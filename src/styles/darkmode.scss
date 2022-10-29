@@ -1,0 +1,1111 @@
+$dark-background: #222;
+$dark-tint-light: #292929;
+$dark-tint-light: rgba(41, 41, 41, 1);
+$dark-tint-light-opacity: rgba(41, 41, 41, 0.85);
+$dark-tint2: #3d3d3d;
+$dark-tint3: #555;
+$dark-text-color: #ccc;
+$dark-text-color-dark: #9e9e9e;
+$dark-text-color-bright: #fff;
+$dark-text-subcolor: #777;
+$dark-text-divcolor: #444;
+$dark-text-disablecolor: #666;
+$dark-dc-color: #4987f7;
+$dark-dc-color-deep: #113475;
+$dark-highlight: #176ef1d5;
+
+$dark-red: #e21919;
+
+// frame, etc.
+
+.refresherDark {
+  .refresher-frame,
+  .refresher-mini-preview {
+    background-color: $dark-tint-light;
+    color: $dark-text-color-bright;
+    border: 1px solid #505050;
+
+    &.blur {
+      background-color: $dark-tint-light-opacity;
+    }
+
+    & .read-more {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      margin: 0;
+      padding: 30px 0;
+      background-image: linear-gradient(transparent 0%, black 80%);
+    }
+  }
+
+  .refresher-frame-outer {
+    &.background {
+      background-color: rgba(82, 82, 82, 0.6);
+    }
+  }
+
+  .refresher-management-panel {
+    background: $dark-tint-light-opacity;
+    border: 1px solid #505050;
+
+    &.blur {
+      backdrop-filter: blur(5px) saturate(150%);
+      background-color: $dark-tint-light-opacity;
+    }
+
+    .button {
+      p {
+        color: $dark-text-color;
+      }
+
+      &:hover {
+        background: rgba(110, 110, 110, 0.5);
+      }
+    }
+
+    img {
+      filter: invert(1);
+    }
+  }
+
+  .refresher-block-popup,
+  .refresher-captcha-popup {
+    background-color: $dark-tint-light;
+    color: white;
+    box-shadow: 0px 0px 16px rgba(51, 51, 51, 0.3);
+    border: 1px solid #505050;
+
+    .close {
+      .cross {
+        background-color: #fff;
+      }
+
+      &:hover {
+        .cross {
+          background-color: rgb(202, 202, 202);
+        }
+      }
+    }
+  }
+
+  .refresher-preview-button {
+    box-shadow: none;
+
+    &.primary {
+      background-color: rgba(0, 110, 255, 0.32);
+
+      &:hover {
+        background-color: rgba(0, 110, 255, 0.28);
+      }
+
+      &:active {
+        background-color: rgba(0, 110, 255, 0.22);
+      }
+    }
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+      box-shadow: none;
+      color: white;
+
+      p {
+        filter: invert(0);
+      }
+    }
+
+    &:active {
+      background-color: rgba(255, 255, 255, 0.12);
+      box-shadow: none;
+
+      p {
+        filter: invert(0);
+      }
+    }
+
+    p {
+      color: $dark-text-color;
+    }
+
+    img {
+      filter: invert(1);
+    }
+  }
+}
+
+.refresherDark {
+  body,
+  .dcwrap,
+  .left_content,
+  .dcfoot,
+  .issuebox,
+  .inner_search {
+    background-color: $dark-background;
+  }
+
+  .font_jinlightpurple,
+  .font_lightpurple,
+  .btn_white_round.font_jinlightpurple,
+  .minor_uadmin_setting .font_lightblue,
+  .miniwrap .minor_uadmin_setting .font_lightblue,
+  .minor_uadmin_top .uadmin_top_tit,
+  .miniwrap .minor_uadmin_top .uadmin_top_tit {
+    color: $dark-dc-color;
+  }
+
+  td,
+  textarea,
+  input,
+  .select_area,
+  .pop_content.ipinbox .ip_inr textarea,
+  #write_wrap,
+  .write_subject,
+  .notice,
+  .dc_all,
+  .content_box,
+  .img_box,
+  .box_tit,
+  .section_cate,
+  .cate_tit,
+  .severalcan .cate,
+  .block_line,
+  .under_paging,
+  .pop_wrap.type3 .pop_head,
+  .pop_wrap .favorite_list .btn_box,
+  .result_list li a,
+  .result_list .result_box,
+  .input_box.input_kcapcode,
+  .kap_codeimg,
+  .minicate_wrap .catehead,
+  .option_box,
+  .select_box.array_latest,
+  .select_arraybox,
+  .integrate_relation,
+  .pop_tipbox .inner,
+  .integrate_schwrap .fix_element,
+  .pop_wrap.type4,
+  .visit_history,
+  .newvisit_history,
+  .minor_wrap.gallmain .visit_history,
+  .hot_gall_box,
+  .hotcate_list .top_cate_wrap .cate_box,
+  .up_mgall_box,
+  .new_magll_box,
+  .integrate_cont,
+  .rcont_sec .txt,
+  .btn_cash,
+  .pop_wrap .btn_box,
+  .word_list li .dot_line,
+  .integrate_schwrap .gnb_bar,
+  .category_solt_area ul,
+  .user_data_list,
+  .user_data_list li,
+  .login_box,
+  .miniwrap .img_contbox,
+  .block_sel,
+  .reason_input,
+  .pop_wrap.gray2px,
+  .cmt_info,
+  .reply_box,
+  .reply_list li,
+  .user_info_input,
+  .comment_wrap .bottom_paging_box,
+  .cmt_bg_box,
+  .btn_recommend_box,
+  .recom_bottom_box,
+  .appending_file_box,
+  .subject_morelist,
+  .subject_inner,
+  .intxt,
+  .pop_content.mns_closing .btn_bottom,
+  .secret_set .pwset input,
+  .set_cont,
+  .block_sch_gall,
+  .minor_ranking_box,
+  .issuebox.open .visit_history,
+  .user_control,
+  .mng_subject_sel,
+  .recommend_kapcode,
+  .select_box.dccon_use,
+  .dccon_search .inner_search,
+  .relation_wrap .inner:last-of-type,
+  .pin_num,
+  .pin_num th,
+  .pin_num td,
+  .mandu_pop .pin_pw,
+  .mandu_pop .cate_group,
+  .gallview_head,
+  .power_click .top_link,
+  .pw_goods_list ul,
+  .over_alt,
+  .gallview_head .gall_comment a,
+  .dcon_frame,
+  .vote_wrap.voteingbox,
+  .no_memberwrap input,
+  .btn_dccon_hot,
+  .user_control + .mng_subject_sel,
+  .pop_content.error_report .box.b,
+  .vote_wrap .btnbox,
+  .vote_content,
+  .vote_content .group,
+  .vote_tit .catetit_input,
+  .vote_categorybox,
+  .votetxt_addbox,
+  .vote_content .dayin,
+  .voteingbox .vote_categorybox.output,
+  .cont_list.img .img_box,
+  .vote_wrap .left_box,
+  .btn_search_nickid,
+  .btn_recent_list,
+  .btn_enroll,
+  .empty_sch_gall,
+  .subject_select.small .option_box,
+  .adult_report,
+  .gall_report,
+  .autodeltime_set .select_arraybox,
+  .autodeltime_set .dayin,
+  .uplink_inbox,
+  .btn_add,
+  .img_uplist li,
+  .file_upbox,
+  .video_box,
+  .local_search,
+  .local_search .top_search,
+  .bnt_ytube_up,
+  .youtube_search .inner,
+  .file.moviecast .setting .inbox,
+  .file.moviecast .setting .group .select_arraybox,
+  .file.moviecast .setting .group .option_box,
+  .content_box .secimg_box .img_box,
+  .info_viewbox,
+  .dccon_popinfo .dccon_infobox,
+  .file.moviecast .mvsetbox .thum_img::after,
+  .key_search_area li,
+  .sch_result_imgbox > a,
+  .restriction_off,
+  .fileupbox,
+  .file_urlbox,
+  &.dgallog .cont_listbox li,
+  &.dgallog .up_bgimg,
+  &.dgallog .gallog_set .int,
+  .gallog_set .btn_fileup,
+  .minor_uadmin_menu li a,
+  .uadmin_cont_box,
+  .complete_txt,
+  .bg_greybox,
+  .cloreason_write_box,
+  .form_group,
+  .relate_wordlist.set li,
+  .tiptxt.dot_line,
+  .mini_slow div.dot_line,
+  .concept_range .recomn,
+  .set_write_subject,
+  .btn_submng_out,
+  .btn_addsubject,
+  .mininame_reason,
+  .miniwrap .mini_member div.dot_line,
+  .miniwrap .mini_anonymity div.dot_line,
+  .miniwrap .modify_img,
+  .m_relate,
+  .error_report .error_textarea,
+  .mini_openset .box,
+  .miniwrap .set_content.category .select_arraybox,
+  .minor_make_chk .scroll,
+  .make_guidetxt_box {
+    border-color: rgba(82, 82, 82, 0.6);
+  }
+
+  #subject {
+    background-color: $dark-tint-light;
+    color: $dark-text-color-bright;
+  }
+
+  // Editor
+
+  .editor_wrap {
+    background: #fff;
+  }
+
+  .sp_img,
+  .power_link .link_upinfo::after,
+  .temsave_info_box p:before,
+  .concept_con .con_list.txt li,
+  .dccon_infobox p,
+  .concept_txtlist li a::before,
+  .noacs_img::after,
+  .dccon_guide .guide_txtbox li {
+    background-image: url(https://nstatic.dcinside.com/dc/w/images/dark/sp_img_dark.png);
+  }
+
+  .refresher-comment svg {
+    filter: invert(1);
+  }
+
+  .icon_mini {
+    filter: invert(0.8);
+  }
+
+  .my_minor_list .mng,
+  .newvisit_history .tit,
+  .bnt_newvisit_more,
+  .under_catelist.newvisit_layer .list_alldel {
+    color: $dark-dc-color;
+  }
+
+  .mini_catebox {
+    border-top: 1px $dark-dc-color solid;
+
+    &:first-child {
+      border-top: 3px $dark-dc-color solid;
+    }
+  }
+
+  .mini_infotxt {
+    .tit {
+      color: $dark-text-color-bright;
+    }
+    .txt {
+      color: $dark-text-color;
+    }
+  }
+
+  .minicate_wrap .mini_new {
+    .tit {
+      background: #4d3075;
+    }
+
+    .lists li a {
+      color: $dark-text-color;
+    }
+  }
+
+  .minicate_wrap .catehead {
+    border-bottom: 1px solid $dark-text-divcolor;
+
+    h3 {
+      color: $dark-text-subcolor;
+
+      ::after {
+        background: $dark-text-divcolor;
+      }
+    }
+  }
+
+  .miniinfo_pop .inner {
+    color: $dark-text-color;
+
+    .box:first-child img {
+      filter: invert(43%) sepia(64%) saturate(1865%) hue-rotate(203deg)
+        brightness(101%) contrast(94%);
+    }
+
+    .box:last-child img {
+      filter: brightness(10);
+    }
+  }
+
+  .minor_wrap.gallmain .visit_history {
+    border-top: 1px $dark-text-divcolor solid;
+  }
+
+  .minor_wrap.gallmain .visit_list li a,
+  .newvisit_list li a,
+  .under_catelist .under_listbox li a {
+    color: $dark-text-color;
+  }
+
+  .miniinfo_pop .function {
+    p {
+      color: $dark-text-color-dark;
+    }
+
+    .bg {
+      background-color: $dark-tint2;
+      color: $dark-text-color-bright;
+
+      .tit {
+        color: $dark-text-color-bright;
+      }
+
+      &:first-of-type {
+        color: $dark-text-color-dark;
+      }
+    }
+  }
+
+  .mini_set {
+    color: $dark-text-color-dark;
+  }
+
+  .mini_list_wrap {
+    border: 1px solid $dark-tint-light;
+    border-top-color: $dark-dc-color;
+  }
+
+  .miniwrap .sogaeimg_tit,
+  .gallview_head .gall_comment a {
+    background: $dark-tint2;
+  }
+
+  .mgall_list_wrap a,
+  .mini_list_wrap a,
+  .option_box li,
+  .pop_wrap .my_minor_mini li a,
+  .migall_state .inner > .tit span,
+  .migall_state .inner > .txt,
+  .pop_wrap .my_minor_mini .inner.my_minor_empty {
+    color: $dark-text-color;
+  }
+
+  .access_limit.gall_list.case3 tbody::before {
+    filter: invert(0.868);
+  }
+
+  .hot_minigall .rank_num,
+  .miniwrap .mgall .rank_num,
+  .minor_uadmin_menu li a.on,
+  .miniwrap .minor_uadmin_menu li a.on {
+    background: $dark-dc-color;
+    border: 1px $dark-highlight solid;
+  }
+
+  .minor_uadmin_menu li a {
+    border: 1px solid $dark-tint2;
+  }
+
+  .miniwrap .img_contbox {
+    border-right: 0px;
+  }
+
+  .pop_wrap .my_minor_mini .tab_menubox button.on,
+  .pop_wrap .my_minor_mini .tab_menubox button:first-child.on,
+  .pop_wrap .my_minor_mini .block_tab button.on,
+  .pop_wrap .my_minor_mini .block_tab button:first-child.on {
+    background: $dark-tint-light;
+    color: $dark-dc-color;
+  }
+
+  .type3.lightpurple .tab_menubox button.on,
+  .type3.lightpurple .tab_menubox button:first-child.on,
+  .type3.lightpurple .block_tab button.on,
+  .type3.lightpurple .block_tab button:first-child.on {
+    border-color: $dark-text-subcolor;
+  }
+
+  .pop_wrap .my_minor_mini .tab_menubox button {
+    background-color: $dark-tint2;
+  }
+
+  .type3.lightpurple .tab_menubox button,
+  .type3.lightpurple .block_tab button {
+    border-bottom-color: $dark-text-subcolor;
+  }
+
+  .notice_list,
+  .info_contbox,
+  .gall_guide .caption_box {
+    &::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: $dark-tint-light;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: $dark-tint2;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: $dark-tint3;
+    }
+  }
+
+  .top_search,
+  .bottom_search,
+  .miniwrap .bottom_search,
+  .login_box {
+    border: 1px solid $dark-tint-light;
+  }
+
+  .miniwrap .bottom_search {
+    background: $dark-tint-light;
+  }
+
+  .mintro_imgbox.in_img,
+  .pop_tipbox.minor_tip .inner,
+  .hot_gall_box,
+  .dccon_storage_table td,
+  .dccon_storage_table th,
+  .newvisit_history::before,
+  .hotcate_list .cate_wrap {
+    border: 1px solid $dark-tint2;
+  }
+
+  .tab_btnlist li {
+    border: 0;
+  }
+
+  .uadmin_cont_box {
+    border-top: 1px solid $dark-text-divcolor;
+  }
+
+  .gallview_head,
+  .all_list,
+  .pop_wrap.type3 .pop_head {
+    border-bottom: 1px solid $dark-text-divcolor;
+  }
+
+  .gall_list,
+  .view_comment .cmt_write_box {
+    border-bottom: 2px solid $dark-text-divcolor;
+  }
+
+  .info_viewbox {
+    border-bottom: 1px solid $dark-tint2;
+  }
+
+  .dccon_popinfo .dccon_infobox {
+    border-top: 1px solid $dark-tint2;
+  }
+
+  .all_list dl,
+  .relation_wrap .inner:last-of-type,
+  .minor_uadmin_wrap .right_content {
+    border-left: 1px solid $dark-text-divcolor;
+  }
+
+  .reply_list li,
+  .recom_bottom_box,
+  .cmt_info,
+  .comment_wrap .bottom_paging_box,
+  .issuebox.open .visit_history,
+  .form_group,
+  .rcont_sec .txt {
+    border-top: 1px solid $dark-text-divcolor;
+  }
+
+  .issue_wrap,
+  .comment_box {
+    border-top: 2px solid $dark-dc-color;
+  }
+
+  .guide_cont {
+    border: 2px $dark-dc-color solid;
+    background: $dark-tint-light;
+  }
+
+  .dc_all {
+    border-left: 1px solid $dark-tint2;
+    border-top: 2px solid $dark-tint2;
+    border-right: 1px solid $dark-tint2;
+    border-bottom: 1px solid $dark-tint2;
+  }
+
+  .minor_uadmin_wrap,
+  .miniwrap .minor_uadmin_wrap {
+    border-top: 2px solid $dark-dc-color;
+    border-bottom: 2px solid $dark-dc-color;
+    border-color: $dark-dc-color;
+  }
+
+  .minor_block_list,
+  .mini_member_list,
+  .table_head {
+    border-bottom: 1px solid $dark-dc-color;
+  }
+
+  .minor_block_list th,
+  .mini_member_list th {
+    border: 1px solid $dark-dc-color;
+    border-width: 1px 0 1px;
+  }
+
+  .minor_intro_box,
+  .minor_wrap.gallmain .left_content .mgall_info .txt,
+  .view_content_wrap,
+  .view_content_wrap a,
+  .comment_wrap,
+  .btn_noti_alldel,
+  .btn_noti_setting,
+  .relation_wrap .pop_info b,
+  .gall_guide .caption_box,
+  .bottom_paging_box a,
+  .pop_tipbox.minor_tip .inner,
+  .tabcontent,
+  .minor_uadmin_setting,
+  .cont_tit,
+  .pop_info,
+  .favorite_list .list_box li a,
+  .tab_menubox button,
+  .block_tab button,
+  .calendar_box thead th,
+  .pop_hot_mgall .inner_txt,
+  .pop_hot_gall .inner_txt,
+  .info_policy a,
+  .content,
+  .guide_cont.mng .gcont_box,
+  .inner_txt,
+  .tiptxt,
+  .box_infotxt,
+  .form_group,
+  th,
+  td,
+  a,
+  .usertxt {
+    color: $dark-text-color;
+  }
+
+  .gnb_list li a.on,
+  .all_list dt,
+  .all_list dt a,
+  .area_links a,
+  .gall_issuebox button,
+  .all_list dl a,
+  .btn_cmt_close,
+  .btn_cmt_refresh,
+  .center_box ul li a,
+  .btn_cmt_open,
+  .copyright,
+  .up_num_box,
+  .down_num_box,
+  .page_num,
+  .comment_box .nickname,
+  .concept_txtbox .writer,
+  .btn_cmt_close,
+  .btn_cmt_close span,
+  .btn_cmt_refresh,
+  .calendar_box .day,
+  .btn_cmt_open,
+  .concept_txtbox .writer_info,
+  .dccon_guide,
+  .word_tit,
+  .right_content .page_num {
+    color: $dark-text-color-dark;
+  }
+
+  .gall_issuebox button::before,
+  .user_option span::before,
+  .area_links li::before,
+  .btn_noti_setting::before,
+  .r_hit .tit:last-of-type:before {
+    color: $dark-text-divcolor;
+  }
+
+  .uadmin_top_tit,
+  .btn_upmgall_info,
+  .font_lightblue,
+  .miniwrap .visit_history .tit,
+  .pop_dccon_tit,
+  .guide_cont.mng .bg_box .email,
+  .guide_cont .gcont_head.txt .tit {
+    color: $dark-dc-color;
+  }
+
+  .guide_cont.mng .bg_box,
+  .guide_cont .gcont_head.txt .subtxt {
+    color: $dark-text-color;
+  }
+
+  .guide_cont.mng .code_input {
+    background: $dark-background;
+  }
+
+  .bg_box,
+  .guide_cont .gcont_head {
+    background: $dark-tint2;
+  }
+
+  .reply_num {
+    color: $dark-text-subcolor;
+  }
+
+  .nickname.me {
+    background-color: $dark-highlight;
+    color: $dark-text-color-bright;
+    border-radius: 5px;
+    padding: 2px 5px;
+  }
+
+  .pop_info,
+  .word_tit {
+    background-color: $dark-tint2;
+  }
+
+  .gallview_head .gall_writer .fr > span::before,
+  .album_head .gall_writer .fr > span::before,
+  .btn_cmt_refresh::before,
+  .gallview_head .gall_date::before {
+    background-color: $dark-text-divcolor;
+  }
+
+  .minor_ranking_box,
+  .top_search,
+  .bottom_search {
+    background-color: #333333;
+    border-left: #d5d5d5;
+
+    .ranking span.blind {
+      color: $dark-text-color;
+    }
+
+    .rank_img,
+    .ranking_tit {
+      filter: invert(1);
+    }
+  }
+
+  .checkmark,
+  .icon_lyclose,
+  .tip_deco {
+    filter: invert(1);
+  }
+
+  .noaccess_wrap .dc_logo a img {
+    filter: invert(0);
+  }
+
+  .top_search,
+  .bottom_search {
+    input {
+      color: $dark-text-color-bright;
+    }
+  }
+
+  .miniwrap .page_head a,
+  .page_head a,
+  .visit_history .tit,
+  .font_blue,
+  .pop_wrap .pop_head.dashed,
+  .pop_wrap.type3 .pop_head,
+  .viewtxt_top .useday {
+    color: $dark-dc-color;
+  }
+
+  .dc_logo img[alt='디시인사이드'] {
+    filter: invert(1);
+  }
+
+  .dc_logo img[alt='갤러리'] {
+    filter: brightness(2);
+  }
+
+  .btn_hitgall,
+  .btn_snsmore,
+  .btn_report,
+  .btn_user_control,
+  .btn_blue,
+  .btn_lightpurple,
+  .btn_lightgrey,
+  .array_tab button.on {
+    text-shadow: unset;
+  }
+
+  .bottom_array .select_area,
+  .miniwrap .bottom_array .select_area,
+  .bottom_array .select_area .inner,
+  .miniwrap .bottom_array .select_area .inner,
+  .user_info_input.id input,
+  .cmt_write_box .user_info_input.id > label,
+  .newvisit_history,
+  .btn_user_control,
+  .btn_white {
+    background-color: $dark-tint-light;
+    color: $dark-text-color;
+  }
+
+  .btn_blue,
+  .btn_lightpurple,
+  .word_close {
+    background-color: $dark-dc-color;
+    color: $dark-text-color-bright;
+    border-color: $dark-dc-color;
+  }
+
+  .pop_wrap.type2,
+  .issuebox.open {
+    border: 1px solid $dark-dc-color;
+  }
+
+  .miniwrap .issue_wrap,
+  .miniwrap .issuebox.open,
+  .miniwrap table th,
+  .miniwrap table {
+    border-color: $dark-tint2;
+  }
+
+  .pop_wrap.type3 {
+    border: 1px solid $dark-dc-color;
+    border-width: 2px 1px 1px;
+  }
+
+  .btn_white {
+    border-color: $dark-text-subcolor;
+  }
+
+  .content_box,
+  .visit_history,
+  .newvisit_history,
+  .array_tab button,
+  .content_box .img_box,
+  .content_box .secimg_box .img_box,
+  .output_array .select_area,
+  .area_links .btn_top_loginout,
+  .cmt_write_box,
+  .subject_morelist,
+  .pop_wrap,
+  .pop_tipbox .inner,
+  .rcont_wiki,
+  .tab_menubox button.on,
+  .tab_menubox button:first-child.on,
+  .block_tab button.on,
+  .option_box.white,
+  .bg_greybox,
+  .box_head,
+  .cate_tit,
+  .bottom_array .option_box,
+  .miniwrap .bottom_array .option_box,
+  .wk_content .tit > span,
+  .wk_box,
+  .block_tab button:first-child.on,
+  .minor_tip_txt.bg,
+  .output_array .option_box,
+  .box_bottom,
+  .reply_box {
+    background-color: $dark-tint-light;
+    color: $dark-text-color;
+    border: 1px solid $dark-tint-light;
+
+    a {
+      color: $dark-text-color;
+    }
+  }
+
+  .user_info_input input {
+    background-color: $dark-tint-light !important;
+  }
+
+  .array_tab button,
+  .cmt_txt_cont textarea,
+  .user_info_input,
+  .user_info_input input,
+  .appending_file_box,
+  .btn_recommend_box,
+  .btn_hitgall,
+  .btn_snsmore,
+  .btn_report,
+  .select_box.array_latest,
+  .btn_lightblue,
+  .set_cont input[type='text'],
+  .select_arraybox,
+  .option_sort .select_arraybox,
+  .option_sort .select_arraybox .option_box,
+  .calendar_wrap .inner,
+  .autodeltime_set .calendar_wrap .inner,
+  .gall_guide,
+  .btn_lightgrey,
+  .option_box,
+  .auto_wordwrap,
+  .checkbox input[type='checkbox'],
+  .mng_subject_sel,
+  .all_ranklist,
+  .t_area,
+  .under_paging,
+  .int,
+  .dccon_infobox,
+  .select_box.dccon_use,
+  .dccon_use .option_box,
+  .miniwrap .bottom_array,
+  .bottom_array {
+    background-color: $dark-tint-light;
+    color: $dark-text-color;
+    border: 1px solid $dark-tint2;
+
+    a {
+      color: $dark-text-color;
+    }
+  }
+
+  .miniwrap .array_tab button.on,
+  .array_tab button.on,
+  .pop_wrap.file .pop_head,
+  .pop_wrap .pop_head.bg {
+    background-color: $dark-dc-color;
+  }
+
+  .content_box header,
+  .pop_wrap .pop_head.dashed {
+    border-bottom: 1px dashed $dark-text-divcolor;
+  }
+
+  .gnb_bar,
+  .login_box,
+  .info_viewtxt {
+    background-color: $dark-tint-light;
+  }
+
+  .word_list .search_key {
+    background-color: $dark-tint-light !important;
+  }
+
+  .word_list .search_key.on {
+    background-color: $dark-tint2 !important;
+  }
+
+  .gnb_bar {
+    border: 0;
+  }
+
+  .login_box {
+    .user_info {
+      color: $dark-dc-color;
+    }
+
+    .user_option {
+      background-color: $dark-tint2;
+      a {
+        color: $dark-text-color;
+      }
+    }
+  }
+
+  .gall_list {
+    th,
+    tbody tr td,
+    th,
+    tbody tr td a {
+      color: $dark-text-color;
+    }
+
+    th {
+      border-color: $dark-text-divcolor;
+    }
+
+    td {
+      border-top: 1px solid $dark-text-divcolor;
+    }
+
+    tbody tr:hover {
+      background-color: $dark-tint-light;
+    }
+
+    tbody tr td a:visited {
+      color: #4d4d4d;
+    }
+
+    // tbody tr td em.icon_img {
+    //   filter: invert(1);
+    // }
+  }
+
+  .write_subject {
+    .tit {
+      background: $dark-tint2;
+      color: $dark-text-color-bright;
+    }
+
+    .subject_list {
+      li:not(.not) {
+        color: $dark-text-color-bright;
+      }
+
+      .not {
+        color: $dark-text-disablecolor;
+      }
+    }
+  }
+}
+
+.refresherDoNotColorVisited {
+  .refresherDark tbody tr td a:visited {
+    color: unset;
+  }
+
+  .list .gall_tit a:visited {
+    color: unset;
+  }
+}
+
+// Gallog
+
+.refresherDark {
+  & > .innerbox,
+  .gallog_wrap > .headbox,
+  #container > article > .conent_wrap {
+    background-color: $dark-tint-light;
+  }
+
+  #top > div.top_bar > div {
+    background: $dark-dc-color-deep;
+
+    ::after {
+      background: linear-gradient(#fff, #000);
+    }
+  }
+
+  .cont_head .tit {
+    color: #e21919;
+  }
+
+  .crt {
+    background: #151515;
+  }
+
+  .gallog_wrap {
+    .cont_listbox {
+      border: 1px solid $dark-dc-color;
+      border-width: 2px 0 1px 0;
+    }
+
+    .tit_box > strong {
+      color: $dark-dc-color;
+    }
+
+    .writing_day button,
+    .writing_info .tit {
+      background: $dark-dc-color;
+    }
+
+    .choice_sect button {
+      color: $dark-dc-color;
+
+      &.on {
+        color: $dark-red;
+      }
+
+      &.on::after {
+        background: $dark-dc-color;
+      }
+    }
+
+    .cont_listbox li {
+      border-top: 1px $dark-text-divcolor solid;
+    }
+
+    .gallog_menu li.on a {
+      background: $dark-dc-color;
+      color: #fff;
+      text-shadow: 0px;
+    }
+
+    .cmt_write_box.gallog {
+      border-top: 2px $dark-dc-color solid;
+    }
+
+    .gallog_menu li a,
+    .gallog_empty {
+      border: 1px solid $dark-dc-color;
+    }
+
+    .gallog_empty {
+      border-width: 2px 0 1px 0;
+    }
+
+    .cont,
+    .gallog_empty {
+      color: $dark-text-color;
+    }
+  }
+}

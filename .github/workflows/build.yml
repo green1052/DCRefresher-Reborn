@@ -1,0 +1,31 @@
+name: Build And Relase
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Install
+        run: yarn
+
+      - name: Build
+        run: yarn run build
+
+      - name: Zip
+        run: 7za a dist.zip ./dist/*
+
+      - name: Release
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{secrets.GITHUB_TOKEN}}"
+          prerelease: false
+          files: dist.zip

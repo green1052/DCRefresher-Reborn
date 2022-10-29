@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "strict": true,
+    "target": "ES2020",
+    "jsx": "preserve",
+    "esModuleInterop": true,
+    "baseUrl": "./",
+    "sourceMap": true,
+    "lib": ["DOM", "ES2015"],
+    "paths": {
+      "*": ["src/@types/*.d.ts"]
+    }
+  },
+  "exclude": ["node_modules", "**/node_modules/*"],
+}
