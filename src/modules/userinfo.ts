@@ -1,6 +1,8 @@
 import * as color from "../utils/color";
 import * as Toast from "../components/toast";
 import {runtime} from "webextension-polyfill";
+import * as communicate from "../core/communicate";
+import {eventBus} from "../core/eventbus";
 
 const types: { [index: string]: string } = {
     UID: "유저 ID",
@@ -193,16 +195,21 @@ export default {
             uid: "",
             ip: ""
         },
-        lastSelect: 0
+        lastSelect: 0,
+        hookID: ""
     },
     enable: true,
     default_enable: true,
     require: ["filter", "eventBus", "ip"],
-    func (
+    func: function (
         filter: RefresherFilter,
         eventBus: RefresherEventBus,
         ip: RefresherIP
     ): void {
+        this.memory.hookID = communicate.addHook("updateMemos", ({memos_store}) => {
+            this.data.memos = memos_store;
+        });
+
         const SendToBackground = () => {
             runtime.sendMessage(
                 JSON.stringify({
@@ -308,6 +315,8 @@ export default {
                 return false;
             }
 
+            SendToBackground();
+
             const text = document.createElement("span");
             text.className = "ip refresherUserData refresherMemoData";
             text.innerHTML = `<span>(${memo.text}) </span>`;
@@ -329,8 +338,6 @@ export default {
             }
 
             elem.dataset.refresherMemo = "true";
-
-            SendToBackground();
         };
 
         const elemAdd = (elem: HTMLElement | Document) => {
@@ -429,9 +436,13 @@ export default {
 
         elemAdd(document);
     },
-    revoke (filter: RefresherFilter): void {
+    revoke(filter: RefresherFilter): void {
         if (this.memory.always) {
             filter.remove(this.memory.always, true);
+        }
+
+        if (this.memory.hookID !== "") {
+            communicate.clearHook("updateMemos", this.memory.hookID);
         }
 
         const lists = document.querySelectorAll(".refresherUserData");

@@ -7,10 +7,7 @@ let blockModes = {};
 let memos = {};
 
 const set = (key: string, value: unknown) => {
-    const obj: { [index: string]: unknown } = {};
-    obj[key] = value;
-
-    return (browser.storage.sync || browser.storage.local).set(obj);
+    return (browser.storage.sync || browser.storage.local).set({[key]: {value}});
 };
 
 // const get = (key: string) => {
@@ -45,7 +42,6 @@ const messageHandler = async (port: browser.Runtime.Port | null, msg: any) => {
     }
 
     if (msg.updateMemos) {
-        set(`refresher.module:유저 정보`, msg.memos_store);
         memos = msg.memos_store;
     }
 
@@ -83,14 +79,6 @@ const messageHandler = async (port: browser.Runtime.Port | null, msg: any) => {
 
     if (msg.requestRefresherMemos) {
         port?.postMessage({requestRefresherMemos: true, memos});
-    }
-
-    if (msg.openShortcutSettings) {
-        browser.tabs.create({
-            url: /Firefox/.test(navigator.userAgent)
-                ? "about:addons"
-                : "chrome://extensions/shortcuts"
-        });
     }
 };
 
