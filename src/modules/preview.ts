@@ -28,7 +28,7 @@ class PostInfo implements PostInfo {
     disabledDownvote?: boolean;
     dom?: Document;
 
-    constructor (id: string, data: { [index: string]: unknown }) {
+    constructor(id: string, data: { [index: string]: unknown }) {
         this.id = id;
 
         const keys = Object.keys(data);
@@ -159,7 +159,7 @@ const parse = (id: string, body: string) => {
 };
 
 const request = {
-    async vote (
+    async vote(
         gall_id: string,
         post_id: string,
         type: string,
@@ -200,7 +200,7 @@ const request = {
             });
     },
 
-    post (
+    post(
         link: string,
         gallery: string,
         id: string,
@@ -223,7 +223,7 @@ const request = {
      * @param args
      * @param signal
      */
-    async comments (args: GalleryHTTPRequestArguments, signal: AbortSignal) {
+    async comments(args: GalleryHTTPRequestArguments, signal: AbortSignal) {
         if (!args.link) {
             throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
         }
@@ -249,7 +249,7 @@ const request = {
 
         return JSON.parse(response);
     },
-    async delete (args: GalleryHTTPRequestArguments) {
+    async delete(args: GalleryHTTPRequestArguments) {
         if (!args.link) {
             throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
         }
@@ -287,7 +287,7 @@ const request = {
         return result;
     },
 
-    async block (
+    async block(
         args: GalleryHTTPRequestArguments,
         avoid_hour: number,
         avoid_reason: number,
@@ -332,7 +332,7 @@ const request = {
         return result;
     },
 
-    async setNotice (args: GalleryHTTPRequestArguments, set: boolean) {
+    async setNotice(args: GalleryHTTPRequestArguments, set: boolean) {
         if (!args.link) {
             throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
         }
@@ -370,7 +370,7 @@ const request = {
         return result;
     },
 
-    async setRecommend (args: GalleryHTTPRequestArguments, set: boolean) {
+    async setRecommend(args: GalleryHTTPRequestArguments, set: boolean) {
         if (!args.link) {
             throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
         }
@@ -409,7 +409,7 @@ const request = {
         return result;
     },
 
-    async captcha (args: GalleryHTTPRequestArguments, kcaptchaType: string) {
+    async captcha(args: GalleryHTTPRequestArguments, kcaptchaType: string) {
         if (!args.link) {
             throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
         }
@@ -444,7 +444,7 @@ const request = {
         );
     },
 
-    async adminDeleteComment (
+    async adminDeleteComment(
         preData: GalleryPreData,
         commentId: string,
         signal: AbortSignal
@@ -491,7 +491,7 @@ const request = {
             });
     },
 
-    async userDeleteComment (
+    async userDeleteComment(
         preData: GalleryPreData,
         commentId: string,
         signal: AbortSignal,
@@ -862,7 +862,7 @@ const panel = {
         return element;
     },
 
-    captcha (src: string, callback: (captcha: string) => void): boolean {
+    captcha(src: string, callback: (captcha: string) => void): boolean {
         const element = document.createElement("div");
         element.className = "refresher-captcha-popup";
 
@@ -1013,7 +1013,7 @@ const miniPreview: miniPreview = {
     caches: {},
     shouldOutHandle: false,
     cursorOut: false,
-    create (ev: MouseEvent, use: boolean) {
+    create(ev: MouseEvent, use: boolean) {
         if (!use) {
             return;
         }
@@ -1122,7 +1122,7 @@ const miniPreview: miniPreview = {
             preData.title;
     },
 
-    move (ev: MouseEvent, use: boolean) {
+    move(ev: MouseEvent, use: boolean) {
         if (use) {
             const rect = miniPreview.element.getBoundingClientRect();
             const width = rect.width;
@@ -1135,7 +1135,7 @@ const miniPreview: miniPreview = {
         }
     },
 
-    close (use: boolean) {
+    close(use: boolean) {
         miniPreview.cursorOut = true;
 
         if (use) {
@@ -1286,7 +1286,7 @@ export default {
         }
     },
     require: ["filter", "eventBus", "Frame", "http", "block"],
-    func (
+    func(
         filter: RefresherFilter,
         eventBus: RefresherEventBus,
         Frame: RefresherFrame,
@@ -1559,8 +1559,8 @@ export default {
                                         v.user_id,
                                         v.ip || "",
                                         ((new DOMParser()
-                                            .parseFromString(v.gallog_icon, "text/html")
-                                            .querySelector("a.writer_nikcon img") ||
+                                                .parseFromString(v.gallog_icon, "text/html")
+                                                .querySelector("a.writer_nikcon img") ||
                                             {}) as HTMLImageElement).src
                                     );
                                 });
@@ -1691,8 +1691,8 @@ export default {
                 }
 
                 return (admin && !password
-                    ? request.adminDeleteComment(preData, commentId, signal)
-                    : request.userDeleteComment(preData, commentId, signal, password)
+                        ? request.adminDeleteComment(preData, commentId, signal)
+                        : request.userDeleteComment(preData, commentId, signal, password)
                 )
                     .then(v => {
                         if (typeof v === "boolean") {
@@ -1783,6 +1783,10 @@ export default {
             if (this.memory.preventOpen) {
                 this.memory.preventOpen = false;
 
+                return;
+            }
+
+            if ((ev?.target as HTMLElement).closest(".ub-writer") !== null) {
                 return;
             }
 
@@ -2013,10 +2017,8 @@ export default {
         const addHandler = (e: HTMLElement) => {
             e.addEventListener("mouseup", handleMousePress);
             e.addEventListener("mousedown", handleMousePress);
-            e.addEventListener(
-                this.status.reversePreviewKey ? "click" : "contextmenu",
-                previewFrame
-            );
+            e.addEventListener(this.status.reversePreviewKey ? "click" : "contextmenu", previewFrame);
+
             if (this.status.reversePreviewKey) {
                 e.addEventListener("contextmenu", e => {
                     e.preventDefault();
@@ -2085,7 +2087,7 @@ export default {
         window.addEventListener("popstate", this.memory.popStateHandler);
     },
 
-    revoke (filter: RefresherFilter): void {
+    revoke(filter: RefresherFilter): void {
         if (this.memory.uuid) {
             filter.remove(this.memory.uuid, true);
         }
