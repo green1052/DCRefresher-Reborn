@@ -9,40 +9,11 @@
 
 원본: [DCRefresher](https://github.com/So-chiru/DCRefresher)
 
-게시글 목록을 자동으로 새로 불러오고 글 미리보기 창을 만들어주며, 기타 편의 기능도 함께 제공합니다.
+디시인사이드 개선 확장 프로그램
 
-## What's Different?
+## 기능
 
-### 오류
-
-```diff
-+ 미리보기 화면에서 댓글을 작성 시 발생하던 오류 수정
-+ 자동 새로고침 시 글 목록이 사라지던 오류 수정
-```
-
-### 모듈
-
-```diff
-+ HIT 갤러리 팝업 제거
-+ 이미지 업로드 개선
-
-- 광고 차단
-```
-
-### 기능
-
-```diff
-+ 메모 관리 기능
-+ 업데이트 확인 기능
-+ 고정닉 아이디 표시
-
-
-* 미리보기 
-
-+ 댓글 여러 줄 표시
-+ 답글 작성 기능
-+ 댓글 여러 줄 작성 지원
-```
+추가 **해줘**
 
 ## 설치
 
@@ -66,3 +37,7 @@ Chrome:
 ```
 
 Firefox: https://addons.mozilla.org/ko/firefox/addon/dcrefresher-reborn
+
+## 개발
+
+[docs 폴더](https://github.com/green1052/DCRefresher-Reborn/tree/main/docs)를 확인해주세요
