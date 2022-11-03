@@ -40,7 +40,7 @@ const memoAsk = (
   <div class="memo-row">
     <p>메모</p>
     <div class="refresher-input-wrap focus">
-      <input id="refresher_memo" type="text"></input>
+      <textarea id="refresher_memo"></textarea>
     </div>
   </div>
   <div class="memo-row">
@@ -88,7 +88,7 @@ const memoAsk = (
         win.classList.add("fadeIn");
     });
 
-    const memoElement = frame.querySelector("#refresher_memo") as HTMLInputElement;
+    const memoElement = frame.querySelector("#refresher_memo") as HTMLTextAreaElement;
     const colorElement = frame.querySelector(
         "#refresher_memo_color"
     ) as HTMLInputElement;
