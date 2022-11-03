@@ -38,21 +38,13 @@ document.addEventListener("DOMContentLoaded", () => {
             };
         },
 
-        computed: {
-            isFirefox() {
-                return /Firefox/.test(navigator.userAgent);
-            }
-        },
-
         methods: {
             open(url) {
-                window.open(url, "_blank");
+                browser.tabs.create({url})
             },
 
             openShortcutSettings() {
-                port.postMessage({
-                    openShortcutSettings: true
-                });
+                browser.runtime.openOptionsPage();
             },
 
             typeWrap(value) {
@@ -205,7 +197,6 @@ document.addEventListener("DOMContentLoaded", () => {
             removeMemoUser(key) {
                 const obj = {...this.memos};
                 delete obj[key];
-
                 this.memos = obj;
 
                 this.syncMemos();

@@ -94,4 +94,4 @@ html.refresher-popup
                             .key
                                 refresher-bubble(v-for="key in shortcut.shortcut.match(shortcutRegex)" :text="key")
                                 refresher-bubble(v-if="!shortcutRegex.test(shortcut.shortcut)" text="키 없음")
-                    p 단축키는 <a v-on:click="openShortcutSettings">{{isFirefox ? 'about:addons > 톱니바퀴 > 확장 기능 단축키 관리' : '확장 프로그램 > 단축키'}}</a>에서 설정할 수 있습니다.
+                    p <a v-on:click="openShortcutSettings">단축키 설정</a>
