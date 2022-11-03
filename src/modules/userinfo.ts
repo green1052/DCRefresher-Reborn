@@ -2,7 +2,6 @@ import * as color from "../utils/color";
 import * as Toast from "../components/toast";
 import {runtime} from "webextension-polyfill";
 import * as communicate from "../core/communicate";
-import {eventBus} from "../core/eventbus";
 
 const types: { [index: string]: string } = {
     UID: "유저 ID",
