@@ -115,13 +115,13 @@ export const modules = {
             mod.data = (await store.module.get(mod.name)) || {};
 
             const proxy = new DeepProxy(mod.data, {
-                set (): boolean {
+                set(): boolean {
                     store.module.setGlobal(mod.name, JSON.stringify(mod.data));
 
                     return true;
                 },
 
-                deleteProperty (): boolean {
+                deleteProperty(): boolean {
                     store.module.setGlobal(mod.name, JSON.stringify(mod.data));
 
                     return true;
@@ -161,7 +161,7 @@ export const modules = {
         );
     },
 
-    getData (name: string, key?: string): unknown {
+    getData(name: string, key?: string): unknown {
         if (!module_store[name]) {
             throw new Error("Given module is not exists.");
         }
