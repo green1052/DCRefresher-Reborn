@@ -1,3 +1,6 @@
+import Vue from "vue";
+import browser from "webextension-polyfill";
+
 const ImageLists = {
     icon: "/assets/icons/logo/Icon.png"
 };
@@ -40,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         methods: {
             open(url) {
-                browser.tabs.create({url})
+                browser.tabs.create({url});
             },
 
             openShortcutSettings() {
@@ -56,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
             },
 
             moveToModuleTab(moduleName) {
-                this.tab = 3;
+                this.tab = 4;
 
                 this.$el.querySelectorAll(".refresher-module.highlight").forEach(v => {
                     v.classList.remove("highlight");
@@ -233,18 +236,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     port.postMessage({
-        requestRefresherModules: true
-    });
-
-    port.postMessage({
-        requestRefresherSettings: true
-    });
-
-    port.postMessage({
-        requestRefresherBlocks: true
-    });
-
-    port.postMessage({
+        requestRefresherModules: true,
+        requestRefresherSettings: true,
+        requestRefresherBlocks: true,
         requestRefresherMemos: true
     });
 
@@ -312,7 +306,7 @@ Vue.component("refresher-module", {
         update(_module, _key, value) {
             let obj = {};
             obj[`${this.name}.enable`] = value;
-            browser.storage.sync.set(obj);
+            (browser.storage.sync || browser.storage.local).set(obj);
 
             // TODO : 전체 로직 깔끔하게 변경
 
