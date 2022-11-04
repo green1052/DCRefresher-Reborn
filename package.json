@@ -1,6 +1,6 @@
 {
   "name": "dcrefresher-reborn",
-  "version": "2.0.3",
+  "version": "2.1.0",
   "description": "디시인사이드 개선 확장 프로그램",
   "devDependencies": {
     "@babel/core": "^7.20.2",
