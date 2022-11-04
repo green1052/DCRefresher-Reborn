@@ -1,11 +1,7 @@
 import browser from "webextension-polyfill";
 
 export const set = (key: string, value: unknown): void => {
-    const obj: { [index: string]: unknown } = {};
-    obj[key] = value;
-    (browser.storage.sync || browser.storage.local).set(obj);
-
-    return;
+    (browser.storage.sync || browser.storage.local).set({[key]: value});
 };
 
 export const get = (key: string | null): Promise<unknown> => {
