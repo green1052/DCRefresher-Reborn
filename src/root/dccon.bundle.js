@@ -1,3 +1,5 @@
+import browser from "webextension-polyfill";
+
 async function selectDCON(e) {
     let targetId = e.currentTarget.id;
 
