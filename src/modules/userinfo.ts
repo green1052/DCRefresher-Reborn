@@ -197,6 +197,33 @@ export default {
         lastSelect: 0,
         hookID: ""
     },
+    status: {
+        showNickUID: true,
+        showFixedNickUID: false,
+        showIpInfo: true
+    },
+    settings: {
+        showNickUID: {
+            name: "고정닉 UID 표시",
+            desc: "고정닉 유저의 UID를 표시합니다.",
+            type: "check",
+            default: true
+        },
+
+        showFixedNickUID: {
+            name: "반고정닉 UID 표시",
+            desc: "반고정닉 유저의 UID를 표시합니다.",
+            type: "check",
+            default: false
+        },
+
+        showIpInfo: {
+            name: "IP 정보 표시",
+            desc: "IP 정보를 표시합니다.",
+            type: "check",
+            default: true
+        }
+    },
     enable: true,
     default_enable: true,
     require: ["filter", "eventBus", "ip"],
@@ -220,7 +247,7 @@ export default {
         SendToBackground();
 
         const ipInfoAdd = (elem: HTMLElement) => {
-            if (!elem || !elem.dataset.ip || elem.dataset.refresherIp) return false;
+            if (!this.status.showIpInfo || !elem || !elem.dataset.ip || elem.dataset.refresherIp) return false;
             const ip_data = ip.ISPData(elem.dataset.ip);
 
             const text = document.createElement("span");
@@ -249,7 +276,8 @@ export default {
             if (!elem || !elem.dataset.uid || elem.dataset.refresherId) return false;
 
             const img = elem.querySelector("img");
-            if (!img || !img.src.endsWith("nik.gif")) {
+
+            if (!img || !(this.status.showNickUID && /fix_(manager|sub_manager|)nik\.gif$/.test(img.src) || this.status.showFixedNickUID && /(?<!fix_)(manager|sub_manager|)nik\.gif$/.test(img.src))) {
                 return false;
             }
 
@@ -257,7 +285,6 @@ export default {
             text.className = "ip refresherUserData";
             text.innerHTML = `<span>(${elem.dataset.uid})</span>`;
             text.title = elem.dataset.uid;
-
             const fl = elem.querySelector(".fl");
             if (fl) {
                 const flIpQuery = fl.querySelector(".ip");
@@ -268,7 +295,6 @@ export default {
             } else {
                 elem.appendChild(text);
             }
-
             elem.dataset.refresherId = "true";
         };
 
