@@ -4,8 +4,6 @@ html.refresher-popup
         meta(http-equiv="Content-Type" content="text/html;charset=UTF-8")
         meta(name="viewport" content="width=device-width, initial-scale=1.0")
         link(rel="stylesheet" href="../refresher.bundle.css")
-        script(src=RefresherDevMode ? "../vue.js" : "../vue.min.js")
-        script(src=RefresherDevMode ? "../browser-polyfill.js" : "../browser-polyfill.min.js")
         script(src="../option.bundle.js")
         style.
             html, body {
@@ -38,7 +36,7 @@ html.refresher-popup
                             h3.need-refresh 우선 디시 페이지를 열고 설정 해주세요.
                         div(v-else class="refresher-setting-category" v-for="(module, i) in Object.keys(settings)")
                             h3(v-on:click="moveToModuleTab(module)") {{module}} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" width="18px" height="18px"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-                            div.refresher-setting(v-for="(setting, i) in Object.keys(settings[module])" v-if="!settings[module][setting].advanced" :data-changed="settings[module][setting].value != settings[module][setting].default")
+                            div.refresher-setting(v-for="(setting, i) in Object.keys(settings[module])" v-if="!settings[module][setting].advanced" :data-changed="settings[module][setting].value !== settings[module][setting].default")
                                 .info
                                     h4 {{settings[module][setting].name}}
                                     p {{settings[module][setting].desc}}
