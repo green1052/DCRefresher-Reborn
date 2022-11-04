@@ -7,7 +7,7 @@ let blockModes = {};
 let memos = {};
 
 const set = (key: string, value: unknown) => {
-    return (browser.storage.sync || browser.storage.local).set({[key]: {value}});
+    (browser.storage.sync || browser.storage.local).set({[key]: value});
 };
 
 // const get = (key: string) => {
