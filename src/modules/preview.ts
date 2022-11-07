@@ -1013,10 +1013,8 @@ const miniPreview: miniPreview = {
     caches: {},
     shouldOutHandle: false,
     cursorOut: false,
-    create(ev: MouseEvent, use: boolean) {
-        if (!use) {
-            return;
-        }
+    create(ev, use, hide) {
+        if (!use) return;
 
         miniPreview.cursorOut = false;
 
@@ -1030,7 +1028,7 @@ const miniPreview: miniPreview = {
 
             miniPreview.lastTimeout = window.setTimeout(() => {
                 if (!miniPreview.cursorOut && miniPreview.lastElement === ev.target) {
-                    miniPreview.create(ev, use);
+                    miniPreview.create(ev, use, hide);
                 }
 
                 miniPreview.cursorOut = false;
@@ -1043,9 +1041,7 @@ const miniPreview: miniPreview = {
 
         const preData = getRelevantData(ev);
 
-        if (!preData) {
-            return;
-        }
+        if (!preData) return;
 
         if (miniPreview.element.classList.contains("hide")) {
             miniPreview.element.classList.remove("hide");
@@ -1056,7 +1052,7 @@ const miniPreview: miniPreview = {
         }
 
         if (!miniPreview.init) {
-            miniPreview.element.innerHTML = `<h3>${preData.title}</h3><br><div class="refresher-mini-preview-contents"></div><p class="read-more">더 읽으려면 클릭하세요.</p>`;
+            miniPreview.element.innerHTML = `<h3>${preData.title}</h3><br><div class="refresher-mini-preview-contents${hide ? " media-hide" : ""}"></div><p class="read-more">더 읽으려면 클릭하세요.</p>`;
 
             document.body.appendChild(miniPreview.element);
             miniPreview.init = true;
@@ -1066,9 +1062,7 @@ const miniPreview: miniPreview = {
             ".refresher-mini-preview-contents"
         );
 
-        if (!selector) {
-            return;
-        }
+        if (!selector) return;
 
         new Promise<PostInfo>((resolve, reject) => {
             if (!preData) {
@@ -1080,6 +1074,7 @@ const miniPreview: miniPreview = {
             }
 
             const cache = miniPreview.caches[preData.gallery + preData.id];
+
             if (cache) {
                 return resolve(cache);
             }
@@ -1117,9 +1112,9 @@ const miniPreview: miniPreview = {
                     e.message.indexOf("aborted") > -1
                         ? ""
                         : "게시글을 새로 가져올 수 없습니다: " + e.message;
-            })
-        ;(miniPreview.element.querySelector("h3") as HTMLHeadingElement).innerHTML =
-            preData.title;
+            });
+
+        (miniPreview.element.querySelector("h3") as HTMLHeadingElement).innerHTML = preData.title;
     },
 
     move(ev: MouseEvent, use: boolean) {
@@ -1163,6 +1158,7 @@ export default {
         toggleAdminPanel: true,
         expandRecognizeRange: false,
         tooltipMode: true,
+        tooltipHide: false,
         useKeyPress: true,
         colorPreviewLink: true,
         reversePreviewKey: false,
@@ -1189,6 +1185,12 @@ export default {
         tooltipMode: {
             name: "툴팁 미리보기 표시",
             desc: "마우스를 올려두면 글 내용만 빠르게 볼 수 있는 툴팁을 추가합니다.",
+            default: false,
+            type: "check"
+        },
+        tooltipHide: {
+            name: "툴팁 미리보기 미디어 숨기기",
+            desc: "툴팁 미리보기 화면에서 미디어를 숨깁니다.",
             default: false,
             type: "check"
         },
@@ -1559,8 +1561,8 @@ export default {
                                         v.user_id,
                                         v.ip || "",
                                         ((new DOMParser()
-                                            .parseFromString(v.gallog_icon, "text/html")
-                                            .querySelector("a.writer_nikcon img") ||
+                                                .parseFromString(v.gallog_icon, "text/html")
+                                                .querySelector("a.writer_nikcon img") ||
                                             {}) as HTMLImageElement).src
                                     );
                                 });
@@ -1691,8 +1693,8 @@ export default {
                 }
 
                 return (admin && !password
-                    ? request.adminDeleteComment(preData, commentId, signal)
-                    : request.userDeleteComment(preData, commentId, signal, password)
+                        ? request.adminDeleteComment(preData, commentId, signal)
+                        : request.userDeleteComment(preData, commentId, signal, password)
                 )
                     .then(v => {
                         if (typeof v === "boolean") {
@@ -2043,7 +2045,7 @@ export default {
                 });
             }
             e.addEventListener("mouseenter", ev =>
-                miniPreview.create(ev, this.status.tooltipMode)
+                miniPreview.create(ev, this.status.tooltipMode, this.status.tooltipHide)
             );
             e.addEventListener("mousemove", ev =>
                 miniPreview.move(ev, this.status.tooltipMode)
