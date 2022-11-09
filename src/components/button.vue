@@ -1,3 +1,15 @@
+<template>
+    <div class="refresher-preview-button" v-on:click="safeClick">
+        <transition name="refresher-shake">
+            <img :key="error + 1" :src="getURL('/assets/icons/' + id + '.png')"></img>
+        </transition>
+        <transition name="refresher-shake">
+            <p class="refresher-vote-text" :key="error" :id="'refresher-' + id + '-counts'">{{ text }}</p>
+        </transition>
+    </div>
+</template>
+
+<script lang="ts">
 import browser from "webextension-polyfill";
 
 interface ButtonProps {
@@ -10,16 +22,7 @@ interface ButtonData {
 }
 
 export default {
-    template: `
-      <div class="refresher-preview-button" v-on:click="safeClick">
-      <transition name="refresher-shake">
-        <img :key="error + 1" :src="getURL('/assets/icons/' + id + '.png')"></img>
-      </transition>
-      <transition name="refresher-shake">
-        <p class="refresher-vote-text" :key="error" :id="'refresher-' + id + '-counts'">{{ text }}</p>
-      </transition>
-      </div>
-    `,
+    name: "refresher-preview-button",
     props: {
         id: {type: [String, Number]},
         text: {
@@ -51,3 +54,4 @@ export default {
         }
     }
 };
+</script>

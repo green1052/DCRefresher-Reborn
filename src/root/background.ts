@@ -105,25 +105,23 @@ browser.runtime.onInstalled.addListener(details => {
 });
 
 browser.contextMenus.create({
+    id: "blockSelected",
     title: "오른쪽 클릭한 유저 차단",
     contexts: ["all"],
-    documentUrlPatterns: ["*://gall.dcinside.com/*"],
-    onclick: (info, tab) => {
-        browser.tabs.sendMessage(tab.id!, {
-            type: "blockSelected"
-        });
-    }
+    documentUrlPatterns: ["*://gall.dcinside.com/*"]
 });
 
 browser.contextMenus.create({
+    id: "memoSelected",
     title: "오른쪽 클릭한 유저 메모",
     contexts: ["all"],
-    documentUrlPatterns: ["*://gall.dcinside.com/*"],
-    onclick: (info, tab) => {
-        browser.tabs.sendMessage(tab.id!, {
-            type: "memoSelected"
-        });
-    }
+    documentUrlPatterns: ["*://gall.dcinside.com/*"]
+});
+
+browser.contextMenus.onClicked.addListener((info, tab) => {
+    browser.tabs.sendMessage(tab!.id!, {
+        type: info.menuItemId
+    });
 });
 
 browser.commands.onCommand.addListener(command => {

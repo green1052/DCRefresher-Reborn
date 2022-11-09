@@ -1,45 +1,46 @@
-import PreviewButton from "./button";
-
-import {User} from "../utils/user";
-
-import * as Toast from "./toast";
-
-import UserComponent from "./user";
-
-export default {
-    components: {
-        PreviewButton,
-        UserComponent
-    },
-    template: `
-      <div class="refresher-write-comment">
-      <div class="user" v-show="editUser">
-        <input type="text" v-model="unsignedUserID" v-on:change="(v) => validCheck('id', v.target.value)"
-               placeholder="닉네임"></input>
-        <div></div>
-        <input type="password" v-model="unsignedUserPW" v-on:change="(v) => validCheck('pw', v.target.value)"
-               placeholder="비밀번호"></input>
-      </div>
-      <div class="refresher-comment-body">
-        <div class="refresher-input-wrap" :class="{focus: focused, disable: disabled}">
+<template>
+    <div class="refresher-write-comment">
+        <div class="user" v-show="editUser">
+            <input type="text" v-model="unsignedUserID" v-on:change="(v) => validCheck('id', v.target.value)"
+                   placeholder="닉네임"/>
+            <div></div>
+            <input type="password" v-model="unsignedUserPW" v-on:change="(v) => validCheck('pw', v.target.value)"
+                   placeholder="비밀번호"/>
+        </div>
+        <div class="refresher-comment-body">
+            <div class="refresher-input-wrap" :class="{focus: focused, disable: disabled}">
           <textarea id="comment_main" placeholder="댓글 입력..." v-model="text" v-on:focus="focus" v-on:blur="blur"
                     v-on:keydown="type" :disabled="disabled"/>
+            </div>
+            <PreviewButton class="refresher-writecomment primary" id="write" text="작성" :click="write"></PreviewButton>
         </div>
-        <PreviewButton class="refresher-writecomment primary" id="write" text="작성" :click="write"></PreviewButton>
-      </div>
-      <div @mouseover="hoverUserInfo = true" @mouseleave="hoverUserInfo = false">
-        <div class="whoami"
-             v-bind:class="{'refresher-comment-util': true, 'refresher-comment-util-show': !(hoverUserInfo && !this.user.id)}">
-          <UserComponent :user="user"></UserComponent>
-          <span>로 {{ this.getReply() === null ? "" : "답글" }} 작성 중</span>
+        <div @mouseover="hoverUserInfo = true" @mouseleave="hoverUserInfo = false">
+            <div class="whoami"
+                 v-bind:class="{'refresher-comment-util': true, 'refresher-comment-util-show': !(hoverUserInfo && !this.user.id)}">
+                <UserComponent :user="user"></UserComponent>
+                <span>로 {{ this.getReply() === null ? "" : "답글" }} 작성 중</span>
+            </div>
+            <div class="whoami"
+                 v-bind:class="{'refresher-comment-util': true, 'refresher-comment-util-edit': true, 'refresher-comment-util-show': hoverUserInfo && !this.user.id}">
+                <span v-on:click="toggleEditUser">클릭하면 작성자 정보 수정 모드를 {{ editUser ? "비활성화" : "활성화" }}시킵니다.</span>
+            </div>
         </div>
-        <div class="whoami"
-             v-bind:class="{'refresher-comment-util': true, 'refresher-comment-util-edit': true, 'refresher-comment-util-show': hoverUserInfo && !this.user.id}">
-          <span v-on:click="toggleEditUser">클릭하면 작성자 정보 수정 모드를 {{ editUser ? '비활성화' : '활성화' }}시킵니다.</span>
-        </div>
-      </div>
-      </div>`,
-    data (): { [index: string]: unknown } {
+    </div>
+</template>
+
+<script lang="ts">
+import {User} from "../utils/user";
+import * as Toast from "./toast";
+import button from "./button.vue";
+import user from "./user.vue";
+
+export default {
+    name: "write_comment",
+    components: {
+        PreviewButton: button,
+        UserComponent: user,
+    },
+    data(): { [index: string]: unknown } {
         return {
             focused: false,
             disabled: false,
@@ -66,16 +67,16 @@ export default {
         }
     },
     watch: {
-        unsignedUserID (value: string): void {
+        unsignedUserID(value: string): void {
             localStorage.setItem("nonmember_nick", value);
             this.user.nick = value;
         },
 
-        unsignedUserPW (value: string): void {
+        unsignedUserPW(value: string): void {
             localStorage.setItem("nonmember_pw", value);
         }
     },
-    mounted (): void {
+    mounted(): void {
         const gallogName = document.querySelector(
             "#login_box .user_info .nickname em"
         ) as HTMLElement;
@@ -101,7 +102,7 @@ export default {
         }
     },
     methods: {
-        validCheck (type: string, value: string): void {
+        validCheck(type: string, value: string): void {
             if (type === "id" && (!value || value.length < 2)) {
                 Toast.show("아이디는 최소 2자리 이상이어야 합니다.", true, 2000);
                 this.unsignedUserID = "ㅇㅇ";
@@ -123,13 +124,13 @@ export default {
             }
         },
 
-        toggleEditUser (): void {
+        toggleEditUser(): void {
             if (!this.user.id) {
                 this.editUser = !this.editUser;
             }
         },
 
-        async write (): Promise<boolean> {
+        async write(): Promise<boolean> {
             this.disabled = true;
 
             if (!this.unsignedUserID || !this.unsignedUserPW) {
@@ -157,17 +158,17 @@ export default {
             return true;
         },
 
-        focus (): void {
+        focus(): void {
             this.focused = true;
             this.$root.inputFocus = true;
         },
 
-        blur (): void {
+        blur(): void {
             this.focused = false;
             this.$root.inputFocus = false;
         },
 
-        type (ev: KeyboardEvent): KeyboardEvent | void {
+        type(ev: KeyboardEvent): KeyboardEvent | void {
             if (ev.shiftKey && ev.key === "Enter") {
                 return ev;
             }
@@ -180,3 +181,4 @@ export default {
         }
     }
 };
+</script>

@@ -1,3 +1,12 @@
+<template>
+    <div class="refresher-timestamp" v-on:click="this.$root.$children[0].changeStamp" :title="locale">
+        <transition name="refresher-opacity">
+            <span :key="'stamp' + this.$root.$children[0].stampMode">{{ this.$root.$children[0].stampMode ? locale : stamp }}</span>
+        </transition>
+    </div>
+</template>
+
+<script lang="ts">
 const s = 1000;
 const m = s * 60;
 const h = m * 60;
@@ -37,12 +46,7 @@ interface TimestampVue extends TimestampVueData {
 }
 
 export default {
-    template: `
-      <div class="refresher-timestamp" v-on:click="this.$root.changeStamp" :title="locale">
-      <transition name="refresher-opacity">
-        <span :key="'stamp' + this.$root.stampMode">{{ this.$root.stampMode ? locale : stamp }}</span>
-      </transition>
-      </div>`,
+    name: "refresher-timestamp",
     props: {
         date: {
             type: Date,
@@ -56,11 +60,11 @@ export default {
         };
     },
     computed: {
-        locale (this: TimestampVue): string {
+        locale(this: TimestampVue): string {
             return this.date.toLocaleString();
         }
     },
-    mounted (this: TimestampVue): void {
+    mounted(this: TimestampVue): void {
         this.stamp = convertTime(this.date);
 
         this.updates = window.setInterval(() => {
@@ -68,7 +72,8 @@ export default {
         }, 3000);
     },
 
-    beforeUnload (this: TimestampVue): void {
+    beforeUnload(this: TimestampVue): void {
         clearInterval(this.updates);
     }
 };
+</script>

@@ -1,0 +1,74 @@
+<template>
+    <div class="refresher-range">
+        <input type="range" :data-id="id" :data-module="modname" :placeholder="placeholder" :value="value"
+               :disabled="disabled" v-on:input="input" v-on:change="update" :max="max" :min="min" :step="step"></input>
+        <span class="indicator">{{ value + (this.unit ? this.unit : '') }}</span>
+    </div>
+</template>
+
+<script>
+export default {
+    name: "refresher-range",
+    props: {
+        change: {
+            type: Function
+        },
+
+        placeholder: {
+            type: Number,
+            required: false
+        },
+
+        modname: {
+            type: String
+        },
+
+        id: {
+            type: String
+        },
+
+        value: {
+            type: Number
+        },
+
+        max: {
+            type: Number
+        },
+
+        min: {
+            type: Number
+        },
+
+        step: {
+            type: Number
+        },
+
+        unit: {
+            type: String
+        },
+
+        disabled: {
+            type: Boolean
+        }
+    },
+    methods: {
+        input(ev) {
+            this.$el.querySelector(".indicator").innerHTML =
+                ev.target.value + (this.unit ? this.unit : "");
+        },
+
+        update(ev) {
+            if (this.change) {
+                this.change(
+                    ev.target.dataset.module,
+                    ev.target.dataset.id,
+                    ev.target.value
+                );
+            }
+        }
+    },
+    mounted() {
+        this.$data.__temp = this.value;
+    }
+};
+</script>

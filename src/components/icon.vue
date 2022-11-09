@@ -1,10 +1,12 @@
+<template>
+    <img :src="getURL(`/assets/icons/${icon}.png`)"/>
+</template>
+
+<script lang="ts">
 import browser from "webextension-polyfill";
 
-
 export default {
-    template: `
-  <img :src="getURL('/assets/icons/' + icon + '.png')"></img>
-  `,
+    name: "icon",
     props: {
         icon: {
             type: String,
@@ -17,3 +19,4 @@ export default {
         }
     }
 };
+</script>

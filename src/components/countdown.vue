@@ -1,3 +1,12 @@
+<template>
+    <div class="refresher-countdown" v-on:click="this.$root.changeStamp" :title="locale">
+        <transition name="refresher-opacity">
+            <span :key="'stamp' + this.$root.stampMode">삭제 : {{ this.$root.stampMode ? locale : stamp }}</span>
+        </transition>
+    </div>
+</template>
+
+<script lang="ts">
 const s = 1000;
 const m = s * 60;
 const h = m * 60;
@@ -26,20 +35,17 @@ const convertTime = (date: Date) => {
 };
 
 interface CountdownVueData {
-  mode: number
-  stamp: string
+    mode: number;
+    stamp: string;
 }
+
 interface CountdownVue extends CountdownVueData {
-  date: Date
-  updates: number
+    date: Date;
+    updates: number;
 }
 
 export default {
-    template: `<div class="refresher-countdown" v-on:click="this.$root.changeStamp" :title="locale">
-    <transition name="refresher-opacity">
-      <span :key="'stamp' + this.$root.stampMode">삭제 : {{this.$root.stampMode ? locale : stamp}}</span>
-    </transition>
-  </div>`,
+    name: "refresher-countdown",
     props: {
         date: {
             type: Date,
@@ -53,11 +59,11 @@ export default {
         };
     },
     computed: {
-        locale (this: CountdownVue): string {
+        locale(this: CountdownVue): string {
             return this.date.toLocaleString();
         }
     },
-    mounted (this: CountdownVue): void {
+    mounted(this: CountdownVue): void {
         this.stamp = convertTime(this.date);
 
         this.updates = window.setInterval(() => {
@@ -65,7 +71,8 @@ export default {
         }, 5000);
     },
 
-    beforeUnload (this: CountdownVue): void {
+    beforeUnload(this: CountdownVue): void {
         clearInterval(this.updates);
     }
 };
+</script>
