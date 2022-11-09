@@ -5,11 +5,11 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const {CleanWebpackPlugin} = require("clean-webpack-plugin");
 const CleanTerminalPlugin = require("clean-terminal-webpack-plugin");
+const {VueLoaderPlugin} = require("vue-loader");
 
 const pkg = require("./package.json");
 
 module.exports = {
-
     entry: {
         "refresher.bundle.js": "./src/index.ts",
         "background.js": "./src/root/background.ts",
@@ -32,7 +32,18 @@ module.exports = {
             {
                 include: /src/,
                 test: /\.scss$/,
-                use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"]
+                use: [
+                    MiniCssExtractPlugin.loader,
+                    "css-loader",
+                    "sass-loader"
+                ]
+            },
+            {
+                include: /src/,
+                test: /\.vue$/,
+                use: {
+                    loader: "vue-loader"
+                }
             }
         ]
     },
@@ -65,10 +76,11 @@ module.exports = {
         }),
         new CleanTerminalPlugin({
             beforeCompile: true
-        })
+        }),
+        new VueLoaderPlugin()
     ],
     resolve: {
-        extensions: [".js", ".ts", ".css"],
+        extensions: [".js", ".ts", ".css", ".vue"],
         modules: ["node_modules"]
     },
     optimization: {

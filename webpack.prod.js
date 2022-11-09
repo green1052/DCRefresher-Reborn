@@ -2,8 +2,6 @@ const common = require("./webpack.common.js");
 const {merge} = require("webpack-merge");
 const {version} = require("./package.json");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const path = require("path");
-const CopyWebpackPlugin = require("copy-webpack-plugin");
 
 module.exports = merge(common, {
     mode: "production",
@@ -40,28 +38,11 @@ module.exports = merge(common, {
                 RefresherVersion: version,
                 RefresherDevMode: false
             }
-        }),
-        new CopyWebpackPlugin({
-            patterns: [
-                {
-                    from: path.dirname(require.resolve("vue")),
-                    to: "./",
-                    filter: path =>
-                        path.endsWith("/vue.min.js")
-                },
-                {
-                    from: path.dirname(require.resolve("webextension-polyfill")),
-                    to: "./",
-                    filter: path =>
-                        path.endsWith("/browser-polyfill.min.js")
-                }
-            ]
         })
     ],
     resolve: {
         alias: {
-            vue: "vue/dist/vue.min.js",
-            "browser-polyfill": "webextension-polyfill/dist/browser-polyfill.min.js"
+            vue: "vue/dist/vue.min.js"
         }
     }
 });

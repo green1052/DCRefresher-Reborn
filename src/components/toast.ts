@@ -1,84 +1,25 @@
+import toast from "./toastComponent.vue";
 import Vue from "vue";
 
 let Toast: Vue;
-Vue.component("refresher-toast", {
-    template: `
-  <transition name="refresher-toast" appear>
-    <div class="refresher-toast" :class="{hover: this.$root.clickCb}" :title="this.$root.content" :data-type="this.$root.type" :key="this.$root.id" v-show="this.$root.open">
-      <div class="contents" v-on:click="click">
-        <div class="text">
-          <p>{{this.$root.content}}</p>
-        </div>
-        <div class="button" v-on:click="this.$root.hide">
-          <i class="material-icons">X</i>
-        </div>
-      </div>
-    </div>
-  </transition>
-  `,
-    methods: {
-        click (ev) {
-            if (this.$root.clickCb) {
-                this.$root.clickCb(ev.target);
-            }
-        }
-    }
-});
+
+const element = document.createElement("refresher-toast");
 
 const initToast = () => {
     if (!document.querySelector(".refresher-toast")) {
-        const element = document.createElement("refresher-toast");
         document.querySelector("body")?.appendChild(element);
     }
 
     Toast = new Vue({
-        el: "refresher-toast",
-        data: () => {
-            return {
-                title: "",
-                id: 0,
-                content: "",
-                clickCb: () => {},
-                open: false,
-                type: "",
-                autoClose: 0
-            };
-        },
-        methods: {
-            update (
-                content: string,
-                type: string,
-                autoClose: boolean,
-                click?: () => void
-            ) {
-                this.content = content;
-                this.id = Math.random();
-                this.type = typeof type === "boolean" ? (type ? "error" : "info") : type;
-                this.clickCb = click;
-
-                if ((typeof autoClose !== "boolean" && !autoClose) || autoClose) {
-                    this.autoClose = window.setTimeout(
-                        this.hide,
-                        autoClose && typeof autoClose === "number" ? autoClose : 5000
-                    );
-                }
-            },
-
-            show () {
-                this.open = true;
-            },
-
-            hide () {
-                this.open = false;
-            }
-        }
-    });
+        el: element,
+        render: h => h(toast)
+    }).$children[0];
 };
 
 window.addEventListener("DOMContentLoaded", initToast);
 
 window.addEventListener("keydown", ev => {
-    if (ev.keyCode == 27 && Toast.open) Toast.open = false;
+    if (ev.keyCode == 27 && Toast.$data.open) Toast.$data.open = false;
 });
 
 /**
@@ -100,8 +41,8 @@ export const show = (
         initToast();
     }
 
-    if (Toast.autoClose) {
-        clearTimeout(Toast.autoClose);
+    if (Toast.$data.autoClose) {
+        clearTimeout(Toast.$data.autoClose);
     }
 
     Toast.update(content, type, autoClose, click);

@@ -1,6 +1,5 @@
 import Vue from "vue";
-
-import {Outer, Scroll} from "../components/frame";
+import frame from "./frameComponent.vue";
 
 interface FrameOption {
     relative?: boolean;
@@ -40,7 +39,7 @@ class InternalFrame implements RefresherFrame {
     downvotes: string | null;
     buttonError: unknown;
 
-    constructor (options: FrameOption, app: RefresherFrameAppVue) {
+    constructor(options: FrameOption, app: RefresherFrameAppVue) {
         this.options = options;
 
         this.title = "";
@@ -59,15 +58,15 @@ class InternalFrame implements RefresherFrame {
         this.buttonError = null;
     }
 
-    querySelector (a: string) {
+    querySelector(a: string) {
         return this.app.$el.querySelector(a);
     }
 
-    querySelectorAll (a: string) {
+    querySelectorAll(a: string) {
         return this.app.$el.querySelectorAll(a);
     }
 
-    get center () {
+    get center() {
         return this.options.center;
     }
 }
@@ -77,7 +76,7 @@ export default class {
     frame: RefresherFrame[];
     app: RefresherFrameAppVue;
 
-    constructor (childs: Array<FrameOption>, option: FrameStackOption) {
+    constructor(childs: Array<FrameOption>, option: FrameStackOption) {
         if (!document || !document.createElement) {
             throw new Error(
                 "Frame is not available before DOMContentLoaded event. (DOM isn't accessible)"
@@ -97,67 +96,13 @@ export default class {
 
         this.frame = [];
         this.app = new Vue({
-            components: {
-                Outer,
-                Scroll
-            },
             el: this.outer,
-            data: () => {
-                return {
-                    frames: [],
-                    ...option,
-                    activeGroup: option.groupOnce,
-                    fade: false,
-                    stampMode: false,
-                    scrollModeTop: false,
-                    scrollModeBottom: false,
-                    closed: false
-                };
-            },
-            methods: {
-                changeStamp () {
-                    this.stampMode = !this.stampMode;
-                },
-
-                first () {
-                    return this.frames[0];
-                },
-
-                second () {
-                    return this.frames[1];
-                },
-
-                clearScrollMode () {
-                    this.scrollModeTop = false;
-                    this.scrollModeBottom = false;
-                },
-
-                outerClick () {
-                    this.$emit("close");
-                    this.fadeOut();
-                    document.body.style.overflow = "auto";
-
-                    setTimeout(() => {
-                        document.body.removeChild(this.$el);
-                    }, 300);
-
-                    this.$data.closed = true;
-                },
-
-                close () {
-                    this.outerClick();
-                },
-
-                fadeIn () {
-                    this.$data.fade = true;
-                    this.$data.closed = false;
-                },
-
-                fadeOut () {
-                    this.$data.fade = false;
+            render: h => h(frame, {
+                props: {
+                    option
                 }
-            }
-        });
+            })
+        }).$children[0];
 
         for (let i = 0; i < childs.length; i++) {
             this.app.frames.push(new InternalFrame(childs[i], this.app));
