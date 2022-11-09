@@ -1,5 +1,4 @@
 import log from "../utils/logger";
-
 import * as store from "./store";
 import {eventBus} from "./eventbus";
 import {filter} from "./filtering";

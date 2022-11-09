@@ -1,5 +1,4 @@
 import { queryString } from "../utils/http";
-
 import * as Toast from "../components/toast";
 
 export default {
