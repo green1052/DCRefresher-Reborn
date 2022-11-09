@@ -31,7 +31,6 @@
             "run_at": "document_start"
         }
     ],
-    "content_security_policy": "script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net; object-src 'self'",
     "icons": {
         "120": "assets/icons/logo/icon_40pt@3x.png",
         "180": "assets/icons/logo/icon_60pt@3x.png",
