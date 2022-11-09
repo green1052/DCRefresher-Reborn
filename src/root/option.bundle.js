@@ -7,8 +7,8 @@ document.addEventListener("DOMContentLoaded", () => {
         render: h => h(refresher, {
             props: {
                 RefresherVersion: document.querySelector("#RefresherVersion").value,
-                RefresherDevMode: document.querySelector("#RefresherDevMode").value
+                RefresherDevMode: document.querySelector("#RefresherDevMode").value === "true"
             }
-        }),
+        })
     });
 });

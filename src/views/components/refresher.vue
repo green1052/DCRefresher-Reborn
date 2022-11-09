@@ -23,7 +23,8 @@
                     <div class="text">
                         <h3>DCRefresher Reborn</h3>
                         <p>
-                            <span class="version">v{{this.RefresherVersion}}{{this.RefresherDevMode ? " (dev mode)" : ""}}</span>
+                            <span
+                                class="version">v{{ this.RefresherVersion }}{{ this.RefresherDevMode ? " (dev mode)" : "" }}</span>
                             <a v-for="link in links" v-on:click="open(link.url)">{{ link.text }}</a>
                         </p>
                     </div>
@@ -249,7 +250,8 @@ export default {
         }
     },
     created() {
-        console.log(this);
+        console.log(this.RefresherDevMode);
+
     },
     methods: {
         getURL(url) {
