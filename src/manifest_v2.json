@@ -7,7 +7,6 @@
         "https://gall.dcinside.com/*",
         "https://gallog.dcinside.com/*",
         "activeTab",
-        "webRequest",
         "storage",
         "contextMenus"
     ],
