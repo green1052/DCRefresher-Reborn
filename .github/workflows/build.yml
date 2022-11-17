@@ -1,4 +1,4 @@
-name: Build And Relase
+name: Build And Release
 
 on:
   push:
@@ -17,15 +17,21 @@ jobs:
       - name: Install
         run: yarn
 
-      - name: Build
-        run: yarn run build
+      - name: Build Manifest v2
+        run: |
+          yarn run build:mv2
+          7za a mv2.zip ./dist/*
 
-      - name: Zip
-        run: 7za a dist.zip ./dist/*
+      - name: Build Manifest v3
+        run: |
+          yarn run build:mv3
+          7za a mv3.zip ./dist/*
 
       - name: Release
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{secrets.GITHUB_TOKEN}}"
           prerelease: false
-          files: dist.zip
+          files: |
+            mv2.zip
+            mv3.zip
