@@ -17,24 +17,7 @@
 
 ## 설치
 
-Chrome:
-
-[클릭해서 DCRefresher Reborn 설치](https://github.com/green1052/DCRefresher-Reborn/releases/latest/download/dist.zip)
-
-```
-신규 설치
-1. dist.zip 압축 풀기
-2. 원하는 위치로 폴더 옮기기
-3. chrome://extensions으로 이동
-4. "압축해제된 확장 프로그램을 로드합니다." 버튼을 클릭
-5. 옮겼던 폴더 선택
-
-업데이트 시
-1. dist.zip 압축 풀기
-2. 기존 설치 폴더에 새 내용물을 덮어씁니다.
-3. chrome://extensions으로 이동
-4. DCRefresher Reborn 항목의 새로고침 아이콘을 클릭
-```
+Chrome: https://chrome.google.com/webstore/detail/dcrefresher-reborn/pmfifcbendahnkeojgpfppklgioemgon
 
 Firefox: https://addons.mozilla.org/ko/firefox/addon/dcrefresher-reborn
 
