@@ -197,7 +197,6 @@ import bubble from "./bubble.vue";
 import dccon from "./dccon.vue";
 import browser from "webextension-polyfill";
 import Vue from "vue";
-import {eventBus} from "../../core/eventbus";
 
 const port = browser.runtime.connect({name: "refresherInternal"});
 
