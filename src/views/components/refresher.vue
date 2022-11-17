@@ -347,8 +347,8 @@ export default Vue.extend({
             }
         },
 
-        advancedSettingsCount(obj) {
-            return Object.keys(obj).filter(v => obj[v] && obj[v].advanced).length;
+        advancedSettingsCount(obj: { [key: string]: RefresherSettings }) {
+            return Object.keys(obj).filter(v => obj[v]?.advanced).length;
         },
 
         updateUserSetting(module: string, key: string, value: unknown) {
@@ -363,7 +363,7 @@ export default Vue.extend({
             });
 
             browser.tabs.query({active: true}).then(tabs => {
-                browser.tabs.sendMessage(tabs[0].id, {
+                browser.tabs.sendMessage(tabs[0].id!, {
                     type: "updateSettingValue",
                     data: {
                         name: module,
@@ -382,7 +382,7 @@ export default Vue.extend({
             });
 
             browser.tabs.query({active: true}).then(tabs => {
-                browser.tabs.sendMessage(tabs[0].id, {
+                browser.tabs.sendMessage(tabs[0].id!, {
                     type: "updateBlocks",
                     data: {
                         blocks: this.blocks,
@@ -392,7 +392,7 @@ export default Vue.extend({
             });
         },
 
-        addEmptyBlockedUser(key) {
+        addEmptyBlockedUser(key: RefresherBlockType) {
             if (key === "DCCON") {
                 createDCConSelector();
 
@@ -414,12 +414,12 @@ export default Vue.extend({
             this.syncBlock();
         },
 
-        removeBlockedUser(key, index) {
+        removeBlockedUser(key: string, index: number) {
             this.blocks[key].splice(index, 1);
             this.syncBlock();
         },
 
-        editBlockedUser(key, index) {
+        editBlockedUser(key: RefresherBlockType, index: number) {
             let result = prompt(
                 `바꿀 ${this.blockKeyNames[key]} 값을 입력하세요.`,
                 this.blocks[key][index].content
@@ -444,7 +444,7 @@ export default Vue.extend({
             });
 
             browser.tabs.query({active: true}).then(tabs => {
-                browser.tabs.sendMessage(tabs[0].id, {
+                browser.tabs.sendMessage(tabs[0].id!, {
                     type: "updateMemos",
                     data: {
                         memos: this.memos
@@ -453,7 +453,7 @@ export default Vue.extend({
             });
         },
 
-        removeMemoUser(key) {
+        removeMemoUser(type: RefresherMemoType, user: string) {
             const obj = {...this.memos};
             delete obj[type][user];
             this.memos = obj;
@@ -461,11 +461,19 @@ export default Vue.extend({
             this.syncMemos();
         },
 
-        editMemoUser(key) {
-            alert("수정 기능은 현재 준비 중입니다.");
+        editMemoUser(type: RefresherMemoType, user: string) {
+            browser.tabs.query({active: true}).then(tabs => {
+                browser.tabs.sendMessage(tabs[0].id!, {
+                    type: "refresherRequestMemoAsk",
+                    data: {
+                        type,
+                        user
+                    }
+                });
+            });
         },
 
-        updateDarkMode(v) {
+        updateDarkMode(v: string) {
             document.documentElement.classList[v ? "add" : "remove"](
                 "refresherDark"
             );
