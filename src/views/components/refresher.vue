@@ -24,7 +24,9 @@
                         <h3>DCRefresher Reborn</h3>
                         <p>
                             <span
-                                class="version">v{{ this.RefresherVersion }}{{ this.RefresherDevMode ? " (dev mode)" : "" }}</span>
+                                class="version">v{{
+                                    this.RefresherVersion
+                                }}{{ this.RefresherDevMode ? " (dev mode)" : "" }}</span>
                             <a v-for="link in links" v-on:click="open(link.url)">{{ link.text }}</a>
                         </p>
                     </div>
@@ -145,11 +147,15 @@
                 </div>
             </div>
             <div class="tab tab4" v-show="tab === 3" key="tab4">
-                <p v-if="!Object.keys(memos).length">메모가 없습니다.</p>
-                <div class="block-divide" v-for="[key] in Object.entries(memos)">
-                    <div class="list">
-                        <refresher-bubble :text="key" :remove="() => removeMemoUser(key)"
-                                          :textclick="() => editMemoUser(key)"></refresher-bubble>
+                <div class="block-divide" v-for="key in Object.keys(memos)">
+                    <h3>{{ memoKeyNames[key] }}</h3>
+
+                    <div class="lists">
+                        <p v-if="!Object.keys(memos[key]).length">{{ memoKeyNames[key] }} 메모 없음</p>
+
+                        <refresher-bubble v-else v-for="[user, memo] in Object.entries(memos[key])" :text="user + ' (' + memo.text.substring(0, 10) + ')'"
+                                          :remove="() => removeMemoUser(key, user)"
+                                          :textclick="() => editMemoUser(key, user)"></refresher-bubble>
                     </div>
                 </div>
             </div>
@@ -181,15 +187,17 @@
     </div>
 </template>
 
-<script>
-import checkbox from "./checkbox";
-import module from "./module";
-import options from "./options";
-import input from "./input";
-import range from "./range";
-import bubble from "./bubble";
-import dccon from "./dccon";
+<script lang="ts">
+import checkbox from "./checkbox.vue";
+import module from "./module.vue";
+import options from "./options.vue";
+import input from "./input.vue";
+import range from "./range.vue";
+import bubble from "./bubble.vue";
+import dccon from "./dccon.vue";
 import browser from "webextension-polyfill";
+import Vue from "vue";
+import {eventBus} from "../../core/eventbus";
 
 const port = browser.runtime.connect({name: "refresherInternal"});
 
@@ -209,12 +217,50 @@ const createDCConSelector = () => {
     // );
 };
 
-export default {
+interface RefresherProps {
+    tab: number;
+    modules: {
+        [key: string]: RefresherModule
+    };
+    settings: {
+        [key: string]: {
+            [key: string]: RefresherSettings
+        }
+    },
+    shortcuts: {} | browser.Commands.Command[],
+    blocks: {
+        [key: string]: RefresherBlockValue
+    },
+    blockModes: {
+        [key in RefresherBlockDetectMode]: RefresherBlockDetectMode
+    },
+    memos: {
+        [key in RefresherMemoType]: {
+            [key: string]: RefresherMemoValue
+        }
+    },
+    memoKeyNames: {
+        UID: "유저 ID",
+        NICK: "닉네임",
+        IP: "IP"
+    },
+    shortcutRegex: RegExp,
+    blockKeyNames: {
+        NICK: "닉네임",
+        ID: "아이디",
+        IP: "IP",
+        TEXT: "내용",
+        DCCON: "디시콘"
+    },
+    links: { text: string, url: string }[]
+}
+
+export default Vue.extend({
     name: "refresher",
-    data: () => {
+    data(): RefresherProps {
         return {
             tab: 0,
-            modules: [],
+            modules: {},
             settings: {},
             shortcuts: {},
             blocks: {},
@@ -249,16 +295,12 @@ export default {
             type: Boolean
         }
     },
-    created() {
-        console.log(this.RefresherDevMode);
-
-    },
     methods: {
-        getURL(url) {
+        getURL(url: string) {
             return browser.runtime.getURL(url);
         },
 
-        open(url) {
+        open(url: string) {
             browser.tabs.create({url});
         },
 
@@ -266,7 +308,7 @@ export default {
             browser.runtime.openOptionsPage();
         },
 
-        typeWrap(value) {
+        typeWrap(value: unknown) {
             if (typeof value === "boolean") {
                 return value ? "On" : "Off";
             }
@@ -274,36 +316,34 @@ export default {
             return value;
         },
 
-        moveToModuleTab(moduleName) {
+        moveToModuleTab(moduleName: string) {
             this.tab = 4;
 
             this.$el.querySelectorAll(".refresher-module.highlight").forEach(v => {
                 v.classList.remove("highlight");
             });
 
-            let modules = this.$el.querySelectorAll(".tab .refresher-module .title");
+            const modules: NodeListOf<HTMLElement> = this.$el.querySelectorAll(".tab .refresher-module .title");
 
-            for (var i = 0; i < modules.length; i++) {
-                if (modules[i].innerText === moduleName) {
-                    requestAnimationFrame(() => {
-                        modules[i].parentElement.parentElement.classList.add("highlight");
+            for (let i = 0; i < modules.length; i++) {
+                if (modules[i].innerText !== moduleName) continue;
 
-                        modules[i].scrollIntoView({
-                            behavior: "smooth",
-                            block: "center"
-                        });
+                requestAnimationFrame(() => {
+                    modules[i].parentElement?.parentElement?.classList.add("highlight");
 
-                        setTimeout(() => {
-                            this.$el
-                                .querySelectorAll(".refresher-module.highlight")
-                                .forEach(v => {
-                                    v.classList.remove("highlight");
-                                });
-                        }, 1000);
+                    modules[i].scrollIntoView({
+                        behavior: "smooth",
+                        block: "center"
                     });
 
-                    return;
-                }
+                    setTimeout(() => {
+                        this.$el
+                            .querySelectorAll(".refresher-module.highlight")
+                            .forEach(v => {
+                                v.classList.remove("highlight");
+                            });
+                    }, 1000);
+                });
             }
         },
 
@@ -311,7 +351,7 @@ export default {
             return Object.keys(obj).filter(v => obj[v] && obj[v].advanced).length;
         },
 
-        updateUserSetting(module, key, value) {
+        updateUserSetting(module: string, key: string, value: unknown) {
             this.settings[module][key].value = value;
 
             port.postMessage({
@@ -407,7 +447,7 @@ export default {
                 browser.tabs.sendMessage(tabs[0].id, {
                     type: "updateMemos",
                     data: {
-                        memos_store: this.memos
+                        memos: this.memos
                     }
                 });
             });
@@ -415,7 +455,7 @@ export default {
 
         removeMemoUser(key) {
             const obj = {...this.memos};
-            delete obj[key];
+            delete obj[type][user];
             this.memos = obj;
 
             this.syncMemos();
@@ -442,20 +482,20 @@ export default {
 
         port.onMessage.addListener(msg => {
             if (msg.responseRefresherModules) {
-                this.$data.modules = msg.modules || {};
+                this.modules = msg.modules || {};
             }
 
             if (msg.responseRefresherSettings) {
-                this.$data.settings = msg.settings || {};
+                this.settings = msg.settings || {};
             }
 
             if (msg.responseRefresherBlocks) {
-                this.$data.blocks = msg.blocks || {};
-                this.$data.blockModes = msg.blockModes || {};
+                this.blocks = msg.blocks || {};
+                this.blockModes = msg.blockModes || {};
             }
 
             if (msg.requestRefresherMemos) {
-                this.$data.memos = msg.memos || {};
+                this.memos = msg.memos || {};
             }
         });
 
@@ -481,5 +521,5 @@ export default {
         "refresher-bubble": bubble,
         "refresher-dccon": dccon
     }
-};
+});
 </script>

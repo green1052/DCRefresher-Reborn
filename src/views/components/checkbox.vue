@@ -8,8 +8,10 @@
     </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import Vue from "vue";
+
+export default Vue.extend({
     name: "refresher-checkbox",
 
     props: {
@@ -58,11 +60,10 @@ export default {
 
             this.on = !this.on;
 
-            this.change &&
-            this.change(this.$el.dataset.module, this.$el.dataset.id, this.on);
+            this.change && this.change(this.$el.dataset.module, this.$el.dataset.id, this.on);
         },
 
-        hover(ev) {
+        hover(ev: PointerEvent) {
             if (this.disabled) {
                 return;
             }
@@ -72,7 +73,7 @@ export default {
             }
         },
 
-        down(ev) {
+        down() {
             if (this.disabled) {
                 return;
             }
@@ -80,7 +81,7 @@ export default {
             this._down = true;
         },
 
-        up(ev) {
+        up() {
             if (this.disabled) {
                 return;
             }
@@ -102,5 +103,5 @@ export default {
             }
         }
     }
-};
+});
 </script>

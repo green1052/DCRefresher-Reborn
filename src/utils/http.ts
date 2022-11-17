@@ -60,9 +60,17 @@ export const heads = {
 export const viewRegex = /\/board\/view\//g;
 export const mgall = /dcinside\.com\/mgallery/g;
 
+/**
+ * 마이너 갤러리인지를 확인하여 boolean을 반환합니다.
+ * @param url 확인할 URL
+ */
 export const checkMinor = (url: string): boolean =>
     /\.com\/mgallery/g.test(url || location.href);
 
+/**
+ * 미니 갤러리인지를 확인하여 boolean을 반환합니다.
+ * @param url 확인할 URL
+ */
 export const checkMini = (url: string): boolean =>
     /\.com\/mini/g.test(url || location.href);
 
@@ -82,6 +90,10 @@ export const galleryType = (url: string, extra?: string): string => {
     return types.MAJOR;
 };
 
+/**
+   * URL에 /board/view가 포함되어 있을 경우 /board/lists로 바꿔줍니다.
+   * @param url
+ */
 export const view = (url: string): string => {
     let type = galleryType(url);
 

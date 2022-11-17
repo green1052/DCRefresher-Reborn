@@ -1,24 +1,18 @@
 import * as color from "../utils/color";
 import * as Toast from "../components/toast";
-import {runtime} from "webextension-polyfill";
 import * as communicate from "../core/communicate";
-
-const types: { [index: string]: string } = {
-    UID: "유저 ID",
-    NICK: "닉네임",
-    IP: "IP"
-};
+import {eventBus} from "../core/eventbus";
 
 const memoAsk = (
-    selected: refresherUserTypes,
-    lists: { [index: string]: refresherMemo },
+    selected: RefresherMemoType,
+    memo: RefresherMemo,
     type: string,
     value: string
 ) => {
     const win = document.createElement("div");
     win.className = "refresher-frame-outer center background";
 
-    let currentType = type;
+    let currentType = type as RefresherMemoType;
     let currentValue = value;
 
     const frame = document.createElement("div");
@@ -99,13 +93,13 @@ const memoAsk = (
     const updateType = () => {
         frame.querySelector(
             ".refresher-memo-type"
-        )!.innerHTML = `${types[currentType]}: ${currentValue}`;
+        )!.innerHTML = `${memo.TYPE_NAMES[currentType]}: ${currentValue}`;
 
         memoElement.value = "";
         colorElement.value = "";
         randomColor();
 
-        const previousObject = lists[`${currentType}@${currentValue}`];
+        const previousObject = memo.get(currentType, currentValue);
         if (previousObject) {
             memoElement.value = previousObject.text;
             colorElement.value = previousObject.color;
@@ -134,7 +128,7 @@ const memoAsk = (
 
             userType.classList.add("active");
 
-            currentType = (userType as HTMLElement).dataset.type || "NICK";
+            currentType = (userType as HTMLElement).dataset.type as RefresherMemoType || "NICK";
             currentValue = selected[currentType.toLowerCase()];
 
             updateType();
@@ -180,9 +174,6 @@ const memoAsk = (
 export default {
     name: "유저 정보",
     description: "사용자의 IP, 아이디 정보, 메모를 표시합니다.",
-    data: {
-        memos: {}
-    },
     author: {name: "Sochiru", url: ""},
     url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/(view|lists)/g,
     memory: {
@@ -195,7 +186,7 @@ export default {
             ip: ""
         },
         lastSelect: 0,
-        hookID: ""
+        memoAsk: ""
     },
     status: {
         showNickUID: true,
@@ -226,26 +217,13 @@ export default {
     },
     enable: true,
     default_enable: true,
-    require: ["filter", "eventBus", "ip"],
+    require: ["filter", "eventBus", "ip", "memo"],
     func: function (
         filter: RefresherFilter,
         eventBus: RefresherEventBus,
-        ip: RefresherIP
+        ip: RefresherIP,
+        memo: RefresherMemo
     ): void {
-        this.memory.hookID = communicate.addHook("updateMemos", ({memos_store}) => {
-            this.data.memos = memos_store;
-        });
-
-        const SendToBackground = () => {
-            runtime.sendMessage(
-                JSON.stringify({
-                    memos_store: this.data.memos
-                })
-            );
-        };
-
-        SendToBackground();
-
         const ipInfoAdd = (elem: HTMLElement) => {
             if (!this.status.showIpInfo || !elem || !elem.dataset.ip || elem.dataset.refresherIp) return false;
             const ip_data = ip.ISPData(elem.dataset.ip);
@@ -318,40 +296,35 @@ export default {
 
             if (!elem || elem.dataset.refresherMemo) return false;
 
-            let memo = null;
-
-            if (!this.data.memos) {
-                this.data.memos = {};
-            }
+            let memoData = null;
 
             if (elem.dataset.uid) {
-                memo = this.data.memos[`UID@${elem.dataset.uid}`];
+                memoData ??= memo.get("UID", elem.dataset.uid);
             }
 
-            if (!memo && elem.dataset.nick) {
-                memo = this.data.memos[`NICK@${elem.dataset.nick}`];
+            if (elem.dataset.nick) {
+                memoData ??= memo.get("NICK", elem.dataset.nick);
             }
 
-            if (!memo && elem.dataset.ip) {
-                memo = this.data.memos[`IP@${elem.dataset.ip}`];
+            if (elem.dataset.ip) {
+                memoData ??= memo.get("IP", elem.dataset.ip);
             }
 
-            if (!memo || !memo.text) {
+            if (!memoData || !memoData.text) {
                 return false;
             }
 
-            SendToBackground();
-
             const text = document.createElement("span");
             text.className = "ip refresherUserData refresherMemoData";
-            text.innerHTML = `<span>(${memo.text}) </span>`;
-            text.title = memo.text;
+            text.innerHTML = `<span>(${memoData.text}) </span>`;
+            text.title = memoData.text;
 
-            if (memo.color) {
-                text.style.color = memo.color;
+            if (memoData.color) {
+                text.style.color = memoData.color;
             }
 
             const fl = elem.querySelector(".fl");
+
             if (fl) {
                 const flIpQuery = fl.querySelector(".ip");
 
@@ -401,12 +374,46 @@ export default {
             }
         );
 
-        this.memory.requestBlock = eventBus.on("refresherUpdateUserMemo", () => {
+        this.memory.memoAsk = communicate.addHook("refresherRequestMemoAsk", async ({type, user}) => {
+            const obj: {
+                text: string,
+                color: string,
+                type: RefresherMemoType,
+                value: string
+            } = await memoAsk(type, memo, type, user);
+
+            eventBus.emit("refreshRequest");
+
+            if (!obj.text) {
+                if (memo.get(obj.type, obj.value)) {
+                    memo.remove(obj.type, obj.value);
+                    return;
+                }
+
+                Toast.show(
+                    `해당하는 ${memo.TYPE_NAMES[obj.type]}을(를) 가진 사용자 메모가 없습니다.`,
+                    true,
+                    3000
+                );
+
+                return;
+            }
+
+            Toast.show(
+                `${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 변경했습니다.`,
+                false,
+                2000
+            );
+
+            memo.add(type, user, obj.text, obj.color);
+        });
+
+        this.memory.requestBlock = eventBus.on("refresherUpdateUserMemo", async () => {
             if (Date.now() - this.memory.lastSelect > 10000) {
                 return;
             }
 
-            let type = "NICK";
+            let type: RefresherMemoType = "NICK";
             let value = this.memory.selected.nick;
 
             if (this.memory.selected.uid) {
@@ -421,42 +428,37 @@ export default {
                 return;
             }
 
-            memoAsk(this.memory.selected, this.data.memos, type, value)
-                .then(obj => {
-                    eventBus.emit("refreshRequest");
+            const obj: {
+                text: string,
+                color: string,
+                type: RefresherMemoType,
+                value: string
+            } = await memoAsk(this.memory.selected, memo, type, value);
 
-                    if (!obj.text) {
-                        if (!this.data.memos[`${obj.type}@${obj.value}`]) {
-                            Toast.show(
-                                `해당하는 ${
-                                    types[obj.type]
-                                }을(를) 가진 사용자 메모가 없습니다.`,
-                                true,
-                                3000
-                            );
+            eventBus.emit("refreshRequest");
 
-                            return;
-                        }
+            if (!obj.text) {
+                if (memo.get(obj.type, obj.value)) {
+                    memo.remove(obj.type, obj.value);
+                    return;
+                }
 
-                        delete this.data.memos[`${obj.type}@${obj.value}`];
+                Toast.show(
+                    `해당하는 ${memo.TYPE_NAMES[obj.type]}을(를) 가진 사용자 메모가 없습니다.`,
+                    true,
+                    3000
+                );
 
-                        return;
-                    }
+                return;
+            }
 
-                    this.data.memos[`${obj.type}@${obj.value}`] = {
-                        text: obj.text,
-                        color: obj.color
-                    };
+            memo.add(type, value, obj.text, obj.color);
 
-                    Toast.show(
-                        `${types[obj.type]} ${obj.value}에 메모를 추가했습니다.`,
-                        false,
-                        2000
-                    );
-                })
-                .catch(e => {
-                    console.log(e);
-                });
+            Toast.show(
+                `${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 추가했습니다.`,
+                false,
+                2000
+            );
         });
 
         elemAdd(document);
@@ -464,10 +466,6 @@ export default {
     revoke(filter: RefresherFilter): void {
         if (this.memory.always) {
             filter.remove(this.memory.always, true);
-        }
-
-        if (this.memory.hookID !== "") {
-            communicate.clearHook("updateMemos", this.memory.hookID);
         }
 
         const lists = document.querySelectorAll(".refresherUserData");

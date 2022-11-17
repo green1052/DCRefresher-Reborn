@@ -1,11 +1,9 @@
 import browser from "webextension-polyfill";
 import {uuid} from "../utils/string";
 
-const runtime = browser && browser.runtime;
-
 const handlerStorage: { [index: string]: storageStructure[] } = {};
 
-runtime.onMessage.addListener((msg: runtimeMessage) => {
+browser.runtime.onMessage.addListener((msg) => {
     if (!msg) {
         return;
     }
@@ -61,11 +59,4 @@ export const clearHook = (type: string, id: string): boolean => {
     }
 
     return removed;
-};
-
-export const sendMessage = (type: string, data: unknown): void => {
-    runtime.postMessage({
-        type,
-        data
-    });
 };

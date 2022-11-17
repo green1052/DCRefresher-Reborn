@@ -13,8 +13,10 @@
     </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import Vue from "vue";
+
+export default Vue.extend({
     name: "refresher-bubble",
     props: {
         text: {
@@ -58,5 +60,5 @@ export default {
             }
         }
     }
-};
+});
 </script>

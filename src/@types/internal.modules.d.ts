@@ -16,15 +16,4 @@ declare global {
     move: (ev: MouseEvent, use: boolean) => void
     close: (use: boolean) => void
   }
-
-  interface refresherUserTypes {
-    uid: string
-    nick: string
-    ip: string
-  }
-
-  interface refresherMemo {
-    text: string
-    color: string
-  }
 }

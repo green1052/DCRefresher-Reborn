@@ -99,6 +99,10 @@ declare global {
         };
     }
 
+    type RefresherBlockType = "NICK" | "ID" | "IP" | "TEXT" | "DCCON";
+
+    type RefresherBlockDetectMode = "SAME" | "CONTAIN" | "NOT_SAME" | "NOT_CONTAIN"
+
     interface RefresherBlockValue {
         content: string;
         isRegex: boolean;
@@ -106,63 +110,16 @@ declare global {
         extra?: string;
     }
 
-    interface RefresherBlock {
-        /**
-         * 타입의 이름을 저장한 객체입니다.
-         */
-        TYPE_NAMES: { [index: string]: string };
+    type RefresherBlock = typeof import("../core/block")
 
-        /**
-         * 차단 목록에 추가합니다.
-         *
-         * @param type 차단 종류
-         * @param content 차단 내용
-         * @param isRegex 정규식인지에 대한 여부
-         * @param gallery 특정 갤러리에만 해당하면 갤러리의 ID 값
-         * @param extra 차단 목록에서의 식별을 위한 추가 값
-         */
-        add (
-            type: string,
-            content: string,
-            isRegex: boolean,
-            gallery?: string,
-            extra?: string
-        ): void;
+    type RefresherMemoType = "UID" | "NICK" | "IP";
 
-        /**
-         * 주어진 type의 차단의 모드를 변경합니다.
-         *
-         * @param type 차단 종류
-         * @param mode 차단 모드
-         */
-        updateMode (type: string, mode: string): void;
-
-        /**
-         * 해당 내용이 차단될 내용인지를 반환합니다.
-         *
-         * @param type 차단 종류
-         * @param content 확인할 내용
-         * @param gallery 현재 갤러리
-         */
-        check (type: string, content: string, gallery: string): boolean;
-
-        /**
-         * 데이터를 저장합니다. (내부)
-         *
-         * @param store
-         * @param mode
-         */
-        setStore (
-            store: { [index: string]: RefresherBlockValue[] },
-            mode: { [index: string]: string }
-        ): void;
-
-        /**
-         * obj에 있는 모든 키 값들이 차단 목록에 있는지 검사합니다.
-         *
-         * @param obj 검사할 객체
-         * @param gallery 갤러리 이름 (선택)
-         */
-        checkAll (obj: { [index: string]: string }, gallery?: string): boolean;
+    interface RefresherMemoValue {
+        text: string;
+        color: string;
+        gallery?: string;
     }
+
+    type RefresherMemo = typeof import("../core/memo")
+
 }

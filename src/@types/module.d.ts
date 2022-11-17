@@ -81,7 +81,7 @@ declare global {
         /**
          * 모듈에서 사용할 내장 유틸 목록.
          */
-        require?: Array<"filter" | "Frame" | "eventBus" | "http" | "ip" | "block" | "dom">;
+        require?: Array<"filter" | "Frame" | "eventBus" | "http" | "ip" | "block" | "dom" | "memo">;
 
         /**
          * 해당 모듈이 작동할 때를 처리하기 위한 함수. require에서 적어 넣은 변수 순서대로의 인자를 인자로 넘겨줍니다.

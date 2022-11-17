@@ -1,12 +1,12 @@
 import log from "../utils/logger";
-import * as store from "./store";
+import storage from "../utils/storage";
 import {eventBus} from "./eventbus";
 import {filter} from "./filtering";
 import Frame from "./frame";
 import * as ip from "../utils/ip";
 import * as http from "../utils/http";
 import * as dom from "../utils/dom";
-
+import * as memo from "./memo";
 import browser from "webextension-polyfill";
 
 import * as settings from "./settings";
@@ -22,7 +22,8 @@ const UTILS: { [index: string]: Record<string, unknown> } = {
     http,
     ip,
     block,
-    dom
+    dom,
+    memo
 };
 
 const module_store: { [index: string]: RefresherModule } = {};
@@ -87,11 +88,11 @@ export const modules = {
             throw new Error(`${mod.name} is already registered.`);
         }
 
-        const enable = (await store.get(`${mod.name}.enable`)) as boolean;
+        const enable = await storage.get<boolean>(`${mod.name}.enable`);
         mod.enable = enable;
 
         if (typeof enable === "undefined" || enable === null) {
-            store.set(`${mod.name}.enable`, mod.default_enable);
+            storage.set(`${mod.name}.enable`, mod.default_enable);
             mod.enable = mod.default_enable;
         }
 
@@ -108,26 +109,24 @@ export const modules = {
         if (mod.data) {
             for (const key in mod.data) {
                 const originValue = mod.data[key];
-                mod.data[key] = (await store.module.get(mod.name)) || originValue;
+                mod.data[key] = (await storage.module.get(mod.name)) || originValue;
             }
 
-            mod.data = (await store.module.get(mod.name)) || {};
+            mod.data = (await storage.module.get(mod.name)) || {};
 
-            const proxy = new DeepProxy(mod.data, {
+            mod.data = new DeepProxy(mod.data, {
                 set(): boolean {
-                    store.module.setGlobal(mod.name, JSON.stringify(mod.data));
+                    storage.module.setGlobal(mod.name, JSON.stringify(mod.data));
 
                     return true;
                 },
 
                 deleteProperty(): boolean {
-                    store.module.setGlobal(mod.name, JSON.stringify(mod.data));
+                    storage.module.setGlobal(mod.name, JSON.stringify(mod.data));
 
                     return true;
                 }
             });
-
-            mod.data = proxy;
         }
 
         module_store[mod.name] = mod;
@@ -175,7 +174,7 @@ export const modules = {
 
 communicate.addHook("updateModuleStatus", data => {
     module_store[data.name].enable = data.value as boolean;
-    store.set(`${data.name}.enable`, data.value);
+    storage.set(`${data.name}.enable`, data.value);
 
     runtime.sendMessage(
         JSON.stringify({

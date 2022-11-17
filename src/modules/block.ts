@@ -1,10 +1,10 @@
-import { queryString } from "../utils/http";
+import {queryString} from "../utils/http";
 import * as Toast from "../components/toast";
 
 export default {
     name: "컨텐츠 차단",
     description: "유저, 컨텐츠 등의 보고 싶지 않은 컨텐츠들을 삭제합니다.",
-    author: { name: "Sochiru", url: "" },
+    author: {name: "Sochiru", url: ""},
     url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/(view|lists)/g,
     memory: {
         uuid: "",
@@ -20,7 +20,7 @@ export default {
     enable: true,
     default_enable: true,
     require: ["filter", "eventBus", "block", "dom"],
-    func (
+    func(
         filter: RefresherFilter,
         eventBus: RefresherEventBus,
         block: RefresherBlock,
@@ -56,8 +56,8 @@ export default {
 
                 if (
                     elem &&
-          elem.parentElement &&
-          (blockNickname || blockId || blockIP)
+                    elem.parentElement &&
+                    (blockNickname || blockId || blockIP)
                 ) {
                     const post = elem.parentElement;
                     if (post && post.className.indexOf("ub-content") > -1) {
@@ -118,7 +118,7 @@ export default {
         });
     },
 
-    revoke (filter: RefresherFilter): void {
+    revoke(filter: RefresherFilter): void {
         if (this.memory.uuid) {
             filter.remove(this.memory.uuid);
         }

@@ -14,6 +14,7 @@
 <script>
 import browser from "webextension-polyfill";
 import checkbox from "./checkbox";
+import storage from "../../utils/storage";
 
 export default {
     name: "refresher-module",
@@ -45,9 +46,7 @@ export default {
     },
     methods: {
         update(_module, _key, value) {
-            let obj = {};
-            obj[`${this.name}.enable`] = value;
-            (browser.storage.sync || browser.storage.local).set(obj);
+            storage.set(this.name.enable, value);
 
             // TODO : 전체 로직 깔끔하게 변경
 

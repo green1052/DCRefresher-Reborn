@@ -1,14 +1,11 @@
 import browser from "webextension-polyfill";
+import storage from "../utils/storage";
 
 let modules = {};
 let settings = {};
 let blocks = {};
 let blockModes = {};
 let memos = {};
-
-const set = (key: string, value: unknown) => {
-    (browser.storage.sync || browser.storage.local).set({[key]: value});
-};
 
 // const get = (key: string) => {
 //     return new Promise<unknown>((resolve, reject) =>
@@ -26,22 +23,25 @@ const messageHandler = async (port: browser.Runtime.Port | null, msg: any) => {
     }
 
     if (msg.updateUserSetting) {
-        await set(`${msg.name}.${msg.key}`, msg.value);
+        await storage.set(`${msg.name}.${msg.key}`, msg.value);
     }
 
     if (msg.updateBlocks) {
         Object.keys(msg.blocks_store).forEach((key) =>
-            set(`__REFRESHER_BLOCK:${key}`, msg.blocks_store[key])
+            storage.set(`__REFRESHER_BLOCK:${key}`, msg.blocks_store[key])
         );
         blocks = msg.blocks_store;
 
         Object.keys(msg.blockModes_store).forEach((key) =>
-            set(`__REFRESHER_BLOCK:${key}:$MODE`, msg.blockModes_store[key])
+            storage.set(`__REFRESHER_BLOCK:${key}:$MODE`, msg.blockModes_store[key])
         );
         blockModes = msg.blockModes_store;
     }
 
     if (msg.updateMemos) {
+        Object.keys(msg.memos_store).forEach((key) =>
+            storage.set(`__REFRESHER_MEMO:${key}`, msg.memos_store[key])
+        );
         memos = msg.memos_store;
     }
 

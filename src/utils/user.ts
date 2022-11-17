@@ -1,5 +1,5 @@
 import * as ip from "./ip";
-import { modules } from "../core/modules";
+import * as memo from "../core/memo";
 
 const USERTYPE = {
     UNFIXED: 0,
@@ -16,25 +16,25 @@ const getType = (icon: string) => {
 
     if (
         icon.indexOf("/fix_nik.gif") > -1 ||
-    icon.indexOf("/dc20th_wgallcon4.") > -1 ||
-    icon.indexOf("gonick_") > -1
+        icon.indexOf("/dc20th_wgallcon4.") > -1 ||
+        icon.indexOf("gonick_") > -1
     ) {
         return USERTYPE.FIXED;
     } else if (
         icon.indexOf("/nik.gif") > -1 ||
-    icon.indexOf("/dc20th_wgallcon.") > -1 ||
-    icon.indexOf("/nogonick_") > -1
+        icon.indexOf("/dc20th_wgallcon.") > -1 ||
+        icon.indexOf("/nogonick_") > -1
     ) {
         return USERTYPE.HALFFIXED;
     } else if (
         icon.indexOf("sub_manager") > -1 ||
-    icon.indexOf("submanager") > -1 ||
-    icon.indexOf("/dc20th_wgallcon3.") > -1
+        icon.indexOf("submanager") > -1 ||
+        icon.indexOf("/dc20th_wgallcon3.") > -1
     ) {
         return USERTYPE.SUBMANAGER;
     } else if (
         icon.indexOf("manager") > -1 ||
-    icon.indexOf("/dc20th_wgallcon2.") > -1
+        icon.indexOf("/dc20th_wgallcon2.") > -1
     ) {
         return USERTYPE.MANAGER;
     }
@@ -49,9 +49,9 @@ export class User {
     icon: string | null;
     type: number;
     private __ip: string | null;
-    memo: refresherMemo | null;
+    memo: RefresherMemoValue | null;
 
-    constructor (
+    constructor(
         nick: string,
         id: string | null,
         ip: string | null,
@@ -70,36 +70,21 @@ export class User {
         this.getMemo();
     }
 
-    getMemo (): void {
-        const memos = modules.getData("유저 정보", "memos") as {
-      [index: string]: refresherMemo
-    };
-
-        if (!memos || typeof memos !== "object") {
-            return;
-        }
-
-        let memo: refresherMemo = {
-            text: "",
-            color: ""
-        };
+    getMemo(): void {
+        let value: RefresherMemoValue | null;
 
         if (this.id) {
-            memo = memos[`UID@${this.id}`];
+            value = memo.get("UID", this.id);
+        } else if (this.ip) {
+            value = memo.get("IP", this.ip);
+        } else {
+            value = memo.get("NICK", this.nick);
         }
 
-        if ((!memo || !memo.text) && this.ip) {
-            memo = memos[`IP@${this.ip}`];
-        }
-
-        if (!memo || !memo.text) {
-            memo = memos[`NICK@${this.nick}`];
-        }
-
-        this.memo = memo;
+        this.memo = value;
     }
 
-    import (dom: HTMLElement | null): this {
+    import(dom: HTMLElement | null): this {
         if (dom === null) {
             return this;
         }
@@ -126,15 +111,15 @@ export class User {
         return this;
     }
 
-    isLogout (): boolean {
+    isLogout(): boolean {
         return this.ip !== null;
     }
 
-    isMember (): boolean {
+    isMember(): boolean {
         return this.id !== null;
     }
 
-    set ip (v: string | null) {
+    set ip(v: string | null) {
         if (v) {
             this.ip_data = ip.format(ip.ISPData(v));
         } else {
@@ -144,7 +129,7 @@ export class User {
         this.__ip = v || null;
     }
 
-    get ip (): string | null {
+    get ip(): string | null {
         return this.__ip;
     }
 }
