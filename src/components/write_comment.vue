@@ -9,7 +9,7 @@
         </div>
         <div class="refresher-comment-body">
             <div class="refresher-input-wrap" :class="{focus: focused, disable: disabled}">
-          <textarea id="comment_main" placeholder="댓글 입력..." v-model="text" v-on:focus="focus" v-on:blur="blur"
+          <input  id="comment_main" placeholder="댓글 입력..." v-model="text" v-on:focus="focus" v-on:blur="blur"
                     v-on:keydown="type" :disabled="disabled"/>
             </div>
             <PreviewButton class="refresher-writecomment primary" id="write" text="작성" :click="write"></PreviewButton>
@@ -33,8 +33,9 @@ import {User} from "../utils/user";
 import * as Toast from "./toast";
 import button from "./button.vue";
 import user from "./user.vue";
+import Vue from "vue";
 
-export default {
+export default Vue.extend({
     name: "write_comment",
     components: {
         PreviewButton: button,
@@ -169,10 +170,6 @@ export default {
         },
 
         type(ev: KeyboardEvent): KeyboardEvent | void {
-            if (ev.shiftKey && ev.key === "Enter") {
-                return ev;
-            }
-
             if (ev.key !== "Enter") {
                 return ev;
             }
@@ -180,5 +177,5 @@ export default {
             this.write();
         }
     }
-};
+});
 </script>
