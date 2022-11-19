@@ -64,11 +64,6 @@ module.exports = (env) => {
             //         RefresherDevMode: true
             //     }
             // })
-        ],
-        resolve: {
-            alias: {
-                vue: "vue/dist/vue.js"
-            }
-        }
+        ]
     });
 }

@@ -3,8 +3,8 @@ const path = require("path");
 const TerserPlugin = require("terser-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
-const CleanTerminalPlugin = require("clean-terminal-webpack-plugin");
 const {VueLoaderPlugin} = require("vue-loader");
+const {CleanWebpackPlugin} = require("clean-webpack-plugin");
 
 module.exports = {
     entry: {
@@ -56,10 +56,8 @@ module.exports = {
                 }
             ]
         }),
-        new CleanTerminalPlugin({
-            beforeCompile: true
-        }),
-        new VueLoaderPlugin()
+        new VueLoaderPlugin(),
+        new CleanWebpackPlugin()
     ],
     resolve: {
         extensions: [".js", ".ts", ".css", ".vue"],
@@ -69,12 +67,12 @@ module.exports = {
         minimize: true,
         minimizer: [
             new TerserPlugin({
+                minify: TerserPlugin.swcMinify,
                 terserOptions: {
                     format: {
                         comments: false
                     }
-                },
-                extractComments: false
+                }
             })
         ]
     }

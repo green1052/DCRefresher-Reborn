@@ -63,11 +63,6 @@ module.exports = (env) => {
             //         RefresherDevMode: false
             //     }
             // })
-        ],
-        resolve: {
-            alias: {
-                vue: "vue/dist/vue.min.js"
-            }
-        }
+        ]
     });
 }
