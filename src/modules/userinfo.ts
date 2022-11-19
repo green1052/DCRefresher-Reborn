@@ -1,18 +1,21 @@
 import * as color from "../utils/color";
 import * as Toast from "../components/toast";
 import * as communicate from "../core/communicate";
-import {eventBus} from "../core/eventbus";
 
 const memoAsk = (
-    selected: RefresherMemoType,
+    selected: {
+        IP: string,
+        NICK: string,
+        UID: string
+    },
     memo: RefresherMemo,
-    type: string,
+    type: RefresherMemoType,
     value: string
 ) => {
     const win = document.createElement("div");
     win.className = "refresher-frame-outer center background";
 
-    let currentType = type as RefresherMemoType;
+    let currentType = type;
     let currentValue = value;
 
     const frame = document.createElement("div");
@@ -33,7 +36,7 @@ const memoAsk = (
   <div class="memo-row">
     <p>메모</p>
     <div class="refresher-input-wrap focus">
-      <textarea id="refresher_memo"></textarea>
+      <input id="refresher_memo" type="text" maxlength="160" placeholder="메모를 입력해주세요 (160자 제한)"></input>
     </div>
   </div>
   <div class="memo-row">
@@ -113,7 +116,7 @@ const memoAsk = (
             userType.classList.add("active");
         }
 
-        if (!selected[(userType as HTMLElement).dataset.type!.toLowerCase()]) {
+        if (!selected[(userType as HTMLElement).dataset.type]) {
             userType.classList.add("disable");
         }
 
@@ -129,7 +132,7 @@ const memoAsk = (
             userType.classList.add("active");
 
             currentType = (userType as HTMLElement).dataset.type as RefresherMemoType || "NICK";
-            currentValue = selected[currentType.toLowerCase()];
+            currentValue = selected[currentType];
 
             updateType();
         });
@@ -174,16 +177,15 @@ const memoAsk = (
 export default {
     name: "유저 정보",
     description: "사용자의 IP, 아이디 정보, 메모를 표시합니다.",
-    author: {name: "Sochiru", url: ""},
     url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/(view|lists)/g,
     memory: {
         always: "",
         requestBlock: "",
         contextMenu: "",
         selected: {
-            nick: "",
-            uid: "",
-            ip: ""
+            NICK: "",
+            UID: "",
+            IP: ""
         },
         lastSelect: 0,
         memoAsk: ""
@@ -282,11 +284,10 @@ export default {
                     const nick = elem.dataset.nick || "";
                     const uid = elem.dataset.uid || "";
                     const ip = elem.dataset.ip || "";
-
                     this.memory.selected = {
-                        nick,
-                        uid,
-                        ip
+                        NICK: nick,
+                        UID: uid,
+                        IP: ip
                     };
                     this.memory.lastSelect = Date.now();
                 });
@@ -366,21 +367,31 @@ export default {
             "refresherUserContextMenu",
             (nick: string, uid: string, ip: string) => {
                 this.memory.selected = {
-                    nick,
-                    uid,
-                    ip
+                    NICK: nick,
+                    UID: uid,
+                    IP: ip
                 };
                 this.memory.lastSelect = Date.now();
             }
         );
 
-        this.memory.memoAsk = communicate.addHook("refresherRequestMemoAsk", async ({type, user}) => {
+        this.memory.memoAsk = communicate.addHook("refresherRequestMemoAsk", async (
+            {type, user}: { type: RefresherMemoType, user: string }
+        ) => {
+            const selected = {
+                IP: "",
+                NICK: "",
+                UID: ""
+            };
+
+            selected[type] = user;
+
             const obj: {
                 text: string,
                 color: string,
                 type: RefresherMemoType,
                 value: string
-            } = await memoAsk(type, memo, type, user);
+            } = await memoAsk(selected, memo, type, user);
 
             eventBus.emit("refreshRequest");
 
@@ -405,7 +416,7 @@ export default {
                 2000
             );
 
-            memo.add(type, user, obj.text, obj.color);
+            memo.add(obj.type, obj.value, obj.text, obj.color);
         });
 
         this.memory.requestBlock = eventBus.on("refresherUpdateUserMemo", async () => {
@@ -414,14 +425,14 @@ export default {
             }
 
             let type: RefresherMemoType = "NICK";
-            let value = this.memory.selected.nick;
+            let value = this.memory.selected.NICK;
 
-            if (this.memory.selected.uid) {
+            if (this.memory.selected.UID) {
                 type = "UID";
-                value = this.memory.selected.uid;
-            } else if (this.memory.selected.ip) {
+                value = this.memory.selected.UID;
+            } else if (this.memory.selected.IP) {
                 type = "IP";
-                value = this.memory.selected.ip;
+                value = this.memory.selected.IP;
             }
 
             if (!value || value.length < 1) {
@@ -452,7 +463,7 @@ export default {
                 return;
             }
 
-            memo.add(type, value, obj.text, obj.color);
+            memo.add(obj.type, obj.value, obj.text, obj.color);
 
             Toast.show(
                 `${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 추가했습니다.`,
