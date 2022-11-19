@@ -120,8 +120,9 @@ import Comment from "./comment.vue";
 import WriteComment from "./write_comment.vue";
 import Icon from "./icon.vue";
 import loader from "./loader.vue";
+import Vue from "vue";
 
-export default {
+export default Vue.extend({
     name: "refresher-frame",
     components: {
         PreviewButton,
@@ -203,5 +204,5 @@ export default {
             return this.reply;
         }
     }
-};
+});
 </script>

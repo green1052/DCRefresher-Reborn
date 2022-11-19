@@ -7,7 +7,9 @@
 </template>
 
 <script>
-export default {
+import Vue from "vue";
+
+export default Vue.extend({
     name: "refresher-options",
     props: {
         options: {
@@ -22,5 +24,5 @@ export default {
             type: Boolean
         }
     }
-};
+});
 </script>

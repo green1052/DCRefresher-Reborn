@@ -5,8 +5,9 @@
 <script>
 import outer from "../components/outer";
 import scroll from "../components/scroll";
+import Vue from "vue";
 
-export default {
+export default Vue.extend({
     name: "refresher-frame-outer",
     components: {
         Outer: outer,
@@ -72,5 +73,5 @@ export default {
             this.$data.fade = false;
         }
     }
-};
+});
 </script>

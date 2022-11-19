@@ -11,6 +11,7 @@
 
 <script lang="ts">
 import browser from "webextension-polyfill";
+import Vue from "vue";
 
 interface ButtonProps {
     click: () => boolean;
@@ -21,7 +22,7 @@ interface ButtonData {
     error: number;
 }
 
-export default {
+export default Vue.extend({
     name: "refresher-preview-button",
     props: {
         id: {type: [String, Number]},
@@ -53,5 +54,5 @@ export default {
             return result;
         }
     }
-};
+});
 </script>

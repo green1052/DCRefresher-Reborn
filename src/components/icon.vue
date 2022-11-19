@@ -4,8 +4,9 @@
 
 <script lang="ts">
 import browser from "webextension-polyfill";
+import Vue from "vue";
 
-export default {
+export default Vue.extend({
     name: "icon",
     props: {
         icon: {
@@ -18,5 +19,5 @@ export default {
             return browser.runtime.getURL(u);
         }
     }
-};
+});
 </script>

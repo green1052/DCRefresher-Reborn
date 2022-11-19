@@ -13,12 +13,13 @@
 <script>
 import group from "./group";
 import scroll from "./scroll";
+import Vue from "vue";
 
-export default {
+export default Vue.extend({
     name: "refresher-frame-outer",
     components: {
         "refresher-group": group,
         "refresher-scroll": scroll
     }
-};
+});
 </script>

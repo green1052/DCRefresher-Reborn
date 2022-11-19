@@ -35,6 +35,7 @@
 import {eventBus} from "../core/eventbus";
 import timestamp from "./timestamp.vue";
 import user from "./user.vue";
+import Vue from "vue";
 
 const NRegex = /(ㄴ)(\s)?([^ ]+)/g;
 
@@ -62,7 +63,7 @@ interface VoiceDataComputed {
     memo: string;
 }
 
-export default {
+export default Vue.extend({
     name: "refresher-comment",
     components: {
         User: user,
@@ -213,5 +214,5 @@ export default {
             this.$emit("setReply", this.getReply() === this.comment.no ? null : this.comment.no);
         }
     }
-};
+});
 </script>

@@ -7,6 +7,8 @@
 </template>
 
 <script lang="ts">
+import Vue from "vue";
+
 const s = 1000;
 const m = s * 60;
 const h = m * 60;
@@ -44,7 +46,7 @@ interface CountdownVue extends CountdownVueData {
     updates: number;
 }
 
-export default {
+export default Vue.extend({
     name: "refresher-countdown",
     props: {
         date: {
@@ -74,5 +76,5 @@ export default {
     beforeUnload(this: CountdownVue): void {
         clearInterval(this.updates);
     }
-};
+});
 </script>

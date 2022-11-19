@@ -15,8 +15,9 @@
 import browser from "webextension-polyfill";
 import checkbox from "./checkbox";
 import storage from "../../utils/storage";
+import Vue from "vue";
 
-export default {
+export default Vue.extend({
     name: "refresher-module",
     props: {
         name: {
@@ -74,5 +75,5 @@ export default {
     components: {
         "refresher-checkbox": checkbox
     }
-};
+});
 </script>

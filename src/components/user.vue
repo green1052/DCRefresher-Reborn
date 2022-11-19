@@ -13,8 +13,9 @@
 
 <script lang="ts">
 import {eventBus} from "../core/eventbus";
+import Vue from "vue";
 
-export default {
+export default Vue.extend({
     name: "refresher-user", props: {
         user: {
             type: Object,
@@ -89,5 +90,5 @@ export default {
             );
         }
     }
-};
+});
 </script>

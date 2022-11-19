@@ -10,7 +10,9 @@
 </template>
 
 <script>
-export default {
+import Vue from "vue";
+
+export default Vue.extend({
     name: "refresher-dccon",
     props: {
         change: {
@@ -44,9 +46,5 @@ export default {
             window.close();
         }
     }
-};
+});
 </script>
-
-<style scoped>
-
-</style>

@@ -7,8 +7,9 @@
 
 <script lang="ts">
 import frame from "./frame.vue";
+import Vue from "vue";
 
-export default {
+export default Vue.extend({
     name: "refresher-group",
     components: {
         "refresher-frame": frame
@@ -24,5 +25,5 @@ export default {
             (this.$root.$children[0] as RefresherFrameAppVue).outerClick();
         }
     }
-};
+});
 </script>

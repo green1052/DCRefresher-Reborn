@@ -15,7 +15,9 @@
 </template>
 
 <script lang="ts">
-export default {
+import Vue from "vue";
+
+export default Vue.extend({
     name: "refresher-toast",
     methods: {
         click(ev) {
@@ -63,5 +65,5 @@ export default {
             autoClose: 0
         };
     }
-};
+});
 </script>

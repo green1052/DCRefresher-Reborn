@@ -7,6 +7,8 @@
 </template>
 
 <script lang="ts">
+import Vue from "vue";
+
 const s = 1000;
 const m = s * 60;
 const h = m * 60;
@@ -45,7 +47,7 @@ interface TimestampVue extends TimestampVueData {
     updates: number;
 }
 
-export default {
+export default Vue.extend({
     name: "refresher-timestamp",
     props: {
         date: {
@@ -75,5 +77,5 @@ export default {
     beforeUnload(this: TimestampVue): void {
         clearInterval(this.updates);
     }
-};
+});
 </script>

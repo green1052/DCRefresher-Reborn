@@ -7,7 +7,9 @@
 </template>
 
 <script>
-export default {
+import Vue from "vue";
+
+export default Vue.extend({
     name: "refresher-range",
     props: {
         change: {
@@ -70,5 +72,5 @@ export default {
     mounted() {
         this.$data.__temp = this.value;
     }
-};
+});
 </script>
