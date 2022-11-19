@@ -5,7 +5,9 @@
 </template>
 
 <script>
-export default {
+import Vue from "vue";
+
+export default Vue.extend({
     name: "refresher-input",
 
     props: {
@@ -46,5 +48,5 @@ export default {
             }
         }
     }
-};
+});
 </script>
