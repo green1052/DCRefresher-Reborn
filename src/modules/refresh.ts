@@ -42,10 +42,9 @@ const addRefreshText = (issueBox: HTMLElement) => {
     }
 };
 
-const MODULE: RefresherModule = {
+export default {
     name: "글 목록 새로고침",
     description: "글 목록을 자동으로 새로고침합니다.",
-    author: {name: "Sochiru", url: ""},
     url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/(view|lists)/g,
     status: {
         refreshRate: undefined,
@@ -573,5 +572,3 @@ const MODULE: RefresherModule = {
         }
     }
 };
-
-export default MODULE;

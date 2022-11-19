@@ -1147,7 +1147,6 @@ let frame: RefresherFrame;
 export default {
     name: "미리보기",
     description: "글을 오른쪽 클릭 했을때 미리보기 창을 만들어줍니다.",
-    author: {name: "Sochiru", url: ""},
     url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/(view|lists)/g,
     status: {
         longPressDelay: 300,

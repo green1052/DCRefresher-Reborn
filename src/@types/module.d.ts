@@ -1,11 +1,6 @@
 export {};
 
 declare global {
-    interface RefresherAuthor {
-        name: string;
-        url?: string;
-    }
-
     interface RefresherSettings {
         name: string;
         desc: string;
@@ -27,11 +22,6 @@ declare global {
          * 모듈의 설정. 설정의 모듈 페이지에 표시됩니다.
          */
         description: string;
-
-        /**
-         * 모듈의 개발자. 설정의 모듈 페이지에 표시됩니다.
-         */
-        author?: RefresherAuthor;
 
         /**
          * 해당 모듈이 작동할 URL regex.

@@ -199,7 +199,6 @@ export.module = {
     name: "대문 제거",
     desc: "갤러리 대문을 제거합니다.",
     memory: {coverFilter: ""},
-    author: {name: "개발자", url: "https://google.com"},
     require: ["filter"],
     func(filter) {
         this.memory.coverFilter = filter.add(".issue_contentbox .bgcover", (element) => {
@@ -246,7 +245,6 @@ export.module = {
     name: "이벤트 버스 예제",
     desc: "이벤트 버스의 예제입니다.",
     memory: {event: ""},
-    author: {name: "개발자", url: "https://google.com"},
     require: ["eventBus"],
     func(eventBus) {
         this.memory.event = eventBus.add("refresh", _ => {
