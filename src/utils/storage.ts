@@ -18,7 +18,7 @@ export function set<T>(key: string, value: T): void {
 }
 
 export function remove(keys: string | string[]): void {
-    storage.remove(keys)
+    storage.remove(keys);
 }
 
 export const module = {
