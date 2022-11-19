@@ -96,13 +96,13 @@ browser.runtime.onMessage.addListener(msg => {
     messageHandler(null, toSend);
 });
 
-browser.runtime.onInstalled.addListener(details => {
-    if (details.reason === "install") {
-        // TODO : After Install
-    } else if (details.reason === "update") {
-        // TODO : Update
-    }
-});
+// browser.runtime.onInstalled.addListener(details => {
+//     if (details.reason === "install") {
+//         // TODO : After Install
+//     } else if (details.reason === "update") {
+//         // TODO : Update
+//     }
+// });
 
 browser.contextMenus.create({
     id: "blockSelected",
