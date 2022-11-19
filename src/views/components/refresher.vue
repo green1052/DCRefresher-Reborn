@@ -133,7 +133,8 @@
                     <div class="lists">
                         <p v-if="!blocks[key].length">차단된 {{ blockKeyNames[key] }} 없음</p>
 
-                        <refresher-bubble v-if="key !== 'DCCON'" v-for="(blocked, i) in blocks[key]" :key="'block:' + i"
+                        <refresher-bubble v-else-if="key !== 'DCCON'" v-for="(blocked, i) in blocks[key]"
+                                          :key="'block:' + i"
                                           :text="blocked.content" :regex="blocked.isRegex" :gallery="blocked.gallery"
                                           :extra="blocked.extra" :remove="() => removeBlockedUser(key, i)"
                                           :textclick="() => editBlockedUser(key, i)"/>
@@ -143,17 +144,23 @@
                                           :regex="blocked.isRegex" :gallery="blocked.gallery" :extra="blocked.extra"
                                           :remove="() => removeBlockedUser(key, i)"
                                           :textclick="() => editBlockedUser(key, i)"/>
+
                     </div>
                 </div>
             </div>
             <div class="tab tab4" v-show="tab === 3" key="tab4">
                 <div class="block-divide" v-for="key in Object.keys(memos)">
-                    <h3>{{ memoKeyNames[key] }}</h3>
+                    <h3>{{ memoKeyNames[key] }} <span class="plus" v-on:click="addMemoUser"><svg
+                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" width="18px" height="18px">
+                                <path d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            </svg></span></h3>
 
                     <div class="lists">
                         <p v-if="!Object.keys(memos[key]).length">{{ memoKeyNames[key] }} 메모 없음</p>
 
-                        <refresher-bubble v-else v-for="[user, memo] in Object.entries(memos[key])" :text="user + ' (' + memo.text.substring(0, 10) + ')'"
+                        <refresher-bubble v-else v-for="[user, memo] in Object.entries(memos[key])"
+                                          :text="user + ' (' + memo.text.substring(0, 10) + ')'"
                                           :remove="() => removeMemoUser(key, user)"
                                           :textclick="() => editMemoUser(key, user)"></refresher-bubble>
                     </div>
@@ -458,6 +465,28 @@ export default Vue.extend({
             this.memos = obj;
 
             this.syncMemos();
+        },
+
+        addMemoUser() {
+            const type: RefresherMemoType | string | null = prompt("메모 타입을 입력하세요. 가능: NICK, UID, IP");
+            const user = prompt("메모 대상을 입력하세요.");
+
+            if (!type || !user) return;
+
+            if (type !== "NICK" && type !== "UID" && type !== "IP") {
+                alert("메모 타입이 잘못됐습니다.");
+                return;
+            }
+
+            browser.tabs.query({active: true}).then(tabs => {
+                browser.tabs.sendMessage(tabs[0].id!, {
+                    type: "refresherRequestMemoAsk",
+                    data: {
+                        type,
+                        user
+                    }
+                });
+            });
         },
 
         editMemoUser(type: RefresherMemoType, user: string) {

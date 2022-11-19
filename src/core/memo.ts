@@ -108,7 +108,7 @@ export const remove = (type: RefresherMemoType, user: string): void => {
     delete MEMO_CACHE[type][user];
     storage.set(`${MEMO_NAMESPACE}:${type}`, MEMO_CACHE[type]);
     SendToBackground();
-}
+};
 
 communicate.addHook("memoSelected", () => {
     eventBus.emit("refresherUpdateUserMemo");
