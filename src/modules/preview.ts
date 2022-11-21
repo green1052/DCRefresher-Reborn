@@ -92,7 +92,7 @@ const parse = (id: string, body: string) => {
         ".view_content_wrap .btn_recommend_box .sup_num .smallnum"
     )?.innerHTML;
 
-    const downvotes = dom.querySelector("div.btn_recommend_box.clear .down_num")
+    const downvotes = dom.querySelector("div.btn_recommend_box .down_num")
         ?.innerHTML;
 
     const content_query = dom.querySelector(
@@ -1427,9 +1427,9 @@ export default {
                         postFetchedData = obj;
 
                         frame.contents = obj.contents || "";
-                        frame.upvotes = obj.upvotes || "0";
-                        frame.fixedUpvotes = obj.fixedUpvotes || "0";
-                        frame.downvotes = obj.downvotes || "0";
+                        frame.upvotes = obj.upvotes || "-1";
+                        frame.fixedUpvotes = obj.fixedUpvotes || "-1";
+                        frame.downvotes = obj.downvotes || "-1";
 
                         frame.data.disabledDownvote = obj.disabledDownvote;
 
