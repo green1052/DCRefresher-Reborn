@@ -1,6 +1,5 @@
 import Vue from "vue";
 import refresher from "../views/components/refresher.vue";
-import browser from "webextension-polyfill";
 
 new Vue({
     el: "#app",
@@ -20,10 +19,7 @@ document.addEventListener("keydown", (e) => {
     input += e.key;
 
     if (input === key) {
-        browser.tabs.create({
-            url: "https://youtu.be/dQw4w9WgXcQ"
-        });
-
+        window.open("https://youtu.be/dQw4w9WgXcQ", "_blank");
         return;
     }
 
