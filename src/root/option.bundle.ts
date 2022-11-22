@@ -23,6 +23,6 @@ document.addEventListener("keydown", (e) => {
         return;
     }
 
-    if (key.indexOf(input))
+    if (key.includes(input))
         input = e.key;
 });

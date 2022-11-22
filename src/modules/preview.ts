@@ -948,7 +948,7 @@ const getRelevantData = (ev: MouseEvent) => {
             ? target.querySelector("em.icon_img")
             : findNeighbor(target, "em.icon_img", 5, null);
         if (emElement) {
-            recommend = emElement.className.indexOf("icon_recomimg") > -1;
+            recommend = emElement.className.includes("icon_recomimg");
         }
 
         linkElement = (isTR
@@ -1109,7 +1109,7 @@ const miniPreview: miniPreview = {
             })
             .catch(e => {
                 selector.innerHTML =
-                    e.message.indexOf("aborted") > -1
+                    e.message.includes("aborted")
                         ? ""
                         : "게시글을 새로 가져올 수 없습니다: " + e.message;
             });
@@ -1704,7 +1704,7 @@ export default {
                             return v;
                         }
 
-                        if (v.indexOf("||") > -1) {
+                        if (v.includes("||")) {
                             const parsed = v.split("||");
 
                             if (parsed[0] !== "true") {
@@ -1807,8 +1807,7 @@ export default {
             let collapseView = false;
 
             if (ev && ev.target) {
-                collapseView =
-                    (ev.target as HTMLElement).className.indexOf("reply_num") > -1;
+                collapseView = (ev.target as HTMLElement).className.includes("reply_num");
             }
 
             if (!historySkip) {

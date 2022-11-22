@@ -64,18 +64,11 @@ export default {
     default_enable: false,
     require: ["filter", "eventBus"],
     func (filter: RefresherFilter, eventBus: RefresherEventBus): void {
-        if (
-            document &&
-            document.documentElement &&
-            document.documentElement.className.indexOf("refresherDark") < 0
-        ) {
-            document.documentElement.className += " refresherDark";
-        }
+        if (document && document.documentElement && !document.documentElement.className.includes("refresherDark"))
+            document.documentElement.classList.add("refresherDark");
 
-        this.memory.uuid = filter.add("html", (elem: HTMLElement) => {
-            if (elem.className.indexOf("refresherDark") == -1) {
-                elem.className += " refresherDark";
-            }
+        this.memory.uuid = filter.add("html", (elem) => {
+            if (!elem.className.includes("refresherDark")) elem.classList.add("refresherDark");
         });
 
         // 다크모드는 반응성이 중요하니깐 모듈에서 바로 로드 시키기

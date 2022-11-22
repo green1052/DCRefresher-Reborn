@@ -60,7 +60,7 @@ export default {
                     (blockNickname || blockId || blockIP)
                 ) {
                     const post = elem.parentElement;
-                    if (post && post.className.indexOf("ub-content") > -1) {
+                    if (post && post.className.includes("ub-content")) {
                         post.style.display = "none";
                     } else {
                         const content = dom.findNeighbor(post, ".ub-content", 3);

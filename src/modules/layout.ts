@@ -5,10 +5,10 @@ const updateWindowSize = (
 ) => {
     if (typeof active === "string") active = Number(active);
 
-    const isView = location.href.indexOf("board/view") > -1;
+    const isView = location.href.includes("board/view");
 
     if (forceActive || active >= width) {
-        if (document.documentElement.className.indexOf("refresherCompact") === -1) {
+        if (!document.documentElement.className.includes("refresherCompact")) {
             document.documentElement.classList.add("refresherCompact");
 
             if (isView) {
@@ -16,7 +16,7 @@ const updateWindowSize = (
             }
         }
     } else {
-        if (document.documentElement.className.indexOf("refresherCompact") > -1) {
+        if (document.documentElement.className.includes("refresherCompact") ) {
             document.documentElement.classList.remove("refresherCompact");
         }
     }
@@ -207,12 +207,7 @@ export default {
         }
     },
     func (filter: RefresherFilter): void {
-        if (
-            location.href.indexOf("board/view") > -1 &&
-            !this.status.useCompactModeOnView
-        ) {
-            return;
-        }
+        if (location.href.includes("board/view")  && !this.status.useCompactModeOnView) return;
 
         this.memory.resize = () =>
             updateWindowSize(
