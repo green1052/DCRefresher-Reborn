@@ -2,9 +2,11 @@ import browser from "webextension-polyfill";
 import storage from "../utils/storage";
 import {eventBus} from "./eventbus";
 
-const settings_store: {
+export interface SettingsStore {
     [index: string]: { [index: string]: RefresherSettings }
-} = {};
+}
+
+const settings_store: SettingsStore = {};
 
 export const set = async (
     module: string,
