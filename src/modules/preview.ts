@@ -1157,7 +1157,7 @@ export default {
         toggleAdminPanel: true,
         expandRecognizeRange: false,
         tooltipMode: true,
-        tooltipHide: false,
+        tooltipMediaHide: false,
         useKeyPress: true,
         colorPreviewLink: true,
         reversePreviewKey: false,
@@ -1187,7 +1187,7 @@ export default {
             default: false,
             type: "check"
         },
-        tooltipHide: {
+        tooltipMediaHide: {
             name: "툴팁 미리보기 미디어 숨기기",
             desc: "툴팁 미리보기 화면에서 미디어를 숨깁니다.",
             default: false,
@@ -1787,7 +1787,7 @@ export default {
                 return;
             }
 
-            if ((ev?.target as HTMLElement).closest(".ub-writer") !== null) {
+            if ((ev?.target as HTMLElement)?.closest(".ub-writer")) {
                 return;
             }
 
@@ -2045,7 +2045,7 @@ export default {
                 });
             }
             e.addEventListener("mouseenter", ev =>
-                miniPreview.create(ev, this.status.tooltipMode, this.status.tooltipHide)
+                miniPreview.create(ev, this.status.tooltipMode, this.status.tooltipMediaHide)
             );
             e.addEventListener("mousemove", ev =>
                 miniPreview.move(ev, this.status.tooltipMode)
@@ -2069,14 +2069,16 @@ export default {
         this.memory.popStateHandler = (ev: PopStateEvent) => {
             if (!ev.state) {
                 this.memory.historyClose = true;
+
                 try {
                     frame.app.close();
-                } catch (e) {
+                } catch {
                     location.reload();
                 }
 
                 return;
             }
+
             this.memory.historyClose = false;
 
             if (frame.app.closed) {
