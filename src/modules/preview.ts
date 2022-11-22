@@ -1026,7 +1026,7 @@ const miniPreview: miniPreview = {
                 clearTimeout(miniPreview.lastTimeout);
             }
 
-            miniPreview.lastTimeout = window.setTimeout(() => {
+            miniPreview.lastTimeout = setTimeout(() => {
                 if (!miniPreview.cursorOut && miniPreview.lastElement === ev.target) {
                     miniPreview.create(ev, use, hide);
                 }
@@ -1123,8 +1123,8 @@ const miniPreview: miniPreview = {
             const width = rect.width;
             const height = rect.height;
 
-            const x = Math.min(ev.clientX, window.innerWidth - width - 10);
-            const y = Math.min(ev.clientY, window.innerHeight - height - 10);
+            const x = Math.min(ev.clientX, innerWidth - width - 10);
+            const y = Math.min(ev.clientY, innerHeight - height - 10);
 
             miniPreview.element.style.transform = `translate(${x}px, ${y}px)`;
         }
@@ -1312,8 +1312,8 @@ export default {
                     .trim()}`;
 
                 if (!historySkip) {
-                    window.history.pushState(
-                        {preData, preURL: window.location.href},
+                    history.pushState(
+                        {preData, preURL: location.href},
                         title,
                         preData.link
                     );
@@ -1367,7 +1367,7 @@ export default {
             };
 
             frame.functions.share = () => {
-                if (!window.navigator.clipboard) {
+                if (!navigator.clipboard) {
                     Toast.show(
                         "이 브라우저는 클립보드 복사 기능을 지원하지 않습니다.",
                         true,
@@ -1376,7 +1376,7 @@ export default {
                     return false;
                 }
 
-                window.navigator.clipboard.writeText(
+                navigator.clipboard.writeText(
                     `https://gall.dcinside.com/${http.galleryType(
                         preData.link || ""
                     )}/board/view/?id=${preData.gallery || http.queryString("id")}&no=${
@@ -1415,8 +1415,8 @@ export default {
 
                             if (!historySkip) {
                                 preData.title = obj.title;
-                                window.history.replaceState(
-                                    {preData, preURL: window.location.href},
+                                history.replaceState(
+                                    {preData, preURL: location.href},
                                     title,
                                     preData.link
                                 );
@@ -1649,10 +1649,10 @@ export default {
                 };
 
                 if (this.memory.refreshIntervalId) {
-                    window.clearInterval(this.memory.refreshIntervalId);
+                    clearInterval(this.memory.refreshIntervalId);
                 }
 
-                this.memory.refreshIntervalId = window.setInterval(() => {
+                this.memory.refreshIntervalId = setInterval(() => {
                     if (this.status.autoRefreshComment) {
                         frame.functions.retry();
                     }

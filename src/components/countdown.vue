@@ -68,7 +68,7 @@ export default Vue.extend({
     mounted(this: CountdownVue): void {
         this.stamp = convertTime(this.date);
 
-        this.updates = window.setInterval(() => {
+        this.updates = setInterval(() => {
             this.stamp = convertTime(this.date);
         }, 5000);
     },

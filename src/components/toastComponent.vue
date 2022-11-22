@@ -38,7 +38,7 @@ export default Vue.extend({
             this.clickCb = click;
 
             if ((typeof autoClose !== "boolean" && !autoClose) || autoClose) {
-                this.autoClose = window.setTimeout(
+                this.autoClose = setTimeout(
                     this.hide,
                     autoClose && typeof autoClose === "number" ? autoClose : 5000
                 );
