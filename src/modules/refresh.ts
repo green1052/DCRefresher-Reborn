@@ -123,7 +123,7 @@ export default {
         }
     },
     shortcuts: {
-        refreshLists (this: RefresherModule): void {
+        refreshLists(this: RefresherModule): void {
             if (this.memory.lastRefresh + 500 > Date.now()) {
                 Toast.show("너무 자주 새로고칠 수 없습니다.", true, 1000);
 
@@ -133,7 +133,7 @@ export default {
             this.memory.load();
         },
 
-        refreshPause (this: RefresherModule): void {
+        refreshPause(this: RefresherModule): void {
             PAUSE_REFRESH = !PAUSE_REFRESH;
 
             Toast.show(
@@ -147,7 +147,7 @@ export default {
             updateRefreshText();
         }
     },
-    func (
+    func(
         http: RefresherHTTP,
         eventBus: RefresherEventBus,
         filter: RefresherFilter,
@@ -173,7 +173,7 @@ export default {
             });
         };
 
-        const isPostView = location.href.indexOf("/board/view") > -1;
+        const isPostView = location.href.includes("/board/view");
         const currentPostNo = new URLSearchParams(location.href).get("no");
 
         let originalLocation = location.href;
@@ -288,7 +288,7 @@ export default {
             postNoIter.forEach(v => {
                 const value = v.innerHTML;
 
-                if (cached.indexOf(value) == -1 && value != currentPostNo) {
+                if (!cached.includes(value) && value != currentPostNo) {
                     if (this.status.fadeIn && !this.memory.calledByPageTurn) {
                         if (v.parentElement) {
                             v.parentElement.className += " refresherNewPost";
@@ -344,7 +344,7 @@ export default {
 
                 if (!noTempl) {
                     document.querySelectorAll(".ub-content").forEach(elem => {
-                        if (elem.className.indexOf("us-post") == -1) {
+                        if (!elem.className.includes("us-post")) {
                             elem.insertBefore(document.createElement("td"), elem.firstChild);
                         }
                     });
@@ -449,13 +449,12 @@ export default {
             this.memory.uuid = filter.add(
                 ".left_content .bottom_paging_box a",
                 (a: Element) => {
-                    if ((a as HTMLAnchorElement).href.indexOf("javascript:") > -1) {
-                        return;
-                    }
+                    if ((a as HTMLAnchorElement).href.includes("javascript:")) return;
 
-                    ;(a as HTMLAnchorElement).onclick = () => false
-                    ;(a as HTMLAnchorElement).addEventListener("click", async () => {
-                        const isPageView = location.href.indexOf("/board/view") > -1;
+                    (a as HTMLAnchorElement).onclick = () => false;
+
+                    (a as HTMLAnchorElement).addEventListener("click", async () => {
+                        const isPageView = location.href.includes("/board/view");
 
                         if (isPageView) {
                             history.pushState(
@@ -512,15 +511,13 @@ export default {
                     if (pagingBoxAnchors) {
                         pagingBoxAnchors.forEach(async a => {
                             const href = (a as HTMLAnchorElement).href;
-                            if (href.indexOf("javascript:") > -1) {
-                                return;
-                            }
 
-                            ;(a as HTMLAnchorElement).onclick = () => false
-                            ;(a as HTMLAnchorElement).addEventListener("click", async () => {
-                                const isPageView = location.href.indexOf("/board/view") > -1;
+                            if (href.includes("javascript:")) return;
 
-                                if (isPageView) {
+                            (a as HTMLAnchorElement).onclick = () => false;
+
+                            (a as HTMLAnchorElement).addEventListener("click", async () => {
+                                if (location.href.includes("/board/view")) {
                                     history.pushState(
                                         null,
                                         document.title,
@@ -534,7 +531,7 @@ export default {
                                 await this.memory.load(location.href, true);
 
                                 const query = document.querySelector(
-                                    location.href.indexOf("/board/view") > -1
+                                    location.href.includes("/board/view")
                                         ? ".view_bottom_btnbox"
                                         : ".page_head"
                                 );
@@ -550,7 +547,7 @@ export default {
         }
     },
 
-    revoke (): void {
+    revoke(): void {
         if (document && document.body) {
             document.body.classList.remove("refresherDoNotColorVisited");
         }

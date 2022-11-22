@@ -31,7 +31,7 @@ const tempButtonCreate = (elem: HTMLElement): void => {
         ) as HTMLElement;
 
         button.addEventListener("click", () => {
-            if (elem.className.indexOf(TEMPORARY_STEALTH) < 0) {
+            if (!elem.className.includes(TEMPORARY_STEALTH)) {
                 elem.classList.add(TEMPORARY_STEALTH);
                 buttonText.innerText = "이미지 숨기기";
             } else {
@@ -54,11 +54,7 @@ export default {
     default_enable: false,
     require: ["eventBus"],
     func (eventBus: RefresherEventBus): void {
-        if (
-            document &&
-      document.documentElement &&
-      document.documentElement.className.indexOf("refresherStealth") < 0
-        ) {
+        if (document && document.documentElement && !document.documentElement.className.includes("refresherStealth")) {
             document.documentElement.classList.add("refresherStealth");
         }
 

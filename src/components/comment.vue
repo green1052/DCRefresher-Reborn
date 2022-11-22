@@ -24,9 +24,8 @@
             <audio v-else :src="getVoiceData.src" controls></audio>
             <p v-if="getVoiceData.memo">{{ getVoiceData.memo }}</p>
         </div>
-        <!--<p v-else-if="comment.memo.includes('<img class=') || comment.memo.includes('<video class=')"></p> -->
         <p v-else class="refresher-comment-content"
-           :class="{dccon: comment.memo.indexOf('<img class=') > -1 || comment.memo.indexOf('<video class=') > -1}"
+           :class="{dccon: /<(img|video) class=/.test(comment.memo)}"
            v-html="comment.memo.replaceAll('\n', '<br/>')"></p>
     </div>
 </template>

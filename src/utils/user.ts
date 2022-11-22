@@ -15,26 +15,26 @@ const getType = (icon: string) => {
     }
 
     if (
-        icon.indexOf("/fix_nik.gif") > -1 ||
-        icon.indexOf("/dc20th_wgallcon4.") > -1 ||
-        icon.indexOf("gonick_") > -1
+        icon.includes("/fix_nik.gif") ||
+        icon.includes("/dc20th_wgallcon4.") ||
+        icon.includes("gonick_")
     ) {
         return USERTYPE.FIXED;
     } else if (
-        icon.indexOf("/nik.gif") > -1 ||
-        icon.indexOf("/dc20th_wgallcon.") > -1 ||
-        icon.indexOf("/nogonick_") > -1
+        icon.includes("/nik.gif") ||
+        icon.includes("/dc20th_wgallcon.") ||
+        icon.includes("/nogonick_")
     ) {
         return USERTYPE.HALFFIXED;
     } else if (
-        icon.indexOf("sub_manager") > -1 ||
-        icon.indexOf("submanager") > -1 ||
-        icon.indexOf("/dc20th_wgallcon3.") > -1
+        icon.includes("sub_manager") ||
+        icon.includes("submanager") ||
+        icon.includes("/dc20th_wgallcon3.")
     ) {
         return USERTYPE.SUBMANAGER;
     } else if (
-        icon.indexOf("manager") > -1 ||
-        icon.indexOf("/dc20th_wgallcon2.") > -1
+        icon.includes("manager") ||
+        icon.includes("/dc20th_wgallcon2.")
     ) {
         return USERTYPE.MANAGER;
     }
