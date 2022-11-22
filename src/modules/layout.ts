@@ -50,7 +50,7 @@ export default {
             default: 900,
             min: 100,
             step: 1,
-            max: window.screen.width,
+            max: screen.width,
             unit: "px",
             advanced: false
         },
@@ -111,12 +111,12 @@ export default {
     update: {
         activePixel (this: RefresherModule, value: number): void {
             if (this.status) {
-                updateWindowSize(this.status.forceCompact, value, window.innerWidth);
+                updateWindowSize(this.status.forceCompact, value, innerWidth);
             }
         },
 
         forceCompact (this: RefresherModule, value: boolean): void {
-            updateWindowSize(value, this.status.activePixel, window.innerWidth);
+            updateWindowSize(value, this.status.activePixel, innerWidth);
         },
 
         hideGalleryView (value: boolean): void {
@@ -218,7 +218,7 @@ export default {
             updateWindowSize(
                 this.status.forceCompact,
                 this.status.activePixel,
-                window.innerWidth
+                innerWidth
             );
         window.addEventListener("resize", this.memory.resize);
         this.memory.resize();

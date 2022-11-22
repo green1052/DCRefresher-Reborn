@@ -36,7 +36,7 @@ export const find = (
             subtree: true
         });
 
-        timeout = window.setTimeout(() => {
+        timeout = setTimeout(() => {
             if (!observer) return;
             observer.disconnect();
 

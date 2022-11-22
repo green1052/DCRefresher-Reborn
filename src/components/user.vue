@@ -14,6 +14,7 @@
 <script lang="ts">
 import {eventBus} from "../core/eventbus";
 import Vue from "vue";
+import browser from "webextension-polyfill";
 
 export default Vue.extend({
     name: "refresher-user", props: {

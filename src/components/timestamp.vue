@@ -69,7 +69,7 @@ export default Vue.extend({
     mounted(this: TimestampVue): void {
         this.stamp = convertTime(this.date);
 
-        this.updates = window.setInterval(() => {
+        this.updates = setInterval(() => {
             this.stamp = convertTime(this.date);
         }, 3000);
     },

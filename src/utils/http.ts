@@ -164,4 +164,4 @@ export const galleryTypeName = (url: string): string => {
  * @param name Query 이름
  */
 export const queryString = (name: string): string | null =>
-    new URLSearchParams(window.location.search).get(name);
+    new URLSearchParams(location.search).get(name);

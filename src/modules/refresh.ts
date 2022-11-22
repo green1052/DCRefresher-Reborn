@@ -420,7 +420,7 @@ export default {
                 clearTimeout(this.memory.refresh);
             }
 
-            this.memory.refresh = window.setTimeout(run, this.memory.delay);
+            this.memory.refresh = setTimeout(run, this.memory.delay);
         };
 
         document.addEventListener("visibilitychange", () => {
