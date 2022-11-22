@@ -39,11 +39,11 @@ const BLOCK_DETECT_MODE = {
 
 const BLOCK_DETECT_MODE_KEYS = Object.keys(BLOCK_DETECT_MODE);
 
-interface BlockCache {
+export interface BlockCache {
     [index: string]: RefresherBlockValue[];
 }
 
-type BlockModeCache = {
+export type BlockModeCache = {
     [index in RefresherBlockType]: RefresherBlockDetectMode;
 }
 

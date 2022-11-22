@@ -1,11 +1,15 @@
 import browser from "webextension-polyfill";
 import storage from "../utils/storage";
+import {BlockCache, BlockModeCache} from "../core/block";
+import {MemoCache} from "../core/memo";
+import {ModuleStore} from "../core/modules";
+import {SettingsStore} from "../core/settings";
 
-let modules = {};
-let settings = {};
-let blocks = {};
-let blockModes = {};
-let memos = {};
+let modules: ModuleStore = {};
+let settings: SettingsStore = {};
+let blocks: BlockCache = {};
+let blockModes: BlockModeCache = {};
+let memos: MemoCache = {};
 
 // const get = (key: string) => {
 //     return new Promise<unknown>((resolve, reject) =>
@@ -17,83 +21,103 @@ let memos = {};
 //     );
 // };
 
-const messageHandler = async (port: browser.Runtime.Port | null, msg: any) => {
-    if (typeof msg !== "object") {
+interface Message {
+    updateUserSetting?: boolean;
+    name?: string;
+    key?: string;
+    value?: unknown;
+
+    updateBlocks?: boolean;
+    blocks_store?: BlockCache;
+    blockModes_store?: BlockModeCache;
+
+    updateMemos?: boolean;
+    memos_store?: MemoCache;
+
+    module_store?: ModuleStore;
+    settings_store?: SettingsStore;
+
+    requestRefresherModules?: boolean;
+    requestRefresherSettings?: boolean;
+    requestRefresherBlocks?: boolean;
+    requestRefresherMemos?: boolean;
+}
+
+const messageHandler = (port: browser.Runtime.Port | null, message: Message) => {
+    if (typeof message !== "object") {
         return;
     }
 
-    if (msg.updateUserSetting) {
-        await storage.set(`${msg.name}.${msg.key}`, msg.value);
+    if (message.updateUserSetting) {
+
+        storage.set(`${message.name}.${message.key}`, message.value);
     }
 
-    if (msg.updateBlocks) {
-        Object.keys(msg.blocks_store).forEach((key) =>
-            storage.set(`__REFRESHER_BLOCK:${key}`, msg.blocks_store[key])
-        );
-        blocks = msg.blocks_store;
+    if (message.updateBlocks && message.blocks_store && message.blockModes_store) {
+        for (const [key, value] of Object.entries(message.blocks_store)) {
+            storage.set(`__REFRESHER_BLOCK:${key}`, value);
+        }
 
-        Object.keys(msg.blockModes_store).forEach((key) =>
-            storage.set(`__REFRESHER_BLOCK:${key}:$MODE`, msg.blockModes_store[key])
-        );
-        blockModes = msg.blockModes_store;
+        blocks = message.blocks_store;
+
+        for (const [key, value] of Object.entries(message.blockModes_store)) {
+            storage.set(`__REFRESHER_BLOCK:${key}:$MODE`, value);
+        }
+
+        blockModes = message.blockModes_store;
     }
 
-    if (msg.updateMemos) {
-        Object.keys(msg.memos_store).forEach((key) =>
-            storage.set(`__REFRESHER_MEMO:${key}`, msg.memos_store[key])
-        );
-        memos = msg.memos_store;
+    if (message.updateMemos && message.memos_store) {
+        for (const [key, value] of Object.entries(message.memos_store)) {
+            storage.set(`__REFRESHER_MEMO:${key}`, value);
+        }
+
+        memos = message.memos_store;
     }
 
-    if (msg.module_store) {
-        modules = msg.module_store;
+    if (message.module_store) {
+        modules = message.module_store;
     }
 
-    if (msg.settings_store) {
-        settings = msg.settings_store;
+    if (message.settings_store) {
+        settings = message.settings_store;
     }
 
-    if (msg.blocks_store) {
-        blocks = msg.blocks_store;
+    if (message.blocks_store) {
+        blocks = message.blocks_store;
     }
 
-    if (msg.memos_store) {
-        memos = msg.memos_store;
+    if (message.memos_store) {
+        memos = message.memos_store;
     }
 
-    if (msg.blockModes_store && Object.keys(msg.blockModes_store).length) {
-        blockModes = msg.blockModes_store;
+    if (message.blockModes_store && Object.keys(message.blockModes_store).length) {
+        blockModes = message.blockModes_store;
     }
 
-    if (msg.requestRefresherModules) {
+    if (message.requestRefresherModules) {
         port?.postMessage({responseRefresherModules: true, modules});
     }
 
-    if (msg.requestRefresherSettings) {
+    if (message.requestRefresherSettings) {
         port?.postMessage({responseRefresherSettings: true, settings});
     }
 
-    if (msg.requestRefresherBlocks) {
+    if (message.requestRefresherBlocks) {
         port?.postMessage({responseRefresherBlocks: true, blocks, blockModes});
     }
 
-    if (msg.requestRefresherMemos) {
+    if (message.requestRefresherMemos) {
         port?.postMessage({requestRefresherMemos: true, memos});
     }
 };
 
-browser.runtime.onConnect.addListener(p => {
-    p.onMessage.addListener(msg => messageHandler(p, msg));
+browser.runtime.onConnect.addListener((port) => {
+    port.onMessage.addListener(message => messageHandler(port, message));
 });
 
-browser.runtime.onMessage.addListener(msg => {
-    let toSend = msg;
-
-    if (typeof msg === "string") {
-        toSend = JSON.parse(msg);
-    }
-
-    messageHandler(null, toSend);
+browser.runtime.onMessage.addListener((message) => {
+    messageHandler(null, typeof message === "string" ? JSON.parse(message) : message);
 });
 
 // browser.runtime.onInstalled.addListener(details => {
