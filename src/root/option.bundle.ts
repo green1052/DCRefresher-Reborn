@@ -16,7 +16,7 @@ const key = "ArrowUpArrowUpArrowDownArrowDownArrowLeftArrowRightArrowLeftArrowRi
 
 let input = "";
 
-document.addEventListener("keydown", function (e) {
+document.addEventListener("keydown", (e) => {
     input += e.key;
 
     if (input === key) {
