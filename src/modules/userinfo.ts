@@ -257,7 +257,7 @@ export default {
 
             const img = elem.querySelector("img");
 
-            if (!img || !(this.status.showNickUID && /fix_(manager|sub_manager|)nik\.gif$/.test(img.src) || this.status.showFixedNickUID && /(?<!fix_)(manager|sub_manager|)nik\.gif$/.test(img.src))) {
+            if (!img || !(this.status.showNickUID && /fix_(manager|sub_manager|)nik\.gif$/.test(img.src) || img.src.includes("/dc20th_wgallcon4.") || this.status.showFixedNickUID && /(?<!fix_)(manager|sub_manager|)nik\.gif$/.test(img.src) || img.src.includes("/dc20th_wgallcon."))) {
                 return false;
             }
 
