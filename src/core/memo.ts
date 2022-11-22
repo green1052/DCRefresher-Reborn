@@ -24,7 +24,7 @@ export const TYPE_NAMES = {
 
 const MEMO_TYPES_KEYS = Object.keys(MEMO_TYPES) as RefresherMemoType[];
 
-type MemoCache = {
+export type MemoCache = {
     [index in RefresherMemoType]: {
         [key: string]: RefresherMemoValue
     };

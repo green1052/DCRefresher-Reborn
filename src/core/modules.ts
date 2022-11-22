@@ -26,7 +26,11 @@ const UTILS: { [index: string]: Record<string, unknown> } = {
     memo
 };
 
-const module_store: { [index: string]: RefresherModule } = {};
+export interface ModuleStore {
+    [index: string]: RefresherModule
+}
+
+const module_store: ModuleStore = {};
 
 const runtime = browser && browser.runtime;
 
