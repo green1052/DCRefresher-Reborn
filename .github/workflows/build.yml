@@ -15,7 +15,7 @@ jobs:
           node-version: 18
 
       - name: Install
-        run: yarn
+        run: yarn install --immutable --immutable-cache
 
       - name: Build Manifest v2
         run: |
