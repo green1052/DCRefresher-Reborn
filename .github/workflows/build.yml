@@ -28,10 +28,8 @@ jobs:
           7za a mv3.zip ./dist/*
 
       - name: Release
-        uses: "marvinpinto/action-automatic-releases@latest"
+        uses: softprops/action-gh-release@v1
         with:
-          repo_token: "${{secrets.GITHUB_TOKEN}}"
-          prerelease: false
           files: |
             mv2.zip
             mv3.zip
