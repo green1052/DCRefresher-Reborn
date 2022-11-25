@@ -15,7 +15,7 @@ jobs:
           node-version: 18
 
       - name: Install
-        run: yarn install --immutable --immutable-cache
+        run: yarn
 
       - name: Build Manifest v2
         run: |
@@ -33,3 +33,4 @@ jobs:
           files: |
             mv2.zip
             mv3.zip
+          generate_release_notes: true
