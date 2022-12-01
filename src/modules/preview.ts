@@ -1242,14 +1242,14 @@ export default {
         toggleBlur: {
             name: "게시글 배경 블러 활성화",
             desc:
-                "미리보기 창의 배경을 블러 처리하여 미관을 돋보이게 합니다. (일부 성능 영향 있음)",
+                "미리보기 창의 배경을 블러 처리하여 미관을 돋보이게 합니다. (성능 하락 영향 있음)",
             default: true,
             type: "check"
         },
         toggleBackgroundBlur: {
             name: "바깥 배경 블러 활성화",
             desc:
-                "미리보기 창의 바깥 배경을 블러 처리하여 미관을 돋보이게 합니다. (성능 영향 있음)",
+                "미리보기 창의 바깥 배경을 블러 처리하여 미관을 돋보이게 합니다. (성능 하락 영향 있음)",
             default: false,
             type: "check"
         },

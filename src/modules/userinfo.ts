@@ -231,7 +231,7 @@ export default {
             const ip_data = ip.ISPData(elem.dataset.ip);
 
             const text = document.createElement("span");
-            text.className = "ip refresherUserData";
+            text.className = "refresherUserData";
             const format = ip.format(ip_data);
             text.innerHTML = `<span>${
                 format.length > 100 ? format.substring(0, 97) + "..." : format
@@ -243,7 +243,7 @@ export default {
                 const flIpQuery = fl.querySelector(".ip");
 
                 if (flIpQuery) {
-                    fl.insertBefore(text, flIpQuery.nextSibling);
+                    flIpQuery.appendChild(text);
                 }
             } else {
                 elem.appendChild(text);
