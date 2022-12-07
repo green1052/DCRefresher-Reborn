@@ -97,7 +97,7 @@
         </div>
         <div class="refresher-preview-votes" v-if="frame.data.buttons && !frame.collapse">
             <div>
-                <PreviewButton class="refresher-upvote" :id="'upvote'" :text="frame.upvotes || '0'" :click="upvote">
+                <PreviewButton class="refresher-upvote" :id="'upvote'" :text="`${frame.upvotes} (${frame.fixedUpvotes})`" :click="upvote">
                 </PreviewButton>
                 <PreviewButton v-if="!frame.data.disabledDownvote" class="refresher-downvote" :id="'downvote'"
                                :text="frame.downvotes || '0'" :click="downvote">
