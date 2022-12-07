@@ -43131,22 +43131,10 @@ const DCREF_COMMON_IP: { [index: string]: ISPInfo } = {
     "223.255": w(P.G, "KT, NHN, [US]CDSC-AS1")
 };
 
-export const ISPData = (ip: string): ISPInfo => DCREF_COMMON_IP[ip] || {};
+export const ISPData = (ip: string): ISPInfo => DCREF_COMMON_IP[ip] ?? {};
 
 export const format = (data: ISPInfo): string => {
-    if (!data.name) {
-        return "";
-    }
+    if (!data.name) return "";
 
-    return (
-        `${
-            typeof data.country !== "undefined" &&
-            data.country !== COUNTRY.KR &&
-            data.country !== COUNTRY.INTERNATIONAL
-                ? `${COUNTRY_STR[data.country]} `
-                : ""
-        }
-    ${data.detail ? data.detail : data.name}` +
-        (data.type && IP_TYPE_STR[data.type] ? ` (${IP_TYPE_STR[data.type]})` : "")
-    );
+    return `${data.country !== COUNTRY.KR && data.country !== COUNTRY.INTERNATIONAL ? `${COUNTRY_STR[data.country]} ` : ""}${data.detail ?? data.name}${IP_TYPE_STR[data.type] ? ` (${IP_TYPE_STR[data.type]})` : ""}`;
 };
