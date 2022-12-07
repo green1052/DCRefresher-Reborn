@@ -231,7 +231,7 @@ export default {
             const ip_data = ip.ISPData(elem.dataset.ip);
 
             const text = document.createElement("span");
-            text.className = "refresherUserData";
+            text.className = "ip refresherUserData";
             const format = ip.format(ip_data);
             text.innerHTML = `<span>${
                 format.length > 100 ? format.substring(0, 97) + "..." : format
