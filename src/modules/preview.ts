@@ -4,9 +4,9 @@ import * as http from "../utils/http";
 import browser from "webextension-polyfill";
 import * as Toast from "../components/toast";
 import {ScrollDetection} from "../utils/scrollDetection";
-import {get_cookie, setCookieTmp} from "../utils/webStorage";
 import {submitComment} from "../utils/comment";
 import logger from "../utils/logger";
+import Cookies from "js-cookie";
 
 class PostInfo implements PostInfo {
     id: string;
@@ -53,19 +53,13 @@ const ISSUE_ZOOM_NO = /\$\(document\)\.data\('comment_no',\s'.+'\);/g;
 
 const QUOTES = /(["'])(?:(?=(\\?))\2.)*?\1/g;
 
-const getURL = (u: string) => {
-    return browser.extension ? browser.runtime.getURL(u) : u;
-};
-
 const parse = (id: string, body: string) => {
     const dom = new DOMParser().parseFromString(body, "text/html");
 
-    let header = dom.querySelector(".view_content_wrap span.title_headtext")
-        ?.innerHTML;
-
-    if (header) {
-        header = header.replace(/(\[|\])/g, "");
-    }
+    const header = dom
+        .querySelector(".view_content_wrap span.title_headtext")
+        ?.innerHTML
+        ?.replace(/(\[|\])/g, "");
 
     const title = dom.querySelector(".view_content_wrap span.title_subject")
         ?.innerHTML;
@@ -84,6 +78,7 @@ const parse = (id: string, body: string) => {
     const views = dom
         .querySelector(".view_content_wrap div.fr > span.gall_count")
         ?.innerHTML.replace(/조회\s/, "");
+
     const upvotes = dom
         .querySelector(".view_content_wrap div.fr > span.gall_reply_num")
         ?.innerHTML.replace(/추천\s/, "");
@@ -159,6 +154,19 @@ const parse = (id: string, body: string) => {
 };
 
 const request = {
+    make: (url: string, options?: RequestInit) => {
+        return http.make(url, {
+            method: "POST",
+            headers: {
+                Origin: "https://gall.dcinside.com",
+                "X-Requested-With": "XMLHttpRequest",
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+            },
+            cache: "no-store",
+            ...options
+        });
+    },
+
     async vote(
         gall_id: string,
         post_id: string,
@@ -166,38 +174,38 @@ const request = {
         code: string | undefined,
         link: string
     ) {
-        setCookieTmp(
+
+        Cookies.set(
             gall_id + post_id + "_Firstcheck" + (!type ? "_down" : ""),
             "Y",
-            3,
-            "dcinside.com"
+            {
+                path: "/",
+                domain: "dcinside.com",
+                expires: new Date(new Date().getTime() + 3 * 60 * 60 * 1000)
+            }
         );
 
-        return http
-            .make(http.urls.vote, {
-                method: "POST",
-                headers: {
-                    Origin: "https://gall.dcinside.com",
-                    "X-Requested-With": "XMLHttpRequest",
-                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
-                },
-                cache: "no-store",
-                referrer: link,
-                body: `ci_t=${get_cookie("ci_c")}&id=${gall_id}&no=${post_id}&mode=${
-                    type ? "U" : "D"
-                }&code_recommend=${code}&_GALLTYPE_=${http.galleryTypeName(
-                    link
-                )}&link_id=${gall_id}`
-            })
-            .then((v: string) => {
-                const res = v.split("||");
+        const params = new URLSearchParams();
+        params.set("ci_t", Cookies.get("ci_c") ?? "");
+        params.set("id", gall_id);
+        params.set("no", post_id);
+        params.set("mode", type ? "U" : "D");
+        params.set("code_recommend", code ?? "undefined");
+        params.set("_GALLTYPE_", http.galleryTypeName(link));
+        params.set("link_id", gall_id);
 
-                return {
-                    result: res[0],
-                    counts: res[1],
-                    fixedCounts: res[2]
-                };
-            });
+        const response = await this.make(http.urls.vote, {
+            referrer: link,
+            body: `&${params.toString()}`
+        });
+
+        const [result, counts, fixedCounts] = response.split("||");
+
+        return {
+            result,
+            counts,
+            fixedCounts
+        };
     },
 
     post(
@@ -207,14 +215,10 @@ const request = {
         signal: AbortSignal,
         noCache: boolean
     ) {
-        return http
-            .make(
-                `${http.urls.base +
-                http.galleryType(link, "/") +
-                http.urls.view +
-                gallery}&no=${id}`,
-                {signal, cache: noCache ? "no-cache" : "default"}
-            )
+        return http.make(
+            `${http.urls.base + http.galleryType(link, "/") + http.urls.view + gallery}&no=${id}`,
+            {signal, cache: noCache ? "no-cache" : "default"}
+        )
             .then(response => parse(id, response));
     },
 
@@ -224,67 +228,53 @@ const request = {
      * @param signal
      */
     async comments(args: GalleryHTTPRequestArguments, signal: AbortSignal) {
-        if (!args.link) {
-            throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
-        }
+        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
 
         const galleryType = http.galleryType(args.link, "/");
 
-        const response = await http.make(http.urls.comments, {
-            method: "POST",
-            headers: {
-                Accept: "application/json, text/javascript, */*; q=0.01",
-                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                "X-Requested-With": "XMLHttpRequest"
-            },
-            cache: "no-store",
+        const params = new URLSearchParams();
+        params.set("id", args.gallery);
+        params.set("no", args.id);
+        params.set("cmt_id", args.commentId ?? args.gallery);
+        params.set("cmt_no", args.commentNo ?? args.id);
+        params.set("e_s_n_o", (document.getElementById("e_s_n_o") as HTMLInputElement).value);
+        params.set("comment_page", "1");
+        params.set("_GALLTYPE_", http.galleryTypeName(args.link));
+
+        const response = await this.make(http.urls.comments, {
             referrer: `https://gall.dcinside.com/${galleryType}board/view/?id=${args.gallery}&no=${args.id}`,
-            body:
-                `id=${args.gallery}&no=${Number(args.id)}&cmt_id=${args.commentId ||
-                args.gallery}&cmt_no=${Number(args.commentNo || args.id)}&e_s_n_o=${
-                    (document.getElementById("e_s_n_o") as HTMLInputElement).value
-                }&comment_page=1&sort=&_GALLTYPE_=` + http.galleryTypeName(args.link),
+            body: `&${params.toString()}`,
             signal
         });
 
         return JSON.parse(response);
     },
     async delete(args: GalleryHTTPRequestArguments) {
-        if (!args.link) {
-            throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
-        }
+        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
 
         const galleryType = http.galleryType(args.link, "/");
 
-        const response = await http.make(
+        const params = new URLSearchParams();
+        params.set("ci_t", Cookies.get("ci_c") ?? "");
+        params.set("id", args.gallery);
+        params.set("nos[]", args.id);
+        params.set("_GALLTYPE_", http.galleryTypeName(args.link));
+
+        const response = await this.make(
             galleryType === "mini/"
                 ? http.urls.manage.deleteMini
                 : http.urls.manage.delete,
             {
-                method: "POST",
-                headers: {
-                    Accept: "application/json, text/javascript, */*; q=0.01",
-                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                    "X-Requested-With": "XMLHttpRequest"
-                },
-                cache: "no-store",
                 referrer: `https://gall.dcinside.com/${galleryType}board/lists/?id=${args.gallery}`,
-                body:
-                    `ci_t=${get_cookie("ci_c")}&id=${args.gallery}&nos[]=${Number(
-                        args.id
-                    )}&_GALLTYPE_=` + http.galleryTypeName(args.link)
+                body: `&${params.toString()}`
             }
         );
 
-        let result;
-
         try {
-            result = JSON.parse(response);
-        } catch (e) {
-            result = response;
+            return JSON.parse(response);
+        } catch {
+            return response;
         }
-
-        return result;
     },
 
     async block(
@@ -294,42 +284,36 @@ const request = {
         avoid_reason_txt: string,
         del_chk: number
     ) {
-        if (!args.link) {
-            throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
-        }
+        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
 
         const galleryType = http.galleryType(args.link, "/");
 
-        const response = await http.make(
+        const params = new URLSearchParams();
+        params.set("ci_t", Cookies.get("ci_c") ?? "");
+        params.set("id", args.gallery);
+        params.set("nos[]", args.id);
+        params.set("parent", "");
+        params.set("_GALLTYPE_", http.galleryTypeName(args.link));
+        params.set("avoid_hour", avoid_hour.toString());
+        params.set("avoid_reason", avoid_reason.toString());
+        params.set("avoid_reason_txt", avoid_reason_txt);
+        params.set("del_chk", del_chk.toString());
+
+        const response = await this.make(
             galleryType == "mini/"
                 ? http.urls.manage.blockMini
                 : http.urls.manage.block,
             {
-                method: "POST",
-                headers: {
-                    Accept: "application/json, text/javascript, */*; q=0.01",
-                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                    "X-Requested-With": "XMLHttpRequest"
-                },
-                cache: "no-store",
                 referrer: `https://gall.dcinside.com/${galleryType}board/lists/?id=${args.gallery}`,
-                body: `ci_t=${get_cookie("ci_c")}&id=${args.gallery}&nos[]=${Number(
-                    args.id
-                )}&parent=&_GALLTYPE_=${http.galleryTypeName(
-                    args.link
-                )}&avoid_hour=${avoid_hour}&avoid_reason=${avoid_reason}&avoid_reason_txt=${avoid_reason_txt}&del_chk=${del_chk}`
+                body: `&${params.toString()}`
             }
         );
 
-        let result;
-
         try {
-            result = JSON.parse(response);
-        } catch (e) {
-            result = response;
+            return JSON.parse(response);
+        } catch {
+            return response;
         }
-
-        return result;
     },
 
     async setNotice(args: GalleryHTTPRequestArguments, set: boolean) {
@@ -339,97 +323,74 @@ const request = {
 
         const galleryType = http.galleryType(args.link, "/");
 
-        const response = await http.make(
+        const params = new URLSearchParams();
+        params.set("ci_t", Cookies.get("ci_c") ?? "");
+        params.set("mode", set ? "SET" : "REL");
+        params.set("id", args.gallery);
+        params.set("no", args.id);
+        params.set("_GALLTYPE_", http.galleryTypeName(args.link));
+
+        const response = await this.make(
             galleryType == "mini/"
                 ? http.urls.manage.setNoticeMini
                 : http.urls.manage.setNotice,
             {
-                method: "POST",
-                headers: {
-                    Accept: "application/json, text/javascript, */*; q=0.01",
-                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                    "X-Requested-With": "XMLHttpRequest"
-                },
-                cache: "no-store",
                 referrer: `https://gall.dcinside.com/${galleryType}board/lists/?id=${args.gallery}`,
-                body:
-                    `ci_t=${get_cookie("ci_c")}&mode=${set ? "SET" : "REL"}&id=${
-                        args.gallery
-                    }&no=${Number(args.id)}&_GALLTYPE_=` + http.galleryTypeName(args.link)
+                body: `&${params.toString()}`
             }
         );
 
-        let result;
-
         try {
-            result = JSON.parse(response);
-        } catch (e) {
-            result = response;
+            return JSON.parse(response);
+        } catch {
+            return response;
         }
-
-        return result;
     },
 
     async setRecommend(args: GalleryHTTPRequestArguments, set: boolean) {
-        if (!args.link) {
-            throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
-        }
+        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
 
         const galleryType = http.galleryType(args.link, "/");
 
-        const response = await http.make(
+        const params = new URLSearchParams();
+        params.set("ci_t", Cookies.get("ci_c") ?? "");
+        params.set("mode", set ? "SET" : "REL");
+        params.set("id", args.gallery);
+        params.set("nos[]", args.id);
+        params.set("_GALLTYPE_", http.galleryTypeName(args.link));
+
+        const response = await this.make(
             galleryType == "mini/"
                 ? http.urls.manage.setRecommendMini
                 : http.urls.manage.setRecommend,
             {
-                method: "POST",
-                headers: {
-                    Accept: "application/json, text/javascript, */*; q=0.01",
-                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                    "X-Requested-With": "XMLHttpRequest"
-                },
-                cache: "no-store",
                 referrer: `https://gall.dcinside.com/${galleryType}board/lists/?id=${args.gallery}`,
-                body:
-                    `ci_t=${get_cookie("ci_c")}&mode=${set ? "SET" : "REL"}&id=${
-                        args.gallery
-                    }&nos[]=${Number(args.id)}&_GALLTYPE_=` +
-                    http.galleryTypeName(args.link)
+                body: `&${params.toString()}`
             }
         );
 
-        let result;
-
         try {
-            result = JSON.parse(response);
-        } catch (e) {
-            result = response;
+            return JSON.parse(response);
+        } catch {
+            return response;
         }
-
-        return result;
     },
 
     async captcha(args: GalleryHTTPRequestArguments, kcaptchaType: string) {
-        if (!args.link) {
-            throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
-        }
+        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
 
         const galleryType = http.galleryType(args.link, "/");
         const galleryTypeName = http.galleryTypeName(args.link);
 
-        await http.make(http.urls.captcha, {
-            method: "POST",
-            headers: {
-                Accept: "application/json, text/javascript, */*; q=0.01",
-                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                "X-Requested-With": "XMLHttpRequest"
-            },
-            cache: "no-store",
+        const params = new URLSearchParams();
+        params.set("ci_t", Cookies.get("ci_c") ?? "");
+        params.set("gall_id", args.gallery);
+        params.set("kcaptcha_type", kcaptchaType);
+        params.set("_GALLTYPE_", galleryTypeName);
+
+        await this.make(http.urls.captcha, {
             referrer: `https://gall.dcinside.com/${galleryType}board/lists/?id=${args.gallery}`,
-            body:
-                `ci_t=${get_cookie("ci_c")}&gall_id=${
-                    args.gallery
-                }&kcaptcha_type=${kcaptchaType}&_GALLTYPE_=` + galleryTypeName
+            body: `&${params.toString()}`
         });
 
         return (
@@ -449,38 +410,29 @@ const request = {
         commentId: string,
         signal: AbortSignal
     ): Promise<boolean | string> {
-        if (!preData.link) {
-            return false;
-        }
+        if (!preData.link) return false;
 
         const typeName = http.galleryTypeName(preData.link);
-        if (!typeName.length) {
-            return false;
-        }
 
-        let url = `${http.urls.manage.deleteComment}`;
+        if (!typeName.length) return false;
 
-        if (http.checkMini(preData.link)) {
-            url = http.urls.manage.deleteCommentMini;
-        }
+        const url = http.checkMini(preData.link)
+            ? http.urls.manage.deleteCommentMini
+            : http.urls.manage.deleteComment;
 
         const galleryType = http.galleryType(preData.link, "/");
 
-        return http
+        const params = new URLSearchParams();
+        params.set("ci_t", Cookies.get("ci_c") ?? "");
+        params.set("id", preData.gallery);
+        params.set("_GALLTYPE_", typeName);
+        params.set("pno", preData.id);
+        params.set("cmt_nos[]", commentId);
+
+        return this
             .make(url, {
-                method: "POST",
-                headers: {
-                    Accept: "application/json, text/javascript, */*; q=0.01",
-                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                    "X-Requested-With": "XMLHttpRequest"
-                },
-                cache: "no-store",
                 referrer: `https://gall.dcinside.com/${galleryType}board/view/?id=${preData.gallery}&no=${preData.id}`,
-                body: `ci_t=${get_cookie("ci_c")}&id=${
-                    preData.gallery
-                }&_GALLTYPE_=${typeName}&pno=${Number(
-                    preData.id
-                )}&cmt_nos[]=${commentId}`,
+                body: `&${params.toString()}`,
                 signal
             })
             .then(v => {
@@ -497,32 +449,30 @@ const request = {
         signal: AbortSignal,
         password?: string
     ): Promise<boolean | string> {
-        if (!preData.link) {
-            return false;
-        }
+        if (!preData.link) return false;
 
         const typeName = http.galleryTypeName(preData.link);
-        if (!typeName.length) {
-            return false;
-        }
+
+        if (!typeName.length) return false;
 
         const galleryType = http.galleryType(preData.link, "/");
 
-        return http
+        const params = new URLSearchParams();
+        params.set("ci_t", Cookies.get("ci_c") ?? "");
+        params.set("id", preData.gallery);
+        params.set("_GALLTYPE_", typeName);
+        params.set("mode", "del");
+        params.set("re_no", commentId);
+
+        if (password) {
+            params.set("re_password", password);
+            params.set("&g-recaptcha-response", password);
+        }
+
+        return this
             .make(http.urls.comment_remove, {
-                method: "POST",
-                headers: {
-                    Accept: "application/json, text/javascript, */*; q=0.01",
-                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                    "X-Requested-With": "XMLHttpRequest"
-                },
-                cache: "no-store",
                 referrer: `https://gall.dcinside.com/${galleryType}board/view/?id=${preData.gallery}&no=${preData.id}`,
-                body: `ci_t=${get_cookie("ci_c")}&id=${
-                    preData.gallery
-                }&_GALLTYPE_=${typeName}&mode=del&re_no=${Number(commentId)}${
-                    password ? `&re_password=${password}` : "&g-recaptcha-response="
-                }`,
+                body: `&${params.toString()}`,
                 signal
             })
             .then(v => {
@@ -671,12 +621,12 @@ const panel = {
             element.className += " blur";
         }
 
-        const upvoteImage = getURL("/assets/icons/upvote.png");
-        const downvoteImage = getURL("/assets/icons/downvote.png");
+        const upvoteImage = browser.runtime.getURL("/assets/icons/upvote.png");
+        const downvoteImage = browser.runtime.getURL("/assets/icons/downvote.png");
 
         element.innerHTML = `
       <div class="button pin">
-        <img src="${getURL("/assets/icons/pin.png")}"></img>
+        <img src="${browser.runtime.getURL("/assets/icons/pin.png")}"></img>
         <p>${setAsNotice ? "공지로 등록" : "공지 등록 해제"}</p>
       </div>
       <div class="button recommend">
@@ -684,11 +634,11 @@ const panel = {
         <p>${setAsRecommend ? "개념글 등록" : "개념글 해제"}</p>
       </div>
       <div class="button block">
-        <img src="${getURL("/assets/icons/block.png")}"></img>
+        <img src="${browser.runtime.getURL("/assets/icons/block.png")}"></img>
         <p>차단</p>
       </div>
       <div class="button delete">
-        <img src="${getURL("/assets/icons/delete.png")}"></img>
+        <img src="${browser.runtime.getURL("/assets/icons/delete.png")}"></img>
         <p>삭제 (D)</p>
       </div>
     `;
@@ -1022,9 +972,7 @@ const miniPreview: miniPreview = {
             miniPreview.lastRequest = Date.now();
             miniPreview.lastElement = ev.target;
 
-            if (miniPreview.lastTimeout) {
-                clearTimeout(miniPreview.lastTimeout);
-            }
+            if (miniPreview.lastTimeout) clearTimeout(miniPreview.lastTimeout);
 
             miniPreview.lastTimeout = setTimeout(() => {
                 if (!miniPreview.cursorOut && miniPreview.lastElement === ev.target) {
@@ -1058,26 +1006,16 @@ const miniPreview: miniPreview = {
             miniPreview.init = true;
         }
 
-        const selector = miniPreview.element.querySelector(
-            ".refresher-mini-preview-contents"
-        );
+        const selector = miniPreview.element.querySelector(".refresher-mini-preview-contents");
 
-        if (!selector) return;
+        if (selector === null) return;
 
         new Promise<PostInfo>((resolve, reject) => {
-            if (!preData) {
-                return reject("preData is not defined.");
-            }
-
-            if (Object.keys(miniPreview.caches).length > 50) {
-                miniPreview.caches = {};
-            }
+            if (Object.keys(miniPreview.caches).length > 50) miniPreview.caches = {};
 
             const cache = miniPreview.caches[preData.gallery + preData.id];
 
-            if (cache) {
-                return resolve(cache);
-            }
+            if (cache) return resolve(cache as PostInfo);
 
             try {
                 request
@@ -1100,34 +1038,30 @@ const miniPreview: miniPreview = {
             }
         })
             .then(v => {
-                selector.innerHTML = v.contents || "";
-
-                const writeDiv = selector.querySelector(".write_div");
-                if (writeDiv) {
-                    writeDiv.setAttribute("style", "");
-                }
+                selector.innerHTML = v.contents ?? "";
+                selector.querySelector(".write_div")?.setAttribute("style", "");
             })
             .catch(e => {
+                const {message} = (e as Error);
+
                 selector.innerHTML =
-                    e.message.includes("aborted")
+                    message.includes("aborted")
                         ? ""
-                        : "게시글을 새로 가져올 수 없습니다: " + e.message;
+                        : `게시글을 새로 가져올 수 없습니다: ${message}`;
             });
 
         (miniPreview.element.querySelector("h3") as HTMLHeadingElement).innerHTML = preData.title;
     },
 
     move(ev: MouseEvent, use: boolean) {
-        if (use) {
-            const rect = miniPreview.element.getBoundingClientRect();
-            const width = rect.width;
-            const height = rect.height;
+        if (!use) return;
 
-            const x = Math.min(ev.clientX, innerWidth - width - 10);
-            const y = Math.min(ev.clientY, innerHeight - height - 10);
-
-            miniPreview.element.style.transform = `translate(${x}px, ${y}px)`;
-        }
+        const rect = miniPreview.element.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+        const x = Math.min(ev.clientX, innerWidth - width - 10);
+        const y = Math.min(ev.clientY, innerHeight - height - 10);
+        miniPreview.element.style.transform = `translate(${x}px, ${y}px)`;
     },
 
     close(use: boolean) {
