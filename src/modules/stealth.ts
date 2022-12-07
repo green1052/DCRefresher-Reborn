@@ -1,9 +1,5 @@
 import browser from "webextension-polyfill";
 
-const getURL = (u: string) => {
-    return browser.extension ? browser.runtime.getURL(u) : u;
-};
-
 const CONTROL_BUTTON = ".stealth_control_button";
 const TEMPORARY_STEALTH = "stlth";
 
@@ -20,7 +16,7 @@ const tempButtonCreate = (elem: HTMLElement): void => {
 
         buttonFrame.innerHTML = `      
       <div class="button" id ="tempview">
-        <img src="${getURL("/assets/icons/change.png")}"></img>
+        <img src="${browser.runtime.getURL("/assets/icons/change.png")}"></img>
         <p id="temp_button_text">이미지 보이기</p>
       </div>
     `;

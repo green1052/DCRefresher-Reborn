@@ -9,8 +9,7 @@
         </div>
         <div class="refresher-comment-body">
             <div class="refresher-input-wrap" :class="{focus: focused, disable: disabled}">
-          <input  id="comment_main" placeholder="댓글 입력..." v-model="text" v-on:focus="focus" v-on:blur="blur"
-                    v-on:keydown="type" :disabled="disabled"/>
+                <input id="comment_main" placeholder="댓글 입력..." v-model="text" v-on:focus="focus" v-on:blur="blur" v-on:keydown="type" :disabled="disabled"/>
             </div>
             <PreviewButton class="refresher-writecomment primary" id="write" text="작성" :click="write"></PreviewButton>
         </div>
@@ -99,7 +98,7 @@ export default Vue.extend({
 
             this.user = new User(fixedName, id, null, gallogIcon.src);
         } else {
-            this.user = new User(this.unsignedUserID || "ㅇㅇ", null, "*.*", null);
+            this.user = new User(this.unsignedUserID ?? "ㅇㅇ", null, "*.*", null);
         }
     },
     methods: {

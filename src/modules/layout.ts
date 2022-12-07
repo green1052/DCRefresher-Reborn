@@ -207,7 +207,7 @@ export default {
         }
     },
     func (filter: RefresherFilter): void {
-        if (location.href.includes("board/view")  && !this.status.useCompactModeOnView) return;
+        if (location.href.includes("board/view") && !this.status.useCompactModeOnView) return;
 
         this.memory.resize = () =>
             updateWindowSize(

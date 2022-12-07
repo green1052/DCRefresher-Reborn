@@ -67,7 +67,6 @@ export default {
 
                             images.push(response);
                         } catch {
-
                         }
                     }
 

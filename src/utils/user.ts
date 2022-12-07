@@ -126,7 +126,7 @@ export class User {
             this.ip_data = "";
         }
 
-        this.__ip = v || null;
+        this.__ip = v ?? null;
     }
 
     get ip(): string | null {
