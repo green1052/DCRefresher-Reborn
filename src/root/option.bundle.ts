@@ -10,19 +10,3 @@ new Vue({
         }
     })
 });
-
-const key = "ArrowUpArrowUpArrowDownArrowDownArrowLeftArrowRightArrowLeftArrowRightba";
-
-let input = "";
-
-document.addEventListener("keydown", (e) => {
-    input += e.key;
-
-    if (input === key) {
-        window.open("https://youtu.be/dQw4w9WgXcQ", "_blank");
-        return;
-    }
-
-    if (key.includes(input))
-        input = e.key;
-});
