@@ -1,10 +1,10 @@
 <template>
     <div class="refresher-input">
-        <img v-bind:src="'https://dcimg5.dcinside.com/dccon.php?no='+value.split('||')[2]" alt="디시콘"
-             style="width: 37px;position: relative;left: -70px;">
-        <button v-on:click="select" :data-id="id" :data-module="modname" :placeholder="placeholder" :value="value"
-                :disabled="disabled"
-                style="position: absolute;right: 10px;top: 5px;background: #dddddd;border: none;padding: 5px 10px;">선택하기
+        <img alt="디시콘" style="width: 37px;position: relative;left: -70px;"
+             v-bind:src="'https://dcimg5.dcinside.com/dccon.php?no='+value.split('||')[2]">
+        <button :data-id="id" :data-module="modname" :disabled="disabled" :placeholder="placeholder" :value="value"
+                style="position: absolute;right: 10px;top: 5px;background: #dddddd;border: none;padding: 5px 10px;"
+                v-on:click="select">선택하기
         </button>
     </div>
 </template>

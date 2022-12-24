@@ -2,7 +2,7 @@ export default class DeepProxy {
     _preproxy: WeakMap<unknown, unknown>;
     _handler: ProxyHandler<{ [index: string]: string }>;
 
-    constructor (
+    constructor(
         target: unknown,
         handler: ProxyHandler<{ [index: string]: string }>
     ) {
@@ -11,23 +11,23 @@ export default class DeepProxy {
         return this.proxify(target, []);
     }
 
-    makeHandler (
+    makeHandler(
         path: string[]
     ): {
-    set: (
-      target: { [index: string]: string },
-      key: string,
-      value: unknown,
-      receiver: unknown
-    ) => boolean
-    deleteProperty: (
-      target: { [index: string]: string },
-      key: string
-    ) => boolean
-  } {
+        set: (
+            target: { [index: string]: string },
+            key: string,
+            value: unknown,
+            receiver: unknown
+        ) => boolean
+        deleteProperty: (
+            target: { [index: string]: string },
+            key: string
+        ) => boolean
+    } {
         const dp = this;
         return {
-            set (target, key, value, receiver) {
+            set(target, key, value, receiver) {
                 if (typeof value === "object") {
                     value = dp.proxify(value, [...path, key]);
                 }
@@ -39,7 +39,7 @@ export default class DeepProxy {
                 return true;
             },
 
-            deleteProperty (target, key) {
+            deleteProperty(target, key) {
                 if (Reflect.has(target, key)) {
                     dp.unproxy(target, key);
                     const deleted = Reflect.deleteProperty(target, key);
@@ -53,7 +53,7 @@ export default class DeepProxy {
         };
     }
 
-    unproxy (
+    unproxy(
         obj: { [index: string]: { [index: string]: unknown } } | unknown,
         key: string
     ): void {
@@ -70,7 +70,7 @@ export default class DeepProxy {
         }
     }
 
-    proxify (
+    proxify(
         obj: { [index: string]: { [index: string]: unknown } } | unknown,
         path: string[]
     ): ProxyConstructor {

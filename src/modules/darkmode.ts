@@ -63,7 +63,7 @@ export default {
     enable: false,
     default_enable: false,
     require: ["filter", "eventBus"],
-    func (filter: RefresherFilter, eventBus: RefresherEventBus): void {
+    func(filter: RefresherFilter, eventBus: RefresherEventBus): void {
         if (document && document.documentElement && !document.documentElement.className.includes("refresherDark"))
             document.documentElement.classList.add("refresherDark");
 
@@ -90,7 +90,7 @@ export default {
         this.memory.contentViewUUID = eventBus.on("contentPreview", contentColorFix);
     },
 
-    revoke (filter: RefresherFilter, eventBus: RefresherEventBus): void {
+    revoke(filter: RefresherFilter, eventBus: RefresherEventBus): void {
         document.documentElement.classList.remove("refresherDark");
 
         if (this.memory.uuid) {

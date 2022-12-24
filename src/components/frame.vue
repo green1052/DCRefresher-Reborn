@@ -1,25 +1,25 @@
 <template>
-    <div class="refresher-frame"
-         :class="{relative: frame.options.relative, blur: frame.options.blur, preview: frame.options.preview, center: frame.options.center}">
-        <div class="refresher-preview-info" v-if="!frame.error">
+    <div :class="{relative: frame.options.relative, blur: frame.options.blur, preview: frame.options.preview, center: frame.options.center}"
+         class="refresher-frame">
+        <div v-if="!frame.error" class="refresher-preview-info">
             <div class="refresher-preview-title-zone">
                 <div :class="{'refresher-preview-title-text':true, 'refresher-title-post':frame.data.buttons}">
-                    <transition name="refresher-slide-up" appear @before-enter="beforeEnter" @after-enter="afterEnter">
-                        <div class="refresher-preview-title" v-html="frame.title" :data-index="index + 1"
-                             :key="frame.title"></div>
+                    <transition appear name="refresher-slide-up" @before-enter="beforeEnter" @after-enter="afterEnter">
+                        <div :key="frame.title" :data-index="index + 1" class="refresher-preview-title"
+                             v-html="frame.title"></div>
                     </transition>
-                    <transition name="refresher-slide-up" appear @before-enter="beforeEnter" @after-enter="afterEnter">
+                    <transition appear name="refresher-slide-up" @before-enter="beforeEnter" @after-enter="afterEnter">
                         <span class="refresher-preview-title-mute" v-html="frame.subtitle"></span>
                     </transition>
-                    <transition name="refresher-slide-up" appear @before-enter="beforeEnter" @after-enter="afterEnter">
+                    <transition appear name="refresher-slide-up" @before-enter="beforeEnter" @after-enter="afterEnter">
                     </transition>
                 </div>
                 <div v-if="frame.data.comments" class="refresher-comment-controls-container">
-                    <PreviewButton v-if="frame.data.useWriteComment" :id="'write'" :text="'댓글 쓰기'"
-                                   :click="toCommentWrite"
+                    <PreviewButton v-if="frame.data.useWriteComment" :id="'write'" :click="toCommentWrite"
+                                   :text="'댓글 쓰기'"
                                    class="refresher-comment-controls">
                     </PreviewButton>
-                    <PreviewButton :id="'refresh'" :text="'새로고침'" :click="refresh" class="refresher-comment-controls">
+                    <PreviewButton :id="'refresh'" :click="refresh" :text="'새로고침'" class="refresher-comment-controls">
                     </PreviewButton>
                 </div>
             </div>
@@ -34,19 +34,19 @@
                 </div>
             </div>
         </div>
-        <div class="refresher-preview-contents" v-if="!frame.error" :class="{collapse: frame.collapse}">
+        <div v-if="!frame.error" :class="{collapse: frame.collapse}" class="refresher-preview-contents">
             <refresher-loader v-show="frame.data.load"></refresher-loader>
             <transition name="refresher-opacity">
-                <div class="refresher-preview-contents-actual" v-html="frame.contents" :key="frame.contents"></div>
+                <div :key="frame.contents" class="refresher-preview-contents-actual" v-html="frame.contents"></div>
             </transition>
 
-            <div class="refresher-preview-comments" v-if="frame.data.comments && frame.data.comments.comments">
-                <transition-group name="refresher-slide-up" appear @before-enter="beforeEnter"
+            <div v-if="frame.data.comments && frame.data.comments.comments" class="refresher-preview-comments">
+                <transition-group appear name="refresher-slide-up" @before-enter="beforeEnter"
                                   @after-enter="afterEnter">
-                    <Comment v-for="(comment, i) in frame.data.comments.comments" :index="i + 1"
-                             :postUser="frame.data.postUserId" :comment="comment" :key="'cmt_' + comment.no"
-                             :delete="frame.functions.deleteComment"
-                             :getReply="getReply"
+                    <Comment v-for="(comment, i) in frame.data.comments.comments" :key="'cmt_' + comment.no"
+                             :comment="comment" :delete="frame.functions.deleteComment" :getReply="getReply"
+                             :index="i + 1"
+                             :postUser="frame.data.postUserId"
                              @setReply="setReply"></Comment>
                 </transition-group>
             </div>
@@ -59,7 +59,7 @@
                 <br/>
             </div>
             <div v-if="frame.data.comments && frame.data.useWriteComment">
-                <WriteComment :func="writeComment" @setReply="setReply" :getReply="getReply"></WriteComment>
+                <WriteComment :func="writeComment" :getReply="getReply" @setReply="setReply"></WriteComment>
             </div>
         </div>
         <div v-if="frame.collapse" class="refresher-collapse-text">
@@ -67,7 +67,7 @@
                 눌러
                 글을 볼 수 있습니다.</h3>
         </div>
-        <div class="refresher-preview-contents refresher-error" v-if="frame.error">
+        <div v-if="frame.error" class="refresher-preview-contents refresher-error">
             <h3>{{ frame.error.title }}을 불러올 수 없습니다.</h3>
             <br>
             <p>가능한 경우:</p>
@@ -90,21 +90,22 @@
                 <li>알 수 없는 오류입니다. 아래 코드를 복사하여 개발자에게 문의해주세요.</li>
             </ul>
             <br>
-            <PreviewButton class="refresher-writecomment primary" id="refresh" text="다시 시도"
-                           :click="retry"></PreviewButton>
+            <PreviewButton id="refresh" :click="retry" class="refresher-writecomment primary"
+                           text="다시 시도"></PreviewButton>
             <br>
             <span class="refresher-mute">{{ frame.error.detail }}</span>
         </div>
-        <div class="refresher-preview-votes" v-if="frame.data.buttons && !frame.collapse">
+        <div v-if="frame.data.buttons && !frame.collapse" class="refresher-preview-votes">
             <div>
-                <PreviewButton class="refresher-upvote" :id="'upvote'" :text="`${frame.upvotes} (${frame.fixedUpvotes})`" :click="upvote">
+                <PreviewButton :id="'upvote'" :click="upvote"
+                               :text="`${frame.upvotes} (${frame.fixedUpvotes})`" class="refresher-upvote">
                 </PreviewButton>
-                <PreviewButton v-if="!frame.data.disabledDownvote" class="refresher-downvote" :id="'downvote'"
-                               :text="frame.downvotes || '0'" :click="downvote">
+                <PreviewButton v-if="!frame.data.disabledDownvote" :id="'downvote'" :click="downvote"
+                               :text="frame.downvotes || '0'" class="refresher-downvote">
                 </PreviewButton>
-                <PreviewButton class="refresher-share primary" :id="'share'" :text="'공유'" :click="share">
+                <PreviewButton :id="'share'" :click="share" :text="'공유'" class="refresher-share primary">
                 </PreviewButton>
-                <PreviewButton :id="'newtab'" :text="'원본 보기'" :click="original">
+                <PreviewButton :id="'newtab'" :click="original" :text="'원본 보기'">
                 </PreviewButton>
             </div>
         </div>
@@ -135,7 +136,7 @@ export default Vue.extend({
         "refresher-loader": loader
     },
     props: ["frame", "index"],
-    data:  function () {
+    data: function () {
         return {
             memoText: "",
             reply: null

@@ -49,7 +49,7 @@ export default {
     enable: false,
     default_enable: false,
     require: ["eventBus"],
-    func (eventBus: RefresherEventBus): void {
+    func(eventBus: RefresherEventBus): void {
         if (document && document.documentElement && !document.documentElement.className.includes("refresherStealth")) {
             document.documentElement.classList.add("refresherStealth");
         }
@@ -68,7 +68,7 @@ export default {
         );
     },
 
-    revoke (eventBus: RefresherEventBus): void {
+    revoke(eventBus: RefresherEventBus): void {
         document.documentElement.classList.remove("refresherStealth");
 
         const buttons = document.querySelectorAll(CONTROL_BUTTON);

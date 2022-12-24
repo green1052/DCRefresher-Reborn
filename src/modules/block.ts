@@ -1,6 +1,5 @@
 import {queryString} from "../utils/http";
 import * as Toast from "../components/toast";
-import * as http from "http";
 import Cookies from "js-cookie";
 
 export default {

@@ -5,16 +5,16 @@ export const rand = (): string => {
 export const uuid = (): string => {
     return (
         rand() +
-    rand() +
-    "-" +
-    rand() +
-    "-" +
-    rand() +
-    "-" +
-    rand() +
-    "-" +
-    rand() +
-    rand() +
-    rand()
+        rand() +
+        "-" +
+        rand() +
+        "-" +
+        rand() +
+        "-" +
+        rand() +
+        "-" +
+        rand() +
+        rand() +
+        rand()
     );
 };

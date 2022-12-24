@@ -11,7 +11,7 @@ export default Vue.extend({
     name: "refresher-frame-outer",
     components: {
         Outer: outer,
-        Scroll: scroll,
+        Scroll: scroll
     },
     props: {
         option: {

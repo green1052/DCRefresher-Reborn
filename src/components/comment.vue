@@ -1,17 +1,17 @@
 <template>
-    <div class="refresher-comment" :data-depth="comment.depth" :data-rereply="rereply"
-         :data-deleted="comment.del_yn === 'Y'">
+    <div :data-deleted="comment.del_yn === 'Y'" :data-depth="comment.depth" :data-rereply="rereply"
+         class="refresher-comment">
         <div class="meta">
-            <User :user="comment.user" :me="me"></User>
+            <User :me="me" :user="comment.user"></User>
             <div class="float-right">
                 <p v-if="comment.depth === 0 && comment.del_yn === 'N'" class="refresher-reply" v-on:click="reply">
                     {{ this.getReply() === this.comment.no ? "답글 해제" : "답글" }}</p>
 
                 <TimeStamp :date="new Date(date(comment.reg_date))"></TimeStamp>
-                <div class="delete"
-                     v-if="comment.del_yn === 'N'"
+                <div v-if="comment.del_yn === 'N'"
+                     class="delete"
                      v-on:click="this.safeDelete">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" width="14px" height="14px">
+                    <svg fill="black" height="14px" viewBox="0 0 24 24" width="14px" xmlns="http://www.w3.org/2000/svg">
                         <path d="M0 0h24v24H0z" fill="none"/>
                         <path
                             d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -20,15 +20,15 @@
             </div>
         </div>
         <div v-if="comment.vr_player">
-            <iframe v-if="getVoiceData.iframe" :src="getVoiceData.src" width="280px" height="54px"></iframe>
+            <iframe v-if="getVoiceData.iframe" :src="getVoiceData.src" height="54px" width="280px"></iframe>
             <audio v-else :src="getVoiceData.src" controls></audio>
             <p v-if="getVoiceData.memo">{{ getVoiceData.memo }}</p>
         </div>
         <p
             v-else-if="/<(img|video) class=/.test(comment.memo)"
-            class="refresher-comment-content"
-            :class="{dccon: true}" v-html="comment.memo"
-            v-on:contextmenu="contextMenu"
+            :class="{dccon: true}"
+            class="refresher-comment-content" v-on:contextmenu="contextMenu"
+            v-html="comment.memo"
         />
         <p v-else class="refresher-comment-content" v-html="comment.memo.replaceAll('\n', '<br/>')"/>
     </div>
@@ -231,7 +231,7 @@ export default Vue.extend({
 
             eventBus.emit(
                 "refresherDcconUserContextMenu",
-               code
+                code
             );
         }
     }

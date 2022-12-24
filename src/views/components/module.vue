@@ -6,7 +6,7 @@
             <p class="mute">요구 유틸 : {{ requirement.join(", ") || "없음" }}</p>
         </div>
         <div class="right">
-            <refresher-checkbox :checked="enabled" :change="update"></refresher-checkbox>
+            <refresher-checkbox :change="update" :checked="enabled"></refresher-checkbox>
         </div>
     </div>
 </template>

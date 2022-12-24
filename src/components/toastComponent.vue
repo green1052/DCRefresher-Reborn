@@ -1,7 +1,7 @@
 <template>
-    <transition name="refresher-toast" appear>
-        <div class="refresher-toast" :class="{hover: this.clickCb}" :title="this.content"
-             :data-type="this.type" :key="this.id" v-show="this.open">
+    <transition appear name="refresher-toast">
+        <div v-show="this.open" :key="this.id" :class="{hover: this.clickCb}"
+             :data-type="this.type" :title="this.content" class="refresher-toast">
             <div class="contents" v-on:click="click">
                 <div class="text">
                     <p>{{ this.content }}</p>

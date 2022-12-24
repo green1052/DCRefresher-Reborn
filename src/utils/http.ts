@@ -10,26 +10,26 @@ export const urls = {
     captcha: "https://gall.dcinside.com/kcaptcha/session",
     manage: {
         delete:
-      "https://gall.dcinside.com/ajax/minor_manager_board_ajax/delete_list",
+            "https://gall.dcinside.com/ajax/minor_manager_board_ajax/delete_list",
         deleteMini:
-      "https://gall.dcinside.com/ajax/mini_manager_board_ajax/delete_list",
+            "https://gall.dcinside.com/ajax/mini_manager_board_ajax/delete_list",
         deleteUser: "https://gall.dcinside.com/board/forms/delete_submit",
         deleteComment:
-      "https://gall.dcinside.com/ajax/minor_manager_board_ajax/delete_comment",
+            "https://gall.dcinside.com/ajax/minor_manager_board_ajax/delete_comment",
         deleteCommentMini:
-      "https://gall.dcinside.com/ajax/mini_manager_board_ajax/delete_comment",
+            "https://gall.dcinside.com/ajax/mini_manager_board_ajax/delete_comment",
         setNotice:
-      "https://gall.dcinside.com/ajax/minor_manager_board_ajax/set_notice",
+            "https://gall.dcinside.com/ajax/minor_manager_board_ajax/set_notice",
         setNoticeMini:
-      "https://gall.dcinside.com/ajax/mini_manager_board_ajax/set_notice",
+            "https://gall.dcinside.com/ajax/mini_manager_board_ajax/set_notice",
         block:
-      "https://gall.dcinside.com/ajax/minor_manager_board_ajax/update_avoid_list",
+            "https://gall.dcinside.com/ajax/minor_manager_board_ajax/update_avoid_list",
         blockMini:
-      "https://gall.dcinside.com/ajax/mini_manager_board_ajax/update_avoid_list",
+            "https://gall.dcinside.com/ajax/mini_manager_board_ajax/update_avoid_list",
         setRecommend:
-      "https://gall.dcinside.com/ajax/minor_manager_board_ajax/set_recommend",
+            "https://gall.dcinside.com/ajax/minor_manager_board_ajax/set_recommend",
         setRecommendMini:
-      "https://gall.dcinside.com/ajax/mini_manager_board_ajax/set_recommend"
+            "https://gall.dcinside.com/ajax/mini_manager_board_ajax/set_recommend"
     },
     comments: "https://gall.dcinside.com/board/comment/",
     comments_submit: "https://gall.dcinside.com/board/forms/comment_submit",
@@ -91,8 +91,8 @@ export const galleryType = (url: string, extra?: string): string => {
 };
 
 /**
-   * URL에 /board/view가 포함되어 있을 경우 /board/lists로 바꿔줍니다.
-   * @param url
+ * URL에 /board/view가 포함되어 있을 경우 /board/lists로 바꿔줍니다.
+ * @param url
  */
 export const view = (url: string): string => {
     let type = galleryType(url);
