@@ -16,7 +16,7 @@ const updateWindowSize = (
             }
         }
     } else {
-        if (document.documentElement.className.includes("refresherCompact") ) {
+        if (document.documentElement.className.includes("refresherCompact")) {
             document.documentElement.classList.remove("refresherCompact");
         }
     }
@@ -109,35 +109,35 @@ export default {
     default_enable: true,
     require: ["filter"],
     update: {
-        activePixel (this: RefresherModule, value: number): void {
+        activePixel(this: RefresherModule, value: number): void {
             if (this.status) {
                 updateWindowSize(this.status.forceCompact, value, innerWidth);
             }
         },
 
-        forceCompact (this: RefresherModule, value: boolean): void {
+        forceCompact(this: RefresherModule, value: boolean): void {
             updateWindowSize(value, this.status.activePixel, innerWidth);
         },
 
-        hideGalleryView (value: boolean): void {
+        hideGalleryView(value: boolean): void {
             document.documentElement.classList[value ? "add" : "remove"](
                 "refresherHideGalleryView"
             );
         },
 
-        hideUselessView (value: boolean): void {
+        hideUselessView(value: boolean): void {
             document.documentElement.classList[value ? "add" : "remove"](
                 "refresherHideUselessView"
             );
         },
 
-        pushToRight (value: boolean): void {
+        pushToRight(value: boolean): void {
             document.documentElement.classList[value ? "add" : "remove"](
                 "refresherPushToRight"
             );
         },
 
-        removeNotice (
+        removeNotice(
             this: RefresherModule,
             value: boolean,
             filter: RefresherFilter
@@ -172,7 +172,7 @@ export default {
             }
         },
 
-        removeDCNotice (
+        removeDCNotice(
             this: RefresherModule,
             value: boolean,
             filter: RefresherFilter
@@ -206,7 +206,7 @@ export default {
             }
         }
     },
-    func (filter: RefresherFilter): void {
+    func(filter: RefresherFilter): void {
         if (location.href.includes("board/view") && !this.status.useCompactModeOnView) return;
 
         this.memory.resize = () =>
@@ -226,7 +226,7 @@ export default {
         this.update.removeDCNotice.bind(this)(this.status.removeDCNotice, filter);
     },
 
-    revoke (filter: RefresherFilter): void {
+    revoke(filter: RefresherFilter): void {
         window.removeEventListener("resize", this.memory.resize);
 
         this.update.hideGalleryView(false);

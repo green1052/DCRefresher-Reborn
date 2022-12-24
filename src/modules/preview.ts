@@ -1494,8 +1494,8 @@ export default {
                                         v.user_id,
                                         v.ip || "",
                                         ((new DOMParser()
-                                                .parseFromString(v.gallog_icon, "text/html")
-                                                .querySelector("a.writer_nikcon img") ||
+                                            .parseFromString(v.gallog_icon, "text/html")
+                                            .querySelector("a.writer_nikcon img") ||
                                             {}) as HTMLImageElement).src
                                     );
                                 });
@@ -1632,8 +1632,8 @@ export default {
                 }
 
                 return (admin && !password
-                        ? request.adminDeleteComment(preData, commentId, signal)
-                        : request.userDeleteComment(preData, commentId, signal, password)
+                    ? request.adminDeleteComment(preData, commentId, signal)
+                    : request.userDeleteComment(preData, commentId, signal, password)
                 )
                     .then(v => {
                         if (typeof v === "boolean") {

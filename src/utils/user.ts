@@ -48,8 +48,8 @@ export class User {
     ip_data: string;
     icon: string | null;
     type: number;
-    private __ip: string | null;
     memo: RefresherMemoValue | null;
+    private __ip: string | null;
 
     constructor(
         nick: string,
@@ -68,6 +68,20 @@ export class User {
         this.memo = null;
 
         this.getMemo();
+    }
+
+    get ip(): string | null {
+        return this.__ip;
+    }
+
+    set ip(v: string | null) {
+        if (v) {
+            this.ip_data = ip.format(ip.ISPData(v));
+        } else {
+            this.ip_data = "";
+        }
+
+        this.__ip = v ?? null;
     }
 
     getMemo(): void {
@@ -117,19 +131,5 @@ export class User {
 
     isMember(): boolean {
         return this.id !== null;
-    }
-
-    set ip(v: string | null) {
-        if (v) {
-            this.ip_data = ip.format(ip.ISPData(v));
-        } else {
-            this.ip_data = "";
-        }
-
-        this.__ip = v ?? null;
-    }
-
-    get ip(): string | null {
-        return this.__ip;
     }
 }

@@ -366,6 +366,7 @@ $dark-red: #e21919;
     .tit {
       color: $dark-text-color-bright;
     }
+
     .txt {
       color: $dark-text-color;
     }
@@ -397,8 +398,7 @@ $dark-red: #e21919;
     color: $dark-text-color;
 
     .box:first-child img {
-      filter: invert(43%) sepia(64%) saturate(1865%) hue-rotate(203deg)
-        brightness(101%) contrast(94%);
+      filter: invert(43%) sepia(64%) saturate(1865%) hue-rotate(203deg) brightness(101%) contrast(94%);
     }
 
     .box:last-child img {
@@ -965,6 +965,7 @@ $dark-red: #e21919;
 
     .user_option {
       background-color: $dark-tint2;
+
       a {
         color: $dark-text-color;
       }

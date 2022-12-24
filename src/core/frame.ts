@@ -58,16 +58,16 @@ class InternalFrame implements RefresherFrame {
         this.buttonError = null;
     }
 
+    get center() {
+        return this.options.center;
+    }
+
     querySelector(a: string) {
         return this.app.$el.querySelector(a);
     }
 
     querySelectorAll(a: string) {
         return this.app.$el.querySelectorAll(a);
-    }
-
-    get center() {
-        return this.options.center;
     }
 }
 

@@ -15,7 +15,7 @@ export default Vue.extend({
         }
     },
     methods: {
-        getURL (u: string): string {
+        getURL(u: string): string {
             return browser.runtime.getURL(u);
         }
     }

@@ -18,6 +18,7 @@ $dark-tint2: #3d3d3d;
     .img_box {
       display: none;
     }
+
     .rcont_issue {
       margin-top: 44px;
     }
@@ -51,6 +52,7 @@ $dark-tint2: #3d3d3d;
       .written_dccon {
         visibility: hidden;
       }
+
       .coment_dccon_img {
         border: 2px solid $dark-dc-color-deep;
         box-sizing: border-box;
@@ -83,13 +85,16 @@ $dark-tint2: #3d3d3d;
     .dory_img img {
       height: 10pt;
     }
+
     .dory_rolling {
       position: inherit;
       margin-top: -17px;
     }
+
     .comment_dory {
       display: none;
     }
+
     .dory_txt {
       margin-top: 0px;
       margin-left: 90px;
@@ -101,6 +106,7 @@ $dark-tint2: #3d3d3d;
     & > img {
       display: none;
     }
+
     & > h3 {
       text-align: center;
       width: 100%;
@@ -112,6 +118,7 @@ $dark-tint2: #3d3d3d;
     .written_dccon {
       visibility: hidden;
     }
+
     &::before {
       position: absolute;
       display: flex;
@@ -162,6 +169,7 @@ $dark-tint2: #3d3d3d;
       display: grid;
       transition: 0.3s all cubic-bezier(0.19, 1, 0.22, 1);
       border-radius: 13.3px;
+
       img {
         margin: auto;
         width: 40px;

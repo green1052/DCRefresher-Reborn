@@ -148,7 +148,7 @@ const contextMenus: browser.Menus.CreateCreatePropertiesType[] = [
         contexts: ["all"],
         documentUrlPatterns: ["*://gall.dcinside.com/*"]
     }
-]
+];
 
 for (const contextMenu of contextMenus) {
     browser.contextMenus.create(contextMenu);

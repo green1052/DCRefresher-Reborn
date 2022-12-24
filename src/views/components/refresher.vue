@@ -12,8 +12,8 @@
                 <p :class="{active: tab === 5}" v-on:click="() => tab = 5">단축키</p>
             </div>
         </div>
-        <transition-group name="refresher-slide-left" mode="in-out">
-            <div class="tab tab1" v-show="tab === 0" key="tab1">
+        <transition-group mode="in-out" name="refresher-slide-left">
+            <div v-show="tab === 0" key="tab1" class="tab tab1">
                 <div class="info">
                     <div class="icon-wrap">
                         <img :src="getURL('/assets/icons/logo/Icon.png')" class="icon"/>
@@ -37,17 +37,17 @@
                         <h3 class="need-refresh">우선 디시인사이드 페이지를 열고 설정 해주세요.</h3>
                     </div>
 
-                    <div class="refresher-setting-category" v-else v-for="module in Object.keys(settings)">
+                    <div v-for="module in Object.keys(settings)" v-else class="refresher-setting-category">
                         <h3 v-on:click="moveToModuleTab(module)">{{ module }}
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" width="18px"
-                                 height="18px">
+                            <svg fill="black" height="18px" viewBox="0 0 24 24" width="18px"
+                                 xmlns="http://www.w3.org/2000/svg">
                                 <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
                             </svg>
                         </h3>
 
-                        <div class="refresher-setting" v-for="setting in Object.keys(settings[module])"
-                             v-if="!settings[module][setting].advanced"
-                             :data-changed="settings[module][setting].value !== settings[module][setting].default">
+                        <div v-for="setting in Object.keys(settings[module])" v-if="!settings[module][setting].advanced"
+                             :data-changed="settings[module][setting].value !== settings[module][setting].default"
+                             class="refresher-setting">
                             <div class="info">
                                 <h4>{{ settings[module][setting].name }}</h4>
                                 <p>{{ settings[module][setting].desc }}</p>
@@ -56,49 +56,49 @@
 
                             <div class="control">
                                 <refresher-checkbox v-if="settings[module][setting].type === 'check'"
-                                                    :checked="settings[module][setting].value"
-                                                    :change="updateUserSetting" :modname="module"
-                                                    :id="setting"></refresher-checkbox>
+                                                    :id="setting"
+                                                    :change="updateUserSetting" :checked="settings[module][setting].value"
+                                                    :modname="module"></refresher-checkbox>
                                 <refresher-input v-if="settings[module][setting].type === 'text'"
-                                                 :placeholder="settings[module][setting].default"
-                                                 :value="settings[module][setting].value" :id="setting"
-                                                 :modname="module" :change="updateUserSetting"></refresher-input>
+                                                 :id="setting"
+                                                 :change="updateUserSetting" :modname="module"
+                                                 :placeholder="settings[module][setting].default" :value="settings[module][setting].value"></refresher-input>
                                 <refresher-range v-if="settings[module][setting].type === 'range'"
+                                                 :id="setting"
+                                                 :change="updateUserSetting" :max="settings[module][setting].max"
+                                                 :min="settings[module][setting].min" :modname="module"
                                                  :placeholder="settings[module][setting].default"
-                                                 :value="Number(settings[module][setting].value)" :id="setting"
-                                                 :modname="module" :change="updateUserSetting"
-                                                 :min="settings[module][setting].min"
-                                                 :max="settings[module][setting].max"
                                                  :step="settings[module][setting].step"
-                                                 :unit="settings[module][setting].unit"></refresher-range>
+                                                 :unit="settings[module][setting].unit"
+                                                 :value="Number(settings[module][setting].value)"></refresher-range>
                                 <refresher-options v-if="settings[module][setting].type === 'option'"
-                                                   :options="settings[module][setting].items"
-                                                   :change="updateUserSetting" :modname="module"></refresher-options>
+                                                   :change="updateUserSetting"
+                                                   :modname="module" :options="settings[module][setting].items"></refresher-options>
                                 <refresher-dccon v-if="settings[module][setting].type === 'dccon'"
-                                                 :placeholder="settings[module][setting].default"
-                                                 :value="settings[module][setting].value" :id="setting"
-                                                 :modname="module" :change="updateUserSetting"></refresher-dccon>
+                                                 :id="setting"
+                                                 :change="updateUserSetting" :modname="module"
+                                                 :placeholder="settings[module][setting].default" :value="settings[module][setting].value"></refresher-dccon>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="tab tab2" v-show="tab === 1" key="tab2">
+            <div v-show="tab === 1" key="tab2" class="tab tab2">
                 <div v-if="!Object.keys(settings).length">
                     <h3 class="need-refresh">우선 디시 페이지를 열고 설정 해주세요.</h3>
                 </div>
-                <div class="refresher-setting-category" v-for="module in Object.keys(settings)"
-                     v-if="settings[module] &amp;&amp; advancedSettingsCount(settings[module])">
+                <div v-for="module in Object.keys(settings)" v-if="settings[module] &amp;&amp; advancedSettingsCount(settings[module])"
+                     class="refresher-setting-category">
                     <h3 v-on:click="moveToModuleTab(module)">{{ module }}
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" width="18px"
-                             height="18px">
+                        <svg fill="black" height="18px" viewBox="0 0 24 24" width="18px"
+                             xmlns="http://www.w3.org/2000/svg">
                             <path d="M0 0h24v24H0z" fill="none"/>
                             <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
                         </svg>
                     </h3>
-                    <div class="refresher-setting" v-for="setting in Object.keys(settings[module])"
-                         v-if="settings[module][setting].advanced"
-                         :data-changed="settings[module][setting].value !== settings[module][setting].default">
+                    <div v-for="setting in Object.keys(settings[module])" v-if="settings[module][setting].advanced"
+                         :data-changed="settings[module][setting].value !== settings[module][setting].default"
+                         class="refresher-setting">
                         <div class="info">
                             <h4>{{ settings[module][setting].name }}</h4>
                             <p>{{ settings[module][setting].desc }}</p>
@@ -106,52 +106,52 @@
                         </div>
                         <div class="control">
                             <refresher-checkbox v-if="settings[module][setting].type === 'check'"
-                                                :checked="settings[module][setting].value" :change="updateUserSetting"
-                                                :modname="module" :id="setting"></refresher-checkbox>
+                                                :id="setting" :change="updateUserSetting"
+                                                :checked="settings[module][setting].value" :modname="module"></refresher-checkbox>
                             <refresher-input v-if="settings[module][setting].type === 'text'"
-                                             :placeholder="settings[module][setting].default"
-                                             :value="settings[module][setting].value" :id="setting" :modname="module"
-                                             :change="updateUserSetting"></refresher-input>
+                                             :id="setting"
+                                             :change="updateUserSetting" :modname="module" :placeholder="settings[module][setting].default"
+                                             :value="settings[module][setting].value"></refresher-input>
                             <refresher-range v-if="settings[module][setting].type === 'range'"
-                                             :placeholder="settings[module][setting].default"
-                                             :value="Number(settings[module][setting].value)" :id="setting"
-                                             :modname="module" :change="updateUserSetting"
-                                             :min="settings[module][setting].min" :max="settings[module][setting].max"
-                                             :step="settings[module][setting].step"
-                                             :unit="settings[module][setting].unit"></refresher-range>
+                                             :id="setting"
+                                             :change="updateUserSetting" :max="settings[module][setting].max"
+                                             :min="settings[module][setting].min" :modname="module"
+                                             :placeholder="settings[module][setting].default" :step="settings[module][setting].step"
+                                             :unit="settings[module][setting].unit"
+                                             :value="Number(settings[module][setting].value)"></refresher-range>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="tab tab3" v-show="tab === 2" key="tab3">
-                <div class="block-divide" v-for="key in Object.keys(blocks)">
+            <div v-show="tab === 2" key="tab3" class="tab tab3">
+                <div v-for="key in Object.keys(blocks)" class="block-divide">
                     <h3>{{ blockKeyNames[key] }} <span class="plus" v-on:click="() => addEmptyBlockedUser(key)"><svg
-                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" width="18px" height="18px">
+                        fill="black" height="18px" viewBox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M0 0h24v24H0z" fill="none"/>
                                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                             </svg></span></h3>
                     <div class="lists">
                         <p v-if="!blocks[key].length">차단된 {{ blockKeyNames[key] }} 없음</p>
 
-                        <refresher-bubble v-else-if="key !== 'DCCON'" v-for="(blocked, i) in blocks[key]"
+                        <refresher-bubble v-for="(blocked, i) in blocks[key]" v-else-if="key !== 'DCCON'"
                                           :key="'block:' + i"
-                                          :text="blocked.content" :regex="blocked.isRegex" :gallery="blocked.gallery"
-                                          :extra="blocked.extra" :remove="() => removeBlockedUser(key, i)"
+                                          :extra="blocked.extra" :gallery="blocked.gallery" :regex="blocked.isRegex"
+                                          :remove="() => removeBlockedUser(key, i)" :text="blocked.content"
                                           :textclick="() => editBlockedUser(key, i)"/>
 
-                        <refresher-bubble v-else v-for="(blocked, i) in blocks[key]" :key="'block:' + i"
-                                          :image="'https://dcimg5.dcinside.com/dccon.php?no='+blocked.content"
-                                          :regex="blocked.isRegex" :gallery="blocked.gallery" :extra="blocked.extra"
+                        <refresher-bubble v-for="(blocked, i) in blocks[key]" v-else :key="'block:' + i"
+                                          :extra="blocked.extra"
+                                          :gallery="blocked.gallery" :image="'https://dcimg5.dcinside.com/dccon.php?no='+blocked.content" :regex="blocked.isRegex"
                                           :remove="() => removeBlockedUser(key, i)"
                                           :textclick="() => editBlockedUser(key, i)"/>
 
                     </div>
                 </div>
             </div>
-            <div class="tab tab4" v-show="tab === 3" key="tab4">
-                <div class="block-divide" v-for="key in Object.keys(memos)">
+            <div v-show="tab === 3" key="tab4" class="tab tab4">
+                <div v-for="key in Object.keys(memos)" class="block-divide">
                     <h3>{{ memoKeyNames[key] }} <span class="plus" v-on:click="addMemoUser"><svg
-                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" width="18px" height="18px">
+                        fill="black" height="18px" viewBox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M0 0h24v24H0z" fill="none"/>
                                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                             </svg></span></h3>
@@ -159,27 +159,27 @@
                     <div class="lists">
                         <p v-if="!Object.keys(memos[key]).length">{{ memoKeyNames[key] }} 메모 없음</p>
 
-                        <refresher-bubble v-else v-for="[user, memo] in Object.entries(memos[key])"
-                                          :text="user + ' (' + memo.text.substring(0, 10) + ')'"
+                        <refresher-bubble v-for="[user, memo] in Object.entries(memos[key])" v-else
                                           :remove="() => removeMemoUser(key, user)"
+                                          :text="user + ' (' + memo.text.substring(0, 10) + ')'"
                                           :textclick="() => editMemoUser(key, user)"></refresher-bubble>
                     </div>
                 </div>
             </div>
-            <div class="tab tab5" v-show="tab === 4" key="tab5">
-                <div class="refresher-no-modules" v-if="!Object.keys(modules).length">
+            <div v-show="tab === 4" key="tab5" class="tab tab5">
+                <div v-if="!Object.keys(modules).length" class="refresher-no-modules">
                     <h3>로드된 모듈 없음</h3>
                     <p>우선 디시 페이지를 열어주세요.</p>
                 </div>
                 <div v-else>
-                    <refresher-module v-for="module in modules" :key="module.name" :name="module.name"
-                                      :desc="module.description" :enabled="module.enable" :author="module.author"
+                    <refresher-module v-for="module in modules" :key="module.name" :author="module.author"
+                                      :desc="module.description" :enabled="module.enable" :name="module.name"
                                       :requirement="module.require"></refresher-module>
                 </div>
             </div>
-            <div class="tab tab6" v-show="tab === 5" key="tab6">
+            <div v-show="tab === 5" key="tab6" class="tab tab6">
                 <div class="shortcut-lists">
-                    <div class="refresher-shortcut" v-for="shortcut in shortcuts" v-if="shortcut.description.length">
+                    <div v-for="shortcut in shortcuts" v-if="shortcut.description.length" class="refresher-shortcut">
                         <p class="description">{{ shortcut.description }}</p>
                         <div class="key">
                             <refresher-bubble v-for="key in shortcut.shortcut.match(shortcutRegex)" :key=key

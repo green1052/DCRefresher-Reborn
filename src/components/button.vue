@@ -4,7 +4,7 @@
             <img :key="error + 1" :src="getURL('/assets/icons/' + id + '.png')"></img>
         </transition>
         <transition name="refresher-shake">
-            <p class="refresher-vote-text" :key="error" :id="'refresher-' + id + '-counts'">{{ text }}</p>
+            <p :id="'refresher-' + id + '-counts'" :key="error" class="refresher-vote-text">{{ text }}</p>
         </transition>
     </div>
 </template>

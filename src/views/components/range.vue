@@ -1,8 +1,8 @@
 <template>
     <div class="refresher-range">
-        <input type="range" :data-id="id" :data-module="modname" :placeholder="placeholder" :value="value"
-               :disabled="disabled" v-on:input="input" v-on:change="update" :max="max" :min="min" :step="step"></input>
-        <span class="indicator">{{ value + (this.unit ? this.unit : '') }}</span>
+        <input :data-id="id" :data-module="modname" :disabled="disabled" :max="max" :min="min"
+               :placeholder="placeholder" :step="step" :value="value" type="range" v-on:change="update" v-on:input="input"></input>
+        <span class="indicator">{{ value + (this.unit ? this.unit : "") }}</span>
     </div>
 </template>
 

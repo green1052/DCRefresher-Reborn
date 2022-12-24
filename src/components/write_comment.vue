@@ -1,20 +1,20 @@
 <template>
     <div class="refresher-write-comment">
-        <div class="user" v-show="editUser">
-            <input type="text" v-model="unsignedUserID" v-on:change="(v) => validCheck('id', v.target.value)"
-                   placeholder="닉네임"/>
+        <div v-show="editUser" class="user">
+            <input v-model="unsignedUserID" placeholder="닉네임" type="text"
+                   v-on:change="(v) => validCheck('id', v.target.value)"/>
             <div/>
-            <input type="password" v-model="unsignedUserPW" v-on:change="(v) => validCheck('pw', v.target.value)"
-                   placeholder="비밀번호"/>
+            <input v-model="unsignedUserPW" placeholder="비밀번호" type="password"
+                   v-on:change="(v) => validCheck('pw', v.target.value)"/>
         </div>
         <div class="refresher-comment-body">
-            <div class="refresher-input-wrap" :class="{focus: focused, disable: disabled}">
-                <input id="comment_main" placeholder="댓글 입력..." v-model="text" v-on:focus="focus" v-on:blur="blur"
-                       v-on:keydown="type" :disabled="disabled"/>
+            <div :class="{focus: focused, disable: disabled}" class="refresher-input-wrap">
+                <input id="comment_main" v-model="text" :disabled="disabled" placeholder="댓글 입력..." v-on:blur="blur"
+                       v-on:focus="focus" v-on:keydown="type"/>
             </div>
-            <PreviewButton class="refresher-writecomment primary" id="write" text="작성" :click="write"></PreviewButton>
+            <PreviewButton id="write" :click="write" class="refresher-writecomment primary" text="작성"></PreviewButton>
         </div>
-        <div @mouseover="hoverUserInfo = true" @mouseleave="hoverUserInfo = false">
+        <div @mouseleave="hoverUserInfo = false" @mouseover="hoverUserInfo = true">
             <div class="whoami"
                  v-bind:class="{'refresher-comment-util': true, 'refresher-comment-util-show': !(hoverUserInfo && !this.user.id)}">
                 <UserComponent :user="user"/>

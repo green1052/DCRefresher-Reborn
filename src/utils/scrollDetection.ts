@@ -7,11 +7,11 @@ const SCROLLMODE = {
 };
 
 interface ScrollSession {
-  time: number[]
-  delta: number[]
-  peak: number
-  direction: number
-  fired: number
+    time: number[]
+    delta: number[]
+    peak: number
+    direction: number
+    fired: number
 }
 
 export class ScrollDetection {
@@ -20,7 +20,7 @@ export class ScrollDetection {
     session: ScrollSession;
     mode: number;
 
-    constructor () {
+    constructor() {
         this.lastEvent = 0;
         this.events = {};
         this.mode = 0;
@@ -36,7 +36,7 @@ export class ScrollDetection {
         this.initSession();
     }
 
-    initSession (): void {
+    initSession(): void {
         this.session = {
             time: [],
             delta: [],
@@ -46,7 +46,7 @@ export class ScrollDetection {
         };
     }
 
-    emit (event: string, ...args: any[]): void {
+    emit(event: string, ...args: any[]): void {
         if (this.events[event]) {
             this.events[event].forEach(func => {
                 func(...args);
@@ -54,7 +54,7 @@ export class ScrollDetection {
         }
     }
 
-    listen (event: string, cb: (...args: any[]) => void): void {
+    listen(event: string, cb: (...args: any[]) => void): void {
         if (!this.events[event]) {
             this.events[event] = [];
         }
@@ -62,12 +62,12 @@ export class ScrollDetection {
         this.events[event].push(cb);
     }
 
-    scroll (ev: WheelEvent): void {
+    scroll(ev: WheelEvent): void {
         this.emit("scroll", ev);
         this.session.fired = Date.now();
     }
 
-    addMouseEvent (ev: WheelEvent): void {
+    addMouseEvent(ev: WheelEvent): void {
         const lastEvent = this.lastEvent;
         this.lastEvent = Date.now();
 
@@ -107,7 +107,7 @@ export class ScrollDetection {
                     if (this.session.fired) {
                         if (
                             Date.now() - this.session.fired > 60 &&
-              lastDelta / 4 > absoluteDelta
+                            lastDelta / 4 > absoluteDelta
                         ) {
                             // 갑자기 새로운 이벤트로 발생한게 확실함
                             this.initSession();

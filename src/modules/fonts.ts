@@ -13,14 +13,14 @@ export default {
         customFonts: {
             name: "font-family 이름",
             desc:
-        "페이지 폰트를 입력된 폰트로 교체합니다. (빈칸으로 둘 시 확장 프로그램 기본 폰트로 설정)",
+                "페이지 폰트를 입력된 폰트로 교체합니다. (빈칸으로 둘 시 확장 프로그램 기본 폰트로 설정)",
             default: "Noto Sans CJK KR, NanumGothic",
             type: "text"
         },
         changeDCFont: {
             name: "디시인사이드 폰트 교체",
             desc:
-        "미리보기 창 같은 DCRefresher Reborn의 폰트 뿐만 아니라 디시인사이드의 폰트까지 교체합니다.",
+                "미리보기 창 같은 DCRefresher Reborn의 폰트 뿐만 아니라 디시인사이드의 폰트까지 교체합니다.",
             type: "check",
             default: true
         },
@@ -85,14 +85,14 @@ export default {
     enable: true,
     default_enable: true,
     require: [],
-    func (): void {
+    func(): void {
         document.documentElement.classList.add("refresherFont");
         this.update.changeDCFont(this.status.changeDCFont);
         this.update.customFonts(this.status.customFonts);
         this.update.bodyFontSize(this.status.bodyFontSize);
     },
 
-    revoke (): void {
+    revoke(): void {
         document.documentElement.classList.remove("refresherFont");
         this.update.changeDCFont(false);
         this.update.customFonts(false);

@@ -1,11 +1,11 @@
 <template>
-    <div class="refresher-user" :data-me="me" v-on:click="clickHandle" :class="{cursor: !!this.user.id}"
-         v-on:contextmenu="contextMenu" :title="title">
+    <div :class="{cursor: !!this.user.id}" :data-me="me" :title="title" class="refresher-user"
+         v-on:click="clickHandle" v-on:contextmenu="contextMenu">
         <div class="refresher-user-content">
-            <span class="refresher-user-icon" :data-icon="user.icon" :data-type="user.type"></span>
+            <span :data-icon="user.icon" :data-type="user.type" class="refresher-user-icon"></span>
             <span class="refresher-user-nick">{{ user.nick }}</span>
-            <span class="refresher-user-memo" v-if="user.memo"
-                  :style="{color: user.memo.color}">{{ user.memo.text }}</span>
+            <span v-if="user.memo" :style="{color: user.memo.color}"
+                  class="refresher-user-memo">{{ user.memo.text }}</span>
             <span class="refresher-user-info">{{ userInfo }}</span>
         </div>
     </div>
