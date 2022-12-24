@@ -24,9 +24,13 @@
             <audio v-else :src="getVoiceData.src" controls></audio>
             <p v-if="getVoiceData.memo">{{ getVoiceData.memo }}</p>
         </div>
-        <p v-else class="refresher-comment-content"
-           :class="{dccon: /<(img|video) class=/.test(comment.memo)}"
-           v-html="comment.memo.replaceAll('\n', '<br/>')"></p>
+        <p
+            v-else-if="/<(img|video) class=/.test(comment.memo)"
+            class="refresher-comment-content"
+            :class="{dccon: true}" v-html="comment.memo"
+            v-on:contextmenu="contextMenu"
+        />
+        <p v-else class="refresher-comment-content" v-html="comment.memo.replaceAll('\n', '<br/>')"/>
     </div>
 </template>
 
@@ -211,6 +215,24 @@ export default Vue.extend({
 
         reply(this: CommentClass) {
             this.$emit("setReply", this.getReply() === this.comment.no ? null : this.comment.no);
+        },
+
+        contextMenu(e: MouseEvent): void {
+            const element = e.target as HTMLElement | null;
+
+            if (element === null || element.className !== "written_dccon") return;
+
+            const src = element.getAttribute("src");
+            if (!src) return;
+
+            const code = src
+                .replace(/^.*no=/g, "")
+                .replace(/^&.*$/g, "");
+
+            eventBus.emit(
+                "refresherDcconUserContextMenu",
+               code
+            );
         }
     }
 });

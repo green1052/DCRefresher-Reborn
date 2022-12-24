@@ -24,7 +24,7 @@
                 </div>
             </div>
             <div class="refresher-preview-meta">
-                <User v-if="frame.data.user" :user="frame.data.user"></User>
+                <User v-if="frame.data.user" :user="frame.data.user"/>
                 <div class="float-right">
                     <div class="date-views">
                         <TimeStamp v-if="frame.data.date" :date="frame.data.date"></TimeStamp>

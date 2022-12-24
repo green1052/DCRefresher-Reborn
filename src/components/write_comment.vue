@@ -3,20 +3,21 @@
         <div class="user" v-show="editUser">
             <input type="text" v-model="unsignedUserID" v-on:change="(v) => validCheck('id', v.target.value)"
                    placeholder="닉네임"/>
-            <div></div>
+            <div/>
             <input type="password" v-model="unsignedUserPW" v-on:change="(v) => validCheck('pw', v.target.value)"
                    placeholder="비밀번호"/>
         </div>
         <div class="refresher-comment-body">
             <div class="refresher-input-wrap" :class="{focus: focused, disable: disabled}">
-                <input id="comment_main" placeholder="댓글 입력..." v-model="text" v-on:focus="focus" v-on:blur="blur" v-on:keydown="type" :disabled="disabled"/>
+                <input id="comment_main" placeholder="댓글 입력..." v-model="text" v-on:focus="focus" v-on:blur="blur"
+                       v-on:keydown="type" :disabled="disabled"/>
             </div>
             <PreviewButton class="refresher-writecomment primary" id="write" text="작성" :click="write"></PreviewButton>
         </div>
         <div @mouseover="hoverUserInfo = true" @mouseleave="hoverUserInfo = false">
             <div class="whoami"
                  v-bind:class="{'refresher-comment-util': true, 'refresher-comment-util-show': !(hoverUserInfo && !this.user.id)}">
-                <UserComponent :user="user"></UserComponent>
+                <UserComponent :user="user"/>
                 <span>로 {{ this.getReply() === null ? "" : "답글" }} 작성 중</span>
             </div>
             <div class="whoami"

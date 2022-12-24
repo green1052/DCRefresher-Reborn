@@ -10,7 +10,6 @@ module.exports = {
     entry: {
         "refresher.bundle.js": "./src/index.ts",
         "background.js": "./src/root/background.ts",
-        // "dccon.bundle.js": "./src/root/dccon.bundle.js",
         "option.bundle.js": "./src/root/option.bundle.ts"
     },
     output: {

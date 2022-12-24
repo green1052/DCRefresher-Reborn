@@ -113,7 +113,7 @@ const messageHandler = (port: browser.Runtime.Port | null, message: Message) => 
 };
 
 browser.runtime.onConnect.addListener((port) => {
-    port.onMessage.addListener(message => messageHandler(port, message));
+    port.onMessage.addListener((message) => messageHandler(port, message));
 });
 
 browser.runtime.onMessage.addListener((message) => {
@@ -128,19 +128,31 @@ browser.runtime.onMessage.addListener((message) => {
 //     }
 // });
 
-browser.contextMenus.create({
-    id: "blockSelected",
-    title: "오른쪽 클릭한 유저 차단",
-    contexts: ["all"],
-    documentUrlPatterns: ["*://gall.dcinside.com/*"]
-});
+const contextMenus: browser.Menus.CreateCreatePropertiesType[] = [
+    {
 
-browser.contextMenus.create({
-    id: "memoSelected",
-    title: "오른쪽 클릭한 유저 메모",
-    contexts: ["all"],
-    documentUrlPatterns: ["*://gall.dcinside.com/*"]
-});
+        id: "blockSelected",
+        title: "오른쪽 클릭한 유저 차단",
+        contexts: ["all"],
+        documentUrlPatterns: ["*://gall.dcinside.com/*"]
+    },
+    {
+        id: "memoSelected",
+        title: "오른쪽 클릭한 유저 메모",
+        contexts: ["all"],
+        documentUrlPatterns: ["*://gall.dcinside.com/*"]
+    },
+    {
+        id: "dcconSelected",
+        title: "오른쪽 클릭한 디시콘 차단",
+        contexts: ["all"],
+        documentUrlPatterns: ["*://gall.dcinside.com/*"]
+    }
+]
+
+for (const contextMenu of contextMenus) {
+    browser.contextMenus.create(contextMenu);
+}
 
 browser.contextMenus.onClicked.addListener((info, tab) => {
     browser.tabs.sendMessage(tab!.id!, {
