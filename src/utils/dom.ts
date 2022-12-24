@@ -38,7 +38,7 @@ export const findNeighbor = (
     el: HTMLElement,
     find: string,
     max: number,
-    current: number | null
+    current?: number | null
 ): HTMLElement | null => {
     if (!find) {
         return null;

@@ -53,16 +53,7 @@ module.exports = (env) => {
                     RefresherVersion: version,
                     RefresherDevMode: false
                 }
-            }),
-            // new HtmlWebpackPlugin({
-            //     template: "./src/views/dcconSelection.pug",
-            //     filename: "views/dcconSelection.html",
-            //     inject: false,
-            //     templateParameters: {
-            //         RefresherVersion: version,
-            //         RefresherDevMode: false
-            //     }
-            // })
+            })
         ]
     });
 }

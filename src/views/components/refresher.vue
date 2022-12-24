@@ -140,7 +140,7 @@
                                           :textclick="() => editBlockedUser(key, i)"/>
 
                         <refresher-bubble v-else v-for="(blocked, i) in blocks[key]" :key="'block:' + i"
-                                          :image="'https://dcimg5.dcinside.com/dccon.php?no='+blocked.content.split('||')[2]"
+                                          :image="'https://dcimg5.dcinside.com/dccon.php?no='+blocked.content"
                                           :regex="blocked.isRegex" :gallery="blocked.gallery" :extra="blocked.extra"
                                           :remove="() => removeBlockedUser(key, i)"
                                           :textclick="() => editBlockedUser(key, i)"/>
@@ -206,22 +206,6 @@ import browser from "webextension-polyfill";
 import Vue from "vue";
 
 const port = browser.runtime.connect({name: "refresherInternal"});
-
-const createDCConSelector = () => {
-    alert("아직 디시콘 차단 기능을 사용할 수 없습니다.");
-    // return;
-    //
-    // browser.windows.create(
-    //     {
-    //         url: "views/dcconSelection.html",
-    //         type: "popup",
-    //         height: 800,
-    //         width: 400
-    //     },
-    //     function (window) {
-    //     }
-    // );
-};
 
 interface RefresherProps {
     tab: number;
@@ -400,8 +384,7 @@ export default Vue.extend({
 
         addEmptyBlockedUser(key: RefresherBlockType) {
             if (key === "DCCON") {
-                createDCConSelector();
-
+                alert("디시콘 수동 차단은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
                 return;
             }
 
@@ -469,9 +452,12 @@ export default Vue.extend({
 
         addMemoUser() {
             const type: RefresherMemoType | string | null = prompt("메모 타입을 입력하세요. 가능: NICK, UID, IP");
+
+            if (!type) return;
+
             const user = prompt("메모 대상을 입력하세요.");
 
-            if (!type || !user) return;
+            if (!user) return;
 
             if (type !== "NICK" && type !== "UID" && type !== "IP") {
                 alert("메모 타입이 잘못됐습니다.");

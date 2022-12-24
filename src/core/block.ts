@@ -288,6 +288,10 @@ communicate.addHook("blockSelected", () => {
     eventBus.emit("refresherRequestBlock");
 });
 
+communicate.addHook("dcconSelected", () => {
+    eventBus.emit("refresherRequestBlock");
+});
+
 communicate.addHook("updateBlocks", data => {
     setStore(data.blocks, data.modes);
 });

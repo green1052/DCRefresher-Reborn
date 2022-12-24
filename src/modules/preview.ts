@@ -1494,18 +1494,24 @@ export default {
                                         v.user_id,
                                         v.ip || "",
                                         ((new DOMParser()
-                                            .parseFromString(v.gallog_icon, "text/html")
-                                            .querySelector("a.writer_nikcon img") ||
+                                                .parseFromString(v.gallog_icon, "text/html")
+                                                .querySelector("a.writer_nikcon img") ||
                                             {}) as HTMLImageElement).src
                                     );
                                 });
+
 
                                 comments.comments = comments.comments.filter(
                                     (comment: dcinsideCommentObject) => {
                                         return !block.checkAll({
                                             NICK: comment.name,
                                             ID: comment.user_id || "",
-                                            IP: comment.ip || ""
+                                            IP: comment.ip || "",
+                                            DCCON: /<(img|video) class=/.test(comment.memo)
+                                                ? /src="(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))"/g.exec(comment.memo)![1]
+                                                    .replace(/^.*no=/g, "")
+                                                    .replace(/^&.*$/g, "")
+                                                : ""
                                         });
                                     }
                                 );
@@ -1626,8 +1632,8 @@ export default {
                 }
 
                 return (admin && !password
-                    ? request.adminDeleteComment(preData, commentId, signal)
-                    : request.userDeleteComment(preData, commentId, signal, password)
+                        ? request.adminDeleteComment(preData, commentId, signal)
+                        : request.userDeleteComment(preData, commentId, signal, password)
                 )
                     .then(v => {
                         if (typeof v === "boolean") {
