@@ -130,7 +130,6 @@ browser.runtime.onMessage.addListener((message) => {
 
 const contextMenus: browser.Menus.CreateCreatePropertiesType[] = [
     {
-
         id: "blockSelected",
         title: "오른쪽 클릭한 유저 차단",
         contexts: ["all"],
