@@ -25,7 +25,9 @@ interface ButtonData {
 export default Vue.extend({
     name: "refresher-preview-button",
     props: {
-        id: {type: [String, Number]},
+        id: {
+            type: [String, Number]
+        },
         text: {
             type: String
         },

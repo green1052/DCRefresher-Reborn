@@ -57,12 +57,14 @@
                             <div class="control">
                                 <refresher-checkbox v-if="settings[module][setting].type === 'check'"
                                                     :id="setting"
-                                                    :change="updateUserSetting" :checked="settings[module][setting].value"
+                                                    :change="updateUserSetting"
+                                                    :checked="settings[module][setting].value"
                                                     :modname="module"></refresher-checkbox>
                                 <refresher-input v-if="settings[module][setting].type === 'text'"
                                                  :id="setting"
                                                  :change="updateUserSetting" :modname="module"
-                                                 :placeholder="settings[module][setting].default" :value="settings[module][setting].value"></refresher-input>
+                                                 :placeholder="settings[module][setting].default"
+                                                 :value="settings[module][setting].value"></refresher-input>
                                 <refresher-range v-if="settings[module][setting].type === 'range'"
                                                  :id="setting"
                                                  :change="updateUserSetting" :max="settings[module][setting].max"
@@ -73,11 +75,13 @@
                                                  :value="Number(settings[module][setting].value)"></refresher-range>
                                 <refresher-options v-if="settings[module][setting].type === 'option'"
                                                    :change="updateUserSetting"
-                                                   :modname="module" :options="settings[module][setting].items"></refresher-options>
+                                                   :modname="module"
+                                                   :options="settings[module][setting].items"></refresher-options>
                                 <refresher-dccon v-if="settings[module][setting].type === 'dccon'"
                                                  :id="setting"
                                                  :change="updateUserSetting" :modname="module"
-                                                 :placeholder="settings[module][setting].default" :value="settings[module][setting].value"></refresher-dccon>
+                                                 :placeholder="settings[module][setting].default"
+                                                 :value="settings[module][setting].value"></refresher-dccon>
                             </div>
                         </div>
                     </div>
@@ -87,7 +91,8 @@
                 <div v-if="!Object.keys(settings).length">
                     <h3 class="need-refresh">우선 디시 페이지를 열고 설정 해주세요.</h3>
                 </div>
-                <div v-for="module in Object.keys(settings)" v-if="settings[module] &amp;&amp; advancedSettingsCount(settings[module])"
+                <div v-for="module in Object.keys(settings)"
+                     v-if="settings[module] &amp;&amp; advancedSettingsCount(settings[module])"
                      class="refresher-setting-category">
                     <h3 v-on:click="moveToModuleTab(module)">{{ module }}
                         <svg fill="black" height="18px" viewBox="0 0 24 24" width="18px"
@@ -107,16 +112,19 @@
                         <div class="control">
                             <refresher-checkbox v-if="settings[module][setting].type === 'check'"
                                                 :id="setting" :change="updateUserSetting"
-                                                :checked="settings[module][setting].value" :modname="module"></refresher-checkbox>
+                                                :checked="settings[module][setting].value"
+                                                :modname="module"></refresher-checkbox>
                             <refresher-input v-if="settings[module][setting].type === 'text'"
                                              :id="setting"
-                                             :change="updateUserSetting" :modname="module" :placeholder="settings[module][setting].default"
+                                             :change="updateUserSetting" :modname="module"
+                                             :placeholder="settings[module][setting].default"
                                              :value="settings[module][setting].value"></refresher-input>
                             <refresher-range v-if="settings[module][setting].type === 'range'"
                                              :id="setting"
                                              :change="updateUserSetting" :max="settings[module][setting].max"
                                              :min="settings[module][setting].min" :modname="module"
-                                             :placeholder="settings[module][setting].default" :step="settings[module][setting].step"
+                                             :placeholder="settings[module][setting].default"
+                                             :step="settings[module][setting].step"
                                              :unit="settings[module][setting].unit"
                                              :value="Number(settings[module][setting].value)"></refresher-range>
                         </div>
@@ -141,7 +149,9 @@
 
                         <refresher-bubble v-for="(blocked, i) in blocks[key]" v-else :key="'block:' + i"
                                           :extra="blocked.extra"
-                                          :gallery="blocked.gallery" :image="'https://dcimg5.dcinside.com/dccon.php?no='+blocked.content" :regex="blocked.isRegex"
+                                          :gallery="blocked.gallery"
+                                          :image="'https://dcimg5.dcinside.com/dccon.php?no='+blocked.content"
+                                          :regex="blocked.isRegex"
                                           :remove="() => removeBlockedUser(key, i)"
                                           :textclick="() => editBlockedUser(key, i)"/>
 
@@ -150,11 +160,16 @@
             </div>
             <div v-show="tab === 3" key="tab4" class="tab tab4">
                 <div v-for="key in Object.keys(memos)" class="block-divide">
-                    <h3>{{ memoKeyNames[key] }} <span class="plus" v-on:click="addMemoUser"><svg
-                        fill="black" height="18px" viewBox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg">
+                    <h3>{{ memoKeyNames[key] }}
+                        <span class="plus" v-on:click="addMemoUser(key)">
+                        <svg
+                            fill="black" height="18px" viewBox="0 0 24 24" width="18px"
+                            xmlns="http://www.w3.org/2000/svg">
                                 <path d="M0 0h24v24H0z" fill="none"/>
                                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-                            </svg></span></h3>
+                            </svg>
+                        </span>
+                    </h3>
 
                     <div class="lists">
                         <p v-if="!Object.keys(memos[key]).length">{{ memoKeyNames[key] }} 메모 없음</p>
@@ -450,19 +465,10 @@ export default Vue.extend({
             this.syncMemos();
         },
 
-        addMemoUser() {
-            const type: RefresherMemoType | string | null = prompt("메모 타입을 입력하세요. 가능: NICK, UID, IP");
-
-            if (!type) return;
-
+        addMemoUser(type: RefresherMemoType) {
             const user = prompt("메모 대상을 입력하세요.");
 
             if (!user) return;
-
-            if (type !== "NICK" && type !== "UID" && type !== "IP") {
-                alert("메모 타입이 잘못됐습니다.");
-                return;
-            }
 
             browser.tabs.query({active: true}).then(tabs => {
                 browser.tabs.sendMessage(tabs[0].id!, {
