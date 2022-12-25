@@ -59,12 +59,12 @@
                                                     :id="setting"
                                                     :change="updateUserSetting"
                                                     :checked="settings[module][setting].value"
-                                                    :modname="module"></refresher-checkbox>
+                                                    :modname="module"/>
                                 <refresher-input v-if="settings[module][setting].type === 'text'"
                                                  :id="setting"
                                                  :change="updateUserSetting" :modname="module"
                                                  :placeholder="settings[module][setting].default"
-                                                 :value="settings[module][setting].value"></refresher-input>
+                                                 :value="settings[module][setting].value"/>
                                 <refresher-range v-if="settings[module][setting].type === 'range'"
                                                  :id="setting"
                                                  :change="updateUserSetting" :max="settings[module][setting].max"
@@ -72,16 +72,11 @@
                                                  :placeholder="settings[module][setting].default"
                                                  :step="settings[module][setting].step"
                                                  :unit="settings[module][setting].unit"
-                                                 :value="Number(settings[module][setting].value)"></refresher-range>
+                                                 :value="Number(settings[module][setting].value)"/>
                                 <refresher-options v-if="settings[module][setting].type === 'option'"
                                                    :change="updateUserSetting"
                                                    :modname="module"
-                                                   :options="settings[module][setting].items"></refresher-options>
-                                <refresher-dccon v-if="settings[module][setting].type === 'dccon'"
-                                                 :id="setting"
-                                                 :change="updateUserSetting" :modname="module"
-                                                 :placeholder="settings[module][setting].default"
-                                                 :value="settings[module][setting].value"></refresher-dccon>
+                                                   :options="settings[module][setting].items"/>
                             </div>
                         </div>
                     </div>
@@ -113,12 +108,12 @@
                             <refresher-checkbox v-if="settings[module][setting].type === 'check'"
                                                 :id="setting" :change="updateUserSetting"
                                                 :checked="settings[module][setting].value"
-                                                :modname="module"></refresher-checkbox>
+                                                :modname="module"/>
                             <refresher-input v-if="settings[module][setting].type === 'text'"
                                              :id="setting"
                                              :change="updateUserSetting" :modname="module"
                                              :placeholder="settings[module][setting].default"
-                                             :value="settings[module][setting].value"></refresher-input>
+                                             :value="settings[module][setting].value"/>
                             <refresher-range v-if="settings[module][setting].type === 'range'"
                                              :id="setting"
                                              :change="updateUserSetting" :max="settings[module][setting].max"
@@ -126,41 +121,48 @@
                                              :placeholder="settings[module][setting].default"
                                              :step="settings[module][setting].step"
                                              :unit="settings[module][setting].unit"
-                                             :value="Number(settings[module][setting].value)"></refresher-range>
+                                             :value="Number(settings[module][setting].value)"/>
                         </div>
                     </div>
                 </div>
             </div>
             <div v-show="tab === 2" key="tab3" class="tab tab3">
                 <div v-for="key in Object.keys(blocks)" class="block-divide">
-                    <h3>{{ blockKeyNames[key] }} <span class="plus" v-on:click="() => addEmptyBlockedUser(key)"><svg
-                        fill="black" height="18px" viewBox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg">
+                    <h3>
+                        {{ blockKeyNames[key] }}
+
+                        <span class="plus" v-on:click="() => addEmptyBlockedUser(key)">
+                            <svg fill="black" height="18px" viewBox="0 0 24 24"
+                                 width="18px" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M0 0h24v24H0z" fill="none"/>
                                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-                            </svg></span></h3>
+                            </svg>
+                        </span>
+                    </h3>
                     <div class="lists">
                         <p v-if="!blocks[key].length">차단된 {{ blockKeyNames[key] }} 없음</p>
 
-                        <refresher-bubble v-for="(blocked, i) in blocks[key]" v-else-if="key !== 'DCCON'"
-                                          :key="'block:' + i"
+                        <refresher-bubble v-else-if="key !== 'DCCON'" v-for="(blocked, i) in blocks[key]"
+                                          :key=`block:${i}`
                                           :extra="blocked.extra" :gallery="blocked.gallery" :regex="blocked.isRegex"
                                           :remove="() => removeBlockedUser(key, i)" :text="blocked.content"
                                           :textclick="() => editBlockedUser(key, i)"/>
 
-                        <refresher-bubble v-for="(blocked, i) in blocks[key]" v-else :key="'block:' + i"
+                        <refresher-bubble v-else v-for="(blocked, i) in blocks[key]"
+                                          :key=`block:${i}`
                                           :extra="blocked.extra"
                                           :gallery="blocked.gallery"
                                           :image="'https://dcimg5.dcinside.com/dccon.php?no='+blocked.content"
                                           :regex="blocked.isRegex"
                                           :remove="() => removeBlockedUser(key, i)"
                                           :textclick="() => editBlockedUser(key, i)"/>
-
                     </div>
                 </div>
             </div>
             <div v-show="tab === 3" key="tab4" class="tab tab4">
                 <div v-for="key in Object.keys(memos)" class="block-divide">
-                    <h3>{{ memoKeyNames[key] }}
+                    <h3>
+                        {{ memoKeyNames[key] }}
                         <span class="plus" v-on:click="addMemoUser(key)">
                         <svg
                             fill="black" height="18px" viewBox="0 0 24 24" width="18px"
@@ -173,11 +175,11 @@
 
                     <div class="lists">
                         <p v-if="!Object.keys(memos[key]).length">{{ memoKeyNames[key] }} 메모 없음</p>
-
-                        <refresher-bubble v-for="[user, memo] in Object.entries(memos[key])" v-else
+                        <refresher-bubble v-else v-for="[user, memo] in Object.entries(memos[key])"
                                           :remove="() => removeMemoUser(key, user)"
-                                          :text="user + ' (' + memo.text.substring(0, 10) + ')'"
-                                          :textclick="() => editMemoUser(key, user)"></refresher-bubble>
+                                          :text="`${user} (${memo.text.substring(0, 10)})`"
+                                          :textclick="() => editMemoUser(key, user)"
+                                          :key="`memo:${user}`"/>
                     </div>
                 </div>
             </div>
@@ -189,7 +191,7 @@
                 <div v-else>
                     <refresher-module v-for="module in modules" :key="module.name" :author="module.author"
                                       :desc="module.description" :enabled="module.enable" :name="module.name"
-                                      :requirement="module.require"></refresher-module>
+                                      :requirement="module.require"/>
                 </div>
             </div>
             <div v-show="tab === 5" key="tab6" class="tab tab6">
@@ -216,7 +218,6 @@ import options from "./options.vue";
 import input from "./input.vue";
 import range from "./range.vue";
 import bubble from "./bubble.vue";
-import dccon from "./dccon.vue";
 import browser from "webextension-polyfill";
 import Vue from "vue";
 
@@ -546,8 +547,7 @@ export default Vue.extend({
         "refresher-options": options,
         "refresher-input": input,
         "refresher-range": range,
-        "refresher-bubble": bubble,
-        "refresher-dccon": dccon
+        "refresher-bubble": bubble
     }
 });
 </script>

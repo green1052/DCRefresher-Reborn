@@ -6,14 +6,14 @@
             <p class="mute">요구 유틸 : {{ requirement.join(", ") || "없음" }}</p>
         </div>
         <div class="right">
-            <refresher-checkbox :change="update" :checked="enabled"></refresher-checkbox>
+            <refresher-checkbox :change="update" :checked="enabled"/>
         </div>
     </div>
 </template>
 
-<script>
+<script lang="ts">
 import browser from "webextension-polyfill";
-import checkbox from "./checkbox";
+import checkbox from "./checkbox.vue";
 import storage from "../../utils/storage";
 import Vue from "vue";
 

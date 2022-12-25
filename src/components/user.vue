@@ -2,7 +2,7 @@
     <div :class="{cursor: !!this.user.id}" :data-me="me" :title="title" class="refresher-user"
          v-on:click="clickHandle" v-on:contextmenu="contextMenu">
         <div class="refresher-user-content">
-            <span :data-icon="user.icon" :data-type="user.type" class="refresher-user-icon"></span>
+            <span :data-icon="user.icon" :data-type="user.type" class="refresher-user-icon"/>
             <span class="refresher-user-nick">{{ user.nick }}</span>
             <span v-if="user.memo" :style="{color: user.memo.color}"
                   class="refresher-user-memo">{{ user.memo.text }}</span>

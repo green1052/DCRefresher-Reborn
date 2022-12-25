@@ -2,12 +2,12 @@
     <div :data-deleted="comment.del_yn === 'Y'" :data-depth="comment.depth" :data-rereply="rereply"
          class="refresher-comment">
         <div class="meta">
-            <User :me="me" :user="comment.user"></User>
+            <User :me="me" :user="comment.user"/>
             <div class="float-right">
                 <p v-if="comment.depth === 0 && comment.del_yn === 'N'" class="refresher-reply" v-on:click="reply">
                     {{ this.getReply() === this.comment.no ? "답글 해제" : "답글" }}</p>
 
-                <TimeStamp :date="new Date(date(comment.reg_date))"></TimeStamp>
+                <TimeStamp :date="new Date(date(comment.reg_date))"/>
                 <div v-if="comment.del_yn === 'N'"
                      class="delete"
                      v-on:click="this.safeDelete">
@@ -20,8 +20,8 @@
             </div>
         </div>
         <div v-if="comment.vr_player">
-            <iframe v-if="getVoiceData.iframe" :src="getVoiceData.src" height="54px" width="280px"></iframe>
-            <audio v-else :src="getVoiceData.src" controls></audio>
+            <iframe v-if="getVoiceData.iframe" :src="getVoiceData.src" height="54px" width="280px"/>
+            <audio v-else :src="getVoiceData.src" controls/>
             <p v-if="getVoiceData.memo">{{ getVoiceData.memo }}</p>
         </div>
         <p

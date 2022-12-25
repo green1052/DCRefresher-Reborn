@@ -2,9 +2,9 @@
     <Outer/>
 </template>
 
-<script>
-import outer from "../components/outer";
-import scroll from "../components/scroll";
+<script lang="ts">
+import outer from "../components/outer.vue";
+import scroll from "../components/scroll.vue";
 import Vue from "vue";
 
 export default Vue.extend({

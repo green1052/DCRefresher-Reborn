@@ -1,7 +1,7 @@
 <template>
     <div class="refresher-preview-button" v-on:click="safeClick">
         <transition name="refresher-shake">
-            <img :key="error + 1" :src="getURL('/assets/icons/' + id + '.png')"></img>
+            <img :key="error + 1" :src="getURL('/assets/icons/' + id + '.png')"/>
         </transition>
         <transition name="refresher-shake">
             <p :id="'refresher-' + id + '-counts'" :key="error" class="refresher-vote-text">{{ text }}</p>
@@ -43,7 +43,7 @@ export default Vue.extend({
     },
     methods: {
         getURL(u: string): string {
-            return browser.extension ? browser.runtime.getURL(u) : u;
+            return browser.runtime.getURL(u);
         },
 
         async safeClick(this: ButtonProps): Promise<unknown> {
