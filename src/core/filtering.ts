@@ -18,7 +18,6 @@ export const filter: RefresherFilter = {
     /**
      * lists에 등록된 필터 함수를 호출합니다.
      *
-     * @param non_blocking 비차단 방식으로 렌더링 합니다. (페이지 로드 후)
      */
     run: async (): Promise<void> => {
         const listsKeys = Object.keys(lists);
