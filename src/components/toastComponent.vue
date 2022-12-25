@@ -17,32 +17,40 @@
 <script lang="ts">
 import Vue from "vue";
 
+type Nullable<T> = T | null;
+
+interface RefresherProps {
+    title: string;
+    id: number;
+    content: string;
+    clickCb: Nullable<(e: MouseEvent) => void>;
+    open: boolean;
+    type: "info" | "error" | null;
+    autoClose: number;
+}
+
 export default Vue.extend({
     name: "refresher-toast",
     methods: {
-        click(ev) {
-            if (this.clickCb) {
-                this.clickCb(ev.target);
-            }
+        click(e: MouseEvent) {
+            this.clickCb?.(e);
         },
 
         update(
             content: string,
-            type: string,
-            autoClose: boolean,
+            type: boolean,
+            autoClose: boolean | number,
             click?: () => void
         ) {
             this.content = content;
             this.id = Math.random();
-            this.type = typeof type === "boolean" ? (type ? "error" : "info") : type;
-            this.clickCb = click;
+            this.type = type ? "error" : "info";
 
-            if ((typeof autoClose !== "boolean" && !autoClose) || autoClose) {
-                this.autoClose = setTimeout(
-                    this.hide,
-                    autoClose && typeof autoClose === "number" ? autoClose : 5000
-                );
-            }
+            if (click !== undefined)
+                this.clickCb = click;
+
+            if ((typeof autoClose === "number" && autoClose > 0) || autoClose === true)
+                this.autoClose = setTimeout(this.hide, typeof autoClose === "number" ? autoClose : 5000);
         },
 
         show() {
@@ -53,15 +61,14 @@ export default Vue.extend({
             this.open = false;
         }
     },
-    data: () => {
+    data: (): RefresherProps => {
         return {
             title: "",
             id: 0,
             content: "",
-            clickCb: () => {
-            },
+            clickCb: null,
             open: false,
-            type: "",
+            type: null,
             autoClose: 0
         };
     }
