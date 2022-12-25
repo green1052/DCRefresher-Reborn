@@ -37,6 +37,7 @@ class InternalFrame implements RefresherFrame {
     error: Error | boolean;
     upvotes: string | null;
     downvotes: string | null;
+    fixedUpvotes: string | null;
     buttonError: unknown;
 
     constructor(options: FrameOption, app: RefresherFrameAppVue) {
@@ -55,6 +56,7 @@ class InternalFrame implements RefresherFrame {
         this.contents = "";
         this.upvotes = null;
         this.downvotes = null;
+        this.fixedUpvotes = null;
         this.buttonError = null;
     }
 
