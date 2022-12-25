@@ -11,9 +11,9 @@
     </div>
 </template>
 
-<script>
-import group from "./group";
-import scroll from "./scroll";
+<script lang="ts">
+import group from "./group.vue";
+import scroll from "./scroll.vue";
 import Vue from "vue";
 
 export default Vue.extend({

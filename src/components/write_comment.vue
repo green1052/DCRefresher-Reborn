@@ -12,7 +12,7 @@
                 <input id="comment_main" v-model="text" :disabled="disabled" placeholder="댓글 입력..." v-on:blur="blur"
                        v-on:focus="focus" v-on:keydown="type"/>
             </div>
-            <PreviewButton id="write" :click="write" class="refresher-writecomment primary" text="작성"></PreviewButton>
+            <PreviewButton id="write" :click="write" class="refresher-writecomment primary" text="작성"/>
         </div>
         <div @mouseleave="hoverUserInfo = false" @mouseover="hoverUserInfo = true">
             <div class="whoami"
