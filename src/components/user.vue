@@ -78,7 +78,7 @@ export default Vue.extend({
             }
 
             if (this.user.id) {
-                this.openLink("https://gallog.dcinside.com/" + this.user.id);
+                this.openLink(`https://gallog.dcinside.com/${this.user.id}`);
             }
         },
 

@@ -78,28 +78,20 @@ export default Vue.extend({
         }
     },
     mounted(): void {
-        const gallogName = document.querySelector(
-            "#login_box .user_info .nickname em"
-        ) as HTMLElement;
-
-        const fixedName = gallogName && gallogName.innerHTML;
+        const gallogName = document.querySelector("#login_box > .user_info .nickname > em");
+        const fixedName = gallogName?.innerHTML;
 
         if (fixedName) {
             this.fixedUser = true;
 
-            const gallogIcon = document.querySelector(
-                "#login_box .user_info .writer_nikcon img"
-            ) as HTMLImageElement;
+            const gallogIcon = document.querySelector("#login_box > .user_info > .writer_nikcon")!;
+            const attribute = gallogIcon.getAttribute("onclick")!;
 
-            const attribute = gallogIcon.getAttribute("onclick") as string;
+            const id = /window\.open\('\/\/gallog\.dcinside\.com\/(\w*)'\);/.exec(attribute)![1];
 
-            const id = attribute
-                .replace(/window\.open\('\/\/gallog\.dcinside\.com\//g, "")
-                .replace(/'\\;/g, "");
-
-            this.user = new User(fixedName, id, null, gallogIcon.src);
+            this.user = new User(fixedName, id, null, gallogIcon.querySelector("img")!.src);
         } else {
-            this.user = new User(this.unsignedUserID ?? "ㅇㅇ", null, "*.*", null);
+            this.user = new User(this.unsignedUserID || "ㅇㅇ", null, "*.*", null);
         }
     },
     methods: {
