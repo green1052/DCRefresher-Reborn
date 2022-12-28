@@ -1088,23 +1088,23 @@ tr .gall_writer {
 
     box-shadow: $shadow-3dp;
 
-    &[data-type='0'] {
+    &[data-type="UNFIXED"] {
       background-color: rgb(241, 241, 241);
     }
 
-    &[data-type='1'] {
+    &[data-type="HALF_FIXED"] {
       background-color: #777;
     }
 
-    &[data-type='2'] {
+    &[data-type="FIXED"] {
       background-color: rgb(241, 206, 50);
     }
 
-    &[data-type='3'] {
+    &[data-type="HALF_FIXED_SUB_MANAGER"], &[data-type="FIXED_SUB_MANAGER"] {
       background-color: rgb(50, 139, 241);
     }
 
-    &[data-type='4'] {
+    &[data-type="HALF_FIXED_MANAGER"], &[data-type="FIXED_MANAGER"] {
       background-color: rgb(241, 126, 50);
     }
   }
