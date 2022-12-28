@@ -143,16 +143,16 @@
                         <p v-if="!blocks[key].length">차단된 {{ blockKeyNames[key] }} 없음</p>
 
                         <refresher-bubble v-else-if="key !== 'DCCON'" v-for="(blocked, i) in blocks[key]"
-                                          :key=`block:${i}`
+                                          :key="`block:${i}`"
                                           :extra="blocked.extra" :gallery="blocked.gallery" :regex="blocked.isRegex"
                                           :remove="() => removeBlockedUser(key, i)" :text="blocked.content"
                                           :textclick="() => editBlockedUser(key, i)"/>
 
                         <refresher-bubble v-else v-for="(blocked, i) in blocks[key]"
-                                          :key=`block:${i}`
+                                          :key="`block:${i}`"
                                           :extra="blocked.extra"
                                           :gallery="blocked.gallery"
-                                          :image="'https://dcimg5.dcinside.com/dccon.php?no='+blocked.content"
+                                          :image="`https://dcimg5.dcinside.com/dccon.php?no=${blocked.content}`"
                                           :regex="blocked.isRegex"
                                           :remove="() => removeBlockedUser(key, i)"
                                           :textclick="() => editBlockedUser(key, i)"/>
