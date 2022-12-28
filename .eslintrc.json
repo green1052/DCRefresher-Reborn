@@ -27,6 +27,7 @@
                 "ignoreRestArgs": true
             }
         ],
+        "arrow-parens": ["error", "always"],
         "linebreak-style": "off",
         "no-use-before-define": "off",
         "camelcase": "off",
