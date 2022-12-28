@@ -1,14 +1,15 @@
 <template>
-    <div :data-deleted="comment.del_yn === 'Y'" :data-depth="comment.depth" :data-rereply="rereply"
+    <div :data-deleted="comment.is_delete === '1'" :data-depth="comment.depth" :data-rereply="rereply"
          class="refresher-comment">
         <div class="meta">
             <User :me="me" :user="comment.user"/>
             <div class="float-right">
-                <p v-if="comment.depth === 0 && comment.del_yn === 'N'" class="refresher-reply" v-on:click="reply">
-                    {{ this.getReply() === this.comment.no ? "답글 해제" : "답글" }}</p>
+                <p v-if="comment.depth === 0 && comment.is_delete === '0'" class="refresher-reply" v-on:click="reply">
+                    {{ this.getReply() === this.comment.no ? "답글 해제" : "답글" }}
+                </p>
 
                 <TimeStamp :date="new Date(date(comment.reg_date))"/>
-                <div v-if="comment.del_yn === 'N'"
+                <div v-if="comment.is_delete === '0' && comment.del_btn === 'Y' && comment.my_cmt === 'Y'"
                      class="delete"
                      v-on:click="this.safeDelete">
                     <svg fill="black" height="14px" viewBox="0 0 24 24" width="14px" xmlns="http://www.w3.org/2000/svg">
@@ -38,7 +39,7 @@
 import {eventBus} from "../core/eventbus";
 import timestamp from "./timestamp.vue";
 import user from "./user.vue";
-import Vue from "vue";
+import Vue, {PropType} from "vue";
 
 const NRegex = /(ㄴ)(\s)?([^ ]+)/g;
 
@@ -81,7 +82,7 @@ export default Vue.extend({
     },
     props: {
         comment: {
-            type: Object,
+            type: Object as PropType<dcinsideCommentObject>,
             required: true
         },
 
