@@ -107,9 +107,7 @@ export default Vue.extend({
                     .substring(5);
 
                 Toast.show(
-                    "비밀번호는 최소 2자리 이상이어야 합니다. 자동으로 \"" +
-                    random +
-                    "\" 으로 설정합니다.",
+                    `비밀번호는 최소 2자리 이상이어야 합니다. 자동으로 "${random}" 으로 설정합니다.`,
                     false,
                     8000
                 );
@@ -118,9 +116,8 @@ export default Vue.extend({
         },
 
         toggleEditUser(): void {
-            if (!this.user.id) {
+            if (this.user.isLogout())
                 this.editUser = !this.editUser;
-            }
         },
 
         async write(): Promise<boolean> {
