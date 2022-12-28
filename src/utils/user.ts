@@ -4,12 +4,20 @@ import * as memo from "../core/memo";
 export type UserType =
     "UNFIXED"
     | "HALF_FIXED"
-    | "FIXED";
+    | "FIXED"
+    | "HALF_FIXED_SUB_MANAGER"
+    | "FIXED_SUB_MANAGER"
+    | "HALF_FIXED_MANAGER"
+    | "FIXED_MANAGER";
 
-const USERTYPE: {[key in UserType]: UserType} = {
+const USERTYPE: { [key in UserType]: UserType } = {
     UNFIXED: "UNFIXED",
     HALF_FIXED: "HALF_FIXED",
-    FIXED: "FIXED"
+    FIXED: "FIXED",
+    HALF_FIXED_SUB_MANAGER: "HALF_FIXED_SUB_MANAGER",
+    FIXED_SUB_MANAGER: "FIXED_SUB_MANAGER",
+    HALF_FIXED_MANAGER: "HALF_FIXED_MANAGER",
+    FIXED_MANAGER: "FIXED_MANAGER",
 }
 
 export const getType = (icon: string | null): UserType => {
@@ -37,9 +45,15 @@ export const getType = (icon: string | null): UserType => {
         return USERTYPE.UNFIXED;
     }
 
-    if (
-        icon.endsWith("fix_managernik.gif") ||
-        icon.endsWith("fix_sub_managernik.gif") ||
+    if (icon.includes("fix_managernik.gif")) {
+        return USERTYPE.FIXED_MANAGER;
+    } else if (icon.includes("managernik.gif")) {
+        return USERTYPE.HALF_FIXED_MANAGER;
+    } else if (icon.includes("fix_sub_managernik.gif")) {
+        return USERTYPE.FIXED_SUB_MANAGER;
+    } else if (icon.includes("sub_managernik.gif")) {
+        return USERTYPE.HALF_FIXED_SUB_MANAGER;
+    } else if (
         icon.endsWith("fix_nik.gif") ||
         icon.endsWith("nftcon_fix.png") ||
         icon.endsWith("dc20th_wgallcon4.png") ||
@@ -47,8 +61,6 @@ export const getType = (icon: string | null): UserType => {
     ) {
         return USERTYPE.FIXED;
     } else if (
-        icon.endsWith("managernik.gif") ||
-        icon.endsWith("sub_managernik.gif") ||
         icon.endsWith("nik.gif") ||
         icon.endsWith("nftcon.png") ||
         icon.endsWith("dc20th_wgallcon.png") ||
