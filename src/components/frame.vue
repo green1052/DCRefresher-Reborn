@@ -41,7 +41,7 @@
             <div v-if="frame.data.comments && frame.data.comments.comments" class="refresher-preview-comments">
                 <transition-group appear name="refresher-slide-up" @before-enter="beforeEnter"
                                   @after-enter="afterEnter">
-                    <Comment v-for="(comment, i) in frame.data.comments.comments" :key="'cmt_' + comment.no"
+                    <Comment v-for="(comment, i) in frame.data.comments.comments" :key="`cmt_${comment.no}`"
                              :comment="comment" :delete="frame.functions.deleteComment" :getReply="getReply"
                              :index="i + 1"
                              :postUser="frame.data.postUserId"
