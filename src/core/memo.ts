@@ -30,7 +30,11 @@ export type MemoCache = {
     };
 }
 
-let MEMO_CACHE: MemoCache = {};
+let MEMO_CACHE: MemoCache = {
+    UID: {},
+    NICK: {},
+    IP: {}
+};
 
 const SendToBackground = () => {
     browser.runtime.sendMessage(
@@ -59,7 +63,7 @@ const InternalAddToList = (type: RefresherMemoType, user: string, text: string, 
 };
 
 const checkValidType = (type: string) => {
-    return MEMO_TYPES_KEYS.some(key => key === type);
+    return MEMO_TYPES_KEYS.some((key) => key === type);
 };
 
 /**
@@ -73,7 +77,7 @@ const checkValidType = (type: string) => {
  */
 export const add = (type: RefresherMemoType, user: string, text: string, color: string, gallery?: string): void => {
     if (!checkValidType(type)) {
-        throw new Error(`${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`);
+        throw `${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`;
     }
 
     InternalAddToList(type, user, text, color, gallery);
@@ -88,7 +92,7 @@ export const add = (type: RefresherMemoType, user: string, text: string, color: 
  */
 export const get = (type: RefresherMemoType, user: string): RefresherMemoValue => {
     if (!checkValidType(type)) {
-        throw new Error(`${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`);
+        throw `${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`;
     }
 
     return MEMO_CACHE[type][user];
@@ -102,7 +106,7 @@ export const get = (type: RefresherMemoType, user: string): RefresherMemoValue =
  */
 export const remove = (type: RefresherMemoType, user: string): void => {
     if (!checkValidType(type)) {
-        throw new Error(`${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`);
+        throw `${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`;
     }
 
     delete MEMO_CACHE[type][user];

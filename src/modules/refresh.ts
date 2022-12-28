@@ -158,7 +158,7 @@ export default {
 
         const body = (url: string) => {
             return new Promise<Element | null>((resolve, reject) => {
-                http.make(url).then(body => {
+                http.make(url).then((body) => {
                     try {
                         const bodyParse = new DOMParser().parseFromString(body, "text/html");
 
@@ -182,7 +182,7 @@ export default {
             updateRefreshText();
         }
 
-        filter.add(".page_head .gall_issuebox", elem => {
+        filter.add(".page_head .gall_issuebox", (elem) => {
             addRefreshText(elem);
         });
 
@@ -218,7 +218,7 @@ export default {
             if (
                 isAdmin &&
                 Array.from(document.querySelectorAll(".article_chkbox")).filter(
-                    v => (v as HTMLInputElement).checked
+                    (v) => (v as HTMLInputElement).checked
                 ).length > 0
             ) {
                 return false;
@@ -237,7 +237,7 @@ export default {
             if (!oldList || !newList || newList.children.length === 0) return false;
 
             const cached = Array.from(oldList.querySelectorAll("td.gall_num"))
-                .map(v => v.innerHTML)
+                .map((v) => v.innerHTML)
                 .join("|");
 
             if (oldList.parentElement) {
@@ -248,7 +248,7 @@ export default {
 
             const posts = newList.querySelectorAll("tr.us-post");
             if (posts) {
-                posts.forEach(tr => {
+                posts.forEach((tr) => {
                     const writter = (tr as HTMLElement).querySelector(
                         ".ub-writer"
                     ) as HTMLElement;
@@ -284,7 +284,7 @@ export default {
                 }
             }
 
-            postNoIter.forEach(v => {
+            postNoIter.forEach((v) => {
                 const value = v.innerHTML;
 
                 if (!cached.includes(value) && value != currentPostNo) {
@@ -330,7 +330,7 @@ export default {
             // 미니 갤, 마이너 갤 관리자일 경우 체크박스를 생성합니다.
             if (isAdmin) {
                 let noTempl = false;
-                document.querySelectorAll(".us-post").forEach(elem => {
+                document.querySelectorAll(".us-post").forEach((elem) => {
                     const tmpl = document.querySelector("#minor_td-tmpl");
 
                     if (!tmpl) {
@@ -342,7 +342,7 @@ export default {
                 });
 
                 if (!noTempl) {
-                    document.querySelectorAll(".ub-content").forEach(elem => {
+                    document.querySelectorAll(".ub-content").forEach((elem) => {
                         if (!elem.className.includes("us-post")) {
                             elem.insertBefore(document.createElement("td"), elem.firstChild);
                         }
@@ -374,7 +374,7 @@ export default {
                 ) as HTMLInputElement).value;
 
                 if (keyword && keyword != "" && keyword != "null") {
-                    document.querySelectorAll(".gall_list .gall_tit").forEach(element => {
+                    document.querySelectorAll(".gall_list .gall_tit").forEach((element) => {
                         const tmp_subject = (element.querySelector(
                             "a:first-child"
                         ) as HTMLAnchorElement).cloneNode(true) as HTMLElement;
@@ -508,7 +508,7 @@ export default {
                     );
 
                     if (pagingBoxAnchors) {
-                        pagingBoxAnchors.forEach(async a => {
+                        pagingBoxAnchors.forEach(async (a) => {
                             const href = (a as HTMLAnchorElement).href;
 
                             if (href.includes("javascript:")) return;

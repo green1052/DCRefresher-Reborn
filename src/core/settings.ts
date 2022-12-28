@@ -53,7 +53,7 @@ export const load = async (
     return got;
 };
 
-eventBus.on("refresherSettingsSync", store => {
+eventBus.on("refresherSettingsSync", (store) => {
     browser.runtime.sendMessage(
         JSON.stringify({
             store

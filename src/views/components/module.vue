@@ -55,9 +55,9 @@ export default Vue.extend({
                 this.$root.$children[0].updateDarkMode(value);
             }
 
-            browser.tabs.query({active: true}).then(tabs => {
-                tabs.forEach(v => {
-                    browser.tabs.sendMessage(v.id, {
+            browser.tabs.query({active: true}).then((tabs) => {
+                tabs.forEach((v) => {
+                    browser.tabs.sendMessage(v.id!, {
                         type: "updateModuleStatus",
                         data: {
                             name: this.name,
@@ -66,10 +66,6 @@ export default Vue.extend({
                     });
                 });
             });
-        },
-
-        openLink(url) {
-            if (url) browser.tabs.create(url);
         }
     },
     components: {

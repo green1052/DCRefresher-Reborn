@@ -75,9 +75,9 @@ export const modules = {
         return module_store;
     },
     load: (...mods: RefresherModule[]): Promise<void> =>
-        new Promise<void>(resolve => {
+        new Promise<void>((resolve) => {
             return Promise.all(
-                mods.map(v => {
+                mods.map((v) => {
                     return modules.register(v);
                 })
             ).then(() => {
@@ -89,7 +89,7 @@ export const modules = {
         const start = performance.now();
 
         if (typeof module_store[mod.name] !== "undefined") {
-            throw new Error(`${mod.name} is already registered.`);
+            throw `${mod.name} is already registered.`;
         }
 
         const enable = await storage.get<boolean>(`${mod.name}.enable`);
@@ -165,7 +165,7 @@ export const modules = {
 
     getData(name: string, key?: string): unknown {
         if (!module_store[name]) {
-            throw new Error("Given module is not exists.");
+            throw "Given module is not exists.";
         }
 
         if (key) {
@@ -176,7 +176,7 @@ export const modules = {
     }
 };
 
-communicate.addHook("updateModuleStatus", data => {
+communicate.addHook("updateModuleStatus", (data) => {
     module_store[data.name].enable = data.value as boolean;
     storage.set(`${data.name}.enable`, data.value);
 
@@ -194,16 +194,16 @@ communicate.addHook("updateModuleStatus", data => {
     runModule(module_store[data.name]);
 });
 
-communicate.addHook("updateSettingValue", data => {
+communicate.addHook("updateSettingValue", (data) => {
     settings.setStore(data.name, data.key, data.value);
 });
 
-communicate.addHook("executeShortcut", data => {
+communicate.addHook("executeShortcut", (data) => {
     const keys = Object.keys(module_store);
 
     log(`Received shortcut execute: ${data}.`);
 
-    keys.forEach(key => {
+    keys.forEach((key) => {
         if (module_store[key] && typeof module_store[key].shortcuts === "object") {
             if (module_store[key].shortcuts[data]) {
                 module_store[key].shortcuts[data].bind(module_store[key])();

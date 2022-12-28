@@ -34,7 +34,7 @@ export default {
     ): void {
         this.memory.uuid = filter.add(
             ".ub-writer",
-            async (elem: HTMLElement) => {
+            async (elem) => {
                 const gallery = queryString("id");
 
                 if (!gallery) return;
@@ -169,7 +169,7 @@ export default {
                 return;
             }
 
-            let type = "NICK";
+            let type: RefresherBlockType = "NICK";
             let value = this.memory.selected.nick;
             const extra = this.memory.selected.nick;
 

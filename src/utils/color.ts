@@ -1,5 +1,5 @@
 export const luminanace = (r: number, g: number, b: number): number => {
-    const a = [r, g, b].map(v => {
+    const a = [r, g, b].map((v) => {
         v /= 255;
         return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
     });
@@ -19,7 +19,7 @@ export const parse = (str: string): number[] => {
         const matched = str.substring(1, str.length).match(/.{1,2}/g);
 
         if (matched) {
-            return matched.map(v => parseInt(v, 16));
+            return matched.map((v) => parseInt(v, 16));
         }
 
         return [0, 0, 0];
@@ -29,7 +29,7 @@ export const parse = (str: string): number[] => {
         .replace(")", "")
         .split("(")[1]
         .split(",")
-        .map(v => Number(v.trim()));
+        .map((v) => Number(v.trim()));
 };
 
 // https://gist.github.com/mjackson/5311256
@@ -101,7 +101,7 @@ export const HSLtoRGB = (
 };
 
 export const RGBtoHEX = (...args: number[]): string =>
-    "#" + args.map(v => (~~v).toString(16)).join("");
+    "#" + args.map((v) => (~~v).toString(16)).join("");
 
 export const inverseColor = (c: number): number => 1 - c ** 2;
 

@@ -80,9 +80,7 @@ export default class {
 
     constructor(childs: Array<FrameOption>, option: FrameStackOption) {
         if (!document || !document.createElement) {
-            throw new Error(
-                "Frame is not available before DOMContentLoaded event. (DOM isn't accessible)"
-            );
+            throw "Frame is not available before DOMContentLoaded event. (DOM isn't accessible)";
         }
 
         if (!childs) {
@@ -99,7 +97,7 @@ export default class {
         this.frame = [];
         this.app = new Vue({
             el: this.outer,
-            render: h => h(frame, {
+            render: (h) => h(frame, {
                 props: {
                     option
                 }
@@ -128,7 +126,7 @@ export default class {
                 return;
             }
 
-            refresherGroup.addEventListener("wheel", ev => {
+            refresherGroup.addEventListener("wheel", (ev) => {
                 if (option.onScroll) {
                     option.onScroll(ev as WheelEvent, this.app, refresherGroup as HTMLElement);
                 }

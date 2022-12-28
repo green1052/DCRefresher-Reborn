@@ -1,7 +1,7 @@
 import * as color from "../utils/color";
 import * as Toast from "../components/toast";
 import * as communicate from "../core/communicate";
-import {getType} from "../utils/user"
+import {getType} from "../utils/user";
 
 const memoAsk = (
     selected: {
@@ -12,7 +12,7 @@ const memoAsk = (
     memo: RefresherMemo,
     type: RefresherMemoType,
     value: string
-) => {
+): Promise<{ text: string, color: string, type: RefresherMemoType, value: string }> => {
     const win = document.createElement("div");
     win.className = "refresher-frame-outer center background";
 
@@ -73,7 +73,7 @@ const memoAsk = (
         }
     };
 
-    win.addEventListener("click", ev => {
+    win.addEventListener("click", (ev) => {
         if (ev.target === win) {
             removeWindow();
         }
@@ -110,14 +110,15 @@ const memoAsk = (
         }
     };
 
-    frame.querySelectorAll(".user-type").forEach(userType => {
+    frame.querySelectorAll(".user-type").forEach((userType) => {
         userType.classList.remove("active");
 
         if ((userType as HTMLElement).dataset.type === currentType) {
             userType.classList.add("active");
         }
 
-        if (!selected[(userType as HTMLElement).dataset.type]) {
+
+        if (!selected[((userType as HTMLElement).dataset.type) as RefresherMemoType]) {
             userType.classList.add("disable");
         }
 
@@ -126,7 +127,7 @@ const memoAsk = (
                 return;
             }
 
-            frame.querySelectorAll(".user-type").forEach(ut => {
+            frame.querySelectorAll(".user-type").forEach((ut) => {
                 ut.classList.remove("active");
             });
 
@@ -140,7 +141,7 @@ const memoAsk = (
     });
     updateType();
 
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
         frame
             .querySelector(".refresher-preview-button[data-update=\"true\"]")
             ?.addEventListener("click", () => {
@@ -355,10 +356,10 @@ export default {
 
         this.memory.always = filter.add(
             ".ub-writer",
-            (elem: HTMLElement) => {
-                memoAdd(elem);
-                ipInfoAdd(elem);
-                IdInfoAdd(elem);
+            (elem) => {
+                memoAdd(elem as HTMLElement);
+                ipInfoAdd(elem as HTMLElement);
+                IdInfoAdd(elem as HTMLElement);
             },
             {
                 neverExpire: true
@@ -389,12 +390,7 @@ export default {
 
             selected[type] = user;
 
-            const obj: {
-                text: string,
-                color: string,
-                type: RefresherMemoType,
-                value: string
-            } = await memoAsk(selected, memo, type, user);
+            const obj = await memoAsk(selected, memo, type, user);
 
             eventBus.emit("refreshRequest");
 
@@ -442,12 +438,7 @@ export default {
                 return;
             }
 
-            const obj: {
-                text: string,
-                color: string,
-                type: RefresherMemoType,
-                value: string
-            } = await memoAsk(this.memory.selected, memo, type, value);
+            const obj = await memoAsk(this.memory.selected, memo, type, value);
 
             eventBus.emit("refreshRequest");
 
@@ -484,7 +475,7 @@ export default {
 
         const lists = document.querySelectorAll(".refresherUserData");
 
-        lists.forEach(elem => {
+        lists.forEach((elem) => {
             elem.parentElement?.removeChild(elem);
         });
     }

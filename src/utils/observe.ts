@@ -10,7 +10,7 @@ export const find = (
 
         let timeout = 0;
 
-        const observer = new MutationObserver(muts => {
+        const observer = new MutationObserver((muts) => {
             let executed = false;
             let iter = muts.length;
             while (iter--) {
@@ -54,7 +54,7 @@ export const listen = (
         cb(parentFind);
     }
 
-    const observer = new MutationObserver(muts => {
+    const observer = new MutationObserver((muts) => {
         let executed = false;
         let iter = muts.length;
         while (iter--) {

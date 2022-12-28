@@ -9,11 +9,11 @@ browser.runtime.onMessage.addListener((msg) => {
     }
 
     if (!msg.type) {
-        throw new Error("Received wrong runtimeMessage structure.");
+        throw "Received wrong runtimeMessage structure.";
     }
 
     if (handlerStorage[msg.type]) {
-        handlerStorage[msg.type].forEach(handler => {
+        handlerStorage[msg.type].forEach((handler) => {
             handler.func(msg.data);
         });
     }

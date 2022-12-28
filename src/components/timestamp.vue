@@ -9,7 +9,7 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import Vue, {PropType} from "vue";
 
 const s = 1000;
 const m = s * 60;
@@ -42,10 +42,6 @@ const convertTime = (date: Date) => {
 interface TimestampVueData {
     mode: number;
     stamp: string;
-}
-
-interface TimestampVue extends TimestampVueData {
-    date: Date;
     updates: number;
 }
 
@@ -53,22 +49,23 @@ export default Vue.extend({
     name: "refresher-timestamp",
     props: {
         date: {
-            type: Date,
+            type: Object as PropType<Date>,
             required: true
         }
     },
     data: (): TimestampVueData => {
         return {
             mode: 0,
-            stamp: ""
+            stamp: "",
+            updates: 0
         };
     },
     computed: {
-        locale(this: TimestampVue): string {
+        locale(): string {
             return this.date.toLocaleString();
         }
     },
-    mounted(this: TimestampVue): void {
+    mounted(): void {
         this.stamp = convertTime(this.date);
 
         this.updates = setInterval(() => {
@@ -76,7 +73,7 @@ export default Vue.extend({
         }, 3000);
     },
 
-    beforeUnload(this: TimestampVue): void {
+    beforeDestroy() {
         clearInterval(this.updates);
     }
 });
