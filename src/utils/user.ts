@@ -9,8 +9,8 @@ const USERTYPE = {
     MANAGER: 4
 };
 
-const getType = (icon: string) => {
-    if (icon == "" || icon === undefined) {
+const getType = (icon: string | null) => {
+    if (icon === null) {
         return USERTYPE.UNFIXED;
     }
 
@@ -45,7 +45,7 @@ const getType = (icon: string) => {
 export class User {
     nick: string;
     id: string | null;
-    ip_data: string;
+    ip_data: null | string;
     icon: string | null;
     type: number;
     memo: RefresherMemoValue | null;
@@ -57,13 +57,14 @@ export class User {
         ip: string | null,
         icon: string | null
     ) {
-        this.__ip = "";
-        this.ip_data = "";
+        this.__ip = null;
+        this.ip_data = null;
 
         this.nick = nick;
         this.id = id;
         this.ip = ip;
-        this.icon = icon || "";
+
+        this.icon = icon;
         this.type = getType(this.icon);
         this.memo = null;
 
@@ -75,13 +76,8 @@ export class User {
     }
 
     set ip(v: string | null) {
-        if (v) {
-            this.ip_data = ip.format(ip.ISPData(v));
-        } else {
-            this.ip_data = "";
-        }
-
-        this.__ip = v ?? null;
+        this.ip_data = v === null ? null : ip.format(ip.ISPData(v));
+        this.__ip = v;
     }
 
     getMemo(): void {
@@ -103,16 +99,14 @@ export class User {
             return this;
         }
 
-        const nick = dom.dataset.nick || "";
-        const uid = dom.dataset.uid || "";
-        const ip = dom.dataset.ip || "";
-        let icon = "";
-
-        if (uid !== null) {
-            icon = (
-                (dom.querySelector("a.writer_nikcon img") as HTMLImageElement) || {}
-            ).src;
-        }
+        const nick = dom.dataset.nick || "오류";
+        const uid = dom.dataset.uid || null;
+        const ip = dom.dataset.ip || null;
+        const icon = uid === null
+            ? null
+            : dom
+                .querySelector("a.writer_nikcon img")!
+                .getAttribute("src")!;
 
         this.nick = nick;
         this.id = uid;

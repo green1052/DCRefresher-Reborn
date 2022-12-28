@@ -5,8 +5,8 @@ declare global {
         no: string
         parent: string
         name: string
-        ip: string | null
-        user_id: string | null
+        ip: string
+        user_id: string
         my_cmt: "Y" | "N"
         user: User
         nicktype: string
