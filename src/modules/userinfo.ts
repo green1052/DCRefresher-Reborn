@@ -270,7 +270,7 @@ export default {
             text.title = elem.dataset.uid;
             const fl = elem.querySelector(".fl");
             if (fl) {
-                const flIpQuery = fl.querySelector(".ip");
+                const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
 
                 if (flIpQuery) {
                     fl.insertBefore(text, flIpQuery.nextSibling);
