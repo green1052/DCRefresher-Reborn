@@ -1,5 +1,5 @@
 <template>
-    <div :title="locale" class="refresher-timestamp" v-on:click="this.$root.$children[0].changeStamp">
+    <div :title="locale" class="refresher-timestamp" @click="this.$root.$children[0].changeStamp">
         <transition name="refresher-opacity">
             <span :key="'stamp' + this.$root.$children[0].stampMode">{{
                     this.$root.$children[0].stampMode ? locale : stamp

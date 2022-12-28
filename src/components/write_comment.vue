@@ -2,15 +2,16 @@
     <div class="refresher-write-comment">
         <div v-show="editUser" class="user">
             <input v-model="unsignedUserID" placeholder="닉네임" type="text"
-                   v-on:change="(v) => validCheck('id', v.target.value)"/>
+                   @change="(v) => validCheck('id', v.target.value)"/>
             <div/>
             <input v-model="unsignedUserPW" placeholder="비밀번호" type="password"
-                   v-on:change="(v) => validCheck('pw', v.target.value)"/>
+                   @change="(v) => validCheck('pw', v.target.value)"/>
         </div>
         <div class="refresher-comment-body">
             <div :class="{focus: focused, disable: disabled}" class="refresher-input-wrap">
-                <input id="comment_main" v-model="text" :disabled="disabled" placeholder="댓글 입력..." v-on:blur="blur"
-                       v-on:focus="focus" v-on:keydown="type"/>
+                <input id="comment_main" v-model="text" :disabled="disabled"
+                       :placeholder="this.getDccon() === null ? '댓글 입력...' : '디시콘이 선택됐습니다, 댓글 내용이 무시됩니다.'" @blur="blur"
+                       @focus="focus" @keydown="type"/>
             </div>
             <PreviewButton id="write" :click="write" class="refresher-writecomment primary" text="작성"/>
         </div>
@@ -18,11 +19,13 @@
             <div class="whoami"
                  v-bind:class="{'refresher-comment-util': true, 'refresher-comment-util-show': !(hoverUserInfo && !this.user.id)}">
                 <UserComponent :user="user"/>
-                <span>로 {{ this.getReply() === null ? "" : "답글" }} 작성 중</span>
+                <span>
+                    로 {{ this.getReply() === null ? "" : "답글" }} {{ this.getDccon() === null ? "" : "디시콘" }} 작성 중
+                </span>
             </div>
             <div class="whoami"
                  v-bind:class="{'refresher-comment-util': true, 'refresher-comment-util-edit': true, 'refresher-comment-util-show': hoverUserInfo && !this.user.id}">
-                <span v-on:click="toggleEditUser">클릭하면 작성자 정보 수정 모드를 {{ editUser ? "비활성화" : "활성화" }}시킵니다.</span>
+                <span @click="toggleEditUser">클릭하면 작성자 정보 수정 모드를 {{ editUser ? "비활성화" : "활성화" }}시킵니다.</span>
             </div>
         </div>
     </div>
@@ -64,6 +67,10 @@ export default Vue.extend({
         },
 
         getReply: {
+            type: Function
+        },
+
+        getDccon: {
             type: Function
         }
     },
@@ -130,8 +137,8 @@ export default Vue.extend({
 
             if (this.func) {
                 const result = await this.func(
-                    "text",
-                    this.text,
+                    this.getDccon() === null ? "text" : "dccon",
+                    this.getDccon() === null ? this.text : this.getDccon(),
                     this.getReply(),
                     this.fixedUser
                         ? {name: this.user.nick}
@@ -140,6 +147,7 @@ export default Vue.extend({
 
                 this.disabled = false;
                 this.text = "";
+                this.$emit("setDccon", null);
                 this.$emit("setReply", null);
 
                 return result;

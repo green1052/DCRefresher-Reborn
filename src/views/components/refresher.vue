@@ -4,12 +4,12 @@
         <div class="refresher-title-zone">
             <h1>설정</h1>
             <div class="float-right">
-                <p :class="{active: tab === 0}" v-on:click="() => tab = 0">일반</p>
-                <p :class="{active: tab === 1}" v-on:click="() => tab = 1">고급</p>
-                <p :class="{active: tab === 2}" v-on:click="() => tab = 2">차단</p>
-                <p :class="{active: tab === 3}" v-on:click="() => tab = 3">메모</p>
-                <p :class="{active: tab === 4}" v-on:click="()=> tab = 4">모듈</p>
-                <p :class="{active: tab === 5}" v-on:click="() => tab = 5">단축키</p>
+                <p :class="{active: tab === 0}" @click="() => tab = 0">일반</p>
+                <p :class="{active: tab === 1}" @click="() => tab = 1">고급</p>
+                <p :class="{active: tab === 2}" @click="() => tab = 2">차단</p>
+                <p :class="{active: tab === 3}" @click="() => tab = 3">메모</p>
+                <p :class="{active: tab === 4}" @click="()=> tab = 4">모듈</p>
+                <p :class="{active: tab === 5}" @click="() => tab = 5">단축키</p>
             </div>
         </div>
         <transition-group mode="in-out" name="refresher-slide-left">
@@ -27,7 +27,7 @@
                                 class="version">v{{
                                     this.RefresherVersion
                                 }}{{ this.RefresherDevMode ? " (dev mode)" : "" }}</span>
-                            <a v-for="link in links" v-on:click="open(link.url)">{{ link.text }}</a>
+                            <a v-for="link in links" @click="open(link.url)">{{ link.text }}</a>
                         </p>
                     </div>
                 </div>
@@ -38,7 +38,7 @@
                     </div>
 
                     <div v-for="module in Object.keys(settings)" v-else class="refresher-setting-category">
-                        <h3 v-on:click="moveToModuleTab(module)">{{ module }}
+                        <h3 @click="moveToModuleTab(module)">{{ module }}
                             <svg fill="black" height="18px" viewBox="0 0 24 24" width="18px"
                                  xmlns="http://www.w3.org/2000/svg">
                                 <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
@@ -89,7 +89,7 @@
                 <div v-for="module in Object.keys(settings)"
                      v-if="settings[module] &amp;&amp; advancedSettingsCount(settings[module])"
                      class="refresher-setting-category">
-                    <h3 v-on:click="moveToModuleTab(module)">{{ module }}
+                    <h3 @click="moveToModuleTab(module)">{{ module }}
                         <svg fill="black" height="18px" viewBox="0 0 24 24" width="18px"
                              xmlns="http://www.w3.org/2000/svg">
                             <path d="M0 0h24v24H0z" fill="none"/>
@@ -131,7 +131,7 @@
                     <h3>
                         {{ blockKeyNames[key] }}
 
-                        <span class="plus" v-on:click="() => addEmptyBlockedUser(key)">
+                        <span class="plus" @click="() => addEmptyBlockedUser(key)">
                             <svg fill="black" height="18px" viewBox="0 0 24 24"
                                  width="18px" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M0 0h24v24H0z" fill="none"/>
@@ -163,7 +163,7 @@
                 <div v-for="key in Object.keys(memos)" class="block-divide">
                     <h3>
                         {{ memoKeyNames[key] }}
-                        <span class="plus" v-on:click="addMemoUser(key)">
+                        <span class="plus" @click="addMemoUser(key)">
                         <svg
                             fill="black" height="18px" viewBox="0 0 24 24" width="18px"
                             xmlns="http://www.w3.org/2000/svg">
@@ -205,7 +205,7 @@
                         </div>
                     </div>
                 </div>
-                <p><a v-on:click="openShortcutSettings">단축키 설정</a></p>
+                <p><a @click="openShortcutSettings">단축키 설정</a></p>
             </div>
         </transition-group>
     </div>
@@ -223,7 +223,7 @@ import Vue from "vue";
 
 const port = browser.runtime.connect({name: "refresherInternal"});
 
-interface RefresherProps {
+interface RefresherData {
     tab: number;
     modules: {
         [key: string]: RefresherModule
@@ -263,7 +263,7 @@ interface RefresherProps {
 
 export default Vue.extend({
     name: "refresher",
-    data(): RefresherProps {
+    data(): RefresherData {
         return {
             tab: 0,
             modules: {},

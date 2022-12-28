@@ -1,5 +1,5 @@
 <template>
-    <div :data-id="id" :data-on="on" class="refresher-options" v-on:click="toggle">
+    <div :data-id="id" :data-on="on" class="refresher-options" @click="toggle">
         <select :disabled="disabled">
             <option v-for="name in options" value="index">{{ name }}</option>
         </select>

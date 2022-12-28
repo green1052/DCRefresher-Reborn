@@ -1,9 +1,10 @@
 <template>
-    <div :class="{relative: frame.options.relative, blur: frame.options.blur, preview: frame.options.preview, center: frame.options.center}"
-         class="refresher-frame">
+    <div
+        :class="{relative: frame.options.relative, blur: frame.options.blur, preview: frame.options.preview, center: frame.options.center}"
+        class="refresher-frame">
         <div v-if="!frame.error" class="refresher-preview-info">
             <div class="refresher-preview-title-zone">
-                <div :class="{'refresher-preview-title-text':true, 'refresher-title-post':frame.data.buttons}">
+                <div :class="{'refresher-preview-title-text': true, 'refresher-title-post': frame.data.buttons}">
                     <transition appear name="refresher-slide-up" @before-enter="beforeEnter" @after-enter="afterEnter">
                         <div :key="frame.title" :data-index="index + 1" class="refresher-preview-title"
                              v-html="frame.title"/>
@@ -14,6 +15,10 @@
                     <transition appear name="refresher-slide-up" @before-enter="beforeEnter" @after-enter="afterEnter"/>
                 </div>
                 <div v-if="frame.data.comments" class="refresher-comment-controls-container">
+                    <PreviewButton v-if="frame.data.useWriteComment" :id="'dccon'" :click="renderDcconPopup"
+                                   :text="'디시콘'"
+                                   class="refresher-comment-controls"/>
+
                     <PreviewButton v-if="frame.data.useWriteComment" :id="'write'" :click="toCommentWrite"
                                    :text="'댓글 쓰기'"
                                    class="refresher-comment-controls"/>
@@ -50,18 +55,17 @@
             </div>
             <div v-if="frame.data.comments && !frame.data.comments.comments">
                 <div class="refresher-nocomment-wrap">
-                    <img
-                        src="https://dcimg5.dcinside.com/dccon.php?no=62b5df2be09d3ca567b1c5bc12d46b394aa3b1058c6e4d0ca41648b65ceb246e13df9546348593b9b03553cb2b363e94da0bda2f33af133d69a3e3bd02836ad0aeef62ce"/>
+                    <img :src="getURL('/assets/icons/empty_comment.png')"/>
                     <h3>댓글이 없습니다.</h3>
                 </div>
                 <br>
             </div>
             <div v-if="frame.data.comments && frame.data.useWriteComment">
-                <WriteComment :func="writeComment" :getReply="getReply" @setReply="setReply"/>
+                <WriteComment :func="writeComment" :getReply="getReply" @setReply="setReply" :getDccon="getDccon" @setDccon="setDccon"/>
             </div>
         </div>
         <div v-if="frame.collapse" class="refresher-collapse-text">
-            <h3 v-on:click="() => {frame.collapse = !frame.collapse; frame.functions.load()}">
+            <h3 @click="() => {frame.collapse = !frame.collapse; frame.functions.load()}">
                 댓글 보기를 클릭하여 댓글만 표시합니다. 여기를 눌러 글을 볼 수 있습니다.
             </h3>
         </div>
@@ -115,7 +119,16 @@ import Comment from "./comment.vue";
 import WriteComment from "./write_comment.vue";
 import Icon from "./icon.vue";
 import loader from "./loader.vue";
-import Vue from "vue";
+import Vue, {PropType} from "vue";
+import browser from "webextension-polyfill";
+import dccon from "./dccon.vue";
+
+interface FrameData {
+    memoText: string;
+    reply: string | null;
+    dccon: RefresherDccon | null;
+    dcconRender: Vue | null;
+}
 
 export default Vue.extend({
     name: "refresher-frame",
@@ -129,11 +142,22 @@ export default Vue.extend({
         Icon,
         "refresher-loader": loader
     },
-    props: ["frame", "index"],
-    data: function () {
+    props: {
+        frame: {
+            type: Object as PropType<RefresherFrame>,
+            required: true
+        },
+        index: {
+            type: Number,
+            required: true
+        },
+    },
+    data: (): FrameData => {
         return {
             memoText: "",
-            reply: null
+            reply: null,
+            dccon: null,
+            dcconRender: null
         };
     },
     methods: {
@@ -183,6 +207,44 @@ export default Vue.extend({
             return true;
         },
 
+        renderDcconPopup() {
+            const element = document.createElement("div");
+            document.body.appendChild(element);
+
+            this.dcconRender = new Vue({
+                el: element,
+                render: h => h(dccon, {
+                    props: {
+                        frame: this.frame
+                    },
+                    on: {
+                        clickDccon: this.clickDccon,
+                        closeDccon: this.closeDccon
+                    }
+                })
+            });
+        },
+
+        clickDccon(dccon: RefresherDccon) {
+            this.dccon = dccon;
+            this.closeDccon();
+        },
+
+        closeDccon() {
+            this.dcconRender!.$destroy();
+            this.dcconRender!.$el.parentNode!.removeChild(this.dcconRender!.$el);
+
+            this.dcconRender = null;
+        },
+
+        setDccon(value: RefresherDccon | null) {
+            this.dccon = value;
+        },
+
+        getDccon() {
+            return this.dccon;
+        },
+
         makeVoteRequest() {
         },
 
@@ -192,11 +254,15 @@ export default Vue.extend({
         },
 
         setReply(value: string | null) {
-            (this.reply as string | null) = value;
+            this.reply = value;
         },
 
         getReply() {
             return this.reply;
+        },
+
+        getURL(u: string): string {
+            return browser.runtime.getURL(u);
         }
     }
 });

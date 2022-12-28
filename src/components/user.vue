@@ -1,6 +1,6 @@
 <template>
     <div :class="{cursor: !!this.user.id}" :data-me="me" :title="title" class="refresher-user"
-         v-on:click="clickHandle" v-on:contextmenu="contextMenu">
+         @click="clickHandle" @contextmenu="contextMenu">
         <div class="refresher-user-content">
             <span :data-icon="user.icon" :data-type="user.type" class="refresher-user-icon"/>
             <span class="refresher-user-nick">{{ user.nick }}</span>

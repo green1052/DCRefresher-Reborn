@@ -1,5 +1,5 @@
 <template>
-    <div class="refresher-preview-button" v-on:click="safeClick">
+    <div class="refresher-preview-button" @click="safeClick">
         <transition name="refresher-shake">
             <img :key="error + 1" :src="getURL(`/assets/icons/${id}.png`)"/>
         </transition>
@@ -12,11 +12,6 @@
 <script lang="ts">
 import browser from "webextension-polyfill";
 import Vue from "vue";
-
-interface ButtonProps {
-    click: () => boolean;
-    error: number;
-}
 
 interface ButtonData {
     error: number;
@@ -46,7 +41,7 @@ export default Vue.extend({
             return browser.runtime.getURL(u);
         },
 
-        async safeClick(this: ButtonProps): Promise<unknown> {
+        async safeClick(this): Promise<unknown> {
             const result = this.click && (await this.click());
 
             if (!result) {

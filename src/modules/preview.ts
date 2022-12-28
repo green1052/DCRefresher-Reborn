@@ -4,7 +4,7 @@ import * as http from "../utils/http";
 import browser from "webextension-polyfill";
 import * as Toast from "../components/toast";
 import {ScrollDetection} from "../utils/scrollDetection";
-import {submitComment} from "../utils/comment";
+import {submitComment, submitDcconComment} from "../utils/comment";
 import logger from "../utils/logger";
 import Cookies from "js-cookie";
 
@@ -227,7 +227,7 @@ const request = {
      * @param args
      * @param signal
      */
-    async comments(args: GalleryHTTPRequestArguments, signal: AbortSignal){
+    async comments(args: GalleryHTTPRequestArguments, signal: AbortSignal) {
         if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
 
         const galleryType = http.galleryType(args.link, "/");
@@ -586,7 +586,7 @@ const panel = {
             callback(avoid_hour, avoid_reason, avoid_reason_txt, del_chk ? 1 : 0);
         });
 
-        document.querySelector("body")?.appendChild(element);
+        document.body.appendChild(element);
     },
 
     admin: (
@@ -807,7 +807,7 @@ const panel = {
             });
         });
 
-        document.querySelector("body")?.appendChild(element);
+        document.body.appendChild(element);
 
         return element;
     },
@@ -855,7 +855,7 @@ const panel = {
             element.parentElement?.removeChild(element);
         });
 
-        document.querySelector("body")?.appendChild(element);
+        document.body.appendChild(element);
 
         return true;
     }
@@ -1428,6 +1428,24 @@ export default {
 
             frame.data.useWriteComment = this.status.experimentalComment;
 
+            const params = new URLSearchParams();
+            params.set("ci_t", Cookies.get("ci_c") ?? "");
+            params.set("target", "icon");
+            params.set("page", "0");
+
+            http.make("https://gall.dcinside.com/dccon/lists", {
+                method: "POST",
+                headers: {
+                    Origin: "https://gall.dcinside.com",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+                },
+                cache: "no-store",
+                body: `?${params.toString()}`
+            }).then((response) => {
+                frame.dccon = JSON.parse(response);
+            });
+
             let postDom: Document;
 
             new Promise<GalleryPreData>(resolve => {
@@ -1547,10 +1565,10 @@ export default {
                 frame.functions.retry = frame.functions.load;
 
                 frame.functions.writeComment = async (
-                    type: string,
-                    memo: string,
+                    type: "text" | "dccon",
+                    memo: string | RefresherDccon,
                     reply: string | null,
-                    user?: User
+                    user: { name: string; pw?: string }
                 ): Promise<boolean> => {
                     // TODO : 디시콘 추가시 type 핸들링 (현재 text만)
                     if (!postFetchedData) {
@@ -1565,14 +1583,23 @@ export default {
                         : "";
 
                     const req = async (captcha?: string) => {
-                        const res = await submitComment(
-                            postData,
-                            user,
-                            postDom,
-                            memo,
-                            reply,
-                            captcha
-                        );
+                        const res = type === "text"
+                            ? await submitComment(
+                                postData,
+                                user,
+                                postDom,
+                                memo as string,
+                                reply,
+                                captcha
+                            )
+                            : await submitDcconComment(
+                                postData,
+                                user,
+                                postDom,
+                                memo as RefresherDccon,
+                                reply,
+                                captcha
+                            )
 
                         if (res.result === "false" || res.result === "PreNotWorking") {
                             alert(res.message);

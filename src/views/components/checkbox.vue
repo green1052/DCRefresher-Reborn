@@ -1,9 +1,9 @@
 <template>
     <div :class="{disabled: disabled}" :data-id="id" :data-module="modname" :data-on="on" class="refresher-checkbox"
-         v-on:click="toggle">
+         @click="toggle">
         <div :style="{transform: 'translateX(' + (typeof translateX !== 'undefined' ? translateX : (this.on ? 18 : 0)) + 'px)'}"
              class="selected"
-             v-on:pointerdown="down" v-on:pointermove="hover" v-on:pointerout="out" v-on:pointerup="up">
+             @pointerdown="down" @pointermove="hover" @pointerout="out" @pointerup="up">
         </div>
     </div>
 </template>

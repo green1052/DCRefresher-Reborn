@@ -1,5 +1,5 @@
 <template>
-    <div :title="locale" class="refresher-countdown" v-on:click="this.$root.changeStamp">
+    <div :title="locale" class="refresher-countdown" @click="this.$root.changeStamp">
         <transition name="refresher-opacity">
             <span :key="'stamp' + this.$root.stampMode">삭제 : {{ this.$root.stampMode ? locale : stamp }}</span>
         </transition>
