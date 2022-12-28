@@ -1,6 +1,7 @@
 import * as color from "../utils/color";
 import * as Toast from "../components/toast";
 import * as communicate from "../core/communicate";
+import {getType} from "../utils/user"
 
 const memoAsk = (
     selected: {
@@ -191,19 +192,19 @@ export default {
         memoAsk: ""
     },
     status: {
-        showNickUID: true,
-        showFixedNickUID: false,
+        showFixedNickUID: true,
+        showHalfFixedNickUID: false,
         showIpInfo: true
     },
     settings: {
-        showNickUID: {
+        showFixedNickUID: {
             name: "고정닉 UID 표시",
             desc: "고정닉 유저의 UID를 표시합니다.",
             type: "check",
             default: true
         },
 
-        showFixedNickUID: {
+        showHalfFixedNickUID: {
             name: "반고정닉 UID 표시",
             desc: "반고정닉 유저의 UID를 표시합니다.",
             type: "check",
@@ -255,11 +256,13 @@ export default {
         const IdInfoAdd = (elem: HTMLElement) => {
             if (!elem || !elem.dataset.uid || elem.dataset.refresherId) return false;
 
-            const img = elem.querySelector("img");
+            const img = elem.querySelector("img")?.src;
 
-            if (!img || !(this.status.showNickUID && /fix_(manager|sub_manager|)nik\.gif$/.test(img.src) || img.src.includes("/dc20th_wgallcon4.") || this.status.showFixedNickUID && /(?<!fix_)(manager|sub_manager|)nik\.gif$/.test(img.src) || img.src.includes("/dc20th_wgallcon."))) {
-                return false;
-            }
+            if (img === undefined) return false;
+
+            const userType = getType(img);
+
+            if ((!this.status.showHalfFixedNickUID && userType === "HALFFIXED") || (!this.status.showFixedNickUID && userType === "FIXED")) return;
 
             const text = document.createElement("span");
             text.className = "ip refresherUserData";

@@ -1,45 +1,59 @@
 import * as ip from "./ip";
 import * as memo from "../core/memo";
 
-const USERTYPE = {
-    UNFIXED: 0,
-    HALFFIXED: 1,
-    FIXED: 2,
-    SUBMANAGER: 3,
-    MANAGER: 4
-};
+export type UserType =
+    "UNFIXED"
+    | "HALFFIXED"
+    | "FIXED"
+    | "SUBMANAGER"
+    | "MANAGER";
 
-const getType = (icon: string | null) => {
+export const getType = (icon: string | null): UserType => {
+    /*
+        주딱 고닉: https://nstatic.dcinside.com/dc/w/images/fix_managernik.gif
+        주딱 반고닉: https://nstatic.dcinside.com/dc/w/images/managernik.gif
+
+        파딱 고닉: https://nstatic.dcinside.com/dc/w/images/fix_sub_managernik.gif
+        파딱 반고닉: https://nstatic.dcinside.com/dc/w/images/sub_managernik.gif
+
+        고닉: https://nstatic.dcinside.com/dc/w/images/fix_nik.gif
+        반고닉: https://nstatic.dcinside.com/dc/w/images/nik.gif
+
+        개 고닉: https://nstatic.dcinside.com/dc/event/nft_gaejugi/nftcon_fix.png
+        개 반고닉: https://nstatic.dcinside.com/dc/event/nft_gaejugi/nftcon.png
+
+        20주년 고닉: https://nstatic.dcinside.com/dc/event/dc20th/dc20th_wgallcon4.png
+        20주년 반고닉: https://nstatic.dcinside.com/dc/event/dc20th/dc20th_wgallcon.png
+
+        공앱 고닉: https://nstatic.dcinside.com/dc/event/app_evt/w_app_gonick_16.png
+        공앱 반고닉: https://nstatic.dcinside.com/dc/event/app_evt/w_app_nogonick_16.png
+     */
+
     if (icon === null) {
-        return USERTYPE.UNFIXED;
+        return "UNFIXED";
     }
 
     if (
-        icon.includes("/fix_nik.gif") ||
-        icon.includes("/dc20th_wgallcon4.") ||
-        icon.includes("gonick_")
+        icon.endsWith("fix_managernik.gif") ||
+        icon.endsWith("fix_sub_managernik.gif") ||
+        icon.endsWith("fix_nik.gif") ||
+        icon.endsWith("nftcon_fix.png") ||
+        icon.endsWith("dc20th_wgallcon4.png") ||
+        icon.endsWith("w_app_gonick_16.png")
     ) {
-        return USERTYPE.FIXED;
+        return "FIXED";
     } else if (
-        icon.includes("/nik.gif") ||
-        icon.includes("/dc20th_wgallcon.") ||
-        icon.includes("/nogonick_")
+        icon.endsWith("managernik.gif") ||
+        icon.endsWith("sub_managernik.gif") ||
+        icon.endsWith("nik.gif") ||
+        icon.endsWith("nftcon.png") ||
+        icon.endsWith("dc20th_wgallcon.png") ||
+        icon.endsWith("w_app_nogonick_16.png")
     ) {
-        return USERTYPE.HALFFIXED;
-    } else if (
-        icon.includes("sub_manager") ||
-        icon.includes("submanager") ||
-        icon.includes("/dc20th_wgallcon3.")
-    ) {
-        return USERTYPE.SUBMANAGER;
-    } else if (
-        icon.includes("manager") ||
-        icon.includes("/dc20th_wgallcon2.")
-    ) {
-        return USERTYPE.MANAGER;
+        return "HALFFIXED";
+    } else {
+        return "UNFIXED";
     }
-
-    return USERTYPE.UNFIXED;
 };
 
 export class User {
@@ -47,7 +61,7 @@ export class User {
     id: string | null;
     ip_data: null | string;
     icon: string | null;
-    type: number;
+    type: UserType;
     memo: RefresherMemoValue | null;
     private __ip: string | null;
 
