@@ -4,7 +4,7 @@
         <div class="meta">
             <User :me="me" :user="comment.user"/>
             <div class="float-right">
-                <p v-if="comment.depth === 0 && comment.is_delete === '0'" class="refresher-reply" v-on:click="reply">
+                <p v-if="comment.depth === 0 && comment.is_delete === '0'" class="refresher-reply" @click="reply">
                     {{ this.getReply() === this.comment.no ? "답글 해제" : "답글" }}
                 </p>
 
@@ -12,7 +12,8 @@
                 <div
                     v-if="comment.is_delete === '0' && ((comment.del_btn === 'Y' && comment.my_cmt === 'Y')  || isAdmin || comment.user.isLogout())"
                     class="delete"
-                    v-on:click="this.safeDelete">
+                    @click="this.safeDelete">
+
                     <svg fill="black" height="14px" viewBox="0 0 24 24" width="14px" xmlns="http://www.w3.org/2000/svg">
                         <path d="M0 0h24v24H0z" fill="none"/>
                         <path
@@ -29,7 +30,7 @@
         <p
             v-else-if="/<(img|video) class=/.test(comment.memo)"
             :class="{dccon: true}"
-            class="refresher-comment-content" v-on:contextmenu="contextMenu"
+            class="refresher-comment-content" @contextmenu="contextMenu"
             v-html="comment.memo"
         />
         <p v-else class="refresher-comment-content" v-html="comment.memo.replaceAll('\n', '<br>')"/>
@@ -48,18 +49,6 @@ interface CommentVueData {
     currentId: string;
     me: boolean;
     rereply: boolean;
-}
-
-interface CommentVueMethods {
-    checkReReply: () => boolean;
-}
-
-interface CommentClass extends CommentVueData, CommentVueMethods {
-    comment: dcinsideCommentObject;
-    index: number;
-    postUser: string;
-    delete: (id: string, password: string, admin: boolean) => void;
-    getReply: () => string | null;
 }
 
 interface VoiceDataComputed {
@@ -96,14 +85,14 @@ export default Vue.extend({
         },
 
         delete: {
-            type: [Function, Boolean]
+            type: Function
         },
 
         getReply: {
             type: Function
         }
     },
-    mounted(this: CommentClass): void {
+    mounted(): void {
         this.rereply = this.checkReReply();
 
         if (!this.comment.user.id) {
@@ -142,7 +131,7 @@ export default Vue.extend({
         }
     },
     computed: {
-        getVoiceData(this: CommentClass): VoiceDataComputed | null {
+        getVoiceData(this): VoiceDataComputed | null {
             if (!this.comment.vr_player) {
                 return null;
             }
@@ -175,7 +164,7 @@ export default Vue.extend({
             return match ? match[0].replace(/gallog\.dcinside.com\/|'/g, "") : null;
         },
 
-        checkReReply(this: CommentClass): boolean {
+        checkReReply(): boolean {
             const content = this.comment.memo;
             const depth = this.comment.depth;
 
@@ -194,7 +183,7 @@ export default Vue.extend({
             return true;
         },
 
-        safeDelete(this: CommentClass): void {
+        safeDelete(): void {
             if (this.delete) {
                 let password: string = "";
 
@@ -214,7 +203,7 @@ export default Vue.extend({
             }
         },
 
-        reply(this: CommentClass) {
+        reply() {
             this.$emit("setReply", this.getReply() === this.comment.no ? null : this.comment.no);
         },
 

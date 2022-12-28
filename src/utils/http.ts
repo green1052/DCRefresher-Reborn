@@ -33,6 +33,7 @@ export const urls = {
     },
     comments: "https://gall.dcinside.com/board/comment/",
     comments_submit: "https://gall.dcinside.com/board/forms/comment_submit",
+    dccon_comments_submit: "https://gall.dcinside.com/dccon/insert_icon",
     comment_remove: "https://gall.dcinside.com/board/comment/comment_delete_submit",
     dccon: {
         detail: "https://gall.dcinside.com/dccon/package_detail",

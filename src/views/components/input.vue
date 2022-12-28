@@ -1,7 +1,7 @@
 <template>
     <div class="refresher-input">
         <input :data-id="id" :data-module="modname" :disabled="disabled" :placeholder="placeholder" :value="value"
-               type="text" v-on:change="update"/>
+               type="text" @change="update"/>
     </div>
 </template>
 

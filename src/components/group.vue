@@ -1,5 +1,5 @@
 <template>
-    <div class="refresher-group" v-on:click="clickHandle">
+    <div class="refresher-group" @click="clickHandle">
         <refresher-frame v-for="(frame, i) in frames" :key="'frame' + Math.random()" :frame="frame"
                          :index="i"/>
     </div>

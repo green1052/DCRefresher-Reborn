@@ -97,6 +97,30 @@ declare global {
         functions: {
             [index: string]: (...args: any[]) => Promise<boolean> | boolean
         };
+
+        dccon?: {
+            list: {
+                detail: RefresherDccon[],
+                detail_page: number;
+                end_date: string;
+                icon_cnt: number;
+                main_img_url: string;
+                package_idx: string;
+                sort: string;
+                title: string;
+            }[];
+            max_page: number;
+            target: string;
+        };
+    }
+
+    interface RefresherDccon {
+        detail_idx: string;
+        list_img: string;
+        package_idx: string;
+        package_title: string;
+        sort: string;
+        title: string;
     }
 
     type RefresherBlockType = "NICK" | "ID" | "IP" | "TEXT" | "DCCON";

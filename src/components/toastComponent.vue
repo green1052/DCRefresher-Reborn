@@ -2,11 +2,11 @@
     <transition appear name="refresher-toast">
         <div v-show="this.open" :key="this.id" :class="{hover: this.clickCb}"
              :data-type="this.type" :title="this.content" class="refresher-toast">
-            <div class="contents" v-on:click="click">
+            <div class="contents" @click="click">
                 <div class="text">
                     <p>{{ this.content }}</p>
                 </div>
-                <div class="button" v-on:click="this.hide">
+                <div class="button" @click="this.hide">
                     <i class="material-icons">X</i>
                 </div>
             </div>
