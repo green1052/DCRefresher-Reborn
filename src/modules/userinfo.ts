@@ -262,7 +262,7 @@ export default {
 
             const userType = getType(img);
 
-            if ((!this.status.showHalfFixedNickUID && userType === "HALFFIXED") || (!this.status.showFixedNickUID && userType === "FIXED")) return;
+            if ((!this.status.showHalfFixedNickUID && userType === "HALF_FIXED") || (!this.status.showFixedNickUID && userType === "FIXED")) return;
 
             const text = document.createElement("span");
             text.className = "ip refresherUserData";
