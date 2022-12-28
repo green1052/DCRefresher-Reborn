@@ -133,7 +133,7 @@ const parse = (id: string, body: string) => {
         title,
         date,
         expire,
-        user: new User("", "", "", "").import(
+        user: new User("", null, null, null).import(
             dom.querySelector(
                 "div.view_content_wrap > header > div > div.gall_writer"
             ) || null
@@ -227,7 +227,7 @@ const request = {
      * @param args
      * @param signal
      */
-    async comments(args: GalleryHTTPRequestArguments, signal: AbortSignal) {
+    async comments(args: GalleryHTTPRequestArguments, signal: AbortSignal){
         if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
 
         const galleryType = http.galleryType(args.link, "/");
@@ -1277,7 +1277,7 @@ export default {
                         preData.link || ""
                     );
 
-                    if (res.result != "true") {
+                    if (res.result !== "true") {
                         Toast.show(res.counts, true, 2000);
 
                         return false;
@@ -1464,7 +1464,7 @@ export default {
                     return request
                         .comments(
                             {
-                                link: preData.link || location.href,
+                                link: preData.link ?? location.href,
                                 gallery: preData.gallery,
                                 id: preData.id,
                                 commentId: postData.gallery,
@@ -1491,28 +1491,35 @@ export default {
                                 comments.comments.map((v: dcinsideCommentObject) => {
                                     v.user = new User(
                                         v.name,
-                                        v.user_id,
-                                        v.ip || "",
-                                        ((new DOMParser()
+                                        v.user_id || null,
+                                        v.ip || null,
+                                        (new DOMParser()
                                             .parseFromString(v.gallog_icon, "text/html")
-                                            .querySelector("a.writer_nikcon img") ||
-                                            {}) as HTMLImageElement).src
+                                            .querySelector("a.writer_nikcon img"))?.getAttribute("src") || null
                                     );
                                 });
 
-
                                 comments.comments = comments.comments.filter(
                                     (comment: dcinsideCommentObject) => {
-                                        return !block.checkAll({
-                                            NICK: comment.name,
-                                            ID: comment.user_id || "",
-                                            IP: comment.ip || "",
-                                            DCCON: /<(img|video) class=/.test(comment.memo)
-                                                ? /src="(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))"/g.exec(comment.memo)![1]
-                                                    .replace(/^.*no=/g, "")
-                                                    .replace(/^&.*$/g, "")
-                                                : ""
-                                        });
+                                        const check: { [index: string]: string } = {
+                                            NICK: comment.name
+                                        };
+
+                                        if (comment.user_id !== null) {
+                                            check.ID = comment.user_id;
+                                        }
+
+                                        if (comment.ip !== null) {
+                                            check.IP = comment.ip;
+                                        }
+
+                                        if (/<(img|video) class=/.test(comment.memo)) {
+                                            check.DCCON = /src="(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))"/g.exec(comment.memo)![1]
+                                                .replace(/^.*no=/g, "")
+                                                .replace(/^&.*$/g, "")
+                                        }
+
+                                        return !block.checkAll(check);
                                     }
                                 );
 
@@ -1521,9 +1528,7 @@ export default {
                                     .reduce((a: number, b: number) => a + b);
                             }
 
-                            frame.subtitle = `${(comments.total_cnt !== threadCounts &&
-                                `쓰레드 ${threadCounts}개, 총 댓글`) ||
-                            ""} ${comments.total_cnt}개`;
+                            frame.subtitle = `${(comments.total_cnt !== threadCounts && `쓰레드 ${threadCounts}개, 총 댓글`) || ""} ${comments.total_cnt}개`;
 
                             frame.data.comments = comments;
                             frame.data.load = false;
@@ -1632,8 +1637,8 @@ export default {
                 }
 
                 return (admin && !password
-                    ? request.adminDeleteComment(preData, commentId, signal)
-                    : request.userDeleteComment(preData, commentId, signal, password)
+                        ? request.adminDeleteComment(preData, commentId, signal)
+                        : request.userDeleteComment(preData, commentId, signal, password)
                 )
                     .then(v => {
                         if (typeof v === "boolean") {

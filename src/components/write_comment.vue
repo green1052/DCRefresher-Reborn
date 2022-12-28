@@ -41,7 +41,7 @@ export default Vue.extend({
         PreviewButton: button,
         UserComponent: user,
     },
-    data(): { [index: string]: unknown } {
+    data() {
         return {
             focused: false,
             disabled: false,
@@ -91,7 +91,7 @@ export default Vue.extend({
 
             this.user = new User(fixedName, id, null, gallogIcon.querySelector("img")!.src);
         } else {
-            this.user = new User(this.unsignedUserID || "ㅇㅇ", null, "*.*", null);
+            this.user = new User(this.unsignedUserID, null, "localhost", null);
         }
     },
     methods: {

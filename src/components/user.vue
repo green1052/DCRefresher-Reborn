@@ -13,13 +13,14 @@
 
 <script lang="ts">
 import {eventBus} from "../core/eventbus";
-import Vue from "vue";
+import Vue, {PropType} from "vue";
+import {User} from "../utils/user";
 
 export default Vue.extend({
     name: "refresher-user",
     props: {
         user: {
-            type: Object,
+            type: Object as PropType<User>,
             required: true
         },
 
@@ -34,37 +35,11 @@ export default Vue.extend({
     },
     computed: {
         title(): string {
-            return (this.user.id
-                    ? "(" + this.user.id + ")"
-                    : this.user.ip
-                        ? "(" +
-                        this.user.ip +
-                        (this.user.ip_data ? ", " + this.user.ip_data : "") +
-                        ")"
-                        : ""
-            )
-                .replace("\\n", " ")
-                .replace(/  +/g, " ");
+            return `${this.user.isMember() ? this.user.id : `(${this.user.ip})${this.user.ip_data ? ` [${this.user.ip_data}]` : ""}`}`;
         },
 
         userInfo(): string {
-            let data = "";
-
-            data += this.user.id
-                ? "(" + this.user.id + ")"
-                : this.user.ip
-                    ? "(" +
-                    this.user.ip +
-                    (this.user.ip_data
-                        ? ", " +
-                        (this.user.ip_data.length > 100
-                            ? this.user.ip_data.substring(0, 97) + "..."
-                            : this.user.ip_data)
-                        : "") +
-                    ")"
-                    : "";
-
-            return data;
+            return `${this.user.isMember() ? this.user.id : `(${this.user.ip})${this.user.ip_data ? ` [${this.user.ip_data}]` : ""}`}`;
         }
     },
     methods: {
