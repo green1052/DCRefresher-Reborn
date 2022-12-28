@@ -9,9 +9,10 @@
                 </p>
 
                 <TimeStamp :date="new Date(date(comment.reg_date))"/>
-                <div v-if="comment.is_delete === '0' && comment.del_btn === 'Y' && comment.my_cmt === 'Y'"
-                     class="delete"
-                     v-on:click="this.safeDelete">
+                <div
+                    v-if="comment.is_delete === '0' && ((comment.del_btn === 'Y' && comment.my_cmt === 'Y')  || isAdmin || comment.user.isLogout())"
+                    class="delete"
+                    v-on:click="this.safeDelete">
                     <svg fill="black" height="14px" viewBox="0 0 24 24" width="14px" xmlns="http://www.w3.org/2000/svg">
                         <path d="M0 0h24v24H0z" fill="none"/>
                         <path
@@ -195,7 +196,7 @@ export default Vue.extend({
 
         safeDelete(this: CommentClass): void {
             if (this.delete) {
-                let password = "";
+                let password: string = "";
 
                 if (this.comment.ip && this.comment.my_cmt !== "Y") {
                     password = prompt("비밀번호를 입력하세요.") || "";
@@ -208,8 +209,7 @@ export default Vue.extend({
                 this.delete(
                     this.comment.no,
                     password,
-                    this.comment.my_cmt !== "Y" &&
-                    document.querySelector(".useradmin_btnbox button") !== null
+                    this.comment.my_cmt !== "Y" && this.isAdmin
                 );
             }
         },
