@@ -40,7 +40,7 @@ export default {
                     const gall_id = (document.querySelector("#id") as HTMLInputElement).value;
                     const gall_no = (document.querySelector("#gallery_no") as HTMLInputElement).value;
                     const _GALLTYPE_ = (document.querySelector("#_GALLTYPE_") as HTMLInputElement).value;
-                    const post_no = (document.querySelector("#no") as HTMLInputElement).value;
+                    const post_no = (document.querySelector("#no") as HTMLInputElement).value ?? "";
 
                     const form = new FormData();
                     form.append("r_key", r_key);
