@@ -143,7 +143,7 @@ export default {
                 params.set("package_idx", this.memory.selected.packageIdx);
                 params.set("code", this.memory.selected.code);
 
-                http.make("https://gall.dcinside.com/dccon/package_detail", {
+                http.make(http.urls.dccon.detail, {
                     method: "POST",
                     headers: {
                         Origin: "https://gall.dcinside.com",
