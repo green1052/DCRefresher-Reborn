@@ -8,18 +8,18 @@ import {SettingsStore} from "../core/settings";
 let modules: ModuleStore = {};
 let settings: SettingsStore = {};
 let blocks: BlockCache = {};
-let blockModes: BlockModeCache = {};
-let memos: MemoCache = {};
-
-// const get = (key: string) => {
-//     return new Promise<unknown>((resolve, reject) =>
-//         (browser.storage.sync || browser.storage.local)
-//             .get(key)
-//             .then(v => {
-//                 resolve(v[key]);
-//             })
-//     );
-// };
+let blockModes: BlockModeCache = {
+    NICK: "SAME",
+    ID: "SAME",
+    IP: "SAME",
+    TEXT: "SAME",
+    DCCON: "SAME"
+};
+let memos: MemoCache = {
+    UID: {},
+    NICK: {},
+    IP: {}
+};
 
 interface Message {
     updateUserSetting?: boolean;
@@ -159,8 +159,8 @@ browser.contextMenus.onClicked.addListener((info, tab) => {
     });
 });
 
-browser.commands.onCommand.addListener(command => {
-    browser.tabs.query({currentWindow: true, active: true}).then(tabs => {
+browser.commands.onCommand.addListener((command) => {
+    browser.tabs.query({currentWindow: true, active: true}).then((tabs) => {
         browser.tabs.sendMessage(tabs[0].id!, {
             type: "executeShortcut",
             data: command

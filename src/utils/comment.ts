@@ -15,13 +15,13 @@ const _d = function (r: string) {
         c = 0;
     for (r = r.replace(/[^A-Za-z0-9+/=]/g, ""); c < r.length;)
         (t = i.indexOf(r.charAt(c++))),
-            (f = i.indexOf(r.charAt(c++))),
-            (d = i.indexOf(r.charAt(c++))),
-            (h = i.indexOf(r.charAt(c++))),
-            (a = (t << 2) | (f >> 4)),
-            (e = ((15 & f) << 4) | (d >> 2)),
-            (n = ((3 & d) << 6) | h),
-            (o += String.fromCharCode(a)),
+        (f = i.indexOf(r.charAt(c++))),
+        (d = i.indexOf(r.charAt(c++))),
+        (h = i.indexOf(r.charAt(c++))),
+        (a = (t << 2) | (f >> 4)),
+        (e = ((15 & f) << 4) | (d >> 2)),
+        (n = ((3 & d) << 6) | h),
+        (o += String.fromCharCode(a)),
         64 != d && (o += String.fromCharCode(e)),
         64 != h && (o += String.fromCharCode(n));
     return o;
@@ -35,41 +35,37 @@ const requestBeforeServiceCode = (dom: Document) => {
     );
 
     if (!_rpre) {
-        throw new Error("_r 값을 찾을 수 없습니다.");
+        throw "_r 값을 찾을 수 없습니다.";
     }
 
     _r = _rpre.innerHTML;
 
     const _rmatch = _r.match(/_d\('(.+)'/g);
     if (!_rmatch || !_rmatch[0]) {
-        throw new Error("_d 값을 찾을 수 없습니다.");
+        throw "_d 값을 찾을 수 없습니다.";
     }
 
     _r = _d(_rmatch[0].replace(/(_d\(|')/g, ""));
 
-    if (!_r || typeof _r !== "string") {
-        throw new Error("_r이 적절한 값이 아닙니다.");
+    if (!_r) {
+        throw "_r이 적절한 값이 아닙니다.";
     }
 
     let tvl = _r,
         fi = parseInt(tvl.substr(0, 1))
     ;(fi = fi > 5 ? fi - 5 : fi + 4),
-        (tvl = tvl.replace(/^./, fi.toString())),
-        (_r = tvl);
+    (tvl = tvl.replace(/^./, fi.toString())),
+    (_r = tvl);
 
+    const r = (dom.querySelector(
+        "input[name=\"service_code\"]"
+    ) as HTMLInputElement).value;
+    const _rs = _r.split(",");
+    let t = "";
+    for (let e = 0; e < _rs.length; e++)
+        t += String.fromCharCode((2 * (_rs[e] - e - 1)) / (13 - e - 1));
 
-    if ("string" == typeof _r) {
-        const r = (dom.querySelector(
-            "input[name=\"service_code\"]"
-        ) as HTMLInputElement).value;
-        const _rs = _r.split(",");
-        let t = "";
-        for (let e = 0; e < _rs.length; e++)
-            t += String.fromCharCode((2 * (_rs[e] - e - 1)) / (13 - e - 1));
-        return r.replace(/(.{10})$/, t);
-    } else {
-        throw new Error("_r이 적절한 값이 아닙니다.");
-    }
+    return r.replace(/(.{10})$/, t);
 };
 
 const secretKey = (dom: Document) => {
@@ -107,7 +103,7 @@ export async function submitComment(
     } catch (e) {
         return {
             result: "PreNotWorking",
-            message: e.message || "사전에 정의되지 않은 오류."
+            message: String(e) || "사전에 정의되지 않은 오류."
         };
     }
 
@@ -122,13 +118,6 @@ export async function submitComment(
         return {
             result: "PreNotWorking",
             message: "preData 값이 올바르지 않습니다. (확장 프로그램 오류)"
-        };
-    }
-
-    if (typeof code !== "string") {
-        return {
-            result: "PreNotWorking",
-            message: "code 값이 올바르지 않습니다. (확장 프로그램 오류)"
         };
     }
 

@@ -47,8 +47,8 @@ export const filter: RefresherFilter = {
             } else {
                 observe
                     .find(filterObj.scope, document.documentElement)
-                    .then(e => filter.__run(filterObj, e))
-                    .catch(e => {
+                    .then((e) => filter.__run(filterObj, e))
+                    .catch((e) => {
                         if (!filterObj.options || !filterObj.options.skipIfNotExists) {
                             throw e;
                         }
@@ -62,7 +62,7 @@ export const filter: RefresherFilter = {
 
         return observe
             .find(item.scope, document.documentElement)
-            .then(async e => filter.__run(item, e));
+            .then(async (e) => filter.__run(item, e));
     },
 
     /**
@@ -108,7 +108,7 @@ export const filter: RefresherFilter = {
         }
 
         if (typeof lists[uuid] === "undefined") {
-            throw new Error("Given UUID is not exists in the list.");
+            throw "Given UUID is not exists in the list.";
         }
 
         filter.events(uuid, "remove");
@@ -127,11 +127,11 @@ export const filter: RefresherFilter = {
      */
     on: (uuid: string, event: string, cb: (...args: any[]) => void): void => {
         if (uuid == "" || event == "") {
-            throw new Error("Given UUID or event is not valid.");
+            throw "Given UUID or event is not valid.";
         }
 
         if (typeof lists[uuid] === "undefined") {
-            throw new Error("Given UUID is not exists in the list.");
+            throw "Given UUID is not exists in the list.";
         }
 
         if (typeof lists[uuid].events[event] === "undefined") {
@@ -146,11 +146,11 @@ export const filter: RefresherFilter = {
      */
     events: (uuid: string, event: string, ...args: any[]): void => {
         if (uuid == "" || event == "") {
-            throw new Error("Given UUID or event is not valid.");
+            throw "Given UUID or event is not valid.";
         }
 
         if (typeof lists[uuid] === "undefined") {
-            throw new Error("Given UUID is not exists in the list.");
+            throw "Given UUID is not exists in the list.";
         }
 
         if (typeof lists[uuid].events[event] === "undefined") {

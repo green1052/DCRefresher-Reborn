@@ -1,13 +1,13 @@
 <template>
     <div :title="locale" class="refresher-countdown" @click="this.$root.changeStamp">
         <transition name="refresher-opacity">
-            <span :key="'stamp' + this.$root.stampMode">삭제 : {{ this.$root.stampMode ? locale : stamp }}</span>
+            <span :key="`stamp${this.$root.stampMode}`">삭제 : {{ this.$root.stampMode ? locale : stamp }}</span>
         </transition>
     </div>
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import Vue, {PropType} from "vue";
 
 const s = 1000;
 const m = s * 60;
@@ -39,10 +39,6 @@ const convertTime = (date: Date) => {
 interface CountdownVueData {
     mode: number;
     stamp: string;
-}
-
-interface CountdownVue extends CountdownVueData {
-    date: Date;
     updates: number;
 }
 
@@ -50,22 +46,23 @@ export default Vue.extend({
     name: "refresher-countdown",
     props: {
         date: {
-            type: Date,
+            type: Object as PropType<Date>,
             required: true
         }
     },
     data: (): CountdownVueData => {
         return {
             mode: 0,
-            stamp: ""
+            stamp: "",
+            updates: 0
         };
     },
     computed: {
-        locale(this: CountdownVue): string {
+        locale(): string {
             return this.date.toLocaleString();
         }
     },
-    mounted(this: CountdownVue): void {
+    mounted(): void {
         this.stamp = convertTime(this.date);
 
         this.updates = setInterval(() => {
@@ -73,7 +70,7 @@ export default Vue.extend({
         }, 5000);
     },
 
-    beforeUnload(this: CountdownVue): void {
+    beforeDestroy() {
         clearInterval(this.updates);
     }
 });

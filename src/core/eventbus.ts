@@ -46,7 +46,7 @@ export const eventBus: RefresherEventBus = {
      */
     emitForResult: (event: string, ...params: any[]) => {
         if (!lists[event]) {
-            throw new Error("Given event is not defined.");
+            throw "Given event is not defined.";
         }
 
         return new Promise((resolve, reject) => {
@@ -69,7 +69,7 @@ export const eventBus: RefresherEventBus = {
                 lists[event].splice(v - i, 1);
             });
 
-            Promise.all(results).then(value => {
+            Promise.all(results).then((value) => {
                 resolve(...value);
             });
         });
@@ -116,7 +116,7 @@ export const eventBus: RefresherEventBus = {
         }
 
         if (typeof lists[event] === "undefined") {
-            throw new Error("Given Event is not exists in the list.");
+            throw "Given Event is not exists in the list.";
         }
 
         const callbacks = lists[event];

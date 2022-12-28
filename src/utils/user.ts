@@ -17,8 +17,8 @@ const USERTYPE: { [key in UserType]: UserType } = {
     HALF_FIXED_SUB_MANAGER: "HALF_FIXED_SUB_MANAGER",
     FIXED_SUB_MANAGER: "FIXED_SUB_MANAGER",
     HALF_FIXED_MANAGER: "HALF_FIXED_MANAGER",
-    FIXED_MANAGER: "FIXED_MANAGER",
-}
+    FIXED_MANAGER: "FIXED_MANAGER"
+};
 
 export const getType = (icon: string | null): UserType => {
     /*

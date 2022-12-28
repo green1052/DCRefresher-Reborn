@@ -121,14 +121,14 @@ export const view = (url: string): string => {
 export const make = (url: string, options?: RequestInit): Promise<string> =>
     new Promise<string>((resolve, reject) =>
         fetch(url, options)
-            .then(async response => {
+            .then(async (response) => {
                 if (response.status && response.status > 400) {
                     reject(`${response.status} ${response.statusText}`);
                 }
 
                 resolve(await response.text());
             })
-            .catch(e => {
+            .catch((e) => {
                 reject(e);
             })
     );

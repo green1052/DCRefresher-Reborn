@@ -48,7 +48,7 @@ export class ScrollDetection {
 
     emit(event: string, ...args: any[]): void {
         if (this.events[event]) {
-            this.events[event].forEach(func => {
+            this.events[event].forEach((func) => {
                 func(...args);
             });
         }

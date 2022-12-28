@@ -10,7 +10,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     Toast = new Vue({
         el: element,
-        render: h => h(toast)
+        render: (h) => h(toast)
     }).$children[0];
 });
 

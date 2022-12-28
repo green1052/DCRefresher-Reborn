@@ -37,7 +37,7 @@ const contentColorFix = (el: HTMLElement) => {
         ".refresher-frame:first-child .refresher-preview-contents"
     ) as HTMLElement;
 
-    DOM.traversal(qSelector).forEach(elem => {
+    DOM.traversal(qSelector).forEach((elem) => {
         if (
             !elem.style ||
             !(elem.style.color || elem.hasAttribute("color")) ||

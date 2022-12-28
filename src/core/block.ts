@@ -39,8 +39,8 @@ const BLOCK_DETECT_MODE = {
 
 const BLOCK_DETECT_MODE_KEYS = Object.keys(BLOCK_DETECT_MODE);
 
-export interface BlockCache {
-    [index: string]: RefresherBlockValue[];
+export type BlockCache = {
+    [index in RefresherBlockType]: RefresherBlockValue[];
 }
 
 export type BlockModeCache = {
@@ -48,7 +48,13 @@ export type BlockModeCache = {
 }
 
 let BLOCK_CACHE: BlockCache = {};
-let BLOCK_MODE_CACHE: BlockModeCache = {};
+let BLOCK_MODE_CACHE: BlockModeCache = {
+    NICK: "SAME",
+    ID: "SAME",
+    IP: "SAME",
+    TEXT: "SAME",
+    DCCON: "SAME"
+};
 
 const SendToBackground = () => {
     browser.runtime.sendMessage(
@@ -74,14 +80,14 @@ BLOCK_TYPES_KEYS.forEach(async (key) => {
 });
 
 const checkValidType = (type: string) => {
-    return BLOCK_TYPES_KEYS.some(key => key === type);
+    return BLOCK_TYPES_KEYS.some((key) => key === type);
 };
 
 const checkValidMode = (mode: string) => {
-    return Object.keys(BLOCK_DETECT_MODE).some(key => mode === key);
+    return Object.keys(BLOCK_DETECT_MODE).some((key) => mode === key);
 };
 
-const removeExists = (type: string, content: string) => {
+const removeExists = (type: RefresherBlockType, content: string) => {
     const cache = BLOCK_CACHE[type];
 
     if (!cache) {
@@ -96,7 +102,7 @@ const removeExists = (type: string, content: string) => {
 };
 
 const InternalAddToList = (
-    type: string,
+    type: RefresherBlockType,
     content: string,
     isRegex: boolean,
     gallery?: string,
@@ -137,11 +143,7 @@ export const add = (
     extra?: string
 ): void => {
     if (!checkValidType(type)) {
-        throw new Error(
-            `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(
-                ", "
-            )}]`
-        );
+        throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
     }
 
     InternalAddToList(type, content, isRegex, gallery, extra);
@@ -161,19 +163,11 @@ export const add = (
  */
 export const updateMode = (type: RefresherBlockType, mode: RefresherBlockDetectMode): void => {
     if (!checkValidType(type)) {
-        throw new Error(
-            `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(
-                ", "
-            )}]`
-        );
+        throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
     }
 
     if (!checkValidMode(mode)) {
-        throw new Error(
-            `${type} is not a valid mode. requires one of [${BLOCK_DETECT_MODE_KEYS.join(
-                ", "
-            )}]`
-        );
+        throw `${type} is not a valid type. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`;
     }
 
     InternalUpdateMode(type, mode);
@@ -192,11 +186,7 @@ export const check = (
     gallery?: string
 ): boolean => {
     if (!checkValidType(type)) {
-        throw new Error(
-            `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(
-                ", "
-            )}]`
-        );
+        throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
     }
 
     if (!content || content.length < 1) {
@@ -209,7 +199,7 @@ export const check = (
         return false;
     }
 
-    const result = BLOCK_CACHE[type].filter(v => {
+    const result = BLOCK_CACHE[type].filter((v) => {
         if (v.gallery && v.gallery !== gallery) {
             return false;
         }
@@ -262,6 +252,8 @@ export const checkAll = (
     for (const key of Object.keys(obj)) {
         if (block) break;
 
+        if (key === null) continue;
+
         if (check(key as RefresherBlockType, obj[key as RefresherBlockType], gallery)) {
             block = true;
         }
@@ -292,12 +284,12 @@ communicate.addHook("dcconSelected", () => {
     eventBus.emit("refresherRequestBlock");
 });
 
-communicate.addHook("updateBlocks", data => {
+communicate.addHook("updateBlocks", (data) => {
     setStore(data.blocks, data.modes);
 });
 
 requestAnimationFrame(async () => {
-    storage.get("refresher.blockQueue").then(value => {
+    storage.get("refresher.blockQueue").then((value) => {
         if (!(value as string[]).length) {
             return;
         }

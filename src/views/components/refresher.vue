@@ -235,7 +235,7 @@ interface RefresherData {
     },
     shortcuts: {} | browser.Commands.Command[],
     blocks: {
-        [key: string]: RefresherBlockValue
+        [key in RefresherBlockType]: RefresherBlockValue[]
     },
     blockModes: {
         [key in RefresherBlockDetectMode]: RefresherBlockDetectMode
@@ -270,8 +270,17 @@ export default Vue.extend({
             settings: {},
             shortcuts: {},
             blocks: {},
-            blockModes: {},
-            memos: {},
+            blockModes: {
+                SAME: "SAME",
+                CONTAIN: "CONTAIN",
+                NOT_SAME: "NOT_SAME",
+                NOT_CONTAIN: "NOT_CONTAIN"
+            },
+            memos: {
+                UID: {},
+                NICK: {},
+                IP: {}
+            },
             memoKeyNames: {
                 UID: "유저 ID",
                 NICK: "닉네임",
@@ -414,12 +423,14 @@ export default Vue.extend({
             }
 
             this.blocks[key].push({
-                content: result
+                content: result,
+                isRegex: false
             });
+
             this.syncBlock();
         },
 
-        removeBlockedUser(key: string, index: number) {
+        removeBlockedUser(key: RefresherBlockType, index: number) {
             this.blocks[key].splice(index, 1);
             this.syncBlock();
         },
