@@ -3,10 +3,14 @@ import * as memo from "../core/memo";
 
 export type UserType =
     "UNFIXED"
-    | "HALFFIXED"
-    | "FIXED"
-    | "SUBMANAGER"
-    | "MANAGER";
+    | "HALF_FIXED"
+    | "FIXED";
+
+const USERTYPE: {[key in UserType]: UserType} = {
+    UNFIXED: "UNFIXED",
+    HALF_FIXED: "HALF_FIXED",
+    FIXED: "FIXED"
+}
 
 export const getType = (icon: string | null): UserType => {
     /*
@@ -30,7 +34,7 @@ export const getType = (icon: string | null): UserType => {
      */
 
     if (icon === null) {
-        return "UNFIXED";
+        return USERTYPE.UNFIXED;
     }
 
     if (
@@ -41,7 +45,7 @@ export const getType = (icon: string | null): UserType => {
         icon.endsWith("dc20th_wgallcon4.png") ||
         icon.endsWith("w_app_gonick_16.png")
     ) {
-        return "FIXED";
+        return USERTYPE.FIXED;
     } else if (
         icon.endsWith("managernik.gif") ||
         icon.endsWith("sub_managernik.gif") ||
@@ -50,7 +54,7 @@ export const getType = (icon: string | null): UserType => {
         icon.endsWith("dc20th_wgallcon.png") ||
         icon.endsWith("w_app_nogonick_16.png")
     ) {
-        return "HALFFIXED";
+        return USERTYPE.HALF_FIXED;
     } else {
         return "UNFIXED";
     }
