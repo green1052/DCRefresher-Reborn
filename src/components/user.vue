@@ -35,11 +35,11 @@ export default Vue.extend({
     },
     computed: {
         title(): string {
-            return `${this.user.isMember() ? `(${this.user.id})` : `(${this.user.ip})${this.user.ip_data ? ` [${this.user.ip_data}]` : ""}`}`;
+            return this.user.isMember() ? `(${this.user.id})` : `(${this.user.ip})${this.user.ip_data ? ` [${this.user.ip_data}]` : ""}`;
         },
 
         userInfo(): string {
-            return `${this.user.isMember() ? this.user.id : `(${this.user.ip})${this.user.ip_data ? ` [${this.user.ip_data}]` : ""}`}`;
+            return this.user.isMember() ? `(${this.user.id})` : `(${this.user.ip})${this.user.ip_data ? ` [${this.user.ip_data}]` : ""}`;
         }
     },
     methods: {
