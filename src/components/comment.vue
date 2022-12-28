@@ -30,7 +30,7 @@
             class="refresher-comment-content" v-on:contextmenu="contextMenu"
             v-html="comment.memo"
         />
-        <p v-else class="refresher-comment-content" v-html="comment.memo.replaceAll('\n', '<br/>')"/>
+        <p v-else class="refresher-comment-content" v-html="comment.memo.replaceAll('\n', '<br>')"/>
     </div>
 </template>
 
