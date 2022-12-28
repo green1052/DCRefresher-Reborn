@@ -2,10 +2,12 @@ export {};
 
 declare global {
     interface dcinsideCommentObject {
+        del_btn: "Y" | "N";
         no: string
         parent: string
         name: string
         ip: string
+        is_delete: "0" | "1"
         user_id: string
         my_cmt: "Y" | "N"
         user: User
