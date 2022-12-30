@@ -1662,8 +1662,8 @@ export default {
                 }
 
                 return (admin && !password
-                        ? request.adminDeleteComment(preData, commentId, signal)
-                        : request.userDeleteComment(preData, commentId, signal, password)
+                    ? request.adminDeleteComment(preData, commentId, signal)
+                    : request.userDeleteComment(preData, commentId, signal, password)
                 )
                     .then((v) => {
                         if (typeof v === "boolean") {

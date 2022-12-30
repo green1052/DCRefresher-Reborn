@@ -4,10 +4,13 @@ import {BlockCache, BlockModeCache} from "../core/block";
 import {MemoCache} from "../core/memo";
 import {ModuleStore} from "../core/modules";
 import {SettingsStore} from "../core/settings";
+import JSZip from "jszip";
 
 let modules: ModuleStore = {};
 let settings: SettingsStore = {};
-let blocks: BlockCache = {};
+let blocks: BlockCache = {
+
+};
 let blockModes: BlockModeCache = {
     NICK: "SAME",
     ID: "SAME",
@@ -22,6 +25,10 @@ let memos: MemoCache = {
 };
 
 interface Message {
+    downloadDccon?: boolean;
+    urlList?: string[];
+    filename?: string;
+
     updateUserSetting?: boolean;
     name?: string;
     key?: string;
@@ -48,8 +55,44 @@ const messageHandler = (port: browser.Runtime.Port | null, message: Message) => 
         return;
     }
 
-    if (message.updateUserSetting) {
+    if (message.downloadDccon) {
+        const zip = new JSZip();
 
+        console.error(message.filename);
+
+        Promise.all(
+            message.urlList!.map((url) => {
+                let title = `${Math.random()}`;
+                let ext = "png";
+
+                return fetch(url)
+                    .then((res) => {
+                        const exec = /filename=(\w*)\.(\w*)/g.exec(res.headers.get("Content-Disposition")!);
+
+                        if (exec !== null && exec.length === 3) {
+                            title = exec?.[1];
+                            ext = exec![2];
+                        }
+
+                        return res.blob();
+                    })
+                    .then((blob) => {
+                        zip.file(`${title}.${ext}`, blob);
+                    });
+            })
+        )
+            .then(() => {
+                return zip.generateAsync({type: "base64"});
+            })
+            .then((blob) => {
+                browser.downloads.download({
+                    url: `data:application/zip;base64,${blob}`,
+                    filename: message.filename
+                });
+            });
+    }
+
+    if (message.updateUserSetting) {
         storage.set(`${message.name}.${message.key}`, message.value);
     }
 

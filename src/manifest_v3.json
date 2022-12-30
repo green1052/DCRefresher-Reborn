@@ -5,12 +5,14 @@
     "permissions": [
         "activeTab",
         "storage",
-        "contextMenus"
+        "contextMenus",
+        "downloads"
     ],
     "host_permissions": [
-        "https://dccon.dcinside.com/",
+        "https://mall.dcinside.com/",
         "https://gall.dcinside.com/",
-        "https://gallog.dcinside.com/"
+        "https://gallog.dcinside.com/",
+        "https://dcimg5.dcinside.com/"
     ],
     "background": {
         "service_worker": "background.js"
@@ -54,6 +56,7 @@
                 "refresher.bundle.css"
             ],
             "matches": [
+                "https://mall.dcinside.com/*",
                 "https://gall.dcinside.com/*",
                 "https://gallog.dcinside.com/*"
             ],
