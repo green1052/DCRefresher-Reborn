@@ -56,8 +56,20 @@ function SendToBackground() {
     );
 }
 
-let BLOCK_CACHE: BlockCache;
-let BLOCK_MODE_CACHE: BlockModeCache;
+let BLOCK_CACHE: BlockCache = {
+    NICK: [],
+    ID: [],
+    IP: [],
+    TEXT: [],
+    DCCON: []
+};
+let BLOCK_MODE_CACHE: BlockModeCache = {
+    NICK: BLOCK_DETECT_MODE.SAME,
+    ID: BLOCK_DETECT_MODE.SAME,
+    IP: BLOCK_DETECT_MODE.SAME,
+    TEXT: BLOCK_DETECT_MODE.SAME,
+    DCCON: BLOCK_DETECT_MODE.SAME
+};
 
 BLOCK_TYPES_KEYS.forEach(async (key) => {
     const keyCache = await storage.get<RefresherBlockValue[]>(`${BLOCK_NAMESPACE}:${key}`);

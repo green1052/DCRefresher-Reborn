@@ -38,7 +38,11 @@ function SendToBackground() {
     );
 }
 
-let MEMO_CACHE: MemoCache;
+let MEMO_CACHE: MemoCache = {
+    UID: {},
+    NICK: {},
+    IP: {}
+};
 
 MEMO_TYPES_KEYS.forEach(async (key) => {
     const memo = await storage.get<{ [key: string]: RefresherMemoValue }>(`${MEMO_NAMESPACE}:${key}`);
