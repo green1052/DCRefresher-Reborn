@@ -49,7 +49,7 @@ export default Vue.extend({
     name: "refresher-timestamp",
     props: {
         date: {
-            type: Object as PropType<Date>,
+            type: Date as PropType<Date>,
             required: true
         }
     },
