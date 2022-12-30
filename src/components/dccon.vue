@@ -1,11 +1,13 @@
 <template>
     <div class="refresher-dccon-popup">
-        <p>디시콘</p>
+        <h3>디시콘</h3>
 
         <div @click="close" class="close">
-            <div class="cross"></div>
-            <div class="cross"></div>
+            <div class="cross"/>
+            <div class="cross"/>
         </div>
+
+        <hr>
 
         <ul style="overflow: auto; display: flex;">
             <li v-for="dccon in this.frame.dccon.list" :key="dccon.title">
