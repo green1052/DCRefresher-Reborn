@@ -30,7 +30,7 @@
 import Vue, {PropType} from "vue";
 
 interface DcconPopupData {
-    currentDccon: RefresherDccon[] | null;
+    currentDccon: DcinsideDccon[] | null;
 }
 
 export default Vue.extend({
@@ -47,10 +47,10 @@ export default Vue.extend({
         }
     },
     methods: {
-        dcconListclick(dccons: RefresherDccon[]) {
+        dcconListclick(dccons: DcinsideDccon[]) {
             this.currentDccon = dccons;
         },
-        dcconClick(dccon: RefresherDccon) {
+        dcconClick(dccon: DcinsideDccon) {
             this.$emit("clickDccon", dccon);
         },
         close() {
