@@ -3,7 +3,7 @@ import browser from "webextension-polyfill";
 export default {
     name: "디시콘 다운로드",
     description: "디시콘 다운로드 기능을 추가합니다.",
-    url: /(dccon|mall)\.dcinside\.com/g,
+    url: /mall\.dcinside\.com/g,
     enable: false,
     default_enable: false,
     require: ["filter"],
