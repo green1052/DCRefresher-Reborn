@@ -30,7 +30,7 @@ export const TYPE_NAMES = {
 
 const BLOCK_TYPES_KEYS = Object.keys(BLOCK_TYPES) as RefresherBlockType[];
 
-const BLOCK_DETECT_MODE = {
+export const BLOCK_DETECT_MODE: { [key in RefresherBlockDetectMode]: RefresherBlockDetectMode } = {
     SAME: "SAME",
     CONTAIN: "CONTAIN",
     NOT_SAME: "NOT_SAME",
@@ -47,23 +47,17 @@ export type BlockModeCache = {
     [index in RefresherBlockType]: RefresherBlockDetectMode;
 }
 
-let BLOCK_CACHE: BlockCache = {};
-let BLOCK_MODE_CACHE: BlockModeCache = {
-    NICK: "SAME",
-    ID: "SAME",
-    IP: "SAME",
-    TEXT: "SAME",
-    DCCON: "SAME"
-};
-
-const SendToBackground = () => {
+function SendToBackground() {
     browser.runtime.sendMessage(
         JSON.stringify({
             blocks_store: BLOCK_CACHE,
             blockModes_store: BLOCK_MODE_CACHE
         })
     );
-};
+}
+
+let BLOCK_CACHE: BlockCache;
+let BLOCK_MODE_CACHE: BlockModeCache;
 
 BLOCK_TYPES_KEYS.forEach(async (key) => {
     const keyCache = await storage.get<RefresherBlockValue[]>(`${BLOCK_NAMESPACE}:${key}`);

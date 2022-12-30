@@ -220,6 +220,8 @@ import range from "./range.vue";
 import bubble from "./bubble.vue";
 import browser from "webextension-polyfill";
 import Vue from "vue";
+import {TYPE_NAMES as MEMO_TYPE_NAMES} from "../../core/memo";
+import {BLOCK_DETECT_MODE, TYPE_NAMES as BLOCK_TYPE_NAMES} from "../../core/block";
 
 const port = browser.runtime.connect({name: "refresherInternal"});
 
@@ -245,19 +247,9 @@ interface RefresherData {
             [key: string]: RefresherMemoValue
         }
     },
-    memoKeyNames: {
-        UID: "유저 ID",
-        NICK: "닉네임",
-        IP: "IP"
-    },
+    memoKeyNames: typeof MEMO_TYPE_NAMES,
     shortcutRegex: RegExp,
-    blockKeyNames: {
-        NICK: "닉네임",
-        ID: "아이디",
-        IP: "IP",
-        TEXT: "내용",
-        DCCON: "디시콘"
-    },
+    blockKeyNames: typeof BLOCK_TYPE_NAMES,
     links: { text: string, url: string }[]
 }
 
@@ -269,31 +261,22 @@ export default Vue.extend({
             modules: {},
             settings: {},
             shortcuts: {},
-            blocks: {},
-            blockModes: {
-                SAME: "SAME",
-                CONTAIN: "CONTAIN",
-                NOT_SAME: "NOT_SAME",
-                NOT_CONTAIN: "NOT_CONTAIN"
+            blocks: {
+                NICK: [],
+                ID: [],
+                IP: [],
+                TEXT: [],
+                DCCON: []
             },
+            blockModes: BLOCK_DETECT_MODE,
             memos: {
                 UID: {},
                 NICK: {},
                 IP: {}
             },
-            memoKeyNames: {
-                UID: "유저 ID",
-                NICK: "닉네임",
-                IP: "IP"
-            },
+            memoKeyNames: MEMO_TYPE_NAMES,
             shortcutRegex: /(Space|⌥|⇧|⌘|⌃|Alt|Cmd|,|'|`|Home|End|PageUp|PageDown|Insert|Delete|Left|Up|Right|Down|[A-Z]|[0-9])/g,
-            blockKeyNames: {
-                NICK: "닉네임",
-                ID: "아이디",
-                IP: "IP",
-                TEXT: "내용",
-                DCCON: "디시콘"
-            },
+            blockKeyNames: BLOCK_TYPE_NAMES,
             links: [
                 {
                     text: "GitHub",

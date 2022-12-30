@@ -30,19 +30,15 @@ export type MemoCache = {
     };
 }
 
-let MEMO_CACHE: MemoCache = {
-    UID: {},
-    NICK: {},
-    IP: {}
-};
-
-const SendToBackground = () => {
+function SendToBackground() {
     browser.runtime.sendMessage(
         JSON.stringify({
             memos_store: MEMO_CACHE
         })
     );
-};
+}
+
+let MEMO_CACHE: MemoCache;
 
 MEMO_TYPES_KEYS.forEach(async (key) => {
     const memo = await storage.get<{ [key: string]: RefresherMemoValue }>(`${MEMO_NAMESPACE}:${key}`);
