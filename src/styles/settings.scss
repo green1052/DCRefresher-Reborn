@@ -660,6 +660,10 @@
     height: 14px;
 
     &.image {
+      img {
+        width: 80px;
+      }
+
       height: unset;
     }
   }
