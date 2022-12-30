@@ -72,7 +72,7 @@ export default Vue.extend({
     },
     props: {
         comment: {
-            type: Object as PropType<dcinsideCommentObject>,
+            type: Object as PropType<DcinsideCommentObject>,
             required: true
         },
 

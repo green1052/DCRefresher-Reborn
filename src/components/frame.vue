@@ -126,7 +126,7 @@ import dccon from "./dccon.vue";
 interface FrameData {
     memoText: string;
     reply: string | null;
-    dccon: RefresherDccon | null;
+    dccon: DcinsideDccon | null;
     dcconRender: Vue | null;
 }
 
@@ -225,7 +225,7 @@ export default Vue.extend({
             });
         },
 
-        clickDccon(dccon: RefresherDccon) {
+        clickDccon(dccon: DcinsideDccon) {
             this.dccon = dccon;
             this.closeDccon();
         },
@@ -237,7 +237,7 @@ export default Vue.extend({
             this.dcconRender = null;
         },
 
-        setDccon(value: RefresherDccon | null) {
+        setDccon(value: DcinsideDccon | null) {
             this.dccon = value;
         },
 

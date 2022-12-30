@@ -1490,7 +1490,7 @@ export default {
                             },
                             signal
                         )
-                        .then((comments: dcinsideComments) => {
+                        .then((comments: DcinsideComments) => {
                             if (!comments) {
                                 frame.error = {
                                     detail: "No comments"
@@ -1501,12 +1501,12 @@ export default {
 
                             if (comments.comments) {
                                 comments.comments = comments.comments.filter(
-                                    (v: dcinsideCommentObject) => {
+                                    (v: DcinsideCommentObject) => {
                                         return v.nicktype !== "COMMENT_BOY";
                                     }
                                 );
 
-                                comments.comments.map((v: dcinsideCommentObject) => {
+                                comments.comments.map((v: DcinsideCommentObject) => {
                                     v.user = new User(
                                         v.name,
                                         v.user_id || null,
@@ -1518,7 +1518,7 @@ export default {
                                 });
 
                                 comments.comments = comments.comments.filter(
-                                    (comment: dcinsideCommentObject) => {
+                                    (comment: DcinsideCommentObject) => {
                                         const check: { [index: string]: string } = {
                                             NICK: comment.name
                                         };
@@ -1542,7 +1542,7 @@ export default {
                                 );
 
                                 threadCounts = comments.comments
-                                    .map((v: dcinsideCommentObject) => Number(v.depth == 0))
+                                    .map((v: DcinsideCommentObject) => Number(v.depth == 0))
                                     .reduce((a: number, b: number) => a + b);
                             }
 
@@ -1566,7 +1566,7 @@ export default {
 
                 frame.functions.writeComment = async (
                     type: "text" | "dccon",
-                    memo: string | RefresherDccon,
+                    memo: string | DcinsideDccon,
                     reply: string | null,
                     user: { name: string; pw?: string }
                 ): Promise<boolean> => {
@@ -1596,7 +1596,7 @@ export default {
                                 postData,
                                 user,
                                 postDom,
-                                memo as RefresherDccon,
+                                memo as DcinsideDccon,
                                 reply,
                                 captcha
                             );

@@ -23,7 +23,7 @@ interface FrameStackOption {
 class InternalFrame implements RefresherFrame {
     title: string;
     subtitle: string;
-    comments: dcinsideComments | Record<string, unknown>;
+    comments: DcinsideComments | Record<string, unknown>;
     functions: {
         [index: string]: (...args: any[]) => boolean | Promise<boolean>
     };

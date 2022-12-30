@@ -165,7 +165,7 @@ export async function submitDcconComment(
     preData: GalleryPreData,
     user: { name: string; pw?: string; },
     dom: Document,
-    dccon: RefresherDccon,
+    dccon: DcinsideDccon,
     reply: string | null,
     captcha?: string
 ): Promise<CommentResult> {

@@ -1,7 +1,31 @@
 export {};
 
 declare global {
-    interface dcinsideCommentObject {
+    interface DcinsideDcconDetail {
+        list: {
+            detail: DcinsideDccon[],
+            detail_page: number;
+            end_date: string;
+            icon_cnt: number;
+            main_img_url: string;
+            package_idx: string;
+            sort: string;
+            title: string;
+        }[];
+        max_page: number;
+        target: string;
+    }
+
+    interface DcinsideDccon {
+        detail_idx: string;
+        list_img: string;
+        package_idx: string;
+        package_title: string;
+        sort: string;
+        title: string;
+    }
+
+    interface DcinsideCommentObject {
         del_btn: "Y" | "N";
         no: string
         parent: string
@@ -19,8 +43,8 @@ declare global {
         vr_player_tag: string
     }
 
-    interface dcinsideComments {
-        comments: dcinsideCommentObject[]
+    interface DcinsideComments {
+        comments: DcinsideCommentObject[]
         total_cnt: number
     }
 
