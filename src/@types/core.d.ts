@@ -145,5 +145,4 @@ declare global {
     }
 
     type RefresherMemo = typeof import("../core/memo")
-
 }
