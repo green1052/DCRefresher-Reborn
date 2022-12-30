@@ -2,7 +2,7 @@
     <div class="refresher-bubble">
         <span :class="{image}" class="text" @click="safeTextClick">
             <img v-if="image" :src="image"/>
-            {{ text }} {{ extra ? " (" + extra + ")" : "" }}
+            {{ text }} {{ extra ? ` (${extra})` : "" }}
             <span v-if="gallery" class="gallery">({{ gallery }})</span>
         </span>
         <span v-if="remove" class="remove" @click="safeRemoveClick">
