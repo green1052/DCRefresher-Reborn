@@ -5,7 +5,7 @@
             <span :data-icon="user.icon" :data-type="user.type" class="refresher-user-icon"/>
             <span class="refresher-user-nick">{{ user.nick }}</span>
             <span v-if="user.memo" :style="{color: user.memo.color}"
-                  class="refresher-user-memo">{{ user.memo.text }}</span>
+                  class="refresher-user-memo">[{{ user.memo.text }}]</span>
             <span class="refresher-user-info">{{ userInfo }}</span>
         </div>
     </div>

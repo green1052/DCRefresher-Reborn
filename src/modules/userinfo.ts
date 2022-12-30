@@ -235,9 +235,9 @@ export default {
             const text = document.createElement("span");
             text.className = "ip refresherUserData";
             const format = ip.format(ip_data);
-            text.innerHTML = `<span>${
+            text.innerHTML = `<span>[${
                 format.length > 100 ? format.substring(0, 97) + "..." : format
-            }</span>`;
+            }]</span>`;
             text.title = format;
 
             const fl = elem.querySelector(".fl");
@@ -321,7 +321,7 @@ export default {
 
             const text = document.createElement("span");
             text.className = "ip refresherUserData refresherMemoData";
-            text.innerHTML = `<span>(${memoData.text}) </span>`;
+            text.innerHTML = `<span>[${memoData.text}] </span>`;
             text.title = memoData.text;
 
             if (memoData.color) {
