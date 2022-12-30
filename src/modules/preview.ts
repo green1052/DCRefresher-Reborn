@@ -1519,7 +1519,7 @@ export default {
 
                                 comments.comments = comments.comments.filter(
                                     (comment: DcinsideCommentObject) => {
-                                        const check: { [index: string]: string } = {
+                                        const check: { [index in RefresherBlockType]?: string } = {
                                             NICK: comment.name
                                         };
 
@@ -1532,9 +1532,7 @@ export default {
                                         }
 
                                         if (/<(img|video) class=/.test(comment.memo)) {
-                                            check.DCCON = /src="(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))"/g.exec(comment.memo)![1]
-                                                .replace(/^.*no=/g, "")
-                                                .replace(/^&.*$/g, "");
+                                            check.DCCON = /https:\/\/dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g.exec(comment.memo)![1];
                                         }
 
                                         return !block.checkAll(check);
@@ -1664,8 +1662,8 @@ export default {
                 }
 
                 return (admin && !password
-                    ? request.adminDeleteComment(preData, commentId, signal)
-                    : request.userDeleteComment(preData, commentId, signal, password)
+                        ? request.adminDeleteComment(preData, commentId, signal)
+                        : request.userDeleteComment(preData, commentId, signal, password)
                 )
                     .then((v) => {
                         if (typeof v === "boolean") {
