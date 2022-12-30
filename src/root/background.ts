@@ -9,7 +9,11 @@ import JSZip from "jszip";
 let modules: ModuleStore = {};
 let settings: SettingsStore = {};
 let blocks: BlockCache = {
-
+    NICK: [],
+    ID: [],
+    IP: [],
+    TEXT: [],
+    DCCON: []
 };
 let blockModes: BlockModeCache = {
     NICK: "SAME",
@@ -57,8 +61,6 @@ const messageHandler = (port: browser.Runtime.Port | null, message: Message) => 
 
     if (message.downloadDccon) {
         const zip = new JSZip();
-
-        console.error(message.filename);
 
         Promise.all(
             message.urlList!.map((url) => {
