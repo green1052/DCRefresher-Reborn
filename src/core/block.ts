@@ -250,7 +250,7 @@ export const check = (
  * @param gallery 갤러리 이름 (선택)
  */
 export const checkAll = (
-    obj: { [index in RefresherBlockType]: string },
+    obj: { [index in RefresherBlockType]?: string },
     gallery?: string
 ): boolean => {
     let block = false;
@@ -258,9 +258,7 @@ export const checkAll = (
     for (const key of Object.keys(obj)) {
         if (block) break;
 
-        if (key === null) continue;
-
-        if (check(key as RefresherBlockType, obj[key as RefresherBlockType], gallery)) {
+        if (check(key as RefresherBlockType, obj[key as RefresherBlockType] as string, gallery)) {
             block = true;
         }
     }
