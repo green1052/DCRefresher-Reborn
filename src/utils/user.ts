@@ -34,6 +34,9 @@ export const getType = (icon: string | null): UserType => {
         개 고닉: https://nstatic.dcinside.com/dc/event/nft_gaejugi/nftcon_fix.png
         개 반고닉: https://nstatic.dcinside.com/dc/event/nft_gaejugi/nftcon.png
 
+        개 파딱: https://nstatic.dcinside.com/dc/event/nft_gaejugi/nftcon_submanager.png
+        개 반고닉 파딱: https://nstatic.dcinside.com/dc/event/nft_gaejugi/nftcon_fix_submanager.png
+
         20주년 고닉: https://nstatic.dcinside.com/dc/event/dc20th/dc20th_wgallcon4.png
         20주년 반고닉: https://nstatic.dcinside.com/dc/event/dc20th/dc20th_wgallcon.png
 
