@@ -45,13 +45,13 @@ export const getType = (icon: string | null): UserType => {
         return USERTYPE.UNFIXED;
     }
 
-    if (icon.includes("fix_managernik.gif")) {
+    if (icon.endsWith("fix_managernik.gif")) {
         return USERTYPE.FIXED_MANAGER;
-    } else if (icon.includes("managernik.gif")) {
+    } else if (/(?<!sub_)managernik\.gif$/g.test(icon)) {
         return USERTYPE.HALF_FIXED_MANAGER;
-    } else if (icon.includes("fix_sub_managernik.gif")) {
+    } else if (icon.endsWith("fix_sub_managernik.gif")) {
         return USERTYPE.FIXED_SUB_MANAGER;
-    } else if (icon.includes("sub_managernik.gif")) {
+    } else if (icon.endsWith("sub_managernik.gif")) {
         return USERTYPE.HALF_FIXED_SUB_MANAGER;
     } else if (
         icon.endsWith("fix_nik.gif") ||
@@ -68,7 +68,7 @@ export const getType = (icon: string | null): UserType => {
     ) {
         return USERTYPE.HALF_FIXED;
     } else {
-        return "UNFIXED";
+        return USERTYPE.UNFIXED;
     }
 };
 
