@@ -3,12 +3,14 @@
     "short_name": "DCRefresher Reborn",
     "manifest_version": 2,
     "permissions": [
-        "https://dccon.dcinside.com/*",
+        "https://mall.dcinside.com/*",
         "https://gall.dcinside.com/*",
         "https://gallog.dcinside.com/*",
+        "https://dcimg5.dcinside.com/*",
         "activeTab",
         "storage",
-        "contextMenus"
+        "contextMenus",
+        "downloads"
     ],
     "background": {
         "scripts": [
@@ -25,6 +27,7 @@
                 "refresher.bundle.css"
             ],
             "matches": [
+                "https://mall.dcinside.com/*",
                 "https://gall.dcinside.com/*",
                 "https://gallog.dcinside.com/*"
             ],
