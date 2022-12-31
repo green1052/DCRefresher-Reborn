@@ -27,8 +27,8 @@ export default {
 
                     browser.runtime.sendMessage(
                         JSON.stringify({
-                            downloadDccon: true,
-                            urlList: imageList.map((image) => image.src),
+                            dcconDownload: true,
+                            urls: imageList.map((image) => image.src),
                             filename: `${dom.querySelector(".viewtxt_top h4")?.textContent ?? "dccon"}.zip`
                         })
                     );
