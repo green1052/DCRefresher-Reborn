@@ -8,7 +8,8 @@ export default {
         injected: false
     },
     status: {
-        imageUpload: false
+        imageUpload: false,
+        selfImage: false
     },
     settings: {
         imageUpload: {
@@ -21,13 +22,15 @@ export default {
     enable: false,
     default_enable: false,
     func(filter: RefresherFilter, http: RefresherHTTP) {
-        if (this.status.imageUpload) {
-            this.memory.canvas = filter.add("#tx_canvas_wysiwyg", (element) => {
-                if (this.memory.injected) return;
+        if (!this.status.imageUpload) return;
 
-                const iframe = (element as HTMLIFrameElement).contentWindow!.document!;
-                const contentContainer = iframe?.querySelector(".tx-content-container") as HTMLElement;
+        this.memory.canvas = filter.add("#tx_canvas_wysiwyg", (element) => {
+            if (this.memory.injected) return;
 
+            const iframe = (element as HTMLIFrameElement).contentWindow!.document!;
+            const contentContainer = iframe?.querySelector(".tx-content-container") as HTMLElement;
+
+            if (this.status.imageUpload) {
                 contentContainer?.addEventListener("paste", async (ev) => {
                     const data = (ev as ClipboardEvent).clipboardData;
 
@@ -78,10 +81,10 @@ export default {
                         contentContainer.insertBefore(p, iframe.getSelection()!.anchorNode!.parentElement);
                     }
                 });
+            }
 
-                this.memory.injected = true;
-            });
-        }
+            this.memory.injected = true;
+        });
     },
     revoke(filter: RefresherFilter) {
         if (this.memory.canvas)
