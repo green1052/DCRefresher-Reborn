@@ -4,7 +4,7 @@ interface ResponseData {
     [key: string]: unknown;
 }
 
-export const storage = browser.storage.sync || browser.storage.local;
+export const storage = browser.storage.local;
 
 export function get<T>(key?: string | null): Promise<T> {
     return new Promise(async (resolve) => {

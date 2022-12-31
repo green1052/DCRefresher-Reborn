@@ -5,6 +5,7 @@
     "permissions": [
         "activeTab",
         "storage",
+        "unlimitedStorage",
         "contextMenus",
         "downloads"
     ],
@@ -75,6 +76,12 @@
                 "default": "Alt+S"
             },
             "description": "글 목록 새로고침: 일시 비활성화"
+        },
+        "stealthPause": {
+            "suggested_key": {
+                "default": "Alt+P"
+            },
+            "description": "스텔스 모드: 일시 비활성화"
         }
     }
 }

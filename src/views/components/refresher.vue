@@ -60,12 +60,12 @@
                                                     :change="updateUserSetting"
                                                     :checked="settings[module][setting].value"
                                                     :modname="module"/>
-                                <refresher-input v-if="settings[module][setting].type === 'text'"
+                                <refresher-input v-else-if="settings[module][setting].type === 'text'"
                                                  :id="setting"
                                                  :change="updateUserSetting" :modname="module"
                                                  :placeholder="settings[module][setting].default"
                                                  :value="settings[module][setting].value"/>
-                                <refresher-range v-if="settings[module][setting].type === 'range'"
+                                <refresher-range v-else-if="settings[module][setting].type === 'range'"
                                                  :id="setting"
                                                  :change="updateUserSetting" :max="settings[module][setting].max"
                                                  :min="settings[module][setting].min" :modname="module"
@@ -73,7 +73,7 @@
                                                  :step="settings[module][setting].step"
                                                  :unit="settings[module][setting].unit"
                                                  :value="Number(settings[module][setting].value)"/>
-                                <refresher-options v-if="settings[module][setting].type === 'option'"
+                                <refresher-options v-else-if="settings[module][setting].type === 'option'"
                                                    :change="updateUserSetting"
                                                    :modname="module"
                                                    :options="settings[module][setting].items"/>
@@ -279,7 +279,7 @@ export default Vue.extend({
             blockKeyNames: BLOCK_TYPE_NAMES,
             links: [
                 {
-                    text: "GitHub",
+                    text: "GitHub (오류 제보 및 개선사항)",
                     url: "https://github.com/green1052/DCRefresher-Reborn"
                 }
             ]
@@ -522,7 +522,7 @@ export default Vue.extend({
             }
         });
 
-        browser.commands.getAll().then(cmd => {
+        browser.commands.getAll().then((cmd) => {
             this.shortcuts = cmd;
         });
     },

@@ -234,10 +234,10 @@ export default {
 
             const text = document.createElement("span");
             text.className = "ip refresherUserData";
+            text.style.color = ip_data.color;
+
             const format = ip.format(ip_data);
-            text.innerHTML = `<span>[${
-                format.length > 100 ? format.substring(0, 97) + "..." : format
-            }]</span>`;
+            text.innerHTML = `<span>${format}</span>`;
             text.title = format;
 
             const fl = elem.querySelector(".fl");
