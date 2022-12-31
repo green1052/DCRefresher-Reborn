@@ -8,8 +8,7 @@ export default {
         injected: false
     },
     status: {
-        imageUpload: false,
-        selfImage: false
+        imageUpload: false
     },
     settings: {
         imageUpload: {
