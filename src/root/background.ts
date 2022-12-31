@@ -165,13 +165,13 @@ browser.runtime.onMessage.addListener((message) => {
     messageHandler(null, typeof message === "string" ? JSON.parse(message) : message);
 });
 
-// browser.runtime.onInstalled.addListener(details => {
-//     if (details.reason === "install") {
-//         // TODO : After Install
-//     } else if (details.reason === "update") {
-//         // TODO : Update
-//     }
-// });
+browser.runtime.onInstalled.addListener((details) => {
+    if (details.reason === "install") {
+        storage.set("refresher.firstInstall", true);
+    } else if (details.reason === "update") {
+        storage.set("refresher.updated", true);
+    }
+});
 
 const contextMenus: browser.Menus.CreateCreatePropertiesType[] = [
     {
