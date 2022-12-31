@@ -17,6 +17,10 @@ storage.getLocal<string>("refresher.country")
     });
 
 const CUSTOM_NAME: { [key: string]: string } = {
+    // 잘못된 정보 수정 시작
+    "ELIMNET, INC.": "LG유플러스",
+    // 잘못된 정보 수정  끝
+
     "LG DACOM Corporation": "LG데이콤",
     "JoongAng Ilbo": "중앙일보",
     "Shinyoung Securities CO ., LTD.": "신영증권",
@@ -86,7 +90,10 @@ const CUSTOM_NAME: { [key: string]: string } = {
     "National Health Insurance Service": "국민건강보험공단",
     "Akamai International B.V.": "Akamai",
     "SK Telecom": "SKT",
-    "LG POWERCOMM": "LG파워콤"
+    "LG POWERCOMM": "LG파워콤",
+    "LG HelloVision Corp.": "LG헬로비전",
+    "youngsan university": "영산대학교",
+    "LGTELECOM": "LG유플러스"
 };
 
 const IP_DETAIL_INFO: { [key: string]: string } = {
@@ -166,7 +173,7 @@ const IP_DETAIL_INFO: { [key: string]: string } = {
     "211.36": "4G",
     "106.101": "5G"
     // LG END
-}
+};
 
 export const ISPData = (ip: string): ISPInfo => {
     const fullIp = `${ip}.0.0`;
@@ -176,20 +183,20 @@ export const ISPData = (ip: string): ISPInfo => {
 
     let color: string;
     switch (country) {
-        case "US":
-        case "JP":
-        case "CN":
-        case "RU":
-        case "TW":
-        case "UK":
-            color = "#f08080"
-            break;
-        case "KR":
-            color = "#6495ed"
-            break;
-        default:
-            color = "#8fbc8f";
-            break;
+    case "US":
+    case "JP":
+    case "CN":
+    case "RU":
+    case "TW":
+    case "UK":
+        color = "#f08080";
+        break;
+    case "KR":
+        color = "#6495ed";
+        break;
+    default:
+        color = "#8fbc8f";
+        break;
     }
 
     return {
@@ -201,5 +208,5 @@ export const ISPData = (ip: string): ISPInfo => {
 };
 
 export const format = (data: ISPInfo): string => {
-    return `[${data.country !== "KR" ? `${data.country} ` : ""}${data.detail ? `${data.detail} ` : ""}${data.name}]`;
+    return `[${data.country !== "KR" ? `${new Intl.DisplayNames(["ko"], {type: "region"}).of(data.country)} ` : ""}${data.detail ? `${data.detail} ` : ""}${data.name}]`;
 };
