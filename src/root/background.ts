@@ -29,8 +29,8 @@ let memos: MemoCache = {
 };
 
 interface Message {
-    downloadDccon?: boolean;
-    urlList?: string[];
+    dcconDownload?: boolean;
+    urls?: string[];
     filename?: string;
 
     updateUserSetting?: boolean;
@@ -59,11 +59,11 @@ const messageHandler = (port: browser.Runtime.Port | null, message: Message) => 
         return;
     }
 
-    if (message.downloadDccon) {
+    if (message.dcconDownload) {
         const zip = new JSZip();
 
         Promise.all(
-            message.urlList!.map((url) => {
+            message.urls!.map((url) => {
                 let title = `${Math.random()}`;
                 let ext = "png";
 
