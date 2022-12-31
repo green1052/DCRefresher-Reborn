@@ -32,7 +32,7 @@ export const show = (
     autoClose: boolean | number,
     click?: (e: MouseEvent) => void
 ): void => {
-    if (Toast === null) return;
+    if (Toast === null) throw "Toast is not initialized";
 
     if (Toast.$data.autoClose) clearTimeout(Toast.$data.autoClose);
 
