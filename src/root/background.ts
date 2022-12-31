@@ -170,13 +170,13 @@ browser.runtime.onInstalled.addListener((details) => {
     fetch(browser.runtime.getURL("/assets/GeoLite2/GeoLite2-ASN.mmdb"))
         .then((res) => res.arrayBuffer())
         .then((buffer) => {
-            storage.set("refresher.asn", Buffer.from(buffer).toString("base64"));
+            storage.setLocal("refresher.asn", Buffer.from(buffer).toString("base64"));
         });
 
     fetch(browser.runtime.getURL("/assets/GeoLite2/GeoLite2-Country.mmdb"))
         .then((res) => res.arrayBuffer())
         .then((buffer) => {
-            storage.set("refresher.country", Buffer.from(buffer).toString("base64"));
+            storage.setLocal("refresher.country", Buffer.from(buffer).toString("base64"));
         });
 
     if (details.reason === "install") {
