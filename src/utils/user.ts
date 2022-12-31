@@ -79,6 +79,7 @@ export class User {
     nick: string;
     id: string | null;
     ip_data: null | string;
+    ip_color: null | string;
     icon: string | null;
     type: UserType;
     memo: RefresherMemoValue | null;
@@ -92,6 +93,7 @@ export class User {
     ) {
         this.__ip = null;
         this.ip_data = null;
+        this.ip_color = null;
 
         this.nick = nick;
         this.id = id;
@@ -109,8 +111,13 @@ export class User {
     }
 
     set ip(v: string | null) {
-        this.ip_data = v === null ? null : ip.format(ip.ISPData(v));
         this.__ip = v;
+
+        if (v === null) return;
+
+        const ispData = ip.ISPData(v);
+        this.ip_color = ispData.color;
+        this.ip_data = ip.format(ispData);
     }
 
     getMemo(): void {

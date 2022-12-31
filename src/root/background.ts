@@ -5,6 +5,7 @@ import {MemoCache} from "../core/memo";
 import {ModuleStore} from "../core/modules";
 import {SettingsStore} from "../core/settings";
 import JSZip from "jszip";
+import {Buffer} from "buffer";
 
 let modules: ModuleStore = {};
 let settings: SettingsStore = {};
@@ -166,6 +167,18 @@ browser.runtime.onMessage.addListener((message) => {
 });
 
 browser.runtime.onInstalled.addListener((details) => {
+    fetch(browser.runtime.getURL("/assets/GeoLite2/GeoLite2-ASN.mmdb"))
+        .then((res) => res.arrayBuffer())
+        .then((buffer) => {
+            storage.set("refresher.asn", Buffer.from(buffer).toString("base64"));
+        });
+
+    fetch(browser.runtime.getURL("/assets/GeoLite2/GeoLite2-Country.mmdb"))
+        .then((res) => res.arrayBuffer())
+        .then((buffer) => {
+            storage.set("refresher.country", Buffer.from(buffer).toString("base64"));
+        });
+
     if (details.reason === "install") {
         storage.set("refresher.firstInstall", true);
     } else if (details.reason === "update") {

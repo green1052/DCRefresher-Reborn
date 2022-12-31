@@ -5,6 +5,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const {VueLoaderPlugin} = require("vue-loader");
 const {CleanWebpackPlugin} = require("clean-webpack-plugin");
+const {ProvidePlugin} = require("webpack");
 
 module.exports = {
     entry: {
@@ -56,11 +57,21 @@ module.exports = {
             ]
         }),
         new VueLoaderPlugin(),
-        new CleanWebpackPlugin()
+        new CleanWebpackPlugin(),
+        new ProvidePlugin({
+            process: "process/browser",
+            Buffer: ["buffer", "Buffer"]
+        })
     ],
     resolve: {
         extensions: [".js", ".ts", ".css", ".vue"],
-        modules: ["node_modules"]
+        modules: ["node_modules"],
+        fallback: {
+            buffer: require.resolve("buffer"),
+            net: false,
+            fs: false,
+            async_hooks: false
+        }
     },
     optimization: {
         minimize: true,
