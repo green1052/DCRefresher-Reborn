@@ -96,6 +96,7 @@ const CUSTOM_NAME: { [key: string]: string } = {
     "LGTELECOM": "LG유플러스",
     // pubnetplus.uplus.co.kr
     "DACOM-PUBNETPLUS": "LG데이콤",
+    "Seoul National University": "서울대학교"
 };
 
 const IP_DETAIL_INFO: { [key: string]: string } = {
