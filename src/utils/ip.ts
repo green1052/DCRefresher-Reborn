@@ -19,6 +19,7 @@ storage.getLocal<string>("refresher.country")
 const CUSTOM_NAME: { [key: string]: string } = {
     // 잘못된 정보 수정 시작
     "ELIMNET, INC.": "LG유플러스",
+    "Hyundai Marin Fire Insurance": "KT",
     // 잘못된 정보 수정 끝
 
     "LG DACOM Corporation": "LG데이콤",
@@ -96,7 +97,9 @@ const CUSTOM_NAME: { [key: string]: string } = {
     "LGTELECOM": "LG유플러스",
     // pubnetplus.uplus.co.kr
     "DACOM-PUBNETPLUS": "LG데이콤",
-    "Seoul National University": "서울대학교"
+    "Seoul National University": "서울대학교",
+    "DLIVE": "딜라이브",
+    "KCTV JEJU BROADCASTING": "KCTV제주방송"
 };
 
 const IP_DETAIL_INFO: { [key: string]: string } = {
