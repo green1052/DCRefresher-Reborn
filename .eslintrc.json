@@ -50,7 +50,8 @@
         "no-extra-semi": "off",
         "indent": [
             "error",
-            4
+            4,
+            {"SwitchCase": 1}
         ],
         "no-unused-expressions": "off",
         "eol-last": [
