@@ -93,7 +93,9 @@ const CUSTOM_NAME: { [key: string]: string } = {
     "LG POWERCOMM": "LG파워콤",
     "LG HelloVision Corp.": "LG헬로비전",
     "youngsan university": "영산대학교",
-    "LGTELECOM": "LG유플러스"
+    "LGTELECOM": "LG유플러스",
+    // pubnetplus.uplus.co.kr
+    "DACOM-PUBNETPLUS": "LG데이콤",
 };
 
 const IP_DETAIL_INFO: { [key: string]: string } = {
