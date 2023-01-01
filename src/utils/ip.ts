@@ -19,7 +19,7 @@ storage.getLocal<string>("refresher.country")
 const CUSTOM_NAME: { [key: string]: string } = {
     // 잘못된 정보 수정 시작
     "ELIMNET, INC.": "LG유플러스",
-    // 잘못된 정보 수정  끝
+    // 잘못된 정보 수정 끝
 
     "LG DACOM Corporation": "LG데이콤",
     "JoongAng Ilbo": "중앙일보",
@@ -175,28 +175,30 @@ const IP_DETAIL_INFO: { [key: string]: string } = {
     // LG END
 };
 
+const displayNames = new Intl.DisplayNames(["ko"], {type: "region"});
+
 export const ISPData = (ip: string): ISPInfo => {
     const fullIp = `${ip}.0.0`;
 
-    const asn = asnReader.get(fullIp)?.autonomous_system_organization ?? "ERROR";
-    const country = countryReader.get(fullIp)?.country?.iso_code ?? "ERR";
+    const asn = asnReader.get(fullIp)?.autonomous_system_organization ?? "";
+    const country = countryReader.get(fullIp)?.country?.iso_code ?? "";
 
     let color: string;
     switch (country) {
-    case "US":
-    case "JP":
-    case "CN":
-    case "RU":
-    case "TW":
-    case "UK":
-        color = "#f08080";
-        break;
-    case "KR":
-        color = "#6495ed";
-        break;
-    default:
-        color = "#8fbc8f";
-        break;
+        case "US":
+        case "JP":
+        case "CN":
+        case "RU":
+        case "TW":
+        case "UK":
+            color = "#f08080";
+            break;
+        case "KR":
+            color = "#6495ed";
+            break;
+        default:
+            color = "#8fbc8f";
+            break;
     }
 
     return {
@@ -208,5 +210,5 @@ export const ISPData = (ip: string): ISPInfo => {
 };
 
 export const format = (data: ISPInfo): string => {
-    return `[${data.country !== "KR" ? `${new Intl.DisplayNames(["ko"], {type: "region"}).of(data.country)} ` : ""}${data.detail ? `${data.detail} ` : ""}${data.name}]`;
+    return `[${data.country !== "KR" ? `${displayNames.of(data.country)} ` : ""}${data.detail ? `${data.detail} ` : ""}${data.name}]`;
 };
