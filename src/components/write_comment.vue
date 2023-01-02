@@ -9,7 +9,7 @@
         </div>
         <div class="refresher-comment-body">
             <div :class="{focus: focused, disable: disabled}" class="refresher-input-wrap">
-                <input id="comment_main" v-model="text" :disabled="disabled"
+                <input id="comment_main" v-model="text" autocomplete="off" :disabled="disabled"
                        :placeholder="this.getDccon() === null ? '댓글 입력...' : '디시콘이 선택됐습니다, 댓글 내용이 무시됩니다.'" @blur="blur"
                        @focus="focus" @keydown="type"/>
             </div>
