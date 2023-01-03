@@ -13,12 +13,13 @@ yarn install
 `yarn install` 명령어를 활용해 의존성 라이브러리들을 다운받아주세요. yarn을 찾을 수 없다고 나오는 경우 `npm install -g yarn` 를 입력해 yarn을 받아주세요.
 
 ```
-yarn dev
+yarn dev:mv2
+yarn dev:mv3
 ```
 
 그 후, 위 명령어를 입력하여 파일 변경 사항이 있을 때마다 빌드하는 개발 모드를 실행할 수 있습니다.
 
-번들링 라이브러리로 webpack, 테스팅 라이브러리로 mocha를 사용하고 있습니다.
+번들링 라이브러리로 webpack을 사용하고 있습니다.
 
 빌드 결과물은 `dist` 폴더에 저장되니 크롬에서 `chrome://extensions` 로 이동하여 `압축해제된 확장 프로그램을 로드합니다.` 를 클릭하신 후 `dist` 폴더를 선택하시면 빌드된 확장 프로그램을
 로드할 수 있습니다.
@@ -26,7 +27,8 @@ yarn dev
 단, 크롬에서 변경 사항을 자동으로 감지하지 않으니 새로 고친 사항이 있을 때마다 `chrome://extensions`에서 확장의 새로고침 버튼을 눌러 주셔야 합니다.
 
 ```
-yarn build
+yarn build:mv2
+yarn build:mv3
 ```
 
 명령어를 통해 production 모드 빌드를 할 수 있습니다. 실행 전에 `dist` 폴더를 삭제하신 후 진행하시는 것을 추천합니다.
