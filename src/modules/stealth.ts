@@ -87,12 +87,8 @@ export default {
 
         const buttons = document.querySelectorAll(CONTROL_BUTTON);
 
-        if (buttons.length) {
-            buttons.forEach((button: Element) => {
-                if (button.parentElement) {
-                    button.parentElement.removeChild(button);
-                }
-            });
+        for (const button of buttons) {
+            button.parentElement?.removeChild(button);
         }
 
         if (this.memory.contentViewUUID) {
