@@ -237,7 +237,7 @@ export default {
             text.style.color = ip_data.color;
 
             const format = ip.format(ip_data);
-            text.innerHTML = `<span>${format}</span>`;
+            text.innerHTML = `<span>[${format}]</span>`;
             text.title = format;
 
             const fl = elem.querySelector(".fl");
