@@ -1,0 +1,33 @@
+name: Test Build
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install
+        run: yarn
+
+      - name: Build Manifest v2
+        run: |
+          yarn run build:mv2
+          7za a mv2.zip ./dist/*
+
+      - name: Build Manifest v3
+        run: |
+          yarn run build:mv3
+          7za a mv3.zip ./dist/*
+
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          path: |
+            mv2.zip
+            mv3.zip
