@@ -1,4 +1,5 @@
 import browser from "webextension-polyfill";
+import * as Toast from "../components/toast";
 
 const CONTROL_BUTTON = ".stealth_control_button";
 const TEMPORARY_STEALTH = "stlth";
@@ -43,6 +44,24 @@ export default {
     enable: false,
     default_enable: false,
     require: ["eventBus"],
+    shortcuts: {
+        stealthPause(this: RefresherModule): void {
+            const button = document.querySelector(`${CONTROL_BUTTON} > #tempview`) as HTMLElement;
+
+            if (button === null) return;
+
+            button.click();
+
+            let content: string;
+            if (document.documentElement.className.includes(TEMPORARY_STEALTH)) {
+                content = "이미지를 보이게 했습니다.";
+            } else {
+                content = "이미지를 숨겼습니다.";
+            }
+
+            Toast.show(content, false, 3000);
+        }
+    },
     func(eventBus: RefresherEventBus): void {
         if (!document.documentElement.className.includes("refresherStealth")) {
             document.documentElement.classList.add("refresherStealth");
