@@ -6,8 +6,8 @@ declare global {
     type RefresherDOM = typeof import("../utils/dom")
 
     interface ISPInfo {
-        name: string;
-        country: string;
+        name?: string;
+        country?: string;
         color: string;
         detail?: string
     }
