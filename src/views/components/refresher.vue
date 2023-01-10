@@ -142,13 +142,13 @@
                     <div class="lists">
                         <p v-if="!blocks[key].length">차단된 {{ blockKeyNames[key] }} 없음</p>
 
-                        <refresher-bubble v-else-if="key !== 'DCCON'" v-for="(blocked, i) in blocks[key]"
+                        <refresher-bubble v-for="(blocked, i) in blocks[key]" v-else-if="key !== 'DCCON'"
                                           :key="`block:${i}`"
                                           :extra="blocked.extra" :gallery="blocked.gallery" :regex="blocked.isRegex"
                                           :remove="() => removeBlockedUser(key, i)" :text="blocked.content"
                                           :textclick="() => editBlockedUser(key, i)"/>
 
-                        <refresher-bubble v-else v-for="(blocked, i) in blocks[key]"
+                        <refresher-bubble v-for="(blocked, i) in blocks[key]" v-else
                                           :key="`block:${i}`"
                                           :extra="blocked.extra"
                                           :gallery="blocked.gallery"
@@ -175,11 +175,11 @@
 
                     <div class="lists">
                         <p v-if="!Object.keys(memos[key]).length">{{ memoKeyNames[key] }} 메모 없음</p>
-                        <refresher-bubble v-else v-for="[user, memo] in Object.entries(memos[key])"
+                        <refresher-bubble v-for="[user, memo] in Object.entries(memos[key])" v-else
+                                          :key="`memo:${user}`"
                                           :remove="() => removeMemoUser(key, user)"
                                           :text="`${user} (${memo.text.substring(0, 10)})`"
-                                          :textclick="() => editMemoUser(key, user)"
-                                          :key="`memo:${user}`"/>
+                                          :textclick="() => editMemoUser(key, user)"/>
                     </div>
                 </div>
             </div>

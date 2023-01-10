@@ -1,6 +1,7 @@
 <template>
-    <div :class="{background: this.$root.$children[0].$data.background, blur: this.$root.$children[0].$data.blur, fadeIn: this.$root.$children[0].$data.fade, fadeOut: !this.$root.$children[0].$data.fade, stack: this.$root.$children[0].$data.fade}"
-         class="refresher-frame-outer">
+    <div
+        :class="{background: this.$root.$children[0].$data.background, blur: this.$root.$children[0].$data.blur, fadeIn: this.$root.$children[0].$data.fade, fadeOut: !this.$root.$children[0].$data.fade, stack: this.$root.$children[0].$data.fade}"
+        class="refresher-frame-outer">
         <refresher-group/>
         <transition name="refresher-prev-post">
             <refresher-scroll v-show="this.$root.$children[0].$data.scrollModeTop" side="top"/>
