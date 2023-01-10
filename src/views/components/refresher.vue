@@ -441,7 +441,7 @@ export default Vue.extend({
             let mode: RefresherBlockDetectMode | undefined;
 
             if (confirm(`차단 모드를 설정하시겠습니까? 기본 값: ${getBlockMode(key)}`)) {
-                const modes = Object.keys(this.blockModes);
+                const modes = Object.keys(this.blockDetectModeTypeNames);
 
                 const inputMode = prompt(`차단 모드를 입력해주세요. (모드 목록: ${modes.join(", ")})`);
 
