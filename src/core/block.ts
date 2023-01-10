@@ -230,11 +230,11 @@ export const check = (
         if (mode === BLOCK_DETECT_MODE.SAME) {
             return v.content === content;
         } else if (mode === BLOCK_DETECT_MODE.CONTAIN) {
-            return v.content.indexOf(content) > -1;
+            return v.content.includes(content);
         } else if (mode === BLOCK_DETECT_MODE.NOT_SAME) {
             return v.content !== content;
         } else if (mode === BLOCK_DETECT_MODE.NOT_CONTAIN) {
-            return v.content.indexOf(content) === -1;
+            return !v.content.includes(content);
         }
 
         return false;
