@@ -1662,8 +1662,8 @@ export default {
                 }
 
                 return (admin && !password
-                    ? request.adminDeleteComment(preData, commentId, signal)
-                    : request.userDeleteComment(preData, commentId, signal, password)
+                        ? request.adminDeleteComment(preData, commentId, signal)
+                        : request.userDeleteComment(preData, commentId, signal, password)
                 )
                     .then((v) => {
                         if (typeof v === "boolean") {
@@ -1835,9 +1835,11 @@ export default {
                 // TODO: 다음 게시글이 작동은 안하는데 고치기는 귀찮으니 미래의 나한테 토스
 
                 const scrolledTop = groupStore.scrollTop === 0;
+
+                const scroll = Math.floor(groupStore.scrollHeight - groupStore.scrollTop);
+
                 const scrolledToBottom =
-                    groupStore.scrollHeight - groupStore.scrollTop ===
-                    groupStore.clientHeight;
+                    scroll === groupStore.clientHeight || scroll + 1 === groupStore.clientHeight;
 
                 if (!scrolledTop && !scrolledToBottom) {
                     scrolledCount = 0;
@@ -1852,14 +1854,10 @@ export default {
                         appStore.$data.scrollModeBottom = false;
                     }
 
-                    if (!scrolledTop || !preData) {
-                        return;
-                    }
+                    if (!scrolledTop || !preData) return;
 
-                    if (scrolledCount < 1) {
-                        scrolledCount++;
-                        return;
-                    }
+                    if (scrolledCount++ < 1) return;
+
                     scrolledCount = 0;
 
                     preData.id = (Number(preData.id) - 1).toString();
