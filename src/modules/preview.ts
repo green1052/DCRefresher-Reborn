@@ -1522,6 +1522,8 @@ export default {
 
                                         if (/<(img|video) class=/.test(comment.memo)) {
                                             check.DCCON = /https:\/\/dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g.exec(comment.memo)![1];
+                                        } else {
+                                            check.COMMENT = comment.memo;
                                         }
 
                                         return !block.checkAll(check);

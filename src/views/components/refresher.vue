@@ -221,7 +221,12 @@ import bubble from "./bubble.vue";
 import browser from "webextension-polyfill";
 import Vue from "vue";
 import {TYPE_NAMES as MEMO_TYPE_NAMES} from "../../core/memo";
-import {BLOCK_DETECT_MODE, TYPE_NAMES as BLOCK_TYPE_NAMES} from "../../core/block";
+import {
+    BLOCK_DETECT_MODE,
+    BLOCK_DETECT_MODE_TYPE_NAMES,
+    getBlockMode,
+    TYPE_NAMES as BLOCK_TYPE_NAMES
+} from "../../core/block";
 
 const port = browser.runtime.connect({name: "refresherInternal"});
 
@@ -242,6 +247,7 @@ interface RefresherData {
     blockModes: {
         [key in RefresherBlockDetectMode]: RefresherBlockDetectMode
     },
+    blockDetectModeTypeNames: typeof BLOCK_DETECT_MODE_TYPE_NAMES,
     memos: {
         [key in RefresherMemoType]: {
             [key: string]: RefresherMemoValue
@@ -265,10 +271,13 @@ export default Vue.extend({
                 NICK: [],
                 ID: [],
                 IP: [],
+                TITLE: [],
                 TEXT: [],
+                COMMENT: [],
                 DCCON: []
             },
             blockModes: BLOCK_DETECT_MODE,
+            blockDetectModeTypeNames: BLOCK_DETECT_MODE_TYPE_NAMES,
             memos: {
                 UID: {},
                 NICK: {},
@@ -405,9 +414,54 @@ export default Vue.extend({
                 return;
             }
 
+            let isRegex: boolean;
+            let extra: string | undefined = undefined;
+
+            if (confirm("정규식입니까?")) {
+                isRegex = true;
+                extra = "[정규식] ";
+            } else {
+                isRegex = false;
+            }
+
+            let gallery: string | undefined = undefined;
+
+            if (confirm("특정 갤러리에서만 차단하시겠습니까?")) {
+                const id = prompt("갤러리 아이디를 입력해주세요.", undefined);
+
+                if (id && id.length > 0) {
+                    gallery = id;
+                    extra += `[${id}] `;
+                } else {
+                    alert("갤러리 아이디가 잘못됐습니다.");
+                    return;
+                }
+            }
+
+            let mode: RefresherBlockDetectMode | undefined;
+
+            if (confirm(`차단 모드를 설정하시겠습니까? 기본 값: ${getBlockMode(key)}`)) {
+                const modes = Object.keys(this.blockModes);
+
+                const inputMode = prompt(`차단 모드를 입력해주세요. (모드 목록: ${modes.join(", ")})`);
+
+                if (inputMode && inputMode.length > 0 && modes.includes(inputMode as RefresherBlockDetectMode)) {
+                    mode = inputMode as RefresherBlockDetectMode;
+                    extra += `[${this.blockDetectModeTypeNames[inputMode as RefresherBlockDetectMode]}]`;
+                } else {
+                    alert("모드가 잘못됐습니다.");
+                    return;
+                }
+            } else {
+                mode = undefined;
+            }
+
             this.blocks[key].push({
                 content: result,
-                isRegex: false
+                isRegex,
+                extra,
+                gallery,
+                mode
             });
 
             this.syncBlock();
@@ -426,10 +480,6 @@ export default Vue.extend({
 
             if (!result || result.length < 1) {
                 return;
-            }
-
-            if (result !== this.blocks[key][index].content) {
-                this.blocks[key][index].extra = "";
             }
 
             this.blocks[key][index].content = result;

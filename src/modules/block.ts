@@ -39,47 +39,53 @@ export default {
 
                 if (!gallery) return;
 
+                const title = elem.parentElement?.querySelector(".gall_tit > a")?.textContent ?? "";
+
                 const nick = elem.dataset.nick || "";
                 const uid = elem.dataset.uid || "";
                 const ip = elem.dataset.ip || "";
 
-                const element = elem.closest(".cmt_info")?.querySelector(".written_dccon");
-                const dccon = (element?.getAttribute("src") || element?.getAttribute("data-src"))?.replace(/^.*no=/g, "").replace(/^&.*$/g, "") || "";
+                const commentElement = elem.closest(".reply_info, .cmt_info");
 
+                const dcconElement = commentElement?.querySelector(".written_dccon");
+                const dccon = (dcconElement?.getAttribute("src") || dcconElement?.getAttribute("data-src"))?.replace(/^.*no=/g, "").replace(/^&.*$/g, "") ?? "";
+
+                const commentContent = commentElement?.querySelector(".usertxt")?.textContent ?? "";
+
+                const blockTitle = block.check("TITLE", title, gallery);
                 const blockNickname = block.check("NICK", nick, gallery);
                 const blockId = block.check("ID", uid, gallery);
                 const blockIP = block.check("IP", ip, gallery);
                 const blockDccon = block.check("DCCON", dccon, gallery);
+                const blockComment = block.check("COMMENT", commentContent, gallery);
 
-                if (!elem.oncontextmenu) {
-                    elem.oncontextmenu = () => {
-                        this.memory.selected = {
-                            nick,
-                            uid,
-                            ip,
-                            code: "",
-                            packageIdx: ""
-                        };
-                        this.memory.lastSelect = Date.now();
-                    };
-                }
+                if (blockTitle || blockNickname || blockId || blockIP || blockDccon || blockComment) {
+                    const post = elem.parentElement!;
 
-                if (
-                    elem &&
-                    elem.parentElement &&
-                    (blockNickname || blockId || blockIP || blockDccon)
-                ) {
-                    const post = elem.parentElement;
-                    if (post && post.className.includes("ub-content")) {
+                    if (post.className.includes("ub-content")) {
                         post.style.display = "none";
-                    } else {
-                        const content = dom.findNeighbor(post, ".ub-content", 3);
-
-                        if (content) {
-                            content.style.display = "none";
-                        }
+                        return;
                     }
+
+                    const content = dom.findNeighbor(post, ".ub-content", 3);
+
+                    if (content) {
+                        content.style.display = "none";
+                    }
+
+                    return;
                 }
+
+                elem.oncontextmenu ??= () => {
+                    this.memory.selected = {
+                        nick,
+                        uid,
+                        ip,
+                        code: "",
+                        packageIdx: ""
+                    };
+                    this.memory.lastSelect = Date.now();
+                };
             },
             {
                 neverExpire: true

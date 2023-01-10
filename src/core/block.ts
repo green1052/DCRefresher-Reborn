@@ -13,7 +13,9 @@ const BLOCK_TYPES: {
     NICK: "NICK",
     ID: "ID",
     IP: "IP",
+    TITLE: "TITLE",
     TEXT: "TEXT",
+    COMMENT: "COMMENT",
     DCCON: "DCCON"
 };
 
@@ -24,7 +26,9 @@ export const TYPE_NAMES = {
     NICK: "닉네임",
     ID: "아이디",
     IP: "IP",
+    TITLE: "제목",
     TEXT: "내용",
+    COMMENT: "댓글",
     DCCON: "디시콘"
 };
 
@@ -35,6 +39,13 @@ export const BLOCK_DETECT_MODE: { [key in RefresherBlockDetectMode]: RefresherBl
     CONTAIN: "CONTAIN",
     NOT_SAME: "NOT_SAME",
     NOT_CONTAIN: "NOT_CONTAIN"
+};
+
+export const BLOCK_DETECT_MODE_TYPE_NAMES = {
+    SAME: "일치",
+    CONTAIN: "포함",
+    NOT_SAME: "불일치",
+    NOT_CONTAIN: "불포함"
 };
 
 const BLOCK_DETECT_MODE_KEYS = Object.keys(BLOCK_DETECT_MODE);
@@ -60,14 +71,18 @@ let BLOCK_CACHE: BlockCache = {
     NICK: [],
     ID: [],
     IP: [],
+    TITLE: [],
     TEXT: [],
+    COMMENT: [],
     DCCON: []
 };
 let BLOCK_MODE_CACHE: BlockModeCache = {
     NICK: BLOCK_DETECT_MODE.SAME,
     ID: BLOCK_DETECT_MODE.SAME,
     IP: BLOCK_DETECT_MODE.SAME,
-    TEXT: BLOCK_DETECT_MODE.SAME,
+    TITLE: BLOCK_DETECT_MODE.CONTAIN,
+    TEXT: BLOCK_DETECT_MODE.CONTAIN,
+    COMMENT: BLOCK_DETECT_MODE.CONTAIN,
     DCCON: BLOCK_DETECT_MODE.SAME
 };
 
@@ -75,11 +90,11 @@ BLOCK_TYPES_KEYS.forEach(async (key) => {
     const keyCache = await storage.get<RefresherBlockValue[]>(`${BLOCK_NAMESPACE}:${key}`);
     const modeCache = await storage.get<RefresherBlockDetectMode>(`${BLOCK_NAMESPACE}:${key}:MODE`);
 
-    BLOCK_CACHE[key] = keyCache || [];
-    BLOCK_MODE_CACHE[key] = modeCache || BLOCK_DETECT_MODE.SAME;
+    BLOCK_CACHE[key] = keyCache ?? [];
+    BLOCK_MODE_CACHE[key] = modeCache ?? BLOCK_MODE_CACHE[key];
 
     if (!modeCache) {
-        await storage.set(`${BLOCK_NAMESPACE}:${key}:MODE`, BLOCK_DETECT_MODE.SAME);
+        await storage.set(`${BLOCK_NAMESPACE}:${key}:MODE`, BLOCK_MODE_CACHE[key]);
     }
 
     SendToBackground();
@@ -112,7 +127,8 @@ const InternalAddToList = (
     content: string,
     isRegex: boolean,
     gallery?: string,
-    extra?: string
+    extra?: string,
+    mode?: RefresherBlockDetectMode
 ) => {
     removeExists(type, content);
 
@@ -120,7 +136,8 @@ const InternalAddToList = (
         content,
         isRegex,
         gallery,
-        extra
+        extra,
+        mode
     });
 
     storage.set(`${BLOCK_NAMESPACE}:${type}`, BLOCK_CACHE[type]);
@@ -140,19 +157,25 @@ const InternalUpdateMode = (type: RefresherBlockType, mode: RefresherBlockDetect
  * @param isRegex 정규식인지에 대한 여부
  * @param gallery 특정 갤러리에만 해당하면 갤러리의 ID 값
  * @param extra 차단 목록에서의 식별을 위한 추가 값
+ * @param mode 차단 모드
  */
 export const add = (
     type: RefresherBlockType,
     content: string,
     isRegex: boolean,
     gallery?: string,
-    extra?: string
+    extra?: string,
+    mode?: RefresherBlockDetectMode
 ): void => {
     if (!checkValidType(type)) {
         throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
     }
 
-    InternalAddToList(type, content, isRegex, gallery, extra);
+    if (mode !== undefined && !checkValidMode(mode)) {
+        throw `${mode} is not a valid mode. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`;
+    }
+
+    InternalAddToList(type, content, isRegex, gallery, extra, mode);
 
     try {
         SendToBackground();
@@ -199,13 +222,14 @@ export const check = (
         return false;
     }
 
-    const mode = BLOCK_MODE_CACHE[type];
 
     if (!BLOCK_CACHE[type] || BLOCK_CACHE[type].length < 1) {
         return false;
     }
 
     const result = BLOCK_CACHE[type].filter((v) => {
+        const mode = v.mode ?? BLOCK_MODE_CACHE[type];
+
         if (v.gallery && v.gallery !== gallery) {
             return false;
         }
@@ -230,11 +254,11 @@ export const check = (
         if (mode === BLOCK_DETECT_MODE.SAME) {
             return v.content === content;
         } else if (mode === BLOCK_DETECT_MODE.CONTAIN) {
-            return v.content.includes(content);
+            return content.includes(v.content);
         } else if (mode === BLOCK_DETECT_MODE.NOT_SAME) {
             return v.content !== content;
         } else if (mode === BLOCK_DETECT_MODE.NOT_CONTAIN) {
-            return !v.content.includes(content);
+            return !content.includes(v.content);
         }
 
         return false;
@@ -279,6 +303,13 @@ export const setStore = (
     BLOCK_CACHE = store;
     BLOCK_MODE_CACHE = mode;
 };
+
+/**
+ * 차단 모드를 구합니다.
+ */
+export const getBlockMode = (type: RefresherBlockType) => {
+    return BLOCK_MODE_CACHE[type];
+}
 
 communicate.addHook("blockSelected", () => {
     eventBus.emit("refresherRequestBlock");
