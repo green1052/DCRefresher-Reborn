@@ -1878,13 +1878,13 @@ export default {
             frame.app.$on("close", () => {
                 controller.abort();
 
-                const blockPopup = document.getElementById("refresher-block-popup");
+                const blockPopup = document.querySelector(".refresher-block-popup");
                 blockPopup?.remove();
 
-                const captchaPopup = document.getElementById("refresher-captcha-popup");
+                const captchaPopup = document.querySelector(".refresher-captcha-popup");
                 captchaPopup?.remove();
 
-                const adminPanel = document.getElementById("refresher-management-panel");
+                const adminPanel = document.querySelector(".refresher-management-panel");
                 adminPanel?.remove();
 
                 if (typeof adminKeyPress === "function") {
