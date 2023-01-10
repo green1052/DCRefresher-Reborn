@@ -1,11 +1,22 @@
 <template>
-    <Outer/>
+    <Outer :style="{display: closed ? 'none' : ''}"/>
 </template>
 
 <script lang="ts">
 import outer from "../components/outer.vue";
 import scroll from "../components/scroll.vue";
-import Vue from "vue";
+import Vue, {PropType} from "vue";
+import {FrameStackOption} from "./frame";
+
+interface FrameComponentData extends FrameStackOption {
+    frames: RefresherFrame[],
+    activeGroup: boolean;
+    fade: boolean;
+    stampMode: boolean;
+    scrollModeTop: boolean;
+    scrollModeBottom: boolean;
+    closed: boolean;
+}
 
 export default Vue.extend({
     name: "refresher-frame-outer",
@@ -15,20 +26,32 @@ export default Vue.extend({
     },
     props: {
         option: {
-            type: Object
+            type: Object as PropType<FrameStackOption>,
         }
     },
-    data: ({$props}) => {
+    data: function (): FrameComponentData {
         return {
+            ...this.option,
             frames: [],
-            ...$props.option,
-            activeGroup: $props.option.groupOnce,
+            activeGroup: this.option.groupOnce!,
             fade: false,
             stampMode: false,
             scrollModeTop: false,
             scrollModeBottom: false,
             closed: false
         };
+    },
+    watch: {
+        closed: (val) => {
+            document.body.style.overflow = val === true ? "auto" : "hidden";
+        }
+    },
+    created() {
+        document.body.style.overflow = "hidden";
+
+        document.addEventListener("keyup", (ev) => {
+            if (ev.code === "Escape" && !closed) this.outerClick();
+        });
     },
     methods: {
         changeStamp() {
@@ -51,12 +74,6 @@ export default Vue.extend({
         outerClick() {
             this.$emit("close");
             this.fadeOut();
-            document.body.style.overflow = "auto";
-
-            setTimeout(() => {
-                document.body.removeChild(this.$el);
-            }, 300);
-
             this.$data.closed = true;
         },
 

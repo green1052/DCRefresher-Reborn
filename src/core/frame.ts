@@ -8,7 +8,7 @@ interface FrameOption {
     blur?: boolean;
 }
 
-interface FrameStackOption {
+export interface FrameStackOption {
     background?: boolean;
     stack?: boolean;
     groupOnce?: boolean;
@@ -64,12 +64,12 @@ class InternalFrame implements RefresherFrame {
         return this.options.center;
     }
 
-    querySelector(a: string) {
-        return this.app.$el.querySelector(a);
+    querySelector(selectors: string) {
+        return this.app.$el.querySelector(selectors);
     }
 
-    querySelectorAll(a: string) {
-        return this.app.$el.querySelectorAll(a);
+    querySelectorAll(selectors: string) {
+        return this.app.$el.querySelectorAll(selectors);
     }
 }
 
@@ -78,17 +78,9 @@ export default class {
     frame: RefresherFrame[];
     app: RefresherFrameAppVue;
 
-    constructor(childs: Array<FrameOption>, option: FrameStackOption) {
+    constructor(children: FrameOption[], option: FrameStackOption) {
         if (!document || !document.createElement) {
             throw "Frame is not available before DOMContentLoaded event. (DOM isn't accessible)";
-        }
-
-        if (!childs) {
-            childs = [];
-        }
-
-        if (typeof option === "undefined") {
-            option = {};
         }
 
         this.outer = document.createElement("refresher-frame-outer");
@@ -104,33 +96,8 @@ export default class {
             })
         }).$children[0];
 
-        for (let i = 0; i < childs.length; i++) {
-            this.app.frames.push(new InternalFrame(childs[i], this.app));
-        }
-
-        const keyupFunction = (ev: KeyboardEvent) => {
-            if (ev.code === "Escape") {
-                this.app.outerClick();
-            }
-
-            document.removeEventListener("keyup", keyupFunction);
-        };
-        document.addEventListener("keyup", keyupFunction);
-
-        document.body.style.overflow = "hidden";
-
-        if (option && option.onScroll) {
-            const refresherGroup = this.app.$el.querySelector(".refresher-group");
-
-            if (!refresherGroup) {
-                return;
-            }
-
-            refresherGroup.addEventListener("wheel", (ev) => {
-                if (option.onScroll) {
-                    option.onScroll(ev as WheelEvent, this.app, refresherGroup as HTMLElement);
-                }
-            });
+        for (let i = 0; i < children.length; i++) {
+            this.app.frames.push(new InternalFrame(children[i], this.app));
         }
     }
 }

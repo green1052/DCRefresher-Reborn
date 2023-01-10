@@ -1235,6 +1235,14 @@ export default {
             signal: AbortSignal,
             historySkip?: boolean
         ) => {
+            frame.data = {};
+            frame.error = false;
+            frame.functions = {};
+            frame.contents = "";
+            frame.upvotes = "";
+            frame.fixedUpvotes = "";
+            frame.downvotes = "";
+
             frame.data.load = true;
             frame.title = preData.title || "";
             frame.data.buttons = true;
@@ -1324,8 +1332,6 @@ export default {
             };
 
             frame.functions.load = () => {
-                frame.error = false;
-                frame.data = {};
                 frame.data.load = true;
 
                 request
@@ -1422,29 +1428,14 @@ export default {
             preData: GalleryPreData,
             signal: AbortSignal
         ) => {
+            frame.error = false;
+            frame.data = {};
+            frame.functions = {};
+
             frame.data.load = true;
             frame.title = "댓글";
             frame.subtitle = "로딩 중";
-
             frame.data.useWriteComment = this.status.experimentalComment;
-
-            const params = new URLSearchParams();
-            params.set("ci_t", Cookies.get("ci_c") ?? "");
-            params.set("target", "icon");
-            params.set("page", "0");
-
-            http.make("https://gall.dcinside.com/dccon/lists", {
-                method: "POST",
-                headers: {
-                    Origin: "https://gall.dcinside.com",
-                    "X-Requested-With": "XMLHttpRequest",
-                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
-                },
-                cache: "no-store",
-                body: `?${params.toString()}`
-            }).then((response) => {
-                frame.dccon = JSON.parse(response);
-            });
 
             let postDom: Document;
 
@@ -1477,8 +1468,6 @@ export default {
                 }
 
                 frame.functions.load = async () => {
-                    frame.error = false;
-
                     return request
                         .comments(
                             {
@@ -1724,7 +1713,7 @@ export default {
 
             const params = new URLSearchParams(preData.link);
             params.set("no", preData.id);
-            preData.link = unescape(params.toString());
+            preData.link = decodeURIComponent(params.toString());
 
             preData.title = "게시글 로딩 중...";
             firstApp.contents = "";
@@ -1763,21 +1752,14 @@ export default {
 
             miniPreview.close(this.status.tooltipMode);
 
-            let preData: GalleryPreData | undefined;
-            if (ev) {
-                preData = getRelevantData(ev);
-            } else if (prd) {
-                preData = prd;
-            }
+            const preData = ev === null ? prd : getRelevantData(ev);
 
-            if (!preData) {
-                return;
-            }
+            if (preData === undefined) return;
 
             let collapseView = false;
 
-            if (ev && ev.target) {
-                collapseView = (ev.target as HTMLElement).className.includes("reply_num");
+            if (ev?.target instanceof HTMLElement) {
+                collapseView = ev.target.className.includes("reply_num");
             }
 
             if (!historySkip) {
@@ -1794,7 +1776,7 @@ export default {
             const detector = new ScrollDetection();
             let scrolledCount = 0;
 
-            frame = new Frame(
+            frame ??= new Frame(
                 [
                     {
                         relative: true,
@@ -1818,9 +1800,7 @@ export default {
                         app: RefresherFrameAppVue,
                         group: HTMLElement
                     ) => {
-                        if (!this.status.scrollToSkip) {
-                            return;
-                        }
+                        if (!this.status.scrollToSkip) return;
 
                         appStore = app;
                         groupStore = group;
@@ -1830,6 +1810,8 @@ export default {
                     blur: this.status.toggleBackgroundBlur
                 }
             );
+
+            frame.app.closed = false;
 
             detector.listen("scroll", (ev: WheelEvent) => {
                 const scrolledTop = groupStore.scrollTop === 0;
@@ -1896,22 +1878,16 @@ export default {
             frame.app.$on("close", () => {
                 controller.abort();
 
-                const blockPopup = document.querySelector(".refresher-block-popup");
-                if (blockPopup) {
-                    blockPopup.parentElement?.removeChild(blockPopup);
-                }
+                const blockPopup = document.getElementById("refresher-block-popup");
+                blockPopup?.remove();
 
-                const captchaPopup = document.querySelector(".refresher-captcha-popup");
-                if (captchaPopup) {
-                    captchaPopup.parentElement?.removeChild(captchaPopup);
-                }
+                const captchaPopup = document.getElementById("refresher-captcha-popup");
+                captchaPopup?.remove();
 
                 const adminPanel = document.getElementById("refresher-management-panel");
-                if (adminPanel) {
-                    adminPanel.parentElement?.removeChild(adminPanel);
-                }
+                adminPanel?.remove();
 
-                if (adminKeyPress) {
+                if (typeof adminKeyPress === "function") {
                     document.removeEventListener("keypress", adminKeyPress);
                 }
 
@@ -1928,16 +1904,16 @@ export default {
                 clearInterval(this.memory.refreshIntervalId);
             });
 
-            frame.app.frames[0].collapse = collapseView;
+            frame.app.first().collapse = collapseView;
 
             makeFirstFrame(
                 frame.app.first(),
                 preData,
-                this.memory.signal,
+                this.memory.signal!,
                 historySkip
             );
 
-            makeSecondFrame(frame.app.second(), preData, this.memory.signal);
+            makeSecondFrame(frame.app.second(), preData, this.memory.signal!);
 
             if (
                 this.status.toggleAdminPanel &&
@@ -1956,13 +1932,11 @@ export default {
                 frame.app.fadeIn();
             }, 0);
 
-            if (ev) {
-                ev.preventDefault();
-            }
+            ev?.preventDefault();
         };
 
         const handleMousePress = (ev: MouseEvent) => {
-            if (ev.button != 2) {
+            if (ev.button !== 2) {
                 return ev;
             }
 
@@ -1994,7 +1968,7 @@ export default {
 
                     if (!href) {
                         if ((e.target as HTMLElement).tagName === "TR") {
-                            href = document.querySelector("a")?.getAttribute("href") || "";
+                            href = document.querySelector("a")?.getAttribute("href") ?? "";
                         } else {
                             href =
                                 findNeighbor(
@@ -2002,13 +1976,14 @@ export default {
                                     "a",
                                     5,
                                     null
-                                )?.getAttribute("href") || "";
+                                )?.getAttribute("href") ?? "";
                         }
                     }
 
                     location.href = href;
                 });
             }
+
             e.addEventListener("mouseenter", (ev) =>
                 miniPreview.create(ev, this.status.tooltipMode, this.status.tooltipMediaHide)
             );
@@ -2020,8 +1995,7 @@ export default {
             );
         };
 
-        this.memory.uuid = filter.add(
-            `.gall_list .us-post${
+        this.memory.uuid = filter.add(`.gall_list .us-post${
                 this.status.expandRecognizeRange ? "" : " .ub-word"
             }`,
             addHandler,
