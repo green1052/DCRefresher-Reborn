@@ -99,7 +99,8 @@ const CUSTOM_NAME: { [key: string]: string } = {
     "DACOM-PUBNETPLUS": "LG데이콤",
     "Seoul National University": "서울대학교",
     "DLIVE": "딜라이브",
-    "KCTV JEJU BROADCASTING": "KCTV제주방송"
+    "KCTV JEJU BROADCASTING": "KCTV제주방송",
+    "CLOUDFLARENET": "클라우드플레어"
 };
 
 const IP_DETAIL_INFO: { [key: string]: string } = {
