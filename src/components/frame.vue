@@ -61,8 +61,8 @@
                 <br>
             </div>
             <div v-if="frame.data.comments && frame.data.useWriteComment">
-                <WriteComment :func="writeComment" :getReply="getReply" @setReply="setReply" :getDccon="getDccon"
-                              @setDccon="setDccon"/>
+                <WriteComment :func="writeComment" :getDccon="getDccon" :getReply="getReply" @setDccon="setDccon"
+                              @setReply="setReply"/>
             </div>
         </div>
         <div v-if="frame.collapse" class="refresher-collapse-text">

@@ -1,9 +1,10 @@
 <template>
     <div :class="{disabled: disabled}" :data-id="id" :data-module="modname" :data-on="on" class="refresher-checkbox"
          @click="toggle">
-        <div :style="{transform: 'translateX(' + (typeof translateX !== 'undefined' ? translateX : (this.on ? 18 : 0)) + 'px)'}"
-             class="selected"
-             @pointerdown="down" @pointermove="hover" @pointerout="out" @pointerup="up">
+        <div
+            :style="{transform: 'translateX(' + (typeof translateX !== 'undefined' ? translateX : (this.on ? 18 : 0)) + 'px)'}"
+            class="selected"
+            @pointerdown="down" @pointermove="hover" @pointerout="out" @pointerup="up">
         </div>
     </div>
 </template>

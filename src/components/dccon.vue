@@ -2,7 +2,7 @@
     <div class="refresher-dccon-popup">
         <h3>디시콘</h3>
 
-        <div @click="close" class="close">
+        <div class="close" @click="close">
             <div class="cross"/>
             <div class="cross"/>
         </div>
@@ -13,7 +13,7 @@
         <fragment v-else>
             <ul style="overflow: auto; display: flex;">
                 <li v-for="dccon in dcconList.list" :key="dccon.title">
-                    <img @click="dcconListClick(dccon.detail)" :alt="dccon.title" :src="dccon.main_img_url"/>
+                    <img :alt="dccon.title" :src="dccon.main_img_url" @click="dcconListClick(dccon.detail)"/>
                 </li>
             </ul>
 
@@ -21,8 +21,8 @@
 
             <div style="width: 100%; height: 80%; overflow: auto;">
                 <ul>
-                    <li v-for="dccon in this.currentDccon" @click="dcconClick(dccon)"
-                        style="float: left;">
+                    <li v-for="dccon in this.currentDccon" style="float: left;"
+                        @click="dcconClick(dccon)">
                         <img :alt="dccon.title" :src="dccon.list_img"/>
                     </li>
                 </ul>

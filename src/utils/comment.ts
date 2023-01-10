@@ -15,13 +15,13 @@ const _d = function (r: string) {
         c = 0;
     for (r = r.replace(/[^A-Za-z0-9+/=]/g, ""); c < r.length;)
         (t = i.indexOf(r.charAt(c++))),
-        (f = i.indexOf(r.charAt(c++))),
-        (d = i.indexOf(r.charAt(c++))),
-        (h = i.indexOf(r.charAt(c++))),
-        (a = (t << 2) | (f >> 4)),
-        (e = ((15 & f) << 4) | (d >> 2)),
-        (n = ((3 & d) << 6) | h),
-        (o += String.fromCharCode(a)),
+            (f = i.indexOf(r.charAt(c++))),
+            (d = i.indexOf(r.charAt(c++))),
+            (h = i.indexOf(r.charAt(c++))),
+            (a = (t << 2) | (f >> 4)),
+            (e = ((15 & f) << 4) | (d >> 2)),
+            (n = ((3 & d) << 6) | h),
+            (o += String.fromCharCode(a)),
         64 != d && (o += String.fromCharCode(e)),
         64 != h && (o += String.fromCharCode(n));
     return o;
@@ -54,8 +54,8 @@ const requestBeforeServiceCode = (dom: Document) => {
     let tvl = _r,
         fi = parseInt(tvl.substr(0, 1))
     ;(fi = fi > 5 ? fi - 5 : fi + 4),
-    (tvl = tvl.replace(/^./, fi.toString())),
-    (_r = tvl);
+        (tvl = tvl.replace(/^./, fi.toString())),
+        (_r = tvl);
 
     const r = (dom.querySelector(
         "input[name=\"service_code\"]"
