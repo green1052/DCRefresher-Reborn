@@ -99,7 +99,7 @@ declare global {
         };
     }
 
-    type RefresherBlockType = "NICK" | "ID" | "IP" | "TEXT" | "DCCON";
+    type RefresherBlockType = "NICK" | "ID" | "IP" | "TITLE" | "TEXT" | "COMMENT" | "DCCON";
 
     type RefresherBlockDetectMode = "SAME" | "CONTAIN" | "NOT_SAME" | "NOT_CONTAIN"
 
@@ -108,6 +108,7 @@ declare global {
         isRegex: boolean;
         gallery?: string;
         extra?: string;
+        mode?: RefresherBlockDetectMode;
     }
 
     type RefresherBlock = typeof import("../core/block")
