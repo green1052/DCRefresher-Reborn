@@ -405,12 +405,9 @@ export default Vue.extend({
                 return;
             }
 
-            let result = prompt(
-                `추가할 ${this.blockKeyNames[key]} 값을 입력하세요.`,
-                ""
-            );
+            const result = prompt(`추가할 ${this.blockKeyNames[key]} 값을 입력하세요.`);
 
-            if (!result || result.length < 1) {
+            if (result == null || result.length === 0) {
                 return;
             }
 
@@ -427,9 +424,9 @@ export default Vue.extend({
             let gallery: string | undefined = undefined;
 
             if (confirm("특정 갤러리에서만 차단하시겠습니까?")) {
-                const id = prompt("갤러리 아이디를 입력해주세요.", undefined);
+                const id = prompt("갤러리 아이디를 입력해주세요.");
 
-                if (id && id.length > 0) {
+                if (id !== null && id.length > 0) {
                     gallery = id;
                     extra += `[${id}] `;
                 } else {
@@ -445,7 +442,7 @@ export default Vue.extend({
 
                 const inputMode = prompt(`차단 모드를 입력해주세요. (모드 목록: ${modes.join(", ")})`);
 
-                if (inputMode && inputMode.length > 0 && modes.includes(inputMode as RefresherBlockDetectMode)) {
+                if (inputMode !== null && inputMode.length > 0 && modes.includes(inputMode as RefresherBlockDetectMode)) {
                     mode = inputMode as RefresherBlockDetectMode;
                     extra += `[${this.blockDetectModeTypeNames[inputMode as RefresherBlockDetectMode]}]`;
                 } else {
@@ -473,12 +470,9 @@ export default Vue.extend({
         },
 
         editBlockedUser(key: RefresherBlockType, index: number) {
-            let result = prompt(
-                `바꿀 ${this.blockKeyNames[key]} 값을 입력하세요.`,
-                this.blocks[key][index].content
-            );
+            const result = prompt(`바꿀 ${this.blockKeyNames[key]} 값을 입력하세요.`,);
 
-            if (!result || result.length < 1) {
+            if (result === null || result.length === 0) {
                 return;
             }
 
@@ -513,7 +507,7 @@ export default Vue.extend({
         addMemoUser(type: RefresherMemoType) {
             const user = prompt("메모 대상을 입력하세요.");
 
-            if (!user) return;
+            if (user === null || user.length === 0) return;
 
             browser.tabs.query({active: true, currentWindow: true}).then(tabs => {
                 browser.tabs.sendMessage(tabs[0].id!, {

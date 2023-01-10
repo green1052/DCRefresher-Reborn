@@ -188,7 +188,7 @@ export default Vue.extend({
                 let password: string = "";
 
                 if (this.comment.ip && this.comment.my_cmt !== "Y") {
-                    password = prompt("비밀번호를 입력하세요.") || "";
+                    password = prompt("비밀번호를 입력하세요.") ?? "";
 
                     if (!password) {
                         return;
