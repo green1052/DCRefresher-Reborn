@@ -1832,8 +1832,6 @@ export default {
             );
 
             detector.listen("scroll", (ev: WheelEvent) => {
-                // TODO: 다음 게시글이 작동은 안하는데 고치기는 귀찮으니 미래의 나한테 토스
-
                 const scrolledTop = groupStore.scrollTop === 0;
 
                 const scroll = Math.floor(groupStore.scrollHeight - groupStore.scrollTop);
