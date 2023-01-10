@@ -157,14 +157,14 @@ export default {
         }
 
         const body = (url: string) => {
-            return new Promise<Element | null>((resolve, reject) => {
+            return new Promise<HTMLElement | null>((resolve, reject) => {
                 http.make(url).then((body) => {
                     try {
                         const bodyParse = new DOMParser().parseFromString(body, "text/html");
 
                         eventBus.emit("refresherGetPost", bodyParse);
 
-                        resolve(bodyParse.querySelector(".gall_list tbody"));
+                        resolve(bodyParse.querySelector(".gall_list tbody") as HTMLElement);
                     } catch (e) {
                         reject(e);
                     }
@@ -287,22 +287,17 @@ export default {
             postNoIter.forEach((v) => {
                 const value = v.innerHTML;
 
-                if (!cached.includes(value) && value != currentPostNo) {
-                    if (this.status.fadeIn && !this.memory.calledByPageTurn) {
-                        if (v.parentElement) {
-                            v.parentElement.className += " refresherNewPost";
-                            v.parentElement.style.animationDelay =
-                                this.memory.new_counts * 23 + "ms";
-                        }
+                if (!cached.includes(value) && value !== currentPostNo) {
+                    if (this.status.fadeIn && !this.memory.calledByPageTurn && v.parentElement !== null) {
+                        v.parentElement.classList.add("refresherNewPost");
+                        v.parentElement.style.animationDelay = `${this.memory.new_counts * 23}ms`;
                     }
                     this.memory.new_counts++;
                 }
 
-                if (isPostView) {
-                    if (value === currentPostNo) {
-                        v.innerHTML = "<span class=\"sp_img crt_icon\"></span>";
-                        v.parentElement?.classList.add("crt");
-                    }
+                if (isPostView && currentPostNo === value) {
+                    v.innerHTML = `<span class="sp_img crt_icon></span>"`;
+                    v.parentElement?.classList.add("crt");
                 }
             });
 
