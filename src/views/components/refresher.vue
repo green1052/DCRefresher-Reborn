@@ -465,7 +465,7 @@ export default Vue.extend({
 
             if (!user) return;
 
-            browser.tabs.query({active: true}).then(tabs => {
+            browser.tabs.query({active: true, currentWindow: true}).then(tabs => {
                 browser.tabs.sendMessage(tabs[0].id!, {
                     type: "refresherRequestMemoAsk",
                     data: {
@@ -477,7 +477,7 @@ export default Vue.extend({
         },
 
         editMemoUser(type: RefresherMemoType, user: string) {
-            browser.tabs.query({active: true}).then(tabs => {
+            browser.tabs.query({active: true, currentWindow: true}).then((tabs) => {
                 browser.tabs.sendMessage(tabs[0].id!, {
                     type: "refresherRequestMemoAsk",
                     data: {
