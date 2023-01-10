@@ -7,6 +7,7 @@ import {ScrollDetection} from "../utils/scrollDetection";
 import {submitComment, submitDcconComment} from "../utils/comment";
 import logger from "../utils/logger";
 import Cookies from "js-cookie";
+import {queryString} from "../utils/http";
 
 class PostInfo implements PostInfo {
     id: string;
@@ -1229,6 +1230,8 @@ export default {
         block: RefresherBlock
     ): void {
         let postFetchedData: PostInfo;
+        const gallery = queryString("id") ?? undefined;
+
         const makeFirstFrame = (
             frame: RefresherFrame,
             preData: GalleryPreData,
@@ -1366,7 +1369,7 @@ export default {
 
                         postFetchedData = obj;
 
-                        frame.contents = obj.contents || "";
+                        frame.contents = block.check("TEXT", obj.contents ?? "", gallery) ? "게시글 내용이 차단됐습니다." : obj.contents ?? "";
                         frame.upvotes = obj.upvotes || "-1";
                         frame.fixedUpvotes = obj.fixedUpvotes || "-1";
                         frame.downvotes = obj.downvotes || "-1";
@@ -1526,7 +1529,7 @@ export default {
                                             check.COMMENT = comment.memo;
                                         }
 
-                                        return !block.checkAll(check);
+                                        return !block.checkAll(check, gallery);
                                     }
                                 );
 
