@@ -61,7 +61,8 @@
                 <br>
             </div>
             <div v-if="frame.data.comments && frame.data.useWriteComment">
-                <WriteComment :func="writeComment" :getReply="getReply" @setReply="setReply" :getDccon="getDccon" @setDccon="setDccon"/>
+                <WriteComment :func="writeComment" :getReply="getReply" @setReply="setReply" :getDccon="getDccon"
+                              @setDccon="setDccon"/>
             </div>
         </div>
         <div v-if="frame.collapse" class="refresher-collapse-text">
@@ -162,7 +163,7 @@ export default Vue.extend({
     },
     methods: {
         beforeEnter(el: HTMLElement) {
-            el.style.transitionDelay = 45 * Number(el.dataset.index) + "ms";
+            el.style.transitionDelay = `${45 * Number(el.dataset.index)}ms`;
         },
 
         afterEnter(el: HTMLElement) {
@@ -214,9 +215,6 @@ export default Vue.extend({
             this.dcconRender = new Vue({
                 el: element,
                 render: h => h(dccon, {
-                    props: {
-                        frame: this.frame
-                    },
                     on: {
                         clickDccon: this.clickDccon,
                         closeDccon: this.closeDccon
@@ -231,8 +229,8 @@ export default Vue.extend({
         },
 
         closeDccon() {
-            this.dcconRender!.$destroy();
-            this.dcconRender!.$el.parentNode!.removeChild(this.dcconRender!.$el);
+            this.dcconRender?.$destroy();
+            this.dcconRender?.$el.remove();
 
             this.dcconRender = null;
         },
@@ -264,6 +262,13 @@ export default Vue.extend({
         getURL(u: string): string {
             return browser.runtime.getURL(u);
         }
+    },
+    created() {
+        this.frame.app.$on("close", () => {
+            this.reply = null;
+            this.dccon = null;
+            this.closeDccon();
+        });
     }
 });
 </script>

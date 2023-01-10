@@ -2951,6 +2951,7 @@ __metadata:
     terser-webpack-plugin: ^5.3.6
     typescript: ^4.9.4
     vue: 2.7.14
+    vue-fragment: ^1.6.0
     vue-loader: 15.10.1
     webextension-polyfill: ^0.10.0
     webpack: ^5.75.0
@@ -6616,6 +6617,15 @@ __metadata:
   version: 3.1.0
   resolution: "void-elements@npm:3.1.0"
   checksum: 0390f818107fa8fce55bb0a5c3f661056001c1d5a2a48c28d582d4d847347c2ab5b7f8272314cac58acf62345126b6b09bea623a185935f6b1c3bbce0dfd7f7f
+  languageName: node
+  linkType: hard
+
+"vue-fragment@npm:^1.6.0":
+  version: 1.6.0
+  resolution: "vue-fragment@npm:1.6.0"
+  peerDependencies:
+    vue: ^2.5.16
+  checksum: 4c4093733b01d779d1ac6a5b9f2aa213d2f39a2c42144df1ff73058b9da3ea599634509bef381a87d2d70c8b8d181644a8e6fb6e72e323f9ebfef0e9dc834a0a
   languageName: node
   linkType: hard
 

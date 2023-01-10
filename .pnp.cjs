@@ -69,6 +69,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["terser-webpack-plugin", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:5.3.6"],\
             ["typescript", "patch:typescript@npm%3A4.9.4#~builtin<compat/typescript>::version=4.9.4&hash=ad5954"],\
             ["vue", "npm:2.7.14"],\
+            ["vue-fragment", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:1.6.0"],\
             ["vue-loader", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:15.10.1"],\
             ["webextension-polyfill", "npm:0.10.0"],\
             ["webpack", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:5.75.0"],\
@@ -4554,6 +4555,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["terser-webpack-plugin", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:5.3.6"],\
             ["typescript", "patch:typescript@npm%3A4.9.4#~builtin<compat/typescript>::version=4.9.4&hash=ad5954"],\
             ["vue", "npm:2.7.14"],\
+            ["vue-fragment", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:1.6.0"],\
             ["vue-loader", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:15.10.1"],\
             ["webextension-polyfill", "npm:0.10.0"],\
             ["webpack", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:5.75.0"],\
@@ -9048,6 +9050,28 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["vue", "npm:2.7.14"],\
             ["@vue/compiler-sfc", "npm:2.7.14"],\
             ["csstype", "npm:3.1.1"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["vue-fragment", [\
+        ["npm:1.6.0", {\
+          "packageLocation": "./.yarn/cache/vue-fragment-npm-1.6.0-b46c0485c7-4c4093733b.zip/node_modules/vue-fragment/",\
+          "packageDependencies": [\
+            ["vue-fragment", "npm:1.6.0"]\
+          ],\
+          "linkType": "SOFT"\
+        }],\
+        ["virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:1.6.0", {\
+          "packageLocation": "./.yarn/__virtual__/vue-fragment-virtual-37e723ce0c/0/cache/vue-fragment-npm-1.6.0-b46c0485c7-4c4093733b.zip/node_modules/vue-fragment/",\
+          "packageDependencies": [\
+            ["vue-fragment", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:1.6.0"],\
+            ["@types/vue", null],\
+            ["vue", "npm:2.7.14"]\
+          ],\
+          "packagePeers": [\
+            "@types/vue",\
+            "vue"\
           ],\
           "linkType": "HARD"\
         }]\

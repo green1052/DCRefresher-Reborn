@@ -97,11 +97,7 @@ declare global {
         functions: {
             [index: string]: (...args: any[]) => Promise<boolean> | boolean
         };
-
-        dccon?: DcinsideDcconDetail;
     }
-
-
 
     type RefresherBlockType = "NICK" | "ID" | "IP" | "TEXT" | "DCCON";
 
