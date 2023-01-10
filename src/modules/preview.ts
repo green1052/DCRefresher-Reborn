@@ -1,13 +1,13 @@
 import {User} from "../utils/user";
 import {findNeighbor} from "../utils/dom";
 import * as http from "../utils/http";
+import {queryString} from "../utils/http";
 import browser from "webextension-polyfill";
 import * as Toast from "../components/toast";
 import {ScrollDetection} from "../utils/scrollDetection";
 import {submitComment, submitDcconComment} from "../utils/comment";
 import logger from "../utils/logger";
 import Cookies from "js-cookie";
-import {queryString} from "../utils/http";
 
 class PostInfo implements PostInfo {
     id: string;
