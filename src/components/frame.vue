@@ -2,75 +2,8 @@
     <div
         :class="{relative: frame.options.relative, blur: frame.options.blur, preview: frame.options.preview, center: frame.options.center}"
         class="refresher-frame">
-        <div v-if="!frame.error" class="refresher-preview-info">
-            <div class="refresher-preview-title-zone">
-                <div :class="{'refresher-preview-title-text': true, 'refresher-title-post': frame.data.buttons}">
-                    <transition appear name="refresher-slide-up" @before-enter="beforeEnter" @after-enter="afterEnter">
-                        <div :key="frame.title" :data-index="index + 1" class="refresher-preview-title"
-                             v-html="frame.title"/>
-                    </transition>
-                    <transition appear name="refresher-slide-up" @before-enter="beforeEnter" @after-enter="afterEnter">
-                        <span class="refresher-preview-title-mute" v-html="frame.subtitle"/>
-                    </transition>
-                    <transition appear name="refresher-slide-up" @before-enter="beforeEnter" @after-enter="afterEnter"/>
-                </div>
-                <div v-if="frame.data.comments" class="refresher-comment-controls-container">
-                    <PreviewButton v-if="frame.data.useWriteComment" :id="'dccon'" :click="renderDcconPopup"
-                                   :text="'디시콘'"
-                                   class="refresher-comment-controls"/>
 
-                    <PreviewButton v-if="frame.data.useWriteComment" :id="'write'" :click="toCommentWrite"
-                                   :text="'댓글 쓰기'"
-                                   class="refresher-comment-controls"/>
-
-                    <PreviewButton :id="'refresh'" :click="refresh" :text="'새로고침'" class="refresher-comment-controls"/>
-                </div>
-            </div>
-            <div class="refresher-preview-meta">
-                <User v-if="frame.data.user" :user="frame.data.user"/>
-                <div class="float-right">
-                    <div class="date-views">
-                        <TimeStamp v-if="frame.data.date" :date="frame.data.date"/>
-                        <span class="refresher-views" v-html="frame.data.views"/>
-                    </div>
-                    <CountDown v-if="frame.data.expire" :date="frame.data.expire"/>
-                </div>
-            </div>
-        </div>
-        <div v-if="!frame.error" :class="{collapse: frame.collapse}" class="refresher-preview-contents">
-            <refresher-loader v-show="frame.data.load"/>
-            <transition name="refresher-opacity">
-                <div :key="frame.contents" class="refresher-preview-contents-actual" v-html="frame.contents"/>
-            </transition>
-
-            <div v-if="frame.data.comments && frame.data.comments.comments" class="refresher-preview-comments">
-                <transition-group appear name="refresher-slide-up" @before-enter="beforeEnter"
-                                  @after-enter="afterEnter">
-                    <Comment v-for="(comment, i) in frame.data.comments.comments" :key="`cmt_${comment.no}`"
-                             :comment="comment" :delete="frame.functions.deleteComment" :getReply="getReply"
-                             :index="i + 1"
-                             :postUser="frame.data.postUserId"
-                             @setReply="setReply"/>
-                </transition-group>
-            </div>
-            <div v-if="frame.data.comments && !frame.data.comments.comments">
-                <div class="refresher-nocomment-wrap">
-                    <img :src="getURL('/assets/icons/empty_comment.png')"/>
-                    <h3>댓글이 없습니다.</h3>
-                </div>
-                <br>
-            </div>
-            <div v-if="frame.data.comments && frame.data.useWriteComment">
-                <WriteComment :func="writeComment" :getDccon="getDccon" :getReply="getReply" @setDccon="setDccon"
-                              @setReply="setReply"/>
-            </div>
-        </div>
-        <div v-if="frame.collapse" class="refresher-collapse-text">
-            <h3 @click="() => {frame.collapse = !frame.collapse; frame.functions.load()}">
-                댓글 보기를 클릭하여 댓글만 표시합니다. 여기를 눌러 글을 볼 수 있습니다.
-            </h3>
-        </div>
-        <div v-if="frame.error" class="refresher-preview-contents refresher-error">
+        <div v-if="frame.error !== undefined" class="refresher-preview-contents refresher-error">
             <h3>{{ frame.error.title }}을 불러올 수 없습니다.</h3>
             <br>
             <p>가능한 경우:</p>
@@ -98,16 +31,105 @@
             <br>
             <span class="refresher-mute">{{ frame.error.detail }}</span>
         </div>
-        <div v-if="frame.data.buttons && !frame.collapse" class="refresher-preview-votes">
-            <div>
-                <PreviewButton :id="'upvote'" :click="upvote"
-                               :text="`${frame.upvotes} (${frame.fixedUpvotes})`" class="refresher-upvote"/>
-                <PreviewButton v-if="!frame.data.disabledDownvote" :id="'downvote'" :click="downvote"
-                               :text="frame.downvotes || '0'" class="refresher-downvote"/>
-                <PreviewButton :id="'share'" :click="share" :text="'공유'" class="refresher-share primary"/>
-                <PreviewButton :id="'newtab'" :click="original" :text="'원본 보기'"/>
+        <fragment v-else>
+            <div class="refresher-preview-info">
+                <div class="refresher-preview-title-zone">
+                    <div :class="{'refresher-preview-title-text': true, 'refresher-title-post': frame.data.buttons}">
+                        <transition appear name="refresher-slide-up" @before-enter="beforeEnter"
+                                    @after-enter="afterEnter">
+                            <div :key="frame.title" :data-index="index + 1" class="refresher-preview-title"
+                                 v-html="frame.title"/>
+                        </transition>
+                        <transition appear name="refresher-slide-up" @before-enter="beforeEnter"
+                                    @after-enter="afterEnter">
+                            <span class="refresher-preview-title-mute" v-html="frame.subtitle"/>
+                        </transition>
+                        <transition appear name="refresher-slide-up" @before-enter="beforeEnter"
+                                    @after-enter="afterEnter"/>
+                    </div>
+
+                    <div v-if="frame.data.comments !== undefined" class="refresher-comment-controls-container">
+                        <fragment v-if="frame.data.useWriteComment">
+                            <PreviewButton :id="'dccon'" :click="renderDcconPopup"
+                                           :text="'디시콘'"
+                                           class="refresher-comment-controls"/>
+
+                            <PreviewButton :id="'write'" :click="toCommentWrite"
+                                           :text="'댓글 쓰기'"
+                                           class="refresher-comment-controls"/>
+                        </fragment>
+
+                        <PreviewButton :id="'refresh'" :click="refresh" :text="'새로고침'"
+                                       class="refresher-comment-controls"/>
+                    </div>
+                </div>
+                <div class="refresher-preview-meta">
+                    <User v-if="frame.data.user !== undefined" :user="frame.data.user"/>
+
+                    <div class="float-right">
+                        <div class="date-views">
+                            <TimeStamp v-if="frame.data.date" :date="frame.data.date"/>
+                            <span class="refresher-views" v-text="frame.data.views"/>
+                        </div>
+                        <CountDown v-if="frame.data.expire" :date="frame.data.expire"/>
+                    </div>
+                </div>
             </div>
-        </div>
+
+            <div v-if="frame.collapse" class="refresher-preview-contents">
+                <div class="refresher-collapse-text">
+                    <h3 @click="() => {frame.collapse = false; frame.functions.load()}">
+                        댓글 보기를 클릭하여 댓글만 표시합니다. 여기를 눌러 글을 볼 수 있습니다.
+                    </h3>
+                </div>
+            </div>
+            <div v-else class="refresher-preview-contents">
+                <refresher-loader v-show="frame.data.load"/>
+
+                <transition v-if="frame.data.comments === undefined" name="refresher-opacity">
+                    <div :key="frame.contents" class="refresher-preview-contents-actual" v-html="frame.contents"/>
+                </transition>
+                <fragment v-else>
+                    <div v-if="frame.data.comments.comments === null">
+                        <div class="refresher-nocomment-wrap">
+                            <img :src="getURL('/assets/icons/empty_comment.png')"/>
+                            <h3>댓글이 없습니다.</h3>
+                        </div>
+                        <br>
+                    </div>
+                    <div v-else class="refresher-preview-comments">
+                        <transition-group appear name="refresher-slide-up" @before-enter="beforeEnter"
+                                          @after-enter="afterEnter">
+                            <Comment v-for="(comment, i) in frame.data.comments.comments"
+                                     :key="`cmt_${comment.no}`"
+                                     :comment="comment" :delete="frame.functions.deleteComment"
+                                     :getReply="getReply"
+                                     :index="i + 1"
+                                     :postUser="frame.data.postUserId"
+                                     @setReply="setReply"/>
+                        </transition-group>
+                    </div>
+
+                    <div v-if="frame.data.useWriteComment">
+                        <WriteComment :func="writeComment" :getDccon="getDccon" :getReply="getReply"
+                                      @setDccon="setDccon"
+                                      @setReply="setReply"/>
+                    </div>
+                </fragment>
+            </div>
+            <div v-if="frame.data.comments === undefined && frame.data.buttons" class="refresher-preview-votes">
+                <div>
+                    <PreviewButton :id="'upvote'" :click="upvote"
+                                   :text="`${frame.upvotes} (${frame.fixedUpvotes})`"
+                                   class="refresher-upvote"/>
+                    <PreviewButton v-if="!frame.data.disabledDownvote" :id="'downvote'" :click="downvote"
+                                   :text="frame.downvotes" class="refresher-downvote"/>
+                    <PreviewButton :id="'share'" :click="share" :text="'공유'"
+                                   class="refresher-share primary"/>
+                    <PreviewButton :id="'newtab'" :click="original" :text="'원본 보기'"/>
+                </div>
+            </div>
+        </fragment>
     </div>
 </template>
 
@@ -119,10 +141,11 @@ import User from "./user.vue";
 import Comment from "./comment.vue";
 import WriteComment from "./write_comment.vue";
 import Icon from "./icon.vue";
-import loader from "./loader.vue";
+import RefresherLoader from "./loader.vue";
 import Vue, {PropType} from "vue";
 import browser from "webextension-polyfill";
 import dccon from "./dccon.vue";
+import {Fragment} from "vue-fragment";
 
 interface FrameData {
     memoText: string;
@@ -141,7 +164,8 @@ export default Vue.extend({
         Comment,
         WriteComment,
         Icon,
-        "refresher-loader": loader
+        RefresherLoader,
+        Fragment
     },
     props: {
         frame: {
@@ -193,7 +217,7 @@ export default Vue.extend({
                 result = await this.frame.functions.writeComment(...args);
             }
 
-            this.frame.functions.retry();
+            this.retry();
 
             return result;
         },
@@ -204,7 +228,7 @@ export default Vue.extend({
         },
 
         refresh() {
-            this.frame.functions.retry();
+            this.retry();
             return true;
         },
 

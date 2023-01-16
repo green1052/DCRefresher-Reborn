@@ -9,7 +9,7 @@
 
         <hr>
 
-        <h3 v-if="dcconList === null">로딩중</h3>
+        <refresher-loader v-if="dcconList === null"/>
         <fragment v-else>
             <ul style="overflow: auto; display: flex;">
                 <li v-for="dccon in dcconList.list" :key="dccon.title">
@@ -35,7 +35,8 @@
 import Vue from "vue";
 import Cookies from "js-cookie";
 import * as http from "../utils/http";
-import {Fragment} from 'vue-fragment'
+import {Fragment} from "vue-fragment";
+import RefresherLoader from "./loader.vue";
 
 interface DcconPopupData {
     dcconList: DcinsideDcconDetail | null;
@@ -83,6 +84,7 @@ export default Vue.extend({
         }
     },
     components: {
+        RefresherLoader,
         Fragment
     }
 });

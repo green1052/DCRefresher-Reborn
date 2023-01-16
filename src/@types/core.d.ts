@@ -82,20 +82,32 @@ declare global {
     interface RefresherFrame {
         title: string;
         subtitle: string;
-
         app: RefresherFrameAppVue;
-        contents: string;
-        comments: DcinsideComments | Record<string, unknown>;
-        upvotes: string | null;
-        fixedUpvotes: string | null;
-        downvotes: string | null;
-        buttonError: unknown;
-        error?: unknown;
+        contents: string | undefined;
+        upvotes: string | undefined;
+        fixedUpvotes: string | undefined;
+        downvotes: string | undefined;
+        error?: { title: string; detail: string; } | undefined;
         collapse?: boolean;
-
-        data: { [index: string]: unknown };
+        data: {
+            load: boolean;
+            buttons: boolean;
+            disabledDownvote: boolean;
+            user: User | undefined;
+            date: Date | undefined;
+            expire: string | undefined;
+            views: string | undefined;
+            useWriteComment: boolean;
+            comments: DcinsideComments | undefined;
+        };
         functions: {
-            [index: string]: (...args: any[]) => Promise<boolean> | boolean
+            vote(type: number): Promise<boolean>;
+            share(): boolean;
+            load(useCache = true): void;
+            retry(useCache = false): void;
+            openOriginal(): boolean;
+            writeComment(type: "text" | "dccon", memo: string | DcinsideDccon, reply: string | null, user: { name: string; pw?: string }): Promise<boolean>
+            deleteComment(commentId: string, password: string, admin: boolean): Promise<boolean>;
         };
     }
 

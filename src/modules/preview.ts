@@ -8,6 +8,7 @@ import {ScrollDetection} from "../utils/scrollDetection";
 import {submitComment, submitDcconComment} from "../utils/comment";
 import logger from "../utils/logger";
 import Cookies from "js-cookie";
+import * as block from "../core/block";
 
 class PostInfo implements PostInfo {
     id: string;
@@ -171,7 +172,7 @@ const request = {
     async vote(
         gall_id: string,
         post_id: string,
-        type: string,
+        type: number,
         code: string | undefined,
         link: string
     ) {
@@ -954,6 +955,45 @@ const getRelevantData = (ev: MouseEvent) => {
     };
 };
 
+interface Cache {
+    post?: PostInfo;
+    comment?: DcinsideComments;
+}
+
+class PostCache {
+    #caches: { [key: string]: Cache } = {};
+
+    constructor(public maxCacheSize: number = 50) {
+
+    }
+
+    public get(id: string): Cache | undefined {
+        return this.#caches[id];
+    }
+
+    public set(id: string, data: Cache): void {
+        if (Object.keys(this.#caches).length > this.maxCacheSize) {
+            const lastCache = Object.entries(this.#caches)[0]![0];
+            this.delete(lastCache);
+        }
+
+        this.#caches[id] ??= {};
+        this.#caches[id] = {
+            ...this.get(id),
+            ...data
+        };
+    }
+
+    public delete(id: string): boolean {
+        if (this.#caches[id] === undefined) return false;
+
+        delete this.#caches[id];
+        return true;
+    }
+}
+
+const postCaches = new PostCache();
+
 const miniPreview: miniPreview = {
     element: document.createElement("div"),
     init: false,
@@ -961,7 +1001,6 @@ const miniPreview: miniPreview = {
     controller: new AbortController(),
     lastElement: null,
     lastTimeout: 0,
-    caches: {},
     shouldOutHandle: false,
     cursorOut: false,
     create(ev, use, hide) {
@@ -1012,46 +1051,48 @@ const miniPreview: miniPreview = {
         if (selector === null) return;
 
         new Promise<PostInfo>((resolve, reject) => {
-            if (Object.keys(miniPreview.caches).length > 50) miniPreview.caches = {};
+            const cache = postCaches.get(`${preData.gallery}${preData.id}`);
 
-            const cache = miniPreview.caches[preData.gallery + preData.id];
-
-            if (cache) return resolve(cache as PostInfo);
-
-            try {
-                request
-                    .post(
-                        preData.link,
-                        preData.gallery,
-                        preData.id,
-                        miniPreview.controller.signal,
-                        false
-                    )
-                    .then((result) => {
-                        miniPreview.caches[preData.gallery + preData.id] = result;
-                        resolve(result);
-                    })
-                    .catch((e) => {
-                        reject(e);
-                    });
-            } catch (e) {
-                reject(e);
+            if (cache?.post !== undefined) {
+                resolve(cache.post);
+                return;
             }
+
+            request
+                .post(
+                    preData.link,
+                    preData.gallery,
+                    preData.id,
+                    miniPreview.controller.signal,
+                    false
+                )
+                .then((response) => {
+                    if (response) {
+                        postCaches.set(`${preData.gallery}${preData.id}`, {post: response});
+                        resolve(response);
+                        return;
+                    }
+
+                    reject();
+                })
+                .catch((e) => {
+                    reject(e);
+                });
         })
             .then((v) => {
-                selector.innerHTML = v.contents ?? "";
+                const content = v.contents ?? "";
+
+                selector.innerHTML = block.check("TEXT", content) ? "게시글 내용이 차단됐습니다." : content;
                 selector.querySelector(".write_div")?.setAttribute("style", "");
             })
-            .catch((e) => {
-                const {message} = (e as Error);
-
+            .catch((error) => {
                 selector.innerHTML =
-                    message.includes("aborted")
+                    error.toString().includes("aborted")
                         ? ""
-                        : `게시글을 새로 가져올 수 없습니다: ${message}`;
+                        : `게시글을 새로 가져올 수 없습니다: ${error}`;
             });
 
-        (miniPreview.element.querySelector("h3") as HTMLHeadingElement).innerHTML = preData.title;
+        miniPreview.element.querySelector("h3")!.innerHTML = preData.title;
     },
 
     move(ev: MouseEvent, use: boolean) {
@@ -1221,13 +1262,12 @@ export default {
             default: false
         }
     },
-    require: ["filter", "eventBus", "Frame", "http", "block"],
+    require: ["filter", "eventBus", "Frame", "http"],
     func(
         filter: RefresherFilter,
         eventBus: RefresherEventBus,
         Frame: RefresherFrame,
-        http: RefresherHTTP,
-        block: RefresherBlock
+        http: RefresherHTTP
     ): void {
         let postFetchedData: PostInfo;
         const gallery = queryString("id") ?? undefined;
@@ -1238,16 +1278,15 @@ export default {
             signal: AbortSignal,
             historySkip?: boolean
         ) => {
-            frame.data = {};
-            frame.error = false;
-            frame.functions = {};
-            frame.contents = "";
-            frame.upvotes = "";
-            frame.fixedUpvotes = "";
-            frame.downvotes = "";
+            frame.error = undefined;
+            frame.contents = undefined;
+            frame.fixedUpvotes = undefined;
+            frame.upvotes = undefined;
+            frame.downvotes = undefined;
+            frame.data.user = undefined;
 
             frame.data.load = true;
-            frame.title = preData.title || "";
+            frame.title = preData.title!;
             frame.data.buttons = true;
 
             if (this.status.colorPreviewLink) {
@@ -1263,29 +1302,25 @@ export default {
                         preData.link
                     );
                 }
+
                 document.title = title;
             }
 
-            frame.functions.vote = async (type: string) => {
+            frame.functions.vote = async (type: number) => {
                 if (!postFetchedData) {
                     Toast.show("게시글이 로딩될 때까지 잠시 기다려주세요.", true, 3000);
-                    return;
+                    return false;
                 }
 
-                const requireCapCode = postFetchedData.requireCaptcha;
-
-                let codeSrc = "";
-                if (requireCapCode) {
-                    codeSrc = await request.captcha(preData, "recommend");
-                }
+                const codeSrc = postFetchedData.requireCaptcha ? await request.captcha(preData, "recommend") : undefined;
 
                 const req = async (captcha?: string) => {
                     const res = await request.vote(
                         preData.gallery,
                         preData.id,
                         type,
-                        captcha || undefined,
-                        preData.link || ""
+                        captcha ?? undefined,
+                        preData.link!
                     );
 
                     if (res.result !== "true") {
@@ -1302,28 +1337,18 @@ export default {
                     return true;
                 };
 
-                if (codeSrc) {
-                    return panel.captcha(codeSrc, (str: string) => {
-                        req(str);
-                    });
-                }
+                if (codeSrc === undefined)
+                    return req();
 
-                return req();
+                return panel.captcha(codeSrc, (str) => {
+                    req(str);
+                });
             };
 
             frame.functions.share = () => {
-                if (!navigator.clipboard) {
-                    Toast.show(
-                        "이 브라우저는 클립보드 복사 기능을 지원하지 않습니다.",
-                        true,
-                        3000
-                    );
-                    return false;
-                }
-
                 navigator.clipboard.writeText(
                     `https://gall.dcinside.com/${http.galleryType(
-                        preData.link || ""
+                        preData.link!
                     )}/board/view/?id=${preData.gallery || http.queryString("id")}&no=${
                         preData.id
                     }`
@@ -1334,93 +1359,111 @@ export default {
                 return true;
             };
 
-            frame.functions.load = () => {
+            frame.functions.load = (useCache = true) => {
                 frame.data.load = true;
 
-                request
-                    .post(
-                        preData.link || "",
-                        preData.gallery || http.queryString("id") || "",
-                        preData.id,
-                        signal,
-                        this.status.noCacheHeader
-                    )
-                    .then((obj: PostInfo) => {
-                        if (!obj) {
-                            return;
-                        }
+                new Promise<PostInfo>((resolve, reject) => {
+                    const cache = postCaches.get(`${preData.gallery}${preData.id}`);
 
+                    if (useCache && cache?.post !== undefined) {
+                        resolve(cache.post);
+                        return;
+                    }
+
+                    request
+                        .post(
+                            preData.link!,
+                            preData.gallery,
+                            preData.id,
+                            signal,
+                            this.status.noCacheHeader
+                        )
+                        .then((response) => {
+                            if (response) {
+                                postCaches.set(`${preData.gallery}${preData.id}`, {post: response});
+                                resolve(response);
+                                return;
+                            }
+
+                            reject();
+                        })
+                        .catch(reject);
+                })
+                    .then((postInfo) => {
                         if (this.status.colorPreviewLink) {
-                            const title = `${obj.title} - ${document.title
+                            const title = `${postInfo.title} - ${document.title
                                 .split("-")
                                 .slice(-1)[0]
                                 .trim()}`;
 
                             if (!historySkip) {
-                                preData.title = obj.title;
+                                preData.title = postInfo.title;
                                 history.replaceState(
                                     {preData, preURL: location.href},
                                     title,
                                     preData.link
                                 );
                             }
+
                             document.title = title;
                         }
 
-                        postFetchedData = obj;
+                        postFetchedData = postInfo;
 
-                        frame.contents = block.check("TEXT", obj.contents ?? "", gallery) ? "게시글 내용이 차단됐습니다." : obj.contents ?? "";
-                        frame.upvotes = obj.upvotes || "-1";
-                        frame.fixedUpvotes = obj.fixedUpvotes || "-1";
-                        frame.downvotes = obj.downvotes || "-1";
+                        frame.contents = block.check("TEXT", postInfo.contents ?? "", gallery) ? "게시글 내용이 차단됐습니다." : postInfo.contents;
+                        frame.upvotes = postInfo.upvotes;
+                        frame.fixedUpvotes = postInfo.fixedUpvotes;
+                        frame.downvotes = postInfo.downvotes;
 
-                        frame.data.disabledDownvote = obj.disabledDownvote;
+                        if (frame.title !== postInfo.title)
+                            frame.title = postInfo.title!;
 
-                        if (frame.title !== obj.title) {
-                            frame.title = obj.title || "";
+                        frame.data.disabledDownvote = postInfo.disabledDownvote ?? false;
+
+                        frame.data.user = postInfo.user;
+
+                        if (postInfo.date) {
+                            frame.data.date = new Date(postInfo.date.replace(/\./g, "-"));
                         }
 
-                        frame.data.user = obj.user;
-
-                        if (obj.date) {
-                            frame.data.date = new Date(obj.date.replace(/\./g, "-"));
-                        }
-
-                        frame.data.expire = obj.expire;
+                        frame.data.expire = postInfo.expire;
                         frame.data.buttons = true;
-                        frame.data.views = `조회 ${obj.views}회`;
+                        frame.data.views = `조회 ${postInfo.views}회`;
 
-                        eventBus.emit("RefresherPostDataLoaded", obj);
+                        eventBus.emit("RefresherPostDataLoaded", postInfo);
                         eventBus.emit(
                             "RefresherPostCommentIDLoaded",
-                            obj.commentId,
-                            obj.commentNo
+                            postInfo.commentId,
+                            postInfo.commentNo
                         );
                         eventBus.emitNextTick("contentPreview", frame.app.$el);
 
                         frame.data.load = false;
                     })
-                    .catch((e) => {
+                    .catch((error) => {
                         frame.error = {
                             title: "게시글",
-                            detail: e || "알 수 없는 오류"
+                            detail: error
                         };
 
-                        logger("Error occured while loading a post.", e);
+                        logger("Error occured while loading a post.", error);
 
                         frame.data.load = false;
                     });
             };
 
-            if (!frame.collapse) {
-                frame.functions.load();
-            }
+            frame.functions.retry = (useCache = false) => {
+                frame.functions.load(useCache);
+            };
 
-            frame.functions.retry = frame.functions.load;
+            if (!frame.collapse)
+                frame.functions.load();
 
             frame.functions.openOriginal = () => {
-                if (this.status.colorPreviewLink) location.reload();
-                else location.href = preData.link || location.href;
+                if (this.status.colorPreviewLink)
+                    location.reload();
+                else
+                    location.href = preData.link!;
 
                 return true;
             };
@@ -1431,9 +1474,8 @@ export default {
             preData: GalleryPreData,
             signal: AbortSignal
         ) => {
-            frame.error = false;
-            frame.data = {};
-            frame.functions = {};
+            frame.error = undefined;
+            frame.data.comments = undefined;
 
             frame.data.load = true;
             frame.title = "댓글";
@@ -1462,7 +1504,7 @@ export default {
                     eventBus.on(
                         "RefresherPostDataLoaded",
                         (obj: PostInfo) => {
-                            postDom = obj.dom as Document;
+                            postDom = obj.dom!;
                         },
                         {
                             once: true
@@ -1470,28 +1512,41 @@ export default {
                     );
                 }
 
-                frame.functions.load = async () => {
-                    return request
-                        .comments(
-                            {
-                                link: preData.link ?? location.href,
-                                gallery: preData.gallery,
-                                id: preData.id,
-                                commentId: postData.gallery,
-                                commentNo: postData.id
-                            },
-                            signal
-                        )
-                        .then((comments: DcinsideComments) => {
-                            if (!comments) {
-                                frame.error = {
-                                    detail: "No comments"
-                                };
-                            }
+                frame.functions.load = (useCache = true) => {
+                    frame.data.load = true;
 
+                    new Promise<DcinsideComments>((resolve, reject) => {
+                        const cache = postCaches.get(`${preData.gallery}${preData.id}`);
+
+                        if (useCache && cache?.comment !== undefined) {
+                            resolve(cache.comment);
+                            return;
+                        }
+
+                        request
+                            .comments(
+                                {
+                                    link: preData.link!,
+                                    gallery: preData.gallery,
+                                    id: preData.id
+                                },
+                                signal
+                            )
+                            .then((response) => {
+                                if (response) {
+                                    postCaches.set(`${preData.gallery}${preData.id}`, {comment: response});
+                                    resolve(response);
+                                    return;
+                                }
+
+                                reject();
+                            })
+                            .catch(reject);
+                    })
+                        .then((comments) => {
                             let threadCounts = 0;
 
-                            if (comments.comments) {
+                            if (comments.comments !== null) {
                                 comments.comments = comments.comments.filter(
                                     (v: DcinsideCommentObject) => {
                                         return v.nicktype !== "COMMENT_BOY";
@@ -1543,26 +1598,25 @@ export default {
                             frame.data.comments = comments;
                             frame.data.load = false;
                         })
-                        .catch((e) => {
-                            frame.subtitle = "";
-
+                        .catch((error) => {
                             frame.error = {
                                 title: "댓글",
-                                detail: e || "알 수 없는 오류"
+                                detail: error
                             };
                         });
                 };
 
                 frame.functions.load();
-                frame.functions.retry = frame.functions.load;
+                frame.functions.retry = (useCache = false) => {
+                    frame.functions.load(useCache);
+                };
 
                 frame.functions.writeComment = async (
                     type: "text" | "dccon",
                     memo: string | DcinsideDccon,
                     reply: string | null,
                     user: { name: string; pw?: string }
-                ): Promise<boolean> => {
-                    // TODO : 디시콘 추가시 type 핸들링 (현재 text만)
+                ) => {
                     if (!postFetchedData) {
                         Toast.show("게시글이 로딩될 때까지 잠시 기다려주세요.", true, 3000);
                         return false;
@@ -1612,9 +1666,8 @@ export default {
                     return req();
                 };
 
-                if (this.memory.refreshIntervalId) {
+                if (this.memory.refreshIntervalId)
                     clearInterval(this.memory.refreshIntervalId);
-                }
 
                 this.memory.refreshIntervalId = setInterval(() => {
                     if (this.status.autoRefreshComment) {
@@ -1629,7 +1682,7 @@ export default {
                 commentId: string,
                 password: string,
                 admin: boolean
-            ): Promise<boolean> => {
+            ) => {
                 if (!preData.link) {
                     return false;
                 }
@@ -1656,8 +1709,8 @@ export default {
                 }
 
                 return (admin && !password
-                        ? request.adminDeleteComment(preData, commentId, signal)
-                        : request.userDeleteComment(preData, commentId, signal, password)
+                    ? request.adminDeleteComment(preData, commentId, signal)
+                    : request.userDeleteComment(preData, commentId, signal, password)
                 )
                     .then((v) => {
                         if (typeof v === "boolean") {
@@ -1712,9 +1765,7 @@ export default {
             const firstApp = frame.app.first();
             const secondApp = frame.app.second();
 
-            if (firstApp.data.load) {
-                return;
-            }
+            if (firstApp.data.load) return;
 
             const params = new URLSearchParams(preData.link);
             params.set("no", preData.id);
@@ -1863,10 +1914,8 @@ export default {
                         return;
                     }
 
-                    if (scrolledCount < 1) {
-                        scrolledCount++;
-                        return;
-                    }
+                    if (scrolledCount++ < 1) return;
+
                     scrolledCount = 0;
 
                     if (!frame || !frame.app.first().error) {
@@ -2001,12 +2050,12 @@ export default {
         };
 
         this.memory.uuid = filter.add(`.gall_list .us-post${
-                this.status.expandRecognizeRange ? "" : " .ub-word"
-            }`,
-            addHandler,
-            {
-                neverExpire: true
-            }
+            this.status.expandRecognizeRange ? "" : " .ub-word"
+        }`,
+        addHandler,
+        {
+            neverExpire: true
+        }
         );
         this.memory.uuid2 = filter.add("#right_issuezoom", addHandler);
 

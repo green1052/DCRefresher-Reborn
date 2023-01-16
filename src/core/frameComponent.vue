@@ -1,12 +1,23 @@
 <template>
-    <Outer :style="{display: closed ? 'none' : ''}"/>
+    <div
+        v-show="!closed"
+        :class="{background: background, blur: blur, fadeIn: fade, fadeOut: !fade, stack: fade}"
+        class="refresher-frame-outer">
+        <refresher-group/>
+        <transition name="refresher-prev-post">
+            <refresher-scroll v-show="scrollModeTop" side="top"/>
+        </transition>
+        <transition name="refresher-next-post">
+            <refresher-scroll v-show="scrollModeBottom" side="bottom"/>
+        </transition>
+    </div>
 </template>
 
 <script lang="ts">
-import outer from "../components/outer.vue";
 import scroll from "../components/scroll.vue";
 import Vue, {PropType} from "vue";
 import {FrameStackOption} from "./frame";
+import group from "../components/group.vue";
 
 interface FrameComponentData extends FrameStackOption {
     frames: RefresherFrame[],
@@ -21,8 +32,9 @@ interface FrameComponentData extends FrameStackOption {
 export default Vue.extend({
     name: "refresher-frame-outer",
     components: {
-        Outer: outer,
-        Scroll: scroll
+        Scroll: scroll,
+        "refresher-group": group,
+        "refresher-scroll": scroll
     },
     props: {
         option: {
@@ -42,8 +54,8 @@ export default Vue.extend({
         };
     },
     watch: {
-        closed: (val) => {
-            document.body.style.overflow = val === true ? "auto" : "hidden";
+        closed: (val: boolean) => {
+            document.body.style.overflow = val ? "auto" : "hidden";
         }
     },
     created() {
@@ -74,7 +86,6 @@ export default Vue.extend({
         outerClick() {
             this.$emit("close");
             this.fadeOut();
-            this.$data.closed = true;
         },
 
         close() {
@@ -82,12 +93,16 @@ export default Vue.extend({
         },
 
         fadeIn() {
-            this.$data.fade = true;
-            this.$data.closed = false;
+            this.fade = true;
+            this.closed = false;
         },
 
         fadeOut() {
-            this.$data.fade = false;
+            this.fade = false;
+
+            setTimeout(() => {
+                this.closed = true;
+            }, 251);
         }
     }
 });
