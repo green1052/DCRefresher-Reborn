@@ -211,19 +211,18 @@ export default Vue.extend({
         },
 
         async writeComment(...args: any[]) {
-            let result = false;
+            try {
+                await this.frame.functions.writeComment(...args);
+                this.retry();
 
-            if (this.frame.functions.writeComment) {
-                result = await this.frame.functions.writeComment(...args);
+                return true;
+            } catch {
+                return false;
             }
-
-            this.retry();
-
-            return result;
         },
 
         toCommentWrite() {
-            document.getElementById("comment_main")?.focus();
+            (document.querySelector("#comment_main") as HTMLElement)?.focus();
             return true;
         },
 
