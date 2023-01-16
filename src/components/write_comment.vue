@@ -9,10 +9,10 @@
         </div>
         <div class="refresher-comment-body">
             <div :class="{focus: focused, disable: disabled}" class="refresher-input-wrap">
-                <input id="comment_main" v-model="text" :disabled="disabled"
-                       :placeholder="this.getDccon() === null ? '댓글 입력...' : '디시콘이 선택됐습니다, 댓글 내용이 무시됩니다.'"
-                       autocomplete="off" @blur="blur"
-                       @focus="focus" @keydown="type"/>
+                <textarea id="comment_main" v-model="text" :disabled="disabled"
+                          :placeholder="this.getDccon() === null ? '댓글 입력...' : '디시콘이 선택됐습니다, 댓글 내용이 무시됩니다.'"
+                          autocomplete="off" @blur="blur"
+                          @focus="focus" @keydown="type"/>
             </div>
             <PreviewButton id="write" :click="write" class="refresher-writecomment primary" text="작성"/>
         </div>
@@ -168,6 +168,10 @@ export default Vue.extend({
         },
 
         type(ev: KeyboardEvent): KeyboardEvent | void {
+            if (ev.shiftKey && ev.key === "Enter") {
+                return ev;
+            }
+
             if (ev.key !== "Enter") {
                 return ev;
             }
