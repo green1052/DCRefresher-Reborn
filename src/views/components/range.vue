@@ -2,7 +2,7 @@
     <div class="refresher-range">
         <input :data-id="id" :data-module="modname" :disabled="disabled" :max="max" :min="min"
                :placeholder="placeholder" :step="step" :value="value" type="range" @change="update"
-               @input="input"></input>
+               @input="input"/>
         <span class="indicator">{{ value + (this.unit ? this.unit : "") }}</span>
     </div>
 </template>

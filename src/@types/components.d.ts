@@ -46,7 +46,7 @@ declare global {
     }
 
     interface DcinsideComments {
-        comments: DcinsideCommentObject[]
+        comments: DcinsideCommentObject[] | null
         total_cnt: number
     }
 

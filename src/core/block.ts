@@ -309,7 +309,7 @@ export const setStore = (
  */
 export const getBlockMode = (type: RefresherBlockType) => {
     return BLOCK_MODE_CACHE[type];
-}
+};
 
 communicate.addHook("blockSelected", () => {
     eventBus.emit("refresherRequestBlock");

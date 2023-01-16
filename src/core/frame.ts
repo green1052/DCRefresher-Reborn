@@ -21,43 +21,36 @@ export interface FrameStackOption {
 }
 
 class InternalFrame implements RefresherFrame {
-    title: string;
-    subtitle: string;
-    comments: DcinsideComments | Record<string, unknown>;
-    functions: {
-        [index: string]: (...args: any[]) => boolean | Promise<boolean>
-    };
-
-    options: FrameOption;
     app: RefresherFrameAppVue;
-    data: { [index: string]: unknown };
-
-    contents: string;
     collapse?: boolean;
-    error: Error | boolean;
-    upvotes: string | null;
-    downvotes: string | null;
-    fixedUpvotes: string | null;
-    buttonError: unknown;
+    contents: string | undefined;
+    downvotes: string | undefined;
+    error: { title: string; detail: string } | undefined;
+    fixedUpvotes: string | undefined;
 
-    constructor(options: FrameOption, app: RefresherFrameAppVue) {
+    subtitle: string;
+    title: string;
+    upvotes: string | undefined;
+    functions;
+    data;
+
+    constructor(public options: FrameOption, app: RefresherFrameAppVue) {
         this.options = options;
 
         this.title = "";
         this.subtitle = "";
-        this.comments = {};
-        this.functions = {};
-        this.collapse = false;
 
         this.app = app;
-        this.data = {};
 
-        this.error = false;
-        this.contents = "";
-        this.upvotes = null;
-        this.downvotes = null;
-        this.fixedUpvotes = null;
-        this.buttonError = null;
+        this.contents = undefined;
+        this.upvotes = undefined;
+        this.downvotes = undefined;
+        this.fixedUpvotes = undefined;
+        this.error = undefined;
+        this.collapse = undefined;
+
+        this.data = {};
+        this.functions = {};
     }
 
     get center() {
@@ -79,7 +72,7 @@ export default class {
     app: RefresherFrameAppVue;
 
     constructor(children: FrameOption[], option: FrameStackOption) {
-        if (!document || !document.createElement) {
+        if (document.readyState === "loading") {
             throw "Frame is not available before DOMContentLoaded event. (DOM isn't accessible)";
         }
 
@@ -94,7 +87,7 @@ export default class {
                     option
                 }
             })
-        }).$children[0];
+        }).$children[0] as RefresherFrameAppVue;
 
         for (let i = 0; i < children.length; i++) {
             this.app.frames.push(new InternalFrame(children[i], this.app));
