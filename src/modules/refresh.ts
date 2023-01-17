@@ -158,17 +158,19 @@ export default {
 
         const body = (url: string) => {
             return new Promise<HTMLElement | null>((resolve, reject) => {
-                http.make(url).then((body) => {
-                    try {
-                        const bodyParse = new DOMParser().parseFromString(body, "text/html");
+                http
+                    .make(url)
+                    .then((body) => {
+                        try {
+                            const bodyParse = new DOMParser().parseFromString(body, "text/html");
 
-                        eventBus.emit("refresherGetPost", bodyParse);
+                            eventBus.emit("refresherGetPost", bodyParse);
 
-                        resolve(bodyParse.querySelector(".gall_list tbody") as HTMLElement);
-                    } catch (e) {
-                        reject(e);
-                    }
-                });
+                            resolve(bodyParse.querySelector(".gall_list tbody") as HTMLElement);
+                        } catch (e) {
+                            reject(e);
+                        }
+                    });
             });
         };
 
@@ -183,7 +185,7 @@ export default {
         }
 
         filter.add(".page_head .gall_issuebox", (elem) => {
-            addRefreshText(elem);
+            addRefreshText(elem as HTMLElement);
         });
 
         this.memory.load = async (
@@ -202,10 +204,10 @@ export default {
                 return false;
             }
 
-            const userDataLyr = document.getElementById("user_data_lyr");
+            const userDataLyr = document.querySelector("#user_data_lyr") as HTMLElement;
 
             // 유저 메뉴가 열렸을 때는 새로고침 하지 않음
-            if (userDataLyr && userDataLyr.style.display !== "none") {
+            if (userDataLyr !== null && userDataLyr.style.display !== "none") {
                 return false;
             }
 
@@ -234,6 +236,7 @@ export default {
             const newList = await body(url);
 
             let oldList = document.querySelector(".gall_list tbody");
+
             if (!oldList || !newList || newList.children.length === 0) return false;
 
             const cached = Array.from(oldList.querySelectorAll("td.gall_num"))
@@ -244,29 +247,27 @@ export default {
                 oldList.parentElement.appendChild(newList);
                 oldList.parentElement.removeChild(oldList);
             }
+
             oldList = null;
 
             const posts = newList.querySelectorAll("tr.us-post");
-            if (posts) {
-                posts.forEach((tr) => {
-                    const writter = (tr as HTMLElement).querySelector(
-                        ".ub-writer"
-                    ) as HTMLElement;
 
-                    if (!writter) {
-                        return;
-                    }
+            for (const tr of posts) {
+                const writter = (tr as HTMLElement).querySelector(
+                    ".ub-writer"
+                ) as HTMLElement;
 
-                    if (
-                        block.checkAll({
-                            NICK: writter.dataset.nick || "",
-                            ID: writter.dataset.uid || "",
-                            IP: writter.dataset.ip || ""
-                        })
-                    ) {
-                        tr.parentElement?.removeChild(tr);
-                    }
-                });
+                if (writter === null) continue;
+
+                if (
+                    block.checkAll({
+                        NICK: writter.dataset.nick ?? "",
+                        ID: writter.dataset.uid ?? "",
+                        IP: writter.dataset.ip ?? ""
+                    })
+                ) {
+                    tr.parentElement?.removeChild(tr);
+                }
             }
 
             const postNoIter = newList.querySelectorAll("td.gall_num");
@@ -284,7 +285,7 @@ export default {
                 }
             }
 
-            postNoIter.forEach((v) => {
+            for (const v of postNoIter) {
                 const value = v.innerHTML;
 
                 if (!cached.includes(value) && value !== currentPostNo) {
@@ -299,7 +300,7 @@ export default {
                     v.innerHTML = `<span class="sp_img crt_icon></span>"`;
                     v.parentElement?.classList.add("crt");
                 }
-            });
+            }
 
             if (this.memory.average_counts && !this.memory.calledByPageTurn) {
                 this.memory.average_counts.push(this.memory.new_counts);
