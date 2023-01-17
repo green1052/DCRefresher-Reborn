@@ -1,7 +1,7 @@
 <template>
-    <div :title="locale" class="refresher-countdown" @click="this.$root.changeStamp">
+    <div :title="locale" class="refresher-countdown" @click="this.$root.$children[0].changeStamp">
         <transition name="refresher-opacity">
-            <span :key="`stamp${this.$root.stampMode}`">삭제 : {{ this.$root.stampMode ? locale : stamp }}</span>
+            <span :key="`stamp${this.$root.$children[0].stampMode}`">삭제 : {{ this.$root.$children[0].stampMode ? locale : stamp }}</span>
         </transition>
     </div>
 </template>
