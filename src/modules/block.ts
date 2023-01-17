@@ -34,44 +34,50 @@ export default {
     ): void {
         this.memory.uuid = filter.add(
             ".ub-writer",
-            async (elem) => {
+            (elem) => {
+                if (!(elem instanceof HTMLElement)) return;
+
                 const gallery = queryString("id");
 
                 if (!gallery) return;
 
                 const title = elem.parentElement?.querySelector(".gall_tit > a")?.textContent ?? "";
 
-                const nick = elem.dataset.nick || "";
-                const uid = elem.dataset.uid || "";
-                const ip = elem.dataset.ip || "";
+                const nick = elem.dataset.nick ?? "";
+                const uid = elem.dataset.uid ?? "";
+                const ip = elem.dataset.ip ?? "";
 
                 const commentElement = elem.closest(".reply_info, .cmt_info");
 
                 const dcconElement = commentElement?.querySelector(".written_dccon");
-                const dccon = (dcconElement?.getAttribute("src") || dcconElement?.getAttribute("data-src"))?.replace(/^.*no=/g, "").replace(/^&.*$/g, "") ?? "";
+                const dccon = (dcconElement?.getAttribute("src") ?? dcconElement?.getAttribute("data-src"))?.replace(/^.*no=/g, "").replace(/^&.*$/g, "") ?? "";
 
                 const commentContent = commentElement?.querySelector(".usertxt")?.textContent ?? "";
 
-                const blockTitle = block.check("TITLE", title, gallery);
-                const blockNickname = block.check("NICK", nick, gallery);
-                const blockId = block.check("ID", uid, gallery);
-                const blockIP = block.check("IP", ip, gallery);
-                const blockDccon = block.check("DCCON", dccon, gallery);
-                const blockComment = block.check("COMMENT", commentContent, gallery);
-
-                if (blockTitle || blockNickname || blockId || blockIP || blockDccon || blockComment) {
+                if (block.checkAll({
+                    TITLE: title,
+                    NICK: nick,
+                    ID: uid,
+                    IP: ip,
+                    DCCON: dccon,
+                    COMMENT: commentContent
+                }, gallery)) {
                     const post = elem.parentElement!;
 
-                    if (post.className.includes("ub-content")) {
+                    if (post.classList.contains("ub-content")) {
                         post.style.display = "none";
                         return;
                     }
 
-                    const content = dom.findNeighbor(post, ".ub-content", 3);
-
-                    if (content) {
-                        content.style.display = "none";
+                    if (post.parentElement?.className.startsWith("reply_")) {
+                        elem.closest<HTMLElement>(".reply")!.style.display = "none";
+                        return;
                     }
+
+                    const content = post.closest<HTMLElement>(".ub-content");
+
+                    if (content !== null)
+                        content.style.display = "none";
 
                     return;
                 }
