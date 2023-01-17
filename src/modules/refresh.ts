@@ -207,9 +207,7 @@ export default {
             const userDataLyr = document.querySelector("#user_data_lyr") as HTMLElement;
 
             // 유저 메뉴가 열렸을 때는 새로고침 하지 않음
-            if (userDataLyr !== null && userDataLyr.style.display !== "none") {
-                return false;
-            }
+            if (userDataLyr !== null && userDataLyr.style.display !== "none") return false;
 
             this.memory.lastRefresh = Date.now();
 
@@ -219,12 +217,10 @@ export default {
             // 글 선택 체크박스에 체크된 경우 새로 고침 건너 뜀
             if (
                 isAdmin &&
-                Array.from(document.querySelectorAll(".article_chkbox")).filter(
-                    (v) => (v as HTMLInputElement).checked
-                ).length > 0
-            ) {
-                return false;
-            }
+                Array.from(document.querySelectorAll(".article_chkbox"))
+                    .filter((v) => (v as HTMLInputElement).checked)
+                    .length > 0
+            ) return false;
 
             this.memory.new_counts = 0;
 
@@ -237,38 +233,17 @@ export default {
 
             let oldList = document.querySelector(".gall_list tbody");
 
-            if (!oldList || !newList || newList.children.length === 0) return false;
+            if (oldList === null || newList === null || newList.children.length === 0) return false;
 
             const cached = Array.from(oldList.querySelectorAll("td.gall_num"))
                 .map((v) => v.innerHTML)
                 .join("|");
 
-            if (oldList.parentElement) {
-                oldList.parentElement.appendChild(newList);
-                oldList.parentElement.removeChild(oldList);
-            }
+            const tbody = oldList.parentElement?.querySelector("tbody") as HTMLElement;
 
-            oldList = null;
+            if (tbody === null) return false;
 
-            const posts = newList.querySelectorAll("tr.us-post");
-
-            for (const tr of posts) {
-                const writter = (tr as HTMLElement).querySelector(
-                    ".ub-writer"
-                ) as HTMLElement;
-
-                if (writter === null) continue;
-
-                if (
-                    block.checkAll({
-                        NICK: writter.dataset.nick ?? "",
-                        ID: writter.dataset.uid ?? "",
-                        IP: writter.dataset.ip ?? ""
-                    })
-                ) {
-                    tr.parentElement?.removeChild(tr);
-                }
-            }
+            tbody.innerHTML = newList.innerHTML;
 
             const postNoIter = newList.querySelectorAll("td.gall_num");
 
@@ -383,15 +358,14 @@ export default {
                         if (tmp_subject_html.match(keyword)) {
                             let subject = tmp_subject_html.replace(
                                 keyword,
-                                "<span class=\"mark\">" + keyword + "</span>"
+                                `<span class="mark">${keyword}</span>`
                             );
 
                             subject = element
                                 .querySelector("a:first-child")
-                                ?.innerHTML.replace(tmp_subject_html, subject) as string
-                            ;(element.querySelector(
-                                "a:first-child"
-                            ) as HTMLAnchorElement).innerHTML = subject;
+                                ?.innerHTML.replace(tmp_subject_html, subject) as string;
+
+                            (element.querySelector("a:first-child") as HTMLAnchorElement).innerHTML = subject;
                         }
                     });
                 }
