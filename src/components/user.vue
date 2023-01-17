@@ -49,12 +49,12 @@ export default Vue.extend({
 
         clickHandle(): void {
             if (typeof this.click === "function") {
-                return this.click(this.user);
+                this.click(this.user);
+                return;
             }
 
-            if (this.user.id) {
+            if (this.user.id)
                 this.openLink(`https://gallog.dcinside.com/${this.user.id}`);
-            }
         },
 
         contextMenu(): void {
