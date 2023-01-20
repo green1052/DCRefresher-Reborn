@@ -10,6 +10,7 @@
         "downloads"
     ],
     "host_permissions": [
+        "https://github.com/",
         "https://mall.dcinside.com/",
         "https://gall.dcinside.com/",
         "https://gallog.dcinside.com/",

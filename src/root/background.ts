@@ -171,13 +171,13 @@ browser.runtime.onMessage.addListener((message) => {
 });
 
 browser.runtime.onInstalled.addListener((details) => {
-    fetch(browser.runtime.getURL("/assets/GeoLite2/GeoLite2-ASN.mmdb"))
+    fetch("https://github.com/green1052/maxmind-geoip2/raw/master/dist/GeoLite2-ASN/GeoLite2-ASN.mmdb")
         .then((res) => res.arrayBuffer())
         .then((buffer) => {
             storage.setLocal("refresher.asn", Buffer.from(buffer).toString("base64"));
         });
 
-    fetch(browser.runtime.getURL("/assets/GeoLite2/GeoLite2-Country.mmdb"))
+    fetch("https://github.com/green1052/maxmind-geoip2/raw/master/dist/GeoLite2-Country/GeoLite2-Country.mmdb")
         .then((res) => res.arrayBuffer())
         .then((buffer) => {
             storage.setLocal("refresher.country", Buffer.from(buffer).toString("base64"));
