@@ -13,14 +13,18 @@ let blocks: BlockCache = {
     NICK: [],
     ID: [],
     IP: [],
+    TITLE: [],
     TEXT: [],
+    COMMENT: [],
     DCCON: []
 };
 let blockModes: BlockModeCache = {
     NICK: "SAME",
     ID: "SAME",
     IP: "SAME",
-    TEXT: "SAME",
+    TITLE: "CONTAIN",
+    TEXT: "CONTAIN",
+    COMMENT: "CONTAIN",
     DCCON: "SAME"
 };
 let memos: MemoCache = {
