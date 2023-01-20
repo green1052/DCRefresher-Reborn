@@ -4,7 +4,7 @@ interface ResponseData {
     [key: string]: unknown;
 }
 
-export const storage = browser.storage.sync;
+export const storage = browser.storage.local;
 
 export function get<T>(key?: string | null): Promise<T> {
     return new Promise(async (resolve) => {
@@ -19,21 +19,6 @@ export function set<T>(key: string, value: T): void {
 
 export function remove(keys: string | string[]): void {
     storage.remove(keys);
-}
-
-export function getLocal<T>(key?: string | null): Promise<T> {
-    return new Promise(async (resolve) => {
-        const value: ResponseData = await browser.storage.local.get(key);
-        resolve(key === null || key === undefined ? value as T : value[key] as T);
-    });
-}
-
-export function setLocal<T>(key: string, value: T): void {
-    browser.storage.local.set({[key]: value});
-}
-
-export function removeLocal(keys: string | string[]): void {
-    browser.storage.local.remove(keys);
 }
 
 export const module = {
@@ -61,8 +46,5 @@ export default {
     get,
     set,
     remove,
-    getLocal,
-    setLocal,
-    removeLocal,
     module
 };

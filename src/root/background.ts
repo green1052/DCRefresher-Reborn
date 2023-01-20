@@ -171,16 +171,28 @@ browser.runtime.onMessage.addListener((message) => {
 });
 
 browser.runtime.onInstalled.addListener((details) => {
+    // TODO 언젠가 제거
+    browser.storage.sync.get()
+        .then((data) => {
+            if (Object.keys(data).length === 0) return;
+
+            for (const [key, value] of Object.entries(data)) {
+                storage.set(key, value);
+            }
+
+            browser.storage.sync.clear();
+        });
+
     fetch("https://github.com/green1052/maxmind-geoip2/raw/master/dist/GeoLite2-ASN/GeoLite2-ASN.mmdb")
         .then((res) => res.arrayBuffer())
         .then((buffer) => {
-            storage.setLocal("refresher.asn", Buffer.from(buffer).toString("base64"));
+            storage.set("refresher.asn", Buffer.from(buffer).toString("base64"));
         });
 
     fetch("https://github.com/green1052/maxmind-geoip2/raw/master/dist/GeoLite2-Country/GeoLite2-Country.mmdb")
         .then((res) => res.arrayBuffer())
         .then((buffer) => {
-            storage.setLocal("refresher.country", Buffer.from(buffer).toString("base64"));
+            storage.set("refresher.country", Buffer.from(buffer).toString("base64"));
         });
 
     if (details.reason === "install") {
