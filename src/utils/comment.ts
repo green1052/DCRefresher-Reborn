@@ -15,13 +15,13 @@ const _d = function (r: string) {
         c = 0;
     for (r = r.replace(/[^A-Za-z0-9+/=]/g, ""); c < r.length;)
         (t = i.indexOf(r.charAt(c++))),
-        (f = i.indexOf(r.charAt(c++))),
-        (d = i.indexOf(r.charAt(c++))),
-        (h = i.indexOf(r.charAt(c++))),
-        (a = (t << 2) | (f >> 4)),
-        (e = ((15 & f) << 4) | (d >> 2)),
-        (n = ((3 & d) << 6) | h),
-        (o += String.fromCharCode(a)),
+            (f = i.indexOf(r.charAt(c++))),
+            (d = i.indexOf(r.charAt(c++))),
+            (h = i.indexOf(r.charAt(c++))),
+            (a = (t << 2) | (f >> 4)),
+            (e = ((15 & f) << 4) | (d >> 2)),
+            (n = ((3 & d) << 6) | h),
+            (o += String.fromCharCode(a)),
         64 != d && (o += String.fromCharCode(e)),
         64 != h && (o += String.fromCharCode(n));
     return o;
@@ -54,8 +54,8 @@ const requestBeforeServiceCode = (dom: Document) => {
     let tvl = _r,
         fi = parseInt(tvl.substr(0, 1))
     ;(fi = fi > 5 ? fi - 5 : fi + 4),
-    (tvl = tvl.replace(/^./, fi.toString())),
-    (_r = tvl);
+        (tvl = tvl.replace(/^./, fi.toString())),
+        (_r = tvl);
 
     const r = (dom.querySelector(
         "input[name=\"service_code\"]"
@@ -68,19 +68,23 @@ const requestBeforeServiceCode = (dom: Document) => {
     return r.replace(/(.{10})$/, t);
 };
 
-const secretKey = (dom: Document) => {
-    return (
-        Array.from(dom.querySelectorAll("#focus_cmt > input"))
-            .map((el) => {
-                const id = el.getAttribute("name") || el.id;
-                if (id === "service_code" || id === "gallery_no" || id === "clickbutton") {
-                    return "";
-                } else {
-                    return `&${id}=${(el as HTMLInputElement).value}`;
-                }
-            })
-            .join("") + "&t_vch2=&t_vch2_chk=&g-recaptcha-response="
-    );
+const secretKey = (dom: Document): string => {
+    const params = new URLSearchParams();
+    params.set("t_vch2", "");
+    params.set("t_vch2_chk", "");
+    params.set("g-recaptcha-response", "");
+
+    for (const element of dom.querySelectorAll<HTMLInputElement>("#focus_cmt > input")) {
+        const id = element.getAttribute("name") ?? element.id;
+
+        if (id === "service_code" || id === "gallery_no" || id === "clickbutton") {
+            continue;
+        }
+
+        params.set(id, element.value);
+    }
+
+    return params.toString();
 };
 
 interface CommentResult {
@@ -103,21 +107,7 @@ export async function submitComment(
     } catch (e) {
         return {
             result: "PreNotWorking",
-            message: String(e) || "사전에 정의되지 않은 오류."
-        };
-    }
-
-    if (!code) {
-        return {
-            result: "PreNotWorking",
-            message: "code 값이 없습니다."
-        };
-    }
-
-    if (!preData.gallery || !preData.id) {
-        return {
-            result: "PreNotWorking",
-            message: "preData 값이 올바르지 않습니다. (확장 프로그램 오류)"
+            message: String(e) ?? "사전에 정의되지 않은 오류."
         };
     }
 
