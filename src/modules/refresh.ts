@@ -231,7 +231,7 @@ export default {
             const url = http.view(originalLocation);
             const newList = await body(url);
 
-            let oldList = document.querySelector(".gall_list tbody");
+            const oldList = document.querySelector(".gall_list tbody");
 
             if (oldList === null || newList === null || newList.children.length === 0) return false;
 
