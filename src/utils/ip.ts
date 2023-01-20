@@ -6,12 +6,12 @@ import {Buffer} from "buffer";
 let asnReader: mmdb.Reader<AsnResponse>;
 let countryReader: mmdb.Reader<CountryResponse>;
 
-storage.getLocal<string>("refresher.asn")
+storage.get<string>("refresher.asn")
     .then((data) => {
         asnReader = new mmdb.Reader<AsnResponse>(Buffer.from(data, "base64"));
     });
 
-storage.getLocal<string>("refresher.country")
+storage.get<string>("refresher.country")
     .then((data) => {
         countryReader = new mmdb.Reader<CountryResponse>(Buffer.from(data, "base64"));
     });
