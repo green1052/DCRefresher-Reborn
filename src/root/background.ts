@@ -170,6 +170,18 @@ browser.runtime.onMessage.addListener((message) => {
     messageHandler(null, typeof message === "string" ? JSON.parse(message) : message);
 });
 
+async function getGeoIP(type: "ASN" | "Country", url: string): Promise<Buffer> {
+    try {
+        const res = await fetch(url);
+        const buffer = await res.arrayBuffer();
+
+        return Buffer.from(buffer);
+    } catch (e) {
+        const res = await fetch(browser.runtime.getURL(`/assets/GeoLite2/GeoLite2-${type}.mmdb`));
+        return Buffer.from(await res.arrayBuffer());
+    }
+}
+
 browser.runtime.onInstalled.addListener((details) => {
     // TODO 언젠가 제거
     browser.storage.sync.get()
@@ -183,14 +195,12 @@ browser.runtime.onInstalled.addListener((details) => {
             browser.storage.sync.clear();
         });
 
-    fetch("https://github.com/green1052/maxmind-geoip2/raw/master/dist/GeoLite2-ASN/GeoLite2-ASN.mmdb")
-        .then((res) => res.arrayBuffer())
+    getGeoIP("ASN", "https://github.com/green1052/maxmind-geoip2/raw/master/dist/GeoLite2-ASN/GeoLite2-ASN.mmdb")
         .then((buffer) => {
             storage.set("refresher.asn", Buffer.from(buffer).toString("base64"));
-        });
+        })
 
-    fetch("https://github.com/green1052/maxmind-geoip2/raw/master/dist/GeoLite2-Country/GeoLite2-Country.mmdb")
-        .then((res) => res.arrayBuffer())
+    getGeoIP("Country", "https://github.com/green1052/maxmind-geoip2/raw/master/dist/GeoLite2-Country/GeoLite2-Country.mmdb")
         .then((buffer) => {
             storage.set("refresher.country", Buffer.from(buffer).toString("base64"));
         });
