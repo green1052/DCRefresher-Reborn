@@ -1307,6 +1307,11 @@ export default {
             }
 
             frame.functions.vote = async (type: number) => {
+                if (frame.collapse === true) {
+                    Toast.show("댓글 보기를 클릭하여 댓글만 표시합니다.", true, 3000);
+                    return false;
+                }
+
                 if (!postFetchedData) {
                     Toast.show("게시글이 로딩될 때까지 잠시 기다려주세요.", true, 3000);
                     return false;
