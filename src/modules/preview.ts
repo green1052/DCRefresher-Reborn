@@ -1512,105 +1512,6 @@ export default {
                     );
                 }
 
-                frame.functions.load = (useCache = true) => {
-                    frame.data.load = true;
-
-                    new Promise<DcinsideComments>((resolve, reject) => {
-                        const cache = postCaches.get(`${preData.gallery}${preData.id}`);
-
-                        if (useCache && cache?.comment !== undefined) {
-                            resolve(cache.comment);
-                            return;
-                        }
-
-                        request
-                            .comments(
-                                {
-                                    link: preData.link!,
-                                    gallery: preData.gallery,
-                                    id: preData.id
-                                },
-                                signal
-                            )
-                            .then((response) => {
-                                if (response) {
-                                    postCaches.set(`${preData.gallery}${preData.id}`, {comment: response});
-                                    resolve(response);
-                                    return;
-                                }
-
-                                reject();
-                            })
-                            .catch(reject);
-                    })
-                        .then((comments) => {
-                            let threadCounts = 0;
-
-                            if (comments.comments !== null) {
-                                comments.comments = comments.comments.filter(
-                                    (v: DcinsideCommentObject) => {
-                                        return v.nicktype !== "COMMENT_BOY";
-                                    }
-                                );
-
-                                comments.comments.map((v: DcinsideCommentObject) => {
-                                    v.user = new User(
-                                        v.name,
-                                        v.user_id || null,
-                                        v.ip || null,
-                                        (new DOMParser()
-                                            .parseFromString(v.gallog_icon, "text/html")
-                                            .querySelector("a.writer_nikcon img"))?.getAttribute("src") || null
-                                    );
-                                });
-
-                                comments.comments = comments.comments.filter(
-                                    (comment: DcinsideCommentObject) => {
-                                        const check: { [index in RefresherBlockType]?: string } = {
-                                            NICK: comment.name
-                                        };
-
-                                        if (comment.user_id !== null) {
-                                            check.ID = comment.user_id;
-                                        }
-
-                                        if (comment.ip !== null) {
-                                            check.IP = comment.ip;
-                                        }
-
-                                        if (/<(img|video) class=/.test(comment.memo)) {
-                                            check.DCCON = /https:\/\/dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g.exec(comment.memo)![1];
-                                        } else {
-                                            check.COMMENT = comment.memo;
-                                        }
-
-                                        return !block.checkAll(check, gallery);
-                                    }
-                                );
-
-                                threadCounts = comments.comments
-                                    .map((v: DcinsideCommentObject) => Number(v.depth == 0))
-                                    .reduce((a: number, b: number) => a + b);
-                            }
-
-                            frame.subtitle = `${(comments.total_cnt !== threadCounts && `쓰레드 ${threadCounts}개, 총 댓글`) || ""} ${comments.total_cnt}개`;
-
-                            frame.data.comments = comments;
-                            frame.data.load = false;
-                        })
-                        .catch((error) => {
-                            frame.error = {
-                                title: "댓글",
-                                detail: error
-                            };
-                        });
-                };
-
-                frame.functions.load();
-                frame.functions.retry = (useCache = false) => {
-                    frame.functions.load(useCache);
-                };
-
                 frame.functions.writeComment = async (
                     type: "text" | "dccon",
                     memo: string | DcinsideDccon,
@@ -1709,8 +1610,8 @@ export default {
                 }
 
                 return (admin && !password
-                    ? request.adminDeleteComment(preData, commentId, signal)
-                    : request.userDeleteComment(preData, commentId, signal, password)
+                        ? request.adminDeleteComment(preData, commentId, signal)
+                        : request.userDeleteComment(preData, commentId, signal, password)
                 )
                     .then((v) => {
                         if (typeof v === "boolean") {
@@ -1755,6 +1656,105 @@ export default {
                     .catch(() => {
                         return false;
                     });
+            };
+
+            frame.functions.load = (useCache = true) => {
+                frame.data.load = true;
+
+                new Promise<DcinsideComments>((resolve, reject) => {
+                    const cache = postCaches.get(`${preData.gallery}${preData.id}`);
+
+                    if (useCache && cache?.comment !== undefined) {
+                        resolve(cache.comment);
+                        return;
+                    }
+
+                    request
+                        .comments(
+                            {
+                                link: preData.link!,
+                                gallery: preData.gallery,
+                                id: preData.id
+                            },
+                            signal
+                        )
+                        .then((response) => {
+                            if (response) {
+                                postCaches.set(`${preData.gallery}${preData.id}`, {comment: response});
+                                resolve(response);
+                                return;
+                            }
+
+                            reject();
+                        })
+                        .catch(reject);
+                })
+                    .then((comments) => {
+                        let threadCounts = 0;
+
+                        if (comments.comments !== null) {
+                            comments.comments = comments.comments.filter(
+                                (v: DcinsideCommentObject) => {
+                                    return v.nicktype !== "COMMENT_BOY";
+                                }
+                            );
+
+                            comments.comments.map((v: DcinsideCommentObject) => {
+                                v.user = new User(
+                                    v.name,
+                                    v.user_id || null,
+                                    v.ip || null,
+                                    (new DOMParser()
+                                        .parseFromString(v.gallog_icon, "text/html")
+                                        .querySelector("a.writer_nikcon img"))?.getAttribute("src") || null
+                                );
+                            });
+
+                            comments.comments = comments.comments.filter(
+                                (comment: DcinsideCommentObject) => {
+                                    const check: { [index in RefresherBlockType]?: string } = {
+                                        NICK: comment.name
+                                    };
+
+                                    if (comment.user_id !== null) {
+                                        check.ID = comment.user_id;
+                                    }
+
+                                    if (comment.ip !== null) {
+                                        check.IP = comment.ip;
+                                    }
+
+                                    if (/<(img|video) class=/.test(comment.memo)) {
+                                        check.DCCON = /https:\/\/dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g.exec(comment.memo)![1];
+                                    } else {
+                                        check.COMMENT = comment.memo;
+                                    }
+
+                                    return !block.checkAll(check, gallery);
+                                }
+                            );
+
+                            threadCounts = comments.comments
+                                .map((v: DcinsideCommentObject) => Number(v.depth == 0))
+                                .reduce((a: number, b: number) => a + b);
+                        }
+
+                        frame.subtitle = `${(comments.total_cnt !== threadCounts && `쓰레드 ${threadCounts}개, 총 댓글`) || ""} ${comments.total_cnt}개`;
+
+                        frame.data.comments = comments;
+                        frame.data.load = false;
+                    })
+                    .catch((error) => {
+                        frame.error = {
+                            title: "댓글",
+                            detail: error
+                        };
+                    });
+            };
+
+            frame.functions.load();
+            frame.functions.retry = (useCache = false) => {
+                frame.functions.load(useCache);
             };
         };
 
@@ -2050,12 +2050,12 @@ export default {
         };
 
         this.memory.uuid = filter.add(`.gall_list .us-post${
-            this.status.expandRecognizeRange ? "" : " .ub-word"
-        }`,
-        addHandler,
-        {
-            neverExpire: true
-        }
+                this.status.expandRecognizeRange ? "" : " .ub-word"
+            }`,
+            addHandler,
+            {
+                neverExpire: true
+            }
         );
         this.memory.uuid2 = filter.add("#right_issuezoom", addHandler);
 
