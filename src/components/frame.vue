@@ -120,10 +120,10 @@
             <div v-if="frame.data.comments === undefined && frame.data.buttons" class="refresher-preview-votes">
                 <div>
                     <PreviewButton :id="'upvote'" :click="upvote"
-                                   :text="`${frame.upvotes} (${frame.fixedUpvotes})`"
+                                   :text="frame.upvotes === undefined && frame.fixedUpvotes === undefined ? 'X' : `${frame.upvotes} (${frame.fixedUpvotes})`"
                                    class="refresher-upvote"/>
                     <PreviewButton v-if="!frame.data.disabledDownvote" :id="'downvote'" :click="downvote"
-                                   :text="frame.downvotes" class="refresher-downvote"/>
+                                   :text="frame.downvotes ?? 'X'" class="refresher-downvote"/>
                     <PreviewButton :id="'share'" :click="share" :text="'공유'"
                                    class="refresher-share primary"/>
                     <PreviewButton :id="'newtab'" :click="original" :text="'원본 보기'"/>
