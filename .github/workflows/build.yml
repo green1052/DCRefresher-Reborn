@@ -1,0 +1,61 @@
+name: Build And Release
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+  pull_request:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+      - uses: actions/setup-node@v3
+        with:
+          node-version: lts/*
+          cache: yarn
+
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build Manifest v2
+        run: |
+          yarn run build:mv2
+          (cd dist && zip -1 -r ../mv2.zip .)
+
+      - name: Build Manifest v3
+        run: |
+          yarn run build:mv3
+          (cd dist && zip -1 -r ../mv3.zip .)
+
+  release:
+    if: github.event_name == "push"
+    name: Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            mv2.zip
+            mv3.zip
+          generate_release_notes: true
+
+  upload:
+    if: github.event_name == "pull_request"
+    name: Upload
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          path: |
+            mv2.zip
+            mv3.zip
