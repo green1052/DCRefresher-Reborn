@@ -198,7 +198,7 @@ browser.runtime.onInstalled.addListener((details) => {
     getGeoIP("ASN", "https://github.com/green1052/maxmind-geoip2/raw/master/dist/GeoLite2-ASN/GeoLite2-ASN.mmdb")
         .then((buffer) => {
             storage.set("refresher.asn", Buffer.from(buffer).toString("base64"));
-        })
+        });
 
     getGeoIP("Country", "https://github.com/green1052/maxmind-geoip2/raw/master/dist/GeoLite2-Country/GeoLite2-Country.mmdb")
         .then((buffer) => {

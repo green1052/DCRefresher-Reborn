@@ -1615,8 +1615,8 @@ export default {
                 }
 
                 return (admin && !password
-                        ? request.adminDeleteComment(preData, commentId, signal)
-                        : request.userDeleteComment(preData, commentId, signal, password)
+                    ? request.adminDeleteComment(preData, commentId, signal)
+                    : request.userDeleteComment(preData, commentId, signal, password)
                 )
                     .then((v) => {
                         if (typeof v === "boolean") {
@@ -2055,12 +2055,12 @@ export default {
         };
 
         this.memory.uuid = filter.add(`.gall_list .us-post${
-                this.status.expandRecognizeRange ? "" : " .ub-word"
-            }`,
-            addHandler,
-            {
-                neverExpire: true
-            }
+            this.status.expandRecognizeRange ? "" : " .ub-word"
+        }`,
+        addHandler,
+        {
+            neverExpire: true
+        }
         );
         this.memory.uuid2 = filter.add("#right_issuezoom", addHandler);
 
