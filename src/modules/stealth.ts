@@ -39,11 +39,10 @@ export default {
     name: "스텔스 모드",
     description: "페이지내에서 표시되는 이미지를 비활성화합니다.",
     memory: {
-        contentViewUUID: ""
+        contentViewUUID: null
     },
     enable: false,
     default_enable: false,
-    require: ["eventBus"],
     shortcuts: {
         stealthPause(this: RefresherModule): void {
             const button = document.querySelector(`${CONTROL_BUTTON} > #tempview`) as HTMLElement;
@@ -62,6 +61,7 @@ export default {
             Toast.show(content, false, 3000);
         }
     },
+    require: ["eventBus"],
     func(eventBus: RefresherEventBus): void {
         if (!document.documentElement.className.includes("refresherStealth")) {
             document.documentElement.classList.add("refresherStealth");
@@ -91,8 +91,13 @@ export default {
             button.parentElement?.removeChild(button);
         }
 
-        if (this.memory.contentViewUUID) {
+        if (this.memory.contentViewUUID !== null) {
             eventBus.remove("contentPreview", this.memory.contentViewUUID);
         }
     }
-};
+} as RefresherModule<{
+    memory: {
+        contentViewUUID: string | null;
+    };
+    require: ["eventBus"];
+}>;

@@ -54,7 +54,6 @@ const contentColorFix = (el: HTMLElement) => {
 export default {
     name: "다크 모드",
     description: "페이지와 DCRefresher Reborn의 창을 어두운 색상으로 변경합니다.",
-    top: true,
     memory: {
         uuid: null,
         uuid2: null,
@@ -63,7 +62,7 @@ export default {
     enable: false,
     default_enable: false,
     require: ["filter", "eventBus"],
-    func(filter: RefresherFilter, eventBus: RefresherEventBus): void {
+    func(filter: RefresherFilter, eventBus: RefresherEventBus) {
         if (document && document.documentElement && !document.documentElement.className.includes("refresherDark"))
             document.documentElement.classList.add("refresherDark");
 
@@ -89,20 +88,23 @@ export default {
 
         this.memory.contentViewUUID = eventBus.on("contentPreview", contentColorFix);
     },
-
-    revoke(filter: RefresherFilter, eventBus: RefresherEventBus): void {
+    revoke(filter: RefresherFilter, eventBus: RefresherEventBus) {
         document.documentElement.classList.remove("refresherDark");
 
-        if (this.memory.uuid) {
+        if (this.memory.uuid !== null)
             filter.remove(this.memory.uuid, true);
-        }
 
-        if (this.memory.uuid2) {
+        if (this.memory.uuid2 !== null)
             filter.remove(this.memory.uuid2, true);
-        }
 
-        if (this.memory.contentViewUUID) {
+        if (this.memory.contentViewUUID !== null)
             eventBus.remove("contentPreview", this.memory.contentViewUUID, true);
-        }
     }
-};
+} as RefresherModule<{
+    memory: {
+        uuid: string | null;
+        uuid2: string | null;
+        contentViewUUID: string | null;
+    };
+    require: ["filter", "eventBus"];
+}>;

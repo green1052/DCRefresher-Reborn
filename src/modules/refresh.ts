@@ -1,7 +1,7 @@
 import {eventBus} from "../core/eventbus";
-import {filter} from "../core/filtering";
 import * as Toast from "../components/toast";
 import {queryString} from "../utils/http";
+import * as assert from "assert";
 
 const AVERAGE_COUNTS_SIZE = 7;
 
@@ -47,16 +47,16 @@ export default {
     description: "글 목록을 자동으로 새로고침합니다.",
     url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/(view|lists)/g,
     status: {
-        refreshRate: undefined,
-        useBetterBrowse: undefined,
-        fadeIn: undefined,
-        autoRate: undefined,
-        noRefreshOnSearch: false,
-        doNotColorVisited: false
+        refreshRate: 2500,
+        useBetterBrowse: true,
+        fadeIn: true,
+        autoRate: true,
+        noRefreshOnSearch: true,
+        doNotColorVisited: true
     },
     memory: {
-        uuid: "",
-        uuid2: "",
+        uuid: null,
+        uuid2: null,
         cache: {},
         new_counts: 0,
         average_counts: new Array(AVERAGE_COUNTS_SIZE).fill(1),
@@ -65,12 +65,10 @@ export default {
         calledByPageTurn: false,
         refreshRequest: "",
         lastRefresh: 0,
-        load: (): void => {
-        }
+        load: null
     },
     enable: true,
     default_enable: true,
-    require: ["http", "eventBus", "filter", "block"],
     settings: {
         refreshRate: {
             name: "새로고침 주기",
@@ -122,17 +120,16 @@ export default {
         }
     },
     shortcuts: {
-        refreshLists(this: RefresherModule): void {
+        refreshLists(this: any) {
             if (this.memory.lastRefresh + 500 > Date.now()) {
                 Toast.show("너무 자주 새로고칠 수 없습니다.", true, 1000);
-
                 return;
             }
 
-            this.memory.load();
+            this.memory.load!();
         },
 
-        refreshPause(this: RefresherModule): void {
+        refreshPause() {
             PAUSE_REFRESH = !PAUSE_REFRESH;
 
             Toast.show(
@@ -146,13 +143,9 @@ export default {
             updateRefreshText();
         }
     },
-    func(
-        http: RefresherHTTP,
-        eventBus: RefresherEventBus,
-        filter: RefresherFilter,
-        block: RefresherBlock
-    ): void {
-        if (document && document.documentElement && this.status.doNotColorVisited) {
+    require: ["http", "eventBus", "filter"],
+    func(http: RefresherHTTP, eventBus: RefresherEventBus, filter: RefresherFilter) {
+        if (document && document.documentElement && this.status!.doNotColorVisited) {
             document.documentElement.classList.add("refresherDoNotColorVisited");
         }
 
@@ -179,7 +172,7 @@ export default {
 
         let originalLocation = location.href;
 
-        if (this.status.noRefreshOnSearch && queryString("s_keyword")) {
+        if (this.status!.noRefreshOnSearch && queryString("s_keyword")) {
             PAUSE_REFRESH = true;
             updateRefreshText();
         }
@@ -188,10 +181,7 @@ export default {
             addRefreshText(elem as HTMLElement);
         });
 
-        this.memory.load = async (
-            customURL?: string,
-            force?: boolean
-        ): Promise<boolean> => {
+        this.memory.load = async (customURL?, force?): Promise<boolean> => {
             if (!force && Date.now() < this.memory.lastRefresh + 500) {
                 return false;
             }
@@ -264,7 +254,7 @@ export default {
                 const value = v.innerHTML;
 
                 if (!cached.includes(value) && value !== currentPostNo) {
-                    if (this.status.fadeIn && !this.memory.calledByPageTurn && v.parentElement !== null) {
+                    if (this.status!.fadeIn && !this.memory.calledByPageTurn && v.parentElement !== null) {
                         v.parentElement.classList.add("refresherNewPost");
                         v.parentElement.style.animationDelay = `${this.memory.new_counts * 23}ms`;
                     }
@@ -288,7 +278,7 @@ export default {
                     this.memory.average_counts.reduce((a, b) => a + b) /
                     this.memory.average_counts.length;
 
-                if (this.status.autoRate) {
+                if (this.status!.autoRate) {
                     this.memory.delay = Math.max(
                         600,
                         8 * Math.pow(2 / 3, 3 * average) * 1000
@@ -378,18 +368,18 @@ export default {
 
         const run = (skipLoad?: boolean) => {
             if (!skipLoad) {
-                this.memory.load();
+                this.memory.load!();
             }
 
-            if (!this.status.autoRate) {
-                this.memory.delay = Math.max(1000, this.status.refreshRate || 2500);
+            if (!this.status!.autoRate) {
+                this.memory.delay = Math.max(1000, this.status!.refreshRate);
             }
 
             if (this.memory.refresh) {
                 clearTimeout(this.memory.refresh);
             }
 
-            this.memory.refresh = setTimeout(run, this.memory.delay);
+            this.memory.refresh = window.setTimeout(run, this.memory.delay);
         };
 
         document.addEventListener("visibilitychange", () => {
@@ -411,10 +401,10 @@ export default {
                 clearTimeout(this.memory.refresh);
             }
 
-            this.memory.load(null, true);
+            this.memory.load!(undefined, true);
         });
 
-        if (this.status.useBetterBrowse) {
+        if (this.status!.useBetterBrowse) {
             this.memory.uuid = filter.add(
                 ".left_content article:has(.gall_listwrap) .bottom_paging_box a",
                 (a: Element) => {
@@ -440,7 +430,7 @@ export default {
                         }
                         this.memory.calledByPageTurn = true;
 
-                        await this.memory.load(location.href, true);
+                        await this.memory.load!(location.href, true);
 
                         const query = document.querySelector(
                             isPageView ? ".view_bottom_btnbox" : ".page_head"
@@ -455,7 +445,7 @@ export default {
 
             window.addEventListener("popstate", () => {
                 this.memory.calledByPageTurn = true;
-                this.memory.load(null, true);
+                this.memory.load!(undefined, true);
             });
 
             this.memory.uuid2 = eventBus.on(
@@ -497,7 +487,7 @@ export default {
                                 }
                                 this.memory.calledByPageTurn = true;
 
-                                await this.memory.load(location.href, true);
+                                await this.memory.load!(location.href, true);
 
                                 const query = document.querySelector(
                                     location.href.includes("/board/view")
@@ -515,8 +505,7 @@ export default {
             );
         }
     },
-
-    revoke(): void {
+    revoke(http: RefresherHTTP, eventBus: RefresherEventBus, filter: RefresherFilter) {
         if (document && document.body) {
             document.body.classList.remove("refresherDoNotColorVisited");
         }
@@ -525,16 +514,39 @@ export default {
             clearTimeout(this.memory.refresh);
         }
 
-        if (this.memory.uuid) {
+        if (this.memory.uuid !== null) {
             filter.remove(this.memory.uuid);
         }
 
-        if (this.memory.uuid2) {
+        if (this.memory.uuid2 !== null) {
             eventBus.remove("refresherGetPost", this.memory.uuid2);
         }
 
-        if (this.memory.refreshRequest) {
+        if (this.memory.refreshRequest !== null) {
             eventBus.remove("refreshRequest", this.memory.refreshRequest);
         }
     }
-};
+} as RefresherModule<{
+    status: {
+        refreshRate: number;
+        useBetterBrowse: boolean;
+        fadeIn: boolean;
+        autoRate: boolean,
+        noRefreshOnSearch: boolean;
+        doNotColorVisited: boolean;
+    },
+    memory: {
+        uuid: string | null;
+        uuid2: string | null;
+        cache: {};
+        new_counts: 0;
+        average_counts: number[];
+        delay: number;
+        refresh: number;
+        calledByPageTurn: boolean;
+        refreshRequest: string | null;
+        lastRefresh: number;
+        load: ((customURL?: string, force?: boolean) => Promise<boolean>) | null;
+    };
+    require: ["http", "eventBus", "filter"]
+}>;

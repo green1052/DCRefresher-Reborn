@@ -39,9 +39,10 @@ export default {
     memory: {
         uuid: null,
         uuiddc: null,
-        resize: (): void => {
-        }
+        resize: null
     },
+    enable: true,
+    default_enable: true,
     settings: {
         activePixel: {
             name: "컴팩트 모드 활성화 조건",
@@ -54,7 +55,6 @@ export default {
             unit: "px",
             advanced: false
         },
-
         forceCompact: {
             name: "컴팩트 모드 강제 사용",
             desc: "항상 컴팩트 모드를 사용하도록 설정합니다.",
@@ -62,42 +62,36 @@ export default {
             default: false,
             advanced: false
         },
-
         useCompactModeOnView: {
             name: "컴팩트 모드 강제 사용",
             desc: "게시글 보기에서도 컴팩트 모드를 사용하도록 설정합니다.",
             type: "check",
             default: true
         },
-
         hideGalleryView: {
             name: "갤러리 뷰 숨기기",
             desc: "갤러리 정보, 최근 방문 갤러리 영역을 숨깁니다.",
             type: "check",
             default: false
         },
-
         hideUselessView: {
             name: "잡다 링크 숨기기",
             desc: "이슈줌, 타갤 개념글, 뉴스, 힛갤등의 컨텐츠를 오른쪽 영역에서 숨깁니다.",
             type: "check",
             default: false
         },
-
         pushToRight: {
             name: "본문 영역 전체로 확장",
             desc: `"잡다 링크 숨기기" 옵션이 켜진 경우 본문 영역을 확장합니다.`,
             type: "check",
             default: false
         },
-
         removeNotice: {
             name: "갤러리 공지 숨기기",
             desc: "글 목록에서 공지사항을 숨깁니다.",
             type: "check",
             default: false
         },
-
         removeDCNotice: {
             name: "디시 공지 숨기기",
             desc: "글 목록에서 운영자의 게시글을 숨깁니다.",
@@ -105,48 +99,35 @@ export default {
             default: false
         }
     },
-    enable: true,
-    default_enable: true,
-    require: ["filter"],
     update: {
-        activePixel(this: RefresherModule, value: number): void {
-            if (this.status) {
-                updateWindowSize(this.status.forceCompact, value, innerWidth);
-            }
+        activePixel(value: number) {
+            updateWindowSize(this.status!.forceCompact, value, innerWidth);
         },
-
-        forceCompact(this: RefresherModule, value: boolean): void {
-            updateWindowSize(value, this.status.activePixel, innerWidth);
+        forceCompact(value: boolean) {
+            updateWindowSize(value, this.status!.activePixel, innerWidth);
         },
-
-        hideGalleryView(value: boolean): void {
+        hideGalleryView(value: boolean) {
             document.documentElement.classList[value ? "add" : "remove"](
                 "refresherHideGalleryView"
             );
         },
-
-        hideUselessView(value: boolean): void {
+        hideUselessView(value: boolean) {
             document.documentElement.classList[value ? "add" : "remove"](
                 "refresherHideUselessView"
             );
         },
-
-        pushToRight(value: boolean): void {
+        pushToRight(value: boolean) {
             document.documentElement.classList[value ? "add" : "remove"](
                 "refresherPushToRight"
             );
         },
-
-        removeNotice(
-            this: RefresherModule,
-            value: boolean,
-            filter: RefresherFilter
-        ): void {
-            if (!this.memory) {
+        removeNotice(value: boolean, filter: RefresherFilter) {
+            if (this.memory.uuid !== null && !value) {
+                filter.remove(this.memory.uuid);
                 return;
             }
 
-            if (!this.memory.uuid && value) {
+            if (this.memory.uuid === null && !value) {
                 this.memory.uuid = filter.add(
                     ".gall_list .us-post b",
                     (elem: HTMLElement) => {
@@ -157,37 +138,29 @@ export default {
                             return;
                         }
 
-                        const pelem = (elem.parentElement as HTMLElement)
-                            .parentElement as HTMLElement;
-                        if (pelem as HTMLElement) {
-                            pelem.style.display = "none";
-                        }
+                        const pelem = (elem.parentElement as HTMLElement).parentElement as HTMLElement;
+
+                        (pelem as HTMLElement).style.display = "none";
                     },
                     {
                         neverExpire: true
                     }
                 );
-            } else if (this.memory.uuid && !value) {
-                filter.remove(this.memory.uuid);
             }
         },
-
-        removeDCNotice(
-            this: RefresherModule,
-            value: boolean,
-            filter: RefresherFilter
-        ): void {
-            if (!this.memory) {
+        removeDCNotice(value: boolean, filter: RefresherFilter) {
+            if (this.memory.uuiddc !== null && !value) {
+                filter.remove(this.memory.uuiddc);
                 return;
             }
 
-            if (!this.memory.uuiddc && value) {
+            if (this.memory.uuiddc === null && value) {
                 this.memory.uuiddc = filter.add(
                     ".gall_list .ub-content .ub-writer",
-                    (elem: Element) => {
+                    (elem) => {
                         const adminAttribute = elem.getAttribute("user_name");
 
-                        if (!adminAttribute || adminAttribute !== "운영자") {
+                        if (adminAttribute === null || adminAttribute !== "운영자") {
                             return;
                         }
 
@@ -201,39 +174,59 @@ export default {
                         neverExpire: true
                     }
                 );
-            } else if (this.memory.uuiddc && !value) {
-                filter.remove(this.memory.uuiddc);
             }
         }
     },
-    func(filter: RefresherFilter): void {
-        if (location.href.includes("board/view") && !this.status.useCompactModeOnView) return;
+    require: ["filter"],
+    func(filter: RefresherFilter) {
+        if (location.href.includes("board/view") && !this.status!.useCompactModeOnView) return;
 
         this.memory.resize = () =>
             updateWindowSize(
-                this.status.forceCompact,
-                this.status.activePixel,
+                this.status!.forceCompact,
+                this.status!.activePixel,
                 innerWidth
             );
+
         window.addEventListener("resize", this.memory.resize);
         this.memory.resize();
 
-        this.update.hideGalleryView(this.status.hideGalleryView);
-        this.update.hideUselessView(this.status.hideUselessView);
-        this.update.pushToRight(this.status.pushToRight);
-
-        this.update.removeNotice.bind(this)(this.status.removeNotice, filter);
-        this.update.removeDCNotice.bind(this)(this.status.removeDCNotice, filter);
+        this.update!.hideGalleryView.bind(this)(this.status!.hideGalleryView);
+        this.update!.hideUselessView.bind(this)(this.status!.hideUselessView);
+        this.update!.pushToRight.bind(this)(this.status!.pushToRight);
+        this.update!.removeNotice.bind(this)(this.status!.removeNotice, filter);
+        this.update!.removeDCNotice.bind(this)(this.status!.removeDCNotice, filter);
     },
+    revoke(filter: RefresherFilter) {
+        if (this.memory.uuid !== null)
+            filter.remove(this.memory.uuid);
 
-    revoke(filter: RefresherFilter): void {
-        window.removeEventListener("resize", this.memory.resize);
+        if (this.memory.uuiddc !== null)
+            filter.remove(this.memory.uuiddc);
 
-        this.update.hideGalleryView(false);
-        this.update.hideUselessView(false);
-        this.update.pushToRight(false);
+        window.removeEventListener("resize", this.memory.resize!);
 
-        this.update.removeNotice.bind(this)(false, filter);
-        this.update.removeDCNotice.bind(this)(false, filter);
+        this.update!.hideGalleryView.bind(this)(false);
+        this.update!.hideUselessView.bind(this)(false);
+        this.update!.pushToRight.bind(this)(false);
+        this.update!.removeNotice.bind(this)(false, filter);
+        this.update!.removeDCNotice.bind(this)(false, filter);
     }
-};
+} as RefresherModule<{
+    status: {
+        activePixel: number;
+        forceCompact: boolean;
+        hideGalleryView: boolean;
+        hideUselessView: boolean;
+        pushToRight: boolean;
+        removeNotice: boolean;
+        removeDCNotice: boolean;
+        useCompactModeOnView: boolean;
+    };
+    memory: {
+        uuid: string | null;
+        uuiddc: string | null;
+        resize: (() => void) | null;
+    };
+    require: ["filter"];
+}>;
