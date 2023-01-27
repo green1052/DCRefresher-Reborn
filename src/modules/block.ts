@@ -5,33 +5,26 @@ import Cookies from "js-cookie";
 export default {
     name: "컨텐츠 차단",
     description: "유저, 컨텐츠 등의 보고 싶지 않은 컨텐츠들을 삭제합니다.",
-    author: {name: "Sochiru", url: ""},
     url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/(view|lists)/g,
     memory: {
-        uuid: "",
-        uuid2: "",
+        uuid: null,
+        uuid2: null,
         selected: {
-            nick: "",
-            uid: "",
-            ip: "",
-            code: "",
-            packageIdx: ""
+            nick: null,
+            uid: null,
+            ip: null,
+            code: null,
+            packageIdx: null
         },
         lastSelect: 0,
-        addBlock: "",
-        addDcconBlock: "",
-        requestBlock: ""
+        addBlock: null,
+        addDcconBlock: null,
+        requestBlock: null
     },
     enable: true,
     default_enable: true,
     require: ["filter", "eventBus", "block", "dom", "http"],
-    func(
-        filter: RefresherFilter,
-        eventBus: RefresherEventBus,
-        block: RefresherBlock,
-        dom: RefresherDOM,
-        http: RefresherHTTP
-    ): void {
+    func(filter: RefresherFilter, eventBus: RefresherEventBus, block: RefresherBlock, dom: RefresherDOM, http: RefresherHTTP) {
         this.memory.uuid = filter.add(
             ".ub-writer",
             (elem) => {
@@ -42,7 +35,6 @@ export default {
                 if (!gallery) return;
 
                 const title = elem.parentElement?.querySelector(".gall_tit > a")?.textContent ?? "";
-
                 const nick = elem.dataset.nick ?? "";
                 const uid = elem.dataset.uid ?? "";
                 const ip = elem.dataset.ip ?? "";
@@ -87,8 +79,8 @@ export default {
                         nick,
                         uid,
                         ip,
-                        code: "",
-                        packageIdx: ""
+                        code: null,
+                        packageIdx: null
                     };
                     this.memory.lastSelect = Date.now();
                 };
@@ -105,11 +97,11 @@ export default {
                 const code = (element?.getAttribute("src") || element?.getAttribute("data-src"))?.replace(/^.*no=/g, "").replace(/^&.*$/g, "") || "";
 
                 this.memory.selected = {
-                    nick: "",
-                    uid: "",
-                    ip: "",
+                    nick: null,
+                    uid: null,
+                    ip: null,
                     code,
-                    packageIdx: ""
+                    packageIdx: null
                 };
                 this.memory.lastSelect = Date.now();
             };
@@ -122,8 +114,8 @@ export default {
                     nick,
                     uid,
                     ip,
-                    code: "",
-                    packageIdx: ""
+                    code: null,
+                    packageIdx: null
                 };
                 this.memory.lastSelect = Date.now();
             }
@@ -133,11 +125,11 @@ export default {
             "refresherDcconUserContextMenu",
             (code: string) => {
                 this.memory.selected = {
-                    nick: "",
-                    uid: "",
-                    ip: "",
+                    nick: null,
+                    uid: null,
+                    ip: null,
                     code,
-                    packageIdx: ""
+                    packageIdx: null
                 };
 
                 this.memory.lastSelect = Date.now();
@@ -149,11 +141,11 @@ export default {
                 return;
             }
 
-            if (this.memory.selected.code || this.memory.selected.packageIdx) {
+            if (this.memory.selected.code !== null || this.memory.selected.packageIdx !== null) {
                 const params = new URLSearchParams();
                 params.set("ci_t", Cookies.get("ci_c") ?? "");
-                params.set("package_idx", this.memory.selected.packageIdx);
-                params.set("code", this.memory.selected.code);
+                params.set("package_idx", this.memory.selected.packageIdx ?? "");
+                params.set("code", this.memory.selected.code!);
 
                 http.make(http.urls.dccon.detail, {
                     method: "POST",
@@ -169,7 +161,7 @@ export default {
                     const title = json.info.title;
                     const packageIdx = json.info.package_idx;
 
-                    block.add("DCCON", this.memory.selected.code, false, undefined, `${title} [${packageIdx}]`);
+                    block.add("DCCON", this.memory.selected.code!, false, undefined, `${title} [${packageIdx}]`);
 
                     Toast.show(
                         `${block.TYPE_NAMES["DCCON"]}을 차단했습니다.`,
@@ -205,26 +197,37 @@ export default {
             );
         });
     },
-
-    revoke(filter: RefresherFilter): void {
-        if (this.memory.uuid) {
+    revoke(filter: RefresherFilter) {
+        if (this.memory.uuid !== null)
             filter.remove(this.memory.uuid);
-        }
 
-        if (this.memory.uuid2) {
+        if (this.memory.uuid2 !== null)
             filter.remove(this.memory.uuid2);
-        }
 
-        if (this.memory.addBlock) {
+        if (this.memory.addBlock !== null)
             filter.remove(this.memory.addBlock);
-        }
 
-        if (this.memory.addDcconBlock) {
+        if (this.memory.addDcconBlock !== null)
             filter.remove(this.memory.addDcconBlock);
-        }
 
-        if (this.memory.requestBlock) {
+        if (this.memory.requestBlock !== null)
             filter.remove(this.memory.requestBlock);
-        }
     }
-};
+} as RefresherModule<{
+    memory: {
+        uuid: string | null;
+        uuid2: string | null;
+        selected: {
+            nick: string | null;
+            uid: string | null;
+            ip: string | null;
+            code: string | null;
+            packageIdx: string | null;
+        };
+        lastSelect: number;
+        addBlock: string | null;
+        addDcconBlock: string | null;
+        requestBlock: string | null;
+    };
+    require: ["filter", "eventBus", "block", "dom", "http"];
+}>;

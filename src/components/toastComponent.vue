@@ -17,13 +17,11 @@
 <script lang="ts">
 import Vue from "vue";
 
-type Nullable<T> = T | null;
-
 interface RefresherProps {
     title: string;
     id: number;
     content: string;
-    clickCb: Nullable<(e: MouseEvent) => void>;
+    clickCb: ((e: MouseEvent) => void) | null;
     open: boolean;
     type: "info" | "error" | null;
     autoClose: number;

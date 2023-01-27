@@ -1014,7 +1014,7 @@ const miniPreview: miniPreview = {
 
             if (miniPreview.lastTimeout) clearTimeout(miniPreview.lastTimeout);
 
-            miniPreview.lastTimeout = setTimeout(() => {
+            miniPreview.lastTimeout = window.setTimeout(() => {
                 if (!miniPreview.cursorOut && miniPreview.lastElement === ev.target) {
                     miniPreview.create(ev, use, hide);
                 }
@@ -1132,12 +1132,12 @@ export default {
         toggleBackgroundBlur: false,
         toggleAdminPanel: true,
         expandRecognizeRange: false,
-        tooltipMode: true,
+        tooltipMode: false,
         tooltipMediaHide: false,
         useKeyPress: true,
         colorPreviewLink: true,
         reversePreviewKey: false,
-        autoRefreshComment: true,
+        autoRefreshComment: false,
         commentRefreshInterval: 10,
         experimentalComment: false
     },
@@ -1149,10 +1149,9 @@ export default {
         popStateHandler: null,
         signal: null,
         historyClose: false,
-        titleStore: "",
-        urlStore: "",
-        dom: null,
-        refreshIntervalId: 0
+        titleStore: null,
+        urlStore: null,
+        refreshIntervalId: null
     },
     enable: true,
     default_enable: true,
@@ -1263,12 +1262,7 @@ export default {
         }
     },
     require: ["filter", "eventBus", "Frame", "http"],
-    func(
-        filter: RefresherFilter,
-        eventBus: RefresherEventBus,
-        Frame: RefresherFrame,
-        http: RefresherHTTP
-    ): void {
+    func(filter: RefresherFilter, eventBus: RefresherEventBus, Frame: RefresherFrame, http: RefresherHTTP) {
         let postFetchedData: PostInfo;
         const gallery = queryString("id") ?? undefined;
 
@@ -1289,7 +1283,7 @@ export default {
             frame.title = preData.title!;
             frame.data.buttons = true;
 
-            if (this.status.colorPreviewLink) {
+            if (this.status!.colorPreviewLink) {
                 const title = `${preData.title} - ${document.title
                     .split("-")
                     .slice(-1)[0]
@@ -1381,7 +1375,7 @@ export default {
                             preData.gallery,
                             preData.id,
                             signal,
-                            this.status.noCacheHeader
+                            this.status!.noCacheHeader
                         )
                         .then((response) => {
                             if (response) {
@@ -1395,7 +1389,7 @@ export default {
                         .catch(reject);
                 })
                     .then((postInfo) => {
-                        if (this.status.colorPreviewLink) {
+                        if (this.status!.colorPreviewLink) {
                             const title = `${postInfo.title} - ${document.title
                                 .split("-")
                                 .slice(-1)[0]
@@ -1465,7 +1459,7 @@ export default {
                 frame.functions.load();
 
             frame.functions.openOriginal = () => {
-                if (this.status.colorPreviewLink)
+                if (this.status!.colorPreviewLink)
                     location.reload();
                 else
                     location.href = preData.link!;
@@ -1485,7 +1479,7 @@ export default {
             frame.data.load = true;
             frame.title = "댓글";
             frame.subtitle = "로딩 중";
-            frame.data.useWriteComment = this.status.experimentalComment;
+            frame.data.useWriteComment = this.status!.experimentalComment;
 
             let postDom: Document;
 
@@ -1575,11 +1569,11 @@ export default {
                 if (this.memory.refreshIntervalId)
                     clearInterval(this.memory.refreshIntervalId);
 
-                this.memory.refreshIntervalId = setInterval(() => {
-                    if (this.status.autoRefreshComment) {
+                this.memory.refreshIntervalId = window.setInterval(() => {
+                    if (this.status!.autoRefreshComment) {
                         frame.functions.retry();
                     }
-                }, this.status.commentRefreshInterval * 1000);
+                }, this.status!.commentRefreshInterval * 1000);
             });
 
             const deletePressCount: { [index: string]: number } = {};
@@ -1615,8 +1609,8 @@ export default {
                 }
 
                 return (admin && !password
-                    ? request.adminDeleteComment(preData, commentId, signal)
-                    : request.userDeleteComment(preData, commentId, signal, password)
+                        ? request.adminDeleteComment(preData, commentId, signal)
+                        : request.userDeleteComment(preData, commentId, signal, password)
                 )
                     .then((v) => {
                         if (typeof v === "boolean") {
@@ -1779,19 +1773,19 @@ export default {
             preData.title = "게시글 로딩 중...";
             firstApp.contents = "";
 
-            makeFirstFrame(firstApp, preData, this.memory.signal, historySkip);
-            makeSecondFrame(secondApp, preData, this.memory.signal);
+            makeFirstFrame(firstApp, preData, this.memory.signal!, historySkip);
+            makeSecondFrame(secondApp, preData, this.memory.signal!);
 
             if (
-                this.status.toggleAdminPanel &&
+                this.status!.toggleAdminPanel &&
                 document.querySelector(".useradmin_btnbox button") !== null
             ) {
                 panel.admin(
                     preData,
                     frame,
-                    this.status.toggleBlur,
+                    this.status!.toggleBlur,
                     eventBus,
-                    this.status.useKeyPress
+                    this.status!.useKeyPress
                 );
             }
         };
@@ -1811,7 +1805,7 @@ export default {
                 return;
             }
 
-            miniPreview.close(this.status.tooltipMode);
+            miniPreview.close(this.status!.tooltipMode);
 
             const preData = ev === null ? prd : getRelevantData(ev);
 
@@ -1843,13 +1837,13 @@ export default {
                         relative: true,
                         center: true,
                         preview: true,
-                        blur: this.status.toggleBlur
+                        blur: this.status!.toggleBlur
                     },
                     {
                         relative: true,
                         center: true,
                         preview: true,
-                        blur: this.status.toggleBlur
+                        blur: this.status!.toggleBlur
                     }
                 ],
                 {
@@ -1861,14 +1855,14 @@ export default {
                         app: RefresherFrameAppVue,
                         group: HTMLElement
                     ) => {
-                        if (!this.status.scrollToSkip) return;
+                        if (!this.status!.scrollToSkip) return;
 
                         appStore = app;
                         groupStore = group;
 
                         detector.addMouseEvent(ev);
                     },
-                    blur: this.status.toggleBackgroundBlur
+                    blur: this.status!.toggleBackgroundBlur
                 }
             );
 
@@ -1950,17 +1944,17 @@ export default {
                     document.removeEventListener("keypress", adminKeyPress);
                 }
 
-                if (!this.memory.historyClose) {
+                if (!this.memory.historyClose && this.memory.titleStore !== "" && this.memory.titleStore !== null) {
                     history.pushState(null, this.memory.titleStore, this.memory.urlStore);
 
                     this.memory.historyClose = false;
                 }
 
-                if (this.memory.titleStore) {
+                if (this.memory.titleStore !== "" && this.memory.titleStore !== null) {
                     document.title = this.memory.titleStore;
                 }
 
-                clearInterval(this.memory.refreshIntervalId);
+                window.clearInterval(this.memory.refreshIntervalId!);
             });
 
             frame.app.first().collapse = collapseView;
@@ -1975,15 +1969,15 @@ export default {
             makeSecondFrame(frame.app.second(), preData, this.memory.signal!);
 
             if (
-                this.status.toggleAdminPanel &&
+                this.status!.toggleAdminPanel &&
                 document.querySelector(".useradmin_btnbox button") !== null
             ) {
                 panel.admin(
                     preData,
                     frame,
-                    this.status.toggleBlur,
+                    this.status!.toggleBlur,
                     eventBus,
-                    this.status.useKeyPress
+                    this.status!.useKeyPress
                 );
             }
 
@@ -2006,7 +2000,7 @@ export default {
 
             if (
                 ev.type === "mouseup" &&
-                Date.now() - this.status.longPressDelay > this.memory.lastPress
+                Date.now() - this.status!.longPressDelay > this.memory.lastPress
             ) {
                 this.memory.preventOpen = true;
                 this.memory.lastPress = 0;
@@ -2017,9 +2011,9 @@ export default {
         const addHandler = (e: HTMLElement) => {
             e.addEventListener("mouseup", handleMousePress);
             e.addEventListener("mousedown", handleMousePress);
-            e.addEventListener(this.status.reversePreviewKey ? "click" : "contextmenu", previewFrame);
+            e.addEventListener(this.status!.reversePreviewKey ? "click" : "contextmenu", previewFrame);
 
-            if (this.status.reversePreviewKey) {
+            if (this.status!.reversePreviewKey) {
                 e.addEventListener("contextmenu", (e) => {
                     e.preventDefault();
 
@@ -2044,23 +2038,23 @@ export default {
             }
 
             e.addEventListener("mouseenter", (ev) =>
-                miniPreview.create(ev, this.status.tooltipMode, this.status.tooltipMediaHide)
+                miniPreview.create(ev, this.status!.tooltipMode, this.status!.tooltipMediaHide)
             );
             e.addEventListener("mousemove", (ev) =>
-                miniPreview.move(ev, this.status.tooltipMode)
+                miniPreview.move(ev, this.status!.tooltipMode)
             );
             e.addEventListener("mouseleave", () =>
-                miniPreview.close(this.status.tooltipMode)
+                miniPreview.close(this.status!.tooltipMode)
             );
         };
 
         this.memory.uuid = filter.add(`.gall_list .us-post${
-            this.status.expandRecognizeRange ? "" : " .ub-word"
-        }`,
-        addHandler,
-        {
-            neverExpire: true
-        }
+                this.status!.expandRecognizeRange ? "" : " .ub-word"
+            }`,
+            addHandler,
+            {
+                neverExpire: true
+            }
         );
         this.memory.uuid2 = filter.add("#right_issuezoom", addHandler);
 
@@ -2088,17 +2082,48 @@ export default {
 
         window.addEventListener("popstate", this.memory.popStateHandler);
     },
-
-    revoke(filter: RefresherFilter): void {
-        if (this.memory.uuid) {
+    revoke(filter: RefresherFilter) {
+        if (this.memory.uuid !== null)
             filter.remove(this.memory.uuid, true);
-        }
 
-        if (this.memory.uuid2) {
+        if (this.memory.uuid2 !== null)
             filter.remove(this.memory.uuid2, true);
-        }
 
-        window.removeEventListener("popstate", this.memory.popStateHandler);
-        clearInterval(this.memory.refreshIntervalId);
+        if (this.memory.popStateHandler !== null)
+            window.removeEventListener("popstate", this.memory.popStateHandler);
+
+        if (this.memory.refreshIntervalId !== null)
+            window.clearInterval(this.memory.refreshIntervalId);
     }
-};
+} as RefresherModule<{
+    status: {
+        longPressDelay: number;
+        scrollToSkip: boolean;
+        noCacheHeader: boolean;
+        toggleBlur: boolean;
+        toggleBackgroundBlur: boolean;
+        toggleAdminPanel: boolean;
+        expandRecognizeRange: boolean;
+        tooltipMode: boolean;
+        tooltipMediaHide: boolean;
+        useKeyPress: boolean;
+        colorPreviewLink: boolean;
+        reversePreviewKey: boolean;
+        autoRefreshComment: boolean;
+        commentRefreshInterval: number;
+        experimentalComment: boolean;
+    };
+    memory: {
+        preventOpen: boolean;
+        lastPress: number;
+        uuid: string | null;
+        uuid2: string | null;
+        popStateHandler: ((ev: PopStateEvent) => void) | null;
+        signal: AbortSignal | null;
+        historyClose: boolean;
+        titleStore: string | null;
+        urlStore: string | null;
+        refreshIntervalId: number | null;
+    };
+    require: ["filter", "eventBus", "Frame", "http"];
+}>;

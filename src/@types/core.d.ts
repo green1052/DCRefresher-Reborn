@@ -123,7 +123,7 @@ declare global {
         mode?: RefresherBlockDetectMode;
     }
 
-    type RefresherBlock = typeof import("../core/block")
+    type RefresherBlock = typeof import("../core/block");
 
     type RefresherMemoType = "UID" | "NICK" | "IP";
 
@@ -133,5 +133,5 @@ declare global {
         gallery?: string;
     }
 
-    type RefresherMemo = typeof import("../core/memo")
+    type RefresherMemo = typeof import("../core/memo");
 }

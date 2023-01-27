@@ -2,14 +2,15 @@ export default {
     name: "글쓰기 개선",
     description: "글쓰기 페이지를 개선합니다.",
     url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/write/,
-    require: ["filter", "http"],
+    status: {
+        imageUpload: false
+    },
     memory: {
         canvas: "",
         injected: false
     },
-    status: {
-        imageUpload: false
-    },
+    enable: false,
+    default_enable: false,
     settings: {
         imageUpload: {
             name: "이미지 업로드",
@@ -18,10 +19,9 @@ export default {
             default: false
         }
     },
-    enable: false,
-    default_enable: false,
+    require: ["filter", "http"],
     func(filter: RefresherFilter, http: RefresherHTTP) {
-        if (!this.status.imageUpload) return;
+        if (!this.status!.imageUpload) return;
 
         this.memory.canvas = filter.add("#tx_canvas_wysiwyg", (element) => {
             if (this.memory.injected) return;
@@ -29,7 +29,7 @@ export default {
             const iframe = (element as HTMLIFrameElement).contentWindow!.document!;
             const contentContainer = iframe?.querySelector(".tx-content-container") as HTMLElement;
 
-            if (this.status.imageUpload) {
+            if (this.status!.imageUpload) {
                 contentContainer?.addEventListener("paste", async (ev) => {
                     const data = (ev as ClipboardEvent).clipboardData;
 
@@ -91,4 +91,13 @@ export default {
 
         this.memory.injected = false;
     }
-};
+} as RefresherModule<{
+    status: {
+        imageUpload: boolean;
+    };
+    memory: {
+        canvas: string;
+        injected: boolean;
+    };
+    require: ["filter", "http"];
+}>;

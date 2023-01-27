@@ -4,13 +4,13 @@ export default {
     name: "디시콘 다운로드",
     description: "디시콘 다운로드 기능을 추가합니다.",
     url: /mall\.dcinside\.com/g,
+    memory: {
+        iframe: null,
+        injected: false
+    },
     enable: false,
     default_enable: false,
     require: ["filter"],
-    memory: {
-        iframe: "",
-        injected: false
-    },
     func(filter: RefresherFilter) {
         this.memory.iframe = filter.add("#TOPTOON", (element) => {
             if (this.memory.injected) return;
@@ -55,9 +55,15 @@ export default {
         });
     },
     revoke(filter: RefresherFilter) {
-        if (this.memory.iframe)
+        if (this.memory.iframe !== null)
             filter.remove(this.memory.iframe);
 
         this.memory.injected = false;
     }
-};
+} as RefresherModule<{
+    memory: {
+        iframe: string | null;
+        injected: boolean;
+    };
+    require: ["filter"];
+}>;

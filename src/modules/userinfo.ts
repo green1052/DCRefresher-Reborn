@@ -5,9 +5,9 @@ import {getType} from "../utils/user";
 
 const memoAsk = (
     selected: {
-        IP: string,
-        NICK: string,
-        UID: string
+        IP: string | null,
+        NICK: string | null,
+        UID: string | null
     },
     memo: RefresherMemo,
     type: RefresherMemoType,
@@ -133,8 +133,8 @@ const memoAsk = (
 
             userType.classList.add("active");
 
-            currentType = (userType as HTMLElement).dataset.type as RefresherMemoType || "NICK";
-            currentValue = selected[currentType];
+            currentType = (userType as HTMLElement).dataset.type as RefresherMemoType ?? "NICK";
+            currentValue = selected[currentType] ?? "";
 
             updateType();
         });
@@ -180,23 +180,25 @@ export default {
     name: "유저 정보",
     description: "사용자의 IP, 아이디 정보, 메모를 표시합니다.",
     url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/(view|lists)/g,
-    memory: {
-        always: "",
-        requestBlock: "",
-        contextMenu: "",
-        selected: {
-            NICK: "",
-            UID: "",
-            IP: ""
-        },
-        lastSelect: 0,
-        memoAsk: ""
-    },
     status: {
         showFixedNickUID: true,
         showHalfFixedNickUID: false,
         showIpInfo: true
     },
+    memory: {
+        always: null,
+        requestBlock: null,
+        contextMenu: null,
+        selected: {
+            NICK: null,
+            UID: null,
+            IP: null
+        },
+        lastSelect: 0,
+        memoAsk: null
+    },
+    enable: true,
+    default_enable: true,
     settings: {
         showFixedNickUID: {
             name: "고정닉 UID 표시",
@@ -219,17 +221,10 @@ export default {
             default: true
         }
     },
-    enable: true,
-    default_enable: true,
     require: ["filter", "eventBus", "ip", "memo"],
-    func: function (
-        filter: RefresherFilter,
-        eventBus: RefresherEventBus,
-        ip: RefresherIP,
-        memo: RefresherMemo
-    ): void {
+    func(filter: RefresherFilter, eventBus: RefresherEventBus, ip: RefresherIP, memo: RefresherMemo) {
         const ipInfoAdd = (elem: HTMLElement) => {
-            if (!this.status.showIpInfo || !elem || !elem.dataset.ip || elem.dataset.refresherIp) return false;
+            if (!this.status!.showIpInfo || !elem || !elem.dataset.ip || elem.dataset.refresherIp) return false;
             const ip_data = ip.ISPData(elem.dataset.ip);
 
             const text = document.createElement("span");
@@ -263,7 +258,7 @@ export default {
 
             const userType = getType(img);
 
-            if ((!this.status.showHalfFixedNickUID && (userType === "HALF_FIXED" || userType === "HALF_FIXED_SUB_MANAGER" || userType === "HALF_FIXED_MANAGER")) || (!this.status.showFixedNickUID && (userType === "FIXED" || userType === "FIXED_SUB_MANAGER" || userType === "FIXED_MANAGER"))) return false;
+            if ((!this.status!.showHalfFixedNickUID && (userType === "HALF_FIXED" || userType === "HALF_FIXED_SUB_MANAGER" || userType === "HALF_FIXED_MANAGER")) || (!this.status!.showFixedNickUID && (userType === "FIXED" || userType === "FIXED_SUB_MANAGER" || userType === "FIXED_MANAGER"))) return false;
 
             const text = document.createElement("span");
             text.className = "ip refresherUserData";
@@ -285,14 +280,16 @@ export default {
         const memoAdd = (elem: HTMLElement) => {
             if (!elem.dataset.refresherMemoHandler) {
                 elem.addEventListener("contextmenu", () => {
-                    const nick = elem.dataset.nick || "";
-                    const uid = elem.dataset.uid || "";
-                    const ip = elem.dataset.ip || "";
+                    const nick = elem.dataset.nick ?? null;
+                    const uid = elem.dataset.uid ?? null;
+                    const ip = elem.dataset.ip ?? null;
+
                     this.memory.selected = {
                         NICK: nick,
                         UID: uid,
                         IP: ip
                     };
+
                     this.memory.lastSelect = Date.now();
                 });
 
@@ -303,21 +300,19 @@ export default {
 
             let memoData = null;
 
-            if (elem.dataset.uid) {
+            if (elem.dataset.uid !== undefined) {
                 memoData ??= memo.get("UID", elem.dataset.uid);
             }
 
-            if (elem.dataset.nick) {
+            if (elem.dataset.nick !== undefined) {
                 memoData ??= memo.get("NICK", elem.dataset.nick);
             }
 
-            if (elem.dataset.ip) {
+            if (elem.dataset.ip !== undefined) {
                 memoData ??= memo.get("IP", elem.dataset.ip);
             }
 
-            if (!memoData || !memoData.text) {
-                return false;
-            }
+            if (memoData === null || memoData === undefined) return false;
 
             const text = document.createElement("span");
             text.className = "ip refresherUserData refresherMemoData";
@@ -382,10 +377,12 @@ export default {
         this.memory.memoAsk = communicate.addHook("refresherRequestMemoAsk", async (
             {type, user}: { type: RefresherMemoType, user: string }
         ) => {
-            const selected = {
-                IP: "",
-                NICK: "",
-                UID: ""
+            const selected: {
+                [key in RefresherMemoType]: string | null
+            } = {
+                IP: null,
+                NICK: null,
+                UID: null
             };
 
             selected[type] = user;
@@ -468,15 +465,34 @@ export default {
 
         elemAdd(document);
     },
-    revoke(filter: RefresherFilter): void {
-        if (this.memory.always) {
+    revoke(filter: RefresherFilter) {
+        if (this.memory.always !== null) {
             filter.remove(this.memory.always, true);
         }
 
-        const lists = document.querySelectorAll(".refresherUserData");
-
-        lists.forEach((elem) => {
-            elem.parentElement?.removeChild(elem);
-        });
+        document
+            .querySelectorAll(".refresherUserData")
+            .forEach((elem) => {
+                elem.parentElement?.removeChild(elem);
+            });
     }
-};
+} as RefresherModule<{
+    status: {
+        showFixedNickUID: boolean,
+        showHalfFixedNickUID: boolean,
+        showIpInfo: boolean
+    }
+    memory: {
+        always: string | null;
+        requestBlock: string | null;
+        contextMenu: string | null;
+        selected: {
+            NICK: string | null;
+            UID: string | null;
+            IP: string | null;
+        };
+        lastSelect: number;
+        memoAsk: string | null;
+    };
+    require: ["filter", "eventBus", "ip", "memo"];
+}>;
