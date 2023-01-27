@@ -416,7 +416,7 @@ export default {
 
         if (this.status.useBetterBrowse) {
             this.memory.uuid = filter.add(
-                ".left_content .bottom_paging_box a",
+                ".left_content article:has(.gall_listwrap) .bottom_paging_box a",
                 (a: Element) => {
                     if ((a as HTMLAnchorElement).href.includes("javascript:")) return;
 
