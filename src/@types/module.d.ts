@@ -12,11 +12,13 @@ declare global {
     interface RefresherCheckSettings extends RefresherSettings {
         type: "check";
         default: boolean;
+        value: boolean;
     }
 
     interface RefresherTextSettings extends RefresherSettings {
         type: "text";
         default: string;
+        value: string;
     }
 
     interface RefresherRangeSettings extends RefresherSettings {
@@ -26,12 +28,15 @@ declare global {
         max: number;
         step: number;
         unit: string;
+        value: number;
     }
 
     interface RefresherOptionSettings extends RefresherSettings {
         type: "option";
         default: { [index: string]: string };
         items: { [index: string]: string };
+        // TODO: value type
+        value: unknown;
     }
 
     interface RefresherModuleGeneric {

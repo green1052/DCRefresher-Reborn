@@ -1,6 +1,5 @@
 const common = require("./webpack.common.js");
 const {merge} = require("webpack-merge");
-const {version} = require("./package.json");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const pkg = require("./package.json");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
@@ -8,21 +7,6 @@ const CopyWebpackPlugin = require("copy-webpack-plugin");
 module.exports = (env) => {
     return merge(common, {
         mode: "production",
-        module: {
-            rules: [
-                {
-                    include: /src/,
-                    test: /\.pug$/,
-                    loader: "pug-loader",
-                    options: {
-                        globals: {
-                            RefresherVersion: version,
-                            RefresherDevMode: false
-                        }
-                    }
-                }
-            ]
-        },
         plugins: [
             new CopyWebpackPlugin({
                 patterns: [
@@ -46,13 +30,9 @@ module.exports = (env) => {
                 ]
             }),
             new HtmlWebpackPlugin({
-                template: "./src/views/index.pug",
+                template: "./src/views/index.html",
                 filename: "views/index.html",
-                inject: false,
-                templateParameters: {
-                    RefresherVersion: version,
-                    RefresherDevMode: false
-                }
+                inject: false
             })
         ]
     });

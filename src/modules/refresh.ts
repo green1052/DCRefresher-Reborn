@@ -1,7 +1,6 @@
 import {eventBus} from "../core/eventbus";
 import * as Toast from "../components/toast";
 import {queryString} from "../utils/http";
-import * as assert from "assert";
 
 const AVERAGE_COUNTS_SIZE = 7;
 
@@ -177,8 +176,8 @@ export default {
             updateRefreshText();
         }
 
-        filter.add(".page_head .gall_issuebox", (elem) => {
-            addRefreshText(elem as HTMLElement);
+        filter.add(".page_head .gall_issuebox", (element) => {
+            addRefreshText(element);
         });
 
         this.memory.load = async (customURL?, force?): Promise<boolean> => {
@@ -405,42 +404,35 @@ export default {
         });
 
         if (this.status!.useBetterBrowse) {
-            this.memory.uuid = filter.add(
-                ".left_content article:has(.gall_listwrap) .bottom_paging_box a",
-                (a: Element) => {
-                    if ((a as HTMLAnchorElement).href.includes("javascript:")) return;
+            this.memory.uuid = filter.add<HTMLAnchorElement>(".left_content article:has(.gall_listwrap) .bottom_paging_box a", (element) => {
+                if (element.href.includes("javascript:")) return;
 
-                    (a as HTMLAnchorElement).onclick = () => false;
+                element.onclick = () => false;
 
-                    (a as HTMLAnchorElement).addEventListener("click", async () => {
-                        const isPageView = location.href.includes("/board/view");
+                element.addEventListener("click", async () => {
+                    const isPageView = location.href.includes("/board/view");
 
-                        if (isPageView) {
-                            history.pushState(
-                                null,
-                                document.title,
-                                http.mergeParamURL(location.href, (a as HTMLAnchorElement).href)
-                            );
-                        } else {
-                            history.pushState(
-                                null,
-                                document.title,
-                                (a as HTMLAnchorElement).href
-                            );
-                        }
-                        this.memory.calledByPageTurn = true;
-
-                        await this.memory.load!(location.href, true);
-
-                        const query = document.querySelector(
-                            isPageView ? ".view_bottom_btnbox" : ".page_head"
+                    if (isPageView) {
+                        history.pushState(
+                            null,
+                            document.title,
+                            http.mergeParamURL(location.href, element.href)
                         );
+                    } else {
+                        history.pushState(
+                            null,
+                            document.title,
+                            (element as HTMLAnchorElement).href
+                        );
+                    }
 
-                        if (query) {
-                            query.scrollIntoView({block: "start", behavior: "smooth"});
-                        }
-                    });
-                }
+                    this.memory.calledByPageTurn = true;
+
+                    await this.memory.load!(location.href, true);
+
+                    document.querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head")?.scrollIntoView({block: "start", behavior: "smooth"});
+                });
+            }
             );
 
             window.addEventListener("popstate", () => {

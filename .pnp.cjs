@@ -61,7 +61,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["prettier", "npm:2.8.3"],\
             ["process", "npm:0.11.10"],\
             ["pug", "npm:3.0.2"],\
-            ["pug-loader", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:2.4.0"],\
             ["regenerator-runtime", "npm:0.13.11"],\
             ["sass", "npm:1.57.1"],\
             ["sass-loader", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:13.2.0"],\
@@ -4438,7 +4437,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["prettier", "npm:2.8.3"],\
             ["process", "npm:0.11.10"],\
             ["pug", "npm:3.0.2"],\
-            ["pug-loader", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:2.4.0"],\
             ["regenerator-runtime", "npm:0.13.11"],\
             ["sass", "npm:1.57.1"],\
             ["sass-loader", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:13.2.0"],\
@@ -7755,31 +7753,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
-      ["pug-loader", [\
-        ["npm:2.4.0", {\
-          "packageLocation": "./.yarn/cache/pug-loader-npm-2.4.0-5430442382-415d86aa1b.zip/node_modules/pug-loader/",\
-          "packageDependencies": [\
-            ["pug-loader", "npm:2.4.0"]\
-          ],\
-          "linkType": "SOFT"\
-        }],\
-        ["virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:2.4.0", {\
-          "packageLocation": "./.yarn/__virtual__/pug-loader-virtual-ec1be27066/0/cache/pug-loader-npm-2.4.0-5430442382-415d86aa1b.zip/node_modules/pug-loader/",\
-          "packageDependencies": [\
-            ["pug-loader", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:2.4.0"],\
-            ["@types/pug", null],\
-            ["loader-utils", "npm:1.4.2"],\
-            ["pug", "npm:3.0.2"],\
-            ["pug-walk", "npm:1.1.8"],\
-            ["resolve", "patch:resolve@npm%3A1.22.1#~builtin<compat/resolve>::version=1.22.1&hash=c3c19d"]\
-          ],\
-          "packagePeers": [\
-            "@types/pug",\
-            "pug"\
-          ],\
-          "linkType": "HARD"\
-        }]\
-      ]],\
       ["pug-parser", [\
         ["npm:6.0.0", {\
           "packageLocation": "./.yarn/cache/pug-parser-npm-6.0.0-87b7dc8a83-a6954d1383.zip/node_modules/pug-parser/",\
@@ -7811,13 +7784,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["pug-walk", [\
-        ["npm:1.1.8", {\
-          "packageLocation": "./.yarn/cache/pug-walk-npm-1.1.8-b306ccf948-b302b5ad6d.zip/node_modules/pug-walk/",\
-          "packageDependencies": [\
-            ["pug-walk", "npm:1.1.8"]\
-          ],\
-          "linkType": "HARD"\
-        }],\
         ["npm:2.0.0", {\
           "packageLocation": "./.yarn/cache/pug-walk-npm-2.0.0-a8a11880fc-bee64e133b.zip/node_modules/pug-walk/",\
           "packageDependencies": [\

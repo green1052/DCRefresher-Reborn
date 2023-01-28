@@ -14,8 +14,7 @@ const loadStart = performance.now();
 
 const context = require.context("./modules/", true, /\.ts$/);
 
-Promise.all(context.keys().map((v: string) => context(v).default))
-    .then((v: RefresherModule[]) => modules.load(...v))
+Promise.all(context.keys().map((v) => modules.load(context(v).default)))
     .then(() => {
         log(
             `🍊✔️ DCRefresher Reborn Module Loaded. took ${(

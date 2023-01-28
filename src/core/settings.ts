@@ -1,9 +1,15 @@
 import browser from "webextension-polyfill";
 import storage from "../utils/storage";
 import {eventBus} from "./eventbus";
+import {
+    RefresherCheckSettings,
+    RefresherOptionSettings,
+    RefresherRangeSettings,
+    RefresherTextSettings
+} from "../@types/module";
 
 export interface SettingsStore {
-    [index: string]: { [index: string]: RefresherSettings }
+    [index: string]: { [index: string]: RefresherCheckSettings | RefresherTextSettings | RefresherRangeSettings | RefresherOptionSettings }
 }
 
 const settings_store: SettingsStore = {};
@@ -33,7 +39,7 @@ export const dump = (): { [index: string]: unknown } => {
 export const load = async (
     module: string,
     key: string,
-    settings: RefresherSettings
+    settings: RefresherCheckSettings | RefresherTextSettings | RefresherRangeSettings | RefresherOptionSettings
 ): Promise<unknown> => {
     if (!settings_store[module]) {
         settings_store[module] = {};

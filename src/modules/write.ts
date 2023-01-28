@@ -23,10 +23,10 @@ export default {
     func(filter: RefresherFilter, http: RefresherHTTP) {
         if (!this.status!.imageUpload) return;
 
-        this.memory.canvas = filter.add("#tx_canvas_wysiwyg", (element) => {
+        this.memory.canvas = filter.add<HTMLIFrameElement>("#tx_canvas_wysiwyg", (element) => {
             if (this.memory.injected) return;
 
-            const iframe = (element as HTMLIFrameElement).contentWindow!.document!;
+            const iframe = element.contentWindow!.document!;
             const contentContainer = iframe?.querySelector(".tx-content-container") as HTMLElement;
 
             if (this.status!.imageUpload) {

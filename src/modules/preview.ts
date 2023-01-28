@@ -1609,8 +1609,8 @@ export default {
                 }
 
                 return (admin && !password
-                        ? request.adminDeleteComment(preData, commentId, signal)
-                        : request.userDeleteComment(preData, commentId, signal, password)
+                    ? request.adminDeleteComment(preData, commentId, signal)
+                    : request.userDeleteComment(preData, commentId, signal, password)
                 )
                     .then((v) => {
                         if (typeof v === "boolean") {
@@ -2008,13 +2008,13 @@ export default {
             }
         };
 
-        const addHandler = (e: HTMLElement) => {
-            e.addEventListener("mouseup", handleMousePress);
-            e.addEventListener("mousedown", handleMousePress);
-            e.addEventListener(this.status!.reversePreviewKey ? "click" : "contextmenu", previewFrame);
+        const addHandler = (element: HTMLElement) => {
+            element.addEventListener("mouseup", handleMousePress);
+            element.addEventListener("mousedown", handleMousePress);
+            element.addEventListener(this.status!.reversePreviewKey ? "click" : "contextmenu", previewFrame);
 
             if (this.status!.reversePreviewKey) {
-                e.addEventListener("contextmenu", (e) => {
+                element.addEventListener("contextmenu", (e) => {
                     e.preventDefault();
 
                     let href = (e.target as HTMLAnchorElement).href;
@@ -2037,25 +2037,18 @@ export default {
                 });
             }
 
-            e.addEventListener("mouseenter", (ev) =>
+            element.addEventListener("mouseenter", (ev) =>
                 miniPreview.create(ev, this.status!.tooltipMode, this.status!.tooltipMediaHide)
             );
-            e.addEventListener("mousemove", (ev) =>
+            element.addEventListener("mousemove", (ev) =>
                 miniPreview.move(ev, this.status!.tooltipMode)
             );
-            e.addEventListener("mouseleave", () =>
+            element.addEventListener("mouseleave", () =>
                 miniPreview.close(this.status!.tooltipMode)
             );
         };
 
-        this.memory.uuid = filter.add(`.gall_list .us-post${
-                this.status!.expandRecognizeRange ? "" : " .ub-word"
-            }`,
-            addHandler,
-            {
-                neverExpire: true
-            }
-        );
+        this.memory.uuid = filter.add(`.gall_list .us-post${this.status!.expandRecognizeRange ? "" : " .ub-word"}`, addHandler, {neverExpire: true});
         this.memory.uuid2 = filter.add("#right_issuezoom", addHandler);
 
         this.memory.popStateHandler = (ev: PopStateEvent) => {
