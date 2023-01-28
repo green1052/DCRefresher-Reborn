@@ -25,72 +25,66 @@ export default {
     default_enable: true,
     require: ["filter", "eventBus", "block", "dom", "http"],
     func(filter: RefresherFilter, eventBus: RefresherEventBus, block: RefresherBlock, dom: RefresherDOM, http: RefresherHTTP) {
-        this.memory.uuid = filter.add(
-            ".ub-writer",
-            (elem) => {
-                if (!(elem instanceof HTMLElement)) return;
+        this.memory.uuid = filter.add(".ub-writer", (element) => {
+            const gallery = queryString("id");
 
-                const gallery = queryString("id");
+            if (!gallery) return;
 
-                if (!gallery) return;
+            const title = element.parentElement?.querySelector(".gall_tit > a")?.textContent ?? "";
+            const nick = element.dataset.nick ?? "";
+            const uid = element.dataset.uid ?? "";
+            const ip = element.dataset.ip ?? "";
 
-                const title = elem.parentElement?.querySelector(".gall_tit > a")?.textContent ?? "";
-                const nick = elem.dataset.nick ?? "";
-                const uid = elem.dataset.uid ?? "";
-                const ip = elem.dataset.ip ?? "";
+            const commentElement = element.closest(".reply_info, .cmt_info");
 
-                const commentElement = elem.closest(".reply_info, .cmt_info");
+            const dcconElement = commentElement?.querySelector(".written_dccon");
+            const dccon = (dcconElement?.getAttribute("src") ?? dcconElement?.getAttribute("data-src"))?.replace(/^.*no=/g, "").replace(/^&.*$/g, "") ?? "";
 
-                const dcconElement = commentElement?.querySelector(".written_dccon");
-                const dccon = (dcconElement?.getAttribute("src") ?? dcconElement?.getAttribute("data-src"))?.replace(/^.*no=/g, "").replace(/^&.*$/g, "") ?? "";
+            const commentContent = commentElement?.querySelector(".usertxt")?.textContent ?? "";
 
-                const commentContent = commentElement?.querySelector(".usertxt")?.textContent ?? "";
+            if (block.checkAll({
+                TITLE: title,
+                NICK: nick,
+                ID: uid,
+                IP: ip,
+                DCCON: dccon,
+                COMMENT: commentContent
+            }, gallery)) {
+                const post = element.parentElement!;
 
-                if (block.checkAll({
-                    TITLE: title,
-                    NICK: nick,
-                    ID: uid,
-                    IP: ip,
-                    DCCON: dccon,
-                    COMMENT: commentContent
-                }, gallery)) {
-                    const post = elem.parentElement!;
-
-                    if (post.classList.contains("ub-content")) {
-                        post.style.display = "none";
-                        return;
-                    }
-
-                    if (post.parentElement?.className.startsWith("reply_")) {
-                        elem.closest<HTMLElement>(".reply")!.style.display = "none";
-                        return;
-                    }
-
-                    const content = post.closest<HTMLElement>(".ub-content");
-
-                    if (content !== null)
-                        content.style.display = "none";
-
+                if (post.classList.contains("ub-content")) {
+                    post.style.display = "none";
                     return;
                 }
 
-                elem.oncontextmenu ??= () => {
-                    this.memory.selected = {
-                        nick,
-                        uid,
-                        ip,
-                        code: null,
-                        packageIdx: null
-                    };
-                    this.memory.lastSelect = Date.now();
-                };
-            },
-            {
-                neverExpire: true
-            }
-        );
+                if (post.parentElement?.className.startsWith("reply_")) {
+                    element.closest<HTMLElement>(".reply")!.style.display = "none";
+                    return;
+                }
 
-        this.memory.uuid2 = filter.add(".written_dccon", async (element: HTMLElement) => {
+                const content = post.closest<HTMLElement>(".ub-content");
+
+                if (content !== null)
+                    content.style.display = "none";
+
+                return;
+            }
+
+            element.oncontextmenu ??= () => {
+                this.memory.selected = {
+                    nick,
+                    uid,
+                    ip,
+                    code: null,
+                    packageIdx: null
+                };
+                this.memory.lastSelect = Date.now();
+            };
+        }, {
+            neverExpire: true
+        });
+
+        this.memory.uuid2 = filter.add(".written_dccon", async (element) => {
             if (element.parentElement!.oncontextmenu) return;
 
             element.parentElement!.oncontextmenu = () => {

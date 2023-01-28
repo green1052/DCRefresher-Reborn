@@ -66,8 +66,9 @@ export default {
         if (document && document.documentElement && !document.documentElement.className.includes("refresherDark"))
             document.documentElement.classList.add("refresherDark");
 
-        this.memory.uuid = filter.add("html", (elem) => {
-            if (!elem.className.includes("refresherDark")) elem.classList.add("refresherDark");
+        this.memory.uuid = filter.add("html", (element) => {
+            if (!element.className.includes("refresherDark"))
+                element.classList.add("refresherDark");
         });
 
         // 다크모드는 반응성이 중요하니깐 모듈에서 바로 로드 시키기
@@ -75,16 +76,14 @@ export default {
 
         this.memory.uuid2 = filter.add(
             ".gallview_contents .inner .writing_view_box *",
-            (elem: HTMLElement) => {
-                if (!elem.style || !(elem.style.color || elem.hasAttribute("color")))
+            (element) => {
+                if (!element.style || !(element.style.color || element.hasAttribute("color")))
                     return;
 
-                colorCorrection(elem);
-            },
-            {
+                colorCorrection(element);
+            }, {
                 skipIfNotExists: true
-            }
-        );
+            });
 
         this.memory.contentViewUUID = eventBus.on("contentPreview", contentColorFix);
     },

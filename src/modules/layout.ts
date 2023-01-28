@@ -130,7 +130,7 @@ export default {
             if (this.memory.uuid === null && !value) {
                 this.memory.uuid = filter.add(
                     ".gall_list .us-post b",
-                    (elem: HTMLElement) => {
+                    (element) => {
                         if (
                             new URL(location.href).searchParams.get("exception_mode") ===
                             "notice"
@@ -138,9 +138,7 @@ export default {
                             return;
                         }
 
-                        const pelem = (elem.parentElement as HTMLElement).parentElement as HTMLElement;
-
-                        (pelem as HTMLElement).style.display = "none";
+                        element.parentElement!.parentElement!.style.display = "none";
                     },
                     {
                         neverExpire: true

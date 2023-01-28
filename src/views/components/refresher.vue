@@ -19,14 +19,10 @@
                         <img :src="getURL('/assets/icons/logo/Icon.png')" class="icon"/>
                         <img :src="getURL('/assets/icons/logo/Icon.png')" class="icon-backdrop"/>
                     </div>
-
                     <div class="text">
                         <h3>DCRefresher Reborn</h3>
                         <p>
-                            <span
-                                class="version">v{{
-                                    this.RefresherVersion
-                                }}{{ this.RefresherDevMode ? " (dev mode)" : "" }}</span>
+                            <span class="version" v-text="getVersion()"/>
                             <a v-for="link in links" @click="open(link.url)">{{ link.text }}</a>
                         </p>
                     </div>
@@ -237,7 +233,7 @@ interface RefresherData {
     };
     settings: {
         [key: string]: {
-            [key: string]: RefresherSettings
+            [key: string]: RefresherCheckSettings | RefresherTextSettings | RefresherRangeSettings | RefresherOptionSettings
         }
     },
     shortcuts: {} | browser.Commands.Command[],
@@ -294,27 +290,19 @@ export default Vue.extend({
             ]
         };
     },
-    props: {
-        RefresherVersion: {
-            type: String
-        },
-        RefresherDevMode: {
-            type: Boolean
-        }
-    },
     methods: {
+        getVersion() {
+            return browser.runtime.getManifest().version;
+        },
         getURL(url: string) {
             return browser.runtime.getURL(url);
         },
-
         open(url: string) {
             browser.tabs.create({url});
         },
-
         openShortcutSettings() {
             browser.runtime.openOptionsPage();
         },
-
         typeWrap(value: unknown) {
             if (typeof value === "boolean") {
                 return value ? "On" : "Off";
@@ -322,15 +310,16 @@ export default Vue.extend({
 
             return value;
         },
-
         moveToModuleTab(moduleName: string) {
             this.tab = 4;
 
-            this.$el.querySelectorAll(".refresher-module.highlight").forEach(v => {
-                v.classList.remove("highlight");
-            });
+            this.$el
+                .querySelectorAll(".refresher-module.highlight")
+                .forEach((v) => {
+                    v.classList.remove("highlight");
+                });
 
-            const modules: NodeListOf<HTMLElement> = this.$el.querySelectorAll(".tab .refresher-module .title");
+            const modules = this.$el.querySelectorAll<HTMLElement>(".tab .refresher-module .title");
 
             for (let i = 0; i < modules.length; i++) {
                 if (modules[i].innerText !== moduleName) continue;
@@ -353,13 +342,13 @@ export default Vue.extend({
                 });
             }
         },
-
         advancedSettingsCount(obj: { [key: string]: RefresherSettings }) {
             return Object.keys(obj).filter(v => obj[v]?.advanced).length;
         },
-
         updateUserSetting(module: string, key: string, value: unknown) {
             this.settings[module][key].value = value;
+
+            const a =   this.settings[module][key]
 
             port.postMessage({
                 updateUserSetting: true,
@@ -380,7 +369,6 @@ export default Vue.extend({
                 });
             });
         },
-
         syncBlock() {
             port.postMessage({
                 updateBlocks: true,
@@ -398,7 +386,6 @@ export default Vue.extend({
                 });
             });
         },
-
         addEmptyBlockedUser(key: RefresherBlockType) {
             if (key === "DCCON") {
                 alert("디시콘 수동 차단은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
@@ -463,12 +450,10 @@ export default Vue.extend({
 
             this.syncBlock();
         },
-
         removeBlockedUser(key: RefresherBlockType, index: number) {
             this.blocks[key].splice(index, 1);
             this.syncBlock();
         },
-
         editBlockedUser(key: RefresherBlockType, index: number) {
             const result = prompt(`바꿀 ${this.blockKeyNames[key]} 값을 입력하세요.`,);
 
@@ -479,7 +464,6 @@ export default Vue.extend({
             this.blocks[key][index].content = result;
             this.syncBlock();
         },
-
         syncMemos() {
             port.postMessage({
                 updateMemos: true,
@@ -495,7 +479,6 @@ export default Vue.extend({
                 });
             });
         },
-
         removeMemoUser(type: RefresherMemoType, user: string) {
             const obj = {...this.memos};
             delete obj[type][user];
@@ -503,7 +486,6 @@ export default Vue.extend({
 
             this.syncMemos();
         },
-
         addMemoUser(type: RefresherMemoType) {
             const user = prompt("메모 대상을 입력하세요.");
 
@@ -519,7 +501,6 @@ export default Vue.extend({
                 });
             });
         },
-
         editMemoUser(type: RefresherMemoType, user: string) {
             browser.tabs.query({active: true, currentWindow: true}).then((tabs) => {
                 browser.tabs.sendMessage(tabs[0].id!, {
@@ -531,7 +512,6 @@ export default Vue.extend({
                 });
             });
         },
-
         updateDarkMode(v: string) {
             document.documentElement.classList[v ? "add" : "remove"](
                 "refresherDark"

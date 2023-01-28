@@ -2836,7 +2836,6 @@ __metadata:
     prettier: ^2.8.3
     process: ^0.11.10
     pug: ^3.0.2
-    pug-loader: ^2.4.0
     regenerator-runtime: ^0.13.11
     sass: ^1.57.1
     sass-loader: ^13.2.0
@@ -5556,19 +5555,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pug-loader@npm:^2.4.0":
-  version: 2.4.0
-  resolution: "pug-loader@npm:2.4.0"
-  dependencies:
-    loader-utils: ^1.1.0
-    pug-walk: ^1.0.0
-    resolve: ^1.1.7
-  peerDependencies:
-    pug: ^2.0.0
-  checksum: 415d86aa1bdfdc1e3e2f3f70273c7a7ca3f1df1d55ffec2b3f0ca2500ebf8da15323c82136a39a15b0757c69200b55db218fc218ed8d0c3670a554e41c4f6353
-  languageName: node
-  linkType: hard
-
 "pug-parser@npm:^6.0.0":
   version: 6.0.0
   resolution: "pug-parser@npm:6.0.0"
@@ -5592,13 +5578,6 @@ __metadata:
   dependencies:
     pug-error: ^2.0.0
   checksum: 2cfcbf506c14bb3e64204a1d93f12ca61658d2540475b0f0911c35531ad28421e8d1e73a646d841d58cfa2c20f8593c52e492dfe5b6bec968e20b614e4dea1e4
-  languageName: node
-  linkType: hard
-
-"pug-walk@npm:^1.0.0":
-  version: 1.1.8
-  resolution: "pug-walk@npm:1.1.8"
-  checksum: b302b5ad6d2d1fbda73b8dc86f6963da5935371949fa5952735bebd7ace8a59c04c83f61800e78a5e5a0735a925e6674541b435a08db075bf029fbedb0dcaf08
   languageName: node
   linkType: hard
 
@@ -5824,7 +5803,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"resolve@npm:^1.1.7, resolve@npm:^1.10.1, resolve@npm:^1.14.2, resolve@npm:^1.15.1, resolve@npm:^1.20.0, resolve@npm:^1.22.1":
+"resolve@npm:^1.10.1, resolve@npm:^1.14.2, resolve@npm:^1.15.1, resolve@npm:^1.20.0, resolve@npm:^1.22.1":
   version: 1.22.1
   resolution: "resolve@npm:1.22.1"
   dependencies:
@@ -5837,7 +5816,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"resolve@patch:resolve@^1.1.7#~builtin<compat/resolve>, resolve@patch:resolve@^1.10.1#~builtin<compat/resolve>, resolve@patch:resolve@^1.14.2#~builtin<compat/resolve>, resolve@patch:resolve@^1.15.1#~builtin<compat/resolve>, resolve@patch:resolve@^1.20.0#~builtin<compat/resolve>, resolve@patch:resolve@^1.22.1#~builtin<compat/resolve>":
+"resolve@patch:resolve@^1.10.1#~builtin<compat/resolve>, resolve@patch:resolve@^1.14.2#~builtin<compat/resolve>, resolve@patch:resolve@^1.15.1#~builtin<compat/resolve>, resolve@patch:resolve@^1.20.0#~builtin<compat/resolve>, resolve@patch:resolve@^1.22.1#~builtin<compat/resolve>":
   version: 1.22.1
   resolution: "resolve@patch:resolve@npm%3A1.22.1#~builtin<compat/resolve>::version=1.22.1&hash=c3c19d"
   dependencies:

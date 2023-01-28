@@ -349,17 +349,14 @@ export default {
             }
         };
 
-        this.memory.always = filter.add(
-            ".ub-writer",
-            (elem) => {
-                memoAdd(elem as HTMLElement);
-                ipInfoAdd(elem as HTMLElement);
-                IdInfoAdd(elem as HTMLElement);
-            },
-            {
-                neverExpire: true
-            }
-        );
+        this.memory.always = filter.add(".ub-writer", (element) => {
+            memoAdd(element);
+            ipInfoAdd(element);
+            IdInfoAdd(element);
+        }, {
+            neverExpire: true
+        });
+
         filter.runSpecific(this.memory.always);
 
         this.memory.contextMenu = eventBus.on(
