@@ -33,11 +33,6 @@
         "1024": "assets/icons/logo/Icon.png"
     },
     "options_page": "views/index.html",
-    "applications": {
-        "gecko": {
-            "id": "dcrefresher-reborn@green1052"
-        }
-    },
     "web_accessible_resources": [
         {
             "resources": [
