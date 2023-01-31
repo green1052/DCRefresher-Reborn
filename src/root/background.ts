@@ -183,18 +183,6 @@ async function getGeoIP(type: "ASN" | "Country", url: string): Promise<Buffer> {
 }
 
 browser.runtime.onInstalled.addListener((details) => {
-    // TODO 언젠가 제거
-    browser.storage.sync.get()
-        .then((data) => {
-            if (Object.keys(data).length === 0) return;
-
-            for (const [key, value] of Object.entries(data)) {
-                storage.set(key, value);
-            }
-
-            browser.storage.sync.clear();
-        });
-
     getGeoIP("ASN", "https://github.com/green1052/maxmind-geoip2/raw/master/dist/GeoLite2-ASN/GeoLite2-ASN.mmdb")
         .then((buffer) => {
             storage.set("refresher.asn", Buffer.from(buffer).toString("base64"));
