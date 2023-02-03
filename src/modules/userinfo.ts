@@ -180,11 +180,6 @@ export default {
     name: "유저 정보",
     description: "사용자의 IP, 아이디 정보, 메모를 표시합니다.",
     url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/(view|lists)/g,
-    status: {
-        showFixedNickUID: true,
-        showHalfFixedNickUID: false,
-        showIpInfo: true
-    },
     memory: {
         always: null,
         requestBlock: null,
@@ -206,14 +201,12 @@ export default {
             type: "check",
             default: true
         },
-
         showHalfFixedNickUID: {
             name: "반고정닉 UID 표시",
             desc: "반고정닉 유저의 UID를 표시합니다.",
             type: "check",
             default: false
         },
-
         showIpInfo: {
             name: "IP 정보 표시",
             desc: "IP 정보를 표시합니다.",
@@ -224,7 +217,7 @@ export default {
     require: ["filter", "eventBus", "ip", "memo"],
     func(filter: RefresherFilter, eventBus: RefresherEventBus, ip: RefresherIP, memo: RefresherMemo) {
         const ipInfoAdd = (elem: HTMLElement) => {
-            if (!this.status!.showIpInfo || !elem || !elem.dataset.ip || elem.dataset.refresherIp) return false;
+            if (!this.status.showIpInfo || !elem || !elem.dataset.ip || elem.dataset.refresherIp) return false;
             const ip_data = ip.ISPData(elem.dataset.ip);
 
             const text = document.createElement("span");
@@ -258,7 +251,7 @@ export default {
 
             const userType = getType(img);
 
-            if ((!this.status!.showHalfFixedNickUID && (userType === "HALF_FIXED" || userType === "HALF_FIXED_SUB_MANAGER" || userType === "HALF_FIXED_MANAGER")) || (!this.status!.showFixedNickUID && (userType === "FIXED" || userType === "FIXED_SUB_MANAGER" || userType === "FIXED_MANAGER"))) return false;
+            if ((!this.status.showHalfFixedNickUID && (userType === "HALF_FIXED" || userType === "HALF_FIXED_SUB_MANAGER" || userType === "HALF_FIXED_MANAGER")) || (!this.status.showFixedNickUID && (userType === "FIXED" || userType === "FIXED_SUB_MANAGER" || userType === "FIXED_MANAGER"))) return false;
 
             const text = document.createElement("span");
             text.className = "ip refresherUserData";
@@ -474,11 +467,6 @@ export default {
             });
     }
 } as RefresherModule<{
-    status: {
-        showFixedNickUID: boolean,
-        showHalfFixedNickUID: boolean,
-        showIpInfo: boolean
-    }
     memory: {
         always: string | null;
         requestBlock: string | null;
@@ -490,6 +478,11 @@ export default {
         };
         lastSelect: number;
         memoAsk: string | null;
+    };
+    settings: {
+        showFixedNickUID: RefresherCheckSettings;
+        showHalfFixedNickUID: RefresherCheckSettings;
+        showIpInfo: RefresherCheckSettings;
     };
     require: ["filter", "eventBus", "ip", "memo"];
 }>;

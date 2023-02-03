@@ -1,5 +1,5 @@
 import browser from "webextension-polyfill";
-import * as Toast from "../components/toast";
+import Toast from "../components/toast";
 
 const CONTROL_BUTTON = ".stealth_control_button";
 const TEMPORARY_STEALTH = "stlth";
@@ -81,7 +81,6 @@ export default {
             }
         );
     },
-
     revoke(eventBus: RefresherEventBus): void {
         document.documentElement.classList.remove("refresherStealth");
 

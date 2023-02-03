@@ -3,25 +3,31 @@ import Frame from "../core/frame";
 export {};
 
 declare global {
-    interface RefresherSettings {
+    type RefresherSettings =
+        RefresherCheckSettings
+        | RefresherTextSettings
+        | RefresherRangeSettings
+        | RefresherOptionSettings;
+
+    interface RefresherBaseSettings {
         name: string;
         desc: string;
         advanced?: boolean;
     }
 
-    interface RefresherCheckSettings extends RefresherSettings {
+    interface RefresherCheckSettings extends RefresherBaseSettings {
         type: "check";
         default: boolean;
         value: boolean;
     }
 
-    interface RefresherTextSettings extends RefresherSettings {
+    interface RefresherTextSettings extends RefresherBaseSettings {
         type: "text";
         default: string;
         value: string;
     }
 
-    interface RefresherRangeSettings extends RefresherSettings {
+    interface RefresherRangeSettings extends RefresherBaseSettings {
         type: "range";
         default: number;
         min: number;
@@ -31,18 +37,17 @@ declare global {
         value: number;
     }
 
-    interface RefresherOptionSettings extends RefresherSettings {
+    interface RefresherOptionSettings extends RefresherBaseSettings {
         type: "option";
         default: { [index: string]: string };
         items: { [index: string]: string };
-        // TODO: value type
-        value: unknown;
+        value: { [index: string]: string };
     }
 
     interface RefresherModuleGeneric {
-        status: { [index: string]: unknown };
         data: { [index: string]: unknown };
         memory: { [index: string]: unknown };
+        settings: { [index: string]: RefresherSettings };
         require: Array<"filter" | "Frame" | "eventBus" | "http" | "ip" | "block" | "dom" | "memo">;
     }
 
@@ -66,7 +71,10 @@ declare global {
         /**
          * 해당 모듈이 가질 상탯값. 모듈 설정 저장용으로 사용됩니다.
          */
-        status?: T["status"];
+        status:
+            T["settings"] extends { [key in infer Key]: RefresherSettings }
+                ? { [key in Key]: T["settings"][key]["default"] }
+                : never
 
         /**
          * 모듈 데이터를 영속적으로 저장하고 싶을 때 사용하는 객체. 이 객체에 값을 저장하면 확장 프로그램이 로드될 때 마다 해당 값을 불러옵니다.
@@ -91,12 +99,14 @@ declare global {
         /**
          * 설정 페이지에 등록할 설정 옵션
          */
-        settings?: { [index: string]: RefresherCheckSettings | RefresherTextSettings | RefresherRangeSettings | RefresherOptionSettings };
+        settings?: T["settings"];
 
         /**
          * 단축키가 입력되면 실행할 함수를 정의합니다.
          */
-        shortcuts?: { [index: string]: () => void };
+        shortcuts?: {
+            [index: string]: () => void;
+        };
 
         /**
          * 설정이 업데이트 됐을 시 호출할 함수를 정의합니다.

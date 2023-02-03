@@ -1124,23 +1124,6 @@ export default {
     name: "미리보기",
     description: "글을 오른쪽 클릭 했을때 미리보기 창을 만들어줍니다.",
     url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/(view|lists)/g,
-    status: {
-        longPressDelay: 300,
-        scrollToSkip: true,
-        noCacheHeader: false,
-        toggleBlur: true,
-        toggleBackgroundBlur: false,
-        toggleAdminPanel: true,
-        expandRecognizeRange: false,
-        tooltipMode: false,
-        tooltipMediaHide: false,
-        useKeyPress: true,
-        colorPreviewLink: true,
-        reversePreviewKey: false,
-        autoRefreshComment: false,
-        commentRefreshInterval: 10,
-        experimentalComment: false
-    },
     memory: {
         preventOpen: false,
         lastPress: 0,
@@ -1159,100 +1142,95 @@ export default {
         tooltipMode: {
             name: "툴팁 미리보기 표시",
             desc: "마우스를 올려두면 글 내용만 빠르게 볼 수 있는 툴팁을 추가합니다.",
-            default: false,
-            type: "check"
+            type: "check",
+            default: false
         },
         tooltipMediaHide: {
             name: "툴팁 미리보기 미디어 숨기기",
             desc: "툴팁 미리보기 화면에서 미디어를 숨깁니다.",
-            default: false,
-            type: "check"
+            type: "check",
+            default: false
         },
         reversePreviewKey: {
             name: "키 반전",
             desc: "오른쪽 버튼 대신 왼쪽 버튼으로 미리보기를 엽니다.",
-            default: false,
-            type: "check"
+            type: "check",
+            default: false
         },
         longPressDelay: {
             name: "기본 마우스 오른쪽 클릭 딜레이",
-            desc:
-                "마우스 오른쪽 버튼을 해당 밀리초 이상 눌러 뗄 때 기본 우클릭 메뉴가 나오게 합니다.",
-            default: 300,
+            desc: "마우스 오른쪽 버튼을 해당 밀리초 이상 눌러 뗄 때 기본 우클릭 메뉴가 나오게 합니다.",
             type: "range",
+            default: 300,
             min: 200,
-            step: 50,
             max: 2000,
+            step: 50,
             unit: "ms"
         },
         scrollToSkip: {
             name: "스크롤하여 게시글 이동",
             desc: "맨 위나 아래로 스크롤하여 다음 게시글로 이동할 수 있게 합니다.",
-            default: true,
-            type: "check"
+            type: "check",
+            default: true
         },
         colorPreviewLink: {
             name: "게시글 URL 변경",
-            desc:
-                "미리보기를 열면 게시글의 URL을 변경하여 브라우저 탐색으로 게시글을 바꿀 수 있게 해줍니다.",
-            default: true,
-            type: "check"
+            desc: "미리보기를 열면 게시글의 URL을 변경하여 브라우저 탐색으로 게시글을 바꿀 수 있게 해줍니다.",
+            type: "check",
+            default: true
         },
         autoRefreshComment: {
             name: "댓글 자동 새로고침",
             desc: "댓글을 일정 주기마다 자동으로 새로고침합니다.",
-            default: false,
-            type: "check"
+            type: "check",
+            default: false
         },
         commentRefreshInterval: {
             name: "댓글 자동 새로고침 주기",
             desc: "위의 옵션이 켜져있을 시 댓글을 새로고침할 주기를 설정합니다.",
-            default: 10,
             type: "range",
+            default: 10,
             min: 1,
-            step: 1,
             max: 20,
+            step: 1,
             unit: "s"
         },
         toggleBlur: {
             name: "게시글 배경 블러 활성화",
-            desc:
-                "미리보기 창의 배경을 블러 처리하여 미관을 돋보이게 합니다. (성능 하락 영향 있음)",
-            default: true,
-            type: "check"
+            desc: "미리보기 창의 배경을 블러 처리하여 미관을 돋보이게 합니다. (성능 하락 영향 있음)",
+            type: "check",
+            default: true
         },
         toggleBackgroundBlur: {
             name: "바깥 배경 블러 활성화",
-            desc:
-                "미리보기 창의 바깥 배경을 블러 처리하여 미관을 돋보이게 합니다. (성능 하락 영향 있음)",
-            default: false,
-            type: "check"
+            desc: "미리보기 창의 바깥 배경을 블러 처리하여 미관을 돋보이게 합니다. (성능 하락 영향 있음)",
+            type: "check",
+            default: false
         },
         toggleAdminPanel: {
             name: "관리 패널 활성화",
             desc: "갤러리에 관리 권한이 있는 경우 창 옆에 관리 패널을 표시합니다.",
-            default: true,
-            type: "check"
+            type: "check",
+            default: true
         },
         useKeyPress: {
             name: "관리 패널 > 키 제어",
-            desc:
-                "관리 패널이 활성화된 경우 단축키를 눌러 빠르게 관리할 수 있습니다.",
-            default: true,
-            type: "check"
+            desc: "관리 패널이 활성화된 경우 단축키를 눌러 빠르게 관리할 수 있습니다.",
+            type: "check",
+            default: true
         },
         expandRecognizeRange: {
             name: "게시글 목록 인식 범위 확장",
             desc: "게시글의 오른쪽 클릭을 인식하는 범위를 칸 전체로 확장합니다.",
-            default: false,
-            type: "check"
+            type: "check",
+            default: false
         },
         noCacheHeader: {
             name: "no-cache 헤더 추가",
             desc: "전송하는 게시글 요청에 no-cache 헤더를 추가합니다.",
+            advanced: true,
             type: "check",
-            default: false,
-            advanced: true
+            default: false
         },
         experimentalComment: {
             name: "댓글 기능 활성화",
@@ -1283,7 +1261,7 @@ export default {
             frame.title = preData.title!;
             frame.data.buttons = true;
 
-            if (this.status!.colorPreviewLink) {
+            if (this.status.colorPreviewLink) {
                 const title = `${preData.title} - ${document.title
                     .split("-")
                     .slice(-1)[0]
@@ -1375,7 +1353,7 @@ export default {
                             preData.gallery,
                             preData.id,
                             signal,
-                            this.status!.noCacheHeader
+                            this.status.noCacheHeader
                         )
                         .then((response) => {
                             if (response) {
@@ -1389,7 +1367,7 @@ export default {
                         .catch(reject);
                 })
                     .then((postInfo) => {
-                        if (this.status!.colorPreviewLink) {
+                        if (this.status.colorPreviewLink) {
                             const title = `${postInfo.title} - ${document.title
                                 .split("-")
                                 .slice(-1)[0]
@@ -1459,7 +1437,7 @@ export default {
                 frame.functions.load();
 
             frame.functions.openOriginal = () => {
-                if (this.status!.colorPreviewLink)
+                if (this.status.colorPreviewLink)
                     location.reload();
                 else
                     location.href = preData.link!;
@@ -1479,7 +1457,7 @@ export default {
             frame.data.load = true;
             frame.title = "댓글";
             frame.subtitle = "로딩 중";
-            frame.data.useWriteComment = this.status!.experimentalComment;
+            frame.data.useWriteComment = this.status.experimentalComment;
 
             let postDom: Document;
 
@@ -1570,10 +1548,10 @@ export default {
                     clearInterval(this.memory.refreshIntervalId);
 
                 this.memory.refreshIntervalId = window.setInterval(() => {
-                    if (this.status!.autoRefreshComment) {
+                    if (this.status.autoRefreshComment) {
                         frame.functions.retry();
                     }
-                }, this.status!.commentRefreshInterval * 1000);
+                }, this.status.commentRefreshInterval * 1000);
             });
 
             const deletePressCount: { [index: string]: number } = {};
@@ -1777,15 +1755,15 @@ export default {
             makeSecondFrame(secondApp, preData, this.memory.signal!);
 
             if (
-                this.status!.toggleAdminPanel &&
+                this.status.toggleAdminPanel &&
                 document.querySelector(".useradmin_btnbox button") !== null
             ) {
                 panel.admin(
                     preData,
                     frame,
-                    this.status!.toggleBlur,
+                    this.status.toggleBlur,
                     eventBus,
-                    this.status!.useKeyPress
+                    this.status.useKeyPress
                 );
             }
         };
@@ -1805,7 +1783,7 @@ export default {
                 return;
             }
 
-            miniPreview.close(this.status!.tooltipMode);
+            miniPreview.close(this.status.tooltipMode);
 
             const preData = ev === null ? prd : getRelevantData(ev);
 
@@ -1837,13 +1815,13 @@ export default {
                         relative: true,
                         center: true,
                         preview: true,
-                        blur: this.status!.toggleBlur
+                        blur: this.status.toggleBlur
                     },
                     {
                         relative: true,
                         center: true,
                         preview: true,
-                        blur: this.status!.toggleBlur
+                        blur: this.status.toggleBlur
                     }
                 ],
                 {
@@ -1855,14 +1833,14 @@ export default {
                         app: RefresherFrameAppVue,
                         group: HTMLElement
                     ) => {
-                        if (!this.status!.scrollToSkip) return;
+                        if (!this.status.scrollToSkip) return;
 
                         appStore = app;
                         groupStore = group;
 
                         detector.addMouseEvent(ev);
                     },
-                    blur: this.status!.toggleBackgroundBlur
+                    blur: this.status.toggleBackgroundBlur
                 }
             );
 
@@ -1969,15 +1947,15 @@ export default {
             makeSecondFrame(frame.app.second(), preData, this.memory.signal!);
 
             if (
-                this.status!.toggleAdminPanel &&
+                this.status.toggleAdminPanel &&
                 document.querySelector(".useradmin_btnbox button") !== null
             ) {
                 panel.admin(
                     preData,
                     frame,
-                    this.status!.toggleBlur,
+                    this.status.toggleBlur,
                     eventBus,
-                    this.status!.useKeyPress
+                    this.status.useKeyPress
                 );
             }
 
@@ -2000,7 +1978,7 @@ export default {
 
             if (
                 ev.type === "mouseup" &&
-                Date.now() - this.status!.longPressDelay > this.memory.lastPress
+                Date.now() - this.status.longPressDelay > this.memory.lastPress
             ) {
                 this.memory.preventOpen = true;
                 this.memory.lastPress = 0;
@@ -2011,9 +1989,9 @@ export default {
         const addHandler = (element: HTMLElement) => {
             element.addEventListener("mouseup", handleMousePress);
             element.addEventListener("mousedown", handleMousePress);
-            element.addEventListener(this.status!.reversePreviewKey ? "click" : "contextmenu", previewFrame);
+            element.addEventListener(this.status.reversePreviewKey ? "click" : "contextmenu", previewFrame);
 
-            if (this.status!.reversePreviewKey) {
+            if (this.status.reversePreviewKey) {
                 element.addEventListener("contextmenu", (e) => {
                     e.preventDefault();
 
@@ -2038,17 +2016,17 @@ export default {
             }
 
             element.addEventListener("mouseenter", (ev) =>
-                miniPreview.create(ev, this.status!.tooltipMode, this.status!.tooltipMediaHide)
+                miniPreview.create(ev, this.status.tooltipMode, this.status.tooltipMediaHide)
             );
             element.addEventListener("mousemove", (ev) =>
-                miniPreview.move(ev, this.status!.tooltipMode)
+                miniPreview.move(ev, this.status.tooltipMode)
             );
             element.addEventListener("mouseleave", () =>
-                miniPreview.close(this.status!.tooltipMode)
+                miniPreview.close(this.status.tooltipMode)
             );
         };
 
-        this.memory.uuid = filter.add(`.gall_list .us-post${this.status!.expandRecognizeRange ? "" : " .ub-word"}`, addHandler, {neverExpire: true});
+        this.memory.uuid = filter.add(`.gall_list .us-post${this.status.expandRecognizeRange ? "" : " .ub-word"}`, addHandler, {neverExpire: true});
         this.memory.uuid2 = filter.add("#right_issuezoom", addHandler);
 
         this.memory.popStateHandler = (ev: PopStateEvent) => {
@@ -2089,23 +2067,6 @@ export default {
             window.clearInterval(this.memory.refreshIntervalId);
     }
 } as RefresherModule<{
-    status: {
-        longPressDelay: number;
-        scrollToSkip: boolean;
-        noCacheHeader: boolean;
-        toggleBlur: boolean;
-        toggleBackgroundBlur: boolean;
-        toggleAdminPanel: boolean;
-        expandRecognizeRange: boolean;
-        tooltipMode: boolean;
-        tooltipMediaHide: boolean;
-        useKeyPress: boolean;
-        colorPreviewLink: boolean;
-        reversePreviewKey: boolean;
-        autoRefreshComment: boolean;
-        commentRefreshInterval: number;
-        experimentalComment: boolean;
-    };
     memory: {
         preventOpen: boolean;
         lastPress: number;
@@ -2117,6 +2078,23 @@ export default {
         titleStore: string | null;
         urlStore: string | null;
         refreshIntervalId: number | null;
+    };
+    settings: {
+        tooltipMode: RefresherCheckSettings,
+        tooltipMediaHide: RefresherCheckSettings,
+        reversePreviewKey: RefresherCheckSettings,
+        longPressDelay: RefresherRangeSettings;
+        scrollToSkip: RefresherCheckSettings;
+        colorPreviewLink: RefresherCheckSettings;
+        autoRefreshComment: RefresherCheckSettings;
+        commentRefreshInterval: RefresherRangeSettings;
+        toggleBlur: RefresherCheckSettings;
+        toggleBackgroundBlur: RefresherCheckSettings;
+        toggleAdminPanel: RefresherCheckSettings;
+        useKeyPress: RefresherCheckSettings;
+        expandRecognizeRange: RefresherCheckSettings;
+        noCacheHeader: RefresherCheckSettings;
+        experimentalComment: RefresherCheckSettings;
     };
     require: ["filter", "eventBus", "Frame", "http"];
 }>;

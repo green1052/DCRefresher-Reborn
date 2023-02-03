@@ -8,14 +8,26 @@ import * as http from "../utils/http";
 import * as dom from "../utils/dom";
 import * as memo from "./memo";
 import browser from "webextension-polyfill";
-
 import * as settings from "./settings";
 import * as block from "./block";
 import DeepProxy from "../utils/deepProxy";
-
 import * as communicate from "./communicate";
 
-const UTILS: { [index: string]: Record<string, unknown> } = {
+type ModuleItem =
+    RefresherFilter
+    | typeof Frame
+    | RefresherEventBus
+    | RefresherHTTP
+    | RefresherIP
+    | RefresherBlock
+    | RefresherDOM
+    | RefresherMemo;
+
+export interface ModuleStore {
+    [index: string]: RefresherModule
+}
+
+const UTILS: { [index: string]: ModuleItem } = {
     filter,
     Frame,
     eventBus,
@@ -26,44 +38,35 @@ const UTILS: { [index: string]: Record<string, unknown> } = {
     memo
 };
 
-export interface ModuleStore {
-    [index: string]: RefresherModule
-}
-
 const module_store: ModuleStore = {};
 
-const runtime = browser && browser.runtime;
+const runModule = (module: RefresherModule) => {
+    const plugins: ModuleItem[] = [];
 
-const runModule = (mod: RefresherModule) => {
-    const plugins = [];
-
-    if (mod.require && mod.require.length) {
-        const len = mod.require.length;
-        for (let mi = 0; mi < len; mi++) {
-            plugins.push(UTILS[mod.require[mi]]);
+    if (Array.isArray(module.require)) {
+        for (const require of module.require) {
+            plugins.push(UTILS[require]);
         }
     }
 
-    if (mod.func) {
-        mod.func.bind(mod)(...plugins);
-    }
+    if (typeof module.func === "function")
+        module.func.bind(module)(...plugins);
 };
 
 const revokeModule = (mod: RefresherModule) => {
-    if (mod.revoke) {
-        const plugins = [];
+    if (typeof mod.revoke === "function") {
+        const plugins: ModuleItem[] = [];
 
-        if (mod.require && mod.require.length) {
-            const len = mod.require.length;
-            for (let mi = 0; mi < len; mi++) {
-                plugins.push(UTILS[mod.require[mi]]);
+        if (Array.isArray(module.require)) {
+            for (const require of module.require) {
+                plugins.push(UTILS[require]);
             }
         }
 
         mod.revoke.bind(mod)(...plugins);
     }
 
-    if (mod.memory) {
+    if (typeof mod.memory === "object") {
         for (const key in mod.memory) {
             mod.memory[key] = undefined;
         }
@@ -71,63 +74,52 @@ const revokeModule = (mod: RefresherModule) => {
 };
 
 export const modules = {
-    lists: (): { [index: string]: RefresherModule } => {
-        return module_store;
+    lists: (): ModuleStore => module_store,
+    load: (...mods: RefresherModule[]): Promise<void> => {
+        return new Promise<void>((resolve) => {
+            Promise
+                .all(mods.map(modules.register))
+                .then(() => {
+                    resolve();
+                });
+        });
     },
-    load: (...mods: RefresherModule[]): Promise<void> =>
-        new Promise<void>((resolve) => {
-            return Promise.all(
-                mods.map((v) => {
-                    return modules.register(v);
-                })
-            ).then(() => {
-                resolve();
-            });
-        }),
-
     register: async (mod: RefresherModule): Promise<void> => {
         const start = performance.now();
 
-        if (typeof module_store[mod.name] !== "undefined") {
+        if (module_store[mod.name] !== undefined) {
             throw `${mod.name} is already registered.`;
         }
 
-        const enable = await storage.get<boolean>(`${mod.name}.enable`);
-        mod.enable = enable;
+        mod.enable = await storage.get<boolean>(`${mod.name}.enable`);
 
-        if (typeof enable === "undefined" || enable === null) {
+        if (mod.enable === undefined) {
             storage.set(`${mod.name}.enable`, mod.default_enable);
             mod.enable = mod.default_enable;
         }
 
-        if (mod.settings) {
+        if (typeof mod.settings === "object") {
             for (const key in mod.settings) {
-                if (!mod.status) {
-                    mod.status = {};
-                }
-
+                mod.status ??= {};
                 mod.status[key] = await settings.load(mod.name, key, mod.settings[key]);
             }
         }
 
-        if (mod.data) {
+        if (typeof mod.data === "object") {
             for (const key in mod.data) {
-                const originValue = mod.data[key];
-                mod.data[key] = (await storage.module.get(mod.name)) || originValue;
+                mod.data[key] = await storage.module.get(mod.name) ?? mod.data[key];
             }
 
-            mod.data = (await storage.module.get(mod.name)) || {};
+            mod.data = await storage.module.get(mod.name) ?? {};
 
             mod.data = new DeepProxy(mod.data, {
                 set(): boolean {
                     storage.module.setGlobal(mod.name, JSON.stringify(mod.data));
-
                     return true;
                 },
 
                 deleteProperty(): boolean {
                     storage.module.setGlobal(mod.name, JSON.stringify(mod.data));
-
                     return true;
                 }
             });
@@ -140,39 +132,21 @@ export const modules = {
             settings_store: settings.dump()
         });
 
-        runtime.sendMessage(stringify);
+        browser.runtime.sendMessage(stringify);
 
         if (!mod.enable) {
             log(`📁 ignoring ${mod.name}. The module is disabled.`);
             return;
         }
 
-        if (mod.url && !mod.url.test(location.href)) {
-            log(
-                `📁 ignoring ${mod.name}. current URL is not matching with the module's URL value.`
-            );
+        if (!mod.url?.test(location.href)) {
+            log(`📁 ignoring ${mod.name}. current URL is not matching with the module's URL value.`);
             return;
         }
 
         runModule(mod);
 
-        log(
-            `📁 ${mod.name} module loaded. took ${(performance.now() - start).toFixed(
-                2
-            )}ms.`
-        );
-    },
-
-    getData(name: string, key?: string): unknown {
-        if (!module_store[name]) {
-            throw "Given module is not exists.";
-        }
-
-        if (key) {
-            return module_store[name].data[key];
-        }
-
-        return module_store[name].data;
+        log(`📁 ${mod.name} module loaded. took ${(performance.now() - start).toFixed(2)}ms.`);
     }
 };
 
@@ -180,7 +154,7 @@ communicate.addHook("updateModuleStatus", (data) => {
     module_store[data.name].enable = data.value as boolean;
     storage.set(`${data.name}.enable`, data.value);
 
-    runtime.sendMessage(
+    browser.runtime.sendMessage(
         JSON.stringify({
             module_store
         })
@@ -199,17 +173,13 @@ communicate.addHook("updateSettingValue", (data) => {
 });
 
 communicate.addHook("executeShortcut", (data) => {
-    const keys = Object.keys(module_store);
-
     log(`Received shortcut execute: ${data}.`);
 
-    keys.forEach((key) => {
-        if (module_store[key] && typeof module_store[key].shortcuts === "object") {
-            if (module_store[key].shortcuts[data]) {
-                module_store[key].shortcuts[data].bind(module_store[key])();
-            }
+    for (const key of Object.keys(module_store)) {
+        if (module_store[key] && typeof module_store[key].shortcuts === "object" && typeof module_store[key].shortcuts![data] === "function") {
+            module_store[key].shortcuts![data].bind(module_store[key])();
         }
-    });
+    }
 });
 
 // 설정 창에서 설정을 변경할 경우 실행되는 함수를 정의합니다.
@@ -218,35 +188,24 @@ eventBus.on(
     (module: string, key: string, value: unknown) => {
         const mod = module_store[module];
 
-        if (mod) {
-            if (!mod.status) {
-                mod.status = {};
-            }
-
+        if (mod !== undefined) {
+            mod.status ??= {};
             mod.status[key] = value;
         }
 
         // 모듈이 활성화되지 않은 상태일 경우 모듈 설정 업데이트 함수 호출을 건너뜁니다.
-        if (!mod.enable) {
-            return;
-        }
+        if (!mod.enable) return;
 
         if (mod.update && typeof mod.update[key] === "function") {
-            const utils: unknown[] = [];
+            const plugins: ModuleItem[] = [];
 
-            const requires = mod.require as string[] | undefined;
-
-            if (requires) {
-                for (let i = 0; i < requires.length; i++) {
-                    const name = requires[i];
-
-                    if (UTILS[name]) {
-                        utils.push(UTILS[name]);
-                    }
+            if (Array.isArray(mod.require)) {
+                for (const require of mod.require) {
+                    plugins.push(UTILS[require]);
                 }
             }
 
-            mod.update[key].bind(mod)(value, ...utils);
+            mod.update[key].bind(mod)(value, ...plugins);
         }
     }
 );

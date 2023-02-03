@@ -1,15 +1,9 @@
 import browser from "webextension-polyfill";
 import storage from "../utils/storage";
 import {eventBus} from "./eventbus";
-import {
-    RefresherCheckSettings,
-    RefresherOptionSettings,
-    RefresherRangeSettings,
-    RefresherTextSettings
-} from "../@types/module";
 
 export interface SettingsStore {
-    [index: string]: { [index: string]: RefresherCheckSettings | RefresherTextSettings | RefresherRangeSettings | RefresherOptionSettings }
+    [index: string]: { [index: string]: RefresherSettings };
 }
 
 const settings_store: SettingsStore = {};
@@ -32,27 +26,17 @@ export const setStore = (module: string, key: string, value: unknown): void => {
     settings_store[module][key].value = value;
 };
 
-export const dump = (): { [index: string]: unknown } => {
-    return settings_store;
-};
+export const dump = (): { [index: string]: unknown } => settings_store;
 
 export const load = async (
     module: string,
     key: string,
-    settings: RefresherCheckSettings | RefresherTextSettings | RefresherRangeSettings | RefresherOptionSettings
+    settings: RefresherSettings
 ): Promise<unknown> => {
-    if (!settings_store[module]) {
-        settings_store[module] = {};
-    }
+    settings_store[module] ??= {};
 
-    let got = await storage.get(`${module}.${key}`);
-
-    if (typeof got === "undefined" || typeof got === null) {
-        settings.value = settings.default;
-        got = settings.default;
-    } else {
-        settings.value = got;
-    }
+    const got = await storage.get(`${module}.${key}`) ?? settings.default;
+    settings.value = got;
 
     settings_store[module][key] = settings;
 

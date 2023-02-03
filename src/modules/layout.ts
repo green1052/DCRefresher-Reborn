@@ -26,16 +26,6 @@ export default {
     name: "레이아웃 수정",
     description: "디시 레이아웃을 변경할 수 있도록 도와줍니다.",
     url: /(board\/lists|board\/view)/g,
-    status: {
-        activePixel: 900,
-        forceCompact: false,
-        hideGalleryView: false,
-        hideUselessView: false,
-        pushToRight: false,
-        removeNotice: false,
-        removeDCNotice: false,
-        useCompactModeOnView: true
-    },
     memory: {
         uuid: null,
         uuiddc: null,
@@ -50,17 +40,15 @@ export default {
             type: "range",
             default: 900,
             min: 100,
-            step: 1,
             max: screen.width,
-            unit: "px",
-            advanced: false
+            step: 1,
+            unit: "px"
         },
         forceCompact: {
             name: "컴팩트 모드 강제 사용",
             desc: "항상 컴팩트 모드를 사용하도록 설정합니다.",
             type: "check",
-            default: false,
-            advanced: false
+            default: false
         },
         useCompactModeOnView: {
             name: "컴팩트 모드 강제 사용",
@@ -101,10 +89,10 @@ export default {
     },
     update: {
         activePixel(value: number) {
-            updateWindowSize(this.status!.forceCompact, value, innerWidth);
+            updateWindowSize(this.status.forceCompact, value, innerWidth);
         },
         forceCompact(value: boolean) {
-            updateWindowSize(value, this.status!.activePixel, innerWidth);
+            updateWindowSize(value, this.status.activePixel, innerWidth);
         },
         hideGalleryView(value: boolean) {
             document.documentElement.classList[value ? "add" : "remove"](
@@ -177,23 +165,23 @@ export default {
     },
     require: ["filter"],
     func(filter: RefresherFilter) {
-        if (location.href.includes("board/view") && !this.status!.useCompactModeOnView) return;
+        if (location.href.includes("board/view") && !this.status.useCompactModeOnView) return;
 
         this.memory.resize = () =>
             updateWindowSize(
-                this.status!.forceCompact,
-                this.status!.activePixel,
+                this.status.forceCompact,
+                this.status.activePixel,
                 innerWidth
             );
 
         window.addEventListener("resize", this.memory.resize);
         this.memory.resize();
 
-        this.update!.hideGalleryView.bind(this)(this.status!.hideGalleryView);
-        this.update!.hideUselessView.bind(this)(this.status!.hideUselessView);
-        this.update!.pushToRight.bind(this)(this.status!.pushToRight);
-        this.update!.removeNotice.bind(this)(this.status!.removeNotice, filter);
-        this.update!.removeDCNotice.bind(this)(this.status!.removeDCNotice, filter);
+        this.update!.hideGalleryView.bind(this)(this.status.hideGalleryView);
+        this.update!.hideUselessView.bind(this)(this.status.hideUselessView);
+        this.update!.pushToRight.bind(this)(this.status.pushToRight);
+        this.update!.removeNotice.bind(this)(this.status.removeNotice, filter);
+        this.update!.removeDCNotice.bind(this)(this.status.removeDCNotice, filter);
     },
     revoke(filter: RefresherFilter) {
         if (this.memory.uuid !== null)
@@ -211,20 +199,20 @@ export default {
         this.update!.removeDCNotice.bind(this)(false, filter);
     }
 } as RefresherModule<{
-    status: {
-        activePixel: number;
-        forceCompact: boolean;
-        hideGalleryView: boolean;
-        hideUselessView: boolean;
-        pushToRight: boolean;
-        removeNotice: boolean;
-        removeDCNotice: boolean;
-        useCompactModeOnView: boolean;
-    };
     memory: {
         uuid: string | null;
         uuiddc: string | null;
         resize: (() => void) | null;
+    };
+    settings: {
+        activePixel: RefresherRangeSettings;
+        forceCompact: RefresherCheckSettings,
+        useCompactModeOnView: RefresherCheckSettings;
+        hideGalleryView: RefresherCheckSettings;
+        hideUselessView: RefresherCheckSettings;
+        pushToRight: RefresherCheckSettings;
+        removeNotice: RefresherCheckSettings;
+        removeDCNotice: RefresherCheckSettings;
     };
     require: ["filter"];
 }>;
