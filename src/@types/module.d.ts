@@ -120,7 +120,7 @@ declare global {
                             ? Item extends "filter"
                                 ? RefresherFilter
                                 : Item extends "Frame"
-                                    ? RefresherFrame
+                                    ? Frame
                                     : Item extends "eventBus"
                                         ? RefresherEventBus
                                         : Item extends "http"
