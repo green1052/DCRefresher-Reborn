@@ -72,7 +72,7 @@ export default {
         });
 
         // 다크모드는 반응성이 중요하니깐 모듈에서 바로 로드 시키기
-        filter.runSpecific(this.memory.uuid);
+        filter.runSpecific(this.memory.uuid!);
 
         this.memory.uuid2 = filter.add(
             ".gallview_contents .inner .writing_view_box *",

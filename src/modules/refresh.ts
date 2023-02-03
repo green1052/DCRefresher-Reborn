@@ -45,14 +45,6 @@ export default {
     name: "글 목록 새로고침",
     description: "글 목록을 자동으로 새로고침합니다.",
     url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/(view|lists)/g,
-    status: {
-        refreshRate: 2500,
-        useBetterBrowse: true,
-        fadeIn: true,
-        autoRate: true,
-        noRefreshOnSearch: true,
-        doNotColorVisited: true
-    },
     memory: {
         uuid: null,
         uuid2: null,
@@ -74,48 +66,40 @@ export default {
             desc: "페이지를 새로 고쳐 현재 페이지에 반영하는 주기입니다.",
             type: "range",
             default: 2500,
-            bind: "delay",
             min: 1000,
-            step: 100,
             max: 20000,
-            unit: "ms",
-            advanced: false
+            step: 100,
+            unit: "ms"
         },
         autoRate: {
             name: "자동 새로고침 주기",
             desc: "새로 올라오는 글의 수에 따라 새로고침 주기를 자동으로 제어합니다.",
             type: "check",
-            default: true,
-            advanced: false
+            default: true
         },
         fadeIn: {
             name: "새 게시글 효과",
             desc: "새로 올라온 게시글에 서서히 등장하는 효과를 줍니다.",
             type: "check",
-            default: true,
-            advanced: false
+            default: true
         },
         useBetterBrowse: {
             name: "인페이지 페이지 전환",
-            desc:
-                "게시글 목록을 다른 페이지로 넘길 때 페이지를 새로 고치지 않고 넘길 수 있게 설정합니다.",
+            desc: "게시글 목록을 다른 페이지로 넘길 때 페이지를 새로 고치지 않고 넘길 수 있게 설정합니다.",
             type: "check",
-            default: true,
-            advanced: false
+            default: true
         },
         noRefreshOnSearch: {
             name: "검색 중 페이지 새로고침 안함",
             desc: "사이트 내부 검색 기능을 사용 중일시 새로고침을 사용하지 않습니다.",
             type: "check",
-            default: true,
-            advanced: false
+            default: true
         },
         doNotColorVisited: {
             name: "방문 링크 색상 지정 비활성화",
             desc: "Firefox와 같이 방문한 링크 색상 지정이 느린 브라우저에서 깜빡거리는 현상을 완화시킵니다.",
             type: "check",
-            default: false,
-            advanced: true
+            default: false
         }
     },
     shortcuts: {
@@ -127,7 +111,6 @@ export default {
 
             this.memory.load!();
         },
-
         refreshPause() {
             PAUSE_REFRESH = !PAUSE_REFRESH;
 
@@ -144,7 +127,7 @@ export default {
     },
     require: ["http", "eventBus", "filter"],
     func(http: RefresherHTTP, eventBus: RefresherEventBus, filter: RefresherFilter) {
-        if (document && document.documentElement && this.status!.doNotColorVisited) {
+        if (document && document.documentElement && this.status.doNotColorVisited) {
             document.documentElement.classList.add("refresherDoNotColorVisited");
         }
 
@@ -171,7 +154,7 @@ export default {
 
         let originalLocation = location.href;
 
-        if (this.status!.noRefreshOnSearch && queryString("s_keyword")) {
+        if (this.status.noRefreshOnSearch && queryString("s_keyword")) {
             PAUSE_REFRESH = true;
             updateRefreshText();
         }
@@ -253,7 +236,7 @@ export default {
                 const value = v.innerHTML;
 
                 if (!cached.includes(value) && value !== currentPostNo) {
-                    if (this.status!.fadeIn && !this.memory.calledByPageTurn && v.parentElement !== null) {
+                    if (this.status.fadeIn && !this.memory.calledByPageTurn && v.parentElement !== null) {
                         v.parentElement.classList.add("refresherNewPost");
                         v.parentElement.style.animationDelay = `${this.memory.new_counts * 23}ms`;
                     }
@@ -277,7 +260,7 @@ export default {
                     this.memory.average_counts.reduce((a, b) => a + b) /
                     this.memory.average_counts.length;
 
-                if (this.status!.autoRate) {
+                if (this.status.autoRate) {
                     this.memory.delay = Math.max(
                         600,
                         8 * Math.pow(2 / 3, 3 * average) * 1000
@@ -370,8 +353,8 @@ export default {
                 this.memory.load!();
             }
 
-            if (!this.status!.autoRate) {
-                this.memory.delay = Math.max(1000, this.status!.refreshRate);
+            if (!this.status.autoRate) {
+                this.memory.delay = Math.max(1000, this.status.refreshRate);
             }
 
             if (this.memory.refresh) {
@@ -403,7 +386,7 @@ export default {
             this.memory.load!(undefined, true);
         });
 
-        if (this.status!.useBetterBrowse) {
+        if (this.status.useBetterBrowse) {
             this.memory.uuid = filter.add<HTMLAnchorElement>(".left_content article:has(.gall_listwrap) .bottom_paging_box a", (element) => {
                 if (element.href.includes("javascript:")) return;
 
@@ -430,7 +413,10 @@ export default {
 
                     await this.memory.load!(location.href, true);
 
-                    document.querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head")?.scrollIntoView({block: "start", behavior: "smooth"});
+                    document.querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head")?.scrollIntoView({
+                        block: "start",
+                        behavior: "smooth"
+                    });
                 });
             }
             );
@@ -519,14 +505,6 @@ export default {
         }
     }
 } as RefresherModule<{
-    status: {
-        refreshRate: number;
-        useBetterBrowse: boolean;
-        fadeIn: boolean;
-        autoRate: boolean,
-        noRefreshOnSearch: boolean;
-        doNotColorVisited: boolean;
-    },
     memory: {
         uuid: string | null;
         uuid2: string | null;
@@ -540,5 +518,13 @@ export default {
         lastRefresh: number;
         load: ((customURL?: string, force?: boolean) => Promise<boolean>) | null;
     };
-    require: ["http", "eventBus", "filter"]
+    settings: {
+        refreshRate: RefresherRangeSettings;
+        autoRate: RefresherCheckSettings;
+        fadeIn: RefresherCheckSettings;
+        useBetterBrowse: RefresherCheckSettings;
+        noRefreshOnSearch: RefresherCheckSettings;
+        doNotColorVisited: RefresherCheckSettings;
+    };
+    require: ["http", "eventBus", "filter"];
 }>;

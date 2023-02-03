@@ -233,7 +233,7 @@ interface RefresherData {
     };
     settings: {
         [key: string]: {
-            [key: string]: RefresherCheckSettings | RefresherTextSettings | RefresherRangeSettings | RefresherOptionSettings
+            [key: string]: RefresherSettings
         }
     },
     shortcuts: {} | browser.Commands.Command[],

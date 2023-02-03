@@ -1,11 +1,6 @@
 export default {
     name: "폰트 교체",
     description: "페이지에 전반적으로 표시되는 폰트를 교체합니다.",
-    status: {
-        customFonts: "Noto Sans CJK KR, NanumGothic",
-        changeDCFont: true,
-        bodyFontSize: 13
-    },
     memory: {
         uuid: null
     },
@@ -14,15 +9,13 @@ export default {
     settings: {
         customFonts: {
             name: "font-family 이름",
-            desc:
-                "페이지 폰트를 입력된 폰트로 교체합니다. (빈칸으로 둘 시 확장 프로그램 기본 폰트로 설정)",
-            default: "Noto Sans CJK KR, NanumGothic",
-            type: "text"
+            desc: "페이지 폰트를 입력된 폰트로 교체합니다. (빈칸으로 둘 시 확장 프로그램 기본 폰트로 설정)",
+            type: "text",
+            default: "Noto Sans CJK KR, NanumGothic"
         },
         changeDCFont: {
             name: "디시인사이드 폰트 교체",
-            desc:
-                "미리보기 창 같은 DCRefresher Reborn의 폰트 뿐만 아니라 디시인사이드의 폰트까지 교체합니다.",
+            desc: "미리보기 창 같은 DCRefresher Reborn의 폰트 뿐만 아니라 디시인사이드의 폰트까지 교체합니다.",
             type: "check",
             default: true
         },
@@ -32,8 +25,8 @@ export default {
             type: "range",
             default: 13,
             min: 5,
-            step: 1,
             max: 30,
+            step: 1,
             unit: "pt"
         }
     },
@@ -86,11 +79,10 @@ export default {
     },
     func() {
         document.documentElement.classList.add("refresherFont");
-        this.update!.changeDCFont(this.status!.changeDCFont);
-        this.update!.customFonts(this.status!.customFonts);
-        this.update!.bodyFontSize(this.status!.bodyFontSize);
+        this.update!.changeDCFont(this.status.changeDCFont);
+        this.update!.customFonts(this.status.customFonts);
+        this.update!.bodyFontSize(this.status.bodyFontSize);
     },
-
     revoke(): void {
         document.documentElement.classList.remove("refresherFont");
         this.update!.changeDCFont(false);
@@ -98,12 +90,12 @@ export default {
         this.update!.bodyFontSize(false);
     }
 } as RefresherModule<{
-    status: {
-        customFonts: string;
-        changeDCFont: boolean;
-        bodyFontSize: number;
-    };
     memory: {
         uuid: string | null;
+    };
+    settings: {
+        customFonts: RefresherTextSettings;
+        changeDCFont: RefresherCheckSettings;
+        bodyFontSize: RefresherRangeSettings;
     };
 }>;
