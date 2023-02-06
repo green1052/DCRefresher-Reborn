@@ -2,6 +2,7 @@ export default {
     name: "글쓰기 개선",
     description: "글쓰기 페이지를 개선합니다.",
     url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/write/,
+    status: {},
     memory: {
         canvas: "",
         injected: false

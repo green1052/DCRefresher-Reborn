@@ -26,6 +26,7 @@ export default {
     name: "레이아웃 수정",
     description: "디시 레이아웃을 변경할 수 있도록 도와줍니다.",
     url: /(board\/lists|board\/view)/g,
+    status: {},
     memory: {
         uuid: null,
         uuiddc: null,
@@ -42,7 +43,8 @@ export default {
             min: 100,
             max: screen.width,
             step: 1,
-            unit: "px"
+            unit: "px",
+            value: 1
         },
         forceCompact: {
             name: "컴팩트 모드 강제 사용",
@@ -213,6 +215,15 @@ export default {
         pushToRight: RefresherCheckSettings;
         removeNotice: RefresherCheckSettings;
         removeDCNotice: RefresherCheckSettings;
+    };
+    update: {
+        activePixel(value: number): void;
+        forceCompact(value: boolean): void;
+        hideGalleryView(value: boolean): void;
+        hideUselessView(value: boolean): void;
+        pushToRight(value: boolean): void;
+        removeNotice(value: boolean): void;
+        removeDCNotice(value: boolean): void;
     };
     require: ["filter"];
 }>;

@@ -45,6 +45,7 @@ export default {
     name: "글 목록 새로고침",
     description: "글 목록을 자동으로 새로고침합니다.",
     url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/(view|lists)/g,
+    status: {},
     memory: {
         uuid: null,
         uuid2: null,
@@ -103,7 +104,7 @@ export default {
         }
     },
     shortcuts: {
-        refreshLists(this: any) {
+        refreshLists() {
             if (this.memory.lastRefresh + 500 > Date.now()) {
                 Toast.show("너무 자주 새로고칠 수 없습니다.", true, 1000);
                 return;
@@ -517,6 +518,10 @@ export default {
         refreshRequest: string | null;
         lastRefresh: number;
         load: ((customURL?: string, force?: boolean) => Promise<boolean>) | null;
+    };
+    shortcuts: {
+        refreshLists(): void;
+        refreshPause(): void;
     };
     settings: {
         refreshRate: RefresherRangeSettings;
