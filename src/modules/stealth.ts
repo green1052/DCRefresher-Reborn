@@ -38,31 +38,30 @@ const tempButtonCreate = (elem: HTMLElement): void => {
 export default {
     name: "스텔스 모드",
     description: "페이지내에서 표시되는 이미지를 비활성화합니다.",
+    status: undefined,
     memory: {
         contentViewUUID: null
     },
     enable: false,
     default_enable: false,
     shortcuts: {
-        stealthPause(this: RefresherModule): void {
-            const button = document.querySelector(`${CONTROL_BUTTON} > #tempview`) as HTMLElement;
+        stealthPause() {
+            const button = document.querySelector<HTMLElement>(`${CONTROL_BUTTON} > #tempview`);
 
             if (button === null) return;
 
             button.click();
 
-            let content: string;
-            if (document.documentElement.className.includes(TEMPORARY_STEALTH)) {
-                content = "이미지를 보이게 했습니다.";
-            } else {
-                content = "이미지를 숨겼습니다.";
-            }
+            const content =
+                document.documentElement.className.includes(TEMPORARY_STEALTH)
+                    ? "이미지를 보이게 했습니다."
+                    : "이미지를 숨겼습니다.";
 
             Toast.show(content, false, 3000);
         }
     },
     require: ["eventBus"],
-    func(eventBus: RefresherEventBus): void {
+    func(eventBus: RefresherEventBus) {
         if (!document.documentElement.className.includes("refresherStealth")) {
             document.documentElement.classList.add("refresherStealth");
         }
@@ -81,7 +80,7 @@ export default {
             }
         );
     },
-    revoke(eventBus: RefresherEventBus): void {
+    revoke(eventBus: RefresherEventBus) {
         document.documentElement.classList.remove("refresherStealth");
 
         const buttons = document.querySelectorAll(CONTROL_BUTTON);
@@ -97,6 +96,9 @@ export default {
 } as RefresherModule<{
     memory: {
         contentViewUUID: string | null;
+    };
+    shortcuts: {
+        stealthPause(): void;
     };
     require: ["eventBus"];
 }>;

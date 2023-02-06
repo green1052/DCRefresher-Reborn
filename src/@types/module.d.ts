@@ -48,6 +48,8 @@ declare global {
         data: { [index: string]: unknown };
         memory: { [index: string]: unknown };
         settings: { [index: string]: RefresherSettings };
+        shortcuts: { [index: string]: () => void };
+        update: { [index: string]: (value: unknown) => void };
         require: Array<"filter" | "Frame" | "eventBus" | "http" | "ip" | "block" | "dom" | "memo">;
     }
 
@@ -74,7 +76,7 @@ declare global {
         status:
             T["settings"] extends { [key in infer Key]: RefresherSettings }
                 ? { [key in Key]: T["settings"][key]["default"] }
-                : never
+                : undefined;
 
         /**
          * 모듈 데이터를 영속적으로 저장하고 싶을 때 사용하는 객체. 이 객체에 값을 저장하면 확장 프로그램이 로드될 때 마다 해당 값을 불러옵니다.
@@ -104,40 +106,42 @@ declare global {
         /**
          * 단축키가 입력되면 실행할 함수를 정의합니다.
          */
-        shortcuts?: {
-            [index: string]: () => void;
-        };
+        shortcuts: T["shortcuts"] extends { [key in infer Index]: () => void }
+            ? { [index in Index]: (this: this) => void }
+            : never;
 
         /**
          * 설정이 업데이트 됐을 시 호출할 함수를 정의합니다.
          */
-        update?: {
-            [index: string]: (
-                value: unknown,
-                ...args:
-                    Array<
-                        T["require"] extends (infer Item)[]
-                            ? Item extends "filter"
-                                ? RefresherFilter
-                                : Item extends "Frame"
-                                    ? Frame
-                                    : Item extends "eventBus"
-                                        ? RefresherEventBus
-                                        : Item extends "http"
-                                            ? RefresherHTTP
-                                            : Item extends "ip"
-                                                ? RefresherIP
-                                                : Item extends "block"
-                                                    ? RefresherBlock
-                                                    : Item extends "dom"
-                                                        ? RefresherDOM
-                                                        : Item extends "memo"
-                                                            ? RefresherMemo
-                                                            : never
-                            : never
-                    >
-            ) => void
-        } | null;
+        update: T["update"] extends { [key in infer Index]: (value: any) => void }
+            ? {
+                [index in Index]: (
+                    this: this,
+                    value: Parameters<T["update"][index]>[0],
+                    ...args:
+                        Array<
+                            T["require"] extends (infer Item)[]
+                                ? Item extends "filter"
+                                    ? RefresherFilter
+                                    : Item extends "Frame"
+                                        ? RefresherFrame
+                                        : Item extends "eventBus"
+                                            ? RefresherEventBus
+                                            : Item extends "http"
+                                                ? RefresherHTTP
+                                                : Item extends "ip"
+                                                    ? RefresherIP
+                                                    : Item extends "block"
+                                                        ? RefresherBlock
+                                                        : Item extends "dom"
+                                                            ? RefresherDOM
+                                                            : Item extends "memo"
+                                                                ? RefresherMemo
+                                                                : never
+                                : never
+                        >) => void
+            }
+            : never;
 
         /**
          * 모듈에서 사용할 내장 유틸 목록.
