@@ -38,7 +38,6 @@ const tempButtonCreate = (elem: HTMLElement): void => {
 export default {
     name: "스텔스 모드",
     description: "페이지내에서 표시되는 이미지를 비활성화합니다.",
-    status: undefined,
     memory: {
         contentViewUUID: null
     },
