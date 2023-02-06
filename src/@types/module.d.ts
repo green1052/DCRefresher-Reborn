@@ -76,7 +76,7 @@ declare global {
         status:
             T["settings"] extends { [key in infer Key]: RefresherSettings }
                 ? { [key in Key]: T["settings"][key]["default"] }
-                : undefined;
+                : never;
 
         /**
          * 모듈 데이터를 영속적으로 저장하고 싶을 때 사용하는 객체. 이 객체에 값을 저장하면 확장 프로그램이 로드될 때 마다 해당 값을 불러옵니다.
