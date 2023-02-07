@@ -1447,13 +1447,13 @@ export default {
 
             new Promise<GalleryPreData>((resolve) => {
                 eventBus.on("RefresherPostCommentIDLoaded", (commentId: string, commentNo: string) =>
-                        resolve({
-                            gallery: commentId,
-                            id: commentNo
-                        }),
-                    {
-                        once: true
-                    });
+                    resolve({
+                        gallery: commentId,
+                        id: commentNo
+                    }),
+                {
+                    once: true
+                });
             })
                 .then((postData) => {
                     if (postFetchedData) postDom = postFetchedData.dom!;
@@ -1548,8 +1548,8 @@ export default {
                 if (!typeName.length) return false;
 
                 return (admin && !password
-                        ? request.adminDeleteComment(preData, commentId, signal)
-                        : request.userDeleteComment(preData, commentId, signal, password)
+                    ? request.adminDeleteComment(preData, commentId, signal)
+                    : request.userDeleteComment(preData, commentId, signal, password)
                 )
                     .then((v) => {
                         if (typeof v === "boolean") {
