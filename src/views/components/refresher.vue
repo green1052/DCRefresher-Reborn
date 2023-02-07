@@ -125,7 +125,7 @@
             <div v-show="tab === 2" key="tab3" class="tab tab3">
                 <div v-for="key in Object.keys(blocks)" class="block-divide">
                     <h3>
-                        {{ blockKeyNames[key] }}
+                        {{ blockKeyNames[key] }} ({{ blocks[key].length }}개)
 
                         <span class="plus" @click="() => addEmptyBlockedUser(key)">
                             <svg fill="black" height="18px" viewBox="0 0 24 24"
@@ -158,7 +158,7 @@
             <div v-show="tab === 3" key="tab4" class="tab tab4">
                 <div v-for="key in Object.keys(memos)" class="block-divide">
                     <h3>
-                        {{ memoKeyNames[key] }}
+                        {{ memoKeyNames[key] }} ({{ Object.keys(memos[key]).length }}개)
                         <span class="plus" @click="addMemoUser(key)">
                         <svg
                             fill="black" height="18px" viewBox="0 0 24 24" width="18px"
@@ -348,7 +348,7 @@ export default Vue.extend({
         updateUserSetting(module: string, key: string, value: unknown) {
             this.settings[module][key].value = value;
 
-            const a =   this.settings[module][key]
+            const a = this.settings[module][key]
 
             port.postMessage({
                 updateUserSetting: true,
