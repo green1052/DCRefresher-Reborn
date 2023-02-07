@@ -24,14 +24,12 @@ export interface FrameStackOption {
 class InternalFrame implements RefresherFrame {
     title = "";
     subtitle = "";
-    app: RefresherFrameAppVue;
     contents: string | undefined = undefined;
     upvotes: string | undefined = undefined;
     fixedUpvotes: string | undefined = undefined;
     downvotes: string | undefined = undefined;
     error?: { title: string; detail: string; } | undefined = undefined;
     collapse?: boolean = undefined;
-    options: FrameOption;
     data: {
         load: boolean;
         buttons: boolean;
@@ -53,10 +51,10 @@ class InternalFrame implements RefresherFrame {
         deleteComment(commentId: string, password: string, admin: boolean): Promise<boolean>;
     };
 
-    constructor(options: FrameOption, app: RefresherFrameAppVue) {
-        this.options = options;
-        this.app = app;
-
+    constructor(
+        public options: FrameOption,
+        public app: RefresherFrameAppVue
+    ) {
         this.data = {};
         this.functions = {};
     }
