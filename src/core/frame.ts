@@ -22,7 +22,7 @@ export interface FrameStackOption {
 
 class InternalFrame implements RefresherFrame {
     app: RefresherFrameAppVue;
-    collapse?: boolean;
+    collapse: boolean | undefined;
     contents: string | undefined;
     downvotes: string | undefined;
     error: { title: string; detail: string } | undefined;
@@ -41,13 +41,6 @@ class InternalFrame implements RefresherFrame {
         this.subtitle = "";
 
         this.app = app;
-
-        this.contents = undefined;
-        this.upvotes = undefined;
-        this.downvotes = undefined;
-        this.fixedUpvotes = undefined;
-        this.error = undefined;
-        this.collapse = undefined;
 
         this.data = {};
         this.functions = {};
@@ -89,8 +82,8 @@ export default class {
             })
         }).$children[0] as RefresherFrameAppVue;
 
-        for (let i = 0; i < children.length; i++) {
-            this.app.frames.push(new InternalFrame(children[i], this.app));
+        for (const child of children) {
+            this.app.frames.push(new InternalFrame(child, this.app));
         }
     }
 }

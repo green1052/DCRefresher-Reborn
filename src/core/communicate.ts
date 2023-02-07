@@ -1,25 +1,19 @@
 import browser from "webextension-polyfill";
 import {uuid} from "../utils/string";
 
-const handlerStorage: { [index: string]: storageStructure[] } = {};
+const handlerStorage: Record<string, StorageStructure[]> = {};
 
 browser.runtime.onMessage.addListener((msg) => {
-    if (!msg) {
-        return;
-    }
+    if (!msg) return;
 
-    if (!msg.type) {
-        throw "Received wrong runtimeMessage structure.";
-    }
+    if (!msg.type) throw "Received wrong runtimeMessage structure.";
 
-    if (handlerStorage[msg.type]) {
-        handlerStorage[msg.type].forEach((handler) => {
-            handler.func(msg.data);
-        });
-    }
+    handlerStorage[msg.type]?.forEach((handler) => {
+        handler.func(msg.data);
+    });
 });
 
-interface storageStructure {
+interface StorageStructure {
     uuid: string;
     func: (...args: any[]) => void;
 }
@@ -28,9 +22,7 @@ export const addHook = (
     type: string,
     callback: (...args: any[]) => void
 ): string => {
-    if (!handlerStorage[type]) {
-        handlerStorage[type] = [];
-    }
+    handlerStorage[type] ??= [];
 
     const id = uuid();
 
@@ -43,20 +35,15 @@ export const addHook = (
 };
 
 export const clearHook = (type: string, id: string): boolean => {
-    if (!handlerStorage[type]) {
-        return false;
-    }
+    const hooks = handlerStorage[type];
 
-    const len = handlerStorage[type].length;
-    let removed = false;
+    if (!hooks) return false;
 
-    for (let i = 0; i < len; i++) {
-        if (handlerStorage[type][i].uuid === id) {
-            handlerStorage[type].splice(i, 1);
+    const oldLength = hooks.length;
 
-            removed = true;
-        }
-    }
+    handlerStorage[type] = hooks.filter((hook) => hook.uuid !== id);
+    
+    const removed = oldLength !== handlerStorage[type].length;
 
     return removed;
 };

@@ -27,6 +27,12 @@
                 "ignoreRestArgs": true
             }
         ],
+        "@typescript-eslint/no-empty-interface": [
+            "error",
+            {
+                "allowSingleExtends": true
+            }
+        ],
         "arrow-parens": ["error", "always"],
         "linebreak-style": "off",
         "no-use-before-define": "off",

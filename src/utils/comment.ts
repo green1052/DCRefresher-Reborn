@@ -1,5 +1,6 @@
 import * as http from "./http";
 import Cookies from "js-cookie";
+import type { Nullable } from "./types";
 
 const _d = function (r: string) {
     const i = "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K";
@@ -34,22 +35,16 @@ const requestBeforeServiceCode = (dom: Document) => {
         "#container > section #reply-setting-tmpl + script[type=\"text/javascript\"]"
     );
 
-    if (!_rpre) {
-        throw "_r 값을 찾을 수 없습니다.";
-    }
+    if (!_rpre) throw "_r 값을 찾을 수 없습니다.";
 
     _r = _rpre.innerHTML;
 
     const _rmatch = _r.match(/_d\('(.+)'/g);
-    if (!_rmatch || !_rmatch[0]) {
-        throw "_d 값을 찾을 수 없습니다.";
-    }
+    if (!_rmatch?.[0]) throw "_d 값을 찾을 수 없습니다.";
 
     _r = _d(_rmatch[0].replace(/(_d\(|')/g, ""));
 
-    if (!_r) {
-        throw "_r이 적절한 값이 아닙니다.";
-    }
+    if (!_r) throw "_r이 적절한 값이 아닙니다.";
 
     let tvl = _r,
         fi = parseInt(tvl.substr(0, 1))
@@ -57,9 +52,7 @@ const requestBeforeServiceCode = (dom: Document) => {
     (tvl = tvl.replace(/^./, fi.toString())),
     (_r = tvl);
 
-    const r = (dom.querySelector(
-        "input[name=\"service_code\"]"
-    ) as HTMLInputElement).value;
+    const r = dom.querySelector<HTMLInputElement>("input[name=\"service_code\"]")!.value;
     const _rs = _r.split(",");
     let t = "";
     for (let e = 0; e < _rs.length; e++)
@@ -77,9 +70,7 @@ const secretKey = (dom: Document): string => {
     for (const element of dom.querySelectorAll<HTMLInputElement>("#focus_cmt > input")) {
         const id = element.getAttribute("name") ?? element.id;
 
-        if (id === "service_code" || id === "gallery_no" || id === "clickbutton") {
-            continue;
-        }
+        if (["service_code", "gallery_no", "clickbutton"].includes(id)) continue;
 
         params.set(id, element.value);
     }
@@ -89,7 +80,7 @@ const secretKey = (dom: Document): string => {
 
 interface CommentResult {
     result: string;
-    message: string | null;
+    message: Nullable<string>;
 }
 
 export async function submitComment(
@@ -118,17 +109,11 @@ export async function submitComment(
     params.set("id", preData.gallery);
     params.set("c_gall_id", preData.gallery);
     params.set("no", preData.id);
-    if (reply !== null)
-        params.set("c_no", reply);
+    if (reply) params.set("c_no", reply);
     params.set("c_gall_no", preData.id);
-
     params.set("name", user.name);
-
-    if (user.pw)
-        params.set("password", user.pw);
-
-    if (captcha)
-        params.set("code", captcha);
+    if (user.pw) params.set("password", user.pw);
+    if (captcha) params.set("code", captcha);
     params.set("memo", memo);
 
     const response = await http.make(http.urls.comments_submit, {
@@ -167,16 +152,13 @@ export async function submitDcconComment(
     params.set("c_gall_id", preData.gallery);
     params.set("no", preData.id);
     params.set("c_gall_no", preData.id);
-    if (reply !== null)
-        params.set("c_no", reply);
+    if (reply) params.set("c_no", reply);
     params.set("package_idx", dccon.package_idx);
     params.set("detail_idx", dccon.detail_idx);
     params.set("input_type", "comment");
     params.set("name", user.name);
-    if (user.pw)
-        params.set("password", user.pw);
-    if (captcha)
-        params.set("code", captcha);
+    if (user.pw) params.set("password", user.pw);
+    if (captcha) params.set("code", captcha);
 
     const response = await http.make(http.urls.dccon_comments_submit, {
         method: "POST",

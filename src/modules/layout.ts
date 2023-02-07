@@ -11,14 +11,10 @@ const updateWindowSize = (
         if (!document.documentElement.className.includes("refresherCompact")) {
             document.documentElement.classList.add("refresherCompact");
 
-            if (isView) {
-                document.documentElement.classList.add("refresherCompactView");
-            }
+            if (isView) document.documentElement.classList.add("refresherCompactView");
         }
     } else {
-        if (document.documentElement.className.includes("refresherCompact")) {
-            document.documentElement.classList.remove("refresherCompact");
-        }
+        document.documentElement.classList.remove("refresherCompact");
     }
 };
 
@@ -112,56 +108,39 @@ export default {
             );
         },
         removeNotice(value: boolean, filter: RefresherFilter) {
-            if (this.memory.uuid !== null && !value) {
+            if (this.memory.uuid && !value) {
                 filter.remove(this.memory.uuid);
                 return;
             }
 
-            if (this.memory.uuid === null && !value) {
-                this.memory.uuid = filter.add(
-                    ".gall_list .us-post b",
-                    (element) => {
-                        if (
-                            new URL(location.href).searchParams.get("exception_mode") ===
-                            "notice"
-                        ) {
-                            return;
-                        }
+            if (!this.memory.uuid && !value) {
+                this.memory.uuid = filter.add(".gall_list .us-post b", (elem) => {
+                    if (new URL(location.href).searchParams.get("exception_mode") === "notice") return;
 
-                        element.parentElement!.parentElement!.style.display = "none";
-                    },
-                    {
-                        neverExpire: true
-                    }
-                );
+                    elem.parentElement!.parentElement!.style.display = "none";
+                }, {
+                    neverExpire: true
+                });
             }
         },
         removeDCNotice(value: boolean, filter: RefresherFilter) {
-            if (this.memory.uuiddc !== null && !value) {
+            if (this.memory.uuiddc && !value) {
                 filter.remove(this.memory.uuiddc);
                 return;
             }
 
-            if (this.memory.uuiddc === null && value) {
-                this.memory.uuiddc = filter.add(
-                    ".gall_list .ub-content .ub-writer",
-                    (elem) => {
-                        const adminAttribute = elem.getAttribute("user_name");
+            if (!this.memory.uuiddc && value) {
+                this.memory.uuiddc = filter.add(".gall_list .ub-content .ub-writer", (elem) => {
+                    const adminAttribute = elem.getAttribute("user_name");
 
-                        if (adminAttribute === null || adminAttribute !== "운영자") {
-                            return;
-                        }
+                    if (adminAttribute !== "운영자") return;
 
-                        const pelem = elem.parentElement as HTMLElement;
+                    const pelem = elem.parentElement;
 
-                        if (pelem) {
-                            pelem.style.display = "none";
-                        }
-                    },
-                    {
-                        neverExpire: true
-                    }
-                );
+                    if (pelem) pelem.style.display = "none";
+                }, {
+                    neverExpire: true
+                });
             }
         }
     },
@@ -186,11 +165,9 @@ export default {
         this.update!.removeDCNotice.bind(this)(this.status.removeDCNotice, filter);
     },
     revoke(filter: RefresherFilter) {
-        if (this.memory.uuid !== null)
-            filter.remove(this.memory.uuid);
+        if (this.memory.uuid) filter.remove(this.memory.uuid);
 
-        if (this.memory.uuiddc !== null)
-            filter.remove(this.memory.uuiddc);
+        if (this.memory.uuiddc) filter.remove(this.memory.uuiddc);
 
         window.removeEventListener("resize", this.memory.resize!);
 

@@ -1,8 +1,9 @@
 import * as ip from "./ip";
 import * as memo from "../core/memo";
+import type { Nullable, ObjectEnum } from "./types";
 
 export type UserType =
-    "UNFIXED"
+    | "UNFIXED"
     | "HALF_FIXED"
     | "FIXED"
     | "HALF_FIXED_SUB_MANAGER"
@@ -10,7 +11,7 @@ export type UserType =
     | "HALF_FIXED_MANAGER"
     | "FIXED_MANAGER";
 
-const USERTYPE: { [key in UserType]: UserType } = {
+const USERTYPE: ObjectEnum<UserType> = {
     UNFIXED: "UNFIXED",
     HALF_FIXED: "HALF_FIXED",
     FIXED: "FIXED",
@@ -46,16 +47,14 @@ export const getType = (icon: string | null): UserType => {
 
     if (icon === null) {
         return USERTYPE.UNFIXED;
-    }
-
-    if (icon.endsWith("fix_managernik.gif")) {
+    } else if (icon.endsWith("fix_managernik.gif")) {
         return USERTYPE.FIXED_MANAGER;
-    } else if (/(?<!sub_)managernik\.gif$/g.test(icon)) {
-        return USERTYPE.HALF_FIXED_MANAGER;
     } else if (icon.endsWith("fix_sub_managernik.gif")) {
         return USERTYPE.FIXED_SUB_MANAGER;
     } else if (icon.endsWith("sub_managernik.gif")) {
         return USERTYPE.HALF_FIXED_SUB_MANAGER;
+    } else if (icon.endsWith("managernik.gif")) {
+        return USERTYPE.HALF_FIXED_MANAGER;
     } else if (
         icon.endsWith("fix_nik.gif") ||
         icon.endsWith("nftcon_fix.png") ||
@@ -76,20 +75,17 @@ export const getType = (icon: string | null): UserType => {
 };
 
 export class User {
-    nick: string;
-    id: string | null;
-    ip_data: null | string;
-    ip_color: null | string;
-    icon: string | null;
+    ip_data: Nullable<string>;
+    ip_color: Nullable<string>;
     type: UserType;
-    memo: RefresherMemoValue | null;
-    private __ip: string | null;
+    memo: Nullable<RefresherMemoValue>;
+    private __ip: Nullable<string>;
 
     constructor(
-        nick: string,
-        id: string | null,
-        ip: string | null,
-        icon: string | null
+        public nick: string,
+        public id: Nullable<string>,
+        ip: Nullable<string>,
+        public icon: Nullable<string>
     ) {
         this.__ip = null;
         this.ip_data = null;
@@ -121,38 +117,29 @@ export class User {
     }
 
     getMemo(): void {
-        let value: RefresherMemoValue | null;
-
-        if (this.id) {
-            value = memo.get("UID", this.id);
-        } else if (this.ip) {
-            value = memo.get("IP", this.ip);
-        } else {
-            value = memo.get("NICK", this.nick);
-        }
-
-        this.memo = value;
+        /* eslint-disable indent */
+        this.memo =
+            this.id ?
+                memo.get("UID", this.id)
+            : this.ip ?
+                memo.get("IP", this.ip)
+            :
+                memo.get("NICK", this.nick);
+        /* eslint-enable indent */
     }
 
     import(dom: HTMLElement | null): this {
-        if (dom === null) {
-            return this;
-        }
+        if (!dom) return this;
 
-        const nick = dom.dataset.nick || "오류";
-        const uid = dom.dataset.uid || null;
-        const ip = dom.dataset.ip || null;
-        const icon = uid === null
+        this.nick = dom.dataset.nick ?? "오류";
+        this.id = dom.dataset.uid ?? null;
+        this.ip = dom.dataset.ip ?? null;
+        this.icon = !this.id
             ? null
             : dom
                 .querySelector("a.writer_nikcon img")!
                 .getAttribute("src")!;
-
-        this.nick = nick;
-        this.id = uid;
-        this.ip = ip;
-        this.icon = icon;
-        this.type = getType(icon);
+        this.type = getType(this.icon);
 
         this.getMemo();
 
