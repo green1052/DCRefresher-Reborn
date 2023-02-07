@@ -158,11 +158,11 @@ export default {
         window.addEventListener("resize", this.memory.resize);
         this.memory.resize();
 
-        this.update!.hideGalleryView.bind(this)(this.status.hideGalleryView);
-        this.update!.hideUselessView.bind(this)(this.status.hideUselessView);
-        this.update!.pushToRight.bind(this)(this.status.pushToRight);
-        this.update!.removeNotice.bind(this)(this.status.removeNotice, filter);
-        this.update!.removeDCNotice.bind(this)(this.status.removeDCNotice, filter);
+        this.update.hideGalleryView.bind(this)(this.status.hideGalleryView);
+        this.update.hideUselessView.bind(this)(this.status.hideUselessView);
+        this.update.pushToRight.bind(this)(this.status.pushToRight);
+        this.update.removeNotice.bind(this)(this.status.removeNotice, filter);
+        this.update.removeDCNotice.bind(this)(this.status.removeDCNotice, filter);
     },
     revoke(filter: RefresherFilter) {
         if (this.memory.uuid) filter.remove(this.memory.uuid);
@@ -171,11 +171,11 @@ export default {
 
         window.removeEventListener("resize", this.memory.resize!);
 
-        this.update!.hideGalleryView.bind(this)(false);
-        this.update!.hideUselessView.bind(this)(false);
-        this.update!.pushToRight.bind(this)(false);
-        this.update!.removeNotice.bind(this)(false, filter);
-        this.update!.removeDCNotice.bind(this)(false, filter);
+        this.update.hideGalleryView.bind(this)(false);
+        this.update.hideUselessView.bind(this)(false);
+        this.update.pushToRight.bind(this)(false);
+        this.update.removeNotice.bind(this)(false, filter);
+        this.update.removeDCNotice.bind(this)(false, filter);
     }
 } as RefresherModule<{
     memory: {

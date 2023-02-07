@@ -12,25 +12,23 @@ export const eventBus: RefresherEventBus = {
     emit: (event: string, ...params: any[]) => {
         if (!lists[event]) return;
 
-        const remove_queue = [];
+        const remove_queue: RefresherEventBusObject[] = [];
 
-        let iter = lists[event].length;
-        while (iter--) {
-            const callback = lists[event][iter];
+        for (const callback of lists[event]) {
             callback.func(...params);
 
-            if (callback.once) remove_queue.push(iter);
+            if (callback.once) remove_queue.push(callback);
         }
 
-        remove_queue.map((v, i) => {
-            lists[event].splice(v - i, 1);
-        });
+        for (const callback of remove_queue) {
+            const index = lists[event].indexOf(callback);
+
+            if (index !== -1)
+                delete lists[event][index];
+        }
+
 
         // TODO : 왜 이상하게 짬?
-    },
-
-    emitNextTick: (event: string, ...params: any[]) => {
-        return requestAnimationFrame(() => eventBus.emit(event, ...params));
     },
 
     /**
@@ -41,32 +39,34 @@ export const eventBus: RefresherEventBus = {
      * @returns {Promise} 모든 이벤트가 종료되기 전까지 대신 받을 Promise.
      */
     emitForResult: (event: string, ...params: any[]) => {
-        if (!lists[event]) throw "Given event is not defined.";
+        throw "Not implemented.";
+        // if (!lists[event]) throw "Given event is not defined.";
+        //
+        // return new Promise((resolve, reject) => {
+        //     const results = [];
+        //
+        //     const remove_queue: number[] = [];
+        //
+        //     for (const callback of lists[event]) {
+        //         try {
+        //             results.push(callback.func(...params));
+        //         } catch (e) {
+        //             reject(e);
+        //         }
+        //     }
+        //
+        //     remove_queue.map((v, i) => {
+        //         lists[event].splice(v - i, 1);
+        //     });
+        //
+        //     Promise.all(results).then((value) => {
+        //         resolve(...value);
+        //     });
+        // });
+    },
 
-        return new Promise((resolve, reject) => {
-            const results = [];
-
-            const remove_queue: number[] = [];
-
-            let iter = lists[event].length;
-            while (iter--) {
-                const callback = lists[event][iter];
-
-                try {
-                    results.push(callback.func(...params));
-                } catch (e) {
-                    reject(e);
-                }
-            }
-
-            remove_queue.map((v, i) => {
-                lists[event].splice(v - i, 1);
-            });
-
-            Promise.all(results).then((value) => {
-                resolve(...value);
-            });
-        });
+    emitNextTick: (event: string, ...params: any[]) => {
+        return requestAnimationFrame(() => eventBus.emit(event, ...params));
     },
 
     /**
@@ -109,14 +109,10 @@ export const eventBus: RefresherEventBus = {
 
         const callbacks = lists[event];
 
-        let iter = callbacks.length;
-        while (iter--) {
-            if (callbacks[iter].uuid && callbacks[iter].uuid == uuid) {
-                callbacks.splice(iter, 1);
-                break;
-            }
-        }
+        const callback = callbacks.findIndex((callback) => callback.uuid === uuid);
 
-        delete lists[uuid];
+        if (callback === -1) return;
+
+        delete callbacks[callback];
     }
 };
