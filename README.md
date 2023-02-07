@@ -20,6 +20,10 @@ Chrome: https://chrome.google.com/webstore/detail/dcrefresher-reborn/pmfifcbenda
 
 Firefox: https://addons.mozilla.org/ko/firefox/addon/dcrefresher-reborn
 
+## 마이그레이션
+
+[마이그레이션 방법](https://github.com/green1052/DCRefresher-Reborn/tree/main/migration.md)
+
 ## 개발
 
 [docs 폴더](https://github.com/green1052/DCRefresher-Reborn/tree/main/docs)를 확인해주세요
