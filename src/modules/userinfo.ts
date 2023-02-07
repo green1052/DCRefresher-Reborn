@@ -2,7 +2,7 @@ import * as color from "../utils/color";
 import * as Toast from "../components/toast";
 import * as communicate from "../core/communicate";
 import {getType} from "../utils/user";
-import type { Nullable, NullableProperties, ObjectEnum } from "../utils/types";
+import type {Nullable, NullableProperties, ObjectEnum} from "../utils/types";
 
 const memoAsk = (
     selected: NullableProperties<ObjectEnum<RefresherMemoType>>,
@@ -280,7 +280,7 @@ export default {
         const memoAdd = (elem: HTMLElement) => {
             if (!elem.dataset.refresherMemoHandler) {
                 elem.addEventListener("contextmenu", () => {
-                    const { nick = null, uid = null, ip = null } = elem.dataset as {
+                    const {nick = null, uid = null, ip = null} = elem.dataset as {
                         [K in RefresherMemoType as Lowercase<K>]: K;
                     };
 
@@ -339,14 +339,10 @@ export default {
         };
 
         const elemAdd = (elem: HTMLElement | Document) => {
-            const list = elem.querySelectorAll(".ub-writer");
-            let iter = list.length;
-
-            while (iter--) {
-                const elem = list[iter] as HTMLElement;
-                memoAdd(elem);
-                ipInfoAdd(elem);
-                IdInfoAdd(elem);
+            for (const element of elem.querySelectorAll<HTMLElement>(".ub-writer")) {
+                memoAdd(element);
+                ipInfoAdd(element);
+                IdInfoAdd(element);
             }
         };
 

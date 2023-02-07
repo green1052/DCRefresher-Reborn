@@ -6,7 +6,7 @@ export {};
 declare global {
     interface DcinsideDcconDetail {
         list: {
-            detail: DcinsideDccon[],
+            detail: DcinsideDccon[];
             detail_page: number;
             end_date: string;
             icon_cnt: number;
@@ -53,7 +53,6 @@ declare global {
 
     interface RefresherFrameAppVue extends Vue {
         changeStamp: () => void;
-
         first: () => RefresherFrame;
         second: () => RefresherFrame;
         clearScrollMode: () => void;
@@ -61,9 +60,7 @@ declare global {
         close: () => void;
         fadeIn: () => void;
         fadeOut: () => void;
-
         frames: RefresherFrame[];
-
         closed: boolean;
         inputFocus: boolean;
     }

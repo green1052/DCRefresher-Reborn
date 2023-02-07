@@ -117,15 +117,12 @@ export class User {
     }
 
     getMemo(): void {
-        /* eslint-disable indent */
         this.memo =
-            this.id ?
-                memo.get("UID", this.id)
-            : this.ip ?
-                memo.get("IP", this.ip)
-            :
-                memo.get("NICK", this.nick);
-        /* eslint-enable indent */
+            this.id
+                ? memo.get("UID", this.id)
+                : this.ip
+                    ? memo.get("IP", this.ip)
+                    : memo.get("NICK", this.nick);
     }
 
     import(dom: HTMLElement | null): this {
@@ -134,11 +131,12 @@ export class User {
         this.nick = dom.dataset.nick ?? "오류";
         this.id = dom.dataset.uid ?? null;
         this.ip = dom.dataset.ip ?? null;
-        this.icon = !this.id
-            ? null
-            : dom
-                .querySelector("a.writer_nikcon img")!
-                .getAttribute("src")!;
+        this.icon =
+            !this.id
+                ? null
+                : dom
+                    .querySelector("a.writer_nikcon img")!
+                    .getAttribute("src")!;
         this.type = getType(this.icon);
 
         this.getMemo();

@@ -9,6 +9,7 @@ import {submitComment, submitDcconComment} from "../utils/comment";
 import logger from "../utils/logger";
 import Cookies from "js-cookie";
 import * as block from "../core/block";
+import type IFrame from "../core/frame";
 
 class PostInfo implements IPostInfo {
     id: string;
@@ -33,11 +34,8 @@ class PostInfo implements IPostInfo {
     constructor(id: string, data: Record<string, unknown>) {
         this.id = id;
 
-        const keys = Object.keys(data);
-        for (let i = 0; i < keys.length; i++) {
-            const key = keys[i];
-
-            this[key] = data[key];
+        for (const [key, value] of Object.entries(data)) {
+            this[key] = value;
         }
     }
 }
@@ -963,7 +961,8 @@ interface Cache {
 class PostCache {
     #caches: Record<string, Cache> = {};
 
-    constructor(public maxCacheSize: number = 50) {}
+    constructor(public maxCacheSize: number = 50) {
+    }
 
     public get(id: string): Cache | undefined {
         return this.#caches[id];
@@ -1230,7 +1229,7 @@ export default {
         }
     },
     require: ["filter", "eventBus", "Frame", "http"],
-    func(filter: RefresherFilter, eventBus: RefresherEventBus, Frame: RefresherFrame, http: RefresherHTTP) {
+    func(filter: RefresherFilter, eventBus: RefresherEventBus, Frame: typeof IFrame, http: RefresherHTTP) {
         let postFetchedData: PostInfo;
         const gallery = queryString("id") ?? undefined;
 
