@@ -292,6 +292,9 @@ export default Vue.extend({
             this.dccon = null;
             this.closeDccon();
         });
+    },
+    updated() {
+        this.$el.scroll(0, 0);
     }
 });
 </script>
