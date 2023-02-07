@@ -1,7 +1,7 @@
 import storage from "../utils/storage";
 import {eventBus} from "./eventbus";
 import log from "../utils/logger";
-import type { ObjectEnum } from "../utils/types";
+import type {ObjectEnum} from "../utils/types";
 import browser from "webextension-polyfill";
 
 import * as communicate from "./communicate";
@@ -33,7 +33,7 @@ export const TYPE_NAMES = {
 
 const BLOCK_TYPES_KEYS = Object.keys(BLOCK_TYPES) as RefresherBlockType[];
 
-export const BLOCK_DETECT_MODE: ObjectEnum<RefresherBlockDetectMode> = {
+const BLOCK_DETECT_MODE: ObjectEnum<RefresherBlockDetectMode> = {
     SAME: "SAME",
     CONTAIN: "CONTAIN",
     NOT_SAME: "NOT_SAME",
@@ -197,7 +197,6 @@ export const check = (
 
     if (!content || content.length < 1) return false;
 
-
     if (!BLOCK_CACHE[type] || BLOCK_CACHE[type].length < 1) return false;
 
     const result = BLOCK_CACHE[type].filter((v) => {
@@ -264,7 +263,18 @@ export const setStore = (
     mode: BlockModeCache
 ): void => {
     BLOCK_CACHE = store;
+
+    for (const [key, value] of Object.entries(store)) {
+        for (const block of value) {
+            InternalAddToList(key as RefresherBlockType, block.content, block.isRegex, block.gallery, block.extra, block.mode);
+        }
+    }
+
     BLOCK_MODE_CACHE = mode;
+
+    for (const [key, value] of Object.entries(mode)) {
+        InternalUpdateMode(key as RefresherBlockType, value);
+    }
 };
 
 /**

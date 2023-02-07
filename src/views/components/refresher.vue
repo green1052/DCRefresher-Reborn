@@ -123,6 +123,19 @@
                 </div>
             </div>
             <div v-show="tab === 2" key="tab3" class="tab tab3">
+                <div style="margin-bottom: 10px;">
+                    <h2>차단 모드</h2>
+
+                    <div style="margin-top: 5px; margin-bottom: 5px;" v-for="key in Object.keys(blocks)">
+                        <label>{{ blockKeyNames[key] }}:</label>
+                        <select v-model="blockModes[key]" @change="editBlockMode">
+                            <option v-for="[key2, value2] in Object.entries(blockDetectModeTypeNames)" :value="key2"
+                                    :selected="blockModes[key] === key2">
+                                {{ value2 }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
                 <div v-for="key in Object.keys(blocks)" class="block-divide">
                     <h3>
                         {{ blockKeyNames[key] }} ({{ blocks[key].length }}개)
@@ -217,12 +230,7 @@ import bubble from "./bubble.vue";
 import browser from "webextension-polyfill";
 import Vue from "vue";
 import {TYPE_NAMES as MEMO_TYPE_NAMES} from "../../core/memo";
-import {
-    BLOCK_DETECT_MODE,
-    BLOCK_DETECT_MODE_TYPE_NAMES,
-    getBlockMode,
-    TYPE_NAMES as BLOCK_TYPE_NAMES
-} from "../../core/block";
+import {BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES} from "../../core/block";
 
 const port = browser.runtime.connect({name: "refresherInternal"});
 
@@ -240,9 +248,7 @@ interface RefresherData {
     blocks: {
         [key in RefresherBlockType]: RefresherBlockValue[]
     },
-    blockModes: {
-        [key in RefresherBlockDetectMode]: RefresherBlockDetectMode
-    },
+    blockModes: BlockModeCache,
     blockDetectModeTypeNames: typeof BLOCK_DETECT_MODE_TYPE_NAMES,
     memos: {
         [key in RefresherMemoType]: {
@@ -272,7 +278,7 @@ export default Vue.extend({
                 COMMENT: [],
                 DCCON: []
             },
-            blockModes: BLOCK_DETECT_MODE,
+            blockModes: {},
             blockDetectModeTypeNames: BLOCK_DETECT_MODE_TYPE_NAMES,
             memos: {
                 UID: {},
@@ -348,8 +354,6 @@ export default Vue.extend({
         updateUserSetting(module: string, key: string, value: unknown) {
             this.settings[module][key].value = value;
 
-            const a = this.settings[module][key]
-
             port.postMessage({
                 updateUserSetting: true,
                 name: module,
@@ -399,7 +403,7 @@ export default Vue.extend({
             }
 
             let isRegex: boolean;
-            let extra: string | undefined = undefined;
+            let extra: string | undefined = undefined
 
             if (confirm("정규식입니까?")) {
                 isRegex = true;
@@ -415,6 +419,7 @@ export default Vue.extend({
 
                 if (id !== null && id.length > 0) {
                     gallery = id;
+                    extra ??= "";
                     extra += `[${id}] `;
                 } else {
                     alert("갤러리 아이디가 잘못됐습니다.");
@@ -422,22 +427,21 @@ export default Vue.extend({
                 }
             }
 
-            let mode: RefresherBlockDetectMode | undefined;
+            let mode: RefresherBlockDetectMode | undefined = undefined;
 
-            if (confirm(`차단 모드를 설정하시겠습니까? 기본 값: ${getBlockMode(key)}`)) {
+            if (confirm(`차단 모드를 설정하시겠습니까? 현재 값: ${this.blockDetectModeTypeNames[this.blockModes[key]]}`)) {
                 const modes = Object.keys(this.blockDetectModeTypeNames);
 
                 const inputMode = prompt(`차단 모드를 입력해주세요. (모드 목록: ${modes.join(", ")})`);
 
                 if (inputMode !== null && inputMode.length > 0 && modes.includes(inputMode as RefresherBlockDetectMode)) {
                     mode = inputMode as RefresherBlockDetectMode;
-                    extra += `[${this.blockDetectModeTypeNames[inputMode as RefresherBlockDetectMode]}]`;
+                    extra ??= "";
+                    extra += `[${this.blockDetectModeTypeNames[mode]}]`;
                 } else {
                     alert("모드가 잘못됐습니다.");
                     return;
                 }
-            } else {
-                mode = undefined;
             }
 
             this.blocks[key].push({
@@ -462,6 +466,9 @@ export default Vue.extend({
             }
 
             this.blocks[key][index].content = result;
+            this.syncBlock();
+        },
+        editBlockMode() {
             this.syncBlock();
         },
         syncMemos() {
@@ -529,20 +536,20 @@ export default Vue.extend({
 
         port.onMessage.addListener(msg => {
             if (msg.responseRefresherModules) {
-                this.modules = msg.modules || {};
+                this.modules = msg.modules ?? {};
             }
 
             if (msg.responseRefresherSettings) {
-                this.settings = msg.settings || {};
+                this.settings = msg.settings ?? {};
             }
 
             if (msg.responseRefresherBlocks) {
-                this.blocks = msg.blocks || {};
-                this.blockModes = msg.blockModes || {};
+                this.blocks = msg.blocks ?? {};
+                this.blockModes = msg.blockModes ?? {};
             }
 
             if (msg.requestRefresherMemos) {
-                this.memos = msg.memos || {};
+                this.memos = msg.memos ?? {};
             }
         });
 
