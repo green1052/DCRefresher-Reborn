@@ -1,3 +1,5 @@
+import type {User} from "../utils/user";
+
 export {};
 
 declare global {

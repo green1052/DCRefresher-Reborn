@@ -222,7 +222,7 @@ export default Vue.extend({
         },
 
         toCommentWrite() {
-            (document.querySelector("#comment_main") as HTMLElement)?.focus();
+            document.querySelector<HTMLElement>("#comment_main")?.focus();
             return true;
         },
 

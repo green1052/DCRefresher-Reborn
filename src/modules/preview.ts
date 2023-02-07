@@ -59,7 +59,7 @@ const parse = (id: string, body: string) => {
     const header = dom
         .querySelector(".view_content_wrap span.title_headtext")
         ?.innerHTML
-        ?.replace(/(\[|\])/g, "");
+        ?.replace(/([\[\]])/g, "");
 
     const title = dom.querySelector(".view_content_wrap span.title_subject")
         ?.innerHTML;
@@ -94,7 +94,7 @@ const parse = (id: string, body: string) => {
         ".view_content_wrap > div > div.inner.clear > div.writing_view_box"
     );
 
-    const writeDiv = content_query?.querySelector(".write_div") as HTMLElement;
+    const writeDiv = content_query?.querySelector<HTMLElement>(".write_div");
     if (writeDiv && writeDiv.style.width) {
         const width = writeDiv.style.width;
         writeDiv.style.width = "unset";
@@ -742,29 +742,28 @@ const panel = {
                 },
                 () => {
                     const blockPopup = document.querySelector(".refresher-block-popup");
-
-                    if (blockPopup) {
-                        blockPopup.parentElement?.removeChild(blockPopup);
-                    }
+                    blockPopup?.remove();
                 }
             );
         });
 
-        const pin = element.querySelector(".pin") as HTMLElement;
+        const pin = element.querySelector<HTMLElement>(".pin")!;
+
         pin.addEventListener("click", () => {
             request.setNotice(preData, setAsNotice).then((response) => {
                 eventBus.emit("refreshRequest");
 
                 if (typeof response === "object") {
                     if (response.result === "success") {
-                        Toast.show(response.message || response.msg, false, 3000);
+                        Toast.show(response.message ?? response.msg, false, 3000);
 
                         setAsNotice = !setAsNotice;
 
-                        const pinP = pin.querySelector("p") as HTMLElement;
+                        const pinP = pin.querySelector<HTMLElement>("p")!;
+
                         pinP.innerHTML = setAsNotice ? "공지로 등록" : "공지 등록 해제";
                     } else {
-                        alert(`${response.result}: ${response.message || response.msg}`);
+                        alert(`${response.result}: ${response.message ?? response.msg}`);
                     }
 
                     return;
@@ -774,7 +773,7 @@ const panel = {
             });
         });
 
-        const recommend = element.querySelector(".recommend") as HTMLElement;
+        const recommend = element.querySelector<HTMLElement>(".recommend")!;
         recommend.addEventListener("click", () => {
             request.setRecommend(preData, setAsRecommend).then((response) => {
                 eventBus.emit("refreshRequest");
@@ -1448,13 +1447,13 @@ export default {
 
             new Promise<GalleryPreData>((resolve) => {
                 eventBus.on("RefresherPostCommentIDLoaded", (commentId: string, commentNo: string) =>
-                    resolve({
-                        gallery: commentId,
-                        id: commentNo
-                    }),
-                {
-                    once: true
-                });
+                        resolve({
+                            gallery: commentId,
+                            id: commentNo
+                        }),
+                    {
+                        once: true
+                    });
             })
                 .then((postData) => {
                     if (postFetchedData) postDom = postFetchedData.dom!;
@@ -1549,8 +1548,8 @@ export default {
                 if (!typeName.length) return false;
 
                 return (admin && !password
-                    ? request.adminDeleteComment(preData, commentId, signal)
-                    : request.userDeleteComment(preData, commentId, signal, password)
+                        ? request.adminDeleteComment(preData, commentId, signal)
+                        : request.userDeleteComment(preData, commentId, signal, password)
                 )
                     .then((v) => {
                         if (typeof v === "boolean") {
