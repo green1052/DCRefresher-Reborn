@@ -5,7 +5,7 @@ export const find = (
     new Promise<NodeListOf<HTMLElement>>((resolve, reject) => {
         let timeout: number | null = null;
 
-        const observer =
+        var observer =
             listen(elem, parent, (elements) => {
                 observer?.disconnect();
 
