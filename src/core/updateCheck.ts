@@ -6,7 +6,7 @@ import storage from "../utils/storage";
     const installed = await storage.get<undefined | boolean>("refresher.firstInstall");
     const updated = await storage.get<boolean>("refresher.updated");
 
-    if (installed === undefined && !updated) return;
+    if (!installed && !updated) return;
 
     setTimeout(() => {
         const currentVersion = browser.runtime.getManifest().version;

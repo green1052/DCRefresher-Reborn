@@ -76,20 +76,15 @@ const revokeModule = (mod: RefresherModule) => {
 export const modules = {
     lists: (): ModuleStore => module_store,
     load: (...mods: RefresherModule[]): Promise<void> => {
-        return new Promise<void>((resolve) => {
-            Promise
-                .all(mods.map(modules.register))
-                .then(() => {
-                    resolve();
-                });
-        });
+        return new Promise<void>((resolve) =>
+            Promise.all(mods.map(modules.register))
+                .then(() => resolve())
+        );
     },
     register: async (mod: RefresherModule): Promise<void> => {
         const start = performance.now();
 
-        if (module_store[mod.name] !== undefined) {
-            throw `${mod.name} is already registered.`;
-        }
+        if (module_store[mod.name]) throw `${mod.name} is already registered.`;
 
         mod.enable = await storage.get<boolean>(`${mod.name}.enable`);
 
@@ -194,18 +189,16 @@ eventBus.on(
         }
 
         // 모듈이 활성화되지 않은 상태일 경우 모듈 설정 업데이트 함수 호출을 건너뜁니다.
-        if (!mod.enable) return;
+        if (!mod.enable || !mod.update || typeof mod.update[key] !== "function") return;
+        
+        const plugins: ModuleItem[] = [];
 
-        if (mod.update && typeof mod.update[key] === "function") {
-            const plugins: ModuleItem[] = [];
-
-            if (Array.isArray(mod.require)) {
-                for (const require of mod.require) {
-                    plugins.push(UTILS[require]);
-                }
+        if (Array.isArray(mod.require)) {
+            for (const require of mod.require) {
+                plugins.push(UTILS[require]);
             }
-
-            mod.update[key].bind(mod)(value, ...plugins);
         }
+
+        mod.update[key].bind(mod)(value, ...plugins);
     }
 );

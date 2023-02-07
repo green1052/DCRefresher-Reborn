@@ -5,12 +5,11 @@ export const find = (
     new Promise<NodeListOf<HTMLElement>>((resolve, reject) => {
         let timeout: number | null = null;
 
-        var observer =
+        const observer =
             listen(elem, parent, (elements) => {
                 observer?.disconnect();
 
-                if (timeout !== null)
-                    window.clearTimeout(timeout);
+                if (timeout) window.clearTimeout(timeout);
 
                 resolve(elements);
             });
@@ -29,8 +28,7 @@ export const listen = (
 ): MutationObserver => {
     const parentFind = parent.querySelectorAll<HTMLElement>(elem);
 
-    if (parentFind.length > 0)
-        callback(parentFind);
+    if (parentFind.length > 0) callback(parentFind);
 
     const observer = new MutationObserver((mutations) => {
         let executed = false;

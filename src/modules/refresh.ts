@@ -1,4 +1,3 @@
-import {eventBus} from "../core/eventbus";
 import * as Toast from "../components/toast";
 import {queryString} from "../utils/http";
 
@@ -128,27 +127,19 @@ export default {
     },
     require: ["http", "eventBus", "filter"],
     func(http: RefresherHTTP, eventBus: RefresherEventBus, filter: RefresherFilter) {
-        if (document && document.documentElement && this.status.doNotColorVisited) {
-            document.documentElement.classList.add("refresherDoNotColorVisited");
+        if (this.status.doNotColorVisited) {
+            document?.documentElement?.classList.add("refresherDoNotColorVisited");
         }
 
-        const body = (url: string) => {
-            return new Promise<HTMLElement | null>((resolve, reject) => {
-                http
-                    .make(url)
-                    .then((body) => {
-                        try {
-                            const bodyParse = new DOMParser().parseFromString(body, "text/html");
+        const body = (url: string) =>
+            http.make(url)
+                .then((body) => {
+                    const bodyParse = new DOMParser().parseFromString(body, "text/html");
 
-                            eventBus.emit("refresherGetPost", bodyParse);
+                    eventBus.emit("refresherGetPost", bodyParse);
 
-                            resolve(bodyParse.querySelector(".gall_list tbody") as HTMLElement);
-                        } catch (e) {
-                            reject(e);
-                        }
-                    });
-            });
-        };
+                    return bodyParse.querySelector(".gall_list tbody");
+                });
 
         const isPostView = location.href.includes("/board/view");
         const currentPostNo = new URLSearchParams(location.href).get("no");
@@ -164,25 +155,24 @@ export default {
             addRefreshText(element);
         });
 
-        this.memory.load = async (customURL?, force?): Promise<boolean> => {
-            if (!force && Date.now() < this.memory.lastRefresh + 500) {
-                return false;
-            }
+        const { memory } = this;
 
+        memory.load = async (customURL?, force?): Promise<boolean> => {
             if (document.hidden) {
                 return false;
             }
-
-            if (PAUSE_REFRESH && !force) {
+            if (!force && (
+                Date.now() < memory.lastRefresh + 500 || PAUSE_REFRESH
+            )) {
                 return false;
             }
 
-            const userDataLyr = document.querySelector("#user_data_lyr") as HTMLElement;
+            const userDataLyr = document.querySelector<HTMLElement>("#user_data_lyr");
 
             // 유저 메뉴가 열렸을 때는 새로고침 하지 않음
-            if (userDataLyr !== null && userDataLyr.style.display !== "none") return false;
+            if (userDataLyr?.style.display !== "none") return false;
 
-            this.memory.lastRefresh = Date.now();
+            memory.lastRefresh = Date.now();
 
             const isAdmin =
                 document.querySelector(".useradmin_btnbox button") !== null;
@@ -190,12 +180,11 @@ export default {
             // 글 선택 체크박스에 체크된 경우 새로 고침 건너 뜀
             if (
                 isAdmin &&
-                Array.from(document.querySelectorAll(".article_chkbox"))
-                    .filter((v) => (v as HTMLInputElement).checked)
-                    .length > 0
+                Array.from(document.querySelectorAll<HTMLInputElement>(".article_chkbox"))
+                    .some((v) => v.checked)
             ) return false;
 
-            this.memory.new_counts = 0;
+            memory.new_counts = 0;
 
             if (customURL) {
                 originalLocation = customURL;
@@ -206,15 +195,15 @@ export default {
 
             const oldList = document.querySelector(".gall_list tbody");
 
-            if (oldList === null || newList === null || newList.children.length === 0) return false;
+            if (!oldList || !newList || newList.children.length === 0) return false;
 
             const cached = Array.from(oldList.querySelectorAll("td.gall_num"))
                 .map((v) => v.innerHTML)
                 .join("|");
 
-            const tbody = oldList.parentElement?.querySelector("tbody") as HTMLElement;
+            const tbody = oldList.parentElement?.querySelector<HTMLElement>("tbody");
 
-            if (tbody === null) return false;
+            if (!tbody) return false;
 
             tbody.innerHTML = newList.innerHTML;
 
@@ -237,11 +226,11 @@ export default {
                 const value = v.innerHTML;
 
                 if (!cached.includes(value) && value !== currentPostNo) {
-                    if (this.status.fadeIn && !this.memory.calledByPageTurn && v.parentElement !== null) {
+                    if (this.status.fadeIn && !memory.calledByPageTurn && v.parentElement) {
                         v.parentElement.classList.add("refresherNewPost");
-                        v.parentElement.style.animationDelay = `${this.memory.new_counts * 23}ms`;
+                        v.parentElement.style.animationDelay = `${memory.new_counts * 23}ms`;
                     }
-                    this.memory.new_counts++;
+                    memory.new_counts++;
                 }
 
                 if (isPostView && currentPostNo === value) {
@@ -250,42 +239,43 @@ export default {
                 }
             }
 
-            if (this.memory.average_counts && !this.memory.calledByPageTurn) {
-                this.memory.average_counts.push(this.memory.new_counts);
+            if (!memory.calledByPageTurn) {
+                const averageCounts = memory.average_counts;
+                averageCounts.push(memory.new_counts);
 
-                if (this.memory.average_counts.length > AVERAGE_COUNTS_SIZE) {
-                    this.memory.average_counts.shift();
+                if (averageCounts.length > AVERAGE_COUNTS_SIZE) {
+                    averageCounts.shift();
                 }
 
                 const average =
-                    this.memory.average_counts.reduce((a, b) => a + b) /
-                    this.memory.average_counts.length;
+                    averageCounts.reduce((a, b) => a + b) /
+                    averageCounts.length;
 
                 if (this.status.autoRate) {
-                    this.memory.delay = Math.max(
+                    memory.delay = Math.max(
                         600,
                         8 * Math.pow(2 / 3, 3 * average) * 1000
                     );
                 }
             }
 
-            this.memory.calledByPageTurn = false;
+            memory.calledByPageTurn = false;
 
             // 미니 갤, 마이너 갤 관리자일 경우 체크박스를 생성합니다.
             if (isAdmin) {
-                let noTempl = false;
+                let templExists = true;
                 document.querySelectorAll(".us-post").forEach((elem) => {
                     const tmpl = document.querySelector("#minor_td-tmpl");
 
                     if (!tmpl) {
-                        noTempl = true;
+                        templExists = false;
                         return;
                     }
 
                     elem.innerHTML = tmpl.innerHTML + elem.innerHTML;
                 });
 
-                if (!noTempl) {
+                if (templExists) {
                     document.querySelectorAll(".ub-content").forEach((elem) => {
                         if (!elem.className.includes("us-post")) {
                             elem.insertBefore(document.createElement("td"), elem.firstChild);
@@ -298,7 +288,7 @@ export default {
                         );
 
                         if (tbody_colspan) {
-                            const colspan = tbody_colspan.getAttribute("colspan") || "";
+                            const colspan = tbody_colspan.getAttribute("colspan") ?? "";
 
                             if (parseInt(colspan) == 6) {
                                 tbody_colspan?.setAttribute(
@@ -313,17 +303,13 @@ export default {
 
             // 검색일 경우 강조 표시 생성
             if (queryString("s_keyword")) {
-                const keyword = (document.querySelector(
-                    "input[name=s_keyword]"
-                ) as HTMLInputElement).value;
+                const keyword = document.querySelector<HTMLInputElement>("input[name=s_keyword]")?.value;
 
-                if (keyword && keyword != "" && keyword != "null") {
+                if (keyword && keyword !== "null") {
                     document.querySelectorAll(".gall_list .gall_tit").forEach((element) => {
-                        const tmp_subject = (element.querySelector(
-                            "a:first-child"
-                        ) as HTMLAnchorElement).cloneNode(true) as HTMLElement;
+                        const tmp_subject = element.querySelector<HTMLAnchorElement>("a:first-child")?.cloneNode(true) as HTMLElement;
 
-                        const iconImg = tmp_subject.querySelector(".icon_img");
+                        const iconImg = tmp_subject?.querySelector(".icon_img");
                         iconImg?.parentElement?.removeChild(iconImg);
 
                         const tmp_subject_html = tmp_subject.innerHTML;
@@ -335,10 +321,11 @@ export default {
                             );
 
                             subject = element
-                                .querySelector("a:first-child")
-                                ?.innerHTML.replace(tmp_subject_html, subject) as string;
+                                .querySelector("a:first-child")!
+                                .innerHTML
+                                .replace(tmp_subject_html, subject);
 
-                            (element.querySelector("a:first-child") as HTMLAnchorElement).innerHTML = subject;
+                            element.querySelector<HTMLAnchorElement>("a:first-child")!.innerHTML = subject;
                         }
                     });
                 }
@@ -351,24 +338,24 @@ export default {
 
         const run = (skipLoad?: boolean) => {
             if (!skipLoad) {
-                this.memory.load!();
+                memory.load!();
             }
 
             if (!this.status.autoRate) {
-                this.memory.delay = Math.max(1000, this.status.refreshRate);
+                memory.delay = Math.max(1000, this.status.refreshRate);
             }
 
-            if (this.memory.refresh) {
-                clearTimeout(this.memory.refresh);
+            if (memory.refresh) {
+                clearTimeout(memory.refresh);
             }
 
-            this.memory.refresh = window.setTimeout(run, this.memory.delay);
+            memory.refresh = window.setTimeout(run, memory.delay);
         };
 
         document.addEventListener("visibilitychange", () => {
             if (document.hidden) {
-                if (this.memory.refresh) {
-                    clearTimeout(this.memory.refresh);
+                if (memory.refresh) {
+                    clearTimeout(memory.refresh);
                 }
 
                 return;
@@ -379,16 +366,16 @@ export default {
 
         run(true);
 
-        this.memory.refreshRequest = eventBus.on("refreshRequest", () => {
-            if (this.memory.refresh) {
-                clearTimeout(this.memory.refresh);
+        memory.refreshRequest = eventBus.on("refreshRequest", () => {
+            if (memory.refresh) {
+                clearTimeout(memory.refresh);
             }
 
-            this.memory.load!(undefined, true);
+            memory.load!(undefined, true);
         });
 
         if (this.status.useBetterBrowse) {
-            this.memory.uuid = filter.add<HTMLAnchorElement>(".left_content article:has(.gall_listwrap) .bottom_paging_box a", (element) => {
+            memory.uuid = filter.add<HTMLAnchorElement>(".left_content article:has(.gall_listwrap) .bottom_paging_box a", (element) => {
                 if (element.href.includes("javascript:")) return;
 
                 element.onclick = () => false;
@@ -403,18 +390,16 @@ export default {
                             http.mergeParamURL(location.href, element.href)
                         );
                     } else {
-                        history.pushState(
-                            null,
-                            document.title,
-                            (element as HTMLAnchorElement).href
-                        );
+                        history.pushState(null, document.title, element.href);
                     }
 
-                    this.memory.calledByPageTurn = true;
+                    memory.calledByPageTurn = true;
 
-                    await this.memory.load!(location.href, true);
+                    await memory.load!(location.href, true);
 
-                    document.querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head")?.scrollIntoView({
+                    document.querySelector(
+                        isPageView ? ".view_bottom_btnbox" : ".page_head"
+                    )?.scrollIntoView({
                         block: "start",
                         behavior: "smooth"
                     });
@@ -423,11 +408,11 @@ export default {
             );
 
             window.addEventListener("popstate", () => {
-                this.memory.calledByPageTurn = true;
-                this.memory.load!(undefined, true);
+                memory.calledByPageTurn = true;
+                memory.load!(undefined, true);
             });
 
-            this.memory.uuid2 = eventBus.on(
+            memory.uuid2 = eventBus.on(
                 "refresherGetPost",
                 (parsedBody: Document) => {
                     const pagingBox = parsedBody.querySelector(
@@ -442,19 +427,19 @@ export default {
                         currentBottomPagingBox.innerHTML = pagingBox.innerHTML;
                     }
 
-                    const pagingBoxAnchors = document.querySelectorAll(
+                    const pagingBoxAnchors = document.querySelectorAll<HTMLAnchorElement>(
                         ".left_content .bottom_paging_box a"
                     );
 
                     if (pagingBoxAnchors) {
                         pagingBoxAnchors.forEach(async (a) => {
-                            const href = (a as HTMLAnchorElement).href;
+                            const href = a.href;
 
                             if (href.includes("javascript:")) return;
 
-                            (a as HTMLAnchorElement).onclick = () => false;
+                            a.onclick = () => false;
 
-                            (a as HTMLAnchorElement).addEventListener("click", async () => {
+                            a.addEventListener("click", async () => {
                                 if (location.href.includes("/board/view")) {
                                     history.pushState(
                                         null,
@@ -464,9 +449,9 @@ export default {
                                 } else {
                                     history.pushState(null, document.title, href);
                                 }
-                                this.memory.calledByPageTurn = true;
+                                memory.calledByPageTurn = true;
 
-                                await this.memory.load!(location.href, true);
+                                await memory.load!(location.href, true);
 
                                 const query = document.querySelector(
                                     location.href.includes("/board/view")
@@ -474,9 +459,7 @@ export default {
                                         : ".page_head"
                                 );
 
-                                if (query) {
-                                    query.scrollIntoView({block: "start", behavior: "smooth"});
-                                }
+                                query?.scrollIntoView({block: "start", behavior: "smooth"});
                             });
                         });
                     }
@@ -485,31 +468,31 @@ export default {
         }
     },
     revoke(http: RefresherHTTP, eventBus: RefresherEventBus, filter: RefresherFilter) {
-        if (document && document.body) {
-            document.body.classList.remove("refresherDoNotColorVisited");
+        document?.body?.classList.remove("refresherDoNotColorVisited");
+
+        const { memory } = this;
+
+        if (memory.refresh) {
+            clearTimeout(memory.refresh);
         }
 
-        if (this.memory.refresh) {
-            clearTimeout(this.memory.refresh);
+        if (memory.uuid) {
+            filter.remove(memory.uuid);
         }
 
-        if (this.memory.uuid !== null) {
-            filter.remove(this.memory.uuid);
+        if (memory.uuid2) {
+            eventBus.remove("refresherGetPost", memory.uuid2);
         }
 
-        if (this.memory.uuid2 !== null) {
-            eventBus.remove("refresherGetPost", this.memory.uuid2);
-        }
-
-        if (this.memory.refreshRequest !== null) {
-            eventBus.remove("refreshRequest", this.memory.refreshRequest);
+        if (memory.refreshRequest) {
+            eventBus.remove("refreshRequest", memory.refreshRequest);
         }
     }
 } as RefresherModule<{
     memory: {
         uuid: string | null;
         uuid2: string | null;
-        cache: {};
+        cache: object;
         new_counts: 0;
         average_counts: number[];
         delay: number;

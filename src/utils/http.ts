@@ -48,7 +48,7 @@ export const types = {
     MINI: "mini"
 };
 
-export const commentGallTypes: { [index: string]: string } = {
+export const commentGallTypes: Record<string, string> = {
     "": "G",
     mgallery: "M",
     mini: "MI"
@@ -82,59 +82,41 @@ export const checkMini = (url: string): boolean =>
  * @param extra 마이너 갤러리와 미니 갤러리에 붙일 URL suffix.
  */
 export const galleryType = (url: string, extra?: string): string => {
-    if (checkMinor(url)) {
-        return types.MINOR + (extra && extra.length ? extra : "");
-    } else if (checkMini(url)) {
-        return types.MINI + (extra && extra.length ? extra : "");
-    }
-
-    return types.MAJOR;
+    if (checkMinor(url)) return types.MINOR + (extra ?? "");
+    else if (checkMini(url)) return types.MINI + (extra ?? "");
+    else return types.MAJOR;
 };
 
 /**
  * URL에 /board/view가 포함되어 있을 경우 /board/lists로 바꿔줍니다.
- * @param url
  */
 export const view = (url: string): string => {
-    let type = galleryType(url);
-
-    if (type === types.MINI) {
-        type = urls.gall.mini;
-    } else if (type === types.MINOR) {
-        type = urls.gall.minor;
-    } else {
-        type = urls.gall.major;
-    }
+    const type = {
+        [types.MINI]: urls.gall.mini,
+        [types.MINOR]: urls.gall.minor,
+        [types.MAJOR]: urls.gall.major
+    }[galleryType(url)];
 
     const urlParse = new URL(url);
     const queries = new URLSearchParams(
         url.replace(urlParse.origin + urlParse.pathname, "")
     );
 
-    if (queries.has("no")) {
-        queries.delete("no");
-    }
+    if (queries.has("no")) queries.delete("no");
 
     return type + "board/lists?" + queries.toString();
 };
 
 export const make = (url: string, options?: RequestInit): Promise<string> =>
-    new Promise<string>((resolve, reject) =>
-        fetch(url, options)
-            .then(async (response) => {
-                if (response.status && response.status > 400) {
-                    reject(`${response.status} ${response.statusText}`);
-                }
+    fetch(url, options)
+        .then(async (response) => {
+            if (response.status > 400) throw `${response.status} ${response.statusText}`;
 
-                resolve(await response.text());
-            })
-            .catch((e) => {
-                reject(e);
-            })
-    );
+            return response.text();
+        });
 
 export const mergeParamURL = (origin: string, getFrom: string): string => {
-    const add: { [index: string]: string } = {};
+    const add: Record<string, string> = {};
 
     const originURL = new URL(origin);
     for (const [key, value] of originURL.searchParams) {
@@ -152,12 +134,9 @@ export const mergeParamURL = (origin: string, getFrom: string): string => {
 /**
  * URL에서 갤러리 종류를 확인하여 갤러리 종류 이름을 반환합니다.
  * (mgallery, mini, '')
- *
- * @param url
  */
-export const galleryTypeName = (url: string): string => {
-    return commentGallTypes[galleryType(url)];
-};
+export const galleryTypeName = (url: string): string =>
+    commentGallTypes[galleryType(url)];
 
 /**
  * 현재 URL의 query를 가져옵니다.

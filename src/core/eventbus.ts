@@ -1,6 +1,6 @@
 import * as strings from "../utils/string";
 
-const lists: { [index: string]: RefresherEventBusObject[] } = {};
+const lists: Record<string, RefresherEventBusObject[]> = {};
 
 export const eventBus: RefresherEventBus = {
     /**
@@ -10,9 +10,7 @@ export const eventBus: RefresherEventBus = {
      * @param params 호출 할 이벤트에 넘길 인자.
      */
     emit: (event: string, ...params: any[]) => {
-        if (!lists[event]) {
-            return;
-        }
+        if (!lists[event]) return;
 
         const remove_queue = [];
 
@@ -21,9 +19,7 @@ export const eventBus: RefresherEventBus = {
             const callback = lists[event][iter];
             callback.func(...params);
 
-            if (callback.once) {
-                remove_queue.push(iter);
-            }
+            if (callback.once) remove_queue.push(iter);
         }
 
         remove_queue.map((v, i) => {
@@ -45,9 +41,7 @@ export const eventBus: RefresherEventBus = {
      * @returns {Promise} 모든 이벤트가 종료되기 전까지 대신 받을 Promise.
      */
     emitForResult: (event: string, ...params: any[]) => {
-        if (!lists[event]) {
-            throw "Given event is not defined.";
-        }
+        if (!lists[event]) throw "Given event is not defined.";
 
         return new Promise((resolve, reject) => {
             const results = [];
@@ -89,16 +83,14 @@ export const eventBus: RefresherEventBus = {
     ): string => {
         const uuid = strings.uuid();
 
-        if (typeof lists[event] === "undefined") {
-            lists[event] = [];
-        }
+        lists[event] ??= [];
 
         const obj: RefresherEventBusObject = {
             func: cb,
             uuid
         };
 
-        if (options && options.once) {
+        if (options?.once) {
             obj.once = true;
         }
 
@@ -111,13 +103,9 @@ export const eventBus: RefresherEventBus = {
      * lists 에 있는 이벤트 콜백을 제거합니다.
      */
     remove: (event: string, uuid: string, skip?: boolean) => {
-        if (skip && typeof lists[event] === "undefined") {
-            return;
-        }
+        if (skip && !lists[event]) return;
 
-        if (typeof lists[event] === "undefined") {
-            throw "Given Event is not exists in the list.";
-        }
+        if (!lists[event]) throw "Given Event is not exists in the list.";
 
         const callbacks = lists[event];
 

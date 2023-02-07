@@ -19,8 +19,8 @@ const tempButtonCreate = (elem: HTMLElement): void => {
     <p id="temp_button_text">이미지 보이기</p>
   </div>
 `;
-    const button = buttonFrame.querySelector("#tempview") as HTMLElement;
-    const buttonText = buttonFrame.querySelector("#temp_button_text") as HTMLElement;
+    const button = buttonFrame.querySelector("#tempview")!;
+    const buttonText = buttonFrame.querySelector<HTMLElement>("#temp_button_text")!;
 
     button.addEventListener("click", () => {
         if (!elem.className.includes(TEMPORARY_STEALTH)) {
@@ -47,7 +47,7 @@ export default {
         stealthPause() {
             const button = document.querySelector<HTMLElement>(`${CONTROL_BUTTON} > #tempview`);
 
-            if (button === null) return;
+            if (!button) return;
 
             button.click();
 
@@ -61,11 +61,9 @@ export default {
     },
     require: ["eventBus"],
     func(eventBus: RefresherEventBus) {
-        if (!document.documentElement.className.includes("refresherStealth")) {
-            document.documentElement.classList.add("refresherStealth");
-        }
+        document.documentElement.classList.add("refresherStealth");
 
-        if (!document.querySelectorAll(CONTROL_BUTTON).length) {
+        if (document.querySelectorAll(CONTROL_BUTTON).length === 0) {
             window.addEventListener("load", () => {
                 tempButtonCreate(document.documentElement);
             });

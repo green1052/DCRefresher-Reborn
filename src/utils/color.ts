@@ -1,76 +1,67 @@
-export const luminanace = (r: number, g: number, b: number): number => {
-    const a = [r, g, b].map((v) => {
-        v /= 255;
-        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-    });
-    return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+export type Rgb = [number, number, number]
+export type Hsl = [number, number, number]
+
+export const luminance = (...[r, g, b]: Rgb): number => {
+    [r, g, b] = [r, g, b]
+        .map((v) => v / 255)
+        .map((v) => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+    return r * 0.2126 + g * 0.7152 + b * 0.0722;
 };
 
-export const contrast = (rgb1: number[], rgb2: number[]): number => {
-    const lum1 = luminanace(rgb1[0], rgb1[1], rgb1[2]);
-    const lum2 = luminanace(rgb2[0], rgb2[1], rgb2[2]);
+export const contrast = (rgb1: Rgb, rgb2: Rgb): number => {
+    const lum1 = luminance(...rgb1);
+    const lum2 = luminance(...rgb2);
     const brightest = Math.max(lum1, lum2);
     const darkest = Math.min(lum1, lum2);
     return (brightest + 0.05) / (darkest + 0.05);
 };
 
-export const parse = (str: string): number[] => {
+export const parse = (str: string): Rgb => {
     if (str[0] === "#") {
-        const matched = str.substring(1, str.length).match(/.{1,2}/g);
-
-        if (matched) {
-            return matched.map((v) => parseInt(v, 16));
-        }
-
-        return [0, 0, 0];
+        return (
+            str
+                .substring(1)
+                .match(/.{1,2}/g)
+                ?.map((v) => parseInt(v, 16)) as Rgb
+        ) ?? [0, 0, 0];
+    } else {
+        return str
+            .match(/^\w+\((.+)\)$/)![1]
+            .split(",")
+            .map(Number) as Rgb;
     }
-
-    return str
-        .replace(")", "")
-        .split("(")[1]
-        .split(",")
-        .map((v) => Number(v.trim()));
 };
 
 // https://gist.github.com/mjackson/5311256
-export const RGBtoHSL = (
-    r: number,
-    g: number,
-    b: number
-): [number, number, number] => {
-    ;(r /= 255), (g /= 255), (b /= 255);
+export const rgbToHsl = ([r, g, b]: Rgb): Hsl => {
+    r /= 255;
+    g /= 255;
+    b /= 255;
 
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
-    let h = 0;
-    let s;
+    const diff = max - min;
     const l = (max + min) / 2;
-
-    if (max === min) {
-        h = s = 0;
+    
+    if (diff === 0) {
+        return [0, 0, l];
     } else {
-        const d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-
-        switch (max) {
-            case r:
-                h = (g - b) / d + (g < b ? 6 : 0);
-                break;
-            case g:
-                h = (b - r) / d + 2;
-                break;
-            case b:
-                h = (r - g) / d + 4;
-                break;
-        }
-
-        h /= 6;
+        const h = (
+            max === r
+                ? (g - b) / diff + (g < b ? 6 : 0)
+                : (b - r) / diff + (max === g ? 2 : 4)
+        ) / 6;
+        const s = diff / (
+            l > 0.5
+                ? 2 - max - min
+                : max + min
+        );
+        
+        return [h, s, l];
     }
-
-    return [h, s, l];
 };
 
-function hue2rgb(p: number, q: number, t: number) {
+function hueToRgbFragment(p: number, q: number, t: number) {
     if (t < 0) t += 1;
     if (t > 1) t -= 1;
     if (t < 1 / 6) return p + (q - p) * 6 * t;
@@ -79,31 +70,30 @@ function hue2rgb(p: number, q: number, t: number) {
     return p;
 }
 
-export const HSLtoRGB = (
-    h: number,
-    s: number,
-    l: number
-): [number, number, number] => {
+export const hslToRgb = ([h, s, l]: Hsl): Rgb => {
     let r, g, b;
 
-    if (s == 0) {
+    if (s === 0) {
         r = g = b = l; // achromatic
     } else {
         const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
         const p = 2 * l - q;
 
-        r = hue2rgb(p, q, h + 1 / 3);
-        g = hue2rgb(p, q, h);
-        b = hue2rgb(p, q, h - 1 / 3);
+        r = hueToRgbFragment(p, q, h + 1 / 3);
+        g = hueToRgbFragment(p, q, h);
+        b = hueToRgbFragment(p, q, h - 1 / 3);
     }
 
     return [r * 255, g * 255, b * 255];
 };
 
-export const RGBtoHEX = (...args: number[]): string =>
-    "#" + args.map((v) => (~~v).toString(16)).join("");
-
 export const inverseColor = (c: number): number => 1 - c ** 2;
 
+export const toHexFragment = (num: number, padWidth = 2) =>
+    num.toString(16).padStart(padWidth, "0");
+
+export const rgbToHex = (...rgb: Rgb): string =>
+    "#" + rgb.map(toHexFragment).join("");
+
 export const random = (): string =>
-    "#" + (((1 << 24) * Math.random()) | 0).toString(16);
+    "#" + toHexFragment(Math.trunc((1 << 24) * Math.random()), 6);

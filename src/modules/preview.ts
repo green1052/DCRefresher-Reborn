@@ -10,7 +10,7 @@ import logger from "../utils/logger";
 import Cookies from "js-cookie";
 import * as block from "../core/block";
 
-class PostInfo implements PostInfo {
+class PostInfo implements IPostInfo {
     id: string;
     header?: string;
     title?: string;
@@ -30,7 +30,7 @@ class PostInfo implements PostInfo {
     disabledDownvote?: boolean;
     dom?: Document;
 
-    constructor(id: string, data: { [index: string]: unknown }) {
+    constructor(id: string, data: Record<string, unknown>) {
         this.id = id;
 
         const keys = Object.keys(data);
@@ -961,11 +961,9 @@ interface Cache {
 }
 
 class PostCache {
-    #caches: { [key: string]: Cache } = {};
+    #caches: Record<string, Cache> = {};
 
-    constructor(public maxCacheSize: number = 50) {
-
-    }
+    constructor(public maxCacheSize: number = 50) {}
 
     public get(id: string): Cache | undefined {
         return this.#caches[id];
@@ -985,7 +983,7 @@ class PostCache {
     }
 
     public delete(id: string): boolean {
-        if (this.#caches[id] === undefined) return false;
+        if (!this.#caches[id]) return false;
 
         delete this.#caches[id];
         return true;
@@ -994,7 +992,7 @@ class PostCache {
 
 const postCaches = new PostCache();
 
-const miniPreview: miniPreview = {
+const miniPreview: MiniPreview = {
     element: document.createElement("div"),
     init: false,
     lastRequest: 0,
@@ -1031,13 +1029,8 @@ const miniPreview: miniPreview = {
 
         if (!preData) return;
 
-        if (miniPreview.element.classList.contains("hide")) {
-            miniPreview.element.classList.remove("hide");
-        }
-
-        if (!miniPreview.element.classList.contains("refresher-mini-preview")) {
-            miniPreview.element.classList.add("refresher-mini-preview");
-        }
+        miniPreview.element.classList.remove("hide");
+        miniPreview.element.classList.add("refresher-mini-preview");
 
         if (!miniPreview.init) {
             miniPreview.element.innerHTML = `<h3>${preData.title}</h3><br><div class="refresher-mini-preview-contents${hide ? " media-hide" : ""}"></div><p class="read-more">더 읽으려면 클릭하세요.</p>`;
@@ -1048,35 +1041,31 @@ const miniPreview: miniPreview = {
 
         const selector = miniPreview.element.querySelector(".refresher-mini-preview-contents");
 
-        if (selector === null) return;
+        if (!selector) return;
 
         new Promise<PostInfo>((resolve, reject) => {
             const cache = postCaches.get(`${preData.gallery}${preData.id}`);
 
-            if (cache?.post !== undefined) {
+            if (cache?.post) {
                 resolve(cache.post);
                 return;
             }
 
-            request
-                .post(
-                    preData.link,
-                    preData.gallery,
-                    preData.id,
-                    miniPreview.controller.signal,
-                    false
-                )
+            request.post(
+                preData.link,
+                preData.gallery,
+                preData.id,
+                miniPreview.controller.signal,
+                false
+            )
                 .then((response) => {
-                    if (response) {
-                        postCaches.set(`${preData.gallery}${preData.id}`, {post: response});
-                        resolve(response);
+                    if (!response) {
+                        reject();
                         return;
                     }
 
-                    reject();
-                })
-                .catch((e) => {
-                    reject(e);
+                    postCaches.set(`${preData.gallery}${preData.id}`, {post: response});
+                    resolve(response);
                 });
         })
             .then((v) => {
@@ -1357,15 +1346,14 @@ export default {
                             this.status.noCacheHeader
                         )
                         .then((response) => {
-                            if (response) {
-                                postCaches.set(`${preData.gallery}${preData.id}`, {post: response});
-                                resolve(response);
+                            if (!response) {
+                                reject();
                                 return;
                             }
 
-                            reject();
-                        })
-                        .catch(reject);
+                            postCaches.set(`${preData.gallery}${preData.id}`, {post: response});
+                            resolve(response);
+                        });
                 })
                     .then((postInfo) => {
                         if (this.status.colorPreviewLink) {
@@ -1434,14 +1422,11 @@ export default {
                 frame.functions.load(useCache);
             };
 
-            if (!frame.collapse)
-                frame.functions.load();
+            if (!frame.collapse) frame.functions.load();
 
             frame.functions.openOriginal = () => {
-                if (this.status.colorPreviewLink)
-                    location.reload();
-                else
-                    location.href = preData.link!;
+                if (this.status.colorPreviewLink) location.reload();
+                else location.href = preData.link!;
 
                 return true;
             };
@@ -1463,97 +1448,78 @@ export default {
             let postDom: Document;
 
             new Promise<GalleryPreData>((resolve) => {
-                eventBus.on(
-                    "RefresherPostCommentIDLoaded",
-                    (commentId: string, commentNo: string) => {
-                        resolve({
-                            gallery: commentId,
-                            id: commentNo
-                        });
-                    },
-                    {
+                eventBus.on("RefresherPostCommentIDLoaded", (commentId: string, commentNo: string) =>
+                    resolve({
+                        gallery: commentId,
+                        id: commentNo
+                    }),
+                {
+                    once: true
+                });
+            })
+                .then((postData) => {
+                    if (postFetchedData) postDom = postFetchedData.dom!;
+                    else eventBus.on("RefresherPostDataLoaded", (obj: PostInfo) => {
+                        postDom = obj.dom!;
+                    }, {
                         once: true
-                    }
-                );
-            }).then((postData) => {
-                if (postFetchedData) {
-                    postDom = postFetchedData.dom as Document;
-                } else {
-                    eventBus.on(
-                        "RefresherPostDataLoaded",
-                        (obj: PostInfo) => {
-                            postDom = obj.dom!;
-                        },
-                        {
-                            once: true
-                        }
-                    );
-                }
+                    });
 
-                frame.functions.writeComment = async (
-                    type: "text" | "dccon",
-                    memo: string | DcinsideDccon,
-                    reply: string | null,
-                    user: { name: string; pw?: string }
-                ) => {
-                    if (!postFetchedData) {
-                        Toast.show("게시글이 로딩될 때까지 잠시 기다려주세요.", true, 3000);
-                        return false;
-                    }
-
-                    const requireCapCode = postFetchedData.requireCommentCaptcha;
-
-                    const codeSrc = requireCapCode
-                        ? await request.captcha(preData, "comment")
-                        : "";
-
-                    const req = async (captcha?: string) => {
-                        const res = type === "text"
-                            ? await submitComment(
-                                postData,
-                                user,
-                                postDom,
-                                memo as string,
-                                reply,
-                                captcha
-                            )
-                            : await submitDcconComment(
-                                postData,
-                                user,
-                                postDom,
-                                memo as DcinsideDccon,
-                                reply,
-                                captcha
-                            );
-
-                        if (res.result === "false" || res.result === "PreNotWorking") {
-                            alert(res.message);
+                    frame.functions.writeComment = async (
+                        type: "text" | "dccon",
+                        memo: string | DcinsideDccon,
+                        reply: string | null,
+                        user: { name: string; pw?: string }
+                    ) => {
+                        if (!postFetchedData) {
+                            Toast.show("게시글이 로딩될 때까지 잠시 기다려주세요.", true, 3000);
                             return false;
-                        } else {
-                            return true;
                         }
+
+                        const requireCapCode = postFetchedData.requireCommentCaptcha;
+
+                        const codeSrc = requireCapCode
+                            ? await request.captcha(preData, "comment")
+                            : "";
+
+                        const req = async (captcha?: string) => {
+                            const res = typeof memo === "string"
+                                ? await submitComment(
+                                    postData,
+                                    user,
+                                    postDom,
+                                    memo,
+                                    reply,
+                                    captcha
+                                )
+                                : await submitDcconComment(
+                                    postData,
+                                    user,
+                                    postDom,
+                                    memo,
+                                    reply,
+                                    captcha
+                                );
+
+                            if (res.result === "false" || res.result === "PreNotWorking") {
+                                alert(res.message);
+                                return false;
+                            } else {
+                                return true;
+                            }
+                        };
+
+                        return codeSrc
+                            ? panel.captcha(codeSrc, req)
+                            : req();
                     };
 
-                    if (codeSrc) {
-                        return new Promise((resolve) =>
-                            panel.captcha(codeSrc, async (str: string) => {
-                                resolve(await req(str));
-                            })
-                        );
-                    }
+                    if (this.memory.refreshIntervalId) clearInterval(this.memory.refreshIntervalId);
 
-                    return req();
-                };
-
-                if (this.memory.refreshIntervalId)
-                    clearInterval(this.memory.refreshIntervalId);
-
-                this.memory.refreshIntervalId = window.setInterval(() => {
-                    if (this.status.autoRefreshComment) {
-                        frame.functions.retry();
-                    }
-                }, this.status.commentRefreshInterval * 1000);
-            });
+                    this.memory.refreshIntervalId = window.setInterval(() => {
+                        if (this.status.autoRefreshComment) frame.functions.retry();
+                    }, this.status.commentRefreshInterval * 1000);
+                });
 
             const deletePressCount: { [index: string]: number } = {};
 
@@ -1562,9 +1528,7 @@ export default {
                 password: string,
                 admin: boolean
             ) => {
-                if (!preData.link) {
-                    return false;
-                }
+                if (!preData.link) return false;
 
                 if (!password) {
                     if (deletePressCount[commentId] + 1000 < Date.now()) {
@@ -1583,9 +1547,7 @@ export default {
                 }
 
                 const typeName = http.galleryTypeName(preData.link);
-                if (!typeName.length) {
-                    return false;
-                }
+                if (!typeName.length) return false;
 
                 return (admin && !password
                     ? request.adminDeleteComment(preData, commentId, signal)
@@ -1593,9 +1555,7 @@ export default {
                 )
                     .then((v) => {
                         if (typeof v === "boolean") {
-                            if (!v) {
-                                return false;
-                            }
+                            if (!v) return false;
 
                             return v;
                         }
@@ -1631,9 +1591,7 @@ export default {
 
                         return true;
                     })
-                    .catch(() => {
-                        return false;
-                    });
+                    .catch(() => false);
             };
 
             frame.functions.load = (useCache = true) => {
@@ -1642,30 +1600,28 @@ export default {
                 new Promise<DcinsideComments>((resolve, reject) => {
                     const cache = postCaches.get(`${preData.gallery}${preData.id}`);
 
-                    if (useCache && cache?.comment !== undefined) {
+                    if (useCache && cache?.comment) {
                         resolve(cache.comment);
                         return;
                     }
 
-                    request
-                        .comments(
-                            {
-                                link: preData.link!,
-                                gallery: preData.gallery,
-                                id: preData.id
-                            },
-                            signal
-                        )
+                    request.comments(
+                        {
+                            link: preData.link!,
+                            gallery: preData.gallery,
+                            id: preData.id
+                        },
+                        signal
+                    )
                         .then((response) => {
-                            if (response) {
-                                postCaches.set(`${preData.gallery}${preData.id}`, {comment: response});
-                                resolve(response);
+                            if (!response) {
+                                reject();
                                 return;
                             }
 
-                            reject();
-                        })
-                        .catch(reject);
+                            postCaches.set(`${preData.gallery}${preData.id}`, {comment: response});
+                            resolve(response);
+                        });
                 })
                     .then((comments) => {
                         let threadCounts = 0;
