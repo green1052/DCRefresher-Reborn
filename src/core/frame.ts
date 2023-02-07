@@ -1,5 +1,6 @@
 import Vue from "vue";
 import frame from "./frameComponent.vue";
+import {User} from "../utils/user";
 
 interface FrameOption {
     relative?: boolean;
@@ -21,25 +22,39 @@ export interface FrameStackOption {
 }
 
 class InternalFrame implements RefresherFrame {
+    title: string = "";
+    subtitle: string = "";
     app: RefresherFrameAppVue;
-    collapse: boolean | undefined;
-    contents: string | undefined;
-    downvotes: string | undefined;
-    error: { title: string; detail: string } | undefined;
-    fixedUpvotes: string | undefined;
+    contents: string | undefined = undefined;
+    upvotes: string | undefined = undefined;
+    fixedUpvotes: string | undefined = undefined;
+    downvotes: string | undefined = undefined;
+    error?: { title: string; detail: string; } | undefined = undefined;
+    collapse?: boolean = undefined;
+    options: FrameOption;
+    data: {
+        load: boolean;
+        buttons: boolean;
+        disabledDownvote: boolean;
+        user: User | undefined;
+        date: Date | undefined;
+        expire: string | undefined;
+        views: string | undefined;
+        useWriteComment: boolean;
+        comments: DcinsideComments | undefined;
+    };
+    functions: {
+        vote(type: number): Promise<boolean>;
+        share(): boolean;
+        load(useCache?: boolean): void;
+        retry(useCache?: boolean): void;
+        openOriginal(): boolean;
+        writeComment(type: "text" | "dccon", memo: string | DcinsideDccon, reply: string | null, user: { name: string; pw?: string }): Promise<boolean>
+        deleteComment(commentId: string, password: string, admin: boolean): Promise<boolean>;
+    };
 
-    subtitle: string;
-    title: string;
-    upvotes: string | undefined;
-    functions;
-    data;
-
-    constructor(public options: FrameOption, app: RefresherFrameAppVue) {
+    constructor(options: FrameOption, app: RefresherFrameAppVue) {
         this.options = options;
-
-        this.title = "";
-        this.subtitle = "";
-
         this.app = app;
 
         this.data = {};
@@ -50,11 +65,11 @@ class InternalFrame implements RefresherFrame {
         return this.options.center;
     }
 
-    querySelector(selectors: string) {
-        return this.app.$el.querySelector(selectors);
+    querySelector<T extends Element = Element>(selectors: string) {
+        return this.app.$el.querySelector<T>(selectors);
     }
 
-    querySelectorAll(selectors: string) {
+    querySelectorAll<T extends Element = Element>(selectors: string) {
         return this.app.$el.querySelectorAll(selectors);
     }
 }
