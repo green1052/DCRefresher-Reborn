@@ -113,7 +113,7 @@ export default {
                 return;
             }
 
-            if (!this.memory.uuid && !value) {
+            if (!this.memory.uuid && value) {
                 this.memory.uuid = filter.add(".gall_list .us-post b", (elem) => {
                     if (new URL(location.href).searchParams.get("exception_mode") === "notice") return;
 
