@@ -22,8 +22,8 @@ export interface FrameStackOption {
 }
 
 class InternalFrame implements RefresherFrame {
-    title: string = "";
-    subtitle: string = "";
+    title = "";
+    subtitle = "";
     app: RefresherFrameAppVue;
     contents: string | undefined = undefined;
     upvotes: string | undefined = undefined;

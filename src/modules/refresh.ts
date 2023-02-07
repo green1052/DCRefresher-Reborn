@@ -372,35 +372,35 @@ export default {
 
         if (this.status.useBetterBrowse) {
             memory.uuid = filter.add<HTMLAnchorElement>(".left_content article:has(.gall_listwrap) .bottom_paging_box a", (element) => {
-                    if (element.href.includes("javascript:")) return;
+                if (element.href.includes("javascript:")) return;
 
-                    element.onclick = () => false;
+                element.onclick = () => false;
 
-                    element.addEventListener("click", async () => {
-                        const isPageView = location.href.includes("/board/view");
+                element.addEventListener("click", async () => {
+                    const isPageView = location.href.includes("/board/view");
 
-                        if (isPageView) {
-                            history.pushState(
-                                null,
-                                document.title,
-                                http.mergeParamURL(location.href, element.href)
-                            );
-                        } else {
-                            history.pushState(null, document.title, element.href);
-                        }
+                    if (isPageView) {
+                        history.pushState(
+                            null,
+                            document.title,
+                            http.mergeParamURL(location.href, element.href)
+                        );
+                    } else {
+                        history.pushState(null, document.title, element.href);
+                    }
 
-                        memory.calledByPageTurn = true;
+                    memory.calledByPageTurn = true;
 
-                        await memory.load!(location.href, true);
+                    await memory.load!(location.href, true);
 
-                        document.querySelector(
-                            isPageView ? ".view_bottom_btnbox" : ".page_head"
-                        )?.scrollIntoView({
-                            block: "start",
-                            behavior: "smooth"
-                        });
+                    document.querySelector(
+                        isPageView ? ".view_bottom_btnbox" : ".page_head"
+                    )?.scrollIntoView({
+                        block: "start",
+                        behavior: "smooth"
                     });
-                }
+                });
+            }
             );
 
             window.addEventListener("popstate", () => {
