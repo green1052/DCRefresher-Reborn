@@ -16,7 +16,7 @@ const BLOCK_TYPES: ObjectEnum<RefresherBlockType> = {
     TEXT: "TEXT",
     COMMENT: "COMMENT",
     DCCON: "DCCON"
-} as const;
+};
 
 /**
  * 타입의 이름을 저장한 객체입니다.
@@ -29,7 +29,7 @@ export const TYPE_NAMES = {
     TEXT: "내용",
     COMMENT: "댓글",
     DCCON: "디시콘"
-} as const;
+};
 
 const BLOCK_TYPES_KEYS = Object.keys(BLOCK_TYPES) as RefresherBlockType[];
 
