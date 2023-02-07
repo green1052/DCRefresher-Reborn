@@ -6,14 +6,10 @@ const AVERAGE_COUNTS_SIZE = 7;
 let PAUSE_REFRESH = false;
 
 const updateRefreshText = (button?: HTMLElement) => {
-    button ??= document.querySelector(
-        ".page_head .gall_issuebox button[data-refresher=\"true\"]"
-    ) as HTMLElement;
+    button ??= document.querySelector<HTMLElement>(".page_head .gall_issuebox button[data-refresher=\"true\"]")!;
 
-    if (!button) return;
-
-    const onOff = button.querySelector("span");
-    (onOff as HTMLSpanElement).innerHTML = PAUSE_REFRESH ? "꺼짐" : "켜짐";
+    const onOff = button.querySelector<HTMLSpanElement>("span")!;
+    onOff.innerHTML = PAUSE_REFRESH ? "꺼짐" : "켜짐";
 };
 
 const addRefreshText = (issueBox: HTMLElement) => {
@@ -155,7 +151,7 @@ export default {
             addRefreshText(element);
         });
 
-        const { memory } = this;
+        const {memory} = this;
 
         memory.load = async (customURL?, force?): Promise<boolean> => {
             if (document.hidden) {
@@ -376,35 +372,35 @@ export default {
 
         if (this.status.useBetterBrowse) {
             memory.uuid = filter.add<HTMLAnchorElement>(".left_content article:has(.gall_listwrap) .bottom_paging_box a", (element) => {
-                if (element.href.includes("javascript:")) return;
+                    if (element.href.includes("javascript:")) return;
 
-                element.onclick = () => false;
+                    element.onclick = () => false;
 
-                element.addEventListener("click", async () => {
-                    const isPageView = location.href.includes("/board/view");
+                    element.addEventListener("click", async () => {
+                        const isPageView = location.href.includes("/board/view");
 
-                    if (isPageView) {
-                        history.pushState(
-                            null,
-                            document.title,
-                            http.mergeParamURL(location.href, element.href)
-                        );
-                    } else {
-                        history.pushState(null, document.title, element.href);
-                    }
+                        if (isPageView) {
+                            history.pushState(
+                                null,
+                                document.title,
+                                http.mergeParamURL(location.href, element.href)
+                            );
+                        } else {
+                            history.pushState(null, document.title, element.href);
+                        }
 
-                    memory.calledByPageTurn = true;
+                        memory.calledByPageTurn = true;
 
-                    await memory.load!(location.href, true);
+                        await memory.load!(location.href, true);
 
-                    document.querySelector(
-                        isPageView ? ".view_bottom_btnbox" : ".page_head"
-                    )?.scrollIntoView({
-                        block: "start",
-                        behavior: "smooth"
+                        document.querySelector(
+                            isPageView ? ".view_bottom_btnbox" : ".page_head"
+                        )?.scrollIntoView({
+                            block: "start",
+                            behavior: "smooth"
+                        });
                     });
-                });
-            }
+                }
             );
 
             window.addEventListener("popstate", () => {
@@ -470,7 +466,7 @@ export default {
     revoke(http: RefresherHTTP, eventBus: RefresherEventBus, filter: RefresherFilter) {
         document?.body?.classList.remove("refresherDoNotColorVisited");
 
-        const { memory } = this;
+        const {memory} = this;
 
         if (memory.refresh) {
             clearTimeout(memory.refresh);
