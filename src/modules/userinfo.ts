@@ -354,7 +354,7 @@ export default {
             neverExpire: true
         });
 
-        filter.runSpecific(this.memory.always);
+        filter.runSpecific(this.memory.always!);
 
         this.memory.contextMenu = eventBus.on(
             "refresherUserContextMenu",

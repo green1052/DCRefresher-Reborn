@@ -1,6 +1,6 @@
 import * as ip from "./ip";
 import * as memo from "../core/memo";
-import type { Nullable, ObjectEnum } from "./types";
+import type {Nullable, ObjectEnum} from "./types";
 
 export type UserType =
     | "UNFIXED"
@@ -128,9 +128,10 @@ export class User {
     import(dom: HTMLElement | null): this {
         if (!dom) return this;
 
-        this.nick = dom.dataset.nick ?? "오류";
-        this.id = dom.dataset.uid ?? null;
-        this.ip = dom.dataset.ip ?? null;
+        this.nick = dom.dataset.nick || "오류";
+        this.id = dom.dataset.uid || null;
+        this.ip = dom.dataset.ip || null;
+
         this.icon =
             !this.id
                 ? null
