@@ -1,8 +1,6 @@
 # 설정 마이그레이션 방법
 
-DCRefresher Reborn나 DCRefresher에서 사용하던 설정을 가져오거나 백업할 수 있습니다.
-
-DCRefresher Reborn에서 DCRefresher로 마이그레이션할 수 없습니다.
+DCRefresher Reborn에 DCRefresher에서 사용하던 설정을 가져오거나 백업할 수 있습니다.
 
 ## Chrome
 
@@ -20,11 +18,28 @@ DCRefresher Reborn에서 DCRefresher로 마이그레이션할 수 없습니다.
 
 ### DCRefresher를 백업
 ```js
-chrome.storage.sync.get().then((settings) => {
+chrome.storage.sync.get(null, (settings) => {
     const result = {};
+
     for (const [key, value] of Object.entries(settings)) {
+        if (["refresher.lastVersion"].includes(key)) continue;
+
+        if (key === "refresher.module:유저 정보") {
+            const {memos} = JSON.parse(value);
+
+            for (const [key, value] of Object.entries(memos)) {
+                const [type, id] = key.split("@");
+
+                result[`__REFRESHER_MEMO:${type}`] ??= {};
+                result[`__REFRESHER_MEMO:${type}`][id] = value;
+            }
+
+            continue;
+        }
+
         result[key] = value;
     }
+
     console.log(JSON.stringify(result));
 });
 ```
@@ -45,15 +60,6 @@ chrome.storage.local.get().then((settings) => {
 
 1. settings 변수에 백업한 설정 붙여넣고 실행
 
-### DCRefresher에 복원
-```js
-const settings = ``;
-for (const [key, value] of Object.entries(JSON.parse(settings))) {
-    chrome.storage.sync.set({[key]: value});
-}
-```
-
-### DCRefresher Reborn에 복원 
 ```js
 const settings = ``;
 for (const [key, value] of Object.entries(JSON.parse(settings))) {
