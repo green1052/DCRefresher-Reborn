@@ -12,18 +12,18 @@ export default {
     default_enable: false,
     require: ["filter"],
     func(filter: RefresherFilter) {
-        this.memory.iframe = filter.add("#TOPTOON", (element) => {
+        this.memory.iframe = filter.add<HTMLIFrameElement>("#TOPTOON", (element) => {
             if (this.memory.injected) return;
 
-            (element as HTMLIFrameElement).addEventListener("load", (e) => {
-                const dom = (e.target as HTMLIFrameElement).contentDocument!;
+            element.addEventListener("load", () => {
+                const dom = element.contentDocument!;
 
                 const button = document.createElement("button");
                 button.setAttribute("type", "button");
                 button.setAttribute("class", "btn_blue small");
                 button.innerText = "다운로드";
                 button.onclick = () => {
-                    const imageList = [...dom.querySelectorAll(".img_dccon img")] as HTMLImageElement[];
+                    const imageList = Array.from(dom.querySelectorAll<HTMLImageElement>(".img_dccon img"));
 
                     browser.runtime.sendMessage(
                         JSON.stringify({
@@ -34,8 +34,8 @@ export default {
                     );
                 };
 
-                dom.body.addEventListener("click", (ev) => {
-                    const target = ev.target as HTMLElement;
+                dom.body.addEventListener("click", () => {
+                    const target = dom.body;
 
                     if (!target.classList.contains("dcon_frame")) return;
 
@@ -55,8 +55,7 @@ export default {
         });
     },
     revoke(filter: RefresherFilter) {
-        if (this.memory.iframe !== null)
-            filter.remove(this.memory.iframe);
+        if (this.memory.iframe) filter.remove(this.memory.iframe);
 
         this.memory.injected = false;
     }

@@ -60,9 +60,7 @@ interface Message {
 }
 
 const messageHandler = (port: browser.Runtime.Port | null, message: Message) => {
-    if (typeof message !== "object") {
-        return;
-    }
+    if (typeof message !== "object") return;
 
     if (message.dcconDownload) {
         const zip = new JSZip();
@@ -76,7 +74,7 @@ const messageHandler = (port: browser.Runtime.Port | null, message: Message) => 
                     .then((res) => {
                         const exec = /filename=(\w*)\.(\w*)/g.exec(res.headers.get("Content-Disposition")!);
 
-                        if (exec !== null && exec.length === 3) {
+                        if (exec && exec.length === 3) {
                             title = exec?.[1];
                             ext = exec![2];
                         }

@@ -4,7 +4,7 @@ declare global {
     interface RefresherFilteringLists {
         func: <T = HTMLElement>(element: T) => void;
         scope: string;
-        events: { [index: string]: ((...args: any[]) => void)[] };
+        events: Record<string, ((...args: any[]) => void)[]>;
         options?: RefresherFilteringOptions;
         expire?: () => void;
     }
@@ -62,8 +62,8 @@ declare global {
         functions: {
             vote(type: number): Promise<boolean>;
             share(): boolean;
-            load(useCache = true): void;
-            retry(useCache = false): void;
+            load(useCache?: boolean): void;
+            retry(useCache?: boolean): void;
             openOriginal(): boolean;
             writeComment(type: "text" | "dccon", memo: string | DcinsideDccon, reply: string | null, user: { name: string; pw?: string }): Promise<boolean>
             deleteComment(commentId: string, password: string, admin: boolean): Promise<boolean>;

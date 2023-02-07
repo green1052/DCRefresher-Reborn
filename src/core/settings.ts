@@ -2,9 +2,7 @@ import browser from "webextension-polyfill";
 import storage from "../utils/storage";
 import {eventBus} from "./eventbus";
 
-export interface SettingsStore {
-    [index: string]: { [index: string]: RefresherSettings };
-}
+export type SettingsStore = Record<string, Record<string, RefresherSettings>>;
 
 const settings_store: SettingsStore = {};
 

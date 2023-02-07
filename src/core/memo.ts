@@ -2,12 +2,11 @@ import * as communicate from "./communicate";
 import {eventBus} from "./eventbus";
 import browser from "webextension-polyfill";
 import storage from "../utils/storage";
+import type { ObjectEnum } from "../utils/types";
 
 const MEMO_NAMESPACE = "__REFRESHER_MEMO";
 
-const MEMO_TYPES: {
-    [key in RefresherMemoType]: RefresherMemoType;
-} = {
+const MEMO_TYPES: ObjectEnum<RefresherMemoType> = {
     UID: "UID",
     NICK: "NICK",
     IP: "IP"
@@ -24,11 +23,7 @@ export const TYPE_NAMES = {
 
 const MEMO_TYPES_KEYS = Object.keys(MEMO_TYPES) as RefresherMemoType[];
 
-export type MemoCache = {
-    [index in RefresherMemoType]: {
-        [key: string]: RefresherMemoValue
-    };
-}
+export type MemoCache = Record<RefresherMemoType, Record<string, RefresherMemoValue>>;
 
 function SendToBackground() {
     browser.runtime.sendMessage(
@@ -45,7 +40,7 @@ let MEMO_CACHE: MemoCache = {
 };
 
 MEMO_TYPES_KEYS.forEach(async (key) => {
-    const memo = await storage.get<{ [key: string]: RefresherMemoValue }>(`${MEMO_NAMESPACE}:${key}`);
+    const memo = await storage.get<Record<string, RefresherMemoValue>>(`${MEMO_NAMESPACE}:${key}`);
 
     MEMO_CACHE[key] = memo || {};
 
@@ -62,9 +57,8 @@ const InternalAddToList = (type: RefresherMemoType, user: string, text: string, 
     storage.set(`${MEMO_NAMESPACE}:${type}`, MEMO_CACHE[type]);
 };
 
-const checkValidType = (type: string) => {
-    return MEMO_TYPES_KEYS.some((key) => key === type);
-};
+const checkValidType = (type: string) =>
+    MEMO_TYPES_KEYS.some((key) => key === type);
 
 /**
  * 메모 목록에 추가합니다.

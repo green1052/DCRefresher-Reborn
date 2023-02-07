@@ -37,11 +37,10 @@ export default {
 
             if (fontElement && !fontName) {
                 fontElement.parentElement?.removeChild(fontElement);
-
                 return;
             }
 
-            if (fontName && document && document.head) {
+            if (fontName && document?.head) {
                 if (!fontElement) {
                     fontElement = document.createElement("style");
                     fontElement.id = "refresherFontStyle";
@@ -58,13 +57,13 @@ export default {
         },
         bodyFontSize: (fontSize: number | boolean) => {
             let fontElement = document.querySelector("#refresherFontStyleSize");
+
             if (fontElement && !fontSize) {
                 fontElement.parentElement?.removeChild(fontElement);
-
                 return;
             }
 
-            if (fontSize && document && document.head) {
+            if (fontSize && document?.head) {
                 if (!fontElement) {
                     fontElement = document.createElement("style");
                     fontElement.id = "refresherFontStyleSize";
@@ -72,9 +71,7 @@ export default {
                 }
 
                 fontElement.innerHTML = `.refresherChangeDCFont .write_div {font-size: ${fontSize}px;}
-        .refresherFont .refresher-preview-contents-actual, .refresherFont .refresher-preview-contents-actual .write_div{font-size: ${Number(
-                    fontSize
-                ) + 2}px;}`;
+        .refresherFont .refresher-preview-contents-actual, .refresherFont .refresher-preview-contents-actual .write_div{font-size: ${Number(fontSize) + 2}px;}`;
             }
         }
     },

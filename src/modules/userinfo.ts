@@ -2,13 +2,10 @@ import * as color from "../utils/color";
 import * as Toast from "../components/toast";
 import * as communicate from "../core/communicate";
 import {getType} from "../utils/user";
+import type { Nullable, NullableProperties, ObjectEnum } from "../utils/types";
 
 const memoAsk = (
-    selected: {
-        IP: string | null,
-        NICK: string | null,
-        UID: string | null
-    },
+    selected: NullableProperties<ObjectEnum<RefresherMemoType>>,
     memo: RefresherMemo,
     type: RefresherMemoType,
     value: string
@@ -85,10 +82,8 @@ const memoAsk = (
         win.classList.add("fadeIn");
     });
 
-    const memoElement = frame.querySelector("#refresher_memo") as HTMLTextAreaElement;
-    const colorElement = frame.querySelector(
-        "#refresher_memo_color"
-    ) as HTMLInputElement;
+    const memoElement = frame.querySelector<HTMLTextAreaElement>("#refresher_memo")!;
+    const colorElement = frame.querySelector<HTMLInputElement>("#refresher_memo_color")!;
 
     const randomColor = () => {
         colorElement.value = color.random();
@@ -110,15 +105,16 @@ const memoAsk = (
         }
     };
 
-    frame.querySelectorAll(".user-type").forEach((userType) => {
+    frame.querySelectorAll<HTMLElement>(".user-type").forEach((userType) => {
         userType.classList.remove("active");
 
-        if ((userType as HTMLElement).dataset.type === currentType) {
+        const type = userType.dataset.type as RefresherMemoType;
+
+        if (type === currentType) {
             userType.classList.add("active");
         }
 
-
-        if (!selected[((userType as HTMLElement).dataset.type) as RefresherMemoType]) {
+        if (!selected[type]) {
             userType.classList.add("disable");
         }
 
@@ -133,7 +129,7 @@ const memoAsk = (
 
             userType.classList.add("active");
 
-            currentType = (userType as HTMLElement).dataset.type as RefresherMemoType ?? "NICK";
+            currentType = type ?? "NICK";
             currentValue = selected[currentType] ?? "";
 
             updateType();
@@ -233,14 +229,12 @@ export default {
             if (fl) {
                 const flIpQuery = fl.querySelector(".ip");
 
-                if (flIpQuery) {
-                    flIpQuery.appendChild(text);
-                }
+                flIpQuery?.appendChild(text);
             } else {
                 elem.appendChild(text);
             }
 
-            elem.dataset.refresherIp = ip_data && ip_data.name && format;
+            elem.dataset.refresherIp = ip_data?.name && format;
         };
 
         const IdInfoAdd = (elem: HTMLElement) => {
@@ -248,11 +242,23 @@ export default {
 
             const img = elem.querySelector("img")?.src;
 
-            if (img === undefined) return false;
+            if (!img) return false;
 
             const userType = getType(img);
 
-            if ((!this.status.showHalfFixedNickUID && (userType === "HALF_FIXED" || userType === "HALF_FIXED_SUB_MANAGER" || userType === "HALF_FIXED_MANAGER")) || (!this.status.showFixedNickUID && (userType === "FIXED" || userType === "FIXED_SUB_MANAGER" || userType === "FIXED_MANAGER"))) return false;
+            if ((
+                !this.status.showHalfFixedNickUID && (
+                    userType === "HALF_FIXED"
+                    || userType === "HALF_FIXED_SUB_MANAGER"
+                    || userType === "HALF_FIXED_MANAGER"
+                )
+            ) || (
+                !this.status.showFixedNickUID && (
+                    userType === "FIXED"
+                    || userType === "FIXED_SUB_MANAGER"
+                    || userType === "FIXED_MANAGER"
+                )
+            )) return false;
 
             const text = document.createElement("span");
             text.className = "ip refresherUserData";
@@ -274,9 +280,9 @@ export default {
         const memoAdd = (elem: HTMLElement) => {
             if (!elem.dataset.refresherMemoHandler) {
                 elem.addEventListener("contextmenu", () => {
-                    const nick = elem.dataset.nick ?? null;
-                    const uid = elem.dataset.uid ?? null;
-                    const ip = elem.dataset.ip ?? null;
+                    const { nick = null, uid = null, ip = null } = elem.dataset as {
+                        [K in RefresherMemoType as Lowercase<K>]: K;
+                    };
 
                     this.memory.selected = {
                         NICK: nick,
@@ -294,19 +300,19 @@ export default {
 
             let memoData = null;
 
-            if (elem.dataset.uid !== undefined) {
+            if (elem.dataset.uid) {
                 memoData ??= memo.get("UID", elem.dataset.uid);
             }
 
-            if (elem.dataset.nick !== undefined) {
+            if (elem.dataset.nick) {
                 memoData ??= memo.get("NICK", elem.dataset.nick);
             }
 
-            if (elem.dataset.ip !== undefined) {
+            if (elem.dataset.ip) {
                 memoData ??= memo.get("IP", elem.dataset.ip);
             }
 
-            if (memoData === null || memoData === undefined) return false;
+            if (!memoData) return false;
 
             const text = document.createElement("span");
             text.className = "ip refresherUserData refresherMemoData";
@@ -337,9 +343,10 @@ export default {
             let iter = list.length;
 
             while (iter--) {
-                memoAdd(list[iter] as HTMLElement);
-                ipInfoAdd(list[iter] as HTMLElement);
-                IdInfoAdd(list[iter] as HTMLElement);
+                const elem = list[iter] as HTMLElement;
+                memoAdd(elem);
+                ipInfoAdd(elem);
+                IdInfoAdd(elem);
             }
         };
 
@@ -355,7 +362,7 @@ export default {
 
         this.memory.contextMenu = eventBus.on(
             "refresherUserContextMenu",
-            (nick: string, uid: string, ip: string) => {
+            (nick: "NICK", uid: "UID", ip: "IP") => {
                 this.memory.selected = {
                     NICK: nick,
                     UID: uid,
@@ -366,17 +373,15 @@ export default {
         );
 
         this.memory.memoAsk = communicate.addHook("refresherRequestMemoAsk", async (
-            {type, user}: { type: RefresherMemoType, user: string }
+            {type, user}: { type: RefresherMemoType, user: RefresherMemoType }
         ) => {
-            const selected: {
-                [key in RefresherMemoType]: string | null
-            } = {
+            const selected: NullableProperties<ObjectEnum<RefresherMemoType>> = {
                 IP: null,
                 NICK: null,
                 UID: null
             };
 
-            selected[type] = user;
+            (selected[type] as RefresherMemoType) = user;
 
             const obj = await memoAsk(selected, memo, type, user);
 
@@ -412,7 +417,7 @@ export default {
             }
 
             let type: RefresherMemoType = "NICK";
-            let value = this.memory.selected.NICK;
+            let value: Nullable<RefresherMemoType> = this.memory.selected.NICK;
 
             if (this.memory.selected.UID) {
                 type = "UID";
@@ -472,11 +477,7 @@ export default {
         always: string | null;
         requestBlock: string | null;
         contextMenu: string | null;
-        selected: {
-            NICK: string | null;
-            UID: string | null;
-            IP: string | null;
-        };
+        selected: NullableProperties<ObjectEnum<RefresherMemoType>>;
         lastSelect: number;
         memoAsk: string | null;
     };

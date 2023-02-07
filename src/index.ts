@@ -16,11 +16,8 @@ const context = require.context("./modules/", true, /\.ts$/);
 
 Promise.all(context.keys().map((v) => modules.load(context(v).default)))
     .then(() => {
-        log(
-            `🍊✔️ DCRefresher Reborn Module Loaded. took ${(
-                performance.now() - loadStart
-            ).toFixed(2)}ms.`
-        );
+        const took = (performance.now() - loadStart).toFixed(2);
+        log(`🍊✔️ DCRefresher Reborn Module Loaded. took ${took}ms.`);
 
         filter.run();
     });

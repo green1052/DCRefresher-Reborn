@@ -212,15 +212,14 @@ export const ISPData = (ip: string): ISPInfo => {
         name: CUSTOM_NAME[asn] ?? asn,
         country,
         color,
-        detail: IP_DETAIL_INFO[ip] ?? undefined
+        detail: IP_DETAIL_INFO[ip]
     };
 };
 
 export const format = (data: ISPInfo): string => {
     const {name, country, detail} = data;
 
-    if (name === undefined || country === undefined)
-        return "";
+    if (!name || !country) return "";
 
     return `${country !== "KR" ? `${displayNames.of(country)} ` : ""}${detail ? `${detail} ` : ""}${name}`;
 };
