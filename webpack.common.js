@@ -1,6 +1,5 @@
 const path = require("path");
 
-const TerserPlugin = require("terser-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const {VueLoaderPlugin} = require("vue-loader");
@@ -72,18 +71,5 @@ module.exports = {
             fs: false,
             async_hooks: false
         }
-    },
-    optimization: {
-        minimize: true,
-        minimizer: [
-            new TerserPlugin({
-                minify: TerserPlugin.swcMinify,
-                terserOptions: {
-                    format: {
-                        comments: false
-                    }
-                }
-            })
-        ]
     }
 };
