@@ -1,10 +1,10 @@
 const average = (arr: number[]) => arr.reduce((a, b) => a + b) / arr.length;
 
-const SCROLLMODE = {
-    NOT_DEFINED: 0,
-    FIXED: 1,
-    VARIABLE: 2
-};
+enum ScrollMode {
+    NOT_DEFINED,
+    FIXED,
+    VARIABLE
+}
 
 interface ScrollSession {
     time: number[]
@@ -16,7 +16,7 @@ interface ScrollSession {
 
 export class ScrollDetection {
     lastEvent: number;
-    events: { [index: string]: ((...args: any[]) => void)[] };
+    events: Record<string, ((...args: any[]) => void)[]>;
     session: ScrollSession;
     mode: number;
 
@@ -47,17 +47,13 @@ export class ScrollDetection {
     }
 
     emit(event: string, ...args: any[]): void {
-        if (this.events[event]) {
-            this.events[event].forEach((func) => {
-                func(...args);
-            });
-        }
+        this.events[event]?.forEach((func) => {
+            func(...args);
+        });
     }
 
     listen(event: string, cb: (...args: any[]) => void): void {
-        if (!this.events[event]) {
-            this.events[event] = [];
-        }
+        this.events[event] ??= [];
 
         this.events[event].push(cb);
     }
@@ -74,7 +70,6 @@ export class ScrollDetection {
         const absoluteDelta = Math.abs(ev.deltaY);
         if (absoluteDelta < 2) {
             this.initSession();
-
             return;
         }
 
@@ -84,22 +79,17 @@ export class ScrollDetection {
             // 이전 세션이랑 다른 스크롤임
         }
 
-        if (this.session.delta.length) {
+        if (this.session.delta.length !== 0) {
             const lastDelta = this.session.delta[this.session.delta.length - 1];
 
             if (lastDelta === 100 && average(this.session.delta) === 100) {
-                this.mode = SCROLLMODE.FIXED;
+                this.mode = ScrollMode.FIXED;
                 // delta 절댓값이 100으로 고정된 경우 (deltaY를 지원하지 않거나 마우스 움직임)
 
-                if (!this.session.fired) {
-                    this.scroll(ev);
-                } else {
-                    if (Date.now() - lastEvent > 100) {
-                        this.initSession();
-                    }
-                }
+                if (!this.session.fired) this.scroll(ev);
+                else if (Date.now() - lastEvent > 100) this.initSession();
             } else {
-                this.mode = SCROLLMODE.VARIABLE;
+                this.mode = ScrollMode.VARIABLE;
                 // delta 절댓값이 다양한 값으로 나오는 경우 (노트북 트랙패드, 관성 스크롤 지원)
 
                 if (lastDelta > this.session.peak) {

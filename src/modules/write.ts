@@ -25,7 +25,7 @@ export default {
             if (this.memory.injected) return;
 
             const iframe = element.contentWindow!.document!;
-            const contentContainer = iframe?.querySelector(".tx-content-container") as HTMLElement;
+            const contentContainer = iframe?.querySelector<HTMLElement>(".tx-content-container");
 
             if (this.status.imageUpload) {
                 contentContainer?.addEventListener("paste", async (ev) => {
@@ -36,11 +36,11 @@ export default {
                     ev.stopPropagation();
                     ev.preventDefault();
 
-                    const r_key = (document.querySelector("#r_key") as HTMLInputElement).value;
-                    const gall_id = (document.querySelector("#id") as HTMLInputElement).value;
-                    const gall_no = (document.querySelector("#gallery_no") as HTMLInputElement).value;
-                    const _GALLTYPE_ = (document.querySelector("#_GALLTYPE_") as HTMLInputElement).value;
-                    const post_no = (document.querySelector("#no") as HTMLInputElement).value ?? "";
+                    const r_key = document.querySelector<HTMLInputElement>("#r_key")!.value;
+                    const gall_id = document.querySelector<HTMLInputElement>("#id")!.value;
+                    const gall_no = document.querySelector<HTMLInputElement>("#gallery_no")!.value;
+                    const _GALLTYPE_ = document.querySelector<HTMLInputElement>("#_GALLTYPE_")!.value;
+                    const post_no = document.querySelector<HTMLInputElement>("#no")?.value ?? "";
 
                     const form = new FormData();
                     form.append("r_key", r_key);
@@ -58,16 +58,18 @@ export default {
                         form.set("files", new File([file], `${new Date().getTime()}-${file.name}`, {type: file.type}));
 
                         try {
-                            const response = JSON.parse(await http.make(`https://upimg.dcinside.com/upimg_file.php?id=${gall_id}&r_key=${r_key}`, {
+                            const response = await http.make(`https://upimg.dcinside.com/upimg_file.php?id=${gall_id}&r_key=${r_key}`, {
                                 method: "POST",
                                 cache: "no-store",
                                 referrer: location.href,
                                 body: form
-                            })).files[0];
+                            })
+                                .then(JSON.parse)
+                                .then((parsed) => parsed.files[0]);
 
                             images.push(response);
-                        } catch {
-                        }
+                        // eslint-disable-next-line no-empty
+                        } catch {}
                     }
 
                     for (const image of images) {

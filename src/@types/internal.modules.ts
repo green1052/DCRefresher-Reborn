@@ -1,12 +1,14 @@
+import type { Nullable } from "../utils/types";
+
 export {};
 
 declare global {
-    interface miniPreview {
+    interface MiniPreview {
         element: HTMLDivElement;
         init: boolean;
         lastRequest: number;
         controller: AbortController;
-        lastElement: EventTarget | null;
+        lastElement: Nullable<EventTarget>;
         lastTimeout: number;
         shouldOutHandle: boolean;
         cursorOut: boolean;

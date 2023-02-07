@@ -1,10 +1,10 @@
 export default class DeepProxy {
     _preproxy: WeakMap<unknown, unknown>;
-    _handler: ProxyHandler<{ [index: string]: string }>;
+    _handler: ProxyHandler<Record<string, string>>;
 
     constructor(
         target: unknown,
-        handler: ProxyHandler<{ [index: string]: string }>
+        handler: ProxyHandler<Record<string, string>>
     ) {
         this._preproxy = new WeakMap();
         this._handler = handler;
@@ -15,13 +15,13 @@ export default class DeepProxy {
         path: string[]
     ): {
         set: (
-            target: { [index: string]: string },
+            target: Record<string, string>,
             key: string,
             value: unknown,
             receiver: unknown
         ) => boolean
         deleteProperty: (
-            target: { [index: string]: string },
+            target: Record<string, string>,
             key: string
         ) => boolean
     } {
@@ -54,7 +54,7 @@ export default class DeepProxy {
     }
 
     unproxy(
-        obj: { [index: string]: { [index: string]: unknown } } | unknown,
+        obj: Record<string, Record<string, unknown>> | unknown,
         key: string
     ): void {
         if (this._preproxy.has(obj[key])) {
@@ -71,9 +71,9 @@ export default class DeepProxy {
     }
 
     proxify(
-        obj: { [index: string]: { [index: string]: unknown } } | unknown,
+        obj: Record<string, Record<string, unknown>> | unknown,
         path: string[]
-    ): ProxyConstructor {
+    ): unknown {
         for (const key of Object.keys(obj)) {
             if (typeof obj[key] === "object") {
                 obj[key] = this.proxify(obj[key], [...path, key]);

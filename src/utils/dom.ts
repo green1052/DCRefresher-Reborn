@@ -6,9 +6,7 @@
 export const traversal = (element: HTMLElement): HTMLElement[] => {
     const result = [];
 
-    if (element.nodeType !== Node.ELEMENT_NODE) {
-        return [];
-    }
+    if (element.nodeType !== Node.ELEMENT_NODE) return [];
 
     const childs = element.children;
     const child_len = childs.length;
@@ -19,9 +17,7 @@ export const traversal = (element: HTMLElement): HTMLElement[] => {
         const child = childs[i] as HTMLElement;
 
         const travel = traversal(child);
-        if (travel.length) {
-            result.push(...travel);
-        }
+        result.push(...travel);
     }
 
     return result;
@@ -40,37 +36,27 @@ export const findNeighbor = (
     max: number,
     current?: number | null
 ): HTMLElement | null => {
-    if (!find) {
-        return null;
-    }
+    if (!find || (current && current > max)) return null;
 
-    if (current && current > max) {
-        return null;
-    }
+    if (!current) current = 0;
 
-    if (!current) {
-        current = 0;
-    }
+    const parent = el.parentElement;
+    if (!parent) return null;
+    if (parent.parentElement) {
+        const qsa = parent.parentElement.querySelectorAll(find);
 
-    if (el.parentElement) {
-        if (el.parentElement && el.parentElement.parentElement) {
-            const qsa = el.parentElement.parentElement.querySelectorAll(find);
-
-            if (qsa && qsa.length && Array.from(qsa).includes(el.parentElement)) {
-                return el.parentElement;
-            }
+        if (qsa.length !== 0 && Array.from(qsa).includes(parent)) {
+            return parent;
         }
-
-        const query = el.parentElement.querySelector(find) as HTMLElement;
-
-        if (!query) {
-            current++;
-
-            return findNeighbor(el.parentElement, find, max, current);
-        }
-
-        return query;
     }
 
-    return null;
+    const query = parent.querySelector<HTMLElement>(find);
+
+    if (!query) {
+        current++;
+
+        return findNeighbor(parent, find, max, current);
+    }
+
+    return query;
 };

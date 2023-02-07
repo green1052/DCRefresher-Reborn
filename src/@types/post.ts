@@ -1,7 +1,7 @@
 export {};
 
 declare global {
-    class PostInfo {
+    interface IPostInfo {
         id: string;
         header?: string;
         title?: string;
@@ -19,17 +19,6 @@ declare global {
         requireCommentCaptcha?: boolean;
         disabledDownvote?: boolean;
         dom?: Document;
-
-        constructor(id: string, data: { [index: string]: unknown }) {
-            this.id = id;
-
-            const keys = Object.keys(data);
-            for (let i = 0; i < keys.length; i++) {
-                const key = keys[i];
-
-                this[key] = data[key];
-            }
-        }
     }
 
     interface GalleryPreData {
