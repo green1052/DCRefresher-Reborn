@@ -3,6 +3,7 @@ const {merge} = require("webpack-merge");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const pkg = require("./package.json");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
 
 module.exports = (env) => {
     return merge(common, {
@@ -34,6 +35,19 @@ module.exports = (env) => {
                 filename: "views/index.html",
                 inject: false
             })
-        ]
+        ],
+        optimization: {
+            minimize: true,
+            minimizer: [
+                new TerserPlugin({
+                    minify: TerserPlugin.swcMinify,
+                    terserOptions: {
+                        format: {
+                            comments: false
+                        }
+                    }
+                })
+            ]
+        }
     });
-}
+};
