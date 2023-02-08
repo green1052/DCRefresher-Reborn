@@ -1,20 +1,20 @@
+import * as block from "./block";
+import * as communicate from "./communicate";
+import { eventBus } from "./eventbus";
+import { filter } from "./filtering";
+import Frame from "./frame";
+import * as memo from "./memo";
+import * as settings from "./settings";
+import DeepProxy from "../utils/deepProxy";
+import * as dom from "../utils/dom";
+import * as http from "../utils/http";
+import * as ip from "../utils/ip";
 import log from "../utils/logger";
 import storage from "../utils/storage";
-import {eventBus} from "./eventbus";
-import {filter} from "./filtering";
-import Frame from "./frame";
-import * as ip from "../utils/ip";
-import * as http from "../utils/http";
-import * as dom from "../utils/dom";
-import * as memo from "./memo";
 import browser from "webextension-polyfill";
-import * as settings from "./settings";
-import * as block from "./block";
-import DeepProxy from "../utils/deepProxy";
-import * as communicate from "./communicate";
 
 type ModuleItem =
-    RefresherFilter
+    | RefresherFilter
     | typeof Frame
     | RefresherEventBus
     | RefresherHTTP
@@ -23,11 +23,9 @@ type ModuleItem =
     | RefresherDOM
     | RefresherMemo;
 
-export interface ModuleStore {
-    [index: string]: RefresherModule
-}
+export type ModuleStore = Record<string, RefresherModule>;
 
-const UTILS: { [index: string]: ModuleItem } = {
+const UTILS: Record<string, ModuleItem> = {
     filter,
     Frame,
     eventBus,
@@ -44,13 +42,12 @@ const runModule = (module: RefresherModule) => {
     const plugins: ModuleItem[] = [];
 
     if (Array.isArray(module.require)) {
-        for (const require of module.require) {
+        for (const require of <Array<keyof ItemToRefresherMap>>module.require) {
             plugins.push(UTILS[require]);
         }
     }
 
-    if (typeof module.func === "function")
-        module.func.bind(module)(...plugins);
+    if (typeof module.func === "function") module.func.bind(module)(...plugins);
 };
 
 const revokeModule = (mod: RefresherModule) => {
@@ -77,8 +74,7 @@ export const modules = {
     lists: (): ModuleStore => module_store,
     load: (...mods: RefresherModule[]): Promise<void> => {
         return new Promise<void>((resolve) =>
-            Promise.all(mods.map(modules.register))
-                .then(() => resolve())
+            Promise.all(mods.map(modules.register)).then(() => resolve())
         );
     },
     register: async (mod: RefresherModule): Promise<void> => {
@@ -96,25 +92,36 @@ export const modules = {
         if (typeof mod.settings === "object") {
             for (const key in mod.settings) {
                 mod.status ??= {};
-                mod.status[key] = await settings.load(mod.name, key, mod.settings[key]);
+                mod.status[key] = await settings.load(
+                    mod.name,
+                    key,
+                    mod.settings[key]
+                );
             }
         }
 
         if (typeof mod.data === "object") {
             for (const key in mod.data) {
-                mod.data[key] = await storage.module.get(mod.name) ?? mod.data[key];
+                mod.data[key] =
+                    (await storage.module.get(mod.name)) ?? mod.data[key];
             }
 
-            mod.data = await storage.module.get(mod.name) ?? {};
+            mod.data = (await storage.module.get(mod.name)) ?? {};
 
             mod.data = new DeepProxy(mod.data, {
                 set(): boolean {
-                    storage.module.setGlobal(mod.name, JSON.stringify(mod.data));
+                    storage.module.setGlobal(
+                        mod.name,
+                        JSON.stringify(mod.data)
+                    );
                     return true;
                 },
 
                 deleteProperty(): boolean {
-                    storage.module.setGlobal(mod.name, JSON.stringify(mod.data));
+                    storage.module.setGlobal(
+                        mod.name,
+                        JSON.stringify(mod.data)
+                    );
                     return true;
                 }
             });
@@ -135,13 +142,19 @@ export const modules = {
         }
 
         if (!mod.url?.test(location.href)) {
-            log(`📁 ignoring ${mod.name}. current URL is not matching with the module's URL value.`);
+            log(
+                `📁 ignoring ${mod.name}. current URL is not matching with the module's URL value.`
+            );
             return;
         }
 
         runModule(mod);
 
-        log(`📁 ${mod.name} module loaded. took ${(performance.now() - start).toFixed(2)}ms.`);
+        log(
+            `📁 ${mod.name} module loaded. took ${(
+                performance.now() - start
+            ).toFixed(2)}ms.`
+        );
     }
 };
 
@@ -171,7 +184,11 @@ communicate.addHook("executeShortcut", (data) => {
     log(`Received shortcut execute: ${data}.`);
 
     for (const key of Object.keys(module_store)) {
-        if (module_store[key] && typeof module_store[key].shortcuts === "object" && typeof module_store[key].shortcuts![data] === "function") {
+        if (
+            module_store[key] &&
+            typeof module_store[key].shortcuts === "object" &&
+            typeof module_store[key].shortcuts![data] === "function"
+        ) {
             module_store[key].shortcuts![data].bind(module_store[key])();
         }
     }
@@ -189,8 +206,9 @@ eventBus.on(
         }
 
         // 모듈이 활성화되지 않은 상태일 경우 모듈 설정 업데이트 함수 호출을 건너뜁니다.
-        if (!mod.enable || !mod.update || typeof mod.update[key] !== "function") return;
-        
+        if (!mod.enable || !mod.update || typeof mod.update[key] !== "function")
+            return;
+
         const plugins: ModuleItem[] = [];
 
         if (Array.isArray(mod.require)) {

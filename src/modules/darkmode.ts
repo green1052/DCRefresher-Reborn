@@ -33,15 +33,20 @@ const colorCorrection = (elem: HTMLElement) => {
 const contentColorFix = (el: HTMLElement) => {
     if (!el) return;
 
-    const qSelector = el.querySelector<HTMLElement>(".refresher-frame:first-child .refresher-preview-contents")!;
+    const qSelector = el.querySelector<HTMLElement>(
+        ".refresher-frame:first-child .refresher-preview-contents"
+    )!;
 
     DOM.traversal(qSelector).forEach((elem) => {
         if (
-            !elem.style
-            || !(elem.style.color || elem.hasAttribute("color"))
-            || (elem.style.background && elem.style.background !== "transparent")
-            || (elem.style.backgroundColor && elem.style.backgroundColor !== "transparent")
-        ) return;
+            !elem.style ||
+            !(elem.style.color || elem.hasAttribute("color")) ||
+            (elem.style.background &&
+                elem.style.background !== "transparent") ||
+            (elem.style.backgroundColor &&
+                elem.style.backgroundColor !== "transparent")
+        )
+            return;
 
         colorCorrection(elem);
     });
@@ -49,7 +54,8 @@ const contentColorFix = (el: HTMLElement) => {
 
 export default {
     name: "다크 모드",
-    description: "페이지와 DCRefresher Reborn의 창을 어두운 색상으로 변경합니다.",
+    description:
+        "페이지와 DCRefresher Reborn의 창을 어두운 색상으로 변경합니다.",
     memory: {
         uuid: null,
         uuid2: null,
@@ -59,7 +65,11 @@ export default {
     default_enable: false,
     require: ["filter", "eventBus"],
     func(filter: RefresherFilter, eventBus: RefresherEventBus) {
-        if (document && document.documentElement && !document.documentElement.className.includes("refresherDark"))
+        if (
+            document &&
+            document.documentElement &&
+            !document.documentElement.className.includes("refresherDark")
+        )
             document.documentElement.classList.add("refresherDark");
 
         this.memory.uuid = filter.add("html", (element) => {
@@ -72,14 +82,20 @@ export default {
         this.memory.uuid2 = filter.add(
             ".gallview_contents .inner .writing_view_box *",
             (element) => {
-                if (!element.style?.color || element.hasAttribute("color")) return;
+                if (!element.style?.color || element.hasAttribute("color"))
+                    return;
 
                 colorCorrection(element);
-            }, {
+            },
+            {
                 skipIfNotExists: true
-            });
+            }
+        );
 
-        this.memory.contentViewUUID = eventBus.on("contentPreview", contentColorFix);
+        this.memory.contentViewUUID = eventBus.on(
+            "contentPreview",
+            contentColorFix
+        );
     },
     revoke(filter: RefresherFilter, eventBus: RefresherEventBus) {
         document.documentElement.classList.remove("refresherDark");
@@ -88,7 +104,12 @@ export default {
 
         if (this.memory.uuid2) filter.remove(this.memory.uuid2, true);
 
-        if (this.memory.contentViewUUID) eventBus.remove("contentPreview", this.memory.contentViewUUID, true);
+        if (this.memory.contentViewUUID)
+            eventBus.remove(
+                "contentPreview",
+                this.memory.contentViewUUID,
+                true
+            );
     }
 } as RefresherModule<{
     memory: {

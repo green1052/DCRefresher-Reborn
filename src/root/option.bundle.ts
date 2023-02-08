@@ -1,5 +1,5 @@
-import Vue from "vue";
 import refresher from "../views/components/refresher.vue";
+import Vue from "vue";
 
 new Vue({
     el: "#app",

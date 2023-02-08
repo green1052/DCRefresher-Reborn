@@ -1,11 +1,12 @@
-import type Vue from "vue";
 import type { Nullable } from "../utils/types";
+import type { User } from "../utils/user";
+import type Vue from "vue";
 
 export {};
 
 declare global {
     interface DcinsideDcconDetail {
-        list: {
+        list: Array<{
             detail: DcinsideDccon[];
             detail_page: number;
             end_date: string;
@@ -14,7 +15,7 @@ declare global {
             package_idx: string;
             sort: string;
             title: string;
-        }[];
+        }>;
         max_page: number;
         target: string;
     }

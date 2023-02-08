@@ -12,47 +12,59 @@ export default {
     default_enable: false,
     require: ["filter"],
     func(filter: RefresherFilter) {
-        this.memory.iframe = filter.add<HTMLIFrameElement>("#TOPTOON", (element) => {
-            if (this.memory.injected) return;
+        this.memory.iframe = filter.add<HTMLIFrameElement>(
+            "#TOPTOON",
+            (element) => {
+                if (this.memory.injected) return;
 
-            element.addEventListener("load", () => {
-                const dom = element.contentDocument!;
+                element.addEventListener("load", () => {
+                    const dom = element.contentDocument!;
 
-                const button = document.createElement("button");
-                button.setAttribute("type", "button");
-                button.setAttribute("class", "btn_blue small");
-                button.innerText = "다운로드";
-                button.onclick = () => {
-                    const imageList = Array.from(dom.querySelectorAll<HTMLImageElement>(".img_dccon img"));
+                    const button = document.createElement("button");
+                    button.setAttribute("type", "button");
+                    button.setAttribute("class", "btn_blue small");
+                    button.innerText = "다운로드";
+                    button.onclick = () => {
+                        const imageList = Array.from(
+                            dom.querySelectorAll<HTMLImageElement>(
+                                ".img_dccon img"
+                            )
+                        );
 
-                    browser.runtime.sendMessage(
-                        JSON.stringify({
-                            dcconDownload: true,
-                            urls: imageList.map((image) => image.src),
-                            filename: `${dom.querySelector(".viewtxt_top h4")?.textContent ?? "dccon"}.zip`
-                        })
-                    );
-                };
+                        browser.runtime.sendMessage(
+                            JSON.stringify({
+                                dcconDownload: true,
+                                urls: imageList.map((image) => image.src),
+                                filename: `${
+                                    dom.querySelector(".viewtxt_top h4")
+                                        ?.textContent ?? "dccon"
+                                }.zip`
+                            })
+                        );
+                    };
 
-                dom.body.addEventListener("click", () => {
-                    const target = dom.body;
+                    dom.body.addEventListener("click", () => {
+                        const target = dom.body;
 
-                    if (!target.classList.contains("dcon_frame")) return;
+                        if (!target.classList.contains("dcon_frame")) return;
 
-                    const observer = new MutationObserver(() => {
-                        dom.querySelector(".btn_buy")?.insertAdjacentElement("beforebegin", button);
-                        observer.disconnect();
-                    });
+                        const observer = new MutationObserver(() => {
+                            dom.querySelector(
+                                ".btn_buy"
+                            )?.insertAdjacentElement("beforebegin", button);
+                            observer.disconnect();
+                        });
 
-                    observer.observe(dom, {
-                        childList: true,
-                        subtree: true
+                        observer.observe(dom, {
+                            childList: true,
+                            subtree: true
+                        });
                     });
                 });
-            });
 
-            this.memory.injected = true;
-        });
+                this.memory.injected = true;
+            }
+        );
     },
     revoke(filter: RefresherFilter) {
         if (this.memory.iframe) filter.remove(this.memory.iframe);

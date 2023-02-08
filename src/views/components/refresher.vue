@@ -126,11 +126,11 @@
                 <div style="margin-bottom: 10px;">
                     <h2>차단 모드</h2>
 
-                    <div style="margin-top: 5px; margin-bottom: 5px;" v-for="key in Object.keys(blocks)">
+                    <div v-for="key in Object.keys(blocks)" style="margin-top: 5px; margin-bottom: 5px;">
                         <label>{{ blockKeyNames[key] }}:</label>
                         <select v-model="blockModes[key]" @change="editBlockMode">
-                            <option v-for="[key2, value2] in Object.entries(blockDetectModeTypeNames)" :value="key2"
-                                    :selected="blockModes[key] === key2">
+                            <option v-for="[key2, value2] in Object.entries(blockDetectModeTypeNames)" :selected="blockModes[key] === key2"
+                                    :value="key2">
                                 {{ value2 }}
                             </option>
                         </select>

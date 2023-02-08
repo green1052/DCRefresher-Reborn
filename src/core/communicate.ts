@@ -1,5 +1,5 @@
+import { uuid } from "../utils/string";
 import browser from "webextension-polyfill";
-import {uuid} from "../utils/string";
 
 const handlerStorage: Record<string, StorageStructure[]> = {};
 
@@ -42,7 +42,7 @@ export const clearHook = (type: string, id: string): boolean => {
     const oldLength = hooks.length;
 
     handlerStorage[type] = hooks.filter((hook) => hook.uuid !== id);
-    
+
     const removed = oldLength !== handlerStorage[type].length;
 
     return removed;

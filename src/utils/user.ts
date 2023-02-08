@@ -1,6 +1,6 @@
 import * as ip from "./ip";
 import * as memo from "../core/memo";
-import type {Nullable, ObjectEnum} from "./types";
+import type { Nullable, ObjectEnum } from "./types";
 
 export type UserType =
     | "UNFIXED"
@@ -117,12 +117,11 @@ export class User {
     }
 
     getMemo(): void {
-        this.memo =
-            this.id
-                ? memo.get("UID", this.id)
-                : this.ip
-                    ? memo.get("IP", this.ip)
-                    : memo.get("NICK", this.nick);
+        this.memo = this.id
+            ? memo.get("UID", this.id)
+            : this.ip
+            ? memo.get("IP", this.ip)
+            : memo.get("NICK", this.nick);
     }
 
     import(dom: HTMLElement | null): this {
@@ -132,12 +131,9 @@ export class User {
         this.id = dom.dataset.uid || null;
         this.ip = dom.dataset.ip || null;
 
-        this.icon =
-            !this.id
-                ? null
-                : dom
-                    .querySelector("a.writer_nikcon img")!
-                    .getAttribute("src")!;
+        this.icon = !this.id
+            ? null
+            : dom.querySelector("a.writer_nikcon img")!.getAttribute("src")!;
         this.type = getType(this.icon);
 
         this.getMemo();

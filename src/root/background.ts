@@ -1,11 +1,11 @@
-import browser from "webextension-polyfill";
+import { BlockCache, BlockModeCache } from "../core/block";
+import { MemoCache } from "../core/memo";
+import { ModuleStore } from "../core/modules";
+import { SettingsStore } from "../core/settings";
 import storage from "../utils/storage";
-import {BlockCache, BlockModeCache} from "../core/block";
-import {MemoCache} from "../core/memo";
-import {ModuleStore} from "../core/modules";
-import {SettingsStore} from "../core/settings";
 import JSZip from "jszip";
-import {Buffer} from "buffer";
+import browser from "webextension-polyfill";
+import { Buffer } from "buffer";
 
 let modules: ModuleStore = {};
 let settings: SettingsStore = {};
@@ -59,7 +59,10 @@ interface Message {
     requestRefresherMemos?: boolean;
 }
 
-const messageHandler = (port: browser.Runtime.Port | null, message: Message) => {
+const messageHandler = (
+    port: browser.Runtime.Port | null,
+    message: Message
+) => {
     if (typeof message !== "object") return;
 
     if (message.dcconDownload) {
@@ -72,7 +75,9 @@ const messageHandler = (port: browser.Runtime.Port | null, message: Message) => 
 
                 return fetch(url)
                     .then((res) => {
-                        const exec = /filename=(\w*)\.(\w*)/g.exec(res.headers.get("Content-Disposition")!);
+                        const exec = /filename=(\w*)\.(\w*)/g.exec(
+                            res.headers.get("Content-Disposition")!
+                        );
 
                         if (exec && exec.length === 3) {
                             title = exec?.[1];
@@ -87,7 +92,7 @@ const messageHandler = (port: browser.Runtime.Port | null, message: Message) => 
             })
         )
             .then(() => {
-                return zip.generateAsync({type: "base64"});
+                return zip.generateAsync({ type: "base64" });
             })
             .then((blob) => {
                 browser.downloads.download({
@@ -101,7 +106,11 @@ const messageHandler = (port: browser.Runtime.Port | null, message: Message) => 
         storage.set(`${message.name}.${message.key}`, message.value);
     }
 
-    if (message.updateBlocks && message.blocks_store && message.blockModes_store) {
+    if (
+        message.updateBlocks &&
+        message.blocks_store &&
+        message.blockModes_store
+    ) {
         for (const [key, value] of Object.entries(message.blocks_store)) {
             storage.set(`__REFRESHER_BLOCK:${key}`, value);
         }
@@ -139,24 +148,31 @@ const messageHandler = (port: browser.Runtime.Port | null, message: Message) => 
         memos = message.memos_store;
     }
 
-    if (message.blockModes_store && Object.keys(message.blockModes_store).length) {
+    if (
+        message.blockModes_store &&
+        Object.keys(message.blockModes_store).length
+    ) {
         blockModes = message.blockModes_store;
     }
 
     if (message.requestRefresherModules) {
-        port?.postMessage({responseRefresherModules: true, modules});
+        port?.postMessage({ responseRefresherModules: true, modules });
     }
 
     if (message.requestRefresherSettings) {
-        port?.postMessage({responseRefresherSettings: true, settings});
+        port?.postMessage({ responseRefresherSettings: true, settings });
     }
 
     if (message.requestRefresherBlocks) {
-        port?.postMessage({responseRefresherBlocks: true, blocks, blockModes});
+        port?.postMessage({
+            responseRefresherBlocks: true,
+            blocks,
+            blockModes
+        });
     }
 
     if (message.requestRefresherMemos) {
-        port?.postMessage({requestRefresherMemos: true, memos});
+        port?.postMessage({ requestRefresherMemos: true, memos });
     }
 };
 
@@ -165,31 +181,44 @@ browser.runtime.onConnect.addListener((port) => {
 });
 
 browser.runtime.onMessage.addListener((message) => {
-    messageHandler(null, typeof message === "string" ? JSON.parse(message) : message);
+    messageHandler(
+        null,
+        typeof message === "string" ? JSON.parse(message) : message
+    );
 });
 
 async function getGeoIP(type: "ASN" | "Country", url: string): Promise<Buffer> {
     try {
+        throw "";
         const res = await fetch(url);
         const buffer = await res.arrayBuffer();
 
         return Buffer.from(buffer);
-    } catch (e) {
-        const res = await fetch(browser.runtime.getURL(`/assets/GeoLite2/GeoLite2-${type}.mmdb`));
+    } catch {
+        const res = await fetch(
+            browser.runtime.getURL(`/assets/GeoLite2/GeoLite2-${type}.mmdb`)
+        );
         return Buffer.from(await res.arrayBuffer());
     }
 }
 
 browser.runtime.onInstalled.addListener((details) => {
-    getGeoIP("ASN", "https://github.com/green1052/maxmind-geoip2/raw/master/dist/GeoLite2-ASN/GeoLite2-ASN.mmdb")
-        .then((buffer) => {
-            storage.set("refresher.asn", Buffer.from(buffer).toString("base64"));
-        });
+    getGeoIP(
+        "ASN",
+        "https://github.com/green1052/maxmind-geoip2/raw/master/dist/GeoLite2-ASN/GeoLite2-ASN.mmdb"
+    ).then((buffer) => {
+        storage.set("refresher.asn", Buffer.from(buffer).toString("base64"));
+    });
 
-    getGeoIP("Country", "https://github.com/green1052/maxmind-geoip2/raw/master/dist/GeoLite2-Country/GeoLite2-Country.mmdb")
-        .then((buffer) => {
-            storage.set("refresher.country", Buffer.from(buffer).toString("base64"));
-        });
+    getGeoIP(
+        "Country",
+        "https://github.com/green1052/maxmind-geoip2/raw/master/dist/GeoLite2-Country/GeoLite2-Country.mmdb"
+    ).then((buffer) => {
+        storage.set(
+            "refresher.country",
+            Buffer.from(buffer).toString("base64")
+        );
+    });
 
     if (details.reason === "install") {
         storage.set("refresher.firstInstall", true);
@@ -230,7 +259,7 @@ browser.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 browser.commands.onCommand.addListener((command) => {
-    browser.tabs.query({currentWindow: true, active: true}).then((tabs) => {
+    browser.tabs.query({ currentWindow: true, active: true }).then((tabs) => {
         browser.tabs.sendMessage(tabs[0].id!, {
             type: "executeShortcut",
             data: command

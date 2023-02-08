@@ -3,7 +3,8 @@ import Cookies from "js-cookie";
 import type { Nullable } from "./types";
 
 const _d = function (r: string) {
-    const i = "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K";
+    const i =
+        "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K";
 
     let a,
         e,
@@ -14,17 +15,17 @@ const _d = function (r: string) {
         h,
         o = "",
         c = 0;
-    for (r = r.replace(/[^A-Za-z0-9+/=]/g, ""); c < r.length;)
+    for (r = r.replace(/[^A-Za-z0-9+/=]/g, ""); c < r.length; )
         (t = i.indexOf(r.charAt(c++))),
-        (f = i.indexOf(r.charAt(c++))),
-        (d = i.indexOf(r.charAt(c++))),
-        (h = i.indexOf(r.charAt(c++))),
-        (a = (t << 2) | (f >> 4)),
-        (e = ((15 & f) << 4) | (d >> 2)),
-        (n = ((3 & d) << 6) | h),
-        (o += String.fromCharCode(a)),
-        64 != d && (o += String.fromCharCode(e)),
-        64 != h && (o += String.fromCharCode(n));
+            (f = i.indexOf(r.charAt(c++))),
+            (d = i.indexOf(r.charAt(c++))),
+            (h = i.indexOf(r.charAt(c++))),
+            (a = (t << 2) | (f >> 4)),
+            (e = ((15 & f) << 4) | (d >> 2)),
+            (n = ((3 & d) << 6) | h),
+            (o += String.fromCharCode(a)),
+            64 != d && (o += String.fromCharCode(e)),
+            64 != h && (o += String.fromCharCode(n));
     return o;
 };
 
@@ -32,7 +33,7 @@ const requestBeforeServiceCode = (dom: Document) => {
     let _r: string;
 
     const _rpre = dom.querySelector(
-        "#container > section #reply-setting-tmpl + script[type=\"text/javascript\"]"
+        `#container > section #reply-setting-tmpl + script[type="text/javascript"]`
     );
 
     if (!_rpre) throw "_r 값을 찾을 수 없습니다.";
@@ -47,12 +48,15 @@ const requestBeforeServiceCode = (dom: Document) => {
     if (!_r) throw "_r이 적절한 값이 아닙니다.";
 
     let tvl = _r,
-        fi = parseInt(tvl.substr(0, 1))
-    ;(fi = fi > 5 ? fi - 5 : fi + 4),
-    (tvl = tvl.replace(/^./, fi.toString())),
-    (_r = tvl);
+        fi = parseInt(tvl.substr(0, 1));
+    (fi = fi > 5 ? fi - 5 : fi + 4),
+        (tvl = tvl.replace(/^./, fi.toString())),
+        (_r = tvl);
 
-    const r = dom.querySelector<HTMLInputElement>("input[name=\"service_code\"]")!.value;
+    const r = dom.querySelector<HTMLInputElement>(
+        `input[name="service_code"]`
+    )!.value;
+
     const _rs = _r.split(",");
     let t = "";
     for (let e = 0; e < _rs.length; e++)
@@ -67,10 +71,13 @@ const secretKey = (dom: Document): string => {
     params.set("t_vch2_chk", "");
     params.set("g-recaptcha-response", "");
 
-    for (const element of dom.querySelectorAll<HTMLInputElement>("#focus_cmt > input")) {
+    for (const element of Array.from(
+        dom.querySelectorAll<HTMLInputElement>("#focus_cmt > input")
+    )) {
         const id = element.getAttribute("name") ?? element.id;
 
-        if (["service_code", "gallery_no", "clickbutton"].includes(id)) continue;
+        if (["service_code", "gallery_no", "clickbutton"].includes(id))
+            continue;
 
         params.set(id, element.value);
     }
@@ -85,7 +92,7 @@ interface CommentResult {
 
 export async function submitComment(
     preData: GalleryPreData,
-    user: { name: string; pw?: string; },
+    user: { name: string; pw?: string },
     dom: Document,
     memo: string,
     reply: string | null,
@@ -138,7 +145,7 @@ export async function submitComment(
 
 export async function submitDcconComment(
     preData: GalleryPreData,
-    user: { name: string; pw?: string; },
+    user: { name: string; pw?: string },
     dom: Document,
     dccon: DcinsideDccon,
     reply: string | null,

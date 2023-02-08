@@ -1,12 +1,14 @@
 import * as Toast from "../components/toast";
-import {queryString} from "../utils/http";
+import { queryString } from "../utils/http";
 
 const AVERAGE_COUNTS_SIZE = 7;
 
 let PAUSE_REFRESH = false;
 
 const updateRefreshText = (button?: HTMLElement) => {
-    button ??= document.querySelector<HTMLElement>(".page_head .gall_issuebox button[data-refresher=\"true\"]")!;
+    button ??= document.querySelector<HTMLElement>(
+        '.page_head .gall_issuebox button[data-refresher="true"]'
+    )!;
 
     const onOff = button.querySelector<HTMLSpanElement>("span")!;
     onOff.innerHTML = PAUSE_REFRESH ? "꺼짐" : "켜짐";
@@ -16,7 +18,7 @@ const addRefreshText = (issueBox: HTMLElement) => {
     const pageHead =
         issueBox || document.querySelector(".page_head .gall_issuebox");
 
-    if (!pageHead?.querySelector("button[data-refresher=\"true\"]")) {
+    if (!pageHead?.querySelector('button[data-refresher="true"]')) {
         const button = document.createElement("button");
         button.setAttribute("type", "button");
         button.dataset.refresher = "true";
@@ -122,20 +124,28 @@ export default {
         }
     },
     require: ["http", "eventBus", "filter"],
-    func(http: RefresherHTTP, eventBus: RefresherEventBus, filter: RefresherFilter) {
+    func(
+        http: RefresherHTTP,
+        eventBus: RefresherEventBus,
+        filter: RefresherFilter
+    ) {
         if (this.status.doNotColorVisited) {
-            document?.documentElement?.classList.add("refresherDoNotColorVisited");
+            document?.documentElement?.classList.add(
+                "refresherDoNotColorVisited"
+            );
         }
 
         const body = (url: string) =>
-            http.make(url)
-                .then((body) => {
-                    const bodyParse = new DOMParser().parseFromString(body, "text/html");
+            http.make(url).then((body) => {
+                const bodyParse = new DOMParser().parseFromString(
+                    body,
+                    "text/html"
+                );
 
-                    eventBus.emit("refresherGetPost", bodyParse);
+                eventBus.emit("refresherGetPost", bodyParse);
 
-                    return bodyParse.querySelector(".gall_list tbody");
-                });
+                return bodyParse.querySelector(".gall_list tbody");
+            });
 
         const isPostView = location.href.includes("/board/view");
         const currentPostNo = new URLSearchParams(location.href).get("no");
@@ -151,19 +161,21 @@ export default {
             addRefreshText(element);
         });
 
-        const {memory} = this;
+        const { memory } = this;
 
         memory.load = async (customURL?, force?): Promise<boolean> => {
             if (document.hidden) {
                 return false;
             }
-            if (!force && (
-                Date.now() < memory.lastRefresh + 500 || PAUSE_REFRESH
-            )) {
+            if (
+                !force &&
+                (Date.now() < memory.lastRefresh + 500 || PAUSE_REFRESH)
+            ) {
                 return false;
             }
 
-            const userDataLyr = document.querySelector<HTMLElement>("#user_data_lyr");
+            const userDataLyr =
+                document.querySelector<HTMLElement>("#user_data_lyr");
 
             // 유저 메뉴가 열렸을 때는 새로고침 하지 않음
             if (userDataLyr?.style.display !== "none") return false;
@@ -176,9 +188,13 @@ export default {
             // 글 선택 체크박스에 체크된 경우 새로 고침 건너 뜀
             if (
                 isAdmin &&
-                Array.from(document.querySelectorAll<HTMLInputElement>(".article_chkbox"))
-                    .some((v) => v.checked)
-            ) return false;
+                Array.from(
+                    document.querySelectorAll<HTMLInputElement>(
+                        ".article_chkbox"
+                    )
+                ).some((v) => v.checked)
+            )
+                return false;
 
             memory.new_counts = 0;
 
@@ -191,13 +207,15 @@ export default {
 
             const oldList = document.querySelector(".gall_list tbody");
 
-            if (!oldList || !newList || newList.children.length === 0) return false;
+            if (!oldList || !newList || newList.children.length === 0)
+                return false;
 
             const cached = Array.from(oldList.querySelectorAll("td.gall_num"))
                 .map((v) => v.innerHTML)
                 .join("|");
 
-            const tbody = oldList.parentElement?.querySelector<HTMLElement>("tbody");
+            const tbody =
+                oldList.parentElement?.querySelector<HTMLElement>("tbody");
 
             if (!tbody) return false;
 
@@ -207,7 +225,8 @@ export default {
 
             let containsEmpty = false;
             if (newList.parentElement) {
-                containsEmpty = newList.parentElement.classList.contains("empty");
+                containsEmpty =
+                    newList.parentElement.classList.contains("empty");
 
                 if (postNoIter.length) {
                     if (containsEmpty) {
@@ -222,15 +241,21 @@ export default {
                 const value = v.innerHTML;
 
                 if (!cached.includes(value) && value !== currentPostNo) {
-                    if (this.status.fadeIn && !memory.calledByPageTurn && v.parentElement) {
+                    if (
+                        this.status.fadeIn &&
+                        !memory.calledByPageTurn &&
+                        v.parentElement
+                    ) {
                         v.parentElement.classList.add("refresherNewPost");
-                        v.parentElement.style.animationDelay = `${memory.new_counts * 23}ms`;
+                        v.parentElement.style.animationDelay = `${
+                            memory.new_counts * 23
+                        }ms`;
                     }
                     memory.new_counts++;
                 }
 
                 if (isPostView && currentPostNo === value) {
-                    v.innerHTML = `<span class="sp_img crt_icon></span>"`;
+                    v.innerHTML = '<span class="sp_img crt_icon></span>"';
                     v.parentElement?.classList.add("crt");
                 }
             }
@@ -274,7 +299,10 @@ export default {
                 if (templExists) {
                     document.querySelectorAll(".ub-content").forEach((elem) => {
                         if (!elem.className.includes("us-post")) {
-                            elem.insertBefore(document.createElement("td"), elem.firstChild);
+                            elem.insertBefore(
+                                document.createElement("td"),
+                                elem.firstChild
+                            );
                         }
                     });
 
@@ -284,7 +312,8 @@ export default {
                         );
 
                         if (tbody_colspan) {
-                            const colspan = tbody_colspan.getAttribute("colspan") ?? "";
+                            const colspan =
+                                tbody_colspan.getAttribute("colspan") ?? "";
 
                             if (parseInt(colspan) == 6) {
                                 tbody_colspan?.setAttribute(
@@ -299,31 +328,44 @@ export default {
 
             // 검색일 경우 강조 표시 생성
             if (queryString("s_keyword")) {
-                const keyword = document.querySelector<HTMLInputElement>("input[name=s_keyword]")?.value;
+                const keyword = document.querySelector<HTMLInputElement>(
+                    "input[name=s_keyword]"
+                )?.value;
 
                 if (keyword && keyword !== "null") {
-                    document.querySelectorAll(".gall_list .gall_tit").forEach((element) => {
-                        const tmp_subject = element.querySelector<HTMLAnchorElement>("a:first-child")?.cloneNode(true) as HTMLElement;
+                    document
+                        .querySelectorAll(".gall_list .gall_tit")
+                        .forEach((element) => {
+                            const tmp_subject = element
+                                .querySelector<HTMLAnchorElement>(
+                                    "a:first-child"
+                                )
+                                ?.cloneNode(true) as HTMLElement;
 
-                        const iconImg = tmp_subject?.querySelector(".icon_img");
-                        iconImg?.parentElement?.removeChild(iconImg);
+                            const iconImg =
+                                tmp_subject?.querySelector(".icon_img");
+                            iconImg?.parentElement?.removeChild(iconImg);
 
-                        const tmp_subject_html = tmp_subject.innerHTML;
+                            const tmp_subject_html = tmp_subject.innerHTML;
 
-                        if (tmp_subject_html.match(keyword)) {
-                            let subject = tmp_subject_html.replace(
-                                keyword,
-                                `<span class="mark">${keyword}</span>`
-                            );
+                            if (tmp_subject_html.match(keyword)) {
+                                let subject = tmp_subject_html.replace(
+                                    keyword,
+                                    `<span class="mark">${keyword}</span>`
+                                );
 
-                            subject = element
-                                .querySelector("a:first-child")!
-                                .innerHTML
-                                .replace(tmp_subject_html, subject);
+                                subject = element
+                                    .querySelector("a:first-child")!
+                                    .innerHTML.replace(
+                                        tmp_subject_html,
+                                        subject
+                                    );
 
-                            element.querySelector<HTMLAnchorElement>("a:first-child")!.innerHTML = subject;
-                        }
-                    });
+                                element.querySelector<HTMLAnchorElement>(
+                                    "a:first-child"
+                                )!.innerHTML = subject;
+                            }
+                        });
                 }
             }
 
@@ -371,36 +413,47 @@ export default {
         });
 
         if (this.status.useBetterBrowse) {
-            memory.uuid = filter.add<HTMLAnchorElement>(".left_content article:has(.gall_listwrap) .bottom_paging_box a", (element) => {
-                if (element.href.includes("javascript:")) return;
+            memory.uuid = filter.add<HTMLAnchorElement>(
+                ".left_content article:has(.gall_listwrap) .bottom_paging_box a",
+                (element) => {
+                    if (element.href.includes("javascript:")) return;
 
-                element.onclick = () => false;
+                    element.onclick = () => false;
 
-                element.addEventListener("click", async () => {
-                    const isPageView = location.href.includes("/board/view");
+                    element.addEventListener("click", async () => {
+                        const isPageView =
+                            location.href.includes("/board/view");
 
-                    if (isPageView) {
-                        history.pushState(
-                            null,
-                            document.title,
-                            http.mergeParamURL(location.href, element.href)
-                        );
-                    } else {
-                        history.pushState(null, document.title, element.href);
-                    }
+                        if (isPageView) {
+                            history.pushState(
+                                null,
+                                document.title,
+                                http.mergeParamURL(location.href, element.href)
+                            );
+                        } else {
+                            history.pushState(
+                                null,
+                                document.title,
+                                element.href
+                            );
+                        }
 
-                    memory.calledByPageTurn = true;
+                        memory.calledByPageTurn = true;
 
-                    await memory.load!(location.href, true);
+                        await memory.load!(location.href, true);
 
-                    document.querySelector(
-                        isPageView ? ".view_bottom_btnbox" : ".page_head"
-                    )?.scrollIntoView({
-                        block: "start",
-                        behavior: "smooth"
+                        document
+                            .querySelector(
+                                isPageView
+                                    ? ".view_bottom_btnbox"
+                                    : ".page_head"
+                            )
+                            ?.scrollIntoView({
+                                block: "start",
+                                behavior: "smooth"
+                            });
                     });
-                });
-            }
+                }
             );
 
             window.addEventListener("popstate", () => {
@@ -423,9 +476,10 @@ export default {
                         currentBottomPagingBox.innerHTML = pagingBox.innerHTML;
                     }
 
-                    const pagingBoxAnchors = document.querySelectorAll<HTMLAnchorElement>(
-                        ".left_content .bottom_paging_box a"
-                    );
+                    const pagingBoxAnchors =
+                        document.querySelectorAll<HTMLAnchorElement>(
+                            ".left_content .bottom_paging_box a"
+                        );
 
                     if (pagingBoxAnchors) {
                         pagingBoxAnchors.forEach(async (a) => {
@@ -443,7 +497,11 @@ export default {
                                         http.mergeParamURL(location.href, href)
                                     );
                                 } else {
-                                    history.pushState(null, document.title, href);
+                                    history.pushState(
+                                        null,
+                                        document.title,
+                                        href
+                                    );
                                 }
                                 memory.calledByPageTurn = true;
 
@@ -455,7 +513,10 @@ export default {
                                         : ".page_head"
                                 );
 
-                                query?.scrollIntoView({block: "start", behavior: "smooth"});
+                                query?.scrollIntoView({
+                                    block: "start",
+                                    behavior: "smooth"
+                                });
                             });
                         });
                     }
@@ -463,10 +524,14 @@ export default {
             );
         }
     },
-    revoke(http: RefresherHTTP, eventBus: RefresherEventBus, filter: RefresherFilter) {
+    revoke(
+        http: RefresherHTTP,
+        eventBus: RefresherEventBus,
+        filter: RefresherFilter
+    ) {
         document?.body?.classList.remove("refresherDoNotColorVisited");
 
-        const {memory} = this;
+        const { memory } = this;
 
         if (memory.refresh) {
             clearTimeout(memory.refresh);
@@ -496,7 +561,9 @@ export default {
         calledByPageTurn: boolean;
         refreshRequest: string | null;
         lastRefresh: number;
-        load: ((customURL?: string, force?: boolean) => Promise<boolean>) | null;
+        load:
+            | ((customURL?: string, force?: boolean) => Promise<boolean>)
+            | null;
     };
     shortcuts: {
         refreshLists(): void;
