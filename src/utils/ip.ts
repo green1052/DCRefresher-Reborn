@@ -222,7 +222,10 @@ export const ISPData = (ip: string): ISPInfo => {
 export const format = (data: ISPInfo): string => {
     const { name, country, detail } = data;
 
-    if (!name || !country) return "";
+    if (!name && country)
+        return country !== "KR" ? `${displayNames.of(country)}` : "";
+
+    if (!name || !country) return "오류";
 
     return `${country !== "KR" ? `${displayNames.of(country)} ` : ""}${
         detail ? `${detail} ` : ""

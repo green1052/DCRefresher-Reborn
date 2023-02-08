@@ -112,7 +112,7 @@ export default {
             }
         );
 
-        this.memory.uuid2 = filter.add(".written_dccon", async (element) => {
+        this.memory.uuid2 = filter.add(".written_dccon", (element) => {
             if (element.parentElement!.oncontextmenu) return;
 
             element.parentElement!.oncontextmenu = () => {
@@ -168,18 +168,15 @@ export default {
             if (Date.now() - this.memory.lastSelect > 10000) {
                 return;
             }
-
-            if (
-                this.memory.selected.code !== null ||
-                this.memory.selected.packageIdx !== null
-            ) {
+            const code = this.memory.selected.code;
+            if (code) {
                 const params = new URLSearchParams();
                 params.set("ci_t", Cookies.get("ci_c") ?? "");
-                params.set(
-                    "package_idx",
-                    this.memory.selected.packageIdx ?? ""
-                );
-                params.set("code", this.memory.selected.code!);
+                // params.set(
+                //     "package_idx",
+                //     this.memory.selected.packageIdx ?? ""
+                // );
+                params.set("code", code);
 
                 http.make(http.urls.dccon.detail, {
                     method: "POST",
@@ -198,7 +195,7 @@ export default {
 
                     block.add(
                         "DCCON",
-                        this.memory.selected.code!,
+                        code,
                         false,
                         undefined,
                         `${title} [${packageIdx}]`
@@ -216,7 +213,7 @@ export default {
 
             let type: RefresherBlockType = "NICK";
             let value = this.memory.selected.nick;
-            const extra = this.memory.selected.nick ?? undefined;
+            const extra = this.memory.selected.nick;
 
             if (this.memory.selected.uid) {
                 type = "ID";
@@ -226,9 +223,7 @@ export default {
                 value = this.memory.selected.ip;
             }
 
-            if (!value || value.length < 1) {
-                return;
-            }
+            if (!value || extra === null) return;
 
             block.add(type, value, false, undefined, extra);
             Toast.show(
@@ -239,17 +234,15 @@ export default {
         });
     },
     revoke(filter: RefresherFilter) {
-        if (this.memory.uuid !== null) filter.remove(this.memory.uuid);
+        if (this.memory.uuid) filter.remove(this.memory.uuid);
 
-        if (this.memory.uuid2 !== null) filter.remove(this.memory.uuid2);
+        if (this.memory.uuid2) filter.remove(this.memory.uuid2);
 
-        if (this.memory.addBlock !== null) filter.remove(this.memory.addBlock);
+        if (this.memory.addBlock) filter.remove(this.memory.addBlock);
 
-        if (this.memory.addDcconBlock !== null)
-            filter.remove(this.memory.addDcconBlock);
+        if (this.memory.addDcconBlock) filter.remove(this.memory.addDcconBlock);
 
-        if (this.memory.requestBlock !== null)
-            filter.remove(this.memory.requestBlock);
+        if (this.memory.requestBlock) filter.remove(this.memory.requestBlock);
     }
 } as RefresherModule<{
     memory: {

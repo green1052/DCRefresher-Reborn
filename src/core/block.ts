@@ -7,20 +7,10 @@ import type { ObjectEnum } from "../utils/types";
 
 const BLOCK_NAMESPACE = "__REFRESHER_BLOCK";
 
-const BLOCK_TYPES: ObjectEnum<RefresherBlockType> = {
-    NICK: "NICK",
-    ID: "ID",
-    IP: "IP",
-    TITLE: "TITLE",
-    TEXT: "TEXT",
-    COMMENT: "COMMENT",
-    DCCON: "DCCON"
-};
-
 /**
  * 타입의 이름을 저장한 객체입니다.
  */
-export const TYPE_NAMES = {
+export const TYPE_NAMES: Record<RefresherBlockType, string> = {
     NICK: "닉네임",
     ID: "아이디",
     IP: "IP",
@@ -30,14 +20,15 @@ export const TYPE_NAMES = {
     DCCON: "디시콘"
 };
 
-const BLOCK_TYPES_KEYS = Object.keys(BLOCK_TYPES) as RefresherBlockType[];
-
-const BLOCK_DETECT_MODE: ObjectEnum<RefresherBlockDetectMode> = {
-    SAME: "SAME",
-    CONTAIN: "CONTAIN",
-    NOT_SAME: "NOT_SAME",
-    NOT_CONTAIN: "NOT_CONTAIN"
-};
+const BLOCK_TYPES_KEYS: RefresherBlockType[] = [
+    "NICK",
+    "ID",
+    "IP",
+    "TITLE",
+    "TEXT",
+    "COMMENT",
+    "DCCON"
+];
 
 export const BLOCK_DETECT_MODE_TYPE_NAMES: Record<
     RefresherBlockDetectMode,
@@ -49,7 +40,16 @@ export const BLOCK_DETECT_MODE_TYPE_NAMES: Record<
     NOT_CONTAIN: "불포함"
 };
 
-const BLOCK_DETECT_MODE_KEYS = Object.keys(BLOCK_DETECT_MODE);
+const BLOCK_DETECT_MODE: ObjectEnum<RefresherBlockDetectMode> = {
+    SAME: "SAME",
+    CONTAIN: "CONTAIN",
+    NOT_SAME: "NOT_SAME",
+    NOT_CONTAIN: "NOT_CONTAIN"
+};
+
+const BLOCK_DETECT_MODE_KEYS = Object.keys(
+    BLOCK_DETECT_MODE
+) as RefresherBlockDetectMode[];
 
 export type BlockCache = Record<RefresherBlockType, RefresherBlockValue[]>;
 

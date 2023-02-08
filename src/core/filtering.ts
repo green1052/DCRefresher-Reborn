@@ -76,17 +76,6 @@ export const filter = {
     },
 
     /**
-     * UUID를 직접 선언하여 함수를 필터로 등록합니다.
-     */
-    addGlobal: (id: string, scope: string, callback: () => void): void => {
-        lists[id] = {
-            func: callback,
-            scope,
-            events: {}
-        };
-    },
-
-    /**
      * 해당 UUID를 가진 필터를 제거합니다.
      */
     remove: (uuid: string, skip?: boolean): void => {

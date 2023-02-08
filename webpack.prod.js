@@ -1,9 +1,9 @@
-const common = require("./webpack.common.js");
-const {merge} = require("webpack-merge");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
 const pkg = require("./package.json");
+const common = require("./webpack.common.js");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
+const { merge } = require("webpack-merge");
 
 module.exports = (env) => {
     return merge(common, {

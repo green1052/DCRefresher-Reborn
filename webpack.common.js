@@ -1,10 +1,9 @@
 const path = require("path");
-
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
-const {VueLoaderPlugin} = require("vue-loader");
-const {CleanWebpackPlugin} = require("clean-webpack-plugin");
-const {ProvidePlugin} = require("webpack");
+const { VueLoaderPlugin } = require("vue-loader");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+const { ProvidePlugin } = require("webpack");
 
 module.exports = {
     entry: {
@@ -28,11 +27,7 @@ module.exports = {
             {
                 include: /src/,
                 test: /\.scss$/,
-                use: [
-                    MiniCssExtractPlugin.loader,
-                    "css-loader",
-                    "sass-loader"
-                ]
+                use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"]
             },
             {
                 include: /src/,

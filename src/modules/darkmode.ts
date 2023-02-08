@@ -1,7 +1,8 @@
 import * as Color from "../utils/color";
 import * as DOM from "../utils/dom";
+import type { Rgb } from "../utils/color";
 
-const DARK_MODE_COLOR = [41, 41, 41];
+const DARK_MODE_COLOR: Rgb = [41, 41, 41];
 
 const colorCorrection = (elem: HTMLElement) => {
     const fontAttr = elem.hasAttribute("color");

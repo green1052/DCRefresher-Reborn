@@ -229,35 +229,34 @@ export default {
         const ipInfoAdd = (elem: HTMLElement) => {
             if (
                 !this.status.showIpInfo ||
-                !elem ||
                 !elem.dataset.ip ||
-                elem.dataset.refresherIp
+                elem.dataset.refresherIp === "true"
             )
                 return false;
+
             const ip_data = ip.ISPData(elem.dataset.ip);
 
             const text = document.createElement("span");
-            text.className = "ip refresherUserData";
+            text.className = "refresherUserData";
             text.style.color = ip_data.color;
 
             const format = ip.format(ip_data);
-            text.innerHTML = `<span>[${format}]</span>`;
+            text.innerHTML = `[${format}]`;
             text.title = format;
 
-            const fl = elem.querySelector(".fl");
+            const fl = elem.querySelector(".fl > .ip");
             if (fl) {
-                const flIpQuery = fl.querySelector(".ip");
-
-                flIpQuery?.appendChild(text);
+                fl.appendChild(text);
             } else {
+                text.classList.add("ip");
                 elem.appendChild(text);
             }
 
-            elem.dataset.refresherIp = ip_data?.name && format;
+            elem.dataset.refresherIp = "true";
         };
 
         const IdInfoAdd = (elem: HTMLElement) => {
-            if (!elem || !elem.dataset.uid || elem.dataset.refresherId)
+            if (!elem.dataset.uid || elem.dataset.refresherId === "true")
                 return false;
 
             const img = elem.querySelector("img")?.src;
@@ -279,24 +278,25 @@ export default {
                 return false;
 
             const text = document.createElement("span");
-            text.className = "ip refresherUserData";
-            text.innerHTML = `<span>(${elem.dataset.uid})</span>`;
+            text.className = "ip";
+            text.innerHTML = `(${elem.dataset.uid})`;
             text.title = elem.dataset.uid;
-            const fl = elem.querySelector(".fl");
-            if (fl) {
-                const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
 
-                if (flIpQuery) {
-                    fl.insertBefore(text, flIpQuery.nextSibling);
-                }
+            const fl = elem.querySelector(".fl");
+
+            if (fl) {
+                const flIpQuery = fl.querySelector(".writer_nikcon");
+                if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling);
             } else {
+                text.classList.add("refresherUserData");
                 elem.appendChild(text);
             }
+
             elem.dataset.refresherId = "true";
         };
 
         const memoAdd = (elem: HTMLElement) => {
-            if (!elem.dataset.refresherMemoHandler) {
+            if (elem.dataset.refresherMemoHandler !== "true") {
                 elem.addEventListener("contextmenu", () => {
                     const {
                         nick = null,
@@ -318,27 +318,25 @@ export default {
                 elem.dataset.refresherMemoHandler = "true";
             }
 
-            if (!elem || elem.dataset.refresherMemo) return false;
+            if (elem.dataset.refresherMemo === "true") return false;
 
-            let memoData = null;
+            let memoData: RefresherMemoValue | null = null;
 
             if (elem.dataset.uid) {
-                memoData ??= memo.get("UID", elem.dataset.uid);
+                memoData = memo.get("UID", elem.dataset.uid);
+            } else if (elem.dataset.ip) {
+                memoData = memo.get("IP", elem.dataset.ip);
             }
 
             if (elem.dataset.nick) {
                 memoData ??= memo.get("NICK", elem.dataset.nick);
             }
 
-            if (elem.dataset.ip) {
-                memoData ??= memo.get("IP", elem.dataset.ip);
-            }
-
             if (!memoData) return false;
 
             const text = document.createElement("span");
             text.className = "ip refresherUserData refresherMemoData";
-            text.innerHTML = `<span>[${memoData.text}] </span>`;
+            text.innerHTML = `[${memoData.text}]`;
             text.title = memoData.text;
 
             if (memoData.color) {
@@ -351,7 +349,16 @@ export default {
                 const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
 
                 if (flIpQuery) {
-                    fl.insertBefore(text, flIpQuery.nextSibling);
+                    const nextSibling = flIpQuery.nextSibling;
+
+                    if (!nextSibling) return false;
+
+                    fl.insertBefore(
+                        text,
+                        nextSibling.nodeName === "#text"
+                            ? nextSibling
+                            : flIpQuery.nextElementSibling!.nextSibling
+                    );
                 }
             } else {
                 elem.appendChild(text);
@@ -360,29 +367,17 @@ export default {
             elem.dataset.refresherMemo = "true";
         };
 
-        const elemAdd = (elem: HTMLElement | Document) => {
-            for (const element of elem.querySelectorAll<HTMLElement>(
-                ".ub-writer"
-            )) {
-                memoAdd(element);
-                ipInfoAdd(element);
-                IdInfoAdd(element);
-            }
-        };
-
         this.memory.always = filter.add(
             ".ub-writer",
             (element) => {
-                memoAdd(element);
                 ipInfoAdd(element);
                 IdInfoAdd(element);
+                memoAdd(element);
             },
             {
                 neverExpire: true
             }
         );
-
-        filter.runSpecific(this.memory.always!);
 
         this.memory.contextMenu = eventBus.on(
             "refresherUserContextMenu",
@@ -508,17 +503,13 @@ export default {
                 );
             }
         );
-
-        elemAdd(document);
     },
     revoke(filter: RefresherFilter) {
-        if (this.memory.always !== null) {
-            filter.remove(this.memory.always, true);
-        }
+        if (this.memory.always) filter.remove(this.memory.always);
 
-        document.querySelectorAll(".refresherUserData").forEach((elem) => {
-            elem.parentElement?.removeChild(elem);
-        });
+        for (const element of document.querySelectorAll(".refresherUserData")) {
+            element.parentElement?.remove();
+        }
     }
 } as RefresherModule<{
     memory: {
