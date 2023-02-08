@@ -34,7 +34,7 @@ jobs:
           (cd dist && zip -1 -r ../mv3.zip .)
 
   release:
-    if: github.event_name == "push"
+    if: github.event_name == 'push'
     name: Release
     needs: build
     runs-on: ubuntu-latest
@@ -48,7 +48,7 @@ jobs:
           generate_release_notes: true
 
   upload:
-    if: github.event_name == "pull_request"
+    if: github.event_name == 'pull_request'
     name: Upload
     needs: build
     runs-on: ubuntu-latest
