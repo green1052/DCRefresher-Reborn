@@ -5,13 +5,13 @@ import { filter } from "./filtering";
 import Frame from "./frame";
 import * as memo from "./memo";
 import * as settings from "./settings";
+import DeepProxy from "../utils/deepProxy";
 import * as dom from "../utils/dom";
 import * as http from "../utils/http";
 import * as ip from "../utils/ip";
 import log from "../utils/logger";
 import storage from "../utils/storage";
 import browser from "webextension-polyfill";
-import DeepProxy from "../utils/deepProxy";
 
 type ModuleItem =
     | RefresherFilter

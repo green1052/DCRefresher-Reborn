@@ -27,11 +27,16 @@
                 <p
                     :class="{ active: tab === 4 }"
                     @click="() => (tab = 4)">
-                    모듈
+                    자짤
                 </p>
                 <p
                     :class="{ active: tab === 5 }"
                     @click="() => (tab = 5)">
+                    모듈
+                </p>
+                <p
+                    :class="{ active: tab === 6 }"
+                    @click="() => (tab = 6)">
                     단축키
                 </p>
             </div>
@@ -370,6 +375,17 @@
                 v-show="tab === 4"
                 key="tab5"
                 class="tab tab5">
+
+              <img style="width: 100px; height: 100px;" src="https://pbs.twimg.com/media/E_AGBpdUcAQzadz?format=jpg"/>
+
+              <h1>
+                자짤 기능인줄 알았지? ㅋㅋㅋ "캬루" 지롱
+              </h1>
+            </div>
+            <div
+                v-show="tab === 5"
+                key="tab6"
+                class="tab tab6">
                 <div
                     v-if="!Object.keys(modules).length"
                     class="refresher-no-modules">
@@ -388,9 +404,9 @@
                 </div>
             </div>
             <div
-                v-show="tab === 5"
-                key="tab6"
-                class="tab tab6">
+                v-show="tab === 6"
+                key="tab7"
+                class="tab tab7">
                 <div class="shortcut-lists">
                     <div
                         v-for="shortcut in shortcuts"
@@ -518,7 +534,7 @@
                 return value;
             },
             moveToModuleTab(moduleName: string) {
-                this.tab = 4;
+                this.tab = 5;
 
                 for (const element of this.$el.querySelectorAll(
                     ".refresher-module.highlight"
@@ -607,7 +623,7 @@
 
                 if (!result) return;
 
-                let isRegex= false;
+                let isRegex = false;
                 let extra: string | undefined = undefined;
 
                 if (confirm("정규식입니까?")) {
@@ -648,7 +664,7 @@
                     );
 
                     if (
-                      inputMode &&
+                        inputMode &&
                         modes.includes(inputMode as RefresherBlockDetectMode)
                     ) {
                         mode = inputMode as RefresherBlockDetectMode;
@@ -679,7 +695,7 @@
                     `바꿀 ${this.blockKeyNames[key]} 값을 입력하세요.`
                 );
 
-              if(!result) return;
+                if (!result) return;
 
                 this.blocks[key][index].content = result;
                 this.syncBlock();
