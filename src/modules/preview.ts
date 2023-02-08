@@ -523,30 +523,30 @@ const panel = {
         <div class="block">
           <h3>차단 기간</h3>
           <div class="block_duration">
-            <label><input type='radio' name='duration' value='1' checked='checked' />1시간</label>
-            <label><input type='radio' name='duration' value='6' />6시간</label>
-            <label><input type='radio' name='duration' value='24' />24시간</label>
-            <label><input type='radio' name='duration' value='168' />7일</label>
-            <label><input type='radio' name='duration' value='336' />14일</label>
-            <label><input type='radio' name='duration' value='720' />30일</label>
+            <label><input type="radio" name="duration" value="1" checked="checked" />1시간</label>
+            <label><input type="radio" name="duration" value="6" />6시간</label>
+            <label><input type="radio" name="duration" value="24" />24시간</label>
+            <label><input type="radio" name="duration" value="168" />7일</label>
+            <label><input type="radio" name="duration" value="336" />14일</label>
+            <label><input type="radio" name="duration" value="720" />30일</label>
           </div>
         </div>
         <div class="block">
           <h3>차단 사유</h3>
           <div class="block_reason">
-            <label><input type='radio' name='reason' value='1' checked='checked' />음란성</label>
-            <label><input type='radio' name='reason' value='2'/>광고</label>
-            <label><input type='radio' name='reason' value='3'/>욕설</label>
-            <label><input type='radio' name='reason' value='4'/>도배</label>
-            <label><input type='radio' name='reason' value='5'/>저작권 침해</label>
-            <label><input type='radio' name='reason' value='6'/>명예훼손</label>
-            <label><input type='radio' name='reason' value='0'/>직접 입력</label>
+            <label><input type="radio" name="reason" value="1" checked="checked" />음란성</label>
+            <label><input type="radio" name="reason" value="2"/>광고</label>
+            <label><input type="radio" name="reason" value="3"/>욕설</label>
+            <label><input type="radio" name="reason" value="4"/>도배</label>
+            <label><input type="radio" name="reason" value="5"/>저작권 침해</label>
+            <label><input type="radio" name="reason" value="6"/>명예훼손</label>
+            <label><input type="radio" name="reason" value="0"/>직접 입력</label>
           </div>
-          <input type='text' name='reason_text' style='display: none;' placeholder="차단 사유 직접 입력 (한글 20자 이내)"></input>
+          <input type="text" name="reason_text" style="display: none;" placeholder="차단 사유 직접 입력 (한글 20자 이내)"></input>
         </div>
         <div class="block">
           <h3>선택한 글 삭제</h3>
-          <input type='checkbox' name='remove'></input>
+          <input type="checkbox" name="remove"></input>
           <button class="go-block">차단</button>
         </div>
       </div>
@@ -1310,6 +1310,12 @@ export default {
             desc: "댓글을 작성할 수 있습니다.",
             type: "check",
             default: false
+        },
+        disableCache: {
+            name: "캐시 비활성화",
+            desc: "캐시를 사용하지 않습니다. (툴팁 미리보기 제외)",
+            type: "check",
+            default: false
         }
     },
     require: ["filter", "eventBus", "Frame", "http"],
@@ -1427,13 +1433,15 @@ export default {
                 frame.data.load = true;
 
                 new Promise<PostInfo>((resolve, reject) => {
-                    const cache = postCaches.get(
-                        `${preData.gallery}${preData.id}`
-                    );
+                    if (!this.status.disableCache) {
+                        const cache = postCaches.get(
+                            `${preData.gallery}${preData.id}`
+                        );
 
-                    if (useCache && cache?.post !== undefined) {
-                        resolve(cache.post);
-                        return;
+                        if (useCache && cache?.post !== undefined) {
+                            resolve(cache.post);
+                            return;
+                        }
                     }
 
                     request
@@ -1737,13 +1745,15 @@ export default {
                 frame.data.load = true;
 
                 new Promise<DcinsideComments>((resolve, reject) => {
-                    const cache = postCaches.get(
-                        `${preData.gallery}${preData.id}`
-                    );
+                    if (!this.status.disableCache) {
+                        const cache = postCaches.get(
+                            `${preData.gallery}${preData.id}`
+                        );
 
-                    if (useCache && cache?.comment) {
-                        resolve(cache.comment);
-                        return;
+                        if (useCache && cache?.comment) {
+                            resolve(cache.comment);
+                            return;
+                        }
                     }
 
                     request
@@ -2251,6 +2261,7 @@ export default {
         expandRecognizeRange: RefresherCheckSettings;
         noCacheHeader: RefresherCheckSettings;
         experimentalComment: RefresherCheckSettings;
+        disableCache: RefresherCheckSettings;
     };
     require: ["filter", "eventBus", "Frame", "http"];
 }>;
