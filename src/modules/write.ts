@@ -5,7 +5,8 @@ export default {
     status: {},
     memory: {
         canvas: "",
-        injected: false
+        injected: false,
+        injected2: false
     },
     enable: false,
     default_enable: false,
@@ -15,16 +16,44 @@ export default {
             desc: "붙여넣기로 이미지를 업로드할 수 있습니다.",
             type: "check",
             default: false
+        },
+        bypassTitleLimit: {
+            name: "제목 글자수 제한 우회",
+            desc: "제목 글자수 제한을 우회합니다.",
+            type: "check",
+            default: false
         }
     },
     require: ["filter", "http"],
     func(filter: RefresherFilter, http: RefresherHTTP) {
-        if (!this.status.imageUpload) return;
+        this.memory.submitButton = filter.add<HTMLButtonElement>(
+            "button.write",
+            (element) => {
+                if (this.memory.injected || !this.status.bypassTitleLimit)
+                    return;
+
+                element.addEventListener("click", () => {
+                    const titleElement =
+                        document.querySelector<HTMLInputElement>(
+                            "input[id=subject]"
+                        );
+
+                    if (!titleElement) return;
+
+                    const title = titleElement.value;
+
+                    if (title.length === 1)
+                        titleElement.value = `${title}\u200B`;
+                });
+
+                this.memory.injected = true;
+            }
+        );
 
         this.memory.canvas = filter.add<HTMLIFrameElement>(
             "#tx_canvas_wysiwyg",
             (element) => {
-                if (this.memory.injected) return;
+                if (this.memory.injected2) return;
 
                 const iframe = element.contentWindow!.document!;
                 const contentContainer = iframe?.querySelector<HTMLElement>(
@@ -117,22 +146,28 @@ export default {
                     });
                 }
 
-                this.memory.injected = true;
+                this.memory.injected2 = true;
             }
         );
     },
     revoke(filter: RefresherFilter) {
+        if (this.memory.submitButton) filter.remove(this.memory.submitButton);
+
         if (this.memory.canvas) filter.remove(this.memory.canvas);
 
         this.memory.injected = false;
+        this.memory.injected2 = false;
     }
 } as RefresherModule<{
     memory: {
+        submitButton: string;
         canvas: string;
         injected: boolean;
+        injected2: boolean;
     };
     settings: {
         imageUpload: RefresherCheckSettings;
+        bypassTitleLimit: RefresherCheckSettings;
     };
     require: ["filter", "http"];
 }>;
