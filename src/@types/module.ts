@@ -8,7 +8,7 @@ type ItemToRefresherArrayArgs<
     T extends { require?: Array<keyof ItemToRefresherMap> }
 > = T["require"] extends Array<keyof ItemToRefresherMap>
     ? Array<ItemToRefresherMap[ItemOf<T["require"]>]>
-    : undefined[];
+    : never[];
 
 declare global {
     interface ItemToRefresherMap {

@@ -22,6 +22,12 @@ export default {
             desc: "제목 글자수 제한을 우회합니다.",
             type: "check",
             default: false
+        },
+        selfImage: {
+            name: "자짤 기능 활성화",
+            desc: "자짤 기능을 활성화합니다.",
+            type: "check",
+            default: false
         }
     },
     require: ["filter", "http"],
@@ -168,6 +174,7 @@ export default {
     settings: {
         imageUpload: RefresherCheckSettings;
         bypassTitleLimit: RefresherCheckSettings;
+        selfImage: RefresherCheckSettings;
     };
     require: ["filter", "http"];
 }>;
