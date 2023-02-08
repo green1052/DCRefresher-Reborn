@@ -247,8 +247,9 @@ $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
 
 // IP Module
 
-.fl > span.ip:not(:has(> span)), .fl .refresherUserData {
-  margin-left: 3px;
+.fl > span.ip:not(:has(> span)),
+.fl .refresherUserData {
+    margin-left: 3px;
 }
 
 .gall_writer {
