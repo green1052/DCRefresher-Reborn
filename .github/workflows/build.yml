@@ -4,11 +4,9 @@ on:
   push:
     tags:
       - "*.*.*"
-  pull_request:
 
 jobs:
   release:
-    if: github.event_name == 'push'
     name: Release
     needs: build
     runs-on: ubuntu-latest
