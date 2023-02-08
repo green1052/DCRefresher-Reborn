@@ -1,4 +1,4 @@
-import type {User} from "../utils/user";
+import type { User } from "../utils/user";
 
 export {};
 
@@ -24,11 +24,11 @@ declare global {
     }
 
     interface GalleryPreData {
-        gallery: string
-        id: string
-        title?: string
-        link?: string
-        notice?: boolean
-        recommend?: boolean
+        gallery: string;
+        id: string;
+        title?: string;
+        link?: string;
+        notice?: boolean;
+        recommend?: boolean;
     }
 }

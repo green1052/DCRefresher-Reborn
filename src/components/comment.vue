@@ -121,7 +121,7 @@ export default Vue.extend({
         if (!this.me && !this.postUser) {
             eventBus.on(
                 "RefresherPostDataLoaded",
-                (obj: PostInfo) => {
+                (obj: IPostInfo) => {
                     this.me = (obj.user && obj.user.id) === this.comment.user.id;
                 },
                 {

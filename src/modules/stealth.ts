@@ -1,12 +1,14 @@
-import browser from "webextension-polyfill";
 import Toast from "../components/toast";
+import browser from "webextension-polyfill";
 
 const CONTROL_BUTTON = ".stealth_control_button";
 const TEMPORARY_STEALTH = "stlth";
 
 const tempButtonCreate = (elem: HTMLElement): void => {
     const buttonNum = elem.querySelectorAll(CONTROL_BUTTON).length;
-    const contentNum = elem.querySelectorAll(".write_div img, .write_div video").length;
+    const contentNum = elem.querySelectorAll(
+        ".write_div img, .write_div video"
+    ).length;
 
     if (buttonNum !== 0 && contentNum === 0) return;
 
@@ -20,7 +22,8 @@ const tempButtonCreate = (elem: HTMLElement): void => {
   </div>
 `;
     const button = buttonFrame.querySelector("#tempview")!;
-    const buttonText = buttonFrame.querySelector<HTMLElement>("#temp_button_text")!;
+    const buttonText =
+        buttonFrame.querySelector<HTMLElement>("#temp_button_text")!;
 
     button.addEventListener("click", () => {
         if (!elem.className.includes(TEMPORARY_STEALTH)) {
@@ -45,16 +48,19 @@ export default {
     default_enable: false,
     shortcuts: {
         stealthPause() {
-            const button = document.querySelector<HTMLElement>(`${CONTROL_BUTTON} > #tempview`);
+            const button = document.querySelector<HTMLElement>(
+                `${CONTROL_BUTTON} > #tempview`
+            );
 
             if (!button) return;
 
             button.click();
 
-            const content =
-                document.documentElement.className.includes(TEMPORARY_STEALTH)
-                    ? "이미지를 보이게 했습니다."
-                    : "이미지를 숨겼습니다.";
+            const content = document.documentElement.className.includes(
+                TEMPORARY_STEALTH
+            )
+                ? "이미지를 보이게 했습니다."
+                : "이미지를 숨겼습니다.";
 
             Toast.show(content, false, 3000);
         }

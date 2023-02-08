@@ -5,27 +5,41 @@
     },
     "extends": [
         "eslint:recommended",
-        "plugin:@typescript-eslint/recommended"
+        "plugin:vue/vue3-essential",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:import/recommended",
+        "plugin:import/typescript",
+        "prettier"
     ],
+    "settings": {
+        "import/resolver": {
+            "typescript": true
+        }
+    },
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-        "ecmaFeatures": {
-            "jsx": true
-        },
-        "ecmaVersion": 12,
+        "ecmaVersion": "latest",
         "sourceType": "module"
     },
     "plugins": [
-        "@typescript-eslint"
+        "vue",
+        "@typescript-eslint",
+        "prettier"
     ],
-    "ignorePatterns": "*.js",
     "rules": {
-        "@typescript-eslint/no-use-before-define": "error",
-        "@typescript-eslint/no-explicit-any": [
+        "@typescript-eslint/array-type": [
             "error",
             {
-                "ignoreRestArgs": true
+                "default": "array-simple"
             }
+        ],
+        "@typescript-eslint/consistent-generic-constructors": [
+            "error",
+            "type-annotation"
+        ],
+        "@typescript-eslint/consistent-indexed-object-style": [
+            "error",
+            "record"
         ],
         "@typescript-eslint/no-empty-interface": [
             "error",
@@ -33,41 +47,50 @@
                 "allowSingleExtends": true
             }
         ],
-        "arrow-parens": ["error", "always"],
-        "linebreak-style": "off",
-        "no-use-before-define": "off",
-        "camelcase": "off",
-        "comma-dangle": [
+        "@typescript-eslint/no-explicit-any": [
             "error",
-            "never"
-        ],
-        "quotes": [
-            "error",
-            "double",
             {
-                "allowTemplateLiterals": true
+                "ignoreRestArgs": true
             }
         ],
-        "quote-props": "off",
-        "semi": [
-            "error",
-            "always"
-        ],
-        "no-extra-semi": "off",
-        "indent": [
-            "error",
-            4,
-            {"SwitchCase": 1}
-        ],
-        "no-unused-expressions": "off",
-        "eol-last": [
-            "error",
-            "never"
-        ],
-        "space-before-function-paren": "off",
-        "@typescript-eslint/no-extra-semi": "off",
-        "@typescript-eslint/no-this-alias": "off",
         "@typescript-eslint/no-non-null-assertion": "off",
-        "@typescript-eslint/no-empty-function": "off"
+        "@typescript-eslint/no-use-before-define": "off",
+        "import/no-named-as-default": "off",
+        "import/order": [
+            "error",
+            {
+                "groups": [
+                    "index",
+                    "sibling",
+                    "parent",
+                    "internal",
+                    "external",
+                    "builtin",
+                    "object",
+                    "type"
+                ],
+                "newlines-between": "never",
+                "alphabetize": {
+                    "order": "asc",
+                    "caseInsensitive": true
+                }
+            }
+        ],
+        "no-use-before-define": "off",
+        "prefer-arrow-callback": [
+            "error",
+            {
+                "allowNamedFunctions": true
+            }
+        ],
+        "prettier/prettier": "error",
+        "space-before-function-paren": [
+            "error",
+            {
+                "anonymous": "always",
+                "named": "never",
+                "asyncArrow": "always"
+            }
+        ]
     }
 }

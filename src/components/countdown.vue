@@ -1,7 +1,9 @@
 <template>
     <div :title="locale" class="refresher-countdown" @click="this.$root.$children[0].changeStamp">
         <transition name="refresher-opacity">
-            <span :key="`stamp${this.$root.$children[0].stampMode}`">삭제 : {{ this.$root.$children[0].stampMode ? locale : stamp }}</span>
+            <span :key="`stamp${this.$root.$children[0].stampMode}`">삭제 : {{
+                    this.$root.$children[0].stampMode ? locale : stamp
+                }}</span>
         </transition>
     </div>
 </template>
@@ -65,7 +67,7 @@ export default Vue.extend({
     mounted(): void {
         this.stamp = convertTime(this.date);
 
-        this.updates = setInterval(() => {
+        this.updates = window.setInterval(() => {
             this.stamp = convertTime(this.date);
         }, 5000);
     },

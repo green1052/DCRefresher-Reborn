@@ -21,73 +21,106 @@ export default {
     func(filter: RefresherFilter, http: RefresherHTTP) {
         if (!this.status.imageUpload) return;
 
-        this.memory.canvas = filter.add<HTMLIFrameElement>("#tx_canvas_wysiwyg", (element) => {
-            if (this.memory.injected) return;
+        this.memory.canvas = filter.add<HTMLIFrameElement>(
+            "#tx_canvas_wysiwyg",
+            (element) => {
+                if (this.memory.injected) return;
 
-            const iframe = element.contentWindow!.document!;
-            const contentContainer = iframe?.querySelector<HTMLElement>(".tx-content-container");
+                const iframe = element.contentWindow!.document!;
+                const contentContainer = iframe?.querySelector<HTMLElement>(
+                    ".tx-content-container"
+                );
 
-            if (this.status.imageUpload) {
-                contentContainer?.addEventListener("paste", async (ev) => {
-                    const data = (ev as ClipboardEvent).clipboardData;
+                if (this.status.imageUpload) {
+                    contentContainer?.addEventListener("paste", async (ev) => {
+                        const data = (ev as ClipboardEvent).clipboardData;
 
-                    if (data === null || data.files.length === 0) return;
+                        if (data === null || data.files.length === 0) return;
 
-                    ev.stopPropagation();
-                    ev.preventDefault();
+                        ev.stopPropagation();
+                        ev.preventDefault();
 
-                    const r_key = document.querySelector<HTMLInputElement>("#r_key")!.value;
-                    const gall_id = document.querySelector<HTMLInputElement>("#id")!.value;
-                    const gall_no = document.querySelector<HTMLInputElement>("#gallery_no")!.value;
-                    const _GALLTYPE_ = document.querySelector<HTMLInputElement>("#_GALLTYPE_")!.value;
-                    const post_no = document.querySelector<HTMLInputElement>("#no")?.value ?? "";
+                        const r_key =
+                            document.querySelector<HTMLInputElement>(
+                                "#r_key"
+                            )!.value;
+                        const gall_id =
+                            document.querySelector<HTMLInputElement>(
+                                "#id"
+                            )!.value;
+                        const gall_no =
+                            document.querySelector<HTMLInputElement>(
+                                "#gallery_no"
+                            )!.value;
+                        const _GALLTYPE_ =
+                            document.querySelector<HTMLInputElement>(
+                                "#_GALLTYPE_"
+                            )!.value;
+                        const post_no =
+                            document.querySelector<HTMLInputElement>("#no")
+                                ?.value ?? "";
 
-                    const form = new FormData();
-                    form.append("r_key", r_key);
-                    form.append("gall_id", gall_id);
-                    form.append("gall_no", gall_no);
-                    form.append("post_no", post_no);
-                    form.append("upload_ing", "N");
-                    form.append("_GALLTYPE_", _GALLTYPE_);
+                        const form = new FormData();
+                        form.append("r_key", r_key);
+                        form.append("gall_id", gall_id);
+                        form.append("gall_no", gall_no);
+                        form.append("post_no", post_no);
+                        form.append("upload_ing", "N");
+                        form.append("_GALLTYPE_", _GALLTYPE_);
 
-                    const images = [];
+                        const images = [];
 
-                    for (const file of data.files) {
-                        if (!file.type.startsWith("image/")) continue;
+                        for (const file of data.files) {
+                            if (!file.type.startsWith("image/")) continue;
 
-                        form.set("files", new File([file], `${new Date().getTime()}-${file.name}`, {type: file.type}));
+                            form.set(
+                                "files",
+                                new File(
+                                    [file],
+                                    `${new Date().getTime()}-${file.name}`,
+                                    {
+                                        type: file.type
+                                    }
+                                )
+                            );
 
-                        try {
-                            const response = await http.make(`https://upimg.dcinside.com/upimg_file.php?id=${gall_id}&r_key=${r_key}`, {
-                                method: "POST",
-                                cache: "no-store",
-                                referrer: location.href,
-                                body: form
-                            })
-                                .then(JSON.parse)
-                                .then((parsed) => parsed.files[0]);
+                            try {
+                                const response = await http
+                                    .make(
+                                        `https://upimg.dcinside.com/upimg_file.php?id=${gall_id}&r_key=${r_key}`,
+                                        {
+                                            method: "POST",
+                                            cache: "no-store",
+                                            referrer: location.href,
+                                            body: form
+                                        }
+                                    )
+                                    .then(JSON.parse)
+                                    .then((parsed) => parsed.files[0]);
 
-                            images.push(response);
-                        // eslint-disable-next-line no-empty
-                        } catch {}
-                    }
+                                images.push(response);
+                            } catch {}
+                        }
 
-                    for (const image of images) {
-                        const p = document.createElement("p");
-                        p.style.textAlign = "left";
-                        p.innerHTML = `<img style="clear:none;float:none;" src="${image.url}" class="txc-image">`;
+                        for (const image of images) {
+                            const p = document.createElement("p");
+                            p.style.textAlign = "left";
+                            p.innerHTML = `<img style="clear:none;float:none;" src="${image.url}" class="txc-image">`;
 
-                        contentContainer.insertBefore(p, iframe.getSelection()!.anchorNode!.parentElement);
-                    }
-                });
+                            contentContainer.insertBefore(
+                                p,
+                                iframe.getSelection()!.anchorNode!.parentElement
+                            );
+                        }
+                    });
+                }
+
+                this.memory.injected = true;
             }
-
-            this.memory.injected = true;
-        });
+        );
     },
     revoke(filter: RefresherFilter) {
-        if (this.memory.canvas)
-            filter.remove(this.memory.canvas);
+        if (this.memory.canvas) filter.remove(this.memory.canvas);
 
         this.memory.injected = false;
     }

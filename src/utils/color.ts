@@ -1,10 +1,10 @@
-export type Rgb = [number, number, number]
-export type Hsl = [number, number, number]
+export type Rgb = [number, number, number];
+export type Hsl = [number, number, number];
 
 export const luminance = (...[r, g, b]: Rgb): number => {
     [r, g, b] = [r, g, b]
         .map((v) => v / 255)
-        .map((v) => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+        .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
     return r * 0.2126 + g * 0.7152 + b * 0.0722;
 };
 
@@ -19,11 +19,11 @@ export const contrast = (rgb1: Rgb, rgb2: Rgb): number => {
 export const parse = (str: string): Rgb => {
     if (str[0] === "#") {
         return (
-            str
+            (str
                 .substring(1)
                 .match(/.{1,2}/g)
-                ?.map((v) => parseInt(v, 16)) as Rgb
-        ) ?? [0, 0, 0];
+                ?.map((v) => parseInt(v, 16)) as Rgb) ?? [0, 0, 0]
+        );
     } else {
         return str
             .match(/^\w+\((.+)\)$/)![1]
@@ -42,21 +42,16 @@ export const rgbToHsl = ([r, g, b]: Rgb): Hsl => {
     const min = Math.min(r, g, b);
     const diff = max - min;
     const l = (max + min) / 2;
-    
+
     if (diff === 0) {
         return [0, 0, l];
     } else {
-        const h = (
-            max === r
+        const h =
+            (max === r
                 ? (g - b) / diff + (g < b ? 6 : 0)
-                : (b - r) / diff + (max === g ? 2 : 4)
-        ) / 6;
-        const s = diff / (
-            l > 0.5
-                ? 2 - max - min
-                : max + min
-        );
-        
+                : (b - r) / diff + (max === g ? 2 : 4)) / 6;
+        const s = diff / (l > 0.5 ? 2 - max - min : max + min);
+
         return [h, s, l];
     }
 };

@@ -1,14 +1,14 @@
-import {User} from "../utils/user";
-import {findNeighbor} from "../utils/dom";
-import * as http from "../utils/http";
-import {queryString} from "../utils/http";
-import browser from "webextension-polyfill";
 import * as Toast from "../components/toast";
-import {ScrollDetection} from "../utils/scrollDetection";
-import {submitComment, submitDcconComment} from "../utils/comment";
-import logger from "../utils/logger";
-import Cookies from "js-cookie";
 import * as block from "../core/block";
+import { submitComment, submitDcconComment } from "../utils/comment";
+import { findNeighbor } from "../utils/dom";
+import * as http from "../utils/http";
+import { queryString } from "../utils/http";
+import logger from "../utils/logger";
+import { ScrollDetection } from "../utils/scrollDetection";
+import { User } from "../utils/user";
+import Cookies from "js-cookie";
+import browser from "webextension-polyfill";
 import type IFrame from "../core/frame";
 
 class PostInfo implements IPostInfo {
@@ -58,14 +58,15 @@ const parse = (id: string, body: string) => {
 
     const header = dom
         .querySelector(".view_content_wrap span.title_headtext")
-        ?.innerHTML
-        ?.replace(/([\[\]])/g, "");
+        ?.innerHTML?.replace(/([\[\]])/g, "");
 
-    const title = dom.querySelector(".view_content_wrap span.title_subject")
-        ?.innerHTML;
+    const title = dom.querySelector(
+        ".view_content_wrap span.title_subject"
+    )?.innerHTML;
 
-    const date = dom.querySelector(".view_content_wrap div.fl > span.gall_date")
-        ?.innerHTML;
+    const date = dom.querySelector(
+        ".view_content_wrap div.fl > span.gall_date"
+    )?.innerHTML;
 
     let expire = dom.querySelector(
         ".view_content_wrap div.fl > span.mini_autodeltime > div.pop_tipbox > div"
@@ -87,8 +88,9 @@ const parse = (id: string, body: string) => {
         ".view_content_wrap .btn_recommend_box .sup_num .smallnum"
     )?.innerHTML;
 
-    const downvotes = dom.querySelector("div.btn_recommend_box .down_num")
-        ?.innerHTML;
+    const downvotes = dom.querySelector(
+        "div.btn_recommend_box .down_num"
+    )?.innerHTML;
 
     const content_query = dom.querySelector(
         ".view_content_wrap > div > div.inner.clear > div.writing_view_box"
@@ -124,7 +126,7 @@ const parse = (id: string, body: string) => {
 
     const requireCaptcha = dom.querySelector(".recommend_kapcode") !== null;
     const requireCommentCaptcha =
-        dom.querySelector(".cmt_write_box input[name=\"comment_code\"]") !== null;
+        dom.querySelector('.cmt_write_box input[name="comment_code"]') !== null;
 
     const disabledDownvote = dom.querySelector(".icon_recom_down") === null;
 
@@ -136,7 +138,7 @@ const parse = (id: string, body: string) => {
         user: new User("", null, null, null).import(
             dom.querySelector(
                 "div.view_content_wrap > header > div > div.gall_writer"
-            ) || null
+            )
         ),
         views,
         upvotes,
@@ -160,7 +162,8 @@ const request = {
             headers: {
                 Origin: "https://gall.dcinside.com",
                 "X-Requested-With": "XMLHttpRequest",
-                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+                "Content-Type":
+                    "application/x-www-form-urlencoded; charset=UTF-8"
             },
             cache: "no-store",
             ...options
@@ -174,7 +177,6 @@ const request = {
         code: string | undefined,
         link: string
     ) {
-
         Cookies.set(
             gall_id + post_id + "_Firstcheck" + (!type ? "_down" : ""),
             "Y",
@@ -215,10 +217,16 @@ const request = {
         signal: AbortSignal,
         noCache: boolean
     ) {
-        return http.make(
-            `${http.urls.base + http.galleryType(link, "/") + http.urls.view + gallery}&no=${id}`,
-            {signal, cache: noCache ? "no-cache" : "default"}
-        )
+        return http
+            .make(
+                `${
+                    http.urls.base +
+                    http.galleryType(link, "/") +
+                    http.urls.view +
+                    gallery
+                }&no=${id}`,
+                { signal, cache: noCache ? "no-cache" : "default" }
+            )
             .then((response) => parse(id, response));
     },
 
@@ -228,7 +236,8 @@ const request = {
      * @param signal
      */
     async comments(args: GalleryHTTPRequestArguments, signal: AbortSignal) {
-        if (!args.link) throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
+        if (!args.link)
+            throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
 
         const galleryType = http.galleryType(args.link, "/");
 
@@ -237,7 +246,10 @@ const request = {
         params.set("no", args.id);
         params.set("cmt_id", args.commentId ?? args.gallery);
         params.set("cmt_no", args.commentNo ?? args.id);
-        params.set("e_s_n_o", (document.getElementById("e_s_n_o") as HTMLInputElement).value);
+        params.set(
+            "e_s_n_o",
+            (document.getElementById("e_s_n_o") as HTMLInputElement).value
+        );
         params.set("comment_page", "1");
         params.set("_GALLTYPE_", http.galleryTypeName(args.link));
 
@@ -250,7 +262,8 @@ const request = {
         return JSON.parse(response);
     },
     async delete(args: GalleryHTTPRequestArguments) {
-        if (!args.link) throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
+        if (!args.link)
+            throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
 
         const galleryType = http.galleryType(args.link, "/");
 
@@ -284,7 +297,8 @@ const request = {
         avoid_reason_txt: string,
         del_chk: number
     ) {
-        if (!args.link) throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
+        if (!args.link)
+            throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
 
         const galleryType = http.galleryType(args.link, "/");
 
@@ -348,7 +362,8 @@ const request = {
     },
 
     async setRecommend(args: GalleryHTTPRequestArguments, set: boolean) {
-        if (!args.link) throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
+        if (!args.link)
+            throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
 
         const galleryType = http.galleryType(args.link, "/");
 
@@ -377,7 +392,8 @@ const request = {
     },
 
     async captcha(args: GalleryHTTPRequestArguments, kcaptchaType: string) {
-        if (!args.link) throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
+        if (!args.link)
+            throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
 
         const galleryType = http.galleryType(args.link, "/");
         const galleryTypeName = http.galleryTypeName(args.link);
@@ -429,12 +445,11 @@ const request = {
         params.set("pno", preData.id);
         params.set("cmt_nos[]", commentId);
 
-        return this
-            .make(url, {
-                referrer: `https://gall.dcinside.com/${galleryType}board/view/?id=${preData.gallery}&no=${preData.id}`,
-                body: `&${params.toString()}`,
-                signal
-            })
+        return this.make(url, {
+            referrer: `https://gall.dcinside.com/${galleryType}board/view/?id=${preData.gallery}&no=${preData.id}`,
+            body: `&${params.toString()}`,
+            signal
+        })
             .then((v) => {
                 return v;
             })
@@ -469,12 +484,11 @@ const request = {
             params.set("&g-recaptcha-response", password);
         }
 
-        return this
-            .make(http.urls.comment_remove, {
-                referrer: `https://gall.dcinside.com/${galleryType}board/view/?id=${preData.gallery}&no=${preData.id}`,
-                body: `&${params.toString()}`,
-                signal
-            })
+        return this.make(http.urls.comment_remove, {
+            referrer: `https://gall.dcinside.com/${galleryType}board/view/?id=${preData.gallery}&no=${preData.id}`,
+            body: `&${params.toString()}`,
+            signal
+        })
             .then((v) => {
                 return v;
             })
@@ -484,7 +498,7 @@ const request = {
     }
 };
 
-const KEY_COUNTS: { [index: string]: [number, number] } = {};
+const KEY_COUNTS: Record<string, [number, number]> = {};
 let adminKeyPress: (ev: KeyboardEvent) => void;
 
 const panel = {
@@ -545,7 +559,7 @@ const panel = {
             closeCallback();
         });
 
-        element.querySelectorAll("input[type=\"radio\"]").forEach((v) => {
+        element.querySelectorAll('input[type="radio"]').forEach((v) => {
             v.addEventListener("click", (ev) => {
                 const selected = ev.target as HTMLInputElement;
 
@@ -561,7 +575,7 @@ const panel = {
                     const value = Number(selected.value);
 
                     const blockReasonInput = document.querySelector(
-                        "input[name=\"reason_text\"]"
+                        'input[name="reason_text"]'
                     ) as HTMLInputElement;
 
                     if (!value) {
@@ -576,14 +590,23 @@ const panel = {
         });
 
         element.querySelector(".go-block")?.addEventListener("click", () => {
-            const avoid_reason_txt = (element.querySelector(
-                "input[name=\"reason_text\"]"
-            ) as HTMLInputElement).value;
-            const del_chk = (element.querySelector(
-                "input[name=\"remove\"]"
-            ) as HTMLInputElement).checked;
+            const avoid_reason_txt = (
+                element.querySelector(
+                    'input[name="reason_text"]'
+                ) as HTMLInputElement
+            ).value;
+            const del_chk = (
+                element.querySelector(
+                    'input[name="remove"]'
+                ) as HTMLInputElement
+            ).checked;
 
-            callback(avoid_hour, avoid_reason, avoid_reason_txt, del_chk ? 1 : 0);
+            callback(
+                avoid_hour,
+                avoid_reason,
+                avoid_reason_txt,
+                del_chk ? 1 : 0
+            );
         });
 
         document.body.appendChild(element);
@@ -600,7 +623,9 @@ const panel = {
             ".refresher-block-popup"
         );
         if (preFoundBlockElement) {
-            preFoundBlockElement.parentElement?.removeChild(preFoundBlockElement);
+            preFoundBlockElement.parentElement?.removeChild(
+                preFoundBlockElement
+            );
         }
 
         const preFoundElement = document.querySelector(
@@ -622,7 +647,9 @@ const panel = {
         }
 
         const upvoteImage = browser.runtime.getURL("/assets/icons/upvote.png");
-        const downvoteImage = browser.runtime.getURL("/assets/icons/downvote.png");
+        const downvoteImage = browser.runtime.getURL(
+            "/assets/icons/downvote.png"
+        );
 
         element.innerHTML = `
       <div class="button pin">
@@ -662,7 +689,9 @@ const panel = {
             });
         };
 
-        element.querySelector(".delete")?.addEventListener("click", deleteFunction);
+        element
+            .querySelector(".delete")
+            ?.addEventListener("click", deleteFunction);
 
         if (adminKeyPress) {
             document.removeEventListener("keypress", adminKeyPress);
@@ -694,7 +723,11 @@ const panel = {
                         deleteFunction();
                         KEY_COUNTS[ev.code][1] = 0;
                     } else {
-                        Toast.show("한번 더 D키를 누르면 게시글을 삭제합니다.", true, 1000);
+                        Toast.show(
+                            "한번 더 D키를 누르면 게시글을 삭제합니다.",
+                            true,
+                            1000
+                        );
                     }
                 }
 
@@ -721,17 +754,29 @@ const panel = {
                     del_chk: number
                 ) => {
                     request
-                        .block(preData, avoid_hour, avoid_reason, avoid_reason_txt, del_chk)
+                        .block(
+                            preData,
+                            avoid_hour,
+                            avoid_reason,
+                            avoid_reason_txt,
+                            del_chk
+                        )
                         .then((response) => {
                             if (typeof response === "object") {
                                 if (response.result === "success") {
-                                    Toast.show(response.message || response.msg, false, 3000);
+                                    Toast.show(
+                                        response.message || response.msg,
+                                        false,
+                                        3000
+                                    );
 
                                     if (del_chk) {
                                         frame.app.close();
                                     }
                                 } else {
-                                    alert(`${response.result}: ${response.message}`);
+                                    alert(
+                                        `${response.result}: ${response.message}`
+                                    );
                                 }
 
                                 return;
@@ -741,7 +786,9 @@ const panel = {
                         });
                 },
                 () => {
-                    const blockPopup = document.querySelector(".refresher-block-popup");
+                    const blockPopup = document.querySelector(
+                        ".refresher-block-popup"
+                    );
                     blockPopup?.remove();
                 }
             );
@@ -755,15 +802,25 @@ const panel = {
 
                 if (typeof response === "object") {
                     if (response.result === "success") {
-                        Toast.show(response.message ?? response.msg, false, 3000);
+                        Toast.show(
+                            response.message ?? response.msg,
+                            false,
+                            3000
+                        );
 
                         setAsNotice = !setAsNotice;
 
                         const pinP = pin.querySelector<HTMLElement>("p")!;
 
-                        pinP.innerHTML = setAsNotice ? "공지로 등록" : "공지 등록 해제";
+                        pinP.innerHTML = setAsNotice
+                            ? "공지로 등록"
+                            : "공지 등록 해제";
                     } else {
-                        alert(`${response.result}: ${response.message ?? response.msg}`);
+                        alert(
+                            `${response.result}: ${
+                                response.message ?? response.msg
+                            }`
+                        );
                     }
 
                     return;
@@ -780,14 +837,20 @@ const panel = {
 
                 if (typeof response === "object") {
                     if (response.result === "success") {
-                        Toast.show(response.message || response.msg, false, 3000);
+                        Toast.show(
+                            response.message || response.msg,
+                            false,
+                            3000
+                        );
 
                         setAsRecommend = !setAsRecommend;
 
                         const recommendImg = recommend.querySelector(
                             "img"
                         ) as HTMLImageElement;
-                        recommendImg.src = setAsRecommend ? upvoteImage : downvoteImage;
+                        recommendImg.src = setAsRecommend
+                            ? upvoteImage
+                            : downvoteImage;
 
                         const recommendP = recommend.querySelector(
                             "p"
@@ -796,7 +859,11 @@ const panel = {
                             ? "개념글 등록"
                             : "개념글 해제";
                     } else {
-                        alert(`${response.result}: ${response.message || response.msg}`);
+                        alert(
+                            `${response.result}: ${
+                                response.message || response.msg
+                            }`
+                        );
                     }
 
                     return;
@@ -834,7 +901,9 @@ const panel = {
 
         element.querySelector("input")?.addEventListener("keydown", (e) => {
             if (e.key === "Enter") {
-                const input = (element.querySelector("input") as HTMLInputElement).value;
+                const input = (
+                    element.querySelector("input") as HTMLInputElement
+                ).value;
 
                 callback(input);
 
@@ -847,7 +916,8 @@ const panel = {
         });
 
         element.querySelector("button")?.addEventListener("click", () => {
-            const input = (element.querySelector("input") as HTMLInputElement).value;
+            const input = (element.querySelector("input") as HTMLInputElement)
+                .value;
 
             callback(input);
 
@@ -864,9 +934,11 @@ const getRelevantData = (ev: MouseEvent) => {
     const target = ev.target as HTMLElement;
     const isTR = target.tagName === "TR";
 
-    const listID = (isTR
-        ? target.querySelector(".gall_num")
-        : findNeighbor(target, ".gall_num", 5, null)) as HTMLElement;
+    const listID = (
+        isTR
+            ? target.querySelector(".gall_num")
+            : findNeighbor(target, ".gall_num", 5, null)
+    ) as HTMLElement;
 
     let id = "";
     let gallery = "";
@@ -884,7 +956,9 @@ const getRelevantData = (ev: MouseEvent) => {
             if (isTR) {
                 href = document.querySelector("a")?.getAttribute("href") || "";
             } else {
-                href = findNeighbor(target, "a", 5, null)?.getAttribute("href") || "";
+                href =
+                    findNeighbor(target, "a", 5, null)?.getAttribute("href") ||
+                    "";
             }
 
             id = new URLSearchParams(href).get("no") || "";
@@ -900,22 +974,21 @@ const getRelevantData = (ev: MouseEvent) => {
             recommend = emElement.className.includes("icon_recomimg");
         }
 
-        linkElement = (isTR
-            ? target.querySelector("a:not(.reply_numbox)")
-            : findNeighbor(
-                target,
-                "a:not(.reply_numbox)",
-                3,
-                null
-            )) as HTMLLinkElement;
+        linkElement = (
+            isTR
+                ? target.querySelector("a:not(.reply_numbox)")
+                : findNeighbor(target, "a:not(.reply_numbox)", 3, null)
+        ) as HTMLLinkElement;
 
         if (typeof linkElement !== null) {
             title = linkElement.innerText;
         }
     } else {
-        linkElement = (isTR
-            ? target.querySelector("a")
-            : findNeighbor(ev.target as HTMLElement, "a", 2, null)) as HTMLLinkElement;
+        linkElement = (
+            isTR
+                ? target.querySelector("a")
+                : findNeighbor(ev.target as HTMLElement, "a", 2, null)
+        ) as HTMLLinkElement;
 
         const pt = isTR
             ? target.querySelector(".txt_box")
@@ -960,8 +1033,7 @@ interface Cache {
 class PostCache {
     #caches: Record<string, Cache> = {};
 
-    constructor(public maxCacheSize: number = 50) {
-    }
+    constructor(public maxCacheSize: number = 50) {}
 
     public get(id: string): Cache | undefined {
         return this.#caches[id];
@@ -1011,7 +1083,10 @@ const miniPreview: MiniPreview = {
             if (miniPreview.lastTimeout) clearTimeout(miniPreview.lastTimeout);
 
             miniPreview.lastTimeout = window.setTimeout(() => {
-                if (!miniPreview.cursorOut && miniPreview.lastElement === ev.target) {
+                if (
+                    !miniPreview.cursorOut &&
+                    miniPreview.lastElement === ev.target
+                ) {
                     miniPreview.create(ev, use, hide);
                 }
 
@@ -1031,13 +1106,19 @@ const miniPreview: MiniPreview = {
         miniPreview.element.classList.add("refresher-mini-preview");
 
         if (!miniPreview.init) {
-            miniPreview.element.innerHTML = `<h3>${preData.title}</h3><br><div class="refresher-mini-preview-contents${hide ? " media-hide" : ""}"></div><p class="read-more">더 읽으려면 클릭하세요.</p>`;
+            miniPreview.element.innerHTML = `<h3>${
+                preData.title
+            }</h3><br><div class="refresher-mini-preview-contents${
+                hide ? " media-hide" : ""
+            }"></div><p class="read-more">더 읽으려면 클릭하세요.</p>`;
 
             document.body.appendChild(miniPreview.element);
             miniPreview.init = true;
         }
 
-        const selector = miniPreview.element.querySelector(".refresher-mini-preview-contents");
+        const selector = miniPreview.element.querySelector(
+            ".refresher-mini-preview-contents"
+        );
 
         if (!selector) return;
 
@@ -1049,34 +1130,38 @@ const miniPreview: MiniPreview = {
                 return;
             }
 
-            request.post(
-                preData.link,
-                preData.gallery,
-                preData.id,
-                miniPreview.controller.signal,
-                false
-            )
+            request
+                .post(
+                    preData.link,
+                    preData.gallery,
+                    preData.id,
+                    miniPreview.controller.signal,
+                    false
+                )
                 .then((response) => {
                     if (!response) {
                         reject();
                         return;
                     }
 
-                    postCaches.set(`${preData.gallery}${preData.id}`, {post: response});
+                    postCaches.set(`${preData.gallery}${preData.id}`, {
+                        post: response
+                    });
                     resolve(response);
                 });
         })
             .then((v) => {
                 const content = v.contents ?? "";
 
-                selector.innerHTML = block.check("TEXT", content) ? "게시글 내용이 차단됐습니다." : content;
+                selector.innerHTML = block.check("TEXT", content)
+                    ? "게시글 내용이 차단됐습니다."
+                    : content;
                 selector.querySelector(".write_div")?.setAttribute("style", "");
             })
             .catch((error) => {
-                selector.innerHTML =
-                    error.toString().includes("aborted")
-                        ? ""
-                        : `게시글을 새로 가져올 수 없습니다: ${error}`;
+                selector.innerHTML = error.toString().includes("aborted")
+                    ? ""
+                    : `게시글을 새로 가져올 수 없습니다: ${error}`;
             });
 
         miniPreview.element.querySelector("h3")!.innerHTML = preData.title;
@@ -1228,7 +1313,12 @@ export default {
         }
     },
     require: ["filter", "eventBus", "Frame", "http"],
-    func(filter: RefresherFilter, eventBus: RefresherEventBus, Frame: typeof IFrame, http: RefresherHTTP) {
+    func(
+        filter: RefresherFilter,
+        eventBus: RefresherEventBus,
+        Frame: typeof IFrame,
+        http: RefresherHTTP
+    ) {
         let postFetchedData: PostInfo;
         const gallery = queryString("id") ?? undefined;
 
@@ -1257,7 +1347,7 @@ export default {
 
                 if (!historySkip) {
                     history.pushState(
-                        {preData, preURL: location.href},
+                        { preData, preURL: location.href },
                         title,
                         preData.link
                     );
@@ -1268,16 +1358,26 @@ export default {
 
             frame.functions.vote = async (type: number) => {
                 if (frame.collapse === true) {
-                    Toast.show("댓글 보기를 클릭하여 댓글만 표시합니다.", true, 3000);
+                    Toast.show(
+                        "댓글 보기를 클릭하여 댓글만 표시합니다.",
+                        true,
+                        3000
+                    );
                     return false;
                 }
 
                 if (!postFetchedData) {
-                    Toast.show("게시글이 로딩될 때까지 잠시 기다려주세요.", true, 3000);
+                    Toast.show(
+                        "게시글이 로딩될 때까지 잠시 기다려주세요.",
+                        true,
+                        3000
+                    );
                     return false;
                 }
 
-                const codeSrc = postFetchedData.requireCaptcha ? await request.captcha(preData, "recommend") : undefined;
+                const codeSrc = postFetchedData.requireCaptcha
+                    ? await request.captcha(preData, "recommend")
+                    : undefined;
 
                 const req = async (captcha?: string) => {
                     const res = await request.vote(
@@ -1302,8 +1402,7 @@ export default {
                     return true;
                 };
 
-                if (codeSrc === undefined)
-                    return req();
+                if (codeSrc === undefined) return req();
 
                 return panel.captcha(codeSrc, (str) => {
                     req(str);
@@ -1314,9 +1413,9 @@ export default {
                 navigator.clipboard.writeText(
                     `https://gall.dcinside.com/${http.galleryType(
                         preData.link!
-                    )}/board/view/?id=${preData.gallery || http.queryString("id")}&no=${
-                        preData.id
-                    }`
+                    )}/board/view/?id=${
+                        preData.gallery || http.queryString("id")
+                    }&no=${preData.id}`
                 );
 
                 Toast.show("클립보드에 복사되었습니다.", false, 3000);
@@ -1328,7 +1427,9 @@ export default {
                 frame.data.load = true;
 
                 new Promise<PostInfo>((resolve, reject) => {
-                    const cache = postCaches.get(`${preData.gallery}${preData.id}`);
+                    const cache = postCaches.get(
+                        `${preData.gallery}${preData.id}`
+                    );
 
                     if (useCache && cache?.post !== undefined) {
                         resolve(cache.post);
@@ -1349,7 +1450,9 @@ export default {
                                 return;
                             }
 
-                            postCaches.set(`${preData.gallery}${preData.id}`, {post: response});
+                            postCaches.set(`${preData.gallery}${preData.id}`, {
+                                post: response
+                            });
                             resolve(response);
                         });
                 })
@@ -1363,7 +1466,7 @@ export default {
                             if (!historySkip) {
                                 preData.title = postInfo.title;
                                 history.replaceState(
-                                    {preData, preURL: location.href},
+                                    { preData, preURL: location.href },
                                     title,
                                     preData.link
                                 );
@@ -1374,7 +1477,13 @@ export default {
 
                         postFetchedData = postInfo;
 
-                        frame.contents = block.check("TEXT", postInfo.contents ?? "", gallery) ? "게시글 내용이 차단됐습니다." : postInfo.contents;
+                        frame.contents = block.check(
+                            "TEXT",
+                            postInfo.contents ?? "",
+                            gallery
+                        )
+                            ? "게시글 내용이 차단됐습니다."
+                            : postInfo.contents;
                         frame.upvotes = postInfo.upvotes;
                         frame.fixedUpvotes = postInfo.fixedUpvotes;
                         frame.downvotes = postInfo.downvotes;
@@ -1382,12 +1491,15 @@ export default {
                         if (frame.title !== postInfo.title)
                             frame.title = postInfo.title!;
 
-                        frame.data.disabledDownvote = postInfo.disabledDownvote ?? false;
+                        frame.data.disabledDownvote =
+                            postInfo.disabledDownvote ?? false;
 
                         frame.data.user = postInfo.user;
 
                         if (postInfo.date) {
-                            frame.data.date = new Date(postInfo.date.replace(/\./g, "-"));
+                            frame.data.date = new Date(
+                                postInfo.date.replace(/\./g, "-")
+                            );
                         }
 
                         frame.data.expire = postInfo.expire;
@@ -1446,80 +1558,95 @@ export default {
             let postDom: Document;
 
             new Promise<GalleryPreData>((resolve) => {
-                eventBus.on("RefresherPostCommentIDLoaded", (commentId: string, commentNo: string) =>
-                    resolve({
-                        gallery: commentId,
-                        id: commentNo
-                    }),
-                {
-                    once: true
-                });
-            })
-                .then((postData) => {
-                    if (postFetchedData) postDom = postFetchedData.dom!;
-                    else eventBus.on("RefresherPostDataLoaded", (obj: PostInfo) => {
-                        postDom = obj.dom!;
-                    }, {
+                eventBus.on(
+                    "RefresherPostCommentIDLoaded",
+                    (commentId: string, commentNo: string) =>
+                        resolve({
+                            gallery: commentId,
+                            id: commentNo
+                        }),
+                    {
                         once: true
-                    });
-
-                    frame.functions.writeComment = async (
-                        type: "text" | "dccon",
-                        memo: string | DcinsideDccon,
-                        reply: string | null,
-                        user: { name: string; pw?: string }
-                    ) => {
-                        if (!postFetchedData) {
-                            Toast.show("게시글이 로딩될 때까지 잠시 기다려주세요.", true, 3000);
-                            return false;
+                    }
+                );
+            }).then((postData) => {
+                if (postFetchedData) postDom = postFetchedData.dom!;
+                else
+                    eventBus.on(
+                        "RefresherPostDataLoaded",
+                        (obj: PostInfo) => {
+                            postDom = obj.dom!;
+                        },
+                        {
+                            once: true
                         }
+                    );
 
-                        const requireCapCode = postFetchedData.requireCommentCaptcha;
+                frame.functions.writeComment = async (
+                    type: "text" | "dccon",
+                    memo: string | DcinsideDccon,
+                    reply: string | null,
+                    user: { name: string; pw?: string }
+                ) => {
+                    if (!postFetchedData) {
+                        Toast.show(
+                            "게시글이 로딩될 때까지 잠시 기다려주세요.",
+                            true,
+                            3000
+                        );
+                        return false;
+                    }
 
-                        const codeSrc = requireCapCode
-                            ? await request.captcha(preData, "comment")
-                            : "";
+                    const requireCapCode =
+                        postFetchedData.requireCommentCaptcha;
 
-                        const req = async (captcha?: string) => {
-                            const res = typeof memo === "string"
+                    const codeSrc = requireCapCode
+                        ? await request.captcha(preData, "comment")
+                        : "";
+
+                    const req = async (captcha?: string) => {
+                        const res =
+                            typeof memo === "string"
                                 ? await submitComment(
-                                    postData,
-                                    user,
-                                    postDom,
-                                    memo,
-                                    reply,
-                                    captcha
-                                )
+                                      postData,
+                                      user,
+                                      postDom,
+                                      memo,
+                                      reply,
+                                      captcha
+                                  )
                                 : await submitDcconComment(
-                                    postData,
-                                    user,
-                                    postDom,
-                                    memo,
-                                    reply,
-                                    captcha
-                                );
+                                      postData,
+                                      user,
+                                      postDom,
+                                      memo,
+                                      reply,
+                                      captcha
+                                  );
 
-                            if (res.result === "false" || res.result === "PreNotWorking") {
-                                alert(res.message);
-                                return false;
-                            } else {
-                                return true;
-                            }
-                        };
-
-                        return codeSrc
-                            ? panel.captcha(codeSrc, req)
-                            : req();
+                        if (
+                            res.result === "false" ||
+                            res.result === "PreNotWorking"
+                        ) {
+                            alert(res.message);
+                            return false;
+                        } else {
+                            return true;
+                        }
                     };
 
-                    if (this.memory.refreshIntervalId) clearInterval(this.memory.refreshIntervalId);
+                    return codeSrc ? panel.captcha(codeSrc, req) : req();
+                };
 
-                    this.memory.refreshIntervalId = window.setInterval(() => {
-                        if (this.status.autoRefreshComment) frame.functions.retry();
-                    }, this.status.commentRefreshInterval * 1000);
-                });
+                if (this.memory.refreshIntervalId)
+                    clearInterval(this.memory.refreshIntervalId);
 
-            const deletePressCount: { [index: string]: number } = {};
+                this.memory.refreshIntervalId = window.setInterval(() => {
+                    if (this.status.autoRefreshComment) frame.functions.retry();
+                }, this.status.commentRefreshInterval * 1000);
+            });
+
+            const deletePressCount: Record<string, number> = {};
 
             frame.functions.deleteComment = async (
                 commentId: string,
@@ -1534,7 +1661,11 @@ export default {
                     }
 
                     if (!deletePressCount[commentId]) {
-                        Toast.show("한번 더 누르면 댓글을 삭제합니다.", true, 1000);
+                        Toast.show(
+                            "한번 더 누르면 댓글을 삭제합니다.",
+                            true,
+                            1000
+                        );
 
                         deletePressCount[commentId] = Date.now();
 
@@ -1547,9 +1678,15 @@ export default {
                 const typeName = http.galleryTypeName(preData.link);
                 if (!typeName.length) return false;
 
-                return (admin && !password
-                    ? request.adminDeleteComment(preData, commentId, signal)
-                    : request.userDeleteComment(preData, commentId, signal, password)
+                return (
+                    admin && !password
+                        ? request.adminDeleteComment(preData, commentId, signal)
+                        : request.userDeleteComment(
+                              preData,
+                              commentId,
+                              signal,
+                              password
+                          )
                 )
                     .then((v) => {
                         if (typeof v === "boolean") {
@@ -1579,7 +1716,11 @@ export default {
                             const parsed = JSON.parse(v);
 
                             if (parsed.result !== "fail") {
-                                Toast.show("댓글을 삭제하였습니다.", false, 3000);
+                                Toast.show(
+                                    "댓글을 삭제하였습니다.",
+                                    false,
+                                    3000
+                                );
                             } else {
                                 Toast.show(parsed.msg, true, 5000);
                             }
@@ -1596,28 +1737,33 @@ export default {
                 frame.data.load = true;
 
                 new Promise<DcinsideComments>((resolve, reject) => {
-                    const cache = postCaches.get(`${preData.gallery}${preData.id}`);
+                    const cache = postCaches.get(
+                        `${preData.gallery}${preData.id}`
+                    );
 
                     if (useCache && cache?.comment) {
                         resolve(cache.comment);
                         return;
                     }
 
-                    request.comments(
-                        {
-                            link: preData.link!,
-                            gallery: preData.gallery,
-                            id: preData.id
-                        },
-                        signal
-                    )
+                    request
+                        .comments(
+                            {
+                                link: preData.link!,
+                                gallery: preData.gallery,
+                                id: preData.id
+                            },
+                            signal
+                        )
                         .then((response) => {
                             if (!response) {
                                 reject();
                                 return;
                             }
 
-                            postCaches.set(`${preData.gallery}${preData.id}`, {comment: response});
+                            postCaches.set(`${preData.gallery}${preData.id}`, {
+                                comment: response
+                            });
                             resolve(response);
                         });
                 })
@@ -1631,20 +1777,30 @@ export default {
                                 }
                             );
 
-                            comments.comments.map((v: DcinsideCommentObject) => {
-                                v.user = new User(
-                                    v.name,
-                                    v.user_id || null,
-                                    v.ip || null,
-                                    (new DOMParser()
-                                        .parseFromString(v.gallog_icon, "text/html")
-                                        .querySelector("a.writer_nikcon img"))?.getAttribute("src") || null
-                                );
-                            });
+                            comments.comments.map(
+                                (v: DcinsideCommentObject) => {
+                                    v.user = new User(
+                                        v.name,
+                                        v.user_id || null,
+                                        v.ip || null,
+                                        new DOMParser()
+                                            .parseFromString(
+                                                v.gallog_icon,
+                                                "text/html"
+                                            )
+                                            .querySelector(
+                                                "a.writer_nikcon img"
+                                            )
+                                            ?.getAttribute("src") || null
+                                    );
+                                }
+                            );
 
                             comments.comments = comments.comments.filter(
                                 (comment: DcinsideCommentObject) => {
-                                    const check: { [index in RefresherBlockType]?: string } = {
+                                    const check: {
+                                        [index in RefresherBlockType]?: string;
+                                    } = {
                                         NICK: comment.name
                                     };
 
@@ -1656,8 +1812,13 @@ export default {
                                         check.IP = comment.ip;
                                     }
 
-                                    if (/<(img|video) class=/.test(comment.memo)) {
-                                        check.DCCON = /https:\/\/dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g.exec(comment.memo)![1];
+                                    if (
+                                        /<(img|video) class=/.test(comment.memo)
+                                    ) {
+                                        check.DCCON =
+                                            /https:\/\/dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g.exec(
+                                                comment.memo
+                                            )![1];
                                     } else {
                                         check.COMMENT = comment.memo;
                                     }
@@ -1667,11 +1828,17 @@ export default {
                             );
 
                             threadCounts = comments.comments
-                                .map((v: DcinsideCommentObject) => Number(v.depth == 0))
+                                .map((v: DcinsideCommentObject) =>
+                                    Number(v.depth == 0)
+                                )
                                 .reduce((a: number, b: number) => a + b);
                         }
 
-                        frame.subtitle = `${(comments.total_cnt !== threadCounts && `쓰레드 ${threadCounts}개, 총 댓글`) || ""} ${comments.total_cnt}개`;
+                        frame.subtitle = `${
+                            (comments.total_cnt !== threadCounts &&
+                                `쓰레드 ${threadCounts}개, 총 댓글`) ||
+                            ""
+                        } ${comments.total_cnt}개`;
 
                         frame.data.comments = comments;
                         frame.data.load = false;
@@ -1804,10 +1971,13 @@ export default {
             detector.listen("scroll", (ev: WheelEvent) => {
                 const scrolledTop = groupStore.scrollTop === 0;
 
-                const scroll = Math.floor(groupStore.scrollHeight - groupStore.scrollTop);
+                const scroll = Math.floor(
+                    groupStore.scrollHeight - groupStore.scrollTop
+                );
 
                 const scrolledToBottom =
-                    scroll === groupStore.clientHeight || scroll + 1 === groupStore.clientHeight;
+                    scroll === groupStore.clientHeight ||
+                    scroll + 1 === groupStore.clientHeight;
 
                 if (!scrolledTop && !scrolledToBottom) {
                     scrolledCount = 0;
@@ -1864,26 +2034,43 @@ export default {
             frame.app.$on("close", () => {
                 controller.abort();
 
-                const blockPopup = document.querySelector(".refresher-block-popup");
+                const blockPopup = document.querySelector(
+                    ".refresher-block-popup"
+                );
                 blockPopup?.remove();
 
-                const captchaPopup = document.querySelector(".refresher-captcha-popup");
+                const captchaPopup = document.querySelector(
+                    ".refresher-captcha-popup"
+                );
                 captchaPopup?.remove();
 
-                const adminPanel = document.querySelector(".refresher-management-panel");
+                const adminPanel = document.querySelector(
+                    ".refresher-management-panel"
+                );
                 adminPanel?.remove();
 
                 if (typeof adminKeyPress === "function") {
                     document.removeEventListener("keypress", adminKeyPress);
                 }
 
-                if (!this.memory.historyClose && this.memory.titleStore !== "" && this.memory.titleStore !== null) {
-                    history.pushState(null, this.memory.titleStore, this.memory.urlStore);
+                if (
+                    !this.memory.historyClose &&
+                    this.memory.titleStore !== "" &&
+                    this.memory.titleStore !== null
+                ) {
+                    history.pushState(
+                        null,
+                        this.memory.titleStore,
+                        this.memory.urlStore
+                    );
 
                     this.memory.historyClose = false;
                 }
 
-                if (this.memory.titleStore !== "" && this.memory.titleStore !== null) {
+                if (
+                    this.memory.titleStore !== "" &&
+                    this.memory.titleStore !== null
+                ) {
                     document.title = this.memory.titleStore;
                 }
 
@@ -1944,7 +2131,10 @@ export default {
         const addHandler = (element: HTMLElement) => {
             element.addEventListener("mouseup", handleMousePress);
             element.addEventListener("mousedown", handleMousePress);
-            element.addEventListener(this.status.reversePreviewKey ? "click" : "contextmenu", previewFrame);
+            element.addEventListener(
+                this.status.reversePreviewKey ? "click" : "contextmenu",
+                previewFrame
+            );
 
             if (this.status.reversePreviewKey) {
                 element.addEventListener("contextmenu", (e) => {
@@ -1954,7 +2144,10 @@ export default {
 
                     if (!href) {
                         if ((e.target as HTMLElement).tagName === "TR") {
-                            href = document.querySelector("a")?.getAttribute("href") ?? "";
+                            href =
+                                document
+                                    .querySelector("a")
+                                    ?.getAttribute("href") ?? "";
                         } else {
                             href =
                                 findNeighbor(
@@ -1971,7 +2164,11 @@ export default {
             }
 
             element.addEventListener("mouseenter", (ev) =>
-                miniPreview.create(ev, this.status.tooltipMode, this.status.tooltipMediaHide)
+                miniPreview.create(
+                    ev,
+                    this.status.tooltipMode,
+                    this.status.tooltipMediaHide
+                )
             );
             element.addEventListener("mousemove", (ev) =>
                 miniPreview.move(ev, this.status.tooltipMode)
@@ -1981,7 +2178,13 @@ export default {
             );
         };
 
-        this.memory.uuid = filter.add(`.gall_list .us-post${this.status.expandRecognizeRange ? "" : " .ub-word"}`, addHandler, {neverExpire: true});
+        this.memory.uuid = filter.add(
+            `.gall_list .us-post${
+                this.status.expandRecognizeRange ? "" : " .ub-word"
+            }`,
+            addHandler,
+            { neverExpire: true }
+        );
         this.memory.uuid2 = filter.add("#right_issuezoom", addHandler);
 
         this.memory.popStateHandler = (ev: PopStateEvent) => {
@@ -2009,11 +2212,9 @@ export default {
         window.addEventListener("popstate", this.memory.popStateHandler);
     },
     revoke(filter: RefresherFilter) {
-        if (this.memory.uuid !== null)
-            filter.remove(this.memory.uuid, true);
+        if (this.memory.uuid !== null) filter.remove(this.memory.uuid, true);
 
-        if (this.memory.uuid2 !== null)
-            filter.remove(this.memory.uuid2, true);
+        if (this.memory.uuid2 !== null) filter.remove(this.memory.uuid2, true);
 
         if (this.memory.popStateHandler !== null)
             window.removeEventListener("popstate", this.memory.popStateHandler);
@@ -2035,9 +2236,9 @@ export default {
         refreshIntervalId: number | null;
     };
     settings: {
-        tooltipMode: RefresherCheckSettings,
-        tooltipMediaHide: RefresherCheckSettings,
-        reversePreviewKey: RefresherCheckSettings,
+        tooltipMode: RefresherCheckSettings;
+        tooltipMediaHide: RefresherCheckSettings;
+        reversePreviewKey: RefresherCheckSettings;
         longPressDelay: RefresherRangeSettings;
         scrollToSkip: RefresherCheckSettings;
         colorPreviewLink: RefresherCheckSettings;

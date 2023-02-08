@@ -6,7 +6,8 @@ let Toast: Vue | null = null;
 const element = document.createElement("refresher-toast");
 
 window.addEventListener("DOMContentLoaded", () => {
-    if (document.querySelector(".refresher-toast") === null) document.body.appendChild(element);
+    if (document.querySelector(".refresher-toast") === null)
+        document.body.appendChild(element);
 
     Toast = new Vue({
         el: element,
@@ -15,7 +16,8 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 window.addEventListener("keydown", (e) => {
-    if (Toast !== null && e.key == "Escape" && Toast.$data.open) Toast.$data.open = false;
+    if (Toast !== null && e.key == "Escape" && Toast.$data.open)
+        Toast.$data.open = false;
 });
 
 /**

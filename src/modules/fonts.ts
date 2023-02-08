@@ -71,7 +71,9 @@ export default {
                 }
 
                 fontElement.innerHTML = `.refresherChangeDCFont .write_div {font-size: ${fontSize}px;}
-        .refresherFont .refresher-preview-contents-actual, .refresherFont .refresher-preview-contents-actual .write_div{font-size: ${Number(fontSize) + 2}px;}`;
+        .refresherFont .refresher-preview-contents-actual, .refresherFont .refresher-preview-contents-actual .write_div{font-size: ${
+            Number(fontSize) + 2
+        }px;}`;
             }
         }
     },

@@ -7,16 +7,16 @@ enum ScrollMode {
 }
 
 interface ScrollSession {
-    time: number[]
-    delta: number[]
-    peak: number
-    direction: number
-    fired: number
+    time: number[];
+    delta: number[];
+    peak: number;
+    direction: number;
+    fired: number;
 }
 
 export class ScrollDetection {
     lastEvent: number;
-    events: Record<string, ((...args: any[]) => void)[]>;
+    events: Record<string, Array<(...args: any[]) => void>>;
     session: ScrollSession;
     mode: number;
 

@@ -5,8 +5,8 @@
                          :index="i"/>
 
         <div id="scroll">
-            <img @click="(e) => clickScroll(e, `up`)" :src="getUrl(`/assets/icons/upvote.png`)"/>
-            <img @click="(e) => clickScroll(e, `down`)" :src="getUrl(`/assets/icons/downvote.png`)"/>
+            <img :src="getUrl(`/assets/icons/upvote.png`)" @click="(e) => clickScroll(e, `up`)"/>
+            <img :src="getUrl(`/assets/icons/downvote.png`)" @click="(e) => clickScroll(e, `down`)"/>
         </div>
     </div>
 </template>
@@ -47,7 +47,7 @@ export default Vue.extend({
 });
 </script>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
 #scroll {
     position: fixed;
     right: 0;

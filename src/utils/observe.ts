@@ -5,14 +5,13 @@ export const find = (
     new Promise<NodeListOf<HTMLElement>>((resolve, reject) => {
         let timeout: number | null = null;
 
-        var observer =
-            listen(elem, parent, (elements) => {
-                observer?.disconnect();
+        var observer = listen(elem, parent, (elements) => {
+            observer?.disconnect();
 
-                if (timeout) window.clearTimeout(timeout);
+            if (timeout) window.clearTimeout(timeout);
 
-                resolve(elements);
-            });
+            resolve(elements);
+        });
 
         timeout = window.setTimeout(() => {
             observer?.disconnect();

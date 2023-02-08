@@ -1,4 +1,4 @@
-import type {User} from "../utils/user";
+import type { User } from "../utils/user";
 
 export {};
 
@@ -6,7 +6,7 @@ declare global {
     interface RefresherFilteringLists {
         func: <T = HTMLElement>(element: T) => void;
         scope: string;
-        events: Record<string, ((...args: any[]) => void)[]>;
+        events: Record<string, Array<(...args: any[]) => void>>;
         options?: RefresherFilteringOptions;
         expire?: () => void;
     }
@@ -48,7 +48,7 @@ declare global {
         upvotes: string | undefined;
         fixedUpvotes: string | undefined;
         downvotes: string | undefined;
-        error?: { title: string; detail: string; } | undefined;
+        error?: { title: string; detail: string } | undefined;
         collapse?: boolean;
         data: {
             load: boolean;
@@ -67,14 +67,34 @@ declare global {
             load(useCache?: boolean): void;
             retry(useCache?: boolean): void;
             openOriginal(): boolean;
-            writeComment(type: "text" | "dccon", memo: string | DcinsideDccon, reply: string | null, user: { name: string; pw?: string }): Promise<boolean>
-            deleteComment(commentId: string, password: string, admin: boolean): Promise<boolean>;
+            writeComment(
+                type: "text" | "dccon",
+                memo: string | DcinsideDccon,
+                reply: string | null,
+                user: { name: string; pw?: string }
+            ): Promise<boolean>;
+            deleteComment(
+                commentId: string,
+                password: string,
+                admin: boolean
+            ): Promise<boolean>;
         };
     }
 
-    type RefresherBlockType = "NICK" | "ID" | "IP" | "TITLE" | "TEXT" | "COMMENT" | "DCCON";
+    type RefresherBlockType =
+        | "NICK"
+        | "ID"
+        | "IP"
+        | "TITLE"
+        | "TEXT"
+        | "COMMENT"
+        | "DCCON";
 
-    type RefresherBlockDetectMode = "SAME" | "CONTAIN" | "NOT_SAME" | "NOT_CONTAIN"
+    type RefresherBlockDetectMode =
+        | "SAME"
+        | "CONTAIN"
+        | "NOT_SAME"
+        | "NOT_CONTAIN";
 
     interface RefresherBlockValue {
         content: string;

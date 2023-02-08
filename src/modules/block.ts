@@ -1,5 +1,5 @@
-import {queryString} from "../utils/http";
 import * as Toast from "../components/toast";
+import { queryString } from "../utils/http";
 import Cookies from "js-cookie";
 
 export default {
@@ -24,71 +24,105 @@ export default {
     enable: true,
     default_enable: true,
     require: ["filter", "eventBus", "block", "dom", "http"],
-    func(filter: RefresherFilter, eventBus: RefresherEventBus, block: RefresherBlock, dom: RefresherDOM, http: RefresherHTTP) {
-        this.memory.uuid = filter.add(".ub-writer", (element) => {
-            const gallery = queryString("id");
+    func(
+        filter: RefresherFilter,
+        eventBus: RefresherEventBus,
+        block: RefresherBlock,
+        dom: RefresherDOM,
+        http: RefresherHTTP
+    ) {
+        this.memory.uuid = filter.add(
+            ".ub-writer",
+            (element) => {
+                const gallery = queryString("id");
 
-            if (!gallery) return;
+                if (!gallery) return;
 
-            const title = element.parentElement?.querySelector(".gall_tit > a")?.textContent ?? "";
-            const nick = element.dataset.nick ?? "";
-            const uid = element.dataset.uid ?? "";
-            const ip = element.dataset.ip ?? "";
+                const title =
+                    element.parentElement?.querySelector(".gall_tit > a")
+                        ?.textContent ?? "";
+                const nick = element.dataset.nick ?? "";
+                const uid = element.dataset.uid ?? "";
+                const ip = element.dataset.ip ?? "";
 
-            const commentElement = element.closest(".reply_info, .cmt_info");
+                const commentElement = element.closest(
+                    ".reply_info, .cmt_info"
+                );
 
-            const dcconElement = commentElement?.querySelector(".written_dccon");
-            const dccon = (dcconElement?.getAttribute("src") ?? dcconElement?.getAttribute("data-src"))?.replace(/^.*no=/g, "").replace(/^&.*$/g, "") ?? "";
+                const dcconElement =
+                    commentElement?.querySelector(".written_dccon");
+                const dccon =
+                    (
+                        dcconElement?.getAttribute("src") ??
+                        dcconElement?.getAttribute("data-src")
+                    )
+                        ?.replace(/^.*no=/g, "")
+                        .replace(/^&.*$/g, "") ?? "";
 
-            const commentContent = commentElement?.querySelector(".usertxt")?.textContent ?? "";
+                const commentContent =
+                    commentElement?.querySelector(".usertxt")?.textContent ??
+                    "";
 
-            if (block.checkAll({
-                TITLE: title,
-                NICK: nick,
-                ID: uid,
-                IP: ip,
-                DCCON: dccon,
-                COMMENT: commentContent
-            }, gallery)) {
-                const post = element.parentElement!;
+                if (
+                    block.checkAll(
+                        {
+                            TITLE: title,
+                            NICK: nick,
+                            ID: uid,
+                            IP: ip,
+                            DCCON: dccon,
+                            COMMENT: commentContent
+                        },
+                        gallery
+                    )
+                ) {
+                    const post = element.parentElement!;
 
-                if (post.classList.contains("ub-content")) {
-                    post.style.display = "none";
+                    if (post.classList.contains("ub-content")) {
+                        post.style.display = "none";
+                        return;
+                    }
+
+                    if (post.parentElement?.className.startsWith("reply_")) {
+                        element.closest<HTMLElement>(".reply")!.style.display =
+                            "none";
+                        return;
+                    }
+
+                    const content = post.closest<HTMLElement>(".ub-content");
+
+                    if (content !== null) content.style.display = "none";
+
                     return;
                 }
 
-                if (post.parentElement?.className.startsWith("reply_")) {
-                    element.closest<HTMLElement>(".reply")!.style.display = "none";
-                    return;
-                }
-
-                const content = post.closest<HTMLElement>(".ub-content");
-
-                if (content !== null)
-                    content.style.display = "none";
-
-                return;
-            }
-
-            element.oncontextmenu ??= () => {
-                this.memory.selected = {
-                    nick,
-                    uid,
-                    ip,
-                    code: null,
-                    packageIdx: null
+                element.oncontextmenu ??= () => {
+                    this.memory.selected = {
+                        nick,
+                        uid,
+                        ip,
+                        code: null,
+                        packageIdx: null
+                    };
+                    this.memory.lastSelect = Date.now();
                 };
-                this.memory.lastSelect = Date.now();
-            };
-        }, {
-            neverExpire: true
-        });
+            },
+            {
+                neverExpire: true
+            }
+        );
 
         this.memory.uuid2 = filter.add(".written_dccon", async (element) => {
             if (element.parentElement!.oncontextmenu) return;
 
             element.parentElement!.oncontextmenu = () => {
-                const code = (element?.getAttribute("src") || element?.getAttribute("data-src"))?.replace(/^.*no=/g, "").replace(/^&.*$/g, "") || "";
+                const code =
+                    (
+                        element?.getAttribute("src") ||
+                        element?.getAttribute("data-src")
+                    )
+                        ?.replace(/^.*no=/g, "")
+                        .replace(/^&.*$/g, "") || "";
 
                 this.memory.selected = {
                     nick: null,
@@ -135,10 +169,16 @@ export default {
                 return;
             }
 
-            if (this.memory.selected.code !== null || this.memory.selected.packageIdx !== null) {
+            if (
+                this.memory.selected.code !== null ||
+                this.memory.selected.packageIdx !== null
+            ) {
                 const params = new URLSearchParams();
                 params.set("ci_t", Cookies.get("ci_c") ?? "");
-                params.set("package_idx", this.memory.selected.packageIdx ?? "");
+                params.set(
+                    "package_idx",
+                    this.memory.selected.packageIdx ?? ""
+                );
                 params.set("code", this.memory.selected.code!);
 
                 http.make(http.urls.dccon.detail, {
@@ -146,7 +186,8 @@ export default {
                     headers: {
                         Origin: "https://gall.dcinside.com",
                         "X-Requested-With": "XMLHttpRequest",
-                        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+                        "Content-Type":
+                            "application/x-www-form-urlencoded; charset=UTF-8"
                     },
                     cache: "no-store",
                     body: `?${params.toString()}`
@@ -155,7 +196,13 @@ export default {
                     const title = json.info.title;
                     const packageIdx = json.info.package_idx;
 
-                    block.add("DCCON", this.memory.selected.code!, false, undefined, `${title} [${packageIdx}]`);
+                    block.add(
+                        "DCCON",
+                        this.memory.selected.code!,
+                        false,
+                        undefined,
+                        `${title} [${packageIdx}]`
+                    );
 
                     Toast.show(
                         `${block.TYPE_NAMES["DCCON"]}을 차단했습니다.`,
@@ -169,7 +216,7 @@ export default {
 
             let type: RefresherBlockType = "NICK";
             let value = this.memory.selected.nick;
-            const extra = this.memory.selected.nick;
+            const extra = this.memory.selected.nick ?? undefined;
 
             if (this.memory.selected.uid) {
                 type = "ID";
@@ -192,14 +239,11 @@ export default {
         });
     },
     revoke(filter: RefresherFilter) {
-        if (this.memory.uuid !== null)
-            filter.remove(this.memory.uuid);
+        if (this.memory.uuid !== null) filter.remove(this.memory.uuid);
 
-        if (this.memory.uuid2 !== null)
-            filter.remove(this.memory.uuid2);
+        if (this.memory.uuid2 !== null) filter.remove(this.memory.uuid2);
 
-        if (this.memory.addBlock !== null)
-            filter.remove(this.memory.addBlock);
+        if (this.memory.addBlock !== null) filter.remove(this.memory.addBlock);
 
         if (this.memory.addDcconBlock !== null)
             filter.remove(this.memory.addDcconBlock);

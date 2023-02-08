@@ -2,23 +2,26 @@ import type Frame from "../core/frame";
 
 export {};
 
-type ItemOf<Arr extends unknown[]> = Arr extends (infer T)[] ? T : never;
+type ItemOf<Arr extends unknown[]> = Arr extends Array<infer T> ? T : never;
 
-interface ItemToRefresherMap {
-    filter: RefresherFilter;
-    Frame: typeof Frame;
-    eventBus: RefresherEventBus;
-    http: RefresherHTTP;
-    ip: RefresherIP;
-    block: RefresherBlock;
-    dom: RefresherDOM;
-    memo: RefresherMemo;
-}
-
-type ItemToRefresherArrayArgs<T extends { require?: (keyof ItemToRefresherMap)[] }> =
-    T["require"] extends (keyof ItemToRefresherMap)[] ? ItemToRefresherMap[ItemOf<T["require"]>][] : undefined[];
+type ItemToRefresherArrayArgs<
+    T extends { require?: Array<keyof ItemToRefresherMap> }
+> = T["require"] extends Array<keyof ItemToRefresherMap>
+    ? Array<ItemToRefresherMap[ItemOf<T["require"]>]>
+    : undefined[];
 
 declare global {
+    interface ItemToRefresherMap {
+        filter: RefresherFilter;
+        Frame: typeof Frame;
+        eventBus: RefresherEventBus;
+        http: RefresherHTTP;
+        ip: RefresherIP;
+        block: RefresherBlock;
+        dom: RefresherDOM;
+        memo: RefresherMemo;
+    }
+
     type RefresherSettings =
         | RefresherCheckSettings
         | RefresherTextSettings
@@ -34,20 +37,22 @@ declare global {
         advanced?: boolean;
     }
 
-    interface RefresherCheckSettings extends RefresherBaseSettings<"check", boolean> {
-    }
+    interface RefresherCheckSettings
+        extends RefresherBaseSettings<"check", boolean> {}
 
-    interface RefresherTextSettings extends RefresherBaseSettings<"text", string> {
-    }
+    interface RefresherTextSettings
+        extends RefresherBaseSettings<"text", string> {}
 
-    interface RefresherRangeSettings extends RefresherBaseSettings<"range", number> {
+    interface RefresherRangeSettings
+        extends RefresherBaseSettings<"range", number> {
         min: number;
         max: number;
         step: number;
         unit: string;
     }
 
-    interface RefresherOptionSettings extends RefresherBaseSettings<"option", Record<string, string>> {
+    interface RefresherOptionSettings
+        extends RefresherBaseSettings<"option", Record<string, string>> {
         items: Record<string, string>;
     }
 
@@ -60,7 +65,9 @@ declare global {
         require?: Array<keyof ItemToRefresherMap>;
     }
 
-    interface RefresherModule<T extends RefresherModuleGeneric = RefresherModuleGeneric> {
+    interface RefresherModule<
+        T extends RefresherModuleGeneric = RefresherModuleGeneric
+    > {
         /**
          * 모듈의 이름. 다른 모듈과 구별 짓는 값으로 사용되니 다른 모듈과 이름이 겹칠 수 없습니다.
          * 설정의 모듈 페이지에 표시됩니다.
@@ -81,7 +88,7 @@ declare global {
          * 해당 모듈이 가질 상탯값. 모듈 설정 저장용으로 사용됩니다.
          */
         status: T["settings"] extends Record<string, RefresherSettings>
-            ? { [K in keyof T["settings"]]: T["settings"][K]["default"]; }
+            ? { [K in keyof T["settings"]]: T["settings"][K]["default"] }
             : never;
 
         /**
@@ -121,12 +128,12 @@ declare global {
          */
         update: T["update"] extends Record<string, (value: any) => void>
             ? {
-                [K in keyof T["update"]]: (
-                    this: this,
-                    value: Parameters<T["update"][K]>[0],
-                    ...args: ItemToRefresherArrayArgs<T>
-                ) => void;
-            }
+                  [K in keyof T["update"]]: (
+                      this: this,
+                      value: Parameters<T["update"][K]>[0],
+                      ...args: ItemToRefresherArrayArgs<T>
+                  ) => void;
+              }
             : never;
 
         /**
@@ -139,7 +146,7 @@ declare global {
         /**
          * 해당 모듈이 작동할 때를 처리하기 위한 함수. require에서 적어 넣은 변수 순서대로의 인자를 인자로 넘겨줍니다.
          */
-        func?: (...args: ItemToRefresherArrayArgs<T>)=> void
+        func?: (...args: ItemToRefresherArrayArgs<T>) => void;
 
         /**
          * 해당 모듈이 회수될 때 (비활성화될 때) 를 처리하기 위한 함수. require에서 적어 넣은 변수 순서대로의 인자를 인자로 넘겨줍니다.

@@ -1,6 +1,6 @@
-import browser from "webextension-polyfill";
+import { eventBus } from "./eventbus";
 import storage from "../utils/storage";
-import {eventBus} from "./eventbus";
+import browser from "webextension-polyfill";
 
 export type SettingsStore = Record<string, Record<string, RefresherSettings>>;
 
@@ -24,7 +24,7 @@ export const setStore = (module: string, key: string, value: unknown): void => {
     settings_store[module][key].value = value;
 };
 
-export const dump = (): { [index: string]: unknown } => settings_store;
+export const dump = (): Record<string, unknown> => settings_store;
 
 export const load = async (
     module: string,
@@ -33,7 +33,7 @@ export const load = async (
 ): Promise<unknown> => {
     settings_store[module] ??= {};
 
-    const got = await storage.get(`${module}.${key}`) ?? settings.default;
+    const got = (await storage.get(`${module}.${key}`)) ?? settings.default;
     settings.value = got;
 
     settings_store[module][key] = settings;

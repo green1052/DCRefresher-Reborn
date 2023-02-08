@@ -11,19 +11,17 @@ export default class DeepProxy {
         return this.proxify(target, []);
     }
 
-    makeHandler(
-        path: string[]
-    ): {
+    makeHandler(path: string[]): {
         set: (
             target: Record<string, string>,
             key: string,
             value: unknown,
             receiver: unknown
-        ) => boolean
+        ) => boolean;
         deleteProperty: (
             target: Record<string, string>,
             key: string
-        ) => boolean
+        ) => boolean;
     } {
         const dp = this;
         return {

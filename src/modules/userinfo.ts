@@ -1,15 +1,20 @@
-import * as color from "../utils/color";
 import * as Toast from "../components/toast";
 import * as communicate from "../core/communicate";
-import {getType} from "../utils/user";
-import type {Nullable, NullableProperties, ObjectEnum} from "../utils/types";
+import * as color from "../utils/color";
+import { getType } from "../utils/user";
+import type { Nullable, NullableProperties, ObjectEnum } from "../utils/types";
 
 const memoAsk = (
     selected: NullableProperties<ObjectEnum<RefresherMemoType>>,
     memo: RefresherMemo,
     type: RefresherMemoType,
     value: string
-): Promise<{ text: string, color: string, type: RefresherMemoType, value: string }> => {
+): Promise<{
+    text: string;
+    color: string;
+    type: RefresherMemoType;
+    value: string;
+}> => {
     const win = document.createElement("div");
     win.className = "refresher-frame-outer center background";
 
@@ -82,8 +87,11 @@ const memoAsk = (
         win.classList.add("fadeIn");
     });
 
-    const memoElement = frame.querySelector<HTMLTextAreaElement>("#refresher_memo")!;
-    const colorElement = frame.querySelector<HTMLInputElement>("#refresher_memo_color")!;
+    const memoElement =
+        frame.querySelector<HTMLTextAreaElement>("#refresher_memo")!;
+    const colorElement = frame.querySelector<HTMLInputElement>(
+        "#refresher_memo_color"
+    )!;
 
     const randomColor = () => {
         colorElement.value = color.random();
@@ -139,7 +147,7 @@ const memoAsk = (
 
     return new Promise((resolve) => {
         frame
-            .querySelector(".refresher-preview-button[data-update=\"true\"]")
+            .querySelector('.refresher-preview-button[data-update="true"]')
             ?.addEventListener("click", () => {
                 if (memoElement.value.length > 160) {
                     alert("160자를 초과할 수 없습니다.");
@@ -158,7 +166,7 @@ const memoAsk = (
             });
 
         frame
-            .querySelector(".refresher-preview-button[data-clear=\"true\"]")
+            .querySelector('.refresher-preview-button[data-clear="true"]')
             ?.addEventListener("click", () => {
                 removeWindow();
 
@@ -212,9 +220,20 @@ export default {
         }
     },
     require: ["filter", "eventBus", "ip", "memo"],
-    func(filter: RefresherFilter, eventBus: RefresherEventBus, ip: RefresherIP, memo: RefresherMemo) {
+    func(
+        filter: RefresherFilter,
+        eventBus: RefresherEventBus,
+        ip: RefresherIP,
+        memo: RefresherMemo
+    ) {
         const ipInfoAdd = (elem: HTMLElement) => {
-            if (!this.status.showIpInfo || !elem || !elem.dataset.ip || elem.dataset.refresherIp) return false;
+            if (
+                !this.status.showIpInfo ||
+                !elem ||
+                !elem.dataset.ip ||
+                elem.dataset.refresherIp
+            )
+                return false;
             const ip_data = ip.ISPData(elem.dataset.ip);
 
             const text = document.createElement("span");
@@ -238,7 +257,8 @@ export default {
         };
 
         const IdInfoAdd = (elem: HTMLElement) => {
-            if (!elem || !elem.dataset.uid || elem.dataset.refresherId) return false;
+            if (!elem || !elem.dataset.uid || elem.dataset.refresherId)
+                return false;
 
             const img = elem.querySelector("img")?.src;
 
@@ -246,19 +266,17 @@ export default {
 
             const userType = getType(img);
 
-            if ((
-                !this.status.showHalfFixedNickUID && (
-                    userType === "HALF_FIXED"
-                    || userType === "HALF_FIXED_SUB_MANAGER"
-                    || userType === "HALF_FIXED_MANAGER"
-                )
-            ) || (
-                !this.status.showFixedNickUID && (
-                    userType === "FIXED"
-                    || userType === "FIXED_SUB_MANAGER"
-                    || userType === "FIXED_MANAGER"
-                )
-            )) return false;
+            if (
+                (!this.status.showHalfFixedNickUID &&
+                    (userType === "HALF_FIXED" ||
+                        userType === "HALF_FIXED_SUB_MANAGER" ||
+                        userType === "HALF_FIXED_MANAGER")) ||
+                (!this.status.showFixedNickUID &&
+                    (userType === "FIXED" ||
+                        userType === "FIXED_SUB_MANAGER" ||
+                        userType === "FIXED_MANAGER"))
+            )
+                return false;
 
             const text = document.createElement("span");
             text.className = "ip refresherUserData";
@@ -280,7 +298,11 @@ export default {
         const memoAdd = (elem: HTMLElement) => {
             if (!elem.dataset.refresherMemoHandler) {
                 elem.addEventListener("contextmenu", () => {
-                    const {nick = null, uid = null, ip = null} = elem.dataset as {
+                    const {
+                        nick = null,
+                        uid = null,
+                        ip = null
+                    } = elem.dataset as {
                         [K in RefresherMemoType as Lowercase<K>]: K;
                     };
 
@@ -339,20 +361,26 @@ export default {
         };
 
         const elemAdd = (elem: HTMLElement | Document) => {
-            for (const element of elem.querySelectorAll<HTMLElement>(".ub-writer")) {
+            for (const element of elem.querySelectorAll<HTMLElement>(
+                ".ub-writer"
+            )) {
                 memoAdd(element);
                 ipInfoAdd(element);
                 IdInfoAdd(element);
             }
         };
 
-        this.memory.always = filter.add(".ub-writer", (element) => {
-            memoAdd(element);
-            ipInfoAdd(element);
-            IdInfoAdd(element);
-        }, {
-            neverExpire: true
-        });
+        this.memory.always = filter.add(
+            ".ub-writer",
+            (element) => {
+                memoAdd(element);
+                ipInfoAdd(element);
+                IdInfoAdd(element);
+            },
+            {
+                neverExpire: true
+            }
+        );
 
         filter.runSpecific(this.memory.always!);
 
@@ -368,92 +396,118 @@ export default {
             }
         );
 
-        this.memory.memoAsk = communicate.addHook("refresherRequestMemoAsk", async (
-            {type, user}: { type: RefresherMemoType, user: RefresherMemoType }
-        ) => {
-            const selected: NullableProperties<ObjectEnum<RefresherMemoType>> = {
-                IP: null,
-                NICK: null,
-                UID: null
-            };
+        this.memory.memoAsk = communicate.addHook(
+            "refresherRequestMemoAsk",
+            async ({
+                type,
+                user
+            }: {
+                type: RefresherMemoType;
+                user: RefresherMemoType;
+            }) => {
+                const selected: NullableProperties<
+                    ObjectEnum<RefresherMemoType>
+                > = {
+                    IP: null,
+                    NICK: null,
+                    UID: null
+                };
 
-            (selected[type] as RefresherMemoType) = user;
+                (selected[type] as RefresherMemoType) = user;
 
-            const obj = await memoAsk(selected, memo, type, user);
+                const obj = await memoAsk(selected, memo, type, user);
 
-            eventBus.emit("refreshRequest");
+                eventBus.emit("refreshRequest");
 
-            if (!obj.text) {
-                if (memo.get(obj.type, obj.value)) {
-                    memo.remove(obj.type, obj.value);
+                if (!obj.text) {
+                    if (memo.get(obj.type, obj.value)) {
+                        memo.remove(obj.type, obj.value);
+                        return;
+                    }
+
+                    Toast.show(
+                        `해당하는 ${
+                            memo.TYPE_NAMES[obj.type]
+                        }을(를) 가진 사용자 메모가 없습니다.`,
+                        true,
+                        3000
+                    );
+
                     return;
                 }
 
                 Toast.show(
-                    `해당하는 ${memo.TYPE_NAMES[obj.type]}을(를) 가진 사용자 메모가 없습니다.`,
-                    true,
-                    3000
+                    `${memo.TYPE_NAMES[obj.type]} ${
+                        obj.value
+                    }에 메모를 변경했습니다.`,
+                    false,
+                    2000
                 );
 
-                return;
+                memo.add(obj.type, obj.value, obj.text, obj.color);
             }
+        );
 
-            Toast.show(
-                `${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 변경했습니다.`,
-                false,
-                2000
-            );
-
-            memo.add(obj.type, obj.value, obj.text, obj.color);
-        });
-
-        this.memory.requestBlock = eventBus.on("refresherUpdateUserMemo", async () => {
-            if (Date.now() - this.memory.lastSelect > 10000) {
-                return;
-            }
-
-            let type: RefresherMemoType = "NICK";
-            let value: Nullable<RefresherMemoType> = this.memory.selected.NICK;
-
-            if (this.memory.selected.UID) {
-                type = "UID";
-                value = this.memory.selected.UID;
-            } else if (this.memory.selected.IP) {
-                type = "IP";
-                value = this.memory.selected.IP;
-            }
-
-            if (!value || value.length < 1) {
-                return;
-            }
-
-            const obj = await memoAsk(this.memory.selected, memo, type, value);
-
-            eventBus.emit("refreshRequest");
-
-            if (!obj.text) {
-                if (memo.get(obj.type, obj.value)) {
-                    memo.remove(obj.type, obj.value);
+        this.memory.requestBlock = eventBus.on(
+            "refresherUpdateUserMemo",
+            async () => {
+                if (Date.now() - this.memory.lastSelect > 10000) {
                     return;
                 }
 
-                Toast.show(
-                    `해당하는 ${memo.TYPE_NAMES[obj.type]}을(를) 가진 사용자 메모가 없습니다.`,
-                    true,
-                    3000
+                let type: RefresherMemoType = "NICK";
+                let value: Nullable<RefresherMemoType> =
+                    this.memory.selected.NICK;
+
+                if (this.memory.selected.UID) {
+                    type = "UID";
+                    value = this.memory.selected.UID;
+                } else if (this.memory.selected.IP) {
+                    type = "IP";
+                    value = this.memory.selected.IP;
+                }
+
+                if (!value || value.length < 1) {
+                    return;
+                }
+
+                const obj = await memoAsk(
+                    this.memory.selected,
+                    memo,
+                    type,
+                    value
                 );
 
-                return;
+                eventBus.emit("refreshRequest");
+
+                if (!obj.text) {
+                    if (memo.get(obj.type, obj.value)) {
+                        memo.remove(obj.type, obj.value);
+                        return;
+                    }
+
+                    Toast.show(
+                        `해당하는 ${
+                            memo.TYPE_NAMES[obj.type]
+                        }을(를) 가진 사용자 메모가 없습니다.`,
+                        true,
+                        3000
+                    );
+
+                    return;
+                }
+
+                memo.add(obj.type, obj.value, obj.text, obj.color);
+
+                Toast.show(
+                    `${memo.TYPE_NAMES[obj.type]} ${
+                        obj.value
+                    }에 메모를 추가했습니다.`,
+                    false,
+                    2000
+                );
             }
-
-            memo.add(obj.type, obj.value, obj.text, obj.color);
-
-            Toast.show(
-                `${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 추가했습니다.`,
-                false,
-                2000
-            );
-        });
+        );
 
         elemAdd(document);
     },
@@ -462,11 +516,9 @@ export default {
             filter.remove(this.memory.always, true);
         }
 
-        document
-            .querySelectorAll(".refresherUserData")
-            .forEach((elem) => {
-                elem.parentElement?.removeChild(elem);
-            });
+        document.querySelectorAll(".refresherUserData").forEach((elem) => {
+            elem.parentElement?.removeChild(elem);
+        });
     }
 } as RefresherModule<{
     memory: {

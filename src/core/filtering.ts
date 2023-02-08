@@ -1,5 +1,5 @@
-import * as strings from "../utils/string";
 import * as observe from "../utils/observe";
+import * as strings from "../utils/string";
 
 const lists: Record<string, RefresherFilteringLists> = {};
 
@@ -96,7 +96,10 @@ export const filter = {
 
         filter.events(uuid, "remove");
 
-        if (lists[uuid].options?.neverExpire && typeof lists[uuid].expire === "function") {
+        if (
+            lists[uuid].options?.neverExpire &&
+            typeof lists[uuid].expire === "function"
+        ) {
             lists[uuid].expire!();
         }
 
@@ -125,7 +128,7 @@ export const filter = {
         if (!lists[uuid]) throw "Given UUID is not exists in the list.";
 
         const eventObj = lists[uuid].events[event];
-        
+
         if (!eventObj) return;
 
         for (const event of eventObj) event(...args);

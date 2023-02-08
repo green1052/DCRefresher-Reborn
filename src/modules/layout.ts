@@ -11,7 +11,8 @@ const updateWindowSize = (
         if (!document.documentElement.className.includes("refresherCompact")) {
             document.documentElement.classList.add("refresherCompact");
 
-            if (isView) document.documentElement.classList.add("refresherCompactView");
+            if (isView)
+                document.documentElement.classList.add("refresherCompactView");
         }
     } else {
         document.documentElement.classList.remove("refresherCompact");
@@ -114,13 +115,23 @@ export default {
             }
 
             if (!this.memory.uuid && value) {
-                this.memory.uuid = filter.add(".gall_list .us-post b", (elem) => {
-                    if (new URL(location.href).searchParams.get("exception_mode") === "notice") return;
+                this.memory.uuid = filter.add(
+                    ".gall_list .us-post b",
+                    (elem) => {
+                        if (
+                            new URL(location.href).searchParams.get(
+                                "exception_mode"
+                            ) === "notice"
+                        )
+                            return;
 
-                    elem.parentElement!.parentElement!.style.display = "none";
-                }, {
-                    neverExpire: true
-                });
+                        elem.parentElement!.parentElement!.style.display =
+                            "none";
+                    },
+                    {
+                        neverExpire: true
+                    }
+                );
             }
         },
         removeDCNotice(value: boolean, filter: RefresherFilter) {
@@ -130,23 +141,31 @@ export default {
             }
 
             if (!this.memory.uuiddc && value) {
-                this.memory.uuiddc = filter.add(".gall_list .ub-content .ub-writer", (elem) => {
-                    const adminAttribute = elem.getAttribute("user_name");
+                this.memory.uuiddc = filter.add(
+                    ".gall_list .ub-content .ub-writer",
+                    (elem) => {
+                        const adminAttribute = elem.getAttribute("user_name");
 
-                    if (adminAttribute !== "운영자") return;
+                        if (adminAttribute !== "운영자") return;
 
-                    const pelem = elem.parentElement;
+                        const pelem = elem.parentElement;
 
-                    if (pelem) pelem.style.display = "none";
-                }, {
-                    neverExpire: true
-                });
+                        if (pelem) pelem.style.display = "none";
+                    },
+                    {
+                        neverExpire: true
+                    }
+                );
             }
         }
     },
     require: ["filter"],
     func(filter: RefresherFilter) {
-        if (location.href.includes("board/view") && !this.status.useCompactModeOnView) return;
+        if (
+            location.href.includes("board/view") &&
+            !this.status.useCompactModeOnView
+        )
+            return;
 
         this.memory.resize = () =>
             updateWindowSize(
@@ -162,7 +181,10 @@ export default {
         this.update.hideUselessView.bind(this)(this.status.hideUselessView);
         this.update.pushToRight.bind(this)(this.status.pushToRight);
         this.update.removeNotice.bind(this)(this.status.removeNotice, filter);
-        this.update.removeDCNotice.bind(this)(this.status.removeDCNotice, filter);
+        this.update.removeDCNotice.bind(this)(
+            this.status.removeDCNotice,
+            filter
+        );
     },
     revoke(filter: RefresherFilter) {
         if (this.memory.uuid) filter.remove(this.memory.uuid);
@@ -185,7 +207,7 @@ export default {
     };
     settings: {
         activePixel: RefresherRangeSettings;
-        forceCompact: RefresherCheckSettings,
+        forceCompact: RefresherCheckSettings;
         useCompactModeOnView: RefresherCheckSettings;
         hideGalleryView: RefresherCheckSettings;
         hideUselessView: RefresherCheckSettings;

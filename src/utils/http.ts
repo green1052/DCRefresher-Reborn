@@ -9,8 +9,7 @@ export const urls = {
     vote: "https://gall.dcinside.com/board/recommend/vote",
     captcha: "https://gall.dcinside.com/kcaptcha/session",
     manage: {
-        delete:
-            "https://gall.dcinside.com/ajax/minor_manager_board_ajax/delete_list",
+        delete: "https://gall.dcinside.com/ajax/minor_manager_board_ajax/delete_list",
         deleteMini:
             "https://gall.dcinside.com/ajax/mini_manager_board_ajax/delete_list",
         deleteUser: "https://gall.dcinside.com/board/forms/delete_submit",
@@ -22,8 +21,7 @@ export const urls = {
             "https://gall.dcinside.com/ajax/minor_manager_board_ajax/set_notice",
         setNoticeMini:
             "https://gall.dcinside.com/ajax/mini_manager_board_ajax/set_notice",
-        block:
-            "https://gall.dcinside.com/ajax/minor_manager_board_ajax/update_avoid_list",
+        block: "https://gall.dcinside.com/ajax/minor_manager_board_ajax/update_avoid_list",
         blockMini:
             "https://gall.dcinside.com/ajax/mini_manager_board_ajax/update_avoid_list",
         setRecommend:
@@ -34,7 +32,8 @@ export const urls = {
     comments: "https://gall.dcinside.com/board/comment/",
     comments_submit: "https://gall.dcinside.com/board/forms/comment_submit",
     dccon_comments_submit: "https://gall.dcinside.com/dccon/insert_icon",
-    comment_remove: "https://gall.dcinside.com/board/comment/comment_delete_submit",
+    comment_remove:
+        "https://gall.dcinside.com/board/comment/comment_delete_submit",
     dccon: {
         detail: "https://gall.dcinside.com/dccon/package_detail",
         info: "https://dccon.dcinside.com/index/get_info",
@@ -108,12 +107,12 @@ export const view = (url: string): string => {
 };
 
 export const make = (url: string, options?: RequestInit): Promise<string> =>
-    fetch(url, options)
-        .then(async (response) => {
-            if (response.status > 400) throw `${response.status} ${response.statusText}`;
+    fetch(url, options).then(async (response) => {
+        if (response.status > 400)
+            throw `${response.status} ${response.statusText}`;
 
-            return response.text();
-        });
+        return response.text();
+    });
 
 export const mergeParamURL = (origin: string, getFrom: string): string => {
     const add: Record<string, string> = {};
