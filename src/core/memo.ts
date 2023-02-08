@@ -2,15 +2,8 @@ import * as communicate from "./communicate";
 import { eventBus } from "./eventbus";
 import storage from "../utils/storage";
 import browser from "webextension-polyfill";
-import type { ObjectEnum } from "../utils/types";
 
 const MEMO_NAMESPACE = "__REFRESHER_MEMO";
-
-const MEMO_TYPES: ObjectEnum<RefresherMemoType> = {
-    UID: "UID",
-    NICK: "NICK",
-    IP: "IP"
-};
 
 /**
  * 타입의 이름을 저장한 객체입니다.
@@ -21,7 +14,7 @@ export const TYPE_NAMES = {
     IP: "IP"
 };
 
-const MEMO_TYPES_KEYS = Object.keys(MEMO_TYPES) as RefresherMemoType[];
+const MEMO_TYPES_KEYS: RefresherMemoType[] = ["UID", "NICK", "IP"];
 
 export type MemoCache = Record<
     RefresherMemoType,
@@ -47,7 +40,7 @@ MEMO_TYPES_KEYS.forEach(async (key) => {
         `${MEMO_NAMESPACE}:${key}`
     );
 
-    MEMO_CACHE[key] = memo || {};
+    MEMO_CACHE[key] = memo ?? {};
 
     SendToBackground();
 });

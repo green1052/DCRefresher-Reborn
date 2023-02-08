@@ -15,19 +15,13 @@
         "downloads"
     ],
     "background": {
-        "scripts": [
-            "background.js"
-        ],
+        "scripts": ["background.js"],
         "persistent": true
     },
     "content_scripts": [
         {
-            "js": [
-                "refresher.bundle.js"
-            ],
-            "css": [
-                "refresher.bundle.css"
-            ],
+            "js": ["refresher.bundle.js"],
+            "css": ["refresher.bundle.css"],
             "matches": [
                 "https://mall.dcinside.com/*",
                 "https://gall.dcinside.com/*",
@@ -54,10 +48,7 @@
         "chrome_style": false,
         "page": "views/index.html"
     },
-    "web_accessible_resources": [
-        "assets/*",
-        "popup/*"
-    ],
+    "web_accessible_resources": ["assets/*", "popup/*"],
     "commands": {
         "refreshLists": {
             "suggested_key": {

@@ -1,22 +1,20 @@
 import { uuid } from "../utils/string";
 import browser from "webextension-polyfill";
 
-const handlerStorage: Record<string, StorageStructure[]> = {};
-
-browser.runtime.onMessage.addListener((msg) => {
-    if (!msg) return;
-
-    if (!msg.type) throw "Received wrong runtimeMessage structure.";
-
-    handlerStorage[msg.type]?.forEach((handler) => {
-        handler.func(msg.data);
-    });
-});
-
 interface StorageStructure {
     uuid: string;
     func: (...args: any[]) => void;
 }
+
+const handlerStorage: Record<string, StorageStructure[]> = {};
+
+browser.runtime.onMessage.addListener((message) => {
+    if (!message?.type) throw "Received wrong runtimeMessage structure.";
+
+    for (const handler of handlerStorage[message.type]) {
+        handler.func(message.data);
+    }
+});
 
 export const addHook = (
     type: string,
@@ -43,7 +41,5 @@ export const clearHook = (type: string, id: string): boolean => {
 
     handlerStorage[type] = hooks.filter((hook) => hook.uuid !== id);
 
-    const removed = oldLength !== handlerStorage[type].length;
-
-    return removed;
+    return oldLength !== handlerStorage[type].length;
 };

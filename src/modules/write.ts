@@ -35,7 +35,7 @@ export default {
                     contentContainer?.addEventListener("paste", async (ev) => {
                         const data = (ev as ClipboardEvent).clipboardData;
 
-                        if (data === null || data.files.length === 0) return;
+                        if (!data || !data.files.length) return;
 
                         ev.stopPropagation();
                         ev.preventDefault();
@@ -107,10 +107,12 @@ export default {
                             p.style.textAlign = "left";
                             p.innerHTML = `<img style="clear:none;float:none;" src="${image.url}" class="txc-image">`;
 
-                            contentContainer.insertBefore(
-                                p,
-                                iframe.getSelection()!.anchorNode!.parentElement
-                            );
+                            contentContainer.appendChild(p);
+
+                            // contentContainer.insertBefore(
+                            //     p,
+                            //     iframe.getSelection()!.anchorNode!.parentElement
+                            // );
                         }
                     });
                 }

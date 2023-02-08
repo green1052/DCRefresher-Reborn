@@ -5,13 +5,13 @@ import { filter } from "./filtering";
 import Frame from "./frame";
 import * as memo from "./memo";
 import * as settings from "./settings";
-import DeepProxy from "../utils/deepProxy";
 import * as dom from "../utils/dom";
 import * as http from "../utils/http";
 import * as ip from "../utils/ip";
 import log from "../utils/logger";
 import storage from "../utils/storage";
 import browser from "webextension-polyfill";
+import DeepProxy from "../utils/deepProxy";
 
 type ModuleItem =
     | RefresherFilter
@@ -42,7 +42,7 @@ const runModule = (module: RefresherModule) => {
     const plugins: ModuleItem[] = [];
 
     if (Array.isArray(module.require)) {
-        for (const require of <Array<keyof ItemToRefresherMap>>module.require) {
+        for (const require of module.require) {
             plugins.push(UTILS[require]);
         }
     }
@@ -82,11 +82,15 @@ export const modules = {
 
         if (module_store[mod.name]) throw `${mod.name} is already registered.`;
 
-        mod.enable = await storage.get<boolean>(`${mod.name}.enable`);
+        const enable = await storage.get<boolean | undefined>(
+            `${mod.name}.enable`
+        );
 
-        if (mod.enable === undefined) {
-            storage.set(`${mod.name}.enable`, mod.default_enable);
+        if (enable === undefined) {
+            await storage.set(`${mod.name}.enable`, mod.default_enable);
             mod.enable = mod.default_enable;
+        } else {
+            mod.enable = enable;
         }
 
         if (typeof mod.settings === "object") {

@@ -25,7 +25,6 @@ declare global {
     interface RefresherEventBus {
         emit: (event: string, ...params: any[]) => void;
         emitNextTick: (event: string, ...params: any[]) => void;
-        emitForResult: (event: string, ...params: any[]) => Promise<void>;
         on: (
             event: string,
             cb: (...any: any[]) => void,
@@ -80,39 +79,4 @@ declare global {
             ): Promise<boolean>;
         };
     }
-
-    type RefresherBlockType =
-        | "NICK"
-        | "ID"
-        | "IP"
-        | "TITLE"
-        | "TEXT"
-        | "COMMENT"
-        | "DCCON";
-
-    type RefresherBlockDetectMode =
-        | "SAME"
-        | "CONTAIN"
-        | "NOT_SAME"
-        | "NOT_CONTAIN";
-
-    interface RefresherBlockValue {
-        content: string;
-        isRegex: boolean;
-        gallery?: string;
-        extra?: string;
-        mode?: RefresherBlockDetectMode;
-    }
-
-    type RefresherBlock = typeof import("../core/block");
-
-    type RefresherMemoType = "UID" | "NICK" | "IP";
-
-    interface RefresherMemoValue {
-        text: string;
-        color: string;
-        gallery?: string;
-    }
-
-    type RefresherMemo = typeof import("../core/memo");
 }

@@ -1,6 +1,10 @@
 {
     "minify": true,
     "jsc": {
+        "minify": {
+            "compress": true,
+            "mangle": true
+        },
         "parser": {
             "syntax": "typescript",
             "tsx": false,
@@ -8,8 +12,5 @@
             "dynamicImport": false
         },
         "target": "es2022"
-    },
-    "env": {
-        "targets": "defaults"
     }
 }

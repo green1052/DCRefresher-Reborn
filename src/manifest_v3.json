@@ -35,23 +35,14 @@
     "options_page": "views/index.html",
     "web_accessible_resources": [
         {
-            "resources": [
-                "assets/*",
-                "popup/*"
-            ],
-            "matches": [
-                "<all_urls>"
-            ]
+            "resources": ["assets/*", "popup/*"],
+            "matches": ["<all_urls>"]
         }
     ],
     "content_scripts": [
         {
-            "js": [
-                "refresher.bundle.js"
-            ],
-            "css": [
-                "refresher.bundle.css"
-            ],
+            "js": ["refresher.bundle.js"],
+            "css": ["refresher.bundle.css"],
             "matches": [
                 "https://mall.dcinside.com/*",
                 "https://gall.dcinside.com/*",
