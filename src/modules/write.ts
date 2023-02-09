@@ -5,8 +5,7 @@ export default {
     status: {},
     memory: {
         canvas: "",
-        injected: false,
-        injected2: false
+        submitButton: ""
     },
     enable: false,
     default_enable: false,
@@ -30,44 +29,41 @@ export default {
             default: false
         }
     },
-    require: ["filter", "http"],
-    func(filter: RefresherFilter, http: RefresherHTTP) {
-        this.memory.submitButton = filter.add<HTMLButtonElement>(
-            "button.write",
-            (element) => {
-                if (this.memory.injected || !this.status.bypassTitleLimit)
-                    return;
+    require: ["filter", "http", "dom"],
+    func(filter: RefresherFilter, http: RefresherHTTP, dom: RefresherDOM) {
+        window.addEventListener("load", () => {
+            this.memory.submitButton = filter.add<HTMLButtonElement>(
+                "button.write",
+                (element) => {
+                    element.addEventListener("click", (e) => {
+                        if (!this.status.bypassTitleLimit) return;
 
-                element.addEventListener("click", () => {
-                    const titleElement =
-                        document.querySelector<HTMLInputElement>(
-                            "input[id=subject]"
-                        );
+                        const titleElement =
+                            document.querySelector<HTMLInputElement>(
+                                "input[id=subject]"
+                            );
 
-                    if (!titleElement) return;
+                        if (!titleElement) return;
 
-                    const title = titleElement.value;
+                        const title = titleElement.value;
 
-                    if (title.length === 1)
-                        titleElement.value = `${title}\u200B`;
-                });
+                        if (title.length === 1)
+                            titleElement.value = `${title}\u200B`;
+                    });
+                }
+            );
 
-                this.memory.injected = true;
-            }
-        );
+            this.memory.canvas = filter.add<HTMLIFrameElement>(
+                "#tx_canvas_wysiwyg",
+                (element) => {
+                    const iframe = element.contentWindow!.document!;
+                    const contentContainer = iframe?.querySelector<HTMLElement>(
+                        ".tx-content-container"
+                    )!;
 
-        this.memory.canvas = filter.add<HTMLIFrameElement>(
-            "#tx_canvas_wysiwyg",
-            (element) => {
-                if (this.memory.injected2) return;
+                    if (!this.status.imageUpload) return;
 
-                const iframe = element.contentWindow!.document!;
-                const contentContainer = iframe?.querySelector<HTMLElement>(
-                    ".tx-content-container"
-                );
-
-                if (this.status.imageUpload) {
-                    contentContainer?.addEventListener("paste", async (ev) => {
+                    contentContainer.addEventListener("paste", async (ev) => {
                         const data = (ev as ClipboardEvent).clipboardData;
 
                         if (!data || !data.files.length) return;
@@ -151,30 +147,23 @@ export default {
                         }
                     });
                 }
-
-                this.memory.injected2 = true;
-            }
-        );
+            );
+        });
     },
     revoke(filter: RefresherFilter) {
         if (this.memory.submitButton) filter.remove(this.memory.submitButton);
 
         if (this.memory.canvas) filter.remove(this.memory.canvas);
-
-        this.memory.injected = false;
-        this.memory.injected2 = false;
     }
 } as RefresherModule<{
     memory: {
         submitButton: string;
         canvas: string;
-        injected: boolean;
-        injected2: boolean;
     };
     settings: {
         imageUpload: RefresherCheckSettings;
         bypassTitleLimit: RefresherCheckSettings;
         selfImage: RefresherCheckSettings;
     };
-    require: ["filter", "http"];
+    require: ["filter", "http", "dom"];
 }>;
