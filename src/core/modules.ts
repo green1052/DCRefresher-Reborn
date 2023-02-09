@@ -145,7 +145,7 @@ export const modules = {
             return;
         }
 
-        if (!mod.url?.test(location.href)) {
+        if (mod.url && !mod.url.test(location.href)) {
             log(
                 `📁 ignoring ${mod.name}. current URL is not matching with the module's URL value.`
             );
