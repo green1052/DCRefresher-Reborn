@@ -6,12 +6,14 @@ const AVERAGE_COUNTS_SIZE = 7;
 let PAUSE_REFRESH = false;
 
 const updateRefreshText = (button?: HTMLElement) => {
-    button ??= document.querySelector<HTMLElement>(
+    button ??= document.querySelector(
         '.page_head .gall_issuebox button[data-refresher="true"]'
-    )!;
+    ) as HTMLElement;
 
-    const onOff = button.querySelector<HTMLSpanElement>("span")!;
-    onOff.innerHTML = PAUSE_REFRESH ? "꺼짐" : "켜짐";
+    if (!button) return;
+
+    const onOff = button.querySelector("span");
+    (onOff as HTMLSpanElement).innerHTML = PAUSE_REFRESH ? "꺼짐" : "켜짐";
 };
 
 const addRefreshText = (issueBox: HTMLElement) => {
