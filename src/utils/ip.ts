@@ -2,6 +2,7 @@ import * as storage from "./storage";
 import * as mmdb from "mmdb-lib";
 import { AsnResponse, CountryResponse } from "mmdb-lib";
 import { Buffer } from "buffer";
+import { Nullable } from "./types";
 
 let asnReader: mmdb.Reader<AsnResponse>;
 let countryReader: mmdb.Reader<CountryResponse>;
@@ -219,15 +220,15 @@ export const ISPData = (ip: string): ISPInfo => {
     };
 };
 
-export const format = (data: ISPInfo): string => {
+export const format = (data: ISPInfo): Nullable<string> => {
     const { name, country, detail } = data;
 
     if (!name && country)
-        return country !== "KR" ? `${displayNames.of(country)}` : "";
+        return country !== "KR" ? `${displayNames.of(country)}` : null;
 
-    if (!name || !country) return "오류";
+    if (!name) return null;
 
-    return `${country !== "KR" ? `${displayNames.of(country)} ` : ""}${
-        detail ? `${detail} ` : ""
-    }${name}`;
+    return `${
+        country && country !== "KR" ? `${displayNames.of(country)} ` : ""
+    }${detail ? `${detail} ` : ""}${name}`;
 };
