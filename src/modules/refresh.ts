@@ -161,15 +161,14 @@ export default {
             addRefreshText(element);
         });
 
-        const { memory } = this;
-
-        memory.load = async (customURL?, force?): Promise<boolean> => {
+        this.memory.load = async (customURL?, force?): Promise<boolean> => {
             if (document.hidden) {
                 return false;
             }
+
             if (
                 !force &&
-                (Date.now() < memory.lastRefresh + 500 || PAUSE_REFRESH)
+                (Date.now() < this.memory.lastRefresh + 500 || PAUSE_REFRESH)
             ) {
                 return false;
             }
@@ -178,9 +177,10 @@ export default {
                 document.querySelector<HTMLElement>("#user_data_lyr");
 
             // 유저 메뉴가 열렸을 때는 새로고침 하지 않음
-            if (userDataLyr?.style.display !== "none") return false;
+            if (userDataLyr && userDataLyr.style.display !== "none")
+                return false;
 
-            memory.lastRefresh = Date.now();
+            this.memory.lastRefresh = Date.now();
 
             const isAdmin =
                 document.querySelector(".useradmin_btnbox button") !== null;
@@ -196,7 +196,7 @@ export default {
             )
                 return false;
 
-            memory.new_counts = 0;
+            this.memory.new_counts = 0;
 
             if (customURL) {
                 originalLocation = customURL;
@@ -243,15 +243,15 @@ export default {
                 if (!cached.includes(value) && value !== currentPostNo) {
                     if (
                         this.status.fadeIn &&
-                        !memory.calledByPageTurn &&
+                        !this.memory.calledByPageTurn &&
                         v.parentElement
                     ) {
                         v.parentElement.classList.add("refresherNewPost");
                         v.parentElement.style.animationDelay = `${
-                            memory.new_counts * 23
+                            this.memory.new_counts * 23
                         }ms`;
                     }
-                    memory.new_counts++;
+                    this.memory.new_counts++;
                 }
 
                 if (isPostView && currentPostNo === value) {
@@ -260,9 +260,9 @@ export default {
                 }
             }
 
-            if (!memory.calledByPageTurn) {
-                const averageCounts = memory.average_counts;
-                averageCounts.push(memory.new_counts);
+            if (!this.memory.calledByPageTurn) {
+                const averageCounts = this.memory.average_counts;
+                averageCounts.push(this.memory.new_counts);
 
                 if (averageCounts.length > AVERAGE_COUNTS_SIZE) {
                     averageCounts.shift();
@@ -273,14 +273,14 @@ export default {
                     averageCounts.length;
 
                 if (this.status.autoRate) {
-                    memory.delay = Math.max(
+                    this.memory.delay = Math.max(
                         600,
                         8 * Math.pow(2 / 3, 3 * average) * 1000
                     );
                 }
             }
 
-            memory.calledByPageTurn = false;
+            this.memory.calledByPageTurn = false;
 
             // 미니 갤, 마이너 갤 관리자일 경우 체크박스를 생성합니다.
             if (isAdmin) {
@@ -376,24 +376,24 @@ export default {
 
         const run = (skipLoad?: boolean) => {
             if (!skipLoad) {
-                memory.load!();
+                this.memory.load!();
             }
 
             if (!this.status.autoRate) {
-                memory.delay = Math.max(1000, this.status.refreshRate);
+                this.memory.delay = Math.max(1000, this.status.refreshRate);
             }
 
-            if (memory.refresh) {
-                clearTimeout(memory.refresh);
+            if (this.memory.refresh) {
+                clearTimeout(this.memory.refresh);
             }
 
-            memory.refresh = window.setTimeout(run, memory.delay);
+            this.memory.refresh = window.setTimeout(run, this.memory.delay);
         };
 
         document.addEventListener("visibilitychange", () => {
             if (document.hidden) {
-                if (memory.refresh) {
-                    clearTimeout(memory.refresh);
+                if (this.memory.refresh) {
+                    clearTimeout(this.memory.refresh);
                 }
 
                 return;
@@ -404,16 +404,16 @@ export default {
 
         run(true);
 
-        memory.refreshRequest = eventBus.on("refreshRequest", () => {
-            if (memory.refresh) {
-                clearTimeout(memory.refresh);
+        this.memory.refreshRequest = eventBus.on("refreshRequest", () => {
+            if (this.memory.refresh) {
+                clearTimeout(this.memory.refresh);
             }
 
-            memory.load!(undefined, true);
+            this.memory.load!(undefined, true);
         });
 
         if (this.status.useBetterBrowse) {
-            memory.uuid = filter.add<HTMLAnchorElement>(
+            this.memory.uuid = filter.add<HTMLAnchorElement>(
                 ".left_content article:has(.gall_listwrap) .bottom_paging_box a",
                 (element) => {
                     if (element.href.includes("javascript:")) return;
@@ -438,9 +438,9 @@ export default {
                             );
                         }
 
-                        memory.calledByPageTurn = true;
+                        this.memory.calledByPageTurn = true;
 
-                        await memory.load!(location.href, true);
+                        await this.memory.load!(location.href, true);
 
                         document
                             .querySelector(
@@ -457,11 +457,11 @@ export default {
             );
 
             window.addEventListener("popstate", () => {
-                memory.calledByPageTurn = true;
-                memory.load!(undefined, true);
+                this.memory.calledByPageTurn = true;
+                this.memory.load!(undefined, true);
             });
 
-            memory.uuid2 = eventBus.on(
+            this.memory.uuid2 = eventBus.on(
                 "refresherGetPost",
                 (parsedBody: Document) => {
                     const pagingBox = parsedBody.querySelector(
@@ -503,9 +503,9 @@ export default {
                                         href
                                     );
                                 }
-                                memory.calledByPageTurn = true;
+                                this.memory.calledByPageTurn = true;
 
-                                await memory.load!(location.href, true);
+                                await this.memory.load!(location.href, true);
 
                                 const query = document.querySelector(
                                     location.href.includes("/board/view")
@@ -531,22 +531,20 @@ export default {
     ) {
         document?.body?.classList.remove("refresherDoNotColorVisited");
 
-        const { memory } = this;
-
-        if (memory.refresh) {
-            clearTimeout(memory.refresh);
+        if (this.memory.refresh) {
+            clearTimeout(this.memory.refresh);
         }
 
-        if (memory.uuid) {
-            filter.remove(memory.uuid);
+        if (this.memory.uuid) {
+            filter.remove(this.memory.uuid);
         }
 
-        if (memory.uuid2) {
-            eventBus.remove("refresherGetPost", memory.uuid2);
+        if (this.memory.uuid2) {
+            eventBus.remove("refresherGetPost", this.memory.uuid2);
         }
 
-        if (memory.refreshRequest) {
-            eventBus.remove("refreshRequest", memory.refreshRequest);
+        if (this.memory.refreshRequest) {
+            eventBus.remove("refreshRequest", this.memory.refreshRequest);
         }
     }
 } as RefresherModule<{
