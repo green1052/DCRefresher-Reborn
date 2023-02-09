@@ -375,12 +375,11 @@
                 v-show="tab === 4"
                 key="tab5"
                 class="tab tab5">
+                <img
+                    style="width: 100px; height: 100px"
+                    src="https://pbs.twimg.com/media/E_AGBpdUcAQzadz?format=jpg" />
 
-              <img style="width: 100px; height: 100px;" src="https://pbs.twimg.com/media/E_AGBpdUcAQzadz?format=jpg"/>
-
-              <h1>
-                자짤 기능인줄 알았지? ㅋㅋㅋ "캬루" 지롱
-              </h1>
+                <h1>자짤 기능인줄 알았지? ㅋㅋㅋ "캬루" 지롱</h1>
             </div>
             <div
                 v-show="tab === 5"
