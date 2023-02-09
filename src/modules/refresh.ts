@@ -7,7 +7,7 @@ let PAUSE_REFRESH = false;
 
 const updateRefreshText = (button?: HTMLElement) => {
     button ??= document.querySelector(
-        '.page_head .gall_issuebox button[data-refresher="true"]'
+        ".page_head .gall_issuebox button[data-refresher=true]"
     ) as HTMLElement;
 
     if (!button) return;
