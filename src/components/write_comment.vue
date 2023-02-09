@@ -50,7 +50,7 @@
                         hoverUserInfo && !this.user.id
                     )
                 }">
-                <UserComponent :user="user" />
+                <UserComponent v-if="user" :user="user" />
                 <span>
                     로 {{ this.getReply() === null ? "" : "답글" }}
                     {{ this.getDccon() === null ? "" : "디시콘" }} 작성 중
@@ -79,6 +79,19 @@
     import button from "./button.vue";
     import user from "./user.vue";
     import Vue from "vue";
+    import { Nullable } from "../utils/types";
+
+    interface WriteCommentData {
+        focused: boolean;
+        disabled: boolean;
+        text: string;
+        editUser: boolean;
+        fixedUser: boolean;
+        hoverUserInfo: boolean;
+        user: Nullable<User>;
+        unsignedUserID: string;
+        unsignedUserPW: string;
+    }
 
     export default Vue.extend({
         name: "write_comment",
@@ -86,7 +99,7 @@
             PreviewButton: button,
             UserComponent: user
         },
-        data() {
+        data(): WriteCommentData {
             return {
                 focused: false,
                 disabled: false,
@@ -94,7 +107,7 @@
                 editUser: false,
                 fixedUser: false,
                 hoverUserInfo: false,
-                user: new User("", null, null, null),
+                user: null,
                 unsignedUserID: localStorage.nonmember_nick || "ㅇㅇ",
                 unsignedUserPW:
                     localStorage.nonmember_pw ||
@@ -116,7 +129,9 @@
         },
         watch: {
             unsignedUserID(value: string): void {
-                localStorage.setItem("nonmember_nick", value);
+              if (!this.user) return;
+
+              localStorage.setItem("nonmember_nick", value);
                 this.user.nick = value;
             },
 
@@ -182,7 +197,7 @@
             },
 
             toggleEditUser(): void {
-                if (this.user.isLogout()) this.editUser = !this.editUser;
+                if (this.user?.isLogout()) this.editUser = !this.editUser;
             },
 
             async write(): Promise<boolean> {
@@ -202,7 +217,7 @@
                         this.getDccon() === null ? "text" : "dccon",
                         this.getDccon() === null ? this.text : this.getDccon(),
                         this.getReply(),
-                        this.fixedUser
+                        this.fixedUser && this.user
                             ? { name: this.user.nick }
                             : {
                                   name: this.unsignedUserID,
