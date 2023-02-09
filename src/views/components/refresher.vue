@@ -506,8 +506,12 @@
                 blockKeyNames: BLOCK_TYPE_NAMES,
                 links: [
                     {
-                        text: "GitHub (오류 제보 및 개선사항)",
+                        text: "GitHub",
                         url: "https://github.com/green1052/DCRefresher-Reborn"
+                    },
+                    {
+                        text: "Discord",
+                        url: "https://discord.gg/SSW6Zuyjz6"
                     }
                 ]
             };
