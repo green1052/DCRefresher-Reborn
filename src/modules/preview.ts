@@ -58,16 +58,12 @@ const parse = (id: string, body: string): PostInfo => {
     const dom = new DOMParser().parseFromString(body, "text/html");
 
     const header = dom
-        .querySelector(".view_content_wrap span.title_headtext")
-        ?.innerHTML?.replace(/([\[\]])/g, "");
+        .querySelector(".title_headtext")
+        ?.innerHTML?.replace(/(^\[.*]$)/g, "");
 
-    const title = dom.querySelector(
-        ".view_content_wrap span.title_subject"
-    )?.innerHTML;
+    const title = dom.querySelector(".title_subject")?.innerHTML;
 
-    const date = dom.querySelector(
-        ".view_content_wrap div.fl > span.gall_date"
-    )?.innerHTML;
+    const date = dom.querySelector(".fl > .gall_date")?.innerHTML;
 
     let expire = dom.querySelector(
         ".view_content_wrap div.fl > span.mini_autodeltime > div.pop_tipbox > div"
@@ -78,26 +74,23 @@ const parse = (id: string, body: string): PostInfo => {
     }
 
     const views = dom
-        .querySelector(".view_content_wrap div.fr > span.gall_count")
+        .querySelector(".fr > .gall_count")
         ?.innerHTML.replace(/조회\s/, "");
 
     const upvotes = dom
-        .querySelector(".view_content_wrap div.fr > span.gall_reply_num")
+        .querySelector(".fr > .gall_reply_num")
         ?.innerHTML.replace(/추천\s/, "");
 
-    const fixedUpvotes = dom.querySelector(
-        ".view_content_wrap .btn_recommend_box .sup_num .smallnum"
-    )?.innerHTML;
+    const fixedUpvotes = dom.querySelector(".sup_num > .smallnum")?.innerHTML;
 
     const downvotes = dom.querySelector(
         "div.btn_recommend_box .down_num"
     )?.innerHTML;
 
-    const content_query = dom.querySelector(
-        ".view_content_wrap > div > div.inner.clear > div.writing_view_box"
-    );
+    const content_query = dom.querySelector(".writing_view_box");
 
-    const writeDiv = content_query?.querySelector<HTMLElement>(".write_div");
+    const writeDiv = content_query?.querySelector<HTMLDivElement>(".write_div");
+
     if (writeDiv && writeDiv.style.width) {
         const width = writeDiv.style.width;
         writeDiv.style.width = "unset";
@@ -123,13 +116,13 @@ const parse = (id: string, body: string): PostInfo => {
     const noticeElement = dom.querySelector(
         ".user_control .option_box li:first-child"
     );
-    const isNotice = noticeElement && noticeElement.innerHTML !== "공지 등록";
+    const isNotice = noticeElement?.innerHTML !== "공지 등록";
 
     const isAdult = dom.head.innerHTML.includes("/error/adult");
 
     const requireCaptcha = dom.querySelector(".recommend_kapcode") !== null;
     const requireCommentCaptcha =
-        dom.querySelector('.cmt_write_box input[name="comment_code"]') !== null;
+        dom.querySelector(`.cmt_write_box input[name="comment_code"]`) !== null;
 
     const disabledDownvote = dom.querySelector(".icon_recom_down") === null;
 
@@ -139,9 +132,7 @@ const parse = (id: string, body: string): PostInfo => {
         date,
         expire,
         user: new User("", null, null, null).import(
-            dom.querySelector(
-                "div.view_content_wrap > header > div > div.gall_writer"
-            )
+            dom.querySelector(".gallview_head > .gall_writer")
         ),
         views,
         upvotes,
@@ -182,7 +173,7 @@ const request = {
         link: string
     ) {
         Cookies.set(
-            gall_id + post_id + "_Firstcheck" + (!type ? "_down" : ""),
+            `${gall_id + post_id}_Firstcheck${type ? "" : "_down"}`,
             "Y",
             {
                 path: "/",
@@ -223,12 +214,9 @@ const request = {
     ) {
         return http
             .make(
-                `${
-                    http.urls.base +
-                    http.galleryType(link, "/") +
-                    http.urls.view +
-                    gallery
-                }&no=${id}`,
+                `${http.urls.base}${http.galleryType(link, "/")}${
+                    http.urls.view
+                }${gallery}&no=${id}`,
                 { signal, cache: noCache ? "no-cache" : "default" }
             )
             .then((response) => parse(id, response));
@@ -252,7 +240,7 @@ const request = {
         params.set("cmt_no", args.commentNo ?? args.id);
         params.set(
             "e_s_n_o",
-            (document.getElementById("e_s_n_o") as HTMLInputElement).value
+            document.querySelector<HTMLInputElement>("#e_s_n_o")!.value
         );
         params.set("comment_page", "1");
         params.set("_GALLTYPE_", http.galleryTypeName(args.link));
@@ -578,9 +566,10 @@ const panel = {
                 if (selected.getAttribute("name") === "reason") {
                     const value = Number(selected.value);
 
-                    const blockReasonInput = document.querySelector(
-                        'input[name="reason_text"]'
-                    ) as HTMLInputElement;
+                    const blockReasonInput =
+                        document.querySelector<HTMLInputElement>(
+                            'input[name="reason_text"]'
+                        )!;
 
                     if (!value) {
                         blockReasonInput.style.display = "block";
@@ -593,17 +582,14 @@ const panel = {
             });
         });
 
-        element.querySelector(".go-block")?.addEventListener("click", () => {
-            const avoid_reason_txt = (
-                element.querySelector(
-                    'input[name="reason_text"]'
-                ) as HTMLInputElement
-            ).value;
-            const del_chk = (
-                element.querySelector(
-                    'input[name="remove"]'
-                ) as HTMLInputElement
-            ).checked;
+        element.querySelector(".go-block")!.addEventListener("click", () => {
+            const avoid_reason_txt = element.querySelector<HTMLInputElement>(
+                `input[name=reason_text]`
+            )!.value;
+            const del_chk =
+                element.querySelector<HTMLInputElement>(
+                    `input[name=remove]`
+                )!.checked;
 
             callback(
                 avoid_hour,
@@ -626,18 +612,14 @@ const panel = {
         const preFoundBlockElement = document.querySelector(
             ".refresher-block-popup"
         );
-        if (preFoundBlockElement) {
-            preFoundBlockElement.parentElement?.removeChild(
-                preFoundBlockElement
-            );
-        }
+
+        preFoundBlockElement?.parentElement?.removeChild(preFoundBlockElement);
 
         const preFoundElement = document.querySelector(
             ".refresher-management-panel"
         );
-        if (preFoundElement) {
-            preFoundElement.parentElement?.removeChild(preFoundElement);
-        }
+
+        preFoundElement?.parentElement?.removeChild(preFoundElement);
 
         let setAsNotice = !preData.notice;
         let setAsRecommend = !preData.recommend;
@@ -646,9 +628,7 @@ const panel = {
         element.id = "refresher-management-panel";
         element.className = "refresher-management-panel";
 
-        if (toggleBlur) {
-            element.className += " blur";
-        }
+        if (toggleBlur) element.classList.add("blur");
 
         const upvoteImage = browser.runtime.getURL("/assets/icons/upvote.png");
         const downvoteImage = browser.runtime.getURL(
@@ -749,7 +729,7 @@ const panel = {
 
         document.addEventListener("keypress", adminKeyPress);
 
-        element.querySelector(".block")?.addEventListener("click", () => {
+        element.querySelector(".block")!.addEventListener("click", () => {
             panel.block(
                 (
                     avoid_hour: number,
@@ -768,11 +748,7 @@ const panel = {
                         .then((response) => {
                             if (typeof response === "object") {
                                 if (response.result === "success") {
-                                    Toast.show(
-                                        response.message || response.msg,
-                                        false,
-                                        3000
-                                    );
+                                    Toast.show(response.message, false, 3000);
 
                                     if (del_chk) {
                                         frame.app.close();
@@ -806,11 +782,7 @@ const panel = {
 
                 if (typeof response === "object") {
                     if (response.result === "success") {
-                        Toast.show(
-                            response.message ?? response.msg,
-                            false,
-                            3000
-                        );
+                        Toast.show(response.message, false, 3000);
 
                         setAsNotice = !setAsNotice;
 
@@ -820,11 +792,7 @@ const panel = {
                             ? "공지로 등록"
                             : "공지 등록 해제";
                     } else {
-                        alert(
-                            `${response.result}: ${
-                                response.message ?? response.msg
-                            }`
-                        );
+                        alert(`${response.result}: ${response.message}`);
                     }
 
                     return;
@@ -841,11 +809,7 @@ const panel = {
 
                 if (typeof response === "object") {
                     if (response.result === "success") {
-                        Toast.show(
-                            response.message || response.msg,
-                            false,
-                            3000
-                        );
+                        Toast.show(response.message, false, 3000);
 
                         setAsRecommend = !setAsRecommend;
 
@@ -863,11 +827,7 @@ const panel = {
                             ? "개념글 등록"
                             : "개념글 해제";
                     } else {
-                        alert(
-                            `${response.result}: ${
-                                response.message || response.msg
-                            }`
-                        );
+                        alert(`${response.result}: ${response.message}`);
                     }
 
                     return;
@@ -903,29 +863,26 @@ const panel = {
             element.querySelector("input")?.focus();
         }, 0);
 
-        element.querySelector("input")?.addEventListener("keydown", (e) => {
+        element.querySelector("input")!.addEventListener("keydown", (e) => {
             if (e.key === "Enter") {
-                const input = (
-                    element.querySelector("input") as HTMLInputElement
-                ).value;
+                const input = element.querySelector("input")!.value;
 
                 callback(input);
 
-                element.parentElement?.removeChild(element);
+                element.parentElement!.removeChild(element);
             }
         });
 
-        element.querySelector(".close")?.addEventListener("click", () => {
-            element.parentElement?.removeChild(element);
+        element.querySelector(".close")!.addEventListener("click", () => {
+            element.parentElement!.removeChild(element);
         });
 
-        element.querySelector("button")?.addEventListener("click", () => {
-            const input = (element.querySelector("input") as HTMLInputElement)
-                .value;
+        element.querySelector("button")!.addEventListener("click", () => {
+            const input = element.querySelector("input")!.value;
 
             callback(input);
 
-            element.parentElement?.removeChild(element);
+            element.parentElement!.removeChild(element);
         });
 
         document.body.appendChild(element);
@@ -938,11 +895,9 @@ const getRelevantData = (ev: MouseEvent) => {
     const target = ev.target as HTMLElement;
     const isTR = target.tagName === "TR";
 
-    const listID = (
-        isTR
-            ? target.querySelector(".gall_num")
-            : findNeighbor(target, ".gall_num", 5, null)
-    ) as HTMLElement;
+    const listID = isTR
+        ? target.querySelector<HTMLElement>(".gall_num")
+        : findNeighbor(target, ".gall_num", 5, null);
 
     let id = "";
     let gallery = "";
@@ -951,7 +906,7 @@ const getRelevantData = (ev: MouseEvent) => {
     let notice = false;
     let recommend = false;
 
-    let linkElement: HTMLLinkElement;
+    let linkElement: HTMLLinkElement | null;
 
     if (listID) {
         if (listID.innerText === "공지") {
@@ -965,7 +920,7 @@ const getRelevantData = (ev: MouseEvent) => {
                     "";
             }
 
-            id = new URLSearchParams(href).get("no") || "";
+            id = new URLSearchParams(href).get("no") ?? "";
             notice = true;
         } else {
             id = listID.innerText;
@@ -975,37 +930,40 @@ const getRelevantData = (ev: MouseEvent) => {
             ? target.querySelector("em.icon_img")
             : findNeighbor(target, "em.icon_img", 5, null);
         if (emElement) {
-            recommend = emElement.className.includes("icon_recomimg");
+            recommend = emElement.classList.contains("icon_recomimg");
         }
 
-        linkElement = (
-            isTR
-                ? target.querySelector("a:not(.reply_numbox)")
-                : findNeighbor(target, "a:not(.reply_numbox)", 3, null)
-        ) as HTMLLinkElement;
+        linkElement = isTR
+            ? target.querySelector<HTMLLinkElement>("a:not(.reply_numbox)")
+            : (findNeighbor(
+                  target,
+                  "a:not(.reply_numbox)",
+                  3,
+                  null
+              ) as HTMLLinkElement);
 
-        if (typeof linkElement !== null) {
-            title = linkElement.innerText;
-        }
+        if (linkElement) title = linkElement.innerText;
     } else {
-        linkElement = (
-            isTR
-                ? target.querySelector("a")
-                : findNeighbor(ev.target as HTMLElement, "a", 2, null)
-        ) as HTMLLinkElement;
+        linkElement = isTR
+            ? target.querySelector<HTMLLinkElement>("a")
+            : (findNeighbor(
+                  ev.target as HTMLElement,
+                  "a",
+                  2,
+                  null
+              ) as HTMLLinkElement);
 
         const pt = isTR
             ? target.querySelector(".txt_box")
             : findNeighbor(ev.target as HTMLElement, ".txt_box", 2, null);
-        if (pt) {
-            title = pt.innerHTML;
-        }
+        if (pt) title = pt.innerHTML;
     }
 
     if (linkElement) {
-        const href = linkElement.href || "";
-        const linkNumberMatch = href.match(/&no=.+/);
-        const linkIdMatch = href.match(/id=.+/);
+        link = linkElement.href;
+
+        const linkNumberMatch = link.match(/&no=.+/);
+        const linkIdMatch = link.match(/id=.+/);
 
         if (!linkNumberMatch || !linkIdMatch) {
             return;
@@ -1013,10 +971,6 @@ const getRelevantData = (ev: MouseEvent) => {
 
         id = linkNumberMatch[0].replace("&no=", "").replace(/&.+/g, "");
         gallery = linkIdMatch[0].replace(/id=/g, "").replace(/&.+/g, "");
-    }
-
-    if (linkElement) {
-        link = linkElement.href;
     }
 
     return {
