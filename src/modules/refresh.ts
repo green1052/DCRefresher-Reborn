@@ -1,24 +1,26 @@
 import * as Toast from "../components/toast";
 import { queryString } from "../utils/http";
+import * as block from "../core/block";
 
 const AVERAGE_COUNTS_SIZE = 7;
 
 let PAUSE_REFRESH = false;
 
 const updateRefreshText = (button?: HTMLElement) => {
-    button ??= document.querySelector(
-        ".page_head .gall_issuebox button[data-refresher=true]"
-    ) as HTMLElement;
+    button ??=
+        document.querySelector<HTMLElement>(
+            ".page_head .gall_issuebox button[data-refresher=true]"
+        ) ?? undefined;
 
     if (!button) return;
 
-    const onOff = button.querySelector("span");
+    const onOff = button.querySelector<HTMLSpanElement>("span");
     (onOff as HTMLSpanElement).innerHTML = PAUSE_REFRESH ? "꺼짐" : "켜짐";
 };
 
 const addRefreshText = (issueBox: HTMLElement) => {
     const pageHead =
-        issueBox || document.querySelector(".page_head .gall_issuebox");
+        issueBox ?? document.querySelector(".page_head .gall_issuebox");
 
     if (!pageHead?.querySelector('button[data-refresher="true"]')) {
         const button = document.createElement("button");
@@ -109,7 +111,7 @@ export default {
                 return;
             }
 
-            this.memory.load!();
+            this.memory.load?.();
         },
         refreshPause() {
             PAUSE_REFRESH = !PAUSE_REFRESH;
@@ -132,7 +134,7 @@ export default {
         filter: RefresherFilter
     ) {
         if (this.status.doNotColorVisited) {
-            document?.documentElement?.classList.add(
+            document.documentElement.classList.add(
                 "refresherDoNotColorVisited"
             );
         }
@@ -149,7 +151,11 @@ export default {
                 return bodyParse.querySelector(".gall_list tbody");
             });
 
-        const isPostView = location.href.includes("/board/view");
+        filter.add(".page_head .gall_issuebox", (element) => {
+            addRefreshText(element);
+        });
+
+        const isPostView = location.pathname === "/board/view/";
         const currentPostNo = new URLSearchParams(location.href).get("no");
 
         let originalLocation = location.href;
@@ -158,10 +164,6 @@ export default {
             PAUSE_REFRESH = true;
             updateRefreshText();
         }
-
-        filter.add(".page_head .gall_issuebox", (element) => {
-            addRefreshText(element);
-        });
 
         this.memory.load = async (customURL?, force?): Promise<boolean> => {
             if (document.hidden) {
@@ -207,35 +209,47 @@ export default {
             const url = http.view(originalLocation);
             const newList = await body(url);
 
-            const oldList = document.querySelector(".gall_list tbody");
+            const tbody = document.querySelector(".gall_list tbody");
 
-            if (!oldList || !newList || newList.children.length === 0)
+            if (!tbody || !newList || newList.children.length === 0)
                 return false;
 
-            const cached = Array.from(oldList.querySelectorAll("td.gall_num"))
+            const cached = Array.from(tbody.querySelectorAll("td.gall_num"))
                 .map((v) => v.innerHTML)
                 .join("|");
 
-            const tbody =
-                oldList.parentElement?.querySelector<HTMLElement>("tbody");
+            tbody.innerHTML = "";
 
-            if (!tbody) return false;
+            for (const element of Array.from(newList.children)) {
+                const writter =
+                    element.querySelector<HTMLElement>(".ub-writer");
 
-            tbody.innerHTML = newList.innerHTML;
+                if (
+                    writter &&
+                    block.checkAll({
+                        NICK: writter.dataset.nick ?? "",
+                        ID: writter.dataset.uid ?? "",
+                        IP: writter.dataset.ip ?? ""
+                    })
+                ) {
+                    continue;
+                }
 
-            const postNoIter = newList.querySelectorAll("td.gall_num");
+                tbody.appendChild(element);
+            }
+
+            const postNoIter = tbody.querySelectorAll("td.gall_num");
 
             let containsEmpty = false;
-            if (newList.parentElement) {
-                containsEmpty =
-                    newList.parentElement.classList.contains("empty");
+            if (tbody.parentElement) {
+                containsEmpty = tbody.parentElement.classList.contains("empty");
 
                 if (postNoIter.length) {
                     if (containsEmpty) {
-                        newList.parentElement.classList.remove("empty");
+                        tbody.parentElement.classList.remove("empty");
                     }
                 } else if (!containsEmpty) {
-                    newList.parentElement.classList.add("empty");
+                    tbody.parentElement.classList.add("empty");
                 }
             }
 
@@ -484,10 +498,10 @@ export default {
                         );
 
                     if (pagingBoxAnchors) {
-                        pagingBoxAnchors.forEach(async (a) => {
+                        for (const a of pagingBoxAnchors) {
                             const href = a.href;
 
-                            if (href.includes("javascript:")) return;
+                            if (href.includes("javascript:")) continue;
 
                             a.onclick = () => false;
 
@@ -520,7 +534,7 @@ export default {
                                     behavior: "smooth"
                                 });
                             });
-                        });
+                        }
                     }
                 }
             );
@@ -531,7 +545,7 @@ export default {
         eventBus: RefresherEventBus,
         filter: RefresherFilter
     ) {
-        document?.body?.classList.remove("refresherDoNotColorVisited");
+        document.body.classList.remove("refresherDoNotColorVisited");
 
         if (this.memory.refresh) {
             clearTimeout(this.memory.refresh);
