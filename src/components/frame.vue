@@ -10,7 +10,7 @@
         <div
             v-if="frame.error !== undefined"
             class="refresher-preview-contents refresher-error">
-            <h3>{{ frame.error.title }}을 불러올 수 없습니다.</h3>
+            <h3>{{ frame.error.title }}</h3>
             <br />
             <p>가능한 경우:</p>
             <ul v-if="frame.error.detail.includes('50')">

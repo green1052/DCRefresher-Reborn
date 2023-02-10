@@ -26,6 +26,7 @@ class PostInfo implements IPostInfo {
     commentId?: string;
     commentNo?: string;
     isNotice?: boolean;
+    isAdult?: boolean;
     requireCaptcha?: boolean;
     requireCommentCaptcha?: boolean;
     disabledDownvote?: boolean;
@@ -53,7 +54,7 @@ const ISSUE_ZOOM_NO = /\$\(document\)\.data\('comment_no',\s'.+'\);/g;
 
 const QUOTES = /(["'])(?:(?=(\\?))\2.)*?\1/g;
 
-const parse = (id: string, body: string) => {
+const parse = (id: string, body: string): PostInfo => {
     const dom = new DOMParser().parseFromString(body, "text/html");
 
     const header = dom
@@ -124,6 +125,8 @@ const parse = (id: string, body: string) => {
     );
     const isNotice = noticeElement && noticeElement.innerHTML !== "공지 등록";
 
+    const isAdult = dom.head.innerHTML.includes("/error/adult");
+
     const requireCaptcha = dom.querySelector(".recommend_kapcode") !== null;
     const requireCommentCaptcha =
         dom.querySelector('.cmt_write_box input[name="comment_code"]') !== null;
@@ -148,6 +151,7 @@ const parse = (id: string, body: string) => {
         commentId,
         commentNo,
         isNotice,
+        isAdult,
         disabledDownvote,
         requireCaptcha,
         requireCommentCaptcha,
@@ -1485,34 +1489,41 @@ export default {
 
                         postFetchedData = postInfo;
 
-                        frame.contents = block.check(
-                            "TEXT",
-                            postInfo.contents ?? "",
-                            gallery
-                        )
-                            ? "게시글 내용이 차단됐습니다."
-                            : postInfo.contents;
-                        frame.upvotes = postInfo.upvotes;
-                        frame.fixedUpvotes = postInfo.fixedUpvotes;
-                        frame.downvotes = postInfo.downvotes;
+                        if (postInfo.isAdult) {
+                            frame.error = {
+                                title: "성인 인증이 필요한 게시글입니다.",
+                                detail: "성인 인증을 하신 후 다시 시도해주세요."
+                            };
+                        } else {
+                            frame.contents = block.check(
+                                "TEXT",
+                                postInfo.contents ?? "",
+                                gallery
+                            )
+                                ? "게시글 내용이 차단됐습니다."
+                                : postInfo.contents;
+                            frame.upvotes = postInfo.upvotes;
+                            frame.fixedUpvotes = postInfo.fixedUpvotes;
+                            frame.downvotes = postInfo.downvotes;
 
-                        if (frame.title !== postInfo.title)
-                            frame.title = postInfo.title!;
+                            if (frame.title !== postInfo.title)
+                                frame.title = postInfo.title!;
 
-                        frame.data.disabledDownvote =
-                            postInfo.disabledDownvote ?? false;
+                            frame.data.disabledDownvote =
+                                postInfo.disabledDownvote ?? false;
 
-                        frame.data.user = postInfo.user;
+                            frame.data.user = postInfo.user;
 
-                        if (postInfo.date) {
-                            frame.data.date = new Date(
-                                postInfo.date.replace(/\./g, "-")
-                            );
+                            if (postInfo.date) {
+                                frame.data.date = new Date(
+                                    postInfo.date.replace(/\./g, "-")
+                                );
+                            }
+
+                            frame.data.expire = postInfo.expire;
+                            frame.data.buttons = true;
+                            frame.data.views = `조회 ${postInfo.views}회`;
                         }
-
-                        frame.data.expire = postInfo.expire;
-                        frame.data.buttons = true;
-                        frame.data.views = `조회 ${postInfo.views}회`;
 
                         eventBus.emit("RefresherPostDataLoaded", postInfo);
                         eventBus.emit(
