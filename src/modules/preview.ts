@@ -604,7 +604,7 @@ const panel = {
 
     admin: (
         preData: GalleryPreData,
-        frame: RefresherFrame,
+        frame: IFrame,
         toggleBlur: boolean,
         eventBus: RefresherEventBus,
         useKeyPress: boolean
@@ -1148,7 +1148,7 @@ const miniPreview: MiniPreview = {
     }
 };
 
-let frame: RefresherFrame;
+let frame: IFrame;
 
 export default {
     name: "미리보기",
@@ -1420,6 +1420,9 @@ export default {
                                 post: response
                             });
                             resolve(response);
+                        })
+                        .catch((error) => {
+                            reject(error);
                         });
                 })
                     .then((postInfo) => {
@@ -1906,151 +1909,146 @@ export default {
             const detector = new ScrollDetection();
             let scrolledCount = 0;
 
-            frame ??= new Frame(
-                [
+            if (!frame) {
+                frame = new Frame(
+                    [
+                        {
+                            relative: true,
+                            center: true,
+                            preview: true,
+                            blur: this.status.toggleBlur
+                        },
+                        {
+                            relative: true,
+                            center: true,
+                            preview: true,
+                            blur: this.status.toggleBlur
+                        }
+                    ],
                     {
-                        relative: true,
-                        center: true,
-                        preview: true,
-                        blur: this.status.toggleBlur
-                    },
-                    {
-                        relative: true,
-                        center: true,
-                        preview: true,
-                        blur: this.status.toggleBlur
+                        background: true,
+                        stack: true,
+                        groupOnce: true,
+                        onScroll: (
+                            ev: WheelEvent,
+                            app: RefresherFrameAppVue,
+                            group: HTMLElement
+                        ) => {
+                            if (!this.status.scrollToSkip) return;
+
+                            appStore = app;
+                            groupStore = group;
+
+                            detector.addMouseEvent(ev);
+                        },
+                        blur: this.status.toggleBackgroundBlur
                     }
-                ],
-                {
-                    background: true,
-                    stack: true,
-                    groupOnce: true,
-                    onScroll: (
-                        ev: WheelEvent,
-                        app: RefresherFrameAppVue,
-                        group: HTMLElement
-                    ) => {
-                        if (!this.status.scrollToSkip) return;
-
-                        appStore = app;
-                        groupStore = group;
-
-                        detector.addMouseEvent(ev);
-                    },
-                    blur: this.status.toggleBackgroundBlur
-                }
-            );
-
-            frame.app.closed = false;
-
-            detector.listen("scroll", (ev: WheelEvent) => {
-                const scrolledTop = groupStore.scrollTop === 0;
-
-                const scroll = Math.floor(
-                    groupStore.scrollHeight - groupStore.scrollTop
                 );
 
-                const scrolledToBottom =
-                    scroll === groupStore.clientHeight ||
-                    scroll + 1 === groupStore.clientHeight;
+                detector.listen("scroll", (ev: WheelEvent) => {
+                    const scrolledTop = groupStore.scrollTop === 0;
 
-                if (!scrolledTop && !scrolledToBottom) {
-                    scrolledCount = 0;
-                }
-
-                if (ev.deltaY < 0) {
-                    appStore.$data.scrollModeBottom = false;
-                    appStore.$data.scrollModeTop = true;
-
-                    if (!scrolledTop) {
-                        appStore.$data.scrollModeTop = false;
-                        appStore.$data.scrollModeBottom = false;
-                    }
-
-                    if (!scrolledTop || !preData) return;
-
-                    if (scrolledCount++ < 1) return;
-
-                    scrolledCount = 0;
-
-                    preData.id = (Number(preData.id) - 1).toString();
-
-                    newPostWithData(preData, historySkip);
-                    groupStore.scrollTop = 0;
-                    appStore.clearScrollMode();
-                } else {
-                    appStore.$data.scrollModeTop = false;
-                    appStore.$data.scrollModeBottom = true;
-
-                    if (!scrolledToBottom) {
-                        appStore.$data.scrollModeTop = false;
-                        appStore.$data.scrollModeBottom = false;
-                    }
-
-                    if (!scrolledToBottom || !preData) {
-                        return;
-                    }
-
-                    if (scrolledCount++ < 1) return;
-
-                    scrolledCount = 0;
-
-                    if (!frame || !frame.app.first().error) {
-                        preData.id = (Number(preData.id) + 1).toString();
-                    }
-
-                    newPostWithData(preData, historySkip);
-
-                    groupStore.scrollTop = 0;
-                    appStore.clearScrollMode();
-                }
-            });
-
-            frame.app.$on("close", () => {
-                controller.abort();
-
-                const blockPopup = document.querySelector(
-                    ".refresher-block-popup"
-                );
-                blockPopup?.remove();
-
-                const captchaPopup = document.querySelector(
-                    ".refresher-captcha-popup"
-                );
-                captchaPopup?.remove();
-
-                const adminPanel = document.querySelector(
-                    ".refresher-management-panel"
-                );
-                adminPanel?.remove();
-
-                if (typeof adminKeyPress === "function") {
-                    document.removeEventListener("keypress", adminKeyPress);
-                }
-
-                if (
-                    !this.memory.historyClose &&
-                    this.memory.titleStore !== "" &&
-                    this.memory.titleStore !== null
-                ) {
-                    history.pushState(
-                        null,
-                        this.memory.titleStore,
-                        this.memory.urlStore
+                    const scroll = Math.floor(
+                        groupStore.scrollHeight - groupStore.scrollTop
                     );
 
-                    this.memory.historyClose = false;
-                }
+                    const scrolledToBottom =
+                        scroll === groupStore.clientHeight ||
+                        scroll + 1 === groupStore.clientHeight;
 
-                if (
-                    this.memory.titleStore !== "" &&
-                    this.memory.titleStore !== null
-                ) {
-                    document.title = this.memory.titleStore;
-                }
+                    if (!scrolledTop && !scrolledToBottom) {
+                        scrolledCount = 0;
+                    }
 
-                window.clearInterval(this.memory.refreshIntervalId!);
-            });
+                    if (ev.deltaY < 0) {
+                        appStore.$data.scrollModeBottom = false;
+                        appStore.$data.scrollModeTop = true;
+
+                        if (!scrolledTop) {
+                            appStore.$data.scrollModeTop = false;
+                            appStore.$data.scrollModeBottom = false;
+                        }
+
+                        if (!scrolledTop || !preData) return;
+
+                        if (scrolledCount++ < 1) return;
+
+                        scrolledCount = 0;
+
+                        preData.id = (Number(preData.id) - 1).toString();
+
+                        newPostWithData(preData, historySkip);
+                        groupStore.scrollTop = 0;
+                        appStore.clearScrollMode();
+                    } else {
+                        appStore.$data.scrollModeTop = false;
+                        appStore.$data.scrollModeBottom = true;
+
+                        if (!scrolledToBottom) {
+                            appStore.$data.scrollModeTop = false;
+                            appStore.$data.scrollModeBottom = false;
+                        }
+
+                        if (!scrolledToBottom || !preData) {
+                            return;
+                        }
+
+                        if (scrolledCount++ < 1) return;
+
+                        scrolledCount = 0;
+
+                        if (!frame || !frame.app.first().error) {
+                            preData.id = (Number(preData.id) + 1).toString();
+                        }
+
+                        newPostWithData(preData, historySkip);
+
+                        groupStore.scrollTop = 0;
+                        appStore.clearScrollMode();
+                    }
+                });
+
+                frame.app.$on("close", () => {
+                    controller.abort();
+
+                    const blockPopup = document.querySelector(
+                        ".refresher-block-popup"
+                    );
+                    blockPopup?.remove();
+
+                    const captchaPopup = document.querySelector(
+                        ".refresher-captcha-popup"
+                    );
+                    captchaPopup?.remove();
+
+                    const adminPanel = document.querySelector(
+                        ".refresher-management-panel"
+                    );
+                    adminPanel?.remove();
+
+                    if (typeof adminKeyPress === "function") {
+                        document.removeEventListener("keypress", adminKeyPress);
+                    }
+
+                    if (!this.memory.historyClose && this.memory.titleStore) {
+                        history.pushState(
+                            null,
+                            this.memory.titleStore,
+                            this.memory.urlStore
+                        );
+
+                        this.memory.historyClose = false;
+                    }
+
+                    if (this.memory.titleStore) {
+                        document.title = this.memory.titleStore;
+                    }
+
+                    window.clearInterval(this.memory.refreshIntervalId!);
+                });
+            }
+
+            frame.app.closed = false;
 
             frame.app.first().collapse = collapseView;
 
@@ -2187,14 +2185,14 @@ export default {
         window.addEventListener("popstate", this.memory.popStateHandler);
     },
     revoke(filter: RefresherFilter) {
-        if (this.memory.uuid !== null) filter.remove(this.memory.uuid, true);
+        if (this.memory.uuid) filter.remove(this.memory.uuid, true);
 
-        if (this.memory.uuid2 !== null) filter.remove(this.memory.uuid2, true);
+        if (this.memory.uuid2) filter.remove(this.memory.uuid2, true);
 
-        if (this.memory.popStateHandler !== null)
+        if (this.memory.popStateHandler)
             window.removeEventListener("popstate", this.memory.popStateHandler);
 
-        if (this.memory.refreshIntervalId !== null)
+        if (this.memory.refreshIntervalId)
             window.clearInterval(this.memory.refreshIntervalId);
     }
 } as RefresherModule<{
