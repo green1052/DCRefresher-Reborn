@@ -58,7 +58,7 @@ declare global {
 
     interface RefresherModuleGeneric {
         data?: Record<string, unknown>;
-        memory: Record<string, unknown>;
+        memory?: Record<string, unknown>;
         settings?: Record<string, RefresherSettings>;
         shortcuts?: Record<string, () => void>;
         update?: Record<string, (value: any) => void>;
