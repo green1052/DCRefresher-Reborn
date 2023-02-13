@@ -687,6 +687,16 @@ const panel = {
 
         if (useKeyPress) {
             adminKeyPress = (ev: KeyboardEvent) => {
+                const target = ev.target as HTMLElement;
+
+                if (
+                    target &&
+                    (target.tagName === "INPUT" ||
+                        target.tagName === "TEXTAREA")
+                ) {
+                    return ev;
+                }
+
                 if (ev.code !== "KeyB" && ev.code !== "KeyD") {
                     return ev;
                 }
