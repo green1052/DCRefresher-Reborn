@@ -77,7 +77,7 @@
                         "application/x-www-form-urlencoded; charset=UTF-8"
                 },
                 cache: "no-store",
-                body: `?${params.toString()}`
+                body: params
             }).then((response) => {
                 this.dcconList = JSON.parse(response);
                 this.currentDccon = this.dcconList!.list[0].detail;

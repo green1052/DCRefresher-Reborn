@@ -251,7 +251,7 @@ const request = {
 
         const response = await this.make(http.urls.comments, {
             referrer: `https://gall.dcinside.com/${galleryType}board/view/?id=${args.gallery}&no=${args.id}`,
-            body: `&${params.toString()}`,
+            body: params,
             signal
         });
 
@@ -275,7 +275,7 @@ const request = {
                 : http.urls.manage.delete,
             {
                 referrer: `https://gall.dcinside.com/${galleryType}board/lists/?id=${args.gallery}`,
-                body: `&${params.toString()}`
+                body: params
             }
         );
 
@@ -315,7 +315,7 @@ const request = {
                 : http.urls.manage.block,
             {
                 referrer: `https://gall.dcinside.com/${galleryType}board/lists/?id=${args.gallery}`,
-                body: `&${params.toString()}`
+                body: params
             }
         );
 
@@ -346,7 +346,7 @@ const request = {
                 : http.urls.manage.setNotice,
             {
                 referrer: `https://gall.dcinside.com/${galleryType}board/lists/?id=${args.gallery}`,
-                body: `&${params.toString()}`
+                body: params
             }
         );
 
@@ -376,7 +376,7 @@ const request = {
                 : http.urls.manage.setRecommend,
             {
                 referrer: `https://gall.dcinside.com/${galleryType}board/lists/?id=${args.gallery}`,
-                body: `&${params.toString()}`
+                body: params
             }
         );
 
@@ -443,7 +443,7 @@ const request = {
 
         return this.make(url, {
             referrer: `https://gall.dcinside.com/${galleryType}board/view/?id=${preData.gallery}&no=${preData.id}`,
-            body: `&${params.toString()}`,
+            body: params,
             signal
         })
             .then((v) => {
@@ -482,7 +482,7 @@ const request = {
 
         return this.make(http.urls.comment_remove, {
             referrer: `https://gall.dcinside.com/${galleryType}board/view/?id=${preData.gallery}&no=${preData.id}`,
-            body: `&${params.toString()}`,
+            body: params,
             signal
         })
             .then((v) => {

@@ -187,7 +187,7 @@ export default {
                             "application/x-www-form-urlencoded; charset=UTF-8"
                     },
                     cache: "no-store",
-                    body: `?${params.toString()}`
+                    body: params
                 }).then((response) => {
                     const json = JSON.parse(response);
                     const title = json.info.title;
