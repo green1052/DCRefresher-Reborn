@@ -55,7 +55,7 @@ declare global {
             disabledDownvote: boolean;
             user: User | undefined;
             date: Date | undefined;
-            expire: string | undefined;
+            expire: Date | undefined;
             views: string | undefined;
             useWriteComment: boolean;
             comments: DcinsideComments | undefined;

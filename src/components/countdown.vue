@@ -13,8 +13,7 @@
 </template>
 
 <script lang="ts">
-    import Vue, { PropType } from "vue";
-    import * as stream from "stream";
+    import Vue from "vue";
 
     const s = 1000;
     const m = s * 60;
@@ -48,7 +47,6 @@
     };
 
     interface CountdownVueData {
-        parseDate: Date;
         mode: number;
         stamp: string;
         updates: number;
@@ -58,13 +56,12 @@
         name: "refresher-countdown",
         props: {
             date: {
-                type: String,
+                type: Date,
                 required: true
             }
         },
         data: (): CountdownVueData => {
             return {
-                parseDate: new Date(),
                 mode: 0,
                 stamp: "",
                 updates: 0
@@ -72,16 +69,14 @@
         },
         computed: {
             locale(): string {
-                return this.parseDate.toLocaleString();
+                return this.date.toLocaleString();
             }
         },
         mounted(): void {
-            this.parseDate = new Date(this.date);
-
-            this.stamp = convertTime(this.parseDate);
+            this.stamp = convertTime(this.date);
 
             this.updates = window.setInterval(() => {
-                this.stamp = convertTime(this.parseDate);
+                this.stamp = convertTime(this.date);
             }, 5000);
         },
 
