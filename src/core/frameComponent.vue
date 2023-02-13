@@ -37,6 +37,7 @@
         scrollModeTop: boolean;
         scrollModeBottom: boolean;
         closed: boolean;
+        inputFocus: boolean;
     }
 
     export default Vue.extend({
@@ -60,7 +61,8 @@
                 stampMode: false,
                 scrollModeTop: false,
                 scrollModeBottom: false,
-                closed: false
+                closed: false,
+                inputFocus: false
             };
         },
         watch: {

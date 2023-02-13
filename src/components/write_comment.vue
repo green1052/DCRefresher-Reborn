@@ -50,7 +50,9 @@
                         hoverUserInfo && !this.user.id
                     )
                 }">
-                <UserComponent v-if="user" :user="user" />
+                <UserComponent
+                    v-if="user"
+                    :user="user" />
                 <span>
                     로 {{ this.getReply() === null ? "" : "답글" }}
                     {{ this.getDccon() === null ? "" : "디시콘" }} 작성 중
@@ -129,9 +131,9 @@
         },
         watch: {
             unsignedUserID(value: string): void {
-              if (!this.user) return;
+                if (!this.user) return;
 
-              localStorage.setItem("nonmember_nick", value);
+                localStorage.setItem("nonmember_nick", value);
                 this.user.nick = value;
             },
 
@@ -238,12 +240,12 @@
 
             focus(): void {
                 this.focused = true;
-                this.$root.inputFocus = true;
+                this.$root.$children[0].$data.inputFocus = true;
             },
 
             blur(): void {
                 this.focused = false;
-                this.$root.inputFocus = false;
+                this.$root.$children[0].$data.inputFocus = false;
             },
 
             type(ev: KeyboardEvent): KeyboardEvent | void {
