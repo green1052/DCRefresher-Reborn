@@ -1,6 +1,6 @@
 import * as Toast from "../components/toast";
-import { queryString } from "../utils/http";
 import * as block from "../core/block";
+import { queryString } from "../utils/http";
 
 const AVERAGE_COUNTS_SIZE = 7;
 
