@@ -1467,7 +1467,10 @@ export default {
                                 );
                             }
 
-                            frame.data.expire = postInfo.expire;
+                            if (postInfo.expire) {
+                                frame.data.expire = new Date(postInfo.expire);
+                            }
+
                             frame.data.buttons = true;
                             frame.data.views = `조회 ${postInfo.views}회`;
                         }
