@@ -29,35 +29,37 @@ export default {
             default: false
         }
     },
-    require: ["filter", "http", "dom"],
-    func(filter: RefresherFilter, http: RefresherHTTP, dom: RefresherDOM) {
-        window.addEventListener("load", () => {
-            this.memory.submitButton = filter.add<HTMLButtonElement>(
-                "button.write",
-                (element) => {
-                    element.addEventListener("click", (e) => {
-                        if (!this.status.bypassTitleLimit) return;
+    require: ["filter", "http"],
+    func(filter: RefresherFilter, http: RefresherHTTP) {
+        this.memory.submitButton = filter.add<HTMLButtonElement>(
+            "button.write",
+            (element) => {
+                element.addEventListener("click", () => {
+                    if (!this.status.bypassTitleLimit) return;
 
-                        const titleElement =
-                            document.querySelector<HTMLInputElement>(
-                                "input[id=subject]"
-                            );
+                    const titleElement =
+                        document.querySelector<HTMLInputElement>(
+                            "input[id=subject]"
+                        );
 
-                        if (!titleElement) return;
+                    if (!titleElement) return;
 
-                        const title = titleElement.value;
+                    const title = titleElement.value;
 
-                        if (title.length === 1)
-                            titleElement.value = `${title}\u200B`;
-                    });
-                }
-            );
+                    if (title.length === 1)
+                        titleElement.value = `${title}\u200B`;
+                });
+            }
+        );
 
-            this.memory.canvas = filter.add<HTMLIFrameElement>(
-                "#tx_canvas_wysiwyg",
-                (element) => {
-                    const iframe = element.contentWindow!.document!;
-                    const contentContainer = iframe?.querySelector<HTMLElement>(
+        this.memory.canvas = filter.add<HTMLIFrameElement>(
+            "#tx_canvas_wysiwyg",
+            (element) => {
+                const win = element.contentWindow!;
+                const dom = win.document!;
+
+                win.addEventListener("DOMContentLoaded", () => {
+                    const contentContainer = dom?.querySelector<HTMLElement>(
                         ".tx-content-container"
                     )!;
 
@@ -146,14 +148,13 @@ export default {
                             // );
                         }
                     });
-                }
-            );
-        });
+                });
+            }
+        );
     },
     revoke(filter: RefresherFilter) {
-        if (this.memory.submitButton) filter.remove(this.memory.submitButton);
-
-        if (this.memory.canvas) filter.remove(this.memory.canvas);
+        filter.remove(this.memory.submitButton);
+        filter.remove(this.memory.canvas);
     }
 } as RefresherModule<{
     memory: {
@@ -165,5 +166,5 @@ export default {
         bypassTitleLimit: RefresherCheckSettings;
         selfImage: RefresherCheckSettings;
     };
-    require: ["filter", "http", "dom"];
+    require: ["filter", "http"];
 }>;
