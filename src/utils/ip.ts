@@ -1,8 +1,8 @@
 import * as storage from "./storage";
+import { Nullable } from "./types";
 import * as mmdb from "mmdb-lib";
 import { AsnResponse, CountryResponse } from "mmdb-lib";
 import { Buffer } from "buffer";
-import { Nullable } from "./types";
 
 let asnReader: mmdb.Reader<AsnResponse>;
 let countryReader: mmdb.Reader<CountryResponse>;
