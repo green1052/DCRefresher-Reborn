@@ -107,7 +107,7 @@ export const view = (url: string): string => {
 };
 
 export const make = (url: string, options?: RequestInit): Promise<string> =>
-    fetch(url, options).then(async (response) => {
+    fetch(url, options).then((response) => {
         if (response.status > 400)
             throw `${response.status} ${response.statusText}`;
 

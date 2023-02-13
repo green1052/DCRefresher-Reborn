@@ -105,7 +105,7 @@ export async function submitComment(
     } catch (e) {
         return {
             result: "PreNotWorking",
-            message: String(e) ?? "사전에 정의되지 않은 오류."
+            message: (e as string) ?? "사전에 정의되지 않은 오류."
         };
     }
 
