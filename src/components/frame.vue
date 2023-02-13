@@ -398,6 +398,17 @@
         },
         created() {
             this.frame.app.$on("close", () => {
+              this.frame.title = "";
+              this.frame.subtitle = "";
+              this.frame.contents = undefined;
+              this.frame.upvotes = undefined;
+              this.frame.fixedUpvotes = undefined;
+              this.frame.downvotes = undefined;
+              this.frame.error = undefined;
+              this.frame.collapse = undefined
+              this.frame.data = {};
+              this.frame.functions = {};
+
                 this.reply = null;
                 this.dccon = null;
                 this.closeDccon();

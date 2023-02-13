@@ -183,17 +183,21 @@ const request = {
         );
 
         const params = new URLSearchParams();
+        if (code) {
+            params.set("kcaptcha_use", "Y");
+        }
+        params.set("code_recommend", code ?? "");
         params.set("ci_t", Cookies.get("ci_c") ?? "");
         params.set("id", gall_id);
         params.set("no", post_id);
         params.set("mode", type ? "U" : "D");
-        params.set("code_recommend", code ?? "undefined");
+        params.set("code_recommend", code ?? "");
         params.set("_GALLTYPE_", http.galleryTypeName(link));
         params.set("link_id", gall_id);
 
         const response = await this.make(http.urls.vote, {
             referrer: link,
-            body: `&${params.toString()}`
+            body: params
         });
 
         const [result, counts, fixedCounts] = response.split("||");
@@ -398,7 +402,7 @@ const request = {
 
         await this.make(http.urls.captcha, {
             referrer: `https://gall.dcinside.com/${galleryType}board/lists/?id=${args.gallery}`,
-            body: `&${params.toString()}`
+            body: params
         });
 
         return (
@@ -859,31 +863,28 @@ const panel = {
     </button>
     `;
 
+        const inputEvent = () => {
+            const input = element.querySelector("input")!.value;
+
+            if (!input) return;
+
+            callback(input);
+            element.parentElement!.removeChild(element);
+        };
+
         setTimeout(() => {
-            element.querySelector("input")?.focus();
+            element.querySelector("input")!.focus();
         }, 0);
 
         element.querySelector("input")!.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                const input = element.querySelector("input")!.value;
-
-                callback(input);
-
-                element.parentElement!.removeChild(element);
-            }
+            if (e.key === "Enter") inputEvent();
         });
 
         element.querySelector(".close")!.addEventListener("click", () => {
             element.parentElement!.removeChild(element);
         });
 
-        element.querySelector("button")!.addEventListener("click", () => {
-            const input = element.querySelector("input")!.value;
-
-            callback(input);
-
-            element.parentElement!.removeChild(element);
-        });
+        element.querySelector("button")!.addEventListener("click", inputEvent);
 
         document.body.appendChild(element);
 
@@ -1292,13 +1293,6 @@ export default {
             signal: AbortSignal,
             historySkip?: boolean
         ) => {
-            frame.error = undefined;
-            frame.contents = undefined;
-            frame.fixedUpvotes = undefined;
-            frame.upvotes = undefined;
-            frame.downvotes = undefined;
-            frame.data.user = undefined;
-
             frame.data.load = true;
             frame.title = preData.title!;
             frame.data.buttons = true;
@@ -1321,7 +1315,7 @@ export default {
             }
 
             frame.functions.vote = async (type: number) => {
-                if (frame.collapse === true) {
+                if (frame.collapse) {
                     Toast.show(
                         "댓글 보기를 클릭하여 댓글만 표시합니다.",
                         true,
@@ -1366,11 +1360,7 @@ export default {
                     return true;
                 };
 
-                if (codeSrc === undefined) return req();
-
-                return panel.captcha(codeSrc, (str) => {
-                    req(str);
-                });
+                return codeSrc ? panel.captcha(codeSrc, req) : req();
             };
 
             frame.functions.share = () => {
@@ -1523,9 +1513,6 @@ export default {
             preData: GalleryPreData,
             signal: AbortSignal
         ) => {
-            frame.error = undefined;
-            frame.data.comments = undefined;
-
             frame.data.load = true;
             frame.title = "댓글";
             frame.subtitle = "로딩 중";
