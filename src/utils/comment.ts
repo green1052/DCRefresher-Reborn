@@ -1,5 +1,4 @@
 import * as http from "./http";
-import Cookies from "js-cookie";
 import ky from "ky";
 import type { Nullable } from "./types";
 
