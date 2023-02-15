@@ -1724,6 +1724,7 @@ __metadata:
     html-webpack-plugin: ^5.5.0
     js-cookie: ^3.0.1
     jszip: ^3.10.1
+    ky: ^0.33.2
     mini-css-extract-plugin: ^2.7.2
     mmdb-lib: ^2.0.2
     prettier: ^2.8.4
@@ -3466,6 +3467,13 @@ __metadata:
   version: 2.0.6
   resolution: "klona@npm:2.0.6"
   checksum: ac9ee3732e42b96feb67faae4d27cf49494e8a3bf3fa7115ce242fe04786788e0aff4741a07a45a2462e2079aa983d73d38519c85d65b70ef11447bbc3c58ce7
+  languageName: node
+  linkType: hard
+
+"ky@npm:^0.33.2":
+  version: 0.33.2
+  resolution: "ky@npm:0.33.2"
+  checksum: bb5b1685b7d639dad5fc0a41a218f76c2400d2a9189bcf747f541633af13b68a7ef12bb8aa971bc1667087789ec5965cc3728e24b693897a2d0cc539d7593655
   languageName: node
   linkType: hard
 
