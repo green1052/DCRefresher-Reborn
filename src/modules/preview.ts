@@ -197,13 +197,7 @@ const request = {
         };
     },
 
-    post(
-        link: string,
-        gallery: string,
-        id: string,
-        signal: AbortSignal,
-        noCache: boolean
-    ) {
+    post(link: string, gallery: string, id: string, signal: AbortSignal) {
         return ky
             .get(
                 `${http.urls.base}${http.galleryType(link, "/")}${
@@ -1222,13 +1216,6 @@ export default {
             type: "check",
             default: false
         },
-        noCacheHeader: {
-            name: "no-cache 헤더 추가",
-            desc: "전송하는 게시글 요청에 no-cache 헤더를 추가합니다.",
-            advanced: true,
-            type: "check",
-            default: false
-        },
         experimentalComment: {
             name: "댓글 기능 활성화",
             desc: "댓글을 작성할 수 있습니다.",
@@ -1362,8 +1349,7 @@ export default {
                             preData.link!,
                             preData.gallery,
                             preData.id,
-                            signal,
-                            this.status.noCacheHeader
+                            signal
                         )
                         .then((response) => {
                             if (!response) {
@@ -2167,7 +2153,6 @@ export default {
         toggleAdminPanel: RefresherCheckSettings;
         useKeyPress: RefresherCheckSettings;
         expandRecognizeRange: RefresherCheckSettings;
-        noCacheHeader: RefresherCheckSettings;
         experimentalComment: RefresherCheckSettings;
         disableCache: RefresherCheckSettings;
     };
