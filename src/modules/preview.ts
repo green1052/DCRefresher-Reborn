@@ -876,13 +876,13 @@ const getRelevantData = (ev: MouseEvent) => {
 
     if (listID) {
         if (listID.innerText === "공지") {
-            let href = "";
+            let href: string;
 
             if (isTR) {
-                href = document.querySelector("a")?.getAttribute("href") || "";
+                href = document.querySelector("a")?.getAttribute("href") ?? "";
             } else {
                 href =
-                    findNeighbor(target, "a", 5, null)?.getAttribute("href") ||
+                    findNeighbor(target, "a", 5, null)?.getAttribute("href") ??
                     "";
             }
 
