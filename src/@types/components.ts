@@ -6,18 +6,20 @@ export {};
 
 declare global {
     interface DcinsideDcconDetail {
-        list: Array<{
-            detail: DcinsideDccon[];
-            detail_page: number;
-            end_date: string;
-            icon_cnt: number;
-            main_img_url: string;
-            package_idx: string;
-            sort: string;
-            title: string;
-        }>;
+        list: DcinsideDcconDetailList[];
         max_page: number;
         target: string;
+    }
+
+    interface DcinsideDcconDetailList {
+        detail: DcinsideDccon[];
+        detail_page: number;
+        end_date: string;
+        icon_cnt: number;
+        main_img_url: string;
+        package_idx: string;
+        sort: string;
+        title: string;
     }
 
     interface DcinsideDccon {
