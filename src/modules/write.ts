@@ -31,8 +31,8 @@ export default {
             default: false
         }
     },
-    require: ["filter", "http"],
-    func(filter: RefresherFilter, http: RefresherHTTP) {
+    require: ["filter"],
+    func(filter: RefresherFilter) {
         this.memory.submitButton = filter.add<HTMLButtonElement>(
             "button.write",
             (element) => {
@@ -162,5 +162,5 @@ export default {
         bypassTitleLimit: RefresherCheckSettings;
         selfImage: RefresherCheckSettings;
     };
-    require: ["filter", "http"];
+    require: ["filter"];
 }>;
