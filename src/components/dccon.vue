@@ -15,7 +15,7 @@
         <fragment v-else>
             <ul style="overflow: auto; display: flex">
                 <li
-                    v-for="dccon in dcconList.list"
+                    v-for="dccon in dcconList"
                     :key="dccon.title">
                     <img
                         :alt="dccon.title"
@@ -45,12 +45,12 @@
 <script lang="ts">
     import Vue from "vue";
     import Cookies from "js-cookie";
-    import * as http from "../utils/http";
     import { Fragment } from "vue-fragment";
     import RefresherLoader from "./loader.vue";
+    import ky from "ky";
 
     interface DcconPopupData {
-        dcconList: DcinsideDcconDetail | null;
+        dcconList: DcinsideDcconDetailList[] | null;
         currentDccon: DcinsideDccon[] | null;
     }
 
@@ -68,20 +68,31 @@
             params.set("target", "icon");
             params.set("page", "0");
 
-            http.make("https://gall.dcinside.com/dccon/lists", {
-                method: "POST",
-                headers: {
-                    Origin: "https://gall.dcinside.com",
-                    "X-Requested-With": "XMLHttpRequest",
-                    "Content-Type":
-                        "application/x-www-form-urlencoded; charset=UTF-8"
-                },
-                cache: "no-store",
-                body: params
-            }).then((response) => {
-                this.dcconList = JSON.parse(response);
-                this.currentDccon = this.dcconList!.list[0].detail;
-            });
+            const result: DcinsideDcconDetailList[] = [];
+
+            const response = await ky
+                .post("https://gall.dcinside.com/dccon/lists", { body: params })
+                .json<DcinsideDcconDetail>();
+
+            for (const list of response.list) {
+                result.push(list);
+            }
+
+            for (let i = 1; i <= response.max_page; i++) {
+                params.set("page", i.toString());
+                const response = await ky
+                    .post("https://gall.dcinside.com/dccon/lists", {
+                        body: params
+                    })
+                    .json<DcinsideDcconDetail>();
+
+                for (const list of response.list) {
+                    result.push(list);
+                }
+            }
+
+            this.dcconList = result;
+            this.currentDccon = response.list[0].detail;
         },
         methods: {
             dcconListClick(dccons: DcinsideDccon[]) {
