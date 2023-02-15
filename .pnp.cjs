@@ -49,6 +49,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["html-webpack-plugin", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:5.5.0"],\
             ["js-cookie", "npm:3.0.1"],\
             ["jszip", "npm:3.10.1"],\
+            ["ky", "npm:0.33.2"],\
             ["mini-css-extract-plugin", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:2.7.2"],\
             ["mmdb-lib", "npm:2.0.2"],\
             ["prettier", "npm:2.8.4"],\
@@ -2419,6 +2420,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["html-webpack-plugin", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:5.5.0"],\
             ["js-cookie", "npm:3.0.1"],\
             ["jszip", "npm:3.10.1"],\
+            ["ky", "npm:0.33.2"],\
             ["mini-css-extract-plugin", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:2.7.2"],\
             ["mmdb-lib", "npm:2.0.2"],\
             ["prettier", "npm:2.8.4"],\
@@ -4503,6 +4505,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/klona-npm-2.0.6-bc83268fb1-ac9ee3732e.zip/node_modules/klona/",\
           "packageDependencies": [\
             ["klona", "npm:2.0.6"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["ky", [\
+        ["npm:0.33.2", {\
+          "packageLocation": "./.yarn/cache/ky-npm-0.33.2-962f722db7-bb5b1685b7.zip/node_modules/ky/",\
+          "packageDependencies": [\
+            ["ky", "npm:0.33.2"]\
           ],\
           "linkType": "HARD"\
         }]\
