@@ -1,5 +1,6 @@
 import * as http from "./http";
 import Cookies from "js-cookie";
+import ky from "ky";
 import type { Nullable } from "./types";
 
 const _d = function (r: string) {
@@ -65,7 +66,7 @@ const requestBeforeServiceCode = (dom: Document) => {
     return r.replace(/(.{10})$/, t);
 };
 
-const secretKey = (dom: Document): string => {
+const secretKey = (dom: Document): URLSearchParams => {
     const params = new URLSearchParams();
     params.set("t_vch2", "");
     params.set("t_vch2_chk", "");
@@ -82,7 +83,7 @@ const secretKey = (dom: Document): string => {
         params.set(id, element.value);
     }
 
-    return params.toString();
+    return params;
 };
 
 interface CommentResult {
@@ -94,7 +95,7 @@ export async function submitComment(
     preData: GalleryPreData,
     user: { name: string; pw?: string },
     dom: Document,
-    memo: string,
+    memo: string | DcinsideDccon,
     reply: string | null,
     captcha?: string
 ): Promise<CommentResult> {
@@ -105,13 +106,11 @@ export async function submitComment(
     } catch (e) {
         return {
             result: "PreNotWorking",
-            message: (e as string) ?? "사전에 정의되지 않은 오류."
+            message: (e as string) || "사전에 정의되지 않은 오류."
         };
     }
 
-    const key = secretKey(dom);
-
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(secretKey(dom));
     params.set("service_code", code);
     params.set("id", preData.gallery);
     params.set("c_gall_id", preData.gallery);
@@ -121,63 +120,22 @@ export async function submitComment(
     params.set("name", user.name);
     if (user.pw) params.set("password", user.pw);
     if (captcha) params.set("code", captcha);
-    params.set("memo", memo);
 
-    const response = await http.make(http.urls.comments_submit, {
-        method: "POST",
-        headers: {
-            Accept: "*/*",
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "X-Requested-With": "XMLHttpRequest"
-        },
-        cache: "no-store",
-        referrer: location.href,
-        body: `${key}&${params.toString()}`
-    });
+    if (typeof memo === "string") {
+        params.set("memo", memo);
+    } else {
+        params.set("package_idx", memo.package_idx);
+        params.set("detail_idx", memo.detail_idx);
+    }
 
-    const [result, message] = response.split("||");
-
-    return {
-        result,
-        message
-    };
-}
-
-export async function submitDcconComment(
-    preData: GalleryPreData,
-    user: { name: string; pw?: string },
-    dom: Document,
-    dccon: DcinsideDccon,
-    reply: string | null,
-    captcha?: string
-): Promise<CommentResult> {
-    const key = secretKey(dom);
-
-    const params = new URLSearchParams();
-    params.set("ci_t", Cookies.get("ci_c") ?? "");
-    params.set("id", preData.gallery);
-    params.set("c_gall_id", preData.gallery);
-    params.set("no", preData.id);
-    params.set("c_gall_no", preData.id);
-    if (reply) params.set("c_no", reply);
-    params.set("package_idx", dccon.package_idx);
-    params.set("detail_idx", dccon.detail_idx);
-    params.set("input_type", "comment");
-    params.set("name", user.name);
-    if (user.pw) params.set("password", user.pw);
-    if (captcha) params.set("code", captcha);
-
-    const response = await http.make(http.urls.dccon_comments_submit, {
-        method: "POST",
-        headers: {
-            Accept: "*/*",
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "X-Requested-With": "XMLHttpRequest"
-        },
-        cache: "no-store",
-        referrer: location.href,
-        body: `${key}&${params.toString()}`
-    });
+    const response = await ky
+        .post(http.urls.comments_submit, {
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            body: params
+        })
+        .text();
 
     const [result, message] = response.split("||");
 

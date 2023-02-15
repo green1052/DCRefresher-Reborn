@@ -27,7 +27,7 @@ declare global {
         emitNextTick: (event: string, ...params: any[]) => void;
         on: (
             event: string,
-            cb: (...any: any[]) => void,
+            callback: (...any: any[]) => void,
             options?: RefresherEventBusOptions
         ) => string;
         remove: (event: string, uuid: string, skip?: boolean) => void;

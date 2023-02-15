@@ -4,6 +4,7 @@ import { ModuleStore } from "../core/modules";
 import { SettingsStore } from "../core/settings";
 import storage from "../utils/storage";
 import JSZip from "jszip";
+import ky from "ky";
 import browser from "webextension-polyfill";
 import { Buffer } from "buffer";
 
@@ -73,7 +74,8 @@ const messageHandler = (
                 let title = `${Math.random()}`;
                 let ext = "png";
 
-                return fetch(url)
+                return ky
+                    .get(url)
                     .then((res) => {
                         const exec = /filename=(\w*)\.(\w*)/g.exec(
                             res.headers.get("Content-Disposition")!
@@ -189,13 +191,12 @@ browser.runtime.onMessage.addListener((message) => {
 
 async function getGeoIP(type: "ASN" | "Country", url: string): Promise<Buffer> {
     try {
-        throw "";
-        const res = await fetch(url);
+        const res = await ky.get(url);
         const buffer = await res.arrayBuffer();
 
         return Buffer.from(buffer);
     } catch {
-        const res = await fetch(
+        const res = await ky.get(
             browser.runtime.getURL(`/assets/GeoLite2/GeoLite2-${type}.mmdb`)
         );
         return Buffer.from(await res.arrayBuffer());
