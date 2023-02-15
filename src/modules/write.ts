@@ -1,3 +1,5 @@
+import ky from "ky";
+
 export default {
     name: "글쓰기 개선",
     description: "글쓰기 페이지를 개선합니다.",
@@ -118,19 +120,13 @@ export default {
                             );
 
                             try {
-                                const response = await http
-                                    .make(
+                                const response = ky
+                                    .post(
                                         `https://upimg.dcinside.com/upimg_file.php?id=${gall_id}&r_key=${r_key}`,
-                                        {
-                                            method: "POST",
-                                            cache: "no-store",
-                                            referrer: location.href,
-                                            body: form
-                                        }
+                                        { body: form }
                                     )
-                                    .then(JSON.parse)
+                                    .json()
                                     .then((parsed) => parsed.files[0]);
-
                                 images.push(response);
                             } catch {}
                         }

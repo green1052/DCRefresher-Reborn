@@ -1,6 +1,7 @@
 import * as Toast from "../components/toast";
 import * as block from "../core/block";
 import { queryString } from "../utils/http";
+import ky from "ky";
 
 const AVERAGE_COUNTS_SIZE = 7;
 
@@ -140,16 +141,17 @@ export default {
         }
 
         const body = (url: string) =>
-            http.make(url).then((body) => {
-                const bodyParse = new DOMParser().parseFromString(
-                    body,
-                    "text/html"
-                );
-
-                eventBus.emit("refresherGetPost", bodyParse);
-
-                return bodyParse.querySelector(".gall_list tbody");
-            });
+            ky
+                .get(url)
+                .text()
+                .then((body) => {
+                    const dom = new DOMParser().parseFromString(
+                        body,
+                        "text/html"
+                    );
+                    eventBus.emit("refresherGetPost", dom);
+                    return dom.querySelector(".gall_list tbody");
+                });
 
         filter.add(".page_head .gall_issuebox", (element) => {
             addRefreshText(element);

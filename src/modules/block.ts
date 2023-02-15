@@ -1,6 +1,7 @@
 import * as Toast from "../components/toast";
 import { queryString } from "../utils/http";
 import Cookies from "js-cookie";
+import ky from "ky";
 
 export default {
     name: "컨텐츠 차단",
@@ -168,7 +169,9 @@ export default {
             if (Date.now() - this.memory.lastSelect > 10000) {
                 return;
             }
+
             const code = this.memory.selected.code;
+
             if (code) {
                 const params = new URLSearchParams();
                 params.set("ci_t", Cookies.get("ci_c") ?? "");
@@ -178,35 +181,32 @@ export default {
                 // );
                 params.set("code", code);
 
-                http.make(http.urls.dccon.detail, {
-                    method: "POST",
+                ky.post(http.urls.dccon.detail, {
                     headers: {
-                        Origin: "https://gall.dcinside.com",
-                        "X-Requested-With": "XMLHttpRequest",
-                        "Content-Type":
-                            "application/x-www-form-urlencoded; charset=UTF-8"
+                        "X-Requested-With": "XMLHttpRequest"
                     },
-                    cache: "no-store",
                     body: params
-                }).then((response) => {
-                    const json = JSON.parse(response);
-                    const title = json.info.title;
-                    const packageIdx = json.info.package_idx;
+                })
+                    .json()
+                    .then((json) => {
+                        console.log(json);
+                        const title = json.info.title;
+                        const packageIdx = json.info.package_idx;
 
-                    block.add(
-                        "DCCON",
-                        code,
-                        false,
-                        undefined,
-                        `${title} [${packageIdx}]`
-                    );
+                        block.add(
+                            "DCCON",
+                            code,
+                            false,
+                            undefined,
+                            `${title} [${packageIdx}]`
+                        );
 
-                    Toast.show(
-                        `${block.TYPE_NAMES["DCCON"]}을 차단했습니다.`,
-                        false,
-                        3000
-                    );
-                });
+                        Toast.show(
+                            `${block.TYPE_NAMES["DCCON"]}을 차단했습니다.`,
+                            false,
+                            3000
+                        );
+                    });
 
                 return;
             }

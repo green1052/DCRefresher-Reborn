@@ -1,6 +1,6 @@
 import * as Toast from "../components/toast";
 import * as block from "../core/block";
-import { submitComment, submitDcconComment } from "../utils/comment";
+import { submitComment } from "../utils/comment";
 import { findNeighbor } from "../utils/dom";
 import * as http from "../utils/http";
 import { queryString } from "../utils/http";
@@ -8,6 +8,7 @@ import logger from "../utils/logger";
 import { ScrollDetection } from "../utils/scrollDetection";
 import { User } from "../utils/user";
 import Cookies from "js-cookie";
+import ky from "ky";
 import browser from "webextension-polyfill";
 import type IFrame from "../core/frame";
 
@@ -150,21 +151,14 @@ const parse = (id: string, body: string): PostInfo => {
     });
 };
 
-const request = {
-    make: (url: string, options?: RequestInit) => {
-        return http.make(url, {
-            method: "POST",
-            headers: {
-                Origin: "https://gall.dcinside.com",
-                "X-Requested-With": "XMLHttpRequest",
-                "Content-Type":
-                    "application/x-www-form-urlencoded; charset=UTF-8"
-            },
-            cache: "no-store",
-            ...options
-        });
-    },
+const client = ky.create({
+    method: "POST",
+    headers: {
+        "X-Requested-With": "XMLHttpRequest"
+    }
+});
 
+const request = {
     async vote(
         gall_id: string,
         post_id: string,
@@ -183,9 +177,6 @@ const request = {
         );
 
         const params = new URLSearchParams();
-        if (code) {
-            params.set("kcaptcha_use", "Y");
-        }
         params.set("code_recommend", code ?? "");
         params.set("ci_t", Cookies.get("ci_c") ?? "");
         params.set("id", gall_id);
@@ -195,10 +186,7 @@ const request = {
         params.set("_GALLTYPE_", http.galleryTypeName(link));
         params.set("link_id", gall_id);
 
-        const response = await this.make(http.urls.vote, {
-            referrer: link,
-            body: params
-        });
+        const response = await client(http.urls.vote, { body: params }).text();
 
         const [result, counts, fixedCounts] = response.split("||");
 
@@ -216,13 +204,14 @@ const request = {
         signal: AbortSignal,
         noCache: boolean
     ) {
-        return http
-            .make(
+        return ky
+            .get(
                 `${http.urls.base}${http.galleryType(link, "/")}${
                     http.urls.view
                 }${gallery}&no=${id}`,
-                { signal, cache: noCache ? "no-cache" : "default" }
+                { signal }
             )
+            .text()
             .then((response) => parse(id, response));
     },
 
@@ -249,11 +238,10 @@ const request = {
         params.set("comment_page", "1");
         params.set("_GALLTYPE_", http.galleryTypeName(args.link));
 
-        const response = await this.make(http.urls.comments, {
-            referrer: `https://gall.dcinside.com/${galleryType}board/view/?id=${args.gallery}&no=${args.id}`,
+        const response = await client(http.urls.comments, {
             body: params,
             signal
-        });
+        }).text();
 
         return JSON.parse(response);
     },
@@ -269,15 +257,14 @@ const request = {
         params.set("nos[]", args.id);
         params.set("_GALLTYPE_", http.galleryTypeName(args.link));
 
-        const response = await this.make(
+        const response = await client(
             galleryType === "mini/"
                 ? http.urls.manage.deleteMini
                 : http.urls.manage.delete,
             {
-                referrer: `https://gall.dcinside.com/${galleryType}board/lists/?id=${args.gallery}`,
                 body: params
             }
-        );
+        ).text();
 
         try {
             return JSON.parse(response);
@@ -309,15 +296,14 @@ const request = {
         params.set("avoid_reason_txt", avoid_reason_txt);
         params.set("del_chk", del_chk.toString());
 
-        const response = await this.make(
+        const response = await client(
             galleryType == "mini/"
                 ? http.urls.manage.blockMini
                 : http.urls.manage.block,
             {
-                referrer: `https://gall.dcinside.com/${galleryType}board/lists/?id=${args.gallery}`,
                 body: params
             }
-        );
+        ).text();
 
         try {
             return JSON.parse(response);
@@ -340,15 +326,14 @@ const request = {
         params.set("no", args.id);
         params.set("_GALLTYPE_", http.galleryTypeName(args.link));
 
-        const response = await this.make(
+        const response = await client(
             galleryType == "mini/"
                 ? http.urls.manage.setNoticeMini
                 : http.urls.manage.setNotice,
             {
-                referrer: `https://gall.dcinside.com/${galleryType}board/lists/?id=${args.gallery}`,
                 body: params
             }
-        );
+        ).text();
 
         try {
             return JSON.parse(response);
@@ -370,15 +355,14 @@ const request = {
         params.set("nos[]", args.id);
         params.set("_GALLTYPE_", http.galleryTypeName(args.link));
 
-        const response = await this.make(
+        const response = await client(
             galleryType == "mini/"
                 ? http.urls.manage.setRecommendMini
                 : http.urls.manage.setRecommend,
             {
-                referrer: `https://gall.dcinside.com/${galleryType}board/lists/?id=${args.gallery}`,
                 body: params
             }
-        );
+        ).text();
 
         try {
             return JSON.parse(response);
@@ -400,10 +384,7 @@ const request = {
         params.set("kcaptcha_type", kcaptchaType);
         params.set("_GALLTYPE_", galleryTypeName);
 
-        await this.make(http.urls.captcha, {
-            referrer: `https://gall.dcinside.com/${galleryType}board/lists/?id=${args.gallery}`,
-            body: params
-        });
+        await client(http.urls.captcha, { body: params });
 
         return (
             "/kcaptcha/image/?gall_id=" +
@@ -432,8 +413,6 @@ const request = {
             ? http.urls.manage.deleteCommentMini
             : http.urls.manage.deleteComment;
 
-        const galleryType = http.galleryType(preData.link, "/");
-
         const params = new URLSearchParams();
         params.set("ci_t", Cookies.get("ci_c") ?? "");
         params.set("id", preData.gallery);
@@ -441,17 +420,10 @@ const request = {
         params.set("pno", preData.id);
         params.set("cmt_nos[]", commentId);
 
-        return this.make(url, {
-            referrer: `https://gall.dcinside.com/${galleryType}board/view/?id=${preData.gallery}&no=${preData.id}`,
-            body: params,
-            signal
-        })
-            .then((v) => {
-                return v;
-            })
-            .catch(() => {
-                return false;
-            });
+        return client(url, { body: params, signal })
+            .text()
+            .then((v) => v)
+            .catch(() => false);
     },
 
     async userDeleteComment(
@@ -480,17 +452,10 @@ const request = {
             params.set("&g-recaptcha-response", password);
         }
 
-        return this.make(http.urls.comment_remove, {
-            referrer: `https://gall.dcinside.com/${galleryType}board/view/?id=${preData.gallery}&no=${preData.id}`,
-            body: params,
-            signal
-        })
-            .then((v) => {
-                return v;
-            })
-            .catch(() => {
-                return false;
-            });
+        return client(http.urls.comment_remove, { body: params, signal })
+            .text()
+            .then((v) => v)
+            .catch(() => false);
     }
 };
 
@@ -1571,24 +1536,14 @@ export default {
                         : "";
 
                     const req = async (captcha?: string) => {
-                        const res =
-                            typeof memo === "string"
-                                ? await submitComment(
-                                      postData,
-                                      user,
-                                      postDom,
-                                      memo,
-                                      reply,
-                                      captcha
-                                  )
-                                : await submitDcconComment(
-                                      postData,
-                                      user,
-                                      postDom,
-                                      memo,
-                                      reply,
-                                      captcha
-                                  );
+                        const res = await submitComment(
+                            postData,
+                            user,
+                            postDom,
+                            memo,
+                            reply,
+                            captcha
+                        );
 
                         if (
                             res.result === "false" ||

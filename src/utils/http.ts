@@ -106,14 +106,6 @@ export const view = (url: string): string => {
     return type + "board/lists?" + queries.toString();
 };
 
-export const make = (url: string, options?: RequestInit): Promise<string> =>
-    fetch(url, options).then((response) => {
-        if (response.status > 400)
-            throw `${response.status} ${response.statusText}`;
-
-        return response.text();
-    });
-
 export const mergeParamURL = (origin: string, getFrom: string): string => {
     const add: Record<string, string> = {};
 
