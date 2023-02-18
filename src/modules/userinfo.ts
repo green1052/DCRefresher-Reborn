@@ -381,7 +381,7 @@ export default {
 
         this.memory.contextMenu = eventBus.on(
             "refresherUserContextMenu",
-            (nick: "NICK", uid: "UID", ip: "IP") => {
+            (nick: string | null, uid: string | null, ip: string | null) => {
                 this.memory.selected = {
                     NICK: nick,
                     UID: uid,
@@ -516,7 +516,7 @@ export default {
         always: string | null;
         requestBlock: string | null;
         contextMenu: string | null;
-        selected: NullableProperties<ObjectEnum<RefresherMemoType>>;
+        selected: NullableProperties<Record<RefresherMemoType, string>>;
         lastSelect: number;
         memoAsk: string | null;
     };
