@@ -252,15 +252,21 @@
             contextMenu(e: MouseEvent): void {
                 const element = e.target as HTMLElement | null;
 
-                if (element === null || element.className !== "written_dccon")
-                    return;
+                if (!element || element.className !== "written_dccon") return;
 
                 const src = element.getAttribute("src");
                 if (!src) return;
 
                 const code = src.replace(/^.*no=/g, "").replace(/^&.*$/g, "");
 
-                eventBus.emit("refresherDcconUserContextMenu", code);
+                eventBus.emit(
+                    "refresherUserContextMenu",
+                    null,
+                    null,
+                    null,
+                    code,
+                    null
+                );
             }
         }
     });

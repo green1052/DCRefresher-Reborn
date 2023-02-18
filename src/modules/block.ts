@@ -10,6 +10,7 @@ export default {
     memory: {
         uuid: null,
         uuid2: null,
+        uuid3: null,
         selected: {
             nick: null,
             uid: null,
@@ -19,7 +20,6 @@ export default {
         },
         lastSelect: 0,
         addBlock: null,
-        addDcconBlock: null,
         requestBlock: null
     },
     enable: true,
@@ -42,6 +42,12 @@ export default {
                 const title =
                     element.parentElement?.querySelector(".gall_tit > a")
                         ?.textContent ?? "";
+
+                const text =
+                    element
+                        .closest<HTMLElement>(".view_content_wrap")
+                        ?.querySelector(".write_div")?.textContent ?? "";
+
                 const nick = element.dataset.nick ?? "";
                 const uid = element.dataset.uid ?? "";
                 const ip = element.dataset.ip ?? "";
@@ -49,17 +55,6 @@ export default {
                 const commentElement = element.closest(
                     ".reply_info, .cmt_info"
                 );
-
-                const dcconElement =
-                    commentElement?.querySelector(".written_dccon");
-                const dccon =
-                    (
-                        dcconElement?.getAttribute("src") ??
-                        dcconElement?.getAttribute("data-src")
-                    )
-                        ?.replace(/^.*no=/g, "")
-                        .replace(/^&.*$/g, "") ?? "";
-
                 const commentContent =
                     commentElement?.querySelector(".usertxt")?.textContent ??
                     "";
@@ -71,7 +66,6 @@ export default {
                             NICK: nick,
                             ID: uid,
                             IP: ip,
-                            DCCON: dccon,
                             COMMENT: commentContent
                         },
                         gallery
@@ -92,9 +86,14 @@ export default {
 
                     const content = post.closest<HTMLElement>(".ub-content");
 
-                    if (content !== null) content.style.display = "none";
+                    if (content) content.style.display = "none";
 
                     return;
+                } else if (block.check("TEXT", text, gallery)) {
+                    element
+                        .closest<HTMLElement>(".view_content_wrap")!
+                        .querySelector<HTMLElement>(".write_div")!.innerText =
+                        "게시글 내용이 차단됐습니다.";
                 }
 
                 element.oncontextmenu ??= () => {
@@ -113,54 +112,147 @@ export default {
             }
         );
 
-        this.memory.uuid2 = filter.add(".written_dccon", (element) => {
-            if (element.parentElement!.oncontextmenu) return;
+        this.memory.uuid2 = filter.add(
+            ".written_dccon",
+            (element) => {
+                const gallery = queryString("id");
 
-            element.parentElement!.oncontextmenu = () => {
-                const code =
+                if (!gallery) return;
+
+                const dccon =
                     (
-                        element?.getAttribute("src") ||
+                        element.getAttribute("src") ??
                         element?.getAttribute("data-src")
                     )
                         ?.replace(/^.*no=/g, "")
-                        .replace(/^&.*$/g, "") || "";
+                        .replace(/^&.*$/g, "") ?? "";
 
-                this.memory.selected = {
-                    nick: null,
-                    uid: null,
-                    ip: null,
-                    code,
-                    packageIdx: null
+                if (block.check("DCCON", dccon, gallery)) {
+                    const content =
+                        element.closest<HTMLElement>(".ub-content") ??
+                        element.closest<HTMLElement>(".comment_dccon");
+
+                    if (content) content.style.display = "none";
+                }
+
+                if (element.parentElement!.oncontextmenu) return;
+
+                element.parentElement!.oncontextmenu = () => {
+                    const code =
+                        (
+                            element?.getAttribute("src") ||
+                            element?.getAttribute("data-src")
+                        )
+                            ?.replace(/^.*no=/g, "")
+                            .replace(/^&.*$/g, "") ?? "";
+
+                    this.memory.selected = {
+                        nick: null,
+                        uid: null,
+                        ip: null,
+                        code,
+                        packageIdx: null
+                    };
+                    this.memory.lastSelect = Date.now();
                 };
-                this.memory.lastSelect = Date.now();
-            };
-        });
+            },
+            {
+                neverExpire: true
+            }
+        );
+
+        this.memory.uuid3 = filter.add(
+            "#package_detail",
+            (element) => {
+                if (element.dataset.refresherDcconBlock === "true") return;
+
+                for (const image of element.querySelectorAll<HTMLImageElement>(
+                    ".img_dccon > img"
+                )) {
+                    image.addEventListener("contextmenu", () => {
+                        const code = image.src
+                            .replace(/^.*no=/g, "")
+                            .replace(/^&.*$/g, "");
+
+                        this.memory.selected = {
+                            nick: null,
+                            uid: null,
+                            ip: null,
+                            code,
+                            packageIdx: null
+                        };
+                        this.memory.lastSelect = Date.now();
+                    });
+                }
+
+                const button = document.createElement("button");
+                button.setAttribute("type", "button");
+                button.setAttribute("class", "btn_blue small");
+                button.innerText = "전체 차단";
+                button.onclick = () => {
+                    const code = element
+                        .querySelector<HTMLImageElement>(".info_viewimg > img")!
+                        .src.replace(/^.*no=/g, "")
+                        .replace(/^&.*$/g, "");
+
+                    const params = new URLSearchParams();
+                    params.set("ci_t", Cookies.get("ci_c") ?? "");
+                    params.set("code", code);
+
+                    ky.post(http.urls.dccon.detail, {
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        },
+                        body: params
+                    })
+                        .json<any>()
+                        .then((json) => {
+                            const title = json.info.title;
+                            const packageIdx = json.info.package_idx;
+
+                            for (const { path } of json.detail) {
+                                block.add(
+                                    "DCCON",
+                                    path,
+                                    false,
+                                    undefined,
+                                    `${title} [${packageIdx}]`
+                                );
+                            }
+
+                            Toast.show(
+                                `${block.TYPE_NAMES["DCCON"]}을 차단했습니다.`,
+                                false,
+                                3000
+                            );
+                        });
+                };
+
+                element
+                    .querySelector(".btn_buy")
+                    ?.insertAdjacentElement("beforebegin", button);
+
+                element.dataset.refresherDcconBlock = "true";
+            },
+            { neverExpire: true }
+        );
 
         this.memory.addBlock = eventBus.on(
             "refresherUserContextMenu",
-            (nick: string, uid: string, ip: string) => {
+            (
+                nick: string | null,
+                uid: string | null,
+                ip: string | null,
+                code: string | null,
+                packageIdx: string | null
+            ) => {
                 this.memory.selected = {
                     nick,
                     uid,
                     ip,
-                    code: null,
-                    packageIdx: null
-                };
-                this.memory.lastSelect = Date.now();
-            }
-        );
-
-        this.memory.addDcconBlock = eventBus.on(
-            "refresherDcconUserContextMenu",
-            (code: string) => {
-                this.memory.selected = {
-                    nick: null,
-                    uid: null,
-                    ip: null,
                     code,
-                    packageIdx: null
+                    packageIdx
                 };
-
                 this.memory.lastSelect = Date.now();
             }
         );
@@ -175,10 +267,6 @@ export default {
             if (code) {
                 const params = new URLSearchParams();
                 params.set("ci_t", Cookies.get("ci_c") ?? "");
-                // params.set(
-                //     "package_idx",
-                //     this.memory.selected.packageIdx ?? ""
-                // );
                 params.set("code", code);
 
                 ky.post(http.urls.dccon.detail, {
@@ -187,9 +275,8 @@ export default {
                     },
                     body: params
                 })
-                    .json()
+                    .json<any>()
                     .then((json) => {
-                        console.log(json);
                         const title = json.info.title;
                         const packageIdx = json.info.package_idx;
 
@@ -223,7 +310,7 @@ export default {
                 value = this.memory.selected.ip;
             }
 
-            if (!value || extra === null) return;
+            if (!value || !extra) return;
 
             block.add(type, value, false, undefined, extra);
             Toast.show(
@@ -238,9 +325,9 @@ export default {
 
         if (this.memory.uuid2) filter.remove(this.memory.uuid2);
 
-        if (this.memory.addBlock) filter.remove(this.memory.addBlock);
+        if (this.memory.uuid3) filter.remove(this.memory.uuid3);
 
-        if (this.memory.addDcconBlock) filter.remove(this.memory.addDcconBlock);
+        if (this.memory.addBlock) filter.remove(this.memory.addBlock);
 
         if (this.memory.requestBlock) filter.remove(this.memory.requestBlock);
     }
@@ -248,6 +335,7 @@ export default {
     memory: {
         uuid: string | null;
         uuid2: string | null;
+        uuid3: string | null;
         selected: {
             nick: string | null;
             uid: string | null;
@@ -257,7 +345,6 @@ export default {
         };
         lastSelect: number;
         addBlock: string | null;
-        addDcconBlock: string | null;
         requestBlock: string | null;
     };
     require: ["filter", "eventBus", "block", "dom", "http"];
