@@ -84,7 +84,9 @@
                     "refresherUserContextMenu",
                     this.user.nick,
                     this.user.id,
-                    this.user.ip
+                    this.user.ip,
+                    null,
+                    null
                 );
             }
         }
