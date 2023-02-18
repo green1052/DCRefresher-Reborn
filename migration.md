@@ -61,8 +61,10 @@ chrome.storage.local.get().then((settings) => {
 1. settings 변수에 백업한 설정 붙여넣고 실행
 
 ```js
-const settings = ``;
-for (const [key, value] of Object.entries(JSON.parse(settings))) {
-    chrome.storage.local.set({[key]: value});
-}
+(() => {
+  const settings = ``;
+  for (const [key, value] of Object.entries(JSON.parse(settings))) {
+    chrome.storage.local.set({ [key]: value });
+  }
+})();
 ```
