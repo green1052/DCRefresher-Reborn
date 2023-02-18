@@ -226,15 +226,15 @@ export default {
         ip: RefresherIP,
         memo: RefresherMemo
     ) {
-        const ipInfoAdd = (elem: HTMLElement) => {
+        const ipInfoAdd = (element: HTMLElement) => {
             if (
                 !this.status.showIpInfo ||
-                !elem.dataset.ip ||
-                elem.dataset.refresherIp === "true"
+                !element.dataset.ip ||
+                element.dataset.refresherIp === "true"
             )
                 return false;
 
-            const ip_data = ip.ISPData(elem.dataset.ip);
+            const ip_data = ip.ISPData(element.dataset.ip);
 
             const text = document.createElement("span");
             text.className = "refresherUserData";
@@ -244,22 +244,22 @@ export default {
             text.innerHTML = `[${format}]`;
             text.title = format;
 
-            const fl = elem.querySelector(".fl > .ip");
+            const fl = element.querySelector(".fl > .ip");
             if (fl) {
                 fl.appendChild(text);
             } else {
                 text.classList.add("ip");
-                elem.appendChild(text);
+                element.appendChild(text);
             }
 
-            elem.dataset.refresherIp = "true";
+            element.dataset.refresherIp = "true";
         };
 
-        const IdInfoAdd = (elem: HTMLElement) => {
-            if (!elem.dataset.uid || elem.dataset.refresherId === "true")
+        const IdInfoAdd = (element: HTMLElement) => {
+            if (!element.dataset.uid || element.dataset.refresherId === "true")
                 return false;
 
-            const img = elem.querySelector("img")?.src;
+            const img = element.querySelector("img")?.src;
 
             if (!img) return false;
 
@@ -279,30 +279,33 @@ export default {
 
             const text = document.createElement("span");
             text.className = "ip";
-            text.innerHTML = `(${elem.dataset.uid})`;
-            text.title = elem.dataset.uid;
+            text.innerHTML = `(${element.dataset.uid})`;
+            text.title = element.dataset.uid;
 
-            const fl = elem.querySelector(".fl");
+            const fl = element.querySelector(".fl");
 
             if (fl) {
-                const flIpQuery = fl.querySelector(".writer_nikcon");
+                const flIpQuery =
+                    fl.querySelector(".refresherMemoData") ??
+                    fl.querySelector(".writer_nikcon");
+
                 if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling);
             } else {
                 text.classList.add("refresherUserData");
-                elem.appendChild(text);
+                element.appendChild(text);
             }
 
-            elem.dataset.refresherId = "true";
+            element.dataset.refresherId = "true";
         };
 
-        const memoAdd = (elem: HTMLElement) => {
-            if (elem.dataset.refresherMemoHandler !== "true") {
-                elem.addEventListener("contextmenu", () => {
+        const memoAdd = (element: HTMLElement) => {
+            if (element.dataset.refresherMemoHandler !== "true") {
+                element.addEventListener("contextmenu", () => {
                     const {
                         nick = null,
                         uid = null,
                         ip = null
-                    } = elem.dataset as {
+                    } = element.dataset as {
                         [K in RefresherMemoType as Lowercase<K>]: K;
                     };
 
@@ -315,27 +318,25 @@ export default {
                     this.memory.lastSelect = Date.now();
                 });
 
-                elem.dataset.refresherMemoHandler = "true";
+                element.dataset.refresherMemoHandler = "true";
             }
 
-            if (elem.dataset.refresherMemo === "true") return false;
+            if (element.dataset.refresherMemo === "true") return false;
 
             let memoData: RefresherMemoValue | null = null;
 
-            if (elem.dataset.uid) {
-                memoData = memo.get("UID", elem.dataset.uid);
-            } else if (elem.dataset.ip) {
-                memoData = memo.get("IP", elem.dataset.ip);
-            }
-
-            if (elem.dataset.nick) {
-                memoData ??= memo.get("NICK", elem.dataset.nick);
+            if (element.dataset.uid) {
+                memoData = memo.get("UID", element.dataset.uid);
+            } else if (element.dataset.ip) {
+                memoData = memo.get("IP", element.dataset.ip);
+            } else if (element.dataset.nick) {
+                memoData ??= memo.get("NICK", element.dataset.nick);
             }
 
             if (!memoData) return false;
 
             const text = document.createElement("span");
-            text.className = "ip refresherUserData refresherMemoData";
+            text.className = "refresherUserData refresherMemoData";
             text.innerHTML = `[${memoData.text}]`;
             text.title = memoData.text;
 
@@ -343,36 +344,35 @@ export default {
                 text.style.color = memoData.color;
             }
 
-            const fl = elem.querySelector(".fl");
+            if (element.dataset.ip) {
+                const fl = element.querySelector(".fl > .ip");
 
-            if (fl) {
-                const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
-
-                if (flIpQuery) {
-                    const nextSibling = flIpQuery.nextSibling;
-
-                    if (!nextSibling) return false;
-
-                    fl.insertBefore(
-                        text,
-                        nextSibling.nodeName === "#text"
-                            ? nextSibling
-                            : flIpQuery.nextElementSibling!.nextSibling
-                    );
+                if (fl) {
+                    fl.appendChild(text);
+                } else {
+                    element.appendChild(text);
                 }
             } else {
-                elem.appendChild(text);
+                const fl = element.querySelector(".fl");
+
+                if (fl) {
+                    const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
+
+                    if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling);
+                } else {
+                    element.appendChild(text);
+                }
             }
 
-            elem.dataset.refresherMemo = "true";
+            element.dataset.refresherMemo = "true";
         };
 
         this.memory.always = filter.add(
             ".ub-writer",
             (element) => {
-                ipInfoAdd(element);
-                IdInfoAdd(element);
                 memoAdd(element);
+                IdInfoAdd(element);
+                ipInfoAdd(element);
             },
             {
                 neverExpire: true
