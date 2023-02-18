@@ -4,13 +4,15 @@
 git clone https://github.com/green1052/DCRefresher-Reborn.git
 ```
 
-우선 위 명령어로 repository를 clone 해주세요.
+우선 위 명령어로 저장소를 복제 해주세요.
 
 ```
 yarn install
 ```
 
-`yarn install` 명령어를 활용해 의존성 라이브러리들을 다운받아주세요. yarn을 찾을 수 없다고 나오는 경우 `npm install -g yarn` 를 입력해 yarn을 받아주세요.
+`yarn install` 명령어를 활용해 의존성 라이브러리들을 다운받아주세요.
+
+yarn을 찾을 수 없다고 나오는 경우 `npm install -g yarn`을 입력해 yarn을 받아주세요.
 
 ```
 yarn dev:mv2
@@ -31,7 +33,7 @@ yarn build:mv2
 yarn build:mv3
 ```
 
-명령어를 통해 production 모드 빌드를 할 수 있습니다. 실행 전에 `dist` 폴더를 삭제하신 후 진행하시는 것을 추천합니다.
+명령어를 통해 production 모드 빌드를 할 수 있습니다.
 
 ## 구조
 
@@ -47,21 +49,25 @@ yarn build:mv3
 
 ### module 객체
 
-모듈은 DCRefresher에서 페이지 DOM 제어 등을 담당하는 실질적인 기능 집합입니다. 모듈 파일은 `src/modules` 폴더에 모여 있습니다. 추후에는 외부에서 스크립트를 불러와 따로 빌드 없이 모듈을
-사용할 수 있도록 할 예정도 있습니다.
+모듈은 DCRefresher Reborn에서 페이지 DOM 제어 등을 담당하는 실질적인 기능 집합입니다. 모듈 파일은 `src/modules` 폴더에 모여 있습니다.
 
-모듈 파일은 오직 하나의 `RefresherModule` 형식의 객체를 가집니다. 객체에 들어가야할 값들은 `src/@types/module.d.ts` 파일에 `RefresherModule`라는 이름의
-interface로 정의되어 있으며, 해당 interface를 참고하시며 개발하시면 도움이 되실겁니다.
+추후에는 외부에서 스크립트를 불러와 따로 빌드 없이 모듈을 사용할 수 있도록 할 예정입니다.
+
+모듈 파일은 오직 하나의 `RefresherModule` 형식의 객체를 가집니다.
+
+객체에 들어가야할 값들은 `src/@types/module.ts` 파일에 `RefresherModule`라는 
+
+이름의 interface로 정의되어 있으며, 해당 interface를 참고하시며 개발하시면 도움이 되실겁니다.
 
 `RefresherModule`의 구조는 업데이트되면서 변경될 수 있으며, 추가되었으면 하는 API가 있으시면 언제든지 이슈나 Pull Request 남겨주시면 감사하겠습니다.
 
 API들은 `module.require` 에서 배열의 형태로 이름들을 넣어 불러올 수 있으며 적은 순서대로 `module.func` 과 `module.revoke` 에 인자로 넣어 호출하게 됩니다.
 
-Refresher에서 제공하는 Core API들은 다음과 같습니다.
+DCRefresher Reborn에서 제공하는 Core API들은 다음과 같습니다.
 
 #### filter
 
-MutationObserver를 활용한 API로, `filter.add` 함수로 필터에 등록시켜두면 DOM에서 해당 선택자에 맞는 Element를 찾아 반환합니다.
+MutationObserver를 활용한 API로, `filter.add` 함수로 필터에 등록시켜두면 DOM에서 해당 선택자에 맞는 HTMLElement을 찾아 반환합니다.
 
 ##### filter.add()
 
@@ -175,8 +181,7 @@ EventBus 모델을 구현한 API입니다. 이벤트를 발생시켜 다른 모�
 
 IP 값을 읽고 통신사나 회사 정보를 IP와 함께 적어 반환합니다.
 
-
-<br/>
+<br>
 여기에 정리되지 않은 값들은 내부적으로 사용되는 함수거나 잘 사용되지 않는 함수들입니다.
 
 여기서 직접 import해서 사용하면 안되는가?라는 의문점이 드실 수도 있습니다. 그러실 수 있고요. 자유롭게 core를 import 해서 사용해주시면 됩니다. <b>단, 이는 src/modules 폴더에 들어갔을
@@ -225,13 +230,10 @@ export.module = {
 위에서 `this.memory.coverFilter`에 UUID를 넣었었죠. 이제 필터 함수에서 이 UUID를 가진 필터를 제거해보도록 하겠습니다.
 
 ```js
-{
-... // func, name, memory...
-    revoke(filter)
-    {
-        if (this.memory.coverFilter) {
-            filter.remove(this.memory.coverFilter)
-        }
+export default {
+    ... // func, name, memory...
+    revoke(filter) {
+        if (this.memory.coverFilter) filter.remove(this.memory.coverFilter);
     }
 }
 ```
@@ -243,22 +245,20 @@ export.module = {
 새로고침 모듈에서는 `refresh` 이벤트를 새로고침될 때마다 반환합니다.
 
 ```js
-export.module = {
+export default {
     name: "이벤트 버스 예제",
     desc: "이벤트 버스의 예제입니다.",
     memory: {event: ""},
     require: ["eventBus"],
     func(eventBus) {
-        this.memory.event = eventBus.add("refresh", _ => {
+        this.memory.event = eventBus.add("refresh", () => {
             // 새로고침될 때 할 일을 여기서 구현합니다.
 
             alert("새로고침");
         });
     },
     revoke(eventBus) {
-        if (this.memory.event) {
-            eventBus.remove("refresh", this.memory.event);
-        }
+        if (this.memory.event) eventBus.remove("refresh", this.memory.event);
     }
 };
 ```
