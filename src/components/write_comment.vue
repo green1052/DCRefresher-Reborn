@@ -177,22 +177,22 @@
         },
         methods: {
             validCheck(type: string, value: string): void {
-                if (type === "id" && (!value || value.length < 2)) {
+                if (type === "id" && value.length < 1) {
                     Toast.show(
-                        "아이디는 최소 2자리 이상이어야 합니다.",
-                        true,
-                        2000
+                        `아이디는 최소 1자리 이상이어야 합니다. 자동으로 "ㅇㅇ"로 설정합니다.`,
+                        false,
+                        5000
                     );
                     this.unsignedUserID = "ㅇㅇ";
                 }
 
-                if (type === "pw" && (!value || value.length < 2)) {
+                if (type === "pw" && value.length < 2) {
                     const random = Math.random().toString(36).substring(5);
 
                     Toast.show(
-                        `비밀번호는 최소 2자리 이상이어야 합니다. 자동으로 "${random}" 으로 설정합니다.`,
+                        `비밀번호는 최소 2자리 이상이어야 합니다. 자동으로 "${random}"로 설정합니다.`,
                         false,
-                        8000
+                        5000
                     );
                     this.unsignedUserPW = random;
                 }
@@ -205,7 +205,10 @@
             async write(): Promise<boolean> {
                 this.disabled = true;
 
-                if (!this.unsignedUserID || !this.unsignedUserPW) {
+                if (
+                    !this.fixedUser &&
+                    (!this.unsignedUserID || !this.unsignedUserPW)
+                ) {
                     Toast.show(
                         "아이디 혹은 비밀번호를 입력하지 않았습니다.",
                         true,
@@ -217,10 +220,10 @@
                 if (this.func) {
                     const result = await this.func(
                         this.getDccon() === null ? "text" : "dccon",
-                        this.getDccon() === null ? this.text : this.getDccon(),
+                        this.getDccon() ?? this.text,
                         this.getReply(),
-                        this.fixedUser && this.user
-                            ? { name: this.user.nick }
+                        this.fixedUser
+                            ? { name: this.user!.nick }
                             : {
                                   name: this.unsignedUserID,
                                   pw: this.unsignedUserPW
