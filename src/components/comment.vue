@@ -126,8 +126,6 @@
             }
         },
         mounted(): void {
-          console.log(this.comment);
-
             this.rereply = this.checkReReply();
 
             if (!this.comment.user.id) {
