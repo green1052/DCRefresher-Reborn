@@ -1,6 +1,6 @@
 <template>
     <div
-        :data-deleted="comment.is_delete === '1'"
+        :data-deleted="comment.is_delete !== '0'"
         :data-depth="comment.depth"
         :data-rereply="rereply"
         class="refresher-comment">
@@ -126,6 +126,8 @@
             }
         },
         mounted(): void {
+          console.log(this.comment);
+
             this.rereply = this.checkReReply();
 
             if (!this.comment.user.id) {
