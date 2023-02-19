@@ -4,15 +4,13 @@
     "manifest_version": 2,
     "permissions": [
         "https://github.com/*",
-        "https://mall.dcinside.com/*",
         "https://gall.dcinside.com/*",
         "https://gallog.dcinside.com/*",
         "https://dcimg5.dcinside.com/*",
         "activeTab",
         "storage",
         "unlimitedStorage",
-        "contextMenus",
-        "downloads"
+        "contextMenus"
     ],
     "background": {
         "scripts": ["background.js"],
@@ -23,7 +21,6 @@
             "js": ["refresher.bundle.js"],
             "css": ["refresher.bundle.css"],
             "matches": [
-                "https://mall.dcinside.com/*",
                 "https://gall.dcinside.com/*",
                 "https://gallog.dcinside.com/*"
             ],
