@@ -35,10 +35,6 @@ let memos: MemoCache = {
 };
 
 interface Message {
-    dcconDownload?: boolean;
-    urls?: string[];
-    filename?: string;
-
     updateUserSetting?: boolean;
     name?: string;
     key?: string;
@@ -65,44 +61,6 @@ const messageHandler = (
     message: Message
 ) => {
     if (typeof message !== "object") return;
-
-    if (message.dcconDownload) {
-        const zip = new JSZip();
-
-        Promise.all(
-            message.urls!.map((url) => {
-                let title = `${Math.random()}`;
-                let ext = "png";
-
-                return ky
-                    .get(url)
-                    .then((res) => {
-                        const exec = /filename=(\w*)\.(\w*)/g.exec(
-                            res.headers.get("Content-Disposition")!
-                        );
-
-                        if (exec && exec.length === 3) {
-                            title = exec?.[1];
-                            ext = exec![2];
-                        }
-
-                        return res.blob();
-                    })
-                    .then((blob) => {
-                        zip.file(`${title}.${ext}`, blob);
-                    });
-            })
-        )
-            .then(() => {
-                return zip.generateAsync({ type: "base64" });
-            })
-            .then((blob) => {
-                browser.downloads.download({
-                    url: `data:application/zip;base64,${blob}`,
-                    filename: message.filename
-                });
-            });
-    }
 
     if (message.updateUserSetting) {
         storage.set(`${message.name}.${message.key}`, message.value);
@@ -191,15 +149,15 @@ browser.runtime.onMessage.addListener((message) => {
 
 async function getGeoIP(type: "ASN" | "Country", url: string): Promise<Buffer> {
     try {
-        const res = await ky.get(url);
-        const buffer = await res.arrayBuffer();
-
+        const buffer = await ky.get(url).arrayBuffer();
         return Buffer.from(buffer);
     } catch {
-        const res = await ky.get(
-            browser.runtime.getURL(`/assets/GeoLite2/GeoLite2-${type}.mmdb`)
-        );
-        return Buffer.from(await res.arrayBuffer());
+        const buffer = await ky
+            .get(
+                browser.runtime.getURL(`/assets/GeoLite2/GeoLite2-${type}.mmdb`)
+            )
+            .arrayBuffer();
+        return Buffer.from(buffer);
     }
 }
 

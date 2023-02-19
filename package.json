@@ -23,7 +23,6 @@
     "eslint-plugin-vue": "latest",
     "html-webpack-plugin": "^5.5.0",
     "js-cookie": "^3.0.1",
-    "jszip": "^3.10.1",
     "ky": "^0.33.2",
     "mini-css-extract-plugin": "^2.7.2",
     "mmdb-lib": "^2.0.2",
