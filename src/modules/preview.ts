@@ -167,7 +167,7 @@ const request = {
         link: string
     ) {
         Cookies.set(
-            `${gall_id + post_id}_Firstcheck${type ? "" : "_down"}`,
+            `${gall_id}${post_id}_Firstcheck${type ? "" : "_down"}`,
             "Y",
             {
                 path: "/",
@@ -177,7 +177,6 @@ const request = {
         );
 
         const params = new URLSearchParams();
-        params.set("code_recommend", code ?? "");
         params.set("ci_t", Cookies.get("ci_c") ?? "");
         params.set("id", gall_id);
         params.set("no", post_id);
@@ -365,7 +364,10 @@ const request = {
         }
     },
 
-    async captcha(args: GalleryHTTPRequestArguments, kcaptchaType: string) {
+    async captcha(
+        args: GalleryHTTPRequestArguments,
+        kcaptchaType: "comment" | "recommend"
+    ) {
         if (!args.link)
             throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
 
@@ -431,8 +433,6 @@ const request = {
         const typeName = http.galleryTypeName(preData.link);
 
         if (!typeName.length) return false;
-
-        const galleryType = http.galleryType(preData.link, "/");
 
         const params = new URLSearchParams();
         params.set("ci_t", Cookies.get("ci_c") ?? "");
@@ -1053,8 +1053,7 @@ const miniPreview: MiniPreview = {
                     preData.link,
                     preData.gallery,
                     preData.id,
-                    miniPreview.controller.signal,
-                    false
+                    miniPreview.controller.signal
                 )
                 .then((response) => {
                     if (!response) {
@@ -1519,7 +1518,7 @@ export default {
 
                     const codeSrc = requireCapCode
                         ? await request.captcha(preData, "comment")
-                        : "";
+                        : undefined;
 
                     const req = async (captcha?: string) => {
                         const res = await submitComment(
