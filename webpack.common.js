@@ -9,7 +9,7 @@ module.exports = {
     entry: {
         "refresher.bundle.js": "./src/index.ts",
         "background.js": "./src/root/background.ts",
-        "option.bundle.js": "./src/root/option.bundle.ts"
+        "option.bundle.js": "./src/root/option.bundle.tsx"
     },
     output: {
         path: path.join(__dirname, "dist"),
@@ -19,7 +19,7 @@ module.exports = {
         rules: [
             {
                 include: /src/,
-                test: /\.js|\.ts$/,
+                test: /\.jsx?|\.tsx?$/,
                 use: {
                     loader: "swc-loader"
                 }
@@ -58,7 +58,7 @@ module.exports = {
         })
     ],
     resolve: {
-        extensions: [".js", ".ts", ".css", ".vue"],
+        extensions: [".js", ".ts", ".css", ".vue", ".tsx", ".jsx"],
         modules: ["node_modules"],
         fallback: {
             buffer: require.resolve("buffer"),

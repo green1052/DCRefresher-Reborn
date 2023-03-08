@@ -478,11 +478,12 @@
         z-index: -1;
     }
 
-    .tab1 .info {
+    .tab0 {
+      .info {
         display: flex;
-    }
+      }
 
-    .tab1 .text {
+      .text {
         font-size: 16px;
         display: grid;
 
@@ -499,10 +500,11 @@
             font-weight: bold;
             margin-right: 5px;
         }
+      }
     }
 
-    .tab3,
-    .tab4 {
+    .tab2,
+    .tab3 {
         .block-divide {
             margin-bottom: 10px;
         }

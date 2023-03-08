@@ -7,7 +7,7 @@
         },
         "parser": {
             "syntax": "typescript",
-            "tsx": false,
+            "tsx": true,
             "decorators": false,
             "dynamicImport": false
         },
