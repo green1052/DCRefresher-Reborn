@@ -66,9 +66,9 @@
             };
         },
         watch: {
-            closed: (val: boolean) => {
-                //document.body.style.overflow = val ? "auto" : "hidden";
-            }
+            // closed: (val: boolean) => {
+            //     document.body.style.overflow = val ? "auto" : "hidden";
+            // }
         },
         created() {
             //document.body.style.overflow = "hidden";
