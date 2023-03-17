@@ -527,7 +527,11 @@
                 browser.tabs.create({ url });
             },
             openShortcutSettings() {
-                browser.runtime.openOptionsPage();
+                browser.tabs.create({
+                    url: /Firefox/.test(navigator.userAgent)
+                        ? "about:addons"
+                        : "chrome://extensions/shortcuts"
+                });
             },
             typeWrap(value: unknown) {
                 if (typeof value === "boolean") {
