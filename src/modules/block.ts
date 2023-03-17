@@ -71,6 +71,7 @@ export default {
                         gallery
                     )
                 ) {
+                    console.log(element);
                     const post = element.parentElement!;
 
                     if (post.classList.contains("ub-content")) {
@@ -78,11 +79,11 @@ export default {
                         return;
                     }
 
-                    if (post.parentElement?.className.startsWith("reply_")) {
-                        element.closest<HTMLElement>(".reply")!.style.display =
-                            "none";
-                        return;
-                    }
+                    // if (post.parentElement?.className.startsWith("reply_")) {
+                    //     element.closest<HTMLElement>(".reply")!.style.display =
+                    //         "none";
+                    //     return;
+                    // }
 
                     const content = post.closest<HTMLElement>(".ub-content");
 
