@@ -629,11 +629,11 @@
                 if (!result) return;
 
                 let isRegex = false;
-                let extra = "";
+                const extra: string[] = [];
 
                 if (confirm("정규식입니까?")) {
                     isRegex = true;
-                    extra += "[정규식] ";
+                    extra.push("[정규식]");
                 }
 
                 let gallery: string | undefined = undefined;
@@ -643,7 +643,6 @@
 
                     if (id) {
                         gallery = id;
-                        extra += `[${id}] `;
                     } else {
                         alert("갤러리 아이디가 잘못됐습니다.");
                         return;
@@ -672,7 +671,7 @@
                         modes.includes(inputMode as RefresherBlockDetectMode)
                     ) {
                         mode = inputMode as RefresherBlockDetectMode;
-                        extra += `[${this.blockDetectModeTypeNames[mode]}]`;
+                        extra.push(`[${this.blockDetectModeTypeNames[mode]}]`);
                     } else {
                         alert("모드가 잘못됐습니다.");
                         return;
@@ -682,7 +681,7 @@
                 this.blocks[key].push({
                     content: result,
                     isRegex,
-                    extra: extra || undefined,
+                    extra: extra.length ? extra.join(" ") : undefined,
                     gallery,
                     mode
                 });
