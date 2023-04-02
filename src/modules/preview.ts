@@ -1225,7 +1225,7 @@ export default {
             name: "캐시 비활성화",
             desc: "캐시를 사용하지 않습니다. (툴팁 미리보기 제외)",
             type: "check",
-            default: false
+            default: true
         }
     },
     require: ["filter", "eventBus", "Frame", "http"],
