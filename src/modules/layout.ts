@@ -1,3 +1,8 @@
+const hideSticky = (hide: boolean) => {
+    const sticky = document.querySelector<HTMLDivElement>(".stickyunit");
+    if (sticky) sticky.style.display = hide ? "none" : "initial";
+};
+
 const updateWindowSize = (
     forceActive: boolean,
     active: number | string,
@@ -8,6 +13,7 @@ const updateWindowSize = (
     const isView = location.href.includes("board/view");
 
     if (forceActive || active >= width) {
+        hideSticky(true);
         if (!document.documentElement.className.includes("refresherCompact")) {
             document.documentElement.classList.add("refresherCompact");
 
@@ -15,6 +21,7 @@ const updateWindowSize = (
                 document.documentElement.classList.add("refresherCompactView");
         }
     } else {
+        hideSticky(false);
         document.documentElement.classList.remove("refresherCompact");
     }
 };
@@ -104,6 +111,7 @@ export default {
             );
         },
         pushToRight(value: boolean) {
+            hideSticky(value);
             document.documentElement.classList[value ? "add" : "remove"](
                 "refresherPushToRight"
             );
