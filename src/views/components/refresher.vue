@@ -179,9 +179,18 @@
                         우선 디시 페이지를 열고 설정 해주세요.
                     </h3>
                 </div>
+                <div v-else-if="true">
+                    <img
+                        width="500px"
+                        height="400px"
+                        :src="getURL('/assets/icons/sry.png')" />
+                </div>
                 <div
                     v-for="module in Object.keys(settings)"
-                    v-if="settings[module] &amp;&amp; advancedSettingsCount(settings[module])"
+                    v-else-if="
+                        settings[module] &&
+                        advancedSettingsCount(settings[module])
+                    "
                     class="refresher-setting-category">
                     <h3 @click="moveToModuleTab(module)">
                         {{ module }}
@@ -375,7 +384,7 @@
                 class="tab tab5">
                 <img
                     style="width: 100px; height: 100px"
-                    src="https://pbs.twimg.com/media/E_AGBpdUcAQzadz?format=jpg" />
+                    :src="getURL('/assets/icons/no.jpg')" />
 
                 <h1>자짤 기능인줄 알았지? ㅋㅋㅋ "캬루" 지롱</h1>
             </div>
