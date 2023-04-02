@@ -1228,6 +1228,15 @@ export default {
             default: true
         }
     },
+    update: {
+        experimentalComment(this, value: boolean) {
+            if (!value || !navigator.userAgent.includes("Firefox")) return;
+
+            alert(
+                "Firefox 사생활 보호 모드에서는 댓글 기능이 작동하지 않습니다.\n해당 기능을 사용하려면 GitHub Discussions을 참고해주세요."
+            );
+        }
+    },
     require: ["filter", "eventBus", "Frame", "http"],
     func(
         filter: RefresherFilter,
