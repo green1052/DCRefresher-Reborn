@@ -60,9 +60,7 @@
                     <div class="text">
                         <h3>DCRefresher Reborn</h3>
                         <p>
-                            <span class="version"
-                                >{{ getVersion() }} (Final)</span
-                            >
+                            <span class="version">{{ getVersion() }}</span>
                             <a
                                 v-for="link in links"
                                 @click="open(link.url)"
