@@ -790,11 +790,22 @@ tr .gall_writer {
     }
 }
 
-.write_div {
-    img,
-    video {
-        max-width: calc(100% - 10px);
-        margin: 10px;
+
+.refresher-mini-preview-contents, .refresher-preview-contents-actual {
+    .write_div {
+        img,
+        video {
+            margin: 10px;
+        }
+    }
+}
+
+.refresher-preview-contents-actual {
+    .write_div {
+        img,
+        video {
+            max-width: calc(100% - 10px);
+        }
     }
 }
 
