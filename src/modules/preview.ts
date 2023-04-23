@@ -4,13 +4,15 @@ import { submitComment } from "../utils/comment";
 import { findNeighbor } from "../utils/dom";
 import * as http from "../utils/http";
 import { queryString } from "../utils/http";
-import logger from "../utils/logger";
+import log from "../utils/logger";
 import { ScrollDetection } from "../utils/scrollDetection";
 import { User } from "../utils/user";
 import Cookies from "js-cookie";
 import ky from "ky";
 import browser from "webextension-polyfill";
 import type IFrame from "../core/frame";
+
+const domParser = new DOMParser();
 
 class PostInfo implements IPostInfo {
     id: string;
@@ -33,12 +35,113 @@ class PostInfo implements IPostInfo {
     disabledDownvote?: boolean;
     dom?: Document;
 
-    constructor(id: string, data: Record<string, unknown>) {
+    constructor(id: string) {
         this.id = id;
+    }
 
-        for (const [key, value] of Object.entries(data)) {
-            this[key] = value;
+    static parse(id: string, body: string): PostInfo {
+        const postInfo = new PostInfo(id);
+
+        postInfo.dom = domParser.parseFromString(body, "text/html");
+
+        postInfo.header = postInfo.dom
+            .querySelector(".title_headtext")
+            ?.innerHTML?.replace(/(^\[.*]$)/g, "");
+
+        postInfo.title =
+            postInfo.dom.querySelector(".title_subject")?.innerHTML;
+
+        postInfo.date =
+            postInfo.dom.querySelector(".fl > .gall_date")?.innerHTML;
+
+        postInfo.expire = (
+            postInfo.dom.querySelector(
+                ".view_content_wrap div.fl > span.mini_autodeltime > div.pop_tipbox > div"
+            )?.innerHTML || ""
+        ).replace(/\s자동\s삭제/, "");
+
+        postInfo.views = postInfo.dom
+            .querySelector(".fr > .gall_count")
+            ?.innerHTML.replace(/조회\s/, "");
+
+        postInfo.upvotes = postInfo.dom
+            .querySelector(".fr > .gall_reply_num")
+            ?.innerHTML.replace(/추천\s/, "");
+
+        postInfo.fixedUpvotes = postInfo.dom.querySelector(
+            ".sup_num > .smallnum"
+        )?.innerHTML;
+
+        postInfo.downvotes = postInfo.dom.querySelector(
+            "div.btn_recommend_box .down_num"
+        )?.innerHTML;
+
+        const content_query = postInfo.dom.querySelector(".writing_view_box");
+
+        const writeDiv =
+            content_query?.querySelector<HTMLDivElement>(".write_div");
+
+        if (writeDiv && writeDiv.style.width) {
+            const width = writeDiv.style.width;
+            writeDiv.style.width = "unset";
+            writeDiv.style.maxWidth = width;
+            writeDiv.style.overflow = "";
         }
+        postInfo.contents = content_query?.innerHTML;
+
+        const zoomID = body.match(ISSUE_ZOOM_ID);
+        const zoomNO = body.match(ISSUE_ZOOM_NO);
+
+        if (zoomID && zoomID[0]) {
+            postInfo.commentId = (
+                zoomID[0].match(QUOTES) as string[]
+            )[1].replace(/'/g, "");
+        }
+
+        if (zoomNO && zoomNO[0]) {
+            postInfo.commentNo = (
+                zoomNO[0].match(QUOTES) as string[]
+            )[1].replace(/'/g, "");
+        }
+
+        const noticeElement = postInfo.dom.querySelector(
+            ".user_control .option_box li:first-child"
+        );
+
+        postInfo.isNotice = noticeElement?.innerHTML !== "공지 등록";
+
+        postInfo.isAdult = postInfo.dom.head.innerHTML.includes("/error/adult");
+
+        postInfo.requireCaptcha =
+            postInfo.dom.querySelector(".recommend_kapcode") !== null;
+        postInfo.requireCommentCaptcha =
+            postInfo.dom.querySelector(
+                `.cmt_write_box input[name="comment_code"]`
+            ) !== null;
+
+        postInfo.disabledDownvote =
+            postInfo.dom.querySelector(".icon_recom_down") === null;
+
+        postInfo.user = User.fromDom(
+            postInfo.dom.querySelector(".gallview_head > .gall_writer")
+        );
+
+        const formValues = postInfo.dom.getElementById("_view_form_")?.children;
+
+        if (formValues) {
+            const randomParam = formValues.item(
+                formValues.length - 2
+            ) as HTMLInputElement;
+            Cookies.set("randomParamName", randomParam.name);
+            Cookies.set("randomParamValue", randomParam.value);
+
+            Cookies.set(
+                "v_cur_t",
+                (formValues.namedItem("v_cur_t") as HTMLInputElement).value
+            );
+        }
+
+        return postInfo;
     }
 }
 
@@ -54,102 +157,6 @@ const ISSUE_ZOOM_ID = /\$\(document\)\.data\('comment_id',\s'.+'\);/g;
 const ISSUE_ZOOM_NO = /\$\(document\)\.data\('comment_no',\s'.+'\);/g;
 
 const QUOTES = /(["'])(?:(?=(\\?))\2.)*?\1/g;
-
-const parse = (id: string, body: string): PostInfo => {
-    const dom = new DOMParser().parseFromString(body, "text/html");
-
-    const header = dom
-        .querySelector(".title_headtext")
-        ?.innerHTML?.replace(/(^\[.*]$)/g, "");
-
-    const title = dom.querySelector(".title_subject")?.innerHTML;
-
-    const date = dom.querySelector(".fl > .gall_date")?.innerHTML;
-
-    let expire = dom.querySelector(
-        ".view_content_wrap div.fl > span.mini_autodeltime > div.pop_tipbox > div"
-    )?.innerHTML;
-
-    if (expire) {
-        expire = expire.replace(/\s자동\s삭제/, "");
-    }
-
-    const views = dom
-        .querySelector(".fr > .gall_count")
-        ?.innerHTML.replace(/조회\s/, "");
-
-    const upvotes = dom
-        .querySelector(".fr > .gall_reply_num")
-        ?.innerHTML.replace(/추천\s/, "");
-
-    const fixedUpvotes = dom.querySelector(".sup_num > .smallnum")?.innerHTML;
-
-    const downvotes = dom.querySelector(
-        "div.btn_recommend_box .down_num"
-    )?.innerHTML;
-
-    const content_query = dom.querySelector(".writing_view_box");
-
-    const writeDiv = content_query?.querySelector<HTMLDivElement>(".write_div");
-
-    if (writeDiv && writeDiv.style.width) {
-        const width = writeDiv.style.width;
-        writeDiv.style.width = "unset";
-        writeDiv.style.maxWidth = width;
-        writeDiv.style.overflow = "";
-    }
-    const contents = content_query?.innerHTML;
-
-    const zoomID = body.match(ISSUE_ZOOM_ID);
-    const zoomNO = body.match(ISSUE_ZOOM_NO);
-
-    let commentId = "";
-    let commentNo = "";
-
-    if (zoomID && zoomID[0]) {
-        commentId = (zoomID[0].match(QUOTES) as string[])[1].replace(/'/g, "");
-    }
-
-    if (zoomNO && zoomNO[0]) {
-        commentNo = (zoomNO[0].match(QUOTES) as string[])[1].replace(/'/g, "");
-    }
-
-    const noticeElement = dom.querySelector(
-        ".user_control .option_box li:first-child"
-    );
-    const isNotice = noticeElement?.innerHTML !== "공지 등록";
-
-    const isAdult = dom.head.innerHTML.includes("/error/adult");
-
-    const requireCaptcha = dom.querySelector(".recommend_kapcode") !== null;
-    const requireCommentCaptcha =
-        dom.querySelector(`.cmt_write_box input[name="comment_code"]`) !== null;
-
-    const disabledDownvote = dom.querySelector(".icon_recom_down") === null;
-
-    return new PostInfo(id, {
-        header,
-        title,
-        date,
-        expire,
-        user: new User("", null, null, null).import(
-            dom.querySelector(".gallview_head > .gall_writer")
-        ),
-        views,
-        upvotes,
-        fixedUpvotes,
-        downvotes,
-        contents,
-        commentId,
-        commentNo,
-        isNotice,
-        isAdult,
-        disabledDownvote,
-        requireCaptcha,
-        requireCommentCaptcha,
-        dom
-    });
-};
 
 const client = ky.create({
     method: "POST",
@@ -178,6 +185,11 @@ const request = {
 
         const params = new URLSearchParams();
         params.set("ci_t", Cookies.get("ci_c") ?? "");
+        params.set("v_cur_t", Cookies.get("v_cur_t") ?? "");
+        params.set(
+            Cookies.get("randomParamName") ?? "",
+            Cookies.get("randomParamValue") ?? ""
+        );
         params.set("id", gall_id);
         params.set("no", post_id);
         params.set("mode", type ? "U" : "D");
@@ -196,16 +208,21 @@ const request = {
         };
     },
 
-    post(link: string, gallery: string, id: string, signal: AbortSignal) {
-        return ky
+    async post(
+        link: string,
+        gallery: string,
+        id: string,
+        signal: AbortSignal
+    ): Promise<PostInfo> {
+        const response = await ky
             .get(
                 `${http.urls.base}${http.galleryType(link, "/")}${
                     http.urls.view
                 }${gallery}&no=${id}`,
                 { signal }
             )
-            .text()
-            .then((response) => parse(id, response));
+            .text();
+        return PostInfo.parse(id, response);
     },
 
     /**
@@ -1450,7 +1467,7 @@ export default {
                             detail: error
                         };
 
-                        logger("Error occured while loading a post.", error);
+                        log("Error occured while loading a post.", error);
 
                         frame.data.load = false;
                     });
@@ -1700,7 +1717,7 @@ export default {
                                         v.name,
                                         v.user_id || null,
                                         v.ip || null,
-                                        new DOMParser()
+                                        domParser
                                             .parseFromString(
                                                 v.gallog_icon,
                                                 "text/html"
