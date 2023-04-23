@@ -327,10 +327,22 @@ tr .gall_writer {
     }
 
     .gall_exposure,
-    .right_content,
     .minor_ranking_box,
     .listwrap .issue_contentbox {
         display: none;
+    }
+
+    .right_content {
+        float: initial;
+        width: initial;
+
+        .user_info,
+        .user_option,
+        .rightbanner1,
+        #my_minor_pop,
+        article {
+            display: none;
+        }
     }
 
     .list_array_option,
