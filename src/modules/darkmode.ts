@@ -16,7 +16,11 @@ const colorCorrection = (elem: HTMLElement) => {
     const contrast = Color.contrast(textColor, DARK_MODE_COLOR);
 
     if (contrast < 3) {
-        const trans = Color.rgbToHsl([textColor[0], textColor[1], textColor[2]]);
+        const trans = Color.rgbToHsl([
+            textColor[0],
+            textColor[1],
+            textColor[2]
+        ]);
         trans[2] = Color.inverseColor(trans[2]);
         const rollback = Color.hslToRgb([trans[0], trans[1], trans[2]]);
 
