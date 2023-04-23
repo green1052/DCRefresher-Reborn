@@ -1,8 +1,9 @@
 import * as Toast from "../components/toast";
+import browser from "webextension-polyfill";
 
 const inject = (filename: string) => {
     const scriptElement = document.createElement("script");
-    scriptElement.src = chrome.runtime.getURL(filename);
+    scriptElement.src = browser.runtime.getURL(filename);
     document.documentElement.appendChild(scriptElement);
 }
 export default {
