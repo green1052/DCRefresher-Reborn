@@ -191,8 +191,15 @@ const displayNames = new Intl.DisplayNames(["ko"], { type: "region" });
 export const ISPData = (ip: string): ISPInfo => {
     const fullIp = `${ip}.0.0`;
 
-    const asn = asnReader.get(fullIp)?.autonomous_system_organization;
-    const country = countryReader.get(fullIp)?.country?.iso_code;
+    let asn = asnReader.get(fullIp)?.autonomous_system_organization;
+    let country = countryReader.get(fullIp)?.country?.iso_code;
+
+    if (!asn && !country) {
+        const fullIp2 = `${ip}.255.255`;
+
+        asn = asnReader.get(fullIp2)?.autonomous_system_organization;
+        country = countryReader.get(fullIp2)?.country?.iso_code;
+    }
 
     let color: string;
     switch (country) {
