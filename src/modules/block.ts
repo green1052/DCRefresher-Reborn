@@ -71,7 +71,6 @@ export default {
                         gallery
                     )
                 ) {
-                    console.log(element);
                     const post = element.parentElement!;
 
                     if (post.classList.contains("ub-content")) {
