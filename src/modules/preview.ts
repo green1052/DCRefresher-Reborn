@@ -48,13 +48,17 @@ class PostInfo implements IPostInfo {
             .querySelector(".title_headtext")
             ?.innerHTML?.replace(/(^\[.*]$)/g, "");
 
-        postInfo.title = postInfo.dom.querySelector(".title_subject")?.innerHTML;
+        postInfo.title =
+            postInfo.dom.querySelector(".title_subject")?.innerHTML;
 
-        postInfo.date = postInfo.dom.querySelector(".fl > .gall_date")?.innerHTML;
+        postInfo.date =
+            postInfo.dom.querySelector(".fl > .gall_date")?.innerHTML;
 
-        postInfo.expire = (postInfo.dom.querySelector(
-            ".view_content_wrap div.fl > span.mini_autodeltime > div.pop_tipbox > div"
-        )?.innerHTML || "").replace(/\s자동\s삭제/, "");
+        postInfo.expire = (
+            postInfo.dom.querySelector(
+                ".view_content_wrap div.fl > span.mini_autodeltime > div.pop_tipbox > div"
+            )?.innerHTML || ""
+        ).replace(/\s자동\s삭제/, "");
 
         postInfo.views = postInfo.dom
             .querySelector(".fr > .gall_count")
@@ -64,7 +68,9 @@ class PostInfo implements IPostInfo {
             .querySelector(".fr > .gall_reply_num")
             ?.innerHTML.replace(/추천\s/, "");
 
-        postInfo.fixedUpvotes = postInfo.dom.querySelector(".sup_num > .smallnum")?.innerHTML;
+        postInfo.fixedUpvotes = postInfo.dom.querySelector(
+            ".sup_num > .smallnum"
+        )?.innerHTML;
 
         postInfo.downvotes = postInfo.dom.querySelector(
             "div.btn_recommend_box .down_num"
@@ -72,7 +78,8 @@ class PostInfo implements IPostInfo {
 
         const content_query = postInfo.dom.querySelector(".writing_view_box");
 
-        const writeDiv = content_query?.querySelector<HTMLDivElement>(".write_div");
+        const writeDiv =
+            content_query?.querySelector<HTMLDivElement>(".write_div");
 
         if (writeDiv && writeDiv.style.width) {
             const width = writeDiv.style.width;
@@ -86,11 +93,15 @@ class PostInfo implements IPostInfo {
         const zoomNO = body.match(ISSUE_ZOOM_NO);
 
         if (zoomID && zoomID[0]) {
-            postInfo.commentId = (zoomID[0].match(QUOTES) as string[])[1].replace(/'/g, "");
+            postInfo.commentId = (
+                zoomID[0].match(QUOTES) as string[]
+            )[1].replace(/'/g, "");
         }
 
         if (zoomNO && zoomNO[0]) {
-            postInfo.commentNo = (zoomNO[0].match(QUOTES) as string[])[1].replace(/'/g, "");
+            postInfo.commentNo = (
+                zoomNO[0].match(QUOTES) as string[]
+            )[1].replace(/'/g, "");
         }
 
         const noticeElement = postInfo.dom.querySelector(
@@ -101,22 +112,33 @@ class PostInfo implements IPostInfo {
 
         postInfo.isAdult = postInfo.dom.head.innerHTML.includes("/error/adult");
 
-        postInfo.requireCaptcha = postInfo.dom.querySelector(".recommend_kapcode") !== null;
+        postInfo.requireCaptcha =
+            postInfo.dom.querySelector(".recommend_kapcode") !== null;
         postInfo.requireCommentCaptcha =
-            postInfo.dom.querySelector(`.cmt_write_box input[name="comment_code"]`) !== null;
+            postInfo.dom.querySelector(
+                `.cmt_write_box input[name="comment_code"]`
+            ) !== null;
 
-        postInfo.disabledDownvote = postInfo.dom.querySelector(".icon_recom_down") === null;
+        postInfo.disabledDownvote =
+            postInfo.dom.querySelector(".icon_recom_down") === null;
 
-        postInfo.user = User.fromDom(postInfo.dom.querySelector(".gallview_head > .gall_writer"));
+        postInfo.user = User.fromDom(
+            postInfo.dom.querySelector(".gallview_head > .gall_writer")
+        );
 
         const formValues = postInfo.dom.getElementById("_view_form_")?.children;
 
         if (formValues) {
-            const randomParam = formValues.item(formValues.length - 2) as HTMLInputElement;
+            const randomParam = formValues.item(
+                formValues.length - 2
+            ) as HTMLInputElement;
             Cookies.set("randomParamName", randomParam.name);
-            Cookies.set("randomParamValue", randomParam.value)
-            
-            Cookies.set("v_cur_t", (formValues.namedItem("v_cur_t") as HTMLInputElement).value);
+            Cookies.set("randomParamValue", randomParam.value);
+
+            Cookies.set(
+                "v_cur_t",
+                (formValues.namedItem("v_cur_t") as HTMLInputElement).value
+            );
         }
 
         return postInfo;
@@ -164,7 +186,10 @@ const request = {
         const params = new URLSearchParams();
         params.set("ci_t", Cookies.get("ci_c") ?? "");
         params.set("v_cur_t", Cookies.get("v_cur_t") ?? "");
-        params.set(Cookies.get("randomParamName") ?? "", Cookies.get("randomParamValue") ?? "");
+        params.set(
+            Cookies.get("randomParamName") ?? "",
+            Cookies.get("randomParamValue") ?? ""
+        );
         params.set("id", gall_id);
         params.set("no", post_id);
         params.set("mode", type ? "U" : "D");
@@ -183,10 +208,17 @@ const request = {
         };
     },
 
-    async post(link: string, gallery: string, id: string, signal: AbortSignal): Promise<PostInfo> {
+    async post(
+        link: string,
+        gallery: string,
+        id: string,
+        signal: AbortSignal
+    ): Promise<PostInfo> {
         const response = await ky
             .get(
-                `${http.urls.base}${http.galleryType(link, "/")}${http.urls.view}${gallery}&no=${id}`,
+                `${http.urls.base}${http.galleryType(link, "/")}${
+                    http.urls.view
+                }${gallery}&no=${id}`,
                 { signal }
             )
             .text();
