@@ -124,21 +124,23 @@ export class User {
             : memo.get("NICK", this.nick);
     }
 
-    import(dom: HTMLElement | null): this {
-        if (!dom) return this;
+    static fromDom(dom: HTMLElement | null): User {
+        const user = new User("", null, null, null);
 
-        this.nick = dom.dataset.nick || "오류";
-        this.id = dom.dataset.uid || null;
-        this.ip = dom.dataset.ip || null;
+        if (!dom) return user;
 
-        this.icon = !this.id
+        user.nick = dom.dataset.nick || "오류";
+        user.id = dom.dataset.uid || null;
+        user.ip = dom.dataset.ip || null;
+
+        user.icon = !user.id
             ? null
             : dom.querySelector("a.writer_nikcon img")!.getAttribute("src")!;
-        this.type = getType(this.icon);
+        user.type = getType(user.icon);
 
-        this.getMemo();
+        user.getMemo();
 
-        return this;
+        return user;
     }
 
     isLogout(): boolean {
