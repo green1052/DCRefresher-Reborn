@@ -109,6 +109,16 @@ class PostInfo implements IPostInfo {
 
         postInfo.user = User.fromDom(postInfo.dom.querySelector(".gallview_head > .gall_writer"));
 
+        const formValues = postInfo.dom.getElementById("_view_form_")?.children;
+
+        if (formValues) {
+            const randomParam = formValues.item(formValues.length - 2) as HTMLInputElement;
+            Cookies.set("randomParamName", randomParam.name);
+            Cookies.set("randomParamValue", randomParam.value)
+            
+            Cookies.set("v_cur_t", (formValues.namedItem("v_cur_t") as HTMLInputElement).value);
+        }
+
         return postInfo;
     }
 }
@@ -153,6 +163,8 @@ const request = {
 
         const params = new URLSearchParams();
         params.set("ci_t", Cookies.get("ci_c") ?? "");
+        params.set("v_cur_t", Cookies.get("v_cur_t") ?? "");
+        params.set(Cookies.get("randomParamName") ?? "", Cookies.get("randomParamValue") ?? "");
         params.set("id", gall_id);
         params.set("no", post_id);
         params.set("mode", type ? "U" : "D");
@@ -1673,7 +1685,7 @@ export default {
                                         v.name,
                                         v.user_id || null,
                                         v.ip || null,
-                                        new DOMParser()
+                                        domParser
                                             .parseFromString(
                                                 v.gallog_icon,
                                                 "text/html"
