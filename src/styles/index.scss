@@ -809,6 +809,12 @@ tr .gall_writer {
     }
 }
 
+.refresherCompactView {
+    .write_div {
+        max-width: calc(100vw - 5%);
+    }
+}
+
 .cmt_nickbox {
     display: flex;
 }
