@@ -2000,6 +2000,7 @@ export default {
                         document.title = this.memory.titleStore;
                     }
 
+                    appStore.clearScrollMode();
                     window.clearInterval(this.memory.refreshIntervalId!);
                 });
             }
