@@ -1960,7 +1960,7 @@ export default {
                         newPostWithData(preData, historySkip);
 
                         groupStore.scrollTop = 0;
-                        appStore.clearScrollMode();
+                        appStore?.clearScrollMode();
                     }
                 });
 
