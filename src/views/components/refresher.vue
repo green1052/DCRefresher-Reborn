@@ -772,7 +772,6 @@
                 );
             }
         },
-
         mounted() {
             port.postMessage({
                 requestRefresherModules: true,
