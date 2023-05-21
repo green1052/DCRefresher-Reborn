@@ -1960,7 +1960,7 @@ export default {
                         newPostWithData(preData, historySkip);
 
                         groupStore.scrollTop = 0;
-                        appStore?.clearScrollMode();
+                        appStore.clearScrollMode();
                     }
                 });
 
@@ -2000,7 +2000,7 @@ export default {
                         document.title = this.memory.titleStore;
                     }
 
-                    appStore.clearScrollMode();
+                    appStore?.clearScrollMode();
                     window.clearInterval(this.memory.refreshIntervalId!);
                 });
             }
