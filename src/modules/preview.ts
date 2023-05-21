@@ -961,6 +961,7 @@ const getRelevantData = (ev: MouseEvent) => {
 };
 
 interface Cache {
+    date: number;
     post?: PostInfo;
     comment?: DcinsideComments;
 }
@@ -971,7 +972,16 @@ class PostCache {
     constructor(public maxCacheSize: number = 50) {}
 
     public get(id: string): Cache | undefined {
-        return this.#caches[id];
+        const cache = this.#caches[id];
+
+        if (!cache) return undefined;
+
+        if (Date.now() - cache.date > 1000 * 60) {
+            this.delete(id);
+            return undefined;
+        }
+
+        return cache;
     }
 
     public set(id: string, data: Cache): void {
@@ -980,9 +990,8 @@ class PostCache {
             this.delete(lastCache);
         }
 
-        this.#caches[id] ??= {};
         this.#caches[id] = {
-            ...this.get(id),
+            ...(this.get(id) ?? {}),
             ...data
         };
     }
@@ -1079,6 +1088,7 @@ const miniPreview: MiniPreview = {
                     }
 
                     postCaches.set(`${preData.gallery}${preData.id}`, {
+                        date: Date.now(),
                         post: response
                     });
                     resolve(response);
@@ -1383,6 +1393,7 @@ export default {
                             }
 
                             postCaches.set(`${preData.gallery}${preData.id}`, {
+                                date: Date.now(),
                                 post: response
                             });
                             resolve(response);
@@ -1696,6 +1707,7 @@ export default {
                             }
 
                             postCaches.set(`${preData.gallery}${preData.id}`, {
+                                date: Date.now(),
                                 comment: response
                             });
                             resolve(response);
