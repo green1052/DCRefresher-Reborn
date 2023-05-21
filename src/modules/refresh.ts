@@ -483,11 +483,11 @@ export default {
                 "refresherGetPost",
                 (parsedBody: Document) => {
                     const pagingBox = parsedBody.querySelector(
-                        ".left_content .bottom_paging_box"
+                        ".left_content article:has(.gall_listwrap) .bottom_paging_box"
                     );
 
                     const currentBottomPagingBox = document.querySelector(
-                        ".left_content .bottom_paging_box"
+                        ".left_content article:has(.gall_listwrap) .bottom_paging_box"
                     );
 
                     if (currentBottomPagingBox && pagingBox) {
@@ -496,7 +496,7 @@ export default {
 
                     const pagingBoxAnchors =
                         document.querySelectorAll<HTMLAnchorElement>(
-                            ".left_content .bottom_paging_box a"
+                            ".left_content article:has(.gall_listwrap) .bottom_paging_box a"
                         );
 
                     if (pagingBoxAnchors) {
