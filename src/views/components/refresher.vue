@@ -306,6 +306,19 @@
                                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
                             </svg>
                         </span>
+
+                        <span
+                            class="remove"
+                            @click="() => removeAllBlockedUser(key)">
+                            <svg
+                                height="14"
+                                viewBox="0 0 18 18"
+                                width="14"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M14.53 4.53l-1.06-1.06L9 7.94 4.53 3.47 3.47 4.53 7.94 9l-4.47 4.47 1.06 1.06L9 10.06l4.47 4.47 1.06-1.06L10.06 9z" />
+                            </svg>
+                        </span>
                     </h3>
                     <div class="lists">
                         <p v-if="!blocks[key].length">
@@ -360,6 +373,19 @@
                                     d="M0 0h24v24H0z"
                                     fill="none" />
                                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                            </svg>
+                        </span>
+
+                        <span
+                            class="remove"
+                            @click="() => removeAllMemoUser(key)">
+                            <svg
+                                height="14"
+                                viewBox="0 0 18 18"
+                                width="14"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M14.53 4.53l-1.06-1.06L9 7.94 4.53 3.47 3.47 4.53 7.94 9l-4.47 4.47 1.06 1.06L9 10.06l4.47 4.47 1.06-1.06L10.06 9z" />
                             </svg>
                         </span>
                     </h3>
@@ -701,7 +727,18 @@
                 this.blocks[key].splice(index, 1);
                 this.syncBlock();
             },
+            removeAllBlockedUser(key: RefresherBlockType) {
+                this.blocks[key] = [];
+                this.syncBlock();
+            },
             editBlockedUser(key: RefresherBlockType, index: number) {
+                if (key === "DCCON") {
+                    alert(
+                        "디시콘 수정은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요."
+                    );
+                    return;
+                }
+
                 const result = prompt(
                     `바꿀 ${this.blockKeyNames[key]} 값을 입력하세요.`
                 );
@@ -734,6 +771,10 @@
                 delete obj[type][user];
                 this.memos = obj;
 
+                this.syncMemos();
+            },
+            removeAllMemoUser(type: RefresherMemoType) {
+                this.memos[type] = {};
                 this.syncMemos();
             },
             addMemoUser(type: RefresherMemoType) {
