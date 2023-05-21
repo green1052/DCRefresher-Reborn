@@ -13,14 +13,24 @@
 
         <refresher-loader v-if="dcconList === null" />
         <fragment v-else>
-            <ul style="overflow: auto; display: flex">
+            <ul style="overflow: auto; display: flex; user-select: none">
                 <li
-                    v-for="dccon in dcconList"
+                    @click="pageDown()"
+                    style="font-size: 30px; margin-right: 5px">
+                    <
+                </li>
+                <li
+                    v-for="dccon in dcconList[currentPage]"
                     :key="dccon.title">
                     <img
                         :alt="dccon.title"
                         :src="dccon.main_img_url"
                         @click="dcconListClick(dccon.detail)" />
+                </li>
+                <li
+                    @click="pageUp()"
+                    style="font-size: 30px; margin-left: 5px">
+                    >
                 </li>
             </ul>
 
@@ -50,7 +60,9 @@
     import ky from "ky";
 
     interface DcconPopupData {
-        dcconList: DcinsideDcconDetailList[] | null;
+        currentPage: number;
+        maxPage: number;
+        dcconList: Record<number, DcinsideDcconDetailList[]>;
         currentDccon: DcinsideDccon[] | null;
     }
 
@@ -58,43 +70,54 @@
         name: "refresher-dccon-popup",
         data: (): DcconPopupData => {
             return {
-                dcconList: null,
+                currentPage: 0,
+                maxPage: 1,
+                dcconList: {},
                 currentDccon: null
             };
         },
-        async created() {
-            const params = new URLSearchParams();
-            params.set("ci_t", Cookies.get("ci_c") ?? "");
-            params.set("target", "icon");
-            params.set("page", "0");
+        created() {
+            this.getDcconList();
+        },
+        methods: {
+            pageUp() {
+                if (this.currentPage < this.maxPage) {
+                    this.currentPage++;
+                    this.getDcconList();
+                }
+            },
+            pageDown() {
+                if (this.currentPage > 0) {
+                    this.currentPage--;
+                    this.getDcconList();
+                }
+            },
+            async getDcconList() {
+                if (this.dcconList[this.currentPage]) {
+                    this.currentDccon =
+                        this.dcconList[this.currentPage][0].detail;
+                    return;
+                }
 
-            const result: DcinsideDcconDetailList[] = [];
+                const params = new URLSearchParams();
+                params.set("ci_t", Cookies.get("ci_c") ?? "");
+                params.set("target", "icon");
+                params.set("page", String(this.currentPage));
 
-            const response = await ky
-                .post("https://gall.dcinside.com/dccon/lists", { body: params })
-                .json<DcinsideDcconDetail>();
-
-            for (const list of response.list) {
-                result.push(list);
-            }
-
-            for (let i = 1; i <= response.max_page; i++) {
-                params.set("page", i.toString());
                 const response = await ky
                     .post("https://gall.dcinside.com/dccon/lists", {
                         body: params
                     })
                     .json<DcinsideDcconDetail>();
 
-                for (const list of response.list) {
-                    result.push(list);
-                }
-            }
+                this.dcconList = {
+                    ...this.dcconList,
+                    [this.currentPage]: response.list
+                };
 
-            this.dcconList = result;
-            this.currentDccon = response.list[0].detail;
-        },
-        methods: {
+                this.maxPage = response.max_page;
+                this.currentDccon = response.list[0].detail;
+            },
             dcconListClick(dccons: DcinsideDccon[]) {
                 this.currentDccon = dccons;
             },
