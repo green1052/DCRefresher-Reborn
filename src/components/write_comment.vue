@@ -230,6 +230,11 @@
                               }
                     );
 
+                    if (result === false) {
+                        this.disabled = false;
+                        return false;
+                    }
+
                     this.disabled = false;
                     this.text = "";
                     this.$emit("setDccon", null);
