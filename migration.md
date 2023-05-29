@@ -62,7 +62,7 @@ chrome.storage.local.get().then((settings) => {
 
 ```js
 (() => {
-  const settings = ``;
+  const settings = `여기에 입력`;
   for (const [key, value] of Object.entries(JSON.parse(settings))) {
     chrome.storage.local.set({ [key]: value });
   }
