@@ -46,13 +46,11 @@
 
         methods: {
             update(ev) {
-                if (this.change) {
-                    this.change(
-                        ev.target.dataset.module,
-                        ev.target.dataset.id,
-                        ev.target.value
-                    );
-                }
+                this.change?.(
+                    ev.target.dataset.module,
+                    ev.target.dataset.id,
+                    ev.target.value
+                );
             }
         }
     });

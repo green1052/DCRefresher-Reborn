@@ -408,7 +408,6 @@
                 this.frame.collapse = undefined;
                 this.frame.data = {};
                 this.frame.functions = {};
-
                 this.reply = null;
                 this.dccon = null;
                 this.closeDccon();

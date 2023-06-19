@@ -20,6 +20,7 @@
 
 <script>
     import Vue from "vue";
+    import $ from "cash-dom";
 
     export default Vue.extend({
         name: "refresher-range",
@@ -67,8 +68,9 @@
         },
         methods: {
             input(ev) {
-                this.$el.querySelector(".indicator").innerHTML =
-                    ev.target.value + (this.unit ? this.unit : "");
+                $(this.$el)
+                    .find(".indicator")
+                    .html(`${ev.target.value}${this.unit ? this.unit : ""}`);
             },
 
             update(ev) {
