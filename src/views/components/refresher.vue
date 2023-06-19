@@ -725,12 +725,11 @@
                 this.syncBlock();
             },
             removeBlockedUser(key: RefresherBlockType, index: number) {
-                if (!confirm("ㄹ?ㅇ")) return;
-
                 this.blocks[key].splice(index, 1);
                 this.syncBlock();
             },
             removeAllBlockedUser(key: RefresherBlockType) {
+                if (!confirm("ㄹ?ㅇ")) return;
                 this.blocks[key] = [];
                 this.syncBlock();
             },
