@@ -7,6 +7,7 @@ import { queryString } from "../utils/http";
 import log from "../utils/logger";
 import { ScrollDetection } from "../utils/scrollDetection";
 import { User } from "../utils/user";
+import $ from "cash-dom";
 import Cookies from "js-cookie";
 import ky from "ky";
 import browser from "webextension-polyfill";
@@ -44,50 +45,46 @@ class PostInfo implements IPostInfo {
 
         postInfo.dom = domParser.parseFromString(body, "text/html");
 
-        postInfo.header = postInfo.dom
-            .querySelector(".title_headtext")
-            ?.innerHTML?.replace(/(^\[.*]$)/g, "");
+        const $dom = $(postInfo.dom);
 
-        postInfo.title =
-            postInfo.dom.querySelector(".title_subject")?.innerHTML;
-
-        postInfo.date =
-            postInfo.dom.querySelector(".fl > .gall_date")?.innerHTML;
-
-        postInfo.expire = (
-            postInfo.dom.querySelector(
+        postInfo.header = $dom
+            .find(".title_headtext")
+            .html()
+            ?.replace(/(^\[.*]$)/g, "");
+        postInfo.title = $dom.find(".title_subject").html();
+        postInfo.date = $dom.find(".fl > .gall_date").html();
+        postInfo.expire = $dom
+            .find(
                 ".view_content_wrap div.fl > span.mini_autodeltime > div.pop_tipbox > div"
-            )?.innerHTML || ""
-        ).replace(/\s자동\s삭제/, "");
+            )
+            .html()
+            ?.replace(/\s자동\s삭제/, "");
+        postInfo.views = $dom
+            .find(".fr > .gall_count")
+            .html()
+            ?.replace(/조회\s/, "");
+        postInfo.upvotes = $dom
+            .find(".fr > .gall_reply_num")
+            .html()
+            ?.replace(/추천\s/, "");
+        postInfo.fixedUpvotes = $dom.find(".sup_num > .smallnum").html();
+        postInfo.downvotes = $dom
+            .find("div.btn_recommend_box .down_num")
+            .html();
 
-        postInfo.views = postInfo.dom
-            .querySelector(".fr > .gall_count")
-            ?.innerHTML.replace(/조회\s/, "");
+        const $contentQuery = $dom.find(".writing_view_box");
 
-        postInfo.upvotes = postInfo.dom
-            .querySelector(".fr > .gall_reply_num")
-            ?.innerHTML.replace(/추천\s/, "");
+        const $writeDiv = $contentQuery.find(".write_div");
 
-        postInfo.fixedUpvotes = postInfo.dom.querySelector(
-            ".sup_num > .smallnum"
-        )?.innerHTML;
+        const width = $writeDiv.css("width");
 
-        postInfo.downvotes = postInfo.dom.querySelector(
-            "div.btn_recommend_box .down_num"
-        )?.innerHTML;
-
-        const content_query = postInfo.dom.querySelector(".writing_view_box");
-
-        const writeDiv =
-            content_query?.querySelector<HTMLDivElement>(".write_div");
-
-        if (writeDiv && writeDiv.style.width) {
-            const width = writeDiv.style.width;
-            writeDiv.style.width = "unset";
-            writeDiv.style.maxWidth = width;
-            writeDiv.style.overflow = "";
+        if (width) {
+            $writeDiv.css("width", "unset");
+            $writeDiv.css("max-width", width);
+            $writeDiv.css("overflow", "");
         }
-        postInfo.contents = content_query?.innerHTML;
+
+        postInfo.contents = $contentQuery.html();
 
         const zoomID = body.match(ISSUE_ZOOM_ID);
         const zoomNO = body.match(ISSUE_ZOOM_NO);
@@ -104,23 +101,18 @@ class PostInfo implements IPostInfo {
             )[1].replace(/'/g, "");
         }
 
-        const noticeElement = postInfo.dom.querySelector(
+        const $noticeElement = $dom.find(
             ".user_control .option_box li:first-child"
         );
 
-        postInfo.isNotice = noticeElement?.innerHTML !== "공지 등록";
-
+        postInfo.isNotice = $noticeElement.html() !== "공지 등록";
         postInfo.isAdult = postInfo.dom.head.innerHTML.includes("/error/adult");
-
-        postInfo.requireCaptcha =
-            postInfo.dom.querySelector(".recommend_kapcode") !== null;
+        postInfo.requireCaptcha = $dom.find(".recommend_kapcode").length > 0;
         postInfo.requireCommentCaptcha =
-            postInfo.dom.querySelector(
-                `.cmt_write_box input[name="comment_code"]`
-            ) !== null;
+            $dom.find(`.cmt_write_box input[name="comment_code"]`).length > 0;
 
         postInfo.disabledDownvote =
-            postInfo.dom.querySelector(".icon_recom_down") === null;
+            $dom.find(".btn_recommend_box .down_num").length === 0;
 
         postInfo.user = User.fromDom(
             postInfo.dom.querySelector(".gallview_head > .gall_writer")
@@ -134,7 +126,6 @@ class PostInfo implements IPostInfo {
             ) as HTMLInputElement;
             Cookies.set("randomParamName", randomParam.name);
             Cookies.set("randomParamValue", randomParam.value);
-
             Cookies.set(
                 "v_cur_t",
                 (formValues.namedItem("v_cur_t") as HTMLInputElement).value
@@ -234,17 +225,14 @@ const request = {
         if (!args.link)
             throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
 
-        const galleryType = http.galleryType(args.link, "/");
+        // const galleryType = http.galleryType(args.link, "/");
 
         const params = new URLSearchParams();
         params.set("id", args.gallery);
         params.set("no", args.id);
         params.set("cmt_id", args.commentId ?? args.gallery);
         params.set("cmt_no", args.commentNo ?? args.id);
-        params.set(
-            "e_s_n_o",
-            document.querySelector<HTMLInputElement>("#e_s_n_o")!.value
-        );
+        params.set("e_s_n_o", $("#e_s_n_o").val() as string);
         params.set("comment_page", "1");
         params.set("_GALLTYPE_", http.galleryTypeName(args.link));
 
@@ -388,7 +376,7 @@ const request = {
         if (!args.link)
             throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
 
-        const galleryType = http.galleryType(args.link, "/");
+        // const galleryType = http.galleryType(args.link, "/");
         const galleryTypeName = http.galleryTypeName(args.link);
 
         const params = new URLSearchParams();
@@ -1252,7 +1240,7 @@ export default {
             name: "캐시 비활성화",
             desc: "캐시를 사용하지 않습니다. (툴팁 미리보기 제외)",
             type: "check",
-            default: true
+            default: false
         }
     },
     update: {
@@ -1571,7 +1559,7 @@ export default {
                             res.result === "false" ||
                             res.result === "PreNotWorking"
                         ) {
-                            alert(res.message);
+                            Toast.show(res.message!, true, 3000);
                             return false;
                         } else {
                             return true;

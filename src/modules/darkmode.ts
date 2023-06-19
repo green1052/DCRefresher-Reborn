@@ -1,13 +1,17 @@
 import * as Color from "../utils/color";
 import * as DOM from "../utils/dom";
+import $ from "cash-dom";
+import { Cash } from "cash-dom/dist/cash";
 import type { Rgb } from "../utils/color";
 
 const DARK_MODE_COLOR: Rgb = [41, 41, 41];
 
-const colorCorrection = (elem: HTMLElement) => {
-    const fontAttr = elem.hasAttribute("color");
+const colorCorrection = (element: HTMLElement) => {
+    const $element = $(element);
 
-    const color = fontAttr ? elem.getAttribute("color") : elem.style.color;
+    const fontAttr = $element.attr("color");
+
+    const color = fontAttr ? fontAttr : $element.css("color");
 
     if (!color) return;
 
@@ -25,36 +29,40 @@ const colorCorrection = (elem: HTMLElement) => {
         const rollback = Color.hslToRgb([trans[0], trans[1], trans[2]]);
 
         if (fontAttr) {
-            elem.setAttribute(
+            $element.attr(
                 "color",
                 Color.rgbToHex(rollback[0], rollback[1], rollback[2])
             );
         } else {
-            elem.style.color = `rgb(${rollback[0]}, ${rollback[1]}, ${rollback[2]})`;
+            $element.css(
+                "color",
+                Color.rgbToHex(rollback[0], rollback[1], rollback[2])
+            );
         }
     }
 };
 
-const contentColorFix = (el: HTMLElement) => {
-    if (!el) return;
+const contentColorFix = (element: HTMLElement) => {
+    if (!element) return;
 
-    const qSelector = el.querySelector<HTMLElement>(
+    const $element = $(element);
+
+    const qSelector = element.querySelector<HTMLElement>(
         ".refresher-frame:first-child .refresher-preview-contents"
     )!;
 
-    DOM.traversal(qSelector).forEach((elem) => {
+    for (const elem of DOM.traversal(qSelector)) {
+        const $elem = $(elem);
+
         if (
-            !elem.style ||
-            !(elem.style.color || elem.hasAttribute("color")) ||
-            (elem.style.background &&
-                elem.style.background !== "transparent") ||
-            (elem.style.backgroundColor &&
-                elem.style.backgroundColor !== "transparent")
+            !($elem.css("style") || $elem.attr("color")) ||
+            $elem.css("background") !== "transparent" ||
+            $elem.css("backgroundColor") !== "transparent"
         )
-            return;
+            continue;
 
         colorCorrection(elem);
-    });
+    }
 };
 
 export default {
@@ -70,15 +78,10 @@ export default {
     default_enable: false,
     require: ["filter", "eventBus"],
     func(filter: RefresherFilter, eventBus: RefresherEventBus) {
-        if (
-            document &&
-            document.documentElement &&
-            !document.documentElement.className.includes("refresherDark")
-        )
-            document.documentElement.classList.add("refresherDark");
+        $(document.documentElement).addClass("refresherDark");
 
         this.memory.uuid = filter.add("html", (element) => {
-            element.classList.add("refresherDark");
+            $(element).addClass("refresherDark");
         });
 
         // 다크모드는 반응성이 중요하니깐 모듈에서 바로 로드 시키기
@@ -87,8 +90,9 @@ export default {
         this.memory.uuid2 = filter.add(
             ".gallview_contents .inner .writing_view_box *",
             (element) => {
-                if (!element.style?.color || element.hasAttribute("color"))
-                    return;
+                const $element = $(element);
+
+                if ($element.css("style") || $element.attr("color")) return;
 
                 colorCorrection(element);
             },

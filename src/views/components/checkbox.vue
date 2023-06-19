@@ -77,12 +77,11 @@
 
                 this.on = !this.on;
 
-                this.change &&
-                    this.change(
-                        this.$el.dataset.module,
-                        this.$el.dataset.id,
-                        this.on
-                    );
+                this.change?.(
+                    this.$el.dataset.module,
+                    this.$el.dataset.id,
+                    this.on
+                );
             },
 
             hover(ev: PointerEvent) {
