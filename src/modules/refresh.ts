@@ -217,7 +217,8 @@ export default {
                 (element) => element!.innerHTML
             );
 
-            $oldList.html("");
+            const $list = $oldList.clone();
+            $list.html("");
 
             for (const element of $newList.children()) {
                 const $element = $(element);
@@ -234,8 +235,10 @@ export default {
                     continue;
                 }
 
-                $oldList.append($element);
+                $list.append($element);
             }
+
+            $oldList.html($list.html());
 
             const postNoIter = $oldList.find("td.gall_num");
             const $gallList = $oldList.parent();
