@@ -1,4 +1,6 @@
 import ky from "ky";
+import $ from "cash-dom";
+import * as Toast from "../components/toast";
 
 export default {
     name: "글쓰기 개선",
@@ -36,38 +38,34 @@ export default {
         this.memory.submitButton = filter.add<HTMLButtonElement>(
             "button.write",
             (element) => {
-                element.addEventListener("click", () => {
+                $(element).on("click", () => {
                     if (!this.status.bypassTitleLimit) return;
 
-                    const titleElement =
-                        document.querySelector<HTMLInputElement>(
-                            "input[id=subject]"
-                        );
+                    const $titleElement = $("input#subject");
+                    const title = $titleElement.val() as string;
 
-                    if (!titleElement) return;
-
-                    const title = titleElement.value;
-
-                    if (title.length === 1)
-                        titleElement.value = `${title}\u200B`;
+                    if (title.length === 1) $titleElement.val(`${title}\u200B`);
                 });
             }
         );
+
+        let injected = false;
 
         this.memory.canvas = filter.add<HTMLIFrameElement>(
             "#tx_canvas_wysiwyg",
             (element) => {
                 const win = element.contentWindow!;
-                const dom = win.document!;
+                const $dom = $(win.document);
 
-                win.addEventListener("DOMContentLoaded", () => {
-                    const contentContainer = dom?.querySelector<HTMLElement>(
-                        ".tx-content-container"
-                    )!;
+                if (injected) return;
+                injected = true;
+
+                $dom.ready(() => {
+                    const contentContainer = $dom.find(".tx-content-container");
 
                     if (!this.status.imageUpload) return;
 
-                    contentContainer.addEventListener("paste", async (ev) => {
+                    contentContainer.on("paste", async (ev) => {
                         const data = (ev as ClipboardEvent).clipboardData;
 
                         if (!data || !data.files.length) return;
@@ -75,25 +73,11 @@ export default {
                         ev.stopPropagation();
                         ev.preventDefault();
 
-                        const r_key =
-                            document.querySelector<HTMLInputElement>(
-                                "#r_key"
-                            )!.value;
-                        const gall_id =
-                            document.querySelector<HTMLInputElement>(
-                                "#id"
-                            )!.value;
-                        const gall_no =
-                            document.querySelector<HTMLInputElement>(
-                                "#gallery_no"
-                            )!.value;
-                        const _GALLTYPE_ =
-                            document.querySelector<HTMLInputElement>(
-                                "#_GALLTYPE_"
-                            )!.value;
-                        const post_no =
-                            document.querySelector<HTMLInputElement>("#no")
-                                ?.value ?? "";
+                        const r_key = $("#r_key").val() as string;
+                        const gall_id = $("#id").val() as string;
+                        const gall_no = $("#gallery_no").val() as string;
+                        const _GALLTYPE_ = $("#_GALLTYPE_").val() as string;
+                        const post_no = $("#no").val() as string;
 
                         const form = new FormData();
                         form.append("r_key", r_key);
@@ -120,15 +104,18 @@ export default {
                             );
 
                             try {
-                                const response = ky
+                                const response = await ky
                                     .post(
                                         `https://upimg.dcinside.com/upimg_file.php?id=${gall_id}&r_key=${r_key}`,
                                         { body: form }
                                     )
-                                    .json()
+                                    .json<any>()
                                     .then((parsed) => parsed.files[0]);
+
                                 images.push(response);
-                            } catch {}
+                            } catch (e) {
+                                Toast.show(String(e), true, 1000);
+                            }
                         }
 
                         for (const image of images) {
@@ -136,12 +123,7 @@ export default {
                             p.style.textAlign = "left";
                             p.innerHTML = `<img style="clear:none;float:none;" src="${image.url}" class="txc-image">`;
 
-                            contentContainer.appendChild(p);
-
-                            // contentContainer.insertBefore(
-                            //     p,
-                            //     iframe.getSelection()!.anchorNode!.parentElement
-                            // );
+                            contentContainer.append(p);
                         }
                     });
                 });
