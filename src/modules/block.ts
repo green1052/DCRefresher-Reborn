@@ -184,11 +184,10 @@ export default {
                     });
                 }
 
-                const button = document.createElement("button");
-                button.setAttribute("type", "button");
-                button.setAttribute("class", "btn_blue small");
-                button.innerText = "전체 차단";
-                button.onclick = () => {
+                const button = $(
+                    `<button style="margin-left: 5px" type="button" class="btn_blue small">전체 차단</button>`
+                );
+                button.on("click", () => {
                     const code = $element
                         .find(".info_viewimg > img")
                         .attr("src")!
@@ -221,14 +220,14 @@ export default {
                             }
 
                             Toast.show(
-                                `${block.TYPE_NAMES["DCCON"]}을 차단했습니다.`,
+                                `${block.TYPE_NAMES["DCCON"]} 묶음을 차단했습니다.`,
                                 false,
                                 3000
                             );
                         });
-                };
+                });
 
-                $(".btn_buy").insertAfter(button);
+                $(".btn_buy").before(button);
                 $element.data("refresherDcconBlock", "true");
             },
             { neverExpire: true }
