@@ -127,14 +127,17 @@ export class User {
 
     static fromDom(dom: HTMLElement | null): User {
         const user = new User("", null, null, null);
+        const $dom = $(dom);
 
-        if (!dom) return user;
+        if (!$dom.length) return user;
 
-        user.nick = dom.dataset.nick || "오류";
-        user.id = dom.dataset.uid || null;
-        user.ip = dom.dataset.ip || null;
+        user.nick = $dom.data("nick") || "오류";
+        user.id = $dom.data("uid") || null;
+        user.ip = $dom.data("ip") || null;
 
-        user.icon = !user.id ? null : $("a.writer_nikcon img").attr("src");
+        user.icon = user.id
+            ? $dom.find("a.writer_nikcon img").attr("src")
+            : null;
         user.type = getType(user.icon);
 
         user.getMemo();
