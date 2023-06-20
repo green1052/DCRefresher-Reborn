@@ -220,7 +220,7 @@ export default {
             name: "반고정닉 UID 표시",
             desc: "반고정닉 유저의 UID를 표시합니다.",
             type: "check",
-            default: false
+            default: true
         },
         showIpInfo: {
             name: "IP 정보 표시",
