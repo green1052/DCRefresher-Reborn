@@ -1,5 +1,6 @@
 import * as Toast from "../components/toast";
 import { queryString } from "../utils/http";
+import $ from "cash-dom";
 import Cookies from "js-cookie";
 import ky from "ky";
 
@@ -35,29 +36,29 @@ export default {
         this.memory.uuid = filter.add(
             ".ub-writer",
             (element) => {
+                const $element = $(element);
+
                 const gallery = queryString("id");
 
                 if (!gallery) return;
 
-                const title =
-                    element.parentElement?.querySelector(".gall_tit > a")
-                        ?.textContent ?? "";
+                const title = $(".gall_tit > a").text();
 
-                const text =
-                    element
-                        .closest<HTMLElement>(".view_content_wrap")
-                        ?.querySelector(".write_div")?.textContent ?? "";
+                const text = $element
+                    .closest(".view_content_wrap")
+                    .find(".write_div")
+                    .text();
 
-                const nick = element.dataset.nick ?? "";
-                const uid = element.dataset.uid ?? "";
-                const ip = element.dataset.ip ?? "";
+                const nick = $(element).data("nick");
 
-                const commentElement = element.closest(
+                const uid = $(element).data("uid");
+
+                const ip = $(element).data("ip");
+
+                const $commentElement = $element.closest(
                     ".reply_info, .cmt_info"
                 );
-                const commentContent =
-                    commentElement?.querySelector(".usertxt")?.textContent ??
-                    "";
+                const commentContent = $commentElement.find(".usertxt")?.text();
 
                 if (
                     block.checkAll(
@@ -71,10 +72,10 @@ export default {
                         gallery
                     )
                 ) {
-                    const post = element.parentElement!;
+                    const $post = $element.parent();
 
-                    if (post.classList.contains("ub-content")) {
-                        post.style.display = "none";
+                    if ($post.hasClass("ub-content")) {
+                        $post.css("display", "none");
                         return;
                     }
 
@@ -84,16 +85,16 @@ export default {
                     //     return;
                     // }
 
-                    const content = post.closest<HTMLElement>(".ub-content");
+                    const $content = $post.closest(".ub-content");
 
-                    if (content) content.style.display = "none";
+                    if ($content) $content.css("display", "none");
 
                     return;
                 } else if (block.check("TEXT", text, gallery)) {
-                    element
-                        .closest<HTMLElement>(".view_content_wrap")!
-                        .querySelector<HTMLElement>(".write_div")!.innerText =
-                        "게시글 내용이 차단됐습니다.";
+                    $element
+                        .closest(".view_content_wrap")
+                        .find(".write_div")
+                        .text("게시글 내용이 차단됐습니다.");
                 }
 
                 element.oncontextmenu ??= () => {
@@ -115,29 +116,25 @@ export default {
         this.memory.uuid2 = filter.add(
             ".written_dccon",
             (element) => {
+                const $element = $(element);
+
                 const gallery = queryString("id");
 
                 if (!gallery) return;
 
                 const dccon =
-                    (
-                        element.getAttribute("src") ??
-                        element?.getAttribute("data-src")
-                    )
+                    ($element.attr("src") ?? $element.attr("data-src"))
                         ?.replace(/^.*no=/g, "")
                         .replace(/^&.*$/g, "") ?? "";
 
                 if (block.check("DCCON", dccon, gallery)) {
-                    const content =
-                        element.closest<HTMLElement>(".ub-content") ??
-                        element.closest<HTMLElement>(".comment_dccon");
-
-                    if (content) content.style.display = "none";
+                    (
+                        $element.closest(".ub-content") ??
+                        $element.closest(".comment_dccon")
+                    ).css("display", "none");
                 }
 
-                if (element.parentElement!.oncontextmenu) return;
-
-                element.parentElement!.oncontextmenu = () => {
+                element.parentElement!.oncontextmenu ??= () => {
                     const code =
                         (
                             element?.getAttribute("src") ||
@@ -164,13 +161,15 @@ export default {
         this.memory.uuid3 = filter.add(
             "#package_detail",
             (element) => {
-                if (element.dataset.refresherDcconBlock === "true") return;
+                const $element = $(element);
+                if ($element.data("refresherDcconBlock") === "true") return;
 
-                for (const image of element.querySelectorAll<HTMLImageElement>(
-                    ".img_dccon > img"
-                )) {
-                    image.addEventListener("contextmenu", () => {
-                        const code = image.src
+                for (const image of $element.find(".img_dccon > img")) {
+                    const $image = $(image);
+
+                    $image.on("contextmenu", () => {
+                        const code = $image
+                            .attr("src")!
                             .replace(/^.*no=/g, "")
                             .replace(/^&.*$/g, "");
 
@@ -185,14 +184,14 @@ export default {
                     });
                 }
 
-                const button = document.createElement("button");
-                button.setAttribute("type", "button");
-                button.setAttribute("class", "btn_blue small");
-                button.innerText = "전체 차단";
-                button.onclick = () => {
-                    const code = element
-                        .querySelector<HTMLImageElement>(".info_viewimg > img")!
-                        .src.replace(/^.*no=/g, "")
+                const button = $(
+                    `<button style="margin-left: 5px" type="button" class="btn_blue small">전체 차단</button>`
+                );
+                button.on("click", () => {
+                    const code = $element
+                        .find(".info_viewimg > img")
+                        .attr("src")!
+                        .replace(/^.*no=/g, "")
                         .replace(/^&.*$/g, "");
 
                     const params = new URLSearchParams();
@@ -221,18 +220,15 @@ export default {
                             }
 
                             Toast.show(
-                                `${block.TYPE_NAMES["DCCON"]}을 차단했습니다.`,
+                                `${block.TYPE_NAMES["DCCON"]} 묶음을 차단했습니다.`,
                                 false,
                                 3000
                             );
                         });
-                };
+                });
 
-                element
-                    .querySelector(".btn_buy")
-                    ?.insertAdjacentElement("beforebegin", button);
-
-                element.dataset.refresherDcconBlock = "true";
+                $(".btn_buy").before(button);
+                $element.data("refresherDcconBlock", "true");
             },
             { neverExpire: true }
         );

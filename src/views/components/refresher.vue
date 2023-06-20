@@ -479,6 +479,7 @@
         BlockModeCache,
         TYPE_NAMES as BLOCK_TYPE_NAMES
     } from "../../core/block";
+    import $ from "cash-dom";
 
     const port = browser.runtime.connect({ name: "refresherInternal" });
 
@@ -576,32 +577,32 @@
             moveToModuleTab(moduleName: string) {
                 this.tab = 5;
 
-                for (const element of this.$el.querySelectorAll(
-                    ".refresher-module.highlight"
-                )) {
-                    element.classList.remove("highlight");
+                const $el = $(this.$el);
+
+                for (const element of $el.find(".refresher-module.highlight")) {
+                    $(element).removeClass("highlight");
                 }
 
-                for (const module of this.$el.querySelectorAll<HTMLElement>(
+                for (const element of $el.find(
                     ".tab .refresher-module .title"
                 )) {
-                    if (module.innerText !== moduleName) continue;
+                    const $element = $(element);
+
+                    if ($element.text() !== moduleName) continue;
 
                     requestAnimationFrame(() => {
-                        module.parentElement?.parentElement?.classList.add(
-                            "highlight"
-                        );
+                        $element.parent().parent().addClass("highlight");
 
-                        module.scrollIntoView({
+                        element.scrollIntoView({
                             behavior: "smooth",
                             block: "center"
                         });
 
                         setTimeout(() => {
-                            for (const element of this.$el.querySelectorAll(
+                            for (const element of $el.find(
                                 ".refresher-module.highlight"
                             )) {
-                                element.classList.remove("highlight");
+                                $(element).removeClass("highlight");
                             }
                         }, 1000);
                     });
@@ -728,6 +729,7 @@
                 this.syncBlock();
             },
             removeAllBlockedUser(key: RefresherBlockType) {
+                if (!confirm("ㄹ?ㅇ")) return;
                 this.blocks[key] = [];
                 this.syncBlock();
             },
@@ -774,6 +776,7 @@
                 this.syncMemos();
             },
             removeAllMemoUser(type: RefresherMemoType) {
+                if (!confirm("ㄹ?ㅇ")) return;
                 this.memos[type] = {};
                 this.syncMemos();
             },
@@ -807,8 +810,8 @@
                         });
                     });
             },
-            updateDarkMode(v: string) {
-                document.documentElement.classList[v ? "add" : "remove"](
+            updateDarkMode(v: boolean) {
+                $(document.documentElement)[v ? "addClass" : "removeClass"](
                     "refresherDark"
                 );
             }

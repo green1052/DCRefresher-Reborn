@@ -1,5 +1,6 @@
 import * as ip from "./ip";
 import * as memo from "../core/memo";
+import $ from "cash-dom";
 import type { Nullable, ObjectEnum } from "./types";
 
 export type UserType =
@@ -133,9 +134,7 @@ export class User {
         user.id = dom.dataset.uid || null;
         user.ip = dom.dataset.ip || null;
 
-        user.icon = !user.id
-            ? null
-            : dom.querySelector("a.writer_nikcon img")!.getAttribute("src")!;
+        user.icon = !user.id ? null : $("a.writer_nikcon img").attr("src");
         user.type = getType(user.icon);
 
         user.getMemo();

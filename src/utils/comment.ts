@@ -1,4 +1,5 @@
 import * as http from "./http";
+import $ from "cash-dom";
 import ky from "ky";
 import type { Nullable } from "./types";
 
@@ -36,11 +37,13 @@ const decode = (r: string) => {
 };
 
 const requestBeforeServiceCode = (dom: Document) => {
-    const script = dom.querySelector("#reply-setting-tmpl + script");
+    const $dom = $(dom);
+
+    const script = $dom.find("script:contains(_r)");
 
     if (!script) throw "_r 값을 찾을 수 없습니다.";
 
-    const dValue = script.innerHTML.match(/_d\('(.*)'\)/)?.[1];
+    const dValue = script.html().match(/_d\('(.*)'\)/)?.[1];
 
     if (!dValue) throw "_d 값을 찾을 수 없습니다.";
 
@@ -53,9 +56,7 @@ const requestBeforeServiceCode = (dom: Document) => {
 
     _r = _r.replace(/^./, fi.toString());
 
-    const r = dom.querySelector<HTMLInputElement>(
-        `input[name="service_code"]`
-    )!.value;
+    const r = $dom.find("input[name=service_code]").val() as string;
 
     const _rs = _r.split(",");
 
@@ -74,13 +75,13 @@ const secretKey = (dom: Document): URLSearchParams => {
     params.set("t_vch2_chk", "");
     params.set("g-recaptcha-response", "");
 
-    for (const element of dom.querySelectorAll<HTMLInputElement>(
-        "#focus_cmt > input"
-    )) {
-        const id = element.getAttribute("name") ?? element.id;
+    for (const element of $(dom).find("#focus_cmt > input")) {
+        const $element = $(element);
+
+        const id = $element.attr("name") ?? $element.attr("id")!;
 
         if (!["service_code", "gallery_no", "clickbutton"].includes(id))
-            params.set(id, element.value);
+            params.set(id, $element.val() as string);
     }
 
     return params;

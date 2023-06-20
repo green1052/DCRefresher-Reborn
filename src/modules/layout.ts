@@ -1,6 +1,7 @@
+import $ from "cash-dom";
+
 const hideSticky = (hide: boolean) => {
-    const sticky = document.querySelector<HTMLDivElement>(".stickyunit");
-    if (sticky) sticky.style.display = hide ? "none" : "initial";
+    $(".stickyunit").css("display", hide ? "none" : "initial");
 };
 
 const updateWindowSize = (
@@ -10,19 +11,21 @@ const updateWindowSize = (
 ) => {
     if (typeof active === "string") active = Number(active);
 
+    const $document = $(document.documentElement);
+
     const isView = location.href.includes("board/view");
 
     if (forceActive || active >= width) {
         hideSticky(true);
-        if (!document.documentElement.className.includes("refresherCompact")) {
-            document.documentElement.classList.add("refresherCompact");
 
-            if (isView)
-                document.documentElement.classList.add("refresherCompactView");
+        if (!$document.hasClass("refresherCompact")) {
+            if (isView) $document.addClass("refresherCompactView");
+
+            $document.addClass("refresherCompact");
         }
     } else {
         hideSticky(false);
-        document.documentElement.classList.remove("refresherCompact");
+        $document.removeClass("refresherCompact");
     }
 };
 
@@ -101,19 +104,22 @@ export default {
             updateWindowSize(value, this.status.activePixel, innerWidth);
         },
         hideGalleryView(value: boolean) {
-            document.documentElement.classList[value ? "add" : "remove"](
-                "refresherHideGalleryView"
+            $(document.documentElement).toggleClass(
+                "refresherHideGalleryView",
+                value
             );
         },
         hideUselessView(value: boolean) {
-            document.documentElement.classList[value ? "add" : "remove"](
-                "refresherHideUselessView"
+            $(document.documentElement).toggleClass(
+                "refresherHideUselessView",
+                value
             );
         },
         pushToRight(value: boolean) {
             hideSticky(value);
-            document.documentElement.classList[value ? "add" : "remove"](
-                "refresherPushToRight"
+            $(document.documentElement).toggleClass(
+                "refresherPushToRight",
+                value
             );
         },
         removeNotice(value: boolean, filter: RefresherFilter) {
@@ -133,8 +139,7 @@ export default {
                         )
                             return;
 
-                        elem.parentElement!.parentElement!.style.display =
-                            "none";
+                        $(elem).parent().parent().css("display", "none");
                     },
                     {
                         neverExpire: true
@@ -152,13 +157,13 @@ export default {
                 this.memory.uuiddc = filter.add(
                     ".gall_list .ub-content .ub-writer",
                     (elem) => {
-                        const adminAttribute = elem.getAttribute("user_name");
+                        const $elem = $(elem);
+
+                        const adminAttribute = $elem.attr("user_name");
 
                         if (adminAttribute !== "운영자") return;
 
-                        const pelem = elem.parentElement;
-
-                        if (pelem) pelem.style.display = "none";
+                        $elem.parent().css("display", "none");
                     },
                     {
                         neverExpire: true

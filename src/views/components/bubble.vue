@@ -66,15 +66,11 @@
         },
         methods: {
             safeTextClick() {
-                if (this.textclick) {
-                    this.textclick();
-                }
+                this.textclick?.();
             },
 
             safeRemoveClick() {
-                if (this.remove) {
-                    this.remove();
-                }
+                this.remove?.();
             }
         }
     });
