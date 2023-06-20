@@ -39,9 +39,9 @@ const decode = (r: string) => {
 const requestBeforeServiceCode = (dom: Document) => {
     const $dom = $(dom);
 
-    const script = $dom.find("script:contains(_r)");
+    const script = $dom.find("#reply-setting-tmpl + script");
 
-    if (!script) throw "_r 값을 찾을 수 없습니다.";
+    if (!script.length) throw "_r 값을 찾을 수 없습니다.";
 
     const dValue = script.html().match(/_d\('(.*)'\)/)?.[1];
 
