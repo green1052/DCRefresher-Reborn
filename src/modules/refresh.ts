@@ -1,6 +1,7 @@
 import * as Toast from "../components/toast";
 import * as block from "../core/block";
 import { queryString } from "../utils/http";
+import $ from "cash-dom";
 import ky from "ky";
 
 const AVERAGE_COUNTS_SIZE = 7;
@@ -135,23 +136,8 @@ export default {
         filter: RefresherFilter
     ) {
         if (this.status.doNotColorVisited) {
-            document.documentElement.classList.add(
-                "refresherDoNotColorVisited"
-            );
+            $(document.documentElement).addClass("refresherDoNotColorVisited");
         }
-
-        const body = (url: string) =>
-            ky
-                .get(url)
-                .text()
-                .then((body) => {
-                    const dom = new DOMParser().parseFromString(
-                        body,
-                        "text/html"
-                    );
-                    eventBus.emit("refresherGetPost", dom);
-                    return dom.querySelector(".gall_list tbody");
-                });
 
         filter.add(".page_head .gall_issuebox", (element) => {
             addRefreshText(element);
@@ -168,9 +154,7 @@ export default {
         }
 
         this.memory.load = async (customURL?, force?): Promise<boolean> => {
-            if (document.hidden) {
-                return false;
-            }
+            if (document.hidden) return false;
 
             if (
                 !force &&
@@ -179,19 +163,18 @@ export default {
                 return false;
             }
 
-            const userDataLyr =
-                document.querySelector<HTMLElement>("#user_data_lyr");
+            const $userDataLyr = $("#user_data_lyr");
 
-            // 유저 메뉴가 열렸을 때는 새로고침 하지 않음
-            if (userDataLyr && userDataLyr.style.display !== "none")
+            if (
+                $userDataLyr.length > 0 &&
+                $userDataLyr.css("display") !== "none"
+            )
                 return false;
 
             this.memory.lastRefresh = Date.now();
 
-            const isAdmin =
-                document.querySelector(".useradmin_btnbox button") !== null;
+            const isAdmin = $(".useradmin_btnbox button").length > 0;
 
-            // 글 선택 체크박스에 체크된 경우 새로 고침 건너 뜀
             if (
                 isAdmin &&
                 Array.from(
@@ -209,72 +192,86 @@ export default {
             }
 
             const url = http.view(originalLocation);
-            const newList = await body(url);
+            const $newList = await ky
+                .get(url)
+                .text()
+                .then((body) => {
+                    const dom = new DOMParser().parseFromString(
+                        body,
+                        "text/html"
+                    );
+                    eventBus.emit("refresherGetPost", dom);
+                    return $(dom.querySelector(".gall_list tbody"));
+                });
 
-            const tbody = document.querySelector(".gall_list tbody");
+            const $oldList = $(".gall_list tbody");
 
-            if (!tbody || !newList || newList.children.length === 0)
+            if (
+                $oldList.length === 0 ||
+                $newList.length === 0 ||
+                $newList.children().length === 0
+            )
                 return false;
 
-            const cached = Array.from(tbody.querySelectorAll("td.gall_num"))
-                .map((v) => v.innerHTML)
-                .join("|");
+            const cached = Array.from($("td.gall_num")).map(
+                (element) => element!.innerHTML
+            );
 
-            tbody.innerHTML = "";
+            const $list = $oldList.clone();
+            $list.html("");
 
-            for (const element of Array.from(newList.children)) {
-                const writter =
-                    element.querySelector<HTMLElement>(".ub-writer");
+            for (const element of $newList.children()) {
+                const $element = $(element);
+                const $writter = $element.find(".ub-writer");
 
                 if (
-                    writter &&
                     block.checkAll({
-                        NICK: writter.dataset.nick ?? "",
-                        ID: writter.dataset.uid ?? "",
-                        IP: writter.dataset.ip ?? ""
+                        TITLE: $element.find(".gall_tit > a").text(),
+                        NICK: $writter.data("nick"),
+                        ID: $writter.data("uid"),
+                        IP: $writter.data("ip")
                     })
                 ) {
                     continue;
                 }
 
-                tbody.appendChild(element);
+                $list.append($element);
             }
 
-            const postNoIter = tbody.querySelectorAll("td.gall_num");
+            $oldList.html($list.html());
 
-            let containsEmpty = false;
-            if (tbody.parentElement) {
-                containsEmpty = tbody.parentElement.classList.contains("empty");
+            const postNoIter = $oldList.find("td.gall_num");
+            const $gallList = $oldList.parent();
+            const containsEmpty = $gallList.hasClass("empty");
 
-                if (postNoIter.length) {
-                    if (containsEmpty) {
-                        tbody.parentElement.classList.remove("empty");
-                    }
-                } else if (!containsEmpty) {
-                    tbody.parentElement.classList.add("empty");
-                }
-            }
+            $gallList.toggleClass(
+                "empty",
+                postNoIter.length > 0 && containsEmpty
+            );
 
-            for (const v of postNoIter) {
-                const value = v.innerHTML;
+            for (const element of postNoIter) {
+                const $element = $(element);
+                const value = $element.html();
 
                 if (!cached.includes(value) && value !== currentPostNo) {
-                    if (
-                        this.status.fadeIn &&
-                        !this.memory.calledByPageTurn &&
-                        v.parentElement
-                    ) {
-                        v.parentElement.classList.add("refresherNewPost");
-                        v.parentElement.style.animationDelay = `${
-                            this.memory.new_counts * 23
-                        }ms`;
+                    if (this.status.fadeIn && !this.memory.calledByPageTurn) {
+                        $element
+                            .parent()
+                            .addClass("refresherNewPost")
+                            .css(
+                                "animation-delay",
+                                `${this.memory.new_counts * 23}ms`
+                            );
                     }
+
                     this.memory.new_counts++;
                 }
 
                 if (isPostView && currentPostNo === value) {
-                    v.innerHTML = '<span class="sp_img crt_icon></span>"';
-                    v.parentElement?.classList.add("crt");
+                    $element
+                        .append(`<span class="sp_img crt_icon"></span>`)
+                        .parent()
+                        .addClass("crt");
                 }
             }
 
@@ -300,44 +297,40 @@ export default {
 
             this.memory.calledByPageTurn = false;
 
-            // 미니 갤, 마이너 갤 관리자일 경우 체크박스를 생성합니다.
             if (isAdmin) {
                 let templExists = true;
-                document.querySelectorAll(".us-post").forEach((elem) => {
-                    const tmpl = document.querySelector("#minor_td-tmpl");
 
-                    if (!tmpl) {
+                for (const element of $(".us-post")) {
+                    const $element = $(element);
+
+                    const $tmpl = $element.find("#minor_td-tmpl");
+
+                    if (!$tmpl.length) {
                         templExists = false;
-                        return;
+                        break;
                     }
 
-                    elem.innerHTML = tmpl.innerHTML + elem.innerHTML;
-                });
+                    $element.html($tmpl.html() + $element.html());
+                }
 
                 if (templExists) {
-                    document.querySelectorAll(".ub-content").forEach((elem) => {
-                        if (!elem.className.includes("us-post")) {
-                            elem.insertBefore(
-                                document.createElement("td"),
-                                elem.firstChild
-                            );
+                    for (const element of $(".ub-content")) {
+                        const $element = $(element);
+
+                        if (!$element.hasClass("us-post")) {
+                            $element.before(document.createElement("td"));
                         }
-                    });
+                    }
 
-                    if (document.querySelector("#comment_chk_all")) {
-                        const tbody_colspan = document.querySelector(
-                            "table.gall_list tbody td"
-                        );
+                    if ($("#comment_chk_all").length > 0) {
+                        const $tbody = $("table.gall_list tbody td");
+                        const colspan = $tbody.attr("colspan");
 
-                        if (tbody_colspan) {
-                            const colspan =
-                                tbody_colspan.getAttribute("colspan") ?? "";
+                        if (colspan) {
+                            const number = parseInt(colspan);
 
                             if (parseInt(colspan) == 6) {
-                                tbody_colspan?.setAttribute(
-                                    "colspan",
-                                    (parseInt(colspan) + 1).toString()
-                                );
+                                $tbody.attr("colspan", String(number + 1));
                             }
                         }
                     }
@@ -346,48 +339,36 @@ export default {
 
             // 검색일 경우 강조 표시 생성
             if (queryString("s_keyword")) {
-                const keyword = document.querySelector<HTMLInputElement>(
-                    "input[name=s_keyword]"
-                )?.value;
+                const keyword = $("input[name=s_keyword]").val() as string;
 
-                if (keyword && keyword !== "null") {
-                    document
-                        .querySelectorAll(".gall_list .gall_tit")
-                        .forEach((element) => {
-                            const tmp_subject = element
-                                .querySelector<HTMLAnchorElement>(
-                                    "a:first-child"
-                                )
-                                ?.cloneNode(true) as HTMLElement;
+                if (keyword) {
+                    for (const element of $(".gall_list .gall_tit")) {
+                        const $element = $(element);
 
-                            const iconImg =
-                                tmp_subject?.querySelector(".icon_img");
-                            iconImg?.parentElement?.removeChild(iconImg);
+                        const $a = $element.find("a:first-child");
 
-                            const tmp_subject_html = tmp_subject.innerHTML;
+                        const $tmpSubject = $a.clone();
 
-                            if (tmp_subject_html.match(keyword)) {
-                                let subject = tmp_subject_html.replace(
-                                    keyword,
-                                    `<span class="mark">${keyword}</span>`
-                                );
+                        $tmpSubject.find(".icon_img").remove();
 
-                                subject = element
-                                    .querySelector("a:first-child")!
-                                    .innerHTML.replace(
-                                        tmp_subject_html,
-                                        subject
-                                    );
+                        const tmpSubjectHtml = $tmpSubject.html();
 
-                                element.querySelector<HTMLAnchorElement>(
-                                    "a:first-child"
-                                )!.innerHTML = subject;
-                            }
-                        });
+                        if (tmpSubjectHtml.match(keyword)) {
+                            let subject = tmpSubjectHtml.replace(
+                                keyword,
+                                `<span class="mark">${keyword}</span>`
+                            );
+                            subject = $a
+                                .html()
+                                .replace(tmpSubjectHtml, subject);
+
+                            $a.html(subject);
+                        }
+                    }
                 }
             }
 
-            eventBus.emit("refresh", newList);
+            eventBus.emit("refresh", $newList);
 
             return true;
         };

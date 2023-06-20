@@ -74,6 +74,7 @@
     import { eventBus } from "../core/eventbus";
     import timestamp from "./timestamp.vue";
     import user from "./user.vue";
+    import $ from "cash-dom";
     import Vue, { PropType } from "vue";
 
     const NRegex = /(ㄴ)(\s)?([^ ]+)/g;
@@ -250,11 +251,12 @@
             },
 
             contextMenu(e: MouseEvent): void {
-                const element = e.target as HTMLElement | null;
+                if (!e.target) return;
+                const $element = $(e.target as HTMLElement);
 
-                if (!element || element.className !== "written_dccon") return;
+                if ($element.hasClass("written_dccon")) return;
 
-                const src = element.getAttribute("src");
+                const src = $element.attr("src");
                 if (!src) return;
 
                 const code = src.replace(/^.*no=/g, "").replace(/^&.*$/g, "");

@@ -230,7 +230,7 @@
                               }
                     );
 
-                    if (result === false) {
+                    if (!result) {
                         this.disabled = false;
                         return false;
                     }

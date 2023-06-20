@@ -203,6 +203,12 @@ const contextMenus: browser.Menus.CreateCreatePropertiesType[] = [
         title: "오른쪽 클릭한 디시콘 차단",
         contexts: ["all"],
         documentUrlPatterns: ["*://gall.dcinside.com/*"]
+    },
+    {
+        id: "searchSauceNao",
+        title: "SauceNao 검색 (미작동)",
+        contexts: ["image"],
+        documentUrlPatterns: ["*://gall.dcinside.com/*"]
     }
 ];
 

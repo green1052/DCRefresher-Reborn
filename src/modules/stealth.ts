@@ -1,14 +1,15 @@
-import Toast from "../components/toast";
+import * as Toast from "../components/toast";
+import $ from "cash-dom";
 import browser from "webextension-polyfill";
 
 const CONTROL_BUTTON = ".stealth_control_button";
 const TEMPORARY_STEALTH = "stlth";
 
-const tempButtonCreate = (elem: HTMLElement): void => {
-    const buttonNum = elem.querySelectorAll(CONTROL_BUTTON).length;
-    const contentNum = elem.querySelectorAll(
-        ".write_div img, .write_div video"
-    ).length;
+const tempButtonCreate = (element: HTMLElement): void => {
+    const $element = $(element);
+
+    const buttonNum = $(CONTROL_BUTTON).length;
+    const contentNum = $(".write_div img, .write_div video").length;
 
     if (buttonNum !== 0 && contentNum === 0) return;
 
@@ -26,16 +27,16 @@ const tempButtonCreate = (elem: HTMLElement): void => {
         buttonFrame.querySelector<HTMLElement>("#temp_button_text")!;
 
     button.addEventListener("click", () => {
-        if (!elem.className.includes(TEMPORARY_STEALTH)) {
-            elem.classList.add(TEMPORARY_STEALTH);
+        if (!element.className.includes(TEMPORARY_STEALTH)) {
+            element.classList.add(TEMPORARY_STEALTH);
             buttonText.innerText = "이미지 숨기기";
         } else {
-            elem.classList.remove(TEMPORARY_STEALTH);
+            element.classList.remove(TEMPORARY_STEALTH);
             buttonText.innerText = "이미지 보이기";
         }
     });
 
-    elem.prepend(buttonFrame);
+    element.prepend(buttonFrame);
 };
 
 export default {
@@ -67,9 +68,9 @@ export default {
     },
     require: ["eventBus"],
     func(eventBus: RefresherEventBus) {
-        document.documentElement.classList.add("refresherStealth");
+        $(document.documentElement).addClass("refresherStealth");
 
-        if (document.querySelectorAll(CONTROL_BUTTON).length === 0) {
+        if (!$(CONTROL_BUTTON).length) {
             window.addEventListener("load", () => {
                 tempButtonCreate(document.documentElement);
             });
@@ -78,18 +79,15 @@ export default {
         this.memory.contentViewUUID = eventBus.on(
             "contentPreview",
             (elem: HTMLElement) => {
-                if (!elem.querySelectorAll(CONTROL_BUTTON).length)
-                    tempButtonCreate(elem);
+                if (!$(CONTROL_BUTTON)) tempButtonCreate(elem);
             }
         );
     },
     revoke(eventBus: RefresherEventBus) {
-        document.documentElement.classList.remove("refresherStealth");
+        $(document.documentElement).removeClass("refresherStealth");
 
-        const buttons = document.querySelectorAll(CONTROL_BUTTON);
-
-        for (const button of buttons) {
-            button.parentElement?.removeChild(button);
+        for (const button of $(CONTROL_BUTTON)) {
+            $(button).remove();
         }
 
         if (this.memory.contentViewUUID !== null) {
