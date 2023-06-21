@@ -61,11 +61,13 @@ export default {
                 injected = true;
 
                 $dom.ready(() => {
-                    const contentContainer = $dom.find(".tx-content-container");
+                    const $contentContainer = $dom.find(
+                        ".tx-content-container"
+                    );
 
                     if (!this.status.imageUpload) return;
 
-                    contentContainer.on("paste", async (ev) => {
+                    $contentContainer.on("paste", async (ev) => {
                         const data = (ev as ClipboardEvent).clipboardData;
 
                         if (!data || !data.files.length) return;
@@ -123,7 +125,7 @@ export default {
                             p.style.textAlign = "left";
                             p.innerHTML = `<img style="clear:none;float:none;" src="${image.url}" class="txc-image">`;
 
-                            contentContainer.append(p);
+                            $contentContainer.append(p);
                         }
                     });
                 });
