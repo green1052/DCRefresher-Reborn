@@ -149,7 +149,7 @@ const memoAsk = (
         if (e.code === "Enter") {
             frame
                 .querySelector<HTMLDivElement>(
-                    `.refresher-preview-button[data-update="true"]`
+                    ".refresher-preview-button[data-update=true]"
                 )!
                 .click();
         }
@@ -157,7 +157,7 @@ const memoAsk = (
 
     return new Promise((resolve) => {
         frame
-            .querySelector(`.refresher-preview-button[data-update="true"]`)
+            .querySelector(".refresher-preview-button[data-update=true]")
             ?.addEventListener("click", () => {
                 if (memoElement.value.length > 160) {
                     alert("160자를 초과할 수 없습니다.");
@@ -176,7 +176,7 @@ const memoAsk = (
             });
 
         frame
-            .querySelector(`.refresher-preview-button[data-clear="true"]`)
+            .querySelector(".refresher-preview-button[data-clear=true]")
             ?.addEventListener("click", () => {
                 removeWindow();
 
