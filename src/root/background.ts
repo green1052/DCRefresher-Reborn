@@ -148,7 +148,6 @@ browser.runtime.onMessage.addListener((message) => {
 
 async function getGeoIP(type: "ASN" | "Country", url: string): Promise<Buffer> {
     try {
-        throw "";
         const buffer = await ky.get(url).arrayBuffer();
         return Buffer.from(buffer);
     } catch {
