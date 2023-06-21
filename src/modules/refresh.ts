@@ -201,10 +201,10 @@ export default {
                         "text/html"
                     );
                     eventBus.emit("refresherGetPost", dom);
-                    return $(dom.querySelector(".gall_list tbody"));
+                    return $(dom.querySelector(".gall_list:not([id]) tbody"));
                 });
 
-            const $oldList = $(".gall_list tbody");
+            const $oldList = $(".gall_list:not([id]) tbody");
 
             if (
                 $oldList.length === 0 ||
@@ -323,7 +323,7 @@ export default {
                     }
 
                     if ($("#comment_chk_all").length > 0) {
-                        const $tbody = $("table.gall_list tbody td");
+                        const $tbody = $(".gall_list:not([id]) tbody td");
                         const colspan = $tbody.attr("colspan");
 
                         if (colspan) {
@@ -342,7 +342,7 @@ export default {
                 const keyword = $("input[name=s_keyword]").val() as string;
 
                 if (keyword) {
-                    for (const element of $(".gall_list .gall_tit")) {
+                    for (const element of $(".gall_list:not([id]) .gall_tit")) {
                         const $element = $(element);
 
                         const $a = $element.find("a:first-child");
