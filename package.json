@@ -36,6 +36,7 @@
     "sass-loader": "^13.3.2",
     "swc-loader": "^0.2.3",
     "terser-webpack-plugin": "^5.3.9",
+    "tesseract.js": "^4.1.1",
     "typescript": "^5.1.3",
     "vue": "2.7.14",
     "vue-fragment": "1.5.1",
