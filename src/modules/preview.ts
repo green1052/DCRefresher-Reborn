@@ -12,6 +12,7 @@ import Cookies from "js-cookie";
 import ky from "ky";
 import browser from "webextension-polyfill";
 import type IFrame from "../core/frame";
+import Tesseract from "tesseract.js";
 
 const domParser = new DOMParser();
 
@@ -810,7 +811,14 @@ const panel = {
         return element;
     },
 
-    captcha(src: string, callback: (captcha: string) => void): boolean {
+    async captcha(
+        src: string,
+        callback: (captcha: string) => void,
+        bypassCaptcha: boolean
+    ): Promise<boolean> {
+        const image = await ky.get(src).blob();
+        const url = URL.createObjectURL(image);
+
         const element = document.createElement("div");
         element.className = "refresher-captcha-popup";
 
@@ -820,17 +828,30 @@ const panel = {
       <div class="cross"></div>
       <div class="cross"></div>
     </div>
-    <img src="${src}"></img>
+    <img src="${url}"></img>
     <input type="text"></input>
     <button class="refresher-preview-button primary">
       <p class="refresher-vote-text">전송</p>
     </button>
     `;
 
+        if (bypassCaptcha) {
+            try {
+                const {
+                    data: { text }
+                } = await Tesseract.recognize(image, "eng");
+                element.querySelector("input")!.value = text.toLowerCase();
+            } catch (e) {
+                Toast.show("자동 인식에 실패했습니다.", true, 3000);
+            }
+        }
+
         const inputEvent = () => {
             const input = element.querySelector("input")!.value;
 
             if (!input) return;
+
+            URL.revokeObjectURL(url);
 
             callback(input);
             element.parentElement!.removeChild(element);
@@ -1236,6 +1257,12 @@ export default {
             type: "check",
             default: false
         },
+        bypassCaptcha: {
+            name: "캡차 자동 완성",
+            desc: "캡차를 자동으로 입력합니다.",
+            type: "check",
+            default: false
+        },
         disableCache: {
             name: "캐시 비활성화",
             desc: "캐시를 사용하지 않습니다. (툴팁 미리보기 제외)",
@@ -1335,7 +1362,9 @@ export default {
                     return true;
                 };
 
-                return codeSrc ? panel.captcha(codeSrc, req) : req();
+                return codeSrc
+                    ? panel.captcha(codeSrc, req, this.status.bypassCaptcha)
+                    : req();
             };
 
             frame.functions.share = () => {
@@ -1566,7 +1595,13 @@ export default {
                         }
                     };
 
-                    return codeSrc ? panel.captcha(codeSrc, req) : req();
+                    return codeSrc
+                        ? await panel.captcha(
+                              codeSrc,
+                              req,
+                              this.status.bypassCaptcha
+                          )
+                        : req();
                 };
 
                 if (this.memory.refreshIntervalId)
@@ -2180,6 +2215,7 @@ export default {
         useKeyPress: RefresherCheckSettings;
         expandRecognizeRange: RefresherCheckSettings;
         experimentalComment: RefresherCheckSettings;
+        bypassCaptcha: RefresherCheckSettings;
         disableCache: RefresherCheckSettings;
     };
     require: ["filter", "eventBus", "Frame", "http"];
