@@ -23,29 +23,6 @@ const USERTYPE: ObjectEnum<UserType> = {
 };
 
 export const getType = (icon: string | null): UserType => {
-    /*
-        주딱 고닉: https://nstatic.dcinside.com/dc/w/images/fix_managernik.gif
-        주딱 반고닉: https://nstatic.dcinside.com/dc/w/images/managernik.gif
-
-        파딱 고닉: https://nstatic.dcinside.com/dc/w/images/fix_sub_managernik.gif
-        파딱 반고닉: https://nstatic.dcinside.com/dc/w/images/sub_managernik.gif
-
-        고닉: https://nstatic.dcinside.com/dc/w/images/fix_nik.gif
-        반고닉: https://nstatic.dcinside.com/dc/w/images/nik.gif
-
-        개 고닉: https://nstatic.dcinside.com/dc/event/nft_gaejugi/nftcon_fix.png
-        개 반고닉: https://nstatic.dcinside.com/dc/event/nft_gaejugi/nftcon.png
-
-        개 파딱: https://nstatic.dcinside.com/dc/event/nft_gaejugi/nftcon_submanager.png
-        개 반고닉 파딱: https://nstatic.dcinside.com/dc/event/nft_gaejugi/nftcon_fix_submanager.png
-
-        20주년 고닉: https://nstatic.dcinside.com/dc/event/dc20th/dc20th_wgallcon4.png
-        20주년 반고닉: https://nstatic.dcinside.com/dc/event/dc20th/dc20th_wgallcon.png
-
-        공앱 고닉: https://nstatic.dcinside.com/dc/event/app_evt/w_app_gonick_16.png
-        공앱 반고닉: https://nstatic.dcinside.com/dc/event/app_evt/w_app_nogonick_16.png
-     */
-
     if (icon === null) {
         return USERTYPE.UNFIXED;
     } else if (icon.endsWith("fix_managernik.gif")) {
@@ -60,14 +37,16 @@ export const getType = (icon: string | null): UserType => {
         icon.endsWith("fix_nik.gif") ||
         icon.endsWith("nftcon_fix.png") ||
         icon.endsWith("dc20th_wgallcon4.png") ||
-        icon.endsWith("w_app_gonick_16.png")
+        icon.endsWith("w_app_gonick_16.png") ||
+        icon.endsWith("nftmdcon_fix.png")
     ) {
         return USERTYPE.FIXED;
     } else if (
         icon.endsWith("nik.gif") ||
         icon.endsWith("nftcon.png") ||
         icon.endsWith("dc20th_wgallcon.png") ||
-        icon.endsWith("w_app_nogonick_16.png")
+        icon.endsWith("w_app_nogonick_16.png") ||
+        icon.endsWith("nftmdcon.png")
     ) {
         return USERTYPE.HALF_FIXED;
     } else {
