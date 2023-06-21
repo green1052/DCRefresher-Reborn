@@ -1,5 +1,5 @@
 const common = require("./webpack.common.js");
-const {merge} = require("webpack-merge");
+const { merge } = require("webpack-merge");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const pkg = require("./package.json");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
