@@ -39,7 +39,7 @@ export const getType = (icon: string | null): UserType => {
         icon.endsWith("dc20th_wgallcon4.png") ||
         icon.endsWith("w_app_gonick_16.png") ||
         icon.endsWith("nftmdcon_fix.png") ||
-        icon.endsWith("gnftmdcon_fix.png")
+        icon.endsWith("gnftmdcon_fix.gif")
     ) {
         return USERTYPE.FIXED;
     } else if (
@@ -48,7 +48,7 @@ export const getType = (icon: string | null): UserType => {
         icon.endsWith("dc20th_wgallcon.png") ||
         icon.endsWith("w_app_nogonick_16.png") ||
         icon.endsWith("nftmdcon.png") ||
-        icon.endsWith("gnftmdcon.png")
+        icon.endsWith("gnftmdcon.gif")
     ) {
         return USERTYPE.HALF_FIXED;
     } else {
