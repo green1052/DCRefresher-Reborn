@@ -10,9 +10,9 @@ import { User } from "../utils/user";
 import $ from "cash-dom";
 import Cookies from "js-cookie";
 import ky from "ky";
+import Tesseract from "tesseract.js";
 import browser from "webextension-polyfill";
 import type IFrame from "../core/frame";
-import Tesseract from "tesseract.js";
 
 const domParser = new DOMParser();
 
