@@ -836,13 +836,24 @@ const panel = {
     `;
 
         if (bypassCaptcha) {
+            const worker = await Tesseract.createWorker();
+
             try {
+                await worker.loadLanguage("eng");
+                await worker.initialize("eng");
+                await worker.setParameters({
+                    tessedit_char_whitelist:
+                        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                });
+
                 const {
                     data: { text }
-                } = await Tesseract.recognize(image, "eng");
+                } = await worker.recognize(image);
                 element.querySelector("input")!.value = text.toLowerCase();
             } catch (e) {
                 Toast.show("자동 인식에 실패했습니다.", true, 3000);
+            } finally {
+                await worker.terminate();
             }
         }
 
