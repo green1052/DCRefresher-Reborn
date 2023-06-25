@@ -67,6 +67,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["vue-fragment", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:1.5.1"],\
             ["vue-loader", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:15.10.1"],\
             ["webextension-polyfill", "npm:0.10.0"],\
+            ["webp-converter-browser", "npm:1.0.3"],\
             ["webpack", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:5.87.0"],\
             ["webpack-cli", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:5.1.4"],\
             ["webpack-merge", "npm:5.9.0"]\
@@ -106,6 +107,16 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [\
             ["@babel/parser", "npm:7.22.5"],\
             ["@babel/types", "npm:7.20.7"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["@babel/runtime", [\
+        ["npm:7.22.5", {\
+          "packageLocation": "./.yarn/cache/@babel-runtime-npm-7.22.5-0a6711d04c-12a50b7de2.zip/node_modules/@babel/runtime/",\
+          "packageDependencies": [\
+            ["@babel/runtime", "npm:7.22.5"],\
+            ["regenerator-runtime", "npm:0.13.11"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -2770,6 +2781,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["vue-fragment", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:1.5.1"],\
             ["vue-loader", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:15.10.1"],\
             ["webextension-polyfill", "npm:0.10.0"],\
+            ["webp-converter-browser", "npm:1.0.3"],\
             ["webpack", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:5.87.0"],\
             ["webpack-cli", "virtual:5ba1c56d814508b2c3d463acd8a82d3c8dd72f5c5a1adadfecdeff12a098cf098167c61df022236d9fd696c6fe9db011f97ff470f068b2c94d022f65c91b771a#npm:5.1.4"],\
             ["webpack-merge", "npm:5.9.0"]\
@@ -7762,6 +7774,16 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/webidl-conversions-npm-3.0.1-60310f6a2b-c92a0a6ab9.zip/node_modules/webidl-conversions/",\
           "packageDependencies": [\
             ["webidl-conversions", "npm:3.0.1"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["webp-converter-browser", [\
+        ["npm:1.0.3", {\
+          "packageLocation": "./.yarn/cache/webp-converter-browser-npm-1.0.3-8b08423511-f6fc79bbd1.zip/node_modules/webp-converter-browser/",\
+          "packageDependencies": [\
+            ["webp-converter-browser", "npm:1.0.3"],\
+            ["@babel/runtime", "npm:7.22.5"]\
           ],\
           "linkType": "HARD"\
         }]\

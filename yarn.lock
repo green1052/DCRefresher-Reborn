@@ -37,6 +37,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@babel/runtime@npm:^7.18.3":
+  version: 7.22.5
+  resolution: "@babel/runtime@npm:7.22.5"
+  dependencies:
+    regenerator-runtime: ^0.13.11
+  checksum: 12a50b7de2531beef38840d17af50c55a094253697600cee255311222390c68eed704829308d4fd305e1b3dfbce113272e428e9d9d45b1730e0fede997eaceb1
+  languageName: node
+  linkType: hard
+
 "@babel/types@npm:^7.6.1, @babel/types@npm:^7.8.3, @babel/types@npm:^7.9.6":
   version: 7.20.7
   resolution: "@babel/types@npm:7.20.7"
@@ -2052,6 +2061,7 @@ __metadata:
     vue-fragment: 1.5.1
     vue-loader: 15.10.1
     webextension-polyfill: ^0.10.0
+    webp-converter-browser: ^1.0.3
     webpack: ^5.87.0
     webpack-cli: ^5.1.4
     webpack-merge: ^5.9.0
@@ -6191,6 +6201,15 @@ __metadata:
   version: 3.0.1
   resolution: "webidl-conversions@npm:3.0.1"
   checksum: c92a0a6ab95314bde9c32e1d0a6dfac83b578f8fa5f21e675bc2706ed6981bc26b7eb7e6a1fab158e5ce4adf9caa4a0aee49a52505d4d13c7be545f15021b17c
+  languageName: node
+  linkType: hard
+
+"webp-converter-browser@npm:^1.0.3":
+  version: 1.0.3
+  resolution: "webp-converter-browser@npm:1.0.3"
+  dependencies:
+    "@babel/runtime": ^7.18.3
+  checksum: f6fc79bbd160e79bcd660522688eb9fff018af467e81e899953e52120d25d1d66bb6961c62a3148f98f728ae13828bc2a0e2b2dbd7a4a3294874cad4d5028f1d
   languageName: node
   linkType: hard
 
