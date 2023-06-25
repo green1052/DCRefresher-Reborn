@@ -79,7 +79,7 @@ export default {
         },
         hideNft: {
             name: "NFT 숨기기",
-            desc: "NFT 발행 버튼을 숨깁니다.",
+            desc: "NFT 관련 내용을 숨깁니다.",
             type: "check",
             default: false
         },
