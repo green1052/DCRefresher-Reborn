@@ -99,7 +99,7 @@ export default {
             name: "디시 공지 숨기기",
             desc: "글 목록에서 운영자의 게시글을 숨깁니다.",
             type: "check",
-            default: false
+            default: true
         }
     },
     update: {
@@ -157,6 +157,12 @@ export default {
             }
         },
         removeDCNotice(value: boolean, filter: RefresherFilter) {
+            if (!value) {
+                alert(
+                    "해당 설정을 비활성화하면 자동 새로고침 시 게시글 목록이 깜박거립니다."
+                );
+            }
+
             if (this.memory.uuiddc && !value) {
                 filter.remove(this.memory.uuiddc);
                 return;
