@@ -1,11 +1,7 @@
 import * as Toast from "../components/toast";
 import $ from "cash-dom";
 import ky from "ky";
-import {
-    srcToWebP,
-    blobToWebP,
-    arrayBufferToWebP
-} from "webp-converter-browser";
+import { blobToWebP } from "webp-converter-browser";
 
 export default {
     name: "글쓰기",
