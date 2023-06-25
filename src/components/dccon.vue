@@ -110,6 +110,12 @@
                     })
                     .json<DcinsideDcconDetail>();
 
+                if (response.target === "shop") {
+                    alert("사용 가능한 디시콘이 없습니다.");
+                    this.close();
+                    return;
+                }
+
                 this.dcconList = {
                     ...this.dcconList,
                     [this.currentPage]: response.list
