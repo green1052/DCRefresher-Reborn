@@ -31,6 +31,18 @@ export default {
             desc: "자짤 기능을 활성화합니다.",
             type: "check",
             default: false
+        },
+        header: {
+            name: "머리말",
+            desc: "머리말을 설정합니다. (HTML)",
+            type: "text",
+            default: ""
+        },
+        footer: {
+            name: "꼬리말",
+            desc: "꼬리말을 설정합니다. (HTML)",
+            type: "text",
+            default: ""
         }
     },
     require: ["filter"],
@@ -38,27 +50,44 @@ export default {
         this.memory.submitButton = filter.add<HTMLButtonElement>(
             "button.write",
             (element) => {
+                filter.remove(this.memory.submitButton);
+
                 $(element).on("click", () => {
-                    if (!this.status.bypassTitleLimit) return;
+                    const header = this.status.header;
+                    const footer = this.status.footer;
 
-                    const $titleElement = $("input#subject");
-                    const title = $titleElement.val() as string;
+                    if (header) {
+                        $("#tx_canvas_wysiwyg")
+                            .contents()
+                            .find("body")
+                            .prepend(`${header}`);
+                    }
 
-                    if (title.length === 1) $titleElement.val(`${title}\u200B`);
+                    if (footer) {
+                        $("#tx_canvas_wysiwyg")
+                            .contents()
+                            .find("body")
+                            .append(`${footer}`);
+                    }
+
+                    if (this.status.bypassTitleLimit) {
+                        const $titleElement = $("input#subject");
+                        const title = $titleElement.val() as string;
+
+                        if (title.length === 1)
+                            $titleElement.val(`${title}\u200B`);
+                    }
                 });
             }
         );
 
-        let injected = false;
-
         this.memory.canvas = filter.add<HTMLIFrameElement>(
             "#tx_canvas_wysiwyg",
             (element) => {
+                filter.remove(this.memory.submitButton);
+
                 const win = element.contentWindow!;
                 const $dom = $(win.document);
-
-                if (injected) return;
-                injected = true;
 
                 $dom.ready(() => {
                     const $contentContainer = $dom.find(
@@ -145,6 +174,8 @@ export default {
         imageUpload: RefresherCheckSettings;
         bypassTitleLimit: RefresherCheckSettings;
         selfImage: RefresherCheckSettings;
+        header: RefresherTextSettings;
+        footer: RefresherTextSettings;
     };
     require: ["filter"];
 }>;
