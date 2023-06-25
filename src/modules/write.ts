@@ -3,8 +3,8 @@ import $ from "cash-dom";
 import ky from "ky";
 
 export default {
-    name: "글쓰기 개선",
-    description: "글쓰기 페이지를 개선합니다.",
+    name: "글쓰기",
+    description: "글쓰기 페이지를 변경합니다.",
     url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/write/,
     status: {},
     memory: {
