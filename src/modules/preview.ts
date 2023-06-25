@@ -843,13 +843,13 @@ const panel = {
                 await worker.initialize("eng");
                 await worker.setParameters({
                     tessedit_char_whitelist:
-                        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                        "0123456789abcdefghijklmnopqrstuvwxyz"
                 });
 
                 const {
                     data: { text }
                 } = await worker.recognize(image);
-                element.querySelector("input")!.value = text.toLowerCase();
+                element.querySelector("input")!.value = text;
             } catch (e) {
                 Toast.show("자동 인식에 실패했습니다.", true, 3000);
             } finally {
