@@ -243,13 +243,7 @@ export default {
             $oldList.html($list.html());
 
             const postNoIter = $oldList.find("td.gall_num");
-            const $gallList = $oldList.parent();
-            const containsEmpty = $gallList.hasClass("empty");
-
-            $gallList.toggleClass(
-                "empty",
-                postNoIter.length > 0 && containsEmpty
-            );
+            $oldList.parent().toggleClass("empty", !postNoIter.length);
 
             for (const element of postNoIter) {
                 const $element = $(element);
