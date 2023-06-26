@@ -42,18 +42,20 @@ export default {
 
                 if (!gallery) return;
 
-                const title = $(".gall_tit > a").text();
+                const title = $element
+                    .find(".gall_tit > a:not([class])")
+                    .text();
 
                 const text = $element
                     .closest(".view_content_wrap")
                     .find(".write_div")
                     .text();
 
-                const nick = $(element).data("nick");
+                const nick = $element.data("nick");
 
-                const uid = $(element).data("uid");
+                const uid = $element.data("uid");
 
-                const ip = $(element).data("ip");
+                const ip = $element.data("ip");
 
                 const $commentElement = $element.closest(
                     ".reply_info, .cmt_info"
