@@ -60,7 +60,7 @@ export default {
                 const $commentElement = $element.closest(
                     ".reply_info, .cmt_info"
                 );
-                const commentContent = $commentElement.find(".usertxt")?.text();
+                const commentContent = $commentElement.find(".usertxt").text();
 
                 if (
                     block.checkAll(
