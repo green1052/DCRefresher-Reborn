@@ -226,7 +226,9 @@ export default {
 
                 if (
                     block.checkAll({
-                        TITLE: $element.find(".gall_tit > a").text(),
+                        TITLE: $element
+                            .find(".gall_tit > a:not([class])")
+                            .text(),
                         NICK: $writter.data("nick"),
                         ID: $writter.data("uid"),
                         IP: $writter.data("ip")
