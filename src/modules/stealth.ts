@@ -27,16 +27,16 @@ const tempButtonCreate = (element: HTMLElement): void => {
         buttonFrame.querySelector<HTMLElement>("#temp_button_text")!;
 
     button.addEventListener("click", () => {
-        if (!element.className.includes(TEMPORARY_STEALTH)) {
-            element.classList.add(TEMPORARY_STEALTH);
-            buttonText.innerText = "이미지 숨기기";
-        } else {
-            element.classList.remove(TEMPORARY_STEALTH);
+        if ($element.hasClass(TEMPORARY_STEALTH)) {
+            $element.removeClass(TEMPORARY_STEALTH);
             buttonText.innerText = "이미지 보이기";
+        } else {
+            $element.addClass(TEMPORARY_STEALTH);
+            buttonText.innerText = "이미지 숨기기";
         }
     });
 
-    element.prepend(buttonFrame);
+    $element.prepend(buttonFrame);
 };
 
 export default {
@@ -49,15 +49,13 @@ export default {
     default_enable: false,
     shortcuts: {
         stealthPause() {
-            const button = document.querySelector<HTMLElement>(
-                `${CONTROL_BUTTON} > #tempview`
-            );
+            const button = $(`${CONTROL_BUTTON} > #tempview`);
 
-            if (!button) return;
+            if (!button.length) return;
 
-            button.click();
+            button.get(0)!.click();
 
-            const content = document.documentElement.className.includes(
+            const content = $(document.documentElement).hasClass(
                 TEMPORARY_STEALTH
             )
                 ? "이미지를 보이게 했습니다."
@@ -79,7 +77,7 @@ export default {
         this.memory.contentViewUUID = eventBus.on(
             "contentPreview",
             (elem: HTMLElement) => {
-                if (!$(CONTROL_BUTTON)) tempButtonCreate(elem);
+                if (!$(CONTROL_BUTTON).length) tempButtonCreate(elem);
             }
         );
     },
