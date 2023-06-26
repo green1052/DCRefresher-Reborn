@@ -296,7 +296,7 @@ export default {
             if (isAdmin) {
                 let templExists = true;
 
-                for (const element of $(".us-post")) {
+                for (const element of $oldList.find(".us-post")) {
                     const $element = $(element);
 
                     const $tmpl = $element.find("#minor_td-tmpl");
@@ -310,7 +310,7 @@ export default {
                 }
 
                 if (templExists) {
-                    for (const element of $(".ub-content")) {
+                    for (const element of $oldList.find(".ub-content")) {
                         const $element = $(element);
 
                         if (!$element.hasClass("us-post")) {
@@ -319,7 +319,7 @@ export default {
                     }
 
                     if ($("#comment_chk_all").length > 0) {
-                        const $tbody = $(".gall_list:not([id]) tbody td");
+                        const $tbody = $oldList.find("td");
                         const colspan = $tbody.attr("colspan");
 
                         if (colspan) {
@@ -338,11 +338,10 @@ export default {
                 const keyword = $("input[name=s_keyword]").val() as string;
 
                 if (keyword) {
-                    for (const element of $(".gall_list:not([id]) .gall_tit")) {
+                    for (const element of $oldList.find(".gall_tit")) {
                         const $element = $(element);
 
                         const $a = $element.find("a:first-child");
-
                         const $tmpSubject = $a.clone();
 
                         $tmpSubject.find(".icon_img").remove();
@@ -352,7 +351,7 @@ export default {
                         if (tmpSubjectHtml.match(keyword)) {
                             let subject = tmpSubjectHtml.replace(
                                 keyword,
-                                `<span class="mark">${keyword}</span>`
+                                `<span class=mark>${keyword}</span>`
                             );
                             subject = $a
                                 .html()
