@@ -3,7 +3,7 @@ import browser from "webextension-polyfill";
 export const storage = browser.storage.local;
 
 export const get = <T>(key?: string | null): Promise<T> =>
-    storage.get(key).then((value) => (!key ? value : value[key]));
+    storage.get(key).then((value) => (key ? value[key] : value));
 
 export const set = <T>(key: string, value: T): Promise<void> =>
     storage.set({ [key]: value });
