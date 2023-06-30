@@ -55,7 +55,7 @@ export default {
 
                 const uid = $element.data("uid");
 
-                const ip = $element.data("ip");
+                const ip = String($element.data("ip"));
 
                 const $commentElement = $element.closest(
                     ".reply_info, .cmt_info"

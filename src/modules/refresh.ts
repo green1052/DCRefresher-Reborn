@@ -231,7 +231,7 @@ export default {
                             .text(),
                         NICK: $writter.data("nick"),
                         ID: $writter.data("uid"),
-                        IP: $writter.data("ip")
+                        IP: String($writter.data("ip"))
                     })
                 ) {
                     continue;
