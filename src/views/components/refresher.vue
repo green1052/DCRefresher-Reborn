@@ -541,11 +541,11 @@
                 links: [
                     {
                         text: "GitHub",
-                        url: "https://github.com/green1052/DCRefresher-Reborn"
+                        url: "https://shorter.green1052.com/drg"
                     },
                     {
                         text: "Discord",
-                        url: "https://discord.gg/SSW6Zuyjz6"
+                        url: "https://shorter.green1052.com/drd"
                     }
                 ]
             };
