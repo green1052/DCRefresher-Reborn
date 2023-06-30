@@ -114,7 +114,9 @@ export class User {
 
         user.nick = $dom.data("nick") || "오류";
         user.id = $dom.data("uid") || null;
-        user.ip = $dom.data("ip") || null;
+
+        const ip = $dom.data("ip");
+        user.ip = ip ? String(ip) : null;
 
         user.icon = user.id
             ? $dom.find("a.writer_nikcon img").attr("src")

@@ -279,8 +279,9 @@ export const checkAll = (
     obj: Partial<Record<RefresherBlockType, string>>,
     gallery?: string
 ): boolean => {
-    for (const key of Object.keys(obj) as RefresherBlockType[]) {
-        if (check(key, obj[key]!, gallery)) return true;
+    for (const [key, value] of Object.entries(obj)) {
+        if (check(key as RefresherBlockType, String(value), gallery))
+            return true;
     }
 
     return false;
