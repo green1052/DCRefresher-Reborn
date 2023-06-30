@@ -293,40 +293,44 @@ export default {
 
             this.memory.calledByPageTurn = false;
 
+            // 미니 갤, 마이너 갤 관리자일 경우 체크박스를 생성합니다.
             if (isAdmin) {
                 let templExists = true;
+                document.querySelectorAll(".us-post").forEach((elem) => {
+                    const tmpl = document.querySelector("#minor_td-tmpl");
 
-                for (const element of $oldList.find(".us-post")) {
-                    const $element = $(element);
-
-                    const $tmpl = $element.find("#minor_td-tmpl");
-
-                    if (!$tmpl.length) {
+                    if (!tmpl) {
                         templExists = false;
-                        break;
+                        return;
                     }
 
-                    $element.html($tmpl.html() + $element.html());
-                }
+                    elem.innerHTML = tmpl.innerHTML + elem.innerHTML;
+                });
 
                 if (templExists) {
-                    for (const element of $oldList.find(".ub-content")) {
-                        const $element = $(element);
-
-                        if (!$element.hasClass("us-post")) {
-                            $element.before(document.createElement("td"));
+                    document.querySelectorAll(".ub-content").forEach((elem) => {
+                        if (!elem.className.includes("us-post")) {
+                            elem.insertBefore(
+                                document.createElement("td"),
+                                elem.firstChild
+                            );
                         }
-                    }
+                    });
 
-                    if ($("#comment_chk_all").length > 0) {
-                        const $tbody = $oldList.find("td");
-                        const colspan = $tbody.attr("colspan");
+                    if (document.querySelector("#comment_chk_all")) {
+                        const tbody_colspan = document.querySelector(
+                            "table.gall_list tbody td"
+                        );
 
-                        if (colspan) {
-                            const number = parseInt(colspan);
+                        if (tbody_colspan) {
+                            const colspan =
+                                tbody_colspan.getAttribute("colspan") ?? "";
 
                             if (parseInt(colspan) == 6) {
-                                $tbody.attr("colspan", String(number + 1));
+                                tbody_colspan?.setAttribute(
+                                    "colspan",
+                                    (parseInt(colspan) + 1).toString()
+                                );
                             }
                         }
                     }
