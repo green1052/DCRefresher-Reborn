@@ -222,16 +222,15 @@ export default {
 
             for (const element of $newList.children()) {
                 const $element = $(element);
-                const $writter = $element.find(".ub-writer");
 
                 if (
                     block.checkAll({
                         TITLE: $element
                             .find(".gall_tit > a:not([class])")
                             .text(),
-                        NICK: $writter.data("nick"),
-                        ID: $writter.data("uid"),
-                        IP: String($writter.data("ip"))
+                        NICK: element.dataset.nick,
+                        ID: element.dataset.uid,
+                        IP: $element.find(".ub-writer").get(0)!.dataset.ip
                     })
                 ) {
                     continue;
