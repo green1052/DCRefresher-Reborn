@@ -51,11 +51,9 @@ export default {
                     .find(".write_div")
                     .text();
 
-                const nick = $element.data("nick");
-
-                const uid = $element.data("uid");
-
-                const ip = String($element.data("ip"));
+                const nick = element.dataset.nick;
+                const uid = element.dataset.uid;
+                const ip = element.dataset.ip;
 
                 const $commentElement = $element.closest(
                     ".reply_info, .cmt_info"
