@@ -506,6 +506,18 @@ tr .gall_writer {
     }
 }
 
+.refresherHideNotice {
+    tr[data-type=icon_notice] {
+        display: none;
+    }
+}
+
+.refresherHideDCNotice {
+    tr[class="ub-content "] {
+        display: none;
+    }
+}
+
 // Comment Dory Block Module
 
 .refresherNoDory .dcwrap .wrap_inner .dory {
