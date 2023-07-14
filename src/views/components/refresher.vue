@@ -481,8 +481,6 @@
     } from "../../core/block";
     import $ from "cash-dom";
 
-    const port = browser.runtime.connect({ name: "refresherInternal" });
-
     interface RefresherData {
         tab: number;
         modules: {
@@ -509,6 +507,8 @@
         blockKeyNames: typeof BLOCK_TYPE_NAMES;
         links: { text: string; url: string }[];
     }
+
+    const port = browser.runtime.connect({ name: "refresherInternal" });
 
     export default Vue.extend({
         name: "refresher",
@@ -811,9 +811,7 @@
                     });
             },
             updateDarkMode(v: boolean) {
-                $(document.documentElement)[v ? "addClass" : "removeClass"](
-                    "refresherDark"
-                );
+                $(document.documentElement).toggleClass("refresherDark", v);
             }
         },
         mounted() {
@@ -824,22 +822,26 @@
                 requestRefresherMemos: true
             });
 
-            port.onMessage.addListener((msg) => {
-                if (msg.responseRefresherModules) {
-                    this.modules = msg.modules ?? {};
+            port.onMessage.addListener((message) => {
+                if (message.responseRefresherModules && message.modules) {
+                    this.modules = message.modules;
                 }
 
-                if (msg.responseRefresherSettings) {
-                    this.settings = msg.settings ?? {};
+                if (message.responseRefresherSettings && message.settings) {
+                    this.settings = message.settings;
                 }
 
-                if (msg.responseRefresherBlocks) {
-                    this.blocks = msg.blocks ?? {};
-                    this.blockModes = msg.blockModes ?? {};
+                if (
+                    message.responseRefresherBlocks &&
+                    message.blocks &&
+                    message.blockModes
+                ) {
+                    this.blocks = message.blocks;
+                    this.blockModes = message.blockModes;
                 }
 
-                if (msg.requestRefresherMemos) {
-                    this.memos = msg.memos ?? {};
+                if (message.requestRefresherMemos && message.memos) {
+                    this.memos = message.memos;
                 }
             });
 
@@ -847,7 +849,6 @@
                 this.shortcuts = cmd;
             });
         },
-
         watch: {
             modules(modules) {
                 if (modules["다크 모드"]) {
@@ -855,7 +856,6 @@
                 }
             }
         },
-
         components: {
             "refresher-checkbox": checkbox,
             "refresher-module": module,

@@ -7,6 +7,33 @@ import ky from "ky";
 import browser from "webextension-polyfill";
 import { Buffer } from "buffer";
 
+const contextMenus: browser.Menus.CreateCreatePropertiesType[] = [
+    {
+        id: "blockSelected",
+        title: "오른쪽 클릭한 유저 차단",
+        contexts: ["all"],
+        documentUrlPatterns: ["*://gall.dcinside.com/*"]
+    },
+    {
+        id: "memoSelected",
+        title: "오른쪽 클릭한 유저 메모",
+        contexts: ["all"],
+        documentUrlPatterns: ["*://gall.dcinside.com/*"]
+    },
+    {
+        id: "dcconSelected",
+        title: "오른쪽 클릭한 디시콘 차단",
+        contexts: ["all"],
+        documentUrlPatterns: ["*://gall.dcinside.com/*"]
+    },
+    {
+        id: "searchSauceNao",
+        title: "SauceNao 검색 (미작동)",
+        contexts: ["image"],
+        documentUrlPatterns: ["*://gall.dcinside.com/*"]
+    }
+];
+
 let modules: ModuleStore = {};
 let settings: SettingsStore = {};
 let blocks: BlockCache = {
@@ -53,6 +80,13 @@ interface Message {
     requestRefresherSettings?: boolean;
     requestRefresherBlocks?: boolean;
     requestRefresherMemos?: boolean;
+}
+
+if (browser.runtime.getManifest().manifest_version === 3) {
+    setInterval(() => {
+        // @ts-ignore
+        self.serviceWorker.postMessage("test");
+    }, 25000);
 }
 
 const messageHandler = (
@@ -161,17 +195,9 @@ async function getGeoIP(type: "ASN" | "Country", url: string): Promise<Buffer> {
 }
 
 browser.runtime.onInstalled.addListener((details) => {
-    try {
-        storage.get().then((settings) => {
-            if (!settings) return;
-
-            for (const key of Object.keys(settings)) {
-                if (key.startsWith("글쓰기 개선.") || key === "undefined") {
-                    storage.remove(key);
-                }
-            }
-        });
-    } catch {}
+    for (const contextMenu of contextMenus) {
+        browser.contextMenus.create(contextMenu);
+    }
 
     getGeoIP(
         "ASN",
@@ -196,37 +222,6 @@ browser.runtime.onInstalled.addListener((details) => {
         storage.set("refresher.updated", true);
     }
 });
-
-const contextMenus: browser.Menus.CreateCreatePropertiesType[] = [
-    {
-        id: "blockSelected",
-        title: "오른쪽 클릭한 유저 차단",
-        contexts: ["all"],
-        documentUrlPatterns: ["*://gall.dcinside.com/*"]
-    },
-    {
-        id: "memoSelected",
-        title: "오른쪽 클릭한 유저 메모",
-        contexts: ["all"],
-        documentUrlPatterns: ["*://gall.dcinside.com/*"]
-    },
-    {
-        id: "dcconSelected",
-        title: "오른쪽 클릭한 디시콘 차단",
-        contexts: ["all"],
-        documentUrlPatterns: ["*://gall.dcinside.com/*"]
-    },
-    {
-        id: "searchSauceNao",
-        title: "SauceNao 검색 (미작동)",
-        contexts: ["image"],
-        documentUrlPatterns: ["*://gall.dcinside.com/*"]
-    }
-];
-
-for (const contextMenu of contextMenus) {
-    browser.contextMenus.create(contextMenu);
-}
 
 browser.contextMenus.onClicked.addListener((info, tab) => {
     browser.tabs.sendMessage(tab!.id!, {
