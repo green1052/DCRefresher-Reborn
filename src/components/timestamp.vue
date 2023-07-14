@@ -77,7 +77,6 @@
                 this.stamp = convertTime(this.date);
             }, 3000);
         },
-
         beforeDestroy() {
             clearInterval(this.updates);
         }
