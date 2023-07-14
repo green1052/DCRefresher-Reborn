@@ -10,9 +10,7 @@
     ],
     "host_permissions": [
         "https://github.com/",
-        "https://gall.dcinside.com/",
-        "https://gallog.dcinside.com/",
-        "https://dcimg5.dcinside.com/"
+        "https://*.dcinside.com/"
     ],
     "background": {
         "service_worker": "background.js"
