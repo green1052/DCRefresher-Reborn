@@ -35,8 +35,6 @@ export default {
     url: /(board\/lists|board\/view)/g,
     status: {},
     memory: {
-        uuid: null,
-        uuiddc: null,
         resize: null
     },
     enable: true,
@@ -97,9 +95,9 @@ export default {
         },
         removeDCNotice: {
             name: "디시 공지 숨기기",
-            desc: "글 목록에서 운영자의 게시글을 숨깁니다. (해당 설정을 비활성화하면 자동 새로고침 시 게시글 목록이 깜박거립니다.)",
+            desc: "글 목록에서 운영자의 게시글을 숨깁니다.",
             type: "check",
-            default: true
+            default: false
         }
     },
     update: {
@@ -131,58 +129,27 @@ export default {
                 value
             );
         },
-        removeNotice(value: boolean, filter: RefresherFilter) {
-            if (this.memory.uuid && !value) {
-                filter.remove(this.memory.uuid);
+        removeNotice(value: boolean) {
+            if (
+                new URL(location.href).searchParams.get("exception_mode") ===
+                "notice"
+            )
                 return;
-            }
 
-            if (!this.memory.uuid && value) {
-                this.memory.uuid = filter.add(
-                    ".gall_list .us-post b",
-                    (elem) => {
-                        if (
-                            new URL(location.href).searchParams.get(
-                                "exception_mode"
-                            ) === "notice"
-                        )
-                            return;
-
-                        $(elem).parent().parent().css("display", "none");
-                    },
-                    {
-                        neverExpire: true
-                    }
-                );
-            }
+            $(document.documentElement).toggleClass(
+                "refresherHideNotice",
+                value
+            );
         },
-        removeDCNotice(value: boolean, filter: RefresherFilter) {
-            if (this.memory.uuiddc && !value) {
-                filter.remove(this.memory.uuiddc);
-                return;
-            }
-
-            if (!this.memory.uuiddc && value) {
-                this.memory.uuiddc = filter.add(
-                    ".gall_list .ub-content .ub-writer",
-                    (elem) => {
-                        const $elem = $(elem);
-
-                        const adminAttribute = $elem.attr("user_name");
-
-                        if (adminAttribute !== "운영자") return;
-
-                        $elem.parent().css("display", "none");
-                    },
-                    {
-                        neverExpire: true
-                    }
-                );
-            }
+        removeDCNotice(value: boolean) {
+            $(document.documentElement).toggleClass(
+                "refresherHideDCNotice",
+                value
+            );
         }
     },
-    require: ["filter"],
-    func(filter: RefresherFilter) {
+    require: [],
+    func() {
         if (
             location.href.includes("board/view") &&
             !this.status.useCompactModeOnView
@@ -203,30 +170,21 @@ export default {
         this.update.hideUselessView.bind(this)(this.status.hideUselessView);
         this.update.hideNft.bind(this)(this.status.hideNft);
         this.update.pushToRight.bind(this)(this.status.pushToRight);
-        this.update.removeNotice.bind(this)(this.status.removeNotice, filter);
-        this.update.removeDCNotice.bind(this)(
-            this.status.removeDCNotice,
-            filter
-        );
+        this.update.removeNotice.bind(this)(this.status.removeNotice);
+        this.update.removeDCNotice.bind(this)(this.status.removeDCNotice);
     },
-    revoke(filter: RefresherFilter) {
-        if (this.memory.uuid) filter.remove(this.memory.uuid);
-
-        if (this.memory.uuiddc) filter.remove(this.memory.uuiddc);
-
+    revoke() {
         window.removeEventListener("resize", this.memory.resize!);
 
         this.update.hideGalleryView.bind(this)(false);
         this.update.hideUselessView.bind(this)(false);
         this.update.hideNft.bind(this)(false);
         this.update.pushToRight.bind(this)(false);
-        this.update.removeNotice.bind(this)(false, filter);
-        this.update.removeDCNotice.bind(this)(false, filter);
+        this.update.removeNotice.bind(this)(false);
+        this.update.removeDCNotice.bind(this)(false);
     }
 } as RefresherModule<{
     memory: {
-        uuid: string | null;
-        uuiddc: string | null;
         resize: (() => void) | null;
     };
     settings: {
@@ -250,5 +208,5 @@ export default {
         removeNotice(value: boolean): void;
         removeDCNotice(value: boolean): void;
     };
-    require: ["filter"];
+    require: [];
 }>;
