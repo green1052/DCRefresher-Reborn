@@ -9,6 +9,7 @@ const inject = (filename: string) => {
 export default {
     name: "알림 개선",
     description: "디시인사이드 알림을 더 미려하게 개선합니다.",
+    status: {},
     memory: {},
     enable: false,
     default_enable: false,
