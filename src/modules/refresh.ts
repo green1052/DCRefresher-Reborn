@@ -192,6 +192,7 @@ export default {
             }
 
             const url = http.view(originalLocation);
+
             const $newList = await ky
                 .get(url)
                 .text()
@@ -206,11 +207,7 @@ export default {
 
             const $oldList = $(".gall_list:not([id]) tbody");
 
-            if (
-                $oldList.length === 0 ||
-                $newList.length === 0 ||
-                $newList.children().length === 0
-            )
+            if ($newList.length === 0 || $newList.children().length === 0)
                 return false;
 
             const cached = Array.from($("td.gall_num")).map(
@@ -223,14 +220,16 @@ export default {
             for (const element of $newList.children()) {
                 const $element = $(element);
 
+                const writer: HTMLElement = $element.find(".ub-writer").get(0)!;
+
                 if (
                     block.checkAll({
                         TITLE: $element
                             .find(".gall_tit > a:not([class])")
                             .text(),
-                        NICK: element.dataset.nick,
-                        ID: element.dataset.uid,
-                        IP: $element.find(".ub-writer").get(0)!.dataset.ip
+                        NICK: writer.dataset.nick,
+                        ID: writer.dataset.uid,
+                        IP: writer.dataset.ip
                     })
                 ) {
                     continue;
