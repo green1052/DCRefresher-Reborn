@@ -53,10 +53,6 @@ export const commentGallTypes: Record<string, string> = {
     mini: "MI"
 };
 
-export const heads = {
-    "X-Requested-With": "XMLHttpRequest"
-};
-
 export const viewRegex = /\/board\/view\//g;
 export const mgall = /dcinside\.com\/mgallery/g;
 
