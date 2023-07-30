@@ -219,7 +219,6 @@ export default {
 
             for (const element of $newList.children()) {
                 const $element = $(element);
-
                 const writer: HTMLElement = $element.find(".ub-writer").get(0)!;
 
                 if (
