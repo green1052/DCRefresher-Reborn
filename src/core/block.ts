@@ -276,11 +276,11 @@ export const check = (
  * @param gallery 갤러리 이름 (선택)
  */
 export const checkAll = (
-    obj: Partial<Record<RefresherBlockType, string>>,
+    obj: Partial<Record<RefresherBlockType, string | null>>,
     gallery?: string
 ): boolean => {
     for (const [key, value] of Object.entries(obj)) {
-        if (check(key as RefresherBlockType, String(value), gallery))
+        if (value && check(key as RefresherBlockType, String(value), gallery))
             return true;
     }
 

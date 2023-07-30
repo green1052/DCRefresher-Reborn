@@ -145,6 +145,8 @@ export default {
 
         const isPostView = location.pathname === "/board/view/";
         const currentPostNo = new URLSearchParams(location.href).get("no");
+        const isAlbumMode =
+            new URLSearchParams(location.href).get("board_type") === "album";
 
         let originalLocation = location.href;
 
@@ -221,16 +223,30 @@ export default {
                 const $element = $(element);
                 const writer: HTMLElement = $element.find(".ub-writer").get(0)!;
 
-                if (
-                    block.checkAll({
+                let obj: Partial<Record<RefresherBlockType, string | null>> =
+                    {};
+
+                if (isAlbumMode) {
+                    if ($element.hasClass("album_head")) {
+                        obj = {
+                            TITLE: $element.find(".gall_tit > a > b").text(),
+                            NICK: writer.dataset.nick,
+                            ID: writer.dataset.uid,
+                            IP: writer.dataset.ip
+                        };
+                    }
+                } else {
+                    obj = {
                         TITLE: $element
                             .find(".gall_tit > a:not([class])")
                             .text(),
                         NICK: writer.dataset.nick,
                         ID: writer.dataset.uid,
                         IP: writer.dataset.ip
-                    })
-                ) {
+                    };
+                }
+
+                if (block.checkAll(obj)) {
                     continue;
                 }
 
@@ -240,7 +256,10 @@ export default {
             $oldList.html($list.html());
 
             const postNoIter = $oldList.find("td.gall_num");
-            $oldList.parent().toggleClass("empty", !postNoIter.length);
+
+            if (!isAlbumMode) {
+                $oldList.parent().toggleClass("empty", !postNoIter.length);
+            }
 
             for (const element of postNoIter) {
                 const $element = $(element);
