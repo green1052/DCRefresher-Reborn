@@ -110,12 +110,12 @@ export class User {
         const user = new User("", null, null, null);
         const $dom = $(dom);
 
-        if (!$dom.length) return user;
+        if (!dom || $dom.length) return user;
 
-        user.nick = $dom.data("nick") || "오류";
-        user.id = $dom.data("uid") || null;
+        user.nick = dom.dataset.nick || "오류";
+        user.id = dom.dataset.uid || null;
 
-        const ip = $dom.data("ip");
+        const ip = dom.dataset.ip;
         user.ip = ip ? String(ip) : null;
 
         user.icon = user.id
