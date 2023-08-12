@@ -110,7 +110,7 @@ class PostInfo implements IPostInfo {
         postInfo.isAdult = postInfo.dom.head.innerHTML.includes("/error/adult");
         postInfo.requireCaptcha = $dom.find(".recommend_kapcode").length > 0;
         postInfo.requireCommentCaptcha =
-            $dom.find(`.cmt_write_box input[name="comment_code"]`).length > 0;
+            $dom.find(".cmt_write_box input[name=comment_code]").length > 0;
 
         postInfo.disabledDownvote =
             $dom.find(".btn_recommend_box .down_num").length === 0;
