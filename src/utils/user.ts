@@ -110,7 +110,7 @@ export class User {
         const user = new User("", null, null, null);
         const $dom = $(dom);
 
-        if (!dom || $dom.length) return user;
+        if (!dom || !$dom.length) return user;
 
         user.nick = dom.dataset.nick || "오류";
         user.id = dom.dataset.uid || null;

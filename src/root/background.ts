@@ -5,7 +5,6 @@ import { SettingsStore } from "../core/settings";
 import storage from "../utils/storage";
 import ky from "ky";
 import browser from "webextension-polyfill";
-import { Buffer } from "buffer";
 
 const contextMenus: browser.Menus.CreateCreatePropertiesType[] = [
     {
@@ -180,41 +179,31 @@ browser.runtime.onMessage.addListener((message) => {
     );
 });
 
-async function getGeoIP(type: "ASN" | "Country", url: string): Promise<Buffer> {
-    try {
-        const buffer = await ky.get(url).arrayBuffer();
-        return Buffer.from(buffer);
-    } catch {
-        const buffer = await ky
-            .get(
-                browser.runtime.getURL(`/assets/GeoLite2/GeoLite2-${type}.mmdb`)
-            )
-            .arrayBuffer();
-        return Buffer.from(buffer);
-    }
-}
-
 browser.runtime.onInstalled.addListener((details) => {
     for (const contextMenu of contextMenus) {
         browser.contextMenus.create(contextMenu);
     }
 
-    getGeoIP(
-        "ASN",
-        "https://github.com/green1052/maxmind-geoip2/raw/master/dist/GeoLite2-ASN/GeoLite2-ASN.mmdb"
-    ).then((buffer) => {
-        storage.set("refresher.asn", Buffer.from(buffer).toString("base64"));
-    });
+    storage.remove("refresher.asn");
+    storage.remove("refresher.country");
 
-    getGeoIP(
-        "Country",
-        "https://github.com/green1052/maxmind-geoip2/raw/master/dist/GeoLite2-Country/GeoLite2-Country.mmdb"
-    ).then((buffer) => {
-        storage.set(
-            "refresher.country",
-            Buffer.from(buffer).toString("base64")
-        );
-    });
+    try {
+        ky.get(
+            "https://raw.githubusercontent.com/green1052/DCRefresher-Reborn/main/data/version"
+        )
+            .text()
+            .then((version) => {
+                storage.set("refresher.database.ip.version", version);
+            });
+
+        ky.get(
+            "https://raw.githubusercontent.com/green1052/DCRefresher-Reborn/main/data/ip.json"
+        )
+            .json()
+            .then((data) => {
+                storage.set("refresher.database.ip", data);
+            });
+    } catch {}
 
     if (details.reason === "install") {
         storage.set("refresher.firstInstall", true);
