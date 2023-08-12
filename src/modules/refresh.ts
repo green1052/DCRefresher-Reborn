@@ -143,7 +143,7 @@ export default {
             addRefreshText(element);
         });
 
-        const isPostView = location.pathname === "/board/view/";
+        const isPostView = location.pathname.endsWith("/board/view/");
         const currentPostNo = new URLSearchParams(location.href).get("no");
         const isAlbumMode =
             new URLSearchParams(location.href).get("board_type") === "album";
@@ -281,6 +281,7 @@ export default {
 
                 if (isPostView && currentPostNo === value) {
                     $element
+                        .empty()
                         .append(`<span class="sp_img crt_icon"></span>`)
                         .parent()
                         .addClass("crt");
