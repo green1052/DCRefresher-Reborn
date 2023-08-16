@@ -16,7 +16,7 @@
 
 GitHub 아이디가 없는 경우 해당 디스코드 채널에서 개선사항 및 오류를 제보할 수 있습니다.  
 
-[초대 링크](https://shorter.green1052.com/drd)
+[초대 링크](https://discord.gg/SSW6Zuyjz6)
 
 ## 기능
 
@@ -24,9 +24,9 @@ GitHub 아이디가 없는 경우 해당 디스코드 채널에서 개선사항 
 
 ## 설치
 
-Chrome: https://shorter.green1052.com/drc
+Chrome: https://chrome.google.com/webstore/detail/dcrefresher-reborn/pmfifcbendahnkeojgpfppklgioemgon
 
-Firefox: https://shorter.green1052.com/dra
+Firefox: https://addons.mozilla.org/ko/firefox/addon/dcrefresher-reborn
 
 ## 마이그레이션
 
