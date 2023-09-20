@@ -6,7 +6,7 @@
 
 [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fgreen1052%2FDCRefresher-Reborn&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
 
-원본: [DCRefresher](https://github.com/refresherdev/DCRefresher)
+원본: DCRefresher
 
 디시인사이드 개선 확장 프로그램
 
@@ -16,7 +16,7 @@
 
 GitHub 아이디가 없는 경우 해당 디스코드 채널에서 개선사항 및 오류를 제보할 수 있습니다.  
 
-[초대 링크](https://shorter.green1052.com/drd)
+[초대 링크](https://discord.gg/SSW6Zuyjz6)
 
 ## 기능
 
@@ -24,9 +24,9 @@ GitHub 아이디가 없는 경우 해당 디스코드 채널에서 개선사항 
 
 ## 설치
 
-Chrome: https://shorter.green1052.com/drc
+Chrome: https://chrome.google.com/webstore/detail/dcrefresher-reborn/pmfifcbendahnkeojgpfppklgioemgon
 
-Firefox: https://shorter.green1052.com/dra
+Firefox: https://addons.mozilla.org/ko/firefox/addon/dcrefresher-reborn
 
 ## 마이그레이션
 
