@@ -559,11 +559,11 @@
                 links: [
                     {
                         text: "GitHub",
-                        url: "https://shorter.green1052.com/drg"
+                        url: "https://github.com/green1052/DCRefresher-Reborn"
                     },
                     {
                         text: "Discord",
-                        url: "https://shorter.green1052.com/drd"
+                        url: "https://discord.gg/SSW6Zuyjz6"
                     }
                 ],
                 ipDatabaseVersion: ""
