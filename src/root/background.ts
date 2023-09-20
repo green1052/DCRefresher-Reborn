@@ -180,9 +180,11 @@ browser.runtime.onMessage.addListener((message) => {
 });
 
 browser.runtime.onInstalled.addListener((details) => {
-    for (const contextMenu of contextMenus) {
-        browser.contextMenus.create(contextMenu);
-    }
+    browser.contextMenus.removeAll().then(() => {
+        for (const contextMenu of contextMenus) {
+            browser.contextMenus.create(contextMenu);
+        }
+    });
 
     storage.remove("refresher.asn");
     storage.remove("refresher.country");
