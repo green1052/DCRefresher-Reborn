@@ -123,6 +123,7 @@ export async function submitComment(
 
     params.set("name", user.name);
     if (user.pw) params.set("password", user.pw);
+    params.set("use_gall_nick", "N");
 
     if (captcha) params.set("code", captcha);
 
