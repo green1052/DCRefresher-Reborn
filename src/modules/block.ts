@@ -11,7 +11,6 @@ export default {
     memory: {
         uuid: null,
         uuid2: null,
-        uuid3: null,
         selected: {
             nick: null,
             uid: null,
@@ -158,81 +157,6 @@ export default {
             }
         );
 
-        this.memory.uuid3 = filter.add(
-            "#package_detail",
-            (element) => {
-                const $element = $(element);
-                if ($element.data("refresherDcconBlock") === "true") return;
-
-                for (const image of $element.find(".img_dccon > img")) {
-                    const $image = $(image);
-
-                    $image.on("contextmenu", () => {
-                        const code = $image
-                            .attr("src")!
-                            .replace(/^.*no=/g, "")
-                            .replace(/^&.*$/g, "");
-
-                        this.memory.selected = {
-                            nick: null,
-                            uid: null,
-                            ip: null,
-                            code,
-                            packageIdx: null
-                        };
-                        this.memory.lastSelect = Date.now();
-                    });
-                }
-
-                const button = $(
-                    `<button style="margin-left: 5px" type="button" class="btn_blue small">전체 차단</button>`
-                );
-                button.on("click", () => {
-                    const code = $element
-                        .find(".info_viewimg > img")
-                        .attr("src")!
-                        .replace(/^.*no=/g, "")
-                        .replace(/^&.*$/g, "");
-
-                    const params = new URLSearchParams();
-                    params.set("ci_t", Cookies.get("ci_c") ?? "");
-                    params.set("code", code);
-
-                    ky.post(http.urls.dccon.detail, {
-                        headers: {
-                            "X-Requested-With": "XMLHttpRequest"
-                        },
-                        body: params
-                    })
-                        .json<any>()
-                        .then((json) => {
-                            const title = json.info.title;
-                            const packageIdx = json.info.package_idx;
-
-                            for (const { path } of json.detail) {
-                                block.add(
-                                    "DCCON",
-                                    path,
-                                    false,
-                                    undefined,
-                                    `${title} [${packageIdx}]`
-                                );
-                            }
-
-                            Toast.show(
-                                `${block.TYPE_NAMES["DCCON"]} 묶음을 차단했습니다.`,
-                                false,
-                                3000
-                            );
-                        });
-                });
-
-                $(".btn_buy").before(button);
-                $element.data("refresherDcconBlock", "true");
-            },
-            { neverExpire: true }
-        );
-
         this.memory.addBlock = eventBus.on(
             "refresherUserContextMenu",
             (
@@ -253,75 +177,96 @@ export default {
             }
         );
 
-        this.memory.requestBlock = eventBus.on("refresherRequestBlock", () => {
-            if (Date.now() - this.memory.lastSelect > 10000) {
-                return;
+        this.memory.requestBlock = eventBus.on(
+            "refresherRequestBlock",
+            ({ blockAllDccon }) => {
+                if (Date.now() - this.memory.lastSelect > 10000) {
+                    return;
+                }
+
+                const code = this.memory.selected.code;
+
+                if (code) {
+                    const params = new URLSearchParams();
+                    params.set("ci_t", Cookies.get("ci_c") ?? "");
+                    params.set("code", code);
+
+                    ky.post(http.urls.dccon.detail, {
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        },
+                        body: params
+                    })
+                        .json<any>()
+                        .then((json) => {
+                            const title = json.info.title;
+                            const packageIdx = json.info.package_idx;
+
+                            if (blockAllDccon) {
+                                for (const { path } of json.detail) {
+                                    block.add(
+                                        "DCCON",
+                                        path,
+                                        false,
+                                        undefined,
+                                        `${title} [${packageIdx}]`
+                                    );
+                                }
+
+                                Toast.show(
+                                    `${title} ${block.TYPE_NAMES["DCCON"]} 묶음을 차단했습니다.`,
+                                    false,
+                                    3000
+                                );
+
+                                return;
+                            }
+
+                            block.add(
+                                "DCCON",
+                                code,
+                                false,
+                                undefined,
+                                `${title} [${packageIdx}]`
+                            );
+
+                            Toast.show(
+                                `${title} ${block.TYPE_NAMES["DCCON"]}을 차단했습니다.`,
+                                false,
+                                3000
+                            );
+                        });
+
+                    return;
+                }
+
+                let type: RefresherBlockType = "NICK";
+                let value = this.memory.selected.nick;
+                const extra = this.memory.selected.nick;
+
+                if (this.memory.selected.uid) {
+                    type = "ID";
+                    value = this.memory.selected.uid;
+                } else if (this.memory.selected.ip) {
+                    type = "IP";
+                    value = this.memory.selected.ip;
+                }
+
+                if (!value || !extra) return;
+
+                block.add(type, value, false, undefined, extra);
+                Toast.show(
+                    `${block.TYPE_NAMES[type]} ${value}을(를) 차단했습니다.`,
+                    false,
+                    3000
+                );
             }
-
-            const code = this.memory.selected.code;
-
-            if (code) {
-                const params = new URLSearchParams();
-                params.set("ci_t", Cookies.get("ci_c") ?? "");
-                params.set("code", code);
-
-                ky.post(http.urls.dccon.detail, {
-                    headers: {
-                        "X-Requested-With": "XMLHttpRequest"
-                    },
-                    body: params
-                })
-                    .json<any>()
-                    .then((json) => {
-                        const title = json.info.title;
-                        const packageIdx = json.info.package_idx;
-
-                        block.add(
-                            "DCCON",
-                            code,
-                            false,
-                            undefined,
-                            `${title} [${packageIdx}]`
-                        );
-
-                        Toast.show(
-                            `${block.TYPE_NAMES["DCCON"]}을 차단했습니다.`,
-                            false,
-                            3000
-                        );
-                    });
-
-                return;
-            }
-
-            let type: RefresherBlockType = "NICK";
-            let value = this.memory.selected.nick;
-            const extra = this.memory.selected.nick;
-
-            if (this.memory.selected.uid) {
-                type = "ID";
-                value = this.memory.selected.uid;
-            } else if (this.memory.selected.ip) {
-                type = "IP";
-                value = this.memory.selected.ip;
-            }
-
-            if (!value || !extra) return;
-
-            block.add(type, value, false, undefined, extra);
-            Toast.show(
-                `${block.TYPE_NAMES[type]} ${value}을(를) 차단했습니다.`,
-                false,
-                3000
-            );
-        });
+        );
     },
     revoke(filter: RefresherFilter) {
         if (this.memory.uuid) filter.remove(this.memory.uuid);
 
         if (this.memory.uuid2) filter.remove(this.memory.uuid2);
-
-        if (this.memory.uuid3) filter.remove(this.memory.uuid3);
 
         if (this.memory.addBlock) filter.remove(this.memory.addBlock);
 
@@ -331,7 +276,6 @@ export default {
     memory: {
         uuid: string | null;
         uuid2: string | null;
-        uuid3: string | null;
         selected: {
             nick: string | null;
             uid: string | null;

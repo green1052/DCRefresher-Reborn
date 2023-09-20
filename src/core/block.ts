@@ -331,6 +331,10 @@ communicate.addHook("dcconSelected", () => {
     eventBus.emit("refresherRequestBlock");
 });
 
+communicate.addHook("dcconAllSelected", () => {
+    eventBus.emit("refresherRequestBlock", { blockAllDccon: true });
+});
+
 communicate.addHook("updateBlocks", (data) => {
     setStore(data.blocks, data.modes);
 });
