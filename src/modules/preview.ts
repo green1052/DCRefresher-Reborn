@@ -1907,11 +1907,11 @@ export default {
 
             let appStore: RefresherFrameAppVue;
             let groupStore: HTMLElement;
-
-            const detector = new ScrollDetection();
             let scrolledCount = 0;
 
             if (!frame) {
+                const detector = new ScrollDetection();
+
                 frame = new Frame(
                     [
                         {
@@ -1977,8 +1977,9 @@ export default {
 
                         scrolledCount = 0;
 
-                        preData.id = (Number(preData.id) - 1).toString();
-
+                        preData.id = (
+                            Number(postFetchedData.id) - 1
+                        ).toString();
                         newPostWithData(preData, historySkip);
                         groupStore.scrollTop = 0;
                         appStore.clearScrollMode();
@@ -1999,10 +2000,9 @@ export default {
 
                         scrolledCount = 0;
 
-                        if (!frame || !frame.app.first().error) {
-                            preData.id = (Number(preData.id) + 1).toString();
-                        }
-
+                        preData.id = (
+                            Number(postFetchedData.id) + 1
+                        ).toString();
                         newPostWithData(preData, historySkip);
 
                         groupStore.scrollTop = 0;
