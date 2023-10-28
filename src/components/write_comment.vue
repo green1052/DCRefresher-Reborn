@@ -21,7 +21,6 @@
                 class="refresher-input-wrap">
                 <textarea
                     id="comment_main"
-                    v-model="text"
                     :disabled="disabled"
                     :placeholder="
                         this.getDccon() === null
@@ -29,6 +28,7 @@
                             : '디시콘이 선택됐습니다, 댓글 내용이 무시됩니다.'
                     "
                     autocomplete="off"
+                    @input="updateText"
                     @blur="blur"
                     @focus="focus"
                     @keydown="type" />
@@ -176,6 +176,10 @@
             }
         },
         methods: {
+            updateText(ev: InputEvent) {
+                this.text = (ev.target as HTMLTextAreaElement).value;
+            },
+
             validCheck(type: string, value: string): void {
                 if (type === "id" && value.length < 1) {
                     Toast.show(
