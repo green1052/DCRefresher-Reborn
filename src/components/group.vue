@@ -35,13 +35,16 @@
                 return browser.runtime.getURL(url);
             },
 
-            clickScroll(e: MouseEvent, type: "up" | "down") {
+            clickScroll(ev: MouseEvent, type: "up" | "down") {
                 const y = type === "up" ? 0 : this.$el.scrollHeight;
                 this.$el.scroll(0, y);
             },
 
-            clickHandle(e: MouseEvent) {
-                if (e.target !== this.$el) return e;
+            clickHandle(ev: MouseEvent) {
+                if (ev.target !== this.$el) return ev;
+
+                if (window.getSelection()?.toString().length !== 0) return ev;
+
                 (this.$root.$children[0] as RefresherFrameAppVue).outerClick();
             },
 
