@@ -73,6 +73,7 @@
                                 class="version">
                                 IP 데이터베이스 버전: {{ ipDatabaseVersion }}
                                 <svg
+                                    style="cursor: pointer"
                                     xmlns="http://www.w3.org/2000/svg"
                                     viewBox="0 0 30 30"
                                     width="12px"
