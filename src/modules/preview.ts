@@ -1907,6 +1907,7 @@ export default {
 
             let appStore: RefresherFrameAppVue;
             let groupStore: HTMLElement;
+
             let scrolledCount = 0;
 
             if (!frame) {
