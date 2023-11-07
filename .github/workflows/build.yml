@@ -10,25 +10,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: latest
-          cache: yarn
+          cache: pnpm
 
       - name: Install Dependencies
-        run: yarn install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build Manifest v2
         run: |
-          yarn run build:mv2
+          pnpm run build:mv2
           (cd dist && zip -1 -r ../mv2.zip .)
 
       - name: Build Manifest v3
         run: |
-          yarn run build:mv3
+          pnpm run build:mv3
           (cd dist && zip -1 -r ../mv3.zip .)
 
       - name: Release
