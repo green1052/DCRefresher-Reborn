@@ -10,7 +10,8 @@
     ],
     "host_permissions": [
         "https://github.com/",
-        "https://*.dcinside.com/"
+        "https://*.dcinside.com/",
+        "https://dcrefresher-reborn-image-proxy.green1052.workers.dev/*"
     ],
     "background": {
         "service_worker": "background.js"
