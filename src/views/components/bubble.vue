@@ -4,12 +4,8 @@
             :class="{ image }"
             class="text"
             @click="safeTextClick">
-          <img
-              v-if="image && image.startsWith('https://dcimg5.dcinside.com')"
-              :src="getDccon(image)"
-          />
               <img
-                  v-else="image"
+                  v-if="image"
                   :src="image"/>
 
             {{ text }} {{ extra ? ` (${extra})` : "" }}
@@ -71,9 +67,6 @@ export default Vue.extend({
     }
   },
   methods: {
-    async getDccon(url: string) {
-      return URL.createObjectURL(await ky.get(url).blob());
-    },
     safeTextClick() {
       this.textclick?.();
     },
