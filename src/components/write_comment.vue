@@ -82,6 +82,7 @@
     import user from "./user.vue";
     import Vue from "vue";
     import { Nullable } from "../utils/types";
+    import $ from "cash-dom";
 
     interface WriteCommentData {
         focused: boolean;
@@ -240,6 +241,8 @@
                     }
 
                     this.disabled = false;
+
+                    $("#comment_main").val("");
                     this.text = "";
                     this.$emit("setDccon", null);
                     this.$emit("setReply", null);
