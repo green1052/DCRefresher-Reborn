@@ -1460,6 +1460,10 @@ tr .gall_writer {
     }
 
     .refresher-comment-content {
+        .written_dccon {
+            height: 100px;
+        }
+
         font-size: 14px;
     }
 }
