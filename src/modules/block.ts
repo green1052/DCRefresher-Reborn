@@ -179,7 +179,7 @@ export default {
 
         this.memory.requestBlock = eventBus.on(
             "refresherRequestBlock",
-            ({ blockAllDccon }) => {
+            (args?: Record<string, boolean>) => {
                 if (Date.now() - this.memory.lastSelect > 10000) {
                     return;
                 }
@@ -202,7 +202,7 @@ export default {
                             const title = json.info.title;
                             const packageIdx = json.info.package_idx;
 
-                            if (blockAllDccon) {
+                            if (args?.blockAllDccon) {
                                 for (const { path } of json.detail) {
                                     block.add(
                                         "DCCON",
