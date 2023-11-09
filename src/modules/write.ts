@@ -46,7 +46,7 @@ export default {
             default: ""
         },
         convertWebp: {
-            name: "WebP 변환",
+            name: "WebP 변환 (이미지 업로드 기능에서만 지원)",
             desc: "모든 이미지를 WebP로 변환합니다.",
             type: "check",
             default: false
