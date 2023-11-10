@@ -90,8 +90,8 @@ interface Message {
 if (browser.runtime.getManifest().manifest_version === 3) {
     setInterval(() => {
         // @ts-ignore
-        self.serviceWorker.postMessage("test");
-    }, 25000);
+        self.serviceWorker.postMessage("heartbeat");
+    }, 20000);
 }
 
 const messageHandler = (
@@ -196,6 +196,8 @@ browser.runtime.onInstalled.addListener((details) => {
     storage.remove("refresher.country");
 
     try {
+        throw "";
+
         ky.get(
             "https://raw.githubusercontent.com/green1052/DCRefresher-Reborn/main/data/version"
         )
@@ -211,7 +213,9 @@ browser.runtime.onInstalled.addListener((details) => {
             .then((data) => {
                 storage.set("refresher.database.ip", data);
             });
-    } catch {}
+    } catch {
+
+    }
 
     if (details.reason === "install") {
         storage.set("refresher.firstInstall", true);

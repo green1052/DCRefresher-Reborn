@@ -46,8 +46,8 @@ export default {
             default: ""
         },
         convertWebp: {
-            name: "WebP 변환 (이미지 업로드 기능에서만 지원)",
-            desc: "모든 이미지를 WebP로 변환합니다.",
+            name: "WebP 변환",
+            desc: "이미지 업로드 기능으로 업로드시 이미지를 WebP로 변환합니다.",
             type: "check",
             default: false
         },
@@ -55,7 +55,7 @@ export default {
             name: "WebP 변환 품질",
             desc: "WebP 변환 품질을 설정합니다.",
             type: "range",
-            default: 75,
+            default: 80,
             min: 0,
             max: 100,
             step: 1,

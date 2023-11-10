@@ -1,12 +1,12 @@
 import * as Toast from "../components/toast";
 import * as block from "../core/block";
-import { submitComment } from "../utils/comment";
-import { findNeighbor } from "../utils/dom";
+import {submitComment} from "../utils/comment";
+import {findNeighbor} from "../utils/dom";
 import * as http from "../utils/http";
-import { queryString } from "../utils/http";
+import {queryString} from "../utils/http";
 import log from "../utils/logger";
-import { ScrollDetection } from "../utils/scrollDetection";
-import { User } from "../utils/user";
+import {ScrollDetection} from "../utils/scrollDetection";
+import {User} from "../utils/user";
 import $ from "cash-dom";
 import Cookies from "js-cookie";
 import ky from "ky";
@@ -189,7 +189,7 @@ const request = {
         params.set("_GALLTYPE_", http.galleryTypeName(link));
         params.set("link_id", gall_id);
 
-        const response = await client(http.urls.vote, { body: params }).text();
+        const response = await client(http.urls.vote, {body: params}).text();
 
         const [result, counts, fixedCounts] = response.split("||");
 
@@ -211,7 +211,7 @@ const request = {
                 `${http.urls.base}${http.galleryType(link, "/")}${
                     http.urls.view
                 }${gallery}&no=${id}`,
-                { signal }
+                {signal}
             )
             .text();
         return PostInfo.parse(id, response);
@@ -386,7 +386,7 @@ const request = {
         params.set("kcaptcha_type", kcaptchaType);
         params.set("_GALLTYPE_", galleryTypeName);
 
-        await client(http.urls.captcha, { body: params });
+        await client(http.urls.captcha, {body: params});
 
         return (
             "/kcaptcha/image/?gall_id=" +
@@ -422,7 +422,7 @@ const request = {
         params.set("pno", preData.id);
         params.set("cmt_nos[]", commentId);
 
-        return client(url, { body: params, signal })
+        return client(url, {body: params, signal})
             .text()
             .then((v) => v)
             .catch(() => false);
@@ -452,7 +452,7 @@ const request = {
             params.set("&g-recaptcha-response", password);
         }
 
-        return client(http.urls.comment_remove, { body: params, signal })
+        return client(http.urls.comment_remove, {body: params, signal})
             .text()
             .then((v) => v)
             .catch(() => false);
@@ -933,22 +933,22 @@ const getRelevantData = (ev: MouseEvent) => {
         linkElement = isTR
             ? target.querySelector<HTMLLinkElement>("a:not(.reply_numbox)")
             : (findNeighbor(
-                  target,
-                  "a:not(.reply_numbox)",
-                  3,
-                  null
-              ) as HTMLLinkElement);
+                target,
+                "a:not(.reply_numbox)",
+                3,
+                null
+            ) as HTMLLinkElement);
 
         if (linkElement) title = linkElement.innerText;
     } else {
         linkElement = isTR
             ? target.querySelector<HTMLLinkElement>("a")
             : (findNeighbor(
-                  ev.target as HTMLElement,
-                  "a",
-                  2,
-                  null
-              ) as HTMLLinkElement);
+                ev.target as HTMLElement,
+                "a",
+                2,
+                null
+            ) as HTMLLinkElement);
 
         const pt = isTR
             ? target.querySelector(".txt_box")
@@ -984,18 +984,21 @@ interface Cache {
     date: number;
     post?: PostInfo;
     comment?: DcinsideComments;
+    deleted?: boolean;
 }
 
 class PostCache {
     #caches: Record<string, Cache> = {};
 
-    constructor(public maxCacheSize: number = 50) {}
+    constructor(public maxCacheSize: number = 100) {
+    }
 
     public get(id: string): Cache | undefined {
         const cache = this.#caches[id];
 
         if (!cache) return undefined;
 
+        // 1분이 지나면 캐시를 삭제합니다.
         if (Date.now() - cache.date > 1000 * 60) {
             this.delete(id);
             return undefined;
@@ -1150,6 +1153,7 @@ const miniPreview: MiniPreview = {
             miniPreview.controller = new AbortController();
         }
 
+        miniPreview.element.querySelector(".refresher-mini-preview-contents")!.innerHTML = "";
         miniPreview.element.classList.add("hide");
     }
 };
@@ -1279,6 +1283,12 @@ export default {
             desc: "캐시를 사용하지 않습니다. (툴팁 미리보기 제외)",
             type: "check",
             default: false
+        },
+        archiveArticle: {
+            name: "삭제된 글 & 댓글 보존",
+            desc: "삭제된 글과 댓글을 보존합니다. (캐시 비활성화 시 작동 안함)",
+            type: "check",
+            default: false
         }
     },
     update: {
@@ -1318,7 +1328,7 @@ export default {
 
                 if (!historySkip) {
                     history.pushState(
-                        { preData, preURL: location.href },
+                        {preData, preURL: location.href},
                         title,
                         preData.link
                     );
@@ -1440,7 +1450,7 @@ export default {
                             if (!historySkip) {
                                 preData.title = postInfo.title;
                                 history.replaceState(
-                                    { preData, preURL: location.href },
+                                    {preData, preURL: location.href},
                                     title,
                                     preData.link
                                 );
@@ -1608,10 +1618,10 @@ export default {
 
                     return codeSrc
                         ? await panel.captcha(
-                              codeSrc,
-                              req,
-                              this.status.bypassCaptcha
-                          )
+                            codeSrc,
+                            req,
+                            this.status.bypassCaptcha
+                        )
                         : req();
                 };
 
@@ -1619,7 +1629,7 @@ export default {
                     clearInterval(this.memory.refreshIntervalId);
 
                 this.memory.refreshIntervalId = window.setInterval(() => {
-                    if (this.status.autoRefreshComment) frame.functions.retry();
+                    if (this.status.autoRefreshComment) frame.functions.retry(false);
                 }, this.status.commentRefreshInterval * 1000);
             });
 
@@ -1659,11 +1669,11 @@ export default {
                     admin && !password
                         ? request.adminDeleteComment(preData, commentId, signal)
                         : request.userDeleteComment(
-                              preData,
-                              commentId,
-                              signal,
-                              password
-                          )
+                            preData,
+                            commentId,
+                            signal,
+                            password
+                        )
                 )
                     .then((v) => {
                         if (typeof v === "boolean") {
@@ -1703,7 +1713,7 @@ export default {
                             }
                         }
 
-                        frame.functions.load();
+                        frame.functions.retry()
 
                         return true;
                     })
@@ -1740,22 +1750,66 @@ export default {
                                 return;
                             }
 
-                            postCaches.set(`${preData.gallery}${preData.id}`, {
-                                date: Date.now(),
-                                comment: response
-                            });
                             resolve(response);
                         });
                 })
                     .then((comments) => {
                         let threadCounts = 0;
 
-                        if (comments.comments !== null) {
+                        if (comments.comments) {
+                            const cache = postCaches.get(`${preData.gallery}${preData.id}`);
+                            const cacheComment = cache?.comment?.comments;
+
                             comments.comments = comments.comments.filter(
                                 (v: DcinsideCommentObject) => {
                                     return v.nicktype !== "COMMENT_BOY";
                                 }
                             );
+
+                            if (this.status.archiveArticle && cacheComment) {
+                                cacheComment.forEach((v: DcinsideCommentObject) => {
+                                    if (!comments.comments!.find((c: DcinsideCommentObject) => c.no === v.no)) {
+                                        v.is_delete = "1";
+
+                                        if (v.depth === 1) {
+                                            const copy = [...comments.comments!];
+
+                                            let findReply = false;
+                                            let isBig = false;
+                                            const parent = copy.reverse().find((c: DcinsideCommentObject) => {
+                                                if (c.c_no === v.c_no) {
+                                                    if (c.no > v.no) {
+                                                        isBig = true
+                                                    }
+
+                                                    findReply = true;
+                                                    return true;
+                                                }
+
+                                                return c.no === v.c_no;
+                                            });
+                                            comments.comments!.splice(comments.comments!.indexOf(parent!) + (findReply && isBig ? 0 : 1), 0, v);
+                                            return;
+                                        }
+
+                                        comments.comments!.push(v);
+                                    }
+
+
+                                    // TODO: 리렌더링 안됨
+                                    const orgIndex = comments.comments!.findIndex((c: DcinsideCommentObject) => c.no === v.no && c.is_delete !== "0");
+
+                                    if (orgIndex !== -1) {
+                                        v.is_delete = "2"
+                                        comments.comments!.splice(orgIndex, 1, v);
+                                    }
+                                });
+                            }
+
+                            postCaches.set(`${preData.gallery}${preData.id}`, {
+                                date: Date.now(),
+                                comment: comments
+                            });
 
                             comments.comments.map(
                                 (v: DcinsideCommentObject) => {
@@ -2160,7 +2214,7 @@ export default {
                 this.status.expandRecognizeRange ? "" : " .ub-word"
             }`,
             addHandler,
-            { neverExpire: true }
+            {neverExpire: true}
         );
         this.memory.uuid2 = filter.add("#right_issuezoom", addHandler);
 
@@ -2229,6 +2283,7 @@ export default {
         experimentalComment: RefresherCheckSettings;
         bypassCaptcha: RefresherCheckSettings;
         disableCache: RefresherCheckSettings;
+        archiveArticle: RefresherCheckSettings;
     };
     require: ["filter", "eventBus", "Frame", "http"];
 }>;
