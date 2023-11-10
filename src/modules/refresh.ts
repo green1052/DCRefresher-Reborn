@@ -1,6 +1,6 @@
 import * as Toast from "../components/toast";
 import * as block from "../core/block";
-import { queryString } from "../utils/http";
+import {queryString} from "../utils/http";
 import $ from "cash-dom";
 import ky from "ky";
 

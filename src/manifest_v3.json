@@ -1,71 +1,80 @@
 {
-    "name": "DCRefresher Reborn",
-    "short_name": "DCRefresher Reborn",
-    "manifest_version": 3,
-    "permissions": [
-        "activeTab",
-        "storage",
-        "unlimitedStorage",
-        "contextMenus"
-    ],
-    "host_permissions": [
-        "https://github.com/",
-        "https://*.dcinside.com/",
-        "https://image.dcinside.com/*"
-    ],
-    "background": {
-        "service_worker": "background.js"
+  "name": "DCRefresher Reborn",
+  "short_name": "DCRefresher Reborn",
+  "manifest_version": 3,
+  "permissions": [
+    "activeTab",
+    "storage",
+    "unlimitedStorage",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "https://github.com/",
+    "https://*.dcinside.com/",
+    "https://image.dcinside.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_icon": {
+      "128": "assets/icons/logo/icon_40pt@3x.png",
+      "180": "assets/icons/logo/icon_60pt@3x.png",
+      "1024": "assets/icons/logo/Icon.png"
     },
-    "action": {
-        "default_icon": {
-            "128": "assets/icons/logo/icon_40pt@3x.png",
-            "180": "assets/icons/logo/icon_60pt@3x.png",
-            "1024": "assets/icons/logo/Icon.png"
-        },
-        "default_popup": "views/index.html"
-    },
-    "icons": {
-        "120": "assets/icons/logo/icon_40pt@3x.png",
-        "180": "assets/icons/logo/icon_60pt@3x.png",
-        "1024": "assets/icons/logo/Icon.png"
-    },
-    "options_page": "views/index.html",
-    "web_accessible_resources": [
-        {
-            "resources": ["assets/*", "popup/*"],
-            "matches": ["<all_urls>"]
-        }
-    ],
-    "content_scripts": [
-        {
-            "js": ["refresher.bundle.js"],
-            "css": ["refresher.bundle.css"],
-            "matches": [
-                "https://mall.dcinside.com/*",
-                "https://gall.dcinside.com/*",
-                "https://gallog.dcinside.com/*"
-            ],
-            "run_at": "document_start"
-        }
-    ],
-    "commands": {
-        "refreshLists": {
-            "suggested_key": {
-                "default": "Alt+R"
-            },
-            "description": "글 목록 새로고침: 새로고침"
-        },
-        "refreshPause": {
-            "suggested_key": {
-                "default": "Alt+S"
-            },
-            "description": "글 목록 새로고침: 일시 비활성화"
-        },
-        "stealthPause": {
-            "suggested_key": {
-                "default": "Alt+P"
-            },
-            "description": "스텔스 모드: 일시 비활성화"
-        }
+    "default_popup": "views/index.html"
+  },
+  "icons": {
+    "120": "assets/icons/logo/icon_40pt@3x.png",
+    "180": "assets/icons/logo/icon_60pt@3x.png",
+    "1024": "assets/icons/logo/Icon.png"
+  },
+  "options_page": "views/index.html",
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/*",
+        "popup/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
+  ],
+  "content_scripts": [
+    {
+      "js": [
+        "refresher.bundle.js"
+      ],
+      "css": [
+        "refresher.bundle.css"
+      ],
+      "matches": [
+        "https://mall.dcinside.com/*",
+        "https://gall.dcinside.com/*",
+        "https://gallog.dcinside.com/*"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "commands": {
+    "refreshLists": {
+      "suggested_key": {
+        "default": "Alt+R"
+      },
+      "description": "글 목록 새로고침: 새로고침"
+    },
+    "refreshPause": {
+      "suggested_key": {
+        "default": "Alt+S"
+      },
+      "description": "글 목록 새로고침: 일시 비활성화"
+    },
+    "stealthPause": {
+      "suggested_key": {
+        "default": "Alt+P"
+      },
+      "description": "스텔스 모드: 일시 비활성화"
+    }
+  }
 }

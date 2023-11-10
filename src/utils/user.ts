@@ -1,7 +1,7 @@
 import * as ip from "./ip";
 import * as memo from "../core/memo";
 import $ from "cash-dom";
-import type { Nullable, ObjectEnum } from "./types";
+import type {Nullable, ObjectEnum} from "./types";
 
 export type UserType =
     | "UNFIXED"
@@ -98,14 +98,6 @@ export class User {
         this.ip_data = ip.format(ispData);
     }
 
-    getMemo(): void {
-        this.memo = this.id
-            ? memo.get("UID", this.id)
-            : this.ip
-            ? memo.get("IP", this.ip)
-            : memo.get("NICK", this.nick);
-    }
-
     static fromDom(dom: HTMLElement | null): User {
         const user = new User("", null, null, null);
         const $dom = $(dom);
@@ -126,6 +118,14 @@ export class User {
         user.getMemo();
 
         return user;
+    }
+
+    getMemo(): void {
+        this.memo = this.id
+            ? memo.get("UID", this.id)
+            : this.ip
+                ? memo.get("IP", this.ip)
+                : memo.get("NICK", this.nick);
     }
 
     isLogout(): boolean {

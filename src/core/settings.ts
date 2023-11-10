@@ -1,4 +1,4 @@
-import { eventBus } from "./eventbus";
+import {eventBus} from "./eventbus";
 import storage from "../utils/storage";
 import browser from "webextension-polyfill";
 

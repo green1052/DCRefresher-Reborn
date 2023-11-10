@@ -55,7 +55,7 @@ yarn build:mv3
 
 모듈 파일은 오직 하나의 `RefresherModule` 형식의 객체를 가집니다.
 
-객체에 들어가야할 값들은 `src/@types/module.ts` 파일에 `RefresherModule`라는 
+객체에 들어가야할 값들은 `src/@types/module.ts` 파일에 `RefresherModule`라는
 
 이름의 interface로 정의되어 있으며, 해당 interface를 참고하시며 개발하시면 도움이 되실겁니다.
 

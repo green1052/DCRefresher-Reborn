@@ -1,9 +1,9 @@
 import * as communicate from "./communicate";
-import { eventBus } from "./eventbus";
+import {eventBus} from "./eventbus";
 import log from "../utils/logger";
 import storage from "../utils/storage";
 import browser from "webextension-polyfill";
-import type { ObjectEnum } from "../utils/types";
+import type {ObjectEnum} from "../utils/types";
 
 const BLOCK_NAMESPACE = "__REFRESHER_BLOCK";
 
@@ -332,7 +332,7 @@ communicate.addHook("dcconSelected", () => {
 });
 
 communicate.addHook("dcconAllSelected", () => {
-    eventBus.emit("refresherRequestBlock", { blockAllDccon: true });
+    eventBus.emit("refresherRequestBlock", {blockAllDccon: true});
 });
 
 communicate.addHook("updateBlocks", (data) => {

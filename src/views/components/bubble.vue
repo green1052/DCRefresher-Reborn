@@ -33,7 +33,6 @@
 
 <script lang="ts">
 import Vue from "vue";
-import ky from "ky";
 
 export default Vue.extend({
   name: "refresher-bubble",

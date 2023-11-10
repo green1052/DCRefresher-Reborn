@@ -1,6 +1,6 @@
 import "./styles/index.scss";
-import { filter } from "./core/filtering";
-import { modules } from "./core/modules";
+import {filter} from "./core/filtering";
+import {modules} from "./core/modules";
 import log from "./utils/logger";
 import "./core/block";
 

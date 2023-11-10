@@ -1,7 +1,7 @@
-import { BlockCache, BlockModeCache } from "../core/block";
-import { MemoCache } from "../core/memo";
-import { ModuleStore } from "../core/modules";
-import { SettingsStore } from "../core/settings";
+import {BlockCache, BlockModeCache} from "../core/block";
+import {MemoCache} from "../core/memo";
+import {ModuleStore} from "../core/modules";
+import {SettingsStore} from "../core/settings";
 import storage from "../utils/storage";
 import ky from "ky";
 import browser from "webextension-polyfill";
@@ -154,11 +154,11 @@ const messageHandler = (
     }
 
     if (message.requestRefresherModules) {
-        port?.postMessage({ responseRefresherModules: true, modules });
+        port?.postMessage({responseRefresherModules: true, modules});
     }
 
     if (message.requestRefresherSettings) {
-        port?.postMessage({ responseRefresherSettings: true, settings });
+        port?.postMessage({responseRefresherSettings: true, settings});
     }
 
     if (message.requestRefresherBlocks) {
@@ -170,7 +170,7 @@ const messageHandler = (
     }
 
     if (message.requestRefresherMemos) {
-        port?.postMessage({ requestRefresherMemos: true, memos });
+        port?.postMessage({requestRefresherMemos: true, memos});
     }
 };
 
@@ -196,8 +196,6 @@ browser.runtime.onInstalled.addListener((details) => {
     storage.remove("refresher.country");
 
     try {
-        throw "";
-
         ky.get(
             "https://raw.githubusercontent.com/green1052/DCRefresher-Reborn/main/data/version"
         )
@@ -231,7 +229,7 @@ browser.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 browser.commands.onCommand.addListener((command) => {
-    browser.tabs.query({ currentWindow: true, active: true }).then((tabs) => {
+    browser.tabs.query({currentWindow: true, active: true}).then((tabs) => {
         browser.tabs.sendMessage(tabs[0].id!, {
             type: "executeShortcut",
             data: command

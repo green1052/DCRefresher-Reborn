@@ -1,83 +1,83 @@
 .refresher-memo-frame {
-    .head {
-        font-size: 20px;
-        font-weight: bold;
-        margin-bottom: 5px;
+  .head {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+
+  .mute {
+    font-size: 14px;
+    font-weight: normal;
+    opacity: 0.7;
+  }
+
+  .memo-row {
+    margin-bottom: 25px;
+  }
+
+  .refresher-input-wrap {
+    width: 100%;
+  }
+
+  .memo-user-type {
+    position: relative;
+    display: flex;
+    height: 45px;
+    width: 100%;
+    display: flex;
+
+    .user-type {
+      flex: 1;
+      margin-right: 10px;
+      display: flex;
+      min-width: 100px;
+      min-height: 45px;
+
+      p {
+        margin: auto;
+      }
+
+      border-radius: 13.3px;
+      background-color: rgba(90, 90, 90, 0.08);
+      cursor: pointer;
+
+      &.active {
+        background-color: rgba(90, 90, 90, 0.22);
+        transition: 0.3s all cubic-bezier(0.19, 1, 0.22, 1);
+      }
+
+      &.disable {
+        background-color: rgba(90, 90, 90, 0.04);
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
     }
+  }
 
-    .mute {
-        font-size: 14px;
-        font-weight: normal;
-        opacity: 0.7;
+  .button-wrap {
+    display: flex;
+    margin-left: auto;
+    width: fit-content;
+  }
+
+  .refresher-preview-button {
+    p {
+      margin: auto;
     }
-
-    .memo-row {
-        margin-bottom: 25px;
-    }
-
-    .refresher-input-wrap {
-        width: 100%;
-    }
-
-    .memo-user-type {
-        position: relative;
-        display: flex;
-        height: 45px;
-        width: 100%;
-        display: flex;
-
-        .user-type {
-            flex: 1;
-            margin-right: 10px;
-            display: flex;
-            min-width: 100px;
-            min-height: 45px;
-
-            p {
-                margin: auto;
-            }
-
-            border-radius: 13.3px;
-            background-color: rgba(90, 90, 90, 0.08);
-            cursor: pointer;
-
-            &.active {
-                background-color: rgba(90, 90, 90, 0.22);
-                transition: 0.3s all cubic-bezier(0.19, 1, 0.22, 1);
-            }
-
-            &.disable {
-                background-color: rgba(90, 90, 90, 0.04);
-                opacity: 0.6;
-                cursor: not-allowed;
-            }
-        }
-    }
-
-    .button-wrap {
-        display: flex;
-        margin-left: auto;
-        width: fit-content;
-    }
-
-    .refresher-preview-button {
-        p {
-            margin: auto;
-        }
-    }
+  }
 }
 
 .refresherDark {
-    .memo-user-type {
-        .user-type {
-            &.active {
-                background-color: rgba(255, 255, 255, 0.22);
-            }
+  .memo-user-type {
+    .user-type {
+      &.active {
+        background-color: rgba(255, 255, 255, 0.22);
+      }
 
-            &.disable {
-                background-color: rgba(255, 255, 255, 0.06);
-                opacity: 0.6;
-            }
-        }
+      &.disable {
+        background-color: rgba(255, 255, 255, 0.06);
+        opacity: 0.6;
+      }
     }
+  }
 }
