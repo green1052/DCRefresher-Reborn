@@ -188,7 +188,7 @@
                             <Comment
                                 v-for="(comment, i) in frame.data.comments
                                     .comments"
-                                :key="`cmt_${comment.no}`"
+                                :key="`cmt_${Math.random()}`"
                                 :comment="comment"
                                 :delete="frame.functions.deleteComment"
                                 :getReply="getReply"
@@ -317,7 +317,7 @@
             },
 
             retry() {
-                return this.frame.functions.retry();
+                return this.frame.functions.retry(false);
             },
 
             async writeComment(...args: any[]) {
@@ -415,6 +415,6 @@
         },
         updated() {
             this.$el.scroll(0, 0);
-        }
+        },
     });
 </script>

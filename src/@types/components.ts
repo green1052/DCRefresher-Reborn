@@ -34,16 +34,17 @@ declare global {
     interface DcinsideCommentObject {
         del_btn: "Y" | "N";
         no: string;
+        c_no: 0 | string;
         parent: string;
         name: string;
         ip: string;
-        is_delete: "0" | "1";
+        is_delete: string;
         user_id: string;
         my_cmt: "Y" | "N";
         user: User;
         nicktype: string;
         memo: string;
-        depth: number;
+        depth: 0 | 1;
         vr_player: boolean | string;
         gallog_icon: string;
         vr_player_tag: string;

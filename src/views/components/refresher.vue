@@ -358,7 +358,7 @@
                             :key="`block:${i}`"
                             :extra="blocked.extra"
                             :gallery="blocked.gallery"
-                            :image="`https://dcrefresher-reborn-image-proxy.green1052.workers.dev?no=${blocked.content}`"
+                            :image="`https://image.dcinside.com/dccon.php?no=${blocked.content}`"
                             :regex="blocked.isRegex"
                             :remove="() => removeBlockedUser(key, i)"
                             :textclick="() => editBlockedUser(key, i)" />

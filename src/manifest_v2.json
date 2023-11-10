@@ -5,7 +5,7 @@
     "permissions": [
         "https://github.com/*",
         "https://*.dcinside.com/*",
-        "https://dcrefresher-reborn-image-proxy.green1052.workers.dev/*",
+        "https://image.dcinside.com/*",
         "activeTab",
         "storage",
         "unlimitedStorage",
