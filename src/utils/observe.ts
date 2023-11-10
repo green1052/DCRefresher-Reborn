@@ -1,5 +1,3 @@
-import $ from "cash-dom";
-
 export const find = (
     elem: string,
     parent: HTMLElement

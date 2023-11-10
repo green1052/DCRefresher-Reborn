@@ -6,7 +6,7 @@ export const get = <T>(key?: string | null): Promise<T> =>
     storage.get(key).then((value) => (key ? value[key] : value));
 
 export const set = <T>(key: string, value: T): Promise<void> =>
-    storage.set({ [key]: value });
+    storage.set({[key]: value});
 
 export const remove = (keys: string | string[]): Promise<void> =>
     storage.remove(keys);

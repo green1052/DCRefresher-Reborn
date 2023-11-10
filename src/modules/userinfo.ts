@@ -1,8 +1,8 @@
 import * as Toast from "../components/toast";
 import * as communicate from "../core/communicate";
 import * as color from "../utils/color";
-import { getType } from "../utils/user";
-import type { Nullable, NullableProperties, ObjectEnum } from "../utils/types";
+import {getType} from "../utils/user";
+import type {Nullable, NullableProperties, ObjectEnum} from "../utils/types";
 
 const memoAsk = (
     selected: NullableProperties<ObjectEnum<RefresherMemoType>>,
@@ -404,9 +404,9 @@ export default {
         this.memory.memoAsk = communicate.addHook(
             "refresherRequestMemoAsk",
             async ({
-                type,
-                user
-            }: {
+                       type,
+                       user
+                   }: {
                 type: RefresherMemoType;
                 user: RefresherMemoType;
             }) => {

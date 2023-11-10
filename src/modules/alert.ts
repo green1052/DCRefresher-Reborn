@@ -1,5 +1,5 @@
 import * as Toast from "../components/toast";
-import { runtime } from "webextension-polyfill";
+import {runtime} from "webextension-polyfill";
 
 const inject = (filename: string) => {
     const scriptElement = document.createElement("script");

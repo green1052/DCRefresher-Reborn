@@ -38,10 +38,12 @@ declare global {
     }
 
     interface RefresherCheckSettings
-        extends RefresherBaseSettings<"check", boolean> {}
+        extends RefresherBaseSettings<"check", boolean> {
+    }
 
     interface RefresherTextSettings
-        extends RefresherBaseSettings<"text", string> {}
+        extends RefresherBaseSettings<"text", string> {
+    }
 
     interface RefresherRangeSettings
         extends RefresherBaseSettings<"range", number> {
@@ -128,12 +130,12 @@ declare global {
          */
         update: T["update"] extends Record<string, (value: any) => void>
             ? {
-                  [K in keyof T["update"]]: (
-                      this: this,
-                      value: Parameters<T["update"][K]>[0],
-                      ...args: ItemToRefresherArrayArgs<T>
-                  ) => void;
-              }
+                [K in keyof T["update"]]: (
+                    this: this,
+                    value: Parameters<T["update"][K]>[0],
+                    ...args: ItemToRefresherArrayArgs<T>
+                ) => void;
+            }
             : never;
 
         /**

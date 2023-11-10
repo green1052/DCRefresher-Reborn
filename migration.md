@@ -11,12 +11,12 @@ DCRefresher Reborn에 DCRefresher에서 사용하던 설정을 가져오거나 �
 3. 대상 확장프로그램의 뷰 검사 서비스 워커 클릭
 4. 콘솔 탭으로 이동
 
-
 ## 백업
 
 1. 해당 코드 실행 후 결과 복사
 
 ### DCRefresher를 백업
+
 ```js
 chrome.storage.sync.get(null, (settings) => {
     const result = {};
@@ -45,6 +45,7 @@ chrome.storage.sync.get(null, (settings) => {
 ```
 
 ### DCRefresher Reborn을 백업
+
 ```js
 chrome.storage.local.get().then((settings) => {
     const result = {};
@@ -62,9 +63,9 @@ chrome.storage.local.get().then((settings) => {
 
 ```js
 (() => {
-  const settings = `여기에 입력`;
-  for (const [key, value] of Object.entries(JSON.parse(settings))) {
-    chrome.storage.local.set({ [key]: value });
-  }
+    const settings = `여기에 입력`;
+    for (const [key, value] of Object.entries(JSON.parse(settings))) {
+        chrome.storage.local.set({[key]: value});
+    }
 })();
 ```

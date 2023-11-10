@@ -1,5 +1,5 @@
 import * as communicate from "./communicate";
-import { eventBus } from "./eventbus";
+import {eventBus} from "./eventbus";
 import storage from "../utils/storage";
 import browser from "webextension-polyfill";
 
@@ -131,6 +131,6 @@ communicate.addHook("memoSelected", () => {
     eventBus.emit("refresherUpdateUserMemo");
 });
 
-communicate.addHook("updateMemos", ({ memos }) => {
+communicate.addHook("updateMemos", ({memos}) => {
     MEMO_CACHE = memos;
 });

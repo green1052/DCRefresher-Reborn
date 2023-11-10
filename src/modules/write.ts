@@ -1,7 +1,7 @@
 import * as Toast from "../components/toast";
 import $ from "cash-dom";
 import ky from "ky";
-import { blobToWebP } from "webp-converter-browser";
+import {blobToWebP} from "webp-converter-browser";
 
 export default {
     name: "글쓰기",
@@ -138,8 +138,8 @@ export default {
 
                             const image = this.status.convertWebp
                                 ? await blobToWebP(file, {
-                                      quality: this.status.convertWebpQuality
-                                  })
+                                    quality: this.status.convertWebpQuality
+                                })
                                 : file;
 
                             form.set(
@@ -159,7 +159,7 @@ export default {
                                 const response = await ky
                                     .post(
                                         `https://upimg.dcinside.com/upimg_file.php?id=${gall_id}&r_key=${r_key}`,
-                                        { body: form }
+                                        {body: form}
                                     )
                                     .json<any>()
                                     .then((parsed) => parsed.files[0]);

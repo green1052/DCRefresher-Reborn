@@ -1,5 +1,5 @@
 import frame from "./frameComponent.vue";
-import { User } from "../utils/user";
+import {User} from "../utils/user";
 import Vue from "vue";
 
 interface FrameOption {

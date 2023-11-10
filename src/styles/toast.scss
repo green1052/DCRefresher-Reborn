@@ -2,196 +2,196 @@ $tablet: 768px;
 $desktop: 1024px;
 
 .refresher-toast {
-    z-index: 1002;
-    position: fixed;
-    right: 5vw;
-    bottom: 5vh;
+  z-index: 1002;
+  position: fixed;
+  right: 5vw;
+  bottom: 5vh;
+  display: -webkit-flex;
+  display: flex;
+  user-select: none;
+  transition: 0.3s background cubic-bezier(0.19, 1, 0.22, 1);
+
+  max-width: 50vw;
+  height: 62px;
+
+  @media screen and (max-width: $desktop) {
+    bottom: 72px;
+    max-width: 80vw;
+  }
+
+  @media screen and (max-width: $tablet) {
+    max-width: unset;
+    width: 90vw;
+    height: 52px;
+  }
+
+  border-radius: 13.3px;
+
+  border: 1px solid transparent;
+  background-color: #fff;
+  color: #000;
+
+  &.hover:hover {
+    background-color: rgb(249, 249, 249);
+  }
+
+  &.hover:active {
+    background-color: rgb(233, 233, 233);
+  }
+
+  .contents,
+  .text {
     display: -webkit-flex;
     display: flex;
-    user-select: none;
-    transition: 0.3s background cubic-bezier(0.19, 1, 0.22, 1);
+  }
 
-    max-width: 50vw;
-    height: 62px;
-
-    @media screen and (max-width: $desktop) {
-        bottom: 72px;
-        max-width: 80vw;
-    }
+  .contents {
+    position: relative;
+    padding: 5px 10px;
+    border-radius: 13.3px;
+    width: 100%;
+    overflow: hidden;
 
     @media screen and (max-width: $tablet) {
-        max-width: unset;
-        width: 90vw;
-        height: 52px;
+      font-size: 14px;
     }
 
-    border-radius: 13.3px;
-
-    border: 1px solid transparent;
-    background-color: #fff;
-    color: #000;
-
-    &.hover:hover {
-        background-color: rgb(249, 249, 249);
-    }
-
-    &.hover:active {
-        background-color: rgb(233, 233, 233);
-    }
-
-    .contents,
+    p,
+    .button,
     .text {
-        display: -webkit-flex;
-        display: flex;
+      margin: auto;
     }
 
-    .contents {
-        position: relative;
-        padding: 5px 10px;
-        border-radius: 13.3px;
-        width: 100%;
-        overflow: hidden;
-
-        @media screen and (max-width: $tablet) {
-            font-size: 14px;
-        }
-
-        p,
-        .button,
-        .text {
-            margin: auto;
-        }
-
-        p {
-            margin: auto 20px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            font-size: 16px;
-        }
-
-        .text .material-icons {
-            margin-left: 10px;
-            margin-right: 5px;
-        }
-
-        .text {
-            margin-left: -10px;
-            letter-spacing: -0.66px;
-            font-weight: 300;
-            margin-right: 0;
-        }
-
-        .button {
-            opacity: 0.25;
-            cursor: pointer;
-            transition: 200ms opacity cubic-bezier(0.19, 1, 0.22, 1);
-        }
-
-        .button:hover {
-            opacity: 0.45;
-        }
-
-        .button:active {
-            opacity: 0.8;
-        }
+    p {
+      margin: auto 20px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 16px;
     }
+
+    .text .material-icons {
+      margin-left: 10px;
+      margin-right: 5px;
+    }
+
+    .text {
+      margin-left: -10px;
+      letter-spacing: -0.66px;
+      font-weight: 300;
+      margin-right: 0;
+    }
+
+    .button {
+      opacity: 0.25;
+      cursor: pointer;
+      transition: 200ms opacity cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
+    .button:hover {
+      opacity: 0.45;
+    }
+
+    .button:active {
+      opacity: 0.8;
+    }
+  }
 }
 
 .refresher-toast[data-type="error"] {
-    background-color: #ff6464;
-    color: #fff;
+  background-color: #ff6464;
+  color: #fff;
 }
 
 .refresher-toast[data-type="warning"] {
-    background-color: #f7af15;
-    color: #fff;
+  background-color: #f7af15;
+  color: #fff;
 }
 
 .refresher-toast[data-type="cake"] {
-    background: linear-gradient(40deg, rgb(162, 248, 201), rgb(166, 212, 243));
-    color: rgb(35, 100, 73);
+  background: linear-gradient(40deg, rgb(162, 248, 201), rgb(166, 212, 243));
+  color: rgb(35, 100, 73);
 }
 
 .refresherDark .refresher-toast {
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background-color: #333;
-    color: rgb(219, 219, 219);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background-color: #333;
+  color: rgb(219, 219, 219);
 
-    &.hover:hover {
-        background-color: #393939;
-    }
+  &.hover:hover {
+    background-color: #393939;
+  }
 
-    &.hover:active {
-        background-color: #424242;
-    }
+  &.hover:active {
+    background-color: #424242;
+  }
 }
 
 .refresherDark .refresher-toast[data-type="error"] {
-    background-color: #d41717;
-    color: #fff;
+  background-color: #d41717;
+  color: #fff;
 }
 
 .refresherDark .refresher-toast[data-type="warning"] {
-    background-color: #eeb02b;
-    color: #000;
+  background-color: #eeb02b;
+  color: #000;
 }
 
 .refresher-toast[data-type="cake"] {
-    background: linear-gradient(40deg, rgb(162, 248, 201), rgb(166, 212, 243));
-    color: rgb(35, 100, 73);
+  background: linear-gradient(40deg, rgb(162, 248, 201), rgb(166, 212, 243));
+  color: rgb(35, 100, 73);
 }
 
 .refresher-toast::after {
-    content: "";
-    width: 100%;
-    height: 100%;
-    border-radius: 13.3px;
-    left: 0;
-    top: 0;
-    position: absolute;
-    pointer-events: none;
-    box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2),
-        0px 4px 5px 0px rgba(0, 0, 0, 0.14),
-        0px 1px 10px 0px rgba(0, 0, 0, 0.12);
-    opacity: 0.32;
+  content: "";
+  width: 100%;
+  height: 100%;
+  border-radius: 13.3px;
+  left: 0;
+  top: 0;
+  position: absolute;
+  pointer-events: none;
+  box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2),
+  0px 4px 5px 0px rgba(0, 0, 0, 0.14),
+  0px 1px 10px 0px rgba(0, 0, 0, 0.12);
+  opacity: 0.32;
 }
 
 // Toast error transition
 
 @keyframes shake {
-    0% {
-        transform: translateX(-2px, 0, 0);
-    }
+  0% {
+    transform: translateX(-2px, 0, 0);
+  }
 
-    25% {
-        transform: translate3d(2px, 0, 0);
-    }
+  25% {
+    transform: translate3d(2px, 0, 0);
+  }
 
-    50% {
-        transform: translate3d(-2px, 0, 0);
-    }
+  50% {
+    transform: translate3d(-2px, 0, 0);
+  }
 
-    75% {
-        transform: translate3d(2px, 0, 0);
-    }
+  75% {
+    transform: translate3d(2px, 0, 0);
+  }
 }
 
 .refresher-toast-enter-active {
-    transition: all 250ms cubic-bezier(0, 0, 0.2, 1);
+  transition: all 250ms cubic-bezier(0, 0, 0.2, 1);
 }
 
 .refresher-toast-leave-active {
-    transition: all 200ms cubic-bezier(0.4, 0, 1, 1);
+  transition: all 200ms cubic-bezier(0.4, 0, 1, 1);
 }
 
 .refresher-toast-enter,
 .refresher-toast-leave-to {
-    transform: translateY(10px);
-    opacity: 0;
+  transform: translateY(10px);
+  opacity: 0;
 }
 
 .refresher-toast-enter-to {
-    transform: translateY(0px);
-    opacity: 1;
+  transform: translateY(0px);
+  opacity: 1;
 }

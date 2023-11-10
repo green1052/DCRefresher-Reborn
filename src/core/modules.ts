@@ -1,7 +1,7 @@
 import * as block from "./block";
 import * as communicate from "./communicate";
-import { eventBus } from "./eventbus";
-import { filter } from "./filtering";
+import {eventBus} from "./eventbus";
+import {filter} from "./filtering";
 import Frame from "./frame";
 import * as memo from "./memo";
 import * as settings from "./settings";

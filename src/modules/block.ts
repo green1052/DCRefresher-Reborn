@@ -1,5 +1,5 @@
 import * as Toast from "../components/toast";
-import { queryString } from "../utils/http";
+import {queryString} from "../utils/http";
 import $ from "cash-dom";
 import Cookies from "js-cookie";
 import ky from "ky";
@@ -203,7 +203,7 @@ export default {
                             const packageIdx = json.info.package_idx;
 
                             if (args?.blockAllDccon) {
-                                for (const { path } of json.detail) {
+                                for (const {path} of json.detail) {
                                     block.add(
                                         "DCCON",
                                         path,
