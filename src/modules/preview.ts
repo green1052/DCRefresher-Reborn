@@ -1153,7 +1153,6 @@ const miniPreview: MiniPreview = {
             miniPreview.controller = new AbortController();
         }
 
-        miniPreview.element.querySelector(".refresher-mini-preview-contents")!.innerHTML = "";
         miniPreview.element.classList.add("hide");
     }
 };
