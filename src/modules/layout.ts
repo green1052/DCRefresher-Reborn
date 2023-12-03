@@ -81,6 +81,12 @@ export default {
             type: "check",
             default: false
         },
+        hideGalleryImage: {
+            name: "갤러리 대문 숨기기",
+            desc: "갤러리 대문을 숨깁니다.",
+            type: "check",
+            default: false
+        },
         pushToRight: {
             name: "본문 영역 전체로 확장",
             desc: `"잡다 링크 숨기기" 옵션이 켜진 경우 본문 영역을 확장합니다.`,
@@ -121,6 +127,12 @@ export default {
         },
         hideNft(value: boolean) {
             $(document.documentElement).toggleClass("refresherHideNtf", value);
+        },
+        hideGalleryImage(value: boolean) {
+            $(document.documentElement).toggleClass(
+                "refresherHideGalleryImage",
+                value
+            );
         },
         pushToRight(value: boolean) {
             hideSticky(value);
@@ -169,6 +181,7 @@ export default {
         this.update.hideGalleryView.bind(this)(this.status.hideGalleryView);
         this.update.hideUselessView.bind(this)(this.status.hideUselessView);
         this.update.hideNft.bind(this)(this.status.hideNft);
+        this.update.hideGalleryImage.bind(this)(this.status.hideGalleryImage);
         this.update.pushToRight.bind(this)(this.status.pushToRight);
         this.update.removeNotice.bind(this)(this.status.removeNotice);
         this.update.removeDCNotice.bind(this)(this.status.removeDCNotice);
@@ -179,6 +192,7 @@ export default {
         this.update.hideGalleryView.bind(this)(false);
         this.update.hideUselessView.bind(this)(false);
         this.update.hideNft.bind(this)(false);
+        this.update.hideGalleryImage.bind(this)(false);
         this.update.pushToRight.bind(this)(false);
         this.update.removeNotice.bind(this)(false);
         this.update.removeDCNotice.bind(this)(false);
@@ -194,6 +208,7 @@ export default {
         hideGalleryView: RefresherCheckSettings;
         hideUselessView: RefresherCheckSettings;
         hideNft: RefresherCheckSettings;
+        hideGalleryImage: RefresherCheckSettings;
         pushToRight: RefresherCheckSettings;
         removeNotice: RefresherCheckSettings;
         removeDCNotice: RefresherCheckSettings;
@@ -204,6 +219,7 @@ export default {
         hideGalleryView(value: boolean): void;
         hideUselessView(value: boolean): void;
         hideNft(value: boolean): void;
+        hideGalleryImage(value: boolean): void;
         pushToRight(value: boolean): void;
         removeNotice(value: boolean): void;
         removeDCNotice(value: boolean): void;
