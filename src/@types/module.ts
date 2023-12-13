@@ -54,8 +54,9 @@ declare global {
     }
 
     interface RefresherOptionSettings
-        extends RefresherBaseSettings<"option", Record<string, string>> {
-        items: Record<string, string>;
+        extends RefresherBaseSettings<"option", string> {
+        // TODO 오류 땜빵
+        items: any
     }
 
     interface RefresherModuleGeneric {
