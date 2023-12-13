@@ -50,7 +50,7 @@ chrome.storage.sync.get(null, (settings) => {
 chrome.storage.local.get().then((settings) => {
     const result = {};
     for (const [key, value] of Object.entries(settings)) {
-        if (["refresher.asn", "refresher.country", "refresher.updated"].includes(key)) continue;
+        if (["refresher.asn", "refresher.country", "refresher.updated", "refresher.database.ip", "refresher.database.ip.version"].includes(key)) continue;
         result[key] = value;
     }
     console.log(JSON.stringify(result));
@@ -62,8 +62,10 @@ chrome.storage.local.get().then((settings) => {
 1. settings 변수에 백업한 설정 붙여넣고 실행
 
 ```js
-(() => {
+(async () => {
     const settings = `여기에 입력`;
+
+    await chrome.storage.local.clear();
     for (const [key, value] of Object.entries(JSON.parse(settings))) {
         chrome.storage.local.set({[key]: value});
     }
