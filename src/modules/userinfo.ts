@@ -288,7 +288,7 @@ export default {
                 return false;
 
             const text = document.createElement("span");
-            text.className = "ip";
+            text.className = "ip refresherUserData";
             text.innerHTML = `(${element.dataset.uid})`;
             text.title = element.dataset.uid;
 

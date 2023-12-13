@@ -10,7 +10,7 @@ import {User} from "../utils/user";
 import $ from "cash-dom";
 import Cookies from "js-cookie";
 import ky from "ky";
-//import Tesseract from "tesseract.js";
+// import Tesseract from "tesseract.js";
 import browser from "webextension-polyfill";
 import type IFrame from "../core/frame";
 
@@ -244,6 +244,7 @@ const request = {
 
         return JSON.parse(response);
     },
+
     async delete(args: GalleryHTTPRequestArguments) {
         if (!args.link)
             throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
@@ -311,7 +312,10 @@ const request = {
         }
     },
 
-    async setNotice(args: GalleryHTTPRequestArguments, set: boolean) {
+    async setNotice(args: GalleryHTTPRequestArguments, set: boolean): Promise<string | {
+        msg: string,
+        result: "success" | "fail"
+    }> {
         if (!args.link) {
             throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
         }
@@ -341,7 +345,10 @@ const request = {
         }
     },
 
-    async setRecommend(args: GalleryHTTPRequestArguments, set: boolean) {
+    async setRecommend(args: GalleryHTTPRequestArguments, set: boolean): Promise<string | {
+        msg: string,
+        result: "success" | "fail"
+    }> {
         if (!args.link)
             throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
 
@@ -349,10 +356,10 @@ const request = {
 
         const params = new URLSearchParams();
         params.set("ci_t", Cookies.get("ci_c") ?? "");
-        params.set("mode", set ? "SET" : "REL");
         params.set("id", args.gallery);
-        params.set("nos[]", args.id);
         params.set("_GALLTYPE_", http.galleryTypeName(args.link));
+        params.set("mode", set ? "SET" : "REL");
+        params.set("nos[]", args.id);
 
         const response = await client(
             galleryType == "mini/"
@@ -535,17 +542,9 @@ const panel = {
                 if (selected.getAttribute("name") === "reason") {
                     const value = Number(selected.value);
 
-                    const blockReasonInput =
-                        document.querySelector<HTMLInputElement>(
-                            'input[name="reason_text"]'
-                        )!;
+                    const blockReasonInput = document.querySelector<HTMLInputElement>("input[name=reason_text]")!;
 
-                    if (!value) {
-                        blockReasonInput.style.display = "block";
-                    } else {
-                        blockReasonInput.style.display = "none";
-                    }
-
+                    blockReasonInput.style.display = value ? "none" : "block";
                     avoid_reason = value;
                 }
             });
@@ -615,7 +614,7 @@ const panel = {
       </div>
       <div class="button block">
         <img src="${browser.runtime.getURL("/assets/icons/block.png")}"></img>
-        <p>차단</p>
+        <p>차단 (B)</p>
       </div>
       <div class="button delete">
         <img src="${browser.runtime.getURL("/assets/icons/delete.png")}"></img>
@@ -629,17 +628,42 @@ const panel = {
             request.delete(preData).then((response) => {
                 if (typeof response === "object") {
                     if (response.result === "success") {
-                        Toast.show("게시글을 삭제했습니다.", false, 600);
+                        Toast.show(response.msg, false, 3000);
                     } else {
-                        Toast.show(response.message, true, 600);
-                        alert(`${response.result}: ${response.message}`);
+                        Toast.show(response.msg, true, 3000);
                     }
 
                     return;
                 }
 
-                alert(response);
+                Toast.show(response, true, 3000);
             });
+        };
+
+        const blockFunction = () => {
+            frame.app.close();
+
+            request
+                .block(
+                    preData,
+                    Number(blockPreset.day),
+                    0,
+                    blockPreset.reason,
+                    blockPreset.delete ? 1 : 0
+                )
+                .then((response) => {
+                    if (typeof response === "object") {
+                        if (response.result === "success") {
+                            Toast.show(response.msg, false, 3000);
+                        } else {
+                            Toast.show(response.msg, true, 3000);
+                        }
+
+                        return;
+                    }
+
+                    Toast.show(response, true, 3000);
+                });
         };
 
         element
@@ -652,11 +676,11 @@ const panel = {
 
         if (useKeyPress) {
             adminKeyPress = (ev: KeyboardEvent) => {
-                if (ev.code !== "KeyB" && ev.code !== "KeyD") {
+                if (frame.app.inputFocus) {
                     return ev;
                 }
 
-                if (frame.app.inputFocus) {
+                if (ev.code !== "KeyB" && ev.code !== "KeyD") {
                     return ev;
                 }
 
@@ -682,17 +706,18 @@ const panel = {
                             1000
                         );
                     }
+                } else if (ev.code === "KeyB") {
+                    if (KEY_COUNTS[ev.code][1] >= 2) {
+                        blockFunction();
+                        KEY_COUNTS[ev.code][1] = 0;
+                    } else {
+                        Toast.show(
+                            "한번 더 D키를 누르면 차단합니다.",
+                            true,
+                            1000
+                        );
+                    }
                 }
-
-                // TODO : 차단 프리셋이 지정된 경우 차단
-
-                // else if (ev.code === 'KeyB') {
-                //   if (KEY_COUNTS[ev.code][1] > 2) {
-                //     // deleteFunction()
-                //   } else {
-                //     Toast.show('한번 더 B키를 누르면 차단합니다.', true, 1000)
-                //   }
-                // }
             };
         }
 
@@ -717,41 +742,33 @@ const panel = {
                         .then((response) => {
                             if (typeof response === "object") {
                                 if (response.result === "success") {
-                                    Toast.show(response.message, false, 3000);
+                                    Toast.show(response.msg, false, 3000);
 
                                     if (del_chk) {
                                         frame.app.close();
                                     }
                                 } else {
-                                    alert(
-                                        `${response.result}: ${response.message}`
-                                    );
+                                    Toast.show(response.msg, true, 3000);
                                 }
 
                                 return;
                             }
 
-                            alert(response);
+                            Toast.show(response, true, 3000);
                         });
                 },
-                () => {
-                    const blockPopup = document.querySelector(
-                        ".refresher-block-popup"
-                    );
-                    blockPopup?.remove();
-                }
+                () => document.querySelector(".refresher-block-popup")?.remove()
             );
         });
 
         const pin = element.querySelector<HTMLElement>(".pin")!;
-
         pin.addEventListener("click", () => {
             request.setNotice(preData, setAsNotice).then((response) => {
                 eventBus.emit("refreshRequest");
 
                 if (typeof response === "object") {
                     if (response.result === "success") {
-                        Toast.show(response.message, false, 3000);
+                        Toast.show(response.msg, false, 3000);
 
                         setAsNotice = !setAsNotice;
 
@@ -761,13 +778,13 @@ const panel = {
                             ? "공지로 등록"
                             : "공지 등록 해제";
                     } else {
-                        alert(`${response.result}: ${response.message}`);
+                        Toast.show(response.msg, true, 3000);
                     }
 
                     return;
                 }
 
-                alert(response);
+                Toast.show(response, true, 3000);
             });
         });
 
@@ -778,7 +795,7 @@ const panel = {
 
                 if (typeof response === "object") {
                     if (response.result === "success") {
-                        Toast.show(response.message, false, 3000);
+                        Toast.show(response.msg, false, 3000);
 
                         setAsRecommend = !setAsRecommend;
 
@@ -796,13 +813,13 @@ const panel = {
                             ? "개념글 등록"
                             : "개념글 해제";
                     } else {
-                        alert(`${response.result}: ${response.message}`);
+                        Toast.show(response.msg, true, 3000);
                     }
 
                     return;
                 }
 
-                alert(response);
+                Toast.show(response, true, 3000);
             });
         });
 
@@ -862,8 +879,6 @@ const panel = {
 
             if (!input) return;
 
-            URL.revokeObjectURL(url);
-
             callback(input);
             element.parentElement!.removeChild(element);
         };
@@ -877,6 +892,7 @@ const panel = {
         });
 
         element.querySelector(".close")!.addEventListener("click", () => {
+            URL.revokeObjectURL(url);
             element.parentElement!.removeChild(element);
         });
 
@@ -1159,6 +1175,12 @@ const miniPreview: MiniPreview = {
 
 let frame: IFrame;
 
+const blockPreset = {
+    day: "",
+    reason: "",
+    delete: false
+};
+
 export default {
     name: "미리보기",
     description: "글을 오른쪽 클릭 했을때 미리보기 창을 만들어줍니다.",
@@ -1259,6 +1281,32 @@ export default {
             type: "check",
             default: true
         },
+        blockPresetDay: {
+            name: "관리 패널 > 차단 프리셋 > 차단 기간",
+            desc: "차단 시 기본으로 선택할 차단 기간을 설정합니다.",
+            type: "option",
+            default: "1시간",
+            items: {
+                "1시간": "1",
+                "6시간": "6",
+                "1일": "24",
+                "7일": "168",
+                "14일": "336",
+                "30일": "720"
+            }
+        },
+        blockPresetReason: {
+            name: "관리 패널 > 차단 프리셋 > 차단 사유",
+            desc: "차단 시 기본으로 선택할 차단 사유를 설정합니다.",
+            type: "text",
+            default: ""
+        },
+        blockPresetDelete: {
+            name: "관리 패널 > 차단 프리셋 > 선택한 글 삭제",
+            desc: "차단 시 선택한 글을 삭제합니다.",
+            type: "check",
+            default: false
+        },
         expandRecognizeRange: {
             name: "게시글 목록 인식 범위 확장",
             desc: "게시글의 오른쪽 클릭을 인식하는 범위를 칸 전체로 확장합니다.",
@@ -1306,6 +1354,10 @@ export default {
         Frame: typeof IFrame,
         http: RefresherHTTP
     ) {
+        blockPreset.day = this.status.blockPresetDay;
+        blockPreset.reason = this.status.blockPresetReason;
+        blockPreset.delete = this.status.blockPresetDelete;
+
         let postFetchedData: PostInfo;
         const gallery = queryString("id") ?? undefined;
 
@@ -2278,6 +2330,9 @@ export default {
         toggleBackgroundBlur: RefresherCheckSettings;
         toggleAdminPanel: RefresherCheckSettings;
         useKeyPress: RefresherCheckSettings;
+        blockPresetDay: RefresherOptionSettings;
+        blockPresetReason: RefresherTextSettings;
+        blockPresetDelete: RefresherCheckSettings;
         expandRecognizeRange: RefresherCheckSettings;
         experimentalComment: RefresherCheckSettings;
         bypassCaptcha: RefresherCheckSettings;

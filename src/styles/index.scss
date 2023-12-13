@@ -241,22 +241,16 @@ $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
 
 // 짤방 2개 해결
 
-.writing_view_box > div#zzbang_div span:last-child {
-  display: none !important;
-}
+//.writing_view_box > div#zzbang_div span:last-child {
+//  display: none !important;
+//}
 
 // IP Module
 
-.fl .refresherUserData {
-  margin-left: 3px;
-}
-
-.cmt_info .refresherUserData {
-  margin-left: 3px;
-}
-
-.reply_info .refresherUserData {
-  margin-left: 3px;
+.fl, .cmt_info, .reply_info {
+  .refresherUserData {
+    margin-left: 3px;
+  }
 }
 
 .gall_writer {
@@ -834,6 +828,10 @@ tr .gall_writer {
 
 .refresher-mini-preview-contents,
 .refresher-preview-contents-actual {
+  .written_dccon {
+    height: 100px !important;
+  }
+
   .write_div {
     img,
     video {

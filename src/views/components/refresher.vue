@@ -142,17 +142,13 @@
                     :checked="settings[module][setting].value"
                     :modname="module"/>
                 <refresher-input
-                    v-else-if="
-                                        settings[module][setting].type ===
-                                        'text'
-                                    "
+                    v-else-if="settings[module][setting].type === 'text'"
                     :id="setting"
                     :change="updateUserSetting"
                     :modname="module"
-                    :placeholder="
-                                        settings[module][setting].default
-                                    "
-                    :value="settings[module][setting].value"/>
+                    :placeholder="settings[module][setting].default"
+                    :value="settings[module][setting].value"
+                />
                 <refresher-range
                     v-else-if="
                                         settings[module][setting].type ===
@@ -176,11 +172,12 @@
                                         settings[module][setting].type ===
                                         'option'
                                     "
+                    :id="setting"
                     :change="updateUserSetting"
                     :modname="module"
-                    :options="
-                                        settings[module][setting].items
-                                    "/>
+                    :options="settings[module][setting].items"
+                    :selected="settings[module][setting].value"
+                />
               </div>
             </div>
           </div>
@@ -586,6 +583,10 @@ export default Vue.extend({
     typeWrap(value: unknown) {
       if (typeof value === "boolean") {
         return value ? "On" : "Off";
+      }
+
+      if (typeof value === "string" && value === "") {
+        return "없음";
       }
 
       return value;
