@@ -7,7 +7,7 @@ import ky from "ky";
 export default {
     name: "컨텐츠 차단",
     description: "유저, 컨텐츠 등의 보고 싶지 않은 컨텐츠들을 삭제합니다.",
-    url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/(view|lists)/g,
+    url: /gall\.dcinside\.com\/(mgallery|mini)\/board\/(view|lists)/,
     memory: {
         uuid: null,
         uuid2: null,
@@ -24,13 +24,12 @@ export default {
     },
     enable: true,
     default_enable: true,
-    require: ["filter", "eventBus", "block", "dom", "http"],
+    require: ["filter", "eventBus", "block", "http"],
     func(
-        filter: RefresherFilter,
-        eventBus: RefresherEventBus,
-        block: RefresherBlock,
-        dom: RefresherDOM,
-        http: RefresherHTTP
+        filter,
+        eventBus,
+        block,
+        http
     ) {
         this.memory.uuid = filter.add(
             ".ub-writer",
@@ -50,9 +49,9 @@ export default {
                     .find(".write_div")
                     .text();
 
-                const nick = element.dataset.nick;
-                const uid = element.dataset.uid;
-                const ip = element.dataset.ip;
+                const nick = element.dataset.nick ?? null;
+                const uid = element.dataset.uid ?? null;
+                const ip = element.dataset.ip ?? null;
 
                 const $commentElement = $element.closest(
                     ".reply_info, .cmt_info"
@@ -263,7 +262,7 @@ export default {
             }
         );
     },
-    revoke(filter: RefresherFilter) {
+    revoke(filter) {
         if (this.memory.uuid) filter.remove(this.memory.uuid);
 
         if (this.memory.uuid2) filter.remove(this.memory.uuid2);
@@ -287,5 +286,5 @@ export default {
         addBlock: string | null;
         requestBlock: string | null;
     };
-    require: ["filter", "eventBus", "block", "dom", "http"];
+    require: ["filter", "eventBus", "block", "http"];
 }>;

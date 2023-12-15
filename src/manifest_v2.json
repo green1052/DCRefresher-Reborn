@@ -1,81 +1,81 @@
 {
-  "name": "DCRefresher Reborn",
-  "short_name": "DCRefresher Reborn",
-  "manifest_version": 2,
-  "permissions": [
-    "https://github.com/*",
-    "https://*.dcinside.com/*",
-    "https://image.dcinside.com/*",
-    "activeTab",
-    "storage",
-    "unlimitedStorage",
-    "contextMenus"
-  ],
-  "background": {
-    "scripts": [
-      "background.js"
+    "name": "DCRefresher Reborn",
+    "short_name": "DCRefresher Reborn",
+    "manifest_version": 2,
+    "permissions": [
+        "https://github.com/*",
+        "https://*.dcinside.com/*",
+        "https://image.dcinside.com/*",
+        "activeTab",
+        "storage",
+        "unlimitedStorage",
+        "contextMenus"
     ],
-    "persistent": true
-  },
-  "content_scripts": [
-    {
-      "js": [
-        "refresher.bundle.js"
-      ],
-      "css": [
-        "refresher.bundle.css"
-      ],
-      "matches": [
-        "https://*.dcinside.com/*"
-      ],
-      "run_at": "document_start"
-    }
-  ],
-  "icons": {
-    "120": "assets/icons/logo/icon_40pt@3x.png",
-    "180": "assets/icons/logo/icon_60pt@3x.png",
-    "1024": "assets/icons/logo/Icon.png"
-  },
-  "browser_action": {
-    "default_icon": {
-      "128": "assets/icons/logo/icon_40pt@3x.png",
-      "180": "assets/icons/logo/icon_60pt@3x.png",
-      "1024": "assets/icons/logo/Icon.png"
+    "background": {
+        "scripts": [
+            "background.js"
+        ],
+        "persistent": true
     },
-    "default_popup": "views/index.html",
-    "default_title": "DCRefresher Reborn"
-  },
-  "options_ui": {
-    "chrome_style": false,
-    "page": "views/index.html"
-  },
-  "web_accessible_resources": [
-    "assets/*",
-    "popup/*"
-  ],
-  "commands": {
-    "refreshLists": {
-      "suggested_key": {
-        "default": "Alt+R"
-      },
-      "description": "글 목록 새로고침: 새로고침"
+    "content_scripts": [
+        {
+            "js": [
+                "refresher.bundle.js"
+            ],
+            "css": [
+                "refresher.bundle.css"
+            ],
+            "matches": [
+                "https://*.dcinside.com/*"
+            ],
+            "run_at": "document_start"
+        }
+    ],
+    "icons": {
+        "120": "assets/icons/logo/icon_40pt@3x.png",
+        "180": "assets/icons/logo/icon_60pt@3x.png",
+        "1024": "assets/icons/logo/Icon.png"
     },
-    "refreshPause": {
-      "suggested_key": {
-        "default": "Alt+S"
-      },
-      "description": "글 목록 새로고침: 일시 비활성화"
+    "browser_action": {
+        "default_icon": {
+            "128": "assets/icons/logo/icon_40pt@3x.png",
+            "180": "assets/icons/logo/icon_60pt@3x.png",
+            "1024": "assets/icons/logo/Icon.png"
+        },
+        "default_popup": "views/index.html",
+        "default_title": "DCRefresher Reborn"
     },
-    "stealthPause": {
-      "suggested_key": {
-        "default": "Alt+P"
-      },
-      "description": "스텔스 모드: 일시 비활성화"
+    "options_ui": {
+        "chrome_style": false,
+        "page": "views/index.html"
+    },
+    "web_accessible_resources": [
+        "assets/*",
+        "popup/*"
+    ],
+    "commands": {
+        "refreshLists": {
+            "suggested_key": {
+                "default": "Alt+R"
+            },
+            "description": "글 목록 새로고침: 새로고침"
+        },
+        "refreshPause": {
+            "suggested_key": {
+                "default": "Alt+S"
+            },
+            "description": "글 목록 새로고침: 일시 비활성화"
+        },
+        "stealthPause": {
+            "suggested_key": {
+                "default": "Alt+P"
+            },
+            "description": "스텔스 모드: 일시 비활성화"
+        }
+    },
+    "applications": {
+        "gecko": {
+            "id": "dcrefresher-reborn@green1052"
+        }
     }
-  },
-  "applications": {
-    "gecko": {
-      "id": "dcrefresher-reborn@green1052"
-    }
-  }
 }

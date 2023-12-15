@@ -18,7 +18,8 @@ module.exports = (env) => {
                             return Buffer.from(
                                 JSON.stringify({
                                     description: pkg.description,
-                                    version: pkg.version,
+                                    version: `${pkg.version}`,
+                                    version_name: `${pkg.version}-dev`,
                                     ...JSON.parse(content.toString())
                                 })
                             );

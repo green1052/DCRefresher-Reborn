@@ -2,13 +2,13 @@ import type Frame from "../core/frame";
 
 export {};
 
-type ItemOf<Arr extends unknown[]> = Arr extends Array<infer T> ? T : never;
+type ItemToRefresherArrayArgs<T extends RefresherModuleGeneric> =
+    T["require"] extends Array<keyof ItemToRefresherMap>
+        ? {
+            [K in keyof T["require"]]: T["require"][K] extends keyof ItemToRefresherMap ? ItemToRefresherMap[T["require"][K]] : never;
+        }
+        : never;
 
-type ItemToRefresherArrayArgs<
-    T extends { require?: Array<keyof ItemToRefresherMap> }
-> = T["require"] extends Array<keyof ItemToRefresherMap>
-    ? Array<ItemToRefresherMap[ItemOf<T["require"]>]>
-    : never[];
 
 declare global {
     interface ItemToRefresherMap {
@@ -55,8 +55,7 @@ declare global {
 
     interface RefresherOptionSettings
         extends RefresherBaseSettings<"option", string> {
-        // TODO 오류 땜빵
-        items: any
+        items: unknown;
     }
 
     interface RefresherModuleGeneric {
@@ -64,7 +63,6 @@ declare global {
         memory?: Record<string, unknown>;
         settings?: Record<string, RefresherSettings>;
         shortcuts?: Record<string, () => void>;
-        update?: Record<string, (value: any) => void>;
         require?: Array<keyof ItemToRefresherMap>;
     }
 
@@ -129,11 +127,11 @@ declare global {
         /**
          * 설정이 업데이트 됐을 시 호출할 함수를 정의합니다.
          */
-        update: T["update"] extends Record<string, (value: any) => void>
+        update: T["settings"] extends Record<string, RefresherSettings>
             ? {
-                [K in keyof T["update"]]: (
-                    this: this,
-                    value: Parameters<T["update"][K]>[0],
+                [K in keyof T["settings"]]: (
+                    this: any,
+                    value: T["settings"][K]["value"],
                     ...args: ItemToRefresherArrayArgs<T>
                 ) => void;
             }

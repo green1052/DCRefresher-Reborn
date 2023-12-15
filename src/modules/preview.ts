@@ -527,7 +527,7 @@ const panel = {
             closeCallback();
         });
 
-        element.querySelectorAll('input[type="radio"]').forEach((v) => {
+        element.querySelectorAll("input[type=\"radio\"]").forEach((v) => {
             v.addEventListener("click", (ev) => {
                 const selected = ev.target as HTMLInputElement;
 
@@ -864,7 +864,7 @@ const panel = {
                 });
 
                 const {
-                    data: { text }
+                    data: {text}
                 } = await worker.recognize(image);
                 element.querySelector("input")!.value = text;
             } catch (e) {
@@ -1184,7 +1184,7 @@ const blockPreset = {
 export default {
     name: "미리보기",
     description: "글을 오른쪽 클릭 했을때 미리보기 창을 만들어줍니다.",
-    url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/(view|lists)/g,
+    url: /gall\.dcinside\.com\/(mgallery|mini)\/board\/(view|lists)/,
     status: {},
     memory: {
         preventOpen: false,
@@ -1285,14 +1285,14 @@ export default {
             name: "관리 패널 > 차단 프리셋 > 차단 기간",
             desc: "차단 시 기본으로 선택할 차단 기간을 설정합니다.",
             type: "option",
-            default: "1시간",
+            default: "1",
             items: {
-                "1시간": "1",
-                "6시간": "6",
-                "1일": "24",
-                "7일": "168",
-                "14일": "336",
-                "30일": "720"
+                "1": "1시간",
+                "6": "6시간",
+                "24": "1일",
+                "168": "7일",
+                "336": "14일",
+                "720": "30일"
             }
         },
         blockPresetReason: {
@@ -1339,7 +1339,7 @@ export default {
         }
     },
     update: {
-        experimentalComment(this, value: boolean) {
+        experimentalComment(this, value) {
             if (!value || !navigator.userAgent.includes("Firefox")) return;
 
             alert(
@@ -1349,10 +1349,10 @@ export default {
     },
     require: ["filter", "eventBus", "Frame", "http"],
     func(
-        filter: RefresherFilter,
-        eventBus: RefresherEventBus,
-        Frame: typeof IFrame,
-        http: RefresherHTTP
+        filter,
+        eventBus,
+        Frame,
+        http
     ) {
         blockPreset.day = this.status.blockPresetDay;
         blockPreset.reason = this.status.blockPresetReason;
@@ -1764,7 +1764,7 @@ export default {
                             }
                         }
 
-                        frame.functions.retry()
+                        frame.functions.retry();
 
                         return true;
                     })
@@ -1830,7 +1830,7 @@ export default {
                                             const parent = copy.reverse().find((c: DcinsideCommentObject) => {
                                                 if (c.c_no === v.c_no) {
                                                     if (c.no > v.no) {
-                                                        isBig = true
+                                                        isBig = true;
                                                     }
 
                                                     findReply = true;
@@ -1851,7 +1851,7 @@ export default {
                                     const orgIndex = comments.comments!.findIndex((c: DcinsideCommentObject) => c.no === v.no && c.is_delete !== "0");
 
                                     if (orgIndex !== -1) {
-                                        v.is_delete = "2"
+                                        v.is_delete = "2";
                                         comments.comments!.splice(orgIndex, 1, v);
                                     }
                                 });
@@ -2293,7 +2293,7 @@ export default {
 
         window.addEventListener("popstate", this.memory.popStateHandler);
     },
-    revoke(filter: RefresherFilter) {
+    revoke(filter) {
         if (this.memory.uuid) filter.remove(this.memory.uuid, true);
 
         if (this.memory.uuid2) filter.remove(this.memory.uuid2, true);

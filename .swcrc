@@ -1,11 +1,15 @@
 {
+    "$schema": "https://json.schemastore.org/swcrc",
     "jsc": {
+        "minify": {
+            "format": {
+                "comments": false,
+            }
+        },
         "parser": {
-            "syntax": "typescript",
-            "tsx": false,
-            "decorators": false,
-            "dynamicImport": false
+            "syntax": "typescript"
         },
         "target": "es2022"
-    }
+    },
+    "minify": true
 }

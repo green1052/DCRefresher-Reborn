@@ -1,7 +1,7 @@
+import type {Rgb} from "../utils/color";
 import * as Color from "../utils/color";
 import * as DOM from "../utils/dom";
 import $ from "cash-dom";
-import type {Rgb} from "../utils/color";
 
 const DARK_MODE_COLOR: Rgb = [41, 41, 41];
 
@@ -76,7 +76,7 @@ export default {
     enable: false,
     default_enable: false,
     require: ["filter", "eventBus"],
-    func(filter: RefresherFilter, eventBus: RefresherEventBus) {
+    func(filter, eventBus) {
         $(document.documentElement).addClass("refresherDark");
 
         this.memory.uuid = filter.add("html", (element) => {
@@ -105,7 +105,7 @@ export default {
             contentColorFix
         );
     },
-    revoke(filter: RefresherFilter, eventBus: RefresherEventBus) {
+    revoke(filter, eventBus) {
         document.documentElement.classList.remove("refresherDark");
 
         if (this.memory.uuid) filter.remove(this.memory.uuid, true);

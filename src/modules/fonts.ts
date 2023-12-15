@@ -34,7 +34,7 @@ export default {
         }
     },
     update: {
-        customFonts: (fontName: string | boolean) => {
+        customFonts(fontName) {
             let $fontElement = $("#refresherFontStyle");
 
             if (fontName) {
@@ -55,13 +55,13 @@ export default {
 
             $fontElement.remove();
         },
-        changeDCFont: (value: boolean) => {
+        changeDCFont(value) {
             $(document.documentElement).toggleClass(
                 "refresherChangeDCFont",
                 value
             );
         },
-        bodyFontSize: (fontSize: number | boolean) => {
+        bodyFontSize(fontSize) {
             let $fontElement = $("#refresherFontStyleSize");
 
             if (fontSize) {
@@ -85,14 +85,15 @@ export default {
     },
     func() {
         $(document.documentElement).addClass("refresherFont");
-        this.update.changeDCFont.bind(this)(this.status.changeDCFont);
-        this.update.customFonts.bind(this)(this.status.customFonts);
-        this.update.bodyFontSize.bind(this)(this.status.bodyFontSize);
     },
     revoke() {
         $(document.documentElement).removeClass("refresherFont");
+
+        // @ts-ignore
         this.update.changeDCFont.bind(this)(false);
+        // @ts-ignore
         this.update.customFonts.bind(this)(false);
+        // @ts-ignore
         this.update.bodyFontSize.bind(this)(false);
     }
 } as RefresherModule<{
@@ -103,10 +104,5 @@ export default {
         customFonts: RefresherTextSettings;
         changeDCFont: RefresherCheckSettings;
         bodyFontSize: RefresherRangeSettings;
-    };
-    update: {
-        customFonts(fontName: string | boolean): void;
-        changeDCFont(value: boolean): void;
-        bodyFontSize(fontSize: number | boolean): void;
     };
 }>;

@@ -195,6 +195,8 @@ browser.runtime.onInstalled.addListener((details) => {
     storage.remove("refresher.asn");
     storage.remove("refresher.country");
 
+    if (browser.runtime.getManifest().version_name) return;
+
     try {
         ky.get(
             "https://raw.githubusercontent.com/green1052/DCRefresher-Reborn/main/data/version"
@@ -212,7 +214,6 @@ browser.runtime.onInstalled.addListener((details) => {
                 storage.set("refresher.database.ip", data);
             });
     } catch {
-
     }
 
     if (details.reason === "install") {
