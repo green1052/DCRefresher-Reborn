@@ -1,21 +1,21 @@
 <template>
-  <div
-      class="refresher-preview-button"
-      @click="safeClick">
-    <transition name="refresher-shake">
-      <img
-          :key="error + 1"
-          :src="getURL(`/assets/icons/${id}.png`)"/>
-    </transition>
-    <transition name="refresher-shake">
-      <p
-          :id="`refresher-${id}-counts`"
-          :key="error"
-          class="refresher-vote-text">
-        {{ text }}
-      </p>
-    </transition>
-  </div>
+    <div
+        class="refresher-preview-button"
+        @click="safeClick">
+        <transition name="refresher-shake">
+            <img
+                :key="error + 1"
+                :src="getURL(`/assets/icons/${id}.png`)"/>
+        </transition>
+        <transition name="refresher-shake">
+            <p
+                :id="`refresher-${id}-counts`"
+                :key="error"
+                class="refresher-vote-text">
+                {{ text }}
+            </p>
+        </transition>
+    </div>
 </template>
 
 <script lang="ts">
@@ -23,42 +23,42 @@ import browser from "webextension-polyfill";
 import Vue from "vue";
 
 interface ButtonData {
-  error: number;
+    error: number;
 }
 
 export default Vue.extend({
-  name: "refresher-preview-button",
-  props: {
-    id: {
-      type: [String, Number]
+    name: "refresher-preview-button",
+    props: {
+        id: {
+            type: [String, Number]
+        },
+        text: {
+            type: String
+        },
+        click: {
+            type: Function,
+            required: false
+        }
     },
-    text: {
-      type: String
+    data(): ButtonData {
+        return {
+            error: 0
+        };
     },
-    click: {
-      type: Function,
-      required: false
+    methods: {
+        getURL(u: string): string {
+            return browser.runtime.getURL(u);
+        },
+
+        async safeClick(this): Promise<unknown> {
+            const result = this.click && (await this.click());
+
+            if (!result) {
+                this.error = Math.random();
+            }
+
+            return result;
+        }
     }
-  },
-  data(): ButtonData {
-    return {
-      error: 0
-    };
-  },
-  methods: {
-    getURL(u: string): string {
-      return browser.runtime.getURL(u);
-    },
-
-    async safeClick(this): Promise<unknown> {
-      const result = this.click && (await this.click());
-
-      if (!result) {
-        this.error = Math.random();
-      }
-
-      return result;
-    }
-  }
 });
 </script>

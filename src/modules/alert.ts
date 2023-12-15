@@ -6,11 +6,10 @@ const inject = (filename: string) => {
     scriptElement.src = runtime.getURL(filename);
     document.documentElement.appendChild(scriptElement);
 };
+
 export default {
     name: "알림 개선",
     description: "디시인사이드 알림을 더 미려하게 개선합니다.",
-    status: {},
-    memory: {},
     enable: false,
     default_enable: false,
     func() {
@@ -33,6 +32,4 @@ export default {
     revoke() {
         inject("../assets/js/alert_unregister.js");
     }
-} as RefresherModule<{
-    require: [];
-}>;
+} as RefresherModule;

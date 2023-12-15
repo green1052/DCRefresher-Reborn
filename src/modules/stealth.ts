@@ -65,7 +65,7 @@ export default {
         }
     },
     require: ["eventBus"],
-    func(eventBus: RefresherEventBus) {
+    func(eventBus) {
         $(document.documentElement).addClass("refresherStealth");
 
         if (!$(CONTROL_BUTTON).length) {
@@ -81,7 +81,7 @@ export default {
             }
         );
     },
-    revoke(eventBus: RefresherEventBus) {
+    revoke(eventBus) {
         $(document.documentElement).removeClass("refresherStealth");
 
         for (const button of $(CONTROL_BUTTON)) {

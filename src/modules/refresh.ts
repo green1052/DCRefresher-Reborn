@@ -24,7 +24,7 @@ const addRefreshText = (issueBox: HTMLElement) => {
     const pageHead =
         issueBox ?? document.querySelector(".page_head .gall_issuebox");
 
-    if (!pageHead?.querySelector('button[data-refresher="true"]')) {
+    if (!pageHead?.querySelector("button[data-refresher=\"true\"]")) {
         const button = document.createElement("button");
         button.setAttribute("type", "button");
         button.dataset.refresher = "true";
@@ -47,7 +47,7 @@ const addRefreshText = (issueBox: HTMLElement) => {
 export default {
     name: "글 목록 새로고침",
     description: "글 목록을 자동으로 새로고침합니다.",
-    url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/(view|lists)/g,
+    url: /gall\.dcinside\.com\/(mgallery|mini)\/board\/(view|lists)/,
     status: {},
     memory: {
         uuid: null,
@@ -131,9 +131,9 @@ export default {
     },
     require: ["http", "eventBus", "filter"],
     func(
-        http: RefresherHTTP,
-        eventBus: RefresherEventBus,
-        filter: RefresherFilter
+        http,
+        eventBus,
+        filter
     ) {
         if (this.status.doNotColorVisited) {
             $(document.documentElement).addClass("refresherDoNotColorVisited");
@@ -540,9 +540,9 @@ export default {
         }
     },
     revoke(
-        http: RefresherHTTP,
-        eventBus: RefresherEventBus,
-        filter: RefresherFilter
+        _,
+        eventBus,
+        filter
     ) {
         document.body.classList.remove("refresherDoNotColorVisited");
 

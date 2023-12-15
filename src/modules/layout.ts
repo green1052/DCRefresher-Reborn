@@ -32,7 +32,7 @@ const updateWindowSize = (
 export default {
     name: "레이아웃 수정",
     description: "디시 레이아웃을 변경할 수 있도록 도와줍니다.",
-    url: /(board\/lists|board\/view)/g,
+    url: /gall\.dcinside\.com\/(mgallery|mini)\/board\/(view|lists)/,
     status: {},
     memory: {
         resize: null

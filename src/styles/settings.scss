@@ -379,6 +379,17 @@
     }
   }
 
+  .refresher-options {
+    position: relative;
+    display: inline-block;
+    width: 150px;
+    height: 25px;
+    font-size: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
   .tab {
     overflow: auto;
     position: absolute;

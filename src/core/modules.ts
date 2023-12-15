@@ -82,26 +82,24 @@ export const modules = {
 
         if (module_store[mod.name]) throw `${mod.name} is already registered.`;
 
-        const enable = await storage.get<boolean | undefined>(
-            `${mod.name}.enable`
-        );
-
-        if (enable === undefined) {
-            await storage.set(`${mod.name}.enable`, mod.default_enable);
-            mod.enable = mod.default_enable;
-        } else {
-            mod.enable = enable;
-        }
+        const checkEnabled = storage.get<boolean | undefined>(`${mod.name}.enable`)
+            .then((enable) => {
+                if (enable === undefined) {
+                    storage.set(`${mod.name}.enable`, mod.default_enable);
+                    mod.enable = mod.default_enable;
+                } else {
+                    mod.enable = enable;
+                }
+            });
 
         if (typeof mod.settings === "object") {
-            for (const key in mod.settings) {
-                mod.status ??= {};
-                mod.status[key] = await settings.load(
-                    mod.name,
-                    key,
-                    mod.settings[key]
-                );
-            }
+            mod.status ??= {};
+
+            const promises = Object.keys(mod.settings).map(async (key) => {
+                mod.status[key] = await settings.load(mod.name, key, mod.settings[key]);
+            });
+
+            await Promise.all(promises);
         }
 
         if (typeof mod.data === "object") {
@@ -132,6 +130,7 @@ export const modules = {
         }
 
         module_store[mod.name] = mod;
+        await checkEnabled;
 
         const stringify = JSON.stringify({
             module_store,

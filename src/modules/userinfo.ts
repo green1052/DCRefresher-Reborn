@@ -193,7 +193,7 @@ const memoAsk = (
 export default {
     name: "유저 정보",
     description: "사용자의 IP, 아이디 정보, 메모를 표시합니다.",
-    url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/(view|lists)/g,
+    url: /gall\.dcinside\.com\/(mgallery|mini)\/board\/(view|lists)/,
     status: {},
     memory: {
         always: null,
@@ -231,10 +231,10 @@ export default {
     },
     require: ["filter", "eventBus", "ip", "memo"],
     func(
-        filter: RefresherFilter,
-        eventBus: RefresherEventBus,
-        ip: RefresherIP,
-        memo: RefresherMemo
+        filter,
+        eventBus,
+        ip,
+        memo
     ) {
         const ipInfoAdd = (element: HTMLElement) => {
             if (
@@ -514,7 +514,7 @@ export default {
             }
         );
     },
-    revoke(filter: RefresherFilter) {
+    revoke(filter) {
         if (this.memory.always) filter.remove(this.memory.always);
 
         for (const element of document.querySelectorAll(".refresherUserData")) {

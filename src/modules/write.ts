@@ -6,7 +6,7 @@ import {blobToWebP} from "webp-converter-browser";
 export default {
     name: "글쓰기",
     description: "글쓰기 페이지를 변경합니다.",
-    url: /gall\.dcinside\.com\/(mgallery\/|mini\/)?board\/write/,
+    url: /gall\.dcinside\.com\/(mgallery|mini)\/board\/write/,
     status: {},
     memory: {
         canvas: "",
@@ -63,7 +63,7 @@ export default {
         }
     },
     require: ["filter"],
-    func(filter: RefresherFilter) {
+    func(filter) {
         this.memory.submitButton = filter.add<HTMLButtonElement>(
             "button.write",
             (element) => {
@@ -136,6 +136,9 @@ export default {
                         for (const file of data.files) {
                             if (!file.type.startsWith("image/")) continue;
 
+                            console.log(this.status.convertWebpQuality);
+                            console.log(typeof this.status.convertWebpQuality)
+
                             const image = this.status.convertWebp
                                 ? await blobToWebP(file, {
                                     quality: this.status.convertWebpQuality
@@ -188,7 +191,7 @@ export default {
             }
         );
     },
-    revoke(filter: RefresherFilter) {
+    revoke(filter) {
         filter.remove(this.memory.submitButton);
         filter.remove(this.memory.canvas);
     }
