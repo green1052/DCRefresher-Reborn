@@ -245,7 +245,7 @@ const request = {
         return JSON.parse(response);
     },
 
-    async delete(args: GalleryHTTPRequestArguments) {
+    async delete(args: GalleryHTTPRequestArguments, password?: string) {
         if (!args.link)
             throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
 
@@ -454,9 +454,10 @@ const request = {
         params.set("mode", "del");
         params.set("re_no", commentId);
 
+        console.log(password)
         if (password) {
             params.set("re_password", password);
-            params.set("&g-recaptcha-response", password);
+            params.set("g-recaptcha-response", "");
         }
 
         return client(http.urls.comment_remove, {body: params, signal})
@@ -1806,6 +1807,7 @@ export default {
                 })
                     .then((comments) => {
                         let threadCounts = 0;
+                        let commentCounts = 0;
 
                         if (comments.comments) {
                             const cache = postCaches.get(`${preData.gallery}${preData.id}`);
@@ -1917,13 +1919,34 @@ export default {
                                     Number(v.depth == 0)
                                 )
                                 .reduce((a: number, b: number) => a + b);
+
+                            commentCounts = comments.comments.length;
+                        } else if (this.status.archiveArticle) {
+                            const cache = postCaches.get(`${preData.gallery}${preData.id}`);
+                            const cacheComment = cache?.comment?.comments;
+
+                            if (cacheComment) {
+                                cacheComment.forEach((v: DcinsideCommentObject) => {
+                                    v.is_delete = "1";
+                                });
+
+                                comments.comments = cacheComment;
+
+                                threadCounts = comments.comments
+                                    .map((v: DcinsideCommentObject) =>
+                                        Number(v.depth == 0)
+                                    )
+                                    .reduce((a: number, b: number) => a + b);
+
+                                commentCounts = comments.comments.length;
+                            }
                         }
 
                         frame.subtitle = `${
-                            (comments.total_cnt !== threadCounts &&
+                            (commentCounts !== threadCounts &&
                                 `쓰레드 ${threadCounts}개, 총 댓글`) ||
                             ""
-                        } ${comments.total_cnt}개`;
+                        } ${commentCounts}개`;
 
                         frame.data.comments = comments;
                         frame.data.load = false;
