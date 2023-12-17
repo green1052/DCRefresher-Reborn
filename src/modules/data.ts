@@ -5,7 +5,6 @@ import browser from "webextension-polyfill";
 export default {
     name: "데이터 관리",
     description: "데이터를 관리합니다.",
-    memory: {},
     enable: true,
     default_enable: true,
     settings: {
