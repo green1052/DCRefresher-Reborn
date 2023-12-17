@@ -24,10 +24,7 @@
                 <div
                     v-if="
                         comment.is_delete === '0' &&
-                        ((comment.del_btn === 'Y' && comment.my_cmt === 'Y') ||
-                            isAdmin ||
-                            comment.user.isLogout())
-                    "
+                        (comment.del_btn === 'Y' || comment.my_cmt === 'Y' || isAdmin || comment.user.isLogout())"
                     class="delete"
                     @click="this.safeDelete">
                     <svg
@@ -227,7 +224,7 @@ export default Vue.extend({
             if (this.delete) {
                 let password: string = "";
 
-                if (this.comment.ip && this.comment.my_cmt !== "Y") {
+                if (!this.isAdmin && this.comment.my_cmt === "N") {
                     password = prompt("비밀번호를 입력하세요.") ?? "";
 
                     if (!password) {
@@ -238,7 +235,7 @@ export default Vue.extend({
                 this.delete(
                     this.comment.no,
                     password,
-                    this.comment.my_cmt !== "Y" && this.isAdmin
+                    this.comment.my_cmt === "N" && this.isAdmin
                 );
             }
         },
