@@ -8,8 +8,12 @@ export const get = <T>(key?: string | null): Promise<T> =>
 export const set = <T>(key: string, value: T): Promise<void> =>
     storage.set({[key]: value});
 
+export const setObject = (items: Record<string, any>): Promise<void> => storage.set(items);
+
 export const remove = (keys: string | string[]): Promise<void> =>
     storage.remove(keys);
+
+export const clear = (): Promise<void> => storage.clear();
 
 export const module = {
     get<T>(module: string, key?: string): Promise<T> {
@@ -35,6 +39,8 @@ export default {
     storage,
     get,
     set,
+    setObject,
     remove,
+    clear,
     module
 };

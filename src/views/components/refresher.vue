@@ -95,8 +95,9 @@
 
                     <div
                         v-for="module in Object.keys(settings)"
-                        v-else
+                        v-if="settings[module] && settingsCount(settings[module])"
                         class="refresher-setting-category">
+
                         <h3 @click="moveToModuleTab(module)">
                             {{ module }}
                             <svg
@@ -186,22 +187,15 @@
                 class="tab tab2">
                 <div v-if="!Object.keys(settings).length">
                     <h3 class="need-refresh">
-                        우선 디시 페이지를 열고 설정 해주세요.
+                        우선 디시인사이드 페이지를 열고 설정 해주세요.
                     </h3>
                 </div>
-                <div v-else-if="true">
-                    <img
-                        :src="getURL('/assets/icons/sry.png')"
-                        height="400px"
-                        width="500px"/>
-                </div>
+
                 <div
                     v-for="module in Object.keys(settings)"
-                    v-else-if="
-                        settings[module] &&
-                        advancedSettingsCount(settings[module])
-                    "
+                    v-if="settings[module] && advancedSettingsCount(settings[module])"
                     class="refresher-setting-category">
+
                     <h3 @click="moveToModuleTab(module)">
                         {{ module }}
                         <svg
@@ -217,13 +211,11 @@
                                 d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
                         </svg>
                     </h3>
+
                     <div
                         v-for="setting in Object.keys(settings[module])"
                         v-if="settings[module][setting].advanced"
-                        :data-changed="
-                            settings[module][setting].value !==
-                            settings[module][setting].default
-                        "
+                        :data-changed="settings[module][setting].value !== settings[module][setting].default"
                         class="refresher-setting">
                         <div class="info">
                             <h4>{{ settings[module][setting].name }}</h4>
@@ -231,44 +223,68 @@
                             <p class="mute">
                                 (기본 값 :
                                 {{
-                                    typeWrap(settings[module][setting].default)
+                                    typeWrap(
+                                        settings[module][setting].default
+                                    )
                                 }})
                             </p>
                         </div>
                         <div class="control">
                             <refresher-checkbox
                                 v-if="
-                                    settings[module][setting].type === 'check'
-                                "
+                                        settings[module][setting].type ===
+                                        'check'
+                                    "
                                 :id="setting"
                                 :change="updateUserSetting"
                                 :checked="settings[module][setting].value"
                                 :modname="module"/>
                             <refresher-input
-                                v-if="settings[module][setting].type === 'text'"
+                                v-else-if="settings[module][setting].type === 'text'"
                                 :id="setting"
                                 :change="updateUserSetting"
                                 :modname="module"
                                 :placeholder="settings[module][setting].default"
-                                :value="settings[module][setting].value"/>
+                                :value="settings[module][setting].value"
+                            />
                             <refresher-range
-                                v-if="
-                                    settings[module][setting].type === 'range'
-                                "
+                                v-else-if="
+                                        settings[module][setting].type ===
+                                        'range'
+                                    "
                                 :id="setting"
                                 :change="updateUserSetting"
                                 :max="settings[module][setting].max"
                                 :min="settings[module][setting].min"
                                 :modname="module"
-                                :placeholder="settings[module][setting].default"
+                                :placeholder="
+                                        settings[module][setting].default
+                                    "
                                 :step="settings[module][setting].step"
                                 :unit="settings[module][setting].unit"
                                 :value="
-                                    Number(settings[module][setting].value)
-                                "/>
+                                        Number(settings[module][setting].value)
+                                    "/>
+                            <refresher-options
+                                v-else-if="
+                                        settings[module][setting].type ===
+                                        'option'
+                                    "
+                                :id="setting"
+                                :change="updateUserSetting"
+                                :modname="module"
+                                :options="settings[module][setting].items"
+                                :value="settings[module][setting].value"
+                            />
                         </div>
                     </div>
                 </div>
+                <!--                <div v-else>-->
+                <!--                    <img-->
+                <!--                        :src="getURL('/assets/icons/sry.png')"-->
+                <!--                        height="400px"-->
+                <!--                        width="500px"/>-->
+                <!--                </div>-->
             </div>
             <div
                 v-show="tab === 2"
@@ -488,6 +504,7 @@ import {BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_N
 import $ from "cash-dom";
 import storage from "../../utils/storage";
 import ky from "ky";
+import {Fragment} from "vue-fragment";
 
 interface RefresherData {
     karyl: boolean;
@@ -624,8 +641,11 @@ export default Vue.extend({
                 });
             }
         },
+        settingsCount(obj: Record<string, RefresherSettings>) {
+            return Object.values(obj).filter((v) => !v?.advanced).length;
+        },
         advancedSettingsCount(obj: Record<string, RefresherSettings>) {
-            return Object.keys(obj).filter((v) => obj[v]?.advanced).length;
+            return Object.values(obj).filter((v) => v?.advanced === true).length;
         },
         updateUserSetting(module: string, key: string, value: unknown) {
             this.settings[module][key].value = value;
@@ -916,7 +936,8 @@ export default Vue.extend({
         "refresher-options": options,
         "refresher-input": input,
         "refresher-range": range,
-        "refresher-bubble": bubble
+        "refresher-bubble": bubble,
+        Fragment
     }
 });
 </script>
