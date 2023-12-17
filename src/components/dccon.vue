@@ -43,6 +43,7 @@
                         style="float: left"
                         @click="dcconClick(dccon)">
                         <img
+                            style="height: 100px"
                             :alt="dccon.title"
                             :src="dccon.list_img"/>
                     </li>
@@ -81,16 +82,22 @@ export default Vue.extend({
     },
     methods: {
         pageUp() {
-            if (this.currentPage < this.maxPage) {
+            if (this.currentPage === this.maxPage) {
+                this.currentPage = 0;
+            } else if (this.currentPage < this.maxPage) {
                 this.currentPage++;
-                this.getDcconList();
             }
+
+            this.getDcconList();
         },
         pageDown() {
-            if (this.currentPage > 0) {
+            if (this.currentPage === 0) {
+                this.currentPage = this.maxPage;
+            } else if (this.currentPage > 0) {
                 this.currentPage--;
-                this.getDcconList();
             }
+
+            this.getDcconList();
         },
         async getDcconList() {
             if (this.dcconList[this.currentPage]) {
