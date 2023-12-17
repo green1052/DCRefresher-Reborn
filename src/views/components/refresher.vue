@@ -50,12 +50,12 @@
                 class="tab tab1">
                 <div class="info">
                     <div class="icon-wrap">
-                        <img
-                            :src="getURL('/assets/icons/logo/Icon.png')"
-                            class="icon"/>
-                        <img
-                            :src="getURL('/assets/icons/logo/Icon.png')"
-                            class="icon-backdrop"/>
+                        <img v-if="karyl"
+                             :src="getURL('/assets/icons/karyl.gif')"
+                             class="icon"/>
+                        <img v-else
+                             :src="getURL('/assets/icons/logo/Icon.png')"
+                             class="icon"/>
                     </div>
                     <div class="text">
                         <h3>DCRefresher Reborn</h3>
@@ -490,6 +490,7 @@ import storage from "../../utils/storage";
 import ky from "ky";
 
 interface RefresherData {
+    karyl: boolean;
     tab: number;
     modules: {
         [key: string]: RefresherModule;
@@ -523,6 +524,7 @@ export default Vue.extend({
     name: "refresher",
     data(): RefresherData {
         return {
+            karyl: false,
             tab: 0,
             modules: {},
             settings: {},
@@ -859,6 +861,10 @@ export default Vue.extend({
         }
     },
     async mounted() {
+        setTimeout(() => {
+            this.karyl = true;
+        }, 10000);
+
         port.postMessage({
             requestRefresherModules: true,
             requestRefresherSettings: true,
