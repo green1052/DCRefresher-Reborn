@@ -43,9 +43,9 @@
                         style="float: left"
                         @click="dcconClick(dccon)">
                         <img
-                            style="height: 100px"
                             :alt="dccon.title"
-                            :src="dccon.list_img"/>
+                            :src="dccon.list_img"
+                            style="height: 100px"/>
                     </li>
                 </ul>
             </div>
