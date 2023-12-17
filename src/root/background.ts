@@ -87,12 +87,12 @@ interface Message {
     requestRefresherMemos?: boolean;
 }
 
-if (browser.runtime.getManifest().manifest_version === 3) {
-    setInterval(() => {
-        // @ts-ignore
-        self.serviceWorker.postMessage("heartbeat");
-    }, 20000);
-}
+// if (browser.runtime.getManifest().manifest_version === 3) {
+//     setInterval(() => {
+//         // @ts-ignore
+//         self.serviceWorker.postMessage("heartbeat");
+//     }, 20000);
+// }
 
 const messageHandler = (
     port: browser.Runtime.Port | null,
