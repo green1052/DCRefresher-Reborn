@@ -6,7 +6,7 @@ import {blobToWebP} from "webp-converter-browser";
 export default {
     name: "글쓰기",
     description: "글쓰기 페이지를 변경합니다.",
-    url: /gall\.dcinside\.com\/(mgallery|mini)\/board\/write/,
+    url: /\/board\/write/,
     status: {},
     memory: {
         canvas: "",
