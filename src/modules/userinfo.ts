@@ -245,12 +245,15 @@ export default {
                 return false;
 
             const ip_data = ip.ISPData(element.dataset.ip);
+            const format = ip.format(ip_data);
+
+            if (!format) return false;
 
             const text = document.createElement("span");
             text.className = "refresherUserData";
             text.style.color = ip_data.color;
 
-            const format = ip.format(ip_data);
+
             text.innerHTML = `[${format}]`;
             text.title = format;
 

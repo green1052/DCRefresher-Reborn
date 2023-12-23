@@ -3,7 +3,7 @@ import {Nullable} from "./types";
 
 let ipData: Record<string, string>;
 
-storage.get<string>("refresher.database.ip").then((data) => {
+storage.get<Record<string, string>>("refresher.database.ip").then((data) => {
     ipData = data;
 });
 
