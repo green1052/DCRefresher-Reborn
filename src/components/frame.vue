@@ -355,6 +355,8 @@ export default Vue.extend({
                         }
                     })
             });
+
+            return true;
         },
 
         clickDccon(dccon: DcinsideDccon) {
