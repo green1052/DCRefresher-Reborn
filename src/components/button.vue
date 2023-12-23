@@ -20,7 +20,7 @@
 
 <script lang="ts">
 import browser from "webextension-polyfill";
-import Vue from "vue";
+import Vue, {PropType} from "vue";
 
 interface ButtonData {
     error: number;
@@ -36,7 +36,7 @@ export default Vue.extend({
             type: String
         },
         click: {
-            type: Function,
+            type: Function as PropType<() => Promise<boolean>>,
             required: false
         }
     },
@@ -50,8 +50,8 @@ export default Vue.extend({
             return browser.runtime.getURL(u);
         },
 
-        async safeClick(this): Promise<unknown> {
-            const result = this.click && (await this.click());
+        async safeClick(): Promise<boolean> {
+            const result = await this.click?.();
 
             if (!result) {
                 this.error = Math.random();
