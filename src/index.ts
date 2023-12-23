@@ -20,5 +20,3 @@ Promise.all(context.keys().map((v) => modules.load(context(v).default))).then(
         filter.run();
     }
 );
-
-window.addEventListener("load", filter.run);
