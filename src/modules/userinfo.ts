@@ -193,7 +193,7 @@ const memoAsk = (
 export default {
     name: "유저 정보",
     description: "사용자의 IP, 아이디 정보, 메모를 표시합니다.",
-    url: /gall\.dcinside\.com\/(mgallery|mini)\/board\/(view|lists)/,
+    url: /\/board\/(view|lists)/,
     status: {},
     memory: {
         always: null,
