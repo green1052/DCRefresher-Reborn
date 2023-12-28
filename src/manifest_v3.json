@@ -9,9 +9,8 @@
         "contextMenus"
     ],
     "host_permissions": [
-        "https://github.com/",
-        "https://*.dcinside.com/",
-        "https://image.dcinside.com/*"
+        "https://github.com/*",
+        "https://*.dcinside.com/*"
     ],
     "background": {
         "service_worker": "background.js"

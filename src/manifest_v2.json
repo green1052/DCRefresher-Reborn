@@ -5,7 +5,6 @@
     "permissions": [
         "https://github.com/*",
         "https://*.dcinside.com/*",
-        "https://image.dcinside.com/*",
         "activeTab",
         "storage",
         "unlimitedStorage",
