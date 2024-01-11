@@ -1252,11 +1252,11 @@ export default {
             name: "댓글 자동 새로고침 주기",
             desc: "위의 옵션이 켜져있을 시 댓글을 새로고침할 주기를 설정합니다.",
             type: "range",
-            default: 10,
-            min: 1,
-            max: 20,
+            default: 100000,
+            min: 1000,
+            max: 20000,
             step: 1,
-            unit: "s"
+            unit: "ms"
         },
         toggleBlur: {
             name: "게시글 배경 블러 활성화",
@@ -1682,7 +1682,7 @@ export default {
 
                 this.memory.refreshIntervalId = window.setInterval(() => {
                     if (this.status.autoRefreshComment) frame.functions.retry(false);
-                }, this.status.commentRefreshInterval * 1000);
+                }, this.status.commentRefreshInterval);
             });
 
             const deletePressCount: Record<string, number> = {};
