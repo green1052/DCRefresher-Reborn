@@ -1252,10 +1252,10 @@ export default {
             name: "댓글 자동 새로고침 주기",
             desc: "위의 옵션이 켜져있을 시 댓글을 새로고침할 주기를 설정합니다.",
             type: "range",
-            default: 100000,
+            default: 10000,
             min: 1000,
             max: 20000,
-            step: 1,
+            step: 100,
             unit: "ms"
         },
         toggleBlur: {
