@@ -1500,8 +1500,8 @@ $btn-height: 20px;
 
   .selected {
     position: absolute;
-    width: ($btn-width / 2) + 1;
-    height: ($btn-width / 2) + 1;
+    width: calc($btn-width / 2) + 1;
+    height: calc($btn-width / 2) + 1;
     border-radius: 50%;
 
     background: #ffffff;
@@ -1518,7 +1518,7 @@ $btn-height: 20px;
     background-color: #35d08f;
 
     .selected {
-      transform: translateX(($btn-width / 2) - 1);
+      transform: translateX(calc($btn-width / 2) - 1);
     }
   }
 }
