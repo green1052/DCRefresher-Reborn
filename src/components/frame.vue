@@ -171,7 +171,7 @@
                         <div class="refresher-nocomment-wrap">
                             <img
                                 :src="
-                                    getURL('/assets/icons/empty_comment.png')
+                                    getURL('/assets/icons/empty_comment.webp')
                                 "/>
                             <h3>댓글이 없습니다.</h3>
                         </div>

@@ -11,10 +11,10 @@
 
         <div id="scroll">
             <img
-                :src="getUrl(`/assets/icons/upvote.png`)"
+                :src="getUrl(`/assets/icons/upvote.webp`)"
                 @click="(e) => clickScroll(e, `up`)"/>
             <img
-                :src="getUrl(`/assets/icons/downvote.png`)"
+                :src="getUrl(`/assets/icons/downvote.webp`)"
                 @click="(e) => clickScroll(e, `down`)"/>
         </div>
     </div>

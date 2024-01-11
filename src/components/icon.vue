@@ -1,5 +1,5 @@
 <template>
-    <img :src="getURL(`/assets/icons/${icon}.png`)"/>
+    <img :src="getURL(`/assets/icons/${icon}.webp`)"/>
 </template>
 
 <script lang="ts">

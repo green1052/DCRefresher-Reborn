@@ -18,7 +18,7 @@ const tempButtonCreate = (element: HTMLElement): void => {
     buttonFrame.classList.add("blur");
     buttonFrame.innerHTML = `      
   <div class="button" id ="tempview">
-    <img src="${browser.runtime.getURL("/assets/icons/change.png")}"></img>
+    <img src="${browser.runtime.getURL("/assets/icons/change.webp")}"></img>
     <p id="temp_button_text">이미지 보이기</p>
   </div>
 `;
