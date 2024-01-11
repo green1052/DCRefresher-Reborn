@@ -1,8 +1,8 @@
-const {CleanWebpackPlugin} = require("clean-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const {VueLoaderPlugin} = require("vue-loader");
 const path = require("path");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
     entry: {
@@ -12,7 +12,8 @@ module.exports = {
     },
     output: {
         path: path.join(__dirname, "dist"),
-        filename: "[name]"
+        filename: "[name]",
+        clean: true
     },
     module: {
         rules: [
@@ -25,8 +26,12 @@ module.exports = {
             },
             {
                 include: /src/,
-                test: /\.scss$/,
-                use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"]
+                test: /\.s[ac]ss$/i,
+                use: [
+                    MiniCssExtractPlugin.loader,
+                    "css-loader",
+                    "sass-loader"
+                ]
             },
             {
                 include: /src/,
@@ -49,8 +54,12 @@ module.exports = {
                 }
             ]
         }),
-        new VueLoaderPlugin(),
-        new CleanWebpackPlugin()
+        new HtmlWebpackPlugin({
+            template: "./src/views/index.html",
+            filename: "views/index.html",
+            inject: false
+        }),
+        new VueLoaderPlugin()
     ],
     resolve: {
         extensions: [".js", ".ts", ".css", ".vue"],
