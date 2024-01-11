@@ -9,7 +9,7 @@ storage.get<Record<string, string>>("refresher.database.ip").then((data) => {
 
 export const ISPData = (ip: string): ISPInfo => {
     return {
-        name: ipData[ip],
+        name: ipData?.[ip],
         color: "#6495ed"
     };
 };
