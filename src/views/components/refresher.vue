@@ -51,7 +51,7 @@
                 <div class="info">
                     <div class="icon-wrap">
                         <img v-if="karyl"
-                             :src="getURL('/assets/icons/karyl.gif')"
+                             :src="getURL('/assets/icons/karyl.webp')"
                              class="icon"/>
                         <img v-else
                              :src="getURL('/assets/icons/logo/Icon.png')"
@@ -281,7 +281,7 @@
                 </div>
                 <!--                <div v-else>-->
                 <!--                    <img-->
-                <!--                        :src="getURL('/assets/icons/sry.png')"-->
+                <!--                        :src="getURL('/assets/icons/sry.webp')"-->
                 <!--                        height="400px"-->
                 <!--                        width="500px"/>-->
                 <!--                </div>-->
