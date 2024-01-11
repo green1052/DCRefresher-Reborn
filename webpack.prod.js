@@ -1,7 +1,6 @@
 const pkg = require("./package.json");
 const common = require("./webpack.common.js");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const {merge} = require("webpack-merge");
 
@@ -29,11 +28,6 @@ module.exports = (env) => {
                         to: "assets/"
                     }
                 ]
-            }),
-            new HtmlWebpackPlugin({
-                template: "./src/views/index.html",
-                filename: "views/index.html",
-                inject: false
             })
         ],
         optimization: {
