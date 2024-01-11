@@ -290,7 +290,7 @@
                 v-show="tab === 2"
                 key="tab3"
                 class="tab tab3">
-                <div style="margin-bottom: 10px">
+                <div style="margin-bottom: 15px">
                     <h2>차단 모드</h2>
 
                     <div
@@ -435,7 +435,7 @@
                 key="tab5"
                 class="tab tab5">
                 <img
-                    :src="getURL('/assets/icons/no.jpg')"
+                    :src="getURL('/assets/icons/no.webp')"
                     style="width: 100px; height: 100px"/>
 
                 <h1>자짤 기능인줄 알았지? ㅋㅋㅋ "캬루" 지롱</h1>
