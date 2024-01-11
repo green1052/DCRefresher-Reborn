@@ -49,9 +49,7 @@
                 "refresher.bundle.css"
             ],
             "matches": [
-                "https://mall.dcinside.com/*",
-                "https://gall.dcinside.com/*",
-                "https://gallog.dcinside.com/*"
+                "https://*.dcinside.com/*"
             ],
             "run_at": "document_start"
         }
