@@ -2,6 +2,7 @@ import * as http from "./http";
 import $ from "cash-dom";
 import ky from "ky";
 import type {Nullable} from "./types";
+import browser from "webextension-polyfill";
 
 const rKey =
     "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K";
@@ -135,19 +136,19 @@ export async function submitComment(
         params.set("detail_idx", memo.detail_idx);
     }
 
-    const response = await ky
-        .post(
-            typeof memo === "string"
-                ? http.urls.comments_submit
-                : http.urls.dccon_comments_submit,
-            {
-                headers: {
-                    "X-Requested-With": "XMLHttpRequest"
-                },
-                body: params
-            }
-        )
-        .text();
+    const url = typeof memo === "string" ? http.urls.comments_submit : http.urls.dccon_comments_submit;
+    const options = {
+        method: "POST",
+        headers: {
+            "X-Requested-With": "XMLHttpRequest"
+        },
+        body: params
+    }
+
+    const response = browser.runtime.getManifest().manifest_version === 2
+        // @ts-ignore
+        ? await content.fetch(url, options).then(response => response.text())
+        : await ky(url, options).text();
 
     const [result, message] = response.split("||");
 

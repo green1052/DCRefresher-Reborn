@@ -9,7 +9,7 @@ import {ScrollDetection} from "../utils/scrollDetection";
 import {User} from "../utils/user";
 import $ from "cash-dom";
 import Cookies from "js-cookie";
-import ky from "ky";
+import ky, {Input, Options} from "ky";
 import Tesseract from "tesseract.js";
 import browser from "webextension-polyfill";
 import type IFrame from "../core/frame";
@@ -163,12 +163,28 @@ const ISSUE_ZOOM_NO = /\$\(document\)\.data\('comment_no',\s'.+'\);/g;
 
 const QUOTES = /(["'])(?:(?=(\\?))\2.)*?\1/g;
 
-const client = ky.create({
+const kyClient = ky.create({
     method: "POST",
     headers: {
         "X-Requested-With": "XMLHttpRequest"
     }
-});
+})
+
+const client = browser.runtime.getManifest().manifest_version === 2
+    ? (url: URL | RequestInfo, init?: RequestInit | undefined): Promise<string> => {
+        // @ts-ignore
+        return content.fetch(url, {
+            ...init,
+            method: "POST",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            }
+            // @ts-ignore
+        }).then(response => response.text());
+    }
+    : (url: Input, options?: Options): Promise<string> => {
+        return kyClient(url, options).text();
+    }
 
 const request = {
     async vote(
@@ -202,7 +218,7 @@ const request = {
         params.set("_GALLTYPE_", http.galleryTypeName(link));
         params.set("link_id", gall_id);
 
-        const response = await client(http.urls.vote, {body: params}).text();
+        const response = await client(http.urls.vote, {body: params});
 
         const [result, counts, fixedCounts] = response.split("||");
 
@@ -253,7 +269,7 @@ const request = {
         const response = await client(http.urls.comments, {
             body: params,
             signal
-        }).text();
+        });
 
         return JSON.parse(response);
     },
@@ -277,7 +293,7 @@ const request = {
             {
                 body: params
             }
-        ).text();
+        );
 
         try {
             return JSON.parse(response);
@@ -316,7 +332,7 @@ const request = {
             {
                 body: params
             }
-        ).text();
+        );
 
         try {
             return JSON.parse(response);
@@ -349,7 +365,7 @@ const request = {
             {
                 body: params
             }
-        ).text();
+        );
 
         try {
             return JSON.parse(response);
@@ -374,14 +390,6 @@ const request = {
         params.set("mode", set ? "SET" : "REL");
         params.set("nos[]", args.id);
 
-
-        // fetch(galleryType == "mini/"
-        //     ? http.urls.manage.setRecommendMini
-        //     : http.urls.manage.setRecommend, {
-        //     body: params
-        // })
-
-
         const response = await client(
             galleryType == "mini/"
                 ? http.urls.manage.setRecommendMini
@@ -389,7 +397,7 @@ const request = {
             {
                 body: params
             }
-        ).text();
+        );
 
         try {
             return JSON.parse(response);
@@ -451,7 +459,6 @@ const request = {
         params.set("cmt_nos[]", commentId);
 
         return client(url, {body: params, signal})
-            .text()
             .then((v) => v)
             .catch(() => false);
     },
@@ -475,14 +482,12 @@ const request = {
         params.set("mode", "del");
         params.set("re_no", commentId);
 
-        console.log(password)
         if (password) {
             params.set("re_password", password);
             params.set("g-recaptcha-response", "");
         }
 
         return client(http.urls.comment_remove, {body: params, signal})
-            .text()
             .then((v) => v)
             .catch(() => false);
     }
@@ -855,7 +860,7 @@ const panel = {
         callback: (captcha: string) => void,
         bypassCaptcha: boolean
     ): Promise<boolean> {
-        const image = await ky.get(src).blob();
+        const image = await ky.get(`https://gall.dcinside.com/${src}`).blob();
         const url = URL.createObjectURL(image);
 
         const element = document.createElement("div");
@@ -873,6 +878,32 @@ const panel = {
       <p class="refresher-vote-text">전송</p>
     </button>
     `;
+
+        const inputEvent = () => {
+            const input = element.querySelector("input")!.value;
+
+            if (!input) return;
+
+            callback(input);
+            element.parentElement!.removeChild(element);
+        };
+
+        element.querySelector("input")!.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") inputEvent();
+        });
+
+        element.querySelector(".close")!.addEventListener("click", () => {
+            URL.revokeObjectURL(url);
+            element.parentElement!.removeChild(element);
+        });
+
+        element.querySelector("button")!.addEventListener("click", inputEvent);
+
+        document.body.appendChild(element);
+
+        setTimeout(() => {
+            element.querySelector("input")!.focus();
+        }, 0);
 
         if (bypassCaptcha) {
             const worker = await Tesseract.createWorker();
@@ -895,32 +926,6 @@ const panel = {
                 await worker.terminate();
             }
         }
-
-        const inputEvent = () => {
-            const input = element.querySelector("input")!.value;
-
-            if (!input) return;
-
-            callback(input);
-            element.parentElement!.removeChild(element);
-        };
-
-        setTimeout(() => {
-            element.querySelector("input")!.focus();
-        }, 0);
-
-        element.querySelector("input")!.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") inputEvent();
-        });
-
-        element.querySelector(".close")!.addEventListener("click", () => {
-            URL.revokeObjectURL(url);
-            element.parentElement!.removeChild(element);
-        });
-
-        element.querySelector("button")!.addEventListener("click", inputEvent);
-
-        document.body.appendChild(element);
 
         return true;
     }
@@ -1358,15 +1363,6 @@ export default {
             desc: "삭제된 글과 댓글을 보존합니다. (캐시 비활성화 시 작동 안함)",
             type: "check",
             default: false
-        }
-    },
-    update: {
-        experimentalComment(this, value) {
-            if (!value || !navigator.userAgent.includes("Firefox")) return;
-
-            alert(
-                "Firefox 사생활 보호 모드에서는 댓글 기능이 작동하지 않습니다.\n해당 기능을 사용하려면 GitHub Discussions을 참고해주세요."
-            );
         }
     },
     require: ["filter", "eventBus", "Frame", "http"],
