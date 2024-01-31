@@ -1,21 +1,27 @@
-# 설정 마이그레이션 방법
+# 설정 마이그레이션
 
-DCRefresher Reborn에 DCRefresher에서 사용하던 설정을 가져오거나 백업할 수 있습니다.
+설정을 이전하거나 백업하는 방법을 설명합니다.
 
 ## Chrome
 
-## 공통
-
 1. ```chrome://extensions``` 접속
 2. 개발자 모드 활성화
-3. 대상 확장프로그램의 뷰 검사 서비스 워커 클릭
+3. 뷰 검사 서비스 워커 클릭
 4. 콘솔 탭으로 이동
+
+## Firefox
+
+1. ```about:debugging#/runtime/this-firefox``` 접속
+2. 검사 버튼 클릭
+3. 콘솔 탭으로 이동
 
 ## 백업
 
-1. 해당 코드 실행 후 결과 복사
+아래 코드를 실행하고 내용을 복사하세요.
 
-### DCRefresher를 백업
+## DCRefresher를 백업
+
+### 백업
 
 ```js
 chrome.storage.sync.get(null, (settings) => {
@@ -44,7 +50,13 @@ chrome.storage.sync.get(null, (settings) => {
 });
 ```
 
-### DCRefresher Reborn을 백업
+## DCRefresher Reborn을 백업, 복원 (Deprecated)
+
+해당 코드는 3.10.2 이후 버전에서 사용을 권장하지 않습니다.
+
+대신 설정 > 고급 > 데이터 관리 기능을 사용하세요.
+
+### 백업
 
 ```js
 chrome.storage.local.get().then((settings) => {
@@ -57,13 +69,11 @@ chrome.storage.local.get().then((settings) => {
 });
 ```
 
-## 복원
-
-1. settings 변수에 백업한 설정 붙여넣고 실행
+### 복원
 
 ```js
 (async () => {
-    const settings = `여기에 입력`;
+    const settings = `데이터 관리 기능에서 내보낸 JSON`;
 
     await chrome.storage.local.clear();
     for (const [key, value] of Object.entries(JSON.parse(settings))) {
