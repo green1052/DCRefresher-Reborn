@@ -1931,14 +1931,14 @@ export default {
                                     if (isBlocked) {
                                         // if (replyConfig) {
                                         //     if (blurConfig) {
-                                        //         comment.memo = "차단된 댓글입니다.";
+                                        //         comment.memo = "댓글 내용이 차단됐습니다.";
                                         //     } else {
                                         //         return false;
                                         //     }
                                         // }
 
                                         if (blurConfig) {
-                                            comment.memo = "차단된 댓글입니다.";
+                                            comment.memo = "댓글 내용이 차단됐습니다.";
                                             comment.is_delete = "1";
                                         } else {
                                             return false;
@@ -2273,7 +2273,11 @@ export default {
             element.addEventListener("mousedown", handleMousePress);
             element.addEventListener(
                 this.status.reversePreviewKey ? "click" : "contextmenu",
-                previewFrame
+                (ev) => {
+                    if ($(element).closest(".us-post").attr("style") === "filter: blur(5px); opacity: 0.5;") return;
+
+                    previewFrame(ev);
+                }
             );
 
             if (this.status.reversePreviewKey) {
@@ -2303,13 +2307,15 @@ export default {
                 });
             }
 
-            element.addEventListener("mouseenter", (ev) =>
+            element.addEventListener("mouseenter", (ev) => {
+                if ($(element).closest(".us-post").attr("style") === "filter: blur(5px); opacity: 0.5;") return;
+
                 miniPreview.create(
                     ev,
                     this.status.tooltipMode,
                     this.status.tooltipMediaHide
                 )
-            );
+            });
             element.addEventListener("mousemove", (ev) =>
                 miniPreview.move(ev, this.status.tooltipMode)
             );
