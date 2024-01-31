@@ -13,6 +13,7 @@ import ky from "ky";
 import Tesseract from "tesseract.js";
 import browser from "webextension-polyfill";
 import type IFrame from "../core/frame";
+import * as storage from "../utils/storage";
 
 const domParser = new DOMParser();
 
@@ -144,6 +145,18 @@ interface GalleryHTTPRequestArguments {
     commentNo?: string;
     link?: string;
 }
+
+let blurConfig = false;
+
+storage.get<boolean>("컨텐츠 차단.blur").then((value) => {
+    blurConfig = value;
+});
+
+let replyConfig = false;
+
+storage.get<boolean>("컨텐츠 차단.replyRemove").then((value) => {
+    blurConfig = value;
+});
 
 const ISSUE_ZOOM_ID = /\$\(document\)\.data\('comment_id',\s'.+'\);/g;
 const ISSUE_ZOOM_NO = /\$\(document\)\.data\('comment_no',\s'.+'\);/g;
@@ -1829,6 +1842,7 @@ export default {
 
                                             let findReply = false;
                                             let isBig = false;
+
                                             const parent = copy.reverse().find((c: DcinsideCommentObject) => {
                                                 if (c.c_no === v.c_no) {
                                                     if (c.no > v.no) {
@@ -1841,7 +1855,9 @@ export default {
 
                                                 return c.no === v.c_no;
                                             });
+
                                             comments.comments!.splice(comments.comments!.indexOf(parent!) + (findReply && isBig ? 0 : 1), 0, v);
+
                                             return;
                                         }
 
@@ -1910,7 +1926,26 @@ export default {
                                         check.COMMENT = comment.memo;
                                     }
 
-                                    return !block.checkAll(check, gallery);
+                                    const isBlocked = block.checkAll(check, gallery);
+
+                                    if (isBlocked) {
+                                        // if (replyConfig) {
+                                        //     if (blurConfig) {
+                                        //         comment.memo = "차단된 댓글입니다.";
+                                        //     } else {
+                                        //         return false;
+                                        //     }
+                                        // }
+
+                                        if (blurConfig) {
+                                            comment.memo = "차단된 댓글입니다.";
+                                            comment.is_delete = "1";
+                                        } else {
+                                            return false;
+                                        }
+                                    }
+
+                                    return true;
                                 }
                             );
 
