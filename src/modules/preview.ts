@@ -374,6 +374,14 @@ const request = {
         params.set("mode", set ? "SET" : "REL");
         params.set("nos[]", args.id);
 
+
+        // fetch(galleryType == "mini/"
+        //     ? http.urls.manage.setRecommendMini
+        //     : http.urls.manage.setRecommend, {
+        //     body: params
+        // })
+
+
         const response = await client(
             galleryType == "mini/"
                 ? http.urls.manage.setRecommendMini
@@ -2273,12 +2281,17 @@ export default {
             element.addEventListener("mousedown", handleMousePress);
             element.addEventListener(
                 this.status.reversePreviewKey ? "click" : "contextmenu",
-                (ev) => {
-                    if ($(element).closest(".us-post").attr("style") === "filter: blur(5px); opacity: 0.5;") return;
-
-                    previewFrame(ev);
-                }
+                previewFrame
             );
+
+            // element.addEventListener(
+            //     this.status.reversePreviewKey ? "click" : "contextmenu",
+            //     (ev) => {
+            //         if ($(element).closest(".us-post").attr("style") === "filter: blur(5px); opacity: 0.5;") return;
+            //
+            //         previewFrame(ev);
+            //     }
+            // );
 
             if (this.status.reversePreviewKey) {
                 element.addEventListener("contextmenu", (e) => {
@@ -2308,7 +2321,7 @@ export default {
             }
 
             element.addEventListener("mouseenter", (ev) => {
-                if ($(element).closest(".us-post").attr("style") === "filter: blur(5px); opacity: 0.5;") return;
+                //if ($(element).closest(".us-post").attr("style") === "filter: blur(5px); opacity: 0.5;") return;
 
                 miniPreview.create(
                     ev,
