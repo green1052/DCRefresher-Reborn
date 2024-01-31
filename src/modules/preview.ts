@@ -2321,7 +2321,7 @@ export default {
             }
 
             element.addEventListener("mouseenter", (ev) => {
-                //if ($(element).closest(".us-post").attr("style") === "filter: blur(5px); opacity: 0.5;") return;
+                // if ($(element).closest(".us-post").attr("style") === "filter: blur(5px); opacity: 0.5;") return;
 
                 miniPreview.create(
                     ev,
