@@ -242,8 +242,9 @@ export default Vue.extend({
 
                 this.disabled = false;
 
-                $("#comment_main").val("");
                 this.text = "";
+                $("#comment_main").val("");
+
                 this.$emit("setDccon", null);
                 this.$emit("setReply", null);
 
