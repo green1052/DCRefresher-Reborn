@@ -68,6 +68,7 @@ export default {
                 if (!gallery) return;
 
                 const title = $element
+                    .parent()
                     .find(".gall_tit > a:not([class])")
                     .text();
 
