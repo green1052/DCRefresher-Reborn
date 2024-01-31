@@ -3,11 +3,24 @@ import {queryString} from "../utils/http";
 import $ from "cash-dom";
 import Cookies from "js-cookie";
 import ky from "ky";
+import {Cash} from "cash-dom/dist/cash";
+
+function hideElement($element: Cash, blur: boolean = false) {
+    if (blur) {
+        $element.css("filter", "blur(5px)");
+        $element.css("opacity", "0.5");
+
+        return;
+    }
+
+    $element.css("display", "none");
+}
 
 export default {
     name: "컨텐츠 차단",
     description: "유저, 컨텐츠 등의 보고 싶지 않은 컨텐츠들을 삭제합니다.",
     url: /\/board\/(view|lists)/,
+    status: {},
     memory: {
         uuid: null,
         uuid2: null,
@@ -24,6 +37,20 @@ export default {
     },
     enable: true,
     default_enable: true,
+    settings: {
+        replyRemove: {
+            name: "대댓글 삭제",
+            desc: "차단된 댓글의 대댓글을 함께 삭제합니다. (미리보기 창에서는 작동하지 않습니다.)",
+            type: "check",
+            default: false
+        },
+        blur: {
+            name: "블러 처리",
+            desc: "차단된 내용을 블러 처리합니다.",
+            type: "check",
+            default: false
+        }
+    },
     require: ["filter", "eventBus", "block", "http"],
     func(
         filter,
@@ -73,8 +100,22 @@ export default {
                     const $post = $element.parent();
 
                     if ($post.hasClass("ub-content")) {
-                        $post.css("display", "none");
+                        hideElement($post, this.status.blur);
                         return;
+                    }
+
+                    const $content = $post.closest(".ub-content");
+
+                    if ($content) {
+                        if (this.status.replyRemove) {
+                            const $next = $content.next();
+
+                            if (!$next.hasClass("ub-content") && $next.children(".reply").length > 0) {
+                                hideElement($next, this.status.blur)
+                            }
+                        }
+
+                        hideElement($content, this.status.blur);
                     }
 
                     // if (post.parentElement?.className.startsWith("reply_")) {
@@ -82,12 +123,6 @@ export default {
                     //         "none";
                     //     return;
                     // }
-
-                    const $content = $post.closest(".ub-content");
-
-                    if ($content) $content.css("display", "none");
-
-                    return;
                 } else if (block.check("TEXT", text, gallery)) {
                     $element
                         .closest(".view_content_wrap")
@@ -126,10 +161,17 @@ export default {
                         .replace(/^&.*$/g, "") ?? "";
 
                 if (block.check("DCCON", dccon, gallery)) {
-                    (
-                        $element.closest(".ub-content") ??
-                        $element.closest(".comment_dccon")
-                    ).css("display", "none");
+                    const $comment = $element.closest(".ub-content") ?? $element.closest(".comment_dccon");
+
+                    if (this.status.replyRemove) {
+                        const $next = $comment.next();
+
+                        if (!$next.hasClass("ub-content") && $next.children(".reply").length > 0) {
+                            hideElement($next, this.status.blur)
+                        }
+                    }
+
+                    hideElement($comment, this.status.blur);
                 }
 
                 element.parentElement!.oncontextmenu ??= () => {
@@ -285,6 +327,10 @@ export default {
         lastSelect: number;
         addBlock: string | null;
         requestBlock: string | null;
+    };
+    settings: {
+        replyRemove: RefresherCheckSettings;
+        blur: RefresherCheckSettings;
     };
     require: ["filter", "eventBus", "block", "http"];
 }>;

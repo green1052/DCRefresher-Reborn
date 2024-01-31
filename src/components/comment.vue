@@ -89,7 +89,7 @@ interface VoiceDataComputed {
 }
 
 export default Vue.extend({
-    name: "refresher-comment",
+    name:   "refresher-comment",
     components: {
         User: user,
         TimeStamp: timestamp

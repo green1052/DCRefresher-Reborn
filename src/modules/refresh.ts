@@ -3,8 +3,15 @@ import * as block from "../core/block";
 import {queryString} from "../utils/http";
 import $ from "cash-dom";
 import ky from "ky";
+import * as storage from "../utils/storage";
 
 const AVERAGE_COUNTS_SIZE = 7;
+
+let blurConfig = false;
+
+storage.get<boolean>("컨텐츠 차단.blur").then((value) => {
+    blurConfig = value;
+});
 
 let PAUSE_REFRESH = false;
 
@@ -247,7 +254,12 @@ export default {
                 }
 
                 if (block.checkAll(obj)) {
-                    continue;
+                    if (blurConfig) {
+                        $element.css("filter", "blur(5px)");
+                        $element.css("opacity", "0.5");
+                    } else {
+                        continue;
+                    }
                 }
 
                 $list.append($element);
