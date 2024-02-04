@@ -9,7 +9,7 @@
         "contextMenus"
     ],
     "host_permissions": [
-        "https://github.com/*",
+        "https://dcrefresher.green1052.com/*",
         "https://*.dcinside.com/*"
     ],
     "background": {

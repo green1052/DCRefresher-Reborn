@@ -947,7 +947,7 @@ export default Vue.extend({
             try {
                 const version = await ky
                     .get(
-                        "https://raw.githubusercontent.com/green1052/DCRefresher-Reborn/main/data/version"
+                        "https://dcrefresher.green1052.com/data/version"
                     )
                     .text();
 
@@ -960,7 +960,7 @@ export default Vue.extend({
 
                 const data = await ky
                     .get(
-                        "https://raw.githubusercontent.com/green1052/DCRefresher-Reborn/main/data/ip.json"
+                        "https://dcrefresher.green1052.com/data/ip.json"
                     )
                     .json();
 
