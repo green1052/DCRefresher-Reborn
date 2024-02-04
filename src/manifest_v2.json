@@ -3,7 +3,7 @@
     "short_name": "DCRefresher Reborn",
     "manifest_version": 2,
     "permissions": [
-        "https://github.com/*",
+        "https://dcrefresher.green1052.com/*",
         "https://*.dcinside.com/*",
         "activeTab",
         "storage",

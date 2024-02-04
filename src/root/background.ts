@@ -203,7 +203,7 @@ browser.runtime.onInstalled.addListener((details) => {
 
     try {
         ky.get(
-            "https://raw.githubusercontent.com/green1052/DCRefresher-Reborn/main/data/version"
+            "https://dcrefresher.green1052.com/data/version"
         )
             .text()
             .then((version) => {
@@ -211,7 +211,7 @@ browser.runtime.onInstalled.addListener((details) => {
             });
 
         ky.get(
-            "https://raw.githubusercontent.com/green1052/DCRefresher-Reborn/main/data/ip.json"
+            "https://dcrefresher.green1052.com/data/ip.json"
         )
             .json()
             .then((data) => {
