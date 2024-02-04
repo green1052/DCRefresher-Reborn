@@ -80,14 +80,13 @@ export default {
                 delete data["refresher.database.ip.version"];
                 delete data["refresher.database.ip"];
 
-                const textArea = document.createElement("textarea");
-                document.body.appendChild(textArea);
-                textArea.value = JSON.stringify(data, null, 4);
-                textArea.select();
-                document.execCommand("copy");
-                document.body.removeChild(textArea);
-
-                Toast.show("데이터를 클립보드로 내보냈습니다.", false, 3000);
+                navigator.clipboard.writeText(JSON.stringify(data, null, 4))
+                    .then(() => {
+                        Toast.show("데이터를 클립보드로 내보냈습니다.", false, 3000);
+                    })
+                    .catch(() => {
+                        Toast.show("데이터를 클립보드로 내보내는데 실패했습니다.", true, 3000);
+                    });
             });
         },
 
