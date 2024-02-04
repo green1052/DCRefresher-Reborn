@@ -1,4 +1,5 @@
 import * as communicate from "../core/communicate";
+import $ from "cash-dom";
 
 export default {
     name: "이미지 검색",
@@ -7,12 +8,12 @@ export default {
     default_enable: true,
     func() {
         communicate.addHook("searchSauceNao", () => {
-            const image = Array.from(document.querySelectorAll<HTMLImageElement>(":hover")).at(-1);
+            const image = $("img:hover").eq(-1);
+            const src = image.attr("src");
 
-            if (!image || !image.src.includes("viewimage.php")) return;
+            if (!image.length || !src || !src.startsWith("viewimage.php")) return;
 
-            const url = new URL(image.src);
-
+            const url = new URL(src);
             url.host = "image.dcinside.com";
             url.pathname = "/dccon.php";
 
