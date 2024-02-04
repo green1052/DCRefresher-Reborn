@@ -291,6 +291,16 @@
                 key="tab3"
                 class="tab tab3">
                 <div style="margin-bottom: 15px">
+                    <h2>데이터 관리</h2>
+
+                    <div style="margin-top: 5px; float: left">
+                        <button @click="exportBlock">내보내기</button>
+                        <button @click="importBlock">가져오기</button>
+                    </div>
+
+                    <br>
+                    <br>
+
                     <h2>차단 모드</h2>
 
                     <div
@@ -379,6 +389,18 @@
                 v-show="tab === 3"
                 key="tab4"
                 class="tab tab4">
+
+                <div style="margin-bottom: 15px">
+                    <h2>데이터 관리</h2>
+
+                    <div style="margin-top: 5px; float: left">
+                        <button @click="exportMemo">내보내기</button>
+                        <button @click="importMemo">가져오기</button>
+                    </div>
+
+                    <br>
+                </div>
+
                 <div
                     v-for="key in Object.keys(memos)"
                     class="block-divide">
@@ -580,6 +602,78 @@ export default Vue.extend({
         };
     },
     methods: {
+        exportMemo() {
+            navigator.clipboard.writeText(JSON.stringify(this.memos, null, 4))
+                .then(() => {
+                    alert("클립보드에 복사되었습니다.");
+                })
+                .catch(() => {
+                    alert("클립보드에 복사하지 못했습니다.");
+                });
+        },
+        importMemo() {
+            const result = prompt("가져올 데이터를 입력하세요.");
+
+            if (!result) return;
+
+            try {
+                const data = JSON.parse(result);
+
+                for (const [key, value] of Object.entries(data)) {
+                    const target = this.memos[key as RefresherMemoType];
+
+                    for (const [id, memo] of Object.entries(value as Record<string, RefresherMemoValue>)) {
+                        if (target[id] && !confirm(`${id}에 대한 메모가 이미 존재합니다, 덮어쓰시겠습니까?`)) {
+                            continue;
+                        }
+
+                        target[id] = memo;
+                    }
+                }
+
+                this.syncMemos();
+
+                alert("가져오기에 성공했습니다.");
+            } catch (e) {
+                alert("데이터가 잘못됐습니다.");
+            }
+        },
+        exportBlock() {
+            navigator.clipboard.writeText(JSON.stringify(this.blocks, null, 4))
+                .then(() => {
+                    alert("클립보드에 복사되었습니다.");
+                })
+                .catch(() => {
+                    alert("클립보드에 복사하지 못했습니다.");
+                });
+        },
+        importBlock() {
+            const result = prompt("가져올 데이터를 입력하세요.");
+
+            if (!result) return;
+
+            try {
+                const data = JSON.parse(result);
+
+                for (const [key, value] of Object.entries(data)) {
+                    const target = this.blocks[key as RefresherBlockType];
+
+                    for (const block of value as RefresherBlockValue[]) {
+                        if (target.some((v) => v.content === block.content) && !confirm(`${block.content}가 이미 존재합니다, 덮어쓰시겠습니까?`)) {
+                            continue;
+                        }
+
+                        target.push(block);
+                    }
+                }
+
+                this.syncBlock();
+
+                alert("가져오기에 성공했습니다.");
+            } catch (e) {
+                alert("데이터가 잘못됐습니다.");
+            }
+        },
         getVersion() {
             return browser.runtime.getManifest().version_name ?? browser.runtime.getManifest().version;
         },
