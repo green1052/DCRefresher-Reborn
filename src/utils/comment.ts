@@ -146,7 +146,6 @@ export async function submitComment(
     }
 
     const response = browser.runtime.getManifest().manifest_version === 2
-        // @ts-ignore
         ? await content.fetch(url, options).then(response => response.text())
         : await ky(url, options).text();
 

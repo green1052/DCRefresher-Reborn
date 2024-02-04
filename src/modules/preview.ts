@@ -172,7 +172,6 @@ const kyClient = ky.create({
 
 const client = browser.runtime.getManifest().manifest_version === 2
     ? (url: URL | RequestInfo, init?: RequestInit | undefined): Promise<string> => {
-        // @ts-ignore
         return content.fetch(url, {
             ...init,
             method: "POST",
