@@ -12,13 +12,7 @@
                 <p
                     v-if="comment.depth === 0 && comment.is_delete === '0'"
                     class="refresher-reply"
-                    @click="reply">
-                    {{
-                        this.getReply() === this.comment.no
-                            ? "답글 해제"
-                            : "답글"
-                    }}
-                </p>
+                    @click="reply">{{ this.getReply() === this.comment.no ? "답글 해제" : "답글" }}</p>
 
                 <TimeStamp :date="new Date(date(comment.reg_date))"/>
                 <div
