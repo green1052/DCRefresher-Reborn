@@ -12,7 +12,7 @@
             class="refresher-preview-contents refresher-error">
             <h3>{{ frame.error.title }}</h3>
             <br/>
-            <img style="width: 150px; height: 150px;" :src="getURL('/assets/icons/karyl.webp')"/>
+            <img :src="getURL('/assets/icons/karyl.webp')" style="width: 150px; height: 150px;"/>
             <br/>
             <br/>
             <p>가능한 경우:</p>
