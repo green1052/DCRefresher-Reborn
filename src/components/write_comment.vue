@@ -53,18 +53,16 @@
                 <UserComponent
                     v-if="user"
                     :user="user"/>
-                <span>
-                    로 {{ this.getReply() === null ? "" : "답글" }}
-                    {{ this.getDccon() === null ? "" : "디시콘" }} 작성 중
-                </span>
+                <span>로 {{
+                        this.getReply() === null ? "" : "답글"
+                    }}{{ this.getDccon() === null ? "" : "디시콘" }} 작성 중</span>
             </div>
             <div
                 class="whoami"
                 v-bind:class="{
                     'refresher-comment-util': true,
                     'refresher-comment-util-edit': true,
-                    'refresher-comment-util-show':
-                        hoverUserInfo && !this.user.id
+                    'refresher-comment-util-show': hoverUserInfo && this.user.isLogout()
                 }">
                 <span @click="toggleEditUser"
                 >클릭하면 작성자 정보 수정 모드를
@@ -171,7 +169,7 @@ export default Vue.extend({
             this.user = new User(
                 this.unsignedUserID,
                 null,
-                "localhost",
+                "127.0.0.1",
                 null
             );
         }
