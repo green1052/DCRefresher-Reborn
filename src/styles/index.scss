@@ -1074,7 +1074,7 @@ tr .gall_writer {
 
     box-shadow: $shadow-2dp;
 
-    * {
+    *:not(img) {
       filter: invert(1);
     }
   }
@@ -1218,6 +1218,7 @@ tr .gall_writer {
     display: flex;
 
     .refresher-reply {
+      cursor: pointer;
       font-size: 12px;
       opacity: 0.6;
     }
@@ -1294,11 +1295,11 @@ tr .gall_writer {
   &::after {
     content: " ";
     position: absolute;
-    height: 1px;
+    height: 2px;
     left: 0;
     background-color: rgb(0, 120, 255);
     z-index: 10;
-    width: 0px;
+    width: 0;
 
     transition: 0.3s all cubic-bezier(0.19, 1, 0.22, 1);
   }
