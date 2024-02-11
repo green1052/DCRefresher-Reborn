@@ -2144,7 +2144,7 @@ export default {
 
                         scrolledCount = 0;
 
-                        preData.id = $(`.us-post[data-no="${postFetchedData.id}"]:not([data-type="icon_notice"])`).next().attr("data-no") || (Number(postFetchedData.id) - 1).toString();
+                        preData.id = $(`.us-post[data-no="${postFetchedData.id}"]`).next().attr("data-no") || (Number(postFetchedData.id) - 1).toString();
 
                         newPostWithData(preData, historySkip);
                         groupStore.scrollTop = 0;
@@ -2166,7 +2166,7 @@ export default {
 
                         scrolledCount = 0;
 
-                        preData.id = $(`.us-post[data-no="${postFetchedData.id}"]:not([data-type="icon_notice"])`).prev().attr("data-no") || (Number(postFetchedData.id) + 1).toString();
+                        preData.id = $(`.us-post[data-no="${postFetchedData.id}"]`).prev().attr("data-no") || (Number(postFetchedData.id) + 1).toString();
                         newPostWithData(preData, historySkip);
 
                         groupStore.scrollTop = 0;
