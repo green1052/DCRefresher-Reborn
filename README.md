@@ -1,6 +1,6 @@
-<div style="text-align: center">
+<p align="center">
     <img src="https://github.com/green1052/DCRefresher-Reborn/raw/main/src/assets/icons/logo/Icon.png" width="200px"/>
-</div>
+</p>
 
 # DCRefresher Reborn
 
