@@ -596,6 +596,10 @@ export default Vue.extend({
                 {
                     text: "Discord",
                     url: "https://discord.gg/SSW6Zuyjz6"
+                },
+                {
+                    text: "후원",
+                    url: "https://www.buymeacoffee.com/green1052"
                 }
             ],
             ipDatabaseVersion: ""
