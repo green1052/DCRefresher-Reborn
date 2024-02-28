@@ -6,6 +6,7 @@
             "tsx": false,
             "decorators": false,
             "dynamicImport": false
-        }
+        },
+        "target": "esnext",
     }
 }
