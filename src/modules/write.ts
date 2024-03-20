@@ -29,7 +29,7 @@ export default {
     },
     selfImage: {
       name: "자짤 기능 활성화",
-      desc: "자짤 기능을 활성화합니다.",
+      desc: "자짤 기능을 활성화합니다. (URL)",
       type: "text",
       default: "",
     },
