@@ -1216,7 +1216,6 @@ export default {
         preventOpen: false,
         lastPress: 0,
         uuid: null,
-        uuid2: null,
         popStateHandler: null,
         signal: null,
         historyClose: false,
@@ -2336,7 +2335,6 @@ export default {
             addHandler,
             {neverExpire: true}
         );
-        this.memory.uuid2 = filter.add("#right_issuezoom", addHandler);
 
         this.memory.popStateHandler = (ev: PopStateEvent) => {
             if (!ev.state) {
@@ -2365,8 +2363,6 @@ export default {
     revoke(filter) {
         if (this.memory.uuid) filter.remove(this.memory.uuid, true);
 
-        if (this.memory.uuid2) filter.remove(this.memory.uuid2, true);
-
         if (this.memory.popStateHandler)
             window.removeEventListener("popstate", this.memory.popStateHandler);
 
@@ -2378,7 +2374,6 @@ export default {
         preventOpen: boolean;
         lastPress: number;
         uuid: string | null;
-        uuid2: string | null;
         popStateHandler: ((ev: PopStateEvent) => void) | null;
         signal: AbortSignal | null;
         historyClose: boolean;
