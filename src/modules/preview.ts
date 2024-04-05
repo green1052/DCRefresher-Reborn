@@ -750,7 +750,7 @@ const panel = {
                         KEY_COUNTS[ev.code][1] = 0;
                     } else {
                         Toast.show(
-                            "한번 더 D키를 누르면 차단합니다.",
+                            "한번 더 B키를 누르면 차단합니다.",
                             true,
                             1000
                         );
