@@ -306,7 +306,8 @@ const request = {
         avoid_hour: number,
         avoid_reason: number,
         avoid_reason_txt: string,
-        del_chk: number
+        del_chk: number,
+        user_type: number
     ) {
         if (!args.link)
             throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
@@ -323,6 +324,7 @@ const request = {
         params.set("avoid_reason", avoid_reason.toString());
         params.set("avoid_reason_txt", avoid_reason_txt);
         params.set("del_chk", del_chk.toString());
+        params.set("avoid_type_chk", user_type.toString());
 
         const response = await client(
             galleryType == "mini/"
@@ -501,7 +503,8 @@ const panel = {
             avoid_hour: number,
             avoid_reason: number,
             avoid_reason_txt: string,
-            del_chk: number
+            del_chk: number,
+            userType: number
         ) => void,
         closeCallback: () => void
     ) => {
@@ -541,6 +544,10 @@ const panel = {
         <div class="block">
           <h3>선택한 글 삭제</h3>
           <input type="checkbox" name="remove"></input>
+          
+          <h3>식별 코드 차단 시 IP 동시 차단</h3>
+          <input type="checkbox" name="user-type"></input>
+          
           <button class="go-block">차단</button>
         </div>
       </div>
@@ -553,7 +560,7 @@ const panel = {
             closeCallback();
         });
 
-        element.querySelectorAll("input[type=\"radio\"]").forEach((v) => {
+        element.querySelectorAll("input[type=radio]").forEach((v) => {
             v.addEventListener("click", (ev) => {
                 const selected = ev.target as HTMLInputElement;
 
@@ -585,11 +592,16 @@ const panel = {
                     `input[name=remove]`
                 )!.checked;
 
+            const userType = element.querySelector<HTMLInputElement>(
+                "input[name=user-type]"
+            )!.checked;
+
             callback(
                 avoid_hour,
                 avoid_reason,
                 avoid_reason_txt,
-                del_chk ? 1 : 0
+                del_chk ? 1 : 0,
+                userType ? 1 : 0
             );
         });
 
@@ -755,7 +767,8 @@ const panel = {
                     avoid_hour: number,
                     avoid_reason: number,
                     avoid_reason_txt: string,
-                    del_chk: number
+                    del_chk: number,
+                    user_type: number
                 ) => {
                     request
                         .block(
@@ -763,7 +776,8 @@ const panel = {
                             avoid_hour,
                             avoid_reason,
                             avoid_reason_txt,
-                            del_chk
+                            del_chk,
+                            user_type
                         )
                         .then((response) => {
                             if (typeof response === "object") {
@@ -1204,7 +1218,8 @@ let frame: IFrame;
 const blockPreset = {
     day: "",
     reason: "",
-    delete: false
+    delete: false,
+    user_type: false
 };
 
 export default {
@@ -1332,6 +1347,12 @@ export default {
             type: "check",
             default: false
         },
+        blockPresetUserType: {
+            name: "관리 패널 > 차단 프리셋 > 식별 코드 차단 시 IP 동시 차단",
+            desc: "차단 시 선택한 글을 삭제합니다.",
+            type: "check",
+            default: false
+        },
         expandRecognizeRange: {
             name: "게시글 목록 인식 범위 확장",
             desc: "게시글의 오른쪽 클릭을 인식하는 범위를 칸 전체로 확장합니다.",
@@ -1373,6 +1394,7 @@ export default {
         blockPreset.day = this.status.blockPresetDay;
         blockPreset.reason = this.status.blockPresetReason;
         blockPreset.delete = this.status.blockPresetDelete;
+        blockPreset.user_type = this.status.blockPresetUserType;
 
         let postFetchedData: PostInfo;
         const gallery = queryString("id") ?? undefined;
@@ -2397,6 +2419,7 @@ export default {
         blockPresetDay: RefresherOptionSettings;
         blockPresetReason: RefresherTextSettings;
         blockPresetDelete: RefresherCheckSettings;
+        blockPresetUserType: RefresherCheckSettings;
         expandRecognizeRange: RefresherCheckSettings;
         experimentalComment: RefresherCheckSettings;
         bypassCaptcha: RefresherCheckSettings;
