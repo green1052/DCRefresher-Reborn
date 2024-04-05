@@ -48,6 +48,6 @@ export default Vue.extend({
                 ev.target.value
             );
         }
-    },
+    }
 });
 </script>
