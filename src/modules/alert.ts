@@ -1,11 +1,5 @@
 import * as Toast from "../components/toast";
-import {runtime} from "webextension-polyfill";
-
-const inject = (filename: string) => {
-    const scriptElement = document.createElement("script");
-    scriptElement.src = runtime.getURL(filename);
-    document.documentElement.appendChild(scriptElement);
-};
+import {inject} from "../utils/inject";
 
 export default {
     name: "알림 개선",
