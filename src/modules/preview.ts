@@ -687,7 +687,8 @@ const panel = {
                     Number(blockPreset.day),
                     0,
                     blockPreset.reason,
-                    blockPreset.delete ? 1 : 0
+                    blockPreset.delete ? 1 : 0,
+                    blockPreset.user_type ? 1 : 0
                 )
                 .then((response) => {
                     if (typeof response === "object") {
