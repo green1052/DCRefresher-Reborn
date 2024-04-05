@@ -66,7 +66,7 @@ export default {
 
             browser.storage.sync.get().then(async (data) => {
                 try {
-                    await storage.clear()
+                    await storage.clear();
 
                     storage.setObject(data);
                     Toast.show("데이터를 복원했습니다.", false, 3000);
@@ -126,4 +126,4 @@ export default {
         importData: RefresherCheckSettings;
         clearData: RefresherCheckSettings;
     };
-}>
+}>;
