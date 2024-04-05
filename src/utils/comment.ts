@@ -143,7 +143,7 @@ export async function submitComment(
             "X-Requested-With": "XMLHttpRequest"
         },
         body: params
-    }
+    };
 
     const response = browser.runtime.getManifest().manifest_version === 2
         ? await content.fetch(url, options).then(response => response.text())
