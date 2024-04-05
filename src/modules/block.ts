@@ -112,7 +112,7 @@ export default {
                             const $next = $content.next();
 
                             if (!$next.hasClass("ub-content") && $next.children(".reply").length > 0) {
-                                hideElement($next, this.status.blur)
+                                hideElement($next, this.status.blur);
                             }
                         }
 
@@ -168,7 +168,7 @@ export default {
                         const $next = $comment.next();
 
                         if (!$next.hasClass("ub-content") && $next.children(".reply").length > 0) {
-                            hideElement($next, this.status.blur)
+                            hideElement($next, this.status.blur);
                         }
                     }
 

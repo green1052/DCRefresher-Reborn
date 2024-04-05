@@ -168,7 +168,7 @@ const kyClient = ky.create({
     headers: {
         "X-Requested-With": "XMLHttpRequest"
     }
-})
+});
 
 const client = browser.runtime.getManifest().manifest_version === 2
     ? (url: URL | RequestInfo, init?: RequestInit | undefined): Promise<string> => {
@@ -183,7 +183,7 @@ const client = browser.runtime.getManifest().manifest_version === 2
     }
     : (url: Input, options?: Options): Promise<string> => {
         return kyClient(url, options).text();
-    }
+    };
 
 const request = {
     async vote(
@@ -2341,7 +2341,7 @@ export default {
                     ev,
                     this.status.tooltipMode,
                     this.status.tooltipMediaHide
-                )
+                );
             });
             element.addEventListener("mousemove", (ev) =>
                 miniPreview.move(ev, this.status.tooltipMode)
