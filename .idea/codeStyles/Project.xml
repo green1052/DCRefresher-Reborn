@@ -5,5 +5,21 @@
       <option name="FORCE_QUOTE_STYlE" value="true" />
       <option name="ENFORCE_TRAILING_COMMA" value="Remove" />
     </JSCodeStyleSettings>
+    <TypeScriptCodeStyleSettings version="0">
+      <option name="FORCE_SEMICOLON_STYLE" value="true" />
+      <option name="FORCE_QUOTE_STYlE" value="true" />
+      <option name="ENFORCE_TRAILING_COMMA" value="Remove" />
+    </TypeScriptCodeStyleSettings>
+    <codeStyleSettings language="JSON">
+      <indentOptions>
+        <option name="INDENT_SIZE" value="4" />
+      </indentOptions>
+    </codeStyleSettings>
+    <codeStyleSettings language="Vue">
+      <indentOptions>
+        <option name="INDENT_SIZE" value="4" />
+        <option name="TAB_SIZE" value="4" />
+      </indentOptions>
+    </codeStyleSettings>
   </code_scheme>
 </component>
