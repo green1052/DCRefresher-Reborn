@@ -1219,6 +1219,9 @@ tr .gall_writer {
 
     .refresher-reply {
       cursor: pointer;
+      // TODO
+      //border: 1px solid black;
+      //border-radius: 5px;
       font-size: 12px;
       opacity: 0.6;
     }
@@ -1312,6 +1315,11 @@ tr .gall_writer {
     background: transparent;
     border: 0;
     border-bottom: 1px solid #000;
+    // TODO
+    //border: 1px solid #000;
+    //border-radius: 5px;
+    // border: 0;
+    // border-bottom: 1px solid #000;
     color: #000;
     font-size: 14px;
     transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
