@@ -11,6 +11,14 @@ export default {
     description: "글쓰기 페이지를 변경합니다.",
     url: /\/board\/write/,
     status: {},
+    data: {
+        temporarySave: {
+            id: "",
+            title: "",
+            content: "",
+            date: 0
+        }
+    },
     memory: {
         canvas: "",
         submitButton: ""
@@ -69,6 +77,12 @@ export default {
             max: 100,
             step: 1,
             unit: "%"
+        },
+        temporarySave: {
+            name: "임시 저장",
+            desc: "글 작성 중 내용을 임시 저장합니다.",
+            type: "check",
+            default: false
         }
     },
     require: ["filter"],
@@ -214,6 +228,42 @@ export default {
                                 Toast.show("이미지 업로드 완료", false, 1000);
                             });
                         }
+
+                        if (this.status.temporarySave) {
+                            const gallId = $("form > input[name=id]").val() as string;
+
+                            const reset = () => {
+                                this.data!.temporarySave.id = "";
+                                this.data!.temporarySave.title = "";
+                                this.data!.temporarySave.content = "";
+                                this.data!.temporarySave.date = 0;
+                            };
+
+                            if (Date.now() - this.data!.temporarySave.date > 86400000) {
+                                reset();
+                            }
+
+                            if (
+                                this.data!.temporarySave.id === gallId &&
+                                this.data!.temporarySave.title &&
+                                this.data!.temporarySave.content &&
+                                this.data!.temporarySave.date &&
+                                confirm("이전에 작성한 글이 있습니다. 불러오시겠습니까? (취소 시 삭제)")
+                            ) {
+                                $("#subject").val(this.data!.temporarySave.title);
+                                $contentContainer.html(this.data!.temporarySave.content);
+                            } else {
+                                reset();
+                            }
+
+                            this.data!.temporarySave.id = gallId;
+
+                            setInterval(() => {
+                                this.data!.temporarySave.title = $("#subject").val() as string;
+                                this.data!.temporarySave.content = $contentContainer.html() as string;
+                                this.data!.temporarySave.date = Date.now();
+                            }, 5000);
+                        }
                     }, 500);
                 });
 
@@ -226,6 +276,14 @@ export default {
         filter.remove(this.memory.canvas);
     }
 } as RefresherModule<{
+    data: {
+        temporarySave: {
+            id: string;
+            title: string;
+            content: string;
+            date: number;
+        }
+    },
     memory: {
         submitButton: string;
         canvas: string;
@@ -239,6 +297,7 @@ export default {
         footer: RefresherTextSettings;
         convertWebp: RefresherCheckSettings;
         convertWebpQuality: RefresherRangeSettings;
+        temporarySave: RefresherCheckSettings;
     };
     require: ["filter"];
 }>;
