@@ -5,6 +5,7 @@ export default {
     description: "무급 노예들을 위한 여러 편의 기능을 제공합니다.",
     url: /\/board\/(view|lists)/,
     status: {},
+    data: {},
     memory: {},
     enable: false,
     default_enable: false,
@@ -24,6 +25,12 @@ export default {
         checkCommentViaCtrl: {
             name: "Ctrl 대댓글 체크",
             desc: "Ctrl키를 누른 상태로 댓글을 클릭하면 대댓글도 체크합니다.",
+            type: "check",
+            default: false
+        },
+        checkTempAccount: {
+            name: "깡계 체크",
+            desc: "임시 계정을 체크합니다.",
             type: "check",
             default: false
         }
@@ -84,6 +91,9 @@ export default {
         filter.remove(this.memory.checkBox);
     }
 } as RefresherModule<{
+    data: {
+
+    },
     memory: {
         checkBox: string;
     };
@@ -91,6 +101,7 @@ export default {
         checkAllTargetUser: RefresherCheckSettings;
         checkViaShift: RefresherCheckSettings;
         checkCommentViaCtrl: RefresherCheckSettings;
+        checkTempAccount: RefresherCheckSettings;
     };
     require: ["filter"];
 }>;
