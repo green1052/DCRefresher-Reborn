@@ -664,6 +664,8 @@ const panel = {
             frame.app.close();
 
             request.delete(preData).then((response) => {
+                eventBus.emit("refreshRequest");
+
                 if (typeof response === "object") {
                     if (response.result === "success") {
                         Toast.show(response.msg, false, 3000);
@@ -691,6 +693,8 @@ const panel = {
                     blockPreset.user_type ? 1 : 0
                 )
                 .then((response) => {
+                    eventBus.emit("refreshRequest");
+
                     if (typeof response === "object") {
                         if (response.result === "success") {
                             Toast.show(response.msg, false, 3000);
@@ -781,6 +785,8 @@ const panel = {
                             user_type
                         )
                         .then((response) => {
+                            eventBus.emit("refreshRequest");
+
                             if (typeof response === "object") {
                                 if (response.result === "success") {
                                     Toast.show(response.msg, false, 3000);
