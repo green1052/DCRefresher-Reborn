@@ -93,6 +93,13 @@ export default {
     },
     require: ["filter"],
     func(filter) {
+        const resetTemporaryData = () => {
+            this.data!.temporarySave.id = "";
+            this.data!.temporarySave.title = "";
+            this.data!.temporarySave.content = "";
+            this.data!.temporarySave.date = 0;
+        };
+
         inject("../assets/js/attach_upload.js");
 
         window.addEventListener("beforeunload", (ev) => {
@@ -131,19 +138,29 @@ export default {
                     const footer = this.status.footer;
                     const selfImage = this.status.selfImage;
 
+                    const $canvas = $("#tx_canvas_wysiwyg").contents().find("body");
+                    const canvas = $canvas.get(0) as HTMLBodyElement;
+                    const selectTop = () => {
+                        if (!canvas) return;
+
+                        canvas.focus();
+                        // @ts-ignore
+                        canvas.setSelectionRange(0, 0);
+                    };
+
                     if (selfImage) {
-                        attachImage($("#tx_canvas_wysiwyg").contents().find("body"), selfImage);
+                        selectTop();
+                        attachImage($canvas, selfImage);
                     }
 
                     if (header) {
-                        $("#tx_canvas_wysiwyg")
-                            .contents()
-                            .find("body")
+                        selectTop();
+                        $canvas
                             .prepend(`${header}`);
                     }
 
                     if (footer) {
-                        $("#tx_canvas_wysiwyg").contents().find("body").append(`${footer}`);
+                        $canvas.append(`${footer}`);
                     }
 
                     if (this.status.bypassTitleLimit) {
@@ -152,6 +169,8 @@ export default {
 
                         if (title.length === 1) $titleElement.val(`${title}\u200B`);
                     }
+
+                    resetTemporaryData();
                 });
 
                 filter.remove(this.memory.submitButton);
@@ -223,7 +242,6 @@ export default {
                                             )
                                             .json<any>()
                                             .then((parsed) => {
-                                                console.log(parsed);
                                                 return parsed.files[0];
                                             });
 
@@ -244,15 +262,8 @@ export default {
                         if (this.status.temporarySave) {
                             const gallId = $("form > input[name=id]").val() as string;
 
-                            const reset = () => {
-                                this.data!.temporarySave.id = "";
-                                this.data!.temporarySave.title = "";
-                                this.data!.temporarySave.content = "";
-                                this.data!.temporarySave.date = 0;
-                            };
-
                             if (Date.now() - this.data!.temporarySave.date > 86400000) {
-                                reset();
+                                resetTemporaryData();
                             }
 
                             if (
@@ -265,7 +276,7 @@ export default {
                                 $("#subject").val(this.data!.temporarySave.title);
                                 $contentContainer.html(this.data!.temporarySave.content);
                             } else {
-                                reset();
+                                resetTemporaryData();
                             }
 
                             this.data!.temporarySave.id = gallId;
