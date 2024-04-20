@@ -510,7 +510,7 @@ tr .gall_writer {
 }
 
 .refresherHideNotice {
-    tr[data-type="icon_notice"] {
+    tr:has(em[class*=icon_notice]) {
         display: none;
     }
 }
