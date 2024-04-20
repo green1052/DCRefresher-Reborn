@@ -83,11 +83,23 @@ export default {
             desc: "글 작성 중 내용을 임시 저장합니다.",
             type: "check",
             default: false
+        } ,
+        preventExit: {
+            name: "나가기 방지",
+            desc: "글 작성 중 나가기를 방지합니다.",
+            type: "check",
+            default: false
         }
     },
     require: ["filter"],
     func(filter) {
         inject("../assets/js/attach_upload.js");
+
+        window.addEventListener("beforeunload", (ev) => {
+            if (this.status.preventExit) {
+                ev.preventDefault();
+            }
+        });
 
         const attachImage = ($contentContainer: Cash, data: string | Record<string, string>) => {
             if (!this.status.bypassUpload && typeof data === "object") {
@@ -298,6 +310,7 @@ export default {
         convertWebp: RefresherCheckSettings;
         convertWebpQuality: RefresherRangeSettings;
         temporarySave: RefresherCheckSettings;
+        preventExit: RefresherCheckSettings;
     };
     require: ["filter"];
 }>;
