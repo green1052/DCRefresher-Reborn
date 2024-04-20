@@ -39,6 +39,18 @@ const contextMenus: browser.Menus.CreateCreatePropertiesType[] = [
     }
 ];
 
+const updateIpDatabase = async () => {
+    const version = await ky.get("https://dcrefresher.green1052.com/data/version").text();
+
+    if (await storage.get("refresher.database.ip.version") === version) return;
+
+    storage.set("refresher.database.ip.version", version);
+
+    const data = ky.get("https://dcrefresher.green1052.com/data/ip.json").json();
+
+    storage.set("refresher.database.ip", data);
+};
+
 let modules: ModuleStore = {};
 let settings: SettingsStore = {};
 let blocks: BlockCache = {
@@ -202,22 +214,9 @@ browser.runtime.onInstalled.addListener((details) => {
     if (browser.runtime.getManifest().version_name) return;
 
     try {
-        ky.get(
-            "https://dcrefresher.green1052.com/data/version"
-        )
-            .text()
-            .then((version) => {
-                storage.set("refresher.database.ip.version", version);
-            });
-
-        ky.get(
-            "https://dcrefresher.green1052.com/data/ip.json"
-        )
-            .json()
-            .then((data) => {
-                storage.set("refresher.database.ip", data);
-            });
-    } catch {
+        updateIpDatabase();
+    } finally {
+        storage.set("refresher.database.lastUpdate", Date.now());
     }
 
     if (details.reason === "install") {
@@ -241,3 +240,12 @@ browser.commands.onCommand.addListener((command) => {
         });
     });
 });
+
+(async () => {
+    const lastUpdate = await storage.get<number>("refresher.database.lastUpdate");
+
+    if (lastUpdate && Date.now() - lastUpdate > 604800000) {
+        await updateIpDatabase();
+        storage.set("refresher.database.lastUpdate", Date.now());
+    }
+})();
