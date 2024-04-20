@@ -429,7 +429,9 @@ export default {
             run();
         });
 
-        run(true);
+        window.addEventListener("pageshow", () => {
+            run(true);
+        });
 
         this.memory.refreshRequest = eventBus.on("refreshRequest", () => {
             if (this.memory.refresh) {
