@@ -41,13 +41,9 @@ const contextMenus: browser.Menus.CreateCreatePropertiesType[] = [
 
 const updateIpDatabase = async () => {
     const version = await ky.get("https://dcrefresher.green1052.com/data/version").text();
-
-    if (await storage.get("refresher.database.ip.version") === version) return;
-
     storage.set("refresher.database.ip.version", version);
 
-    const data = ky.get("https://dcrefresher.green1052.com/data/ip.json").json();
-
+    const data = await ky.get("https://dcrefresher.green1052.com/data/ip.json").json();
     storage.set("refresher.database.ip", data);
 };
 
