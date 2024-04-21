@@ -955,11 +955,6 @@ export default Vue.extend({
                     )
                     .text();
 
-                if (this.ipDatabaseVersion === version) {
-                    alert("이미 최신 버전입니다.");
-                    return;
-                }
-
                 storage.set("refresher.database.ip.version", version);
 
                 const data = await ky
