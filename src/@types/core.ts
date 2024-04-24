@@ -63,7 +63,7 @@ declare global {
         functions: {
             vote(type: number): Promise<boolean>;
             share(): boolean;
-            load(useCache?: boolean): void;
+            load(useCache?: boolean): Promise<void>;
             retry(useCache?: boolean): void;
             openOriginal(): boolean;
             writeComment(

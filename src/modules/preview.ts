@@ -1468,18 +1468,17 @@ export default {
                         preData.link!
                     );
 
-                    if (res.result !== "true") {
-                        Toast.show(res.counts, true, 2000);
+                    if (res.result === "true") {
+                        frame[type ? "upvotes" : "downvotes"] = res.counts.replace(
+                            /\B(?=(\d{3})+(?!\d))/g,
+                            ",");
 
-                        return false;
+                        return true;
                     }
 
-                    frame[type ? "upvotes" : "downvotes"] = res.counts.replace(
-                        /\B(?=(\d{3})+(?!\d))/g,
-                        ","
-                    );
+                    Toast.show(res.counts, true, 2000);
 
-                    return true;
+                    return false;
                 };
 
                 return codeSrc
@@ -1501,104 +1500,101 @@ export default {
                 return true;
             };
 
-            frame.functions.load = (useCache = true) => {
+            frame.functions.load = async (useCache = true) => {
                 frame.data.load = true;
 
-                new Promise<PostInfo>((resolve, reject) => {
-                    if (!this.status.disableCache) {
-                        const cache = postCaches.get(
-                            `${preData.gallery}${preData.id}`
-                        );
+                const getPostInfo = async (): Promise<PostInfo> => {
+                    if (useCache && !this.status.disableCache) {
+                        const cache = postCaches.get(`${preData.gallery}${preData.id}`);
 
-                        if (useCache && cache?.post !== undefined) {
-                            resolve(cache.post);
-                            return;
+                        if (cache?.post !== undefined) {
+                            return cache.post;
                         }
                     }
 
-                    request
+                    const response = await request
                         .post(
                             preData.link!,
                             preData.gallery,
                             preData.id,
                             signal
-                        )
-                        .then((response) => {
-                            if (!response) {
-                                reject();
-                                return;
-                            }
+                        );
 
-                            postCaches.set(`${preData.gallery}${preData.id}`, {
-                                date: Date.now(),
-                                post: response
-                            });
-                            resolve(response);
-                        })
-                        .catch((error) => {
-                            reject(error);
-                        });
-                })
-                    .then((postInfo) => {
-                        if (this.status.colorPreviewLink) {
-                            const title = `${postInfo.title} - ${document.title
-                                .split("-")
-                                .slice(-1)[0]
-                                .trim()}`;
+                    if (!response)
+                        throw "Can not fetch post data.";
 
-                            if (!historySkip) {
-                                preData.title = postInfo.title;
-                                history.replaceState(
-                                    {preData, preURL: location.href},
-                                    title,
-                                    preData.link
-                                );
-                            }
+                    postCaches.set(`${preData.gallery}${preData.id}`, {
+                        date: Date.now(),
+                        post: response
+                    });
 
-                            document.title = title;
+                    return response;
+                };
+
+                try {
+                    const postInfo = await getPostInfo();
+                    postFetchedData = postInfo;
+
+                    if (this.status.colorPreviewLink) {
+                        const title = `${postInfo.title} - ${document.title
+                            .split("-")
+                            .slice(-1)[0]
+                            .trim()}`;
+
+                        if (!historySkip) {
+                            preData.title = postInfo.title;
+                            history.replaceState(
+                                {preData, preURL: location.href},
+                                title,
+                                preData.link
+                            );
                         }
 
-                        postFetchedData = postInfo;
+                        document.title = title;
+                    }
 
+                    try {
                         if (postInfo.isAdult) {
                             frame.error = {
                                 title: "성인 인증이 필요한 게시글입니다.",
                                 detail: "성인 인증을 하신 후 다시 시도해주세요."
                             };
-                        } else {
-                            frame.contents = block.check(
-                                "TEXT",
-                                postInfo.contents ?? "",
-                                gallery
-                            )
-                                ? "게시글 내용이 차단됐습니다."
-                                : postInfo.contents;
-                            frame.upvotes = postInfo.upvotes;
-                            frame.fixedUpvotes = postInfo.fixedUpvotes;
-                            frame.downvotes = postInfo.downvotes;
 
-                            if (frame.title !== postInfo.title)
-                                frame.title = postInfo.title!;
-
-                            frame.data.disabledDownvote =
-                                postInfo.disabledDownvote ?? false;
-
-                            frame.data.user = postInfo.user;
-
-                            if (postInfo.date) {
-                                frame.data.date = new Date(
-                                    postInfo.date.replace(/\./g, "-")
-                                );
-                            }
-
-                            if (postInfo.expire) {
-                                frame.data.expire = new Date(postInfo.expire);
-                            }
-
-                            frame.data.buttons = true;
-                            frame.data.views = `조회 ${postInfo.views}회`;
+                            return;
                         }
 
+                        frame.contents = block.check(
+                            "TEXT",
+                            postInfo.contents ?? "",
+                            gallery
+                        )
+                            ? "게시글 내용이 차단됐습니다."
+                            : postInfo.contents;
+                        frame.upvotes = postInfo.upvotes;
+                        frame.fixedUpvotes = postInfo.fixedUpvotes;
+                        frame.downvotes = postInfo.downvotes;
+
+                        if (frame.title !== postInfo.title)
+                            frame.title = postInfo.title!;
+
+                        frame.data.disabledDownvote =
+                            postInfo.disabledDownvote ?? false;
+
+                        frame.data.user = postInfo.user;
+
+                        if (postInfo.date) {
+                            frame.data.date = new Date(
+                                postInfo.date.replace(/\./g, "-")
+                            );
+                        }
+
+                        if (postInfo.expire) {
+                            frame.data.expire = new Date(postInfo.expire);
+                        }
+
+                        frame.data.buttons = true;
+                        frame.data.views = `조회 ${postInfo.views}회`;
+                    } finally {
                         eventBus.emit("RefresherPostDataLoaded", postInfo);
                         eventBus.emit(
                             "RefresherPostCommentIDLoaded",
@@ -1606,24 +1602,20 @@ export default {
                             postInfo.commentNo
                         );
                         eventBus.emitNextTick("contentPreview", frame.app.$el);
+                    }
+                } catch (error) {
+                    frame.error = {
+                        title: "게시글",
+                        detail: String(error)
+                    };
 
-                        frame.data.load = false;
-                    })
-                    .catch((error) => {
-                        frame.error = {
-                            title: "게시글",
-                            detail: String(error)
-                        };
-
-                        log("Error occured while loading a post.", error);
-
-                        frame.data.load = false;
-                    });
+                    log("Error occured while loading a post.", error);
+                } finally {
+                    frame.data.load = false;
+                }
             };
 
-            frame.functions.retry = (useCache = false) => {
-                frame.functions.load(useCache);
-            };
+            frame.functions.retry = (useCache = false) => frame.functions.load(useCache);
 
             if (!frame.collapse) frame.functions.load();
 
@@ -1819,22 +1811,21 @@ export default {
                     .catch(() => false);
             };
 
-            frame.functions.load = (useCache = true) => {
+            frame.functions.load = async (useCache = true) => {
                 frame.data.load = true;
 
-                new Promise<DcinsideComments>((resolve, reject) => {
-                    if (!this.status.disableCache) {
+                const getCommentInfo = async (): Promise<DcinsideComments> => {
+                    if (useCache && !this.status.disableCache) {
                         const cache = postCaches.get(
                             `${preData.gallery}${preData.id}`
                         );
 
-                        if (useCache && cache?.comment) {
-                            resolve(cache.comment);
-                            return;
+                        if (cache?.comment) {
+                            return cache.comment;
                         }
                     }
 
-                    request
+                    const response = await request
                         .comments(
                             {
                                 link: preData.link!,
@@ -1842,146 +1833,163 @@ export default {
                                 id: preData.id
                             },
                             signal
-                        )
-                        .then((response) => {
-                            if (!response) {
-                                reject();
-                                return;
+                        );
+
+                    if (!response)
+                        throw "Can not fetch comment data.";
+
+                    return response;
+                };
+
+                try {
+                    const comments = await getCommentInfo();
+                    let threadCounts = 0;
+                    let commentCounts = 0;
+
+                    if (comments.comments) {
+                        const cache = postCaches.get(`${preData.gallery}${preData.id}`);
+                        const cacheComment = cache?.comment?.comments;
+
+                        comments.comments = comments.comments.filter(
+                            (v: DcinsideCommentObject) => {
+                                return v.nicktype !== "COMMENT_BOY";
                             }
+                        );
 
-                            resolve(response);
-                        });
-                })
-                    .then((comments) => {
-                        let threadCounts = 0;
-                        let commentCounts = 0;
+                        if (this.status.archiveArticle && cacheComment) {
+                            cacheComment.forEach((v: DcinsideCommentObject) => {
+                                if (!comments.comments!.find((c: DcinsideCommentObject) => c.no === v.no)) {
+                                    v.is_delete = "1";
 
-                        if (comments.comments) {
-                            const cache = postCaches.get(`${preData.gallery}${preData.id}`);
-                            const cacheComment = cache?.comment?.comments;
+                                    if (v.depth === 1) {
+                                        const copy = [...comments.comments!];
 
-                            comments.comments = comments.comments.filter(
-                                (v: DcinsideCommentObject) => {
-                                    return v.nicktype !== "COMMENT_BOY";
-                                }
-                            );
+                                        let findReply = false;
+                                        let isBig = false;
 
-                            if (this.status.archiveArticle && cacheComment) {
-                                cacheComment.forEach((v: DcinsideCommentObject) => {
-                                    if (!comments.comments!.find((c: DcinsideCommentObject) => c.no === v.no)) {
-                                        v.is_delete = "1";
-
-                                        if (v.depth === 1) {
-                                            const copy = [...comments.comments!];
-
-                                            let findReply = false;
-                                            let isBig = false;
-
-                                            const parent = copy.reverse().find((c: DcinsideCommentObject) => {
-                                                if (c.c_no === v.c_no) {
-                                                    if (c.no > v.no) {
-                                                        isBig = true;
-                                                    }
-
-                                                    findReply = true;
-                                                    return true;
+                                        const parent = copy.reverse().find((c: DcinsideCommentObject) => {
+                                            if (c.c_no === v.c_no) {
+                                                if (c.no > v.no) {
+                                                    isBig = true;
                                                 }
 
-                                                return c.no === v.c_no;
-                                            });
+                                                findReply = true;
+                                                return true;
+                                            }
 
-                                            comments.comments!.splice(comments.comments!.indexOf(parent!) + (findReply && isBig ? 0 : 1), 0, v);
+                                            return c.no === v.c_no;
+                                        });
 
-                                            return;
-                                        }
+                                        comments.comments!.splice(comments.comments!.indexOf(parent!) + (findReply && isBig ? 0 : 1), 0, v);
 
-                                        comments.comments!.push(v);
+                                        return;
                                     }
 
+                                    comments.comments!.push(v);
+                                }
 
-                                    // TODO: 리렌더링 안됨
-                                    const orgIndex = comments.comments!.findIndex((c: DcinsideCommentObject) => c.no === v.no && c.is_delete !== "0");
 
-                                    if (orgIndex !== -1) {
-                                        v.is_delete = "2";
-                                        comments.comments!.splice(orgIndex, 1, v);
-                                    }
-                                });
+                                // TODO: 리렌더링 안됨
+                                const orgIndex = comments.comments!.findIndex((c: DcinsideCommentObject) => c.no === v.no && c.is_delete !== "0");
+
+                                if (orgIndex !== -1) {
+                                    v.is_delete = "2";
+                                    comments.comments!.splice(orgIndex, 1, v);
+                                }
+                            });
+                        }
+
+                        postCaches.set(`${preData.gallery}${preData.id}`, {
+                            date: Date.now(),
+                            comment: comments
+                        });
+
+                        comments.comments.map(
+                            (v: DcinsideCommentObject) => {
+                                v.user = new User(
+                                    v.name,
+                                    v.user_id || null,
+                                    v.ip || null,
+                                    domParser
+                                        .parseFromString(
+                                            v.gallog_icon,
+                                            "text/html"
+                                        )
+                                        .querySelector(
+                                            "a.writer_nikcon img"
+                                        )
+                                        ?.getAttribute("src") || null
+                                );
                             }
+                        );
 
-                            postCaches.set(`${preData.gallery}${preData.id}`, {
-                                date: Date.now(),
-                                comment: comments
+                        comments.comments = comments.comments.filter(
+                            (comment: DcinsideCommentObject) => {
+                                const check: {
+                                    [index in RefresherBlockType]?: string;
+                                } = {
+                                    NICK: comment.name
+                                };
+
+                                if (comment.user_id !== null) {
+                                    check.ID = comment.user_id;
+                                }
+
+                                if (comment.ip !== null) {
+                                    check.IP = comment.ip;
+                                }
+
+                                if (
+                                    /<(img|video) class=/.test(comment.memo)
+                                ) {
+                                    check.DCCON =
+                                        /https:\/\/dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g.exec(
+                                            comment.memo
+                                        )![1];
+                                } else {
+                                    check.COMMENT = comment.memo;
+                                }
+
+                                const isBlocked = block.checkAll(check, gallery);
+
+                                if (isBlocked) {
+                                    // if (replyConfig) {
+                                    //     if (blurConfig) {
+                                    //         comment.memo = "댓글 내용이 차단됐습니다.";
+                                    //     } else {
+                                    //         return false;
+                                    //     }
+                                    // }
+
+                                    if (blurConfig) {
+                                        comment.memo = "댓글 내용이 차단됐습니다.";
+                                        comment.is_delete = "1";
+                                    } else {
+                                        return false;
+                                    }
+                                }
+
+                                return true;
+                            }
+                        );
+
+                        threadCounts = comments.comments
+                            .map((v: DcinsideCommentObject) =>
+                                Number(v.depth == 0)
+                            )
+                            .reduce((a: number, b: number) => a + b);
+
+                        commentCounts = comments.comments.length;
+                    } else if (this.status.archiveArticle) {
+                        const cache = postCaches.get(`${preData.gallery}${preData.id}`);
+                        const cacheComment = cache?.comment?.comments;
+
+                        if (cacheComment) {
+                            cacheComment.forEach((v: DcinsideCommentObject) => {
+                                v.is_delete = "1";
                             });
 
-                            comments.comments.map(
-                                (v: DcinsideCommentObject) => {
-                                    v.user = new User(
-                                        v.name,
-                                        v.user_id || null,
-                                        v.ip || null,
-                                        domParser
-                                            .parseFromString(
-                                                v.gallog_icon,
-                                                "text/html"
-                                            )
-                                            .querySelector(
-                                                "a.writer_nikcon img"
-                                            )
-                                            ?.getAttribute("src") || null
-                                    );
-                                }
-                            );
-
-                            comments.comments = comments.comments.filter(
-                                (comment: DcinsideCommentObject) => {
-                                    const check: {
-                                        [index in RefresherBlockType]?: string;
-                                    } = {
-                                        NICK: comment.name
-                                    };
-
-                                    if (comment.user_id !== null) {
-                                        check.ID = comment.user_id;
-                                    }
-
-                                    if (comment.ip !== null) {
-                                        check.IP = comment.ip;
-                                    }
-
-                                    if (
-                                        /<(img|video) class=/.test(comment.memo)
-                                    ) {
-                                        check.DCCON =
-                                            /https:\/\/dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g.exec(
-                                                comment.memo
-                                            )![1];
-                                    } else {
-                                        check.COMMENT = comment.memo;
-                                    }
-
-                                    const isBlocked = block.checkAll(check, gallery);
-
-                                    if (isBlocked) {
-                                        // if (replyConfig) {
-                                        //     if (blurConfig) {
-                                        //         comment.memo = "댓글 내용이 차단됐습니다.";
-                                        //     } else {
-                                        //         return false;
-                                        //     }
-                                        // }
-
-                                        if (blurConfig) {
-                                            comment.memo = "댓글 내용이 차단됐습니다.";
-                                            comment.is_delete = "1";
-                                        } else {
-                                            return false;
-                                        }
-                                    }
-
-                                    return true;
-                                }
-                            );
+                            comments.comments = cacheComment;
 
                             threadCounts = comments.comments
                                 .map((v: DcinsideCommentObject) =>
@@ -1990,42 +1998,24 @@ export default {
                                 .reduce((a: number, b: number) => a + b);
 
                             commentCounts = comments.comments.length;
-                        } else if (this.status.archiveArticle) {
-                            const cache = postCaches.get(`${preData.gallery}${preData.id}`);
-                            const cacheComment = cache?.comment?.comments;
-
-                            if (cacheComment) {
-                                cacheComment.forEach((v: DcinsideCommentObject) => {
-                                    v.is_delete = "1";
-                                });
-
-                                comments.comments = cacheComment;
-
-                                threadCounts = comments.comments
-                                    .map((v: DcinsideCommentObject) =>
-                                        Number(v.depth == 0)
-                                    )
-                                    .reduce((a: number, b: number) => a + b);
-
-                                commentCounts = comments.comments.length;
-                            }
                         }
+                    }
 
-                        frame.subtitle = `${
-                            (commentCounts !== threadCounts &&
-                                `쓰레드 ${threadCounts}개, 총 댓글`) ||
-                            ""
-                        } ${commentCounts}개`;
+                    frame.subtitle = `${
+                        (commentCounts !== threadCounts &&
+                            `쓰레드 ${threadCounts}개, 총 댓글`) ||
+                        ""
+                    } ${commentCounts}개`;
 
-                        frame.data.comments = comments;
-                        frame.data.load = false;
-                    })
-                    .catch((error) => {
-                        frame.error = {
-                            title: "댓글",
-                            detail: String(error)
-                        };
-                    });
+                    frame.data.comments = comments;
+                } catch (error) {
+                    frame.error = {
+                        title: "댓글",
+                        detail: String(error)
+                    };
+                } finally {
+                    frame.data.load = false;
+                }
             };
 
             frame.functions.load();
