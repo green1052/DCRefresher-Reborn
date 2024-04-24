@@ -11,7 +11,7 @@ export default {
             const image = $("img:hover").eq(-1);
             const src = image.attr("src");
 
-            if (!image.length || !src || !src.startsWith("viewimage.php")) return;
+            if (!image.length || !src || !src.includes("viewimage.php")) return;
 
             const url = new URL(src);
             url.host = "image.dcinside.com";
