@@ -525,6 +525,12 @@ tr .gall_writer {
     }
 }
 
+.refresherHideGamemeca {
+    tr[data-type=icon_fnews] {
+        display: none;
+    }
+}
+
 // Comment Dory Block Module
 
 .refresherNoDory .dcwrap .wrap_inner .dory {
