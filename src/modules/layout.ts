@@ -104,6 +104,12 @@ export default {
             desc: "글 목록에서 운영자의 게시글을 숨깁니다.",
             type: "check",
             default: false
+        },
+        removeGamemeca: {
+            name: "게임메카 숨기기",
+            desc: "글 목록에서 게임메카 게시글을 숨깁니다.",
+            type: "check",
+            default: false
         }
     },
     update: {
@@ -158,6 +164,12 @@ export default {
                 "refresherHideDCNotice",
                 value
             );
+        },
+        removeGamemeca(value: boolean) {
+            $(document.documentElement).toggleClass(
+                "refresherHideGamemeca",
+                value
+            );
         }
     },
     require: [],
@@ -185,6 +197,7 @@ export default {
         this.update.pushToRight.bind(this)(this.status.pushToRight);
         this.update.removeNotice.bind(this)(this.status.removeNotice);
         this.update.removeDCNotice.bind(this)(this.status.removeDCNotice);
+        this.update.removeGamemeca.bind(this)(this.status.removeGamemeca);
     },
     revoke() {
         window.removeEventListener("resize", this.memory.resize!);
@@ -196,6 +209,7 @@ export default {
         this.update.pushToRight.bind(this)(false);
         this.update.removeNotice.bind(this)(false);
         this.update.removeDCNotice.bind(this)(false);
+        this.update.removeGamemeca.bind(this)(this.status.removeGamemeca);
     }
 } as RefresherModule<{
     memory: {
@@ -212,6 +226,7 @@ export default {
         pushToRight: RefresherCheckSettings;
         removeNotice: RefresherCheckSettings;
         removeDCNotice: RefresherCheckSettings;
+        removeGamemeca: RefresherCheckSettings;
     };
     update: {
         activePixel(value: number): void;
@@ -223,6 +238,7 @@ export default {
         pushToRight(value: boolean): void;
         removeNotice(value: boolean): void;
         removeDCNotice(value: boolean): void;
+        removeGamemeca(value: boolean): void;
     };
     require: [];
 }>;
