@@ -336,15 +336,7 @@ export default {
 
             if (element.dataset.refresherMemo === "true") return false;
 
-            let memoData: RefresherMemoValue | null = null;
-
-            if (element.dataset.uid) {
-                memoData = memo.get("UID", element.dataset.uid);
-            } else if (element.dataset.ip) {
-                memoData = memo.get("IP", element.dataset.ip);
-            } else if (element.dataset.nick) {
-                memoData ??= memo.get("NICK", element.dataset.nick);
-            }
+            const memoData: RefresherMemoValue | null = memo.get("UID", element.dataset.uid) ?? memo.get("IP", element.dataset.ip) ?? memo.get("NICK", element.dataset.nick);
 
             if (!memoData) return false;
 
