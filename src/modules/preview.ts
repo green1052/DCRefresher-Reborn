@@ -1178,6 +1178,9 @@ const miniPreview: MiniPreview = {
                         post: response
                     });
                     resolve(response);
+                })
+                .catch((error) => {
+                    reject(error);
                 });
         })
             .then((v) => {
@@ -1609,7 +1612,7 @@ export default {
                     .catch((error) => {
                         frame.error = {
                             title: "게시글",
-                            detail: error
+                            detail: String(error)
                         };
 
                         log("Error occured while loading a post.", error);
@@ -2020,7 +2023,7 @@ export default {
                     .catch((error) => {
                         frame.error = {
                             title: "댓글",
-                            detail: error
+                            detail: String(error)
                         };
                     });
             };
@@ -2358,9 +2361,7 @@ export default {
         };
 
         this.memory.uuid = filter.add(
-            `.gall_list .us-post${
-                this.status.expandRecognizeRange ? "" : " .ub-word"
-            }`,
+            `.gall_list .ub-content${this.status.expandRecognizeRange ? "" : " .ub-word"}`,
             addHandler,
             {neverExpire: true}
         );

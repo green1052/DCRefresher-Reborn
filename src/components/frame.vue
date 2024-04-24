@@ -8,16 +8,19 @@
         }"
         class="refresher-frame">
         <div
-            v-if="frame.error !== undefined"
+            v-if="frame.error"
             class="refresher-preview-contents refresher-error">
-            <h3>{{ frame.error.title }}</h3>
+            <h3>{{ frame.error.title || "알 수 없는 오류" }}</h3>
             <br/>
             <img :src="getURL('/assets/icons/karyl.webp')" style="width: 150px; height: 150px;"/>
             <br/>
             <br/>
             <p>가능한 경우:</p>
 
-            <ul v-if="frame.error.detail.includes('Failed to fetch')">
+            <ul v-if="!frame.error.detail">
+                <li>알 수 없는 오류가 발생했습니다.</li>
+            </ul>
+            <ul v-else-if="frame.error.detail.includes('Failed to fetch')">
                 <li>연결 오류, 서버 오류일 가능성도 있습니다.</li>
                 <li>
                     브라우저 오류, 대부분 구현 오류로 확장 프로그램 업데이트가

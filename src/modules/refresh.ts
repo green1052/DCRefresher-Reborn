@@ -1,5 +1,4 @@
 import * as Toast from "../components/toast";
-import * as block from "../core/block";
 import {queryString} from "../utils/http";
 import $ from "cash-dom";
 import ky from "ky";
@@ -31,7 +30,7 @@ const addRefreshText = (issueBox: HTMLElement) => {
     const pageHead =
         issueBox ?? document.querySelector(".page_head .gall_issuebox");
 
-    if (!pageHead?.querySelector("button[data-refresher=\"true\"]")) {
+    if (!pageHead?.querySelector("button[data-refresher=true]")) {
         const button = document.createElement("button");
         button.setAttribute("type", "button");
         button.dataset.refresher = "true";
@@ -150,10 +149,8 @@ export default {
             addRefreshText(element);
         });
 
-        const isPostView = location.pathname.endsWith("/board/view/");
-        const currentPostNo = new URLSearchParams(location.href).get("no");
-        const isAlbumMode =
-            new URLSearchParams(location.href).get("board_type") === "album";
+        const urlSearchParams = new URLSearchParams(location.href);
+        const currentPostNo = urlSearchParams.get("no");
 
         let originalLocation = location.href;
 
@@ -180,20 +177,13 @@ export default {
             )
                 return false;
 
-            this.memory.lastRefresh = Date.now();
-
             const isAdmin = $(".useradmin_btnbox button").length > 0;
 
-            if (
-                isAdmin &&
-                Array.from(
-                    document.querySelectorAll<HTMLInputElement>(
-                        ".article_chkbox"
-                    )
-                ).some((v) => v.checked)
-            )
-                return false;
+            if (isAdmin && $(".article_chkbox").filter(":checked").length > 0) return false;
 
+            const managerCheckbox = $("#minor_manager_checkbox-tmpl").html();
+
+            this.memory.lastRefresh = Date.now();
             this.memory.new_counts = 0;
 
             if (customURL) {
@@ -219,84 +209,66 @@ export default {
             if ($newList.length === 0 || $newList.children().length === 0)
                 return false;
 
-            const cached = Array.from($("td.gall_num")).map(
-                (element) => element!.innerHTML
+            const cached = Array.from($("tbody > tr")).map(
+                (element) => element?.dataset.no || element?.querySelector(".gall_num")?.textContent
             );
 
-            const $list = $oldList.clone();
-            $list.html("");
+            for (const no of $oldList.children().map((_, element) => element.dataset.no || element.querySelector(".gall_num")?.textContent)) {
+                if (!no || $newList.children().filter((_, element) => element.dataset.no === String(no) || element.querySelector(".gall_num")?.textContent === String(no)).length) continue;
+                $oldList.children(`tr[data-no="${no}"]`).remove();
+            }
 
             for (const element of $newList.children()) {
                 const $element = $(element);
-                const writer: HTMLElement = $element.find(".ub-writer").get(0)!;
+                const no = $element.data("no");
 
-                let obj: Partial<Record<RefresherBlockType, string | null>> =
-                    {};
+                if (!no) continue;
 
-                if (isAlbumMode) {
-                    if ($element.hasClass("album_head")) {
-                        obj = {
-                            TITLE: $element.find(".gall_tit > a > b").text(),
-                            NICK: writer.dataset.nick,
-                            ID: writer.dataset.uid,
-                            IP: writer.dataset.ip
-                        };
-                    }
-                } else {
-                    obj = {
-                        TITLE: $element
-                            .find(".gall_tit > a:not([class])")
-                            .text(),
-                        NICK: writer.dataset.nick,
-                        ID: writer.dataset.uid,
-                        IP: writer.dataset.ip
-                    };
+                if (currentPostNo === String(no)) {
+                    const $crt = $oldList.children("tr[class*=crt]");
+
+                    $crt.children(".gall_tit").html($element.children(".gall_tit").html());
+                    $crt.children(".gall_count").html($element.children(".gall_count").html());
+                    $crt.children(".gall_recommend").html($element.children(".gall_recommend").html());
+
+                    continue;
                 }
 
-                if (block.checkAll(obj)) {
-                    if (blurConfig) {
-                        $element.css("filter", "blur(5px)");
-                        $element.css("opacity", "0.5");
-                    } else {
-                        continue;
-                    }
+                if (cached.includes(String(no))) {
+                    const $old = $oldList.children().filter((_, element) => element.dataset.no === String(no) || element.querySelector(".gall_num")?.textContent === String(no));
+
+                    $old.children(".gall_tit").html($element.children(".gall_tit").html());
+                    $old.children(".gall_count").html($element.children(".gall_count").html());
+                    $old.children(".gall_recommend").html($element.children(".gall_recommend").html());
+
+                    continue;
                 }
 
-                $list.append($element);
-            }
+                if (isAdmin) {
+                    $element.prepend(managerCheckbox);
+                }
 
-            $oldList.html($list.html());
+                const last = $oldList.children("tr:has(em.icon_notice)").last();
 
-            const postNoIter = $oldList.find("td.gall_num");
+                (last.length > 0 ? last : $oldList.children(`tr[class="ub-content "]`)).after($element);
 
-            if (!isAlbumMode) {
-                $oldList.parent().toggleClass("empty", !postNoIter.length);
-            }
+                if (this.status.fadeIn && !this.memory.calledByPageTurn) {
+                    const delay = this.memory.new_counts * 23;
 
-            for (const element of postNoIter) {
-                const $element = $(element);
-                const value = $element.html();
+                    $element
+                        .addClass("refresherNewPost")
+                        .css(
+                            "animation-delay",
+                            `${delay}ms`
+                        );
 
-                if (!cached.includes(value) && value !== currentPostNo) {
-                    if (this.status.fadeIn && !this.memory.calledByPageTurn) {
+                    setTimeout(() => {
                         $element
-                            .parent()
-                            .addClass("refresherNewPost")
-                            .css(
-                                "animation-delay",
-                                `${this.memory.new_counts * 23}ms`
-                            );
-                    }
+                            .css("animation-delay", "")
+                            .removeClass("refresherNewPost");
+                    }, delay + 1000);
 
                     this.memory.new_counts++;
-                }
-
-                if (isPostView && currentPostNo === value) {
-                    $element
-                        .empty()
-                        .append(`<span class="sp_img crt_icon"></span>`)
-                        .parent()
-                        .addClass("crt");
                 }
             }
 
@@ -322,50 +294,6 @@ export default {
 
             this.memory.calledByPageTurn = false;
 
-            // 미니 갤, 마이너 갤 관리자일 경우 체크박스를 생성합니다.
-            if (isAdmin) {
-                let templExists = true;
-                document.querySelectorAll(".us-post").forEach((elem) => {
-                    const tmpl = document.querySelector("#minor_td-tmpl");
-
-                    if (!tmpl) {
-                        templExists = false;
-                        return;
-                    }
-
-                    elem.innerHTML = tmpl.innerHTML + elem.innerHTML;
-                });
-
-                if (templExists) {
-                    document.querySelectorAll(".ub-content").forEach((elem) => {
-                        if (!elem.className.includes("us-post")) {
-                            elem.insertBefore(
-                                document.createElement("td"),
-                                elem.firstChild
-                            );
-                        }
-                    });
-
-                    if (document.querySelector("#comment_chk_all")) {
-                        const tbody_colspan = document.querySelector(
-                            "table.gall_list tbody td"
-                        );
-
-                        if (tbody_colspan) {
-                            const colspan =
-                                tbody_colspan.getAttribute("colspan") ?? "";
-
-                            if (parseInt(colspan) == 6) {
-                                tbody_colspan?.setAttribute(
-                                    "colspan",
-                                    (parseInt(colspan) + 1).toString()
-                                );
-                            }
-                        }
-                    }
-                }
-            }
-
             // 검색일 경우 강조 표시 생성
             if (queryString("s_keyword")) {
                 const keyword = $("input[name=s_keyword]").val() as string;
@@ -379,7 +307,7 @@ export default {
 
                         $tmpSubject.find(".icon_img").remove();
 
-                        const tmpSubjectHtml = $tmpSubject.html();
+                        const tmpSubjectHtml = $tmpSubject.html().trim();
 
                         if (tmpSubjectHtml.match(keyword)) {
                             let subject = tmpSubjectHtml.replace(
