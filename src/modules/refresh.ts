@@ -192,41 +192,43 @@ export default {
 
             const url = http.view(originalLocation);
 
-            const $newList = await ky
-                .get(url)
-                .text()
-                .then((body) => {
-                    const dom = new DOMParser().parseFromString(
-                        body,
-                        "text/html"
-                    );
-                    eventBus.emit("refresherGetPost", dom);
-                    return $(dom.querySelector(".gall_list:not([id]) tbody"));
-                });
+            const response = await ky.get(url).text();
+            const dom = new DOMParser().parseFromString(response, "text/html");
 
-            const $oldList = $(".gall_list:not([id]) tbody");
+            eventBus.emit("refresherGetPost", dom);
+
+            const $newList = $(dom.querySelector(".gall_list:not([id]) tbody"));
 
             if ($newList.length === 0 || $newList.children().length === 0)
                 return false;
 
-            const cached = Array.from($("tbody > tr")).map(
-                (element) => element?.dataset.no || element?.querySelector(".gall_num")?.textContent
-            );
+            const $oldList = $(".gall_list:not([id]) tbody");
 
-            for (const no of $oldList.children().map((_, element) => element.dataset.no || element.querySelector(".gall_num")?.textContent)) {
-                if (!no || $newList.children().filter((_, element) => element.dataset.no === String(no) || element.querySelector(".gall_num")?.textContent === String(no)).length) continue;
-                $oldList.children(`tr[data-no="${no}"]`).remove();
+            const cached = Array.from($("tbody > tr")).map(element => element?.dataset.no || $(element).find(".gall_num").text());
+
+
+            for (const element of $oldList.children()) {
+                const no = String($(element).data("no")) || $(element).find(".gall_num").text();
+                if (!no || !$newList.children().is(`[data-no="${no}"]`)) {
+                    $(element).remove();
+                }
             }
+
+            // for (const no of $oldList.children().map((_, element) => element.dataset.no || element.querySelector(".gall_num")?.textContent)) {
+            //     if (!no || $newList.children().filter((_, element) => element.dataset.no === String(no) || element.querySelector(".gall_num")?.textContent === String(no)).length) continue;
+            //     $oldList.children(`tr[data-no="${no}"]`).remove();
+            // }
 
             for (const element of $newList.children()) {
                 const $element = $(element);
-                const no = $element.data("no");
+                let no = $element.data("no");
 
                 if (!no) continue;
 
-                if (currentPostNo === String(no)) {
-                    const $crt = $oldList.children("tr[class*=crt]");
+                no = String(no);
 
+                if (currentPostNo === no) {
+                    const $crt = $oldList.children("tr[class*=crt]");
                     $crt.children(".gall_tit").html($element.children(".gall_tit").html());
                     $crt.children(".gall_count").html($element.children(".gall_count").html());
                     $crt.children(".gall_recommend").html($element.children(".gall_recommend").html());
@@ -234,8 +236,8 @@ export default {
                     continue;
                 }
 
-                if (cached.includes(String(no))) {
-                    const $old = $oldList.children().filter((_, element) => element.dataset.no === String(no) || element.querySelector(".gall_num")?.textContent === String(no));
+                if (cached.includes(no)) {
+                    const $old = $oldList.children().filter((_, element) => element.dataset.no === no || $(element).find(".gall_num").text() === no);
 
                     $old.children(".gall_tit").html($element.children(".gall_tit").html());
                     $old.children(".gall_count").html($element.children(".gall_count").html());
@@ -245,29 +247,36 @@ export default {
                 }
 
                 if (isAdmin) {
-                    $element.prepend(managerCheckbox);
+                    $element
+                        .prepend(`<td class=gall_chk>${managerCheckbox}</td>`)
                 }
 
                 const last = $oldList.children("tr:has(em.icon_notice)").last();
 
-                (last.length > 0 ? last : $oldList.children(`tr[class="ub-content "]`)).after($element);
+                if (last.length) {
+                    last.after($element)
+                } else {
+                    const $hope = $oldList.children(`tr[class="ub-content "]`);
+
+                    if ($hope.length) {
+                        $hope.after($element);
+                    } else {
+                        $oldList.prepend($element)
+                    }
+                }
 
                 if (this.status.fadeIn && !this.memory.calledByPageTurn) {
                     const delay = this.memory.new_counts * 23;
 
                     $element
                         .addClass("refresherNewPost")
-                        .css(
-                            "animation-delay",
-                            `${delay}ms`
-                        );
+                        .css("animation-delay", `${delay}ms`);
 
                     setTimeout(() => {
                         $element
                             .css("animation-delay", "")
                             .removeClass("refresherNewPost");
                     }, delay + 1000);
-
                     this.memory.new_counts++;
                 }
             }
