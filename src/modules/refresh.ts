@@ -206,7 +206,6 @@ export default {
 
             const cached = Array.from($("tbody > tr")).map(element => element?.dataset.no || $(element).find(".gall_num").text());
 
-
             for (const element of $oldList.children()) {
                 const no = String($(element).data("no")) || $(element).find(".gall_num").text();
                 if (!no || !$newList.children().is(`[data-no="${no}"]`)) {
@@ -219,7 +218,7 @@ export default {
             //     $oldList.children(`tr[data-no="${no}"]`).remove();
             // }
 
-            for (const element of $newList.children()) {
+            for (const element of Array.from($newList.children()).reverse()) {
                 const $element = $(element);
                 let no = $element.data("no");
 
@@ -227,41 +226,43 @@ export default {
 
                 no = String(no);
 
-                if (currentPostNo === no) {
-                    const $crt = $oldList.children("tr[class*=crt]");
-                    $crt.children(".gall_tit").html($element.children(".gall_tit").html());
-                    $crt.children(".gall_count").html($element.children(".gall_count").html());
-                    $crt.children(".gall_recommend").html($element.children(".gall_recommend").html());
+                if (!this.memory.calledByPageTurn) {
+                    if (currentPostNo === no) {
+                        const $crt = $oldList.children("tr[class*=crt]");
+                        $crt.children(".gall_tit").html($element.children(".gall_tit").html());
+                        $crt.children(".gall_count").html($element.children(".gall_count").html());
+                        $crt.children(".gall_recommend").html($element.children(".gall_recommend").html());
 
-                    continue;
-                }
+                        continue;
+                    }
 
-                if (cached.includes(no)) {
-                    const $old = $oldList.children().filter((_, element) => element.dataset.no === no || $(element).find(".gall_num").text() === no);
+                    if (cached.includes(no)) {
+                        const $old = $oldList.children().filter((_, element) => element.dataset.no === no || $(element).find(".gall_num").text() === no);
 
-                    $old.children(".gall_tit").html($element.children(".gall_tit").html());
-                    $old.children(".gall_count").html($element.children(".gall_count").html());
-                    $old.children(".gall_recommend").html($element.children(".gall_recommend").html());
+                        $old.children(".gall_tit").html($element.children(".gall_tit").html());
+                        $old.children(".gall_count").html($element.children(".gall_count").html());
+                        $old.children(".gall_recommend").html($element.children(".gall_recommend").html());
 
-                    continue;
+                        continue;
+                    }
                 }
 
                 if (isAdmin) {
                     $element
-                        .prepend(`<td class=gall_chk>${managerCheckbox}</td>`)
+                        .prepend(`<td class=gall_chk>${managerCheckbox}</td>`);
                 }
 
                 const last = $oldList.children("tr:has(em.icon_notice)").last();
 
                 if (last.length) {
-                    last.after($element)
+                    last.after($element);
                 } else {
                     const $hope = $oldList.children(`tr[class="ub-content "]`);
 
                     if ($hope.length) {
                         $hope.after($element);
                     } else {
-                        $oldList.prepend($element)
+                        $oldList.prepend($element);
                     }
                 }
 
@@ -354,7 +355,7 @@ export default {
             this.memory.refresh = window.setTimeout(run, this.memory.delay);
         };
 
-        document.addEventListener("visibilitychange", (evnet) => {
+        document.addEventListener("visibilitychange", () => {
             if (document.hidden) {
                 if (this.memory.refresh) {
                     clearTimeout(this.memory.refresh);
