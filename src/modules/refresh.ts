@@ -354,7 +354,7 @@ export default {
             this.memory.refresh = window.setTimeout(run, this.memory.delay);
         };
 
-        document.addEventListener("visibilitychange", () => {
+        document.addEventListener("visibilitychange", (evnet) => {
             if (document.hidden) {
                 if (this.memory.refresh) {
                     clearTimeout(this.memory.refresh);
@@ -366,8 +366,8 @@ export default {
             run();
         });
 
-        window.addEventListener("pageshow", () => {
-            run(true);
+        window.addEventListener("pageshow", (event) => {
+            run(!event.persisted);
         });
 
         this.memory.refreshRequest = eventBus.on("refreshRequest", () => {
