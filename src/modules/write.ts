@@ -103,7 +103,7 @@ export default {
         inject("../assets/js/attach_upload.js");
 
         window.addEventListener("beforeunload", (ev) => {
-            if (this.status.preventExit) {
+            if (this.status.preventExit && !$("button:hover").eq(-1).hasClass("write")) {
                 ev.preventDefault();
             }
         });
