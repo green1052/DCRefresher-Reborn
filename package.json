@@ -3,9 +3,9 @@
   "version": "3.11.1",
   "description": "디시인사이드 개선 확장 프로그램",
   "devDependencies": {
-    "@swc/core": "^1.4.16",
+    "@swc/core": "^1.5.2",
     "@types/js-cookie": "^3.0.6",
-    "@types/node": "^20.12.7",
+    "@types/node": "^20.12.8",
     "@types/webextension-polyfill": "^0.10.7",
     "@types/webpack": "^5.28.5",
     "@types/webpack-env": "^1.18.4",
@@ -17,7 +17,7 @@
     "ky": "^1.2.4",
     "mini-css-extract-plugin": "^2.9.0",
     "pug": "^3.0.2",
-    "sass": "^1.75.0",
+    "sass": "^1.76.0",
     "sass-loader": "^14.2.1",
     "swc-loader": "^0.2.6",
     "terser-webpack-plugin": "^5.3.10",
@@ -38,5 +38,6 @@
     "build:mv3": "webpack --env manifest=manifest_v3.json --config webpack.prod.js",
     "dev:mv2": "webpack --env manifest=manifest_v2.json --watch --config webpack.dev.js",
     "dev:mv3": "webpack --env manifest=manifest_v3.json --watch --config webpack.dev.js"
-  }
+  },
+  "packageManager": "pnpm@9.0.6+sha256.0624e30eff866cdeb363b15061bdb7fd9425b17bc1bb42c22f5f4efdea21f6b3"
 }
