@@ -976,7 +976,7 @@ export default Vue.extend({
     async mounted() {
         setTimeout(() => {
             this.karyl = true;
-        }, 10000);
+        }, 20000);
 
         port.postMessage({
             requestRefresherModules: true,
@@ -1008,9 +1008,7 @@ export default Vue.extend({
             }
         });
 
-        browser.commands.getAll().then((cmd) => {
-            this.shortcuts = cmd;
-        });
+        this.shortcuts = await browser.commands.getAll();
 
         this.ipDatabaseVersion = await storage.get(
             "refresher.database.ip.version"
@@ -1019,7 +1017,7 @@ export default Vue.extend({
     watch: {
         modules(modules) {
             if (modules["다크 모드"]) {
-                this.updateDarkMode(modules["다크 모드"].enable);
+                this.updateDarkMode(modules["다크 모드"].enable || matchMedia("(prefers-color-scheme: dark)").matches);
             }
         }
     },
