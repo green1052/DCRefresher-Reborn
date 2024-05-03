@@ -95,12 +95,11 @@ interface Message {
     requestRefresherMemos?: boolean;
 }
 
-// if (browser.runtime.getManifest().manifest_version === 3) {
-//     setInterval(() => {
-//         // @ts-ignore
-//         self.serviceWorker.postMessage("heartbeat");
-//     }, 20000);
-// }
+if (browser.runtime.getManifest().manifest_version === 3) {
+    const keepAlive = () => setInterval(browser.runtime.getPlatformInfo, 20e3);
+    browser.runtime.onStartup.addListener(keepAlive);
+    keepAlive();
+}
 
 const messageHandler = (
     port: browser.Runtime.Port | null,
