@@ -944,8 +944,8 @@ export default Vue.extend({
                     });
                 });
         },
-        updateDarkMode(v: boolean) {
-            $(document.documentElement).toggleClass("refresherDark", v);
+        updateDarkMode(value: boolean) {
+            $(document.documentElement).toggleClass("refresherDark", value);
         },
         async updateIpDatabase() {
             try {
