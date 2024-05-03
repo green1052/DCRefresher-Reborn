@@ -61,7 +61,7 @@ export default Vue.extend({
                 (typeof autoClose === "number" && autoClose > 0) ||
                 autoClose === true
             )
-                this.autoClose = setTimeout(
+                this.autoClose = window.setTimeout(
                     this.hide,
                     typeof autoClose === "number" ? autoClose : 5000
                 );

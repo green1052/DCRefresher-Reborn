@@ -1,13 +1,12 @@
 import toast from "./toastComponent.vue";
 import Vue from "vue";
 
-let Toast: Vue | null = null;
-
 const element = document.createElement("refresher-toast");
 
+let Toast: Vue | null = null;
+
 window.addEventListener("DOMContentLoaded", () => {
-    if (document.querySelector(".refresher-toast") === null)
-        document.body.appendChild(element);
+    document.body.appendChild(element);
 
     Toast = new Vue({
         el: element,
@@ -15,8 +14,8 @@ window.addEventListener("DOMContentLoaded", () => {
     }).$children[0];
 });
 
-window.addEventListener("keydown", (e) => {
-    if (Toast !== null && e.key == "Escape" && Toast.$data.open)
+window.addEventListener("keydown", (ev) => {
+    if (Toast !== null && ev.key == "Escape" && Toast.$data.open)
         Toast.$data.open = false;
 });
 
