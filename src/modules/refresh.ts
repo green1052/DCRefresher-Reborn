@@ -204,19 +204,21 @@ export default {
 
             const $oldList = $(".gall_list:not([id]) tbody");
 
+            $oldList.parent().removeClass("empty");
+
             const cached = Array.from($("tbody > tr")).map(element => element?.dataset.no || $(element).find(".gall_num").text());
 
             for (const element of $oldList.children()) {
-                const no = String($(element).data("no")) || $(element).find(".gall_num").text();
+                const $element = $(element);
+
+                if ($element.hasClass("crt>")) continue;
+
+                const no = String($element.data("no") || $element.find(".gall_num").text());
+
                 if (!no || !$newList.children().is(`[data-no="${no}"]`)) {
                     $(element).remove();
                 }
             }
-
-            // for (const no of $oldList.children().map((_, element) => element.dataset.no || element.querySelector(".gall_num")?.textContent)) {
-            //     if (!no || $newList.children().filter((_, element) => element.dataset.no === String(no) || element.querySelector(".gall_num")?.textContent === String(no)).length) continue;
-            //     $oldList.children(`tr[data-no="${no}"]`).remove();
-            // }
 
             for (const element of Array.from($newList.children()).reverse()) {
                 const $element = $(element);
@@ -278,6 +280,7 @@ export default {
                             .css("animation-delay", "")
                             .removeClass("refresherNewPost");
                     }, delay + 1000);
+
                     this.memory.new_counts++;
                 }
             }
