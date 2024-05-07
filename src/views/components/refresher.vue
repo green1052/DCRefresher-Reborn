@@ -378,7 +378,7 @@
                             :key="`block:${i}`"
                             :extra="blocked.extra"
                             :gallery="blocked.gallery"
-                            :image="`https://image.dcinside.com/dccon.php?no=${blocked.content}`"
+                            :image="`https://image.dcinside.com/dccon.php?no=${blocked.isRegex ? blocked.content.match(/^\^\((\w*)\|/)[1] : blocked.content}`"
                             :regex="blocked.isRegex"
                             :remove="() => removeBlockedUser(key, i)"
                             :textclick="() => editBlockedUser(key, i)"/>
