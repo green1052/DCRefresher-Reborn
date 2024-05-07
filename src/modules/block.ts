@@ -245,13 +245,32 @@ export default {
                             const packageIdx = json.info.package_idx;
 
                             if (args?.blockAllDccon) {
+                                const blockBundle = confirm("디시콘을 묶어서 차단하시겠습니까? (차단탭에서 한개로 표시됩니다.)");
+
+                                const list = [];
+
                                 for (const {path} of json.detail) {
+                                    if (blockBundle) {
+                                        list.push(path);
+                                        continue;
+                                    }
+
                                     block.add(
                                         "DCCON",
                                         path,
                                         false,
                                         undefined,
                                         `${title} [${packageIdx}]`
+                                    );
+                                }
+
+                                if (blockBundle) {
+                                    block.add(
+                                        "DCCON",
+                                        `^(${list.join("|")})$`,
+                                        true,
+                                        undefined,
+                                        `[묶음] ${title} [${packageIdx}]`
                                     );
                                 }
 
