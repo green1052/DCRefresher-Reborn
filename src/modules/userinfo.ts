@@ -297,9 +297,7 @@ export default {
             const fl = element.querySelector(".fl");
 
             if (fl) {
-                const flIpQuery =
-                    fl.querySelector(".refresherMemoData") ??
-                    fl.querySelector(".writer_nikcon");
+                const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
 
                 if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling);
             } else {
