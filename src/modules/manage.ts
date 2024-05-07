@@ -34,7 +34,7 @@ export default {
             type: "check",
             default: false
         },
-        checkTempAccount: {
+        checkRatio: {
             name: "글댓비 표시",
             desc: "글댓비를 표시합니다. (3일 마다 갱신, 새 글 작성시에만 조회)",
             type: "check",
@@ -94,7 +94,7 @@ export default {
         });
 
         this.memory.always = filter.add(".ub-writer:not([user_name])", (element) => {
-            if (!this.status.checkTempAccount || element.dataset.refresherRatio === "true") return false;
+            if (!this.status.checkRatio || element.dataset.refresherRatio === "true") return false;
 
             const ratio = this.data!.ratio[element.dataset.uid!];
 
@@ -124,7 +124,7 @@ export default {
         });
 
         this.memory.newPostListEvent = eventBus.on("newPostList", async (articles: Cash[]) => {
-            if (!this.status.checkTempAccount) return;
+            if (!this.status.checkRatio) return;
 
             const getRatio = async (uid: string) => {
                 const params = new URLSearchParams();
@@ -184,7 +184,7 @@ export default {
         checkAllTargetUser: RefresherCheckSettings;
         checkViaShift: RefresherCheckSettings;
         checkCommentViaCtrl: RefresherCheckSettings;
-        checkTempAccount: RefresherCheckSettings;
+        checkRatio: RefresherCheckSettings;
     };
     require: ["filter", "eventBus"];
 }>;
