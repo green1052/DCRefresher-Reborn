@@ -252,12 +252,11 @@ export default {
             const text = document.createElement("span");
             text.className = "refresherUserData";
             text.style.color = ip_data.color;
-
-
             text.innerHTML = `[${format}]`;
             text.title = format;
 
             const fl = element.querySelector(".fl > .ip");
+
             if (fl) {
                 fl.appendChild(text);
             } else {
@@ -355,7 +354,12 @@ export default {
                 if (fl) {
                     fl.appendChild(text);
                 } else {
-                    element.appendChild(text);
+                    const userData = element.querySelector(".refresherUserData");
+
+                    if (userData)
+                        element.insertBefore(text, userData);
+                    else
+                        element.appendChild(text);
                 }
             } else {
                 const fl = element.querySelector(".fl");
@@ -365,7 +369,12 @@ export default {
 
                     if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling);
                 } else {
-                    element.appendChild(text);
+                    const userData = element.querySelector(".refresherUserData");
+
+                    if (userData)
+                        element.insertBefore(text, userData);
+                    else
+                        element.appendChild(text);
                 }
             }
 
@@ -417,7 +426,7 @@ export default {
 
                 const obj = await memoAsk(selected, memo, type, user);
 
-                eventBus.emit("refreshRequest");
+                // eventBus.emit("refreshRequest");
 
                 if (!obj.text) {
                     if (memo.get(obj.type, obj.value)) {
@@ -478,7 +487,7 @@ export default {
                     value
                 );
 
-                eventBus.emit("refreshRequest");
+                // eventBus.emit("refreshRequest");
 
                 if (!obj.text) {
                     if (memo.get(obj.type, obj.value)) {
