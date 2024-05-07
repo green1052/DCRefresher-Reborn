@@ -109,11 +109,7 @@ export default {
 
             if (fl) {
                 const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
-
-                // insert After
                 if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling?.nextSibling ?? flIpQuery.nextSibling);
-
-                // if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling);
             } else {
                 element.appendChild(text);
             }
