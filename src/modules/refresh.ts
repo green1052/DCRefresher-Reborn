@@ -3,6 +3,7 @@ import {queryString} from "../utils/http";
 import $ from "cash-dom";
 import ky from "ky";
 import * as storage from "../utils/storage";
+import {Cash} from "cash-dom/dist/cash";
 
 const AVERAGE_COUNTS_SIZE = 7;
 
@@ -220,6 +221,8 @@ export default {
                 }
             }
 
+            const newPostList: Cash[] = [];
+
             for (const element of Array.from($newList.children()).reverse()) {
                 const $element = $(element);
                 let no = $element.data("no");
@@ -268,6 +271,8 @@ export default {
                     }
                 }
 
+                newPostList.push($element);
+
                 if (this.status.fadeIn && !this.memory.calledByPageTurn) {
                     const delay = this.memory.new_counts * 23;
 
@@ -284,6 +289,8 @@ export default {
                     this.memory.new_counts++;
                 }
             }
+
+            eventBus.emit("newPostList", newPostList);
 
             if (!this.memory.calledByPageTurn) {
                 const averageCounts = this.memory.average_counts;
@@ -337,7 +344,7 @@ export default {
                 }
             }
 
-            eventBus.emit("refresh", $newList);
+            eventBus.emit("refresh", $oldList);
 
             return true;
         };

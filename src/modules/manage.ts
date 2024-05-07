@@ -1,11 +1,17 @@
 import $ from "cash-dom";
+import {Cash} from "cash-dom/dist/cash";
+import ky from "ky";
+import Cookies from "js-cookie";
+import {eventBus} from "../core/eventbus";
 
 export default {
     name: "관리",
     description: "무급 노예들을 위한 여러 편의 기능을 제공합니다.",
     url: /\/board\/(view|lists)/,
     status: {},
-    data: {},
+    data: {
+        ratio: {}
+    },
     memory: {},
     enable: false,
     default_enable: false,
@@ -29,14 +35,14 @@ export default {
             default: false
         },
         checkTempAccount: {
-            name: "깡계 체크",
-            desc: "임시 계정을 체크합니다.",
+            name: "글댓비 표시",
+            desc: "글댓비를 표시합니다. (3일 마다 갱신, 새 글 작성시에만 조회)",
             type: "check",
             default: false
         }
     },
-    require: ["filter"],
-    func(filter) {
+    require: ["filter", "eventBus"],
+    func(filter, eventBus) {
         this.memory.checkBox = filter.add<HTMLInputElement>(".article_chkbox", (element) => {
             if (this.status.checkAllTargetUser) {
                 const $element = $(element);
@@ -86,16 +92,93 @@ export default {
                 });
             }
         });
+
+        this.memory.always = filter.add(".ub-writer:not([user_name])", (element) => {
+            if (!this.status.checkTempAccount || element.dataset.refresherRatio === "true") return false;
+
+            const ratio = this.data!.ratio[element.dataset.uid!];
+
+            if (!ratio) return false;
+
+            const text = document.createElement("span");
+            text.className = "ip refresherUserData";
+            text.innerHTML = `[${ratio.article}/${ratio.comment}]`;
+            text.title = `${ratio.article}/${ratio.comment}`;
+
+            const fl = element.querySelector(".fl");
+
+            if (fl) {
+                const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
+
+                // insert After
+                if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling?.nextSibling ?? flIpQuery.nextSibling);
+
+                // if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling);
+            } else {
+                element.appendChild(text);
+            }
+
+            element.dataset.refresherRatio = "true";
+        }, {
+            neverExpire: true
+        });
+
+        this.memory.newPostListEvent = eventBus.on("newPostList", async (articles: Cash[]) => {
+            if (!this.status.checkTempAccount) return;
+
+            const getRatio = async (uid: string) => {
+                const params = new URLSearchParams();
+                params.set("ci_t", Cookies.get("ci_c") ?? "");
+                params.set("user_id", uid);
+
+                const response = await ky.post("/api/gallog_user_layer/gallog_content_reple/", {
+                    body: params,
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                }).text();
+
+                const [article, comment] = response.split(",").map(Number);
+
+                const result = {article, comment, data: Date.now()};
+
+                const deepCopy = {...this.data!.ratio};
+                deepCopy[uid] = result;
+
+                this.data!.ratio = deepCopy;
+
+                return result;
+            };
+
+            for (const article of articles) {
+                const $writer = article.find(".ub-writer");
+                const uid = $writer.attr("data-uid");
+
+                if (!uid) continue;
+
+                let ratio = this.data!.ratio?.[uid] ?? await getRatio(uid);
+
+                if (Date.now() - ratio.data > 1000 * 60 * 60 * 24 * 3) {
+                    ratio = await getRatio(uid);
+                }
+
+                const $ratio = $(`<span class="ip refresherUserData" title="${ratio.article}/${ratio.comment}">[${ratio.article}/${ratio.comment}]</span>`);
+                $writer.append($ratio);
+            }
+        });
     },
     revoke(filter) {
-        filter.remove(this.memory.checkBox);
+        if (this.memory.checkBox) filter.remove(this.memory.checkBox);
+        if (this.memory.newPostListEvent) eventBus.remove("newPostList", this.memory.newPostListEvent);
     }
 } as RefresherModule<{
     data: {
-
+        ratio: Record<string, { article: number; comment: number; data: number; }>
     },
     memory: {
+        always: string;
         checkBox: string;
+        newPostListEvent: string;
     };
     settings: {
         checkAllTargetUser: RefresherCheckSettings;
@@ -103,5 +186,5 @@ export default {
         checkCommentViaCtrl: RefresherCheckSettings;
         checkTempAccount: RefresherCheckSettings;
     };
-    require: ["filter"];
+    require: ["filter", "eventBus"];
 }>;
