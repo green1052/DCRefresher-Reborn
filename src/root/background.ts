@@ -199,13 +199,6 @@ browser.runtime.onInstalled.addListener((details) => {
         }
     });
 
-    storage.remove("undefined");
-    storage.remove("미리보기.commentRefreshInterval");
-
-    storage.remove("refresher.asn");
-    storage.remove("refresher.country");
-    storage.remove("refresher.database.ip");
-
     if (browser.runtime.getManifest().version_name) return;
 
     try {
