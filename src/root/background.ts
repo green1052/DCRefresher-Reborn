@@ -195,13 +195,13 @@ browser.runtime.onMessage.addListener((message) => {
 });
 
 browser.runtime.onInstalled.addListener((details) => {
-    const menus = browser.runtime.getManifest().manifest_version === 3 ? browser.contextMenus : browser.menus;
+    setTimeout(async () => {
+        await browser.contextMenus.removeAll();
 
-    menus.removeAll().then(() => {
         for (const contextMenu of contextMenus) {
-            menus.create(contextMenu);
+            browser.contextMenus.create(contextMenu);
         }
-    });
+    }, 1000);
 
     if (browser.runtime.getManifest().version_name) return;
 
