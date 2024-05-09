@@ -48,7 +48,7 @@ export default Vue.extend({
     computed: {
         title(): string {
             if (this.user.isMember()) {
-                const ratio = this.user.getRatio();
+                const ratio = this.user.ratio;
                 return `(${this.user.id})${ratio ? ` [${ratio}]` : ""}`;
             }
 
@@ -57,7 +57,7 @@ export default Vue.extend({
 
         userInfo(): string {
             if (this.user.isMember()) {
-                const ratio = this.user.getRatio();
+                const ratio = this.user.ratio;
                 return `(${this.user.id})${ratio ? ` [${ratio}]` : ""}`;
             }
 
