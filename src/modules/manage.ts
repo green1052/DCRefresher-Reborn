@@ -101,7 +101,7 @@ export default {
             if (!ratio) return false;
 
             const text = document.createElement("span");
-            text.className = "ip refresherUserData";
+            text.className = "ip ratio refresherUserData";
             text.innerHTML = `[${ratio.article}/${ratio.comment}]`;
             text.title = `${ratio.article}/${ratio.comment}`;
 
@@ -127,7 +127,7 @@ export default {
                 params.set("ci_t", Cookies.get("ci_c") ?? "");
                 params.set("user_id", uid);
 
-                const response = await ky.post("/api/gallog_user_layer/gallog_content_reple/", {
+                const response = await ky.post("https://gall.dcinside.com/api/gallog_user_layer/gallog_content_reple", {
                     body: params,
                     headers: {
                         "X-Requested-With": "XMLHttpRequest"
@@ -148,7 +148,7 @@ export default {
 
             for (const article of articles) {
                 const $writer = article.find(".ub-writer");
-                const uid = $writer.attr("data-uid");
+                const uid = $writer.data("uid");
 
                 if (!uid) continue;
 
@@ -158,7 +158,15 @@ export default {
                     ratio = await getRatio(uid);
                 }
 
-                const $ratio = $(`<span class="ip refresherUserData" title="${ratio.article}/${ratio.comment}">[${ratio.article}/${ratio.comment}]</span>`);
+                const $ratio = $(`<span class="ip ratio refresherUserData" title="${ratio.article}/${ratio.comment}">[${ratio.article}/${ratio.comment}]</span>`);
+
+                article.data("refresherRatio", true);
+
+                if (article.data("refresherRatio") === true) {
+                    article.find(".ratio").replaceWith($ratio);
+                    return;
+                }
+
                 $writer.append($ratio);
             }
         });

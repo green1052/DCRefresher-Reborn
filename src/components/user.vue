@@ -47,20 +47,22 @@ export default Vue.extend({
     },
     computed: {
         title(): string {
-            return this.user.isMember()
-                ? `(${this.user.id})`
-                : `(${this.user.ip})${
-                    this.user.ip_data ? ` [${this.user.ip_data}]` : ""
-                }`;
+            if (this.user.isMember()) {
+                const ratio = this.user.getRatio();
+                return `(${this.user.id})${ratio ? ` [${ratio}]` : ""}`;
+            }
+
+            return `(${this.user.ip})${this.user.ip_data ? ` [${this.user.ip_data}]` : ""}`;
         },
 
         userInfo(): string {
-            return this.user.isMember()
-                ? `(${this.user.id})`
-                : `(${this.user.ip})${
-                    this.user.ip_data ? ` [${this.user.ip_data}]` : ""
-                }`;
-        }
+            if (this.user.isMember()) {
+                const ratio = this.user.getRatio();
+                return `(${this.user.id})${ratio ? ` [${ratio}]` : ""}`;
+            }
+
+            return `(${this.user.ip})${this.user.ip_data ? ` [${this.user.ip_data}]` : ""}`;
+        },
     },
     methods: {
         openLink(url: string): void {

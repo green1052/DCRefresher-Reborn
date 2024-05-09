@@ -2,6 +2,7 @@ import * as ip from "./ip";
 import * as memo from "../core/memo";
 import $ from "cash-dom";
 import type {Nullable, ObjectEnum} from "./types";
+import storage from "./storage";
 
 export type UserType =
     | "UNFIXED"
@@ -21,6 +22,12 @@ const USERTYPE: ObjectEnum<UserType> = {
     HALF_FIXED_MANAGER: "HALF_FIXED_MANAGER",
     FIXED_MANAGER: "FIXED_MANAGER"
 };
+
+let ratio: Record<string, { article: number; comment: number; data: number; }> = {};
+
+(async () => {
+    ratio = (await storage.module.get<any>("관리"))?.["ratio"] ?? {};
+})();
 
 export const getType = (icon: string | null): UserType => {
     if (icon === null) {
@@ -124,6 +131,16 @@ export class User {
 
     getMemo(): void {
         this.memo = memo.get("UID", this.id) ?? memo.get("IP", this.ip) ?? memo.get("NICK", this.nick);
+    }
+
+    getRatio(): string {
+        if (!this.id) return "";
+
+        const r = ratio?.[this.id];
+
+        if (!r) return "";
+
+        return `${r.article}/${r.comment}`;
     }
 
     isLogout(): boolean {
