@@ -40,10 +40,12 @@ const contextMenus: browser.Menus.CreateCreatePropertiesType[] = [
 ];
 
 const updateIpDatabase = async () => {
-    const version = await ky.get("https://dcrefresher.green1052.com/data/version").text();
-    storage.set("refresher.database.ip.version", version);
+    const [version, data] = await Promise.all([
+        ky.get("https://dcrefresher.green1052.com/data/version").text(),
+        ky.get("https://dcrefresher.green1052.com/data/ip.json").json()
+    ]);
 
-    const data = await ky.get("https://dcrefresher.green1052.com/data/ip.json").json();
+    storage.set("refresher.database.ip.version", version);
     storage.set("refresher.database.ip", data);
 };
 
@@ -193,9 +195,9 @@ browser.runtime.onMessage.addListener((message) => {
 });
 
 browser.runtime.onInstalled.addListener((details) => {
-    browser.contextMenus.removeAll().then(() => {
+    browser.menus.removeAll().then(() => {
         for (const contextMenu of contextMenus) {
-            browser.contextMenus.create(contextMenu);
+            browser.menus.create(contextMenu);
         }
     });
 
