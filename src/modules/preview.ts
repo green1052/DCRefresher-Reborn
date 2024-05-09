@@ -147,16 +147,19 @@ interface GalleryHTTPRequestArguments {
 }
 
 let blurConfig = false;
-
-storage.get<boolean>("컨텐츠 차단.blur").then((value) => {
-    blurConfig = value;
-});
-
 let replyConfig = false;
 
-storage.get<boolean>("컨텐츠 차단.replyRemove").then((value) => {
-    blurConfig = value;
-});
+(async () => {
+    if (!await storage.get<boolean>("컨텐츠 차단.enable")) return;
+
+    const [blur, replyRemove] = await Promise.all([
+        storage.get<boolean>("컨텐츠 차단.blur"),
+        storage.get<boolean>("컨텐츠 차단.replyRemove")
+    ]);
+
+    blurConfig = blur;
+    replyConfig = replyRemove;
+})();
 
 const ISSUE_ZOOM_ID = /\$\(document\)\.data\('comment_id',\s'.+'\);/g;
 const ISSUE_ZOOM_NO = /\$\(document\)\.data\('comment_no',\s'.+'\);/g;

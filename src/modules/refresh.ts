@@ -2,16 +2,9 @@ import * as Toast from "../components/toast";
 import {queryString} from "../utils/http";
 import $ from "cash-dom";
 import ky from "ky";
-import * as storage from "../utils/storage";
 import {Cash} from "cash-dom/dist/cash";
 
 const AVERAGE_COUNTS_SIZE = 7;
-
-let blurConfig = false;
-
-storage.get<boolean>("컨텐츠 차단.blur").then((value) => {
-    blurConfig = value;
-});
 
 let PAUSE_REFRESH = false;
 
