@@ -26,6 +26,15 @@ const USERTYPE: ObjectEnum<UserType> = {
 let ratio: Record<string, { article: number; comment: number; data: number; }> = {};
 
 (async () => {
+    const [enable, checkRatio] = await Promise.all([
+        storage.get<boolean>("관리.enable"),
+        storage.get<boolean>("관리.checkRatio")
+    ]);
+
+    console.log(enable, checkRatio);
+
+    if (!enable || !checkRatio) return;
+
     ratio = (await storage.module.get<any>("관리"))?.["ratio"] ?? {};
 })();
 
@@ -70,6 +79,8 @@ export class User {
     ip_color: Nullable<string>;
     type: UserType;
     memo: Nullable<RefresherMemoValue>;
+    ratio: Nullable<string>;
+
     private __ip: Nullable<string>;
 
     constructor(
@@ -89,8 +100,10 @@ export class User {
         this.icon = icon;
         this.type = getType(this.icon);
         this.memo = null;
+        this.ratio = null;
 
         this.getMemo();
+        this.getRatio();
     }
 
     get ip(): string | null {
@@ -125,6 +138,7 @@ export class User {
         user.type = getType(user.icon);
 
         user.getMemo();
+        user.getRatio();
 
         return user;
     }
@@ -133,14 +147,14 @@ export class User {
         this.memo = memo.get("UID", this.id) ?? memo.get("IP", this.ip) ?? memo.get("NICK", this.nick);
     }
 
-    getRatio(): string {
-        if (!this.id) return "";
+    getRatio(): void {
+        if (!this.id) return;
 
         const r = ratio?.[this.id];
 
-        if (!r) return "";
+        if (!r) return;
 
-        return `${r.article}/${r.comment}`;
+        this.ratio = `${r.article}/${r.comment}`;
     }
 
     isLogout(): boolean {
