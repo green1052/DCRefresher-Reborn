@@ -195,9 +195,11 @@ browser.runtime.onMessage.addListener((message) => {
 });
 
 browser.runtime.onInstalled.addListener((details) => {
-    browser.menus.removeAll().then(() => {
+    const menus = browser.runtime.getManifest().manifest_version === 3 ? browser.contextMenus : browser.menus;
+
+    menus.removeAll().then(() => {
         for (const contextMenu of contextMenus) {
-            browser.menus.create(contextMenu);
+            menus.create(contextMenu);
         }
     });
 
