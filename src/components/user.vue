@@ -62,7 +62,7 @@ export default Vue.extend({
             }
 
             return `(${this.user.ip})${this.user.ip_data ? ` [${this.user.ip_data}]` : ""}`;
-        },
+        }
     },
     methods: {
         openLink(url: string): void {
