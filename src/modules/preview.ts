@@ -1502,6 +1502,7 @@ export default {
 
             frame.functions.load = async (useCache = true) => {
                 frame.data.load = true;
+                frame.error = undefined;
 
                 const getPostInfo = async (): Promise<PostInfo> => {
                     if (useCache && !this.status.disableCache) {
@@ -1813,6 +1814,7 @@ export default {
 
             frame.functions.load = async (useCache = true) => {
                 frame.data.load = true;
+                frame.error = undefined;
 
                 const getCommentInfo = async (): Promise<DcinsideComments> => {
                     if (useCache && !this.status.disableCache) {
