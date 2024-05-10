@@ -31,8 +31,6 @@ let ratio: Record<string, { article: number; comment: number; data: number; }> =
         storage.get<boolean>("관리.checkRatio")
     ]);
 
-    console.log(enable, checkRatio);
-
     if (!enable || !checkRatio) return;
 
     ratio = (await storage.module.get<any>("관리"))?.["ratio"] ?? {};
