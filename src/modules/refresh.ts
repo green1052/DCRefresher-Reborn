@@ -200,6 +200,13 @@ export default {
 
             $oldList.parent().removeClass("empty");
 
+            if (this.memory.calledByPageTurn) {
+                $oldList.replaceWith($newList);
+                this.memory.calledByPageTurn = false;
+
+                return true;
+            }
+
             const cached = Array.from($("tbody > tr")).map(element => element?.dataset.no || $(element).find(".gall_num").text());
 
             for (const element of $oldList.children()) {
@@ -224,25 +231,23 @@ export default {
 
                 no = String(no);
 
-                if (!this.memory.calledByPageTurn) {
-                    if (currentPostNo === no) {
-                        const $crt = $oldList.children("tr[class*=crt]");
-                        $crt.children(".gall_tit").html($element.children(".gall_tit").html());
-                        $crt.children(".gall_count").html($element.children(".gall_count").html());
-                        $crt.children(".gall_recommend").html($element.children(".gall_recommend").html());
+                if (currentPostNo === no) {
+                    const $crt = $oldList.children("tr[class*=crt]");
+                    $crt.children(".gall_tit").html($element.children(".gall_tit").html());
+                    $crt.children(".gall_count").html($element.children(".gall_count").html());
+                    $crt.children(".gall_recommend").html($element.children(".gall_recommend").html());
 
-                        continue;
-                    }
+                    continue;
+                }
 
-                    if (cached.includes(no)) {
-                        const $old = $oldList.children().filter((_, element) => element.dataset.no === no || $(element).find(".gall_num").text() === no);
+                if (cached.includes(no)) {
+                    const $old = $oldList.children().filter((_, element) => element.dataset.no === no || $(element).find(".gall_num").text() === no);
 
-                        $old.children(".gall_tit").html($element.children(".gall_tit").html());
-                        $old.children(".gall_count").html($element.children(".gall_count").html());
-                        $old.children(".gall_recommend").html($element.children(".gall_recommend").html());
+                    $old.children(".gall_tit").html($element.children(".gall_tit").html());
+                    $old.children(".gall_count").html($element.children(".gall_count").html());
+                    $old.children(".gall_recommend").html($element.children(".gall_recommend").html());
 
-                        continue;
-                    }
+                    continue;
                 }
 
                 if (isAdmin) {
@@ -250,23 +255,27 @@ export default {
                         .prepend(`<td class=gall_chk>${managerCheckbox}</td>`);
                 }
 
-                const last = $oldList.children("tr:has(em.icon_notice)").last();
-
-                if (last.length) {
-                    last.after($element);
+                if ($element.data("type") === "icon_slow") {
+                    $oldList.prepend($element);
                 } else {
-                    const $hope = $oldList.children(`tr[class="ub-content "]`);
+                    const last = $oldList.children("tr:has(em.icon_notice)").last();
 
-                    if ($hope.length) {
-                        $hope.after($element);
+                    if (last.length) {
+                        last.after($element);
                     } else {
-                        $oldList.prepend($element);
+                        const $hope = $oldList.children(`tr[class="ub-content "]`);
+
+                        if ($hope.length) {
+                            $hope.after($element);
+                        } else {
+                            $oldList.prepend($element);
+                        }
                     }
                 }
 
                 newPostList.push($element);
 
-                if (this.status.fadeIn && !this.memory.calledByPageTurn) {
+                if (this.status.fadeIn) {
                     const delay = this.memory.new_counts * 23;
 
                     $element
@@ -285,27 +294,23 @@ export default {
 
             eventBus.emit("newPostList", newPostList);
 
-            if (!this.memory.calledByPageTurn) {
-                const averageCounts = this.memory.average_counts;
-                averageCounts.push(this.memory.new_counts);
+            const averageCounts = this.memory.average_counts;
+            averageCounts.push(this.memory.new_counts);
 
-                if (averageCounts.length > AVERAGE_COUNTS_SIZE) {
-                    averageCounts.shift();
-                }
-
-                const average =
-                    averageCounts.reduce((a, b) => a + b) /
-                    averageCounts.length;
-
-                if (this.status.autoRate) {
-                    this.memory.delay = Math.max(
-                        600,
-                        8 * Math.pow(2 / 3, 3 * average) * 1000
-                    );
-                }
+            if (averageCounts.length > AVERAGE_COUNTS_SIZE) {
+                averageCounts.shift();
             }
 
-            this.memory.calledByPageTurn = false;
+            const average =
+                averageCounts.reduce((a, b) => a + b) /
+                averageCounts.length;
+
+            if (this.status.autoRate) {
+                this.memory.delay = Math.max(
+                    600,
+                    8 * Math.pow(2 / 3, 3 * average) * 1000
+                );
+            }
 
             // 검색일 경우 강조 표시 생성
             if (queryString("s_keyword")) {
