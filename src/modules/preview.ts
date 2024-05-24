@@ -482,13 +482,14 @@ const request = {
         const params = new URLSearchParams();
         params.set("ci_t", Cookies.get("ci_c") ?? "");
         params.set("id", preData.gallery);
-        params.set("_GALLTYPE_", typeName);
-        params.set("mode", "del");
         params.set("re_no", commentId);
+        params.set("mode", "del");
+        params.set("g-recaptcha-response", "");
+        params.set("_GALLTYPE_", typeName);
+        params.set("no", preData.id)
 
         if (password) {
             params.set("re_password", password);
-            params.set("g-recaptcha-response", "");
         }
 
         return client(http.urls.comment_remove, {body: params, signal})

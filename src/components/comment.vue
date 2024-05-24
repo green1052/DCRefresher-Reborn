@@ -215,23 +215,21 @@ export default Vue.extend({
         },
 
         safeDelete(): void {
-            if (this.delete) {
-                let password: string = "";
+            if (!this.delete) return;
 
-                if (!this.isAdmin && this.comment.my_cmt === "N") {
-                    password = prompt("비밀번호를 입력하세요.") ?? "";
+            let password: string = "";
 
-                    if (!password) {
-                        return;
-                    }
-                }
+            if (!this.isAdmin && this.comment.my_cmt === "N") {
+                password = prompt("비밀번호를 입력하세요.") ?? "";
 
-                this.delete(
-                    this.comment.no,
-                    password,
-                    this.comment.my_cmt === "N" && this.isAdmin
-                );
+                if (!password) return;
             }
+
+            this.delete(
+                this.comment.no,
+                password,
+                this.comment.my_cmt === "N" && this.isAdmin
+            );
         },
 
         reply() {
