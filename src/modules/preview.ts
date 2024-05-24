@@ -1894,8 +1894,6 @@ export default {
                                     comments.comments!.push(v);
                                 }
 
-
-                                // TODO: 리렌더링 안됨
                                 const orgIndex = comments.comments!.findIndex((c: DcinsideCommentObject) => c.no === v.no && c.is_delete !== "0");
 
                                 if (orgIndex !== -1) {
@@ -2014,6 +2012,7 @@ export default {
                     } ${commentCounts}개`;
 
                     frame.data.comments = comments;
+                    frame.app.$children[0].$children[1].commentKey = Date.now();
                 } catch (error) {
                     frame.error = {
                         title: "댓글",

@@ -189,13 +189,14 @@
                         v-else
                         class="refresher-preview-comments">
                         <transition-group
+                            :key="commentKey"
                             appear
                             name="refresher-slide-up"
                             @before-enter="beforeEnter"
                             @after-enter="afterEnter">
                             <Comment
                                 v-for="(comment, i) in frame.data.comments.comments"
-                                :key="`cmt_${comment.no}_${Math.random()}`"
+                                :key="`cmt_${comment.no}`"
                                 :comment="comment"
                                 :delete="frame.functions.deleteComment"
                                 :getReply="getReply"
@@ -269,6 +270,7 @@ interface FrameData {
     reply: string | null;
     dccon: DcinsideDccon | null;
     dcconRender: Vue | null;
+    commentKey: number;
 }
 
 export default Vue.extend({
@@ -299,7 +301,8 @@ export default Vue.extend({
             memoText: "",
             reply: null,
             dccon: null,
-            dcconRender: null
+            dcconRender: null,
+            commentKey: 0
         };
     },
     methods: {
