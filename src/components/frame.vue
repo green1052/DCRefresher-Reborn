@@ -194,9 +194,8 @@
                             @before-enter="beforeEnter"
                             @after-enter="afterEnter">
                             <Comment
-                                v-for="(comment, i) in frame.data.comments
-                                    .comments"
-                                :key="`cmt_${Math.random()}`"
+                                v-for="(comment, i) in frame.data.comments.comments"
+                                :key="`cmt_${comment.no}_${Math.random()}`"
                                 :comment="comment"
                                 :delete="frame.functions.deleteComment"
                                 :getReply="getReply"
