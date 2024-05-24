@@ -76,7 +76,7 @@ export default {
             unit: "ms"
         },
         autoRate: {
-            name: "자동 새로고침 주기",
+            name: "자동 새로고침 주기 (기능 임시 중단)",
             desc: "새로 올라오는 글의 수에 따라 새로고침 주기를 자동으로 제어합니다.",
             type: "check",
             default: true
@@ -294,23 +294,23 @@ export default {
 
             eventBus.emit("newPostList", newPostList);
 
-            const averageCounts = this.memory.average_counts;
-            averageCounts.push(this.memory.new_counts);
-
-            if (averageCounts.length > AVERAGE_COUNTS_SIZE) {
-                averageCounts.shift();
-            }
-
-            const average =
-                averageCounts.reduce((a, b) => a + b) /
-                averageCounts.length;
-
-            if (this.status.autoRate) {
-                this.memory.delay = Math.max(
-                    600,
-                    8 * Math.pow(2 / 3, 3 * average) * 1000
-                );
-            }
+            // if (this.status.autoRate) {
+            //     const averageCounts = this.memory.average_counts;
+            //     averageCounts.push(this.memory.new_counts);
+            //
+            //     if (averageCounts.length > AVERAGE_COUNTS_SIZE) {
+            //         averageCounts.shift();
+            //     }
+            //
+            //     const average =
+            //         averageCounts.reduce((a, b) => a + b) /
+            //         averageCounts.length;
+            //
+            //     this.memory.delay = Math.max(
+            //         600,
+            //         8 * Math.pow(2 / 3, 3 * average) * 1000
+            //     );
+            // }
 
             // 검색일 경우 강조 표시 생성
             if (queryString("s_keyword")) {
