@@ -871,14 +871,11 @@ tr .gall_writer {
 
 .refresher-frame.preview .refresher-preview-contents {
     embed {
-        background-color: #333;
         border-radius: 10px;
         box-shadow: $shadow-2dp;
     }
 
-    img,
-    video {
-        background-color: #333;
+    img, video {
         border-radius: 10px;
         box-shadow: $shadow-2dp;
         transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
