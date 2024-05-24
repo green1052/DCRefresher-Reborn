@@ -92,6 +92,12 @@ $dark-red: #e21919;
         }
     }
 
+    .refresher-frame.preview .refresher-preview-contents {
+        embed, img, video {
+            background-color: #333;
+        }
+    }
+
     .refresher-preview-button {
         box-shadow: none;
 
