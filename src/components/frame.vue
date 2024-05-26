@@ -7,9 +7,8 @@
             center: frame.options.center
         }"
         class="refresher-frame">
-        <div
-            v-if="frame.error"
-            class="refresher-preview-contents refresher-error">
+
+        <div v-if="frame.error" class="refresher-preview-contents refresher-error">
             <h3>{{ frame.error.title || "알 수 없는 오류" }}</h3>
             <br/>
             <img :src="getURL('/assets/icons/karyl.webp')" style="width: 150px; height: 150px;"/>
@@ -65,7 +64,7 @@
                 class="refresher-writecomment primary"
                 text="다시 시도"/>
         </div>
-        <fragment v-else>
+        <div v-else>
             <div class="refresher-preview-info">
                 <div class="refresher-preview-title-zone">
                     <div
@@ -103,6 +102,7 @@
                     <div
                         v-if="frame.data.comments !== undefined"
                         class="refresher-comment-controls-container">
+
                         <fragment v-if="frame.data.useWriteComment">
                             <PreviewButton
                                 :id="'dccon'"
@@ -124,6 +124,7 @@
                             class="refresher-comment-controls"/>
                     </div>
                 </div>
+
                 <div class="refresher-preview-meta">
                     <User
                         v-if="frame.data.user !== undefined"
@@ -174,7 +175,7 @@
                         class="refresher-preview-contents-actual"
                         v-html="frame.contents"/>
                 </transition>
-                <fragment v-else>
+                <div v-else>
                     <div v-if="frame.data.comments.comments === null">
                         <div class="refresher-nocomment-wrap">
                             <img
@@ -214,7 +215,7 @@
                             @setDccon="setDccon"
                             @setReply="setReply"/>
                     </div>
-                </fragment>
+                </div>
             </div>
             <div
                 v-if="frame.data.comments === undefined && frame.data.buttons"
@@ -247,7 +248,7 @@
                         :text="'원본 보기'"/>
                 </div>
             </div>
-        </fragment>
+        </div>
     </div>
 </template>
 
