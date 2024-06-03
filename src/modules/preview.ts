@@ -486,7 +486,7 @@ const request = {
         params.set("mode", "del");
         params.set("g-recaptcha-response", "");
         params.set("_GALLTYPE_", typeName);
-        params.set("no", preData.id)
+        params.set("no", preData.id);
 
         if (password) {
             params.set("re_password", password);
