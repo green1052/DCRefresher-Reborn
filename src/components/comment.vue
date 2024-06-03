@@ -10,7 +10,7 @@
                 :user="comment.user"/>
             <div class="float-right">
                 <p
-                    v-if="comment.depth === 0 && comment.is_delete === '0'"
+                    v-if="comment.depth === 0"
                     class="refresher-reply"
                     @click="reply">{{ this.getReply() === this.comment.no ? "답글 해제" : "답글" }}</p>
 
