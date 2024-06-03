@@ -428,7 +428,7 @@ export default Vue.extend({
         });
     },
     updated() {
-        this.$el.scroll(0, 0);
+        // this.$el.scroll(0, 0);
     }
 });
 </script>
