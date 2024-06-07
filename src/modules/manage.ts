@@ -3,6 +3,7 @@ import {Cash} from "cash-dom/dist/cash";
 import ky from "ky";
 import Cookies from "js-cookie";
 import {eventBus} from "../core/eventbus";
+import * as http from "../utils/http";
 
 export default {
     name: "관리",
@@ -39,10 +40,40 @@ export default {
             desc: "글댓비를 표시합니다. (3일 마다 갱신, 새 글 작성시에만 조회)",
             type: "check",
             default: false
+        },
+        deleteViaCtrl: {
+            name: "Ctrl로 삭제",
+            desc: "Ctrl키를 누른 상태로 게시글을 클릭해 삭제합니다.",
+            type: "check",
+            default: false
         }
     },
     require: ["filter", "eventBus"],
     func(filter, eventBus) {
+        const deletePost = async (id: string) => {
+            if (!id) return;
+
+            const galleryType = http.galleryType(location.href, "/");
+
+            const params = new URLSearchParams();
+            params.set("ci_t", Cookies.get("ci_c") ?? "");
+            params.set("id", $("#gallery_id").val() as string);
+            params.set("nos[]", id);
+            params.set("_GALLTYPE_", http.galleryTypeName(location.href));
+
+            await ky.post(
+                galleryType === "mini/"
+                    ? http.urls.manage.deleteMini
+                    : http.urls.manage.delete,
+                {
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: params
+                }
+            );
+        };
+
         this.memory.checkBox = filter.add<HTMLInputElement>(".article_chkbox", (element) => {
             if (this.status.checkAllTargetUser) {
                 const $element = $(element);
@@ -92,6 +123,19 @@ export default {
                 });
             }
         });
+
+        this.memory.content = filter.add(".gall_list .ub-content", (element) => {
+            if (!this.status.deleteViaCtrl) return;
+
+            element.onclick ??= (ev: MouseEvent) => {
+                if (!this.status.deleteViaCtrl || !ev.ctrlKey) return;
+
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                deletePost(element.dataset.no!);
+            };
+        }, {neverExpire: true});
 
         this.memory.always = filter.add(".ub-writer:not([user_name])", (element) => {
             if (!this.status.checkRatio || element.dataset.refresherRatio === "true") return false;
@@ -174,6 +218,7 @@ export default {
     revoke(filter) {
         if (this.memory.checkBox) filter.remove(this.memory.checkBox);
         if (this.memory.newPostListEvent) eventBus.remove("newPostList", this.memory.newPostListEvent);
+        if (this.memory.content) filter.remove(this.memory.content);
     }
 } as RefresherModule<{
     data: {
@@ -183,12 +228,15 @@ export default {
         always: string;
         checkBox: string;
         newPostListEvent: string;
+        content: string;
+
     };
     settings: {
         checkAllTargetUser: RefresherCheckSettings;
         checkViaShift: RefresherCheckSettings;
         checkCommentViaCtrl: RefresherCheckSettings;
         checkRatio: RefresherCheckSettings;
+        deleteViaCtrl: RefresherCheckSettings;
     };
     require: ["filter", "eventBus"];
 }>;
