@@ -189,6 +189,31 @@ const client = browser.runtime.getManifest().manifest_version === 2
     };
 
 const request = {
+    async bump(args: GalleryHTTPRequestArguments) {
+        const galleryType = http.galleryType(location.href, "/");
+
+        const params = new URLSearchParams();
+        params.set("ci_t", Cookies.get("ci_c") ?? "");
+        params.set("id", args.gallery);
+        params.set("nos[]", args.id);
+        params.set("_GALLTYPE_", http.galleryTypeName(location.href));
+
+        const response = await client(
+            galleryType === "mini/"
+                ? http.urls.manage.bumpMini
+                : http.urls.manage.bump,
+            {
+                body: params
+            }
+        );
+
+        try {
+            return JSON.parse(response);
+        } catch {
+            return response;
+        }
+    },
+
     async vote(
         gall_id: string,
         post_id: string,
@@ -662,6 +687,10 @@ const panel = {
         <img src="${browser.runtime.getURL("/assets/icons/delete.webp")}"></img>
         <p>삭제 (D)</p>
       </div>
+      <div class="button bump">
+        <img src="${browser.runtime.getURL("/assets/icons/upvote.webp")}"></img>
+        <p>끌올</p>
+      </div>
     `;
 
         const deleteFunction = () => {
@@ -713,9 +742,7 @@ const panel = {
                 });
         };
 
-        element
-            .querySelector(".delete")
-            ?.addEventListener("click", deleteFunction);
+        element.querySelector(".delete")?.addEventListener("click", deleteFunction);
 
         if (adminKeyPress) {
             document.removeEventListener("keypress", adminKeyPress);
@@ -863,6 +890,25 @@ const panel = {
                         recommendP.innerHTML = setAsRecommend
                             ? "개념글 등록"
                             : "개념글 해제";
+                    } else {
+                        Toast.show(response.msg, true, 3000);
+                    }
+
+                    return;
+                }
+
+                Toast.show(response, true, 3000);
+            });
+        });
+
+        const bump = element.querySelector<HTMLElement>(".bump")!;
+        bump.addEventListener("click", () => {
+            request.bump(preData).then((response) => {
+                eventBus.emit("refreshRequest");
+
+                if (typeof response === "object") {
+                    if (response.result === "success") {
+                        Toast.show(response.msg, false, 3000);
                     } else {
                         Toast.show(response.msg, true, 3000);
                     }

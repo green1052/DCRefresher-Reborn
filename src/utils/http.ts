@@ -9,6 +9,8 @@ export const urls = {
     vote: "https://gall.dcinside.com/board/recommend/vote",
     captcha: "https://gall.dcinside.com/kcaptcha/session",
     manage: {
+        bump: "https://gall.dcinside.com/ajax/minor_manager_board_ajax/update_bump",
+        bumpMini: "https://gall.dcinside.com/ajax/mini_manager_board_ajax/update_bump",
         delete: "https://gall.dcinside.com/ajax/minor_manager_board_ajax/delete_list",
         deleteMini:
             "https://gall.dcinside.com/ajax/mini_manager_board_ajax/delete_list",
