@@ -21,11 +21,11 @@
                 class="refresher-input-wrap">
                 <textarea
                     id="comment_main"
-                    :disabled="disabled"
+                    :disabled="disabled || this.getDccon()"
                     :placeholder="
                         this.getDccon() === null
                             ? '댓글 입력...'
-                            : '디시콘이 선택됐습니다, 댓글 내용이 무시됩니다.'
+                            : '디시콘이 선택됐습니다.'
                     "
                     autocomplete="off"
                     @blur="blur"
