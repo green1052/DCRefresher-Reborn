@@ -516,11 +516,7 @@ tr .gall_writer {
 }
 
 .refresherHideDCNotice {
-    tr[class="ub-content "]:has(> td[user_name=운영자]) {
-        display: none;
-    }
-
-    tr[class="ub-content empty_list"]:has(> td[user_name=운영자]) {
+    tr[class*=ub-content]:has(> td[user_name=운영자]) {
         display: none;
     }
 }

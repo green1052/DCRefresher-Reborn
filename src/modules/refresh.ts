@@ -216,6 +216,8 @@ export default {
 
                 const no = String($element.data("no") || $element.find(".gall_num").text());
 
+                if ($element.children("script").attr("src")?.includes("survey.js")) continue;
+
                 if (!no || !$newList.children().is(`[data-no="${no}"]`)) {
                     $(element).remove();
                 }
