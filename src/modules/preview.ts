@@ -1676,7 +1676,9 @@ export default {
                 }
             };
 
-            frame.functions.retry = (useCache = false) => frame.functions.load(useCache);
+            frame.functions.retry = (useCache = false) => {
+                frame.functions.load(useCache);
+            };
 
             if (!frame.collapse) frame.functions.load();
 
@@ -2351,13 +2353,24 @@ export default {
         };
 
         const addHandler = (element: HTMLElement) => {
+            if (element.dataset.refresherPreview === "true") return;
+
+            let timer: number | undefined;
+
+            element.dataset.refresherPreview = "true";
             element.addEventListener("mouseup", handleMousePress);
             element.addEventListener("mousedown", handleMousePress);
             element.addEventListener(
                 this.status.reversePreviewKey ? "click" : "contextmenu",
                 (ev) => {
-                    if (!$(element).closest(".us-post").hasClass("refresherBlur"))
-                        previewFrame(ev);
+                    if ($(element).closest(".us-post").hasClass("refresherBlur")) return;
+
+                    if (typeof timer === "number") {
+                        window.clearTimeout(timer);
+                        timer = undefined;
+                    }
+
+                    previewFrame(ev);
                 }
             );
 
@@ -2388,11 +2401,12 @@ export default {
                 });
             }
 
-
-            let timer: number | undefined;
-
             element.addEventListener("mouseenter", (ev) => {
-                if ($(element).closest(".us-post").hasClass("refresherBlur")) return;
+                if (
+                    !this.status.tooltipMode ||
+                    $(element).closest(".us-post").hasClass("refresherBlur") ||
+                    typeof timer === "number"
+                ) return;
 
                 timer = window.setTimeout(() => {
                     miniPreview.create(
@@ -2403,15 +2417,16 @@ export default {
                 }, this.status.tooltipDelay);
             });
 
-            element.addEventListener("mousemove", (ev) =>
-                miniPreview.move(ev, this.status.tooltipMode)
-            );
+            element.addEventListener("mousemove", (ev) => {
+                if (this.status.tooltipMode) miniPreview.move(ev, this.status.tooltipMode);
+            });
 
             element.addEventListener("mouseleave", () => {
+                if (!this.status.tooltipMode) return;
+
                 if (typeof timer === "number") {
                     window.clearTimeout(timer);
                     timer = undefined;
-                    return;
                 }
 
                 miniPreview.close(this.status.tooltipMode);
