@@ -1313,6 +1313,16 @@ export default {
             type: "check",
             default: false
         },
+        tooltipDelay: {
+            name: "툴팁 미리보기 딜레이",
+            desc: "툴팁 미리보기가 나타나기까지의 시간을 설정합니다.",
+            type: "range",
+            default: 0,
+            min: 0,
+            max: 1000,
+            step: 50,
+            unit: "ms"
+        },
         reversePreviewKey: {
             name: "키 반전",
             desc: "오른쪽 버튼 대신 왼쪽 버튼으로 미리보기를 엽니다.",
@@ -2378,21 +2388,34 @@ export default {
                 });
             }
 
+
+            let timer: number | undefined;
+
             element.addEventListener("mouseenter", (ev) => {
                 if ($(element).closest(".us-post").hasClass("refresherBlur")) return;
 
-                miniPreview.create(
-                    ev,
-                    this.status.tooltipMode,
-                    this.status.tooltipMediaHide
-                );
+                timer = window.setTimeout(() => {
+                    miniPreview.create(
+                        ev,
+                        this.status.tooltipMode,
+                        this.status.tooltipMediaHide
+                    );
+                }, this.status.tooltipDelay);
             });
+
             element.addEventListener("mousemove", (ev) =>
                 miniPreview.move(ev, this.status.tooltipMode)
             );
-            element.addEventListener("mouseleave", () =>
-                miniPreview.close(this.status.tooltipMode)
-            );
+
+            element.addEventListener("mouseleave", () => {
+                if (typeof timer === "number") {
+                    window.clearTimeout(timer);
+                    timer = undefined;
+                    return;
+                }
+
+                miniPreview.close(this.status.tooltipMode);
+            });
         };
 
         this.memory.uuid = filter.add(
@@ -2449,6 +2472,7 @@ export default {
     settings: {
         tooltipMode: RefresherCheckSettings;
         tooltipMediaHide: RefresherCheckSettings;
+        tooltipDelay: RefresherRangeSettings;
         reversePreviewKey: RefresherCheckSettings;
         longPressDelay: RefresherRangeSettings;
         scrollToSkip: RefresherCheckSettings;
