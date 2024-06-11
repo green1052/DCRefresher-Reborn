@@ -1263,6 +1263,7 @@ const miniPreview: MiniPreview = {
 
     close(use: boolean) {
         miniPreview.cursorOut = true;
+        miniPreview.element.querySelector(".refresher-mini-preview-contents")!.innerHTML = "로딩 중...";
 
         if (use) {
             miniPreview.controller.abort();
