@@ -2345,17 +2345,11 @@ export default {
             element.addEventListener("mousedown", handleMousePress);
             element.addEventListener(
                 this.status.reversePreviewKey ? "click" : "contextmenu",
-                previewFrame
+                (ev) => {
+                    if (!$(element).closest(".us-post").hasClass("refresherBlur"))
+                        previewFrame(ev);
+                }
             );
-
-            // element.addEventListener(
-            //     this.status.reversePreviewKey ? "click" : "contextmenu",
-            //     (ev) => {
-            //         if ($(element).closest(".us-post").attr("style") === "filter: blur(5px); opacity: 0.5;") return;
-            //
-            //         previewFrame(ev);
-            //     }
-            // );
 
             if (this.status.reversePreviewKey) {
                 element.addEventListener("contextmenu", (e) => {
@@ -2385,7 +2379,7 @@ export default {
             }
 
             element.addEventListener("mouseenter", (ev) => {
-                // if ($(element).closest(".us-post").attr("style") === "filter: blur(5px); opacity: 0.5;") return;
+                if ($(element).closest(".us-post").hasClass("refresherBlur")) return;
 
                 miniPreview.create(
                     ev,
