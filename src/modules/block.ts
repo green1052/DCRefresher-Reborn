@@ -70,6 +70,11 @@ export default {
                     .find(".gall_tit > a:not([class])")
                     .text();
 
+                const tab = $element
+                    .parent()
+                    .find(".gall_subject")
+                    .text()
+
                 const text = $element
                     .closest(".view_content_wrap")
                     .find(".write_div")
@@ -91,7 +96,8 @@ export default {
                             NICK: nick,
                             ID: uid,
                             IP: ip,
-                            COMMENT: commentContent
+                            COMMENT: commentContent,
+                            TAB: tab
                         },
                         gallery
                     )

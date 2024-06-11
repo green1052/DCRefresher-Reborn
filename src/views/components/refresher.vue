@@ -575,7 +575,9 @@ export default Vue.extend({
                 TITLE: [],
                 TEXT: [],
                 COMMENT: [],
-                DCCON: []
+                DCCON: [],
+                TAB: [],
+                IMAGE: []
             },
             blockModes: {},
             blockDetectModeTypeNames: BLOCK_DETECT_MODE_TYPE_NAMES,

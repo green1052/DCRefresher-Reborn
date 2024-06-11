@@ -10,7 +10,9 @@ declare global {
         | "TITLE"
         | "TEXT"
         | "COMMENT"
-        | "DCCON";
+        | "DCCON"
+        | "TAB"
+        | "IMAGE";
 
     type RefresherBlockDetectMode =
         | "SAME"
