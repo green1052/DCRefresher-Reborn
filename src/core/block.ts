@@ -17,7 +17,9 @@ export const TYPE_NAMES: Record<RefresherBlockType, string> = {
     TITLE: "제목",
     TEXT: "내용",
     COMMENT: "댓글",
-    DCCON: "디시콘"
+    DCCON: "디시콘",
+    TAB: "말머리",
+    IMAGE: "이미지 (미구현)"
 };
 
 const BLOCK_TYPES_KEYS: RefresherBlockType[] = [
@@ -27,7 +29,9 @@ const BLOCK_TYPES_KEYS: RefresherBlockType[] = [
     "TITLE",
     "TEXT",
     "COMMENT",
-    "DCCON"
+    "DCCON",
+    "TAB",
+    "IMAGE"
 ];
 
 export const BLOCK_DETECT_MODE_TYPE_NAMES: Record<
@@ -74,8 +78,11 @@ let BLOCK_CACHE: BlockCache = {
     TITLE: [],
     TEXT: [],
     COMMENT: [],
-    DCCON: []
+    DCCON: [],
+    TAB: [],
+    IMAGE: []
 };
+
 let BLOCK_MODE_CACHE: BlockModeCache = {
     NICK: BLOCK_DETECT_MODE.SAME,
     ID: BLOCK_DETECT_MODE.SAME,
@@ -83,7 +90,9 @@ let BLOCK_MODE_CACHE: BlockModeCache = {
     TITLE: BLOCK_DETECT_MODE.CONTAIN,
     TEXT: BLOCK_DETECT_MODE.CONTAIN,
     COMMENT: BLOCK_DETECT_MODE.CONTAIN,
-    DCCON: BLOCK_DETECT_MODE.SAME
+    DCCON: BLOCK_DETECT_MODE.SAME,
+    TAB: BLOCK_DETECT_MODE.SAME,
+    IMAGE: BLOCK_DETECT_MODE.SAME
 };
 
 BLOCK_TYPES_KEYS.forEach(async (key) => {
