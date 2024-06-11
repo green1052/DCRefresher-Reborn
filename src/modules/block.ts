@@ -7,9 +7,7 @@ import {Cash} from "cash-dom/dist/cash";
 
 function hideElement($element: Cash, blur: boolean = false) {
     if (blur) {
-        $element.css("filter", "blur(5px)");
-        $element.css("opacity", "0.5");
-
+        $element.addClass("refresherBlur")
         return;
     }
 
