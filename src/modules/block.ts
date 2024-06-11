@@ -7,7 +7,7 @@ import {Cash} from "cash-dom/dist/cash";
 
 function hideElement($element: Cash, blur: boolean = false) {
     if (blur) {
-        $element.addClass("refresherBlur")
+        $element.addClass("refresherBlur");
         return;
     }
 
@@ -73,7 +73,7 @@ export default {
                 const tab = $element
                     .parent()
                     .find(".gall_subject")
-                    .text()
+                    .text();
 
                 const text = $element
                     .closest(".view_content_wrap")
