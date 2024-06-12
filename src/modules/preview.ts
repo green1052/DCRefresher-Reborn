@@ -1263,7 +1263,11 @@ const miniPreview: MiniPreview = {
 
     close(use: boolean) {
         miniPreview.cursorOut = true;
-        miniPreview.element.querySelector(".refresher-mini-preview-contents")!.innerHTML = "로딩 중...";
+
+        const contents = miniPreview.element.querySelector(".refresher-mini-preview-contents");
+
+        if (contents)
+            contents.innerHTML = "로딩 중...";
 
         if (use) {
             miniPreview.controller.abort();
@@ -1910,6 +1914,7 @@ export default {
                     const comments = await getCommentInfo();
                     let threadCounts = 0;
                     let commentCounts = 0;
+                    let needRefresh = false;
 
                     if (comments.comments) {
                         const cache = postCaches.get(`${preData.gallery}${preData.id}`);
@@ -1924,6 +1929,7 @@ export default {
                         if (this.status.archiveArticle && cacheComment) {
                             cacheComment.forEach((v: DcinsideCommentObject) => {
                                 if (!comments.comments!.find((c: DcinsideCommentObject) => c.no === v.no)) {
+                                    needRefresh = true;
                                     v.is_delete = "1";
 
                                     if (v.depth === 1) {
@@ -2048,6 +2054,8 @@ export default {
                         const cacheComment = cache?.comment?.comments;
 
                         if (cacheComment) {
+                            needRefresh = true;
+
                             cacheComment.forEach((v: DcinsideCommentObject) => {
                                 v.is_delete = "1";
                             });
@@ -2071,7 +2079,7 @@ export default {
                     } ${commentCounts}개`;
 
                     frame.data.comments = comments;
-                    frame.app.$children[0].$children[1].commentKey = Date.now();
+                    if (needRefresh) frame.app.$children[0].$children[1].commentKey = Date.now();
                 } catch (error) {
                     frame.error = {
                         title: "댓글",
@@ -2136,7 +2144,8 @@ export default {
                 return;
             }
 
-            miniPreview.close(this.status.tooltipMode);
+            if (this.status.tooltipMode)
+                miniPreview.close(this.status.tooltipMode);
 
             const preData = ev === null ? prd : getRelevantData(ev);
 
