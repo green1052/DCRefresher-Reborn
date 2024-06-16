@@ -227,7 +227,7 @@ export default {
                                         "files",
                                         new File(
                                             [image],
-                                            `${new Date().getTime()}-${file.name.split(".")[0]}`,
+                                            `${new Date().getTime()}-${file.name.split(".").at(-1)}`,
                                             {
                                                 type: image.type
                                             }
