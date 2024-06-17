@@ -201,6 +201,12 @@ export default {
             $oldList.parent().removeClass("empty");
 
             if (this.memory.calledByPageTurn) {
+                if (isAdmin) {
+                    for (const element of $newList.children()) {
+                        $(element).prepend(`<td class=gall_chk>${managerCheckbox}</td>`);
+                    }
+                }
+
                 $oldList.replaceWith($newList);
                 this.memory.calledByPageTurn = false;
 

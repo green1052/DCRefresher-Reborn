@@ -140,6 +140,8 @@ export default {
         this.memory.always = filter.add(".ub-writer:not([user_name])", (element) => {
             if (!this.status.checkRatio || element.dataset.refresherRatio === "true") return false;
 
+            if (!this.data!.ratio.hasOwnProperty(element.dataset.uid!)) return false;
+
             const ratio = this.data!.ratio[element.dataset.uid!];
 
             if (!ratio) return false;
