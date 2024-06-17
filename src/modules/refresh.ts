@@ -260,10 +260,13 @@ export default {
                 if ($element.data("type") === "icon_slow") {
                     $oldList.prepend($element);
                 } else {
-                    const last = $oldList.children("tr:has(em.icon_notice)").last();
+                    const $notice = $oldList.children("tr:has(em.icon_notice)").last();
+                    const $survey = $oldList.children("tr:has(em.icon_survey)").last();
 
-                    if (last.length) {
-                        last.after($element);
+                    if ($notice.length) {
+                        $notice.after($element);
+                    } else if ($survey.length) {
+                        $survey.after($element);
                     } else {
                         const $hope = $oldList.children(`tr[class="ub-content "]`);
 
