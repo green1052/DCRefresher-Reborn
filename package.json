@@ -3,9 +3,9 @@
   "version": "3.11.5",
   "description": "디시인사이드 개선 확장 프로그램",
   "devDependencies": {
-    "@swc/core": "^1.6.1",
+    "@swc/core": "^1.6.5",
     "@types/js-cookie": "^3.0.6",
-    "@types/node": "^20.14.2",
+    "@types/node": "^20.14.8",
     "@types/webextension-polyfill": "^0.10.7",
     "@types/webpack": "^5.28.5",
     "@types/webpack-env": "^1.18.5",
@@ -17,18 +17,18 @@
     "ky": "^1.3.0",
     "mini-css-extract-plugin": "^2.9.0",
     "pug": "^3.0.3",
-    "sass": "^1.77.5",
+    "sass": "^1.77.6",
     "sass-loader": "^14.2.1",
     "swc-loader": "^0.2.6",
     "terser-webpack-plugin": "^5.3.10",
     "tesseract.js": "^5.1.0",
-    "typescript": "^5.4.5",
+    "typescript": "^5.5.2",
     "vue": "2.7.16",
     "vue-fragment": "1.6.0",
     "vue-loader": "15.11.1",
     "webextension-polyfill": "^0.12.0",
     "webp-converter-browser": "^1.0.4",
-    "webpack": "^5.92.0",
+    "webpack": "^5.92.1",
     "webpack-cli": "^5.1.4",
     "webpack-merge": "^5.10.0"
   },
@@ -39,5 +39,5 @@
     "dev:mv2": "webpack --env manifest=manifest_v2.json --watch --config webpack.dev.js",
     "dev:mv3": "webpack --env manifest=manifest_v3.json --watch --config webpack.dev.js"
   },
-  "packageManager": "pnpm@9.3.0+sha512.ee7b93e0c2bd11409c6424f92b866f31d3ea1bef5fbe47d3c7500cdc3c9668833d2e55681ad66df5b640c61fa9dc25d546efa54d76d7f8bf54b13614ac293631"
+  "packageManager": "pnpm@9.4.0+sha512.f549b8a52c9d2b8536762f99c0722205efc5af913e77835dbccc3b0b0b2ca9e7dc8022b78062c17291c48e88749c70ce88eb5a74f1fa8c4bf5e18bb46c8bd83a"
 }
