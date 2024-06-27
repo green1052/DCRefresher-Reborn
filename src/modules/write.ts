@@ -9,7 +9,7 @@ import {inject} from "../utils/inject";
 export default {
     name: "글쓰기",
     description: "글쓰기 페이지를 변경합니다.",
-    url: /\/board\/write/,
+    url: /\/board\/(write|edit)/,
     status: {},
     data: {
         temporarySave: {
