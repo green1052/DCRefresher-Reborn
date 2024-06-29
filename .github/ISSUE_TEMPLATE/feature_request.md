@@ -1,20 +1,14 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
+name: 기능 요청
+about: 리프레셔 기능을 제안하세요
 title: ''
 labels: enhancement
 assignees: green1052
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+**기능 요청 이유**
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+**기능 설명**
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
-
-**Additional context**
-Add any other context or screenshots about the feature request here.
+**추가 설명**
