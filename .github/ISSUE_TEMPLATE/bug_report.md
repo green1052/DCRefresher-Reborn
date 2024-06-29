@@ -11,8 +11,7 @@ assignees: green1052
 
 **재현 방법**
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+**예상 동작**
 
 **스크린샷**
 
