@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="https://github.com/green1052/DCRefresher-Reborn/raw/main/src/assets/icons/logo/Icon.png" width="200px"/>
+    <img src="./src/assets/icons/logo/Icon.png" width="200px"/>
 </p>
 
 # DCRefresher Reborn
