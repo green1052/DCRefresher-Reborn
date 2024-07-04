@@ -1,14 +1,14 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: npm
+    directory: /
     schedule:
-      interval: "daily"
+      interval: daily
     assignees:
-      - "green1052"
-  - package-ecosystem: "github-actions"
-    directory: "/"
+      - green1052
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: "daily"
+      interval: daily
     assignees:
-      - "green1052"
+      - green1052
