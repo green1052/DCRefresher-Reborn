@@ -218,6 +218,35 @@ export default {
                 $oldList.replaceWith($newList);
                 this.memory.calledByPageTurn = false;
 
+                if (queryString("s_keyword")) {
+                    const keyword = $("input[name=s_keyword]").val() as string;
+
+                    if (keyword) {
+                        for (const element of $oldList.find(".gall_tit")) {
+                            const $element = $(element);
+
+                            const $a = $element.find("a:first-child");
+                            const $tmpSubject = $a.clone();
+
+                            $tmpSubject.find(".icon_img").remove();
+
+                            const tmpSubjectHtml = $tmpSubject.html().trim();
+
+                            if (tmpSubjectHtml.match(keyword)) {
+                                let subject = tmpSubjectHtml.replace(
+                                    keyword,
+                                    `<span class=mark>${keyword}</span>`
+                                );
+                                subject = $a
+                                    .html()
+                                    .replace(tmpSubjectHtml, subject);
+
+                                $a.html(subject);
+                            }
+                        }
+                    }
+                }
+
                 return true;
             }
 
@@ -226,19 +255,22 @@ export default {
             for (const element of Array.from($oldList.children()).reverse()) {
                 const $element = $(element);
 
-                if ($element.hasClass("crt>")) continue;
+                if ($element.hasClass("crt>") || $element.hasClass("refresher-deleted")) continue;
 
                 const no = String($element.data("no") || $element.find(".gall_num").text());
 
                 if ($element.children("script").attr("src")?.includes("survey.js")) continue;
 
                 if (!no || !$newList.children().is(`[data-no="${no}"]`)) {
+                    // TODO 마지막 글 삭제됨
                     if ($element.next().length === 0) {
                         $element.remove();
                         continue;
                     }
 
-                    if (archiveArticleConfig) $element.css("background-color", "#e8645f");
+                    if (archiveArticleConfig) {
+                        $element.addClass("refresher-deleted");
+                    }
                 }
             }
 
@@ -335,36 +367,6 @@ export default {
             //         8 * Math.pow(2 / 3, 3 * average) * 1000
             //     );
             // }
-
-            // 검색일 경우 강조 표시 생성
-            if (queryString("s_keyword")) {
-                const keyword = $("input[name=s_keyword]").val() as string;
-
-                if (keyword) {
-                    for (const element of $oldList.find(".gall_tit")) {
-                        const $element = $(element);
-
-                        const $a = $element.find("a:first-child");
-                        const $tmpSubject = $a.clone();
-
-                        $tmpSubject.find(".icon_img").remove();
-
-                        const tmpSubjectHtml = $tmpSubject.html().trim();
-
-                        if (tmpSubjectHtml.match(keyword)) {
-                            let subject = tmpSubjectHtml.replace(
-                                keyword,
-                                `<span class=mark>${keyword}</span>`
-                            );
-                            subject = $a
-                                .html()
-                                .replace(tmpSubjectHtml, subject);
-
-                            $a.html(subject);
-                        }
-                    }
-                }
-            }
 
             eventBus.emit("refresh", $oldList);
 
