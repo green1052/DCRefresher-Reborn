@@ -1151,7 +1151,7 @@ const miniPreview: MiniPreview = {
     lastTimeout: 0,
     shouldOutHandle: false,
     cursorOut: false,
-    create(ev, use, hide) {
+    create(ev, use, hide, interaction) {
         if (!use) return;
 
         miniPreview.cursorOut = false;
@@ -1167,7 +1167,7 @@ const miniPreview: MiniPreview = {
                     !miniPreview.cursorOut &&
                     miniPreview.lastElement === ev.target
                 ) {
-                    miniPreview.create(ev, use, hide);
+                    miniPreview.create(ev, use, hide, interaction);
                 }
 
                 miniPreview.cursorOut = false;
@@ -1186,12 +1186,16 @@ const miniPreview: MiniPreview = {
         miniPreview.element.classList.add("refresher-mini-preview");
 
         if (!miniPreview.init) {
+            if (interaction) {
+                miniPreview.element.style.pointerEvents = "auto";
+                miniPreview.element.style.overflow = "auto";
+            }
+
             miniPreview.element.innerHTML = `<h3>${
                 preData.title
             }</h3><br><div class="refresher-mini-preview-contents${
                 hide ? " media-hide" : ""
-            }"></div><p class="read-more">더 읽으려면 클릭하세요.</p>`;
-
+            }"></div>${interaction ? "" : "<p class=read-more>더 읽으려면 클릭하세요.</p>"}`;
             document.body.appendChild(miniPreview.element);
             miniPreview.init = true;
         }
@@ -1250,19 +1254,24 @@ const miniPreview: MiniPreview = {
         miniPreview.element.querySelector("h3")!.innerHTML = preData.title;
     },
 
-    move(ev: MouseEvent, use: boolean) {
+    move(ev: MouseEvent, use: boolean, interaction: boolean) {
         if (!use) return;
 
         const rect = miniPreview.element.getBoundingClientRect();
         const width = rect.width;
         const height = rect.height;
-        const x = Math.min(ev.clientX, innerWidth - width - 10);
-        const y = Math.min(ev.clientY, innerHeight - height - 10);
+        const x = Math.min(interaction ? ev.clientX + 10 : ev.clientX, innerWidth - width - 10);
+        const y = Math.min(interaction ? ev.clientY - 50 : ev.clientY, innerHeight - height - 10);
+
         miniPreview.element.style.transform = `translate(${x}px, ${y}px)`;
     },
 
     close(use: boolean) {
+        if (document.querySelector("div:hover")?.classList.contains("refresher-mini-preview")) return;
+
         miniPreview.cursorOut = true;
+
+        miniPreview.element.querySelector("h3")!.innerHTML = "로딩 중...";
 
         const contents = miniPreview.element.querySelector(".refresher-mini-preview-contents");
 
@@ -1327,6 +1336,12 @@ export default {
             max: 1000,
             step: 50,
             unit: "ms"
+        },
+        tooltipInteraction: {
+            name: "툴팁 미리보기 상호작용",
+            desc: "툴팁 미리보기에서 마우스 클릭이나 휠 스크롤을 가능하게 합니다. (툴팁 미리보기 딜레이 설정 필수)",
+            type: "check",
+            default: false
         },
         reversePreviewKey: {
             name: "키 반전",
@@ -2422,13 +2437,19 @@ export default {
                     miniPreview.create(
                         ev,
                         this.status.tooltipMode,
-                        this.status.tooltipMediaHide
+                        this.status.tooltipMediaHide,
+                        this.status.tooltipInteraction
                     );
+
+                    if (this.status.tooltipInteraction)
+                        miniPreview.move(ev, this.status.tooltipMode, this.status.tooltipInteraction);
+
                 }, this.status.tooltipDelay);
             });
 
             element.addEventListener("mousemove", (ev) => {
-                if (this.status.tooltipMode) miniPreview.move(ev, this.status.tooltipMode);
+                if (this.status.tooltipMode && !this.status.tooltipInteraction)
+                    miniPreview.move(ev, this.status.tooltipMode, this.status.tooltipInteraction);
             });
 
             element.addEventListener("mouseleave", () => {
@@ -2498,6 +2519,7 @@ export default {
         tooltipMode: RefresherCheckSettings;
         tooltipMediaHide: RefresherCheckSettings;
         tooltipDelay: RefresherRangeSettings;
+        tooltipInteraction: RefresherCheckSettings;
         reversePreviewKey: RefresherCheckSettings;
         longPressDelay: RefresherRangeSettings;
         scrollToSkip: RefresherCheckSettings;

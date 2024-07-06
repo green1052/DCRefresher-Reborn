@@ -12,8 +12,8 @@ declare global {
         lastTimeout: number;
         shouldOutHandle: boolean;
         cursorOut: boolean;
-        create: (ev: MouseEvent, use: boolean, hide: boolean) => void;
-        move: (ev: MouseEvent, use: boolean) => void;
+        create: (ev: MouseEvent, use: boolean, hide: boolean, interaction: boolean) => void;
+        move: (ev: MouseEvent, use: boolean, interaction: boolean) => void;
         close: (use: boolean) => void;
     }
 }
