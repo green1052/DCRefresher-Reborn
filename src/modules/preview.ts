@@ -1271,7 +1271,10 @@ const miniPreview: MiniPreview = {
 
         miniPreview.cursorOut = true;
 
-        miniPreview.element.querySelector("h3")!.innerHTML = "로딩 중...";
+        const h3 = miniPreview.element.querySelector("h3");
+
+        if (h3)
+            h3.innerHTML = "로딩 중...";
 
         const contents = miniPreview.element.querySelector(".refresher-mini-preview-contents");
 
