@@ -193,7 +193,6 @@ export default {
             }
 
             const url = http.view(originalLocation);
-
             const response = await ky.get(url).text();
             const dom = new DOMParser().parseFromString(response, "text/html");
 
@@ -250,18 +249,21 @@ export default {
                 return true;
             }
 
-            const cached = Array.from($("tbody > tr")).map(element => element?.dataset.no || $(element).find(".gall_num").text());
-
             for (const element of Array.from($oldList.children()).reverse()) {
                 const $element = $(element);
 
-                if ($element.hasClass("crt>") || $element.hasClass("refresher-deleted")) continue;
+                if (
+                    $element.hasClass("refresher-deleted") ||
+                    $element.children("script").attr("src")?.includes("survey.js")
+                ) continue;
 
-                const no = String($element.data("no") || $element.find(".gall_num").text());
+                let no = $element.data("no") || $element.find(".gall_num").text();
 
-                if ($element.children("script").attr("src")?.includes("survey.js")) continue;
+                if (!no) continue;
 
-                if (!no || !$newList.children().is(`[data-no="${no}"]`)) {
+                no = String(no);
+
+                if (!$newList.children().is(`[data-no="${no}"]`)) {
                     // TODO 마지막 글 삭제됨
                     if ($element.next().length === 0) {
                         $element.remove();
@@ -274,17 +276,33 @@ export default {
                 }
             }
 
+            const cached = Array.from($("tbody > tr")).map(element => {
+                const $element = $(element);
+
+                if ($element.hasClass("refresher-deleted")) return;
+
+                const no = $element.data("no") || $element.find(".gall_num").text();
+
+                if (!no) return;
+
+                return String(no);
+            }).filter((v) => v);
+
             const newPostList: Cash[] = [];
 
             for (const element of Array.from($newList.children()).reverse()) {
                 const $element = $(element);
-                let no = $element.data("no");
+                let no = $element.data("no") || $element.find(".gall_num").text();
 
-                if (!no) continue;
+                if (
+                    !no ||
+                    $element.hasClass("refresher-deleted") ||
+                    $element.children("script").attr("src")?.includes("survey.js")
+                ) continue;
 
                 no = String(no);
 
-                if (currentPostNo === no) {
+                if (currentPostNo && currentPostNo === no) {
                     const $crt = $oldList.children("tr[class*=crt]");
                     $crt.children(".gall_tit").html($element.children(".gall_tit").html());
                     $crt.children(".gall_count").html($element.children(".gall_count").html());
@@ -349,6 +367,7 @@ export default {
             }
 
             eventBus.emit("newPostList", newPostList);
+            eventBus.emit("refresh", $oldList);
 
             // if (this.status.autoRate) {
             //     const averageCounts = this.memory.average_counts;
@@ -367,8 +386,6 @@ export default {
             //         8 * Math.pow(2 / 3, 3 * average) * 1000
             //     );
             // }
-
-            eventBus.emit("refresh", $oldList);
 
             return true;
         };
