@@ -179,6 +179,7 @@ export default {
                 return false;
 
             const isAdmin = $(".useradmin_btnbox button").length > 0;
+            const isPageView = location.href.includes("/board/view");
 
             if (isAdmin && $(".article_chkbox").filter(":checked").length > 0) return false;
 
@@ -270,7 +271,7 @@ export default {
                     continue;
                 }
 
-                if (isAdmin) {
+                if (isAdmin && !isPageView) {
                     $element
                         .prepend(`<td class=gall_chk>${managerCheckbox}</td>`);
                 }
@@ -419,8 +420,7 @@ export default {
                     element.onclick = () => false;
 
                     element.addEventListener("click", async () => {
-                        const isPageView =
-                            location.href.includes("/board/view");
+                        const isPageView = location.href.includes("/board/view");
 
                         if (isPageView) {
                             history.pushState(
