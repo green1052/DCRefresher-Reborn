@@ -215,14 +215,11 @@ export default {
                     }
                 }
 
-                $oldList.replaceWith($newList);
-                this.memory.calledByPageTurn = false;
-
                 if (queryString("s_keyword")) {
                     const keyword = $("input[name=s_keyword]").val() as string;
 
                     if (keyword) {
-                        for (const element of $oldList.find(".gall_tit")) {
+                        for (const element of $newList.find(".gall_tit")) {
                             const $element = $(element);
 
                             const $a = $element.find("a:first-child");
@@ -246,6 +243,9 @@ export default {
                         }
                     }
                 }
+
+                $oldList.replaceWith($newList);
+                this.memory.calledByPageTurn = false;
 
                 return true;
             }
