@@ -3,6 +3,7 @@ import {queryString} from "../utils/http";
 import $ from "cash-dom";
 import ky from "ky";
 import {Cash} from "cash-dom/dist/cash";
+import * as storage from "../utils/storage";
 
 const AVERAGE_COUNTS_SIZE = 7;
 
@@ -43,6 +44,12 @@ const addRefreshText = (issueBox: HTMLElement) => {
         pageHead?.appendChild(button);
     }
 };
+let archiveArticleConfig = false;
+
+(async () => {
+    if (!await storage.get<boolean>("미리보기.enable")) return;
+    archiveArticleConfig = await storage.get<boolean>("미리보기.archiveArticle");
+})();
 
 export default {
     name: "글 목록 새로고침",
@@ -215,7 +222,7 @@ export default {
 
             const cached = Array.from($("tbody > tr")).map(element => element?.dataset.no || $(element).find(".gall_num").text());
 
-            for (const element of $oldList.children()) {
+            for (const element of Array.from($oldList.children()).reverse()) {
                 const $element = $(element);
 
                 if ($element.hasClass("crt>")) continue;
@@ -225,7 +232,12 @@ export default {
                 if ($element.children("script").attr("src")?.includes("survey.js")) continue;
 
                 if (!no || !$newList.children().is(`[data-no="${no}"]`)) {
-                    $(element).remove();
+                    if ($element.next().length === 0) {
+                        $element.remove();
+                        continue;
+                    }
+
+                    if (archiveArticleConfig) $element.css("background-color", "#e8645f");
                 }
             }
 
