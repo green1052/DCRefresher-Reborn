@@ -110,6 +110,12 @@ export default {
             desc: "글 목록에서 게임메카 게시글을 숨깁니다.",
             type: "check",
             default: false
+        },
+        removeZzbang: {
+            name: "짤방 숨기기",
+            desc: "글 목록에서 짤방을 숨깁니다.",
+            type: "check",
+            default: false
         }
     },
     update: {
@@ -170,6 +176,9 @@ export default {
                 "refresherHideGamemeca",
                 value
             );
+        },
+        removeZzbang(value: boolean) {
+            $(document.documentElement).toggleClass("refresherHideZzbang", value);
         }
     },
     require: [],
@@ -198,6 +207,8 @@ export default {
         this.update.removeNotice.bind(this)(this.status.removeNotice);
         this.update.removeDCNotice.bind(this)(this.status.removeDCNotice);
         this.update.removeGamemeca.bind(this)(this.status.removeGamemeca);
+        this.update.removeZzbang.bind(this)(this.status.removeZzbang);
+
     },
     revoke() {
         window.removeEventListener("resize", this.memory.resize!);
@@ -209,7 +220,7 @@ export default {
         this.update.pushToRight.bind(this)(false);
         this.update.removeNotice.bind(this)(false);
         this.update.removeDCNotice.bind(this)(false);
-        this.update.removeGamemeca.bind(this)(this.status.removeGamemeca);
+        this.update.removeZzbang.bind(this)(this.status.removeZzbang);
     }
 } as RefresherModule<{
     memory: {
@@ -227,6 +238,7 @@ export default {
         removeNotice: RefresherCheckSettings;
         removeDCNotice: RefresherCheckSettings;
         removeGamemeca: RefresherCheckSettings;
+        removeZzbang: RefresherCheckSettings;
     };
     update: {
         activePixel(value: number): void;
