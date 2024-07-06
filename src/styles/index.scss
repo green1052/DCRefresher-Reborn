@@ -527,6 +527,12 @@ tr .gall_writer {
     }
 }
 
+.refresherHideZzbang {
+    #zzbang_div {
+        display: none;
+    }
+}
+
 // Refresh Module
 
 .refresherBlur {
@@ -1420,7 +1426,7 @@ tr .gall_writer {
     left: 0;
     top: 0;
     z-index: 1000;
-    overflow: hidden;
+    overflow: scroll;
     pointer-events: none;
 
     min-width: 300px;
