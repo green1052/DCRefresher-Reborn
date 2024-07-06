@@ -1426,7 +1426,7 @@ tr .gall_writer {
     left: 0;
     top: 0;
     z-index: 1000;
-    overflow: scroll;
+    overflow: hidden;
     pointer-events: none;
 
     min-width: 300px;
@@ -1438,9 +1438,9 @@ tr .gall_writer {
     max-height: 400px;
     max-width: 800px;
 
-    &:hover {
-        opacity: 0.4;
-    }
+    //&:hover {
+    //    opacity: 0.4;
+    //}
 
     img {
         max-width: 300px;
