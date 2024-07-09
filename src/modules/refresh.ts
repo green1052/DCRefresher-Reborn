@@ -249,6 +249,24 @@ export default {
                 return true;
             }
 
+            const newCache: Record<string, Cash> = {};
+
+            for (const element of Array.from($newList.children()).reverse()) {
+                const $element = $(element);
+
+                if (
+                    $element.children("script").attr("src")?.includes("survey.js")
+                ) continue;
+
+                const no = element!.dataset.no || $element.find(".gall_num").text();
+
+                if (!no) continue;
+
+                newCache[no] = $element;
+            }
+
+            const cache: Record<string, Cash> = {};
+
             for (const element of Array.from($oldList.children()).reverse()) {
                 const $element = $(element);
 
@@ -257,65 +275,35 @@ export default {
                     $element.children("script").attr("src")?.includes("survey.js")
                 ) continue;
 
-                let no = $element.data("no") || $element.find(".gall_num").text();
+                const no = element!.dataset.no || $element.find(".gall_num").text();
 
                 if (!no) continue;
 
-                no = String(no);
-
-                if (!$newList.children().is(`[data-no="${no}"]`)) {
-                    // TODO 마지막 글 삭제됨
-                    if ($element.next().length === 0) {
-                        $element.remove();
-                        continue;
+                if (!newCache[no]) {
+                    if (currentPostNo) {
+                        cache[currentPostNo] = $element;
                     }
 
-                    if (archiveArticleConfig) {
+                    if ($element.is(":last-child")) {
+                        $element.remove();
+                    } else if (currentPostNo) {
+                        cache[currentPostNo] = $element;
+                    } else if (archiveArticleConfig) {
                         $element.addClass("refresher-deleted");
                     }
-                }
-            }
-
-            const cached = Array.from($("tbody > tr")).map(element => {
-                const $element = $(element);
-
-                if ($element.hasClass("refresher-deleted")) return;
-
-                const no = $element.data("no") || $element.find(".gall_num").text();
-
-                if (!no) return;
-
-                return String(no);
-            }).filter((v) => v);
-
-            const newPostList: Cash[] = [];
-
-            for (const element of Array.from($newList.children()).reverse()) {
-                const $element = $(element);
-
-                if (
-                    $element.hasClass("refresher-deleted") ||
-                    $element.children("script").attr("src")?.includes("survey.js")
-                ) continue;
-
-                let no = $element.data("no") || $element.find(".gall_num").text();
-
-                if (!no) continue;
-
-                no = String(no);
-
-                if (currentPostNo && currentPostNo === no) {
-                    const $crt = $oldList.children("tr[class*=crt]");
-                    $crt.children(".gall_tit").html($element.children(".gall_tit").html());
-                    $crt.children(".gall_count").html($element.children(".gall_count").html());
-                    $crt.children(".gall_recommend").html($element.children(".gall_recommend").html());
 
                     continue;
                 }
 
-                if (cached.includes(no)) {
-                    const $old = $oldList.children().filter((_, element) => element.dataset.no === no || $(element).find(".gall_num").text() === no);
+                cache[no] = $element;
+            }
 
+            const newPostList: Cash[] = [];
+
+            for (const [no, $element] of Object.entries(newCache)) {
+                const $old = cache[no];
+
+                if ($old) {
                     $old.children(".gall_tit").html($element.children(".gall_tit").html());
                     $old.children(".gall_count").html($element.children(".gall_count").html());
                     $old.children(".gall_recommend").html($element.children(".gall_recommend").html());
@@ -370,7 +358,7 @@ export default {
             }
 
             eventBus.emit("newPostList", newPostList);
-            eventBus.emit("refresh", $oldList);
+            eventBus.emit("refresh");
 
             // if (this.status.autoRate) {
             //     const averageCounts = this.memory.average_counts;
