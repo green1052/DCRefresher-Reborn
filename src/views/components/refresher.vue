@@ -61,11 +61,7 @@
                         <h3>{{ karyl ? "RULIRefresher Reborn" : "DCRefresher Reborn" }}</h3>
                         <p>
                             <span class="version">{{ getVersion() }}</span>
-                            <a
-                                v-for="link in links"
-                                @click="open(link.url)"
-                            >{{ link.text }}</a
-                            >
+                            <a v-for="link in links" @click="open(link.url)">{{ link.text }}</a>
                         </p>
                         <p>
                             <span
