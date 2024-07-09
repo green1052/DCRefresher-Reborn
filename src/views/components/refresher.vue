@@ -51,14 +51,14 @@
                 <div class="info">
                     <div class="icon-wrap">
                         <img v-if="karyl"
-                             :src="getURL('/assets/icons/karyl.webp')"
+                             :src="getURL('/assets/icons/ruliweb.webp')"
                              class="icon"/>
                         <img v-else
                              :src="getURL('/assets/icons/logo/Icon.png')"
                              class="icon"/>
                     </div>
                     <div class="text">
-                        <h3>DCRefresher Reborn</h3>
+                        <h3>{{ karyl ? "RULIRefresher Reborn" : "DCRefresher Reborn" }}</h3>
                         <p>
                             <span class="version">{{ getVersion() }}</span>
                             <a
