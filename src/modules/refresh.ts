@@ -292,13 +292,15 @@ export default {
 
             for (const element of Array.from($newList.children()).reverse()) {
                 const $element = $(element);
-                let no = $element.data("no") || $element.find(".gall_num").text();
 
                 if (
-                    !no ||
                     $element.hasClass("refresher-deleted") ||
                     $element.children("script").attr("src")?.includes("survey.js")
                 ) continue;
+
+                let no = $element.data("no") || $element.find(".gall_num").text();
+
+                if (!no) continue;
 
                 no = String(no);
 
@@ -357,9 +359,10 @@ export default {
                         .css("animation-delay", `${delay}ms`);
 
                     setTimeout(() => {
-                        $element
-                            .css("animation-delay", "")
-                            .removeClass("refresherNewPost");
+                        if ($element.length > 0)
+                            $element
+                                .css("animation-delay", "")
+                                .removeClass("refresherNewPost");
                     }, delay + 1000);
 
                     this.memory.new_counts++;
