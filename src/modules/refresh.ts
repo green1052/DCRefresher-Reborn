@@ -282,16 +282,22 @@ export default {
                 if (!newCache[no]) {
                     if (currentPostNo) {
                         cache[currentPostNo] = $element;
+                        continue;
                     }
 
-                    if ($element.is(":last-child")) {
-                        $element.remove();
-                    } else if (currentPostNo) {
-                        cache[currentPostNo] = $element;
-                    } else if (archiveArticleConfig) {
-                        $element.addClass("refresher-deleted");
+                    // TODO 이전 글 위로 올라오는 오류 있음
+                    if (archiveArticleConfig) {
+                        // TODO 마지막 글은 무조건 삭제됨
+                        if ($element.is(":last-child")) {
+                            $element.remove();
+                        } else {
+                            $element.addClass("refresher-deleted");
+                        }
+
+                        continue;
                     }
 
+                    $element.remove();
                     continue;
                 }
 
