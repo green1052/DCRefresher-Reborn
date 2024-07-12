@@ -12,8 +12,5 @@ declare global {
         detail?: string;
     }
 
-    interface RefresherIP {
-        ISPData: (ip: string) => ISPInfo;
-        format: (data: ISPInfo) => string;
-    }
+    type RefresherIP = typeof import("../utils/ip");
 }
