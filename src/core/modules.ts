@@ -12,19 +12,11 @@ import * as ip from "../utils/ip";
 import storage from "../utils/storage";
 import browser from "webextension-polyfill";
 
-type ModuleItem =
-    | RefresherFilter
-    | typeof Frame
-    | RefresherEventBus
-    | RefresherHTTP
-    | RefresherIP
-    | RefresherBlock
-    | RefresherDOM
-    | RefresherMemo;
+type ModuleItem = ValueOf<ItemToRefresherMap>;
 
 export type ModuleStore = Record<string, RefresherModule>;
 
-const UTILS: Record<string, ModuleItem> = {
+const UTILS: ItemToRefresherMap = {
     filter,
     Frame,
     eventBus,
@@ -41,7 +33,7 @@ const runModule = (module: RefresherModule) => {
     const plugins: ModuleItem[] = [];
 
     if (Array.isArray(module.require)) {
-        for (const require of module.require) {
+        for (const require of module.require as (keyof ItemToRefresherMap)[]) {
             plugins.push(UTILS[require]);
         }
     }
@@ -54,7 +46,7 @@ const revokeModule = (mod: RefresherModule) => {
         const plugins: ModuleItem[] = [];
 
         if (Array.isArray(module.require)) {
-            for (const require of module.require) {
+            for (const require of module.require as (keyof ItemToRefresherMap)[]) {
                 plugins.push(UTILS[require]);
             }
         }
@@ -71,65 +63,69 @@ const revokeModule = (mod: RefresherModule) => {
 
 export const modules = {
     lists: (): ModuleStore => module_store,
-    load: (...mods: RefresherModule[]): Promise<void> => {
-        return new Promise<void>((resolve) =>
-            Promise.all(mods.map(modules.register)).then(() => resolve())
-        );
+    load: (module: RefresherModule): Promise<void> => {
+        return new Promise<void>((resolve) => modules.register(module).then(() => resolve()));
     },
-    register: async (mod: RefresherModule): Promise<void> => {
+    register: async (module: RefresherModule): Promise<void> => {
+        if (!module) throw "Module is not defined.";
+
         const start = performance.now();
 
-        if (module_store[mod.name]) throw `${mod.name} is already registered.`;
+        if (module_store[module.name]) throw `${module.name} is already registered.`;
 
-        const checkEnabled = storage.get<boolean | undefined>(`${mod.name}.enable`)
-            .then((enable) => {
-                if (enable === undefined) {
-                    storage.set(`${mod.name}.enable`, mod.default_enable);
-                    mod.enable = mod.default_enable;
-                } else {
-                    mod.enable = enable;
-                }
-            });
+        const promises: Promise<void>[] = [];
 
-        if (typeof mod.settings === "object") {
-            mod.status ??= {};
+        promises.push(
+            storage
+                .get<boolean | undefined>(`${module.name}.enable`)
+                .then((enable) => {
+                    module.enable = typeof enable === "boolean" ? enable : module.default_enable;
 
-            const promises = Object.keys(mod.settings).map(async (key) => {
-                mod.status[key] = await settings.load(mod.name, key, mod.settings[key]);
-            });
+                    if (enable === undefined)
+                        storage.set(`${module.name}.enable`, module.default_enable);
+                })
+        );
 
-            await Promise.all(promises);
+        if (typeof module.settings === "object") {
+            module.status ??= {};
+
+            promises.push(
+                ...Object
+                    .entries(module.settings)
+                    .map(async ([key, value]) => {
+                        module.status[key] = await settings.load(module.name, key, value);
+                    })
+            );
         }
 
-        if (typeof mod.data === "object") {
-            for (const key in mod.data) {
-                mod.data[key] =
-                    (await storage.module.get(mod.name)) ?? mod.data[key];
-            }
+        if (typeof module.data === "object") {
+            promises.push(
+                storage.module.get(module.name)
+                    .then((data) => {
+                        module.data = new DeepProxy(data ?? {}, {
+                            set(): boolean {
+                                storage.module.setGlobal(
+                                    module.name,
+                                    JSON.stringify(module.data)
+                                );
+                                return true;
+                            },
 
-            mod.data = (await storage.module.get(mod.name)) ?? {};
-
-            mod.data = new DeepProxy(mod.data, {
-                set(): boolean {
-                    storage.module.setGlobal(
-                        mod.name,
-                        JSON.stringify(mod.data)
-                    );
-                    return true;
-                },
-
-                deleteProperty(): boolean {
-                    storage.module.setGlobal(
-                        mod.name,
-                        JSON.stringify(mod.data)
-                    );
-                    return true;
-                }
-            });
+                            deleteProperty(): boolean {
+                                storage.module.setGlobal(
+                                    module.name,
+                                    JSON.stringify(module.data)
+                                );
+                                return true;
+                            }
+                        });
+                    })
+            );
         }
 
-        module_store[mod.name] = mod;
-        await checkEnabled;
+        module_store[module.name] = module;
+
+        await Promise.all(promises);
 
         const stringify = JSON.stringify({
             module_store,
@@ -138,22 +134,22 @@ export const modules = {
 
         browser.runtime.sendMessage(stringify);
 
-        if (!mod.enable) {
-            console.log(`📁 ignoring ${mod.name}. The module is disabled.`);
+        if (!module.enable) {
+            console.log(`📁 ignoring ${module.name}. The module is disabled.`);
             return;
         }
 
-        if (mod.url && !mod.url.test(location.href)) {
+        if (module.url && !module.url.test(location.href)) {
             console.log(
-                `📁 ignoring ${mod.name}. current URL is not matching with the module's URL value.`
+                `📁 ignoring ${module.name}. current URL is not matching with the module's URL value.`
             );
             return;
         }
 
-        runModule(mod);
+        runModule(module);
 
         console.log(
-            `📁 ${mod.name} module loaded. took ${(
+            `📁 ${module.name} module loaded. took ${(
                 performance.now() - start
             ).toFixed(2)}ms.`
         );

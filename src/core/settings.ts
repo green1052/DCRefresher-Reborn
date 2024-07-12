@@ -9,7 +9,7 @@ const settings_store: SettingsStore = {};
 export const set = async (
     module: string,
     key: string,
-    value: unknown
+    value: string | number | boolean
 ): Promise<void> => {
     eventBus.emit("refresherUpdateSetting", module, key, value);
 
@@ -19,7 +19,7 @@ export const set = async (
     eventBus.emit("refresherSettingsSync", settings_store);
 };
 
-export const setStore = (module: string, key: string, value: unknown): void => {
+export const setStore = (module: string, key: string, value: string | number | boolean): void => {
     eventBus.emit("refresherUpdateSetting", module, key, value);
     settings_store[module][key].value = value;
 };
@@ -33,7 +33,7 @@ export const load = async (
 ): Promise<unknown> => {
     settings_store[module] ??= {};
 
-    const got = (await storage.get(`${module}.${key}`)) ?? settings.default;
+    const got = (await storage.get<string | number | boolean>(`${module}.${key}`)) ?? settings.default;
     settings.value = got;
 
     settings_store[module][key] = settings;
