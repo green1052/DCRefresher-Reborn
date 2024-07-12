@@ -4,7 +4,6 @@ import {submitComment} from "../utils/comment";
 import {findNeighbor} from "../utils/dom";
 import * as http from "../utils/http";
 import {queryString} from "../utils/http";
-import log from "../utils/logger";
 import {ScrollDetection} from "../utils/scrollDetection";
 import {User} from "../utils/user";
 import $ from "cash-dom";
@@ -1693,7 +1692,7 @@ export default {
                         detail: String(error)
                     };
 
-                    log("Error occured while loading a post.", error);
+                    console.log("Error occured while loading a post.", error);
                 } finally {
                     frame.data.load = false;
                 }

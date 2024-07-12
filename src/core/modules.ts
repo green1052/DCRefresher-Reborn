@@ -9,7 +9,6 @@ import DeepProxy from "../utils/deepProxy";
 import * as dom from "../utils/dom";
 import * as http from "../utils/http";
 import * as ip from "../utils/ip";
-import log from "../utils/logger";
 import storage from "../utils/storage";
 import browser from "webextension-polyfill";
 
@@ -140,12 +139,12 @@ export const modules = {
         browser.runtime.sendMessage(stringify);
 
         if (!mod.enable) {
-            log(`📁 ignoring ${mod.name}. The module is disabled.`);
+            console.log(`📁 ignoring ${mod.name}. The module is disabled.`);
             return;
         }
 
         if (mod.url && !mod.url.test(location.href)) {
-            log(
+            console.log(
                 `📁 ignoring ${mod.name}. current URL is not matching with the module's URL value.`
             );
             return;
@@ -153,7 +152,7 @@ export const modules = {
 
         runModule(mod);
 
-        log(
+        console.log(
             `📁 ${mod.name} module loaded. took ${(
                 performance.now() - start
             ).toFixed(2)}ms.`
@@ -184,7 +183,7 @@ communicate.addHook("updateSettingValue", (data) => {
 });
 
 communicate.addHook("executeShortcut", (data) => {
-    log(`Received shortcut execute: ${data}.`);
+    console.log(`Received shortcut execute: ${data}.`);
 
     for (const key of Object.keys(module_store)) {
         if (
