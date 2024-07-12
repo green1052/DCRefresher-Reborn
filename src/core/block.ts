@@ -1,6 +1,5 @@
 import * as communicate from "./communicate";
 import {eventBus} from "./eventbus";
-import log from "../utils/logger";
 import storage from "../utils/storage";
 import browser from "webextension-polyfill";
 import type {ObjectEnum} from "../utils/types";
@@ -194,7 +193,7 @@ export const add = (
     try {
         SendToBackground();
     } catch (e) {
-        log(`Failed to send to background context. ${e}`);
+        console.log(`Failed to send to background context. ${e}`);
     }
 };
 
