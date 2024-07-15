@@ -21,6 +21,8 @@ declare global {
         requireCaptcha?: boolean;
         requireCommentCaptcha?: boolean;
         disabledDownvote?: boolean;
+        v_cur_t?: string;
+        randomParam?: { name: string, value: string };
         dom?: Document;
     }
 

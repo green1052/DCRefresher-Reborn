@@ -35,6 +35,8 @@ class PostInfo implements IPostInfo {
     requireCaptcha?: boolean;
     requireCommentCaptcha?: boolean;
     disabledDownvote?: boolean;
+    v_cur_t?: string;
+    randomParam?: { name: string, value: string };
     dom?: Document;
 
     constructor(id: string) {
@@ -119,18 +121,15 @@ class PostInfo implements IPostInfo {
             postInfo.dom.querySelector(".gallview_head > .gall_writer")
         );
 
-        const formValues = postInfo.dom.getElementById("_view_form_")?.children;
+        const randomParam = postInfo.dom.querySelector<HTMLInputElement>("#adult_article + input");
 
-        if (formValues) {
-            const randomParam = formValues.item(
-                formValues.length - 2
-            ) as HTMLInputElement;
-            Cookies.set("randomParamName", randomParam.name);
-            Cookies.set("randomParamValue", randomParam.value);
-            Cookies.set(
-                "v_cur_t",
-                (formValues.namedItem("v_cur_t") as HTMLInputElement).value
-            );
+        if (randomParam) {
+            postInfo.randomParam = {
+                name: randomParam.name,
+                value: randomParam.value
+            };
+
+            postInfo.v_cur_t = postInfo.dom.querySelector<HTMLInputElement>("input[name=v_cur_t]")!.value;
         }
 
         return postInfo;
@@ -218,7 +217,9 @@ const request = {
         post_id: string,
         type: number,
         code: string | undefined,
-        link: string
+        link: string,
+        v_cur_t?: string,
+        randomParam?: { name: string, value: string }
     ) {
         Cookies.set(
             `${gall_id}${post_id}_Firstcheck${type ? "" : "_down"}`,
@@ -232,11 +233,11 @@ const request = {
 
         const params = new URLSearchParams();
         params.set("ci_t", Cookies.get("ci_c") ?? "");
-        params.set("v_cur_t", Cookies.get("v_cur_t") ?? "");
-        params.set(
-            Cookies.get("randomParamName") ?? "",
-            Cookies.get("randomParamValue") ?? ""
-        );
+
+        if (v_cur_t) params.set("v_cur_t", v_cur_t);
+
+        if (randomParam) params.set(randomParam.name, randomParam.value);
+
         params.set("id", gall_id);
         params.set("no", post_id);
         params.set("mode", type ? "U" : "D");
@@ -1547,7 +1548,9 @@ export default {
                         preData.id,
                         type,
                         captcha ?? undefined,
-                        preData.link!
+                        preData.link!,
+                        postFetchedData.v_cur_t,
+                        postFetchedData.randomParam
                     );
 
                     if (res.result === "true") {
