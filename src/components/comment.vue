@@ -10,7 +10,7 @@
                 :user="comment.user"/>
             <div class="float-right">
                 <p
-                    v-if="comment.depth === 0"
+                    v-if="useWriteComment && comment.depth === 0"
                     class="refresher-reply"
                     @click="reply">{{ this.getReply() === this.comment.no ? "답글 해제" : "답글" }}</p>
 
@@ -109,6 +109,10 @@ export default Vue.extend({
             type: String
         },
 
+        useWriteComment: {
+            type: Boolean
+        },
+
         delete: {
             type: Function
         },
@@ -124,9 +128,7 @@ export default Vue.extend({
             return;
         }
 
-        const gallogImageElement = document.querySelector(
-            "#login_box .user_info .writer_nikcon > img"
-        ) as HTMLImageElement;
+        const gallogImageElement = document.querySelector<HTMLImageElement>("#login_box .user_info .writer_nikcon > img");
 
         const click =
             gallogImageElement &&
