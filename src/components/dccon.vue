@@ -37,12 +37,16 @@
             <hr/>
 
             <div style="width: 100%; height: 80%; overflow: auto">
-                <ul>
+                <h2 v-if="firstLoad" style="position: absolute; top: 50%; left: 35%">
+                    디시콘을 클릭해주세요.
+                </h2>
+                <ul v-else>
                     <li
                         v-for="dccon in this.currentDccon"
                         style="float: left"
                         @click="dcconClick(dccon)">
                         <img
+                            loading="lazy"
                             :alt="dccon.title"
                             :src="dccon.list_img"
                             style="height: 100px"/>
@@ -61,6 +65,7 @@ import RefresherLoader from "./loader.vue";
 import ky from "ky";
 
 interface DcconPopupData {
+    firstLoad: boolean;
     currentPage: number;
     maxPage: number;
     dcconList: Record<number, DcinsideDcconDetailList[]>;
@@ -71,6 +76,7 @@ export default Vue.extend({
     name: "refresher-dccon-popup",
     data: (): DcconPopupData => {
         return {
+            firstLoad: true,
             currentPage: 0,
             maxPage: 1,
             dcconList: {},
@@ -132,6 +138,7 @@ export default Vue.extend({
             this.currentDccon = response.list[0].detail;
         },
         dcconListClick(dccons: DcinsideDccon[]) {
+            this.firstLoad = false;
             this.currentDccon = dccons;
         },
         dcconClick(dccon: DcinsideDccon) {
