@@ -9,7 +9,7 @@ import {User} from "../utils/user";
 import $ from "cash-dom";
 import Cookies from "js-cookie";
 import ky, {Input, Options} from "ky";
-//import Tesseract from "tesseract.js";
+import Tesseract from "tesseract.js";
 import browser from "webextension-polyfill";
 import type IFrame from "../core/frame";
 import * as storage from "../utils/storage";
@@ -975,27 +975,27 @@ const panel = {
             element.querySelector("input")!.focus();
         }, 0);
 
-        // if (bypassCaptcha) {
-        //     const worker = await Tesseract.createWorker();
-        //
-        //     try {
-        //         await worker.loadLanguage("eng");
-        //         await worker.initialize("eng");
-        //         await worker.setParameters({
-        //             tessedit_char_whitelist:
-        //                 "0123456789abcdefghijklmnopqrstuvwxyz"
-        //         });
-        //
-        //         const {
-        //             data: {text}
-        //         } = await worker.recognize(image);
-        //         element.querySelector("input")!.value = text;
-        //     } catch (e) {
-        //         Toast.show("자동 인식에 실패했습니다.", true, 3000);
-        //     } finally {
-        //         await worker.terminate();
-        //     }
-        // }
+        if (bypassCaptcha) {
+            const worker = await Tesseract.createWorker();
+
+            try {
+                await worker.loadLanguage("eng");
+                await worker.initialize("eng");
+                await worker.setParameters({
+                    tessedit_char_whitelist:
+                        "0123456789abcdefghijklmnopqrstuvwxyz"
+                });
+
+                const {
+                    data: {text}
+                } = await worker.recognize(image);
+                element.querySelector("input")!.value = text;
+            } catch (e) {
+                Toast.show("자동 인식에 실패했습니다.", true, 3000);
+            } finally {
+                await worker.terminate();
+            }
+        }
 
         return true;
     }
@@ -1459,7 +1459,7 @@ export default {
             default: false
         },
         bypassCaptcha: {
-            name: "캡차 자동 완성 (작동 안함)",
+            name: "캡차 자동 완성",
             desc: "캡차를 자동으로 입력합니다.",
             type: "check",
             default: false
