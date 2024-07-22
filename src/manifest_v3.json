@@ -5,7 +5,8 @@
         "activeTab",
         "storage",
         "unlimitedStorage",
-        "contextMenus"
+        "contextMenus",
+        "declarativeNetRequest"
     ],
     "host_permissions": [
         "https://dcrefresher.green1052.com/*",
