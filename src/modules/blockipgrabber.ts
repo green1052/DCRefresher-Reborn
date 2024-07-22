@@ -1,7 +1,7 @@
 import browser from "webextension-polyfill";
 
 export default {
-    name: "IP Grabber 방지",
+    name: "IP 추출 방지",
     description: "IP 추출을 방지합니다.",
     status: {},
     enable: false,
