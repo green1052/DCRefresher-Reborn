@@ -200,10 +200,10 @@
                                 :key="`cmt_${comment.no}`"
                                 :comment="comment"
                                 :delete="frame.functions.deleteComment"
-                                :useWriteComment="frame.data.useWriteComment"
                                 :getReply="getReply"
                                 :index="i + 1"
                                 :postUser="frame.data.postUserId"
+                                :useWriteComment="frame.data.useWriteComment"
                                 @setReply="setReply"/>
                         </transition-group>
                     </div>

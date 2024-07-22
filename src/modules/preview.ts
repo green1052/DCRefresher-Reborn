@@ -1459,7 +1459,7 @@ export default {
             default: false
         },
         bypassCaptcha: {
-            name: "캡차 자동 완성",
+            name: "캡차 자동 완성 (비활성화)",
             desc: "캡차를 자동으로 입력합니다.",
             type: "check",
             default: false
