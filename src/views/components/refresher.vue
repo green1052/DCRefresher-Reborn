@@ -67,7 +67,7 @@
                             <span
                                 class="version"
                                 @click="updateIpDatabase">
-                                데이터베이스 버전: {{ ipDatabaseVersion || "미설치" }}
+                                데이터베이스 버전: {{ databaseVersion || "미설치" }}
                                 <svg
                                     height="12px"
                                     style="cursor: pointer"
@@ -550,7 +550,7 @@ interface RefresherData {
     shortcutRegex: RegExp;
     blockKeyNames: typeof BLOCK_TYPE_NAMES;
     links: { text: string; url: string }[];
-    ipDatabaseVersion: string;
+    databaseVersion: string;
 }
 
 const port = browser.runtime.connect({name: "refresherInternal"});
@@ -600,7 +600,7 @@ export default Vue.extend({
                     url: "https://www.buymeacoffee.com/green1052"
                 }
             ],
-            ipDatabaseVersion: ""
+            databaseVersion: ""
         };
     },
     methods: {
@@ -947,26 +947,21 @@ export default Vue.extend({
         },
         async updateIpDatabase() {
             try {
-                const version = await ky
-                    .get(
-                        "https://dcrefresher.green1052.com/data/version"
-                    )
-                    .text();
+                const [version, ip, ban] = await Promise.all([
+                    ky.get("https://dcrefresher.green1052.com/data/version").text(),
+                    ky.get("https://dcrefresher.green1052.com/data/ip.json").json(),
+                    ky.get("https://dcrefresher.green1052.com/data/ban.json").json()
+                ]);
 
-                storage.set("refresher.database.ip.version", version);
+                storage.set("refresher.database.ip", ip);
+                storage.set("refresher.database.ban", ban);
+                storage.set("refresher.database.version", version);
+                storage.set("refresher.database.lastUpdate", Date.now());
 
-                const data = await ky
-                    .get(
-                        "https://dcrefresher.green1052.com/data/ip.json"
-                    )
-                    .json();
-
-                storage.set("refresher.database.ip", data);
-
-                alert("IP 데이터베이스 업데이트에 성공했습니다.");
+                alert("데이터베이스 업데이트에 성공했습니다.");
             } catch (e) {
                 alert(
-                    `IP 데이터베이스 업데이트에 실패했습니다. 오류: ${e}`
+                    `데이터베이스 업데이트에 실패했습니다. 오류: ${e}`
                 );
             }
         }
@@ -1008,8 +1003,8 @@ export default Vue.extend({
 
         this.shortcuts = await browser.commands.getAll();
 
-        this.ipDatabaseVersion = await storage.get(
-            "refresher.database.ip.version"
+        this.databaseVersion = await storage.get(
+            "refresher.database.version"
         );
     },
     watch: {

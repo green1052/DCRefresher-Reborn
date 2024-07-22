@@ -39,14 +39,18 @@ const contextMenus: browser.Menus.CreateCreatePropertiesType[] = [
     }
 ];
 
-const updateIpDatabase = async () => {
-    const [version, data] = await Promise.all([
+const updateDatabase = async () => {
+    const [version, ip, ban] = await Promise.all([
         ky.get("https://dcrefresher.green1052.com/data/version").text(),
-        ky.get("https://dcrefresher.green1052.com/data/ip.json").json()
+        ky.get("https://dcrefresher.green1052.com/data/ip.json").json(),
+        ky.get("https://dcrefresher.green1052.com/data/ban.json").json()
     ]);
 
-    storage.set("refresher.database.ip.version", version);
-    storage.set("refresher.database.ip", data);
+    storage.set("refresher.database.ip", ip);
+    storage.set("refresher.database.ban", ban);
+
+    storage.set("refresher.database.version", version);
+    storage.set("refresher.database.lastUpdate", Date.now());
 };
 
 let modules: ModuleStore = {};
@@ -113,7 +117,6 @@ const messageHandler = (
     if (typeof message !== "object") return;
 
     if (message.requestRefresherBlockIPGrabber) {
-
         if (message.enableBlockIPGrabber) {
             browser
                 .declarativeNetRequest
@@ -233,6 +236,8 @@ browser.runtime.onMessage.addListener((message) => {
 });
 
 browser.runtime.onInstalled.addListener((details) => {
+    storage.remove("refresher.database.ip.version");
+
     setTimeout(async () => {
         await browser.contextMenus.removeAll();
 
@@ -244,9 +249,9 @@ browser.runtime.onInstalled.addListener((details) => {
     if (browser.runtime.getManifest().version_name) return;
 
     try {
-        updateIpDatabase();
-    } finally {
-        storage.set("refresher.database.lastUpdate", Date.now());
+        updateDatabase();
+    } catch {
+
     }
 
     if (details.reason === "install") {
@@ -275,7 +280,6 @@ browser.commands.onCommand.addListener((command) => {
     const lastUpdate = await storage.get<number>("refresher.database.lastUpdate");
 
     if (lastUpdate && Date.now() - lastUpdate > 604800000) {
-        await updateIpDatabase();
-        storage.set("refresher.database.lastUpdate", Date.now());
+        updateDatabase();
     }
 })();
