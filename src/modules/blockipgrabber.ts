@@ -9,7 +9,7 @@ export default {
     settings: {
         blockImageGrabber: {
             name: "이미지 IP 추출 방지",
-            desc: "이미지를 불러올 때 IP 추출을 방지합니다.",
+            desc: "이미지를 불러올 때 다른 서버로의 요청을 차단하여 IP 추출을 방지합니다.",
             type: "check",
             default: false
         }
