@@ -36,7 +36,7 @@ let ban: Record<string, string[]> = {};
     if (!enable) return;
 
     if (checkRatio) ratio = (await storage.module.get<any>("관리"))?.["ratio"] ?? {};
-    if (checkPermBan) ban = (await storage.module.get<any>("관리"))?.["ban"] ?? {};
+    if (checkPermBan) ban = await storage.get<any>("refresher.database.ban") ?? {};
 })();
 
 export const getType = (icon: string | null): UserType => {
@@ -143,6 +143,7 @@ export class User {
 
         user.getMemo();
         user.getRatio();
+        user.getBan();
 
         return user;
     }
@@ -169,6 +170,8 @@ export class User {
         for (const [key, value] of Object.entries(ban)) {
             if (value.includes(this.id)) list.push(key);
         }
+
+        if (list.length === 0) return;
 
         this.ban = list.join(", ");
     }
