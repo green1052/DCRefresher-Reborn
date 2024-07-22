@@ -158,6 +158,7 @@ export default {
                     element.dataset.refresherPermBan = "true";
 
                     const text = document.createElement("span");
+                    text.style.color = "red";
                     text.className = "ip ratio refresherUserData";
                     text.innerHTML = `[${permBan}]`;
                     text.title = permBan;
