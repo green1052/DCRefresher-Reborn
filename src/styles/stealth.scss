@@ -29,7 +29,7 @@ $dark-tint2: #3d3d3d;
     }
 
     //content
-    .refresher-frame-outer:not(.stlth) .write_div,
+    &:not(.stlth) .refresher-preview-contents-actual,
     &:not(.stlth) .writing_view_box {
         embed,
         img,
@@ -69,7 +69,7 @@ $dark-tint2: #3d3d3d;
                     font-weight: bold;
                     width: 100px;
                     height: 100px;
-                    content: "디씨콘 표시";
+                    content: "디시콘 표시";
                 }
             }
         }
@@ -154,7 +154,7 @@ $dark-tint2: #3d3d3d;
         left: -1px;
         width: 80px;
         height: 80px;
-        z-index: 10;
+        z-index: 1002;
         display: grid;
         font-size: 13px;
         background: rgba(255, 255, 255, 0.8);
