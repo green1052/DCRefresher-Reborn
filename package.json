@@ -3,9 +3,9 @@
   "version": "3.11.6",
   "description": "디시인사이드 개선 확장 프로그램",
   "devDependencies": {
-    "@swc/core": "^1.6.13",
+    "@swc/core": "^1.7.0",
     "@types/js-cookie": "^3.0.6",
-    "@types/node": "^20.14.10",
+    "@types/node": "^20.14.11",
     "@types/webextension-polyfill": "^0.10.7",
     "@types/webpack": "^5.28.5",
     "@types/webpack-env": "^1.18.5",
@@ -21,7 +21,6 @@
     "sass-loader": "^14.2.1",
     "swc-loader": "^0.2.6",
     "terser-webpack-plugin": "^5.3.10",
-    "tesseract.js": "^5.1.0",
     "typescript": "^5.5.3",
     "vue": "2.7.16",
     "vue-fragment": "1.6.0",
@@ -39,5 +38,5 @@
     "dev:mv2": "webpack --env manifest=manifest_v2.json --watch --config webpack.dev.js",
     "dev:mv3": "webpack --env manifest=manifest_v3.json --watch --config webpack.dev.js"
   },
-  "packageManager": "pnpm@9.5.0+sha512.140036830124618d624a2187b50d04289d5a087f326c9edfc0ccd733d76c4f52c3a313d4fc148794a2a9d81553016004e6742e8cf850670268a7387fc220c903"
+  "packageManager": "pnpm@9.6.0+sha512.38dc6fba8dba35b39340b9700112c2fe1e12f10b17134715a4aa98ccf7bb035e76fd981cf0bb384dfa98f8d6af5481c2bef2f4266a24bfa20c34eb7147ce0b5e"
 }
