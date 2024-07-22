@@ -67,7 +67,7 @@
                             <span
                                 class="version"
                                 @click="updateIpDatabase">
-                                IP 데이터베이스 버전: {{ ipDatabaseVersion || "미설치" }}
+                                데이터베이스 버전: {{ ipDatabaseVersion || "미설치" }}
                                 <svg
                                     height="12px"
                                     style="cursor: pointer"
