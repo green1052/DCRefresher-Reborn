@@ -46,9 +46,9 @@
                         style="float: left"
                         @click="dcconClick(dccon)">
                         <img
-                            loading="lazy"
                             :alt="dccon.title"
                             :src="dccon.list_img"
+                            loading="lazy"
                             style="height: 100px"/>
                     </li>
                 </ul>
