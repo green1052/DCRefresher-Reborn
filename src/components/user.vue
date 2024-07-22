@@ -48,8 +48,10 @@ export default Vue.extend({
     computed: {
         title(): string {
             if (this.user.isMember()) {
+                const ban = this.user.ban;
                 const ratio = this.user.ratio;
-                return `(${this.user.id})${ratio ? ` [${ratio}]` : ""}`;
+
+                return `(${this.user.id})${ban ? ` [${ban}]` : ""}${ratio ? ` [${ratio}]` : ""}`;
             }
 
             return `(${this.user.ip})${this.user.ip_data ? ` [${this.user.ip_data}]` : ""}`;
@@ -57,8 +59,10 @@ export default Vue.extend({
 
         userInfo(): string {
             if (this.user.isMember()) {
+                const ban = this.user.ban;
                 const ratio = this.user.ratio;
-                return `(${this.user.id})${ratio ? ` [${ratio}]` : ""}`;
+
+                return `(${this.user.id})${ban ? ` [${ban}]` : ""}${ratio ? ` [${ratio}]` : ""}`;
             }
 
             return `(${this.user.ip})${this.user.ip_data ? ` [${this.user.ip_data}]` : ""}`;

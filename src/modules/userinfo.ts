@@ -302,7 +302,14 @@ export default {
                 if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling);
             } else {
                 text.classList.add("refresherUserData");
-                element.appendChild(text);
+
+                const refresherUserData = element.querySelector(".refresherUserData");
+
+                if (refresherUserData) {
+                    element.insertBefore(text, refresherUserData);
+                } else {
+                    element.appendChild(text);
+                }
             }
 
             element.dataset.refresherId = "true";

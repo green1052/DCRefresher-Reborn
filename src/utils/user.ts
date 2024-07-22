@@ -24,16 +24,19 @@ const USERTYPE: ObjectEnum<UserType> = {
 };
 
 let ratio: Record<string, { article: number; comment: number; data: number; }> = {};
+let ban: Record<string, string[]> = {};
 
 (async () => {
-    const [enable, checkRatio] = await Promise.all([
+    const [enable, checkRatio, checkPermBan] = await Promise.all([
         storage.get<boolean>("관리.enable"),
-        storage.get<boolean>("관리.checkRatio")
+        storage.get<boolean>("관리.checkRatio"),
+        storage.get<boolean>("관리.checkPermBan")
     ]);
 
-    if (!enable || !checkRatio) return;
+    if (!enable) return;
 
-    ratio = (await storage.module.get<any>("관리"))?.["ratio"] ?? {};
+    if (checkRatio) ratio = (await storage.module.get<any>("관리"))?.["ratio"] ?? {};
+    if (checkPermBan) ban = (await storage.module.get<any>("관리"))?.["ban"] ?? {};
 })();
 
 export const getType = (icon: string | null): UserType => {
@@ -78,6 +81,7 @@ export class User {
     type: UserType;
     memo: Nullable<RefresherMemoValue>;
     ratio: Nullable<string>;
+    ban: Nullable<string>;
 
     private __ip: Nullable<string>;
 
@@ -99,9 +103,11 @@ export class User {
         this.type = getType(this.icon);
         this.memo = null;
         this.ratio = null;
+        this.ban = null;
 
         this.getMemo();
         this.getRatio();
+        this.getBan();
     }
 
     get ip(): string | null {
@@ -153,6 +159,18 @@ export class User {
         if (!r) return;
 
         this.ratio = `${r.article}/${r.comment}`;
+    }
+
+    getBan(): void {
+        if (!this.id) return;
+
+        const list = [];
+
+        for (const [key, value] of Object.entries(ban)) {
+            if (value.includes(this.id)) list.push(key);
+        }
+
+        this.ban = list.join(", ");
     }
 
     isLogout(): boolean {

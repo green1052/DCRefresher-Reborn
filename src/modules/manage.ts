@@ -4,6 +4,13 @@ import ky from "ky";
 import Cookies from "js-cookie";
 import {eventBus} from "../core/eventbus";
 import * as http from "../utils/http";
+import * as storage from "../utils/storage";
+
+let permBanList: Record<string, string[]> | null = null;
+
+storage.get<Record<string, string[]>>("refresher.database.ban").then((value) => {
+    permBanList = value;
+});
 
 export default {
     name: "관리",
@@ -44,6 +51,12 @@ export default {
         deleteViaCtrl: {
             name: "Ctrl로 삭제",
             desc: "Ctrl키를 누른 상태로 게시글을 클릭해 삭제합니다.",
+            type: "check",
+            default: false
+        },
+        checkPermBan: {
+            name: "갱차 조회",
+            desc: "갱신 차단 여부를 조회합니다.",
             type: "check",
             default: false
         }
@@ -138,82 +151,131 @@ export default {
         }, {neverExpire: true});
 
         this.memory.always = filter.add(".ub-writer:not([user_name])", (element) => {
-            if (!this.status.checkRatio || element.dataset.refresherRatio === "true") return false;
+            if (this.status.checkPermBan && element.dataset.refresherPermBan !== "true") {
+                const permBan=  getPermBan(element.dataset.uid!);
 
-            if (!this.data!.ratio.hasOwnProperty(element.dataset.uid!)) return false;
+                if (permBan) {
+                    element.dataset.refresherPermBan = "true";
 
-            const ratio = this.data!.ratio[element.dataset.uid!];
+                    const text = document.createElement("span");
+                    text.className = "ip ratio refresherUserData";
+                    text.innerHTML = `[${permBan}]`;
+                    text.title = permBan;
 
-            if (!ratio) return false;
+                    const fl = element.querySelector(".fl");
 
-            const text = document.createElement("span");
-            text.className = "ip ratio refresherUserData";
-            text.innerHTML = `[${ratio.article}/${ratio.comment}]`;
-            text.title = `${ratio.article}/${ratio.comment}`;
-
-            const fl = element.querySelector(".fl");
-
-            if (fl) {
-                const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
-                if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling?.nextSibling ?? flIpQuery.nextSibling);
-            } else {
-                element.appendChild(text);
+                    if (fl) {
+                        const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
+                        if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling?.nextSibling ?? flIpQuery.nextSibling);
+                    } else {
+                        element.appendChild(text);
+                    }
+                }
             }
 
-            element.dataset.refresherRatio = "true";
+            if (this.status.checkRatio && element.dataset.refresherRatio !== "true") {
+                if (!this.data!.ratio.hasOwnProperty(element.dataset.uid!)) return false;
+
+                const ratio = this.data!.ratio[element.dataset.uid!];
+
+                if (!ratio) return false;
+
+                element.dataset.refresherRatio = "true";
+
+                const text = document.createElement("span");
+                text.className = "ip ratio refresherUserData";
+                text.innerHTML = `[${ratio.article}/${ratio.comment}]`;
+                text.title = `${ratio.article}/${ratio.comment}`;
+
+                const fl = element.querySelector(".fl");
+
+                if (fl) {
+                    const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
+                    if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling?.nextSibling ?? flIpQuery.nextSibling);
+                } else {
+                    element.appendChild(text);
+                }
+            }
         }, {
             neverExpire: true
         });
 
+        const getPermBan =  (uid: string): string | undefined => {
+            if (!permBanList) return;
+
+            const list = [];
+
+            for (const [key, value] of Object.entries(permBanList)) {
+                if (value.includes(uid)) list.push(key);
+            }
+
+            return list.join(", ");
+        };
+
+        const getRatio = async (uid: string) => {
+            const params = new URLSearchParams();
+            params.set("ci_t", Cookies.get("ci_c") ?? "");
+            params.set("user_id", uid);
+
+            const response = await ky.post("https://gall.dcinside.com/api/gallog_user_layer/gallog_content_reple", {
+                body: params,
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            }).text();
+
+            const [article, comment] = response.split(",").map(Number);
+
+            const result = {article, comment, date: Date.now()};
+
+            const deepCopy = {...this.data!.ratio};
+            deepCopy[uid] = result;
+
+            this.data!.ratio = deepCopy;
+
+            return result;
+        };
+
         this.memory.newPostListEvent = eventBus.on("newPostList", async (articles: Cash[]) => {
-            if (!this.status.checkRatio) return;
-
-            const getRatio = async (uid: string) => {
-                const params = new URLSearchParams();
-                params.set("ci_t", Cookies.get("ci_c") ?? "");
-                params.set("user_id", uid);
-
-                const response = await ky.post("https://gall.dcinside.com/api/gallog_user_layer/gallog_content_reple", {
-                    body: params,
-                    headers: {
-                        "X-Requested-With": "XMLHttpRequest"
-                    }
-                }).text();
-
-                const [article, comment] = response.split(",").map(Number);
-
-                const result = {article, comment, data: Date.now()};
-
-                const deepCopy = {...this.data!.ratio};
-                deepCopy[uid] = result;
-
-                this.data!.ratio = deepCopy;
-
-                return result;
-            };
-
             for (const article of articles) {
                 const $writer = article.find(".ub-writer");
                 const uid = $writer.data("uid");
 
                 if (!uid) continue;
 
-                let ratio = this.data!.ratio?.[uid] ?? await getRatio(uid);
+                if (this.status.checkPermBan) {
+                    const permBan= getPermBan(uid);
 
-                if (Date.now() - ratio.data > 1000 * 60 * 60 * 24 * 3) {
-                    ratio = await getRatio(uid);
+                    if (permBan) {
+                        const $permBan = $(`<span style="color: red" class="ip permBan refresherUserData" title="${permBan}">[${permBan}]</span>`);
+
+                        if (article.data("refresherPermBan") === true) {
+                            article.find(".permBan").replaceWith($permBan);
+                            return;
+                        }
+
+                        article.data("refresherPermBan", true);
+                        $writer.add($permBan);
+                    }
                 }
 
-                const $ratio = $(`<span class="ip ratio refresherUserData" title="${ratio.article}/${ratio.comment}">[${ratio.article}/${ratio.comment}]</span>`);
+                if (this.status.checkRatio) {
+                    let ratio = this.data!.ratio?.[uid] ?? await getRatio(uid);
 
-                article.data("refresherRatio", true);
+                    if (Date.now() - ratio.date > 1000 * 60 * 60 * 24 * 3) {
+                        ratio = await getRatio(uid);
+                    }
 
-                if (article.data("refresherRatio") === true) {
-                    article.find(".ratio").replaceWith($ratio);
-                    return;
+                    const $ratio = $(`<span class="ip ratio refresherUserData" title="${ratio.article}/${ratio.comment}">[${ratio.article}/${ratio.comment}]</span>`);
+
+                    if (article.data("refresherRatio") === true) {
+                        article.find(".ratio").replaceWith($ratio);
+                        return;
+                    }
+
+                    article.data("refresherRatio", true);
+                    $writer.append($ratio);
                 }
-
-                $writer.append($ratio);
             }
         });
     },
@@ -224,14 +286,13 @@ export default {
     }
 } as RefresherModule<{
     data: {
-        ratio: Record<string, { article: number; comment: number; data: number; }>
+        ratio: Record<string, { article: number; comment: number; date: number; }>
     },
     memory: {
         always: string;
         checkBox: string;
         newPostListEvent: string;
         content: string;
-
     };
     settings: {
         checkAllTargetUser: RefresherCheckSettings;
@@ -239,6 +300,7 @@ export default {
         checkCommentViaCtrl: RefresherCheckSettings;
         checkRatio: RefresherCheckSettings;
         deleteViaCtrl: RefresherCheckSettings;
+        checkPermBan: RefresherCheckSettings;
     };
     require: ["filter", "eventBus"];
 }>;
