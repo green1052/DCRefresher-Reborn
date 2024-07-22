@@ -9,7 +9,7 @@ import {User} from "../utils/user";
 import $ from "cash-dom";
 import Cookies from "js-cookie";
 import ky, {Input, Options} from "ky";
-import Tesseract from "tesseract.js";
+// import Tesseract from "tesseract.js";
 import browser from "webextension-polyfill";
 import type IFrame from "../core/frame";
 import * as storage from "../utils/storage";
@@ -975,27 +975,27 @@ const panel = {
             element.querySelector("input")!.focus();
         }, 0);
 
-        if (bypassCaptcha) {
-            const worker = await Tesseract.createWorker();
-
-            try {
-                await worker.loadLanguage("eng");
-                await worker.initialize("eng");
-                await worker.setParameters({
-                    tessedit_char_whitelist:
-                        "0123456789abcdefghijklmnopqrstuvwxyz"
-                });
-
-                const {
-                    data: {text}
-                } = await worker.recognize(image);
-                element.querySelector("input")!.value = text;
-            } catch (e) {
-                Toast.show("자동 인식에 실패했습니다.", true, 3000);
-            } finally {
-                await worker.terminate();
-            }
-        }
+        // if (bypassCaptcha) {
+        //     const worker = await Tesseract.createWorker();
+        //
+        //     try {
+        //         await worker.loadLanguage("eng");
+        //         await worker.initialize("eng");
+        //         await worker.setParameters({
+        //             tessedit_char_whitelist:
+        //                 "0123456789abcdefghijklmnopqrstuvwxyz"
+        //         });
+        //
+        //         const {
+        //             data: {text}
+        //         } = await worker.recognize(image);
+        //         element.querySelector("input")!.value = text;
+        //     } catch (e) {
+        //         Toast.show("자동 인식에 실패했습니다.", true, 3000);
+        //     } finally {
+        //         await worker.terminate();
+        //     }
+        // }
 
         return true;
     }
@@ -2020,11 +2020,11 @@ export default {
                                     NICK: comment.name
                                 };
 
-                                if (comment.user_id !== null) {
+                                if (comment.user_id) {
                                     check.ID = comment.user_id;
                                 }
 
-                                if (comment.ip !== null) {
+                                if (comment.ip) {
                                     check.IP = comment.ip;
                                 }
 
