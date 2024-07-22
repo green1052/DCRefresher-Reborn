@@ -2,14 +2,25 @@ import browser from "webextension-polyfill";
 
 export default {
     name: "IP Grabber 방지",
-    description: "이미지를 통한 IP 추출을 방지합니다.",
+    description: "IP 추출을 방지합니다.",
+    status: {},
     enable: false,
     default_enable: false,
-    func() {
-        console.log(1);
-        browser.runtime.sendMessage({requestRefresherBlockIPGrabber: true, enableBlockIPGrabber: true});
+    settings: {
+        blockImageGrabber: {
+            name: "이미지 IP 추출 방지",
+            desc: "이미지를 불러올 때 IP 추출을 방지합니다.",
+            type: "check",
+            default: false
+        }
     },
-    revoke() {
-        browser.runtime.sendMessage({requestRefresherBlockIPGrabber: true, enableBlockIPGrabber: false});
+    update: {
+        blockImageGrabber(value) {
+            browser.runtime.sendMessage({requestRefresherBlockIPGrabber: true, enableBlockIPGrabber: value});
+        }
     }
-} as RefresherModule;
+} as RefresherModule<{
+    settings: {
+        blockImageGrabber: RefresherCheckSettings;
+    }
+}>;
