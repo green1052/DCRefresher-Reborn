@@ -7,7 +7,8 @@
         "activeTab",
         "storage",
         "unlimitedStorage",
-        "contextMenus"
+        "contextMenus",
+        "declarativeNetRequest"
     ],
     "background": {
         "scripts": [
