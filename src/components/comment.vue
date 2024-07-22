@@ -122,6 +122,19 @@ export default Vue.extend({
         }
     },
     mounted(): void {
+        console.log(this.comment);
+/*
+
+<video class="written_dccon " autoplay loop muted playsinline onmousedown="mp4_overlay_dccon(this, 'https://dcimg5.dcinside.com/dccon.php?no=62b5df2be09d3ca567b1c5bc12d46b394aa3b1058c6e4d0ca41648b658ea2471eec24e83609107e7c833984daff184c50ddcd898b19ba1da5d53a3947f63e3bd7fb946e170ca',' conalt=03 alt=03 title=03 conalt=04 alt=04 title=04');" data-src="https://dcimg5.dcinside.com/dccon.php?no=62b5df2be09d3ca567b1c5bc12d46b394aa3b1058c6e4d0ca41648b658ea2471eec24e83609107e7c833984daff184c50ddcd898b19ba1da5d53a3947f63e3bd7fb946e170ca" conalt="03" alt="03" title="03" conalt="04" alt="04" title="04" style="max-width:100%;" >
+
+<source src="https://dcimg5.dcinside.com/dccon.php?no=62b5df2be09d3ca567b1c5bc12d46b394aa3b1058c6e4d0ca41648b658ea2471eec24e83609107e7c833984daff184c50ddcd898b19ba1da5d53a3947f63e3bd7fb946e170caae00ae3a" type="video/mp4"/ onerror="change_gif(this)">
+
+</video>
+
+
+
+img class="written_dccon " src="https://dcimg5.dcinside.com/dccon.php?no=62b5df2be09d3ca567b1c5bc12d46b394aa3b1058c6e4d0ca41648b658ea2471eec24e83609107e7c833984daff184c50ddcd898b19ba1da5d53a3947f63e3bd7fbe46e170ca" conalt="04" alt="04" title="04" data-dcconoverstatus="false"
+ */
         this.rereply = this.checkReReply();
 
         if (!this.comment.user.id) {
