@@ -15,7 +15,7 @@ export default {
         }
     },
     update: {
-        blockImageGrabber(value) {
+        blockMediaGrabber(value) {
             browser.runtime.sendMessage({requestRefresherBlockIPGrabber: true, enableBlockIPGrabber: value});
         }
     }
