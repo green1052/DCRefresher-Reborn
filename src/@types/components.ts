@@ -32,22 +32,34 @@ declare global {
     }
 
     interface DcinsideCommentObject {
-        del_btn: "Y" | "N";
-        no: string;
+        a_my_cmt: "Y" | "N";
         c_no: 0 | string;
-        parent: string;
-        name: string;
+        del_btn: "Y" | "N";
+        del_yn: "Y" | "N";
+        depth: 0 | 1;
+        gallog_icon: string;
         ip: string;
         is_delete: string;
-        user_id: string;
-        my_cmt: "Y" | "N";
-        user: User;
-        nicktype: string;
         memo: string;
-        depth: 0 | 1;
+        mod_btn: "Y" | "N";
+        my_cmt: "Y" | "N";
+        name: string;
+        nicktype?: string;
+        nickname: string;
+        no: string;
+        parent: string;
+        password_pop: string;
+        rcnt: string;
+        reg_date: string;
+        reply_w: "Y" | "N";
+        t_ch1: string;
+        t_ch2: string;
+        user_id: string;
+        voice: string | null;
         vr_player: boolean | string;
-        gallog_icon: string;
         vr_player_tag: string;
+        vr_type: string;
+        user: User;
     }
 
     interface DcinsideComments {
