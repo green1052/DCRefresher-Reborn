@@ -3,10 +3,10 @@ import storage from "../utils/storage";
 import browser from "webextension-polyfill";
 
 (async () => {
-    const installed = await storage.get<undefined | boolean>(
-        "refresher.firstInstall"
-    );
-    const updated = await storage.get<boolean>("refresher.updated");
+    const [installed, updated] = await Promise.all([
+        storage.get<boolean>("refresher.firstInstall"),
+        storage.get<boolean>("refresher.updated")
+    ]);
 
     if (!installed && !updated) return;
 
@@ -15,7 +15,7 @@ import browser from "webextension-polyfill";
 
         let content: string;
 
-        if (installed === true) {
+        if (installed) {
             content = `DCRefresher Reborn ${currentVersion}이 설치되었습니다, 오류 및 개선사항은 여기에서 알려주세요.`;
             storage.remove("refresher.firstInstall");
         } else {
