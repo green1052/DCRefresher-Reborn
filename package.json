@@ -22,7 +22,7 @@
     "swc-loader": "^0.2.6",
     "terser-webpack-plugin": "^5.3.10",
     "typescript": "^5.5.4",
-    "vue": "2.7.16",
+    "vue": "3.4.34",
     "vue-fragment": "1.6.0",
     "vue-loader": "15.11.1",
     "webextension-polyfill": "^0.12.0",
