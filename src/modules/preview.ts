@@ -2062,12 +2062,7 @@ export default {
                             }
                         );
 
-                        threadCounts = comments.comments
-                            .map((v: DcinsideCommentObject) =>
-                                Number(v.depth == 0)
-                            )
-                            .reduce((a: number, b: number) => a + b);
-
+                        threadCounts = comments.comments.length === 0 ? 0 : comments.comments.map((v: DcinsideCommentObject) => Number(v.depth == 0)).reduce((a: number, b: number) => a + b);
                         commentCounts = comments.comments.length;
                     } else if (this.status.archiveArticle) {
                         const cache = postCaches.get(`${preData.gallery}${preData.id}`);
@@ -2081,13 +2076,7 @@ export default {
                             });
 
                             comments.comments = cacheComment;
-
-                            threadCounts = comments.comments
-                                .map((v: DcinsideCommentObject) =>
-                                    Number(v.depth == 0)
-                                )
-                                .reduce((a: number, b: number) => a + b);
-
+                            threadCounts = comments.comments.length === 0 ? 0 : comments.comments.map((v: DcinsideCommentObject) => Number(v.depth == 0)).reduce((a: number, b: number) => a + b);
                             commentCounts = comments.comments.length;
                         }
                     }
@@ -2097,7 +2086,7 @@ export default {
                             `쓰레드 ${threadCounts}개, 총 댓글`) ||
                         ""
                     } ${commentCounts}개`;
-
+                    ;
                     frame.data.comments = comments;
                     if (needRefresh) frame.app.$children[0].$children[1].commentKey = Date.now();
                 } catch (error) {
