@@ -837,24 +837,71 @@ tr.gall_writer {
     }
 }
 
-.refresher-mini-preview-contents,
-.refresher-preview-contents-actual {
-    .written_dccon {
-        height: 100px !important;
+.refresher-preview-contents {
+    .coment_dccon_info {
+        display: none !important;
     }
+}
 
-    .write_div {
-        img,
-        video {
-            margin: 10px;
+.refresher-preview-comments {
+    .dccon {
+        display: flex;
+
+        & > .written_dccon {
+            &:not(.bigdccon) {
+                width: 100px;
+                height: 100px;
+            }
+
+            margin: 3px 0 5px;
+        }
+
+        img, video {
+            box-shadow: initial !important;
+            border-radius: initial !important;
+            transition: initial !important;
         }
     }
 }
 
 .refresher-preview-contents-actual {
+    .coment_dccon_img {
+        width: 100px;
+        height: 100px;
+    }
+
+    .comment_dccon  {
+        padding-bottom: 0 !important;
+
+        * {
+            padding-bottom: 0 !important;
+        }
+    }
+
+    p:has(.written_dccon) {
+        display: flex;
+
+        & > .written_dccon {
+            position: relative;
+            margin: 3px 0 5px;
+        }
+    }
+}
+
+//.refresher-mini-preview-contents,
+//.refresher-preview-contents-actual {
+//    .write_div {
+//        img,
+//        video {
+//            margin: 10px;
+//        }
+//    }
+//}
+
+.refresher-preview-contents-actual {
     .write_div {
-        img,
-        video {
+        img:not(.written_dccon),
+        video:not(.written_dccon) {
             max-width: calc(100% - 10px);
         }
     }
@@ -870,17 +917,17 @@ tr.gall_writer {
     display: flex;
 }
 
-.refresher-frame.preview .refresher-preview-contents {
-    embed {
-        border-radius: 10px;
-        box-shadow: $shadow-2dp;
-    }
-
-    img, video {
-        border-radius: 10px;
-        box-shadow: $shadow-2dp;
-        transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
-    }
+.refresher-preview-contents {
+    //embed {
+    //    border-radius: 10px;
+    //    box-shadow: $shadow-2dp;
+    //}
+    //
+    //img, video {
+    //    border-radius: 10px;
+    //    box-shadow: $shadow-2dp;
+    //    transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+    //}
 
     img::before {
         display: block;
@@ -888,9 +935,9 @@ tr.gall_writer {
         padding-top: calc(100% * 2 / 3);
     }
 
-    img:hover {
-        box-shadow: $shadow-1dp;
-    }
+    //img:hover {
+    //    box-shadow: $shadow-1dp;
+    //}
 }
 
 .refresher-preview-title-zone {
@@ -1483,10 +1530,6 @@ tr.gall_writer {
     }
 
     .refresher-comment-content {
-        .written_dccon {
-            height: 100px !important;
-        }
-
         font-size: 14px;
     }
 }
