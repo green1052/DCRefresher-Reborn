@@ -325,13 +325,10 @@ export default {
                 if ($element.data("type") === "icon_slow") {
                     $oldList.prepend($element);
                 } else {
-                    const $notice = $oldList.children("tr:has(em.icon_notice)").last();
-                    const $survey = $oldList.children("tr:has(em.icon_survey)").last();
+                    const $target = $oldList.children(`tr:has(em.icon_slow), tr:has(em.icon_notice), tr:has(em.icon_survey)`).last();
 
-                    if ($notice.length) {
-                        $notice.after($element);
-                    } else if ($survey.length) {
-                        $survey.after($element);
+                    if ($target.length) {
+                        $target.after($element);
                     } else {
                         const $hope = $oldList.children(`tr[class="ub-content "]`);
 
