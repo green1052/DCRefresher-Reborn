@@ -865,7 +865,7 @@ tr.gall_writer {
 }
 
 .refresher-preview-contents-actual {
-    .coment_dccon_img {
+    .written_dccon:not(.bigdccon) {
         width: 100px;
         height: 100px;
     }
