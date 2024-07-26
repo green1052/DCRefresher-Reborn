@@ -275,12 +275,6 @@
                         </div>
                     </div>
                 </div>
-                <!--                <div v-else>-->
-                <!--                    <img-->
-                <!--                        :src="getURL('/assets/icons/sry.webp')"-->
-                <!--                        height="400px"-->
-                <!--                        width="500px"/>-->
-                <!--                </div>-->
             </div>
             <div
                 v-show="tab === 2"
