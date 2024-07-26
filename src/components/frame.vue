@@ -176,7 +176,7 @@
                         v-html="frame.contents"/>
                 </transition>
                 <div v-else>
-                    <div v-if="frame.data.comments.comments === null">
+                    <div v-if="frame.data.comments.comments === null || frame.data.comments.comments.length === 0">
                         <div class="refresher-nocomment-wrap">
                             <img
                                 :src="
