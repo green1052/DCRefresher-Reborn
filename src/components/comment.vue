@@ -53,7 +53,7 @@
             :class="{ dccon: true }"
             class="refresher-comment-content"
             @contextmenu="contextMenu"
-            v-html="comment.memo"/>
+            v-html="comment.memo.replace(/(?<!(dc|<))img/gi, '/><img')"/>
         <p
             v-else
             class="refresher-comment-content"
