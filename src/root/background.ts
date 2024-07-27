@@ -236,15 +236,12 @@ browser.runtime.onMessage.addListener((message) => {
 });
 
 browser.runtime.onInstalled.addListener((details) => {
-    storage.remove("refresher.database.ip.version");
-
-    setTimeout(async () => {
-        await browser.contextMenus.removeAll();
-
-        for (const contextMenu of contextMenus) {
-            browser.contextMenus.create(contextMenu);
-        }
-    }, 1000);
+    browser.contextMenus.removeAll()
+        .then(() => {
+            for (const contextMenu of contextMenus) {
+                browser.contextMenus.create(contextMenu);
+            }
+        });
 
     if (browser.runtime.getManifest().version_name) return;
 
