@@ -55,15 +55,15 @@ export default Vue.extend({
             }
 
             browser.tabs.query({active: true}).then((tabs) => {
-                tabs.forEach((v) => {
-                    browser.tabs.sendMessage(v.id!, {
+                for (const tab of tabs) {
+                    browser.tabs.sendMessage(tab.id!, {
                         type: "updateModuleStatus",
                         data: {
                             name: this.name,
                             value: value
                         }
                     });
-                });
+                }
             });
         }
     },
