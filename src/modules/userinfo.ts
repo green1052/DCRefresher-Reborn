@@ -389,9 +389,9 @@ export default {
         this.memory.always = filter.add(
             ".ub-writer:not([user_name])",
             (element) => {
-                memoAdd(element);
-                IdInfoAdd(element);
                 ipInfoAdd(element);
+                IdInfoAdd(element);
+                memoAdd(element);
             },
             {
                 neverExpire: true
