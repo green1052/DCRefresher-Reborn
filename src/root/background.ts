@@ -235,13 +235,20 @@ browser.runtime.onMessage.addListener((message) => {
     );
 });
 
+browser.runtime.onStartup.addListener(async () => {
+    await browser.contextMenus.removeAll();
+
+    for (const contextMenu of contextMenus) {
+        browser.contextMenus.create(contextMenu);
+    }
+});
+
 browser.runtime.onInstalled.addListener((details) => {
-    browser.contextMenus.removeAll()
-        .then(() => {
-            for (const contextMenu of contextMenus) {
-                browser.contextMenus.create(contextMenu);
-            }
-        });
+    browser.contextMenus.removeAll().then(() => {
+        for (const contextMenu of contextMenus) {
+            browser.contextMenus.create(contextMenu);
+        }
+    });
 
     if (browser.runtime.getManifest().version_name) return;
 
