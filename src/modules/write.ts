@@ -5,11 +5,10 @@ import {blobToWebP} from "webp-converter-browser";
 import {Cash} from "cash-dom/dist/cash";
 import {inject} from "../utils/inject";
 
-
 export default {
     name: "글쓰기",
     description: "글쓰기 페이지를 변경합니다.",
-    url: /\/board\/(write|edit)/,
+    url: /\/board\/(write|modify)/,
     status: {},
     data: {
         temporarySave: {
