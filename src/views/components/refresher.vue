@@ -57,6 +57,7 @@
                              :src="getURL('/assets/icons/logo/Icon.png')"
                              class="icon"/>
                     </div>
+
                     <div class="text">
                         <h3>{{ karyl ? "RULIRefresher Reborn" : "DCRefresher Reborn" }}</h3>
                         <p>
@@ -88,10 +89,110 @@
                             우선 디시인사이드 페이지를 열고 설정 해주세요.
                         </h3>
                     </div>
+                    <Fragment v-else>
+                        <div
+                            v-for="module in Object.keys(settings)"
+                            v-if="modules[module].enable && settings[module] && settingsCount(settings[module])"
+                            class="refresher-setting-category">
 
+                            <h3 @click="moveToModuleTab(module)">
+                                {{ module }}
+                                <svg
+                                    fill="black"
+                                    height="18px"
+                                    viewBox="0 0 24 24"
+                                    width="18px"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                                </svg>
+                            </h3>
+
+                            <div
+                                v-for="setting in Object.keys(settings[module])"
+                                v-if="!settings[module][setting].advanced"
+                                :data-changed="settings[module][setting].value !== settings[module][setting].default"
+                                class="refresher-setting">
+                                <div class="info">
+                                    <h4>{{ settings[module][setting].name }}</h4>
+                                    <p>{{ settings[module][setting].desc }}</p>
+                                    <p class="mute">
+                                        (기본 값 :
+                                        {{
+                                            typeWrap(
+                                                settings[module][setting].default
+                                            )
+                                        }})
+                                    </p>
+                                </div>
+
+                                <div class="control">
+                                    <refresher-checkbox
+                                        v-if="
+                                        settings[module][setting].type ===
+                                        'check'
+                                    "
+                                        :id="setting"
+                                        :change="updateUserSetting"
+                                        :checked="settings[module][setting].value"
+                                        :modname="module"/>
+                                    <refresher-input
+                                        v-else-if="settings[module][setting].type === 'text'"
+                                        :id="setting"
+                                        :change="updateUserSetting"
+                                        :modname="module"
+                                        :placeholder="settings[module][setting].default"
+                                        :value="settings[module][setting].value"
+                                    />
+                                    <refresher-range
+                                        v-else-if="
+                                        settings[module][setting].type ===
+                                        'range'
+                                    "
+                                        :id="setting"
+                                        :change="updateUserSetting"
+                                        :max="settings[module][setting].max"
+                                        :min="settings[module][setting].min"
+                                        :modname="module"
+                                        :placeholder="
+                                        settings[module][setting].default
+                                    "
+                                        :step="settings[module][setting].step"
+                                        :unit="settings[module][setting].unit"
+                                        :value="
+                                        Number(settings[module][setting].value)
+                                    "/>
+                                    <refresher-options
+                                        v-else-if="
+                                        settings[module][setting].type ===
+                                        'option'
+                                    "
+                                        :id="setting"
+                                        :change="updateUserSetting"
+                                        :modname="module"
+                                        :options="settings[module][setting].items"
+                                        :value="settings[module][setting].value"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </Fragment>
+                </div>
+            </div>
+            <div
+                v-show="tab === 1"
+                key="tab2"
+                class="tab tab2">
+
+                <div v-if="!Object.keys(settings).length">
+                    <h3 class="need-refresh">
+                        우선 디시인사이드 페이지를 열고 설정 해주세요.
+                    </h3>
+                </div>
+                <Fragment v-else>
                     <div
                         v-for="module in Object.keys(settings)"
-                        v-if="modules[module].enable && settings[module] && settingsCount(settings[module])"
+                        v-if="modules[module].enable && settings[module] && advancedSettingsCount(settings[module])"
                         class="refresher-setting-category">
 
                         <h3 @click="moveToModuleTab(module)">
@@ -103,13 +204,16 @@
                                 width="18px"
                                 xmlns="http://www.w3.org/2000/svg">
                                 <path
+                                    d="M0 0h24v24H0z"
+                                    fill="none"/>
+                                <path
                                     d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
                             </svg>
                         </h3>
 
                         <div
                             v-for="setting in Object.keys(settings[module])"
-                            v-if="!settings[module][setting].advanced"
+                            v-if="settings[module][setting].advanced"
                             :data-changed="settings[module][setting].value !== settings[module][setting].default"
                             class="refresher-setting">
                             <div class="info">
@@ -124,7 +228,6 @@
                                     }})
                                 </p>
                             </div>
-
                             <div class="control">
                                 <refresher-checkbox
                                     v-if="
@@ -175,106 +278,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-            <div
-                v-show="tab === 1"
-                key="tab2"
-                class="tab tab2">
-                <div v-if="!Object.keys(settings).length">
-                    <h3 class="need-refresh">
-                        우선 디시인사이드 페이지를 열고 설정 해주세요.
-                    </h3>
-                </div>
-
-                <div
-                    v-for="module in Object.keys(settings)"
-                    v-if="modules[module].enable && settings[module] && advancedSettingsCount(settings[module])"
-                    class="refresher-setting-category">
-
-                    <h3 @click="moveToModuleTab(module)">
-                        {{ module }}
-                        <svg
-                            fill="black"
-                            height="18px"
-                            viewBox="0 0 24 24"
-                            width="18px"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path
-                                d="M0 0h24v24H0z"
-                                fill="none"/>
-                            <path
-                                d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-                        </svg>
-                    </h3>
-
-                    <div
-                        v-for="setting in Object.keys(settings[module])"
-                        v-if="settings[module][setting].advanced"
-                        :data-changed="settings[module][setting].value !== settings[module][setting].default"
-                        class="refresher-setting">
-                        <div class="info">
-                            <h4>{{ settings[module][setting].name }}</h4>
-                            <p>{{ settings[module][setting].desc }}</p>
-                            <p class="mute">
-                                (기본 값 :
-                                {{
-                                    typeWrap(
-                                        settings[module][setting].default
-                                    )
-                                }})
-                            </p>
-                        </div>
-                        <div class="control">
-                            <refresher-checkbox
-                                v-if="
-                                        settings[module][setting].type ===
-                                        'check'
-                                    "
-                                :id="setting"
-                                :change="updateUserSetting"
-                                :checked="settings[module][setting].value"
-                                :modname="module"/>
-                            <refresher-input
-                                v-else-if="settings[module][setting].type === 'text'"
-                                :id="setting"
-                                :change="updateUserSetting"
-                                :modname="module"
-                                :placeholder="settings[module][setting].default"
-                                :value="settings[module][setting].value"
-                            />
-                            <refresher-range
-                                v-else-if="
-                                        settings[module][setting].type ===
-                                        'range'
-                                    "
-                                :id="setting"
-                                :change="updateUserSetting"
-                                :max="settings[module][setting].max"
-                                :min="settings[module][setting].min"
-                                :modname="module"
-                                :placeholder="
-                                        settings[module][setting].default
-                                    "
-                                :step="settings[module][setting].step"
-                                :unit="settings[module][setting].unit"
-                                :value="
-                                        Number(settings[module][setting].value)
-                                    "/>
-                            <refresher-options
-                                v-else-if="
-                                        settings[module][setting].type ===
-                                        'option'
-                                    "
-                                :id="setting"
-                                :change="updateUserSetting"
-                                :modname="module"
-                                :options="settings[module][setting].items"
-                                :value="settings[module][setting].value"
-                            />
-                        </div>
-                    </div>
-                </div>
+                </Fragment>
             </div>
             <div
                 v-show="tab === 2"
