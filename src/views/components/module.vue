@@ -34,11 +34,6 @@ export default Vue.extend({
             required: true
         },
 
-        author: {
-            type: [String, Object],
-            required: false
-        },
-
         requirement: {
             type: Array,
             required: false

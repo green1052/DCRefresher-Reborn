@@ -470,7 +470,6 @@
                     <refresher-module
                         v-for="module in modules"
                         :key="module.name"
-                        :author="module.author"
                         :desc="module.description"
                         :enabled="module.enable"
                         :name="module.name"
