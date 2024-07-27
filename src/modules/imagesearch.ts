@@ -3,7 +3,7 @@ import $ from "cash-dom";
 
 export default {
     name: "이미지 검색",
-    description: "이미지를 검색합니다.",
+    description: "이미지를 검색합니다. (Firefox에서 작동 안함)",
     enable: true,
     default_enable: true,
     func() {
