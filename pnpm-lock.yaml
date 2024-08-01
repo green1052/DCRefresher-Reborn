@@ -9,7 +9,7 @@ importers:
   .:
     devDependencies:
       '@swc/core':
-        specifier: ^1.7.0
+        specifier: ^1.7.4
         version: 1.7.4
       '@types/js-cookie':
         specifier: ^3.0.6
