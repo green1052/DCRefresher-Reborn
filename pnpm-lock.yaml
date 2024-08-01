@@ -15,7 +15,7 @@ importers:
         specifier: ^3.0.6
         version: 3.0.6
       '@types/node':
-        specifier: ^20.14.12
+        specifier: ^20.14.13
         version: 20.14.13
       '@types/webextension-polyfill':
         specifier: ^0.10.7
