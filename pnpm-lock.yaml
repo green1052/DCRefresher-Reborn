@@ -42,7 +42,7 @@ importers:
         specifier: ^3.0.5
         version: 3.0.5
       ky:
-        specifier: ^1.4.0
+        specifier: ^1.5.0
         version: 1.5.0
       mini-css-extract-plugin:
         specifier: ^2.9.0
