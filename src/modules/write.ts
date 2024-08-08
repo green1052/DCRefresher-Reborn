@@ -71,8 +71,8 @@ export default {
             name: "WebP 변환 품질",
             desc: "WebP 변환 품질을 설정합니다.",
             type: "range",
-            default: 80,
-            min: 0,
+            default: 70,
+            min: 1,
             max: 100,
             step: 1,
             unit: "%"
