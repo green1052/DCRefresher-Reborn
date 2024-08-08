@@ -218,7 +218,7 @@ export default {
 
                                     const image = this.status.convertWebp
                                         ? await blobToWebP(file, {
-                                            quality: this.status.convertWebpQuality
+                                            quality: this.status.convertWebpQuality / 100
                                         })
                                         : file;
 
