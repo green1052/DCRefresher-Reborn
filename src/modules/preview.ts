@@ -1754,7 +1754,7 @@ export default {
 
                 frame.functions.writeComment = async (
                     type: "text" | "dccon",
-                    memo: string | DcinsideDccon,
+                    memo: string | DcinsideDccon[],
                     reply: string | null,
                     user: { name: string; pw?: string }
                 ) => {
@@ -2086,7 +2086,7 @@ export default {
                             `쓰레드 ${threadCounts}개, 총 댓글`) ||
                         ""
                     } ${commentCounts}개`;
-                    ;
+
                     frame.data.comments = comments;
                     if (needRefresh) frame.app.$children[0].$children[1].commentKey = Date.now();
                 } catch (error) {

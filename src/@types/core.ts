@@ -68,7 +68,7 @@ declare global {
             openOriginal(): boolean;
             writeComment(
                 type: "text" | "dccon",
-                memo: string | DcinsideDccon,
+                memo: string | DcinsideDccon[],
                 reply: string | null,
                 user: { name: string; pw?: string }
             ): Promise<boolean>;

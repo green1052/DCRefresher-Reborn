@@ -1,19 +1,26 @@
 <template>
     <div class="refresher-dccon-popup">
-        <h3>디시콘</h3>
+        <div style="display: flex;">
+            <h3>디시콘</h3>
 
-        <div
-            class="close"
-            @click="close">
-            <div class="cross"/>
-            <div class="cross"/>
+            <div>
+                <input v-model="doubleDccon" type="checkbox">
+                <label>더블콘</label>
+            </div>
+
+            <div
+                class="close"
+                @click="close">
+                <div class="cross"/>
+                <div class="cross"/>
+            </div>
         </div>
 
-        <hr/>
-
-        <refresher-loader v-if="dcconList === null"/>
+        <refresher-loader v-if="!Object.keys(dcconList).length"/>
         <fragment v-else>
-            <ul style="overflow: auto; display: flex; user-select: none">
+            <hr/>
+
+            <ul style="overflow: auto; display: flex; user-select: none; justify-content: center;">
                 <li
                     style="font-size: 30px; margin-right: 5px"
                     @click="pageDown()">
@@ -40,15 +47,13 @@
                 <h2 v-if="firstLoad" style="position: absolute; top: 50%; left: 35%">
                     디시콘을 클릭해주세요.
                 </h2>
-                <ul v-else>
+                <ul style="display: flex; flex-wrap: wrap;" v-else>
                     <li
                         v-for="dccon in this.currentDccon"
-                        style="float: left"
                         @click="dcconClick(dccon)">
                         <img
                             :alt="dccon.title"
                             :src="dccon.list_img"
-                            loading="lazy"
                             style="height: 100px"/>
                     </li>
                 </ul>
@@ -70,6 +75,8 @@ interface DcconPopupData {
     maxPage: number;
     dcconList: Record<number, DcinsideDcconDetailList[]>;
     currentDccon: DcinsideDccon[] | null;
+    doubleDccon: boolean;
+    selectedDccon: DcinsideDccon[];
 }
 
 export default Vue.extend({
@@ -80,7 +87,9 @@ export default Vue.extend({
             currentPage: 0,
             maxPage: 1,
             dcconList: {},
-            currentDccon: null
+            currentDccon: null,
+            doubleDccon: false,
+            selectedDccon: []
         };
     },
     created() {
@@ -142,7 +151,17 @@ export default Vue.extend({
             this.currentDccon = dccons;
         },
         dcconClick(dccon: DcinsideDccon) {
-            this.$emit("clickDccon", dccon);
+            if (this.doubleDccon) {
+                this.selectedDccon.push(dccon);
+
+                if (this.selectedDccon.length === 2) {
+                    this.$emit("clickDccon", this.selectedDccon);
+                    this.close();
+                }
+            } else {
+                this.$emit("clickDccon", [dccon]);
+                this.close();
+            }
         },
         close() {
             this.$emit("closeDccon");
