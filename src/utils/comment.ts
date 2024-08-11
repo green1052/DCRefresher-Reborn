@@ -97,7 +97,7 @@ export async function submitComment(
     preData: GalleryPreData,
     user: { name: string; pw?: string },
     dom: Document,
-    memo: string | DcinsideDccon,
+    memo: string | DcinsideDccon[],
     reply: string | null,
     captcha?: string
 ): Promise<CommentResult> {
@@ -111,6 +111,8 @@ export async function submitComment(
             message: (e as string) || "사전에 정의되지 않은 오류."
         };
     }
+
+    console.log(memo);
 
     const params = new URLSearchParams(secretKey(dom));
     params.set("service_code", code);
@@ -132,8 +134,10 @@ export async function submitComment(
         params.set("memo", memo);
     } else {
         params.set("input_type", "comment");
-        params.set("package_idx", memo.package_idx);
-        params.set("detail_idx", memo.detail_idx);
+
+        if (memo.length > 1) params.set("double_con_chk", "1");
+        params.set("package_idx", memo.map((dccon) => dccon.package_idx).join(","));
+        params.set("detail_idx", memo.map((dccon) => dccon.detail_idx).join(","));
     }
 
     const url = typeof memo === "string" ? http.urls.comments_submit : http.urls.dccon_comments_submit;

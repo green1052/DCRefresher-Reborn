@@ -21,9 +21,9 @@
                 class="refresher-input-wrap">
                 <textarea
                     id="comment_main"
-                    :disabled="disabled || this.getDccon()"
+                    :disabled="disabled || this.getDccon().length > 0"
                     :placeholder="
-                        this.getDccon() === null
+                        !this.getDccon().length
                             ? '댓글 입력...'
                             : '디시콘이 선택됐습니다.'
                     "
@@ -55,7 +55,7 @@
                     :user="user"/>
                 <span>로 {{
                         this.getReply() === null ? "" : "답글"
-                    }}{{ this.getDccon() === null ? "" : "디시콘" }} 작성 중</span>
+                    }}{{ !this.getDccon().length ? "" : "디시콘" }} 작성 중</span>
             </div>
             <div
                 class="whoami"
@@ -220,36 +220,34 @@ export default Vue.extend({
                 return false;
             }
 
-            if (this.func) {
-                const result = await this.func(
-                    this.getDccon() === null ? "text" : "dccon",
-                    this.getDccon() ?? this.text,
-                    this.getReply(),
-                    this.fixedUser
-                        ? {name: this.user!.nick}
-                        : {
-                            name: this.unsignedUserID,
-                            pw: this.unsignedUserPW
-                        }
-                );
+            if (!this.func) return true;
 
-                if (!result) {
-                    this.disabled = false;
-                    return false;
-                }
+            const result = await this.func(
+                !this.getDccon().length ? "text" : "dccon",
+                this.getDccon().length ? this.getDccon() : this.text,
+                this.getReply(),
+                this.fixedUser
+                    ? {name: this.user!.nick}
+                    : {
+                        name: this.unsignedUserID,
+                        pw: this.unsignedUserPW
+                    }
+            );
 
+            if (!result) {
                 this.disabled = false;
-
-                this.text = "";
-                $("#comment_main").val("");
-
-                this.$emit("setDccon", null);
-                this.$emit("setReply", null);
-
-                return result;
+                return false;
             }
 
-            return true;
+            this.disabled = false;
+
+            this.text = "";
+            $("#comment_main").val("");
+
+            this.$emit("setDccon", []);
+            this.$emit("setReply", null);
+
+            return result;
         },
 
         focus(): void {

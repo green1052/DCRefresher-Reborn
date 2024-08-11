@@ -270,7 +270,7 @@ import {Fragment} from "vue-fragment";
 interface FrameData {
     memoText: string;
     reply: string | null;
-    dccon: DcinsideDccon | null;
+    dccon: DcinsideDccon[];
     dcconRender: Vue | null;
     commentKey: number;
 }
@@ -302,7 +302,7 @@ export default Vue.extend({
         return {
             memoText: "",
             reply: null,
-            dccon: null,
+            dccon: [],
             dcconRender: null,
             commentKey: 0
         };
@@ -371,7 +371,7 @@ export default Vue.extend({
             return true;
         },
 
-        clickDccon(dccon: DcinsideDccon) {
+        clickDccon(dccon: DcinsideDccon[]) {
             this.dccon = dccon;
             this.closeDccon();
         },
@@ -383,7 +383,7 @@ export default Vue.extend({
             this.dcconRender = null;
         },
 
-        setDccon(value: DcinsideDccon | null) {
+        setDccon(value: DcinsideDccon[]) {
             this.dccon = value;
         },
 
@@ -424,7 +424,7 @@ export default Vue.extend({
             this.frame.data = {};
             this.frame.functions = {};
             this.reply = null;
-            this.dccon = null;
+            this.dccon = [];
             this.closeDccon();
         });
     },
