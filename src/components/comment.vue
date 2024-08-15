@@ -2,7 +2,6 @@
     <div
         :data-deleted="comment.is_delete !== '0'"
         :data-depth="comment.depth"
-        :data-rereply="rereply"
         class="refresher-comment">
         <div class="meta">
             <User
@@ -53,7 +52,7 @@
             :class="{ dccon: true }"
             class="refresher-comment-content"
             @contextmenu="contextMenu"
-            v-html="comment.memo.replace(/(?<!(dc|<))img/gi, '/><img')"/>
+            v-html="comment.memo"/>
         <p
             v-else
             class="refresher-comment-content"
@@ -68,12 +67,9 @@ import user from "./user.vue";
 import $ from "cash-dom";
 import Vue, {PropType} from "vue";
 
-const NRegex = /(ㄴ)(\s)?([^ ]+)/g;
-
 interface CommentVueData {
     currentId: string;
     me: boolean;
-    rereply: boolean;
 }
 
 interface VoiceDataComputed {
@@ -91,8 +87,8 @@ export default Vue.extend({
     data(): CommentVueData {
         return {
             currentId: "",
-            me: false,
-            rereply: false
+            me: false
+
         };
     },
     props: {
@@ -122,8 +118,6 @@ export default Vue.extend({
         }
     },
     mounted(): void {
-        this.rereply = this.checkReReply();
-
         if (!this.comment.user.id) {
             return;
         }
@@ -178,9 +172,7 @@ export default Vue.extend({
         },
 
         isAdmin(): boolean {
-            return (
-                document.querySelector(".useradmin_btnbox button") !== null
-            );
+            return document.querySelector(".useradmin_btnbox button") !== null;
         }
     },
     methods: {
@@ -195,25 +187,6 @@ export default Vue.extend({
             return match
                 ? match[0].replace(/gallog\.dcinside.com\/|'/g, "")
                 : null;
-        },
-
-        checkReReply(): boolean {
-            const content = this.comment.memo;
-            const depth = this.comment.depth;
-
-            if (depth < 1) {
-                return false;
-            }
-
-            if (
-                !NRegex.test(content) ||
-                content.indexOf("ㄴ") !== 0 ||
-                content.indexOf("ㄴㄴ") === 0
-            ) {
-                return false;
-            }
-
-            return true;
         },
 
         safeDelete(): void {
