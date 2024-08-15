@@ -847,6 +847,14 @@ tr.gall_writer {
     .dccon {
         display: flex;
 
+        & > img.written_dccon {
+            position: relative !important;
+        }
+
+        & > img.written_dccon + video.written_dccon {
+            display: none !important;
+        }
+
         & > .written_dccon {
             &:not(.bigdccon) {
                 width: 100px;
@@ -870,7 +878,7 @@ tr.gall_writer {
         height: 100px;
     }
 
-    .comment_dccon  {
+    .comment_dccon {
         padding-bottom: 0 !important;
 
         * {
