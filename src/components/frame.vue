@@ -199,9 +199,9 @@
                                 :key="comment.no"
                                 :comment="comment"
                                 :delete="frame.functions.deleteComment"
+                                :index="i + 1"
                                 :postUser="frame.data.user"
                                 :reply.sync="reply"
-                                :index="i + 1"
                                 :useWriteComment="frame.data.useWriteComment"/>
                         </transition-group>
                     </div>
@@ -262,8 +262,8 @@ import RefresherLoader from "./loader.vue";
 import Vue, {PropType} from "vue";
 import browser from "webextension-polyfill";
 import dccon from "./dccon.vue";
-import {Fragment} from "vue-fragment";
 import RefresherDcconPopup from "./dccon.vue";
+import {Fragment} from "vue-fragment";
 
 interface FrameData {
     memoText: string;
