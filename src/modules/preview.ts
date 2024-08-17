@@ -1740,17 +1740,8 @@ export default {
                     }
                 );
             }).then((postData) => {
-                if (postFetchedData) postDom = postFetchedData.dom!;
-                else
-                    eventBus.on(
-                        "RefresherPostDataLoaded",
-                        (obj: PostInfo) => {
-                            postDom = obj.dom!;
-                        },
-                        {
-                            once: true
-                        }
-                    );
+                postDom = postFetchedData.dom!;
+                frame.data.user = postFetchedData.user;
 
                 frame.functions.writeComment = async (
                     type: "text" | "dccon",
@@ -1940,11 +1931,7 @@ export default {
                         const cache = postCaches.get(`${preData.gallery}${preData.id}`);
                         const cacheComment = cache?.comment?.comments;
 
-                        comments.comments = comments.comments.filter(
-                            (v: DcinsideCommentObject) => {
-                                return v.nicktype !== "COMMENT_BOY";
-                            }
-                        );
+                        comments.comments = comments.comments.filter((v: DcinsideCommentObject) => v.nicktype !== "COMMENT_BOY");
 
                         if (this.status.archiveArticle && cacheComment) {
                             cacheComment.forEach((v: DcinsideCommentObject) => {
@@ -2012,8 +1999,19 @@ export default {
                             }
                         );
 
+                        let parentComment: DcinsideCommentObject | null = null;
+
                         comments.comments = comments.comments.filter(
                             (comment: DcinsideCommentObject) => {
+                                if (replyConfig && comment.c_no === parentComment?.no) {
+                                    if (blurConfig) {
+                                        comment.memo = "댓글 내용이 차단됐습니다.";
+                                        comment.is_delete = "1";
+                                    } else {
+                                        return false;
+                                    }
+                                }
+
                                 const check: {
                                     [index in RefresherBlockType]?: string;
                                 } = {
@@ -2042,13 +2040,9 @@ export default {
                                 const isBlocked = block.checkAll(check, gallery);
 
                                 if (isBlocked) {
-                                    // if (replyConfig) {
-                                    //     if (blurConfig) {
-                                    //         comment.memo = "댓글 내용이 차단됐습니다.";
-                                    //     } else {
-                                    //         return false;
-                                    //     }
-                                    // }
+                                    if (replyConfig && comment.c_no === 0) {
+                                        parentComment = comment;
+                                    }
 
                                     if (blurConfig) {
                                         comment.memo = "댓글 내용이 차단됐습니다.";
@@ -2088,7 +2082,7 @@ export default {
                     } ${commentCounts}개`;
 
                     frame.data.comments = comments;
-                    if (needRefresh) frame.app.$children[0].$children[1].commentKey = Date.now();
+                    if (needRefresh) frame.app.$children[0].$children[1].commentKey++;
                 } catch (error) {
                     frame.error = {
                         title: "댓글",
@@ -2126,7 +2120,7 @@ export default {
 
             if (
                 this.status.toggleAdminPanel &&
-                document.querySelector(".useradmin_btnbox button") !== null
+                document.querySelector(".useradmin_btnbox button")
             ) {
                 panel.admin(
                     preData,
@@ -2158,7 +2152,7 @@ export default {
 
             const preData = ev === null ? prd : getRelevantData(ev);
 
-            if (preData === undefined) return;
+            if (!preData) return;
 
             let collapseView = false;
 
@@ -2232,6 +2226,24 @@ export default {
                         scrolledCount = 0;
                     }
 
+                    const getNextPost = (direction: "next" | "prev") => {
+                        const post = $(`.us-post[data-no="${postFetchedData.id}"]`);
+
+                        if (!post) return;
+
+                        const nextPost = direction === "next"
+                            ? post.prev()
+                            : post.next();
+
+                        if (!nextPost || nextPost.data("data-type") === "icon_notice") return;
+
+                        const nextPostNo = nextPost.attr("data-no");
+
+                        if (!nextPostNo) return;
+
+                        return nextPostNo;
+                    };
+
                     if (ev.deltaY < 0) {
                         appStore.$data.scrollModeBottom = false;
                         appStore.$data.scrollModeTop = true;
@@ -2247,7 +2259,7 @@ export default {
 
                         scrolledCount = 0;
 
-                        preData.id = $(`.us-post[data-no="${postFetchedData.id}"]`).next().attr("data-no") || (Number(postFetchedData.id) - 1).toString();
+                        preData.id = getNextPost("prev") || (Number(postFetchedData.id) - 1).toString();
 
                         newPostWithData(preData, historySkip);
                         groupStore.scrollTop = 0;
@@ -2269,7 +2281,7 @@ export default {
 
                         scrolledCount = 0;
 
-                        preData.id = $(`.us-post[data-no="${postFetchedData.id}"]`).prev().attr("data-no") || (Number(postFetchedData.id) + 1).toString();
+                        preData.id = getNextPost("next") || (Number(postFetchedData.id) + 1).toString();
                         newPostWithData(preData, historySkip);
 
                         groupStore.scrollTop = 0;
@@ -2344,9 +2356,7 @@ export default {
                 );
             }
 
-            setTimeout(() => {
-                frame.app.fadeIn();
-            }, 0);
+            setTimeout(frame.app.fadeIn, 0);
 
             ev?.preventDefault();
         };

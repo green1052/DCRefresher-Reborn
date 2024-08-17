@@ -100,7 +100,7 @@
                     </div>
 
                     <div
-                        v-if="frame.data.comments !== undefined"
+                        v-if="frame.data.comments"
                         class="refresher-comment-controls-container">
 
                         <fragment v-if="frame.data.useWriteComment">
@@ -127,8 +127,7 @@
 
                 <div class="refresher-preview-meta">
                     <User
-                        v-if="frame.data.user !== undefined"
-                        :user="frame.data.user"/>
+                        v-if="frame.data.user" :user="frame.data.user"/>
 
                     <div class="float-right">
                         <div class="date-views">
@@ -168,7 +167,7 @@
                 <refresher-loader v-show="frame.data.load"/>
 
                 <transition
-                    v-if="frame.data.comments === undefined"
+                    v-if="!frame.data.comments"
                     name="refresher-opacity">
                     <div
                         :key="frame.contents"
@@ -176,7 +175,7 @@
                         v-html="frame.contents"/>
                 </transition>
                 <div v-else>
-                    <div v-if="frame.data.comments.comments === null || frame.data.comments.comments.length === 0">
+                    <div v-if="!frame.data.comments.comments || frame.data.comments.comments.length === 0">
                         <div class="refresher-nocomment-wrap">
                             <img
                                 :src="
@@ -197,14 +196,13 @@
                             @after-enter="afterEnter">
                             <Comment
                                 v-for="(comment, i) in frame.data.comments.comments"
-                                :key="`cmt_${comment.no}`"
+                                :key="comment.no"
                                 :comment="comment"
                                 :delete="frame.functions.deleteComment"
-                                :getReply="getReply"
+                                :postUser="frame.data.user"
+                                :reply.sync="reply"
                                 :index="i + 1"
-                                :postUser="frame.data.postUserId"
-                                :useWriteComment="frame.data.useWriteComment"
-                                @setReply="setReply"/>
+                                :useWriteComment="frame.data.useWriteComment"/>
                         </transition-group>
                     </div>
 
@@ -212,9 +210,8 @@
                         <WriteComment
                             :func="writeComment"
                             :getDccon="getDccon"
-                            :getReply="getReply"
-                            @setDccon="setDccon"
-                            @setReply="setReply"/>
+                            :reply.sync="reply"
+                            @setDccon="setDccon"/>
                     </div>
                 </div>
             </div>
@@ -266,6 +263,7 @@ import Vue, {PropType} from "vue";
 import browser from "webextension-polyfill";
 import dccon from "./dccon.vue";
 import {Fragment} from "vue-fragment";
+import RefresherDcconPopup from "./dccon.vue";
 
 interface FrameData {
     memoText: string;
@@ -273,11 +271,13 @@ interface FrameData {
     dccon: DcinsideDccon[];
     dcconRender: Vue | null;
     commentKey: number;
+    sibalKey: Record<string, number>;
 }
 
 export default Vue.extend({
     name: "refresher-frame",
     components: {
+        RefresherDcconPopup,
         PreviewButton,
         TimeStamp,
         CountDown,
@@ -391,20 +391,9 @@ export default Vue.extend({
             return this.dccon;
         },
 
-        makeVoteRequest() {
-        },
-
         original() {
             this.frame.functions.openOriginal();
             return true;
-        },
-
-        setReply(value: string | null) {
-            this.reply = value;
-        },
-
-        getReply() {
-            return this.reply;
         },
 
         getURL(u: string): string {
@@ -423,13 +412,16 @@ export default Vue.extend({
             this.frame.collapse = undefined;
             this.frame.data = {};
             this.frame.functions = {};
+
             this.reply = null;
             this.dccon = [];
             this.closeDccon();
+            this.commentKey = 0;
+            this.sibalKey = {};
         });
-    },
-    updated() {
-        // this.$el.scroll(0, 0);
     }
+    // updated() {
+    //     this.$el.scroll(0, 0);
+    // }
 });
 </script>

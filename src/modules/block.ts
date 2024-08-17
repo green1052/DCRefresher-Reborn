@@ -38,7 +38,7 @@ export default {
     settings: {
         replyRemove: {
             name: "대댓글 삭제",
-            desc: "차단된 댓글의 대댓글을 함께 삭제합니다. (미리보기 창에서는 작동하지 않습니다.)",
+            desc: "차단된 댓글의 대댓글을 함께 삭제합니다.",
             type: "check",
             default: false
         },

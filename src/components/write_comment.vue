@@ -54,7 +54,7 @@
                     v-if="user"
                     :user="user"/>
                 <span>로 {{
-                        this.getReply() === null ? "" : "답글"
+                        reply === null ? "" : "답글"
                     }}{{ !this.getDccon().length ? "" : "디시콘" }} 작성 중</span>
             </div>
             <div
@@ -120,8 +120,8 @@ export default Vue.extend({
             type: Function
         },
 
-        getReply: {
-            type: Function
+        reply: {
+            type: String
         },
 
         getDccon: {
@@ -225,7 +225,7 @@ export default Vue.extend({
             const result = await this.func(
                 !this.getDccon().length ? "text" : "dccon",
                 this.getDccon().length ? this.getDccon() : this.text,
-                this.getReply(),
+                this.reply,
                 this.fixedUser
                     ? {name: this.user!.nick}
                     : {
@@ -245,7 +245,7 @@ export default Vue.extend({
             $("#comment_main").val("");
 
             this.$emit("setDccon", []);
-            this.$emit("setReply", null);
+            this.$emit("update:reply", null);
 
             return result;
         },
