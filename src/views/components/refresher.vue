@@ -451,10 +451,10 @@
                 key="tab5"
                 class="tab tab5">
                 <img
-                    :src="getURL('/assets/icons/no.webp')"
+                    :src="getURL('/assets/icons/god2.webp')"
                     style="width: 100px; height: 100px"/>
 
-                <h1>자짤 기능인줄 알았지? ㅋㅋㅋ "캬루" 지롱</h1>
+                <h1>전투력 5천 이하는 사용 불가능한 기능입니다.</h1>
             </div>
             <div
                 v-show="tab === 5"
