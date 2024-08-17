@@ -152,7 +152,7 @@ export default {
 
         this.memory.always = filter.add(".ub-writer:not([user_name])", (element) => {
             if (this.status.checkPermBan && element.dataset.refresherPermBan !== "true") {
-                const permBan=  getPermBan(element.dataset.uid!);
+                const permBan = getPermBan(element.dataset.uid!);
 
                 if (permBan) {
                     element.dataset.refresherPermBan = "true";
@@ -201,7 +201,7 @@ export default {
             neverExpire: true
         });
 
-        const getPermBan =  (uid: string): string | undefined => {
+        const getPermBan = (uid: string): string | undefined => {
             if (!permBanList) return;
 
             const list = [];
@@ -245,7 +245,7 @@ export default {
                 if (!uid) continue;
 
                 if (this.status.checkPermBan) {
-                    const permBan= getPermBan(uid);
+                    const permBan = getPermBan(uid);
 
                     if (permBan) {
                         const $permBan = $(`<span style="color: red" class="ip permBan refresherUserData" title="${permBan}">[${permBan}]</span>`);

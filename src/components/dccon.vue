@@ -47,7 +47,7 @@
                 <h2 v-if="firstLoad" style="position: absolute; top: 50%; left: 35%">
                     디시콘을 클릭해주세요.
                 </h2>
-                <ul style="display: flex; flex-wrap: wrap;" v-else>
+                <ul v-else style="display: flex; flex-wrap: wrap;">
                     <li
                         v-for="dccon in this.currentDccon"
                         @click="dcconClick(dccon)">
