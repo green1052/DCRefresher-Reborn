@@ -11,7 +11,7 @@
                 <p
                     v-if="useWriteComment && comment.depth === 0"
                     class="refresher-reply"
-                    @click="reply">{{ this.getReply() === this.comment.no ? "답글 해제" : "답글" }}</p>
+                    @click="setReply">{{ reply === comment.no ? "답글 해제" : "답글" }}</p>
 
                 <TimeStamp :date="new Date(date(comment.reg_date))"/>
                 <div
@@ -19,7 +19,7 @@
                         comment.is_delete === '0' &&
                         (comment.del_btn === 'Y' || comment.my_cmt === 'Y' || isAdmin || comment.user.isLogout())"
                     class="delete"
-                    @click="this.safeDelete">
+                    @click="safeDelete">
                     <svg
                         fill="black"
                         height="14px"
@@ -49,8 +49,7 @@
         </div>
         <p
             v-else-if="/<(img|video) class=/.test(comment.memo)"
-            :class="{ dccon: true }"
-            class="refresher-comment-content"
+            class="refresher-comment-content dccon"
             @contextmenu="contextMenu"
             v-html="comment.memo.replace(/(?<!(dc|<))img/gi, '/><img')"/>
         <p
@@ -68,7 +67,6 @@ import $ from "cash-dom";
 import Vue, {PropType} from "vue";
 
 interface CommentVueData {
-    currentId: string;
     me: boolean;
 }
 
@@ -86,9 +84,7 @@ export default Vue.extend({
     },
     data(): CommentVueData {
         return {
-            currentId: "",
             me: false
-
         };
     },
     props: {
@@ -101,57 +97,34 @@ export default Vue.extend({
             type: Number
         },
 
-        postUser: {
-            type: String
-        },
-
         useWriteComment: {
             type: Boolean
+        },
+
+        postUser: {
+            type: Object as PropType<User>
         },
 
         delete: {
             type: Function
         },
 
-        getReply: {
-            type: Function
+        reply: {
+            type: String
         }
     },
-    mounted(): void {
-        if (!this.comment.user.id) {
-            return;
-        }
+    mounted() {
+        if (this.comment.user.isLogout()) return;
 
-        const gallogImageElement = document.querySelector<HTMLImageElement>("#login_box .user_info .writer_nikcon > img");
-
-        const click =
-            gallogImageElement &&
-            gallogImageElement.getAttribute("onclick");
-
-        if (click) {
-            this.currentId = click
-                .replace(/window\.open\('\/\/gallog\.dcinside\.com\//g, "")
-                .replace(/'\);/g, "");
-
-            this.me = this.currentId === this.comment.user.id;
-        }
-
-        if (!this.me && this.postUser) {
-            this.me = this.postUser === this.comment.user.id;
-        }
-
-        if (!this.me && !this.postUser) {
-            eventBus.on(
-                "RefresherPostDataLoaded",
-                (obj: IPostInfo) => {
-                    this.me =
-                        (obj.user && obj.user.id) === this.comment.user.id;
-                },
-                {
-                    once: true
-                }
-            );
-        }
+        eventBus.on(
+            "RefresherPostDataLoaded",
+            (obj: IPostInfo) => {
+                this.me = obj.user?.id === this.comment.user.id;
+            },
+            {
+                once: true
+            }
+        );
     },
     computed: {
         getVoiceData(this): VoiceDataComputed | null {
@@ -182,13 +155,6 @@ export default Vue.extend({
                 : str.replace(/\./g, "-");
         },
 
-        extractID(str: string): string | null {
-            const match = str.match(/gallog\.dcinside.com\/.+'/g);
-            return match
-                ? match[0].replace(/gallog\.dcinside.com\/|'/g, "")
-                : null;
-        },
-
         safeDelete(): void {
             if (!this.delete) return;
 
@@ -207,11 +173,8 @@ export default Vue.extend({
             );
         },
 
-        reply() {
-            this.$emit(
-                "setReply",
-                this.getReply() === this.comment.no ? null : this.comment.no
-            );
+        setReply() {
+            this.$emit("update:reply", this.reply === this.comment.no ? null : this.comment.no);
         },
 
         contextMenu(e: MouseEvent): void {
