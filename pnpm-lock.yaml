@@ -42,8 +42,8 @@ importers:
         specifier: ^3.0.5
         version: 3.0.5
       ky:
-        specifier: ^1.6.0
-        version: 1.6.0
+        specifier: ^1.7.0
+        version: 1.7.0
       mini-css-extract-plugin:
         specifier: ^2.9.0
         version: 2.9.0(webpack@5.93.0(@swc/core@1.7.11)(webpack-cli@5.1.4))
@@ -1000,8 +1000,8 @@ packages:
     resolution: {integrity: sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==}
     engines: {node: '>=0.10.0'}
 
-  ky@1.6.0:
-    resolution: {integrity: sha512-MG7hlH26oShC4Lysk5TYzXshHLfEY52IJ0ofOeCsifquqTymbXCSTx+g4rXO30XYxoM6Y1ed5pNnpULe9Rx19A==}
+  ky@1.7.0:
+    resolution: {integrity: sha512-g+S6ZMESSMuxrrbcDioBKSjBj8Xvam2WmLso+q1Ub7TTYCGS68XbSEM+eA3VSTmXJfR1uQjsTooC2tCsC3bW6g==}
     engines: {node: '>=18'}
 
   loader-runner@4.3.0:
@@ -2388,7 +2388,7 @@ snapshots:
 
   kind-of@6.0.3: {}
 
-  ky@1.6.0: {}
+  ky@1.7.0: {}
 
   loader-runner@4.3.0: {}
 
