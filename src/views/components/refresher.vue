@@ -50,8 +50,8 @@
                 class="tab tab1">
                 <div class="info">
                     <div class="icon-wrap">
-                        <img v-if="karyl"
-                             :src="getURL('/assets/icons/ruliweb.webp')"
+                        <img v-if="easterEgg"
+                             :src="getURL('/assets/icons/reboot.webp')"
                              class="icon"/>
                         <img v-else
                              :src="getURL('/assets/icons/logo/Icon.png')"
@@ -59,7 +59,7 @@
                     </div>
 
                     <div class="text">
-                        <h3>{{ karyl ? "RULIRefresher Reborn" : "DCRefresher Reborn" }}</h3>
+                        <h3>{{ easterEgg ? "(경) 쌀먹충 정상화 (축)" : "DCRefresher Reborn" }}</h3>
                         <p>
                             <span class="version">{{ getVersion() }}</span>
                             <a v-for="link in links" @click="open(link.url)">{{ link.text }}</a>
@@ -522,7 +522,7 @@ import ky from "ky";
 import {Fragment} from "vue-fragment";
 
 interface RefresherData {
-    karyl: boolean;
+    easterEgg: boolean;
     tab: number;
     modules: {
         [key: string]: RefresherModule;
@@ -556,7 +556,7 @@ export default Vue.extend({
     name: "refresher",
     data(): RefresherData {
         return {
-            karyl: false,
+            easterEgg: false,
             tab: 0,
             modules: {},
             settings: {},
@@ -965,8 +965,8 @@ export default Vue.extend({
     },
     async mounted() {
         setTimeout(() => {
-            this.karyl = true;
-        }, 20000);
+            this.easterEgg = true;
+        }, 10000);
 
         port.postMessage({
             requestRefresherModules: true,
