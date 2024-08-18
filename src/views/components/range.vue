@@ -6,10 +6,18 @@
             :disabled="disabled"
             :max="max"
             :min="min"
+
+
             :placeholder="placeholder"
+
+
             :step="step"
+
+
             :value="value"
             type="range"
+
+
             @change="update"
             @input="input"/>
         <span class="indicator">{{

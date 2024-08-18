@@ -8,7 +8,7 @@ module.exports = {
     entry: {
         "refresher.bundle.js": "./src/index.ts",
         "background.js": "./src/root/background.ts",
-        "option.bundle.js": "./src/root/option.bundle.ts"
+        "option.bundle.js": "./src/root/option.bundle.tsx"
     },
     output: {
         path: path.join(__dirname, "dist"),
@@ -19,7 +19,7 @@ module.exports = {
         rules: [
             {
                 include: /src/,
-                test: /\.js|\.ts$/,
+                test: /\.(js|ts)x?$/,
                 use: {
                     loader: "swc-loader"
                 }
@@ -62,7 +62,7 @@ module.exports = {
         new VueLoaderPlugin()
     ],
     resolve: {
-        extensions: [".js", ".ts", ".css", ".vue"],
+        extensions: [".js", ".ts", ".jsx", ".tsx", ".css", ".vue"],
         modules: ["node_modules"]
     }
 };
