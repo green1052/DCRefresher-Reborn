@@ -394,8 +394,6 @@ export function App() {
 
     return (
         <div id="refresher-app">
-            <div className="refresher-add-block-popup"/>
-
             <div className="refresher-title-zone">
                 <h1>설정</h1>
                 <div className="float-right">
