@@ -22,7 +22,7 @@
     "react-dom": "^18.3.1",
     "react-transition-group": "^4.4.5",
     "sass": "^1.77.8",
-    "sass-loader": "^16.0.0",
+    "sass-loader": "^16.0.1",
     "swc-loader": "^0.2.6",
     "terser-webpack-plugin": "^5.3.10",
     "typescript": "^5.5.4",

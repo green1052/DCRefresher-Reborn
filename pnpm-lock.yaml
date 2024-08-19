@@ -66,8 +66,8 @@ importers:
         specifier: ^1.77.8
         version: 1.77.8
       sass-loader:
-        specifier: ^16.0.0
-        version: 16.0.0(sass@1.77.8)(webpack@5.93.0(@swc/core@1.7.14)(webpack-cli@5.1.4))
+        specifier: ^16.0.1
+        version: 16.0.1(sass@1.77.8)(webpack@5.93.0(@swc/core@1.7.14)(webpack-cli@5.1.4))
       swc-loader:
         specifier: ^0.2.6
         version: 0.2.6(@swc/core@1.7.14)(webpack@5.93.0(@swc/core@1.7.14)(webpack-cli@5.1.4))
@@ -1333,8 +1333,8 @@ packages:
   safe-buffer@5.2.1:
     resolution: {integrity: sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==}
 
-  sass-loader@16.0.0:
-    resolution: {integrity: sha512-n13Z+3rU9A177dk4888czcVFiC8CL9dii4qpXWUg3YIIgZEvi9TCFKjOQcbK0kJM7DJu9VucrZFddvNfYCPwtw==}
+  sass-loader@16.0.1:
+    resolution: {integrity: sha512-xACl1ToTsKnL9Ce5yYpRxrLj9QUDCnwZNhzpC7tKiFyA8zXsd3Ap+HGVnbCgkdQcm43E+i6oKAWBsvGA6ZoiMw==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
       '@rspack/core': 0.x || 1.x
@@ -2801,7 +2801,7 @@ snapshots:
 
   safe-buffer@5.2.1: {}
 
-  sass-loader@16.0.0(sass@1.77.8)(webpack@5.93.0(@swc/core@1.7.14)(webpack-cli@5.1.4)):
+  sass-loader@16.0.1(sass@1.77.8)(webpack@5.93.0(@swc/core@1.7.14)(webpack-cli@5.1.4)):
     dependencies:
       neo-async: 2.6.2
     optionalDependencies:
