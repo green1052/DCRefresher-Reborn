@@ -1,7 +1,7 @@
-import React, {useCallback, useEffect, useState} from "react";
+import React, {ChangeEvent, useCallback, useEffect, useState} from "react";
 import browser from "webextension-polyfill";
 import * as storage from "../utils/storage";
-import {BlockModeCache} from "../core/block";
+import {BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES} from "../core/block";
 import {Checkbox} from "./Checkbox";
 import {Options} from "./Options";
 import {Range} from "./Range";
@@ -52,8 +52,8 @@ function Tab({children, id}: { children: React.ReactNode, id: number }) {
     );
 }
 
-function Tab1({onUpdate, modules, settings}: {
-    onUpdate: (module: string, key: string, value: unknown) => void,
+function Tab1({updateSetting, modules, settings}: {
+    updateSetting: (module: string, key: string, value: unknown) => void,
     modules: Record<string, RefresherModule>,
     settings: Record<string, Record<string, RefresherSettings>>
 }) {
@@ -104,28 +104,34 @@ function Tab1({onUpdate, modules, settings}: {
                 </div>
             </div>
 
-            <Settings onUpdate={onUpdate} modules={modules} settings={settings} advanced={false}/>
+            <Settings updateSetting={updateSetting} modules={modules} settings={settings} advanced={false}/>
         </Tab>
     );
 }
 
-function Tab2({onUpdate, modules, settings}: {
-    onUpdate: (module: string, key: string, value: unknown) => void,
+function Tab2({updateSetting, modules, settings}: {
+    updateSetting: (module: string, key: string, value: unknown) => void,
     modules: Record<string, RefresherModule>,
     settings: Record<string, Record<string, RefresherSettings>>
 }) {
 
     return (
         <Tab id={2}>
-            <Settings onUpdate={onUpdate} modules={modules} settings={settings} advanced={true}/>
+            <Settings updateSetting={updateSetting} modules={modules} settings={settings} advanced={true}/>
         </Tab>
     );
 }
 
-function Tab3({blocks, blockModes}: {
+function Tab3({blocks, updateBlock, blockModes, updateBlockMode}: {
     blocks: Record<RefresherBlockType, RefresherBlockValue[]>
-    blockModes: BlockModeCache
+    updateBlock: (key: RefresherBlockType, value: RefresherBlockValue[]) => void,
+    blockModes: BlockModeCache,
+    updateBlockMode: (key: RefresherBlockType, value: RefresherBlockDetectMode) => void
 }) {
+    const onChange = useCallback((ev: ChangeEvent<HTMLSelectElement>) => {
+        // updateBlockMode`(ev.target., ev.target.value);
+    }, []);
+
     const exportBlock = useCallback(() => {
         navigator.clipboard.writeText(JSON.stringify(blocks, null, 4))
             .then(() => {
@@ -137,35 +143,32 @@ function Tab3({blocks, blockModes}: {
     }, []);
 
     const importBlock = useCallback(() => {
-        // TODO
+        const result = prompt("가져올 데이터를 입력하세요.");
 
-        /*
-          const result = prompt("가져올 데이터를 입력하세요.");
+        if (!result) return;
 
-            if (!result) return;
+        const deepCopy = {...blocks};
 
-            try {
-                const data = JSON.parse(result);
+        try {
+            const data = JSON.parse(result);
 
-                for (const [key, value] of Object.entries(data)) {
-                    const target = this.blocks[key as RefresherBlockType];
+            for (const [key, value] of Object.entries(data)) {
+                const target = deepCopy[key as RefresherBlockType];
 
-                    for (const block of value as RefresherBlockValue[]) {
-                        if (target.some((v) => v.content === block.content) && !confirm(`${block.content}가 이미 존재합니다, 덮어쓰시겠습니까?`)) {
-                            continue;
-                        }
-
-                        target.push(block);
+                for (const block of value as RefresherBlockValue[]) {
+                    if (target.some((v) => v.content === block.content) && !confirm(`${block.content}가 이미 존재합니다, 덮어쓰시겠습니까?`)) {
+                        continue;
                     }
+
+                    target.push(block);
                 }
-
-                this.syncBlock();
-
-                alert("가져오기에 성공했습니다.");
-            } catch (e) {
-                alert("데이터가 잘못됐습니다.");
             }
-         */
+
+
+            alert("가져오기에 성공했습니다.");
+        } catch (e) {
+            alert("데이터가 잘못됐습니다.");
+        }
     }, []);
 
     return (
@@ -180,13 +183,30 @@ function Tab3({blocks, blockModes}: {
                 <br/>
 
                 <h2>차단 모드</h2>
+
+                {
+                    Object.keys(blocks).map((key) => (
+                        <div style={{marginTop: "5px", marginBottom: "5px"}}>
+                            <label>{BLOCK_TYPE_NAMES[key as RefresherBlockType]}</label>
+                            <select onChange={onChange} defaultValue={blockModes[key as RefresherBlockType]}>
+                                {
+                                    Object.entries(BLOCK_DETECT_MODE_TYPE_NAMES).map(([key2, value2]) => (
+                                        <option value={key2}>
+                                            {value2}
+                                        </option>
+                                    ))
+                                }
+                            </select>
+                        </div>
+                    ))
+                }
             </div>
         </Tab>
     );
 }
 
-function Settings({onUpdate, modules, settings, advanced}: {
-    onUpdate: (module: string, key: string, value: unknown) => void,
+function Settings({updateSetting, modules, settings, advanced}: {
+    updateSetting: (module: string, key: string, value: unknown) => void,
     modules: Record<string, RefresherModule>,
     settings: Record<string, Record<string, RefresherSettings>>,
     advanced: boolean
@@ -199,7 +219,7 @@ function Settings({onUpdate, modules, settings, advanced}: {
                     : Object.keys(settings)
                         .filter((module) => modules[module].enable && (advanced && Object.values(settings[module]).filter((v) => v?.advanced).length) || !advanced)
                         .map((module) => (
-                            <SettingsCategory key={module} onUpdate={onUpdate} module={module} settings={settings[module]}
+                            <SettingsCategory key={module} updateSetting={updateSetting} module={module} settings={settings[module]}
                                               advanced={advanced}/>
                         ))
             }
@@ -207,8 +227,8 @@ function Settings({onUpdate, modules, settings, advanced}: {
     );
 }
 
-function SettingsCategory({onUpdate, module, settings, advanced}: {
-    onUpdate: (module: string, key: string, value: unknown) => void,
+function SettingsCategory({updateSetting, module, settings, advanced}: {
+    updateSetting: (module: string, key: string, value: unknown) => void,
     module: string,
     settings: Record<string, RefresherSettings>,
     advanced: boolean
@@ -232,7 +252,7 @@ function SettingsCategory({onUpdate, module, settings, advanced}: {
                 Object.keys(settings).map((setting) => (
                     <SettingsItem
                         key={setting}
-                        onUpdate={onUpdate}
+                        updateSetting={updateSetting}
                         module={module}
                         settingKey={setting}
                         setting={settings[setting]}
@@ -244,8 +264,8 @@ function SettingsCategory({onUpdate, module, settings, advanced}: {
     );
 }
 
-function SettingsItem({onUpdate, module, settingKey, setting, advanced}: {
-    onUpdate: (module: string, key: string, value: unknown) => void,
+function SettingsItem({updateSetting, module, settingKey, setting, advanced}: {
+    updateSetting: (module: string, key: string, value: unknown) => void,
     module: string,
     settingKey: string,
     setting: RefresherSettings,
@@ -280,7 +300,7 @@ function SettingsItem({onUpdate, module, settingKey, setting, advanced}: {
                 {
                     setting.type === "check" &&
                     <Checkbox
-                        onChange={onUpdate}
+                        onChange={updateSetting}
                         module={module}
                         id={settingKey}
                         checked={setting.value}
@@ -290,7 +310,7 @@ function SettingsItem({onUpdate, module, settingKey, setting, advanced}: {
                 {
                     setting.type === "text" &&
                     <Input
-                        onChange={onUpdate}
+                        onChange={updateSetting}
                         placeholder={setting.default}
                         module={module}
                         id={settingKey}
@@ -301,7 +321,7 @@ function SettingsItem({onUpdate, module, settingKey, setting, advanced}: {
                 {
                     setting.type === "range" &&
                     <Range
-                        onChange={onUpdate}
+                        onChange={updateSetting}
                         module={module}
                         id={settingKey}
                         placeholder={String(setting.default)}
@@ -316,7 +336,7 @@ function SettingsItem({onUpdate, module, settingKey, setting, advanced}: {
                 {
                     setting.type === "option" &&
                     <Options
-                        onChange={onUpdate}
+                        onChange={updateSetting}
                         module={module}
                         id={settingKey}
                         options={setting.items as Record<string, string>}
@@ -363,6 +383,50 @@ export function App() {
             });
         });
     }, [settings]);
+
+    const updateBlock = useCallback((key: RefresherBlockType, value: RefresherBlockValue[]) => {
+        const deepCopy = {...blocks};
+        deepCopy[key] = value;
+        setBlocks(deepCopy as Record<RefresherBlockType, RefresherBlockValue[]> | null);
+
+        port.postMessage({
+            updateBlocks: true,
+            blocks_store: blocks,
+            blockModes_store: blockModes
+        });
+
+        browser.tabs.query({active: true}).then((tabs) => {
+            browser.tabs.sendMessage(tabs[0].id!, {
+                type: "updateBlocks",
+                data: {
+                    blocks: blocks,
+                    modes: blockModes
+                }
+            });
+        });
+    }, [blocks, blockModes]);
+
+    const updateBlockMode = useCallback((key: RefresherBlockType, value: RefresherBlockDetectMode) => {
+        const deepCopy = {...blockModes};
+        deepCopy[key] = value;
+        setBlockModes(deepCopy as BlockModeCache | null);
+
+        port.postMessage({
+            updateBlocks: true,
+            blocks_store: blocks,
+            blockModes_store: blockModes
+        });
+
+        browser.tabs.query({active: true}).then((tabs) => {
+            browser.tabs.sendMessage(tabs[0].id!, {
+                type: "updateBlocks",
+                data: {
+                    blocks: blocks,
+                    modes: blockModes
+                }
+            });
+        });
+    }, []);
 
     useEffect(() => {
         port.postMessage({
@@ -412,9 +476,10 @@ export function App() {
             {
                 modules && settings && blocks && blockModes && memos &&
                 (
-                    currentTab === 0 && <Tab1 onUpdate={updateSetting} modules={modules} settings={settings}/> ||
-                    currentTab === 1 && <Tab2 onUpdate={updateSetting} modules={modules} settings={settings}/> ||
-                    currentTab === 2 && <Tab3 blocks={blocks} blockModes={blockModes}/>
+                    currentTab === 0 && <Tab1 updateSetting={updateSetting} modules={modules} settings={settings}/> ||
+                    currentTab === 1 && <Tab2 updateSetting={updateSetting} modules={modules} settings={settings}/> ||
+                    currentTab === 2 &&
+                    <Tab3 blocks={blocks} updateBlock={updateBlock} blockModes={blockModes} updateBlockMode={updateBlockMode}/>
                 )
             }
         </div>
