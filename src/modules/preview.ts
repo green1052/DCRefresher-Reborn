@@ -1741,7 +1741,6 @@ export default {
                 );
             }).then((postData) => {
                 postDom = postFetchedData.dom!;
-                frame.data.user = postFetchedData.user;
 
                 frame.functions.writeComment = async (
                     type: "text" | "dccon",
