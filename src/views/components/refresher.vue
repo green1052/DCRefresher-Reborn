@@ -61,15 +61,14 @@
                     <div class="text">
                         <h3>{{ easterEgg ? "(경) 쌀먹충 정상화 (축)" : "DCRefresher Reborn" }}</h3>
                         <p>
-                            <span class="version">{{ getVersion() }}</span>
+                            <span class="version">{{ getVersion() }}<a target="_blank" href="https://github.com/green1052/DCRefresher-Reborn?tab=readme-ov-file#%EC%A0%95%EC%83%81%ED%99%94-%EA%B3%B5%EC%A7%80">(개발 잠정 중단)</a></span>
                             <a v-for="link in links" @click="open(link.url)">{{ link.text }}</a>
                         </p>
                         <p>
-                            <span
-                                class="version"
-                                @click="updateIpDatabase">
+                            <span class="version">
                                 데이터베이스 버전: {{ databaseVersion || "미설치" }}
                                 <svg
+                                    @click="updateIpDatabase"
                                     height="12px"
                                     style="cursor: pointer"
                                     viewBox="0 0 30 30"
@@ -966,7 +965,7 @@ export default Vue.extend({
     async mounted() {
         setTimeout(() => {
             this.easterEgg = true;
-        }, 10000);
+        }, 30000);
 
         port.postMessage({
             requestRefresherModules: true,
