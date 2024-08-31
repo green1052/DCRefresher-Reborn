@@ -67,6 +67,7 @@ import $ from "cash-dom";
 import Vue, {PropType} from "vue";
 
 interface CommentVueData {
+    currentId: string;
     me: boolean;
 }
 
@@ -84,6 +85,7 @@ export default Vue.extend({
     },
     data(): CommentVueData {
         return {
+            currentId: "",
             me: false
         };
     },
@@ -102,7 +104,7 @@ export default Vue.extend({
         },
 
         postUser: {
-            type: Object as PropType<User>
+            type: String
         },
 
         delete: {
@@ -114,17 +116,40 @@ export default Vue.extend({
         }
     },
     mounted() {
-        if (this.comment.user.isLogout()) return;
+        if (!this.comment.user.id) {
+            return;
+        }
 
-        eventBus.on(
-            "RefresherPostDataLoaded",
-            (obj: IPostInfo) => {
-                this.me = obj.user?.id === this.comment.user.id;
-            },
-            {
-                once: true
-            }
-        );
+        const gallogImageElement = document.querySelector<HTMLImageElement>("#login_box .user_info .writer_nikcon > img");
+
+        const click =
+            gallogImageElement &&
+            gallogImageElement.getAttribute("onclick");
+
+        if (click) {
+            this.currentId = click
+                .replace(/window\.open\('\/\/gallog\.dcinside\.com\//g, "")
+                .replace(/'\);/g, "");
+
+            this.me = this.currentId === this.comment.user.id;
+        }
+
+        if (!this.me && this.postUser) {
+            this.me = this.postUser === this.comment.user.id;
+        }
+
+        if (!this.me && !this.postUser) {
+            eventBus.on(
+                "RefresherPostDataLoaded",
+                (obj: IPostInfo) => {
+                    this.me =
+                        (obj.user && obj.user.id) === this.comment.user.id;
+                },
+                {
+                    once: true
+                }
+            );
+        }
     },
     computed: {
         getVoiceData(this): VoiceDataComputed | null {

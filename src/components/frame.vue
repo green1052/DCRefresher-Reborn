@@ -200,7 +200,7 @@
                                 :comment="comment"
                                 :delete="frame.functions.deleteComment"
                                 :index="i + 1"
-                                :postUser="frame.data.user"
+                                :postUser="frame.data.postUserId"
                                 :reply.sync="reply"
                                 :useWriteComment="frame.data.useWriteComment"/>
                         </transition-group>
