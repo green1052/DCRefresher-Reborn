@@ -16,6 +16,13 @@
 
 디시인사이드 개선 확장 프로그램
 
-버그나 문의사항은 [Issues](./issues)에서 제보하거나 [디스코드 서버](https://discord.gg/SSW6Zuyjz6)에서 문의해주세요.
+버그나 문의사항은 [Issues](https://github.com/green1052/DCRefresher-Reborn/issues) 또는 [디스코드 서버](https://discord.gg/SSW6Zuyjz6)를 이용해주세요.
 
 설치 방법 등 확장프로그램에 관한 내용은 [홈페이지](https://dcrefresher.green1052.com)에서 확인해주세요.
+
+## 정상화 공지
+
+현타가 오는 바람에 한동안 기능 추가 등 업데이트를 잠정 중단하고 심각한 버그만 수정할 예정입니다.
+
+항상 이용해주셔서 감사합니다.
+
