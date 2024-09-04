@@ -2,6 +2,15 @@ import * as Toast from "../components/toast";
 import storage from "../utils/storage";
 import browser from "webextension-polyfill";
 
+function copyToClipboard(text: string) {
+    const tempElem = document.createElement("textarea");
+    tempElem.value = text;
+    document.body.appendChild(tempElem);
+    tempElem.select();
+    document.execCommand("copy");
+    document.body.removeChild(tempElem);
+}
+
 export default {
     name: "데이터 관리",
     description: "데이터를 관리합니다.",
@@ -82,13 +91,12 @@ export default {
                 delete data["refresher.database.ip"];
                 delete data["refresher.database.ban"];
 
-                navigator.clipboard.writeText(JSON.stringify(data, null, 4))
-                    .then(() => {
-                        Toast.show("데이터를 클립보드로 내보냈습니다.", false, 3000);
-                    })
-                    .catch(() => {
-                        Toast.show("데이터를 클립보드로 내보내는데 실패했습니다.", true, 3000);
-                    });
+                try {
+                    copyToClipboard(JSON.stringify(data, null, 4));
+                    Toast.show("데이터를 클립보드로 내보냈습니다.", false, 3000);
+                } catch {
+                    Toast.show("데이터를 클립보드로 내보내는데 실패했습니다.", true, 3000);
+                }
             });
         },
 
