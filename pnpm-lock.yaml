@@ -48,11 +48,11 @@ importers:
         specifier: ^2.9.1
         version: 2.9.1(webpack@5.94.0(@swc/core@1.7.23)(webpack-cli@5.1.4))
       sass:
-        specifier: ^1.77.8
-        version: 1.77.8
+        specifier: ^1.78.0
+        version: 1.78.0
       sass-loader:
         specifier: ^16.0.1
-        version: 16.0.1(sass@1.77.8)(webpack@5.94.0(@swc/core@1.7.23)(webpack-cli@5.1.4))
+        version: 16.0.1(sass@1.78.0)(webpack@5.94.0(@swc/core@1.7.23)(webpack-cli@5.1.4))
       swc-loader:
         specifier: ^0.2.6
         version: 0.2.6(@swc/core@1.7.23)(webpack@5.94.0(@swc/core@1.7.23)(webpack-cli@5.1.4))
@@ -1293,8 +1293,8 @@ packages:
       webpack:
         optional: true
 
-  sass@1.77.8:
-    resolution: {integrity: sha512-4UHg6prsrycW20fqLGPShtEvo/WyHRVRHwOP4DzkUrObWoWI05QBSfzU71TVB7PFaL104TwNaHpjlWXAZbQiNQ==}
+  sass@1.78.0:
+    resolution: {integrity: sha512-AaIqGSrjo5lA2Yg7RvFZrlXDBCp3nV4XP73GrLGvdRWWwk+8H3l0SDvq/5bA4eF+0RFPLuWUk3E+P1U/YqnpsQ==}
     engines: {node: '>=14.0.0'}
     hasBin: true
 
@@ -2677,14 +2677,14 @@ snapshots:
 
   safe-buffer@5.2.1: {}
 
-  sass-loader@16.0.1(sass@1.77.8)(webpack@5.94.0(@swc/core@1.7.23)(webpack-cli@5.1.4)):
+  sass-loader@16.0.1(sass@1.78.0)(webpack@5.94.0(@swc/core@1.7.23)(webpack-cli@5.1.4)):
     dependencies:
       neo-async: 2.6.2
     optionalDependencies:
-      sass: 1.77.8
+      sass: 1.78.0
       webpack: 5.94.0(@swc/core@1.7.23)(webpack-cli@5.1.4)
 
-  sass@1.77.8:
+  sass@1.78.0:
     dependencies:
       chokidar: 3.6.0
       immutable: 4.3.6
