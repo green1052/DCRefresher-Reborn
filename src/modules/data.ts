@@ -57,9 +57,10 @@ export default {
         backupCloud(this, _) {
             storage.get<Record<any, any>>().then(async (data) => {
                 try {
-                    delete data["refresher.database.version"];
                     delete data["refresher.database.ip"];
                     delete data["refresher.database.ban"];
+                    delete data["refresher.database.version"];
+                    delete data["refresher.database.lastUpdate"];
 
                     await browser.storage.sync.clear();
                     browser.storage.sync.set(data);
@@ -87,9 +88,10 @@ export default {
         },
         exportData(this, _) {
             storage.get<Record<any, any>>().then((data) => {
-                delete data["refresher.database.version"];
                 delete data["refresher.database.ip"];
                 delete data["refresher.database.ban"];
+                delete data["refresher.database.version"];
+                delete data["refresher.database.lastUpdate"];
 
                 try {
                     copyToClipboard(JSON.stringify(data, null, 4));
