@@ -13,7 +13,7 @@ export function Bubble(
         text?: string;
         image?: string;
         isRegex?: boolean;
-        gallery?: boolean;
+        gallery?: string;
         extra?: string;
         onRemove?: () => void;
         onTextClick?: () => void;

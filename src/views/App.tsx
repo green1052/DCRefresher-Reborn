@@ -6,6 +6,7 @@ import {Checkbox} from "./Checkbox";
 import {Options} from "./Options";
 import {Range} from "./Range";
 import {Input} from "./Input";
+import {Bubble} from "./Bubble";
 
 const port = browser.runtime.connect({name: "refresherInternal"});
 
@@ -170,6 +171,36 @@ function Tab3({blocks, updateBlock, blockModes, updateBlockMode}: {
         }
     }, []);
 
+    const removeBlockedUser = useCallback((key: RefresherBlockType, index: number) => {
+        const deepCopy = {...blocks};
+        deepCopy[key].splice(index, 1);
+        updateBlock(key, deepCopy[key]);
+    }, []);
+
+    const addEmptyBlockedUser = useCallback((key: RefresherBlockType) => {
+
+    }, []);
+
+    const removeAllBlockedUser = useCallback((key: RefresherBlockType) => {
+        // if (!confirm("ㄹ?ㅇ")) return;
+        // updateBlock(key, []);
+    }, []);
+
+    const editBlockedUser = useCallback((key: RefresherBlockType, index: number) => {
+        if (key === "DCCON") {
+            alert("디시콘 수정은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
+            return;
+        }
+
+        const result = prompt(`바꿀 ${BLOCK_TYPE_NAMES[key]} 값을 입력하세요.`);
+
+        if (!result) return;
+
+        const deepCopy = {...blocks};
+        deepCopy[key][index].content = result;
+        updateBlock(key, deepCopy[key]);
+    }, []);
+
     return (
         <Tab id={3}>
             <div style={{marginBottom: "15px"}}>
@@ -205,7 +236,9 @@ function Tab3({blocks, updateBlock, blockModes, updateBlockMode}: {
                 Object.keys(blocks).map((key) => (
                     <div className="block-divide">
                         <h3>
-                            <span className="plus">
+                            {BLOCK_TYPE_NAMES[key]} ({blocks[key].length}개)
+
+                            <span className="plus" onClick={() => addEmptyBlockedUser(key)}>
                                 <svg
                                     fill="black"
                                     height="18px"
@@ -217,14 +250,40 @@ function Tab3({blocks, updateBlock, blockModes, updateBlockMode}: {
                                         fill="none"/>
                                     <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                                 </svg>
-                            </span>
+                        </span>
+                            <span className="remove" onClick={() => removeAllBlockedUser(key)}>
+                            <svg
+                                height="14"
+                                viewBox="0 0 18 18"
+                                width="14"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M14.53 4.53l-1.06-1.06L9 7.94 4.53 3.47 3.47 4.53 7.94 9l-4.47 4.47 1.06 1.06L9 10.06l4.47 4.47 1.06-1.06L10.06 9z"/>
+                            </svg>
+                        </span>
                         </h3>
 
+                        <div className="lists">
+                            {blocks[key as RefresherBlockType].length === 0 && <p>차단된 {BLOCK_TYPE_NAMES[key]} 없음</p>}
 
+                            {
+                                blocks[key as RefresherBlockType].map((block, index) => (
+                                    <Bubble
+                                        key={index}
+                                        text={block.content}
+                                        image={key === "DCCON" ? `https://image.dcinside.com/dccon.php?no=${block.isRegex ? block.content.match(/^\^\((\w*)\|/)?.[1] : block.content}` : undefined}
+                                        isRegex={block.isRegex}
+                                        gallery={block.gallery}
+                                        extra={block.extra}
+                                        onRemove={() => removeBlockedUser(key as RefresherBlockType, index)}
+                                        onTextClick={() => editBlockedUser(key as RefresherBlockType, index)}
+                                    />
+                                ))
+                            }
+                        </div>
                     </div>
                 ))
             }
-
         </Tab>
     );
 }
