@@ -9,7 +9,7 @@ console.log("🍊⚓ Initializing DCRefresher Reborn.");
 
 const loadStart = performance.now();
 
-const context = require.context("./modules/", true, /\.ts$/);
+const context = require.context("./modules/", true, /\.tsx?$/);
 
 Promise
     .all(context.keys().map((v) => modules.load(context(v).default)))
