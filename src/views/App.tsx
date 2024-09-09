@@ -164,7 +164,6 @@ function Tab3({blocks, updateBlock, blockModes, updateBlockMode}: {
                 }
             }
 
-
             alert("가져오기에 성공했습니다.");
         } catch (e) {
             alert("데이터가 잘못됐습니다.");
@@ -201,6 +200,31 @@ function Tab3({blocks, updateBlock, blockModes, updateBlockMode}: {
                     ))
                 }
             </div>
+
+            {
+                Object.keys(blocks).map((key) => (
+                    <div className="block-divide">
+                        <h3>
+                            <span className="plus">
+                                <svg
+                                    fill="black"
+                                    height="18px"
+                                    viewBox="0 0 24 24"
+                                    width="18px"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M0 0h24v24H0z"
+                                        fill="none"/>
+                                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                                </svg>
+                            </span>
+                        </h3>
+
+
+                    </div>
+                ))
+            }
+
         </Tab>
     );
 }
@@ -219,7 +243,8 @@ function Settings({updateSetting, modules, settings, advanced}: {
                     : Object.keys(settings)
                         .filter((module) => modules[module].enable && (advanced && Object.values(settings[module]).filter((v) => v?.advanced).length) || !advanced)
                         .map((module) => (
-                            <SettingsCategory key={module} updateSetting={updateSetting} module={module} settings={settings[module]}
+                            <SettingsCategory key={module} updateSetting={updateSetting} module={module}
+                                              settings={settings[module]}
                                               advanced={advanced}/>
                         ))
             }
@@ -479,7 +504,8 @@ export function App() {
                     currentTab === 0 && <Tab1 updateSetting={updateSetting} modules={modules} settings={settings}/> ||
                     currentTab === 1 && <Tab2 updateSetting={updateSetting} modules={modules} settings={settings}/> ||
                     currentTab === 2 &&
-                    <Tab3 blocks={blocks} updateBlock={updateBlock} blockModes={blockModes} updateBlockMode={updateBlockMode}/>
+                    <Tab3 blocks={blocks} updateBlock={updateBlock} blockModes={blockModes}
+                          updateBlockMode={updateBlockMode}/>
                 )
             }
         </div>
