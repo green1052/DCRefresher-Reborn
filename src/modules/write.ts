@@ -237,7 +237,7 @@ export default {
                                         const response = await ky.post(`https://upimg.dcinside.com/upimg_file.php?id=${gall_id}&r_key=${r_key}`, {body: form, timeout: 30000}).json<any>();
                                         images.push(response.files[0]);
                                     } catch (e) {
-                                        Toast.show(String(e), true, 1000);
+                                        Toast.show(String(e), true, 5000);
                                         return;
                                     }
                                 }
@@ -246,7 +246,7 @@ export default {
                                     attachImage($contentContainer, image);
                                 }
 
-                                Toast.show("이미지 업로드 완료", false, 5000);
+                                Toast.show("이미지 업로드 완료", false, 1000);
                             });
                         }
 
