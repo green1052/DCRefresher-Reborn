@@ -3,7 +3,8 @@ export const urls = {
     gall: {
         major: "https://gall.dcinside.com/",
         mini: "https://gall.dcinside.com/mini/",
-        minor: "https://gall.dcinside.com/mgallery/"
+        minor: "https://gall.dcinside.com/mgallery/",
+        person: "https://gall.dcinside.com/person/"
     },
     view: "board/view/?id=",
     vote: "https://gall.dcinside.com/board/recommend/vote",
@@ -46,13 +47,15 @@ export const urls = {
 export const types = {
     MAJOR: "",
     MINOR: "mgallery",
-    MINI: "mini"
+    MINI: "mini",
+    PERSON: "person"
 };
 
 export const commentGallTypes: Record<string, string> = {
     "": "G",
     mgallery: "M",
-    mini: "MI"
+    mini: "MI",
+    person: "PR"
 };
 
 export const viewRegex = /\/board\/view\//g;
@@ -73,6 +76,13 @@ export const checkMini = (url: string): boolean =>
     /\.com\/mini/g.test(url || location.href);
 
 /**
+ * 인물 갤러리인지를 확인하여 boolean을 반환합니다.
+ * @param url 확인할 URL
+ */
+export const checkPerson = (url: string): boolean =>
+    /\.com\/person/g.test(url || location.href);
+
+/**
  * URL에서 갤러리 종류를 확인하여 반환합니다.
  *
  * @param url 갤러리 종류를 확인할 URL.
@@ -81,6 +91,7 @@ export const checkMini = (url: string): boolean =>
 export const galleryType = (url: string, extra?: string): string => {
     if (checkMinor(url)) return types.MINOR + (extra ?? "");
     else if (checkMini(url)) return types.MINI + (extra ?? "");
+    else if (checkPerson(url)) return types.PERSON + (extra ?? "");
     else return types.MAJOR;
 };
 
@@ -91,7 +102,8 @@ export const view = (url: string): string => {
     const type = {
         [types.MINI]: urls.gall.mini,
         [types.MINOR]: urls.gall.minor,
-        [types.MAJOR]: urls.gall.major
+        [types.MAJOR]: urls.gall.major,
+        [types.PERSON]: urls.gall.person
     }[galleryType(url)];
 
     const urlParse = new URL(url);
