@@ -152,6 +152,7 @@ export default {
 
         const urlSearchParams = new URLSearchParams(location.href);
         const currentPostNo = urlSearchParams.get("no");
+        const isPageView = location.href.includes("/board/view");
 
         let originalLocation = location.href;
 
@@ -179,7 +180,6 @@ export default {
                 return false;
 
             const isAdmin = $(".useradmin_btnbox button").length > 0;
-            const isPageView = location.href.includes("/board/view");
 
             if (isAdmin && $(".article_chkbox").filter(":checked").length > 0) return false;
 
@@ -318,14 +318,13 @@ export default {
                 }
 
                 if (isAdmin && !isPageView) {
-                    $element
-                        .prepend(`<td class=gall_chk>${managerCheckbox}</td>`);
+                    $element.prepend(`<td class=gall_chk>${managerCheckbox}</td>`);
                 }
 
                 if ($element.data("type") === "icon_slow") {
                     $oldList.prepend($element);
                 } else {
-                    const $target = $oldList.children(`tr:has(em.icon_slow), tr:has(em.icon_notice), tr:has(em.icon_survey)`).last();
+                    const $target = $oldList.children(`tr:has(em.icon_slow), tr:has(em.icon_notice), tr:has(em.icon_survey), tr:has(em.icon_issue)`).last();
 
                     if ($target.length) {
                         $target.after($element);
