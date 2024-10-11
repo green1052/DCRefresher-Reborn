@@ -35,53 +35,31 @@ export default {
     },
     update: {
         customFonts(fontName) {
+            console.log(fontName);
+            fontName ??= this.settings.customFonts.default;
+            console.log(fontName);
+
             let $fontElement = $("#refresherFontStyle");
 
-            if (fontName) {
-                if (!$fontElement.length) {
-                    $fontElement = $("<style>").attr(
-                        "id",
-                        "refresherFontStyle"
-                    );
-
-                    $(document.head).append($fontElement);
-                }
-
-                $fontElement.html(
-                    `.refresherFont .refresher-block-popup, .refresherFont .refresher-captcha-popup, .refresherFont .refresher-frame, .refresherFont .refresher-popup, .refresherChangeDCFont, .refresherChangeDCFont body, .refresherChangeDCFont .gall_list, .refresherChangeDCFont button, .refresherChangeDCFont input, .refresherChangeDCFont .view_comment div, .refresherChangeDCFont .view_content_wrap, .refresherChangeDCFont .view_content_wrap a, .refresherChangeDCFont .btn_cmt_close, .refresherChangeDCFont .btn_cmt_close span, .refresherChangeDCFont .btn_cmt_refresh, .refresherChangeDCFont .btn_cmt_open{font-family:${fontName},-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Open Sans','Helvetica Neue',sans-serif!important}`
-                );
-
-                return;
+            if (!$fontElement.length) {
+                $fontElement = $("<style id=refresherFontStyle>");
+                $(document.head).append($fontElement);
             }
 
-            $fontElement.remove();
+            $fontElement.html(`.refresherChangeDCFont,.refresherChangeDCFont .btn_cmt_close,.refresherChangeDCFont .btn_cmt_close span,.refresherChangeDCFont .btn_cmt_open,.refresherChangeDCFont .btn_cmt_refresh,.refresherChangeDCFont .gall_list,.refresherChangeDCFont .view_comment div,.refresherChangeDCFont .view_content_wrap,.refresherChangeDCFont .view_content_wrap a,.refresherChangeDCFont body,.refresherChangeDCFont button,.refresherChangeDCFont input,.refresherFont .refresher-block-popup,.refresherFont .refresher-captcha-popup,.refresherFont .refresher-frame,.refresherFont .refresher-popup{font-family:${fontName},sans-serif}`);
         },
         changeDCFont(value) {
-            $(document.documentElement).toggleClass(
-                "refresherChangeDCFont",
-                value
-            );
+            $(document.documentElement).toggleClass("refresherChangeDCFont", value);
         },
         bodyFontSize(fontSize) {
             let $fontElement = $("#refresherFontStyleSize");
 
-            if (typeof fontSize === "number") {
-                if (!$fontElement.length) {
-                    $fontElement = $("<style>").attr(
-                        "id",
-                        "refresherFontStyleSize"
-                    );
-                    document.head.appendChild($fontElement.get(0)!);
-                }
-
-                $fontElement.html(`.refresherChangeDCFont .write_div {font-size: ${fontSize}px;}
-        .refresherFont .refresher-preview-contents-actual, .refresherFont .refresher-preview-contents-actual .write_div{font-size: ${
-                    Number(fontSize) + 2
-                }px;}`);
-                return;
+            if (!$fontElement.length) {
+                $fontElement = $("<style id=refresherFontStyleSize>");
+                document.head.appendChild($fontElement.get(0)!);
             }
 
-            $fontElement.remove();
+            $fontElement.html(`.refresherChangeDCFont .write_div{font-size:${fontSize}px}.refresherFont .refresher-preview-contents-actual,.refresherFont .refresher-preview-contents-actual .write_div{font-size:${fontSize + 2}px}`);
         }
     },
     func() {
