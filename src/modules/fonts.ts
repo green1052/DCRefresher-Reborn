@@ -35,9 +35,7 @@ export default {
     },
     update: {
         customFonts(fontName) {
-            console.log(fontName);
             fontName ??= this.settings.customFonts.default;
-            console.log(fontName);
 
             let $fontElement = $("#refresherFontStyle");
 
