@@ -48,11 +48,11 @@ importers:
         specifier: ^2.9.1
         version: 2.9.1(webpack@5.95.0)
       sass:
-        specifier: ^1.79.5
-        version: 1.79.5
+        specifier: ^1.79.6
+        version: 1.79.6
       sass-loader:
         specifier: ^16.0.2
-        version: 16.0.2(sass@1.79.5)(webpack@5.95.0)
+        version: 16.0.2(sass@1.79.6)(webpack@5.95.0)
       swc-loader:
         specifier: ^0.2.6
         version: 0.2.6(@swc/core@1.7.36)(webpack@5.95.0)
@@ -1360,8 +1360,8 @@ packages:
       webpack:
         optional: true
 
-  sass@1.79.5:
-    resolution: {integrity: sha512-W1h5kp6bdhqFh2tk3DsI771MoEJjvrSY/2ihJRJS4pjIyfJCw0nTsxqhnrUzaLMOJjFchj8rOvraI/YUVjtx5g==}
+  sass@1.79.6:
+    resolution: {integrity: sha512-PVVjeeiUGx6Nj4PtEE/ecwu8ltwfPKzHxbbVmmLj4l1FYHhOyfA0scuVF8sVaa+b+VY4z7BVKjKq0cPUQdUU3g==}
     engines: {node: '>=14.0.0'}
     hasBin: true
 
@@ -2780,14 +2780,14 @@ snapshots:
 
   safe-buffer@5.2.1: {}
 
-  sass-loader@16.0.2(sass@1.79.5)(webpack@5.95.0):
+  sass-loader@16.0.2(sass@1.79.6)(webpack@5.95.0):
     dependencies:
       neo-async: 2.6.2
     optionalDependencies:
-      sass: 1.79.5
+      sass: 1.79.6
       webpack: 5.95.0(@swc/core@1.7.36)(webpack-cli@5.1.4)
 
-  sass@1.79.5:
+  sass@1.79.6:
     dependencies:
       '@parcel/watcher': 2.4.1
       chokidar: 4.0.0
