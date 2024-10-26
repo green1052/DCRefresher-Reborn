@@ -5,7 +5,7 @@
   "devDependencies": {
     "@swc/core": "^1.7.39",
     "@types/js-cookie": "^3.0.6",
-    "@types/node": "^22.8.0",
+    "@types/node": "^22.8.1",
     "@types/webextension-polyfill": "^0.12.0",
     "@types/webpack": "^5.28.5",
     "@types/webpack-env": "^1.18.5",
