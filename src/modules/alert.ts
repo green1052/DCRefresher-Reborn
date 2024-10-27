@@ -12,13 +12,8 @@ export default {
         window.addEventListener(
             "message",
             (event) => {
-                if (event.source !== window) {
-                    return;
-                }
-
-                if (event.data.type && event.data.type === "ALERT") {
-                    Toast.show(event.data.text, false, 2600);
-                }
+                if (event.source === window && event.data?.type === "refresherAlert")
+                    Toast.show(event.data.message, false, 2500);
             },
             false
         );
