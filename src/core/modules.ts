@@ -5,7 +5,6 @@ import {filter} from "./filtering";
 import Frame from "./frame";
 import * as memo from "./memo";
 import * as settings from "./settings";
-import DeepProxy from "../utils/deepProxy";
 import * as dom from "../utils/dom";
 import * as http from "../utils/http";
 import * as ip from "../utils/ip";
@@ -64,7 +63,7 @@ const revokeModule = (mod: RefresherModule) => {
 export const modules = {
     lists: (): ModuleStore => module_store,
     load: (module: RefresherModule): Promise<void> => {
-        return new Promise<void>((resolve) => modules.register(module).then(() => resolve()));
+        return new Promise((resolve) => modules.register(module).then(resolve));
     },
     register: async (module: RefresherModule): Promise<void> => {
         if (!module) throw "Module is not defined.";
@@ -102,21 +101,16 @@ export const modules = {
             promises.push(
                 storage.module.get(module.name)
                     .then((data) => {
-                        module.data = new DeepProxy(data ?? {}, {
-                            set(): boolean {
-                                storage.module.setGlobal(
-                                    module.name,
-                                    JSON.stringify(module.data)
-                                );
-                                return true;
+                        module.data = data ?? {};
+                        module.data = new Proxy(module.data, {
+                            set(target, p, newValue, receiver) {
+                                storage.module.setGlobal(module.name, JSON.stringify(module.data));
+                                return Reflect.set(target, p, newValue, receiver);
                             },
 
-                            deleteProperty(): boolean {
-                                storage.module.setGlobal(
-                                    module.name,
-                                    JSON.stringify(module.data)
-                                );
-                                return true;
+                            deleteProperty(target, p) {
+                                storage.module.setGlobal(module.name, JSON.stringify(module.data));
+                                return Reflect.deleteProperty(target, p);
                             }
                         });
                     })
@@ -140,19 +134,13 @@ export const modules = {
         }
 
         if (module.url && !module.url.test(location.href)) {
-            console.log(
-                `📁 ignoring ${module.name}. current URL is not matching with the module's URL value.`
-            );
+            console.log(`📁 ignoring ${module.name}. current URL is not matching with the module's URL value.`);
             return;
         }
 
         runModule(module);
 
-        console.log(
-            `📁 ${module.name} module loaded. took ${(
-                performance.now() - start
-            ).toFixed(2)}ms.`
-        );
+        console.log(`📁 ${module.name} module loaded. took ${(performance.now() - start).toFixed(2)}ms.`);
     }
 };
 
