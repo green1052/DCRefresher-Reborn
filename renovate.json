@@ -2,7 +2,6 @@
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
     "extends": [
         "config:recommended",
-        "group:all",
         ":disableDependencyDashboard"
     ],
     "labels": [
@@ -13,7 +12,12 @@
             "matchCurrentVersion": "!/^0/",
             "automerge": true,
             "ignoreTests": true,
-            "rangeStrategy": "bump"
+            "rangeStrategy": "bump",
+            "groupName": "all dependencies",
+            "groupSlug": "all",
+            "matchPackageNames": [
+                "*"
+            ]
         }
     ]
 }
