@@ -2,8 +2,8 @@ import * as Toast from "../components/toast";
 import {queryString} from "../utils/http";
 import $ from "cash-dom";
 import ky from "ky";
-import {Cash} from "cash-dom/dist/cash";
 import * as storage from "../utils/storage";
+import {Cash} from "cash-dom/dist/cash";
 
 const AVERAGE_COUNTS_SIZE = 7;
 
@@ -44,6 +44,7 @@ const addRefreshText = (issueBox: HTMLElement) => {
         pageHead?.appendChild(button);
     }
 };
+
 let archiveArticleConfig = false;
 
 (async () => {
@@ -83,7 +84,7 @@ export default {
             unit: "ms"
         },
         autoRate: {
-            name: "자동 새로고침 주기 (기능 임시 중단)",
+            name: "자동 새로고침 주기",
             desc: "새로 올라오는 글의 수에 따라 새로고침 주기를 자동으로 제어합니다.",
             type: "check",
             default: true
@@ -164,10 +165,7 @@ export default {
         this.memory.load = async (customURL?, force?): Promise<boolean> => {
             if (document.hidden) return false;
 
-            if (
-                !force &&
-                (Date.now() < this.memory.lastRefresh + 500 || PAUSE_REFRESH)
-            ) {
+            if (!force && (Date.now() < this.memory.lastRefresh + 500 || PAUSE_REFRESH)) {
                 return false;
             }
 
@@ -198,41 +196,63 @@ export default {
 
             eventBus.emit("refresherGetPost", dom);
 
+            const $oldList = $(".gall_list:not([id]) tbody");
             const $newList = $(dom.querySelector(".gall_list:not([id]) tbody"));
+            const $newListChildren = $newList.children();
 
-            if ($newList.length === 0 || $newList.children().length === 0)
+            if ($newListChildren.length === 0 || $newListChildren.length === 0)
                 return false;
 
-            const $oldList = $(".gall_list:not([id]) tbody");
+            const newPostList: Cash[] = [];
 
-            $oldList.parent().removeClass("empty");
+            const oldCache = Array.from($oldList.find(".gall_num")).map((element) => element!.innerText);
+            const newCache = Array.from($newList.find(".gall_num")).map((element) => element!.innerText);
+
+            for (const element of $newListChildren) {
+                const $element = $(element);
+                const no = $element.find(".gall_num").text();
+
+                if (isAdmin) {
+                    $element.prepend(`<td class=gall_chk>${managerCheckbox}</td>`);
+                }
+
+                if (isPageView && no === currentPostNo) {
+                    $element
+                        .addClass("crt>")
+                        .find(".gall_num")
+                        .html(`<span class="sp_img crt_icon"> </span>`);
+
+                    continue;
+                }
+
+                if (!oldCache.includes(no)) {
+                    newPostList.push($element);
+                }
+            }
+
+            this.memory.new_counts = newPostList.length;
 
             if (this.memory.calledByPageTurn) {
-                if (isAdmin) {
-                    for (const element of $newList.children()) {
-                        $(element).prepend(`<td class=gall_chk>${managerCheckbox}</td>`);
-                    }
-                }
+                this.memory.calledByPageTurn = false;
 
                 if (queryString("s_keyword")) {
                     const keyword = $("input[name=s_keyword]").val() as string;
 
                     if (keyword) {
-                        for (const element of $newList.find(".gall_tit")) {
+                        for (const element of $newListChildren.find(".gall_tit")) {
                             const $element = $(element);
 
                             const $a = $element.find("a:first-child");
-                            const $tmpSubject = $a.clone();
+                            $a.find(".icon_img").remove();
 
-                            $tmpSubject.find(".icon_img").remove();
-
-                            const tmpSubjectHtml = $tmpSubject.html().trim();
+                            const tmpSubjectHtml = $a.html().trim();
 
                             if (tmpSubjectHtml.match(keyword)) {
                                 let subject = tmpSubjectHtml.replace(
                                     keyword,
                                     `<span class=mark>${keyword}</span>`
                                 );
+
                                 subject = $a
                                     .html()
                                     .replace(tmpSubjectHtml, subject);
@@ -242,143 +262,50 @@ export default {
                         }
                     }
                 }
-
-                $oldList.replaceWith($newList);
-                this.memory.calledByPageTurn = false;
-
-                return true;
-            }
-
-            const newCache: Record<string, Cash> = {};
-
-            for (const element of Array.from($newList.children()).reverse()) {
-                const $element = $(element);
-
-                if (
-                    $element.children("script").attr("src")?.includes("survey.js")
-                ) continue;
-
-                const no = element!.dataset.no || $element.find(".gall_num").text();
-
-                if (!no) continue;
-
-                newCache[no] = $element;
-            }
-
-            const cache: Record<string, Cash> = {};
-
-            for (const element of Array.from($oldList.children()).reverse()) {
-                const $element = $(element);
-
-                if (
-                    $element.hasClass("refresher-deleted") ||
-                    $element.children("script").attr("src")?.includes("survey.js")
-                ) continue;
-
-                const no = element!.dataset.no || $element.find(".gall_num").text();
-
-                if (!no) continue;
-
-                if (!newCache[no]) {
-                    if (currentPostNo) {
-                        cache[currentPostNo] = $element;
-                        continue;
-                    }
-
-                    // TODO 이전 글 위로 올라오는 오류 있음
-                    if (archiveArticleConfig) {
-                        // TODO 마지막 글은 무조건 삭제됨
-                        if ($element.is(":last-child")) {
-                            $element.remove();
-                        } else {
-                            $element.addClass("refresher-deleted");
-                        }
-
-                        continue;
-                    }
-
-                    $element.remove();
-                    continue;
-                }
-
-                cache[no] = $element;
-            }
-
-            const newPostList: Cash[] = [];
-
-            for (const [no, $element] of Object.entries(newCache)) {
-                const $old = cache[no];
-
-                if ($old) {
-                    $old.children(".gall_tit").html($element.children(".gall_tit").html());
-                    $old.children(".gall_count").html($element.children(".gall_count").html());
-                    $old.children(".gall_recommend").html($element.children(".gall_recommend").html());
-
-                    continue;
-                }
-
-                if (isAdmin && !isPageView) {
-                    $element.prepend(`<td class=gall_chk>${managerCheckbox}</td>`);
-                }
-
-                if ($element.data("type") === "icon_slow") {
-                    $oldList.prepend($element);
-                } else {
-                    const $target = $oldList.children(`tr:has(em.icon_slow), tr:has(em.icon_notice), tr:has(em.icon_survey), tr:has(em.icon_issue)`).last();
-
-                    if ($target.length) {
-                        $target.after($element);
-                    } else {
-                        const $hope = $oldList.children(`tr[class="ub-content "]`);
-
-                        if ($hope.length) {
-                            $hope.after($element);
-                        } else {
-                            $oldList.prepend($element);
-                        }
-                    }
-                }
-
-                newPostList.push($element);
-
-                if (this.status.fadeIn) {
-                    const delay = this.memory.new_counts * 23;
-
-                    $element
-                        .addClass("refresherNewPost")
-                        .css("animation-delay", `${delay}ms`);
-
-                    setTimeout(() => {
-                        if ($element.length > 0)
-                            $element
-                                .css("animation-delay", "")
-                                .removeClass("refresherNewPost");
-                    }, delay + 1000);
-
-                    this.memory.new_counts++;
+            } else if (this.status.fadeIn) {
+                for (const $element of newPostList) {
+                    $element.addClass("refresherNewPost");
+                    $element.css("animation-delay", `${this.memory.new_counts * 50}ms`);
                 }
             }
+
+            // TODO 왜 안됨?
+            // if (archiveArticleConfig) {
+            //     const different = oldCache.filter((x) => oldCache.slice(0, oldCache.length - newPostList.length).includes(x) && !newCache.includes(x));
+            //     let t = 0;
+            //
+            //     oldCache.forEach((no, index) => {
+            //         if (!different.includes(no)) return;
+            //
+            //         $newListChildren
+            //             .eq(index + newPostList.length - t - 1)
+            //             .before($oldList.children().eq(index).addClass("refresher-deleted"));
+            //         t++;
+            //     });
+            // }
+
+            $oldList.replaceWith($newList);
 
             eventBus.emit("newPostList", newPostList);
             eventBus.emit("refresh");
 
-            // if (this.status.autoRate) {
-            //     const averageCounts = this.memory.average_counts;
-            //     averageCounts.push(this.memory.new_counts);
-            //
-            //     if (averageCounts.length > AVERAGE_COUNTS_SIZE) {
-            //         averageCounts.shift();
-            //     }
-            //
-            //     const average =
-            //         averageCounts.reduce((a, b) => a + b) /
-            //         averageCounts.length;
-            //
-            //     this.memory.delay = Math.max(
-            //         600,
-            //         8 * Math.pow(2 / 3, 3 * average) * 1000
-            //     );
-            // }
+            if (this.status.autoRate) {
+                const averageCounts = this.memory.average_counts;
+                averageCounts.push(this.memory.new_counts);
+
+                if (averageCounts.length > AVERAGE_COUNTS_SIZE) {
+                    averageCounts.shift();
+                }
+
+                const average =
+                    averageCounts.reduce((a, b) => a + b) /
+                    averageCounts.length;
+
+                this.memory.delay = Math.max(
+                    600,
+                    8 * Math.pow(2 / 3, 3 * average) * 1000
+                );
+            }
 
             return true;
         };
@@ -423,28 +350,92 @@ export default {
             this.memory.load!(undefined, true);
         });
 
-        if (this.status.useBetterBrowse) {
-            this.memory.uuid = filter.add<HTMLAnchorElement>(
-                ".left_content article:has(.gall_listwrap) .bottom_paging_box a",
-                (element) => {
-                    if (element.href.includes("javascript:")) return;
+        window.addEventListener("popstate", () => {
+            this.memory.calledByPageTurn = true;
+            this.memory.load!(undefined, true);
+        });
 
-                    element.onclick = () => false;
+        if (!this.status.useBetterBrowse) return;
 
-                    element.addEventListener("click", async () => {
-                        const isPageView = location.href.includes("/board/view");
+        this.memory.uuid = filter.add<HTMLAnchorElement>(".left_content article:has(.gall_listwrap) .bottom_paging_box a", (element) => {
+                if (element.href.includes("javascript:")) return;
 
-                        if (isPageView) {
+                element.onclick = () => false;
+
+                element.addEventListener("click", async () => {
+                    const isPageView = location.href.includes("/board/view");
+
+                    if (isPageView) {
+                        history.pushState(
+                            null,
+                            document.title,
+                            http.mergeParamURL(location.href, element.href)
+                        );
+                    } else {
+                        history.pushState(
+                            null,
+                            document.title,
+                            element.href
+                        );
+                    }
+
+                    this.memory.calledByPageTurn = true;
+
+                    await this.memory.load!(location.href, true);
+
+                    document
+                        .querySelector(
+                            isPageView
+                                ? ".view_bottom_btnbox"
+                                : ".page_head"
+                        )
+                        ?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start"
+                        });
+                });
+            }
+        );
+
+        this.memory.uuid2 = eventBus.on(
+            "refresherGetPost",
+            (parsedBody: Document) => {
+                const pagingBox = parsedBody.querySelector(
+                    ".left_content article:has(.gall_listwrap) .bottom_paging_box"
+                );
+
+                const currentBottomPagingBox = document.querySelector(
+                    ".left_content article:has(.gall_listwrap) .bottom_paging_box"
+                );
+
+                if (currentBottomPagingBox && pagingBox) {
+                    currentBottomPagingBox.innerHTML = pagingBox.innerHTML;
+                }
+
+                const pagingBoxAnchors =
+                    document.querySelectorAll<HTMLAnchorElement>(".left_content article:has(.gall_listwrap) .bottom_paging_box a");
+
+                if (!pagingBoxAnchors) return;
+
+                for (const a of pagingBoxAnchors) {
+                    const href = a.href;
+
+                    if (href.includes("javascript:")) continue;
+
+                    a.onclick = () => false;
+
+                    a.addEventListener("click", async () => {
+                        if (location.href.includes("/board/view")) {
                             history.pushState(
                                 null,
                                 document.title,
-                                http.mergeParamURL(location.href, element.href)
+                                http.mergeParamURL(location.href, href)
                             );
                         } else {
                             history.pushState(
                                 null,
                                 document.title,
-                                element.href
+                                href
                             );
                         }
 
@@ -452,87 +443,20 @@ export default {
 
                         await this.memory.load!(location.href, true);
 
-                        document
-                            .querySelector(
-                                isPageView
-                                    ? ".view_bottom_btnbox"
-                                    : ".page_head"
-                            )
-                            ?.scrollIntoView({
-                                block: "start",
-                                behavior: "smooth"
-                            });
-                    });
-                }
-            );
-
-            window.addEventListener("popstate", () => {
-                this.memory.calledByPageTurn = true;
-                this.memory.load!(undefined, true);
-            });
-
-            this.memory.uuid2 = eventBus.on(
-                "refresherGetPost",
-                (parsedBody: Document) => {
-                    const pagingBox = parsedBody.querySelector(
-                        ".left_content article:has(.gall_listwrap) .bottom_paging_box"
-                    );
-
-                    const currentBottomPagingBox = document.querySelector(
-                        ".left_content article:has(.gall_listwrap) .bottom_paging_box"
-                    );
-
-                    if (currentBottomPagingBox && pagingBox) {
-                        currentBottomPagingBox.innerHTML = pagingBox.innerHTML;
-                    }
-
-                    const pagingBoxAnchors =
-                        document.querySelectorAll<HTMLAnchorElement>(
-                            ".left_content article:has(.gall_listwrap) .bottom_paging_box a"
+                        const query = document.querySelector(
+                            location.href.includes("/board/view")
+                                ? ".view_bottom_btnbox"
+                                : ".page_head"
                         );
 
-                    if (pagingBoxAnchors) {
-                        for (const a of pagingBoxAnchors) {
-                            const href = a.href;
-
-                            if (href.includes("javascript:")) continue;
-
-                            a.onclick = () => false;
-
-                            a.addEventListener("click", async () => {
-                                if (location.href.includes("/board/view")) {
-                                    history.pushState(
-                                        null,
-                                        document.title,
-                                        http.mergeParamURL(location.href, href)
-                                    );
-                                } else {
-                                    history.pushState(
-                                        null,
-                                        document.title,
-                                        href
-                                    );
-                                }
-                                this.memory.calledByPageTurn = true;
-
-                                await this.memory.load!(location.href, true);
-
-                                const query = document.querySelector(
-                                    location.href.includes("/board/view")
-                                        ? ".view_bottom_btnbox"
-                                        : ".page_head"
-                                );
-
-                                query?.scrollIntoView({
-                                    block: "start",
-                                    behavior: "smooth"
-                                });
-                            });
-                        }
-                    }
+                        query?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start"
+                        });
+                    });
                 }
-            );
-        }
+            }
+        );
     },
     revoke(
         _,
@@ -562,7 +486,7 @@ export default {
         uuid: string | null;
         uuid2: string | null;
         cache: object;
-        new_counts: 0;
+        new_counts: number;
         average_counts: number[];
         delay: number;
         refresh: number;
