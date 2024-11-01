@@ -238,8 +238,8 @@ export default {
         };
 
         this.memory.newPostListEvent = eventBus.on("newPostList", async (articles: Cash[]) => {
-            for (const article of articles) {
-                const $writer = article.find(".ub-writer");
+            for (const $article of articles) {
+                const $writer = $article.find(".ub-writer");
                 const uid = $writer.data("uid");
 
                 if (!uid) continue;
@@ -250,33 +250,32 @@ export default {
                     if (permBan) {
                         const $permBan = $(`<span style="color: red" class="ip permBan refresherUserData" title="${permBan}">[${permBan}]</span>`);
 
-                        if (article.data("refresherPermBan") === true) {
-                            article.find(".permBan").replaceWith($permBan);
-                            return;
+                        if ($article.data("refresherPermBan") === true) {
+                            $article.find(".permBan").replaceWith($permBan);
+                        } else {
+                            $article.data("refresherPermBan", true);
+                            $writer.add($permBan);
                         }
-
-                        article.data("refresherPermBan", true);
-                        $writer.add($permBan);
                     }
                 }
 
-                if (this.status.checkRatio) {
-                    let ratio = this.data!.ratio?.[uid] ?? await getRatio(uid);
+                if (!this.status.checkRatio) continue;
 
-                    if (Date.now() - ratio.date > 1000 * 60 * 60 * 24 * 3) {
-                        ratio = await getRatio(uid);
-                    }
+                let ratio = this.data!.ratio?.[uid];
 
-                    const $ratio = $(`<span class="ip ratio refresherUserData" title="${ratio.article}/${ratio.comment}">[${ratio.article}/${ratio.comment}]</span>`);
-
-                    if (article.data("refresherRatio") === true) {
-                        article.find(".ratio").replaceWith($ratio);
-                        return;
-                    }
-
-                    article.data("refresherRatio", true);
-                    $writer.append($ratio);
+                if (!ratio || (ratio && Date.now() - ratio.date > 1000 * 60 * 60 * 24 * 3)) {
+                    ratio = await getRatio(uid);
                 }
+
+                const $ratio = $(`<span class="ip ratio refresherUserData" title="${ratio.article}/${ratio.comment}">[${ratio.article}/${ratio.comment}]</span>`);
+
+                if ($article.data("refresherRatio") === true) {
+                    $article.find(".ratio").replaceWith($ratio);
+                    continue;
+                }
+
+                $article.data("refresherRatio", true);
+                $writer.append($ratio);
             }
         });
     },
