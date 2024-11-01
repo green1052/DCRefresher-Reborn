@@ -230,11 +230,11 @@ $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
 }
 
 .gall_writer {
-    position: static !important;
     text-overflow: ellipsis;
+    overflow: hidden;
+    position: static !important;
     white-space: nowrap;
     word-wrap: normal;
-    overflow: hidden;
     display: block;
 }
 
@@ -250,7 +250,6 @@ tr.gall_writer {
     margin-left: unset !important;
 }
 
-//
 //.gall_writer span:not(.refresherMemoData).ip.refresherUserData {
 //    display: contents;
 //}
