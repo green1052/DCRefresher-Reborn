@@ -112,8 +112,6 @@ export async function submitComment(
         };
     }
 
-    console.log(memo);
-
     const params = new URLSearchParams(secretKey(dom));
     params.set("service_code", code);
     params.set("c_gall_id", preData.gallery);
