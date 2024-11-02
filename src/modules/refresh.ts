@@ -274,20 +274,22 @@ export default {
                 }
             }
 
-            // TODO 왜 안됨?
-            // if (archiveArticleConfig) {
-            //     const different = oldCache.filter((x) => oldCache.slice(0, oldCache.length - newPostList.length).includes(x) && !newCache.includes(x));
-            //     let t = 0;
-            //
-            //     oldCache.forEach((no, index) => {
-            //         if (!different.includes(no)) return;
-            //
-            //         $newListChildren
-            //             .eq(index + newPostList.length - t - 1)
-            //             .before($oldList.children().eq(index).addClass("refresher-deleted"));
-            //         t++;
-            //     });
-            // }
+            if (archiveArticleConfig) {
+                const different = oldCache.filter((x) => oldCache.slice(0, oldCache.length - newPostList.length).includes(x) && !newCache.includes(x));
+                let t = 0;
+
+                oldCache.forEach((no, index) => {
+                    if (!different.includes(no)) return;
+
+                    $newListChildren
+                        .eq(index + newPostList.length - t - 1)
+                        .before($oldList.children().eq(index).addClass("refresher-deleted"))
+                        .last()
+                        .remove();
+
+                    t++;
+                });
+            }
 
             $oldList.replaceWith($newList);
 
