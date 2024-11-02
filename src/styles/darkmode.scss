@@ -41,6 +41,16 @@ $dark-red: #e21919;
         }
     }
 
+    .refresher-tooltip {
+        background-color: $dark-tint-light;
+        color: $dark-text-color-bright;
+        border: 1px solid #505050;
+
+        &.blur {
+            background-color: $dark-tint-light-opacity;
+        }
+    }
+
     .refresher-frame-outer {
         &.background {
             background-color: rgba(82, 82, 82, 0.6);

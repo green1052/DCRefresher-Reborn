@@ -3,6 +3,76 @@ import * as communicate from "../core/communicate";
 import * as color from "../utils/color";
 import {getType} from "../utils/user";
 import type {Nullable, NullableProperties, ObjectEnum} from "../utils/types";
+import $ from "cash-dom";
+
+const tooltip = {
+    element: document.createElement("div"),
+    init: false,
+    lastRequest: 0,
+    controller: new AbortController(),
+    lastElement: null,
+    lastTimeout: 0,
+    shouldOutHandle: false,
+    cursorOut: false,
+    create(ev: MouseEvent, use: boolean) {
+        if (!use) return;
+
+        tooltip.cursorOut = false;
+
+        if (Date.now() - tooltip.lastRequest < 150) {
+            tooltip.lastRequest = Date.now();
+            tooltip.lastElement = ev.target;
+
+            if (tooltip.lastTimeout) clearTimeout(tooltip.lastTimeout);
+
+            tooltip.lastTimeout = window.setTimeout(() => {
+                if (
+                    !tooltip.cursorOut &&
+                    tooltip.lastElement === ev.target
+                ) {
+                    tooltip.create(ev, use);
+                }
+
+                tooltip.cursorOut = false;
+            }, 150);
+
+            return;
+        }
+
+        tooltip.lastRequest = Date.now();
+
+        tooltip.element.classList.remove("hide");
+        tooltip.element.classList.add("refresher-tooltip");
+
+        if (!tooltip.init) {
+            document.body.appendChild(tooltip.element);
+            tooltip.init = true;
+        }
+
+        tooltip.element.innerHTML = `<p>${Array.from($(ev.target as HTMLElement).children(".refresherUserData[title]")).map((e) => e?.outerHTML).join(" ")}</p>`;
+    },
+    move(ev: MouseEvent, use: boolean) {
+        if (!use) return;
+
+        const rect = tooltip.element.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+        const x = Math.min(ev.clientX, innerWidth - width - 10);
+        const y = Math.min(ev.clientY, innerHeight - height - 10);
+
+        tooltip.element.style.transform = `translate(${x}px, ${y}px)`;
+    },
+    close(use: boolean) {
+        tooltip.cursorOut = true;
+
+        if (use) {
+            tooltip.controller.abort();
+            tooltip.controller = new AbortController();
+        }
+
+        tooltip.element.classList.add("hide");
+    }
+};
 
 const memoAsk = (
     selected: NullableProperties<ObjectEnum<RefresherMemoType>>,
@@ -227,6 +297,12 @@ export default {
             desc: "IP 정보를 표시합니다.",
             type: "check",
             default: true
+        },
+        showTooltip: {
+            name: "툴팁 표시",
+            desc: "마우스를 올리면 정보를 표시합니다.",
+            type: "check",
+            default: false
         }
     },
     require: ["filter", "eventBus", "ip", "memo"],
@@ -389,6 +465,21 @@ export default {
         this.memory.always = filter.add(
             ".ub-writer:not([user_name])",
             (element) => {
+                element.addEventListener("mouseenter", (ev) => {
+                    if (this.status.showTooltip)
+                        tooltip.create(ev, this.status.showTooltip);
+                });
+
+                element.addEventListener("mousemove", (ev) => {
+                    if (this.status.showTooltip)
+                        tooltip.move(ev, this.status.showTooltip);
+                });
+
+                element.addEventListener("mouseleave", () => {
+                    if (this.status.showTooltip)
+                        tooltip.close(this.status.showTooltip);
+                });
+
                 ipInfoAdd(element);
                 IdInfoAdd(element);
                 memoAdd(element);
@@ -543,6 +634,7 @@ export default {
         showFixedNickUID: RefresherCheckSettings;
         showHalfFixedNickUID: RefresherCheckSettings;
         showIpInfo: RefresherCheckSettings;
+        showTooltip: RefresherCheckSettings;
     };
     require: ["filter", "eventBus", "ip", "memo"];
 }>;

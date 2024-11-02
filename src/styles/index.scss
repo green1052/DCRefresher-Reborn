@@ -1459,6 +1459,25 @@ tr.gall_writer {
     text-align: right;
 }
 
+.refresher-tooltip {
+    &.hide {
+        opacity: 0;
+        pointer-events: none !important;
+    }
+
+    display: block;
+    background-color: #fff;
+    box-shadow: $shadow-2dp;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1000;
+    overflow: hidden;
+    border-radius: 10px;
+    transition: opacity 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+    padding: 13px 20px;
+}
+
 .refresher-mini-preview {
     position: fixed;
     left: 0;
