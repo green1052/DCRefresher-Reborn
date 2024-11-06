@@ -3,7 +3,7 @@
   "version": "3.11.13",
   "description": "디시인사이드 개선 확장 프로그램",
   "devDependencies": {
-    "@swc/core": "^1.9.0",
+    "@swc/core": "^1.9.1",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^22.9.0",
     "@types/webextension-polyfill": "^0.12.1",
