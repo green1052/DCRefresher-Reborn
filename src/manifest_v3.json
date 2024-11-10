@@ -3,13 +3,12 @@
     "manifest_version": 3,
     "permissions": [
         "activeTab",
-        "storage",
-        "unlimitedStorage",
         "contextMenus",
-        "declarativeNetRequest"
+        "declarativeNetRequest",
+        "storage",
+        "unlimitedStorage"
     ],
     "host_permissions": [
-        "https://dcrefresher.green1052.com/*",
         "https://*.dcinside.com/*"
     ],
     "background": {
@@ -52,11 +51,11 @@
                 "https://*.dcinside.com/*"
             ],
             "exclude_matches": [
-                "https://wiki.dcinside.com/*",
                 "https://event.dcinside.com/*",
-                "https://mall.dcinside.com/*",
                 "https://h5.dcinside.com/*",
-                "https://m.dcinside.com/*"
+                "https://m.dcinside.com/*",
+                "https://mall.dcinside.com/*",
+                "https://wiki.dcinside.com/*"
             ],
             "run_at": "document_start"
         }
