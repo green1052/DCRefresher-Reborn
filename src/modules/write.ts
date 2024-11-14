@@ -99,7 +99,13 @@ export default {
             this.data!.temporarySave.date = 0;
         };
 
-        inject("../assets/js/attach_upload.js");
+        inject("../assets/js/editor.js");
+
+        window.addEventListener("message", (event) => {
+            if (event.source !== window || event.data?.type !== "refresherEditorLoaded") return;
+
+
+        });
 
         window.addEventListener("beforeunload", (ev) => {
             if (this.status.preventExit && !$("button:hover").eq(-1).hasClass("write")) {
@@ -112,7 +118,7 @@ export default {
                 const url = data.web__url ?? data.url;
 
                 window.postMessage({
-                    type: "attach_upload",
+                    type: "refresherAttachUpload",
                     data: {
                         thumburl: url,
                         imageurl: url,
@@ -139,6 +145,7 @@ export default {
 
                     const $canvas = $("#tx_canvas_wysiwyg").contents().find("body");
                     const canvas = $canvas.get(0) as HTMLBodyElement;
+
                     const selectTop = () => {
                         if (!canvas) return;
 
@@ -179,107 +186,112 @@ export default {
         this.memory.canvas = filter.add<HTMLIFrameElement>(
             "#tx_canvas_wysiwyg",
             (element) => {
-                const win = element.contentWindow!;
+                window.addEventListener("message", (event) => {
+                    if (event.source !== window || event.data?.type !== "refresherEditorLoaded") return;
+                    console.log(2);
 
-                win.addEventListener("DOMContentLoaded", () => {
-                    setTimeout(() => {
-                        const $dom = $(element.contentDocument);
-                        const $contentContainer = $dom.find("body");
-
-                        if (this.status.imageUpload) {
-                            $contentContainer.on("paste", async (ev) => {
-                                const data = (ev as ClipboardEvent).clipboardData;
-
-                                if (!data || !data.files.length) return;
-
-                                ev.stopPropagation();
-                                ev.preventDefault();
-
-                                Toast.show("이미지 업로드 중...", false, 1000);
-
-                                const r_key = $("#r_key").val() as string;
-                                const gall_id = $("#id").val() as string;
-                                const gall_no = $("#gallery_no").val() as string;
-                                const _GALLTYPE_ = $("#_GALLTYPE_").val() as string;
-                                const post_no = $("#no").val() as string;
-
-                                const form = new FormData();
-                                form.append("r_key", r_key);
-                                form.append("gall_id", gall_id);
-                                form.append("gall_no", gall_no);
-                                form.append("post_no", post_no);
-                                form.append("upload_ing", "N");
-                                form.append("_GALLTYPE_", _GALLTYPE_);
-
-                                const images = [];
-
-                                for (const file of data.files) {
-                                    if (!file.type.startsWith("image/")) continue;
-
-                                    const image = this.status.convertWebp
-                                        ? await blobToWebP(file, {
-                                            quality: this.status.convertWebpQuality / 100
-                                        })
-                                        : file;
-
-                                    form.set(
-                                        "files",
-                                        new File(
-                                            [image],
-                                            `${new Date().getTime()}-${file.name.split(".").at(-1)}`,
-                                            {
-                                                type: image.type
-                                            }
-                                        )
-                                    );
-
-                                    try {
-                                        const response = await ky.post(`https://upimg.dcinside.com/upimg_file.php?id=${gall_id}&r_key=${r_key}`, {body: form, timeout: 30000}).json<any>();
-                                        images.push(response.files[0]);
-                                    } catch (e) {
-                                        Toast.show(String(e), true, 5000);
-                                        return;
-                                    }
-                                }
-
-                                for (const image of images) {
-                                    attachImage($contentContainer, image);
-                                }
-
-                                Toast.show("이미지 업로드 완료", false, 1000);
-                            });
-                        }
-
-                        if (this.status.temporarySave) {
-                            const gallId = $("form > input[name=id]").val() as string;
-
-                            if (Date.now() - this.data!.temporarySave.date > 86400000) {
-                                resetTemporaryData();
-                            }
-
-                            if (
-                                this.data!.temporarySave.id === gallId &&
-                                this.data!.temporarySave.title &&
-                                this.data!.temporarySave.content &&
-                                this.data!.temporarySave.date &&
-                                confirm("이전에 작성한 글이 있습니다. 불러오시겠습니까? (취소 시 삭제)")
-                            ) {
-                                $("#subject").val(this.data!.temporarySave.title);
-                                $contentContainer.html(this.data!.temporarySave.content);
-                            } else {
-                                resetTemporaryData();
-                            }
-
-                            this.data!.temporarySave.id = gallId;
-
-                            setInterval(() => {
-                                this.data!.temporarySave.title = $("#subject").val() as string;
-                                this.data!.temporarySave.content = $contentContainer.html() as string;
-                                this.data!.temporarySave.date = Date.now();
-                            }, 5000);
-                        }
-                    }, 500);
                 });
+
+
+                const $dom = $(element.contentDocument);
+                const $contentContainer = $dom.find("body");
+
+                if (this.status.imageUpload) {
+                    $contentContainer.on("paste", async (ev: ClipboardEvent) => {
+                        const data = ev.clipboardData;
+
+                        if (!data || !data.files.length) return;
+
+                        ev.stopPropagation();
+                        ev.preventDefault();
+
+                        Toast.show("이미지 업로드 중...", false, 1000);
+
+                        const r_key = $("#r_key").val() as string;
+                        const gall_id = $("#id").val() as string;
+                        const gall_no = $("#gallery_no").val() as string;
+                        const _GALLTYPE_ = $("#_GALLTYPE_").val() as string;
+                        const post_no = $("#no").val() as string;
+
+                        const form = new FormData();
+                        form.append("r_key", r_key);
+                        form.append("gall_id", gall_id);
+                        form.append("gall_no", gall_no);
+                        form.append("post_no", post_no);
+                        form.append("upload_ing", "N");
+                        form.append("_GALLTYPE_", _GALLTYPE_);
+
+                        const images = [];
+
+                        for (const file of data.files) {
+                            if (!file.type.startsWith("image/")) continue;
+
+                            const image = this.status.convertWebp
+                                ? await blobToWebP(file, {
+                                    quality: this.status.convertWebpQuality / 100
+                                })
+                                : file;
+
+                            form.set(
+                                "files",
+                                new File(
+                                    [image],
+                                    `${new Date().getTime()}-${file.name.split(".").at(-1)}`,
+                                    {
+                                        type: image.type
+                                    }
+                                )
+                            );
+
+                            try {
+                                const response = await ky.post(`https://upimg.dcinside.com/upimg_file.php?id=${gall_id}&r_key=${r_key}`, {
+                                    body: form,
+                                    timeout: 30000
+                                }).json<any>();
+
+                                images.push(response.files[0]);
+                            } catch (e) {
+                                Toast.show(String(e), true, 5000);
+                                return;
+                            }
+                        }
+
+                        for (const image of images) {
+                            attachImage($contentContainer, image);
+                        }
+
+                        Toast.show("이미지 업로드 완료", false, 1000);
+                    });
+                }
+
+                if (this.status.temporarySave) {
+                    const gallId = $("form > input[name=id]").val() as string;
+
+                    if (Date.now() - this.data!.temporarySave.date > 86400000) {
+                        resetTemporaryData();
+                    }
+
+                    if (
+                        this.data!.temporarySave.id === gallId &&
+                        this.data!.temporarySave.title &&
+                        this.data!.temporarySave.content &&
+                        this.data!.temporarySave.date &&
+                        confirm("이전에 작성한 글이 있습니다. 불러오시겠습니까? (취소 시 삭제)")
+                    ) {
+                        $("#subject").val(this.data!.temporarySave.title);
+                        $contentContainer.html(this.data!.temporarySave.content);
+                    } else {
+                        resetTemporaryData();
+                    }
+
+                    this.data!.temporarySave.id = gallId;
+
+                    setInterval(() => {
+                        this.data!.temporarySave.title = $("#subject").val() as string;
+                        this.data!.temporarySave.content = $contentContainer.html() as string;
+                        this.data!.temporarySave.date = Date.now();
+                    }, 5000);
+                }
 
                 filter.remove(this.memory.canvas);
             }
