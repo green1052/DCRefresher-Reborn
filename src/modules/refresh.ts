@@ -87,7 +87,7 @@ export default {
             name: "자동 새로고침 주기",
             desc: "새로 올라오는 글의 수에 따라 새로고침 주기를 자동으로 제어합니다.",
             type: "check",
-            default: true
+            default: false
         },
         fadeIn: {
             name: "새 게시글 효과",
@@ -274,22 +274,22 @@ export default {
                 }
             }
 
-            if (archiveArticleConfig) {
-                const different = oldCache.filter((x) => oldCache.slice(0, oldCache.length - newPostList.length).includes(x) && !newCache.includes(x));
-                let t = 0;
-
-                oldCache.forEach((no, index) => {
-                    if (!different.includes(no)) return;
-
-                    $newListChildren
-                        .eq(index + newPostList.length - t - 1)
-                        .before($oldList.children().eq(index).addClass("refresher-deleted"))
-                        .last()
-                        .remove();
-
-                    t++;
-                });
-            }
+            // if (archiveArticleConfig) {
+            //     const different = oldCache.filter((x) => oldCache.slice(0, oldCache.length - newPostList.length).includes(x) && !newCache.includes(x));
+            //     let t = 0;
+            //
+            //     oldCache.forEach((no, index) => {
+            //         if (!different.includes(no)) return;
+            //
+            //         $newListChildren
+            //             .eq(index + newPostList.length - t - 1)
+            //             .before($oldList.children().eq(index).addClass("refresher-deleted"))
+            //             .last()
+            //             .remove();
+            //
+            //         t++;
+            //     });
+            // }
 
             $oldList.replaceWith($newList);
 

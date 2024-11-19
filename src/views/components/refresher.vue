@@ -61,8 +61,7 @@
                     <div class="text">
                         <h3>{{ easterEgg ? "(경) 쌀먹충 정상화 (축)" : "DCRefresher Reborn" }}</h3>
                         <p>
-                            <span class="version">{{ getVersion() }}<a href="https://github.com/green1052/DCRefresher-Reborn?tab=readme-ov-file#%EC%A0%95%EC%83%81%ED%99%94-%EA%B3%B5%EC%A7%80"
-                                                                       target="_blank">(개발 잠정 중단)</a></span>
+                            <span class="version">{{ getVersion() }}</span>
                             <a v-for="link in links" @click="open(link.url)">{{ link.text }}</a>
                         </p>
                         <p>

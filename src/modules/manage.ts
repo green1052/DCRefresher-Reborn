@@ -44,9 +44,18 @@ export default {
         },
         checkRatio: {
             name: "글댓비 표시",
-            desc: "글댓비를 표시합니다. (3일 마다 갱신, 새 글 작성시에만 조회)",
+            desc: "글댓비를 표시합니다. (1시간 마다 갱신, 새 글 작성시에만 조회)",
             type: "check",
             default: false
+        },
+        alarmRatio: {
+            name: "깡계 알림",
+            desc: "글댓합이 설정한 값 이하일 때 강조 표시합니다. (0이면 비활성화)",
+            type: "range",
+            default: 0,
+            min: 0,
+            max: 5000,
+            step: 10
         },
         deleteViaCtrl: {
             name: "Ctrl로 삭제",
@@ -180,13 +189,21 @@ export default {
                 const ratio = this.data!.ratio[element.dataset.uid!];
 
                 if (!ratio) return false;
-
+                
                 element.dataset.refresherRatio = "true";
 
                 const text = document.createElement("span");
                 text.className = "ip ratio refresherUserData";
                 text.innerHTML = `[${ratio.article}/${ratio.comment}]`;
                 text.title = `${ratio.article}/${ratio.comment}`;
+
+                if (this.status.alarmRatio > 0) {
+                    const calculatedRatio = ratio.article + ratio.comment;
+
+                    if (calculatedRatio <= this.status.alarmRatio) {
+                        text.style.color = "red";
+                    }
+                }
 
                 const fl = element.querySelector(".fl");
 
@@ -263,11 +280,19 @@ export default {
 
                 let ratio = this.data!.ratio?.[uid];
 
-                if (!ratio || (ratio && Date.now() - ratio.date > 1000 * 60 * 60 * 24 * 3)) {
+                if (!ratio || (ratio && Date.now() - ratio.date > 3600000)) {
                     ratio = await getRatio(uid);
                 }
 
                 const $ratio = $(`<span class="ip ratio refresherUserData" title="${ratio.article}/${ratio.comment}">[${ratio.article}/${ratio.comment}]</span>`);
+
+                if (this.status.alarmRatio > 0) {
+                    const calculatedRatio = ratio.article + ratio.comment;
+
+                    if (calculatedRatio <= this.status.alarmRatio) {
+                        $ratio.css("color", "red");
+                    }
+                }
 
                 if ($article.data("refresherRatio") === true) {
                     $article.find(".ratio").replaceWith($ratio);
@@ -299,6 +324,7 @@ export default {
         checkViaShift: RefresherCheckSettings;
         checkCommentViaCtrl: RefresherCheckSettings;
         checkRatio: RefresherCheckSettings;
+        alarmRatio: RefresherRangeSettings;
         deleteViaCtrl: RefresherCheckSettings;
         checkPermBan: RefresherCheckSettings;
     };
