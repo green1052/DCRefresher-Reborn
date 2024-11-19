@@ -1,6 +1,6 @@
 {
   "name": "dcrefresher-reborn",
-  "version": "3.11.13",
+  "version": "3.11.14",
   "description": "디시인사이드 개선 확장 프로그램",
   "devDependencies": {
     "@swc/core": "^1.9.2",
