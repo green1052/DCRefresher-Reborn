@@ -94,7 +94,7 @@ export default {
                 delete data["refresher.database.lastUpdate"];
 
                 try {
-                    copyToClipboard(JSON.stringify(data, null, 4));
+                    copyToClipboard(JSON.stringify(data));
                     Toast.show("데이터를 클립보드로 내보냈습니다.", false, 3000);
                 } catch {
                     Toast.show("데이터를 클립보드로 내보내는데 실패했습니다.", true, 3000);

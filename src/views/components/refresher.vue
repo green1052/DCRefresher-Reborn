@@ -601,7 +601,7 @@ export default Vue.extend({
     },
     methods: {
         exportMemo() {
-            navigator.clipboard.writeText(JSON.stringify(this.memos, null, 4))
+            navigator.clipboard.writeText(JSON.stringify(this.memos))
                 .then(() => {
                     alert("클립보드에 복사되었습니다.");
                 })
@@ -637,7 +637,7 @@ export default Vue.extend({
             }
         },
         exportBlock() {
-            navigator.clipboard.writeText(JSON.stringify(this.blocks, null, 4))
+            navigator.clipboard.writeText(JSON.stringify(this.blocks))
                 .then(() => {
                     alert("클립보드에 복사되었습니다.");
                 })
