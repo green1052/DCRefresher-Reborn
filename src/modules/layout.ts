@@ -182,21 +182,19 @@ export default {
     },
     require: [],
     func() {
-        if (
-            location.href.includes("board/view") &&
-            !this.status.useCompactModeOnView
-        )
-            return;
+        const isPageView = location.href.includes("board/view");
+        
+        if (!isPageView || (isPageView && this.status.useCompactModeOnView)) {
+            this.memory.resize = () =>
+                updateWindowSize(
+                    this.status.forceCompact,
+                    this.status.activePixel,
+                    innerWidth
+                );
 
-        this.memory.resize = () =>
-            updateWindowSize(
-                this.status.forceCompact,
-                this.status.activePixel,
-                innerWidth
-            );
-
-        window.addEventListener("resize", this.memory.resize);
-        this.memory.resize();
+            window.addEventListener("resize", this.memory.resize);
+            this.memory.resize();
+        }
 
         this.update.hideGalleryView.bind(this)(this.status.hideGalleryView);
         this.update.hideUselessView.bind(this)(this.status.hideUselessView);
