@@ -183,7 +183,7 @@ export default {
     require: [],
     func() {
         const isPageView = location.href.includes("board/view");
-        
+
         if (!isPageView || (isPageView && this.status.useCompactModeOnView)) {
             this.memory.resize = () =>
                 updateWindowSize(
