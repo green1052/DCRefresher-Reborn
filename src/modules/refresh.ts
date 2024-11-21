@@ -165,11 +165,6 @@ export default {
         this.memory.load = async (customURL?, force?): Promise<boolean> => {
             if (document.hidden) return false;
 
-            // DC-Modtools 호환
-            if ($(".ub-content[retry-count][data-must-parse]").length > 0) {
-                return false;
-            }
-
             if (!force && (Date.now() < this.memory.lastRefresh + 500 || PAUSE_REFRESH)) {
                 return false;
             }
