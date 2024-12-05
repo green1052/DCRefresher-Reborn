@@ -181,7 +181,7 @@ export default {
 
             if (isAdmin && $(".article_chkbox").filter(":checked").length > 0) return false;
 
-            const managerCheckbox = $("#minor_manager_checkbox-tmpl").html();
+            const managerCheckbox = $(`#minor_td-tmpl[type="text/x-jquery-tmpl"]`).html();
 
             this.memory.lastRefresh = Date.now();
             this.memory.new_counts = 0;
