@@ -213,7 +213,7 @@ export default {
                 const no = $element.find(".gall_num").text();
 
                 if (!isPageView && isAdmin) {
-                    $element.prepend(`<td class=gall_chk>${managerCheckbox}</td>`);
+                    $element.prepend(managerCheckbox);
                 }
 
                 if (isPageView && no === currentPostNo) {
