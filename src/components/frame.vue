@@ -11,7 +11,7 @@
         <div v-if="frame.error" class="refresher-preview-contents refresher-error">
             <h3>{{ frame.error.title || "알 수 없는 오류" }}</h3>
             <br/>
-            <img :src="getURL('/assets/icons/god.webp')" style="width: 150px; height: 150px;"/>
+            <img :src="getURL('/assets/icons/charlotte.webp')" style="width: 150px; height: 150px;"/>
             <br/>
             <br/>
             <p>가능한 경우:</p>
