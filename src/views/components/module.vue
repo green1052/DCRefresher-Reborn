@@ -46,7 +46,7 @@ export default Vue.extend({
     },
     methods: {
         update(_module, _key, value) {
-            storage.set(this.name.enable, value);
+            storage.set(`${this.name}.enable`, value);
 
             // TODO : 전체 로직 깔끔하게 변경
 
