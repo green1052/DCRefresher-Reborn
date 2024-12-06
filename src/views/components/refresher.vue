@@ -51,7 +51,7 @@
                 <div class="info">
                     <div class="icon-wrap">
                         <img v-if="easterEgg"
-                             :src="getURL('/assets/icons/reboot.webp')"
+                             :src="getURL('/assets/icons/charlotte2.webp')"
                              class="icon"/>
                         <img v-else
                              :src="getURL('/assets/icons/logo/Icon.png')"
@@ -59,7 +59,7 @@
                     </div>
 
                     <div class="text">
-                        <h3>{{ easterEgg ? "(경) 쌀먹충 정상화 (축)" : "DCRefresher Reborn" }}</h3>
+                        <h3>{{ easterEgg ? "야 김쁠뿡!" : "DCRefresher Reborn" }}</h3>
                         <p>
                             <span class="version">{{ getVersion() }}</span>
                             <a v-for="link in links" @click="open(link.url)">{{ link.text }}</a>
