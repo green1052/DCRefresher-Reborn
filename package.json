@@ -16,7 +16,7 @@
     "js-cookie": "^3.0.5",
     "ky": "^1.7.3",
     "mini-css-extract-plugin": "^2.9.2",
-    "sass": "^1.82.0",
+    "sass": "^1.83.0",
     "sass-loader": "^16.0.4",
     "swc-loader": "^0.2.6",
     "terser-webpack-plugin": "^5.3.10",
