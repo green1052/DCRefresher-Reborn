@@ -200,8 +200,10 @@ export default {
             const $newList = $(dom.querySelector(".gall_list:not([id]) tbody"));
             const $newListChildren = $newList.children();
 
-            if ($newListChildren.length === 0 || $newListChildren.length === 0)
+            if ($newListChildren.length === 0)
                 return false;
+
+            $oldList.parent().removeClass("empty");
 
             const newPostList: Cash[] = [];
 
@@ -236,29 +238,22 @@ export default {
                 this.memory.calledByPageTurn = false;
 
                 if (queryString("s_keyword")) {
-                    const keyword = $("input[name=s_keyword]").val() as string;
+                    const keyword = $("#sch_q").val() as string;
 
                     if (keyword) {
                         for (const element of $newListChildren.find(".gall_tit")) {
                             const $element = $(element);
 
                             const $a = $element.find("a:first-child");
-                            $a.find(".icon_img").remove();
+                            let classList = "mark";
 
-                            const tmpSubjectHtml = $a.html().trim();
+                            if ($a.find(".spoiler").length)
+                                classList += " spoiler";
 
-                            if (tmpSubjectHtml.match(keyword)) {
-                                let subject = tmpSubjectHtml.replace(
-                                    keyword,
-                                    `<span class=mark>${keyword}</span>`
-                                );
+                            const subject = $a.html();
 
-                                subject = $a
-                                    .html()
-                                    .replace(tmpSubjectHtml, subject);
-
-                                $a.html(subject);
-                            }
+                            if (subject.match(keyword))
+                                $a.html(subject.replace(keyword, `<span class="${classList}">${keyword}</span>`));
                         }
                     }
                 }
