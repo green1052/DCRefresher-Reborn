@@ -1722,7 +1722,7 @@ export default {
         ) => {
             frame.data.load = true;
             frame.title = "댓글";
-            frame.subtitle = "로딩 중";
+            frame.subtitle = "로딩 중...";
             frame.data.useWriteComment = this.status.experimentalComment;
 
             let postDom: Document;
@@ -2115,8 +2115,8 @@ export default {
             params.set("no", preData.id);
             preData.link = decodeURIComponent(params.toString());
 
-            preData.title = "게시글 로딩 중...";
-            firstApp.contents = "";
+            preData.title = "로딩 중...";
+            firstApp.contents = "로딩 중...";
 
             makeFirstFrame(firstApp, preData, this.memory.signal!, historySkip);
             makeSecondFrame(secondApp, preData, this.memory.signal!);
