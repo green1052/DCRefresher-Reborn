@@ -2082,11 +2082,15 @@ export default {
 
                     frame.data.comments = comments;
                     if (needRefresh) frame.app.$children[0].$children[1].commentKey++;
-                } catch (error) {
-                    frame.error = {
-                        title: "댓글",
-                        detail: String(error)
-                    };
+                } catch (e) {
+                    if (frame.data.comments) {
+                        Toast.show(String(e), true, 3000);
+                    } else {
+                        frame.error = {
+                            title: "댓글",
+                            detail: String(e)
+                        };
+                    }
                 } finally {
                     frame.data.load = false;
                 }
