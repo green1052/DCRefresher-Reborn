@@ -117,13 +117,19 @@ export default {
             if (!this.status.bypassUpload && typeof data === "object") {
                 const url = data.web__url ?? data.url;
 
+                $("#upload_status").val("Y");
+
                 window.postMessage({
                     type: "refresherAttachUpload",
                     data: {
-                        thumburl: url,
                         imageurl: url,
                         filename: data.name,
-                        filesize: Number(data.size)
+                        filesize: data.size,
+                        imagealign: "L",
+                        originalurl: url,
+                        thumburl: url,
+                        file_temp_no: data.file_temp_no,
+                        mp4: ""
                     }
                 }, "*");
 
@@ -213,7 +219,7 @@ export default {
                             form.append("r_key", r_key);
                             form.append("gall_id", gall_id);
                             form.append("gall_no", gall_no);
-                            form.append("post_no", post_no);
+                            form.append("post_no", post_no || "");
                             form.append("upload_ing", "N");
                             form.append("_GALLTYPE_", _GALLTYPE_);
 
@@ -229,10 +235,10 @@ export default {
                                     : file;
 
                                 form.set(
-                                    "files",
+                                    "files[]",
                                     new File(
                                         [image],
-                                        `${new Date().getTime()}-${file.name.split(".").at(-1)}`,
+                                        `${new Date().getTime()}.${file.name.split(".").at(-1)}`,
                                         {
                                             type: image.type
                                         }
@@ -240,7 +246,11 @@ export default {
                                 );
 
                                 try {
-                                    const response = await ky.post(`https://upimg.dcinside.com/upimg_file.php?id=${gall_id}&r_key=${r_key}`, {
+                                    const response = await ky.post("https://upimg.dcinside.com/upimg_file.php", {
+                                        searchParams: {
+                                            id: gall_id,
+                                            r_key
+                                        },
                                         body: form,
                                         timeout: 30000
                                     }).json<any>();
