@@ -214,8 +214,8 @@ export default {
                 const $element = $(element);
                 const no = $element.find(".gall_num").text();
 
-                if (!isPageView && isAdmin && no !== "설문") {
-                    $element.prepend(managerCheckbox);
+                if (!isPageView && isAdmin) {
+                    $element.prepend(no === "설문" ? "<td></td>" : managerCheckbox);
                 }
 
                 if (isPageView && no === currentPostNo) {
