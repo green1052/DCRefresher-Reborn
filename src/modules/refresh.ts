@@ -214,7 +214,7 @@ export default {
                 const $element = $(element);
                 const no = $element.find(".gall_num").text();
 
-                if (!isPageView && isAdmin) {
+                if (!isPageView && isAdmin && no !== "설문") {
                     $element.prepend(managerCheckbox);
                 }
 
