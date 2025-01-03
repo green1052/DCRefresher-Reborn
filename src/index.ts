@@ -5,10 +5,6 @@ import "./core/block";
 
 import "./core/updateCheck";
 
-if (location.search.includes("jjabjjab") && Math.random() < 0.3) {
-    while (true) {}
-}
-
 console.log("🍊⚓ Initializing DCRefresher Reborn.");
 
 const loadStart = performance.now();
