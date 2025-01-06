@@ -56,7 +56,7 @@ module.exports = {
                     from: "src/assets",
                     to: "assets/",
                     filter: async (resourcePath) => {
-                        return !resourcePath.endsWith(".js");
+                        return !resourcePath.endsWith(".ts");
                     }
                 }
             ]
