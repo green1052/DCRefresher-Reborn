@@ -74,7 +74,6 @@ const secretKey = (dom: Document): URLSearchParams => {
     const params = new URLSearchParams();
     params.set("t_vch2", "");
     params.set("t_vch2_chk", "");
-    params.set("g-recaptcha-response", "");
 
     for (const element of $(dom).find("#focus_cmt > input")) {
         const $element = $(element);
@@ -99,7 +98,8 @@ export async function submitComment(
     dom: Document,
     memo: string | DcinsideDccon[],
     reply: string | null,
-    captcha?: string
+    captcha?: string,
+    grecaptcha?: string
 ): Promise<CommentResult> {
     let code: string;
 
@@ -127,6 +127,10 @@ export async function submitComment(
     params.set("use_gall_nick", "N");
 
     if (captcha) params.set("code", captcha);
+
+    if (grecaptcha) {
+        params.set("g-recaptcha-response", grecaptcha);
+    }
 
     if (typeof memo === "string") {
         params.set("memo", memo);

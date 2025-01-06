@@ -13,6 +13,7 @@ import ky, {Input, Options} from "ky";
 import browser from "webextension-polyfill";
 import type IFrame from "../core/frame";
 import * as storage from "../utils/storage";
+import {inject} from "../utils/inject";
 
 const domParser = new DOMParser();
 
@@ -1484,6 +1485,8 @@ export default {
         Frame,
         http
     ) {
+        inject("../assets/js/grecaptcha.js");
+
         blockPreset.day = this.status.blockPresetDay;
         blockPreset.reason = this.status.blockPresetReason;
         blockPreset.delete = this.status.blockPresetDelete;
@@ -1764,6 +1767,21 @@ export default {
                         ? await request.captcha(preData, "comment")
                         : undefined;
 
+                    const getGreCaptchaToken = () => new Promise<string>((resolve) => {
+                        window.postMessage({
+                            type: "refresherGrecaptcha",
+                            action: "comment_token"
+                        }, "*");
+
+                        window.addEventListener("message", (ev) => {
+                            if (ev.data.type !== "refresherGrecaptchaToken") return;
+                            resolve(ev.data.token);
+                        });
+                    });
+
+                    const grecaptcha = await getGreCaptchaToken();
+                    console.log(grecaptcha);
+
                     const req = async (captcha?: string) => {
                         const res = await submitComment(
                             postData,
@@ -1771,7 +1789,8 @@ export default {
                             postDom,
                             memo,
                             reply,
-                            captcha
+                            captcha,
+                            grecaptcha
                         );
 
                         if (
