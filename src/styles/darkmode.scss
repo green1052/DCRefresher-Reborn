@@ -86,7 +86,7 @@ $dark-red: #e21919;
     .refresher-dccon-popup {
         background-color: $dark-tint-light;
         color: white;
-        box-shadow: 0px 0px 16px rgba(51, 51, 51, 0.3);
+        box-shadow: 0 0 16px rgba(51, 51, 51, 0.3);
         border: 1px solid #505050;
 
         .close {
@@ -494,7 +494,7 @@ $dark-red: #e21919;
     }
 
     .miniwrap .img_contbox {
-        border-right: 0px;
+        border-right: 0;
     }
 
     .pop_wrap .my_minor_mini .tab_menubox button.on,
@@ -637,8 +637,7 @@ $dark-red: #e21919;
 
     .minor_block_list th,
     .mini_member_list th {
-        border: 1px solid $dark-dc-color;
-        border-width: 1px 0 1px;
+        border: 1px 0 1px solid $dark-dc-color;
     }
 
     .minor_intro_box,
@@ -855,8 +854,7 @@ $dark-red: #e21919;
     }
 
     .pop_wrap.type3 {
-        border: 1px solid $dark-dc-color;
-        border-width: 2px 1px 1px;
+        border: 2px 1px 1px solid $dark-dc-color;
     }
 
     .btn_white {
@@ -1074,8 +1072,7 @@ $dark-red: #e21919;
 
     .gallog_wrap {
         .cont_listbox {
-            border: 1px solid $dark-dc-color;
-            border-width: 2px 0 1px 0;
+            border: 2px 0 1px 0 solid $dark-dc-color;
         }
 
         .tit_box > strong {
@@ -1106,7 +1103,7 @@ $dark-red: #e21919;
         .gallog_menu li.on a {
             background: $dark-dc-color;
             color: #fff;
-            text-shadow: 0px;
+            text-shadow: none;
         }
 
         .cmt_write_box.gallog {

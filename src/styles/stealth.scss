@@ -100,7 +100,7 @@ $dark-tint2: #3d3d3d;
         }
 
         .dory_txt {
-            margin-top: 0px;
+            margin-top: 0;
             margin-left: 90px;
         }
     }
@@ -139,8 +139,8 @@ $dark-tint2: #3d3d3d;
     }
 
     //comment - Dark mode
-    &.refresherDark
-    div.refresher-preview-comments
+    &.refresherDark,
+    div.refresher-preview-comments,
     .coment_dccon_img:not(:hover) {
         &::before {
             border: 1px solid $dark-tint2;
@@ -159,7 +159,7 @@ $dark-tint2: #3d3d3d;
         font-size: 13px;
         background: rgba(255, 255, 255, 0.8);
         user-select: none;
-        border-radius: 0px 13.3px 13.3px 0px;
+        border-radius: 0 13.3px 13.3px 0;
         transition: 0.3s all cubic-bezier(0.19, 1, 0.22, 1);
         transform: translateX(-50px);
 

@@ -1,3 +1,5 @@
+@use "sass:color";
+
 @keyframes refresher-logo-animation {
     0%,
     100% {
@@ -92,15 +94,15 @@
                 color: $dark-floatright;
 
                 &:hover {
-                    color: darken($dark-floatright, 20);
+                    color: color.adjust($dark-floatright, $lightness: -20%, $space: hsl);
                 }
 
                 &:active {
-                    color: darken($dark-floatright, 30);
+                    color: color.adjust($dark-floatright, $lightness: -30%, $space: hsl);
                 }
 
                 &.active {
-                    color: darken($dark-floatright, 45);
+                    color: color.adjust($dark-floatright, $lightness: -45%, $space: hsl);
                 }
             }
         }
@@ -144,11 +146,11 @@
             background-color: #666666;
 
             &:hover {
-                background-color: brighten(#666666, 20);
+                background-color: color.adjust(#666666, $lightness: 20%);
             }
 
             &:active {
-                background-color: brighten(#666666, 30);
+                background-color: color.adjust(#666666, $lightness: 30%);
             }
         }
     }
@@ -404,7 +406,7 @@
     }
 
     .refresher-title-zone {
-        padding: 0vh 7.5vw 2vh 7.5vw;
+        padding: 0 7.5vw 2vh 7.5vw;
         margin-top: 10px;
         margin-bottom: 10px;
         display: flex;

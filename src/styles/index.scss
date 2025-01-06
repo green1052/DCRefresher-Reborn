@@ -391,6 +391,8 @@ tr.gall_writer {
         margin-left: 20px;
 
         textarea {
+            width: 100px;
+
             @media screen and (min-width: 1220px) {
                 width: 956px !important;
             }
@@ -430,8 +432,6 @@ tr.gall_writer {
             @media screen and (min-width: 410px) and (max-width: 520px) {
                 width: 200px !important;
             }
-
-            width: 100px;
         }
     }
 }
@@ -738,8 +738,8 @@ tr.gall_writer {
     background: rgba(255, 255, 255, 0.8);
     user-select: none;
     border-radius: 0 13.3px 13.3px 0;
-    transition: 0.3 all cubic-bezier(0.19, 1, 0.22, 1);
-
+    transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+    
     &.blur {
         background-color: rgba(245, 245, 245, 0.85);
     }
@@ -747,7 +747,7 @@ tr.gall_writer {
     .button {
         margin: auto;
         display: grid;
-        transition: 0.3s all cubic-bezier(0.19, 1, 0.22, 1);
+        transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
         border-radius: 13.3px;
 
         img {
@@ -987,7 +987,7 @@ tr.gall_writer {
 .refresher-countdown,
 .refresher-views {
     font-size: 12px;
-    font-weight: thin;
+    font-weight: 100;
     opacity: 0.6;
 }
 
@@ -1078,7 +1078,6 @@ tr.gall_writer {
 
     &.primary {
         background-color: rgba(0, 110, 255, 0.8);
-        -moz-backdrop-filter: saturate(180%);
         backdrop-filter: blur(10px) saturate(180%);
 
         p {
@@ -1094,7 +1093,6 @@ tr.gall_writer {
 
     &.sub {
         background-color: rgba(106, 122, 143, 0.8);
-        -moz-backdrop-filter: saturate(180%);
         backdrop-filter: blur(10px) saturate(180%);
 
         p {
