@@ -50,16 +50,13 @@
                 class="tab tab1">
                 <div class="info">
                     <div class="icon-wrap">
-                        <img v-if="easterEgg"
-                             :src="getURL('/assets/icons/charlotte2.webp')"
-                             class="icon"/>
-                        <img v-else
-                             :src="getURL('/assets/icons/logo/Icon.png')"
-                             class="icon"/>
+                        <img
+                            :src="getURL('/assets/icons/logo/Icon.png')"
+                            class="icon"/>
                     </div>
 
                     <div class="text">
-                        <h3>{{ easterEgg ? "야 김쁠뿡!" : "DCRefresher Reborn" }}</h3>
+                        <h3>DCRefresher Reborn</h3>
                         <p>
                             <span class="version">{{ getVersion() }}</span>
                             <a v-for="link in links" @click="open(link.url)">{{ link.text }}</a>
@@ -449,10 +446,6 @@
                 v-show="tab === 4"
                 key="tab5"
                 class="tab tab5">
-                <img
-                    :src="getURL('/assets/icons/god2.webp')"
-                    style="width: 100px; height: 100px"/>
-
                 <h1>전투력 5천 이하는 사용 불가능한 기능입니다.</h1>
             </div>
             <div
@@ -521,7 +514,6 @@ import ky from "ky";
 import {Fragment} from "vue-fragment";
 
 interface RefresherData {
-    easterEgg: boolean;
     tab: number;
     modules: {
         [key: string]: RefresherModule;
@@ -555,7 +547,6 @@ export default Vue.extend({
     name: "refresher",
     data(): RefresherData {
         return {
-            easterEgg: false,
             tab: 0,
             modules: {},
             settings: {},
@@ -963,10 +954,6 @@ export default Vue.extend({
         }
     },
     async mounted() {
-        setTimeout(() => {
-            this.easterEgg = true;
-        }, 30000);
-
         port.postMessage({
             requestRefresherModules: true,
             requestRefresherSettings: true,
