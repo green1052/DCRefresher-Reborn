@@ -8,7 +8,10 @@ module.exports = {
     entry: {
         "refresher.bundle.js": "./src/index.ts",
         "background.js": "./src/root/background.ts",
-        "option.bundle.js": "./src/root/option.bundle.ts"
+        "option.bundle.js": "./src/root/option.bundle.ts",
+        "./assets/js/alert_register.js": "./src/assets/js/alert_register.js",
+        "./assets/js/alert_unregister.js": "./src/assets/js/alert_unregister.js",
+        "./assets/js/editor.js": "./src/assets/js/editor.js"
     },
     output: {
         path: path.join(__dirname, "dist"),
@@ -50,7 +53,10 @@ module.exports = {
             patterns: [
                 {
                     from: "src/assets",
-                    to: "assets/"
+                    to: "assets/",
+                    filter: async (resourcePath) => {
+                        return !resourcePath.endsWith(".js");
+                    }
                 }
             ]
         }),

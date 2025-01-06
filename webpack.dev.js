@@ -19,14 +19,10 @@ module.exports = (env) => {
                                     description: pkg.description,
                                     version: `${pkg.version}`,
                                     version_name: `${pkg.version}-dev`,
-                                    ...JSON.parse(content.toString())
+                                    ...JSON.parse(String(content))
                                 })
                             );
                         }
-                    },
-                    {
-                        from: "src/assets",
-                        to: "assets/"
                     }
                 ]
             })

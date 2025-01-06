@@ -18,14 +18,10 @@ module.exports = (env) => {
                                 JSON.stringify({
                                     description: pkg.description,
                                     version: pkg.version,
-                                    ...JSON.parse(content.toString())
+                                    ...JSON.parse(String(content))
                                 })
                             );
                         }
-                    },
-                    {
-                        from: "src/assets",
-                        to: "assets/"
                     }
                 ]
             })
