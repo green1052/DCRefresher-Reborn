@@ -16,6 +16,7 @@ declare global {
         contents?: string;
         commentId?: string;
         commentNo?: string;
+        commentCount?: number;
         isNotice?: boolean;
         isAdult?: boolean;
         requireCaptcha?: boolean;

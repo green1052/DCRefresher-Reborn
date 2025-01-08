@@ -31,6 +31,7 @@ class PostInfo implements IPostInfo {
     contents?: string;
     commentId?: string;
     commentNo?: string;
+    commentCount?: number;
     isNotice?: boolean;
     isAdult?: boolean;
     requireCaptcha?: boolean;
@@ -104,6 +105,8 @@ class PostInfo implements IPostInfo {
                 zoomNO[0].match(QUOTES) as string[]
             )[1].replace(/'/g, "");
         }
+
+        postInfo.commentCount = Number($dom.find(".gall_comment").text().split(" ")[1]);
 
         const $noticeElement = $dom.find(
             ".user_control .option_box li:first-child"
@@ -1780,7 +1783,6 @@ export default {
                     });
 
                     const grecaptcha = await getGreCaptchaToken();
-                    console.log(grecaptcha);
 
                     const req = async (captcha?: string) => {
                         const res = await submitComment(
@@ -1918,7 +1920,7 @@ export default {
                             `${preData.gallery}${preData.id}`
                         );
 
-                        if (cache?.comment) {
+                        if (cache?.comment && postFetchedData.commentCount !== cache.comment.total_cnt) {
                             return cache.comment;
                         }
                     }
