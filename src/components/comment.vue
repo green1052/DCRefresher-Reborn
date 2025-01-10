@@ -120,6 +120,18 @@ export default Vue.extend({
             return;
         }
 
+        const fixedName = document.querySelector("#login_box > .user_info .nickname > em")?.innerHTML;
+
+        if (fixedName) {
+            const gallogIcon = document.querySelector("#login_box > .user_info > .writer_nikcon")!;
+            const attribute = gallogIcon.getAttribute("onclick")!;
+            const id = /window\.open\('\/\/gallog\.dcinside\.com\/(\w*)'\);/.exec(attribute)![1];
+
+            if (this.comment.user.id === id) {
+                this.me = true;
+            }
+        }
+
         const gallogImageElement = document.querySelector<HTMLImageElement>("#login_box .user_info .writer_nikcon > img");
 
         const click =

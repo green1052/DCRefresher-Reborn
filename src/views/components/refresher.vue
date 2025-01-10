@@ -777,65 +777,72 @@ export default Vue.extend({
                 return;
             }
 
+            const extra: string[] = [];
+            const isAdvanced = confirm("고급 차단 설정을 하시겠습니까?");
+
+            if (isAdvanced) {
+                extra.push("[고급]");
+            }
+
             const result = prompt(
-                `추가할 ${this.blockKeyNames[key]} 값을 입력하세요.`
+                isAdvanced ? `${this.blockKeyNames[key]} 차단\n인수: type: RefresherBlockType, content: string, gallery?: string\n예제: return content === "개블빙" && gallery === "bser";` : `추가할 ${this.blockKeyNames[key]} 값을 입력하세요.`
             );
 
             if (!result) return;
 
             let isRegex = false;
-            const extra: string[] = [];
-
-            if (confirm("정규식입니까?")) {
-                isRegex = true;
-                extra.push("[정규식]");
-            }
-
             let gallery: string | undefined = undefined;
-
-            if (confirm("특정 갤러리에서만 차단하시겠습니까?")) {
-                const id = prompt("갤러리 아이디를 입력해주세요.");
-
-                if (id) {
-                    gallery = id;
-                } else {
-                    alert("갤러리 아이디가 잘못됐습니다.");
-                    return;
-                }
-            }
-
             let mode: RefresherBlockDetectMode | undefined = undefined;
 
-            if (
-                confirm(
-                    `차단 모드를 설정하시겠습니까? 현재 값: ${
-                        this.blockDetectModeTypeNames[this.blockModes[key]]
-                    }`
-                )
-            ) {
-                const modes = Object.keys(this.blockDetectModeTypeNames);
+            if (!isAdvanced) {
+                if (confirm("정규식입니까?")) {
+                    isRegex = true;
+                    extra.push("[정규식]");
+                }
 
-                const inputMode = prompt(
-                    `차단 모드를 입력해주세요. (모드 목록: ${modes.join(
-                        ", "
-                    )})`
-                );
+                if (confirm("특정 갤러리에서만 차단하시겠습니까?")) {
+                    const id = prompt("갤러리 아이디를 입력해주세요.");
+
+                    if (id) {
+                        gallery = id;
+                    } else {
+                        alert("갤러리 아이디가 잘못됐습니다.");
+                        return;
+                    }
+                }
 
                 if (
-                    inputMode &&
-                    modes.includes(inputMode as RefresherBlockDetectMode)
+                    confirm(
+                        `차단 모드를 설정하시겠습니까? 현재 값: ${
+                            this.blockDetectModeTypeNames[this.blockModes[key]]
+                        }`
+                    )
                 ) {
-                    mode = inputMode as RefresherBlockDetectMode;
-                    extra.push(`[${this.blockDetectModeTypeNames[mode]}]`);
-                } else {
-                    alert("모드가 잘못됐습니다.");
-                    return;
+                    const modes = Object.keys(this.blockDetectModeTypeNames);
+
+                    const inputMode = prompt(
+                        `차단 모드를 입력해주세요. (모드 목록: ${modes.join(
+                            ", "
+                        )})`
+                    );
+
+                    if (
+                        inputMode &&
+                        modes.includes(inputMode as RefresherBlockDetectMode)
+                    ) {
+                        mode = inputMode as RefresherBlockDetectMode;
+                        extra.push(`[${this.blockDetectModeTypeNames[mode]}]`);
+                    } else {
+                        alert("모드가 잘못됐습니다.");
+                        return;
+                    }
                 }
             }
 
             this.blocks[key].push({
                 content: result,
                 isRegex,
+                isAdvanced,
                 extra: extra.length ? extra.join(" ") : undefined,
                 gallery,
                 mode

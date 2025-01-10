@@ -134,6 +134,7 @@ const InternalAddToList = (
     type: RefresherBlockType,
     content: string,
     isRegex: boolean,
+    isAdvanced: boolean,
     gallery?: string,
     extra?: string,
     mode?: RefresherBlockDetectMode
@@ -143,6 +144,7 @@ const InternalAddToList = (
     BLOCK_CACHE[type].push({
         content,
         isRegex,
+        isAdvanced,
         gallery,
         extra,
         mode
@@ -243,6 +245,11 @@ export const check = (
 
     const result = BLOCK_CACHE[type].filter((v) => {
         if (v.gallery && v.gallery !== gallery) return false;
+
+        if (v.isAdvanced) {
+            const response = new Function("type", "content", "gallery", v.content)(type, content, gallery);
+            return typeof response === "boolean" ? response : false;
+        }
 
         const mode = v.mode ?? BLOCK_MODE_CACHE[type];
 

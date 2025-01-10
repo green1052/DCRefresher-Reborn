@@ -23,6 +23,7 @@ declare global {
     interface RefresherBlockValue {
         content: string;
         isRegex: boolean;
+        isAdvanced: boolean;
         gallery?: string;
         extra?: string;
         mode?: RefresherBlockDetectMode;
