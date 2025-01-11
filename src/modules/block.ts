@@ -263,6 +263,7 @@ export default {
                                         "DCCON",
                                         path,
                                         false,
+                                        false,
                                         undefined,
                                         `${title} [${packageIdx}]`
                                     );
@@ -273,6 +274,7 @@ export default {
                                         "DCCON",
                                         `^(${list.join("|")})$`,
                                         true,
+                                        false,
                                         undefined,
                                         `[묶음] ${title} [${packageIdx}]`
                                     );
@@ -290,6 +292,7 @@ export default {
                             block.add(
                                 "DCCON",
                                 code,
+                                false,
                                 false,
                                 undefined,
                                 `${title} [${packageIdx}]`
@@ -319,7 +322,7 @@ export default {
 
                 if (!value || !extra) return;
 
-                block.add(type, value, false, undefined, extra);
+                block.add(type, value, false, false, undefined, extra);
                 Toast.show(
                     `${block.TYPE_NAMES[type]} ${value}을(를) 차단했습니다.`,
                     false,

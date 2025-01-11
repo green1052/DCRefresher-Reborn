@@ -168,6 +168,7 @@ const InternalUpdateMode = (
  * @param type 차단 종류
  * @param content 차단 내용
  * @param isRegex 정규식인지에 대한 여부
+ * @param isAdvanced 고급 차단인지에 대한 여부
  * @param gallery 특정 갤러리에만 해당하면 갤러리의 ID 값
  * @param extra 차단 목록에서의 식별을 위한 추가 값
  * @param mode 차단 모드
@@ -176,6 +177,7 @@ export const add = (
     type: RefresherBlockType,
     content: string,
     isRegex: boolean,
+    isAdvanced: boolean,
     gallery?: string,
     extra?: string,
     mode?: RefresherBlockDetectMode
@@ -190,7 +192,7 @@ export const add = (
             ", "
         )}]`;
 
-    InternalAddToList(type, content, isRegex, gallery, extra, mode);
+    InternalAddToList(type, content, isRegex, isAdvanced, gallery, extra, mode);
 
     try {
         SendToBackground();
@@ -317,6 +319,7 @@ export const setStore = (store: BlockCache, mode: BlockModeCache): void => {
                 key as RefresherBlockType,
                 block.content,
                 block.isRegex,
+                block.isAdvanced,
                 block.gallery,
                 block.extra,
                 block.mode
@@ -357,7 +360,7 @@ communicate.addHook("updateBlocks", (data) => {
 requestAnimationFrame(async () => {
     storage.get<string[]>("refresher.blockQueue").then((value) => {
         for (const dccon of value) {
-            InternalAddToList("DCCON", dccon, false);
+            InternalAddToList("DCCON", dccon, false, false);
         }
     });
 
