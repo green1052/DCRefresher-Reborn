@@ -1920,7 +1920,7 @@ export default {
                             `${preData.gallery}${preData.id}`
                         );
 
-                        if (cache?.comment && postFetchedData.commentCount !== cache.comment.total_cnt) {
+                        if (cache?.comment && postFetchedData.commentCount === cache.comment.total_cnt) {
                             return cache.comment;
                         }
                     }
