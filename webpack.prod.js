@@ -30,12 +30,7 @@ module.exports = (env) => {
             minimize: true,
             minimizer: [
                 new TerserPlugin({
-                    minify: TerserPlugin.swcMinify,
-                    terserOptions: {
-                        format: {
-                            comments: false
-                        }
-                    }
+                    minify: TerserPlugin.swcMinify
                 })
             ]
         }

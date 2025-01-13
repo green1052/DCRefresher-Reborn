@@ -1,6 +1,6 @@
 {
   "name": "dcrefresher-reborn",
-  "version": "3.11.22",
+  "version": "3.11.23",
   "description": "디시인사이드 개선 확장 프로그램",
   "devDependencies": {
     "@swc/core": "^1.10.7",
@@ -25,7 +25,6 @@
     "vue-fragment": "1.6.0",
     "vue-loader": "15.11.1",
     "webextension-polyfill": "^0.12.0",
-    "webp-converter-browser": "^1.0.4",
     "webpack": "^5.97.1",
     "webpack-cli": "^6.0.1",
     "webpack-merge": "^6.0.1"
