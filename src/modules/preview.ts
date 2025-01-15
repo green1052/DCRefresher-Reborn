@@ -1350,6 +1350,12 @@ export default {
             type: "check",
             default: false
         },
+        tooltipRatioDisable: {
+            name: "툴팁 미리보기 글댓비 강조시 비활성화",
+            desc: "글댓비 강조가 활성화된 경우 툴팁 미리보기를 비활성화합니다.",
+            type: "check",
+            default: false
+        },
         reversePreviewKey: {
             name: "키 반전",
             desc: "오른쪽 버튼 대신 왼쪽 버튼으로 미리보기를 엽니다.",
@@ -2458,7 +2464,8 @@ export default {
                 if (
                     !this.status.tooltipMode ||
                     $(element).closest(".us-post").hasClass("refresherBlur") ||
-                    typeof timer === "number"
+                    typeof timer === "number" ||
+                    (this.status.tooltipRatioDisable && $(element).closest(".us-post").find(".ratio[style]").length)
                 ) return;
 
                 timer = window.setTimeout(() => {
@@ -2548,6 +2555,7 @@ export default {
         tooltipMediaHide: RefresherCheckSettings;
         tooltipDelay: RefresherRangeSettings;
         tooltipInteraction: RefresherCheckSettings;
+        tooltipRatioDisable: RefresherCheckSettings;
         reversePreviewKey: RefresherCheckSettings;
         longPressDelay: RefresherRangeSettings;
         scrollToSkip: RefresherCheckSettings;
