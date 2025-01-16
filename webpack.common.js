@@ -11,7 +11,7 @@ module.exports = {
         "option.bundle.js": "./src/root/option.bundle.ts",
         "./assets/js/alert_register.js": "./src/assets/js/alert_register.ts",
         "./assets/js/alert_unregister.js": "./src/assets/js/alert_unregister.ts",
-        "./assets/js/grecaptcha.js": "./src/assets/js/grecaptcha.ts",
+        "./assets/js/grecaptcha.js": "./src/assets/js/grecaptcha.ts"
     },
     output: {
         path: path.join(__dirname, "dist"),

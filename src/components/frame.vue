@@ -259,10 +259,10 @@ import WriteComment from "./write_comment.vue";
 import Icon from "./icon.vue";
 import RefresherLoader from "./loader.vue";
 import Vue, {PropType} from "vue";
-import browser from "webextension-polyfill";
 import dccon from "./dccon.vue";
 import RefresherDcconPopup from "./dccon.vue";
 import {Fragment} from "vue-fragment";
+import {getURL} from "../utils/getURL";
 
 interface FrameData {
     memoText: string;
@@ -307,6 +307,7 @@ export default Vue.extend({
         };
     },
     methods: {
+        getURL,
         beforeEnter(el: HTMLElement) {
             el.style.transitionDelay = `${45 * Number(el.dataset.index)}ms`;
         },
@@ -393,10 +394,6 @@ export default Vue.extend({
         original() {
             this.frame.functions.openOriginal();
             return true;
-        },
-
-        getURL(u: string): string {
-            return browser.runtime.getURL(u);
         }
     },
     created() {

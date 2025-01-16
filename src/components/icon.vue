@@ -3,8 +3,8 @@
 </template>
 
 <script lang="ts">
-import browser from "webextension-polyfill";
 import Vue from "vue";
+import {getURL} from "../utils/getURL";
 
 export default Vue.extend({
     name: "icon",
@@ -15,9 +15,7 @@ export default Vue.extend({
         }
     },
     methods: {
-        getURL(u: string): string {
-            return browser.runtime.getURL(u);
-        }
+        getURL
     }
 });
 </script>

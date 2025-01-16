@@ -19,8 +19,8 @@
 </template>
 
 <script lang="ts">
-import browser from "webextension-polyfill";
 import Vue, {PropType} from "vue";
+import {getURL} from "../utils/getURL";
 
 interface ButtonData {
     error: number;
@@ -46,10 +46,7 @@ export default Vue.extend({
         };
     },
     methods: {
-        getURL(u: string): string {
-            return browser.runtime.getURL(u);
-        },
-
+        getURL,
         async safeClick(): Promise<boolean> {
             const result = await this.click?.();
 

@@ -6,7 +6,7 @@ const {merge} = require("webpack-merge");
 module.exports = (env) => {
     return merge(common, {
         mode: "development",
-        devtool: "inline-source-map",
+        devtool: "source-map",
         plugins: [
             new CopyWebpackPlugin({
                 patterns: [

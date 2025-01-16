@@ -1,6 +1,7 @@
 import * as Toast from "../components/toast";
 import $ from "cash-dom";
 import browser from "webextension-polyfill";
+import {getURL} from "../utils/getURL";
 
 const CONTROL_BUTTON = ".stealth_control_button";
 const TEMPORARY_STEALTH = "stlth";
@@ -18,7 +19,7 @@ const tempButtonCreate = (element: HTMLElement): void => {
     buttonFrame.classList.add("blur");
     buttonFrame.innerHTML = `      
   <div class="button" id ="tempview">
-    <img src="${browser.runtime.getURL("/assets/icons/change.webp")}"></img>
+    <img src="${getURL("/assets/icons/change.webp")}"></img>
     <p id="temp_button_text">이미지 보이기</p>
   </div>
 `;

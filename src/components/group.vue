@@ -11,19 +11,19 @@
 
         <div id="scroll">
             <img
-                :src="getUrl(`/assets/icons/upvote.webp`)"
+                :src="getURL(`/assets/icons/upvote.webp`)"
                 @click="(e) => clickScroll(e, `up`)"/>
             <img
-                :src="getUrl(`/assets/icons/downvote.webp`)"
+                :src="getURL(`/assets/icons/downvote.webp`)"
                 @click="(e) => clickScroll(e, `down`)"/>
         </div>
     </div>
 </template>
 
 <script lang="ts">
-import browser from "webextension-polyfill";
 import frame from "./frame.vue";
 import Vue from "vue";
+import {getURL} from "../utils/getURL";
 
 export default Vue.extend({
     name: "refresher-group",
@@ -31,10 +31,7 @@ export default Vue.extend({
         "refresher-frame": frame
     },
     methods: {
-        getUrl(url: string) {
-            return browser.runtime.getURL(url);
-        },
-
+        getURL,
         clickScroll(ev: MouseEvent, type: "up" | "down") {
             const y = type === "up" ? 0 : this.$el.scrollHeight;
             this.$el.scroll(0, y);

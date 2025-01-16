@@ -512,6 +512,7 @@ import $ from "cash-dom";
 import storage from "../../utils/storage";
 import ky from "ky";
 import {Fragment} from "vue-fragment";
+import {getURL} from "../../utils/getURL";
 
 interface RefresherData {
     tab: number;
@@ -591,6 +592,7 @@ export default Vue.extend({
         };
     },
     methods: {
+        getURL,
         exportMemo() {
             navigator.clipboard.writeText(JSON.stringify(this.memos))
                 .then(() => {
@@ -665,9 +667,6 @@ export default Vue.extend({
         },
         getVersion() {
             return browser.runtime.getManifest().version_name ?? browser.runtime.getManifest().version;
-        },
-        getURL(url: string) {
-            return browser.runtime.getURL(url);
         },
         open(url: string) {
             browser.tabs.create({url});

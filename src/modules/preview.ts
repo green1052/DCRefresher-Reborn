@@ -14,6 +14,7 @@ import browser from "webextension-polyfill";
 import type IFrame from "../core/frame";
 import * as storage from "../utils/storage";
 import {inject} from "../utils/inject";
+import {getURL} from "../utils/getURL";
 
 const domParser = new DOMParser();
 
@@ -669,14 +670,12 @@ const panel = {
 
         if (toggleBlur) element.classList.add("blur");
 
-        const upvoteImage = browser.runtime.getURL("/assets/icons/upvote.webp");
-        const downvoteImage = browser.runtime.getURL(
-            "/assets/icons/downvote.webp"
-        );
+        const upvoteImage = getURL("/assets/icons/upvote.webp");
+        const downvoteImage = getURL("/assets/icons/downvote.webp");
 
         element.innerHTML = `
       <div class="button pin">
-        <img src="${browser.runtime.getURL("/assets/icons/pin.webp")}"></img>
+        <img src="${getURL("/assets/icons/pin.webp")}"></img>
         <p>${setAsNotice ? "공지로 등록" : "공지 등록 해제"}</p>
       </div>
       <div class="button recommend">
@@ -684,15 +683,15 @@ const panel = {
         <p>${setAsRecommend ? "개념글 등록" : "개념글 해제"}</p>
       </div>
       <div class="button block">
-        <img src="${browser.runtime.getURL("/assets/icons/block.webp")}"></img>
+        <img src="${getURL("/assets/icons/block.webp")}"></img>
         <p>차단 (B)</p>
       </div>
       <div class="button delete">
-        <img src="${browser.runtime.getURL("/assets/icons/delete.webp")}"></img>
+        <img src="${getURL("/assets/icons/delete.webp")}"></img>
         <p>삭제 (D)</p>
       </div>
       <div class="button bump">
-        <img src="${browser.runtime.getURL("/assets/icons/upvote.webp")}"></img>
+        <img src="${getURL("/assets/icons/upvote.webp")}"></img>
         <p>끌올</p>
       </div>
     `;
