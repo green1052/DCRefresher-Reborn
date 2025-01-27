@@ -26,12 +26,6 @@ export default {
             type: "check",
             default: false
         },
-        selfImage: {
-            name: "자짤 기능 활성화",
-            desc: "자짤 기능을 활성화합니다. (URL)",
-            type: "text",
-            default: ""
-        },
         header: {
             name: "머리말",
             desc: "머리말을 설정합니다. (HTML)",
@@ -78,14 +72,8 @@ export default {
                 $(element).on("click", () => {
                     const header = this.status.header;
                     const footer = this.status.footer;
-                    const selfImage = this.status.selfImage;
 
                     const $editor = $(".note-editable");
-
-                    if (selfImage) {
-                        $("#upload_status").val("Y");
-                        $editor.prepend(`<img src="${selfImage}">`);
-                    }
 
                     if (header) {
                         $editor.prepend(header);
@@ -165,7 +153,6 @@ export default {
     };
     settings: {
         bypassTitleLimit: RefresherCheckSettings;
-        selfImage: RefresherTextSettings;
         header: RefresherTextSettings;
         footer: RefresherTextSettings;
         temporarySave: RefresherCheckSettings;
