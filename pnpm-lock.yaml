@@ -24,8 +24,8 @@ importers:
         specifier: ^5.28.5
         version: 5.28.5(@swc/core@1.10.11)(webpack-cli@6.0.1)
       '@types/webpack-env':
-        specifier: ^1.18.7
-        version: 1.18.7
+        specifier: ^1.18.8
+        version: 1.18.8
       cash-dom:
         specifier: ^8.1.5
         version: 8.1.5
@@ -319,8 +319,8 @@ packages:
   '@types/webextension-polyfill@0.12.1':
     resolution: {integrity: sha512-xPTFWwQ8BxPevPF2IKsf4hpZNss4LxaOLZXypQH4E63BDLmcwX/RMGdI4tB4VO4Nb6xDBH3F/p4gz4wvof1o9w==}
 
-  '@types/webpack-env@1.18.7':
-    resolution: {integrity: sha512-EUenEZ8xpaNKJnVbwEZq406UjWXskrNQj3l1KVCSqEPM6J4ItRxPJHgstdo6qSYSxgz677GOoAHVU0nIZiPIww==}
+  '@types/webpack-env@1.18.8':
+    resolution: {integrity: sha512-G9eAoJRMLjcvN4I08wB5I7YofOb/kaJNd5uoCMX+LbKXTPCF+ZIHuqTnFaK9Jz1rgs035f9JUPUhNFtqgucy/A==}
 
   '@types/webpack@5.28.5':
     resolution: {integrity: sha512-wR87cgvxj3p6D0Crt1r5avwqffqPXUkNlnQ1mjU93G7gCuFjufZR4I6j8cz5g1F1tTYpfOOFvly+cmIQwL9wvw==}
@@ -1629,7 +1629,7 @@ snapshots:
 
   '@types/webextension-polyfill@0.12.1': {}
 
-  '@types/webpack-env@1.18.7': {}
+  '@types/webpack-env@1.18.8': {}
 
   '@types/webpack@5.28.5(@swc/core@1.10.11)(webpack-cli@6.0.1)':
     dependencies:
