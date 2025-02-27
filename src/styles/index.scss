@@ -812,8 +812,7 @@ tr.gall_writer {
 .refresher-preview-block-media {
     embed,
     img:not(.written_dccon),
-    video,
-    #zzbang_div {
+    video {
         display: none;
     }
 }
