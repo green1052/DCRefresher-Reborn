@@ -211,8 +211,6 @@ export default {
             const oldCache = Array.from($oldList.find(".gall_num")).map((element) => element!.innerText);
             // const newCache = Array.from($newList.find(".gall_num")).map((element) => element!.innerText);
 
-            console.log(searchType);
-
             for (const element of $newListChildren) {
                 const $element = $(element);
                 const no = $element.find(".gall_num").text();
