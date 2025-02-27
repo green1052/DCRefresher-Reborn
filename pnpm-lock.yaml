@@ -57,8 +57,8 @@ importers:
         specifier: ^0.2.6
         version: 0.2.6(@swc/core@1.11.4)(webpack@5.98.0)
       terser-webpack-plugin:
-        specifier: ^5.3.11
-        version: 5.3.11(@swc/core@1.11.4)(webpack@5.98.0)
+        specifier: ^5.3.12
+        version: 5.3.12(@swc/core@1.11.4)(webpack@5.98.0)
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
@@ -1273,8 +1273,8 @@ packages:
     resolution: {integrity: sha512-GNzQvQTOIP6RyTfE2Qxb8ZVlNmw0n88vp1szwWRimP02mnTsx3Wtn5qRdqY9w2XduFNUgvOwhNnQsjwCp+kqaQ==}
     engines: {node: '>=6'}
 
-  terser-webpack-plugin@5.3.11:
-    resolution: {integrity: sha512-RVCsMfuD0+cTt3EwX8hSl2Ks56EbFHWmhluwcqoPKtBnfjiT6olaq7PRIRfhyU8nnC2MrnDrBLfrD/RGE+cVXQ==}
+  terser-webpack-plugin@5.3.12:
+    resolution: {integrity: sha512-jDLYqo7oF8tJIttjXO6jBY5Hk8p3A8W4ttih7cCEq64fQFWmgJ4VqAQjKr7WwIDlmXKEc6QeoRb5ecjZ+2afcg==}
     engines: {node: '>= 10.13.0'}
     peerDependencies:
       '@swc/core': '*'
@@ -2454,7 +2454,7 @@ snapshots:
 
   tapable@2.2.1: {}
 
-  terser-webpack-plugin@5.3.11(@swc/core@1.11.4)(webpack@5.98.0):
+  terser-webpack-plugin@5.3.12(@swc/core@1.11.4)(webpack@5.98.0):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.25
       jest-worker: 27.5.1
@@ -2645,7 +2645,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.0
       tapable: 2.2.1
-      terser-webpack-plugin: 5.3.11(@swc/core@1.11.4)(webpack@5.98.0)
+      terser-webpack-plugin: 5.3.12(@swc/core@1.11.4)(webpack@5.98.0)
       watchpack: 2.4.2
       webpack-sources: 3.2.3
     optionalDependencies:
