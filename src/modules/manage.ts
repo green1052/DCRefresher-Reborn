@@ -97,9 +97,12 @@ export default {
         };
 
         this.memory.checkBox = filter.add<HTMLInputElement>(".article_chkbox", (element) => {
-            if (this.status.checkAllTargetUser) {
-                const $element = $(element);
-                const $writer = $element.closest(".ub-content, .cmt_nickbox").children(".ub-writer");
+            const $element = $(element);
+
+            if (this.status.checkAllTargetUser && !$element.data("refresherMemoHandler")) {
+                const $writer = $element.closest(".ub-content, .cmt_nickbox, .search_comment").children(".ub-writer");
+
+                $element.data("refresherMemoHandler", true);
 
                 const uid = $writer.attr("data-uid");
                 const ip = $writer.attr("data-ip");
@@ -144,7 +147,7 @@ export default {
                     $(element).prop("checked", !(ev.target as HTMLInputElement).checked);
                 });
             }
-        });
+        }, {neverExpire: true});
 
         this.memory.content = filter.add(".gall_list .ub-content", (element) => {
             if (!this.status.deleteViaCtrl) return;
@@ -189,7 +192,7 @@ export default {
                 const ratio = this.data!.ratio[element.dataset.uid!];
 
                 if (!ratio) return false;
-                
+
                 element.dataset.refresherRatio = "true";
 
                 const text = document.createElement("span");
