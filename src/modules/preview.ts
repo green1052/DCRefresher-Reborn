@@ -15,6 +15,7 @@ import type IFrame from "../core/frame";
 import * as storage from "../utils/storage";
 import {inject} from "../utils/inject";
 import {getURL} from "../utils/getURL";
+import {GalleryPreData} from "../@types/post";
 
 const domParser = new DOMParser();
 
@@ -1004,7 +1005,7 @@ const panel = {
     }
 };
 
-const getRelevantData = (ev: MouseEvent) => {
+const getRelevantData = (ev: MouseEvent): GalleryPreData => {
     const target = ev.target as HTMLElement;
     const isTR = target.tagName === "TR";
 
@@ -1018,6 +1019,7 @@ const getRelevantData = (ev: MouseEvent) => {
     let link = "";
     let notice = false;
     let recommend = false;
+    let type = "";
 
     let linkElement: HTMLLinkElement | null;
 
@@ -1042,7 +1044,9 @@ const getRelevantData = (ev: MouseEvent) => {
         const emElement = isTR
             ? target.querySelector("em.icon_img")
             : findNeighbor(target, "em.icon_img", 5, null);
+
         if (emElement) {
+            type = emElement.className.split(" ").at(-1) ?? "icon_txt";
             recommend = emElement.classList.contains("icon_recomimg");
         }
 
@@ -1092,7 +1096,8 @@ const getRelevantData = (ev: MouseEvent) => {
         title,
         link,
         notice,
-        recommend
+        recommend,
+        type
     };
 };
 
@@ -1484,6 +1489,12 @@ export default {
             desc: "삭제된 글과 댓글을 보존합니다. (캐시 비활성화 시 작동 안함, 글 보존 기능 작동 안함)",
             type: "check",
             default: false
+        },
+        blockImage: {
+            name: "이미지 아이콘 없는 이미지 차단",
+            desc: "이미지가 없는 게시글에 이미지가 있을 경우 차단합니다.",
+            type: "check",
+            default: false
         }
     },
     require: ["filter", "eventBus", "Frame", "http"],
@@ -1512,6 +1523,8 @@ export default {
             frame.data.load = true;
             frame.title = preData.title!;
             frame.data.buttons = true;
+            frame.data.type = preData.type!;
+            frame.data.useImageBlock = this.status.blockImage;
 
             if (this.status.colorPreviewLink) {
                 const title = `${preData.title} - ${document.title
@@ -2574,6 +2587,7 @@ export default {
         bypassCaptcha: RefresherCheckSettings;
         disableCache: RefresherCheckSettings;
         archiveArticle: RefresherCheckSettings;
+        blockImage: RefresherCheckSettings;
     };
     require: ["filter", "eventBus", "Frame", "http"];
 }>;

@@ -34,5 +34,6 @@ declare global {
         link?: string;
         notice?: boolean;
         recommend?: boolean;
+        type: string;
     }
 }

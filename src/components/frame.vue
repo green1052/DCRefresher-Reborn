@@ -170,6 +170,7 @@
                     name="refresher-opacity">
                     <div
                         :key="frame.contents"
+                        :class="frame.data.useImageBlock && frame.data.type === 'icon_txt' && 'refresher-preview-block-media'"
                         class="refresher-preview-contents-actual"
                         v-html="frame.contents"/>
                 </transition>
@@ -408,7 +409,6 @@ export default Vue.extend({
             this.frame.collapse = undefined;
             this.frame.data = {};
             this.frame.functions = {};
-
             this.reply = null;
             this.dccon = [];
             this.closeDccon();

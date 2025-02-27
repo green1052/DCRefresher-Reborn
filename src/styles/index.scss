@@ -809,6 +809,15 @@ tr.gall_writer {
     }
 }
 
+.refresher-preview-block-media {
+    embed,
+    img,
+    video,
+    #zzbang_div {
+        display: none;
+    }
+}
+
 .refresher-preview-contents-actual {
     display: block;
 }

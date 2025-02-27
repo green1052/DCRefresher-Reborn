@@ -59,6 +59,8 @@ declare global {
             views: string | undefined;
             useWriteComment: boolean;
             comments: DcinsideComments | undefined;
+            type: string;
+            useImageBlock: boolean;
         };
         functions: {
             vote(type: number): Promise<boolean>;
