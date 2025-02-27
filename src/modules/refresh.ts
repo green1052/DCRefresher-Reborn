@@ -154,6 +154,7 @@ export default {
         const urlSearchParams = new URLSearchParams(location.href);
         const currentPostNo = urlSearchParams.get("no");
         const isPageView = location.href.includes("/board/view");
+        const searchType = queryString("s_type");
 
         let originalLocation = location.href;
 
@@ -214,7 +215,7 @@ export default {
                 const $element = $(element);
                 const no = $element.find(".gall_num").text();
 
-                if (!isPageView && isAdmin) {
+                if (!isPageView && isAdmin && (searchType === "search_comment" && $element.hasClass("search_comment"))) {
                     $element.prepend(no === "설문" ? "<td></td>" : managerCheckbox);
                 }
 
