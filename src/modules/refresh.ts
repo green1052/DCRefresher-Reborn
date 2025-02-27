@@ -211,11 +211,13 @@ export default {
             const oldCache = Array.from($oldList.find(".gall_num")).map((element) => element!.innerText);
             // const newCache = Array.from($newList.find(".gall_num")).map((element) => element!.innerText);
 
+            console.log(searchType);
+
             for (const element of $newListChildren) {
                 const $element = $(element);
                 const no = $element.find(".gall_num").text();
 
-                if (!isPageView && isAdmin && (!searchType || (searchType === "search_comment" && $element.hasClass("search_comment")))) {
+                if (!isPageView && isAdmin && (searchType !== "search_comment" || (searchType === "search_comment" && $element.hasClass("search_comment")))) {
                     $element.prepend(no === "설문" ? "<td></td>" : managerCheckbox);
                 }
 
