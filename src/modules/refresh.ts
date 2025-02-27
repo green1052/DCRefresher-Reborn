@@ -215,7 +215,7 @@ export default {
                 const $element = $(element);
                 const no = $element.find(".gall_num").text();
 
-                if (!isPageView && isAdmin && (searchType === "search_comment" && $element.hasClass("search_comment"))) {
+                if (!isPageView && isAdmin && (!searchType || (searchType === "search_comment" && $element.hasClass("search_comment")))) {
                     $element.prepend(no === "설문" ? "<td></td>" : managerCheckbox);
                 }
 
