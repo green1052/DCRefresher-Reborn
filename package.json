@@ -20,7 +20,7 @@
     "sass-loader": "^16.0.5",
     "swc-loader": "^0.2.6",
     "terser-webpack-plugin": "^5.3.12",
-    "typescript": "^5.7.3",
+    "typescript": "^5.8.2",
     "vue": "2.7.16",
     "vue-fragment": "1.6.0",
     "vue-loader": "15.11.1",
