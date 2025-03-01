@@ -18,8 +18,8 @@ importers:
         specifier: ^22.13.8
         version: 22.13.8
       '@types/webextension-polyfill':
-        specifier: ^0.12.2
-        version: 0.12.2
+        specifier: ^0.12.3
+        version: 0.12.3
       '@types/webpack':
         specifier: ^5.28.5
         version: 5.28.5(@swc/core@1.11.5)(webpack-cli@6.0.1)
@@ -300,8 +300,8 @@ packages:
   '@types/node@22.13.8':
     resolution: {integrity: sha512-G3EfaZS+iOGYWLLRCEAXdWK9my08oHNZ+FHluRiggIYJPOXzhOiDgpVCUHaUvyIC5/fj7C/p637jdzC666AOKQ==}
 
-  '@types/webextension-polyfill@0.12.2':
-    resolution: {integrity: sha512-rUIyZfbj1TcxlV0IWyy7MUHnW24nqUfQR0F+vPru/3t4noA9Pd4sdG4sljQgQHLd1vYgmkFLSvEc/furzQPbUw==}
+  '@types/webextension-polyfill@0.12.3':
+    resolution: {integrity: sha512-F58aDVSeN/MjUGazXo/cPsmR76EvqQhQ1v4x23hFjUX0cfAJYE+JBWwiOGW36/VJGGxoH74sVlRIF3z7SJCKyg==}
 
   '@types/webpack-env@1.18.8':
     resolution: {integrity: sha512-G9eAoJRMLjcvN4I08wB5I7YofOb/kaJNd5uoCMX+LbKXTPCF+ZIHuqTnFaK9Jz1rgs035f9JUPUhNFtqgucy/A==}
@@ -1550,7 +1550,7 @@ snapshots:
     dependencies:
       undici-types: 6.20.0
 
-  '@types/webextension-polyfill@0.12.2': {}
+  '@types/webextension-polyfill@0.12.3': {}
 
   '@types/webpack-env@1.18.8': {}
 
