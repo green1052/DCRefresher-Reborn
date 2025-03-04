@@ -1,0 +1,194 @@
+.refresherCompact {
+    min-width: unset;
+
+    .wrap_inner {
+        width: 95%;
+        max-width: 1000px;
+        margin-left: auto;
+        margin-right: auto;
+        margin-bottom: 25px;
+    }
+
+    .list_wrap {
+        min-width: unset;
+        width: 100%;
+    }
+
+    .dchead,
+    .gnb,
+    #container {
+        width: unset !important;
+    }
+
+    .dchead {
+        height: 50px;
+    }
+
+    .area_links {
+        right: 5px;
+    }
+
+    .visit_bookmark {
+        width: 80% !important;
+    }
+
+    .ad_bottom_list,
+    .top_search,
+    .gnb_bar,
+    .dcfoot,
+    .dc_logo,
+    .issuebox,
+    .right_content {
+        display: none !important;
+    }
+
+    .list_array_option {
+        width: 100% !important;
+    }
+
+    .page_head h2 {
+        font-size: 25px;
+    }
+
+    .gall_issuebox {
+        padding-top: unset;
+    }
+
+    .listwrap {
+        display: flex;
+    }
+}
+
+.refresherCompactView {
+    .cmt_write_box {
+        display: flex;
+    }
+
+    .left_content {
+        width: unset !important;
+    }
+
+    .wrap_inner {
+        width: 95%;
+        max-width: 1000px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .cmt_write {
+        width: 100%;
+    }
+
+    .cmt_txt_cont {
+        margin-left: 20px;
+
+        textarea {
+            width: 100px;
+
+            //@media screen and (min-width: 1220px) {
+            //    width: 800px !important;
+            //}
+            //
+            //@media screen and (min-width: 1145px) and (max-width: 1220px) {
+            //    width: 882px !important;
+            //}
+
+            @media screen and (min-width: 1145px) {
+                width: 770px !important;
+            }
+            
+            @media screen and (min-width: 1070px) and (max-width: 1145px) {
+                width: 750px !important;
+            }
+
+            @media screen and (min-width: 1015px) and (max-width: 1070px) {
+                width: 700px !important;
+            }
+
+            @media screen and (min-width: 960px) and (max-width: 1015px) {
+                width: 630px !important;
+            }
+
+            @media screen and (min-width: 850px) and (max-width: 960px) {
+                width: 580px !important;
+            }
+
+            @media screen and (min-width: 740px) and (max-width: 850px) {
+                width: 508px !important;
+            }
+
+            @media screen and (min-width: 630px) and (max-width: 740px) {
+                width: 400px !important;
+            }
+
+            @media screen and (min-width: 520px) and (max-width: 630px) {
+                width: 300px !important;
+            }
+
+            @media screen and (min-width: 410px) and (max-width: 520px) {
+                width: 200px !important;
+            }
+        }
+    }
+}
+
+.refresherHideGalleryView {
+    .issue_wrap, #visit_history {
+        display: none;
+    }
+}
+
+.refresherHideUselessView section.right_content article {
+    display: none;
+}
+
+.refresherHideUselessView.refresherPushToRight {
+    .left_content,
+    .issuebox,
+    .list_array_option {
+        width: 1160px;
+    }
+
+    .minor_intro_box {
+        width: 1000px;
+    }
+
+    .newvisit_history {
+        width: unset;
+    }
+
+    .stickyunit {
+        display: none;
+    }
+}
+
+
+.refresherHideNtf {
+    .btn_nftbox, .nft_informationwrap {
+        display: none;
+    }
+}
+
+.refresherHideGalleryImage {
+    #zzbang_div {
+        display: none;
+    }
+}
+
+.refresherHideNotice {
+    tr:has(em[class*=icon_notice]) {
+        display: none;
+    }
+}
+
+.refresherHideDCNotice {
+    tr[class*=ub-content]:has(> td[user_name=운영자]) {
+        display: none;
+    }
+}
+
+.refresherHideGamemeca {
+    tr[data-type=icon_fnews] {
+        display: none;
+    }
+}
