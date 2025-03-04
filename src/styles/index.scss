@@ -819,6 +819,11 @@ tr.gall_writer {
 
 .refresher-preview-contents-actual {
     display: block;
+
+    #pollFrame {
+        width: 100vh !important;
+        height: 100vw !important;
+    }
 }
 
 .refresher-loader {
