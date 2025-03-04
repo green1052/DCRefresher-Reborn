@@ -1,6 +1,5 @@
 import * as Toast from "../components/toast";
 import $ from "cash-dom";
-import browser from "webextension-polyfill";
 import {getURL} from "../utils/getURL";
 
 const CONTROL_BUTTON = ".stealth_control_button";

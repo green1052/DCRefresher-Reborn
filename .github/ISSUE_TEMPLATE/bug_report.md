@@ -16,8 +16,9 @@ assignees: green1052
 **스크린샷**
 
 **환경:**
- - OS: [e.g. Windows 11]
- - 브라우저: [e.g. Chrome, Firefox]
- - 버전: [e.g. 3.115]
+
+- OS: [e.g. Windows 11]
+- 브라우저: [e.g. Chrome, Firefox]
+- 버전: [e.g. 3.115]
 
 **추가 설명**
