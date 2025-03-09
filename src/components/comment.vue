@@ -2,35 +2,42 @@
     <div
         :data-deleted="comment.is_delete !== '0'"
         :data-depth="comment.depth"
-        class="refresher-comment">
+        class="refresher-comment"
+    >
         <div class="meta">
-            <User
-                :me="me"
-                :user="comment.user"/>
+            <User :me="me" :user="comment.user" />
             <div class="float-right">
                 <p
                     v-if="useWriteComment && comment.depth === 0"
                     class="refresher-reply"
-                    @click="setReply">{{ reply === comment.no ? "답글 해제" : "답글" }}</p>
+                    @click="setReply"
+                >
+                    {{ reply === comment.no ? "답글 해제" : "답글" }}
+                </p>
 
-                <TimeStamp :date="new Date(date(comment.reg_date))"/>
+                <TimeStamp :date="new Date(date(comment.reg_date))" />
                 <div
                     v-if="
                         comment.is_delete === '0' &&
-                        (comment.del_btn === 'Y' || comment.my_cmt === 'Y' || isAdmin || comment.user.isLogout())"
+                        (comment.del_btn === 'Y' ||
+                            comment.my_cmt === 'Y' ||
+                            isAdmin ||
+                            comment.user.isLogout())
+                    "
                     class="delete"
-                    @click="safeDelete">
+                    @click="safeDelete"
+                >
                     <svg
                         fill="black"
                         height="14px"
                         viewBox="0 0 24 24"
                         width="14px"
-                        xmlns="http://www.w3.org/2000/svg">
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <path d="M0 0h24v24H0z" fill="none" />
                         <path
-                            d="M0 0h24v24H0z"
-                            fill="none"/>
-                        <path
-                            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                        />
                     </svg>
                 </div>
             </div>
@@ -40,31 +47,31 @@
                 v-if="getVoiceData.iframe"
                 :src="getVoiceData.src"
                 height="54px"
-                width="280px"/>
-            <audio
-                v-else
-                :src="getVoiceData.src"
-                controls/>
+                width="280px"
+            />
+            <audio v-else :src="getVoiceData.src" controls />
             <p v-if="getVoiceData.memo">{{ getVoiceData.memo }}</p>
         </div>
         <p
             v-else-if="/<(img|video) class=/.test(comment.memo)"
             class="refresher-comment-content dccon"
             @contextmenu="contextMenu"
-            v-html="comment.memo.replace(/(?<!(dc|<))img/gi, '/><img')"/>
+            v-html="comment.memo.replace(/(?<!(dc|<))img/gi, '/><img')"
+        />
         <p
             v-else
             class="refresher-comment-content"
-            v-html="comment.memo.replaceAll('\n', '<br>')"/>
+            v-html="comment.memo.replaceAll('\n', '<br>')"
+        />
     </div>
 </template>
 
 <script lang="ts">
-import {eventBus} from "../core/eventbus";
+import { eventBus } from "../core/eventbus";
 import timestamp from "./timestamp.vue";
 import user from "./user.vue";
 import $ from "cash-dom";
-import Vue, {PropType} from "vue";
+import Vue, { PropType } from "vue";
 
 interface CommentVueData {
     currentId: string;
@@ -120,7 +127,9 @@ export default Vue.extend({
             return;
         }
 
-        const fixedName = document.querySelector("#login_box > .user_info .nickname > em")?.innerHTML;
+        const fixedName = document.querySelector(
+            "#login_box > .user_info .nickname > em"
+        )?.innerHTML;
 
         if (fixedName) {
             const gallogIcon = document.querySelector("#login_box > .user_info > .writer_nikcon")!;
@@ -132,11 +141,11 @@ export default Vue.extend({
             }
         }
 
-        const gallogImageElement = document.querySelector<HTMLImageElement>("#login_box .user_info .writer_nikcon > img");
+        const gallogImageElement = document.querySelector<HTMLImageElement>(
+            "#login_box .user_info .writer_nikcon > img"
+        );
 
-        const click =
-            gallogImageElement &&
-            gallogImageElement.getAttribute("onclick");
+        const click = gallogImageElement && gallogImageElement.getAttribute("onclick");
 
         if (click) {
             this.currentId = click
@@ -151,12 +160,9 @@ export default Vue.extend({
         }
 
         if (!this.me && !this.postUser) {
-            eventBus.on(
-                "RefresherPostDataLoaded",
-                (obj: IPostInfo) => {
-                    this.me = obj.user?.id === this.comment.user.id;
-                }
-            );
+            eventBus.on("RefresherPostDataLoaded", (obj: IPostInfo) => {
+                this.me = obj.user?.id === this.comment.user.id;
+            });
         }
     },
     computed: {
@@ -171,7 +177,7 @@ export default Vue.extend({
                 iframe: memo[0].indexOf("iframe") > -1,
                 src:
                     memo[0].indexOf("iframe") > -1
-                        ? memo[0].split("src=\"")[1].split("\"")[0]
+                        ? memo[0].split('src="')[1].split('"')[0]
                         : "https://vr.dcinside.com/" + memo[0],
                 memo: memo[1]
             };
@@ -199,11 +205,7 @@ export default Vue.extend({
                 if (!password) return;
             }
 
-            this.delete(
-                this.comment.no,
-                password,
-                this.comment.my_cmt === "N" && this.isAdmin
-            );
+            this.delete(this.comment.no, password, this.comment.my_cmt === "N" && this.isAdmin);
         },
 
         setReply() {
@@ -221,14 +223,7 @@ export default Vue.extend({
 
             const code = src.replace(/^.*no=/g, "").replace(/^&.*$/g, "");
 
-            eventBus.emit(
-                "refresherUserContextMenu",
-                null,
-                null,
-                null,
-                code,
-                null
-            );
+            eventBus.emit("refresherUserContextMenu", null, null, null, code, null);
         }
     }
 });

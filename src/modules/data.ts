@@ -70,7 +70,6 @@ export default {
                     Toast.show("데이터를 클라우드에 백업하는데 실패했습니다.", true, 3000);
                 }
             });
-
         },
         recoverCloud(this, _) {
             if (!confirm("ㄹ?ㅇ")) return;
@@ -110,7 +109,8 @@ export default {
             try {
                 const data: Record<any, any> = JSON.parse(input);
 
-                storage.clear()
+                storage
+                    .clear()
                     .then(() => {
                         storage.setObject(data);
                         Toast.show("데이터를 가져왔습니다.", false, 3000);
@@ -118,7 +118,6 @@ export default {
                     .catch(() => {
                         Toast.show("데이터를 가져오는데 실패했습니다.", true, 3000);
                     });
-
             } catch {
                 Toast.show("데이터를 가져오는데 실패했습니다.", true, 3000);
             }

@@ -5,23 +5,21 @@
         :data-module="modname"
         :data-on="on"
         class="refresher-checkbox"
-        @click="toggle">
+        @click="toggle"
+    >
         <div
             :style="{
                 transform:
                     'translateX(' +
-                    (typeof translateX !== 'undefined'
-                        ? translateX
-                        : this.on
-                        ? 18
-                        : 0) +
+                    (typeof translateX !== 'undefined' ? translateX : this.on ? 18 : 0) +
                     'px)'
             }"
             class="selected"
             @pointerdown="down"
             @pointermove="hover"
             @pointerout="out"
-            @pointerup="up"></div>
+            @pointerup="up"
+        ></div>
     </div>
 </template>
 
@@ -77,11 +75,7 @@ export default Vue.extend({
 
             this.on = !this.on;
 
-            this.change?.(
-                this.$el.dataset.module,
-                this.$el.dataset.id,
-                this.on
-            );
+            this.change?.(this.$el.dataset.module, this.$el.dataset.id, this.on);
         },
 
         hover(ev: PointerEvent) {

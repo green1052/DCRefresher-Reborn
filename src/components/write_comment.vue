@@ -1,61 +1,55 @@
 <template>
     <div class="refresher-write-comment">
-        <div
-            v-show="editUser"
-            class="user">
+        <div v-show="editUser" class="user">
             <input
                 v-model="unsignedUserID"
                 placeholder="닉네임"
                 type="text"
-                @change="(v) => validCheck('id', v.target.value)"/>
-            <div/>
+                @change="(v) => validCheck('id', v.target.value)"
+            />
+            <div />
             <input
                 v-model="unsignedUserPW"
                 placeholder="비밀번호"
                 type="password"
-                @change="(v) => validCheck('pw', v.target.value)"/>
+                @change="(v) => validCheck('pw', v.target.value)"
+            />
         </div>
         <div class="refresher-comment-body">
-            <div
-                :class="{ focus: focused, disable: disabled }"
-                class="refresher-input-wrap">
+            <div :class="{ focus: focused, disable: disabled }" class="refresher-input-wrap">
                 <textarea
                     id="comment_main"
                     :disabled="disabled || this.getDccon().length > 0"
                     :placeholder="
-                        !this.getDccon().length
-                            ? '댓글 입력...'
-                            : '디시콘이 선택됐습니다.'
+                        !this.getDccon().length ? '댓글 입력...' : '디시콘이 선택됐습니다.'
                     "
                     autocomplete="off"
                     @blur="blur"
                     @focus="focus"
                     @input="updateText"
-                    @keydown="type"/>
+                    @keydown="type"
+                />
             </div>
             <PreviewButton
                 id="write"
                 :click="write"
                 class="refresher-writecomment primary"
-                text="작성"/>
+                text="작성"
+            />
         </div>
-        <div
-            @mouseleave="hoverUserInfo = false"
-            @mouseover="hoverUserInfo = true">
+        <div @mouseleave="hoverUserInfo = false" @mouseover="hoverUserInfo = true">
             <div
                 class="whoami"
                 v-bind:class="{
                     'refresher-comment-util': true,
-                    'refresher-comment-util-show': !(
-                        hoverUserInfo && !this.user.id
-                    )
-                }">
-                <UserComponent
-                    v-if="user"
-                    :user="user"/>
-                <span>로 {{
-                        reply === null ? "" : "답글"
-                    }}{{ !this.getDccon().length ? "" : "디시콘" }} 작성 중</span>
+                    'refresher-comment-util-show': !(hoverUserInfo && !this.user.id)
+                }"
+            >
+                <UserComponent v-if="user" :user="user" />
+                <span
+                    >로 {{ reply === null ? "" : "답글"
+                    }}{{ !this.getDccon().length ? "" : "디시콘" }} 작성 중</span
+                >
             </div>
             <div
                 class="whoami"
@@ -63,9 +57,10 @@
                     'refresher-comment-util': true,
                     'refresher-comment-util-edit': true,
                     'refresher-comment-util-show': hoverUserInfo && this.user.isLogout()
-                }">
+                }"
+            >
                 <span @click="toggleEditUser"
-                >클릭하면 작성자 정보 수정 모드를
+                    >클릭하면 작성자 정보 수정 모드를
                     {{ editUser ? "비활성화" : "활성화" }}시킵니다.</span
                 >
             </div>
@@ -74,12 +69,12 @@
 </template>
 
 <script lang="ts">
-import {User} from "../utils/user";
+import { User } from "../utils/user";
 import * as Toast from "./toast";
 import button from "./button.vue";
 import user from "./user.vue";
 import Vue from "vue";
-import {Nullable} from "../utils/types";
+import { Nullable } from "../utils/types";
 import $ from "cash-dom";
 
 interface WriteCommentData {
@@ -110,9 +105,7 @@ export default Vue.extend({
             hoverUserInfo: false,
             user: null,
             unsignedUserID: localStorage.nonmember_nick || "ㅇㅇ",
-            unsignedUserPW:
-                localStorage.nonmember_pw ||
-                Math.random().toString(36).substring(5)
+            unsignedUserPW: localStorage.nonmember_pw || Math.random().toString(36).substring(5)
         };
     },
     props: {
@@ -141,37 +134,20 @@ export default Vue.extend({
         }
     },
     mounted(): void {
-        const gallogName = document.querySelector(
-            "#login_box > .user_info .nickname > em"
-        );
+        const gallogName = document.querySelector("#login_box > .user_info .nickname > em");
         const fixedName = gallogName?.innerHTML;
 
         if (fixedName) {
             this.fixedUser = true;
 
-            const gallogIcon = document.querySelector(
-                "#login_box > .user_info > .writer_nikcon"
-            )!;
+            const gallogIcon = document.querySelector("#login_box > .user_info > .writer_nikcon")!;
             const attribute = gallogIcon.getAttribute("onclick")!;
 
-            const id =
-                /window\.open\('\/\/gallog\.dcinside\.com\/(\w*)'\);/.exec(
-                    attribute
-                )![1];
+            const id = /window\.open\('\/\/gallog\.dcinside\.com\/(\w*)'\);/.exec(attribute)![1];
 
-            this.user = new User(
-                fixedName,
-                id,
-                null,
-                gallogIcon.querySelector("img")!.src
-            );
+            this.user = new User(fixedName, id, null, gallogIcon.querySelector("img")!.src);
         } else {
-            this.user = new User(
-                this.unsignedUserID,
-                null,
-                "127.0.0.1",
-                null
-            );
+            this.user = new User(this.unsignedUserID, null, "127.0.0.1", null);
         }
     },
     methods: {
@@ -208,15 +184,8 @@ export default Vue.extend({
         async write(): Promise<boolean> {
             this.disabled = true;
 
-            if (
-                !this.fixedUser &&
-                (!this.unsignedUserID || !this.unsignedUserPW)
-            ) {
-                Toast.show(
-                    "아이디 혹은 비밀번호를 입력하지 않았습니다.",
-                    true,
-                    2000
-                );
+            if (!this.fixedUser && (!this.unsignedUserID || !this.unsignedUserPW)) {
+                Toast.show("아이디 혹은 비밀번호를 입력하지 않았습니다.", true, 2000);
                 return false;
             }
 
@@ -227,11 +196,11 @@ export default Vue.extend({
                 this.getDccon().length ? this.getDccon() : this.text,
                 this.reply,
                 this.fixedUser
-                    ? {name: this.user!.nick}
+                    ? { name: this.user!.nick }
                     : {
-                        name: this.unsignedUserID,
-                        pw: this.unsignedUserPW
-                    }
+                          name: this.unsignedUserID,
+                          pw: this.unsignedUserPW
+                      }
             );
 
             if (!result) {

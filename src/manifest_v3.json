@@ -8,9 +8,7 @@
         "storage",
         "unlimitedStorage"
     ],
-    "host_permissions": [
-        "https://*.dcinside.com/*"
-    ],
+    "host_permissions": ["https://*.dcinside.com/*"],
     "background": {
         "service_worker": "background.js"
     },
@@ -30,26 +28,15 @@
     "options_page": "views/index.html",
     "web_accessible_resources": [
         {
-            "resources": [
-                "assets/*",
-                "popup/*"
-            ],
-            "matches": [
-                "<all_urls>"
-            ]
+            "resources": ["assets/*", "popup/*"],
+            "matches": ["<all_urls>"]
         }
     ],
     "content_scripts": [
         {
-            "js": [
-                "refresher.bundle.js"
-            ],
-            "css": [
-                "refresher.bundle.css"
-            ],
-            "matches": [
-                "https://*.dcinside.com/*"
-            ],
+            "js": ["refresher.bundle.js"],
+            "css": ["refresher.bundle.css"],
+            "matches": ["https://*.dcinside.com/*"],
             "exclude_matches": [
                 "https://event.dcinside.com/*",
                 "https://h5.dcinside.com/*",

@@ -1,60 +1,44 @@
 <template>
     <div class="refresher-dccon-popup">
-        <div style="display: flex;">
+        <div style="display: flex">
             <h3>디시콘</h3>
 
             <div>
-                <input v-model="doubleDccon" type="checkbox">
+                <input v-model="doubleDccon" type="checkbox" />
                 <label>더블콘</label>
             </div>
 
-            <div
-                class="close"
-                @click="close">
-                <div class="cross"/>
-                <div class="cross"/>
+            <div class="close" @click="close">
+                <div class="cross" />
+                <div class="cross" />
             </div>
         </div>
 
-        <refresher-loader v-if="!Object.keys(dcconList).length"/>
+        <refresher-loader v-if="!Object.keys(dcconList).length" />
         <fragment v-else>
-            <hr/>
+            <hr />
 
-            <ul style="overflow: auto; display: flex; user-select: none; justify-content: center;">
-                <li
-                    style="font-size: 30px; margin-right: 5px"
-                    @click="pageDown()">
-                    <
-                </li>
-                <li
-                    v-for="dccon in dcconList[currentPage]"
-                    :key="dccon.title">
+            <ul style="overflow: auto; display: flex; user-select: none; justify-content: center">
+                <li style="font-size: 30px; margin-right: 5px" @click="pageDown()"><</li>
+                <li v-for="dccon in dcconList[currentPage]" :key="dccon.title">
                     <img
                         :alt="dccon.title"
                         :src="dccon.main_img_url"
-                        @click="dcconListClick(dccon.detail)"/>
+                        @click="dcconListClick(dccon.detail)"
+                    />
                 </li>
-                <li
-                    style="font-size: 30px; margin-left: 5px"
-                    @click="pageUp()">
-                    >
-                </li>
+                <li style="font-size: 30px; margin-left: 5px" @click="pageUp()">></li>
             </ul>
 
-            <hr/>
+            <hr />
 
             <div style="width: 100%; height: 80%; overflow: auto">
                 <h2 v-if="firstLoad" style="position: absolute; top: 50%; left: 35%">
                     디시콘을 클릭해주세요.
                 </h2>
-                <ul v-else style="display: flex; flex-wrap: wrap;">
-                    <li
-                        v-for="dccon in this.currentDccon"
-                        @click="dcconClick(dccon)">
-                        <img
-                            :alt="dccon.title"
-                            :src="dccon.list_img"
-                            style="height: 100px"/>
+                <ul v-else style="display: flex; flex-wrap: wrap">
+                    <li v-for="dccon in this.currentDccon" @click="dcconClick(dccon)">
+                        <img :alt="dccon.title" :src="dccon.list_img" style="height: 100px" />
                     </li>
                 </ul>
             </div>
@@ -65,7 +49,7 @@
 <script lang="ts">
 import Vue from "vue";
 import Cookies from "js-cookie";
-import {Fragment} from "vue-fragment";
+import { Fragment } from "vue-fragment";
 import RefresherLoader from "./loader.vue";
 import ky from "ky";
 
@@ -116,8 +100,7 @@ export default Vue.extend({
         },
         async getDcconList() {
             if (this.dcconList[this.currentPage]) {
-                this.currentDccon =
-                    this.dcconList[this.currentPage][0].detail;
+                this.currentDccon = this.dcconList[this.currentPage][0].detail;
                 return;
             }
 

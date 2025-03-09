@@ -1,4 +1,4 @@
-import type {User} from "../utils/user";
+import type { User } from "../utils/user";
 
 export {};
 
@@ -74,11 +74,7 @@ declare global {
                 reply: string | null,
                 user: { name: string; pw?: string }
             ): Promise<boolean>;
-            deleteComment(
-                commentId: string,
-                password: string,
-                admin: boolean
-            ): Promise<boolean>;
+            deleteComment(commentId: string, password: string, admin: boolean): Promise<boolean>;
         };
     }
 }

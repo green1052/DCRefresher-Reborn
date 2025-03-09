@@ -16,11 +16,14 @@ $dark-tint2: #3d3d3d;
 
     &:not(.stlth) .refresher-preview-contents-actual,
     &:not(.stlth) .writing_view_box {
-        embed, img, video, #zzbang_div {
+        embed,
+        img,
+        video,
+        #zzbang_div {
             display: none;
         }
     }
-    
+
     div.comment_box .comment_dccon {
         &:not(:hover) {
             .written_dccon {
@@ -48,7 +51,7 @@ $dark-tint2: #3d3d3d;
             border: 2px solid $dark-tint2;
         }
     }
-    
+
     .dory {
         .dory_img img {
             height: 10pt;
@@ -68,12 +71,12 @@ $dark-tint2: #3d3d3d;
             margin-left: 90px;
         }
     }
-    
+
     .refresher-nocomment-wrap {
         img {
             display: none;
         }
-        
+
         h3 {
             text-align: center;
             width: 100%;
@@ -100,7 +103,7 @@ $dark-tint2: #3d3d3d;
             content: "디시콘 표시";
         }
     }
-    
+
     &.refresherDark,
     div.refresher-preview-comments,
     .coment_dccon_img:not(:hover) {
@@ -108,7 +111,7 @@ $dark-tint2: #3d3d3d;
             border: 1px solid $dark-tint2;
         }
     }
-    
+
     .stealth_control_button {
         position: fixed;
         bottom: 20px;
@@ -158,7 +161,7 @@ $dark-tint2: #3d3d3d;
             transform: translateX(0px);
         }
     }
-    
+
     &.refresherDark .stealth_control_button {
         background: $dark-tint-light-opacity;
         border: 1px solid #505050;

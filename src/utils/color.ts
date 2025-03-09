@@ -47,9 +47,8 @@ export const rgbToHsl = ([r, g, b]: Rgb): Hsl => {
         return [0, 0, l];
     } else {
         const h =
-            (max === r
-                ? (g - b) / diff + (g < b ? 6 : 0)
-                : (b - r) / diff + (max === g ? 2 : 4)) / 6;
+            (max === r ? (g - b) / diff + (g < b ? 6 : 0) : (b - r) / diff + (max === g ? 2 : 4)) /
+            6;
         const s = diff / (l > 0.5 ? 2 - max - min : max + min);
 
         return [h, s, l];
@@ -87,8 +86,6 @@ export const inverseColor = (c: number): number => 1 - c ** 2;
 export const toHexFragment = (num: number, padWidth = 2) =>
     num.toString(16).padStart(padWidth, "0");
 
-export const rgbToHex = (...rgb: Rgb): string =>
-    "#" + rgb.map(toHexFragment).join("");
+export const rgbToHex = (...rgb: Rgb): string => "#" + rgb.map(toHexFragment).join("");
 
-export const random = (): string =>
-    "#" + toHexFragment(Math.trunc((1 << 24) * Math.random()), 6);
+export const random = (): string => "#" + toHexFragment(Math.trunc((1 << 24) * Math.random()), 6);

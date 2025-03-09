@@ -1,7 +1,7 @@
 import * as ip from "./ip";
 import * as memo from "../core/memo";
 import $ from "cash-dom";
-import type {Nullable, ObjectEnum} from "./types";
+import type { Nullable, ObjectEnum } from "./types";
 import storage from "./storage";
 
 export type UserType =
@@ -23,7 +23,7 @@ const USERTYPE: ObjectEnum<UserType> = {
     FIXED_MANAGER: "FIXED_MANAGER"
 };
 
-let ratio: Record<string, { article: number; comment: number; data: number; }> = {};
+let ratio: Record<string, { article: number; comment: number; data: number }> = {};
 let ban: Record<string, string[]> = {};
 
 (async () => {
@@ -36,7 +36,7 @@ let ban: Record<string, string[]> = {};
     if (!enable) return;
 
     if (checkRatio) ratio = (await storage.module.get<any>("관리"))?.["ratio"] ?? {};
-    if (checkPermBan) ban = await storage.get<any>("refresher.database.ban") ?? {};
+    if (checkPermBan) ban = (await storage.get<any>("refresher.database.ban")) ?? {};
 })();
 
 export const getType = (icon: string | null): UserType => {
@@ -136,9 +136,7 @@ export class User {
         const ip = dom.dataset.ip;
         user.ip = ip ? String(ip) : null;
 
-        user.icon = user.id
-            ? $dom.find("a.writer_nikcon img").attr("src")
-            : null;
+        user.icon = user.id ? $dom.find("a.writer_nikcon img").attr("src") : null;
         user.type = getType(user.icon);
 
         user.getMemo();
@@ -149,7 +147,8 @@ export class User {
     }
 
     getMemo(): void {
-        this.memo = memo.get("UID", this.id) ?? memo.get("IP", this.ip) ?? memo.get("NICK", this.nick);
+        this.memo =
+            memo.get("UID", this.id) ?? memo.get("IP", this.ip) ?? memo.get("NICK", this.nick);
     }
 
     getRatio(): void {

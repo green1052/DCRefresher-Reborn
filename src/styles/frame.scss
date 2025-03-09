@@ -116,10 +116,10 @@ $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
 
 .refresher-scroll {
     background: linear-gradient(
-                    to top,
-                    rgba(12, 23, 53, 0.7),
-                    rgba(32, 42, 72, 0.3),
-                    rgba(0, 0, 0, 0)
+        to top,
+        rgba(12, 23, 53, 0.7),
+        rgba(32, 42, 72, 0.3),
+        rgba(0, 0, 0, 0)
     );
     bottom: 0;
     color: white;
@@ -145,10 +145,10 @@ $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
 
     &.top {
         background: linear-gradient(
-                        to bottom,
-                        rgba(12, 23, 53, 0.7),
-                        rgba(32, 42, 72, 0.3),
-                        rgba(0, 0, 0, 0)
+            to bottom,
+            rgba(12, 23, 53, 0.7),
+            rgba(32, 42, 72, 0.3),
+            rgba(0, 0, 0, 0)
         );
         bottom: unset;
         top: 0;

@@ -20,13 +20,9 @@ export const filter = {
             if (filterObj.options?.neverExpire) {
                 filterObj.expire?.();
 
-                const observer = observe.listen(
-                    filterObj.scope,
-                    document.documentElement,
-                    (e) => {
-                        filter.__run(filterObj, e);
-                    }
-                );
+                const observer = observe.listen(filterObj.scope, document.documentElement, (e) => {
+                    filter.__run(filterObj, e);
+                });
 
                 filterObj.expire = () => observer.disconnect();
 
@@ -85,10 +81,7 @@ export const filter = {
 
         filter.events(uuid, "remove");
 
-        if (
-            lists[uuid].options?.neverExpire &&
-            typeof lists[uuid].expire === "function"
-        ) {
+        if (lists[uuid].options?.neverExpire && typeof lists[uuid].expire === "function") {
             lists[uuid].expire!();
         }
 

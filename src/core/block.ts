@@ -1,8 +1,8 @@
 import * as communicate from "./communicate";
-import {eventBus} from "./eventbus";
+import { eventBus } from "./eventbus";
 import storage from "../utils/storage";
 import browser from "webextension-polyfill";
-import type {ObjectEnum} from "../utils/types";
+import type { ObjectEnum } from "../utils/types";
 
 const BLOCK_NAMESPACE = "__REFRESHER_BLOCK";
 
@@ -33,10 +33,7 @@ const BLOCK_TYPES_KEYS: RefresherBlockType[] = [
     "IMAGE"
 ];
 
-export const BLOCK_DETECT_MODE_TYPE_NAMES: Record<
-    RefresherBlockDetectMode,
-    string
-> = {
+export const BLOCK_DETECT_MODE_TYPE_NAMES: Record<RefresherBlockDetectMode, string> = {
     SAME: "일치",
     CONTAIN: "포함",
     NOT_SAME: "불일치",
@@ -50,16 +47,11 @@ const BLOCK_DETECT_MODE: ObjectEnum<RefresherBlockDetectMode> = {
     NOT_CONTAIN: "NOT_CONTAIN"
 };
 
-const BLOCK_DETECT_MODE_KEYS = Object.keys(
-    BLOCK_DETECT_MODE
-) as RefresherBlockDetectMode[];
+const BLOCK_DETECT_MODE_KEYS = Object.keys(BLOCK_DETECT_MODE) as RefresherBlockDetectMode[];
 
 export type BlockCache = Record<RefresherBlockType, RefresherBlockValue[]>;
 
-export type BlockModeCache = Record<
-    RefresherBlockType,
-    RefresherBlockDetectMode
->;
+export type BlockModeCache = Record<RefresherBlockType, RefresherBlockDetectMode>;
 
 function SendToBackground() {
     browser.runtime.sendMessage(
@@ -95,21 +87,13 @@ let BLOCK_MODE_CACHE: BlockModeCache = {
 };
 
 BLOCK_TYPES_KEYS.forEach(async (key) => {
-    const keyCache = await storage.get<RefresherBlockValue[]>(
-        `${BLOCK_NAMESPACE}:${key}`
-    );
-    const modeCache = await storage.get<RefresherBlockDetectMode>(
-        `${BLOCK_NAMESPACE}:${key}:MODE`
-    );
+    const keyCache = await storage.get<RefresherBlockValue[]>(`${BLOCK_NAMESPACE}:${key}`);
+    const modeCache = await storage.get<RefresherBlockDetectMode>(`${BLOCK_NAMESPACE}:${key}:MODE`);
 
     BLOCK_CACHE[key] = keyCache ?? [];
     BLOCK_MODE_CACHE[key] = modeCache ?? BLOCK_MODE_CACHE[key];
 
-    if (!modeCache)
-        await storage.set(
-            `${BLOCK_NAMESPACE}:${key}:MODE`,
-            BLOCK_MODE_CACHE[key]
-        );
+    if (!modeCache) await storage.set(`${BLOCK_NAMESPACE}:${key}:MODE`, BLOCK_MODE_CACHE[key]);
 
     SendToBackground();
 });
@@ -153,10 +137,7 @@ const InternalAddToList = (
     storage.set(`${BLOCK_NAMESPACE}:${type}`, BLOCK_CACHE[type]);
 };
 
-const InternalUpdateMode = (
-    type: RefresherBlockType,
-    mode: RefresherBlockDetectMode
-) => {
+const InternalUpdateMode = (type: RefresherBlockType, mode: RefresherBlockDetectMode) => {
     BLOCK_MODE_CACHE[type] = mode;
 
     storage.set(`${BLOCK_NAMESPACE}:${type}:MODE`, mode);
@@ -183,14 +164,10 @@ export const add = (
     mode?: RefresherBlockDetectMode
 ): void => {
     if (!checkValidType(type))
-        throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(
-            ", "
-        )}]`;
+        throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
 
     if (mode && !checkValidMode(mode))
-        throw `${mode} is not a valid mode. requires one of [${BLOCK_DETECT_MODE_KEYS.join(
-            ", "
-        )}]`;
+        throw `${mode} is not a valid mode. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`;
 
     InternalAddToList(type, content, isRegex, isAdvanced, gallery, extra, mode);
 
@@ -207,19 +184,12 @@ export const add = (
  * @param type 차단 종류
  * @param mode 차단 모드
  */
-export const updateMode = (
-    type: RefresherBlockType,
-    mode: RefresherBlockDetectMode
-): void => {
+export const updateMode = (type: RefresherBlockType, mode: RefresherBlockDetectMode): void => {
     if (!checkValidType(type))
-        throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(
-            ", "
-        )}]`;
+        throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
 
     if (!checkValidMode(mode))
-        throw `${type} is not a valid type. requires one of [${BLOCK_DETECT_MODE_KEYS.join(
-            ", "
-        )}]`;
+        throw `${type} is not a valid type. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`;
 
     InternalUpdateMode(type, mode);
 };
@@ -231,15 +201,9 @@ export const updateMode = (
  * @param content 확인할 내용
  * @param gallery 현재 갤러리
  */
-export const check = (
-    type: RefresherBlockType,
-    content: string,
-    gallery?: string
-): boolean => {
+export const check = (type: RefresherBlockType, content: string, gallery?: string): boolean => {
     if (!checkValidType(type))
-        throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(
-            ", "
-        )}]`;
+        throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
 
     if (!content || content.length < 1) return false;
 
@@ -249,7 +213,11 @@ export const check = (
         if (v.gallery && v.gallery !== gallery) return false;
 
         if (v.isAdvanced) {
-            const response = new Function("type", "content", "gallery", v.content)(type, content, gallery);
+            const response = new Function("type", "content", "gallery", v.content)(
+                type,
+                content,
+                gallery
+            );
             return typeof response === "boolean" ? response : false;
         }
 
@@ -297,8 +265,7 @@ export const checkAll = (
     gallery?: string
 ): boolean => {
     for (const [key, value] of Object.entries(obj)) {
-        if (value && check(key as RefresherBlockType, String(value), gallery))
-            return true;
+        if (value && check(key as RefresherBlockType, String(value), gallery)) return true;
     }
 
     return false;
@@ -350,7 +317,7 @@ communicate.addHook("dcconSelected", () => {
 });
 
 communicate.addHook("dcconAllSelected", () => {
-    eventBus.emit("refresherRequestBlock", {blockAllDccon: true});
+    eventBus.emit("refresherRequestBlock", { blockAllDccon: true });
 });
 
 communicate.addHook("updateBlocks", (data) => {

@@ -66,73 +66,68 @@ export default {
             }
         });
 
-        this.memory.submitButton = filter.add<HTMLButtonElement>(
-            "button.write",
-            (element) => {
-                $(element).on("click", () => {
-                    const header = this.status.header;
-                    const footer = this.status.footer;
+        this.memory.submitButton = filter.add<HTMLButtonElement>("button.write", (element) => {
+            $(element).on("click", () => {
+                const header = this.status.header;
+                const footer = this.status.footer;
 
-                    const $editor = $(".note-editable");
+                const $editor = $(".note-editable");
 
-                    if (header) {
-                        $editor.prepend(header);
-                    }
-
-                    if (footer) {
-                        $editor.append(footer);
-                    }
-
-                    if (this.status.bypassTitleLimit) {
-                        const $titleElement = $("input#subject");
-                        const title = $titleElement.val() as string;
-
-                        if (title.length === 1) $titleElement.val(`${title}\u200B`);
-                    }
-
-                    resetTemporaryData();
-                });
-
-                filter.remove(this.memory.submitButton);
-            }
-        );
-
-        this.memory.canvas = filter.add<HTMLIFrameElement>(
-            ".note-editable",
-            (element) => {
-                const $element = $(element);
-
-                if (this.status.temporarySave) {
-                    const gallId = $("form > input[name=id]").val() as string;
-
-                    if (Date.now() - this.data!.temporarySave.date > 86400000) {
-                        resetTemporaryData();
-                    }
-
-                    if (
-                        this.data!.temporarySave.id === gallId &&
-                        this.data!.temporarySave.title &&
-                        this.data!.temporarySave.content &&
-                        this.data!.temporarySave.date &&
-                        confirm("이전에 작성한 글이 있습니다. 불러오시겠습니까? (취소 시 삭제)")
-                    ) {
-                        $("#subject").val(this.data!.temporarySave.title);
-                        $element.html(this.data!.temporarySave.content);
-                    } else {
-                        resetTemporaryData();
-                    }
-
-                    this.data!.temporarySave.id = gallId;
-
-                    setInterval(() => {
-                        this.data!.temporarySave.title = $("#subject").val() as string;
-                        this.data!.temporarySave.content = $element.html() as string;
-                        this.data!.temporarySave.date = Date.now();
-                    }, 5000);
+                if (header) {
+                    $editor.prepend(header);
                 }
 
-                filter.remove(this.memory.canvas);
+                if (footer) {
+                    $editor.append(footer);
+                }
+
+                if (this.status.bypassTitleLimit) {
+                    const $titleElement = $("input#subject");
+                    const title = $titleElement.val() as string;
+
+                    if (title.length === 1) $titleElement.val(`${title}\u200B`);
+                }
+
+                resetTemporaryData();
             });
+
+            filter.remove(this.memory.submitButton);
+        });
+
+        this.memory.canvas = filter.add<HTMLIFrameElement>(".note-editable", (element) => {
+            const $element = $(element);
+
+            if (this.status.temporarySave) {
+                const gallId = $("form > input[name=id]").val() as string;
+
+                if (Date.now() - this.data!.temporarySave.date > 86400000) {
+                    resetTemporaryData();
+                }
+
+                if (
+                    this.data!.temporarySave.id === gallId &&
+                    this.data!.temporarySave.title &&
+                    this.data!.temporarySave.content &&
+                    this.data!.temporarySave.date &&
+                    confirm("이전에 작성한 글이 있습니다. 불러오시겠습니까? (취소 시 삭제)")
+                ) {
+                    $("#subject").val(this.data!.temporarySave.title);
+                    $element.html(this.data!.temporarySave.content);
+                } else {
+                    resetTemporaryData();
+                }
+
+                this.data!.temporarySave.id = gallId;
+
+                setInterval(() => {
+                    this.data!.temporarySave.title = $("#subject").val() as string;
+                    this.data!.temporarySave.content = $element.html() as string;
+                    this.data!.temporarySave.date = Date.now();
+                }, 5000);
+            }
+
+            filter.remove(this.memory.canvas);
+        });
     },
     revoke(filter) {
         filter.remove(this.memory.submitButton);
@@ -145,8 +140,8 @@ export default {
             title: string;
             content: string;
             date: number;
-        }
-    },
+        };
+    };
     memory: {
         submitButton: string;
         canvas: string;

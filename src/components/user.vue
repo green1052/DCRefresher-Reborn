@@ -5,18 +5,13 @@
         :title="title"
         class="refresher-user"
         @click="clickHandle"
-        @contextmenu="contextMenu">
+        @contextmenu="contextMenu"
+    >
         <div class="refresher-user-content">
-            <span
-                :data-icon="user.icon"
-                :data-type="user.type"
-                class="refresher-user-icon"/>
+            <span :data-icon="user.icon" :data-type="user.type" class="refresher-user-icon" />
             <span class="refresher-user-nick">{{ user.nick }}</span>
-            <span
-                v-if="user.memo"
-                :style="{ color: user.memo.color }"
-                class="refresher-user-memo"
-            >[{{ user.memo.text }}]</span
+            <span v-if="user.memo" :style="{ color: user.memo.color }" class="refresher-user-memo"
+                >[{{ user.memo.text }}]</span
             >
             <span class="refresher-user-info">{{ userInfo }}</span>
         </div>
@@ -24,9 +19,9 @@
 </template>
 
 <script lang="ts">
-import {eventBus} from "../core/eventbus";
-import Vue, {PropType} from "vue";
-import {User} from "../utils/user";
+import { eventBus } from "../core/eventbus";
+import Vue, { PropType } from "vue";
+import { User } from "../utils/user";
 
 export default Vue.extend({
     name: "refresher-user",
@@ -79,10 +74,7 @@ export default Vue.extend({
                 return;
             }
 
-            if (this.user.id)
-                this.openLink(
-                    `https://gallog.dcinside.com/${this.user.id}`
-                );
+            if (this.user.id) this.openLink(`https://gallog.dcinside.com/${this.user.id}`);
         },
 
         contextMenu(): void {

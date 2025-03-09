@@ -1,6 +1,6 @@
 import * as Toast from "../components/toast";
 import $ from "cash-dom";
-import {getURL} from "../utils/getURL";
+import { getURL } from "../utils/getURL";
 
 const CONTROL_BUTTON = ".stealth_control_button";
 const TEMPORARY_STEALTH = "stlth";
@@ -23,8 +23,7 @@ const tempButtonCreate = (element: HTMLElement): void => {
   </div>
 `;
     const button = buttonFrame.querySelector("#tempview")!;
-    const buttonText =
-        buttonFrame.querySelector<HTMLElement>("#temp_button_text")!;
+    const buttonText = buttonFrame.querySelector<HTMLElement>("#temp_button_text")!;
 
     button.addEventListener("click", () => {
         if ($element.hasClass(TEMPORARY_STEALTH)) {
@@ -55,9 +54,7 @@ export default {
 
             button.get(0)!.click();
 
-            const content = $(document.documentElement).hasClass(
-                TEMPORARY_STEALTH
-            )
+            const content = $(document.documentElement).hasClass(TEMPORARY_STEALTH)
                 ? "이미지를 보이게 했습니다."
                 : "이미지를 숨겼습니다.";
 
@@ -74,12 +71,9 @@ export default {
             });
         }
 
-        this.memory.contentViewUUID = eventBus.on(
-            "contentPreview",
-            (elem: HTMLElement) => {
-                if (!$(CONTROL_BUTTON).length) tempButtonCreate(elem);
-            }
-        );
+        this.memory.contentViewUUID = eventBus.on("contentPreview", (elem: HTMLElement) => {
+            if (!$(CONTROL_BUTTON).length) tempButtonCreate(elem);
+        });
     },
     revoke(eventBus) {
         $(document.documentElement).removeClass("refresherStealth");

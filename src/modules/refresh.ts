@@ -1,9 +1,9 @@
 import * as Toast from "../components/toast";
-import {queryString} from "../utils/http";
+import { queryString } from "../utils/http";
 import $ from "cash-dom";
 import ky from "ky";
 import * as storage from "../utils/storage";
-import {Cash} from "cash-dom/dist/cash";
+import { Cash } from "cash-dom/dist/cash";
 
 const AVERAGE_COUNTS_SIZE = 7;
 
@@ -22,8 +22,7 @@ const updateRefreshText = (button?: HTMLElement) => {
 };
 
 const addRefreshText = (issueBox: HTMLElement) => {
-    const pageHead =
-        issueBox ?? document.querySelector(".page_head .gall_issuebox");
+    const pageHead = issueBox ?? document.querySelector(".page_head .gall_issuebox");
 
     if (!pageHead?.querySelector("button[data-refresher=true]")) {
         const button = document.createElement("button");
@@ -48,7 +47,7 @@ const addRefreshText = (issueBox: HTMLElement) => {
 let archiveArticleConfig = false;
 
 (async () => {
-    if (!await storage.get<boolean>("미리보기.enable")) return;
+    if (!(await storage.get<boolean>("미리보기.enable"))) return;
     archiveArticleConfig = await storage.get<boolean>("미리보기.archiveArticle");
 })();
 
@@ -138,11 +137,7 @@ export default {
         }
     },
     require: ["http", "eventBus", "filter"],
-    func(
-        http,
-        eventBus,
-        filter
-    ) {
+    func(http, eventBus, filter) {
         if (this.status.doNotColorVisited) {
             $(document.documentElement).addClass("refresherDoNotColorVisited");
         }
@@ -172,11 +167,7 @@ export default {
 
             const $userDataLyr = $("#user_data_lyr");
 
-            if (
-                $userDataLyr.length > 0 &&
-                $userDataLyr.css("display") !== "none"
-            )
-                return false;
+            if ($userDataLyr.length > 0 && $userDataLyr.css("display") !== "none") return false;
 
             const isAdmin = $(".useradmin_btnbox button").length > 0;
 
@@ -201,21 +192,27 @@ export default {
             const $newList = $(dom.querySelector(".gall_list:not([id]) tbody"));
             const $newListChildren = $newList.children();
 
-            if ($newListChildren.length === 0)
-                return false;
+            if ($newListChildren.length === 0) return false;
 
             $oldList.parent().removeClass("empty");
 
             const newPostList: Cash[] = [];
 
-            const oldCache = Array.from($oldList.find(".gall_num")).map((element) => element!.innerText);
+            const oldCache = Array.from($oldList.find(".gall_num")).map(
+                (element) => element!.innerText
+            );
             // const newCache = Array.from($newList.find(".gall_num")).map((element) => element!.innerText);
 
             for (const element of $newListChildren) {
                 const $element = $(element);
                 const no = $element.find(".gall_num").text();
 
-                if (!isPageView && isAdmin && (searchType !== "search_comment" || (searchType === "search_comment" && $element.hasClass("search_comment")))) {
+                if (
+                    !isPageView &&
+                    isAdmin &&
+                    (searchType !== "search_comment" ||
+                        (searchType === "search_comment" && $element.hasClass("search_comment")))
+                ) {
                     $element.prepend(no === "설문" ? "<td></td>" : managerCheckbox);
                 }
 
@@ -248,13 +245,17 @@ export default {
                             const $a = $element.find("a:first-child");
                             let classList = "mark";
 
-                            if ($a.find(".spoiler").length)
-                                classList += " spoiler";
+                            if ($a.find(".spoiler").length) classList += " spoiler";
 
                             const subject = $a.html();
 
                             if (subject.match(keyword))
-                                $a.html(subject.replace(keyword, `<span class="${classList}">${keyword}</span>`));
+                                $a.html(
+                                    subject.replace(
+                                        keyword,
+                                        `<span class="${classList}">${keyword}</span>`
+                                    )
+                                );
                         }
                     }
                 }
@@ -295,14 +296,9 @@ export default {
                     averageCounts.shift();
                 }
 
-                const average =
-                    averageCounts.reduce((a, b) => a + b) /
-                    averageCounts.length;
+                const average = averageCounts.reduce((a, b) => a + b) / averageCounts.length;
 
-                this.memory.delay = Math.max(
-                    600,
-                    8 * Math.pow(2 / 3, 3 * average) * 1000
-                );
+                this.memory.delay = Math.max(600, 8 * Math.pow(2 / 3, 3 * average) * 1000);
             }
 
             return true;
@@ -355,7 +351,9 @@ export default {
 
         if (!this.status.useBetterBrowse) return;
 
-        this.memory.uuid = filter.add<HTMLAnchorElement>(".left_content article:has(.gall_listwrap) .bottom_paging_box a", (element) => {
+        this.memory.uuid = filter.add<HTMLAnchorElement>(
+            ".left_content article:has(.gall_listwrap) .bottom_paging_box a",
+            (element) => {
                 if (element.href.includes("javascript:")) return;
 
                 element.onclick = () => false;
@@ -370,11 +368,7 @@ export default {
                             http.mergeParamURL(location.href, element.href)
                         );
                     } else {
-                        history.pushState(
-                            null,
-                            document.title,
-                            element.href
-                        );
+                        history.pushState(null, document.title, element.href);
                     }
 
                     this.memory.calledByPageTurn = true;
@@ -382,11 +376,7 @@ export default {
                     await this.memory.load!(location.href, true);
 
                     document
-                        .querySelector(
-                            isPageView
-                                ? ".view_bottom_btnbox"
-                                : ".page_head"
-                        )
+                        .querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head")
                         ?.scrollIntoView({
                             behavior: "smooth",
                             block: "start"
@@ -395,72 +385,60 @@ export default {
             }
         );
 
-        this.memory.uuid2 = eventBus.on(
-            "refresherGetPost",
-            (parsedBody: Document) => {
-                const pagingBox = parsedBody.querySelector(
-                    ".left_content article:has(.gall_listwrap) .bottom_paging_box"
-                );
+        this.memory.uuid2 = eventBus.on("refresherGetPost", (parsedBody: Document) => {
+            const pagingBox = parsedBody.querySelector(
+                ".left_content article:has(.gall_listwrap) .bottom_paging_box"
+            );
 
-                const currentBottomPagingBox = document.querySelector(
-                    ".left_content article:has(.gall_listwrap) .bottom_paging_box"
-                );
+            const currentBottomPagingBox = document.querySelector(
+                ".left_content article:has(.gall_listwrap) .bottom_paging_box"
+            );
 
-                if (currentBottomPagingBox && pagingBox) {
-                    currentBottomPagingBox.innerHTML = pagingBox.innerHTML;
-                }
-
-                const pagingBoxAnchors =
-                    document.querySelectorAll<HTMLAnchorElement>(".left_content article:has(.gall_listwrap) .bottom_paging_box a");
-
-                if (!pagingBoxAnchors) return;
-
-                for (const a of pagingBoxAnchors) {
-                    const href = a.href;
-
-                    if (href.includes("javascript:")) continue;
-
-                    a.onclick = () => false;
-
-                    a.addEventListener("click", async () => {
-                        if (location.href.includes("/board/view")) {
-                            history.pushState(
-                                null,
-                                document.title,
-                                http.mergeParamURL(location.href, href)
-                            );
-                        } else {
-                            history.pushState(
-                                null,
-                                document.title,
-                                href
-                            );
-                        }
-
-                        this.memory.calledByPageTurn = true;
-
-                        await this.memory.load!(location.href, true);
-
-                        const query = document.querySelector(
-                            location.href.includes("/board/view")
-                                ? ".view_bottom_btnbox"
-                                : ".page_head"
-                        );
-
-                        query?.scrollIntoView({
-                            behavior: "smooth",
-                            block: "start"
-                        });
-                    });
-                }
+            if (currentBottomPagingBox && pagingBox) {
+                currentBottomPagingBox.innerHTML = pagingBox.innerHTML;
             }
-        );
+
+            const pagingBoxAnchors = document.querySelectorAll<HTMLAnchorElement>(
+                ".left_content article:has(.gall_listwrap) .bottom_paging_box a"
+            );
+
+            if (!pagingBoxAnchors) return;
+
+            for (const a of pagingBoxAnchors) {
+                const href = a.href;
+
+                if (href.includes("javascript:")) continue;
+
+                a.onclick = () => false;
+
+                a.addEventListener("click", async () => {
+                    if (location.href.includes("/board/view")) {
+                        history.pushState(
+                            null,
+                            document.title,
+                            http.mergeParamURL(location.href, href)
+                        );
+                    } else {
+                        history.pushState(null, document.title, href);
+                    }
+
+                    this.memory.calledByPageTurn = true;
+
+                    await this.memory.load!(location.href, true);
+
+                    const query = document.querySelector(
+                        location.href.includes("/board/view") ? ".view_bottom_btnbox" : ".page_head"
+                    );
+
+                    query?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start"
+                    });
+                });
+            }
+        });
     },
-    revoke(
-        _,
-        eventBus,
-        filter
-    ) {
+    revoke(_, eventBus, filter) {
         document.body.classList.remove("refresherDoNotColorVisited");
 
         if (this.memory.refresh) {
@@ -491,9 +469,7 @@ export default {
         calledByPageTurn: boolean;
         refreshRequest: string | null;
         lastRefresh: number;
-        load:
-            | ((customURL?: string, force?: boolean) => Promise<boolean>)
-            | null;
+        load: ((customURL?: string, force?: boolean) => Promise<boolean>) | null;
     };
     shortcuts: {
         refreshLists(): void;

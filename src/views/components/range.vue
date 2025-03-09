@@ -11,10 +11,9 @@
             :value="value"
             type="range"
             @change="update"
-            @input="input"/>
-        <span class="indicator">{{
-                value + (this.unit ? this.unit : "")
-            }}</span>
+            @input="input"
+        />
+        <span class="indicator">{{ value + (this.unit ? this.unit : "") }}</span>
     </div>
 </template>
 
@@ -74,11 +73,7 @@ export default Vue.extend({
         },
 
         update(ev: Event) {
-            this.change?.(
-                ev.target.dataset.module,
-                ev.target.dataset.id,
-                Number(ev.target.value)
-            );
+            this.change?.(ev.target.dataset.module, ev.target.dataset.id, Number(ev.target.value));
         }
     },
     mounted() {

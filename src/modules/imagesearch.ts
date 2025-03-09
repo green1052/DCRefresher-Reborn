@@ -17,7 +17,9 @@ export default {
             url.host = "image.dcinside.com";
             url.pathname = "/dccon.php";
 
-            window.open(`https://saucenao.com/search.php?url=${encodeURIComponent(url.toString())}`);
+            window.open(
+                `https://saucenao.com/search.php?url=${encodeURIComponent(url.toString())}`
+            );
         });
     }
 } as RefresherModule;

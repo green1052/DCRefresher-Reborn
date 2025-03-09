@@ -5,13 +5,16 @@
         :data-module="modname"
         :disabled="disabled"
         class="refresher-options"
-        @change="update">
-        <option v-for="(value, key) in options" :value="key">{{ value }}</option>
+        @change="update"
+    >
+        <option v-for="(value, key) in options" :value="key">
+            {{ value }}
+        </option>
     </select>
 </template>
 
 <script lang="ts">
-import Vue, {PropType} from "vue";
+import Vue, { PropType } from "vue";
 
 export default Vue.extend({
     name: "refresher-options",
@@ -42,11 +45,7 @@ export default Vue.extend({
     },
     methods: {
         update(ev: any) {
-            this.change?.(
-                ev.target.dataset.module,
-                ev.target.dataset.id,
-                ev.target.value
-            );
+            this.change?.(ev.target.dataset.module, ev.target.dataset.id, ev.target.value);
         }
     }
 });

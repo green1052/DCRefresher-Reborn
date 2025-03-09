@@ -1,11 +1,10 @@
 import * as http from "./http";
 import $ from "cash-dom";
 import ky from "ky";
-import type {Nullable} from "./types";
+import type { Nullable } from "./types";
 import browser from "webextension-polyfill";
 
-const rKey =
-    "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K";
+const rKey = "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K";
 const rRegex = /[^A-Za-z0-9+/=]/g;
 
 const decode = (r: string) => {
@@ -19,7 +18,7 @@ const decode = (r: string) => {
     let o = "";
     let c = 0;
 
-    for (r = r.replace(rRegex, ""); c < r.length;) {
+    for (r = r.replace(rRegex, ""); c < r.length; ) {
         t = rKey.indexOf(r.charAt(c++));
         f = rKey.indexOf(r.charAt(c++));
         d = rKey.indexOf(r.charAt(c++));
@@ -142,7 +141,8 @@ export async function submitComment(
         params.set("detail_idx", memo.map((dccon) => dccon.detail_idx).join(","));
     }
 
-    const url = typeof memo === "string" ? http.urls.comments_submit : http.urls.dccon_comments_submit;
+    const url =
+        typeof memo === "string" ? http.urls.comments_submit : http.urls.dccon_comments_submit;
     const options = {
         method: "POST",
         headers: {
@@ -151,9 +151,10 @@ export async function submitComment(
         body: params
     };
 
-    const response = browser.runtime.getManifest().manifest_version === 2
-        ? await content.fetch(url, options).then(response => response.text())
-        : await ky(url, options).text();
+    const response =
+        browser.runtime.getManifest().manifest_version === 2
+            ? await content.fetch(url, options).then((response) => response.text())
+            : await ky(url, options).text();
 
     const [result, message] = response.split("||");
 

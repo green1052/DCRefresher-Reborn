@@ -4,11 +4,7 @@ const hideSticky = (hide: boolean) => {
     $(".stickyunit").css("display", hide ? "none" : "initial");
 };
 
-const updateWindowSize = (
-    forceActive: boolean,
-    active: number | string,
-    width: number
-) => {
+const updateWindowSize = (forceActive: boolean, active: number | string, width: number) => {
     if (typeof active === "string") active = Number(active);
 
     const $document = $(document.documentElement);
@@ -119,56 +115,31 @@ export default {
             updateWindowSize(value, this.status.activePixel, innerWidth);
         },
         hideGalleryView(value: boolean) {
-            $(document.documentElement).toggleClass(
-                "refresherHideGalleryView",
-                value
-            );
+            $(document.documentElement).toggleClass("refresherHideGalleryView", value);
         },
         hideUselessView(value: boolean) {
-            $(document.documentElement).toggleClass(
-                "refresherHideUselessView",
-                value
-            );
+            $(document.documentElement).toggleClass("refresherHideUselessView", value);
         },
         hideNft(value: boolean) {
             $(document.documentElement).toggleClass("refresherHideNtf", value);
         },
         hideGalleryImage(value: boolean) {
-            $(document.documentElement).toggleClass(
-                "refresherHideGalleryImage",
-                value
-            );
+            $(document.documentElement).toggleClass("refresherHideGalleryImage", value);
         },
         pushToRight(value: boolean) {
             hideSticky(value);
-            $(document.documentElement).toggleClass(
-                "refresherPushToRight",
-                value
-            );
+            $(document.documentElement).toggleClass("refresherPushToRight", value);
         },
         removeNotice(value: boolean) {
-            if (
-                new URL(location.href).searchParams.get("exception_mode") ===
-                "notice"
-            )
-                return;
+            if (new URL(location.href).searchParams.get("exception_mode") === "notice") return;
 
-            $(document.documentElement).toggleClass(
-                "refresherHideNotice",
-                value
-            );
+            $(document.documentElement).toggleClass("refresherHideNotice", value);
         },
         removeDCNotice(value: boolean) {
-            $(document.documentElement).toggleClass(
-                "refresherHideDCNotice",
-                value
-            );
+            $(document.documentElement).toggleClass("refresherHideDCNotice", value);
         },
         removeGamemeca(value: boolean) {
-            $(document.documentElement).toggleClass(
-                "refresherHideGamemeca",
-                value
-            );
+            $(document.documentElement).toggleClass("refresherHideGamemeca", value);
         }
     },
     require: [],
@@ -177,11 +148,7 @@ export default {
 
         if (!isPageView || (isPageView && this.status.useCompactModeOnView)) {
             this.memory.resize = () =>
-                updateWindowSize(
-                    this.status.forceCompact,
-                    this.status.activePixel,
-                    innerWidth
-                );
+                updateWindowSize(this.status.forceCompact, this.status.activePixel, innerWidth);
 
             window.addEventListener("resize", this.memory.resize);
             this.memory.resize();
@@ -195,7 +162,6 @@ export default {
         this.update.removeNotice.bind(this)(this.status.removeNotice);
         this.update.removeDCNotice.bind(this)(this.status.removeDCNotice);
         this.update.removeGamemeca.bind(this)(this.status.removeGamemeca);
-
     },
     revoke() {
         window.removeEventListener("resize", this.memory.resize!);

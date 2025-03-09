@@ -1,7 +1,7 @@
-import {BlockCache, BlockModeCache} from "../core/block";
-import {MemoCache} from "../core/memo";
-import {ModuleStore} from "../core/modules";
-import {SettingsStore} from "../core/settings";
+import { BlockCache, BlockModeCache } from "../core/block";
+import { MemoCache } from "../core/memo";
+import { ModuleStore } from "../core/modules";
+import { SettingsStore } from "../core/settings";
 import storage from "../utils/storage";
 import ky from "ky";
 import browser from "webextension-polyfill";
@@ -110,43 +110,32 @@ if (browser.runtime.getManifest().manifest_version === 3) {
     keepAlive();
 }
 
-const messageHandler = (
-    port: browser.Runtime.Port | null,
-    message: Message
-) => {
+const messageHandler = (port: browser.Runtime.Port | null, message: Message) => {
     if (typeof message !== "object") return;
 
     if (message.requestRefresherBlockIPGrabber) {
         if (message.enableBlockIPGrabber) {
-            browser
-                .declarativeNetRequest
-                .updateDynamicRules(
+            browser.declarativeNetRequest.updateDynamicRules({
+                addRules: [
                     {
-                        addRules: [
-                            {
-                                id: 1,
-                                condition: {
-                                    urlFilter: "*",
-                                    initiatorDomains: ["gall.dcinside.com"],
-                                    excludedRequestDomains: [
-                                        "dcinside.co.kr",
-                                        "dcinside.com"
-                                    ],
-                                    resourceTypes: ["image", "media"],
-                                    domainType: "thirdParty"
-
-                                },
-                                action: {
-                                    type: "block"
-                                }
-                            }
-                        ]
+                        id: 1,
+                        condition: {
+                            urlFilter: "*",
+                            initiatorDomains: ["gall.dcinside.com"],
+                            excludedRequestDomains: ["dcinside.co.kr", "dcinside.com"],
+                            resourceTypes: ["image", "media"],
+                            domainType: "thirdParty"
+                        },
+                        action: {
+                            type: "block"
+                        }
                     }
-                );
+                ]
+            });
         } else {
-            browser
-                .declarativeNetRequest
-                .updateDynamicRules({removeRuleIds: [1]});
+            browser.declarativeNetRequest.updateDynamicRules({
+                removeRuleIds: [1]
+            });
         }
     }
 
@@ -154,11 +143,7 @@ const messageHandler = (
         storage.set(`${message.name}.${message.key}`, message.value);
     }
 
-    if (
-        message.updateBlocks &&
-        message.blocks_store &&
-        message.blockModes_store
-    ) {
+    if (message.updateBlocks && message.blocks_store && message.blockModes_store) {
         for (const [key, value] of Object.entries(message.blocks_store)) {
             storage.set(`__REFRESHER_BLOCK:${key}`, value);
         }
@@ -196,19 +181,16 @@ const messageHandler = (
         memos = message.memos_store;
     }
 
-    if (
-        message.blockModes_store &&
-        Object.keys(message.blockModes_store).length
-    ) {
+    if (message.blockModes_store && Object.keys(message.blockModes_store).length) {
         blockModes = message.blockModes_store;
     }
 
     if (message.requestRefresherModules) {
-        port?.postMessage({responseRefresherModules: true, modules});
+        port?.postMessage({ responseRefresherModules: true, modules });
     }
 
     if (message.requestRefresherSettings) {
-        port?.postMessage({responseRefresherSettings: true, settings});
+        port?.postMessage({ responseRefresherSettings: true, settings });
     }
 
     if (message.requestRefresherBlocks) {
@@ -220,7 +202,7 @@ const messageHandler = (
     }
 
     if (message.requestRefresherMemos) {
-        port?.postMessage({requestRefresherMemos: true, memos});
+        port?.postMessage({ requestRefresherMemos: true, memos });
     }
 };
 
@@ -229,10 +211,7 @@ browser.runtime.onConnect.addListener((port) => {
 });
 
 browser.runtime.onMessage.addListener((message) => {
-    messageHandler(
-        null,
-        typeof message === "string" ? JSON.parse(message) : message
-    );
+    messageHandler(null, typeof message === "string" ? JSON.parse(message) : message);
 });
 
 browser.runtime.onStartup.addListener(async () => {
@@ -254,9 +233,7 @@ browser.runtime.onInstalled.addListener((details) => {
 
     try {
         updateDatabase();
-    } catch {
-
-    }
+    } catch {}
 
     if (details.reason === "install") {
         storage.set("refresher.firstInstall", true);
@@ -272,7 +249,7 @@ browser.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 browser.commands.onCommand.addListener((command) => {
-    browser.tabs.query({currentWindow: true, active: true}).then((tabs) => {
+    browser.tabs.query({ currentWindow: true, active: true }).then((tabs) => {
         browser.tabs.sendMessage(tabs[0].id!, {
             type: "executeShortcut",
             data: command

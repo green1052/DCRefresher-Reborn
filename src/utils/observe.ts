@@ -1,7 +1,4 @@
-export const find = (
-    elem: string,
-    parent: HTMLElement
-): Promise<NodeListOf<HTMLElement>> =>
+export const find = (elem: string, parent: HTMLElement): Promise<NodeListOf<HTMLElement>> =>
     new Promise<NodeListOf<HTMLElement>>((resolve, reject) => {
         let timeout: number | null = null;
 

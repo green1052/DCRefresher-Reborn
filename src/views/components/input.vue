@@ -7,7 +7,8 @@
             :placeholder="placeholder"
             :value="value"
             type="text"
-            @change="update"/>
+            @change="update"
+        />
     </div>
 </template>
 
@@ -46,11 +47,7 @@ export default Vue.extend({
 
     methods: {
         update(ev) {
-            this.change?.(
-                ev.target.dataset.module,
-                ev.target.dataset.id,
-                ev.target.value
-            );
+            this.change?.(ev.target.dataset.module, ev.target.dataset.id, ev.target.value);
         }
     }
 });

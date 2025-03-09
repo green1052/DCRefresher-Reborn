@@ -16,11 +16,14 @@ export default {
     },
     update: {
         blockMediaGrabber(value) {
-            browser.runtime.sendMessage({requestRefresherBlockIPGrabber: true, enableBlockIPGrabber: value});
+            browser.runtime.sendMessage({
+                requestRefresherBlockIPGrabber: true,
+                enableBlockIPGrabber: value
+            });
         }
     }
 } as RefresherModule<{
     settings: {
         blockMediaGrabber: RefresherCheckSettings;
-    }
+    };
 }>;

@@ -1,21 +1,18 @@
 <template>
-    <div
-        class="refresher-group"
-        @click="clickHandle"
-        @wheel="wheelHandle">
+    <div class="refresher-group" @click="clickHandle" @wheel="wheelHandle">
         <refresher-frame
             v-for="(frame, i) in this.$root.$children[0].$data.frames"
             :key="`frame${Math.random()}`"
             :frame="frame"
-            :index="i"/>
+            :index="i"
+        />
 
         <div id="scroll">
-            <img
-                :src="getURL(`/assets/icons/upvote.webp`)"
-                @click="(e) => clickScroll(e, `up`)"/>
+            <img :src="getURL(`/assets/icons/upvote.webp`)" @click="(e) => clickScroll(e, `up`)" />
             <img
                 :src="getURL(`/assets/icons/downvote.webp`)"
-                @click="(e) => clickScroll(e, `down`)"/>
+                @click="(e) => clickScroll(e, `down`)"
+            />
         </div>
     </div>
 </template>
@@ -23,7 +20,7 @@
 <script lang="ts">
 import frame from "./frame.vue";
 import Vue from "vue";
-import {getURL} from "../utils/getURL";
+import { getURL } from "../utils/getURL";
 
 export default Vue.extend({
     name: "refresher-group",
@@ -46,9 +43,7 @@ export default Vue.extend({
         },
 
         wheelHandle(e: WheelEvent) {
-            const onScroll = (
-                this.$root.$children[0] as RefresherFrameAppVue
-            ).$data.onScroll;
+            const onScroll = (this.$root.$children[0] as RefresherFrameAppVue).$data.onScroll;
 
             if (typeof onScroll !== "function") return;
 

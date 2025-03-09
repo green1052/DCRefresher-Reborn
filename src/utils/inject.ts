@@ -1,4 +1,4 @@
-import {getURL} from "./getURL";
+import { getURL } from "./getURL";
 
 export const inject = (filename: string) => {
     document.addEventListener("DOMContentLoaded", () => {

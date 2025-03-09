@@ -8,10 +8,8 @@ export default {
     default_enable: true,
     settings: {},
     require: ["filter"],
-    func(filter) {
-    },
-    revoke(filter) {
-    }
+    func(filter) {},
+    revoke(filter) {}
 } as RefresherModule<{
     // settings: {};
     require: ["filter"];

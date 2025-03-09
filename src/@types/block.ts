@@ -14,11 +14,7 @@ declare global {
         | "TAB"
         | "IMAGE";
 
-    type RefresherBlockDetectMode =
-        | "SAME"
-        | "CONTAIN"
-        | "NOT_SAME"
-        | "NOT_CONTAIN";
+    type RefresherBlockDetectMode = "SAME" | "CONTAIN" | "NOT_SAME" | "NOT_CONTAIN";
 
     interface RefresherBlockValue {
         content: string;

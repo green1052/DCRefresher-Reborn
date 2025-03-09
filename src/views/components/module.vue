@@ -3,14 +3,10 @@
         <div class="left">
             <p class="title">{{ name }}</p>
             <p class="desc">{{ desc }}</p>
-            <p class="mute">
-                요구 유틸 : {{ requirement?.join(", ") || "없음" }}
-            </p>
+            <p class="mute">요구 유틸 : {{ requirement?.join(", ") || "없음" }}</p>
         </div>
         <div class="right">
-            <refresher-checkbox
-                :change="update"
-                :checked="enabled"/>
+            <refresher-checkbox :change="update" :checked="enabled" />
         </div>
     </div>
 </template>
@@ -54,7 +50,7 @@ export default Vue.extend({
                 this.$root.$children[0].updateDarkMode(value);
             }
 
-            browser.tabs.query({active: true}).then((tabs) => {
+            browser.tabs.query({ active: true }).then((tabs) => {
                 for (const tab of tabs) {
                     browser.tabs.sendMessage(tab.id!, {
                         type: "updateModuleStatus",

@@ -37,7 +37,9 @@ $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
 
 // IP Module
 
-.fl, .cmt_info, .reply_info {
+.fl,
+.cmt_info,
+.reply_info {
     .refresherUserData {
         margin-left: 3px;
     }
@@ -325,7 +327,8 @@ tr.gall_writer {
     .button.block {
         &:hover {
             img {
-                filter: invert(22%) sepia(85%) saturate(5841%) hue-rotate(355deg) brightness(92%) contrast(126%);
+                filter: invert(22%) sepia(85%) saturate(5841%) hue-rotate(355deg) brightness(92%)
+                    contrast(126%);
             }
 
             p {
@@ -412,7 +415,8 @@ tr.gall_writer {
             margin: 3px 0 5px;
         }
 
-        img, video {
+        img,
+        video {
             box-shadow: initial !important;
             border-radius: initial !important;
             transition: initial !important;

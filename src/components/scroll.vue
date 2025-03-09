@@ -1,7 +1,5 @@
 <template>
-    <div
-        :class="{ top: side === 'top' }"
-        class="refresher-scroll">
+    <div :class="{ top: side === 'top' }" class="refresher-scroll">
         <div class="center">
             <p>
                 한번 더 스크롤 하면

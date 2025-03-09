@@ -1,4 +1,4 @@
-import type {User} from "../utils/user";
+import type { User } from "../utils/user";
 
 export {};
 
@@ -23,7 +23,7 @@ declare global {
         requireCommentCaptcha?: boolean;
         disabledDownvote?: boolean;
         v_cur_t?: string;
-        randomParam?: { name: string, value: string };
+        randomParam?: { name: string; value: string };
         dom?: Document;
     }
 

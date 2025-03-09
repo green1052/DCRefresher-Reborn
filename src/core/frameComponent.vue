@@ -8,25 +8,22 @@
             fadeOut: !fade,
             stack: fade
         }"
-        class="refresher-frame-outer">
-        <refresher-group/>
+        class="refresher-frame-outer"
+    >
+        <refresher-group />
         <transition name="refresher-prev-post">
-            <refresher-scroll
-                v-show="scrollModeTop"
-                side="top"/>
+            <refresher-scroll v-show="scrollModeTop" side="top" />
         </transition>
         <transition name="refresher-next-post">
-            <refresher-scroll
-                v-show="scrollModeBottom"
-                side="bottom"/>
+            <refresher-scroll v-show="scrollModeBottom" side="bottom" />
         </transition>
     </div>
 </template>
 
 <script lang="ts">
 import scroll from "../components/scroll.vue";
-import Vue, {PropType} from "vue";
-import {FrameStackOption} from "./frame";
+import Vue, { PropType } from "vue";
+import { FrameStackOption } from "./frame";
 import group from "../components/group.vue";
 
 interface FrameComponentData extends FrameStackOption {

@@ -1,8 +1,8 @@
 import $ from "cash-dom";
-import {Cash} from "cash-dom/dist/cash";
+import { Cash } from "cash-dom/dist/cash";
 import ky from "ky";
 import Cookies from "js-cookie";
-import {eventBus} from "../core/eventbus";
+import { eventBus } from "../core/eventbus";
 import * as http from "../utils/http";
 import * as storage from "../utils/storage";
 
@@ -84,9 +84,7 @@ export default {
             params.set("_GALLTYPE_", http.galleryTypeName(location.href));
 
             await ky.post(
-                galleryType === "mini/"
-                    ? http.urls.manage.deleteMini
-                    : http.urls.manage.delete,
+                galleryType === "mini/" ? http.urls.manage.deleteMini : http.urls.manage.delete,
                 {
                     headers: {
                         "X-Requested-With": "XMLHttpRequest"
@@ -96,130 +94,158 @@ export default {
             );
         };
 
-        this.memory.checkBox = filter.add<HTMLInputElement>(".article_chkbox", (element) => {
-            const $element = $(element);
+        this.memory.checkBox = filter.add<HTMLInputElement>(
+            ".article_chkbox",
+            (element) => {
+                const $element = $(element);
 
-            if (this.status.checkAllTargetUser && !$element.data("refresherMemoHandler")) {
-                const $writer = $element.closest(".ub-content, .cmt_nickbox, .search_comment").children(".ub-writer");
+                if (this.status.checkAllTargetUser && !$element.data("refresherMemoHandler")) {
+                    const $writer = $element
+                        .closest(".ub-content, .cmt_nickbox, .search_comment")
+                        .children(".ub-writer");
 
-                $element.data("refresherMemoHandler", true);
+                    $element.data("refresherMemoHandler", true);
 
-                const uid = $writer.attr("data-uid");
-                const ip = $writer.attr("data-ip");
-                const nick = $writer.attr("data-nick");
+                    const uid = $writer.attr("data-uid");
+                    const ip = $writer.attr("data-ip");
+                    const nick = $writer.attr("data-nick");
 
-                let type: "data-uid" | "data-ip" | "data-nick" | null = null;
-                let target: string | null = null;
+                    let type: "data-uid" | "data-ip" | "data-nick" | null = null;
+                    let target: string | null = null;
 
-                if (uid) {
-                    type = "data-uid";
-                    target = uid;
-                } else if (ip) {
-                    type = "data-ip";
-                    target = ip;
-                } else if (nick) {
-                    type = "data-nick";
-                    target = nick;
+                    if (uid) {
+                        type = "data-uid";
+                        target = uid;
+                    } else if (ip) {
+                        type = "data-ip";
+                        target = ip;
+                    } else if (nick) {
+                        type = "data-nick";
+                        target = nick;
+                    }
+
+                    $element.on("click", (ev: PointerEvent) => {
+                        if (type && target && this.status.checkAllTargetUser && ev.shiftKey) {
+                            for (const post of $(`.ub-writer[${type}="${target}"]`)) {
+                                $(post)
+                                    .parent()
+                                    .find(".article_chkbox")
+                                    .prop("checked", (ev.target as HTMLInputElement).checked);
+                            }
+                        }
+
+                        const li = $element.closest("li");
+                        if (
+                            this.status.checkCommentViaCtrl &&
+                            ev.ctrlKey &&
+                            !li.attr("id")?.startsWith("reply_")
+                        ) {
+                            for (const input of li.next().find(".article_chkbox")) {
+                                (input as HTMLInputElement).checked = (
+                                    ev.target as HTMLInputElement
+                                ).checked;
+                            }
+                        }
+                    });
                 }
 
-                $element.on("click", (ev: PointerEvent) => {
-                    if (type && target && this.status.checkAllTargetUser && ev.shiftKey) {
-                        for (const post of $(`.ub-writer[${type}="${target}"]`)) {
-                            $(post)
-                                .parent()
-                                .find(".article_chkbox")
-                                .prop("checked", (ev.target as HTMLInputElement).checked);
+                if (this.status.checkViaShift) {
+                    $(element).on("mouseover", (ev: MouseEvent) => {
+                        if (!this.status.checkViaShift || !ev.shiftKey) return;
+                        $(element).prop("checked", !(ev.target as HTMLInputElement).checked);
+                    });
+                }
+            },
+            { neverExpire: true }
+        );
+
+        this.memory.content = filter.add(
+            ".gall_list .ub-content",
+            (element) => {
+                if (!this.status.deleteViaCtrl) return;
+
+                element.onclick ??= (ev: MouseEvent) => {
+                    if (!this.status.deleteViaCtrl || !ev.ctrlKey) return;
+
+                    ev.preventDefault();
+                    ev.stopPropagation();
+
+                    deletePost(element.dataset.no!);
+                };
+            },
+            { neverExpire: true }
+        );
+
+        this.memory.always = filter.add(
+            ".ub-writer:not([user_name])",
+            (element) => {
+                if (this.status.checkPermBan && element.dataset.refresherPermBan !== "true") {
+                    const permBan = getPermBan(element.dataset.uid!);
+
+                    if (permBan) {
+                        element.dataset.refresherPermBan = "true";
+
+                        const text = document.createElement("span");
+                        text.style.color = "red";
+                        text.className = "ip ratio refresherUserData";
+                        text.innerHTML = `[${permBan}]`;
+                        text.title = permBan;
+
+                        const fl = element.querySelector(".fl");
+
+                        if (fl) {
+                            const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
+                            if (flIpQuery)
+                                fl.insertBefore(
+                                    text,
+                                    flIpQuery.nextSibling?.nextSibling ?? flIpQuery.nextSibling
+                                );
+                        } else {
+                            element.appendChild(text);
                         }
                     }
+                }
 
-                    const li = $element.closest("li");
-                    if (this.status.checkCommentViaCtrl && ev.ctrlKey && !li.attr("id")?.startsWith("reply_")) {
-                        for (const input of li.next().find(".article_chkbox")) {
-                            (input as HTMLInputElement).checked = (ev.target as HTMLInputElement).checked;
-                        }
-                    }
-                });
-            }
+                if (this.status.checkRatio && element.dataset.refresherRatio !== "true") {
+                    if (!this.data!.ratio.hasOwnProperty(element.dataset.uid!)) return false;
 
-            if (this.status.checkViaShift) {
-                $(element).on("mouseover", (ev: MouseEvent) => {
-                    if (!this.status.checkViaShift || !ev.shiftKey) return;
-                    $(element).prop("checked", !(ev.target as HTMLInputElement).checked);
-                });
-            }
-        }, {neverExpire: true});
+                    const ratio = this.data!.ratio[element.dataset.uid!];
 
-        this.memory.content = filter.add(".gall_list .ub-content", (element) => {
-            if (!this.status.deleteViaCtrl) return;
+                    if (!ratio) return false;
 
-            element.onclick ??= (ev: MouseEvent) => {
-                if (!this.status.deleteViaCtrl || !ev.ctrlKey) return;
-
-                ev.preventDefault();
-                ev.stopPropagation();
-
-                deletePost(element.dataset.no!);
-            };
-        }, {neverExpire: true});
-
-        this.memory.always = filter.add(".ub-writer:not([user_name])", (element) => {
-            if (this.status.checkPermBan && element.dataset.refresherPermBan !== "true") {
-                const permBan = getPermBan(element.dataset.uid!);
-
-                if (permBan) {
-                    element.dataset.refresherPermBan = "true";
+                    element.dataset.refresherRatio = "true";
 
                     const text = document.createElement("span");
-                    text.style.color = "red";
                     text.className = "ip ratio refresherUserData";
-                    text.innerHTML = `[${permBan}]`;
-                    text.title = permBan;
+                    text.innerHTML = `[${ratio.article}/${ratio.comment}]`;
+                    text.title = `${ratio.article}/${ratio.comment}`;
+
+                    if (this.status.alarmRatio > 0) {
+                        const calculatedRatio = ratio.article + ratio.comment;
+
+                        if (calculatedRatio <= this.status.alarmRatio) {
+                            text.style.color = "red";
+                        }
+                    }
 
                     const fl = element.querySelector(".fl");
 
                     if (fl) {
                         const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
-                        if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling?.nextSibling ?? flIpQuery.nextSibling);
+                        if (flIpQuery)
+                            fl.insertBefore(
+                                text,
+                                flIpQuery.nextSibling?.nextSibling ?? flIpQuery.nextSibling
+                            );
                     } else {
                         element.appendChild(text);
                     }
                 }
+            },
+            {
+                neverExpire: true
             }
-
-            if (this.status.checkRatio && element.dataset.refresherRatio !== "true") {
-                if (!this.data!.ratio.hasOwnProperty(element.dataset.uid!)) return false;
-
-                const ratio = this.data!.ratio[element.dataset.uid!];
-
-                if (!ratio) return false;
-
-                element.dataset.refresherRatio = "true";
-
-                const text = document.createElement("span");
-                text.className = "ip ratio refresherUserData";
-                text.innerHTML = `[${ratio.article}/${ratio.comment}]`;
-                text.title = `${ratio.article}/${ratio.comment}`;
-
-                if (this.status.alarmRatio > 0) {
-                    const calculatedRatio = ratio.article + ratio.comment;
-
-                    if (calculatedRatio <= this.status.alarmRatio) {
-                        text.style.color = "red";
-                    }
-                }
-
-                const fl = element.querySelector(".fl");
-
-                if (fl) {
-                    const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
-                    if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling?.nextSibling ?? flIpQuery.nextSibling);
-                } else {
-                    element.appendChild(text);
-                }
-            }
-        }, {
-            neverExpire: true
-        });
+        );
 
         const getPermBan = (uid: string): string | undefined => {
             if (!permBanList) return;
@@ -238,18 +264,20 @@ export default {
             params.set("ci_t", Cookies.get("ci_c") ?? "");
             params.set("user_id", uid);
 
-            const response = await ky.post("https://gall.dcinside.com/api/gallog_user_layer/gallog_content_reple", {
-                body: params,
-                headers: {
-                    "X-Requested-With": "XMLHttpRequest"
-                }
-            }).text();
+            const response = await ky
+                .post("https://gall.dcinside.com/api/gallog_user_layer/gallog_content_reple", {
+                    body: params,
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                })
+                .text();
 
             const [article, comment] = response.split(",").map(Number);
 
-            const result = {article, comment, date: Date.now()};
+            const result = { article, comment, date: Date.now() };
 
-            const deepCopy = {...this.data!.ratio};
+            const deepCopy = { ...this.data!.ratio };
             deepCopy[uid] = result;
 
             this.data!.ratio = deepCopy;
@@ -268,7 +296,9 @@ export default {
                     const permBan = getPermBan(uid);
 
                     if (permBan) {
-                        const $permBan = $(`<span style="color: red" class="ip permBan refresherUserData" title="${permBan}">[${permBan}]</span>`);
+                        const $permBan = $(
+                            `<span style="color: red" class="ip permBan refresherUserData" title="${permBan}">[${permBan}]</span>`
+                        );
 
                         if ($article.data("refresherPermBan") === true) {
                             $article.find(".permBan").replaceWith($permBan);
@@ -287,7 +317,9 @@ export default {
                     ratio = await getRatio(uid);
                 }
 
-                const $ratio = $(`<span class="ip ratio refresherUserData" title="${ratio.article}/${ratio.comment}">[${ratio.article}/${ratio.comment}]</span>`);
+                const $ratio = $(
+                    `<span class="ip ratio refresherUserData" title="${ratio.article}/${ratio.comment}">[${ratio.article}/${ratio.comment}]</span>`
+                );
 
                 if (this.status.alarmRatio > 0) {
                     const calculatedRatio = ratio.article + ratio.comment;
@@ -309,13 +341,14 @@ export default {
     },
     revoke(filter) {
         if (this.memory.checkBox) filter.remove(this.memory.checkBox);
-        if (this.memory.newPostListEvent) eventBus.remove("newPostList", this.memory.newPostListEvent);
+        if (this.memory.newPostListEvent)
+            eventBus.remove("newPostList", this.memory.newPostListEvent);
         if (this.memory.content) filter.remove(this.memory.content);
     }
 } as RefresherModule<{
     data: {
-        ratio: Record<string, { article: number; comment: number; date: number; }>
-    },
+        ratio: Record<string, { article: number; comment: number; date: number }>;
+    };
     memory: {
         always: string;
         checkBox: string;

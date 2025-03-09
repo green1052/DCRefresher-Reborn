@@ -30,11 +30,7 @@ export const eventBus: RefresherEventBus = {
      * @param callback 나중에 호출 될 이벤트 콜백 함수.
      * @param options 이벤트에 등록할 옵션.
      */
-    on: (
-        event: string,
-        callback: () => void,
-        options?: RefresherEventBusOptions
-    ): string => {
+    on: (event: string, callback: () => void, options?: RefresherEventBusOptions): string => {
         const uuid = strings.uuid();
 
         lists[event] ??= [];
@@ -61,9 +57,7 @@ export const eventBus: RefresherEventBus = {
 
         if (!lists[event]) throw "Given Event is not exists in the list.";
 
-        const index = lists[event].findIndex(
-            (callback) => callback.uuid == uuid
-        );
+        const index = lists[event].findIndex((callback) => callback.uuid == uuid);
 
         if (index == -1) throw "Given UUID is not exists in the list.";
 

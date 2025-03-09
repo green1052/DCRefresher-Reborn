@@ -96,7 +96,7 @@
             @media screen and (min-width: 1145px) {
                 width: 770px !important;
             }
-            
+
             @media screen and (min-width: 1070px) and (max-width: 1145px) {
                 width: 750px !important;
             }
@@ -133,7 +133,8 @@
 }
 
 .refresherHideGalleryView {
-    .issue_wrap, #visit_history {
+    .issue_wrap,
+    #visit_history {
         display: none;
     }
 }
@@ -162,9 +163,9 @@
     }
 }
 
-
 .refresherHideNtf {
-    .btn_nftbox, .nft_informationwrap {
+    .btn_nftbox,
+    .nft_informationwrap {
         display: none;
     }
 }
@@ -176,19 +177,19 @@
 }
 
 .refresherHideNotice {
-    tr:has(em[class*=icon_notice]) {
+    tr:has(em[class*="icon_notice"]) {
         display: none;
     }
 }
 
 .refresherHideDCNotice {
-    tr[class*=ub-content]:has(> td[user_name=운영자]) {
+    tr[class*="ub-content"]:has(> td[user_name="운영자"]) {
         display: none;
     }
 }
 
 .refresherHideGamemeca {
-    tr[data-type=icon_fnews] {
+    tr[data-type="icon_fnews"] {
         display: none;
     }
 }

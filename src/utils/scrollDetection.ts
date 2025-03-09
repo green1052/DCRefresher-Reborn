@@ -95,10 +95,7 @@ export class ScrollDetection {
                 if (lastDelta > this.session.peak) {
                     // 감속 구간 진입 혹은 갑자기 새로운 이벤트 발생
                     if (this.session.fired) {
-                        if (
-                            Date.now() - this.session.fired > 60 &&
-                            lastDelta / 4 > absoluteDelta
-                        ) {
+                        if (Date.now() - this.session.fired > 60 && lastDelta / 4 > absoluteDelta) {
                             // 갑자기 새로운 이벤트로 발생한게 확실함
                             this.initSession();
                         }

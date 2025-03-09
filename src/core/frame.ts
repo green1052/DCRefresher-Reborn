@@ -1,5 +1,5 @@
 import frame from "./frameComponent.vue";
-import {User} from "../utils/user";
+import { User } from "../utils/user";
 import Vue from "vue";
 
 interface FrameOption {
@@ -13,11 +13,7 @@ export interface FrameStackOption {
     background?: boolean;
     stack?: boolean;
     groupOnce?: boolean;
-    onScroll?: (
-        ev: WheelEvent,
-        app: RefresherFrameAppVue,
-        group: HTMLElement
-    ) => void;
+    onScroll?: (ev: WheelEvent, app: RefresherFrameAppVue, group: HTMLElement) => void;
     blur?: boolean;
 }
 
@@ -53,14 +49,13 @@ class InternalFrame implements RefresherFrame {
             reply: string | null,
             user: { name: string; pw?: string }
         ): Promise<boolean>;
-        deleteComment(
-            commentId: string,
-            password: string,
-            admin: boolean
-        ): Promise<boolean>;
+        deleteComment(commentId: string, password: string, admin: boolean): Promise<boolean>;
     };
 
-    constructor(public options: FrameOption, public app: RefresherFrameAppVue) {
+    constructor(
+        public options: FrameOption,
+        public app: RefresherFrameAppVue
+    ) {
         this.data = {};
         this.functions = {};
     }

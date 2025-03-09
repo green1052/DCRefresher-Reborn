@@ -1,4 +1,4 @@
-import {uuid} from "../utils/string";
+import { uuid } from "../utils/string";
 import browser from "webextension-polyfill";
 
 interface StorageStructure {
@@ -16,10 +16,7 @@ browser.runtime.onMessage.addListener((message) => {
     }
 });
 
-export const addHook = (
-    type: string,
-    callback: (...args: any[]) => void
-): string => {
+export const addHook = (type: string, callback: (...args: any[]) => void): string => {
     handlerStorage[type] ??= [];
 
     const id = uuid();

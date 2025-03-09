@@ -1,4 +1,4 @@
-import type {Rgb} from "../utils/color";
+import type { Rgb } from "../utils/color";
 import * as Color from "../utils/color";
 import * as DOM from "../utils/dom";
 import $ from "cash-dom";
@@ -19,24 +19,14 @@ const colorCorrection = (element: HTMLElement) => {
     const contrast = Color.contrast(textColor, DARK_MODE_COLOR);
 
     if (contrast < 3) {
-        const trans = Color.rgbToHsl([
-            textColor[0],
-            textColor[1],
-            textColor[2]
-        ]);
+        const trans = Color.rgbToHsl([textColor[0], textColor[1], textColor[2]]);
         trans[2] = Color.inverseColor(trans[2]);
         const rollback = Color.hslToRgb([trans[0], trans[1], trans[2]]);
 
         if (fontAttr) {
-            $element.attr(
-                "color",
-                Color.rgbToHex(rollback[0], rollback[1], rollback[2])
-            );
+            $element.attr("color", Color.rgbToHex(rollback[0], rollback[1], rollback[2]));
         } else {
-            $element.css(
-                "color",
-                Color.rgbToHex(rollback[0], rollback[1], rollback[2])
-            );
+            $element.css("color", Color.rgbToHex(rollback[0], rollback[1], rollback[2]));
         }
     }
 };
@@ -66,8 +56,7 @@ const contentColorFix = (element: HTMLElement) => {
 
 export default {
     name: "다크 모드",
-    description:
-        "페이지와 DCRefresher Reborn의 창을 어두운 색상으로 변경합니다.",
+    description: "페이지와 DCRefresher Reborn의 창을 어두운 색상으로 변경합니다.",
     memory: {
         uuid: null,
         uuid2: null,
@@ -100,10 +89,7 @@ export default {
             }
         );
 
-        this.memory.contentViewUUID = eventBus.on(
-            "contentPreview",
-            contentColorFix
-        );
+        this.memory.contentViewUUID = eventBus.on("contentPreview", contentColorFix);
     },
     revoke(filter, eventBus) {
         document.documentElement.classList.remove("refresherDark");
@@ -113,11 +99,7 @@ export default {
         if (this.memory.uuid2) filter.remove(this.memory.uuid2, true);
 
         if (this.memory.contentViewUUID)
-            eventBus.remove(
-                "contentPreview",
-                this.memory.contentViewUUID,
-                true
-            );
+            eventBus.remove("contentPreview", this.memory.contentViewUUID, true);
     }
 } as RefresherModule<{
     memory: {

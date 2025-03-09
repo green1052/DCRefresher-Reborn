@@ -1,5 +1,5 @@
 import * as communicate from "./communicate";
-import {eventBus} from "./eventbus";
+import { eventBus } from "./eventbus";
 import storage from "../utils/storage";
 import browser from "webextension-polyfill";
 
@@ -16,10 +16,7 @@ export const TYPE_NAMES = {
 
 const MEMO_TYPES_KEYS: RefresherMemoType[] = ["UID", "NICK", "IP"];
 
-export type MemoCache = Record<
-    RefresherMemoType,
-    Record<string, RefresherMemoValue>
->;
+export type MemoCache = Record<RefresherMemoType, Record<string, RefresherMemoValue>>;
 
 function SendToBackground() {
     browser.runtime.sendMessage(
@@ -36,9 +33,7 @@ let MEMO_CACHE: MemoCache = {
 };
 
 MEMO_TYPES_KEYS.forEach(async (key) => {
-    const memo = await storage.get<Record<string, RefresherMemoValue>>(
-        `${MEMO_NAMESPACE}:${key}`
-    );
+    const memo = await storage.get<Record<string, RefresherMemoValue>>(`${MEMO_NAMESPACE}:${key}`);
 
     MEMO_CACHE[key] = memo ?? {};
 
@@ -61,8 +56,7 @@ const InternalAddToList = (
     storage.set(`${MEMO_NAMESPACE}:${type}`, MEMO_CACHE[type]);
 };
 
-const checkValidType = (type: string) =>
-    MEMO_TYPES_KEYS.some((key) => key === type);
+const checkValidType = (type: string) => MEMO_TYPES_KEYS.some((key) => key === type);
 
 /**
  * 메모 목록에 추가합니다.
@@ -81,9 +75,7 @@ export const add = (
     gallery?: string
 ): void => {
     if (!checkValidType(type)) {
-        throw `${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(
-            ", "
-        )}]`;
+        throw `${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`;
     }
 
     InternalAddToList(type, user, text, color, gallery);
@@ -96,14 +88,9 @@ export const add = (
  * @param type 메모 종류
  * @param user 유저
  */
-export const get = (
-    type: RefresherMemoType,
-    user: string
-): RefresherMemoValue => {
+export const get = (type: RefresherMemoType, user: string): RefresherMemoValue => {
     if (!checkValidType(type)) {
-        throw `${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(
-            ", "
-        )}]`;
+        throw `${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`;
     }
 
     return MEMO_CACHE[type][user];
@@ -117,9 +104,7 @@ export const get = (
  */
 export const remove = (type: RefresherMemoType, user: string): void => {
     if (!checkValidType(type)) {
-        throw `${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(
-            ", "
-        )}]`;
+        throw `${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`;
     }
 
     delete MEMO_CACHE[type][user];
@@ -131,6 +116,6 @@ communicate.addHook("memoSelected", () => {
     eventBus.emit("refresherUpdateUserMemo");
 });
 
-communicate.addHook("updateMemos", ({memos}) => {
+communicate.addHook("updateMemos", ({ memos }) => {
     MEMO_CACHE = memos;
 });

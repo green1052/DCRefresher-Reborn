@@ -15,8 +15,7 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 window.addEventListener("keydown", (ev) => {
-    if (Toast !== null && ev.key == "Escape" && Toast.$data.open)
-        Toast.$data.open = false;
+    if (Toast !== null && ev.key == "Escape" && Toast.$data.open) Toast.$data.open = false;
 });
 
 /**

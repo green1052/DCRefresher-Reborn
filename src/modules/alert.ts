@@ -1,5 +1,5 @@
 import * as Toast from "../components/toast";
-import {inject} from "../utils/inject";
+import { inject } from "../utils/inject";
 
 export default {
     name: "알림 개선",

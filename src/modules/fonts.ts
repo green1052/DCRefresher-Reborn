@@ -44,7 +44,9 @@ export default {
                 $(document.head).append($fontElement);
             }
 
-            $fontElement.html(`.refresherChangeDCFont,.refresherChangeDCFont .btn_cmt_close,.refresherChangeDCFont .btn_cmt_close span,.refresherChangeDCFont .btn_cmt_open,.refresherChangeDCFont .btn_cmt_refresh,.refresherChangeDCFont .gall_list,.refresherChangeDCFont .view_comment div,.refresherChangeDCFont .view_content_wrap,.refresherChangeDCFont .view_content_wrap a,.refresherChangeDCFont body,.refresherChangeDCFont button,.refresherChangeDCFont input,.refresherFont .refresher-block-popup,.refresherFont .refresher-captcha-popup,.refresherFont .refresher-frame,.refresherFont .refresher-popup{font-family:${fontName},sans-serif}`);
+            $fontElement.html(
+                `.refresherChangeDCFont,.refresherChangeDCFont .btn_cmt_close,.refresherChangeDCFont .btn_cmt_close span,.refresherChangeDCFont .btn_cmt_open,.refresherChangeDCFont .btn_cmt_refresh,.refresherChangeDCFont .gall_list,.refresherChangeDCFont .view_comment div,.refresherChangeDCFont .view_content_wrap,.refresherChangeDCFont .view_content_wrap a,.refresherChangeDCFont body,.refresherChangeDCFont button,.refresherChangeDCFont input,.refresherFont .refresher-block-popup,.refresherFont .refresher-captcha-popup,.refresherFont .refresher-frame,.refresherFont .refresher-popup{font-family:${fontName},sans-serif}`
+            );
         },
         changeDCFont(value) {
             $(document.documentElement).toggleClass("refresherChangeDCFont", value);
@@ -57,7 +59,9 @@ export default {
                 document.head.appendChild($fontElement.get(0)!);
             }
 
-            $fontElement.html(`.refresherChangeDCFont .write_div{font-size:${fontSize}px}.refresherFont .refresher-preview-contents-actual,.refresherFont .refresher-preview-contents-actual .write_div{font-size:${fontSize + 2}px}`);
+            $fontElement.html(
+                `.refresherChangeDCFont .write_div{font-size:${fontSize}px}.refresherFont .refresher-preview-contents-actual,.refresherFont .refresher-preview-contents-actual .write_div{font-size:${fontSize + 2}px}`
+            );
         }
     },
     func() {

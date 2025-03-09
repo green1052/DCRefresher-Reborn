@@ -1,12 +1,8 @@
 <template>
-    <div
-        :title="locale"
-        class="refresher-countdown"
-        @click="this.$root.$children[0].changeStamp">
+    <div :title="locale" class="refresher-countdown" @click="this.$root.$children[0].changeStamp">
         <transition name="refresher-opacity">
             <span :key="`stamp${this.$root.$children[0].stampMode}`"
-            >삭제 :
-                {{ this.$root.$children[0].stampMode ? locale : stamp }}</span
+                >삭제 : {{ this.$root.$children[0].stampMode ? locale : stamp }}</span
             >
         </transition>
     </div>
@@ -35,11 +31,7 @@ const convertTime = (date: Date) => {
     const abs = Math.abs(estimate);
     for (let f = 0; f < timeCounts.length; f++) {
         if (abs >= timeCounts[f]) {
-            return (
-                Math.round(estimate / timeCounts[f]) +
-                timeFilters[f] +
-                " 후"
-            );
+            return Math.round(estimate / timeCounts[f]) + timeFilters[f] + " 후";
         }
     }
 
@@ -80,7 +72,7 @@ export default Vue.extend({
         }, 5000);
     },
 
-    beforeDestroy() {
+    beforeUnmount() {
         clearInterval(this.updates);
     }
 });

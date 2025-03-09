@@ -1,18 +1,15 @@
 <template>
-    <div
-        :title="locale"
-        class="refresher-timestamp"
-        @click="this.$root.$children[0].changeStamp">
+    <div :title="locale" class="refresher-timestamp" @click="this.$root.$children[0].changeStamp">
         <transition name="refresher-opacity">
             <span :key="'stamp' + this.$root.$children[0].stampMode">{{
-                    this.$root.$children[0].stampMode ? locale : stamp
-                }}</span>
+                this.$root.$children[0].stampMode ? locale : stamp
+            }}</span>
         </transition>
     </div>
 </template>
 
 <script lang="ts">
-import Vue, {PropType} from "vue";
+import Vue, { PropType } from "vue";
 
 const s = 1000;
 const m = s * 60;
@@ -35,9 +32,7 @@ const convertTime = (date: Date) => {
 
     for (let f = 0; f < timeCounts.length; f++) {
         if (abs >= timeCounts[f]) {
-            return (
-                Math.round(elapsed / timeCounts[f]) + timeFilters[f] + " 전"
-            );
+            return Math.round(elapsed / timeCounts[f]) + timeFilters[f] + " 전";
         }
     }
 
@@ -77,7 +72,7 @@ export default Vue.extend({
             this.stamp = convertTime(this.date);
         }, 3000);
     },
-    beforeDestroy() {
+    beforeUnmount() {
         clearInterval(this.updates);
     }
 });

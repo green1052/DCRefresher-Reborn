@@ -1,9 +1,9 @@
 import * as Toast from "../components/toast";
-import {queryString} from "../utils/http";
+import { queryString } from "../utils/http";
 import $ from "cash-dom";
 import Cookies from "js-cookie";
 import ky from "ky";
-import {Cash} from "cash-dom/dist/cash";
+import { Cash } from "cash-dom/dist/cash";
 
 function hideElement($element: Cash, blur: boolean = false) {
     if (blur) {
@@ -50,12 +50,7 @@ export default {
         }
     },
     require: ["filter", "eventBus", "block", "http"],
-    func(
-        filter,
-        eventBus,
-        block,
-        http
-    ) {
+    func(filter, eventBus, block, http) {
         this.memory.uuid = filter.add(
             ".ub-writer",
             (element) => {
@@ -65,28 +60,17 @@ export default {
 
                 if (!gallery) return;
 
-                const title = $element
-                    .parent()
-                    .find(".gall_tit > a:not([class])")
-                    .text();
+                const title = $element.parent().find(".gall_tit > a:not([class])").text();
 
-                const tab = $element
-                    .parent()
-                    .find(".gall_subject")
-                    .text();
+                const tab = $element.parent().find(".gall_subject").text();
 
-                const text = $element
-                    .closest(".view_content_wrap")
-                    .find(".write_div")
-                    .text();
+                const text = $element.closest(".view_content_wrap").find(".write_div").text();
 
                 const nick = element.dataset.nick ?? null;
                 const uid = element.dataset.uid ?? null;
                 const ip = element.dataset.ip ?? null;
 
-                const $commentElement = $element.closest(
-                    ".reply_info, .cmt_info"
-                );
+                const $commentElement = $element.closest(".reply_info, .cmt_info");
                 const commentContent = $commentElement.find(".usertxt").text();
 
                 if (
@@ -115,7 +99,10 @@ export default {
                         if (this.status.replyRemove) {
                             const $next = $content.next();
 
-                            if (!$next.hasClass("ub-content") && $next.children(".reply").length > 0) {
+                            if (
+                                !$next.hasClass("ub-content") &&
+                                $next.children(".reply").length > 0
+                            ) {
                                 hideElement($next, this.status.blur);
                             }
                         }
@@ -166,7 +153,8 @@ export default {
                         .replace(/^&.*$/g, "") ?? "";
 
                 if (block.check("DCCON", dccon, gallery)) {
-                    const $comment = $element.closest(".ub-content") ?? $element.closest(".comment_dccon");
+                    const $comment =
+                        $element.closest(".ub-content") ?? $element.closest(".comment_dccon");
 
                     if (this.status.replyRemove) {
                         const $next = $comment.next();
@@ -181,10 +169,7 @@ export default {
 
                 element.parentElement!.oncontextmenu ??= () => {
                     const code =
-                        (
-                            element?.getAttribute("src") ||
-                            element?.getAttribute("data-src")
-                        )
+                        (element?.getAttribute("src") || element?.getAttribute("data-src"))
                             ?.replace(/^.*no=/g, "")
                             .replace(/^&.*$/g, "") ?? "";
 
@@ -249,11 +234,13 @@ export default {
                             const packageIdx = json.info.package_idx;
 
                             if (args?.blockAllDccon) {
-                                const blockBundle = confirm("디시콘을 묶어서 차단하시겠습니까? (차단탭에서 한개로 표시됩니다.)");
+                                const blockBundle = confirm(
+                                    "디시콘을 묶어서 차단하시겠습니까? (차단탭에서 한개로 표시됩니다.)"
+                                );
 
                                 const list = [];
 
-                                for (const {path} of json.detail) {
+                                for (const { path } of json.detail) {
                                     if (blockBundle) {
                                         list.push(path);
                                         continue;
@@ -323,11 +310,7 @@ export default {
                 if (!value || !extra) return;
 
                 block.add(type, value, false, false, undefined, extra);
-                Toast.show(
-                    `${block.TYPE_NAMES[type]} ${value}을(를) 차단했습니다.`,
-                    false,
-                    3000
-                );
+                Toast.show(`${block.TYPE_NAMES[type]} ${value}을(를) 차단했습니다.`, false, 3000);
             }
         );
     },

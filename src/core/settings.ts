@@ -1,4 +1,4 @@
-import {eventBus} from "./eventbus";
+import { eventBus } from "./eventbus";
 import storage from "../utils/storage";
 import browser from "webextension-polyfill";
 
@@ -33,7 +33,8 @@ export const load = async (
 ): Promise<unknown> => {
     settings_store[module] ??= {};
 
-    const got = (await storage.get<string | number | boolean>(`${module}.${key}`)) ?? settings.default;
+    const got =
+        (await storage.get<string | number | boolean>(`${module}.${key}`)) ?? settings.default;
     settings.value = got;
 
     settings_store[module][key] = settings;

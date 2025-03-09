@@ -5,10 +5,11 @@ export {};
 type ItemToRefresherArrayArgs<T extends RefresherModuleGeneric> =
     T["require"] extends Array<keyof ItemToRefresherMap>
         ? {
-            [K in keyof T["require"]]: T["require"][K] extends keyof ItemToRefresherMap ? ItemToRefresherMap[T["require"][K]] : never;
-        }
+              [K in keyof T["require"]]: T["require"][K] extends keyof ItemToRefresherMap
+                  ? ItemToRefresherMap[T["require"][K]]
+                  : never;
+          }
         : never;
-
 
 declare global {
     interface ItemToRefresherMap {
@@ -37,24 +38,18 @@ declare global {
         advanced?: boolean;
     }
 
-    interface RefresherCheckSettings
-        extends RefresherBaseSettings<"check", boolean> {
-    }
+    interface RefresherCheckSettings extends RefresherBaseSettings<"check", boolean> {}
 
-    interface RefresherTextSettings
-        extends RefresherBaseSettings<"text", string> {
-    }
+    interface RefresherTextSettings extends RefresherBaseSettings<"text", string> {}
 
-    interface RefresherRangeSettings
-        extends RefresherBaseSettings<"range", number> {
+    interface RefresherRangeSettings extends RefresherBaseSettings<"range", number> {
         min: number;
         max: number;
         step: number;
         unit: string;
     }
 
-    interface RefresherOptionSettings
-        extends RefresherBaseSettings<"option", string> {
+    interface RefresherOptionSettings extends RefresherBaseSettings<"option", string> {
         items: unknown;
     }
 
@@ -66,9 +61,7 @@ declare global {
         require?: Array<keyof ItemToRefresherMap>;
     }
 
-    interface RefresherModule<
-        T extends RefresherModuleGeneric = RefresherModuleGeneric
-    > {
+    interface RefresherModule<T extends RefresherModuleGeneric = RefresherModuleGeneric> {
         /**
          * 모듈의 이름. 다른 모듈과 구별 짓는 값으로 사용되니 다른 모듈과 이름이 겹칠 수 없습니다.
          * 설정의 모듈 페이지에 표시됩니다.
@@ -129,20 +122,18 @@ declare global {
          */
         update: T["settings"] extends Record<string, RefresherSettings>
             ? {
-                [K in keyof T["settings"]]: (
-                    this: any,
-                    value: T["settings"][K]["value"],
-                    ...args: ItemToRefresherArrayArgs<T>
-                ) => void;
-            }
+                  [K in keyof T["settings"]]: (
+                      this: any,
+                      value: T["settings"][K]["value"],
+                      ...args: ItemToRefresherArrayArgs<T>
+                  ) => void;
+              }
             : never;
 
         /**
          * 모듈에서 사용할 내장 유틸 목록.
          */
-        require?: T["require"] extends Array<keyof ItemToRefresherMap>
-            ? T["require"]
-            : never;
+        require?: T["require"] extends Array<keyof ItemToRefresherMap> ? T["require"] : never;
 
         /**
          * 해당 모듈이 작동할 때를 처리하기 위한 함수. require에서 적어 넣은 변수 순서대로의 인자를 인자로 넘겨줍니다.
