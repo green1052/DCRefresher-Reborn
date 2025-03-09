@@ -6,23 +6,19 @@ const {merge} = require("webpack-merge");
 module.exports = (env) => {
     return merge(common, {
         mode: "development",
-        devtool: "source-map",
+        devtool: "inline-source-map",
         plugins: [
             new CopyWebpackPlugin({
                 patterns: [
                     {
                         from: `src/${env.manifest}`,
                         to: "manifest.json",
-                        transform: (content) => {
-                            return Buffer.from(
-                                JSON.stringify({
-                                    description: pkg.description,
-                                    version: `${pkg.version}`,
-                                    version_name: `${pkg.version}-dev`,
-                                    ...JSON.parse(String(content))
-                                })
-                            );
-                        }
+                        transform: (content) => JSON.stringify({
+                            description: pkg.description,
+                            version: pkg.version,
+                            version_name: `${pkg.version}-dev`,
+                            ...JSON.parse(String(content))
+                        })
                     }
                 ]
             })

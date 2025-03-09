@@ -22,7 +22,7 @@ export const module = {
                 ? `refresher.module:${module}-${key}`
                 : `refresher.module:${module}`
         ).then((value) =>
-            typeof value === "string" && value[0] === "{"
+            typeof value === "string" && value.startsWith("{")
                 ? JSON.parse(value)
                 : value
         );

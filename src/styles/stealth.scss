@@ -1,91 +1,55 @@
 $dark-dc-color-deep: #113475;
 $dark-tint2: #3d3d3d;
 
-.imgwrap {
-    display: initial !important;
-}
+//.imgwrap {
+//    display: initial !important;
+//}
 
 .refresherStealth {
-    //frame etc.
-    .issuebox {
-        .mintro_imgbox {
-            display: none;
-        }
-
-        .concept_imgbox {
-            visibility: hidden;
-        }
+    .bgcover {
+        visibility: hidden;
     }
 
-    //right content
-    .right_content > article {
-        .img_box {
-            display: none;
-        }
-
-        .rcont_issue {
-            margin-top: 44px;
-        }
+    .rcontimg_box .img_box {
+        display: none !important;
     }
 
-    //content
     &:not(.stlth) .refresher-preview-contents-actual,
     &:not(.stlth) .writing_view_box {
-        embed,
-        img,
-        video,
-        #zzbang_div {
-            display: none;
-        }
-
-        //Video player - youtube
-        .writing_view_box > iframe {
-            display: none;
-        }
-
-        //Video player - kakao
-        .refresher-preview-contents-actual iframe,
-        .write_div embed {
+        embed, img, video, #zzbang_div {
             display: none;
         }
     }
-
-    //comment
+    
     div.comment_box .comment_dccon {
         &:not(:hover) {
             .written_dccon {
                 visibility: hidden;
             }
 
-            .coment_dccon_img {
-                border: 2px solid $dark-dc-color-deep;
-                box-sizing: border-box;
-
-                &::before {
-                    position: absolute;
-                    display: flex;
-                    justify-content: space-around;
-                    align-items: center;
-                    font-weight: bold;
-                    width: 100px;
-                    height: 100px;
-                    content: "디시콘 표시";
-                }
+            &::before {
+                position: absolute;
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                font-weight: bold;
+                width: 100px;
+                height: 100px;
+                content: "디시콘 표시";
             }
+
+            border: 1px solid $dark-dc-color-deep;
+            box-sizing: border-box;
         }
     }
 
-    //comment - Dark mode
-    &.refresherDark div.comment_box .comment_dccon {
+    &.refresherDark .coment_dccon_img {
         &:not(:hover) {
-            .coment_dccon_img {
-                border: 2px solid $dark-tint2;
-            }
+            border: 2px solid $dark-tint2;
         }
     }
-
-    //comment dory
-    .ub-content.dory {
+    
+    .dory {
         .dory_img img {
             height: 10pt;
         }
@@ -104,14 +68,13 @@ $dark-tint2: #3d3d3d;
             margin-left: 90px;
         }
     }
-
-    //Preview - No Comment
-    div.refresher-nocomment-wrap {
-        & > img {
+    
+    .refresher-nocomment-wrap {
+        img {
             display: none;
         }
-
-        & > h3 {
+        
+        h3 {
             text-align: center;
             width: 100%;
         }
@@ -137,8 +100,7 @@ $dark-tint2: #3d3d3d;
             content: "디시콘 표시";
         }
     }
-
-    //comment - Dark mode
+    
     &.refresherDark,
     div.refresher-preview-comments,
     .coment_dccon_img:not(:hover) {
@@ -146,8 +108,7 @@ $dark-tint2: #3d3d3d;
             border: 1px solid $dark-tint2;
         }
     }
-
-    //control button
+    
     .stealth_control_button {
         position: fixed;
         bottom: 20px;
@@ -197,8 +158,7 @@ $dark-tint2: #3d3d3d;
             transform: translateX(0px);
         }
     }
-
-    //control button - dark mode
+    
     &.refresherDark .stealth_control_button {
         background: $dark-tint-light-opacity;
         border: 1px solid #505050;

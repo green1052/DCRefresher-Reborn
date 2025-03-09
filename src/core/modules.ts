@@ -37,11 +37,12 @@ const runModule = (module: RefresherModule) => {
         }
     }
 
-    if (typeof module.func === "function") module.func.bind(module)(...plugins);
+    if (typeof module.func === "function")
+        module.func.bind(module)(...plugins);
 };
 
-const revokeModule = (mod: RefresherModule) => {
-    if (typeof mod.revoke === "function") {
+const revokeModule = (module: RefresherModule) => {
+    if (typeof module.revoke === "function") {
         const plugins: ModuleItem[] = [];
 
         if (Array.isArray(module.require)) {
@@ -50,26 +51,25 @@ const revokeModule = (mod: RefresherModule) => {
             }
         }
 
-        mod.revoke.bind(mod)(...plugins);
+        module.revoke.bind(module)(...plugins);
     }
 
-    if (typeof mod.memory === "object") {
-        for (const key in mod.memory) {
-            mod.memory[key] = undefined;
+    if (typeof module.memory === "object") {
+        for (const key in module.memory) {
+            module.memory[key] = undefined;
         }
     }
 };
 
 export const modules = {
     lists: (): ModuleStore => module_store,
+
     load: (module: RefresherModule): Promise<void> => {
         return new Promise((resolve) => modules.register(module).then(resolve));
     },
+
     register: async (module: RefresherModule): Promise<void> => {
         if (!module) throw "Module is not defined.";
-
-        const start = performance.now();
-
         if (module_store[module.name]) throw `${module.name} is already registered.`;
 
         const promises: Promise<void>[] = [];
@@ -78,10 +78,12 @@ export const modules = {
             storage
                 .get<boolean | undefined>(`${module.name}.enable`)
                 .then((enable) => {
-                    module.enable = typeof enable === "boolean" ? enable : module.default_enable;
-
                     if (enable === undefined)
                         storage.set(`${module.name}.enable`, module.default_enable);
+
+                    module.enable = typeof enable === "boolean"
+                        ? enable
+                        : module.default_enable;
                 })
         );
 
@@ -101,8 +103,7 @@ export const modules = {
             promises.push(
                 storage.module.get(module.name)
                     .then((data) => {
-                        module.data = data ?? {};
-                        module.data = new Proxy(module.data, {
+                        module.data = new Proxy(data ?? {}, {
                             set(target, p, newValue, receiver) {
                                 storage.module.setGlobal(module.name, JSON.stringify(module.data));
                                 return Reflect.set(target, p, newValue, receiver);
@@ -121,26 +122,16 @@ export const modules = {
 
         await Promise.all(promises);
 
-        const stringify = JSON.stringify({
-            module_store,
-            settings_store: settings.dump()
-        });
+        browser.runtime.sendMessage(
+            JSON.stringify({
+                module_store,
+                settings_store: settings.dump()
+            })
+        );
 
-        browser.runtime.sendMessage(stringify);
-
-        if (!module.enable) {
-            console.log(`📁 ignoring ${module.name}. The module is disabled.`);
-            return;
-        }
-
-        if (module.url && !module.url.test(location.href)) {
-            console.log(`📁 ignoring ${module.name}. current URL is not matching with the module's URL value.`);
-            return;
-        }
+        if (!module.enable || !module.url?.test(location.href)) return;
 
         runModule(module);
-
-        console.log(`📁 ${module.name} module loaded. took ${(performance.now() - start).toFixed(2)}ms.`);
     }
 };
 
@@ -154,12 +145,12 @@ communicate.addHook("updateModuleStatus", (data) => {
         })
     );
 
-    if (!data.value) {
-        revokeModule(module_store[data.name]);
+    if (data.value) {
+        runModule(module_store[data.name]);
         return;
     }
 
-    runModule(module_store[data.name]);
+    revokeModule(module_store[data.name]);
 });
 
 communicate.addHook("updateSettingValue", (data) => {
@@ -167,8 +158,6 @@ communicate.addHook("updateSettingValue", (data) => {
 });
 
 communicate.addHook("executeShortcut", (data) => {
-    console.log(`Received shortcut execute: ${data}.`);
-
     for (const key of Object.keys(module_store)) {
         if (
             module_store[key] &&
@@ -180,29 +169,27 @@ communicate.addHook("executeShortcut", (data) => {
     }
 });
 
-// 설정 창에서 설정을 변경할 경우 실행되는 함수를 정의합니다.
 eventBus.on(
     "refresherUpdateSetting",
-    (module: string, key: string, value: unknown) => {
-        const mod = module_store[module];
+    (mod: string, key: string, value: unknown) => {
+        const module = module_store[mod];
 
-        if (mod !== undefined) {
-            mod.status ??= {};
-            mod.status[key] = value;
+        if (module !== undefined) {
+            module.status ??= {};
+            module.status[key] = value;
         }
 
-        // 모듈이 활성화되지 않은 상태일 경우 모듈 설정 업데이트 함수 호출을 건너뜁니다.
-        if (!mod.enable || !mod.update || typeof mod.update[key] !== "function")
+        if (!module.enable || !module.update || typeof module.update[key] !== "function")
             return;
 
         const plugins: ModuleItem[] = [];
 
-        if (Array.isArray(mod.require)) {
-            for (const require of mod.require) {
+        if (Array.isArray(module.require)) {
+            for (const require of module.require as (keyof ItemToRefresherMap)[]) {
                 plugins.push(UTILS[require]);
             }
         }
 
-        mod.update[key].bind(mod)(value, ...plugins);
+        module.update[key].bind(module)(value, ...plugins);
     }
 );

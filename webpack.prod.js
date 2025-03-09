@@ -13,15 +13,10 @@ module.exports = (env) => {
                     {
                         from: `src/${env.manifest}`,
                         to: "manifest.json",
-                        transform: (content) => {
-                            return Buffer.from(
-                                JSON.stringify({
-                                    description: pkg.description,
-                                    version: pkg.version,
-                                    ...JSON.parse(String(content))
-                                })
-                            );
-                        }
+                        transform: (content) => JSON.stringify({
+                            description: pkg.description,
+                            version: pkg.version, ...JSON.parse(String(content))
+                        })
                     }
                 ]
             })
