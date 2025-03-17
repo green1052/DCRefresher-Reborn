@@ -4,7 +4,7 @@
     "description": "디시인사이드 개선 확장 프로그램",
     "devDependencies": {
         "@eslint/js": "^9.22.0",
-        "@swc/core": "^1.11.9",
+        "@swc/core": "^1.11.10",
         "@types/js-cookie": "^3.0.6",
         "@types/node": "^22.13.10",
         "@types/webextension-polyfill": "^0.12.3",
