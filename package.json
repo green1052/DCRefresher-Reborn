@@ -24,7 +24,7 @@
         "ky": "^1.7.5",
         "mini-css-extract-plugin": "^2.9.2",
         "prettier": "^3.5.3",
-        "sass": "^1.85.1",
+        "sass": "^1.86.0",
         "sass-loader": "^16.0.5",
         "swc-loader": "^0.2.6",
         "terser-webpack-plugin": "^5.3.14",
