@@ -45,5 +45,5 @@
         "dev:mv2": "webpack --env manifest=manifest_v2.json --watch --config webpack.dev.js",
         "dev:mv3": "webpack --env manifest=manifest_v3.json --watch --config webpack.dev.js"
     },
-    "packageManager": "pnpm@10.6.3"
+    "packageManager": "pnpm@10.6.4"
 }
