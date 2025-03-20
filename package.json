@@ -29,7 +29,7 @@
         "swc-loader": "^0.2.6",
         "terser-webpack-plugin": "^5.3.14",
         "typescript": "^5.8.2",
-        "typescript-eslint": "^8.26.1",
+        "typescript-eslint": "^8.27.0",
         "vue": "2.7.16",
         "vue-fragment": "1.6.0",
         "vue-loader": "15.11.1",
