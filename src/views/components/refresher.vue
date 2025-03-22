@@ -277,8 +277,8 @@
                         <button @click="importBlock">가져오기</button>
                     </div>
 
-                    <br />
-                    <br />
+                    <br >
+                    <br >
 
                     <h2>차단 모드</h2>
 
@@ -385,7 +385,7 @@
                         <button @click="importMemo">가져오기</button>
                     </div>
 
-                    <br />
+                    <br >
                 </div>
 
                 <div
@@ -507,498 +507,498 @@
 </template>
 
 <script lang="ts">
-    import $ from "cash-dom";
-    import ky from "ky";
-    import Vue from "vue";
-    import { Fragment } from "vue-fragment";
-    import browser from "webextension-polyfill";
+import $ from "cash-dom";
+import ky from "ky";
+import Vue from "vue";
+import { Fragment } from "vue-fragment";
+import browser from "webextension-polyfill";
 
-    import { BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES } from "../../core/block";
-    import { TYPE_NAMES as MEMO_TYPE_NAMES } from "../../core/memo";
-    import { getURL } from "../../utils/getURL";
-    import storage from "../../utils/storage";
-    import bubble from "./bubble.vue";
-    import checkbox from "./checkbox.vue";
-    import input from "./input.vue";
-    import module from "./module.vue";
-    import options from "./options.vue";
-    import range from "./range.vue";
+import { BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES } from "../../core/block";
+import { TYPE_NAMES as MEMO_TYPE_NAMES } from "../../core/memo";
+import { getURL } from "../../utils/getURL";
+import storage from "../../utils/storage";
+import bubble from "./bubble.vue";
+import checkbox from "./checkbox.vue";
+import input from "./input.vue";
+import module from "./module.vue";
+import options from "./options.vue";
+import range from "./range.vue";
 
-    interface RefresherData {
-        tab: number;
-        modules: {
-            [key: string]: RefresherModule;
+interface RefresherData {
+    tab: number;
+    modules: {
+        [key: string]: RefresherModule;
+    };
+    settings: {
+        [key: string]: {
+            [key: string]: RefresherSettings;
         };
-        settings: {
-            [key: string]: {
-                [key: string]: RefresherSettings;
-            };
+    };
+    shortcuts: {} | browser.Commands.Command[];
+    blocks: {
+        [key in RefresherBlockType]: RefresherBlockValue[];
+    };
+    blockModes: BlockModeCache;
+    blockDetectModeTypeNames: typeof BLOCK_DETECT_MODE_TYPE_NAMES;
+    memos: {
+        [key in RefresherMemoType]: {
+            [key: string]: RefresherMemoValue;
         };
-        shortcuts: {} | browser.Commands.Command[];
-        blocks: {
-            [key in RefresherBlockType]: RefresherBlockValue[];
-        };
-        blockModes: BlockModeCache;
-        blockDetectModeTypeNames: typeof BLOCK_DETECT_MODE_TYPE_NAMES;
-        memos: {
-            [key in RefresherMemoType]: {
-                [key: string]: RefresherMemoValue;
-            };
-        };
-        memoKeyNames: typeof MEMO_TYPE_NAMES;
-        shortcutRegex: RegExp;
-        blockKeyNames: typeof BLOCK_TYPE_NAMES;
-        links: { text: string; url: string }[];
-        databaseVersion: string;
-    }
+    };
+    memoKeyNames: typeof MEMO_TYPE_NAMES;
+    shortcutRegex: RegExp;
+    blockKeyNames: typeof BLOCK_TYPE_NAMES;
+    links: { text: string; url: string }[];
+    databaseVersion: string;
+}
 
-    const port = browser.runtime.connect({ name: "refresherInternal" });
+const port = browser.runtime.connect({ name: "refresherInternal" });
 
-    export default Vue.extend({
-        name: "Refresher",
-        components: {
-            "refresher-checkbox": checkbox,
-            "refresher-module": module,
-            "refresher-options": options,
-            "refresher-input": input,
-            "refresher-range": range,
-            "refresher-bubble": bubble,
-            Fragment
-        },
-        data(): RefresherData {
-            return {
-                tab: 0,
-                modules: {},
-                settings: {},
-                shortcuts: {},
-                blocks: {
-                    NICK: [],
-                    ID: [],
-                    IP: [],
-                    TITLE: [],
-                    TEXT: [],
-                    COMMENT: [],
-                    DCCON: [],
-                    TAB: [],
-                    IMAGE: []
+export default Vue.extend({
+    name: "Refresher",
+    components: {
+        "refresher-checkbox": checkbox,
+        "refresher-module": module,
+        "refresher-options": options,
+        "refresher-input": input,
+        "refresher-range": range,
+        "refresher-bubble": bubble,
+        Fragment
+    },
+    data(): RefresherData {
+        return {
+            tab: 0,
+            modules: {},
+            settings: {},
+            shortcuts: {},
+            blocks: {
+                NICK: [],
+                ID: [],
+                IP: [],
+                TITLE: [],
+                TEXT: [],
+                COMMENT: [],
+                DCCON: [],
+                TAB: [],
+                IMAGE: []
+            },
+            blockModes: {},
+            blockDetectModeTypeNames: BLOCK_DETECT_MODE_TYPE_NAMES,
+            memos: {
+                UID: {},
+                NICK: {},
+                IP: {}
+            },
+            memoKeyNames: MEMO_TYPE_NAMES,
+            shortcutRegex:
+                /(Space|⌥|⇧|⌘|⌃|Alt|Cmd|,|'|`|Home|End|PageUp|PageDown|Insert|Delete|Left|Up|Right|Down|[A-Z]|[0-9])/g,
+            blockKeyNames: BLOCK_TYPE_NAMES,
+            links: [
+                {
+                    text: "GitHub",
+                    url: "https://github.com/green1052/DCRefresher-Reborn"
                 },
-                blockModes: {},
-                blockDetectModeTypeNames: BLOCK_DETECT_MODE_TYPE_NAMES,
-                memos: {
-                    UID: {},
-                    NICK: {},
-                    IP: {}
+                {
+                    text: "Discord",
+                    url: "https://discord.gg/SSW6Zuyjz6"
                 },
-                memoKeyNames: MEMO_TYPE_NAMES,
-                shortcutRegex:
-                    /(Space|⌥|⇧|⌘|⌃|Alt|Cmd|,|'|`|Home|End|PageUp|PageDown|Insert|Delete|Left|Up|Right|Down|[A-Z]|[0-9])/g,
-                blockKeyNames: BLOCK_TYPE_NAMES,
-                links: [
-                    {
-                        text: "GitHub",
-                        url: "https://github.com/green1052/DCRefresher-Reborn"
-                    },
-                    {
-                        text: "Discord",
-                        url: "https://discord.gg/SSW6Zuyjz6"
-                    },
-                    {
-                        text: "후원",
-                        url: "https://www.buymeacoffee.com/green1052"
-                    }
-                ],
-                databaseVersion: ""
-            };
-        },
-        watch: {
-            modules(modules) {
-                if (modules["다크 모드"]) {
-                    this.updateDarkMode(
-                        modules["다크 모드"].enable || matchMedia("(prefers-color-scheme: dark)").matches
-                    );
+                {
+                    text: "후원",
+                    url: "https://www.buymeacoffee.com/green1052"
+                },
+                {
+                    text: "도움말",
+                    url: "https://dcrefresher.green1052.com"
                 }
-            }
-        },
-        async mounted() {
-            port.postMessage({
-                requestRefresherModules: true,
-                requestRefresherSettings: true,
-                requestRefresherBlocks: true,
-                requestRefresherMemos: true
-            });
-
-            port.onMessage.addListener((message) => {
-                if (message.responseRefresherModules && message.modules) {
-                    this.modules = message.modules;
-                }
-
-                if (message.responseRefresherSettings && message.settings) {
-                    this.settings = message.settings;
-                }
-
-                if (message.responseRefresherBlocks && message.blocks && message.blockModes) {
-                    this.blocks = message.blocks;
-                    this.blockModes = message.blockModes;
-                }
-
-                if (message.requestRefresherMemos && message.memos) {
-                    this.memos = message.memos;
-                }
-            });
-
-            this.shortcuts = await browser.commands.getAll();
-
-            this.databaseVersion = await storage.get("refresher.database.version");
-        },
-        methods: {
-            getURL,
-            exportMemo() {
-                navigator.clipboard
-                    .writeText(JSON.stringify(this.memos))
-                    .then(() => {
-                        alert("클립보드에 복사되었습니다.");
-                    })
-                    .catch(() => {
-                        alert("클립보드에 복사하지 못했습니다.");
-                    });
-            },
-            importMemo() {
-                const result = prompt("가져올 데이터를 입력하세요.");
-
-                if (!result) return;
-
-                try {
-                    const data = JSON.parse(result);
-
-                    for (const [key, value] of Object.entries(data)) {
-                        const target = this.memos[key as RefresherMemoType];
-
-                        for (const [id, memo] of Object.entries(value as Record<string, RefresherMemoValue>)) {
-                            if (target[id] && !confirm(`${id}에 대한 메모가 이미 존재합니다, 덮어쓰시겠습니까?`)) {
-                                continue;
-                            }
-
-                            target[id] = memo;
-                        }
-                    }
-
-                    this.syncMemos();
-
-                    alert("가져오기에 성공했습니다.");
-                } catch (e) {
-                    alert("데이터가 잘못됐습니다.");
-                }
-            },
-            exportBlock() {
-                navigator.clipboard
-                    .writeText(JSON.stringify(this.blocks))
-                    .then(() => {
-                        alert("클립보드에 복사되었습니다.");
-                    })
-                    .catch(() => {
-                        alert("클립보드에 복사하지 못했습니다.");
-                    });
-            },
-            importBlock() {
-                const result = prompt("가져올 데이터를 입력하세요.");
-
-                if (!result) return;
-
-                try {
-                    const data = JSON.parse(result);
-
-                    for (const [key, value] of Object.entries(data)) {
-                        const target = this.blocks[key as RefresherBlockType];
-
-                        for (const block of value as RefresherBlockValue[]) {
-                            if (
-                                target.some((v) => v.content === block.content) &&
-                                !confirm(`${block.content}가 이미 존재합니다, 덮어쓰시겠습니까?`)
-                            ) {
-                                continue;
-                            }
-
-                            target.push(block);
-                        }
-                    }
-
-                    this.syncBlock();
-
-                    alert("가져오기에 성공했습니다.");
-                } catch (e) {
-                    alert("데이터가 잘못됐습니다.");
-                }
-            },
-            getVersion() {
-                return browser.runtime.getManifest().version_name ?? browser.runtime.getManifest().version;
-            },
-            open(url: string) {
-                browser.tabs.create({ url });
-            },
-            openShortcutSettings() {
-                browser.tabs.create({
-                    url: /Firefox/.test(navigator.userAgent) ? "about:addons" : "chrome://extensions/shortcuts"
-                });
-            },
-            typeWrap(value: unknown) {
-                if (typeof value === "boolean") {
-                    return value ? "On" : "Off";
-                }
-
-                if (typeof value === "string" && value === "") {
-                    return "없음";
-                }
-
-                return value;
-            },
-            moveToModuleTab(moduleName: string) {
-                this.tab = 5;
-
-                const $el = $(this.$el);
-
-                for (const element of $el.find(".refresher-module.highlight")) {
-                    $(element).removeClass("highlight");
-                }
-
-                for (const element of $el.find(".tab .refresher-module .title")) {
-                    const $element = $(element);
-
-                    if ($element.text() !== moduleName) continue;
-
-                    requestAnimationFrame(() => {
-                        $element.parent().parent().addClass("highlight");
-
-                        element.scrollIntoView({
-                            behavior: "smooth",
-                            block: "center"
-                        });
-
-                        setTimeout(() => {
-                            for (const element of $el.find(".refresher-module.highlight")) {
-                                $(element).removeClass("highlight");
-                            }
-                        }, 1000);
-                    });
-                }
-            },
-            settingsCount(obj: Record<string, RefresherSettings>) {
-                return Object.values(obj).filter((v) => !v?.advanced).length;
-            },
-            advancedSettingsCount(obj: Record<string, RefresherSettings>) {
-                return Object.values(obj).filter((v) => v?.advanced === true).length;
-            },
-            updateUserSetting(module: string, key: string, value: unknown) {
-                this.settings[module][key].value = value;
-
-                port.postMessage({
-                    updateUserSetting: true,
-                    name: module,
-                    key,
-                    value,
-                    settings_store: this.settings
-                });
-
-                browser.tabs.query({ active: true }).then((tabs) => {
-                    browser.tabs.sendMessage(tabs[0].id!, {
-                        type: "updateSettingValue",
-                        data: {
-                            name: module,
-                            key,
-                            value
-                        }
-                    });
-                });
-            },
-            syncBlock() {
-                port.postMessage({
-                    updateBlocks: true,
-                    blocks_store: this.blocks,
-                    blockModes_store: this.blockModes
-                });
-
-                browser.tabs.query({ active: true }).then((tabs) => {
-                    browser.tabs.sendMessage(tabs[0].id!, {
-                        type: "updateBlocks",
-                        data: {
-                            blocks: this.blocks,
-                            modes: this.blockModes
-                        }
-                    });
-                });
-            },
-            addEmptyBlockedUser(key: RefresherBlockType) {
-                if (key === "DCCON") {
-                    alert("디시콘 수동 차단은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
-                    return;
-                }
-
-                const extra: string[] = [];
-                const isAdvanced = confirm("고급 차단 설정을 하시겠습니까?");
-
-                if (isAdvanced) {
-                    extra.push("[고급]");
-                }
-
-                const result = prompt(
-                    isAdvanced
-                        ? `${this.blockKeyNames[key]} 차단\n인수: type: RefresherBlockType, content: string, gallery?: string\n예제: return content === "개블빙" && gallery === "bser";`
-                        : `추가할 ${this.blockKeyNames[key]} 값을 입력하세요.`
-                );
-
-                if (!result) return;
-
-                let isRegex = false;
-                let gallery: string | undefined = undefined;
-                let mode: RefresherBlockDetectMode | undefined = undefined;
-
-                if (!isAdvanced) {
-                    if (confirm("정규식입니까?")) {
-                        isRegex = true;
-                        extra.push("[정규식]");
-                    }
-
-                    if (confirm("특정 갤러리에서만 차단하시겠습니까?")) {
-                        const id = prompt("갤러리 아이디를 입력해주세요.");
-
-                        if (id) {
-                            gallery = id;
-                        } else {
-                            alert("갤러리 아이디가 잘못됐습니다.");
-                            return;
-                        }
-                    }
-
-                    if (
-                        confirm(
-                            `차단 모드를 설정하시겠습니까? 현재 값: ${
-                                this.blockDetectModeTypeNames[this.blockModes[key]]
-                            }`
-                        )
-                    ) {
-                        const modes = Object.keys(this.blockDetectModeTypeNames);
-
-                        const inputMode = prompt(`차단 모드를 입력해주세요. (모드 목록: ${modes.join(", ")})`);
-
-                        if (inputMode && modes.includes(inputMode as RefresherBlockDetectMode)) {
-                            mode = inputMode as RefresherBlockDetectMode;
-                            extra.push(`[${this.blockDetectModeTypeNames[mode]}]`);
-                        } else {
-                            alert("모드가 잘못됐습니다.");
-                            return;
-                        }
-                    }
-                }
-
-                this.blocks[key].push({
-                    content: result,
-                    isRegex,
-                    isAdvanced,
-                    extra: extra.length ? extra.join(" ") : undefined,
-                    gallery,
-                    mode
-                });
-
-                this.syncBlock();
-            },
-            removeBlockedUser(key: RefresherBlockType, index: number) {
-                this.blocks[key].splice(index, 1);
-                this.syncBlock();
-            },
-            removeAllBlockedUser(key: RefresherBlockType) {
-                if (!confirm("ㄹ?ㅇ")) return;
-                this.blocks[key] = [];
-                this.syncBlock();
-            },
-            editBlockedUser(key: RefresherBlockType, index: number) {
-                if (key === "DCCON") {
-                    alert("디시콘 수정은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
-                    return;
-                }
-
-                const result = prompt(`바꿀 ${this.blockKeyNames[key]} 값을 입력하세요.`);
-
-                if (!result) return;
-
-                this.blocks[key][index].content = result;
-                this.syncBlock();
-            },
-            editBlockMode() {
-                this.syncBlock();
-            },
-            syncMemos() {
-                port.postMessage({
-                    updateMemos: true,
-                    memos_store: this.memos
-                });
-
-                browser.tabs.query({ active: true }).then((tabs) => {
-                    browser.tabs.sendMessage(tabs[0].id!, {
-                        type: "updateMemos",
-                        data: {
-                            memos: this.memos
-                        }
-                    });
-                });
-            },
-            removeMemoUser(type: RefresherMemoType, user: string) {
-                const obj = { ...this.memos };
-                delete obj[type][user];
-                this.memos = obj;
-
-                this.syncMemos();
-            },
-            removeAllMemoUser(type: RefresherMemoType) {
-                if (!confirm("ㄹ?ㅇ")) return;
-                this.memos[type] = {};
-                this.syncMemos();
-            },
-            addMemoUser(type: RefresherMemoType) {
-                const user = prompt("메모 대상을 입력하세요.");
-
-                if (!user) return;
-
-                browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
-                    browser.tabs.sendMessage(tabs[0].id!, {
-                        type: "refresherRequestMemoAsk",
-                        data: {
-                            type,
-                            user
-                        }
-                    });
-                });
-            },
-            editMemoUser(type: RefresherMemoType, user: string) {
-                browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
-                    browser.tabs.sendMessage(tabs[0].id!, {
-                        type: "refresherRequestMemoAsk",
-                        data: {
-                            type,
-                            user
-                        }
-                    });
-                });
-            },
-            updateDarkMode(value: boolean) {
-                $(document.documentElement).toggleClass("refresherDark", value);
-            },
-            async updateIpDatabase() {
-                try {
-                    const [version, ip, ban] = await Promise.all([
-                        ky.get("https://dcrefresher.green1052.com/data/version").text(),
-                        ky.get("https://dcrefresher.green1052.com/data/ip.json").json(),
-                        ky.get("https://dcrefresher.green1052.com/data/ban.json").json()
-                    ]);
-
-                    storage.set("refresher.database.ip", ip);
-                    storage.set("refresher.database.ban", ban);
-                    storage.set("refresher.database.version", version);
-                    storage.set("refresher.database.lastUpdate", Date.now());
-
-                    alert("데이터베이스 업데이트에 성공했습니다.");
-                } catch (e) {
-                    alert(`데이터베이스 업데이트에 실패했습니다. 오류: ${e}`);
-                }
+            ],
+            databaseVersion: ""
+        };
+    },
+    watch: {
+        modules(modules) {
+            if (modules["다크 모드"]) {
+                this.updateDarkMode(modules["다크 모드"].enable || matchMedia("(prefers-color-scheme: dark)").matches);
             }
         }
-    });
+    },
+    async mounted() {
+        port.postMessage({
+            requestRefresherModules: true,
+            requestRefresherSettings: true,
+            requestRefresherBlocks: true,
+            requestRefresherMemos: true
+        });
+
+        port.onMessage.addListener((message) => {
+            if (message.responseRefresherModules && message.modules) {
+                this.modules = message.modules;
+            }
+
+            if (message.responseRefresherSettings && message.settings) {
+                this.settings = message.settings;
+            }
+
+            if (message.responseRefresherBlocks && message.blocks && message.blockModes) {
+                this.blocks = message.blocks;
+                this.blockModes = message.blockModes;
+            }
+
+            if (message.requestRefresherMemos && message.memos) {
+                this.memos = message.memos;
+            }
+        });
+
+        this.shortcuts = await browser.commands.getAll();
+
+        this.databaseVersion = await storage.get("refresher.database.version");
+    },
+    methods: {
+        getURL,
+        exportMemo() {
+            navigator.clipboard
+                .writeText(JSON.stringify(this.memos))
+                .then(() => {
+                    alert("클립보드에 복사되었습니다.");
+                })
+                .catch(() => {
+                    alert("클립보드에 복사하지 못했습니다.");
+                });
+        },
+        importMemo() {
+            const result = prompt("가져올 데이터를 입력하세요.");
+
+            if (!result) return;
+
+            try {
+                const data = JSON.parse(result);
+
+                for (const [key, value] of Object.entries(data)) {
+                    const target = this.memos[key as RefresherMemoType];
+
+                    for (const [id, memo] of Object.entries(value as Record<string, RefresherMemoValue>)) {
+                        if (target[id] && !confirm(`${id}에 대한 메모가 이미 존재합니다, 덮어쓰시겠습니까?`)) {
+                            continue;
+                        }
+
+                        target[id] = memo;
+                    }
+                }
+
+                this.syncMemos();
+
+                alert("가져오기에 성공했습니다.");
+            } catch (e) {
+                alert("데이터가 잘못됐습니다.");
+            }
+        },
+        exportBlock() {
+            navigator.clipboard
+                .writeText(JSON.stringify(this.blocks))
+                .then(() => {
+                    alert("클립보드에 복사되었습니다.");
+                })
+                .catch(() => {
+                    alert("클립보드에 복사하지 못했습니다.");
+                });
+        },
+        importBlock() {
+            const result = prompt("가져올 데이터를 입력하세요.");
+
+            if (!result) return;
+
+            try {
+                const data = JSON.parse(result);
+
+                for (const [key, value] of Object.entries(data)) {
+                    const target = this.blocks[key as RefresherBlockType];
+
+                    for (const block of value as RefresherBlockValue[]) {
+                        if (
+                            target.some((v) => v.content === block.content) &&
+                            !confirm(`${block.content}가 이미 존재합니다, 덮어쓰시겠습니까?`)
+                        ) {
+                            continue;
+                        }
+
+                        target.push(block);
+                    }
+                }
+
+                this.syncBlock();
+
+                alert("가져오기에 성공했습니다.");
+            } catch (e) {
+                alert("데이터가 잘못됐습니다.");
+            }
+        },
+        getVersion() {
+            return browser.runtime.getManifest().version_name ?? browser.runtime.getManifest().version;
+        },
+        open(url: string) {
+            browser.tabs.create({ url });
+        },
+        openShortcutSettings() {
+            browser.tabs.create({
+                url: /Firefox/.test(navigator.userAgent) ? "about:addons" : "chrome://extensions/shortcuts"
+            });
+        },
+        typeWrap(value: unknown) {
+            if (typeof value === "boolean") {
+                return value ? "On" : "Off";
+            }
+
+            if (typeof value === "string" && value === "") {
+                return "없음";
+            }
+
+            return value;
+        },
+        moveToModuleTab(moduleName: string) {
+            this.tab = 5;
+
+            const $el = $(this.$el);
+
+            for (const element of $el.find(".refresher-module.highlight")) {
+                $(element).removeClass("highlight");
+            }
+
+            for (const element of $el.find(".tab .refresher-module .title")) {
+                const $element = $(element);
+
+                if ($element.text() !== moduleName) continue;
+
+                requestAnimationFrame(() => {
+                    $element.parent().parent().addClass("highlight");
+
+                    element.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center"
+                    });
+
+                    setTimeout(() => {
+                        for (const element of $el.find(".refresher-module.highlight")) {
+                            $(element).removeClass("highlight");
+                        }
+                    }, 1000);
+                });
+            }
+        },
+        settingsCount(obj: Record<string, RefresherSettings>) {
+            return Object.values(obj).filter((v) => !v?.advanced).length;
+        },
+        advancedSettingsCount(obj: Record<string, RefresherSettings>) {
+            return Object.values(obj).filter((v) => v?.advanced === true).length;
+        },
+        updateUserSetting(module: string, key: string, value: unknown) {
+            this.settings[module][key].value = value;
+
+            port.postMessage({
+                updateUserSetting: true,
+                name: module,
+                key,
+                value,
+                settings_store: this.settings
+            });
+
+            browser.tabs.query({ active: true }).then((tabs) => {
+                browser.tabs.sendMessage(tabs[0].id!, {
+                    type: "updateSettingValue",
+                    data: {
+                        name: module,
+                        key,
+                        value
+                    }
+                });
+            });
+        },
+        syncBlock() {
+            port.postMessage({
+                updateBlocks: true,
+                blocks_store: this.blocks,
+                blockModes_store: this.blockModes
+            });
+
+            browser.tabs.query({ active: true }).then((tabs) => {
+                browser.tabs.sendMessage(tabs[0].id!, {
+                    type: "updateBlocks",
+                    data: {
+                        blocks: this.blocks,
+                        modes: this.blockModes
+                    }
+                });
+            });
+        },
+        addEmptyBlockedUser(key: RefresherBlockType) {
+            if (key === "DCCON") {
+                alert("디시콘 수동 차단은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
+                return;
+            }
+
+            const extra: string[] = [];
+            const isAdvanced = confirm("고급 차단 설정을 하시겠습니까?");
+
+            if (isAdvanced) {
+                extra.push("[고급]");
+            }
+
+            const result = prompt(
+                isAdvanced
+                    ? `${this.blockKeyNames[key]} 차단\n인수: type: RefresherBlockType, content: string, gallery?: string\n예제: return content === "개블빙" && gallery === "bser";`
+                    : `추가할 ${this.blockKeyNames[key]} 값을 입력하세요.`
+            );
+
+            if (!result) return;
+
+            let isRegex = false;
+            let gallery: string | undefined = undefined;
+            let mode: RefresherBlockDetectMode | undefined = undefined;
+
+            if (!isAdvanced) {
+                if (confirm("정규식입니까?")) {
+                    isRegex = true;
+                    extra.push("[정규식]");
+                }
+
+                if (confirm("특정 갤러리에서만 차단하시겠습니까?")) {
+                    const id = prompt("갤러리 아이디를 입력해주세요.");
+
+                    if (id) {
+                        gallery = id;
+                    } else {
+                        alert("갤러리 아이디가 잘못됐습니다.");
+                        return;
+                    }
+                }
+
+                if (
+                    confirm(
+                        `차단 모드를 설정하시겠습니까? 현재 값: ${this.blockDetectModeTypeNames[this.blockModes[key]]}`
+                    )
+                ) {
+                    const modes = Object.keys(this.blockDetectModeTypeNames);
+
+                    const inputMode = prompt(`차단 모드를 입력해주세요. (모드 목록: ${modes.join(", ")})`);
+
+                    if (inputMode && modes.includes(inputMode as RefresherBlockDetectMode)) {
+                        mode = inputMode as RefresherBlockDetectMode;
+                        extra.push(`[${this.blockDetectModeTypeNames[mode]}]`);
+                    } else {
+                        alert("모드가 잘못됐습니다.");
+                        return;
+                    }
+                }
+            }
+
+            this.blocks[key].push({
+                content: result,
+                isRegex,
+                isAdvanced,
+                extra: extra.length ? extra.join(" ") : undefined,
+                gallery,
+                mode
+            });
+
+            this.syncBlock();
+        },
+        removeBlockedUser(key: RefresherBlockType, index: number) {
+            this.blocks[key].splice(index, 1);
+            this.syncBlock();
+        },
+        removeAllBlockedUser(key: RefresherBlockType) {
+            if (!confirm("ㄹ?ㅇ")) return;
+            this.blocks[key] = [];
+            this.syncBlock();
+        },
+        editBlockedUser(key: RefresherBlockType, index: number) {
+            if (key === "DCCON") {
+                alert("디시콘 수정은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
+                return;
+            }
+
+            const result = prompt(`바꿀 ${this.blockKeyNames[key]} 값을 입력하세요.`);
+
+            if (!result) return;
+
+            this.blocks[key][index].content = result;
+            this.syncBlock();
+        },
+        editBlockMode() {
+            this.syncBlock();
+        },
+        syncMemos() {
+            port.postMessage({
+                updateMemos: true,
+                memos_store: this.memos
+            });
+
+            browser.tabs.query({ active: true }).then((tabs) => {
+                browser.tabs.sendMessage(tabs[0].id!, {
+                    type: "updateMemos",
+                    data: {
+                        memos: this.memos
+                    }
+                });
+            });
+        },
+        removeMemoUser(type: RefresherMemoType, user: string) {
+            const obj = { ...this.memos };
+            delete obj[type][user];
+            this.memos = obj;
+
+            this.syncMemos();
+        },
+        removeAllMemoUser(type: RefresherMemoType) {
+            if (!confirm("ㄹ?ㅇ")) return;
+            this.memos[type] = {};
+            this.syncMemos();
+        },
+        addMemoUser(type: RefresherMemoType) {
+            const user = prompt("메모 대상을 입력하세요.");
+
+            if (!user) return;
+
+            browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+                browser.tabs.sendMessage(tabs[0].id!, {
+                    type: "refresherRequestMemoAsk",
+                    data: {
+                        type,
+                        user
+                    }
+                });
+            });
+        },
+        editMemoUser(type: RefresherMemoType, user: string) {
+            browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+                browser.tabs.sendMessage(tabs[0].id!, {
+                    type: "refresherRequestMemoAsk",
+                    data: {
+                        type,
+                        user
+                    }
+                });
+            });
+        },
+        updateDarkMode(value: boolean) {
+            $(document.documentElement).toggleClass("refresherDark", value);
+        },
+        async updateIpDatabase() {
+            try {
+                const [version, ip, ban] = await Promise.all([
+                    ky.get("https://dcrefresher.green1052.com/data/version").text(),
+                    ky.get("https://dcrefresher.green1052.com/data/ip.json").json(),
+                    ky.get("https://dcrefresher.green1052.com/data/ban.json").json()
+                ]);
+
+                storage.set("refresher.database.ip", ip);
+                storage.set("refresher.database.ban", ban);
+                storage.set("refresher.database.version", version);
+                storage.set("refresher.database.lastUpdate", Date.now());
+
+                alert("데이터베이스 업데이트에 성공했습니다.");
+            } catch (e) {
+                alert(`데이터베이스 업데이트에 실패했습니다. 오류: ${e}`);
+            }
+        }
+    }
+});
 </script>

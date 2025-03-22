@@ -37,9 +37,7 @@ $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
 
 // IP Module
 
-.fl,
-.cmt_info,
-.reply_info {
+.fl, .cmt_info, .reply_info {
     .refresherUserData {
         margin-left: 3px;
     }
@@ -65,10 +63,6 @@ tr.gall_writer {
     top: unset !important;
     margin-left: unset !important;
 }
-
-//.gall_writer span:not(.refresherMemoData).ip.refresherUserData {
-//    display: contents;
-//}
 
 // Refresh Module
 

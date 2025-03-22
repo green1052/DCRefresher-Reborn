@@ -484,8 +484,6 @@ export default {
 
                 const obj = await memoAsk(selected, memo, type, user);
 
-                // eventBus.emit("refreshRequest");
-
                 if (!obj.text) {
                     if (memo.get(obj.type, obj.value)) {
                         memo.remove(obj.type, obj.value);
@@ -524,8 +522,6 @@ export default {
             }
 
             const obj = await memoAsk(this.memory.selected, memo, type, value);
-
-            // eventBus.emit("refreshRequest");
 
             if (!obj.text) {
                 if (memo.get(obj.type, obj.value)) {
