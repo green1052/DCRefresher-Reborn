@@ -1,21 +1,22 @@
-import * as Toast from "../components/toast";
-import * as block from "../core/block";
-import { submitComment } from "../utils/comment";
-import { findNeighbor } from "../utils/dom";
-import * as http from "../utils/http";
-import { queryString } from "../utils/http";
-import { ScrollDetection } from "../utils/scrollDetection";
-import { User } from "../utils/user";
 import $ from "cash-dom";
 import Cookies from "js-cookie";
 import ky, { Input, Options } from "ky";
 // import Tesseract from "tesseract.js";
 import browser from "webextension-polyfill";
-import type IFrame from "../core/frame";
-import * as storage from "../utils/storage";
-import { inject } from "../utils/inject";
-import { getURL } from "../utils/getURL";
+
 import { GalleryPreData } from "../@types/post";
+import * as Toast from "../components/toast";
+import * as block from "../core/block";
+import type IFrame from "../core/frame";
+import { submitComment } from "../utils/comment";
+import { findNeighbor } from "../utils/dom";
+import { getURL } from "../utils/getURL";
+import * as http from "../utils/http";
+import { queryString } from "../utils/http";
+import { inject } from "../utils/inject";
+import { ScrollDetection } from "../utils/scrollDetection";
+import * as storage from "../utils/storage";
+import { User } from "../utils/user";
 
 const domParser = new DOMParser();
 

@@ -1,9 +1,10 @@
+import $ from "cash-dom";
+import { Cash } from "cash-dom/dist/cash";
+import ky from "ky";
+
 import * as Toast from "../components/toast";
 import { queryString } from "../utils/http";
-import $ from "cash-dom";
-import ky from "ky";
 import * as storage from "../utils/storage";
-import { Cash } from "cash-dom/dist/cash";
 
 const AVERAGE_COUNTS_SIZE = 7;
 

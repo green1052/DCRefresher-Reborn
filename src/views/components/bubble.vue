@@ -14,8 +14,7 @@
             <span
                 v-if="gallery"
                 class="gallery"
-                >({{ gallery }})</span
-            >
+            >({{ gallery }})</span>
         </span>
         <span
             v-if="remove"
@@ -40,7 +39,7 @@
     import Vue from "vue";
 
     export default Vue.extend({
-        name: "refresher-bubble",
+        name: "RefresherBubble",
         props: {
             text: {
                 type: String

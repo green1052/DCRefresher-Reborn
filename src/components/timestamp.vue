@@ -2,11 +2,11 @@
     <div
         :title="locale"
         class="refresher-timestamp"
-        @click="this.$root.$children[0].changeStamp"
+        @click="$root.$children[0].changeStamp"
     >
         <transition name="refresher-opacity">
-            <span :key="'stamp' + this.$root.$children[0].stampMode">{{
-                this.$root.$children[0].stampMode ? locale : stamp
+            <span :key="'stamp' + $root.$children[0].stampMode">{{
+                $root.$children[0].stampMode ? locale : stamp
             }}</span>
         </transition>
     </div>
@@ -50,7 +50,7 @@
     }
 
     export default Vue.extend({
-        name: "refresher-timestamp",
+        name: "RefresherTimestamp",
         props: {
             date: {
                 type: Date as PropType<Date>,

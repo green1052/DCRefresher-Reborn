@@ -1,8 +1,9 @@
+import browser from "webextension-polyfill";
+
+import storage from "../utils/storage";
+import type { ObjectEnum } from "../utils/types";
 import * as communicate from "./communicate";
 import { eventBus } from "./eventbus";
-import storage from "../utils/storage";
-import browser from "webextension-polyfill";
-import type { ObjectEnum } from "../utils/types";
 
 const BLOCK_NAMESPACE = "__REFRESHER_BLOCK";
 

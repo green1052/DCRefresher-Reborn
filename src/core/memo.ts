@@ -1,7 +1,8 @@
+import browser from "webextension-polyfill";
+
+import storage from "../utils/storage";
 import * as communicate from "./communicate";
 import { eventBus } from "./eventbus";
-import storage from "../utils/storage";
-import browser from "webextension-polyfill";
 
 const MEMO_NAMESPACE = "__REFRESHER_MEMO";
 

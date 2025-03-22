@@ -72,7 +72,7 @@
                             <a
                                 v-for="link in links"
                                 @click="open(link.url)"
-                                >{{ link.text }}</a
+                            >{{ link.text }}</a
                             >
                         </p>
                         <p>
@@ -484,7 +484,9 @@
                         v-if="shortcut.description.length"
                         class="refresher-shortcut"
                     >
-                        <p class="description">{{ shortcut.description }}</p>
+                        <p class="description">
+                            {{ shortcut.description }}
+                        </p>
                         <div class="key">
                             <refresher-bubble
                                 v-for="key in shortcut.shortcut.match(shortcutRegex)"
@@ -505,21 +507,22 @@
 </template>
 
 <script lang="ts">
+    import $ from "cash-dom";
+    import ky from "ky";
+    import Vue from "vue";
+    import { Fragment } from "vue-fragment";
+    import browser from "webextension-polyfill";
+
+    import { BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES } from "../../core/block";
+    import { TYPE_NAMES as MEMO_TYPE_NAMES } from "../../core/memo";
+    import { getURL } from "../../utils/getURL";
+    import storage from "../../utils/storage";
+    import bubble from "./bubble.vue";
     import checkbox from "./checkbox.vue";
+    import input from "./input.vue";
     import module from "./module.vue";
     import options from "./options.vue";
-    import input from "./input.vue";
     import range from "./range.vue";
-    import bubble from "./bubble.vue";
-    import browser from "webextension-polyfill";
-    import Vue from "vue";
-    import { TYPE_NAMES as MEMO_TYPE_NAMES } from "../../core/memo";
-    import { BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES } from "../../core/block";
-    import $ from "cash-dom";
-    import storage from "../../utils/storage";
-    import ky from "ky";
-    import { Fragment } from "vue-fragment";
-    import { getURL } from "../../utils/getURL";
 
     interface RefresherData {
         tab: number;
@@ -552,7 +555,16 @@
     const port = browser.runtime.connect({ name: "refresherInternal" });
 
     export default Vue.extend({
-        name: "refresher",
+        name: "Refresher",
+        components: {
+            "refresher-checkbox": checkbox,
+            "refresher-module": module,
+            "refresher-options": options,
+            "refresher-input": input,
+            "refresher-range": range,
+            "refresher-bubble": bubble,
+            Fragment
+        },
         data(): RefresherData {
             return {
                 tab: 0,
@@ -597,6 +609,46 @@
                 ],
                 databaseVersion: ""
             };
+        },
+        watch: {
+            modules(modules) {
+                if (modules["다크 모드"]) {
+                    this.updateDarkMode(
+                        modules["다크 모드"].enable || matchMedia("(prefers-color-scheme: dark)").matches
+                    );
+                }
+            }
+        },
+        async mounted() {
+            port.postMessage({
+                requestRefresherModules: true,
+                requestRefresherSettings: true,
+                requestRefresherBlocks: true,
+                requestRefresherMemos: true
+            });
+
+            port.onMessage.addListener((message) => {
+                if (message.responseRefresherModules && message.modules) {
+                    this.modules = message.modules;
+                }
+
+                if (message.responseRefresherSettings && message.settings) {
+                    this.settings = message.settings;
+                }
+
+                if (message.responseRefresherBlocks && message.blocks && message.blockModes) {
+                    this.blocks = message.blocks;
+                    this.blockModes = message.blockModes;
+                }
+
+                if (message.requestRefresherMemos && message.memos) {
+                    this.memos = message.memos;
+                }
+            });
+
+            this.shortcuts = await browser.commands.getAll();
+
+            this.databaseVersion = await storage.get("refresher.database.version");
         },
         methods: {
             getURL,
@@ -947,55 +999,6 @@
                     alert(`데이터베이스 업데이트에 실패했습니다. 오류: ${e}`);
                 }
             }
-        },
-        async mounted() {
-            port.postMessage({
-                requestRefresherModules: true,
-                requestRefresherSettings: true,
-                requestRefresherBlocks: true,
-                requestRefresherMemos: true
-            });
-
-            port.onMessage.addListener((message) => {
-                if (message.responseRefresherModules && message.modules) {
-                    this.modules = message.modules;
-                }
-
-                if (message.responseRefresherSettings && message.settings) {
-                    this.settings = message.settings;
-                }
-
-                if (message.responseRefresherBlocks && message.blocks && message.blockModes) {
-                    this.blocks = message.blocks;
-                    this.blockModes = message.blockModes;
-                }
-
-                if (message.requestRefresherMemos && message.memos) {
-                    this.memos = message.memos;
-                }
-            });
-
-            this.shortcuts = await browser.commands.getAll();
-
-            this.databaseVersion = await storage.get("refresher.database.version");
-        },
-        watch: {
-            modules(modules) {
-                if (modules["다크 모드"]) {
-                    this.updateDarkMode(
-                        modules["다크 모드"].enable || matchMedia("(prefers-color-scheme: dark)").matches
-                    );
-                }
-            }
-        },
-        components: {
-            "refresher-checkbox": checkbox,
-            "refresher-module": module,
-            "refresher-options": options,
-            "refresher-input": input,
-            "refresher-range": range,
-            "refresher-bubble": bubble,
-            Fragment
         }
     });
 </script>

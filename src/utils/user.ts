@@ -1,8 +1,9 @@
-import * as ip from "./ip";
-import * as memo from "../core/memo";
 import $ from "cash-dom";
-import type { Nullable, ObjectEnum } from "./types";
+
+import * as memo from "../core/memo";
+import * as ip from "./ip";
 import storage from "./storage";
+import type { Nullable, ObjectEnum } from "./types";
 
 export type UserType =
     | "UNFIXED"

@@ -57,7 +57,9 @@
                 :src="getVoiceData.src"
                 controls
             />
-            <p v-if="getVoiceData.memo">{{ getVoiceData.memo }}</p>
+            <p v-if="getVoiceData.memo">
+                {{ getVoiceData.memo }}
+            </p>
         </div>
         <p
             v-else-if="/<(img|video) class=/.test(comment.memo)"
@@ -74,11 +76,12 @@
 </template>
 
 <script lang="ts">
+    import $ from "cash-dom";
+    import Vue, { PropType } from "vue";
+
     import { eventBus } from "../core/eventbus";
     import timestamp from "./timestamp.vue";
     import user from "./user.vue";
-    import $ from "cash-dom";
-    import Vue, { PropType } from "vue";
 
     interface CommentVueData {
         currentId: string;
@@ -92,16 +95,10 @@
     }
 
     export default Vue.extend({
-        name: "refresher-comment",
+        name: "RefresherComment",
         components: {
             User: user,
             TimeStamp: timestamp
-        },
-        data(): CommentVueData {
-            return {
-                currentId: "",
-                me: false
-            };
         },
         props: {
             comment: {
@@ -127,6 +124,34 @@
 
             reply: {
                 type: String
+            }
+        },
+        data(): CommentVueData {
+            return {
+                currentId: "",
+                me: false
+            };
+        },
+        computed: {
+            getVoiceData(this): VoiceDataComputed | null {
+                if (!this.comment.vr_player) {
+                    return null;
+                }
+
+                const memo = this.comment.memo.split("@^dc^@");
+
+                return {
+                    iframe: memo[0].indexOf("iframe") > -1,
+                    src:
+                        memo[0].indexOf("iframe") > -1
+                            ? memo[0].split('src="')[1].split('"')[0]
+                            : "https://vr.dcinside.com/" + memo[0],
+                    memo: memo[1]
+                };
+            },
+
+            isAdmin(): boolean {
+                return document.querySelector(".useradmin_btnbox button") !== null;
             }
         },
         mounted() {
@@ -166,28 +191,6 @@
                 eventBus.on("RefresherPostDataLoaded", (obj: IPostInfo) => {
                     this.me = obj.user?.id === this.comment.user.id;
                 });
-            }
-        },
-        computed: {
-            getVoiceData(this): VoiceDataComputed | null {
-                if (!this.comment.vr_player) {
-                    return null;
-                }
-
-                const memo = this.comment.memo.split("@^dc^@");
-
-                return {
-                    iframe: memo[0].indexOf("iframe") > -1,
-                    src:
-                        memo[0].indexOf("iframe") > -1
-                            ? memo[0].split('src="')[1].split('"')[0]
-                            : "https://vr.dcinside.com/" + memo[0],
-                    memo: memo[1]
-                };
-            },
-
-            isAdmin(): boolean {
-                return document.querySelector(".useradmin_btnbox button") !== null;
             }
         },
         methods: {

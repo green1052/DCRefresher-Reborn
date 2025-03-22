@@ -1,7 +1,8 @@
 import $ from "cash-dom";
 import { Cash } from "cash-dom/dist/cash";
-import ky from "ky";
 import Cookies from "js-cookie";
+import ky from "ky";
+
 import { eventBus } from "../core/eventbus";
 import * as http from "../utils/http";
 import * as storage from "../utils/storage";

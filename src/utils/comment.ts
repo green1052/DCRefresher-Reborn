@@ -1,8 +1,9 @@
-import * as http from "./http";
 import $ from "cash-dom";
 import ky from "ky";
-import type { Nullable } from "./types";
 import browser from "webextension-polyfill";
+
+import * as http from "./http";
+import type { Nullable } from "./types";
 
 const rKey = "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K";
 const rRegex = /[^A-Za-z0-9+/=]/g;

@@ -209,8 +209,8 @@
                                 :comment="comment"
                                 :delete="frame.functions.deleteComment"
                                 :index="i + 1"
-                                :postUser="frame.data.postUserId"
-                                :useWriteComment="frame.data.useWriteComment"
+                                :post-user="frame.data.postUserId"
+                                :use-write-comment="frame.data.useWriteComment"
                             />
                         </transition-group>
                     </div>
@@ -219,7 +219,7 @@
                         <WriteComment
                             v-model:reply="reply"
                             :func="writeComment"
-                            :getDccon="getDccon"
+                            :get-dccon="getDccon"
                             @setDccon="setDccon"
                         />
                     </div>
@@ -265,19 +265,20 @@
 </template>
 
 <script lang="ts">
-    import PreviewButton from "./button.vue";
-    import TimeStamp from "./timestamp.vue";
-    import CountDown from "./countdown.vue";
-    import User from "./user.vue";
-    import Comment from "./comment.vue";
-    import WriteComment from "./write_comment.vue";
-    import Icon from "./icon.vue";
-    import RefresherLoader from "./loader.vue";
     import Vue, { PropType } from "vue";
+    import { Fragment } from "vue-fragment";
+
+    import { getURL } from "../utils/getURL";
+    import PreviewButton from "./button.vue";
+    import Comment from "./comment.vue";
+    import CountDown from "./countdown.vue";
     import dccon from "./dccon.vue";
     import RefresherDcconPopup from "./dccon.vue";
-    import { Fragment } from "vue-fragment";
-    import { getURL } from "../utils/getURL";
+    import Icon from "./icon.vue";
+    import RefresherLoader from "./loader.vue";
+    import TimeStamp from "./timestamp.vue";
+    import User from "./user.vue";
+    import WriteComment from "./write_comment.vue";
 
     interface FrameData {
         memoText: string;
@@ -289,7 +290,7 @@
     }
 
     export default Vue.extend({
-        name: "refresher-frame",
+        name: "RefresherFrame",
         components: {
             RefresherDcconPopup,
             PreviewButton,
@@ -320,6 +321,25 @@
                 dcconRender: null,
                 commentKey: 0
             };
+        },
+        created() {
+            this.frame.app.$on("close", () => {
+                this.frame.title = "";
+                this.frame.subtitle = "";
+                this.frame.contents = undefined;
+                this.frame.upvotes = undefined;
+                this.frame.fixedUpvotes = undefined;
+                this.frame.downvotes = undefined;
+                this.frame.error = undefined;
+                this.frame.collapse = undefined;
+                this.frame.data = {};
+                this.frame.functions = {};
+                this.reply = null;
+                this.dccon = [];
+                this.closeDccon();
+                this.commentKey = 0;
+                this.sibalKey = {};
+            });
         },
         methods: {
             getURL,
@@ -410,25 +430,6 @@
                 this.frame.functions.openOriginal();
                 return true;
             }
-        },
-        created() {
-            this.frame.app.$on("close", () => {
-                this.frame.title = "";
-                this.frame.subtitle = "";
-                this.frame.contents = undefined;
-                this.frame.upvotes = undefined;
-                this.frame.fixedUpvotes = undefined;
-                this.frame.downvotes = undefined;
-                this.frame.error = undefined;
-                this.frame.collapse = undefined;
-                this.frame.data = {};
-                this.frame.functions = {};
-                this.reply = null;
-                this.dccon = [];
-                this.closeDccon();
-                this.commentKey = 0;
-                this.sibalKey = {};
-            });
         }
         // updated() {
         //     this.$el.scroll(0, 0);

@@ -1,3 +1,9 @@
+import browser from "webextension-polyfill";
+
+import * as dom from "../utils/dom";
+import * as http from "../utils/http";
+import * as ip from "../utils/ip";
+import storage from "../utils/storage";
 import * as block from "./block";
 import * as communicate from "./communicate";
 import { eventBus } from "./eventbus";
@@ -5,11 +11,6 @@ import { filter } from "./filtering";
 import Frame from "./frame";
 import * as memo from "./memo";
 import * as settings from "./settings";
-import * as dom from "../utils/dom";
-import * as http from "../utils/http";
-import * as ip from "../utils/ip";
-import storage from "../utils/storage";
-import browser from "webextension-polyfill";
 
 type ModuleItem = ValueOf<ItemToRefresherMap>;
 

@@ -4,10 +4,11 @@
 
 <script lang="ts">
     import Vue from "vue";
+
     import { getURL } from "../utils/getURL";
 
     export default Vue.extend({
-        name: "icon",
+        name: "Icon",
         props: {
             icon: {
                 type: String,

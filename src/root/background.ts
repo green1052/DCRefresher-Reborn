@@ -1,10 +1,11 @@
+import ky from "ky";
+import browser from "webextension-polyfill";
+
 import { BlockCache, BlockModeCache } from "../core/block";
 import { MemoCache } from "../core/memo";
 import { ModuleStore } from "../core/modules";
 import { SettingsStore } from "../core/settings";
 import storage from "../utils/storage";
-import ky from "ky";
-import browser from "webextension-polyfill";
 
 const contextMenus: browser.Menus.CreateCreatePropertiesType[] = [
     {

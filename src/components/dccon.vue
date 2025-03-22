@@ -63,7 +63,7 @@
                     style="display: flex; flex-wrap: wrap"
                 >
                     <li
-                        v-for="dccon in this.currentDccon"
+                        v-for="dccon in currentDccon"
                         @click="dcconClick(dccon)"
                     >
                         <img
@@ -79,11 +79,12 @@
 </template>
 
 <script lang="ts">
-    import Vue from "vue";
     import Cookies from "js-cookie";
-    import { Fragment } from "vue-fragment";
-    import RefresherLoader from "./loader.vue";
     import ky from "ky";
+    import Vue from "vue";
+    import { Fragment } from "vue-fragment";
+
+    import RefresherLoader from "./loader.vue";
 
     interface DcconPopupData {
         firstLoad: boolean;
@@ -96,7 +97,11 @@
     }
 
     export default Vue.extend({
-        name: "refresher-dccon-popup",
+        name: "RefresherDcconPopup",
+        components: {
+            RefresherLoader,
+            Fragment
+        },
         data: (): DcconPopupData => {
             return {
                 firstLoad: true,
@@ -181,10 +186,6 @@
             close() {
                 this.$emit("closeDccon");
             }
-        },
-        components: {
-            RefresherLoader,
-            Fragment
         }
     });
 </script>

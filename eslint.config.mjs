@@ -1,20 +1,22 @@
 import eslint from "@eslint/js";
-import tseslint from "typescript-eslint";
+import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
+import simpleImportSort from "eslint-plugin-simple-import-sort";
 import pluginVue from "eslint-plugin-vue";
 import globals from "globals";
-import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
-import importPlugin from "eslint-plugin-import";
+import tseslint from "typescript-eslint";
 
 export default tseslint.config(
     eslintPluginPrettierRecommended,
     eslint.configs.recommended,
     tseslint.configs.recommended,
     {
-        files: ["**/*.{ts,tsx}"],
-        extends: [
-            importPlugin.flatConfigs.recommended,
-            importPlugin.flatConfigs.typescript
-        ]
+        plugins: {
+            "simple-import-sort": simpleImportSort
+        },
+        rules: {
+            "simple-import-sort/imports": "error",
+            "simple-import-sort/exports": "error"
+        }
     },
     ...pluginVue.configs["flat/vue2-recommended"],
     {
@@ -24,62 +26,9 @@ export default tseslint.config(
             parserOptions: {
                 parser: tseslint.parser
             }
+        },
+        rules: {
+            "vue/html-indent": ["error", 4]
         }
     }
 );
-
-/*
-    {
-        rules: {
-            "@typescript-eslint/array-type": [
-                "error",
-                {
-                    default: "array-simple"
-                }
-            ],
-            "@typescript-eslint/consistent-generic-constructors": [
-                "error",
-                "constructor"
-            ],
-            "@typescript-eslint/consistent-indexed-object-style": [
-                "error",
-                "record"
-            ],
-            "import/no-named-as-default": "off",
-            "import/order": [
-                "error",
-                {
-                    groups: [
-                        "index",
-                        "sibling",
-                        "parent",
-                        "internal",
-                        "external",
-                        "builtin",
-                        "object",
-                        "type"
-                    ],
-                    "newlines-between": "never",
-                    alphabetize: {
-                        order: "asc",
-                        caseInsensitive: true
-                    }
-                }
-            ],
-            "prefer-arrow-callback": [
-                "error",
-                {
-                    allowNamedFunctions: true
-                }
-            ],
-            "space-before-function-paren": [
-                "error",
-                {
-                    anonymous: "always",
-                    named: "never",
-                    asyncArrow: "always"
-                }
-            ]
-        }
-    }
- */

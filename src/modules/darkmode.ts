@@ -1,7 +1,8 @@
+import $ from "cash-dom";
+
 import type { Rgb } from "../utils/color";
 import * as Color from "../utils/color";
 import * as DOM from "../utils/dom";
-import $ from "cash-dom";
 
 const DARK_MODE_COLOR: Rgb = [41, 41, 41];
 

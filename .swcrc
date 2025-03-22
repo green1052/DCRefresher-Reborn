@@ -4,7 +4,6 @@
         "parser": {
             "syntax": "typescript"
         },
-        "target": "esnext",
-        "loose": true
+        "target": "esnext"
     }
 }
