@@ -1,6 +1,7 @@
+import type Vue from "vue";
+
 import type { Nullable } from "../utils/types";
 import type { User } from "../utils/user";
-import type Vue from "vue";
 
 export {};
 

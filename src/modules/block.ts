@@ -1,9 +1,10 @@
-import * as Toast from "../components/toast";
-import { queryString } from "../utils/http";
 import $ from "cash-dom";
+import { Cash } from "cash-dom/dist/cash";
 import Cookies from "js-cookie";
 import ky from "ky";
-import { Cash } from "cash-dom/dist/cash";
+
+import * as Toast from "../components/toast";
+import { queryString } from "../utils/http";
 
 function hideElement($element: Cash, blur: boolean = false) {
     if (blur) {

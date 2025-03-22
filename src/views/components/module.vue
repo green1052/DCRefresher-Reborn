@@ -1,8 +1,12 @@
 <template>
     <div class="refresher-module">
         <div class="left">
-            <p class="title">{{ name }}</p>
-            <p class="desc">{{ desc }}</p>
+            <p class="title">
+                {{ name }}
+            </p>
+            <p class="desc">
+                {{ desc }}
+            </p>
             <p class="mute">요구 유틸 : {{ requirement?.join(", ") || "없음" }}</p>
         </div>
         <div class="right">
@@ -15,13 +19,17 @@
 </template>
 
 <script lang="ts">
-    import browser from "webextension-polyfill";
-    import checkbox from "./checkbox.vue";
-    import storage from "../../utils/storage";
     import Vue from "vue";
+    import browser from "webextension-polyfill";
+
+    import storage from "../../utils/storage";
+    import checkbox from "./checkbox.vue";
 
     export default Vue.extend({
-        name: "refresher-module",
+        name: "RefresherModule",
+        components: {
+            "refresher-checkbox": checkbox
+        },
         props: {
             name: {
                 type: String,
@@ -65,9 +73,6 @@
                     }
                 });
             }
-        },
-        components: {
-            "refresher-checkbox": checkbox
         }
     });
 </script>

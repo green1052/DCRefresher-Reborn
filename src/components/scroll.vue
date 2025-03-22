@@ -16,7 +16,7 @@
     import Vue from "vue";
 
     export default Vue.extend({
-        name: "refresher-scroll",
+        name: "RefresherScroll",
         props: {
             side: {
                 type: String,

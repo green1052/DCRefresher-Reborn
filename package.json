@@ -15,8 +15,8 @@
         "css-loader": "^7.1.2",
         "eslint": "^9.23.0",
         "eslint-config-prettier": "^10.1.1",
-        "eslint-plugin-import": "^2.31.0",
         "eslint-plugin-prettier": "^5.2.3",
+        "eslint-plugin-simple-import-sort": "^12.1.1",
         "eslint-plugin-vue": "^10.0.0",
         "globals": "^16.0.0",
         "html-webpack-plugin": "^5.6.3",
@@ -39,7 +39,6 @@
         "webpack-merge": "^6.0.1"
     },
     "scripts": {
-        "preinstall": "npx only-allow pnpm",
         "build:mv2": "webpack --env manifest=manifest_v2.json --config webpack.prod.js",
         "build:mv3": "webpack --env manifest=manifest_v3.json --config webpack.prod.js",
         "dev:mv2": "webpack --env manifest=manifest_v2.json --watch --config webpack.dev.js",

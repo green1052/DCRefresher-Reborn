@@ -1,9 +1,10 @@
+import $ from "cash-dom";
+
 import * as Toast from "../components/toast";
 import * as communicate from "../core/communicate";
 import * as color from "../utils/color";
-import { getType } from "../utils/user";
 import type { Nullable, NullableProperties, ObjectEnum } from "../utils/types";
-import $ from "cash-dom";
+import { getType } from "../utils/user";
 
 const tooltip = {
     element: document.createElement("div"),

@@ -1,5 +1,6 @@
-import * as Toast from "../components/toast";
 import $ from "cash-dom";
+
+import * as Toast from "../components/toast";
 import { getURL } from "../utils/getURL";
 
 const CONTROL_BUTTON = ".stealth_control_button";

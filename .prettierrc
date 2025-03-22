@@ -2,6 +2,5 @@
     "printWidth": 120,
     "tabWidth": 4,
     "trailingComma": "none",
-    "vueIndentScriptAndStyle": true,
     "singleAttributePerLine": true
 }

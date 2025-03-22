@@ -20,7 +20,7 @@
     import Vue, { PropType } from "vue";
 
     export default Vue.extend({
-        name: "refresher-options",
+        name: "RefresherOptions",
         props: {
             change: {
                 type: Function

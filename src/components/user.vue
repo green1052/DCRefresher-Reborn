@@ -1,6 +1,6 @@
 <template>
     <div
-        :class="{ cursor: !!this.user.id }"
+        :class="{ cursor: !!user.id }"
         :data-me="me"
         :title="title"
         class="refresher-user"
@@ -26,12 +26,13 @@
 </template>
 
 <script lang="ts">
-    import { eventBus } from "../core/eventbus";
     import Vue, { PropType } from "vue";
+
+    import { eventBus } from "../core/eventbus";
     import { User } from "../utils/user";
 
     export default Vue.extend({
-        name: "refresher-user",
+        name: "RefresherUser",
         props: {
             user: {
                 type: Object as PropType<User>,

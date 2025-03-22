@@ -9,14 +9,14 @@
     >
         <div
             :style="{
-                transform: 'translateX(' + (typeof translateX !== 'undefined' ? translateX : this.on ? 18 : 0) + 'px)'
+                transform: 'translateX(' + (typeof translateX !== 'undefined' ? translateX : on ? 18 : 0) + 'px)'
             }"
             class="selected"
             @pointerdown="down"
             @pointermove="hover"
             @pointerout="out"
             @pointerup="up"
-        ></div>
+        />
     </div>
 </template>
 
@@ -24,7 +24,7 @@
     import Vue from "vue";
 
     export default Vue.extend({
-        name: "refresher-checkbox",
+        name: "RefresherCheckbox",
 
         props: {
             change: {

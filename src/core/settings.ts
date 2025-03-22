@@ -1,6 +1,7 @@
-import { eventBus } from "./eventbus";
-import storage from "../utils/storage";
 import browser from "webextension-polyfill";
+
+import storage from "../utils/storage";
+import { eventBus } from "./eventbus";
 
 export type SettingsStore = Record<string, Record<string, RefresherSettings>>;
 

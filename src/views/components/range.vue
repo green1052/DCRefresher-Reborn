@@ -12,17 +12,17 @@
             type="range"
             @change="update"
             @input="input"
-        />
-        <span class="indicator">{{ value + (this.unit ? this.unit : "") }}</span>
+        >
+        <span class="indicator">{{ value + (unit ? unit : "") }}</span>
     </div>
 </template>
 
 <script lang="ts">
-    import Vue from "vue";
     import $ from "cash-dom";
+    import Vue from "vue";
 
     export default Vue.extend({
-        name: "refresher-range",
+        name: "RefresherRange",
         props: {
             change: {
                 type: Function
@@ -65,6 +65,9 @@
                 type: Boolean
             }
         },
+        mounted() {
+            this.$data.__temp = this.value;
+        },
         methods: {
             input(ev: Event) {
                 $(this.$el)
@@ -75,9 +78,6 @@
             update(ev: Event) {
                 this.change?.(ev.target.dataset.module, ev.target.dataset.id, Number(ev.target.value));
             }
-        },
-        mounted() {
-            this.$data.__temp = this.value;
         }
     });
 </script>

@@ -27,10 +27,11 @@
 </template>
 
 <script lang="ts">
-    import scroll from "../components/scroll.vue";
     import Vue, { PropType } from "vue";
-    import { FrameStackOption } from "./frame";
+
     import group from "../components/group.vue";
+    import scroll from "../components/scroll.vue";
+    import { FrameStackOption } from "./frame";
 
     interface FrameComponentData extends FrameStackOption {
         frames: RefresherFrame[];
@@ -44,7 +45,7 @@
     }
 
     export default Vue.extend({
-        name: "refresher-frame-outer",
+        name: "RefresherFrameOuter",
         components: {
             Scroll: scroll,
             "refresher-group": group,

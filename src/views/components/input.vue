@@ -8,7 +8,7 @@
             :value="value"
             type="text"
             @change="update"
-        />
+        >
     </div>
 </template>
 
@@ -16,7 +16,7 @@
     import Vue from "vue";
 
     export default Vue.extend({
-        name: "refresher-input",
+        name: "RefresherInput",
 
         props: {
             change: {

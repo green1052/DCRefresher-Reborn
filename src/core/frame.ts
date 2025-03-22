@@ -1,6 +1,7 @@
-import frame from "./frameComponent.vue";
-import { User } from "../utils/user";
 import Vue from "vue";
+
+import { User } from "../utils/user";
+import frame from "./frameComponent.vue";
 
 interface FrameOption {
     relative?: boolean;

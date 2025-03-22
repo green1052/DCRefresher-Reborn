@@ -4,11 +4,11 @@
         name="refresher-toast"
     >
         <div
-            v-show="this.open"
-            :key="this.id"
-            :class="{ hover: this.clickCb }"
-            :data-type="this.type"
-            :title="this.content"
+            v-show="open"
+            :key="id"
+            :class="{ hover: clickCb }"
+            :data-type="type"
+            :title="content"
             class="refresher-toast"
         >
             <div
@@ -16,11 +16,11 @@
                 @click="click"
             >
                 <div class="text">
-                    <p>{{ this.content }}</p>
+                    <p>{{ content }}</p>
                 </div>
                 <div
                     class="button"
-                    @click="this.hide"
+                    @click="hide"
                 >
                     <i class="material-icons">X</i>
                 </div>
@@ -43,7 +43,18 @@
     }
 
     export default Vue.extend({
-        name: "refresher-toast",
+        name: "RefresherToast",
+        data: (): RefresherProps => {
+            return {
+                title: "",
+                id: 0,
+                content: "",
+                clickCb: null,
+                open: false,
+                type: null,
+                autoClose: 0
+            };
+        },
         methods: {
             click(e: MouseEvent) {
                 this.clickCb?.(e);
@@ -67,17 +78,6 @@
             hide() {
                 this.open = false;
             }
-        },
-        data: (): RefresherProps => {
-            return {
-                title: "",
-                id: 0,
-                content: "",
-                clickCb: null,
-                open: false,
-                type: null,
-                autoClose: 0
-            };
         }
     });
 </script>

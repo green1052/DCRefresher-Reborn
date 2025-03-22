@@ -5,7 +5,7 @@
         @wheel="wheelHandle"
     >
         <refresher-frame
-            v-for="(frame, i) in this.$root.$children[0].$data.frames"
+            v-for="(frame, i) in $root.$children[0].$data.frames"
             :key="`frame${Math.random()}`"
             :frame="frame"
             :index="i"
@@ -15,22 +15,23 @@
             <img
                 :src="getURL(`/assets/icons/upvote.webp`)"
                 @click="(e) => clickScroll(e, `up`)"
-            />
+            >
             <img
                 :src="getURL(`/assets/icons/downvote.webp`)"
                 @click="(e) => clickScroll(e, `down`)"
-            />
+            >
         </div>
     </div>
 </template>
 
 <script lang="ts">
-    import frame from "./frame.vue";
     import Vue from "vue";
+
     import { getURL } from "../utils/getURL";
+    import frame from "./frame.vue";
 
     export default Vue.extend({
-        name: "refresher-group",
+        name: "RefresherGroup",
         components: {
             "refresher-frame": frame
         },

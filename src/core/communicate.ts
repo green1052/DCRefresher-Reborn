@@ -1,5 +1,6 @@
-import { uuid } from "../utils/string";
 import browser from "webextension-polyfill";
+
+import { uuid } from "../utils/string";
 
 interface StorageStructure {
     uuid: string;

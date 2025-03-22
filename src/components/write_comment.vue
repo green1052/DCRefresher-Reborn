@@ -25,8 +25,8 @@
             >
                 <textarea
                     id="comment_main"
-                    :disabled="disabled || this.getDccon().length > 0"
-                    :placeholder="!this.getDccon().length ? '댓글 입력...' : '디시콘이 선택됐습니다.'"
+                    :disabled="disabled || getDccon().length > 0"
+                    :placeholder="!getDccon().length ? '댓글 입력...' : '디시콘이 선택됐습니다.'"
                     autocomplete="off"
                     @blur="blur"
                     @focus="focus"
@@ -46,42 +46,41 @@
             @mouseover="hoverUserInfo = true"
         >
             <div
-                class="whoami"
-                v-bind:class="{
+                :class="{
                     'refresher-comment-util': true,
-                    'refresher-comment-util-show': !(hoverUserInfo && !this.user.id)
+                    'refresher-comment-util-show': !(hoverUserInfo && !user.id)
                 }"
+                class="whoami"
             >
                 <UserComponent
                     v-if="user"
                     :user="user"
                 />
-                <span>로 {{ reply === null ? "" : "답글" }}{{ !this.getDccon().length ? "" : "디시콘" }} 작성 중</span>
+                <span>로 {{ reply === null ? "" : "답글" }}{{ !getDccon().length ? "" : "디시콘" }} 작성 중</span>
             </div>
             <div
-                class="whoami"
-                v-bind:class="{
+                :class="{
                     'refresher-comment-util': true,
                     'refresher-comment-util-edit': true,
-                    'refresher-comment-util-show': hoverUserInfo && this.user.isLogout()
+                    'refresher-comment-util-show': hoverUserInfo && user.isLogout()
                 }"
+                class="whoami"
             >
-                <span @click="toggleEditUser"
-                    >클릭하면 작성자 정보 수정 모드를 {{ editUser ? "비활성화" : "활성화" }}시킵니다.</span
-                >
+                <span @click="toggleEditUser">클릭하면 작성자 정보 수정 모드를 {{ editUser ? "비활성화" : "활성화" }}시킵니다.</span>
             </div>
         </div>
     </div>
 </template>
 
 <script lang="ts">
-    import { User } from "../utils/user";
-    import * as Toast from "./toast";
-    import button from "./button.vue";
-    import user from "./user.vue";
-    import Vue from "vue";
-    import { Nullable } from "../utils/types";
     import $ from "cash-dom";
+    import Vue from "vue";
+
+    import { Nullable } from "../utils/types";
+    import { User } from "../utils/user";
+    import button from "./button.vue";
+    import * as Toast from "./toast";
+    import user from "./user.vue";
 
     interface WriteCommentData {
         focused: boolean;
@@ -96,23 +95,10 @@
     }
 
     export default Vue.extend({
-        name: "write_comment",
+        name: "WriteComment",
         components: {
             PreviewButton: button,
             UserComponent: user
-        },
-        data(): WriteCommentData {
-            return {
-                focused: false,
-                disabled: false,
-                text: "",
-                editUser: false,
-                fixedUser: false,
-                hoverUserInfo: false,
-                user: null,
-                unsignedUserID: localStorage.nonmember_nick || "ㅇㅇ",
-                unsignedUserPW: localStorage.nonmember_pw || Math.random().toString(36).substring(5)
-            };
         },
         props: {
             func: {
@@ -126,6 +112,19 @@
             getDccon: {
                 type: Function
             }
+        },
+        data(): WriteCommentData {
+            return {
+                focused: false,
+                disabled: false,
+                text: "",
+                editUser: false,
+                fixedUser: false,
+                hoverUserInfo: false,
+                user: null,
+                unsignedUserID: localStorage.nonmember_nick || "ㅇㅇ",
+                unsignedUserPW: localStorage.nonmember_pw || Math.random().toString(36).substring(5)
+            };
         },
         watch: {
             unsignedUserID(value: string): void {
