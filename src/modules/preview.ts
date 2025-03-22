@@ -107,8 +107,7 @@ class PostInfo implements IPostInfo {
         postInfo.isNotice = $noticeElement.html() !== "공지 등록";
         postInfo.isAdult = postInfo.dom.head.innerHTML.includes("/error/adult");
         postInfo.requireCaptcha = $dom.find(".recommend_kapcode").length > 0;
-        postInfo.requireCommentCaptcha =
-            $dom.find(".cmt_write_box input[name=comment_code]").length > 0;
+        postInfo.requireCommentCaptcha = $dom.find(".cmt_write_box input[name=comment_code]").length > 0;
 
         postInfo.disabledDownvote = $dom.find(".btn_recommend_box .down_num").length === 0;
 
@@ -122,8 +121,7 @@ class PostInfo implements IPostInfo {
                 value: randomParam.value
             };
 
-            postInfo.v_cur_t =
-                postInfo.dom.querySelector<HTMLInputElement>("input[name=v_cur_t]")!.value;
+            postInfo.v_cur_t = postInfo.dom.querySelector<HTMLInputElement>("input[name=v_cur_t]")!.value;
         }
 
         return postInfo;
@@ -193,12 +191,9 @@ const request = {
         params.set("nos[]", args.id);
         params.set("_GALLTYPE_", http.galleryTypeName(location.href));
 
-        const response = await client(
-            galleryType === "mini/" ? http.urls.manage.bumpMini : http.urls.manage.bump,
-            {
-                body: params
-            }
-        );
+        const response = await client(galleryType === "mini/" ? http.urls.manage.bumpMini : http.urls.manage.bump, {
+            body: params
+        });
 
         try {
             return JSON.parse(response);
@@ -249,12 +244,7 @@ const request = {
 
     async post(link: string, gallery: string, id: string, signal: AbortSignal): Promise<PostInfo> {
         const response = await ky
-            .get(
-                `${http.urls.base}${http.galleryType(link, "/")}${
-                    http.urls.view
-                }${gallery}&no=${id}`,
-                { signal }
-            )
+            .get(`${http.urls.base}${http.galleryType(link, "/")}${http.urls.view}${gallery}&no=${id}`, { signal })
             .text();
         return PostInfo.parse(id, response);
     },
@@ -297,12 +287,9 @@ const request = {
         params.set("nos[]", args.id);
         params.set("_GALLTYPE_", http.galleryTypeName(args.link));
 
-        const response = await client(
-            galleryType === "mini/" ? http.urls.manage.deleteMini : http.urls.manage.delete,
-            {
-                body: params
-            }
-        );
+        const response = await client(galleryType === "mini/" ? http.urls.manage.deleteMini : http.urls.manage.delete, {
+            body: params
+        });
 
         try {
             return JSON.parse(response);
@@ -335,12 +322,9 @@ const request = {
         params.set("del_chk", del_chk.toString());
         params.set("avoid_type_chk", user_type.toString());
 
-        const response = await client(
-            galleryType == "mini/" ? http.urls.manage.blockMini : http.urls.manage.block,
-            {
-                body: params
-            }
-        );
+        const response = await client(galleryType == "mini/" ? http.urls.manage.blockMini : http.urls.manage.block, {
+            body: params
+        });
 
         try {
             return JSON.parse(response);
@@ -408,9 +392,7 @@ const request = {
         params.set("nos[]", args.id);
 
         const response = await client(
-            galleryType == "mini/"
-                ? http.urls.manage.setRecommendMini
-                : http.urls.manage.setRecommend,
+            galleryType == "mini/" ? http.urls.manage.setRecommendMini : http.urls.manage.setRecommend,
             {
                 body: params
             }
@@ -460,9 +442,7 @@ const request = {
 
         if (!typeName.length) return false;
 
-        const url = http.checkMini(preData.link)
-            ? http.urls.manage.deleteCommentMini
-            : http.urls.manage.deleteComment;
+        const url = http.checkMini(preData.link) ? http.urls.manage.deleteCommentMini : http.urls.manage.deleteComment;
 
         const params = new URLSearchParams();
         params.set("ci_t", Cookies.get("ci_c") ?? "");
@@ -588,8 +568,7 @@ const panel = {
                 if (selected.getAttribute("name") === "reason") {
                     const value = Number(selected.value);
 
-                    const blockReasonInput =
-                        document.querySelector<HTMLInputElement>("input[name=reason_text]")!;
+                    const blockReasonInput = document.querySelector<HTMLInputElement>("input[name=reason_text]")!;
 
                     blockReasonInput.style.display = value ? "none" : "block";
                     avoid_reason = value;
@@ -598,12 +577,10 @@ const panel = {
         });
 
         element.querySelector(".go-block")!.addEventListener("click", () => {
-            const avoid_reason_txt =
-                element.querySelector<HTMLInputElement>(`input[name=reason_text]`)!.value;
+            const avoid_reason_txt = element.querySelector<HTMLInputElement>(`input[name=reason_text]`)!.value;
             const del_chk = element.querySelector<HTMLInputElement>(`input[name=remove]`)!.checked;
 
-            const userType =
-                element.querySelector<HTMLInputElement>("input[name=user-type]")!.checked;
+            const userType = element.querySelector<HTMLInputElement>("input[name=user-type]")!.checked;
 
             callback(avoid_hour, avoid_reason, avoid_reason_txt, del_chk ? 1 : 0, userType ? 1 : 0);
         });
@@ -767,14 +744,7 @@ const panel = {
                     user_type: number
                 ) => {
                     request
-                        .block(
-                            preData,
-                            avoid_hour,
-                            avoid_reason,
-                            avoid_reason_txt,
-                            del_chk,
-                            user_type
-                        )
+                        .block(preData, avoid_hour, avoid_reason, avoid_reason_txt, del_chk, user_type)
                         .then((response) => {
                             eventBus.emit("refreshRequest");
 
@@ -875,11 +845,7 @@ const panel = {
         return element;
     },
 
-    async captcha(
-        src: string,
-        callback: (captcha: string) => void,
-        bypassCaptcha: boolean
-    ): Promise<boolean> {
+    async captcha(src: string, callback: (captcha: string) => void, bypassCaptcha: boolean): Promise<boolean> {
         const image = await ky.get(`https://gall.dcinside.com/${src}`).blob();
         const url = URL.createObjectURL(image);
 
@@ -955,9 +921,7 @@ const getRelevantData = (ev: MouseEvent): GalleryPreData => {
     const target = ev.target as HTMLElement;
     const isTR = target.tagName === "TR";
 
-    const listID = isTR
-        ? target.querySelector<HTMLElement>(".gall_num")
-        : findNeighbor(target, ".gall_num", 5, null);
+    const listID = isTR ? target.querySelector<HTMLElement>(".gall_num") : findNeighbor(target, ".gall_num", 5, null);
 
     let id = "";
     let gallery = "";
@@ -985,9 +949,7 @@ const getRelevantData = (ev: MouseEvent): GalleryPreData => {
             id = listID.innerText;
         }
 
-        const emElement = isTR
-            ? target.querySelector("em.icon_img")
-            : findNeighbor(target, "em.icon_img", 5, null);
+        const emElement = isTR ? target.querySelector("em.icon_img") : findNeighbor(target, "em.icon_img", 5, null);
 
         if (emElement) {
             type = emElement.className.split(" ").at(-1) ?? "icon_txt";
@@ -1129,9 +1091,7 @@ const miniPreview: MiniPreview = {
                 miniPreview.element.style.overflow = "auto";
             }
 
-            miniPreview.element.innerHTML = `<h3>${
-                preData.title
-            }</h3><br><div class="refresher-mini-preview-contents${
+            miniPreview.element.innerHTML = `<h3>${preData.title}</h3><br><div class="refresher-mini-preview-contents${
                 hide ? " media-hide" : ""
             }"></div>${interaction ? "" : "<p class=read-more>더 읽으려면 클릭하세요.</p>"}`;
             document.body.appendChild(miniPreview.element);
@@ -1171,9 +1131,7 @@ const miniPreview: MiniPreview = {
             .then((v) => {
                 const content = v.contents ?? "";
 
-                selector.innerHTML = block.check("TEXT", content)
-                    ? "게시글 내용이 차단됐습니다."
-                    : content;
+                selector.innerHTML = block.check("TEXT", content) ? "게시글 내용이 차단됐습니다." : content;
                 selector.querySelector(".write_div")?.setAttribute("style", "");
             })
             .catch((error) => {
@@ -1198,8 +1156,7 @@ const miniPreview: MiniPreview = {
     },
 
     close(use: boolean) {
-        if (document.querySelector("div:hover")?.classList.contains("refresher-mini-preview"))
-            return;
+        if (document.querySelector("div:hover")?.classList.contains("refresher-mini-preview")) return;
 
         miniPreview.cursorOut = true;
 
@@ -1480,10 +1437,7 @@ export default {
                     );
 
                     if (res.result === "true") {
-                        frame[type ? "upvotes" : "downvotes"] = res.counts.replace(
-                            /\B(?=(\d{3})+(?!\d))/g,
-                            ","
-                        );
+                        frame[type ? "upvotes" : "downvotes"] = res.counts.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
                         return true;
                     }
@@ -1521,12 +1475,7 @@ export default {
                         }
                     }
 
-                    const response = await request.post(
-                        preData.link!,
-                        preData.gallery,
-                        preData.id,
-                        signal
-                    );
+                    const response = await request.post(preData.link!, preData.gallery, preData.id, signal);
 
                     if (!response) throw "Can not fetch post data.";
 
@@ -1543,18 +1492,11 @@ export default {
                     postFetchedData = postInfo;
 
                     if (this.status.colorPreviewLink) {
-                        const title = `${postInfo.title} - ${document.title
-                            .split("-")
-                            .slice(-1)[0]
-                            .trim()}`;
+                        const title = `${postInfo.title} - ${document.title.split("-").slice(-1)[0].trim()}`;
 
                         if (!historySkip) {
                             preData.title = postInfo.title;
-                            history.replaceState(
-                                { preData, preURL: location.href },
-                                title,
-                                preData.link
-                            );
+                            history.replaceState({ preData, preURL: location.href }, title, preData.link);
                         }
 
                         document.title = title;
@@ -1570,9 +1512,16 @@ export default {
                             return;
                         }
 
-                        frame.contents = block.check("TEXT", postInfo.contents ?? "", gallery)
+                        const dom = new DOMParser().parseFromString(postInfo.contents!, "text/html");
+
+                        for (const element of dom.querySelectorAll("img[data-original]")) {
+                            element.setAttribute("src", element.getAttribute("data-original")!);
+                        }
+
+                        frame.contents = block.check("TEXT", dom.body.innerHTML, gallery)
                             ? "게시글 내용이 차단됐습니다."
-                            : postInfo.contents;
+                            : dom.body.innerHTML;
+
                         frame.upvotes = postInfo.upvotes;
                         frame.fixedUpvotes = postInfo.fixedUpvotes;
                         frame.downvotes = postInfo.downvotes;
@@ -1595,11 +1544,7 @@ export default {
                         frame.data.views = `조회 ${postInfo.views}회`;
                     } finally {
                         eventBus.emit("RefresherPostDataLoaded", postInfo);
-                        eventBus.emit(
-                            "RefresherPostCommentIDLoaded",
-                            postInfo.commentId,
-                            postInfo.commentNo
-                        );
+                        eventBus.emit("RefresherPostCommentIDLoaded", postInfo.commentId, postInfo.commentNo);
                         eventBus.emitNextTick("contentPreview", frame.app.$el);
                     }
                 } catch (error) {
@@ -1628,11 +1573,7 @@ export default {
             };
         };
 
-        const makeSecondFrame = (
-            frame: RefresherFrame,
-            preData: GalleryPreData,
-            signal: AbortSignal
-        ) => {
+        const makeSecondFrame = (frame: RefresherFrame, preData: GalleryPreData, signal: AbortSignal) => {
             frame.data.load = true;
             frame.title = "댓글";
             frame.subtitle = "로딩 중...";
@@ -1668,9 +1609,7 @@ export default {
 
                     const requireCapCode = postFetchedData.requireCommentCaptcha;
 
-                    const codeSrc = requireCapCode
-                        ? await request.captcha(preData, "comment")
-                        : undefined;
+                    const codeSrc = requireCapCode ? await request.captcha(preData, "comment") : undefined;
 
                     const getGreCaptchaToken = () =>
                         new Promise<string>((resolve) => {
@@ -1691,15 +1630,7 @@ export default {
                     const grecaptcha = await getGreCaptchaToken();
 
                     const req = async (captcha?: string) => {
-                        const res = await submitComment(
-                            postData,
-                            user,
-                            postDom,
-                            memo,
-                            reply,
-                            captcha,
-                            grecaptcha
-                        );
+                        const res = await submitComment(postData, user, postDom, memo, reply, captcha, grecaptcha);
 
                         if (res.result === "false" || res.result === "PreNotWorking") {
                             Toast.show(res.message!, true, 3000);
@@ -1709,9 +1640,7 @@ export default {
                         }
                     };
 
-                    return codeSrc
-                        ? await panel.captcha(codeSrc, req, this.status.bypassCaptcha)
-                        : req();
+                    return codeSrc ? await panel.captcha(codeSrc, req, this.status.bypassCaptcha) : req();
                 };
 
                 if (this.memory.refreshIntervalId) clearInterval(this.memory.refreshIntervalId);
@@ -1723,11 +1652,7 @@ export default {
 
             const deletePressCount: Record<string, number> = {};
 
-            frame.functions.deleteComment = async (
-                commentId: string,
-                password: string,
-                admin: boolean
-            ) => {
+            frame.functions.deleteComment = async (commentId: string, password: string, admin: boolean) => {
                 if (!preData.link) return false;
 
                 if (!password) {
@@ -1803,10 +1728,7 @@ export default {
                     if (useCache && !this.status.disableCache) {
                         const cache = postCaches.get(`${preData.gallery}${preData.id}`);
 
-                        if (
-                            cache?.comment &&
-                            postFetchedData.commentCount === cache.comment.total_cnt
-                        ) {
+                        if (cache?.comment && postFetchedData.commentCount === cache.comment.total_cnt) {
                             return cache.comment;
                         }
                     }
@@ -1841,11 +1763,7 @@ export default {
 
                         if (this.status.archiveArticle && cacheComment) {
                             cacheComment.forEach((v: DcinsideCommentObject) => {
-                                if (
-                                    !comments.comments!.find(
-                                        (c: DcinsideCommentObject) => c.no === v.no
-                                    )
-                                ) {
+                                if (!comments.comments!.find((c: DcinsideCommentObject) => c.no === v.no)) {
                                     needRefresh = true;
                                     v.is_delete = "1";
 
@@ -1855,24 +1773,21 @@ export default {
                                         let findReply = false;
                                         let isBig = false;
 
-                                        const parent = copy
-                                            .reverse()
-                                            .find((c: DcinsideCommentObject) => {
-                                                if (c.c_no === v.c_no) {
-                                                    if (c.no > v.no) {
-                                                        isBig = true;
-                                                    }
-
-                                                    findReply = true;
-                                                    return true;
+                                        const parent = copy.reverse().find((c: DcinsideCommentObject) => {
+                                            if (c.c_no === v.c_no) {
+                                                if (c.no > v.no) {
+                                                    isBig = true;
                                                 }
 
-                                                return c.no === v.c_no;
-                                            });
+                                                findReply = true;
+                                                return true;
+                                            }
+
+                                            return c.no === v.c_no;
+                                        });
 
                                         comments.comments!.splice(
-                                            comments.comments!.indexOf(parent!) +
-                                                (findReply && isBig ? 0 : 1),
+                                            comments.comments!.indexOf(parent!) + (findReply && isBig ? 0 : 1),
                                             0,
                                             v
                                         );
@@ -1884,8 +1799,7 @@ export default {
                                 }
 
                                 const orgIndex = comments.comments!.findIndex(
-                                    (c: DcinsideCommentObject) =>
-                                        c.no === v.no && c.is_delete !== "0"
+                                    (c: DcinsideCommentObject) => c.no === v.no && c.is_delete !== "0"
                                 );
 
                                 if (orgIndex !== -1) {
@@ -1914,58 +1828,55 @@ export default {
 
                         let parentComment: DcinsideCommentObject | null = null;
 
-                        comments.comments = comments.comments.filter(
-                            (comment: DcinsideCommentObject) => {
-                                if (replyConfig && comment.c_no === parentComment?.no) {
-                                    if (blurConfig) {
-                                        comment.memo = "댓글 내용이 차단됐습니다.";
-                                        comment.is_delete = "1";
-                                    } else {
-                                        return false;
-                                    }
-                                }
-
-                                const check: {
-                                    [index in RefresherBlockType]?: string;
-                                } = {
-                                    NICK: comment.name
-                                };
-
-                                if (comment.user_id) {
-                                    check.ID = comment.user_id;
-                                }
-
-                                if (comment.ip) {
-                                    check.IP = comment.ip;
-                                }
-
-                                if (/<(img|video) class=/.test(comment.memo)) {
-                                    check.DCCON =
-                                        /https:\/\/dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g.exec(
-                                            comment.memo
-                                        )![1];
+                        comments.comments = comments.comments.filter((comment: DcinsideCommentObject) => {
+                            if (replyConfig && comment.c_no === parentComment?.no) {
+                                if (blurConfig) {
+                                    comment.memo = "댓글 내용이 차단됐습니다.";
+                                    comment.is_delete = "1";
                                 } else {
-                                    check.COMMENT = comment.memo;
+                                    return false;
                                 }
-
-                                const isBlocked = block.checkAll(check, gallery);
-
-                                if (isBlocked) {
-                                    if (replyConfig && comment.c_no === 0) {
-                                        parentComment = comment;
-                                    }
-
-                                    if (blurConfig) {
-                                        comment.memo = "댓글 내용이 차단됐습니다.";
-                                        comment.is_delete = "1";
-                                    } else {
-                                        return false;
-                                    }
-                                }
-
-                                return true;
                             }
-                        );
+
+                            const check: {
+                                [index in RefresherBlockType]?: string;
+                            } = {
+                                NICK: comment.name
+                            };
+
+                            if (comment.user_id) {
+                                check.ID = comment.user_id;
+                            }
+
+                            if (comment.ip) {
+                                check.IP = comment.ip;
+                            }
+
+                            if (/<(img|video) class=/.test(comment.memo)) {
+                                check.DCCON = /https:\/\/dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g.exec(
+                                    comment.memo
+                                )![1];
+                            } else {
+                                check.COMMENT = comment.memo;
+                            }
+
+                            const isBlocked = block.checkAll(check, gallery);
+
+                            if (isBlocked) {
+                                if (replyConfig && comment.c_no === 0) {
+                                    parentComment = comment;
+                                }
+
+                                if (blurConfig) {
+                                    comment.memo = "댓글 내용이 차단됐습니다.";
+                                    comment.is_delete = "1";
+                                } else {
+                                    return false;
+                                }
+                            }
+
+                            return true;
+                        });
 
                         threadCounts =
                             comments.comments.length === 0
@@ -1997,8 +1908,7 @@ export default {
                     }
 
                     frame.subtitle = `${
-                        (commentCounts !== threadCounts && `쓰레드 ${threadCounts}개, 총 댓글`) ||
-                        ""
+                        (commentCounts !== threadCounts && `쓰레드 ${threadCounts}개, 총 댓글`) || ""
                     } ${commentCounts}개`;
 
                     frame.data.comments = comments;
@@ -2039,25 +1949,12 @@ export default {
             makeFirstFrame(firstApp, preData, this.memory.signal!, historySkip);
             makeSecondFrame(secondApp, preData, this.memory.signal!);
 
-            if (
-                this.status.toggleAdminPanel &&
-                document.querySelector(".useradmin_btnbox button")
-            ) {
-                panel.admin(
-                    preData,
-                    frame,
-                    this.status.toggleBlur,
-                    eventBus,
-                    this.status.useKeyPress
-                );
+            if (this.status.toggleAdminPanel && document.querySelector(".useradmin_btnbox button")) {
+                panel.admin(preData, frame, this.status.toggleBlur, eventBus, this.status.useKeyPress);
             }
         };
 
-        const previewFrame = (
-            ev: MouseEvent | null,
-            prd?: GalleryPreData,
-            historySkip?: boolean
-        ) => {
+        const previewFrame = (ev: MouseEvent | null, prd?: GalleryPreData, historySkip?: boolean) => {
             if (this.memory.preventOpen) {
                 this.memory.preventOpen = false;
 
@@ -2115,11 +2012,7 @@ export default {
                         background: true,
                         stack: true,
                         groupOnce: true,
-                        onScroll: (
-                            ev: WheelEvent,
-                            app: RefresherFrameAppVue,
-                            group: HTMLElement
-                        ) => {
+                        onScroll: (ev: WheelEvent, app: RefresherFrameAppVue, group: HTMLElement) => {
                             if (!this.status.scrollToSkip) return;
 
                             appStore = app;
@@ -2137,8 +2030,7 @@ export default {
                     const scroll = Math.floor(groupStore.scrollHeight - groupStore.scrollTop);
 
                     const scrolledToBottom =
-                        scroll === groupStore.clientHeight ||
-                        scroll + 1 === groupStore.clientHeight;
+                        scroll === groupStore.clientHeight || scroll + 1 === groupStore.clientHeight;
 
                     if (!scrolledTop && !scrolledToBottom) {
                         scrolledCount = 0;
@@ -2175,8 +2067,7 @@ export default {
 
                         scrolledCount = 0;
 
-                        preData.id =
-                            getNextPost("prev") || (Number(postFetchedData.id) - 1).toString();
+                        preData.id = getNextPost("prev") || (Number(postFetchedData.id) - 1).toString();
 
                         newPostWithData(preData, historySkip);
                         groupStore.scrollTop = 0;
@@ -2198,8 +2089,7 @@ export default {
 
                         scrolledCount = 0;
 
-                        preData.id =
-                            getNextPost("next") || (Number(postFetchedData.id) + 1).toString();
+                        preData.id = getNextPost("next") || (Number(postFetchedData.id) + 1).toString();
                         newPostWithData(preData, historySkip);
 
                         groupStore.scrollTop = 0;
@@ -2246,17 +2136,8 @@ export default {
 
             makeSecondFrame(frame.app.second(), preData, this.memory.signal!);
 
-            if (
-                this.status.toggleAdminPanel &&
-                document.querySelector(".useradmin_btnbox button") !== null
-            ) {
-                panel.admin(
-                    preData,
-                    frame,
-                    this.status.toggleBlur,
-                    eventBus,
-                    this.status.useKeyPress
-                );
+            if (this.status.toggleAdminPanel && document.querySelector(".useradmin_btnbox button") !== null) {
+                panel.admin(preData, frame, this.status.toggleBlur, eventBus, this.status.useKeyPress);
             }
 
             setTimeout(frame.app.fadeIn, 0);
@@ -2274,10 +2155,7 @@ export default {
                 return ev;
             }
 
-            if (
-                ev.type === "mouseup" &&
-                Date.now() - this.status.longPressDelay > this.memory.lastPress
-            ) {
+            if (ev.type === "mouseup" && Date.now() - this.status.longPressDelay > this.memory.lastPress) {
                 this.memory.preventOpen = true;
                 this.memory.lastPress = 0;
                 return ev;
@@ -2292,19 +2170,16 @@ export default {
             element.dataset.refresherPreview = "true";
             element.addEventListener("mouseup", handleMousePress);
             element.addEventListener("mousedown", handleMousePress);
-            element.addEventListener(
-                this.status.reversePreviewKey ? "click" : "contextmenu",
-                (ev) => {
-                    if ($(element).closest(".us-post").hasClass("refresherBlur")) return;
+            element.addEventListener(this.status.reversePreviewKey ? "click" : "contextmenu", (ev) => {
+                if ($(element).closest(".us-post").hasClass("refresherBlur")) return;
 
-                    if (typeof timer === "number") {
-                        window.clearTimeout(timer);
-                        timer = undefined;
-                    }
-
-                    previewFrame(ev);
+                if (typeof timer === "number") {
+                    window.clearTimeout(timer);
+                    timer = undefined;
                 }
-            );
+
+                previewFrame(ev);
+            });
 
             if (this.status.reversePreviewKey) {
                 element.addEventListener("contextmenu", (e) => {
@@ -2316,10 +2191,7 @@ export default {
                         if ((e.target as HTMLElement).tagName === "TR") {
                             href = document.querySelector("a")?.getAttribute("href") ?? "";
                         } else {
-                            href =
-                                findNeighbor(e.target as HTMLElement, "a", 5, null)?.getAttribute(
-                                    "href"
-                                ) ?? "";
+                            href = findNeighbor(e.target as HTMLElement, "a", 5, null)?.getAttribute("href") ?? "";
                         }
                     }
 
@@ -2332,8 +2204,7 @@ export default {
                     !this.status.tooltipMode ||
                     $(element).closest(".us-post").hasClass("refresherBlur") ||
                     typeof timer === "number" ||
-                    (this.status.tooltipRatioDisable &&
-                        $(element).closest(".us-post").find(".ratio[style]").length)
+                    (this.status.tooltipRatioDisable && $(element).closest(".us-post").find(".ratio[style]").length)
                 )
                     return;
 
@@ -2346,11 +2217,7 @@ export default {
                     );
 
                     if (this.status.tooltipInteraction)
-                        miniPreview.move(
-                            ev,
-                            this.status.tooltipMode,
-                            this.status.tooltipInteraction
-                        );
+                        miniPreview.move(ev, this.status.tooltipMode, this.status.tooltipInteraction);
                 }, this.status.tooltipDelay);
             });
 
@@ -2404,8 +2271,7 @@ export default {
     revoke(filter) {
         if (this.memory.uuid) filter.remove(this.memory.uuid, true);
 
-        if (this.memory.popStateHandler)
-            window.removeEventListener("popstate", this.memory.popStateHandler);
+        if (this.memory.popStateHandler) window.removeEventListener("popstate", this.memory.popStateHandler);
 
         if (this.memory.refreshIntervalId) window.clearInterval(this.memory.refreshIntervalId);
     }
