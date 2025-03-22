@@ -75,8 +75,7 @@ export const modules = {
 
         promises.push(
             storage.get<boolean | undefined>(`${module.name}.enable`).then((enable) => {
-                if (enable === undefined)
-                    storage.set(`${module.name}.enable`, module.default_enable);
+                if (enable === undefined) storage.set(`${module.name}.enable`, module.default_enable);
 
                 module.enable = typeof enable === "boolean" ? enable : module.default_enable;
             })

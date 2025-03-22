@@ -99,10 +99,7 @@ export default {
                         if (this.status.replyRemove) {
                             const $next = $content.next();
 
-                            if (
-                                !$next.hasClass("ub-content") &&
-                                $next.children(".reply").length > 0
-                            ) {
+                            if (!$next.hasClass("ub-content") && $next.children(".reply").length > 0) {
                                 hideElement($next, this.status.blur);
                             }
                         }
@@ -116,10 +113,7 @@ export default {
                     //     return;
                     // }
                 } else if (block.check("TEXT", text, gallery)) {
-                    $element
-                        .closest(".view_content_wrap")
-                        .find(".write_div")
-                        .text("게시글 내용이 차단됐습니다.");
+                    $element.closest(".view_content_wrap").find(".write_div").text("게시글 내용이 차단됐습니다.");
                 }
 
                 element.oncontextmenu ??= () => {
@@ -148,13 +142,11 @@ export default {
                 if (!gallery) return;
 
                 const dccon =
-                    ($element.attr("src") ?? $element.attr("data-src"))
-                        ?.replace(/^.*no=/g, "")
-                        .replace(/^&.*$/g, "") ?? "";
+                    ($element.attr("src") ?? $element.attr("data-src"))?.replace(/^.*no=/g, "").replace(/^&.*$/g, "") ??
+                    "";
 
                 if (block.check("DCCON", dccon, gallery)) {
-                    const $comment =
-                        $element.closest(".ub-content") ?? $element.closest(".comment_dccon");
+                    const $comment = $element.closest(".ub-content") ?? $element.closest(".comment_dccon");
 
                     if (this.status.replyRemove) {
                         const $next = $comment.next();
@@ -208,111 +200,86 @@ export default {
             }
         );
 
-        this.memory.requestBlock = eventBus.on(
-            "refresherRequestBlock",
-            (args?: Record<string, boolean>) => {
-                if (Date.now() - this.memory.lastSelect > 10000) {
-                    return;
-                }
+        this.memory.requestBlock = eventBus.on("refresherRequestBlock", (args?: Record<string, boolean>) => {
+            if (Date.now() - this.memory.lastSelect > 10000) {
+                return;
+            }
 
-                const code = this.memory.selected.code;
+            const code = this.memory.selected.code;
 
-                if (code) {
-                    const params = new URLSearchParams();
-                    params.set("ci_t", Cookies.get("ci_c") ?? "");
-                    params.set("code", code);
+            if (code) {
+                const params = new URLSearchParams();
+                params.set("ci_t", Cookies.get("ci_c") ?? "");
+                params.set("code", code);
 
-                    ky.post(http.urls.dccon.detail, {
-                        headers: {
-                            "X-Requested-With": "XMLHttpRequest"
-                        },
-                        body: params
-                    })
-                        .json<any>()
-                        .then((json) => {
-                            const title = json.info.title;
-                            const packageIdx = json.info.package_idx;
+                ky.post(http.urls.dccon.detail, {
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: params
+                })
+                    .json<any>()
+                    .then((json) => {
+                        const title = json.info.title;
+                        const packageIdx = json.info.package_idx;
 
-                            if (args?.blockAllDccon) {
-                                const blockBundle = confirm(
-                                    "디시콘을 묶어서 차단하시겠습니까? (차단탭에서 한개로 표시됩니다.)"
-                                );
+                        if (args?.blockAllDccon) {
+                            const blockBundle = confirm(
+                                "디시콘을 묶어서 차단하시겠습니까? (차단탭에서 한개로 표시됩니다.)"
+                            );
 
-                                const list = [];
+                            const list = [];
 
-                                for (const { path } of json.detail) {
-                                    if (blockBundle) {
-                                        list.push(path);
-                                        continue;
-                                    }
-
-                                    block.add(
-                                        "DCCON",
-                                        path,
-                                        false,
-                                        false,
-                                        undefined,
-                                        `${title} [${packageIdx}]`
-                                    );
-                                }
-
+                            for (const { path } of json.detail) {
                                 if (blockBundle) {
-                                    block.add(
-                                        "DCCON",
-                                        `^(${list.join("|")})$`,
-                                        true,
-                                        false,
-                                        undefined,
-                                        `[묶음] ${title} [${packageIdx}]`
-                                    );
+                                    list.push(path);
+                                    continue;
                                 }
 
-                                Toast.show(
-                                    `${title} ${block.TYPE_NAMES["DCCON"]} 묶음을 차단했습니다.`,
-                                    false,
-                                    3000
-                                );
-
-                                return;
+                                block.add("DCCON", path, false, false, undefined, `${title} [${packageIdx}]`);
                             }
 
-                            block.add(
-                                "DCCON",
-                                code,
-                                false,
-                                false,
-                                undefined,
-                                `${title} [${packageIdx}]`
-                            );
+                            if (blockBundle) {
+                                block.add(
+                                    "DCCON",
+                                    `^(${list.join("|")})$`,
+                                    true,
+                                    false,
+                                    undefined,
+                                    `[묶음] ${title} [${packageIdx}]`
+                                );
+                            }
 
-                            Toast.show(
-                                `${title} ${block.TYPE_NAMES["DCCON"]}을 차단했습니다.`,
-                                false,
-                                3000
-                            );
-                        });
+                            Toast.show(`${title} ${block.TYPE_NAMES["DCCON"]} 묶음을 차단했습니다.`, false, 3000);
 
-                    return;
-                }
+                            return;
+                        }
 
-                let type: RefresherBlockType = "NICK";
-                let value = this.memory.selected.nick;
-                const extra = this.memory.selected.nick;
+                        block.add("DCCON", code, false, false, undefined, `${title} [${packageIdx}]`);
 
-                if (this.memory.selected.uid) {
-                    type = "ID";
-                    value = this.memory.selected.uid;
-                } else if (this.memory.selected.ip) {
-                    type = "IP";
-                    value = this.memory.selected.ip;
-                }
+                        Toast.show(`${title} ${block.TYPE_NAMES["DCCON"]}을 차단했습니다.`, false, 3000);
+                    });
 
-                if (!value || !extra) return;
-
-                block.add(type, value, false, false, undefined, extra);
-                Toast.show(`${block.TYPE_NAMES[type]} ${value}을(를) 차단했습니다.`, false, 3000);
+                return;
             }
-        );
+
+            let type: RefresherBlockType = "NICK";
+            let value = this.memory.selected.nick;
+            const extra = this.memory.selected.nick;
+
+            if (this.memory.selected.uid) {
+                type = "ID";
+                value = this.memory.selected.uid;
+            } else if (this.memory.selected.ip) {
+                type = "IP";
+                value = this.memory.selected.ip;
+            }
+
+            if (!value || !extra) return;
+
+            block.add(type, value, false, false, undefined, extra);
+            Toast.show(`${block.TYPE_NAMES[type]} ${value}을(를) 차단했습니다.`, false, 3000);
+        });
     },
     revoke(filter) {
         if (this.memory.uuid) filter.remove(this.memory.uuid);

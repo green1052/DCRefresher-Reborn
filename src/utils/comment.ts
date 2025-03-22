@@ -79,8 +79,7 @@ const secretKey = (dom: Document): URLSearchParams => {
 
         const id = $element.attr("name") ?? $element.attr("id")!;
 
-        if (!["service_code", "gallery_no", "clickbutton"].includes(id))
-            params.set(id, $element.val() as string);
+        if (!["service_code", "gallery_no", "clickbutton"].includes(id)) params.set(id, $element.val() as string);
     }
 
     return params;
@@ -141,8 +140,7 @@ export async function submitComment(
         params.set("detail_idx", memo.map((dccon) => dccon.detail_idx).join(","));
     }
 
-    const url =
-        typeof memo === "string" ? http.urls.comments_submit : http.urls.dccon_comments_submit;
+    const url = typeof memo === "string" ? http.urls.comments_submit : http.urls.dccon_comments_submit;
     const options = {
         method: "POST",
         headers: {

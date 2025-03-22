@@ -327,8 +327,7 @@ tr.gall_writer {
     .button.block {
         &:hover {
             img {
-                filter: invert(22%) sepia(85%) saturate(5841%) hue-rotate(355deg) brightness(92%)
-                    contrast(126%);
+                filter: invert(22%) sepia(85%) saturate(5841%) hue-rotate(355deg) brightness(92%) contrast(126%);
             }
 
             p {

@@ -147,8 +147,7 @@ export default {
         const isPageView = location.href.includes("board/view");
 
         if (!isPageView || (isPageView && this.status.useCompactModeOnView)) {
-            this.memory.resize = () =>
-                updateWindowSize(this.status.forceCompact, this.status.activePixel, innerWidth);
+            this.memory.resize = () => updateWindowSize(this.status.forceCompact, this.status.activePixel, innerWidth);
 
             window.addEventListener("resize", this.memory.resize);
             this.memory.resize();

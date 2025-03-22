@@ -147,8 +147,7 @@ export class User {
     }
 
     getMemo(): void {
-        this.memo =
-            memo.get("UID", this.id) ?? memo.get("IP", this.ip) ?? memo.get("NICK", this.nick);
+        this.memo = memo.get("UID", this.id) ?? memo.get("IP", this.ip) ?? memo.get("NICK", this.nick);
     }
 
     getRatio(): void {

@@ -3,19 +3,19 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
-import { getURL } from "../utils/getURL";
+    import Vue from "vue";
+    import { getURL } from "../utils/getURL";
 
-export default Vue.extend({
-    name: "icon",
-    props: {
-        icon: {
-            type: String,
-            required: true
+    export default Vue.extend({
+        name: "icon",
+        props: {
+            icon: {
+                type: String,
+                required: true
+            }
+        },
+        methods: {
+            getURL
         }
-    },
-    methods: {
-        getURL
-    }
-});
+    });
 </script>

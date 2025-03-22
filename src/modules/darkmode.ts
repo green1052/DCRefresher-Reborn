@@ -36,9 +36,7 @@ const contentColorFix = (element: HTMLElement) => {
 
     const $element = $(element);
 
-    const qSelector = element.querySelector<HTMLElement>(
-        ".refresher-frame:first-child .refresher-preview-contents"
-    )!;
+    const qSelector = element.querySelector<HTMLElement>(".refresher-frame:first-child .refresher-preview-contents")!;
 
     for (const elem of DOM.traversal(qSelector)) {
         const $elem = $(elem);
@@ -98,8 +96,7 @@ export default {
 
         if (this.memory.uuid2) filter.remove(this.memory.uuid2, true);
 
-        if (this.memory.contentViewUUID)
-            eventBus.remove("contentPreview", this.memory.contentViewUUID, true);
+        if (this.memory.contentViewUUID) eventBus.remove("contentPreview", this.memory.contentViewUUID, true);
     }
 } as RefresherModule<{
     memory: {

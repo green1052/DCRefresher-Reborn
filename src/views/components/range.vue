@@ -18,66 +18,66 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
-import $ from "cash-dom";
+    import Vue from "vue";
+    import $ from "cash-dom";
 
-export default Vue.extend({
-    name: "refresher-range",
-    props: {
-        change: {
-            type: Function
+    export default Vue.extend({
+        name: "refresher-range",
+        props: {
+            change: {
+                type: Function
+            },
+
+            placeholder: {
+                type: Number,
+                required: false
+            },
+
+            modname: {
+                type: String
+            },
+
+            id: {
+                type: String
+            },
+
+            value: {
+                type: Number
+            },
+
+            max: {
+                type: Number
+            },
+
+            min: {
+                type: Number
+            },
+
+            step: {
+                type: Number
+            },
+
+            unit: {
+                type: String
+            },
+
+            disabled: {
+                type: Boolean
+            }
         },
+        methods: {
+            input(ev: Event) {
+                $(this.$el)
+                    .find(".indicator")
+                    .html(`${ev.target.value}${this.unit ? this.unit : ""}`);
+            },
 
-        placeholder: {
-            type: Number,
-            required: false
+            update(ev: Event) {
+                this.change?.(ev.target.dataset.module, ev.target.dataset.id, Number(ev.target.value));
+            }
         },
-
-        modname: {
-            type: String
-        },
-
-        id: {
-            type: String
-        },
-
-        value: {
-            type: Number
-        },
-
-        max: {
-            type: Number
-        },
-
-        min: {
-            type: Number
-        },
-
-        step: {
-            type: Number
-        },
-
-        unit: {
-            type: String
-        },
-
-        disabled: {
-            type: Boolean
+        mounted() {
+            this.$data.__temp = this.value;
         }
-    },
-    methods: {
-        input(ev: Event) {
-            $(this.$el)
-                .find(".indicator")
-                .html(`${ev.target.value}${this.unit ? this.unit : ""}`);
-        },
-
-        update(ev: Event) {
-            this.change?.(ev.target.dataset.module, ev.target.dataset.id, Number(ev.target.value));
-        }
-    },
-    mounted() {
-        this.$data.__temp = this.value;
-    }
-});
+    });
 </script>

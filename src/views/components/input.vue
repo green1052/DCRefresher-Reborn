@@ -13,42 +13,42 @@
 </template>
 
 <script>
-import Vue from "vue";
+    import Vue from "vue";
 
-export default Vue.extend({
-    name: "refresher-input",
+    export default Vue.extend({
+        name: "refresher-input",
 
-    props: {
-        change: {
-            type: Function
+        props: {
+            change: {
+                type: Function
+            },
+
+            placeholder: {
+                type: String,
+                required: false
+            },
+
+            modname: {
+                type: String
+            },
+
+            id: {
+                type: String
+            },
+
+            value: {
+                type: String
+            },
+
+            disabled: {
+                type: Boolean
+            }
         },
 
-        placeholder: {
-            type: String,
-            required: false
-        },
-
-        modname: {
-            type: String
-        },
-
-        id: {
-            type: String
-        },
-
-        value: {
-            type: String
-        },
-
-        disabled: {
-            type: Boolean
+        methods: {
+            update(ev) {
+                this.change?.(ev.target.dataset.module, ev.target.dataset.id, ev.target.value);
+            }
         }
-    },
-
-    methods: {
-        update(ev) {
-            this.change?.(ev.target.dataset.module, ev.target.dataset.id, ev.target.value);
-        }
-    }
-});
+    });
 </script>

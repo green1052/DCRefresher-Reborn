@@ -1,5 +1,8 @@
 <template>
-    <div :class="{ top: side === 'top' }" class="refresher-scroll">
+    <div
+        :class="{ top: side === 'top' }"
+        class="refresher-scroll"
+    >
         <div class="center">
             <p>
                 한번 더 스크롤 하면
@@ -10,15 +13,15 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+    import Vue from "vue";
 
-export default Vue.extend({
-    name: "refresher-scroll",
-    props: {
-        side: {
-            type: String,
-            required: true
+    export default Vue.extend({
+        name: "refresher-scroll",
+        props: {
+            side: {
+                type: String,
+                required: true
+            }
         }
-    }
-});
+    });
 </script>

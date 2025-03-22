@@ -163,8 +163,7 @@ export const add = (
     extra?: string,
     mode?: RefresherBlockDetectMode
 ): void => {
-    if (!checkValidType(type))
-        throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
+    if (!checkValidType(type)) throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
 
     if (mode && !checkValidMode(mode))
         throw `${mode} is not a valid mode. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`;
@@ -185,8 +184,7 @@ export const add = (
  * @param mode 차단 모드
  */
 export const updateMode = (type: RefresherBlockType, mode: RefresherBlockDetectMode): void => {
-    if (!checkValidType(type))
-        throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
+    if (!checkValidType(type)) throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
 
     if (!checkValidMode(mode))
         throw `${type} is not a valid type. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`;
@@ -202,8 +200,7 @@ export const updateMode = (type: RefresherBlockType, mode: RefresherBlockDetectM
  * @param gallery 현재 갤러리
  */
 export const check = (type: RefresherBlockType, content: string, gallery?: string): boolean => {
-    if (!checkValidType(type))
-        throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
+    if (!checkValidType(type)) throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
 
     if (!content || content.length < 1) return false;
 
@@ -213,11 +210,7 @@ export const check = (type: RefresherBlockType, content: string, gallery?: strin
         if (v.gallery && v.gallery !== gallery) return false;
 
         if (v.isAdvanced) {
-            const response = new Function("type", "content", "gallery", v.content)(
-                type,
-                content,
-                gallery
-            );
+            const response = new Function("type", "content", "gallery", v.content)(type, content, gallery);
             return typeof response === "boolean" ? response : false;
         }
 
@@ -260,10 +253,7 @@ export const check = (type: RefresherBlockType, content: string, gallery?: strin
  * @param obj 검사할 객체
  * @param gallery 갤러리 이름 (선택)
  */
-export const checkAll = (
-    obj: Partial<Record<RefresherBlockType, string | null>>,
-    gallery?: string
-): boolean => {
+export const checkAll = (obj: Partial<Record<RefresherBlockType, string | null>>, gallery?: string): boolean => {
     for (const [key, value] of Object.entries(obj)) {
         if (value && check(key as RefresherBlockType, String(value), gallery)) return true;
     }

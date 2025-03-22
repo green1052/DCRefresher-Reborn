@@ -2,9 +2,7 @@ export type Rgb = [number, number, number];
 export type Hsl = [number, number, number];
 
 export const luminance = (...[r, g, b]: Rgb): number => {
-    [r, g, b] = [r, g, b]
-        .map((v) => v / 255)
-        .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+    [r, g, b] = [r, g, b].map((v) => v / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
     return r * 0.2126 + g * 0.7152 + b * 0.0722;
 };
 
@@ -46,9 +44,7 @@ export const rgbToHsl = ([r, g, b]: Rgb): Hsl => {
     if (diff === 0) {
         return [0, 0, l];
     } else {
-        const h =
-            (max === r ? (g - b) / diff + (g < b ? 6 : 0) : (b - r) / diff + (max === g ? 2 : 4)) /
-            6;
+        const h = (max === r ? (g - b) / diff + (g < b ? 6 : 0) : (b - r) / diff + (max === g ? 2 : 4)) / 6;
         const s = diff / (l > 0.5 ? 2 - max - min : max + min);
 
         return [h, s, l];
@@ -83,8 +79,7 @@ export const hslToRgb = ([h, s, l]: Hsl): Rgb => {
 
 export const inverseColor = (c: number): number => 1 - c ** 2;
 
-export const toHexFragment = (num: number, padWidth = 2) =>
-    num.toString(16).padStart(padWidth, "0");
+export const toHexFragment = (num: number, padWidth = 2) => num.toString(16).padStart(padWidth, "0");
 
 export const rgbToHex = (...rgb: Rgb): string => "#" + rgb.map(toHexFragment).join("");
 

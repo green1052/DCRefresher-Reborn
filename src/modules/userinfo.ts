@@ -46,9 +46,7 @@ const tooltip = {
             tooltip.init = true;
         }
 
-        tooltip.element.innerHTML = `<p>${Array.from(
-            $(ev.target as HTMLElement).children(".refresherUserData[title]")
-        )
+        tooltip.element.innerHTML = `<p>${Array.from($(ev.target as HTMLElement).children(".refresherUserData[title]"))
             .map((e) => e?.outerHTML)
             .join(" ")}</p>`;
     },
@@ -166,8 +164,7 @@ const memoAsk = (
     };
 
     const updateType = () => {
-        frame.querySelector(".refresher-memo-type")!.innerHTML =
-            `${memo.TYPE_NAMES[currentType]}: ${currentValue}`;
+        frame.querySelector(".refresher-memo-type")!.innerHTML = `${memo.TYPE_NAMES[currentType]}: ${currentValue}`;
 
         memoElement.value = "";
         colorElement.value = "";
@@ -214,44 +211,38 @@ const memoAsk = (
 
     memoElement.addEventListener("keyup", (e) => {
         if (e.code === "Enter") {
-            frame
-                .querySelector<HTMLDivElement>(".refresher-preview-button[data-update=true]")!
-                .click();
+            frame.querySelector<HTMLDivElement>(".refresher-preview-button[data-update=true]")!.click();
         }
     });
 
     return new Promise((resolve) => {
-        frame
-            .querySelector(".refresher-preview-button[data-update=true]")
-            ?.addEventListener("click", () => {
-                if (memoElement.value.length > 160) {
-                    alert("160자를 초과할 수 없습니다.");
+        frame.querySelector(".refresher-preview-button[data-update=true]")?.addEventListener("click", () => {
+            if (memoElement.value.length > 160) {
+                alert("160자를 초과할 수 없습니다.");
 
-                    return;
-                }
+                return;
+            }
 
-                removeWindow();
+            removeWindow();
 
-                resolve({
-                    text: memoElement.value,
-                    color: colorElement.value,
-                    type: currentType,
-                    value: currentValue
-                });
+            resolve({
+                text: memoElement.value,
+                color: colorElement.value,
+                type: currentType,
+                value: currentValue
             });
+        });
 
-        frame
-            .querySelector(".refresher-preview-button[data-clear=true]")
-            ?.addEventListener("click", () => {
-                removeWindow();
+        frame.querySelector(".refresher-preview-button[data-clear=true]")?.addEventListener("click", () => {
+            removeWindow();
 
-                resolve({
-                    text: "",
-                    color: "",
-                    type: currentType,
-                    value: currentValue
-                });
+            resolve({
+                text: "",
+                color: "",
+                type: currentType,
+                value: currentValue
             });
+        });
     });
 };
 
@@ -303,12 +294,7 @@ export default {
     require: ["filter", "eventBus", "ip", "memo"],
     func(filter, eventBus, ip, memo) {
         const ipInfoAdd = (element: HTMLElement) => {
-            if (
-                !this.status.showIpInfo ||
-                !element.dataset.ip ||
-                element.dataset.refresherIp === "true"
-            )
-                return false;
+            if (!this.status.showIpInfo || !element.dataset.ip || element.dataset.refresherIp === "true") return false;
 
             const ip_data = ip.ISPData(element.dataset.ip);
             const format = ip.format(ip_data);
@@ -348,9 +334,7 @@ export default {
                         userType === "HALF_FIXED_SUB_MANAGER" ||
                         userType === "HALF_FIXED_MANAGER")) ||
                 (!this.status.showFixedNickUID &&
-                    (userType === "FIXED" ||
-                        userType === "FIXED_SUB_MANAGER" ||
-                        userType === "FIXED_MANAGER"))
+                    (userType === "FIXED" || userType === "FIXED_SUB_MANAGER" || userType === "FIXED_MANAGER"))
             )
                 return false;
 
@@ -507,20 +491,12 @@ export default {
                         return;
                     }
 
-                    Toast.show(
-                        `해당하는 ${memo.TYPE_NAMES[obj.type]}을(를) 가진 사용자 메모가 없습니다.`,
-                        true,
-                        3000
-                    );
+                    Toast.show(`해당하는 ${memo.TYPE_NAMES[obj.type]}을(를) 가진 사용자 메모가 없습니다.`, true, 3000);
 
                     return;
                 }
 
-                Toast.show(
-                    `${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 변경했습니다.`,
-                    false,
-                    2000
-                );
+                Toast.show(`${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 변경했습니다.`, false, 2000);
 
                 memo.add(obj.type, obj.value, obj.text, obj.color);
             }
@@ -556,22 +532,14 @@ export default {
                     return;
                 }
 
-                Toast.show(
-                    `해당하는 ${memo.TYPE_NAMES[obj.type]}을(를) 가진 사용자 메모가 없습니다.`,
-                    true,
-                    3000
-                );
+                Toast.show(`해당하는 ${memo.TYPE_NAMES[obj.type]}을(를) 가진 사용자 메모가 없습니다.`, true, 3000);
 
                 return;
             }
 
             memo.add(obj.type, obj.value, obj.text, obj.color);
 
-            Toast.show(
-                `${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 추가했습니다.`,
-                false,
-                2000
-            );
+            Toast.show(`${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 추가했습니다.`, false, 2000);
         });
     },
     revoke(filter) {

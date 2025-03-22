@@ -83,15 +83,12 @@ export default {
             params.set("nos[]", id);
             params.set("_GALLTYPE_", http.galleryTypeName(location.href));
 
-            await ky.post(
-                galleryType === "mini/" ? http.urls.manage.deleteMini : http.urls.manage.delete,
-                {
-                    headers: {
-                        "X-Requested-With": "XMLHttpRequest"
-                    },
-                    body: params
-                }
-            );
+            await ky.post(galleryType === "mini/" ? http.urls.manage.deleteMini : http.urls.manage.delete, {
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: params
+            });
         };
 
         this.memory.checkBox = filter.add<HTMLInputElement>(
@@ -135,15 +132,9 @@ export default {
                         }
 
                         const li = $element.closest("li");
-                        if (
-                            this.status.checkCommentViaCtrl &&
-                            ev.ctrlKey &&
-                            !li.attr("id")?.startsWith("reply_")
-                        ) {
+                        if (this.status.checkCommentViaCtrl && ev.ctrlKey && !li.attr("id")?.startsWith("reply_")) {
                             for (const input of li.next().find(".article_chkbox")) {
-                                (input as HTMLInputElement).checked = (
-                                    ev.target as HTMLInputElement
-                                ).checked;
+                                (input as HTMLInputElement).checked = (ev.target as HTMLInputElement).checked;
                             }
                         }
                     });
@@ -196,10 +187,7 @@ export default {
                         if (fl) {
                             const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
                             if (flIpQuery)
-                                fl.insertBefore(
-                                    text,
-                                    flIpQuery.nextSibling?.nextSibling ?? flIpQuery.nextSibling
-                                );
+                                fl.insertBefore(text, flIpQuery.nextSibling?.nextSibling ?? flIpQuery.nextSibling);
                         } else {
                             element.appendChild(text);
                         }
@@ -233,10 +221,7 @@ export default {
                     if (fl) {
                         const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
                         if (flIpQuery)
-                            fl.insertBefore(
-                                text,
-                                flIpQuery.nextSibling?.nextSibling ?? flIpQuery.nextSibling
-                            );
+                            fl.insertBefore(text, flIpQuery.nextSibling?.nextSibling ?? flIpQuery.nextSibling);
                     } else {
                         element.appendChild(text);
                     }
@@ -341,8 +326,7 @@ export default {
     },
     revoke(filter) {
         if (this.memory.checkBox) filter.remove(this.memory.checkBox);
-        if (this.memory.newPostListEvent)
-            eventBus.remove("newPostList", this.memory.newPostListEvent);
+        if (this.memory.newPostListEvent) eventBus.remove("newPostList", this.memory.newPostListEvent);
         if (this.memory.content) filter.remove(this.memory.content);
     }
 } as RefresherModule<{
