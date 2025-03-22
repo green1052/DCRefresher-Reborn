@@ -84,15 +84,7 @@
 
         textarea {
             width: 100px;
-
-            //@media screen and (min-width: 1220px) {
-            //    width: 800px !important;
-            //}
-            //
-            //@media screen and (min-width: 1145px) and (max-width: 1220px) {
-            //    width: 882px !important;
-            //}
-
+            
             @media screen and (min-width: 1145px) {
                 width: 770px !important;
             }
@@ -177,19 +169,19 @@
 }
 
 .refresherHideNotice {
-    tr:has(em[class*="icon_notice"]) {
+    tr:has(em[class*=icon_notice]) {
         display: none;
     }
 }
 
 .refresherHideDCNotice {
-    tr[class*="ub-content"]:has(> td[user_name="운영자"]) {
+    tr[class*=ub-content]:has(> td[user_name=운영자]) {
         display: none;
     }
 }
 
 .refresherHideGamemeca {
-    tr[data-type="icon_fnews"] {
+    tr[data-type=icon_fnews] {
         display: none;
     }
 }
