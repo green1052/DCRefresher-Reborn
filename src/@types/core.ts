@@ -25,11 +25,7 @@ declare global {
     interface RefresherEventBus {
         emit: (event: string, ...params: any[]) => void;
         emitNextTick: (event: string, ...params: any[]) => void;
-        on: (
-            event: string,
-            callback: (...any: any[]) => void,
-            options?: RefresherEventBusOptions
-        ) => string;
+        on: (event: string, callback: (...any: any[]) => void, options?: RefresherEventBusOptions) => string;
         remove: (event: string, uuid: string, skip?: boolean) => void;
     }
 

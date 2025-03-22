@@ -24,10 +24,7 @@ import browser from "webextension-polyfill";
         }
 
         Toast.show(content, false, 4000, () => {
-            window.open(
-                `https://github.com/green1052/DCRefresher-Reborn/releases/tag/${currentVersion}`,
-                "_blank"
-            );
+            window.open(`https://github.com/green1052/DCRefresher-Reborn/releases/tag/${currentVersion}`, "_blank");
         });
     }, 5000);
 })();

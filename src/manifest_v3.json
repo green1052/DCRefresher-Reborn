@@ -1,13 +1,7 @@
 {
     "name": "DCRefresher Reborn",
     "manifest_version": 3,
-    "permissions": [
-        "activeTab",
-        "contextMenus",
-        "declarativeNetRequest",
-        "storage",
-        "unlimitedStorage"
-    ],
+    "permissions": ["activeTab", "contextMenus", "declarativeNetRequest", "storage", "unlimitedStorage"],
     "host_permissions": ["https://*.dcinside.com/*"],
     "background": {
         "service_worker": "background.js"

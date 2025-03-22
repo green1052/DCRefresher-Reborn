@@ -11,9 +11,7 @@ let PAUSE_REFRESH = false;
 
 const updateRefreshText = (button?: HTMLElement) => {
     button ??=
-        document.querySelector<HTMLElement>(
-            ".page_head .gall_issuebox button[data-refresher=true]"
-        ) ?? undefined;
+        document.querySelector<HTMLElement>(".page_head .gall_issuebox button[data-refresher=true]") ?? undefined;
 
     if (!button) return;
 
@@ -198,9 +196,7 @@ export default {
 
             const newPostList: Cash[] = [];
 
-            const oldCache = Array.from($oldList.find(".gall_num")).map(
-                (element) => element!.innerText
-            );
+            const oldCache = Array.from($oldList.find(".gall_num")).map((element) => element!.innerText);
             // const newCache = Array.from($newList.find(".gall_num")).map((element) => element!.innerText);
 
             for (const element of $newListChildren) {
@@ -217,10 +213,7 @@ export default {
                 }
 
                 if (isPageView && no === currentPostNo) {
-                    $element
-                        .addClass("crt>")
-                        .find(".gall_num")
-                        .html(`<span class="sp_img crt_icon"> </span>`);
+                    $element.addClass("crt>").find(".gall_num").html(`<span class="sp_img crt_icon"> </span>`);
 
                     continue;
                 }
@@ -250,12 +243,7 @@ export default {
                             const subject = $a.html();
 
                             if (subject.match(keyword))
-                                $a.html(
-                                    subject.replace(
-                                        keyword,
-                                        `<span class="${classList}">${keyword}</span>`
-                                    )
-                                );
+                                $a.html(subject.replace(keyword, `<span class="${classList}">${keyword}</span>`));
                         }
                     }
                 }
@@ -362,11 +350,7 @@ export default {
                     const isPageView = location.href.includes("/board/view");
 
                     if (isPageView) {
-                        history.pushState(
-                            null,
-                            document.title,
-                            http.mergeParamURL(location.href, element.href)
-                        );
+                        history.pushState(null, document.title, http.mergeParamURL(location.href, element.href));
                     } else {
                         history.pushState(null, document.title, element.href);
                     }
@@ -375,20 +359,16 @@ export default {
 
                     await this.memory.load!(location.href, true);
 
-                    document
-                        .querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head")
-                        ?.scrollIntoView({
-                            behavior: "smooth",
-                            block: "start"
-                        });
+                    document.querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head")?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start"
+                    });
                 });
             }
         );
 
         this.memory.uuid2 = eventBus.on("refresherGetPost", (parsedBody: Document) => {
-            const pagingBox = parsedBody.querySelector(
-                ".left_content article:has(.gall_listwrap) .bottom_paging_box"
-            );
+            const pagingBox = parsedBody.querySelector(".left_content article:has(.gall_listwrap) .bottom_paging_box");
 
             const currentBottomPagingBox = document.querySelector(
                 ".left_content article:has(.gall_listwrap) .bottom_paging_box"
@@ -413,11 +393,7 @@ export default {
 
                 a.addEventListener("click", async () => {
                     if (location.href.includes("/board/view")) {
-                        history.pushState(
-                            null,
-                            document.title,
-                            http.mergeParamURL(location.href, href)
-                        );
+                        history.pushState(null, document.title, http.mergeParamURL(location.href, href));
                     } else {
                         history.pushState(null, document.title, href);
                     }

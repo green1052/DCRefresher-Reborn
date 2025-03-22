@@ -4,27 +4,76 @@
         <div class="refresher-title-zone">
             <h1>설정</h1>
             <div class="float-right">
-                <p :class="{ active: tab === 0 }" @click="() => (tab = 0)">일반</p>
-                <p :class="{ active: tab === 1 }" @click="() => (tab = 1)">고급</p>
-                <p :class="{ active: tab === 2 }" @click="() => (tab = 2)">차단</p>
-                <p :class="{ active: tab === 3 }" @click="() => (tab = 3)">메모</p>
-                <p :class="{ active: tab === 4 }" @click="() => (tab = 4)">자짤</p>
-                <p :class="{ active: tab === 5 }" @click="() => (tab = 5)">모듈</p>
-                <p :class="{ active: tab === 6 }" @click="() => (tab = 6)">단축키</p>
+                <p
+                    :class="{ active: tab === 0 }"
+                    @click="() => (tab = 0)"
+                >
+                    일반
+                </p>
+                <p
+                    :class="{ active: tab === 1 }"
+                    @click="() => (tab = 1)"
+                >
+                    고급
+                </p>
+                <p
+                    :class="{ active: tab === 2 }"
+                    @click="() => (tab = 2)"
+                >
+                    차단
+                </p>
+                <p
+                    :class="{ active: tab === 3 }"
+                    @click="() => (tab = 3)"
+                >
+                    메모
+                </p>
+                <p
+                    :class="{ active: tab === 4 }"
+                    @click="() => (tab = 4)"
+                >
+                    자짤
+                </p>
+                <p
+                    :class="{ active: tab === 5 }"
+                    @click="() => (tab = 5)"
+                >
+                    모듈
+                </p>
+                <p
+                    :class="{ active: tab === 6 }"
+                    @click="() => (tab = 6)"
+                >
+                    단축키
+                </p>
             </div>
         </div>
-        <transition-group mode="in-out" name="refresher-slide-left">
-            <div v-show="tab === 0" key="tab1" class="tab tab1">
+        <transition-group
+            mode="in-out"
+            name="refresher-slide-left"
+        >
+            <div
+                v-show="tab === 0"
+                key="tab1"
+                class="tab tab1"
+            >
                 <div class="info">
                     <div class="icon-wrap">
-                        <img :src="getURL('/assets/icons/logo/Icon.png')" class="icon" />
+                        <img
+                            :src="getURL('/assets/icons/logo/Icon.png')"
+                            class="icon"
+                        />
                     </div>
 
                     <div class="text">
                         <h3>DCRefresher Reborn</h3>
                         <p>
                             <span class="version">{{ getVersion() }}</span>
-                            <a v-for="link in links" @click="open(link.url)">{{ link.text }}</a>
+                            <a
+                                v-for="link in links"
+                                @click="open(link.url)"
+                                >{{ link.text }}</a
+                            >
                         </p>
                         <p>
                             <span class="version">
@@ -54,11 +103,7 @@
                     <Fragment v-else>
                         <div
                             v-for="module in Object.keys(settings)"
-                            v-if="
-                                modules[module].enable &&
-                                settings[module] &&
-                                settingsCount(settings[module])
-                            "
+                            v-if="modules[module].enable && settings[module] && settingsCount(settings[module])"
                             class="refresher-setting-category"
                         >
                             <h3 @click="moveToModuleTab(module)">
@@ -77,10 +122,7 @@
                             <div
                                 v-for="setting in Object.keys(settings[module])"
                                 v-if="!settings[module][setting].advanced"
-                                :data-changed="
-                                    settings[module][setting].value !==
-                                    settings[module][setting].default
-                                "
+                                :data-changed="settings[module][setting].value !== settings[module][setting].default"
                                 class="refresher-setting"
                             >
                                 <div class="info">
@@ -136,18 +178,18 @@
                     </Fragment>
                 </div>
             </div>
-            <div v-show="tab === 1" key="tab2" class="tab tab2">
+            <div
+                v-show="tab === 1"
+                key="tab2"
+                class="tab tab2"
+            >
                 <div v-if="!Object.keys(settings).length">
                     <h3 class="need-refresh">우선 디시인사이드 페이지를 열고 설정 해주세요.</h3>
                 </div>
                 <Fragment v-else>
                     <div
                         v-for="module in Object.keys(settings)"
-                        v-if="
-                            modules[module].enable &&
-                            settings[module] &&
-                            advancedSettingsCount(settings[module])
-                        "
+                        v-if="modules[module].enable && settings[module] && advancedSettingsCount(settings[module])"
                         class="refresher-setting-category"
                     >
                         <h3 @click="moveToModuleTab(module)">
@@ -159,7 +201,10 @@
                                 width="18px"
                                 xmlns="http://www.w3.org/2000/svg"
                             >
-                                <path d="M0 0h24v24H0z" fill="none" />
+                                <path
+                                    d="M0 0h24v24H0z"
+                                    fill="none"
+                                />
                                 <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
                             </svg>
                         </h3>
@@ -167,10 +212,7 @@
                         <div
                             v-for="setting in Object.keys(settings[module])"
                             v-if="settings[module][setting].advanced"
-                            :data-changed="
-                                settings[module][setting].value !==
-                                settings[module][setting].default
-                            "
+                            :data-changed="settings[module][setting].value !== settings[module][setting].default"
                             class="refresher-setting"
                         >
                             <div class="info">
@@ -222,7 +264,11 @@
                     </div>
                 </Fragment>
             </div>
-            <div v-show="tab === 2" key="tab3" class="tab tab3">
+            <div
+                v-show="tab === 2"
+                key="tab3"
+                class="tab tab3"
+            >
                 <div style="margin-bottom: 15px">
                     <h2>데이터 관리</h2>
 
@@ -241,7 +287,10 @@
                         style="margin-top: 5px; margin-bottom: 5px"
                     >
                         <label>{{ blockKeyNames[key] }}:</label>
-                        <select v-model="blockModes[key]" @change="editBlockMode">
+                        <select
+                            v-model="blockModes[key]"
+                            @change="editBlockMode"
+                        >
                             <option
                                 v-for="[key2, value2] in Object.entries(blockDetectModeTypeNames)"
                                 :selected="blockModes[key] === key2"
@@ -252,11 +301,17 @@
                         </select>
                     </div>
                 </div>
-                <div v-for="key in Object.keys(blocks)" class="block-divide">
+                <div
+                    v-for="key in Object.keys(blocks)"
+                    class="block-divide"
+                >
                     <h3>
                         {{ blockKeyNames[key] }} ({{ blocks[key].length }}개)
 
-                        <span class="plus" @click="() => addEmptyBlockedUser(key)">
+                        <span
+                            class="plus"
+                            @click="() => addEmptyBlockedUser(key)"
+                        >
                             <svg
                                 fill="black"
                                 height="18px"
@@ -264,12 +319,18 @@
                                 width="18px"
                                 xmlns="http://www.w3.org/2000/svg"
                             >
-                                <path d="M0 0h24v24H0z" fill="none" />
+                                <path
+                                    d="M0 0h24v24H0z"
+                                    fill="none"
+                                />
                                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
                             </svg>
                         </span>
 
-                        <span class="remove" @click="() => removeAllBlockedUser(key)">
+                        <span
+                            class="remove"
+                            @click="() => removeAllBlockedUser(key)"
+                        >
                             <svg
                                 height="14"
                                 viewBox="0 0 18 18"
@@ -311,7 +372,11 @@
                     </div>
                 </div>
             </div>
-            <div v-show="tab === 3" key="tab4" class="tab tab4">
+            <div
+                v-show="tab === 3"
+                key="tab4"
+                class="tab tab4"
+            >
                 <div style="margin-bottom: 15px">
                     <h2>데이터 관리</h2>
 
@@ -323,10 +388,16 @@
                     <br />
                 </div>
 
-                <div v-for="key in Object.keys(memos)" class="block-divide">
+                <div
+                    v-for="key in Object.keys(memos)"
+                    class="block-divide"
+                >
                     <h3>
                         {{ memoKeyNames[key] }} ({{ Object.keys(memos[key]).length }}개)
-                        <span class="plus" @click="addMemoUser(key)">
+                        <span
+                            class="plus"
+                            @click="addMemoUser(key)"
+                        >
                             <svg
                                 fill="black"
                                 height="18px"
@@ -334,12 +405,18 @@
                                 width="18px"
                                 xmlns="http://www.w3.org/2000/svg"
                             >
-                                <path d="M0 0h24v24H0z" fill="none" />
+                                <path
+                                    d="M0 0h24v24H0z"
+                                    fill="none"
+                                />
                                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
                             </svg>
                         </span>
 
-                        <span class="remove" @click="() => removeAllMemoUser(key)">
+                        <span
+                            class="remove"
+                            @click="() => removeAllMemoUser(key)"
+                        >
                             <svg
                                 height="14"
                                 viewBox="0 0 18 18"
@@ -354,9 +431,7 @@
                     </h3>
 
                     <div class="lists">
-                        <p v-if="!Object.keys(memos[key]).length">
-                            {{ memoKeyNames[key] }} 메모 없음
-                        </p>
+                        <p v-if="!Object.keys(memos[key]).length">{{ memoKeyNames[key] }} 메모 없음</p>
                         <refresher-bubble
                             v-for="[user, memo] in Object.entries(memos[key])"
                             v-else
@@ -368,11 +443,22 @@
                     </div>
                 </div>
             </div>
-            <div v-show="tab === 4" key="tab5" class="tab tab5">
+            <div
+                v-show="tab === 4"
+                key="tab5"
+                class="tab tab5"
+            >
                 <h1>전투력 5천 이하는 사용 불가능한 기능입니다.</h1>
             </div>
-            <div v-show="tab === 5" key="tab6" class="tab tab6">
-                <div v-if="!Object.keys(modules).length" class="refresher-no-modules">
+            <div
+                v-show="tab === 5"
+                key="tab6"
+                class="tab tab6"
+            >
+                <div
+                    v-if="!Object.keys(modules).length"
+                    class="refresher-no-modules"
+                >
                     <h3>로드된 모듈 없음</h3>
                     <p>우선 디시 페이지를 열어주세요.</p>
                 </div>
@@ -387,7 +473,11 @@
                     />
                 </div>
             </div>
-            <div v-show="tab === 6" key="tab7" class="tab tab7">
+            <div
+                v-show="tab === 6"
+                key="tab7"
+                class="tab tab7"
+            >
                 <div class="shortcut-lists">
                     <div
                         v-for="shortcut in shortcuts"
@@ -415,513 +505,497 @@
 </template>
 
 <script lang="ts">
-import checkbox from "./checkbox.vue";
-import module from "./module.vue";
-import options from "./options.vue";
-import input from "./input.vue";
-import range from "./range.vue";
-import bubble from "./bubble.vue";
-import browser from "webextension-polyfill";
-import Vue from "vue";
-import { TYPE_NAMES as MEMO_TYPE_NAMES } from "../../core/memo";
-import {
-    BLOCK_DETECT_MODE_TYPE_NAMES,
-    BlockModeCache,
-    TYPE_NAMES as BLOCK_TYPE_NAMES
-} from "../../core/block";
-import $ from "cash-dom";
-import storage from "../../utils/storage";
-import ky from "ky";
-import { Fragment } from "vue-fragment";
-import { getURL } from "../../utils/getURL";
+    import checkbox from "./checkbox.vue";
+    import module from "./module.vue";
+    import options from "./options.vue";
+    import input from "./input.vue";
+    import range from "./range.vue";
+    import bubble from "./bubble.vue";
+    import browser from "webextension-polyfill";
+    import Vue from "vue";
+    import { TYPE_NAMES as MEMO_TYPE_NAMES } from "../../core/memo";
+    import { BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES } from "../../core/block";
+    import $ from "cash-dom";
+    import storage from "../../utils/storage";
+    import ky from "ky";
+    import { Fragment } from "vue-fragment";
+    import { getURL } from "../../utils/getURL";
 
-interface RefresherData {
-    tab: number;
-    modules: {
-        [key: string]: RefresherModule;
-    };
-    settings: {
-        [key: string]: {
-            [key: string]: RefresherSettings;
+    interface RefresherData {
+        tab: number;
+        modules: {
+            [key: string]: RefresherModule;
         };
-    };
-    shortcuts: {} | browser.Commands.Command[];
-    blocks: {
-        [key in RefresherBlockType]: RefresherBlockValue[];
-    };
-    blockModes: BlockModeCache;
-    blockDetectModeTypeNames: typeof BLOCK_DETECT_MODE_TYPE_NAMES;
-    memos: {
-        [key in RefresherMemoType]: {
-            [key: string]: RefresherMemoValue;
+        settings: {
+            [key: string]: {
+                [key: string]: RefresherSettings;
+            };
         };
-    };
-    memoKeyNames: typeof MEMO_TYPE_NAMES;
-    shortcutRegex: RegExp;
-    blockKeyNames: typeof BLOCK_TYPE_NAMES;
-    links: { text: string; url: string }[];
-    databaseVersion: string;
-}
+        shortcuts: {} | browser.Commands.Command[];
+        blocks: {
+            [key in RefresherBlockType]: RefresherBlockValue[];
+        };
+        blockModes: BlockModeCache;
+        blockDetectModeTypeNames: typeof BLOCK_DETECT_MODE_TYPE_NAMES;
+        memos: {
+            [key in RefresherMemoType]: {
+                [key: string]: RefresherMemoValue;
+            };
+        };
+        memoKeyNames: typeof MEMO_TYPE_NAMES;
+        shortcutRegex: RegExp;
+        blockKeyNames: typeof BLOCK_TYPE_NAMES;
+        links: { text: string; url: string }[];
+        databaseVersion: string;
+    }
 
-const port = browser.runtime.connect({ name: "refresherInternal" });
+    const port = browser.runtime.connect({ name: "refresherInternal" });
 
-export default Vue.extend({
-    name: "refresher",
-    data(): RefresherData {
-        return {
-            tab: 0,
-            modules: {},
-            settings: {},
-            shortcuts: {},
-            blocks: {
-                NICK: [],
-                ID: [],
-                IP: [],
-                TITLE: [],
-                TEXT: [],
-                COMMENT: [],
-                DCCON: [],
-                TAB: [],
-                IMAGE: []
-            },
-            blockModes: {},
-            blockDetectModeTypeNames: BLOCK_DETECT_MODE_TYPE_NAMES,
-            memos: {
-                UID: {},
-                NICK: {},
-                IP: {}
-            },
-            memoKeyNames: MEMO_TYPE_NAMES,
-            shortcutRegex:
-                /(Space|⌥|⇧|⌘|⌃|Alt|Cmd|,|'|`|Home|End|PageUp|PageDown|Insert|Delete|Left|Up|Right|Down|[A-Z]|[0-9])/g,
-            blockKeyNames: BLOCK_TYPE_NAMES,
-            links: [
-                {
-                    text: "GitHub",
-                    url: "https://github.com/green1052/DCRefresher-Reborn"
+    export default Vue.extend({
+        name: "refresher",
+        data(): RefresherData {
+            return {
+                tab: 0,
+                modules: {},
+                settings: {},
+                shortcuts: {},
+                blocks: {
+                    NICK: [],
+                    ID: [],
+                    IP: [],
+                    TITLE: [],
+                    TEXT: [],
+                    COMMENT: [],
+                    DCCON: [],
+                    TAB: [],
+                    IMAGE: []
                 },
-                {
-                    text: "Discord",
-                    url: "https://discord.gg/SSW6Zuyjz6"
+                blockModes: {},
+                blockDetectModeTypeNames: BLOCK_DETECT_MODE_TYPE_NAMES,
+                memos: {
+                    UID: {},
+                    NICK: {},
+                    IP: {}
                 },
-                {
-                    text: "후원",
-                    url: "https://www.buymeacoffee.com/green1052"
-                }
-            ],
-            databaseVersion: ""
-        };
-    },
-    methods: {
-        getURL,
-        exportMemo() {
-            navigator.clipboard
-                .writeText(JSON.stringify(this.memos))
-                .then(() => {
-                    alert("클립보드에 복사되었습니다.");
-                })
-                .catch(() => {
-                    alert("클립보드에 복사하지 못했습니다.");
-                });
+                memoKeyNames: MEMO_TYPE_NAMES,
+                shortcutRegex:
+                    /(Space|⌥|⇧|⌘|⌃|Alt|Cmd|,|'|`|Home|End|PageUp|PageDown|Insert|Delete|Left|Up|Right|Down|[A-Z]|[0-9])/g,
+                blockKeyNames: BLOCK_TYPE_NAMES,
+                links: [
+                    {
+                        text: "GitHub",
+                        url: "https://github.com/green1052/DCRefresher-Reborn"
+                    },
+                    {
+                        text: "Discord",
+                        url: "https://discord.gg/SSW6Zuyjz6"
+                    },
+                    {
+                        text: "후원",
+                        url: "https://www.buymeacoffee.com/green1052"
+                    }
+                ],
+                databaseVersion: ""
+            };
         },
-        importMemo() {
-            const result = prompt("가져올 데이터를 입력하세요.");
+        methods: {
+            getURL,
+            exportMemo() {
+                navigator.clipboard
+                    .writeText(JSON.stringify(this.memos))
+                    .then(() => {
+                        alert("클립보드에 복사되었습니다.");
+                    })
+                    .catch(() => {
+                        alert("클립보드에 복사하지 못했습니다.");
+                    });
+            },
+            importMemo() {
+                const result = prompt("가져올 데이터를 입력하세요.");
 
-            if (!result) return;
+                if (!result) return;
 
-            try {
-                const data = JSON.parse(result);
+                try {
+                    const data = JSON.parse(result);
 
-                for (const [key, value] of Object.entries(data)) {
-                    const target = this.memos[key as RefresherMemoType];
+                    for (const [key, value] of Object.entries(data)) {
+                        const target = this.memos[key as RefresherMemoType];
 
-                    for (const [id, memo] of Object.entries(
-                        value as Record<string, RefresherMemoValue>
-                    )) {
-                        if (
-                            target[id] &&
-                            !confirm(`${id}에 대한 메모가 이미 존재합니다, 덮어쓰시겠습니까?`)
-                        ) {
-                            continue;
+                        for (const [id, memo] of Object.entries(value as Record<string, RefresherMemoValue>)) {
+                            if (target[id] && !confirm(`${id}에 대한 메모가 이미 존재합니다, 덮어쓰시겠습니까?`)) {
+                                continue;
+                            }
+
+                            target[id] = memo;
                         }
+                    }
 
-                        target[id] = memo;
+                    this.syncMemos();
+
+                    alert("가져오기에 성공했습니다.");
+                } catch (e) {
+                    alert("데이터가 잘못됐습니다.");
+                }
+            },
+            exportBlock() {
+                navigator.clipboard
+                    .writeText(JSON.stringify(this.blocks))
+                    .then(() => {
+                        alert("클립보드에 복사되었습니다.");
+                    })
+                    .catch(() => {
+                        alert("클립보드에 복사하지 못했습니다.");
+                    });
+            },
+            importBlock() {
+                const result = prompt("가져올 데이터를 입력하세요.");
+
+                if (!result) return;
+
+                try {
+                    const data = JSON.parse(result);
+
+                    for (const [key, value] of Object.entries(data)) {
+                        const target = this.blocks[key as RefresherBlockType];
+
+                        for (const block of value as RefresherBlockValue[]) {
+                            if (
+                                target.some((v) => v.content === block.content) &&
+                                !confirm(`${block.content}가 이미 존재합니다, 덮어쓰시겠습니까?`)
+                            ) {
+                                continue;
+                            }
+
+                            target.push(block);
+                        }
+                    }
+
+                    this.syncBlock();
+
+                    alert("가져오기에 성공했습니다.");
+                } catch (e) {
+                    alert("데이터가 잘못됐습니다.");
+                }
+            },
+            getVersion() {
+                return browser.runtime.getManifest().version_name ?? browser.runtime.getManifest().version;
+            },
+            open(url: string) {
+                browser.tabs.create({ url });
+            },
+            openShortcutSettings() {
+                browser.tabs.create({
+                    url: /Firefox/.test(navigator.userAgent) ? "about:addons" : "chrome://extensions/shortcuts"
+                });
+            },
+            typeWrap(value: unknown) {
+                if (typeof value === "boolean") {
+                    return value ? "On" : "Off";
+                }
+
+                if (typeof value === "string" && value === "") {
+                    return "없음";
+                }
+
+                return value;
+            },
+            moveToModuleTab(moduleName: string) {
+                this.tab = 5;
+
+                const $el = $(this.$el);
+
+                for (const element of $el.find(".refresher-module.highlight")) {
+                    $(element).removeClass("highlight");
+                }
+
+                for (const element of $el.find(".tab .refresher-module .title")) {
+                    const $element = $(element);
+
+                    if ($element.text() !== moduleName) continue;
+
+                    requestAnimationFrame(() => {
+                        $element.parent().parent().addClass("highlight");
+
+                        element.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center"
+                        });
+
+                        setTimeout(() => {
+                            for (const element of $el.find(".refresher-module.highlight")) {
+                                $(element).removeClass("highlight");
+                            }
+                        }, 1000);
+                    });
+                }
+            },
+            settingsCount(obj: Record<string, RefresherSettings>) {
+                return Object.values(obj).filter((v) => !v?.advanced).length;
+            },
+            advancedSettingsCount(obj: Record<string, RefresherSettings>) {
+                return Object.values(obj).filter((v) => v?.advanced === true).length;
+            },
+            updateUserSetting(module: string, key: string, value: unknown) {
+                this.settings[module][key].value = value;
+
+                port.postMessage({
+                    updateUserSetting: true,
+                    name: module,
+                    key,
+                    value,
+                    settings_store: this.settings
+                });
+
+                browser.tabs.query({ active: true }).then((tabs) => {
+                    browser.tabs.sendMessage(tabs[0].id!, {
+                        type: "updateSettingValue",
+                        data: {
+                            name: module,
+                            key,
+                            value
+                        }
+                    });
+                });
+            },
+            syncBlock() {
+                port.postMessage({
+                    updateBlocks: true,
+                    blocks_store: this.blocks,
+                    blockModes_store: this.blockModes
+                });
+
+                browser.tabs.query({ active: true }).then((tabs) => {
+                    browser.tabs.sendMessage(tabs[0].id!, {
+                        type: "updateBlocks",
+                        data: {
+                            blocks: this.blocks,
+                            modes: this.blockModes
+                        }
+                    });
+                });
+            },
+            addEmptyBlockedUser(key: RefresherBlockType) {
+                if (key === "DCCON") {
+                    alert("디시콘 수동 차단은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
+                    return;
+                }
+
+                const extra: string[] = [];
+                const isAdvanced = confirm("고급 차단 설정을 하시겠습니까?");
+
+                if (isAdvanced) {
+                    extra.push("[고급]");
+                }
+
+                const result = prompt(
+                    isAdvanced
+                        ? `${this.blockKeyNames[key]} 차단\n인수: type: RefresherBlockType, content: string, gallery?: string\n예제: return content === "개블빙" && gallery === "bser";`
+                        : `추가할 ${this.blockKeyNames[key]} 값을 입력하세요.`
+                );
+
+                if (!result) return;
+
+                let isRegex = false;
+                let gallery: string | undefined = undefined;
+                let mode: RefresherBlockDetectMode | undefined = undefined;
+
+                if (!isAdvanced) {
+                    if (confirm("정규식입니까?")) {
+                        isRegex = true;
+                        extra.push("[정규식]");
+                    }
+
+                    if (confirm("특정 갤러리에서만 차단하시겠습니까?")) {
+                        const id = prompt("갤러리 아이디를 입력해주세요.");
+
+                        if (id) {
+                            gallery = id;
+                        } else {
+                            alert("갤러리 아이디가 잘못됐습니다.");
+                            return;
+                        }
+                    }
+
+                    if (
+                        confirm(
+                            `차단 모드를 설정하시겠습니까? 현재 값: ${
+                                this.blockDetectModeTypeNames[this.blockModes[key]]
+                            }`
+                        )
+                    ) {
+                        const modes = Object.keys(this.blockDetectModeTypeNames);
+
+                        const inputMode = prompt(`차단 모드를 입력해주세요. (모드 목록: ${modes.join(", ")})`);
+
+                        if (inputMode && modes.includes(inputMode as RefresherBlockDetectMode)) {
+                            mode = inputMode as RefresherBlockDetectMode;
+                            extra.push(`[${this.blockDetectModeTypeNames[mode]}]`);
+                        } else {
+                            alert("모드가 잘못됐습니다.");
+                            return;
+                        }
                     }
                 }
 
-                this.syncMemos();
-
-                alert("가져오기에 성공했습니다.");
-            } catch (e) {
-                alert("데이터가 잘못됐습니다.");
-            }
-        },
-        exportBlock() {
-            navigator.clipboard
-                .writeText(JSON.stringify(this.blocks))
-                .then(() => {
-                    alert("클립보드에 복사되었습니다.");
-                })
-                .catch(() => {
-                    alert("클립보드에 복사하지 못했습니다.");
+                this.blocks[key].push({
+                    content: result,
+                    isRegex,
+                    isAdvanced,
+                    extra: extra.length ? extra.join(" ") : undefined,
+                    gallery,
+                    mode
                 });
-        },
-        importBlock() {
-            const result = prompt("가져올 데이터를 입력하세요.");
-
-            if (!result) return;
-
-            try {
-                const data = JSON.parse(result);
-
-                for (const [key, value] of Object.entries(data)) {
-                    const target = this.blocks[key as RefresherBlockType];
-
-                    for (const block of value as RefresherBlockValue[]) {
-                        if (
-                            target.some((v) => v.content === block.content) &&
-                            !confirm(`${block.content}가 이미 존재합니다, 덮어쓰시겠습니까?`)
-                        ) {
-                            continue;
-                        }
-
-                        target.push(block);
-                    }
-                }
 
                 this.syncBlock();
+            },
+            removeBlockedUser(key: RefresherBlockType, index: number) {
+                this.blocks[key].splice(index, 1);
+                this.syncBlock();
+            },
+            removeAllBlockedUser(key: RefresherBlockType) {
+                if (!confirm("ㄹ?ㅇ")) return;
+                this.blocks[key] = [];
+                this.syncBlock();
+            },
+            editBlockedUser(key: RefresherBlockType, index: number) {
+                if (key === "DCCON") {
+                    alert("디시콘 수정은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
+                    return;
+                }
 
-                alert("가져오기에 성공했습니다.");
-            } catch (e) {
-                alert("데이터가 잘못됐습니다.");
-            }
-        },
-        getVersion() {
-            return (
-                browser.runtime.getManifest().version_name ?? browser.runtime.getManifest().version
-            );
-        },
-        open(url: string) {
-            browser.tabs.create({ url });
-        },
-        openShortcutSettings() {
-            browser.tabs.create({
-                url: /Firefox/.test(navigator.userAgent)
-                    ? "about:addons"
-                    : "chrome://extensions/shortcuts"
-            });
-        },
-        typeWrap(value: unknown) {
-            if (typeof value === "boolean") {
-                return value ? "On" : "Off";
-            }
+                const result = prompt(`바꿀 ${this.blockKeyNames[key]} 값을 입력하세요.`);
 
-            if (typeof value === "string" && value === "") {
-                return "없음";
-            }
+                if (!result) return;
 
-            return value;
-        },
-        moveToModuleTab(moduleName: string) {
-            this.tab = 5;
+                this.blocks[key][index].content = result;
+                this.syncBlock();
+            },
+            editBlockMode() {
+                this.syncBlock();
+            },
+            syncMemos() {
+                port.postMessage({
+                    updateMemos: true,
+                    memos_store: this.memos
+                });
 
-            const $el = $(this.$el);
-
-            for (const element of $el.find(".refresher-module.highlight")) {
-                $(element).removeClass("highlight");
-            }
-
-            for (const element of $el.find(".tab .refresher-module .title")) {
-                const $element = $(element);
-
-                if ($element.text() !== moduleName) continue;
-
-                requestAnimationFrame(() => {
-                    $element.parent().parent().addClass("highlight");
-
-                    element.scrollIntoView({
-                        behavior: "smooth",
-                        block: "center"
-                    });
-
-                    setTimeout(() => {
-                        for (const element of $el.find(".refresher-module.highlight")) {
-                            $(element).removeClass("highlight");
+                browser.tabs.query({ active: true }).then((tabs) => {
+                    browser.tabs.sendMessage(tabs[0].id!, {
+                        type: "updateMemos",
+                        data: {
+                            memos: this.memos
                         }
-                    }, 1000);
+                    });
                 });
+            },
+            removeMemoUser(type: RefresherMemoType, user: string) {
+                const obj = { ...this.memos };
+                delete obj[type][user];
+                this.memos = obj;
+
+                this.syncMemos();
+            },
+            removeAllMemoUser(type: RefresherMemoType) {
+                if (!confirm("ㄹ?ㅇ")) return;
+                this.memos[type] = {};
+                this.syncMemos();
+            },
+            addMemoUser(type: RefresherMemoType) {
+                const user = prompt("메모 대상을 입력하세요.");
+
+                if (!user) return;
+
+                browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+                    browser.tabs.sendMessage(tabs[0].id!, {
+                        type: "refresherRequestMemoAsk",
+                        data: {
+                            type,
+                            user
+                        }
+                    });
+                });
+            },
+            editMemoUser(type: RefresherMemoType, user: string) {
+                browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+                    browser.tabs.sendMessage(tabs[0].id!, {
+                        type: "refresherRequestMemoAsk",
+                        data: {
+                            type,
+                            user
+                        }
+                    });
+                });
+            },
+            updateDarkMode(value: boolean) {
+                $(document.documentElement).toggleClass("refresherDark", value);
+            },
+            async updateIpDatabase() {
+                try {
+                    const [version, ip, ban] = await Promise.all([
+                        ky.get("https://dcrefresher.green1052.com/data/version").text(),
+                        ky.get("https://dcrefresher.green1052.com/data/ip.json").json(),
+                        ky.get("https://dcrefresher.green1052.com/data/ban.json").json()
+                    ]);
+
+                    storage.set("refresher.database.ip", ip);
+                    storage.set("refresher.database.ban", ban);
+                    storage.set("refresher.database.version", version);
+                    storage.set("refresher.database.lastUpdate", Date.now());
+
+                    alert("데이터베이스 업데이트에 성공했습니다.");
+                } catch (e) {
+                    alert(`데이터베이스 업데이트에 실패했습니다. 오류: ${e}`);
+                }
             }
         },
-        settingsCount(obj: Record<string, RefresherSettings>) {
-            return Object.values(obj).filter((v) => !v?.advanced).length;
-        },
-        advancedSettingsCount(obj: Record<string, RefresherSettings>) {
-            return Object.values(obj).filter((v) => v?.advanced === true).length;
-        },
-        updateUserSetting(module: string, key: string, value: unknown) {
-            this.settings[module][key].value = value;
-
+        async mounted() {
             port.postMessage({
-                updateUserSetting: true,
-                name: module,
-                key,
-                value,
-                settings_store: this.settings
+                requestRefresherModules: true,
+                requestRefresherSettings: true,
+                requestRefresherBlocks: true,
+                requestRefresherMemos: true
             });
 
-            browser.tabs.query({ active: true }).then((tabs) => {
-                browser.tabs.sendMessage(tabs[0].id!, {
-                    type: "updateSettingValue",
-                    data: {
-                        name: module,
-                        key,
-                        value
-                    }
-                });
-            });
-        },
-        syncBlock() {
-            port.postMessage({
-                updateBlocks: true,
-                blocks_store: this.blocks,
-                blockModes_store: this.blockModes
-            });
-
-            browser.tabs.query({ active: true }).then((tabs) => {
-                browser.tabs.sendMessage(tabs[0].id!, {
-                    type: "updateBlocks",
-                    data: {
-                        blocks: this.blocks,
-                        modes: this.blockModes
-                    }
-                });
-            });
-        },
-        addEmptyBlockedUser(key: RefresherBlockType) {
-            if (key === "DCCON") {
-                alert("디시콘 수동 차단은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
-                return;
-            }
-
-            const extra: string[] = [];
-            const isAdvanced = confirm("고급 차단 설정을 하시겠습니까?");
-
-            if (isAdvanced) {
-                extra.push("[고급]");
-            }
-
-            const result = prompt(
-                isAdvanced
-                    ? `${this.blockKeyNames[key]} 차단\n인수: type: RefresherBlockType, content: string, gallery?: string\n예제: return content === "개블빙" && gallery === "bser";`
-                    : `추가할 ${this.blockKeyNames[key]} 값을 입력하세요.`
-            );
-
-            if (!result) return;
-
-            let isRegex = false;
-            let gallery: string | undefined = undefined;
-            let mode: RefresherBlockDetectMode | undefined = undefined;
-
-            if (!isAdvanced) {
-                if (confirm("정규식입니까?")) {
-                    isRegex = true;
-                    extra.push("[정규식]");
+            port.onMessage.addListener((message) => {
+                if (message.responseRefresherModules && message.modules) {
+                    this.modules = message.modules;
                 }
 
-                if (confirm("특정 갤러리에서만 차단하시겠습니까?")) {
-                    const id = prompt("갤러리 아이디를 입력해주세요.");
-
-                    if (id) {
-                        gallery = id;
-                    } else {
-                        alert("갤러리 아이디가 잘못됐습니다.");
-                        return;
-                    }
+                if (message.responseRefresherSettings && message.settings) {
+                    this.settings = message.settings;
                 }
 
-                if (
-                    confirm(
-                        `차단 모드를 설정하시겠습니까? 현재 값: ${
-                            this.blockDetectModeTypeNames[this.blockModes[key]]
-                        }`
-                    )
-                ) {
-                    const modes = Object.keys(this.blockDetectModeTypeNames);
+                if (message.responseRefresherBlocks && message.blocks && message.blockModes) {
+                    this.blocks = message.blocks;
+                    this.blockModes = message.blockModes;
+                }
 
-                    const inputMode = prompt(
-                        `차단 모드를 입력해주세요. (모드 목록: ${modes.join(", ")})`
+                if (message.requestRefresherMemos && message.memos) {
+                    this.memos = message.memos;
+                }
+            });
+
+            this.shortcuts = await browser.commands.getAll();
+
+            this.databaseVersion = await storage.get("refresher.database.version");
+        },
+        watch: {
+            modules(modules) {
+                if (modules["다크 모드"]) {
+                    this.updateDarkMode(
+                        modules["다크 모드"].enable || matchMedia("(prefers-color-scheme: dark)").matches
                     );
-
-                    if (inputMode && modes.includes(inputMode as RefresherBlockDetectMode)) {
-                        mode = inputMode as RefresherBlockDetectMode;
-                        extra.push(`[${this.blockDetectModeTypeNames[mode]}]`);
-                    } else {
-                        alert("모드가 잘못됐습니다.");
-                        return;
-                    }
                 }
             }
-
-            this.blocks[key].push({
-                content: result,
-                isRegex,
-                isAdvanced,
-                extra: extra.length ? extra.join(" ") : undefined,
-                gallery,
-                mode
-            });
-
-            this.syncBlock();
         },
-        removeBlockedUser(key: RefresherBlockType, index: number) {
-            this.blocks[key].splice(index, 1);
-            this.syncBlock();
-        },
-        removeAllBlockedUser(key: RefresherBlockType) {
-            if (!confirm("ㄹ?ㅇ")) return;
-            this.blocks[key] = [];
-            this.syncBlock();
-        },
-        editBlockedUser(key: RefresherBlockType, index: number) {
-            if (key === "DCCON") {
-                alert("디시콘 수정은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
-                return;
-            }
-
-            const result = prompt(`바꿀 ${this.blockKeyNames[key]} 값을 입력하세요.`);
-
-            if (!result) return;
-
-            this.blocks[key][index].content = result;
-            this.syncBlock();
-        },
-        editBlockMode() {
-            this.syncBlock();
-        },
-        syncMemos() {
-            port.postMessage({
-                updateMemos: true,
-                memos_store: this.memos
-            });
-
-            browser.tabs.query({ active: true }).then((tabs) => {
-                browser.tabs.sendMessage(tabs[0].id!, {
-                    type: "updateMemos",
-                    data: {
-                        memos: this.memos
-                    }
-                });
-            });
-        },
-        removeMemoUser(type: RefresherMemoType, user: string) {
-            const obj = { ...this.memos };
-            delete obj[type][user];
-            this.memos = obj;
-
-            this.syncMemos();
-        },
-        removeAllMemoUser(type: RefresherMemoType) {
-            if (!confirm("ㄹ?ㅇ")) return;
-            this.memos[type] = {};
-            this.syncMemos();
-        },
-        addMemoUser(type: RefresherMemoType) {
-            const user = prompt("메모 대상을 입력하세요.");
-
-            if (!user) return;
-
-            browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
-                browser.tabs.sendMessage(tabs[0].id!, {
-                    type: "refresherRequestMemoAsk",
-                    data: {
-                        type,
-                        user
-                    }
-                });
-            });
-        },
-        editMemoUser(type: RefresherMemoType, user: string) {
-            browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
-                browser.tabs.sendMessage(tabs[0].id!, {
-                    type: "refresherRequestMemoAsk",
-                    data: {
-                        type,
-                        user
-                    }
-                });
-            });
-        },
-        updateDarkMode(value: boolean) {
-            $(document.documentElement).toggleClass("refresherDark", value);
-        },
-        async updateIpDatabase() {
-            try {
-                const [version, ip, ban] = await Promise.all([
-                    ky.get("https://dcrefresher.green1052.com/data/version").text(),
-                    ky.get("https://dcrefresher.green1052.com/data/ip.json").json(),
-                    ky.get("https://dcrefresher.green1052.com/data/ban.json").json()
-                ]);
-
-                storage.set("refresher.database.ip", ip);
-                storage.set("refresher.database.ban", ban);
-                storage.set("refresher.database.version", version);
-                storage.set("refresher.database.lastUpdate", Date.now());
-
-                alert("데이터베이스 업데이트에 성공했습니다.");
-            } catch (e) {
-                alert(`데이터베이스 업데이트에 실패했습니다. 오류: ${e}`);
-            }
+        components: {
+            "refresher-checkbox": checkbox,
+            "refresher-module": module,
+            "refresher-options": options,
+            "refresher-input": input,
+            "refresher-range": range,
+            "refresher-bubble": bubble,
+            Fragment
         }
-    },
-    async mounted() {
-        port.postMessage({
-            requestRefresherModules: true,
-            requestRefresherSettings: true,
-            requestRefresherBlocks: true,
-            requestRefresherMemos: true
-        });
-
-        port.onMessage.addListener((message) => {
-            if (message.responseRefresherModules && message.modules) {
-                this.modules = message.modules;
-            }
-
-            if (message.responseRefresherSettings && message.settings) {
-                this.settings = message.settings;
-            }
-
-            if (message.responseRefresherBlocks && message.blocks && message.blockModes) {
-                this.blocks = message.blocks;
-                this.blockModes = message.blockModes;
-            }
-
-            if (message.requestRefresherMemos && message.memos) {
-                this.memos = message.memos;
-            }
-        });
-
-        this.shortcuts = await browser.commands.getAll();
-
-        this.databaseVersion = await storage.get("refresher.database.version");
-    },
-    watch: {
-        modules(modules) {
-            if (modules["다크 모드"]) {
-                this.updateDarkMode(
-                    modules["다크 모드"].enable ||
-                        matchMedia("(prefers-color-scheme: dark)").matches
-                );
-            }
-        }
-    },
-    components: {
-        "refresher-checkbox": checkbox,
-        "refresher-module": module,
-        "refresher-options": options,
-        "refresher-input": input,
-        "refresher-range": range,
-        "refresher-bubble": bubble,
-        Fragment
-    }
-});
+    });
 </script>

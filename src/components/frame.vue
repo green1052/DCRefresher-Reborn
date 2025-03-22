@@ -8,7 +8,10 @@
         }"
         class="refresher-frame"
     >
-        <div v-if="frame.error" class="refresher-preview-contents refresher-error">
+        <div
+            v-if="frame.error"
+            class="refresher-preview-contents refresher-error"
+        >
             <h3>{{ frame.error.title || "알 수 없는 오류" }}</h3>
             <br />
             <br />
@@ -21,16 +24,12 @@
             <ul v-else-if="frame.error.detail.includes('Failed to fetch')">
                 <li>연결 오류, 서버 오류일 가능성도 있습니다.</li>
                 <li>브라우저 오류, 대부분 구현 오류로 확장 프로그램 업데이트가 필요합니다.</li>
-                <li>
-                    서버 구조 변경으로 인한 잘못된 방식으로 요청. 지속될 경우 개발자에게 문의하세요.
-                </li>
+                <li>서버 구조 변경으로 인한 잘못된 방식으로 요청. 지속될 경우 개발자에게 문의하세요.</li>
             </ul>
             <ul v-else-if="frame.error.detail.includes('40')">
                 <li>게시글이 이미 삭제됨</li>
                 <li>게시글이 없음</li>
-                <li>
-                    서버 구조 변경으로 인한 잘못된 값으로 요청. 지속될 경우 개발자에게 문의하세요.
-                </li>
+                <li>서버 구조 변경으로 인한 잘못된 값으로 요청. 지속될 경우 개발자에게 문의하세요.</li>
             </ul>
             <ul v-else-if="frame.error.detail.includes('50')">
                 <li>서버가 불안정합니다. 페이지를 다시 고쳐보세요.</li>
@@ -79,7 +78,10 @@
                             @before-enter="beforeEnter"
                             @after-enter="afterEnter"
                         >
-                            <span class="refresher-preview-title-mute" v-html="frame.subtitle" />
+                            <span
+                                class="refresher-preview-title-mute"
+                                v-html="frame.subtitle"
+                            />
                         </transition>
                         <transition
                             appear
@@ -89,7 +91,10 @@
                         />
                     </div>
 
-                    <div v-if="frame.data.comments" class="refresher-comment-controls-container">
+                    <div
+                        v-if="frame.data.comments"
+                        class="refresher-comment-controls-container"
+                    >
                         <fragment v-if="frame.data.useWriteComment">
                             <PreviewButton
                                 :id="'dccon'"
@@ -116,19 +121,34 @@
                 </div>
 
                 <div class="refresher-preview-meta">
-                    <User v-if="frame.data.user" :user="frame.data.user" />
+                    <User
+                        v-if="frame.data.user"
+                        :user="frame.data.user"
+                    />
 
                     <div class="float-right">
                         <div class="date-views">
-                            <TimeStamp v-if="frame.data.date" :date="frame.data.date" />
-                            <span class="refresher-views" v-text="frame.data.views" />
+                            <TimeStamp
+                                v-if="frame.data.date"
+                                :date="frame.data.date"
+                            />
+                            <span
+                                class="refresher-views"
+                                v-text="frame.data.views"
+                            />
                         </div>
-                        <CountDown v-if="frame.data.expire" :date="frame.data.expire" />
+                        <CountDown
+                            v-if="frame.data.expire"
+                            :date="frame.data.expire"
+                        />
                     </div>
                 </div>
             </div>
 
-            <div v-if="frame.collapse" class="refresher-preview-contents">
+            <div
+                v-if="frame.collapse"
+                class="refresher-preview-contents"
+            >
                 <div class="refresher-collapse-text">
                     <h3
                         @click="
@@ -142,10 +162,16 @@
                     </h3>
                 </div>
             </div>
-            <div v-else class="refresher-preview-contents">
+            <div
+                v-else
+                class="refresher-preview-contents"
+            >
                 <refresher-loader v-show="frame.data.load" />
 
-                <transition v-if="!frame.data.comments" name="refresher-opacity">
+                <transition
+                    v-if="!frame.data.comments"
+                    name="refresher-opacity"
+                >
                     <div
                         :key="frame.contents"
                         :class="
@@ -158,19 +184,17 @@
                     />
                 </transition>
                 <div v-else>
-                    <div
-                        v-if="
-                            !frame.data.comments.comments ||
-                            frame.data.comments.comments.length === 0
-                        "
-                    >
+                    <div v-if="!frame.data.comments.comments || frame.data.comments.comments.length === 0">
                         <div class="refresher-nocomment-wrap">
                             <img :src="getURL('/assets/icons/empty_comment.webp')" />
                             <h3>댓글이 없습니다.</h3>
                         </div>
                         <br />
                     </div>
-                    <div v-else class="refresher-preview-comments">
+                    <div
+                        v-else
+                        class="refresher-preview-comments"
+                    >
                         <transition-group
                             :key="commentKey"
                             appear
@@ -229,7 +253,11 @@
                         :text="'공유'"
                         class="refresher-share primary"
                     />
-                    <PreviewButton :id="'newtab'" :click="original" :text="'원본 보기'" />
+                    <PreviewButton
+                        :id="'newtab'"
+                        :click="original"
+                        :text="'원본 보기'"
+                    />
                 </div>
             </div>
         </div>
@@ -237,173 +265,173 @@
 </template>
 
 <script lang="ts">
-import PreviewButton from "./button.vue";
-import TimeStamp from "./timestamp.vue";
-import CountDown from "./countdown.vue";
-import User from "./user.vue";
-import Comment from "./comment.vue";
-import WriteComment from "./write_comment.vue";
-import Icon from "./icon.vue";
-import RefresherLoader from "./loader.vue";
-import Vue, { PropType } from "vue";
-import dccon from "./dccon.vue";
-import RefresherDcconPopup from "./dccon.vue";
-import { Fragment } from "vue-fragment";
-import { getURL } from "../utils/getURL";
+    import PreviewButton from "./button.vue";
+    import TimeStamp from "./timestamp.vue";
+    import CountDown from "./countdown.vue";
+    import User from "./user.vue";
+    import Comment from "./comment.vue";
+    import WriteComment from "./write_comment.vue";
+    import Icon from "./icon.vue";
+    import RefresherLoader from "./loader.vue";
+    import Vue, { PropType } from "vue";
+    import dccon from "./dccon.vue";
+    import RefresherDcconPopup from "./dccon.vue";
+    import { Fragment } from "vue-fragment";
+    import { getURL } from "../utils/getURL";
 
-interface FrameData {
-    memoText: string;
-    reply: string | null;
-    dccon: DcinsideDccon[];
-    dcconRender: Vue | null;
-    commentKey: number;
-    sibalKey: Record<string, number>;
-}
+    interface FrameData {
+        memoText: string;
+        reply: string | null;
+        dccon: DcinsideDccon[];
+        dcconRender: Vue | null;
+        commentKey: number;
+        sibalKey: Record<string, number>;
+    }
 
-export default Vue.extend({
-    name: "refresher-frame",
-    components: {
-        RefresherDcconPopup,
-        PreviewButton,
-        TimeStamp,
-        CountDown,
-        User,
-        Comment,
-        WriteComment,
-        Icon,
-        RefresherLoader,
-        Fragment
-    },
-    props: {
-        frame: {
-            type: Object as PropType<RefresherFrame>,
-            required: true
+    export default Vue.extend({
+        name: "refresher-frame",
+        components: {
+            RefresherDcconPopup,
+            PreviewButton,
+            TimeStamp,
+            CountDown,
+            User,
+            Comment,
+            WriteComment,
+            Icon,
+            RefresherLoader,
+            Fragment
         },
-        index: {
-            type: Number,
-            required: true
-        }
-    },
-    data: (): FrameData => {
-        return {
-            memoText: "",
-            reply: null,
-            dccon: [],
-            dcconRender: null,
-            commentKey: 0
-        };
-    },
-    methods: {
-        getURL,
-        beforeEnter(el: HTMLElement) {
-            el.style.transitionDelay = `${45 * Number(el.dataset.index)}ms`;
-        },
-
-        afterEnter(el: HTMLElement) {
-            el.style.transitionDelay = "";
-        },
-
-        upvote() {
-            return this.frame.functions.vote(1);
-        },
-
-        downvote() {
-            return this.frame.functions.vote(0);
-        },
-
-        share() {
-            return this.frame.functions.share();
-        },
-
-        retry() {
-            return this.frame.functions.retry(false);
-        },
-
-        async writeComment(...args: any[]) {
-            try {
-                await this.frame.functions.writeComment(...args);
-                this.retry();
-
-                return true;
-            } catch {
-                return false;
+        props: {
+            frame: {
+                type: Object as PropType<RefresherFrame>,
+                required: true
+            },
+            index: {
+                type: Number,
+                required: true
             }
         },
-
-        toCommentWrite() {
-            document.querySelector<HTMLElement>("#comment_main")?.focus();
-            return true;
+        data: (): FrameData => {
+            return {
+                memoText: "",
+                reply: null,
+                dccon: [],
+                dcconRender: null,
+                commentKey: 0
+            };
         },
+        methods: {
+            getURL,
+            beforeEnter(el: HTMLElement) {
+                el.style.transitionDelay = `${45 * Number(el.dataset.index)}ms`;
+            },
 
-        refresh() {
-            this.retry();
-            return true;
+            afterEnter(el: HTMLElement) {
+                el.style.transitionDelay = "";
+            },
+
+            upvote() {
+                return this.frame.functions.vote(1);
+            },
+
+            downvote() {
+                return this.frame.functions.vote(0);
+            },
+
+            share() {
+                return this.frame.functions.share();
+            },
+
+            retry() {
+                return this.frame.functions.retry(false);
+            },
+
+            async writeComment(...args: any[]) {
+                try {
+                    await this.frame.functions.writeComment(...args);
+                    this.retry();
+
+                    return true;
+                } catch {
+                    return false;
+                }
+            },
+
+            toCommentWrite() {
+                document.querySelector<HTMLElement>("#comment_main")?.focus();
+                return true;
+            },
+
+            refresh() {
+                this.retry();
+                return true;
+            },
+
+            renderDcconPopup() {
+                const element = document.createElement("div");
+                document.body.appendChild(element);
+
+                this.dcconRender = new Vue({
+                    el: element,
+                    render: (h) =>
+                        h(dccon, {
+                            on: {
+                                clickDccon: this.clickDccon,
+                                closeDccon: this.closeDccon
+                            }
+                        })
+                });
+
+                return true;
+            },
+
+            clickDccon(dccon: DcinsideDccon[]) {
+                this.dccon = dccon;
+                this.closeDccon();
+            },
+
+            closeDccon() {
+                this.dcconRender?.$destroy();
+                this.dcconRender?.$el.remove();
+
+                this.dcconRender = null;
+            },
+
+            setDccon(value: DcinsideDccon[]) {
+                this.dccon = value;
+            },
+
+            getDccon() {
+                return this.dccon;
+            },
+
+            original() {
+                this.frame.functions.openOriginal();
+                return true;
+            }
         },
-
-        renderDcconPopup() {
-            const element = document.createElement("div");
-            document.body.appendChild(element);
-
-            this.dcconRender = new Vue({
-                el: element,
-                render: (h) =>
-                    h(dccon, {
-                        on: {
-                            clickDccon: this.clickDccon,
-                            closeDccon: this.closeDccon
-                        }
-                    })
+        created() {
+            this.frame.app.$on("close", () => {
+                this.frame.title = "";
+                this.frame.subtitle = "";
+                this.frame.contents = undefined;
+                this.frame.upvotes = undefined;
+                this.frame.fixedUpvotes = undefined;
+                this.frame.downvotes = undefined;
+                this.frame.error = undefined;
+                this.frame.collapse = undefined;
+                this.frame.data = {};
+                this.frame.functions = {};
+                this.reply = null;
+                this.dccon = [];
+                this.closeDccon();
+                this.commentKey = 0;
+                this.sibalKey = {};
             });
-
-            return true;
-        },
-
-        clickDccon(dccon: DcinsideDccon[]) {
-            this.dccon = dccon;
-            this.closeDccon();
-        },
-
-        closeDccon() {
-            this.dcconRender?.$destroy();
-            this.dcconRender?.$el.remove();
-
-            this.dcconRender = null;
-        },
-
-        setDccon(value: DcinsideDccon[]) {
-            this.dccon = value;
-        },
-
-        getDccon() {
-            return this.dccon;
-        },
-
-        original() {
-            this.frame.functions.openOriginal();
-            return true;
         }
-    },
-    created() {
-        this.frame.app.$on("close", () => {
-            this.frame.title = "";
-            this.frame.subtitle = "";
-            this.frame.contents = undefined;
-            this.frame.upvotes = undefined;
-            this.frame.fixedUpvotes = undefined;
-            this.frame.downvotes = undefined;
-            this.frame.error = undefined;
-            this.frame.collapse = undefined;
-            this.frame.data = {};
-            this.frame.functions = {};
-            this.reply = null;
-            this.dccon = [];
-            this.closeDccon();
-            this.commentKey = 0;
-            this.sibalKey = {};
-        });
-    }
-    // updated() {
-    //     this.$el.scroll(0, 0);
-    // }
-});
+        // updated() {
+        //     this.$el.scroll(0, 0);
+        // }
+    });
 </script>

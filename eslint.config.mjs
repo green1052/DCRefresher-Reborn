@@ -1,24 +1,32 @@
-import pluginJs from "@eslint/js";
-import importPlugin from "eslint-plugin-import";
-import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
+import eslint from "@eslint/js";
+import tseslint from "typescript-eslint";
 import pluginVue from "eslint-plugin-vue";
 import globals from "globals";
-import tseslint from "typescript-eslint";
+import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
+import importPlugin from "eslint-plugin-import";
 
-/** @type {import("eslint").Linter.Config[]} */
-export default [
+export default tseslint.config(
     eslintPluginPrettierRecommended,
-    pluginJs.configs.recommended,
-    ...tseslint.configs.recommended,
-    importPlugin.flatConfigs.recommended,
-    ...pluginVue.configs["flat/essential"],
-    { files: ["**/*.{js,mjs,cjs,ts,vue}"] },
-    { languageOptions: { globals: globals.browser } },
+    eslint.configs.recommended,
+    tseslint.configs.recommended,
     {
-        files: ["**/*.vue"],
-        languageOptions: { parserOptions: { parser: tseslint.parser } }
+        files: ["**/*.{ts,tsx}"],
+        extends: [
+            importPlugin.flatConfigs.recommended,
+            importPlugin.flatConfigs.typescript
+        ]
+    },
+    ...pluginVue.configs["flat/vue2-recommended"],
+    {
+        files: ["*.vue", "**/*.vue"],
+        languageOptions: {
+            globals: globals.browser,
+            parserOptions: {
+                parser: tseslint.parser
+            }
+        }
     }
-];
+);
 
 /*
     {

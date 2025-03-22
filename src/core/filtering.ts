@@ -4,10 +4,7 @@ import * as strings from "../utils/string";
 const lists: Record<string, RefresherFilteringLists> = {};
 
 export const filter = {
-    __run: async (
-        filteringLists: RefresherFilteringLists,
-        elements: NodeListOf<HTMLElement>
-    ): Promise<void> => {
+    __run: async (filteringLists: RefresherFilteringLists, elements: NodeListOf<HTMLElement>): Promise<void> => {
         for (const element of elements) {
             filteringLists.func(element);
         }
@@ -46,9 +43,7 @@ export const filter = {
     runSpecific: (id: string): Promise<void> => {
         const item = lists[id];
 
-        return observe
-            .find(item.scope, document.documentElement)
-            .then((e) => filter.__run(item, e));
+        return observe.find(item.scope, document.documentElement).then((e) => filter.__run(item, e));
     },
 
     /**

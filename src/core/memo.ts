@@ -40,13 +40,7 @@ MEMO_TYPES_KEYS.forEach(async (key) => {
     SendToBackground();
 });
 
-const InternalAddToList = (
-    type: RefresherMemoType,
-    user: string,
-    text: string,
-    color: string,
-    gallery?: string
-) => {
+const InternalAddToList = (type: RefresherMemoType, user: string, text: string, color: string, gallery?: string) => {
     MEMO_CACHE[type][user] = {
         text,
         color,
@@ -67,13 +61,7 @@ const checkValidType = (type: string) => MEMO_TYPES_KEYS.some((key) => key === t
  * @param color 메모 색상
  * @param gallery 특정 갤러리에만 해당하면 갤러리의 ID 값
  */
-export const add = (
-    type: RefresherMemoType,
-    user: string,
-    text: string,
-    color: string,
-    gallery?: string
-): void => {
+export const add = (type: RefresherMemoType, user: string, text: string, color: string, gallery?: string): void => {
     if (!checkValidType(type)) {
         throw `${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`;
     }
