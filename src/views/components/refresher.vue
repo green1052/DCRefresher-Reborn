@@ -60,7 +60,7 @@
                 <div class="info">
                     <div class="icon-wrap">
                         <img
-                            :src="getURL('/assets/icons/logo/Icon.png')"
+                            :src="getURL('/assets/icons/oyster.webp')"
                             class="icon"
                         />
                     </div>
@@ -68,7 +68,7 @@
                     <div class="text">
                         <h3>DCRefresher Reborn</h3>
                         <p>
-                            <span class="version">{{ getVersion() }} (개발 중지)</span>
+                            <span class="version">{{ getVersion() }}</span>
                             <a
                                 v-for="link in links"
                                 @click="open(link.url)"

@@ -115,7 +115,7 @@ export default {
                         storage.setObject(data);
                         toast.show("데이터를 가져왔습니다.", false, 3000);
                     })
-                    .catch(toast.show("데이터를 가져오는데 실패했습니다.", true, 3000));
+                    .catch(() => toast.show("데이터를 가져오는데 실패했습니다.", true, 3000));
             } catch {
                 toast.show("데이터를 가져오는데 실패했습니다.", true, 3000);
             }
@@ -125,8 +125,8 @@ export default {
 
             storage
                 .clear()
-                .then(toast.show("데이터를 초기화했습니다.", false, 3000))
-                .catch(toast.show("데이터를 초기화하는데 실패했습니다..", false, 3000));
+                .then(() => toast.show("데이터를 초기화했습니다.", false, 3000))
+                .catch(() => toast.show("데이터를 초기화하는데 실패했습니다.", false, 3000));
         }
     }
 } as RefresherModule<{
