@@ -1,10 +1,10 @@
-const CopyWebpackPlugin = require("copy-webpack-plugin");
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const {VueLoaderPlugin} = require("vue-loader");
-const path = require("path");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
+import CopyWebpackPlugin from "copy-webpack-plugin";
+import HtmlWebpackPlugin from "html-webpack-plugin";
+import MiniCssExtractPlugin from "mini-css-extract-plugin";
+import path from "path";
+import { VueLoaderPlugin } from "vue-loader";
 
-module.exports = {
+export default {
     entry: {
         "refresher.bundle.js": "./src/index.ts",
         "background.js": "./src/root/background.ts",
@@ -14,7 +14,7 @@ module.exports = {
         "./assets/js/grecaptcha.js": "./src/assets/js/grecaptcha.ts"
     },
     output: {
-        path: path.join(__dirname, "dist"),
+        path: path.join(path.resolve(), "dist"),
         filename: "[name]",
         clean: true
     },
@@ -30,11 +30,7 @@ module.exports = {
             {
                 include: /src/,
                 test: /\.s[ac]ss$/i,
-                use: [
-                    MiniCssExtractPlugin.loader,
-                    "css-loader",
-                    "sass-loader"
-                ]
+                use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"]
             },
             {
                 include: /src/,

@@ -1,15 +1,14 @@
-import * as Toast from "../components/toast";
-import storage from "../utils/storage";
 import browser from "webextension-polyfill";
 
-(async () => {
-    const [installed, updated] = await Promise.all([
-        storage.get<boolean>("refresher.firstInstall"),
-        storage.get<boolean>("refresher.updated")
-    ]);
+import * as Toast from "../components/toast";
+import storage from "../utils/storage";
 
-    if (!installed && !updated) return;
+const [installed, updated] = await Promise.all([
+    storage.get<boolean>("refresher.firstInstall"),
+    storage.get<boolean>("refresher.updated")
+]);
 
+if (installed || updated)
     setTimeout(() => {
         const currentVersion = browser.runtime.getManifest().version;
 
@@ -23,8 +22,7 @@ import browser from "webextension-polyfill";
             storage.set("refresher.updated", false);
         }
 
-        Toast.show(content, false, 4000, () => {
+        Toast.show(content, false, 5000, () => {
             window.open(`https://github.com/green1052/DCRefresher-Reborn/releases/tag/${currentVersion}`, "_blank");
         });
-    }, 5000);
-})();
+    }, 3000);
