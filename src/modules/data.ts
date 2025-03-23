@@ -1,6 +1,6 @@
 import browser from "webextension-polyfill";
 
-import * as Toast from "../components/toast";
+import toast from "../components/toast";
 import storage from "../utils/storage";
 
 function copyToClipboard(text: string) {
@@ -66,9 +66,9 @@ export default {
                     await browser.storage.sync.clear();
                     await browser.storage.sync.set(data);
 
-                    Toast.show("데이터를 클라우드에 백업했습니다.", false, 3000);
+                    toast.show("데이터를 클라우드에 백업했습니다.", false, 3000);
                 } catch {
-                    Toast.show("데이터를 클라우드에 백업하는데 실패했습니다.", true, 3000);
+                    toast.show("데이터를 클라우드에 백업하는데 실패했습니다.", true, 3000);
                 }
             });
         },
@@ -80,9 +80,9 @@ export default {
                     await storage.clear();
                     await storage.setObject(data);
 
-                    Toast.show("데이터를 복원했습니다.", false, 3000);
+                    toast.show("데이터를 복원했습니다.", false, 3000);
                 } catch {
-                    Toast.show("데이터를 복원하는데 실패했습니다.", true, 3000);
+                    toast.show("데이터를 복원하는데 실패했습니다.", true, 3000);
                 }
             });
         },
@@ -95,9 +95,9 @@ export default {
 
                 try {
                     copyToClipboard(JSON.stringify(data));
-                    Toast.show("데이터를 클립보드로 내보냈습니다.", false, 3000);
+                    toast.show("데이터를 클립보드로 내보냈습니다.", false, 3000);
                 } catch {
-                    Toast.show("데이터를 클립보드로 내보내는데 실패했습니다.", true, 3000);
+                    toast.show("데이터를 클립보드로 내보내는데 실패했습니다.", true, 3000);
                 }
             });
         },
@@ -113,11 +113,11 @@ export default {
                     .clear()
                     .then(() => {
                         storage.setObject(data);
-                        Toast.show("데이터를 가져왔습니다.", false, 3000);
+                        toast.show("데이터를 가져왔습니다.", false, 3000);
                     })
-                    .catch(Toast.show("데이터를 가져오는데 실패했습니다.", true, 3000));
+                    .catch(toast.show("데이터를 가져오는데 실패했습니다.", true, 3000));
             } catch {
-                Toast.show("데이터를 가져오는데 실패했습니다.", true, 3000);
+                toast.show("데이터를 가져오는데 실패했습니다.", true, 3000);
             }
         },
         clearData(this, _) {
@@ -125,8 +125,8 @@ export default {
 
             storage
                 .clear()
-                .then(Toast.show("데이터를 초기화했습니다.", false, 3000))
-                .catch(Toast.show("데이터를 초기화하는데 실패했습니다..", false, 3000));
+                .then(toast.show("데이터를 초기화했습니다.", false, 3000))
+                .catch(toast.show("데이터를 초기화하는데 실패했습니다..", false, 3000));
         }
     }
 } as RefresherModule<{

@@ -183,3 +183,8 @@ export class User {
         return this.id !== null;
     }
 }
+
+export default {
+    getType,
+    User
+};

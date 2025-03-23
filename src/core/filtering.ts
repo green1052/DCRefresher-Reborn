@@ -1,5 +1,5 @@
 import * as observe from "../utils/observe";
-import * as strings from "../utils/string";
+import strings from "../utils/string";
 
 const lists: Record<string, RefresherFilteringLists> = {};
 
@@ -9,6 +9,7 @@ export const filter = {
             filteringLists.func(element);
         }
     },
+
     /**
      * 필터로 등록된 함수들을 전부 실행합니다.
      */
@@ -56,8 +57,8 @@ export const filter = {
     ): string => {
         const uuid = strings.uuid();
 
-        lists[uuid] ??= {
-            func: callback as <T>(elem: T) => void,
+        lists[uuid] = {
+            func: callback,
             scope,
             events: {},
             options
@@ -70,17 +71,21 @@ export const filter = {
      * 해당 UUID를 가진 필터를 제거합니다.
      */
     remove: (uuid: string, skip?: boolean): void => {
-        if (skip && !lists[uuid]) return;
+        if (skip) return;
 
-        if (!lists[uuid]) throw "Given UUID is not exists in the list.";
+        if (!uuid) throw "Given UUID is not valid.";
 
-        filter.events(uuid, "remove");
+        const event = lists[uuid];
 
-        if (lists[uuid].options?.neverExpire && typeof lists[uuid].expire === "function") {
-            lists[uuid].expire!();
+        if (!event) throw "Given UUID is not exists in the list.";
+
+        filter.emit(uuid, "remove");
+
+        if (event.options?.neverExpire && typeof event.expire === "function") {
+            event.expire();
         }
 
-        delete lists[uuid];
+        delete event;
     },
 
     /**
@@ -89,22 +94,26 @@ export const filter = {
     on: (uuid: string, event: string, cb: (...args: any[]) => void): void => {
         if (!uuid || !event) throw "Given UUID or event is not valid.";
 
-        if (!lists[uuid]) throw "Given UUID is not exists in the list.";
+        const event = lists[uuid];
 
-        lists[uuid].events[event] ??= [];
+        if (!event) throw "Given UUID is not exists in the list.";
 
-        lists[uuid].events[event].push(cb);
+        event.events[event] ??= [];
+
+        event.events[event].push(cb);
     },
 
     /**
      * 해당 UUID에 이벤트를 발생시킵니다.
      */
-    events: (uuid: string, event: string, ...args: any[]): void => {
+    emit: (uuid: string, event: string, ...args: any[]): void => {
         if (!uuid || !event) throw "Given UUID or event is not valid.";
 
-        if (!lists[uuid]) throw "Given UUID is not exists in the list.";
+        const event = lists[uuid];
 
-        const eventObj = lists[uuid].events[event];
+        if (!event) throw "Given UUID is not exists in the list.";
+
+        const eventObj = event.events[event];
 
         if (!eventObj) return;
 

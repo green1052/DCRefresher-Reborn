@@ -5,7 +5,7 @@ import ky, { Input, Options } from "ky";
 import browser from "webextension-polyfill";
 
 import { GalleryPreData } from "../@types/post";
-import * as Toast from "../components/toast";
+import toast from "../components/toast";
 import * as block from "../core/block";
 import type IFrame from "../core/frame";
 import { submitComment } from "../utils/comment";
@@ -647,15 +647,15 @@ const panel = {
 
                 if (typeof response === "object") {
                     if (response.result === "success") {
-                        Toast.show(response.msg, false, 3000);
+                        toast.show(response.msg, false, 3000);
                     } else {
-                        Toast.show(response.msg, true, 3000);
+                        toast.show(response.msg, true, 3000);
                     }
 
                     return;
                 }
 
-                Toast.show(response, true, 3000);
+                toast.show(response, true, 3000);
             });
         };
 
@@ -676,15 +676,15 @@ const panel = {
 
                     if (typeof response === "object") {
                         if (response.result === "success") {
-                            Toast.show(response.msg, false, 3000);
+                            toast.show(response.msg, false, 3000);
                         } else {
-                            Toast.show(response.msg, true, 3000);
+                            toast.show(response.msg, true, 3000);
                         }
 
                         return;
                     }
 
-                    Toast.show(response, true, 3000);
+                    toast.show(response, true, 3000);
                 });
         };
 
@@ -720,14 +720,14 @@ const panel = {
                         deleteFunction();
                         KEY_COUNTS[ev.code][1] = 0;
                     } else {
-                        Toast.show("한번 더 D키를 누르면 게시글을 삭제합니다.", true, 1000);
+                        toast.show("한번 더 D키를 누르면 게시글을 삭제합니다.", true, 1000);
                     }
                 } else if (ev.code === "KeyB") {
                     if (KEY_COUNTS[ev.code][1] >= 2) {
                         blockFunction();
                         KEY_COUNTS[ev.code][1] = 0;
                     } else {
-                        Toast.show("한번 더 B키를 누르면 차단합니다.", true, 1000);
+                        toast.show("한번 더 B키를 누르면 차단합니다.", true, 1000);
                     }
                 }
             };
@@ -751,19 +751,19 @@ const panel = {
 
                             if (typeof response === "object") {
                                 if (response.result === "success") {
-                                    Toast.show(response.msg, false, 3000);
+                                    toast.show(response.msg, false, 3000);
 
                                     if (del_chk) {
                                         frame.app.close();
                                     }
                                 } else {
-                                    Toast.show(response.msg, true, 3000);
+                                    toast.show(response.msg, true, 3000);
                                 }
 
                                 return;
                             }
 
-                            Toast.show(response, true, 3000);
+                            toast.show(response, true, 3000);
                         });
                 },
                 () => document.querySelector(".refresher-block-popup")?.remove()
@@ -777,7 +777,7 @@ const panel = {
 
                 if (typeof response === "object") {
                     if (response.result === "success") {
-                        Toast.show(response.msg, false, 3000);
+                        toast.show(response.msg, false, 3000);
 
                         setAsNotice = !setAsNotice;
 
@@ -785,13 +785,13 @@ const panel = {
 
                         pinP.innerHTML = setAsNotice ? "공지로 등록" : "공지 등록 해제";
                     } else {
-                        Toast.show(response.msg, true, 3000);
+                        toast.show(response.msg, true, 3000);
                     }
 
                     return;
                 }
 
-                Toast.show(response, true, 3000);
+                toast.show(response, true, 3000);
             });
         });
 
@@ -802,7 +802,7 @@ const panel = {
 
                 if (typeof response === "object") {
                     if (response.result === "success") {
-                        Toast.show(response.msg, false, 3000);
+                        toast.show(response.msg, false, 3000);
 
                         setAsRecommend = !setAsRecommend;
 
@@ -812,13 +812,13 @@ const panel = {
                         const recommendP = recommend.querySelector("p") as HTMLParagraphElement;
                         recommendP.innerHTML = setAsRecommend ? "개념글 등록" : "개념글 해제";
                     } else {
-                        Toast.show(response.msg, true, 3000);
+                        toast.show(response.msg, true, 3000);
                     }
 
                     return;
                 }
 
-                Toast.show(response, true, 3000);
+                toast.show(response, true, 3000);
             });
         });
 
@@ -829,15 +829,15 @@ const panel = {
 
                 if (typeof response === "object") {
                     if (response.result === "success") {
-                        Toast.show(response.msg, false, 3000);
+                        toast.show(response.msg, false, 3000);
                     } else {
-                        Toast.show(response.msg, true, 3000);
+                        toast.show(response.msg, true, 3000);
                     }
 
                     return;
                 }
 
-                Toast.show(response, true, 3000);
+                toast.show(response, true, 3000);
             });
         });
 
@@ -908,7 +908,7 @@ const panel = {
         //         } = await worker.recognize(image);
         //         element.querySelector("input")!.value = text;
         //     } catch (e) {
-        //         Toast.show("자동 인식에 실패했습니다.", true, 3000);
+        //         toast.show("자동 인식에 실패했습니다.", true, 3000);
         //     } finally {
         //         await worker.terminate();
         //     }
@@ -1413,12 +1413,12 @@ export default {
 
             frame.functions.vote = async (type: number) => {
                 if (frame.collapse) {
-                    Toast.show("댓글 보기를 클릭하여 댓글만 표시합니다.", true, 3000);
+                    toast.show("댓글 보기를 클릭하여 댓글만 표시합니다.", true, 3000);
                     return false;
                 }
 
                 if (!postFetchedData) {
-                    Toast.show("게시글이 로딩될 때까지 잠시 기다려주세요.", true, 3000);
+                    toast.show("게시글이 로딩될 때까지 잠시 기다려주세요.", true, 3000);
                     return false;
                 }
 
@@ -1443,7 +1443,7 @@ export default {
                         return true;
                     }
 
-                    Toast.show(res.counts, true, 2000);
+                    toast.show(res.counts, true, 2000);
 
                     return false;
                 };
@@ -1458,7 +1458,7 @@ export default {
                     }&no=${preData.id}`
                 );
 
-                Toast.show("클립보드에 복사되었습니다.", false, 3000);
+                toast.show("클립보드에 복사되었습니다.", false, 3000);
 
                 return true;
             };
@@ -1604,7 +1604,7 @@ export default {
                     user: { name: string; pw?: string }
                 ) => {
                     if (!postFetchedData) {
-                        Toast.show("게시글이 로딩될 때까지 잠시 기다려주세요.", true, 3000);
+                        toast.show("게시글이 로딩될 때까지 잠시 기다려주세요.", true, 3000);
                         return false;
                     }
 
@@ -1634,7 +1634,7 @@ export default {
                         const res = await submitComment(postData, user, postDom, memo, reply, captcha, grecaptcha);
 
                         if (res.result === "false" || res.result === "PreNotWorking") {
-                            Toast.show(res.message!, true, 3000);
+                            toast.show(res.message!, true, 3000);
                             return false;
                         } else {
                             return true;
@@ -1662,7 +1662,7 @@ export default {
                     }
 
                     if (!deletePressCount[commentId]) {
-                        Toast.show("한번 더 누르면 댓글을 삭제합니다.", true, 1000);
+                        toast.show("한번 더 누르면 댓글을 삭제합니다.", true, 1000);
 
                         deletePressCount[commentId] = Date.now();
 
@@ -1691,7 +1691,7 @@ export default {
                             const parsed = v.split("||");
 
                             if (parsed[0] !== "true") {
-                                Toast.show(parsed[1], true, 3000);
+                                toast.show(parsed[1], true, 3000);
 
                                 return false;
                             }
@@ -1699,18 +1699,18 @@ export default {
 
                         if (v[0] !== "{") {
                             if (v !== "true") {
-                                Toast.show(v, true, 3000);
+                                toast.show(v, true, 3000);
                                 return false;
                             }
 
-                            Toast.show("댓글을 삭제하였습니다.", false, 3000);
+                            toast.show("댓글을 삭제하였습니다.", false, 3000);
                         } else {
                             const parsed = JSON.parse(v);
 
                             if (parsed.result !== "fail") {
-                                Toast.show("댓글을 삭제하였습니다.", false, 3000);
+                                toast.show("댓글을 삭제하였습니다.", false, 3000);
                             } else {
-                                Toast.show(parsed.msg, true, 5000);
+                                toast.show(parsed.msg, true, 5000);
                             }
                         }
 
@@ -1916,7 +1916,7 @@ export default {
                     if (needRefresh) frame.app.$children[0].$children[1].commentKey++;
                 } catch (e) {
                     if (frame.data.comments) {
-                        Toast.show(String(e), true, 3000);
+                        toast.show(String(e), true, 3000);
                     } else {
                         frame.error = {
                             title: "댓글",
