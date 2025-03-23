@@ -721,9 +721,11 @@ tr.gall_writer {
     }
 }
 
-.refresherDark .refresher-user {
-    &[data-me="true"] {
-        background-color: rgb(20, 109, 243);
+html[class*=darkmode] {
+    .refresher-user {
+        &[data-me=true] {
+            background-color: rgb(20, 109, 243);
+        }
     }
 }
 
@@ -983,7 +985,7 @@ tr.gall_writer {
     }
 }
 
-.refresherDark {
+html.darkmode {
     .refresher-input-wrap {
         &.disable {
             input {

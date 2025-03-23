@@ -46,7 +46,7 @@ $dark-tint2: #3d3d3d;
         }
     }
 
-    &.refresherDark .coment_dccon_img {
+    &.darkmode .coment_dccon_img {
         &:not(:hover) {
             border: 2px solid $dark-tint2;
         }
@@ -104,7 +104,7 @@ $dark-tint2: #3d3d3d;
         }
     }
 
-    &.refresherDark,
+    &.darkmode,
     div.refresher-preview-comments,
     .coment_dccon_img:not(:hover) {
         &::before {
@@ -162,7 +162,7 @@ $dark-tint2: #3d3d3d;
         }
     }
 
-    &.refresherDark .stealth_control_button {
+    &.darkmode .stealth_control_button {
         background: $dark-tint-light-opacity;
         border: 1px solid #505050;
 
