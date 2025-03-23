@@ -15,7 +15,8 @@ export default tseslint.config(
         },
         rules: {
             "simple-import-sort/imports": "error",
-            "simple-import-sort/exports": "error"
+            "simple-import-sort/exports": "error",
+            "@typescript-eslint/no-explicit-any": "off"
         }
     },
     ...pluginVue.configs["flat/vue2-recommended"],

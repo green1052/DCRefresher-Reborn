@@ -18,66 +18,66 @@
 </template>
 
 <script lang="ts">
-    import $ from "cash-dom";
-    import Vue from "vue";
+import $ from "cash-dom";
+import Vue from "vue";
 
-    export default Vue.extend({
-        name: "RefresherRange",
-        props: {
-            change: {
-                type: Function
-            },
-
-            placeholder: {
-                type: Number,
-                required: false
-            },
-
-            modname: {
-                type: String
-            },
-
-            id: {
-                type: String
-            },
-
-            value: {
-                type: Number
-            },
-
-            max: {
-                type: Number
-            },
-
-            min: {
-                type: Number
-            },
-
-            step: {
-                type: Number
-            },
-
-            unit: {
-                type: String
-            },
-
-            disabled: {
-                type: Boolean
-            }
+export default Vue.extend({
+    name: "RefresherRange",
+    props: {
+        change: {
+            type: Function
         },
-        mounted() {
-            this.$data.__temp = this.value;
-        },
-        methods: {
-            input(ev: Event) {
-                $(this.$el)
-                    .find(".indicator")
-                    .html(`${ev.target.value}${this.unit ? this.unit : ""}`);
-            },
 
-            update(ev: Event) {
-                this.change?.(ev.target.dataset.module, ev.target.dataset.id, Number(ev.target.value));
-            }
+        placeholder: {
+            type: Number,
+            required: false
+        },
+
+        modname: {
+            type: String
+        },
+
+        id: {
+            type: String
+        },
+
+        value: {
+            type: Number
+        },
+
+        max: {
+            type: Number
+        },
+
+        min: {
+            type: Number
+        },
+
+        step: {
+            type: Number
+        },
+
+        unit: {
+            type: String
+        },
+
+        disabled: {
+            type: Boolean
         }
-    });
+    },
+    mounted() {
+        this.$data.__temp = this.value;
+    },
+    methods: {
+        input(ev: Event) {
+            $(this.$el)
+                .find(".indicator")
+                .html(`${ev.target.value}${this.unit ? this.unit : ""}`);
+        },
+
+        update(ev: Event) {
+            this.change?.(ev.target.dataset.module, ev.target.dataset.id, Number(ev.target.value));
+        }
+    }
+});
 </script>

@@ -265,174 +265,174 @@
 </template>
 
 <script lang="ts">
-    import Vue, { PropType } from "vue";
-    import { Fragment } from "vue-fragment";
+import Vue, { PropType } from "vue";
+import { Fragment } from "vue-fragment";
 
-    import { getURL } from "../utils/getURL";
-    import PreviewButton from "./button.vue";
-    import Comment from "./comment.vue";
-    import CountDown from "./countdown.vue";
-    import dccon from "./dccon.vue";
-    import RefresherDcconPopup from "./dccon.vue";
-    import Icon from "./icon.vue";
-    import RefresherLoader from "./loader.vue";
-    import TimeStamp from "./timestamp.vue";
-    import User from "./user.vue";
-    import WriteComment from "./write_comment.vue";
+import getURL from "../utils/getURL";
+import PreviewButton from "./button.vue";
+import Comment from "./comment.vue";
+import CountDown from "./countdown.vue";
+import dccon from "./dccon.vue";
+import RefresherDcconPopup from "./dccon.vue";
+import Icon from "./icon.vue";
+import RefresherLoader from "./loader.vue";
+import TimeStamp from "./timestamp.vue";
+import User from "./user.vue";
+import WriteComment from "./write_comment.vue";
 
-    interface FrameData {
-        memoText: string;
-        reply: string | null;
-        dccon: DcinsideDccon[];
-        dcconRender: Vue | null;
-        commentKey: number;
-        sibalKey: Record<string, number>;
-    }
+interface FrameData {
+    memoText: string;
+    reply: string | null;
+    dccon: DcinsideDccon[];
+    dcconRender: Vue | null;
+    commentKey: number;
+    sibalKey: Record<string, number>;
+}
 
-    export default Vue.extend({
-        name: "RefresherFrame",
-        components: {
-            RefresherDcconPopup,
-            PreviewButton,
-            TimeStamp,
-            CountDown,
-            User,
-            Comment,
-            WriteComment,
-            Icon,
-            RefresherLoader,
-            Fragment
+export default Vue.extend({
+    name: "RefresherFrame",
+    components: {
+        RefresherDcconPopup,
+        PreviewButton,
+        TimeStamp,
+        CountDown,
+        User,
+        Comment,
+        WriteComment,
+        Icon,
+        RefresherLoader,
+        Fragment
+    },
+    props: {
+        frame: {
+            type: Object as PropType<RefresherFrame>,
+            required: true
         },
-        props: {
-            frame: {
-                type: Object as PropType<RefresherFrame>,
-                required: true
-            },
-            index: {
-                type: Number,
-                required: true
-            }
-        },
-        data: (): FrameData => {
-            return {
-                memoText: "",
-                reply: null,
-                dccon: [],
-                dcconRender: null,
-                commentKey: 0
-            };
-        },
-        created() {
-            this.frame.app.$on("close", () => {
-                this.frame.title = "";
-                this.frame.subtitle = "";
-                this.frame.contents = undefined;
-                this.frame.upvotes = undefined;
-                this.frame.fixedUpvotes = undefined;
-                this.frame.downvotes = undefined;
-                this.frame.error = undefined;
-                this.frame.collapse = undefined;
-                this.frame.data = {};
-                this.frame.functions = {};
-                this.reply = null;
-                this.dccon = [];
-                this.closeDccon();
-                this.commentKey = 0;
-                this.sibalKey = {};
-            });
-        },
-        methods: {
-            getURL,
-            beforeEnter(el: HTMLElement) {
-                el.style.transitionDelay = `${45 * Number(el.dataset.index)}ms`;
-            },
-
-            afterEnter(el: HTMLElement) {
-                el.style.transitionDelay = "";
-            },
-
-            upvote() {
-                return this.frame.functions.vote(1);
-            },
-
-            downvote() {
-                return this.frame.functions.vote(0);
-            },
-
-            share() {
-                return this.frame.functions.share();
-            },
-
-            retry() {
-                return this.frame.functions.retry(false);
-            },
-
-            async writeComment(...args: any[]) {
-                try {
-                    await this.frame.functions.writeComment(...args);
-                    this.retry();
-
-                    return true;
-                } catch {
-                    return false;
-                }
-            },
-
-            toCommentWrite() {
-                document.querySelector<HTMLElement>("#comment_main")?.focus();
-                return true;
-            },
-
-            refresh() {
-                this.retry();
-                return true;
-            },
-
-            renderDcconPopup() {
-                const element = document.createElement("div");
-                document.body.appendChild(element);
-
-                this.dcconRender = new Vue({
-                    el: element,
-                    render: (h) =>
-                        h(dccon, {
-                            on: {
-                                clickDccon: this.clickDccon,
-                                closeDccon: this.closeDccon
-                            }
-                        })
-                });
-
-                return true;
-            },
-
-            clickDccon(dccon: DcinsideDccon[]) {
-                this.dccon = dccon;
-                this.closeDccon();
-            },
-
-            closeDccon() {
-                this.dcconRender?.$destroy();
-                this.dcconRender?.$el.remove();
-
-                this.dcconRender = null;
-            },
-
-            setDccon(value: DcinsideDccon[]) {
-                this.dccon = value;
-            },
-
-            getDccon() {
-                return this.dccon;
-            },
-
-            original() {
-                this.frame.functions.openOriginal();
-                return true;
-            }
+        index: {
+            type: Number,
+            required: true
         }
-        // updated() {
-        //     this.$el.scroll(0, 0);
-        // }
-    });
+    },
+    data: (): FrameData => {
+        return {
+            memoText: "",
+            reply: null,
+            dccon: [],
+            dcconRender: null,
+            commentKey: 0
+        };
+    },
+    created() {
+        this.frame.app.$on("close", () => {
+            this.frame.title = "";
+            this.frame.subtitle = "";
+            this.frame.contents = undefined;
+            this.frame.upvotes = undefined;
+            this.frame.fixedUpvotes = undefined;
+            this.frame.downvotes = undefined;
+            this.frame.error = undefined;
+            this.frame.collapse = undefined;
+            this.frame.data = {};
+            this.frame.functions = {};
+            this.reply = null;
+            this.dccon = [];
+            this.closeDccon();
+            this.commentKey = 0;
+            this.sibalKey = {};
+        });
+    },
+    methods: {
+        getURL,
+        beforeEnter(el: HTMLElement) {
+            el.style.transitionDelay = `${45 * Number(el.dataset.index)}ms`;
+        },
+
+        afterEnter(el: HTMLElement) {
+            el.style.transitionDelay = "";
+        },
+
+        upvote() {
+            return this.frame.functions.vote(1);
+        },
+
+        downvote() {
+            return this.frame.functions.vote(0);
+        },
+
+        share() {
+            return this.frame.functions.share();
+        },
+
+        retry() {
+            return this.frame.functions.retry(false);
+        },
+
+        async writeComment(...args: any[]) {
+            try {
+                await this.frame.functions.writeComment(...args);
+                this.retry();
+
+                return true;
+            } catch {
+                return false;
+            }
+        },
+
+        toCommentWrite() {
+            document.querySelector<HTMLElement>("#comment_main")?.focus();
+            return true;
+        },
+
+        refresh() {
+            this.retry();
+            return true;
+        },
+
+        renderDcconPopup() {
+            const element = document.createElement("div");
+            document.body.appendChild(element);
+
+            this.dcconRender = new Vue({
+                el: element,
+                render: (h) =>
+                    h(dccon, {
+                        on: {
+                            clickDccon: this.clickDccon,
+                            closeDccon: this.closeDccon
+                        }
+                    })
+            });
+
+            return true;
+        },
+
+        clickDccon(dccon: DcinsideDccon[]) {
+            this.dccon = dccon;
+            this.closeDccon();
+        },
+
+        closeDccon() {
+            this.dcconRender?.$destroy();
+            this.dcconRender?.$el.remove();
+
+            this.dcconRender = null;
+        },
+
+        setDccon(value: DcinsideDccon[]) {
+            this.dccon = value;
+        },
+
+        getDccon() {
+            return this.dccon;
+        },
+
+        original() {
+            this.frame.functions.openOriginal();
+            return true;
+        }
+    }
+    // updated() {
+    //     this.$el.scroll(0, 0);
+    // }
+});
 </script>

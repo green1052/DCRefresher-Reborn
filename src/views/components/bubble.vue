@@ -36,47 +36,47 @@
 </template>
 
 <script lang="ts">
-    import Vue from "vue";
+import Vue from "vue";
 
-    export default Vue.extend({
-        name: "RefresherBubble",
-        props: {
-            text: {
-                type: String
-            },
-
-            image: {
-                type: String
-            },
-
-            isRegex: {
-                type: Boolean
-            },
-
-            gallery: {
-                type: String
-            },
-
-            extra: {
-                type: String
-            },
-
-            remove: {
-                type: Function
-            },
-
-            textclick: {
-                type: Function
-            }
+export default Vue.extend({
+    name: "RefresherBubble",
+    props: {
+        text: {
+            type: String
         },
-        methods: {
-            safeTextClick() {
-                this.textclick?.();
-            },
 
-            safeRemoveClick() {
-                this.remove?.();
-            }
+        image: {
+            type: String
+        },
+
+        isRegex: {
+            type: Boolean
+        },
+
+        gallery: {
+            type: String
+        },
+
+        extra: {
+            type: String
+        },
+
+        remove: {
+            type: Function
+        },
+
+        textclick: {
+            type: Function
         }
-    });
+    },
+    methods: {
+        safeTextClick() {
+            this.textclick?.();
+        },
+
+        safeRemoveClick() {
+            this.remove?.();
+        }
+    }
+});
 </script>

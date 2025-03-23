@@ -1,7 +1,7 @@
 import browser from "webextension-polyfill";
 
 import storage from "../utils/storage";
-import { eventBus } from "./eventbus";
+import eventBus from "./eventbus";
 
 export type SettingsStore = Record<string, Record<string, RefresherSettings>>;
 
@@ -41,3 +41,10 @@ eventBus.on("refresherSettingsSync", (store) => {
         })
     );
 });
+
+export default {
+    set,
+    setStore,
+    dump,
+    load
+};

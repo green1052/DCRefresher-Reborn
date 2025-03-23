@@ -1,6 +1,6 @@
-import { getURL } from "./getURL";
+import getURL from "./getURL";
 
-export const inject = (filename: string) => {
+export default (filename: string) => {
     document.addEventListener("DOMContentLoaded", () => {
         const scriptElement = document.createElement("script");
         scriptElement.src = getURL(filename);

@@ -18,9 +18,9 @@
 </template>
 
 <script lang="ts">
-    import Vue from "vue";
+import Vue from "vue";
 
-    export default Vue.extend({
-        name: "RefresherLoader"
-    });
+export default Vue.extend({
+    name: "RefresherLoader"
+});
 </script>

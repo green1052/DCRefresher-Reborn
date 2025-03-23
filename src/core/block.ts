@@ -2,14 +2,11 @@ import browser from "webextension-polyfill";
 
 import storage from "../utils/storage";
 import type { ObjectEnum } from "../utils/types";
-import * as communicate from "./communicate";
-import { eventBus } from "./eventbus";
+import communicate from "./communicate";
+import eventBus from "./eventbus";
 
 const BLOCK_NAMESPACE = "__REFRESHER_BLOCK";
 
-/**
- * 타입의 이름을 저장한 객체입니다.
- */
 export const TYPE_NAMES: Record<RefresherBlockType, string> = {
     NICK: "닉네임",
     ID: "아이디",
@@ -87,7 +84,7 @@ let BLOCK_MODE_CACHE: BlockModeCache = {
     IMAGE: BLOCK_DETECT_MODE.SAME
 };
 
-BLOCK_TYPES_KEYS.forEach(async (key) => {
+for (const key of BLOCK_TYPES_KEYS) {
     const keyCache = await storage.get<RefresherBlockValue[]>(`${BLOCK_NAMESPACE}:${key}`);
     const modeCache = await storage.get<RefresherBlockDetectMode>(`${BLOCK_NAMESPACE}:${key}:MODE`);
 
@@ -97,7 +94,7 @@ BLOCK_TYPES_KEYS.forEach(async (key) => {
     if (!modeCache) await storage.set(`${BLOCK_NAMESPACE}:${key}:MODE`, BLOCK_MODE_CACHE[key]);
 
     SendToBackground();
-});
+}
 
 const checkValidType = (type: string) => {
     return BLOCK_TYPES_KEYS.some((key) => key === type);
@@ -299,28 +296,31 @@ export const getBlockMode = (type: RefresherBlockType) => {
     return BLOCK_MODE_CACHE[type];
 };
 
-communicate.addHook("blockSelected", () => {
-    eventBus.emit("refresherRequestBlock");
-});
+communicate.addHook("blockSelected", () => eventBus.emit("refresherRequestBlock"));
 
-communicate.addHook("dcconSelected", () => {
-    eventBus.emit("refresherRequestBlock");
-});
+communicate.addHook("dcconSelected", () => eventBus.emit("refresherRequestBlock"));
 
-communicate.addHook("dcconAllSelected", () => {
-    eventBus.emit("refresherRequestBlock", { blockAllDccon: true });
-});
+communicate.addHook("dcconAllSelected", () => eventBus.emit("refresherRequestBlock", { blockAllDccon: true }));
 
-communicate.addHook("updateBlocks", (data) => {
-    setStore(data.blocks, data.modes);
-});
+communicate.addHook("updateBlocks", (data) => setStore(data.blocks, data.modes));
 
 requestAnimationFrame(async () => {
-    storage.get<string[]>("refresher.blockQueue").then((value) => {
-        for (const dccon of value) {
-            InternalAddToList("DCCON", dccon, false, false);
-        }
-    });
+    const value = await storage.get<string[]>("refresher.blockQueue");
+
+    for (const dccon of value) {
+        InternalAddToList("DCCON", dccon, false, false);
+    }
 
     storage.set("refresher.blockQueue", []);
 });
+
+export default {
+    TYPE_NAMES,
+    BLOCK_DETECT_MODE_TYPE_NAMES,
+    add,
+    updateMode,
+    check,
+    checkAll,
+    setStore,
+    getBlockMode
+};

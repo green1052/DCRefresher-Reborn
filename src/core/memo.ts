@@ -1,8 +1,8 @@
 import browser from "webextension-polyfill";
 
 import storage from "../utils/storage";
-import * as communicate from "./communicate";
-import { eventBus } from "./eventbus";
+import communicate from "./communicate";
+import eventBus from "./eventbus";
 
 const MEMO_NAMESPACE = "__REFRESHER_MEMO";
 
@@ -108,3 +108,9 @@ communicate.addHook("memoSelected", () => {
 communicate.addHook("updateMemos", ({ memos }) => {
     MEMO_CACHE = memos;
 });
+
+export default {
+    add,
+    get,
+    remove
+};

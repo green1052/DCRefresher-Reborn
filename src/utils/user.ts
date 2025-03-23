@@ -1,7 +1,7 @@
 import $ from "cash-dom";
 
-import * as memo from "../core/memo";
-import * as ip from "./ip";
+import memo from "../core/memo";
+import ip from "./ip";
 import storage from "./storage";
 import type { Nullable, ObjectEnum } from "./types";
 

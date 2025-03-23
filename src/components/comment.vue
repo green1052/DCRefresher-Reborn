@@ -76,161 +76,161 @@
 </template>
 
 <script lang="ts">
-    import $ from "cash-dom";
-    import Vue, { PropType } from "vue";
+import $ from "cash-dom";
+import Vue, { PropType } from "vue";
 
-    import { eventBus } from "../core/eventbus";
-    import timestamp from "./timestamp.vue";
-    import user from "./user.vue";
+import eventBus from "../core/eventbus";
+import timestamp from "./timestamp.vue";
+import user from "./user.vue";
 
-    interface CommentVueData {
-        currentId: string;
-        me: boolean;
-    }
+interface CommentVueData {
+    currentId: string;
+    me: boolean;
+}
 
-    interface VoiceDataComputed {
-        iframe: boolean;
-        src: string;
-        memo: string;
-    }
+interface VoiceDataComputed {
+    iframe: boolean;
+    src: string;
+    memo: string;
+}
 
-    export default Vue.extend({
-        name: "RefresherComment",
-        components: {
-            User: user,
-            TimeStamp: timestamp
+export default Vue.extend({
+    name: "RefresherComment",
+    components: {
+        User: user,
+        TimeStamp: timestamp
+    },
+    props: {
+        comment: {
+            type: Object as PropType<DcinsideCommentObject>,
+            required: true
         },
-        props: {
-            comment: {
-                type: Object as PropType<DcinsideCommentObject>,
-                required: true
-            },
 
-            index: {
-                type: Number
-            },
+        index: {
+            type: Number
+        },
 
-            useWriteComment: {
-                type: Boolean
-            },
+        useWriteComment: {
+            type: Boolean
+        },
 
-            postUser: {
-                type: String
-            },
+        postUser: {
+            type: String
+        },
 
-            delete: {
-                type: Function
-            },
+        delete: {
+            type: Function
+        },
 
-            reply: {
-                type: String
+        reply: {
+            type: String
+        }
+    },
+    data(): CommentVueData {
+        return {
+            currentId: "",
+            me: false
+        };
+    },
+    computed: {
+        getVoiceData(this): VoiceDataComputed | null {
+            if (!this.comment.vr_player) {
+                return null;
             }
-        },
-        data(): CommentVueData {
+
+            const memo = this.comment.memo.split("@^dc^@");
+
             return {
-                currentId: "",
-                me: false
+                iframe: memo[0].indexOf("iframe") > -1,
+                src:
+                    memo[0].indexOf("iframe") > -1
+                        ? memo[0].split('src="')[1].split('"')[0]
+                        : "https://vr.dcinside.com/" + memo[0],
+                memo: memo[1]
             };
         },
-        computed: {
-            getVoiceData(this): VoiceDataComputed | null {
-                if (!this.comment.vr_player) {
-                    return null;
-                }
 
-                const memo = this.comment.memo.split("@^dc^@");
+        isAdmin(): boolean {
+            return document.querySelector(".useradmin_btnbox button") !== null;
+        }
+    },
+    mounted() {
+        if (!this.comment.user.id) {
+            return;
+        }
 
-                return {
-                    iframe: memo[0].indexOf("iframe") > -1,
-                    src:
-                        memo[0].indexOf("iframe") > -1
-                            ? memo[0].split('src="')[1].split('"')[0]
-                            : "https://vr.dcinside.com/" + memo[0],
-                    memo: memo[1]
-                };
-            },
+        const fixedName = document.querySelector("#login_box > .user_info .nickname > em")?.innerHTML;
 
-            isAdmin(): boolean {
-                return document.querySelector(".useradmin_btnbox button") !== null;
-            }
-        },
-        mounted() {
-            if (!this.comment.user.id) {
-                return;
-            }
+        if (fixedName) {
+            const gallogIcon = document.querySelector("#login_box > .user_info > .writer_nikcon")!;
+            const attribute = gallogIcon.getAttribute("onclick")!;
+            const id = /window\.open\('\/\/gallog\.dcinside\.com\/(\w*)'\);/.exec(attribute)![1];
 
-            const fixedName = document.querySelector("#login_box > .user_info .nickname > em")?.innerHTML;
-
-            if (fixedName) {
-                const gallogIcon = document.querySelector("#login_box > .user_info > .writer_nikcon")!;
-                const attribute = gallogIcon.getAttribute("onclick")!;
-                const id = /window\.open\('\/\/gallog\.dcinside\.com\/(\w*)'\);/.exec(attribute)![1];
-
-                if (this.comment.user.id === id) {
-                    this.me = true;
-                }
-            }
-
-            const gallogImageElement = document.querySelector<HTMLImageElement>(
-                "#login_box .user_info .writer_nikcon > img"
-            );
-
-            const click = gallogImageElement && gallogImageElement.getAttribute("onclick");
-
-            if (click) {
-                this.currentId = click.replace(/window\.open\('\/\/gallog\.dcinside\.com\//g, "").replace(/'\);/g, "");
-
-                this.me = this.currentId === this.comment.user.id;
-            }
-
-            if (!this.me && this.postUser) {
-                this.me = this.postUser === this.comment.user.id;
-            }
-
-            if (!this.me && !this.postUser) {
-                eventBus.on("RefresherPostDataLoaded", (obj: IPostInfo) => {
-                    this.me = obj.user?.id === this.comment.user.id;
-                });
-            }
-        },
-        methods: {
-            date(str: string): string {
-                return str.substring(0, 4).match(/\./)
-                    ? `${new Date().getFullYear()}-${str.replace(/\./g, "-")}`
-                    : str.replace(/\./g, "-");
-            },
-
-            safeDelete(): void {
-                if (!this.delete) return;
-
-                let password: string = "";
-
-                if (!this.isAdmin && this.comment.my_cmt === "N") {
-                    password = prompt("비밀번호를 입력하세요.") ?? "";
-
-                    if (!password) return;
-                }
-
-                this.delete(this.comment.no, password, this.comment.my_cmt === "N" && this.isAdmin);
-            },
-
-            setReply() {
-                this.$emit("update:reply", this.reply === this.comment.no ? null : this.comment.no);
-            },
-
-            contextMenu(e: MouseEvent): void {
-                if (!e.target) return;
-                const $element = $(e.target as HTMLElement);
-
-                if ($element.hasClass("written_dccon")) return;
-
-                const src = $element.attr("src");
-                if (!src) return;
-
-                const code = src.replace(/^.*no=/g, "").replace(/^&.*$/g, "");
-
-                eventBus.emit("refresherUserContextMenu", null, null, null, code, null);
+            if (this.comment.user.id === id) {
+                this.me = true;
             }
         }
-    });
+
+        const gallogImageElement = document.querySelector<HTMLImageElement>(
+            "#login_box .user_info .writer_nikcon > img"
+        );
+
+        const click = gallogImageElement && gallogImageElement.getAttribute("onclick");
+
+        if (click) {
+            this.currentId = click.replace(/window\.open\('\/\/gallog\.dcinside\.com\//g, "").replace(/'\);/g, "");
+
+            this.me = this.currentId === this.comment.user.id;
+        }
+
+        if (!this.me && this.postUser) {
+            this.me = this.postUser === this.comment.user.id;
+        }
+
+        if (!this.me && !this.postUser) {
+            eventBus.on("RefresherPostDataLoaded", (obj: IPostInfo) => {
+                this.me = obj.user?.id === this.comment.user.id;
+            });
+        }
+    },
+    methods: {
+        date(str: string): string {
+            return str.substring(0, 4).match(/\./)
+                ? `${new Date().getFullYear()}-${str.replace(/\./g, "-")}`
+                : str.replace(/\./g, "-");
+        },
+
+        safeDelete(): void {
+            if (!this.delete) return;
+
+            let password: string = "";
+
+            if (!this.isAdmin && this.comment.my_cmt === "N") {
+                password = prompt("비밀번호를 입력하세요.") ?? "";
+
+                if (!password) return;
+            }
+
+            this.delete(this.comment.no, password, this.comment.my_cmt === "N" && this.isAdmin);
+        },
+
+        setReply() {
+            this.$emit("update:reply", this.reply === this.comment.no ? null : this.comment.no);
+        },
+
+        contextMenu(e: MouseEvent): void {
+            if (!e.target) return;
+            const $element = $(e.target as HTMLElement);
+
+            if ($element.hasClass("written_dccon")) return;
+
+            const src = $element.attr("src");
+            if (!src) return;
+
+            const code = src.replace(/^.*no=/g, "").replace(/^&.*$/g, "");
+
+            eventBus.emit("refresherUserContextMenu", null, null, null, code, null);
+        }
+    }
+});
 </script>

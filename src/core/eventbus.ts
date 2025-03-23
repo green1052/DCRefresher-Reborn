@@ -64,3 +64,5 @@ export const eventBus: RefresherEventBus = {
         lists[event].splice(index, 1);
     }
 };
+
+export default eventBus;

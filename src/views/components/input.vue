@@ -13,42 +13,42 @@
 </template>
 
 <script>
-    import Vue from "vue";
+import Vue from "vue";
 
-    export default Vue.extend({
-        name: "RefresherInput",
+export default Vue.extend({
+    name: "RefresherInput",
 
-        props: {
-            change: {
-                type: Function
-            },
-
-            placeholder: {
-                type: String,
-                required: false
-            },
-
-            modname: {
-                type: String
-            },
-
-            id: {
-                type: String
-            },
-
-            value: {
-                type: String
-            },
-
-            disabled: {
-                type: Boolean
-            }
+    props: {
+        change: {
+            type: Function
         },
 
-        methods: {
-            update(ev) {
-                this.change?.(ev.target.dataset.module, ev.target.dataset.id, ev.target.value);
-            }
+        placeholder: {
+            type: String,
+            required: false
+        },
+
+        modname: {
+            type: String
+        },
+
+        id: {
+            type: String
+        },
+
+        value: {
+            type: String
+        },
+
+        disabled: {
+            type: Boolean
         }
-    });
+    },
+
+    methods: {
+        update(ev) {
+            this.change?.(ev.target.dataset.module, ev.target.dataset.id, ev.target.value);
+        }
+    }
+});
 </script>
