@@ -2,9 +2,9 @@ import $ from "cash-dom";
 import { Cash } from "cash-dom/dist/cash";
 import ky from "ky";
 
-import * as Toast from "../components/toast";
+import toast from "../components/toast";
 import { queryString } from "../utils/http";
-import * as storage from "../utils/storage";
+import storage from "../utils/storage";
 
 const AVERAGE_COUNTS_SIZE = 7;
 
@@ -115,7 +115,7 @@ export default {
     shortcuts: {
         refreshLists() {
             if (this.memory.lastRefresh + 500 > Date.now()) {
-                Toast.show("너무 자주 새로고칠 수 없습니다.", true, 1000);
+                toast.show("너무 자주 새로고칠 수 없습니다.", true, 1000);
                 return;
             }
 
@@ -124,7 +124,7 @@ export default {
         refreshPause() {
             PAUSE_REFRESH = !PAUSE_REFRESH;
 
-            Toast.show(
+            toast.show(
                 PAUSE_REFRESH
                     ? "이번 페이지에서는 새로고침을 사용하지 않습니다."
                     : "이번 페이지에서 새로고침을 사용합니다.",

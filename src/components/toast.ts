@@ -1,11 +1,12 @@
-import toast from "./toastComponent.vue";
 import Vue from "vue";
+
+import toast from "./toastComponent.vue";
 
 const element = document.createElement("refresher-toast");
 
 let Toast: Vue | null = null;
 
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("load", () => {
     document.body.appendChild(element);
 
     Toast = new Vue({
@@ -40,4 +41,6 @@ export const show = (
     Toast.show();
 };
 
-export default Toast;
+export default {
+    show
+};

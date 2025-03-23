@@ -18,11 +18,11 @@ export const find = (elem: string, parent: HTMLElement): Promise<NodeListOf<HTML
     });
 
 export const listen = (
-    elem: string,
+    element: string,
     parent: HTMLElement,
     callback: (element: NodeListOf<HTMLElement>) => void
 ): MutationObserver => {
-    const parentFind = parent.querySelectorAll<HTMLElement>(elem);
+    const parentFind = parent.querySelectorAll<HTMLElement>(element);
 
     if (parentFind.length > 0) callback(parentFind);
 
@@ -37,7 +37,7 @@ export const listen = (
 
         if (!executed) return;
 
-        const lists = document.querySelectorAll<HTMLElement>(elem);
+        const lists = document.querySelectorAll<HTMLElement>(element);
 
         if (lists.length === 0) return;
 

@@ -1,6 +1,6 @@
 import browser from "webextension-polyfill";
 
-import * as Toast from "../components/toast";
+import toast from "../components/toast";
 import storage from "../utils/storage";
 
 const [installed, updated] = await Promise.all([
@@ -22,7 +22,7 @@ if (installed || updated)
             storage.set("refresher.updated", false);
         }
 
-        Toast.show(content, false, 5000, () => {
+        toast.show(content, false, 5000, () => {
             window.open(`https://github.com/green1052/DCRefresher-Reborn/releases/tag/${currentVersion}`, "_blank");
         });
     }, 3000);
