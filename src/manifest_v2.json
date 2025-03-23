@@ -5,7 +5,6 @@
         "https://*.dcinside.com/*",
         "activeTab",
         "contextMenus",
-        "declarativeNetRequest",
         "storage",
         "unlimitedStorage"
     ],
