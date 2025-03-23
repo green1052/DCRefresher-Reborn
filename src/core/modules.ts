@@ -121,7 +121,7 @@ export const modules = {
             })
         );
 
-        if (!module.enable || !module.url?.test(location.href)) return;
+        if (!module.enable || (module.url && !module.url.test(location.href))) return;
 
         runModule(module);
     }
