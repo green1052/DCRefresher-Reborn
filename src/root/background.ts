@@ -100,9 +100,6 @@ interface Message {
     requestRefresherSettings?: boolean;
     requestRefresherBlocks?: boolean;
     requestRefresherMemos?: boolean;
-
-    requestRefresherBlockIPGrabber?: boolean;
-    enableBlockIPGrabber?: boolean;
 }
 
 if (browser.runtime.getManifest().manifest_version === 3) {
@@ -113,32 +110,6 @@ if (browser.runtime.getManifest().manifest_version === 3) {
 
 const messageHandler = (port: browser.Runtime.Port | null, message: Message) => {
     if (typeof message !== "object") return;
-
-    if (message.requestRefresherBlockIPGrabber) {
-        if (message.enableBlockIPGrabber) {
-            browser.declarativeNetRequest.updateDynamicRules({
-                addRules: [
-                    {
-                        id: 1,
-                        condition: {
-                            urlFilter: "*",
-                            initiatorDomains: ["gall.dcinside.com"],
-                            excludedRequestDomains: ["dcinside.co.kr", "dcinside.com"],
-                            resourceTypes: ["image", "media"],
-                            domainType: "thirdParty"
-                        },
-                        action: {
-                            type: "block"
-                        }
-                    }
-                ]
-            });
-        } else {
-            browser.declarativeNetRequest.updateDynamicRules({
-                removeRuleIds: [1]
-            });
-        }
-    }
 
     if (message.updateUserSetting) {
         storage.set(`${message.name}.${message.key}`, message.value);

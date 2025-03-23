@@ -4,7 +4,6 @@
     "permissions": [
         "activeTab",
         "contextMenus",
-        "declarativeNetRequest",
         "storage",
         "unlimitedStorage"
     ],
