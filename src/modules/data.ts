@@ -1,6 +1,7 @@
+import browser from "webextension-polyfill";
+
 import * as Toast from "../components/toast";
 import storage from "../utils/storage";
-import browser from "webextension-polyfill";
 
 function copyToClipboard(text: string) {
     const tempElem = document.createElement("textarea");
@@ -63,7 +64,7 @@ export default {
                     delete data["refresher.database.lastUpdate"];
 
                     await browser.storage.sync.clear();
-                    browser.storage.sync.set(data);
+                    await browser.storage.sync.set(data);
 
                     Toast.show("데이터를 클라우드에 백업했습니다.", false, 3000);
                 } catch {
@@ -77,8 +78,8 @@ export default {
             browser.storage.sync.get().then(async (data) => {
                 try {
                     await storage.clear();
+                    await storage.setObject(data);
 
-                    storage.setObject(data);
                     Toast.show("데이터를 복원했습니다.", false, 3000);
                 } catch {
                     Toast.show("데이터를 복원하는데 실패했습니다.", true, 3000);
@@ -100,7 +101,6 @@ export default {
                 }
             });
         },
-
         importData(this, _) {
             const input = prompt("데이터를 입력해주세요.");
 
@@ -115,9 +115,7 @@ export default {
                         storage.setObject(data);
                         Toast.show("데이터를 가져왔습니다.", false, 3000);
                     })
-                    .catch(() => {
-                        Toast.show("데이터를 가져오는데 실패했습니다.", true, 3000);
-                    });
+                    .catch(Toast.show("데이터를 가져오는데 실패했습니다.", true, 3000));
             } catch {
                 Toast.show("데이터를 가져오는데 실패했습니다.", true, 3000);
             }
@@ -125,8 +123,10 @@ export default {
         clearData(this, _) {
             if (!confirm("ㄹ?ㅇ")) return;
 
-            storage.clear();
-            Toast.show("데이터를 초기화했습니다.", false, 3000);
+            storage
+                .clear()
+                .then(Toast.show("데이터를 초기화했습니다.", false, 3000))
+                .catch(Toast.show("데이터를 초기화하는데 실패했습니다..", false, 3000));
         }
     }
 } as RefresherModule<{

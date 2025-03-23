@@ -5,6 +5,7 @@
         "https://*.dcinside.com/*",
         "activeTab",
         "contextMenus",
+        "clipboardWrite",
         "storage",
         "unlimitedStorage"
     ],
