@@ -721,7 +721,7 @@ tr.gall_writer {
     }
 }
 
-html[class*=darkmode] {
+html:has(#css-darkmode) {
     .refresher-user {
         &[data-me=true] {
             background-color: rgb(20, 109, 243);
