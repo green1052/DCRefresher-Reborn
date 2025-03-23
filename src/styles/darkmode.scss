@@ -15,7 +15,7 @@ $dark-dc-color-deep: #113475;
 $dark-highlight: #176ef1d5;
 $dark-red: #e21919;
 
-html.darkmode {
+html:has(#css-darkmode) {
     .refresher-comment svg {
         filter: invert(1);
     }

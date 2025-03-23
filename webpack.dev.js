@@ -1,10 +1,11 @@
-const pkg = require("./package.json");
-const common = require("./webpack.common.js");
-const CopyWebpackPlugin = require("copy-webpack-plugin");
-const {merge} = require("webpack-merge");
+import CopyWebpackPlugin from "copy-webpack-plugin";
+import { merge } from "webpack-merge";
 
-module.exports = (env) => {
-    return merge(common, {
+import pkg from "./package.json" with { type: "json" };
+import common from "./webpack.common.js";
+
+export default (env) =>
+    merge(common, {
         mode: "development",
         devtool: "inline-source-map",
         plugins: [
@@ -13,15 +14,15 @@ module.exports = (env) => {
                     {
                         from: `src/${env.manifest}`,
                         to: "manifest.json",
-                        transform: (content) => JSON.stringify({
-                            description: pkg.description,
-                            version: pkg.version,
-                            version_name: `${pkg.version}-dev`,
-                            ...JSON.parse(String(content))
-                        })
+                        transform: (content) =>
+                            JSON.stringify({
+                                description: pkg.description,
+                                version: pkg.version,
+                                version_name: `${pkg.version}-dev`,
+                                ...JSON.parse(String(content))
+                            })
                     }
                 ]
             })
         ]
     });
-};

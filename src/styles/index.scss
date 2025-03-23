@@ -985,7 +985,7 @@ html[class*=darkmode] {
     }
 }
 
-html.darkmode {
+html:has(#css-darkmode) {
     .refresher-input-wrap {
         &.disable {
             input {
