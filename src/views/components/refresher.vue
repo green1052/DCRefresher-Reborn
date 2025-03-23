@@ -277,8 +277,8 @@
                         <button @click="importBlock">가져오기</button>
                     </div>
 
-                    <br >
-                    <br >
+                    <br>
+                    <br>
 
                     <h2>차단 모드</h2>
 
@@ -385,7 +385,7 @@
                         <button @click="importMemo">가져오기</button>
                     </div>
 
-                    <br >
+                    <br>
                 </div>
 
                 <div
@@ -613,13 +613,6 @@ export default Vue.extend({
             ],
             databaseVersion: ""
         };
-    },
-    watch: {
-        modules(modules) {
-            if (modules["다크 모드"]) {
-                this.updateDarkMode(modules["다크 모드"].enable || matchMedia("(prefers-color-scheme: dark)").matches);
-            }
-        }
     },
     async mounted() {
         port.postMessage({
@@ -977,9 +970,6 @@ export default Vue.extend({
                     }
                 });
             });
-        },
-        updateDarkMode(value: boolean) {
-            $(document.documentElement).toggleClass("refresherDark", value);
         },
         async updateIpDatabase() {
             try {
