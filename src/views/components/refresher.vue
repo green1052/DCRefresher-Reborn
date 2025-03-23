@@ -68,12 +68,11 @@
                     <div class="text">
                         <h3>DCRefresher Reborn</h3>
                         <p>
-                            <span class="version">{{ getVersion() }}</span>
+                            <span class="version">{{ getVersion() }} (개발 중지)</span>
                             <a
                                 v-for="link in links"
                                 @click="open(link.url)"
-                            >{{ link.text }}</a
-                            >
+                            >{{ link.text }}</a>
                         </p>
                         <p>
                             <span class="version">
@@ -277,8 +276,8 @@
                         <button @click="importBlock">가져오기</button>
                     </div>
 
-                    <br >
-                    <br >
+                    <br />
+                    <br />
 
                     <h2>차단 모드</h2>
 
@@ -385,7 +384,7 @@
                         <button @click="importMemo">가져오기</button>
                     </div>
 
-                    <br >
+                    <br />
                 </div>
 
                 <div

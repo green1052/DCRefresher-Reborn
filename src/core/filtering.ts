@@ -85,7 +85,7 @@ export const filter = {
             event.expire();
         }
 
-        delete event;
+        delete lists[uuid];
     },
 
     /**
@@ -94,13 +94,10 @@ export const filter = {
     on: (uuid: string, event: string, cb: (...args: any[]) => void): void => {
         if (!uuid || !event) throw "Given UUID or event is not valid.";
 
-        const event = lists[uuid];
-
         if (!event) throw "Given UUID is not exists in the list.";
 
-        event.events[event] ??= [];
-
-        event.events[event].push(cb);
+        lists[uuid].events[event] ??= [];
+        lists[uuid].events[event].push(cb);
     },
 
     /**
@@ -108,12 +105,9 @@ export const filter = {
      */
     emit: (uuid: string, event: string, ...args: any[]): void => {
         if (!uuid || !event) throw "Given UUID or event is not valid.";
-
-        const event = lists[uuid];
-
         if (!event) throw "Given UUID is not exists in the list.";
 
-        const eventObj = event.events[event];
+        const eventObj = lists[uuid].events[event];
 
         if (!eventObj) return;
 
