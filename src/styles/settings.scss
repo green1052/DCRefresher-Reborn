@@ -23,141 +23,145 @@
     }
 }
 
-.refresherDark .refresher-popup {
-    color: white;
+html.darkmode {
+    .refresher-popup {
+        color: white;
 
-    ::-webkit-scrollbar-track {
-        background: #3b3b3b;
-    }
+        ::-webkit-scrollbar-track {
+            background: #3b3b3b;
+        }
 
-    ::-webkit-scrollbar-thumb {
-        background: rgb(100, 100, 100);
-    }
+        ::-webkit-scrollbar-thumb {
+            background: rgb(100, 100, 100);
+        }
 
-    ::-webkit-scrollbar-thumb:hover {
-        background: rgb(124, 124, 124);
-    }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgb(124, 124, 124);
+        }
 
-    .refresher-shortcut,
-    .refresher-setting-category,
-    .refresher-module {
-        background-color: #2c2c2c;
-    }
+        .refresher-shortcut,
+        .refresher-setting-category,
+        .refresher-module {
+            background-color: #2c2c2c;
+        }
 
-    .refresher-setting-category {
-        .refresher-setting {
-            .info {
-                h4 {
-                    font-size: 16px;
-                    font-weight: 500;
+        .refresher-setting-category {
+            .refresher-setting {
+                .info {
+                    h4 {
+                        font-size: 16px;
+                        font-weight: 500;
+                    }
+
+                    p {
+                        font-size: 14px;
+                        color: rgb(190, 190, 190);
+                    }
+
+                    .mute {
+                        font-size: 12px;
+                        color: rgb(100, 100, 100);
+                    }
                 }
 
-                p {
-                    font-size: 14px;
-                    color: rgb(190, 190, 190);
-                }
-
-                .mute {
-                    font-size: 12px;
-                    color: rgb(100, 100, 100);
-                }
-            }
-
-            .control {
-                input[type="text"] {
-                    background-color: #3b3b3b;
-                    border: 1px solid rgb(90, 90, 90);
-                    color: white;
+                .control {
+                    input[type="text"] {
+                        background-color: #3b3b3b;
+                        border: 1px solid rgb(90, 90, 90);
+                        color: white;
+                    }
                 }
             }
         }
-    }
 
-    .tab1 .text .version {
-        color: #dddddd;
-    }
+        .tab1 .text .version {
+            color: #dddddd;
+        }
 
-    .refresher-title-zone {
-        background: linear-gradient(
-                        to bottom,
-                        #222,
-                        #222,
-                        rgb(34, 34, 34),
-                        rgba(34, 34, 34, 0.9),
-                        rgba(34, 34, 34, 0.6),
-                        rgba(34, 34, 34, 0)
-        );
+        .refresher-title-zone {
+            background: linear-gradient(
+                            to bottom,
+                            #222,
+                            #222,
+                            rgb(34, 34, 34),
+                            rgba(34, 34, 34, 0.9),
+                            rgba(34, 34, 34, 0.6),
+                            rgba(34, 34, 34, 0)
+            );
 
-        .float-right {
-            p {
-                $dark-floatright: #d2d2d2;
-                color: $dark-floatright;
+            .float-right {
+                p {
+                    $dark-floatright: #d2d2d2;
+                    color: $dark-floatright;
+
+                    &:hover {
+                        color: color.adjust($dark-floatright, $lightness: -20%, $space: hsl);
+                    }
+
+                    &:active {
+                        color: color.adjust($dark-floatright, $lightness: -30%, $space: hsl);
+                    }
+
+                    &.active {
+                        color: color.adjust($dark-floatright, $lightness: -45%, $space: hsl);
+                    }
+                }
+            }
+        }
+
+        .refresher-module {
+            &.highlight {
+                animation: highlight-blink-dark 1s;
+            }
+        }
+
+        svg {
+            filter: invert(1);
+        }
+
+        .tab3 {
+            h3 {
+                .plus {
+                    &:hover {
+                        background-color: #5c5c5c;
+                    }
+                }
+            }
+
+            .gallery {
+                color: #7a7a7a;
+            }
+
+            .lists {
+                p {
+                    color: #7a7a7a;
+                }
+            }
+        }
+
+        .refresher-bubble {
+            background-color: #3a3a3a;
+            border: 1px solid #444;
+
+            .remove {
+                background-color: #666666;
 
                 &:hover {
-                    color: color.adjust($dark-floatright, $lightness: -20%, $space: hsl);
+                    background-color: color.adjust(#666666, $lightness: 20%);
                 }
 
                 &:active {
-                    color: color.adjust($dark-floatright, $lightness: -30%, $space: hsl);
+                    background-color: color.adjust(#666666, $lightness: 30%);
                 }
-
-                &.active {
-                    color: color.adjust($dark-floatright, $lightness: -45%, $space: hsl);
-                }
-            }
-        }
-    }
-
-    .refresher-module {
-        &.highlight {
-            animation: highlight-blink-dark 1s;
-        }
-    }
-
-    svg {
-        filter: invert(1);
-    }
-
-    .tab3 {
-        h3 {
-            .plus {
-                &:hover {
-                    background-color: #5c5c5c;
-                }
-            }
-        }
-
-        .gallery {
-            color: #7a7a7a;
-        }
-
-        .lists {
-            p {
-                color: #7a7a7a;
-            }
-        }
-    }
-
-    .refresher-bubble {
-        background-color: #3a3a3a;
-        border: 1px solid #444;
-
-        .remove {
-            background-color: #666666;
-
-            &:hover {
-                background-color: color.adjust(#666666, $lightness: 20%);
-            }
-
-            &:active {
-                background-color: color.adjust(#666666, $lightness: 30%);
             }
         }
     }
 }
 
-.refresherDark.refresher-popup {
-    background: #222;
+html.darkmode {
+    .refresher-popup {
+        background: #222;
+    }
 }
 
 .refresher-popup {

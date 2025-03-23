@@ -110,7 +110,7 @@ $desktop: 1024px;
     color: rgb(35, 100, 73);
 }
 
-.refresherDark .refresher-toast {
+.darkmode .refresher-toast {
     border: 1px solid rgba(255, 255, 255, 0.12);
     background-color: #333;
     color: rgb(219, 219, 219);
@@ -124,12 +124,12 @@ $desktop: 1024px;
     }
 }
 
-.refresherDark .refresher-toast[data-type="error"] {
+.darkmode .refresher-toast[data-type="error"] {
     background-color: #d41717;
     color: #fff;
 }
 
-.refresherDark .refresher-toast[data-type="warning"] {
+.darkmode .refresher-toast[data-type="warning"] {
     background-color: #eeb02b;
     color: #000;
 }
