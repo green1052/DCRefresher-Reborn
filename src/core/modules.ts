@@ -4,13 +4,13 @@ import * as dom from "../utils/dom";
 import * as http from "../utils/http";
 import * as ip from "../utils/ip";
 import storage from "../utils/storage";
-import * as block from "./block";
-import * as communicate from "./communicate";
-import { eventBus } from "./eventbus";
-import { filter } from "./filtering";
+import block from "./block";
+import communicate from "./communicate";
+import eventBus from "./eventbus";
+import filter from "./filtering";
 import Frame from "./frame";
-import * as memo from "./memo";
-import * as settings from "./settings";
+import memo from "./memo";
+import settings from "./settings";
 
 type ModuleItem = ValueOf<ItemToRefresherMap>;
 
@@ -65,7 +65,7 @@ export const modules = {
     lists: (): ModuleStore => module_store,
 
     load: (module: RefresherModule): Promise<void> => {
-        return new Promise((resolve) => modules.register(module).then(resolve));
+        return modules.register(module);
     },
 
     register: async (module: RefresherModule): Promise<void> => {
@@ -121,11 +121,13 @@ export const modules = {
             })
         );
 
-        if (!module.enable || (module.url && !module.url.test(location.href))) return;
+        if (!module.enable || module.url?.test(location.href) === false) return;
 
         runModule(module);
     }
 };
+
+export default modules;
 
 communicate.addHook("updateModuleStatus", (data) => {
     module_store[data.name].enable = data.value as boolean;

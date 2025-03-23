@@ -1,7 +1,7 @@
 import $ from "cash-dom";
 
 import * as Toast from "../components/toast";
-import * as communicate from "../core/communicate";
+import communicate from "../core/communicate";
 import color from "../utils/color";
 import type { Nullable, NullableProperties, ObjectEnum } from "../utils/types";
 import { getType } from "../utils/user";

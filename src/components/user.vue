@@ -26,68 +26,68 @@
 </template>
 
 <script lang="ts">
-    import Vue, { PropType } from "vue";
+import Vue, { PropType } from "vue";
 
-    import { eventBus } from "../core/eventbus";
-    import { User } from "../utils/user";
+import eventBus from "../core/eventbus";
+import { User } from "../utils/user";
 
-    export default Vue.extend({
-        name: "RefresherUser",
-        props: {
-            user: {
-                type: Object as PropType<User>,
-                required: true
-            },
-
-            me: {
-                type: Boolean,
-                required: false
-            },
-
-            click: {
-                type: Function
-            }
+export default Vue.extend({
+    name: "RefresherUser",
+    props: {
+        user: {
+            type: Object as PropType<User>,
+            required: true
         },
-        computed: {
-            title(): string {
-                if (this.user.isMember()) {
-                    const ban = this.user.ban;
-                    const ratio = this.user.ratio;
 
-                    return `(${this.user.id})${ban ? ` [${ban}]` : ""}${ratio ? ` [${ratio}]` : ""}`;
-                }
-
-                return `(${this.user.ip})${this.user.ip_data ? ` [${this.user.ip_data}]` : ""}`;
-            },
-
-            userInfo(): string {
-                if (this.user.isMember()) {
-                    const ban = this.user.ban;
-                    const ratio = this.user.ratio;
-
-                    return `(${this.user.id})${ban ? ` [${ban}]` : ""}${ratio ? ` [${ratio}]` : ""}`;
-                }
-
-                return `(${this.user.ip})${this.user.ip_data ? ` [${this.user.ip_data}]` : ""}`;
-            }
+        me: {
+            type: Boolean,
+            required: false
         },
-        methods: {
-            openLink(url: string): void {
-                window.open(url, "_blank");
-            },
 
-            clickHandle(): void {
-                if (typeof this.click === "function") {
-                    this.click(this.user);
-                    return;
-                }
-
-                if (this.user.id) this.openLink(`https://gallog.dcinside.com/${this.user.id}`);
-            },
-
-            contextMenu(): void {
-                eventBus.emit("refresherUserContextMenu", this.user.nick, this.user.id, this.user.ip, null, null);
-            }
+        click: {
+            type: Function
         }
-    });
+    },
+    computed: {
+        title(): string {
+            if (this.user.isMember()) {
+                const ban = this.user.ban;
+                const ratio = this.user.ratio;
+
+                return `(${this.user.id})${ban ? ` [${ban}]` : ""}${ratio ? ` [${ratio}]` : ""}`;
+            }
+
+            return `(${this.user.ip})${this.user.ip_data ? ` [${this.user.ip_data}]` : ""}`;
+        },
+
+        userInfo(): string {
+            if (this.user.isMember()) {
+                const ban = this.user.ban;
+                const ratio = this.user.ratio;
+
+                return `(${this.user.id})${ban ? ` [${ban}]` : ""}${ratio ? ` [${ratio}]` : ""}`;
+            }
+
+            return `(${this.user.ip})${this.user.ip_data ? ` [${this.user.ip_data}]` : ""}`;
+        }
+    },
+    methods: {
+        openLink(url: string): void {
+            window.open(url, "_blank");
+        },
+
+        clickHandle(): void {
+            if (typeof this.click === "function") {
+                this.click(this.user);
+                return;
+            }
+
+            if (this.user.id) this.openLink(`https://gallog.dcinside.com/${this.user.id}`);
+        },
+
+        contextMenu(): void {
+            eventBus.emit("refresherUserContextMenu", this.user.nick, this.user.id, this.user.ip, null, null);
+        }
+    }
+});
 </script>

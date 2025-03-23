@@ -111,3 +111,5 @@ export const filter = {
         for (const event of eventObj) event(...args);
     }
 };
+
+export default filter;

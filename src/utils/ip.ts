@@ -1,4 +1,4 @@
-import * as storage from "./storage";
+import storage from "./storage";
 import { Nullable } from "./types";
 
 let ipData: Record<string, string>;
@@ -17,4 +17,9 @@ export const ISPData = (ip: string): ISPInfo => {
 export const format = (data: ISPInfo): Nullable<string> => {
     const { name } = data;
     return name ?? null;
+};
+
+export default {
+    ISPData,
+    format
 };

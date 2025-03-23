@@ -277,8 +277,8 @@
                         <button @click="importBlock">가져오기</button>
                     </div>
 
-                    <br>
-                    <br>
+                    <br >
+                    <br >
 
                     <h2>차단 모드</h2>
 
@@ -385,7 +385,7 @@
                         <button @click="importMemo">가져오기</button>
                     </div>
 
-                    <br>
+                    <br >
                 </div>
 
                 <div
@@ -515,7 +515,7 @@ import browser from "webextension-polyfill";
 
 import { BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES } from "../../core/block";
 import { TYPE_NAMES as MEMO_TYPE_NAMES } from "../../core/memo";
-import { getURL } from "../../utils/getURL";
+import getURL from "../../utils/getURL";
 import storage from "../../utils/storage";
 import bubble from "./bubble.vue";
 import checkbox from "./checkbox.vue";

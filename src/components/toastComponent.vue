@@ -30,54 +30,54 @@
 </template>
 
 <script lang="ts">
-    import Vue from "vue";
+import Vue from "vue";
 
-    interface RefresherProps {
-        title: string;
-        id: number;
-        content: string;
-        clickCb: ((e: MouseEvent) => void) | null;
-        open: boolean;
-        type: "info" | "error" | null;
-        autoClose: number;
-    }
+interface RefresherProps {
+    title: string;
+    id: number;
+    content: string;
+    clickCb: ((e: MouseEvent) => void) | null;
+    open: boolean;
+    type: "info" | "error" | null;
+    autoClose: number;
+}
 
-    export default Vue.extend({
-        name: "RefresherToast",
-        data: (): RefresherProps => {
-            return {
-                title: "",
-                id: 0,
-                content: "",
-                clickCb: null,
-                open: false,
-                type: null,
-                autoClose: 0
-            };
+export default Vue.extend({
+    name: "RefresherToast",
+    data: (): RefresherProps => {
+        return {
+            title: "",
+            id: 0,
+            content: "",
+            clickCb: null,
+            open: false,
+            type: null,
+            autoClose: 0
+        };
+    },
+    methods: {
+        click(e: MouseEvent) {
+            this.clickCb?.(e);
         },
-        methods: {
-            click(e: MouseEvent) {
-                this.clickCb?.(e);
-            },
 
-            update(content: string, type: boolean, autoClose: boolean | number, click?: () => void) {
-                this.content = content;
-                this.id = Math.random();
-                this.type = type ? "error" : "info";
+        update(content: string, type: boolean, autoClose: boolean | number, click?: () => void) {
+            this.content = content;
+            this.id = Math.random();
+            this.type = type ? "error" : "info";
 
-                if (click !== undefined) this.clickCb = click;
+            if (click !== undefined) this.clickCb = click;
 
-                if ((typeof autoClose === "number" && autoClose > 0) || autoClose === true)
-                    this.autoClose = window.setTimeout(this.hide, typeof autoClose === "number" ? autoClose : 5000);
-            },
+            if ((typeof autoClose === "number" && autoClose > 0) || autoClose === true)
+                this.autoClose = window.setTimeout(this.hide, typeof autoClose === "number" ? autoClose : 5000);
+        },
 
-            show() {
-                this.open = true;
-            },
+        show() {
+            this.open = true;
+        },
 
-            hide() {
-                this.open = false;
-            }
+        hide() {
+            this.open = false;
         }
-    });
+    }
+});
 </script>

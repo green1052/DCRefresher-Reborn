@@ -15,60 +15,60 @@
             <img
                 :src="getURL(`/assets/icons/upvote.webp`)"
                 @click="(e) => clickScroll(e, `up`)"
-            >
+            />
             <img
                 :src="getURL(`/assets/icons/downvote.webp`)"
                 @click="(e) => clickScroll(e, `down`)"
-            >
+            />
         </div>
     </div>
 </template>
 
 <script lang="ts">
-    import Vue from "vue";
+import Vue from "vue";
 
-    import { getURL } from "../utils/getURL";
-    import frame from "./frame.vue";
+import getURL from "../utils/getURL";
+import frame from "./frame.vue";
 
-    export default Vue.extend({
-        name: "RefresherGroup",
-        components: {
-            "refresher-frame": frame
+export default Vue.extend({
+    name: "RefresherGroup",
+    components: {
+        "refresher-frame": frame
+    },
+    methods: {
+        getURL,
+        clickScroll(ev: MouseEvent, type: "up" | "down") {
+            const y = type === "up" ? 0 : this.$el.scrollHeight;
+            this.$el.scroll(0, y);
         },
-        methods: {
-            getURL,
-            clickScroll(ev: MouseEvent, type: "up" | "down") {
-                const y = type === "up" ? 0 : this.$el.scrollHeight;
-                this.$el.scroll(0, y);
-            },
 
-            clickHandle(ev: MouseEvent) {
-                if (ev.target !== this.$el) return ev;
+        clickHandle(ev: MouseEvent) {
+            if (ev.target !== this.$el) return ev;
 
-                if (window.getSelection()?.toString().length !== 0) return ev;
+            if (window.getSelection()?.toString().length !== 0) return ev;
 
-                (this.$root.$children[0] as RefresherFrameAppVue).outerClick();
-            },
+            (this.$root.$children[0] as RefresherFrameAppVue).outerClick();
+        },
 
-            wheelHandle(e: WheelEvent) {
-                const onScroll = (this.$root.$children[0] as RefresherFrameAppVue).$data.onScroll;
+        wheelHandle(e: WheelEvent) {
+            const onScroll = (this.$root.$children[0] as RefresherFrameAppVue).$data.onScroll;
 
-                if (typeof onScroll !== "function") return;
+            if (typeof onScroll !== "function") return;
 
-                onScroll(e, this.$root.$children[0], this.$el);
-            }
+            onScroll(e, this.$root.$children[0], this.$el);
         }
-    });
+    }
+});
 </script>
 
 <style lang="scss" scoped>
-    #scroll {
-        position: fixed;
-        right: 0;
-        bottom: 5px;
-        width: 100px;
-        z-index: 1000;
-        display: grid;
-        user-select: none;
-    }
+#scroll {
+    position: fixed;
+    right: 0;
+    bottom: 5px;
+    width: 100px;
+    z-index: 1000;
+    display: grid;
+    user-select: none;
+}
 </style>

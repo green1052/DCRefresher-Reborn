@@ -41,3 +41,8 @@ export const clearHook = (type: string, id: string): boolean => {
 
     return oldLength !== handlerStorage[type].length;
 };
+
+export default {
+    addHook,
+    clearHook
+};

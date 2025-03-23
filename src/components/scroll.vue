@@ -13,15 +13,15 @@
 </template>
 
 <script lang="ts">
-    import Vue from "vue";
+import Vue from "vue";
 
-    export default Vue.extend({
-        name: "RefresherScroll",
-        props: {
-            side: {
-                type: String,
-                required: true
-            }
+export default Vue.extend({
+    name: "RefresherScroll",
+    props: {
+        side: {
+            type: String,
+            required: true
         }
-    });
+    }
+});
 </script>

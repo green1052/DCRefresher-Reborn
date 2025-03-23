@@ -130,3 +130,18 @@ export const galleryTypeName = (url: string): string => commentGallTypes[gallery
  * @param name Query 이름
  */
 export const queryString = (name: string): string | null => new URLSearchParams(location.search).get(name);
+
+export default {
+    urls,
+    types,
+    viewRegex,
+    mgall,
+    checkMinor,
+    checkMini,
+    checkPerson,
+    galleryType,
+    view,
+    mergeParamURL,
+    galleryTypeName,
+    queryString
+};

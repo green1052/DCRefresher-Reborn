@@ -1,6 +1,6 @@
 import $ from "cash-dom";
 
-import * as communicate from "../core/communicate";
+import communicate from "../core/communicate";
 
 export default {
     name: "이미지 검색",

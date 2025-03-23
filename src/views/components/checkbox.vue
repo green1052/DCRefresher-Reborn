@@ -21,99 +21,99 @@
 </template>
 
 <script lang="ts">
-    import Vue from "vue";
+import Vue from "vue";
 
-    export default Vue.extend({
-        name: "RefresherCheckbox",
+export default Vue.extend({
+    name: "RefresherCheckbox",
 
-        props: {
-            change: {
-                type: Function
-            },
+    props: {
+        change: {
+            type: Function
+        },
 
-            modname: {
-                type: String,
-                required: false
-            },
+        modname: {
+            type: String,
+            required: false
+        },
 
-            id: {
-                type: String
-            },
+        id: {
+            type: String
+        },
 
-            checked: {
-                type: Boolean
-            },
+        checked: {
+            type: Boolean
+        },
 
-            disabled: {
-                type: Boolean
+        disabled: {
+            type: Boolean
+        }
+    },
+
+    data() {
+        return {
+            on: this.checked,
+            _down: false,
+            translateX: undefined,
+            onceOut: false
+        };
+    },
+
+    methods: {
+        toggle() {
+            if (this.disabled) {
+                return;
+            }
+
+            if (this.onceOut) {
+                this.onceOut = false;
+
+                return;
+            }
+
+            this.on = !this.on;
+
+            this.change?.(this.$el.dataset.module, this.$el.dataset.id, this.on);
+        },
+
+        hover(ev: PointerEvent) {
+            if (this.disabled) {
+                return;
+            }
+
+            if (this._down) {
+                this.translateX = Math.ceil(ev.offsetX);
             }
         },
 
-        data() {
-            return {
-                on: this.checked,
-                _down: false,
-                translateX: undefined,
-                onceOut: false
-            };
+        down() {
+            if (this.disabled) {
+                return;
+            }
+
+            this._down = true;
         },
 
-        methods: {
-            toggle() {
-                if (this.disabled) {
-                    return;
-                }
+        up() {
+            if (this.disabled) {
+                return;
+            }
 
-                if (this.onceOut) {
-                    this.onceOut = false;
+            this._down = false;
+            this.translateX = undefined;
+        },
+        out() {
+            if (this.disabled) {
+                return;
+            }
 
-                    return;
-                }
-
-                this.on = !this.on;
-
-                this.change?.(this.$el.dataset.module, this.$el.dataset.id, this.on);
-            },
-
-            hover(ev: PointerEvent) {
-                if (this.disabled) {
-                    return;
-                }
-
-                if (this._down) {
-                    this.translateX = Math.ceil(ev.offsetX);
-                }
-            },
-
-            down() {
-                if (this.disabled) {
-                    return;
-                }
-
-                this._down = true;
-            },
-
-            up() {
-                if (this.disabled) {
-                    return;
-                }
-
+            if (this._down) {
                 this._down = false;
                 this.translateX = undefined;
-            },
-            out() {
-                if (this.disabled) {
-                    return;
-                }
+                this.toggle();
 
-                if (this._down) {
-                    this._down = false;
-                    this.translateX = undefined;
-                    this.toggle();
-
-                    this.onceOut = true;
-                }
+                this.onceOut = true;
             }
         }
-    });
+    }
+});
 </script>
