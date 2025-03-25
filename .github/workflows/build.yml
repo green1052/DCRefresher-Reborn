@@ -3,6 +3,7 @@ on:
   push:
     tags:
       - "*.*.*"
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -47,6 +48,7 @@ jobs:
           addon-path: mv2.zip
           auth-api-issuer: ${{ secrets.AUTH_API_ISSUER }}
           auth-api-secret: ${{ secrets.AUTH_API_SECRET }}
+          release-note: https://github.com/green1052/DCRefresher-Reborn/releases/tag/${{ github.ref }}
 
       - name: Release CWS
         uses: browser-actions/release-chrome-extension@latest
