@@ -1379,7 +1379,7 @@ export default {
     },
     require: ["filter", "eventBus", "Frame", "http"],
     func(filter, eventBus, Frame, http) {
-        inject("../assets/js/grecaptcha.js");
+        inject("/assets/js/grecaptcha.js");
 
         blockPreset.day = this.status.blockPresetDay;
         blockPreset.reason = this.status.blockPresetReason;
@@ -1614,6 +1614,8 @@ export default {
 
                     const getGreCaptchaToken = () =>
                         new Promise<string>((resolve) => {
+                            setTimeout(() => resolve(""), 3000);
+
                             window.postMessage(
                                 {
                                     type: "refresherGrecaptcha",

@@ -110,6 +110,7 @@ communicate.addHook("updateMemos", ({ memos }) => {
 });
 
 export default {
+    TYPE_NAMES,
     add,
     get,
     remove
