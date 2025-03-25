@@ -2,60 +2,118 @@
     min-width: unset;
 
     .wrap_inner {
-        width: 95%;
-        max-width: 1000px;
-        margin-left: auto;
-        margin-right: auto;
-        margin-bottom: 25px;
+        width: unset;
     }
 
-    .list_wrap {
+    .list_wrap,
+    .view_wrap {
         min-width: unset;
         width: 100%;
     }
 
-    .dchead,
-    .gnb,
-    #container {
-        width: unset !important;
+    .width1160 .dchead,
+    .width1160 .gnb,
+    .width1160 #container,
+    .width1160 .info_policy,
+    .width1160 .copyright {
+        width: unset;
     }
 
     .dchead {
-        height: 50px;
+        height: 100px;
+    }
+
+    .list_wrap .dc_logo,
+    .gnb_bar {
+        display: none;
+    }
+
+    .width1160 .top_search {
+        display: none;
     }
 
     .area_links {
-        right: 5px;
+        right: 13px;
     }
 
-    .visit_bookmark {
-        width: 80% !important;
+    .dc_logo {
+        display: none;
     }
 
-    .ad_bottom_list,
-    .top_search,
-    .gnb_bar,
-    .dcfoot,
-    .dc_logo,
-    .issuebox,
+    .gall_exposure,
+    .minor_ranking_box,
+    .listwrap .issue_contentbox {
+        display: none;
+    }
+
     .right_content {
-        display: none !important;
+        float: initial;
+        width: initial;
+
+        .user_info,
+        .user_option,
+        .rightbanner1,
+        #my_minor_pop,
+        article {
+            display: none;
+        }
     }
 
-    .list_array_option {
+    .list_array_option,
+    .listwrap .visit_list,
+    .listwrap .issuebox {
         width: 100% !important;
     }
 
+    .listwrap .visit_history {
+        width: 98.5%;
+    }
+
+    .listwrap .visit_list {
+        display: contents;
+    }
+
+    .array_tab button {
+        width: 72px;
+    }
+
     .page_head h2 {
-        font-size: 25px;
+        font-size: 23px;
+    }
+
+    .left_content .visit_list li a {
+        width: 60px;
     }
 
     .gall_issuebox {
         padding-top: unset;
     }
 
-    .listwrap {
+    .listwrap .minor_intro_box {
+        padding: 0 0 0 2px;
+    }
+
+    main.listwrap {
         display: flex;
+    }
+
+    .width1160 .wrap_inner {
+        width: 95%;
+        max-width: 1000px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .width1160 .dc_all {
+        display: none;
+    }
+
+    .ad_bottom_list {
+        display: none;
+    }
+
+    .input_write_tit {
+        float: initial;
     }
 }
 
@@ -64,19 +122,15 @@
         display: flex;
     }
 
-    .left_content {
+    .width1160 .left_content {
         width: unset !important;
     }
 
-    .wrap_inner {
+    .width1160 .wrap_inner {
         width: 95%;
-        max-width: 1000px;
+        max-width: 1200px;
         margin-left: auto;
         margin-right: auto;
-    }
-
-    .cmt_write {
-        width: 100%;
     }
 
     .cmt_txt_cont {
@@ -85,24 +139,28 @@
         textarea {
             width: 100px;
 
-            @media screen and (min-width: 1145px) {
-                width: 770px !important;
+            @media screen and (min-width: 1220px) {
+                width: 956px !important;
+            }
+
+            @media screen and (min-width: 1145px) and (max-width: 1220px) {
+                width: 882px !important;
             }
 
             @media screen and (min-width: 1070px) and (max-width: 1145px) {
-                width: 750px !important;
+                width: 808px !important;
             }
 
             @media screen and (min-width: 1015px) and (max-width: 1070px) {
-                width: 700px !important;
+                width: 758px !important;
             }
 
             @media screen and (min-width: 960px) and (max-width: 1015px) {
-                width: 630px !important;
+                width: 708px !important;
             }
 
             @media screen and (min-width: 850px) and (max-width: 960px) {
-                width: 580px !important;
+                width: 608px !important;
             }
 
             @media screen and (min-width: 740px) and (max-width: 850px) {
