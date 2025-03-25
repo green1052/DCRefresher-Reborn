@@ -7,7 +7,7 @@
             <img
                 :key="error + 1"
                 :src="getURL(`/assets/icons/${id}.webp`)"
-            />
+            >
         </transition>
         <transition name="refresher-shake">
             <p

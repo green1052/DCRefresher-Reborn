@@ -9,14 +9,14 @@
                 placeholder="닉네임"
                 type="text"
                 @change="(v) => validCheck('id', v.target.value)"
-            >
+            />
             <div />
             <input
                 v-model="unsignedUserPW"
                 placeholder="비밀번호"
                 type="password"
                 @change="(v) => validCheck('pw', v.target.value)"
-            >
+            />
         </div>
         <div class="refresher-comment-body">
             <div
@@ -66,9 +66,7 @@
                 }"
                 class="whoami"
             >
-                <span @click="toggleEditUser"
-                    >클릭하면 작성자 정보 수정 모드를 {{ editUser ? "비활성화" : "활성화" }}시킵니다.</span
-                >
+                <span @click="toggleEditUser">클릭하면 작성자 정보 수정 모드를 {{ editUser ? "비활성화" : "활성화" }}시킵니다.</span>
             </div>
         </div>
     </div>

@@ -7,7 +7,9 @@
             <p class="desc">
                 {{ desc }}
             </p>
-            <p class="mute">요구 유틸 : {{ requirement?.join(", ") || "없음" }}</p>
+            <p class="mute">
+요구 유틸 : {{ requirement?.join(", ") || "없음" }}
+</p>
         </div>
         <div class="right">
             <refresher-checkbox
