@@ -177,7 +177,7 @@
                         :class="
                             frame.data.useImageBlock &&
                             frame.data.type === 'icon_txt' &&
-                            'refresher-preview-block-media'
+                                'refresher-preview-block-media'
                         "
                         class="refresher-preview-contents-actual"
                         v-html="frame.contents"
@@ -205,11 +205,11 @@
                             <Comment
                                 v-for="(comment, i) in frame.data.comments.comments"
                                 :key="comment.no"
-                                v-model:reply="reply"
                                 :comment="comment"
                                 :delete="frame.functions.deleteComment"
                                 :index="i + 1"
                                 :post-user="frame.data.postUserId"
+                                :reply.sync="reply"
                                 :use-write-comment="frame.data.useWriteComment"
                             />
                         </transition-group>
@@ -217,9 +217,9 @@
 
                     <div v-if="frame.data.useWriteComment">
                         <WriteComment
-                            v-model:reply="reply"
                             :func="writeComment"
                             :get-dccon="getDccon"
+                            :reply.sync="reply"
                             @setDccon="setDccon"
                         />
                     </div>
