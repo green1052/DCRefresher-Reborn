@@ -43,12 +43,12 @@ const addRefreshText = (issueBox: HTMLElement) => {
     }
 };
 
-let archiveArticleConfig = false;
-
-(async () => {
-    if (!(await storage.get<boolean>("미리보기.enable"))) return;
-    archiveArticleConfig = await storage.get<boolean>("미리보기.archiveArticle");
-})();
+// let archiveArticleConfig = false;
+//
+// (async () => {
+//     if (!(await storage.get<boolean>("미리보기.enable"))) return;
+//     archiveArticleConfig = await storage.get<boolean>("미리보기.archiveArticle");
+// })();
 
 export default {
     name: "글 목록 새로고침",
@@ -337,6 +337,8 @@ export default {
             this.memory.calledByPageTurn = true;
             this.memory.load!(undefined, true);
         });
+
+        run();
 
         if (!this.status.useBetterBrowse) return;
 
