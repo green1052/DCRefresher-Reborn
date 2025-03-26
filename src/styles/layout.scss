@@ -194,22 +194,23 @@
 }
 
 .refresherHideUselessView.refresherPushToRight {
+    .list_array_option,
     .left_content,
-    .issuebox,
-    .list_array_option {
+    .listwrap .issuebox {
         width: 1160px;
     }
 
-    .minor_intro_box {
+    .listwrap .minor_intro_box,
+    .listwrap .visit_list {
         width: 1000px;
     }
 
-    .newvisit_history {
-        width: unset;
+    .listwrap .visit_history {
+        width: 1134px;
     }
 
-    .stickyunit {
-        display: none;
+    .list_wrap.width1160 .newvisit_history {
+        width: unset;
     }
 }
 
