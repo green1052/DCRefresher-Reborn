@@ -9,7 +9,6 @@ import toast from "../components/toast";
 import * as block from "../core/block";
 import type IFrame from "../core/frame";
 import { submitComment } from "../utils/comment";
-import { findNeighbor } from "../utils/dom";
 import getURL from "../utils/getURL";
 import * as http from "../utils/http";
 import { queryString } from "../utils/http";
@@ -919,72 +918,31 @@ const panel = {
 };
 
 const getRelevantData = (ev: MouseEvent): GalleryPreData => {
-    const target = ev.target as HTMLElement;
-    const isTR = target.tagName === "TR";
+    const $element = $(ev.target as HTMLElement).closest(".ub-post");
 
-    const listID = isTR ? target.querySelector<HTMLElement>(".gall_num") : findNeighbor(target, ".gall_num", 5, null);
+    const id = $element.attr("data-no") ?? "";
+    const notice = false;
+    const recommend = $element.data("type") === "icon_recomimg";
 
-    let id = "";
-    let gallery = "";
+    let type = "";
     let title = "";
     let link = "";
-    let notice = false;
-    let recommend = false;
-    let type = "";
+    let gallery = "";
 
-    let linkElement: HTMLLinkElement | null;
+    const $em = $element.find(".icon_img");
 
-    if (listID) {
-        if (listID.innerText === "공지") {
-            let href: string;
-
-            if (isTR) {
-                href = document.querySelector("a")?.getAttribute("href") ?? "";
-            } else {
-                href = findNeighbor(target, "a", 5, null)?.getAttribute("href") ?? "";
-            }
-
-            id = new URLSearchParams(href).get("no") ?? "";
-            notice = true;
-        } else {
-            id = listID.innerText;
-        }
-
-        const emElement = isTR ? target.querySelector("em.icon_img") : findNeighbor(target, "em.icon_img", 5, null);
-
-        if (emElement) {
-            type = emElement.className.split(" ").at(-1) ?? "icon_txt";
-            recommend = emElement.classList.contains("icon_recomimg");
-        }
-
-        linkElement = isTR
-            ? target.querySelector<HTMLLinkElement>("a:not(.reply_numbox)")
-            : (findNeighbor(target, "a:not(.reply_numbox)", 3, null) as HTMLLinkElement);
-
-        if (linkElement) title = linkElement.innerText;
-    } else {
-        linkElement = isTR
-            ? target.querySelector<HTMLLinkElement>("a")
-            : (findNeighbor(ev.target as HTMLElement, "a", 2, null) as HTMLLinkElement);
-
-        const pt = isTR
-            ? target.querySelector(".txt_box")
-            : findNeighbor(ev.target as HTMLElement, ".txt_box", 2, null);
-        if (pt) title = pt.innerHTML;
+    if ($em.length) {
+        type = $em.attr("class")?.split(" ").at(-1) ?? "icon_txt";
     }
 
-    if (linkElement) {
-        link = linkElement.href;
+    const $linkElement = $element.find("a:not(.reply_numbox)");
 
-        const linkNumberMatch = link.match(/&no=.+/);
-        const linkIdMatch = link.match(/id=.+/);
+    if ($linkElement.length) {
+        title = $linkElement.text().trim();
 
-        if (!linkNumberMatch || !linkIdMatch) {
-            return;
-        }
-
-        id = linkNumberMatch[0].replace("&no=", "").replace(/&.+/g, "");
-        gallery = linkIdMatch[0].replace(/id=/g, "").replace(/&.+/g, "");
+        const url = new URL($linkElement.attr("href") ?? "", location.href);
+        link = url.href;
+        gallery = url.searchParams.get("id") ?? "";
     }
 
     return {
@@ -2188,17 +2146,12 @@ export default {
                 element.addEventListener("contextmenu", (e) => {
                     e.preventDefault();
 
-                    let href = (e.target as HTMLAnchorElement).href;
+                    const $element = $(e.target as HTMLAnchorElement);
 
-                    if (!href) {
-                        if ((e.target as HTMLElement).tagName === "TR") {
-                            href = document.querySelector("a")?.getAttribute("href") ?? "";
-                        } else {
-                            href = findNeighbor(e.target as HTMLElement, "a", 5, null)?.getAttribute("href") ?? "";
-                        }
-                    }
-
-                    location.href = href;
+                    location.href =
+                        $element.attr("href") ??
+                        $element.closest(".us-post").find("a:not(.reply_numbox)").attr("href") ??
+                        location.href;
                 });
             }
 

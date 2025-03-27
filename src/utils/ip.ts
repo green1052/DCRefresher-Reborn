@@ -1,11 +1,7 @@
 import storage from "./storage";
 import { Nullable } from "./types";
 
-let ipData: Record<string, string>;
-
-storage.get<Record<string, string>>("refresher.database.ip").then((data) => {
-    ipData = data;
-});
+const ipData: Record<string, string> = await storage.get("refresher.database.ip");
 
 export const ISPData = (ip: string): ISPInfo => {
     return {
