@@ -1,4 +1,5 @@
 import "./styles/index.scss";
+import "./core/memo";
 import "./core/block";
 import "./core/updateCheck";
 
