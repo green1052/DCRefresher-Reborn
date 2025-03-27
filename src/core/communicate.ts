@@ -20,7 +20,7 @@ browser.runtime.onMessage.addListener((message) => {
 export const addHook = (type: string, callback: (...args: any[]) => void): string => {
     handlerStorage[type] ??= [];
 
-    const id = uuid();
+    const id = crypto.randomUUID();
 
     handlerStorage[type].push({
         uuid: id,
