@@ -43,12 +43,9 @@ const addRefreshText = (issueBox: HTMLElement) => {
     }
 };
 
-// let archiveArticleConfig = false;
-//
-// (async () => {
-//     if (!(await storage.get<boolean>("미리보기.enable"))) return;
-//     archiveArticleConfig = await storage.get<boolean>("미리보기.archiveArticle");
-// })();
+const archiveArticleConfig = (await storage.get<boolean>("미리보기.enable"))
+    ? await storage.get<boolean>("미리보기.archiveArticle")
+    : false;
 
 export default {
     name: "글 목록 새로고침",
@@ -198,7 +195,7 @@ export default {
             const newPostList: Cash[] = [];
 
             const oldCache = Array.from($oldList.find(".gall_num")).map((element) => element!.innerText);
-            // const newCache = Array.from($newList.find(".gall_num")).map((element) => element!.innerText);
+            const newCache = Array.from($newList.find(".gall_num")).map((element) => element!.innerText);
 
             for (const element of $newListChildren) {
                 const $element = $(element);
@@ -255,22 +252,17 @@ export default {
                 }
             }
 
-            // if (archiveArticleConfig) {
-            //     const different = oldCache.filter((x) => oldCache.slice(0, oldCache.length - newPostList.length).includes(x) && !newCache.includes(x));
-            //     let t = 0;
-            //
-            //     oldCache.forEach((no, index) => {
-            //         if (!different.includes(no)) return;
-            //
-            //         $newListChildren
-            //             .eq(index + newPostList.length - t - 1)
-            //             .before($oldList.children().eq(index).addClass("refresher-deleted"))
-            //             .last()
-            //             .remove();
-            //
-            //         t++;
-            //     });
-            // }
+            if (archiveArticleConfig) {
+                const different = oldCache.filter((x) => oldCache.includes(x) && !newCache.includes(x));
+
+                oldCache.forEach((no, index) => {
+                    if (!different.includes(no)) return;
+
+                    $newListChildren
+                        .eq(index + newPostList.length)
+                        .before($oldList.children().eq(index).addClass("refresher-deleted"));
+                });
+            }
 
             $oldList.replaceWith($newList);
 
