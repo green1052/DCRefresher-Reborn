@@ -918,7 +918,7 @@ const panel = {
 };
 
 const getRelevantData = (ev: MouseEvent): GalleryPreData => {
-    const $element = $(ev.target as HTMLElement).closest(".ub-post");
+    const $element = $(ev.target as HTMLElement).closest(".us-post");
 
     const id = $element.attr("data-no") ?? "";
     const notice = false;

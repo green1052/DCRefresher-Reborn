@@ -19,7 +19,6 @@ declare global {
         http: RefresherHTTP;
         ip: RefresherIP;
         block: RefresherBlock;
-        dom: RefresherDOM;
         memo: RefresherMemo;
     }
 

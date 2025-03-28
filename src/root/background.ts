@@ -229,10 +229,8 @@ browser.commands.onCommand.addListener((command) => {
     });
 });
 
-(async () => {
-    const lastUpdate = await storage.get<number>("refresher.database.lastUpdate");
+const lastUpdate = await storage.get<number>("refresher.database.lastUpdate");
 
-    if (lastUpdate && Date.now() - lastUpdate > 604800000) {
-        updateDatabase();
-    }
-})();
+if (lastUpdate && Date.now() - lastUpdate > 604800000) {
+    updateDatabase();
+}

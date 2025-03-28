@@ -1,20 +1,19 @@
-export const find = (elem: string, parent: HTMLElement): Promise<NodeListOf<HTMLElement>> =>
+export const find = (element: string, parent: HTMLElement): Promise<NodeListOf<HTMLElement>> =>
     new Promise<NodeListOf<HTMLElement>>((resolve, reject) => {
-        let timeout: number | null = null;
+        let observer: MutationObserver | null = null;
 
-        var observer = listen(elem, parent, (elements) => {
+        const timeout = window.setTimeout(() => {
             observer?.disconnect();
+            reject(`Couldn't find the element(${element}).`);
+        }, 3000);
+
+        observer = listen(element, parent, function (this: MutationObserver, elements) {
+            this?.disconnect();
 
             if (timeout) window.clearTimeout(timeout);
 
             resolve(elements);
         });
-
-        timeout = window.setTimeout(() => {
-            observer?.disconnect();
-
-            reject(`Couldn't find the element(${elem}).`);
-        }, 3000);
     });
 
 export const listen = (
@@ -26,7 +25,7 @@ export const listen = (
 
     if (parentFind.length > 0) callback(parentFind);
 
-    const observer = new MutationObserver((mutations) => {
+    const observer = new MutationObserver(function (this: MutationObserver, mutations) {
         let executed = false;
 
         for (const mutation of mutations) {
@@ -41,7 +40,7 @@ export const listen = (
 
         if (lists.length === 0) return;
 
-        callback(lists);
+        callback.bind(this)(lists);
     });
 
     observer.observe(parent ?? document.documentElement, {
@@ -50,4 +49,9 @@ export const listen = (
     });
 
     return observer;
+};
+
+export default {
+    find,
+    listen
 };

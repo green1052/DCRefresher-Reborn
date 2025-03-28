@@ -7,19 +7,19 @@ export default {
     description: "이미지를 검색합니다.",
     memory: {
         id: "",
-        currentImage: ""
+        currentImage: null
     },
     enable: true,
     default_enable: true,
     func() {
         window.addEventListener("contextmenu", (ev) => {
-            const $element = $(ev.target);
+            const $element = $(ev.target as HTMLElement);
 
             if ($element.is("img")) this.memory.currentImage = $element.attr("src");
         });
 
         this.memory.id = communicate.addHook("searchSauceNao", () => {
-            if (!this.memory.currentImage.includes("viewimage.php")) return;
+            if (!this.memory.currentImage?.includes("viewimage.php")) return;
 
             const url = new URL(this.memory.currentImage);
             url.host = "image.dcinside.com";
@@ -34,6 +34,6 @@ export default {
 } as RefresherModule<{
     memory: {
         id: string;
-        currentImage: string;
+        currentImage: string | null;
     };
 }>;

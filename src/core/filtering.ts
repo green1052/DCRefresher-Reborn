@@ -1,5 +1,4 @@
 import * as observe from "../utils/observe";
-import strings from "../utils/string";
 
 const lists: Record<string, RefresherFilteringLists> = {};
 
@@ -55,7 +54,7 @@ export const filter = {
         callback: (element: T) => void,
         options?: RefresherFilteringOptions
     ): string => {
-        const uuid = strings.uuid();
+        const uuid = crypto.randomUUID();
 
         lists[uuid] = {
             func: callback,
