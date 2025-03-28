@@ -1,6 +1,5 @@
 import browser from "webextension-polyfill";
 
-import * as dom from "../utils/dom";
 import * as http from "../utils/http";
 import * as ip from "../utils/ip";
 import storage from "../utils/storage";
@@ -23,7 +22,6 @@ const UTILS: ItemToRefresherMap = {
     http,
     ip,
     block,
-    dom,
     memo
 };
 

@@ -1,5 +1,3 @@
-import * as strings from "../utils/string";
-
 const lists: Record<string, RefresherEventBusObject[]> = {};
 
 export const eventBus: RefresherEventBus = {

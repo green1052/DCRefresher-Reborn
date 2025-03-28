@@ -6,15 +6,6 @@ import ky from "ky";
 import toast from "../components/toast";
 import { queryString } from "../utils/http";
 
-function hideElement($element: Cash, blur: boolean = false) {
-    if (blur) {
-        $element.addClass("refresherBlur");
-        return;
-    }
-
-    $element.css("display", "none");
-}
-
 export default {
     name: "컨텐츠 차단",
     description: "유저, 컨텐츠 등의 보고 싶지 않은 컨텐츠들을 삭제합니다.",
@@ -52,6 +43,15 @@ export default {
     },
     require: ["filter", "eventBus", "block", "http"],
     func(filter, eventBus, block, http) {
+        const hideElement = ($element: Cash, blur = false) => {
+            if (blur) {
+                $element.addClass("refresherBlur");
+                return;
+            }
+
+            $element.hide();
+        };
+
         this.memory.uuid = filter.add(
             ".ub-writer",
             (element) => {
@@ -61,18 +61,18 @@ export default {
 
                 if (!gallery) return;
 
-                const title = $element.parent().find(".gall_tit > a:not([class])").text();
-
+                const title = $element.parent().find(".gall_tit > a:not([class])").text().trim();
                 const tab = $element.parent().find(".gall_subject").text();
-
-                const text = $element.closest(".view_content_wrap").find(".write_div").text();
+                const text = location.pathname.includes("/view/")
+                    ? $element.closest(".view_content_wrap").find(".write_div").text().trim()
+                    : null;
+                const commentContent = location.pathname.includes("/view/")
+                    ? $element.closest(".reply_info, .cmt_info").find(".usertxt").text()
+                    : null;
 
                 const nick = element.dataset.nick ?? null;
                 const uid = element.dataset.uid ?? null;
                 const ip = element.dataset.ip ?? null;
-
-                const $commentElement = $element.closest(".reply_info, .cmt_info");
-                const commentContent = $commentElement.find(".usertxt").text();
 
                 if (
                     block.checkAll(
@@ -96,24 +96,18 @@ export default {
 
                     const $content = $post.closest(".ub-content");
 
-                    if ($content) {
+                    if ($content.length) {
                         if (this.status.replyRemove) {
                             const $next = $content.next();
 
-                            if (!$next.hasClass("ub-content") && $next.children(".reply").length > 0) {
+                            if (!$next.hasClass("ub-content") && $next.children(".reply").length) {
                                 hideElement($next, this.status.blur);
                             }
                         }
 
                         hideElement($content, this.status.blur);
                     }
-
-                    // if (post.parentElement?.className.startsWith("reply_")) {
-                    //     element.closest<HTMLElement>(".reply")!.style.display =
-                    //         "none";
-                    //     return;
-                    // }
-                } else if (block.check("TEXT", text, gallery)) {
+                } else if (text && block.check("TEXT", text, gallery)) {
                     $element.closest(".view_content_wrap").find(".write_div").text("게시글 내용이 차단됐습니다.");
                 }
 
@@ -226,7 +220,7 @@ export default {
 
                         if (args?.blockAllDccon) {
                             const blockBundle = confirm(
-                                "디시콘을 묶어서 차단하시겠습니까? (차단탭에서 한개로 표시됩니다.)"
+                                "디시콘을 묶어서 차단하시겠습니까? (차단 목록에서는 한개로 표시됩니다.)"
                             );
 
                             const list = [];
