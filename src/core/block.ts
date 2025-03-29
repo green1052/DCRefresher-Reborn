@@ -208,8 +208,12 @@ export const check = (type: RefresherBlockType, content: string, gallery?: strin
         if (v.gallery && v.gallery !== gallery) return false;
 
         if (v.isAdvanced) {
-            const response = new Function("type", "content", "gallery", v.content)(type, content, gallery);
-            return typeof response === "boolean" ? response : false;
+            try {
+                const response = new Function("type", "content", "gallery", v.content)(type, content, gallery);
+                return typeof response === "boolean" ? response : false;
+            } catch {
+                return false;
+            }
         }
 
         const mode = v.mode ?? BLOCK_MODE_CACHE[type];
