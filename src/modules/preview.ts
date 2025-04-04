@@ -9,7 +9,7 @@ import toast from "../components/toast";
 import * as block from "../core/block";
 import type IFrame from "../core/frame";
 import { submitComment } from "../utils/comment";
-import getURL from "../utils/getURL";
+import getImage from "../utils/getImage";
 import * as http from "../utils/http";
 import { queryString } from "../utils/http";
 import inject from "../utils/inject";
@@ -518,7 +518,7 @@ const panel = {
             <label><input type="radio" name="duration" value="24" />24시간</label>
             <label><input type="radio" name="duration" value="168" />7일</label>
             <label><input type="radio" name="duration" value="336" />14일</label>
-            <label><input type="radio" name="duration" value="720" />30일</label>
+            <label><input type="radio" name="duration" value="744" />31일</label>
           </div>
         </div>
         <div class="block">
@@ -612,12 +612,12 @@ const panel = {
 
         if (toggleBlur) element.classList.add("blur");
 
-        const upvoteImage = getURL("/assets/icons/upvote.webp");
-        const downvoteImage = getURL("/assets/icons/downvote.webp");
+        const upvoteImage = getImage("upvote");
+        const downvoteImage = getImage("downvote");
 
         element.innerHTML = `
       <div class="button pin">
-        <img src="${getURL("/assets/icons/pin.webp")}"></img>
+        <img src="${getImage("pin")}"></img>
         <p>${setAsNotice ? "공지로 등록" : "공지 등록 해제"}</p>
       </div>
       <div class="button recommend">
@@ -625,15 +625,15 @@ const panel = {
         <p>${setAsRecommend ? "개념글 등록" : "개념글 해제"}</p>
       </div>
       <div class="button block">
-        <img src="${getURL("/assets/icons/block.webp")}"></img>
+        <img src="${getImage("block")}"></img>
         <p>차단 (B)</p>
       </div>
       <div class="button delete">
-        <img src="${getURL("/assets/icons/delete.webp")}"></img>
+        <img src="${getImage("delete")}"></img>
         <p>삭제 (D)</p>
       </div>
       <div class="button bump">
-        <img src="${getURL("/assets/icons/upvote.webp")}"></img>
+        <img src="${getImage("upvote")}"></img>
         <p>끌올</p>
       </div>
     `;
@@ -1277,7 +1277,7 @@ export default {
                 "24": "1일",
                 "168": "7일",
                 "336": "14일",
-                "720": "30일"
+                "744": "31일"
             }
         },
         blockPresetReason: {
