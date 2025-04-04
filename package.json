@@ -7,7 +7,7 @@
         "@eslint/js": "^9.23.0",
         "@swc/core": "^1.11.16",
         "@types/js-cookie": "^3.0.6",
-        "@types/node": "^22.13.17",
+        "@types/node": "^22.14.0",
         "@types/webextension-polyfill": "^0.12.3",
         "@types/webpack": "^5.28.5",
         "@types/webpack-env": "^1.18.8",
