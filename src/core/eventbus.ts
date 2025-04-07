@@ -1,5 +1,3 @@
-import * as strings from "../utils/string";
-
 const lists: Record<string, RefresherEventBusObject[]> = {};
 
 export const eventBus: RefresherEventBus = {
@@ -31,7 +29,7 @@ export const eventBus: RefresherEventBus = {
      * @param options 이벤트에 등록할 옵션.
      */
     on: (event: string, callback: () => void, options?: RefresherEventBusOptions): string => {
-        const uuid = strings.uuid();
+        const uuid = crypto.randomUUID();
 
         lists[event] ??= [];
 

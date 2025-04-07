@@ -1,7 +1,5 @@
 import browser from "webextension-polyfill";
 
-import { uuid } from "../utils/string";
-
 interface StorageStructure {
     uuid: string;
     func: (...args: any[]) => void;
@@ -20,7 +18,7 @@ browser.runtime.onMessage.addListener((message) => {
 export const addHook = (type: string, callback: (...args: any[]) => void): string => {
     handlerStorage[type] ??= [];
 
-    const id = uuid();
+    const id = crypto.randomUUID();
 
     handlerStorage[type].push({
         uuid: id,

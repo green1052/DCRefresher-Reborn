@@ -5,14 +5,14 @@
     >
         <transition name="refresher-shake">
             <img
-                :key="error + 1"
+                :key="error"
                 :src="getURL(`/assets/icons/${id}.webp`)"
             >
         </transition>
         <transition name="refresher-shake">
             <p
                 :id="`refresher-${id}-counts`"
-                :key="error"
+                :key="error + 1"
                 class="refresher-vote-text"
             >
                 {{ text }}

@@ -7,11 +7,7 @@ import eventBus from "../core/eventbus";
 import * as http from "../utils/http";
 import * as storage from "../utils/storage";
 
-let permBanList: Record<string, string[]> | null = null;
-
-storage.get<Record<string, string[]>>("refresher.database.ban").then((value) => {
-    permBanList = value;
-});
+const permBanList: Record<string, string[]> = await storage.get("refresher.database.ban");
 
 export default {
     name: "관리",

@@ -1,6 +1,6 @@
 <template>
     <div
-        :class="{ disabled: disabled }"
+        :class="{ disabled }"
         :data-id="id"
         :data-module="modname"
         :data-on="on"
@@ -9,7 +9,7 @@
     >
         <div
             :style="{
-                transform: 'translateX(' + (typeof translateX !== 'undefined' ? translateX : on ? 18 : 0) + 'px)'
+                transform: `translateX(${translateX ?? (on ? 18 : 0)}px)`
             }"
             class="selected"
             @pointerdown="down"
@@ -25,7 +25,6 @@ import Vue from "vue";
 
 export default Vue.extend({
     name: "RefresherCheckbox",
-
     props: {
         change: {
             type: Function
@@ -48,7 +47,6 @@ export default Vue.extend({
             type: Boolean
         }
     },
-
     data() {
         return {
             on: this.checked,
@@ -57,7 +55,6 @@ export default Vue.extend({
             onceOut: false
         };
     },
-
     methods: {
         toggle() {
             if (this.disabled) {
@@ -76,21 +73,13 @@ export default Vue.extend({
         },
 
         hover(ev: PointerEvent) {
-            if (this.disabled) {
-                return;
-            }
+            if (this.disabled || !this._down) return;
 
-            if (this._down) {
-                this.translateX = Math.ceil(ev.offsetX);
-            }
+            this.translateX = Math.ceil(ev.offsetX);
         },
 
         down() {
-            if (this.disabled) {
-                return;
-            }
-
-            this._down = true;
+            if (!this.disabled) this._down = true;
         },
 
         up() {
@@ -102,17 +91,13 @@ export default Vue.extend({
             this.translateX = undefined;
         },
         out() {
-            if (this.disabled) {
-                return;
-            }
+            if (this.disabled || !this._down) return;
 
-            if (this._down) {
-                this._down = false;
-                this.translateX = undefined;
-                this.toggle();
+            this._down = false;
+            this.translateX = undefined;
+            this.toggle();
 
-                this.onceOut = true;
-            }
+            this.onceOut = true;
         }
     }
 });
