@@ -179,7 +179,8 @@ export default {
             }
 
             const url = http.view(originalLocation);
-            const response = await ky.get(url).text();
+
+            const response = await ky.get(url, { timeout: this.status.refreshRate - 100 }).text();
             const dom = new DOMParser().parseFromString(response, "text/html");
 
             eventBus.emit("refresherGetPost", dom);
@@ -194,8 +195,8 @@ export default {
 
             const newPostList: Cash[] = [];
 
-            const oldCache = Array.from($oldList.find(".gall_num")).map((element) => element!.innerText);
-            const newCache = Array.from($newList.find(".gall_num")).map((element) => element!.innerText);
+            const oldCache = Array.from($oldList.find("tr[data-no]")).map((element) => element!.dataset.no);
+            const newCache = Array.from($newList.find("tr[data-no]")).map((element) => element!.dataset.no);
 
             for (const element of $newListChildren) {
                 const $element = $(element);
@@ -285,7 +286,7 @@ export default {
             return true;
         };
 
-        const run = (skipLoad?: boolean) => {
+        const run = (skipLoad = false) => {
             if (!skipLoad) {
                 this.memory.load!();
             }
@@ -295,7 +296,7 @@ export default {
             }
 
             if (this.memory.refresh) {
-                clearTimeout(this.memory.refresh);
+                window.clearTimeout(this.memory.refresh);
             }
 
             this.memory.refresh = window.setTimeout(run, this.memory.delay);
@@ -304,7 +305,7 @@ export default {
         document.addEventListener("visibilitychange", () => {
             if (document.hidden) {
                 if (this.memory.refresh) {
-                    clearTimeout(this.memory.refresh);
+                    window.clearTimeout(this.memory.refresh);
                 }
 
                 return;
@@ -317,9 +318,11 @@ export default {
             run(!ev.persisted);
         });
 
+        run(true);
+
         this.memory.refreshRequest = eventBus.on("refreshRequest", () => {
             if (this.memory.refresh) {
-                clearTimeout(this.memory.refresh);
+                window.clearTimeout(this.memory.refresh);
             }
 
             this.memory.load!(undefined, true);
@@ -329,8 +332,6 @@ export default {
             this.memory.calledByPageTurn = true;
             this.memory.load!(undefined, true);
         });
-
-        run();
 
         if (!this.status.useBetterBrowse) return;
 
@@ -413,7 +414,7 @@ export default {
         document.body.classList.remove("refresherDoNotColorVisited");
 
         if (this.memory.refresh) {
-            clearTimeout(this.memory.refresh);
+            window.clearTimeout(this.memory.refresh);
         }
 
         if (this.memory.uuid) {

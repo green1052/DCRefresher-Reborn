@@ -1324,7 +1324,7 @@ export default {
         },
         archiveArticle: {
             name: "삭제된 글 & 댓글 보존",
-            desc: "삭제된 글과 댓글을 보존합니다. (캐시 비활성화 시 작동 안함, 글 보존 기능 작동 안함)",
+            desc: "삭제된 글과 댓글을 보존합니다. (캐시 비활성화 시 작동 안함)",
             type: "check",
             default: false
         },
