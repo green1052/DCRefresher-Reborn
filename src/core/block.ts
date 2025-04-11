@@ -311,9 +311,10 @@ communicate.addHook("updateBlocks", (data) => setStore(data.blocks, data.modes))
 requestAnimationFrame(async () => {
     const value = await storage.get<string[]>("refresher.blockQueue");
 
-    for (const dccon of value) {
-        InternalAddToList("DCCON", dccon, false, false);
-    }
+    if (value)
+        for (const dccon of value) {
+            InternalAddToList("DCCON", dccon, false, false);
+        }
 
     storage.set("refresher.blockQueue", []);
 });
