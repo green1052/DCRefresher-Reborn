@@ -8,7 +8,7 @@
             :value="value"
             type="text"
             @change="update"
-        >
+        />
     </div>
 </template>
 

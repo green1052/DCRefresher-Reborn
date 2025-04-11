@@ -7,6 +7,6 @@
         "target": "esnext"
     },
     "module": {
-        "type": "es6"
+        "type": "nodenext"
     }
 }

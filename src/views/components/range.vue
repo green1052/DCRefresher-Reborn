@@ -12,7 +12,7 @@
             type="range"
             @change="update"
             @input="input"
-        >
+        />
         <span class="indicator">{{ value + (unit ? unit : "") }}</span>
     </div>
 </template>
