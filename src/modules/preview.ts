@@ -1088,7 +1088,13 @@ const miniPreview: MiniPreview = {
                 });
         })
             .then((v) => {
-                const content = v.contents ?? "";
+                const dom = new DOMParser().parseFromString(v.contents!, "text/html");
+
+                for (const element of dom.querySelectorAll("img[data-original]")) {
+                    element.setAttribute("src", element.getAttribute("data-original")!);
+                }
+
+                const content = dom.body.innerHTML;
 
                 selector.innerHTML = block.check("TEXT", content) ? "게시글 내용이 차단됐습니다." : content;
                 selector.querySelector(".write_div")?.setAttribute("style", "");
