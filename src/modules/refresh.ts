@@ -195,12 +195,16 @@ export default {
 
             const newPostList: Cash[] = [];
 
-            const oldCache = Array.from($oldList.find("tr[data-no]")).map((element) => element!.dataset.no);
-            const newCache = Array.from($newList.find("tr[data-no]")).map((element) => element!.dataset.no);
+            const oldCache = Array.from($oldList.find(".ub-content")).map(
+                (element) => element!.dataset.no ?? element!.querySelector<HTMLElement>(".gall_num")!.innerText
+            );
+            const newCache = Array.from($newList.find(".ub-content")).map(
+                (element) => element!.dataset.no ?? element!.querySelector<HTMLElement>(".gall_num")!.innerText
+            );
 
             for (const element of $newListChildren) {
                 const $element = $(element);
-                const no = $element.find(".gall_num").text();
+                const no = $element.get(0)!.dataset.no || $element.find(".gall_num").text();
 
                 if (
                     !isPageView &&
@@ -254,7 +258,9 @@ export default {
             }
 
             if (archiveArticleConfig) {
-                const different = oldCache.filter((x) => oldCache.includes(x) && !newCache.includes(x));
+                const different = oldCache
+                    .filter((x) => oldCache.includes(x) && !newCache.includes(x))
+                    .filter((x) => x !== "");
 
                 oldCache.forEach((no, index) => {
                     if (!different.includes(no)) return;
