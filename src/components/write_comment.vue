@@ -66,7 +66,9 @@
                 }"
                 class="whoami"
             >
-                <span @click="toggleEditUser">클릭하면 작성자 정보 수정 모드를 {{ editUser ? "비활성화" : "활성화" }}시킵니다.</span>
+                <span @click="toggleEditUser"
+                    >클릭하면 작성자 정보 수정 모드를 {{ editUser ? "비활성화" : "활성화" }}시킵니다.</span
+                >
             </div>
         </div>
     </div>
@@ -110,6 +112,10 @@ export default Vue.extend({
         },
 
         getDccon: {
+            type: Function
+        },
+
+        getBigDccon: {
             type: Function
         }
     },
@@ -197,7 +203,8 @@ export default Vue.extend({
                     : {
                           name: this.unsignedUserID,
                           pw: this.unsignedUserPW
-                      }
+                      },
+                this.getBigDccon()
             );
 
             if (!result) {
@@ -211,6 +218,7 @@ export default Vue.extend({
             $("#comment_main").val("");
 
             this.$emit("setDccon", []);
+            this.$emit("setBigDccon", false);
             this.$emit("update:reply", null);
 
             return result;

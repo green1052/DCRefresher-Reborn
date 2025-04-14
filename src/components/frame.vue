@@ -177,7 +177,7 @@
                         :class="
                             frame.data.useImageBlock &&
                             frame.data.type === 'icon_txt' &&
-                                'refresher-preview-block-media'
+                            'refresher-preview-block-media'
                         "
                         class="refresher-preview-contents-actual"
                         v-html="frame.contents"
@@ -219,8 +219,10 @@
                         <WriteComment
                             :func="writeComment"
                             :get-dccon="getDccon"
+                            :get-big-dccon="getBigDccon"
                             :reply.sync="reply"
                             @setDccon="setDccon"
+                            @setBigDccon="setBigDccon"
                         />
                     </div>
                 </div>
@@ -284,9 +286,9 @@ interface FrameData {
     memoText: string;
     reply: string | null;
     dccon: DcinsideDccon[];
+    bigDccon: boolean;
     dcconRender: Vue | null;
     commentKey: number;
-    sibalKey: Record<string, number>;
 }
 
 export default Vue.extend({
@@ -318,6 +320,7 @@ export default Vue.extend({
             memoText: "",
             reply: null,
             dccon: [],
+            bigDccon: false,
             dcconRender: null,
             commentKey: 0
         };
@@ -336,9 +339,9 @@ export default Vue.extend({
             this.frame.functions = {};
             this.reply = null;
             this.dccon = [];
+            this.bigDccon = false;
             this.closeDccon();
             this.commentKey = 0;
-            this.sibalKey = {};
         });
     },
     methods: {
@@ -406,8 +409,9 @@ export default Vue.extend({
             return true;
         },
 
-        clickDccon(dccon: DcinsideDccon[]) {
+        clickDccon(dccon: DcinsideDccon[], bigDccon: boolean) {
             this.dccon = dccon;
+            this.bigDccon = bigDccon;
             this.closeDccon();
         },
 
@@ -422,8 +426,16 @@ export default Vue.extend({
             this.dccon = value;
         },
 
+        setBigDccon(value: boolean) {
+            this.bigDccon = value;
+        },
+
         getDccon() {
             return this.dccon;
+        },
+
+        getBigDccon() {
+            return this.bigDccon;
         },
 
         original() {

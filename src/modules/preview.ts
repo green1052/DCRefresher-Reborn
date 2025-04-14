@@ -1565,7 +1565,8 @@ export default {
                     type: "text" | "dccon",
                     memo: string | DcinsideDccon[],
                     reply: string | null,
-                    user: { name: string; pw?: string }
+                    user: { name: string; pw?: string },
+                    bigDccon: boolean
                 ) => {
                     if (!postFetchedData) {
                         toast.show("게시글이 로딩될 때까지 잠시 기다려주세요.", true, 3000);
@@ -1597,7 +1598,16 @@ export default {
                     const grecaptcha = await getGreCaptchaToken();
 
                     const req = async (captcha?: string) => {
-                        const res = await submitComment(postData, user, postDom, memo, reply, captcha, grecaptcha);
+                        const res = await submitComment(
+                            postData,
+                            user,
+                            postDom,
+                            memo,
+                            reply,
+                            bigDccon,
+                            captcha,
+                            grecaptcha
+                        );
 
                         if (res.result === "false" || res.result === "PreNotWorking") {
                             toast.show(res.message!, true, 3000);

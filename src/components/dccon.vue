@@ -11,6 +11,14 @@
                 <label>더블콘</label>
             </div>
 
+            <div>
+                <input
+                    v-model="doubleDccon"
+                    type="checkbox"
+                />
+                <label>대왕콘</label>
+            </div>
+
             <div
                 class="close"
                 @click="close"
@@ -93,6 +101,7 @@ interface DcconPopupData {
     dcconList: Record<number, DcinsideDcconDetailList[]>;
     currentDccon: DcinsideDccon[] | null;
     doubleDccon: boolean;
+    bigDccon: boolean;
     selectedDccon: DcinsideDccon[];
 }
 
@@ -110,6 +119,7 @@ export default Vue.extend({
             dcconList: {},
             currentDccon: null,
             doubleDccon: false,
+            bigDccon: false,
             selectedDccon: []
         };
     },
@@ -175,11 +185,11 @@ export default Vue.extend({
                 this.selectedDccon.push(dccon);
 
                 if (this.selectedDccon.length === 2) {
-                    this.$emit("clickDccon", this.selectedDccon);
+                    this.$emit("clickDccon", this.selectedDccon, this.bigDccon);
                     this.close();
                 }
             } else {
-                this.$emit("clickDccon", [dccon]);
+                this.$emit("clickDccon", [dccon], this.bigDccon);
                 this.close();
             }
         },
