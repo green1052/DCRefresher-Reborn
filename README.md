@@ -2,7 +2,6 @@
     <img src="./src/assets/icons/logo/Icon.png" width="200px"/>
     <br>
     <br>
-    <img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fgreen1052%2FDCRefresher-Reborn">
     <img src="https://img.shields.io/github/v/release/green1052/DCRefresher-Reborn">
     <a href="https://chrome.google.com/webstore/detail/dcrefresher-reborn/pmfifcbendahnkeojgpfppklgioemgon" target="_blank">
         <img src="https://img.shields.io/chrome-web-store/rating/pmfifcbendahnkeojgpfppklgioemgon?logo=chromewebstore">
