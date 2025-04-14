@@ -13,7 +13,7 @@
 
             <div>
                 <input
-                    v-model="doubleDccon"
+                    v-model="bigDccon"
                     type="checkbox"
                 />
                 <label>대왕콘</label>
@@ -30,7 +30,7 @@
 
         <refresher-loader v-if="!Object.keys(dcconList).length" />
         <fragment v-else>
-            <hr />
+            <hr >
 
             <ul style="overflow: auto; display: flex; user-select: none; justify-content: center">
                 <li
@@ -57,7 +57,7 @@
                 </li>
             </ul>
 
-            <hr />
+            <hr >
 
             <div style="width: 100%; height: 80%; overflow: auto">
                 <h2

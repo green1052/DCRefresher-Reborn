@@ -266,7 +266,7 @@ export default {
                     if (!different.includes(no)) return;
 
                     $newListChildren
-                        .eq(index + newPostList.length)
+                        .eq(index + newPostList.length - 1)
                         .before($oldList.children().eq(index).addClass("refresher-deleted"));
                 });
             }
