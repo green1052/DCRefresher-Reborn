@@ -97,6 +97,7 @@ export async function submitComment(
     dom: Document,
     memo: string | DcinsideDccon[],
     reply: string | null,
+    bigDccon: boolean,
     captcha?: string,
     grecaptcha?: string
 ): Promise<CommentResult> {
@@ -127,9 +128,9 @@ export async function submitComment(
 
     if (captcha) params.set("code", captcha);
 
-    if (grecaptcha) {
-        params.set("g-recaptcha-response", grecaptcha);
-    }
+    if (grecaptcha) params.set("g-recaptcha-response", grecaptcha);
+
+    if (bigDccon) params.set("bigdccon", "1");
 
     if (typeof memo === "string") {
         params.set("memo", memo);

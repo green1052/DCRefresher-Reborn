@@ -68,7 +68,8 @@ declare global {
                 type: "text" | "dccon",
                 memo: string | DcinsideDccon[],
                 reply: string | null,
-                user: { name: string; pw?: string }
+                user: { name: string; pw?: string },
+                bigDccon: boolean
             ): Promise<boolean>;
             deleteComment(commentId: string, password: string, admin: boolean): Promise<boolean>;
         };
