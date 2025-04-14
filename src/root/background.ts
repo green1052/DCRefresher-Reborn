@@ -63,7 +63,9 @@ let blocks: BlockCache = {
     TITLE: [],
     TEXT: [],
     COMMENT: [],
-    DCCON: []
+    DCCON: [],
+    TAB: [],
+    IMAGE: []
 };
 let blockModes: BlockModeCache = {
     NICK: "SAME",
@@ -72,7 +74,9 @@ let blockModes: BlockModeCache = {
     TITLE: "CONTAIN",
     TEXT: "CONTAIN",
     COMMENT: "CONTAIN",
-    DCCON: "SAME"
+    DCCON: "SAME",
+    TAB: "SAME",
+    IMAGE: "SAME"
 };
 let memos: MemoCache = {
     UID: {},
@@ -179,7 +183,9 @@ const messageHandler = (port: browser.Runtime.Port | null, message: Message) => 
 };
 
 browser.runtime.onConnect.addListener((port) => {
-    port.onMessage.addListener((message) => messageHandler(port, message));
+    port.onMessage.addListener((message) =>
+        messageHandler(port, typeof message === "string" ? JSON.parse(message) : message)
+    );
 });
 
 browser.runtime.onMessage.addListener((message) => {
@@ -205,13 +211,11 @@ browser.runtime.onInstalled.addListener((details) => {
 
     try {
         updateDatabase();
-    } catch {}
-
-    if (details.reason === "install") {
-        storage.set("refresher.firstInstall", true);
-    } else if (details.reason === "update") {
-        storage.set("refresher.updated", true);
+    } catch {
+        // empty
     }
+
+    storage.set(details.reason === "install" ? "refresher.firstInstall" : "refresher.updated", true);
 });
 
 browser.contextMenus.onClicked.addListener((info, tab) => {
@@ -220,12 +224,12 @@ browser.contextMenus.onClicked.addListener((info, tab) => {
     });
 });
 
-browser.commands.onCommand.addListener((command) => {
-    browser.tabs.query({ currentWindow: true, active: true }).then((tabs) => {
-        browser.tabs.sendMessage(tabs[0].id!, {
-            type: "executeShortcut",
-            data: command
-        });
+browser.commands.onCommand.addListener(async (command) => {
+    const tabs = await browser.tabs.query({ currentWindow: true, active: true });
+
+    browser.tabs.sendMessage(tabs[0].id!, {
+        type: "executeShortcut",
+        data: command
     });
 });
 
