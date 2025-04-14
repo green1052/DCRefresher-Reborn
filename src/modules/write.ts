@@ -5,16 +5,7 @@ export default {
     description: "글쓰기 페이지를 변경합니다.",
     url: /\/board\/(write|modify)/,
     status: {},
-    data: {
-        temporarySave: {
-            id: "",
-            title: "",
-            content: "",
-            date: 0
-        }
-    },
     memory: {
-        canvas: "",
         submitButton: ""
     },
     enable: false,
@@ -38,11 +29,11 @@ export default {
             type: "text",
             default: ""
         },
-        temporarySave: {
-            name: "임시 저장",
-            desc: "글 작성 중 내용을 임시 저장합니다.",
-            type: "check",
-            default: false
+        selfImage: {
+            name: "자짤",
+            desc: "자짤을 설정합니다. (이미지 주소)",
+            type: "text",
+            default: ""
         },
         preventExit: {
             name: "나가기 방지",
@@ -53,13 +44,6 @@ export default {
     },
     require: ["filter"],
     func(filter) {
-        const resetTemporaryData = () => {
-            this.data!.temporarySave.id = "";
-            this.data!.temporarySave.title = "";
-            this.data!.temporarySave.content = "";
-            this.data!.temporarySave.date = 0;
-        };
-
         window.addEventListener("beforeunload", (ev) => {
             if (this.status.preventExit && !$("button:hover").eq(-1).hasClass("write")) {
                 ev.preventDefault();
@@ -68,17 +52,18 @@ export default {
 
         this.memory.submitButton = filter.add<HTMLButtonElement>("button.write", (element) => {
             $(element).on("click", () => {
-                const header = this.status.header;
-                const footer = this.status.footer;
-
                 const $editor = $(".note-editable");
 
-                if (header) {
-                    $editor.prepend(header);
+                if (this.status.header) {
+                    $editor.prepend(this.status.header);
                 }
 
-                if (footer) {
-                    $editor.append(footer);
+                if (this.status.footer) {
+                    $editor.append(this.status.footer);
+                }
+
+                if (this.status.selfImage) {
+                    $editor.prepend(`<p><img src="${this.status.selfImage}"></p><p><br></p>`);
                 }
 
                 if (this.status.bypassTitleLimit) {
@@ -87,70 +72,23 @@ export default {
 
                     if (title.length === 1) $titleElement.val(`${title}\u200B`);
                 }
-
-                resetTemporaryData();
             });
 
             filter.remove(this.memory.submitButton);
         });
-
-        this.memory.canvas = filter.add<HTMLIFrameElement>(".note-editable", (element) => {
-            const $element = $(element);
-
-            if (this.status.temporarySave) {
-                const gallId = $("form > input[name=id]").val() as string;
-
-                if (Date.now() - this.data!.temporarySave.date > 86400000) {
-                    resetTemporaryData();
-                }
-
-                if (
-                    this.data!.temporarySave.id === gallId &&
-                    this.data!.temporarySave.title &&
-                    this.data!.temporarySave.content &&
-                    this.data!.temporarySave.date &&
-                    confirm("이전에 작성한 글이 있습니다. 불러오시겠습니까? (취소 시 삭제)")
-                ) {
-                    $("#subject").val(this.data!.temporarySave.title);
-                    $element.html(this.data!.temporarySave.content);
-                } else {
-                    resetTemporaryData();
-                }
-
-                this.data!.temporarySave.id = gallId;
-
-                setInterval(() => {
-                    this.data!.temporarySave.title = $("#subject").val() as string;
-                    this.data!.temporarySave.content = $element.html() as string;
-                    this.data!.temporarySave.date = Date.now();
-                }, 5000);
-            }
-
-            filter.remove(this.memory.canvas);
-        });
     },
     revoke(filter) {
         filter.remove(this.memory.submitButton);
-        filter.remove(this.memory.canvas);
     }
 } as RefresherModule<{
-    data: {
-        temporarySave: {
-            id: string;
-            title: string;
-            content: string;
-            date: number;
-        };
-    };
     memory: {
         submitButton: string;
-        canvas: string;
     };
     settings: {
         bypassTitleLimit: RefresherCheckSettings;
         header: RefresherTextSettings;
         footer: RefresherTextSettings;
-        temporarySave: RefresherCheckSettings;
+        selfImage: RefresherTextSettings;
         preventExit: RefresherCheckSettings;
     };
     require: ["filter"];
