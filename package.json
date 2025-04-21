@@ -4,7 +4,7 @@
     "description": "디시인사이드 개선 확장 프로그램",
     "type": "module",
     "devDependencies": {
-        "@eslint/js": "^9.25.0",
+        "@eslint/js": "^9.25.1",
         "@swc/core": "^1.11.21",
         "@types/js-cookie": "^3.0.6",
         "@types/node": "^22.14.1",
@@ -14,7 +14,7 @@
         "cash-dom": "^8.1.5",
         "copy-webpack-plugin": "^13.0.0",
         "css-loader": "^7.1.2",
-        "eslint": "^9.25.0",
+        "eslint": "^9.25.1",
         "eslint-config-prettier": "^10.1.2",
         "eslint-plugin-prettier": "^5.2.6",
         "eslint-plugin-simple-import-sort": "^12.1.1",
