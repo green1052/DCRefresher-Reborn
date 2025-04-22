@@ -918,12 +918,12 @@ const panel = {
 };
 
 const getRelevantData = (ev: MouseEvent): GalleryPreData => {
-    const $element = $(ev.target as HTMLElement).closest(".us-post");
+    const $element = $(ev.target as HTMLElement).closest(".ub-content");
 
-    const id = $element.attr("data-no") ?? "";
-    const notice = false;
-    const recommend = $element.data("type") === "icon_recomimg";
+    const id = $element.attr("data-no") ?? $element.children(".gall_num").text()
 
+    let notice = false;
+    let recommend = false;
     let type = "";
     let title = "";
     let link = "";
@@ -932,7 +932,11 @@ const getRelevantData = (ev: MouseEvent): GalleryPreData => {
     const $em = $element.find(".icon_img");
 
     if ($em.length) {
-        type = $em.attr("class")?.split(" ").at(-1) ?? "icon_txt";
+		const attr = $em.attr("class")!;
+		
+        type = attr.split(" ").at(-1) ?? "icon_txt";
+		notice = attr.includes("icon_notice");
+		recommend = attr.includes("icon_recomimg");
     }
 
     const $linkElement = $element.find("a:not(.reply_numbox)");
