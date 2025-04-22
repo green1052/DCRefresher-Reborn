@@ -920,7 +920,7 @@ const panel = {
 const getRelevantData = (ev: MouseEvent): GalleryPreData => {
     const $element = $(ev.target as HTMLElement).closest(".ub-content");
 
-    const id = $element.attr("data-no") ?? $element.children(".gall_num").text()
+    const id = $element.children(".gall_num").text().trim() || queryString("no");
 
     let notice = false;
     let recommend = false;
