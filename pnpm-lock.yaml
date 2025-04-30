@@ -51,8 +51,8 @@ importers:
         specifier: ^12.1.1
         version: 12.1.1(eslint@9.25.1)
       eslint-plugin-vue:
-        specifier: ^10.0.1
-        version: 10.0.1(eslint@9.25.1)(vue-eslint-parser@10.1.1(eslint@9.25.1))
+        specifier: ^10.1.0
+        version: 10.1.0(eslint@9.25.1)(vue-eslint-parser@10.1.1(eslint@9.25.1))
       globals:
         specifier: ^16.0.0
         version: 16.0.0
@@ -368,6 +368,7 @@ packages:
   '@swc/core@1.11.22':
     resolution: {integrity: sha512-mjPYbqq8XjwqSE0hEPT9CzaJDyxql97LgK4iyvYlwVSQhdN1uK0DBG4eP9PxYzCS2MUGAXB34WFLegdUj5HGpg==}
     engines: {node: '>=10'}
+    deprecated: It has a bug. See https://github.com/swc-project/swc/issues/10413
     peerDependencies:
       '@swc/helpers': '>=0.5.17'
     peerDependenciesMeta:
@@ -983,8 +984,8 @@ packages:
     peerDependencies:
       eslint: '>=5.0.0'
 
-  eslint-plugin-vue@10.0.1:
-    resolution: {integrity: sha512-A5dRYc3eQ5i2rJFBW8J6F69ur/H7YfYg+5SCg6v829FU0BhM4fUTrRVR2d4MdZgzw0ioJEk6otYHEAnoGFqO4A==}
+  eslint-plugin-vue@10.1.0:
+    resolution: {integrity: sha512-/VTiJ1eSfNLw6lvG9ENySbGmcVvz6wZ9nA7ZqXlLBY2RkaF15iViYKxglWiIch12KiLAj0j1iXPYU6W4wTROFA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0
@@ -2637,7 +2638,7 @@ snapshots:
     dependencies:
       eslint: 9.25.1
 
-  eslint-plugin-vue@10.0.1(eslint@9.25.1)(vue-eslint-parser@10.1.1(eslint@9.25.1)):
+  eslint-plugin-vue@10.1.0(eslint@9.25.1)(vue-eslint-parser@10.1.1(eslint@9.25.1)):
     dependencies:
       '@eslint-community/eslint-utils': 4.4.1(eslint@9.25.1)
       eslint: 9.25.1
