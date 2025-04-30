@@ -22,7 +22,7 @@
                 <div
                     v-if="
                         comment.is_delete === '0' &&
-                            (comment.del_btn === 'Y' || comment.my_cmt === 'Y' || isAdmin || comment.user.isLogout())
+                        (comment.del_btn === 'Y' || comment.my_cmt === 'Y' || isAdmin || comment.user.isLogout())
                     "
                     class="delete"
                     @click="safeDelete"
