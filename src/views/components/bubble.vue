@@ -14,7 +14,8 @@
             <span
                 v-if="gallery"
                 class="gallery"
-            >({{ gallery }})</span>
+                >({{ gallery }})</span
+            >
         </span>
         <span
             v-if="remove"

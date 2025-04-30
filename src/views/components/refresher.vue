@@ -72,7 +72,8 @@
                             <a
                                 v-for="link in links"
                                 @click="open(link.url)"
-                            >{{ link.text }}</a>
+                                >{{ link.text }}</a
+                            >
                         </p>
                         <p>
                             <span class="version">

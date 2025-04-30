@@ -17,7 +17,7 @@ const updateRefreshText = (button?: HTMLElement) => {
     if (!button) return;
 
     const onOff = button.querySelector<HTMLSpanElement>("span");
-    (onOff as HTMLSpanElement).innerHTML = PAUSE_REFRESH ? "꺼짐" : "켜짐";
+    onOff!.innerHTML = PAUSE_REFRESH ? "꺼짐" : "켜짐";
 };
 
 const addRefreshText = (issueBox: HTMLElement) => {

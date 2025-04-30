@@ -218,11 +218,11 @@
                     <div v-if="frame.data.useWriteComment">
                         <WriteComment
                             :func="writeComment"
-                            :get-dccon="getDccon"
                             :get-big-dccon="getBigDccon"
+                            :get-dccon="getDccon"
                             :reply.sync="reply"
-                            @setDccon="setDccon"
                             @setBigDccon="setBigDccon"
+                            @setDccon="setDccon"
                         />
                     </div>
                 </div>

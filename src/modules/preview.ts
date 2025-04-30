@@ -932,11 +932,11 @@ const getRelevantData = (ev: MouseEvent): GalleryPreData => {
     const $em = $element.find(".icon_img");
 
     if ($em.length) {
-		const attr = $em.attr("class")!;
-		
+        const attr = $em.attr("class")!;
+
         type = attr.split(" ").at(-1) ?? "icon_txt";
-		notice = attr.includes("icon_notice");
-		recommend = attr.includes("icon_recomimg");
+        notice = attr.includes("icon_notice");
+        recommend = attr.includes("icon_recomimg");
     }
 
     const $linkElement = $element.find("a:not(.reply_numbox)");
