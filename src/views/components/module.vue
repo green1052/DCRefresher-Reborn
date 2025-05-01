@@ -35,37 +35,33 @@ export default Vue.extend({
             type: String,
             required: true
         },
-
         desc: {
             type: String,
             required: true
         },
-
         requirement: {
-            type: Array,
-            required: false
+            type: Array
         },
-
         enabled: {
             type: Boolean,
             required: true
         }
     },
     methods: {
-        update(_module, _key, value) {
-            storage.set(`${this.name}.enable`, value);
+        async update(module: RefresherModule, id: string, value: boolean) {
+            await storage.set(`${this.name}.enable`, value);
 
-            browser.tabs.query({ active: true }).then((tabs) => {
-                for (const tab of tabs) {
-                    browser.tabs.sendMessage(tab.id!, {
-                        type: "updateModuleStatus",
-                        data: {
-                            name: this.name,
-                            value: value
-                        }
-                    });
-                }
-            });
+            const tabs = await browser.tabs.query({ active: true });
+
+            for (const tab of tabs) {
+                browser.tabs.sendMessage(tab.id!, {
+                    type: "updateModuleStatus",
+                    data: {
+                        name: this.name,
+                        value
+                    }
+                });
+            }
         }
     }
 });

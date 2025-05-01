@@ -57,9 +57,7 @@ export default Vue.extend({
     },
     methods: {
         toggle() {
-            if (this.disabled) {
-                return;
-            }
+            if (this.disabled) return;
 
             if (this.onceOut) {
                 this.onceOut = false;

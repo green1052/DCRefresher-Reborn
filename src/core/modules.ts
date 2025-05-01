@@ -1,7 +1,7 @@
 import browser from "webextension-polyfill";
 
-import * as http from "../utils/http";
-import * as ip from "../utils/ip";
+import http from "../utils/http";
+import ip from "../utils/ip";
 import storage from "../utils/storage";
 import block from "./block";
 import communicate from "./communicate";
@@ -28,28 +28,22 @@ const UTILS: ItemToRefresherMap = {
 const module_store: ModuleStore = {};
 
 const runModule = (module: RefresherModule) => {
-    const plugins: ModuleItem[] = [];
+    const plugins: ModuleItem[] = Array.isArray(module.require)
+        ? (module.require as (keyof ItemToRefresherMap)[]).map((require) => UTILS[require])
+        : [];
 
-    if (Array.isArray(module.require)) {
-        for (const require of module.require as (keyof ItemToRefresherMap)[]) {
-            plugins.push(UTILS[require]);
-        }
-    }
-
-    if (typeof module.func === "function") module.func.bind(module)(...plugins);
+    // @ts-ignore
+    if (typeof module.func === "function") module.func(...plugins);
 };
 
 const revokeModule = (module: RefresherModule) => {
     if (typeof module.revoke === "function") {
-        const plugins: ModuleItem[] = [];
+        const plugins: ModuleItem[] = Array.isArray(module.require)
+            ? (module.require as (keyof ItemToRefresherMap)[]).map((require) => UTILS[require])
+            : [];
 
-        if (Array.isArray(module.require)) {
-            for (const require of module.require as (keyof ItemToRefresherMap)[]) {
-                plugins.push(UTILS[require]);
-            }
-        }
-
-        module.revoke.bind(module)(...plugins);
+        // @ts-ignore
+        module.revoke(...plugins);
     }
 
     if (typeof module.memory === "object") {
@@ -61,11 +55,7 @@ const revokeModule = (module: RefresherModule) => {
 
 export const modules = {
     lists: (): ModuleStore => module_store,
-
-    load: (module: RefresherModule): Promise<void> => {
-        return modules.register(module);
-    },
-
+    load: (module: RefresherModule): Promise<void> => modules.register(module),
     register: async (module: RefresherModule): Promise<void> => {
         if (!module) throw "Module is not defined.";
         if (module_store[module.name]) throw `${module.name} is already registered.`;
@@ -74,9 +64,13 @@ export const modules = {
 
         promises.push(
             storage.get<boolean | undefined>(`${module.name}.enable`).then((enable) => {
-                if (enable === undefined) storage.set(`${module.name}.enable`, module.default_enable);
+                if (enable === undefined) {
+                    storage.set(`${module.name}.enable`, module.default_enable);
+                    module.enable = module.default_enable;
+                    return;
+                }
 
-                module.enable = typeof enable === "boolean" ? enable : module.default_enable;
+                module.enable = enable;
             })
         );
 
@@ -93,6 +87,7 @@ export const modules = {
         if (typeof module.data === "object") {
             promises.push(
                 storage.module.get(module.name).then((data) => {
+                    // @ts-ignore
                     module.data = new Proxy(data ?? {}, {
                         set(target, p, newValue, receiver) {
                             storage.module.setGlobal(module.name, JSON.stringify(module.data));

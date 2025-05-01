@@ -1,7 +1,7 @@
 export {};
 
 declare global {
-    type RefresherBlock = typeof import("../core/block");
+    type RefresherBlock = typeof import("../core/block").default;
 
     type RefresherBlockType = "NICK" | "ID" | "IP" | "TITLE" | "TEXT" | "COMMENT" | "DCCON" | "TAB" | "IMAGE";
 

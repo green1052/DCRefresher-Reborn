@@ -1,7 +1,7 @@
 export {};
 
 declare global {
-    type RefresherMemo = typeof import("../core/memo");
+    type RefresherMemo = typeof import("../core/memo").default;
 
     type RefresherMemoType = "UID" | "NICK" | "IP";
 
