@@ -2,30 +2,30 @@ import browser from "webextension-polyfill";
 
 interface StorageStructure {
     uuid: string;
-    func: (...args: any[]) => void;
+    run: (...args: any[]) => void;
 }
 
 const handlerStorage: Record<string, StorageStructure[]> = {};
 
-browser.runtime.onMessage.addListener((message) => {
-    if (!message?.type) throw "Received wrong runtimeMessage structure.";
+browser.runtime.onMessage.addListener((message: any) => {
+    if (typeof message !== "object" || !message.type) return;
 
     for (const handler of handlerStorage[message.type]) {
-        handler.func(message.data);
+        handler.run(message.data);
     }
 });
 
 export const addHook = (type: string, callback: (...args: any[]) => void): string => {
     handlerStorage[type] ??= [];
 
-    const id = crypto.randomUUID();
+    const uuid = crypto.randomUUID();
 
     handlerStorage[type].push({
-        uuid: id,
-        func: callback
+        uuid,
+        run: callback
     });
 
-    return id;
+    return uuid;
 };
 
 export const clearHook = (type: string, id: string): boolean => {

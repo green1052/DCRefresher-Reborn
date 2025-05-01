@@ -1,7 +1,7 @@
 export {};
 
 declare global {
-    type RefresherHTTP = typeof import("../utils/http");
+    type RefresherHTTP = typeof import("../utils/http").default;
 
     interface ISPInfo {
         name?: string;
@@ -10,5 +10,5 @@ declare global {
         detail?: string;
     }
 
-    type RefresherIP = typeof import("../utils/ip");
+    type RefresherIP = typeof import("../utils/ip").default;
 }
