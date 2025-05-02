@@ -920,8 +920,7 @@ const panel = {
 const getRelevantData = (ev: MouseEvent): GalleryPreData => {
     const $element = $(ev.target as HTMLElement).closest(".ub-content");
 
-    const id = $element.children(".gall_num").text().trim() || queryString("no");
-
+    let id = "";
     let notice = false;
     let recommend = false;
     let type = "";
@@ -945,6 +944,7 @@ const getRelevantData = (ev: MouseEvent): GalleryPreData => {
         title = $linkElement.text().trim();
 
         const url = new URL($linkElement.attr("href") ?? "", location.href);
+        id = url.searchParams.get("no") ?? "";
         link = url.href;
         gallery = url.searchParams.get("id") ?? "";
     }
