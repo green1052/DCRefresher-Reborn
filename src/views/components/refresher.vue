@@ -448,7 +448,7 @@
                 key="tab5"
                 class="tab tab5"
             >
-                <h2>해당 확장프로그램을 이용해주세요</h2>
+                <h2>아래의 확장 프로그램을 이용해주세요</h2>
                 <a @click="open('https://github.com/green1052/DCSelfImage')">DCSelfImage</a>
             </div>
             <div
