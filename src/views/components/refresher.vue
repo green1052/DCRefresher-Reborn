@@ -448,7 +448,8 @@
                 key="tab5"
                 class="tab tab5"
             >
-                <h1>전투력 5천만 이하는 사용 불가능한 기능입니다.</h1>
+                <h2>해당 확장프로그램을 이용해주세요</h2>
+                <a @click="open('https://github.com/green1052/DCSelfImage')">DCSelfImage</a>
             </div>
             <div
                 v-show="tab === 5"

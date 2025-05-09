@@ -29,12 +29,6 @@ export default {
             type: "text",
             default: ""
         },
-        selfImage: {
-            name: "자짤",
-            desc: "자짤을 설정합니다. (이미지 주소)",
-            type: "text",
-            default: ""
-        },
         preventExit: {
             name: "나가기 방지",
             desc: "글 작성 중 나가기를 방지합니다.",
@@ -62,10 +56,6 @@ export default {
                     $editor.append(this.status.footer);
                 }
 
-                if (this.status.selfImage) {
-                    $editor.prepend(`<p><img src="${this.status.selfImage}"></p><p><br></p>`);
-                }
-
                 if (this.status.bypassTitleLimit) {
                     const $titleElement = $("input#subject");
                     const title = $titleElement.val() as string;
@@ -88,7 +78,6 @@ export default {
         bypassTitleLimit: RefresherCheckSettings;
         header: RefresherTextSettings;
         footer: RefresherTextSettings;
-        selfImage: RefresherTextSettings;
         preventExit: RefresherCheckSettings;
     };
     require: ["filter"];
