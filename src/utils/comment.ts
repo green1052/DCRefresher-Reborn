@@ -120,7 +120,10 @@ export async function submitComment(
     params.set("id", preData.gallery);
     params.set("no", preData.id);
 
-    if (reply) params.set("c_no", reply);
+    if (reply) {
+        params.set("c_no", reply);
+        params.set("reply_no", reply);
+    }
 
     params.set("name", user.name);
     if (user.pw) params.set("password", user.pw);
