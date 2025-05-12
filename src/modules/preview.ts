@@ -1347,6 +1347,19 @@ export default {
     },
     require: ["filter", "eventBus", "Frame", "http"],
     func(filter, eventBus, Frame, http) {
+        $(document).on("click", ".btn_img_block", (ev: PointerEvent) => {
+            if (!ev.target) return;
+
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            $(ev.target as HTMLElement)
+                .hide()
+                .closest("div")
+                .children("img")
+                .show();
+        });
+
         inject("/assets/js/grecaptcha.js");
 
         blockPreset.day = this.status.blockPresetDay;
