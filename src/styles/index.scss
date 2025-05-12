@@ -418,12 +418,17 @@ tr.gall_writer {
 }
 
 .refresher-preview-contents-actual {
+    div:has(> .comment_dccon) {
+        display: flex;
+    }
+    
     .written_dccon:not(.bigdccon) {
         width: 100px;
         height: 100px;
     }
 
     .comment_dccon {
+        margin: 0;
         padding-bottom: 0 !important;
 
         * {
