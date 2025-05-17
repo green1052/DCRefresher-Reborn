@@ -4,17 +4,17 @@
     "description": "디시인사이드 개선 확장 프로그램",
     "type": "module",
     "devDependencies": {
-        "@eslint/js": "^9.26.0",
+        "@eslint/js": "^9.27.0",
         "@swc/core": "^1.11.22",
         "@types/js-cookie": "^3.0.6",
-        "@types/node": "^22.15.17",
+        "@types/node": "^22.15.18",
         "@types/webextension-polyfill": "^0.12.3",
         "@types/webpack": "^5.28.5",
         "@types/webpack-env": "^1.18.8",
         "cash-dom": "^8.1.5",
         "copy-webpack-plugin": "^13.0.0",
         "css-loader": "^7.1.2",
-        "eslint": "^9.26.0",
+        "eslint": "^9.27.0",
         "eslint-config-prettier": "^10.1.5",
         "eslint-plugin-prettier": "^5.4.0",
         "eslint-plugin-simple-import-sort": "^12.1.1",
@@ -25,12 +25,12 @@
         "ky": "^1.8.1",
         "mini-css-extract-plugin": "^2.9.2",
         "prettier": "^3.5.3",
-        "sass": "^1.88.0",
+        "sass": "^1.89.0",
         "sass-loader": "^16.0.5",
         "swc-loader": "^0.2.6",
         "terser-webpack-plugin": "^5.3.14",
         "typescript": "^5.8.3",
-        "typescript-eslint": "^8.32.0",
+        "typescript-eslint": "^8.32.1",
         "vue": "2.7.16",
         "vue-fragment": "1.6.0",
         "vue-loader": "15.11.1",
@@ -45,5 +45,5 @@
         "dev:mv2": "webpack --env manifest=manifest_v2.json --watch --config webpack.dev.js",
         "dev:mv3": "webpack --env manifest=manifest_v3.json --watch --config webpack.dev.js"
     },
-    "packageManager": "pnpm@10.10.0"
+    "packageManager": "pnpm@10.11.0"
 }
