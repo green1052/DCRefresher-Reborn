@@ -11,7 +11,7 @@
             />
             <div class="float-right">
                 <p
-                    v-if="useWriteComment && comment.depth === 0"
+                    v-if="useWriteComment"
                     class="refresher-reply"
                     @click="setReply"
                 >
