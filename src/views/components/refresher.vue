@@ -72,8 +72,7 @@
                             <a
                                 v-for="link in links"
                                 @click="open(link.url)"
-                                >{{ link.text }}</a
-                            >
+                                >{{ link.text }}</a>
                         </p>
                         <p>
                             <span class="version">
@@ -277,8 +276,8 @@
                         <button @click="importBlock">가져오기</button>
                     </div>
 
-                    <br />
-                    <br />
+                    <br >
+                    <br >
 
                     <h2>차단 모드</h2>
 
@@ -385,7 +384,7 @@
                         <button @click="importMemo">가져오기</button>
                     </div>
 
-                    <br />
+                    <br >
                 </div>
 
                 <div
@@ -829,11 +828,13 @@ export default Vue.extend({
             }
 
             const extra: string[] = [];
-            const isAdvanced = confirm("고급 차단 설정을 하시겠습니까?");
 
-            if (isAdvanced) {
-                extra.push("[고급]");
-            }
+            const isAdvanced = false;
+            // const isAdvanced = confirm("고급 차단 설정을 하시겠습니까?");
+            //
+            // if (isAdvanced) {
+            //     extra.push("[고급]");
+            // }
 
             const result = prompt(
                 isAdvanced
