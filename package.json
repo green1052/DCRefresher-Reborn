@@ -1,6 +1,6 @@
 {
     "name": "dcrefresher-reborn",
-    "version": "3.11.35",
+    "version": "3.11.36",
     "description": "디시인사이드 개선 확장 프로그램",
     "type": "module",
     "devDependencies": {
