@@ -1581,7 +1581,8 @@ export default {
                 frame.functions.writeComment = async (
                     type: "text" | "dccon",
                     memo: string | DcinsideDccon[],
-                    reply: string | null,
+                    commentNo: string | null,
+                    replyNo: string | null,
                     user: { name: string; pw?: string },
                     bigDccon: boolean
                 ) => {
@@ -1620,7 +1621,8 @@ export default {
                             user,
                             postDom,
                             memo,
-                            reply,
+                            commentNo,
+                            replyNo,
                             bigDccon,
                             captcha,
                             grecaptcha

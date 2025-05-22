@@ -10,22 +10,14 @@
         "unlimitedStorage"
     ],
     "background": {
-        "scripts": [
-            "background.js"
-        ],
+        "scripts": ["background.js"],
         "persistent": true
     },
     "content_scripts": [
         {
-            "js": [
-                "refresher.bundle.js"
-            ],
-            "css": [
-                "refresher.bundle.css"
-            ],
-            "matches": [
-                "https://*.dcinside.com/*"
-            ],
+            "js": ["refresher.bundle.js"],
+            "css": ["refresher.bundle.css"],
+            "matches": ["https://*.dcinside.com/*"],
             "exclude_matches": [
                 "https://event.dcinside.com/*",
                 "https://h5.dcinside.com/*",
@@ -54,10 +46,7 @@
         "chrome_style": false,
         "page": "views/index.html"
     },
-    "web_accessible_resources": [
-        "assets/*",
-        "popup/*"
-    ],
+    "web_accessible_resources": ["assets/*", "popup/*"],
     "commands": {
         "refreshLists": {
             "suggested_key": {

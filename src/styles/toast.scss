@@ -124,17 +124,17 @@ html:has(#css-darkmode) .refresher-toast {
     }
 }
 
-html:has(#css-darkmode) .refresher-toast[data-type=error] {
+html:has(#css-darkmode) .refresher-toast[data-type="error"] {
     background-color: #d41717;
     color: #fff;
 }
 
-html:has(#css-darkmode) .refresher-toast[data-type=warning] {
+html:has(#css-darkmode) .refresher-toast[data-type="warning"] {
     background-color: #eeb02b;
     color: #000;
 }
 
-.refresher-toast[data-type=cake] {
+.refresher-toast[data-type="cake"] {
     background: linear-gradient(40deg, rgb(162, 248, 201), rgb(166, 212, 243));
     color: rgb(35, 100, 73);
 }
@@ -148,9 +148,10 @@ html:has(#css-darkmode) .refresher-toast[data-type=warning] {
     top: 0;
     position: absolute;
     pointer-events: none;
-    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.2),
-    0px 4px 5px 0px rgba(0, 0, 0, 0.14),
-    0px 1px 10px 0px rgba(0, 0, 0, 0.12);
+    box-shadow:
+        0 2px 4px -1px rgba(0, 0, 0, 0.2),
+        0px 4px 5px 0px rgba(0, 0, 0, 0.14),
+        0px 1px 10px 0px rgba(0, 0, 0, 0.12);
     opacity: 0.32;
 }
 

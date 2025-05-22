@@ -96,7 +96,8 @@ export async function submitComment(
     user: { name: string; pw?: string },
     dom: Document,
     memo: string | DcinsideDccon[],
-    reply: string | null,
+    commentNo: string | null,
+    replyNo: string | null,
     bigDccon: boolean,
     captcha?: string,
     grecaptcha?: string
@@ -120,10 +121,9 @@ export async function submitComment(
     params.set("id", preData.gallery);
     params.set("no", preData.id);
 
-    if (reply) {
-        params.set("c_no", reply);
-        params.set("reply_no", reply);
-    }
+    if (commentNo) params.set("c_no", commentNo);
+
+    if (replyNo) params.set("reply_no", replyNo);
 
     params.set("name", user.name);
     if (user.pw) params.set("password", user.pw);

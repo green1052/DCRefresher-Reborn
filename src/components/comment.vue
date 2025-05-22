@@ -15,7 +15,7 @@
                     class="refresher-reply"
                     @click="setReply"
                 >
-                    {{ reply === comment.no ? "답글 해제" : "답글" }}
+                    {{ reply.replyNo === comment.no ? "답글 해제" : "답글" }}
                 </p>
 
                 <TimeStamp :date="new Date(date(comment.reg_date))" />
@@ -123,7 +123,7 @@ export default Vue.extend({
         },
 
         reply: {
-            type: String
+            type: Object
         }
     },
     data(): CommentVueData {
@@ -215,7 +215,10 @@ export default Vue.extend({
         },
 
         setReply() {
-            this.$emit("update:reply", this.reply === this.comment.no ? null : this.comment.no);
+            this.$emit("update:reply", {
+                commentNo: this.reply.commentNo === this.comment.c_no ? null : this.comment.c_no,
+                replyNo: this.reply.replyNo === this.comment.no ? null : this.comment.no
+            });
         },
 
         contextMenu(e: MouseEvent): void {
