@@ -67,7 +67,8 @@ declare global {
             writeComment(
                 type: "text" | "dccon",
                 memo: string | DcinsideDccon[],
-                reply: string | null,
+                commentNo: string | null,
+                replyNo: string | null,
                 user: { name: string; pw?: string },
                 bigDccon: boolean
             ): Promise<boolean>;

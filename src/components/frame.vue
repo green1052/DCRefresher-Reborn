@@ -284,7 +284,10 @@ import WriteComment from "./write_comment.vue";
 
 interface FrameData {
     memoText: string;
-    reply: string | null;
+    reply: {
+        commentNo: string | null;
+        replyNo: string | null;
+    };
     dccon: DcinsideDccon[];
     bigDccon: boolean;
     dcconRender: Vue | null;
@@ -318,7 +321,10 @@ export default Vue.extend({
     data: (): FrameData => {
         return {
             memoText: "",
-            reply: null,
+            reply: {
+                commentNo: null,
+                replyNo: null
+            },
             dccon: [],
             bigDccon: false,
             dcconRender: null,
@@ -337,7 +343,10 @@ export default Vue.extend({
             this.frame.collapse = undefined;
             this.frame.data = {};
             this.frame.functions = {};
-            this.reply = null;
+            this.reply = {
+                commentNo: null,
+                replyNo: null
+            };
             this.dccon = [];
             this.bigDccon = false;
             this.closeDccon();

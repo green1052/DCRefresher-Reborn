@@ -56,7 +56,7 @@
                     v-if="user"
                     :user="user"
                 />
-                <span>로 {{ reply === null ? "" : "답글" }}{{ !getDccon().length ? "" : "디시콘" }} 작성 중</span>
+                <span>로 {{ reply.commentNo ? "" : "답글" }}{{ !getDccon().length ? "" : "디시콘" }} 작성 중</span>
             </div>
             <div
                 :class="{
@@ -108,7 +108,7 @@ export default Vue.extend({
         },
 
         reply: {
-            type: String
+            type: Object
         },
 
         getDccon: {
@@ -197,7 +197,8 @@ export default Vue.extend({
             const result = await this.func(
                 !this.getDccon().length ? "text" : "dccon",
                 this.getDccon().length ? this.getDccon() : this.text,
-                this.reply,
+                this.reply.commentNo,
+                this.reply.replyNo,
                 this.fixedUser
                     ? { name: this.user!.nick }
                     : {
@@ -219,7 +220,7 @@ export default Vue.extend({
 
             this.$emit("setDccon", []);
             this.$emit("setBigDccon", false);
-            this.$emit("update:reply", null);
+            this.$emit("update:reply", { commentNo: null, replyNo: null });
 
             return result;
         },

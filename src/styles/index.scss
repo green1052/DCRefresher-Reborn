@@ -37,7 +37,9 @@ $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
 
 // IP Module
 
-.fl, .cmt_info, .reply_info {
+.fl,
+.cmt_info,
+.reply_info {
     .refresherUserData {
         margin-left: 3px;
     }
@@ -421,7 +423,7 @@ tr.gall_writer {
     div:has(> .comment_dccon) {
         display: flex;
     }
-    
+
     .written_dccon:not(.bigdccon) {
         width: 100px;
         height: 100px;
@@ -728,7 +730,7 @@ tr.gall_writer {
 
 html:has(#css-darkmode) {
     .refresher-user {
-        &[data-me=true] {
+        &[data-me="true"] {
             background-color: rgb(20, 109, 243);
         }
     }
