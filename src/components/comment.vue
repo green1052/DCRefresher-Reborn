@@ -216,7 +216,7 @@ export default Vue.extend({
 
         setReply() {
             this.$emit("update:reply", {
-                commentNo: this.reply.commentNo === this.comment.c_no ? null : this.comment.c_no,
+                commentNo: this.reply.commentNo === this.comment.c_no ? null : this.comment.c_no || this.comment.no,
                 replyNo: this.reply.replyNo === this.comment.no ? null : this.comment.no
             });
         },
