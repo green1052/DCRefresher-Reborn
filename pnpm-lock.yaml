@@ -18,8 +18,8 @@ importers:
         specifier: ^3.0.6
         version: 3.0.6
       '@types/node':
-        specifier: ^22.15.26
-        version: 22.15.26
+        specifier: ^22.15.27
+        version: 22.15.27
       '@types/webextension-polyfill':
         specifier: ^0.12.3
         version: 0.12.3
@@ -404,8 +404,8 @@ packages:
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
-  '@types/node@22.15.26':
-    resolution: {integrity: sha512-lgISkNrqdQ5DAzjBhnDNGKDuXDNo7/1V4FhNzsKREhWLZTOELQAptuAnJMzHtUl1qyEBBy9lNBKQ9WjyiSloTw==}
+  '@types/node@22.15.27':
+    resolution: {integrity: sha512-5fF+eu5mwihV2BeVtX5vijhdaZOfkQTATrePEaXTcKqI16LhJ7gi2/Vhd9OZM0UojcdmiOCVg5rrax+i1MdoQQ==}
 
   '@types/webextension-polyfill@0.12.3':
     resolution: {integrity: sha512-F58aDVSeN/MjUGazXo/cPsmR76EvqQhQ1v4x23hFjUX0cfAJYE+JBWwiOGW36/VJGGxoH74sVlRIF3z7SJCKyg==}
@@ -2119,7 +2119,7 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
-  '@types/node@22.15.26':
+  '@types/node@22.15.27':
     dependencies:
       undici-types: 6.21.0
 
@@ -2129,7 +2129,7 @@ snapshots:
 
   '@types/webpack@5.28.5(@swc/core@1.11.29)(webpack-cli@6.0.1)':
     dependencies:
-      '@types/node': 22.15.26
+      '@types/node': 22.15.27
       tapable: 2.2.1
       webpack: 5.99.9(@swc/core@1.11.29)(webpack-cli@6.0.1)
     transitivePeerDependencies:
@@ -2928,7 +2928,7 @@ snapshots:
 
   jest-worker@27.5.1:
     dependencies:
-      '@types/node': 22.15.26
+      '@types/node': 22.15.27
       merge-stream: 2.0.0
       supports-color: 8.1.1
 
