@@ -46,7 +46,7 @@ importers:
         version: 10.1.5(eslint@9.29.0)
       eslint-plugin-prettier:
         specifier: ^5.5.1
-        version: 5.5.1(@types/eslint@9.6.1)(eslint-config-prettier@10.1.5(eslint@9.29.0))(eslint@9.29.0)(prettier@3.6.1)
+        version: 5.5.1(@types/eslint@9.6.1)(eslint-config-prettier@10.1.5(eslint@9.29.0))(eslint@9.29.0)(prettier@3.6.2)
       eslint-plugin-simple-import-sort:
         specifier: ^12.1.1
         version: 12.1.1(eslint@9.29.0)
@@ -69,8 +69,8 @@ importers:
         specifier: ^2.9.2
         version: 2.9.2(webpack@5.99.9)
       prettier:
-        specifier: ^3.6.1
-        version: 3.6.1
+        specifier: ^3.6.2
+        version: 3.6.2
       sass:
         specifier: ^1.89.2
         version: 1.89.2
@@ -97,7 +97,7 @@ importers:
         version: 1.6.0(vue@2.7.16)
       vue-loader:
         specifier: 15.11.1
-        version: 15.11.1(@vue/compiler-sfc@3.5.13)(css-loader@7.1.2(webpack@5.99.9))(lodash@4.17.21)(prettier@3.6.1)(webpack@5.99.9)
+        version: 15.11.1(@vue/compiler-sfc@3.5.13)(css-loader@7.1.2(webpack@5.99.9))(lodash@4.17.21)(prettier@3.6.2)(webpack@5.99.9)
       webextension-polyfill:
         specifier: ^0.12.0
         version: 0.12.0
@@ -1517,8 +1517,8 @@ packages:
     engines: {node: '>=10.13.0'}
     hasBin: true
 
-  prettier@3.6.1:
-    resolution: {integrity: sha512-5xGWRa90Sp2+x1dQtNpIpeOQpTDBs9cZDmA/qs2vDNN2i18PdapqY7CmBeyLlMuGqXJRIOPaCaVZTLNQRWUH/A==}
+  prettier@3.6.2:
+    resolution: {integrity: sha512-I7AIg5boAr5R0FFtJ6rCfD+LFsWHp81dolrFD8S79U9tb8Az2nGrJncnMSnys+bpQJfRUzqs9hnA81OAA3hCuQ==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -2666,10 +2666,10 @@ snapshots:
     dependencies:
       eslint: 9.29.0
 
-  eslint-plugin-prettier@5.5.1(@types/eslint@9.6.1)(eslint-config-prettier@10.1.5(eslint@9.29.0))(eslint@9.29.0)(prettier@3.6.1):
+  eslint-plugin-prettier@5.5.1(@types/eslint@9.6.1)(eslint-config-prettier@10.1.5(eslint@9.29.0))(eslint@9.29.0)(prettier@3.6.2):
     dependencies:
       eslint: 9.29.0
-      prettier: 3.6.1
+      prettier: 3.6.2
       prettier-linter-helpers: 1.0.0
       synckit: 0.11.8
     optionalDependencies:
@@ -3173,7 +3173,7 @@ snapshots:
   prettier@2.8.8:
     optional: true
 
-  prettier@3.6.1: {}
+  prettier@3.6.2: {}
 
   pretty-error@4.0.0:
     dependencies:
@@ -3414,7 +3414,7 @@ snapshots:
 
   vue-hot-reload-api@2.3.4: {}
 
-  vue-loader@15.11.1(@vue/compiler-sfc@3.5.13)(css-loader@7.1.2(webpack@5.99.9))(lodash@4.17.21)(prettier@3.6.1)(webpack@5.99.9):
+  vue-loader@15.11.1(@vue/compiler-sfc@3.5.13)(css-loader@7.1.2(webpack@5.99.9))(lodash@4.17.21)(prettier@3.6.2)(webpack@5.99.9):
     dependencies:
       '@vue/component-compiler-utils': 3.3.0(lodash@4.17.21)
       css-loader: 7.1.2(webpack@5.99.9)
@@ -3425,7 +3425,7 @@ snapshots:
       webpack: 5.99.9(@swc/core@1.12.7)(webpack-cli@6.0.1)
     optionalDependencies:
       '@vue/compiler-sfc': 3.5.13
-      prettier: 3.6.1
+      prettier: 3.6.2
     transitivePeerDependencies:
       - arc-templates
       - atpl
