@@ -6,6 +6,7 @@ import ky from "ky";
 import eventBus from "../core/eventbus";
 import * as http from "../utils/http";
 import * as storage from "../utils/storage";
+import data from "./data";
 
 const permBanList: Record<string, string[]> = await storage.get("refresher.database.ban");
 
@@ -192,7 +193,7 @@ export default {
                 }
 
                 if (this.status.checkRatio && element.dataset.refresherRatio !== "true") {
-                    if (!this.data!.ratio.hasOwnProperty(element.dataset.uid!)) return false;
+                    if (!Object.hasOwn(this.data!.ratio, element.dataset.uid!)) return false;
 
                     const ratio = this.data!.ratio[element.dataset.uid!];
 
@@ -268,6 +269,8 @@ export default {
         };
 
         this.memory.newPostListEvent = eventBus.on("newPostList", async (articles: Cash[]) => {
+            articles.slice(0, 10);
+
             for (const $article of articles) {
                 const $writer = $article.find(".ub-writer");
                 const uid = $writer.data("uid");
