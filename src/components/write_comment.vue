@@ -54,9 +54,10 @@
             >
                 <UserComponent
                     v-if="user"
+                    :me="true"
                     :user="user"
                 />
-                <span>로 {{ reply.commentNo ? "" : "답글" }}{{ !getDccon().length ? "" : "디시콘" }} 작성 중</span>
+                <span>로 {{ reply.commentNo ? "" : "답글" }} {{ !getDccon().length ? "" : "디시콘" }} 작성 중</span>
             </div>
             <div
                 :class="{
@@ -66,9 +67,9 @@
                 }"
                 class="whoami"
             >
-                <span @click="toggleEditUser"
-                    >클릭하면 작성자 정보 수정 모드를 {{ editUser ? "비활성화" : "활성화" }}시킵니다.</span
-                >
+                <span @click="toggleEditUser">
+                    클릭하면 작성자 정보 수정 모드를 {{ editUser ? "비활성화" : "활성화" }}시킵니다.
+                </span>
             </div>
         </div>
     </div>

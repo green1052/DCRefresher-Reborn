@@ -18,9 +18,15 @@
                 v-if="user.memo"
                 :style="{ color: user.memo.color }"
                 class="refresher-user-memo"
-                >[{{ user.memo.text }}]</span
             >
-            <span class="refresher-user-info">{{ userInfo }}</span>
+                [{{ user.memo.text }}]
+            </span>
+            <span
+                v-if="!(me && user.isLogout())"
+                class="refresher-user-info"
+            >
+                {{ userInfo }}
+            </span>
         </div>
     </div>
 </template>
