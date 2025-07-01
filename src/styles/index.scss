@@ -749,7 +749,7 @@ html:has(#css-darkmode) {
         cursor: pointer;
     }
 
-    &[data-me="true"] {
+    &[data-me=true] {
         background-color: rgba(0, 110, 255, 0.5);
         color: white;
         border-radius: 5px;
@@ -819,6 +819,14 @@ html:has(#css-darkmode) {
     .refresher-user-memo {
         font-size: 12px;
         margin-right: 5px;
+    }
+}
+
+.refresher-write-comment {
+    .refresher-user {
+        background-color: initial !important;
+        color: initial !important;
+        border-radius: initial !important;
     }
 }
 
