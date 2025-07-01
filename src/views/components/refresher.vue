@@ -103,11 +103,11 @@
                     <Fragment v-else>
                         <div
                             v-for="module in Object.keys(settings)"
-                            v-if="modules[module].enable && settings[module] && settingsCount(settings[module])"
+                            v-if="settings[module] && settingsCount(settings[module])"
                             class="refresher-setting-category"
                         >
                             <h3 @click="moveToModuleTab(module)">
-                                {{ module }}
+                                {{ module }} {{ !modules[module].enable ? "(비활성화)" : "" }}
                                 <svg
                                     fill="black"
                                     height="18px"
@@ -140,6 +140,7 @@
                                     <refresher-checkbox
                                         v-if="settings[module][setting].type === 'check'"
                                         :id="setting"
+                                        :disabled="!modules[module].enable"
                                         :change="updateUserSetting"
                                         :checked="settings[module][setting].value"
                                         :modname="module"
@@ -147,6 +148,7 @@
                                     <refresher-input
                                         v-else-if="settings[module][setting].type === 'text'"
                                         :id="setting"
+                                        :disabled="!modules[module].enable"
                                         :change="updateUserSetting"
                                         :modname="module"
                                         :placeholder="settings[module][setting].default"
@@ -155,6 +157,7 @@
                                     <refresher-range
                                         v-else-if="settings[module][setting].type === 'range'"
                                         :id="setting"
+                                        :disabled="!modules[module].enable"
                                         :change="updateUserSetting"
                                         :max="settings[module][setting].max"
                                         :min="settings[module][setting].min"
@@ -167,6 +170,7 @@
                                     <refresher-options
                                         v-else-if="settings[module][setting].type === 'option'"
                                         :id="setting"
+                                        :disabled="!modules[module].enable"
                                         :change="updateUserSetting"
                                         :modname="module"
                                         :options="settings[module][setting].items"
@@ -189,11 +193,11 @@
                 <Fragment v-else>
                     <div
                         v-for="module in Object.keys(settings)"
-                        v-if="modules[module].enable && settings[module] && advancedSettingsCount(settings[module])"
+                        v-if="settings[module] && advancedSettingsCount(settings[module])"
                         class="refresher-setting-category"
                     >
                         <h3 @click="moveToModuleTab(module)">
-                            {{ module }}
+                            {{ module }} {{ !modules[module].enable ? "(비활성화)" : "" }}
                             <svg
                                 fill="black"
                                 height="18px"
@@ -227,6 +231,7 @@
                                 <refresher-checkbox
                                     v-if="settings[module][setting].type === 'check'"
                                     :id="setting"
+                                    :disabled="!modules[module].enable"
                                     :change="updateUserSetting"
                                     :checked="settings[module][setting].value"
                                     :modname="module"
@@ -234,6 +239,7 @@
                                 <refresher-input
                                     v-else-if="settings[module][setting].type === 'text'"
                                     :id="setting"
+                                    :disabled="!modules[module].enable"
                                     :change="updateUserSetting"
                                     :modname="module"
                                     :placeholder="settings[module][setting].default"
@@ -242,6 +248,7 @@
                                 <refresher-range
                                     v-else-if="settings[module][setting].type === 'range'"
                                     :id="setting"
+                                    :disabled="!modules[module].enable"
                                     :change="updateUserSetting"
                                     :max="settings[module][setting].max"
                                     :min="settings[module][setting].min"
@@ -254,6 +261,7 @@
                                 <refresher-options
                                     v-else-if="settings[module][setting].type === 'option'"
                                     :id="setting"
+                                    :disabled="!modules[module].enable"
                                     :change="updateUserSetting"
                                     :modname="module"
                                     :options="settings[module][setting].items"
