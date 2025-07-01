@@ -273,7 +273,7 @@ export default {
 
             $oldList.replaceWith($newList);
 
-            eventBus.emit("newPostList", newPostList);
+            if (newPostList.length) eventBus.emit("newPostList", newPostList);
             eventBus.emit("refresh");
 
             if (this.status.autoRate) {
