@@ -970,15 +970,15 @@ interface Cache {
 class PostCache {
     #caches: Record<string, Cache> = {};
 
-    constructor(public maxCacheSize: number = 100) {}
+    constructor(public maxCacheSize: number = 500) {}
 
-    public get(id: string): Cache | undefined {
+    public get(id: string, ignoreTimeout = false): Cache | undefined {
         const cache = this.#caches[id];
 
         if (!cache) return undefined;
 
         // 1분이 지나면 캐시를 삭제합니다.
-        if (Date.now() - cache.date > 1000 * 60) {
+        if (!ignoreTimeout && Date.now() - cache.date > 1000 * 60) {
             this.delete(id);
             return undefined;
         }
@@ -1433,13 +1433,18 @@ export default {
             };
 
             frame.functions.share = () => {
-                navigator.clipboard.writeText(
-                    `https://gall.dcinside.com/${http.galleryType(preData.link!)}/board/view/?id=${
-                        preData.gallery || http.queryString("id")
-                    }&no=${preData.id}`
-                );
+                try {
+                    navigator.clipboard.writeText(
+                        `https://gall.dcinside.com/${http.galleryType(preData.link!)}/board/view/?id=${
+                            preData.gallery || http.queryString("id")
+                        }&no=${preData.id}`
+                    );
 
-                toast.show("클립보드에 복사되었습니다.", false, 3000);
+                    toast.show("클립보드에 복사되었습니다.", false, 3000);
+                } catch {
+                    toast.show("클립보드에 복사하는데 실패했습니다.", true, 3000);
+                    return false;
+                }
 
                 return true;
             };
