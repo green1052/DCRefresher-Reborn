@@ -6,7 +6,6 @@ import ky from "ky";
 import eventBus from "../core/eventbus";
 import * as http from "../utils/http";
 import * as storage from "../utils/storage";
-import data from "./data";
 
 const permBanList: Record<string, string[]> = await storage.get("refresher.database.ban");
 
@@ -66,6 +65,12 @@ export default {
             desc: "갱신 차단 여부를 조회합니다.",
             type: "check",
             default: false
+        },
+        enableGifControl: {
+            name: "GIF 조작 기능 활성화",
+            desc: "GIF를 제어할 수 있는 기능을 활성화합니다.",
+            type: "check",
+            default: false
         }
     },
     require: ["filter", "eventBus"],
@@ -88,6 +93,18 @@ export default {
                 body: params
             });
         };
+
+        this.memory.gallViewContents = filter.add<HTMLVideoElement>(".gallview_contents video", (element) => {
+            if (!this.status.enableGifControl) return;
+
+            const $element = $(element);
+            const src = $element.attr("data-src");
+
+            if (src?.includes("dcinside.com/dccon.php")) return;
+
+            $element.removeAttr("onmousedown");
+            $element.attr("controls", "");
+        });
 
         this.memory.checkBox = filter.add<HTMLInputElement>(
             ".article_chkbox",
@@ -325,6 +342,7 @@ export default {
         });
     },
     revoke(filter) {
+        if (this.memory.gallViewContents) filter.remove(this.memory.gallViewContents);
         if (this.memory.checkBox) filter.remove(this.memory.checkBox);
         if (this.memory.newPostListEvent) eventBus.remove("newPostList", this.memory.newPostListEvent);
         if (this.memory.content) filter.remove(this.memory.content);
@@ -334,6 +352,7 @@ export default {
         ratio: Record<string, { article: number; comment: number; date: number }>;
     };
     memory: {
+        gallViewContents: string;
         always: string;
         checkBox: string;
         newPostListEvent: string;
@@ -347,6 +366,7 @@ export default {
         alarmRatio: RefresherRangeSettings;
         deleteViaCtrl: RefresherCheckSettings;
         checkPermBan: RefresherCheckSettings;
+        enableGifControl: RefresherCheckSettings;
     };
     require: ["filter", "eventBus"];
 }>;

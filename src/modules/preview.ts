@@ -151,6 +151,9 @@ let replyConfig = false;
     replyConfig = replyRemove;
 })();
 
+const gifControlConfig =
+    (await storage.get<boolean>("관리.enable")) && (await storage.get<boolean>("관리.enableGifControl"));
+
 const ISSUE_ZOOM_ID = /\$\(document\)\.data\('comment_id',\s'.+'\);/g;
 const ISSUE_ZOOM_NO = /\$\(document\)\.data\('comment_no',\s'.+'\);/g;
 
@@ -1503,6 +1506,17 @@ export default {
 
                         for (const element of dom.querySelectorAll("img[data-original]")) {
                             element.setAttribute("src", element.getAttribute("data-original")!);
+                        }
+
+                        if (gifControlConfig) {
+                            for (const element of dom.querySelectorAll("video")) {
+                                const src = element.getAttribute("data-src");
+
+                                if (src?.includes("dcinside.com/dccon.php")) continue;
+
+                                element.removeAttribute("onmousedown");
+                                element.setAttribute("controls", "");
+                            }
                         }
 
                         frame.contents = block.check("TEXT", dom.body.innerHTML, gallery)
