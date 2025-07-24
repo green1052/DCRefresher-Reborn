@@ -198,6 +198,10 @@
 }
 
 .refresherHideUselessView.refresherPushToRight {
+    ._BTN_AD_ {
+        display: none !important;
+    }
+
     .list_array_option,
     .left_content,
     .listwrap .issuebox {
