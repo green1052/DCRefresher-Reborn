@@ -2161,19 +2161,20 @@ export default {
         };
 
         const handleMousePress = (ev: MouseEvent) => {
-            if (ev.button !== 2) {
-                return ev;
-            }
+            if (ev.button !== 2) return;
 
             if (ev.type === "mousedown") {
                 this.memory.lastPress = Date.now();
-                return ev;
+                return;
             }
 
-            if (ev.type === "mouseup" && Date.now() - this.status.longPressDelay > this.memory.lastPress) {
+            if (
+                ev.type === "mouseup" &&
+                this.memory.lastPress > 0 &&
+                Date.now() - this.status.longPressDelay > this.memory.lastPress
+            ) {
                 this.memory.preventOpen = true;
                 this.memory.lastPress = 0;
-                return ev;
             }
         };
 
