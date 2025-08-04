@@ -7,8 +7,8 @@
         >
             <img
                 v-if="image"
-                :src="image"
                 :alt="text || 'Image'"
+                :src="image"
                 loading="lazy"
             />
 
@@ -22,10 +22,10 @@
         </span>
         <span
             v-if="hasRemove"
+            aria-label="Remove item"
             class="remove"
             role="button"
             tabindex="0"
-            aria-label="Remove item"
             @click="handleRemoveClick"
             @keydown.enter="handleRemoveClick"
         >
@@ -43,7 +43,7 @@
     </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { computed } from "vue";
 
 interface Props {

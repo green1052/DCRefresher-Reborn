@@ -1,10 +1,10 @@
 <template>
     <select
         v-model="value"
-        :disabled="disabled"
-        :data-module="modname"
-        class="refresher-options"
         :data-id="id"
+        :data-module="modname"
+        :disabled="disabled"
+        class="refresher-options"
         @change="handleChange"
     >
         <option
@@ -17,7 +17,7 @@
     </select>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 interface Props {
     change?: (module: string | undefined, id: string | undefined, value: string) => void;
     modname?: string;

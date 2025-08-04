@@ -12,7 +12,7 @@
     </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 interface Props {
     change?: (module: string | undefined, id: string | undefined, value: string) => void;
     placeholder?: string;
