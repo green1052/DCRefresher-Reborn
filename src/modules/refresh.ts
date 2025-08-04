@@ -309,11 +309,11 @@ export default {
         };
 
         document.addEventListener("visibilitychange", () => {
-            if (!document.hidden) 
+            if (!document.hidden) {
                 run();
                 return;
             }
-          
+
             if (this.memory.refresh) window.clearTimeout(this.memory.refresh);
         });
 
