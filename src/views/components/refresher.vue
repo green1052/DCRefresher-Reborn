@@ -32,17 +32,11 @@
                     :class="{ active: tab === 4 }"
                     @click="() => (tab = 4)"
                 >
-                    자짤
+                    모듈
                 </p>
                 <p
                     :class="{ active: tab === 5 }"
                     @click="() => (tab = 5)"
-                >
-                    모듈
-                </p>
-                <p
-                    :class="{ active: tab === 6 }"
-                    @click="() => (tab = 6)"
                 >
                     단축키
                 </p>
@@ -456,14 +450,6 @@
                 key="tab5"
                 class="tab tab5"
             >
-                <h2>아래의 확장 프로그램을 이용해주세요</h2>
-                <a @click="open('https://github.com/green1052/DCSelfImage')">DCSelfImage</a>
-            </div>
-            <div
-                v-show="tab === 5"
-                key="tab6"
-                class="tab tab6"
-            >
                 <div
                     v-if="!Object.keys(modules).length"
                     class="refresher-no-modules"
@@ -483,9 +469,9 @@
                 </div>
             </div>
             <div
-                v-show="tab === 6"
-                key="tab7"
-                class="tab tab7"
+                v-show="tab === 5"
+                key="tab6"
+                class="tab tab6"
             >
                 <div class="shortcut-lists">
                     <div
