@@ -7,48 +7,86 @@
             :placeholder="placeholder"
             :value="value"
             type="text"
-            @change="update"
+            @change="handleChange"
         />
     </div>
 </template>
 
-<script>
-import Vue from "vue";
+<script setup lang="ts">
+interface Props {
+    change?: (module: string | undefined, id: string | undefined, value: string) => void;
+    placeholder?: string;
+    modname?: string;
+    id?: string;
+    value?: string;
+    disabled?: boolean;
+}
 
-export default Vue.extend({
-    name: "RefresherInput",
+const props = withDefaults(defineProps<Props>(), {
+    value: "",
+    disabled: false
+});
 
-    props: {
-        change: {
-            type: Function
-        },
+const handleChange = (ev: Event) => {
+    const target = ev.target as HTMLInputElement;
+    props.change?.(target.dataset.module, target.dataset.id, target.value);
+};
+</script>
 
-        placeholder: {
-            type: String,
-            required: false
-        },
+<style lang="scss" scoped>
+.refresher-input {
+    display: flex;
+    align-items: center;
 
-        modname: {
-            type: String
-        },
+    input[type="text"] {
+        background-color: #fff;
+        border: 1px solid #aaa;
+        padding: 4px 16px;
+        border-radius: 9px;
+        font-size: 15px;
+        color: black;
+        transition: all 0.25s cubic-bezier(0.19, 1, 0.22, 1);
+        min-width: 150px;
 
-        id: {
-            type: String
-        },
-
-        value: {
-            type: String
-        },
-
-        disabled: {
-            type: Boolean
+        &:focus {
+            outline: none;
+            border-color: #4caf50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
         }
-    },
 
-    methods: {
-        update(ev) {
-            this.change?.(ev.target.dataset.module, ev.target.dataset.id, ev.target.value);
+        &:disabled {
+            background-color: #f5f5f5;
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        &::placeholder {
+            color: #999;
         }
     }
-});
-</script>
+}
+
+@media (prefers-color-scheme: dark) {
+    .refresher-input {
+        input[type="text"] {
+            background-color: #3b3b3b;
+            border: 1px solid rgb(90, 90, 90);
+            color: white;
+
+            &:focus {
+                border-color: #66bb6a;
+                box-shadow: 0 0 0 2px rgba(102, 187, 106, 0.2);
+            }
+
+            &:disabled {
+                background-color: #2a2a2a;
+                color: #666;
+            }
+
+            &::placeholder {
+                color: #666;
+            }
+        }
+    }
+}
+</style>
