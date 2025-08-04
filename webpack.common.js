@@ -41,7 +41,9 @@ export default {
     },
     plugins: [
         new MiniCssExtractPlugin({
-            filename: "refresher.bundle.css"
+            filename: (pathData) => {
+                return pathData.chunk.name === "refresher.bundle.js" ? "refresher.bundle.css" : "[name].css";
+            }
         }),
         new CopyWebpackPlugin({
             patterns: [

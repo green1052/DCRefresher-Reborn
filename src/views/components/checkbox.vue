@@ -3,100 +3,147 @@
         :class="{ disabled }"
         :data-id="id"
         :data-module="modname"
-        :data-on="on"
+        :data-on="isOn"
         class="refresher-checkbox"
         @click="toggle"
     >
         <div
-            :style="{
-                transform: `translateX(${translateX ?? (on ? 18 : 0)}px)`
-            }"
+            :style="transformStyle"
             class="selected"
-            @pointerdown="down"
-            @pointermove="hover"
-            @pointerout="out"
-            @pointerup="up"
+            @pointerdown="handlePointerDown"
+            @pointermove="handlePointerMove"
+            @pointerout="handlePointerOut"
+            @pointerup="handlePointerUp"
         />
     </div>
 </template>
 
-<script lang="ts">
-import Vue from "vue";
+<script setup lang="ts">
+import { computed, getCurrentInstance, ref, toRefs, watch } from "vue";
 
-export default Vue.extend({
-    name: "RefresherCheckbox",
-    props: {
-        change: {
-            type: Function
-        },
+interface Props {
+    change?: (module: string | undefined, id: string | undefined, value: boolean) => void;
+    modname?: string;
+    id?: string;
+    checked?: boolean;
+    disabled?: boolean;
+}
 
-        modname: {
-            type: String,
-            required: false
-        },
+const props = withDefaults(defineProps<Props>(), {
+    checked: false,
+    disabled: false
+});
 
-        id: {
-            type: String
-        },
+const { checked, disabled } = toRefs(props);
+const instance = getCurrentInstance();
+const isOn = ref(checked.value);
+const isDown = ref(false);
+const translateX = ref<number | undefined>(undefined);
+const onceOut = ref(false);
 
-        checked: {
-            type: Boolean
-        },
+watch(checked, (newValue) => {
+    isOn.value = newValue;
+});
 
-        disabled: {
-            type: Boolean
-        }
-    },
-    data() {
-        return {
-            on: this.checked,
-            _down: false,
-            translateX: undefined,
-            onceOut: false
-        };
-    },
-    methods: {
-        toggle() {
-            if (this.disabled) return;
+const transformStyle = computed(() => ({
+    transform: `translateX(${translateX.value ?? (isOn.value ? 18 : 0)}px)`
+}));
 
-            if (this.onceOut) {
-                this.onceOut = false;
+const toggle = () => {
+    if (disabled.value) return;
 
-                return;
-            }
+    if (onceOut.value) {
+        onceOut.value = false;
+        return;
+    }
 
-            this.on = !this.on;
+    isOn.value = !isOn.value;
+    const el = instance?.proxy?.$el as HTMLElement;
+    props.change?.(el?.dataset.module, el?.dataset.id, isOn.value);
+};
 
-            this.change?.(this.$el.dataset.module, this.$el.dataset.id, this.on);
-        },
+const handlePointerMove = (ev: PointerEvent) => {
+    if (disabled.value || !isDown.value) return;
+    translateX.value = Math.max(0, Math.min(18, Math.ceil(ev.offsetX)));
+};
 
-        hover(ev: PointerEvent) {
-            if (this.disabled || !this._down) return;
+const handlePointerDown = () => {
+    if (!disabled.value) isDown.value = true;
+};
 
-            this.translateX = Math.ceil(ev.offsetX);
-        },
+const handlePointerUp = () => {
+    if (disabled.value) return;
+    isDown.value = false;
+    translateX.value = undefined;
+};
 
-        down() {
-            if (!this.disabled) this._down = true;
-        },
+const handlePointerOut = () => {
+    if (disabled.value || !isDown.value) return;
+    isDown.value = false;
+    translateX.value = undefined;
+    toggle();
+    onceOut.value = true;
+};
+</script>
 
-        up() {
-            if (this.disabled) {
-                return;
-            }
+<style lang="scss" scoped>
+.refresher-checkbox {
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    width: 38px;
+    height: 20px;
+    border-radius: 25px;
+    transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+    background-color: #e0e0e0;
 
-            this._down = false;
-            this.translateX = undefined;
-        },
-        out() {
-            if (this.disabled || !this._down) return;
+    &[data-on="true"] {
+        background-color: #4caf50;
+    }
 
-            this._down = false;
-            this.translateX = undefined;
-            this.toggle();
+    &.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
 
-            this.onceOut = true;
+    .selected {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background-color: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        transition: transform 0.25s cubic-bezier(0.19, 1, 0.22, 1);
+        cursor: grab;
+
+        &:active {
+            cursor: grabbing;
         }
     }
-});
-</script>
+
+    &:hover:not(.disabled) {
+        transform: scale(1.05);
+    }
+
+    &:active:not(.disabled) {
+        transform: scale(0.95);
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .refresher-checkbox {
+        background-color: #555;
+
+        &[data-on="true"] {
+            background-color: #66bb6a;
+        }
+
+        .selected {
+            background-color: #f5f5f5;
+            box-shadow: 0 2px 4px rgba(255, 255, 255, 0.1);
+        }
+    }
+}
+</style>

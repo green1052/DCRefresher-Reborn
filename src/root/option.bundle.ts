@@ -1,3 +1,4 @@
+import "../styles/index.scss";
 import refresher from "../views/components/refresher.vue";
 import Vue from "vue";
 

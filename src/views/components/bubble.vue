@@ -1,26 +1,33 @@
 <template>
     <div class="refresher-bubble">
         <span
-            :class="{ image }"
+            :class="{ image: hasImage }"
             class="text"
-            @click="safeTextClick"
+            @click="handleTextClick"
         >
             <img
                 v-if="image"
                 :src="image"
+                :alt="text || 'Image'"
+                loading="lazy"
             />
 
-            {{ text }} {{ extra ? ` (${extra})` : "" }}
+            {{ displayText }}
             <span
-                v-if="gallery"
+                v-if="hasGallery"
                 class="gallery"
-                >({{ gallery }})</span
             >
+                ({{ gallery }})
+            </span>
         </span>
         <span
-            v-if="remove"
+            v-if="hasRemove"
             class="remove"
-            @click="safeRemoveClick"
+            role="button"
+            tabindex="0"
+            aria-label="Remove item"
+            @click="handleRemoveClick"
+            @keydown.enter="handleRemoveClick"
         >
             <svg
                 height="14"
@@ -36,48 +43,39 @@
     </div>
 </template>
 
-<script lang="ts">
-import Vue from "vue";
+<script setup lang="ts">
+import { computed } from "vue";
 
-export default Vue.extend({
-    name: "RefresherBubble",
-    props: {
-        text: {
-            type: String
-        },
+interface Props {
+    text?: string;
+    image?: string;
+    isRegex?: boolean;
+    gallery?: string;
+    extra?: string;
+    remove?: () => void;
+    textclick?: () => void;
+}
 
-        image: {
-            type: String
-        },
-
-        isRegex: {
-            type: Boolean
-        },
-
-        gallery: {
-            type: String
-        },
-
-        extra: {
-            type: String
-        },
-
-        remove: {
-            type: Function
-        },
-
-        textclick: {
-            type: Function
-        }
-    },
-    methods: {
-        safeTextClick() {
-            this.textclick?.();
-        },
-
-        safeRemoveClick() {
-            this.remove?.();
-        }
-    }
+const props = withDefaults(defineProps<Props>(), {
+    text: "",
+    isRegex: false
 });
+
+const displayText = computed(() => {
+    const baseText = props.text || "";
+    const extraText = props.extra ? ` (${props.extra})` : "";
+    return baseText + extraText;
+});
+
+const hasImage = computed(() => Boolean(props.image));
+const hasRemove = computed(() => Boolean(props.remove));
+const hasGallery = computed(() => Boolean(props.gallery));
+
+const handleTextClick = () => {
+    props.textclick?.();
+};
+
+const handleRemoveClick = () => {
+    props.remove?.();
+};
 </script>
