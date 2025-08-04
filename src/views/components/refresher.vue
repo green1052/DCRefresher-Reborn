@@ -556,7 +556,7 @@
                             />
                             <refresher-bubble
                                 v-if="!shortcutRegex.test(shortcut.shortcut)"
-                                text="키 없음"
+                                text="없음"
                             />
                         </div>
                     </div>
