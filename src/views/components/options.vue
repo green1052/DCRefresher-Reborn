@@ -1,10 +1,10 @@
 <template>
     <select
         v-model="value"
-        :data-id="id"
-        :data-module="modname"
         :disabled="disabled"
+        :data-module="modname"
         class="refresher-options"
+        :data-id="id"
         @change="handleChange"
     >
         <option

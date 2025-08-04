@@ -43,7 +43,7 @@
         "default_title": "DCRefresher Reborn"
     },
     "options_ui": {
-        "chrome_style": false,
+        "open_in_tab": true,
         "page": "views/index.html"
     },
     "web_accessible_resources": ["assets/*", "popup/*"],

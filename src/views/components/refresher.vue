@@ -1,6 +1,71 @@
 <template>
     <div id="refresher-app">
-        <div class="refresher-add-block-popup" />
+        <div
+            v-if="showBlockDialog"
+            class="block-dialog-backdrop"
+            @click="closeBlockDialog"
+        >
+            <div
+                class="block-dialog-content"
+                @click.stop
+            >
+                <h3 class="head">{{ blockKeyNames[currentBlockType] }} 차단 추가</h3>
+
+                <div class="memo-row">
+                    <p>{{ blockKeyNames[currentBlockType] }}</p>
+
+                    <refresher-input
+                        :placeholder="`${blockKeyNames[currentBlockType]} 값을 입력하세요`"
+                        :change="(a, b, value) => (blockFormData.content = value)"
+                        @keyup.enter="confirmAddBlock"
+                    />
+                </div>
+
+                <div class="memo-row">
+                    <p>정규식 사용</p>
+
+                    <refresher-checkbox
+                        :change="(a, b, value) => (blockFormData.isRegex = value)"
+                        :checked="blockFormData.isRegex"
+                    />
+                </div>
+
+                <div class="memo-row">
+                    <p>특정 갤러리 차단 (선택)</p>
+
+                    <refresher-input
+                        placeholder="갤러리 ID"
+                        :change="(a, b, value) => (blockFormData.gallery = value)"
+                    />
+                </div>
+
+                <div class="memo-row">
+                    <p>차단 모드</p>
+
+                    <refresher-options
+                        :options="{ NONE: '기본값', ...blockDetectModeTypeNames }"
+                        :change="(a, b, value) => (blockFormData.mode = value)"
+                        :value="blockFormData.mode"
+                    />
+                </div>
+
+                <div class="button-wrap">
+                    <div
+                        class="refresher-preview-button primary"
+                        @click="confirmAddBlock"
+                    >
+                        <p>추가</p>
+                    </div>
+                    <div
+                        class="refresher-preview-button sub"
+                        @click="closeBlockDialog"
+                    >
+                        <p>취소</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="refresher-title-zone">
             <h1>설정</h1>
             <div class="float-right">
@@ -66,8 +131,9 @@
                             <a
                                 v-for="link in links"
                                 @click="open(link.url)"
-                                >{{ link.text }}</a
                             >
+                                {{ link.text }}
+                            </a>
                         </p>
                         <p>
                             <span class="version">
@@ -504,7 +570,7 @@
 <script setup lang="ts">
 import $ from "cash-dom";
 import ky from "ky";
-import { onMounted, reactive, ref } from "vue";
+import { nextTick, onMounted, reactive, ref } from "vue";
 import { Fragment } from "vue-fragment";
 import browser from "webextension-polyfill";
 
@@ -566,6 +632,17 @@ const links = [
     }
 ];
 const databaseVersion = ref("");
+
+const showBlockDialog = ref(false);
+const currentBlockType = ref<RefresherBlockType>("NICK");
+const blockContentInput = ref<HTMLInputElement>();
+const blockFormData = reactive({
+    content: "",
+    isRegex: false,
+    gallery: "",
+    mode: "NONE" as RefresherBlockDetectMode
+});
+
 onMounted(async () => {
     port.postMessage({
         requestRefresherModules: true,
@@ -596,6 +673,7 @@ onMounted(async () => {
     shortcuts.value = await browser.commands.getAll();
     databaseVersion.value = await storage.get("refresher.database.version");
 });
+
 const exportMemo = () => {
     navigator.clipboard
         .writeText(JSON.stringify(memos))
@@ -606,6 +684,7 @@ const exportMemo = () => {
             alert("클립보드에 복사하지 못했습니다.");
         });
 };
+
 const importMemo = () => {
     const result = prompt("가져올 데이터를 입력하세요.");
 
@@ -633,6 +712,7 @@ const importMemo = () => {
         alert("데이터가 잘못됐습니다.");
     }
 };
+
 const exportBlock = () => {
     navigator.clipboard
         .writeText(JSON.stringify(blocks))
@@ -643,6 +723,7 @@ const exportBlock = () => {
             alert("클립보드에 복사하지 못했습니다.");
         });
 };
+
 const importBlock = () => {
     const result = prompt("가져올 데이터를 입력하세요.");
 
@@ -673,17 +754,21 @@ const importBlock = () => {
         alert("데이터가 잘못됐습니다.");
     }
 };
+
 const getVersion = () => {
     return browser.runtime.getManifest().version_name ?? browser.runtime.getManifest().version;
 };
+
 const open = (url: string) => {
     browser.tabs.create({ url });
 };
+
 const openShortcutSettings = () => {
     browser.tabs.create({
         url: /Firefox/.test(navigator.userAgent) ? "about:addons" : "chrome://extensions/shortcuts"
     });
 };
+
 const typeWrap = (value: unknown) => {
     if (typeof value === "boolean") {
         return value ? "On" : "Off";
@@ -695,6 +780,7 @@ const typeWrap = (value: unknown) => {
 
     return value;
 };
+
 const moveToModuleTab = (moduleName: string) => {
     tab.value = 5;
 
@@ -725,12 +811,15 @@ const moveToModuleTab = (moduleName: string) => {
         });
     }
 };
+
 const settingsCount = (obj: Record<string, RefresherSettings>) => {
     return Object.values(obj).filter((v) => !v?.advanced).length;
 };
+
 const advancedSettingsCount = (obj: Record<string, RefresherSettings>) => {
     return Object.values(obj).filter((v) => v?.advanced === true).length;
 };
+
 const updateUserSetting = (module: string, key: string, value: unknown) => {
     settings.value[module][key].value = value;
 
@@ -753,6 +842,7 @@ const updateUserSetting = (module: string, key: string, value: unknown) => {
         });
     });
 };
+
 const syncBlock = () => {
     port.postMessage({
         updateBlocks: true,
@@ -770,76 +860,69 @@ const syncBlock = () => {
         });
     });
 };
-const addEmptyBlockedUser = (key: RefresherBlockType) => {
+
+const openBlockDialog = (key: RefresherBlockType) => {
     if (key === "DCCON") {
         alert("디시콘 수동 차단은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
         return;
     }
 
-    const extra: string[] = [];
+    currentBlockType.value = key;
+    blockFormData.content = "";
+    blockFormData.isRegex = false;
+    blockFormData.gallery = "";
+    blockFormData.mode = "NONE";
+    showBlockDialog.value = true;
 
-    const isAdvanced = false;
-    // const isAdvanced = confirm("고급 차단 설정을 하시겠습니까?");
-    //
-    // if (isAdvanced) {
-    //     extra.push("[고급]");
-    // }
+    nextTick(() => {
+        blockContentInput.value?.focus();
+    });
+};
 
-    const result = prompt(
-        isAdvanced
-            ? `${blockKeyNames[key]} 차단\n인수: type: RefresherBlockType, content: string, gallery?: string\n예제: return content === "개블빙" && gallery === "bser";`
-            : `추가할 ${blockKeyNames[key]} 값을 입력하세요.`
-    );
-
-    if (!result) return;
-
-    let isRegex = false;
-    let gallery: string | undefined = undefined;
-    let mode: RefresherBlockDetectMode | undefined = undefined;
-
-    if (!isAdvanced) {
-        if (confirm("정규식입니까?")) {
-            isRegex = true;
-            extra.push("[정규식]");
-        }
-
-        if (confirm("특정 갤러리에서만 차단하시겠습니까?")) {
-            const id = prompt("갤러리 아이디를 입력해주세요.");
-
-            if (id) {
-                gallery = id;
-            } else {
-                alert("갤러리 아이디가 잘못됐습니다.");
-                return;
-            }
-        }
-
-        if (confirm(`차단 모드를 설정하시겠습니까? 현재 값: ${blockDetectModeTypeNames[blockModes.value[key]]}`)) {
-            const modes = Object.keys(blockDetectModeTypeNames);
-
-            const inputMode = prompt(`차단 모드를 입력해주세요. (모드 목록: ${modes.join(", ")})`);
-
-            if (inputMode && modes.includes(inputMode as RefresherBlockDetectMode)) {
-                mode = inputMode as RefresherBlockDetectMode;
-                extra.push(`[${blockDetectModeTypeNames[mode]}]`);
-            } else {
-                alert("모드가 잘못됐습니다.");
-                return;
-            }
-        }
+const closeBlockDialog = (event?: Event) => {
+    if (event && event.target !== event.currentTarget) {
+        return;
     }
 
-    blocks[key].push({
-        content: result,
-        isRegex,
+    showBlockDialog.value = false;
+};
+
+const confirmAddBlock = () => {
+    if (!blockFormData.content.trim()) {
+        alert(`${blockKeyNames[currentBlockType.value]} 값을 입력해주세요.`);
+        return;
+    }
+
+    const extra: string[] = [];
+    const isAdvanced = false;
+
+    if (blockFormData.isRegex) {
+        extra.push("[정규식]");
+    }
+
+    if (blockFormData.gallery.trim()) {
+        extra.push(`[갤러리: ${blockFormData.gallery.trim()}]`);
+    }
+
+    if (blockFormData.mode && blockFormData.mode !== "NONE") {
+        extra.push(`[${blockDetectModeTypeNames[blockFormData.mode]}]`);
+    }
+
+    blocks[currentBlockType.value].push({
+        content: blockFormData.content.trim(),
+        isRegex: blockFormData.isRegex,
         isAdvanced,
         extra: extra.length ? extra.join(" ") : undefined,
-        gallery,
-        mode
+        gallery: blockFormData.gallery.trim() || undefined,
+        mode: blockFormData.mode === "NONE" ? undefined : blockFormData.mode
     });
 
     syncBlock();
+    closeBlockDialog();
 };
+
+// Legacy function for compatibility
+const addEmptyBlockedUser = openBlockDialog;
 const removeBlockedUser = (key: RefresherBlockType, index: number) => {
     blocks[key].splice(index, 1);
     syncBlock();
@@ -1197,7 +1280,7 @@ const updateIpDatabase = async () => {
         overflow: auto;
         position: absolute;
         width: 90%;
-        height: 345px;
+        height: 90%;
         padding-top: 40px;
         margin-top: 30px;
 
@@ -1676,6 +1759,183 @@ const updateIpDatabase = async () => {
 
     &:last-child {
         margin-bottom: unset;
+    }
+}
+
+// Block dialog styles
+.block-dialog-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+    animation: backdrop-fade-in 0.3s ease-out;
+    overflow-y: auto;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.block-dialog-content {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 32px;
+    width: 100%;
+    max-width: 500px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    animation: dialog-slide-in 0.3s ease-out;
+    margin: auto;
+    position: relative;
+    flex-shrink: 0;
+
+    .head {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 28px;
+        text-align: center;
+        color: #2c3e50;
+        border-bottom: 2px solid #f8f9fa;
+        padding-bottom: 16px;
+    }
+
+    .memo-row {
+        margin-bottom: 24px;
+
+        > p {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #343a40;
+            display: block;
+        }
+    }
+
+    .button-wrap {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 32px;
+        padding-top: 20px;
+        border-top: 1px solid #f1f3f4;
+
+        //.refresher-preview-button {
+        //    padding: 14px 28px;
+        //    border-radius: 12px;
+        //    cursor: pointer;
+        //    font-weight: 600;
+        //    font-size: 15px;
+        //    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        //    border: none;
+        //    min-width: 100px;
+        //
+        //    &.primary {
+        //        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        //        color: white;
+        //
+        //        &:hover {
+        //            transform: translateY(-2px);
+        //            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
+        //        }
+        //
+        //        &:active {
+        //            transform: translateY(0);
+        //        }
+        //    }
+        //
+        //    &.sub {
+        //        background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
+        //        color: white;
+        //
+        //        &:hover {
+        //            transform: translateY(-2px);
+        //            box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
+        //        }
+        //
+        //        &:active {
+        //            transform: translateY(0);
+        //        }
+        //    }
+        //
+        //    p {
+        //        margin: 0;
+        //        font-size: 15px;
+        //        font-weight: 600;
+        //    }
+        //}
+    }
+}
+
+@keyframes backdrop-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes dialog-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .block-dialog-backdrop {
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+
+    .block-dialog-content {
+        background: #1e1e1e;
+        color: #ffffff;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+
+        .head {
+            color: #ffffff;
+            border-bottom-color: #2f3349;
+        }
+
+        .memo-row {
+            > p {
+                color: #e9ecef;
+            }
+        }
+
+        .button-wrap {
+            border-top-color: #3a3f47;
+
+            //.refresher-preview-button {
+            //    &.primary {
+            //        background: linear-gradient(135deg, #4dabf7 0%, #339af0 100%);
+            //
+            //        &:hover {
+            //            box-shadow: 0 8px 25px rgba(77, 171, 247, 0.4);
+            //        }
+            //    }
+            //
+            //    &.sub {
+            //        background: linear-gradient(135deg, #868e96 0%, #6c757d 100%);
+            //
+            //        &:hover {
+            //            box-shadow: 0 8px 25px rgba(134, 142, 150, 0.4);
+            //        }
+            //    }
+            //}
+        }
     }
 }
 </style>
