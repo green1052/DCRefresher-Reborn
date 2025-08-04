@@ -19,7 +19,10 @@
         "180": "assets/icons/logo/icon_60pt@3x.png",
         "1024": "assets/icons/logo/Icon.png"
     },
-    "options_page": "views/index.html",
+    "options_ui": {
+        "open_in_tab": true,
+        "page": "views/index.html"
+    },
     "web_accessible_resources": [
         {
             "resources": ["assets/*", "popup/*"],
