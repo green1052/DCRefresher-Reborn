@@ -309,15 +309,12 @@ export default {
         };
 
         document.addEventListener("visibilitychange", () => {
-            if (document.hidden) {
-                if (this.memory.refresh) {
-                    window.clearTimeout(this.memory.refresh);
-                }
-
+            if (!document.hidden) 
+                run();
                 return;
             }
-
-            run();
+          
+            if (this.memory.refresh) window.clearTimeout(this.memory.refresh);
         });
 
         window.addEventListener("pageshow", (ev) => {
