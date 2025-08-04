@@ -15,8 +15,8 @@
                     <p>{{ blockKeyNames[currentBlockType] }}</p>
 
                     <refresher-input
-                        :placeholder="`${blockKeyNames[currentBlockType]} 값을 입력하세요`"
                         :change="(a, b, value) => (blockFormData.content = value)"
+                        :placeholder="`${blockKeyNames[currentBlockType]} 값을 입력하세요`"
                         @keyup.enter="confirmAddBlock"
                     />
                 </div>
@@ -34,8 +34,8 @@
                     <p>특정 갤러리 차단 (선택)</p>
 
                     <refresher-input
-                        placeholder="갤러리 ID"
                         :change="(a, b, value) => (blockFormData.gallery = value)"
+                        placeholder="갤러리 ID"
                     />
                 </div>
 
@@ -43,8 +43,8 @@
                     <p>차단 모드</p>
 
                     <refresher-options
-                        :options="{ NONE: '기본값', ...blockDetectModeTypeNames }"
                         :change="(a, b, value) => (blockFormData.mode = value)"
+                        :options="{ NONE: '기본값', ...blockDetectModeTypeNames }"
                         :value="blockFormData.mode"
                     />
                 </div>
@@ -200,16 +200,16 @@
                                     <refresher-checkbox
                                         v-if="settings[module][setting].type === 'check'"
                                         :id="setting"
-                                        :disabled="!modules[module].enable"
                                         :change="updateUserSetting"
                                         :checked="settings[module][setting].value"
+                                        :disabled="!modules[module].enable"
                                         :modname="module"
                                     />
                                     <refresher-input
                                         v-else-if="settings[module][setting].type === 'text'"
                                         :id="setting"
-                                        :disabled="!modules[module].enable"
                                         :change="updateUserSetting"
+                                        :disabled="!modules[module].enable"
                                         :modname="module"
                                         :placeholder="settings[module][setting].default"
                                         :value="settings[module][setting].value"
@@ -217,8 +217,8 @@
                                     <refresher-range
                                         v-else-if="settings[module][setting].type === 'range'"
                                         :id="setting"
-                                        :disabled="!modules[module].enable"
                                         :change="updateUserSetting"
+                                        :disabled="!modules[module].enable"
                                         :max="settings[module][setting].max"
                                         :min="settings[module][setting].min"
                                         :modname="module"
@@ -230,8 +230,8 @@
                                     <refresher-options
                                         v-else-if="settings[module][setting].type === 'option'"
                                         :id="setting"
-                                        :disabled="!modules[module].enable"
                                         :change="updateUserSetting"
+                                        :disabled="!modules[module].enable"
                                         :modname="module"
                                         :options="settings[module][setting].items"
                                         :value="settings[module][setting].value"
@@ -291,16 +291,16 @@
                                 <refresher-checkbox
                                     v-if="settings[module][setting].type === 'check'"
                                     :id="setting"
-                                    :disabled="!modules[module].enable"
                                     :change="updateUserSetting"
                                     :checked="settings[module][setting].value"
+                                    :disabled="!modules[module].enable"
                                     :modname="module"
                                 />
                                 <refresher-input
                                     v-else-if="settings[module][setting].type === 'text'"
                                     :id="setting"
-                                    :disabled="!modules[module].enable"
                                     :change="updateUserSetting"
+                                    :disabled="!modules[module].enable"
                                     :modname="module"
                                     :placeholder="settings[module][setting].default"
                                     :value="settings[module][setting].value"
@@ -308,8 +308,8 @@
                                 <refresher-range
                                     v-else-if="settings[module][setting].type === 'range'"
                                     :id="setting"
-                                    :disabled="!modules[module].enable"
                                     :change="updateUserSetting"
+                                    :disabled="!modules[module].enable"
                                     :max="settings[module][setting].max"
                                     :min="settings[module][setting].min"
                                     :modname="module"
@@ -321,8 +321,8 @@
                                 <refresher-options
                                     v-else-if="settings[module][setting].type === 'option'"
                                     :id="setting"
-                                    :disabled="!modules[module].enable"
                                     :change="updateUserSetting"
+                                    :disabled="!modules[module].enable"
                                     :modname="module"
                                     :options="settings[module][setting].items"
                                     :value="settings[module][setting].value"
@@ -567,7 +567,7 @@
     </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import $ from "cash-dom";
 import ky from "ky";
 import { nextTick, onMounted, reactive, ref } from "vue";

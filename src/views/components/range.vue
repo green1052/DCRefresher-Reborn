@@ -21,7 +21,7 @@
     </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { computed, nextTick, ref } from "vue";
 
 interface Props {
@@ -122,7 +122,7 @@ const handleChange = (ev: Event) => {
 
             &::-webkit-slider-thumb {
                 cursor: not-allowed;
-                
+
                 &:hover {
                     transform: none;
                     box-shadow: none;
@@ -131,7 +131,7 @@ const handleChange = (ev: Event) => {
 
             &::-moz-range-thumb {
                 cursor: not-allowed;
-                
+
                 &:hover {
                     transform: none;
                     box-shadow: none;
