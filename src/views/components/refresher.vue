@@ -50,16 +50,10 @@
                 </div>
 
                 <div class="button-wrap">
-                    <div
-                        class="refresher-preview-button primary"
-                        @click="confirmAddBlock"
-                    >
+                    <div @click="confirmAddBlock">
                         <p>추가</p>
                     </div>
-                    <div
-                        class="refresher-preview-button sub"
-                        @click="closeBlockDialog"
-                    >
+                    <div @click="closeBlockDialog">
                         <p>취소</p>
                     </div>
                 </div>
@@ -880,10 +874,6 @@ const openBlockDialog = (key: RefresherBlockType) => {
 };
 
 const closeBlockDialog = (event?: Event) => {
-    if (event && event.target !== event.currentTarget) {
-        return;
-    }
-
     showBlockDialog.value = false;
 };
 
@@ -1280,7 +1270,7 @@ const updateIpDatabase = async () => {
         overflow: auto;
         position: absolute;
         width: 90%;
-        height: 90%;
+        height: 85%;
         padding-top: 40px;
         margin-top: 30px;
 
@@ -1826,51 +1816,7 @@ const updateIpDatabase = async () => {
         margin-top: 32px;
         padding-top: 20px;
         border-top: 1px solid #f1f3f4;
-
-        //.refresher-preview-button {
-        //    padding: 14px 28px;
-        //    border-radius: 12px;
-        //    cursor: pointer;
-        //    font-weight: 600;
-        //    font-size: 15px;
-        //    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        //    border: none;
-        //    min-width: 100px;
-        //
-        //    &.primary {
-        //        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-        //        color: white;
-        //
-        //        &:hover {
-        //            transform: translateY(-2px);
-        //            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
-        //        }
-        //
-        //        &:active {
-        //            transform: translateY(0);
-        //        }
-        //    }
-        //
-        //    &.sub {
-        //        background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
-        //        color: white;
-        //
-        //        &:hover {
-        //            transform: translateY(-2px);
-        //            box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
-        //        }
-        //
-        //        &:active {
-        //            transform: translateY(0);
-        //        }
-        //    }
-        //
-        //    p {
-        //        margin: 0;
-        //        font-size: 15px;
-        //        font-weight: 600;
-        //    }
-        //}
+        cursor: pointer;
     }
 }
 
@@ -1917,24 +1863,6 @@ const updateIpDatabase = async () => {
 
         .button-wrap {
             border-top-color: #3a3f47;
-
-            //.refresher-preview-button {
-            //    &.primary {
-            //        background: linear-gradient(135deg, #4dabf7 0%, #339af0 100%);
-            //
-            //        &:hover {
-            //            box-shadow: 0 8px 25px rgba(77, 171, 247, 0.4);
-            //        }
-            //    }
-            //
-            //    &.sub {
-            //        background: linear-gradient(135deg, #868e96 0%, #6c757d 100%);
-            //
-            //        &:hover {
-            //            box-shadow: 0 8px 25px rgba(134, 142, 150, 0.4);
-            //        }
-            //    }
-            //}
         }
     }
 }
