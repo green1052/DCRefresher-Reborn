@@ -11,6 +11,7 @@
             <span
                 :data-icon="user.icon"
                 :data-type="user.type"
+                :style="{ backgroundImage: getUserIconUrl() }"
                 class="refresher-user-icon"
             />
             <span class="refresher-user-nick">{{ user.nick }}</span>
@@ -31,69 +32,79 @@
     </div>
 </template>
 
-<script lang="ts">
-import Vue, { PropType } from "vue";
+<script lang="ts" setup>
+import { computed } from "vue";
 
 import eventBus from "../core/eventbus";
+import getURL from "../utils/getURL";
 import { User } from "../utils/user";
 
-export default Vue.extend({
-    name: "RefresherUser",
-    props: {
-        user: {
-            type: Object as PropType<User>,
-            required: true
-        },
+interface Props {
+    user: User;
+    me?: boolean;
+    click?: (user: User) => void;
+}
 
-        me: {
-            type: Boolean,
-            required: false
-        },
-
-        click: {
-            type: Function
-        }
-    },
-    computed: {
-        title(): string {
-            if (this.user.isMember()) {
-                const ban = this.user.ban;
-                const ratio = this.user.ratio;
-
-                return `(${this.user.id})${ban ? ` [${ban}]` : ""}${ratio ? ` [${ratio}]` : ""}`;
-            }
-
-            return `(${this.user.ip})${this.user.ip_data ? ` [${this.user.ip_data}]` : ""}`;
-        },
-
-        userInfo(): string {
-            if (this.user.isMember()) {
-                const ban = this.user.ban;
-                const ratio = this.user.ratio;
-
-                return `(${this.user.id})${ban ? ` [${ban}]` : ""}${ratio ? ` [${ratio}]` : ""}`;
-            }
-
-            return `(${this.user.ip})${this.user.ip_data ? ` [${this.user.ip_data}]` : ""}`;
-        }
-    },
-    methods: {
-        openLink(url: string): void {
-            window.open(url, "_blank");
-        },
-
-        clickHandle(): void {
-            if (typeof this.click === "function") {
-                this.click(this.user);
-                return;
-            }
-
-            if (this.user.id) this.openLink(`https://gallog.dcinside.com/${this.user.id}`);
-        },
-
-        contextMenu(): void {
-            eventBus.emit("refresherUserContextMenu", this.user.nick, this.user.id, this.user.ip, null, null);
-        }
-    }
+const props = withDefaults(defineProps<Props>(), {
+    me: false,
+    click: undefined
 });
+
+const title = computed(() => {
+    if (props.user.isMember()) {
+        const ban = props.user.ban;
+        const ratio = props.user.ratio;
+
+        return `(${props.user.id})${ban ? ` [${ban}]` : ""}${ratio ? ` [${ratio}]` : ""}`;
+    }
+
+    return `(${props.user.ip})${props.user.ip_data ? ` [${props.user.ip_data}]` : ""}`;
+});
+
+const userInfo = computed(() => {
+    if (props.user.isMember()) {
+        const ban = props.user.ban;
+        const ratio = props.user.ratio;
+
+        return `(${props.user.id})${ban ? ` [${ban}]` : ""}${ratio ? ` [${ratio}]` : ""}`;
+    }
+
+    return `(${props.user.ip})${props.user.ip_data ? ` [${props.user.ip_data}]` : ""}`;
+});
+
+const openLink = (url: string): void => {
+    window.open(url, "_blank");
+};
+
+const clickHandle = (): void => {
+    if (typeof props.click === "function") {
+        props.click(props.user);
+        return;
+    }
+
+    if (props.user.id) {
+        openLink(`https://gallog.dcinside.com/${props.user.id}`);
+    }
+};
+
+const contextMenu = (): void => {
+    eventBus.emit("refresherUserContextMenu", props.user.nick, props.user.id, props.user.ip, null, null);
+};
+
+const getUserIconUrl = () => {
+    if (props.user.icon === "true") {
+        return `url(${getURL("/assets/icons/fixed_member.webp")})`;
+    }
+
+    switch (props.user.type) {
+        case "member":
+            return `url(${getURL("/assets/icons/member.webp")})`;
+        case "manager":
+            return `url(${getURL("/assets/icons/manager.webp")})`;
+        case "admin":
+            return `url(${getURL("/assets/icons/admin.webp")})`;
+        default:
+            return "none";
+    }
+};
 </script>

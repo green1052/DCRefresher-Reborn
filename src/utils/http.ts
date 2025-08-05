@@ -103,19 +103,19 @@ export const view = (url: string): string => {
 };
 
 export const mergeParamURL = (origin: string, getFrom: string): string => {
-    const add: Record<string, string> = {};
+    const params: Record<string, string> = {};
 
     const originURL = new URL(origin);
     for (const [key, value] of originURL.searchParams) {
-        add[key] = value;
+        params[key] = value;
     }
 
     const fromURL = new URL(getFrom);
     for (const [key, value] of fromURL.searchParams) {
-        add[key] = value;
+        params[key] = value;
     }
 
-    return "?" + new URLSearchParams(add).toString();
+    return "?" + new URLSearchParams(params).toString();
 };
 
 /**

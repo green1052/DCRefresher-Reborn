@@ -1,22 +1,17 @@
 <template>
-    <img :src="getURL(`/assets/icons/${icon}.webp`)" />
+    <img
+        :alt="icon"
+        :src="getURL(`/assets/icons/${icon}.webp`)"
+        class="refresher-icon"
+    />
 </template>
 
-<script lang="ts">
-import Vue from "vue";
-
+<script lang="ts" setup>
 import getURL from "../utils/getURL";
 
-export default Vue.extend({
-    name: "Icon",
-    props: {
-        icon: {
-            type: String,
-            required: true
-        }
-    },
-    methods: {
-        getURL
-    }
-});
+interface Props {
+    icon: string;
+}
+
+defineProps<Props>();
 </script>

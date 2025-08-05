@@ -83,39 +83,33 @@
                                 v-html="frame.subtitle"
                             />
                         </transition>
-                        <transition
-                            appear
-                            name="refresher-slide-up"
-                            @before-enter="beforeEnter"
-                            @after-enter="afterEnter"
-                        />
                     </div>
 
                     <div
                         v-if="frame.data.comments"
                         class="refresher-comment-controls-container"
                     >
-                        <fragment v-if="frame.data.useWriteComment">
+                        <template v-if="frame.data.useWriteComment">
                             <PreviewButton
-                                :id="'dccon'"
+                                id="dccon"
                                 :click="renderDcconPopup"
-                                :text="'디시콘'"
                                 class="refresher-comment-controls"
+                                text="디시콘"
                             />
 
                             <PreviewButton
-                                :id="'write'"
+                                id="write"
                                 :click="toCommentWrite"
-                                :text="'댓글 쓰기'"
                                 class="refresher-comment-controls"
+                                text="댓글 쓰기"
                             />
-                        </fragment>
+                        </template>
 
                         <PreviewButton
-                            :id="'refresh'"
+                            id="refresh"
                             :click="refresh"
-                            :text="'새로고침'"
                             class="refresher-comment-controls"
+                            text="새로고침"
                         />
                     </div>
                 </div>
@@ -166,7 +160,7 @@
                 v-else
                 class="refresher-preview-contents"
             >
-                <refresher-loader v-show="frame.data.load" />
+                <RefresherLoader v-show="frame.data.load" />
 
                 <transition
                     v-if="!frame.data.comments"
@@ -233,7 +227,7 @@
             >
                 <div>
                     <PreviewButton
-                        :id="'upvote'"
+                        id="upvote"
                         :click="upvote"
                         :text="
                             frame.upvotes === undefined && frame.fixedUpvotes === undefined
@@ -244,21 +238,21 @@
                     />
                     <PreviewButton
                         v-if="!frame.data.disabledDownvote"
-                        :id="'downvote'"
+                        id="downvote"
                         :click="downvote"
                         :text="frame.downvotes ?? 'X'"
                         class="refresher-downvote"
                     />
                     <PreviewButton
-                        :id="'share'"
+                        id="share"
                         :click="share"
-                        :text="'공유'"
                         class="refresher-share primary"
+                        text="공유"
                     />
                     <PreviewButton
-                        :id="'newtab'"
+                        id="newtab"
                         :click="original"
-                        :text="'원본 보기'"
+                        text="원본 보기"
                     />
                 </div>
             </div>
@@ -266,194 +260,168 @@
     </div>
 </template>
 
-<script lang="ts">
-import Vue, { PropType } from "vue";
-import { Fragment } from "vue-fragment";
+<script lang="ts" setup>
+import { getCurrentInstance, onBeforeUnmount, onMounted, ref } from "vue";
 
 import getURL from "../utils/getURL";
 import PreviewButton from "./button.vue";
 import Comment from "./comment.vue";
 import CountDown from "./countdown.vue";
-import dccon from "./dccon.vue";
 import RefresherDcconPopup from "./dccon.vue";
-import Icon from "./icon.vue";
 import RefresherLoader from "./loader.vue";
 import TimeStamp from "./timestamp.vue";
 import User from "./user.vue";
 import WriteComment from "./write_comment.vue";
 
-interface FrameData {
-    memoText: string;
-    reply: {
-        commentNo: string | null;
-        replyNo: string | null;
-    };
-    dccon: DcinsideDccon[];
-    bigDccon: boolean;
-    dcconRender: Vue | null;
-    commentKey: number;
+interface Props {
+    frame: RefresherFrame;
+    index: number;
 }
 
-export default Vue.extend({
-    name: "RefresherFrame",
-    components: {
-        RefresherDcconPopup,
-        PreviewButton,
-        TimeStamp,
-        CountDown,
-        User,
-        Comment,
-        WriteComment,
-        Icon,
-        RefresherLoader,
-        Fragment
-    },
-    props: {
-        frame: {
-            type: Object as PropType<RefresherFrame>,
-            required: true
-        },
-        index: {
-            type: Number,
-            required: true
-        }
-    },
-    data: (): FrameData => {
-        return {
-            memoText: "",
-            reply: {
-                commentNo: null,
-                replyNo: null
-            },
-            dccon: [],
-            bigDccon: false,
-            dcconRender: null,
-            commentKey: 0
-        };
-    },
-    created() {
-        this.frame.app.$on("close", () => {
-            this.frame.title = "";
-            this.frame.subtitle = "";
-            this.frame.contents = undefined;
-            this.frame.upvotes = undefined;
-            this.frame.fixedUpvotes = undefined;
-            this.frame.downvotes = undefined;
-            this.frame.error = undefined;
-            this.frame.collapse = undefined;
-            this.frame.data = {};
-            this.frame.functions = {};
-            this.reply = {
-                commentNo: null,
-                replyNo: null
-            };
-            this.dccon = [];
-            this.bigDccon = false;
-            this.closeDccon();
-            this.commentKey = 0;
-        });
-    },
-    methods: {
-        getURL,
-        beforeEnter(el: HTMLElement) {
-            el.style.transitionDelay = `${45 * Number(el.dataset.index)}ms`;
-        },
+const props = defineProps<Props>();
+const instance = getCurrentInstance();
 
-        afterEnter(el: HTMLElement) {
-            el.style.transitionDelay = "";
-        },
+const memoText = ref("");
+const reply = ref({
+    commentNo: null as string | null,
+    replyNo: null as string | null
+});
+const dccon = ref<DcinsideDccon[]>([]);
+const bigDccon = ref(false);
+const dcconRender = ref<any>(null);
+const commentKey = ref(0);
 
-        upvote() {
-            return this.frame.functions.vote(1);
-        },
+const beforeEnter = (el: HTMLElement) => {
+    el.style.transitionDelay = `${45 * Number(el.dataset.index)}ms`;
+};
 
-        downvote() {
-            return this.frame.functions.vote(0);
-        },
+const afterEnter = (el: HTMLElement) => {
+    el.style.transitionDelay = "";
+};
 
-        share() {
-            return this.frame.functions.share();
-        },
+const upvote = () => {
+    return props.frame.functions.vote(1);
+};
 
-        retry() {
-            return this.frame.functions.retry(false);
-        },
+const downvote = () => {
+    return props.frame.functions.vote(0);
+};
 
-        async writeComment(...args: any[]) {
-            try {
-                await this.frame.functions.writeComment(...args);
-                this.retry();
+const share = () => {
+    return props.frame.functions.share();
+};
 
-                return true;
-            } catch {
-                return false;
-            }
-        },
+const retry = () => {
+    return props.frame.functions.retry(false);
+};
 
-        toCommentWrite() {
-            document.querySelector<HTMLElement>("#comment_main")?.focus();
-            return true;
-        },
-
-        refresh() {
-            this.retry();
-            return true;
-        },
-
-        renderDcconPopup() {
-            const element = document.createElement("div");
-            document.body.appendChild(element);
-
-            this.dcconRender = new Vue({
-                el: element,
-                render: (h) =>
-                    h(dccon, {
-                        on: {
-                            clickDccon: this.clickDccon,
-                            closeDccon: this.closeDccon
-                        }
-                    })
-            });
-
-            return true;
-        },
-
-        clickDccon(dccon: DcinsideDccon[], bigDccon: boolean) {
-            this.dccon = dccon;
-            this.bigDccon = bigDccon;
-            this.closeDccon();
-        },
-
-        closeDccon() {
-            this.dcconRender?.$destroy();
-            this.dcconRender?.$el.remove();
-
-            this.dcconRender = null;
-        },
-
-        setDccon(value: DcinsideDccon[]) {
-            this.dccon = value;
-        },
-
-        setBigDccon(value: boolean) {
-            this.bigDccon = value;
-        },
-
-        getDccon() {
-            return this.dccon;
-        },
-
-        getBigDccon() {
-            return this.bigDccon;
-        },
-
-        original() {
-            this.frame.functions.openOriginal();
-            return true;
-        }
+const writeComment = async (...args: any[]) => {
+    try {
+        await props.frame.functions.writeComment(...args);
+        retry();
+        return true;
+    } catch {
+        return false;
     }
-    // updated() {
-    //     this.$el.scroll(0, 0);
-    // }
+};
+
+const toCommentWrite = () => {
+    const commentElement = document.querySelector<HTMLElement>("#comment_main");
+    if (commentElement) {
+        commentElement.focus();
+    }
+    return true;
+};
+
+const refresh = () => {
+    retry();
+    return true;
+};
+
+const renderDcconPopup = () => {
+    const element = document.createElement("div");
+    document.body.appendChild(element);
+
+    // Vue 2에서 동적 컴포넌트 생성
+    let VueConstructor = null;
+    if (instance && instance.$root && instance.$root.constructor) {
+        VueConstructor = instance.$root.constructor;
+    } else if ((window as any).Vue) {
+        VueConstructor = (window as any).Vue;
+    }
+
+    dcconRender.value = new VueConstructor({
+        render: (h: any) =>
+            h(RefresherDcconPopup, {
+                on: {
+                    clickDccon: clickDccon,
+                    closeDccon: closeDccon
+                }
+            })
+    }).$mount(element);
+
+    return true;
+};
+
+const clickDccon = (selectedDccon: DcinsideDccon[], selectedBigDccon: boolean) => {
+    dccon.value = selectedDccon;
+    bigDccon.value = selectedBigDccon;
+    closeDccon();
+};
+
+const closeDccon = () => {
+    if (dcconRender.value) {
+        dcconRender.value.$destroy();
+        dcconRender.value.$el.remove();
+        dcconRender.value = null;
+    }
+};
+
+const setDccon = (value: DcinsideDccon[]) => {
+    dccon.value = value;
+};
+
+const setBigDccon = (value: boolean) => {
+    bigDccon.value = value;
+};
+
+const getDccon = () => {
+    return dccon.value;
+};
+
+const getBigDccon = () => {
+    return bigDccon.value;
+};
+
+const original = () => {
+    props.frame.functions.openOriginal();
+    return true;
+};
+
+onMounted(() => {
+    props.frame.app.$on("close", () => {
+        props.frame.title = "";
+        props.frame.subtitle = "";
+        props.frame.contents = undefined;
+        props.frame.upvotes = undefined;
+        props.frame.fixedUpvotes = undefined;
+        props.frame.downvotes = undefined;
+        props.frame.error = undefined;
+        props.frame.collapse = undefined;
+        props.frame.data = {};
+        props.frame.functions = {};
+        reply.value = {
+            commentNo: null,
+            replyNo: null
+        };
+        dccon.value = [];
+        bigDccon.value = false;
+        closeDccon();
+        commentKey.value = 0;
+    });
+});
+
+onBeforeUnmount(() => {
+    closeDccon();
 });
 </script>

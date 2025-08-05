@@ -2,25 +2,24 @@
     <div
         :title="locale"
         class="refresher-countdown"
-        @click="$root.$children[0].changeStamp"
+        @click="changeStamp"
     >
         <transition name="refresher-opacity">
-            <span
-                :key="`stamp${$root.$children[0].stampMode}`"
-                $root.$children[0].stampMode
-                :
-                ?
-                locale
-                stamp
-                }}<
-                span
-            />
+            <span :key="`stamp${stampMode}`">
+                {{ stampMode ? locale : stamp }}
+            </span>
         </transition>
     </div>
 </template>
 
-<script lang="ts">
-import Vue from "vue";
+<script lang="ts" setup>
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+
+interface Props {
+    date: Date;
+}
+
+const props = defineProps<Props>();
 
 const s = 1000;
 const m = s * 60;
@@ -49,42 +48,27 @@ const convertTime = (date: Date) => {
     return "이미 삭제 됨";
 };
 
-interface CountdownVueData {
-    mode: number;
-    stamp: string;
-    updates: number;
-}
+const stampMode = ref(false);
+const stamp = ref("");
+const updates = ref<number | null>(null);
 
-export default Vue.extend({
-    name: "RefresherCountdown",
-    props: {
-        date: {
-            type: Date,
-            required: true
-        }
-    },
-    data: (): CountdownVueData => {
-        return {
-            mode: 0,
-            stamp: "",
-            updates: 0
-        };
-    },
-    computed: {
-        locale(): string {
-            return this.date.toLocaleString();
-        }
-    },
-    mounted(): void {
-        this.stamp = convertTime(this.date);
+const locale = computed(() => props.date.toLocaleString());
 
-        this.updates = window.setInterval(() => {
-            this.stamp = convertTime(this.date);
-        }, 5000);
-    },
+const changeStamp = () => {
+    stampMode.value = !stampMode.value;
+};
 
-    beforeUnmount() {
-        clearInterval(this.updates);
+onMounted(() => {
+    stamp.value = convertTime(props.date);
+
+    updates.value = window.setInterval(() => {
+        stamp.value = convertTime(props.date);
+    }, 5000);
+});
+
+onBeforeUnmount(() => {
+    if (updates.value) {
+        clearInterval(updates.value);
     }
 });
 </script>

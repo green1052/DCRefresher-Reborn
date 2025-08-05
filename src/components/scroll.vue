@@ -12,16 +12,10 @@
     </div>
 </template>
 
-<script lang="ts">
-import Vue from "vue";
+<script lang="ts" setup>
+interface Props {
+    side: "top" | "bottom";
+}
 
-export default Vue.extend({
-    name: "RefresherScroll",
-    props: {
-        side: {
-            type: String,
-            required: true
-        }
-    }
-});
+defineProps<Props>();
 </script>

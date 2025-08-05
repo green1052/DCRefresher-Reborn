@@ -4,9 +4,9 @@
         @click="clickHandle"
         @wheel="wheelHandle"
     >
-        <refresher-frame
-            v-for="(frame, i) in $root.$children[0].$data.frames"
-            :key="`frame${Math.random()}`"
+        <RefresherFrame
+            v-for="(frame, i) in frames"
+            :key="`frame${frame.id || i}`"
             :frame="frame"
             :index="i"
         />
@@ -14,51 +14,68 @@
         <div id="scroll">
             <img
                 :src="getURL(`/assets/icons/upvote.webp`)"
-                @click="(e) => clickScroll(e, `up`)"
+                alt="Scroll up"
+                @click="(e) => clickScroll(e, 'up')"
             />
             <img
                 :src="getURL(`/assets/icons/downvote.webp`)"
-                @click="(e) => clickScroll(e, `down`)"
+                alt="Scroll down"
+                @click="(e) => clickScroll(e, 'down')"
             />
         </div>
     </div>
 </template>
 
-<script lang="ts">
-import Vue from "vue";
+<script lang="ts" setup>
+import { getCurrentInstance } from "vue";
 
 import getURL from "../utils/getURL";
-import frame from "./frame.vue";
+import RefresherFrame from "./frame.vue";
 
-export default Vue.extend({
-    name: "RefresherGroup",
-    components: {
-        "refresher-frame": frame
-    },
-    methods: {
-        getURL,
-        clickScroll(ev: MouseEvent, type: "up" | "down") {
-            const y = type === "up" ? 0 : this.$el.scrollHeight;
-            this.$el.scroll(0, y);
-        },
+interface Props {
+    frames?: any[];
+    onScroll?: (e: WheelEvent, app: any, el: HTMLElement) => void;
+    outerClick?: () => void;
+}
 
-        clickHandle(ev: MouseEvent) {
-            if (ev.target !== this.$el) return ev;
-
-            if (window.getSelection()?.toString().length !== 0) return ev;
-
-            (this.$root.$children[0] as RefresherFrameAppVue).outerClick();
-        },
-
-        wheelHandle(e: WheelEvent) {
-            const onScroll = (this.$root.$children[0] as RefresherFrameAppVue).$data.onScroll;
-
-            if (typeof onScroll !== "function") return;
-
-            onScroll(e, this.$root.$children[0], this.$el);
-        }
-    }
+const props = withDefaults(defineProps<Props>(), {
+    frames: () => []
 });
+
+// Get current instance to access parent data
+const instance = getCurrentInstance();
+const parentData = instance && instance.parent ? instance.parent.proxy : null;
+
+const clickScroll = (ev: MouseEvent, type: "up" | "down") => {
+    if (instance && instance.proxy && instance.proxy.$el) {
+        const el = instance.proxy.$el as HTMLElement;
+        const y = type === "up" ? 0 : el.scrollHeight;
+        el.scroll(0, y);
+    }
+};
+
+const clickHandle = (ev: MouseEvent) => {
+    if (instance && instance.proxy && instance.proxy.$el) {
+        const el = instance.proxy.$el as HTMLElement;
+        if (ev.target !== el) return ev;
+    }
+
+    const selection = window.getSelection();
+    if (selection && selection.toString().length !== 0) return ev;
+
+    if (props.outerClick) {
+        props.outerClick();
+    }
+};
+
+const wheelHandle = (e: WheelEvent) => {
+    if (typeof props.onScroll !== "function") return;
+
+    if (instance && instance.proxy && instance.proxy.$el) {
+        const el = instance.proxy.$el as HTMLElement;
+        props.onScroll(e, instance.proxy, el);
+    }
+};
 </script>
 
 <style lang="scss" scoped>
