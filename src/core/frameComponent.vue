@@ -10,15 +10,19 @@
         }"
         class="refresher-frame-outer"
     >
-        <refresher-group />
+        <RefresherGroup
+            :frames="frames"
+            :on-scroll="onScroll"
+            :outer-click="outerClick"
+        />
         <transition name="refresher-prev-post">
-            <refresher-scroll
+            <RefresherScroll
                 v-show="scrollModeTop"
                 side="top"
             />
         </transition>
         <transition name="refresher-next-post">
-            <refresher-scroll
+            <RefresherScroll
                 v-show="scrollModeBottom"
                 side="bottom"
             />
@@ -26,100 +30,118 @@
     </div>
 </template>
 
-<script lang="ts">
-import Vue, { PropType } from "vue";
+<script lang="ts" setup>
+import { getCurrentInstance, onMounted, ref, watch } from "vue";
 
-import group from "../components/group.vue";
-import scroll from "../components/scroll.vue";
+import RefresherGroup from "../components/group.vue";
+import RefresherScroll from "../components/scroll.vue";
 import { FrameStackOption } from "./frame";
 
-interface FrameComponentData extends FrameStackOption {
-    frames: RefresherFrame[];
-    activeGroup: boolean;
-    fade: boolean;
-    stampMode: boolean;
-    scrollModeTop: boolean;
-    scrollModeBottom: boolean;
-    closed: boolean;
-    inputFocus: boolean;
+interface Props {
+    option?: FrameStackOption;
 }
 
-export default Vue.extend({
-    name: "RefresherFrameOuter",
-    components: {
-        Scroll: scroll,
-        "refresher-group": group,
-        "refresher-scroll": scroll
-    },
-    props: {
-        option: {
-            type: Object as PropType<FrameStackOption>
+const props = withDefaults(defineProps<Props>(), {
+    option: () => ({})
+});
+
+const emit = defineEmits<{
+    close: [];
+}>();
+
+// Reactive data
+const frames = ref<RefresherFrame[]>([]);
+const activeGroup = ref(props.option && props.option.groupOnce ? props.option.groupOnce : false);
+const fade = ref(false);
+const stampMode = ref(false);
+const scrollModeTop = ref(false);
+const scrollModeBottom = ref(false);
+const closed = ref(false);
+const inputFocus = ref(false);
+
+// Spread option properties
+const background = ref(props.option && props.option.background ? props.option.background : false);
+const blur = ref(props.option && props.option.blur ? props.option.blur : false);
+const stack = ref(props.option && props.option.stack ? props.option.stack : false);
+const groupOnce = ref(props.option && props.option.groupOnce ? props.option.groupOnce : false);
+const onScroll = props.option && props.option.onScroll ? props.option.onScroll : undefined;
+
+// Watch for closed state changes
+watch(closed, (val: boolean) => {
+    document.body.style.overflow = val ? "auto" : "hidden";
+});
+
+// Component instance for global event handling
+const instance = getCurrentInstance();
+
+// Lifecycle hook
+onMounted(() => {
+    document.body.style.overflow = "hidden";
+
+    document.addEventListener("keyup", (ev) => {
+        if (ev.code === "Escape" && !closed.value) {
+            outerClick();
         }
-    },
-    data: function (): FrameComponentData {
-        return {
-            ...this.option,
-            frames: [],
-            activeGroup: this.option.groupOnce!,
-            fade: false,
-            stampMode: false,
-            scrollModeTop: false,
-            scrollModeBottom: false,
-            closed: false,
-            inputFocus: false
-        };
-    },
-    watch: {
-        closed: (val: boolean) => {
-            document.body.style.overflow = val ? "auto" : "hidden";
-        }
-    },
-    created() {
-        document.body.style.overflow = "hidden";
+    });
+});
 
-        document.addEventListener("keyup", (ev) => {
-            if (ev.code === "Escape" && !closed) this.outerClick();
-        });
-    },
-    methods: {
-        changeStamp() {
-            this.stampMode = !this.stampMode;
-        },
+// Methods
+const changeStamp = () => {
+    stampMode.value = !stampMode.value;
+};
 
-        first() {
-            return this.frames[0];
-        },
+const first = () => {
+    return frames.value[0];
+};
 
-        second() {
-            return this.frames[1];
-        },
+const second = () => {
+    return frames.value[1];
+};
 
-        clearScrollMode() {
-            this.scrollModeTop = false;
-            this.scrollModeBottom = false;
-        },
+const clearScrollMode = () => {
+    scrollModeTop.value = false;
+    scrollModeBottom.value = false;
+};
 
-        outerClick() {
-            this.$emit("close");
-            this.fadeOut();
-        },
+const outerClick = () => {
+    emit("close");
+    fadeOut();
+};
 
-        close() {
-            this.outerClick();
-        },
+const close = () => {
+    outerClick();
+};
 
-        fadeIn() {
-            this.fade = true;
-            this.closed = false;
-        },
+const fadeIn = () => {
+    fade.value = true;
+    closed.value = false;
+};
 
-        fadeOut() {
-            this.fade = false;
+const fadeOut = () => {
+    fade.value = false;
 
-            setTimeout(() => {
-                this.closed = true;
-            }, 251);
-        }
-    }
+    setTimeout(() => {
+        closed.value = true;
+    }, 251);
+};
+
+// Expose methods for external access
+defineExpose({
+    frames,
+    activeGroup,
+    fade,
+    stampMode,
+    scrollModeTop,
+    scrollModeBottom,
+    closed,
+    inputFocus,
+    changeStamp,
+    first,
+    second,
+    clearScrollMode,
+    outerClick,
+    close,
+    fadeIn,
+    fadeOut
 });
 </script>

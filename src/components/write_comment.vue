@@ -75,178 +75,193 @@
     </div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import $ from "cash-dom";
-import Vue from "vue";
+import { getCurrentInstance, onMounted, ref, watch } from "vue";
 
 import { Nullable } from "../utils/types";
 import { User } from "../utils/user";
-import button from "./button.vue";
+import PreviewButton from "./button.vue";
 import toast from "./toast";
-import user from "./user.vue";
+import UserComponent from "./user.vue";
 
-interface WriteCommentData {
-    focused: boolean;
-    disabled: boolean;
-    text: string;
-    editUser: boolean;
-    fixedUser: boolean;
-    hoverUserInfo: boolean;
-    user: Nullable<User>;
-    unsignedUserID: string;
-    unsignedUserPW: string;
+interface Props {
+    func?: (...args: any[]) => Promise<boolean>;
+    reply?: { commentNo: string | null; replyNo: string | null };
+    getDccon?: () => any[];
+    getBigDccon?: () => boolean;
 }
 
-export default Vue.extend({
-    name: "WriteComment",
-    components: {
-        PreviewButton: button,
-        UserComponent: user
-    },
-    props: {
-        func: {
-            type: Function
-        },
+const props = withDefaults(defineProps<Props>(), {
+    func: undefined,
+    reply: () => ({ commentNo: null, replyNo: null }),
+    getDccon: () => () => [],
+    getBigDccon: () => () => false
+});
 
-        reply: {
-            type: Object
-        },
+const emit = defineEmits<{
+    setDccon: [dccons: any[]];
+    setBigDccon: [value: boolean];
+    "update:reply": [reply: { commentNo: string | null; replyNo: string | null }];
+}>();
 
-        getDccon: {
-            type: Function
-        },
+// Reactive data
+const focused = ref(false);
+const disabled = ref(false);
+const text = ref("");
+const editUser = ref(false);
+const fixedUser = ref(false);
+const hoverUserInfo = ref(false);
+const user = ref<Nullable<User>>(null);
+const unsignedUserID = ref(localStorage.nonmember_nick || "ㅇㅇ");
+const unsignedUserPW = ref(localStorage.nonmember_pw || Math.random().toString(36).substring(5));
 
-        getBigDccon: {
-            type: Function
+// Get current instance for accessing root data
+const instance = getCurrentInstance();
+
+// Watchers
+watch(unsignedUserID, (value: string) => {
+    if (!user.value) return;
+
+    localStorage.setItem("nonmember_nick", value);
+    user.value.nick = value;
+});
+
+watch(unsignedUserPW, (value: string) => {
+    localStorage.setItem("nonmember_pw", value);
+});
+
+// Lifecycle
+onMounted(() => {
+    const gallogName = document.querySelector("#login_box > .user_info .nickname > em");
+    const fixedName = gallogName && gallogName.innerHTML ? gallogName.innerHTML : null;
+
+    if (fixedName) {
+        fixedUser.value = true;
+
+        const gallogIcon = document.querySelector("#login_box > .user_info > .writer_nikcon");
+        if (gallogIcon) {
+            const attribute = gallogIcon.getAttribute("onclick");
+            if (attribute) {
+                const match = /window\.open\('\/\/gallog\.dcinside\.com\/(\w*)'\);/.exec(attribute);
+                if (match && match[1]) {
+                    const id = match[1];
+                    const imgElement = gallogIcon.querySelector("img");
+                    const src = imgElement ? imgElement.src : null;
+                    user.value = new User(fixedName, id, null, src);
+                }
+            }
         }
-    },
-    data(): WriteCommentData {
-        return {
-            focused: false,
-            disabled: false,
-            text: "",
-            editUser: false,
-            fixedUser: false,
-            hoverUserInfo: false,
-            user: null,
-            unsignedUserID: localStorage.nonmember_nick || "ㅇㅇ",
-            unsignedUserPW: localStorage.nonmember_pw || Math.random().toString(36).substring(5)
-        };
-    },
-    watch: {
-        unsignedUserID(value: string): void {
-            if (!this.user) return;
-
-            localStorage.setItem("nonmember_nick", value);
-            this.user.nick = value;
-        },
-
-        unsignedUserPW(value: string): void {
-            localStorage.setItem("nonmember_pw", value);
-        }
-    },
-    mounted(): void {
-        const gallogName = document.querySelector("#login_box > .user_info .nickname > em");
-        const fixedName = gallogName?.innerHTML;
-
-        if (fixedName) {
-            this.fixedUser = true;
-
-            const gallogIcon = document.querySelector("#login_box > .user_info > .writer_nikcon")!;
-            const attribute = gallogIcon.getAttribute("onclick")!;
-
-            const id = /window\.open\('\/\/gallog\.dcinside\.com\/(\w*)'\);/.exec(attribute)![1];
-
-            this.user = new User(fixedName, id, null, gallogIcon.querySelector("img")!.src);
-        } else {
-            this.user = new User(this.unsignedUserID, null, "127.0.0.1", null);
-        }
-    },
-    methods: {
-        updateText(ev: InputEvent) {
-            this.text = (ev.target as HTMLTextAreaElement).value;
-        },
-
-        validCheck(type: string, value: string): void {
-            if (type === "id" && value.length < 1) {
-                toast.show(`아이디는 최소 1자리 이상이어야 합니다. 자동으로 "ㅇㅇ"로 설정합니다.`, false, 5000);
-                this.unsignedUserID = "ㅇㅇ";
-            }
-
-            if (type === "pw" && value.length < 2) {
-                const random = Math.random().toString(36).substring(5);
-
-                toast.show(`비밀번호는 최소 2자리 이상이어야 합니다. 자동으로 "${random}"로 설정합니다.`, false, 5000);
-                this.unsignedUserPW = random;
-            }
-        },
-
-        toggleEditUser(): void {
-            if (this.user?.isLogout()) this.editUser = !this.editUser;
-        },
-
-        async write(): Promise<boolean> {
-            this.disabled = true;
-
-            if (!this.fixedUser && (!this.unsignedUserID || !this.unsignedUserPW)) {
-                toast.show("아이디 혹은 비밀번호를 입력하지 않았습니다.", true, 2000);
-                return false;
-            }
-
-            if (!this.func) return true;
-
-            const result = await this.func(
-                !this.getDccon().length ? "text" : "dccon",
-                this.getDccon().length ? this.getDccon() : this.text,
-                this.reply.commentNo,
-                this.reply.replyNo,
-                this.fixedUser
-                    ? { name: this.user!.nick }
-                    : {
-                          name: this.unsignedUserID,
-                          pw: this.unsignedUserPW
-                      },
-                this.getBigDccon()
-            );
-
-            if (!result) {
-                this.disabled = false;
-                return false;
-            }
-
-            this.disabled = false;
-
-            this.text = "";
-            $("#comment_main").val("");
-
-            this.$emit("setDccon", []);
-            this.$emit("setBigDccon", false);
-            this.$emit("update:reply", { commentNo: null, replyNo: null });
-
-            return result;
-        },
-
-        focus(): void {
-            this.focused = true;
-            this.$root.$children[0].$data.inputFocus = true;
-        },
-
-        blur(): void {
-            this.focused = false;
-            this.$root.$children[0].$data.inputFocus = false;
-        },
-
-        type(ev: KeyboardEvent): KeyboardEvent | void {
-            if (ev.shiftKey && ev.key === "Enter") {
-                return ev;
-            }
-
-            if (ev.key !== "Enter") {
-                return ev;
-            }
-
-            this.write();
-        }
+    } else {
+        user.value = new User(unsignedUserID.value, null, "127.0.0.1", null);
     }
 });
+
+// Methods
+const updateText = (ev: InputEvent) => {
+    text.value = (ev.target as HTMLTextAreaElement).value;
+};
+
+const validCheck = (type: string, value: string): void => {
+    if (type === "id" && value.length < 1) {
+        toast.show(`아이디는 최소 1자리 이상이어야 합니다. 자동으로 "ㅇㅇ"로 설정합니다.`, false, 5000);
+        unsignedUserID.value = "ㅇㅇ";
+    }
+
+    if (type === "pw" && value.length < 2) {
+        const random = Math.random().toString(36).substring(5);
+
+        toast.show(`비밀번호는 최소 2자리 이상이어야 합니다. 자동으로 "${random}"로 설정합니다.`, false, 5000);
+        unsignedUserPW.value = random;
+    }
+};
+
+const toggleEditUser = (): void => {
+    if (user.value && user.value.isLogout()) {
+        editUser.value = !editUser.value;
+    }
+};
+
+const write = async (): Promise<boolean> => {
+    disabled.value = true;
+
+    if (!fixedUser.value && (!unsignedUserID.value || !unsignedUserPW.value)) {
+        toast.show("아이디 혹은 비밀번호를 입력하지 않았습니다.", true, 2000);
+        disabled.value = false;
+        return false;
+    }
+
+    if (!props.func) return true;
+
+    const dccons = props.getDccon ? props.getDccon() : [];
+    const bigDccon = props.getBigDccon ? props.getBigDccon() : false;
+
+    const result = await props.func(
+        !dccons.length ? "text" : "dccon",
+        dccons.length ? dccons : text.value,
+        props.reply ? props.reply.commentNo : null,
+        props.reply ? props.reply.replyNo : null,
+        fixedUser.value && user.value
+            ? { name: user.value.nick }
+            : {
+                  name: unsignedUserID.value,
+                  pw: unsignedUserPW.value
+              },
+        bigDccon
+    );
+
+    if (!result) {
+        disabled.value = false;
+        return false;
+    }
+
+    disabled.value = false;
+
+    text.value = "";
+    $("#comment_main").val("");
+
+    emit("setDccon", []);
+    emit("setBigDccon", false);
+    emit("update:reply", { commentNo: null, replyNo: null });
+
+    return result;
+};
+
+const focus = (): void => {
+    focused.value = true;
+    if (
+        instance &&
+        instance.root &&
+        instance.root.$children &&
+        instance.root.$children[0] &&
+        instance.root.$children[0].$data
+    ) {
+        instance.root.$children[0].$data.inputFocus = true;
+    }
+};
+
+const blur = (): void => {
+    focused.value = false;
+    if (
+        instance &&
+        instance.root &&
+        instance.root.$children &&
+        instance.root.$children[0] &&
+        instance.root.$children[0].$data
+    ) {
+        instance.root.$children[0].$data.inputFocus = false;
+    }
+};
+
+const type = (ev: KeyboardEvent): KeyboardEvent | void => {
+    if (ev.shiftKey && ev.key === "Enter") {
+        return ev;
+    }
+
+    if (ev.key !== "Enter") {
+        return ev;
+    }
+
+    write();
+};
 </script>

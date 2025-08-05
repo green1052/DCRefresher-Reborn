@@ -29,55 +29,52 @@
     </transition>
 </template>
 
-<script lang="ts">
-import Vue from "vue";
+<script lang="ts" setup>
+import { ref } from "vue";
 
-interface RefresherProps {
-    title: string;
-    id: number;
-    content: string;
-    clickCb: ((e: MouseEvent) => void) | null;
-    open: boolean;
-    type: "info" | "error" | null;
-    autoClose: number;
-}
+const title = ref("");
+const id = ref(0);
+const content = ref("");
+const clickCb = ref<((e: MouseEvent) => void) | null>(null);
+const open = ref(false);
+const type = ref<"info" | "error" | "warning" | "cake" | null>(null);
+const autoClose = ref(0);
 
-export default Vue.extend({
-    name: "RefresherToast",
-    data: (): RefresherProps => {
-        return {
-            title: "",
-            id: 0,
-            content: "",
-            clickCb: null,
-            open: false,
-            type: null,
-            autoClose: 0
-        };
-    },
-    methods: {
-        click(e: MouseEvent) {
-            this.clickCb?.(e);
-        },
-
-        update(content: string, type: boolean, autoClose: boolean | number, click?: () => void) {
-            this.content = content;
-            this.id = Math.random();
-            this.type = type ? "error" : "info";
-
-            if (click !== undefined) this.clickCb = click;
-
-            if ((typeof autoClose === "number" && autoClose > 0) || autoClose === true)
-                this.autoClose = window.setTimeout(this.hide, typeof autoClose === "number" ? autoClose : 5000);
-        },
-
-        show() {
-            this.open = true;
-        },
-
-        hide() {
-            this.open = false;
-        }
+const click = (e: MouseEvent) => {
+    if (clickCb.value) {
+        clickCb.value(e);
     }
+};
+
+const update = (newContent: string, isError: boolean, autoCloseOption: boolean | number, clickHandler?: () => void) => {
+    content.value = newContent;
+    id.value = Math.random();
+    type.value = isError ? "error" : "info";
+
+    if (clickHandler !== undefined) {
+        clickCb.value = clickHandler;
+    }
+
+    if ((typeof autoCloseOption === "number" && autoCloseOption > 0) || autoCloseOption === true) {
+        autoClose.value = window.setTimeout(hide, typeof autoCloseOption === "number" ? autoCloseOption : 5000);
+    }
+};
+
+const show = () => {
+    open.value = true;
+};
+
+const hide = () => {
+    open.value = false;
+    if (autoClose.value) {
+        clearTimeout(autoClose.value);
+        autoClose.value = 0;
+    }
+};
+
+defineExpose({
+    update,
+    show,
+    hide
 });
 </script>

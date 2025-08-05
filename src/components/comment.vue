@@ -75,18 +75,13 @@
     </div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import $ from "cash-dom";
-import Vue, { PropType } from "vue";
+import { computed, onMounted, ref } from "vue";
 
 import eventBus from "../core/eventbus";
-import timestamp from "./timestamp.vue";
-import user from "./user.vue";
-
-interface CommentVueData {
-    currentId: string;
-    me: boolean;
-}
+import TimeStamp from "./timestamp.vue";
+import User from "./user.vue";
 
 interface VoiceDataComputed {
     iframe: boolean;
@@ -94,146 +89,141 @@ interface VoiceDataComputed {
     memo: string;
 }
 
-export default Vue.extend({
-    name: "RefresherComment",
-    components: {
-        User: user,
-        TimeStamp: timestamp
-    },
-    props: {
-        comment: {
-            type: Object as PropType<DcinsideCommentObject>,
-            required: true
-        },
+interface Props {
+    comment: DcinsideCommentObject;
+    index?: number;
+    useWriteComment?: boolean;
+    postUser?: string;
+    delete?: (no: string, password: string, isAdmin: boolean) => void;
+    reply?: { commentNo: string | null; replyNo: string | null };
+}
 
-        index: {
-            type: Number
-        },
+const props = withDefaults(defineProps<Props>(), {
+    index: 0,
+    useWriteComment: false,
+    postUser: "",
+    delete: undefined,
+    reply: () => ({ commentNo: null, replyNo: null })
+});
 
-        useWriteComment: {
-            type: Boolean
-        },
+const emit = defineEmits<{
+    "update:reply": [reply: { commentNo: string | null; replyNo: string | null }];
+}>();
 
-        postUser: {
-            type: String
-        },
+// Reactive data
+const currentId = ref("");
+const me = ref(false);
 
-        delete: {
-            type: Function
-        },
+// Computed properties
+const getVoiceData = computed((): VoiceDataComputed | null => {
+    if (!props.comment.vr_player) {
+        return null;
+    }
 
-        reply: {
-            type: Object
-        }
-    },
-    data(): CommentVueData {
-        return {
-            currentId: "",
-            me: false
-        };
-    },
-    computed: {
-        getVoiceData(this): VoiceDataComputed | null {
-            if (!this.comment.vr_player) {
-                return null;
+    const memo = props.comment.memo.split("@^dc^@");
+
+    return {
+        iframe: memo[0].indexOf("iframe") > -1,
+        src:
+            memo[0].indexOf("iframe") > -1
+                ? memo[0].split('src="')[1].split('"')[0]
+                : "https://vr.dcinside.com/" + memo[0],
+        memo: memo[1]
+    };
+});
+
+const isAdmin = computed((): boolean => {
+    return document.querySelector(".useradmin_btnbox button") !== null;
+});
+
+// Lifecycle
+onMounted(() => {
+    if (!props.comment.user.id) {
+        return;
+    }
+
+    const fixedNameElement = document.querySelector("#login_box > .user_info .nickname > em");
+    const fixedName = fixedNameElement && fixedNameElement.innerHTML ? fixedNameElement.innerHTML : null;
+
+    if (fixedName) {
+        const gallogIcon = document.querySelector("#login_box > .user_info > .writer_nikcon");
+        if (gallogIcon) {
+            const attribute = gallogIcon.getAttribute("onclick");
+            if (attribute) {
+                const match = /window\.open\('\/\/gallog\.dcinside\.com\/(\w*)'\);/.exec(attribute);
+                if (match && match[1]) {
+                    const id = match[1];
+
+                    if (props.comment.user.id === id) {
+                        me.value = true;
+                    }
+                }
             }
-
-            const memo = this.comment.memo.split("@^dc^@");
-
-            return {
-                iframe: memo[0].indexOf("iframe") > -1,
-                src:
-                    memo[0].indexOf("iframe") > -1
-                        ? memo[0].split('src="')[1].split('"')[0]
-                        : "https://vr.dcinside.com/" + memo[0],
-                memo: memo[1]
-            };
-        },
-
-        isAdmin(): boolean {
-            return document.querySelector(".useradmin_btnbox button") !== null;
-        }
-    },
-    mounted() {
-        if (!this.comment.user.id) {
-            return;
-        }
-
-        const fixedName = document.querySelector("#login_box > .user_info .nickname > em")?.innerHTML;
-
-        if (fixedName) {
-            const gallogIcon = document.querySelector("#login_box > .user_info > .writer_nikcon")!;
-            const attribute = gallogIcon.getAttribute("onclick")!;
-            const id = /window\.open\('\/\/gallog\.dcinside\.com\/(\w*)'\);/.exec(attribute)![1];
-
-            if (this.comment.user.id === id) {
-                this.me = true;
-            }
-        }
-
-        const gallogImageElement = document.querySelector<HTMLImageElement>(
-            "#login_box .user_info .writer_nikcon > img"
-        );
-
-        const click = gallogImageElement && gallogImageElement.getAttribute("onclick");
-
-        if (click) {
-            this.currentId = click.replace(/window\.open\('\/\/gallog\.dcinside\.com\//g, "").replace(/'\);/g, "");
-
-            this.me = this.currentId === this.comment.user.id;
-        }
-
-        if (!this.me && this.postUser) {
-            this.me = this.postUser === this.comment.user.id;
-        }
-
-        if (!this.me && !this.postUser) {
-            eventBus.on("RefresherPostDataLoaded", (obj: IPostInfo) => {
-                this.me = obj.user?.id === this.comment.user.id;
-            });
-        }
-    },
-    methods: {
-        date(str: string): string {
-            return str.substring(0, 4).match(/\./)
-                ? `${new Date().getFullYear()}-${str.replace(/\./g, "-")}`
-                : str.replace(/\./g, "-");
-        },
-
-        safeDelete(): void {
-            if (!this.delete) return;
-
-            let password: string = "";
-
-            if (!this.isAdmin && this.comment.my_cmt === "N") {
-                password = prompt("비밀번호를 입력하세요.") ?? "";
-
-                if (!password) return;
-            }
-
-            this.delete(this.comment.no, password, this.comment.my_cmt === "N" && this.isAdmin);
-        },
-
-        setReply() {
-            this.$emit("update:reply", {
-                commentNo: this.reply.commentNo === this.comment.c_no ? null : this.comment.c_no || this.comment.no,
-                replyNo: this.reply.replyNo === this.comment.no ? null : this.comment.no
-            });
-        },
-
-        contextMenu(e: MouseEvent): void {
-            if (!e.target) return;
-            const $element = $(e.target as HTMLElement);
-
-            if ($element.hasClass("written_dccon")) return;
-
-            const src = $element.attr("src");
-            if (!src) return;
-
-            const code = src.replace(/^.*no=/g, "").replace(/^&.*$/g, "");
-
-            eventBus.emit("refresherUserContextMenu", null, null, null, code, null);
         }
     }
+
+    const gallogImageElement = document.querySelector<HTMLImageElement>("#login_box .user_info .writer_nikcon > img");
+
+    const click = gallogImageElement && gallogImageElement.getAttribute("onclick");
+
+    if (click) {
+        currentId.value = click.replace(/window\.open\('\/\/gallog\.dcinside\.com\//g, "").replace(/'\);/g, "");
+
+        me.value = currentId.value === props.comment.user.id;
+    }
+
+    if (!me.value && props.postUser) {
+        me.value = props.postUser === props.comment.user.id;
+    }
+
+    if (!me.value && !props.postUser) {
+        eventBus.on("RefresherPostDataLoaded", (obj: IPostInfo) => {
+            me.value = obj.user && obj.user.id === props.comment.user.id;
+        });
+    }
 });
+
+// Methods
+const date = (str: string): string => {
+    return str.substring(0, 4).match(/\./)
+        ? `${new Date().getFullYear()}-${str.replace(/\./g, "-")}`
+        : str.replace(/\./g, "-");
+};
+
+const safeDelete = (): void => {
+    if (!props.delete) return;
+
+    let password: string = "";
+
+    if (!isAdmin.value && props.comment.my_cmt === "N") {
+        password = prompt("비밀번호를 입력하세요.") ?? "";
+
+        if (!password) return;
+    }
+
+    props.delete(props.comment.no, password, props.comment.my_cmt === "N" && isAdmin.value);
+};
+
+const setReply = () => {
+    if (!props.reply) return;
+
+    emit("update:reply", {
+        commentNo: props.reply.commentNo === props.comment.c_no ? null : props.comment.c_no || props.comment.no,
+        replyNo: props.reply.replyNo === props.comment.no ? null : props.comment.no
+    });
+};
+
+const contextMenu = (e: MouseEvent): void => {
+    if (!e.target) return;
+    const $element = $(e.target as HTMLElement);
+
+    if ($element.hasClass("written_dccon")) return;
+
+    const src = $element.attr("src");
+    if (!src) return;
+
+    const code = src.replace(/^.*no=/g, "").replace(/^&.*$/g, "");
+
+    eventBus.emit("refresherUserContextMenu", null, null, null, code, null);
+};
 </script>

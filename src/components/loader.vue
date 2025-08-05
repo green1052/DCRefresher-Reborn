@@ -1,6 +1,6 @@
 <template>
     <transition name="refresher-opacity">
-        <div class="refresher-loader spinner gray animating">
+        <div class="refresher-loader spinner">
             <div class="spinner-blade" />
             <div class="spinner-blade" />
             <div class="spinner-blade" />
@@ -16,11 +16,3 @@
         </div>
     </transition>
 </template>
-
-<script lang="ts">
-import Vue from "vue";
-
-export default Vue.extend({
-    name: "RefresherLoader"
-});
-</script>

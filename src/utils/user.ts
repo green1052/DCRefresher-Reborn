@@ -27,53 +27,83 @@ const USERTYPE: ObjectEnum<UserType> = {
 let ratio: Record<string, { article: number; comment: number; data: number }> = {};
 let ban: Record<string, string[]> = {};
 
-(async () => {
-    const [enable, checkRatio, checkPermBan] = await Promise.all([
-        storage.get<boolean>("관리.enable"),
-        storage.get<boolean>("관리.checkRatio"),
-        storage.get<boolean>("관리.checkPermBan")
-    ]);
+const initializeUserData = async (): Promise<void> => {
+    try {
+        const [enable, checkRatio, checkPermBan] = await Promise.all([
+            storage.get<boolean>("관리.enable"),
+            storage.get<boolean>("관리.checkRatio"),
+            storage.get<boolean>("관리.checkPermBan")
+        ]);
 
-    if (!enable) return;
+        if (!enable) return;
 
-    if (checkRatio) ratio = (await storage.module.get<any>("관리"))?.["ratio"] ?? {};
-    if (checkPermBan) ban = (await storage.get<any>("refresher.database.ban")) ?? {};
-})();
+        if (checkRatio) {
+            const moduleData = await storage.module.get<any>("관리");
+            ratio = moduleData?.["ratio"] ?? {};
+        }
+        if (checkPermBan) {
+            ban = (await storage.get<any>("refresher.database.ban")) ?? {};
+        }
+    } catch (error) {
+        console.error("Failed to initialize user data:", error);
+    }
+};
+
+initializeUserData();
+
+const FIXED_MANAGER_ICONS = ["fix_managernik.gif"];
+const FIXED_SUB_MANAGER_ICONS = ["fix_sub_managernik.gif"];
+const HALF_FIXED_SUB_MANAGER_ICONS = ["sub_managernik.gif"];
+const HALF_FIXED_MANAGER_ICONS = ["managernik.gif"];
+const FIXED_ICONS = [
+    "fix_nik.gif",
+    "nftcon_fix.png",
+    "dc20th_wgallcon4.png",
+    "w_app_gonick_16.png",
+    "nftmdcon_fix.png",
+    "gnftmdcon_fix.gif",
+    "bestcon_fix.png"
+];
+const HALF_FIXED_ICONS = [
+    "nik.gif",
+    "nftcon.png",
+    "dc20th_wgallcon.png",
+    "w_app_nogonick_16.png",
+    "nftmdcon.png",
+    "gnftmdcon.gif",
+    "bestcon.png"
+];
 
 export const getType = (icon: string | null): UserType => {
-    if (icon === null) {
-        return USERTYPE.UNFIXED;
-    } else if (icon.endsWith("fix_managernik.gif")) {
-        return USERTYPE.FIXED_MANAGER;
-    } else if (icon.endsWith("fix_sub_managernik.gif")) {
-        return USERTYPE.FIXED_SUB_MANAGER;
-    } else if (icon.endsWith("sub_managernik.gif")) {
-        return USERTYPE.HALF_FIXED_SUB_MANAGER;
-    } else if (icon.endsWith("managernik.gif")) {
-        return USERTYPE.HALF_FIXED_MANAGER;
-    } else if (
-        icon.endsWith("fix_nik.gif") ||
-        icon.endsWith("nftcon_fix.png") ||
-        icon.endsWith("dc20th_wgallcon4.png") ||
-        icon.endsWith("w_app_gonick_16.png") ||
-        icon.endsWith("nftmdcon_fix.png") ||
-        icon.endsWith("gnftmdcon_fix.gif") ||
-        icon.endsWith("bestcon_fix.png")
-    ) {
-        return USERTYPE.FIXED;
-    } else if (
-        icon.endsWith("nik.gif") ||
-        icon.endsWith("nftcon.png") ||
-        icon.endsWith("dc20th_wgallcon.png") ||
-        icon.endsWith("w_app_nogonick_16.png") ||
-        icon.endsWith("nftmdcon.png") ||
-        icon.endsWith("gnftmdcon.gif") ||
-        icon.endsWith("bestcon.png")
-    ) {
-        return USERTYPE.HALF_FIXED;
-    } else {
+    if (!icon) {
         return USERTYPE.UNFIXED;
     }
+
+    if (FIXED_MANAGER_ICONS.some((suffix) => icon.endsWith(suffix))) {
+        return USERTYPE.FIXED_MANAGER;
+    }
+
+    if (FIXED_SUB_MANAGER_ICONS.some((suffix) => icon.endsWith(suffix))) {
+        return USERTYPE.FIXED_SUB_MANAGER;
+    }
+
+    if (HALF_FIXED_SUB_MANAGER_ICONS.some((suffix) => icon.endsWith(suffix))) {
+        return USERTYPE.HALF_FIXED_SUB_MANAGER;
+    }
+
+    if (HALF_FIXED_MANAGER_ICONS.some((suffix) => icon.endsWith(suffix))) {
+        return USERTYPE.HALF_FIXED_MANAGER;
+    }
+
+    if (FIXED_ICONS.some((suffix) => icon.endsWith(suffix))) {
+        return USERTYPE.FIXED;
+    }
+
+    if (HALF_FIXED_ICONS.some((suffix) => icon.endsWith(suffix))) {
+        return USERTYPE.HALF_FIXED;
+    }
+
+    return USERTYPE.UNFIXED;
 };
 
 export class User {
@@ -164,15 +194,13 @@ export class User {
     getBan(): void {
         if (!this.id) return;
 
-        const list = [];
+        const bannedFrom = Object.entries(ban)
+            .filter(([, userIds]) => userIds.includes(this.id!))
+            .map(([key]) => key);
 
-        for (const [key, value] of Object.entries(ban)) {
-            if (value.includes(this.id)) list.push(key);
-        }
+        if (bannedFrom.length === 0) return;
 
-        if (list.length === 0) return;
-
-        this.ban = list.join(", ");
+        this.ban = bannedFrom.join(", ");
     }
 
     isLogout(): boolean {

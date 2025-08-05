@@ -7,6 +7,12 @@ import { ModuleStore } from "../core/modules";
 import { SettingsStore } from "../core/settings";
 import storage from "../utils/storage";
 
+const CONSTANTS = {
+    KEEP_ALIVE_INTERVAL: 20_000,
+    DATABASE_UPDATE_INTERVAL: 604_800_000, // 1 week
+    API_BASE_URL: "https://dcrefresher.green1052.com/data"
+} as const;
+
 const contextMenus: browser.Menus.CreateCreatePropertiesType[] = [
     {
         id: "blockSelected",
@@ -40,18 +46,19 @@ const contextMenus: browser.Menus.CreateCreatePropertiesType[] = [
     }
 ];
 
-const updateDatabase = async () => {
+const updateDatabase = async (): Promise<void> => {
     const [version, ip, ban] = await Promise.all([
-        ky.get("https://dcrefresher.green1052.com/data/version").text(),
-        ky.get("https://dcrefresher.green1052.com/data/ip.json").json(),
-        ky.get("https://dcrefresher.green1052.com/data/ban.json").json()
+        ky.get(`${CONSTANTS.API_BASE_URL}/version`).text(),
+        ky.get(`${CONSTANTS.API_BASE_URL}/ip.json`).json<unknown>(),
+        ky.get(`${CONSTANTS.API_BASE_URL}/ban.json`).json<unknown>()
     ]);
 
-    storage.set("refresher.database.ip", ip);
-    storage.set("refresher.database.ban", ban);
-
-    storage.set("refresher.database.version", version);
-    storage.set("refresher.database.lastUpdate", Date.now());
+    await Promise.all([
+        storage.set("refresher.database.ip", ip),
+        storage.set("refresher.database.ban", ban),
+        storage.set("refresher.database.version", version),
+        storage.set("refresher.database.lastUpdate", Date.now())
+    ]);
 };
 
 let modules: ModuleStore = {};
@@ -112,32 +119,33 @@ if (browser.runtime.getManifest().manifest_version === 3) {
     keepAlive();
 }
 
-const messageHandler = (port: browser.Runtime.Port | null, message: Message) => {
+const messageHandler = async (port: browser.Runtime.Port | null, message: Message): Promise<void> => {
     if (typeof message !== "object") return;
 
-    if (message.updateUserSetting) {
-        storage.set(`${message.name}.${message.key}`, message.value);
+    if (message.updateUserSetting && message.name && message.key !== undefined) {
+        await storage.set(`${message.name}.${message.key}`, message.value);
     }
 
     if (message.updateBlocks && message.blocks_store && message.blockModes_store) {
-        for (const [key, value] of Object.entries(message.blocks_store)) {
-            storage.set(`__REFRESHER_BLOCK:${key}`, value);
-        }
+        const blockPromises = Object.entries(message.blocks_store).map(([key, value]) =>
+            storage.set(`__REFRESHER_BLOCK:${key}`, value)
+        );
+        const blockModePromises = Object.entries(message.blockModes_store).map(([key, value]) =>
+            storage.set(`__REFRESHER_BLOCK:${key}:$MODE`, value)
+        );
+
+        await Promise.all([...blockPromises, ...blockModePromises]);
 
         blocks = message.blocks_store;
-
-        for (const [key, value] of Object.entries(message.blockModes_store)) {
-            storage.set(`__REFRESHER_BLOCK:${key}:$MODE`, value);
-        }
-
         blockModes = message.blockModes_store;
     }
 
     if (message.updateMemos && message.memos_store) {
-        for (const [key, value] of Object.entries(message.memos_store)) {
-            storage.set(`__REFRESHER_MEMO:${key}`, value);
-        }
+        const memoPromises = Object.entries(message.memos_store).map(([key, value]) =>
+            storage.set(`__REFRESHER_MEMO:${key}`, value)
+        );
 
+        await Promise.all(memoPromises);
         memos = message.memos_store;
     }
 
@@ -157,7 +165,7 @@ const messageHandler = (port: browser.Runtime.Port | null, message: Message) => 
         memos = message.memos_store;
     }
 
-    if (message.blockModes_store && Object.keys(message.blockModes_store).length) {
+    if (message.blockModes_store && Object.keys(message.blockModes_store).length > 0) {
         blockModes = message.blockModes_store;
     }
 
@@ -182,30 +190,28 @@ const messageHandler = (port: browser.Runtime.Port | null, message: Message) => 
     }
 };
 
+const parseMessage = (message: unknown): Message => {
+    return typeof message === "string" ? JSON.parse(message) : (message as Message);
+};
+
 browser.runtime.onConnect.addListener((port) => {
-    port.onMessage.addListener((message) =>
-        messageHandler(port, typeof message === "string" ? JSON.parse(message) : message)
-    );
+    port.onMessage.addListener((rawMessage) => messageHandler(port, parseMessage(rawMessage)));
 });
 
-browser.runtime.onMessage.addListener((message) => {
-    messageHandler(null, typeof message === "string" ? JSON.parse(message) : message);
-});
+browser.runtime.onMessage.addListener((rawMessage) => messageHandler(null, parseMessage(rawMessage)));
 
-browser.runtime.onStartup.addListener(async () => {
+const createContextMenus = async (): Promise<void> => {
     await browser.contextMenus.removeAll();
 
     for (const contextMenu of contextMenus) {
         browser.contextMenus.create(contextMenu);
     }
-});
+};
 
-browser.runtime.onInstalled.addListener((details) => {
-    browser.contextMenus.removeAll().then(() => {
-        for (const contextMenu of contextMenus) {
-            browser.contextMenus.create(contextMenu);
-        }
-    });
+browser.runtime.onStartup.addListener(createContextMenus);
+
+browser.runtime.onInstalled.addListener(async (details) => {
+    await createContextMenus();
 
     if (browser.runtime.getManifest().version_name) return;
 
@@ -227,7 +233,7 @@ browser.contextMenus.onClicked.addListener((info, tab) => {
 browser.commands.onCommand.addListener(async (command) => {
     const tabs = await browser.tabs.query({ currentWindow: true, active: true });
 
-    browser.tabs.sendMessage(tabs[0].id!, {
+    await browser.tabs.sendMessage(tabs[0].id!, {
         type: "executeShortcut",
         data: command
     });
@@ -235,6 +241,6 @@ browser.commands.onCommand.addListener(async (command) => {
 
 const lastUpdate = await storage.get<number>("refresher.database.lastUpdate");
 
-if (lastUpdate && Date.now() - lastUpdate > 604800000) {
-    updateDatabase();
+if (!lastUpdate || Date.now() - lastUpdate > CONSTANTS.DATABASE_UPDATE_INTERVAL) {
+    await updateDatabase();
 }

@@ -21,45 +21,36 @@
     </div>
 </template>
 
-<script lang="ts">
-import Vue, { PropType } from "vue";
+<script lang="ts" setup>
+import { ref } from "vue";
 
 import getURL from "../utils/getURL";
 
-interface ButtonData {
-    error: number;
+interface Props {
+    id?: string | number;
+    text?: string;
+    click?: () => Promise<boolean>;
 }
 
-export default Vue.extend({
-    name: "RefresherPreviewButton",
-    props: {
-        id: {
-            type: [String, Number]
-        },
-        text: {
-            type: String
-        },
-        click: {
-            type: Function as PropType<() => Promise<boolean>>,
-            required: false
-        }
-    },
-    data(): ButtonData {
-        return {
-            error: 0
-        };
-    },
-    methods: {
-        getURL,
-        async safeClick(): Promise<boolean> {
-            const result = await this.click?.();
-
-            if (!result) {
-                this.error = Math.random();
-            }
-
-            return result;
-        }
-    }
+const props = withDefaults(defineProps<Props>(), {
+    id: "",
+    text: "",
+    click: undefined
 });
+
+const error = ref(0);
+
+const safeClick = async (): Promise<boolean> => {
+    if (props.click) {
+        const result = await props.click();
+
+        if (!result) {
+            error.value = Math.random();
+        }
+
+        return result || false;
+    }
+
+    return false;
+};
 </script>
