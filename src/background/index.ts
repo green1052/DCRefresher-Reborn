@@ -244,8 +244,10 @@ browser.commands.onCommand.addListener(async (command) => {
     });
 });
 
-const lastUpdate = await storage.get<number>("refresher.database.lastUpdate");
+(async () => {
+    const lastUpdate = await storage.get<number>("refresher.database.lastUpdate");
 
-if (!lastUpdate || Date.now() - lastUpdate > CONSTANTS.DATABASE_UPDATE_INTERVAL) {
-    await updateDatabase();
-}
+    if (!lastUpdate || Date.now() - lastUpdate > CONSTANTS.DATABASE_UPDATE_INTERVAL) {
+        await updateDatabase();
+    }
+})();
