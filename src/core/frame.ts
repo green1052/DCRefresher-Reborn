@@ -86,7 +86,7 @@ class InternalFrame implements RefresherFrame {
     $emit(event: string, ...args: any[]) {
         const callbacks = this.eventListeners.get(event);
         if (callbacks) {
-            callbacks.forEach(callback => callback(...args));
+            callbacks.forEach((callback) => callback(...args));
         }
     }
 
@@ -95,7 +95,7 @@ class InternalFrame implements RefresherFrame {
             this.eventListeners.delete(event);
             return;
         }
-        
+
         const callbacks = this.eventListeners.get(event);
         if (callbacks) {
             const index = callbacks.indexOf(callback);
@@ -131,8 +131,8 @@ export default class {
         // Add $on method to app for backward compatibility
         if (!this.app.$on) {
             this.app.$on = (event: string, callback: Function) => {
-                if (event === 'close') {
-                    this.app.frames.forEach(frame => (frame as InternalFrame).$on('close', callback));
+                if (event === "close") {
+                    this.app.frames.forEach((frame) => (frame as InternalFrame).$on("close", callback));
                 }
             };
         }
@@ -140,6 +140,6 @@ export default class {
 
     // Method to trigger close event on all frames
     triggerCloseEvent() {
-        this.app.frames.forEach(frame => (frame as InternalFrame).$emit('close'));
+        this.app.frames.forEach((frame) => (frame as InternalFrame).$emit("close"));
     }
 }

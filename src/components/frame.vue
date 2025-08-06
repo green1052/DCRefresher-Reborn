@@ -261,7 +261,7 @@
 </template>
 
 <script lang="ts" setup>
-import { createApp, getCurrentInstance, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { createApp, getCurrentInstance, onBeforeUnmount, onMounted, ref } from "vue";
 
 import getURL from "../utils/getURL";
 import Comment from "./comment.vue";
