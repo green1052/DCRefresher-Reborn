@@ -1,9 +1,9 @@
 <template>
     <select
-        :value="value"
         :data-id="id"
         :data-module="modname"
         :disabled="disabled"
+        :value="value"
         class="refresher-options"
         @change="handleChange"
     >
@@ -34,12 +34,12 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-    'update:value': [value: string];
+    "update:value": [value: string];
 }>();
 
 const handleChange = (ev: Event) => {
     const target = ev.target as HTMLSelectElement;
-    emit('update:value', target.value);
+    emit("update:value", target.value);
     props.change?.(target.dataset.module, target.dataset.id, target.value);
 };
 </script>
