@@ -84,17 +84,19 @@ let BLOCK_MODE_CACHE: BlockModeCache = {
     IMAGE: BLOCK_DETECT_MODE.SAME
 };
 
-for (const key of BLOCK_TYPES_KEYS) {
-    const keyCache = await storage.get<RefresherBlockValue[]>(`${BLOCK_NAMESPACE}:${key}`);
-    const modeCache = await storage.get<RefresherBlockDetectMode>(`${BLOCK_NAMESPACE}:${key}:MODE`);
+(async () => {
+    for (const key of BLOCK_TYPES_KEYS) {
+        const keyCache = await storage.get<RefresherBlockValue[]>(`${BLOCK_NAMESPACE}:${key}`);
+        const modeCache = await storage.get<RefresherBlockDetectMode>(`${BLOCK_NAMESPACE}:${key}:MODE`);
 
-    BLOCK_CACHE[key] = keyCache ?? [];
-    BLOCK_MODE_CACHE[key] = modeCache ?? BLOCK_MODE_CACHE[key];
+        BLOCK_CACHE[key] = keyCache ?? [];
+        BLOCK_MODE_CACHE[key] = modeCache ?? BLOCK_MODE_CACHE[key];
 
-    if (!modeCache) await storage.set(`${BLOCK_NAMESPACE}:${key}:MODE`, BLOCK_MODE_CACHE[key]);
+        if (!modeCache) await storage.set(`${BLOCK_NAMESPACE}:${key}:MODE`, BLOCK_MODE_CACHE[key]);
 
-    SendToBackground();
-}
+        SendToBackground();
+    }
+})();
 
 const checkValidType = (type: string) => {
     return BLOCK_TYPES_KEYS.some((key) => key === type);

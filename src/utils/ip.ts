@@ -1,9 +1,11 @@
 import storage from "./storage";
 import { Nullable } from "./types";
 
-const ipData: Record<string, string> = await storage.get("refresher.database.ip");
+const ipData = storage.get<Record<string, string>>("refresher.database.ip");
 
 export const ISPData = (ip: string): ISPInfo => {
+    if (!ipData) throw new Error("IP data not loaded");
+
     return {
         name: ipData?.[ip],
         color: "#6495ed"

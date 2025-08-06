@@ -1,7 +1,7 @@
 <template>
     <img
         :alt="icon"
-        :src="getURL(`/assets/icons/${icon}.webp`)"
+        :src="getURL(`/assets/${icon}.webp`)"
         class="refresher-icon"
     />
 </template>
@@ -12,6 +12,5 @@ import getURL from "../utils/getURL";
 interface Props {
     icon: string;
 }
-
 defineProps<Props>();
 </script>

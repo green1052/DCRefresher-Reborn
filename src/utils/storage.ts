@@ -12,7 +12,7 @@ export const remove = (keys: string | string[]): Promise<void> => storage.remove
 
 export const clear = (): Promise<void> => storage.clear();
 
-export const module = {
+export const moduleStorage = {
     get<T>(module: string, key?: string): Promise<T> {
         return get(key ? `refresher.module:${module}-${key}` : `refresher.module:${module}`).then((value) =>
             typeof value === "string" && value.startsWith("{") ? JSON.parse(value) : value
@@ -33,5 +33,5 @@ export default {
     setObject,
     remove,
     clear,
-    module
+    module: moduleStorage
 };

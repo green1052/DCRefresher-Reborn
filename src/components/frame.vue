@@ -180,7 +180,7 @@
                 <div v-else>
                     <div v-if="!frame.data.comments.comments || frame.data.comments.comments.length === 0">
                         <div class="refresher-nocomment-wrap">
-                            <img :src="getURL('/assets/icons/empty_comment.webp')" />
+                            <img :src="EmptyCommentIcon" />
                             <h3>댓글이 없습니다.</h3>
                         </div>
                         <br />
@@ -263,7 +263,7 @@
 <script lang="ts" setup>
 import { createApp, getCurrentInstance, onBeforeUnmount, onMounted, ref } from "vue";
 
-import getURL from "../utils/getURL";
+import EmptyCommentIcon from "~assets/empty_comment.webp";
 import Comment from "./comment.vue";
 import CountDown from "./countdown.vue";
 import RefresherDcconPopup from "./dccon.vue";

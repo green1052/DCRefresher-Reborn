@@ -113,7 +113,7 @@
                 <div class="info">
                     <div class="icon-wrap">
                         <img
-                            :src="getURL('/assets/icons/oyster.webp')"
+                            :src="Logo"
                             class="icon"
                         />
                     </div>
@@ -537,7 +537,7 @@
                 <div class="shortcut-lists">
                     <div
                         v-for="shortcut in shortcuts"
-                        v-if="shortcut.description.length"
+                        v-if="shortcut?.description.length"
                         class="refresher-shortcut"
                     >
                         <p class="description">
@@ -568,16 +568,17 @@ import ky from "ky";
 import { Fragment, nextTick, onMounted, reactive, ref } from "vue";
 import browser from "webextension-polyfill";
 
-import { BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES } from "../../core/block";
-import { TYPE_NAMES as MEMO_TYPE_NAMES } from "../../core/memo";
-import getURL from "../../utils/getURL";
-import storage from "../../utils/storage";
-import RefresherBubble from "./bubble.vue";
-import RefresherCheckbox from "./checkbox.vue";
-import RefresherModule from "./module.vue";
-import RefresherOptions from "./options.vue";
-import RefresherRange from "./range.vue";
-import RefresherInput from "./refresherInput.vue";
+import Logo from "~assets/oyster.webp";
+
+import { BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES } from "./core/block";
+import { TYPE_NAMES as MEMO_TYPE_NAMES } from "./core/memo";
+import storage from "./utils/storage";
+import RefresherBubble from "./views/components/bubble.vue";
+import RefresherCheckbox from "./views/components/checkbox.vue";
+import RefresherModule from "./views/components/module.vue";
+import RefresherOptions from "./views/components/options.vue";
+import RefresherRange from "./views/components/range.vue";
+import RefresherInput from "./views/components/refresherInput.vue";
 
 const port = browser.runtime.connect({ name: "refresherInternal" });
 
@@ -1034,7 +1035,7 @@ const updateIpDatabase = async () => {
     }
 }
 
-.refresher-popup {
+body {
     font-family:
         -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans CJK KR", Roboto, Oxygen, Ubuntu, Cantarell,
         "Open Sans", "Helvetica Neue", sans-serif;
@@ -1462,7 +1463,7 @@ const updateIpDatabase = async () => {
 }
 
 @media (prefers-color-scheme: dark) {
-    .refresher-popup {
+    body {
         background: #222;
         color: white;
 

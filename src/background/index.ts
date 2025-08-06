@@ -1,3 +1,6 @@
+//import "@plasmohq/messaging/background";
+//import { startHub } from "@plasmohq/messaging/pub-sub";
+
 import ky from "ky";
 import browser from "webextension-polyfill";
 
@@ -6,6 +9,8 @@ import { MemoCache } from "../core/memo";
 import { ModuleStore } from "../core/modules";
 import { SettingsStore } from "../core/settings";
 import storage from "../utils/storage";
+
+// startHub();
 
 const CONSTANTS = {
     KEEP_ALIVE_INTERVAL: 20_000,
