@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="./src/assets/icons/logo/Icon.png" width="200px"/>
+    <img src="./assets/icon.png" width="200px"/>
     <br>
     <br>
     <img src="https://img.shields.io/github/v/release/green1052/DCRefresher-Reborn">
