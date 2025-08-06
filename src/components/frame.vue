@@ -261,7 +261,7 @@
 </template>
 
 <script lang="ts" setup>
-import { getCurrentInstance, onBeforeUnmount, onMounted, ref } from "vue";
+import Vue, { getCurrentInstance, onBeforeUnmount, onMounted, ref } from "vue";
 
 import getURL from "../utils/getURL";
 import PreviewButton from "./button.vue";
@@ -342,15 +342,7 @@ const renderDcconPopup = () => {
     const element = document.createElement("div");
     document.body.appendChild(element);
 
-    // Vue 2에서 동적 컴포넌트 생성
-    let VueConstructor = null;
-    if (instance && instance.$root && instance.$root.constructor) {
-        VueConstructor = instance.$root.constructor;
-    } else if ((window as any).Vue) {
-        VueConstructor = (window as any).Vue;
-    }
-
-    dcconRender.value = new VueConstructor({
+    dcconRender.value = new Vue({
         render: (h: any) =>
             h(RefresherDcconPopup, {
                 on: {

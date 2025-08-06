@@ -2068,12 +2068,12 @@ export default {
                     };
 
                     if (ev.deltaY < 0) {
-                        appStore.$data.scrollModeBottom = false;
-                        appStore.$data.scrollModeTop = true;
+                        appStore.$parent!.scrollModeBottom = false;
+                        appStore.$parent!.scrollModeTop = true;
 
                         if (!scrolledTop) {
-                            appStore.$data.scrollModeTop = false;
-                            appStore.$data.scrollModeBottom = false;
+                            appStore.$parent!.scrollModeTop = false;
+                            appStore.$parent!.scrollModeBottom = false;
                         }
 
                         if (!scrolledTop || !preData) return;
@@ -2086,14 +2086,14 @@ export default {
 
                         newPostWithData(preData, historySkip);
                         groupStore.scrollTop = 0;
-                        appStore.clearScrollMode();
+                        (appStore.$parent as RefresherFrameAppVue).clearScrollMode();
                     } else {
-                        appStore.$data.scrollModeTop = false;
-                        appStore.$data.scrollModeBottom = true;
+                        appStore.$parent!.scrollModeTop = false;
+                        appStore.$parent!.scrollModeBottom = true;
 
                         if (!scrolledToBottom) {
-                            appStore.$data.scrollModeTop = false;
-                            appStore.$data.scrollModeBottom = false;
+                            appStore.$parent!.scrollModeTop = false;
+                            appStore.$parent!.scrollModeBottom = false;
                         }
 
                         if (!scrolledToBottom || !preData) {
@@ -2108,7 +2108,7 @@ export default {
                         newPostWithData(preData, historySkip);
 
                         groupStore.scrollTop = 0;
-                        appStore.clearScrollMode();
+                        (appStore.$parent as RefresherFrameAppVue).clearScrollMode();
                     }
                 });
 
@@ -2138,7 +2138,7 @@ export default {
                         document.title = this.memory.titleStore;
                     }
 
-                    appStore?.clearScrollMode();
+                    (appStore.$parent as RefresherFrameAppVue).clearScrollMode();
                     window.clearInterval(this.memory.refreshIntervalId!);
                 });
             }
