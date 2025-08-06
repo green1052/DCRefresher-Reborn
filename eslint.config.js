@@ -20,17 +20,5 @@ export default tseslint.config(
             "@typescript-eslint/ban-ts-comment": "off"
         }
     },
-    ...pluginVue.configs["flat/vue2-recommended"],
-    {
-        files: ["*.vue", "**/*.vue"],
-        languageOptions: {
-            globals: globals.browser,
-            parserOptions: {
-                parser: tseslint.parser
-            }
-        },
-        rules: {
-            "vue/html-indent": ["error", 4]
-        }
-    }
+    ...pluginVue.configs["flat/recommended"]
 );
