@@ -158,6 +158,7 @@
                         <div
                             v-for="module in Object.keys(settings)"
                             v-if="settings[module] && settingsCount(settings[module])"
+                            :key="module"
                             class="refresher-setting-category"
                         >
                             <h3 @click="moveToModuleTab(module)">
