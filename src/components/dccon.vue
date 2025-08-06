@@ -29,7 +29,7 @@
         </div>
 
         <refresher-loader v-if="!Object.keys(dcconList).length" />
-        <fragment v-else>
+        <template v-else>
             <hr />
 
             <ul style="overflow: auto; display: flex; user-select: none; justify-content: center">
@@ -82,7 +82,7 @@
                     </li>
                 </ul>
             </div>
-        </fragment>
+        </template>
     </div>
 </template>
 

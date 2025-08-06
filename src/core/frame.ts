@@ -1,4 +1,4 @@
-import Vue from "vue";
+import { createApp } from "vue";
 
 import { User } from "../utils/user";
 import frame from "./frameComponent.vue";
@@ -53,6 +53,8 @@ class InternalFrame implements RefresherFrame {
         deleteComment(commentId: string, password: string, admin: boolean): Promise<boolean>;
     };
 
+    private eventListeners: Map<string, Function[]> = new Map();
+
     constructor(
         public options: FrameOption,
         public app: RefresherFrameAppVue
@@ -72,6 +74,36 @@ class InternalFrame implements RefresherFrame {
     querySelectorAll<T extends Element = Element>(selectors: string) {
         return this.app.$el.querySelectorAll<T>(selectors);
     }
+
+    // Event emitter methods for Vue 3 compatibility
+    $on(event: string, callback: Function) {
+        if (!this.eventListeners.has(event)) {
+            this.eventListeners.set(event, []);
+        }
+        this.eventListeners.get(event)!.push(callback);
+    }
+
+    $emit(event: string, ...args: any[]) {
+        const callbacks = this.eventListeners.get(event);
+        if (callbacks) {
+            callbacks.forEach(callback => callback(...args));
+        }
+    }
+
+    $off(event: string, callback?: Function) {
+        if (!callback) {
+            this.eventListeners.delete(event);
+            return;
+        }
+        
+        const callbacks = this.eventListeners.get(event);
+        if (callbacks) {
+            const index = callbacks.indexOf(callback);
+            if (index > -1) {
+                callbacks.splice(index, 1);
+            }
+        }
+    }
 }
 
 export default class {
@@ -88,18 +120,26 @@ export default class {
         document.body.appendChild(this.outer);
 
         this.frame = [];
-        this.app = new Vue({
-            el: this.outer,
-            render: (h) =>
-                h(frame, {
-                    props: {
-                        option
-                    }
-                })
-        }).$children[0] as RefresherFrameAppVue;
+        const app = createApp(frame, { option });
+        this.app = app.mount(this.outer) as RefresherFrameAppVue;
 
         for (const child of children) {
-            this.app.frames.push(new InternalFrame(child, this.app));
+            const internalFrame = new InternalFrame(child, this.app);
+            this.app.frames.push(internalFrame);
         }
+
+        // Add $on method to app for backward compatibility
+        if (!this.app.$on) {
+            this.app.$on = (event: string, callback: Function) => {
+                if (event === 'close') {
+                    this.app.frames.forEach(frame => (frame as InternalFrame).$on('close', callback));
+                }
+            };
+        }
+    }
+
+    // Method to trigger close event on all frames
+    triggerCloseEvent() {
+        this.app.frames.forEach(frame => (frame as InternalFrame).$emit('close'));
     }
 }

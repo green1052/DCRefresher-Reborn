@@ -1,5 +1,6 @@
 <template>
     <div
+        ref="groupElement"
         class="refresher-group"
         @click="clickHandle"
         @wheel="wheelHandle"
@@ -27,7 +28,7 @@
 </template>
 
 <script lang="ts" setup>
-import { getCurrentInstance } from "vue";
+import { getCurrentInstance, ref } from "vue";
 
 import getURL from "../utils/getURL";
 import RefresherFrame from "./frame.vue";
@@ -42,21 +43,23 @@ const props = withDefaults(defineProps<Props>(), {
     frames: () => []
 });
 
+// Template ref for the group element
+const groupElement = ref<HTMLElement>();
+
 // Get current instance to access parent data
 const instance = getCurrentInstance();
-const parentData = instance && instance.parent ? instance.parent.proxy : null;
 
 const clickScroll = (ev: MouseEvent, type: "up" | "down") => {
-    if (instance && instance.proxy && instance.proxy.$el) {
-        const el = instance.proxy.$el as HTMLElement;
+    if (groupElement.value) {
+        const el = groupElement.value;
         const y = type === "up" ? 0 : el.scrollHeight;
         el.scroll(0, y);
     }
 };
 
 const clickHandle = (ev: MouseEvent) => {
-    if (instance && instance.proxy && instance.proxy.$el) {
-        const el = instance.proxy.$el as HTMLElement;
+    if (groupElement.value) {
+        const el = groupElement.value;
         if (ev.target !== el) return ev;
     }
 
@@ -71,9 +74,9 @@ const clickHandle = (ev: MouseEvent) => {
 const wheelHandle = (e: WheelEvent) => {
     if (typeof props.onScroll !== "function") return;
 
-    if (instance && instance.proxy && instance.proxy.$el) {
-        const el = instance.proxy.$el as HTMLElement;
-        props.onScroll(e, instance.proxy, el);
+    if (groupElement.value) {
+        const el = groupElement.value;
+        props.onScroll(e, instance, el);
     }
 };
 </script>

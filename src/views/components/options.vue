@@ -1,6 +1,6 @@
 <template>
     <select
-        v-model="value"
+        :value="value"
         :data-id="id"
         :data-module="modname"
         :disabled="disabled"
@@ -33,8 +33,13 @@ const props = withDefaults(defineProps<Props>(), {
     disabled: false
 });
 
+const emit = defineEmits<{
+    'update:value': [value: string];
+}>();
+
 const handleChange = (ev: Event) => {
     const target = ev.target as HTMLSelectElement;
+    emit('update:value', target.value);
     props.change?.(target.dataset.module, target.dataset.id, target.value);
 };
 </script>

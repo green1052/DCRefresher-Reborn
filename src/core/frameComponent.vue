@@ -104,6 +104,13 @@ const clearScrollMode = () => {
 };
 
 const outerClick = () => {
+    // Trigger close event on all frames for backward compatibility
+    frames.value.forEach((frame) => {
+        if (frame && typeof (frame as any).$emit === "function") {
+            (frame as any).$emit("close");
+        }
+    });
+
     emit("close");
     fadeOut();
 };

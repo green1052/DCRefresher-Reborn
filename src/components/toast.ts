@@ -1,22 +1,21 @@
-import Vue from "vue";
+import { createApp } from "vue";
 
 import toast from "./toastComponent.vue";
 
 const element = document.createElement("refresher-toast");
 
-let Toast: Vue | null = null;
+let Toast: any = null;
 
 window.addEventListener("load", () => {
     document.body.appendChild(element);
 
-    Toast = new Vue({
-        el: element,
-        render: (h) => h(toast)
-    }).$children[0];
+    const app = createApp(toast);
+    const instance = app.mount(element);
+    Toast = instance;
 });
 
 window.addEventListener("keydown", (ev) => {
-    if (Toast !== null && ev.key == "Escape" && Toast.$data.open) Toast.$data.open = false;
+    if (Toast !== null && ev.key == "Escape" && Toast.open) Toast.open = false;
 });
 
 /**
@@ -35,7 +34,7 @@ export const show = (
 ): void => {
     if (Toast === null) throw "Toast is not initialized";
 
-    if (Toast.$data.autoClose) clearTimeout(Toast.$data.autoClose);
+    if (Toast.autoClose) clearTimeout(Toast.autoClose);
 
     Toast.update(content, type, autoClose, click);
     Toast.show();
