@@ -564,8 +564,7 @@
 <script lang="ts" setup>
 import $ from "cash-dom";
 import ky from "ky";
-import { nextTick, onMounted, reactive, ref } from "vue";
-import { Fragment } from "vue-fragment";
+import { Fragment, nextTick, onMounted, reactive, ref } from "vue";
 import browser from "webextension-polyfill";
 
 import { BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES } from "../../core/block";
@@ -574,10 +573,10 @@ import getURL from "../../utils/getURL";
 import storage from "../../utils/storage";
 import RefresherBubble from "./bubble.vue";
 import RefresherCheckbox from "./checkbox.vue";
-import RefresherInput from "./refresherInput.vue";
 import RefresherModule from "./module.vue";
 import RefresherOptions from "./options.vue";
 import RefresherRange from "./range.vue";
+import RefresherInput from "./refresherInput.vue";
 
 const port = browser.runtime.connect({ name: "refresherInternal" });
 

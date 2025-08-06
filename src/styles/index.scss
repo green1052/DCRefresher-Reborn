@@ -3,18 +3,18 @@ $shadow-1dp: 0px 0px 16px rgba(0, 0, 0, 0.08);
 $shadow-2dp: 0px 0px 16px rgba(0, 0, 0, 0.12);
 $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
 
-@import "./spinner.scss";
+@use "./spinner.scss";
 
-@import "./darkmode.scss";
-@import "./stealth.scss";
+@use "./darkmode.scss";
+@use "./stealth.scss";
 
-@import "./animations.scss";
-@import "./toast.scss";
+@use "./animations.scss";
+@use "./toast.scss";
 
-@import "./memo.scss";
+@use "./memo.scss";
 
-@import "./frame.scss";
-@import "./layout.scss";
+@use "./frame.scss";
+@use "./layout.scss";
 
 // Link
 

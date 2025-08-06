@@ -199,11 +199,11 @@
                             <Comment
                                 v-for="(comment, i) in frame.data.comments.comments"
                                 :key="comment.no"
+                                v-model:reply="reply"
                                 :comment="comment"
                                 :delete="frame.functions.deleteComment"
                                 :index="i + 1"
                                 :post-user="frame.data.postUserId"
-                                :reply.sync="reply"
                                 :use-write-comment="frame.data.useWriteComment"
                             />
                         </transition-group>
@@ -211,10 +211,10 @@
 
                     <div v-if="frame.data.useWriteComment">
                         <WriteComment
+                            v-model:reply="reply"
                             :func="writeComment"
                             :get-big-dccon="getBigDccon"
                             :get-dccon="getDccon"
-                            :reply.sync="reply"
                             @setBigDccon="setBigDccon"
                             @setDccon="setDccon"
                         />
@@ -261,14 +261,14 @@
 </template>
 
 <script lang="ts" setup>
-import Vue, { getCurrentInstance, onBeforeUnmount, onMounted, ref } from "vue";
+import { createApp, getCurrentInstance, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 import getURL from "../utils/getURL";
-import PreviewButton from "./previewButton.vue";
 import Comment from "./comment.vue";
 import CountDown from "./countdown.vue";
 import RefresherDcconPopup from "./dccon.vue";
 import RefresherLoader from "./loader.vue";
+import PreviewButton from "./previewButton.vue";
 import TimeStamp from "./timestamp.vue";
 import User from "./user.vue";
 import WriteComment from "./write_comment.vue";
@@ -289,6 +289,7 @@ const reply = ref({
 const dccon = ref<DcinsideDccon[]>([]);
 const bigDccon = ref(false);
 const dcconRender = ref<any>(null);
+const dcconApp = ref<any>(null);
 const commentKey = ref(0);
 
 const beforeEnter = (el: HTMLElement) => {
@@ -342,15 +343,13 @@ const renderDcconPopup = () => {
     const element = document.createElement("div");
     document.body.appendChild(element);
 
-    dcconRender.value = new Vue({
-        render: (h: any) =>
-            h(RefresherDcconPopup, {
-                on: {
-                    clickDccon: clickDccon,
-                    closeDccon: closeDccon
-                }
-            })
-    }).$mount(element);
+    const app = createApp(RefresherDcconPopup, {
+        onClickDccon: clickDccon,
+        onCloseDccon: closeDccon
+    });
+
+    dcconApp.value = app;
+    dcconRender.value = app.mount(element);
 
     return true;
 };
@@ -362,9 +361,10 @@ const clickDccon = (selectedDccon: DcinsideDccon[], selectedBigDccon: boolean) =
 };
 
 const closeDccon = () => {
-    if (dcconRender.value) {
-        dcconRender.value.$destroy();
-        dcconRender.value.$el.remove();
+    if (dcconApp.value && dcconRender.value) {
+        dcconApp.value.unmount();
+        dcconRender.value.remove();
+        dcconApp.value = null;
         dcconRender.value = null;
     }
 };
