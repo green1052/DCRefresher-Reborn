@@ -570,15 +570,15 @@ import browser from "webextension-polyfill";
 
 import Logo from "~assets/oyster.webp";
 
-import { BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES } from "./core/block";
-import { TYPE_NAMES as MEMO_TYPE_NAMES } from "./core/memo";
-import storage from "./utils/storage";
-import RefresherBubble from "./views/components/bubble.vue";
-import RefresherCheckbox from "./views/components/checkbox.vue";
-import RefresherModule from "./views/components/module.vue";
-import RefresherOptions from "./views/components/options.vue";
-import RefresherRange from "./views/components/range.vue";
-import RefresherInput from "./views/components/refresherInput.vue";
+import { BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES } from "../core/block";
+import { TYPE_NAMES as MEMO_TYPE_NAMES } from "../core/memo";
+import storage from "../utils/storage";
+import RefresherBubble from "~popup/components/bubble.vue";
+import RefresherCheckbox from "~popup/components/checkbox.vue";
+import RefresherModule from "~popup/components/module.vue";
+import RefresherOptions from "~popup/components/options.vue";
+import RefresherRange from "~popup/components/range.vue";
+import RefresherInput from "~popup/components/refresherInput.vue";
 
 const port = browser.runtime.connect({ name: "refresherInternal" });
 
