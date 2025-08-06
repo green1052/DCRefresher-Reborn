@@ -32,7 +32,7 @@
         "terser-webpack-plugin": "^5.3.14",
         "typescript": "^5.9.2",
         "typescript-eslint": "^8.39.0",
-        "vue": "^3.5.13",
+        "vue": "^3.5.18",
         "vue-loader": "^17.4.2",
         "webextension-polyfill": "^0.12.0",
         "webpack": "^5.101.0",

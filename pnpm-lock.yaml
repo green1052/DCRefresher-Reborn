@@ -93,7 +93,7 @@ importers:
         specifier: ^8.39.0
         version: 8.39.0(eslint@9.32.0)(typescript@5.9.2)
       vue:
-        specifier: ^3.5.13
+        specifier: ^3.5.18
         version: 3.5.18(typescript@5.9.2)
       vue-loader:
         specifier: ^17.4.2
