@@ -264,7 +264,7 @@
 import Vue, { getCurrentInstance, onBeforeUnmount, onMounted, ref } from "vue";
 
 import getURL from "../utils/getURL";
-import PreviewButton from "./button.vue";
+import PreviewButton from "./previewButton.vue";
 import Comment from "./comment.vue";
 import CountDown from "./countdown.vue";
 import RefresherDcconPopup from "./dccon.vue";

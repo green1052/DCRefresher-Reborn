@@ -81,7 +81,7 @@ import { getCurrentInstance, onMounted, ref, watch } from "vue";
 
 import { Nullable } from "../utils/types";
 import { User } from "../utils/user";
-import PreviewButton from "./button.vue";
+import PreviewButton from "./previewButton.vue";
 import toast from "./toast";
 import UserComponent from "./user.vue";
 
