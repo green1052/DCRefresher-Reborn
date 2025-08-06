@@ -8,7 +8,7 @@ export const find = (element: string, parent: HTMLElement): Promise<NodeListOf<H
         }, 3000);
 
         observer = listen(element, parent, function (this: MutationObserver, elements) {
-            this?.disconnect();
+            observer?.disconnect();
 
             if (timeout) window.clearTimeout(timeout);
 

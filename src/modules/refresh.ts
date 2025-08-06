@@ -43,9 +43,13 @@ const addRefreshText = (issueBox: HTMLElement) => {
     }
 };
 
-const archiveArticleConfig = (await storage.get<boolean>("미리보기.enable"))
-    ? await storage.get<boolean>("미리보기.archiveArticle")
-    : false;
+let archiveArticleConfig = false;
+
+(async () => {
+    archiveArticleConfig = (await storage.get<boolean>("미리보기.enable"))
+        ? await storage.get<boolean>("미리보기.archiveArticle")
+        : false;
+})();
 
 export default {
     name: "글 목록 새로고침",

@@ -6,7 +6,7 @@
         <transition name="refresher-shake">
             <img
                 :key="error"
-                :src="getURL(`/assets/icons/${id}.webp`)"
+                :src="getURL(`/assets/${id}.webp`)"
             />
         </transition>
         <transition name="refresher-shake">

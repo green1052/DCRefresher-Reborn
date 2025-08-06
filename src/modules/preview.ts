@@ -4,15 +4,19 @@ import ky, { Input, Options } from "ky";
 // import Tesseract from "tesseract.js";
 import browser from "webextension-polyfill";
 
+import BlockIcon from "~assets/block.webp";
+import DeleteIcon from "~assets/delete.webp";
+import DownVoteIcon from "~assets/downvote.webp";
+import PinIcon from "~assets/pin.webp";
+import UpVoteIcon from "~assets/upvote.webp";
+
 import { GalleryPreData } from "../@types/post";
 import toast from "../components/toast";
 import * as block from "../core/block";
 import type IFrame from "../core/frame";
 import { submitComment } from "../utils/comment";
-import getURL from "../utils/getURL";
 import * as http from "../utils/http";
 import { queryString } from "../utils/http";
-import inject from "../utils/inject";
 import { ScrollDetection } from "../utils/scrollDetection";
 import * as storage from "../utils/storage";
 import { User } from "../utils/user";
@@ -151,8 +155,12 @@ let replyConfig = false;
     replyConfig = replyRemove;
 })();
 
-const gifControlConfig =
-    (await storage.get<boolean>("관리.enable")) && (await storage.get<boolean>("관리.enableGifControl"));
+let gifControlConfig = false;
+
+(async () => {
+    gifControlConfig =
+        (await storage.get<boolean>("관리.enable")) && (await storage.get<boolean>("관리.enableGifControl"));
+})();
 
 const ISSUE_ZOOM_ID = /\$\(document\)\.data\('comment_id',\s'.+'\);/g;
 const ISSUE_ZOOM_NO = /\$\(document\)\.data\('comment_no',\s'.+'\);/g;
@@ -615,28 +623,25 @@ const panel = {
 
         if (toggleBlur) element.classList.add("blur");
 
-        const upvoteImage = getURL("/assets/icons/upvote.webp");
-        const downvoteImage = getURL("/assets/icons/downvote.webp");
-
         element.innerHTML = `
       <div class="button pin">
-        <img src="${getURL("/assets/icons/pin.webp")}"></img>
+        <img src="${PinIcon}"></img>
         <p>${setAsNotice ? "공지로 등록" : "공지 등록 해제"}</p>
       </div>
       <div class="button recommend">
-        <img src="${setAsRecommend ? upvoteImage : downvoteImage}"></img>
+        <img src="${setAsRecommend ? UpVoteIcon : DownVoteIcon}"></img>
         <p>${setAsRecommend ? "개념글 등록" : "개념글 해제"}</p>
       </div>
       <div class="button block">
-        <img src="${getURL("/assets/icons/block.webp")}"></img>
+        <img src="${BlockIcon}"></img>
         <p>차단 (B)</p>
       </div>
       <div class="button delete">
-        <img src="${getURL("/assets/icons/delete.webp")}"></img>
+        <img src="${DeleteIcon}"></img>
         <p>삭제 (D)</p>
       </div>
       <div class="button bump">
-        <img src="${getURL("/assets/icons/upvote.webp")}"></img>
+        <img src="${UpVoteIcon}"></img>
         <p>끌올</p>
       </div>
     `;
@@ -1362,8 +1367,6 @@ export default {
                 .children("img")
                 .show();
         });
-
-        inject("/assets/js/grecaptcha.js");
 
         blockPreset.day = this.status.blockPresetDay;
         blockPreset.reason = this.status.blockPresetReason;
@@ -2139,7 +2142,7 @@ export default {
                         document.title = this.memory.titleStore;
                     }
 
-                    appStore.root.exposeProxy.clearScrollMode();
+                    appStore.root?.exposeProxy.clearScrollMode();
                     window.clearInterval(this.memory.refreshIntervalId!);
                 });
             }

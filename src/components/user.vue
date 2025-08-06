@@ -11,7 +11,6 @@
             <span
                 :data-icon="user.icon"
                 :data-type="user.type"
-                :style="{ backgroundImage: getUserIconUrl() }"
                 class="refresher-user-icon"
             />
             <span class="refresher-user-nick">{{ user.nick }}</span>
@@ -36,7 +35,6 @@
 import { computed } from "vue";
 
 import eventBus from "../core/eventbus";
-import getURL from "../utils/getURL";
 import { User } from "../utils/user";
 
 interface Props {
@@ -89,22 +87,5 @@ const clickHandle = (): void => {
 
 const contextMenu = (): void => {
     eventBus.emit("refresherUserContextMenu", props.user.nick, props.user.id, props.user.ip, null, null);
-};
-
-const getUserIconUrl = () => {
-    if (props.user.icon === "true") {
-        return `url(${getURL("/assets/icons/fixed_member.webp")})`;
-    }
-
-    switch (props.user.type) {
-        case "member":
-            return `url(${getURL("/assets/icons/member.webp")})`;
-        case "manager":
-            return `url(${getURL("/assets/icons/manager.webp")})`;
-        case "admin":
-            return `url(${getURL("/assets/icons/admin.webp")})`;
-        default:
-            return "none";
-    }
 };
 </script>
