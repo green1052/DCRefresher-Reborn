@@ -1,30 +1,26 @@
 <template>
     <div class="refresher-dccon-popup">
-        <div class="dccon-header">
+        <div style="display: flex">
             <h3>디시콘</h3>
 
-            <div class="dccon-options">
-                <div class="option-item">
-                    <input
-                        id="double-dccon"
-                        v-model="doubleDccon"
-                        type="checkbox"
-                    />
-                    <label for="double-dccon">더블콘</label>
-                </div>
+            <div>
+                <input
+                    v-model="doubleDccon"
+                    type="checkbox"
+                />
+                <label>더블콘</label>
+            </div>
 
-                <div class="option-item">
-                    <input
-                        id="big-dccon"
-                        v-model="bigDccon"
-                        type="checkbox"
-                    />
-                    <label for="big-dccon">대왕콘</label>
-                </div>
+            <div>
+                <input
+                    v-model="bigDccon"
+                    type="checkbox"
+                />
+                <label>대왕콘</label>
             </div>
 
             <div
-                class="close-button"
+                class="close"
                 @click="close"
             >
                 <div class="cross" />
@@ -32,69 +28,61 @@
             </div>
         </div>
 
-        <RefresherLoader v-if="!Object.keys(dcconList).length" />
-        <template v-else>
-            <hr class="divider" />
+        <refresher-loader v-if="!Object.keys(dcconList).length" />
+        <fragment v-else>
+            <hr />
 
-            <div class="dccon-list-container">
-                <button
-                    aria-label="이전 페이지"
-                    class="nav-button prev"
+            <ul style="overflow: auto; display: flex; user-select: none; justify-content: center">
+                <li
+                    style="font-size: 30px; margin-right: 5px"
                     @click="pageDown()"
                 >
-                    &#8249;
-                </button>
-
-                <ul class="dccon-list">
-                    <li
-                        v-for="dccon in dcconList[currentPage]"
-                        :key="dccon.title"
-                        class="dccon-item"
-                    >
-                        <img
-                            :alt="dccon.title"
-                            :src="dccon.main_img_url"
-                            @click="dcconListClick(dccon.detail)"
-                        />
-                    </li>
-                </ul>
-
-                <button
-                    aria-label="다음 페이지"
-                    class="nav-button next"
+                    <
+                </li>
+                <li
+                    v-for="dccon in dcconList[currentPage]"
+                    :key="dccon.title"
+                >
+                    <img
+                        :alt="dccon.title"
+                        :src="dccon.main_img_url"
+                        @click="dcconListClick(dccon.detail)"
+                    />
+                </li>
+                <li
+                    style="font-size: 30px; margin-left: 5px"
                     @click="pageUp()"
                 >
-                    &#8250;
-                </button>
-            </div>
+                    >
+                </li>
+            </ul>
 
-            <hr class="divider" />
+            <hr />
 
-            <div class="dccon-detail-container">
+            <div style="width: 100%; height: 80%; overflow: auto">
                 <h2
                     v-if="firstLoad"
-                    class="instruction-text"
+                    style="position: absolute; top: 50%; left: 35%"
                 >
                     디시콘을 클릭해주세요.
                 </h2>
                 <ul
                     v-else
-                    class="dccon-detail-list"
+                    style="display: flex; flex-wrap: wrap"
                 >
                     <li
                         v-for="dccon in currentDccon"
-                        :key="dccon.title"
-                        class="dccon-detail-item"
                         @click="dcconClick(dccon)"
                     >
                         <img
                             :alt="dccon.title"
                             :src="dccon.list_img"
+                            style="height: 100px"
                         />
                     </li>
                 </ul>
             </div>
-        </template>
+        </fragment>
     </div>
 </template>
 
