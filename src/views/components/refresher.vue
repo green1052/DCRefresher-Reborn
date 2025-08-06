@@ -574,7 +574,7 @@ import getURL from "../../utils/getURL";
 import storage from "../../utils/storage";
 import RefresherBubble from "./bubble.vue";
 import RefresherCheckbox from "./checkbox.vue";
-import RefresherInput from "./input.vue";
+import RefresherInput from "./refresherInput.vue";
 import RefresherModule from "./module.vue";
 import RefresherOptions from "./options.vue";
 import RefresherRange from "./range.vue";
