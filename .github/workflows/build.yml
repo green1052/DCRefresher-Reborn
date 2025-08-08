@@ -25,7 +25,7 @@ jobs:
 
       - name: Build
         run: |
-          pnpm run build
+          pnpm build
           cd build/firefox-mv2-prod zip -1 -r ../mv2.zip .
           cd build/chrome-mv3-prod && zip -1 -r ../mv3.zip .
 

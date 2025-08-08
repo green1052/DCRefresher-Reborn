@@ -1,4 +1,4 @@
-import browser from "webextension-polyfill";
+import { sendToBackground } from "@plasmohq/messaging";
 
 import http from "../utils/http";
 import ip from "../utils/ip";
@@ -107,12 +107,17 @@ export const modules = {
 
         await Promise.all(promises);
 
-        browser.runtime.sendMessage(
-            JSON.stringify({
-                module_store,
-                settings_store: settings.dump()
-            })
-        );
+        sendToBackground({
+            name: "store",
+            body: {
+                action: "update",
+                type: "modules",
+                data: {
+                    module_store,
+                    settings_store: settings.dump()
+                }
+            }
+        });
 
         if (!module.enable || module.url?.test(location.href) === false) return;
 
@@ -126,11 +131,16 @@ communicate.addHook("updateModuleStatus", (data) => {
     module_store[data.name].enable = data.value as boolean;
     storage.set(`${data.name}.enable`, data.value);
 
-    browser.runtime.sendMessage(
-        JSON.stringify({
-            module_store
-        })
-    );
+    sendToBackground({
+        name: "store",
+        body: {
+            action: "update",
+            type: "modules",
+            data: {
+                module_store
+            }
+        }
+    });
 
     if (data.value) {
         runModule(module_store[data.name]);

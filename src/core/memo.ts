@@ -1,4 +1,4 @@
-import browser from "webextension-polyfill";
+import { sendToBackground } from "@plasmohq/messaging";
 
 import storage from "../utils/storage";
 import communicate from "./communicate";
@@ -20,11 +20,17 @@ const MEMO_TYPES_KEYS: RefresherMemoType[] = ["UID", "NICK", "IP"];
 export type MemoCache = Record<RefresherMemoType, Record<string, RefresherMemoValue>>;
 
 function SendToBackground() {
-    browser.runtime.sendMessage(
-        JSON.stringify({
-            memos_store: MEMO_CACHE
-        })
-    );
+    sendToBackground({
+        name: "store",
+        body: {
+            action: "update",
+            type: "memos",
+            data: {
+                updateMemos: true,
+                memos_store: MEMO_CACHE
+            }
+        }
+    });
 }
 
 let MEMO_CACHE: MemoCache = {

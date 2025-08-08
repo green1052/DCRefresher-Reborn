@@ -45,7 +45,7 @@
                     <refresher-options
                         :change="(a, b, value) => (blockFormData.mode = value)"
                         :options="{ NONE: '기본값', ...blockDetectModeTypeNames }"
-                        :value="blockFormData.mode"
+                        :value="blockFormData.mode || 'NONE'"
                     />
                 </div>
 
@@ -101,12 +101,10 @@
                 </p>
             </div>
         </div>
-        <transition-group
-            mode="in-out"
-            name="refresher-slide-left"
-        >
+
+        <transition-group name="refresher-slide-left">
             <div
-                v-show="tab === 0"
+                v-if="tab === 0"
                 key="tab1"
                 class="tab tab1"
             >
@@ -121,7 +119,7 @@
                     <div class="text">
                         <h3>DCRefresher Reborn</h3>
                         <p>
-                            <span class="version">{{ getVersion() }}</span>
+                            <span class="version">{{ version }}</span>
                             <a
                                 v-for="link in links"
                                 @click="open(link.url)"
@@ -151,184 +149,50 @@
                 </div>
 
                 <div class="settings">
-                    <div v-if="!Object.keys(settings).length">
+                    <div v-if="Object.keys(settings).length === 0">
                         <h3 class="need-refresh">우선 디시인사이드 페이지를 열고 설정 해주세요.</h3>
                     </div>
-                    <Fragment v-else>
-                        <div
-                            v-for="module in Object.keys(settings)"
-                            v-if="settings[module] && settingsCount(settings[module])"
+                    <div v-else>
+                        <settings-module
+                            v-for="module in modulesWithBasicSettings"
                             :key="module"
-                            class="refresher-setting-category"
-                        >
-                            <h3 @click="moveToModuleTab(module)">
-                                {{ module }} {{ !modules[module].enable ? "(비활성화)" : "" }}
-                                <svg
-                                    fill="black"
-                                    height="18px"
-                                    viewBox="0 0 24 24"
-                                    width="18px"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
-                                </svg>
-                            </h3>
-
-                            <div
-                                v-for="setting in Object.keys(settings[module])"
-                                v-if="!settings[module][setting].advanced"
-                                :data-changed="settings[module][setting].value !== settings[module][setting].default"
-                                class="refresher-setting"
-                            >
-                                <div class="info">
-                                    <h4>
-                                        {{ settings[module][setting].name }}
-                                    </h4>
-                                    <p>{{ settings[module][setting].desc }}</p>
-                                    <p class="mute">
-                                        (기본 값 :
-                                        {{ typeWrap(settings[module][setting].default) }})
-                                    </p>
-                                </div>
-
-                                <div class="control">
-                                    <refresher-checkbox
-                                        v-if="settings[module][setting].type === 'check'"
-                                        :id="setting"
-                                        :change="updateUserSetting"
-                                        :checked="settings[module][setting].value"
-                                        :disabled="!modules[module].enable"
-                                        :modname="module"
-                                    />
-                                    <refresher-input
-                                        v-else-if="settings[module][setting].type === 'text'"
-                                        :id="setting"
-                                        :change="updateUserSetting"
-                                        :disabled="!modules[module].enable"
-                                        :modname="module"
-                                        :placeholder="settings[module][setting].default"
-                                        :value="settings[module][setting].value"
-                                    />
-                                    <refresher-range
-                                        v-else-if="settings[module][setting].type === 'range'"
-                                        :id="setting"
-                                        :change="updateUserSetting"
-                                        :disabled="!modules[module].enable"
-                                        :max="settings[module][setting].max"
-                                        :min="settings[module][setting].min"
-                                        :modname="module"
-                                        :placeholder="settings[module][setting].default"
-                                        :step="settings[module][setting].step"
-                                        :unit="settings[module][setting].unit"
-                                        :value="Number(settings[module][setting].value)"
-                                    />
-                                    <refresher-options
-                                        v-else-if="settings[module][setting].type === 'option'"
-                                        :id="setting"
-                                        :change="updateUserSetting"
-                                        :disabled="!modules[module].enable"
-                                        :modname="module"
-                                        :options="settings[module][setting].items"
-                                        :value="settings[module][setting].value"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </Fragment>
+                            :module-name="module"
+                            :module-settings="settings[module]"
+                            :module-enabled="modules[module]?.enable ?? false"
+                            :show-advanced="false"
+                            :move-to-module-tab="moveToModuleTab"
+                            :update-user-setting="updateUserSetting"
+                            :type-wrap="typeWrap"
+                        />
+                    </div>
                 </div>
             </div>
+
             <div
-                v-show="tab === 1"
+                v-else-if="tab === 1"
                 key="tab2"
                 class="tab tab2"
             >
-                <div v-if="!Object.keys(settings).length">
+                <div v-if="Object.keys(settings).length === 0">
                     <h3 class="need-refresh">우선 디시인사이드 페이지를 열고 설정 해주세요.</h3>
                 </div>
-                <Fragment v-else>
-                    <div
-                        v-for="module in Object.keys(settings)"
-                        v-if="settings[module] && advancedSettingsCount(settings[module])"
-                        class="refresher-setting-category"
-                    >
-                        <h3 @click="moveToModuleTab(module)">
-                            {{ module }} {{ !modules[module].enable ? "(비활성화)" : "" }}
-                            <svg
-                                fill="black"
-                                height="18px"
-                                viewBox="0 0 24 24"
-                                width="18px"
-                                xmlns="http://www.w3.org/2000/svg"
-                            >
-                                <path
-                                    d="M0 0h24v24H0z"
-                                    fill="none"
-                                />
-                                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
-                            </svg>
-                        </h3>
-
-                        <div
-                            v-for="setting in Object.keys(settings[module])"
-                            v-if="settings[module][setting].advanced"
-                            :data-changed="settings[module][setting].value !== settings[module][setting].default"
-                            class="refresher-setting"
-                        >
-                            <div class="info">
-                                <h4>{{ settings[module][setting].name }}</h4>
-                                <p>{{ settings[module][setting].desc }}</p>
-                                <p class="mute">
-                                    (기본 값 :
-                                    {{ typeWrap(settings[module][setting].default) }})
-                                </p>
-                            </div>
-                            <div class="control">
-                                <refresher-checkbox
-                                    v-if="settings[module][setting].type === 'check'"
-                                    :id="setting"
-                                    :change="updateUserSetting"
-                                    :checked="settings[module][setting].value"
-                                    :disabled="!modules[module].enable"
-                                    :modname="module"
-                                />
-                                <refresher-input
-                                    v-else-if="settings[module][setting].type === 'text'"
-                                    :id="setting"
-                                    :change="updateUserSetting"
-                                    :disabled="!modules[module].enable"
-                                    :modname="module"
-                                    :placeholder="settings[module][setting].default"
-                                    :value="settings[module][setting].value"
-                                />
-                                <refresher-range
-                                    v-else-if="settings[module][setting].type === 'range'"
-                                    :id="setting"
-                                    :change="updateUserSetting"
-                                    :disabled="!modules[module].enable"
-                                    :max="settings[module][setting].max"
-                                    :min="settings[module][setting].min"
-                                    :modname="module"
-                                    :placeholder="settings[module][setting].default"
-                                    :step="settings[module][setting].step"
-                                    :unit="settings[module][setting].unit"
-                                    :value="Number(settings[module][setting].value)"
-                                />
-                                <refresher-options
-                                    v-else-if="settings[module][setting].type === 'option'"
-                                    :id="setting"
-                                    :change="updateUserSetting"
-                                    :disabled="!modules[module].enable"
-                                    :modname="module"
-                                    :options="settings[module][setting].items"
-                                    :value="settings[module][setting].value"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </Fragment>
+                <div v-else>
+                    <settings-module
+                        v-for="module in modulesWithAdvancedSettings"
+                        :key="module"
+                        :module-name="module"
+                        :module-settings="settings[module]"
+                        :module-enabled="modules[module]?.enable ?? false"
+                        :show-advanced="true"
+                        :move-to-module-tab="moveToModuleTab"
+                        :update-user-setting="updateUserSetting"
+                        :type-wrap="typeWrap"
+                    />
+                </div>
             </div>
+
             <div
-                v-show="tab === 2"
+                v-else-if="tab === 2"
                 key="tab3"
                 class="tab tab3"
             >
@@ -435,8 +299,9 @@
                     </div>
                 </div>
             </div>
+
             <div
-                v-show="tab === 3"
+                v-else-if="tab === 3"
                 key="tab4"
                 class="tab tab4"
             >
@@ -506,13 +371,14 @@
                     </div>
                 </div>
             </div>
+
             <div
-                v-show="tab === 4"
+                v-else-if="tab === 4"
                 key="tab5"
                 class="tab tab5"
             >
                 <div
-                    v-if="!Object.keys(modules).length"
+                    v-if="Object.keys(modules).length === 0"
                     class="refresher-no-modules"
                 >
                     <h3>로드된 모듈 없음</h3>
@@ -529,15 +395,16 @@
                     />
                 </div>
             </div>
+
             <div
-                v-show="tab === 5"
+                v-else-if="tab === 5"
                 key="tab6"
                 class="tab tab6"
             >
                 <div class="shortcut-lists">
                     <div
                         v-for="shortcut in shortcuts"
-                        v-if="shortcut?.description.length"
+                        v-if="shortcut.description.length"
                         class="refresher-shortcut"
                     >
                         <p class="description">
@@ -565,8 +432,9 @@
 <script lang="ts" setup>
 import $ from "cash-dom";
 import ky from "ky";
-import { Fragment, nextTick, onMounted, reactive, ref } from "vue";
+import { computed, nextTick, onMounted, reactive, ref } from "vue";
 import browser from "webextension-polyfill";
+import { sendToBackground } from "@plasmohq/messaging";
 
 import Logo from "~assets/oyster.webp";
 
@@ -579,8 +447,7 @@ import RefresherModule from "~popup/components/module.vue";
 import RefresherOptions from "~popup/components/options.vue";
 import RefresherRange from "~popup/components/range.vue";
 import RefresherInput from "~popup/components/refresherInput.vue";
-
-const port = browser.runtime.connect({ name: "refresherInternal" });
+import SettingsModule from "~popup/components/settingsModule.vue";
 
 const tab = ref(0);
 const modules = ref<{ [key: string]: RefresherModule }>({});
@@ -639,31 +506,41 @@ const blockFormData = reactive({
 });
 
 onMounted(async () => {
-    port.postMessage({
-        requestRefresherModules: true,
-        requestRefresherSettings: true,
-        requestRefresherBlocks: true,
-        requestRefresherMemos: true
-    });
+    try {
+        const [modulesResponse, blocksResponse, memosResponse] = await Promise.all([
+            sendToBackground({
+                name: "store",
+                body: { action: "get", type: "modules" }
+            }),
+            sendToBackground({
+                name: "store",
+                body: { action: "get", type: "blocks" }
+            }),
+            sendToBackground({
+                name: "store",
+                body: { action: "get", type: "memos" }
+            })
+        ]);
 
-    port.onMessage.addListener((message) => {
-        if (message.responseRefresherModules && message.modules) {
-            modules.value = message.modules;
+        if (modulesResponse.modules) {
+            modules.value = modulesResponse.modules;
         }
 
-        if (message.responseRefresherSettings && message.settings) {
-            settings.value = message.settings;
+        if (modulesResponse.settings) {
+            settings.value = modulesResponse.settings;
         }
 
-        if (message.responseRefresherBlocks && message.blocks && message.blockModes) {
-            Object.assign(blocks, message.blocks);
-            blockModes.value = message.blockModes;
+        if (blocksResponse.blocks && blocksResponse.blockModes) {
+            Object.assign(blocks, blocksResponse.blocks);
+            blockModes.value = blocksResponse.blockModes;
         }
 
-        if (message.requestRefresherMemos && message.memos) {
-            Object.assign(memos, message.memos);
+        if (memosResponse.memos) {
+            Object.assign(memos, memosResponse.memos);
         }
-    });
+    } catch (error) {
+        // Silent error handling
+    }
 
     shortcuts.value = await browser.commands.getAll();
     databaseVersion.value = await storage.get("refresher.database.version");
@@ -750,9 +627,7 @@ const importBlock = () => {
     }
 };
 
-const getVersion = () => {
-    return browser.runtime.getManifest().version_name ?? browser.runtime.getManifest().version;
-};
+const version = ref(browser.runtime.getManifest().version_name ?? browser.runtime.getManifest().version);
 
 const open = (url: string) => {
     browser.tabs.create({ url });
@@ -808,6 +683,7 @@ const moveToModuleTab = (moduleName: string) => {
 };
 
 const settingsCount = (obj: Record<string, RefresherSettings>) => {
+    if (!obj) return 0;
     return Object.values(obj).filter((v) => !v?.advanced).length;
 };
 
@@ -815,45 +691,82 @@ const advancedSettingsCount = (obj: Record<string, RefresherSettings>) => {
     return Object.values(obj).filter((v) => v?.advanced === true).length;
 };
 
-const updateUserSetting = (module: string, key: string, value: unknown) => {
+// Computed properties for filtered modules
+const modulesWithBasicSettings = computed(() => {
+    return Object.keys(settings.value).filter(
+        (module) => settings.value[module] && settingsCount(settings.value[module]) > 0
+    );
+});
+
+const modulesWithAdvancedSettings = computed(() => {
+    return Object.keys(settings.value).filter(
+        (module) => settings.value[module] && advancedSettingsCount(settings.value[module]) > 0
+    );
+});
+
+const updateUserSetting = async (module: string, key: string, value: unknown) => {
     settings.value[module][key].value = value;
 
-    port.postMessage({
-        updateUserSetting: true,
-        name: module,
-        key,
-        value,
-        settings_store: settings.value
-    });
-
-    browser.tabs.query({ active: true }).then((tabs) => {
-        browser.tabs.sendMessage(tabs[0].id!, {
-            type: "updateSettingValue",
-            data: {
-                name: module,
-                key,
-                value
+    try {
+        await sendToBackground({
+            name: "store",
+            body: {
+                action: "update",
+                type: "userSetting",
+                data: {
+                    name: module,
+                    key,
+                    value
+                }
             }
         });
-    });
+
+        await sendToBackground({
+            name: "broadcast",
+            body: {
+                type: "updateSettingValue",
+                data: {
+                    name: module,
+                    key,
+                    value
+                },
+                targetUrl: "dcinside.com"
+            }
+        });
+    } catch (error) {
+        // Silent error handling
+    }
 };
 
-const syncBlock = () => {
-    port.postMessage({
-        updateBlocks: true,
-        blocks_store: blocks,
-        blockModes_store: blockModes.value
-    });
-
-    browser.tabs.query({ active: true }).then((tabs) => {
-        browser.tabs.sendMessage(tabs[0].id!, {
-            type: "updateBlocks",
-            data: {
-                blocks: blocks,
-                modes: blockModes.value
+const syncBlock = async () => {
+    try {
+        await sendToBackground({
+            name: "store",
+            body: {
+                action: "update",
+                type: "blocks",
+                data: {
+                    updateBlocks: true,
+                    blocks_store: blocks,
+                    blockModes_store: blockModes.value
+                }
             }
         });
-    });
+
+        await sendToBackground({
+            name: "broadcast",
+            body: {
+                type: "updateBlocks",
+                data: {
+                    blocks: blocks,
+                    modes: blockModes.value
+                },
+                targetUrl: "dcinside.com"
+            }
+        });
+    } catch (error) {
+        // Silent error handling
+    }
 };
 
 const openBlockDialog = (key: RefresherBlockType) => {
@@ -939,20 +852,33 @@ const editBlockedUser = (key: RefresherBlockType, index: number) => {
 const editBlockMode = () => {
     syncBlock();
 };
-const syncMemos = () => {
-    port.postMessage({
-        updateMemos: true,
-        memos_store: memos
-    });
-
-    browser.tabs.query({ active: true }).then((tabs) => {
-        browser.tabs.sendMessage(tabs[0].id!, {
-            type: "updateMemos",
-            data: {
-                memos: memos
+const syncMemos = async () => {
+    try {
+        await sendToBackground({
+            name: "store",
+            body: {
+                action: "update",
+                type: "memos",
+                data: {
+                    updateMemos: true,
+                    memos_store: memos
+                }
             }
         });
-    });
+
+        await sendToBackground({
+            name: "broadcast",
+            body: {
+                type: "updateMemos",
+                data: {
+                    memos: memos
+                },
+                targetUrl: "dcinside.com"
+            }
+        });
+    } catch (error) {
+        // Silent error handling
+    }
 };
 const removeMemoUser = (type: RefresherMemoType, user: string) => {
     delete memos[type][user];
@@ -963,31 +889,43 @@ const removeAllMemoUser = (type: RefresherMemoType) => {
     memos[type] = {};
     syncMemos();
 };
-const addMemoUser = (type: RefresherMemoType) => {
-    const user = prompt("메모 대상을 입력하세요.");
+const addMemoUser = async (type: RefresherMemoType) => {
+    const user = prompt("멤모 대상을 입력하세요.");
 
     if (!user) return;
 
-    browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
-        browser.tabs.sendMessage(tabs[0].id!, {
-            type: "refresherRequestMemoAsk",
-            data: {
-                type,
-                user
+    try {
+        await sendToBackground({
+            name: "broadcast",
+            body: {
+                type: "refresherRequestMemoAsk",
+                data: {
+                    type,
+                    user
+                },
+                targetUrl: "dcinside.com"
             }
         });
-    });
+    } catch (error) {
+        // Silent error handling
+    }
 };
-const editMemoUser = (type: RefresherMemoType, user: string) => {
-    browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
-        browser.tabs.sendMessage(tabs[0].id!, {
-            type: "refresherRequestMemoAsk",
-            data: {
-                type,
-                user
+const editMemoUser = async (type: RefresherMemoType, user: string) => {
+    try {
+        await sendToBackground({
+            name: "broadcast",
+            body: {
+                type: "refresherRequestMemoAsk",
+                data: {
+                    type,
+                    user
+                },
+                targetUrl: "dcinside.com"
             }
         });
-    });
+    } catch (error) {
+        // Silent error handling
+    }
 };
 const updateIpDatabase = async () => {
     try {
@@ -1696,8 +1634,7 @@ body {
     }
 
     .remove {
-        margin: auto;
-        margin-left: 5px;
+        margin: auto auto auto 5px;
         width: 20px;
         height: 20px;
         border-radius: 50%;
@@ -1753,7 +1690,6 @@ body {
     }
 }
 
-// Block dialog styles
 .block-dialog-backdrop {
     position: fixed;
     top: 0;
@@ -1866,5 +1802,45 @@ body {
             border-top-color: #3a3f47;
         }
     }
+}
+
+.refresher-slide-left-enter-active {
+    transition: all 450ms cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.refresher-slide-left-leave-active {
+    display: none;
+}
+
+.refresher-slide-left-enter,
+.refresher-slide-left-leave-to {
+    position: absolute;
+    transform: translateX(10px);
+    opacity: 0;
+}
+
+.refresher-slide-left-enter-to {
+    transform: translateX(0px);
+    opacity: 1;
+}
+
+.refresher-slide-up-enter-active {
+    transition: all 450ms cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.refresher-slide-up-leave-active {
+    display: none;
+}
+
+.refresher-slide-up-enter,
+.refresher-slide-up-leave-to {
+    position: absolute;
+    transform: translateY(10px);
+    opacity: 0;
+}
+
+.refresher-slide-up-enter-to {
+    transform: translateY(0px);
+    opacity: 1;
 }
 </style>
