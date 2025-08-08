@@ -1,4 +1,4 @@
-import browser from "webextension-polyfill";
+import { sendToBackground } from "@plasmohq/messaging";
 
 import storage from "../utils/storage";
 import type { ObjectEnum } from "../utils/types";
@@ -52,12 +52,18 @@ export type BlockCache = Record<RefresherBlockType, RefresherBlockValue[]>;
 export type BlockModeCache = Record<RefresherBlockType, RefresherBlockDetectMode>;
 
 function SendToBackground() {
-    browser.runtime.sendMessage(
-        JSON.stringify({
-            blocks_store: BLOCK_CACHE,
-            blockModes_store: BLOCK_MODE_CACHE
-        })
-    );
+    sendToBackground({
+        name: "store",
+        body: {
+            action: "update",
+            type: "blocks",
+            data: {
+                updateBlocks: true,
+                blocks_store: BLOCK_CACHE,
+                blockModes_store: BLOCK_MODE_CACHE
+            }
+        }
+    });
 }
 
 let BLOCK_CACHE: BlockCache = {

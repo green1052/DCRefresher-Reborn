@@ -1,4 +1,4 @@
-import browser from "webextension-polyfill";
+import { sendToBackground } from "@plasmohq/messaging";
 
 import storage from "../utils/storage";
 import eventBus from "./eventbus";
@@ -35,11 +35,16 @@ export const load = async (module: string, key: string, settings: RefresherSetti
 };
 
 eventBus.on("refresherSettingsSync", (store) => {
-    browser.runtime.sendMessage(
-        JSON.stringify({
-            store
-        })
-    );
+    sendToBackground({
+        name: "store",
+        body: {
+            action: "update",
+            type: "settings",
+            data: {
+                store
+            }
+        }
+    });
 });
 
 export default {

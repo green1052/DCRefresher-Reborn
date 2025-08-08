@@ -10,7 +10,10 @@ const handlerStorage: Record<string, StorageStructure[]> = {};
 browser.runtime.onMessage.addListener((message: any) => {
     if (typeof message !== "object" || !message.type) return;
 
-    for (const handler of handlerStorage[message.type]) {
+    const handlers = handlerStorage[message.type];
+    if (!handlers) return;
+
+    for (const handler of handlers) {
         handler.run(message.data);
     }
 });
