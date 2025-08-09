@@ -1,5 +1,3 @@
-import { sendToBackground } from "@plasmohq/messaging";
-
 const contextMenuItems: chrome.contextMenus.CreateProperties[] = [
     {
         id: "blockSelected",
@@ -40,12 +38,9 @@ const createContextMenus = async (): Promise<void> => {
     }
 };
 
-chrome.contextMenus.onClicked.addListener((info) => {
-    sendToBackground({
-        name: "broadcast",
-        body: {
-            type: info.menuItemId as string
-        }
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+    chrome.tabs.sendMessage(tab!.id!, {
+        type: info.menuItemId
     });
 });
 

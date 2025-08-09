@@ -62,8 +62,8 @@
                         <transition
                             appear
                             name="refresher-slide-up"
-                            @before-enter="beforeEnter"
                             @enter="onEnter"
+                            @before-enter="beforeEnter"
                         >
                             <div
                                 :key="frame.title"
@@ -75,8 +75,8 @@
                         <transition
                             appear
                             name="refresher-slide-up"
-                            @before-enter="beforeEnter"
                             @enter="onEnter"
+                            @before-enter="beforeEnter"
                         >
                             <span
                                 class="refresher-preview-title-mute"
@@ -193,8 +193,8 @@
                             :key="commentKey"
                             appear
                             name="refresher-slide-up"
-                            @before-enter="beforeEnter"
                             @enter="onEnter"
+                            @before-enter="beforeEnter"
                         >
                             <Comment
                                 v-for="(comment, i) in frame.data.comments.comments"
@@ -426,3 +426,60 @@ defineExpose({
     incrementCommentKey
 });
 </script>
+
+<style lang="scss">
+$shadow-0dp: none;
+$shadow-1dp: 0px 0px 16px rgba(0, 0, 0, 0.08);
+$shadow-2dp: 0px 0px 16px rgba(0, 0, 0, 0.12);
+$shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
+
+.refresher-frame,
+.refresher-mini-preview {
+    background-color: #fff;
+    border-radius: 13.3px;
+    box-shadow: $shadow-2dp;
+    display: block;
+    max-width: 700px;
+    min-height: 100px;
+    min-width: 100px;
+    overflow: hidden;
+    padding: 3vh 2.5vw;
+    pointer-events: all;
+    position: absolute;
+    transform: translateY(10px);
+    width: 70%;
+
+    @media screen and (max-width: 900px) {
+        max-width: 90%;
+        padding: 3vh 4vw;
+    }
+
+    &.blur {
+        backdrop-filter: blur(5px) saturate(150%);
+        background-color: rgba(245, 245, 245, 0.85);
+    }
+
+    &.center {
+        margin: auto;
+    }
+
+    &.preview {
+        min-height: 100px;
+        min-width: 30vw;
+    }
+
+    &.relative {
+        position: relative;
+    }
+
+    &.x-center {
+        margin-right: auto;
+        margin-left: auto;
+    }
+
+    &.y-center {
+        margin-bottom: auto;
+        margin-top: auto;
+    }
+}
+</style>

@@ -79,7 +79,7 @@ const handler: PlasmoMessaging.MessageHandler<StoreRequest> = async (req, res) =
             case "userSetting":
                 if (data.name && data.key !== undefined) {
                     await storage.set(`${data.name}.${data.key}`, data.value);
-                    
+
                     if (settings[data.name] && settings[data.name][data.key] !== undefined) {
                         settings[data.name][data.key].value = data.value;
                     }

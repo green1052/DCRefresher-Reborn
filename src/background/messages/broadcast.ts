@@ -13,16 +13,16 @@ const handler: PlasmoMessaging.MessageHandler<BroadcastRequest> = async (req, re
         const promises: Promise<any>[] = [];
 
         for (const tab of tabs) {
-            if (tab.id && tab.url) {
-                promises.push(
-                    chrome.tabs
-                        .sendMessage(tab.id, {
-                            type,
-                            data
-                        })
-                        .catch(() => {})
-                );
-            }
+            if (!tab.id || !tab.url) continue;
+
+            promises.push(
+                chrome.tabs
+                    .sendMessage(tab.id, {
+                        type,
+                        data
+                    })
+                    .catch(() => {})
+            );
         }
 
         await Promise.all(promises);
