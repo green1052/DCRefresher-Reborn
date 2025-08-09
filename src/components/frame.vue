@@ -63,7 +63,7 @@
                             appear
                             name="refresher-slide-up"
                             @before-enter="beforeEnter"
-                            @after-enter="afterEnter"
+                            @enter="onEnter"
                         >
                             <div
                                 :key="frame.title"
@@ -76,7 +76,7 @@
                             appear
                             name="refresher-slide-up"
                             @before-enter="beforeEnter"
-                            @after-enter="afterEnter"
+                            @enter="onEnter"
                         >
                             <span
                                 class="refresher-preview-title-mute"
@@ -180,7 +180,7 @@
                 <div v-else>
                     <div v-if="!frame.data.comments.comments || frame.data.comments.comments.length === 0">
                         <div class="refresher-nocomment-wrap">
-                            <img :src="EmptyCommentIcon" />
+                            <img :src="getURL('/assets/empty_comment.webp')" />
                             <h3>댓글이 없습니다.</h3>
                         </div>
                         <br />
@@ -194,7 +194,7 @@
                             appear
                             name="refresher-slide-up"
                             @before-enter="beforeEnter"
-                            @after-enter="afterEnter"
+                            @enter="onEnter"
                         >
                             <Comment
                                 v-for="(comment, i) in frame.data.comments.comments"
@@ -263,7 +263,6 @@
 <script lang="ts" setup>
 import { createApp, getCurrentInstance, onBeforeUnmount, onMounted, ref } from "vue";
 
-import EmptyCommentIcon from "~assets/empty_comment.webp";
 import Comment from "./comment.vue";
 import CountDown from "./countdown.vue";
 import RefresherDcconPopup from "./dccon.vue";
@@ -272,6 +271,7 @@ import PreviewButton from "./previewButton.vue";
 import TimeStamp from "./timestamp.vue";
 import User from "./user.vue";
 import WriteComment from "./write_comment.vue";
+import getURL from "../utils/getURL";
 
 interface Props {
     frame: RefresherFrame;
@@ -296,7 +296,7 @@ const beforeEnter = (el: HTMLElement) => {
     el.style.transitionDelay = `${45 * Number(el.dataset.index)}ms`;
 };
 
-const afterEnter = (el: HTMLElement) => {
+const onEnter = (el: HTMLElement) => {
     el.style.transitionDelay = "";
 };
 
@@ -415,5 +415,14 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     closeDccon();
+});
+
+const incrementCommentKey = () => {
+    commentKey.value++;
+};
+
+defineExpose({
+    commentKey,
+    incrementCommentKey
 });
 </script>

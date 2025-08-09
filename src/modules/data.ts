@@ -1,5 +1,3 @@
-import browser from "webextension-polyfill";
-
 import toast from "../components/toast";
 import storage from "../utils/storage";
 
@@ -63,8 +61,8 @@ export default {
                     delete data["refresher.database.version"];
                     delete data["refresher.database.lastUpdate"];
 
-                    await browser.storage.sync.clear();
-                    await browser.storage.sync.set(data);
+                    await chrome.storage.sync.clear();
+                    await chrome.storage.sync.set(data);
 
                     toast.show("데이터를 클라우드에 백업했습니다.", false, 3000);
                 } catch {
@@ -75,7 +73,7 @@ export default {
         recoverCloud(this, _) {
             if (!confirm("ㄹ?ㅇ")) return;
 
-            browser.storage.sync.get().then(async (data) => {
+            chrome.storage.sync.get().then(async (data) => {
                 try {
                     await storage.clear();
                     await storage.setObject(data);

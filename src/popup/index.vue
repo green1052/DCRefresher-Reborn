@@ -111,7 +111,7 @@
                 <div class="info">
                     <div class="icon-wrap">
                         <img
-                            :src="Logo"
+                            :src="getURL('/assets/oyster.webp')"
                             class="icon"
                         />
                     </div>
@@ -156,13 +156,13 @@
                         <settings-module
                             v-for="module in modulesWithBasicSettings"
                             :key="module"
+                            :module-enabled="modules[module]?.enable ?? false"
                             :module-name="module"
                             :module-settings="settings[module]"
-                            :module-enabled="modules[module]?.enable ?? false"
-                            :show-advanced="false"
                             :move-to-module-tab="moveToModuleTab"
-                            :update-user-setting="updateUserSetting"
+                            :show-advanced="false"
                             :type-wrap="typeWrap"
+                            :update-user-setting="updateUserSetting"
                         />
                     </div>
                 </div>
@@ -180,13 +180,13 @@
                     <settings-module
                         v-for="module in modulesWithAdvancedSettings"
                         :key="module"
+                        :module-enabled="modules[module]?.enable ?? false"
                         :module-name="module"
                         :module-settings="settings[module]"
-                        :module-enabled="modules[module]?.enable ?? false"
-                        :show-advanced="true"
                         :move-to-module-tab="moveToModuleTab"
-                        :update-user-setting="updateUserSetting"
+                        :show-advanced="true"
                         :type-wrap="typeWrap"
+                        :update-user-setting="updateUserSetting"
                     />
                 </div>
             </div>
@@ -402,28 +402,24 @@
                 class="tab tab6"
             >
                 <div class="shortcut-lists">
-                    <div
+                    <template
                         v-for="shortcut in shortcuts"
-                        v-if="shortcut.description.length"
-                        class="refresher-shortcut"
+                        :key="shortcut.id"
                     >
-                        <p class="description">
-                            {{ shortcut.description }}
-                        </p>
-                        <div class="key">
-                            <refresher-bubble
-                                v-for="key in shortcut.shortcut.match(shortcutRegex)"
-                                :key="key"
-                                :text="key"
-                            />
-                            <refresher-bubble
-                                v-if="!shortcutRegex.test(shortcut.shortcut)"
-                                text="없음"
-                            />
+                        <div
+                            v-if="shortcut.description.length"
+                            class="refresher-shortcut"
+                        >
+                            <p class="description">
+                                {{ shortcut.description }}
+                            </p>
+                            <div class="key">
+                                <refresher-bubble :text="shortcut.shortcut || '없음'" />
+                            </div>
                         </div>
-                    </div>
+                    </template>
                 </div>
-                <p><a @click="openShortcutSettings">단축키 설정</a></p>
+                <p style="text-align: right; margin-right: 5px"><a @click="openShortcutSettings">단축키 설정</a></p>
             </div>
         </transition-group>
     </div>
@@ -433,26 +429,23 @@
 import $ from "cash-dom";
 import ky from "ky";
 import { computed, nextTick, onMounted, reactive, ref } from "vue";
-import browser from "webextension-polyfill";
 import { sendToBackground } from "@plasmohq/messaging";
-
-import Logo from "~assets/oyster.webp";
 
 import { BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES } from "../core/block";
 import { TYPE_NAMES as MEMO_TYPE_NAMES } from "../core/memo";
 import storage from "../utils/storage";
-import RefresherBubble from "~popup/components/bubble.vue";
-import RefresherCheckbox from "~popup/components/checkbox.vue";
-import RefresherModule from "~popup/components/module.vue";
-import RefresherOptions from "~popup/components/options.vue";
-import RefresherRange from "~popup/components/range.vue";
-import RefresherInput from "~popup/components/refresherInput.vue";
-import SettingsModule from "~popup/components/settingsModule.vue";
+import RefresherBubble from "./components/bubble.vue";
+import RefresherCheckbox from "./components/checkbox.vue";
+import RefresherModule from "./components/module.vue";
+import RefresherOptions from "./components/options.vue";
+import RefresherInput from "./components/refresherInput.vue";
+import SettingsModule from "./components/settingsModule.vue";
+import getURL from "../utils/getURL";
 
 const tab = ref(0);
 const modules = ref<{ [key: string]: RefresherModule }>({});
 const settings = ref<{ [key: string]: { [key: string]: RefresherSettings } }>({});
-const shortcuts = ref<{} | browser.Commands.Command[]>({});
+const shortcuts = ref<{} | chrome.commands.Command[]>({});
 const blocks = reactive<{ [key in RefresherBlockType]: RefresherBlockValue[] }>({
     NICK: [],
     ID: [],
@@ -472,8 +465,6 @@ const memos = reactive<{ [key in RefresherMemoType]: { [key: string]: RefresherM
     IP: {}
 });
 const memoKeyNames = MEMO_TYPE_NAMES;
-const shortcutRegex =
-    /(Space|⌥|⇧|⌘|⌃|Alt|Cmd|,|'|`|Home|End|PageUp|PageDown|Insert|Delete|Left|Up|Right|Down|[A-Z]|[0-9])/g;
 const blockKeyNames = BLOCK_TYPE_NAMES;
 const links = [
     {
@@ -538,11 +529,9 @@ onMounted(async () => {
         if (memosResponse.memos) {
             Object.assign(memos, memosResponse.memos);
         }
-    } catch (error) {
-        // Silent error handling
-    }
+    } catch {}
 
-    shortcuts.value = await browser.commands.getAll();
+    shortcuts.value = await chrome.commands.getAll();
     databaseVersion.value = await storage.get("refresher.database.version");
 });
 
@@ -627,15 +616,19 @@ const importBlock = () => {
     }
 };
 
-const version = ref(browser.runtime.getManifest().version_name ?? browser.runtime.getManifest().version);
+const version = ref(
+    process.env.NODE_ENV === "development"
+        ? `${chrome.runtime.getManifest().version}-dev`
+        : chrome.runtime.getManifest().version
+);
 
 const open = (url: string) => {
-    browser.tabs.create({ url });
+    chrome.tabs.create({ url });
 };
 
 const openShortcutSettings = () => {
-    browser.tabs.create({
-        url: /Firefox/.test(navigator.userAgent) ? "about:addons" : "chrome://extensions/shortcuts"
+    chrome.tabs.create({
+        url: process.env.PLASMO_BROWSER === "firefox" ? "about:addons" : "chrome://extensions/shortcuts"
     });
 };
 
@@ -652,20 +645,20 @@ const typeWrap = (value: unknown) => {
 };
 
 const moveToModuleTab = (moduleName: string) => {
-    tab.value = 5;
+    tab.value = 4;
 
-    const $el = $("#refresher-app");
+    nextTick(() => {
+        const $el = $("#refresher-app");
 
-    for (const element of $el.find(".refresher-module.highlight")) {
-        $(element).removeClass("highlight");
-    }
+        for (const element of $el.find(".refresher-module.highlight")) {
+            $(element).removeClass("highlight");
+        }
 
-    for (const element of $el.find(".tab .refresher-module .title")) {
-        const $element = $(element);
+        for (const element of $el.find(".tab .refresher-module .title")) {
+            const $element = $(element);
 
-        if ($element.text() !== moduleName) continue;
+            if ($element.text() !== moduleName) continue;
 
-        requestAnimationFrame(() => {
             $element.parent().parent().addClass("highlight");
 
             element.scrollIntoView({
@@ -678,8 +671,8 @@ const moveToModuleTab = (moduleName: string) => {
                     $(element).removeClass("highlight");
                 }
             }, 1000);
-        });
-    }
+        }
+    });
 };
 
 const settingsCount = (obj: Record<string, RefresherSettings>) => {
@@ -729,13 +722,10 @@ const updateUserSetting = async (module: string, key: string, value: unknown) =>
                     name: module,
                     key,
                     value
-                },
-                targetUrl: "dcinside.com"
+                }
             }
         });
-    } catch (error) {
-        // Silent error handling
-    }
+    } catch {}
 };
 
 const syncBlock = async () => {
@@ -760,8 +750,7 @@ const syncBlock = async () => {
                 data: {
                     blocks: blocks,
                     modes: blockModes.value
-                },
-                targetUrl: "dcinside.com"
+                }
             }
         });
     } catch (error) {
@@ -872,13 +861,10 @@ const syncMemos = async () => {
                 type: "updateMemos",
                 data: {
                     memos: memos
-                },
-                targetUrl: "dcinside.com"
+                }
             }
         });
-    } catch (error) {
-        // Silent error handling
-    }
+    } catch {}
 };
 const removeMemoUser = (type: RefresherMemoType, user: string) => {
     delete memos[type][user];
@@ -890,7 +876,7 @@ const removeAllMemoUser = (type: RefresherMemoType) => {
     syncMemos();
 };
 const addMemoUser = async (type: RefresherMemoType) => {
-    const user = prompt("멤모 대상을 입력하세요.");
+    const user = prompt("메모 대상을 입력하세요.");
 
     if (!user) return;
 
@@ -902,13 +888,10 @@ const addMemoUser = async (type: RefresherMemoType) => {
                 data: {
                     type,
                     user
-                },
-                targetUrl: "dcinside.com"
+                }
             }
         });
-    } catch (error) {
-        // Silent error handling
-    }
+    } catch {}
 };
 const editMemoUser = async (type: RefresherMemoType, user: string) => {
     try {
@@ -919,13 +902,10 @@ const editMemoUser = async (type: RefresherMemoType, user: string) => {
                 data: {
                     type,
                     user
-                },
-                targetUrl: "dcinside.com"
+                }
             }
         });
-    } catch (error) {
-        // Silent error handling
-    }
+    } catch {}
 };
 const updateIpDatabase = async () => {
     try {
@@ -935,10 +915,12 @@ const updateIpDatabase = async () => {
             ky.get("https://dcrefresher.green1052.com/data/ban.json").json()
         ]);
 
-        storage.set("refresher.database.ip", ip);
-        storage.set("refresher.database.ban", ban);
-        storage.set("refresher.database.version", version);
-        storage.set("refresher.database.lastUpdate", Date.now());
+        await Promise.all([
+            storage.set("refresher.database.ip", ip),
+            storage.set("refresher.database.ban", ban),
+            storage.set("refresher.database.version", version),
+            storage.set("refresher.database.lastUpdate", Date.now())
+        ]);
 
         alert("데이터베이스 업데이트에 성공했습니다.");
     } catch (e) {
@@ -1208,7 +1190,7 @@ body {
     .tab {
         overflow: auto;
         position: absolute;
-        width: 90%;
+        width: 99%;
         height: 85%;
         padding-top: 40px;
         margin-top: 30px;
@@ -1821,26 +1803,6 @@ body {
 
 .refresher-slide-left-enter-to {
     transform: translateX(0px);
-    opacity: 1;
-}
-
-.refresher-slide-up-enter-active {
-    transition: all 450ms cubic-bezier(0.19, 1, 0.22, 1);
-}
-
-.refresher-slide-up-leave-active {
-    display: none;
-}
-
-.refresher-slide-up-enter,
-.refresher-slide-up-leave-to {
-    position: absolute;
-    transform: translateY(10px);
-    opacity: 0;
-}
-
-.refresher-slide-up-enter-to {
-    transform: translateY(0px);
     opacity: 1;
 }
 </style>

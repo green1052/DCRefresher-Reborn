@@ -8,18 +8,19 @@
         <RefresherFrame
             v-for="(frame, i) in frames"
             :key="`frame${frame.id || i}`"
+            :ref="(el) => setFrameRef(el, i)"
             :frame="frame"
             :index="i"
         />
 
         <div id="scroll">
             <img
-                :src="UpVoteIcon"
+                :src="getURL('/assets/upvote.webp')"
                 alt="Scroll up"
                 @click="(e) => clickScroll(e, 'up')"
             />
             <img
-                :src="DownVoteIcon"
+                :src="getURL('/assets/downvote.webp')"
                 alt="Scroll down"
                 @click="(e) => clickScroll(e, 'down')"
             />
@@ -29,10 +30,8 @@
 
 <script lang="ts" setup>
 import { getCurrentInstance, ref } from "vue";
-
-import DownVoteIcon from "~assets/downvote.webp";
-import UpVoteIcon from "~assets/upvote.webp";
 import RefresherFrame from "./frame.vue";
+import getURL from "../utils/getURL";
 
 interface Props {
     frames?: any[];
@@ -44,10 +43,15 @@ const props = withDefaults(defineProps<Props>(), {
     frames: () => []
 });
 
-// Template ref for the group element
 const groupElement = ref<HTMLElement>();
+const frameRefs = ref<any[]>([]);
 
-// Get current instance to access parent data
+const setFrameRef = (el: any, index: number) => {
+    if (el) {
+        frameRefs.value[index] = el;
+    }
+};
+
 const instance = getCurrentInstance();
 
 const clickScroll = (ev: MouseEvent, type: "up" | "down") => {
@@ -80,6 +84,10 @@ const wheelHandle = (e: WheelEvent) => {
         props.onScroll(e, instance, el);
     }
 };
+
+defineExpose({
+    frameRefs
+});
 </script>
 
 <style lang="scss" scoped>

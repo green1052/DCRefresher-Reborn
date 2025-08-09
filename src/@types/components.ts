@@ -80,5 +80,11 @@ declare global {
         frames: RefresherFrame[];
         closed: boolean;
         inputFocus: boolean;
+        groupRef?: {
+            frameRefs?: Array<{
+                incrementCommentKey?: () => void;
+                commentKey?: { value: number };
+            }>;
+        };
     }
 }

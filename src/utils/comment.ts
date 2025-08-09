@@ -1,6 +1,5 @@
 import $ from "cash-dom";
 import ky from "ky";
-import browser from "webextension-polyfill";
 
 import * as http from "./http";
 import type { Nullable } from "./types";
@@ -155,7 +154,7 @@ export async function submitComment(
     };
 
     const response =
-        browser.runtime.getManifest().manifest_version === 2
+        process.env.PLASMO_MANIFEST_VERSION === "mv2"
             ? await content.fetch(url, options).then((response) => response.text())
             : await ky(url, options).text();
 

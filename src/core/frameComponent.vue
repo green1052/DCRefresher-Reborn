@@ -11,19 +11,20 @@
         class="refresher-frame-outer"
     >
         <RefresherGroup
+            ref="groupRef"
             :frames="frames"
             :on-scroll="onScroll"
             :outer-click="outerClick"
         />
         <transition name="refresher-prev-post">
             <RefresherScroll
-                v-show="scrollModeTop"
+                v-if="scrollModeTop"
                 side="top"
             />
         </transition>
         <transition name="refresher-next-post">
             <RefresherScroll
-                v-show="scrollModeBottom"
+                v-if="scrollModeBottom"
                 side="bottom"
             />
         </transition>
@@ -58,6 +59,7 @@ const scrollModeTop = ref(false);
 const scrollModeBottom = ref(false);
 const closed = ref(false);
 const inputFocus = ref(false);
+const groupRef = ref<any>(null);
 
 // Spread option properties
 const background = ref(props.option && props.option.background ? props.option.background : false);
@@ -142,6 +144,7 @@ defineExpose({
     scrollModeBottom,
     closed,
     inputFocus,
+    groupRef,
     changeStamp,
     first,
     second,

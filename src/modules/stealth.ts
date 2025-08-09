@@ -1,8 +1,7 @@
 import $ from "cash-dom";
 
-import ChangeIcon from "~assets/change.webp";
-
 import toast from "../components/toast";
+import getURL from "../utils/getURL";
 
 const CONTROL_BUTTON = ".stealth_control_button";
 const TEMPORARY_STEALTH = "stlth";
@@ -20,7 +19,7 @@ const tempButtonCreate = (element: HTMLElement): void => {
     buttonFrame.classList.add("blur");
     buttonFrame.innerHTML = `      
   <div class="button" id ="tempview">
-    <img src="${ChangeIcon}"></img>
+    <img src="${getURL("/assets/change.webp")}"></img>
     <p id="temp_button_text">이미지 보이기</p>
   </div>
 `;

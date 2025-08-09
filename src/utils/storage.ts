@@ -17,7 +17,7 @@ export const setObject = (items: Record<string, any>): Promise<void> => {
 
 export const remove = (keys: string | string[]): Promise<void> => {
     if (Array.isArray(keys)) {
-        return Promise.all(keys.map(key => storage.remove(key))).then(() => {});
+        return Promise.all(keys.map((key) => storage.remove(key))).then(() => {});
     }
     return storage.remove(keys);
 };

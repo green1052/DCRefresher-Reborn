@@ -23,14 +23,14 @@ declare global {
     }
 
     interface RefresherEventBus {
-        emit: (event: string, ...params: any[]) => void;
-        emitNextTick: (event: string, ...params: any[]) => void;
-        on: (event: string, callback: (...any: any[]) => void, options?: RefresherEventBusOptions) => string;
+        emit: (event: string, ...params: unknown[]) => void;
+        emitNextTick: (event: string, ...params: unknown[]) => void;
+        on: (event: string, callback: (...args: unknown[]) => void, options?: RefresherEventBusOptions) => string;
         remove: (event: string, uuid: string, skip?: boolean) => void;
     }
 
     interface RefresherEventBusObject {
-        func: (...params: any[]) => void;
+        func: (...params: unknown[]) => void;
         uuid: string;
         once?: boolean;
     }

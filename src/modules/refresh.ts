@@ -7,6 +7,9 @@ import { queryString } from "../utils/http";
 import storage from "../utils/storage";
 
 const AVERAGE_COUNTS_SIZE = 7;
+const MINIMUM_REFRESH_INTERVAL = 500;
+const MINIMUM_AUTO_DELAY = 600;
+const DEFAULT_TIMEOUT_OFFSET = 100;
 
 let PAUSE_REFRESH = false;
 
@@ -17,7 +20,9 @@ const updateRefreshText = (button?: HTMLElement) => {
     if (!button) return;
 
     const onOff = button.querySelector<HTMLSpanElement>("span");
-    onOff!.innerHTML = PAUSE_REFRESH ? "꺼짐" : "켜짐";
+    if (onOff) {
+        onOff.innerHTML = PAUSE_REFRESH ? "꺼짐" : "켜짐";
+    }
 };
 
 const addRefreshText = (issueBox: HTMLElement) => {
@@ -25,21 +30,21 @@ const addRefreshText = (issueBox: HTMLElement) => {
 
     if (!pageHead?.querySelector("button[data-refresher=true]")) {
         const button = document.createElement("button");
-        button.setAttribute("type", "button");
+        button.type = "button";
         button.dataset.refresher = "true";
         button.innerHTML = "새로고침: ";
 
         const onOff = document.createElement("span");
         onOff.innerHTML = "켜짐";
+
         button.onclick = () => {
             PAUSE_REFRESH = !PAUSE_REFRESH;
             updateRefreshText(button);
         };
+
         button.appendChild(onOff);
-
         updateRefreshText(button);
-
-        pageHead?.appendChild(button);
+        pageHead.appendChild(button);
     }
 };
 
@@ -115,7 +120,7 @@ export default {
     },
     shortcuts: {
         refreshLists() {
-            if (this.memory.lastRefresh + 500 > Date.now()) {
+            if (this.memory.lastRefresh + MINIMUM_REFRESH_INTERVAL > Date.now()) {
                 toast.show("너무 자주 새로고칠 수 없습니다.", true, 1000);
                 return;
             }
@@ -132,7 +137,6 @@ export default {
                 false,
                 1000
             );
-
             updateRefreshText();
         }
     },
@@ -158,10 +162,10 @@ export default {
             updateRefreshText();
         }
 
-        this.memory.load = async (customURL?, force?): Promise<boolean> => {
+        this.memory.load = async (customURL?: string, force?: boolean): Promise<boolean> => {
             if (document.hidden) return false;
 
-            if (!force && (Date.now() < this.memory.lastRefresh + 500 || PAUSE_REFRESH)) {
+            if (!force && (Date.now() < this.memory.lastRefresh + MINIMUM_REFRESH_INTERVAL || PAUSE_REFRESH)) {
                 return false;
             }
 
@@ -184,7 +188,7 @@ export default {
 
             const url = http.view(originalLocation);
 
-            const response = await ky.get(url, { timeout: this.status.refreshRate - 100 }).text();
+            const response = await ky.get(url, { timeout: this.status.refreshRate - DEFAULT_TIMEOUT_OFFSET }).text();
             const dom = new DOMParser().parseFromString(response, "text/html");
 
             eventBus.emit("refresherGetPost", dom);
@@ -199,29 +203,29 @@ export default {
 
             const newPostList: Cash[] = [];
 
-            const oldCache = Array.from($oldList.find(".ub-content")).map(
-                (element) => element!.dataset.no ?? element!.querySelector<HTMLElement>(".gall_num")!.innerText
-            );
-            const newCache = Array.from($newList.find(".ub-content")).map(
-                (element) => element!.dataset.no ?? element!.querySelector<HTMLElement>(".gall_num")!.innerText
-            );
+            const extractPostNumber = (element: Element): string => {
+                return element.dataset.no ?? element.querySelector<HTMLElement>(".gall_num")?.innerText ?? "";
+            };
+
+            const oldCache = Array.from($oldList.find(".ub-content")).map(extractPostNumber);
+            const newCache = Array.from($newList.find(".ub-content")).map(extractPostNumber);
 
             for (const element of $newListChildren) {
                 const $element = $(element);
-                const no = $element.get(0)!.dataset.no || $element.find(".gall_num").text();
+                const no = $element.get(0)?.dataset.no || $element.find(".gall_num").text();
 
-                if (
-                    !isPageView &&
-                    isAdmin &&
-                    (searchType !== "search_comment" ||
-                        (searchType === "search_comment" && $element.hasClass("search_comment")))
-                ) {
-                    $element.prepend(no === "설문" ? "<td></td>" : managerCheckbox);
+                if (!isPageView && isAdmin) {
+                    const shouldAddCheckbox =
+                        searchType !== "search_comment" ||
+                        (searchType === "search_comment" && $element.hasClass("search_comment"));
+
+                    if (shouldAddCheckbox) {
+                        $element.prepend(no === "설문" ? "<td></td>" : managerCheckbox);
+                    }
                 }
 
                 if (isPageView && no === currentPostNo) {
                     $element.addClass("crt>").find(".gall_num").html(`<span class="sp_img crt_icon"> </span>`);
-
                     continue;
                 }
 
@@ -235,43 +239,47 @@ export default {
             if (this.memory.calledByPageTurn) {
                 this.memory.calledByPageTurn = false;
 
-                if (queryString("s_keyword")) {
-                    const keyword = $("#sch_q").val() as string;
+                const keyword = queryString("s_keyword");
+                if (keyword) {
+                    const searchValue = $("#sch_q").val() as string;
 
-                    if (keyword) {
-                        for (const element of $newListChildren.find(".gall_tit")) {
+                    if (searchValue) {
+                        $newListChildren.find(".gall_tit").each((_, element) => {
                             const $element = $(element);
-
                             const $a = $element.find("a:first-child");
-                            let classList = "mark";
 
-                            if ($a.find(".spoiler").length) classList += " spoiler";
+                            let classList = "mark";
+                            if ($a.find(".spoiler").length) {
+                                classList += " spoiler";
+                            }
 
                             const subject = $a.html();
-
-                            if (subject.match(keyword))
-                                $a.html(subject.replace(keyword, `<span class="${classList}">${keyword}</span>`));
-                        }
+                            if (subject.includes(searchValue)) {
+                                $a.html(
+                                    subject.replace(searchValue, `<span class="${classList}">${searchValue}</span>`)
+                                );
+                            }
+                        });
                     }
                 }
             } else if (this.status.fadeIn) {
-                for (const $element of newPostList) {
+                newPostList.forEach(($element, index) => {
                     $element.addClass("refresherNewPost");
-                    $element.css("animation-delay", `${this.memory.new_counts * 50}ms`);
-                }
+                    $element.css("animation-delay", `${(newPostList.length - index) * 50}ms`);
+                });
             }
 
             if (archiveArticleConfig) {
-                const different = oldCache
-                    .filter((x) => oldCache.includes(x) && !newCache.includes(x))
-                    .filter((x) => x !== "");
+                const deletedPosts = oldCache.filter((postNo) => postNo && !newCache.includes(postNo));
 
-                oldCache.forEach((no, index) => {
-                    if (!different.includes(no)) return;
-
-                    $newListChildren
-                        .eq(index + newPostList.length)
-                        .before($oldList.children().eq(index).addClass("refresher-deleted"));
+                deletedPosts.forEach((deletedNo) => {
+                    const originalIndex = oldCache.indexOf(deletedNo);
+                    if (originalIndex !== -1) {
+                        const insertIndex = originalIndex + newPostList.length;
+                        $newListChildren
+                            .eq(insertIndex)
+                            .before($oldList.children().eq(originalIndex).addClass("refresher-deleted"));
+                    }
                 });
             }
 
@@ -288,17 +296,18 @@ export default {
                     averageCounts.shift();
                 }
 
-                const average = averageCounts.reduce((a, b) => a + b) / averageCounts.length;
+                const average = averageCounts.reduce((sum, count) => sum + count, 0) / averageCounts.length;
+                const calculatedDelay = 8 * Math.pow(2 / 3, 3 * average) * 1000;
 
-                this.memory.delay = Math.max(600, 8 * Math.pow(2 / 3, 3 * average) * 1000);
+                this.memory.delay = Math.max(MINIMUM_AUTO_DELAY, calculatedDelay);
             }
 
             return true;
         };
 
-        const run = (skipLoad = false) => {
+        const scheduleNextRefresh = (skipLoad = false) => {
             if (!skipLoad) {
-                this.memory.load!();
+                this.memory.load?.();
             }
 
             if (!this.status.autoRate) {
@@ -309,70 +318,77 @@ export default {
                 window.clearTimeout(this.memory.refresh);
             }
 
-            this.memory.refresh = window.setTimeout(run, this.memory.delay);
+            this.memory.refresh = window.setTimeout(scheduleNextRefresh, this.memory.delay);
         };
 
-        document.addEventListener("visibilitychange", () => {
+        const handleVisibilityChange = () => {
             if (!document.hidden) {
-                run();
+                scheduleNextRefresh();
                 return;
             }
 
-            if (this.memory.refresh) window.clearTimeout(this.memory.refresh);
-        });
+            if (this.memory.refresh) {
+                window.clearTimeout(this.memory.refresh);
+            }
+        };
 
-        window.addEventListener("pageshow", (ev) => {
-            run(!ev.persisted);
-        });
+        const handlePageShow = (event: PageTransitionEvent) => {
+            scheduleNextRefresh(!event.persisted);
+        };
 
-        run(true);
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        window.addEventListener("pageshow", handlePageShow);
+
+        scheduleNextRefresh(true);
 
         this.memory.refreshRequest = eventBus.on("refreshRequest", () => {
             if (this.memory.refresh) {
                 window.clearTimeout(this.memory.refresh);
             }
 
-            this.memory.load!(undefined, true);
+            this.memory.load?.(undefined, true);
         });
 
-        window.addEventListener("popstate", () => {
+        const handlePopState = () => {
             this.memory.calledByPageTurn = true;
-            this.memory.load!(undefined, true);
-        });
+            this.memory.load?.(undefined, true);
+        };
+
+        window.addEventListener("popstate", handlePopState);
 
         if (!this.status.useBetterBrowse) return;
 
+        const handlePaginationClick = async (element: HTMLAnchorElement) => {
+            if (element.href.includes("javascript:")) return;
+
+            element.onclick = () => false;
+
+            element.addEventListener("click", async () => {
+                const isPageView = location.href.includes("/board/view");
+
+                const newUrl = isPageView ? http.mergeParamURL(location.href, element.href) : element.href;
+
+                history.pushState(null, document.title, newUrl);
+                this.memory.calledByPageTurn = true;
+
+                await this.memory.load?.(location.href, true);
+
+                const scrollTarget = document.querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head");
+
+                scrollTarget?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+            });
+        };
+
         this.memory.uuid = filter.add<HTMLAnchorElement>(
             ".left_content article:has(.gall_listwrap) .bottom_paging_box a",
-            (element) => {
-                if (element.href.includes("javascript:")) return;
-
-                element.onclick = () => false;
-
-                element.addEventListener("click", async () => {
-                    const isPageView = location.href.includes("/board/view");
-
-                    if (isPageView) {
-                        history.pushState(null, document.title, http.mergeParamURL(location.href, element.href));
-                    } else {
-                        history.pushState(null, document.title, element.href);
-                    }
-
-                    this.memory.calledByPageTurn = true;
-
-                    await this.memory.load!(location.href, true);
-
-                    document.querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head")?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start"
-                    });
-                });
-            }
+            handlePaginationClick
         );
 
-        this.memory.uuid2 = eventBus.on("refresherGetPost", (parsedBody: Document) => {
+        const updatePagination = (parsedBody: Document) => {
             const pagingBox = parsedBody.querySelector(".left_content article:has(.gall_listwrap) .bottom_paging_box");
-
             const currentBottomPagingBox = document.querySelector(
                 ".left_content article:has(.gall_listwrap) .bottom_paging_box"
             );
@@ -385,56 +401,56 @@ export default {
                 ".left_content article:has(.gall_listwrap) .bottom_paging_box a"
             );
 
-            if (!pagingBoxAnchors) return;
+            pagingBoxAnchors.forEach((anchor) => {
+                if (anchor.href.includes("javascript:")) return;
 
-            for (const a of pagingBoxAnchors) {
-                const href = a.href;
+                anchor.onclick = () => false;
 
-                if (href.includes("javascript:")) continue;
+                anchor.addEventListener("click", async () => {
+                    const isPageView = location.href.includes("/board/view");
 
-                a.onclick = () => false;
+                    const newUrl = isPageView ? http.mergeParamURL(location.href, anchor.href) : anchor.href;
 
-                a.addEventListener("click", async () => {
-                    if (location.href.includes("/board/view")) {
-                        history.pushState(null, document.title, http.mergeParamURL(location.href, href));
-                    } else {
-                        history.pushState(null, document.title, href);
-                    }
-
+                    history.pushState(null, document.title, newUrl);
                     this.memory.calledByPageTurn = true;
 
-                    await this.memory.load!(location.href, true);
+                    await this.memory.load?.(location.href, true);
 
-                    const query = document.querySelector(
-                        location.href.includes("/board/view") ? ".view_bottom_btnbox" : ".page_head"
-                    );
+                    const scrollTarget = document.querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head");
 
-                    query?.scrollIntoView({
+                    scrollTarget?.scrollIntoView({
                         behavior: "smooth",
                         block: "start"
                     });
                 });
-            }
-        });
+            });
+        };
+
+        this.memory.uuid2 = eventBus.on("refresherGetPost", updatePagination);
     },
     revoke(_, eventBus, filter) {
         document.body.classList.remove("refresherDoNotColorVisited");
 
         if (this.memory.refresh) {
             window.clearTimeout(this.memory.refresh);
+            this.memory.refresh = 0;
         }
 
-        if (this.memory.uuid) {
-            filter.remove(this.memory.uuid);
-        }
+        [this.memory.uuid, this.memory.uuid2, this.memory.refreshRequest].forEach((id, index) => {
+            if (!id) return;
 
-        if (this.memory.uuid2) {
-            eventBus.remove("refresherGetPost", this.memory.uuid2);
-        }
+            if (index === 0) {
+                filter.remove(id);
+            } else {
+                const eventName = index === 1 ? "refresherGetPost" : "refreshRequest";
+                eventBus.remove(eventName, id);
+            }
+        });
 
-        if (this.memory.refreshRequest) {
-            eventBus.remove("refreshRequest", this.memory.refreshRequest);
-        }
+        this.memory.uuid = null;
+        this.memory.uuid2 = null;
+        this.memory.refreshRequest = null;
+        this.memory.load = null;
     }
 } as RefresherModule<{
     memory: {
