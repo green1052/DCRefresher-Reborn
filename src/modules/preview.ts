@@ -2074,10 +2074,12 @@ export default {
                     };
 
                     if (ev.deltaY < 0) {
-                        appStore.root.exposeProxy.scrollModeBottom = false;
-                        appStore.root.exposeProxy.scrollModeTop = true;
+                        if (appStore.root) {
+                            appStore.root.exposeProxy.scrollModeBottom = false;
+                            appStore.root.exposeProxy.scrollModeTop = true;
+                        }
 
-                        if (!scrolledTop) {
+                        if (!scrolledTop && appStore.root) {
                             appStore.root.exposeProxy.scrollModeTop = false;
                             appStore.root.exposeProxy.scrollModeBottom = false;
                         }
@@ -2093,12 +2095,14 @@ export default {
                         newPostWithData(preData, historySkip);
                         groupStore.scrollTop = 0;
 
-                        appStore.root.exposeProxy.clearScrollMode();
+                        if (appStore.root) appStore.root.exposeProxy.clearScrollMode();
                     } else {
-                        appStore.root.exposeProxy.scrollModeTop = false;
-                        appStore.root.exposeProxy.scrollModeBottom = true;
+                        if (appStore.root) {
+                            appStore.root.exposeProxy.scrollModeTop = false;
+                            appStore.root.exposeProxy.scrollModeBottom = true;
+                        }
 
-                        if (!scrolledToBottom) {
+                        if (!scrolledToBottom && appStore.root) {
                             appStore.root.exposeProxy.scrollModeTop = false;
                             appStore.root.exposeProxy.scrollModeBottom = false;
                         }
@@ -2115,7 +2119,7 @@ export default {
                         newPostWithData(preData, historySkip);
 
                         groupStore.scrollTop = 0;
-                        appStore.root.exposeProxy.clearScrollMode();
+                        appStore.root?.exposeProxy.clearScrollMode();
                     }
                 });
 
@@ -2145,7 +2149,7 @@ export default {
                         document.title = this.memory.titleStore;
                     }
 
-                    appStore.root?.exposeProxy.clearScrollMode();
+                    appStore?.root.exposeProxy.clearScrollMode();
                     window.clearInterval(this.memory.refreshIntervalId!);
                 });
             }
