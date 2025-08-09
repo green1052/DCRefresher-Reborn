@@ -1,7 +1,6 @@
 import { sendToBackground } from "@plasmohq/messaging";
-import browser from "webextension-polyfill";
 
-const contextMenuItems: browser.Menus.CreateCreatePropertiesType[] = [
+const contextMenuItems: chrome.contextMenus.CreateProperties[] = [
     {
         id: "blockSelected",
         title: "오른쪽 클릭한 유저 차단",
@@ -35,22 +34,20 @@ const contextMenuItems: browser.Menus.CreateCreatePropertiesType[] = [
 ];
 
 const createContextMenus = async (): Promise<void> => {
-    await browser.contextMenus.removeAll();
-
+    await chrome.contextMenus.removeAll();
     for (const contextMenu of contextMenuItems) {
-        browser.contextMenus.create(contextMenu);
+        chrome.contextMenus.create(contextMenu);
     }
 };
 
-browser.contextMenus.onClicked.addListener((info, tab) => {
+chrome.contextMenus.onClicked.addListener((info) => {
     sendToBackground({
         name: "broadcast",
         body: {
-            type: info.menuItemId as string,
-            targetUrl: "dcinside.com"
+            type: info.menuItemId as string
         }
     });
 });
 
-browser.runtime.onStartup.addListener(createContextMenus);
-browser.runtime.onInstalled.addListener(createContextMenus);
+chrome.runtime.onStartup.addListener(createContextMenus);
+chrome.runtime.onInstalled.addListener(createContextMenus);

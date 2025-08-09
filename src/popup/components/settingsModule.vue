@@ -16,19 +16,19 @@
         <setting-item
             v-for="settingKey in filteredSettings"
             :key="`${moduleName}-${settingKey}`"
+            :module-enabled="moduleEnabled"
+            :module-name="moduleName"
             :setting="moduleSettings[settingKey]"
             :setting-key="settingKey"
-            :module-name="moduleName"
-            :module-enabled="moduleEnabled"
-            :update-user-setting="updateUserSetting"
             :type-wrap="typeWrap"
+            :update-user-setting="updateUserSetting"
         />
     </div>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
-import SettingItem from './settingItem.vue';
+import { computed } from "vue";
+import SettingItem from "./settingItem.vue";
 
 interface Props {
     moduleName: string;
@@ -43,7 +43,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const filteredSettings = computed(() => {
-    return Object.keys(props.moduleSettings).filter(settingKey => {
+    return Object.keys(props.moduleSettings).filter((settingKey) => {
         const setting = props.moduleSettings[settingKey];
         return props.showAdvanced ? setting?.advanced : !setting?.advanced;
     });

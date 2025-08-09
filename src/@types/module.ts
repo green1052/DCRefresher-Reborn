@@ -122,7 +122,7 @@ declare global {
         update: T["settings"] extends Record<string, RefresherSettings>
             ? {
                   [K in keyof T["settings"]]: (
-                      this: any,
+                      this: RefresherModule<T>,
                       value: T["settings"][K]["value"],
                       ...args: ItemToRefresherArrayArgs<T>
                   ) => void;

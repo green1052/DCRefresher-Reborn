@@ -1,7 +1,12 @@
-import storage from "./storage";
-import { Nullable } from "./types";
+import type { Nullable } from "~utils/types";
 
-const ipData = storage.get<Record<string, string>>("refresher.database.ip");
+import storage from "./storage";
+
+let ipData: Record<string, string> = {};
+
+(async () => {
+    ipData = await storage.get<Record<string, string>>("refresher.database.ip");
+})();
 
 export const ISPData = (ip: string): ISPInfo => {
     if (!ipData) throw new Error("IP data not loaded");

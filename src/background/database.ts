@@ -1,7 +1,4 @@
 import ky from "ky";
-import browser from "webextension-polyfill";
-
-import { createContextMenus } from "~background/contextMenu";
 
 import storage from "../utils/storage";
 
@@ -25,13 +22,13 @@ const updateDatabase = async (): Promise<void> => {
     ]);
 };
 
-browser.runtime.onInstalled.addListener(async () => {
-    if (browser.runtime.getManifest().version_name) return;
+chrome.runtime.onInstalled.addListener(async () => {
+    if (process.env.NODE_ENV !== "production") return;
 
     try {
         await updateDatabase();
     } catch {
-        // Silent error handling for database update
+        // empty
     }
 });
 

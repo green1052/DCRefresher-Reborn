@@ -1,20 +1,14 @@
 import $ from "cash-dom";
 import Cookies from "js-cookie";
 import ky, { Input, Options } from "ky";
-// import Tesseract from "tesseract.js";
-import browser from "webextension-polyfill";
-
-import BlockIcon from "~assets/block.webp";
-import DeleteIcon from "~assets/delete.webp";
-import DownVoteIcon from "~assets/downvote.webp";
-import PinIcon from "~assets/pin.webp";
-import UpVoteIcon from "~assets/upvote.webp";
 
 import { GalleryPreData } from "../@types/post";
 import toast from "../components/toast";
 import * as block from "../core/block";
 import type IFrame from "../core/frame";
 import { submitComment } from "../utils/comment";
+// import Tesseract from "tesseract.js";;
+import getURL from "../utils/getURL";
 import * as http from "../utils/http";
 import { queryString } from "../utils/http";
 import { ScrollDetection } from "../utils/scrollDetection";
@@ -175,7 +169,7 @@ const kyClient = ky.create({
 });
 
 const client =
-    browser.runtime.getManifest().manifest_version === 2
+    process.env.PLASMO_MANIFEST_VERSION === "mv2"
         ? (url: URL | RequestInfo, init?: RequestInit | undefined): Promise<string> => {
               return content
                   .fetch(url, {
@@ -625,23 +619,23 @@ const panel = {
 
         element.innerHTML = `
       <div class="button pin">
-        <img src="${PinIcon}"></img>
+        <img src="${getURL("/assets/pin.webp")}"></img>
         <p>${setAsNotice ? "공지로 등록" : "공지 등록 해제"}</p>
       </div>
       <div class="button recommend">
-        <img src="${setAsRecommend ? UpVoteIcon : DownVoteIcon}"></img>
+        <img src="${setAsRecommend ? getURL("/assets/upvote.webp") : getURL("/assets/downvote.webp")}"></img>
         <p>${setAsRecommend ? "개념글 등록" : "개념글 해제"}</p>
       </div>
       <div class="button block">
-        <img src="${BlockIcon}"></img>
+        <img src="${getURL("/assets/block.webp")}"></img>
         <p>차단 (B)</p>
       </div>
       <div class="button delete">
-        <img src="${DeleteIcon}"></img>
+        <img src="${getURL("/assets/delete.webp")}"></img>
         <p>삭제 (D)</p>
       </div>
       <div class="button bump">
-        <img src="${UpVoteIcon}"></img>
+        <img src="${getURL("/assets/upvote.webp")}"></img>
         <p>끌올</p>
       </div>
     `;
@@ -814,7 +808,9 @@ const panel = {
                         setAsRecommend = !setAsRecommend;
 
                         const recommendImg = recommend.querySelector("img") as HTMLImageElement;
-                        recommendImg.src = setAsRecommend ? upvoteImage : downvoteImage;
+                        recommendImg.src = setAsRecommend
+                            ? getURL("/assets/upvote.webp")
+                            : getURL("/assets/downvote.webp");
 
                         const recommendP = recommend.querySelector("p") as HTMLParagraphElement;
                         recommendP.innerHTML = setAsRecommend ? "개념글 등록" : "개념글 해제";
@@ -1780,51 +1776,56 @@ export default {
                         );
 
                         if (this.status.archiveArticle && cacheComment) {
-                            cacheComment.forEach((v: DcinsideCommentObject) => {
-                                if (!comments.comments!.find((c: DcinsideCommentObject) => c.no === v.no)) {
-                                    needRefresh = true;
-                                    v.is_delete = "1";
+                            const restoreArchivedComments = (cachedComments: DcinsideCommentObject[]) => {
+                                const currentCommentMap = new Map(comments.comments!.map((c) => [c.no, c]));
 
-                                    if (v.depth === 1) {
-                                        const copy = [...comments.comments!];
+                                cachedComments.forEach((cachedComment: DcinsideCommentObject) => {
+                                    const existingComment = currentCommentMap.get(cachedComment.no);
 
-                                        let findReply = false;
-                                        let isBig = false;
+                                    if (!existingComment) {
+                                        needRefresh = true;
+                                        cachedComment.is_delete = "1";
 
-                                        const parent = copy.reverse().find((c: DcinsideCommentObject) => {
-                                            if (c.c_no === v.c_no) {
-                                                if (c.no > v.no) {
-                                                    isBig = true;
+                                        if (cachedComment.depth === 1) {
+                                            const insertReplyComment = (
+                                                comments: DcinsideCommentObject[],
+                                                replyComment: DcinsideCommentObject
+                                            ) => {
+                                                const reversedComments = [...comments].reverse();
+
+                                                const parentComment = reversedComments.find(
+                                                    (comment: DcinsideCommentObject) => {
+                                                        if (comment.c_no === replyComment.c_no) {
+                                                            return true;
+                                                        }
+                                                        return comment.no === replyComment.c_no;
+                                                    }
+                                                );
+
+                                                if (parentComment) {
+                                                    const parentIndex = comments.indexOf(parentComment);
+                                                    const shouldInsertAfter = parentComment.no > replyComment.no;
+                                                    const insertIndex = parentIndex + (shouldInsertAfter ? 0 : 1);
+
+                                                    comments.splice(insertIndex, 0, replyComment);
+                                                } else {
+                                                    comments.push(replyComment);
                                                 }
+                                            };
 
-                                                findReply = true;
-                                                return true;
-                                            }
-
-                                            return c.no === v.c_no;
-                                        });
-
-                                        comments.comments!.splice(
-                                            comments.comments!.indexOf(parent!) + (findReply && isBig ? 0 : 1),
-                                            0,
-                                            v
-                                        );
-
-                                        return;
+                                            insertReplyComment(comments.comments!, cachedComment);
+                                        } else {
+                                            comments.comments!.push(cachedComment);
+                                        }
+                                    } else if (existingComment.is_delete !== "0") {
+                                        cachedComment.is_delete = "2";
+                                        const targetIndex = comments.comments!.indexOf(existingComment);
+                                        comments.comments![targetIndex] = cachedComment;
                                     }
+                                });
+                            };
 
-                                    comments.comments!.push(v);
-                                }
-
-                                const orgIndex = comments.comments!.findIndex(
-                                    (c: DcinsideCommentObject) => c.no === v.no && c.is_delete !== "0"
-                                );
-
-                                if (orgIndex !== -1) {
-                                    v.is_delete = "2";
-                                    comments.comments!.splice(orgIndex, 1, v);
-                                }
-                            });
+                            restoreArchivedComments(cacheComment);
                         }
 
                         postCaches.set(`${preData.gallery}${preData.id}`, {
@@ -1907,20 +1908,18 @@ export default {
                         const cache = postCaches.get(`${preData.gallery}${preData.id}`);
                         const cacheComment = cache?.comment?.comments;
 
-                        if (cacheComment) {
+                        if (cacheComment?.length) {
                             needRefresh = true;
 
-                            cacheComment.forEach((v: DcinsideCommentObject) => {
-                                v.is_delete = "1";
-                            });
+                            const restoredComments = cacheComment.map((comment: DcinsideCommentObject) => ({
+                                ...comment,
+                                is_delete: "1"
+                            }));
 
-                            comments.comments = cacheComment;
-                            threadCounts =
-                                comments.comments.length === 0
-                                    ? 0
-                                    : comments.comments
-                                          .map((v: DcinsideCommentObject) => Number(v.depth == 0))
-                                          .reduce((a: number, b: number) => a + b);
+                            comments.comments = restoredComments;
+                            threadCounts = restoredComments.filter(
+                                (comment: DcinsideCommentObject) => comment.depth === 0
+                            ).length;
                             commentCounts = comments.comments.length;
                         }
                     }
@@ -1930,7 +1929,11 @@ export default {
                     } ${commentCounts}개`;
 
                     frame.data.comments = comments;
-                    if (needRefresh) frame.app.$children[0].$children[1].commentKey++;
+
+                    if (needRefresh) {
+                        const frameComponent = frame.app.groupRef?.frameRefs?.[1];
+                        frameComponent?.incrementCommentKey?.();
+                    }
                 } catch (e) {
                     if (frame.data.comments) {
                         toast.show(String(e), true, 3000);

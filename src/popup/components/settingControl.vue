@@ -43,10 +43,10 @@
 </template>
 
 <script lang="ts" setup>
-import RefresherCheckbox from './checkbox.vue';
-import RefresherInput from './refresherInput.vue';
-import RefresherRange from './range.vue';
-import RefresherOptions from './options.vue';
+import RefresherCheckbox from "./checkbox.vue";
+import RefresherInput from "./refresherInput.vue";
+import RefresherRange from "./range.vue";
+import RefresherOptions from "./options.vue";
 
 interface Props {
     setting: RefresherSettings;
