@@ -469,6 +469,7 @@ $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
     }
 
     &.relative {
+        margin-bottom: 10px;
         position: relative;
     }
 
