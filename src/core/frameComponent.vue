@@ -155,3 +155,107 @@ defineExpose({
     fadeOut
 });
 </script>
+
+<style lang="scss">
+$shadow-0dp: none;
+$shadow-1dp: 0px 0px 16px rgba(0, 0, 0, 0.08);
+$shadow-2dp: 0px 0px 16px rgba(0, 0, 0, 0.12);
+$shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
+
+.refresher-frame-outer {
+    display: flex;
+    left: 0;
+    margin: 0;
+    min-height: 100%;
+    opacity: 0;
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+
+    &.background {
+        background-color: rgba(221, 221, 221, 0.6);
+    }
+
+    &.blur {
+        backdrop-filter: blur(5px) saturate(150%);
+    }
+
+    &.center {
+        justify-content: center;
+        align-items: center;
+    }
+
+    &.fadeIn {
+        transition: 0.6s opacity cubic-bezier(0.19, 1, 0.22, 1);
+        opacity: 1;
+
+        .refresher-frame {
+            transition: 0.5s transform cubic-bezier(0.19, 1, 0.22, 1);
+            transform: translateY(0px);
+        }
+    }
+
+    &.fadeOut {
+        transition: 0.25s opacity cubic-bezier(0.19, 1, 0.22, 1);
+        opacity: 0;
+        pointer-events: none;
+
+        .refresher-frame {
+            transition: 0.25s transform cubic-bezier(0.19, 1, 0.22, 1);
+            transform: translateY(10px);
+        }
+    }
+
+    &.stack {
+        display: block;
+        min-height: 100%;
+    }
+}
+
+.refresher-group {
+    display: block;
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    position: absolute;
+    width: 100%;
+}
+
+.refresher-scroll {
+    background: linear-gradient(to top, rgba(12, 23, 53, 0.7), rgba(32, 42, 72, 0.3), rgba(0, 0, 0, 0));
+    bottom: 0;
+    color: white;
+    display: flex;
+    height: 40%;
+    justify-content: center;
+    left: 0;
+    pointer-events: none;
+    position: fixed;
+    width: 100%;
+
+    .center {
+        margin: auto;
+        top: 20%;
+        position: relative;
+
+        p {
+            font-size: 24px;
+            letter-spacing: -1.66px;
+            font-weight: bold;
+        }
+    }
+
+    &.top {
+        background: linear-gradient(to bottom, rgba(12, 23, 53, 0.7), rgba(32, 42, 72, 0.3), rgba(0, 0, 0, 0));
+        bottom: unset;
+        top: 0;
+
+        .center {
+            bottom: 20%;
+            top: unset;
+        }
+    }
+}
+</style>
