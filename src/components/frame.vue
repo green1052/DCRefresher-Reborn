@@ -9,7 +9,7 @@
         class="refresher-frame"
     >
         <div
-            v-if="!frame.error"
+            v-if="frame.error"
             class="refresher-preview-contents refresher-error"
         >
             <img :src="getURL('/assets/error.webp')" />
@@ -435,8 +435,7 @@ $shadow-1dp: 0px 0px 16px rgba(0, 0, 0, 0.08);
 $shadow-2dp: 0px 0px 16px rgba(0, 0, 0, 0.12);
 $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
 
-.refresher-frame,
-.refresher-mini-preview {
+.refresher-frame {
     background-color: #fff;
     border-radius: 13.3px;
     box-shadow: $shadow-2dp;
