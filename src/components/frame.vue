@@ -9,9 +9,11 @@
         class="refresher-frame"
     >
         <div
-            v-if="frame.error"
+            v-if="!frame.error"
             class="refresher-preview-contents refresher-error"
         >
+            <img :src="getURL('/assets/error.webp')" />
+
             <h3>{{ frame.error.title || "알 수 없는 오류" }}</h3>
             <br />
             <br />
