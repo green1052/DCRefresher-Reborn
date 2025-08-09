@@ -965,6 +965,22 @@ html:has(#css-darkmode) {
 }
 
 .refresher-mini-preview {
+    background-color: #fff;
+    box-shadow: $shadow-2dp;
+    display: block;
+    transform: translateY(10px);
+    width: 70%;
+
+    @media screen and (max-width: 900px) {
+        max-width: 90%;
+        padding: 3vh 4vw;
+    }
+
+    &.blur {
+        backdrop-filter: blur(5px) saturate(150%);
+        background-color: rgba(245, 245, 245, 0.85);
+    }
+
     position: fixed;
     left: 0;
     top: 0;
@@ -980,10 +996,6 @@ html:has(#css-darkmode) {
 
     max-height: 400px;
     max-width: 800px;
-
-    //&:hover {
-    //    opacity: 0.4;
-    //}
 
     img {
         max-width: 300px;
