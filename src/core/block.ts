@@ -99,9 +99,9 @@ let BLOCK_MODE_CACHE: BlockModeCache = {
         BLOCK_MODE_CACHE[key] = modeCache ?? BLOCK_MODE_CACHE[key];
 
         if (!modeCache) await storage.set(`${BLOCK_NAMESPACE}:${key}:MODE`, BLOCK_MODE_CACHE[key]);
-
-        SendToBackground();
     }
+
+    SendToBackground();
 })();
 
 const checkValidType = (type: string) => {
