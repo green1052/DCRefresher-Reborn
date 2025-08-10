@@ -39,13 +39,14 @@ let MEMO_CACHE: MemoCache = {
     IP: {}
 };
 
-MEMO_TYPES_KEYS.forEach(async (key) => {
-    const memo = await storage.get<Record<string, RefresherMemoValue>>(`${MEMO_NAMESPACE}:${key}`);
-
-    MEMO_CACHE[key] = memo ?? {};
+(async () => {
+    for (const key of MEMO_TYPES_KEYS) {
+        const memo = await storage.get<Record<string, RefresherMemoValue>>(`${MEMO_NAMESPACE}:${key}`);
+        MEMO_CACHE[key] = memo ?? {};
+    }
 
     SendToBackground();
-});
+})();
 
 const InternalAddToList = (type: RefresherMemoType, user: string, text: string, color: string, gallery?: string) => {
     MEMO_CACHE[type][user] = {
