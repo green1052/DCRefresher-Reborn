@@ -472,6 +472,10 @@ const links = [
         url: "https://github.com/green1052/DCRefresher-Reborn"
     },
     {
+        text: "갤러리",
+        url: "https://gall.dcinside.com/mini/board/lists/?id=bjwg64"
+    },
+    {
         text: "Discord",
         url: "https://discord.gg/SSW6Zuyjz6"
     },
