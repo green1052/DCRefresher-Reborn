@@ -19,7 +19,7 @@
 
 디시인사이드 개선 확장 프로그램
 
-버그나 문의사항은 [Issues](https://github.com/green1052/DCRefresher-Reborn/issues) 또는 [디스코드 서버](https://discord.gg/SSW6Zuyjz6)를
+버그나 문의사항은 [Issues](https://github.com/green1052/DCRefresher-Reborn/issues), [디스코드 서버](https://discord.gg/SSW6Zuyjz6) 또는 [리프레셔 미니 갤러리](https://gall.dcinside.com/mini/board/lists/?id=bjwg64)를
 이용해주세요.
 
 설치 방법 등 확장프로그램에 관한 내용은 [홈페이지](https://dcrefresher.green1052.com)에서 확인해주세요.
