@@ -12,9 +12,8 @@
             v-if="frame.error"
             class="refresher-preview-contents refresher-error"
         >
-            <img :src="getURL('/assets/error.webp')" />
-
             <h3>{{ frame.error.title || "알 수 없는 오류" }}</h3>
+            <img :src="getURL('/assets/error.webp')" />
             <br />
             <br />
             <br />
