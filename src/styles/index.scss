@@ -247,7 +247,7 @@ tr.gall_writer {
     width: 620px;
     height: 500px;
 
-    left: calc(320px);
+    left: calc(50% - 350px);
     top: calc(50% - 300px);
 
     .close {
@@ -971,11 +971,6 @@ html:has(#css-darkmode) {
     transform: translateY(10px);
     width: 70%;
 
-    @media screen and (max-width: 900px) {
-        max-width: 90%;
-        padding: 3vh 4vw;
-    }
-
     &.blur {
         backdrop-filter: blur(5px) saturate(150%);
         background-color: rgba(245, 245, 245, 0.85);
@@ -1027,6 +1022,11 @@ html:has(#css-darkmode) {
     &.hide {
         opacity: 0;
         pointer-events: none !important;
+    }
+
+    @media screen and (max-width: 900px) {
+        max-width: 90%;
+        padding: 3vh 4vw;
     }
 }
 
