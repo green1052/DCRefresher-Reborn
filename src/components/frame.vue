@@ -362,12 +362,11 @@ const clickDccon = (selectedDccon: DcinsideDccon[], selectedBigDccon: boolean) =
 };
 
 const closeDccon = () => {
-    if (dcconApp.value && dcconRender.value) {
-        dcconApp.value.unmount();
-        dcconRender.value.remove();
-        dcconApp.value = null;
-        dcconRender.value = null;
-    }
+    if (!dcconApp.value) return;
+
+    dcconApp.value.unmount();
+    dcconApp.value = null;
+    dcconRender.value = null;
 };
 
 const setDccon = (value: DcinsideDccon[]) => {

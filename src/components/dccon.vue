@@ -37,7 +37,7 @@
                     style="font-size: 30px; margin-right: 5px"
                     @click="pageDown()"
                 >
-                    &gt;
+                    &lt;
                 </li>
                 <li
                     v-for="dccon in dcconList[currentPage]"
@@ -53,7 +53,7 @@
                     style="font-size: 30px; margin-left: 5px"
                     @click="pageUp()"
                 >
-                    &lt;
+                    &gt;
                 </li>
             </ul>
 
