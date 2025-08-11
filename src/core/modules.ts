@@ -88,15 +88,17 @@ export const modules = {
             promises.push(
                 storage.module.get(module.name).then((data) => {
                     // @ts-ignore
-                    module.data = new Proxy(data ?? {}, {
+                    module.data = new Proxy(data ?? module.data ?? {}, {
                         set(target, p, newValue, receiver) {
+                            const result = Reflect.set(target, p, newValue, receiver);
                             storage.module.setGlobal(module.name, JSON.stringify(module.data));
-                            return Reflect.set(target, p, newValue, receiver);
+                            return result;
                         },
 
                         deleteProperty(target, p) {
+                            const result = Reflect.deleteProperty(target, p);
                             storage.module.setGlobal(module.name, JSON.stringify(module.data));
-                            return Reflect.deleteProperty(target, p);
+                            return result;
                         }
                     });
                 })
