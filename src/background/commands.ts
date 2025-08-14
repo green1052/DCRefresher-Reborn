@@ -1,6 +1,6 @@
 import { sendToBackground } from "@plasmohq/messaging";
 
-chrome.commands.onCommand.addListener(async (command) => {
+chrome.commands.onCommand.addListener((command) => {
     sendToBackground({
         name: "broadcast",
         body: {

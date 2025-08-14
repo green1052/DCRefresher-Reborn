@@ -23,13 +23,7 @@ const updateDatabase = async (): Promise<void> => {
 };
 
 chrome.runtime.onInstalled.addListener(async () => {
-    if (process.env.NODE_ENV !== "production") return;
-
-    try {
-        await updateDatabase();
-    } catch {
-        // empty
-    }
+    if (process.env.NODE_ENV === "production") await updateDatabase();
 });
 
 (async () => {
