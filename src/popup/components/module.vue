@@ -22,6 +22,7 @@
 import { computed } from "vue";
 import storage from "../../utils/storage";
 import RefresherCheckbox from "./checkbox.vue";
+import browser from "webextension-polyfill";
 
 interface Props {
     name: string;
@@ -38,12 +39,12 @@ const handleToggle = async (_module: string | undefined, _id: string | undefined
     try {
         await storage.set(`${props.name}.enable`, value);
 
-        const tabs = await chrome.tabs.query({ active: true });
+        const tabs = await browser.tabs.query({ active: true });
 
         const updatePromises = tabs.map((tab) => {
             if (!tab.id) return Promise.resolve();
 
-            return chrome.tabs
+            return browser.tabs
                 .sendMessage(tab.id, {
                     type: "updateModuleStatus",
                     data: {
@@ -51,9 +52,7 @@ const handleToggle = async (_module: string | undefined, _id: string | undefined
                         value
                     }
                 })
-                .catch((error) => {
-                    console.warn(`Failed to send message to tab ${tab.id}:`, error);
-                });
+                .catch((e) => console.error(`Failed to send message to tab ${tab.id}:`, e));
         });
 
         await Promise.all(updatePromises);

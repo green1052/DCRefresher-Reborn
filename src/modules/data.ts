@@ -1,3 +1,5 @@
+import browser from "webextension-polyfill";
+
 import toast from "../components/toast";
 
 function copyToClipboard(text: string) {
@@ -64,15 +66,15 @@ export default {
     },
     update: {
         backupCloud(this, _) {
-            chrome.storage.local.get<Record<any, any>>().then(async (data) => {
+            browser.storage.local.get().then(async (data) => {
                 try {
                     delete data["refresher.database.ip"];
                     delete data["refresher.database.ban"];
                     delete data["refresher.database.version"];
                     delete data["refresher.database.lastUpdate"];
 
-                    await chrome.storage.sync.clear();
-                    await chrome.storage.sync.set(data);
+                    await browser.storage.sync.clear();
+                    await browser.storage.sync.set(data);
 
                     toast.show("데이터를 클라우드에 백업했습니다.", false, 3000);
                 } catch {
@@ -83,13 +85,13 @@ export default {
         recoverCloud(this, _) {
             if (!confirm("ㄹ?ㅇ")) return;
 
-            chrome.storage.sync.get().then(async (data) => {
+            browser.storage.sync.get().then(async (data) => {
                 try {
                     // await storage.clear();
                     // await storage.setObject(data);
 
-                    await chrome.storage.local.clear();
-                    await chrome.storage.local.set(data);
+                    await browser.storage.local.clear();
+                    await browser.storage.local.set(data);
 
                     toast.show("데이터를 복원했습니다.", false, 3000);
                 } catch {
@@ -98,7 +100,7 @@ export default {
             });
         },
         exportData(this, _) {
-            chrome.storage.local.get<Record<any, any>>().then((data) => {
+            browser.storage.local.get().then((data) => {
                 delete data["refresher.database.ip"];
                 delete data["refresher.database.ban"];
                 delete data["refresher.database.version"];
@@ -121,8 +123,8 @@ export default {
                 try {
                     const data: Record<any, any> = JSON.parse(input);
 
-                    await chrome.storage.local.clear();
-                    await chrome.storage.local.set(data);
+                    await browser.storage.local.clear();
+                    await browser.storage.local.set(data);
 
                     toast.show("데이터를 가져왔습니다.", false, 3000);
                 } catch {
@@ -133,7 +135,7 @@ export default {
         clearData(this, _) {
             if (!confirm("ㄹ?ㅇ")) return;
 
-            chrome.storage.local
+            browser.storage.local
                 .clear()
                 .then(() => toast.show("데이터를 초기화했습니다.", false, 3000))
                 .catch(() => toast.show("데이터를 초기화하는데 실패했습니다.", false, 3000));

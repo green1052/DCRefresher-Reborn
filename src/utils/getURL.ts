@@ -1,3 +1,5 @@
-export const getURL = (url: string): string => chrome.runtime.getURL(url);
+import browser from "webextension-polyfill";
+
+export const getURL = (url: string): string => browser.runtime.getURL(url);
 
 export default getURL;

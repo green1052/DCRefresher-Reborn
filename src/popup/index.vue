@@ -430,6 +430,7 @@ import $ from "cash-dom";
 import ky from "ky";
 import { computed, nextTick, onMounted, reactive, ref } from "vue";
 import { sendToBackground } from "@plasmohq/messaging";
+import browser from "webextension-polyfill";
 
 import { BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES } from "../core/block";
 import { TYPE_NAMES as MEMO_TYPE_NAMES } from "../core/memo";
@@ -445,7 +446,7 @@ import getURL from "../utils/getURL";
 const tab = ref(0);
 const modules = ref<{ [key: string]: RefresherModule }>({});
 const settings = ref<{ [key: string]: { [key: string]: RefresherSettings } }>({});
-const shortcuts = ref<{} | chrome.commands.Command[]>({});
+const shortcuts = ref<{} | browser.Commands.Command[]>({});
 const blocks = reactive<{ [key in RefresherBlockType]: RefresherBlockValue[] }>({
     NICK: [],
     ID: [],
@@ -535,7 +536,7 @@ onMounted(async () => {
         }
     } catch {}
 
-    shortcuts.value = await chrome.commands.getAll();
+    shortcuts.value = await browser.commands.getAll();
     databaseVersion.value = await storage.get("refresher.database.version");
 });
 
@@ -622,16 +623,16 @@ const importBlock = () => {
 
 const version = ref(
     process.env.NODE_ENV === "development"
-        ? `${chrome.runtime.getManifest().version}-dev`
-        : chrome.runtime.getManifest().version
+        ? `${browser.runtime.getManifest().version}-dev`
+        : browser.runtime.getManifest().version
 );
 
 const open = (url: string) => {
-    chrome.tabs.create({ url });
+    browser.tabs.create({ url });
 };
 
 const openShortcutSettings = () => {
-    chrome.tabs.create({
+    browser.tabs.create({
         url: process.env.PLASMO_BROWSER === "firefox" ? "about:addons" : "chrome://extensions/shortcuts"
     });
 };
@@ -729,7 +730,9 @@ const updateUserSetting = async (module: string, key: string, value: unknown) =>
                 }
             }
         });
-    } catch {}
+    } catch (e) {
+        console.error("Failed to update user setting:", e);
+    }
 };
 
 const syncBlock = async () => {
@@ -741,8 +744,8 @@ const syncBlock = async () => {
                 type: "blocks",
                 data: {
                     updateBlocks: true,
-                    blocks_store: blocks,
-                    blockModes_store: blockModes.value
+                    blocks_store: JSON.parse(JSON.stringify(blocks)),
+                    blockModes_store: JSON.parse(JSON.stringify(blockModes.value))
                 }
             }
         });
@@ -752,8 +755,8 @@ const syncBlock = async () => {
             body: {
                 type: "updateBlocks",
                 data: {
-                    blocks: blocks,
-                    modes: blockModes.value
+                    blocks: JSON.parse(JSON.stringify(blocks)),
+                    modes: JSON.parse(JSON.stringify(blockModes.value))
                 }
             }
         });
@@ -854,7 +857,7 @@ const syncMemos = async () => {
                 type: "memos",
                 data: {
                     updateMemos: true,
-                    memos_store: memos
+                    memos_store: JSON.parse(JSON.stringify(memos))
                 }
             }
         });
@@ -864,7 +867,7 @@ const syncMemos = async () => {
             body: {
                 type: "updateMemos",
                 data: {
-                    memos: memos
+                    memos: JSON.parse(JSON.stringify(memos))
                 }
             }
         });

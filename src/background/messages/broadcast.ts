@@ -1,4 +1,5 @@
 import type { PlasmoMessaging } from "@plasmohq/messaging";
+import browser from "webextension-polyfill";
 
 interface BroadcastRequest {
     type: string;
@@ -9,14 +10,15 @@ const handler: PlasmoMessaging.MessageHandler<BroadcastRequest> = async (req, re
     const { type, data } = req.body;
 
     try {
-        const tabs = await chrome.tabs.query({});
+        const tabs = await browser.tabs.query({});
+
         const promises: Promise<any>[] = [];
 
         for (const tab of tabs) {
-            if (!tab.id || !tab.url) continue;
+            if (!tab.id) continue;
 
             promises.push(
-                chrome.tabs
+                browser.tabs
                     .sendMessage(tab.id, {
                         type,
                         data
@@ -27,8 +29,9 @@ const handler: PlasmoMessaging.MessageHandler<BroadcastRequest> = async (req, re
 
         await Promise.all(promises);
         res.send({ success: true, sentTo: promises.length });
-    } catch (error) {
-        res.send({ success: false, error: error.message });
+    } catch (e) {
+        console.error("Broadcast error:", e);
+        res.send({ success: false, error: e });
     }
 };
 
