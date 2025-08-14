@@ -26,7 +26,7 @@
         "webextension-polyfill": "^0.12.0"
     },
     "scripts": {
-        "dev": "plasmo dev --target=firefox-mv2",
+        "dev": "plasmo dev",
         "build": "plasmo build --hoist --zip --target=chrome-mv3 && plasmo build --hoist --zip --target=firefox-mv2"
     },
     "packageManager": "pnpm@10.14.0",
