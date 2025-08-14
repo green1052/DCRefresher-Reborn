@@ -1439,18 +1439,14 @@ export default {
             };
 
             frame.functions.share = () => {
-                try {
-                    navigator.clipboard.writeText(
+                navigator.clipboard
+                    .writeText(
                         `https://gall.dcinside.com/${http.galleryType(preData.link!)}/board/view/?id=${
                             preData.gallery || http.queryString("id")
                         }&no=${preData.id}`
-                    );
-
-                    toast.show("클립보드에 복사되었습니다.", false, 3000);
-                } catch {
-                    toast.show("클립보드에 복사하는데 실패했습니다.", true, 3000);
-                    return false;
-                }
+                    )
+                    .then(() => toast.show("클립보드에 복사되었습니다.", false, 3000))
+                    .catch(() => toast.show("클립보드에 복사하는데 실패했습니다.", true, 3000));
 
                 return true;
             };
