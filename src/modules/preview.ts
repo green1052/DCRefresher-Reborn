@@ -1,17 +1,15 @@
 import $ from "cash-dom";
 import Cookies from "js-cookie";
 import ky, { Input, Options } from "ky";
+// import Tesseract from "tesseract.js";
+import grecaptcha from "url:../temp/grecaptcha";
 
 import { GalleryPreData } from "../@types/post";
 import toast from "../components/toast";
 import * as block from "../core/block";
 import type IFrame from "../core/frame";
-import { submitComment } from "../utils/comment";
-// import Tesseract from "tesseract.js";;
 import getURL from "../utils/getURL";
 import * as http from "../utils/http";
-import { queryString } from "../utils/http";
-import { ScrollDetection } from "../utils/scrollDetection";
 import * as storage from "../utils/storage";
 import { User } from "../utils/user";
 
@@ -1362,6 +1360,10 @@ export default {
                 .closest("div")
                 .children("img")
                 .show();
+        });
+
+        $(document).on("DOMContentLoaded", () => {
+            $(document.body).append(`<script src="${grecaptcha}">`);
         });
 
         blockPreset.day = this.status.blockPresetDay;

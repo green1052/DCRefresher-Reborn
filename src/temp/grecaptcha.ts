@@ -1,4 +1,4 @@
-import type { PlasmoCSConfig } from "plasmo";
+// import type { PlasmoCSConfig } from "plasmo";
 
 $.getScript("https://www.google.com/recaptcha/api.js?render=6Lc-Fr0UAAAAAOdqLYqPy53MxlRMIXpNXFvBliwI", () => {
     window.addEventListener("message", (event) => {
@@ -13,14 +13,14 @@ $.getScript("https://www.google.com/recaptcha/api.js?render=6Lc-Fr0UAAAAAOdqLYqP
     });
 });
 
-export const config: PlasmoCSConfig = {
-    matches: ["https://*.dcinside.com/*"],
-    exclude_matches: [
-        "https://event.dcinside.com/*",
-        "https://h5.dcinside.com/*",
-        "https://m.dcinside.com/*",
-        "https://mall.dcinside.com/*",
-        "https://wiki.dcinside.com/*"
-    ],
-    world: "MAIN"
-};
+// export const config: PlasmoCSConfig = {
+//     matches: ["https://*.dcinside.com/*"],
+//     exclude_matches: [
+//         "https://event.dcinside.com/*",
+//         "https://h5.dcinside.com/*",
+//         "https://m.dcinside.com/*",
+//         "https://mall.dcinside.com/*",
+//         "https://wiki.dcinside.com/*"
+//     ],
+//     world: "MAIN"
+// };
