@@ -1,5 +1,4 @@
 import toast from "../components/toast";
-import storage from "../utils/storage";
 
 function copyToClipboard(text: string) {
     const tempElem = document.createElement("textarea");
@@ -65,7 +64,7 @@ export default {
     },
     update: {
         backupCloud(this, _) {
-            storage.get<Record<any, any>>().then(async (data) => {
+            chrome.storage.local.get<Record<any, any>>().then(async (data) => {
                 try {
                     delete data["refresher.database.ip"];
                     delete data["refresher.database.ban"];
@@ -86,8 +85,11 @@ export default {
 
             chrome.storage.sync.get().then(async (data) => {
                 try {
-                    await storage.clear();
-                    await storage.setObject(data);
+                    // await storage.clear();
+                    // await storage.setObject(data);
+
+                    await chrome.storage.local.clear();
+                    await chrome.storage.local.set(data);
 
                     toast.show("데이터를 복원했습니다.", false, 3000);
                 } catch {
@@ -96,14 +98,14 @@ export default {
             });
         },
         exportData(this, _) {
-            storage.get<Record<any, any>>().then((data) => {
+            chrome.storage.local.get<Record<any, any>>().then((data) => {
                 delete data["refresher.database.ip"];
                 delete data["refresher.database.ban"];
                 delete data["refresher.database.version"];
                 delete data["refresher.database.lastUpdate"];
 
                 try {
-                    copyToClipboard(JSON.stringify(data));
+                    copyToClipboard(JSON.stringify(data, null, 4));
                     toast.show("데이터를 클립보드로 내보냈습니다.", false, 3000);
                 } catch {
                     toast.show("데이터를 클립보드로 내보내는데 실패했습니다.", true, 3000);
@@ -111,28 +113,27 @@ export default {
             });
         },
         importData(this, _) {
-            const input = prompt("데이터를 입력해주세요.");
+            (async () => {
+                const input = prompt("데이터를 입력해주세요.");
 
-            if (!input) return;
+                if (!input) return;
 
-            try {
-                const data: Record<any, any> = JSON.parse(input);
+                try {
+                    const data: Record<any, any> = JSON.parse(input);
 
-                storage
-                    .clear()
-                    .then(() => {
-                        storage.setObject(data);
-                        toast.show("데이터를 가져왔습니다.", false, 3000);
-                    })
-                    .catch(() => toast.show("데이터를 가져오는데 실패했습니다.", true, 3000));
-            } catch {
-                toast.show("데이터를 가져오는데 실패했습니다.", true, 3000);
-            }
+                    await chrome.storage.local.clear();
+                    await chrome.storage.local.set(data);
+
+                    toast.show("데이터를 가져왔습니다.", false, 3000);
+                } catch {
+                    toast.show("데이터를 가져오는데 실패했습니다.", true, 3000);
+                }
+            })();
         },
         clearData(this, _) {
             if (!confirm("ㄹ?ㅇ")) return;
 
-            storage
+            chrome.storage.local
                 .clear()
                 .then(() => toast.show("데이터를 초기화했습니다.", false, 3000))
                 .catch(() => toast.show("데이터를 초기화하는데 실패했습니다.", false, 3000));

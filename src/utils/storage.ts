@@ -2,25 +2,15 @@ import { Storage } from "@plasmohq/storage";
 
 export const storage = new Storage({ area: "local" });
 
-export const get = <T>(key?: string | null): Promise<T> => {
-    if (!key) {
-        return storage.getAll() as Promise<T>;
-    }
-    return storage.get(key) as Promise<T>;
-};
+export const get = <T>(key?: string | null): Promise<T> =>
+    key ? storage.get<T>(key) : (storage.rawGetAll() as Promise<T>);
 
 export const set = <T>(key: string, value: T): Promise<void> => storage.set(key, value);
 
-export const setObject = (items: Record<string, any>): Promise<void> => {
-    return Promise.all(Object.entries(items).map(([key, value]) => storage.set(key, value))).then(() => {});
-};
+export const setObject = (items: Record<string, any>): Promise<void> => storage.setMany(items);
 
-export const remove = (keys: string | string[]): Promise<void> => {
-    if (Array.isArray(keys)) {
-        return Promise.all(keys.map((key) => storage.remove(key))).then(() => {});
-    }
-    return storage.remove(keys);
-};
+export const remove = (keys: string | string[]): Promise<void> =>
+    Array.isArray(keys) ? storage.removeMany(keys) : storage.remove(keys);
 
 export const clear = (): Promise<void> => storage.clear();
 
