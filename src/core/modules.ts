@@ -115,8 +115,8 @@ export const modules = {
                 action: "update",
                 type: "modules",
                 data: {
-                    module_store,
-                    settings_store: settings.dump()
+                    module_store: JSON.parse(JSON.stringify(module_store)),
+                    settings_store: JSON.parse(JSON.stringify(settings.dump()))
                 }
             }
         });
@@ -139,7 +139,7 @@ communicate.addHook("updateModuleStatus", (data) => {
             action: "update",
             type: "modules",
             data: {
-                module_store
+                module_store: JSON.parse(JSON.stringify(module_store))
             }
         }
     });

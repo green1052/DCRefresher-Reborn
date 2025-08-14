@@ -1,4 +1,5 @@
 import ky from "ky";
+import browser from "webextension-polyfill";
 
 import storage from "../utils/storage";
 
@@ -22,7 +23,7 @@ const updateDatabase = async (): Promise<void> => {
     ]);
 };
 
-chrome.runtime.onInstalled.addListener(async () => {
+browser.runtime.onInstalled.addListener(async () => {
     if (process.env.NODE_ENV === "production") await updateDatabase();
 });
 

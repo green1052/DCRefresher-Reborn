@@ -1,3 +1,5 @@
+import browser from "webextension-polyfill";
+
 import toast from "../components/toast";
 import storage from "../utils/storage";
 
@@ -9,7 +11,7 @@ import storage from "../utils/storage";
 
     if (installed || updated)
         setTimeout(() => {
-            const currentVersion = chrome.runtime.getManifest().version;
+            const currentVersion = browser.runtime.getManifest().version;
 
             let content: string;
 

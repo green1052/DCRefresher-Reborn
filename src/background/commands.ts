@@ -1,6 +1,7 @@
 import { sendToBackground } from "@plasmohq/messaging";
+import browser from "webextension-polyfill";
 
-chrome.commands.onCommand.addListener((command) => {
+browser.commands.onCommand.addListener((command) => {
     sendToBackground({
         name: "broadcast",
         body: {

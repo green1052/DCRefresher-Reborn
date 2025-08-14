@@ -1,3 +1,5 @@
+import browser from "webextension-polyfill";
+
 interface StorageStructure {
     uuid: string;
     run: (...args: any[]) => void;
@@ -5,7 +7,7 @@ interface StorageStructure {
 
 const handlerStorage: Record<string, StorageStructure[]> = {};
 
-chrome.runtime.onMessage.addListener((message: any) => {
+browser.runtime.onMessage.addListener((message: any) => {
     if (typeof message !== "object" || !message.type) return;
 
     const handlers = handlerStorage[message.type];

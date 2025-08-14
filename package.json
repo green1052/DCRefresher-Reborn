@@ -1,7 +1,7 @@
 {
     "displayName": "DCRefresher Reborn",
     "name": "dcrefresher-reborn",
-    "version": "4.0.6",
+    "version": "4.0.7",
     "author": "green1052",
     "homepage": "https://github.com/green1052/DCRefresher-Reborn",
     "description": "디시인사이드 개선 확장 프로그램",
@@ -9,8 +9,8 @@
         "@eslint/js": "^9.33.0",
         "@parcel/resolver-glob": "2.9.3",
         "@plasmohq/parcel-config": "^0.42.0",
-        "@types/chrome": "^0.1.4",
         "@types/js-cookie": "^3.0.6",
+        "@types/webextension-polyfill": "^0.12.3",
         "cash-dom": "^8.1.5",
         "eslint": "^9.33.0",
         "eslint-config-prettier": "^10.1.7",
@@ -22,10 +22,11 @@
         "ky": "^1.8.2",
         "prettier": "^3.6.2",
         "typescript": "^5.9.2",
-        "typescript-eslint": "^8.39.1"
+        "typescript-eslint": "^8.39.1",
+        "webextension-polyfill": "^0.12.0"
     },
     "scripts": {
-        "dev": "plasmo dev",
+        "dev": "plasmo dev --target=firefox-mv2",
         "build": "plasmo build --hoist --zip --target=chrome-mv3 && plasmo build --hoist --zip --target=firefox-mv2"
     },
     "packageManager": "pnpm@10.14.0",

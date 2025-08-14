@@ -44,8 +44,8 @@ const initializeUserData = async (): Promise<void> => {
         if (checkPermBan) {
             ban = (await storage.get<any>("refresher.database.ban")) ?? {};
         }
-    } catch (error) {
-        console.error("Failed to initialize user data:", error);
+    } catch (e) {
+        console.error("Failed to initialize user data:", e);
     }
 };
 

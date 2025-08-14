@@ -1557,7 +1557,7 @@ export default {
                         detail: String(error)
                     };
 
-                    console.log("Error occured while loading a post.", error);
+                    console.error("Error occured while loading a post.", error);
                 } finally {
                     frame.data.load = false;
                 }

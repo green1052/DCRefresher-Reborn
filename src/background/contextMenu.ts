@@ -1,4 +1,6 @@
-const contextMenuItems: chrome.contextMenus.CreateProperties[] = [
+import browser from "webextension-polyfill";
+
+const contextMenuItems: browser.Menus.CreateCreatePropertiesType[] = [
     {
         id: "blockSelected",
         title: "오른쪽 클릭한 유저 차단",
@@ -32,17 +34,17 @@ const contextMenuItems: chrome.contextMenus.CreateProperties[] = [
 ];
 
 const createContextMenus = async (): Promise<void> => {
-    await chrome.contextMenus.removeAll();
+    await browser.contextMenus.removeAll();
     for (const contextMenu of contextMenuItems) {
-        chrome.contextMenus.create(contextMenu);
+        browser.contextMenus.create(contextMenu);
     }
 };
 
-chrome.contextMenus.onClicked.addListener((info, tab) => {
-    chrome.tabs.sendMessage(tab!.id!, {
+browser.contextMenus.onClicked.addListener((info, tab) => {
+    browser.tabs.sendMessage(tab!.id!, {
         type: info.menuItemId
     });
 });
 
-chrome.runtime.onStartup.addListener(createContextMenus);
-chrome.runtime.onInstalled.addListener(createContextMenus);
+browser.runtime.onStartup.addListener(createContextMenus);
+browser.runtime.onInstalled.addListener(createContextMenus);
