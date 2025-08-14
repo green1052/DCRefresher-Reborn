@@ -10,6 +10,8 @@ import * as block from "../core/block";
 import type IFrame from "../core/frame";
 import getURL from "../utils/getURL";
 import * as http from "../utils/http";
+import { queryString } from "../utils/http";
+import { ScrollDetection } from "../utils/scrollDetection";
 import * as storage from "../utils/storage";
 import { User } from "../utils/user";
 

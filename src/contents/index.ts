@@ -11,6 +11,10 @@ import * as modulesList from "../modules/*.ts";
 
 Promise.all(Object.values(modulesList).map((module) => modules.load(module.default))).then(filter.run);
 
+import storage from "../utils/storage";
+
+storage.get().then(console.log);
+
 export const config: PlasmoCSConfig = {
     matches: ["https://*.dcinside.com/*"],
     exclude_matches: [

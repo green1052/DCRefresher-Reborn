@@ -541,7 +541,7 @@ onMounted(async () => {
 
 const exportMemo = () => {
     navigator.clipboard
-        .writeText(JSON.stringify(memos))
+        .writeText(JSON.stringify(memos, null, 4))
         .then(() => {
             alert("클립보드에 복사되었습니다.");
         })
@@ -580,7 +580,7 @@ const importMemo = () => {
 
 const exportBlock = () => {
     navigator.clipboard
-        .writeText(JSON.stringify(blocks))
+        .writeText(JSON.stringify(blocks, null, 4))
         .then(() => {
             alert("클립보드에 복사되었습니다.");
         })

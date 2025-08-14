@@ -91,13 +91,13 @@ export const modules = {
                     module.data = new Proxy(data ?? module.data ?? {}, {
                         set(target, p, newValue, receiver) {
                             const result = Reflect.set(target, p, newValue, receiver);
-                            storage.module.setGlobal(module.name, JSON.stringify(target));
+                            storage.module.setGlobal(module.name, target);
                             return result;
                         },
 
                         deleteProperty(target, p) {
                             const result = Reflect.deleteProperty(target, p);
-                            storage.module.setGlobal(module.name, JSON.stringify(target));
+                            storage.module.setGlobal(module.name, target);
                             return result;
                         }
                     });

@@ -153,6 +153,7 @@ export default {
         const urlSearchParams = new URLSearchParams(location.href);
         const currentPostNo = urlSearchParams.get("no");
         const isPageView = location.href.includes("/board/view");
+
         const searchType = queryString("s_type");
 
         let originalLocation = location.href;
