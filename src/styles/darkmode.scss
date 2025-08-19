@@ -83,8 +83,7 @@ html:has(#css-darkmode) {
     }
 
     .refresher-block-popup,
-    .refresher-captcha-popup,
-    .refresher-dccon-popup {
+    .refresher-captcha-popup {
         background-color: $dark-tint-light;
         color: white;
         box-shadow: 0 0 16px rgba(51, 51, 51, 0.3);
