@@ -8,6 +8,7 @@ import { GalleryPreData } from "../@types/post";
 import toast from "../components/toast";
 import * as block from "../core/block";
 import type IFrame from "../core/frame";
+import { submitComment } from "../utils/comment";
 import getURL from "../utils/getURL";
 import * as http from "../utils/http";
 import { queryString } from "../utils/http";
