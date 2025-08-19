@@ -2017,8 +2017,6 @@ export default {
                     ],
                     {
                         background: true,
-                        stack: true,
-                        groupOnce: true,
                         onScroll: (ev: WheelEvent, app: RefresherFrameAppVue, group: HTMLElement) => {
                             if (!this.status.scrollToSkip) return;
 

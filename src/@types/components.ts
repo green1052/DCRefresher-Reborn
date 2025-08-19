@@ -1,4 +1,4 @@
-import type Vue from "vue";
+import type { ComponentPublicInstance } from "vue";
 
 import type { Nullable } from "../utils/types";
 import type { User } from "../utils/user";
@@ -68,7 +68,7 @@ declare global {
         total_cnt: number;
     }
 
-    interface RefresherFrameAppVue extends Vue {
+    interface RefresherFrameAppVue extends ComponentPublicInstance {
         changeStamp: () => void;
         first: () => RefresherFrame;
         second: () => RefresherFrame;
