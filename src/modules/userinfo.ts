@@ -1,8 +1,8 @@
 import $ from "cash-dom";
 
-import toast from "../components/toast";
 import communicate from "../core/communicate";
 import color from "../utils/color";
+import toast from "../utils/toast";
 import type { Nullable, NullableProperties, ObjectEnum } from "../utils/types";
 import { getType } from "../utils/user";
 
@@ -490,12 +490,12 @@ export default {
                         return;
                     }
 
-                    toast.show(`해당하는 ${memo.TYPE_NAMES[obj.type]}을(를) 가진 사용자 메모가 없습니다.`, true, 3000);
+                    toast.show(`해당하는 ${memo.TYPE_NAMES[obj.type]}을(를) 가진 사용자 메모가 없습니다.`, "error");
 
                     return;
                 }
 
-                toast.show(`${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 변경했습니다.`, false, 2000);
+                toast.show(`${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 변경했습니다.`);
 
                 memo.add(obj.type, obj.value, obj.text, obj.color);
             }
@@ -529,14 +529,14 @@ export default {
                     return;
                 }
 
-                toast.show(`해당하는 ${memo.TYPE_NAMES[obj.type]}을(를) 가진 사용자 메모가 없습니다.`, true, 3000);
+                toast.show(`해당하는 ${memo.TYPE_NAMES[obj.type]}을(를) 가진 사용자 메모가 없습니다.`, "error");
 
                 return;
             }
 
             memo.add(obj.type, obj.value, obj.text, obj.color);
 
-            toast.show(`${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 추가했습니다.`, false, 2000);
+            toast.show(`${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 추가했습니다.`);
         });
     },
     revoke(filter) {

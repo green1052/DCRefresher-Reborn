@@ -1,7 +1,7 @@
 import $ from "cash-dom";
 
-import toast from "../components/toast";
 import getURL from "../utils/getURL";
+import toast from "../utils/toast";
 
 const CONTROL_BUTTON = ".stealth_control_button";
 const TEMPORARY_STEALTH = "stlth";
@@ -59,7 +59,7 @@ export default {
                 ? "이미지를 보이게 했습니다."
                 : "이미지를 숨겼습니다.";
 
-            toast.show(content, false, 3000);
+            toast.show(content, "info");
         }
     },
     require: ["eventBus"],
