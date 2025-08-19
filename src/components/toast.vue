@@ -183,11 +183,6 @@ $desktop: 1024px;
     color: #fff;
 }
 
-.refresher-toast[data-type="cake"] {
-    background: linear-gradient(40deg, rgb(162, 248, 201), rgb(166, 212, 243));
-    color: rgb(35, 100, 73);
-}
-
 html:has(#css-darkmode) {
     .refresher-toast {
         border: 1px solid rgba(255, 255, 255, 0.12);
