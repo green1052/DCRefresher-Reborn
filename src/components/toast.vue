@@ -5,7 +5,6 @@
     >
         <div
             v-show="open"
-            :key="id"
             :class="{ hover: clickCb }"
             :data-type="type"
             :title="content"
@@ -32,54 +31,51 @@
 <script lang="ts" setup>
 import { ref } from "vue";
 
-const title = ref("");
-const id = ref(0);
 const content = ref("");
-const clickCb = ref<((e: MouseEvent) => void) | null>(null);
+const clickCb = ref<((ev: MouseEvent) => void) | null>(null);
 const open = ref(false);
 const type = ref<"info" | "error" | "warning" | "cake" | null>(null);
 const autoClose = ref(0);
 
-const click = (e: MouseEvent) => {
-    if (clickCb.value) {
-        clickCb.value(e);
-    }
+const click = (ev: MouseEvent) => {
+    clickCb.value?.(ev);
 };
 
-const update = (newContent: string, isError: boolean, autoCloseOption: boolean | number, clickHandler?: () => void) => {
+const show = (
+    newContent: string,
+    newType: "info" | "error" | "warning" | "cake",
+    newAutoClose: number,
+    clickHandler?: () => void
+) => {
     content.value = newContent;
-    id.value = Math.random();
-    type.value = isError ? "error" : "info";
+    type.value = newType;
 
     if (clickHandler !== undefined) {
         clickCb.value = clickHandler;
     }
 
-    if ((typeof autoCloseOption === "number" && autoCloseOption > 0) || autoCloseOption === true) {
-        autoClose.value = window.setTimeout(hide, typeof autoCloseOption === "number" ? autoCloseOption : 5000);
-    }
-};
+    if (newAutoClose > 0) autoClose.value = setTimeout(hide, newAutoClose);
 
-const show = () => {
     open.value = true;
 };
 
 const hide = () => {
-    open.value = false;
     if (autoClose.value) {
         clearTimeout(autoClose.value);
         autoClose.value = 0;
     }
+
+    open.value = false;
 };
 
 defineExpose({
-    update,
+    open,
     show,
     hide
 });
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 $tablet: 768px;
 $desktop: 1024px;
 
@@ -192,33 +188,30 @@ $desktop: 1024px;
     color: rgb(35, 100, 73);
 }
 
-html:has(#css-darkmode) .refresher-toast {
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background-color: #333;
-    color: rgb(219, 219, 219);
+html:has(#css-darkmode) {
+    .refresher-toast {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background-color: #333;
+        color: rgb(219, 219, 219);
 
-    &.hover:hover {
-        background-color: #393939;
+        &.hover:hover {
+            background-color: #393939;
+        }
+
+        &.hover:active {
+            background-color: #424242;
+        }
     }
 
-    &.hover:active {
-        background-color: #424242;
+    .refresher-toast[data-type="error"] {
+        background-color: #d41717;
+        color: #fff;
     }
-}
 
-html:has(#css-darkmode) .refresher-toast[data-type="error"] {
-    background-color: #d41717;
-    color: #fff;
-}
-
-html:has(#css-darkmode) .refresher-toast[data-type="warning"] {
-    background-color: #eeb02b;
-    color: #000;
-}
-
-.refresher-toast[data-type="cake"] {
-    background: linear-gradient(40deg, rgb(162, 248, 201), rgb(166, 212, 243));
-    color: rgb(35, 100, 73);
+    .refresher-toast[data-type="warning"] {
+        background-color: #eeb02b;
+        color: #000;
+    }
 }
 
 .refresher-toast::after {
@@ -236,8 +229,6 @@ html:has(#css-darkmode) .refresher-toast[data-type="warning"] {
         0px 1px 10px 0px rgba(0, 0, 0, 0.12);
     opacity: 0.32;
 }
-
-// Toast error transition
 
 @keyframes shake {
     0% {

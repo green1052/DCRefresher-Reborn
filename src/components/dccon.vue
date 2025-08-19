@@ -196,27 +196,6 @@ onMounted(getDcconList);
 <style lang="scss" scoped>
 $dark-tint-light: #292929;
 
-html:has(#css-darkmode) {
-    .refresher-dccon-popup {
-        background-color: $dark-tint-light;
-        color: white;
-        box-shadow: 0 0 16px rgba(51, 51, 51, 0.3);
-        border: 1px solid #505050;
-
-        .close {
-            .cross {
-                background-color: #fff;
-            }
-
-            &:hover {
-                .cross {
-                    background-color: rgb(202, 202, 202);
-                }
-            }
-        }
-    }
-}
-
 .refresher-dccon-popup {
     position: fixed;
     background-color: rgba(255, 255, 255, 0.85);
@@ -273,6 +252,27 @@ html:has(#css-darkmode) {
 
             &:last-child {
                 transform: rotateZ(-45deg);
+            }
+        }
+    }
+}
+
+html:has(#css-darkmode) {
+    .refresher-dccon-popup {
+        background-color: $dark-tint-light;
+        color: white;
+        box-shadow: 0 0 16px rgba(51, 51, 51, 0.3);
+        border: 1px solid #505050;
+
+        .close {
+            .cross {
+                background-color: #fff;
+            }
+
+            &:hover {
+                .cross {
+                    background-color: rgb(202, 202, 202);
+                }
             }
         }
     }

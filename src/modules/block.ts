@@ -3,8 +3,8 @@ import { Cash } from "cash-dom/dist/cash";
 import Cookies from "js-cookie";
 import ky from "ky";
 
-import toast from "../components/toast";
 import { queryString } from "../utils/http";
+import toast from "../utils/toast";
 
 export default {
     name: "컨텐츠 차단",
@@ -245,14 +245,14 @@ export default {
                                 );
                             }
 
-                            toast.show(`${title} ${block.TYPE_NAMES["DCCON"]} 묶음을 차단했습니다.`, false, 3000);
+                            toast.show(`${title} ${block.TYPE_NAMES["DCCON"]} 묶음을 차단했습니다.`);
 
                             return;
                         }
 
                         block.add("DCCON", code, false, false, undefined, `${title} [${packageIdx}]`);
 
-                        toast.show(`${title} ${block.TYPE_NAMES["DCCON"]}을 차단했습니다.`, false, 3000);
+                        toast.show(`${title} ${block.TYPE_NAMES["DCCON"]}을 차단했습니다.`);
                     });
 
                 return;
@@ -273,7 +273,7 @@ export default {
             if (!value || !extra) return;
 
             block.add(type, value, false, false, undefined, extra);
-            toast.show(`${block.TYPE_NAMES[type]} ${value}을(를) 차단했습니다.`, false, 3000);
+            toast.show(`${block.TYPE_NAMES[type]} ${value}을(를) 차단했습니다.`);
         });
     },
     revoke(filter) {

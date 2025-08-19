@@ -82,7 +82,7 @@ import { getCurrentInstance, onMounted, ref, watch } from "vue";
 import { Nullable } from "../utils/types";
 import { User } from "../utils/user";
 import PreviewButton from "./previewButton.vue";
-import toast from "./toast";
+import toast from "../utils/toast";
 import UserComponent from "./user.vue";
 
 interface Props {
@@ -164,14 +164,14 @@ const updateText = (ev: InputEvent) => {
 
 const validCheck = (type: string, value: string): void => {
     if (type === "id" && value.length < 1) {
-        toast.show(`아이디는 최소 1자리 이상이어야 합니다. 자동으로 "ㅇㅇ"로 설정합니다.`, false, 5000);
+        toast.show(`아이디는 최소 1자리 이상이어야 합니다. 자동으로 "ㅇㅇ"로 설정합니다.`);
         unsignedUserID.value = "ㅇㅇ";
     }
 
     if (type === "pw" && value.length < 2) {
         const random = Math.random().toString(36).substring(5);
 
-        toast.show(`비밀번호는 최소 2자리 이상이어야 합니다. 자동으로 "${random}"로 설정합니다.`, false, 5000);
+        toast.show(`비밀번호는 최소 2자리 이상이어야 합니다. 자동으로 "${random}"로 설정합니다.`);
         unsignedUserPW.value = random;
     }
 };
@@ -186,7 +186,7 @@ const write = async (): Promise<boolean> => {
     disabled.value = true;
 
     if (!fixedUser.value && (!unsignedUserID.value || !unsignedUserPW.value)) {
-        toast.show("아이디 혹은 비밀번호를 입력하지 않았습니다.", true, 2000);
+        toast.show("아이디 혹은 비밀번호를 입력하지 않았습니다.", "error");
         disabled.value = false;
         return false;
     }

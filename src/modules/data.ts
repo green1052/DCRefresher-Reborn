@@ -1,6 +1,6 @@
 import browser from "webextension-polyfill";
 
-import toast from "../components/toast";
+import toast from "../utils/toast";
 
 export default {
     name: "데이터 관리",
@@ -67,9 +67,9 @@ export default {
                     await browser.storage.sync.clear();
                     await browser.storage.sync.set(data);
 
-                    toast.show("데이터를 클라우드에 백업했습니다.", false, 3000);
+                    toast.show("데이터를 클라우드에 백업했습니다.");
                 } catch {
-                    toast.show("데이터를 클라우드에 백업하는데 실패했습니다.", true, 3000);
+                    toast.show("데이터를 클라우드에 백업하는데 실패했습니다.", "error");
                 }
             });
         },
@@ -84,9 +84,9 @@ export default {
                     await browser.storage.local.clear();
                     await browser.storage.local.set(data);
 
-                    toast.show("데이터를 복원했습니다.", false, 3000);
+                    toast.show("데이터를 복원했습니다.");
                 } catch {
-                    toast.show("데이터를 복원하는데 실패했습니다.", true, 3000);
+                    toast.show("데이터를 복원하는데 실패했습니다.", "error");
                 }
             });
         },
@@ -99,8 +99,8 @@ export default {
 
                 navigator.clipboard
                     .writeText(JSON.stringify(data, null, 4))
-                    .then(() => toast.show("데이터를 클립보드로 내보냈습니다.", false, 3000))
-                    .catch(() => toast.show("데이터를 클립보드로 내보내는데 실패했습니다.", true, 3000));
+                    .then(() => toast.show("데이터를 클립보드로 내보냈습니다."))
+                    .catch(() => toast.show("데이터를 클립보드로 내보내는데 실패했습니다.", "error"));
             });
         },
         importData(this, _) {
@@ -115,9 +115,9 @@ export default {
                     await browser.storage.local.clear();
                     await browser.storage.local.set(data);
 
-                    toast.show("데이터를 가져왔습니다.", false, 3000);
+                    toast.show("데이터를 가져왔습니다.");
                 } catch {
-                    toast.show("데이터를 가져오는데 실패했습니다.", true, 3000);
+                    toast.show("데이터를 가져오는데 실패했습니다.", "error");
                 }
             })();
         },
@@ -126,8 +126,8 @@ export default {
 
             browser.storage.local
                 .clear()
-                .then(() => toast.show("데이터를 초기화했습니다.", false, 3000))
-                .catch(() => toast.show("데이터를 초기화하는데 실패했습니다.", false, 3000));
+                .then(() => toast.show("데이터를 초기화했습니다."))
+                .catch(() => toast.show("데이터를 초기화하는데 실패했습니다.", "error"));
         }
     },
     func() {

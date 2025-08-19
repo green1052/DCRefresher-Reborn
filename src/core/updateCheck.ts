@@ -1,7 +1,7 @@
 import browser from "webextension-polyfill";
 
-import toast from "../components/toast";
 import storage from "../utils/storage";
+import toast from "../utils/toast";
 
 (async () => {
     const [installed, updated] = await Promise.all([
@@ -23,8 +23,8 @@ import storage from "../utils/storage";
                 storage.set("refresher.updated", false);
             }
 
-            toast.show(content, false, 5000, () => {
-                window.open(`https://github.com/green1052/DCRefresher-Reborn/releases/tag/${currentVersion}`, "_blank");
-            });
+            toast.show(content, "info", 5000, () =>
+                window.open(`https://github.com/green1052/DCRefresher-Reborn/releases/tag/${currentVersion}`, "_blank")
+            );
         }, 3000);
 })();
