@@ -12,8 +12,6 @@ interface FrameOption {
 
 export interface FrameStackOption {
     background?: boolean;
-    stack?: boolean;
-    groupOnce?: boolean;
     onScroll?: (ev: WheelEvent, app: RefresherFrameAppVue, group: HTMLElement) => void;
     blur?: boolean;
 }
@@ -61,18 +59,6 @@ class InternalFrame implements RefresherFrame {
     ) {
         this.data = {};
         this.functions = {};
-    }
-
-    get center() {
-        return this.options.center;
-    }
-
-    querySelector<T extends Element = Element>(selectors: string) {
-        return this.app.$el.querySelector<T>(selectors);
-    }
-
-    querySelectorAll<T extends Element = Element>(selectors: string) {
-        return this.app.$el.querySelectorAll<T>(selectors);
     }
 
     // Event emitter methods for Vue 3 compatibility

@@ -32,7 +32,7 @@
 </template>
 
 <script lang="ts" setup>
-import { getCurrentInstance, onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 
 import RefresherGroup from "../components/group.vue";
 import RefresherScroll from "../components/scroll.vue";
@@ -52,7 +52,6 @@ const emit = defineEmits<{
 
 // Reactive data
 const frames = ref<RefresherFrame[]>([]);
-const activeGroup = ref(props.option && props.option.groupOnce ? props.option.groupOnce : false);
 const fade = ref(false);
 const stampMode = ref(false);
 const scrollModeTop = ref(false);
@@ -64,17 +63,12 @@ const groupRef = ref<any>(null);
 // Spread option properties
 const background = ref(props.option && props.option.background ? props.option.background : false);
 const blur = ref(props.option && props.option.blur ? props.option.blur : false);
-const stack = ref(props.option && props.option.stack ? props.option.stack : false);
-const groupOnce = ref(props.option && props.option.groupOnce ? props.option.groupOnce : false);
 const onScroll = props.option && props.option.onScroll ? props.option.onScroll : undefined;
 
 // Watch for closed state changes
 watch(closed, (val: boolean) => {
     document.body.style.overflow = val ? "auto" : "hidden";
 });
-
-// Component instance for global event handling
-const instance = getCurrentInstance();
 
 // Lifecycle hook
 onMounted(() => {
@@ -137,7 +131,6 @@ const fadeOut = () => {
 // Expose methods for external access
 defineExpose({
     frames,
-    activeGroup,
     fade,
     stampMode,
     scrollModeTop,
