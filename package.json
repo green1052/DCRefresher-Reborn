@@ -29,7 +29,7 @@
         "dev": "plasmo dev",
         "build": "plasmo build --hoist --zip --target=chrome-mv3 && plasmo build --hoist --zip --target=firefox-mv2"
     },
-    "packageManager": "pnpm@10.14.0",
+    "packageManager": "pnpm@10.15.0",
     "dependencies": {
         "@plasmohq/messaging": "^0.7.2",
         "@plasmohq/storage": "^1.15.0",
