@@ -19,3 +19,41 @@ interface Props {
 
 defineProps<Props>();
 </script>
+
+<style lang="scss" scoped>
+.refresher-scroll {
+    background: linear-gradient(to top, rgba(12, 23, 53, 0.7), rgba(32, 42, 72, 0.3), rgba(0, 0, 0, 0));
+    bottom: 0;
+    color: white;
+    display: flex;
+    height: 40%;
+    justify-content: center;
+    left: 0;
+    pointer-events: none;
+    position: fixed;
+    width: 100%;
+
+    .center {
+        margin: auto;
+        top: 20%;
+        position: relative;
+
+        p {
+            font-size: 24px;
+            letter-spacing: -1.66px;
+            font-weight: bold;
+        }
+    }
+
+    &.top {
+        background: linear-gradient(to bottom, rgba(12, 23, 53, 0.7), rgba(32, 42, 72, 0.3), rgba(0, 0, 0, 0));
+        bottom: unset;
+        top: 0;
+
+        .center {
+            bottom: 20%;
+            top: unset;
+        }
+    }
+}
+</style>
