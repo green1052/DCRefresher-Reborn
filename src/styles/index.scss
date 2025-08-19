@@ -110,8 +110,7 @@ tr.gall_writer {
 }
 
 .refresher-block-popup,
-.refresher-captcha-popup,
-.refresher-dccon-popup {
+.refresher-captcha-popup {
     position: fixed;
     background-color: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(5px) saturate(150%);
@@ -162,7 +161,7 @@ tr.gall_writer {
             margin-bottom: 20px;
         }
 
-        input[type="text"] {
+        input[type=text] {
             margin-top: 5px;
             width: 100%;
             height: 33px;
@@ -240,32 +239,6 @@ tr.gall_writer {
 
     .refresher-vote-text {
         margin: auto;
-    }
-}
-
-.refresher-dccon-popup {
-    width: 620px;
-    height: 500px;
-
-    left: calc(50% - 350px);
-    top: calc(50% - 300px);
-
-    .close {
-        &:after {
-            cursor: pointer;
-            left: -3.5px;
-            top: -15px;
-            width: 35px;
-            height: 35px;
-            content: " ";
-            display: block;
-            position: relative;
-        }
-    }
-
-    & > p {
-        font-size: 18px;
-        font-weight: bold;
     }
 }
 
