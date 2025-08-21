@@ -35,7 +35,7 @@
         "@plasmohq/storage": "^1.15.0",
         "plasmo": "^0.90.5",
         "sass": "^1.90.0",
-        "vue": "^3.5.18"
+        "vue": "^3.5.19"
     },
     "manifest": {
         "host_permissions": [
