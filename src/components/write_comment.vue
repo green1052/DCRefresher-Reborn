@@ -1,6 +1,6 @@
 <template>
     <div class="refresher-write-comment">
-        <div
+        <form
             v-show="editUser"
             class="user"
         >
@@ -10,14 +10,13 @@
                 type="text"
                 @change="(v) => validCheck('id', v.target.value)"
             />
-            <div />
             <input
                 v-model="unsignedUserPW"
                 placeholder="비밀번호"
                 type="password"
                 @change="(v) => validCheck('pw', v.target.value)"
             />
-        </div>
+        </form>
         <div class="refresher-comment-body">
             <div
                 :class="{ focus: focused, disable: disabled }"
@@ -116,10 +115,8 @@ const user = ref<Nullable<User>>(null);
 const unsignedUserID = ref(localStorage.nonmember_nick || "ㅇㅇ");
 const unsignedUserPW = ref(localStorage.nonmember_pw || Math.random().toString(36).substring(5));
 
-// Get current instance for accessing root data
 const instance = getCurrentInstance();
 
-// Watchers
 watch(unsignedUserID, (value: string) => {
     if (!user.value) return;
 
@@ -131,7 +128,6 @@ watch(unsignedUserPW, (value: string) => {
     localStorage.setItem("nonmember_pw", value);
 });
 
-// Lifecycle
 onMounted(() => {
     const gallogName = document.querySelector("#login_box > .user_info .nickname > em");
     const fixedName = gallogName && gallogName.innerHTML ? gallogName.innerHTML : null;
@@ -166,6 +162,8 @@ const validCheck = (type: string, value: string): void => {
     if (type === "id" && value.length < 1) {
         toast.show(`아이디는 최소 1자리 이상이어야 합니다. 자동으로 "ㅇㅇ"로 설정합니다.`);
         unsignedUserID.value = "ㅇㅇ";
+
+        return;
     }
 
     if (type === "pw" && value.length < 2) {
@@ -229,28 +227,12 @@ const write = async (): Promise<boolean> => {
 
 const focus = (): void => {
     focused.value = true;
-    if (
-        instance &&
-        instance.root &&
-        instance.root.$children &&
-        instance.root.$children[0] &&
-        instance.root.$children[0].$data
-    ) {
-        instance.root.$children[0].$data.inputFocus = true;
-    }
+    instance.parent.root.exposeProxy.inputFocus = true;
 };
 
 const blur = (): void => {
     focused.value = false;
-    if (
-        instance &&
-        instance.root &&
-        instance.root.$children &&
-        instance.root.$children[0] &&
-        instance.root.$children[0].$data
-    ) {
-        instance.root.$children[0].$data.inputFocus = false;
-    }
+    instance.parent.root.exposeProxy.inputFocus = false;
 };
 
 const type = (ev: KeyboardEvent): KeyboardEvent | void => {
@@ -265,3 +247,84 @@ const type = (ev: KeyboardEvent): KeyboardEvent | void => {
     write();
 };
 </script>
+
+<style lang="scss" scoped>
+.refresher-write-comment {
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
+
+    .refresher-comment-util {
+        transition: opacity 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+        opacity: 0;
+
+        &.refresher-comment-util-show {
+            opacity: 1;
+        }
+
+        &.refresher-comment-util-edit {
+            margin-top: -17px;
+            margin-left: 15px;
+            color: black;
+            cursor: pointer;
+        }
+    }
+
+    .whoami {
+        display: flex;
+
+        & > span {
+            margin-top: auto;
+            margin-bottom: 1px;
+            opacity: 0.5;
+            letter-spacing: -1px;
+        }
+    }
+
+    .refresher-user {
+        margin-top: 10px;
+        background-color: initial !important;
+        color: initial !important;
+        border-radius: initial !important;
+    }
+
+    .user {
+        display: flex;
+
+        input {
+            margin-right: 5px;
+            background-color: #fff;
+            border: 1px solid #aaa;
+            border-radius: 9px;
+            font-size: 15px;
+            width: 150px;
+        }
+    }
+
+    .refresher-comment-body {
+        display: flex;
+        margin-top: 30px;
+    }
+
+    & > .refresher-writecomment {
+        margin: auto;
+    }
+}
+
+html:has(#css-darkmode) {
+    .refresher-write-comment {
+        .refresher-comment-util {
+            &.refresher-comment-util-edit {
+                color: white;
+            }
+        }
+
+        .user {
+            input {
+                background-color: #3b3b3b;
+                border: 1px solid rgb(90, 90, 90);
+            }
+        }
+    }
+}
+</style>

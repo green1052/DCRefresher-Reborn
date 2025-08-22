@@ -17,12 +17,12 @@
             <img
                 :src="getURL('/assets/upvote.webp')"
                 alt="Scroll up"
-                @click="(e) => clickScroll(e, 'up')"
+                @click="() => clickScroll('up')"
             />
             <img
                 :src="getURL('/assets/downvote.webp')"
                 alt="Scroll down"
-                @click="(e) => clickScroll(e, 'down')"
+                @click="() => clickScroll('down')"
             />
         </div>
     </div>
@@ -54,7 +54,7 @@ const setFrameRef = (el: any, index: number) => {
 
 const instance = getCurrentInstance();
 
-const clickScroll = (ev: MouseEvent, type: "up" | "down") => {
+const clickScroll = (type: "up" | "down") => {
     if (groupElement.value) {
         const el = groupElement.value;
         const y = type === "up" ? 0 : el.scrollHeight;
@@ -63,26 +63,16 @@ const clickScroll = (ev: MouseEvent, type: "up" | "down") => {
 };
 
 const clickHandle = (ev: MouseEvent) => {
-    if (groupElement.value) {
-        const el = groupElement.value;
-        if (ev.target !== el) return ev;
-    }
+    if (ev.target !== groupElement.value) return ev;
 
     const selection = window.getSelection();
     if (selection && selection.toString().length !== 0) return ev;
 
-    if (props.outerClick) {
-        props.outerClick();
-    }
+    props.outerClick?.();
 };
 
-const wheelHandle = (e: WheelEvent) => {
-    if (typeof props.onScroll !== "function") return;
-
-    if (groupElement.value) {
-        const el = groupElement.value;
-        props.onScroll(e, instance, el);
-    }
+const wheelHandle = (ev: WheelEvent) => {
+    if (typeof props.onScroll === "function") props.onScroll(ev, instance, groupElement.value);
 };
 
 defineExpose({
