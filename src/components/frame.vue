@@ -262,7 +262,7 @@
 </template>
 
 <script lang="ts" setup>
-import { createApp, getCurrentInstance, onBeforeUnmount, onMounted, ref } from "vue";
+import { createApp, onBeforeUnmount, onMounted, ref } from "vue";
 
 import Comment from "./comment.vue";
 import CountDown from "./countdown.vue";
@@ -280,7 +280,6 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const instance = getCurrentInstance();
 
 const memoText = ref("");
 const reply = ref({
@@ -328,10 +327,7 @@ const writeComment = async (...args: any[]) => {
 };
 
 const toCommentWrite = () => {
-    const commentElement = document.querySelector<HTMLElement>("#comment_main");
-    if (commentElement) {
-        commentElement.focus();
-    }
+    document.querySelector<HTMLElement>("#comment_main")?.focus();
     return true;
 };
 

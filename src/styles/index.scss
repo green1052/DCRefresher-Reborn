@@ -704,14 +704,6 @@ html:has(#css-darkmode) {
     }
 }
 
-.refresher-write-comment {
-    .refresher-user {
-        background-color: initial !important;
-        color: initial !important;
-        border-radius: initial !important;
-    }
-}
-
 .refresher-comment {
     position: relative;
 
@@ -831,57 +823,6 @@ html:has(#css-darkmode) {
     }
 }
 
-.refresher-write-comment {
-    display: flex;
-    flex-direction: column;
-    margin-top: 20px;
-
-    .refresher-comment-util {
-        transition: opacity 0.2s cubic-bezier(0.19, 1, 0.22, 1);
-        opacity: 0;
-
-        &.refresher-comment-util-show {
-            opacity: 1;
-        }
-
-        &.refresher-comment-util-edit {
-            margin-top: -17px;
-            margin-left: 15px;
-            color: black;
-            cursor: pointer;
-        }
-    }
-
-    .whoami {
-        display: flex;
-
-        & > span {
-            margin-top: auto;
-            margin-bottom: 1px;
-            opacity: 0.5;
-            letter-spacing: -1px;
-        }
-    }
-
-    .refresher-user {
-        margin-top: 10px;
-    }
-
-    .user {
-        display: grid;
-        grid-template-columns: 100px 30px 200px;
-    }
-
-    .refresher-comment-body {
-        display: flex;
-        margin-top: 30px;
-    }
-
-    & > .refresher-writecomment {
-        margin: auto;
-    }
-}
-
 html:has(#css-darkmode) {
     .refresher-input-wrap {
         &.disable {
@@ -900,14 +841,6 @@ html:has(#css-darkmode) {
 
             &:disabled {
                 border-bottom: 1px solid rgb(63, 63, 63);
-            }
-        }
-    }
-
-    .refresher-write-comment {
-        .refresher-comment-util {
-            &.refresher-comment-util-edit {
-                color: white;
             }
         }
     }
