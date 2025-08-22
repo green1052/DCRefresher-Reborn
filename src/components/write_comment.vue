@@ -27,7 +27,7 @@
                     id="comment_main"
                     :disabled="disabled || getDccon().length > 0"
                     :placeholder="!getDccon().length ? '댓글 입력...' : '디시콘이 선택됐습니다.'"
-                    autocomplete="off"
+                    autocomplete="new-password"
                     @blur="blur"
                     @focus="focus"
                     @input="updateText"
