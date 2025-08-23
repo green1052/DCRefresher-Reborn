@@ -2,9 +2,21 @@
     "displayName": "DCRefresher Reborn",
     "name": "dcrefresher-reborn",
     "version": "4.0.9",
-    "author": "green1052",
-    "homepage": "https://github.com/green1052/DCRefresher-Reborn",
     "description": "디시인사이드 개선 확장 프로그램",
+    "homepage": "https://dcrefresher.green1052.com",
+    "license": "GPL-3.0-only",
+    "author": "green1052",
+    "scripts": {
+        "dev": "plasmo dev --target=chrome-mv3",
+        "build": "plasmo build --hoist --zip --target=chrome-mv3 && plasmo build --hoist --zip --target=firefox-mv2"
+    },
+    "dependencies": {
+        "@plasmohq/messaging": "^0.7.2",
+        "@plasmohq/storage": "^1.15.0",
+        "plasmo": "^0.90.5",
+        "sass": "^1.90.0",
+        "vue": "^3.5.19"
+    },
     "devDependencies": {
         "@eslint/js": "^9.34.0",
         "@parcel/resolver-glob": "2.9.3",
@@ -26,18 +38,8 @@
         "typescript-eslint": "^8.40.0",
         "webextension-polyfill": "^0.12.0"
     },
-    "scripts": {
-        "dev": "plasmo dev",
-        "build": "plasmo build --hoist --zip --target=chrome-mv3 && plasmo build --hoist --zip --target=firefox-mv2"
-    },
     "packageManager": "pnpm@10.15.0",
-    "dependencies": {
-        "@plasmohq/messaging": "^0.7.2",
-        "@plasmohq/storage": "^1.15.0",
-        "plasmo": "^0.90.5",
-        "sass": "^1.90.0",
-        "vue": "^3.5.19"
-    },
+    "private": true,
     "manifest": {
         "host_permissions": [
             "https://*.dcinside.com/*"
