@@ -1386,7 +1386,7 @@ export default {
                             {
                                 gallery,
                                 id: value.post.id,
-                                title: `캐시 - ${value.post.title}`,
+                                title: value.post.title,
                                 link: `https://gall.dcinside.com/${http.galleryType(location.href)}/board/view/?id=${gallery}&no=${value.post.id}`,
                                 notice: false,
                                 recommend: false,
