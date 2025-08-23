@@ -20,6 +20,7 @@
         "globals": "^16.3.0",
         "js-cookie": "^3.0.5",
         "ky": "^1.9.0",
+        "parcel-reporter-clean-dist": "^1.0.4",
         "prettier": "^3.6.2",
         "typescript": "^5.9.2",
         "typescript-eslint": "^8.40.0",
