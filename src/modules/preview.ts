@@ -179,7 +179,6 @@ const client =
                       headers: {
                           "X-Requested-With": "XMLHttpRequest"
                       }
-                      // @ts-ignore
                   })
                   .then((response) => response.text());
           }

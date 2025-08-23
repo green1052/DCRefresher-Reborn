@@ -7,8 +7,8 @@
     "license": "GPL-3.0-only",
     "author": "green1052",
     "scripts": {
-        "dev": "plasmo dev --target=chrome-mv3",
-        "build": "plasmo build --hoist --zip --target=chrome-mv3 && plasmo build --hoist --zip --target=firefox-mv2"
+        "dev": "plasmo dev",
+        "build": "plasmo build --hoist --zip && plasmo build --hoist --zip --target=firefox-mv2"
     },
     "dependencies": {
         "@plasmohq/messaging": "^0.7.2",
