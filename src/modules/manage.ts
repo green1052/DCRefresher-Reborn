@@ -4,8 +4,8 @@ import Cookies from "js-cookie";
 import ky from "ky";
 
 import eventBus from "../core/eventbus";
-import * as http from "../utils/http";
-import * as storage from "../utils/storage";
+import http from "../utils/http";
+import storage from "../utils/storage";
 
 const permBanList = storage.get<Record<string, string[]>>("refresher.database.ban");
 
@@ -17,7 +17,13 @@ export default {
     data: {
         ratio: {}
     },
-    memory: {},
+    memory: {
+        gallViewContents: "",
+        always: "",
+        checkBox: "",
+        newPostListEvent: "",
+        content: ""
+    },
     enable: false,
     default_enable: false,
     settings: {
