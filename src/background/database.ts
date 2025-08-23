@@ -23,18 +23,12 @@ const updateDatabase = async (): Promise<void> => {
     ]);
 };
 
-browser.runtime.onInstalled.addListener(async () => {
-    if (process.env.NODE_ENV === "production") await updateDatabase();
-});
+if (process.env.NODE_ENV === "production") {
+    browser.runtime.onInstalled.addListener(updateDatabase);
 
-(async () => {
     const lastUpdate = await storage.get<number>("refresher.database.lastUpdate");
 
     if (!lastUpdate || Date.now() - lastUpdate > CONSTANTS.DATABASE_UPDATE_INTERVAL) {
-        try {
-            await updateDatabase();
-        } catch {
-            // empty
-        }
+        updateDatabase();
     }
-})();
+}
