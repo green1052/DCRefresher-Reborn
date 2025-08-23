@@ -1,4 +1,4 @@
-import $ from "cash-dom";
+import $, { Cash } from "cash-dom";
 import Cookies from "js-cookie";
 import ky, { Input, Options } from "ky";
 import { createWorker } from "tesseract.js";
@@ -261,8 +261,6 @@ const request = {
      */
     async comments(args: GalleryHTTPRequestArguments, signal: AbortSignal) {
         if (!args.link) throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
-
-        // const galleryType = http.galleryType(args.link, "/");
 
         const params = new URLSearchParams();
         params.set("id", args.gallery);
@@ -955,16 +953,15 @@ interface Cache {
 class PostCache {
     #caches: Record<string, Cache> = {};
 
-    constructor(public maxCacheSize: number = 500) {}
+    constructor(public maxCacheSize: number = 1000) {}
 
     public get(id: string, ignoreTimeout = false): Cache | undefined {
         const cache = this.#caches[id];
 
         if (!cache) return undefined;
 
-        // 1분이 지나면 캐시를 삭제합니다.
         if (!ignoreTimeout && Date.now() - cache.date > 1000 * 60) {
-            this.delete(id);
+            // this.delete(id);
             return undefined;
         }
 
@@ -973,7 +970,7 @@ class PostCache {
 
     public set(id: string, data: Cache): void {
         if (Object.keys(this.#caches).length > this.maxCacheSize) {
-            const lastCache = Object.entries(this.#caches)[0]![0];
+            const lastCache = Object.keys(this.#caches)[0];
             this.delete(lastCache);
         }
 
@@ -1154,7 +1151,8 @@ export default {
         historyClose: false,
         titleStore: null,
         urlStore: null,
-        refreshIntervalId: null
+        refreshIntervalId: null,
+        newPostListEvent: ""
     },
     enable: true,
     default_enable: true,
@@ -1323,6 +1321,12 @@ export default {
             type: "check",
             default: false
         },
+        newArticleArchive: {
+            name: "새 글 보존",
+            desc: "새로고침 시 불러오는 글을 자동으로 불러오고 보존합니다. (캐시 비활성화 시 작동 안함)",
+            type: "check",
+            default: false
+        },
         blockImage: {
             name: "이미지 아이콘 없는 이미지 차단",
             desc: "이미지가 없는 게시글에 이미지가 있을 경우 차단합니다.",
@@ -1332,6 +1336,23 @@ export default {
     },
     require: ["filter", "eventBus", "Frame", "http"],
     func(filter, eventBus, Frame, http) {
+        if (!this.status.disableCache && this.status.newArticleArchive)
+            this.memory.newPostListEvent = eventBus.on("newPostList", async (articles: Cash[]) => {
+                articles.slice(0, 5);
+
+                for (const article of articles) {
+                    const url = new URL(article.find(".gall_tit > a").attr("href"), "https://gall.dcinside.com");
+                    const gallery = url.searchParams.get("id");
+                    const no = url.searchParams.get("no");
+                    const post = await request.post(url.href, gallery, no, null);
+
+                    postCaches.set(`${gallery}${no}`, {
+                        date: Date.now(),
+                        post
+                    });
+                }
+            });
+
         $(document).on("click", ".btn_img_block", (ev: PointerEvent) => {
             if (!ev.target) return;
 
@@ -1345,9 +1366,7 @@ export default {
                 .show();
         });
 
-        $(document).on("DOMContentLoaded", () => {
-            $(document.body).append(`<script src="${grecaptcha}">`);
-        });
+        $(document).on("DOMContentLoaded", () => $(document.body).append(`<script src="${grecaptcha}">`));
 
         blockPreset.day = this.status.blockPresetDay;
         blockPreset.reason = this.status.blockPresetReason;
@@ -2287,6 +2306,7 @@ export default {
         titleStore: string | null;
         urlStore: string | null;
         refreshIntervalId: number | null;
+        newPostListEvent: string;
     };
     settings: {
         tooltipMode: RefresherCheckSettings;
@@ -2313,6 +2333,7 @@ export default {
         bypassCaptcha: RefresherCheckSettings;
         disableCache: RefresherCheckSettings;
         archiveArticle: RefresherCheckSettings;
+        newArticleArchive: RefresherCheckSettings;
         blockImage: RefresherCheckSettings;
     };
     require: ["filter", "eventBus", "Frame", "http"];
