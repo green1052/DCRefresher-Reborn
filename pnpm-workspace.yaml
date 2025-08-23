@@ -1,3 +1,6 @@
+ignoredBuiltDependencies:
+  - tesseract.js
+
 onlyBuiltDependencies:
   - '@parcel/watcher'
   - '@swc/core'
