@@ -951,12 +951,12 @@ interface Cache {
 }
 
 class PostCache {
-    #caches: Record<string, Cache> = {};
+    caches: Record<string, Cache> = {};
 
     constructor(public maxCacheSize: number = 1000) {}
 
     public get(id: string, ignoreTimeout = false): Cache | undefined {
-        const cache = this.#caches[id];
+        const cache = this.caches[id];
 
         if (!cache) return undefined;
 
@@ -969,21 +969,21 @@ class PostCache {
     }
 
     public set(id: string, data: Cache): void {
-        if (Object.keys(this.#caches).length > this.maxCacheSize) {
-            const lastCache = Object.keys(this.#caches)[0];
+        if (Object.keys(this.caches).length > this.maxCacheSize) {
+            const lastCache = Object.keys(this.caches)[0];
             this.delete(lastCache);
         }
 
-        this.#caches[id] = {
+        this.caches[id] = {
             ...(this.get(id) ?? {}),
             ...data
         };
     }
 
     public delete(id: string): boolean {
-        if (!this.#caches[id]) return false;
+        if (!this.caches[id]) return false;
 
-        delete this.#caches[id];
+        delete this.caches[id];
         return true;
     }
 }
@@ -1336,6 +1336,73 @@ export default {
     },
     require: ["filter", "eventBus", "Frame", "http"],
     func(filter, eventBus, Frame, http) {
+        if (!this.status.disableCache) {
+            filter.add(".page_head .gall_issuebox", (element) => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.innerHTML = "캐시";
+                button.addEventListener("click", () => {
+                    const div = document.createElement("div");
+                    div.className = "refresher-cache-popup";
+                    div.innerHTML = `
+                        <div style="display: flex">
+                            <h3>캐시</h3>
+                            <div class="close">
+                                <div class="cross"></div>
+                                <div class="cross"></div>
+                            </div>
+                        </div>
+                        <hr/>
+                        <div>
+                            <ul>
+                                ${Object.entries(postCaches.caches)
+                                    .map(
+                                        ([key, value]) =>
+                                            `<li data-cache-key="${key}"><span>${value.post?.title ?? key}</span></li>`
+                                    )
+                                    .join("")}
+                            </ul>
+                        </div>
+                    `;
+
+                    div.querySelector(".close")!.addEventListener("click", () => {
+                        div.remove();
+                    });
+
+                    const ul = div.querySelector("ul")!;
+                    ul.addEventListener("click", (e) => {
+                        const target = e.target as HTMLElement;
+                        const li = target.closest("li");
+                        const key = li.dataset.cacheKey;
+
+                        const value = postCaches.caches[key];
+
+                        if (!value || !value.post) return;
+
+                        const gallery = new URL(location.href).searchParams.get("id");
+
+                        previewFrame(
+                            null,
+                            {
+                                gallery,
+                                id: value.post.id,
+                                title: `캐시 - ${value.post.title}`,
+                                link: `https://gall.dcinside.com/${http.galleryType(location.href)}/board/view/?id=${gallery}&no=${value.post.id}`,
+                                notice: false,
+                                recommend: false,
+                                type: ""
+                            },
+                            true
+                        );
+                    });
+
+                    document.body.append(div);
+                });
+
+                element.appendChild(button);
+            });
+        }
+
         if (!this.status.disableCache && this.status.newArticleArchive)
             this.memory.newPostListEvent = eventBus.on("newPostList", async (articles: Cash[]) => {
                 articles.slice(0, 5);

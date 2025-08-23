@@ -1013,3 +1013,86 @@ $btn-height: 20px;
 .grecaptcha-badge {
     visibility: hidden !important;
 }
+
+
+.refresher-cache-popup {
+    position: fixed;
+    background-color: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(5px) saturate(150%);
+    border-radius: 13.3px;
+    width: 620px;
+    height: 500px;
+    left: calc(50% - 350px);
+    top: calc(50% - 300px);
+    z-index: 999;
+    padding: 20px 30px;
+
+    & > p {
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    h3 {
+        font-size: 18px;
+    }
+
+    box-shadow: 0 0 16px rgba(51, 51, 51, 0.3);
+
+    .close {
+        content: " ";
+        position: absolute;
+        right: 10px;
+        font-size: 24px;
+
+        &:after {
+            cursor: pointer;
+            left: -3.5px;
+            top: -15px;
+            width: 35px;
+            height: 35px;
+            content: " ";
+            display: block;
+            position: relative;
+        }
+
+        .cross {
+            position: absolute;
+            width: 30px;
+            height: 2px;
+            background-color: #000;
+
+            &:hover {
+                background-color: rgb(49, 49, 49);
+            }
+
+            &:first-child {
+                transform: rotateZ(45deg);
+            }
+
+            &:last-child {
+                transform: rotateZ(-45deg);
+            }
+        }
+    }
+}
+
+html:has(#css-darkmode) {
+    .refresher-cache-popup {
+        background-color: #292929;
+        color: white;
+        box-shadow: 0 0 16px rgba(51, 51, 51, 0.3);
+        border: 1px solid #505050;
+
+        .close {
+            .cross {
+                background-color: #fff;
+            }
+
+            &:hover {
+                .cross {
+                    background-color: rgb(202, 202, 202);
+                }
+            }
+        }
+    }
+}
