@@ -30,7 +30,7 @@
         "eslint-plugin-simple-import-sort": "^12.1.1",
         "eslint-plugin-vue": "^10.4.0",
         "js-cookie": "^3.0.5",
-        "ky": "^1.9.0",
+        "ky": "^1.9.1",
         "parcel-reporter-clean-dist": "^1.0.4",
         "prettier": "^3.6.2",
         "tesseract.js": "^6.0.1",
