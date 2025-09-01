@@ -1,9 +1,9 @@
-import type { PlasmoMessaging } from "@plasmohq/messaging";
+import type {PlasmoMessaging} from "@plasmohq/messaging";
 
-import { BlockCache, BlockModeCache } from "../../core/block";
-import { MemoCache } from "../../core/memo";
-import { ModuleStore } from "../../core/modules";
-import { SettingsStore } from "../../core/settings";
+import {BlockCache, BlockModeCache} from "../../core/block";
+import {MemoCache} from "../../core/memo";
+import {ModuleStore} from "../../core/modules";
+import {SettingsStore} from "../../core/settings";
 import storage from "../../utils/storage";
 
 let modules: ModuleStore = {};
@@ -43,7 +43,7 @@ interface StoreRequest {
 }
 
 const handler: PlasmoMessaging.MessageHandler<StoreRequest> = async (req, res) => {
-    const { action, type, data } = req.body;
+    const {action, type, data} = req.body;
 
     if (action === "update") {
         switch (type) {
@@ -86,20 +86,20 @@ const handler: PlasmoMessaging.MessageHandler<StoreRequest> = async (req, res) =
                 }
                 break;
         }
-        res.send({ success: true });
+        res.send({success: true});
     } else if (action === "get") {
         switch (type) {
             case "modules":
-                res.send({ modules, settings });
+                res.send({modules, settings});
                 break;
             case "settings":
-                res.send({ settings });
+                res.send({settings});
                 break;
             case "blocks":
-                res.send({ blocks, blockModes });
+                res.send({blocks, blockModes});
                 break;
             case "memos":
-                res.send({ memos });
+                res.send({memos});
                 break;
         }
     }

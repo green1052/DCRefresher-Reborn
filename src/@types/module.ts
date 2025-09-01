@@ -5,10 +5,10 @@ export {};
 type ItemToRefresherArrayArgs<T extends RefresherModuleGeneric> =
     T["require"] extends Array<keyof ItemToRefresherMap>
         ? {
-              [K in keyof T["require"]]: T["require"][K] extends keyof ItemToRefresherMap
-                  ? ItemToRefresherMap[T["require"][K]]
-                  : never;
-          }
+            [K in keyof T["require"]]: T["require"][K] extends keyof ItemToRefresherMap
+                ? ItemToRefresherMap[T["require"][K]]
+                : never;
+        }
         : never;
 
 declare global {
@@ -37,9 +37,11 @@ declare global {
         advanced?: boolean;
     }
 
-    interface RefresherCheckSettings extends RefresherBaseSettings<"check", boolean> {}
+    interface RefresherCheckSettings extends RefresherBaseSettings<"check", boolean> {
+    }
 
-    interface RefresherTextSettings extends RefresherBaseSettings<"text", string> {}
+    interface RefresherTextSettings extends RefresherBaseSettings<"text", string> {
+    }
 
     interface RefresherRangeSettings extends RefresherBaseSettings<"range", number> {
         min: number;
@@ -121,12 +123,12 @@ declare global {
          */
         update: T["settings"] extends Record<string, RefresherSettings>
             ? {
-                  [K in keyof T["settings"]]: (
-                      this: RefresherModule<T>,
-                      value: T["settings"][K]["value"],
-                      ...args: ItemToRefresherArrayArgs<T>
-                  ) => void;
-              }
+                [K in keyof T["settings"]]: (
+                    this: RefresherModule<T>,
+                    value: T["settings"][K]["value"],
+                    ...args: ItemToRefresherArrayArgs<T>
+                ) => void;
+            }
             : never;
 
         /**

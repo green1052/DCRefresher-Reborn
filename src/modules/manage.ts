@@ -1,5 +1,5 @@
 import $ from "cash-dom";
-import { Cash } from "cash-dom/dist/cash";
+import {Cash} from "cash-dom/dist/cash";
 import Cookies from "js-cookie";
 import ky from "ky";
 
@@ -168,7 +168,7 @@ export default {
                     });
                 }
             },
-            { neverExpire: true }
+            {neverExpire: true}
         );
 
         this.memory.content = filter.add(
@@ -185,7 +185,7 @@ export default {
                     deletePost(element.dataset.no!);
                 };
             },
-            { neverExpire: true }
+            {neverExpire: true}
         );
 
         this.memory.always = filter.add(
@@ -281,9 +281,9 @@ export default {
 
             const [article, comment] = response.split(",").map(Number);
 
-            const result = { article, comment, date: Date.now() };
+            const result = {article, comment, date: Date.now()};
 
-            const deepCopy = { ...this.data!.ratio };
+            const deepCopy = {...this.data!.ratio};
             deepCopy[uid] = result;
 
             this.data!.ratio = deepCopy;

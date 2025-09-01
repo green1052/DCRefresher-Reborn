@@ -3,8 +3,8 @@ import $ from "cash-dom";
 import communicate from "../core/communicate";
 import color from "../utils/color";
 import toast from "../utils/toast";
-import type { Nullable, NullableProperties, ObjectEnum } from "../utils/types";
-import { getType } from "../utils/user";
+import type {Nullable, NullableProperties, ObjectEnum} from "../utils/types";
+import {getType} from "../utils/user";
 
 const tooltip = {
     element: document.createElement("div"),
@@ -473,7 +473,7 @@ export default {
 
         this.memory.memoAsk = communicate.addHook(
             "refresherRequestMemoAsk",
-            async ({ type, user }: { type: RefresherMemoType; user: RefresherMemoType }) => {
+            async ({type, user}: { type: RefresherMemoType; user: RefresherMemoType }) => {
                 const selected: NullableProperties<ObjectEnum<RefresherMemoType>> = {
                     IP: null,
                     NICK: null,

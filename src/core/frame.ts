@@ -1,6 +1,6 @@
-import { createApp } from "vue";
+import {createApp} from "vue";
 
-import { User } from "../utils/user";
+import {User} from "../utils/user";
 import frame from "./frameComponent.vue";
 
 interface FrameOption {
@@ -106,7 +106,7 @@ export default class {
         document.body.appendChild(this.outer);
 
         this.frame = [];
-        const app = createApp(frame, { option });
+        const app = createApp(frame, {option});
         this.app = app.mount(this.outer) as RefresherFrameAppVue;
 
         for (const child of children) {
