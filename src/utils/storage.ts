@@ -1,6 +1,6 @@
-import { Storage } from "@plasmohq/storage";
+import {Storage} from "@plasmohq/storage";
 
-export const storage = new Storage({ area: "local" });
+export const storage = new Storage({area: "local"});
 
 export const get = <T>(key?: string | null): Promise<T> =>
     key ? storage.get<T>(key) : (storage.rawGetAll() as Promise<T>);

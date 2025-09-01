@@ -1,4 +1,4 @@
-import type { Nullable } from "~utils/types";
+import type {Nullable} from "~utils/types";
 
 import storage from "./storage";
 
@@ -18,7 +18,7 @@ export const ISPData = (ip: string): ISPInfo => {
 };
 
 export const format = (data: ISPInfo): Nullable<string> => {
-    const { name } = data;
+    const {name} = data;
     return name ?? null;
 };
 

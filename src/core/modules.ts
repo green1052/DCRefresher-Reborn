@@ -1,4 +1,4 @@
-import { sendToBackground } from "@plasmohq/messaging";
+import {sendToBackground} from "@plasmohq/messaging";
 
 import http from "../utils/http";
 import ip from "../utils/ip";

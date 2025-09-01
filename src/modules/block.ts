@@ -1,9 +1,9 @@
 import $ from "cash-dom";
-import { Cash } from "cash-dom/dist/cash";
+import {Cash} from "cash-dom/dist/cash";
 import Cookies from "js-cookie";
 import ky from "ky";
 
-import { queryString } from "../utils/http";
+import {queryString} from "../utils/http";
 import toast from "../utils/toast";
 
 export default {
@@ -225,7 +225,7 @@ export default {
 
                             const list = [];
 
-                            for (const { path } of json.detail) {
+                            for (const {path} of json.detail) {
                                 if (blockBundle) {
                                     list.push(path);
                                     continue;

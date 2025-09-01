@@ -1,4 +1,4 @@
-import { type ComponentPublicInstance, createApp } from "vue";
+import {type ComponentPublicInstance, createApp} from "vue";
 
 import Toast from "../components/toast.vue";
 

@@ -1,4 +1,4 @@
-import { sendToBackground } from "@plasmohq/messaging";
+import {sendToBackground} from "@plasmohq/messaging";
 
 import storage from "../utils/storage";
 import communicate from "./communicate";
@@ -112,7 +112,7 @@ communicate.addHook("memoSelected", () => {
     eventBus.emit("refresherUpdateUserMemo");
 });
 
-communicate.addHook("updateMemos", ({ memos }) => {
+communicate.addHook("updateMemos", ({memos}) => {
     MEMO_CACHE = memos;
 });
 

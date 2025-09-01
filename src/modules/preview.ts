@@ -1,20 +1,20 @@
-import $, { Cash } from "cash-dom";
+import $, {Cash} from "cash-dom";
 import Cookies from "js-cookie";
-import ky, { Input, Options } from "ky";
-import { createWorker } from "tesseract.js";
+import ky, {Input, Options} from "ky";
+import {createWorker} from "tesseract.js";
 import grecaptcha from "url:../temp/grecaptcha";
 
-import { GalleryPreData } from "../@types/post";
+import {GalleryPreData} from "../@types/post";
 import * as block from "../core/block";
 import type IFrame from "../core/frame";
-import { submitComment } from "../utils/comment";
+import {submitComment} from "../utils/comment";
 import getURL from "../utils/getURL";
 import * as http from "../utils/http";
-import { queryString } from "../utils/http";
-import { ScrollDetection } from "../utils/scrollDetection";
+import {queryString} from "../utils/http";
+import {ScrollDetection} from "../utils/scrollDetection";
 import * as storage from "../utils/storage";
 import toast from "../utils/toast";
-import { User } from "../utils/user";
+import {User} from "../utils/user";
 
 const domParser = new DOMParser();
 
@@ -172,19 +172,19 @@ const kyClient = ky.create({
 const client =
     process.env.PLASMO_MANIFEST_VERSION === "mv2"
         ? (url: URL | RequestInfo, init?: RequestInit | undefined): Promise<string> => {
-              return content
-                  .fetch(url, {
-                      ...init,
-                      method: "POST",
-                      headers: {
-                          "X-Requested-With": "XMLHttpRequest"
-                      }
-                  })
-                  .then((response) => response.text());
-          }
+            return content
+                .fetch(url, {
+                    ...init,
+                    method: "POST",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                })
+                .then((response) => response.text());
+        }
         : (url: Input, options?: Options): Promise<string> => {
-              return kyClient(url, options).text();
-          };
+            return kyClient(url, options).text();
+        };
 
 const request = {
     async bump(args: GalleryHTTPRequestArguments) {
@@ -236,7 +236,7 @@ const request = {
         params.set("_GALLTYPE_", http.galleryTypeName(link));
         params.set("link_id", gall_id);
 
-        const response = await client(http.urls.vote, { body: params });
+        const response = await client(http.urls.vote, {body: params});
 
         const [result, counts, fixedCounts] = response.split("||");
 
@@ -249,7 +249,7 @@ const request = {
 
     async post(link: string, gallery: string, id: string, signal: AbortSignal): Promise<PostInfo> {
         const response = await ky
-            .get(`${http.urls.base}${http.galleryType(link, "/")}${http.urls.view}${gallery}&no=${id}`, { signal })
+            .get(`${http.urls.base}${http.galleryType(link, "/")}${http.urls.view}${gallery}&no=${id}`, {signal})
             .text();
         return PostInfo.parse(id, response);
     },
@@ -342,9 +342,9 @@ const request = {
     ): Promise<
         | string
         | {
-              msg: string;
-              result: "success" | "fail";
-          }
+        msg: string;
+        result: "success" | "fail";
+    }
     > {
         if (!args.link) {
             throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
@@ -379,9 +379,9 @@ const request = {
     ): Promise<
         | string
         | {
-              msg: string;
-              result: "success" | "fail";
-          }
+        msg: string;
+        result: "success" | "fail";
+    }
     > {
         if (!args.link) throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
 
@@ -420,7 +420,7 @@ const request = {
         params.set("kcaptcha_type", kcaptchaType);
         params.set("_GALLTYPE_", galleryTypeName);
 
-        await client(http.urls.captcha, { body: params });
+        await client(http.urls.captcha, {body: params});
 
         return (
             "/kcaptcha/image/?gall_id=" +
@@ -454,7 +454,7 @@ const request = {
         params.set("pno", preData.id);
         params.set("cmt_nos[]", commentId);
 
-        return client(url, { body: params, signal })
+        return client(url, {body: params, signal})
             .then((v) => v)
             .catch(() => false);
     },
@@ -484,7 +484,7 @@ const request = {
             params.set("re_password", password);
         }
 
-        return client(http.urls.comment_remove, { body: params, signal })
+        return client(http.urls.comment_remove, {body: params, signal})
             .then((v) => v)
             .catch(() => false);
     }
@@ -885,7 +885,7 @@ const panel = {
                 });
 
                 const {
-                    data: { text }
+                    data: {text}
                 } = await worker.recognize(image);
 
                 element.querySelector("input")!.value = text;
@@ -953,7 +953,8 @@ interface Cache {
 class PostCache {
     caches: Record<string, Cache> = {};
 
-    constructor(public maxCacheSize: number = 1000) {}
+    constructor(public maxCacheSize: number = 1000) {
+    }
 
     public get(id: string, ignoreTimeout = false): Cache | undefined {
         const cache = this.caches[id];
@@ -1356,11 +1357,11 @@ export default {
                         <div>
                             <ul>
                                 ${Object.entries(postCaches.caches)
-                                    .map(
-                                        ([key, value]) =>
-                                            `<li data-cache-key="${key}"><span>${value.post?.title ?? key}</span></li>`
-                                    )
-                                    .join("")}
+                        .map(
+                            ([key, value]) =>
+                                `<li data-cache-key="${key}"><span>${value.post?.title ?? key}</span></li>`
+                        )
+                        .join("")}
                             </ul>
                         </div>
                     `;
@@ -1459,7 +1460,7 @@ export default {
                 const title = `${preData.title} - ${document.title.split("-").slice(-1)[0].trim()}`;
 
                 if (!historySkip) {
-                    history.pushState({ preData, preURL: location.href }, title, preData.link);
+                    history.pushState({preData, preURL: location.href}, title, preData.link);
                 }
 
                 document.title = title;
@@ -1552,7 +1553,7 @@ export default {
 
                         if (!historySkip) {
                             preData.title = postInfo.title;
-                            history.replaceState({ preData, preURL: location.href }, title, preData.link);
+                            history.replaceState({preData, preURL: location.href}, title, preData.link);
                         }
 
                         document.title = title;
@@ -1968,8 +1969,8 @@ export default {
                             comments.comments.length === 0
                                 ? 0
                                 : comments.comments
-                                      .map((v: DcinsideCommentObject) => Number(v.depth == 0))
-                                      .reduce((a: number, b: number) => a + b);
+                                    .map((v: DcinsideCommentObject) => Number(v.depth == 0))
+                                    .reduce((a: number, b: number) => a + b);
                         commentCounts = comments.comments.length;
                     } else if (this.status.archiveArticle) {
                         const cache = postCaches.get(`${preData.gallery}${preData.id}`);
@@ -2328,7 +2329,7 @@ export default {
         this.memory.uuid = filter.add(
             `.gall_list .ub-content${this.status.expandRecognizeRange ? "" : " .ub-word"}`,
             addHandler,
-            { neverExpire: true }
+            {neverExpire: true}
         );
 
         this.memory.popStateHandler = (ev: PopStateEvent) => {

@@ -1,4 +1,4 @@
-import { sendToBackground } from "@plasmohq/messaging";
+import {sendToBackground} from "@plasmohq/messaging";
 
 import storage from "../utils/storage";
 import eventBus from "./eventbus";

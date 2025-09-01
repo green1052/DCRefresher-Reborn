@@ -1,7 +1,7 @@
-import { sendToBackground } from "@plasmohq/messaging";
+import {sendToBackground} from "@plasmohq/messaging";
 
 import storage from "../utils/storage";
-import type { ObjectEnum } from "../utils/types";
+import type {ObjectEnum} from "../utils/types";
 import communicate from "./communicate";
 import eventBus from "./eventbus";
 
@@ -312,7 +312,7 @@ communicate.addHook("blockSelected", () => eventBus.emit("refresherRequestBlock"
 
 communicate.addHook("dcconSelected", () => eventBus.emit("refresherRequestBlock"));
 
-communicate.addHook("dcconAllSelected", () => eventBus.emit("refresherRequestBlock", { blockAllDccon: true }));
+communicate.addHook("dcconAllSelected", () => eventBus.emit("refresherRequestBlock", {blockAllDccon: true}));
 
 communicate.addHook("updateBlocks", (data) => setStore(data.blocks, data.modes));
 

@@ -1,5 +1,5 @@
 <template>
-    <div class="refresher-bubble">
+  <div class="refresher-bubble">
         <span
             :class="{ image: hasImage }"
             class="text"
@@ -20,15 +20,15 @@
                 ({{ gallery }})
             </span>
         </span>
-        <span
-            v-if="hasRemove"
-            aria-label="Remove item"
-            class="remove"
-            role="button"
-            tabindex="0"
-            @click="handleRemoveClick"
-            @keydown.enter="handleRemoveClick"
-        >
+    <span
+        v-if="hasRemove"
+        aria-label="Remove item"
+        class="remove"
+        role="button"
+        tabindex="0"
+        @click="handleRemoveClick"
+        @keydown.enter="handleRemoveClick"
+    >
             <svg
                 height="14"
                 viewBox="0 0 18 18"
@@ -40,31 +40,31 @@
                 />
             </svg>
         </span>
-    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
-import { computed } from "vue";
+import {computed} from "vue";
 
 interface Props {
-    text?: string;
-    image?: string;
-    isRegex?: boolean;
-    gallery?: string;
-    extra?: string;
-    remove?: () => void;
-    textclick?: () => void;
+  text?: string;
+  image?: string;
+  isRegex?: boolean;
+  gallery?: string;
+  extra?: string;
+  remove?: () => void;
+  textclick?: () => void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    text: "",
-    isRegex: false
+  text: "",
+  isRegex: false
 });
 
 const displayText = computed(() => {
-    const baseText = props.text || "";
-    const extraText = props.extra ? ` (${props.extra})` : "";
-    return baseText + extraText;
+  const baseText = props.text || "";
+  const extraText = props.extra ? ` (${props.extra})` : "";
+  return baseText + extraText;
 });
 
 const hasImage = computed(() => Boolean(props.image));
@@ -72,10 +72,10 @@ const hasRemove = computed(() => Boolean(props.remove));
 const hasGallery = computed(() => Boolean(props.gallery));
 
 const handleTextClick = () => {
-    props.textclick?.();
+  props.textclick?.();
 };
 
 const handleRemoveClick = () => {
-    props.remove?.();
+  props.remove?.();
 };
 </script>

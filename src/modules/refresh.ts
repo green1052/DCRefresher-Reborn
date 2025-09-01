@@ -1,8 +1,8 @@
 import $ from "cash-dom";
-import { Cash } from "cash-dom/dist/cash";
+import {Cash} from "cash-dom/dist/cash";
 import ky from "ky";
 
-import { queryString } from "../utils/http";
+import {queryString} from "../utils/http";
 import storage from "../utils/storage";
 import toast from "../utils/toast";
 
@@ -189,7 +189,7 @@ export default {
 
             const url = http.view(originalLocation);
 
-            const response = await ky.get(url, { timeout: this.status.refreshRate - DEFAULT_TIMEOUT_OFFSET }).text();
+            const response = await ky.get(url, {timeout: this.status.refreshRate - DEFAULT_TIMEOUT_OFFSET}).text();
             const dom = new DOMParser().parseFromString(response, "text/html");
 
             eventBus.emit("refresherGetPost", dom);

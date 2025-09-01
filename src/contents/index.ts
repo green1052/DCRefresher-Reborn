@@ -3,7 +3,7 @@ import "../core/memo";
 import "../core/block";
 import "../core/updateCheck";
 
-import type { PlasmoCSConfig } from "plasmo";
+import type {PlasmoCSConfig} from "plasmo";
 
 import filter from "../core/filtering";
 import modules from "../core/modules";

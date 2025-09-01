@@ -2,7 +2,7 @@ import $ from "cash-dom";
 import ky from "ky";
 
 import * as http from "./http";
-import type { Nullable } from "./types";
+import type {Nullable} from "./types";
 
 const rKey = "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K";
 const rRegex = /[^A-Za-z0-9+/=]/g;
@@ -18,7 +18,7 @@ const decode = (r: string) => {
     let o = "";
     let c = 0;
 
-    for (r = r.replace(rRegex, ""); c < r.length; ) {
+    for (r = r.replace(rRegex, ""); c < r.length;) {
         t = rKey.indexOf(r.charAt(c++));
         f = rKey.indexOf(r.charAt(c++));
         d = rKey.indexOf(r.charAt(c++));
