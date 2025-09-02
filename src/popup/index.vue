@@ -436,6 +436,7 @@ import {BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_N
 import {TYPE_NAMES as MEMO_TYPE_NAMES} from "../core/memo";
 import getURL from "../utils/getURL";
 import storage from "../utils/storage";
+import {writeClipboard} from "../utils/writeClipboard";
 import RefresherBubble from "./components/bubble.vue";
 import RefresherCheckbox from "./components/checkbox.vue";
 import RefresherModule from "./components/module.vue";
@@ -542,8 +543,7 @@ onMounted(async () => {
 });
 
 const exportMemo = () => {
-    navigator.clipboard
-        .writeText(JSON.stringify(memos, null, 4))
+    writeClipboard(JSON.stringify(memos))
         .then(() => {
             alert("클립보드에 복사되었습니다.");
         })
@@ -581,8 +581,7 @@ const importMemo = () => {
 };
 
 const exportBlock = () => {
-    navigator.clipboard
-        .writeText(JSON.stringify(blocks, null, 4))
+    writeClipboard(JSON.stringify(blocks))
         .then(() => {
             alert("클립보드에 복사되었습니다.");
         })

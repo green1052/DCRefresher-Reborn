@@ -1,6 +1,7 @@
 import browser from "webextension-polyfill";
 
 import toast from "../utils/toast";
+import {writeClipboard} from "../utils/writeClipboard";
 
 export default {
     name: "데이터 관리",
@@ -97,8 +98,7 @@ export default {
                 delete data["refresher.database.version"];
                 delete data["refresher.database.lastUpdate"];
 
-                navigator.clipboard
-                    .writeText(JSON.stringify(data, null, 4))
+                writeClipboard(JSON.stringify(data))
                     .then(() => toast.show("데이터를 클립보드로 내보냈습니다."))
                     .catch(() => toast.show("데이터를 클립보드로 내보내는데 실패했습니다.", "error"));
             });
