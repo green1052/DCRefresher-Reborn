@@ -181,6 +181,7 @@
                 <div v-else>
                     <div v-if="!frame.data.comments.comments || frame.data.comments.comments.length === 0">
                         <div class="refresher-nocomment-wrap">
+                            <img :src="getURL('/assets/empty_comment.webp')"/>
                             <h3>댓글이 없습니다.</h3>
                         </div>
                         <br/>

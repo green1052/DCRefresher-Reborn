@@ -25,7 +25,7 @@
             :max="setting.max"
             :min="setting.min"
             :modname="moduleName"
-            :placeholder="setting.default"
+            :placeholder="String(setting.default)"
             :step="setting.step"
             :unit="setting.unit"
             :value="Number(setting.value)"

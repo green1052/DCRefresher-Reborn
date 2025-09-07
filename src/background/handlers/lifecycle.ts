@@ -1,6 +1,6 @@
 import browser from "webextension-polyfill";
 
-import storage from "../utils/storage";
+import storage from "../../utils/storage";
 
 if (process.env.NODE_ENV === "production")
     browser.runtime.onInstalled.addListener(async (details) => {

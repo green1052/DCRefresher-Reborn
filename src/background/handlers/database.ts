@@ -1,7 +1,7 @@
 import ky from "ky";
 import browser from "webextension-polyfill";
 
-import storage from "../utils/storage";
+import storage from "../../utils/storage";
 
 const CONSTANTS = {
     DATABASE_UPDATE_INTERVAL: 604_800_000, // 1 week

@@ -38,7 +38,7 @@ const handleChange = (ev: Event) => {
     align-items: center;
     display: flex;
 
-    input[type="text"] {
+    input {
         background-color: #fff;
         border: 1px solid #aaa;
         border-radius: 9px;
@@ -68,7 +68,7 @@ const handleChange = (ev: Event) => {
 
 @media (prefers-color-scheme: dark) {
     .refresher-input {
-        input[type="text"] {
+        input {
             background-color: #3b3b3b;
             border: 1px solid rgb(90, 90, 90);
             color: white;
