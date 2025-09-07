@@ -31,7 +31,7 @@ importers:
         specifier: ^3.0.6
         version: 3.0.6
       '@types/node':
-        specifier: ^24.3.0
+        specifier: ^24.3.1
         version: 24.3.1
       '@types/webextension-polyfill':
         specifier: ^0.12.3
@@ -4651,7 +4651,7 @@ snapshots:
       '@parcel/fs': 2.9.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
       '@parcel/logger': 2.9.3
       '@parcel/node-resolver-core': 3.0.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
-      '@parcel/types': 2.9.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
+      '@parcel/types': 2.9.3(@parcel/core@2.9.3)
       '@parcel/utils': 2.9.3
       '@parcel/workers': 2.9.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
       semver: 7.7.2
