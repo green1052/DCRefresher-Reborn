@@ -1,5 +1,4 @@
 import $ from "cash-dom";
-
 import communicate from "../core/communicate";
 
 export default {

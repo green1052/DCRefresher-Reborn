@@ -7,7 +7,6 @@
         >
             <img
                 v-if="image"
-                :alt="text || 'Image'"
                 :src="image"
                 loading="lazy"
             />
@@ -22,7 +21,6 @@
         </span>
         <span
             v-if="hasRemove"
-            aria-label="Remove item"
             class="remove"
             role="button"
             tabindex="0"
@@ -79,3 +77,59 @@ const handleRemoveClick = () => {
     props.remove?.();
 };
 </script>
+
+<style lang="scss" scoped>
+.refresher-bubble {
+    background-color: #f9f9f9;
+    border: 1px solid #d6d6d6;
+    border-radius: 13.3px;
+    display: flex;
+    font-size: 14px;
+    font-weight: normal;
+    padding: 3px 16px;
+    width: fit-content;
+
+    .text {
+        height: 14px;
+        width: fit-content;
+
+        &.image {
+            height: unset;
+
+            img {
+                width: 80px;
+            }
+        }
+    }
+
+    .remove {
+        background-color: #d6d6d6;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        font-weight: bold;
+        height: 20px;
+
+        justify-content: center;
+        margin: auto auto auto 5px;
+
+        text-align: center;
+
+        transition: 0.25s all cubic-bezier(0.19, 1, 0.22, 1);
+
+        width: 20px;
+
+        &:hover {
+            background-color: rgb(190, 190, 190);
+        }
+
+        &:active {
+            background-color: rgb(155, 155, 155);
+        }
+
+        svg {
+            margin: auto;
+        }
+    }
+}
+</style>

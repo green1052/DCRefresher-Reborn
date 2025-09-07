@@ -8,25 +8,20 @@
             :min="min"
             :placeholder="placeholder"
             :step="step"
-            :value="value"
             type="range"
+            v-model="currentValue"
             @change="handleChange"
-            @input="handleInput"
         />
-        <span
-            ref="indicatorRef"
-            class="indicator"
-        >{{ displayValue }}</span
-        >
+        <span class="indicator">{{ displayValue }}</span>
     </div>
 </template>
 
 <script lang="ts" setup>
-import {computed, nextTick, ref} from "vue";
+import {computed, ref} from "vue";
 
 interface Props {
     change?: (module: string | undefined, id: string | undefined, value: number) => void;
-    placeholder?: number;
+    placeholder?: string;
     modname?: string;
     id?: string;
     value?: number;
@@ -46,26 +41,12 @@ const props = withDefaults(defineProps<Props>(), {
     disabled: false
 });
 
-const indicatorRef = ref<HTMLElement>();
 const currentValue = ref(props.value);
 
 const displayValue = computed(() => `${currentValue.value}${props.unit}`);
 
-const handleInput = async (ev: Event) => {
-    const target = ev.target as HTMLInputElement;
-    const value = Number(target.value);
-    currentValue.value = value;
-
-    await nextTick();
-    if (indicatorRef.value) {
-        indicatorRef.value.textContent = `${value}${props.unit}`;
-    }
-};
-
-const handleChange = (ev: Event) => {
-    const target = ev.target as HTMLInputElement;
-    const value = Number(target.value);
-    props.change?.(target.dataset.module, target.dataset.id, value);
+const handleChange = () => {
+    props.change?.(props.modname, props.id, Number(currentValue.value));
 };
 </script>
 
@@ -75,7 +56,7 @@ const handleChange = (ev: Event) => {
     display: flex;
     gap: 10px;
 
-    input[type="range"] {
+    input {
         -webkit-appearance: none;
         appearance: none;
         background: #ddd;
@@ -151,7 +132,7 @@ const handleChange = (ev: Event) => {
 
 @media (prefers-color-scheme: dark) {
     .refresher-range {
-        input[type="range"] {
+        input {
             background: #555;
 
             &::-webkit-slider-thumb {

@@ -67,7 +67,7 @@ const onScroll = props.option && props.option.onScroll ? props.option.onScroll :
 
 // Watch for closed state changes
 watch(closed, (val: boolean) => {
-    document.body.style.overflow = val ? "auto" : "hidden";
+    document.body.style.overflow = val ? "" : "hidden";
 });
 
 // Lifecycle hook
