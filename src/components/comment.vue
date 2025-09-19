@@ -207,6 +207,15 @@ const safeDelete = (): void => {
 const setReply = () => {
     if (!props.reply) return;
 
+    if (props.reply.replyNo === props.comment.no) {
+        emit("update:reply", {
+            commentNo: null,
+            replyNo: null
+        });
+
+        return;
+    }
+
     emit("update:reply", {
         commentNo: props.reply.commentNo === props.comment.c_no ? null : props.comment.c_no || props.comment.no,
         replyNo: props.reply.replyNo === props.comment.no ? null : props.comment.no
