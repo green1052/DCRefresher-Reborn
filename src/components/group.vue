@@ -16,12 +16,10 @@
         <div id="scroll">
             <img
                 :src="getURL('/assets/upvote.webp')"
-                alt="Scroll up"
                 @click="() => clickScroll('up')"
             />
             <img
                 :src="getURL('/assets/downvote.webp')"
-                alt="Scroll down"
                 @click="() => clickScroll('down')"
             />
         </div>
