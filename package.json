@@ -17,7 +17,7 @@
         "vue": "^3.5.21"
     },
     "devDependencies": {
-        "@parcel/resolver-glob": "2.16.0",
+        "@parcel/resolver-glob": "2.9.3",
         "@plasmohq/parcel-config": "^0.42.0",
         "@types/js-cookie": "^3.0.6",
         "@types/node": "^24.5.2",
