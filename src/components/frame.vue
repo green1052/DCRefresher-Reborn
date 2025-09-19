@@ -337,6 +337,8 @@ const refresh = () => {
 };
 
 const renderDcconPopup = () => {
+    if (dcconApp.value) return false;
+
     const element = document.createElement("div");
     document.body.appendChild(element);
 
