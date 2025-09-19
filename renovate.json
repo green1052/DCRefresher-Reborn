@@ -1,5 +1,8 @@
 {
     "extends": [
         "github>green1052/renovate-config"
+    ],
+    "ignoreDeps": [
+        "@parcel/resolver-glob"
     ]
 }
