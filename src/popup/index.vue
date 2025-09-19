@@ -311,6 +311,7 @@
                     <div style="margin-top: 5px; float: left">
                         <button @click="exportMemo">내보내기</button>
                         <button @click="importMemo">가져오기</button>
+                        <button @click="open('https://dcrefresher.green1052.com/utils/convert-memo')">메모 변환</button>
                     </div>
 
                     <br/>
@@ -553,7 +554,7 @@ const exportMemo = () => {
 };
 
 const importMemo = () => {
-    const result = prompt("가져올 데이터를 입력하세요.");
+    const result = prompt("가져올 데이터를 입력하세요.", `예시: {"UID":{},"NICK":{},"IP":{}}`);
 
     if (!result) return;
 
@@ -591,7 +592,7 @@ const exportBlock = () => {
 };
 
 const importBlock = () => {
-    const result = prompt("가져올 데이터를 입력하세요.");
+    const result = prompt("가져올 데이터를 입력하세요.", `예시: {"NICK":[],"ID":[],"IP":[],"TITLE":[],"TEXT":[],"COMMENT":[],"DCCON":[],"TAB":[],"IMAGE":[]}`);
 
     if (!result) return;
 
