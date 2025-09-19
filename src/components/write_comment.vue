@@ -56,7 +56,7 @@
                     :me="true"
                     :user="user"
                 />
-                <span>로 {{ reply.commentNo ? "" : "답글" }} {{ !getDccon().length ? "" : "디시콘" }} 작성 중</span>
+                <span>로 {{ reply.commentNo ? "답글" : "" }} {{ !getDccon().length ? "" : "디시콘" }} 작성 중</span>
             </div>
             <div
                 :class="{
