@@ -4,7 +4,7 @@ import browser from "webextension-polyfill";
 import storage from "../../utils/storage";
 
 const CONSTANTS = {
-    DATABASE_UPDATE_INTERVAL: 604_800_000, // 1 week
+    DATABASE_UPDATE_INTERVAL: 604_800_000,
     API_BASE_URL: "https://dcrefresher.green1052.com/data"
 } as const;
 
