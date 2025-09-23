@@ -49,8 +49,8 @@ importers:
         specifier: ^1.0.4
         version: 1.0.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))(parcel@2.15.4(@swc/helpers@0.5.17))
       sass:
-        specifier: ^1.93.0
-        version: 1.93.0
+        specifier: ^1.93.1
+        version: 1.93.1
       tesseract.js:
         specifier: ^6.0.1
         version: 6.0.1
@@ -3192,8 +3192,8 @@ packages:
   safer-buffer@2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
 
-  sass@1.93.0:
-    resolution: {integrity: sha512-CQi5/AzCwiubU3dSqRDJ93RfOfg/hhpW1l6wCIvolmehfwgCI35R/0QDs1+R+Ygrl8jFawwwIojE2w47/mf94A==}
+  sass@1.93.1:
+    resolution: {integrity: sha512-wLAeLB7IksO2u+cCfhHqcy7/2ZUMPp/X2oV6+LjmweTqgjhOKrkaE/Q1wljxtco5EcOcupZ4c981X0gpk5Tiag==}
     engines: {node: '>=14.0.0'}
     hasBin: true
 
@@ -4651,7 +4651,7 @@ snapshots:
       '@parcel/fs': 2.9.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
       '@parcel/logger': 2.9.3
       '@parcel/node-resolver-core': 3.0.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
-      '@parcel/types': 2.9.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
+      '@parcel/types': 2.9.3(@parcel/core@2.9.3)
       '@parcel/utils': 2.9.3
       '@parcel/workers': 2.9.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
       semver: 7.7.2
@@ -4662,8 +4662,8 @@ snapshots:
       '@parcel/diagnostic': 2.9.3
       '@parcel/fs': 2.9.3(@parcel/core@2.9.3)
       '@parcel/logger': 2.9.3
-      '@parcel/node-resolver-core': 3.0.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
-      '@parcel/types': 2.9.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
+      '@parcel/node-resolver-core': 3.0.3(@parcel/core@2.9.3)
+      '@parcel/types': 2.9.3(@parcel/core@2.9.3)
       '@parcel/utils': 2.9.3
       '@parcel/workers': 2.9.3(@parcel/core@2.9.3)
       semver: 7.7.2
@@ -5249,7 +5249,7 @@ snapshots:
     dependencies:
       '@parcel/plugin': 2.9.3(@parcel/core@2.9.3)
       '@parcel/source-map': 2.1.1
-      sass: 1.93.0
+      sass: 1.93.1
     transitivePeerDependencies:
       - '@parcel/core'
 
@@ -7508,7 +7508,7 @@ snapshots:
 
   safer-buffer@2.1.2: {}
 
-  sass@1.93.0:
+  sass@1.93.1:
     dependencies:
       chokidar: 4.0.0
       immutable: 5.0.2
