@@ -86,6 +86,6 @@ defineExpose({
     right: 0;
     user-select: none;
     width: 100px;
-    z-index: 1000;
+    z-index: 2000;
 }
 </style>

@@ -119,7 +119,7 @@ tr.gall_writer {
     padding: 20px 30px;
     position: fixed;
 
-    z-index: 1001;
+    z-index: 2001;
 
     h3 {
         font-size: 18px;
@@ -253,7 +253,7 @@ tr.gall_writer {
     transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
     user-select: none;
     width: 100px;
-    z-index: 1000;
+    z-index: 2000;
 
     &.blur {
         background-color: rgba(245, 245, 245, 0.85);
@@ -864,7 +864,7 @@ html:has(#css-darkmode) {
     position: fixed;
     top: 0;
     transition: opacity 0.3s cubic-bezier(0.19, 1, 0.22, 1);
-    z-index: 1000;
+    z-index: 2000;
 
     &.hide {
         opacity: 0;
@@ -894,7 +894,7 @@ html:has(#css-darkmode) {
     transition: 0.3s opacity cubic-bezier(0.19, 1, 0.22, 1);
     width: 70%;
 
-    z-index: 1000;
+    z-index: 2000;
 
     &.blur {
         backdrop-filter: blur(5px) saturate(150%);
@@ -1030,7 +1030,7 @@ $btn-height: 20px;
     top: calc(50% - 300px);
     width: 620px;
 
-    z-index: 999;
+    z-index: 2000;
 
     & > p {
         font-size: 18px;

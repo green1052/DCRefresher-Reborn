@@ -165,7 +165,7 @@ $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
     position: fixed;
     top: 0;
     width: 100%;
-    z-index: 1000;
+    z-index: 2000;
 
     &.background {
         background-color: rgba(221, 221, 221, 0.6);
