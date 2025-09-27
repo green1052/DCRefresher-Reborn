@@ -78,7 +78,7 @@ const handleRemoveClick = () => {
 };
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 .refresher-bubble {
     background-color: #f9f9f9;
     border: 1px solid #d6d6d6;
