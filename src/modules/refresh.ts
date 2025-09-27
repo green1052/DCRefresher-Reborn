@@ -372,7 +372,7 @@ export default {
                 history.pushState(null, document.title, newUrl);
                 this.memory.calledByPageTurn = true;
 
-                await this.memory.load?.(location.href, true);
+                if (!(await this.memory.load?.(location.href, true))) return;
 
                 const scrollTarget = document.querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head");
 
@@ -415,7 +415,7 @@ export default {
                     history.pushState(null, document.title, newUrl);
                     this.memory.calledByPageTurn = true;
 
-                    await this.memory.load?.(location.href, true);
+                    if (!(await this.memory.load?.(location.href, true))) return;
 
                     const scrollTarget = document.querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head");
 

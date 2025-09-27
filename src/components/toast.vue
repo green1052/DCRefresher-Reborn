@@ -93,7 +93,7 @@ $desktop: 1024px;
     right: 5vw;
     transition: 0.3s background cubic-bezier(0.19, 1, 0.22, 1);
     user-select: none;
-    z-index: 1002;
+    z-index: 2002;
 
     @media screen and (max-width: $desktop) {
         bottom: 72px;
