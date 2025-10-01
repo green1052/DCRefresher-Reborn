@@ -21,7 +21,7 @@
         "@plasmohq/parcel-config": "^0.42.0",
         "@types/js-cookie": "^3.0.6",
         "@types/node": "^24.6.1",
-        "@types/webextension-polyfill": "^0.12.3",
+        "@types/webextension-polyfill": "^0.12.4",
         "cash-dom": "^8.1.5",
         "js-cookie": "^3.0.5",
         "ky": "^1.11.0",
