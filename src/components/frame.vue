@@ -275,7 +275,6 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const memoText = ref("");
 const reply = ref({
     commentNo: null as string | null,
     replyNo: null as string | null

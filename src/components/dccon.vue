@@ -3,20 +3,22 @@
         <div style="display: flex">
             <h3>디시콘</h3>
 
-            <div>
+            <div style="margin-top: 3px">
                 <input
                     v-model="doubleDccon"
                     type="checkbox"
                 />
                 <label>더블콘</label>
-            </div>
 
-            <div>
                 <input
                     v-model="bigDccon"
                     type="checkbox"
                 />
                 <label>대왕콘</label>
+            </div>
+
+            <div class="refresh" @click="getDcconList(true)">
+                <img :src="getURL('/assets/refresh.webp')"/>
             </div>
 
             <div
@@ -90,6 +92,7 @@
 import Cookies from "js-cookie";
 import ky from "ky";
 import {onMounted, ref} from "vue";
+import getURL from "~utils/getURL";
 
 import RefresherLoader from "./loader.vue";
 
@@ -129,8 +132,8 @@ const pageDown = () => {
     getDcconList();
 };
 
-const getDcconList = async () => {
-    if (dcconList.value[currentPage.value]) {
+const getDcconList = async (refresh = false) => {
+    if (!refresh && dcconList.value[currentPage.value]) {
         currentDccon.value = dcconList.value[currentPage.value][0].detail;
         return;
     }
@@ -160,8 +163,7 @@ const getDcconList = async () => {
 
         maxPage.value = response.max_page;
         currentDccon.value = response.list[0].detail;
-    } catch (error) {
-        console.error("Failed to load dccon list:", error);
+    } catch {
         alert("디시콘을 불러오는데 실패했습니다.");
         close();
     }
@@ -219,9 +221,21 @@ $dark-tint-light: #292929;
         font-size: 18px;
     }
 
+    .refresh {
+        margin-left: auto;
+        margin-right: 20px;
+        margin-top: -5px;
+
+        img {
+            height: 25px;
+            width: 25px;
+        }
+    }
+
     .close {
         content: " ";
         font-size: 24px;
+        margin-top: 5px;
         position: absolute;
         right: 10px;
 
@@ -240,7 +254,7 @@ $dark-tint-light: #292929;
             background-color: #000;
             height: 2px;
             position: absolute;
-            width: 30px;
+            width: 25px;
 
             &:hover {
                 background-color: rgb(49, 49, 49);
