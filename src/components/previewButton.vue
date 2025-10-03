@@ -3,13 +3,13 @@
         class="refresher-preview-button"
         @click="safeClick"
     >
-        <transition name="refresher-shake">
+        <transition v-if="id" name="refresher-shake">
             <img
                 :key="error"
                 :src="getURL(`/assets/${id}.webp`)"
             />
         </transition>
-        <transition name="refresher-shake">
+        <transition v-if="text" name="refresher-shake">
             <p
                 :id="`refresher-${id}-counts`"
                 :key="error + 1"
@@ -65,13 +65,12 @@ $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
     background-color: transparent;
     border-radius: 15px;
     display: flex;
-    height: 38px;
     margin-right: 15px;
 
     transition: all 0.25s cubic-bezier(0.19, 1, 0.22, 1);
     user-select: none;
 
-    width: 120px;
+
 
     &.primary {
         backdrop-filter: blur(10px) saturate(180%);
@@ -130,9 +129,18 @@ $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
         }
     }
 
+    &:has(> p) {
+        height: 38px;
+        width: 120px;
+
+        img {
+            margin: auto 0 auto auto;
+        }
+    }
+
     img {
         height: 30px;
-        margin: auto 10px auto auto;
+        margin-top: 5px;
         width: 30px;
     }
 
