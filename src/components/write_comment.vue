@@ -187,7 +187,6 @@ const toggleEditUser = (): void => {
 };
 
 const renderDcconPopup = (): void => {
-    console.log(props.renderDcconPopup);
     props.renderDcconPopup();
 };
 
