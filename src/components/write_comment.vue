@@ -34,6 +34,11 @@
                 />
             </div>
             <PreviewButton
+                id="dccon"
+                :click="renderDcconPopup"
+                class="refresher-writecomment"
+            />
+            <PreviewButton
                 id="write"
                 :click="write"
                 class="refresher-writecomment primary"
@@ -87,6 +92,7 @@ import UserComponent from "./user.vue";
 interface Props {
     func?: (...args: any[]) => Promise<boolean>;
     reply?: { commentNo: string | null; replyNo: string | null };
+    renderDcconPopup?: () => boolean;
     getDccon?: () => any[];
     getBigDccon?: () => boolean;
 }
@@ -94,6 +100,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
     func: undefined,
     reply: () => ({commentNo: null, replyNo: null}),
+    renderDcconPopup: () => false,
     getDccon: () => () => [],
     getBigDccon: () => () => false
 });
@@ -104,7 +111,6 @@ const emit = defineEmits<{
     "update:reply": [reply: { commentNo: string | null; replyNo: string | null }];
 }>();
 
-// Reactive data
 const focused = ref(false);
 const disabled = ref(false);
 const text = ref("");
@@ -178,6 +184,11 @@ const toggleEditUser = (): void => {
     if (user.value && user.value.isLogout()) {
         editUser.value = !editUser.value;
     }
+};
+
+const renderDcconPopup = (): void => {
+    console.log(props.renderDcconPopup);
+    props.renderDcconPopup();
 };
 
 const write = async (): Promise<boolean> => {

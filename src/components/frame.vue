@@ -92,13 +92,6 @@
                     >
                         <template v-if="frame.data.useWriteComment">
                             <PreviewButton
-                                id="dccon"
-                                :click="renderDcconPopup"
-                                class="refresher-comment-controls"
-                                text="디시콘"
-                            />
-
-                            <PreviewButton
                                 id="write"
                                 :click="toCommentWrite"
                                 class="refresher-comment-controls"
@@ -216,6 +209,7 @@
                             :func="writeComment"
                             :get-big-dccon="getBigDccon"
                             :get-dccon="getDccon"
+                            :renderDcconPopup="renderDcconPopup"
                             @setBigDccon="setBigDccon"
                             @setDccon="setDccon"
                         />
