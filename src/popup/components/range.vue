@@ -1,6 +1,7 @@
 <template>
     <div class="refresher-range">
         <input
+            v-model="currentValue"
             :data-id="id"
             :data-module="modname"
             :disabled="disabled"
@@ -9,7 +10,6 @@
             :placeholder="placeholder"
             :step="step"
             type="range"
-            v-model="currentValue"
             @change="handleChange"
         />
         <span class="indicator">{{ displayValue }}</span>
