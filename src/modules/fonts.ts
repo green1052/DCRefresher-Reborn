@@ -56,7 +56,7 @@ export default {
 
             if (!$fontElement.length) {
                 $fontElement = $("<style id=refresherFontStyleSize>");
-                document.head.appendChild($fontElement.get(0)!);
+                $(document.head).append($fontElement);
             }
 
             $fontElement.html(
