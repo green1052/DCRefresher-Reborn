@@ -24,7 +24,7 @@
         "@types/webextension-polyfill": "^0.12.4",
         "cash-dom": "^8.1.5",
         "js-cookie": "^3.0.5",
-        "ky": "^1.13.0",
+        "ky": "^1.14.0",
         "parcel-reporter-clean-dist": "^1.0.4",
         "sass": "^1.93.3",
         "tesseract.js": "^6.0.1",
