@@ -31,7 +31,7 @@
         "typescript": "^5.9.3",
         "webextension-polyfill": "^0.12.0"
     },
-    "packageManager": "pnpm@10.22.0",
+    "packageManager": "pnpm@10.23.0",
     "private": true,
     "manifest": {
         "host_permissions": [
