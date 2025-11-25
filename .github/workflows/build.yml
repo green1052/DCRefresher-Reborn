@@ -8,47 +8,38 @@ jobs:
     release:
         runs-on: ubuntu-latest
         steps:
-            - name: Checkout
-              uses: actions/checkout@v6
+            -   name: Checkout
+                uses: actions/checkout@v6
 
-            - name: Setup pnpm
-              uses: pnpm/action-setup@v4
+            -   name: Setup pnpm
+                uses: pnpm/action-setup@v4
 
-            - name: Setup Node
-              uses: actions/setup-node@v6
-              with:
-                  node-version: latest
-                  cache: pnpm
+            -   name: Setup Node
+                uses: actions/setup-node@v6
+                with:
+                    node-version: latest
+                    cache: pnpm
 
-            - name: Install Dependencies
-              run: pnpm install --frozen-lockfile
+            -   name: Install Dependencies
+                run: pnpm install --frozen-lockfile
 
-            - name: Build
-              run: |
-                  pnpm build
+            -   name: Build
+                run: |
+                    pnpm build
 
-            - name: Release
-              uses: softprops/action-gh-release@v2
-              with:
-                  files: |
-                      build/firefox-mv2-prod.zip
-                      build/chrome-mv3-prod.zip
-                  generate_release_notes: true
+            -   name: Release
+                uses: softprops/action-gh-release@v2
+                with:
+                    files: |
+                        build/firefox-mv2-prod.zip
+                        build/chrome-mv3-prod.zip
+                    generate_release_notes: true
 
-            - name: Release AMO
-              uses: browser-actions/release-firefox-addon@latest
-              with:
-                  addon-id: dcrefresher-reborn@green1052
-                  addon-path: build/firefox-mv2-prod.zip
-                  auth-api-issuer: ${{ secrets.AUTH_API_ISSUER }}
-                  auth-api-secret: ${{ secrets.AUTH_API_SECRET }}
-                  release-note: https://github.com/green1052/DCRefresher-Reborn/releases/tag/${{ github.ref_name }}
+            -   name: Compress Source Code
+                run: |
+                    zip -1 -r src.zip src
 
-            - name: Release CWS
-              uses: browser-actions/release-chrome-extension@latest
-              with:
-                  extension-id: pmfifcbendahnkeojgpfppklgioemgon
-                  extension-path: build/chrome-mv3-prod.zip
-                  oauth-client-id: ${{ secrets.OAUTH_CLIENT_ID }}
-                  oauth-client-secret: ${{ secrets.OAUTH_CLIENT_SECRET }}
-                  oauth-refresh-token: ${{ secrets.OAUTH_REFRESH_TOKEN }}
+            -   name: Browser Platform Publish
+                uses: PlasmoHQ/bpp@v3
+                with:
+                    keys: ${{ secrets.BPP_KEYS }}
