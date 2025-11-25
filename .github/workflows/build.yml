@@ -37,7 +37,7 @@ jobs:
 
             -   name: Compress Source Code
                 run: |
-                    zip -1 -r src.zip src
+                    zip -r src.zip src
 
             -   name: Browser Platform Publish
                 uses: PlasmoHQ/bpp@v3
