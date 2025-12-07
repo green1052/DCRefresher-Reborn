@@ -25,7 +25,7 @@
         "@typescript/native-preview": "7.0.0-dev.20251207.1",
         "cash-dom": "^8.1.5",
         "js-cookie": "^3.0.5",
-        "ky": "^1.14.0",
+        "ky": "^1.14.1",
         "parcel-reporter-clean-dist": "^1.0.4",
         "sass": "^1.94.2",
         "tesseract.js": "^6.0.1",
