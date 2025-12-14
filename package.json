@@ -20,7 +20,7 @@
         "@parcel/resolver-glob": "2.9.3",
         "@plasmohq/parcel-config": "^0.42.0",
         "@types/js-cookie": "^3.0.6",
-        "@types/node": "^24.10.3",
+        "@types/node": "^24.10.4",
         "@types/webextension-polyfill": "^0.12.4",
         "@typescript/native-preview": "7.0.0-dev.20251213.1",
         "cash-dom": "^8.1.5",
