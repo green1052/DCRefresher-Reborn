@@ -28,7 +28,7 @@
         "ky": "^1.14.1",
         "parcel-reporter-clean-dist": "^1.0.4",
         "sass": "^1.96.0",
-        "tesseract.js": "^6.0.1",
+        "tesseract.js": "^7.0.0",
         "webextension-polyfill": "^0.12.0"
     },
     "packageManager": "pnpm@10.25.0",
