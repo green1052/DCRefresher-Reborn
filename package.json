@@ -22,7 +22,7 @@
         "@types/js-cookie": "^3.0.6",
         "@types/node": "^24.10.4",
         "@types/webextension-polyfill": "^0.12.4",
-        "@typescript/native-preview": "7.0.0-dev.20251218.1",
+        "@typescript/native-preview": "7.0.0-dev.20251218.3",
         "cash-dom": "^8.1.5",
         "js-cookie": "^3.0.5",
         "ky": "^1.14.1",
