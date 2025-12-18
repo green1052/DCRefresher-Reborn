@@ -14,7 +14,7 @@
         "@plasmohq/messaging": "^0.7.2",
         "@plasmohq/storage": "^1.15.0",
         "plasmo": "^0.90.5",
-        "vue": "^3.5.25"
+        "vue": "^3.5.26"
     },
     "devDependencies": {
         "@parcel/resolver-glob": "2.9.3",
