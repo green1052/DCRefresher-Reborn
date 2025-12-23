@@ -204,7 +204,7 @@ export default {
 
             const newPostList: Cash[] = [];
 
-            const extractPostNumber = (element: Element): string => {
+            const extractPostNumber = (element: HTMLElement): string => {
                 return element.dataset.no ?? element.querySelector<HTMLElement>(".gall_num")?.innerText ?? "";
             };
 
@@ -240,8 +240,7 @@ export default {
             if (this.memory.calledByPageTurn) {
                 this.memory.calledByPageTurn = false;
 
-                const keyword = queryString("s_keyword");
-                if (keyword) {
+                if (queryString("s_keyword")) {
                     const searchValue = $("#sch_q").val() as string;
 
                     if (searchValue) {
@@ -263,27 +262,29 @@ export default {
                         });
                     }
                 }
-            } else if (this.status.fadeIn) {
-                newPostList.forEach(($element, index) => {
-                    $element.addClass("refresherNewPost");
-                    $element.css("animation-delay", `${(newPostList.length - index) * 50}ms`);
-                });
+            } else {
+                if (this.status.fadeIn) {
+                    newPostList.forEach(($element, index) => {
+                        $element.addClass("refresherNewPost");
+                        $element.css("animation-delay", `${(newPostList.length - index) * 50}ms`);
+                    });
+                }
+
+                if (archiveArticleConfig) {
+                    const deletedPosts = oldCache.filter((postNo) => postNo && !newCache.includes(postNo));
+
+                    deletedPosts.forEach((deletedNo) => {
+                        const originalIndex = oldCache.indexOf(deletedNo);
+                        if (originalIndex !== -1) {
+                            const insertIndex = originalIndex + newPostList.length;
+                            $newListChildren
+                                .eq(insertIndex)
+                                .before($oldList.children().eq(originalIndex).addClass("refresher-deleted"));
+                        }
+                    });
+                }
             }
-
-            if (archiveArticleConfig) {
-                const deletedPosts = oldCache.filter((postNo) => postNo && !newCache.includes(postNo));
-
-                deletedPosts.forEach((deletedNo) => {
-                    const originalIndex = oldCache.indexOf(deletedNo);
-                    if (originalIndex !== -1) {
-                        const insertIndex = originalIndex + newPostList.length;
-                        $newListChildren
-                            .eq(insertIndex)
-                            .before($oldList.children().eq(originalIndex).addClass("refresher-deleted"));
-                    }
-                });
-            }
-
+            
             $oldList.replaceWith($newList);
 
             if (newPostList.length) eventBus.emit("newPostList", newPostList);
