@@ -27,7 +27,7 @@
         "js-cookie": "^3.0.5",
         "ky": "^1.14.2",
         "parcel-reporter-clean-dist": "^1.0.4",
-        "sass": "^1.97.1",
+        "sass": "^1.97.2",
         "tesseract.js": "^7.0.0",
         "webextension-polyfill": "^0.12.0"
     },
