@@ -1,3 +1,5 @@
+@use "sass:color";
+
 $dark-background: #222;
 $dark-tint-light: #292929;
 $dark-tint-light: rgba(41, 41, 41, 1);
@@ -16,6 +18,19 @@ $dark-highlight: #176ef1d5;
 $dark-red: #e21919;
 
 html:has(#css-darkmode) {
+    .refresher-preview-contents-actual {
+        .og-wrap, .og-img {
+            filter: invert(1) !important;
+        }
+    }
+
+    // dc_series
+
+    .write_div :not(.dc_series) .lnk {
+        background-color: color.invert(#252525);
+        color: color.invert($dark-highlight) !important;
+    }
+
     .refresher-comment svg {
         filter: invert(1);
     }
