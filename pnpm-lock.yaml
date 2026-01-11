@@ -19,14 +19,14 @@ importers:
         version: 0.90.5(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(@types/node@24.10.4)(lodash@4.17.21)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)
       vue:
         specifier: ^3.5.26
-        version: 3.5.26(typescript@5.2.2)
+        version: 3.5.26(typescript@5.9.3)
     devDependencies:
       '@parcel/resolver-glob':
         specifier: 2.9.3
         version: 2.9.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
       '@plasmohq/parcel-config':
         specifier: ^0.42.0
-        version: 0.42.0(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(lodash@4.17.21)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.2.2)
+        version: 0.42.0(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(lodash@4.17.21)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.9.3)
       '@types/js-cookie':
         specifier: ^3.0.6
         version: 3.0.6
@@ -36,9 +36,6 @@ importers:
       '@types/webextension-polyfill':
         specifier: ^0.12.4
         version: 0.12.4
-      '@typescript/native-preview':
-        specifier: 7.0.0-dev.20260109.1
-        version: 7.0.0-dev.20260109.1
       cash-dom:
         specifier: ^8.1.5
         version: 8.1.5
@@ -57,6 +54,9 @@ importers:
       tesseract.js:
         specifier: ^7.0.0
         version: 7.0.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
       webextension-polyfill:
         specifier: ^0.12.0
         version: 0.12.0
@@ -1879,45 +1879,6 @@ packages:
   '@types/webextension-polyfill@0.12.4':
     resolution: {integrity: sha512-wK8YdSI0pDiaehSLDIvtvonYmLwUUivg4Z6JCJO8rkyssMAG82cFJgwPK/V7NO61mJBLg/tXeoXQL8AFzpXZmQ==}
 
-  '@typescript/native-preview-darwin-arm64@7.0.0-dev.20260109.1':
-    resolution: {integrity: sha512-rEY7JFH9JhIQ7SCjD+cpwPhIBLzNOgA7IVkfIcOpbWTmtOufx0sTZejR5B2b81x2fLCJDPZGpUv71wD1LP45iA==}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@typescript/native-preview-darwin-x64@7.0.0-dev.20260109.1':
-    resolution: {integrity: sha512-zBrxf4LYMhLGimvEZHJjtpYnpSqV4Q0rOkXEi8I5durn9NaGIBTOebBYXwF8/na6Pufdqd+vI1KQYxkm2G02pw==}
-    cpu: [x64]
-    os: [darwin]
-
-  '@typescript/native-preview-linux-arm64@7.0.0-dev.20260109.1':
-    resolution: {integrity: sha512-WeDI+wrA1GqBFwFzj9i/zXlOuUaJdKidg6Jgry1P1TNpsHYW5YiKoNcpFirm1Fq3Dnav5cAa66z6VK5lvz7tgQ==}
-    cpu: [arm64]
-    os: [linux]
-
-  '@typescript/native-preview-linux-arm@7.0.0-dev.20260109.1':
-    resolution: {integrity: sha512-J8kHoVttxNeMq1wdT12HPe6i/524svbdw1RsMBgb+kbqTfFFElSK7rbeZFuTfzpEA0/c6y2MY96qLP07Fq4zEw==}
-    cpu: [arm]
-    os: [linux]
-
-  '@typescript/native-preview-linux-x64@7.0.0-dev.20260109.1':
-    resolution: {integrity: sha512-D0nuBsJTIfc1JD2HyoMKqc2Wpe0tMAP92hgwap6E3iTlKFMW9ayd7KLUjLz6EFxxw9LRw2sjECT1VvjCjAJ4GQ==}
-    cpu: [x64]
-    os: [linux]
-
-  '@typescript/native-preview-win32-arm64@7.0.0-dev.20260109.1':
-    resolution: {integrity: sha512-nv365W1TiJEAAJ/NiBaKE9hSvG7U7ipuAoaSdr6HzdyMVouArq2DxxLo06mzDMOjNdc6U7vAIkLB52CcK3Y8ZQ==}
-    cpu: [arm64]
-    os: [win32]
-
-  '@typescript/native-preview-win32-x64@7.0.0-dev.20260109.1':
-    resolution: {integrity: sha512-da44CbC8ktr741ISLvCQlz3Gv2UqO2M+rB585xCFNjcz+0IyOKkBGr9eR++f6uy46/QKFK4w44x0cK71PVqk9g==}
-    cpu: [x64]
-    os: [win32]
-
-  '@typescript/native-preview@7.0.0-dev.20260109.1':
-    resolution: {integrity: sha512-27XQhOQWcGp7/nOS1NbEoC4vA2dZOmG5X+OP4e5KX2uAUc2cjE1Scn1Nnv9D7wU2ZBA+/wrqqvJqidCPFRlq+A==}
-    hasBin: true
-
   '@vue/compiler-core@3.3.4':
     resolution: {integrity: sha512-cquyDNvZ6jTbf/+x+AgM2Arrp6G4Dzbb0R64jiG804HRMfRiFXWI6kqUVqZ6ZR0bQhIoQjB4+2bhNtVwndW15g==}
 
@@ -3480,6 +3441,11 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  typescript@5.9.3:
+    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
   undici-types@7.16.0:
     resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
 
@@ -4227,14 +4193,14 @@ snapshots:
       - '@swc/helpers'
       - napi-wasm
 
-  '@parcel/config-default@2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.2.2)':
+  '@parcel/config-default@2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)':
     dependencies:
       '@parcel/bundler-default': 2.9.3(@parcel/core@2.9.3)
       '@parcel/compressor-raw': 2.9.3(@parcel/core@2.9.3)
       '@parcel/core': 2.9.3
       '@parcel/namer-default': 2.9.3(@parcel/core@2.9.3)
       '@parcel/optimizer-css': 2.9.3(@parcel/core@2.9.3)
-      '@parcel/optimizer-htmlnano': 2.9.3(@parcel/core@2.9.3)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.2.2)
+      '@parcel/optimizer-htmlnano': 2.9.3(@parcel/core@2.9.3)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)
       '@parcel/optimizer-image': 2.9.3(@parcel/core@2.9.3)
       '@parcel/optimizer-svgo': 2.9.3(@parcel/core@2.9.3)
       '@parcel/optimizer-swc': 2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)
@@ -4271,14 +4237,14 @@ snapshots:
       - typescript
       - uncss
 
-  '@parcel/config-default@2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)':
+  '@parcel/config-default@2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.9.3)':
     dependencies:
       '@parcel/bundler-default': 2.9.3(@parcel/core@2.9.3)
       '@parcel/compressor-raw': 2.9.3(@parcel/core@2.9.3)
       '@parcel/core': 2.9.3
       '@parcel/namer-default': 2.9.3(@parcel/core@2.9.3)
       '@parcel/optimizer-css': 2.9.3(@parcel/core@2.9.3)
-      '@parcel/optimizer-htmlnano': 2.9.3(@parcel/core@2.9.3)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)
+      '@parcel/optimizer-htmlnano': 2.9.3(@parcel/core@2.9.3)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.9.3)
       '@parcel/optimizer-image': 2.9.3(@parcel/core@2.9.3)
       '@parcel/optimizer-svgo': 2.9.3(@parcel/core@2.9.3)
       '@parcel/optimizer-swc': 2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)
@@ -4584,10 +4550,10 @@ snapshots:
       - '@parcel/core'
       - napi-wasm
 
-  '@parcel/optimizer-htmlnano@2.9.3(@parcel/core@2.9.3)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.2.2)':
+  '@parcel/optimizer-htmlnano@2.9.3(@parcel/core@2.9.3)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)':
     dependencies:
       '@parcel/plugin': 2.9.3(@parcel/core@2.9.3)
-      htmlnano: 2.1.2(postcss@8.5.6)(relateurl@0.2.7)(svgo@2.8.0)(terser@5.43.1)(typescript@5.2.2)
+      htmlnano: 2.1.2(postcss@8.5.6)(relateurl@0.2.7)(svgo@2.8.0)(terser@5.43.1)(typescript@5.8.2)
       nullthrows: 1.1.1
       posthtml: 0.16.6
       svgo: 2.8.0
@@ -4602,10 +4568,10 @@ snapshots:
       - typescript
       - uncss
 
-  '@parcel/optimizer-htmlnano@2.9.3(@parcel/core@2.9.3)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)':
+  '@parcel/optimizer-htmlnano@2.9.3(@parcel/core@2.9.3)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.9.3)':
     dependencies:
       '@parcel/plugin': 2.9.3(@parcel/core@2.9.3)
-      htmlnano: 2.1.2(postcss@8.5.6)(relateurl@0.2.7)(svgo@2.8.0)(terser@5.43.1)(typescript@5.8.2)
+      htmlnano: 2.1.2(postcss@8.5.6)(relateurl@0.2.7)(svgo@2.8.0)(terser@5.43.1)(typescript@5.9.3)
       nullthrows: 1.1.1
       posthtml: 0.16.6
       svgo: 2.8.0
@@ -4728,7 +4694,7 @@ snapshots:
       '@parcel/fs': 2.9.3(@parcel/core@2.9.3)
       '@parcel/logger': 2.9.3
       '@parcel/node-resolver-core': 3.0.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
-      '@parcel/types': 2.9.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
+      '@parcel/types': 2.9.3(@parcel/core@2.9.3)
       '@parcel/utils': 2.9.3
       '@parcel/workers': 2.9.3(@parcel/core@2.9.3)
       semver: 7.7.2
@@ -5574,10 +5540,10 @@ snapshots:
     transitivePeerDependencies:
       - '@parcel/core'
 
-  '@plasmohq/parcel-config@0.42.0(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(lodash@4.17.21)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.2.2)':
+  '@plasmohq/parcel-config@0.42.0(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(lodash@4.17.21)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)':
     dependencies:
       '@parcel/compressor-raw': 2.9.3(@parcel/core@2.9.3)
-      '@parcel/config-default': 2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.2.2)
+      '@parcel/config-default': 2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)
       '@parcel/core': 2.9.3
       '@parcel/optimizer-data-url': 2.9.3(@parcel/core@2.9.3)
       '@parcel/reporter-bundle-buddy': 2.9.3(@parcel/core@2.9.3)
@@ -5671,10 +5637,10 @@ snapshots:
       - walrus
       - whiskers
 
-  '@plasmohq/parcel-config@0.42.0(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(lodash@4.17.21)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)':
+  '@plasmohq/parcel-config@0.42.0(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(lodash@4.17.21)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.9.3)':
     dependencies:
       '@parcel/compressor-raw': 2.9.3(@parcel/core@2.9.3)
-      '@parcel/config-default': 2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)
+      '@parcel/config-default': 2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)(postcss@8.5.6)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.9.3)
       '@parcel/core': 2.9.3
       '@parcel/optimizer-data-url': 2.9.3(@parcel/core@2.9.3)
       '@parcel/reporter-bundle-buddy': 2.9.3(@parcel/core@2.9.3)
@@ -6174,37 +6140,6 @@ snapshots:
 
   '@types/webextension-polyfill@0.12.4': {}
 
-  '@typescript/native-preview-darwin-arm64@7.0.0-dev.20260109.1':
-    optional: true
-
-  '@typescript/native-preview-darwin-x64@7.0.0-dev.20260109.1':
-    optional: true
-
-  '@typescript/native-preview-linux-arm64@7.0.0-dev.20260109.1':
-    optional: true
-
-  '@typescript/native-preview-linux-arm@7.0.0-dev.20260109.1':
-    optional: true
-
-  '@typescript/native-preview-linux-x64@7.0.0-dev.20260109.1':
-    optional: true
-
-  '@typescript/native-preview-win32-arm64@7.0.0-dev.20260109.1':
-    optional: true
-
-  '@typescript/native-preview-win32-x64@7.0.0-dev.20260109.1':
-    optional: true
-
-  '@typescript/native-preview@7.0.0-dev.20260109.1':
-    optionalDependencies:
-      '@typescript/native-preview-darwin-arm64': 7.0.0-dev.20260109.1
-      '@typescript/native-preview-darwin-x64': 7.0.0-dev.20260109.1
-      '@typescript/native-preview-linux-arm': 7.0.0-dev.20260109.1
-      '@typescript/native-preview-linux-arm64': 7.0.0-dev.20260109.1
-      '@typescript/native-preview-linux-x64': 7.0.0-dev.20260109.1
-      '@typescript/native-preview-win32-arm64': 7.0.0-dev.20260109.1
-      '@typescript/native-preview-win32-x64': 7.0.0-dev.20260109.1
-
   '@vue/compiler-core@3.3.4':
     dependencies:
       '@babel/parser': 7.28.5
@@ -6310,11 +6245,11 @@ snapshots:
       '@vue/shared': 3.3.4
       vue: 3.3.4
 
-  '@vue/server-renderer@3.5.26(vue@3.5.26(typescript@5.2.2))':
+  '@vue/server-renderer@3.5.26(vue@3.5.26(typescript@5.9.3))':
     dependencies:
       '@vue/compiler-ssr': 3.5.26
       '@vue/shared': 3.5.26
-      vue: 3.5.26(typescript@5.2.2)
+      vue: 3.5.26(typescript@5.9.3)
 
   '@vue/shared@3.3.4': {}
 
@@ -6532,15 +6467,6 @@ snapshots:
       path-type: 4.0.0
       yaml: 1.10.2
 
-  cosmiconfig@9.0.0(typescript@5.2.2):
-    dependencies:
-      env-paths: 2.2.1
-      import-fresh: 3.3.1
-      js-yaml: 4.1.0
-      parse-json: 5.2.0
-    optionalDependencies:
-      typescript: 5.2.2
-
   cosmiconfig@9.0.0(typescript@5.8.2):
     dependencies:
       env-paths: 2.2.1
@@ -6549,6 +6475,15 @@ snapshots:
       parse-json: 5.2.0
     optionalDependencies:
       typescript: 5.8.2
+
+  cosmiconfig@9.0.0(typescript@5.9.3):
+    dependencies:
+      env-paths: 2.2.1
+      import-fresh: 3.3.1
+      js-yaml: 4.1.0
+      parse-json: 5.2.0
+    optionalDependencies:
+      typescript: 5.9.3
 
   cross-spawn@7.0.6:
     dependencies:
@@ -6849,9 +6784,9 @@ snapshots:
 
   has-flag@4.0.0: {}
 
-  htmlnano@2.1.2(postcss@8.5.6)(relateurl@0.2.7)(svgo@2.8.0)(terser@5.43.1)(typescript@5.2.2):
+  htmlnano@2.1.2(postcss@8.5.6)(relateurl@0.2.7)(svgo@2.8.0)(terser@5.43.1)(typescript@5.8.2):
     dependencies:
-      cosmiconfig: 9.0.0(typescript@5.2.2)
+      cosmiconfig: 9.0.0(typescript@5.8.2)
       posthtml: 0.16.6
     optionalDependencies:
       postcss: 8.5.6
@@ -6861,9 +6796,9 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  htmlnano@2.1.2(postcss@8.5.6)(relateurl@0.2.7)(svgo@2.8.0)(terser@5.43.1)(typescript@5.8.2):
+  htmlnano@2.1.2(postcss@8.5.6)(relateurl@0.2.7)(svgo@2.8.0)(terser@5.43.1)(typescript@5.9.3):
     dependencies:
-      cosmiconfig: 9.0.0(typescript@5.8.2)
+      cosmiconfig: 9.0.0(typescript@5.9.3)
       posthtml: 0.16.6
     optionalDependencies:
       postcss: 8.5.6
@@ -7860,6 +7795,8 @@ snapshots:
 
   typescript@5.8.2: {}
 
+  typescript@5.9.3: {}
+
   undici-types@7.16.0: {}
 
   unique-string@3.0.0:
@@ -7896,15 +7833,15 @@ snapshots:
       '@vue/server-renderer': 3.3.4(vue@3.3.4)
       '@vue/shared': 3.3.4
 
-  vue@3.5.26(typescript@5.2.2):
+  vue@3.5.26(typescript@5.9.3):
     dependencies:
       '@vue/compiler-dom': 3.5.26
       '@vue/compiler-sfc': 3.5.26
       '@vue/runtime-dom': 3.5.26
-      '@vue/server-renderer': 3.5.26(vue@3.5.26(typescript@5.2.2))
+      '@vue/server-renderer': 3.5.26(vue@3.5.26(typescript@5.9.3))
       '@vue/shared': 3.5.26
     optionalDependencies:
-      typescript: 5.2.2
+      typescript: 5.9.3
 
   wasm-feature-detect@1.8.0: {}
 
