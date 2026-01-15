@@ -300,13 +300,11 @@ tr.gall_writer {
 }
 
 .refresher-frame.preview {
-    margin-bottom: 10px;
-
     &:first-child {
         margin-top: 10vh;
     }
 
-    &:last-child {
+    &:nth-child(2) {
         margin-bottom: 10vh;
     }
 }
