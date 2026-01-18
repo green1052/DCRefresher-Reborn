@@ -1508,7 +1508,7 @@ export default {
             };
 
             frame.functions.share = () => {
-                writeClipboard(`https://gall.dcinside.com/${http.galleryType(preData.link!)}/board/view/?id=${preData.gallery || http.queryString("id")}&no=${preData.id}`)
+                writeClipboard(`https://gall.dcinside.com/${http.galleryType(preData.link!, "/")}board/view/?id=${preData.gallery || http.queryString("id")}&no=${preData.id}`)
                     .then(() => toast.show("클립보드에 복사되었습니다."))
                     .catch(() => toast.show("클립보드에 복사하는데 실패했습니다.", "error"));
 
