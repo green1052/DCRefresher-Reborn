@@ -43,8 +43,8 @@ importers:
         specifier: ^3.0.5
         version: 3.0.5
       ky:
-        specifier: ^1.14.2
-        version: 1.14.2
+        specifier: ^1.14.3
+        version: 1.14.3
       parcel-reporter-clean-dist:
         specifier: ^1.0.4
         version: 1.0.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))(parcel@2.15.4(@swc/helpers@0.5.17))
@@ -2624,8 +2624,8 @@ packages:
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
-  ky@1.14.2:
-    resolution: {integrity: sha512-q3RBbsO5A5zrPhB6CaCS8ZUv+NWCXv6JJT4Em0i264G9W0fdPB8YRfnnEi7Dm7X7omAkBIPojzYJ2D1oHTHqug==}
+  ky@1.14.3:
+    resolution: {integrity: sha512-9zy9lkjac+TR1c2tG+mkNSVlyOpInnWdSMiue4F+kq8TwJSgv6o8jhLRg8Ho6SnZ9wOYUq/yozts9qQCfk7bIw==}
     engines: {node: '>=18'}
 
   less@4.4.0:
@@ -4652,7 +4652,7 @@ snapshots:
       '@parcel/fs': 2.9.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
       '@parcel/logger': 2.9.3
       '@parcel/node-resolver-core': 3.0.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
-      '@parcel/types': 2.9.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
+      '@parcel/types': 2.9.3(@parcel/core@2.9.3)
       '@parcel/utils': 2.9.3
       '@parcel/workers': 2.9.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
       semver: 7.7.2
@@ -4663,8 +4663,8 @@ snapshots:
       '@parcel/diagnostic': 2.9.3
       '@parcel/fs': 2.9.3(@parcel/core@2.9.3)
       '@parcel/logger': 2.9.3
-      '@parcel/node-resolver-core': 3.0.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
-      '@parcel/types': 2.9.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
+      '@parcel/node-resolver-core': 3.0.3(@parcel/core@2.9.3)
+      '@parcel/types': 2.9.3(@parcel/core@2.9.3)
       '@parcel/utils': 2.9.3
       '@parcel/workers': 2.9.3(@parcel/core@2.9.3)
       semver: 7.7.2
@@ -6912,7 +6912,7 @@ snapshots:
     dependencies:
       json-buffer: 3.0.1
 
-  ky@1.14.2: {}
+  ky@1.14.3: {}
 
   less@4.4.0:
     dependencies:
@@ -7231,7 +7231,7 @@ snapshots:
 
   package-json@10.0.1:
     dependencies:
-      ky: 1.14.2
+      ky: 1.14.3
       registry-auth-token: 5.1.0
       registry-url: 6.0.1
       semver: 7.7.2
