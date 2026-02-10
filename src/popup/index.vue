@@ -111,7 +111,7 @@
                 <div class="info">
                     <div class="icon-wrap">
                         <img
-                            :src="getURL('/assets/oyster.webp')"
+                            :src="getURL('/assets/icon.png')"
                             class="icon"
                         />
                     </div>
