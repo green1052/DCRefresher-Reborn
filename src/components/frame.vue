@@ -13,7 +13,6 @@
             class="refresher-preview-contents refresher-error"
         >
             <h3>{{ frame.error.title || "알 수 없는 오류" }}</h3>
-            <img :src="getURL('/assets/error.webp')"/>
             <br/>
             <br/>
             <br/>
@@ -174,10 +173,8 @@
                 <div v-else>
                     <div v-if="!frame.data.comments.comments || frame.data.comments.comments.length === 0">
                         <div class="refresher-nocomment-wrap">
-                            <img :src="getURL('/assets/empty_comment.webp')"/>
                             <h3>댓글이 없습니다.</h3>
                         </div>
-                        <br/>
                     </div>
                     <div
                         v-else
@@ -257,7 +254,6 @@
 
 <script lang="ts" setup>
 import {createApp, onBeforeUnmount, onMounted, ref} from "vue";
-import getURL from "../utils/getURL";
 
 import Comment from "./comment.vue";
 import CountDown from "./countdown.vue";
