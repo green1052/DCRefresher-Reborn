@@ -34,8 +34,8 @@ importers:
         specifier: ^24.10.13
         version: 24.10.13
       '@types/webextension-polyfill':
-        specifier: ^0.12.4
-        version: 0.12.4
+        specifier: ^0.12.5
+        version: 0.12.5
       cash-dom:
         specifier: ^8.1.5
         version: 8.1.5
@@ -1899,8 +1899,8 @@ packages:
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
 
-  '@types/webextension-polyfill@0.12.4':
-    resolution: {integrity: sha512-wK8YdSI0pDiaehSLDIvtvonYmLwUUivg4Z6JCJO8rkyssMAG82cFJgwPK/V7NO61mJBLg/tXeoXQL8AFzpXZmQ==}
+  '@types/webextension-polyfill@0.12.5':
+    resolution: {integrity: sha512-uKSAv6LgcVdINmxXMKBuVIcg/2m5JZugoZO8x20g7j2bXJkPIl/lVGQcDlbV+aXAiTyXT2RA5U5mI4IGCDMQeg==}
 
   '@vue/compiler-core@3.3.4':
     resolution: {integrity: sha512-cquyDNvZ6jTbf/+x+AgM2Arrp6G4Dzbb0R64jiG804HRMfRiFXWI6kqUVqZ6ZR0bQhIoQjB4+2bhNtVwndW15g==}
@@ -6160,7 +6160,7 @@ snapshots:
 
   '@types/trusted-types@2.0.7': {}
 
-  '@types/webextension-polyfill@0.12.4': {}
+  '@types/webextension-polyfill@0.12.5': {}
 
   '@vue/compiler-core@3.3.4':
     dependencies:
