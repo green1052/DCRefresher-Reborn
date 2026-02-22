@@ -111,7 +111,7 @@
                 <div class="info">
                     <div class="icon-wrap">
                         <img
-                            :src="getURL('/assets/icon.png')"
+                            :src="getURL(browser.runtime.getManifest().icons[128])"
                             class="icon"
                         />
                     </div>
@@ -435,7 +435,6 @@ import browser from "webextension-polyfill";
 
 import {BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES} from "../core/block";
 import {TYPE_NAMES as MEMO_TYPE_NAMES} from "../core/memo";
-import getURL from "../utils/getURL";
 import storage from "../utils/storage";
 import {writeClipboard} from "../utils/writeClipboard";
 import RefresherBubble from "./components/bubble.vue";
@@ -444,6 +443,7 @@ import RefresherModule from "./components/module.vue";
 import RefresherOptions from "./components/options.vue";
 import RefresherInput from "./components/refresherInput.vue";
 import SettingsModule from "./components/settingsModule.vue";
+import getURL from "~utils/getURL";
 
 const tab = ref(0);
 const modules = ref<{ [key: string]: RefresherModule }>({});

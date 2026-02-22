@@ -26,7 +26,7 @@ html:has(#css-darkmode) {
 
     // dc_series
 
-    .write_div :not(.dc_series) .lnk {
+    .write_div > :not(.dc_series) > .lnk {
         background-color: color.invert(#252525);
         color: color.invert($dark-highlight) !important;
     }

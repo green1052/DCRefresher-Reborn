@@ -6,7 +6,6 @@ export default {
     description: "이미지를 검색합니다.",
     memory: {
         sauceNao: "",
-        iqdb: "",
         currentImage: null
     },
     enable: true,
@@ -29,16 +28,13 @@ export default {
         };
 
         this.memory.sauceNao = communicate.addHook("searchSauceNao", () => foo("https://saucenao.com/search.php?url=[url]"));
-        this.memory.iqdb = communicate.addHook("searchIqdb", () => foo("https://iqdb.org/?url=[url]"));
     },
     revoke() {
         communicate.clearHook("searchSauceNao", this.memory.sauceNao);
-        communicate.clearHook("searchIqdb", this.memory.iqdb);
     }
 } as RefresherModule<{
     memory: {
         sauceNao: string;
-        iqdb: string;
         currentImage: string | null;
     };
 }>;

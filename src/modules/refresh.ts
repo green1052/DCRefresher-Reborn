@@ -6,45 +6,19 @@ import {queryString} from "../utils/http";
 import storage from "../utils/storage";
 import toast from "../utils/toast";
 
-const AVERAGE_COUNTS_SIZE = 7;
 const MINIMUM_REFRESH_INTERVAL = 500;
-const MINIMUM_AUTO_DELAY = 600;
 const DEFAULT_TIMEOUT_OFFSET = 100;
 
 let PAUSE_REFRESH = false;
 
 const updateRefreshText = (button?: HTMLElement) => {
-    button ??=
-        document.querySelector<HTMLElement>(".page_head .gall_issuebox button[data-refresher=true]") ?? undefined;
+    button ??= document.querySelector<HTMLElement>(".page_head .gall_issuebox button[data-refresher=true]");
 
     if (!button) return;
 
     const onOff = button.querySelector<HTMLSpanElement>("span");
     if (onOff) {
         onOff.innerHTML = PAUSE_REFRESH ? "꺼짐" : "켜짐";
-    }
-};
-
-const addRefreshText = (issueBox: HTMLElement) => {
-    const pageHead = issueBox ?? document.querySelector(".page_head .gall_issuebox");
-
-    if (!pageHead?.querySelector("button[data-refresher=true]")) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.dataset.refresher = "true";
-        button.innerHTML = "새로고침: ";
-
-        const onOff = document.createElement("span");
-        onOff.innerHTML = "켜짐";
-
-        button.onclick = () => {
-            PAUSE_REFRESH = !PAUSE_REFRESH;
-            updateRefreshText(button);
-        };
-
-        button.appendChild(onOff);
-        updateRefreshText(button);
-        pageHead.appendChild(button);
     }
 };
 
@@ -66,8 +40,7 @@ export default {
         uuid2: null,
         cache: {},
         new_counts: 0,
-        average_counts: new Array(AVERAGE_COUNTS_SIZE).fill(1),
-        delay: 2500,
+        delay: 1000,
         refresh: 0,
         calledByPageTurn: false,
         refreshRequest: "",
@@ -81,17 +54,11 @@ export default {
             name: "새로고침 주기",
             desc: "페이지를 새로 고쳐 현재 페이지에 반영하는 주기입니다.",
             type: "range",
-            default: 2500,
+            default: 3000,
             min: 1000,
             max: 20000,
             step: 100,
             unit: "ms"
-        },
-        autoRate: {
-            name: "자동 새로고침 주기",
-            desc: "새로 올라오는 글의 수에 따라 새로고침 주기를 자동으로 제어합니다.",
-            type: "check",
-            default: false
         },
         fadeIn: {
             name: "새 게시글 효과",
@@ -147,7 +114,22 @@ export default {
         }
 
         filter.add(".page_head .gall_issuebox", (element) => {
-            addRefreshText(element);
+            if (element?.querySelector("button[data-refresher=true]"))
+                return;
+
+            const button = document.createElement("button");
+            button.type = "button";
+            button.dataset.refresher = "true";
+            button.innerHTML = "새로고침: ";
+            const onOff = document.createElement("span");
+            onOff.innerHTML = "켜짐";
+            button.onclick = () => {
+                PAUSE_REFRESH = !PAUSE_REFRESH;
+                updateRefreshText(button);
+            };
+            button.appendChild(onOff);
+            updateRefreshText(button);
+            element.appendChild(button);
         });
 
         const urlSearchParams = new URLSearchParams(location.href);
@@ -183,13 +165,11 @@ export default {
             this.memory.lastRefresh = Date.now();
             this.memory.new_counts = 0;
 
-            if (customURL) {
-                originalLocation = customURL;
-            }
+            if (customURL) originalLocation = customURL;
 
             const url = http.view(originalLocation);
 
-            const response = await ky.get(url, {timeout: this.status.refreshRate - DEFAULT_TIMEOUT_OFFSET}).text();
+            const response = await ky.get(url, {timeout: this.memory.delay - DEFAULT_TIMEOUT_OFFSET}).text();
             const dom = new DOMParser().parseFromString(response, "text/html");
 
             eventBus.emit("refresherGetPost", dom);
@@ -284,42 +264,21 @@ export default {
                     });
                 }
             }
-            
+
             $oldList.replaceWith($newList);
 
             if (newPostList.length) eventBus.emit("newPostList", newPostList);
             eventBus.emit("refresh");
 
-            if (this.status.autoRate) {
-                const averageCounts = this.memory.average_counts;
-                averageCounts.push(this.memory.new_counts);
-
-                if (averageCounts.length > AVERAGE_COUNTS_SIZE) {
-                    averageCounts.shift();
-                }
-
-                const average = averageCounts.reduce((sum, count) => sum + count, 0) / averageCounts.length;
-                const calculatedDelay = 8 * Math.pow(2 / 3, 3 * average) * 1000;
-
-                this.memory.delay = Math.max(MINIMUM_AUTO_DELAY, calculatedDelay);
-            }
-
             return true;
         };
 
         const scheduleNextRefresh = (skipLoad = false) => {
-            if (!skipLoad) {
-                this.memory.load?.();
-            }
+            if (!skipLoad) this.memory.load?.();
 
-            if (!this.status.autoRate) {
-                this.memory.delay = Math.max(1000, this.status.refreshRate);
-            }
+            if (this.memory.refresh) window.clearTimeout(this.memory.refresh);
 
-            if (this.memory.refresh) {
-                window.clearTimeout(this.memory.refresh);
-            }
-
+            this.memory.delay = this.status.refreshRate + Math.floor(Math.random() * (1000 - 100) + 100);
             this.memory.refresh = window.setTimeout(scheduleNextRefresh, this.memory.delay);
         };
 
@@ -460,7 +419,6 @@ export default {
         uuid2: string | null;
         cache: object;
         new_counts: number;
-        average_counts: number[];
         delay: number;
         refresh: number;
         calledByPageTurn: boolean;
@@ -474,7 +432,6 @@ export default {
     };
     settings: {
         refreshRate: RefresherRangeSettings;
-        autoRate: RefresherCheckSettings;
         fadeIn: RefresherCheckSettings;
         useBetterBrowse: RefresherCheckSettings;
         noRefreshOnSearch: RefresherCheckSettings;
