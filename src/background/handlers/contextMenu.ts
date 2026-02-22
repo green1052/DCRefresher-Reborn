@@ -30,12 +30,6 @@ const contextMenuItems: browser.Menus.CreateCreatePropertiesType[] = [
         title: "SauceNao 검색",
         contexts: ["image"],
         documentUrlPatterns: ["*://gall.dcinside.com/*"]
-    },
-    {
-        id: "searchIqdb",
-        title: "Iqdb 검색",
-        contexts: ["image"],
-        documentUrlPatterns: ["*://gall.dcinside.com/*"]
     }
 ];
 
