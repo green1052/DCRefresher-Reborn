@@ -388,8 +388,11 @@ tr.gall_writer {
     }
 }
 
-
 .refresher-preview-contents-actual {
+    #zzbang_div:not(:has(#zzbang_img img)) {
+        display: none;
+    }
+
     div:has(> .comment_dccon) {
         display: flex;
     }
