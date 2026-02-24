@@ -40,7 +40,7 @@ export default {
         uuid2: null,
         cache: {},
         new_counts: 0,
-        delay: 1000,
+        delay: 3000,
         refresh: 0,
         calledByPageTurn: false,
         refreshRequest: "",
