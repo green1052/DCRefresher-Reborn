@@ -153,14 +153,14 @@
                 v-else
                 class="refresher-preview-contents"
             >
-                <RefresherLoader v-show="frame.data.load"/>
+                <RefresherLoader
+                    v-show="(frame.data.comments && (!frame.data.comments.comments || frame.data.comments.comments.length === 0)) && frame.data.load"/>
 
                 <transition
                     v-if="!frame.data.comments"
                     name="refresher-opacity"
                 >
                     <div
-                        :key="frame.contents"
                         :class="
                             frame.data.useImageBlock &&
                             frame.data.type === 'icon_txt' &&
