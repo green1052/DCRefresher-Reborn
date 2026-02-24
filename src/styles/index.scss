@@ -353,10 +353,15 @@ tr.gall_writer {
     }
 }
 
-.refresher-preview-comments {
-    .dccon {
-        display: flex;
+.refresher-comment-content {
+    display: flex;
+    flex-wrap: wrap;
 
+    .mention {
+        flex-basis: 100%;
+    }
+
+    .dccon {
         & > img.written_dccon {
             position: relative !important;
         }
@@ -382,6 +387,7 @@ tr.gall_writer {
         }
     }
 }
+
 
 .refresher-preview-contents-actual {
     div:has(> .comment_dccon) {
