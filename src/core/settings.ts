@@ -8,6 +8,8 @@ export type SettingsStore = Record<string, Record<string, RefresherSettings>>;
 const settings_store: SettingsStore = {};
 
 export const set = async (module: string, key: string, value: string | number | boolean): Promise<void> => {
+    if (!settings_store[module]?.[key]) return;
+
     eventBus.emit("refresherUpdateSetting", module, key, value);
 
     settings_store[module][key].value = value;
@@ -17,6 +19,8 @@ export const set = async (module: string, key: string, value: string | number | 
 };
 
 export const setStore = (module: string, key: string, value: string | number | boolean): void => {
+    if (!settings_store[module]?.[key]) return;
+
     eventBus.emit("refresherUpdateSetting", module, key, value);
     settings_store[module][key].value = value;
 };

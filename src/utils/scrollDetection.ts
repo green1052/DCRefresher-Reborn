@@ -1,4 +1,7 @@
-const average = (arr: number[]) => arr.reduce((a, b) => a + b) / arr.length;
+const average = (arr: number[]) => {
+    if (arr.length === 0) return 0;
+    return arr.reduce((a, b) => a + b) / arr.length;
+};
 
 enum ScrollMode {
     NOT_DEFINED,

@@ -65,6 +65,7 @@
                             @enter="onEnter"
                             @before-enter="beforeEnter"
                         >
+                            <!-- v-html: frame.title may contain HTML from page scraping (.html()) -->
                             <div
                                 :key="frame.title"
                                 :data-index="index + 1"
@@ -80,8 +81,7 @@
                         >
                             <span
                                 class="refresher-preview-title-mute"
-                                v-html="frame.subtitle"
-                            />
+                            >{{ frame.subtitle }}</span>
                         </transition>
                     </div>
 
@@ -351,7 +351,9 @@ const clickDccon = (selectedDccon: DcinsideDccon[], selectedBigDccon: boolean) =
 const closeDccon = () => {
     if (!dcconApp.value) return;
 
+    const container = dcconRender.value?.$el?.parentElement;
     dcconApp.value.unmount();
+    if (container) container.remove();
     dcconApp.value = null;
     dcconRender.value = null;
 };
@@ -378,7 +380,7 @@ const original = () => {
 };
 
 onMounted(() => {
-    props.frame.app.$on("close", () => {
+    (props.frame as any).$on("close", () => {
         props.frame.title = "";
         props.frame.subtitle = "";
         props.frame.contents = undefined;

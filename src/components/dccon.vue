@@ -74,6 +74,7 @@
                 >
                     <li
                         v-for="dccon in currentDccon"
+                        :key="dccon.detail_idx"
                         @click="dcconClick(dccon)"
                     >
                         <img

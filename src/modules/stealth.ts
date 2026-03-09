@@ -12,7 +12,7 @@ const tempButtonCreate = (element: HTMLElement): void => {
     const buttonNum = $(CONTROL_BUTTON).length;
     const contentNum = $(".write_div img, .write_div video").length;
 
-    if (buttonNum !== 0 && contentNum === 0) return;
+    if (buttonNum !== 0) return;
 
     const buttonFrame = document.createElement("div");
     buttonFrame.classList.add(CONTROL_BUTTON.replace(".", ""));
@@ -67,9 +67,13 @@ export default {
         $(document.documentElement).addClass("refresherStealth");
 
         if (!$(CONTROL_BUTTON).length) {
-            window.addEventListener("load", () => {
+            if (document.readyState === "complete") {
                 tempButtonCreate(document.documentElement);
-            });
+            } else {
+                window.addEventListener("load", () => {
+                    tempButtonCreate(document.documentElement);
+                });
+            }
         }
 
         this.memory.contentViewUUID = eventBus.on("contentPreview", (elem: HTMLElement) => {

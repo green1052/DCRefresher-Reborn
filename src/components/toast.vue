@@ -47,6 +47,8 @@ const show = (
     newAutoClose: number,
     clickHandler?: () => void
 ) => {
+    if (autoClose.value) clearTimeout(autoClose.value);
+
     content.value = newContent;
     type.value = newType;
 
@@ -226,7 +228,7 @@ html:has(#css-darkmode) {
 
 @keyframes shake {
     0% {
-        transform: translateX(-2px, 0, 0);
+        transform: translate3d(-2px, 0, 0);
     }
 
     25% {
