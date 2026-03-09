@@ -443,7 +443,6 @@ const request = {
         params.set("cmt_nos[]", commentId);
 
         return client(url, {body: params, signal})
-            .then((v) => v)
             .catch(() => false);
     },
 
@@ -473,7 +472,6 @@ const request = {
         }
 
         return client(http.urls.comment_remove, {body: params, signal})
-            .then((v) => v)
             .catch(() => false);
     }
 };
@@ -588,11 +586,11 @@ const panel = {
     ) => {
         const preFoundBlockElement = document.querySelector(".refresher-block-popup");
 
-        preFoundBlockElement?.parentElement?.removeChild(preFoundBlockElement);
+        preFoundBlockElement?.remove();
 
         const preFoundElement = document.querySelector(".refresher-management-panel");
 
-        preFoundElement?.parentElement?.removeChild(preFoundElement);
+        preFoundElement?.remove();
 
         let setAsNotice = !preData.notice;
         let setAsRecommend = !preData.recommend;
@@ -846,7 +844,7 @@ const panel = {
             if (!input) return;
 
             callback(input);
-            element.parentElement!.removeChild(element);
+            element.remove();
         };
 
         element.querySelector("input")!.addEventListener("keydown", (e) => {
@@ -855,7 +853,7 @@ const panel = {
 
         element.querySelector(".close")!.addEventListener("click", () => {
             URL.revokeObjectURL(url);
-            element.parentElement!.removeChild(element);
+            element.remove();
         });
 
         element.querySelector("button")!.addEventListener("click", inputEvent);
@@ -964,7 +962,7 @@ class PostCache {
         }
 
         this.caches[id] = {
-            ...(this.get(id) ?? {}),
+            ...(this.caches[id] ?? {}),
             ...data
         };
     }
@@ -1219,7 +1217,7 @@ export default {
             desc: "위의 옵션이 켜져있을 시 댓글을 새로고침할 주기를 설정합니다.",
             type: "range",
             default: 10000,
-            min: 1000,
+            min: 3000,
             max: 20000,
             step: 100,
             unit: "ms"
@@ -1362,7 +1360,9 @@ export default {
                     ul.addEventListener("click", (e) => {
                         const target = e.target as HTMLElement;
                         const li = target.closest("li");
-                        const key = li.dataset.cacheKey;
+                        if (!li) return;
+                        const key = (li as HTMLElement).dataset.cacheKey;
+                        if (!key) return;
 
                         const value = postCaches.caches[key];
 
@@ -1394,13 +1394,14 @@ export default {
 
         if (!this.status.disableCache && this.status.newArticleArchive)
             this.memory.newPostListEvent = eventBus.on("newPostList", async (articles: Cash[]) => {
-                articles.slice(0, 5);
+                const limited = articles.slice(0, 5);
 
-                for (const article of articles) {
+                for (const article of limited) {
                     const url = new URL(article.find(".gall_tit > a").attr("href"), "https://gall.dcinside.com");
                     const gallery = url.searchParams.get("id");
                     const no = url.searchParams.get("no");
-                    const post = await request.post(url.href, gallery, no, null);
+                    const controller = new AbortController();
+                    const post = await request.post(url.href, gallery, no, controller.signal);
 
                     postCaches.set(`${gallery}${no}`, {
                         date: Date.now(),
@@ -1676,10 +1677,12 @@ export default {
                                 "*"
                             );
 
-                            window.addEventListener("message", (ev) => {
+                            const grecaptchaHandler = (ev: MessageEvent) => {
                                 if (ev.data.type !== "refresherGrecaptchaToken") return;
+                                window.removeEventListener("message", grecaptchaHandler);
                                 resolve(ev.data.token);
-                            });
+                            };
+                            window.addEventListener("message", grecaptchaHandler);
                         });
 
                     const grecaptcha = await getGreCaptchaToken();
@@ -1884,7 +1887,7 @@ export default {
                             comment: comments
                         });
 
-                        comments.comments.map((v: DcinsideCommentObject) => {
+                        comments.comments.forEach((v: DcinsideCommentObject) => {
                             v.user = new User(
                                 v.name,
                                 v.user_id || null,
@@ -1923,9 +1926,11 @@ export default {
                             }
 
                             if (/<(img|video) class=/.test(comment.memo)) {
-                                check.DCCON = /https:\/\/dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g.exec(
+                                const match = /https:\/\/dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g.exec(
                                     comment.memo
-                                )![1];
+                                );
+                                if (!match) return true;
+                                check.DCCON = match[1];
                             } else {
                                 check.COMMENT = comment.memo;
                             }
@@ -1952,7 +1957,7 @@ export default {
                             comments.comments.length === 0
                                 ? 0
                                 : comments.comments
-                                    .map((v: DcinsideCommentObject) => Number(v.depth == 0))
+                                    .map((v: DcinsideCommentObject) => Number(v.depth === 0))
                                     .reduce((a: number, b: number) => a + b);
                         commentCounts = comments.comments.length;
                     } else if (this.status.archiveArticle) {
@@ -2113,7 +2118,7 @@ export default {
 
                         const nextPost = direction === "next" ? post.prev() : post.next();
 
-                        if (!nextPost || nextPost.data("data-type") === "icon_notice") return;
+                        if (!nextPost || nextPost.attr("data-type") === "icon_notice") return;
 
                         const nextPostNo = nextPost.attr("data-no");
 
@@ -2190,9 +2195,9 @@ export default {
 
                     if (!this.memory.historyClose && this.memory.titleStore) {
                         history.pushState(null, this.memory.titleStore, this.memory.urlStore);
-
-                        this.memory.historyClose = false;
                     }
+
+                    this.memory.historyClose = false;
 
                     if (this.memory.titleStore) {
                         document.title = this.memory.titleStore;
