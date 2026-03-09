@@ -3,7 +3,7 @@ import {Cash} from "cash-dom/dist/cash";
 import ky from "ky";
 
 import {queryString} from "../utils/http";
-import storage from "../utils/storage";
+import storage from "../utils/webStorage";
 import toast from "../utils/toast";
 
 const MINIMUM_REFRESH_INTERVAL = 500;

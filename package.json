@@ -7,21 +7,22 @@
     "license": "GPL-3.0-only",
     "author": "green1052",
     "scripts": {
-        "dev": "plasmo dev",
-        "build": "plasmo build --hoist --zip && plasmo build --hoist --zip --target=firefox-mv2"
+        "dev": "wxt",
+        "dev:firefox": "wxt -b firefox",
+        "build": "wxt build && wxt build -b firefox",
+        "zip": "wxt zip && wxt zip -b firefox",
+        "postinstall": "wxt prepare"
     },
     "dependencies": {
-        "@plasmohq/messaging": "^0.7.2",
-        "@plasmohq/storage": "^1.15.0",
-        "plasmo": "^0.90.5",
         "vue": "^3.5.29"
     },
     "devDependencies": {
         "@parcel/resolver-glob": "2.9.3",
-        "@plasmohq/parcel-config": "^0.42.0",
         "@types/js-cookie": "^3.0.6",
         "@types/node": "^24.12.0",
         "@types/webextension-polyfill": "^0.12.5",
+        "@webext-core/messaging": "^2.3.0",
+        "@wxt-dev/module-vue": "^1.0.3",
         "cash-dom": "^8.1.5",
         "js-cookie": "^3.0.5",
         "ky": "^1.14.3",
@@ -29,51 +30,9 @@
         "sass": "^1.97.3",
         "tesseract.js": "^7.0.0",
         "typescript": "^5.9.3",
-        "webextension-polyfill": "^0.12.0"
+        "webextension-polyfill": "^0.12.0",
+        "wxt": "^0.20.18"
     },
     "packageManager": "pnpm@10.31.0",
-    "private": true,
-    "manifest": {
-        "host_permissions": [
-            "https://*.dcinside.com/*"
-        ],
-        "permissions": [
-            "activeTab",
-            "contextMenus",
-            "storage",
-            "scripting",
-            "unlimitedStorage",
-            "clipboardWrite"
-        ],
-        "web_accessible_resources": [
-            {
-                "resources": [
-                    "assets/*.webp"
-                ],
-                "matches": [
-                    "<all_urls>"
-                ]
-            }
-        ],
-        "commands": {
-            "refreshLists": {
-                "suggested_key": {
-                    "default": "Alt+R"
-                },
-                "description": "글 목록 새로고침: 새로고침"
-            },
-            "refreshPause": {
-                "suggested_key": {
-                    "default": "Alt+S"
-                },
-                "description": "글 목록 새로고침: 일시 비활성화"
-            },
-            "stealthPause": {
-                "suggested_key": {
-                    "default": "Alt+P"
-                },
-                "description": "스텔스 모드: 일시 비활성화"
-            }
-        }
-    }
+    "private": true
 }

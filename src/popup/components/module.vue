@@ -21,7 +21,7 @@
 <script lang="ts" setup>
 import {computed} from "vue";
 import browser from "webextension-polyfill";
-import storage from "../../utils/storage";
+import storage from "../../utils/webStorage";
 import RefresherCheckbox from "./checkbox.vue";
 
 interface Props {

@@ -1,6 +1,6 @@
-import {sendToBackground} from "@plasmohq/messaging";
+import {sendMessage} from "../utils/messaging";
 
-import storage from "../utils/storage";
+import storage from "../utils/webStorage";
 import eventBus from "./eventbus";
 
 export type SettingsStore = Record<string, Record<string, RefresherSettings>>;
@@ -35,14 +35,11 @@ export const load = async (module: string, key: string, settings: RefresherSetti
 };
 
 eventBus.on("refresherSettingsSync", (store) => {
-    sendToBackground({
-        name: "store",
-        body: {
-            action: "update",
-            type: "settings",
-            data: {
-                store
-            }
+    sendMessage("store", {
+        action: "update",
+        type: "settings",
+        data: {
+            store
         }
     });
 });

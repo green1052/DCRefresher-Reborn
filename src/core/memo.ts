@@ -1,6 +1,6 @@
-import {sendToBackground} from "@plasmohq/messaging";
+import {sendMessage} from "../utils/messaging";
 
-import storage from "../utils/storage";
+import storage from "../utils/webStorage";
 import communicate from "./communicate";
 import eventBus from "./eventbus";
 
@@ -20,15 +20,12 @@ const MEMO_TYPES_KEYS: RefresherMemoType[] = ["UID", "NICK", "IP"];
 export type MemoCache = Record<RefresherMemoType, Record<string, RefresherMemoValue>>;
 
 function SendToBackground() {
-    sendToBackground({
-        name: "store",
-        body: {
-            action: "update",
-            type: "memos",
-            data: {
-                updateMemos: true,
-                memos_store: MEMO_CACHE
-            }
+    sendMessage("store", {
+        action: "update",
+        type: "memos",
+        data: {
+            updateMemos: true,
+            memos_store: MEMO_CACHE
         }
     });
 }

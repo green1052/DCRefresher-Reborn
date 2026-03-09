@@ -92,7 +92,7 @@
 import Cookies from "js-cookie";
 import ky from "ky";
 import {onMounted, ref} from "vue";
-import getURL from "~utils/getURL";
+import getURL from "../utils/getURL";
 
 import RefresherLoader from "./loader.vue";
 

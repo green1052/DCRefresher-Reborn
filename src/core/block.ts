@@ -1,6 +1,6 @@
-import {sendToBackground} from "@plasmohq/messaging";
+import {sendMessage} from "../utils/messaging";
 
-import storage from "../utils/storage";
+import storage from "../utils/webStorage";
 import type {ObjectEnum} from "../utils/types";
 import communicate from "./communicate";
 import eventBus from "./eventbus";
@@ -52,16 +52,13 @@ export type BlockCache = Record<RefresherBlockType, RefresherBlockValue[]>;
 export type BlockModeCache = Record<RefresherBlockType, RefresherBlockDetectMode>;
 
 function SendToBackground() {
-    sendToBackground({
-        name: "store",
-        body: {
-            action: "update",
-            type: "blocks",
-            data: {
-                updateBlocks: true,
-                blocks_store: BLOCK_CACHE,
-                blockModes_store: BLOCK_MODE_CACHE
-            }
+    sendMessage("store", {
+        action: "update",
+        type: "blocks",
+        data: {
+            updateBlocks: true,
+            blocks_store: BLOCK_CACHE,
+            blockModes_store: BLOCK_MODE_CACHE
         }
     });
 }

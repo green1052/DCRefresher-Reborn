@@ -1,6 +1,6 @@
-import type {Nullable} from "~utils/types";
+import type {Nullable} from "./types";
 
-import storage from "./storage";
+import storage from "./webStorage";
 
 let ipData: Record<string, string> = {};
 

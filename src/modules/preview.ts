@@ -2,7 +2,7 @@ import $, {Cash} from "cash-dom";
 import Cookies from "js-cookie";
 import ky, {Input, Options} from "ky";
 import {createWorker} from "tesseract.js";
-import grecaptcha from "url:../temp/grecaptcha";
+import grecaptchaUrl from "../temp/grecaptcha.ts?url";
 
 import {GalleryPreData} from "../@types/post";
 import * as block from "../core/block";
@@ -12,7 +12,7 @@ import getURL from "../utils/getURL";
 import * as http from "../utils/http";
 import {queryString} from "../utils/http";
 import {ScrollDetection} from "../utils/scrollDetection";
-import * as storage from "../utils/storage";
+import * as storage from "../utils/webStorage";
 import toast from "../utils/toast";
 import {User} from "../utils/user";
 import {writeClipboard} from "../utils/writeClipboard";
@@ -170,22 +170,9 @@ const kyClient = ky.create({
     }
 });
 
-const client =
-    process.env.PLASMO_MANIFEST_VERSION === "mv2"
-        ? (url: URL | RequestInfo, init?: RequestInit | undefined): Promise<string> => {
-            return content
-                .fetch(url, {
-                    ...init,
-                    method: "POST",
-                    headers: {
-                        "X-Requested-With": "XMLHttpRequest"
-                    }
-                })
-                .then((response) => response.text());
-        }
-        : (url: Input, options?: Options): Promise<string> => {
-            return kyClient(url, options).text();
-        };
+const client = (url: Input, options?: Options): Promise<string> => {
+    return kyClient(url, options).text();
+};
 
 const request = {
     async bump(args: GalleryHTTPRequestArguments) {
@@ -1435,7 +1422,7 @@ export default {
                 .show();
         });
 
-        $(document).on("DOMContentLoaded", () => $(document.body).append(`<script src="${grecaptcha}">`));
+        $(document).on("DOMContentLoaded", () => $(document.body).append(`<script src="${grecaptchaUrl}">`));
 
         blockPreset.day = this.status.blockPresetDay;
         blockPreset.reason = this.status.blockPresetReason;
