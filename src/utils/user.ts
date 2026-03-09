@@ -2,7 +2,7 @@ import $ from "cash-dom";
 
 import memo from "../core/memo";
 import ip from "./ip";
-import storage from "./storage";
+import storage from "./webStorage";
 import type {Nullable, ObjectEnum} from "./types";
 
 export type UserType =

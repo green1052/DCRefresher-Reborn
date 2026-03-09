@@ -1,6 +1,6 @@
 import browser from "webextension-polyfill";
 
-import storage from "../utils/storage";
+import storage from "../utils/webStorage";
 import toast from "../utils/toast";
 
 (async () => {

@@ -5,7 +5,7 @@ import ky from "ky";
 
 import eventBus from "../core/eventbus";
 import http from "../utils/http";
-import storage from "../utils/storage";
+import storage from "../utils/webStorage";
 
 let permBanList = {};
 

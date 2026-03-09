@@ -153,10 +153,7 @@ export async function submitComment(
         body: params
     };
 
-    const response =
-        process.env.PLASMO_MANIFEST_VERSION === "mv2"
-            ? await content.fetch(url, options).then((response) => response.text())
-            : await ky(url, options).text();
+    const response = await ky(url, options).text();
 
     const [result, message] = response.split("||");
 

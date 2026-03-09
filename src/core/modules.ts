@@ -1,8 +1,8 @@
-import {sendToBackground} from "@plasmohq/messaging";
+import {sendMessage} from "../utils/messaging";
 
 import http from "../utils/http";
 import ip from "../utils/ip";
-import storage from "../utils/storage";
+import storage from "../utils/webStorage";
 import block from "./block";
 import communicate from "./communicate";
 import eventBus from "./eventbus";
@@ -109,15 +109,12 @@ export const modules = {
 
         await Promise.all(promises);
 
-        sendToBackground({
-            name: "store",
-            body: {
-                action: "update",
-                type: "modules",
-                data: {
-                    module_store: JSON.parse(JSON.stringify(module_store)),
-                    settings_store: JSON.parse(JSON.stringify(settings.dump()))
-                }
+        sendMessage("store", {
+            action: "update",
+            type: "modules",
+            data: {
+                module_store: JSON.parse(JSON.stringify(module_store)),
+                settings_store: JSON.parse(JSON.stringify(settings.dump()))
             }
         });
 
@@ -133,14 +130,11 @@ communicate.addHook("updateModuleStatus", (data) => {
     module_store[data.name].enable = data.value as boolean;
     storage.set(`${data.name}.enable`, data.value);
 
-    sendToBackground({
-        name: "store",
-        body: {
-            action: "update",
-            type: "modules",
-            data: {
-                module_store: JSON.parse(JSON.stringify(module_store))
-            }
+    sendMessage("store", {
+        action: "update",
+        type: "modules",
+        data: {
+            module_store: JSON.parse(JSON.stringify(module_store))
         }
     });
 

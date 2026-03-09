@@ -427,7 +427,7 @@
 </template>
 
 <script lang="ts" setup>
-import {sendToBackground} from "@plasmohq/messaging";
+import {sendMessage} from "../utils/messaging";
 import $ from "cash-dom";
 import ky from "ky";
 import {computed, nextTick, onMounted, reactive, ref} from "vue";
@@ -435,7 +435,7 @@ import browser from "webextension-polyfill";
 
 import {BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES} from "../core/block";
 import {TYPE_NAMES as MEMO_TYPE_NAMES} from "../core/memo";
-import storage from "../utils/storage";
+import storage from "../utils/webStorage";
 import {writeClipboard} from "../utils/writeClipboard";
 import RefresherBubble from "./components/bubble.vue";
 import RefresherCheckbox from "./components/checkbox.vue";
@@ -443,7 +443,7 @@ import RefresherModule from "./components/module.vue";
 import RefresherOptions from "./components/options.vue";
 import RefresherInput from "./components/refresherInput.vue";
 import SettingsModule from "./components/settingsModule.vue";
-import getURL from "~utils/getURL";
+import getURL from "../utils/getURL";
 
 const tab = ref(0);
 const modules = ref<{ [key: string]: RefresherModule }>({});
@@ -506,18 +506,9 @@ const blockFormData = reactive({
 onMounted(async () => {
     try {
         const [modulesResponse, blocksResponse, memosResponse] = await Promise.all([
-            sendToBackground({
-                name: "store",
-                body: {action: "get", type: "modules"}
-            }),
-            sendToBackground({
-                name: "store",
-                body: {action: "get", type: "blocks"}
-            }),
-            sendToBackground({
-                name: "store",
-                body: {action: "get", type: "memos"}
-            })
+            sendMessage("store", {action: "get", type: "modules"}),
+            sendMessage("store", {action: "get", type: "blocks"}),
+            sendMessage("store", {action: "get", type: "memos"})
         ]);
 
         if (modulesResponse.modules) {
@@ -623,7 +614,7 @@ const importBlock = () => {
 };
 
 const version = ref(
-    process.env.NODE_ENV === "development"
+    import.meta.env.DEV
         ? `${browser.runtime.getManifest().version}-dev`
         : browser.runtime.getManifest().version
 );
@@ -634,7 +625,7 @@ const open = (url: string) => {
 
 const openShortcutSettings = () => {
     browser.tabs.create({
-        url: process.env.PLASMO_BROWSER === "firefox" ? "about:addons" : "chrome://extensions/shortcuts"
+        url: (import.meta.env.FIREFOX as boolean) ? "about:addons" : "chrome://extensions/shortcuts"
     });
 };
 
@@ -707,28 +698,22 @@ const updateUserSetting = async (module: string, key: string, value: unknown) =>
     settings.value[module][key].value = value;
 
     try {
-        await sendToBackground({
-            name: "store",
-            body: {
-                action: "update",
-                type: "userSetting",
-                data: {
-                    name: module,
-                    key,
-                    value
-                }
+        await sendMessage("store", {
+            action: "update",
+            type: "userSetting",
+            data: {
+                name: module,
+                key,
+                value
             }
         });
 
-        await sendToBackground({
-            name: "broadcast",
-            body: {
-                type: "updateSettingValue",
-                data: {
-                    name: module,
-                    key,
-                    value
-                }
+        await sendMessage("broadcast", {
+            type: "updateSettingValue",
+            data: {
+                name: module,
+                key,
+                value
             }
         });
     } catch (e) {
@@ -738,27 +723,21 @@ const updateUserSetting = async (module: string, key: string, value: unknown) =>
 
 const syncBlock = async () => {
     try {
-        await sendToBackground({
-            name: "store",
-            body: {
-                action: "update",
-                type: "blocks",
-                data: {
-                    updateBlocks: true,
-                    blocks_store: JSON.parse(JSON.stringify(blocks)),
-                    blockModes_store: JSON.parse(JSON.stringify(blockModes.value))
-                }
+        await sendMessage("store", {
+            action: "update",
+            type: "blocks",
+            data: {
+                updateBlocks: true,
+                blocks_store: JSON.parse(JSON.stringify(blocks)),
+                blockModes_store: JSON.parse(JSON.stringify(blockModes.value))
             }
         });
 
-        await sendToBackground({
-            name: "broadcast",
-            body: {
-                type: "updateBlocks",
-                data: {
-                    blocks: JSON.parse(JSON.stringify(blocks)),
-                    modes: JSON.parse(JSON.stringify(blockModes.value))
-                }
+        await sendMessage("broadcast", {
+            type: "updateBlocks",
+            data: {
+                blocks: JSON.parse(JSON.stringify(blocks)),
+                modes: JSON.parse(JSON.stringify(blockModes.value))
             }
         });
     } catch (error) {
@@ -851,25 +830,19 @@ const editBlockMode = () => {
 };
 const syncMemos = async () => {
     try {
-        await sendToBackground({
-            name: "store",
-            body: {
-                action: "update",
-                type: "memos",
-                data: {
-                    updateMemos: true,
-                    memos_store: JSON.parse(JSON.stringify(memos))
-                }
+        await sendMessage("store", {
+            action: "update",
+            type: "memos",
+            data: {
+                updateMemos: true,
+                memos_store: JSON.parse(JSON.stringify(memos))
             }
         });
 
-        await sendToBackground({
-            name: "broadcast",
-            body: {
-                type: "updateMemos",
-                data: {
-                    memos: JSON.parse(JSON.stringify(memos))
-                }
+        await sendMessage("broadcast", {
+            type: "updateMemos",
+            data: {
+                memos: JSON.parse(JSON.stringify(memos))
             }
         });
     } catch {
@@ -890,14 +863,11 @@ const addMemoUser = async (type: RefresherMemoType) => {
     if (!user) return;
 
     try {
-        await sendToBackground({
-            name: "broadcast",
-            body: {
-                type: "refresherRequestMemoAsk",
-                data: {
-                    type,
-                    user
-                }
+        await sendMessage("broadcast", {
+            type: "refresherRequestMemoAsk",
+            data: {
+                type,
+                user
             }
         });
     } catch {
@@ -905,14 +875,11 @@ const addMemoUser = async (type: RefresherMemoType) => {
 };
 const editMemoUser = async (type: RefresherMemoType, user: string) => {
     try {
-        await sendToBackground({
-            name: "broadcast",
-            body: {
-                type: "refresherRequestMemoAsk",
-                data: {
-                    type,
-                    user
-                }
+        await sendMessage("broadcast", {
+            type: "refresherRequestMemoAsk",
+            data: {
+                type,
+                user
             }
         });
     } catch {
