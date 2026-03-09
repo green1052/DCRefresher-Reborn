@@ -6,7 +6,8 @@ export default {
     url: /\/board\/(write|modify)/,
     status: {},
     memory: {
-        submitButton: ""
+        submitButton: "",
+        beforeUnloadHandler: null as ((ev: BeforeUnloadEvent) => void) | null
     },
     enable: false,
     default_enable: false,
@@ -38,11 +39,12 @@ export default {
     },
     require: ["filter"],
     func(filter) {
-        window.addEventListener("beforeunload", (ev) => {
+        this.memory.beforeUnloadHandler = (ev: BeforeUnloadEvent) => {
             if (this.status.preventExit && !$("button:hover").eq(-1).hasClass("write")) {
                 ev.preventDefault();
             }
-        });
+        };
+        window.addEventListener("beforeunload", this.memory.beforeUnloadHandler);
 
         this.memory.submitButton = filter.add<HTMLButtonElement>("button.write", (element) => {
             $(element).on("click", () => {
@@ -69,10 +71,15 @@ export default {
     },
     revoke(filter) {
         filter.remove(this.memory.submitButton);
+        if (this.memory.beforeUnloadHandler) {
+            window.removeEventListener("beforeunload", this.memory.beforeUnloadHandler);
+            this.memory.beforeUnloadHandler = null;
+        }
     }
 } as RefresherModule<{
     memory: {
         submitButton: string;
+        beforeUnloadHandler: ((ev: BeforeUnloadEvent) => void) | null;
     };
     settings: {
         bypassTitleLimit: RefresherCheckSettings;

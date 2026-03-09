@@ -111,7 +111,7 @@
                 <div class="info">
                     <div class="icon-wrap">
                         <img
-                            :src="getURL(browser.runtime.getManifest().icons[128])"
+                            :src="getURL(browser.runtime.getManifest().icons?.[128] ?? 'icon-128.png')"
                             class="icon"
                         />
                     </div>
@@ -291,7 +291,7 @@
                             :key="`block:${i}`"
                             :extra="blocked.extra"
                             :gallery="blocked.gallery"
-                            :image="`https://image.dcinside.com/dccon.php?no=${blocked.isRegex ? blocked.content.match(/^\^\((\w*)\|/)[1] : blocked.content}`"
+                            :image="`https://image.dcinside.com/dccon.php?no=${blocked.isRegex ? (blocked.content.match(/^\^\((\w*)\|/)?.at(1) ?? blocked.content) : blocked.content}`"
                             :regex="blocked.isRegex"
                             :remove="() => removeBlockedUser(key, i)"
                             :textclick="() => editBlockedUser(key, i)"
@@ -448,7 +448,7 @@ import getURL from "../utils/getURL";
 const tab = ref(0);
 const modules = ref<{ [key: string]: RefresherModule }>({});
 const settings = ref<{ [key: string]: { [key: string]: RefresherSettings } }>({});
-const shortcuts = ref<{} | browser.Commands.Command[]>({});
+const shortcuts = ref<browser.Commands.Command[]>([]);
 const blocks = reactive<{ [key in RefresherBlockType]: RefresherBlockValue[] }>({
     NICK: [],
     ID: [],

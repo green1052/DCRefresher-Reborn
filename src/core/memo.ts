@@ -68,7 +68,7 @@ const checkValidType = (type: string) => MEMO_TYPES_KEYS.some((key) => key === t
  */
 export const add = (type: RefresherMemoType, user: string, text: string, color: string, gallery?: string): void => {
     if (!checkValidType(type)) {
-        throw `${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`;
+        throw new Error(`${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`);
     }
 
     InternalAddToList(type, user, text, color, gallery);
@@ -83,7 +83,7 @@ export const add = (type: RefresherMemoType, user: string, text: string, color: 
  */
 export const get = (type: RefresherMemoType, user: string): RefresherMemoValue => {
     if (!checkValidType(type)) {
-        throw `${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`;
+        throw new Error(`${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`);
     }
 
     return MEMO_CACHE[type][user];
@@ -97,7 +97,7 @@ export const get = (type: RefresherMemoType, user: string): RefresherMemoValue =
  */
 export const remove = (type: RefresherMemoType, user: string): void => {
     if (!checkValidType(type)) {
-        throw `${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`;
+        throw new Error(`${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`);
     }
 
     delete MEMO_CACHE[type][user];

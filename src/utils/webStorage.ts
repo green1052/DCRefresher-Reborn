@@ -31,7 +31,10 @@ export const moduleStorage = {
     async get<T>(module: string, key?: string): Promise<T> {
         const storageKey = key ? `refresher.module:${module}-${key}` : `refresher.module:${module}`;
         const value = await get<T>(storageKey);
-        return typeof value === "string" && value.startsWith("{") ? JSON.parse(value) : value;
+        if (typeof value === "string") {
+            try { return JSON.parse(value); } catch { return value; }
+        }
+        return value;
     },
     set(module: string, key: string, value: unknown): void {
         set(`refresher.module:${module}-${key}`, value);

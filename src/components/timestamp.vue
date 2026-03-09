@@ -68,7 +68,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-    if (updates.value) {
+    if (updates.value !== null) {
         clearInterval(updates.value);
     }
 });

@@ -49,26 +49,26 @@ export const commentGallTypes: Record<string, string> = {
     person: "PR"
 };
 
-export const viewRegex = /\/board\/view\//g;
-export const mgall = /dcinside\.com\/mgallery/g;
+export const viewRegex = /\/board\/view\//;
+export const mgall = /dcinside\.com\/mgallery/;
 
 /**
  * 마이너 갤러리인지를 확인하여 boolean을 반환합니다.
  * @param url 확인할 URL
  */
-export const checkMinor = (url?: string): boolean => /\.com\/mgallery/g.test(url || location.href);
+export const checkMinor = (url?: string): boolean => /\.com\/mgallery/.test(url || location.href);
 
 /**
  * 미니 갤러리인지를 확인하여 boolean을 반환합니다.
  * @param url 확인할 URL
  */
-export const checkMini = (url?: string): boolean => /\.com\/mini/g.test(url || location.href);
+export const checkMini = (url?: string): boolean => /\.com\/mini/.test(url || location.href);
 
 /**
  * 인물 갤러리인지를 확인하여 boolean을 반환합니다.
  * @param url 확인할 URL
  */
-export const checkPerson = (url?: string): boolean => /\.com\/person/g.test(url || location.href);
+export const checkPerson = (url?: string): boolean => /\.com\/person/.test(url || location.href);
 
 /**
  * URL에서 갤러리 종류를 확인하여 반환합니다.

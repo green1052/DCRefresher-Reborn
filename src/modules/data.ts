@@ -79,11 +79,13 @@ export default {
 
             browser.storage.sync.get().then(async (data) => {
                 try {
-                    // await storage.clear();
-                    // await storage.setObject(data);
+                    const preserved = await browser.storage.local.get([
+                        "refresher.database.ip",
+                        "refresher.database.ban"
+                    ]);
 
                     await browser.storage.local.clear();
-                    await browser.storage.local.set(data);
+                    await browser.storage.local.set({...data, ...preserved});
 
                     toast.show("데이터를 복원했습니다.");
                 } catch {
@@ -130,18 +132,19 @@ export default {
                 .catch(() => toast.show("데이터를 초기화하는데 실패했습니다.", "error"));
         }
     },
-    func() {
+    async func() {
         if (!this.status.autoBackup) return;
 
-        if (this.data.lastUpdate === -1) {
-            this.update.backupCloud();
-            this.data.lastUpdate = Date.now();
-            return;
-        }
+        const stored = await browser.storage.local.get("refresher.database.lastUpdate");
+        const lastUpdate = stored["refresher.database.lastUpdate"] ?? -1;
 
-        if (Date.now() - this.data.lastUpdate > 24 * 60 * 60 * 1000) {
+        if (lastUpdate === -1 || Date.now() - lastUpdate > 24 * 60 * 60 * 1000) {
             this.update.backupCloud();
-            this.data.lastUpdate = Date.now();
+            const now = Date.now();
+            this.data.lastUpdate = now;
+            await browser.storage.local.set({"refresher.database.lastUpdate": now});
+        } else {
+            this.data.lastUpdate = lastUpdate;
         }
     }
 } as RefresherModule<{

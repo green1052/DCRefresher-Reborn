@@ -119,7 +119,7 @@ const fixedUser = ref(false);
 const hoverUserInfo = ref(false);
 const user = ref<Nullable<User>>(null);
 const unsignedUserID = ref(localStorage.nonmember_nick || "ㅇㅇ");
-const unsignedUserPW = ref(localStorage.nonmember_pw || Math.random().toString(36).substring(5));
+const unsignedUserPW = ref(localStorage.nonmember_pw || Math.random().toString(36).substring(2, 10));
 
 const instance = getCurrentInstance();
 
@@ -204,35 +204,36 @@ const write = async (): Promise<boolean> => {
     const dccons = props.getDccon ? props.getDccon() : [];
     const bigDccon = props.getBigDccon ? props.getBigDccon() : false;
 
-    const result = await props.func(
-        !dccons.length ? "text" : "dccon",
-        dccons.length ? dccons : text.value,
-        props.reply ? props.reply.commentNo : null,
-        props.reply ? props.reply.replyNo : null,
-        fixedUser.value && user.value
-            ? {name: user.value.nick}
-            : {
-                name: unsignedUserID.value,
-                pw: unsignedUserPW.value
-            },
-        bigDccon
-    );
+    try {
+        const result = await props.func(
+            !dccons.length ? "text" : "dccon",
+            dccons.length ? dccons : text.value,
+            props.reply ? props.reply.commentNo : null,
+            props.reply ? props.reply.replyNo : null,
+            fixedUser.value && user.value
+                ? {name: user.value.nick}
+                : {
+                    name: unsignedUserID.value,
+                    pw: unsignedUserPW.value
+                },
+            bigDccon
+        );
 
-    if (!result) {
+        if (!result) {
+            return false;
+        }
+
+        text.value = "";
+        $("#comment_main").val("");
+
+        emit("setDccon", []);
+        emit("setBigDccon", false);
+        emit("update:reply", {commentNo: null, replyNo: null});
+
+        return result;
+    } finally {
         disabled.value = false;
-        return false;
     }
-
-    disabled.value = false;
-
-    text.value = "";
-    $("#comment_main").val("");
-
-    emit("setDccon", []);
-    emit("setBigDccon", false);
-    emit("update:reply", {commentNo: null, replyNo: null});
-
-    return result;
 };
 
 const focus = (): void => {

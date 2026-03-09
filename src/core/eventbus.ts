@@ -10,7 +10,7 @@ export const eventBus: RefresherEventBus = {
     emit: (event: string, ...params: any[]) => {
         if (!lists[event]) return;
 
-        for (const callback of lists[event]) {
+        for (const callback of [...lists[event]]) {
             callback.func(...params);
 
             if (callback.once) eventBus.remove(event, callback.uuid);
@@ -53,11 +53,11 @@ export const eventBus: RefresherEventBus = {
     remove: (event: string, uuid: string, skip?: boolean) => {
         if (skip && !lists[event]) return;
 
-        if (!lists[event]) throw "Given Event is not exists in the list.";
+        if (!lists[event]) throw new Error("Given Event is not exists in the list.");
 
-        const index = lists[event].findIndex((callback) => callback.uuid == uuid);
+        const index = lists[event].findIndex((callback) => callback.uuid === uuid);
 
-        if (index == -1) throw "Given UUID is not exists in the list.";
+        if (index === -1) throw new Error("Given UUID is not exists in the list.");
 
         lists[event].splice(index, 1);
     }

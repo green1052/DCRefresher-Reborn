@@ -96,12 +96,16 @@ export default {
             params.set("nos[]", id);
             params.set("_GALLTYPE_", http.galleryTypeName(location.href));
 
-            await ky.post(galleryType === "mini/" ? http.urls.manage.deleteMini : http.urls.manage.delete, {
-                headers: {
-                    "X-Requested-With": "XMLHttpRequest"
-                },
-                body: params
-            });
+            try {
+                await ky.post(galleryType === "mini/" ? http.urls.manage.deleteMini : http.urls.manage.delete, {
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: params
+                });
+            } catch (e) {
+                console.error("deletePost failed:", e);
+            }
         };
 
         this.memory.gallViewContents = filter.add<HTMLVideoElement>(".gallview_contents video", (element) => {
@@ -204,7 +208,7 @@ export default {
                         const text = document.createElement("span");
                         text.style.color = "red";
                         text.className = "ip ratio refresherUserData";
-                        text.innerHTML = `[${permBan}]`;
+                        text.textContent = `[${permBan}]`;
                         text.title = permBan;
 
                         const fl = element.querySelector(".fl");
@@ -230,7 +234,7 @@ export default {
 
                     const text = document.createElement("span");
                     text.className = "ip ratio refresherUserData";
-                    text.innerHTML = `[${ratio.article}/${ratio.comment}]`;
+                    text.textContent = `[${ratio.article}/${ratio.comment}]`;
                     text.title = `${ratio.article}/${ratio.comment}`;
 
                     if (this.status.alarmRatio > 0) {
@@ -285,6 +289,8 @@ export default {
 
             const [article, comment] = response.split(",").map(Number);
 
+            if (isNaN(article) || isNaN(comment)) return;
+
             const result = {article, comment, date: Date.now()};
 
             const deepCopy = {...this.data!.ratio};
@@ -296,9 +302,9 @@ export default {
         };
 
         this.memory.newPostListEvent = eventBus.on("newPostList", async (articles: Cash[]) => {
-            articles.slice(0, 10);
+            const limitedArticles = articles.slice(0, 10);
 
-            for (const $article of articles) {
+            for (const $article of limitedArticles) {
                 const $writer = $article.find(".ub-writer");
                 const uid = $writer.data("uid");
 
@@ -308,15 +314,18 @@ export default {
                     const permBan = getPermBan(uid);
 
                     if (permBan) {
-                        const $permBan = $(
-                            `<span style="color: red" class="ip permBan refresherUserData" title="${permBan}">[${permBan}]</span>`
-                        );
+                        const permBanSpan = document.createElement("span");
+                        permBanSpan.style.color = "red";
+                        permBanSpan.className = "ip permBan refresherUserData";
+                        permBanSpan.title = permBan;
+                        permBanSpan.textContent = `[${permBan}]`;
+                        const $permBan = $(permBanSpan);
 
                         if ($article.data("refresherPermBan") === true) {
                             $article.find(".permBan").replaceWith($permBan);
                         } else {
                             $article.data("refresherPermBan", true);
-                            $writer.add($permBan);
+                            $writer.append($permBan);
                         }
                     }
                 }
@@ -329,9 +338,11 @@ export default {
                     ratio = await getRatio(uid);
                 }
 
-                const $ratio = $(
-                    `<span class="ip ratio refresherUserData" title="${ratio.article}/${ratio.comment}">[${ratio.article}/${ratio.comment}]</span>`
-                );
+                const ratioSpan = document.createElement("span");
+                ratioSpan.className = "ip ratio refresherUserData";
+                ratioSpan.title = `${ratio.article}/${ratio.comment}`;
+                ratioSpan.textContent = `[${ratio.article}/${ratio.comment}]`;
+                const $ratio = $(ratioSpan);
 
                 if (this.status.alarmRatio > 0) {
                     const calculatedRatio = ratio.article + ratio.comment;
@@ -354,6 +365,7 @@ export default {
     revoke(filter) {
         if (this.memory.gallViewContents) filter.remove(this.memory.gallViewContents);
         if (this.memory.checkBox) filter.remove(this.memory.checkBox);
+        if (this.memory.always) filter.remove(this.memory.always);
         if (this.memory.newPostListEvent) eventBus.remove("newPostList", this.memory.newPostListEvent);
         if (this.memory.content) filter.remove(this.memory.content);
     }

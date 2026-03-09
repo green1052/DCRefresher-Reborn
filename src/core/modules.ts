@@ -127,6 +127,7 @@ export const modules = {
 export default modules;
 
 communicate.addHook("updateModuleStatus", (data) => {
+    if (!module_store[data.name]) return;
     module_store[data.name].enable = data.value as boolean;
     storage.set(`${data.name}.enable`, data.value);
 
@@ -168,6 +169,8 @@ eventBus.on("refresherUpdateSetting", (mod: string, key: string, value: unknown)
     if (module !== undefined) {
         module.status ??= {};
         module.status[key] = value;
+    } else {
+        return;
     }
 
     if (!module.enable || !module.update || typeof module.update[key] !== "function") return;

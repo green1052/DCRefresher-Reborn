@@ -119,7 +119,8 @@ export default defineBackground(() => {
     };
 
     browser.contextMenus.onClicked.addListener((info, tab) => {
-        browser.tabs.sendMessage(tab!.id!, {type: info.menuItemId});
+        if (!tab?.id) return;
+        browser.tabs.sendMessage(tab.id, {type: info.menuItemId});
     });
 
     browser.runtime.onStartup.addListener(createContextMenus);

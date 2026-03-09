@@ -166,10 +166,10 @@ export const add = (
     extra?: string,
     mode?: RefresherBlockDetectMode
 ): void => {
-    if (!checkValidType(type)) throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
+    if (!checkValidType(type)) throw new Error(`${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`);
 
     if (mode && !checkValidMode(mode))
-        throw `${mode} is not a valid mode. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`;
+        throw new Error(`${mode} is not a valid mode. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`);
 
     InternalAddToList(type, content, isRegex, isAdvanced, gallery, extra, mode);
 
@@ -187,10 +187,10 @@ export const add = (
  * @param mode 차단 모드
  */
 export const updateMode = (type: RefresherBlockType, mode: RefresherBlockDetectMode): void => {
-    if (!checkValidType(type)) throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
+    if (!checkValidType(type)) throw new Error(`${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`);
 
     if (!checkValidMode(mode))
-        throw `${type} is not a valid type. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`;
+        throw new Error(`${mode} is not a valid mode. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`);
 
     InternalUpdateMode(type, mode);
 };
@@ -203,7 +203,7 @@ export const updateMode = (type: RefresherBlockType, mode: RefresherBlockDetectM
  * @param gallery 현재 갤러리
  */
 export const check = (type: RefresherBlockType, content: string, gallery?: string): boolean => {
-    if (!checkValidType(type)) throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
+    if (!checkValidType(type)) throw new Error(`${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`);
 
     if (!content || content.length < 1) return false;
 

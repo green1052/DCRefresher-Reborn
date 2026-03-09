@@ -70,14 +70,14 @@
         <p
             v-else
             class="refresher-comment-content"
-            v-html="comment.memo.replaceAll('\n', '<br>')"
+            v-html="escapeHtml(comment.memo).replaceAll('\n', '<br>')"
         />
     </div>
 </template>
 
 <script lang="ts" setup>
 import $ from "cash-dom";
-import {computed, onMounted, ref} from "vue";
+import {computed, onBeforeUnmount, onMounted, ref} from "vue";
 
 import eventBus from "../core/eventbus";
 import TimeStamp from "./timestamp.vue";
@@ -132,12 +132,14 @@ const getVoiceData = computed((): VoiceDataComputed | null => {
     };
 });
 
-const isAdmin = computed((): boolean => {
-    return document.querySelector(".useradmin_btnbox button") !== null;
-});
+const isAdmin = ref(false);
+
+const eventBusUuid = ref<string | null>(null);
 
 // Lifecycle
 onMounted(() => {
+    isAdmin.value = document.querySelector(".useradmin_btnbox button") !== null;
+
     if (!props.comment.user.id) {
         return;
     }
@@ -177,13 +179,22 @@ onMounted(() => {
     }
 
     if (!me.value && !props.postUser) {
-        eventBus.on("RefresherPostDataLoaded", (obj: IPostInfo) => {
+        const handler = (obj: IPostInfo) => {
             me.value = obj.user && obj.user.id === props.comment.user.id;
-        });
+        };
+        eventBusUuid.value = eventBus.on("RefresherPostDataLoaded", handler);
+    }
+});
+
+onBeforeUnmount(() => {
+    if (eventBusUuid.value) {
+        eventBus.remove("RefresherPostDataLoaded", eventBusUuid.value, true);
     }
 });
 
 // Methods
+const escapeHtml = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
 const date = (str: string): string => {
     return str.substring(0, 4).match(/\./)
         ? `${new Date().getFullYear()}-${str.replace(/\./g, "-")}`

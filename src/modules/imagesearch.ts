@@ -6,16 +6,18 @@ export default {
     description: "이미지를 검색합니다.",
     memory: {
         sauceNao: "",
-        currentImage: null
+        currentImage: null,
+        contextMenuHandler: null
     },
     enable: true,
     default_enable: true,
     func() {
-        window.addEventListener("contextmenu", (ev) => {
+        this.memory.contextMenuHandler = (ev: MouseEvent) => {
             const $element = $(ev.target as HTMLElement);
 
             if ($element.is("img")) this.memory.currentImage = $element.attr("src");
-        });
+        };
+        window.addEventListener("contextmenu", this.memory.contextMenuHandler);
 
         const foo = (targetUrl: string) => {
             if (!this.memory.currentImage?.includes("viewimage.php")) return;
@@ -30,11 +32,15 @@ export default {
         this.memory.sauceNao = communicate.addHook("searchSauceNao", () => foo("https://saucenao.com/search.php?url=[url]"));
     },
     revoke() {
+        if (this.memory.contextMenuHandler) {
+            window.removeEventListener("contextmenu", this.memory.contextMenuHandler);
+        }
         communicate.clearHook("searchSauceNao", this.memory.sauceNao);
     }
 } as RefresherModule<{
     memory: {
         sauceNao: string;
         currentImage: string | null;
+        contextMenuHandler: ((ev: MouseEvent) => void) | null;
     };
 }>;
