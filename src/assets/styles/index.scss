@@ -1,7 +1,4 @@
-$shadow-0dp: none;
-$shadow-1dp: 0px 0px 16px rgba(0, 0, 0, 0.08);
-$shadow-2dp: 0px 0px 16px rgba(0, 0, 0, 0.12);
-$shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
+@use "variables" as *;
 
 @use "./darkmode.scss";
 @use "./stealth.scss";

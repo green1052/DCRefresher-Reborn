@@ -2,7 +2,6 @@ import $, {Cash} from "cash-dom";
 import Cookies from "js-cookie";
 import ky, {Input, Options} from "ky";
 import {createWorker} from "tesseract.js";
-import grecaptchaUrl from "../temp/grecaptcha.ts?url";
 
 import {GalleryPreData} from "../@types/post";
 import * as block from "../core/block";
@@ -1422,8 +1421,6 @@ export default {
                 .children("img")
                 .show();
         });
-
-        $(document).on("DOMContentLoaded", () => $(document.body).append(`<script src="${grecaptchaUrl}">`));
 
         blockPreset.day = this.status.blockPresetDay;
         blockPreset.reason = this.status.blockPresetReason;

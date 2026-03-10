@@ -427,28 +427,41 @@
 </template>
 
 <script lang="ts" setup>
-import {sendMessage} from "../utils/messaging";
+import {sendMessage} from "../../utils/messaging";
 import $ from "cash-dom";
 import ky from "ky";
 import {computed, nextTick, onMounted, reactive, ref} from "vue";
-import browser from "webextension-polyfill";
+import type {Browser} from "wxt/browser";
 
-import {BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES} from "../core/block";
-import {TYPE_NAMES as MEMO_TYPE_NAMES} from "../core/memo";
-import storage from "../utils/webStorage";
-import {writeClipboard} from "../utils/writeClipboard";
+import {BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES} from "../../core/block";
+import {TYPE_NAMES as MEMO_TYPE_NAMES} from "../../core/memo";
+import storage from "../../utils/webStorage";
+import {
+    BLOCK_TYPES,
+    blockModeStorage,
+    blockStorage,
+    MEMO_TYPES,
+    memoStorage,
+    modulesStorage,
+    settingsStorage
+} from "../../utils/storage";
+import {writeClipboard} from "../../utils/writeClipboard";
+
 import RefresherBubble from "./components/bubble.vue";
 import RefresherCheckbox from "./components/checkbox.vue";
 import RefresherModule from "./components/module.vue";
 import RefresherOptions from "./components/options.vue";
 import RefresherInput from "./components/refresherInput.vue";
 import SettingsModule from "./components/settingsModule.vue";
-import getURL from "../utils/getURL";
+
+const props = defineProps<{
+    msg: string;
+}>();
 
 const tab = ref(0);
 const modules = ref<{ [key: string]: RefresherModule }>({});
 const settings = ref<{ [key: string]: { [key: string]: RefresherSettings } }>({});
-const shortcuts = ref<browser.Commands.Command[]>([]);
+const shortcuts = ref<Browser.Commands.Command[]>([]);
 const blocks = reactive<{ [key in RefresherBlockType]: RefresherBlockValue[] }>({
     NICK: [],
     ID: [],
@@ -460,7 +473,7 @@ const blocks = reactive<{ [key in RefresherBlockType]: RefresherBlockValue[] }>(
     TAB: [],
     IMAGE: []
 });
-const blockModes = ref<BlockModeCache>({});
+const blockModes = ref<Partial<BlockModeCache>>({});
 const blockDetectModeTypeNames = BLOCK_DETECT_MODE_TYPE_NAMES;
 const memos = reactive<{ [key in RefresherMemoType]: { [key: string]: RefresherMemoValue } }>({
     UID: {},
@@ -496,38 +509,72 @@ const databaseVersion = ref("");
 const showBlockDialog = ref(false);
 const currentBlockType = ref<RefresherBlockType>("NICK");
 const blockContentInput = ref<HTMLInputElement>();
-const blockFormData = reactive({
+const blockFormData = reactive<{
+    content: string;
+    isRegex: boolean;
+    gallery: string;
+    mode: RefresherBlockDetectMode | "NONE";
+}>({
     content: "",
     isRegex: false,
     gallery: "",
-    mode: "NONE" as RefresherBlockDetectMode
+    mode: "NONE"
 });
+
+const closeBlockDialog = () => {
+    showBlockDialog.value = false;
+};
+
+const openBlockDialog = (type: RefresherBlockType) => {
+    currentBlockType.value = type;
+    blockFormData.content = "";
+    blockFormData.isRegex = false;
+    blockFormData.gallery = "";
+    blockFormData.mode = "NONE";
+    showBlockDialog.value = true;
+};
 
 onMounted(async () => {
     try {
-        const [modulesResponse, blocksResponse, memosResponse] = await Promise.all([
-            sendMessage("store", {action: "get", type: "modules"}),
-            sendMessage("store", {action: "get", type: "blocks"}),
-            sendMessage("store", {action: "get", type: "memos"})
-        ]);
+        // Load initial data for blocks and memos directly from storage
+        for (const type of BLOCK_TYPES) {
+            blocks[type] = (await blockStorage[type].getValue()) ?? [];
+            const mode = await blockModeStorage[type].getValue();
+            if (mode) blockModes.value[type] = mode;
 
-        if (modulesResponse.modules) {
-            modules.value = modulesResponse.modules;
+            // Watch for changes
+            blockStorage[type].watch((newValue) => {
+                if (newValue) blocks[type] = newValue;
+            });
+            blockModeStorage[type].watch((newValue) => {
+                if (newValue) blockModes.value[type] = newValue;
+            });
         }
 
-        if (modulesResponse.settings) {
-            settings.value = modulesResponse.settings;
+        for (const type of MEMO_TYPES) {
+            memos[type] = (await memoStorage[type].getValue()) ?? {};
+
+            // Watch for changes
+            memoStorage[type].watch((newValue) => {
+                if (newValue) memos[type] = newValue;
+            });
         }
 
-        if (blocksResponse.blocks && blocksResponse.blockModes) {
-            Object.assign(blocks, blocksResponse.blocks);
-            blockModes.value = blocksResponse.blockModes;
-        }
+        const initialModules = await modulesStorage.getValue();
+        const initialSettings = await settingsStorage.getValue();
 
-        if (memosResponse.memos) {
-            Object.assign(memos, memosResponse.memos);
-        }
-    } catch {
+        if (initialModules) modules.value = initialModules;
+        if (initialSettings) settings.value = initialSettings;
+
+        modulesStorage.watch((newValue) => {
+            if (newValue) modules.value = newValue;
+        });
+
+        settingsStorage.watch((newValue) => {
+            if (newValue) settings.value = newValue;
+        });
+    } catch (e) {
+        console.error("Failed to load initial data", e);
     }
 
     shortcuts.value = await browser.commands.getAll();
@@ -563,8 +610,6 @@ const importMemo = () => {
                 target[id] = memo;
             }
         }
-
-        syncMemos();
 
         alert("가져오기에 성공했습니다.");
     } catch (e) {
@@ -604,8 +649,6 @@ const importBlock = () => {
                 target.push(block);
             }
         }
-
-        syncBlock();
 
         alert("가져오기에 성공했습니다.");
     } catch (e) {
@@ -695,18 +738,16 @@ const modulesWithAdvancedSettings = computed(() => {
 });
 
 const updateUserSetting = async (module: string, key: string, value: unknown) => {
-    settings.value[module][key].value = value;
+    (settings.value[module][key].value as unknown) = value;
 
     try {
-        await sendMessage("store", {
-            action: "update",
-            type: "userSetting",
-            data: {
-                name: module,
-                key,
-                value
-            }
-        });
+        await wxtStorage.setItem(`local:${module}.${key}`, value);
+
+        const currentSettings = await settingsStorage.getValue();
+        if (currentSettings && currentSettings[module] && currentSettings[module][key]) {
+            (currentSettings[module][key].value as unknown) = value;
+            await settingsStorage.setValue(currentSettings);
+        }
 
         await sendMessage("broadcast", {
             type: "updateSettingValue",
@@ -721,53 +762,7 @@ const updateUserSetting = async (module: string, key: string, value: unknown) =>
     }
 };
 
-const syncBlock = async () => {
-    try {
-        await sendMessage("store", {
-            action: "update",
-            type: "blocks",
-            data: {
-                updateBlocks: true,
-                blocks_store: JSON.parse(JSON.stringify(blocks)),
-                blockModes_store: JSON.parse(JSON.stringify(blockModes.value))
-            }
-        });
-
-        await sendMessage("broadcast", {
-            type: "updateBlocks",
-            data: {
-                blocks: JSON.parse(JSON.stringify(blocks)),
-                modes: JSON.parse(JSON.stringify(blockModes.value))
-            }
-        });
-    } catch (error) {
-        // Silent error handling
-    }
-};
-
-const openBlockDialog = (key: RefresherBlockType) => {
-    if (key === "DCCON") {
-        alert("디시콘 수동 차단은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
-        return;
-    }
-
-    currentBlockType.value = key;
-    blockFormData.content = "";
-    blockFormData.isRegex = false;
-    blockFormData.gallery = "";
-    blockFormData.mode = "NONE";
-    showBlockDialog.value = true;
-
-    nextTick(() => {
-        blockContentInput.value?.focus();
-    });
-};
-
-const closeBlockDialog = (event?: Event) => {
-    showBlockDialog.value = false;
-};
-
-const confirmAddBlock = () => {
+const confirmAddBlock = async () => {
     if (!blockFormData.content.trim()) {
         alert(`${blockKeyNames[currentBlockType.value]} 값을 입력해주세요.`);
         return;
@@ -797,22 +792,22 @@ const confirmAddBlock = () => {
         mode: blockFormData.mode === "NONE" ? undefined : blockFormData.mode
     });
 
-    syncBlock();
+    await blockStorage[currentBlockType.value].setValue(blocks[currentBlockType.value]);
     closeBlockDialog();
 };
 
 // Legacy function for compatibility
 const addEmptyBlockedUser = openBlockDialog;
-const removeBlockedUser = (key: RefresherBlockType, index: number) => {
+const removeBlockedUser = async (key: RefresherBlockType, index: number) => {
     blocks[key].splice(index, 1);
-    syncBlock();
+    await blockStorage[key].setValue(blocks[key]);
 };
-const removeAllBlockedUser = (key: RefresherBlockType) => {
+const removeAllBlockedUser = async (key: RefresherBlockType) => {
     if (!confirm("ㄹ?ㅇ")) return;
     blocks[key] = [];
-    syncBlock();
+    await blockStorage[key].setValue([]);
 };
-const editBlockedUser = (key: RefresherBlockType, index: number) => {
+const editBlockedUser = async (key: RefresherBlockType, index: number) => {
     if (key === "DCCON") {
         alert("디시콘 수정은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
         return;
@@ -823,39 +818,23 @@ const editBlockedUser = (key: RefresherBlockType, index: number) => {
     if (!result) return;
 
     blocks[key][index].content = result;
-    syncBlock();
+    await blockStorage[key].setValue(blocks[key]);
 };
-const editBlockMode = () => {
-    syncBlock();
-};
-const syncMemos = async () => {
-    try {
-        await sendMessage("store", {
-            action: "update",
-            type: "memos",
-            data: {
-                updateMemos: true,
-                memos_store: JSON.parse(JSON.stringify(memos))
-            }
-        });
-
-        await sendMessage("broadcast", {
-            type: "updateMemos",
-            data: {
-                memos: JSON.parse(JSON.stringify(memos))
-            }
-        });
-    } catch {
+const editBlockMode = async () => {
+    for (const type of BLOCK_TYPES) {
+        const mode = blockModes.value[type];
+        if (mode) await blockModeStorage[type].setValue(mode);
     }
 };
-const removeMemoUser = (type: RefresherMemoType, user: string) => {
+
+const removeMemoUser = async (type: RefresherMemoType, user: string) => {
     delete memos[type][user];
-    syncMemos();
+    await memoStorage[type].setValue(memos[type]);
 };
-const removeAllMemoUser = (type: RefresherMemoType) => {
+const removeAllMemoUser = async (type: RefresherMemoType) => {
     if (!confirm("ㄹ?ㅇ")) return;
     memos[type] = {};
-    syncMemos();
+    await memoStorage[type].setValue({});
 };
 const addMemoUser = async (type: RefresherMemoType) => {
     const user = prompt("메모 대상을 입력하세요.");
@@ -1166,13 +1145,13 @@ body {
 
     .refresher-title-zone {
         background: linear-gradient(
-                to bottom,
-                rgba(255, 255, 255, 1),
-                rgba(255, 255, 255, 1),
-                rgba(255, 255, 255, 1),
-                rgba(255, 255, 255, 0.9),
-                rgba(255, 255, 255, 0.6),
-                rgba(255, 255, 255, 0)
+            to bottom,
+            rgba(255, 255, 255, 1),
+            rgba(255, 255, 255, 1),
+            rgba(255, 255, 255, 1),
+            rgba(255, 255, 255, 0.9),
+            rgba(255, 255, 255, 0.6),
+            rgba(255, 255, 255, 0)
         );
         display: flex;
         left: 0;
@@ -1404,13 +1383,13 @@ body {
 
         .refresher-title-zone {
             background: linear-gradient(
-                    to bottom,
-                    #222,
-                    #222,
-                    rgb(34, 34, 34),
-                    rgba(34, 34, 34, 0.9),
-                    rgba(34, 34, 34, 0.6),
-                    rgba(34, 34, 34, 0)
+                to bottom,
+                #222,
+                #222,
+                rgb(34, 34, 34),
+                rgba(34, 34, 34, 0.9),
+                rgba(34, 34, 34, 0.6),
+                rgba(34, 34, 34, 0)
             );
 
             .float-right {
@@ -1718,3 +1697,4 @@ body {
     transform: translateX(0px);
 }
 </style>
+

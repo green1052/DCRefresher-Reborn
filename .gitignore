@@ -1,6 +1,5 @@
-.plasmo
+.output
 .wxt
-build
 .idea/**/workspace.xml
 .idea/**/tasks.xml
 .idea/**/usage.statistics.xml

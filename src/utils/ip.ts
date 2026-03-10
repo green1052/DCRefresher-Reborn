@@ -9,7 +9,7 @@ let ipData: Record<string, string> = {};
 })();
 
 export const ISPData = (ip: string): ISPInfo => {
-    if (!Object.keys(ipData).length) return { name: undefined, color: "#6495ed" };
+    if (!Object.keys(ipData).length) return {name: undefined, color: "#6495ed"};
 
     return {
         name: ipData?.[ip],

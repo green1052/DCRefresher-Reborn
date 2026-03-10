@@ -1,11 +1,4 @@
-$dark-dc-color-deep: #113475;
-$dark-tint2: #3d3d3d;
-$dark-tint-light-opacity: rgba(41, 41, 41, 0.85);
-$dark-text-color: #ccc;
-
-//.imgwrap {
-//    display: initial !important;
-//}
+@use "variables" as *;
 
 .refresherStealth {
     .bgcover {

@@ -1,21 +1,5 @@
+@use "variables" as *;
 @use "sass:color";
-
-$dark-background: #222;
-$dark-tint-light: #292929;
-$dark-tint-light: rgba(41, 41, 41, 1);
-$dark-tint-light-opacity: rgba(41, 41, 41, 0.85);
-$dark-tint2: #3d3d3d;
-$dark-tint3: #555;
-$dark-text-color: #ccc;
-$dark-text-color-dark: #9e9e9e;
-$dark-text-color-bright: #fff;
-$dark-text-subcolor: #777;
-$dark-text-divcolor: #444;
-$dark-text-disablecolor: #666;
-$dark-dc-color: #4987f7;
-$dark-dc-color-deep: #113475;
-$dark-highlight: #176ef1d5;
-$dark-red: #e21919;
 
 html:has(#css-darkmode) {
     .refresher-preview-contents-actual {
@@ -37,7 +21,7 @@ html:has(#css-darkmode) {
 
     .refresher-frame,
     .refresher-mini-preview {
-        background-color: $dark-tint-light;
+        background-color: $dark-tint-light-rgb;
         border: 1px solid #505050;
         color: $dark-text-color-bright;
 
@@ -58,7 +42,7 @@ html:has(#css-darkmode) {
     }
 
     .refresher-tooltip {
-        background-color: $dark-tint-light;
+        background-color: $dark-tint-light-rgb;
         border: 1px solid #505050;
         color: $dark-text-color-bright;
 
@@ -99,7 +83,7 @@ html:has(#css-darkmode) {
 
     .refresher-block-popup,
     .refresher-captcha-popup {
-        background-color: $dark-tint-light;
+        background-color: $dark-tint-light-rgb;
         border: 1px solid #505050;
         box-shadow: 0 0 16px rgba(51, 51, 51, 0.3);
         color: white;
@@ -122,49 +106,6 @@ html:has(#css-darkmode) {
         img,
         video {
             background-color: #333;
-        }
-    }
-
-    .refresher-preview-button {
-        box-shadow: none;
-
-        &.primary {
-            background-color: rgba(0, 110, 255, 0.32);
-
-            &:hover {
-                background-color: rgba(0, 110, 255, 0.28);
-            }
-
-            &:active {
-                background-color: rgba(0, 110, 255, 0.22);
-            }
-        }
-
-        &:hover {
-            background-color: rgba(255, 255, 255, 0.08);
-            box-shadow: none;
-            color: white;
-
-            p {
-                filter: invert(0);
-            }
-        }
-
-        &:active {
-            background-color: rgba(255, 255, 255, 0.12);
-            box-shadow: none;
-
-            p {
-                filter: invert(0);
-            }
-        }
-
-        p {
-            color: $dark-text-color;
-        }
-
-        img {
-            filter: invert(1);
         }
     }
 }

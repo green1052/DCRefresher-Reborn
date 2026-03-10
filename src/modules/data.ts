@@ -1,5 +1,3 @@
-import browser from "webextension-polyfill";
-
 import toast from "../utils/toast";
 import {writeClipboard} from "../utils/writeClipboard";
 
