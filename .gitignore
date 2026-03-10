@@ -69,6 +69,7 @@ web_modules/
 .env.test.local
 .env.production.local
 .env.local
+.env.submit
 .cache
 .parcel-cache
 .next
