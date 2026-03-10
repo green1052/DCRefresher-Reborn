@@ -1,20 +1,3 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "esModuleInterop": true,
-    "strict": true,
-    "jsx": "preserve",
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "paths": {
-      "~/*": ["./src/*"]
-    },
-    "baseUrl": "."
-  },
-  "include": ["src/**/*.ts", "src/**/*.vue", "src/**/*.d.ts"]
+    "extends": "./.wxt/tsconfig.json"
 }

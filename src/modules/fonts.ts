@@ -45,7 +45,7 @@ export default {
             }
 
             $fontElement.html(
-                `.refresherChangeDCFont,.refresherChangeDCFont .btn_cmt_close,.refresherChangeDCFont .btn_cmt_close span,.refresherChangeDCFont .btn_cmt_open,.refresherChangeDCFont .btn_cmt_refresh,.refresherChangeDCFont .gall_list,.refresherChangeDCFont .view_comment div,.refresherChangeDCFont .view_content_wrap,.refresherChangeDCFont .view_content_wrap a,.refresherChangeDCFont body,.refresherChangeDCFont button,.refresherChangeDCFont input,.refresherFont .refresher-block-popup,.refresherFont .refresher-captcha-popup,.refresherFont .refresher-frame,.refresherFont .refresher-popup{font-family:"${fontName.replace(/"/g, '\\"')}",sans-serif}`
+                `.refresherChangeDCFont,.refresherChangeDCFont .btn_cmt_close,.refresherChangeDCFont .btn_cmt_close span,.refresherChangeDCFont .btn_cmt_open,.refresherChangeDCFont .btn_cmt_refresh,.refresherChangeDCFont .gall_list,.refresherChangeDCFont .view_comment div,.refresherChangeDCFont .view_content_wrap,.refresherChangeDCFont .view_content_wrap a,.refresherChangeDCFont body,.refresherChangeDCFont button,.refresherChangeDCFont input,.refresherFont .refresher-block-popup,.refresherFont .refresher-captcha-popup,.refresherFont .refresher-frame,.refresherFont .refresher-popup{font-family:"${fontName.replace(/"/g, "\\\"")}",sans-serif}`
             );
         },
         changeDCFont(value) {

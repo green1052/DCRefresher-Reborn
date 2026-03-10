@@ -193,7 +193,7 @@ onBeforeUnmount(() => {
 });
 
 // Methods
-const escapeHtml = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const escapeHtml = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 const date = (str: string): string => {
     return str.substring(0, 4).match(/\./)

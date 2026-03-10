@@ -1,5 +1,3 @@
-import browser from "webextension-polyfill";
-
 interface StorageStructure {
     uuid: string;
     run: (...args: any[]) => void;

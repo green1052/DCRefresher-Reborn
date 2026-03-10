@@ -21,25 +21,31 @@ jobs:
                     cache: pnpm
 
             -   name: Install Dependencies
-                run: pnpm install --frozen-lockfile
+                run: pnpm install
 
-            -   name: Build
+            -   name: Zip extensions
                 run: |
-                    pnpm build
+                    pnpm zip
+                    pnpm zip:firefox
 
             -   name: Release
                 uses: softprops/action-gh-release@v2
                 with:
                     files: |
-                        build/firefox-mv2-prod.zip
-                        build/chrome-mv3-prod.zip
+                        .output/firefox-mv2.zip
+                        .output/chrome-mv3.zip
                     generate_release_notes: true
 
-            -   name: Compress Source Code
+            -   name: Submit to stores
                 run: |
-                    zip -r src.zip src
-
-            -   name: Browser Platform Publish
-                uses: PlasmoHQ/bpp@v3
-                with:
-                    keys: ${{ secrets.BPP_KEYS }}
+                    pnpm wxt submit \
+                      --chrome-zip .output/chrome-mv3.zip \
+                      --firefox-zip .output/firefox-mv2.zip --firefox-sources-zip .output/firefox-mv2-src.zip
+                env:
+                    CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+                    CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+                    CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+                    CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+                    FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
+                    FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
+                    FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}

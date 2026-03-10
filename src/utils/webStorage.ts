@@ -1,5 +1,3 @@
-import browser from "webextension-polyfill";
-
 const storageArea = browser.storage.local;
 
 export const get = async <T>(key?: string | null): Promise<T> => {
@@ -32,7 +30,11 @@ export const moduleStorage = {
         const storageKey = key ? `refresher.module:${module}-${key}` : `refresher.module:${module}`;
         const value = await get<T>(storageKey);
         if (typeof value === "string") {
-            try { return JSON.parse(value); } catch { return value; }
+            try {
+                return JSON.parse(value);
+            } catch {
+                return value;
+            }
         }
         return value;
     },

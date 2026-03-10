@@ -9,28 +9,6 @@ import toast from "../utils/toast";
 const MINIMUM_REFRESH_INTERVAL = 2000;
 const DEFAULT_TIMEOUT_OFFSET = 100;
 
-let PAUSE_REFRESH = false;
-let loading = false;
-
-const updateRefreshText = (button?: HTMLElement) => {
-    button ??= document.querySelector<HTMLElement>(".page_head .gall_issuebox button[data-refresher=true]");
-
-    if (!button) return;
-
-    const onOff = button.querySelector<HTMLSpanElement>("span");
-    if (onOff) {
-        onOff.innerHTML = PAUSE_REFRESH ? "꺼짐" : "켜짐";
-    }
-};
-
-let archiveArticleConfig = false;
-
-(async () => {
-    archiveArticleConfig = (await storage.get<boolean>("미리보기.enable"))
-        ? await storage.get<boolean>("미리보기.archiveArticle")
-        : false;
-})();
-
 export default {
     name: "글 목록 새로고침",
     description: "글 목록을 자동으로 새로고침합니다.",
@@ -46,7 +24,10 @@ export default {
         calledByPageTurn: false,
         refreshRequest: "",
         lastRefresh: 0,
-        load: null
+        load: null,
+        paused: false,
+        loading: false,
+        archiveArticleConfig: false
     },
     enable: true,
     default_enable: true,
@@ -96,20 +77,40 @@ export default {
             this.memory.load?.();
         },
         refreshPause() {
-            PAUSE_REFRESH = !PAUSE_REFRESH;
+            this.memory.paused = !this.memory.paused;
 
             toast.show(
-                PAUSE_REFRESH
+                this.memory.paused
                     ? "이번 페이지에서는 새로고침을 사용하지 않습니다."
                     : "이번 페이지에서 새로고침을 사용합니다.",
                 "info",
                 1000
             );
-            updateRefreshText();
+
+            const button = document.querySelector<HTMLElement>(".page_head .gall_issuebox button[data-refresher=true]");
+            if (button) {
+                const onOff = button.querySelector<HTMLSpanElement>("span");
+                if (onOff) onOff.innerHTML = this.memory.paused ? "꺼짐" : "켜짐";
+            }
         }
     },
     require: ["http", "eventBus", "filter"],
-    func(http, eventBus, filter) {
+    async func(http, eventBus, filter) {
+        const updateRefreshText = (button?: HTMLElement) => {
+            button ??= document.querySelector<HTMLElement>(".page_head .gall_issuebox button[data-refresher=true]");
+
+            if (!button) return;
+
+            const onOff = button.querySelector<HTMLSpanElement>("span");
+            if (onOff) {
+                onOff.innerHTML = this.memory.paused ? "꺼짐" : "켜짐";
+            }
+        };
+
+        this.memory.archiveArticleConfig = (await storage.get<boolean>("미리보기.enable"))
+            ? await storage.get<boolean>("미리보기.archiveArticle")
+            : false;
+
         if (this.status.doNotColorVisited) {
             $(document.documentElement).addClass("refresherDoNotColorVisited");
         }
@@ -125,7 +126,7 @@ export default {
             const onOff = document.createElement("span");
             onOff.innerHTML = "켜짐";
             button.onclick = () => {
-                PAUSE_REFRESH = !PAUSE_REFRESH;
+                this.memory.paused = !this.memory.paused;
                 updateRefreshText(button);
             };
             button.appendChild(onOff);
@@ -142,13 +143,13 @@ export default {
         let originalLocation = location.href;
 
         if (this.status.noRefreshOnSearch && queryString("s_keyword")) {
-            PAUSE_REFRESH = true;
+            this.memory.paused = true;
             updateRefreshText();
         }
 
         this.memory.load = async (customURL?: string, force?: boolean): Promise<boolean> => {
-            if (loading) return false;
-            loading = true;
+            if (this.memory.loading) return false;
+            this.memory.loading = true;
 
             try {
                 if (document.hidden) return false;
@@ -157,7 +158,7 @@ export default {
                     return false;
                 }
 
-                if (!force && PAUSE_REFRESH) {
+                if (!force && this.memory.paused) {
                     return false;
                 }
 
@@ -259,7 +260,7 @@ export default {
                         });
                     }
 
-                    if (archiveArticleConfig) {
+                    if (this.memory.archiveArticleConfig) {
                         const deletedPosts = oldCache.filter((postNo) => postNo && !newCache.includes(postNo));
 
                         deletedPosts.forEach((deletedNo) => {
@@ -281,7 +282,7 @@ export default {
 
                 return true;
             } finally {
-                loading = false;
+                this.memory.loading = false;
             }
         };
 

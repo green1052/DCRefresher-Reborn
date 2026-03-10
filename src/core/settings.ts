@@ -1,4 +1,4 @@
-import {sendMessage} from "../utils/messaging";
+import {settingsStorage} from "../utils/storage";
 
 import storage from "../utils/webStorage";
 import eventBus from "./eventbus";
@@ -39,13 +39,7 @@ export const load = async (module: string, key: string, settings: RefresherSetti
 };
 
 eventBus.on("refresherSettingsSync", (store) => {
-    sendMessage("store", {
-        action: "update",
-        type: "settings",
-        data: {
-            store
-        }
-    });
+    settingsStorage.setValue(JSON.parse(JSON.stringify(store)));
 });
 
 export default {

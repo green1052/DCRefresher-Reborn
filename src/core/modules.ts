@@ -1,4 +1,4 @@
-import {sendMessage} from "../utils/messaging";
+import {modulesStorage, settingsStorage} from "../utils/storage";
 
 import http from "../utils/http";
 import ip from "../utils/ip";
@@ -75,10 +75,12 @@ export const modules = {
         );
 
         if (typeof module.settings === "object") {
+            // @ts-ignore
             module.status ??= {};
 
             promises.push(
                 ...Object.entries(module.settings).map(async ([key, value]) => {
+                    // @ts-ignore
                     module.status[key] = await settings.load(module.name, key, value);
                 })
             );
@@ -109,14 +111,11 @@ export const modules = {
 
         await Promise.all(promises);
 
-        sendMessage("store", {
-            action: "update",
-            type: "modules",
-            data: {
-                module_store: JSON.parse(JSON.stringify(module_store)),
-                settings_store: JSON.parse(JSON.stringify(settings.dump()))
-            }
-        });
+        const modulesSnap = JSON.parse(JSON.stringify(module_store));
+        const settingsSnap = JSON.parse(JSON.stringify(settings.dump()));
+
+        await modulesStorage.setValue(modulesSnap);
+        await settingsStorage.setValue(settingsSnap);
 
         if (!module.enable || module.url?.test(location.href) === false) return;
 
@@ -131,13 +130,8 @@ communicate.addHook("updateModuleStatus", (data) => {
     module_store[data.name].enable = data.value as boolean;
     storage.set(`${data.name}.enable`, data.value);
 
-    sendMessage("store", {
-        action: "update",
-        type: "modules",
-        data: {
-            module_store: JSON.parse(JSON.stringify(module_store))
-        }
-    });
+    const modulesSnap = JSON.parse(JSON.stringify(module_store));
+    modulesStorage.setValue(modulesSnap);
 
     if (data.value) {
         runModule(module_store[data.name]);

@@ -2,12 +2,18 @@ import {defineConfig} from "wxt";
 
 export default defineConfig({
     srcDir: "src",
-    outDir: "dist",
-    modules: ["@wxt-dev/module-vue"],
+    modules: [
+        "@wxt-dev/auto-icons",
+        "@wxt-dev/webextension-polyfill",
+        "@wxt-dev/module-vue"
+    ],
+    zip: {
+        artifactTemplate: "{{browser}}-{{manifestVersion}}.zip",
+        sourcesTemplate: "{{browser}}-{{manifestVersion}}-src.zip"
+    },
     manifest: {
         name: "DCRefresher Reborn",
         description: "디시인사이드 개선 확장 프로그램",
-        version: "4.1.5",
         permissions: [
             "activeTab",
             "contextMenus",
@@ -45,14 +51,5 @@ export default defineConfig({
                 description: "스텔스 모드: 일시 비활성화"
             }
         }
-    },
-    vite: () => ({
-        css: {
-            preprocessorOptions: {
-                scss: {
-                    api: "modern-compiler"
-                }
-            }
-        }
-    })
+    }
 });
