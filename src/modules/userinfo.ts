@@ -308,13 +308,17 @@ export default {
             text.innerHTML = `[${format}]`;
             text.title = format;
 
-            const fl = element.querySelector(".fl > .ip");
+            const addbox = element.querySelector(".addbox");
 
-            if (fl) {
-                fl.appendChild(text);
+            if (addbox) {
+                addbox.appendChild(text);
             } else {
-                text.classList.add("ip");
-                element.appendChild(text);
+                const ipEl = element.querySelector(".fl .ip");
+                if (ipEl) {
+                    ipEl.after(text);
+                } else {
+                    element.appendChild(text);
+                }
             }
 
             element.dataset.refresherIp = "true";
@@ -344,19 +348,14 @@ export default {
             text.innerHTML = `(${element.dataset.uid})`;
             text.title = element.dataset.uid;
 
-            const fl = element.querySelector(".fl");
+            const addbox = element.querySelector(".addbox");
 
-            if (fl) {
-                const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
-
-                if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling);
+            if (addbox) {
+                addbox.appendChild(text);
             } else {
-                text.classList.add("refresherUserData");
-
-                const refresherUserData = element.querySelector(".refresherUserData");
-
-                if (refresherUserData) {
-                    element.insertBefore(text, refresherUserData);
+                const ipEl = element.querySelector(".fl .ip, .fl .writer_nikcon");
+                if (ipEl) {
+                    ipEl.after(text);
                 } else {
                     element.appendChild(text);
                 }
@@ -406,29 +405,16 @@ export default {
                 text.style.color = memoData.color;
             }
 
-            if (element.dataset.ip) {
-                const fl = element.querySelector(".fl > .ip");
+            const addbox = element.querySelector(".addbox");
 
-                if (fl) {
-                    fl.appendChild(text);
-                } else {
-                    const userData = element.querySelector(".refresherUserData");
-
-                    if (userData) element.insertBefore(text, userData);
-                    else element.appendChild(text);
-                }
+            if (addbox) {
+                addbox.appendChild(text);
             } else {
-                const fl = element.querySelector(".fl");
-
-                if (fl) {
-                    const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
-
-                    if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling);
+                const ipEl = element.querySelector(".fl .ip, .fl .writer_nikcon");
+                if (ipEl) {
+                    ipEl.after(text);
                 } else {
-                    const userData = element.querySelector(".refresherUserData");
-
-                    if (userData) element.insertBefore(text, userData);
-                    else element.appendChild(text);
+                    element.appendChild(text);
                 }
             }
 
