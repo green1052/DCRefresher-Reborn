@@ -207,14 +207,17 @@ export default {
                         text.innerHTML = `[${permBan}]`;
                         text.title = permBan;
 
-                        const fl = element.querySelector(".fl");
+                        const addbox = element.querySelector(".addbox");
 
-                        if (fl) {
-                            const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
-                            if (flIpQuery)
-                                fl.insertBefore(text, flIpQuery.nextSibling?.nextSibling ?? flIpQuery.nextSibling);
+                        if (addbox) {
+                            addbox.appendChild(text);
                         } else {
-                            element.appendChild(text);
+                            const fl = element.querySelector(".fl .ip, .fl .writer_nikcon");
+                            if (fl) {
+                                fl.after(text);
+                            } else {
+                                element.appendChild(text);
+                            }
                         }
                     }
                 }
@@ -241,14 +244,17 @@ export default {
                         }
                     }
 
-                    const fl = element.querySelector(".fl");
+                    const addbox = element.querySelector(".addbox");
 
-                    if (fl) {
-                        const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
-                        if (flIpQuery)
-                            fl.insertBefore(text, flIpQuery.nextSibling?.nextSibling ?? flIpQuery.nextSibling);
+                    if (addbox) {
+                        addbox.appendChild(text);
                     } else {
-                        element.appendChild(text);
+                        const fl = element.querySelector(".fl .ip, .fl .writer_nikcon");
+                        if (fl) {
+                            fl.after(text);
+                        } else {
+                            element.appendChild(text);
+                        }
                     }
                 }
             },
@@ -316,7 +322,12 @@ export default {
                             $article.find(".permBan").replaceWith($permBan);
                         } else {
                             $article.data("refresherPermBan", true);
-                            $writer.add($permBan);
+                            const $addbox = $writer.find(".addbox");
+                            if ($addbox.length) {
+                                $addbox.append($permBan);
+                            } else {
+                                $writer.append($permBan);
+                            }
                         }
                     }
                 }
@@ -347,7 +358,12 @@ export default {
                 }
 
                 $article.data("refresherRatio", true);
-                $writer.append($ratio);
+                const $addbox = $writer.find(".addbox");
+                if ($addbox.length) {
+                    $addbox.append($ratio);
+                } else {
+                    $writer.append($ratio);
+                }
             }
         });
     },
