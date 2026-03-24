@@ -10,7 +10,6 @@ interface ImportMetaEnv {
     readonly COMMAND: "build" | "serve";
     readonly ENTRYPOINT: string;
 }
-
 interface ImportMeta {
     readonly env: ImportMetaEnv;
 }
