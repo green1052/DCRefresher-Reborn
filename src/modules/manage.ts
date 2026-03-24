@@ -207,14 +207,21 @@ export default {
                         text.innerHTML = `[${permBan}]`;
                         text.title = permBan;
 
-                        const addbox = element.querySelector(".addbox");
+                        const addBox = element.querySelector(".addbox");
 
-                        if (addbox) {
-                            addbox.appendChild(text);
+                        if (addBox) {
+                            const nickCon = addBox.querySelector(".writer_nikcon");
+
+                            if (nickCon)
+                                addBox.insertBefore(text, nickCon.nextSibling);
+                            else
+                                addBox.insertBefore(text, addBox.querySelector(".ip"));
                         } else {
-                            const fl = element.querySelector(".fl .ip, .fl .writer_nikcon");
+                            const fl = element.querySelector(".fl > span");
+
                             if (fl) {
-                                fl.after(text);
+                                const flIpQuery = fl.querySelector(".writer_nikcon, .ip");
+                                if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling);
                             } else {
                                 element.appendChild(text);
                             }
@@ -244,14 +251,17 @@ export default {
                         }
                     }
 
-                    const addbox = element.querySelector(".addbox");
+                    const addBox = element.querySelector(".addbox");
 
-                    if (addbox) {
-                        addbox.appendChild(text);
+                    if (addBox) {
+                        const flIpQuery = addBox.querySelector(".writer_nikcon, .ip");
+                        addBox.insertBefore(text, flIpQuery.nextSibling);
                     } else {
-                        const fl = element.querySelector(".fl .ip, .fl .writer_nikcon");
+                        const fl = element.querySelector(".fl > span");
+
                         if (fl) {
-                            fl.after(text);
+                            const flIpQuery = fl.querySelector(".writer_nikcon, .ip");
+                            if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling);
                         } else {
                             element.appendChild(text);
                         }
@@ -322,12 +332,7 @@ export default {
                             $article.find(".permBan").replaceWith($permBan);
                         } else {
                             $article.data("refresherPermBan", true);
-                            const $addbox = $writer.find(".addbox");
-                            if ($addbox.length) {
-                                $addbox.append($permBan);
-                            } else {
-                                $writer.append($permBan);
-                            }
+                            $writer.add($permBan);
                         }
                     }
                 }
@@ -358,12 +363,7 @@ export default {
                 }
 
                 $article.data("refresherRatio", true);
-                const $addbox = $writer.find(".addbox");
-                if ($addbox.length) {
-                    $addbox.append($ratio);
-                } else {
-                    $writer.append($ratio);
-                }
+                $writer.append($ratio);
             }
         });
     },

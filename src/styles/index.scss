@@ -30,33 +30,44 @@ $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
 // IP Module
 
 .fl,
+.addbox,
 .cmt_info,
 .reply_info {
     .refresherUserData {
+        letter-spacing: -0.05em;
         margin-left: 3px;
     }
 }
 
 .gall_writer {
-    display: block;
+    // TODO 고쳐야함
     overflow: hidden;
-    position: static !important;
+
+    // display: block;
     text-overflow: ellipsis;
+    //position: static !important;
     white-space: nowrap;
-    word-wrap: normal;
+    &:has(.user_data.add) {
+        overflow: unset !important;
+    }
+    // word-wrap: normal;
+
+    .addbox {
+        display: initial !important;
+    }
 }
 
-tr.gall_writer {
-    display: table-cell;
-    text-align: center;
-    vertical-align: middle;
-}
+//tr.gall_writer {
+//    display: table-cell;
+//    text-align: center;
+//    vertical-align: middle;
+//}
 
-.gall_writer .user_data {
-    left: unset !important;
-    margin-left: unset !important;
-    top: unset !important;
-}
+//.gall_writer .user_data {
+//    left: unset !important;
+//    margin-left: unset !important;
+//    top: unset !important;
+//}
 
 // Refresh Module
 
