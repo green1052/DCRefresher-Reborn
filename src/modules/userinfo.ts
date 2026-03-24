@@ -308,17 +308,13 @@ export default {
             text.innerHTML = `[${format}]`;
             text.title = format;
 
-            const addbox = element.querySelector(".addbox");
+            const addBox = element.querySelector(".addbox .ip");
 
-            if (addbox) {
-                addbox.appendChild(text);
+            if (addBox) {
+                addBox.appendChild(text);
             } else {
-                const ipEl = element.querySelector(".fl .ip");
-                if (ipEl) {
-                    ipEl.after(text);
-                } else {
-                    element.appendChild(text);
-                }
+                text.classList.add("ip");
+                element.querySelector(".fl .ip")?.appendChild(text);
             }
 
             element.dataset.refresherIp = "true";
@@ -348,17 +344,18 @@ export default {
             text.innerHTML = `(${element.dataset.uid})`;
             text.title = element.dataset.uid;
 
-            const addbox = element.querySelector(".addbox");
+            const fl = element.querySelector(".fl > span");
 
-            if (addbox) {
-                addbox.appendChild(text);
+            if (fl) {
+                const flIpQuery = fl.querySelector(".writer_nikcon, .ip");
+                if (flIpQuery) fl.insertBefore(text, flIpQuery.nextElementSibling);
             } else {
-                const ipEl = element.querySelector(".fl .ip, .fl .writer_nikcon");
-                if (ipEl) {
-                    ipEl.after(text);
-                } else {
+                const addBox = element.querySelector(".addbox");
+
+                if (addBox)
+                    addBox.appendChild(text);
+                else
                     element.appendChild(text);
-                }
             }
 
             element.dataset.refresherId = "true";
@@ -405,16 +402,53 @@ export default {
                 text.style.color = memoData.color;
             }
 
-            const addbox = element.querySelector(".addbox");
+            if (element.dataset.ip) {
+                const addBox = element.querySelector(".addbox");
 
-            if (addbox) {
-                addbox.appendChild(text);
-            } else {
-                const ipEl = element.querySelector(".fl .ip, .fl .writer_nikcon");
-                if (ipEl) {
-                    ipEl.after(text);
+                if (addBox) {
+                    const ip = addBox.querySelector(".ip");
+                    addBox.insertBefore(text, ip);
                 } else {
-                    element.appendChild(text);
+
+                    const fl = element.querySelector(".fl > span");
+
+                    if (fl) {
+                        const ip = fl.querySelector(".ip");
+                        if (ip) fl.insertBefore(text, ip);
+                    } else {
+                        const ip = element.querySelector(".ip");
+                        const userData = ip.querySelector(".refresherUserData");
+
+                        if (userData)
+                            ip.insertBefore(text, userData);
+                        else
+                            ip.appendChild(text);
+                    }
+                }
+            } else {
+                const addBox = element.querySelector(".addbox");
+
+                if (addBox) {
+                    const userData = element.querySelector(".refresherUserData");
+
+                    if (userData)
+                        addBox.insertBefore(text, userData);
+                    else
+                        addBox.appendChild(text);
+                } else {
+                    const fl = element.querySelector(".fl > span");
+
+                    if (fl) {
+                        const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
+                        if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling);
+                    } else {
+                        const userData = element.querySelector(".refresherUserData");
+
+                        if (userData)
+                            element.insertBefore(text, userData);
+                        else
+                            element.appendChild(text);
+                    }
                 }
             }
 

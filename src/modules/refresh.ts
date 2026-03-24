@@ -152,9 +152,7 @@ export default {
                 return false;
             }
 
-            const $userDataLyr = $("#user_data_lyr");
-
-            if ($userDataLyr.length > 0 && $userDataLyr.css("display") !== "none") return false;
+            if ($(".user_data.add").length > 0) return false;
 
             const isAdmin = $(".useradmin_btnbox button").length > 0;
 
