@@ -18,7 +18,6 @@ export const config: PlasmoCSConfig = {
     exclude_matches: [
         "https://event.dcinside.com/*",
         "https://h5.dcinside.com/*",
-        "https://m.dcinside.com/*",
         "https://mall.dcinside.com/*",
         "https://wiki.dcinside.com/*"
     ],

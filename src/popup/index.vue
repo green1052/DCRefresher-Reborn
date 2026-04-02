@@ -94,6 +94,7 @@
                     모듈
                 </p>
                 <p
+                    v-if="supportsCommands"
                     :class="{ active: tab === 5 }"
                     @click="() => (tab = 5)"
                 >
@@ -398,7 +399,7 @@
             </div>
 
             <div
-                v-else-if="tab === 5"
+                v-else-if="tab === 5 && supportsCommands"
                 key="tab6"
                 class="tab tab6"
             >
@@ -448,7 +449,8 @@ import getURL from "~utils/getURL";
 const tab = ref(0);
 const modules = ref<{ [key: string]: RefresherModule }>({});
 const settings = ref<{ [key: string]: { [key: string]: RefresherSettings } }>({});
-const shortcuts = ref<{} | browser.Commands.Command[]>({});
+const supportsCommands = typeof browser.commands?.getAll === "function";
+const shortcuts = ref<browser.Commands.Command[]>([]);
 const blocks = reactive<{ [key in RefresherBlockType]: RefresherBlockValue[] }>({
     NICK: [],
     ID: [],
@@ -539,7 +541,10 @@ onMounted(async () => {
     } catch {
     }
 
-    shortcuts.value = await browser.commands.getAll();
+    if (supportsCommands) {
+        shortcuts.value = await browser.commands.getAll().catch(() => []);
+    }
+
     databaseVersion.value = await storage.get("refresher.database.version");
 });
 
@@ -633,6 +638,11 @@ const open = (url: string) => {
 };
 
 const openShortcutSettings = () => {
+    if (browser.commands.openShortcutSettings) {
+        browser.commands.openShortcutSettings?.();
+        return;
+    }
+
     browser.tabs.create({
         url: process.env.PLASMO_BROWSER === "firefox" ? "about:addons" : "chrome://extensions/shortcuts"
     });
