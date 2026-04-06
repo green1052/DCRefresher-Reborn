@@ -43,8 +43,8 @@ importers:
         specifier: ^3.0.5
         version: 3.0.5
       ky:
-        specifier: ^1.14.3
-        version: 1.14.3
+        specifier: ^2.0.0
+        version: 2.0.0
       parcel-reporter-clean-dist:
         specifier: ^1.0.4
         version: 1.0.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))(parcel@2.15.4(@swc/helpers@0.5.17))
@@ -2655,6 +2655,10 @@ packages:
   ky@1.14.3:
     resolution: {integrity: sha512-9zy9lkjac+TR1c2tG+mkNSVlyOpInnWdSMiue4F+kq8TwJSgv6o8jhLRg8Ho6SnZ9wOYUq/yozts9qQCfk7bIw==}
     engines: {node: '>=18'}
+
+  ky@2.0.0:
+    resolution: {integrity: sha512-KzI4Vz5AbZFAUFYGx28PCSfFWUo6/qj9Br/P6KRwDieE1xfdz0tIONepJcLw/1xLocN13GgvfJGasa+pfSkbHg==}
+    engines: {node: '>=22'}
 
   less@4.4.0:
     resolution: {integrity: sha512-kdTwsyRuncDfjEs0DlRILWNvxhDG/Zij4YLO4TMJgDLW+8OzpfkdPnRgrsRuY1o+oaxJGWsps5f/RVBgGmmN0w==}
@@ -6947,6 +6951,8 @@ snapshots:
       json-buffer: 3.0.1
 
   ky@1.14.3: {}
+
+  ky@2.0.0: {}
 
   less@4.4.0:
     dependencies:
