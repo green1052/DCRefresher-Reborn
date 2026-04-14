@@ -8,9 +8,6 @@ declare global {
     const InvalidMatchPattern: typeof import("wxt/utils/match-patterns").InvalidMatchPattern;
     const MEMO_TYPES: typeof import("C:/Dev/DCRefresher-Reborn/src/utils/storage").MEMO_TYPES;
     const MatchPattern: typeof import("wxt/utils/match-patterns").MatchPattern;
-    const ModuleState: typeof import("C:/Dev/DCRefresher-Reborn/src/utils/storage").ModuleState;
-    const Record: typeof import("C:/Dev/DCRefresher-Reborn/src/utils/storage").Record;
-    const RefresherSettings: typeof import("C:/Dev/DCRefresher-Reborn/src/utils/storage").RefresherSettings;
     const ScrollDetection: typeof import("C:/Dev/DCRefresher-Reborn/src/utils/scrollDetection").ScrollDetection;
     const User: typeof import("C:/Dev/DCRefresher-Reborn/src/utils/user").User;
     const blockModeStorage: typeof import("C:/Dev/DCRefresher-Reborn/src/utils/storage").blockModeStorage;
@@ -218,9 +215,6 @@ declare module "vue" {
         readonly InvalidMatchPattern: UnwrapRef<typeof import("wxt/utils/match-patterns")["InvalidMatchPattern"]>;
         readonly MEMO_TYPES: UnwrapRef<typeof import("C:/Dev/DCRefresher-Reborn/src/utils/storage")["MEMO_TYPES"]>;
         readonly MatchPattern: UnwrapRef<typeof import("wxt/utils/match-patterns")["MatchPattern"]>;
-        readonly ModuleState: UnwrapRef<typeof import("C:/Dev/DCRefresher-Reborn/src/utils/storage")["ModuleState"]>;
-        readonly Record: UnwrapRef<typeof import("C:/Dev/DCRefresher-Reborn/src/utils/storage")["Record"]>;
-        readonly RefresherSettings: UnwrapRef<typeof import("C:/Dev/DCRefresher-Reborn/src/utils/storage")["RefresherSettings"]>;
         readonly ScrollDetection: UnwrapRef<typeof import("C:/Dev/DCRefresher-Reborn/src/utils/scrollDetection")["ScrollDetection"]>;
         readonly User: UnwrapRef<typeof import("C:/Dev/DCRefresher-Reborn/src/utils/user")["User"]>;
         readonly blockModeStorage: UnwrapRef<typeof import("C:/Dev/DCRefresher-Reborn/src/utils/storage")["blockModeStorage"]>;

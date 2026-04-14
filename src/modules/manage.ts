@@ -211,14 +211,24 @@ export default {
                         text.textContent = `[${permBan}]`;
                         text.title = permBan;
 
-                        const fl = element.querySelector(".fl");
+                        const addBox = element.querySelector(".addbox");
 
-                        if (fl) {
-                            const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
-                            if (flIpQuery)
-                                fl.insertBefore(text, flIpQuery.nextSibling?.nextSibling ?? flIpQuery.nextSibling);
+                        if (addBox) {
+                            const nickCon = addBox.querySelector(".writer_nikcon");
+
+                            if (nickCon)
+                                addBox.insertBefore(text, nickCon.nextSibling);
+                            else
+                                addBox.insertBefore(text, addBox.querySelector(".ip"));
                         } else {
-                            element.appendChild(text);
+                            const fl = element.querySelector(".fl > span");
+
+                            if (fl) {
+                                const flIpQuery = fl.querySelector(".writer_nikcon, .ip");
+                                if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling);
+                            } else {
+                                element.appendChild(text);
+                            }
                         }
                     }
                 }
@@ -245,14 +255,20 @@ export default {
                         }
                     }
 
-                    const fl = element.querySelector(".fl");
+                    const addBox = element.querySelector(".addbox");
 
-                    if (fl) {
-                        const flIpQuery = fl.querySelector(".ip, .writer_nikcon");
-                        if (flIpQuery)
-                            fl.insertBefore(text, flIpQuery.nextSibling?.nextSibling ?? flIpQuery.nextSibling);
+                    if (addBox) {
+                        const flIpQuery = addBox.querySelector(".writer_nikcon, .ip");
+                        addBox.insertBefore(text, flIpQuery.nextSibling);
                     } else {
-                        element.appendChild(text);
+                        const fl = element.querySelector(".fl > span");
+
+                        if (fl) {
+                            const flIpQuery = fl.querySelector(".writer_nikcon, .ip");
+                            if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling);
+                        } else {
+                            element.appendChild(text);
+                        }
                     }
                 }
             },
