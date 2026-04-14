@@ -3,8 +3,8 @@ import {Cash} from "cash-dom/dist/cash";
 import ky from "ky";
 
 import {queryString} from "../utils/http";
-import storage from "../utils/webStorage";
 import toast from "../utils/toast";
+import storage from "../utils/webStorage";
 
 const MINIMUM_REFRESH_INTERVAL = 2000;
 const DEFAULT_TIMEOUT_OFFSET = 100;
@@ -162,9 +162,7 @@ export default {
                     return false;
                 }
 
-                const $userDataLyr = $("#user_data_lyr");
-
-                if ($userDataLyr.length > 0 && $userDataLyr.css("display") !== "none") return false;
+                if ($(".user_data.add").length > 0) return false;
 
                 const isAdmin = $(".useradmin_btnbox button").length > 0;
 

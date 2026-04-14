@@ -53,7 +53,7 @@ const title = computed(() => {
         const ban = props.user.ban;
         const ratio = props.user.ratio;
 
-        return `(${props.user.id})${ban ? ` [${ban}]` : ""}${ratio ? ` [${ratio}]` : ""}`;
+        return `${ban ? `[${ban}] ` : ""}${ratio ? ` [${ratio}] ` : ""}(${props.user.id})`;
     }
 
     return `(${props.user.ip})${props.user.ip_data ? ` [${props.user.ip_data}]` : ""}`;
@@ -64,7 +64,7 @@ const userInfo = computed(() => {
         const ban = props.user.ban;
         const ratio = props.user.ratio;
 
-        return `(${props.user.id})${ban ? ` [${ban}]` : ""}${ratio ? ` [${ratio}]` : ""}`;
+        return `${ban ? `[${ban}] ` : ""}${ratio ? ` [${ratio}] ` : ""}(${props.user.id})`;
     }
 
     return `(${props.user.ip})${props.user.ip_data ? ` [${props.user.ip_data}]` : ""}`;

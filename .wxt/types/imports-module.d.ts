@@ -139,16 +139,7 @@ declare module "#imports" {
     export {default as observe, find, listen} from "../src/utils/observe";
     export {ScrollDetection, ScrollDetection} from "../src/utils/scrollDetection";
     export {
-        BLOCK_TYPES,
-        MEMO_TYPES,
-        blockStorage,
-        blockModeStorage,
-        memoStorage,
-        modulesStorage,
-        ModuleState,
-        settingsStorage,
-        Record,
-        RefresherSettings
+        BLOCK_TYPES, MEMO_TYPES, blockStorage, blockModeStorage, memoStorage, modulesStorage, settingsStorage
     } from "../src/utils/storage";
     export {default as toast, show} from "../src/utils/toast";
     export {Nullable, NullableProperties, ObjectEnum} from "../src/utils/types";
