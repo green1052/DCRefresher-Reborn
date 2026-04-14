@@ -139,22 +139,33 @@ let blurConfig = false;
 let replyConfig = false;
 
 (async () => {
-    if (!(await storage.get<boolean>("컨텐츠 차단.enable"))) return;
+    try {
+        if (!(await storage.get<boolean>("컨텐츠 차단.enable"))) return;
 
-    const [blur, replyRemove] = await Promise.all([
-        storage.get<boolean>("컨텐츠 차단.blur"),
-        storage.get<boolean>("컨텐츠 차단.replyRemove")
-    ]);
+        const [blur, replyRemove] = await Promise.all([
+            storage.get<boolean>("컨텐츠 차단.blur"),
+            storage.get<boolean>("컨텐츠 차단.replyRemove")
+        ]);
 
-    blurConfig = blur;
-    replyConfig = replyRemove;
+        blurConfig = blur ?? false;
+        replyConfig = replyRemove ?? false;
+    } catch (error) {
+        console.error("Failed to load block config:", error);
+        blurConfig = false;
+        replyConfig = false;
+    }
 })();
 
 let gifControlConfig = false;
 
 (async () => {
-    gifControlConfig =
-        (await storage.get<boolean>("관리.enable")) && (await storage.get<boolean>("관리.enableGifControl"));
+    try {
+        gifControlConfig =
+            (await storage.get<boolean>("관리.enable")) && (await storage.get<boolean>("관리.enableGifControl"));
+    } catch (error) {
+        console.error("Failed to load GIF control config:", error);
+        gifControlConfig = false;
+    }
 })();
 
 const ISSUE_ZOOM_ID = /\$\(document\)\.data\('comment_id',\s'.+'\);/g;
@@ -263,7 +274,12 @@ const request = {
             signal
         });
 
-        return JSON.parse(response);
+        try {
+            return JSON.parse(response);
+        } catch (error) {
+            console.error("Failed to parse comments response:", error);
+            throw "댓글 데이터를 파싱하는데 실패했습니다.";
+        }
     },
 
     async delete(args: GalleryHTTPRequestArguments, password?: string) {
