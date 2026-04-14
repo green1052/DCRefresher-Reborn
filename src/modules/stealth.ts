@@ -43,7 +43,8 @@ export default {
     name: "스텔스 모드",
     description: "페이지내에서 표시되는 이미지를 비활성화합니다.",
     memory: {
-        contentViewUUID: null
+        contentViewUUID: null,
+        loadHandler: null as (() => void) | null
     },
     enable: false,
     default_enable: false,
@@ -70,9 +71,10 @@ export default {
             if (document.readyState === "complete") {
                 tempButtonCreate(document.documentElement);
             } else {
-                window.addEventListener("load", () => {
+                this.memory.loadHandler = () => {
                     tempButtonCreate(document.documentElement);
-                });
+                };
+                window.addEventListener("load", this.memory.loadHandler);
             }
         }
 
@@ -90,10 +92,16 @@ export default {
         if (this.memory.contentViewUUID !== null) {
             eventBus.remove("contentPreview", this.memory.contentViewUUID);
         }
+
+        if (this.memory.loadHandler) {
+            window.removeEventListener("load", this.memory.loadHandler);
+            this.memory.loadHandler = null;
+        }
     }
 } as RefresherModule<{
     memory: {
         contentViewUUID: string | null;
+        loadHandler: (() => void) | null;
     };
     shortcuts: {
         stealthPause(): void;

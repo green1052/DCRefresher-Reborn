@@ -27,7 +27,10 @@ export default {
         load: null,
         paused: false,
         loading: false,
-        archiveArticleConfig: false
+        archiveArticleConfig: false,
+        visibilityHandler: null as (() => void) | null,
+        pageShowHandler: null as ((event: PageTransitionEvent) => void) | null,
+        popStateHandler: null as (() => void) | null
     },
     enable: true,
     default_enable: true,
@@ -313,6 +316,10 @@ export default {
             scheduleNextRefresh(!event.persisted);
         };
 
+        this.memory.visibilityHandler = handleVisibilityChange;
+        this.memory.pageShowHandler = handlePageShow;
+        this.memory.popStateHandler = handlePopState;
+
         document.addEventListener("visibilitychange", handleVisibilityChange);
         window.addEventListener("pageshow", handlePageShow);
 
@@ -325,12 +332,6 @@ export default {
 
             this.memory.load?.(undefined, true);
         });
-
-        const handlePopState = () => {
-            if (this.memory.refresh) window.clearTimeout(this.memory.refresh);
-            this.memory.calledByPageTurn = true;
-            scheduleNextRefresh();
-        };
 
         window.addEventListener("popstate", handlePopState);
 
@@ -431,6 +432,19 @@ export default {
         this.memory.uuid2 = null;
         this.memory.refreshRequest = null;
         this.memory.load = null;
+
+        if (this.memory.visibilityHandler) {
+            document.removeEventListener("visibilitychange", this.memory.visibilityHandler);
+            this.memory.visibilityHandler = null;
+        }
+        if (this.memory.pageShowHandler) {
+            window.removeEventListener("pageshow", this.memory.pageShowHandler);
+            this.memory.pageShowHandler = null;
+        }
+        if (this.memory.popStateHandler) {
+            window.removeEventListener("popstate", this.memory.popStateHandler);
+            this.memory.popStateHandler = null;
+        }
     }
 } as RefresherModule<{
     memory: {
