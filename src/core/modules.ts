@@ -71,6 +71,9 @@ export const modules = {
                 }
 
                 module.enable = enable;
+            }).catch((error) => {
+                console.error(`Failed to load enable state for module ${module.name}:`, error);
+                module.enable = module.default_enable;
             })
         );
 
@@ -80,8 +83,14 @@ export const modules = {
 
             promises.push(
                 ...Object.entries(module.settings).map(async ([key, value]) => {
-                    // @ts-ignore
-                    module.status[key] = await settings.load(module.name, key, value);
+                    try {
+                        // @ts-ignore
+                        module.status[key] = await settings.load(module.name, key, value);
+                    } catch (error) {
+                        console.error(`Failed to load setting ${key} for module ${module.name}:`, error);
+                        // @ts-ignore
+                        module.status[key] = value.default;
+                    }
                 })
             );
         }
@@ -103,23 +112,47 @@ export const modules = {
                             return result;
                         }
                     });
+                }).catch((error) => {
+                    console.error(`Failed to load data for module ${module.name}:`, error);
+                    // @ts-ignore
+                    module.data = new Proxy(module.data ?? {}, {
+                        set(target, p, newValue, receiver) {
+                            const result = Reflect.set(target, p, newValue, receiver);
+                            storage.module.setGlobal(module.name, target);
+                            return result;
+                        },
+
+                        deleteProperty(target, p) {
+                            const result = Reflect.deleteProperty(target, p);
+                            storage.module.setGlobal(module.name, target);
+                            return result;
+                        }
+                    });
                 })
             );
         }
 
         module_store[module.name] = module;
 
-        await Promise.all(promises);
+        try {
+            await Promise.all(promises);
 
-        const modulesSnap = JSON.parse(JSON.stringify(module_store));
-        const settingsSnap = JSON.parse(JSON.stringify(settings.dump()));
+            const modulesSnap = JSON.parse(JSON.stringify(module_store));
+            const settingsSnap = JSON.parse(JSON.stringify(settings.dump()));
 
-        await modulesStorage.setValue(modulesSnap);
-        await settingsStorage.setValue(settingsSnap);
+            await modulesStorage.setValue(modulesSnap);
+            await settingsStorage.setValue(settingsSnap);
+        } catch (error) {
+            console.error(`Failed to persist module state for ${module.name}:`, error);
+        }
 
         if (!module.enable || module.url?.test(location.href) === false) return;
 
-        runModule(module);
+        try {
+            runModule(module);
+        } catch (error) {
+            console.error(`Failed to run module ${module.name}:`, error);
+        }
     }
 };
 

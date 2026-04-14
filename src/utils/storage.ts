@@ -1,16 +1,8 @@
-export const BLOCK_TYPES: RefresherBlockType[] = [
-    "NICK",
-    "ID",
-    "IP",
-    "TITLE",
-    "TEXT",
-    "COMMENT",
-    "DCCON",
-    "TAB",
-    "IMAGE"
-];
+import {BLOCK_TYPES as BLOCK_TYPES_CONST, MEMO_TYPES as MEMO_TYPES_CONST} from "./constants";
 
-export const MEMO_TYPES: RefresherMemoType[] = ["UID", "NICK", "IP"];
+export const BLOCK_TYPES: RefresherBlockType[] = [...BLOCK_TYPES_CONST];
+
+export const MEMO_TYPES: RefresherMemoType[] = [...MEMO_TYPES_CONST];
 
 export const blockStorage = BLOCK_TYPES.reduce((acc, type) => {
     acc[type] = storage.defineItem<RefresherBlockValue[]>(`local:__REFRESHER_BLOCK:${type}`, {

@@ -24,15 +24,19 @@ let MEMO_CACHE: MemoCache = {
 };
 
 (async () => {
-    for (const key of MEMO_TYPES_KEYS) {
-        const memo = await memoStorage[key].getValue();
-        MEMO_CACHE[key] = memo ?? {};
+    try {
+        for (const key of MEMO_TYPES_KEYS) {
+            const memo = await memoStorage[key].getValue();
+            MEMO_CACHE[key] = memo ?? {};
 
-        memoStorage[key].watch((newValue) => {
-            if (!newValue) return;
-            MEMO_CACHE[key] = newValue;
-            eventBus.emit("refresh");
-        });
+            memoStorage[key].watch((newValue) => {
+                if (!newValue) return;
+                MEMO_CACHE[key] = newValue;
+                eventBus.emit("refresh");
+            });
+        }
+    } catch (error) {
+        console.error("Failed to initialize memo cache:", error);
     }
 })();
 
