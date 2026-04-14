@@ -1,9 +1,12 @@
+import block from "@/core/block";
 import $ from "cash-dom";
 import {Cash} from "cash-dom/dist/cash";
 import Cookies from "js-cookie";
 import ky from "ky";
 
 import {eventBus} from "../core/eventbus";
+import filter from "../core/filtering";
+import * as http from "../utils/http";
 import {queryString} from "../utils/http";
 import toast from "../utils/toast";
 
@@ -42,8 +45,7 @@ export default {
             default: false
         }
     },
-    require: ["filter", "eventBus", "block", "http"],
-    func(filter, eventBus, block, http) {
+    func() {
         const hideElement = ($element: Cash, blur = false) => {
             if (blur) {
                 $element.addClass("refresherBlur");
@@ -285,7 +287,7 @@ export default {
             toast.show(`${block.TYPE_NAMES[type]} ${value}을(를) 차단했습니다.`);
         });
     },
-    revoke(filter) {
+    revoke() {
         if (this.memory.uuid) filter.remove(this.memory.uuid);
 
         if (this.memory.uuid2) filter.remove(this.memory.uuid2);
@@ -313,5 +315,4 @@ export default {
         replyRemove: RefresherCheckSettings;
         blur: RefresherCheckSettings;
     };
-    require: ["filter", "eventBus", "block", "http"];
 }>;

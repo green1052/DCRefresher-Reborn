@@ -35,10 +35,9 @@ export default {
     default_enable: boolean,          // Default setting value
     settings: { ... },                 // Configuration schema
     shortcuts?: { ... },               // Keyboard shortcuts
-    require: ["filter", "eventBus"],   // Dependencies (injected order)
     func(deps) { ... },                // Init with injected deps
     revoke(deps) { ... }               // Cleanup
-} as RefresherModule<{ memory, settings, require }>;
+} as RefresherModule<{ memory, settings }>;
 ```
 
 ### Settings Schema
@@ -48,9 +47,6 @@ export default {
 - `type: "option"` → dropdown (items object)
 - `type: "text"` → string input
 
-### Dependencies Injection
-
-Dependencies injected as func parameters in order: `["filter", "eventBus", "block", "http", "ip", "memo", "Frame"]`
 
 ### Memory Pattern
 

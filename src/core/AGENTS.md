@@ -29,4 +29,3 @@ Internal utilities powering the module system: filtering, settings, block, memo,
 - **Storage watchers**: Block and Memo use WXT storage `.watch()` to auto-update in-memory cache.
 - **Proxy auto-save**: Module data (in `modules.ts`) uses Proxy - mutations trigger automatic
   `storage.module.setGlobal()`.
-- **Self image**: File contains only namespace constant - placeholder for future implementation.

@@ -1,5 +1,7 @@
 import $ from "cash-dom";
 
+import filter from "../core/filtering";
+
 export default {
     name: "글쓰기",
     description: "글쓰기 페이지를 변경합니다.",
@@ -37,8 +39,7 @@ export default {
             default: false
         }
     },
-    require: ["filter"],
-    func(filter) {
+    func() {
         this.memory.beforeUnloadHandler = (ev: BeforeUnloadEvent) => {
             if (this.status.preventExit && !$("button:hover").eq(-1).hasClass("write")) {
                 ev.preventDefault();
@@ -69,7 +70,7 @@ export default {
             filter.remove(this.memory.submitButton);
         });
     },
-    revoke(filter) {
+    revoke() {
         filter.remove(this.memory.submitButton);
         if (this.memory.beforeUnloadHandler) {
             window.removeEventListener("beforeunload", this.memory.beforeUnloadHandler);
@@ -87,5 +88,4 @@ export default {
         footer: RefresherTextSettings;
         preventExit: RefresherCheckSettings;
     };
-    require: ["filter"];
 }>;

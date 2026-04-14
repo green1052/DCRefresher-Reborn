@@ -2,6 +2,9 @@ import $ from "cash-dom";
 import {Cash} from "cash-dom/dist/cash";
 import ky from "ky";
 
+import eventBus from "../core/eventbus";
+import filter from "../core/filtering";
+import * as http from "../utils/http";
 import {queryString} from "../utils/http";
 import toast from "../utils/toast";
 import storage from "../utils/webStorage";
@@ -28,9 +31,9 @@ export default {
         paused: false,
         loading: false,
         archiveArticleConfig: false,
-        visibilityHandler: null as (() => void) | null,
-        pageShowHandler: null as ((event: PageTransitionEvent) => void) | null,
-        popStateHandler: null as (() => void) | null
+        visibilityHandler: null,
+        pageShowHandler: null,
+        popStateHandler: null
     },
     enable: true,
     default_enable: true,
@@ -97,8 +100,7 @@ export default {
             }
         }
     },
-    require: ["http", "eventBus", "filter"],
-    async func(http, eventBus, filter) {
+    async func() {
         const updateRefreshText = (button?: HTMLElement) => {
             button ??= document.querySelector<HTMLElement>(".page_head .gall_issuebox button[data-refresher=true]");
 
@@ -316,6 +318,11 @@ export default {
             scheduleNextRefresh(!event.persisted);
         };
 
+        const handlePopState = () => {
+            if (this.memory.refresh) window.clearTimeout(this.memory.refresh);
+            this.memory.load?.();
+        };
+
         this.memory.visibilityHandler = handleVisibilityChange;
         this.memory.pageShowHandler = handlePageShow;
         this.memory.popStateHandler = handlePopState;
@@ -409,7 +416,7 @@ export default {
 
         this.memory.uuid2 = eventBus.on("refresherGetPost", updatePagination);
     },
-    revoke(_, eventBus, filter) {
+    revoke() {
         document.body.classList.remove("refresherDoNotColorVisited");
 
         if (this.memory.refresh) {
@@ -450,14 +457,20 @@ export default {
     memory: {
         uuid: string | null;
         uuid2: string | null;
-        cache: object;
+        cache: Record<any, any>;
         new_counts: number;
         delay: number;
         refresh: number;
         calledByPageTurn: boolean;
         refreshRequest: string | null;
         lastRefresh: number;
+        paused: boolean;
+        loading: boolean;
         load: ((customURL?: string, force?: boolean) => Promise<boolean>) | null;
+        archiveArticleConfig: boolean;
+        visibilityHandler: (() => void) | null;
+        pageShowHandler: ((event: PageTransitionEvent) => void) | null;
+        popStateHandler: (() => void) | null;
     };
     shortcuts: {
         refreshLists(): void;
@@ -470,5 +483,4 @@ export default {
         noRefreshOnSearch: RefresherCheckSettings;
         doNotColorVisited: RefresherCheckSettings;
     };
-    require: ["http", "eventBus", "filter"];
 }>;

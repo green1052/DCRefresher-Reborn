@@ -5,15 +5,17 @@ import {createWorker} from "tesseract.js";
 
 import {GalleryPreData} from "../@types/post";
 import * as block from "../core/block";
-import type IFrame from "../core/frame";
+import eventBus from "../core/eventbus";
+import filter from "../core/filtering";
+import Frame from "../core/frame";
 import {submitComment} from "../utils/comment";
 import getURL from "../utils/getURL";
 import * as http from "../utils/http";
 import {queryString} from "../utils/http";
 import {ScrollDetection} from "../utils/scrollDetection";
-import * as storage from "../utils/webStorage";
 import toast from "../utils/toast";
 import {User} from "../utils/user";
+import * as storage from "../utils/webStorage";
 import {writeClipboard} from "../utils/writeClipboard";
 
 const domParser = new DOMParser();
@@ -1336,8 +1338,7 @@ export default {
             default: false
         }
     },
-    require: ["filter", "eventBus", "Frame", "http"],
-    func(filter, eventBus, Frame, http) {
+    func() {
         if (!this.status.disableCache) {
             filter.add(".page_head .gall_issuebox", (element) => {
                 const button = document.createElement("button");
@@ -2357,7 +2358,7 @@ export default {
 
         window.addEventListener("popstate", this.memory.popStateHandler);
     },
-    revoke(filter) {
+    revoke() {
         if (this.memory.uuid) filter.remove(this.memory.uuid, true);
 
         if (this.memory.popStateHandler) window.removeEventListener("popstate", this.memory.popStateHandler);
@@ -2405,5 +2406,4 @@ export default {
         newArticleArchive: RefresherCheckSettings;
         blockImage: RefresherCheckSettings;
     };
-    require: ["filter", "eventBus", "Frame", "http"];
 }>;
