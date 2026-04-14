@@ -28,6 +28,7 @@
 
 .fl,
 .cmt_info,
+.addbox,
 .reply_info {
     .refresherUserData {
         margin-left: 3px;
@@ -35,24 +36,29 @@
 }
 
 .gall_writer {
-    display: block;
+    // TODO 고쳐야함
     overflow: hidden;
-    position: static !important;
+
+    // display: block;
     text-overflow: ellipsis;
+    //position: static !important;
     white-space: nowrap;
-    word-wrap: normal;
+
+    &:has(.user_data.add) {
+        overflow: unset !important;
+    }
+
+    // word-wrap: normal;
+
+    .addbox {
+        display: initial !important;
+    }
 }
 
 tr.gall_writer {
     display: table-cell;
     text-align: center;
     vertical-align: middle;
-}
-
-.gall_writer .user_data {
-    left: unset !important;
-    margin-left: unset !important;
-    top: unset !important;
 }
 
 // Refresh Module
