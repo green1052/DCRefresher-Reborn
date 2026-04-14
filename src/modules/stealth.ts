@@ -1,5 +1,6 @@
 import $ from "cash-dom";
 
+import eventBus from "../core/eventbus";
 import getURL from "../utils/getURL";
 import toast from "../utils/toast";
 
@@ -63,8 +64,7 @@ export default {
             toast.show(content, "info");
         }
     },
-    require: ["eventBus"],
-    func(eventBus) {
+    func() {
         $(document.documentElement).addClass("refresherStealth");
 
         if (!$(CONTROL_BUTTON).length) {
@@ -82,7 +82,7 @@ export default {
             if (!$(CONTROL_BUTTON).length) tempButtonCreate(elem);
         });
     },
-    revoke(eventBus) {
+    revoke() {
         $(document.documentElement).removeClass("refresherStealth");
 
         for (const button of $(CONTROL_BUTTON)) {
@@ -106,5 +106,4 @@ export default {
     shortcuts: {
         stealthPause(): void;
     };
-    require: ["eventBus"];
 }>;

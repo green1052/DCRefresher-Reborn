@@ -16,21 +16,19 @@ declare global {
         skipIfNotExists?: boolean;
     }
 
-    type RefresherFilter = typeof import("../core/filtering").filter;
-
     interface RefresherEventBusOptions {
         once: boolean;
     }
 
     interface RefresherEventBus {
-        emit: (event: string, ...params: unknown[]) => void;
-        emitNextTick: (event: string, ...params: unknown[]) => void;
-        on: (event: string, callback: (...args: unknown[]) => void, options?: RefresherEventBusOptions) => string;
+        emit: (event: string, ...params: any[]) => void;
+        emitNextTick: (event: string, ...params: any[]) => void;
+        on: (event: string, callback: (...args: any[]) => void, options?: RefresherEventBusOptions) => string;
         remove: (event: string, uuid: string, skip?: boolean) => void;
     }
 
     interface RefresherEventBusObject {
-        func: (...params: unknown[]) => void;
+        func: (...params: any[]) => void;
         uuid: string;
         once?: boolean;
     }

@@ -1,7 +1,11 @@
 import $ from "cash-dom";
 
 import communicate from "../core/communicate";
+import eventBus from "../core/eventbus";
+import filter from "../core/filtering";
+import * as memo from "../core/memo";
 import color from "../utils/color";
+import * as ip from "../utils/ip";
 import toast from "../utils/toast";
 import type {Nullable, NullableProperties, ObjectEnum} from "../utils/types";
 import {getType} from "../utils/user";
@@ -305,8 +309,7 @@ export default {
             default: false
         }
     },
-    require: ["filter", "eventBus", "ip", "memo"],
-    func(filter, eventBus, ip, memo) {
+    func() {
         const ipInfoAdd = (element: HTMLElement) => {
             if (!this.status.showIpInfo || !element.dataset.ip || element.dataset.refresherIp === "true") return false;
 
@@ -342,14 +345,12 @@ export default {
 
             const userType = getType(img);
 
-            if (
-                (!this.status.showHalfFixedNickUID &&
+            if ((!this.status.showHalfFixedNickUID &&
                     (userType === "HALF_FIXED" ||
                         userType === "HALF_FIXED_SUB_MANAGER" ||
                         userType === "HALF_FIXED_MANAGER")) ||
                 (!this.status.showFixedNickUID &&
-                    (userType === "FIXED" || userType === "FIXED_SUB_MANAGER" || userType === "FIXED_MANAGER"))
-            )
+                    (userType === "FIXED" || userType === "FIXED_SUB_MANAGER" || userType === "FIXED_MANAGER")))
                 return false;
 
             const text = document.createElement("span");
@@ -367,6 +368,7 @@ export default {
 
                 if (addBox)
                     addBox.appendChild(text);
+
                 else
                     element.appendChild(text);
             }
@@ -378,9 +380,7 @@ export default {
             if (element.dataset.refresherMemoHandler !== "true") {
                 element.addEventListener("contextmenu", () => {
                     const {
-                        nick = null,
-                        uid = null,
-                        ip = null
+                        nick = null, uid = null, ip = null
                     } = element.dataset as {
                         [K in RefresherMemoType as Lowercase<K>]: K;
                     };
@@ -399,8 +399,7 @@ export default {
 
             if (element.dataset.refresherMemo === "true") return false;
 
-            const memoData: RefresherMemoValue | null =
-                memo.get("UID", element.dataset.uid) ??
+            const memoData: RefresherMemoValue | null = memo.get("UID", element.dataset.uid) ??
                 memo.get("IP", element.dataset.ip) ??
                 memo.get("NICK", element.dataset.nick);
 
@@ -434,6 +433,7 @@ export default {
 
                         if (userData)
                             ip.insertBefore(text, userData);
+
                         else
                             ip.appendChild(text);
                     }
@@ -446,6 +446,7 @@ export default {
 
                     if (userData)
                         addBox.insertBefore(text, userData);
+
                     else
                         addBox.appendChild(text);
                 } else {
@@ -459,6 +460,7 @@ export default {
 
                         if (userData)
                             element.insertBefore(text, userData);
+
                         else
                             element.appendChild(text);
                     }
@@ -506,7 +508,7 @@ export default {
 
         this.memory.memoAsk = communicate.addHook(
             "refresherRequestMemoAsk",
-            async ({type, user}: { type: RefresherMemoType; user: RefresherMemoType }) => {
+            async ({type, user}: { type: RefresherMemoType; user: RefresherMemoType; }) => {
                 const selected: NullableProperties<ObjectEnum<RefresherMemoType>> = {
                     IP: null,
                     NICK: null,
@@ -572,7 +574,7 @@ export default {
             toast.show(`${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 추가했습니다.`);
         });
     },
-    revoke(filter, eventBus) {
+    revoke() {
         if (this.memory.always) filter.remove(this.memory.always);
         if (this.memory.contextMenu) eventBus.remove("refresherUserContextMenu", this.memory.contextMenu);
         if (this.memory.requestBlock) eventBus.remove("refresherUpdateUserMemo", this.memory.requestBlock);
@@ -597,5 +599,4 @@ export default {
         showIpInfo: RefresherCheckSettings;
         showTooltip: RefresherCheckSettings;
     };
-    require: ["filter", "eventBus", "ip", "memo"];
 }>;
