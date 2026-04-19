@@ -143,7 +143,6 @@ export default {
             $(document.documentElement).toggleClass("refresherHideGamemeca", value);
         }
     },
-    require: [],
     func() {
         const isPageView = location.href.includes("board/view");
 
@@ -204,5 +203,4 @@ export default {
         removeDCNotice(value: boolean): void;
         removeGamemeca(value: boolean): void;
     };
-    require: [];
 }>;

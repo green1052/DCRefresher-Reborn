@@ -13,18 +13,6 @@ export const set = async <T>(key: string, value: T): Promise<void> => {
     await storageArea.set({[key]: value});
 };
 
-export const setObject = async (items: Record<string, any>): Promise<void> => {
-    await storageArea.set(items);
-};
-
-export const remove = async (keys: string | string[]): Promise<void> => {
-    await storageArea.remove(keys);
-};
-
-export const clear = async (): Promise<void> => {
-    await storageArea.clear();
-};
-
 export const moduleStorage = {
     async get<T>(module: string, key?: string): Promise<T> {
         const storageKey = key ? `refresher.module:${module}-${key}` : `refresher.module:${module}`;
@@ -49,8 +37,5 @@ export const moduleStorage = {
 export default {
     get,
     set,
-    setObject,
-    remove,
-    clear,
     module: moduleStorage
 };

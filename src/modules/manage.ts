@@ -1,3 +1,4 @@
+import filter from "@/core/filtering";
 import $ from "cash-dom";
 import {Cash} from "cash-dom/dist/cash";
 import Cookies from "js-cookie";
@@ -83,8 +84,7 @@ export default {
             default: false
         }
     },
-    require: ["filter", "eventBus"],
-    func(filter, eventBus) {
+    func() {
         const deletePost = async (id: string) => {
             if (!id) return;
 
@@ -378,7 +378,7 @@ export default {
             }
         });
     },
-    revoke(filter) {
+    revoke() {
         if (this.memory.gallViewContents) filter.remove(this.memory.gallViewContents);
         if (this.memory.checkBox) filter.remove(this.memory.checkBox);
         if (this.memory.always) filter.remove(this.memory.always);
@@ -406,5 +406,4 @@ export default {
         checkPermBan: RefresherCheckSettings;
         enableGifControl: RefresherCheckSettings;
     };
-    require: ["filter", "eventBus"];
 }>;

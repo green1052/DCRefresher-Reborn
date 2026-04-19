@@ -1,3 +1,5 @@
+import eventBus from "@/core/eventbus";
+import filter from "@/core/filtering";
 import $ from "cash-dom";
 import {Cash} from "cash-dom/dist/cash";
 import ky from "ky";
@@ -94,8 +96,7 @@ export default {
             }
         }
     },
-    require: ["http", "eventBus", "filter"],
-    async func(http, eventBus, filter) {
+    async func() {
         const updateRefreshText = (button?: HTMLElement) => {
             button ??= document.querySelector<HTMLElement>(".page_head .gall_issuebox button[data-refresher=true]");
 
@@ -408,7 +409,7 @@ export default {
 
         this.memory.uuid2 = eventBus.on("refresherGetPost", updatePagination);
     },
-    revoke(_, eventBus, filter) {
+    revoke() {
         document.body.classList.remove("refresherDoNotColorVisited");
 
         if (this.memory.refresh) {
@@ -436,7 +437,7 @@ export default {
     memory: {
         uuid: string | null;
         uuid2: string | null;
-        cache: object;
+        cache: any;
         new_counts: number;
         delay: number;
         refresh: number;
@@ -444,6 +445,9 @@ export default {
         refreshRequest: string | null;
         lastRefresh: number;
         load: ((customURL?: string, force?: boolean) => Promise<boolean>) | null;
+        paused: boolean;
+        loading: boolean;
+        archiveArticleConfig: boolean;
     };
     shortcuts: {
         refreshLists(): void;
@@ -456,5 +460,4 @@ export default {
         noRefreshOnSearch: RefresherCheckSettings;
         doNotColorVisited: RefresherCheckSettings;
     };
-    require: ["http", "eventBus", "filter"];
 }>;

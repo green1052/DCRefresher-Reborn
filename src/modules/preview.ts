@@ -1,19 +1,20 @@
+import eventBus from "@/core/eventbus";
+import filter from "@/core/filtering";
 import $, {Cash} from "cash-dom";
 import Cookies from "js-cookie";
 import ky, {Input, Options} from "ky";
-import {createWorker} from "tesseract.js";
-
 import {GalleryPreData} from "../@types/post";
 import * as block from "../core/block";
-import type IFrame from "../core/frame";
+import Frame from "../core/frame";
+import IFrame from "../core/frame";
 import {submitComment} from "../utils/comment";
 import getURL from "../utils/getURL";
 import * as http from "../utils/http";
 import {queryString} from "../utils/http";
 import {ScrollDetection} from "../utils/scrollDetection";
-import * as storage from "../utils/webStorage";
 import toast from "../utils/toast";
 import {User} from "../utils/user";
+import * as storage from "../utils/webStorage";
 import {writeClipboard} from "../utils/writeClipboard";
 
 const domParser = new DOMParser();
@@ -398,7 +399,6 @@ const request = {
     async captcha(args: GalleryHTTPRequestArguments, kcaptchaType: "comment" | "recommend") {
         if (!args.link) throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
 
-        // const galleryType = http.galleryType(args.link, "/");
         const galleryTypeName = http.galleryTypeName(args.link);
 
         const params = new URLSearchParams();
@@ -407,10 +407,8 @@ const request = {
         params.set("kcaptcha_type", kcaptchaType);
         params.set("_GALLTYPE_", galleryTypeName);
 
-        await client(http.urls.captcha, {body: params});
-
         return (
-            "/kcaptcha/image/?gall_id=" +
+            "/kcaptcha/image_v3/?gall_id=" +
             args.gallery +
             "&kcaptcha_type=" +
             kcaptchaType +
@@ -817,10 +815,7 @@ const panel = {
         return element;
     },
 
-    async captcha(src: string, callback: (captcha: string) => void, bypassCaptcha: boolean): Promise<boolean> {
-        const image = await ky.get(`https://gall.dcinside.com/${src}`).blob();
-        const url = URL.createObjectURL(image);
-
+    async captcha(src: string, callback: (captcha: string) => void): Promise<boolean> {
         const element = document.createElement("div");
         element.className = "refresher-captcha-popup";
 
@@ -830,7 +825,7 @@ const panel = {
       <div class="cross"></div>
       <div class="cross"></div>
     </div>
-    <img src="${url}"></img>
+    <img src="${src}"></img>
     <input type="text"></input>
     <button class="refresher-preview-button primary">
       <p class="refresher-vote-text">전송</p>
@@ -851,7 +846,6 @@ const panel = {
         });
 
         element.querySelector(".close")!.addEventListener("click", () => {
-            URL.revokeObjectURL(url);
             element.remove();
         });
 
@@ -860,26 +854,6 @@ const panel = {
         document.body.appendChild(element);
 
         setTimeout(() => element.querySelector("input")!.focus(), 0);
-
-        if (bypassCaptcha) {
-            const worker = await createWorker("eng");
-
-            try {
-                await worker.setParameters({
-                    tessedit_char_whitelist: "0123456789abcdefghijklmnopqrstuvwxyz"
-                });
-
-                const {
-                    data: {text}
-                } = await worker.recognize(image);
-
-                element.querySelector("input")!.value = text;
-            } catch {
-                toast.show("자동 인식에 실패했습니다.", "error");
-            } finally {
-                await worker.terminate();
-            }
-        }
 
         return true;
     }
@@ -938,7 +912,7 @@ interface Cache {
 class PostCache {
     caches: Record<string, Cache> = {};
 
-    constructor(public maxCacheSize: number = 1000) {
+    constructor(public maxCacheSize: number = 50) {
     }
 
     public get(id: string, ignoreTimeout = false): Cache | undefined {
@@ -1289,12 +1263,6 @@ export default {
             type: "check",
             default: false
         },
-        bypassCaptcha: {
-            name: "캡차 자동 완성",
-            desc: "캡차를 자동으로 입력합니다.",
-            type: "check",
-            default: false
-        },
         disableCache: {
             name: "캐시 비활성화",
             desc: "캐시를 사용하지 않습니다. (툴팁 미리보기 제외)",
@@ -1320,8 +1288,7 @@ export default {
             default: false
         }
     },
-    require: ["filter", "eventBus", "Frame", "http"],
-    func(filter, eventBus, Frame, http) {
+    func() {
         if (!this.status.disableCache) {
             filter.add(".page_head .gall_issuebox", (element) => {
                 const button = document.createElement("button");
@@ -1489,7 +1456,7 @@ export default {
                     return false;
                 };
 
-                return codeSrc ? panel.captcha(codeSrc, req, this.status.bypassCaptcha) : req();
+                return codeSrc ? panel.captcha(codeSrc, req) : req();
             };
 
             frame.functions.share = () => {
@@ -1663,8 +1630,16 @@ export default {
                     const codeSrc = requireCapCode ? await request.captcha(preData, "comment") : undefined;
 
                     const getGreCaptchaToken = () =>
-                        new Promise<string>((resolve) => {
-                            setTimeout(() => resolve(""), 3000);
+                        new Promise<string | undefined>((resolve) => {
+                            setTimeout(() => resolve(undefined), 3000);
+
+                            const grecaptchaHandler = (ev: MessageEvent) => {
+                                if (ev.data.type !== "refresherGrecaptchaToken") return;
+                                window.removeEventListener("message", grecaptchaHandler);
+                                resolve(ev.data.token);
+                            };
+
+                            window.addEventListener("message", grecaptchaHandler);
 
                             window.postMessage(
                                 {
@@ -1673,13 +1648,6 @@ export default {
                                 },
                                 "*"
                             );
-
-                            const grecaptchaHandler = (ev: MessageEvent) => {
-                                if (ev.data.type !== "refresherGrecaptchaToken") return;
-                                window.removeEventListener("message", grecaptchaHandler);
-                                resolve(ev.data.token);
-                            };
-                            window.addEventListener("message", grecaptchaHandler);
                         });
 
                     const grecaptcha = await getGreCaptchaToken();
@@ -1705,7 +1673,7 @@ export default {
                         }
                     };
 
-                    return codeSrc ? await panel.captcha(codeSrc, req, this.status.bypassCaptcha) : req();
+                    return codeSrc ? await panel.captcha(codeSrc, req) : req();
                 };
 
                 if (this.memory.refreshIntervalId) clearInterval(this.memory.refreshIntervalId);
@@ -2341,7 +2309,7 @@ export default {
 
         window.addEventListener("popstate", this.memory.popStateHandler);
     },
-    revoke(filter) {
+    revoke() {
         if (this.memory.uuid) filter.remove(this.memory.uuid, true);
 
         if (this.memory.popStateHandler) window.removeEventListener("popstate", this.memory.popStateHandler);
@@ -2383,11 +2351,9 @@ export default {
         blockPresetUserType: RefresherCheckSettings;
         expandRecognizeRange: RefresherCheckSettings;
         experimentalComment: RefresherCheckSettings;
-        bypassCaptcha: RefresherCheckSettings;
         disableCache: RefresherCheckSettings;
         archiveArticle: RefresherCheckSettings;
         newArticleArchive: RefresherCheckSettings;
         blockImage: RefresherCheckSettings;
     };
-    require: ["filter", "eventBus", "Frame", "http"];
 }>;
