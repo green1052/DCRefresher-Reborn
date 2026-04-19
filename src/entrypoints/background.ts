@@ -1,8 +1,7 @@
-import {onMessage, sendMessage} from "../utils/messaging";
-import storage from "../utils/webStorage";
-
 import type {ModuleStore} from "../core/modules";
 import type {SettingsStore} from "../core/settings";
+import {onMessage, sendMessage} from "../utils/messaging";
+import storage from "../utils/webStorage";
 
 export default defineBackground(() => {
     // ===== Store State =====

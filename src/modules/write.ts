@@ -1,8 +1,6 @@
 import filter from "@/core/filtering";
 import $ from "cash-dom";
 
-import filter from "../core/filtering";
-
 export default {
     name: "글쓰기",
     description: "글쓰기 페이지를 변경합니다.",
