@@ -1,7 +1,10 @@
+import eventBus from "@/core/eventbus";
+import filter from "@/core/filtering";
+import memo from "@/core/memo";
+import ip from "@/utils/ip";
 import $ from "cash-dom";
 
 import communicate from "../core/communicate";
-import color from "../utils/color";
 import toast from "../utils/toast";
 import type {Nullable, NullableProperties, ObjectEnum} from "../utils/types";
 import {getType} from "../utils/user";
@@ -168,7 +171,7 @@ const memoAsk = (
     const colorElement = frame.querySelector<HTMLInputElement>("#refresher_memo_color")!;
 
     const randomColor = () => {
-        colorElement.value = color.random();
+        colorElement.value = `#${Math.random().toString(16).slice(2, 8).padStart(6, "0")}`;
     };
 
     const updateType = () => {
@@ -305,8 +308,7 @@ export default {
             default: false
         }
     },
-    require: ["filter", "eventBus", "ip", "memo"],
-    func(filter, eventBus, ip, memo) {
+    func() {
         const ipInfoAdd = (element: HTMLElement) => {
             if (!this.status.showIpInfo || !element.dataset.ip || element.dataset.refresherIp === "true") return false;
 
@@ -572,7 +574,7 @@ export default {
             toast.show(`${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 추가했습니다.`);
         });
     },
-    revoke(filter, eventBus) {
+    revoke() {
         if (this.memory.always) filter.remove(this.memory.always);
         if (this.memory.contextMenu) eventBus.remove("refresherUserContextMenu", this.memory.contextMenu);
         if (this.memory.requestBlock) eventBus.remove("refresherUpdateUserMemo", this.memory.requestBlock);
@@ -597,5 +599,4 @@ export default {
         showIpInfo: RefresherCheckSettings;
         showTooltip: RefresherCheckSettings;
     };
-    require: ["filter", "eventBus", "ip", "memo"];
 }>;

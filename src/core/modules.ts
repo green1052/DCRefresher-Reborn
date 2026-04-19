@@ -1,49 +1,21 @@
-import {modulesStorage, settingsStorage} from "../utils/storage";
-
-import http from "../utils/http";
-import ip from "../utils/ip";
+import {modulesStorage, settingsStorage} from "@/utils/storage";
 import storage from "../utils/webStorage";
-import block from "./block";
 import communicate from "./communicate";
 import eventBus from "./eventbus";
-import filter from "./filtering";
-import Frame from "./frame";
-import memo from "./memo";
 import settings from "./settings";
 
-type ModuleItem = ValueOf<ItemToRefresherMap>;
-
 export type ModuleStore = Record<string, RefresherModule>;
-
-const UTILS: ItemToRefresherMap = {
-    filter,
-    Frame,
-    eventBus,
-    http,
-    ip,
-    block,
-    memo
-};
 
 const module_store: ModuleStore = {};
 
 const runModule = (module: RefresherModule) => {
-    const plugins: ModuleItem[] = Array.isArray(module.require)
-        ? (module.require as (keyof ItemToRefresherMap)[]).map((require) => UTILS[require])
-        : [];
-
-    // @ts-ignore
-    if (typeof module.func === "function") module.func(...plugins);
+    if (typeof module.func === "function")
+        module.func();
 };
 
 const revokeModule = (module: RefresherModule) => {
     if (typeof module.revoke === "function") {
-        const plugins: ModuleItem[] = Array.isArray(module.require)
-            ? (module.require as (keyof ItemToRefresherMap)[]).map((require) => UTILS[require])
-            : [];
-
-        // @ts-ignore
-        module.revoke(...plugins);
+        module.revoke();
     }
 
     if (typeof module.memory === "object") {
@@ -169,13 +141,5 @@ eventBus.on("refresherUpdateSetting", (mod: string, key: string, value: unknown)
 
     if (!module.enable || !module.update || typeof module.update[key] !== "function") return;
 
-    const plugins: ModuleItem[] = [];
-
-    if (Array.isArray(module.require)) {
-        for (const require of module.require as (keyof ItemToRefresherMap)[]) {
-            plugins.push(UTILS[require]);
-        }
-    }
-
-    module.update[key].bind(module)(value, ...plugins);
+    module.update[key].bind(module)(value);
 });

@@ -427,15 +427,8 @@
 </template>
 
 <script lang="ts" setup>
-import {sendMessage} from "../../utils/messaging";
-import $ from "cash-dom";
-import ky from "ky";
-import {computed, nextTick, onMounted, reactive, ref} from "vue";
-import type {Browser} from "wxt/browser";
-
-import {BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES} from "../../core/block";
-import {TYPE_NAMES as MEMO_TYPE_NAMES} from "../../core/memo";
-import storage from "../../utils/webStorage";
+import {Browser} from "#imports";
+import {sendMessage} from "@/utils/messaging";
 import {
     BLOCK_TYPES,
     blockModeStorage,
@@ -444,8 +437,15 @@ import {
     memoStorage,
     modulesStorage,
     settingsStorage
-} from "../../utils/storage";
-import {writeClipboard} from "../../utils/writeClipboard";
+} from "@/utils/storage";
+import {writeClipboard} from "@/utils/writeClipboard";
+import $ from "cash-dom";
+import ky from "ky";
+import {computed, nextTick, onMounted, reactive, ref} from "vue";
+
+import {BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES} from "../../core/block";
+import {TYPE_NAMES as MEMO_TYPE_NAMES} from "../../core/memo";
+import storage from "../../utils/webStorage";
 
 import RefresherBubble from "./components/bubble.vue";
 import RefresherCheckbox from "./components/checkbox.vue";
@@ -461,7 +461,7 @@ const props = defineProps<{
 const tab = ref(0);
 const modules = ref<{ [key: string]: RefresherModule }>({});
 const settings = ref<{ [key: string]: { [key: string]: RefresherSettings } }>({});
-const shortcuts = ref<Browser.Commands.Command[]>([]);
+const shortcuts = ref<Browser.commands.Command[]>([]);
 const blocks = reactive<{ [key in RefresherBlockType]: RefresherBlockValue[] }>({
     NICK: [],
     ID: [],
@@ -741,7 +741,7 @@ const updateUserSetting = async (module: string, key: string, value: unknown) =>
     (settings.value[module][key].value as unknown) = value;
 
     try {
-        await wxtStorage.setItem(`local:${module}.${key}`, value);
+        await storage.set(`${module}.${key}`, value);
 
         const currentSettings = await settingsStorage.getValue();
         if (currentSettings && currentSettings[module] && currentSettings[module][key]) {
@@ -1697,4 +1697,3 @@ body {
     transform: translateX(0px);
 }
 </style>
-
