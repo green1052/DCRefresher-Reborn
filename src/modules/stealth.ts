@@ -1,7 +1,6 @@
 import eventBus from "@/core/eventbus";
 import $ from "cash-dom";
 
-import eventBus from "../core/eventbus";
 import getURL from "../utils/getURL";
 import toast from "../utils/toast";
 
@@ -45,8 +44,7 @@ export default {
     name: "스텔스 모드",
     description: "페이지내에서 표시되는 이미지를 비활성화합니다.",
     memory: {
-        contentViewUUID: null,
-        loadHandler: null as (() => void) | null
+        contentViewUUID: null
     },
     enable: false,
     default_enable: false,
@@ -72,10 +70,9 @@ export default {
             if (document.readyState === "complete") {
                 tempButtonCreate(document.documentElement);
             } else {
-                this.memory.loadHandler = () => {
+                window.addEventListener("load", () => {
                     tempButtonCreate(document.documentElement);
-                };
-                window.addEventListener("load", this.memory.loadHandler);
+                });
             }
         }
 
@@ -93,16 +90,10 @@ export default {
         if (this.memory.contentViewUUID !== null) {
             eventBus.remove("contentPreview", this.memory.contentViewUUID);
         }
-
-        if (this.memory.loadHandler) {
-            window.removeEventListener("load", this.memory.loadHandler);
-            this.memory.loadHandler = null;
-        }
     }
 } as RefresherModule<{
     memory: {
         contentViewUUID: string | null;
-        loadHandler: (() => void) | null;
     };
     shortcuts: {
         stealthPause(): void;

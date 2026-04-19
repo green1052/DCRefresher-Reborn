@@ -5,7 +5,6 @@ import Cookies from "js-cookie";
 import ky from "ky";
 
 import eventBus from "../core/eventbus";
-import filter from "../core/filtering";
 import http from "../utils/http";
 import storage from "../utils/webStorage";
 

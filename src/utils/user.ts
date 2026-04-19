@@ -2,8 +2,8 @@ import $ from "cash-dom";
 
 import memo from "../core/memo";
 import ip from "./ip";
-import storage from "./webStorage";
 import type {Nullable, ObjectEnum} from "./types";
+import storage from "./webStorage";
 
 export type UserType =
     | "UNFIXED"

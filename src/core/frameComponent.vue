@@ -32,7 +32,7 @@
 </template>
 
 <script lang="ts" setup>
-import {onMounted, onUnmounted, ref, watch} from "vue";
+import {onMounted, ref, watch} from "vue";
 
 import RefresherGroup from "../components/group.vue";
 import RefresherScroll from "../components/scroll.vue";
@@ -70,22 +70,15 @@ watch(closed, (val: boolean) => {
     document.body.style.overflow = val ? "" : "hidden";
 });
 
-// Event handler reference for cleanup
-const handleKeyup = (ev: KeyboardEvent) => {
-    if (ev.code === "Escape" && !closed.value) {
-        outerClick();
-    }
-};
-
-// Lifecycle hooks
+// Lifecycle hook
 onMounted(() => {
     document.body.style.overflow = "hidden";
-    document.addEventListener("keyup", handleKeyup);
-});
 
-onUnmounted(() => {
-    document.removeEventListener("keyup", handleKeyup);
-    document.body.style.overflow = "";
+    document.addEventListener("keyup", (ev) => {
+        if (ev.code === "Escape" && !closed.value) {
+            outerClick();
+        }
+    });
 });
 
 // Methods

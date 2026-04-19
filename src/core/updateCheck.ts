@@ -1,5 +1,5 @@
-import storage from "../utils/webStorage";
 import toast from "../utils/toast";
+import storage from "../utils/webStorage";
 
 (async () => {
     const [installed, updated] = await Promise.all([

@@ -1,6 +1,7 @@
 import {blockModeStorage, blockStorage} from "../utils/storage";
-import {BLOCK_TYPES} from "../utils/constants";
 import {eventBus} from "./eventbus";
+
+const BLOCK_NAMESPACE = "__REFRESHER_BLOCK";
 
 export const TYPE_NAMES: Record<RefresherBlockType, string> = {
     NICK: "닉네임",
@@ -14,7 +15,17 @@ export const TYPE_NAMES: Record<RefresherBlockType, string> = {
     IMAGE: "이미지 (미구현)"
 };
 
-const BLOCK_TYPES_KEYS: RefresherBlockType[] = [...BLOCK_TYPES];
+const BLOCK_TYPES_KEYS: RefresherBlockType[] = [
+    "NICK",
+    "ID",
+    "IP",
+    "TITLE",
+    "TEXT",
+    "COMMENT",
+    "DCCON",
+    "TAB",
+    "IMAGE"
+];
 
 export const BLOCK_DETECT_MODE_TYPE_NAMES: Record<RefresherBlockDetectMode, string> = {
     SAME: "일치",
@@ -62,30 +73,26 @@ let BLOCK_MODE_CACHE: BlockModeCache = {
 
 // Initialize cache and watchers from wxt/storage
 (async () => {
-    try {
-        for (const key of BLOCK_TYPES_KEYS) {
-            // Initial load
-            const storedBlocks = await blockStorage[key].getValue();
-            const storedMode = await blockModeStorage[key].getValue();
+    for (const key of BLOCK_TYPES_KEYS) {
+        // Initial load
+        const storedBlocks = await blockStorage[key].getValue();
+        const storedMode = await blockModeStorage[key].getValue();
 
-            BLOCK_CACHE[key] = storedBlocks ?? [];
-            BLOCK_MODE_CACHE[key] = storedMode ?? BLOCK_DETECT_MODE.SAME;
+        BLOCK_CACHE[key] = storedBlocks;
+        BLOCK_MODE_CACHE[key] = storedMode;
 
-            // Watch for changes
-            blockStorage[key].watch((newValue) => {
-                if (!newValue) return;
-                BLOCK_CACHE[key] = newValue;
-                eventBus.emit("refresh");
-            });
+        // Watch for changes
+        blockStorage[key].watch((newValue) => {
+            if (!newValue) return;
+            BLOCK_CACHE[key] = newValue;
+            eventBus.emit("refresh");
+        });
 
-            blockModeStorage[key].watch((newValue) => {
-                if (!newValue) return;
-                BLOCK_MODE_CACHE[key] = newValue;
-                eventBus.emit("refresh");
-            });
-        }
-    } catch (error) {
-        console.error("Failed to initialize block cache:", error);
+        blockModeStorage[key].watch((newValue) => {
+            if (!newValue) return;
+            BLOCK_MODE_CACHE[key] = newValue;
+            eventBus.emit("refresh");
+        });
     }
 })();
 
