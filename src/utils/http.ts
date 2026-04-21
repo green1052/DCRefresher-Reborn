@@ -8,7 +8,6 @@ export const urls = {
     },
     view: "board/view/?id=",
     vote: "https://gall.dcinside.com/board/recommend/vote",
-    captcha: "https://gall.dcinside.com/kcaptcha/session",
     manage: {
         bump: "https://gall.dcinside.com/ajax/minor_manager_board_ajax/update_bump",
         bumpMini: "https://gall.dcinside.com/ajax/mini_manager_board_ajax/update_bump",

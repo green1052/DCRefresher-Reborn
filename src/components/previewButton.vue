@@ -6,7 +6,7 @@
         <transition v-if="id" name="refresher-shake">
             <img
                 :key="error"
-                :src="getURL(`/assets/${id}.webp`)"
+                :src="browser.runtime.getURL(`/assets/${id}.webp`)"
             />
         </transition>
         <transition v-if="text" name="refresher-shake">
@@ -23,8 +23,6 @@
 
 <script lang="ts" setup>
 import {ref} from "vue";
-
-import getURL from "../utils/getURL";
 
 interface Props {
     id?: string | number;
