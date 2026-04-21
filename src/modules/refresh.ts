@@ -108,15 +108,7 @@ export default {
             }
         };
 
-        this.memory.archiveArticleConfig = (await storage.get<boolean>("미리보기.enable"))
-            ? await storage.get<boolean>("미리보기.archiveArticle")
-            : false;
-
-        if (this.status.doNotColorVisited) {
-            $(document.documentElement).addClass("refresherDoNotColorVisited");
-        }
-
-        filter.add(".page_head .gall_issuebox", (element) => {
+        filter.add(".page_head > .gall_issuebox", (element) => {
             if (element?.querySelector("button[data-refresher=true]"))
                 return;
 
@@ -134,6 +126,14 @@ export default {
             updateRefreshText(button);
             element.appendChild(button);
         });
+
+        this.memory.archiveArticleConfig = (await storage.get<boolean>("미리보기.enable"))
+            ? await storage.get<boolean>("미리보기.archiveArticle")
+            : false;
+
+        if (this.status.doNotColorVisited) {
+            $(document.documentElement).addClass("refresherDoNotColorVisited");
+        }
 
         const urlSearchParams = new URLSearchParams(location.href);
         const currentPostNo = urlSearchParams.get("no");

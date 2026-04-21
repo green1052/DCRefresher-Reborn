@@ -111,7 +111,7 @@
                 <div class="info">
                     <div class="icon-wrap">
                         <img
-                            :src="getURL(browser.runtime.getManifest().icons?.[128] ?? 'icon-128.png')"
+                            :src="browser.runtime.getURL(browser.runtime.getManifest().icons?.[128] ?? 'icon-128.png')"
                             class="icon"
                         />
                     </div>
