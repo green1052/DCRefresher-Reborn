@@ -92,8 +92,8 @@ declare global {
         /**
          * 단축키가 입력되면 실행할 함수를 정의합니다.
          */
-        shortcuts: T["shortcuts"] extends Record<string, () => void>
-            ? Record<keyof T["shortcuts"], (this: RefresherModule<T>) => void>
+        shortcuts: T["shortcuts"] extends Record<string, () => void | Promise<void>>
+            ? Record<keyof T["shortcuts"], (this: RefresherModule<T>) => void | Promise<void>>
             : never;
 
         /**
@@ -104,7 +104,7 @@ declare global {
                 [K in keyof T["settings"]]: (
                     this: RefresherModule<T>,
                     value: T["settings"][K]["value"]
-                ) => void;
+                ) => void | Promise<void>;
             }
             : never;
 
