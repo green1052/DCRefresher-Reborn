@@ -8,7 +8,6 @@ import * as block from "../core/block";
 import Frame from "../core/frame";
 import IFrame from "../core/frame";
 import {submitComment} from "../utils/comment";
-import getURL from "../utils/getURL";
 import * as http from "../utils/http";
 import {queryString} from "../utils/http";
 import {ScrollDetection} from "../utils/scrollDetection";
@@ -600,23 +599,23 @@ const panel = {
 
         element.innerHTML = `
       <div class="button pin">
-        <img src="${getURL("/assets/pin.webp")}"></img>
+        <img src="${browser.runtime.getURL("/assets/pin.webp")}"></img>
         <p>${setAsNotice ? "공지로 등록" : "공지 등록 해제"}</p>
       </div>
       <div class="button recommend">
-        <img src="${setAsRecommend ? getURL("/assets/upvote.webp") : getURL("/assets/downvote.webp")}"></img>
+        <img src="${setAsRecommend ? browser.runtime.getURL("/assets/upvote.webp") : browser.runtime.getURL("/assets/downvote.webp")}"></img>
         <p>${setAsRecommend ? "개념글 등록" : "개념글 해제"}</p>
       </div>
       <div class="button block">
-        <img src="${getURL("/assets/block.webp")}"></img>
+        <img src="${browser.runtime.getURL("/assets/block.webp")}"></img>
         <p>차단 (B)</p>
       </div>
       <div class="button delete">
-        <img src="${getURL("/assets/delete.webp")}"></img>
+        <img src="${browser.runtime.getURL("/assets/delete.webp")}"></img>
         <p>삭제 (D)</p>
       </div>
       <div class="button bump">
-        <img src="${getURL("/assets/upvote.webp")}"></img>
+        <img src="${browser.runtime.getURL("/assets/upvote.webp")}"></img>
         <p>끌올</p>
       </div>
     `;
@@ -779,9 +778,7 @@ const panel = {
                         setAsRecommend = !setAsRecommend;
 
                         const recommendImg = recommend.querySelector("img") as HTMLImageElement;
-                        recommendImg.src = setAsRecommend
-                            ? getURL("/assets/upvote.webp")
-                            : getURL("/assets/downvote.webp");
+                        recommendImg.src = browser.runtime.getURL(setAsRecommend ? "/assets/upvote.webp" : "/assets/downvote.webp");
 
                         const recommendP = recommend.querySelector("p") as HTMLParagraphElement;
                         recommendP.innerHTML = setAsRecommend ? "개념글 등록" : "개념글 해제";

@@ -51,59 +51,37 @@ const initializeUserData = async (): Promise<void> => {
 
 initializeUserData();
 
-const FIXED_MANAGER_ICONS = ["fix_managernik.gif"];
-const FIXED_SUB_MANAGER_ICONS = ["fix_sub_managernik.gif"];
-const HALF_FIXED_SUB_MANAGER_ICONS = ["sub_managernik.gif"];
-const HALF_FIXED_MANAGER_ICONS = ["managernik.gif"];
-const FIXED_ICONS = [
-    "fix_nik.gif",
-    "nftcon_fix.png",
-    "dc20th_wgallcon4.png",
-    "w_app_gonick_16.png",
-    "nftmdcon_fix.png",
-    "gnftmdcon_fix.gif",
-    "bestcon_fix.png"
-];
-const HALF_FIXED_ICONS = [
-    "nik.gif",
-    "nftcon.png",
-    "dc20th_wgallcon.png",
-    "w_app_nogonick_16.png",
-    "nftmdcon.png",
-    "gnftmdcon.gif",
-    "bestcon.png"
-];
+const FILE_NAME_MAP = new Map<string, UserType>([
+    ["managernik.gif", USERTYPE.HALF_FIXED_MANAGER],
+    ["fix_managernik.gif", USERTYPE.FIXED_MANAGER],
+
+    ["fix_sub_managernik.gif", USERTYPE.FIXED_SUB_MANAGER],
+    ["sub_managernik.gif", USERTYPE.HALF_FIXED_SUB_MANAGER],
+
+    ["fix_nik.gif", USERTYPE.FIXED],
+    ["nftcon_fix.png", USERTYPE.FIXED],
+    ["dc20th_wgallcon4.png", USERTYPE.FIXED],
+    ["w_app_gonick_16.png", USERTYPE.FIXED],
+    ["nftmdcon_fix.png", USERTYPE.FIXED],
+    ["gnftmdcon_fix.gif", USERTYPE.FIXED],
+    ["bestcon_fix.png", USERTYPE.FIXED],
+    ["fix_newnik.gif", USERTYPE.FIXED],
+
+    ["nik.gif", USERTYPE.HALF_FIXED],
+    ["nftcon.png", USERTYPE.HALF_FIXED],
+    ["dc20th_wgallcon.png", USERTYPE.HALF_FIXED],
+    ["w_app_nogonick_16.png", USERTYPE.HALF_FIXED],
+    ["nftmdcon.png", USERTYPE.HALF_FIXED],
+    ["gnftmdcon.gif", USERTYPE.HALF_FIXED],
+    ["bestcon.png", USERTYPE.HALF_FIXED],
+    ["newnik.gif", USERTYPE.HALF_FIXED]
+]);
 
 export const getType = (icon: string | null): UserType => {
-    if (!icon) {
-        return USERTYPE.UNFIXED;
-    }
+    if (!icon) return USERTYPE.UNFIXED;
 
-    if (FIXED_MANAGER_ICONS.some((suffix) => icon.endsWith(suffix))) {
-        return USERTYPE.FIXED_MANAGER;
-    }
-
-    if (FIXED_SUB_MANAGER_ICONS.some((suffix) => icon.endsWith(suffix))) {
-        return USERTYPE.FIXED_SUB_MANAGER;
-    }
-
-    if (HALF_FIXED_SUB_MANAGER_ICONS.some((suffix) => icon.endsWith(suffix))) {
-        return USERTYPE.HALF_FIXED_SUB_MANAGER;
-    }
-
-    if (HALF_FIXED_MANAGER_ICONS.some((suffix) => icon.endsWith(suffix))) {
-        return USERTYPE.HALF_FIXED_MANAGER;
-    }
-
-    if (FIXED_ICONS.some((suffix) => icon.endsWith(suffix))) {
-        return USERTYPE.FIXED;
-    }
-
-    if (HALF_FIXED_ICONS.some((suffix) => icon.endsWith(suffix))) {
-        return USERTYPE.HALF_FIXED;
-    }
-
-    return USERTYPE.UNFIXED;
+    const fileName = icon.split("/").pop()!;
+    return FILE_NAME_MAP.get(fileName) ?? USERTYPE.UNFIXED;
 };
 
 export class User {

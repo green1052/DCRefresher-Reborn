@@ -1,7 +1,5 @@
 import eventBus from "@/core/eventbus";
 import $ from "cash-dom";
-
-import getURL from "../utils/getURL";
 import toast from "../utils/toast";
 
 const CONTROL_BUTTON = ".stealth_control_button";
@@ -20,7 +18,7 @@ const tempButtonCreate = (element: HTMLElement): void => {
     buttonFrame.classList.add("blur");
     buttonFrame.innerHTML = `      
   <div class="button" id ="tempview">
-    <img src="${getURL("/assets/change.webp")}"></img>
+    <img src="${browser.runtime.getURL("/assets/change.webp")}"></img>
     <p id="temp_button_text">이미지 보이기</p>
   </div>
 `;

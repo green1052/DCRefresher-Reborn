@@ -15,11 +15,11 @@
 
         <div id="scroll">
             <img
-                :src="getURL('/assets/upvote.webp')"
+                :src="browser.runtime.getURL('/assets/upvote.webp')"
                 @click="() => clickScroll('up')"
             />
             <img
-                :src="getURL('/assets/downvote.webp')"
+                :src="browser.runtime.getURL('/assets/downvote.webp')"
                 @click="() => clickScroll('down')"
             />
         </div>
@@ -28,7 +28,6 @@
 
 <script lang="ts" setup>
 import {getCurrentInstance, ref} from "vue";
-import getURL from "../utils/getURL";
 import RefresherFrame from "./frame.vue";
 
 interface Props {
