@@ -16,17 +16,17 @@ importers:
         version: 1.15.0
       plasmo:
         specifier: ^0.90.5
-        version: 0.90.5(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(@types/node@24.12.2)(lodash@4.17.21)(postcss@8.5.10)(relateurl@0.2.7)(terser@5.43.1)
+        version: 0.90.5(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(@types/node@24.12.2)(lodash@4.17.21)(postcss@8.5.14)(relateurl@0.2.7)(terser@5.43.1)
       vue:
-        specifier: ^3.5.33
-        version: 3.5.33(typescript@6.0.3)
+        specifier: ^3.5.34
+        version: 3.5.34(typescript@6.0.3)
     devDependencies:
       '@parcel/resolver-glob':
         specifier: 2.9.3
         version: 2.9.3(@parcel/core@2.15.4(@swc/helpers@0.5.17))
       '@plasmohq/parcel-config':
         specifier: ^0.42.0
-        version: 0.42.0(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(lodash@4.17.21)(postcss@8.5.10)(relateurl@0.2.7)(terser@5.43.1)(typescript@6.0.3)
+        version: 0.42.0(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(lodash@4.17.21)(postcss@8.5.14)(relateurl@0.2.7)(terser@5.43.1)(typescript@6.0.3)
       '@types/js-cookie':
         specifier: ^3.0.6
         version: 3.0.6
@@ -119,6 +119,11 @@ packages:
 
   '@babel/parser@7.29.2':
     resolution: {integrity: sha512-4GgRzy/+fsBa72/RZVJmGKPmZu9Byn8o4MoLpmNe1m8ZfYnz5emHLQz3U4gLud6Zwl0RZIcgiLD7Uq7ySFuDLA==}
+    engines: {node: '>=6.0.0'}
+    hasBin: true
+
+  '@babel/parser@7.29.3':
+    resolution: {integrity: sha512-b3ctpQwp+PROvU/cttc4OYl4MzfJUWy6FZg+PMXfzmt/+39iHVF0sDfqay8TQM3JA2EUOyKcFZt75jWriQijsA==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -1896,26 +1901,26 @@ packages:
   '@vue/compiler-core@3.3.4':
     resolution: {integrity: sha512-cquyDNvZ6jTbf/+x+AgM2Arrp6G4Dzbb0R64jiG804HRMfRiFXWI6kqUVqZ6ZR0bQhIoQjB4+2bhNtVwndW15g==}
 
-  '@vue/compiler-core@3.5.33':
-    resolution: {integrity: sha512-3PZLQwFw4Za3TC8t0FvTy3wI16Kt+pmwcgNZca4Pj9iWL2E72a/gZlpBtAJvEdDMdCxdG/qq0C7PN0bsJuv0Rw==}
+  '@vue/compiler-core@3.5.34':
+    resolution: {integrity: sha512-s9cLyK5mLcvZ4Agva5QgRsQyLKvts9WbU9DB6NqiZkkGEdwmcEiylj5Jbwkp680drF/NNCV8OlAJSe+yMLxaJw==}
 
   '@vue/compiler-dom@3.3.4':
     resolution: {integrity: sha512-wyM+OjOVpuUukIq6p5+nwHYtj9cFroz9cwkfmP9O1nzH68BenTTv0u7/ndggT8cIQlnBeOo6sUT/gvHcIkLA5w==}
 
-  '@vue/compiler-dom@3.5.33':
-    resolution: {integrity: sha512-PXq0yrfCLzzL07rbXO4awtXY1Z06LG2eu6Adg3RJFa/j3Cii217XxxLXG22N330gw7GmALCY0Z8RgXEviwgpjA==}
+  '@vue/compiler-dom@3.5.34':
+    resolution: {integrity: sha512-EbF/T++k0e2MMZlJsBhzK8Sgwt0HcIPOhzn1CTB/lv6sQcyk+OWf8YeiLxZp3ro7MbbLcAfAJ6sEvjFWuNgUCw==}
 
   '@vue/compiler-sfc@3.3.4':
     resolution: {integrity: sha512-6y/d8uw+5TkCuzBkgLS0v3lSM3hJDntFEiUORM11pQ/hKvkhSKZrXW6i69UyXlJQisJxuUEJKAWEqWbWsLeNKQ==}
 
-  '@vue/compiler-sfc@3.5.33':
-    resolution: {integrity: sha512-UTUvRO9cY+rROrx/pvN9P5Z7FgA6QGfokUCfhQE4EnmUj3rVnK+CHI0LsEO1pg+I7//iRYMUfcNcCPe7tg0CoA==}
+  '@vue/compiler-sfc@3.5.34':
+    resolution: {integrity: sha512-D/ihr6uZeIt6r+pVZf46RWT1fAsLFMbUP7k8G1VkiiWexriED9GrX3echHd4Abbt17zjlfiFJ8z7a3BxZOPNjg==}
 
   '@vue/compiler-ssr@3.3.4':
     resolution: {integrity: sha512-m0v6oKpup2nMSehwA6Uuu+j+wEwcy7QmwMkVNVfrV9P2qE5KshC6RwOCq8fjGS/Eak/uNb8AaWekfiXxbBB6gQ==}
 
-  '@vue/compiler-ssr@3.5.33':
-    resolution: {integrity: sha512-IErjYdnj1qIupG5xxiVIYiiRvDhGWV4zuh/RCrwfYpuL+HWQzeU6lCk/nF9r7olWMnjKxCAkOctT2qFWFkzb1A==}
+  '@vue/compiler-ssr@3.5.34':
+    resolution: {integrity: sha512-cDtTHKibkThKGHH1SP+WdccquNRYQDFH6rRjQCqT9G2ltFAfoR5pUftpab/z+aM5mW9HLLVQW7hfKKQe/1GBeQ==}
 
   '@vue/reactivity-transform@3.3.4':
     resolution: {integrity: sha512-MXgwjako4nu5WFLAjpBnCj/ieqcjE2aJBINUNQzkZQfzIZA4xn+0fV1tIYBJvvva3N3OvKGofRLvQIwEQPpaXw==}
@@ -1923,36 +1928,36 @@ packages:
   '@vue/reactivity@3.3.4':
     resolution: {integrity: sha512-kLTDLwd0B1jG08NBF3R5rqULtv/f8x3rOFByTDz4J53ttIQEDmALqKqXY0J+XQeN0aV2FBxY8nJDf88yvOPAqQ==}
 
-  '@vue/reactivity@3.5.33':
-    resolution: {integrity: sha512-p8UfIqyIhb0rYGlSgSBV+lPhF2iUSBcRy7enhTmPqKWadHy9kcOFYF1AejYBP9P+avnd3OBbD49DU4pLWX/94A==}
+  '@vue/reactivity@3.5.34':
+    resolution: {integrity: sha512-y9XDjCEuBp+98k+UL5dbYkh57AHU4o6cxZedOPXw3bmrZZYLQsVHguGurq7hVrPCSrQtrnz1f9dssyFr+dMXfQ==}
 
   '@vue/runtime-core@3.3.4':
     resolution: {integrity: sha512-R+bqxMN6pWO7zGI4OMlmvePOdP2c93GsHFM/siJI7O2nxFRzj55pLwkpCedEY+bTMgp5miZ8CxfIZo3S+gFqvA==}
 
-  '@vue/runtime-core@3.5.33':
-    resolution: {integrity: sha512-UpFF45RI9//a7rvq7RdOQblb4tup7hHG9QsmIrxkFQLzQ7R8/iNQ5LE15NhLZ1/WcHMU2b47u6P33CPUelHyIQ==}
+  '@vue/runtime-core@3.5.34':
+    resolution: {integrity: sha512-mKeBYvu8tcMSLhypAHBmriUFfWXKTCF/23Z4jiCoYK3UtWepkliViNLuR90V9XOyD62mUxs9p1jsrpK3CCGIzw==}
 
   '@vue/runtime-dom@3.3.4':
     resolution: {integrity: sha512-Aj5bTJ3u5sFsUckRghsNjVTtxZQ1OyMWCr5dZRAPijF/0Vy4xEoRCwLyHXcj4D0UFbJ4lbx3gPTgg06K/GnPnQ==}
 
-  '@vue/runtime-dom@3.5.33':
-    resolution: {integrity: sha512-IOxMsAOwquhfITgmOgaPYl7/j8gKUxUFoflRc+u4LxyD3+783xne8vNta1PONVCvCV9A0w7hkyEepINDqfO0tw==}
+  '@vue/runtime-dom@3.5.34':
+    resolution: {integrity: sha512-e8kZzERmCwUnBRVsgSQlAfrfU2rGoy0FFKPBXSlfEjc/O3KfA7QP0t1/2ZylrbchjmIKB4dPTd07A6WPr0eOrg==}
 
   '@vue/server-renderer@3.3.4':
     resolution: {integrity: sha512-Q6jDDzR23ViIb67v+vM1Dqntu+HUexQcsWKhhQa4ARVzxOY2HbC7QRW/ggkDBd5BU+uM1sV6XOAP0b216o34JQ==}
     peerDependencies:
       vue: 3.3.4
 
-  '@vue/server-renderer@3.5.33':
-    resolution: {integrity: sha512-0xylq/8/h44lVG0pZFknv1XIdEgymq2E9n59uTWJBG+dIgiT0TMCSsxrN7nO16Z0MU0MPjFcguBbZV8Itk52Hw==}
+  '@vue/server-renderer@3.5.34':
+    resolution: {integrity: sha512-nHxmJoTrKsmrkbILRhkC9gY1G3moZbJTqCzDd7DOOzG5KH9oeJ0Unqrff5f9v0pW//jES05ZkJcNtfE8JjOIew==}
     peerDependencies:
-      vue: 3.5.33
+      vue: 3.5.34
 
   '@vue/shared@3.3.4':
     resolution: {integrity: sha512-7OjdcV8vQ74eiz1TZLzZP4JwqM5fA94K6yntPS5Z25r9HDuGNzaGdgvwKYq6S+MxwF0TFRwe50fIR/MYnakdkQ==}
 
-  '@vue/shared@3.5.33':
-    resolution: {integrity: sha512-5vR2QIlmaLG77Ygd4pMP6+SGQ5yox9VhtnbDWTy9DzMzdmeLxZ1QqxrywEZ9sa1AVubfIJyaCG3ytyWU81ufcQ==}
+  '@vue/shared@3.5.34':
+    resolution: {integrity: sha512-24uqU4OIiX29ryC3MeWid/Xf2fa2EFRUVLb77nRhk+UrTVrh/XiGtFAFmJBAtBRbjwNdsPRP+jj/OL27Eg1NDA==}
 
   abortcontroller-polyfill@1.7.8:
     resolution: {integrity: sha512-9f1iZ2uWh92VcrU9Y8x+LdM4DLj75VE0MJB8zuF1iUnroEptStw+DQ8EQPMUdfe5k+PkB1uUfDQfWbhstH8LrQ==}
@@ -3111,8 +3116,8 @@ packages:
     resolution: {integrity: sha512-pMMHxBOZKFU6HgAZ4eyGnwXF/EvPGGqUr0MnZ5+99485wwW41kW91A4LOGxSHhgugZmSChL5AlElNdwlNgcnLQ==}
     engines: {node: ^10 || ^12 || >=14}
 
-  postcss@8.5.8:
-    resolution: {integrity: sha512-OW/rX8O/jXnm82Ey1k44pObPtdblfiuWnrd8X7GJ7emImCOstunGbXUpp7HdBrFQX6rJzn3sPT397Wp5aCwCHg==}
+  postcss@8.5.14:
+    resolution: {integrity: sha512-SoSL4+OSEtR99LHFZQiJLkT59C5B1amGO1NzTwj7TT1qCUgUO6hxOvzkOYxD+vMrXBM3XJIKzokoERdqQq/Zmg==}
     engines: {node: ^10 || ^12 || >=14}
 
   posthtml-parser@0.10.2:
@@ -3501,8 +3506,8 @@ packages:
   vue@3.3.4:
     resolution: {integrity: sha512-VTyEYn3yvIeY1Py0WaYGZsXnz3y5UnGi62GjVEqvEGPl6nxbOrCXbVOTQWBEJUqAyTUk2uJ5JLVnYJ6ZzGbrSw==}
 
-  vue@3.5.33:
-    resolution: {integrity: sha512-1AgChhx5w3ALgT4oK3acm2Es/7jyZhWSVUfs3rOBlGQC0rjEDkS7G4lWlJJGGNQD+BV3reCwbQrOe1mPNwKHBQ==}
+  vue@3.5.34:
+    resolution: {integrity: sha512-WdLBG9gm02OgJIG9axd5Hpx0TFLdzVgfG2evFFu8Rur5O/IoGc5cMjnjh3tPL6GnRGsYvUhBSKVPYVcxRKpMCA==}
     peerDependencies:
       typescript: '*'
     peerDependenciesMeta:
@@ -3653,6 +3658,10 @@ snapshots:
       '@babel/types': 7.29.0
 
   '@babel/parser@7.29.2':
+    dependencies:
+      '@babel/types': 7.29.0
+
+  '@babel/parser@7.29.3':
     dependencies:
       '@babel/types': 7.29.0
 
@@ -4205,14 +4214,14 @@ snapshots:
       - '@swc/helpers'
       - napi-wasm
 
-  '@parcel/config-default@2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)(postcss@8.5.10)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)':
+  '@parcel/config-default@2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)(postcss@8.5.14)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)':
     dependencies:
       '@parcel/bundler-default': 2.9.3(@parcel/core@2.9.3)
       '@parcel/compressor-raw': 2.9.3(@parcel/core@2.9.3)
       '@parcel/core': 2.9.3
       '@parcel/namer-default': 2.9.3(@parcel/core@2.9.3)
       '@parcel/optimizer-css': 2.9.3(@parcel/core@2.9.3)
-      '@parcel/optimizer-htmlnano': 2.9.3(@parcel/core@2.9.3)(postcss@8.5.10)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)
+      '@parcel/optimizer-htmlnano': 2.9.3(@parcel/core@2.9.3)(postcss@8.5.14)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)
       '@parcel/optimizer-image': 2.9.3(@parcel/core@2.9.3)
       '@parcel/optimizer-svgo': 2.9.3(@parcel/core@2.9.3)
       '@parcel/optimizer-swc': 2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)
@@ -4249,14 +4258,14 @@ snapshots:
       - typescript
       - uncss
 
-  '@parcel/config-default@2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)(postcss@8.5.10)(relateurl@0.2.7)(terser@5.43.1)(typescript@6.0.3)':
+  '@parcel/config-default@2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)(postcss@8.5.14)(relateurl@0.2.7)(terser@5.43.1)(typescript@6.0.3)':
     dependencies:
       '@parcel/bundler-default': 2.9.3(@parcel/core@2.9.3)
       '@parcel/compressor-raw': 2.9.3(@parcel/core@2.9.3)
       '@parcel/core': 2.9.3
       '@parcel/namer-default': 2.9.3(@parcel/core@2.9.3)
       '@parcel/optimizer-css': 2.9.3(@parcel/core@2.9.3)
-      '@parcel/optimizer-htmlnano': 2.9.3(@parcel/core@2.9.3)(postcss@8.5.10)(relateurl@0.2.7)(terser@5.43.1)(typescript@6.0.3)
+      '@parcel/optimizer-htmlnano': 2.9.3(@parcel/core@2.9.3)(postcss@8.5.14)(relateurl@0.2.7)(terser@5.43.1)(typescript@6.0.3)
       '@parcel/optimizer-image': 2.9.3(@parcel/core@2.9.3)
       '@parcel/optimizer-svgo': 2.9.3(@parcel/core@2.9.3)
       '@parcel/optimizer-swc': 2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)
@@ -4562,10 +4571,10 @@ snapshots:
       - '@parcel/core'
       - napi-wasm
 
-  '@parcel/optimizer-htmlnano@2.9.3(@parcel/core@2.9.3)(postcss@8.5.10)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)':
+  '@parcel/optimizer-htmlnano@2.9.3(@parcel/core@2.9.3)(postcss@8.5.14)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)':
     dependencies:
       '@parcel/plugin': 2.9.3(@parcel/core@2.9.3)
-      htmlnano: 2.1.2(postcss@8.5.10)(relateurl@0.2.7)(svgo@2.8.0)(terser@5.43.1)(typescript@5.8.2)
+      htmlnano: 2.1.2(postcss@8.5.14)(relateurl@0.2.7)(svgo@2.8.0)(terser@5.43.1)(typescript@5.8.2)
       nullthrows: 1.1.1
       posthtml: 0.16.6
       svgo: 2.8.0
@@ -4580,10 +4589,10 @@ snapshots:
       - typescript
       - uncss
 
-  '@parcel/optimizer-htmlnano@2.9.3(@parcel/core@2.9.3)(postcss@8.5.10)(relateurl@0.2.7)(terser@5.43.1)(typescript@6.0.3)':
+  '@parcel/optimizer-htmlnano@2.9.3(@parcel/core@2.9.3)(postcss@8.5.14)(relateurl@0.2.7)(terser@5.43.1)(typescript@6.0.3)':
     dependencies:
       '@parcel/plugin': 2.9.3(@parcel/core@2.9.3)
-      htmlnano: 2.1.2(postcss@8.5.10)(relateurl@0.2.7)(svgo@2.8.0)(terser@5.43.1)(typescript@6.0.3)
+      htmlnano: 2.1.2(postcss@8.5.14)(relateurl@0.2.7)(svgo@2.8.0)(terser@5.43.1)(typescript@6.0.3)
       nullthrows: 1.1.1
       posthtml: 0.16.6
       svgo: 2.8.0
@@ -5552,10 +5561,10 @@ snapshots:
     transitivePeerDependencies:
       - '@parcel/core'
 
-  '@plasmohq/parcel-config@0.42.0(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(lodash@4.17.21)(postcss@8.5.10)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)':
+  '@plasmohq/parcel-config@0.42.0(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(lodash@4.17.21)(postcss@8.5.14)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)':
     dependencies:
       '@parcel/compressor-raw': 2.9.3(@parcel/core@2.9.3)
-      '@parcel/config-default': 2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)(postcss@8.5.10)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)
+      '@parcel/config-default': 2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)(postcss@8.5.14)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)
       '@parcel/core': 2.9.3
       '@parcel/optimizer-data-url': 2.9.3(@parcel/core@2.9.3)
       '@parcel/reporter-bundle-buddy': 2.9.3(@parcel/core@2.9.3)
@@ -5582,7 +5591,7 @@ snapshots:
       '@plasmohq/parcel-optimizer-es': 0.4.1(@swc/helpers@0.5.17)
       '@plasmohq/parcel-packager': 0.6.15
       '@plasmohq/parcel-resolver': 0.14.1
-      '@plasmohq/parcel-resolver-post': 0.4.5(@swc/core@1.13.3(@swc/helpers@0.5.17))(postcss@8.5.10)
+      '@plasmohq/parcel-resolver-post': 0.4.5(@swc/core@1.13.3(@swc/helpers@0.5.17))(postcss@8.5.14)
       '@plasmohq/parcel-runtime': 0.25.2
       '@plasmohq/parcel-transformer-inject-env': 0.2.12
       '@plasmohq/parcel-transformer-inline-css': 0.3.11
@@ -5649,10 +5658,10 @@ snapshots:
       - walrus
       - whiskers
 
-  '@plasmohq/parcel-config@0.42.0(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(lodash@4.17.21)(postcss@8.5.10)(relateurl@0.2.7)(terser@5.43.1)(typescript@6.0.3)':
+  '@plasmohq/parcel-config@0.42.0(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(lodash@4.17.21)(postcss@8.5.14)(relateurl@0.2.7)(terser@5.43.1)(typescript@6.0.3)':
     dependencies:
       '@parcel/compressor-raw': 2.9.3(@parcel/core@2.9.3)
-      '@parcel/config-default': 2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)(postcss@8.5.10)(relateurl@0.2.7)(terser@5.43.1)(typescript@6.0.3)
+      '@parcel/config-default': 2.9.3(@parcel/core@2.9.3)(@swc/helpers@0.5.17)(postcss@8.5.14)(relateurl@0.2.7)(terser@5.43.1)(typescript@6.0.3)
       '@parcel/core': 2.9.3
       '@parcel/optimizer-data-url': 2.9.3(@parcel/core@2.9.3)
       '@parcel/reporter-bundle-buddy': 2.9.3(@parcel/core@2.9.3)
@@ -5679,7 +5688,7 @@ snapshots:
       '@plasmohq/parcel-optimizer-es': 0.4.1(@swc/helpers@0.5.17)
       '@plasmohq/parcel-packager': 0.6.15
       '@plasmohq/parcel-resolver': 0.14.1
-      '@plasmohq/parcel-resolver-post': 0.4.5(@swc/core@1.13.3(@swc/helpers@0.5.17))(postcss@8.5.10)
+      '@plasmohq/parcel-resolver-post': 0.4.5(@swc/core@1.13.3(@swc/helpers@0.5.17))(postcss@8.5.14)
       '@plasmohq/parcel-runtime': 0.25.2
       '@plasmohq/parcel-transformer-inject-env': 0.2.12
       '@plasmohq/parcel-transformer-inline-css': 0.3.11
@@ -5799,14 +5808,14 @@ snapshots:
       '@parcel/utils': 2.9.3
       nullthrows: 1.1.1
 
-  '@plasmohq/parcel-resolver-post@0.4.5(@swc/core@1.13.3(@swc/helpers@0.5.17))(postcss@8.5.10)':
+  '@plasmohq/parcel-resolver-post@0.4.5(@swc/core@1.13.3(@swc/helpers@0.5.17))(postcss@8.5.14)':
     dependencies:
       '@parcel/core': 2.9.3
       '@parcel/hash': 2.9.3
       '@parcel/plugin': 2.9.3(@parcel/core@2.9.3)
       '@parcel/types': 2.9.3(@parcel/core@2.9.3)
       '@parcel/utils': 2.9.3
-      tsup: 7.2.0(@swc/core@1.13.3(@swc/helpers@0.5.17))(postcss@8.5.10)(typescript@5.2.2)
+      tsup: 7.2.0(@swc/core@1.13.3(@swc/helpers@0.5.17))(postcss@8.5.14)(typescript@5.2.2)
       typescript: 5.2.2
     transitivePeerDependencies:
       - '@swc/core'
@@ -6159,10 +6168,10 @@ snapshots:
       estree-walker: 2.0.2
       source-map-js: 1.2.1
 
-  '@vue/compiler-core@3.5.33':
+  '@vue/compiler-core@3.5.34':
     dependencies:
-      '@babel/parser': 7.29.2
-      '@vue/shared': 3.5.33
+      '@babel/parser': 7.29.3
+      '@vue/shared': 3.5.34
       entities: 7.0.1
       estree-walker: 2.0.2
       source-map-js: 1.2.1
@@ -6172,10 +6181,10 @@ snapshots:
       '@vue/compiler-core': 3.3.4
       '@vue/shared': 3.3.4
 
-  '@vue/compiler-dom@3.5.33':
+  '@vue/compiler-dom@3.5.34':
     dependencies:
-      '@vue/compiler-core': 3.5.33
-      '@vue/shared': 3.5.33
+      '@vue/compiler-core': 3.5.34
+      '@vue/shared': 3.5.34
 
   '@vue/compiler-sfc@3.3.4':
     dependencies:
@@ -6187,19 +6196,19 @@ snapshots:
       '@vue/shared': 3.3.4
       estree-walker: 2.0.2
       magic-string: 0.30.21
-      postcss: 8.5.8
+      postcss: 8.5.10
       source-map-js: 1.2.1
 
-  '@vue/compiler-sfc@3.5.33':
+  '@vue/compiler-sfc@3.5.34':
     dependencies:
-      '@babel/parser': 7.29.2
-      '@vue/compiler-core': 3.5.33
-      '@vue/compiler-dom': 3.5.33
-      '@vue/compiler-ssr': 3.5.33
-      '@vue/shared': 3.5.33
+      '@babel/parser': 7.29.3
+      '@vue/compiler-core': 3.5.34
+      '@vue/compiler-dom': 3.5.34
+      '@vue/compiler-ssr': 3.5.34
+      '@vue/shared': 3.5.34
       estree-walker: 2.0.2
       magic-string: 0.30.21
-      postcss: 8.5.10
+      postcss: 8.5.14
       source-map-js: 1.2.1
 
   '@vue/compiler-ssr@3.3.4':
@@ -6207,10 +6216,10 @@ snapshots:
       '@vue/compiler-dom': 3.3.4
       '@vue/shared': 3.3.4
 
-  '@vue/compiler-ssr@3.5.33':
+  '@vue/compiler-ssr@3.5.34':
     dependencies:
-      '@vue/compiler-dom': 3.5.33
-      '@vue/shared': 3.5.33
+      '@vue/compiler-dom': 3.5.34
+      '@vue/shared': 3.5.34
 
   '@vue/reactivity-transform@3.3.4':
     dependencies:
@@ -6224,19 +6233,19 @@ snapshots:
     dependencies:
       '@vue/shared': 3.3.4
 
-  '@vue/reactivity@3.5.33':
+  '@vue/reactivity@3.5.34':
     dependencies:
-      '@vue/shared': 3.5.33
+      '@vue/shared': 3.5.34
 
   '@vue/runtime-core@3.3.4':
     dependencies:
       '@vue/reactivity': 3.3.4
       '@vue/shared': 3.3.4
 
-  '@vue/runtime-core@3.5.33':
+  '@vue/runtime-core@3.5.34':
     dependencies:
-      '@vue/reactivity': 3.5.33
-      '@vue/shared': 3.5.33
+      '@vue/reactivity': 3.5.34
+      '@vue/shared': 3.5.34
 
   '@vue/runtime-dom@3.3.4':
     dependencies:
@@ -6244,11 +6253,11 @@ snapshots:
       '@vue/shared': 3.3.4
       csstype: 3.2.3
 
-  '@vue/runtime-dom@3.5.33':
+  '@vue/runtime-dom@3.5.34':
     dependencies:
-      '@vue/reactivity': 3.5.33
-      '@vue/runtime-core': 3.5.33
-      '@vue/shared': 3.5.33
+      '@vue/reactivity': 3.5.34
+      '@vue/runtime-core': 3.5.34
+      '@vue/shared': 3.5.34
       csstype: 3.2.3
 
   '@vue/server-renderer@3.3.4(vue@3.3.4)':
@@ -6257,15 +6266,15 @@ snapshots:
       '@vue/shared': 3.3.4
       vue: 3.3.4
 
-  '@vue/server-renderer@3.5.33(vue@3.5.33(typescript@6.0.3))':
+  '@vue/server-renderer@3.5.34(vue@3.5.34(typescript@6.0.3))':
     dependencies:
-      '@vue/compiler-ssr': 3.5.33
-      '@vue/shared': 3.5.33
-      vue: 3.5.33(typescript@6.0.3)
+      '@vue/compiler-ssr': 3.5.34
+      '@vue/shared': 3.5.34
+      vue: 3.5.34(typescript@6.0.3)
 
   '@vue/shared@3.3.4': {}
 
-  '@vue/shared@3.5.33': {}
+  '@vue/shared@3.5.34': {}
 
   abortcontroller-polyfill@1.7.8: {}
 
@@ -6794,24 +6803,24 @@ snapshots:
 
   has-flag@4.0.0: {}
 
-  htmlnano@2.1.2(postcss@8.5.10)(relateurl@0.2.7)(svgo@2.8.0)(terser@5.43.1)(typescript@5.8.2):
+  htmlnano@2.1.2(postcss@8.5.14)(relateurl@0.2.7)(svgo@2.8.0)(terser@5.43.1)(typescript@5.8.2):
     dependencies:
       cosmiconfig: 9.0.0(typescript@5.8.2)
       posthtml: 0.16.6
     optionalDependencies:
-      postcss: 8.5.10
+      postcss: 8.5.14
       relateurl: 0.2.7
       svgo: 2.8.0
       terser: 5.43.1
     transitivePeerDependencies:
       - typescript
 
-  htmlnano@2.1.2(postcss@8.5.10)(relateurl@0.2.7)(svgo@2.8.0)(terser@5.43.1)(typescript@6.0.3):
+  htmlnano@2.1.2(postcss@8.5.14)(relateurl@0.2.7)(svgo@2.8.0)(terser@5.43.1)(typescript@6.0.3):
     dependencies:
       cosmiconfig: 9.0.0(typescript@6.0.3)
       posthtml: 0.16.6
     optionalDependencies:
-      postcss: 8.5.10
+      postcss: 8.5.14
       relateurl: 0.2.7
       svgo: 2.8.0
       terser: 5.43.1
@@ -7348,7 +7357,7 @@ snapshots:
 
   pirates@4.0.7: {}
 
-  plasmo@0.90.5(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(@types/node@24.12.2)(lodash@4.17.21)(postcss@8.5.10)(relateurl@0.2.7)(terser@5.43.1):
+  plasmo@0.90.5(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(@types/node@24.12.2)(lodash@4.17.21)(postcss@8.5.14)(relateurl@0.2.7)(terser@5.43.1):
     dependencies:
       '@expo/spawn-async': 1.7.2
       '@parcel/core': 2.9.3
@@ -7356,7 +7365,7 @@ snapshots:
       '@parcel/package-manager': 2.9.3(@parcel/core@2.9.3)
       '@parcel/watcher': 2.5.1
       '@plasmohq/init': 0.7.0
-      '@plasmohq/parcel-config': 0.42.0(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(lodash@4.17.21)(postcss@8.5.10)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)
+      '@plasmohq/parcel-config': 0.42.0(@swc/core@1.13.3(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(lodash@4.17.21)(postcss@8.5.14)(relateurl@0.2.7)(terser@5.43.1)(typescript@5.8.2)
       '@plasmohq/parcel-core': 0.1.11
       buffer: 6.0.3
       chalk: 5.4.1
@@ -7440,12 +7449,12 @@ snapshots:
       - walrus
       - whiskers
 
-  postcss-load-config@4.0.2(postcss@8.5.10):
+  postcss-load-config@4.0.2(postcss@8.5.14):
     dependencies:
       lilconfig: 3.1.3
       yaml: 2.8.1
     optionalDependencies:
-      postcss: 8.5.10
+      postcss: 8.5.14
 
   postcss-value-parser@4.2.0: {}
 
@@ -7455,7 +7464,7 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  postcss@8.5.8:
+  postcss@8.5.14:
     dependencies:
       nanoid: 3.3.11
       picocolors: 1.1.1
@@ -7771,7 +7780,7 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tsup@7.2.0(@swc/core@1.13.3(@swc/helpers@0.5.17))(postcss@8.5.10)(typescript@5.2.2):
+  tsup@7.2.0(@swc/core@1.13.3(@swc/helpers@0.5.17))(postcss@8.5.14)(typescript@5.2.2):
     dependencies:
       bundle-require: 4.2.1(esbuild@0.18.20)
       cac: 6.7.14
@@ -7781,7 +7790,7 @@ snapshots:
       execa: 5.1.1
       globby: 11.1.0
       joycon: 3.1.1
-      postcss-load-config: 4.0.2(postcss@8.5.10)
+      postcss-load-config: 4.0.2(postcss@8.5.14)
       resolve-from: 5.0.0
       rollup: 3.29.5
       source-map: 0.8.0-beta.0
@@ -7789,7 +7798,7 @@ snapshots:
       tree-kill: 1.2.2
     optionalDependencies:
       '@swc/core': 1.13.3(@swc/helpers@0.5.17)
-      postcss: 8.5.10
+      postcss: 8.5.14
       typescript: 5.2.2
     transitivePeerDependencies:
       - supports-color
@@ -7847,13 +7856,13 @@ snapshots:
       '@vue/server-renderer': 3.3.4(vue@3.3.4)
       '@vue/shared': 3.3.4
 
-  vue@3.5.33(typescript@6.0.3):
+  vue@3.5.34(typescript@6.0.3):
     dependencies:
-      '@vue/compiler-dom': 3.5.33
-      '@vue/compiler-sfc': 3.5.33
-      '@vue/runtime-dom': 3.5.33
-      '@vue/server-renderer': 3.5.33(vue@3.5.33(typescript@6.0.3))
-      '@vue/shared': 3.5.33
+      '@vue/compiler-dom': 3.5.34
+      '@vue/compiler-sfc': 3.5.34
+      '@vue/runtime-dom': 3.5.34
+      '@vue/server-renderer': 3.5.34(vue@3.5.34(typescript@6.0.3))
+      '@vue/shared': 3.5.34
     optionalDependencies:
       typescript: 6.0.3
 
