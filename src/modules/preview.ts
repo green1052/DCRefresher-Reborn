@@ -421,10 +421,8 @@ const request = {
         params.set("kcaptcha_type", kcaptchaType);
         params.set("_GALLTYPE_", galleryTypeName);
 
-        await client(http.urls.captcha, {body: params});
-
         return (
-            "/kcaptcha/image/?gall_id=" +
+            "/kcaptcha/image_v3/?gall_id=" +
             args.gallery +
             "&kcaptcha_type=" +
             kcaptchaType +
@@ -797,9 +795,7 @@ const panel = {
                         setAsRecommend = !setAsRecommend;
 
                         const recommendImg = recommend.querySelector("img") as HTMLImageElement;
-                        recommendImg.src = setAsRecommend
-                            ? getURL("/assets/upvote.webp")
-                            : getURL("/assets/downvote.webp");
+                        recommendImg.src = getURL(setAsRecommend ? "/assets/upvote.webp" : "/assets/downvote.webp");
 
                         const recommendP = recommend.querySelector("p") as HTMLParagraphElement;
                         recommendP.innerHTML = setAsRecommend ? "개념글 등록" : "개념글 해제";
