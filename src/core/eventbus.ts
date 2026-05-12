@@ -7,7 +7,7 @@ export const eventBus: RefresherEventBus = {
      * @param event 호출 할 이벤트 이름.
      * @param params 호출 할 이벤트에 넘길 인자.
      */
-    emit: (event: string, ...params: any[]) => {
+    emit: (event: string, ...params: unknown[]) => {
         if (!lists[event]) return;
 
         for (const callback of [...lists[event]]) {
@@ -17,7 +17,7 @@ export const eventBus: RefresherEventBus = {
         }
     },
 
-    emitNextTick: (event: string, ...params: any[]) => {
+    emitNextTick: (event: string, ...params: unknown[]) => {
         return requestAnimationFrame(() => eventBus.emit(event, ...params));
     },
 
@@ -28,7 +28,7 @@ export const eventBus: RefresherEventBus = {
      * @param callback 나중에 호출 될 이벤트 콜백 함수.
      * @param options 이벤트에 등록할 옵션.
      */
-    on: (event: string, callback: () => void, options?: RefresherEventBusOptions): string => {
+    on: (event: string, callback: RefresherUnknownHandler, options?: RefresherEventBusOptions): string => {
         const uuid = crypto.randomUUID();
 
         lists[event] ??= [];

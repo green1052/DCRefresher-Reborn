@@ -10,14 +10,26 @@ export default defineContentScript({
     world: "MAIN",
     runAt: "document_end",
     main() {
-        // @ts-ignore
+        const grecaptchaSiteKey = "6Lc-Fr0UAAAAAOdqLYqPy53MxlRMIXpNXFvBliwI";
+
+        interface GrecaptchaRuntime {
+            ready: (callback: () => void) => void;
+            execute: (siteKey: string, options: { action: string }) => Promise<string>;
+        }
+
+        const getGrecaptcha = (): GrecaptchaRuntime | null => {
+            const scope = window as Window & { grecaptcha?: GrecaptchaRuntime };
+            return scope.grecaptcha ?? null;
+        };
+
         $.getScript("https://www.google.com/recaptcha/api.js?render=6Lc-Fr0UAAAAAOdqLYqPy53MxlRMIXpNXFvBliwI", () => {
             window.addEventListener("message", (event) => {
                 if (event.data.type === "refresherGrecaptcha" && event.data.action) {
-                    // @ts-ignore
+                    const grecaptcha = getGrecaptcha();
+                    if (!grecaptcha) return;
+
                     grecaptcha.ready(async () => {
-                        // @ts-ignore
-                        const token = await grecaptcha.execute("6Lc-Fr0UAAAAAOdqLYqPy53MxlRMIXpNXFvBliwI", {
+                        const token = await grecaptcha.execute(grecaptchaSiteKey, {
                             action: event.data.action
                         });
 

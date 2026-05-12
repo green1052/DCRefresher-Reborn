@@ -437,7 +437,7 @@ export default {
     memory: {
         uuid: string | null;
         uuid2: string | null;
-        cache: any;
+        cache: Record<string, unknown>;
         new_counts: number;
         delay: number;
         refresh: number;

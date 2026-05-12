@@ -110,7 +110,7 @@ export default {
                 if (!input) return;
 
                 try {
-                    const data: Record<any, any> = JSON.parse(input);
+                    const data = JSON.parse(input) as Record<string, unknown>;
 
                     await browser.storage.local.clear();
                     await browser.storage.local.set(data);

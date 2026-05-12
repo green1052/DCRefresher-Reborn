@@ -31,11 +31,13 @@
 <script lang="ts" setup>
 import {ref} from "vue";
 
+export type ToastLevel = "info" | "error" | "warning" | "cake";
+
 const content = ref("");
 const clickCb = ref<((ev: MouseEvent) => void) | null>(null);
 const open = ref(false);
-const type = ref<"info" | "error" | "warning" | "cake" | null>(null);
-const autoClose = ref(0);
+const type = ref<ToastLevel | null>(null);
+let autoCloseTimer: ReturnType<typeof setTimeout> | null = null;
 
 const click = (ev: MouseEvent) => {
     clickCb.value?.(ev);
@@ -43,37 +45,40 @@ const click = (ev: MouseEvent) => {
 
 const show = (
     newContent: string,
-    newType: "info" | "error" | "warning" | "cake",
+    newType: ToastLevel,
     newAutoClose: number,
-    clickHandler?: () => void
+    clickHandler?: (ev: MouseEvent) => void
 ) => {
-    if (autoClose.value) clearTimeout(autoClose.value);
+    if (autoCloseTimer) clearTimeout(autoCloseTimer);
 
     content.value = newContent;
     type.value = newType;
+    clickCb.value = clickHandler ?? null;
 
-    if (clickHandler !== undefined) {
-        clickCb.value = clickHandler;
+    if (newAutoClose > 0) {
+        autoCloseTimer = setTimeout(hide, newAutoClose);
+    } else {
+        autoCloseTimer = null;
     }
-
-    if (newAutoClose > 0) autoClose.value = setTimeout(hide, newAutoClose);
 
     open.value = true;
 };
 
 const hide = () => {
-    if (autoClose.value) {
-        clearTimeout(autoClose.value);
-        autoClose.value = 0;
+    if (autoCloseTimer) {
+        clearTimeout(autoCloseTimer);
+        autoCloseTimer = null;
     }
 
     open.value = false;
 };
 
+const isOpen = () => open.value;
+
 defineExpose({
-    open,
     show,
-    hide
+    hide,
+    isOpen
 });
 </script>
 

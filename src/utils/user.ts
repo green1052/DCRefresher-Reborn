@@ -38,11 +38,15 @@ const initializeUserData = async (): Promise<void> => {
         if (!enable) return;
 
         if (checkRatio) {
-            const moduleData = await storage.module.get<any>("관리");
+            const moduleData = await storage.module.get < Record<string, Record<string, {
+                article: number;
+                comment: number;
+                data: number
+            }>>("관리");
             ratio = moduleData?.["ratio"] ?? {};
         }
         if (checkPermBan) {
-            ban = (await storage.get<any>("refresher.database.ban")) ?? {};
+            ban = (await storage.get<Record<string, string[]>>("refresher.database.ban")) ?? {};
         }
     } catch (e) {
         console.error("Failed to initialize user data:", e);

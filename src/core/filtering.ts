@@ -75,7 +75,7 @@ export const filter = {
         delete lists[uuid];
     },
 
-    on: (uuid: string, event: string, cb: (...args: any[]) => void): void => {
+    on: (uuid: string, event: string, cb: (...args: unknown[]) => void): void => {
         if (!uuid || !event) throw new Error("Given UUID or event is not valid.");
 
         if (!lists[uuid]) throw new Error("Given UUID does not exist in the list.");
@@ -84,7 +84,7 @@ export const filter = {
         lists[uuid].events[event].push(cb);
     },
 
-    emit: (uuid: string, event: string, ...args: any[]): void => {
+    emit: (uuid: string, event: string, ...args: unknown[]): void => {
         if (!uuid || !event) throw new Error("Given UUID or event is not valid.");
         if (!lists[uuid]) throw new Error("Given UUID does not exist in the list.");
 

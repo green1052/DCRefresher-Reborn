@@ -69,9 +69,10 @@ declare global {
     }
 
     interface RefresherFrameAppVue extends ComponentPublicInstance {
-        changeStamp: () => void;
-        first: () => RefresherFrame;
-        second: () => RefresherFrame;
+        $on?: (event: string, callback: (...args: unknown[]) => void) => void;
+        body: () => RefresherFrame;
+        comment: () => RefresherFrame;
+        setScrollMode: (mode: "top" | "bottom" | "none") => void;
         clearScrollMode: () => void;
         outerClick: () => void;
         close: () => void;
@@ -80,11 +81,14 @@ declare global {
         frames: RefresherFrame[];
         closed: boolean;
         inputFocus: boolean;
-        groupRef?: {
-            frameRefs?: Array<{
-                incrementCommentKey?: () => void;
-                commentKey?: { value: number };
-            }>;
-        };
+        groupElement?: HTMLElement;
+        bodyFrameRef?: {
+            incrementCommentKey?: () => void;
+            commentKey?: { value: number };
+        } | null;
+        commentFrameRef?: {
+            incrementCommentKey?: () => void;
+            commentKey?: { value: number };
+        } | null;
     }
 }
