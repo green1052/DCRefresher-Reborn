@@ -33,13 +33,13 @@ export const memoStorage = MEMO_TYPES.reduce((acc, type) => {
     return acc;
 }, {} as Record<RefresherMemoType, ReturnType<typeof storage.defineItem<Record<string, RefresherMemoValue>>>>);
 
-interface ModuleState {
+export interface ModuleState {
     name: string;
     description?: string;
     enable: boolean;
     require?: string[];
-    settings?: Record<string, any>; // Schema
-    status?: Record<string, any>; // Values
+    settings?: Record<string, RefresherSettings>; // Schema
+    status?: Record<string, string | number | boolean>; // Values
     url?: RegExp;
 }
 

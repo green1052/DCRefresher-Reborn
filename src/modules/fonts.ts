@@ -67,17 +67,13 @@ export default {
     func() {
         $(document.documentElement).addClass("refresherFont");
 
-        // @ts-ignore
         this.update.changeDCFont.bind(this)(this.status.changeDCFont);
-        // @ts-ignore
         this.update.customFonts.bind(this)(this.status.customFonts);
-        // @ts-ignore
         this.update.bodyFontSize.bind(this)(this.status.bodyFontSize);
     },
     revoke() {
         $(document.documentElement).removeClass("refresherFont");
 
-        // @ts-ignore
         this.update.changeDCFont.bind(this)(false);
         document.getElementById("refresherFontStyle")?.remove();
         document.getElementById("refresherFontStyleSize")?.remove();

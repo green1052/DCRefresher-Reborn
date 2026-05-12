@@ -5,8 +5,7 @@ import Cookies from "js-cookie";
 import ky, {Input, Options} from "ky";
 import {GalleryPreData} from "../@types/post";
 import * as block from "../core/block";
-import Frame from "../core/frame";
-import IFrame from "../core/frame";
+import Frame, {FrameScrollApi} from "../core/frame";
 import {submitComment} from "../utils/comment";
 import * as http from "../utils/http";
 import {queryString} from "../utils/http";
@@ -17,6 +16,8 @@ import * as storage from "../utils/webStorage";
 import {writeClipboard} from "../utils/writeClipboard";
 
 const domParser = new DOMParser();
+
+type PreviewFrameAppApi = FrameScrollApi;
 
 class PostInfo implements IPostInfo {
     id: string;
@@ -474,6 +475,7 @@ const request = {
 
 const KEY_COUNTS: Record<string, [number, number]> = {};
 let adminKeyPress: (ev: KeyboardEvent) => void;
+let previewNavigationKeyDown: ((ev: KeyboardEvent) => void) | null = null;
 
 const panel = {
     block: (
@@ -575,7 +577,7 @@ const panel = {
 
     admin: (
         preData: GalleryPreData,
-        frame: IFrame,
+        frame: Frame,
         toggleBlur: boolean,
         eventBus: RefresherEventBus,
         useKeyPress: boolean
@@ -1085,7 +1087,7 @@ const miniPreview: MiniPreview = {
     }
 };
 
-let frame: IFrame;
+let frame: Frame;
 
 const blockPreset = {
     day: "",
@@ -1392,9 +1394,10 @@ export default {
         blockPreset.user_type = this.status.blockPresetUserType;
 
         let postFetchedData: PostInfo;
+        let currentPreData: GalleryPreData | null = null;
         const gallery = queryString("id") ?? undefined;
 
-        const makeFirstFrame = (
+        const makeBodyFrame = (
             frame: RefresherFrame,
             preData: GalleryPreData,
             signal: AbortSignal,
@@ -1586,7 +1589,7 @@ export default {
             };
         };
 
-        const makeSecondFrame = (frame: RefresherFrame, preData: GalleryPreData, signal: AbortSignal) => {
+        const makeCommentFrame = (frame: RefresherFrame, preData: GalleryPreData, signal: AbortSignal) => {
             frame.data.load = true;
             frame.title = "댓글";
             frame.subtitle = "로딩 중...";
@@ -1949,7 +1952,7 @@ export default {
                     frame.data.comments = comments;
 
                     if (needRefresh) {
-                        const frameComponent = frame.app.groupRef?.frameRefs?.[1];
+                        const frameComponent = frame.app.commentFrameRef;
                         frameComponent?.incrementCommentKey?.();
                     }
                 } catch (e) {
@@ -1973,20 +1976,20 @@ export default {
         };
 
         const newPostWithData = (preData: GalleryPreData, historySkip?: boolean) => {
-            const firstApp = frame.app.first();
-            const secondApp = frame.app.second();
+            const bodyFrame = frame.app.body();
+            const commentFrame = frame.app.comment();
 
-            if (firstApp.data.load) return;
+            if (bodyFrame.data.load) return;
 
             const params = new URLSearchParams(preData.link);
             params.set("no", preData.id);
             preData.link = decodeURIComponent(params.toString());
 
             preData.title = "로딩 중...";
-            firstApp.contents = "로딩 중...";
+            bodyFrame.contents = "로딩 중...";
 
-            makeFirstFrame(firstApp, preData, this.memory.signal!, historySkip);
-            makeSecondFrame(secondApp, preData, this.memory.signal!);
+            makeBodyFrame(bodyFrame, preData, this.memory.signal!, historySkip);
+            makeCommentFrame(commentFrame, preData, this.memory.signal!);
 
             if (this.status.toggleAdminPanel && document.querySelector(".useradmin_btnbox button")) {
                 panel.admin(preData, frame, this.status.toggleBlur, eventBus, this.status.useKeyPress);
@@ -2009,6 +2012,7 @@ export default {
             const preData = ev === null ? prd : getRelevantData(ev);
 
             if (!preData) return;
+            currentPreData = preData;
 
             let collapseView = false;
 
@@ -2024,7 +2028,7 @@ export default {
             const controller = new AbortController();
             this.memory.signal = controller.signal;
 
-            let appStore: RefresherFrameAppVue;
+            let appStore: PreviewFrameAppApi | undefined;
             let groupStore: HTMLElement;
 
             let scrolledCount = 0;
@@ -2049,7 +2053,7 @@ export default {
                     ],
                     {
                         background: true,
-                        onScroll: (ev: WheelEvent, app: RefresherFrameAppVue, group: HTMLElement) => {
+                        onScroll: (ev: WheelEvent, app: FrameScrollApi, group: HTMLElement) => {
                             if (!this.status.scrollToSkip) return;
 
                             appStore = app;
@@ -2090,14 +2094,10 @@ export default {
                     };
 
                     if (ev.deltaY < 0) {
-                        if (appStore.root) {
-                            appStore.root.exposeProxy.scrollModeBottom = false;
-                            appStore.root.exposeProxy.scrollModeTop = true;
-                        }
+                        appStore?.setScrollMode("top");
 
-                        if (!scrolledTop && appStore.root) {
-                            appStore.root.exposeProxy.scrollModeTop = false;
-                            appStore.root.exposeProxy.scrollModeBottom = false;
+                        if (!scrolledTop) {
+                            appStore?.clearScrollMode();
                         }
 
                         if (!scrolledTop || !preData) return;
@@ -2111,16 +2111,12 @@ export default {
                         newPostWithData(preData, historySkip);
                         groupStore.scrollTop = 0;
 
-                        if (appStore.root) appStore.root.exposeProxy.clearScrollMode();
+                        appStore?.clearScrollMode();
                     } else {
-                        if (appStore.root) {
-                            appStore.root.exposeProxy.scrollModeTop = false;
-                            appStore.root.exposeProxy.scrollModeBottom = true;
-                        }
+                        appStore?.setScrollMode("bottom");
 
-                        if (!scrolledToBottom && appStore.root) {
-                            appStore.root.exposeProxy.scrollModeTop = false;
-                            appStore.root.exposeProxy.scrollModeBottom = false;
+                        if (!scrolledToBottom) {
+                            appStore?.clearScrollMode();
                         }
 
                         if (!scrolledToBottom || !preData) {
@@ -2135,9 +2131,44 @@ export default {
                         newPostWithData(preData, historySkip);
 
                         groupStore.scrollTop = 0;
-                        appStore.root?.exposeProxy.clearScrollMode();
+                        appStore?.clearScrollMode();
                     }
                 });
+
+                const getAdjacentPostNo = (direction: "next" | "prev") => {
+                    if (!postFetchedData?.id) return;
+
+                    const post = $(`.us-post[data-no="${postFetchedData.id}"]`);
+                    if (!post) return;
+
+                    const adjacentPost = direction === "next" ? post.prev() : post.next();
+                    if (!adjacentPost || adjacentPost.attr("data-type") === "icon_notice") return;
+
+                    return adjacentPost.attr("data-no");
+                };
+
+                previewNavigationKeyDown = (keyboardEvent: KeyboardEvent) => {
+                    if (keyboardEvent.key !== "PageUp" && keyboardEvent.key !== "PageDown") return;
+                    if (!currentPreData || frame.app.closed || frame.app.inputFocus) return;
+
+                    keyboardEvent.preventDefault();
+
+                    const isPageUp = keyboardEvent.key === "PageUp";
+                    const nextPostNo = isPageUp
+                        ? getAdjacentPostNo("prev") || (Number(postFetchedData.id) - 1).toString()
+                        : getAdjacentPostNo("next") || (Number(postFetchedData.id) + 1).toString();
+
+                    currentPreData.id = nextPostNo;
+                    newPostWithData(currentPreData, historySkip);
+
+                    if (groupStore) {
+                        groupStore.scrollTop = 0;
+                    }
+
+                    appStore?.clearScrollMode();
+                };
+
+                document.addEventListener("keydown", previewNavigationKeyDown);
 
                 frame.app.$on("close", () => {
                     controller.abort();
@@ -2154,6 +2185,10 @@ export default {
                     if (typeof adminKeyPress === "function") {
                         document.removeEventListener("keypress", adminKeyPress);
                     }
+                    if (previewNavigationKeyDown) {
+                        document.removeEventListener("keydown", previewNavigationKeyDown);
+                        previewNavigationKeyDown = null;
+                    }
 
                     if (!this.memory.historyClose && this.memory.titleStore) {
                         history.pushState(null, this.memory.titleStore, this.memory.urlStore);
@@ -2165,18 +2200,18 @@ export default {
                         document.title = this.memory.titleStore;
                     }
 
-                    appStore?.root.exposeProxy.clearScrollMode();
+                    appStore?.clearScrollMode();
                     window.clearInterval(this.memory.refreshIntervalId!);
                 });
             }
 
             frame.app.closed = false;
 
-            frame.app.first().collapse = collapseView;
+            frame.app.body().collapse = collapseView;
 
-            makeFirstFrame(frame.app.first(), preData, this.memory.signal!, historySkip);
+            makeBodyFrame(frame.app.body(), preData, this.memory.signal!, historySkip);
 
-            makeSecondFrame(frame.app.second(), preData, this.memory.signal!);
+            makeCommentFrame(frame.app.comment(), preData, this.memory.signal!);
 
             if (this.status.toggleAdminPanel && document.querySelector(".useradmin_btnbox button") !== null) {
                 panel.admin(preData, frame, this.status.toggleBlur, eventBus, this.status.useKeyPress);
@@ -2310,6 +2345,10 @@ export default {
         if (this.memory.uuid) filter.remove(this.memory.uuid, true);
 
         if (this.memory.popStateHandler) window.removeEventListener("popstate", this.memory.popStateHandler);
+        if (previewNavigationKeyDown) {
+            document.removeEventListener("keydown", previewNavigationKeyDown);
+            previewNavigationKeyDown = null;
+        }
 
         if (this.memory.refreshIntervalId) window.clearInterval(this.memory.refreshIntervalId);
     }

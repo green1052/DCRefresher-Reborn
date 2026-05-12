@@ -14,7 +14,7 @@ export default defineBackground(() => {
 
         try {
             const tabs = await browser.tabs.query({});
-            const promises: Promise<any>[] = [];
+            const promises: Promise<unknown>[] = [];
 
             for (const tab of tabs) {
                 if (!tab.id) continue;

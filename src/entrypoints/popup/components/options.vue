@@ -79,7 +79,7 @@ const handleChange = (ev: Event) => {
             background-color: #f0f0f0;
         }
 
-        &:selected {
+        &:checked {
             background-color: #4caf50;
             color: white;
         }
@@ -110,7 +110,7 @@ const handleChange = (ev: Event) => {
                 background-color: #4a4a4a;
             }
 
-            &:selected {
+            &:checked {
                 background-color: #66bb6a;
             }
         }

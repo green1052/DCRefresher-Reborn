@@ -90,10 +90,17 @@ import PreviewButton from "./previewButton.vue";
 import UserComponent from "./user.vue";
 
 interface Props {
-    func?: (...args: any[]) => Promise<boolean>;
+    func?: (
+        type: "text" | "dccon",
+        memo: string | DcinsideDccon[],
+        commentNo: string | null,
+        replyNo: string | null,
+        user: { name: string; pw?: string },
+        bigDccon: boolean
+    ) => Promise<boolean>;
     reply?: { commentNo: string | null; replyNo: string | null };
     renderDcconPopup?: () => boolean;
-    getDccon?: () => any[];
+    getDccon?: () => DcinsideDccon[];
     getBigDccon?: () => boolean;
 }
 
@@ -106,7 +113,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-    setDccon: [dccons: any[]];
+    setDccon: [dccons: DcinsideDccon[]];
     setBigDccon: [value: boolean];
     "update:reply": [reply: { commentNo: string | null; replyNo: string | null }];
 }>();
@@ -238,12 +245,14 @@ const write = async (): Promise<boolean> => {
 
 const focus = (): void => {
     focused.value = true;
-    instance.parent.root.exposeProxy.inputFocus = true;
+    const proxy = instance?.parent?.root?.exposed as { inputFocus?: boolean } | null | undefined;
+    if (proxy) proxy.inputFocus = true;
 };
 
 const blur = (): void => {
     focused.value = false;
-    instance.parent.root.exposeProxy.inputFocus = false;
+    const proxy = instance?.parent?.root?.exposed as { inputFocus?: boolean } | null | undefined;
+    if (proxy) proxy.inputFocus = false;
 };
 
 const type = (ev: KeyboardEvent): KeyboardEvent | void => {

@@ -50,6 +50,13 @@ export default defineConfig({
                 },
                 description: "스텔스 모드: 일시 비활성화"
             }
+        },
+        browser_specific_settings: {
+            gecko: {
+                data_collection_permissions: {
+                    required: ["none"]
+                }
+            }
         }
     }
 });

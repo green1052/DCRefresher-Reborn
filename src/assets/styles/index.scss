@@ -36,7 +36,7 @@
 }
 
 .gall_writer {
-    // TODO 고쳐야함
+    // Keep ellipsis for long nicknames while allowing addon badges to expand.
     overflow: hidden;
 
     // display: block;
@@ -718,7 +718,7 @@ html:has(#css-darkmode) {
 
         .refresher-reply {
             cursor: pointer;
-            // TODO
+            // Intentionally minimal style to align with site-native comment actions.
             //border: 1px solid black;
             //border-radius: 5px;
             font-size: 12px;
@@ -814,7 +814,7 @@ html:has(#css-darkmode) {
         color: #000;
         font-size: 14px;
         height: 100%;
-        // TODO
+        // TODO: Replace border-bottom focus style with shared input token when design system is extracted.
         //border: 1px solid #000;
         //border-radius: 5px;
         // border: 0;

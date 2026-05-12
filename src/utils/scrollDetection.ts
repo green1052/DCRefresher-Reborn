@@ -17,9 +17,11 @@ interface ScrollSession {
     fired: number;
 }
 
+type ScrollEventHandler = (...args: unknown[]) => void;
+
 export class ScrollDetection {
     lastEvent: number;
-    events: Record<string, Array<(...args: any[]) => void>>;
+    events: Record<string, ScrollEventHandler[]>;
     session: ScrollSession;
     mode: number;
 
@@ -49,13 +51,13 @@ export class ScrollDetection {
         };
     }
 
-    emit(event: string, ...args: any[]): void {
+    emit(event: string, ...args: unknown[]): void {
         this.events[event]?.forEach((func) => {
             func(...args);
         });
     }
 
-    listen(event: string, cb: (...args: any[]) => void): void {
+    listen(event: string, cb: ScrollEventHandler): void {
         this.events[event] ??= [];
 
         this.events[event].push(cb);

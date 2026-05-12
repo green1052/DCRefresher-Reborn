@@ -25,6 +25,40 @@ const revokeModule = (module: RefresherModule) => {
     }
 };
 
+type ModuleStatusPayload = {
+    name: string;
+    value: boolean;
+};
+
+type SettingUpdatePayload = {
+    name: string;
+    key: string;
+    value: string | number | boolean;
+};
+
+const isModuleStatusPayload = (value: unknown): value is ModuleStatusPayload => {
+    return (
+        typeof value === "object" &&
+        value !== null &&
+        "name" in value &&
+        "value" in value &&
+        typeof value.name === "string" &&
+        typeof value.value === "boolean"
+    );
+};
+
+const isSettingUpdatePayload = (value: unknown): value is SettingUpdatePayload => {
+    return (
+        typeof value === "object" &&
+        value !== null &&
+        "name" in value &&
+        "key" in value &&
+        "value" in value &&
+        typeof value.name === "string" &&
+        typeof value.key === "string"
+    );
+};
+
 export const modules = {
     lists: (): ModuleStore => module_store,
     load: (module: RefresherModule): Promise<void> => modules.register(module),
@@ -47,13 +81,12 @@ export const modules = {
         );
 
         if (typeof module.settings === "object") {
-            // @ts-ignore
             module.status ??= {};
 
             promises.push(
                 ...Object.entries(module.settings).map(async ([key, value]) => {
-                    // @ts-ignore
-                    module.status[key] = await settings.load(module.name, key, value);
+                    const loaded = await settings.load(module.name, key, value);
+                    module.status[key] = loaded;
                 })
             );
         }
@@ -61,8 +94,8 @@ export const modules = {
         if (typeof module.data === "object") {
             promises.push(
                 storage.module.get(module.name).then((data) => {
-                    // @ts-ignore
-                    module.data = new Proxy(data ?? module.data ?? {}, {
+                    const currentData = (data ?? module.data ?? {}) as Record<string, unknown>;
+                    module.data = new Proxy(currentData, {
                         set(target, p, newValue, receiver) {
                             const result = Reflect.set(target, p, newValue, receiver);
                             storage.module.setGlobal(module.name, target);
@@ -98,8 +131,8 @@ export const modules = {
 export default modules;
 
 communicate.addHook("updateModuleStatus", (data) => {
-    if (!module_store[data.name]) return;
-    module_store[data.name].enable = data.value as boolean;
+    if (!isModuleStatusPayload(data) || !module_store[data.name]) return;
+    module_store[data.name].enable = data.value;
     storage.set(`${data.name}.enable`, data.value);
 
     const modulesSnap = JSON.parse(JSON.stringify(module_store));
@@ -114,17 +147,20 @@ communicate.addHook("updateModuleStatus", (data) => {
 });
 
 communicate.addHook("updateSettingValue", (data) => {
+    if (!isSettingUpdatePayload(data)) return;
     settings.setStore(data.name, data.key, data.value);
 });
 
 communicate.addHook("executeShortcut", (data) => {
+    if (typeof data !== "string") return;
+
     for (const key of Object.keys(module_store)) {
         if (
             module_store[key] &&
             typeof module_store[key].shortcuts === "object" &&
-            typeof module_store[key].shortcuts![data] === "function"
+            typeof module_store[key].shortcuts?.[data] === "function"
         ) {
-            module_store[key].shortcuts![data].bind(module_store[key])();
+            module_store[key].shortcuts?.[data].bind(module_store[key])();
         }
     }
 });
