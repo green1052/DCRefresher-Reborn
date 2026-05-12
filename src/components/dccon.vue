@@ -34,7 +34,7 @@
         <template v-else>
             <hr/>
 
-            <ul style="overflow: auto; display: flex; user-select: none; justify-content: center">
+            <ul style="overflow-x: auto; overflow-y: hidden; display: flex; user-select: none; column-gap: 4px;">
                 <li
                     style="font-size: 30px; margin-right: 5px"
                     @click="pageDown()"
@@ -44,11 +44,13 @@
                 <li
                     v-for="dccon in dcconList[currentPage]"
                     :key="dccon.title"
+                    style="width: auto;"
                 >
                     <img
                         :alt="dccon.title"
                         :src="dccon.main_img_url"
                         @click="dcconListClick(dccon.detail)"
+                        style="object-fit: cover; width: 100%; max-width: 53.3px; max-height: 53.3px;"
                     />
                 </li>
                 <li
@@ -70,7 +72,7 @@
                 </h2>
                 <ul
                     v-else
-                    style="display: flex; flex-wrap: wrap"
+                    style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px;"
                 >
                     <li
                         v-for="dccon in currentDccon"
@@ -79,7 +81,7 @@
                         <img
                             :alt="dccon.title"
                             :src="dccon.list_img"
-                            style="height: 100px"
+                            style="height: 100px; width: 100%; object-fit: contain;"
                         />
                     </li>
                 </ul>
