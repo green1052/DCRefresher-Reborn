@@ -7,10 +7,6 @@ export default defineConfig({
         "@wxt-dev/webextension-polyfill",
         "@wxt-dev/module-vue"
     ],
-    zip: {
-        artifactTemplate: "{{browser}}-{{manifestVersion}}.zip",
-        sourcesTemplate: "{{browser}}-{{manifestVersion}}-src.zip"
-    },
     manifest: {
         name: "DCRefresher Reborn",
         description: "디시인사이드 개선 확장 프로그램",
