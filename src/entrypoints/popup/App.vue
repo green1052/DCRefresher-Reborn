@@ -64,40 +64,12 @@
             <h1>설정</h1>
             <div class="float-right">
                 <p
-                    :class="{ active: tab === 0 }"
-                    @click="() => (tab = 0)"
+                    v-for="tabItem in tabs"
+                    :key="tabItem.id"
+                    :class="{ active: tab === tabItem.id }"
+                    @click="() => (tab = tabItem.id)"
                 >
-                    일반
-                </p>
-                <p
-                    :class="{ active: tab === 1 }"
-                    @click="() => (tab = 1)"
-                >
-                    고급
-                </p>
-                <p
-                    :class="{ active: tab === 2 }"
-                    @click="() => (tab = 2)"
-                >
-                    차단
-                </p>
-                <p
-                    :class="{ active: tab === 3 }"
-                    @click="() => (tab = 3)"
-                >
-                    메모
-                </p>
-                <p
-                    :class="{ active: tab === 4 }"
-                    @click="() => (tab = 4)"
-                >
-                    모듈
-                </p>
-                <p
-                    :class="{ active: tab === 5 }"
-                    @click="() => (tab = 5)"
-                >
-                    단축키
+                    {{ tabItem.label }}
                 </p>
             </div>
         </div>
@@ -111,7 +83,7 @@
                 <div class="info">
                     <div class="icon-wrap">
                         <img
-                            :src="getURL(browser.runtime.getManifest().icons[128])"
+                            :src="browser.runtime.getURL(browser.runtime.getManifest().icons?.[128] ?? 'icon-128.png')"
                             class="icon"
                         />
                     </div>
@@ -132,8 +104,8 @@
                                 데이터베이스 버전:
                                 {{ databaseVersion || "미설치" }}
                                 <svg
+                                    class="clickable-icon"
                                     height="12px"
-                                    style="cursor: pointer"
                                     viewBox="0 0 30 30"
                                     width="12px"
                                     xmlns="http://www.w3.org/2000/svg"
@@ -149,7 +121,7 @@
                 </div>
 
                 <div class="settings">
-                    <div v-if="Object.keys(settings).length === 0">
+                    <div v-if="!hasSettings">
                         <h3 class="need-refresh">우선 디시인사이드 페이지를 열고 설정 해주세요.</h3>
                     </div>
                     <div v-else>
@@ -173,7 +145,7 @@
                 key="tab2"
                 class="tab tab2"
             >
-                <div v-if="Object.keys(settings).length === 0">
+                <div v-if="!hasSettings">
                     <h3 class="need-refresh">우선 디시인사이드 페이지를 열고 설정 해주세요.</h3>
                 </div>
                 <div v-else>
@@ -196,10 +168,10 @@
                 key="tab3"
                 class="tab tab3"
             >
-                <div style="margin-bottom: 15px">
+                <div class="section-header">
                     <h2>데이터 관리</h2>
 
-                    <div style="margin-top: 5px; float: left">
+                    <div class="section-actions">
                         <button @click="exportBlock">내보내기</button>
                         <button @click="importBlock">가져오기</button>
                     </div>
@@ -210,8 +182,8 @@
                     <h2>차단 모드</h2>
 
                     <div
-                        v-for="key in Object.keys(blocks)"
-                        style="margin-top: 5px; margin-bottom: 5px"
+                        v-for="key in blockTypes"
+                        class="mode-row"
                     >
                         <label>{{ blockKeyNames[key] }}:</label>
                         <select
@@ -220,7 +192,6 @@
                         >
                             <option
                                 v-for="[key2, value2] in Object.entries(blockDetectModeTypeNames)"
-                                :selected="blockModes[key] === key2"
                                 :value="key2"
                             >
                                 {{ value2 }}
@@ -229,7 +200,7 @@
                     </div>
                 </div>
                 <div
-                    v-for="key in Object.keys(blocks)"
+                    v-for="key in blockTypes"
                     class="block-divide"
                 >
                     <h3>
@@ -237,7 +208,7 @@
 
                         <span
                             class="plus"
-                            @click="() => addEmptyBlockedUser(key)"
+                            @click="() => openBlockDialog(key)"
                         >
                             <svg
                                 fill="black"
@@ -291,7 +262,7 @@
                             :key="`block:${i}`"
                             :extra="blocked.extra"
                             :gallery="blocked.gallery"
-                            :image="`https://image.dcinside.com/dccon.php?no=${blocked.isRegex ? blocked.content.match(/^\^\((\w*)\|/)[1] : blocked.content}`"
+                            :image="`https://image.dcinside.com/dccon.php?no=${blocked.isRegex ? (blocked.content.match(/^\^\((\w*)\|/)?.at(1) ?? blocked.content) : blocked.content}`"
                             :regex="blocked.isRegex"
                             :remove="() => removeBlockedUser(key, i)"
                             :textclick="() => editBlockedUser(key, i)"
@@ -305,10 +276,10 @@
                 key="tab4"
                 class="tab tab4"
             >
-                <div style="margin-bottom: 15px">
+                <div class="section-header">
                     <h2>데이터 관리</h2>
 
-                    <div style="margin-top: 5px; float: left">
+                    <div class="section-actions">
                         <button @click="exportMemo">내보내기</button>
                         <button @click="importMemo">가져오기</button>
                         <button @click="open('https://dcrefresher.green1052.com/utils/convert-memo')">메모 변환</button>
@@ -318,7 +289,7 @@
                 </div>
 
                 <div
-                    v-for="key in Object.keys(memos)"
+                    v-for="key in memoTypes"
                     class="block-divide"
                 >
                     <h3>
@@ -379,7 +350,7 @@
                 class="tab tab5"
             >
                 <div
-                    v-if="Object.keys(modules).length === 0"
+                    v-if="!hasModules"
                     class="refresher-no-modules"
                 >
                     <h3>로드된 모듈 없음</h3>
@@ -420,35 +391,53 @@
                         </div>
                     </template>
                 </div>
-                <p style="text-align: right; margin-right: 5px"><a @click="openShortcutSettings">단축키 설정</a></p>
+                <p class="shortcut-settings-link"><a @click="openShortcutSettings">단축키 설정</a></p>
             </div>
         </transition-group>
     </div>
 </template>
 
 <script lang="ts" setup>
-import {sendToBackground} from "@plasmohq/messaging";
+import {Browser} from "#imports";
+import {sendMessage} from "@/utils/messaging";
+import {
+    BLOCK_TYPES,
+    blockModeStorage,
+    blockStorage,
+    MEMO_TYPES,
+    memoStorage,
+    modulesStorage,
+    type ModuleState,
+    settingsStorage
+} from "@/utils/storage";
+import {writeClipboard} from "@/utils/writeClipboard";
 import $ from "cash-dom";
 import ky from "ky";
 import {computed, nextTick, onMounted, reactive, ref} from "vue";
-import browser from "webextension-polyfill";
 
-import {BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES} from "../core/block";
-import {TYPE_NAMES as MEMO_TYPE_NAMES} from "../core/memo";
-import storage from "../utils/storage";
-import {writeClipboard} from "../utils/writeClipboard";
+import {BLOCK_DETECT_MODE_TYPE_NAMES, BlockModeCache, TYPE_NAMES as BLOCK_TYPE_NAMES} from "../../core/block";
+import {TYPE_NAMES as MEMO_TYPE_NAMES} from "../../core/memo";
+import storage from "../../utils/webStorage";
+
 import RefresherBubble from "./components/bubble.vue";
 import RefresherCheckbox from "./components/checkbox.vue";
 import RefresherModule from "./components/module.vue";
 import RefresherOptions from "./components/options.vue";
 import RefresherInput from "./components/refresherInput.vue";
 import SettingsModule from "./components/settingsModule.vue";
-import getURL from "~utils/getURL";
 
 const tab = ref(0);
-const modules = ref<{ [key: string]: RefresherModule }>({});
+const modules = ref<Record<string, ModuleState>>({});
 const settings = ref<{ [key: string]: { [key: string]: RefresherSettings } }>({});
-const shortcuts = ref<{} | browser.Commands.Command[]>({});
+const tabs = [
+    {id: 0, label: "일반"},
+    {id: 1, label: "고급"},
+    {id: 2, label: "차단"},
+    {id: 3, label: "메모"},
+    {id: 4, label: "모듈"},
+    {id: 5, label: "단축키"}
+] as const;
+const shortcuts = ref<Browser.commands.Command[]>([]);
 const blocks = reactive<{ [key in RefresherBlockType]: RefresherBlockValue[] }>({
     NICK: [],
     ID: [],
@@ -460,7 +449,7 @@ const blocks = reactive<{ [key in RefresherBlockType]: RefresherBlockValue[] }>(
     TAB: [],
     IMAGE: []
 });
-const blockModes = ref<BlockModeCache>({});
+const blockModes = ref<Partial<BlockModeCache>>({});
 const blockDetectModeTypeNames = BLOCK_DETECT_MODE_TYPE_NAMES;
 const memos = reactive<{ [key in RefresherMemoType]: { [key: string]: RefresherMemoValue } }>({
     UID: {},
@@ -469,6 +458,8 @@ const memos = reactive<{ [key in RefresherMemoType]: { [key: string]: RefresherM
 });
 const memoKeyNames = MEMO_TYPE_NAMES;
 const blockKeyNames = BLOCK_TYPE_NAMES;
+const blockTypes = BLOCK_TYPES;
+const memoTypes = MEMO_TYPES;
 const links = [
     {
         text: "GitHub",
@@ -495,135 +486,148 @@ const databaseVersion = ref("");
 
 const showBlockDialog = ref(false);
 const currentBlockType = ref<RefresherBlockType>("NICK");
-const blockContentInput = ref<HTMLInputElement>();
-const blockFormData = reactive({
+const blockFormData = reactive<{
+    content: string;
+    isRegex: boolean;
+    gallery: string;
+    mode: RefresherBlockDetectMode | "NONE";
+}>({
     content: "",
     isRegex: false,
     gallery: "",
-    mode: "NONE" as RefresherBlockDetectMode
+    mode: "NONE"
 });
+
+const copyToClipboard = async (payload: unknown) => {
+    try {
+        await writeClipboard(JSON.stringify(payload));
+        alert("클립보드에 복사되었습니다.");
+    } catch {
+        alert("클립보드에 복사하지 못했습니다.");
+    }
+};
+
+const parseImportData = (example: string) => {
+    const result = prompt("가져올 데이터를 입력하세요.", example);
+    if (!result) return null;
+
+    try {
+        return JSON.parse(result) as Record<string, unknown>;
+    } catch {
+        alert("데이터가 잘못됐습니다.");
+        return null;
+    }
+};
+
+const closeBlockDialog = () => {
+    showBlockDialog.value = false;
+};
+
+const openBlockDialog = (type: RefresherBlockType) => {
+    currentBlockType.value = type;
+    blockFormData.content = "";
+    blockFormData.isRegex = false;
+    blockFormData.gallery = "";
+    blockFormData.mode = "NONE";
+    showBlockDialog.value = true;
+};
 
 onMounted(async () => {
     try {
-        const [modulesResponse, blocksResponse, memosResponse] = await Promise.all([
-            sendToBackground({
-                name: "store",
-                body: {action: "get", type: "modules"}
-            }),
-            sendToBackground({
-                name: "store",
-                body: {action: "get", type: "blocks"}
-            }),
-            sendToBackground({
-                name: "store",
-                body: {action: "get", type: "memos"}
-            })
-        ]);
+        // Load initial data for blocks and memos directly from storage
+        for (const type of BLOCK_TYPES) {
+            blocks[type] = (await blockStorage[type].getValue()) ?? [];
+            const mode = await blockModeStorage[type].getValue();
+            if (mode) blockModes.value[type] = mode;
 
-        if (modulesResponse.modules) {
-            modules.value = modulesResponse.modules;
+            // Watch for changes
+            blockStorage[type].watch((newValue) => {
+                if (newValue) blocks[type] = newValue;
+            });
+            blockModeStorage[type].watch((newValue) => {
+                if (newValue) blockModes.value[type] = newValue;
+            });
         }
 
-        if (modulesResponse.settings) {
-            settings.value = modulesResponse.settings;
+        for (const type of MEMO_TYPES) {
+            memos[type] = (await memoStorage[type].getValue()) ?? {};
+
+            // Watch for changes
+            memoStorage[type].watch((newValue) => {
+                if (newValue) memos[type] = newValue;
+            });
         }
 
-        if (blocksResponse.blocks && blocksResponse.blockModes) {
-            Object.assign(blocks, blocksResponse.blocks);
-            blockModes.value = blocksResponse.blockModes;
-        }
+        const initialModules = await modulesStorage.getValue();
+        const initialSettings = await settingsStorage.getValue();
 
-        if (memosResponse.memos) {
-            Object.assign(memos, memosResponse.memos);
-        }
-    } catch {
+        if (initialModules) modules.value = initialModules;
+        if (initialSettings) settings.value = initialSettings;
+
+        modulesStorage.watch((newValue) => {
+            if (newValue) modules.value = newValue;
+        });
+
+        settingsStorage.watch((newValue) => {
+            if (newValue) settings.value = newValue;
+        });
+    } catch (e) {
+        console.error("Failed to load initial data", e);
     }
 
     shortcuts.value = await browser.commands.getAll();
     databaseVersion.value = await storage.get("refresher.database.version");
 });
 
-const exportMemo = () => {
-    writeClipboard(JSON.stringify(memos))
-        .then(() => {
-            alert("클립보드에 복사되었습니다.");
-        })
-        .catch(() => {
-            alert("클립보드에 복사하지 못했습니다.");
-        });
-};
+const exportMemo = () => copyToClipboard(memos);
 
 const importMemo = () => {
-    const result = prompt("가져올 데이터를 입력하세요.", `예시: {"UID":{},"NICK":{},"IP":{}}`);
+    const data = parseImportData(`예시: {"UID":{},"NICK":{},"IP":{}}`);
+    if (!data) return;
 
-    if (!result) return;
+    for (const [key, value] of Object.entries(data)) {
+        const target = memos[key as RefresherMemoType];
+        if (!target || typeof value !== "object" || value === null) continue;
 
-    try {
-        const data = JSON.parse(result);
-
-        for (const [key, value] of Object.entries(data)) {
-            const target = memos[key as RefresherMemoType];
-
-            for (const [id, memo] of Object.entries(value as Record<string, RefresherMemoValue>)) {
-                if (target[id] && !confirm(`${id}에 대한 메모가 이미 존재합니다, 덮어쓰시겠습니까?`)) {
-                    continue;
-                }
-
-                target[id] = memo;
+        for (const [id, memo] of Object.entries(value as Record<string, RefresherMemoValue>)) {
+            if (target[id] && !confirm(`${id}에 대한 메모가 이미 존재합니다. 덮어쓰시겠습니까?`)) {
+                continue;
             }
+
+            target[id] = memo;
         }
-
-        syncMemos();
-
-        alert("가져오기에 성공했습니다.");
-    } catch (e) {
-        alert("데이터가 잘못됐습니다.");
     }
+
+    alert("가져오기에 성공했습니다.");
 };
 
-const exportBlock = () => {
-    writeClipboard(JSON.stringify(blocks))
-        .then(() => {
-            alert("클립보드에 복사되었습니다.");
-        })
-        .catch(() => {
-            alert("클립보드에 복사하지 못했습니다.");
-        });
-};
+const exportBlock = () => copyToClipboard(blocks);
 
 const importBlock = () => {
-    const result = prompt("가져올 데이터를 입력하세요.", `예시: {"NICK":[],"ID":[],"IP":[],"TITLE":[],"TEXT":[],"COMMENT":[],"DCCON":[],"TAB":[],"IMAGE":[]}`);
+    const data = parseImportData(`예시: {"NICK":[],"ID":[],"IP":[],"TITLE":[],"TEXT":[],"COMMENT":[],"DCCON":[],"TAB":[],"IMAGE":[]}`);
+    if (!data) return;
 
-    if (!result) return;
+    for (const [key, value] of Object.entries(data)) {
+        const target = blocks[key as RefresherBlockType];
+        if (!target || !Array.isArray(value)) continue;
 
-    try {
-        const data = JSON.parse(result);
-
-        for (const [key, value] of Object.entries(data)) {
-            const target = blocks[key as RefresherBlockType];
-
-            for (const block of value as RefresherBlockValue[]) {
-                if (
-                    target.some((v) => v.content === block.content) &&
-                    !confirm(`${block.content}가 이미 존재합니다, 덮어쓰시겠습니까?`)
-                ) {
-                    continue;
-                }
-
-                target.push(block);
+        for (const block of value as RefresherBlockValue[]) {
+            if (
+                target.some((v) => v.content === block.content) &&
+                !confirm(`${block.content}가 이미 존재합니다. 추가하시겠습니까?`)
+            ) {
+                continue;
             }
+
+            target.push(block);
         }
-
-        syncBlock();
-
-        alert("가져오기에 성공했습니다.");
-    } catch (e) {
-        alert("데이터가 잘못됐습니다.");
     }
+
+    alert("가져오기에 성공했습니다.");
 };
 
 const version = ref(
-    process.env.NODE_ENV === "development"
+    import.meta.env.DEV
         ? `${browser.runtime.getManifest().version}-dev`
         : browser.runtime.getManifest().version
 );
@@ -634,7 +638,7 @@ const open = (url: string) => {
 
 const openShortcutSettings = () => {
     browser.tabs.create({
-        url: process.env.PLASMO_BROWSER === "firefox" ? "about:addons" : "chrome://extensions/shortcuts"
+        url: (import.meta.env.FIREFOX as boolean) ? "about:addons" : "chrome://extensions/shortcuts"
     });
 };
 
@@ -689,6 +693,8 @@ const settingsCount = (obj: Record<string, RefresherSettings>) => {
 const advancedSettingsCount = (obj: Record<string, RefresherSettings>) => {
     return Object.values(obj).filter((v) => v?.advanced === true).length;
 };
+const hasSettings = computed(() => Object.keys(settings.value).length > 0);
+const hasModules = computed(() => Object.keys(modules.value).length > 0);
 
 // Computed properties for filtered modules
 const modulesWithBasicSettings = computed(() => {
@@ -704,31 +710,23 @@ const modulesWithAdvancedSettings = computed(() => {
 });
 
 const updateUserSetting = async (module: string, key: string, value: unknown) => {
-    settings.value[module][key].value = value;
+    (settings.value[module][key].value as unknown) = value;
 
     try {
-        await sendToBackground({
-            name: "store",
-            body: {
-                action: "update",
-                type: "userSetting",
-                data: {
-                    name: module,
-                    key,
-                    value
-                }
-            }
-        });
+        await storage.set(`${module}.${key}`, value);
 
-        await sendToBackground({
-            name: "broadcast",
-            body: {
-                type: "updateSettingValue",
-                data: {
-                    name: module,
-                    key,
-                    value
-                }
+        const currentSettings = await settingsStorage.getValue();
+        if (currentSettings && currentSettings[module] && currentSettings[module][key]) {
+            (currentSettings[module][key].value as unknown) = value;
+            await settingsStorage.setValue(currentSettings);
+        }
+
+        await sendMessage("broadcast", {
+            type: "updateSettingValue",
+            data: {
+                name: module,
+                key,
+                value
             }
         });
     } catch (e) {
@@ -736,59 +734,7 @@ const updateUserSetting = async (module: string, key: string, value: unknown) =>
     }
 };
 
-const syncBlock = async () => {
-    try {
-        await sendToBackground({
-            name: "store",
-            body: {
-                action: "update",
-                type: "blocks",
-                data: {
-                    updateBlocks: true,
-                    blocks_store: JSON.parse(JSON.stringify(blocks)),
-                    blockModes_store: JSON.parse(JSON.stringify(blockModes.value))
-                }
-            }
-        });
-
-        await sendToBackground({
-            name: "broadcast",
-            body: {
-                type: "updateBlocks",
-                data: {
-                    blocks: JSON.parse(JSON.stringify(blocks)),
-                    modes: JSON.parse(JSON.stringify(blockModes.value))
-                }
-            }
-        });
-    } catch (error) {
-        // Silent error handling
-    }
-};
-
-const openBlockDialog = (key: RefresherBlockType) => {
-    if (key === "DCCON") {
-        alert("디시콘 수동 차단은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
-        return;
-    }
-
-    currentBlockType.value = key;
-    blockFormData.content = "";
-    blockFormData.isRegex = false;
-    blockFormData.gallery = "";
-    blockFormData.mode = "NONE";
-    showBlockDialog.value = true;
-
-    nextTick(() => {
-        blockContentInput.value?.focus();
-    });
-};
-
-const closeBlockDialog = (event?: Event) => {
-    showBlockDialog.value = false;
-};
-
-const confirmAddBlock = () => {
+const confirmAddBlock = async () => {
     if (!blockFormData.content.trim()) {
         alert(`${blockKeyNames[currentBlockType.value]} 값을 입력해주세요.`);
         return;
@@ -818,22 +764,20 @@ const confirmAddBlock = () => {
         mode: blockFormData.mode === "NONE" ? undefined : blockFormData.mode
     });
 
-    syncBlock();
+    await blockStorage[currentBlockType.value].setValue(blocks[currentBlockType.value]);
     closeBlockDialog();
 };
 
-// Legacy function for compatibility
-const addEmptyBlockedUser = openBlockDialog;
-const removeBlockedUser = (key: RefresherBlockType, index: number) => {
+const removeBlockedUser = async (key: RefresherBlockType, index: number) => {
     blocks[key].splice(index, 1);
-    syncBlock();
+    await blockStorage[key].setValue(blocks[key]);
 };
-const removeAllBlockedUser = (key: RefresherBlockType) => {
-    if (!confirm("ㄹ?ㅇ")) return;
+const removeAllBlockedUser = async (key: RefresherBlockType) => {
+    if (!confirm(`${blockKeyNames[key]} 차단 목록을 모두 삭제할까요?`)) return;
     blocks[key] = [];
-    syncBlock();
+    await blockStorage[key].setValue([]);
 };
-const editBlockedUser = (key: RefresherBlockType, index: number) => {
+const editBlockedUser = async (key: RefresherBlockType, index: number) => {
     if (key === "DCCON") {
         alert("디시콘 수정은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
         return;
@@ -844,79 +788,46 @@ const editBlockedUser = (key: RefresherBlockType, index: number) => {
     if (!result) return;
 
     blocks[key][index].content = result;
-    syncBlock();
+    await blockStorage[key].setValue(blocks[key]);
 };
-const editBlockMode = () => {
-    syncBlock();
+const editBlockMode = async () => {
+    for (const type of BLOCK_TYPES) {
+        const mode = blockModes.value[type];
+        if (mode) await blockModeStorage[type].setValue(mode);
+    }
 };
-const syncMemos = async () => {
-    try {
-        await sendToBackground({
-            name: "store",
-            body: {
-                action: "update",
-                type: "memos",
-                data: {
-                    updateMemos: true,
-                    memos_store: JSON.parse(JSON.stringify(memos))
-                }
-            }
-        });
 
-        await sendToBackground({
-            name: "broadcast",
-            body: {
-                type: "updateMemos",
-                data: {
-                    memos: JSON.parse(JSON.stringify(memos))
-                }
+const removeMemoUser = async (type: RefresherMemoType, user: string) => {
+    delete memos[type][user];
+    await memoStorage[type].setValue(memos[type]);
+};
+const removeAllMemoUser = async (type: RefresherMemoType) => {
+    if (!confirm(`${memoKeyNames[type]} 메모를 모두 삭제할까요?`)) return;
+    memos[type] = {};
+    await memoStorage[type].setValue({});
+};
+const requestMemoAsk = async (type: RefresherMemoType, user: string) => {
+    try {
+        await sendMessage("broadcast", {
+            type: "refresherRequestMemoAsk",
+            data: {
+                type,
+                user
             }
         });
     } catch {
     }
 };
-const removeMemoUser = (type: RefresherMemoType, user: string) => {
-    delete memos[type][user];
-    syncMemos();
-};
-const removeAllMemoUser = (type: RefresherMemoType) => {
-    if (!confirm("ㄹ?ㅇ")) return;
-    memos[type] = {};
-    syncMemos();
-};
+
 const addMemoUser = async (type: RefresherMemoType) => {
     const user = prompt("메모 대상을 입력하세요.");
 
     if (!user) return;
 
-    try {
-        await sendToBackground({
-            name: "broadcast",
-            body: {
-                type: "refresherRequestMemoAsk",
-                data: {
-                    type,
-                    user
-                }
-            }
-        });
-    } catch {
-    }
+    await requestMemoAsk(type, user);
 };
 const editMemoUser = async (type: RefresherMemoType, user: string) => {
-    try {
-        await sendToBackground({
-            name: "broadcast",
-            body: {
-                type: "refresherRequestMemoAsk",
-                data: {
-                    type,
-                    user
-                }
-            }
-        });
-    } catch {
-    }
+    await requestMemoAsk(type, user);
 };
 const updateIpDatabase = async () => {
     try {
@@ -1184,6 +1095,29 @@ body {
         width: 150px;
     }
 
+    .clickable-icon {
+        cursor: pointer;
+    }
+
+    .section-header {
+        margin-bottom: 15px;
+    }
+
+    .section-actions {
+        float: left;
+        margin-top: 5px;
+    }
+
+    .mode-row {
+        margin-bottom: 5px;
+        margin-top: 5px;
+    }
+
+    .shortcut-settings-link {
+        margin-right: 5px;
+        text-align: right;
+    }
+
     .tab {
         height: 85%;
         margin-top: 30px;
@@ -1199,13 +1133,13 @@ body {
 
     .refresher-title-zone {
         background: linear-gradient(
-                to bottom,
-                rgba(255, 255, 255, 1),
-                rgba(255, 255, 255, 1),
-                rgba(255, 255, 255, 1),
-                rgba(255, 255, 255, 0.9),
-                rgba(255, 255, 255, 0.6),
-                rgba(255, 255, 255, 0)
+            to bottom,
+            rgba(255, 255, 255, 1),
+            rgba(255, 255, 255, 1),
+            rgba(255, 255, 255, 1),
+            rgba(255, 255, 255, 0.9),
+            rgba(255, 255, 255, 0.6),
+            rgba(255, 255, 255, 0)
         );
         display: flex;
         left: 0;
@@ -1437,13 +1371,13 @@ body {
 
         .refresher-title-zone {
             background: linear-gradient(
-                    to bottom,
-                    #222,
-                    #222,
-                    rgb(34, 34, 34),
-                    rgba(34, 34, 34, 0.9),
-                    rgba(34, 34, 34, 0.6),
-                    rgba(34, 34, 34, 0)
+                to bottom,
+                #222,
+                #222,
+                rgb(34, 34, 34),
+                rgba(34, 34, 34, 0.9),
+                rgba(34, 34, 34, 0.6),
+                rgba(34, 34, 34, 0)
             );
 
             .float-right {

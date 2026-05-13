@@ -1,23 +1,23 @@
+import eventBus from "@/core/eventbus";
+import filter from "@/core/filtering";
 import $, {Cash} from "cash-dom";
 import Cookies from "js-cookie";
 import ky, {Input, Options} from "ky";
-import {createWorker} from "tesseract.js";
-import grecaptcha from "url:../temp/grecaptcha";
-
 import {GalleryPreData} from "../@types/post";
 import * as block from "../core/block";
-import type IFrame from "../core/frame";
+import Frame, {FrameScrollApi} from "../core/frame";
 import {submitComment} from "../utils/comment";
-import getURL from "../utils/getURL";
 import * as http from "../utils/http";
 import {queryString} from "../utils/http";
 import {ScrollDetection} from "../utils/scrollDetection";
-import * as storage from "../utils/storage";
 import toast from "../utils/toast";
 import {User} from "../utils/user";
+import * as storage from "../utils/webStorage";
 import {writeClipboard} from "../utils/writeClipboard";
 
 const domParser = new DOMParser();
+
+type PreviewFrameAppApi = FrameScrollApi;
 
 class PostInfo implements IPostInfo {
     id: string;
@@ -170,22 +170,9 @@ const kyClient = ky.create({
     }
 });
 
-const client =
-    process.env.PLASMO_MANIFEST_VERSION === "mv2"
-        ? (url: URL | RequestInfo, init?: RequestInit | undefined): Promise<string> => {
-            return content
-                .fetch(url, {
-                    ...init,
-                    method: "POST",
-                    headers: {
-                        "X-Requested-With": "XMLHttpRequest"
-                    }
-                })
-                .then((response) => response.text());
-        }
-        : (url: Input, options?: Options): Promise<string> => {
-            return kyClient(url, options).text();
-        };
+const client = (url: Input, options?: Options): Promise<string> => {
+    return kyClient(url, options).text();
+};
 
 const request = {
     async bump(args: GalleryHTTPRequestArguments) {
@@ -412,7 +399,6 @@ const request = {
     async captcha(args: GalleryHTTPRequestArguments, kcaptchaType: "comment" | "recommend") {
         if (!args.link) throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
 
-        // const galleryType = http.galleryType(args.link, "/");
         const galleryTypeName = http.galleryTypeName(args.link);
 
         const params = new URLSearchParams();
@@ -454,7 +440,6 @@ const request = {
         params.set("cmt_nos[]", commentId);
 
         return client(url, {body: params, signal})
-            .then((v) => v)
             .catch(() => false);
     },
 
@@ -484,13 +469,13 @@ const request = {
         }
 
         return client(http.urls.comment_remove, {body: params, signal})
-            .then((v) => v)
             .catch(() => false);
     }
 };
 
 const KEY_COUNTS: Record<string, [number, number]> = {};
 let adminKeyPress: (ev: KeyboardEvent) => void;
+let previewNavigationKeyDown: ((ev: KeyboardEvent) => void) | null = null;
 
 const panel = {
     block: (
@@ -592,18 +577,18 @@ const panel = {
 
     admin: (
         preData: GalleryPreData,
-        frame: IFrame,
+        frame: Frame,
         toggleBlur: boolean,
         eventBus: RefresherEventBus,
         useKeyPress: boolean
     ) => {
         const preFoundBlockElement = document.querySelector(".refresher-block-popup");
 
-        preFoundBlockElement?.parentElement?.removeChild(preFoundBlockElement);
+        preFoundBlockElement?.remove();
 
         const preFoundElement = document.querySelector(".refresher-management-panel");
 
-        preFoundElement?.parentElement?.removeChild(preFoundElement);
+        preFoundElement?.remove();
 
         let setAsNotice = !preData.notice;
         let setAsRecommend = !preData.recommend;
@@ -616,23 +601,23 @@ const panel = {
 
         element.innerHTML = `
       <div class="button pin">
-        <img src="${getURL("/assets/pin.webp")}"></img>
+        <img src="${browser.runtime.getURL("/assets/pin.webp")}"></img>
         <p>${setAsNotice ? "공지로 등록" : "공지 등록 해제"}</p>
       </div>
       <div class="button recommend">
-        <img src="${setAsRecommend ? getURL("/assets/upvote.webp") : getURL("/assets/downvote.webp")}"></img>
+        <img src="${setAsRecommend ? browser.runtime.getURL("/assets/upvote.webp") : browser.runtime.getURL("/assets/downvote.webp")}"></img>
         <p>${setAsRecommend ? "개념글 등록" : "개념글 해제"}</p>
       </div>
       <div class="button block">
-        <img src="${getURL("/assets/block.webp")}"></img>
+        <img src="${browser.runtime.getURL("/assets/block.webp")}"></img>
         <p>차단 (B)</p>
       </div>
       <div class="button delete">
-        <img src="${getURL("/assets/delete.webp")}"></img>
+        <img src="${browser.runtime.getURL("/assets/delete.webp")}"></img>
         <p>삭제 (D)</p>
       </div>
       <div class="button bump">
-        <img src="${getURL("/assets/upvote.webp")}"></img>
+        <img src="${browser.runtime.getURL("/assets/upvote.webp")}"></img>
         <p>끌올</p>
       </div>
     `;
@@ -795,7 +780,7 @@ const panel = {
                         setAsRecommend = !setAsRecommend;
 
                         const recommendImg = recommend.querySelector("img") as HTMLImageElement;
-                        recommendImg.src = getURL(setAsRecommend ? "/assets/upvote.webp" : "/assets/downvote.webp");
+                        recommendImg.src = browser.runtime.getURL(setAsRecommend ? "/assets/upvote.webp" : "/assets/downvote.webp");
 
                         const recommendP = recommend.querySelector("p") as HTMLParagraphElement;
                         recommendP.innerHTML = setAsRecommend ? "개념글 등록" : "개념글 해제";
@@ -829,10 +814,7 @@ const panel = {
         return element;
     },
 
-    async captcha(src: string, callback: (captcha: string) => void, bypassCaptcha: boolean): Promise<boolean> {
-        const image = await ky.get(`https://gall.dcinside.com/${src}`).blob();
-        const url = URL.createObjectURL(image);
-
+    async captcha(src: string, callback: (captcha: string) => void): Promise<boolean> {
         const element = document.createElement("div");
         element.className = "refresher-captcha-popup";
 
@@ -842,7 +824,7 @@ const panel = {
       <div class="cross"></div>
       <div class="cross"></div>
     </div>
-    <img src="${url}"></img>
+    <img src="${src}"></img>
     <input type="text"></input>
     <button class="refresher-preview-button primary">
       <p class="refresher-vote-text">전송</p>
@@ -855,7 +837,7 @@ const panel = {
             if (!input) return;
 
             callback(input);
-            element.parentElement!.removeChild(element);
+            element.remove();
         };
 
         element.querySelector("input")!.addEventListener("keydown", (e) => {
@@ -863,8 +845,7 @@ const panel = {
         });
 
         element.querySelector(".close")!.addEventListener("click", () => {
-            URL.revokeObjectURL(url);
-            element.parentElement!.removeChild(element);
+            element.remove();
         });
 
         element.querySelector("button")!.addEventListener("click", inputEvent);
@@ -872,26 +853,6 @@ const panel = {
         document.body.appendChild(element);
 
         setTimeout(() => element.querySelector("input")!.focus(), 0);
-
-        if (bypassCaptcha) {
-            const worker = await createWorker("eng");
-
-            try {
-                await worker.setParameters({
-                    tessedit_char_whitelist: "0123456789abcdefghijklmnopqrstuvwxyz"
-                });
-
-                const {
-                    data: {text}
-                } = await worker.recognize(image);
-
-                element.querySelector("input")!.value = text;
-            } catch {
-                toast.show("자동 인식에 실패했습니다.", "error");
-            } finally {
-                await worker.terminate();
-            }
-        }
 
         return true;
     }
@@ -950,7 +911,7 @@ interface Cache {
 class PostCache {
     caches: Record<string, Cache> = {};
 
-    constructor(public maxCacheSize: number = 1000) {
+    constructor(public maxCacheSize: number = 50) {
     }
 
     public get(id: string, ignoreTimeout = false): Cache | undefined {
@@ -973,7 +934,7 @@ class PostCache {
         }
 
         this.caches[id] = {
-            ...(this.get(id) ?? {}),
+            ...(this.caches[id] ?? {}),
             ...data
         };
     }
@@ -1126,7 +1087,7 @@ const miniPreview: MiniPreview = {
     }
 };
 
-let frame: IFrame;
+let frame: Frame;
 
 const blockPreset = {
     day: "",
@@ -1228,7 +1189,7 @@ export default {
             desc: "위의 옵션이 켜져있을 시 댓글을 새로고침할 주기를 설정합니다.",
             type: "range",
             default: 10000,
-            min: 1000,
+            min: 3000,
             max: 20000,
             step: 100,
             unit: "ms"
@@ -1301,12 +1262,6 @@ export default {
             type: "check",
             default: false
         },
-        bypassCaptcha: {
-            name: "캡차 자동 완성",
-            desc: "캡차를 자동으로 입력합니다.",
-            type: "check",
-            default: false
-        },
         disableCache: {
             name: "캐시 비활성화",
             desc: "캐시를 사용하지 않습니다. (툴팁 미리보기 제외)",
@@ -1332,8 +1287,7 @@ export default {
             default: false
         }
     },
-    require: ["filter", "eventBus", "Frame", "http"],
-    func(filter, eventBus, Frame, http) {
+    func() {
         if (!this.status.disableCache) {
             filter.add(".page_head .gall_issuebox", (element) => {
                 const button = document.createElement("button");
@@ -1371,7 +1325,9 @@ export default {
                     ul.addEventListener("click", (e) => {
                         const target = e.target as HTMLElement;
                         const li = target.closest("li");
-                        const key = li.dataset.cacheKey;
+                        if (!li) return;
+                        const key = (li as HTMLElement).dataset.cacheKey;
+                        if (!key) return;
 
                         const value = postCaches.caches[key];
 
@@ -1403,13 +1359,14 @@ export default {
 
         if (!this.status.disableCache && this.status.newArticleArchive)
             this.memory.newPostListEvent = eventBus.on("newPostList", async (articles: Cash[]) => {
-                articles.slice(0, 5);
+                const limited = articles.slice(0, 5);
 
-                for (const article of articles) {
+                for (const article of limited) {
                     const url = new URL(article.find(".gall_tit > a").attr("href"), "https://gall.dcinside.com");
                     const gallery = url.searchParams.get("id");
                     const no = url.searchParams.get("no");
-                    const post = await request.post(url.href, gallery, no, null);
+                    const controller = new AbortController();
+                    const post = await request.post(url.href, gallery, no, controller.signal);
 
                     postCaches.set(`${gallery}${no}`, {
                         date: Date.now(),
@@ -1431,17 +1388,16 @@ export default {
                 .show();
         });
 
-        $(document).on("DOMContentLoaded", () => $(document.body).append(`<script src="${grecaptcha}">`));
-
         blockPreset.day = this.status.blockPresetDay;
         blockPreset.reason = this.status.blockPresetReason;
         blockPreset.delete = this.status.blockPresetDelete;
         blockPreset.user_type = this.status.blockPresetUserType;
 
         let postFetchedData: PostInfo;
+        let currentPreData: GalleryPreData | null = null;
         const gallery = queryString("id") ?? undefined;
 
-        const makeFirstFrame = (
+        const makeBodyFrame = (
             frame: RefresherFrame,
             preData: GalleryPreData,
             signal: AbortSignal,
@@ -1500,7 +1456,7 @@ export default {
                     return false;
                 };
 
-                return codeSrc ? panel.captcha(codeSrc, req, this.status.bypassCaptcha) : req();
+                return codeSrc ? panel.captcha(codeSrc, req) : req();
             };
 
             frame.functions.share = () => {
@@ -1633,7 +1589,7 @@ export default {
             };
         };
 
-        const makeSecondFrame = (frame: RefresherFrame, preData: GalleryPreData, signal: AbortSignal) => {
+        const makeCommentFrame = (frame: RefresherFrame, preData: GalleryPreData, signal: AbortSignal) => {
             frame.data.load = true;
             frame.title = "댓글";
             frame.subtitle = "로딩 중...";
@@ -1674,8 +1630,16 @@ export default {
                     const codeSrc = requireCapCode ? await request.captcha(preData, "comment") : undefined;
 
                     const getGreCaptchaToken = () =>
-                        new Promise<string>((resolve) => {
-                            setTimeout(() => resolve(""), 3000);
+                        new Promise<string | undefined>((resolve) => {
+                            setTimeout(() => resolve(undefined), 3000);
+
+                            const grecaptchaHandler = (ev: MessageEvent) => {
+                                if (ev.data.type !== "refresherGrecaptchaToken") return;
+                                window.removeEventListener("message", grecaptchaHandler);
+                                resolve(ev.data.token);
+                            };
+
+                            window.addEventListener("message", grecaptchaHandler);
 
                             window.postMessage(
                                 {
@@ -1684,11 +1648,6 @@ export default {
                                 },
                                 "*"
                             );
-
-                            window.addEventListener("message", (ev) => {
-                                if (ev.data.type !== "refresherGrecaptchaToken") return;
-                                resolve(ev.data.token);
-                            });
                         });
 
                     const grecaptcha = await getGreCaptchaToken();
@@ -1714,7 +1673,7 @@ export default {
                         }
                     };
 
-                    return codeSrc ? await panel.captcha(codeSrc, req, this.status.bypassCaptcha) : req();
+                    return codeSrc ? await panel.captcha(codeSrc, req) : req();
                 };
 
                 if (this.memory.refreshIntervalId) clearInterval(this.memory.refreshIntervalId);
@@ -1893,7 +1852,7 @@ export default {
                             comment: comments
                         });
 
-                        comments.comments.map((v: DcinsideCommentObject) => {
+                        comments.comments.forEach((v: DcinsideCommentObject) => {
                             v.user = new User(
                                 v.name,
                                 v.user_id || null,
@@ -1932,9 +1891,11 @@ export default {
                             }
 
                             if (/<(img|video) class=/.test(comment.memo)) {
-                                check.DCCON = /https:\/\/dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g.exec(
+                                const match = /https:\/\/dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g.exec(
                                     comment.memo
-                                )![1];
+                                );
+                                if (!match) return true;
+                                check.DCCON = match[1];
                             } else {
                                 check.COMMENT = comment.memo;
                             }
@@ -1961,7 +1922,7 @@ export default {
                             comments.comments.length === 0
                                 ? 0
                                 : comments.comments
-                                    .map((v: DcinsideCommentObject) => Number(v.depth == 0))
+                                    .map((v: DcinsideCommentObject) => Number(v.depth === 0))
                                     .reduce((a: number, b: number) => a + b);
                         commentCounts = comments.comments.length;
                     } else if (this.status.archiveArticle) {
@@ -1991,7 +1952,7 @@ export default {
                     frame.data.comments = comments;
 
                     if (needRefresh) {
-                        const frameComponent = frame.app.groupRef?.frameRefs?.[1];
+                        const frameComponent = frame.app.commentFrameRef;
                         frameComponent?.incrementCommentKey?.();
                     }
                 } catch (e) {
@@ -2015,20 +1976,20 @@ export default {
         };
 
         const newPostWithData = (preData: GalleryPreData, historySkip?: boolean) => {
-            const firstApp = frame.app.first();
-            const secondApp = frame.app.second();
+            const bodyFrame = frame.app.body();
+            const commentFrame = frame.app.comment();
 
-            if (firstApp.data.load) return;
+            if (bodyFrame.data.load) return;
 
             const params = new URLSearchParams(preData.link);
             params.set("no", preData.id);
             preData.link = decodeURIComponent(params.toString());
 
             preData.title = "로딩 중...";
-            firstApp.contents = "로딩 중...";
+            bodyFrame.contents = "로딩 중...";
 
-            makeFirstFrame(firstApp, preData, this.memory.signal!, historySkip);
-            makeSecondFrame(secondApp, preData, this.memory.signal!);
+            makeBodyFrame(bodyFrame, preData, this.memory.signal!, historySkip);
+            makeCommentFrame(commentFrame, preData, this.memory.signal!);
 
             if (this.status.toggleAdminPanel && document.querySelector(".useradmin_btnbox button")) {
                 panel.admin(preData, frame, this.status.toggleBlur, eventBus, this.status.useKeyPress);
@@ -2051,6 +2012,7 @@ export default {
             const preData = ev === null ? prd : getRelevantData(ev);
 
             if (!preData) return;
+            currentPreData = preData;
 
             let collapseView = false;
 
@@ -2066,7 +2028,7 @@ export default {
             const controller = new AbortController();
             this.memory.signal = controller.signal;
 
-            let appStore: RefresherFrameAppVue;
+            let appStore: PreviewFrameAppApi | undefined;
             let groupStore: HTMLElement;
 
             let scrolledCount = 0;
@@ -2091,7 +2053,7 @@ export default {
                     ],
                     {
                         background: true,
-                        onScroll: (ev: WheelEvent, app: RefresherFrameAppVue, group: HTMLElement) => {
+                        onScroll: (ev: WheelEvent, app: FrameScrollApi, group: HTMLElement) => {
                             if (!this.status.scrollToSkip) return;
 
                             appStore = app;
@@ -2122,7 +2084,7 @@ export default {
 
                         const nextPost = direction === "next" ? post.prev() : post.next();
 
-                        if (!nextPost || nextPost.data("data-type") === "icon_notice") return;
+                        if (!nextPost || nextPost.attr("data-type") === "icon_notice") return;
 
                         const nextPostNo = nextPost.attr("data-no");
 
@@ -2132,14 +2094,10 @@ export default {
                     };
 
                     if (ev.deltaY < 0) {
-                        if (appStore.root) {
-                            appStore.root.exposeProxy.scrollModeBottom = false;
-                            appStore.root.exposeProxy.scrollModeTop = true;
-                        }
+                        appStore?.setScrollMode("top");
 
-                        if (!scrolledTop && appStore.root) {
-                            appStore.root.exposeProxy.scrollModeTop = false;
-                            appStore.root.exposeProxy.scrollModeBottom = false;
+                        if (!scrolledTop) {
+                            appStore?.clearScrollMode();
                         }
 
                         if (!scrolledTop || !preData) return;
@@ -2153,16 +2111,12 @@ export default {
                         newPostWithData(preData, historySkip);
                         groupStore.scrollTop = 0;
 
-                        if (appStore.root) appStore.root.exposeProxy.clearScrollMode();
+                        appStore?.clearScrollMode();
                     } else {
-                        if (appStore.root) {
-                            appStore.root.exposeProxy.scrollModeTop = false;
-                            appStore.root.exposeProxy.scrollModeBottom = true;
-                        }
+                        appStore?.setScrollMode("bottom");
 
-                        if (!scrolledToBottom && appStore.root) {
-                            appStore.root.exposeProxy.scrollModeTop = false;
-                            appStore.root.exposeProxy.scrollModeBottom = false;
+                        if (!scrolledToBottom) {
+                            appStore?.clearScrollMode();
                         }
 
                         if (!scrolledToBottom || !preData) {
@@ -2177,9 +2131,44 @@ export default {
                         newPostWithData(preData, historySkip);
 
                         groupStore.scrollTop = 0;
-                        appStore.root?.exposeProxy.clearScrollMode();
+                        appStore?.clearScrollMode();
                     }
                 });
+
+                const getAdjacentPostNo = (direction: "next" | "prev") => {
+                    if (!postFetchedData?.id) return;
+
+                    const post = $(`.us-post[data-no="${postFetchedData.id}"]`);
+                    if (!post) return;
+
+                    const adjacentPost = direction === "next" ? post.prev() : post.next();
+                    if (!adjacentPost || adjacentPost.attr("data-type") === "icon_notice") return;
+
+                    return adjacentPost.attr("data-no");
+                };
+
+                previewNavigationKeyDown = (keyboardEvent: KeyboardEvent) => {
+                    if (keyboardEvent.key !== "PageUp" && keyboardEvent.key !== "PageDown") return;
+                    if (!currentPreData || frame.app.closed || frame.app.inputFocus) return;
+
+                    keyboardEvent.preventDefault();
+
+                    const isPageUp = keyboardEvent.key === "PageUp";
+                    const nextPostNo = isPageUp
+                        ? getAdjacentPostNo("prev") || (Number(postFetchedData.id) - 1).toString()
+                        : getAdjacentPostNo("next") || (Number(postFetchedData.id) + 1).toString();
+
+                    currentPreData.id = nextPostNo;
+                    newPostWithData(currentPreData, historySkip);
+
+                    if (groupStore) {
+                        groupStore.scrollTop = 0;
+                    }
+
+                    appStore?.clearScrollMode();
+                };
+
+                document.addEventListener("keydown", previewNavigationKeyDown);
 
                 frame.app.$on("close", () => {
                     controller.abort();
@@ -2196,29 +2185,33 @@ export default {
                     if (typeof adminKeyPress === "function") {
                         document.removeEventListener("keypress", adminKeyPress);
                     }
+                    if (previewNavigationKeyDown) {
+                        document.removeEventListener("keydown", previewNavigationKeyDown);
+                        previewNavigationKeyDown = null;
+                    }
 
                     if (!this.memory.historyClose && this.memory.titleStore) {
                         history.pushState(null, this.memory.titleStore, this.memory.urlStore);
-
-                        this.memory.historyClose = false;
                     }
+
+                    this.memory.historyClose = false;
 
                     if (this.memory.titleStore) {
                         document.title = this.memory.titleStore;
                     }
 
-                    appStore?.root.exposeProxy.clearScrollMode();
+                    appStore?.clearScrollMode();
                     window.clearInterval(this.memory.refreshIntervalId!);
                 });
             }
 
             frame.app.closed = false;
 
-            frame.app.first().collapse = collapseView;
+            frame.app.body().collapse = collapseView;
 
-            makeFirstFrame(frame.app.first(), preData, this.memory.signal!, historySkip);
+            makeBodyFrame(frame.app.body(), preData, this.memory.signal!, historySkip);
 
-            makeSecondFrame(frame.app.second(), preData, this.memory.signal!);
+            makeCommentFrame(frame.app.comment(), preData, this.memory.signal!);
 
             if (this.status.toggleAdminPanel && document.querySelector(".useradmin_btnbox button") !== null) {
                 panel.admin(preData, frame, this.status.toggleBlur, eventBus, this.status.useKeyPress);
@@ -2348,10 +2341,14 @@ export default {
 
         window.addEventListener("popstate", this.memory.popStateHandler);
     },
-    revoke(filter) {
+    revoke() {
         if (this.memory.uuid) filter.remove(this.memory.uuid, true);
 
         if (this.memory.popStateHandler) window.removeEventListener("popstate", this.memory.popStateHandler);
+        if (previewNavigationKeyDown) {
+            document.removeEventListener("keydown", previewNavigationKeyDown);
+            previewNavigationKeyDown = null;
+        }
 
         if (this.memory.refreshIntervalId) window.clearInterval(this.memory.refreshIntervalId);
     }
@@ -2390,11 +2387,9 @@ export default {
         blockPresetUserType: RefresherCheckSettings;
         expandRecognizeRange: RefresherCheckSettings;
         experimentalComment: RefresherCheckSettings;
-        bypassCaptcha: RefresherCheckSettings;
         disableCache: RefresherCheckSettings;
         archiveArticle: RefresherCheckSettings;
         newArticleArchive: RefresherCheckSettings;
         blockImage: RefresherCheckSettings;
     };
-    require: ["filter", "eventBus", "Frame", "http"];
 }>;

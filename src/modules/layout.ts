@@ -22,6 +22,7 @@ const updateWindowSize = (forceActive: boolean, active: number | string, width: 
     } else {
         hideSticky(false);
         $document.removeClass("refresherCompact");
+        $document.removeClass("refresherCompactView");
     }
 };
 
@@ -142,7 +143,6 @@ export default {
             $(document.documentElement).toggleClass("refresherHideGamemeca", value);
         }
     },
-    require: [],
     func() {
         const isPageView = location.href.includes("board/view");
 
@@ -163,7 +163,7 @@ export default {
         this.update.removeGamemeca.bind(this)(this.status.removeGamemeca);
     },
     revoke() {
-        window.removeEventListener("resize", this.memory.resize!);
+        if (this.memory.resize) window.removeEventListener("resize", this.memory.resize);
 
         this.update.hideGalleryView.bind(this)(false);
         this.update.hideUselessView.bind(this)(false);
@@ -172,6 +172,7 @@ export default {
         this.update.pushToRight.bind(this)(false);
         this.update.removeNotice.bind(this)(false);
         this.update.removeDCNotice.bind(this)(false);
+        this.update.removeGamemeca.bind(this)(false);
     }
 } as RefresherModule<{
     memory: {
@@ -202,5 +203,4 @@ export default {
         removeDCNotice(value: boolean): void;
         removeGamemeca(value: boolean): void;
     };
-    require: [];
 }>;

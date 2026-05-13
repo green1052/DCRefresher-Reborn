@@ -1,14 +1,21 @@
-import browser from "webextension-polyfill";
-
 interface StorageStructure {
     uuid: string;
-    run: (...args: any[]) => void;
+    run: (payload: unknown) => void;
 }
 
 const handlerStorage: Record<string, StorageStructure[]> = {};
 
-browser.runtime.onMessage.addListener((message: any) => {
-    if (typeof message !== "object" || !message.type) return;
+interface RuntimeHookMessage {
+    type: string;
+    data?: unknown;
+}
+
+const isRuntimeHookMessage = (value: unknown): value is RuntimeHookMessage => {
+    return typeof value === "object" && value !== null && "type" in value && typeof value.type === "string";
+};
+
+browser.runtime.onMessage.addListener((message: unknown) => {
+    if (!isRuntimeHookMessage(message)) return;
 
     const handlers = handlerStorage[message.type];
     if (!handlers) return;
@@ -18,7 +25,7 @@ browser.runtime.onMessage.addListener((message: any) => {
     }
 });
 
-export const addHook = (type: string, callback: (...args: any[]) => void): string => {
+export const addHook = (type: string, callback: (payload: unknown) => void): string => {
     handlerStorage[type] ??= [];
 
     const uuid = crypto.randomUUID();

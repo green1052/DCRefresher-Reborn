@@ -1,27 +1,6 @@
-import type Frame from "../core/frame";
-
 export {};
 
-type ItemToRefresherArrayArgs<T extends RefresherModuleGeneric> =
-    T["require"] extends Array<keyof ItemToRefresherMap>
-        ? {
-            [K in keyof T["require"]]: T["require"][K] extends keyof ItemToRefresherMap
-                ? ItemToRefresherMap[T["require"][K]]
-                : never;
-        }
-        : never;
-
 declare global {
-    interface ItemToRefresherMap {
-        filter: RefresherFilter;
-        Frame: typeof Frame;
-        eventBus: RefresherEventBus;
-        http: RefresherHTTP;
-        ip: RefresherIP;
-        block: RefresherBlock;
-        memo: RefresherMemo;
-    }
-
     type RefresherSettings =
         | RefresherCheckSettings
         | RefresherTextSettings
@@ -59,7 +38,6 @@ declare global {
         memory?: Record<string, unknown>;
         settings?: Record<string, RefresherSettings>;
         shortcuts?: Record<string, () => void>;
-        require?: Array<keyof ItemToRefresherMap>;
     }
 
     interface RefresherModule<T extends RefresherModuleGeneric = RefresherModuleGeneric> {
@@ -89,7 +67,7 @@ declare global {
         /**
          * 모듈 데이터를 영속적으로 저장하고 싶을 때 사용하는 객체. 이 객체에 값을 저장하면 확장 프로그램이 로드될 때 마다 해당 값을 불러옵니다.
          */
-        data?: T["data"];
+        data: T["data"];
 
         /**
          * 해당 모듈이 가질 메모리 값. 모듈에 일시적으로 데이터를 저장하고 싶을 때 사용됩니다.
@@ -109,13 +87,13 @@ declare global {
         /**
          * 설정 페이지에 등록할 설정 옵션
          */
-        settings?: T["settings"];
+        settings: T["settings"];
 
         /**
          * 단축키가 입력되면 실행할 함수를 정의합니다.
          */
-        shortcuts: T["shortcuts"] extends Record<string, () => void>
-            ? Record<keyof T["shortcuts"], (this: this) => void>
+        shortcuts: T["shortcuts"] extends Record<string, () => void | Promise<void>>
+            ? Record<keyof T["shortcuts"], (this: RefresherModule<T>) => void | Promise<void>>
             : never;
 
         /**
@@ -125,25 +103,19 @@ declare global {
             ? {
                 [K in keyof T["settings"]]: (
                     this: RefresherModule<T>,
-                    value: T["settings"][K]["value"],
-                    ...args: ItemToRefresherArrayArgs<T>
-                ) => void;
+                    value: T["settings"][K]["value"]
+                ) => void | Promise<void>;
             }
             : never;
 
         /**
-         * 모듈에서 사용할 내장 유틸 목록.
+         * 해당 모듈이 작동할 때를 처리하기 위한 함수.
          */
-        require?: T["require"] extends Array<keyof ItemToRefresherMap> ? T["require"] : never;
+        func?: () => void | Promise<void>;
 
         /**
-         * 해당 모듈이 작동할 때를 처리하기 위한 함수. require에서 적어 넣은 변수 순서대로의 인자를 인자로 넘겨줍니다.
+         * 해당 모듈이 회수될 때 (비활성화될 때) 를 처리하기 위한 함수.
          */
-        func?: (...args: ItemToRefresherArrayArgs<T>) => void;
-
-        /**
-         * 해당 모듈이 회수될 때 (비활성화될 때) 를 처리하기 위한 함수. require에서 적어 넣은 변수 순서대로의 인자를 인자로 넘겨줍니다.
-         */
-        revoke?: (...args: ItemToRefresherArrayArgs<T>) => void;
+        revoke?: () => void | Promise<void>;
     }
 }

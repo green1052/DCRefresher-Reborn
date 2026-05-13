@@ -1,39 +1,52 @@
-import {Storage} from "@plasmohq/storage";
+export const BLOCK_TYPES: RefresherBlockType[] = [
+    "NICK",
+    "ID",
+    "IP",
+    "TITLE",
+    "TEXT",
+    "COMMENT",
+    "DCCON",
+    "TAB",
+    "IMAGE"
+];
 
-export const storage = new Storage({area: "local"});
+export const MEMO_TYPES: RefresherMemoType[] = ["UID", "NICK", "IP"];
 
-export const get = <T>(key?: string | null): Promise<T> =>
-    key ? storage.get<T>(key) : (storage.rawGetAll() as Promise<T>);
+export const blockStorage = BLOCK_TYPES.reduce((acc, type) => {
+    acc[type] = storage.defineItem<RefresherBlockValue[]>(`local:__REFRESHER_BLOCK:${type}`, {
+        defaultValue: []
+    });
+    return acc;
+}, {} as Record<RefresherBlockType, ReturnType<typeof storage.defineItem<RefresherBlockValue[]>>>);
 
-export const set = <T>(key: string, value: T): Promise<void> => storage.set(key, value);
+export const blockModeStorage = BLOCK_TYPES.reduce((acc, type) => {
+    acc[type] = storage.defineItem<RefresherBlockDetectMode>(`local:__REFRESHER_BLOCK:${type}:$MODE`, {
+        defaultValue: "SAME" // Default from background.ts
+    });
+    return acc;
+}, {} as Record<RefresherBlockType, ReturnType<typeof storage.defineItem<RefresherBlockDetectMode>>>);
 
-export const setObject = (items: Record<string, any>): Promise<void> => storage.setMany(items);
+export const memoStorage = MEMO_TYPES.reduce((acc, type) => {
+    acc[type] = storage.defineItem<Record<string, RefresherMemoValue>>(`local:__REFRESHER_MEMO:${type}`, {
+        defaultValue: {}
+    });
+    return acc;
+}, {} as Record<RefresherMemoType, ReturnType<typeof storage.defineItem<Record<string, RefresherMemoValue>>>>);
 
-export const remove = (keys: string | string[]): Promise<void> =>
-    Array.isArray(keys) ? storage.removeMany(keys) : storage.remove(keys);
+export interface ModuleState {
+    name: string;
+    description?: string;
+    enable: boolean;
+    require?: string[];
+    settings?: Record<string, RefresherSettings>; // Schema
+    status?: Record<string, string | number | boolean>; // Values
+    url?: RegExp;
+}
 
-export const clear = (): Promise<void> => storage.clear();
+export const modulesStorage = storage.defineItem<Record<string, ModuleState>>("local:__REFRESHER_MODULES", {
+    defaultValue: {}
+});
 
-export const moduleStorage = {
-    async get<T>(module: string, key?: string): Promise<T> {
-        const storageKey = key ? `refresher.module:${module}-${key}` : `refresher.module:${module}`;
-        const value = await storage.get(storageKey);
-        return typeof value === "string" && value.startsWith("{") ? JSON.parse(value) : value;
-    },
-    set(module: string, key: string, value: unknown): void {
-        storage.set(`refresher.module:${module}-${key}`, value);
-    },
-    setGlobal(module: string, dump: unknown): void {
-        storage.set(`refresher.module:${module}`, dump);
-    }
-};
-
-export default {
-    storage,
-    get,
-    set,
-    setObject,
-    remove,
-    clear,
-    module: moduleStorage
-};
+export const settingsStorage = storage.defineItem<Record<string, Record<string, RefresherSettings>>>("local:__REFRESHER_SETTINGS", {
+    defaultValue: {}
+});

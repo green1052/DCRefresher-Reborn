@@ -36,7 +36,7 @@ export const listen = (
 
         if (!executed) return;
 
-        const lists = document.querySelectorAll<HTMLElement>(element);
+        const lists = parent.querySelectorAll<HTMLElement>(element);
 
         if (lists.length === 0) return;
 

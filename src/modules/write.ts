@@ -1,3 +1,4 @@
+import filter from "@/core/filtering";
 import $ from "cash-dom";
 
 export default {
@@ -6,7 +7,8 @@ export default {
     url: /\/board\/(write|modify)/,
     status: {},
     memory: {
-        submitButton: ""
+        submitButton: "",
+        beforeUnloadHandler: null as ((ev: BeforeUnloadEvent) => void) | null
     },
     enable: false,
     default_enable: false,
@@ -36,13 +38,13 @@ export default {
             default: false
         }
     },
-    require: ["filter"],
-    func(filter) {
-        window.addEventListener("beforeunload", (ev) => {
+    func() {
+        this.memory.beforeUnloadHandler = (ev: BeforeUnloadEvent) => {
             if (this.status.preventExit && !$("button:hover").eq(-1).hasClass("write")) {
                 ev.preventDefault();
             }
-        });
+        };
+        window.addEventListener("beforeunload", this.memory.beforeUnloadHandler);
 
         this.memory.submitButton = filter.add<HTMLButtonElement>("button.write", (element) => {
             $(element).on("click", () => {
@@ -67,12 +69,17 @@ export default {
             filter.remove(this.memory.submitButton);
         });
     },
-    revoke(filter) {
+    revoke() {
         filter.remove(this.memory.submitButton);
+        if (this.memory.beforeUnloadHandler) {
+            window.removeEventListener("beforeunload", this.memory.beforeUnloadHandler);
+            this.memory.beforeUnloadHandler = null;
+        }
     }
 } as RefresherModule<{
     memory: {
         submitButton: string;
+        beforeUnloadHandler: ((ev: BeforeUnloadEvent) => void) | null;
     };
     settings: {
         bypassTitleLimit: RefresherCheckSettings;
@@ -80,5 +87,4 @@ export default {
         footer: RefresherTextSettings;
         preventExit: RefresherCheckSettings;
     };
-    require: ["filter"];
 }>;

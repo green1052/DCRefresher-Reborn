@@ -1,7 +1,5 @@
-import browser from "webextension-polyfill";
-
-import storage from "../utils/storage";
 import toast from "../utils/toast";
+import storage from "../utils/webStorage";
 
 (async () => {
     const [installed, updated] = await Promise.all([

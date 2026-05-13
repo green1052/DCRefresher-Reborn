@@ -1,6 +1,6 @@
-import type {Nullable} from "~utils/types";
+import type {Nullable} from "./types";
 
-import storage from "./storage";
+import storage from "./webStorage";
 
 let ipData: Record<string, string> = {};
 
@@ -9,7 +9,7 @@ let ipData: Record<string, string> = {};
 })();
 
 export const ISPData = (ip: string): ISPInfo => {
-    if (!ipData) throw new Error("IP data not loaded");
+    if (!Object.keys(ipData).length) return {name: undefined, color: "#6495ed"};
 
     return {
         name: ipData?.[ip],

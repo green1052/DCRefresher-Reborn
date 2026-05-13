@@ -6,7 +6,7 @@
         <transition v-if="id" name="refresher-shake">
             <img
                 :key="error"
-                :src="getURL(`/assets/${id}.webp`)"
+                :src="browser.runtime.getURL(`/assets/${id}.webp`)"
             />
         </transition>
         <transition v-if="text" name="refresher-shake">
@@ -23,8 +23,6 @@
 
 <script lang="ts" setup>
 import {ref} from "vue";
-
-import getURL from "../utils/getURL";
 
 interface Props {
     id?: string | number;
@@ -56,10 +54,7 @@ const safeClick = async (): Promise<boolean> => {
 </script>
 
 <style lang="scss">
-$shadow-0dp: none;
-$shadow-1dp: 0px 0px 16px rgba(0, 0, 0, 0.08);
-$shadow-2dp: 0px 0px 16px rgba(0, 0, 0, 0.12);
-$shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
+@use "@/assets/styles/variables" as *;
 
 .refresher-preview-button {
     background-color: transparent;
@@ -173,7 +168,7 @@ html:has(#css-darkmode) {
         &:hover {
             background-color: rgba(255, 255, 255, 0.08);
             box-shadow: none;
-            color: white;
+            color: $dark-text-color-bright;
 
             p {
                 filter: invert(0);
@@ -190,7 +185,7 @@ html:has(#css-darkmode) {
         }
 
         p {
-            color: #ccc;
+            color: $dark-text-color;
         }
 
         img {

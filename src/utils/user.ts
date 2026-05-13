@@ -2,8 +2,8 @@ import $ from "cash-dom";
 
 import memo from "../core/memo";
 import ip from "./ip";
-import storage from "./storage";
 import type {Nullable, ObjectEnum} from "./types";
+import storage from "./webStorage";
 
 export type UserType =
     | "UNFIXED"
@@ -38,11 +38,15 @@ const initializeUserData = async (): Promise<void> => {
         if (!enable) return;
 
         if (checkRatio) {
-            const moduleData = await storage.module.get<any>("관리");
+            const moduleData = await storage.module.get < Record<string, Record<string, {
+                article: number;
+                comment: number;
+                data: number
+            }>>("관리");
             ratio = moduleData?.["ratio"] ?? {};
         }
         if (checkPermBan) {
-            ban = (await storage.get<any>("refresher.database.ban")) ?? {};
+            ban = (await storage.get<Record<string, string[]>>("refresher.database.ban")) ?? {};
         }
     } catch (e) {
         console.error("Failed to initialize user data:", e);
@@ -156,7 +160,7 @@ export class User {
     }
 
     getMemo(): void {
-        this.memo = memo.get("UID", this.id) ?? memo.get("IP", this.ip) ?? memo.get("NICK", this.nick);
+        this.memo = (this.id ? memo.get("UID", this.id) : null) ?? (this.ip ? memo.get("IP", this.ip) : null) ?? memo.get("NICK", this.nick);
     }
 
     getRatio(): void {

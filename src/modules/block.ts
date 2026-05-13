@@ -1,10 +1,21 @@
+import block from "@/core/block";
+import filter from "@/core/filtering";
 import $ from "cash-dom";
 import {Cash} from "cash-dom/dist/cash";
 import Cookies from "js-cookie";
 import ky from "ky";
 
+import {eventBus} from "../core/eventbus";
 import {queryString} from "../utils/http";
 import toast from "../utils/toast";
+
+interface DcconDetailResponse {
+    info?: {
+        title: string;
+        package_idx: string;
+    };
+    detail: Array<{ path: string }>;
+}
 
 export default {
     name: "컨텐츠 차단",
@@ -41,8 +52,7 @@ export default {
             default: false
         }
     },
-    require: ["filter", "eventBus", "block", "http"],
-    func(filter, eventBus, block, http) {
+    func() {
         const hideElement = ($element: Cash, blur = false) => {
             if (blur) {
                 $element.addClass("refresherBlur");
@@ -141,20 +151,23 @@ export default {
                     "";
 
                 if (block.check("DCCON", dccon, gallery)) {
-                    const $comment = $element.closest(".ub-content") ?? $element.closest(".comment_dccon");
+                    const $comment = $element.closest(".ub-content");
+                    const hideTarget = $comment.length ? $comment : $element.closest(".comment_dccon");
 
                     if (this.status.replyRemove) {
-                        const $next = $comment.next();
+                        const $next = hideTarget.next();
 
                         if (!$next.hasClass("ub-content") && $next.children(".reply").length > 0) {
                             hideElement($next, this.status.blur);
                         }
                     }
 
-                    hideElement($comment, this.status.blur);
+                    hideElement(hideTarget, this.status.blur);
                 }
 
-                element.parentElement!.oncontextmenu ??= () => {
+                if (!element.parentElement) return;
+
+                element.parentElement.oncontextmenu ??= () => {
                     const code =
                         (element?.getAttribute("src") || element?.getAttribute("data-src"))
                             ?.replace(/^.*no=/g, "")
@@ -213,8 +226,10 @@ export default {
                     },
                     body: params
                 })
-                    .json<any>()
+                    .json<DcconDetailResponse>()
                     .then((json) => {
+                        if (!json?.info) return;
+
                         const title = json.info.title;
                         const packageIdx = json.info.package_idx;
 
@@ -253,6 +268,9 @@ export default {
                         block.add("DCCON", code, false, false, undefined, `${title} [${packageIdx}]`);
 
                         toast.show(`${title} ${block.TYPE_NAMES["DCCON"]}을 차단했습니다.`);
+                    })
+                    .catch(() => {
+                        toast.show("디시콘 정보를 가져오는데 실패했습니다.", "error");
                     });
 
                 return;
@@ -276,14 +294,14 @@ export default {
             toast.show(`${block.TYPE_NAMES[type]} ${value}을(를) 차단했습니다.`);
         });
     },
-    revoke(filter) {
+    revoke() {
         if (this.memory.uuid) filter.remove(this.memory.uuid);
 
         if (this.memory.uuid2) filter.remove(this.memory.uuid2);
 
-        if (this.memory.addBlock) filter.remove(this.memory.addBlock);
+        if (this.memory.addBlock) eventBus.remove("refresherUserContextMenu", this.memory.addBlock);
 
-        if (this.memory.requestBlock) filter.remove(this.memory.requestBlock);
+        if (this.memory.requestBlock) eventBus.remove("refresherRequestBlock", this.memory.requestBlock);
     }
 } as RefresherModule<{
     memory: {
@@ -304,5 +322,4 @@ export default {
         replyRemove: RefresherCheckSettings;
         blur: RefresherCheckSettings;
     };
-    require: ["filter", "eventBus", "block", "http"];
 }>;
