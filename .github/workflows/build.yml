@@ -11,36 +11,28 @@ jobs:
             -   name: Checkout
                 uses: actions/checkout@v6
 
-            -   name: Setup pnpm
-                uses: pnpm/action-setup@v4
-
-            -   name: Setup Node
-                uses: actions/setup-node@v6
-                with:
-                    node-version: latest
-                    cache: pnpm
+            -   name: Setup Bun
+                uses: oven-sh/setup-bun@v2
 
             -   name: Install Dependencies
-                run: pnpm install
+                run: bun install
 
-            -   name: Zip extensions
-                run: |
-                    pnpm zip
-                    pnpm zip:firefox
+            -   name: Build
+                run: bun zip
 
             -   name: Release
-                uses: softprops/action-gh-release@v2
+                uses: softprops/action-gh-release@v3
                 with:
                     files: |
-                        .output/firefox-mv2.zip
-                        .output/chrome-mv3.zip
+                        .output/*-firefox.zip
+                        .output/*-chrome.zip
                     generate_release_notes: true
 
             -   name: Submit to stores
                 run: |
-                    pnpm wxt submit \
-                      --chrome-zip .output/chrome-mv3.zip \
-                      --firefox-zip .output/firefox-mv2.zip --firefox-sources-zip .output/firefox-mv2-src.zip
+                    bun wxt submit \
+                    --chrome-zip .output/*-chrome.zip \
+                    --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip
                 env:
                     CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
                     CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
