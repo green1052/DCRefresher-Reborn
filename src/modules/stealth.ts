@@ -1,6 +1,5 @@
+import eventBus from "@/core/eventbus";
 import $ from "cash-dom";
-
-import getURL from "../utils/getURL";
 import toast from "../utils/toast";
 
 const CONTROL_BUTTON = ".stealth_control_button";
@@ -12,14 +11,14 @@ const tempButtonCreate = (element: HTMLElement): void => {
     const buttonNum = $(CONTROL_BUTTON).length;
     const contentNum = $(".write_div img, .write_div video").length;
 
-    if (buttonNum !== 0 && contentNum === 0) return;
+    if (buttonNum !== 0) return;
 
     const buttonFrame = document.createElement("div");
     buttonFrame.classList.add(CONTROL_BUTTON.replace(".", ""));
     buttonFrame.classList.add("blur");
     buttonFrame.innerHTML = `      
   <div class="button" id ="tempview">
-    <img src="${getURL("/assets/change.webp")}"></img>
+    <img src="${browser.runtime.getURL("/assets/change.webp")}"></img>
     <p id="temp_button_text">이미지 보이기</p>
   </div>
 `;
@@ -62,21 +61,24 @@ export default {
             toast.show(content, "info");
         }
     },
-    require: ["eventBus"],
-    func(eventBus) {
+    func() {
         $(document.documentElement).addClass("refresherStealth");
 
         if (!$(CONTROL_BUTTON).length) {
-            window.addEventListener("load", () => {
+            if (document.readyState === "complete") {
                 tempButtonCreate(document.documentElement);
-            });
+            } else {
+                window.addEventListener("load", () => {
+                    tempButtonCreate(document.documentElement);
+                });
+            }
         }
 
         this.memory.contentViewUUID = eventBus.on("contentPreview", (elem: HTMLElement) => {
             if (!$(CONTROL_BUTTON).length) tempButtonCreate(elem);
         });
     },
-    revoke(eventBus) {
+    revoke() {
         $(document.documentElement).removeClass("refresherStealth");
 
         for (const button of $(CONTROL_BUTTON)) {
@@ -94,5 +96,4 @@ export default {
     shortcuts: {
         stealthPause(): void;
     };
-    require: ["eventBus"];
 }>;

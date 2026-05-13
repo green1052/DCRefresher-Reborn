@@ -1,9 +1,5 @@
-import {sendToBackground} from "@plasmohq/messaging";
-
-import storage from "../utils/storage";
-import type {ObjectEnum} from "../utils/types";
-import communicate from "./communicate";
-import eventBus from "./eventbus";
+import {blockModeStorage, blockStorage} from "../utils/storage";
+import {eventBus} from "./eventbus";
 
 const BLOCK_NAMESPACE = "__REFRESHER_BLOCK";
 
@@ -51,21 +47,6 @@ export type BlockCache = Record<RefresherBlockType, RefresherBlockValue[]>;
 
 export type BlockModeCache = Record<RefresherBlockType, RefresherBlockDetectMode>;
 
-function SendToBackground() {
-    sendToBackground({
-        name: "store",
-        body: {
-            action: "update",
-            type: "blocks",
-            data: {
-                updateBlocks: true,
-                blocks_store: BLOCK_CACHE,
-                blockModes_store: BLOCK_MODE_CACHE
-            }
-        }
-    });
-}
-
 let BLOCK_CACHE: BlockCache = {
     NICK: [],
     ID: [],
@@ -90,18 +71,29 @@ let BLOCK_MODE_CACHE: BlockModeCache = {
     IMAGE: BLOCK_DETECT_MODE.SAME
 };
 
+// Initialize cache and watchers from wxt/storage
 (async () => {
     for (const key of BLOCK_TYPES_KEYS) {
-        const keyCache = await storage.get<RefresherBlockValue[]>(`${BLOCK_NAMESPACE}:${key}`);
-        const modeCache = await storage.get<RefresherBlockDetectMode>(`${BLOCK_NAMESPACE}:${key}:MODE`);
+        // Initial load
+        const storedBlocks = await blockStorage[key].getValue();
+        const storedMode = await blockModeStorage[key].getValue();
 
-        BLOCK_CACHE[key] = keyCache ?? [];
-        BLOCK_MODE_CACHE[key] = modeCache ?? BLOCK_MODE_CACHE[key];
+        BLOCK_CACHE[key] = storedBlocks;
+        BLOCK_MODE_CACHE[key] = storedMode;
 
-        if (!modeCache) await storage.set(`${BLOCK_NAMESPACE}:${key}:MODE`, BLOCK_MODE_CACHE[key]);
+        // Watch for changes
+        blockStorage[key].watch((newValue) => {
+            if (!newValue) return;
+            BLOCK_CACHE[key] = newValue;
+            eventBus.emit("refresh");
+        });
+
+        blockModeStorage[key].watch((newValue) => {
+            if (!newValue) return;
+            BLOCK_MODE_CACHE[key] = newValue;
+            eventBus.emit("refresh");
+        });
     }
-
-    SendToBackground();
 })();
 
 const checkValidType = (type: string) => {
@@ -120,7 +112,10 @@ const removeExists = (type: RefresherBlockType, content: string) => {
     BLOCK_CACHE[type] = cache.filter((value) => value.content !== content);
 };
 
-const InternalAddToList = (
+// Internal update helpers now just update storage. The watcher updates local cache.
+// However, to keep synchronous operations working smoothly (avoid race conditions in same context),
+// we update local cache immediately as well.
+const InternalAddToList = async (
     type: RefresherBlockType,
     content: string,
     isRegex: boolean,
@@ -131,22 +126,23 @@ const InternalAddToList = (
 ) => {
     removeExists(type, content);
 
-    BLOCK_CACHE[type].push({
+    const newItem: RefresherBlockValue = {
         content,
         isRegex,
         isAdvanced,
         gallery,
         extra,
         mode
-    });
+    };
 
-    storage.set(`${BLOCK_NAMESPACE}:${type}`, BLOCK_CACHE[type]);
+    BLOCK_CACHE[type].push(newItem);
+
+    await blockStorage[type].setValue(BLOCK_CACHE[type]);
 };
 
-const InternalUpdateMode = (type: RefresherBlockType, mode: RefresherBlockDetectMode) => {
+const InternalUpdateMode = async (type: RefresherBlockType, mode: RefresherBlockDetectMode) => {
     BLOCK_MODE_CACHE[type] = mode;
-
-    storage.set(`${BLOCK_NAMESPACE}:${type}:MODE`, mode);
+    await blockModeStorage[type].setValue(mode);
 };
 
 /**
@@ -169,18 +165,12 @@ export const add = (
     extra?: string,
     mode?: RefresherBlockDetectMode
 ): void => {
-    if (!checkValidType(type)) throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
+    if (!checkValidType(type)) throw new Error(`${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`);
 
     if (mode && !checkValidMode(mode))
-        throw `${mode} is not a valid mode. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`;
+        throw new Error(`${mode} is not a valid mode. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`);
 
     InternalAddToList(type, content, isRegex, isAdvanced, gallery, extra, mode);
-
-    try {
-        SendToBackground();
-    } catch (e) {
-        console.log(`Failed to send to background context. ${e}`);
-    }
 };
 
 /**
@@ -190,10 +180,10 @@ export const add = (
  * @param mode 차단 모드
  */
 export const updateMode = (type: RefresherBlockType, mode: RefresherBlockDetectMode): void => {
-    if (!checkValidType(type)) throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
+    if (!checkValidType(type)) throw new Error(`${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`);
 
     if (!checkValidMode(mode))
-        throw `${type} is not a valid type. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`;
+        throw new Error(`${mode} is not a valid mode. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`);
 
     InternalUpdateMode(type, mode);
 };
@@ -206,7 +196,7 @@ export const updateMode = (type: RefresherBlockType, mode: RefresherBlockDetectM
  * @param gallery 현재 갤러리
  */
 export const check = (type: RefresherBlockType, content: string, gallery?: string): boolean => {
-    if (!checkValidType(type)) throw `${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`;
+    if (!checkValidType(type)) throw new Error(`${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`);
 
     if (!content || content.length < 1) return false;
 
@@ -272,60 +262,11 @@ export const checkAll = (obj: Partial<Record<RefresherBlockType, string | null>>
 };
 
 /**
- * 데이터를 저장합니다. (내부)
- *
- * @param store
- * @param mode
- */
-export const setStore = (store: BlockCache, mode: BlockModeCache): void => {
-    BLOCK_CACHE = store;
-
-    for (const [key, value] of Object.entries(store)) {
-        for (const block of value) {
-            InternalAddToList(
-                key as RefresherBlockType,
-                block.content,
-                block.isRegex,
-                block.isAdvanced,
-                block.gallery,
-                block.extra,
-                block.mode
-            );
-        }
-    }
-
-    BLOCK_MODE_CACHE = mode;
-
-    for (const [key, value] of Object.entries(mode)) {
-        InternalUpdateMode(key as RefresherBlockType, value);
-    }
-};
-
-/**
  * 차단 모드를 구합니다.
  */
 export const getBlockMode = (type: RefresherBlockType) => {
     return BLOCK_MODE_CACHE[type];
 };
-
-communicate.addHook("blockSelected", () => eventBus.emit("refresherRequestBlock"));
-
-communicate.addHook("dcconSelected", () => eventBus.emit("refresherRequestBlock"));
-
-communicate.addHook("dcconAllSelected", () => eventBus.emit("refresherRequestBlock", {blockAllDccon: true}));
-
-communicate.addHook("updateBlocks", (data) => setStore(data.blocks, data.modes));
-
-requestAnimationFrame(async () => {
-    const value = await storage.get<string[]>("refresher.blockQueue");
-
-    if (value)
-        for (const dccon of value) {
-            InternalAddToList("DCCON", dccon, false, false);
-        }
-
-    storage.set("refresher.blockQueue", []);
-});
 
 export default {
     TYPE_NAMES,
@@ -334,6 +275,5 @@ export default {
     updateMode,
     check,
     checkAll,
-    setStore,
     getBlockMode
 };

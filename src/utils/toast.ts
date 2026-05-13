@@ -1,28 +1,63 @@
-import {type ComponentPublicInstance, createApp} from "vue";
+import {createApp} from "vue";
 
-import Toast from "../components/toast.vue";
+import Toast, {type ToastLevel} from "../components/toast.vue";
 
 const div = document.createElement("div");
 div.className = "refresher-toast";
 
-let instance: ComponentPublicInstance | null = null;
+type ToastClickHandler = (ev: MouseEvent) => void;
+type PendingToast = {
+    content: string;
+    type: ToastLevel;
+    autoClose: number;
+    onClick?: ToastClickHandler;
+};
+
+type ToastExposed = {
+    show: (content: string, type: ToastLevel, autoClose: number, onClick?: ToastClickHandler) => void;
+    hide: () => void;
+    isOpen: () => boolean;
+};
+
+let instance: ToastExposed | null = null;
+const pendingToasts: PendingToast[] = [];
+
+const mountToast = () => {
+    if (instance || !document.body) return;
+    document.body.appendChild(div);
+    instance = createApp(Toast).mount(div) as unknown as ToastExposed;
+
+    for (const toast of pendingToasts.splice(0, pendingToasts.length)) {
+        instance.show(toast.content, toast.type, toast.autoClose, toast.onClick);
+    }
+};
 
 document.addEventListener("DOMContentLoaded", () => {
-    document.body.appendChild(div);
-    instance = createApp(Toast).mount(div);
+    mountToast();
 });
 
 window.addEventListener("keydown", (ev) => {
-    if (instance?.open && ev.key === "Escape") instance.hide();
+    if (ev.key === "Escape" && instance?.isOpen()) {
+        instance.hide();
+    }
 });
 
 export const show = (
     content: string,
-    type: "info" | "error" | "warning" | "cake" = "info",
+    type: ToastLevel = "info",
     autoClose: number = 5000,
-    onClick?: (ev: MouseEvent) => void
+    onClick?: ToastClickHandler
 ): void => {
-    if (!instance) throw new Error("Toast instance is not initialized");
+    mountToast();
+    if (!instance) {
+        pendingToasts.push({
+            content,
+            type,
+            autoClose,
+            onClick
+        });
+        return;
+    }
 
     instance.show(content, type, autoClose, onClick);
 };

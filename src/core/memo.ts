@@ -1,6 +1,4 @@
-import {sendToBackground} from "@plasmohq/messaging";
-
-import storage from "../utils/storage";
+import {memoStorage} from "../utils/storage";
 import communicate from "./communicate";
 import eventBus from "./eventbus";
 
@@ -19,20 +17,6 @@ const MEMO_TYPES_KEYS: RefresherMemoType[] = ["UID", "NICK", "IP"];
 
 export type MemoCache = Record<RefresherMemoType, Record<string, RefresherMemoValue>>;
 
-function SendToBackground() {
-    sendToBackground({
-        name: "store",
-        body: {
-            action: "update",
-            type: "memos",
-            data: {
-                updateMemos: true,
-                memos_store: MEMO_CACHE
-            }
-        }
-    });
-}
-
 let MEMO_CACHE: MemoCache = {
     UID: {},
     NICK: {},
@@ -41,21 +25,25 @@ let MEMO_CACHE: MemoCache = {
 
 (async () => {
     for (const key of MEMO_TYPES_KEYS) {
-        const memo = await storage.get<Record<string, RefresherMemoValue>>(`${MEMO_NAMESPACE}:${key}`);
+        const memo = await memoStorage[key].getValue();
         MEMO_CACHE[key] = memo ?? {};
-    }
 
-    SendToBackground();
+        memoStorage[key].watch((newValue) => {
+            if (!newValue) return;
+            MEMO_CACHE[key] = newValue;
+            eventBus.emit("refresh");
+        });
+    }
 })();
 
-const InternalAddToList = (type: RefresherMemoType, user: string, text: string, color: string, gallery?: string) => {
+const InternalAddToList = async (type: RefresherMemoType, user: string, text: string, color: string, gallery?: string) => {
     MEMO_CACHE[type][user] = {
         text,
         color,
         gallery
     };
 
-    storage.set(`${MEMO_NAMESPACE}:${type}`, MEMO_CACHE[type]);
+    await memoStorage[type].setValue(MEMO_CACHE[type]);
 };
 
 const checkValidType = (type: string) => MEMO_TYPES_KEYS.some((key) => key === type);
@@ -71,11 +59,10 @@ const checkValidType = (type: string) => MEMO_TYPES_KEYS.some((key) => key === t
  */
 export const add = (type: RefresherMemoType, user: string, text: string, color: string, gallery?: string): void => {
     if (!checkValidType(type)) {
-        throw `${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`;
+        throw new Error(`${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`);
     }
 
     InternalAddToList(type, user, text, color, gallery);
-    SendToBackground();
 };
 
 /**
@@ -86,7 +73,7 @@ export const add = (type: RefresherMemoType, user: string, text: string, color: 
  */
 export const get = (type: RefresherMemoType, user: string): RefresherMemoValue => {
     if (!checkValidType(type)) {
-        throw `${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`;
+        throw new Error(`${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`);
     }
 
     return MEMO_CACHE[type][user];
@@ -98,23 +85,19 @@ export const get = (type: RefresherMemoType, user: string): RefresherMemoValue =
  * @param type 메모 종류
  * @param user 유저
  */
-export const remove = (type: RefresherMemoType, user: string): void => {
+export const remove = async (type: RefresherMemoType, user: string): Promise<void> => {
     if (!checkValidType(type)) {
-        throw `${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`;
+        throw new Error(`${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`);
     }
 
     delete MEMO_CACHE[type][user];
-    storage.set(`${MEMO_NAMESPACE}:${type}`, MEMO_CACHE[type]);
-    SendToBackground();
+    await memoStorage[type].setValue(MEMO_CACHE[type]);
 };
 
 communicate.addHook("memoSelected", () => {
     eventBus.emit("refresherUpdateUserMemo");
 });
 
-communicate.addHook("updateMemos", ({memos}) => {
-    MEMO_CACHE = memos;
-});
 
 export default {
     TYPE_NAMES,

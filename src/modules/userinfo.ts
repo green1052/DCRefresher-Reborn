@@ -1,7 +1,10 @@
+import eventBus from "@/core/eventbus";
+import filter from "@/core/filtering";
+import memo from "@/core/memo";
+import ip from "@/utils/ip";
 import $ from "cash-dom";
 
 import communicate from "../core/communicate";
-import color from "../utils/color";
 import toast from "../utils/toast";
 import type {Nullable, NullableProperties, ObjectEnum} from "../utils/types";
 import {getType} from "../utils/user";
@@ -126,6 +129,8 @@ const memoAsk = (
     win.appendChild(frame);
     document.body.appendChild(win);
 
+    let onDismiss: (() => void) | null = null;
+
     const removeWindow = () => {
         if (!win) return;
 
@@ -135,6 +140,11 @@ const memoAsk = (
         setTimeout(() => {
             document.body.removeChild(win);
         }, 300);
+
+        if (onDismiss) {
+            onDismiss();
+            onDismiss = null;
+        }
     };
 
     const removeWindowKey = (ev: KeyboardEvent) => {
@@ -161,7 +171,7 @@ const memoAsk = (
     const colorElement = frame.querySelector<HTMLInputElement>("#refresher_memo_color")!;
 
     const randomColor = () => {
-        colorElement.value = color.random();
+        colorElement.value = `#${Math.random().toString(16).slice(2, 8).padStart(6, "0")}`;
     };
 
     const updateType = () => {
@@ -216,8 +226,13 @@ const memoAsk = (
         }
     });
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+        onDismiss = () => {
+            reject(new Error("Dialog dismissed"));
+        };
+
         frame.querySelector(".refresher-preview-button[data-update=true]")?.addEventListener("click", () => {
+            onDismiss = null;
             if (memoElement.value.length > 160) {
                 alert("160자를 초과할 수 없습니다.");
 
@@ -235,6 +250,7 @@ const memoAsk = (
         });
 
         frame.querySelector(".refresher-preview-button[data-clear=true]")?.addEventListener("click", () => {
+            onDismiss = null;
             removeWindow();
 
             resolve({
@@ -292,8 +308,7 @@ export default {
             default: false
         }
     },
-    require: ["filter", "eventBus", "ip", "memo"],
-    func(filter, eventBus, ip, memo) {
+    func() {
         const ipInfoAdd = (element: HTMLElement) => {
             if (!this.status.showIpInfo || !element.dataset.ip || element.dataset.refresherIp === "true") return false;
 
@@ -305,7 +320,7 @@ export default {
             const text = document.createElement("span");
             text.className = "refresherUserData";
             text.style.color = ip_data.color;
-            text.innerHTML = `[${format}]`;
+            text.textContent = `[${format}]`;
             text.title = format;
 
             const addBox = element.querySelector(".addbox .ip");
@@ -341,7 +356,7 @@ export default {
 
             const text = document.createElement("span");
             text.className = "ip refresherUserData";
-            text.innerHTML = `(${element.dataset.uid})`;
+            text.textContent = `(${element.dataset.uid})`;
             text.title = element.dataset.uid;
 
             const fl = element.querySelector(".fl > span");
@@ -395,7 +410,7 @@ export default {
 
             const text = document.createElement("span");
             text.className = "refresherUserData refresherMemoData";
-            text.innerHTML = `[${memoData.text}]`;
+            text.textContent = `[${memoData.text}]`;
             text.title = memoData.text;
 
             if (memoData.color) {
@@ -559,11 +574,14 @@ export default {
             toast.show(`${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 추가했습니다.`);
         });
     },
-    revoke(filter) {
+    revoke() {
         if (this.memory.always) filter.remove(this.memory.always);
+        if (this.memory.contextMenu) eventBus.remove("refresherUserContextMenu", this.memory.contextMenu);
+        if (this.memory.requestBlock) eventBus.remove("refresherUpdateUserMemo", this.memory.requestBlock);
+        if (this.memory.memoAsk) communicate.clearHook("refresherRequestMemoAsk", this.memory.memoAsk);
 
         for (const element of document.querySelectorAll(".refresherUserData")) {
-            element.parentElement?.remove();
+            element.remove();
         }
     }
 } as RefresherModule<{
@@ -581,5 +599,4 @@ export default {
         showIpInfo: RefresherCheckSettings;
         showTooltip: RefresherCheckSettings;
     };
-    require: ["filter", "eventBus", "ip", "memo"];
 }>;

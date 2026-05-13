@@ -65,6 +65,7 @@
                             @enter="onEnter"
                             @before-enter="beforeEnter"
                         >
+                            <!-- v-html: frame.title may contain HTML from page scraping (.html()) -->
                             <div
                                 :key="frame.title"
                                 :data-index="index + 1"
@@ -80,8 +81,7 @@
                         >
                             <span
                                 class="refresher-preview-title-mute"
-                                v-html="frame.subtitle"
-                            />
+                            >{{ frame.subtitle }}</span>
                         </transition>
                     </div>
 
@@ -253,6 +253,7 @@
 </template>
 
 <script lang="ts" setup>
+import type {App, ComponentPublicInstance} from "vue";
 import {createApp, onBeforeUnmount, onMounted, ref} from "vue";
 
 import Comment from "./comment.vue";
@@ -277,8 +278,8 @@ const reply = ref({
 });
 const dccon = ref<DcinsideDccon[]>([]);
 const bigDccon = ref(false);
-const dcconRender = ref<any>(null);
-const dcconApp = ref<any>(null);
+const dcconRender = ref<ComponentPublicInstance | null>(null);
+const dcconApp = ref<App<Element> | null>(null);
 const commentKey = ref(0);
 
 const beforeEnter = (el: HTMLElement) => {
@@ -305,9 +306,16 @@ const retry = () => {
     return props.frame.functions.retry(false);
 };
 
-const writeComment = async (...args: any[]) => {
+const writeComment = async (
+    type: "text" | "dccon",
+    memo: string | DcinsideDccon[],
+    commentNo: string | null,
+    replyNo: string | null,
+    user: { name: string; pw?: string },
+    selectedBigDccon: boolean
+) => {
     try {
-        await props.frame.functions.writeComment(...args);
+        await props.frame.functions.writeComment(type, memo, commentNo, replyNo, user, selectedBigDccon);
         retry();
         return true;
     } catch {
@@ -351,7 +359,9 @@ const clickDccon = (selectedDccon: DcinsideDccon[], selectedBigDccon: boolean) =
 const closeDccon = () => {
     if (!dcconApp.value) return;
 
+    const container = dcconRender.value?.$el?.parentElement;
     dcconApp.value.unmount();
+    if (container) container.remove();
     dcconApp.value = null;
     dcconRender.value = null;
 };
@@ -378,17 +388,13 @@ const original = () => {
 };
 
 onMounted(() => {
-    props.frame.app.$on("close", () => {
-        props.frame.title = "";
-        props.frame.subtitle = "";
-        props.frame.contents = undefined;
-        props.frame.upvotes = undefined;
-        props.frame.fixedUpvotes = undefined;
-        props.frame.downvotes = undefined;
-        props.frame.error = undefined;
-        props.frame.collapse = undefined;
-        props.frame.data = {};
-        props.frame.functions = {};
+    const frameWithEvent = props.frame as RefresherFrame & {
+        $on?: (event: string, callback: () => void) => void;
+        resetRuntime?: () => void;
+    };
+
+    frameWithEvent.$on?.("close", () => {
+        frameWithEvent.resetRuntime?.();
         reply.value = {
             commentNo: null,
             replyNo: null

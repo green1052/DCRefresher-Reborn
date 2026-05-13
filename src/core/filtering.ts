@@ -35,6 +35,8 @@ export const filter = {
     runSpecific: (id: string): Promise<void> => {
         const item = lists[id];
 
+        if (!item) return Promise.resolve();
+
         return observe.find(item.scope, document.documentElement).then((e) => filter.__run(item, e));
     },
 
@@ -58,11 +60,11 @@ export const filter = {
     remove: (uuid: string, skip?: boolean): void => {
         if (skip) return;
 
-        if (!uuid) throw "Given UUID is not valid.";
+        if (!uuid) throw new Error("Given UUID is not valid.");
 
         const event = lists[uuid];
 
-        if (!event) throw "Given UUID is not exists in the list.";
+        if (!event) throw new Error("Given UUID is not exists in the list.");
 
         filter.emit(uuid, "remove");
 
@@ -73,18 +75,18 @@ export const filter = {
         delete lists[uuid];
     },
 
-    on: (uuid: string, event: string, cb: (...args: any[]) => void): void => {
-        if (!uuid || !event) throw "Given UUID or event is not valid.";
+    on: (uuid: string, event: string, cb: (...args: unknown[]) => void): void => {
+        if (!uuid || !event) throw new Error("Given UUID or event is not valid.");
 
-        if (!event) throw "Given UUID is not exists in the list.";
+        if (!lists[uuid]) throw new Error("Given UUID does not exist in the list.");
 
         lists[uuid].events[event] ??= [];
         lists[uuid].events[event].push(cb);
     },
 
-    emit: (uuid: string, event: string, ...args: any[]): void => {
-        if (!uuid || !event) throw "Given UUID or event is not valid.";
-        if (!event) throw "Given UUID is not exists in the list.";
+    emit: (uuid: string, event: string, ...args: unknown[]): void => {
+        if (!uuid || !event) throw new Error("Given UUID or event is not valid.");
+        if (!lists[uuid]) throw new Error("Given UUID does not exist in the list.");
 
         const eventObj = lists[uuid].events[event];
 

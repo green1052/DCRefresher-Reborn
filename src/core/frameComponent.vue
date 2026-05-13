@@ -10,12 +10,36 @@
         }"
         class="refresher-frame-outer"
     >
-        <RefresherGroup
-            ref="groupRef"
-            :frames="frames"
-            :on-scroll="onScroll"
-            :outer-click="outerClick"
-        />
+        <div
+            ref="groupElement"
+            class="refresher-group"
+            @click="clickHandle"
+            @wheel="wheelHandle"
+        >
+            <RefresherFrame
+                v-if="bodyFrame"
+                ref="bodyFrameRef"
+                :frame="bodyFrame"
+                :index="0"
+            />
+            <RefresherFrame
+                v-if="commentFrame"
+                ref="commentFrameRef"
+                :frame="commentFrame"
+                :index="1"
+            />
+
+            <div id="scroll">
+                <img
+                    :src="browser.runtime.getURL('/assets/upvote.webp')"
+                    @click="() => clickScroll('up')"
+                />
+                <img
+                    :src="browser.runtime.getURL('/assets/downvote.webp')"
+                    @click="() => clickScroll('down')"
+                />
+            </div>
+        </div>
         <transition name="refresher-prev-post">
             <RefresherScroll
                 v-if="scrollModeTop"
@@ -32,33 +56,63 @@
 </template>
 
 <script lang="ts" setup>
-import {onMounted, ref, watch} from "vue";
+import {getCurrentInstance, onBeforeUnmount, onMounted, ref, watch} from "vue";
 
-import RefresherGroup from "../components/group.vue";
+import RefresherFrame from "../components/frame.vue";
 import RefresherScroll from "../components/scroll.vue";
-import {FrameStackOption} from "./frame";
+import {FrameOption, FrameScrollApi, FrameStackOption} from "./frame";
+import {createFrameRuntime} from "./frameRuntime";
 
 interface Props {
     option?: FrameStackOption;
+    children?: FrameOption[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    option: () => ({})
+    option: () => ({}),
+    children: () => []
 });
+const instance = getCurrentInstance();
 
 const emit = defineEmits<{
     close: [];
 }>();
 
+type FrameEventHandler = (...args: unknown[]) => void;
+type FrameComponentApi = Pick<
+    RefresherFrameAppVue,
+    "body" | "comment" | "setScrollMode" | "clearScrollMode" | "outerClick" | "close" | "fadeIn" | "fadeOut" | "$on"
+> & {
+    frames: RefresherFrame[];
+    fade: boolean;
+    scrollModeTop: boolean;
+    scrollModeBottom: boolean;
+    closed: boolean;
+    inputFocus: boolean;
+    groupElement?: HTMLElement;
+    bodyFrameRef?: { incrementCommentKey?: () => void; commentKey?: { value: number } } | null;
+    commentFrameRef?: { incrementCommentKey?: () => void; commentKey?: { value: number } } | null;
+};
+
 // Reactive data
-const frames = ref<RefresherFrame[]>([]);
+const frames = ref<RefresherFrame[]>(props.children.map((child) => createFrameRuntime(child)));
 const fade = ref(false);
-const stampMode = ref(false);
 const scrollModeTop = ref(false);
 const scrollModeBottom = ref(false);
 const closed = ref(false);
 const inputFocus = ref(false);
-const groupRef = ref<any>(null);
+
+interface ClosableFrame {
+    $emit: (event: string, ...args: unknown[]) => void;
+}
+
+const isClosableFrame = (frame: RefresherFrame): frame is RefresherFrame & ClosableFrame => {
+    return typeof (frame as Partial<ClosableFrame>).$emit === "function";
+};
+
+const groupElement = ref<HTMLElement>();
+const bodyFrameRef = ref<{ incrementCommentKey?: () => void; commentKey?: { value: number } } | null>(null);
+const commentFrameRef = ref<{ incrementCommentKey?: () => void; commentKey?: { value: number } } | null>(null);
 
 // Spread option properties
 const background = ref(props.option && props.option.background ? props.option.background : false);
@@ -71,39 +125,72 @@ watch(closed, (val: boolean) => {
 });
 
 // Lifecycle hook
+const onKeyUp = (ev: KeyboardEvent) => {
+    if (ev.code === "Escape" && !closed.value) {
+        outerClick();
+    }
+};
+
+const clickScroll = (type: "up" | "down") => {
+    if (!groupElement.value) return;
+    const y = type === "up" ? 0 : groupElement.value.scrollHeight;
+    groupElement.value.scroll(0, y);
+};
+
+const clickHandle = (ev: MouseEvent) => {
+    if (ev.target !== groupElement.value) return;
+
+    const selection = window.getSelection();
+    if (selection && selection.toString().length !== 0) return;
+
+    outerClick();
+};
+
+const wheelHandle = (ev: WheelEvent) => {
+    if (typeof onScroll === "function") {
+        onScroll(
+            ev,
+            instance?.exposed as FrameScrollApi,
+            groupElement.value as HTMLElement
+        );
+    }
+};
+
 onMounted(() => {
     document.body.style.overflow = "hidden";
+    document.addEventListener("keyup", onKeyUp);
+});
 
-    document.addEventListener("keyup", (ev) => {
-        if (ev.code === "Escape" && !closed.value) {
-            outerClick();
-        }
-    });
+onBeforeUnmount(() => {
+    document.removeEventListener("keyup", onKeyUp);
 });
 
 // Methods
-const changeStamp = () => {
-    stampMode.value = !stampMode.value;
-};
-
-const first = () => {
+const body = () => {
     return frames.value[0];
 };
 
-const second = () => {
+const comment = () => {
     return frames.value[1];
 };
 
+const bodyFrame = ref<RefresherFrame | undefined>(body());
+const commentFrame = ref<RefresherFrame | undefined>(comment());
+
+const setScrollMode = (mode: "top" | "bottom" | "none") => {
+    scrollModeTop.value = mode === "top";
+    scrollModeBottom.value = mode === "bottom";
+};
+
 const clearScrollMode = () => {
-    scrollModeTop.value = false;
-    scrollModeBottom.value = false;
+    setScrollMode("none");
 };
 
 const outerClick = () => {
-    // Trigger close event on all frames for backward compatibility
+    // Broadcast close to each frame runtime.
     frames.value.forEach((frame) => {
-        if (frame && typeof (frame as any).$emit === "function") {
-            (frame as any).$emit("close");
+        if (frame && isClosableFrame(frame)) {
+            frame.$emit("close");
         }
     });
 
@@ -128,24 +215,54 @@ const fadeOut = () => {
     }, 251);
 };
 
+const appCloseSubscribers = new Set<FrameEventHandler>();
+const appOn = (event: string, callback: FrameEventHandler) => {
+    if (event !== "close") return;
+    appCloseSubscribers.add(callback);
+};
+
+const emitAppClose = (...args: unknown[]) => {
+    appCloseSubscribers.forEach((handler) => handler(...args));
+};
+
 // Expose methods for external access
 defineExpose({
     frames,
     fade,
-    stampMode,
     scrollModeTop,
     scrollModeBottom,
     closed,
     inputFocus,
-    groupRef,
-    changeStamp,
-    first,
-    second,
+    groupElement,
+    bodyFrameRef,
+    commentFrameRef,
+    body,
+    comment,
+    setScrollMode,
     clearScrollMode,
     outerClick,
     close,
     fadeIn,
-    fadeOut
+    fadeOut,
+    $on: appOn
+});
+
+onMounted(() => {
+    const app = instance?.exposed as FrameComponentApi | undefined;
+    if (!app) return;
+
+    frames.value.forEach((frame) => {
+        frame.app = app as unknown as RefresherFrameAppVue;
+    });
+
+    bodyFrame.value = body();
+    commentFrame.value = comment();
+});
+
+watch(closed, (value) => {
+    if (value) {
+        emitAppClose();
+    }
 });
 </script>
 
@@ -214,6 +331,16 @@ $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
     overscroll-behavior: contain;
     position: absolute;
     width: 100%;
+}
+
+#scroll {
+    bottom: 5px;
+    display: grid;
+    position: fixed;
+    right: 0;
+    user-select: none;
+    width: 100px;
+    z-index: 2000;
 }
 
 .refresher-scroll {

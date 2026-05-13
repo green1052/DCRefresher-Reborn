@@ -3,10 +3,12 @@ import type {User} from "../utils/user";
 export {};
 
 declare global {
+    type RefresherUnknownHandler = (...args: unknown[]) => void;
+
     interface RefresherFilteringLists {
         func: <T = HTMLElement>(element: T) => void;
         scope: string;
-        events: Record<string, Array<(...args: any[]) => void>>;
+        events: Record<string, RefresherUnknownHandler[]>;
         options?: RefresherFilteringOptions;
         expire?: () => void;
     }
@@ -16,8 +18,6 @@ declare global {
         skipIfNotExists?: boolean;
     }
 
-    type RefresherFilter = typeof import("../core/filtering").filter;
-
     interface RefresherEventBusOptions {
         once: boolean;
     }
@@ -25,17 +25,23 @@ declare global {
     interface RefresherEventBus {
         emit: (event: string, ...params: unknown[]) => void;
         emitNextTick: (event: string, ...params: unknown[]) => void;
-        on: (event: string, callback: (...args: unknown[]) => void, options?: RefresherEventBusOptions) => string;
+        on: (event: string, callback: RefresherUnknownHandler, options?: RefresherEventBusOptions) => string;
         remove: (event: string, uuid: string, skip?: boolean) => void;
     }
 
     interface RefresherEventBusObject {
-        func: (...params: unknown[]) => void;
+        func: RefresherUnknownHandler;
         uuid: string;
         once?: boolean;
     }
 
     interface RefresherFrame {
+        options: {
+            relative?: boolean;
+            center?: boolean;
+            preview?: boolean;
+            blur?: boolean;
+        };
         title: string;
         subtitle: string;
         app: RefresherFrameAppVue;
@@ -55,6 +61,7 @@ declare global {
             views: string | undefined;
             useWriteComment: boolean;
             comments: DcinsideComments | undefined;
+            postUserId?: string;
             type: string;
             useImageBlock: boolean;
         };

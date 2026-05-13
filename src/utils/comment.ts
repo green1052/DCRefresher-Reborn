@@ -77,7 +77,7 @@ const secretKey = (dom: Document): URLSearchParams => {
     for (const element of $(dom).find("#focus_cmt > input")) {
         const $element = $(element);
 
-        const id = $element.attr("name") ?? $element.attr("id")!;
+        const id = $element.attr("name") ?? $element.attr("id") ?? "";
 
         if (!["service_code", "gallery_no", "clickbutton"].includes(id)) params.set(id, $element.val() as string);
     }
@@ -153,10 +153,7 @@ export async function submitComment(
         body: params
     };
 
-    const response =
-        process.env.PLASMO_MANIFEST_VERSION === "mv2"
-            ? await content.fetch(url, options).then((response) => response.text())
-            : await ky(url, options).text();
+    const response = await ky(url, options).text();
 
     const [result, message] = response.split("||");
 
