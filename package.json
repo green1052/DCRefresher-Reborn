@@ -23,7 +23,7 @@
         "@types/node": "^24.12.4",
         "@types/webextension-polyfill": "^0.12.5",
         "cash-dom": "^8.1.5",
-        "js-cookie": "^3.0.6",
+        "js-cookie": "^3.0.8",
         "ky": "^2.0.2",
         "parcel-reporter-clean-dist": "^1.0.4",
         "sass": "^1.100.0",
