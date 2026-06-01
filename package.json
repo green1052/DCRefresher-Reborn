@@ -1,7 +1,7 @@
 {
     "displayName": "DCRefresher Reborn",
     "name": "dcrefresher-reborn",
-    "version": "4.1.7",
+    "version": "4.1.8",
     "description": "디시인사이드 개선 확장 프로그램",
     "homepage": "https://dcrefresher.green1052.com",
     "license": "GPL-3.0-only",
@@ -14,7 +14,7 @@
         "postinstall": "wxt prepare"
     },
     "dependencies": {
-        "vue": "^3.5.34"
+        "vue": "^3.5.35"
     },
     "devDependencies": {
         "@types/js-cookie": "^3.0.6",
@@ -23,9 +23,9 @@
         "@wxt-dev/module-vue": "^1.0.3",
         "@wxt-dev/webextension-polyfill": "^1.0.0",
         "cash-dom": "^8.1.5",
-        "js-cookie": "^3.0.5",
+        "js-cookie": "^3.0.8",
         "ky": "^2.0.2",
-        "sass": "^1.99.0",
+        "sass": "^1.100.0",
         "webextension-polyfill": "^0.12.0",
         "wxt": "^0.20.26"
     },
