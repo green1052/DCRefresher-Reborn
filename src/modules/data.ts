@@ -1,3 +1,4 @@
+import {normalizeStorageData} from "../utils/storageMigration";
 import toast from "../utils/toast";
 import {writeClipboard} from "../utils/writeClipboard";
 
@@ -83,7 +84,7 @@ export default {
                     ]);
 
                     await browser.storage.local.clear();
-                    await browser.storage.local.set({...data, ...preserved});
+                    await browser.storage.local.set(normalizeStorageData({...data, ...preserved}));
 
                     toast.show("데이터를 복원했습니다.");
                 } catch {
@@ -110,7 +111,7 @@ export default {
                 if (!input) return;
 
                 try {
-                    const data = JSON.parse(input) as Record<string, unknown>;
+                    const data = normalizeStorageData(JSON.parse(input) as Record<string, unknown>);
 
                     await browser.storage.local.clear();
                     await browser.storage.local.set(data);

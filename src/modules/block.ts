@@ -4,6 +4,7 @@ import $ from "cash-dom";
 import {Cash} from "cash-dom/dist/cash";
 import Cookies from "js-cookie";
 import ky from "ky";
+import communicate from "../core/communicate";
 
 import {eventBus} from "../core/eventbus";
 import {queryString} from "../utils/http";
@@ -34,7 +35,10 @@ export default {
         },
         lastSelect: 0,
         addBlock: null,
-        requestBlock: null
+        requestBlock: null,
+        blockSelected: null,
+        dcconSelected: null,
+        dcconAllSelected: null
     },
     enable: true,
     default_enable: true,
@@ -208,6 +212,18 @@ export default {
             }
         );
 
+        this.memory.blockSelected = communicate.addHook("blockSelected", () => {
+            eventBus.emit("refresherRequestBlock");
+        });
+
+        this.memory.dcconSelected = communicate.addHook("dcconSelected", () => {
+            eventBus.emit("refresherRequestBlock");
+        });
+
+        this.memory.dcconAllSelected = communicate.addHook("dcconAllSelected", () => {
+            eventBus.emit("refresherRequestBlock", {blockAllDccon: true});
+        });
+
         this.memory.requestBlock = eventBus.on("refresherRequestBlock", (args?: Record<string, boolean>) => {
             if (Date.now() - this.memory.lastSelect > 10000) {
                 return;
@@ -302,6 +318,12 @@ export default {
         if (this.memory.addBlock) eventBus.remove("refresherUserContextMenu", this.memory.addBlock);
 
         if (this.memory.requestBlock) eventBus.remove("refresherRequestBlock", this.memory.requestBlock);
+
+        if (this.memory.blockSelected) communicate.clearHook("blockSelected", this.memory.blockSelected);
+
+        if (this.memory.dcconSelected) communicate.clearHook("dcconSelected", this.memory.dcconSelected);
+
+        if (this.memory.dcconAllSelected) communicate.clearHook("dcconAllSelected", this.memory.dcconAllSelected);
     }
 } as RefresherModule<{
     memory: {
@@ -317,6 +339,9 @@ export default {
         lastSelect: number;
         addBlock: string | null;
         requestBlock: string | null;
+        blockSelected: string | null;
+        dcconSelected: string | null;
+        dcconAllSelected: string | null;
     };
     settings: {
         replyRemove: RefresherCheckSettings;

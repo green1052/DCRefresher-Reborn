@@ -1,9 +1,14 @@
 import type {ModuleStore} from "../core/modules";
 import type {SettingsStore} from "../core/settings";
 import {onMessage, sendMessage} from "../utils/messaging";
+import {migrateLocalStorageData} from "../utils/storageMigration";
 import storage from "../utils/webStorage";
 
 export default defineBackground(() => {
+    migrateLocalStorageData().catch((error) => {
+        console.error("Storage migration error:", error);
+    });
+
     // ===== Store State =====
     let modules: ModuleStore = {};
     let settings: SettingsStore = {};
