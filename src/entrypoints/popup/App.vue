@@ -15,6 +15,7 @@
                     <p>{{ blockKeyNames[currentBlockType] }}</p>
 
                     <refresher-input
+                        v-model:value="blockFormData.content"
                         :change="(a, b, value) => (blockFormData.content = value)"
                         :placeholder="`${blockKeyNames[currentBlockType]} 값을 입력하세요`"
                         @keyup.enter="confirmAddBlock"
@@ -34,6 +35,7 @@
                     <p>특정 갤러리 차단 (선택)</p>
 
                     <refresher-input
+                        v-model:value="blockFormData.gallery"
                         :change="(a, b, value) => (blockFormData.gallery = value)"
                         placeholder="갤러리 ID"
                     />
@@ -43,9 +45,9 @@
                     <p>차단 모드</p>
 
                     <refresher-options
+                        v-model:value="blockFormData.mode"
                         :change="(a, b, value) => (blockFormData.mode = value)"
                         :options="{ NONE: '기본값', ...blockDetectModeTypeNames }"
-                        :value="blockFormData.mode || 'NONE'"
                     />
                 </div>
 
@@ -519,6 +521,24 @@ const parseImportData = (example: string) => {
     }
 };
 
+const isBlockImportValue = (value: unknown): value is RefresherBlockValue => {
+    if (!value || typeof value !== "object") return false;
+
+    const blockValue = value as Partial<RefresherBlockValue>;
+    return (
+        typeof blockValue.content === "string" &&
+        typeof blockValue.isRegex === "boolean" &&
+        typeof blockValue.isAdvanced === "boolean" &&
+        (blockValue.gallery === undefined || typeof blockValue.gallery === "string") &&
+        (blockValue.extra === undefined || typeof blockValue.extra === "string") &&
+        (blockValue.mode === undefined || Object.hasOwn(blockDetectModeTypeNames, blockValue.mode))
+    );
+};
+
+const normalizeBlockImportList = (value: unknown): RefresherBlockValue[] => {
+    return Array.isArray(value) ? value.filter(isBlockImportValue) : [];
+};
+
 const closeBlockDialog = () => {
     showBlockDialog.value = false;
 };
@@ -536,13 +556,13 @@ onMounted(async () => {
     try {
         // Load initial data for blocks and memos directly from storage
         for (const type of BLOCK_TYPES) {
-            blocks[type] = (await blockStorage[type].getValue()) ?? [];
+            blocks[type] = normalizeBlockImportList(await blockStorage[type].getValue());
             const mode = await blockModeStorage[type].getValue();
             if (mode) blockModes.value[type] = mode;
 
             // Watch for changes
             blockStorage[type].watch((newValue) => {
-                if (newValue) blocks[type] = newValue;
+                blocks[type] = normalizeBlockImportList(newValue);
             });
             blockModeStorage[type].watch((newValue) => {
                 if (newValue) blockModes.value[type] = newValue;
@@ -581,7 +601,7 @@ onMounted(async () => {
 
 const exportMemo = () => copyToClipboard(memos);
 
-const importMemo = () => {
+const importMemo = async () => {
     const data = parseImportData(`예시: {"UID":{},"NICK":{},"IP":{}}`);
     if (!data) return;
 
@@ -596,6 +616,8 @@ const importMemo = () => {
 
             target[id] = memo;
         }
+
+        await memoStorage[key as RefresherMemoType].setValue(target);
     }
 
     alert("가져오기에 성공했습니다.");
@@ -603,15 +625,20 @@ const importMemo = () => {
 
 const exportBlock = () => copyToClipboard(blocks);
 
-const importBlock = () => {
+const importBlock = async () => {
     const data = parseImportData(`예시: {"NICK":[],"ID":[],"IP":[],"TITLE":[],"TEXT":[],"COMMENT":[],"DCCON":[],"TAB":[],"IMAGE":[]}`);
     if (!data) return;
 
     for (const [key, value] of Object.entries(data)) {
-        const target = blocks[key as RefresherBlockType];
-        if (!target || !Array.isArray(value)) continue;
+        if (!(blockTypes as readonly string[]).includes(key)) continue;
 
-        for (const block of value as RefresherBlockValue[]) {
+        const type = key as RefresherBlockType;
+        const target = normalizeBlockImportList(blocks[type]);
+        if (!Array.isArray(value)) continue;
+
+        blocks[type] = target;
+
+        for (const block of normalizeBlockImportList(value)) {
             if (
                 target.some((v) => v.content === block.content) &&
                 !confirm(`${block.content}가 이미 존재합니다. 추가하시겠습니까?`)
@@ -621,6 +648,8 @@ const importBlock = () => {
 
             target.push(block);
         }
+
+        await blockStorage[type].setValue(target);
     }
 
     alert("가져오기에 성공했습니다.");
@@ -764,13 +793,13 @@ const confirmAddBlock = async () => {
         mode: blockFormData.mode === "NONE" ? undefined : blockFormData.mode
     });
 
-    await blockStorage[currentBlockType.value].setValue(blocks[currentBlockType.value]);
+    await blockStorage[currentBlockType.value].setValue([...blocks[currentBlockType.value]]);
     closeBlockDialog();
 };
 
 const removeBlockedUser = async (key: RefresherBlockType, index: number) => {
     blocks[key].splice(index, 1);
-    await blockStorage[key].setValue(blocks[key]);
+    await blockStorage[key].setValue([...blocks[key]]);
 };
 const removeAllBlockedUser = async (key: RefresherBlockType) => {
     if (!confirm(`${blockKeyNames[key]} 차단 목록을 모두 삭제할까요?`)) return;
@@ -788,7 +817,7 @@ const editBlockedUser = async (key: RefresherBlockType, index: number) => {
     if (!result) return;
 
     blocks[key][index].content = result;
-    await blockStorage[key].setValue(blocks[key]);
+    await blockStorage[key].setValue([...blocks[key]]);
 };
 const editBlockMode = async () => {
     for (const type of BLOCK_TYPES) {

@@ -8,6 +8,7 @@
             :value="value"
             type="text"
             @change="handleChange"
+            @input="handleInput"
         />
     </div>
 </template>
@@ -26,6 +27,15 @@ const props = withDefaults(defineProps<Props>(), {
     value: "",
     disabled: false
 });
+
+const emit = defineEmits<{
+    "update:value": [value: string];
+}>();
+
+const handleInput = (ev: Event) => {
+    const target = ev.target as HTMLInputElement;
+    emit("update:value", target.value);
+};
 
 const handleChange = (ev: Event) => {
     const target = ev.target as HTMLInputElement;

@@ -49,8 +49,8 @@
                     <img
                         :alt="dccon.title"
                         :src="dccon.main_img_url"
-                        @click="dcconListClick(dccon.detail)"
                         style="object-fit: cover; width: 100%; max-width: 53.3px; max-height: 53.3px;"
+                        @click="dcconListClick(dccon.detail)"
                     />
                 </li>
                 <li

@@ -71,11 +71,29 @@ let BLOCK_MODE_CACHE: BlockModeCache = {
     IMAGE: BLOCK_DETECT_MODE.SAME
 };
 
+const isBlockValue = (value: unknown): value is RefresherBlockValue => {
+    if (!value || typeof value !== "object") return false;
+
+    const blockValue = value as Partial<RefresherBlockValue>;
+    return (
+        typeof blockValue.content === "string" &&
+        typeof blockValue.isRegex === "boolean" &&
+        typeof blockValue.isAdvanced === "boolean" &&
+        (blockValue.gallery === undefined || typeof blockValue.gallery === "string") &&
+        (blockValue.extra === undefined || typeof blockValue.extra === "string") &&
+        (blockValue.mode === undefined || checkValidMode(blockValue.mode))
+    );
+};
+
+const normalizeBlockList = (value: unknown): RefresherBlockValue[] => {
+    return Array.isArray(value) ? value.filter(isBlockValue) : [];
+};
+
 // Initialize cache and watchers from wxt/storage
 (async () => {
     for (const key of BLOCK_TYPES_KEYS) {
         // Initial load
-        const storedBlocks = await blockStorage[key].getValue();
+        const storedBlocks = normalizeBlockList(await blockStorage[key].getValue());
         const storedMode = await blockModeStorage[key].getValue();
 
         BLOCK_CACHE[key] = storedBlocks;
@@ -84,7 +102,7 @@ let BLOCK_MODE_CACHE: BlockModeCache = {
         // Watch for changes
         blockStorage[key].watch((newValue) => {
             if (!newValue) return;
-            BLOCK_CACHE[key] = newValue;
+            BLOCK_CACHE[key] = normalizeBlockList(newValue);
             eventBus.emit("refresh");
         });
 
@@ -105,7 +123,7 @@ const checkValidMode = (mode: string) => {
 };
 
 const removeExists = (type: RefresherBlockType, content: string) => {
-    const cache = BLOCK_CACHE[type];
+    const cache = normalizeBlockList(BLOCK_CACHE[type]);
 
     if (!cache) return;
 
@@ -135,6 +153,7 @@ const InternalAddToList = async (
         mode
     };
 
+    BLOCK_CACHE[type] = normalizeBlockList(BLOCK_CACHE[type]);
     BLOCK_CACHE[type].push(newItem);
 
     await blockStorage[type].setValue(BLOCK_CACHE[type]);
@@ -200,9 +219,11 @@ export const check = (type: RefresherBlockType, content: string, gallery?: strin
 
     if (!content || content.length < 1) return false;
 
-    if (!BLOCK_CACHE[type] || BLOCK_CACHE[type].length < 1) return false;
+    const cache = normalizeBlockList(BLOCK_CACHE[type]);
 
-    const result = BLOCK_CACHE[type].filter((v) => {
+    if (cache.length < 1) return false;
+
+    const result = cache.filter((v) => {
         if (v.gallery && v.gallery !== gallery) return false;
 
         if (v.isAdvanced) {
