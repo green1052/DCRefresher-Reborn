@@ -70,7 +70,7 @@
         <p
             v-else
             class="refresher-comment-content"
-            v-html="escapeHtml(comment.memo).replaceAll('\n', '<br>')"
+            v-html="comment.memo.replaceAll('\n', '<br>')"
         />
     </div>
 </template>
@@ -191,9 +191,6 @@ onBeforeUnmount(() => {
         eventBus.remove("RefresherPostDataLoaded", eventBusUuid.value, true);
     }
 });
-
-// Methods
-const escapeHtml = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 const date = (str: string): string => {
     return str.substring(0, 4).match(/\./)
