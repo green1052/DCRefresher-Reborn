@@ -14,7 +14,7 @@
         "postinstall": "wxt prepare"
     },
     "dependencies": {
-        "vue": "^3.5.35"
+        "vue": "^3.5.38"
     },
     "devDependencies": {
         "@types/js-cookie": "^3.0.6",
