@@ -1,5 +1,5 @@
-export const find = (element: string, parent: HTMLElement): Promise<NodeListOf<HTMLElement>> =>
-    new Promise<NodeListOf<HTMLElement>>((resolve, reject) => {
+export const find = (element: string, parent: HTMLElement): Promise<Iterable<HTMLElement>> =>
+    new Promise<Iterable<HTMLElement>>((resolve, reject) => {
         let observer: MutationObserver | null = null;
 
         const timeout = window.setTimeout(() => {
@@ -19,28 +19,40 @@ export const find = (element: string, parent: HTMLElement): Promise<NodeListOf<H
 export const listen = (
     element: string,
     parent: HTMLElement,
-    callback: (element: NodeListOf<HTMLElement>) => void
+    callback: (elements: Iterable<HTMLElement>) => void
 ): MutationObserver => {
     const parentFind = parent.querySelectorAll<HTMLElement>(element);
 
     if (parentFind.length > 0) callback(parentFind);
 
-    const observer = new MutationObserver(function (this: MutationObserver, mutations) {
-        let executed = false;
+    const observer = new MutationObserver((mutations) => {
+        const matches = new Set<HTMLElement>();
 
         for (const mutation of mutations) {
-            if (mutation.addedNodes.length === 0) continue;
-            executed = true;
-            break;
+            for (const addedNode of mutation.addedNodes) {
+                const addedElement =
+                    addedNode instanceof HTMLElement ? addedNode : addedNode.parentElement;
+
+                if (!addedElement) continue;
+
+                if (addedElement.matches(element)) {
+                    matches.add(addedElement);
+                }
+
+                for (const matchedElement of addedElement.querySelectorAll<HTMLElement>(element)) {
+                    matches.add(matchedElement);
+                }
+
+                const matchingParent = addedElement.parentElement?.closest<HTMLElement>(element);
+                if (matchingParent) {
+                    matches.add(matchingParent);
+                }
+            }
         }
 
-        if (!executed) return;
-
-        const lists = parent.querySelectorAll<HTMLElement>(element);
-
-        if (lists.length === 0) return;
-
-        callback.bind(this)(lists);
+        if (matches.size > 0) {
+            callback(matches);
+        }
     });
 
     observer.observe(parent ?? document.documentElement, {

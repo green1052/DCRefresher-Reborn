@@ -7,22 +7,44 @@ export type SettingsStore = Record<string, Record<string, RefresherSettings>>;
 
 const settings_store: SettingsStore = {};
 
+const normalizeSettingValue = (
+    settings: RefresherSettings,
+    value: unknown
+): string | number | boolean => {
+    switch (settings.type) {
+        case "check":
+            return typeof value === "boolean" ? value : settings.default;
+        case "text":
+            return typeof value === "string" ? value : settings.default;
+        case "range":
+            return typeof value === "number" && Number.isFinite(value)
+                ? Math.min(settings.max, Math.max(settings.min, value))
+                : settings.default;
+        case "option":
+            return typeof value === "string" ? value : settings.default;
+    }
+};
+
 export const set = async (module: string, key: string, value: string | number | boolean): Promise<void> => {
-    if (!settings_store[module]?.[key]) return;
+    const setting = settings_store[module]?.[key];
+    if (!setting) return;
 
-    eventBus.emit("refresherUpdateSetting", module, key, value);
+    const normalizedValue = normalizeSettingValue(setting, value);
+    eventBus.emit("refresherUpdateSetting", module, key, normalizedValue);
 
-    settings_store[module][key].value = value;
-    await storage.set(`${module}.${key}`, value);
+    setting.value = normalizedValue;
+    await storage.set(`${module}.${key}`, normalizedValue);
 
     eventBus.emit("refresherSettingsSync", settings_store);
 };
 
 export const setStore = (module: string, key: string, value: string | number | boolean): void => {
-    if (!settings_store[module]?.[key]) return;
+    const setting = settings_store[module]?.[key];
+    if (!setting) return;
 
-    eventBus.emit("refresherUpdateSetting", module, key, value);
-    settings_store[module][key].value = value;
+    const normalizedValue = normalizeSettingValue(setting, value);
+    eventBus.emit("refresherUpdateSetting", module, key, normalizedValue);
+    setting.value = normalizedValue;
 };
 
 export const dump = (): Record<string, unknown> => settings_store;
@@ -30,16 +52,21 @@ export const dump = (): Record<string, unknown> => settings_store;
 export const load = async (module: string, key: string, settings: RefresherSettings): Promise<unknown> => {
     settings_store[module] ??= {};
 
-    const got = (await storage.get<string | number | boolean>(`${module}.${key}`)) ?? settings.default;
-    settings.value = got;
+    const storedValue = await storage.get<unknown>(`${module}.${key}`);
+    const value = normalizeSettingValue(settings, storedValue ?? settings.default);
+    settings.value = value;
 
     settings_store[module][key] = settings;
 
-    return got;
+    if (storedValue !== undefined && storedValue !== value) {
+        await storage.set(`${module}.${key}`, value);
+    }
+
+    return value;
 };
 
 eventBus.on("refresherSettingsSync", (store) => {
-    settingsStorage.setValue(JSON.parse(JSON.stringify(store)));
+    return settingsStorage.setValue(JSON.parse(JSON.stringify(store)));
 });
 
 export default {

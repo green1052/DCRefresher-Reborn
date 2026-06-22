@@ -18,6 +18,11 @@ interface DcconDetailResponse {
     detail: Array<{ path: string }>;
 }
 
+interface BlockRequestOptions {
+    target: "user" | "dccon";
+    blockAllDccon?: boolean;
+}
+
 export default {
     name: "컨텐츠 차단",
     description: "유저, 컨텐츠 등의 보고 싶지 않은 컨텐츠들을 삭제합니다.",
@@ -38,7 +43,8 @@ export default {
         requestBlock: null,
         blockSelected: null,
         dcconSelected: null,
-        dcconAllSelected: null
+        dcconAllSelected: null,
+        contextMenuHandler: null
     },
     enable: true,
     default_enable: true,
@@ -125,16 +131,6 @@ export default {
                     $element.closest(".view_content_wrap").find(".write_div").text("게시글 내용이 차단됐습니다.");
                 }
 
-                element.oncontextmenu ??= () => {
-                    this.memory.selected = {
-                        nick,
-                        uid,
-                        ip,
-                        code: null,
-                        packageIdx: null
-                    };
-                    this.memory.lastSelect = Date.now();
-                };
             },
             {
                 neverExpire: true
@@ -169,28 +165,45 @@ export default {
                     hideElement(hideTarget, this.status.blur);
                 }
 
-                if (!element.parentElement) return;
-
-                element.parentElement.oncontextmenu ??= () => {
-                    const code =
-                        (element?.getAttribute("src") || element?.getAttribute("data-src"))
-                            ?.replace(/^.*no=/g, "")
-                            .replace(/^&.*$/g, "") ?? "";
-
-                    this.memory.selected = {
-                        nick: null,
-                        uid: null,
-                        ip: null,
-                        code,
-                        packageIdx: null
-                    };
-                    this.memory.lastSelect = Date.now();
-                };
             },
             {
                 neverExpire: true
             }
         );
+
+        this.memory.contextMenuHandler = (event: MouseEvent) => {
+            if (!(event.target instanceof Element)) return;
+
+            const dccon = event.target.closest<HTMLImageElement>(".written_dccon");
+            if (dccon) {
+                const code = (dccon.src || dccon.dataset.src || "")
+                    .replace(/^.*no=/g, "")
+                    .replace(/^&.*$/g, "");
+
+                this.memory.selected = {
+                    nick: null,
+                    uid: null,
+                    ip: null,
+                    code,
+                    packageIdx: null
+                };
+                this.memory.lastSelect = Date.now();
+                return;
+            }
+
+            const writer = event.target.closest<HTMLElement>(".ub-writer");
+            if (!writer) return;
+
+            this.memory.selected = {
+                nick: writer.dataset.nick ?? null,
+                uid: writer.dataset.uid ?? null,
+                ip: writer.dataset.ip ?? null,
+                code: null,
+                packageIdx: null
+            };
+            this.memory.lastSelect = Date.now();
+        };
+        document.addEventListener("contextmenu", this.memory.contextMenuHandler, true);
 
         this.memory.addBlock = eventBus.on(
             "refresherUserContextMenu",
@@ -213,88 +226,99 @@ export default {
         );
 
         this.memory.blockSelected = communicate.addHook("blockSelected", () => {
-            eventBus.emit("refresherRequestBlock");
+            eventBus.emit("refresherRequestBlock", {target: "user"});
         });
 
         this.memory.dcconSelected = communicate.addHook("dcconSelected", () => {
-            eventBus.emit("refresherRequestBlock");
+            eventBus.emit("refresherRequestBlock", {target: "dccon"});
         });
 
         this.memory.dcconAllSelected = communicate.addHook("dcconAllSelected", () => {
-            eventBus.emit("refresherRequestBlock", {blockAllDccon: true});
+            eventBus.emit("refresherRequestBlock", {
+                target: "dccon",
+                blockAllDccon: true
+            });
         });
 
-        this.memory.requestBlock = eventBus.on("refresherRequestBlock", (args?: Record<string, boolean>) => {
+        this.memory.requestBlock = eventBus.on("refresherRequestBlock", async (args: BlockRequestOptions) => {
             if (Date.now() - this.memory.lastSelect > 10000) {
+                toast.show("차단할 대상을 다시 오른쪽 클릭해주세요.", "error");
                 return;
             }
 
             const code = this.memory.selected.code;
 
-            if (code) {
+            if (args.target === "dccon") {
+                if (!code) {
+                    toast.show("차단할 디시콘을 다시 오른쪽 클릭해주세요.", "error");
+                    return;
+                }
+
                 const params = new URLSearchParams();
                 params.set("ci_t", Cookies.get("ci_c") ?? "");
                 params.set("code", code);
 
-                ky.post(http.urls.dccon.detail, {
-                    headers: {
-                        "X-Requested-With": "XMLHttpRequest"
-                    },
-                    body: params
-                })
-                    .json<DcconDetailResponse>()
-                    .then((json) => {
-                        if (!json?.info) return;
+                try {
+                    const json = await ky
+                        .post(http.urls.dccon.detail, {
+                            headers: {
+                                "X-Requested-With": "XMLHttpRequest"
+                            },
+                            body: params
+                        })
+                        .json<DcconDetailResponse>();
 
-                        const title = json.info.title;
-                        const packageIdx = json.info.package_idx;
+                    if (!json?.info) {
+                        throw new Error("디시콘 상세 정보가 없습니다.");
+                    }
 
-                        if (args?.blockAllDccon) {
-                            const blockBundle = confirm(
-                                "디시콘을 묶어서 차단하시겠습니까? (차단 목록에서는 한개로 표시됩니다.)"
+                    const title = json.info.title;
+                    const packageIdx = json.info.package_idx;
+
+                    if (args.blockAllDccon) {
+                        const blockBundle = confirm(
+                            "디시콘을 묶어서 차단하시겠습니까? (차단 목록에서는 한개로 표시됩니다.)"
+                        );
+
+                        if (blockBundle) {
+                            const paths = json.detail.map(({path}) => path);
+                            await block.add(
+                                "DCCON",
+                                `^(${paths.join("|")})$`,
+                                true,
+                                false,
+                                undefined,
+                                `[묶음] ${title} [${packageIdx}]`
                             );
-
-                            const list = [];
-
+                        } else {
                             for (const {path} of json.detail) {
-                                if (blockBundle) {
-                                    list.push(path);
-                                    continue;
-                                }
-
-                                block.add("DCCON", path, false, false, undefined, `${title} [${packageIdx}]`);
-                            }
-
-                            if (blockBundle) {
-                                block.add(
+                                await block.add(
                                     "DCCON",
-                                    `^(${list.join("|")})$`,
-                                    true,
+                                    path,
+                                    false,
                                     false,
                                     undefined,
-                                    `[묶음] ${title} [${packageIdx}]`
+                                    `${title} [${packageIdx}]`
                                 );
                             }
-
-                            toast.show(`${title} ${block.TYPE_NAMES["DCCON"]} 묶음을 차단했습니다.`);
-
-                            return;
                         }
 
-                        block.add("DCCON", code, false, false, undefined, `${title} [${packageIdx}]`);
+                        toast.show(`${title} ${block.TYPE_NAMES.DCCON} 묶음을 차단했습니다.`);
+                        return;
+                    }
 
-                        toast.show(`${title} ${block.TYPE_NAMES["DCCON"]}을 차단했습니다.`);
-                    })
-                    .catch(() => {
-                        toast.show("디시콘 정보를 가져오는데 실패했습니다.", "error");
-                    });
+                    await block.add("DCCON", code, false, false, undefined, `${title} [${packageIdx}]`);
+                    toast.show(`${title} ${block.TYPE_NAMES.DCCON}을 차단했습니다.`);
+                } catch (error) {
+                    console.error("Failed to block dccon:", error);
+                    toast.show("디시콘 정보를 가져오거나 저장하는데 실패했습니다.", "error");
+                }
 
                 return;
             }
 
             let type: RefresherBlockType = "NICK";
             let value = this.memory.selected.nick;
-            const extra = this.memory.selected.nick;
 
             if (this.memory.selected.uid) {
                 type = "ID";
@@ -304,10 +328,18 @@ export default {
                 value = this.memory.selected.ip;
             }
 
-            if (!value || !extra) return;
+            if (!value) {
+                toast.show("차단할 유저를 다시 오른쪽 클릭해주세요.", "error");
+                return;
+            }
 
-            block.add(type, value, false, false, undefined, extra);
-            toast.show(`${block.TYPE_NAMES[type]} ${value}을(를) 차단했습니다.`);
+            try {
+                await block.add(type, value, false, false, undefined, this.memory.selected.nick ?? value);
+                toast.show(`${block.TYPE_NAMES[type]} ${value}을(를) 차단했습니다.`);
+            } catch (error) {
+                console.error("Failed to save blocked user:", error);
+                toast.show("차단 목록을 저장하는데 실패했습니다.", "error");
+            }
         });
     },
     revoke() {
@@ -324,6 +356,11 @@ export default {
         if (this.memory.dcconSelected) communicate.clearHook("dcconSelected", this.memory.dcconSelected);
 
         if (this.memory.dcconAllSelected) communicate.clearHook("dcconAllSelected", this.memory.dcconAllSelected);
+
+        if (this.memory.contextMenuHandler) {
+            document.removeEventListener("contextmenu", this.memory.contextMenuHandler, true);
+            this.memory.contextMenuHandler = null;
+        }
     }
 } as RefresherModule<{
     memory: {
@@ -342,6 +379,7 @@ export default {
         blockSelected: string | null;
         dcconSelected: string | null;
         dcconAllSelected: string | null;
+        contextMenuHandler: ((event: MouseEvent) => void) | null;
     };
     settings: {
         replyRemove: RefresherCheckSettings;

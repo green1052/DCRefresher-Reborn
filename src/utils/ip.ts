@@ -5,7 +5,7 @@ import storage from "./webStorage";
 let ipData: Record<string, string> = {};
 
 (async () => {
-    ipData = await storage.get<Record<string, string>>("refresher.database.ip");
+    ipData = (await storage.get<Record<string, string>>("refresher.database.ip")) ?? {};
 })();
 
 export const ISPData = (ip: string): ISPInfo => {

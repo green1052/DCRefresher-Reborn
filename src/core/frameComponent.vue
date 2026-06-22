@@ -113,6 +113,7 @@ const isClosableFrame = (frame: RefresherFrame): frame is RefresherFrame & Closa
 const groupElement = ref<HTMLElement>();
 const bodyFrameRef = ref<{ incrementCommentKey?: () => void; commentKey?: { value: number } } | null>(null);
 const commentFrameRef = ref<{ incrementCommentKey?: () => void; commentKey?: { value: number } } | null>(null);
+let fadeOutTimer: number | null = null;
 
 // Spread option properties
 const background = ref(props.option && props.option.background ? props.option.background : false);
@@ -163,6 +164,14 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     document.removeEventListener("keyup", onKeyUp);
+    document.body.style.overflow = "";
+
+    if (fadeOutTimer !== null) {
+        window.clearTimeout(fadeOutTimer);
+        fadeOutTimer = null;
+    }
+
+    appCloseSubscribers.clear();
 });
 
 // Methods
@@ -210,8 +219,13 @@ const fadeIn = () => {
 const fadeOut = () => {
     fade.value = false;
 
-    setTimeout(() => {
+    if (fadeOutTimer !== null) {
+        window.clearTimeout(fadeOutTimer);
+    }
+
+    fadeOutTimer = window.setTimeout(() => {
         closed.value = true;
+        fadeOutTimer = null;
     }, 251);
 };
 

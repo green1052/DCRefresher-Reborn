@@ -248,7 +248,7 @@ const request = {
      * @param signal
      */
     async comments(args: GalleryHTTPRequestArguments, signal: AbortSignal) {
-        if (!args.link) throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
+        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
 
         const params = new URLSearchParams();
         params.set("id", args.gallery);
@@ -268,7 +268,7 @@ const request = {
     },
 
     async delete(args: GalleryHTTPRequestArguments, password?: string) {
-        if (!args.link) throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
+        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
 
         const galleryType = http.galleryType(args.link, "/");
 
@@ -297,7 +297,7 @@ const request = {
         del_chk: number,
         user_type: number
     ) {
-        if (!args.link) throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
+        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
 
         const galleryType = http.galleryType(args.link, "/");
 
@@ -335,7 +335,7 @@ const request = {
     }
     > {
         if (!args.link) {
-            throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
+            throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
         }
 
         const galleryType = http.galleryType(args.link, "/");
@@ -371,7 +371,7 @@ const request = {
         result: "success" | "fail";
     }
     > {
-        if (!args.link) throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
+        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
 
         const galleryType = http.galleryType(args.link, "/");
 
@@ -397,7 +397,7 @@ const request = {
     },
 
     async captcha(args: GalleryHTTPRequestArguments, kcaptchaType: "comment" | "recommend") {
-        if (!args.link) throw "link 값이 주어지지 않았습니다. (확장 프로그램 오류)";
+        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
 
         const galleryTypeName = http.galleryTypeName(args.link);
 
@@ -1087,7 +1087,7 @@ const miniPreview: MiniPreview = {
     }
 };
 
-let frame: Frame;
+let frame: Frame | undefined;
 
 const blockPreset = {
     day: "",
@@ -1107,11 +1107,15 @@ export default {
         uuid: null,
         popStateHandler: null,
         signal: null,
+        controller: null,
         historyClose: false,
         titleStore: null,
         urlStore: null,
         refreshIntervalId: null,
-        newPostListEvent: ""
+        newPostListEvent: null,
+        cacheButtonFilterId: null,
+        imageBlockClickHandler: null,
+        elementEventController: null
     },
     enable: true,
     default_enable: true,
@@ -1288,11 +1292,18 @@ export default {
         }
     },
     func() {
+        this.memory.elementEventController?.abort();
+        this.memory.elementEventController = new AbortController();
+        const elementEventSignal = this.memory.elementEventController.signal;
+
         if (!this.status.disableCache) {
-            filter.add(".page_head .gall_issuebox", (element) => {
+            this.memory.cacheButtonFilterId = filter.add(".page_head .gall_issuebox", (element) => {
+                if (element.querySelector("[data-refresher-cache-button]")) return;
+
                 const button = document.createElement("button");
                 button.type = "button";
                 button.innerHTML = "캐시";
+                button.dataset.refresherCacheButton = "true";
                 button.addEventListener("click", () => {
                     const div = document.createElement("div");
                     div.className = "refresher-cache-popup";
@@ -1375,18 +1386,22 @@ export default {
                 }
             });
 
-        $(document).on("click", ".btn_img_block", (ev: PointerEvent) => {
-            if (!ev.target) return;
+        this.memory.imageBlockClickHandler = (ev: MouseEvent) => {
+            if (!(ev.target instanceof Element)) return;
+
+            const button = ev.target.closest<HTMLElement>(".btn_img_block");
+            if (!button) return;
 
             ev.preventDefault();
             ev.stopPropagation();
 
-            $(ev.target as HTMLElement)
+            $(button)
                 .hide()
                 .closest("div")
                 .children("img")
                 .show();
-        });
+        };
+        document.addEventListener("click", this.memory.imageBlockClickHandler);
 
         blockPreset.day = this.status.blockPresetDay;
         blockPreset.reason = this.status.blockPresetReason;
@@ -1482,7 +1497,7 @@ export default {
 
                     const response = await request.post(preData.link!, preData.gallery, preData.id, signal);
 
-                    if (!response) throw "Can not fetch post data.";
+                    if (!response) throw new Error("Can not fetch post data.");
 
                     postCaches.set(`${preData.gallery}${preData.id}`, {
                         date: Date.now(),
@@ -1597,19 +1612,34 @@ export default {
 
             let postDom: Document;
 
-            new Promise<GalleryPreData>((resolve) => {
-                eventBus.on(
+            new Promise<GalleryPreData | null>((resolve) => {
+                let eventId = "";
+
+                const abortHandler = () => {
+                    if (eventId) {
+                        eventBus.remove("RefresherPostCommentIDLoaded", eventId, true);
+                    }
+                    resolve(null);
+                };
+
+                eventId = eventBus.on(
                     "RefresherPostCommentIDLoaded",
-                    (commentId: string, commentNo: string) =>
+                    (commentId: string, commentNo: string) => {
+                        signal.removeEventListener("abort", abortHandler);
                         resolve({
                             gallery: commentId,
                             id: commentNo
-                        }),
+                        });
+                    },
                     {
                         once: true
                     }
                 );
+
+                signal.addEventListener("abort", abortHandler, {once: true});
             }).then((postData) => {
+                if (!postData || signal.aborted) return;
+
                 postDom = postFetchedData.dom!;
 
                 frame.functions.writeComment = async (
@@ -1631,14 +1661,29 @@ export default {
 
                     const getGreCaptchaToken = () =>
                         new Promise<string | undefined>((resolve) => {
-                            setTimeout(() => resolve(undefined), 3000);
+                            let settled = false;
 
-                            const grecaptchaHandler = (ev: MessageEvent) => {
-                                if (ev.data.type !== "refresherGrecaptchaToken") return;
+                            const finish = (token?: string) => {
+                                if (settled) return;
+                                settled = true;
+                                window.clearTimeout(timeoutId);
                                 window.removeEventListener("message", grecaptchaHandler);
-                                resolve(ev.data.token);
+                                resolve(token);
                             };
 
+                            const grecaptchaHandler = (ev: MessageEvent) => {
+                                if (
+                                    ev.source !== window ||
+                                    !ev.data ||
+                                    ev.data.type !== "refresherGrecaptchaToken"
+                                ) {
+                                    return;
+                                }
+
+                                finish(typeof ev.data.token === "string" ? ev.data.token : undefined);
+                            };
+
+                            const timeoutId = window.setTimeout(() => finish(), 3000);
                             window.addEventListener("message", grecaptchaHandler);
 
                             window.postMessage(
@@ -1775,7 +1820,7 @@ export default {
                         signal
                     );
 
-                    if (!response) throw "Can not fetch comment data.";
+                    if (!response) throw new Error("Can not fetch comment data.");
 
                     return response;
                 };
@@ -1975,12 +2020,24 @@ export default {
             };
         };
 
+        const renewPreviewSignal = (): AbortSignal => {
+            this.memory.controller?.abort();
+
+            const controller = new AbortController();
+            this.memory.controller = controller;
+            this.memory.signal = controller.signal;
+            return controller.signal;
+        };
+
         const newPostWithData = (preData: GalleryPreData, historySkip?: boolean) => {
+            if (!frame) return;
+
             const bodyFrame = frame.app.body();
             const commentFrame = frame.app.comment();
 
             if (bodyFrame.data.load) return;
 
+            const signal = renewPreviewSignal();
             const params = new URLSearchParams(preData.link);
             params.set("no", preData.id);
             preData.link = decodeURIComponent(params.toString());
@@ -1988,8 +2045,8 @@ export default {
             preData.title = "로딩 중...";
             bodyFrame.contents = "로딩 중...";
 
-            makeBodyFrame(bodyFrame, preData, this.memory.signal!, historySkip);
-            makeCommentFrame(commentFrame, preData, this.memory.signal!);
+            makeBodyFrame(bodyFrame, preData, signal, historySkip);
+            makeCommentFrame(commentFrame, preData, signal);
 
             if (this.status.toggleAdminPanel && document.querySelector(".useradmin_btnbox button")) {
                 panel.admin(preData, frame, this.status.toggleBlur, eventBus, this.status.useKeyPress);
@@ -2025,8 +2082,7 @@ export default {
                 this.memory.urlStore = location.href;
             }
 
-            const controller = new AbortController();
-            this.memory.signal = controller.signal;
+            const signal = renewPreviewSignal();
 
             let appStore: PreviewFrameAppApi | undefined;
             let groupStore: HTMLElement;
@@ -2171,7 +2227,9 @@ export default {
                 document.addEventListener("keydown", previewNavigationKeyDown);
 
                 frame.app.$on("close", () => {
-                    controller.abort();
+                    this.memory.controller?.abort();
+                    this.memory.controller = null;
+                    this.memory.signal = null;
 
                     const blockPopup = document.querySelector(".refresher-block-popup");
                     blockPopup?.remove();
@@ -2209,9 +2267,9 @@ export default {
 
             frame.app.body().collapse = collapseView;
 
-            makeBodyFrame(frame.app.body(), preData, this.memory.signal!, historySkip);
+            makeBodyFrame(frame.app.body(), preData, signal, historySkip);
 
-            makeCommentFrame(frame.app.comment(), preData, this.memory.signal!);
+            makeCommentFrame(frame.app.comment(), preData, signal);
 
             if (this.status.toggleAdminPanel && document.querySelector(".useradmin_btnbox button") !== null) {
                 panel.admin(preData, frame, this.status.toggleBlur, eventBus, this.status.useKeyPress);
@@ -2246,8 +2304,16 @@ export default {
             let timer: number | undefined;
 
             element.dataset.refresherPreview = "true";
-            element.addEventListener("mouseup", handleMousePress);
-            element.addEventListener("mousedown", handleMousePress);
+            elementEventSignal.addEventListener("abort", () => {
+                if (typeof timer === "number") {
+                    window.clearTimeout(timer);
+                }
+
+                delete element.dataset.refresherPreview;
+            }, {once: true});
+
+            element.addEventListener("mouseup", handleMousePress, {signal: elementEventSignal});
+            element.addEventListener("mousedown", handleMousePress, {signal: elementEventSignal});
             element.addEventListener(this.status.reversePreviewKey ? "click" : "contextmenu", (ev) => {
                 if ($(element).closest(".us-post").hasClass("refresherBlur")) return;
 
@@ -2257,7 +2323,7 @@ export default {
                 }
 
                 previewFrame(ev);
-            });
+            }, {signal: elementEventSignal});
 
             if (this.status.reversePreviewKey) {
                 element.addEventListener("contextmenu", (e) => {
@@ -2269,7 +2335,7 @@ export default {
                         $element.attr("href") ??
                         $element.closest(".us-post").find("a:not(.reply_numbox)").attr("href") ??
                         location.href;
-                });
+                }, {signal: elementEventSignal});
             }
 
             element.addEventListener("mouseenter", (ev) => {
@@ -2292,12 +2358,12 @@ export default {
                     if (this.status.tooltipInteraction)
                         miniPreview.move(ev, this.status.tooltipMode, this.status.tooltipInteraction);
                 }, this.status.tooltipDelay);
-            });
+            }, {signal: elementEventSignal});
 
             element.addEventListener("mousemove", (ev) => {
                 if (this.status.tooltipMode && !this.status.tooltipInteraction)
                     miniPreview.move(ev, this.status.tooltipMode, this.status.tooltipInteraction);
-            });
+            }, {signal: elementEventSignal});
 
             element.addEventListener("mouseleave", () => {
                 if (!this.status.tooltipMode) return;
@@ -2308,7 +2374,7 @@ export default {
                 }
 
                 miniPreview.close(this.status.tooltipMode);
-            });
+            }, {signal: elementEventSignal});
         };
 
         this.memory.uuid = filter.add(
@@ -2343,14 +2409,52 @@ export default {
     },
     revoke() {
         if (this.memory.uuid) filter.remove(this.memory.uuid, true);
+        this.memory.uuid = null;
 
-        if (this.memory.popStateHandler) window.removeEventListener("popstate", this.memory.popStateHandler);
+        if (this.memory.cacheButtonFilterId) {
+            filter.remove(this.memory.cacheButtonFilterId, true);
+            this.memory.cacheButtonFilterId = null;
+        }
+
+        if (this.memory.newPostListEvent) {
+            eventBus.remove("newPostList", this.memory.newPostListEvent, true);
+            this.memory.newPostListEvent = null;
+        }
+
+        if (this.memory.popStateHandler) {
+            window.removeEventListener("popstate", this.memory.popStateHandler);
+            this.memory.popStateHandler = null;
+        }
+
+        if (this.memory.imageBlockClickHandler) {
+            document.removeEventListener("click", this.memory.imageBlockClickHandler);
+            this.memory.imageBlockClickHandler = null;
+        }
+
         if (previewNavigationKeyDown) {
             document.removeEventListener("keydown", previewNavigationKeyDown);
             previewNavigationKeyDown = null;
         }
 
-        if (this.memory.refreshIntervalId) window.clearInterval(this.memory.refreshIntervalId);
+        if (typeof adminKeyPress === "function") {
+            document.removeEventListener("keypress", adminKeyPress);
+        }
+
+        if (this.memory.refreshIntervalId) {
+            window.clearInterval(this.memory.refreshIntervalId);
+            this.memory.refreshIntervalId = null;
+        }
+
+        this.memory.controller?.abort();
+        this.memory.controller = null;
+        this.memory.signal = null;
+        this.memory.elementEventController?.abort();
+        this.memory.elementEventController = null;
+
+        if (frame) {
+            frame.destroy();
+            frame = undefined;
+        }
     }
 } as RefresherModule<{
     memory: {
@@ -2359,11 +2463,15 @@ export default {
         uuid: string | null;
         popStateHandler: ((ev: PopStateEvent) => void) | null;
         signal: AbortSignal | null;
+        controller: AbortController | null;
         historyClose: boolean;
         titleStore: string | null;
         urlStore: string | null;
         refreshIntervalId: number | null;
-        newPostListEvent: string;
+        newPostListEvent: string | null;
+        cacheButtonFilterId: string | null;
+        imageBlockClickHandler: ((event: MouseEvent) => void) | null;
+        elementEventController: AbortController | null;
     };
     settings: {
         tooltipMode: RefresherCheckSettings;

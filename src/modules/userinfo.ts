@@ -130,15 +130,18 @@ const memoAsk = (
     document.body.appendChild(win);
 
     let onDismiss: (() => void) | null = null;
+    let closed = false;
 
     const removeWindow = () => {
-        if (!win) return;
+        if (closed) return;
+        closed = true;
 
+        window.removeEventListener("keydown", removeWindowKey);
         win.classList.remove("fadeIn");
         win.classList.add("fadeOut");
 
         setTimeout(() => {
-            document.body.removeChild(win);
+            win.remove();
         }, 300);
 
         if (onDismiss) {
@@ -148,10 +151,8 @@ const memoAsk = (
     };
 
     const removeWindowKey = (ev: KeyboardEvent) => {
-        if (win && ev.code === "Escape") {
+        if (ev.code === "Escape") {
             removeWindow();
-
-            window.removeEventListener("keydown", removeWindowKey);
         }
     };
 
@@ -379,6 +380,8 @@ export default {
         const memoAdd = (element: HTMLElement) => {
             if (element.dataset.refresherMemoHandler !== "true") {
                 element.addEventListener("contextmenu", () => {
+                    if (!this.enable) return;
+
                     const {
                         nick = null,
                         uid = null,
@@ -473,17 +476,21 @@ export default {
         this.memory.always = filter.add(
             ".ub-writer:not([user_name])",
             (element) => {
-                element.addEventListener("mouseenter", (ev) => {
-                    if (this.status.showTooltip) tooltip.create(ev, this.status.showTooltip);
-                });
+                if (element.dataset.refresherUserInfoHandler !== "true") {
+                    element.addEventListener("mouseenter", (ev) => {
+                        if (this.enable && this.status.showTooltip) tooltip.create(ev, this.status.showTooltip);
+                    });
 
-                element.addEventListener("mousemove", (ev) => {
-                    if (this.status.showTooltip) tooltip.move(ev, this.status.showTooltip);
-                });
+                    element.addEventListener("mousemove", (ev) => {
+                        if (this.enable && this.status.showTooltip) tooltip.move(ev, this.status.showTooltip);
+                    });
 
-                element.addEventListener("mouseleave", () => {
-                    if (this.status.showTooltip) tooltip.close(this.status.showTooltip);
-                });
+                    element.addEventListener("mouseleave", () => {
+                        if (this.enable && this.status.showTooltip) tooltip.close(this.status.showTooltip);
+                    });
+
+                    element.dataset.refresherUserInfoHandler = "true";
+                }
 
                 ipInfoAdd(element);
                 IdInfoAdd(element);

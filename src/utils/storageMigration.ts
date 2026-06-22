@@ -57,13 +57,22 @@ const normalizeBlockMode = (value: unknown): RefresherBlockDetectMode | undefine
 };
 
 export const normalizeStorageData = (data: StorageRecord): StorageRecord => {
-    const normalized = Object.fromEntries(
-        Object.entries(data).map(([key, value]) => [key, parseLegacyString(value)])
-    );
+    const isLegacySerializedData = Object.entries(data).some(([key, value]) => {
+        return (
+            typeof value === "string" &&
+            (key.startsWith("__REFRESHER_BLOCK:") || key.startsWith("__REFRESHER_MEMO:"))
+        );
+    });
+
+    const normalized = isLegacySerializedData
+        ? Object.fromEntries(Object.entries(data).map(([key, value]) => [key, parseLegacyString(value)]))
+        : {...data};
 
     for (const type of BLOCK_TYPES) {
         const blockKey = `__REFRESHER_BLOCK:${type}`;
-        normalized[blockKey] = normalizeBlockList(normalized[blockKey]);
+        if (blockKey in normalized) {
+            normalized[blockKey] = normalizeBlockList(normalized[blockKey]);
+        }
 
         const modeKey = `__REFRESHER_BLOCK:${type}:$MODE`;
         const legacyModeKey = `__REFRESHER_BLOCK:${type}:MODE`;
@@ -75,7 +84,9 @@ export const normalizeStorageData = (data: StorageRecord): StorageRecord => {
 
     for (const type of MEMO_TYPES) {
         const memoKey = `__REFRESHER_MEMO:${type}`;
-        normalized[memoKey] = normalizeMemoMap(normalized[memoKey]);
+        if (memoKey in normalized) {
+            normalized[memoKey] = normalizeMemoMap(normalized[memoKey]);
+        }
     }
 
     return normalized;
@@ -86,6 +97,11 @@ export const migrateLocalStorageData = async (): Promise<void> => {
     const normalized = normalizeStorageData(data);
 
     if (JSON.stringify(data) === JSON.stringify(normalized)) return;
+
+    const removedKeys = Object.keys(data).filter((key) => !(key in normalized));
+    if (removedKeys.length > 0) {
+        await browser.storage.local.remove(removedKeys);
+    }
 
     await browser.storage.local.set(normalized);
 };

@@ -3,7 +3,9 @@ import * as observe from "../utils/observe";
 const lists: Record<string, RefresherFilteringLists> = {};
 
 export const filter = {
-    __run: async (filteringLists: RefresherFilteringLists, elements: NodeListOf<HTMLElement>): Promise<void> => {
+    ids: (): string[] => Object.keys(lists),
+
+    __run: async (filteringLists: RefresherFilteringLists, elements: Iterable<HTMLElement>): Promise<void> => {
         for (const element of elements) {
             filteringLists.func(element);
         }
@@ -37,6 +39,17 @@ export const filter = {
 
         if (!item) return Promise.resolve();
 
+        if (item.options?.neverExpire) {
+            item.expire?.();
+
+            const observer = observe.listen(item.scope, document.documentElement, (elements) => {
+                void filter.__run(item, elements);
+            });
+
+            item.expire = () => observer.disconnect();
+            return Promise.resolve();
+        }
+
         return observe.find(item.scope, document.documentElement).then((e) => filter.__run(item, e));
     },
 
@@ -58,13 +71,17 @@ export const filter = {
     },
 
     remove: (uuid: string, skip?: boolean): void => {
-        if (skip) return;
-
-        if (!uuid) throw new Error("Given UUID is not valid.");
+        if (!uuid) {
+            if (skip) return;
+            throw new Error("Given UUID is not valid.");
+        }
 
         const event = lists[uuid];
 
-        if (!event) throw new Error("Given UUID is not exists in the list.");
+        if (!event) {
+            if (skip) return;
+            throw new Error("Given UUID is not exists in the list.");
+        }
 
         filter.emit(uuid, "remove");
 

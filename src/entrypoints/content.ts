@@ -17,6 +17,7 @@ import refreshModule from "../modules/refresh";
 import stealthModule from "../modules/stealth";
 import userinfoModule from "../modules/userinfo";
 import writeModule from "../modules/write";
+import {migrateLocalStorageData} from "../utils/storageMigration";
 
 const allModules = [
     blockModule,
@@ -42,7 +43,17 @@ export default defineContentScript({
         "https://wiki.dcinside.com/*"
     ],
     runAt: "document_start",
-    main() {
-        Promise.all(allModules.map((mod) => modules.load(mod))).then(filter.run);
+    async main() {
+        await migrateLocalStorageData();
+
+        const results = await Promise.allSettled(allModules.map((module) => modules.load(module)));
+
+        results.forEach((result, index) => {
+            if (result.status === "rejected") {
+                console.error(`Failed to load module: ${allModules[index].name}`, result.reason);
+            }
+        });
+
+        await filter.run();
     }
 });

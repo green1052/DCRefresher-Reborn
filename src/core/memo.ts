@@ -2,8 +2,6 @@ import {memoStorage} from "../utils/storage";
 import communicate from "./communicate";
 import eventBus from "./eventbus";
 
-const MEMO_NAMESPACE = "__REFRESHER_MEMO";
-
 /**
  * 타입의 이름을 저장한 객체입니다.
  */
@@ -23,14 +21,38 @@ let MEMO_CACHE: MemoCache = {
     IP: {}
 };
 
+const isMemoValue = (value: unknown): value is RefresherMemoValue => {
+    if (!value || typeof value !== "object") return false;
+
+    const memoValue = value as Partial<RefresherMemoValue>;
+    return (
+        typeof memoValue.text === "string" &&
+        typeof memoValue.color === "string" &&
+        (memoValue.gallery === undefined || typeof memoValue.gallery === "string")
+    );
+};
+
+const normalizeMemoMap = (value: unknown): Record<string, RefresherMemoValue> => {
+    if (typeof value === "string") {
+        try {
+            return normalizeMemoMap(JSON.parse(value));
+        } catch {
+            return {};
+        }
+    }
+
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+
+    return Object.fromEntries(Object.entries(value).filter(([, memo]) => isMemoValue(memo)));
+};
+
 (async () => {
     for (const key of MEMO_TYPES_KEYS) {
         const memo = await memoStorage[key].getValue();
-        MEMO_CACHE[key] = memo ?? {};
+        MEMO_CACHE[key] = normalizeMemoMap(memo);
 
         memoStorage[key].watch((newValue) => {
-            if (!newValue) return;
-            MEMO_CACHE[key] = newValue;
+            MEMO_CACHE[key] = normalizeMemoMap(newValue);
             eventBus.emit("refresh");
         });
     }
@@ -43,7 +65,7 @@ const InternalAddToList = async (type: RefresherMemoType, user: string, text: st
         gallery
     };
 
-    await memoStorage[type].setValue(MEMO_CACHE[type]);
+    await memoStorage[type].setValue({...MEMO_CACHE[type]});
 };
 
 const checkValidType = (type: string) => MEMO_TYPES_KEYS.some((key) => key === type);
@@ -91,7 +113,7 @@ export const remove = async (type: RefresherMemoType, user: string): Promise<voi
     }
 
     delete MEMO_CACHE[type][user];
-    await memoStorage[type].setValue(MEMO_CACHE[type]);
+    await memoStorage[type].setValue({...MEMO_CACHE[type]});
 };
 
 communicate.addHook("memoSelected", () => {

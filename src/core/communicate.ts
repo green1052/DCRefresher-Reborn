@@ -1,6 +1,6 @@
 interface StorageStructure {
     uuid: string;
-    run: (payload: unknown) => void;
+    run: (payload: unknown) => void | Promise<void>;
 }
 
 const handlerStorage: Record<string, StorageStructure[]> = {};
@@ -21,11 +21,17 @@ browser.runtime.onMessage.addListener((message: unknown) => {
     if (!handlers) return;
 
     for (const handler of handlers) {
-        handler.run(message.data);
+        try {
+            void Promise.resolve(handler.run(message.data)).catch((error) => {
+                console.error(`Runtime hook failed: ${message.type}`, error);
+            });
+        } catch (error) {
+            console.error(`Runtime hook failed: ${message.type}`, error);
+        }
     }
 });
 
-export const addHook = (type: string, callback: (payload: unknown) => void): string => {
+export const addHook = (type: string, callback: (payload: unknown) => void | Promise<void>): string => {
     handlerStorage[type] ??= [];
 
     const uuid = crypto.randomUUID();

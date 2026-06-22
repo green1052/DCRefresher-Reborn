@@ -24,18 +24,31 @@ export default defineContentScript({
 
         $.getScript("https://www.google.com/recaptcha/api.js?render=6Lc-Fr0UAAAAAOdqLYqPy53MxlRMIXpNXFvBliwI", () => {
             window.addEventListener("message", (event) => {
-                if (event.data.type === "refresherGrecaptcha" && event.data.action) {
-                    const grecaptcha = getGrecaptcha();
-                    if (!grecaptcha) return;
-
-                    grecaptcha.ready(async () => {
-                        const token = await grecaptcha.execute(grecaptchaSiteKey, {
-                            action: event.data.action
-                        });
-
-                        window.postMessage({type: "refresherGrecaptchaToken", token}, "*");
-                    });
+                if (
+                    event.source !== window ||
+                    !event.data ||
+                    event.data.type !== "refresherGrecaptcha" ||
+                    typeof event.data.action !== "string"
+                ) {
+                    return;
                 }
+
+                const grecaptcha = getGrecaptcha();
+                if (!grecaptcha) return;
+
+                grecaptcha.ready(() => {
+                    void (async () => {
+                        try {
+                            const token = await grecaptcha.execute(grecaptchaSiteKey, {
+                                action: event.data.action
+                            });
+
+                            window.postMessage({type: "refresherGrecaptchaToken", token}, "*");
+                        } catch (error) {
+                            console.error("Failed to execute reCAPTCHA:", error);
+                        }
+                    })();
+                });
             });
         });
     }

@@ -29,7 +29,11 @@ export default {
         load: null,
         paused: false,
         loading: false,
-        archiveArticleConfig: false
+        archiveArticleConfig: false,
+        controlButtonFilterId: null,
+        visibilityChangeHandler: null,
+        pageShowHandler: null,
+        popStateHandler: null
     },
     enable: true,
     default_enable: true,
@@ -108,7 +112,7 @@ export default {
             }
         };
 
-        filter.add(".page_head > .gall_issuebox", (element) => {
+        this.memory.controlButtonFilterId = filter.add(".page_head > .gall_issuebox", (element) => {
             if (element?.querySelector("button[data-refresher=true]"))
                 return;
 
@@ -314,8 +318,11 @@ export default {
             scheduleNextRefresh(!event.persisted);
         };
 
-        document.addEventListener("visibilitychange", handleVisibilityChange);
-        window.addEventListener("pageshow", handlePageShow);
+        this.memory.visibilityChangeHandler = handleVisibilityChange;
+        this.memory.pageShowHandler = handlePageShow;
+
+        document.addEventListener("visibilitychange", this.memory.visibilityChangeHandler);
+        window.addEventListener("pageshow", this.memory.pageShowHandler);
 
         scheduleNextRefresh(true);
 
@@ -333,7 +340,8 @@ export default {
             scheduleNextRefresh();
         };
 
-        window.addEventListener("popstate", handlePopState);
+        this.memory.popStateHandler = handlePopState;
+        window.addEventListener("popstate", this.memory.popStateHandler);
 
         if (!this.status.useBetterBrowse) return;
 
@@ -417,6 +425,28 @@ export default {
             this.memory.refresh = 0;
         }
 
+        if (this.memory.visibilityChangeHandler) {
+            document.removeEventListener("visibilitychange", this.memory.visibilityChangeHandler);
+            this.memory.visibilityChangeHandler = null;
+        }
+
+        if (this.memory.pageShowHandler) {
+            window.removeEventListener("pageshow", this.memory.pageShowHandler);
+            this.memory.pageShowHandler = null;
+        }
+
+        if (this.memory.popStateHandler) {
+            window.removeEventListener("popstate", this.memory.popStateHandler);
+            this.memory.popStateHandler = null;
+        }
+
+        if (this.memory.controlButtonFilterId) {
+            filter.remove(this.memory.controlButtonFilterId, true);
+            this.memory.controlButtonFilterId = null;
+        }
+
+        document.querySelector(".page_head .gall_issuebox button[data-refresher=true]")?.remove();
+
         [this.memory.uuid, this.memory.uuid2, this.memory.refreshRequest].forEach((id, index) => {
             if (!id) return;
 
@@ -448,6 +478,10 @@ export default {
         paused: boolean;
         loading: boolean;
         archiveArticleConfig: boolean;
+        controlButtonFilterId: string | null;
+        visibilityChangeHandler: (() => void) | null;
+        pageShowHandler: ((event: PageTransitionEvent) => void) | null;
+        popStateHandler: (() => void) | null;
     };
     shortcuts: {
         refreshLists(): void;
