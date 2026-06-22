@@ -37,4 +37,9 @@ export default class Frame {
         this.vueApp = createApp(frameRoot, {option, children});
         this.app = this.vueApp.mount(this.rootElement) as RefresherFrameAppVue;
     }
+
+    destroy(): void {
+        this.vueApp.unmount();
+        this.rootElement.remove();
+    }
 }

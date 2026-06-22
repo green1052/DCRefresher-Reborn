@@ -8,10 +8,10 @@ import eventBus from "../core/eventbus";
 import http from "../utils/http";
 import storage from "../utils/webStorage";
 
-let permBanList = {};
+let permBanList: Record<string, string[]> = {};
 
 (async () => {
-    permBanList = await storage.get<Record<string, string[]>>("refresher.database.ban");
+    permBanList = (await storage.get<Record<string, string[]>>("refresher.database.ban")) ?? {};
 })();
 
 export default {
@@ -123,14 +123,16 @@ export default {
         this.memory.checkBox = filter.add<HTMLInputElement>(
             ".article_chkbox",
             (element) => {
-                const $element = $(element);
+                if (element.dataset.refresherManageHandler === "true") return;
+                element.dataset.refresherManageHandler = "true";
 
-                if (this.status.checkAllTargetUser && !$element.data("refresherMemoHandler")) {
+                element.addEventListener("click", (ev: PointerEvent) => {
+                    if (!this.enable) return;
+
+                    const $element = $(element);
                     const $writer = $element
                         .closest(".ub-content, .cmt_nickbox, .search_comment")
                         .children(".ub-writer");
-
-                    $element.data("refresherMemoHandler", true);
 
                     const uid = $writer.attr("data-uid");
                     const ip = $writer.attr("data-ip");
@@ -150,31 +152,27 @@ export default {
                         target = nick;
                     }
 
-                    $element.on("click", (ev: PointerEvent) => {
-                        if (type && target && this.status.checkAllTargetUser && ev.shiftKey) {
-                            for (const post of $(`.ub-writer[${type}="${target}"]`)) {
-                                $(post)
-                                    .parent()
-                                    .find(".article_chkbox")
-                                    .prop("checked", (ev.target as HTMLInputElement).checked);
-                            }
+                    if (type && target && this.status.checkAllTargetUser && ev.shiftKey) {
+                        for (const post of $(`.ub-writer[${type}="${target}"]`)) {
+                            $(post)
+                                .parent()
+                                .find(".article_chkbox")
+                                .prop("checked", (ev.target as HTMLInputElement).checked);
                         }
+                    }
 
-                        const li = $element.closest("li");
-                        if (this.status.checkCommentViaCtrl && ev.ctrlKey && !li.attr("id")?.startsWith("reply_")) {
-                            for (const input of li.next().find(".article_chkbox")) {
-                                (input as HTMLInputElement).checked = (ev.target as HTMLInputElement).checked;
-                            }
+                    const li = $element.closest("li");
+                    if (this.status.checkCommentViaCtrl && ev.ctrlKey && !li.attr("id")?.startsWith("reply_")) {
+                        for (const input of li.next().find(".article_chkbox")) {
+                            (input as HTMLInputElement).checked = (ev.target as HTMLInputElement).checked;
                         }
-                    });
-                }
+                    }
+                });
 
-                if (this.status.checkViaShift) {
-                    $(element).on("mouseover", (ev: MouseEvent) => {
-                        if (!this.status.checkViaShift || !ev.shiftKey) return;
-                        $(element).prop("checked", !(ev.target as HTMLInputElement).checked);
-                    });
-                }
+                element.addEventListener("mouseover", (ev: MouseEvent) => {
+                    if (!this.enable || !this.status.checkViaShift || !ev.shiftKey) return;
+                    element.checked = !element.checked;
+                });
             },
             {neverExpire: true}
         );
@@ -182,16 +180,18 @@ export default {
         this.memory.content = filter.add(
             ".gall_list .ub-content",
             (element) => {
-                if (!this.status.deleteViaCtrl) return;
+                if (element.dataset.refresherManageClick === "true") return;
+                element.dataset.refresherManageClick = "true";
 
-                element.onclick ??= (ev: MouseEvent) => {
-                    if (!this.status.deleteViaCtrl || !ev.ctrlKey) return;
+                element.addEventListener("click", (ev: MouseEvent) => {
+                    if (!this.enable || !this.status.deleteViaCtrl || !ev.ctrlKey) return;
 
                     ev.preventDefault();
                     ev.stopPropagation();
 
-                    deletePost(element.dataset.no!);
-                };
+                    const postId = element.dataset.no;
+                    if (postId) void deletePost(postId);
+                });
             },
             {neverExpire: true}
         );
@@ -199,8 +199,10 @@ export default {
         this.memory.always = filter.add(
             ".ub-writer:not([user_name])",
             (element) => {
+                const uid = element.dataset.uid;
+
                 if (this.status.checkPermBan && element.dataset.refresherPermBan !== "true") {
-                    const permBan = getPermBan(element.dataset.uid!);
+                    const permBan = uid ? getPermBan(uid) : undefined;
 
                     if (permBan) {
                         element.dataset.refresherPermBan = "true";
@@ -259,7 +261,7 @@ export default {
 
                     if (addBox) {
                         const flIpQuery = addBox.querySelector(".writer_nikcon, .ip");
-                        addBox.insertBefore(text, flIpQuery.nextSibling);
+                        addBox.insertBefore(text, flIpQuery?.nextSibling ?? null);
                     } else {
                         const fl = element.querySelector(".fl > span");
 
@@ -353,6 +355,8 @@ export default {
                 if (!ratio || (ratio && Date.now() - ratio.date > 3600000)) {
                     ratio = await getRatio(uid);
                 }
+
+                if (!ratio) continue;
 
                 const ratioSpan = document.createElement("span");
                 ratioSpan.className = "ip ratio refresherUserData";

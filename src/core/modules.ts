@@ -1,27 +1,40 @@
-import {modulesStorage, settingsStorage} from "@/utils/storage";
+import {modulesStorage, type ModuleState, settingsStorage} from "@/utils/storage";
 import storage from "../utils/webStorage";
 import communicate from "./communicate";
 import eventBus from "./eventbus";
+import filter from "./filtering";
 import settings from "./settings";
 
 export type ModuleStore = Record<string, RefresherModule>;
 
 const module_store: ModuleStore = {};
 
-const runModule = (module: RefresherModule) => {
-    if (typeof module.func === "function")
-        module.func();
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
 };
 
-const revokeModule = (module: RefresherModule) => {
-    if (typeof module.revoke === "function") {
-        module.revoke();
-    }
+const createModuleSnapshot = (): Record<string, ModuleState> => {
+    return Object.fromEntries(
+        Object.values(module_store).map((module) => [
+            module.name,
+            {
+                name: module.name,
+                description: module.description,
+                enable: module.enable
+            }
+        ])
+    );
+};
 
-    if (typeof module.memory === "object") {
-        for (const key in module.memory) {
-            module.memory[key] = undefined;
-        }
+const runModule = async (module: RefresherModule): Promise<void> => {
+    if (typeof module.func === "function") {
+        await module.func();
+    }
+};
+
+const revokeModule = async (module: RefresherModule): Promise<void> => {
+    if (typeof module.revoke === "function") {
+        await module.revoke();
     }
 };
 
@@ -63,8 +76,8 @@ export const modules = {
     lists: (): ModuleStore => module_store,
     load: (module: RefresherModule): Promise<void> => modules.register(module),
     register: async (module: RefresherModule): Promise<void> => {
-        if (!module) throw "Module is not defined.";
-        if (module_store[module.name]) throw `${module.name} is already registered.`;
+        if (!module) throw new Error("Module is not defined.");
+        if (module_store[module.name]) throw new Error(`${module.name} is already registered.`);
 
         const promises: Promise<void>[] = [];
 
@@ -94,7 +107,12 @@ export const modules = {
         if (typeof module.data === "object") {
             promises.push(
                 storage.module.get(module.name).then((data) => {
-                    const currentData = (data ?? module.data ?? {}) as Record<string, unknown>;
+                    const currentData = isRecord(data)
+                        ? data
+                        : isRecord(module.data)
+                            ? {...module.data}
+                            : {};
+
                     module.data = new Proxy(currentData, {
                         set(target, p, newValue, receiver) {
                             const result = Reflect.set(target, p, newValue, receiver);
@@ -116,7 +134,7 @@ export const modules = {
 
         await Promise.all(promises);
 
-        const modulesSnap = JSON.parse(JSON.stringify(module_store));
+        const modulesSnap = createModuleSnapshot();
         const settingsSnap = JSON.parse(JSON.stringify(settings.dump()));
 
         await modulesStorage.setValue(modulesSnap);
@@ -124,26 +142,37 @@ export const modules = {
 
         if (!module.enable || module.url?.test(location.href) === false) return;
 
-        runModule(module);
+        await runModule(module);
     }
 };
 
 export default modules;
 
-communicate.addHook("updateModuleStatus", (data) => {
+communicate.addHook("updateModuleStatus", async (data) => {
     if (!isModuleStatusPayload(data) || !module_store[data.name]) return;
+
+    if (module_store[data.name].enable === data.value) return;
+
     module_store[data.name].enable = data.value;
     storage.set(`${data.name}.enable`, data.value);
 
-    const modulesSnap = JSON.parse(JSON.stringify(module_store));
+    const modulesSnap = createModuleSnapshot();
     modulesStorage.setValue(modulesSnap);
 
     if (data.value) {
-        runModule(module_store[data.name]);
+        const existingFilterIds = new Set(filter.ids());
+        await runModule(module_store[data.name]);
+
+        for (const filterId of filter.ids()) {
+            if (!existingFilterIds.has(filterId)) {
+                void filter.runSpecific(filterId);
+            }
+        }
+
         return;
     }
 
-    revokeModule(module_store[data.name]);
+    await revokeModule(module_store[data.name]);
 });
 
 communicate.addHook("updateSettingValue", (data) => {
@@ -177,5 +206,5 @@ eventBus.on("refresherUpdateSetting", (mod: string, key: string, value: unknown)
 
     if (!module.enable || !module.update || typeof module.update[key] !== "function") return;
 
-    module.update[key].bind(module)(value);
+    return module.update[key].bind(module)(value);
 });

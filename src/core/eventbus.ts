@@ -11,7 +11,16 @@ export const eventBus: RefresherEventBus = {
         if (!lists[event]) return;
 
         for (const callback of [...lists[event]]) {
-            callback.func(...params);
+            try {
+                const result = callback.func(...params);
+                if (result instanceof Promise) {
+                    void result.catch((error) => {
+                        console.error(`Event handler failed: ${event}`, error);
+                    });
+                }
+            } catch (error) {
+                console.error(`Event handler failed: ${event}`, error);
+            }
 
             if (callback.once) eventBus.remove(event, callback.uuid);
         }

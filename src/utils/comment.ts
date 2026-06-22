@@ -41,15 +41,15 @@ const requestBeforeServiceCode = (dom: Document) => {
 
     const script = $dom.find("#reply-setting-tmpl + script");
 
-    if (!script.length) throw "_r 값을 찾을 수 없습니다.";
+    if (!script.length) throw new Error("_r 값을 찾을 수 없습니다.");
 
     const dValue = script.html().match(/_d\('(.*)'\)/)?.[1];
 
-    if (!dValue) throw "_d 값을 찾을 수 없습니다.";
+    if (!dValue) throw new Error("_d 값을 찾을 수 없습니다.");
 
     let _r = decode(dValue);
 
-    if (!_r) throw "_r이 적절한 값이 아닙니다.";
+    if (!_r) throw new Error("_r이 적절한 값이 아닙니다.");
 
     let fi = parseInt(_r.slice(0, 1));
     fi = fi > 5 ? fi - 5 : fi + 4;

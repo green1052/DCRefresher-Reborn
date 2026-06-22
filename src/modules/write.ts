@@ -66,11 +66,14 @@ export default {
                 }
             });
 
-            filter.remove(this.memory.submitButton);
+            filter.remove(this.memory.submitButton, true);
+            this.memory.submitButton = "";
         });
     },
     revoke() {
-        filter.remove(this.memory.submitButton);
+        filter.remove(this.memory.submitButton, true);
+        this.memory.submitButton = "";
+
         if (this.memory.beforeUnloadHandler) {
             window.removeEventListener("beforeunload", this.memory.beforeUnloadHandler);
             this.memory.beforeUnloadHandler = null;

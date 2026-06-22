@@ -1,8 +1,6 @@
 import {blockModeStorage, blockStorage} from "../utils/storage";
 import {eventBus} from "./eventbus";
 
-const BLOCK_NAMESPACE = "__REFRESHER_BLOCK";
-
 export const TYPE_NAMES: Record<RefresherBlockType, string> = {
     NICK: "닉네임",
     ID: "아이디",
@@ -86,7 +84,34 @@ const isBlockValue = (value: unknown): value is RefresherBlockValue => {
 };
 
 const normalizeBlockList = (value: unknown): RefresherBlockValue[] => {
+    if (typeof value === "string") {
+        try {
+            return normalizeBlockList(JSON.parse(value));
+        } catch {
+            return [];
+        }
+    }
+
     return Array.isArray(value) ? value.filter(isBlockValue) : [];
+};
+
+const normalizeBlockMode = (
+    value: unknown,
+    fallback: RefresherBlockDetectMode
+): RefresherBlockDetectMode => {
+    if (typeof value === "string") {
+        if (BLOCK_DETECT_MODE_KEYS.includes(value as RefresherBlockDetectMode)) {
+            return value as RefresherBlockDetectMode;
+        }
+
+        try {
+            return normalizeBlockMode(JSON.parse(value), fallback);
+        } catch {
+            return fallback;
+        }
+    }
+
+    return fallback;
 };
 
 // Initialize cache and watchers from wxt/storage
@@ -94,7 +119,10 @@ const normalizeBlockList = (value: unknown): RefresherBlockValue[] => {
     for (const key of BLOCK_TYPES_KEYS) {
         // Initial load
         const storedBlocks = normalizeBlockList(await blockStorage[key].getValue());
-        const storedMode = await blockModeStorage[key].getValue();
+        const storedMode = normalizeBlockMode(
+            await blockModeStorage[key].getValue(),
+            BLOCK_MODE_CACHE[key]
+        );
 
         BLOCK_CACHE[key] = storedBlocks;
         BLOCK_MODE_CACHE[key] = storedMode;
@@ -108,7 +136,7 @@ const normalizeBlockList = (value: unknown): RefresherBlockValue[] => {
 
         blockModeStorage[key].watch((newValue) => {
             if (!newValue) return;
-            BLOCK_MODE_CACHE[key] = newValue;
+            BLOCK_MODE_CACHE[key] = normalizeBlockMode(newValue, BLOCK_MODE_CACHE[key]);
             eventBus.emit("refresh");
         });
     }
@@ -183,13 +211,13 @@ export const add = (
     gallery?: string,
     extra?: string,
     mode?: RefresherBlockDetectMode
-): void => {
+): Promise<void> => {
     if (!checkValidType(type)) throw new Error(`${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`);
 
     if (mode && !checkValidMode(mode))
         throw new Error(`${mode} is not a valid mode. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`);
 
-    InternalAddToList(type, content, isRegex, isAdvanced, gallery, extra, mode);
+    return InternalAddToList(type, content, isRegex, isAdvanced, gallery, extra, mode);
 };
 
 /**
@@ -198,13 +226,13 @@ export const add = (
  * @param type 차단 종류
  * @param mode 차단 모드
  */
-export const updateMode = (type: RefresherBlockType, mode: RefresherBlockDetectMode): void => {
+export const updateMode = (type: RefresherBlockType, mode: RefresherBlockDetectMode): Promise<void> => {
     if (!checkValidType(type)) throw new Error(`${type} is not a valid type. requires one of [${BLOCK_TYPES_KEYS.join(", ")}]`);
 
     if (!checkValidMode(mode))
         throw new Error(`${mode} is not a valid mode. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`);
 
-    InternalUpdateMode(type, mode);
+    return InternalUpdateMode(type, mode);
 };
 
 /**

@@ -84,7 +84,9 @@ const FILE_NAME_MAP = new Map<string, UserType>([
 export const getType = (icon: string | null): UserType => {
     if (!icon) return USERTYPE.UNFIXED;
 
-    const fileName = icon.split("/").pop()!;
+    const fileName = icon.split("/").pop();
+    if (!fileName) return USERTYPE.UNFIXED;
+
     return FILE_NAME_MAP.get(fileName) ?? USERTYPE.UNFIXED;
 };
 

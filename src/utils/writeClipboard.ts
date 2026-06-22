@@ -8,7 +8,9 @@ export const writeClipboard = async (text: string) => {
         try {
             textArea.focus();
             textArea.select();
-            document.execCommand("copy");
+            if (!document.execCommand("copy")) {
+                throw new Error("Clipboard copy command was rejected.");
+            }
         } finally {
             document.body.removeChild(textArea);
         }

@@ -514,7 +514,12 @@ const parseImportData = (example: string) => {
     if (!result) return null;
 
     try {
-        return JSON.parse(result) as Record<string, unknown>;
+        const parsed = JSON.parse(result) as unknown;
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+            throw new Error("가져오기 데이터는 JSON 객체여야 합니다.");
+        }
+
+        return parsed as Record<string, unknown>;
     } catch {
         alert("데이터가 잘못됐습니다.");
         return null;
@@ -536,7 +541,51 @@ const isBlockImportValue = (value: unknown): value is RefresherBlockValue => {
 };
 
 const normalizeBlockImportList = (value: unknown): RefresherBlockValue[] => {
+    if (typeof value === "string") {
+        try {
+            return normalizeBlockImportList(JSON.parse(value));
+        } catch {
+            return [];
+        }
+    }
+
     return Array.isArray(value) ? value.filter(isBlockImportValue) : [];
+};
+
+const normalizeBlockModeValue = (value: unknown): RefresherBlockDetectMode | undefined => {
+    if (typeof value !== "string") return;
+    if (Object.hasOwn(blockDetectModeTypeNames, value)) return value as RefresherBlockDetectMode;
+
+    try {
+        return normalizeBlockModeValue(JSON.parse(value));
+    } catch {
+        return;
+    }
+};
+
+const isMemoImportValue = (value: unknown): value is RefresherMemoValue => {
+    if (!value || typeof value !== "object") return false;
+
+    const memoValue = value as Partial<RefresherMemoValue>;
+    return (
+        typeof memoValue.text === "string" &&
+        typeof memoValue.color === "string" &&
+        (memoValue.gallery === undefined || typeof memoValue.gallery === "string")
+    );
+};
+
+const normalizeMemoImportMap = (value: unknown): Record<string, RefresherMemoValue> => {
+    if (typeof value === "string") {
+        try {
+            return normalizeMemoImportMap(JSON.parse(value));
+        } catch {
+            return {};
+        }
+    }
+
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+
+    return Object.fromEntries(Object.entries(value).filter(([, memo]) => isMemoImportValue(memo)));
 };
 
 const closeBlockDialog = () => {
@@ -557,7 +606,7 @@ onMounted(async () => {
         // Load initial data for blocks and memos directly from storage
         for (const type of BLOCK_TYPES) {
             blocks[type] = normalizeBlockImportList(await blockStorage[type].getValue());
-            const mode = await blockModeStorage[type].getValue();
+            const mode = normalizeBlockModeValue(await blockModeStorage[type].getValue());
             if (mode) blockModes.value[type] = mode;
 
             // Watch for changes
@@ -565,16 +614,17 @@ onMounted(async () => {
                 blocks[type] = normalizeBlockImportList(newValue);
             });
             blockModeStorage[type].watch((newValue) => {
-                if (newValue) blockModes.value[type] = newValue;
+                const mode = normalizeBlockModeValue(newValue);
+                if (mode) blockModes.value[type] = mode;
             });
         }
 
         for (const type of MEMO_TYPES) {
-            memos[type] = (await memoStorage[type].getValue()) ?? {};
+            memos[type] = normalizeMemoImportMap(await memoStorage[type].getValue());
 
             // Watch for changes
             memoStorage[type].watch((newValue) => {
-                if (newValue) memos[type] = newValue;
+                memos[type] = normalizeMemoImportMap(newValue);
             });
         }
 
@@ -606,10 +656,13 @@ const importMemo = async () => {
     if (!data) return;
 
     for (const [key, value] of Object.entries(data)) {
-        const target = memos[key as RefresherMemoType];
-        if (!target || typeof value !== "object" || value === null) continue;
+        if (!(memoTypes as readonly string[]).includes(key)) continue;
 
-        for (const [id, memo] of Object.entries(value as Record<string, RefresherMemoValue>)) {
+        const type = key as RefresherMemoType;
+        const target = memos[type];
+        const importedMemos = normalizeMemoImportMap(value);
+
+        for (const [id, memo] of Object.entries(importedMemos)) {
             if (target[id] && !confirm(`${id}에 대한 메모가 이미 존재합니다. 덮어쓰시겠습니까?`)) {
                 continue;
             }
@@ -617,7 +670,7 @@ const importMemo = async () => {
             target[id] = memo;
         }
 
-        await memoStorage[key as RefresherMemoType].setValue(target);
+        await memoStorage[type].setValue({...target});
     }
 
     alert("가져오기에 성공했습니다.");
@@ -739,12 +792,17 @@ const modulesWithAdvancedSettings = computed(() => {
 });
 
 const updateUserSetting = async (module: string, key: string, value: unknown) => {
-    (settings.value[module][key].value as unknown) = value;
+    const setting = settings.value[module]?.[key];
+    if (!setting) return;
+
+    const previousValue = setting.value;
+    (setting.value as unknown) = value;
+    let currentSettings: Record<string, Record<string, RefresherSettings>> | null = null;
 
     try {
         await storage.set(`${module}.${key}`, value);
 
-        const currentSettings = await settingsStorage.getValue();
+        currentSettings = await settingsStorage.getValue();
         if (currentSettings && currentSettings[module] && currentSettings[module][key]) {
             (currentSettings[module][key].value as unknown) = value;
             await settingsStorage.setValue(currentSettings);
@@ -759,6 +817,19 @@ const updateUserSetting = async (module: string, key: string, value: unknown) =>
             }
         });
     } catch (e) {
+        (setting.value as unknown) = previousValue;
+
+        try {
+            await storage.set(`${module}.${key}`, previousValue);
+
+            if (currentSettings?.[module]?.[key]) {
+                (currentSettings[module][key].value as unknown) = previousValue;
+                await settingsStorage.setValue(currentSettings);
+            }
+        } catch (rollbackError) {
+            console.error("Failed to rollback user setting:", rollbackError);
+        }
+
         console.error("Failed to update user setting:", e);
     }
 };
