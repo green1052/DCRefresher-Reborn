@@ -27,7 +27,7 @@
         "ky": "^2.0.2",
         "sass": "^1.101.0",
         "webextension-polyfill": "^0.12.0",
-        "wxt": "^0.20.26"
+        "wxt": "^0.20.27"
     },
     "private": true
 }
