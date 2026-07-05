@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="TypeScriptCompiler">
-    <option name="memoryLimit" value="4096" />
-    <option name="nodeInterpreterTextField" value="$PROJECT_DIR$/../../Program Files/nodejs/node" />
-    <option name="useServicePoweredTypesDisabledManually" value="true" />
-  </component>
-</project>
