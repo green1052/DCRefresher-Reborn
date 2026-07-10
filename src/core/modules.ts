@@ -7,7 +7,7 @@ import settings from "./settings";
 
 export type ModuleStore = Record<string, RefresherModule>;
 
-const module_store: ModuleStore = {};
+const moduleStore: ModuleStore = {};
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
     return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -15,7 +15,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
 
 const createModuleSnapshot = (): Record<string, ModuleState> => {
     return Object.fromEntries(
-        Object.values(module_store).map((module) => [
+        Object.values(moduleStore).map((module) => [
             module.name,
             {
                 name: module.name,
@@ -73,56 +73,58 @@ const isSettingUpdatePayload = (value: unknown): value is SettingUpdatePayload =
 };
 
 export const modules = {
-    lists: (): ModuleStore => module_store,
-    load: (module: RefresherModule): Promise<void> => modules.register(module),
-    register: async (module: RefresherModule): Promise<void> => {
-        if (!module) throw new Error("Module is not defined.");
-        if (module_store[module.name]) throw new Error(`${module.name} is already registered.`);
+    lists: (): ModuleStore => moduleStore,
+    load: (module: unknown): Promise<void> =>
+        modules.register(module as RefresherModule),
+    register: async (module: unknown): Promise<void> => {
+        const mod = module as RefresherModule;
+        if (!mod) throw new Error("Module is not defined.");
+        if (moduleStore[mod.name]) throw new Error(`${mod.name} is already registered.`);
 
         const promises: Promise<void>[] = [];
 
         promises.push(
-            storage.get<boolean | undefined>(`${module.name}.enable`).then((enable) => {
+            storage.get<boolean | undefined>(`${mod.name}.enable`).then((enable) => {
                 if (enable === undefined) {
-                    storage.set(`${module.name}.enable`, module.default_enable);
-                    module.enable = module.default_enable;
+                    storage.set(`${mod.name}.enable`, mod.default_enable);
+                    mod.enable = mod.default_enable;
                     return;
                 }
 
-                module.enable = enable;
+                mod.enable = enable;
             })
         );
 
-        if (typeof module.settings === "object") {
-            module.status ??= {};
+        if (typeof mod.settings === "object") {
+            (mod as {status?: Record<string, unknown>}).status ??= {};
 
             promises.push(
-                ...Object.entries(module.settings).map(async ([key, value]) => {
-                    const loaded = await settings.load(module.name, key, value);
-                    module.status[key] = loaded;
+                ...Object.entries(mod.settings).map(async ([key, value]) => {
+                    const loaded = await settings.load(mod.name, key, value);
+                    (mod.status as Record<string, unknown>)[key] = loaded;
                 })
             );
         }
 
-        if (typeof module.data === "object") {
+        if (typeof mod.data === "object") {
             promises.push(
-                storage.module.get(module.name).then((data) => {
+                storage.module.get(mod.name).then((data) => {
                     const currentData = isRecord(data)
                         ? data
-                        : isRecord(module.data)
-                            ? {...module.data}
+                        : isRecord(mod.data)
+                            ? {...mod.data}
                             : {};
 
-                    module.data = new Proxy(currentData, {
+                    mod.data = new Proxy(currentData, {
                         set(target, p, newValue, receiver) {
                             const result = Reflect.set(target, p, newValue, receiver);
-                            storage.module.setGlobal(module.name, target);
+                            storage.module.setGlobal(mod.name, target);
                             return result;
                         },
 
                         deleteProperty(target, p) {
                             const result = Reflect.deleteProperty(target, p);
-                            storage.module.setGlobal(module.name, target);
+                            storage.module.setGlobal(mod.name, target);
                             return result;
                         }
                     });
@@ -130,7 +132,7 @@ export const modules = {
             );
         }
 
-        module_store[module.name] = module;
+        moduleStore[mod.name] = mod;
 
         await Promise.all(promises);
 
@@ -140,20 +142,20 @@ export const modules = {
         await modulesStorage.setValue(modulesSnap);
         await settingsStorage.setValue(settingsSnap);
 
-        if (!module.enable || module.url?.test(location.href) === false) return;
+        if (!mod.enable || mod.url?.test(location.href) === false) return;
 
-        await runModule(module);
+        await runModule(mod);
     }
 };
 
 export default modules;
 
 communicate.addHook("updateModuleStatus", async (data) => {
-    if (!isModuleStatusPayload(data) || !module_store[data.name]) return;
+    if (!isModuleStatusPayload(data) || !moduleStore[data.name]) return;
 
-    if (module_store[data.name].enable === data.value) return;
+    if (moduleStore[data.name].enable === data.value) return;
 
-    module_store[data.name].enable = data.value;
+    moduleStore[data.name].enable = data.value;
     storage.set(`${data.name}.enable`, data.value);
 
     const modulesSnap = createModuleSnapshot();
@@ -161,7 +163,7 @@ communicate.addHook("updateModuleStatus", async (data) => {
 
     if (data.value) {
         const existingFilterIds = new Set(filter.ids());
-        await runModule(module_store[data.name]);
+        await runModule(moduleStore[data.name]);
 
         for (const filterId of filter.ids()) {
             if (!existingFilterIds.has(filterId)) {
@@ -172,7 +174,7 @@ communicate.addHook("updateModuleStatus", async (data) => {
         return;
     }
 
-    await revokeModule(module_store[data.name]);
+    await revokeModule(moduleStore[data.name]);
 });
 
 communicate.addHook("updateSettingValue", (data) => {
@@ -183,28 +185,29 @@ communicate.addHook("updateSettingValue", (data) => {
 communicate.addHook("executeShortcut", (data) => {
     if (typeof data !== "string") return;
 
-    for (const key of Object.keys(module_store)) {
+    for (const key of Object.keys(moduleStore)) {
+        const module = moduleStore[key] as RefresherModule;
         if (
-            module_store[key] &&
-            typeof module_store[key].shortcuts === "object" &&
-            typeof module_store[key].shortcuts?.[data] === "function"
+            module &&
+            typeof module.shortcuts === "object" &&
+            typeof (module.shortcuts as Record<string, () => void>)[data] === "function"
         ) {
-            module_store[key].shortcuts?.[data].bind(module_store[key])();
+            (module.shortcuts as Record<string, () => void>)[data].bind(module)();
         }
     }
 });
 
 eventBus.on("refresherUpdateSetting", (mod: string, key: string, value: unknown) => {
-    const module = module_store[mod];
+    const module = moduleStore[mod] as RefresherModule;
 
     if (module !== undefined) {
-        module.status ??= {};
-        module.status[key] = value;
+        (module as {status?: Record<string, unknown>}).status ??= {};
+        (module.status as Record<string, unknown>)[key] = value;
     } else {
         return;
     }
 
-    if (!module.enable || !module.update || typeof module.update[key] !== "function") return;
+    if (!module.enable || !module.update || typeof (module.update as Record<string, (value: unknown) => void>)[key] !== "function") return;
 
-    return module.update[key].bind(module)(value);
+    return (module.update as Record<string, (value: unknown) => void>)[key].bind(module)(value);
 });

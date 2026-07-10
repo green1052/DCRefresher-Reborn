@@ -1,9 +1,7 @@
-import $ from "cash-dom";
-
 import memo from "../core/memo";
 import ip from "./ip";
 import type {Nullable, ObjectEnum} from "./types";
-import storage from "./webStorage";
+import localWebStorage from "./webStorage";
 
 export type UserType =
     | "UNFIXED"
@@ -24,36 +22,47 @@ const USERTYPE: ObjectEnum<UserType> = {
     FIXED_MANAGER: "FIXED_MANAGER"
 };
 
-let ratio: Record<string, { article: number; comment: number; data: number }> = {};
+let ratio: Record<string, { article: number; comment: number; date: number }> = {};
 let ban: Record<string, string[]> = {};
 
-const initializeUserData = async (): Promise<void> => {
-    try {
-        const [enable, checkRatio, checkPermBan] = await Promise.all([
-            storage.get<boolean>("관리.enable"),
-            storage.get<boolean>("관리.checkRatio"),
-            storage.get<boolean>("관리.checkPermBan")
-        ]);
+let userDataReady: Promise<void> | null = null;
 
-        if (!enable) return;
+const initializeUserData = (): Promise<void> => {
+    if (!userDataReady) {
+        userDataReady = (async () => {
+            try {
+                const [enable, checkRatio, checkPermBan] = await Promise.all([
+                    localWebStorage.get<boolean>("관리.enable"),
+                    localWebStorage.get<boolean>("관리.checkRatio"),
+                    localWebStorage.get<boolean>("관리.checkPermBan")
+                ]);
 
-        if (checkRatio) {
-            const moduleData = await storage.module.get < Record<string, Record<string, {
-                article: number;
-                comment: number;
-                data: number
-            }>>("관리");
-            ratio = moduleData?.["ratio"] ?? {};
-        }
-        if (checkPermBan) {
-            ban = (await storage.get<Record<string, string[]>>("refresher.database.ban")) ?? {};
-        }
-    } catch (e) {
-        console.error("Failed to initialize user data:", e);
+                if (!enable) return;
+
+                if (checkRatio) {
+                    const ratioData = await localWebStorage.module.get<{
+                        ratio: Record<string, {
+                            article: number;
+                            comment: number;
+                            date: number;
+                        }>;
+                    }>("관리");
+                    ratio = ratioData?.["ratio"] ?? {};
+                }
+                if (checkPermBan) {
+                    ban = (await localWebStorage.get<Record<string, string[]>>("refresher.database.ban")) ?? {};
+                }
+            } catch (e) {
+                console.error("Failed to initialize user data:", e);
+            }
+        })();
     }
+    return userDataReady;
 };
 
-initializeUserData();
+void initializeUserData();
+
+export const ensureUserDataReady = (): Promise<void> => initializeUserData();
 
 const FILE_NAME_MAP = new Map<string, UserType>([
     ["managernik.gif", USERTYPE.HALF_FIXED_MANAGER],
@@ -98,7 +107,7 @@ export class User {
     ratio: Nullable<string>;
     ban: Nullable<string>;
 
-    private __ip: Nullable<string>;
+    __ip: Nullable<string>;
 
     constructor(
         public nick: string,
@@ -141,17 +150,16 @@ export class User {
 
     static fromDom(dom: HTMLElement | null): User {
         const user = new User("", null, null, null);
-        const $dom = $(dom);
 
-        if (!dom || !$dom.length) return user;
+        if (!dom) return user;
 
         user.nick = dom.dataset.nick || "오류";
         user.id = dom.dataset.uid || null;
 
-        const ip = dom.dataset.ip;
-        user.ip = ip ? String(ip) : null;
+        const ipVal = dom.dataset.ip;
+        user.ip = ipVal ? String(ipVal) : null;
 
-        user.icon = user.id ? $dom.find("a.writer_nikcon img").attr("src") : null;
+        user.icon = user.id ? dom.querySelector<HTMLImageElement>("a.writer_nikcon img")?.getAttribute("src") ?? null : null;
         user.type = getType(user.icon);
 
         user.getMemo();
@@ -162,7 +170,7 @@ export class User {
     }
 
     getMemo(): void {
-        this.memo = (this.id ? memo.get("UID", this.id) : null) ?? (this.ip ? memo.get("IP", this.ip) : null) ?? memo.get("NICK", this.nick);
+        this.memo = (this.id ? memo.get("UID", this.id) : null) ?? (this.ip ? memo.get("IP", this.ip) : null) ?? memo.get("NICK", this.nick) ?? null;
     }
 
     getRatio(): void {
@@ -198,5 +206,6 @@ export class User {
 
 export default {
     getType,
-    User
+    User,
+    ensureUserDataReady
 };

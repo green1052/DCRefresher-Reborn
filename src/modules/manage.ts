@@ -1,18 +1,24 @@
 import filter from "@/core/filtering";
-import $ from "cash-dom";
-import {Cash} from "cash-dom/dist/cash";
 import Cookies from "js-cookie";
-import ky from "ky";
+import ky from "../utils/httpClient";
 
 import eventBus from "../core/eventbus";
 import http from "../utils/http";
 import storage from "../utils/webStorage";
 
 let permBanList: Record<string, string[]> = {};
+let permBanReady: Promise<void> | null = null;
 
-(async () => {
-    permBanList = (await storage.get<Record<string, string[]>>("refresher.database.ban")) ?? {};
-})();
+const initPermBan = (): Promise<void> => {
+    if (!permBanReady) {
+        permBanReady = (async () => {
+            permBanList = (await storage.get<Record<string, string[]>>("refresher.database.ban")) ?? {};
+        })();
+    }
+    return permBanReady;
+};
+
+void initPermBan();
 
 export default {
     name: "관리",
@@ -92,7 +98,8 @@ export default {
 
             const params = new URLSearchParams();
             params.set("ci_t", Cookies.get("ci_c") ?? "");
-            params.set("id", $("#gallery_id").val() as string);
+            const galleryIdInput = document.querySelector<HTMLInputElement>("#gallery_id");
+            params.set("id", galleryIdInput?.value ?? "");
             params.set("nos[]", id);
             params.set("_GALLTYPE_", http.galleryTypeName(location.href));
 
@@ -111,13 +118,12 @@ export default {
         this.memory.gallViewContents = filter.add<HTMLVideoElement>(".gallview_contents video", (element) => {
             if (!this.status.enableGifControl) return;
 
-            const $element = $(element);
-            const src = $element.attr("data-src");
+            const src = element.getAttribute("data-src");
 
             if (src?.includes("dcinside.com/dccon.php")) return;
 
-            $element.removeAttr("onmousedown");
-            $element.attr("controls", "");
+            element.removeAttribute("onmousedown");
+            element.setAttribute("controls", "");
         });
 
         this.memory.checkBox = filter.add<HTMLInputElement>(
@@ -126,17 +132,15 @@ export default {
                 if (element.dataset.refresherManageHandler === "true") return;
                 element.dataset.refresherManageHandler = "true";
 
-                element.addEventListener("click", (ev: PointerEvent) => {
+                element.addEventListener("click", (ev: MouseEvent) => {
                     if (!this.enable) return;
 
-                    const $element = $(element);
-                    const $writer = $element
-                        .closest(".ub-content, .cmt_nickbox, .search_comment")
-                        .children(".ub-writer");
+                    const container = element.closest<HTMLElement>(".ub-content, .cmt_nickbox, .search_comment");
+                    const writer = container?.querySelector<HTMLElement>(":scope > .ub-writer");
 
-                    const uid = $writer.attr("data-uid");
-                    const ip = $writer.attr("data-ip");
-                    const nick = $writer.attr("data-nick");
+                    const uid = writer?.dataset.uid;
+                    const ip = writer?.dataset.ip;
+                    const nick = writer?.dataset.nick;
 
                     let type: "data-uid" | "data-ip" | "data-nick" | null = null;
                     let target: string | null = null;
@@ -153,18 +157,19 @@ export default {
                     }
 
                     if (type && target && this.status.checkAllTargetUser && ev.shiftKey) {
-                        for (const post of $(`.ub-writer[${type}="${target}"]`)) {
-                            $(post)
-                                .parent()
-                                .find(".article_chkbox")
-                                .prop("checked", (ev.target as HTMLInputElement).checked);
+                        for (const post of document.querySelectorAll<HTMLElement>(`.ub-writer[${type}="${target}"]`)) {
+                            const checkbox = post.parentElement?.querySelector<HTMLInputElement>(".article_chkbox");
+                            if (checkbox) checkbox.checked = (ev.target as HTMLInputElement).checked;
                         }
                     }
 
-                    const li = $element.closest("li");
-                    if (this.status.checkCommentViaCtrl && ev.ctrlKey && !li.attr("id")?.startsWith("reply_")) {
-                        for (const input of li.next().find(".article_chkbox")) {
-                            (input as HTMLInputElement).checked = (ev.target as HTMLInputElement).checked;
+                    const li = element.closest<HTMLLIElement>("li");
+                    if (li && this.status.checkCommentViaCtrl && ev.ctrlKey && !li.id.startsWith("reply_")) {
+                        const next = li.nextElementSibling;
+                        if (next) {
+                            for (const input of next.querySelectorAll<HTMLInputElement>(".article_chkbox")) {
+                                input.checked = (ev.target as HTMLInputElement).checked;
+                            }
                         }
                     }
                 });
@@ -291,7 +296,7 @@ export default {
             return list.join(", ");
         };
 
-        const getRatio = async (uid: string) => {
+        const getRatio = async (uid: string): Promise<{article: number; comment: number; date: number} | undefined> => {
             const params = new URLSearchParams();
             params.set("ci_t", Cookies.get("ci_c") ?? "");
             params.set("user_id", uid);
@@ -319,12 +324,12 @@ export default {
             return result;
         };
 
-        this.memory.newPostListEvent = eventBus.on("newPostList", async (articles: Cash[]) => {
+        this.memory.newPostListEvent = eventBus.on("newPostList", async (articles: HTMLElement[]) => {
             const limitedArticles = articles.slice(0, 10);
 
-            for (const $article of limitedArticles) {
-                const $writer = $article.find(".ub-writer");
-                const uid = $writer.data("uid");
+            for (const article of limitedArticles) {
+                const writer = article.querySelector<HTMLElement>(".ub-writer");
+                const uid = writer?.dataset.uid;
 
                 if (!uid) continue;
 
@@ -337,20 +342,20 @@ export default {
                         permBanSpan.className = "ip permBan refresherUserData";
                         permBanSpan.title = permBan;
                         permBanSpan.textContent = `[${permBan}]`;
-                        const $permBan = $(permBanSpan);
 
-                        if ($article.data("refresherPermBan") === true) {
-                            $article.find(".permBan").replaceWith($permBan);
+                        if (article.dataset.refresherPermBan === "true") {
+                            const existing = article.querySelector(".permBan");
+                            existing?.replaceWith(permBanSpan);
                         } else {
-                            $article.data("refresherPermBan", true);
-                            $writer.append($permBan);
+                            article.dataset.refresherPermBan = "true";
+                            writer?.appendChild(permBanSpan);
                         }
                     }
                 }
 
                 if (!this.status.checkRatio) continue;
 
-                let ratio = this.data!.ratio?.[uid];
+                let ratio: {article: number; comment: number; date: number} | undefined = this.data!.ratio?.[uid];
 
                 if (!ratio || (ratio && Date.now() - ratio.date > 3600000)) {
                     ratio = await getRatio(uid);
@@ -362,23 +367,23 @@ export default {
                 ratioSpan.className = "ip ratio refresherUserData";
                 ratioSpan.title = `${ratio.article}/${ratio.comment}`;
                 ratioSpan.textContent = `[${ratio.article}/${ratio.comment}]`;
-                const $ratio = $(ratioSpan);
 
                 if (this.status.alarmRatio > 0) {
                     const calculatedRatio = ratio.article + ratio.comment;
 
                     if (calculatedRatio <= this.status.alarmRatio) {
-                        $ratio.css("color", "red");
+                        ratioSpan.style.color = "red";
                     }
                 }
 
-                if ($article.data("refresherRatio") === true) {
-                    $article.find(".ratio").replaceWith($ratio);
+                if (article.dataset.refresherRatio === "true") {
+                    const existing = article.querySelector(".ratio");
+                    existing?.replaceWith(ratioSpan);
                     continue;
                 }
 
-                $article.data("refresherRatio", true);
-                $writer.append($ratio);
+                article.dataset.refresherRatio = "true";
+                writer?.appendChild(ratioSpan);
             }
         });
     },

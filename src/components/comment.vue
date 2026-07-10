@@ -45,7 +45,7 @@
                 </div>
             </div>
         </div>
-        <div v-if="comment.vr_player">
+        <div v-if="comment.vr_player && getVoiceData">
             <iframe
                 v-if="getVoiceData.iframe"
                 :src="getVoiceData.src"
@@ -76,10 +76,10 @@
 </template>
 
 <script lang="ts" setup>
-import $ from "cash-dom";
-import {computed, onBeforeUnmount, onMounted, ref} from "vue";
+import {computed, ref} from "vue";
 
 import eventBus from "../core/eventbus";
+import {useMeDetection} from "./useMeDetection";
 import TimeStamp from "./timestamp.vue";
 import User from "./user.vue";
 
@@ -111,8 +111,12 @@ const emit = defineEmits<{
 }>();
 
 // Reactive data
-const currentId = ref("");
-const me = ref(false);
+const isAdmin = ref(!!document.querySelector(".useradmin_btnbox button"));
+
+const {me} = useMeDetection({
+    userId: props.comment.user.id ?? "",
+    postUser: props.postUser || undefined
+});
 
 // Computed properties
 const getVoiceData = computed((): VoiceDataComputed | null => {
@@ -132,68 +136,9 @@ const getVoiceData = computed((): VoiceDataComputed | null => {
     };
 });
 
-const isAdmin = ref(false);
-
-const eventBusUuid = ref<string | null>(null);
-
-// Lifecycle
-onMounted(() => {
-    isAdmin.value = document.querySelector(".useradmin_btnbox button") !== null;
-
-    if (!props.comment.user.id) {
-        return;
-    }
-
-    const fixedNameElement = document.querySelector("#login_box > .user_info .nickname > em");
-    const fixedName = fixedNameElement && fixedNameElement.innerHTML ? fixedNameElement.innerHTML : null;
-
-    if (fixedName) {
-        const gallogIcon = document.querySelector("#login_box > .user_info > .writer_nikcon");
-        if (gallogIcon) {
-            const attribute = gallogIcon.getAttribute("onclick");
-            if (attribute) {
-                const match = /window\.open\('\/\/gallog\.dcinside\.com\/(\w*)'\);/.exec(attribute);
-                if (match && match[1]) {
-                    const id = match[1];
-
-                    if (props.comment.user.id === id) {
-                        me.value = true;
-                    }
-                }
-            }
-        }
-    }
-
-    const gallogImageElement = document.querySelector<HTMLImageElement>("#login_box .user_info .writer_nikcon > img");
-
-    const click = gallogImageElement && gallogImageElement.getAttribute("onclick");
-
-    if (click) {
-        currentId.value = click.replace(/window\.open\('\/\/gallog\.dcinside\.com\//g, "").replace(/'\);/g, "");
-
-        me.value = currentId.value === props.comment.user.id;
-    }
-
-    if (!me.value && props.postUser) {
-        me.value = props.postUser === props.comment.user.id;
-    }
-
-    if (!me.value && !props.postUser) {
-        const handler = (obj: IPostInfo) => {
-            me.value = obj.user && obj.user.id === props.comment.user.id;
-        };
-        eventBusUuid.value = eventBus.on("RefresherPostDataLoaded", handler);
-    }
-});
-
-onBeforeUnmount(() => {
-    if (eventBusUuid.value) {
-        eventBus.remove("RefresherPostDataLoaded", eventBusUuid.value, true);
-    }
-});
-
 const date = (str: string): string => {
-    return str.substring(0, 4).match(/\./)
+    const hasYear = str.substring(0, 4).match(/\./);
+    return hasYear
         ? `${new Date().getFullYear()}-${str.replace(/\./g, "-")}`
         : str.replace(/\./g, "-");
 };
@@ -231,12 +176,12 @@ const setReply = () => {
 };
 
 const contextMenu = (e: MouseEvent): void => {
-    if (!e.target) return;
-    const $element = $(e.target as HTMLElement);
+    if (!e.target || !(e.target instanceof HTMLElement)) return;
+    const element = e.target;
 
-    if ($element.hasClass("written_dccon")) return;
+    if (element.classList.contains("written_dccon")) return;
 
-    const src = $element.attr("src");
+    const src = element.getAttribute("src");
     if (!src) return;
 
     const code = src.replace(/^.*no=/g, "").replace(/^&.*$/g, "");
@@ -244,3 +189,57 @@ const contextMenu = (e: MouseEvent): void => {
     eventBus.emit("refresherUserContextMenu", null, null, null, code, null);
 };
 </script>
+
+<style lang="scss" scoped>
+@use "@/assets/styles/variables" as *;
+
+.refresher-comment {
+    position: relative;
+
+    &[data-deleted="true"] {
+        opacity: 0.4;
+    }
+
+    .meta {
+        display: flex;
+
+        .refresher-reply {
+            cursor: pointer;
+            font-size: 12px;
+            opacity: 0.6;
+        }
+
+        .float-right {
+            display: flex;
+            margin-left: auto;
+        }
+    }
+
+    .refresher-timestamp {
+        margin-left: 2vw;
+        white-space: nowrap;
+    }
+
+    .delete {
+        background-color: rgba(170, 170, 170, 0.32);
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        height: 20px;
+        margin-left: 10px;
+        width: 20px;
+
+        &:hover {
+            background-color: rgba(170, 170, 170, 0.45);
+        }
+
+        &:active {
+            background-color: rgba(170, 170, 170, 0.6);
+        }
+
+        svg {
+            margin: auto;
+        }
+    }
+}
+</style>

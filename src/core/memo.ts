@@ -1,21 +1,16 @@
-import {memoStorage} from "../utils/storage";
+import {MEMO_TYPES, memoStorage} from "../utils/storage";
 import communicate from "./communicate";
 import eventBus from "./eventbus";
 
-/**
- * 타입의 이름을 저장한 객체입니다.
- */
 export const TYPE_NAMES = {
     UID: "유저 ID",
     NICK: "닉네임",
     IP: "IP"
 };
 
-const MEMO_TYPES_KEYS: RefresherMemoType[] = ["UID", "NICK", "IP"];
-
 export type MemoCache = Record<RefresherMemoType, Record<string, RefresherMemoValue>>;
 
-let MEMO_CACHE: MemoCache = {
+let memoCache: MemoCache = {
     UID: {},
     NICK: {},
     IP: {}
@@ -47,28 +42,28 @@ const normalizeMemoMap = (value: unknown): Record<string, RefresherMemoValue> =>
 };
 
 (async () => {
-    for (const key of MEMO_TYPES_KEYS) {
+    for (const key of MEMO_TYPES) {
         const memo = await memoStorage[key].getValue();
-        MEMO_CACHE[key] = normalizeMemoMap(memo);
+        memoCache[key] = normalizeMemoMap(memo);
 
         memoStorage[key].watch((newValue) => {
-            MEMO_CACHE[key] = normalizeMemoMap(newValue);
+            memoCache[key] = normalizeMemoMap(newValue);
             eventBus.emit("refresh");
         });
     }
 })();
 
 const InternalAddToList = async (type: RefresherMemoType, user: string, text: string, color: string, gallery?: string) => {
-    MEMO_CACHE[type][user] = {
+    memoCache[type][user] = {
         text,
         color,
         gallery
     };
 
-    await memoStorage[type].setValue({...MEMO_CACHE[type]});
+    await memoStorage[type].setValue({...memoCache[type]});
 };
 
-const checkValidType = (type: string) => MEMO_TYPES_KEYS.some((key) => key === type);
+const checkValidType = (type: string) => MEMO_TYPES.some((key) => key === type);
 
 /**
  * 메모 목록에 추가합니다.
@@ -81,7 +76,7 @@ const checkValidType = (type: string) => MEMO_TYPES_KEYS.some((key) => key === t
  */
 export const add = (type: RefresherMemoType, user: string, text: string, color: string, gallery?: string): void => {
     if (!checkValidType(type)) {
-        throw new Error(`${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`);
+        throw new Error(`${type} is not a valid mode. requires one of [${MEMO_TYPES.join(", ")}]`);
     }
 
     InternalAddToList(type, user, text, color, gallery);
@@ -93,12 +88,12 @@ export const add = (type: RefresherMemoType, user: string, text: string, color: 
  * @param type 메모 종류
  * @param user 유저
  */
-export const get = (type: RefresherMemoType, user: string): RefresherMemoValue => {
+export const get = (type: RefresherMemoType, user: string): RefresherMemoValue | undefined => {
     if (!checkValidType(type)) {
-        throw new Error(`${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`);
+        throw new Error(`${type} is not a valid mode. requires one of [${MEMO_TYPES.join(", ")}]`);
     }
 
-    return MEMO_CACHE[type][user];
+    return memoCache[type][user];
 };
 
 /**
@@ -109,17 +104,16 @@ export const get = (type: RefresherMemoType, user: string): RefresherMemoValue =
  */
 export const remove = async (type: RefresherMemoType, user: string): Promise<void> => {
     if (!checkValidType(type)) {
-        throw new Error(`${type} is not a valid mode. requires one of [${MEMO_TYPES_KEYS.join(", ")}]`);
+        throw new Error(`${type} is not a valid mode. requires one of [${MEMO_TYPES.join(", ")}]`);
     }
 
-    delete MEMO_CACHE[type][user];
-    await memoStorage[type].setValue({...MEMO_CACHE[type]});
+    delete memoCache[type][user];
+    await memoStorage[type].setValue({...memoCache[type]});
 };
 
 communicate.addHook("memoSelected", () => {
     eventBus.emit("refresherUpdateUserMemo");
 });
-
 
 export default {
     TYPE_NAMES,

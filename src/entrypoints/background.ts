@@ -32,7 +32,7 @@ export default defineBackground(() => {
     });
 
     // ===== Context Menus =====
-    const contextMenuItems: browser.Menus.CreateCreatePropertiesType[] = [
+    const contextMenuItems: Browser.contextMenus.CreateProperties[] = [
         {
             id: "blockSelected",
             title: "오른쪽 클릭한 유저 차단",
@@ -95,23 +95,28 @@ export default defineBackground(() => {
         API_BASE_URL: "https://dcrefresher.green1052.com/data"
     } as const;
 
-    const updateDatabase = async () => {
+    const updateDatabase = async (): Promise<void> => {
         const {default: ky} = await import("ky");
-        const [version, ip, ban] = await Promise.all([
-            ky.get(`${CONSTANTS.API_BASE_URL}/version`).text(),
-            ky.get(`${CONSTANTS.API_BASE_URL}/ip.json`).json<unknown>(),
-            ky.get(`${CONSTANTS.API_BASE_URL}/ban.json`).json<unknown>()
-        ]);
-        await Promise.all([
-            storage.set("refresher.database.ip", ip),
-            storage.set("refresher.database.ban", ban),
-            storage.set("refresher.database.version", version),
-            storage.set("refresher.database.lastUpdate", Date.now())
-        ]);
+        try {
+            const [version, ip, ban] = await Promise.all([
+                ky.get(`${CONSTANTS.API_BASE_URL}/version`).text(),
+                ky.get(`${CONSTANTS.API_BASE_URL}/ip.json`).json<unknown>(),
+                ky.get(`${CONSTANTS.API_BASE_URL}/ban.json`).json<unknown>()
+            ]);
+            await Promise.all([
+                storage.set("refresher.database.ip", ip),
+                storage.set("refresher.database.ban", ban),
+                storage.set("refresher.database.version", version),
+                storage.set("refresher.database.lastUpdate", Date.now())
+            ]);
+        } catch (error) {
+            console.error("Database update failed:", error);
+        }
     };
 
     // ===== Lifecycle =====
     browser.runtime.onInstalled.addListener(async (details) => {
+        await createContextMenus();
         if (import.meta.env.PROD) {
             await storage.set(details.reason === "install" ? "refresher.firstInstall" : "refresher.updated", true);
             await updateDatabase();

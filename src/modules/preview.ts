@@ -1,1100 +1,69 @@
 import eventBus from "@/core/eventbus";
 import filter from "@/core/filtering";
-import $, {Cash} from "cash-dom";
-import Cookies from "js-cookie";
-import ky, {Input, Options} from "ky";
-import {GalleryPreData} from "../@types/post";
 import * as block from "../core/block";
-import Frame, {FrameScrollApi} from "../core/frame";
+import Frame, {type FrameScrollApi} from "../core/frame";
+import type {PreviewFrame} from "../core/PreviewFrame";
 import {submitComment} from "../utils/comment";
 import * as http from "../utils/http";
 import {queryString} from "../utils/http";
+import {getRelevantData} from "../utils/getRelevantData";
+import {makeBodyFrame as makeBodyFrameFn} from "../utils/makeBodyFrame";
+import {createMiniPreview, miniPreviewClose, miniPreviewCreate, miniPreviewMove} from "../utils/miniPreview";
+import {PostCache} from "../utils/PostCache";
+import {blockPreset, panel, removeAdminKeyPressHandler} from "../utils/previewPanel";
+import {previewRequest} from "../utils/previewRequest";
 import {ScrollDetection} from "../utils/scrollDetection";
 import toast from "../utils/toast";
 import {User} from "../utils/user";
 import * as storage from "../utils/webStorage";
 import {writeClipboard} from "../utils/writeClipboard";
 
-const domParser = new DOMParser();
-
 type PreviewFrameAppApi = FrameScrollApi;
-
-class PostInfo implements IPostInfo {
-    id: string;
-    header?: string;
-    title?: string;
-    date?: string;
-    expire?: string;
-    user?: User;
-    views?: string;
-    fixedUpvotes?: string;
-    upvotes?: string;
-    downvotes?: string;
-    contents?: string;
-    commentId?: string;
-    commentNo?: string;
-    commentCount?: number;
-    isNotice?: boolean;
-    isAdult?: boolean;
-    requireCaptcha?: boolean;
-    requireCommentCaptcha?: boolean;
-    disabledDownvote?: boolean;
-    v_cur_t?: string;
-    randomParam?: { name: string; value: string };
-    dom?: Document;
-
-    constructor(id: string) {
-        this.id = id;
-    }
-
-    static parse(id: string, body: string): PostInfo {
-        const postInfo = new PostInfo(id);
-
-        postInfo.dom = domParser.parseFromString(body, "text/html");
-
-        const $dom = $(postInfo.dom);
-
-        postInfo.header = $dom
-            .find(".title_headtext")
-            .html()
-            ?.replace(/(^\[.*]$)/g, "");
-        postInfo.title = $dom.find(".title_subject").html();
-        postInfo.date = $dom.find(".fl > .gall_date").html();
-        postInfo.expire = $dom
-            .find(".view_content_wrap div.fl > span.mini_autodeltime > div.pop_tipbox > div")
-            .html()
-            ?.replace(/\s자동\s삭제/, "");
-        postInfo.views = $dom
-            .find(".fr > .gall_count")
-            .html()
-            ?.replace(/조회\s/, "");
-        postInfo.upvotes = $dom
-            .find(".fr > .gall_reply_num")
-            .html()
-            ?.replace(/추천\s/, "");
-        postInfo.fixedUpvotes = $dom.find(".sup_num > .smallnum").html();
-        postInfo.downvotes = $dom.find("div.btn_recommend_box .down_num").html();
-
-        const $contentQuery = $dom.find(".writing_view_box");
-
-        const $writeDiv = $contentQuery.find(".write_div");
-
-        const width = $writeDiv.css("width");
-
-        if (width) {
-            $writeDiv.css("width", "unset");
-            $writeDiv.css("max-width", width);
-            $writeDiv.css("overflow", "");
-        }
-
-        postInfo.contents = $contentQuery.html();
-
-        const zoomID = body.match(ISSUE_ZOOM_ID);
-        const zoomNO = body.match(ISSUE_ZOOM_NO);
-
-        if (zoomID && zoomID[0]) {
-            postInfo.commentId = (zoomID[0].match(QUOTES) as string[])[1].replace(/'/g, "");
-        }
-
-        if (zoomNO && zoomNO[0]) {
-            postInfo.commentNo = (zoomNO[0].match(QUOTES) as string[])[1].replace(/'/g, "");
-        }
-
-        postInfo.commentCount = Number($dom.find(".gall_comment").text().split(" ")[1]);
-
-        const $noticeElement = $dom.find(".user_control .option_box li:first-child");
-
-        postInfo.isNotice = $noticeElement.html() !== "공지 등록";
-        postInfo.isAdult = postInfo.dom.head.innerHTML.includes("/error/adult");
-        postInfo.requireCaptcha = $dom.find(".recommend_kapcode").length > 0;
-        postInfo.requireCommentCaptcha = $dom.find(".cmt_write_box input[name=comment_code]").length > 0;
-
-        postInfo.disabledDownvote = $dom.find(".btn_recommend_box .down_num").length === 0;
-
-        postInfo.user = User.fromDom(postInfo.dom.querySelector(".gallview_head > .gall_writer"));
-
-        const randomParam = postInfo.dom.querySelector<HTMLInputElement>("#adult_article + input");
-
-        if (randomParam) {
-            postInfo.randomParam = {
-                name: randomParam.name,
-                value: randomParam.value
-            };
-
-            postInfo.v_cur_t = postInfo.dom.querySelector<HTMLInputElement>("input[name=v_cur_t]")!.value;
-        }
-
-        return postInfo;
-    }
-}
-
-interface GalleryHTTPRequestArguments {
-    gallery: string;
-    id: string;
-    commentId?: string;
-    commentNo?: string;
-    link?: string;
-}
 
 let blurConfig = false;
 let replyConfig = false;
+let configReady: Promise<void> | null = null;
 
-(async () => {
-    if (!(await storage.get<boolean>("컨텐츠 차단.enable"))) return;
+const initConfigs = (): Promise<void> => {
+    if (!configReady) {
+        configReady = (async () => {
+            if (!(await storage.get<boolean>("컨텐츠 차단.enable"))) return;
 
-    const [blur, replyRemove] = await Promise.all([
-        storage.get<boolean>("컨텐츠 차단.blur"),
-        storage.get<boolean>("컨텐츠 차단.replyRemove")
-    ]);
+            const [blur, replyRemove] = await Promise.all([
+                storage.get<boolean>("컨텐츠 차단.blur"),
+                storage.get<boolean>("컨텐츠 차단.replyRemove")
+            ]);
 
-    blurConfig = blur;
-    replyConfig = replyRemove;
-})();
+            blurConfig = blur;
+            replyConfig = replyRemove;
+        })();
+    }
+    return configReady;
+};
+
+void initConfigs();
 
 let gifControlConfig = false;
+let gifControlReady: Promise<void> | null = null;
 
-(async () => {
-    gifControlConfig =
-        (await storage.get<boolean>("관리.enable")) && (await storage.get<boolean>("관리.enableGifControl"));
-})();
-
-const ISSUE_ZOOM_ID = /\$\(document\)\.data\('comment_id',\s'.+'\);/g;
-const ISSUE_ZOOM_NO = /\$\(document\)\.data\('comment_no',\s'.+'\);/g;
-
-const QUOTES = /(["'])(?:(?=(\\?))\2.)*?\1/g;
-
-const kyClient = ky.create({
-    method: "POST",
-    headers: {
-        "X-Requested-With": "XMLHttpRequest"
+const initGifControl = (): Promise<void> => {
+    if (!gifControlReady) {
+        gifControlReady = (async () => {
+            gifControlConfig =
+                (await storage.get<boolean>("관리.enable")) && (await storage.get<boolean>("관리.enableGifControl"));
+        })();
     }
-});
-
-const client = (url: Input, options?: Options): Promise<string> => {
-    return kyClient(url, options).text();
+    return gifControlReady;
 };
 
-const request = {
-    async bump(args: GalleryHTTPRequestArguments) {
-        const galleryType = http.galleryType(location.href, "/");
-
-        const params = new URLSearchParams();
-        params.set("ci_t", Cookies.get("ci_c") ?? "");
-        params.set("id", args.gallery);
-        params.set("nos[]", args.id);
-        params.set("_GALLTYPE_", http.galleryTypeName(location.href));
-
-        const response = await client(galleryType === "mini/" ? http.urls.manage.bumpMini : http.urls.manage.bump, {
-            body: params
-        });
-
-        try {
-            return JSON.parse(response);
-        } catch {
-            return response;
-        }
-    },
-
-    async vote(
-        gall_id: string,
-        post_id: string,
-        type: number,
-        code: string | undefined,
-        link: string,
-        v_cur_t?: string,
-        randomParam?: { name: string; value: string }
-    ) {
-        Cookies.set(`${gall_id}${post_id}_Firstcheck${type ? "" : "_down"}`, "Y", {
-            path: "/",
-            domain: "dcinside.com",
-            expires: new Date(new Date().getTime() + 3 * 60 * 60 * 1000)
-        });
-
-        const params = new URLSearchParams();
-        params.set("ci_t", Cookies.get("ci_c") ?? "");
-
-        if (v_cur_t) params.set("v_cur_t", v_cur_t);
-
-        if (randomParam) params.set(randomParam.name, randomParam.value);
-
-        params.set("id", gall_id);
-        params.set("no", post_id);
-        params.set("mode", type ? "U" : "D");
-        params.set("code_recommend", code ?? "");
-        params.set("_GALLTYPE_", http.galleryTypeName(link));
-        params.set("link_id", gall_id);
-
-        const response = await client(http.urls.vote, {body: params});
-
-        const [result, counts, fixedCounts] = response.split("||");
-
-        return {
-            result,
-            counts,
-            fixedCounts
-        };
-    },
-
-    async post(link: string, gallery: string, id: string, signal: AbortSignal): Promise<PostInfo> {
-        const response = await ky
-            .get(`${http.urls.base}${http.galleryType(link, "/")}${http.urls.view}${gallery}&no=${id}`, {signal})
-            .text();
-        return PostInfo.parse(id, response);
-    },
-
-    /**
-     * 디시인사이드 서버에 댓글을 요청합니다.
-     * @param args
-     * @param signal
-     */
-    async comments(args: GalleryHTTPRequestArguments, signal: AbortSignal) {
-        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
-
-        const params = new URLSearchParams();
-        params.set("id", args.gallery);
-        params.set("no", args.id);
-        params.set("cmt_id", args.commentId ?? args.gallery);
-        params.set("cmt_no", args.commentNo ?? args.id);
-        params.set("e_s_n_o", $("#e_s_n_o").val() as string);
-        params.set("comment_page", "1");
-        params.set("_GALLTYPE_", http.galleryTypeName(args.link));
-
-        const response = await client(http.urls.comments, {
-            body: params,
-            signal
-        });
-
-        return JSON.parse(response);
-    },
-
-    async delete(args: GalleryHTTPRequestArguments, password?: string) {
-        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
-
-        const galleryType = http.galleryType(args.link, "/");
-
-        const params = new URLSearchParams();
-        params.set("ci_t", Cookies.get("ci_c") ?? "");
-        params.set("id", args.gallery);
-        params.set("nos[]", args.id);
-        params.set("_GALLTYPE_", http.galleryTypeName(args.link));
-
-        const response = await client(galleryType === "mini/" ? http.urls.manage.deleteMini : http.urls.manage.delete, {
-            body: params
-        });
-
-        try {
-            return JSON.parse(response);
-        } catch {
-            return response;
-        }
-    },
-
-    async block(
-        args: GalleryHTTPRequestArguments,
-        avoid_hour: number,
-        avoid_reason: number,
-        avoid_reason_txt: string,
-        del_chk: number,
-        user_type: number
-    ) {
-        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
-
-        const galleryType = http.galleryType(args.link, "/");
-
-        const params = new URLSearchParams();
-        params.set("ci_t", Cookies.get("ci_c") ?? "");
-        params.set("id", args.gallery);
-        params.set("nos[]", args.id);
-        params.set("parent", "");
-        params.set("_GALLTYPE_", http.galleryTypeName(args.link));
-        params.set("avoid_hour", avoid_hour.toString());
-        params.set("avoid_reason", avoid_reason.toString());
-        params.set("avoid_reason_txt", avoid_reason_txt);
-        params.set("del_chk", del_chk.toString());
-        params.set("avoid_type_chk", user_type.toString());
-
-        const response = await client(galleryType == "mini/" ? http.urls.manage.blockMini : http.urls.manage.block, {
-            body: params
-        });
-
-        try {
-            return JSON.parse(response);
-        } catch {
-            return response;
-        }
-    },
-
-    async setNotice(
-        args: GalleryHTTPRequestArguments,
-        set: boolean
-    ): Promise<
-        | string
-        | {
-        msg: string;
-        result: "success" | "fail";
-    }
-    > {
-        if (!args.link) {
-            throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
-        }
-
-        const galleryType = http.galleryType(args.link, "/");
-
-        const params = new URLSearchParams();
-        params.set("ci_t", Cookies.get("ci_c") ?? "");
-        params.set("mode", set ? "SET" : "REL");
-        params.set("id", args.gallery);
-        params.set("no", args.id);
-        params.set("_GALLTYPE_", http.galleryTypeName(args.link));
-
-        const response = await client(
-            galleryType == "mini/" ? http.urls.manage.setNoticeMini : http.urls.manage.setNotice,
-            {
-                body: params
-            }
-        );
-
-        try {
-            return JSON.parse(response);
-        } catch {
-            return response;
-        }
-    },
-
-    async setRecommend(
-        args: GalleryHTTPRequestArguments,
-        set: boolean
-    ): Promise<
-        | string
-        | {
-        msg: string;
-        result: "success" | "fail";
-    }
-    > {
-        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
-
-        const galleryType = http.galleryType(args.link, "/");
-
-        const params = new URLSearchParams();
-        params.set("ci_t", Cookies.get("ci_c") ?? "");
-        params.set("id", args.gallery);
-        params.set("_GALLTYPE_", http.galleryTypeName(args.link));
-        params.set("mode", set ? "SET" : "REL");
-        params.set("nos[]", args.id);
-
-        const response = await client(
-            galleryType == "mini/" ? http.urls.manage.setRecommendMini : http.urls.manage.setRecommend,
-            {
-                body: params
-            }
-        );
-
-        try {
-            return JSON.parse(response);
-        } catch {
-            return response;
-        }
-    },
-
-    async captcha(args: GalleryHTTPRequestArguments, kcaptchaType: "comment" | "recommend") {
-        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
-
-        const galleryTypeName = http.galleryTypeName(args.link);
-
-        const params = new URLSearchParams();
-        params.set("ci_t", Cookies.get("ci_c") ?? "");
-        params.set("gall_id", args.gallery);
-        params.set("kcaptcha_type", kcaptchaType);
-        params.set("_GALLTYPE_", galleryTypeName);
-
-        return (
-            "/kcaptcha/image_v3/?gall_id=" +
-            args.gallery +
-            "&kcaptcha_type=" +
-            kcaptchaType +
-            "&time=" +
-            new Date().getTime() +
-            "&_GALLTYPE_=" +
-            galleryTypeName
-        );
-    },
-
-    async adminDeleteComment(
-        preData: GalleryPreData,
-        commentId: string,
-        signal: AbortSignal
-    ): Promise<boolean | string> {
-        if (!preData.link) return false;
-
-        const typeName = http.galleryTypeName(preData.link);
-
-        if (!typeName.length) return false;
-
-        const url = http.checkMini(preData.link) ? http.urls.manage.deleteCommentMini : http.urls.manage.deleteComment;
-
-        const params = new URLSearchParams();
-        params.set("ci_t", Cookies.get("ci_c") ?? "");
-        params.set("id", preData.gallery);
-        params.set("_GALLTYPE_", typeName);
-        params.set("pno", preData.id);
-        params.set("cmt_nos[]", commentId);
-
-        return client(url, {body: params, signal})
-            .catch(() => false);
-    },
-
-    async userDeleteComment(
-        preData: GalleryPreData,
-        commentId: string,
-        signal: AbortSignal,
-        password?: string
-    ): Promise<boolean | string> {
-        if (!preData.link) return false;
-
-        const typeName = http.galleryTypeName(preData.link);
-
-        if (!typeName.length) return false;
-
-        const params = new URLSearchParams();
-        params.set("ci_t", Cookies.get("ci_c") ?? "");
-        params.set("id", preData.gallery);
-        params.set("re_no", commentId);
-        params.set("mode", "del");
-        params.set("g-recaptcha-response", "");
-        params.set("_GALLTYPE_", typeName);
-        params.set("no", preData.id);
-
-        if (password) {
-            params.set("re_password", password);
-        }
-
-        return client(http.urls.comment_remove, {body: params, signal})
-            .catch(() => false);
-    }
-};
-
-const KEY_COUNTS: Record<string, [number, number]> = {};
-let adminKeyPress: (ev: KeyboardEvent) => void;
-let previewNavigationKeyDown: ((ev: KeyboardEvent) => void) | null = null;
-
-const panel = {
-    block: (
-        callback: (
-            avoid_hour: number,
-            avoid_reason: number,
-            avoid_reason_txt: string,
-            del_chk: number,
-            userType: number
-        ) => void,
-        closeCallback: () => void
-    ) => {
-        const element = document.createElement("div");
-        element.className = "refresher-block-popup";
-
-        element.innerHTML = `
-      <div class="close">
-        <div class="cross"></div>
-        <div class="cross"></div>
-      </div>
-      <div class="contents">
-        <div class="block">
-          <h3>차단 기간</h3>
-          <div class="block_duration">
-            <label><input type="radio" name="duration" value="1" checked="checked" />1시간</label>
-            <label><input type="radio" name="duration" value="6" />6시간</label>
-            <label><input type="radio" name="duration" value="24" />24시간</label>
-            <label><input type="radio" name="duration" value="168" />7일</label>
-            <label><input type="radio" name="duration" value="336" />14일</label>
-            <label><input type="radio" name="duration" value="744" />31일</label>
-          </div>
-        </div>
-        <div class="block">
-          <h3>차단 사유</h3>
-          <div class="block_reason">
-            <label><input type="radio" name="reason" value="1" checked="checked" />음란성</label>
-            <label><input type="radio" name="reason" value="2"/>광고</label>
-            <label><input type="radio" name="reason" value="3"/>욕설</label>
-            <label><input type="radio" name="reason" value="4"/>도배</label>
-            <label><input type="radio" name="reason" value="5"/>저작권 침해</label>
-            <label><input type="radio" name="reason" value="6"/>명예훼손</label>
-            <label><input type="radio" name="reason" value="0"/>직접 입력</label>
-          </div>
-          <input type="text" name="reason_text" style="display: none;" placeholder="차단 사유 직접 입력 (한글 20자 이내)"></input>
-        </div>
-        <div class="block">
-          <h3>선택한 글 삭제</h3>
-          <input type="checkbox" name="remove"></input>
-          
-          <h3>식별 코드 차단 시 IP 동시 차단</h3>
-          <input type="checkbox" name="user-type"></input>
-          
-          <button class="go-block">차단</button>
-        </div>
-      </div>
-    `;
-
-        let avoid_hour = 1;
-        let avoid_reason = 1;
-
-        element.querySelector(".close")?.addEventListener("click", () => {
-            closeCallback();
-        });
-
-        element.querySelectorAll("input[type=radio]").forEach((v) => {
-            v.addEventListener("click", (ev) => {
-                const selected = ev.target as HTMLInputElement;
-
-                if (!selected) {
-                    return;
-                }
-
-                if (selected.getAttribute("name") === "duration") {
-                    avoid_hour = Number(selected.value);
-                }
-
-                if (selected.getAttribute("name") === "reason") {
-                    const value = Number(selected.value);
-
-                    const blockReasonInput = document.querySelector<HTMLInputElement>("input[name=reason_text]")!;
-
-                    blockReasonInput.style.display = value ? "none" : "block";
-                    avoid_reason = value;
-                }
-            });
-        });
-
-        element.querySelector(".go-block")!.addEventListener("click", () => {
-            const avoid_reason_txt = element.querySelector<HTMLInputElement>(`input[name=reason_text]`)!.value;
-            const del_chk = element.querySelector<HTMLInputElement>(`input[name=remove]`)!.checked;
-
-            const userType = element.querySelector<HTMLInputElement>("input[name=user-type]")!.checked;
-
-            callback(avoid_hour, avoid_reason, avoid_reason_txt, del_chk ? 1 : 0, userType ? 1 : 0);
-        });
-
-        document.body.appendChild(element);
-    },
-
-    admin: (
-        preData: GalleryPreData,
-        frame: Frame,
-        toggleBlur: boolean,
-        eventBus: RefresherEventBus,
-        useKeyPress: boolean
-    ) => {
-        const preFoundBlockElement = document.querySelector(".refresher-block-popup");
-
-        preFoundBlockElement?.remove();
-
-        const preFoundElement = document.querySelector(".refresher-management-panel");
-
-        preFoundElement?.remove();
-
-        let setAsNotice = !preData.notice;
-        let setAsRecommend = !preData.recommend;
-
-        const element = document.createElement("div");
-        element.id = "refresher-management-panel";
-        element.className = "refresher-management-panel";
-
-        if (toggleBlur) element.classList.add("blur");
-
-        element.innerHTML = `
-      <div class="button pin">
-        <img src="${browser.runtime.getURL("/assets/pin.webp")}"></img>
-        <p>${setAsNotice ? "공지로 등록" : "공지 등록 해제"}</p>
-      </div>
-      <div class="button recommend">
-        <img src="${setAsRecommend ? browser.runtime.getURL("/assets/upvote.webp") : browser.runtime.getURL("/assets/downvote.webp")}"></img>
-        <p>${setAsRecommend ? "개념글 등록" : "개념글 해제"}</p>
-      </div>
-      <div class="button block">
-        <img src="${browser.runtime.getURL("/assets/block.webp")}"></img>
-        <p>차단 (B)</p>
-      </div>
-      <div class="button delete">
-        <img src="${browser.runtime.getURL("/assets/delete.webp")}"></img>
-        <p>삭제 (D)</p>
-      </div>
-      <div class="button bump">
-        <img src="${browser.runtime.getURL("/assets/upvote.webp")}"></img>
-        <p>끌올</p>
-      </div>
-    `;
-
-        const deleteFunction = () => {
-            frame.app.close();
-
-            request.delete(preData).then((response) => {
-                eventBus.emit("refreshRequest");
-
-                if (typeof response === "object") {
-                    toast.show(response.msg, response.result === "success" ? "info" : "error");
-                    return;
-                }
-
-                toast.show(response, "error");
-            });
-        };
-
-        const blockFunction = () => {
-            frame.app.close();
-
-            request
-                .block(
-                    preData,
-                    Number(blockPreset.day),
-                    0,
-                    blockPreset.reason,
-                    blockPreset.delete ? 1 : 0,
-                    blockPreset.user_type ? 1 : 0
-                )
-                .then((response) => {
-                    eventBus.emit("refreshRequest");
-
-                    if (typeof response === "object") {
-                        toast.show(response.msg, response.result === "success" ? "info" : "error");
-                        return;
-                    }
-
-                    toast.show(response, "error");
-                });
-        };
-
-        element.querySelector(".delete")?.addEventListener("click", deleteFunction);
-
-        if (adminKeyPress) {
-            document.removeEventListener("keypress", adminKeyPress);
-        }
-
-        if (useKeyPress) {
-            adminKeyPress = (ev: KeyboardEvent) => {
-                if (frame.app.inputFocus) {
-                    return ev;
-                }
-
-                if (ev.code !== "KeyB" && ev.code !== "KeyD") {
-                    return ev;
-                }
-
-                if (KEY_COUNTS[ev.code]) {
-                    if (Date.now() - KEY_COUNTS[ev.code][0] > 1000) {
-                        KEY_COUNTS[ev.code] = [Date.now(), 0];
-                    }
-                } else {
-                    KEY_COUNTS[ev.code] = [Date.now(), 0];
-                }
-
-                KEY_COUNTS[ev.code][0] = Date.now();
-                KEY_COUNTS[ev.code][1]++;
-
-                if (ev.code === "KeyD") {
-                    if (KEY_COUNTS[ev.code][1] >= 2) {
-                        deleteFunction();
-                        KEY_COUNTS[ev.code][1] = 0;
-                    } else {
-                        toast.show("한번 더 D키를 누르면 게시글을 삭제합니다.", "warning", 1000);
-                    }
-                } else if (ev.code === "KeyB") {
-                    if (KEY_COUNTS[ev.code][1] >= 2) {
-                        blockFunction();
-                        KEY_COUNTS[ev.code][1] = 0;
-                    } else {
-                        toast.show("한번 더 B키를 누르면 차단합니다.", "warning", 1000);
-                    }
-                }
-            };
-        }
-
-        document.addEventListener("keypress", adminKeyPress);
-
-        element.querySelector(".block")!.addEventListener("click", () => {
-            panel.block(
-                (
-                    avoid_hour: number,
-                    avoid_reason: number,
-                    avoid_reason_txt: string,
-                    del_chk: number,
-                    user_type: number
-                ) => {
-                    request
-                        .block(preData, avoid_hour, avoid_reason, avoid_reason_txt, del_chk, user_type)
-                        .then((response) => {
-                            eventBus.emit("refreshRequest");
-
-                            if (typeof response === "object") {
-                                if (response.result === "success") {
-                                    toast.show(response.msg);
-
-                                    if (del_chk) {
-                                        frame.app.close();
-                                    }
-                                } else {
-                                    toast.show(response.msg, "error");
-                                }
-
-                                return;
-                            }
-
-                            toast.show(response, "error");
-                        });
-                },
-                () => document.querySelector(".refresher-block-popup")?.remove()
-            );
-        });
-
-        const pin = element.querySelector<HTMLElement>(".pin")!;
-        pin.addEventListener("click", () => {
-            request.setNotice(preData, setAsNotice).then((response) => {
-                eventBus.emit("refreshRequest");
-
-                if (typeof response === "object") {
-                    if (response.result === "success") {
-                        toast.show(response.msg);
-
-                        setAsNotice = !setAsNotice;
-
-                        const pinP = pin.querySelector<HTMLElement>("p")!;
-
-                        pinP.innerHTML = setAsNotice ? "공지로 등록" : "공지 등록 해제";
-                    } else {
-                        toast.show(response.msg, "error");
-                    }
-
-                    return;
-                }
-
-                toast.show(response, "error");
-            });
-        });
-
-        const recommend = element.querySelector<HTMLElement>(".recommend")!;
-        recommend.addEventListener("click", () => {
-            request.setRecommend(preData, setAsRecommend).then((response) => {
-                eventBus.emit("refreshRequest");
-
-                if (typeof response === "object") {
-                    if (response.result === "success") {
-                        toast.show(response.msg);
-
-                        setAsRecommend = !setAsRecommend;
-
-                        const recommendImg = recommend.querySelector("img") as HTMLImageElement;
-                        recommendImg.src = browser.runtime.getURL(setAsRecommend ? "/assets/upvote.webp" : "/assets/downvote.webp");
-
-                        const recommendP = recommend.querySelector("p") as HTMLParagraphElement;
-                        recommendP.innerHTML = setAsRecommend ? "개념글 등록" : "개념글 해제";
-                    } else {
-                        toast.show(response.msg, "error");
-                    }
-
-                    return;
-                }
-
-                toast.show(response, "error");
-            });
-        });
-
-        const bump = element.querySelector<HTMLElement>(".bump")!;
-        bump.addEventListener("click", () => {
-            request.bump(preData).then((response) => {
-                eventBus.emit("refreshRequest");
-
-                if (typeof response === "object") {
-                    toast.show(response.msg, response.result === "success" ? "info" : "error");
-                    return;
-                }
-
-                toast.show(response, "error");
-            });
-        });
-
-        document.body.appendChild(element);
-
-        return element;
-    },
-
-    async captcha(src: string, callback: (captcha: string) => void): Promise<boolean> {
-        const element = document.createElement("div");
-        element.className = "refresher-captcha-popup";
-
-        element.innerHTML = `
-    <p>코드 입력</p>
-    <div class="close">
-      <div class="cross"></div>
-      <div class="cross"></div>
-    </div>
-    <img src="${src}"></img>
-    <input type="text"></input>
-    <button class="refresher-preview-button primary">
-      <p class="refresher-vote-text">전송</p>
-    </button>
-    `;
-
-        const inputEvent = () => {
-            const input = element.querySelector("input")!.value;
-
-            if (!input) return;
-
-            callback(input);
-            element.remove();
-        };
-
-        element.querySelector("input")!.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") inputEvent();
-        });
-
-        element.querySelector(".close")!.addEventListener("click", () => {
-            element.remove();
-        });
-
-        element.querySelector("button")!.addEventListener("click", inputEvent);
-
-        document.body.appendChild(element);
-
-        setTimeout(() => element.querySelector("input")!.focus(), 0);
-
-        return true;
-    }
-};
-
-const getRelevantData = (ev: MouseEvent): GalleryPreData => {
-    const $element = $(ev.target as HTMLElement).closest(".ub-content");
-
-    let id = "";
-    let notice = false;
-    let recommend = false;
-    let type = "";
-    let title = "";
-    let link = "";
-    let gallery = "";
-
-    const $em = $element.find(".icon_img");
-
-    if ($em.length) {
-        const attr = $em.attr("class")!;
-
-        type = attr.split(" ").at(-1) ?? "icon_txt";
-        notice = attr.includes("icon_notice");
-        recommend = attr.includes("icon_recomimg");
-    }
-
-    const $linkElement = $element.find("a:not(.reply_numbox)");
-
-    if ($linkElement.length) {
-        title = $linkElement.text().trim();
-
-        const url = new URL($linkElement.attr("href") ?? "", location.href);
-        id = url.searchParams.get("no") ?? "";
-        link = url.href;
-        gallery = url.searchParams.get("id") ?? "";
-    }
-
-    return {
-        id,
-        gallery,
-        title,
-        link,
-        notice,
-        recommend,
-        type
-    };
-};
-
-interface Cache {
-    date: number;
-    post?: PostInfo;
-    comment?: DcinsideComments;
-    deleted?: boolean;
-}
-
-class PostCache {
-    caches: Record<string, Cache> = {};
-
-    constructor(public maxCacheSize: number = 50) {
-    }
-
-    public get(id: string, ignoreTimeout = false): Cache | undefined {
-        const cache = this.caches[id];
-
-        if (!cache) return undefined;
-
-        if (!ignoreTimeout && Date.now() - cache.date > 1000 * 60) {
-            // this.delete(id);
-            return undefined;
-        }
-
-        return cache;
-    }
-
-    public set(id: string, data: Cache): void {
-        if (Object.keys(this.caches).length > this.maxCacheSize) {
-            const lastCache = Object.keys(this.caches)[0];
-            this.delete(lastCache);
-        }
-
-        this.caches[id] = {
-            ...(this.caches[id] ?? {}),
-            ...data
-        };
-    }
-
-    public delete(id: string): boolean {
-        if (!this.caches[id]) return false;
-
-        delete this.caches[id];
-        return true;
-    }
-}
+void initGifControl();
 
 const postCaches = new PostCache();
+const miniPreview = createMiniPreview();
 
-const miniPreview: MiniPreview = {
-    element: document.createElement("div"),
-    init: false,
-    lastRequest: 0,
-    controller: new AbortController(),
-    lastElement: null,
-    lastTimeout: 0,
-    shouldOutHandle: false,
-    cursorOut: false,
-    create(ev, use, hide, interaction) {
-        if (!use) return;
-
-        miniPreview.cursorOut = false;
-
-        if (Date.now() - miniPreview.lastRequest < 150) {
-            miniPreview.lastRequest = Date.now();
-            miniPreview.lastElement = ev.target;
-
-            if (miniPreview.lastTimeout) clearTimeout(miniPreview.lastTimeout);
-
-            miniPreview.lastTimeout = window.setTimeout(() => {
-                if (!miniPreview.cursorOut && miniPreview.lastElement === ev.target) {
-                    miniPreview.create(ev, use, hide, interaction);
-                }
-
-                miniPreview.cursorOut = false;
-            }, 150);
-
-            return;
-        }
-
-        miniPreview.lastRequest = Date.now();
-
-        const preData = getRelevantData(ev);
-
-        if (!preData) return;
-
-        miniPreview.element.classList.remove("hide");
-        miniPreview.element.classList.add("refresher-mini-preview");
-
-        if (!miniPreview.init) {
-            if (interaction) {
-                miniPreview.element.style.pointerEvents = "auto";
-                miniPreview.element.style.overflow = "auto";
-            }
-
-            miniPreview.element.innerHTML = `<h3>${preData.title}</h3><br><div class="refresher-mini-preview-contents${
-                hide ? " media-hide" : ""
-            }"></div>${interaction ? "" : "<p class=read-more>더 읽으려면 클릭하세요.</p>"}`;
-            document.body.appendChild(miniPreview.element);
-            miniPreview.init = true;
-        }
-
-        const selector = miniPreview.element.querySelector(".refresher-mini-preview-contents");
-
-        if (!selector) return;
-
-        new Promise<PostInfo>((resolve, reject) => {
-            const cache = postCaches.get(`${preData.gallery}${preData.id}`);
-
-            if (cache?.post) {
-                resolve(cache.post);
-                return;
-            }
-
-            request
-                .post(preData.link, preData.gallery, preData.id, miniPreview.controller.signal)
-                .then((response) => {
-                    if (!response) {
-                        reject();
-                        return;
-                    }
-
-                    postCaches.set(`${preData.gallery}${preData.id}`, {
-                        date: Date.now(),
-                        post: response
-                    });
-                    resolve(response);
-                })
-                .catch((error) => {
-                    reject(error);
-                });
-        })
-            .then((v) => {
-                const dom = new DOMParser().parseFromString(v.contents!, "text/html");
-
-                for (const element of dom.querySelectorAll("img[data-original]")) {
-                    element.setAttribute("src", element.getAttribute("data-original")!);
-                }
-
-                const content = dom.body.innerHTML;
-
-                selector.innerHTML = block.check("TEXT", content) ? "게시글 내용이 차단됐습니다." : content;
-                selector.querySelector(".write_div")?.setAttribute("style", "");
-            })
-            .catch((error) => {
-                selector.innerHTML = error.toString().includes("aborted")
-                    ? ""
-                    : `게시글을 새로 가져올 수 없습니다: ${error}`;
-            });
-
-        miniPreview.element.querySelector("h3")!.innerHTML = preData.title;
-    },
-
-    move(ev: MouseEvent, use: boolean, interaction: boolean) {
-        if (!use) return;
-
-        const rect = miniPreview.element.getBoundingClientRect();
-        const width = rect.width;
-        const height = rect.height;
-        const x = Math.min(interaction ? ev.clientX + 10 : ev.clientX, innerWidth - width - 10);
-        const y = Math.min(interaction ? ev.clientY - 50 : ev.clientY, innerHeight - height - 10);
-
-        miniPreview.element.style.transform = `translate(${x}px, ${y}px)`;
-    },
-
-    close(use: boolean) {
-        if (document.querySelector("div:hover")?.classList.contains("refresher-mini-preview")) return;
-
-        miniPreview.cursorOut = true;
-
-        const h3 = miniPreview.element.querySelector("h3");
-
-        if (h3) h3.innerHTML = "로딩 중...";
-
-        const contents = miniPreview.element.querySelector(".refresher-mini-preview-contents");
-
-        if (contents) contents.innerHTML = "로딩 중...";
-
-        if (use) {
-            miniPreview.controller.abort();
-            miniPreview.controller = new AbortController();
-        }
-
-        miniPreview.element.classList.add("hide");
-    }
-};
+let previewNavigationKeyDown: ((ev: KeyboardEvent) => void) | null = null;
 
 let frame: Frame | undefined;
-
-const blockPreset = {
-    day: "",
-    reason: "",
-    delete: false,
-    user_type: false
-};
 
 export default {
     name: "미리보기",
@@ -1344,7 +313,7 @@ export default {
 
                         if (!value || !value.post) return;
 
-                        const gallery = new URL(location.href).searchParams.get("id");
+                        const gallery = new URL(location.href).searchParams.get("id") ?? "";
 
                         previewFrame(
                             null,
@@ -1369,15 +338,15 @@ export default {
         }
 
         if (!this.status.disableCache && this.status.newArticleArchive)
-            this.memory.newPostListEvent = eventBus.on("newPostList", async (articles: Cash[]) => {
+            this.memory.newPostListEvent = eventBus.on("newPostList", async (articles: HTMLElement[]) => {
                 const limited = articles.slice(0, 5);
 
                 for (const article of limited) {
-                    const url = new URL(article.find(".gall_tit > a").attr("href"), "https://gall.dcinside.com");
-                    const gallery = url.searchParams.get("id");
-                    const no = url.searchParams.get("no");
+                    const url = new URL((article.querySelector(".gall_tit > a") as HTMLAnchorElement).getAttribute("href") ?? "", "https://gall.dcinside.com");
+                    const gallery = url.searchParams.get("id") ?? "";
+                    const no = url.searchParams.get("no") ?? "";
                     const controller = new AbortController();
-                    const post = await request.post(url.href, gallery, no, controller.signal);
+                    const post = await previewRequest.post(url.href, gallery, no, controller.signal);
 
                     postCaches.set(`${gallery}${no}`, {
                         date: Date.now(),
@@ -1395,11 +364,9 @@ export default {
             ev.preventDefault();
             ev.stopPropagation();
 
-            $(button)
-                .hide()
-                .closest("div")
-                .children("img")
-                .show();
+            button.style.display = "none";
+            const img = button.closest("div")?.querySelector("img");
+            if (img) img.style.display = "";
         };
         document.addEventListener("click", this.memory.imageBlockClickHandler);
 
@@ -1408,203 +375,34 @@ export default {
         blockPreset.delete = this.status.blockPresetDelete;
         blockPreset.user_type = this.status.blockPresetUserType;
 
-        let postFetchedData: PostInfo;
+        let postFetchedData: IPostInfo;
         let currentPreData: GalleryPreData | null = null;
         const gallery = queryString("id") ?? undefined;
 
+        const getFrameApp = (): FrameScrollApi | undefined => frame?.app;
+
         const makeBodyFrame = (
-            frame: RefresherFrame,
+            frame: PreviewFrame,
             preData: GalleryPreData,
             signal: AbortSignal,
             historySkip?: boolean
         ) => {
-            frame.data.load = true;
-            frame.title = preData.title!;
-            frame.data.buttons = true;
-            frame.data.type = preData.type!;
-            frame.data.useImageBlock = this.status.blockImage;
-
-            if (this.status.colorPreviewLink) {
-                const title = `${preData.title} - ${document.title.split("-").slice(-1)[0].trim()}`;
-
-                if (!historySkip) {
-                    history.pushState({preData, preURL: location.href}, title, preData.link);
-                }
-
-                document.title = title;
-            }
-
-            frame.functions.vote = async (type: number) => {
-                if (frame.collapse) {
-                    toast.show("댓글 보기를 클릭하여 댓글만 표시합니다.");
-                    return false;
-                }
-
-                if (!postFetchedData) {
-                    toast.show("게시글이 로딩될 때까지 잠시 기다려주세요.");
-                    return false;
-                }
-
-                const codeSrc = postFetchedData.requireCaptcha
-                    ? await request.captcha(preData, "recommend")
-                    : undefined;
-
-                const req = async (captcha?: string) => {
-                    const response = await request.vote(
-                        preData.gallery,
-                        preData.id,
-                        type,
-                        captcha ?? undefined,
-                        preData.link!,
-                        postFetchedData.v_cur_t,
-                        postFetchedData.randomParam
-                    );
-
-                    if (response.result === "true") {
-                        frame[type ? "upvotes" : "downvotes"] = response.counts.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-
-                        return true;
-                    }
-
-                    toast.show(response.counts, "error");
-
-                    return false;
-                };
-
-                return codeSrc ? panel.captcha(codeSrc, req) : req();
-            };
-
-            frame.functions.share = () => {
-                writeClipboard(`https://gall.dcinside.com/${http.galleryType(preData.link!, "/")}board/view/?id=${preData.gallery || http.queryString("id")}&no=${preData.id}`)
-                    .then(() => toast.show("클립보드에 복사되었습니다."))
-                    .catch(() => toast.show("클립보드에 복사하는데 실패했습니다.", "error"));
-
-                return true;
-            };
-
-            frame.functions.load = async (useCache = true) => {
-                frame.data.load = true;
-                frame.error = undefined;
-
-                const getPostInfo = async (): Promise<PostInfo> => {
-                    if (useCache && !this.status.disableCache) {
-                        const cache = postCaches.get(`${preData.gallery}${preData.id}`);
-
-                        if (cache?.post !== undefined) {
-                            return cache.post;
-                        }
-                    }
-
-                    const response = await request.post(preData.link!, preData.gallery, preData.id, signal);
-
-                    if (!response) throw new Error("Can not fetch post data.");
-
-                    postCaches.set(`${preData.gallery}${preData.id}`, {
-                        date: Date.now(),
-                        post: response
-                    });
-
-                    return response;
-                };
-
-                try {
-                    const postInfo = await getPostInfo();
-                    postFetchedData = postInfo;
-
-                    if (this.status.colorPreviewLink) {
-                        const title = `${postInfo.title} - ${document.title.split("-").slice(-1)[0].trim()}`;
-
-                        if (!historySkip) {
-                            preData.title = postInfo.title;
-                            history.replaceState({preData, preURL: location.href}, title, preData.link);
-                        }
-
-                        document.title = title;
-                    }
-
-                    try {
-                        if (postInfo.isAdult) {
-                            frame.error = {
-                                title: "성인 인증이 필요한 게시글입니다.",
-                                detail: "성인 인증을 하신 후 다시 시도해주세요."
-                            };
-
-                            return;
-                        }
-
-                        const dom = new DOMParser().parseFromString(postInfo.contents!, "text/html");
-
-                        for (const element of dom.querySelectorAll("img[data-original]")) {
-                            element.setAttribute("src", element.getAttribute("data-original")!);
-                        }
-
-                        if (gifControlConfig) {
-                            for (const element of dom.querySelectorAll("video")) {
-                                const src = element.getAttribute("data-src");
-
-                                if (src?.includes("dcinside.com/dccon.php")) continue;
-
-                                element.removeAttribute("onmousedown");
-                                element.setAttribute("controls", "");
-                            }
-                        }
-
-                        frame.contents = block.check("TEXT", dom.body.innerHTML, gallery)
-                            ? "게시글 내용이 차단됐습니다."
-                            : dom.body.innerHTML;
-
-                        frame.upvotes = postInfo.upvotes;
-                        frame.fixedUpvotes = postInfo.fixedUpvotes;
-                        frame.downvotes = postInfo.downvotes;
-
-                        if (frame.title !== postInfo.title) frame.title = postInfo.title!;
-
-                        frame.data.disabledDownvote = postInfo.disabledDownvote ?? false;
-
-                        frame.data.user = postInfo.user;
-
-                        if (postInfo.date) {
-                            frame.data.date = new Date(postInfo.date.replace(/\./g, "-"));
-                        }
-
-                        if (postInfo.expire) {
-                            frame.data.expire = new Date(postInfo.expire);
-                        }
-
-                        frame.data.buttons = true;
-                        frame.data.views = `조회 ${postInfo.views}회`;
-                    } finally {
-                        eventBus.emit("RefresherPostDataLoaded", postInfo);
-                        eventBus.emit("RefresherPostCommentIDLoaded", postInfo.commentId, postInfo.commentNo);
-                        eventBus.emitNextTick("contentPreview", frame.app.$el);
-                    }
-                } catch (error) {
-                    frame.error = {
-                        title: "게시글",
-                        detail: String(error)
-                    };
-
-                    console.error("Error occured while loading a post.", error);
-                } finally {
-                    frame.data.load = false;
-                }
-            };
-
-            frame.functions.retry = (useCache = false) => {
-                frame.functions.load(useCache);
-            };
-
-            if (!frame.collapse) frame.functions.load();
-
-            frame.functions.openOriginal = () => {
-                if (this.status.colorPreviewLink) location.reload();
-                else location.href = preData.link!;
-
-                return true;
-            };
+            makeBodyFrameFn({
+                frame,
+                preData,
+                signal,
+                historySkip,
+                gallery,
+                disableCache: this.status.disableCache,
+                colorPreviewLink: this.status.colorPreviewLink,
+                gifControl: gifControlConfig,
+                blockImage: this.status.blockImage,
+                postCaches,
+                getGroupElement: () => getFrameApp()?.groupElement
+            });
         };
 
-        const makeCommentFrame = (frame: RefresherFrame, preData: GalleryPreData, signal: AbortSignal) => {
+        const makeCommentFrame = (frame: PreviewFrame, preData: GalleryPreData, signal: AbortSignal) => {
             frame.data.load = true;
             frame.title = "댓글";
             frame.subtitle = "로딩 중...";
@@ -1628,7 +426,8 @@ export default {
                         signal.removeEventListener("abort", abortHandler);
                         resolve({
                             gallery: commentId,
-                            id: commentNo
+                            id: commentNo,
+                            type: ""
                         });
                     },
                     {
@@ -1657,7 +456,7 @@ export default {
 
                     const requireCapCode = postFetchedData.requireCommentCaptcha;
 
-                    const codeSrc = requireCapCode ? await request.captcha(preData, "comment") : undefined;
+                    const codeSrc = requireCapCode ? await previewRequest.captcha(preData, "comment") : undefined;
 
                     const getGreCaptchaToken = () =>
                         new Promise<string | undefined>((resolve) => {
@@ -1754,8 +553,8 @@ export default {
 
                 return (
                     admin && !password
-                        ? request.adminDeleteComment(preData, commentId, signal)
-                        : request.userDeleteComment(preData, commentId, signal, password)
+                        ? previewRequest.adminDeleteComment(preData, commentId, signal)
+                        : previewRequest.userDeleteComment(preData, commentId, signal, password)
                 )
                     .then((v) => {
                         if (typeof v === "boolean") {
@@ -1811,7 +610,7 @@ export default {
                         }
                     }
 
-                    const response = await request.comments(
+                    const response = await previewRequest.comments(
                         {
                             link: preData.link!,
                             gallery: preData.gallery,
@@ -1902,7 +701,7 @@ export default {
                                 v.name,
                                 v.user_id || null,
                                 v.ip || null,
-                                domParser
+                                new DOMParser()
                                     .parseFromString(v.gallog_icon, "text/html")
                                     .querySelector("a.writer_nikcon img")
                                     ?.getAttribute("src") || null
@@ -1997,7 +796,7 @@ export default {
                     frame.data.comments = comments;
 
                     if (needRefresh) {
-                        const frameComponent = frame.app.commentFrameRef;
+                        const frameComponent = getFrameApp()?.commentFrameRef;
                         frameComponent?.incrementCommentKey?.();
                     }
                 } catch (e) {
@@ -2032,8 +831,8 @@ export default {
         const newPostWithData = (preData: GalleryPreData, historySkip?: boolean) => {
             if (!frame) return;
 
-            const bodyFrame = frame.app.body();
-            const commentFrame = frame.app.comment();
+            const bodyFrame = frame.frames[0];
+            const commentFrame = frame.frames[1];
 
             if (bodyFrame.data.load) return;
 
@@ -2049,7 +848,7 @@ export default {
             makeCommentFrame(commentFrame, preData, signal);
 
             if (this.status.toggleAdminPanel && document.querySelector(".useradmin_btnbox button")) {
-                panel.admin(preData, frame, this.status.toggleBlur, eventBus, this.status.useKeyPress);
+                panel.admin(preData, frame, this.status.toggleBlur, eventBus, this.status.useKeyPress, previewRequest);
             }
         };
 
@@ -2064,7 +863,7 @@ export default {
                 return;
             }
 
-            if (this.status.tooltipMode) miniPreview.close(this.status.tooltipMode);
+            if (this.status.tooltipMode) miniPreviewClose(miniPreview, this.status.tooltipMode);
 
             const preData = ev === null ? prd : getRelevantData(ev);
 
@@ -2109,10 +908,10 @@ export default {
                     ],
                     {
                         background: true,
-                        onScroll: (ev: WheelEvent, app: FrameScrollApi, group: HTMLElement) => {
+                        onScroll: (ev: WheelEvent, group: HTMLElement) => {
                             if (!this.status.scrollToSkip) return;
 
-                            appStore = app;
+                            appStore = frame?.app;
                             groupStore = group;
 
                             detector.addMouseEvent(ev);
@@ -2134,15 +933,17 @@ export default {
                     }
 
                     const getNextPost = (direction: "next" | "prev") => {
-                        const post = $(`.us-post[data-no="${postFetchedData.id}"]`);
+                        const post = document.querySelector(`.us-post[data-no="${postFetchedData.id}"]`) as HTMLElement | null;
 
                         if (!post) return;
 
-                        const nextPost = direction === "next" ? post.prev() : post.next();
+                        const nextPost = direction === "next"
+                            ? (post.previousElementSibling as HTMLElement | null)
+                            : (post.nextElementSibling as HTMLElement | null);
 
-                        if (!nextPost || nextPost.attr("data-type") === "icon_notice") return;
+                        if (!nextPost || nextPost.getAttribute("data-type") === "icon_notice") return;
 
-                        const nextPostNo = nextPost.attr("data-no");
+                        const nextPostNo = nextPost.getAttribute("data-no");
 
                         if (!nextPostNo) return;
 
@@ -2194,18 +995,20 @@ export default {
                 const getAdjacentPostNo = (direction: "next" | "prev") => {
                     if (!postFetchedData?.id) return;
 
-                    const post = $(`.us-post[data-no="${postFetchedData.id}"]`);
+                    const post = document.querySelector(`.us-post[data-no="${postFetchedData.id}"]`) as HTMLElement | null;
                     if (!post) return;
 
-                    const adjacentPost = direction === "next" ? post.prev() : post.next();
-                    if (!adjacentPost || adjacentPost.attr("data-type") === "icon_notice") return;
+                    const adjacentPost = direction === "next"
+                        ? (post.previousElementSibling as HTMLElement | null)
+                        : (post.nextElementSibling as HTMLElement | null);
+                    if (!adjacentPost || adjacentPost.getAttribute("data-type") === "icon_notice") return;
 
-                    return adjacentPost.attr("data-no");
+                    return adjacentPost.getAttribute("data-no");
                 };
 
                 previewNavigationKeyDown = (keyboardEvent: KeyboardEvent) => {
                     if (keyboardEvent.key !== "PageUp" && keyboardEvent.key !== "PageDown") return;
-                    if (!currentPreData || frame.app.closed || frame.app.inputFocus) return;
+                    if (!currentPreData || frame?.app?.closed || frame?.app?.inputFocus) return;
 
                     keyboardEvent.preventDefault();
 
@@ -2226,7 +1029,7 @@ export default {
 
                 document.addEventListener("keydown", previewNavigationKeyDown);
 
-                frame.app.$on("close", () => {
+                frame.app?.onClose(() => {
                     this.memory.controller?.abort();
                     this.memory.controller = null;
                     this.memory.signal = null;
@@ -2240,9 +1043,7 @@ export default {
                     const adminPanel = document.querySelector(".refresher-management-panel");
                     adminPanel?.remove();
 
-                    if (typeof adminKeyPress === "function") {
-                        document.removeEventListener("keypress", adminKeyPress);
-                    }
+                    removeAdminKeyPressHandler();
                     if (previewNavigationKeyDown) {
                         document.removeEventListener("keydown", previewNavigationKeyDown);
                         previewNavigationKeyDown = null;
@@ -2265,14 +1066,14 @@ export default {
 
             frame.app.closed = false;
 
-            frame.app.body().collapse = collapseView;
+            frame.frames[0].collapse = collapseView;
 
-            makeBodyFrame(frame.app.body(), preData, signal, historySkip);
+            makeBodyFrame(frame.frames[0], preData, signal, historySkip);
 
-            makeCommentFrame(frame.app.comment(), preData, signal);
+            makeCommentFrame(frame.frames[1], preData, signal);
 
             if (this.status.toggleAdminPanel && document.querySelector(".useradmin_btnbox button") !== null) {
-                panel.admin(preData, frame, this.status.toggleBlur, eventBus, this.status.useKeyPress);
+                panel.admin(preData, frame, this.status.toggleBlur, eventBus, this.status.useKeyPress, previewRequest);
             }
 
             setTimeout(frame.app.fadeIn, 0);
@@ -2315,7 +1116,7 @@ export default {
             element.addEventListener("mouseup", handleMousePress, {signal: elementEventSignal});
             element.addEventListener("mousedown", handleMousePress, {signal: elementEventSignal});
             element.addEventListener(this.status.reversePreviewKey ? "click" : "contextmenu", (ev) => {
-                if ($(element).closest(".us-post").hasClass("refresherBlur")) return;
+                if (element.closest(".us-post")?.classList.contains("refresherBlur")) return;
 
                 if (typeof timer === "number") {
                     window.clearTimeout(timer);
@@ -2329,11 +1130,11 @@ export default {
                 element.addEventListener("contextmenu", (e) => {
                     e.preventDefault();
 
-                    const $element = $(e.target as HTMLAnchorElement);
+                    const target = e.target as HTMLAnchorElement;
 
                     location.href =
-                        $element.attr("href") ??
-                        $element.closest(".us-post").find("a:not(.reply_numbox)").attr("href") ??
+                        target.getAttribute("href") ??
+                        target.closest(".us-post")?.querySelector("a:not(.reply_numbox)")?.getAttribute("href") ??
                         location.href;
                 }, {signal: elementEventSignal});
             }
@@ -2341,28 +1142,32 @@ export default {
             element.addEventListener("mouseenter", (ev) => {
                 if (
                     !this.status.tooltipMode ||
-                    $(element).closest(".us-post").hasClass("refresherBlur") ||
+                    element.closest(".us-post")?.classList.contains("refresherBlur") ||
                     typeof timer === "number" ||
-                    (this.status.tooltipRatioDisable && $(element).closest(".us-post").find(".ratio[style]").length)
+                    (this.status.tooltipRatioDisable && element.closest(".us-post")?.querySelector(".ratio[style]"))
                 )
                     return;
 
                 timer = window.setTimeout(() => {
-                    miniPreview.create(
+                    miniPreviewCreate(
+                        miniPreview,
                         ev,
                         this.status.tooltipMode,
                         this.status.tooltipMediaHide,
-                        this.status.tooltipInteraction
+                        this.status.tooltipInteraction,
+                        getRelevantData,
+                        postCaches,
+                        previewRequest
                     );
 
                     if (this.status.tooltipInteraction)
-                        miniPreview.move(ev, this.status.tooltipMode, this.status.tooltipInteraction);
+                        miniPreviewMove(miniPreview, ev, this.status.tooltipMode, this.status.tooltipInteraction);
                 }, this.status.tooltipDelay);
             }, {signal: elementEventSignal});
 
             element.addEventListener("mousemove", (ev) => {
                 if (this.status.tooltipMode && !this.status.tooltipInteraction)
-                    miniPreview.move(ev, this.status.tooltipMode, this.status.tooltipInteraction);
+                    miniPreviewMove(miniPreview, ev, this.status.tooltipMode, this.status.tooltipInteraction);
             }, {signal: elementEventSignal});
 
             element.addEventListener("mouseleave", () => {
@@ -2373,7 +1178,7 @@ export default {
                     timer = undefined;
                 }
 
-                miniPreview.close(this.status.tooltipMode);
+                miniPreviewClose(miniPreview, this.status.tooltipMode);
             }, {signal: elementEventSignal});
         };
 
@@ -2388,7 +1193,7 @@ export default {
                 this.memory.historyClose = true;
 
                 try {
-                    frame.app.close();
+                    frame?.app?.close();
                 } catch {
                     location.reload();
                 }
@@ -2398,7 +1203,7 @@ export default {
 
             this.memory.historyClose = false;
 
-            if (frame.app.closed) {
+            if (frame?.app?.closed) {
                 previewFrame(null, ev.state.preData, true);
             } else {
                 newPostWithData(ev.state.preData, true);
@@ -2436,9 +1241,7 @@ export default {
             previewNavigationKeyDown = null;
         }
 
-        if (typeof adminKeyPress === "function") {
-            document.removeEventListener("keypress", adminKeyPress);
-        }
+        removeAdminKeyPressHandler();
 
         if (this.memory.refreshIntervalId) {
             window.clearInterval(this.memory.refreshIntervalId);

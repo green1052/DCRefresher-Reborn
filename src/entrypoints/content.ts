@@ -5,33 +5,9 @@ import "../core/updateCheck";
 
 import filter from "../core/filtering";
 import modules from "../core/modules";
-
-import blockModule from "../modules/block";
-import dataModule from "../modules/data";
-import fontsModule from "../modules/fonts";
-import imagesearchModule from "../modules/imagesearch";
-import layoutModule from "../modules/layout";
-import manageModule from "../modules/manage";
-import previewModule from "../modules/preview";
-import refreshModule from "../modules/refresh";
-import stealthModule from "../modules/stealth";
-import userinfoModule from "../modules/userinfo";
-import writeModule from "../modules/write";
 import {migrateLocalStorageData} from "../utils/storageMigration";
 
-const allModules = [
-    blockModule,
-    dataModule,
-    fontsModule,
-    imagesearchModule,
-    layoutModule,
-    manageModule,
-    previewModule,
-    refreshModule,
-    stealthModule,
-    userinfoModule,
-    writeModule
-];
+const moduleLoaders = import.meta.glob<{default: RefresherModule}>("../modules/*.ts");
 
 export default defineContentScript({
     matches: ["https://*.dcinside.com/*"],
@@ -45,6 +21,12 @@ export default defineContentScript({
     runAt: "document_start",
     async main() {
         await migrateLocalStorageData();
+
+        const loadedModules = await Promise.all(
+            Object.values(moduleLoaders).map((loader) => loader().then((m) => m.default))
+        );
+
+        const allModules = loadedModules.filter((m): m is RefresherModule => m !== undefined);
 
         const results = await Promise.allSettled(allModules.map((module) => modules.load(module)));
 

@@ -8,13 +8,13 @@
                 v-model="unsignedUserID"
                 placeholder="닉네임"
                 type="text"
-                @change="(v) => validCheck('id', v.target.value)"
+                @change="(v: Event) => validCheck('id', (v.target as HTMLInputElement).value)"
             />
             <input
                 v-model="unsignedUserPW"
                 placeholder="비밀번호"
                 type="password"
-                @change="(v) => validCheck('pw', v.target.value)"
+                @change="(v: Event) => validCheck('pw', (v.target as HTMLInputElement).value)"
             />
         </form>
         <div class="refresher-comment-body">
@@ -80,8 +80,7 @@
 </template>
 
 <script lang="ts" setup>
-import $ from "cash-dom";
-import {getCurrentInstance, onMounted, ref, watch} from "vue";
+import {inject, onMounted, ref, shallowRef, watch, type Ref} from "vue";
 import toast from "../utils/toast";
 
 import {Nullable} from "../utils/types";
@@ -124,11 +123,11 @@ const text = ref("");
 const editUser = ref(false);
 const fixedUser = ref(false);
 const hoverUserInfo = ref(false);
-const user = ref<Nullable<User>>(null);
+const user = shallowRef<Nullable<User>>(null);
 const unsignedUserID = ref(localStorage.nonmember_nick || "ㅇㅇ");
 const unsignedUserPW = ref(localStorage.nonmember_pw || Math.random().toString(36).substring(2, 10));
 
-const instance = getCurrentInstance();
+const inputFocusRef = inject<Ref<boolean>>("refresherInputFocus", ref(false));
 
 watch(unsignedUserID, (value: string) => {
     if (!user.value) return;
@@ -231,7 +230,8 @@ const write = async (): Promise<boolean> => {
         }
 
         text.value = "";
-        $("#comment_main").val("");
+        const commentMain = document.querySelector<HTMLInputElement>("#comment_main");
+        if (commentMain) commentMain.value = "";
 
         emit("setDccon", []);
         emit("setBigDccon", false);
@@ -245,14 +245,12 @@ const write = async (): Promise<boolean> => {
 
 const focus = (): void => {
     focused.value = true;
-    const proxy = instance?.parent?.root?.exposed as { inputFocus?: boolean } | null | undefined;
-    if (proxy) proxy.inputFocus = true;
+    inputFocusRef.value = true;
 };
 
 const blur = (): void => {
     focused.value = false;
-    const proxy = instance?.parent?.root?.exposed as { inputFocus?: boolean } | null | undefined;
-    if (proxy) proxy.inputFocus = false;
+    inputFocusRef.value = false;
 };
 
 const type = (ev: KeyboardEvent): KeyboardEvent | void => {
@@ -345,6 +343,91 @@ html:has(#css-darkmode) {
                 border: 1px solid rgb(90, 90, 90);
             }
         }
+
+        .refresher-input-wrap {
+            &.disable {
+                input {
+                    color: rgb(63, 63, 63);
+                }
+
+                &::after {
+                    background-color: rgb(38, 55, 73);
+                }
+            }
+
+            textarea {
+                border-bottom: 1px solid #fff;
+                color: #fff;
+
+                &:disabled {
+                    border-bottom: 1px solid rgb(63, 63, 63);
+                }
+            }
+        }
+    }
+}
+
+// ============================================================
+// Input wrap (underline-style focus)
+// ============================================================
+
+.refresher-input-wrap {
+    height: 45px;
+    margin-right: 20px;
+    min-width: 400px;
+    position: relative;
+    width: 80%;
+
+    &.focus {
+        &::after {
+            width: calc(100% + 4px);
+        }
+    }
+
+    &.disable {
+        input {
+            color: rgb(110, 110, 110);
+        }
+
+        &::after {
+            background-color: rgb(38, 55, 73);
+        }
+    }
+
+    &:has(textarea) {
+        &::after {
+            bottom: -6px;
+        }
+    }
+
+    &:has(input) {
+        &::after {
+            bottom: -3px;
+        }
+    }
+
+    &::after {
+        background-color: var(--refresher-input-focus);
+        content: " ";
+        height: 2px;
+        left: 0;
+        position: absolute;
+        transition: 0.3s all cubic-bezier(0.19, 1, 0.22, 1);
+        width: 0;
+        z-index: 10;
+    }
+
+    input,
+    textarea {
+        background: transparent;
+        border: 0;
+        border-bottom: 1px solid var(--refresher-input-border);
+        color: var(--refresher-text);
+        font-size: 14px;
+        height: 100%;
+        outline: none;
+        transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+        width: 100%;
     }
 }
 </style>

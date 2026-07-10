@@ -27,7 +27,7 @@ interface Props {
     settingKey: string;
     moduleName: string;
     moduleEnabled: boolean;
-    updateUserSetting: (module: string, key: string, value: unknown) => void;
+    updateUserSetting: (module: string | undefined, key: string | undefined, value: unknown) => void;
     typeWrap: (value: unknown) => string | unknown;
 }
 

@@ -3,7 +3,7 @@
         <refresher-checkbox
             v-if="setting.type === 'check'"
             :id="settingKey"
-            :change="updateUserSetting"
+            :change="updateUserSettingAdapter"
             :checked="setting.value"
             :disabled="!moduleEnabled"
             :modname="moduleName"
@@ -11,7 +11,7 @@
         <refresher-input
             v-else-if="setting.type === 'text'"
             :id="settingKey"
-            :change="updateUserSetting"
+            :change="updateUserSettingAdapter"
             :disabled="!moduleEnabled"
             :modname="moduleName"
             :placeholder="setting.default"
@@ -20,7 +20,7 @@
         <refresher-range
             v-else-if="setting.type === 'range'"
             :id="settingKey"
-            :change="updateUserSetting"
+            :change="updateUserSettingAdapter"
             :disabled="!moduleEnabled"
             :max="setting.max"
             :min="setting.min"
@@ -33,10 +33,10 @@
         <refresher-options
             v-else-if="setting.type === 'option'"
             :id="settingKey"
-            :change="updateUserSetting"
+            :change="updateUserSettingAdapter"
             :disabled="!moduleEnabled"
             :modname="moduleName"
-            :options="setting.items"
+            :options="setting.items as Record<string, string>"
             :value="setting.value"
         />
     </div>
@@ -53,8 +53,12 @@ interface Props {
     settingKey: string;
     moduleName: string;
     moduleEnabled: boolean;
-    updateUserSetting: (module: string, key: string, value: unknown) => void;
+    updateUserSetting: (module: string | undefined, key: string | undefined, value: unknown) => void;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
+
+const updateUserSettingAdapter = (module: string | undefined, id: string | undefined, value: unknown) => {
+    props.updateUserSetting(module, id, value);
+};
 </script>

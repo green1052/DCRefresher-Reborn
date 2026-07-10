@@ -17,25 +17,25 @@
             @wheel="wheelHandle"
         >
             <RefresherFrame
-                v-if="bodyFrame"
+                v-if="frames[0]"
                 ref="bodyFrameRef"
-                :frame="bodyFrame"
+                :frame="frames[0]"
                 :index="0"
             />
             <RefresherFrame
-                v-if="commentFrame"
+                v-if="frames[1]"
                 ref="commentFrameRef"
-                :frame="commentFrame"
+                :frame="frames[1]"
                 :index="1"
             />
 
             <div id="scroll">
                 <img
-                    :src="browser.runtime.getURL('/assets/upvote.webp')"
+                    :src="getAssetURL('upvote')"
                     @click="() => clickScroll('up')"
                 />
                 <img
-                    :src="browser.runtime.getURL('/assets/downvote.webp')"
+                    :src="getAssetURL('downvote')"
                     @click="() => clickScroll('down')"
                 />
             </div>
@@ -56,76 +56,47 @@
 </template>
 
 <script lang="ts" setup>
-import {getCurrentInstance, onBeforeUnmount, onMounted, ref, watch} from "vue";
+import {onBeforeUnmount, onMounted, provide, ref, watch} from "vue";
 
 import RefresherFrame from "../components/frame.vue";
+import {getAssetURL} from "../utils/assetURL";
 import RefresherScroll from "../components/scroll.vue";
-import {FrameOption, FrameScrollApi, FrameStackOption} from "./frame";
-import {createFrameRuntime} from "./frameRuntime";
+import type {PreviewFrame} from "./PreviewFrame";
+import type {FrameStackOption} from "./frame";
 
 interface Props {
+    frames: PreviewFrame[];
     option?: FrameStackOption;
-    children?: FrameOption[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    option: () => ({}),
-    children: () => []
+    option: () => ({})
 });
-const instance = getCurrentInstance();
 
 const emit = defineEmits<{
     close: [];
 }>();
 
-type FrameEventHandler = (...args: unknown[]) => void;
-type FrameComponentApi = Pick<
-    RefresherFrameAppVue,
-    "body" | "comment" | "setScrollMode" | "clearScrollMode" | "outerClick" | "close" | "fadeIn" | "fadeOut" | "$on"
-> & {
-    frames: RefresherFrame[];
-    fade: boolean;
-    scrollModeTop: boolean;
-    scrollModeBottom: boolean;
-    closed: boolean;
-    inputFocus: boolean;
-    groupElement?: HTMLElement;
-    bodyFrameRef?: { incrementCommentKey?: () => void; commentKey?: { value: number } } | null;
-    commentFrameRef?: { incrementCommentKey?: () => void; commentKey?: { value: number } } | null;
-};
-
-// Reactive data
-const frames = ref<RefresherFrame[]>(props.children.map((child) => createFrameRuntime(child)));
 const fade = ref(false);
 const scrollModeTop = ref(false);
 const scrollModeBottom = ref(false);
 const closed = ref(false);
 const inputFocus = ref(false);
-
-interface ClosableFrame {
-    $emit: (event: string, ...args: unknown[]) => void;
-}
-
-const isClosableFrame = (frame: RefresherFrame): frame is RefresherFrame & ClosableFrame => {
-    return typeof (frame as Partial<ClosableFrame>).$emit === "function";
-};
-
 const groupElement = ref<HTMLElement>();
-const bodyFrameRef = ref<{ incrementCommentKey?: () => void; commentKey?: { value: number } } | null>(null);
-const commentFrameRef = ref<{ incrementCommentKey?: () => void; commentKey?: { value: number } } | null>(null);
+const bodyFrameRef = ref<{incrementCommentKey?: () => void} | null>(null);
+const commentFrameRef = ref<{incrementCommentKey?: () => void} | null>(null);
 let fadeOutTimer: number | null = null;
 
-// Spread option properties
-const background = ref(props.option && props.option.background ? props.option.background : false);
-const blur = ref(props.option && props.option.blur ? props.option.blur : false);
-const onScroll = props.option && props.option.onScroll ? props.option.onScroll : undefined;
+provide("refresherInputFocus", inputFocus);
 
-// Watch for closed state changes
+const background = ref(props.option?.background ?? false);
+const blur = ref(props.option?.blur ?? false);
+const onScroll = props.option?.onScroll;
+
 watch(closed, (val: boolean) => {
     document.body.style.overflow = val ? "" : "hidden";
 });
 
-// Lifecycle hook
 const onKeyUp = (ev: KeyboardEvent) => {
     if (ev.code === "Escape" && !closed.value) {
         outerClick();
@@ -149,66 +120,21 @@ const clickHandle = (ev: MouseEvent) => {
 
 const wheelHandle = (ev: WheelEvent) => {
     if (typeof onScroll === "function") {
-        onScroll(
-            ev,
-            instance?.exposed as FrameScrollApi,
-            groupElement.value as HTMLElement
-        );
+        onScroll(ev, groupElement.value as HTMLElement);
     }
 };
-
-onMounted(() => {
-    document.body.style.overflow = "hidden";
-    document.addEventListener("keyup", onKeyUp);
-});
-
-onBeforeUnmount(() => {
-    document.removeEventListener("keyup", onKeyUp);
-    document.body.style.overflow = "";
-
-    if (fadeOutTimer !== null) {
-        window.clearTimeout(fadeOutTimer);
-        fadeOutTimer = null;
-    }
-
-    appCloseSubscribers.clear();
-});
-
-// Methods
-const body = () => {
-    return frames.value[0];
-};
-
-const comment = () => {
-    return frames.value[1];
-};
-
-const bodyFrame = ref<RefresherFrame | undefined>(body());
-const commentFrame = ref<RefresherFrame | undefined>(comment());
 
 const setScrollMode = (mode: "top" | "bottom" | "none") => {
     scrollModeTop.value = mode === "top";
     scrollModeBottom.value = mode === "bottom";
 };
 
-const clearScrollMode = () => {
-    setScrollMode("none");
-};
+const clearScrollMode = () => setScrollMode("none");
 
 const outerClick = () => {
-    // Broadcast close to each frame runtime.
-    frames.value.forEach((frame) => {
-        if (frame && isClosableFrame(frame)) {
-            frame.$emit("close");
-        }
-    });
-
+    props.frames.forEach((frame) => frame.emitClose());
     emit("close");
     fadeOut();
-};
-
-const close = () => {
-    outerClick();
 };
 
 const fadeIn = () => {
@@ -229,19 +155,35 @@ const fadeOut = () => {
     }, 251);
 };
 
-const appCloseSubscribers = new Set<FrameEventHandler>();
-const appOn = (event: string, callback: FrameEventHandler) => {
-    if (event !== "close") return;
-    appCloseSubscribers.add(callback);
+const close = () => outerClick();
+
+const onClose = (handler: () => void) => {
+    props.frames.forEach((frame) => frame.onClose(handler));
 };
 
-const emitAppClose = (...args: unknown[]) => {
-    appCloseSubscribers.forEach((handler) => handler(...args));
-};
+onMounted(() => {
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keyup", onKeyUp);
+});
 
-// Expose methods for external access
+onBeforeUnmount(() => {
+    document.removeEventListener("keyup", onKeyUp);
+    document.body.style.overflow = "";
+
+    if (fadeOutTimer !== null) {
+        window.clearTimeout(fadeOutTimer);
+        fadeOutTimer = null;
+    }
+});
+
+watch(closed, (value) => {
+    if (value) {
+        props.frames.forEach((frame) => frame.emitClose());
+    }
+});
+
 defineExpose({
-    frames,
+    frames: props.frames,
     fade,
     scrollModeTop,
     scrollModeBottom,
@@ -250,41 +192,20 @@ defineExpose({
     groupElement,
     bodyFrameRef,
     commentFrameRef,
-    body,
-    comment,
+    body: () => props.frames[0],
+    comment: () => props.frames[1],
     setScrollMode,
     clearScrollMode,
     outerClick,
     close,
     fadeIn,
     fadeOut,
-    $on: appOn
-});
-
-onMounted(() => {
-    const app = instance?.exposed as FrameComponentApi | undefined;
-    if (!app) return;
-
-    frames.value.forEach((frame) => {
-        frame.app = app as unknown as RefresherFrameAppVue;
-    });
-
-    bodyFrame.value = body();
-    commentFrame.value = comment();
-});
-
-watch(closed, (value) => {
-    if (value) {
-        emitAppClose();
-    }
+    onClose
 });
 </script>
 
 <style lang="scss">
-$shadow-0dp: none;
-$shadow-1dp: 0px 0px 16px rgba(0, 0, 0, 0.08);
-$shadow-2dp: 0px 0px 16px rgba(0, 0, 0, 0.12);
-$shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
+@use "@/assets/styles/variables" as *;
 
 .refresher-frame-outer {
     display: flex;
@@ -296,10 +217,10 @@ $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
     position: fixed;
     top: 0;
     width: 100%;
-    z-index: 2000;
+    z-index: $z-tooltip;
 
     &.background {
-        background-color: rgba(221, 221, 221, 0.6);
+        background-color: var(--refresher-bg-overlay);
     }
 
     &.blur {
@@ -313,22 +234,22 @@ $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
 
     &.fadeIn {
         opacity: 1;
-        transition: 0.6s opacity cubic-bezier(0.19, 1, 0.22, 1);
+        transition: 0.6s opacity $ease-out-expo;
 
         .refresher-frame {
             transform: translateY(0px);
-            transition: 0.5s transform cubic-bezier(0.19, 1, 0.22, 1);
+            transition: 0.5s transform $ease-out-expo;
         }
     }
 
     &.fadeOut {
         opacity: 0;
         pointer-events: none;
-        transition: 0.25s opacity cubic-bezier(0.19, 1, 0.22, 1);
+        transition: 0.25s opacity $ease-out-expo;
 
         .refresher-frame {
             transform: translateY(10px);
-            transition: 0.25s transform cubic-bezier(0.19, 1, 0.22, 1);
+            transition: 0.25s transform $ease-out-expo;
         }
     }
 
@@ -354,42 +275,6 @@ $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
     right: 0;
     user-select: none;
     width: 100px;
-    z-index: 2000;
-}
-
-.refresher-scroll {
-    background: linear-gradient(to top, rgba(12, 23, 53, 0.7), rgba(32, 42, 72, 0.3), rgba(0, 0, 0, 0));
-    bottom: 0;
-    color: white;
-    display: flex;
-    height: 40%;
-    justify-content: center;
-    left: 0;
-    pointer-events: none;
-    position: fixed;
-    width: 100%;
-
-    .center {
-        margin: auto;
-        position: relative;
-        top: 20%;
-
-        p {
-            font-size: 24px;
-            font-weight: bold;
-            letter-spacing: -1.66px;
-        }
-    }
-
-    &.top {
-        background: linear-gradient(to bottom, rgba(12, 23, 53, 0.7), rgba(32, 42, 72, 0.3), rgba(0, 0, 0, 0));
-        bottom: unset;
-        top: 0;
-
-        .center {
-            bottom: 20%;
-            top: unset;
-        }
-    }
+    z-index: $z-tooltip;
 }
 </style>

@@ -1,8 +1,6 @@
 import eventBus from "@/core/eventbus";
 import filter from "@/core/filtering";
-import $ from "cash-dom";
-import {Cash} from "cash-dom/dist/cash";
-import ky from "ky";
+import ky from "../utils/httpClient";
 
 import {queryString} from "../utils/http";
 import toast from "../utils/toast";
@@ -10,6 +8,88 @@ import storage from "../utils/webStorage";
 
 const MINIMUM_REFRESH_INTERVAL = 2000;
 const DEFAULT_TIMEOUT_OFFSET = 100;
+
+interface RefresherModuleMemory {
+    uuid: string | null;
+    uuid2: string | null;
+    cache: Record<string, unknown>;
+    new_counts: number;
+    delay: number;
+    refresh: number;
+    calledByPageTurn: boolean;
+    refreshRequest: string | null;
+    lastRefresh: number;
+    load: ((customURL?: string, force?: boolean) => Promise<boolean>) | null;
+    paused: boolean;
+    loading: boolean;
+    archiveArticleConfig: boolean;
+    controlButtonFilterId: string | null;
+    visibilityChangeHandler: (() => void) | null;
+    pageShowHandler: ((event: PageTransitionEvent) => void) | null;
+    popStateHandler: (() => void) | null;
+}
+
+const highlightSearchResults = (newList: HTMLElement, searchValue: string): void => {
+    if (!searchValue) return;
+    for (const gallTit of newList.querySelectorAll<HTMLElement>(".gall_tit")) {
+        const a = gallTit.querySelector<HTMLElement>("a:first-child");
+        if (!a) continue;
+
+        let classList = "mark";
+        if (a.querySelector(".spoiler")) {
+            classList += " spoiler";
+        }
+
+        const subject = a.innerHTML;
+        if (subject.includes(searchValue)) {
+            a.innerHTML = subject.replace(searchValue, `<span class="${classList}">${searchValue}</span>`);
+        }
+    }
+};
+
+const archiveDeletedPosts = (
+    oldList: HTMLElement,
+    newList: HTMLElement,
+    newListChildren: HTMLElement[],
+    oldCache: string[],
+    newCache: string[],
+    newPostCount: number
+): void => {
+    const deletedPosts = oldCache.filter((postNo) => postNo && !newCache.includes(postNo));
+
+    deletedPosts.forEach((deletedNo) => {
+        const originalIndex = oldCache.indexOf(deletedNo);
+        if (originalIndex !== -1) {
+            const insertIndex = originalIndex + newPostCount;
+            const oldChild = oldList.children[originalIndex] as HTMLElement | undefined;
+            if (oldChild) {
+                oldChild.classList.add("refresher-deleted");
+                const refChild = newListChildren[insertIndex] ?? null;
+                newList.insertBefore(oldChild, refChild);
+            }
+        }
+    });
+};
+
+const bindPaginationAnchor = (anchor: HTMLAnchorElement, memory: RefresherModuleMemory): void => {
+    if (anchor.href.includes("javascript:")) return;
+
+    anchor.onclick = () => false;
+
+    anchor.addEventListener("click", async () => {
+        const isPageView = location.href.includes("/board/view");
+        const newUrl = isPageView ? http.mergeParamURL(location.href, anchor.href) : anchor.href;
+
+        history.pushState(null, document.title, newUrl);
+        memory.calledByPageTurn = true;
+
+        if (memory.refresh) window.clearTimeout(memory.refresh);
+        if (!(await memory.load?.(location.href, true))) return;
+
+        const scrollTarget = document.querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head");
+        scrollTarget?.scrollIntoView({behavior: "smooth", block: "start"});
+    });
+};
 
 export default {
     name: "글 목록 새로고침",
@@ -101,7 +181,7 @@ export default {
         }
     },
     async func() {
-        const updateRefreshText = (button?: HTMLElement) => {
+        const updateRefreshText = (button?: HTMLElement | null) => {
             button ??= document.querySelector<HTMLElement>(".page_head .gall_issuebox button[data-refresher=true]");
 
             if (!button) return;
@@ -136,7 +216,7 @@ export default {
             : false;
 
         if (this.status.doNotColorVisited) {
-            $(document.documentElement).addClass("refresherDoNotColorVisited");
+            document.documentElement.classList.add("refresherDoNotColorVisited");
         }
 
         const urlSearchParams = new URLSearchParams(location.href);
@@ -167,13 +247,14 @@ export default {
                     return false;
                 }
 
-                if ($(".user_data.add").length > 0) return false;
+                if (document.querySelector(".user_data.add")) return false;
 
-                const isAdmin = $(".useradmin_btnbox button").length > 0;
+                const isAdmin = !!document.querySelector(".useradmin_btnbox button");
 
-                if (isAdmin && $(".article_chkbox").filter(":checked").length > 0) return false;
+                if (isAdmin && document.querySelector<HTMLInputElement>(".article_chkbox:checked")) return false;
 
-                const managerCheckbox = $(`#minor_td-tmpl[type="text/x-jquery-tmpl"]`).html();
+                const managerCheckboxTpl = document.querySelector<HTMLTemplateElement>('#minor_td-tmpl[type="text/x-jquery-tmpl"]');
+                const managerCheckbox = managerCheckboxTpl?.innerHTML ?? "";
 
                 this.memory.lastRefresh = Date.now();
                 this.memory.new_counts = 0;
@@ -187,44 +268,47 @@ export default {
 
                 eventBus.emit("refresherGetPost", dom);
 
-                const $oldList = $(".gall_list:not([id]) tbody");
-                const $newList = $(dom.querySelector(".gall_list:not([id]) tbody"));
-                const $newListChildren = $newList.children();
+                const oldList = document.querySelector<HTMLElement>(".gall_list:not([id]) tbody");
+                const newList = dom.querySelector<HTMLElement>(".gall_list:not([id]) tbody");
+                if (!oldList || !newList) return false;
 
-                if ($newListChildren.length === 0) return false;
+                const newListChildren = Array.from(newList.children) as HTMLElement[];
 
-                $oldList.parent().removeClass("empty");
+                if (newListChildren.length === 0) return false;
 
-                const newPostList: Cash[] = [];
+                oldList.parentElement?.classList.remove("empty");
+
+                const newPostList: HTMLElement[] = [];
 
                 const extractPostNumber = (element: HTMLElement): string => {
                     return element.dataset.no ?? element.querySelector<HTMLElement>(".gall_num")?.innerText ?? "";
                 };
 
-                const oldCache = Array.from($oldList.find(".ub-content")).map(extractPostNumber);
-                const newCache = Array.from($newList.find(".ub-content")).map(extractPostNumber);
+                const oldCache = Array.from(oldList.querySelectorAll<HTMLElement>(".ub-content")).map(extractPostNumber);
+                const newCache = Array.from(newList.querySelectorAll<HTMLElement>(".ub-content")).map(extractPostNumber);
 
-                for (const element of $newListChildren) {
-                    const $element = $(element);
-                    const no = $element.get(0)?.dataset.no || $element.find(".gall_num").text();
+                for (const element of newListChildren) {
+                    const no = element.dataset.no ?? (element.querySelector<HTMLElement>(".gall_num")?.textContent ?? "");
 
                     if (!isPageView && isAdmin) {
                         const shouldAddCheckbox =
                             searchType !== "search_comment" ||
-                            (searchType === "search_comment" && $element.hasClass("search_comment"));
+                            (searchType === "search_comment" && element.classList.contains("search_comment"));
 
                         if (shouldAddCheckbox) {
-                            $element.prepend(no === "설문" ? "<td></td>" : managerCheckbox);
+                            element.insertAdjacentHTML("afterbegin", no === "설문" ? "<td></td>" : managerCheckbox);
                         }
                     }
 
                     if (isPageView && no === currentPostNo) {
-                        $element.addClass("crt>").find(".gall_num").html(`<span class="sp_img crt_icon"> </span>`);
+                        element.classList.add("crt>");
+                        const gallNum = element.querySelector<HTMLElement>(".gall_num");
+                        if (gallNum) gallNum.innerHTML = `<span class="sp_img crt_icon"> </span>`;
                         continue;
                     }
 
                     if (!oldCache.includes(no)) {
-                        newPostList.push($element);
+                        newPostList.push(element);
                     }
                 }
 
@@ -234,51 +318,24 @@ export default {
                     this.memory.calledByPageTurn = false;
 
                     if (queryString("s_keyword")) {
-                        const searchValue = $("#sch_q").val() as string;
-
-                        if (searchValue) {
-                            $newListChildren.find(".gall_tit").each((_, element) => {
-                                const $element = $(element);
-                                const $a = $element.find("a:first-child");
-
-                                let classList = "mark";
-                                if ($a.find(".spoiler").length) {
-                                    classList += " spoiler";
-                                }
-
-                                const subject = $a.html();
-                                if (subject.includes(searchValue)) {
-                                    $a.html(
-                                        subject.replace(searchValue, `<span class="${classList}">${searchValue}</span>`)
-                                    );
-                                }
-                            });
-                        }
+                        const searchInput = document.querySelector<HTMLInputElement>("#sch_q");
+                        const searchValue = searchInput?.value ?? "";
+                        highlightSearchResults(newList, searchValue);
                     }
                 } else {
                     if (this.status.fadeIn) {
-                        newPostList.forEach(($element, index) => {
-                            $element.addClass("refresherNewPost");
-                            $element.css("animation-delay", `${(newPostList.length - index) * 50}ms`);
+                        newPostList.forEach((element, index) => {
+                            element.classList.add("refresherNewPost");
+                            element.style.animationDelay = `${(newPostList.length - index) * 50}ms`;
                         });
                     }
 
                     if (this.memory.archiveArticleConfig) {
-                        const deletedPosts = oldCache.filter((postNo) => postNo && !newCache.includes(postNo));
-
-                        deletedPosts.forEach((deletedNo) => {
-                            const originalIndex = oldCache.indexOf(deletedNo);
-                            if (originalIndex !== -1) {
-                                const insertIndex = originalIndex + newPostList.length;
-                                $newListChildren
-                                    .eq(insertIndex)
-                                    .before($oldList.children().eq(originalIndex).addClass("refresher-deleted"));
-                            }
-                        });
+                        archiveDeletedPosts(oldList, newList, newListChildren, oldCache, newCache, newPostList.length);
                     }
                 }
 
-                $oldList.replaceWith($newList);
+                oldList.replaceWith(newList);
 
                 if (newPostList.length) eventBus.emit("newPostList", newPostList);
                 eventBus.emit("refresh");
@@ -345,29 +402,8 @@ export default {
 
         if (!this.status.useBetterBrowse) return;
 
-        const handlePaginationClick = async (element: HTMLAnchorElement) => {
-            if (element.href.includes("javascript:")) return;
-
-            element.onclick = () => false;
-
-            element.addEventListener("click", async () => {
-                const isPageView = location.href.includes("/board/view");
-
-                const newUrl = isPageView ? http.mergeParamURL(location.href, element.href) : element.href;
-
-                history.pushState(null, document.title, newUrl);
-                this.memory.calledByPageTurn = true;
-
-                if (this.memory.refresh) window.clearTimeout(this.memory.refresh);
-                if (!(await this.memory.load?.(location.href, true))) return;
-
-                const scrollTarget = document.querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head");
-
-                scrollTarget?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start"
-                });
-            });
+        const handlePaginationClick = (element: HTMLAnchorElement) => {
+            bindPaginationAnchor(element, this.memory);
         };
 
         this.memory.uuid = filter.add<HTMLAnchorElement>(
@@ -390,28 +426,7 @@ export default {
             );
 
             pagingBoxAnchors.forEach((anchor) => {
-                if (anchor.href.includes("javascript:")) return;
-
-                anchor.onclick = () => false;
-
-                anchor.addEventListener("click", async () => {
-                    const isPageView = location.href.includes("/board/view");
-
-                    const newUrl = isPageView ? http.mergeParamURL(location.href, anchor.href) : anchor.href;
-
-                    history.pushState(null, document.title, newUrl);
-                    this.memory.calledByPageTurn = true;
-
-                    if (this.memory.refresh) window.clearTimeout(this.memory.refresh);
-                    if (!(await this.memory.load?.(location.href, true))) return;
-
-                    const scrollTarget = document.querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head");
-
-                    scrollTarget?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start"
-                    });
-                });
+                bindPaginationAnchor(anchor, this.memory);
             });
         };
 

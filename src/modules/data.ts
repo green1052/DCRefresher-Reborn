@@ -2,6 +2,14 @@ import {normalizeStorageData} from "../utils/storageMigration";
 import toast from "../utils/toast";
 import {writeClipboard} from "../utils/writeClipboard";
 
+interface DataModuleThis {
+    status: {autoBackup: boolean};
+    data: {lastUpdate: number};
+    update: {
+        backupCloud: (this: DataModuleThis, value: boolean) => Promise<void>;
+    };
+}
+
 const replaceLocalStorage = async (data: Record<string, unknown>): Promise<void> => {
     const previousData = await browser.storage.local.get(null);
 
@@ -83,7 +91,7 @@ export default {
         }
     },
     update: {
-        async backupCloud(this, _) {
+        async backupCloud(this: DataModuleThis, _value: boolean) {
             try {
                 const data = await browser.storage.local.get(null);
                 delete data["refresher.database.ip"];
@@ -103,7 +111,7 @@ export default {
                 toast.show("데이터를 클라우드에 백업하는데 실패했습니다.", "error");
             }
         },
-        recoverCloud(this, _) {
+        recoverCloud(this: DataModuleThis, _value: boolean) {
             if (!confirm("클라우드 백업으로 현재 설정을 교체할까요?")) return;
 
             browser.storage.sync.get().then(async (data) => {
@@ -121,7 +129,7 @@ export default {
                 }
             });
         },
-        exportData(this, _) {
+        exportData(this: DataModuleThis, _value: boolean) {
             browser.storage.local.get().then((data) => {
                 delete data["refresher.database.ip"];
                 delete data["refresher.database.ban"];
@@ -133,7 +141,7 @@ export default {
                     .catch(() => toast.show("데이터를 클립보드로 내보내는데 실패했습니다.", "error"));
             });
         },
-        importData(this, _) {
+        importData(this: DataModuleThis, _value: boolean) {
             (async () => {
                 const input = prompt("데이터를 입력해주세요.");
 
@@ -150,7 +158,7 @@ export default {
                 }
             })();
         },
-        clearData(this, _) {
+        clearData(this: DataModuleThis, _value: boolean) {
             if (!confirm("모든 설정과 사용자 데이터를 초기화할까요?")) return;
 
             browser.storage.local
@@ -159,19 +167,20 @@ export default {
                 .catch(() => toast.show("데이터를 초기화하는데 실패했습니다.", "error"));
         }
     },
-    async func() {
+    async func(this: DataModuleThis) {
         if (!this.status.autoBackup) return;
 
         const stored = await browser.storage.local.get("refresher.database.lastUpdate");
-        const lastUpdate = stored["refresher.database.lastUpdate"] ?? -1;
+        const rawLastUpdate = stored["refresher.database.lastUpdate"];
+        const lastUpdate = typeof rawLastUpdate === "number" ? rawLastUpdate : -1;
 
         if (lastUpdate === -1 || Date.now() - lastUpdate > 24 * 60 * 60 * 1000) {
-            await this.update.backupCloud();
+            await this.update.backupCloud.call(this, false);
         } else {
             this.data.lastUpdate = lastUpdate;
         }
     }
-} as RefresherModule<{
+} as unknown as RefresherModule<{
     data: {
         lastUpdate: number;
     };

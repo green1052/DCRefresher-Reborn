@@ -13,8 +13,8 @@ export const eventBus: RefresherEventBus = {
         for (const callback of [...lists[event]]) {
             try {
                 const result = callback.func(...params);
-                if (result instanceof Promise) {
-                    void result.catch((error) => {
+                if (result !== undefined && typeof (result as Promise<unknown>).then === "function") {
+                    void (result as Promise<unknown>).catch((error) => {
                         console.error(`Event handler failed: ${event}`, error);
                     });
                 }
@@ -27,7 +27,7 @@ export const eventBus: RefresherEventBus = {
     },
 
     emitNextTick: (event: string, ...params: unknown[]) => {
-        return requestAnimationFrame(() => eventBus.emit(event, ...params));
+        return setTimeout(() => eventBus.emit(event, ...params), 0);
     },
 
     /**
@@ -37,7 +37,7 @@ export const eventBus: RefresherEventBus = {
      * @param callback 나중에 호출 될 이벤트 콜백 함수.
      * @param options 이벤트에 등록할 옵션.
      */
-    on: (event: string, callback: RefresherUnknownHandler, options?: RefresherEventBusOptions): string => {
+    on: (event: string, callback: (...args: any[]) => void, options?: RefresherEventBusOptions): string => {
         const uuid = crypto.randomUUID();
 
         lists[event] ??= [];

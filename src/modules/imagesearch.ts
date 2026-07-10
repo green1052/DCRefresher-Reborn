@@ -1,4 +1,3 @@
-import $ from "cash-dom";
 import communicate from "../core/communicate";
 
 export default {
@@ -13,9 +12,8 @@ export default {
     default_enable: true,
     func() {
         this.memory.contextMenuHandler = (ev: MouseEvent) => {
-            const $element = $(ev.target as HTMLElement);
-
-            if ($element.is("img")) this.memory.currentImage = $element.attr("src");
+            if (!(ev.target instanceof HTMLImageElement)) return;
+            this.memory.currentImage = ev.target.src;
         };
         window.addEventListener("contextmenu", this.memory.contextMenuHandler);
 

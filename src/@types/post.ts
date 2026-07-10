@@ -12,6 +12,7 @@ declare global {
         user?: User;
         views?: string;
         upvotes?: string;
+        fixedUpvotes?: string;
         downvotes?: string;
         contents?: string;
         commentId?: string;

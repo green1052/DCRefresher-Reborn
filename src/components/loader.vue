@@ -118,4 +118,9 @@
         opacity: 0.25;
     }
 }
+
+.refresher-loader {
+    margin: auto;
+    position: relative;
+}
 </style>

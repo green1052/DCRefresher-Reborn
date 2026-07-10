@@ -67,28 +67,4 @@ declare global {
         comments: Nullable<DcinsideCommentObject[]>;
         total_cnt: number;
     }
-
-    interface RefresherFrameAppVue extends ComponentPublicInstance {
-        $on?: (event: string, callback: (...args: unknown[]) => void) => void;
-        body: () => RefresherFrame;
-        comment: () => RefresherFrame;
-        setScrollMode: (mode: "top" | "bottom" | "none") => void;
-        clearScrollMode: () => void;
-        outerClick: () => void;
-        close: () => void;
-        fadeIn: () => void;
-        fadeOut: () => void;
-        frames: RefresherFrame[];
-        closed: boolean;
-        inputFocus: boolean;
-        groupElement?: HTMLElement;
-        bodyFrameRef?: {
-            incrementCommentKey?: () => void;
-            commentKey?: { value: number };
-        } | null;
-        commentFrameRef?: {
-            incrementCommentKey?: () => void;
-            commentKey?: { value: number };
-        } | null;
-    }
 }

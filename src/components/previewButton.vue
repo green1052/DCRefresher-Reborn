@@ -6,7 +6,7 @@
         <transition v-if="id" name="refresher-shake">
             <img
                 :key="error"
-                :src="browser.runtime.getURL(`/assets/${id}.webp`)"
+                :src="getAssetURL(String(id))"
             />
         </transition>
         <transition v-if="text" name="refresher-shake">
@@ -24,10 +24,12 @@
 <script lang="ts" setup>
 import {ref} from "vue";
 
+import {getAssetURL} from "../utils/assetURL";
+
 interface Props {
     id?: string | number;
     text?: string;
-    click?: () => Promise<boolean>;
+    click?: () => boolean | Promise<boolean>;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -39,17 +41,15 @@ const props = withDefaults(defineProps<Props>(), {
 const error = ref(0);
 
 const safeClick = async (): Promise<boolean> => {
-    if (props.click) {
-        const result = await props.click();
+    if (!props.click) return false;
 
-        if (!result) {
-            error.value = Math.random();
-        }
+    const result = await props.click();
 
-        return result || false;
+    if (!result) {
+        error.value = Math.random();
     }
 
-    return false;
+    return result;
 };
 </script>
 
