@@ -1,0 +1,277 @@
+@use "../variables" as *;
+
+// ============================================================
+// Preview frame layout (global — applied to dynamically created frames)
+// ============================================================
+
+.refresher-frame.preview {
+    &:first-child {
+        margin-top: 10vh;
+    }
+
+    &:nth-child(2) {
+        margin-bottom: 10vh;
+    }
+}
+
+.refresher-frame.preview[data-load="true"] {
+    .refresher-preview-contents {
+        display: flex;
+        height: 60px;
+        margin-top: 30px;
+        padding-bottom: 1vh;
+    }
+}
+
+.refresher-frame.preview[data-load="false"] {
+    .refresher-loader {
+        display: none;
+    }
+}
+
+// ============================================================
+// Preview block media
+// ============================================================
+
+.refresher-preview-block-media {
+    embed,
+    img:not(.written_dccon),
+    video {
+        display: none;
+    }
+}
+
+// ============================================================
+// Preview contents (global — frame contents rendered via v-html)
+// ============================================================
+
+.refresher-preview-contents {
+    display: block;
+    font-size: 15px;
+    margin-top: 2vh;
+    padding-bottom: 2.5vh;
+    position: relative;
+
+    &.collapse {
+        display: none;
+    }
+
+    .coment_dccon_info {
+        display: none !important;
+    }
+
+    img::before {
+        content: "";
+        display: block;
+        padding-top: calc(100% * 2 / 3);
+    }
+}
+
+// ============================================================
+// Preview contents actual (rendered post body via v-html)
+// ============================================================
+
+.refresher-preview-contents-actual {
+    display: block;
+
+    #pollFrame {
+        height: 100vw !important;
+        width: 100vh !important;
+    }
+
+    #zzbang_div:not(:has(#zzbang_img img)) {
+        display: none;
+    }
+
+    div:has(> .comment_dccon) {
+        display: flex;
+    }
+
+    .written_dccon:not(.bigdccon) {
+        height: 100px;
+        width: 100px;
+    }
+
+    .comment_dccon {
+        margin: 0;
+        padding-bottom: 0 !important;
+
+        * {
+            padding-bottom: 0 !important;
+        }
+    }
+
+    p:has(.written_dccon) {
+        display: flex;
+
+        & > .written_dccon {
+            margin: 3px 0 5px;
+            position: relative;
+        }
+    }
+
+    .write_div {
+        img:not(.written_dccon),
+        video:not(.written_dccon) {
+            max-width: calc(100% - 10px);
+        }
+    }
+}
+
+// ============================================================
+// Preview meta (title zone — rendered inside frame.vue)
+// ============================================================
+
+.refresher-preview-title-zone {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+}
+
+.refresher-preview-title-text {
+    display: flex;
+
+    &.refresher-title-post {
+        width: 100%;
+    }
+}
+
+.refresher-preview-title {
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: -1.66px;
+}
+
+.refresher-preview-title-mute {
+    color: var(--refresher-text-muted);
+    font-size: 16px;
+    margin-bottom: 0;
+    margin-left: 10px;
+    margin-top: 10px;
+}
+
+.refresher-preview-meta {
+    display: flex;
+    margin-top: 5px;
+
+    .float-right {
+        display: flex;
+        margin-left: auto;
+
+        .date-views {
+            display: flex;
+
+            .refresher-timestamp {
+                &::after {
+                    content: ", ";
+                }
+            }
+
+            .refresher-views {
+                margin-left: 5px;
+            }
+        }
+    }
+}
+
+.refresher-views {
+    font-size: 12px;
+    font-weight: 100;
+    opacity: 0.6;
+}
+
+// ============================================================
+// No comments state
+// ============================================================
+
+.refresher-nocomment {
+    font-size: 20px;
+    font-weight: 100;
+    letter-spacing: -1.66px;
+    margin-bottom: 5px;
+}
+
+.refresher-nocomment-wrap {
+    display: flex;
+    justify-content: center;
+
+    h3 {
+        margin: auto;
+    }
+}
+
+// ============================================================
+// Comment content (dccon layout inside comments — v-html)
+// ============================================================
+
+.refresher-comment-content {
+    display: flex;
+    flex-wrap: wrap;
+
+    .mention {
+        flex-basis: 100%;
+    }
+
+    .dccon {
+        & > img.written_dccon {
+            position: relative !important;
+        }
+
+        & > img.written_dccon + video.written_dccon {
+            display: none !important;
+        }
+
+        & > .written_dccon {
+            margin: 3px 0 5px;
+
+            &:not(.bigdccon) {
+                height: 100px;
+                width: 100px;
+            }
+        }
+
+        img,
+        video {
+            border-radius: initial !important;
+            box-shadow: initial !important;
+            transition: initial !important;
+        }
+    }
+}
+
+// ============================================================
+// Preview comments thread indentation
+// ============================================================
+
+.refresher-preview-comments .refresher-comment {
+    margin-bottom: 2vh;
+
+    .refresher-user {
+        margin-bottom: 3px;
+    }
+
+    .refresher-comment-content {
+        font-size: 14px;
+    }
+}
+
+.refresher-preview-comments .refresher-comment[data-depth="1"] {
+    margin-left: 2.2vw;
+}
+
+.refresher-preview-comments .refresher-comment[data-rereply="true"] {
+    margin-left: 4.4vw;
+}
+
+// ============================================================
+// Comment controls container
+// ============================================================
+
+.refresher-comment-controls-container {
+    position: relative;
+    right: -30px;
+
+    .refresher-comment-controls {
+        float: left;
+    }
+}

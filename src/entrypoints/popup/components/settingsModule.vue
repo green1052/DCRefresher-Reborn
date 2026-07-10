@@ -36,7 +36,7 @@ interface Props {
     moduleEnabled: boolean;
     showAdvanced: boolean;
     moveToModuleTab: (moduleName: string) => void;
-    updateUserSetting: (module: string, key: string, value: unknown) => void;
+    updateUserSetting: (module: string | undefined, key: string | undefined, value: unknown) => void;
     typeWrap: (value: unknown) => string | unknown;
 }
 

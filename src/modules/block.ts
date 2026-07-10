@@ -1,11 +1,9 @@
 import block from "@/core/block";
 import filter from "@/core/filtering";
-import $ from "cash-dom";
-import {Cash} from "cash-dom/dist/cash";
 import Cookies from "js-cookie";
-import ky from "ky";
-import communicate from "../core/communicate";
+import ky from "../utils/httpClient";
 
+import communicate from "../core/communicate";
 import {eventBus} from "../core/eventbus";
 import {queryString} from "../utils/http";
 import toast from "../utils/toast";
@@ -63,31 +61,36 @@ export default {
         }
     },
     func() {
-        const hideElement = ($element: Cash, blur = false) => {
+        const hideElement = (element: HTMLElement, blur = false) => {
             if (blur) {
-                $element.addClass("refresherBlur");
+                element.classList.add("refresherBlur");
                 return;
             }
 
-            $element.hide();
+            element.style.display = "none";
         };
 
         this.memory.uuid = filter.add(
             ".ub-writer",
             (element) => {
-                const $element = $(element);
-
                 const gallery = queryString("id");
 
                 if (!gallery) return;
 
-                const title = $element.parent().find(".gall_tit > a:not([class])").text().trim();
-                const tab = $element.parent().find(".gall_subject").text();
-                const text = location.pathname.includes("/view/")
-                    ? $element.closest(".view_content_wrap").find(".write_div").text().trim()
+                const parent = element.parentElement;
+                if (!parent) return;
+
+                const title = parent.querySelector<HTMLElement>(".gall_tit > a:not([class])")?.textContent?.trim() ?? "";
+                const tab = parent.querySelector<HTMLElement>(".gall_subject")?.textContent ?? "";
+
+                const viewWrap = element.closest<HTMLElement>(".view_content_wrap");
+                const text = location.pathname.includes("/view/") && viewWrap
+                    ? viewWrap.querySelector(".write_div")?.textContent?.trim() ?? null
                     : null;
-                const commentContent = location.pathname.includes("/view/")
-                    ? $element.closest(".reply_info, .cmt_info").find(".usertxt").text()
+
+                const commentInfo = element.closest<HTMLElement>(".reply_info, .cmt_info");
+                const commentContent = location.pathname.includes("/view/") && commentInfo
+                    ? commentInfo.querySelector(".usertxt")?.textContent ?? null
                     : null;
 
                 const nick = element.dataset.nick ?? null;
@@ -107,30 +110,30 @@ export default {
                         gallery
                     )
                 ) {
-                    const $post = $element.parent();
+                    const post = parent;
 
-                    if ($post.hasClass("ub-content")) {
-                        hideElement($post, this.status.blur);
+                    if (post.classList.contains("ub-content")) {
+                        hideElement(post, this.status.blur);
                         return;
                     }
 
-                    const $content = $post.closest(".ub-content");
+                    const content = post.closest<HTMLElement>(".ub-content");
 
-                    if ($content.length) {
+                    if (content) {
                         if (this.status.replyRemove) {
-                            const $next = $content.next();
+                            const next = content.nextElementSibling as HTMLElement | null;
 
-                            if (!$next.hasClass("ub-content") && $next.children(".reply").length) {
-                                hideElement($next, this.status.blur);
+                            if (next && !next.classList.contains("ub-content") && next.querySelector(":scope > .reply")) {
+                                hideElement(next, this.status.blur);
                             }
                         }
 
-                        hideElement($content, this.status.blur);
+                        hideElement(content, this.status.blur);
                     }
-                } else if (text && block.check("TEXT", text, gallery)) {
-                    $element.closest(".view_content_wrap").find(".write_div").text("게시글 내용이 차단됐습니다.");
+                } else if (text && block.check("TEXT", text, gallery) && viewWrap) {
+                    const writeDiv = viewWrap.querySelector<HTMLElement>(".write_div");
+                    if (writeDiv) writeDiv.textContent = "게시글 내용이 차단됐습니다.";
                 }
-
             },
             {
                 neverExpire: true
@@ -140,31 +143,29 @@ export default {
         this.memory.uuid2 = filter.add(
             ".written_dccon",
             (element) => {
-                const $element = $(element);
-
                 const gallery = queryString("id");
 
                 if (!gallery) return;
 
-                const dccon =
-                    ($element.attr("src") ?? $element.attr("data-src"))?.replace(/^.*no=/g, "").replace(/^&.*$/g, "") ??
-                    "";
+                const src = element.getAttribute("src") ?? element.getAttribute("data-src") ?? "";
+                const dccon = src.replace(/^.*no=/g, "").replace(/^&.*$/g, "");
 
                 if (block.check("DCCON", dccon, gallery)) {
-                    const $comment = $element.closest(".ub-content");
-                    const hideTarget = $comment.length ? $comment : $element.closest(".comment_dccon");
+                    const comment = element.closest<HTMLElement>(".ub-content");
+                    const hideTarget = comment ?? element.closest<HTMLElement>(".comment_dccon");
+
+                    if (!hideTarget) return;
 
                     if (this.status.replyRemove) {
-                        const $next = hideTarget.next();
+                        const next = hideTarget.nextElementSibling as HTMLElement | null;
 
-                        if (!$next.hasClass("ub-content") && $next.children(".reply").length > 0) {
-                            hideElement($next, this.status.blur);
+                        if (next && !next.classList.contains("ub-content") && next.querySelector(":scope > .reply")) {
+                            hideElement(next, this.status.blur);
                         }
                     }
 
                     hideElement(hideTarget, this.status.blur);
                 }
-
             },
             {
                 neverExpire: true

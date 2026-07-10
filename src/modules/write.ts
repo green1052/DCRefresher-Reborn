@@ -1,5 +1,4 @@
 import filter from "@/core/filtering";
-import $ from "cash-dom";
 
 export default {
     name: "글쓰기",
@@ -40,29 +39,32 @@ export default {
     },
     func() {
         this.memory.beforeUnloadHandler = (ev: BeforeUnloadEvent) => {
-            if (this.status.preventExit && !$("button:hover").eq(-1).hasClass("write")) {
-                ev.preventDefault();
+            if (this.status.preventExit) {
+                const hoveredWrite = document.querySelector<HTMLButtonElement>("button.write:hover");
+                if (!hoveredWrite) ev.preventDefault();
             }
         };
         window.addEventListener("beforeunload", this.memory.beforeUnloadHandler);
 
         this.memory.submitButton = filter.add<HTMLButtonElement>("button.write", (element) => {
-            $(element).on("click", () => {
-                const $editor = $(".note-editable");
+            element.addEventListener("click", () => {
+                const editor = document.querySelector<HTMLElement>(".note-editable");
 
-                if (this.status.header) {
-                    $editor.prepend(this.status.header);
+                if (this.status.header && editor) {
+                    editor.insertAdjacentHTML("afterbegin", this.status.header);
                 }
 
-                if (this.status.footer) {
-                    $editor.append(this.status.footer);
+                if (this.status.footer && editor) {
+                    editor.insertAdjacentHTML("beforeend", this.status.footer);
                 }
 
                 if (this.status.bypassTitleLimit) {
-                    const $titleElement = $("input#subject");
-                    const title = $titleElement.val() as string;
+                    const titleElement = document.querySelector<HTMLInputElement>("input#subject");
+                    if (titleElement) {
+                        const title = titleElement.value;
 
-                    if (title.length === 1) $titleElement.val(`${title}\u200B`);
+                        if (title.length === 1) titleElement.value = `${title}\u200B`;
+                    }
                 }
             });
 

@@ -1,5 +1,4 @@
-import $ from "cash-dom";
-import ky from "ky";
+import ky from "./httpClient";
 
 import * as http from "./http";
 import type {Nullable} from "./types";
@@ -37,13 +36,11 @@ const decode = (r: string) => {
 };
 
 const requestBeforeServiceCode = (dom: Document) => {
-    const $dom = $(dom);
+    const script = dom.querySelector<HTMLElement>("#reply-setting-tmpl + script");
 
-    const script = $dom.find("#reply-setting-tmpl + script");
+    if (!script) throw new Error("_r 값을 찾을 수 없습니다.");
 
-    if (!script.length) throw new Error("_r 값을 찾을 수 없습니다.");
-
-    const dValue = script.html().match(/_d\('(.*)'\)/)?.[1];
+    const dValue = script.textContent?.match(/_d\('(.*)'\)/)?.[1];
 
     if (!dValue) throw new Error("_d 값을 찾을 수 없습니다.");
 
@@ -56,7 +53,8 @@ const requestBeforeServiceCode = (dom: Document) => {
 
     _r = _r.replace(/^./, fi.toString());
 
-    const r = $dom.find("input[name=service_code]").val() as string;
+    const serviceInput = dom.querySelector<HTMLInputElement>("input[name=service_code]");
+    const r = serviceInput?.value ?? "";
 
     const _rs = _r.split(",");
 
@@ -74,12 +72,10 @@ const secretKey = (dom: Document): URLSearchParams => {
     params.set("t_vch2", "");
     params.set("t_vch2_chk", "");
 
-    for (const element of $(dom).find("#focus_cmt > input")) {
-        const $element = $(element);
+    for (const element of dom.querySelectorAll<HTMLInputElement>("#focus_cmt > input")) {
+        const id = element.name || element.id || "";
 
-        const id = $element.attr("name") ?? $element.attr("id") ?? "";
-
-        if (!["service_code", "gallery_no", "clickbutton"].includes(id)) params.set(id, $element.val() as string);
+        if (!["service_code", "gallery_no", "clickbutton"].includes(id)) params.set(id, element.value);
     }
 
     return params;
@@ -146,7 +142,7 @@ export async function submitComment(
 
     const url = typeof memo === "string" ? http.urls.comments_submit : http.urls.dccon_comments_submit;
     const options = {
-        method: "POST",
+        method: "post" as const,
         headers: {
             "X-Requested-With": "XMLHttpRequest"
         },

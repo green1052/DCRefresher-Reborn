@@ -61,7 +61,7 @@ export const filter = {
         const uuid = crypto.randomUUID();
 
         lists[uuid] = {
-            func: callback,
+            func: callback as (element: HTMLElement) => void,
             scope,
             events: {},
             options

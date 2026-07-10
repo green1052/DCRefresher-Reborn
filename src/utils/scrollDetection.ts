@@ -1,8 +1,3 @@
-const average = (arr: number[]) => {
-    if (arr.length === 0) return 0;
-    return arr.reduce((a, b) => a + b) / arr.length;
-};
-
 enum ScrollMode {
     NOT_DEFINED,
     FIXED,
@@ -17,7 +12,7 @@ interface ScrollSession {
     fired: number;
 }
 
-type ScrollEventHandler = (...args: unknown[]) => void;
+type ScrollEventHandler = (ev: WheelEvent, ...args: unknown[]) => void;
 
 export class ScrollDetection {
     lastEvent: number;
@@ -28,32 +23,26 @@ export class ScrollDetection {
     constructor() {
         this.lastEvent = 0;
         this.events = {};
-        this.mode = 0;
+        this.mode = ScrollMode.NOT_DEFINED;
+        this.session = this.createSession();
+    }
 
-        this.session = {
-            time: [],
-            delta: [],
-            peak: 0,
-            direction: 0,
-            fired: 0
-        };
+    private createSession(): ScrollSession {
+        return {time: [], delta: [], peak: 0, direction: 0, fired: 0};
+    }
 
-        this.initSession();
+    private average(arr: number[]): number {
+        if (arr.length === 0) return 0;
+        return arr.reduce((a, b) => a + b) / arr.length;
     }
 
     initSession(): void {
-        this.session = {
-            time: [],
-            delta: [],
-            peak: 0,
-            direction: 0,
-            fired: 0
-        };
+        this.session = this.createSession();
     }
 
     emit(event: string, ...args: unknown[]): void {
         this.events[event]?.forEach((func) => {
-            func(...args);
+            (func as (...a: unknown[]) => void)(...args);
         });
     }
 
@@ -87,7 +76,7 @@ export class ScrollDetection {
         if (this.session.delta.length !== 0) {
             const lastDelta = this.session.delta[this.session.delta.length - 1];
 
-            if (lastDelta === 100 && average(this.session.delta) === 100) {
+            if (lastDelta === 100 && this.average(this.session.delta) === 100) {
                 this.mode = ScrollMode.FIXED;
                 // delta 절댓값이 100으로 고정된 경우 (deltaY를 지원하지 않거나 마우스 움직임)
 
@@ -114,6 +103,8 @@ export class ScrollDetection {
             }
         }
 
-        this.session.delta.push(Math.abs(ev.deltaY));
+        if (this.session.delta.length < 50) {
+            this.session.delta.push(Math.abs(ev.deltaY));
+        }
     }
 }

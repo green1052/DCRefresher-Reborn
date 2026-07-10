@@ -23,18 +23,18 @@ export const moduleStorage = {
         const value = await get<T>(storageKey);
         if (typeof value === "string") {
             try {
-                return JSON.parse(value);
+                return JSON.parse(value) as T;
             } catch {
-                return value;
+                return value as T;
             }
         }
         return value;
     },
-    set(module: string, key: string, value: unknown): void {
-        set(`refresher.module:${module}-${key}`, value);
+    async set(module: string, key: string, value: unknown): Promise<void> {
+        await set(`refresher.module:${module}-${key}`, value);
     },
-    setGlobal(module: string, dump: unknown): void {
-        set(`refresher.module:${module}`, dump);
+    async setGlobal(module: string, dump: unknown): Promise<void> {
+        await set(`refresher.module:${module}`, dump);
     }
 };
 

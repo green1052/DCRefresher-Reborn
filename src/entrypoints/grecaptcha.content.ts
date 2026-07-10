@@ -22,7 +22,10 @@ export default defineContentScript({
             return scope.grecaptcha ?? null;
         };
 
-        $.getScript("https://www.google.com/recaptcha/api.js?render=6Lc-Fr0UAAAAAOdqLYqPy53MxlRMIXpNXFvBliwI", () => {
+        const script = document.createElement("script");
+        script.src = "https://www.google.com/recaptcha/api.js?render=6Lc-Fr0UAAAAAOdqLYqPy53MxlRMIXpNXFvBliwI";
+        script.async = true;
+        script.onload = () => {
             window.addEventListener("message", (event) => {
                 if (
                     event.source !== window ||
@@ -50,6 +53,7 @@ export default defineContentScript({
                     })();
                 });
             });
-        });
+        };
+        document.head.appendChild(script);
     }
 });

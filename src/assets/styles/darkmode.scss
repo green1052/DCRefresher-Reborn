@@ -1,76 +1,66 @@
 @use "variables" as *;
 @use "sass:color";
 
+// ============================================================
+// Dark mode overrides — site uses #css-darkmode flag
+// Most colours are handled via CSS custom properties in
+// variables.scss; here we override things that can't be
+// expressed as tokens (filters, gradients, borders).
+// ============================================================
+
 html:has(#css-darkmode) {
+    // OG cards invert
     .refresher-preview-contents-actual {
         .og-wrap, .og-img {
             filter: invert(1) !important;
         }
     }
 
-    // dc_series
-
-    .write_div > :not(.dc_series) > .lnk {
-        background-color: color.invert(#252525);
-        color: color.invert($dark-highlight) !important;
-    }
-
+    // Comment icons invert
     .refresher-comment svg {
         filter: invert(1);
     }
 
+    // Frame / mini-preview border + read-more gradient
     .refresher-frame,
     .refresher-mini-preview {
-        background-color: $dark-tint-light-rgb;
-        border: 1px solid #505050;
-        color: $dark-text-color-bright;
+        border: 1px solid var(--refresher-border);
 
         &.blur {
-            background-color: $dark-tint-light-opacity;
+            background-color: var(--refresher-bg-blur);
         }
 
         & .read-more {
             background-image: linear-gradient(transparent 0%, black 80%);
-            bottom: 0;
-            left: 0;
-            margin: 0;
-            padding: 30px 0;
-            position: absolute;
-            text-align: center;
-            width: 100%;
         }
     }
 
+    // Tooltip border
     .refresher-tooltip {
-        background-color: $dark-tint-light-rgb;
-        border: 1px solid #505050;
-        color: $dark-text-color-bright;
+        border: 1px solid var(--refresher-border);
 
         &.blur {
-            background-color: $dark-tint-light-opacity;
+            background-color: var(--refresher-bg-blur);
         }
     }
 
+    // Frame outer overlay
     .refresher-frame-outer {
         &.background {
-            background-color: rgba(82, 82, 82, 0.6);
+            background-color: var(--refresher-bg-overlay);
         }
     }
 
+    // Management panel
     .refresher-management-panel {
-        background: $dark-tint-light-opacity;
-        border: 1px solid #505050;
+        border: 1px solid var(--refresher-border);
 
         &.blur {
             backdrop-filter: blur(5px) saturate(150%);
-            background-color: $dark-tint-light-opacity;
+            background-color: var(--refresher-bg-blur);
         }
 
         .button {
-            p {
-                color: $dark-text-color;
-            }
-
             &:hover {
                 background: rgba(110, 110, 110, 0.5);
             }
@@ -81,31 +71,45 @@ html:has(#css-darkmode) {
         }
     }
 
+    // Popups (block / captcha / cache)
     .refresher-block-popup,
-    .refresher-captcha-popup {
-        background-color: $dark-tint-light-rgb;
-        border: 1px solid #505050;
-        box-shadow: 0 0 16px rgba(51, 51, 51, 0.3);
+    .refresher-captcha-popup,
+    .refresher-cache-popup {
+        border: 1px solid var(--refresher-border);
         color: white;
-
-        .close {
-            .cross {
-                background-color: #fff;
-            }
-
-            &:hover {
-                .cross {
-                    background-color: rgb(202, 202, 202);
-                }
-            }
-        }
     }
 
+    // Preview media placeholder bg
     .refresher-frame.preview .refresher-preview-contents {
         embed,
         img,
         video {
             background-color: #333;
+        }
+    }
+
+    // Stealth control button
+    .stealth_control_button {
+        background: var(--refresher-bg-blur);
+        border: 1px solid var(--refresher-border);
+
+        &.blur {
+            backdrop-filter: blur(5px) saturate(150%);
+            background-color: var(--refresher-bg-blur);
+        }
+
+        .button {
+            p {
+                color: var(--refresher-text-muted);
+            }
+
+            &:hover {
+                background: rgba(110, 110, 110, 0.5);
+            }
+        }
+
+        img {
+            filter: invert(1);
         }
     }
 }

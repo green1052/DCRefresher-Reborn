@@ -5,7 +5,7 @@ import eventBus from "./eventbus";
 
 export type SettingsStore = Record<string, Record<string, RefresherSettings>>;
 
-const settings_store: SettingsStore = {};
+const settingsStore: SettingsStore = {};
 
 const normalizeSettingValue = (
     settings: RefresherSettings,
@@ -26,7 +26,7 @@ const normalizeSettingValue = (
 };
 
 export const set = async (module: string, key: string, value: string | number | boolean): Promise<void> => {
-    const setting = settings_store[module]?.[key];
+    const setting = settingsStore[module]?.[key];
     if (!setting) return;
 
     const normalizedValue = normalizeSettingValue(setting, value);
@@ -35,11 +35,11 @@ export const set = async (module: string, key: string, value: string | number | 
     setting.value = normalizedValue;
     await storage.set(`${module}.${key}`, normalizedValue);
 
-    eventBus.emit("refresherSettingsSync", settings_store);
+    eventBus.emit("refresherSettingsSync", settingsStore);
 };
 
 export const setStore = (module: string, key: string, value: string | number | boolean): void => {
-    const setting = settings_store[module]?.[key];
+    const setting = settingsStore[module]?.[key];
     if (!setting) return;
 
     const normalizedValue = normalizeSettingValue(setting, value);
@@ -47,16 +47,16 @@ export const setStore = (module: string, key: string, value: string | number | b
     setting.value = normalizedValue;
 };
 
-export const dump = (): Record<string, unknown> => settings_store;
+export const dump = (): Record<string, unknown> => settingsStore;
 
 export const load = async (module: string, key: string, settings: RefresherSettings): Promise<unknown> => {
-    settings_store[module] ??= {};
+    settingsStore[module] ??= {};
 
     const storedValue = await storage.get<unknown>(`${module}.${key}`);
     const value = normalizeSettingValue(settings, storedValue ?? settings.default);
     settings.value = value;
 
-    settings_store[module][key] = settings;
+    settingsStore[module][key] = settings;
 
     if (storedValue !== undefined && storedValue !== value) {
         await storage.set(`${module}.${key}`, value);

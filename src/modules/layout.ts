@@ -1,28 +1,27 @@
-import $ from "cash-dom";
-
 const hideSticky = (hide: boolean) => {
-    $(".stickyunit").css("display", hide ? "none" : "initial");
+    const sticky = document.querySelector<HTMLElement>(".stickyunit");
+    if (sticky) sticky.style.display = hide ? "none" : "initial";
 };
 
 const updateWindowSize = (forceActive: boolean, active: number | string, width: number) => {
     if (typeof active === "string") active = Number(active);
 
-    const $document = $(document.documentElement);
+    const docEl = document.documentElement;
 
     const isView = location.href.includes("board/view");
 
     if (forceActive || active >= width) {
         hideSticky(true);
 
-        if (!$document.hasClass("refresherCompact")) {
-            if (isView) $document.addClass("refresherCompactView");
+        if (!docEl.classList.contains("refresherCompact")) {
+            if (isView) docEl.classList.add("refresherCompactView");
 
-            $document.addClass("refresherCompact");
+            docEl.classList.add("refresherCompact");
         }
     } else {
         hideSticky(false);
-        $document.removeClass("refresherCompact");
-        $document.removeClass("refresherCompactView");
+        docEl.classList.remove("refresherCompact");
+        docEl.classList.remove("refresherCompactView");
     }
 };
 
@@ -116,31 +115,31 @@ export default {
             updateWindowSize(value, this.status.activePixel, innerWidth);
         },
         hideGalleryView(value: boolean) {
-            $(document.documentElement).toggleClass("refresherHideGalleryView", value);
+            document.documentElement.classList.toggle("refresherHideGalleryView", value);
         },
         hideUselessView(value: boolean) {
-            $(document.documentElement).toggleClass("refresherHideUselessView", value);
+            document.documentElement.classList.toggle("refresherHideUselessView", value);
         },
         hideNft(value: boolean) {
-            $(document.documentElement).toggleClass("refresherHideNtf", value);
+            document.documentElement.classList.toggle("refresherHideNtf", value);
         },
         hideGalleryImage(value: boolean) {
-            $(document.documentElement).toggleClass("refresherHideGalleryImage", value);
+            document.documentElement.classList.toggle("refresherHideGalleryImage", value);
         },
         pushToRight(value: boolean) {
             hideSticky(value);
-            $(document.documentElement).toggleClass("refresherPushToRight", value);
+            document.documentElement.classList.toggle("refresherPushToRight", value);
         },
         removeNotice(value: boolean) {
             if (new URL(location.href).searchParams.get("exception_mode") === "notice") return;
 
-            $(document.documentElement).toggleClass("refresherHideNotice", value);
+            document.documentElement.classList.toggle("refresherHideNotice", value);
         },
         removeDCNotice(value: boolean) {
-            $(document.documentElement).toggleClass("refresherHideDCNotice", value);
+            document.documentElement.classList.toggle("refresherHideDCNotice", value);
         },
         removeGamemeca(value: boolean) {
-            $(document.documentElement).toggleClass("refresherHideGamemeca", value);
+            document.documentElement.classList.toggle("refresherHideGamemeca", value);
         }
     },
     func() {

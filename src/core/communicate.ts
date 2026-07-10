@@ -1,9 +1,9 @@
-interface StorageStructure {
+interface HookEntry {
     uuid: string;
     run: (payload: unknown) => void | Promise<void>;
 }
 
-const handlerStorage: Record<string, StorageStructure[]> = {};
+const handlerStorage: Record<string, HookEntry[]> = {};
 
 interface RuntimeHookMessage {
     type: string;

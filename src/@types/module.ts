@@ -34,10 +34,10 @@ declare global {
     }
 
     interface RefresherModuleGeneric {
-        data?: Record<string, unknown>;
-        memory?: Record<string, unknown>;
-        settings?: Record<string, RefresherSettings>;
-        shortcuts?: Record<string, () => void>;
+        data?: Record<string, unknown> | undefined;
+        memory?: Record<string, unknown> | undefined;
+        settings?: Record<string, RefresherSettings> | undefined;
+        shortcuts?: Record<string, () => void> | undefined;
     }
 
     interface RefresherModule<T extends RefresherModuleGeneric = RefresherModuleGeneric> {
@@ -62,7 +62,7 @@ declare global {
          */
         status: T["settings"] extends Record<string, RefresherSettings>
             ? { [K in keyof T["settings"]]: T["settings"][K]["default"] }
-            : never;
+            : Record<string, unknown>;
 
         /**
          * 모듈 데이터를 영속적으로 저장하고 싶을 때 사용하는 객체. 이 객체에 값을 저장하면 확장 프로그램이 로드될 때 마다 해당 값을 불러옵니다.
@@ -94,7 +94,7 @@ declare global {
          */
         shortcuts: T["shortcuts"] extends Record<string, () => void | Promise<void>>
             ? Record<keyof T["shortcuts"], (this: RefresherModule<T>) => void | Promise<void>>
-            : never;
+            : Record<string, () => void | Promise<void>> | undefined;
 
         /**
          * 설정이 업데이트 됐을 시 호출할 함수를 정의합니다.
@@ -106,7 +106,7 @@ declare global {
                     value: T["settings"][K]["value"]
                 ) => void | Promise<void>;
             }
-            : never;
+            : Record<string, (value: unknown) => void | Promise<void>> | undefined;
 
         /**
          * 해당 모듈이 작동할 때를 처리하기 위한 함수.

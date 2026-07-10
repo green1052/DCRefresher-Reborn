@@ -1,5 +1,3 @@
-import $ from "cash-dom";
-
 export default {
     name: "폰트 교체",
     description: "페이지에 전반적으로 표시되는 폰트를 교체합니다.",
@@ -37,42 +35,42 @@ export default {
         customFonts(fontName) {
             fontName ??= this.settings.customFonts.default;
 
-            let $fontElement = $("#refresherFontStyle");
+            let fontElement = document.getElementById("refresherFontStyle") as HTMLStyleElement | null;
 
-            if (!$fontElement.length) {
-                $fontElement = $("<style id=refresherFontStyle>");
-                $(document.head).append($fontElement);
+            if (!fontElement) {
+                fontElement = document.createElement("style");
+                fontElement.id = "refresherFontStyle";
+                document.head.append(fontElement);
             }
 
-            $fontElement.html(
-                `.refresherChangeDCFont,.refresherChangeDCFont .btn_cmt_close,.refresherChangeDCFont .btn_cmt_close span,.refresherChangeDCFont .btn_cmt_open,.refresherChangeDCFont .btn_cmt_refresh,.refresherChangeDCFont .gall_list,.refresherChangeDCFont .view_comment div,.refresherChangeDCFont .view_content_wrap,.refresherChangeDCFont .view_content_wrap a,.refresherChangeDCFont body,.refresherChangeDCFont button,.refresherChangeDCFont input,.refresherFont .refresher-block-popup,.refresherFont .refresher-captcha-popup,.refresherFont .refresher-frame,.refresherFont .refresher-popup{font-family:"${fontName.replace(/"/g, "\\\"")}",sans-serif}`
-            );
+            fontElement.textContent =
+                `.refresherChangeDCFont,.refresherChangeDCFont .btn_cmt_close,.refresherChangeDCFont .btn_cmt_close span,.refresherChangeDCFont .btn_cmt_open,.refresherChangeDCFont .btn_cmt_refresh,.refresherChangeDCFont .gall_list,.refresherChangeDCFont .view_comment div,.refresherChangeDCFont .view_content_wrap,.refresherChangeDCFont .view_content_wrap a,.refresherChangeDCFont body,.refresherChangeDCFont button,.refresherChangeDCFont input,.refresherFont .refresher-block-popup,.refresherFont .refresher-captcha-popup,.refresherFont .refresher-frame,.refresherFont .refresher-popup{font-family:"${fontName.replace(/"/g, "\\\"")}",sans-serif}`;
         },
         changeDCFont(value) {
-            $(document.documentElement).toggleClass("refresherChangeDCFont", value);
+            document.documentElement.classList.toggle("refresherChangeDCFont", value);
         },
         bodyFontSize(fontSize) {
-            let $fontElement = $("#refresherFontStyleSize");
+            let fontElement = document.getElementById("refresherFontStyleSize") as HTMLStyleElement | null;
 
-            if (!$fontElement.length) {
-                $fontElement = $("<style id=refresherFontStyleSize>");
-                $(document.head).append($fontElement);
+            if (!fontElement) {
+                fontElement = document.createElement("style");
+                fontElement.id = "refresherFontStyleSize";
+                document.head.append(fontElement);
             }
 
-            $fontElement.html(
-                `.refresherChangeDCFont .write_div{font-size:${fontSize}px}.refresherFont .refresher-preview-contents-actual,.refresherFont .refresher-preview-contents-actual .write_div{font-size:${fontSize + 2}px}`
-            );
+            fontElement.textContent =
+                `.refresherChangeDCFont .write_div{font-size:${fontSize}px}.refresherFont .refresher-preview-contents-actual,.refresherFont .refresher-preview-contents-actual .write_div{font-size:${fontSize + 2}px}`;
         }
     },
     func() {
-        $(document.documentElement).addClass("refresherFont");
+        document.documentElement.classList.add("refresherFont");
 
         this.update.changeDCFont.bind(this)(this.status.changeDCFont);
         this.update.customFonts.bind(this)(this.status.customFonts);
         this.update.bodyFontSize.bind(this)(this.status.bodyFontSize);
     },
     revoke() {
-        $(document.documentElement).removeClass("refresherFont");
+        document.documentElement.classList.remove("refresherFont");
 
         this.update.changeDCFont.bind(this)(false);
         document.getElementById("refresherFontStyle")?.remove();

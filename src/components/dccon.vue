@@ -1,9 +1,9 @@
 <template>
     <div class="refresher-dccon-popup">
-        <div style="display: flex">
+        <div class="dccon-header">
             <h3>디시콘</h3>
 
-            <div style="margin-top: 3px">
+            <div class="dccon-options">
                 <input
                     v-model="doubleDccon"
                     type="checkbox"
@@ -18,7 +18,7 @@
             </div>
 
             <div class="refresh" @click="getDcconList(true)">
-                <img :src="browser.runtime.getURL('/assets/refresh.webp')"/>
+                <img :src="getAssetURL('refresh')"/>
             </div>
 
             <div
@@ -34,9 +34,9 @@
         <template v-else>
             <hr/>
 
-            <ul style="overflow-x: auto; overflow-y: hidden; display: flex; user-select: none; column-gap: 4px;">
+            <ul class="dccon-pager">
                 <li
-                    style="font-size: 30px; margin-right: 5px"
+                    class="pager-prev"
                     @click="pageDown()"
                 >
                     &lt;
@@ -44,17 +44,17 @@
                 <li
                     v-for="dccon in dcconList[currentPage]"
                     :key="dccon.title"
-                    style="width: auto;"
+                    class="pager-item"
                 >
                     <img
                         :alt="dccon.title"
                         :src="dccon.main_img_url"
-                        style="object-fit: cover; width: 100%; max-width: 53.3px; max-height: 53.3px;"
+                        class="pager-img"
                         @click="dcconListClick(dccon.detail)"
                     />
                 </li>
                 <li
-                    style="font-size: 30px; margin-left: 5px"
+                    class="pager-next"
                     @click="pageUp()"
                 >
                     &gt;
@@ -63,25 +63,26 @@
 
             <hr/>
 
-            <div style="width: 100%; height: 80%; overflow: auto">
+            <div class="dccon-grid-wrap">
                 <h2
                     v-if="firstLoad"
-                    style="position: absolute; top: 50%; left: 35%"
+                    class="dccon-placeholder"
                 >
                     디시콘을 클릭해주세요.
                 </h2>
                 <ul
                     v-else
-                    style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px;"
+                    class="dccon-grid"
                 >
                     <li
                         v-for="dccon in currentDccon"
+                        class="dccon-grid-item"
                         @click="dcconClick(dccon)"
                     >
                         <img
                             :alt="dccon.title"
                             :src="dccon.list_img"
-                            style="height: 100px; width: 100%; object-fit: contain;"
+                            class="dccon-grid-img"
                         />
                     </li>
                 </ul>
@@ -92,7 +93,8 @@
 
 <script lang="ts" setup>
 import Cookies from "js-cookie";
-import ky from "ky";
+import ky from "../utils/httpClient";
+import {getAssetURL} from "../utils/assetURL";
 import {onMounted, ref} from "vue";
 
 import RefresherLoader from "./loader.vue";
@@ -197,12 +199,14 @@ onMounted(getDcconList);
 </script>
 
 <style lang="scss" scoped>
+@use "@/assets/styles/variables" as *;
+
 $dark-tint-light: #292929;
 
 .refresher-dccon-popup {
     backdrop-filter: blur(5px) saturate(150%);
-    background-color: rgba(255, 255, 255, 0.85);
-    border-radius: 13.3px;
+    background-color: var(--refresher-bg-popup);
+    border-radius: $radius-md;
     box-shadow: 0 0 16px rgba(51, 51, 51, 0.3);
     height: 500px;
     left: calc(50% - 350px);
@@ -291,5 +295,71 @@ html:has(#css-darkmode) {
             }
         }
     }
+}
+
+// Extracted inline styles
+.dccon-header {
+    display: flex;
+}
+
+.dccon-options {
+    margin-top: 3px;
+}
+
+.dccon-pager {
+    column-gap: 4px;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    user-select: none;
+
+    .pager-prev {
+        font-size: 30px;
+        margin-right: 5px;
+    }
+
+    .pager-next {
+        font-size: 30px;
+        margin-left: 5px;
+    }
+
+    .pager-item {
+        width: auto;
+    }
+
+    .pager-img {
+        height: 53.3px;
+        max-width: 53.3px;
+        object-fit: cover;
+        width: 100%;
+    }
+}
+
+.dccon-grid-wrap {
+    height: 80%;
+    overflow: auto;
+    width: 100%;
+}
+
+.dccon-placeholder {
+    left: 35%;
+    position: absolute;
+    top: 50%;
+}
+
+.dccon-grid {
+    display: grid;
+    gap: 4px;
+    grid-template-columns: repeat(6, 1fr);
+}
+
+.dccon-grid-item {
+    cursor: pointer;
+}
+
+.dccon-grid-img {
+    height: 100px;
+    object-fit: contain;
+    width: 100%;
 }
 </style>
