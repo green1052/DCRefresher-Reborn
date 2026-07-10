@@ -7,7 +7,7 @@ import filter from "../core/filtering";
 import modules from "../core/modules";
 import {migrateLocalStorageData} from "../utils/storageMigration";
 
-const moduleLoaders = import.meta.glob<{default: RefresherModule}>("../modules/*.ts");
+const moduleLoaders = import.meta.glob<{ default: RefresherModule }>("../modules/*.ts");
 
 export default defineContentScript({
     matches: ["https://*.dcinside.com/*"],

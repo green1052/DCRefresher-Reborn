@@ -96,7 +96,7 @@ export const modules = {
         );
 
         if (typeof mod.settings === "object") {
-            (mod as {status?: Record<string, unknown>}).status ??= {};
+            (mod as { status?: Record<string, unknown> }).status ??= {};
 
             promises.push(
                 ...Object.entries(mod.settings).map(async ([key, value]) => {
@@ -201,7 +201,7 @@ eventBus.on("refresherUpdateSetting", (mod: string, key: string, value: unknown)
     const module = moduleStore[mod] as RefresherModule;
 
     if (module !== undefined) {
-        (module as {status?: Record<string, unknown>}).status ??= {};
+        (module as { status?: Record<string, unknown> }).status ??= {};
         (module.status as Record<string, unknown>)[key] = value;
     } else {
         return;

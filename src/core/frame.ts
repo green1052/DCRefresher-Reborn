@@ -1,7 +1,7 @@
-import {type App, createApp, reactive, ref} from "vue";
+import {type App, createApp} from "vue";
 
 import frameRoot from "./frameComponent.vue";
-import {PreviewFrame, type FrameOptions} from "./PreviewFrame";
+import {type FrameOptions, PreviewFrame} from "./PreviewFrame";
 
 export type {FrameOptions, FrameData, FrameFunctions} from "./PreviewFrame";
 
@@ -22,8 +22,8 @@ export interface FrameScrollApi {
     closed: boolean;
     inputFocus: boolean;
     groupElement: HTMLElement | undefined;
-    bodyFrameRef: {incrementCommentKey?: () => void} | null;
-    commentFrameRef: {incrementCommentKey?: () => void} | null;
+    bodyFrameRef: { incrementCommentKey?: () => void } | null;
+    commentFrameRef: { incrementCommentKey?: () => void } | null;
     onClose: (handler: () => void) => void;
 }
 

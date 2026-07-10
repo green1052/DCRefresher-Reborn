@@ -25,7 +25,7 @@ export function useMeDetection({userId, postUser}: UseMeDetectionOptions): UseMe
         return clickAttr.replace(/window\.open\('\/\/gallog\.dcinside\.com\//g, "").replace(/'\);/g, "");
     };
 
-    const checkFixedName = (): {id: string; name: string} | null => {
+    const checkFixedName = (): { id: string; name: string } | null => {
         const fixedNameElement = document.querySelector("#login_box > .user_info .nickname > em");
         if (!fixedNameElement || !fixedNameElement.innerHTML) return null;
 

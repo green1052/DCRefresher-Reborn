@@ -1,173 +1,173 @@
 @use "variables" as *;
 
 .refresherStealth {
-    .bgcover {
+  .bgcover {
+    visibility: hidden;
+  }
+
+  .rcontimg_box .img_box {
+    display: none !important;
+  }
+
+  &:not(.stlth) .refresher-preview-contents-actual,
+  &:not(.stlth) .writing_view_box {
+    embed,
+    img,
+    video,
+    #zzbang_div {
+      display: none;
+    }
+  }
+
+  div.comment_box .comment_dccon {
+    &:not(:hover) {
+      border: 1px solid $dark-dc-color-deep;
+
+      box-sizing: border-box;
+
+      .written_dccon {
         visibility: hidden;
+      }
+
+      &::before {
+        align-items: center;
+        content: "디시콘 표시";
+        display: flex;
+        font-weight: bold;
+        height: 100px;
+        justify-content: space-around;
+        position: absolute;
+        width: 100px;
+      }
+    }
+  }
+
+  &:has(#css-darkmode) .coment_dccon_img {
+    &:not(:hover) {
+      border: 2px solid $dark-tint2;
+    }
+  }
+
+  .dory {
+    .dory_img img {
+      height: 10pt;
     }
 
-    .rcontimg_box .img_box {
-        display: none !important;
+    .dory_rolling {
+      margin-top: -17px;
+      position: inherit;
     }
 
-    &:not(.stlth) .refresher-preview-contents-actual,
-    &:not(.stlth) .writing_view_box {
-        embed,
-        img,
-        video,
-        #zzbang_div {
-            display: none;
-        }
+    .comment_dory {
+      display: none;
     }
 
-    div.comment_box .comment_dccon {
-        &:not(:hover) {
-            border: 1px solid $dark-dc-color-deep;
+    .dory_txt {
+      margin-left: 90px;
+      margin-top: 0;
+    }
+  }
 
-            box-sizing: border-box;
-
-            .written_dccon {
-                visibility: hidden;
-            }
-
-            &::before {
-                align-items: center;
-                content: "디시콘 표시";
-                display: flex;
-                font-weight: bold;
-                height: 100px;
-                justify-content: space-around;
-                position: absolute;
-                width: 100px;
-            }
-        }
+  //Preview - dccon
+  div.refresher-preview-comments .dccon:not(:hover) {
+    .written_dccon {
+      visibility: hidden;
     }
 
-    &:has(#css-darkmode) .coment_dccon_img {
-        &:not(:hover) {
-            border: 2px solid $dark-tint2;
-        }
+    &::before {
+      align-items: center;
+      border: 1px solid $dark-dc-color-deep;
+      border-radius: 10px;
+      box-sizing: border-box;
+      content: "디시콘 표시";
+      display: flex;
+      font-weight: bold;
+      height: 100px;
+      justify-content: space-around;
+      position: absolute;
+      width: 100px;
+    }
+  }
+
+  &:has(#css-darkmode),
+  div.refresher-preview-comments,
+  .coment_dccon_img:not(:hover) {
+    &::before {
+      border: 1px solid $dark-tint2;
+    }
+  }
+
+  .stealth_control_button {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 0 13.3px 13.3px 0;
+    bottom: 20px;
+    display: grid;
+    font-size: 13px;
+    height: 80px;
+    left: -1px;
+    position: fixed;
+    transform: translateX(-50px);
+    transition: 0.3s all cubic-bezier(0.19, 1, 0.22, 1);
+    user-select: none;
+    width: 80px;
+    z-index: 2002;
+
+    &.blur {
+      background-color: rgba(245, 245, 245, 0.85);
     }
 
-    .dory {
-        .dory_img img {
-            height: 10pt;
-        }
+    .button {
+      border-radius: 13.3px;
+      display: grid;
+      height: 60px;
+      margin: auto;
+      padding: 5px;
+      transition: 0.3s all cubic-bezier(0.19, 1, 0.22, 1);
+      width: 60px;
 
-        .dory_rolling {
-            margin-top: -17px;
-            position: inherit;
-        }
+      img {
+        height: 40px;
+        margin: auto;
+        width: 40px;
+      }
 
-        .comment_dory {
-            display: none;
-        }
+      p {
+        color: #000;
+        font-size: 10px;
+        text-align: center;
+      }
 
-        .dory_txt {
-            margin-left: 90px;
-            margin-top: 0;
-        }
+      &:hover {
+        background: rgba(255, 255, 255, 1);
+      }
     }
 
-    //Preview - dccon
-    div.refresher-preview-comments .dccon:not(:hover) {
-        .written_dccon {
-            visibility: hidden;
-        }
+    &:hover {
+      transform: translateX(0px);
+    }
+  }
 
-        &::before {
-            align-items: center;
-            border: 1px solid $dark-dc-color-deep;
-            border-radius: 10px;
-            box-sizing: border-box;
-            content: "디시콘 표시";
-            display: flex;
-            font-weight: bold;
-            height: 100px;
-            justify-content: space-around;
-            position: absolute;
-            width: 100px;
-        }
+  &:has(#css-darkmode) .stealth_control_button {
+    background: $dark-tint-light-opacity;
+    border: 1px solid #505050;
+
+    &.blur {
+      backdrop-filter: blur(5px) saturate(150%);
+      background-color: $dark-tint-light-opacity;
     }
 
-    &:has(#css-darkmode),
-    div.refresher-preview-comments,
-    .coment_dccon_img:not(:hover) {
-        &::before {
-            border: 1px solid $dark-tint2;
-        }
+    .button {
+      p {
+        color: $dark-text-color;
+      }
+
+      &:hover {
+        background: rgba(110, 110, 110, 0.5);
+      }
     }
 
-    .stealth_control_button {
-        background: rgba(255, 255, 255, 0.8);
-        border-radius: 0 13.3px 13.3px 0;
-        bottom: 20px;
-        display: grid;
-        font-size: 13px;
-        height: 80px;
-        left: -1px;
-        position: fixed;
-        transform: translateX(-50px);
-        transition: 0.3s all cubic-bezier(0.19, 1, 0.22, 1);
-        user-select: none;
-        width: 80px;
-        z-index: 2002;
-
-        &.blur {
-            background-color: rgba(245, 245, 245, 0.85);
-        }
-
-        .button {
-            border-radius: 13.3px;
-            display: grid;
-            height: 60px;
-            margin: auto;
-            padding: 5px;
-            transition: 0.3s all cubic-bezier(0.19, 1, 0.22, 1);
-            width: 60px;
-
-            img {
-                height: 40px;
-                margin: auto;
-                width: 40px;
-            }
-
-            p {
-                color: #000;
-                font-size: 10px;
-                text-align: center;
-            }
-
-            &:hover {
-                background: rgba(255, 255, 255, 1);
-            }
-        }
-
-        &:hover {
-            transform: translateX(0px);
-        }
+    img {
+      filter: invert(1);
     }
-
-    &:has(#css-darkmode) .stealth_control_button {
-        background: $dark-tint-light-opacity;
-        border: 1px solid #505050;
-
-        &.blur {
-            backdrop-filter: blur(5px) saturate(150%);
-            background-color: $dark-tint-light-opacity;
-        }
-
-        .button {
-            p {
-                color: $dark-text-color;
-            }
-
-            &:hover {
-                background: rgba(110, 110, 110, 0.5);
-            }
-        }
-
-        img {
-            filter: invert(1);
-        }
-    }
+  }
 }

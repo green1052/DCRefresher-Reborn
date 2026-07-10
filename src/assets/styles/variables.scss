@@ -33,99 +33,99 @@ $z-overlay: 2002;
 // Light theme (default) — CSS custom properties
 // ============================================================
 :root {
-    --refresher-bg: #fff;
-    --refresher-bg-blur: rgba(245, 245, 245, 0.85);
-    --refresher-bg-overlay: rgba(221, 221, 221, 0.6);
-    --refresher-bg-popup: rgba(255, 255, 255, 0.85);
+  --refresher-bg: #fff;
+  --refresher-bg-blur: rgba(245, 245, 245, 0.85);
+  --refresher-bg-overlay: rgba(221, 221, 221, 0.6);
+  --refresher-bg-popup: rgba(255, 255, 255, 0.85);
 
-    --refresher-text: #000;
-    --refresher-text-muted: rgb(170, 170, 170);
-    --refresher-text-secondary: #666;
-    --refresher-text-tertiary: #a0a0a0;
+  --refresher-text: #000;
+  --refresher-text-muted: rgb(170, 170, 170);
+  --refresher-text-secondary: #666;
+  --refresher-text-tertiary: #a0a0a0;
 
-    --refresher-border: #505050;
-    --refresher-border-light: #d6d6d6;
+  --refresher-border: #505050;
+  --refresher-border-light: #d6d6d6;
 
-    --refresher-primary: rgb(0, 110, 255);
-    --refresher-primary-hover: rgba(0, 110, 255, 0.7);
-    --refresher-primary-active: rgba(0, 110, 255, 0.6);
+  --refresher-primary: rgb(0, 110, 255);
+  --refresher-primary-hover: rgba(0, 110, 255, 0.7);
+  --refresher-primary-active: rgba(0, 110, 255, 0.6);
 
-    --refresher-danger: #fb4c4c;
-    --refresher-success: #35d08f;
+  --refresher-danger: #fb4c4c;
+  --refresher-success: #35d08f;
 
-    --refresher-link: rgb(0, 140, 255);
-    --refresher-link-hover: rgb(0, 120, 255);
-    --refresher-link-active: rgb(0, 100, 255);
+  --refresher-link: rgb(0, 140, 255);
+  --refresher-link-hover: rgb(0, 120, 255);
+  --refresher-link-active: rgb(0, 100, 255);
 
-    --refresher-input-border: #000;
-    --refresher-input-bg: transparent;
-    --refresher-input-focus: rgb(0, 120, 255);
+  --refresher-input-border: #000;
+  --refresher-input-bg: transparent;
+  --refresher-input-focus: rgb(0, 120, 255);
 
-    --refresher-close-cross: #000;
-    --refresher-close-cross-hover: rgb(49, 49, 49);
+  --refresher-close-cross: #000;
+  --refresher-close-cross-hover: rgb(49, 49, 49);
 
-    --refresher-accent-yellow: rgb(241, 206, 50);
-    --refresher-accent-blue: rgb(50, 139, 241);
-    --refresher-accent-orange: rgb(241, 126, 50);
-    --refresher-accent-gray: #777;
+  --refresher-accent-yellow: rgb(241, 206, 50);
+  --refresher-accent-blue: rgb(50, 139, 241);
+  --refresher-accent-orange: rgb(241, 126, 50);
+  --refresher-accent-gray: #777;
 
-    --refresher-deleted-bg: #e8645f;
+  --refresher-deleted-bg: #e8645f;
 
-    --refresher-user-me-bg: rgba(0, 110, 255, 0.5);
+  --refresher-user-me-bg: rgba(0, 110, 255, 0.5);
 
-    --refresher-scrollbar-track: #f1f1f1;
-    --refresher-scrollbar-thumb: #888;
-    --refresher-scrollbar-thumb-hover: #555;
+  --refresher-scrollbar-track: #f1f1f1;
+  --refresher-scrollbar-thumb: #888;
+  --refresher-scrollbar-thumb-hover: #555;
 }
 
 // ============================================================
 // Dark theme — override via site darkmode flag
 // ============================================================
 html:has(#css-darkmode) {
-    --refresher-bg: #292929;
-    --refresher-bg-blur: rgba(41, 41, 41, 0.85);
-    --refresher-bg-overlay: rgba(82, 82, 82, 0.6);
-    --refresher-bg-popup: #292929;
+  --refresher-bg: #292929;
+  --refresher-bg-blur: rgba(41, 41, 41, 0.85);
+  --refresher-bg-overlay: rgba(82, 82, 82, 0.6);
+  --refresher-bg-popup: #292929;
 
-    --refresher-text: #fff;
-    --refresher-text-muted: #ccc;
-    --refresher-text-secondary: #b0b0b0;
-    --refresher-text-tertiary: #888;
+  --refresher-text: #fff;
+  --refresher-text-muted: #ccc;
+  --refresher-text-secondary: #b0b0b0;
+  --refresher-text-tertiary: #888;
 
-    --refresher-border: #505050;
-    --refresher-border-light: #505050;
+  --refresher-border: #505050;
+  --refresher-border-light: #505050;
 
-    --refresher-primary: #4987f7;
-    --refresher-primary-hover: rgba(0, 110, 255, 0.28);
-    --refresher-primary-active: rgba(0, 110, 255, 0.22);
+  --refresher-primary: #4987f7;
+  --refresher-primary-hover: rgba(0, 110, 255, 0.28);
+  --refresher-primary-active: rgba(0, 110, 255, 0.22);
 
-    --refresher-link: #176ef1d5;
+  --refresher-link: #176ef1d5;
 
-    --refresher-input-border: #fff;
-    --refresher-input-bg: transparent;
-    --refresher-input-focus: rgb(38, 55, 73);
+  --refresher-input-border: #fff;
+  --refresher-input-bg: transparent;
+  --refresher-input-focus: rgb(38, 55, 73);
 
-    --refresher-close-cross: #fff;
-    --refresher-close-cross-hover: rgb(202, 202, 202);
+  --refresher-close-cross: #fff;
+  --refresher-close-cross-hover: rgb(202, 202, 202);
 
-    --refresher-user-me-bg: rgb(20, 109, 243);
+  --refresher-user-me-bg: rgb(20, 109, 243);
 
-    --refresher-scrollbar-track: #292929;
-    --refresher-scrollbar-thumb: #555;
-    --refresher-scrollbar-thumb-hover: #777;
+  --refresher-scrollbar-track: #292929;
+  --refresher-scrollbar-thumb: #555;
+  --refresher-scrollbar-thumb-hover: #777;
 }
 
 // ============================================================
 // Popup dark mode via prefers-color-scheme
 // ============================================================
 @media (prefers-color-scheme: dark) {
-    :root {
-        --refresher-bg: #2c2c2c;
-        --refresher-text: #e0e0e0;
-        --refresher-text-secondary: #b0b0b0;
-        --refresher-text-tertiary: #888;
-        --refresher-border-light: rgb(90, 90, 90);
-    }
+  :root {
+    --refresher-bg: #2c2c2c;
+    --refresher-text: #e0e0e0;
+    --refresher-text-secondary: #b0b0b0;
+    --refresher-text-tertiary: #888;
+    --refresher-border-light: rgb(90, 90, 90);
+  }
 }
 
 // ============================================================

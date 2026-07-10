@@ -1,5 +1,3 @@
-import type {ComponentPublicInstance} from "vue";
-
 import type {Nullable} from "../utils/types";
 import type {User} from "../utils/user";
 

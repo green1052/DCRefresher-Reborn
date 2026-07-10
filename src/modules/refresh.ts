@@ -253,7 +253,7 @@ export default {
 
                 if (isAdmin && document.querySelector<HTMLInputElement>(".article_chkbox:checked")) return false;
 
-                const managerCheckboxTpl = document.querySelector<HTMLTemplateElement>('#minor_td-tmpl[type="text/x-jquery-tmpl"]');
+                const managerCheckboxTpl = document.querySelector<HTMLTemplateElement>("#minor_td-tmpl[type=\"text/x-jquery-tmpl\"]");
                 const managerCheckbox = managerCheckboxTpl?.innerHTML ?? "";
 
                 this.memory.lastRefresh = Date.now();

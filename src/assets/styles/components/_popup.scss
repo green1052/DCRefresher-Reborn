@@ -5,58 +5,58 @@
 // ============================================================
 
 @mixin popup-shell {
-    backdrop-filter: blur(5px) saturate(150%);
-    background-color: var(--refresher-bg-popup);
-    border-radius: $radius-md;
-    box-shadow: 0 0 16px rgba(51, 51, 51, 0.3);
-    padding: 20px 30px;
-    position: fixed;
-    z-index: $z-popup;
+  backdrop-filter: blur(5px) saturate(150%);
+  background-color: var(--refresher-bg-popup);
+  border-radius: $radius-md;
+  box-shadow: 0 0 16px rgba(51, 51, 51, 0.3);
+  padding: 20px 30px;
+  position: fixed;
+  z-index: $z-popup;
 
-    h3 {
-        font-size: 18px;
+  h3 {
+    font-size: 18px;
+  }
+
+  span {
+    cursor: pointer;
+  }
+
+  .close {
+    content: " ";
+    font-size: 24px;
+    position: absolute;
+    right: 10px;
+
+    &:after {
+      content: " ";
+      cursor: pointer;
+      display: block;
+      height: 35px;
+      left: -3.5px;
+      position: relative;
+      top: -15px;
+      width: 35px;
     }
 
-    span {
-        cursor: pointer;
+    .cross {
+      background-color: var(--refresher-close-cross);
+      height: 2px;
+      position: absolute;
+      width: 30px;
+
+      &:hover {
+        background-color: var(--refresher-close-cross-hover);
+      }
+
+      &:first-child {
+        transform: rotateZ(45deg);
+      }
+
+      &:last-child {
+        transform: rotateZ(-45deg);
+      }
     }
-
-    .close {
-        content: " ";
-        font-size: 24px;
-        position: absolute;
-        right: 10px;
-
-        &:after {
-            content: " ";
-            cursor: pointer;
-            display: block;
-            height: 35px;
-            left: -3.5px;
-            position: relative;
-            top: -15px;
-            width: 35px;
-        }
-
-        .cross {
-            background-color: var(--refresher-close-cross);
-            height: 2px;
-            position: absolute;
-            width: 30px;
-
-            &:hover {
-                background-color: var(--refresher-close-cross-hover);
-            }
-
-            &:first-child {
-                transform: rotateZ(45deg);
-            }
-
-            &:last-child {
-                transform: rotateZ(-45deg);
-            }
-        }
-    }
+  }
 }
 
 // ============================================================
@@ -64,39 +64,39 @@
 // ============================================================
 
 .refresher-block-popup {
-    @include popup-shell;
+  @include popup-shell;
 
-    height: 320px;
-    left: calc(120px);
-    top: calc(50% - 160px);
-    width: 420px;
+  height: 320px;
+  left: calc(120px);
+  top: calc(50% - 160px);
+  width: 420px;
 
-    .contents {
-        margin-top: 30px;
+  .contents {
+    margin-top: 30px;
 
-        & > div {
-            margin-bottom: 20px;
-        }
-
-        input[type=text] {
-            border-radius: 6px;
-            height: 33px;
-            margin-top: 5px;
-            width: 100%;
-        }
-
-        button {
-            background-color: var(--refresher-danger);
-            border-radius: $radius-md;
-            color: #fff;
-            display: block;
-            height: 40px;
-            margin-left: auto;
-            margin-top: 10px;
-            position: relative;
-            width: 120px;
-        }
+    & > div {
+      margin-bottom: 20px;
     }
+
+    input[type=text] {
+      border-radius: 6px;
+      height: 33px;
+      margin-top: 5px;
+      width: 100%;
+    }
+
+    button {
+      background-color: var(--refresher-danger);
+      border-radius: $radius-md;
+      color: #fff;
+      display: block;
+      height: 40px;
+      margin-left: auto;
+      margin-top: 10px;
+      position: relative;
+      width: 120px;
+    }
+  }
 }
 
 // ============================================================
@@ -104,42 +104,42 @@
 // ============================================================
 
 .refresher-captcha-popup {
-    @include popup-shell;
+  @include popup-shell;
 
-    height: 150px;
-    left: calc(50% - 160px);
-    top: calc(50% - 75px);
-    width: 320px;
+  height: 150px;
+  left: calc(50% - 160px);
+  top: calc(50% - 75px);
+  width: 320px;
 
-    & > p {
-        font-size: 18px;
-        font-weight: bold;
+  & > p {
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  input {
+    border: 1px solid #777;
+    border-radius: $radius-md;
+    height: 30px;
+    outline: none;
+    text-decoration: none;
+    transition: all $duration-normal $ease-out-expo;
+    width: 100%;
+
+    &:focus,
+    &:hover {
+      box-shadow: inset 0 0 4px rgba(60, 71, 144, 0.5);
     }
+  }
 
-    input {
-        border: 1px solid #777;
-        border-radius: $radius-md;
-        height: 30px;
-        outline: none;
-        text-decoration: none;
-        transition: all $duration-normal $ease-out-expo;
-        width: 100%;
+  .refresher-preview-button {
+    bottom: 5%;
+    position: absolute;
+    right: 0;
+  }
 
-        &:focus,
-        &:hover {
-            box-shadow: inset 0 0 4px rgba(60, 71, 144, 0.5);
-        }
-    }
-
-    .refresher-preview-button {
-        bottom: 5%;
-        position: absolute;
-        right: 0;
-    }
-
-    .refresher-vote-text {
-        margin: auto;
-    }
+  .refresher-vote-text {
+    margin: auto;
+  }
 }
 
 // ============================================================
@@ -147,26 +147,26 @@
 // ============================================================
 
 .refresher-cache-popup {
-    @include popup-shell;
+  @include popup-shell;
 
-    height: 500px;
-    left: calc(50% - 350px);
-    top: calc(50% - 300px);
-    width: 620px;
-    z-index: $z-tooltip;
+  height: 500px;
+  left: calc(50% - 350px);
+  top: calc(50% - 300px);
+  width: 620px;
+  z-index: $z-tooltip;
 
-    & > p {
-        font-size: 18px;
-        font-weight: bold;
-    }
+  & > p {
+    font-size: 18px;
+    font-weight: bold;
+  }
 
-    h3 {
-        font-size: 18px;
-    }
+  h3 {
+    font-size: 18px;
+  }
 
-    .close {
-        font-size: 24px;
-    }
+  .close {
+    font-size: 24px;
+  }
 }
 
 // ============================================================
@@ -174,56 +174,56 @@
 // ============================================================
 
 .refresher-management-panel {
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 0 $radius-md $radius-md 0;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 0 $radius-md $radius-md 0;
+  display: grid;
+  height: 60%;
+  left: 0;
+  position: fixed;
+  top: 20%;
+  transition: all $duration-normal $ease-out-expo;
+  user-select: none;
+  width: 100px;
+  z-index: $z-overlay;
+
+  &.blur {
+    background-color: var(--refresher-bg-blur);
+  }
+
+  .button {
+    border-radius: $radius-md;
     display: grid;
-    height: 60%;
-    left: 0;
-    position: fixed;
-    top: 20%;
+    height: 80px;
+    margin: auto;
     transition: all $duration-normal $ease-out-expo;
-    user-select: none;
-    width: 100px;
-    z-index: $z-overlay;
+    width: 80px;
 
-    &.blur {
-        background-color: var(--refresher-bg-blur);
+    img {
+      height: 60px;
+      margin: auto;
+      width: 60px;
     }
 
-    .button {
-        border-radius: $radius-md;
-        display: grid;
-        height: 80px;
-        margin: auto;
-        transition: all $duration-normal $ease-out-expo;
-        width: 80px;
-
-        img {
-            height: 60px;
-            margin: auto;
-            width: 60px;
-        }
-
-        p {
-            color: var(--refresher-text);
-            text-align: center;
-        }
-
-        &:hover {
-            background: rgba(255, 255, 255, 1);
-        }
+    p {
+      color: var(--refresher-text);
+      text-align: center;
     }
 
-    .button.delete,
-    .button.block {
-        &:hover {
-            img {
-                filter: invert(22%) sepia(85%) saturate(5841%) hue-rotate(355deg) brightness(92%) contrast(126%);
-            }
-
-            p {
-                color: #f00;
-            }
-        }
+    &:hover {
+      background: rgba(255, 255, 255, 1);
     }
+  }
+
+  .button.delete,
+  .button.block {
+    &:hover {
+      img {
+        filter: invert(22%) sepia(85%) saturate(5841%) hue-rotate(355deg) brightness(92%) contrast(126%);
+      }
+
+      p {
+        color: #f00;
+      }
+    }
+  }
 }
