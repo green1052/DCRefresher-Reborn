@@ -23,7 +23,18 @@ export interface BodyFrameContext {
 }
 
 export function makeBodyFrame(ctx: BodyFrameContext): void {
-    const {frame, preData, signal, historySkip, gallery, disableCache, colorPreviewLink, gifControl, blockImage, postCaches} = ctx;
+    const {
+        frame,
+        preData,
+        signal,
+        historySkip,
+        gallery,
+        disableCache,
+        colorPreviewLink,
+        gifControl,
+        blockImage,
+        postCaches
+    } = ctx;
 
     frame.data.load = true;
     frame.title = preData.title!;

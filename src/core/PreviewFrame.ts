@@ -35,7 +35,7 @@ export interface FrameFunctions {
         memo: string | DcinsideDccon[],
         commentNo: string | null,
         replyNo: string | null,
-        user: {name: string; pw?: string},
+        user: { name: string; pw?: string },
         bigDccon: boolean
     ) => Promise<boolean>;
     deleteComment: (commentId: string, password: string, admin: boolean) => Promise<boolean>;
@@ -56,7 +56,7 @@ interface ReactiveFrameState {
     upvotes: string | undefined;
     fixedUpvotes: string | undefined;
     downvotes: string | undefined;
-    error: {title: string; detail: string} | undefined;
+    error: { title: string; detail: string } | undefined;
     collapse: boolean | undefined;
     data: FrameData;
 }
@@ -153,11 +153,11 @@ export class PreviewFrame {
         this.state.downvotes = v;
     }
 
-    get error(): {title: string; detail: string} | undefined {
+    get error(): { title: string; detail: string } | undefined {
         return this.state.error;
     }
 
-    set error(v: {title: string; detail: string} | undefined) {
+    set error(v: { title: string; detail: string } | undefined) {
         this.state.error = v;
     }
 

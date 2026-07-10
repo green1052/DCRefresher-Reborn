@@ -1,4 +1,4 @@
-import {computed, onBeforeUnmount, onMounted, ref, type ComputedRef, type Ref} from "vue";
+import {computed, type ComputedRef, onBeforeUnmount, onMounted, ref, type Ref} from "vue";
 
 const s = 1000;
 const m = s * 60;
@@ -24,7 +24,12 @@ interface UseRelativeTimeReturn {
     changeStamp: () => void;
 }
 
-export function useRelativeTime({date, mode, interval = 3000, fallbackText}: UseRelativeTimeOptions): UseRelativeTimeReturn {
+export function useRelativeTime({
+                                    date,
+                                    mode,
+                                    interval = 3000,
+                                    fallbackText
+                                }: UseRelativeTimeOptions): UseRelativeTimeReturn {
     const convertTime = (target: Date): string => {
         const diff = mode === "elapsed"
             ? Date.now() - target.getTime()

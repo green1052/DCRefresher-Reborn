@@ -3,19 +3,19 @@
 
 // Link styles inside write_div
 .write_div > :not(.dc_series) > .lnk {
-    background-color: rgb(248, 248, 248);
-    border-radius: 5px;
-    color: var(--refresher-link);
-    padding: 2px 4px;
-    transition: color $duration-normal $ease-out-expo;
+  background-color: rgb(248, 248, 248);
+  border-radius: 5px;
+  color: var(--refresher-link);
+  padding: 2px 4px;
+  transition: color $duration-normal $ease-out-expo;
 
-    &:hover {
-        color: var(--refresher-link-hover);
-    }
+  &:hover {
+    color: var(--refresher-link-hover);
+  }
 
-    &:active {
-        color: var(--refresher-link-active);
-    }
+  &:active {
+    color: var(--refresher-link-active);
+  }
 }
 
 // IP Module — user data badge margins
@@ -23,35 +23,35 @@
 .cmt_info,
 .addbox,
 .reply_info {
-    .refresherUserData {
-        margin-left: 3px;
-    }
+  .refresherUserData {
+    margin-left: 3px;
+  }
 }
 
 // Writer cell layout
 .gall_writer {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
-    &:has(.user_data.add) {
-        overflow: unset !important;
-    }
+  &:has(.user_data.add) {
+    overflow: unset !important;
+  }
 
-    .addbox {
-        display: initial !important;
-    }
+  .addbox {
+    display: initial !important;
+  }
 }
 
 tr.gall_writer {
-    display: table-cell;
-    text-align: center;
-    vertical-align: middle;
+  display: table-cell;
+  text-align: center;
+  vertical-align: middle;
 }
 
 html:has(#css-darkmode) {
-    .write_div > :not(.dc_series) > .lnk {
-        background-color: color.invert(#252525);
-        color: color.invert($dark-highlight) !important;
-    }
+  .write_div > :not(.dc_series) > .lnk {
+    background-color: color.invert(#252525);
+    color: color.invert($dark-highlight) !important;
+  }
 }

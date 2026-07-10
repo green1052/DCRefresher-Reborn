@@ -296,7 +296,11 @@ export default {
             return list.join(", ");
         };
 
-        const getRatio = async (uid: string): Promise<{article: number; comment: number; date: number} | undefined> => {
+        const getRatio = async (uid: string): Promise<{
+            article: number;
+            comment: number;
+            date: number
+        } | undefined> => {
             const params = new URLSearchParams();
             params.set("ci_t", Cookies.get("ci_c") ?? "");
             params.set("user_id", uid);
@@ -355,7 +359,7 @@ export default {
 
                 if (!this.status.checkRatio) continue;
 
-                let ratio: {article: number; comment: number; date: number} | undefined = this.data!.ratio?.[uid];
+                let ratio: { article: number; comment: number; date: number } | undefined = this.data!.ratio?.[uid];
 
                 if (!ratio || (ratio && Date.now() - ratio.date > 3600000)) {
                     ratio = await getRatio(uid);

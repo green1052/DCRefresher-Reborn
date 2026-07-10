@@ -3,8 +3,8 @@ import toast from "../utils/toast";
 import {writeClipboard} from "../utils/writeClipboard";
 
 interface DataModuleThis {
-    status: {autoBackup: boolean};
-    data: {lastUpdate: number};
+    status: { autoBackup: boolean };
+    data: { lastUpdate: number };
     update: {
         backupCloud: (this: DataModuleThis, value: boolean) => Promise<void>;
     };

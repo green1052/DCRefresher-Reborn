@@ -27,15 +27,6 @@ export class ScrollDetection {
         this.session = this.createSession();
     }
 
-    private createSession(): ScrollSession {
-        return {time: [], delta: [], peak: 0, direction: 0, fired: 0};
-    }
-
-    private average(arr: number[]): number {
-        if (arr.length === 0) return 0;
-        return arr.reduce((a, b) => a + b) / arr.length;
-    }
-
     initSession(): void {
         this.session = this.createSession();
     }
@@ -106,5 +97,14 @@ export class ScrollDetection {
         if (this.session.delta.length < 50) {
             this.session.delta.push(Math.abs(ev.deltaY));
         }
+    }
+
+    private createSession(): ScrollSession {
+        return {time: [], delta: [], peak: 0, direction: 0, fired: 0};
+    }
+
+    private average(arr: number[]): number {
+        if (arr.length === 0) return 0;
+        return arr.reduce((a, b) => a + b) / arr.length;
     }
 }

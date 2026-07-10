@@ -158,7 +158,7 @@ export const panel = {
             eventBus.emit("refreshRequest");
 
             if (typeof response === "object" && response !== null) {
-                const r = response as {msg: string; result: string};
+                const r = response as { msg: string; result: string };
                 toast.show(r.msg, r.result === "success" ? "info" : "error");
                 return;
             }
@@ -225,7 +225,7 @@ export const panel = {
                             eventBus.emit("refreshRequest");
 
                             if (typeof response === "object" && response !== null) {
-                                const r = response as {msg: string; result: string};
+                                const r = response as { msg: string; result: string };
                                 if (r.result === "success") {
                                     toast.show(r.msg);
                                     if (delChk) frame.app?.close();
@@ -248,7 +248,7 @@ export const panel = {
                 eventBus.emit("refreshRequest");
 
                 if (typeof response === "object" && response !== null) {
-                    const r = response as {msg: string; result: string};
+                    const r = response as { msg: string; result: string };
                     if (r.result === "success") {
                         toast.show(r.msg);
                         setAsNotice = !setAsNotice;
@@ -269,7 +269,7 @@ export const panel = {
                 eventBus.emit("refreshRequest");
 
                 if (typeof response === "object" && response !== null) {
-                    const r = response as {msg: string; result: string};
+                    const r = response as { msg: string; result: string };
                     if (r.result === "success") {
                         toast.show(r.msg);
                         setAsRecommend = !setAsRecommend;

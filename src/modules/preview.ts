@@ -16,7 +16,6 @@ import {ScrollDetection} from "../utils/scrollDetection";
 import toast from "../utils/toast";
 import {User} from "../utils/user";
 import * as storage from "../utils/webStorage";
-import {writeClipboard} from "../utils/writeClipboard";
 
 type PreviewFrameAppApi = FrameScrollApi;
 

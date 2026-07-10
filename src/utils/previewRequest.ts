@@ -161,7 +161,7 @@ export const previewRequest = {
     async setNotice(
         args: GalleryHTTPRequestArguments,
         set: boolean
-    ): Promise<string | {msg: string; result: "success" | "fail"}> {
+    ): Promise<string | { msg: string; result: "success" | "fail" }> {
         if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
 
         const galleryType = http.galleryType(args.link, "/");
@@ -178,13 +178,13 @@ export const previewRequest = {
             {body: params}
         );
 
-        return parseJsonSafely(response) as string | {msg: string; result: "success" | "fail"};
+        return parseJsonSafely(response) as string | { msg: string; result: "success" | "fail" };
     },
 
     async setRecommend(
         args: GalleryHTTPRequestArguments,
         set: boolean
-    ): Promise<string | {msg: string; result: "success" | "fail"}> {
+    ): Promise<string | { msg: string; result: "success" | "fail" }> {
         if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
 
         const galleryType = http.galleryType(args.link, "/");
@@ -201,7 +201,7 @@ export const previewRequest = {
             {body: params}
         );
 
-        return parseJsonSafely(response) as string | {msg: string; result: "success" | "fail"};
+        return parseJsonSafely(response) as string | { msg: string; result: "success" | "fail" };
     },
 
     async captcha(args: GalleryHTTPRequestArguments, kcaptchaType: "comment" | "recommend") {
