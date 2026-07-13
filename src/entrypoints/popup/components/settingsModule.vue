@@ -20,14 +20,12 @@
         :module-name="moduleName"
         :setting="moduleSettings[settingKey]"
         :setting-key="settingKey"
-        :type-wrap="typeWrap"
-        :update-user-setting="updateUserSetting"
     />
   </div>
 </template>
 
 <script lang="ts" setup>
-import {computed} from "vue";
+import {computed, inject} from "vue";
 import SettingItem from "./settingItem.vue";
 
 interface Props {
@@ -35,12 +33,11 @@ interface Props {
   moduleSettings: Record<string, RefresherSettings>;
   moduleEnabled: boolean;
   showAdvanced: boolean;
-  moveToModuleTab: (moduleName: string) => void;
-  updateUserSetting: (module: string | undefined, key: string | undefined, value: unknown) => void;
-  typeWrap: (value: unknown) => string | unknown;
 }
 
 const props = defineProps<Props>();
+
+const moveToModuleTab = inject<(moduleName: string) => void>("moveToModuleTab")!;
 
 const filteredSettings = computed(() => {
   return Object.keys(props.moduleSettings).filter((settingKey) => {

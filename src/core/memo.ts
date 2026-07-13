@@ -1,5 +1,5 @@
-import {MEMO_TYPES, memoStorage} from "../utils/storage";
-import communicate from "./communicate";
+import {MEMO_TYPES, memoStorage} from "@/storage/wxtStorage";
+import {onMessage} from "@/http/messaging";
 import eventBus from "./eventbus";
 
 export const TYPE_NAMES = {
@@ -111,7 +111,7 @@ export const remove = async (type: RefresherMemoType, user: string): Promise<voi
     await memoStorage[type].setValue({...memoCache[type]});
 };
 
-communicate.addHook("memoSelected", () => {
+onMessage("memoSelected", () => {
     eventBus.emit("refresherUpdateUserMemo");
 });
 

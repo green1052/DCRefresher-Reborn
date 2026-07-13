@@ -1,7 +1,6 @@
-import ky from "./httpClient";
-
-import * as http from "./http";
-import type {Nullable} from "./types";
+import * as http from "@/http/http";
+import {client as ky} from "@/http/http";
+import type {Nullable} from "@/utils/types";
 
 const rKey = "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K";
 const rRegex = /[^A-Za-z0-9+/=]/g;

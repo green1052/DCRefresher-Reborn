@@ -1,7 +1,8 @@
-import memo from "../core/memo";
+import memo from "@/core/memo";
 import ip from "./ip";
+import ban from "./ban";
 import type {Nullable, ObjectEnum} from "./types";
-import localWebStorage from "./webStorage";
+import {moduleDataStorage, moduleEnableStorage, moduleSettingStorage} from "@/storage/wxtStorage";
 
 export type UserType =
     | "UNFIXED"
@@ -23,7 +24,6 @@ const USERTYPE: ObjectEnum<UserType> = {
 };
 
 let ratio: Record<string, { article: number; comment: number; date: number }> = {};
-let ban: Record<string, string[]> = {};
 
 let userDataReady: Promise<void> | null = null;
 
@@ -31,26 +31,20 @@ const initializeUserData = (): Promise<void> => {
     if (!userDataReady) {
         userDataReady = (async () => {
             try {
-                const [enable, checkRatio, checkPermBan] = await Promise.all([
-                    localWebStorage.get<boolean>("관리.enable"),
-                    localWebStorage.get<boolean>("관리.checkRatio"),
-                    localWebStorage.get<boolean>("관리.checkPermBan")
+                const [enable, checkRatio] = await Promise.all([
+                    moduleEnableStorage("관리").getValue(),
+                    moduleSettingStorage("관리", "checkRatio").getValue()
                 ]);
 
                 if (!enable) return;
 
                 if (checkRatio) {
-                    const ratioData = await localWebStorage.module.get<{
-                        ratio: Record<string, {
-                            article: number;
-                            comment: number;
-                            date: number;
-                        }>;
-                    }>("관리");
-                    ratio = ratioData?.["ratio"] ?? {};
-                }
-                if (checkPermBan) {
-                    ban = (await localWebStorage.get<Record<string, string[]>>("refresher.database.ban")) ?? {};
+                    const ratioData = await moduleDataStorage("관리").getValue();
+                    ratio = (ratioData?.["ratio"] as Record<string, {
+                        article: number;
+                        comment: number;
+                        date: number
+                    }>) ?? {};
                 }
             } catch (e) {
                 console.error("Failed to initialize user data:", e);
@@ -185,14 +179,7 @@ export class User {
 
     getBan(): void {
         if (!this.id) return;
-
-        const bannedFrom = Object.entries(ban)
-            .filter(([, userIds]) => userIds.includes(this.id!))
-            .map(([key]) => key);
-
-        if (bannedFrom.length === 0) return;
-
-        this.ban = bannedFrom.join(", ");
+        this.ban = ban.getBan(this.id);
     }
 
     isLogout(): boolean {

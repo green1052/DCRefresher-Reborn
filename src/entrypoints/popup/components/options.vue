@@ -1,7 +1,5 @@
 <template>
   <select
-      :data-id="id"
-      :data-module="modname"
       :disabled="disabled"
       :value="value"
       class="refresher-options"
@@ -19,15 +17,12 @@
 
 <script lang="ts" setup>
 interface Props {
-  change?: (module: string | undefined, id: string | undefined, value: string) => void;
-  modname?: string;
   options?: Record<string, string>;
-  id?: string;
   value?: string;
   disabled?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   options: () => ({}),
   value: "",
   disabled: false
@@ -35,12 +30,13 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   "update:value": [value: string];
+  change: [value: string];
 }>();
 
 const handleChange = (ev: Event) => {
   const target = ev.target as HTMLSelectElement;
   emit("update:value", target.value);
-  props.change?.(target.dataset.module, target.dataset.id, target.value);
+  emit("change", target.value);
 };
 </script>
 

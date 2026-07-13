@@ -1,7 +1,7 @@
 export {};
 
 declare global {
-    type RefresherBlockType = "NICK" | "ID" | "IP" | "TITLE" | "TEXT" | "COMMENT" | "DCCON" | "TAB" | "IMAGE";
+    type RefresherBlockType = "NICK" | "ID" | "IP" | "TITLE" | "TEXT" | "COMMENT" | "DCCON" | "TAB";
 
     type RefresherBlockDetectMode = "SAME" | "CONTAIN" | "NOT_SAME" | "NOT_CONTAIN";
 

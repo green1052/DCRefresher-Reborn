@@ -1,75 +1,28 @@
-const lists: Record<string, RefresherEventBusObject[]> = {};
+type RefresherEventListener<T extends unknown[]> = (...args: T) => void;
 
-export const eventBus: RefresherEventBus = {
-    /**
-     * lists에 등록된 이벤트 콜백을 호출합니다.
-     *
-     * @param event 호출 할 이벤트 이름.
-     * @param params 호출 할 이벤트에 넘길 인자.
-     */
-    emit: (event: string, ...params: unknown[]) => {
-        if (!lists[event]) return;
+export class TypedEventBus {
+    private target = new EventTarget();
 
-        for (const callback of [...lists[event]]) {
-            try {
-                const result = callback.func(...params);
-                if (result !== undefined && typeof (result as Promise<unknown>).then === "function") {
-                    void (result as Promise<unknown>).catch((error) => {
-                        console.error(`Event handler failed: ${event}`, error);
-                    });
-                }
-            } catch (error) {
-                console.error(`Event handler failed: ${event}`, error);
-            }
-
-            if (callback.once) eventBus.remove(event, callback.uuid);
-        }
-    },
-
-    emitNextTick: (event: string, ...params: unknown[]) => {
-        return setTimeout(() => eventBus.emit(event, ...params), 0);
-    },
-
-    /**
-     * lists 에 이벤트 콜백을 등록합니다.
-     *
-     * @param event 등록 될 이벤트 이름.
-     * @param callback 나중에 호출 될 이벤트 콜백 함수.
-     * @param options 이벤트에 등록할 옵션.
-     */
-    on: (event: string, callback: (...args: any[]) => void, options?: RefresherEventBusOptions): string => {
-        const uuid = crypto.randomUUID();
-
-        lists[event] ??= [];
-
-        const obj: RefresherEventBusObject = {
-            func: callback,
-            uuid
+    on<K extends keyof RefresherEventMap>(event: K, callback: RefresherEventListener<RefresherEventMap[K]>, options?: {
+        once?: boolean
+    }): () => void {
+        const handler = (e: Event) => {
+            const args = (e as CustomEvent).detail as RefresherEventMap[K];
+            callback(...args);
         };
-
-        if (options?.once) {
-            obj.once = true;
-        }
-
-        lists[event].push(obj);
-
-        return uuid;
-    },
-
-    /**
-     * lists 에 있는 이벤트 콜백을 제거합니다.
-     */
-    remove: (event: string, uuid: string, skip?: boolean) => {
-        if (skip && !lists[event]) return;
-
-        if (!lists[event]) throw new Error("Given Event is not exists in the list.");
-
-        const index = lists[event].findIndex((callback) => callback.uuid === uuid);
-
-        if (index === -1) throw new Error("Given UUID is not exists in the list.");
-
-        lists[event].splice(index, 1);
+        this.target.addEventListener(event as string, handler, options?.once ? {once: true} : undefined);
+        return () => this.target.removeEventListener(event as string, handler);
     }
-};
+
+    emit<K extends keyof RefresherEventMap>(event: K, ...args: RefresherEventMap[K]): void {
+        this.target.dispatchEvent(new CustomEvent(event as string, {detail: args}));
+    }
+
+    emitNextTick<K extends keyof RefresherEventMap>(event: K, ...args: RefresherEventMap[K]): void {
+        setTimeout(() => this.emit(event, ...args), 0);
+    }
+}
+
+export const eventBus = new TypedEventBus();
 
 export default eventBus;

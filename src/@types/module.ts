@@ -118,4 +118,14 @@ declare global {
          */
         revoke?: () => void | Promise<void>;
     }
+
+    interface ModuleSchema {
+        name: string;
+        description: string;
+        default_enable: boolean;
+        enable: boolean;
+        settings?: Record<string, RefresherSettings>;
+    }
+
+    type ModuleSchemaMap = Record<string, ModuleSchema>;
 }

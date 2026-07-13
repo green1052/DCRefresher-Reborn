@@ -14,12 +14,12 @@
         :module-name="moduleName"
         :setting="setting"
         :setting-key="settingKey"
-        :update-user-setting="updateUserSetting"
     />
   </div>
 </template>
 
 <script lang="ts" setup>
+import {inject} from "vue";
 import SettingControl from "./settingControl.vue";
 
 interface Props {
@@ -27,9 +27,9 @@ interface Props {
   settingKey: string;
   moduleName: string;
   moduleEnabled: boolean;
-  updateUserSetting: (module: string | undefined, key: string | undefined, value: unknown) => void;
-  typeWrap: (value: unknown) => string | unknown;
 }
 
 defineProps<Props>();
+
+const typeWrap = inject<(value: unknown) => string | unknown>("typeWrap")!;
 </script>

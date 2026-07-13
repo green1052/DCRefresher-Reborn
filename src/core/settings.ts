@@ -1,6 +1,5 @@
-import {settingsStorage} from "../utils/storage";
+import {moduleSettingStorage} from "@/storage/wxtStorage";
 
-import storage from "../utils/webStorage";
 import eventBus from "./eventbus";
 
 export type SettingsStore = Record<string, Record<string, RefresherSettings>>;
@@ -33,9 +32,7 @@ export const set = async (module: string, key: string, value: string | number | 
     eventBus.emit("refresherUpdateSetting", module, key, normalizedValue);
 
     setting.value = normalizedValue;
-    await storage.set(`${module}.${key}`, normalizedValue);
-
-    eventBus.emit("refresherSettingsSync", settingsStore);
+    await moduleSettingStorage(module, key).setValue(normalizedValue);
 };
 
 export const setStore = (module: string, key: string, value: string | number | boolean): void => {
@@ -47,31 +44,24 @@ export const setStore = (module: string, key: string, value: string | number | b
     setting.value = normalizedValue;
 };
 
-export const dump = (): Record<string, unknown> => settingsStore;
-
 export const load = async (module: string, key: string, settings: RefresherSettings): Promise<unknown> => {
     settingsStore[module] ??= {};
 
-    const storedValue = await storage.get<unknown>(`${module}.${key}`);
+    const storedValue = await moduleSettingStorage(module, key).getValue();
     const value = normalizeSettingValue(settings, storedValue ?? settings.default);
     settings.value = value;
 
     settingsStore[module][key] = settings;
 
-    if (storedValue !== undefined && storedValue !== value) {
-        await storage.set(`${module}.${key}`, value);
+    if (storedValue !== undefined && storedValue !== null && storedValue !== value) {
+        await moduleSettingStorage(module, key).setValue(value);
     }
 
     return value;
 };
 
-eventBus.on("refresherSettingsSync", (store) => {
-    return settingsStorage.setValue(JSON.parse(JSON.stringify(store)));
-});
-
 export default {
     set,
     setStore,
-    dump,
     load
 };

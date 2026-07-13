@@ -116,19 +116,6 @@ html:has(#css-darkmode) {
 }
 
 // ============================================================
-// Popup dark mode via prefers-color-scheme
-// ============================================================
-@media (prefers-color-scheme: dark) {
-  :root {
-    --refresher-bg: #2c2c2c;
-    --refresher-text: #e0e0e0;
-    --refresher-text-secondary: #b0b0b0;
-    --refresher-text-tertiary: #888;
-    --refresher-border-light: rgb(90, 90, 90);
-  }
-}
-
-// ============================================================
 // Legacy SCSS variables (kept for backward compat with existing styles)
 // ============================================================
 

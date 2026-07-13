@@ -7,54 +7,33 @@
       <p class="desc">
         {{ desc }}
       </p>
-      <p class="mute">요구 유틸 : {{ requirementText }}</p>
     </div>
     <div class="right">
       <RefresherCheckbox
-          :change="handleToggle"
-          :checked="enabled"
+          :model-value="enabled"
+          @change="handleToggle"
       />
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import {computed} from "vue";
-import storage from "../../../utils/webStorage";
+import {inject} from "vue";
 import RefresherCheckbox from "./checkbox.vue";
 
 interface Props {
   name: string;
   desc: string;
-  requirement?: string[];
   enabled: boolean;
 }
 
 const props = defineProps<Props>();
 
-const requirementText = computed(() => (props.requirement?.length ? props.requirement.join(", ") : "없음"));
+const {updateModuleStatus} = inject("settings")!;
 
-const handleToggle = async (_module: string | undefined, _id: string | undefined, value: boolean) => {
+const handleToggle = async (value: boolean) => {
   try {
-    await storage.set(`${props.name}.enable`, value);
-
-    const tabs = await browser.tabs.query({active: true});
-
-    const updatePromises = tabs.map((tab) => {
-      if (!tab.id) return Promise.resolve();
-
-      return browser.tabs
-          .sendMessage(tab.id, {
-            type: "updateModuleStatus",
-            data: {
-              name: props.name,
-              value
-            }
-          })
-          .catch((e) => console.error(`Failed to send message to tab ${tab.id}:`, e));
-    });
-
-    await Promise.all(updatePromises);
+    await updateModuleStatus(props.name, value);
   } catch (error) {
     console.error("Failed to update module status:", error);
   }
