@@ -765,6 +765,17 @@ body {
 // ============================================================
 
 @media (prefers-color-scheme: dark) {
+  :root {
+    --refresher-text: #fff;
+    --refresher-text-secondary: #aaa;
+    --refresher-text-tertiary: #888;
+    --refresher-bg: #3b3b3b;
+    --refresher-bg-blur: rgba(34, 34, 34, 0.85);
+    --refresher-bg-overlay: rgba(0, 0, 0, 0.6);
+    --refresher-bg-popup: rgba(34, 34, 34, 0.9);
+    --refresher-border-light: #555;
+  }
+
   body {
     background: #222;
     color: white;
@@ -855,10 +866,6 @@ body {
       &.highlight {
         animation: highlight-blink-dark 1s;
       }
-    }
-
-    svg {
-      filter: invert(1);
     }
 
     .tab2 {

@@ -27,7 +27,13 @@ const emit = defineEmits<{
 const setAsNotice = ref(!props.preData.notice);
 const setAsRecommend = ref(!props.preData.recommend);
 
-const recommendImg = ref(upvoteIcon);
+const pinUrl = browser.runtime.getURL(pinIcon as never);
+const upvoteUrl = browser.runtime.getURL(upvoteIcon as never);
+const downvoteUrl = browser.runtime.getURL(downvoteIcon as never);
+const blockUrl = browser.runtime.getURL(blockIcon as never);
+const deleteUrl = browser.runtime.getURL(deleteIcon as never);
+
+const recommendImg = ref(upvoteUrl);
 const recommendLabel = ref("개념글 등록");
 const pinLabel = ref("공지로 등록");
 
@@ -72,7 +78,7 @@ const recommend = (): void => {
       if (r.result === "success") {
         toast.show(r.msg);
         setAsRecommend.value = !setAsRecommend.value;
-        recommendImg.value = setAsRecommend.value ? upvoteIcon : downvoteIcon;
+        recommendImg.value = setAsRecommend.value ? upvoteUrl : downvoteUrl;
         recommendLabel.value = setAsRecommend.value ? "개념글 등록" : "개념글 해제";
       } else {
         toast.show(r.msg, "error");
@@ -151,23 +157,23 @@ onUnmounted(() => {
 <template>
   <div id="refresher-management-panel" :class="{ blur: toggleBlur }" class="refresher-management-panel">
     <div class="button pin" @click="pin">
-      <img :src="pinIcon"/>
+      <img :src="pinUrl" alt="pin"/>
       <p>{{ pinLabel }}</p>
     </div>
     <div class="button recommend" @click="recommend">
-      <img :src="recommendImg"/>
+      <img :src="recommendImg" alt="recommend"/>
       <p>{{ recommendLabel }}</p>
     </div>
     <div class="button block" @click="emit('openBlock')">
-      <img :src="blockIcon"/>
+      <img :src="blockUrl" alt="block"/>
       <p>차단 (B)</p>
     </div>
     <div class="button delete" @click="doDelete">
-      <img :src="deleteIcon"/>
+      <img :src="deleteUrl" alt="delete"/>
       <p>삭제 (D)</p>
     </div>
     <div class="button bump" @click="bump">
-      <img :src="upvoteIcon"/>
+      <img :src="upvoteUrl" alt="upvote"/>
       <p>끌올</p>
     </div>
   </div>
