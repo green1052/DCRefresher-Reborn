@@ -34,8 +34,8 @@
 <script lang="ts" setup>
 import {computed} from "vue";
 
-import eventBus from "../core/eventbus";
-import {User} from "../utils/user";
+import eventBus from "@/core/eventbus";
+import {User} from "@/utils/user";
 
 interface Props {
   user: User;

@@ -1,0 +1,140 @@
+import {databaseStorage} from "@/storage/wxtStorage";
+import {normalizeStorageData} from "@/storage/migration";
+import {ref} from "vue";
+
+const replaceLocalStorage = async (data: Record<string, unknown>): Promise<void> => {
+    const previousData = await browser.storage.local.get(null);
+
+    try {
+        await browser.storage.local.clear();
+        await browser.storage.local.set(data);
+    } catch (error) {
+        await browser.storage.local.clear();
+        await browser.storage.local.set(previousData);
+        throw error;
+    }
+};
+
+const parseStorageImport = (input: string): Record<string, unknown> => {
+    const parsed = JSON.parse(input) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("가져오기 데이터는 JSON 객체여야 합니다.");
+    }
+
+    return parsed as Record<string, unknown>;
+};
+
+export function useData() {
+    const lastUpdate = ref(-1);
+    const loading = ref(false);
+
+    const refreshLastUpdate = async () => {
+        lastUpdate.value = await databaseStorage.lastUpdate.getValue();
+    };
+
+    const backupCloud = async (): Promise<void> => {
+        loading.value = true;
+        try {
+            const data = await browser.storage.local.get(null);
+            const prefix = "refresher:database:";
+            for (const key of Object.keys(data)) {
+                if (key.startsWith(prefix)) delete data[key];
+            }
+
+            await browser.storage.sync.clear();
+            await browser.storage.sync.set(data);
+
+            const now = Date.now();
+            lastUpdate.value = now;
+            await databaseStorage.lastUpdate.setValue(now);
+            alert("데이터를 클라우드에 백업했습니다.");
+        } catch (error) {
+            console.error("Cloud backup failed:", error);
+            alert("데이터를 클라우드에 백업하는데 실패했습니다.");
+        } finally {
+            loading.value = false;
+        }
+    };
+
+    const recoverCloud = async (): Promise<void> => {
+        if (!confirm("클라우드 백업으로 현재 설정을 교체할까요?")) return;
+
+        loading.value = true;
+        try {
+            const data = await browser.storage.sync.get();
+            const preservedIp = await databaseStorage.ip.getValue();
+            const preservedBan = await databaseStorage.ban.getValue();
+
+            const preserved: Record<string, unknown> = {};
+            if (preservedIp) preserved["refresher:database:ip"] = preservedIp;
+            if (preservedBan) preserved["refresher:database:ban"] = preservedBan;
+
+            await replaceLocalStorage(normalizeStorageData({...data, ...preserved}));
+            alert("데이터를 복원했습니다. 새탭에서 디시인사이드를 열어주세요.");
+        } catch {
+            alert("데이터를 복원하는데 실패했습니다.");
+        } finally {
+            loading.value = false;
+        }
+    };
+
+    const exportData = async (): Promise<void> => {
+        loading.value = true;
+        try {
+            const data = await browser.storage.local.get();
+            const prefix = "refresher:database:";
+            for (const key of Object.keys(data)) {
+                if (key.startsWith(prefix)) delete data[key];
+            }
+
+            await navigator.clipboard.writeText(JSON.stringify(data));
+            alert("데이터를 클립보드로 내보냈습니다.");
+        } catch {
+            alert("데이터를 클립보드로 내보내는데 실패했습니다.");
+        } finally {
+            loading.value = false;
+        }
+    };
+
+    const importData = async (): Promise<void> => {
+        const input = prompt("데이터를 입력해주세요.");
+
+        if (!input) return;
+
+        loading.value = true;
+        try {
+            const data = normalizeStorageData(parseStorageImport(input));
+            await replaceLocalStorage(data);
+            alert("데이터를 가져왔습니다. 새탭에서 디시인사이드를 열어주세요.");
+        } catch {
+            alert("데이터를 가져오는데 실패했습니다.");
+        } finally {
+            loading.value = false;
+        }
+    };
+
+    const clearData = async (): Promise<void> => {
+        if (!confirm("모든 설정과 사용자 데이터를 초기화할까요?")) return;
+
+        loading.value = true;
+        try {
+            await browser.storage.local.clear();
+            alert("데이터를 초기화했습니다. 새탭에서 디시인사이드를 열어주세요.");
+        } catch {
+            alert("데이터를 초기화하는데 실패했습니다.");
+        } finally {
+            loading.value = false;
+        }
+    };
+
+    return {
+        lastUpdate,
+        loading,
+        refreshLastUpdate,
+        backupCloud,
+        recoverCloud,
+        exportData,
+        importData,
+        clearData
+    };
+}

@@ -1,6 +1,6 @@
 import {createApp} from "vue";
 
-import Toast, {type ToastLevel} from "../components/toast.vue";
+import Toast, {type ToastLevel} from "@/components/toast.vue";
 
 const div = document.createElement("div");
 div.className = "refresher-toast";

@@ -18,7 +18,7 @@
       </div>
 
       <div class="refresh" @click="getDcconList(true)">
-        <img :src="getAssetURL('refresh')"/>
+        <img :src="browser.runtime.getURL(refreshIcon)"/>
       </div>
 
       <div
@@ -93,8 +93,8 @@
 
 <script lang="ts" setup>
 import Cookies from "js-cookie";
-import ky from "../utils/httpClient";
-import {getAssetURL} from "../utils/assetURL";
+import {client as ky} from "@/http/http";
+import refreshIcon from "@/assets/icons/refresh.webp?no-inline";
 import {onMounted, ref} from "vue";
 
 import RefresherLoader from "./loader.vue";

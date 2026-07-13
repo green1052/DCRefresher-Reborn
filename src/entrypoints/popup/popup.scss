@@ -72,15 +72,16 @@ body {
   overflow: hidden;
 
   ::-webkit-scrollbar {
-    width: 10px;
+    width: 8px;
   }
 
   ::-webkit-scrollbar-track {
-    background: var(--refresher-scrollbar-track);
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
     background: var(--refresher-scrollbar-thumb);
+    border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
@@ -88,16 +89,59 @@ body {
   }
 
   #refresher-app {
-    height: 435px;
-    width: 715px;
+    height: 480px;
+    width: 760px;
   }
 
-  body {
-    font-size: 100%;
-    margin-left: 5%;
-    margin-right: 5%;
-    overflow: hidden;
-    width: 90%;
+  button {
+    background: var(--refresher-bg);
+    border: 1px solid var(--refresher-border-light);
+    border-radius: $radius-sm;
+    color: var(--refresher-text);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 6px 14px;
+    transition: all $duration-fast $ease-out-expo;
+
+    &:hover {
+      border-color: var(--refresher-primary);
+      color: var(--refresher-primary);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    &.danger {
+      border-color: var(--refresher-danger);
+      color: var(--refresher-danger);
+
+      &:hover {
+        background: rgba(251, 76, 76, 0.08);
+      }
+    }
+  }
+
+  select {
+    background: var(--refresher-bg);
+    border: 1px solid var(--refresher-border-light);
+    border-radius: $radius-sm;
+    color: var(--refresher-text);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 4px 8px;
+    transition: border-color $duration-fast $ease-out-expo;
+
+    &:hover {
+      border-color: var(--refresher-primary);
+    }
+
+    &:focus {
+      outline: none;
+    }
   }
 
   h1,
@@ -146,14 +190,14 @@ body {
   .refresher-shortcut,
   .refresher-setting-category,
   .refresher-module {
-    background-color: #f8f8f8;
+    background-color: var(--refresher-bg-blur);
   }
 
   .refresher-setting-category {
     border-radius: $radius-md;
-    margin-bottom: 5%;
+    margin-bottom: 8px;
     margin-right: 3px;
-    padding: 4px 8px;
+    padding: 8px 14px;
     position: relative;
     z-index: 3;
 
@@ -198,7 +242,7 @@ body {
       }
 
       .info::before {
-        background-color: rgb(250, 200, 60);
+        background-color: var(--refresher-accent-yellow);
         content: " ";
         height: 100%;
         left: -12px;
@@ -235,12 +279,12 @@ body {
         }
 
         p {
-          color: rgb(109, 109, 109);
+          color: var(--refresher-text-secondary);
           font-size: 14px;
         }
 
         .mute {
-          color: rgb(177, 177, 177);
+          color: var(--refresher-text-tertiary);
           font-size: 12px;
         }
       }
@@ -259,19 +303,25 @@ body {
         }
 
         input[type="text"] {
-          background-color: #fff;
-          border: 1px solid #aaa;
+          background-color: var(--refresher-bg);
+          border: 1px solid var(--refresher-border-light);
           border-radius: 9px;
-          color: black;
+          color: var(--refresher-text);
           font-size: 15px;
           padding: 4px 16px;
+          transition: border-color $duration-fast $ease-out-expo;
+
+          &:focus {
+            border-color: var(--refresher-primary);
+            outline: none;
+          }
         }
       }
     }
   }
 
   .refresher-options {
-    border: 1px solid #ccc;
+    border: 1px solid var(--refresher-border-light);
     border-radius: 4px;
     display: inline-block;
     font-size: 15px;
@@ -290,11 +340,16 @@ body {
   }
 
   .section-actions {
-    float: left;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     margin-top: 5px;
   }
 
   .mode-row {
+    align-items: center;
+    display: flex;
+    gap: 8px;
     margin-bottom: 5px;
     margin-top: 5px;
   }
@@ -305,16 +360,13 @@ body {
   }
 
   .tab {
+    box-sizing: border-box;
     height: 85%;
     margin-top: 30px;
-    overflow: auto;
-    padding-top: 40px;
+    overflow-y: auto;
+    padding: 20px 14px 12px;
     position: absolute;
-    width: 99%;
-
-    & > *:first-child {
-      margin-top: 5px;
-    }
+    width: 100%;
   }
 
   .refresher-title-zone {
@@ -339,6 +391,27 @@ body {
     h1 {
       margin-bottom: auto;
       margin-top: auto;
+    }
+
+    .open-options-btn {
+      align-items: center;
+      background: transparent;
+      border: 1px solid var(--refresher-border-light);
+      border-radius: $radius-sm;
+      color: var(--refresher-text-tertiary);
+      cursor: pointer;
+      display: flex;
+      height: 28px;
+      justify-content: center;
+      margin: auto 0 auto 8px;
+      padding: 0;
+      transition: all $duration-normal $ease-out-expo;
+      width: 28px;
+
+      &:hover {
+        border-color: var(--refresher-primary);
+        color: var(--refresher-primary);
+      }
     }
 
     .float-right {
@@ -401,11 +474,11 @@ body {
     z-index: -1;
   }
 
-  .tab1 .info {
+  .tab0 .info {
     display: flex;
   }
 
-  .tab1 .text {
+  .tab0 .text {
     display: grid;
     font-size: 16px;
 
@@ -418,14 +491,14 @@ body {
     }
 
     .version {
-      color: #333;
+      color: var(--refresher-text);
       font-weight: bold;
       margin-right: 5px;
     }
   }
 
-  .tab3,
-  .tab4 {
+  .tab2,
+  .tab3 {
     .block-divide {
       margin-bottom: 10px;
     }
@@ -446,13 +519,13 @@ body {
         transition: 0.25s all $ease-out-expo;
 
         &:hover {
-          background-color: #eaeaea;
+          background-color: var(--refresher-bg-overlay);
         }
       }
     }
 
     .gallery {
-      color: #7a7a7a;
+      color: var(--refresher-text-tertiary);
       margin-left: 3px;
     }
 
@@ -461,7 +534,7 @@ body {
       flex-wrap: wrap;
 
       p {
-        color: #7a7a7a;
+        color: var(--refresher-text-tertiary);
       }
 
       .refresher-bubble {
@@ -471,7 +544,7 @@ body {
   }
 
   a {
-    color: #2475ee;
+    color: var(--refresher-link);
     cursor: pointer;
     margin-right: 5px;
     text-decoration: none;
@@ -479,11 +552,11 @@ body {
   }
 
   a:hover {
-    color: #33a3ee;
+    color: var(--refresher-link-hover);
   }
 
   a:active {
-    color: #33b9ee;
+    color: var(--refresher-link-active);
   }
 
   a::after {
@@ -743,7 +816,7 @@ body {
       }
     }
 
-    .tab1 .text .version {
+    .tab0 .text .version {
       color: #dddddd;
     }
 
@@ -788,22 +861,22 @@ body {
       filter: invert(1);
     }
 
-    .tab3 {
+    .tab2 {
       h3 {
         .plus {
           &:hover {
-            background-color: #5c5c5c;
+            background-color: var(--refresher-bg-overlay);
           }
         }
       }
 
       .gallery {
-        color: #7a7a7a;
+        color: var(--refresher-text-tertiary);
       }
 
       .lists {
         p {
-          color: #7a7a7a;
+          color: var(--refresher-text-tertiary);
         }
       }
     }

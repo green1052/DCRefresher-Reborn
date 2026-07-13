@@ -6,7 +6,7 @@
     <transition v-if="id" name="refresher-shake">
       <img
           :key="error"
-          :src="getAssetURL(String(id))"
+          :src="iconSrc"
       />
     </transition>
     <transition v-if="text" name="refresher-shake">
@@ -22,9 +22,15 @@
 </template>
 
 <script lang="ts" setup>
-import {ref} from "vue";
+import {computed, ref} from "vue";
 
-import {getAssetURL} from "../utils/assetURL";
+import upvoteIcon from "@/assets/icons/upvote.webp?no-inline";
+import downvoteIcon from "@/assets/icons/downvote.webp?no-inline";
+import shareIcon from "@/assets/icons/share.webp?no-inline";
+import newtabIcon from "@/assets/icons/newtab.webp?no-inline";
+import writeIcon from "@/assets/icons/write.webp?no-inline";
+import refreshIcon from "@/assets/icons/refresh.webp?no-inline";
+import dcconIcon from "@/assets/icons/dccon.webp?no-inline";
 
 interface Props {
   id?: string | number;
@@ -39,6 +45,18 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const error = ref(0);
+
+const iconMap: Record<string, string> = {
+  upvote: browser.runtime.getURL(upvoteIcon),
+  downvote: browser.runtime.getURL(downvoteIcon),
+  share: browser.runtime.getURL(shareIcon),
+  newtab: browser.runtime.getURL(newtabIcon),
+  write: browser.runtime.getURL(writeIcon),
+  refresh: browser.runtime.getURL(refreshIcon),
+  dccon: browser.runtime.getURL(dcconIcon)
+};
+
+const iconSrc = computed(() => iconMap[String(props.id)]);
 
 const safeClick = async (): Promise<boolean> => {
   if (!props.click) return false;

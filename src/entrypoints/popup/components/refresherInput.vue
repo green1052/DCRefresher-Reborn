@@ -1,8 +1,6 @@
 <template>
   <div class="refresher-input">
     <input
-        :data-id="id"
-        :data-module="modname"
         :disabled="disabled"
         :placeholder="placeholder"
         :value="value"
@@ -15,21 +13,19 @@
 
 <script lang="ts" setup>
 interface Props {
-  change?: (module: string | undefined, id: string | undefined, value: string) => void;
-  placeholder?: string;
-  modname?: string;
-  id?: string;
   value?: string;
+  placeholder?: string;
   disabled?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   value: "",
   disabled: false
 });
 
 const emit = defineEmits<{
   "update:value": [value: string];
+  change: [value: string];
 }>();
 
 const handleInput = (ev: Event) => {
@@ -39,7 +35,7 @@ const handleInput = (ev: Event) => {
 
 const handleChange = (ev: Event) => {
   const target = ev.target as HTMLInputElement;
-  props.change?.(target.dataset.module, target.dataset.id, target.value);
+  emit("change", target.value);
 };
 </script>
 

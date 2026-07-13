@@ -1,4 +1,4 @@
-import {BLOCK_TYPES, blockModeStorage, blockStorage} from "../utils/storage";
+import {BLOCK_TYPES, blockModeStorage, blockStorage} from "@/storage/wxtStorage";
 import {eventBus} from "./eventbus";
 
 export const TYPE_NAMES: Record<RefresherBlockType, string> = {
@@ -9,8 +9,7 @@ export const TYPE_NAMES: Record<RefresherBlockType, string> = {
     TEXT: "내용",
     COMMENT: "댓글",
     DCCON: "디시콘",
-    TAB: "말머리",
-    IMAGE: "이미지 (미구현)"
+    TAB: "말머리"
 };
 
 export const BLOCK_DETECT_MODE_TYPE_NAMES: Record<RefresherBlockDetectMode, string> = {
@@ -33,6 +32,38 @@ export type BlockCache = Record<RefresherBlockType, RefresherBlockValue[]>;
 
 export type BlockModeCache = Record<RefresherBlockType, RefresherBlockDetectMode>;
 
+const regexCache = new Map<string, RegExp>();
+const advancedFnCache = new Map<string, (...args: unknown[]) => unknown>();
+
+const clearCompiledCaches = (): void => {
+    regexCache.clear();
+    advancedFnCache.clear();
+};
+
+const getCompiledRegex = (pattern: string): RegExp | null => {
+    let regex = regexCache.get(pattern);
+    if (regex) return regex;
+    try {
+        regex = new RegExp(pattern);
+    } catch {
+        return null;
+    }
+    regexCache.set(pattern, regex);
+    return regex;
+};
+
+const getCompiledAdvancedFn = (content: string): ((...args: unknown[]) => unknown) | null => {
+    let fn = advancedFnCache.get(content);
+    if (fn) return fn;
+    try {
+        fn = new Function("type", "content", "gallery", content) as (...args: unknown[]) => unknown;
+    } catch {
+        return null;
+    }
+    advancedFnCache.set(content, fn);
+    return fn;
+};
+
 let blockCache: BlockCache = {
     NICK: [],
     ID: [],
@@ -41,8 +72,7 @@ let blockCache: BlockCache = {
     TEXT: [],
     COMMENT: [],
     DCCON: [],
-    TAB: [],
-    IMAGE: []
+    TAB: []
 };
 
 let blockModeCache: BlockModeCache = {
@@ -53,8 +83,7 @@ let blockModeCache: BlockModeCache = {
     TEXT: BLOCK_DETECT_MODE.CONTAIN,
     COMMENT: BLOCK_DETECT_MODE.CONTAIN,
     DCCON: BLOCK_DETECT_MODE.SAME,
-    TAB: BLOCK_DETECT_MODE.SAME,
-    IMAGE: BLOCK_DETECT_MODE.SAME
+    TAB: BLOCK_DETECT_MODE.SAME
 };
 
 const isBlockValue = (value: unknown): value is RefresherBlockValue => {
@@ -119,6 +148,7 @@ const normalizeBlockMode = (
         blockStorage[key].watch((newValue) => {
             if (!newValue) return;
             blockCache[key] = normalizeBlockList(newValue);
+            clearCompiledCaches();
             eventBus.emit("refresh");
         });
 
@@ -167,6 +197,7 @@ const InternalAddToList = async (
 
     blockCache[type] = normalizeBlockList(blockCache[type]);
     blockCache[type].push(newItem);
+    clearCompiledCaches();
 
     await blockStorage[type].setValue(blockCache[type]);
 };
@@ -235,12 +266,14 @@ export const check = (type: RefresherBlockType, content: string, gallery?: strin
 
     if (!cache || cache.length < 1) return false;
 
-    const result = cache.filter((v) => {
+    const result = cache.some((v) => {
         if (v.gallery && v.gallery !== gallery) return false;
 
         if (v.isAdvanced) {
+            const fn = getCompiledAdvancedFn(v.content);
+            if (!fn) return false;
             try {
-                const response = new Function("type", "content", "gallery", v.content)(type, content, gallery);
+                const response = fn(type, content, gallery);
                 return typeof response === "boolean" ? response : false;
             } catch {
                 return false;
@@ -250,12 +283,8 @@ export const check = (type: RefresherBlockType, content: string, gallery?: strin
         const mode = v.mode ?? blockModeCache[type];
 
         if (v.isRegex) {
-            let regexd: RegExp;
-            try {
-                regexd = new RegExp(v.content);
-            } catch {
-                return false;
-            }
+            const regexd = getCompiledRegex(v.content);
+            if (!regexd) return false;
             const match = content.match(regexd);
 
             switch (mode) {
@@ -282,7 +311,7 @@ export const check = (type: RefresherBlockType, content: string, gallery?: strin
         }
     });
 
-    return result.length > 0;
+    return result;
 };
 
 /**

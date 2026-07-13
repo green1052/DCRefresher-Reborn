@@ -2,8 +2,6 @@
   <div class="refresher-range">
     <input
         v-model="currentValue"
-        :data-id="id"
-        :data-module="modname"
         :disabled="disabled"
         :max="max"
         :min="min"
@@ -17,14 +15,11 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, ref} from "vue";
+import {computed, ref, watch} from "vue";
 
 interface Props {
-  change?: (module: string | undefined, id: string | undefined, value: number) => void;
+  modelValue?: number;
   placeholder?: string;
-  modname?: string;
-  id?: string;
-  value?: number;
   max?: number;
   min?: number;
   step?: number;
@@ -33,7 +28,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  value: 0,
+  modelValue: 0,
   min: 0,
   max: 100,
   step: 1,
@@ -41,12 +36,22 @@ const props = withDefaults(defineProps<Props>(), {
   disabled: false
 });
 
-const currentValue = ref(props.value);
+const emit = defineEmits<{
+  "update:modelValue": [value: number];
+  change: [value: number];
+}>();
+
+const currentValue = ref(props.modelValue);
+
+watch(() => props.modelValue, (v) => {
+  currentValue.value = v;
+});
 
 const displayValue = computed(() => `${currentValue.value}${props.unit}`);
 
 const handleChange = () => {
-  props.change?.(props.modname, props.id, Number(currentValue.value));
+  emit("update:modelValue", Number(currentValue.value));
+  emit("change", Number(currentValue.value));
 };
 </script>
 

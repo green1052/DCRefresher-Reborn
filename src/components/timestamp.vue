@@ -13,7 +13,7 @@
 </template>
 
 <script lang="ts" setup>
-import {useRelativeTime} from "./useRelativeTime";
+import {useRelativeTime} from "@/composables/useRelativeTime";
 
 interface Props {
   date: Date;

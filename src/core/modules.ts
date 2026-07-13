@@ -1,6 +1,5 @@
-import {modulesStorage, type ModuleState, settingsStorage} from "@/utils/storage";
-import storage from "../utils/webStorage";
-import communicate from "./communicate";
+import {moduleDataStorage, moduleEnableStorage} from "@/storage/wxtStorage";
+import {onMessage} from "@/http/messaging";
 import eventBus from "./eventbus";
 import filter from "./filtering";
 import settings from "./settings";
@@ -11,19 +10,6 @@ const moduleStore: ModuleStore = {};
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
     return typeof value === "object" && value !== null && !Array.isArray(value);
-};
-
-const createModuleSnapshot = (): Record<string, ModuleState> => {
-    return Object.fromEntries(
-        Object.values(moduleStore).map((module) => [
-            module.name,
-            {
-                name: module.name,
-                description: module.description,
-                enable: module.enable
-            }
-        ])
-    );
 };
 
 const runModule = async (module: RefresherModule): Promise<void> => {
@@ -84,9 +70,9 @@ export const modules = {
         const promises: Promise<void>[] = [];
 
         promises.push(
-            storage.get<boolean | undefined>(`${mod.name}.enable`).then((enable) => {
-                if (enable === undefined) {
-                    storage.set(`${mod.name}.enable`, mod.default_enable);
+            moduleEnableStorage(mod.name).getValue().then((enable) => {
+                if (enable === null || enable === undefined) {
+                    moduleEnableStorage(mod.name).setValue(mod.default_enable);
                     mod.enable = mod.default_enable;
                     return;
                 }
@@ -108,7 +94,7 @@ export const modules = {
 
         if (typeof mod.data === "object") {
             promises.push(
-                storage.module.get(mod.name).then((data) => {
+                moduleDataStorage(mod.name).getValue().then((data) => {
                     const currentData = isRecord(data)
                         ? data
                         : isRecord(mod.data)
@@ -118,13 +104,13 @@ export const modules = {
                     mod.data = new Proxy(currentData, {
                         set(target, p, newValue, receiver) {
                             const result = Reflect.set(target, p, newValue, receiver);
-                            storage.module.setGlobal(mod.name, target);
+                            moduleDataStorage(mod.name).setValue(target);
                             return result;
                         },
 
                         deleteProperty(target, p) {
                             const result = Reflect.deleteProperty(target, p);
-                            storage.module.setGlobal(mod.name, target);
+                            moduleDataStorage(mod.name).setValue(target);
                             return result;
                         }
                     });
@@ -136,12 +122,6 @@ export const modules = {
 
         await Promise.all(promises);
 
-        const modulesSnap = createModuleSnapshot();
-        const settingsSnap = JSON.parse(JSON.stringify(settings.dump()));
-
-        await modulesStorage.setValue(modulesSnap);
-        await settingsStorage.setValue(settingsSnap);
-
         if (!mod.enable || mod.url?.test(location.href) === false) return;
 
         await runModule(mod);
@@ -150,16 +130,27 @@ export const modules = {
 
 export default modules;
 
-communicate.addHook("updateModuleStatus", async (data) => {
+onMessage("getSchema", () => {
+    const schema: ModuleSchemaMap = {};
+    for (const mod of Object.values(moduleStore)) {
+        schema[mod.name] = {
+            name: mod.name,
+            description: mod.description,
+            default_enable: mod.default_enable,
+            enable: mod.enable,
+            settings: mod.settings
+        };
+    }
+    return schema;
+});
+
+onMessage("updateModuleStatus", async ({data}) => {
     if (!isModuleStatusPayload(data) || !moduleStore[data.name]) return;
 
     if (moduleStore[data.name].enable === data.value) return;
 
     moduleStore[data.name].enable = data.value;
-    storage.set(`${data.name}.enable`, data.value);
-
-    const modulesSnap = createModuleSnapshot();
-    modulesStorage.setValue(modulesSnap);
+    moduleEnableStorage(data.name).setValue(data.value);
 
     if (data.value) {
         const existingFilterIds = new Set(filter.ids());
@@ -177,12 +168,12 @@ communicate.addHook("updateModuleStatus", async (data) => {
     await revokeModule(moduleStore[data.name]);
 });
 
-communicate.addHook("updateSettingValue", (data) => {
+onMessage("updateSettingValue", ({data}) => {
     if (!isSettingUpdatePayload(data)) return;
     settings.setStore(data.name, data.key, data.value);
 });
 
-communicate.addHook("executeShortcut", (data) => {
+onMessage("executeShortcut", ({data}) => {
     if (typeof data !== "string") return;
 
     for (const key of Object.keys(moduleStore)) {
@@ -197,7 +188,7 @@ communicate.addHook("executeShortcut", (data) => {
     }
 });
 
-eventBus.on("refresherUpdateSetting", (mod: string, key: string, value: unknown) => {
+eventBus.on("refresherUpdateSetting", (mod, key, value) => {
     const module = moduleStore[mod] as RefresherModule;
 
     if (module !== undefined) {

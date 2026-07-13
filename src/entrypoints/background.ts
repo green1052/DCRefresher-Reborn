@@ -1,13 +1,13 @@
-import {onMessage, sendMessage} from "../utils/messaging";
-import {migrateLocalStorageData} from "../utils/storageMigration";
-import storage from "../utils/webStorage";
+import {onMessage, sendMessage} from "@/http/messaging";
+import {migrateLocalStorageData} from "@/storage/migration";
+import {databaseStorage} from "@/storage/wxtStorage";
 
 export default defineBackground(() => {
     migrateLocalStorageData().catch((error) => {
         console.error("Storage migration error:", error);
     });
 
-// ===== Message Handler: broadcast =====
+    // ===== Broadcast: popup/content → background → 모든 탭 =====
     onMessage("broadcast", async ({data}) => {
         const {type, data: payload} = data;
 
@@ -74,17 +74,30 @@ export default defineBackground(() => {
 
     browser.contextMenus.onClicked.addListener((info, tab) => {
         if (!tab?.id) return;
-        browser.tabs.sendMessage(tab.id, {type: info.menuItemId}).catch(() => {
-        });
+        // 타입 안전 메시징: 활성 탭에 전달
+        switch (info.menuItemId) {
+            case "blockSelected":
+                sendMessage("blockSelected", undefined, tab.id).catch(() => {});
+                break;
+            case "memoSelected":
+                sendMessage("memoSelected", undefined, tab.id).catch(() => {});
+                break;
+            case "dcconSelected":
+                sendMessage("dcconSelected", undefined, tab.id).catch(() => {});
+                break;
+            case "dcconAllSelected":
+                sendMessage("dcconAllSelected", undefined, tab.id).catch(() => {});
+                break;
+            case "searchSauceNao":
+                sendMessage("searchSauceNao", undefined, tab.id).catch(() => {});
+                break;
+        }
     });
 
     browser.runtime.onStartup.addListener(createContextMenus);
     browser.runtime.onInstalled.addListener(createContextMenus);
-    createContextMenus().catch((error) => {
-        console.error("Context menu initialization error:", error);
-    });
 
-    // ===== Commands =====
+    // ===== Commands: 단축키 → 모든 탭에 broadcast =====
     browser.commands.onCommand.addListener((command) => {
         sendMessage("broadcast", {type: "executeShortcut", data: command});
     });
@@ -104,10 +117,10 @@ export default defineBackground(() => {
                 ky.get(`${CONSTANTS.API_BASE_URL}/ban.json`).json<unknown>()
             ]);
             await Promise.all([
-                storage.set("refresher.database.ip", ip),
-                storage.set("refresher.database.ban", ban),
-                storage.set("refresher.database.version", version),
-                storage.set("refresher.database.lastUpdate", Date.now())
+                databaseStorage.ip.setValue(ip as Record<string, string>),
+                databaseStorage.ban.setValue(ban as Record<string, string[]>),
+                databaseStorage.version.setValue(version),
+                databaseStorage.lastUpdate.setValue(Date.now())
             ]);
         } catch (error) {
             console.error("Database update failed:", error);
@@ -118,14 +131,18 @@ export default defineBackground(() => {
     browser.runtime.onInstalled.addListener(async (details) => {
         await createContextMenus();
         if (import.meta.env.PROD) {
-            await storage.set(details.reason === "install" ? "refresher.firstInstall" : "refresher.updated", true);
             await updateDatabase();
+        } else {
+            const version = await databaseStorage.version.getValue();
+            if (!version) {
+                await updateDatabase();
+            }
         }
     });
 
     if (import.meta.env.PROD) {
         (async () => {
-            const lastUpdate = await storage.get<number>("refresher.database.lastUpdate");
+            const lastUpdate = await databaseStorage.lastUpdate.getValue();
             if (!lastUpdate || Date.now() - lastUpdate > CONSTANTS.DATABASE_UPDATE_INTERVAL) {
                 updateDatabase();
             }

@@ -1,6 +1,6 @@
 import type {Nullable} from "./types";
 
-import storage from "./webStorage";
+import {databaseStorage} from "@/storage/wxtStorage";
 
 let ipData: Record<string, string> = {};
 let ipDataReady: Promise<void> | null = null;
@@ -8,7 +8,7 @@ let ipDataReady: Promise<void> | null = null;
 const initIpData = (): Promise<void> => {
     if (!ipDataReady) {
         ipDataReady = (async () => {
-            ipData = (await storage.get<Record<string, string>>("refresher.database.ip")) ?? {};
+            ipData = await databaseStorage.ip.getValue();
         })();
     }
     return ipDataReady;

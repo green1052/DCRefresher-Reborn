@@ -1,8 +1,6 @@
 <template>
   <div
       :class="{ disabled }"
-      :data-id="id"
-      :data-module="modname"
       :data-on="isOn"
       class="refresher-checkbox"
       @click="toggle"
@@ -19,29 +17,29 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, getCurrentInstance, ref, toRefs, watch} from "vue";
+import {computed, ref, watch} from "vue";
 
 interface Props {
-  change?: (module: string | undefined, id: string | undefined, value: boolean) => void;
-  modname?: string;
-  id?: string;
-  checked?: boolean;
+  modelValue?: boolean;
   disabled?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  checked: false,
+  modelValue: false,
   disabled: false
 });
 
-const {checked, disabled} = toRefs(props);
-const instance = getCurrentInstance();
-const isOn = ref(checked.value);
+const emit = defineEmits<{
+  "update:modelValue": [value: boolean];
+  change: [value: boolean];
+}>();
+
+const isOn = ref(props.modelValue);
 const isDown = ref(false);
 const translateX = ref<number | undefined>(undefined);
 const onceOut = ref(false);
 
-watch(checked, (newValue) => {
+watch(() => props.modelValue, (newValue) => {
   isOn.value = newValue;
 });
 
@@ -50,7 +48,7 @@ const transformStyle = computed(() => ({
 }));
 
 const toggle = () => {
-  if (disabled.value) return;
+  if (props.disabled) return;
 
   if (onceOut.value) {
     onceOut.value = false;
@@ -58,27 +56,27 @@ const toggle = () => {
   }
 
   isOn.value = !isOn.value;
-  const el = instance?.proxy?.$el as HTMLElement;
-  props.change?.(el?.dataset.module, el?.dataset.id, isOn.value);
+  emit("update:modelValue", isOn.value);
+  emit("change", isOn.value);
 };
 
 const handlePointerMove = (ev: PointerEvent) => {
-  if (disabled.value || !isDown.value) return;
+  if (props.disabled || !isDown.value) return;
   translateX.value = Math.max(0, Math.min(18, Math.ceil(ev.offsetX)));
 };
 
 const handlePointerDown = () => {
-  if (!disabled.value) isDown.value = true;
+  if (!props.disabled) isDown.value = true;
 };
 
 const handlePointerUp = () => {
-  if (disabled.value) return;
+  if (props.disabled) return;
   isDown.value = false;
   translateX.value = undefined;
 };
 
 const handlePointerOut = () => {
-  if (disabled.value || !isDown.value) return;
+  if (props.disabled || !isDown.value) return;
   isDown.value = false;
   translateX.value = undefined;
   toggle();

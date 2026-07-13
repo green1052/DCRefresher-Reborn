@@ -5,7 +5,8 @@ export default defineContentScript({
         "https://h5.dcinside.com/*",
         "https://m.dcinside.com/*",
         "https://mall.dcinside.com/*",
-        "https://wiki.dcinside.com/*"
+        "https://wiki.dcinside.com/*",
+        "https://gallog.dcinside.com/*"
     ],
     world: "MAIN",
     runAt: "document_end",
