@@ -2,9 +2,6 @@ import {defineConfig} from "wxt";
 
 export default defineConfig({
     srcDir: "src",
-    imports: {
-        dirs: ["components", "composables", "hooks", "utils", "storage", "http"]
-    },
     modules: [
         "@wxt-dev/auto-icons",
         "@wxt-dev/webextension-polyfill",

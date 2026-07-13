@@ -3,7 +3,7 @@
     <h3 @click="moveToModuleTab(moduleName)">
       {{ moduleName }} {{ !moduleEnabled ? "(비활성화)" : "" }}
       <svg
-          fill="black"
+          fill="currentColor"
           height="18px"
           viewBox="0 0 24 24"
           width="18px"
