@@ -1,9 +1,10 @@
 import ky from "ky";
 
-const fetchFn: typeof fetch = import.meta.env.FIREFOX
-    // @ts-ignore
-    ? content.fetch.bind(content)
-    : window.fetch.bind(window);
+const g = globalThis as any;
+const fetchFn: typeof fetch =
+    typeof g.content?.fetch === "function"
+        ? g.content.fetch.bind(g.content)
+        : window.fetch.bind(window);
 
 export const contentFetch: typeof fetch = fetchFn;
 

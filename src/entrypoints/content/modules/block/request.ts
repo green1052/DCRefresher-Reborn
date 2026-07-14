@@ -1,5 +1,5 @@
 import Cookies from "js-cookie";
-import {client as ky} from "@/http/http";
+import http, {client as ky} from "@/http/http";
 
 import block from "@/core/block";
 import toast from "@/utils/toast";

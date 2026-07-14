@@ -1,5 +1,6 @@
 import eventBus from "@/core/eventbus";
 import filter from "@/core/filtering";
+import http, {queryString} from "@/http/http";
 import {createLoadFunction} from "./load";
 import {moduleEnableStorage, moduleSettingStorage} from "@/storage/wxtStorage";
 
