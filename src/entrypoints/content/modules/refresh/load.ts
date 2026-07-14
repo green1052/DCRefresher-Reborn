@@ -1,5 +1,5 @@
 import eventBus from "@/core/eventbus";
-import {client} from "@/http/http";
+import http, {client, queryString} from "@/http/http";
 
 export interface LoadFunctionContext {
     memory: {

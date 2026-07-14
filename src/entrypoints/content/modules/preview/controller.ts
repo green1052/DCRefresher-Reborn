@@ -149,8 +149,9 @@ export class PreviewController {
             this.replyConfig = Boolean(replyRemove);
         }
 
-        this.gifControlConfig =
-            (await moduleEnableStorage("관리").getValue()) && Boolean(await moduleSettingStorage("관리", "enableGifControl").getValue());
+        this.gifControlConfig = Boolean(
+            (await moduleEnableStorage("관리").getValue()) && Boolean(await moduleSettingStorage("관리", "enableGifControl").getValue())
+        );
     }
 
     private setupImageBlockHandler(): void {
