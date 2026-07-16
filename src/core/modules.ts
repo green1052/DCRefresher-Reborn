@@ -127,17 +127,8 @@ export const modules = {
         await runModule(mod);
     },
 
-    // 모든 모듈 로드 완료 후 일괄 설정 게시
-    // 의존 모듈의 func()(구독 설정)가 이미 실행된 후이므로 모든 구독자가 수신 보장
-    publishAllConfigs: (): void => {
-        for (const mod of Object.values(moduleStore)) {
-            const moduleConfig: Record<string, unknown> = {...(mod.status as Record<string, unknown> ?? {})};
-            if (isRecord(mod.data)) {
-                Object.assign(moduleConfig, mod.data);
-            }
-            eventBus.emit("refresherModuleConfig", mod.name, moduleConfig);
-        }
-    }
+    // 모듈 조회 헬퍼 (외부에서 다른 모듈의 설정/데이터에 직접 접근)
+    get: (name: string): RefresherModule | undefined => moduleStore[name]
 };
 
 export default modules;
@@ -209,13 +200,6 @@ eventBus.on("refresherUpdateSetting", (mod, key, value) => {
     } else {
         return;
     }
-
-    // 설정 변경 시 다른 모듈에 재게시
-    const moduleConfig: Record<string, unknown> = {...(module.status as Record<string, unknown> ?? {})};
-    if (isRecord(module.data)) {
-        Object.assign(moduleConfig, module.data);
-    }
-    eventBus.emit("refresherModuleConfig", mod, moduleConfig);
 
     if (!module.enable || !module.update || typeof (module.update as Record<string, (value: unknown) => void>)[key] !== "function") return;
 
