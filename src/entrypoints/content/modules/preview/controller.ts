@@ -368,8 +368,7 @@ export class PreviewController {
     private handleScrollSkip(ev: WheelEvent, preData: GalleryPreData | null, historySkip?: boolean): void {
         const scrolledTop = this.groupStore.scrollTop === 0;
         const scroll = Math.floor(this.groupStore.scrollHeight - this.groupStore.scrollTop);
-        const scrolledToBottom =
-            scroll === this.groupStore.clientHeight || scroll + 1 === this.groupStore.clientHeight;
+        const scrolledToBottom = Math.abs(scroll - this.groupStore.clientHeight) < 2;
 
         if (!scrolledTop && !scrolledToBottom) {
             this.scrolledCount = 0;

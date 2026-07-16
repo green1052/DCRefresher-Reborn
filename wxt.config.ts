@@ -24,7 +24,7 @@ export default defineConfig({
         web_accessible_resources: [
             {
                 resources: ["assets/*.webp"],
-                matches: ["<all_urls>"]
+                matches: ["https://*.dcinside.com/*"]
             }
         ],
         commands: {
