@@ -122,6 +122,13 @@ export const modules = {
 
         await Promise.all(promises);
 
+        // 모든 설정 로드 완료 후 다른 모듈이 사용할 수 있도록 게시
+        const moduleConfig: Record<string, unknown> = {...(mod.status as Record<string, unknown> ?? {})};
+        if (isRecord(mod.data)) {
+            Object.assign(moduleConfig, mod.data);
+        }
+        eventBus.emit("refresherModuleConfig", mod.name, moduleConfig);
+
         if (!mod.enable || mod.url?.test(location.href) === false) return;
 
         await runModule(mod);
@@ -197,6 +204,13 @@ eventBus.on("refresherUpdateSetting", (mod, key, value) => {
     } else {
         return;
     }
+
+    // 설정 변경 시 다른 모듈에 재게시
+    const moduleConfig: Record<string, unknown> = {...(module.status as Record<string, unknown> ?? {})};
+    if (isRecord(module.data)) {
+        Object.assign(moduleConfig, module.data);
+    }
+    eventBus.emit("refresherModuleConfig", mod, moduleConfig);
 
     if (!module.enable || !module.update || typeof (module.update as Record<string, (value: unknown) => void>)[key] !== "function") return;
 
