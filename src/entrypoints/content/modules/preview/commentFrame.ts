@@ -11,6 +11,20 @@ import {previewRequest} from "./request";
 import toast from "@/utils/toast";
 import {User} from "@/utils/user";
 
+// gallog_icon HTML 파싱 결과 캐싱 (DOMParser 반복 생성 방지)
+const gallogIconCache = new Map<string, string | null>();
+
+const extractIconFromGallog = (gallogIcon: string): string | null => {
+    const cached = gallogIconCache.get(gallogIcon);
+    if (cached !== undefined) return cached;
+
+    const doc = new DOMParser().parseFromString(gallogIcon, "text/html");
+    const src = doc.querySelector("a.writer_nikcon img")?.getAttribute("src") ?? null;
+
+    gallogIconCache.set(gallogIcon, src);
+    return src;
+};
+
 export interface CommentFrameContext {
     frame: PreviewFrame;
     preData: GalleryPreData;
@@ -325,10 +339,7 @@ export function makeCommentFrame(ctx: CommentFrameContext): void {
                         v.name,
                         v.user_id || null,
                         v.ip || null,
-                        new DOMParser()
-                            .parseFromString(v.gallog_icon, "text/html")
-                            .querySelector("a.writer_nikcon img")
-                            ?.getAttribute("src") || null
+                        extractIconFromGallog(v.gallog_icon)
                     );
                 });
 

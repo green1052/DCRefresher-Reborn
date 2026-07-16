@@ -248,20 +248,17 @@ export default {
             }
         );
 
-        const getRatio = async (uid: string): Promise<RatioInfo | undefined> => {
-            const result = await fetchRatio(uid);
-            if (!result) return;
-
+        const updateRatioStore = (uid: string, result: RatioInfo): void => {
             const deepCopy = {...this.data!.ratio};
             deepCopy[uid] = result;
-
             this.data!.ratio = deepCopy;
-
-            return result;
         };
 
         this.memory.newPostListEvent = eventBus.on("newPostList", async (articles) => {
             const limitedArticles = articles.slice(0, 10);
+
+            // 1단계: permBan DOM 처리 + ratio 처리 대상 수집 (동기)
+            const ratioTargets: { article: HTMLElement; writer: HTMLElement | null; uid: string }[] = [];
 
             for (const article of limitedArticles) {
                 const writer = article.querySelector<HTMLElement>(".ub-writer");
@@ -291,12 +288,36 @@ export default {
 
                 if (!this.status.checkRatio) continue;
 
-                let ratio: { article: number; comment: number; date: number } | undefined = this.data!.ratio?.[uid];
+                ratioTargets.push({article, writer, uid});
+            }
 
-                if (!ratio || (ratio && Date.now() - ratio.date > 3600000)) {
-                    ratio = await getRatio(uid);
+            // 2단계: 캐시 미스 대상 식별
+            const staleUids = new Set<string>();
+            for (const {uid} of ratioTargets) {
+                const cached = this.data!.ratio?.[uid];
+                if (!cached || Date.now() - cached.date > 3600000) {
+                    staleUids.add(uid);
                 }
+            }
 
+            // 3단계: ratio 병렬 fetch (캐시 미스만)
+            if (staleUids.size > 0) {
+                const fetchedResults = await Promise.all(
+                    Array.from(staleUids).map(async (uid) => {
+                        const result = await fetchRatio(uid);
+                        return {uid, result};
+                    })
+                );
+
+                // 4단계: fetch 결과를 data에 일괄 반영 (race condition 방지)
+                for (const {uid, result} of fetchedResults) {
+                    if (result) updateRatioStore(uid, result);
+                }
+            }
+
+            // 5단계: ratio DOM 처리 (순차, 캐시에서 읽기)
+            for (const {article, writer, uid} of ratioTargets) {
+                const ratio = this.data!.ratio?.[uid];
                 if (!ratio) continue;
 
                 const ratioSpan = document.createElement("span");

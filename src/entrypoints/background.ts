@@ -12,7 +12,7 @@ export default defineBackground(() => {
         const {type, data: payload} = data;
 
         try {
-            const tabs = await browser.tabs.query({});
+            const tabs = await browser.tabs.query({url: ["https://*.dcinside.com/*"]});
             const promises: Promise<unknown>[] = [];
 
             for (const tab of tabs) {
