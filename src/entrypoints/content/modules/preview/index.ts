@@ -1,7 +1,6 @@
 import {PreviewController, type PreviewStatus} from "./controller";
 import {PostCache} from "./cache";
 import {createMiniPreview, type MiniPreviewState} from "./miniPreview";
-import eventBus from "@/core/eventbus";
 import {queryString} from "@/http/http";
 
 interface PreviewMemory {
@@ -217,11 +216,6 @@ export default {
         }
     },
     async func() {
-        // 결합 분리: 미리보기 설정을 eventBus로 게시 (refresh 모듈이 구독)
-        eventBus.emit("refresherModuleConfig", "미리보기", {
-            archiveArticle: this.status.archiveArticle
-        });
-
         this.memory.controller = new PreviewController(
             this.status as PreviewStatus,
             postCaches,

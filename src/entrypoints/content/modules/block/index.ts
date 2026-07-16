@@ -46,12 +46,6 @@ export default {
         }
     },
     func() {
-        // 결합 분리: 컨텐츠 차단 설정을 eventBus로 게시 (preview 모듈이 구독)
-        eventBus.emit("refresherModuleConfig", "컨텐츠 차단", {
-            blur: this.status.blur,
-            replyRemove: this.status.replyRemove
-        });
-
         const gallery = queryString("id");
 
         const hideElement = (element: HTMLElement, blur = false) => {
