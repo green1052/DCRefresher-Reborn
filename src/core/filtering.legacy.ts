@@ -10,34 +10,6 @@ const neverExpireIds = new Set<string>();
 
 let sharedObserver: MutationObserver | null = null;
 
-// 배치 처리: mutation을 큐에 모아두고 microtask에서 한 번에 처리
-let pendingMutations: MutationRecord[] = [];
-let flushScheduled = false;
-
-// selector 캐싱: 컴파일된 정규식/필터 함수 재사용 (scope 문자열이 같으면 캐시 히트)
-const selectorCache = new Map<string, (el: HTMLElement) => boolean>();
-
-const getSelectorMatcher = (scope: string): ((el: HTMLElement) => boolean) => {
-    let matcher = selectorCache.get(scope);
-    if (matcher) return matcher;
-
-    try {
-        // matches()를 사용하는 matcher 생성 (정규식 아님, CSS selector)
-        matcher = (el: HTMLElement): boolean => {
-            try {
-                return el.matches(scope);
-            } catch {
-                return false;
-            }
-        };
-    } catch {
-        matcher = (): boolean => false;
-    }
-
-    selectorCache.set(scope, matcher);
-    return matcher;
-};
-
 const collectAddedElements = (mutations: MutationRecord[]): HTMLElement[] => {
     const elements: HTMLElement[] = [];
 
@@ -52,57 +24,25 @@ const collectAddedElements = (mutations: MutationRecord[]): HTMLElement[] => {
     return elements;
 };
 
-// 단일 패스 매칭: 모든 neverExpire 필터를 added elements에 대해 한 번에 순회
-const matchAllScopes = (
-    addedElements: HTMLElement[]
-): Map<string, Set<HTMLElement>> => {
-    const result = new Map<string, Set<HTMLElement>>();
-
-    if (neverExpireIds.size === 0 || addedElements.length === 0) return result;
-
-    // neverExpire 필터들의 scope matcher 미리 준비
-    const matchers: { id: string; scope: string; matcher: (el: HTMLElement) => boolean }[] = [];
-    for (const id of neverExpireIds) {
-        const entry = lists.get(id);
-        if (!entry) continue;
-        matchers.push({id, scope: entry.scope, matcher: getSelectorMatcher(entry.scope)});
-    }
+const matchScope = (addedElements: HTMLElement[], scope: string): Set<HTMLElement> => {
+    const matches = new Set<HTMLElement>();
 
     for (const el of addedElements) {
-        for (const {id, scope, matcher} of matchers) {
-            let matches = result.get(id);
-            if (!matches) {
-                matches = new Set();
-                result.set(id, matches);
-            }
+        if (el.matches(scope)) {
+            matches.add(el);
+        }
 
-            // 1. el 자체가 scope에 매칭
-            if (matcher(el)) {
-                matches.add(el);
-            }
+        for (const matched of el.querySelectorAll<HTMLElement>(scope)) {
+            matches.add(matched);
+        }
 
-            // 2. el의 자손 중 scope에 매칭
-            let descendants: NodeListOf<HTMLElement> | undefined;
-            try {
-                descendants = el.querySelectorAll<HTMLElement>(scope);
-            } catch {
-                // invalid selector - skip
-            }
-            if (descendants) {
-                for (const matched of descendants) {
-                    matches.add(matched);
-                }
-            }
-
-            // 3. el의 조상 중 scope에 매칭 (closest)
-            const matchingParent = el.parentElement?.closest<HTMLElement>(scope);
-            if (matchingParent) {
-                matches.add(matchingParent);
-            }
+        const matchingParent = el.parentElement?.closest<HTMLElement>(scope);
+        if (matchingParent) {
+            matches.add(matchingParent);
         }
     }
 
-    return result;
+    return matches;
 };
 
 const runFilter = async (entry: FilterEntry, elements: Iterable<HTMLElement>): Promise<void> => {
@@ -111,40 +51,22 @@ const runFilter = async (entry: FilterEntry, elements: Iterable<HTMLElement>): P
     }
 };
 
-// 배치 처리 플러시: 큐에 모인 mutation을 한 번에 처리
-const flushPendingMutations = (): void => {
-    flushScheduled = false;
-    if (pendingMutations.length === 0) return;
-
-    const mutations = pendingMutations;
-    pendingMutations = [];
-
-    const addedElements = collectAddedElements(mutations);
-    if (addedElements.length === 0) return;
-
-    const matchesByFilter = matchAllScopes(addedElements);
-
-    for (const [id, matches] of matchesByFilter) {
-        const entry = lists.get(id);
-        if (!entry || matches.size === 0) continue;
-        void runFilter(entry, matches);
-    }
-};
-
-const scheduleFlush = (): void => {
-    if (flushScheduled) return;
-    flushScheduled = true;
-    // microtask로 배치 처리 (Promise.resolve().then과 동등)
-    queueMicrotask(flushPendingMutations);
-};
-
 const ensureSharedObserver = (): void => {
     if (sharedObserver) return;
 
     sharedObserver = new MutationObserver((mutations) => {
-        // mutation을 큐에 적재 후 microtask에서 배치 처리
-        pendingMutations.push(...mutations);
-        scheduleFlush();
+        const addedElements = collectAddedElements(mutations);
+        if (addedElements.length === 0) return;
+
+        for (const id of neverExpireIds) {
+            const entry = lists.get(id);
+            if (!entry) continue;
+
+            const matches = matchScope(addedElements, entry.scope);
+            if (matches.size > 0) {
+                void runFilter(entry, matches);
+            }
+        }
     });
 
     sharedObserver.observe(document.documentElement, {
@@ -157,8 +79,6 @@ const teardownSharedObserver = (): void => {
     if (neverExpireIds.size > 0 || !sharedObserver) return;
     sharedObserver.disconnect();
     sharedObserver = null;
-    pendingMutations = [];
-    flushScheduled = false;
 };
 
 const setupNeverExpire = (id: string): void => {
@@ -198,24 +118,7 @@ const findElements = (scope: string, parent: HTMLElement): Promise<Iterable<HTML
             const addedElements = collectAddedElements(mutations);
             if (addedElements.length === 0) return;
 
-            const matcher = getSelectorMatcher(scope);
-            const matches = new Set<HTMLElement>();
-
-            for (const el of addedElements) {
-                if (matcher(el)) matches.add(el);
-
-                try {
-                    for (const matched of el.querySelectorAll<HTMLElement>(scope)) {
-                        matches.add(matched);
-                    }
-                } catch {
-                    // invalid selector
-                }
-
-                const matchingParent = el.parentElement?.closest<HTMLElement>(scope);
-                if (matchingParent) matches.add(matchingParent);
-            }
-
+            const matches = matchScope(addedElements, scope);
             if (matches.size > 0) {
                 observer?.disconnect();
                 window.clearTimeout(timeout);
