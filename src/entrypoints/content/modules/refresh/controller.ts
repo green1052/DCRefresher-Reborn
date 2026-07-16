@@ -1,5 +1,6 @@
 import eventBus from "@/core/eventbus";
 import filter from "@/core/filtering";
+import modules from "@/core/modules";
 import http, {queryString} from "@/http/http";
 import {createLoadFunction} from "./load";
 
@@ -28,7 +29,6 @@ interface RefreshMemory {
     loading: boolean;
     archiveArticleConfig: boolean;
     controlButtonFilterId: string | null;
-    configUnsubscribe: (() => void) | null;
     visibilityChangeHandler: (() => void) | null;
     pageShowHandler: ((event: PageTransitionEvent) => void) | null;
     popStateHandler: (() => void) | null;
@@ -76,7 +76,6 @@ export class RefreshController {
             loading: false,
             archiveArticleConfig: false,
             controlButtonFilterId: null,
-            configUnsubscribe: null,
             visibilityChangeHandler: null,
             pageShowHandler: null,
             popStateHandler: null
@@ -190,11 +189,6 @@ export class RefreshController {
             this.memory.refreshRequest = null;
         }
 
-        if (this.memory.configUnsubscribe) {
-            this.memory.configUnsubscribe();
-            this.memory.configUnsubscribe = null;
-        }
-
         this.memory.load = null;
     }
 
@@ -230,13 +224,10 @@ export class RefreshController {
     }
 
     private async loadArchiveConfig(): Promise<void> {
-        // 결합 분리: moduleEnableStorage/moduleSettingStorage 직접 읽기 대신 eventBus 구독 사용
-        // 미리보기 모듈이 refresherModuleConfig 이벤트로 archiveArticle 설정을 게시하면 수신
-        this.memory.configUnsubscribe = eventBus.on("refresherModuleConfig", (module, config) => {
-            if (module === "미리보기") {
-                this.memory.archiveArticleConfig = Boolean(config.archiveArticle);
-            }
-        });
+        // 결합 분리: modules.ts에서 직접 읽기 (모듈 로드 완료 후이므로 데이터 보장)
+        const previewModule = modules.get("미리보기");
+        const previewStatus = previewModule?.status as { archiveArticle?: boolean } | undefined;
+        this.memory.archiveArticleConfig = Boolean(previewStatus?.archiveArticle);
     }
 
     private scheduleNextRefresh = (skipLoad = false): void => {

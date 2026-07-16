@@ -1,5 +1,6 @@
 import eventBus from "@/core/eventbus";
 import filter from "@/core/filtering";
+import modules from "@/core/modules";
 import Frame, {type FrameScrollApi} from "./frame";
 import type {PreviewFrame} from "./previewFrame";
 import {makeBodyFrame, type PostFetchedDataRef} from "./bodyFrame";
@@ -53,7 +54,6 @@ export class PreviewController {
     private previewAbortController: AbortController | null = null;
     private previewSignal: AbortSignal | null = null;
     private refreshIntervalId: number | null = null;
-    private configUnsubscribe: (() => void) | null = null;
 
     private preventOpen = false;
     private lastPress = 0;
@@ -136,24 +136,18 @@ export class PreviewController {
             this.frame.destroy();
             this.frame = undefined;
         }
-
-        if (this.configUnsubscribe) {
-            this.configUnsubscribe();
-            this.configUnsubscribe = null;
-        }
     }
 
     private async loadConfigs(): Promise<void> {
-        // 결합 분리: moduleEnableStorage/moduleSettingStorage 직접 읽기 대신 eventBus 구독 사용
-        // 컨텐츠 차단 모듈과 관리 모듈이 refresherModuleConfig 이벤트로 설정을 게시하면 수신
-        this.configUnsubscribe = eventBus.on("refresherModuleConfig", (module, config) => {
-            if (module === "컨텐츠 차단") {
-                this.blurConfig = Boolean(config.blur);
-                this.replyConfig = Boolean(config.replyRemove);
-            } else if (module === "관리") {
-                this.gifControlConfig = Boolean(config.enableGifControl);
-            }
-        });
+        // 결합 분리: modules.ts에서 직접 읽기 (모듈 로드 완료 후이므로 데이터 보장)
+        const blockModule = modules.get("컨텐츠 차단");
+        const blockStatus = blockModule?.status as { blur?: boolean; replyRemove?: boolean } | undefined;
+        this.blurConfig = Boolean(blockStatus?.blur);
+        this.replyConfig = Boolean(blockStatus?.replyRemove);
+
+        const manageModule = modules.get("관리");
+        const manageStatus = manageModule?.status as { enableGifControl?: boolean } | undefined;
+        this.gifControlConfig = Boolean(manageStatus?.enableGifControl);
     }
 
     private setupImageBlockHandler(): void {

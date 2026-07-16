@@ -1,7 +1,7 @@
 import memo from "@/core/memo";
+import modules from "@/core/modules";
 import ip from "./ip";
 import ban from "./ban";
-import eventBus from "@/core/eventbus";
 import type {Nullable, ObjectEnum} from "./types";
 
 export type UserType =
@@ -23,22 +23,7 @@ const USERTYPE: ObjectEnum<UserType> = {
     FIXED_MANAGER: "FIXED_MANAGER"
 };
 
-let ratio: Record<string, { article: number; comment: number; date: number }> = {};
-
-// 외부에서 ratio 데이터 주입 (결합 분리: moduleDataStorage('관리') 직접 의존 제거)
-export const setRatioData = (data: Record<string, { article: number; comment: number; date: number }>): void => {
-    ratio = data;
-};
-
-// eventBus를 통해 관리 모듈의 ratio 데이터 수신
-// 관리 모듈이 data.ratio를 refresherModuleConfig 이벤트로 게시
-eventBus.on("refresherModuleConfig", (module, config) => {
-    if (module === "관리" && config.ratio && typeof config.ratio === "object") {
-        setRatioData(config.ratio as Record<string, { article: number; comment: number; date: number }>);
-    }
-});
-
-// 더 이상 비동기 초기화가 필요 없음 (데이터는 eventBus로 수신)
+// 더 이상 비동기 초기화가 필요 없음 (데이터는 modules.ts에서 직접 읽기)
 export const ensureUserDataReady = (): Promise<void> => Promise.resolve();
 
 const FILE_NAME_MAP = new Map<string, UserType>([
@@ -153,7 +138,9 @@ export class User {
     getRatio(): void {
         if (!this.id) return;
 
-        const r = ratio?.[this.id];
+        const manageModule = modules.get("관리");
+        const ratioData = manageModule?.data as { ratio?: Record<string, { article: number; comment: number; date: number }> } | undefined;
+        const r = ratioData?.ratio?.[this.id];
 
         if (!r) return;
 
@@ -177,6 +164,5 @@ export class User {
 export default {
     getType,
     User,
-    ensureUserDataReady,
-    setRatioData
+    ensureUserDataReady
 };
