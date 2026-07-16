@@ -71,11 +71,12 @@ export function createLoadFunction(ctx: LoadFunctionContext): (customURL?: strin
     return async (customURL?: string, force?: boolean): Promise<boolean> => {
         const memory = ctx.memory;
         if (memory.loading) return false;
+
+        if (document.hidden) return false;
+
         memory.loading = true;
 
         try {
-            if (document.hidden) return false;
-
             if (Date.now() < memory.lastRefresh + MINIMUM_REFRESH_INTERVAL) {
                 return false;
             }

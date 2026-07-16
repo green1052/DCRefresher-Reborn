@@ -1,7 +1,8 @@
 import Cookies from "js-cookie";
 import ky, {Input, Options} from "ky";
 
-import * as http from "@/http/http";
+import * as http from "./http";
+import {contentFetch} from "./httpClient";
 import {parsePostInfo} from "./postParser";
 
 export interface GalleryHTTPRequestArguments {
@@ -17,7 +18,7 @@ const kyClient = ky.create({
     headers: {
         "X-Requested-With": "XMLHttpRequest"
     },
-    fetch: http.contentFetch
+    fetch: contentFetch
 });
 
 const client = (url: Input, options?: Options): Promise<string> => {
@@ -32,20 +33,15 @@ const parseJsonSafely = (response: string): unknown => {
     }
 };
 
-const createParams = (link?: string): URLSearchParams => {
-    const params = new URLSearchParams();
-    params.set("ci_t", Cookies.get("ci_c") ?? "");
-    if (link) params.set("_GALLTYPE_", http.galleryTypeName(link));
-    return params;
-};
-
 export const previewRequest = {
     async bump(args: GalleryHTTPRequestArguments) {
         const galleryType = http.galleryType(location.href, "/");
 
-        const params = createParams(location.href);
+        const params = new URLSearchParams();
+        params.set("ci_t", Cookies.get("ci_c") ?? "");
         params.set("id", args.gallery);
         params.set("nos[]", args.id);
+        params.set("_GALLTYPE_", http.galleryTypeName(location.href));
 
         const response = await client(galleryType === "mini/" ? http.urls.manage.bumpMini : http.urls.manage.bump, {
             body: params
@@ -69,7 +65,8 @@ export const previewRequest = {
             expires: new Date(Date.now() + 3 * 60 * 60 * 1000)
         });
 
-        const params = createParams(link);
+        const params = new URLSearchParams();
+        params.set("ci_t", Cookies.get("ci_c") ?? "");
 
         if (vCurT) params.set("v_cur_t", vCurT);
         if (randomParam) params.set(randomParam.name, randomParam.value);
@@ -78,6 +75,7 @@ export const previewRequest = {
         params.set("no", postId);
         params.set("mode", type ? "U" : "D");
         params.set("code_recommend", code ?? "");
+        params.set("_GALLTYPE_", http.galleryTypeName(link));
         params.set("link_id", gallId);
 
         const response = await client(http.urls.vote, {body: params});
@@ -94,25 +92,21 @@ export const previewRequest = {
         return parsePostInfo(id, response);
     },
 
-    async comments(args: GalleryHTTPRequestArguments, signal: AbortSignal): Promise<DcinsideComments> {
+    async comments(args: GalleryHTTPRequestArguments, signal: AbortSignal) {
         if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
 
-        const params = createParams(args.link);
+        const params = new URLSearchParams();
         params.set("id", args.gallery);
         params.set("no", args.id);
         params.set("cmt_id", args.commentId ?? args.gallery);
         params.set("cmt_no", args.commentNo ?? args.id);
         params.set("e_s_n_o", document.querySelector<HTMLInputElement>("#e_s_n_o")?.value ?? "");
         params.set("comment_page", "1");
+        params.set("_GALLTYPE_", http.galleryTypeName(args.link));
 
         const response = await client(http.urls.comments, {body: params, signal});
 
-        const parsed = parseJsonSafely(response);
-        if (typeof parsed !== "object" || parsed === null) {
-            throw new Error("댓글 데이터를 불러오지 못했습니다.");
-        }
-
-        return parsed as DcinsideComments;
+        return JSON.parse(response);
     },
 
     async delete(args: GalleryHTTPRequestArguments, password?: string) {
@@ -120,9 +114,11 @@ export const previewRequest = {
 
         const galleryType = http.galleryType(args.link, "/");
 
-        const params = createParams(args.link);
+        const params = new URLSearchParams();
+        params.set("ci_t", Cookies.get("ci_c") ?? "");
         params.set("id", args.gallery);
         params.set("nos[]", args.id);
+        params.set("_GALLTYPE_", http.galleryTypeName(args.link));
 
         const response = await client(galleryType === "mini/" ? http.urls.manage.deleteMini : http.urls.manage.delete, {
             body: params
@@ -143,10 +139,12 @@ export const previewRequest = {
 
         const galleryType = http.galleryType(args.link, "/");
 
-        const params = createParams(args.link);
+        const params = new URLSearchParams();
+        params.set("ci_t", Cookies.get("ci_c") ?? "");
         params.set("id", args.gallery);
         params.set("nos[]", args.id);
         params.set("parent", "");
+        params.set("_GALLTYPE_", http.galleryTypeName(args.link));
         params.set("avoid_hour", avoidHour.toString());
         params.set("avoid_reason", avoidReason.toString());
         params.set("avoid_reason_txt", avoidReasonTxt);
@@ -168,10 +166,12 @@ export const previewRequest = {
 
         const galleryType = http.galleryType(args.link, "/");
 
-        const params = createParams(args.link);
+        const params = new URLSearchParams();
+        params.set("ci_t", Cookies.get("ci_c") ?? "");
         params.set("mode", set ? "SET" : "REL");
         params.set("id", args.gallery);
         params.set("no", args.id);
+        params.set("_GALLTYPE_", http.galleryTypeName(args.link));
 
         const response = await client(
             galleryType === "mini/" ? http.urls.manage.setNoticeMini : http.urls.manage.setNotice,
@@ -189,8 +189,10 @@ export const previewRequest = {
 
         const galleryType = http.galleryType(args.link, "/");
 
-        const params = createParams(args.link);
+        const params = new URLSearchParams();
+        params.set("ci_t", Cookies.get("ci_c") ?? "");
         params.set("id", args.gallery);
+        params.set("_GALLTYPE_", http.galleryTypeName(args.link));
         params.set("mode", set ? "SET" : "REL");
         params.set("nos[]", args.id);
 
@@ -207,9 +209,11 @@ export const previewRequest = {
 
         const galleryTypeName = http.galleryTypeName(args.link);
 
-        const params = createParams(args.link);
+        const params = new URLSearchParams();
+        params.set("ci_t", Cookies.get("ci_c") ?? "");
         params.set("gall_id", args.gallery);
         params.set("kcaptcha_type", kcaptchaType);
+        params.set("_GALLTYPE_", galleryTypeName);
 
         return (
             "/kcaptcha/image_v3/?gall_id=" +
@@ -235,8 +239,10 @@ export const previewRequest = {
 
         const url = http.checkMini(preData.link) ? http.urls.manage.deleteCommentMini : http.urls.manage.deleteComment;
 
-        const params = createParams(preData.link);
+        const params = new URLSearchParams();
+        params.set("ci_t", Cookies.get("ci_c") ?? "");
         params.set("id", preData.gallery);
+        params.set("_GALLTYPE_", typeName);
         params.set("pno", preData.id);
         params.set("cmt_nos[]", commentId);
 
@@ -254,11 +260,13 @@ export const previewRequest = {
         const typeName = http.galleryTypeName(preData.link);
         if (!typeName.length) return false;
 
-        const params = createParams(preData.link);
+        const params = new URLSearchParams();
+        params.set("ci_t", Cookies.get("ci_c") ?? "");
         params.set("id", preData.gallery);
         params.set("re_no", commentId);
         params.set("mode", "del");
         params.set("g-recaptcha-response", "");
+        params.set("_GALLTYPE_", typeName);
         params.set("no", preData.id);
 
         if (password) {

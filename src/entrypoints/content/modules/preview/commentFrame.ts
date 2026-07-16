@@ -82,7 +82,9 @@ export function makeCommentFrame(ctx: CommentFrameContext): void {
     }).then((postData) => {
         if (!postData || signal.aborted) return;
 
-        const postDom = postFetchedDataRef.value!.dom!;
+        const postDom = postFetchedDataRef.value?.dom;
+
+        if (!postDom) return;
 
         frame.functions.writeComment = async (
             type: "text" | "dccon",
