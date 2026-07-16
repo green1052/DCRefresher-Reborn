@@ -1,8 +1,8 @@
 import memo from "@/core/memo";
 import ip from "./ip";
 import ban from "./ban";
+import eventBus from "@/core/eventbus";
 import type {Nullable, ObjectEnum} from "./types";
-import {moduleDataStorage, moduleEnableStorage, moduleSettingStorage} from "@/storage/wxtStorage";
 
 export type UserType =
     | "UNFIXED"
@@ -25,38 +25,21 @@ const USERTYPE: ObjectEnum<UserType> = {
 
 let ratio: Record<string, { article: number; comment: number; date: number }> = {};
 
-let userDataReady: Promise<void> | null = null;
-
-const initializeUserData = (): Promise<void> => {
-    if (!userDataReady) {
-        userDataReady = (async () => {
-            try {
-                const [enable, checkRatio] = await Promise.all([
-                    moduleEnableStorage("관리").getValue(),
-                    moduleSettingStorage("관리", "checkRatio").getValue()
-                ]);
-
-                if (!enable) return;
-
-                if (checkRatio) {
-                    const ratioData = await moduleDataStorage("관리").getValue();
-                    ratio = (ratioData?.["ratio"] as Record<string, {
-                        article: number;
-                        comment: number;
-                        date: number
-                    }>) ?? {};
-                }
-            } catch (e) {
-                console.error("Failed to initialize user data:", e);
-            }
-        })();
-    }
-    return userDataReady;
+// 외부에서 ratio 데이터 주입 (결합 분리: moduleDataStorage('관리') 직접 의존 제거)
+export const setRatioData = (data: Record<string, { article: number; comment: number; date: number }>): void => {
+    ratio = data;
 };
 
-void initializeUserData();
+// eventBus를 통해 관리 모듈의 ratio 데이터 수신
+// 관리 모듈이 data.ratio를 refresherModuleConfig 이벤트로 게시
+eventBus.on("refresherModuleConfig", (module, config) => {
+    if (module === "관리" && config.ratio && typeof config.ratio === "object") {
+        setRatioData(config.ratio as Record<string, { article: number; comment: number; date: number }>);
+    }
+});
 
-export const ensureUserDataReady = (): Promise<void> => initializeUserData();
+// 더 이상 비동기 초기화가 필요 없음 (데이터는 eventBus로 수신)
+export const ensureUserDataReady = (): Promise<void> => Promise.resolve();
 
 const FILE_NAME_MAP = new Map<string, UserType>([
     ["managernik.gif", USERTYPE.HALF_FIXED_MANAGER],
@@ -194,5 +177,6 @@ export class User {
 export default {
     getType,
     User,
-    ensureUserDataReady
+    ensureUserDataReady,
+    setRatioData
 };

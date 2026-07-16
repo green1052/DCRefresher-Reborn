@@ -10,7 +10,6 @@ import {miniPreviewClose, miniPreviewCreate, miniPreviewMove, type MiniPreviewSt
 import {getRelevantData} from "./getRelevantData";
 import type {PostCache} from "./cache";
 import {ScrollDetection} from "./scrollDetection";
-import {moduleEnableStorage, moduleSettingStorage} from "@/storage/wxtStorage";
 
 export interface PreviewStatus {
     tooltipMode: boolean;
@@ -54,6 +53,7 @@ export class PreviewController {
     private previewAbortController: AbortController | null = null;
     private previewSignal: AbortSignal | null = null;
     private refreshIntervalId: number | null = null;
+    private configUnsubscribe: (() => void) | null = null;
 
     private preventOpen = false;
     private lastPress = 0;
@@ -136,22 +136,24 @@ export class PreviewController {
             this.frame.destroy();
             this.frame = undefined;
         }
+
+        if (this.configUnsubscribe) {
+            this.configUnsubscribe();
+            this.configUnsubscribe = null;
+        }
     }
 
     private async loadConfigs(): Promise<void> {
-        const contentBlockEnabled = await moduleEnableStorage("컨텐츠 차단").getValue();
-        if (contentBlockEnabled) {
-            const [blur, replyRemove] = await Promise.all([
-                moduleSettingStorage("컨텐츠 차단", "blur").getValue(),
-                moduleSettingStorage("컨텐츠 차단", "replyRemove").getValue()
-            ]);
-            this.blurConfig = Boolean(blur);
-            this.replyConfig = Boolean(replyRemove);
-        }
-
-        this.gifControlConfig = Boolean(
-            (await moduleEnableStorage("관리").getValue()) && Boolean(await moduleSettingStorage("관리", "enableGifControl").getValue())
-        );
+        // 결합 분리: moduleEnableStorage/moduleSettingStorage 직접 읽기 대신 eventBus 구독 사용
+        // 컨텐츠 차단 모듈과 관리 모듈이 refresherModuleConfig 이벤트로 설정을 게시하면 수신
+        this.configUnsubscribe = eventBus.on("refresherModuleConfig", (module, config) => {
+            if (module === "컨텐츠 차단") {
+                this.blurConfig = Boolean(config.blur);
+                this.replyConfig = Boolean(config.replyRemove);
+            } else if (module === "관리") {
+                this.gifControlConfig = Boolean(config.enableGifControl);
+            }
+        });
     }
 
     private setupImageBlockHandler(): void {

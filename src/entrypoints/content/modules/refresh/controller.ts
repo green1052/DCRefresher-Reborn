@@ -2,7 +2,6 @@ import eventBus from "@/core/eventbus";
 import filter from "@/core/filtering";
 import http, {queryString} from "@/http/http";
 import {createLoadFunction} from "./load";
-import {moduleEnableStorage, moduleSettingStorage} from "@/storage/wxtStorage";
 
 const MINIMUM_REFRESH_INTERVAL = 2000;
 const PAGING_SELECTOR = ".left_content article:has(.gall_listwrap) .bottom_paging_box";
@@ -29,6 +28,7 @@ interface RefreshMemory {
     loading: boolean;
     archiveArticleConfig: boolean;
     controlButtonFilterId: string | null;
+    configUnsubscribe: (() => void) | null;
     visibilityChangeHandler: (() => void) | null;
     pageShowHandler: ((event: PageTransitionEvent) => void) | null;
     popStateHandler: (() => void) | null;
@@ -76,6 +76,7 @@ export class RefreshController {
             loading: false,
             archiveArticleConfig: false,
             controlButtonFilterId: null,
+            configUnsubscribe: null,
             visibilityChangeHandler: null,
             pageShowHandler: null,
             popStateHandler: null
@@ -189,6 +190,11 @@ export class RefreshController {
             this.memory.refreshRequest = null;
         }
 
+        if (this.memory.configUnsubscribe) {
+            this.memory.configUnsubscribe();
+            this.memory.configUnsubscribe = null;
+        }
+
         this.memory.load = null;
     }
 
@@ -224,9 +230,13 @@ export class RefreshController {
     }
 
     private async loadArchiveConfig(): Promise<void> {
-        this.memory.archiveArticleConfig = (await moduleEnableStorage("미리보기").getValue())
-            ? Boolean(await moduleSettingStorage("미리보기", "archiveArticle").getValue())
-            : false;
+        // 결합 분리: moduleEnableStorage/moduleSettingStorage 직접 읽기 대신 eventBus 구독 사용
+        // 미리보기 모듈이 refresherModuleConfig 이벤트로 archiveArticle 설정을 게시하면 수신
+        this.memory.configUnsubscribe = eventBus.on("refresherModuleConfig", (module, config) => {
+            if (module === "미리보기") {
+                this.memory.archiveArticleConfig = Boolean(config.archiveArticle);
+            }
+        });
     }
 
     private scheduleNextRefresh = (skipLoad = false): void => {
