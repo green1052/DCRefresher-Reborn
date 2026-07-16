@@ -49,6 +49,9 @@ export default defineContentScript({
             }
         });
 
+        // 모든 모듈 로드 완료 후 설정 일괄 게시 (의존 모듈 구독 보장)
+        modules.publishAllConfigs();
+
         await filter.run();
     }
 });
