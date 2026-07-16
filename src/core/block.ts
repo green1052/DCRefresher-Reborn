@@ -1,5 +1,6 @@
 import {BLOCK_TYPES, blockModeStorage, blockStorage} from "@/storage/wxtStorage";
 import {eventBus} from "./eventbus";
+import {LRUCache} from "@/utils/lruCache";
 
 export const TYPE_NAMES: Record<RefresherBlockType, string> = {
     NICK: "닉네임",
@@ -32,8 +33,10 @@ export type BlockCache = Record<RefresherBlockType, RefresherBlockValue[]>;
 
 export type BlockModeCache = Record<RefresherBlockType, RefresherBlockDetectMode>;
 
-const regexCache = new Map<string, RegExp>();
-const advancedFnCache = new Map<string, (...args: unknown[]) => unknown>();
+// LRU 캐시 - 최대 500개 항목으로 메모리 누수 방지
+const MAX_CACHE_SIZE = 500;
+const regexCache = new LRUCache<string, RegExp>(MAX_CACHE_SIZE);
+const advancedFnCache = new LRUCache<string, (...args: unknown[]) => unknown>(MAX_CACHE_SIZE);
 
 const clearCompiledCaches = (): void => {
     regexCache.clear();
@@ -41,27 +44,29 @@ const clearCompiledCaches = (): void => {
 };
 
 const getCompiledRegex = (pattern: string): RegExp | null => {
-    let regex = regexCache.get(pattern);
-    if (regex) return regex;
+    const cached = regexCache.get(pattern);
+    if (cached) return cached;
     try {
-        regex = new RegExp(pattern);
+        const regex = new RegExp(pattern);
+        regexCache.set(pattern, regex);
+        return regex;
     } catch {
         return null;
     }
-    regexCache.set(pattern, regex);
-    return regex;
 };
 
+// advanced 차단: new Function 평가 (사용자 신뢰 설정이지만 주의 필요)
+// 캐시 크기 제한으로 메모리 누수 방지, LRU로 오래된 항목 자동 제거
 const getCompiledAdvancedFn = (content: string): ((...args: unknown[]) => unknown) | null => {
-    let fn = advancedFnCache.get(content);
-    if (fn) return fn;
+    const cached = advancedFnCache.get(content);
+    if (cached) return cached;
     try {
-        fn = new Function("type", "content", "gallery", content) as (...args: unknown[]) => unknown;
+        const fn = new Function("type", "content", "gallery", content) as (...args: unknown[]) => unknown;
+        advancedFnCache.set(content, fn);
+        return fn;
     } catch {
         return null;
     }
-    advancedFnCache.set(content, fn);
-    return fn;
 };
 
 let blockCache: BlockCache = {
