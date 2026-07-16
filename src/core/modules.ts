@@ -122,16 +122,21 @@ export const modules = {
 
         await Promise.all(promises);
 
-        // 모든 설정 로드 완료 후 다른 모듈이 사용할 수 있도록 게시
-        const moduleConfig: Record<string, unknown> = {...(mod.status as Record<string, unknown> ?? {})};
-        if (isRecord(mod.data)) {
-            Object.assign(moduleConfig, mod.data);
-        }
-        eventBus.emit("refresherModuleConfig", mod.name, moduleConfig);
-
         if (!mod.enable || mod.url?.test(location.href) === false) return;
 
         await runModule(mod);
+    },
+
+    // 모든 모듈 로드 완료 후 일괄 설정 게시
+    // 의존 모듈의 func()(구독 설정)가 이미 실행된 후이므로 모든 구독자가 수신 보장
+    publishAllConfigs: (): void => {
+        for (const mod of Object.values(moduleStore)) {
+            const moduleConfig: Record<string, unknown> = {...(mod.status as Record<string, unknown> ?? {})};
+            if (isRecord(mod.data)) {
+                Object.assign(moduleConfig, mod.data);
+            }
+            eventBus.emit("refresherModuleConfig", mod.name, moduleConfig);
+        }
     }
 };
 
