@@ -31,5 +31,6 @@ declare global {
         newPostList: [HTMLElement[]];
         refresherGetPost: [Document];
         refreshRequest: [];
+        refresherModuleConfig: [string, Record<string, unknown>];
     }
 }

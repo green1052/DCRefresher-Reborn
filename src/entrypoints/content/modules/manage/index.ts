@@ -75,6 +75,12 @@ export default {
         }
     },
     func() {
+        // 결합 분리: 관리 설정을 eventBus로 게시 (preview, user utils가 구독)
+        eventBus.emit("refresherModuleConfig", "관리", {
+            enableGifControl: this.status.enableGifControl,
+            ratio: this.data.ratio
+        });
+
         this.memory.gallViewContents = filter.add<HTMLVideoElement>(
             ".gallview_contents video",
             (element) => {
