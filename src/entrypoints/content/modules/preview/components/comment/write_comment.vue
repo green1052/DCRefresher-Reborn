@@ -24,13 +24,13 @@
       >
                 <textarea
                     id="comment_main"
-                    :disabled="disabled || getDccon().length > 0"
-                    :placeholder="!getDccon().length ? '댓글 입력...' : '디시콘이 선택됐습니다.'"
+                    :disabled="disabled || dcconCount > 0"
+                    :placeholder="dcconCount > 0 ? '디시콘이 선택됐습니다.' : '댓글 입력...'"
                     autocomplete="new-password"
                     @blur="blur"
                     @focus="focus"
                     @input="updateText"
-                    @keydown="type"
+                    @keydown="onKeyDown"
                 />
       </div>
       <PreviewButton
@@ -52,7 +52,7 @@
       <div
           :class="{
                     'refresher-comment-util': true,
-                    'refresher-comment-util-show': !(hoverUserInfo && !user.id)
+                    'refresher-comment-util-show': !(hoverUserInfo && !user?.id)
                 }"
           class="whoami"
       >
@@ -61,13 +61,13 @@
             :me="true"
             :user="user"
         />
-        <span>로 {{ reply.commentNo ? "답글" : "" }} {{ !getDccon().length ? "" : "디시콘" }} 작성 중</span>
+        <span>로 {{ reply?.commentNo ? "답글" : "" }} {{ dcconCount > 0 ? "디시콘" : "" }} 작성 중</span>
       </div>
       <div
           :class="{
                     'refresher-comment-util': true,
                     'refresher-comment-util-edit': true,
-                    'refresher-comment-util-show': hoverUserInfo && user.isLogout()
+                    'refresher-comment-util-show': hoverUserInfo && user?.isLogout()
                 }"
           class="whoami"
       >
@@ -80,13 +80,12 @@
 </template>
 
 <script lang="ts" setup>
-import {inject, onMounted, ref, type Ref, shallowRef, watch} from "vue";
+import {computed, inject, ref, type Ref} from "vue";
 import toast from "@/utils/toast";
 
-import {Nullable} from "@/utils/types";
-import {User} from "@/utils/user";
 import PreviewButton from "@/components/previewButton.vue";
 import UserComponent from "@/components/user.vue";
+import {useCommentUser} from "../../composables/useCommentUser";
 
 interface Props {
   func?: (
@@ -117,79 +116,19 @@ const emit = defineEmits<{
   "update:reply": [reply: { commentNo: string | null; replyNo: string | null }];
 }>();
 
+const {user, unsignedUserID, unsignedUserPW, fixedUser, editUser, toggleEditUser, validCheck} = useCommentUser();
+
 const focused = ref(false);
 const disabled = ref(false);
 const text = ref("");
-const editUser = ref(false);
-const fixedUser = ref(false);
 const hoverUserInfo = ref(false);
-const user = shallowRef<Nullable<User>>(null);
-const unsignedUserID = ref(localStorage.nonmember_nick || "ㅇㅇ");
-const unsignedUserPW = ref(localStorage.nonmember_pw || Math.random().toString(36).substring(2, 10));
 
 const inputFocusRef = inject<Ref<boolean>>("refresherInputFocus", ref(false));
 
-watch(unsignedUserID, (value: string) => {
-  if (!user.value) return;
+const dcconCount = computed(() => props.getDccon().length);
 
-  localStorage.setItem("nonmember_nick", value);
-  user.value.nick = value;
-});
-
-watch(unsignedUserPW, (value: string) => {
-  localStorage.setItem("nonmember_pw", value);
-});
-
-onMounted(() => {
-  const gallogName = document.querySelector("#login_box > .user_info .nickname > em");
-  const fixedName = gallogName && gallogName.innerHTML ? gallogName.innerHTML : null;
-
-  if (fixedName) {
-    fixedUser.value = true;
-
-    const gallogIcon = document.querySelector("#login_box > .user_info > .writer_nikcon");
-    if (gallogIcon) {
-      const attribute = gallogIcon.getAttribute("onclick");
-      if (attribute) {
-        const match = /window\.open\('\/\/gallog\.dcinside\.com\/(\w*)'\);/.exec(attribute);
-        if (match && match[1]) {
-          const id = match[1];
-          const imgElement = gallogIcon.querySelector("img");
-          const src = imgElement ? imgElement.src : null;
-          user.value = new User(fixedName, id, null, src);
-        }
-      }
-    }
-  } else {
-    user.value = new User(unsignedUserID.value, null, "127.0.0.1", null);
-  }
-});
-
-// Methods
 const updateText = (ev: InputEvent) => {
   text.value = (ev.target as HTMLTextAreaElement).value;
-};
-
-const validCheck = (type: string, value: string): void => {
-  if (type === "id" && value.length < 1) {
-    toast.show(`아이디는 최소 1자리 이상이어야 합니다. 자동으로 "ㅇㅇ"로 설정합니다.`);
-    unsignedUserID.value = "ㅇㅇ";
-
-    return;
-  }
-
-  if (type === "pw" && value.length < 2) {
-    const random = Math.random().toString(36).substring(5);
-
-    toast.show(`비밀번호는 최소 2자리 이상이어야 합니다. 자동으로 "${random}"로 설정합니다.`);
-    unsignedUserPW.value = random;
-  }
-};
-
-const toggleEditUser = (): void => {
-  if (user.value && user.value.isLogout()) {
-    editUser.value = !editUser.value;
-  }
 };
 
 const renderDcconPopup = (): void => {
@@ -207,15 +146,15 @@ const write = async (): Promise<boolean> => {
 
   if (!props.func) return true;
 
-  const dccons = props.getDccon ? props.getDccon() : [];
-  const bigDccon = props.getBigDccon ? props.getBigDccon() : false;
+  const dccons = props.getDccon();
+  const bigDccon = props.getBigDccon();
 
   try {
     const result = await props.func(
-        !dccons.length ? "text" : "dccon",
-        dccons.length ? dccons : text.value,
-        props.reply ? props.reply.commentNo : null,
-        props.reply ? props.reply.replyNo : null,
+        dccons.length > 0 ? "dccon" : "text",
+        dccons.length > 0 ? dccons : text.value,
+        props.reply?.commentNo ?? null,
+        props.reply?.replyNo ?? null,
         fixedUser.value && user.value
             ? {name: user.value.nick}
             : {
@@ -253,7 +192,7 @@ const blur = (): void => {
   inputFocusRef.value = false;
 };
 
-const type = (ev: KeyboardEvent): KeyboardEvent | void => {
+const onKeyDown = (ev: KeyboardEvent): KeyboardEvent | void => {
   if (ev.shiftKey && ev.key === "Enter") {
     return ev;
   }
@@ -366,10 +305,6 @@ html:has(#css-darkmode) {
     }
   }
 }
-
-// ============================================================
-// Input wrap (underline-style focus)
-// ============================================================
 
 .refresher-input-wrap {
   height: 45px;
