@@ -7,10 +7,21 @@ import {makeBodyFrame, type PostFetchedDataRef} from "./bodyFrame";
 import {makeCommentFrame} from "./commentFrame";
 import {previewRequest} from "./request";
 import {blockPreset, closeAllPopups, panel} from "./panel";
-import {miniPreviewClose, miniPreviewCreate, miniPreviewMove, type MiniPreviewState} from "./miniPreview";
+import {type MiniPreviewState} from "./miniPreview";
 import {getRelevantData} from "./getRelevantData";
 import type {PostCache} from "./cache";
 import {ScrollDetection} from "./scrollDetection";
+import {
+    type PreviewInputContext,
+    attachElementHandlers,
+    createImageBlockClickHandler,
+    createMousePressHandler
+} from "./previewInputHandler";
+import {
+    type ScrollNavigationContext,
+    createNavigationKeyHandler,
+    createScrollSkipHandler
+} from "./previewScrollNavigation";
 
 export interface PreviewStatus {
     tooltipMode: boolean;
@@ -55,8 +66,8 @@ export class PreviewController {
     private previewSignal: AbortSignal | null = null;
     private refreshIntervalId: number | null = null;
 
-    private preventOpen = false;
-    private lastPress = 0;
+    private readonly preventOpenRef = {value: false};
+    private readonly lastPressRef = {value: 0};
     private historyClose = false;
     private frameClosed = false;
     private titleStore: string | null = null;
@@ -67,7 +78,7 @@ export class PreviewController {
 
     private appStore: FrameScrollApi | undefined;
     private groupStore!: HTMLElement;
-    private scrolledCount = 0;
+    private readonly scrolledCountRef = {value: 0};
 
     private destroyed = false;
 
@@ -88,11 +99,20 @@ export class PreviewController {
         this.setupImageBlockHandler();
         this.applyBlockPreset();
 
-        const handleMousePress = (ev: MouseEvent): void => this.handleMousePress(ev);
+        const inputCtx: PreviewInputContext = {
+            status: this.status,
+            postCaches: this.postCaches,
+            miniPreview: this.miniPreview,
+            previewFrame: (ev, prd, historySkip) => this.previewFrame(ev, prd, historySkip),
+            preventOpenRef: this.preventOpenRef,
+            lastPressRef: this.lastPressRef
+        };
+
+        const handleMousePress = createMousePressHandler(inputCtx);
 
         this.filterUuid = filter.add(
             `.gall_list .ub-content${this.status.expandRecognizeRange ? "" : " .ub-word"}`,
-            (element: HTMLElement) => this.addHandler(element, handleMousePress, elementEventSignal),
+            (element: HTMLElement) => attachElementHandlers(element, handleMousePress, elementEventSignal, inputCtx),
             {neverExpire: true}
         );
 
@@ -139,7 +159,6 @@ export class PreviewController {
     }
 
     private async loadConfigs(): Promise<void> {
-        // 결합 분리: modules.ts에서 직접 읽기 (모듈 로드 완료 후이므로 데이터 보장)
         const blockModule = modules.get("컨텐츠 차단");
         const blockStatus = blockModule?.status as { blur?: boolean; replyRemove?: boolean } | undefined;
         this.blurConfig = Boolean(blockStatus?.blur);
@@ -151,19 +170,7 @@ export class PreviewController {
     }
 
     private setupImageBlockHandler(): void {
-        this.imageBlockClickHandler = (ev: MouseEvent) => {
-            if (!(ev.target instanceof Element)) return;
-
-            const button = ev.target.closest<HTMLElement>(".btn_img_block");
-            if (!button) return;
-
-            ev.preventDefault();
-            ev.stopPropagation();
-
-            button.style.display = "none";
-            const img = button.closest("div")?.querySelector("img");
-            if (img) img.style.display = "";
-        };
+        this.imageBlockClickHandler = createImageBlockClickHandler();
         document.addEventListener("click", this.imageBlockClickHandler);
     }
 
@@ -265,34 +272,15 @@ export class PreviewController {
         }
     }
 
-    private getAdjacentPostNo(direction: "next" | "prev"): string | undefined {
-        const currentId = this.postFetchedDataRef.value?.id;
-        if (!currentId) return undefined;
-
-        const post = document.querySelector(`.us-post[data-no="${currentId}"]`) as HTMLElement | null;
-        if (!post) return undefined;
-
-        const adjacentPost =
-            direction === "next"
-                ? (post.previousElementSibling as HTMLElement | null)
-                : (post.nextElementSibling as HTMLElement | null);
-
-        if (!adjacentPost || adjacentPost.getAttribute("data-type") === "icon_notice") return undefined;
-
-        return adjacentPost.getAttribute("data-no") ?? undefined;
-    }
-
     private previewFrame(ev: MouseEvent | null, prd?: GalleryPreData, historySkip?: boolean): void {
-        if (this.preventOpen) {
-            this.preventOpen = false;
+        if (this.preventOpenRef.value) {
+            this.preventOpenRef.value = false;
             return;
         }
 
         if ((ev?.target as HTMLElement)?.closest(".ub-writer")) {
             return;
         }
-
-        if (this.status.tooltipMode) miniPreviewClose(this.miniPreview, this.status.tooltipMode);
 
         const preData = ev === null ? prd : getRelevantData(ev);
         if (!preData) return;
@@ -350,86 +338,29 @@ export class PreviewController {
             }
         );
 
-        detector.listen("scroll", (ev: WheelEvent) => this.handleScrollSkip(ev, preData, historySkip));
+        const scrollCtx: ScrollNavigationContext = {
+            postFetchedDataRef: this.postFetchedDataRef,
+            getAppStore: () => this.appStore,
+            getGroupStore: () => this.groupStore,
+            scrolledCountRef: this.scrolledCountRef,
+            newPostWithData: (pd, hs) => this.newPostWithData(pd, hs),
+            getPostFetchedId: () => this.getPostFetchedId()
+        };
 
-        this.previewNavigationKeyDown = (keyboardEvent: KeyboardEvent) =>
-            this.handleNavigationKey(keyboardEvent, historySkip);
+        detector.listen("scroll", createScrollSkipHandler(scrollCtx, preData, historySkip));
+
+        this.previewNavigationKeyDown = createNavigationKeyHandler(
+            scrollCtx,
+            () => this.currentPreData,
+            () => this.frame?.app?.closed ?? true,
+            () => this.frame?.app?.inputFocus ?? false,
+            historySkip
+        );
         document.addEventListener("keydown", this.previewNavigationKeyDown);
 
         this.frame.app?.onClose(() => this.handleFrameClose());
 
         return this.frame;
-    }
-
-    private handleScrollSkip(ev: WheelEvent, preData: GalleryPreData | null, historySkip?: boolean): void {
-        const scrolledTop = this.groupStore.scrollTop === 0;
-        const scroll = Math.floor(this.groupStore.scrollHeight - this.groupStore.scrollTop);
-        const scrolledToBottom = Math.abs(scroll - this.groupStore.clientHeight) < 2;
-
-        if (!scrolledTop && !scrolledToBottom) {
-            this.scrolledCount = 0;
-        }
-
-        if (ev.deltaY < 0) {
-            this.appStore?.setScrollMode("top");
-
-            if (!scrolledTop) {
-                this.appStore?.clearScrollMode();
-            }
-
-            if (!scrolledTop || !preData) return;
-
-            if (this.scrolledCount++ < 1) return;
-            this.scrolledCount = 0;
-
-            preData.id = this.getAdjacentPostNo("prev") || (Number(this.getPostFetchedId()) - 1).toString();
-            this.newPostWithData(preData, historySkip);
-            this.groupStore.scrollTop = 0;
-
-            this.appStore?.clearScrollMode();
-        } else {
-            this.appStore?.setScrollMode("bottom");
-
-            if (!scrolledToBottom) {
-                this.appStore?.clearScrollMode();
-            }
-
-            if (!scrolledToBottom || !preData) {
-                return;
-            }
-
-            if (this.scrolledCount++ < 1) return;
-            this.scrolledCount = 0;
-
-            preData.id = this.getAdjacentPostNo("next") || (Number(this.getPostFetchedId()) + 1).toString();
-            this.newPostWithData(preData, historySkip);
-
-            this.groupStore.scrollTop = 0;
-            this.appStore?.clearScrollMode();
-        }
-    }
-
-    private handleNavigationKey(keyboardEvent: KeyboardEvent, historySkip?: boolean): void {
-        if (keyboardEvent.key !== "PageUp" && keyboardEvent.key !== "PageDown") return;
-        if (!this.currentPreData || this.frame?.app?.closed || this.frame?.app?.inputFocus) return;
-
-        keyboardEvent.preventDefault();
-
-        const isPageUp = keyboardEvent.key === "PageUp";
-        const currentId = this.postFetchedDataRef.value?.id;
-        const fallbackId = currentId ? (Number(currentId) + (isPageUp ? -1 : 1)).toString() : "";
-        const nextPostNo = isPageUp
-            ? this.getAdjacentPostNo("prev") || fallbackId
-            : this.getAdjacentPostNo("next") || fallbackId;
-
-        this.currentPreData.id = nextPostNo;
-        this.newPostWithData(this.currentPreData, historySkip);
-
-        if (this.groupStore) {
-            this.groupStore.scrollTop = 0;
-        }
-
-        this.appStore?.clearScrollMode();
     }
 
     private handleFrameClose(): void {
@@ -458,110 +389,6 @@ export class PreviewController {
 
         this.appStore?.clearScrollMode();
         if (this.refreshIntervalId) window.clearInterval(this.refreshIntervalId);
-    }
-
-    private handleMousePress(ev: MouseEvent): void {
-        if (ev.button !== 2) return;
-
-        if (ev.type === "mousedown") {
-            this.lastPress = Date.now();
-            return;
-        }
-
-        if (
-            ev.type === "mouseup" &&
-            this.lastPress > 0 &&
-            Date.now() - this.status.longPressDelay > this.lastPress
-        ) {
-            this.preventOpen = true;
-            this.lastPress = 0;
-        }
-    }
-
-    private addHandler(element: HTMLElement, handleMousePress: (ev: MouseEvent) => void, signal: AbortSignal): void {
-        if (element.dataset.refresherPreview === "true") return;
-
-        let timer: number | undefined;
-
-        element.dataset.refresherPreview = "true";
-        signal.addEventListener(
-            "abort",
-            () => {
-                if (typeof timer === "number") {
-                    window.clearTimeout(timer);
-                }
-                delete element.dataset.refresherPreview;
-            },
-            {once: true}
-        );
-
-        element.addEventListener("mouseup", handleMousePress, {signal});
-        element.addEventListener("mousedown", handleMousePress, {signal});
-        element.addEventListener(this.status.reversePreviewKey ? "click" : "contextmenu", (ev) => {
-            if (element.closest(".us-post")?.classList.contains("refresherBlur")) return;
-
-            if (typeof timer === "number") {
-                window.clearTimeout(timer);
-                timer = undefined;
-            }
-
-            this.previewFrame(ev);
-        }, {signal});
-
-        if (this.status.reversePreviewKey) {
-            element.addEventListener("contextmenu", (e) => {
-                e.preventDefault();
-
-                const target = e.target as HTMLAnchorElement;
-
-                location.href =
-                    target.getAttribute("href") ??
-                    target.closest(".us-post")?.querySelector("a:not(.reply_numbox)")?.getAttribute("href") ??
-                    location.href;
-            }, {signal});
-        }
-
-        element.addEventListener("mouseenter", (ev) => {
-            if (
-                !this.status.tooltipMode ||
-                element.closest(".us-post")?.classList.contains("refresherBlur") ||
-                typeof timer === "number" ||
-                (this.status.tooltipRatioDisable && element.closest(".us-post")?.querySelector(".ratio[style]"))
-            )
-                return;
-
-            timer = window.setTimeout(() => {
-                miniPreviewCreate(
-                    this.miniPreview,
-                    ev,
-                    this.status.tooltipMode,
-                    this.status.tooltipMediaHide,
-                    this.status.tooltipInteraction,
-                    getRelevantData,
-                    this.postCaches,
-                    previewRequest
-                );
-
-                if (this.status.tooltipInteraction)
-                    miniPreviewMove(this.miniPreview, ev, this.status.tooltipMode, this.status.tooltipInteraction);
-            }, this.status.tooltipDelay);
-        }, {signal});
-
-        element.addEventListener("mousemove", (ev) => {
-            if (this.status.tooltipMode && !this.status.tooltipInteraction)
-                miniPreviewMove(this.miniPreview, ev, this.status.tooltipMode, this.status.tooltipInteraction);
-        }, {signal});
-
-        element.addEventListener("mouseleave", () => {
-            if (!this.status.tooltipMode) return;
-
-            if (typeof timer === "number") {
-                window.clearTimeout(timer);
-                timer = undefined;
-            }
-
-            miniPreviewClose(this.miniPreview, this.status.tooltipMode);
-        }, {signal});
     }
 
     private handlePopState(ev: PopStateEvent): void {
