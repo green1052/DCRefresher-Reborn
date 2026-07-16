@@ -11,19 +11,32 @@ export interface MiniPreviewState {
     lastTimeout: number;
     shouldOutHandle: boolean;
     cursorOut: boolean;
+    isHovered: boolean;
 }
 
 export function createMiniPreview(): MiniPreviewState {
-    return {
-        element: document.createElement("div"),
+    const element = document.createElement("div");
+
+    element.addEventListener("mouseenter", () => {
+        state.isHovered = true;
+    });
+    element.addEventListener("mouseleave", () => {
+        state.isHovered = false;
+    });
+
+    const state: MiniPreviewState = {
+        element,
         init: false,
         lastRequest: 0,
         controller: new AbortController(),
         lastElement: null,
         lastTimeout: 0,
         shouldOutHandle: false,
-        cursorOut: false
+        cursorOut: false,
+        isHovered: false
     };
+
+    return state;
 }
 
 export function miniPreviewCreate(
@@ -139,7 +152,7 @@ export function miniPreviewMove(state: MiniPreviewState, ev: MouseEvent, use: bo
 }
 
 export function miniPreviewClose(state: MiniPreviewState, use: boolean): void {
-    if (document.querySelector("div:hover")?.classList.contains("refresher-mini-preview")) return;
+    if (state.isHovered) return;
 
     state.cursorOut = true;
 
