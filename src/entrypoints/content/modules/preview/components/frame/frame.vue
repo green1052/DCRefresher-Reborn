@@ -58,7 +58,7 @@
             />
             <PreviewButton
                 id="refresh"
-                :click="refresh"
+                :click="retry"
                 class="refresher-comment-controls"
                 text="새로고침"
             />
@@ -160,11 +160,11 @@
 
       <FrameVotes
           v-if="showVotes"
-          :downvote="downvote"
+          :downvote="() => frame.functions.vote(0)"
           :frame="frame"
-          :original="original"
-          :share="share"
-          :upvote="upvote"
+          :original="() => { void frame.functions.openOriginal(); return Promise.resolve(true); }"
+          :share="() => frame.functions.share()"
+          :upvote="() => frame.functions.vote(1)"
       />
     </div>
   </div>
@@ -228,35 +228,25 @@ const onEnter = (el: Element) => {
   (el as HTMLElement).style.transitionDelay = "";
 };
 
-const upvote = (): Promise<boolean> => props.frame.functions.vote(1);
-const downvote = (): Promise<boolean> => props.frame.functions.vote(0);
-const share = (): Promise<boolean> => props.frame.functions.share();
-
+// 댓글 새로고침 (retry 래핑)
 const retry = (): Promise<boolean> => {
   void props.frame.functions.retry(false);
   return Promise.resolve(true);
 };
 
-const original = (): Promise<boolean> => {
-  void props.frame.functions.openOriginal();
-  return Promise.resolve(true);
-};
-
-const refresh = (): Promise<boolean> => {
-  void retry();
-  return Promise.resolve(true);
-};
-
+// 댓글 작성 영역으로 포커스 이동
 const toCommentWrite = (): Promise<boolean> => {
   document.querySelector<HTMLElement>("#comment_main")?.focus();
   return Promise.resolve(true);
 };
 
+// 접힌 상태 펼치기
 const expandCollapse = () => {
   props.frame.collapse = false;
   void props.frame.functions.load();
 };
 
+// 댓글 작성 후 새로고침
 const writeComment = async (
     type: "text" | "dccon",
     memo: string | DcinsideDccon[],
@@ -274,15 +264,18 @@ const writeComment = async (
   }
 };
 
+// 프레임 닫힘 시 상태 초기화
+const resetFrameState = () => {
+  props.frame.reset();
+  reply.value = {commentNo: null, replyNo: null};
+  dccon.value = [];
+  bigDccon.value = false;
+  closeDccon();
+  commentKey.value = 0;
+};
+
 onMounted(() => {
-  props.frame.onClose(() => {
-    props.frame.reset();
-    reply.value = {commentNo: null, replyNo: null};
-    dccon.value = [];
-    bigDccon.value = false;
-    closeDccon();
-    commentKey.value = 0;
-  });
+  props.frame.onClose(resetFrameState);
 });
 
 const incrementCommentKey = () => {
