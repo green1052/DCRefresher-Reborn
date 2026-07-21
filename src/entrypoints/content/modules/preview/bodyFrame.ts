@@ -26,6 +26,88 @@ export interface BodyFrameContext {
     getGroupElement: () => HTMLElement | undefined;
 }
 
+// 게시글 정보 조회 (캐시 우선)
+async function fetchPostInfo(
+    preData: GalleryPreData,
+    signal: AbortSignal,
+    postCaches: PostCache,
+    useCache: boolean,
+    disableCache: boolean
+): Promise<IPostInfo> {
+    const cacheKey = PostCache.key(preData.gallery, preData.id);
+
+    if (useCache && !disableCache) {
+        const cache = postCaches.get(cacheKey);
+        if (cache?.post !== undefined) {
+            return cache.post as IPostInfo;
+        }
+    }
+
+    const response = await previewRequest.post(preData.link!, preData.gallery, preData.id, signal);
+
+    if (!response) throw new Error("Can not fetch post data.");
+
+    postCaches.set(cacheKey, {date: Date.now(), post: response});
+
+    return response as IPostInfo;
+}
+
+// 게시글 콘텐츠 렌더링 (이미지/GIF 처리, 차단 체크, 필드 할당)
+function renderPostContent(
+    frame: PreviewFrame,
+    postInfo: IPostInfo,
+    gallery: string | undefined,
+    gifControl: boolean
+): void {
+    if (postInfo.isAdult) {
+        frame.error = {
+            title: "성인 인증이 필요한 게시글입니다.",
+            detail: "성인 인증을 하신 후 다시 시도해주세요."
+        };
+        return;
+    }
+
+    const dom = new DOMParser().parseFromString(postInfo.contents!, "text/html");
+
+    for (const element of dom.querySelectorAll("img[data-original]")) {
+        element.setAttribute("src", element.getAttribute("data-original")!);
+    }
+
+    if (gifControl) {
+        for (const element of dom.querySelectorAll("video")) {
+            const src = element.getAttribute("data-src");
+            if (src?.includes("dcinside.com/dccon.php")) continue;
+
+            element.removeAttribute("onmousedown");
+            element.setAttribute("controls", "");
+        }
+    }
+
+    frame.contents = block.check("TEXT", dom.body.innerHTML, gallery)
+        ? "게시글 내용이 차단됐습니다."
+        : dom.body.innerHTML;
+
+    frame.upvotes = postInfo.upvotes;
+    frame.fixedUpvotes = postInfo.fixedUpvotes;
+    frame.downvotes = postInfo.downvotes;
+
+    if (frame.title !== postInfo.title) frame.title = postInfo.title!;
+
+    frame.data.disabledDownvote = postInfo.disabledDownvote ?? false;
+    frame.data.user = postInfo.user;
+
+    if (postInfo.date) {
+        frame.data.date = new Date(postInfo.date.replace(/\./g, "-"));
+    }
+
+    if (postInfo.expire) {
+        frame.data.expire = new Date(postInfo.expire);
+    }
+
+    frame.data.buttons = true;
+    frame.data.views = `조회 ${postInfo.views}회`;
+}
+
 export function makeBodyFrame(ctx: BodyFrameContext): void {
     const {
         frame,
@@ -56,80 +138,6 @@ export function makeBodyFrame(ctx: BodyFrameContext): void {
 
         document.title = title;
     }
-
-    const getPostInfo = async (useCache: boolean): Promise<IPostInfo> => {
-        const cacheKey = PostCache.key(preData.gallery, preData.id);
-
-        if (useCache && !disableCache) {
-            const cache = postCaches.get(cacheKey);
-
-            if (cache?.post !== undefined) {
-                return cache.post as IPostInfo;
-            }
-        }
-
-        const response = await previewRequest.post(preData.link!, preData.gallery, preData.id, signal);
-
-        if (!response) throw new Error("Can not fetch post data.");
-
-        postCaches.set(cacheKey, {
-            date: Date.now(),
-            post: response
-        });
-
-        return response as IPostInfo;
-    };
-
-    const renderPostContent = (postInfo: IPostInfo): void => {
-        if (postInfo.isAdult) {
-            frame.error = {
-                title: "성인 인증이 필요한 게시글입니다.",
-                detail: "성인 인증을 하신 후 다시 시도해주세요."
-            };
-            return;
-        }
-
-        const dom = new DOMParser().parseFromString(postInfo.contents!, "text/html");
-
-        for (const element of dom.querySelectorAll("img[data-original]")) {
-            element.setAttribute("src", element.getAttribute("data-original")!);
-        }
-
-        if (gifControl) {
-            for (const element of dom.querySelectorAll("video")) {
-                const src = element.getAttribute("data-src");
-
-                if (src?.includes("dcinside.com/dccon.php")) continue;
-
-                element.removeAttribute("onmousedown");
-                element.setAttribute("controls", "");
-            }
-        }
-
-        frame.contents = block.check("TEXT", dom.body.innerHTML, gallery)
-            ? "게시글 내용이 차단됐습니다."
-            : dom.body.innerHTML;
-
-        frame.upvotes = postInfo.upvotes;
-        frame.fixedUpvotes = postInfo.fixedUpvotes;
-        frame.downvotes = postInfo.downvotes;
-
-        if (frame.title !== postInfo.title) frame.title = postInfo.title!;
-
-        frame.data.disabledDownvote = postInfo.disabledDownvote ?? false;
-        frame.data.user = postInfo.user;
-
-        if (postInfo.date) {
-            frame.data.date = new Date(postInfo.date.replace(/\./g, "-"));
-        }
-
-        if (postInfo.expire) {
-            frame.data.expire = new Date(postInfo.expire);
-        }
-
-        frame.data.buttons = true;
-        frame.data.views = `조회 ${postInfo.views}회`;
-    };
 
     frame.functions.vote = async (type: number) => {
         if (frame.collapse) {
@@ -184,7 +192,7 @@ export function makeBodyFrame(ctx: BodyFrameContext): void {
         frame.error = undefined;
 
         try {
-            const postInfo = await getPostInfo(useCache);
+            const postInfo = await fetchPostInfo(preData, signal, postCaches, useCache, disableCache);
             postFetchedDataRef.value = postInfo;
 
             if (colorPreviewLink) {
@@ -199,7 +207,7 @@ export function makeBodyFrame(ctx: BodyFrameContext): void {
             }
 
             try {
-                renderPostContent(postInfo);
+                renderPostContent(frame, postInfo, gallery, gifControl);
             } finally {
                 eventBus.emit("RefresherPostDataLoaded", postInfo);
                 eventBus.emit("RefresherPostCommentIDLoaded", postInfo.commentId, postInfo.commentNo);
