@@ -48,8 +48,7 @@ const unmountPopup = (instance: MountedPopup): void => {
 
 export const closeAllPopups = (): void => {
     for (const instance of mountedPopups) {
-        instance.app.unmount();
-        instance.element.remove();
+        unmountPopup(instance);
     }
     mountedPopups.clear();
 };
