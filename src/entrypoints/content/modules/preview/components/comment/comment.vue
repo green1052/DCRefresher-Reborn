@@ -18,7 +18,7 @@
           {{ reply.replyNo === comment.no ? "답글 해제" : "답글" }}
         </p>
 
-        <TimeStamp :date="new Date(date(comment.reg_date))"/>
+        <TimeStamp :date="new Date(parsedDate)"/>
         <div
             v-if="
                         comment.is_delete === '0' &&
@@ -45,26 +45,26 @@
         </div>
       </div>
     </div>
-    <div v-if="comment.vr_player && getVoiceData">
+    <div v-if="comment.vr_player && voiceData">
       <iframe
-          v-if="getVoiceData.iframe"
-          :src="getVoiceData.src"
+          v-if="voiceData.iframe"
+          :src="voiceData.src"
           height="54px"
           width="280px"
       />
       <audio
           v-else
-          :src="getVoiceData.src"
+          :src="voiceData.src"
           controls
       />
-      <p v-if="getVoiceData.memo">
-        {{ getVoiceData.memo }}
+      <p v-if="voiceData.memo">
+        {{ voiceData.memo }}
       </p>
     </div>
     <p
         v-else-if="/<(img|video) class=/.test(comment.memo)"
         class="refresher-comment-content dccon"
-        @contextmenu="contextMenu"
+        @contextmenu="handleDcconContextMenu"
         v-html="comment.memo.replace(/(?<!(dc|<))img/gi, '/><img')"
     />
     <p
@@ -78,16 +78,10 @@
 <script lang="ts" setup>
 import {computed, ref} from "vue";
 
-import eventBus from "@/core/eventbus";
 import {useMeDetection} from "@/entrypoints/content/composables/useMeDetection";
 import TimeStamp from "@/components/timestamp.vue";
 import User from "@/components/user.vue";
-
-interface VoiceDataComputed {
-  iframe: boolean;
-  src: string;
-  memo: string;
-}
+import {handleDcconContextMenu, parseCommentDate, parseVoiceData} from "../../commentUtils";
 
 interface Props {
   comment: DcinsideCommentObject;
@@ -110,7 +104,6 @@ const emit = defineEmits<{
   "update:reply": [reply: { commentNo: string | null; replyNo: string | null }];
 }>();
 
-// Reactive data
 const isAdmin = ref(!!document.querySelector(".useradmin_btnbox button"));
 
 const {me} = useMeDetection({
@@ -118,30 +111,12 @@ const {me} = useMeDetection({
   postUser: props.postUser || undefined
 });
 
-// Computed properties
-const getVoiceData = computed((): VoiceDataComputed | null => {
-  if (!props.comment.vr_player) {
-    return null;
-  }
+const parsedDate = computed(() => parseCommentDate(props.comment.reg_date));
 
-  const memo = props.comment.memo.split("@^dc^@");
-
-  return {
-    iframe: memo[0].indexOf("iframe") > -1,
-    src:
-        memo[0].indexOf("iframe") > -1
-            ? memo[0].split("src=\"")[1].split("\"")[0]
-            : "https://vr.dcinside.com/" + memo[0],
-    memo: memo[1]
-  };
+const voiceData = computed(() => {
+    if (!props.comment.vr_player) return null;
+    return parseVoiceData(props.comment.memo);
 });
-
-const date = (str: string): string => {
-  const hasYear = str.substring(0, 4).match(/\./);
-  return hasYear
-      ? `${new Date().getFullYear()}-${str.replace(/\./g, "-")}`
-      : str.replace(/\./g, "-");
-};
 
 const safeDelete = (): void => {
   if (!props.delete) return;
@@ -173,20 +148,6 @@ const setReply = () => {
     commentNo: props.reply.commentNo === props.comment.c_no ? null : props.comment.c_no || props.comment.no,
     replyNo: props.reply.replyNo === props.comment.no ? null : props.comment.no
   });
-};
-
-const contextMenu = (e: MouseEvent): void => {
-  if (!e.target || !(e.target instanceof HTMLElement)) return;
-  const element = e.target;
-
-  if (element.classList.contains("written_dccon")) return;
-
-  const src = element.getAttribute("src");
-  if (!src) return;
-
-  const code = src.replace(/^.*no=/g, "").replace(/^&.*$/g, "");
-
-  eventBus.emit("refresherUserContextMenu", null, null, null, code, null);
 };
 </script>
 
