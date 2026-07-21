@@ -56,7 +56,7 @@
 </template>
 
 <script lang="ts" setup>
-import {onBeforeUnmount, onMounted, provide, ref, watch} from "vue";
+import {onBeforeUnmount, onMounted, provide, ref} from "vue";
 
 import RefresherFrame from "./frame.vue";
 import upvoteIcon from "@/assets/icons/upvote.webp?no-inline";
@@ -64,6 +64,7 @@ import downvoteIcon from "@/assets/icons/downvote.webp?no-inline";
 import RefresherScroll from "./scroll.vue";
 import type {PreviewFrame} from "../../previewFrame";
 import type {FrameStackOption} from "../../frame";
+import {useFrameFade} from "../../composables/useFrameFade";
 
 const upvoteUrl = browser.runtime.getURL(upvoteIcon);
 const downvoteUrl = browser.runtime.getURL(downvoteIcon);
@@ -81,15 +82,12 @@ const emit = defineEmits<{
   close: [];
 }>();
 
-const fade = ref(false);
 const scrollModeTop = ref(false);
 const scrollModeBottom = ref(false);
-const closed = ref(false);
 const inputFocus = ref(false);
 const groupElement = ref<HTMLElement>();
 const bodyFrameRef = ref<{ incrementCommentKey?: () => void } | null>(null);
 const commentFrameRef = ref<{ incrementCommentKey?: () => void } | null>(null);
-let fadeOutTimer: number | null = null;
 
 provide("refresherInputFocus", inputFocus);
 
@@ -97,8 +95,9 @@ const background = ref(props.option?.background ?? false);
 const blur = ref(props.option?.blur ?? false);
 const onScroll = props.option?.onScroll;
 
-watch(closed, (val: boolean) => {
-  document.body.style.overflow = val ? "" : "hidden";
+// 페이드 전환 컴포저블 (fade/closed/fadeIn/fadeOut, body overflow, timer 관리)
+const {fade, closed, fadeIn, fadeOut} = useFrameFade(() => {
+  props.frames.forEach((frame) => frame.emitClose());
 });
 
 const onKeyUp = (ev: KeyboardEvent) => {
@@ -140,24 +139,6 @@ const outerClick = () => {
   fadeOut();
 };
 
-const fadeIn = () => {
-  fade.value = true;
-  closed.value = false;
-};
-
-const fadeOut = () => {
-  fade.value = false;
-
-  if (fadeOutTimer !== null) {
-    window.clearTimeout(fadeOutTimer);
-  }
-
-  fadeOutTimer = window.setTimeout(() => {
-    closed.value = true;
-    fadeOutTimer = null;
-  }, 251);
-};
-
 const close = () => outerClick();
 
 const onClose = (handler: () => void) => {
@@ -171,25 +152,11 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener("keyup", onKeyUp);
-  document.body.style.overflow = "";
-
-  if (fadeOutTimer !== null) {
-    window.clearTimeout(fadeOutTimer);
-    fadeOutTimer = null;
-  }
-});
-
-watch(closed, (value) => {
-  if (value) {
-    props.frames.forEach((frame) => frame.emitClose());
-  }
 });
 
 defineExpose({
   frames: props.frames,
   fade,
-  scrollModeTop,
-  scrollModeBottom,
   closed,
   inputFocus,
   groupElement,
