@@ -15,17 +15,8 @@ export interface MiniPreviewState {
 }
 
 export function createMiniPreview(): MiniPreviewState {
-    const element = document.createElement("div");
-
-    element.addEventListener("mouseenter", () => {
-        state.isHovered = true;
-    });
-    element.addEventListener("mouseleave", () => {
-        state.isHovered = false;
-    });
-
     const state: MiniPreviewState = {
-        element,
+        element: document.createElement("div"),
         init: false,
         lastRequest: 0,
         controller: new AbortController(),
@@ -36,7 +27,49 @@ export function createMiniPreview(): MiniPreviewState {
         isHovered: false
     };
 
+    state.element.addEventListener("mouseenter", () => {
+        state.isHovered = true;
+    });
+    state.element.addEventListener("mouseleave", () => {
+        state.isHovered = false;
+    });
+
     return state;
+}
+
+// 게시글 콘텐츠 파싱 (이미지 src 복원 + 차단 체크)
+function parsePreviewContent(contents: string): string {
+    const dom = new DOMParser().parseFromString(contents, "text/html");
+
+    for (const element of dom.querySelectorAll("img[data-original]")) {
+        element.setAttribute("src", element.getAttribute("data-original")!);
+    }
+
+    const content = dom.body.innerHTML;
+    return block.check("TEXT", content) ? "게시글 내용이 차단됐습니다." : content;
+}
+
+// 게시글 정보 로드 (캐시 우선)
+async function loadPostForPreview(
+    state: MiniPreviewState,
+    preData: GalleryPreData,
+    postCaches: PostCache,
+    request: PreviewRequest
+): Promise<IPostInfo> {
+    const cacheKey = PostCache.key(preData.gallery, preData.id);
+    const cache = postCaches.get(cacheKey);
+
+    if (cache?.post) {
+        return cache.post;
+    }
+
+    const response = await request.post(preData.link ?? "", preData.gallery, preData.id, state.controller.signal);
+
+    if (!response) throw new Error("No response");
+
+    postCaches.set(cacheKey, {date: Date.now(), post: response});
+
+    return response;
 }
 
 export function miniPreviewCreate(
@@ -53,6 +86,7 @@ export function miniPreviewCreate(
 
     state.cursorOut = false;
 
+    // 150ms 스로틀
     if (Date.now() - state.lastRequest < 150) {
         state.lastRequest = Date.now();
         state.lastElement = ev.target;
@@ -93,41 +127,9 @@ export function miniPreviewCreate(
     const selector = state.element.querySelector(".refresher-mini-preview-contents");
     if (!selector) return;
 
-    new Promise<IPostInfo>((resolve, reject) => {
-        const cacheKey = PostCache.key(preData.gallery, preData.id);
-        const cache = postCaches.get(cacheKey);
-
-        if (cache?.post) {
-            resolve(cache.post);
-            return;
-        }
-
-        request
-            .post(preData.link ?? "", preData.gallery, preData.id, state.controller.signal)
-            .then((response) => {
-                if (!response) {
-                    reject();
-                    return;
-                }
-
-                postCaches.set(cacheKey, {
-                    date: Date.now(),
-                    post: response
-                });
-                resolve(response);
-            })
-            .catch(reject);
-    })
+    loadPostForPreview(state, preData, postCaches, request)
         .then((v) => {
-            const dom = new DOMParser().parseFromString(v.contents!, "text/html");
-
-            for (const element of dom.querySelectorAll("img[data-original]")) {
-                element.setAttribute("src", element.getAttribute("data-original")!);
-            }
-
-            const content = dom.body.innerHTML;
-
-            selector.innerHTML = block.check("TEXT", content) ? "게시글 내용이 차단됐습니다." : content;
+            selector.innerHTML = parsePreviewContent(v.contents!);
             selector.querySelector(".write_div")?.setAttribute("style", "");
         })
         .catch((error) => {
