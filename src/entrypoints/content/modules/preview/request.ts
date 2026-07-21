@@ -12,6 +12,17 @@ export interface GalleryHTTPRequestArguments {
     link?: string;
 }
 
+interface VoteResponse {
+    result: string;
+    counts: string;
+    fixedCounts: string;
+}
+
+interface ManagementResponse {
+    msg: string;
+    result: "success" | "fail";
+}
+
 const kyClient = ky.create({
     method: "POST",
     headers: {
@@ -32,6 +43,20 @@ const parseJsonSafely = (response: string): unknown => {
     }
 };
 
+const isManagementResponse = (value: unknown): value is ManagementResponse => {
+    return (
+        typeof value === "object" &&
+        value !== null &&
+        typeof (value as ManagementResponse).msg === "string" &&
+        ((value as ManagementResponse).result === "success" || (value as ManagementResponse).result === "fail")
+    );
+};
+
+const requireLink = (args: GalleryHTTPRequestArguments): string => {
+    if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
+    return args.link;
+};
+
 const createParams = (link?: string): URLSearchParams => {
     const params = new URLSearchParams();
     params.set("ci_t", Cookies.get("ci_c") ?? "");
@@ -39,17 +64,25 @@ const createParams = (link?: string): URLSearchParams => {
     return params;
 };
 
-export const previewRequest = {
-    async bump(args: GalleryHTTPRequestArguments) {
-        const galleryType = http.galleryType(location.href, "/");
+const getManageUrl = (
+    link: string,
+    miniUrl: string,
+    normalUrl: string
+): string => {
+    const galleryType = http.galleryType(link, "/");
+    return galleryType === "mini/" ? miniUrl : normalUrl;
+};
 
+export const previewRequest = {
+    async bump(args: GalleryHTTPRequestArguments): Promise<unknown> {
         const params = createParams(location.href);
         params.set("id", args.gallery);
         params.set("nos[]", args.id);
 
-        const response = await client(galleryType === "mini/" ? http.urls.manage.bumpMini : http.urls.manage.bump, {
-            body: params
-        });
+        const response = await client(
+            getManageUrl(location.href, http.urls.manage.bumpMini, http.urls.manage.bump),
+            {body: params}
+        );
 
         return parseJsonSafely(response);
     },
@@ -62,7 +95,7 @@ export const previewRequest = {
         link: string,
         vCurT?: string,
         randomParam?: { name: string; value: string }
-    ) {
+    ): Promise<VoteResponse> {
         Cookies.set(`${gallId}${postId}_Firstcheck${type ? "" : "_down"}`, "Y", {
             path: "/",
             domain: "dcinside.com",
@@ -95,9 +128,9 @@ export const previewRequest = {
     },
 
     async comments(args: GalleryHTTPRequestArguments, signal: AbortSignal): Promise<DcinsideComments> {
-        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
+        const link = requireLink(args);
 
-        const params = createParams(args.link);
+        const params = createParams(link);
         params.set("id", args.gallery);
         params.set("no", args.id);
         params.set("cmt_id", args.commentId ?? args.gallery);
@@ -115,18 +148,17 @@ export const previewRequest = {
         return parsed as DcinsideComments;
     },
 
-    async delete(args: GalleryHTTPRequestArguments, password?: string) {
-        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
+    async delete(args: GalleryHTTPRequestArguments): Promise<unknown> {
+        const link = requireLink(args);
 
-        const galleryType = http.galleryType(args.link, "/");
-
-        const params = createParams(args.link);
+        const params = createParams(link);
         params.set("id", args.gallery);
         params.set("nos[]", args.id);
 
-        const response = await client(galleryType === "mini/" ? http.urls.manage.deleteMini : http.urls.manage.delete, {
-            body: params
-        });
+        const response = await client(
+            getManageUrl(link, http.urls.manage.deleteMini, http.urls.manage.delete),
+            {body: params}
+        );
 
         return parseJsonSafely(response);
     },
@@ -138,12 +170,10 @@ export const previewRequest = {
         avoidReasonTxt: string,
         delChk: number,
         userType: number
-    ) {
-        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
+    ): Promise<unknown> {
+        const link = requireLink(args);
 
-        const galleryType = http.galleryType(args.link, "/");
-
-        const params = createParams(args.link);
+        const params = createParams(link);
         params.set("id", args.gallery);
         params.set("nos[]", args.id);
         params.set("parent", "");
@@ -153,9 +183,10 @@ export const previewRequest = {
         params.set("del_chk", delChk.toString());
         params.set("avoid_type_chk", userType.toString());
 
-        const response = await client(galleryType === "mini/" ? http.urls.manage.blockMini : http.urls.manage.block, {
-            body: params
-        });
+        const response = await client(
+            getManageUrl(link, http.urls.manage.blockMini, http.urls.manage.block),
+            {body: params}
+        );
 
         return parseJsonSafely(response);
     },
@@ -163,53 +194,49 @@ export const previewRequest = {
     async setNotice(
         args: GalleryHTTPRequestArguments,
         set: boolean
-    ): Promise<string | { msg: string; result: "success" | "fail" }> {
-        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
+    ): Promise<string | ManagementResponse> {
+        const link = requireLink(args);
 
-        const galleryType = http.galleryType(args.link, "/");
-
-        const params = createParams(args.link);
+        const params = createParams(link);
         params.set("mode", set ? "SET" : "REL");
         params.set("id", args.gallery);
         params.set("no", args.id);
 
         const response = await client(
-            galleryType === "mini/" ? http.urls.manage.setNoticeMini : http.urls.manage.setNotice,
+            getManageUrl(link, http.urls.manage.setNoticeMini, http.urls.manage.setNotice),
             {body: params}
         );
 
-        return parseJsonSafely(response) as string | { msg: string; result: "success" | "fail" };
+        const parsed = parseJsonSafely(response);
+        if (isManagementResponse(parsed)) return parsed;
+        return String(parsed);
     },
 
     async setRecommend(
         args: GalleryHTTPRequestArguments,
         set: boolean
-    ): Promise<string | { msg: string; result: "success" | "fail" }> {
-        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
+    ): Promise<string | ManagementResponse> {
+        const link = requireLink(args);
 
-        const galleryType = http.galleryType(args.link, "/");
-
-        const params = createParams(args.link);
+        const params = createParams(link);
         params.set("id", args.gallery);
         params.set("mode", set ? "SET" : "REL");
         params.set("nos[]", args.id);
 
         const response = await client(
-            galleryType === "mini/" ? http.urls.manage.setRecommendMini : http.urls.manage.setRecommend,
+            getManageUrl(link, http.urls.manage.setRecommendMini, http.urls.manage.setRecommend),
             {body: params}
         );
 
-        return parseJsonSafely(response) as string | { msg: string; result: "success" | "fail" };
+        const parsed = parseJsonSafely(response);
+        if (isManagementResponse(parsed)) return parsed;
+        return String(parsed);
     },
 
-    async captcha(args: GalleryHTTPRequestArguments, kcaptchaType: "comment" | "recommend") {
-        if (!args.link) throw new Error("link 값이 주어지지 않았습니다. (확장 프로그램 오류)");
+    async captcha(args: GalleryHTTPRequestArguments, kcaptchaType: "comment" | "recommend"): Promise<string> {
+        const link = requireLink(args);
 
-        const galleryTypeName = http.galleryTypeName(args.link);
-
-        const params = createParams(args.link);
-        params.set("gall_id", args.gallery);
-        params.set("kcaptcha_type", kcaptchaType);
+        const galleryTypeName = http.galleryTypeName(link);
 
         return (
             "/kcaptcha/image_v3/?gall_id=" +
