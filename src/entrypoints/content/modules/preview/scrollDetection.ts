@@ -12,6 +12,13 @@ interface ScrollSession {
 
 type ScrollEventHandler = (ev: WheelEvent, ...args: unknown[]) => void;
 
+const SCROLL_TAIL_THRESHOLD = 60;
+const NEW_EVENT_RATIO = 4;
+const SESSION_RESET_DELAY = 100;
+const MAX_DELTA_HISTORY = 50;
+const MIN_DELTA_THRESHOLD = 2;
+const FIXED_DELTA_VALUE = 100;
+
 export class ScrollDetection {
     lastEvent: number;
     events: Record<string, ScrollEventHandler[]>;
@@ -37,7 +44,6 @@ export class ScrollDetection {
 
     listen(event: string, cb: ScrollEventHandler): void {
         this.events[event] ??= [];
-
         this.events[event].push(cb);
     }
 
@@ -51,38 +57,37 @@ export class ScrollDetection {
         this.lastEvent = Date.now();
 
         const absoluteDelta = Math.abs(ev.deltaY);
-        if (absoluteDelta < 2) {
+
+        // 미세 스크롤 무시
+        if (absoluteDelta < MIN_DELTA_THRESHOLD) {
             this.initSession();
             return;
         }
 
-        if (Date.now() - lastEvent > 100) {
+        // 이전 세션과 다른 스크롤 시 세션 초기화
+        if (Date.now() - lastEvent > SESSION_RESET_DELAY) {
             this.initSession();
-
-            // 이전 세션이랑 다른 스크롤임
         }
 
         if (this.session.delta.length !== 0) {
             const lastDelta = this.session.delta[this.session.delta.length - 1];
 
-            if (lastDelta === 100 && this.average(this.session.delta) === 100) {
+            if (lastDelta === FIXED_DELTA_VALUE && this.average(this.session.delta) === FIXED_DELTA_VALUE) {
+                // FIXED 모드: delta 절댓값이 100으로 고정 (deltaY 미지원 또는 마우스)
                 this.mode = ScrollMode.FIXED;
-                // delta 절댓값이 100으로 고정된 경우 (deltaY를 지원하지 않거나 마우스 움직임)
 
                 if (!this.session.fired) this.scroll(ev);
-                else if (Date.now() - lastEvent > 100) this.initSession();
+                else if (Date.now() - lastEvent > SESSION_RESET_DELAY) this.initSession();
             } else {
+                // VARIABLE 모드: delta가 다양한 값 (트랙패드, 관성 스크롤)
                 this.mode = ScrollMode.VARIABLE;
-                // delta 절댓값이 다양한 값으로 나오는 경우 (노트북 트랙패드, 관성 스크롤 지원)
 
                 if (lastDelta > this.session.peak) {
-                    // 감속 구간 진입 혹은 갑자기 새로운 이벤트 발생
+                    // 감속 구간 진입 또는 새로운 이벤트
                     if (this.session.fired) {
-                        if (Date.now() - this.session.fired > 60 && lastDelta / 4 > absoluteDelta) {
-                            // 갑자기 새로운 이벤트로 발생한게 확실함
+                        if (Date.now() - this.session.fired > SCROLL_TAIL_THRESHOLD && lastDelta / NEW_EVENT_RATIO > absoluteDelta) {
                             this.initSession();
                         }
-                        // 스크롤 이벤트는 이미 불러졌고 scroll tail만 남아 있는 경우
                     } else {
                         this.scroll(ev);
                     }
@@ -92,7 +97,7 @@ export class ScrollDetection {
             }
         }
 
-        if (this.session.delta.length < 50) {
+        if (this.session.delta.length < MAX_DELTA_HISTORY) {
             this.session.delta.push(Math.abs(ev.deltaY));
         }
     }
