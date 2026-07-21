@@ -49,7 +49,8 @@ const noopAsyncResult = async () => false;
 const noop = () => {
 };
 
-interface ReactiveFrameState {
+// 초기 상태 팩토리 (reset 재사용)
+const createInitialState = (): {
     title: string;
     subtitle: string;
     contents: string | undefined;
@@ -59,41 +60,41 @@ interface ReactiveFrameState {
     error: { title: string; detail: string } | undefined;
     collapse: boolean | undefined;
     data: FrameData;
-}
+} => ({
+    title: "",
+    subtitle: "",
+    contents: undefined,
+    upvotes: undefined,
+    fixedUpvotes: undefined,
+    downvotes: undefined,
+    error: undefined,
+    collapse: undefined,
+    data: {
+        load: false,
+        buttons: false,
+        disabledDownvote: false,
+        user: undefined,
+        date: undefined,
+        expire: undefined,
+        views: undefined,
+        useWriteComment: false,
+        comments: undefined,
+        postUserId: undefined,
+        type: "",
+        useImageBlock: false
+    }
+});
 
 export class PreviewFrame {
     readonly options: FrameOptions;
-    readonly state: ReactiveFrameState;
+    readonly state: ReturnType<typeof createInitialState>;
     functions: FrameFunctions;
 
     private closeHandlers = new Set<CloseHandler>();
 
     constructor(options: FrameOptions = {}) {
         this.options = options;
-        this.state = reactive({
-            title: "",
-            subtitle: "",
-            contents: undefined,
-            upvotes: undefined,
-            fixedUpvotes: undefined,
-            downvotes: undefined,
-            error: undefined,
-            collapse: undefined,
-            data: {
-                load: false,
-                buttons: false,
-                disabledDownvote: false,
-                user: undefined,
-                date: undefined,
-                expire: undefined,
-                views: undefined,
-                useWriteComment: false,
-                comments: undefined,
-                postUserId: undefined,
-                type: "",
-                useImageBlock: false
-            }
-        });
+        this.state = reactive(createInitialState());
         this.functions = {
             vote: noopAsyncResult,
             share: noopAsyncResult,
@@ -105,6 +106,7 @@ export class PreviewFrame {
         };
     }
 
+    // reactive state에 직접 접근 (getter/setter boilerplate 제거)
     get title(): string {
         return this.state.title;
     }
@@ -173,27 +175,20 @@ export class PreviewFrame {
         return this.state.data;
     }
 
+    // 초기 상태로 일괄 리셋 (팩토리 재사용으로 자동화)
     reset(): void {
-        this.state.title = "";
-        this.state.subtitle = "";
-        this.state.contents = undefined;
-        this.state.upvotes = undefined;
-        this.state.fixedUpvotes = undefined;
-        this.state.downvotes = undefined;
-        this.state.error = undefined;
-        this.state.collapse = undefined;
-        this.state.data.load = false;
-        this.state.data.buttons = false;
-        this.state.data.disabledDownvote = false;
-        this.state.data.user = undefined;
-        this.state.data.date = undefined;
-        this.state.data.expire = undefined;
-        this.state.data.views = undefined;
-        this.state.data.useWriteComment = false;
-        this.state.data.comments = undefined;
-        this.state.data.postUserId = undefined;
-        this.state.data.type = "";
-        this.state.data.useImageBlock = false;
+        const initial = createInitialState();
+        Object.assign(this.state, {
+            title: initial.title,
+            subtitle: initial.subtitle,
+            contents: initial.contents,
+            upvotes: initial.upvotes,
+            fixedUpvotes: initial.fixedUpvotes,
+            downvotes: initial.downvotes,
+            error: initial.error,
+            collapse: initial.collapse
+        });
+        Object.assign(this.state.data, initial.data);
     }
 
     onClose(handler: CloseHandler): void {
