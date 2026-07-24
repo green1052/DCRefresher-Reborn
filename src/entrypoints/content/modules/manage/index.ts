@@ -4,6 +4,266 @@ import eventBus from "@/core/eventbus";
 import {deletePost, fetchRatio, getPermBanFor, type RatioInfo} from "./helpers";
 import {getBanReverseIndex} from "@/utils/ban";
 
+type ManageModule = RefresherModule<{
+    data: {
+        ratio: Record<string, RatioInfo>;
+    };
+    memory: {
+        gallViewContents: string;
+        always: string;
+        checkBox: string;
+        newPostListEvent: (() => void) | null;
+        content: string;
+    };
+    settings: {
+        checkAllTargetUser: RefresherCheckSettings;
+        checkViaShift: RefresherCheckSettings;
+        checkCommentViaCtrl: RefresherCheckSettings;
+        checkRatio: RefresherCheckSettings;
+        alarmRatio: RefresherRangeSettings;
+        deleteViaCtrl: RefresherCheckSettings;
+        checkPermBan: RefresherCheckSettings;
+        enableGifControl: RefresherCheckSettings;
+    };
+}>;
+
+const createRatioSpan = (ratio: RatioInfo, alarmRatio: number): HTMLSpanElement => {
+    const span = document.createElement("span");
+    span.className = "ip ratio refresherUserData";
+    span.textContent = `[${ratio.article}/${ratio.comment}]`;
+    span.title = `${ratio.article}/${ratio.comment}`;
+
+    if (alarmRatio > 0 && ratio.article + ratio.comment <= alarmRatio) {
+        span.style.color = "red";
+    }
+
+    return span;
+};
+
+const insertSpanNearWriter = (element: HTMLElement, span: HTMLElement): void => {
+    const addBox = element.querySelector<HTMLElement>(".addbox");
+
+    if (addBox) {
+        const flIpQuery = addBox.querySelector<HTMLElement>(".writer_nikcon, .ip");
+        addBox.insertBefore(span, flIpQuery?.nextSibling ?? null);
+        return;
+    }
+
+    const fl = element.querySelector<HTMLElement>(".fl > span");
+    if (fl) {
+        const flIpQuery = fl.querySelector<HTMLElement>(".writer_nikcon, .ip");
+        if (flIpQuery) fl.insertBefore(span, flIpQuery.nextSibling);
+        else fl.appendChild(span);
+        return;
+    }
+
+    element.appendChild(span);
+};
+
+const setupGifControl = (ctx: ManageModule): string =>
+    filter.add<HTMLVideoElement>(
+        ".gallview_contents video",
+        (element) => {
+            if (!ctx.status.enableGifControl) return;
+
+            const src = element.getAttribute("data-src");
+
+            if (src?.includes("dcinside.com/dccon.php")) return;
+
+            element.removeAttribute("onmousedown");
+            element.setAttribute("controls", "");
+        },
+        {skipIfNotExists: true}
+    );
+
+const setupCheckboxHandlers = (ctx: ManageModule): string =>
+    filter.add<HTMLInputElement>(
+        ".article_chkbox",
+        (element) => {
+            if (element.dataset.refresherManageHandler === "true") return;
+            element.dataset.refresherManageHandler = "true";
+
+            element.addEventListener("click", (ev: MouseEvent) => {
+                if (!ctx.enable) return;
+
+                const container = element.closest<HTMLElement>(".ub-content, .cmt_nickbox, .search_comment");
+                const writer = container?.querySelector<HTMLElement>(":scope > .ub-writer");
+
+                const uid = writer?.dataset.uid;
+                const ip = writer?.dataset.ip;
+                const nick = writer?.dataset.nick;
+
+                let type: "data-uid" | "data-ip" | "data-nick" | null = null;
+                let target: string | null = null;
+
+                if (uid) {
+                    type = "data-uid";
+                    target = uid;
+                } else if (ip) {
+                    type = "data-ip";
+                    target = ip;
+                } else if (nick) {
+                    type = "data-nick";
+                    target = nick;
+                }
+
+                if (type && target && ctx.status.checkAllTargetUser && ev.shiftKey) {
+                    for (const post of document.querySelectorAll<HTMLElement>(`.ub-writer[${type}="${target}"]`)) {
+                        const checkbox = post.parentElement?.querySelector<HTMLInputElement>(".article_chkbox");
+                        if (checkbox) checkbox.checked = (ev.target as HTMLInputElement).checked;
+                    }
+                }
+
+                const li = element.closest<HTMLLIElement>("li");
+                if (li && ctx.status.checkCommentViaCtrl && ev.ctrlKey && !li.id.startsWith("reply_")) {
+                    const next = li.nextElementSibling;
+                    if (next) {
+                        for (const input of next.querySelectorAll<HTMLInputElement>(".article_chkbox")) {
+                            input.checked = (ev.target as HTMLInputElement).checked;
+                        }
+                    }
+                }
+            });
+
+            element.addEventListener("mouseover", (ev: MouseEvent) => {
+                if (!ctx.enable || !ctx.status.checkViaShift || !ev.shiftKey) return;
+                element.checked = !element.checked;
+            });
+        },
+        {neverExpire: true}
+    );
+
+const setupCtrlDelete = (ctx: ManageModule): string =>
+    filter.add(
+        ".gall_list .ub-content",
+        (element) => {
+            if (element.dataset.refresherManageClick === "true") return;
+            element.dataset.refresherManageClick = "true";
+
+            element.addEventListener("click", (ev: MouseEvent) => {
+                if (!ctx.enable || !ctx.status.deleteViaCtrl || !ev.ctrlKey) return;
+
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                const postId = element.dataset.no;
+                if (postId) void deletePost(postId);
+            });
+        },
+        {neverExpire: true}
+    );
+
+const setupWriterDisplay = (ctx: ManageModule): string =>
+    filter.add(
+        ".ub-writer:not([user_name])",
+        (element) => {
+            const uid = element.dataset.uid;
+
+            if (ctx.status.checkPermBan && element.dataset.refresherPermBan !== "true") {
+                const permBan = uid ? getPermBanFor(uid, getBanReverseIndex()) : undefined;
+
+                if (permBan) {
+                    element.dataset.refresherPermBan = "true";
+
+                    const text = document.createElement("span");
+                    text.style.color = "red";
+                    text.className = "ip ratio refresherUserData";
+                    text.textContent = `[${permBan}]`;
+                    text.title = permBan;
+
+                    insertSpanNearWriter(element, text);
+                }
+            }
+
+            if (ctx.status.checkRatio && element.dataset.refresherRatio !== "true") {
+                if (!Object.hasOwn(ctx.data.ratio, element.dataset.uid!)) return;
+
+                const ratio = ctx.data.ratio[element.dataset.uid!];
+                if (!ratio) return;
+
+                element.dataset.refresherRatio = "true";
+                insertSpanNearWriter(element, createRatioSpan(ratio, ctx.status.alarmRatio));
+            }
+        },
+        {neverExpire: true}
+    );
+
+const handleNewPostList = async (ctx: ManageModule, articles: HTMLElement[]): Promise<void> => {
+    const limitedArticles = articles.slice(0, 10);
+
+    const ratioTargets: {article: HTMLElement; writer: HTMLElement | null; uid: string}[] = [];
+
+    for (const article of limitedArticles) {
+        const writer = article.querySelector<HTMLElement>(".ub-writer");
+        const uid = writer?.dataset.uid;
+
+        if (!uid) continue;
+
+        if (ctx.status.checkPermBan) {
+            const permBan = getPermBanFor(uid, getBanReverseIndex());
+
+            if (permBan) {
+                const permBanSpan = document.createElement("span");
+                permBanSpan.style.color = "red";
+                permBanSpan.className = "ip permBan refresherUserData";
+                permBanSpan.title = permBan;
+                permBanSpan.textContent = `[${permBan}]`;
+
+                if (article.dataset.refresherPermBan === "true") {
+                    article.querySelector(".permBan")?.replaceWith(permBanSpan);
+                } else {
+                    article.dataset.refresherPermBan = "true";
+                    writer?.appendChild(permBanSpan);
+                }
+            }
+        }
+
+        if (!ctx.status.checkRatio) continue;
+
+        ratioTargets.push({article, writer, uid});
+    }
+
+    const staleUids = new Set<string>();
+    for (const {uid} of ratioTargets) {
+        const cached = ctx.data.ratio?.[uid];
+        if (!cached || Date.now() - cached.date > 3600000) {
+            staleUids.add(uid);
+        }
+    }
+
+    if (staleUids.size > 0) {
+        const fetchedResults = await Promise.all(
+            Array.from(staleUids).map(async (uid) => ({
+                uid,
+                result: await fetchRatio(uid)
+            }))
+        );
+
+        for (const {uid, result} of fetchedResults) {
+            if (result) {
+                const deepCopy = {...ctx.data.ratio};
+                deepCopy[uid] = result;
+                ctx.data.ratio = deepCopy;
+            }
+        }
+    }
+
+    for (const {article, writer, uid} of ratioTargets) {
+        const ratio = ctx.data.ratio?.[uid];
+        if (!ratio) continue;
+
+        const ratioSpan = createRatioSpan(ratio, ctx.status.alarmRatio);
+
+        if (article.dataset.refresherRatio === "true") {
+            article.querySelector(".ratio")?.replaceWith(ratioSpan);
+            continue;
+        }
+
+        article.dataset.refresherRatio = "true";
+        writer?.appendChild(ratioSpan);
+    }
+};
+
 export default {
     name: "관리",
     description: "무급 노예들을 위한 여러 편의 기능을 제공합니다.",
@@ -75,273 +335,12 @@ export default {
         }
     },
     func() {
-        this.memory.gallViewContents = filter.add<HTMLVideoElement>(
-            ".gallview_contents video",
-            (element) => {
-                if (!this.status.enableGifControl) return;
-
-                const src = element.getAttribute("data-src");
-
-                if (src?.includes("dcinside.com/dccon.php")) return;
-
-                element.removeAttribute("onmousedown");
-                element.setAttribute("controls", "");
-            },
-            {skipIfNotExists: true}
-        );
-
-        this.memory.checkBox = filter.add<HTMLInputElement>(
-            ".article_chkbox",
-            (element) => {
-                if (element.dataset.refresherManageHandler === "true") return;
-                element.dataset.refresherManageHandler = "true";
-
-                element.addEventListener("click", (ev: MouseEvent) => {
-                    if (!this.enable) return;
-
-                    const container = element.closest<HTMLElement>(".ub-content, .cmt_nickbox, .search_comment");
-                    const writer = container?.querySelector<HTMLElement>(":scope > .ub-writer");
-
-                    const uid = writer?.dataset.uid;
-                    const ip = writer?.dataset.ip;
-                    const nick = writer?.dataset.nick;
-
-                    let type: "data-uid" | "data-ip" | "data-nick" | null = null;
-                    let target: string | null = null;
-
-                    if (uid) {
-                        type = "data-uid";
-                        target = uid;
-                    } else if (ip) {
-                        type = "data-ip";
-                        target = ip;
-                    } else if (nick) {
-                        type = "data-nick";
-                        target = nick;
-                    }
-
-                    if (type && target && this.status.checkAllTargetUser && ev.shiftKey) {
-                        for (const post of document.querySelectorAll<HTMLElement>(`.ub-writer[${type}="${target}"]`)) {
-                            const checkbox = post.parentElement?.querySelector<HTMLInputElement>(".article_chkbox");
-                            if (checkbox) checkbox.checked = (ev.target as HTMLInputElement).checked;
-                        }
-                    }
-
-                    const li = element.closest<HTMLLIElement>("li");
-                    if (li && this.status.checkCommentViaCtrl && ev.ctrlKey && !li.id.startsWith("reply_")) {
-                        const next = li.nextElementSibling;
-                        if (next) {
-                            for (const input of next.querySelectorAll<HTMLInputElement>(".article_chkbox")) {
-                                input.checked = (ev.target as HTMLInputElement).checked;
-                            }
-                        }
-                    }
-                });
-
-                element.addEventListener("mouseover", (ev: MouseEvent) => {
-                    if (!this.enable || !this.status.checkViaShift || !ev.shiftKey) return;
-                    element.checked = !element.checked;
-                });
-            },
-            {neverExpire: true}
-        );
-
-        this.memory.content = filter.add(
-            ".gall_list .ub-content",
-            (element) => {
-                if (element.dataset.refresherManageClick === "true") return;
-                element.dataset.refresherManageClick = "true";
-
-                element.addEventListener("click", (ev: MouseEvent) => {
-                    if (!this.enable || !this.status.deleteViaCtrl || !ev.ctrlKey) return;
-
-                    ev.preventDefault();
-                    ev.stopPropagation();
-
-                    const postId = element.dataset.no;
-                    if (postId) void deletePost(postId);
-                });
-            },
-            {neverExpire: true}
-        );
-
-        this.memory.always = filter.add(
-            ".ub-writer:not([user_name])",
-            (element) => {
-                const uid = element.dataset.uid;
-
-                if (this.status.checkPermBan && element.dataset.refresherPermBan !== "true") {
-                    const permBan = uid ? getPermBanFor(uid, getBanReverseIndex()) : undefined;
-
-                    if (permBan) {
-                        element.dataset.refresherPermBan = "true";
-
-                        const text = document.createElement("span");
-                        text.style.color = "red";
-                        text.className = "ip ratio refresherUserData";
-                        text.textContent = `[${permBan}]`;
-                        text.title = permBan;
-
-                        const addBox = element.querySelector(".addbox");
-
-                        if (addBox) {
-                            const nickCon = addBox.querySelector(".writer_nikcon");
-
-                            if (nickCon)
-                                addBox.insertBefore(text, nickCon.nextSibling);
-                            else
-                                addBox.insertBefore(text, addBox.querySelector(".ip"));
-                        } else {
-                            const fl = element.querySelector(".fl > span");
-
-                            if (fl) {
-                                const flIpQuery = fl.querySelector(".writer_nikcon, .ip");
-                                if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling);
-                            } else {
-                                element.appendChild(text);
-                            }
-                        }
-                    }
-                }
-
-                if (this.status.checkRatio && element.dataset.refresherRatio !== "true") {
-                    if (!Object.hasOwn(this.data!.ratio, element.dataset.uid!)) return false;
-
-                    const ratio = this.data!.ratio[element.dataset.uid!];
-
-                    if (!ratio) return false;
-
-                    element.dataset.refresherRatio = "true";
-
-                    const text = document.createElement("span");
-                    text.className = "ip ratio refresherUserData";
-                    text.textContent = `[${ratio.article}/${ratio.comment}]`;
-                    text.title = `${ratio.article}/${ratio.comment}`;
-
-                    if (this.status.alarmRatio > 0) {
-                        const calculatedRatio = ratio.article + ratio.comment;
-
-                        if (calculatedRatio <= this.status.alarmRatio) {
-                            text.style.color = "red";
-                        }
-                    }
-
-                    const addBox = element.querySelector(".addbox");
-
-                    if (addBox) {
-                        const flIpQuery = addBox.querySelector(".writer_nikcon, .ip");
-                        addBox.insertBefore(text, flIpQuery?.nextSibling ?? null);
-                    } else {
-                        const fl = element.querySelector(".fl > span");
-
-                        if (fl) {
-                            const flIpQuery = fl.querySelector(".writer_nikcon, .ip");
-                            if (flIpQuery) fl.insertBefore(text, flIpQuery.nextSibling);
-                        } else {
-                            element.appendChild(text);
-                        }
-                    }
-                }
-            },
-            {
-                neverExpire: true
-            }
-        );
-
-        const updateRatioStore = (uid: string, result: RatioInfo): void => {
-            const deepCopy = {...this.data!.ratio};
-            deepCopy[uid] = result;
-            this.data!.ratio = deepCopy;
-        };
-
-        this.memory.newPostListEvent = eventBus.on("newPostList", async (articles) => {
-            const limitedArticles = articles.slice(0, 10);
-
-            // 1단계: permBan DOM 처리 + ratio 처리 대상 수집 (동기)
-            const ratioTargets: { article: HTMLElement; writer: HTMLElement | null; uid: string }[] = [];
-
-            for (const article of limitedArticles) {
-                const writer = article.querySelector<HTMLElement>(".ub-writer");
-                const uid = writer?.dataset.uid;
-
-                if (!uid) continue;
-
-                if (this.status.checkPermBan) {
-                    const permBan = getPermBanFor(uid, getBanReverseIndex());
-
-                    if (permBan) {
-                        const permBanSpan = document.createElement("span");
-                        permBanSpan.style.color = "red";
-                        permBanSpan.className = "ip permBan refresherUserData";
-                        permBanSpan.title = permBan;
-                        permBanSpan.textContent = `[${permBan}]`;
-
-                        if (article.dataset.refresherPermBan === "true") {
-                            const existing = article.querySelector(".permBan");
-                            existing?.replaceWith(permBanSpan);
-                        } else {
-                            article.dataset.refresherPermBan = "true";
-                            writer?.appendChild(permBanSpan);
-                        }
-                    }
-                }
-
-                if (!this.status.checkRatio) continue;
-
-                ratioTargets.push({article, writer, uid});
-            }
-
-            // 2단계: 캐시 미스 대상 식별
-            const staleUids = new Set<string>();
-            for (const {uid} of ratioTargets) {
-                const cached = this.data!.ratio?.[uid];
-                if (!cached || Date.now() - cached.date > 3600000) {
-                    staleUids.add(uid);
-                }
-            }
-
-            // 3단계: ratio 병렬 fetch (캐시 미스만)
-            if (staleUids.size > 0) {
-                const fetchedResults = await Promise.all(
-                    Array.from(staleUids).map(async (uid) => {
-                        const result = await fetchRatio(uid);
-                        return {uid, result};
-                    })
-                );
-
-                // 4단계: fetch 결과를 data에 일괄 반영 (race condition 방지)
-                for (const {uid, result} of fetchedResults) {
-                    if (result) updateRatioStore(uid, result);
-                }
-            }
-
-            // 5단계: ratio DOM 처리 (순차, 캐시에서 읽기)
-            for (const {article, writer, uid} of ratioTargets) {
-                const ratio = this.data!.ratio?.[uid];
-                if (!ratio) continue;
-
-                const ratioSpan = document.createElement("span");
-                ratioSpan.className = "ip ratio refresherUserData";
-                ratioSpan.title = `${ratio.article}/${ratio.comment}`;
-                ratioSpan.textContent = `[${ratio.article}/${ratio.comment}]`;
-
-                if (this.status.alarmRatio > 0) {
-                    const calculatedRatio = ratio.article + ratio.comment;
-
-                    if (calculatedRatio <= this.status.alarmRatio) {
-                        ratioSpan.style.color = "red";
-                    }
-                }
-
-                if (article.dataset.refresherRatio === "true") {
-                    const existing = article.querySelector(".ratio");
-                    existing?.replaceWith(ratioSpan);
-                    continue;
-                }
-
-                article.dataset.refresherRatio = "true";
-                writer?.appendChild(ratioSpan);
-            }
+        this.memory.gallViewContents = setupGifControl(this);
+        this.memory.checkBox = setupCheckboxHandlers(this);
+        this.memory.content = setupCtrlDelete(this);
+        this.memory.always = setupWriterDisplay(this);
+        this.memory.newPostListEvent = eventBus.on("newPostList", (articles: HTMLElement[]) => {
+            void handleNewPostList(this, articles);
         });
     },
     revoke() {
@@ -351,25 +350,4 @@ export default {
         if (this.memory.newPostListEvent) this.memory.newPostListEvent();
         if (this.memory.content) filter.remove(this.memory.content);
     }
-} as RefresherModule<{
-    data: {
-        ratio: Record<string, { article: number; comment: number; date: number }>;
-    };
-    memory: {
-        gallViewContents: string;
-        always: string;
-        checkBox: string;
-        newPostListEvent: (() => void) | null;
-        content: string;
-    };
-    settings: {
-        checkAllTargetUser: RefresherCheckSettings;
-        checkViaShift: RefresherCheckSettings;
-        checkCommentViaCtrl: RefresherCheckSettings;
-        checkRatio: RefresherCheckSettings;
-        alarmRatio: RefresherRangeSettings;
-        deleteViaCtrl: RefresherCheckSettings;
-        checkPermBan: RefresherCheckSettings;
-        enableGifControl: RefresherCheckSettings;
-    };
-}>;
+} as ManageModule;
