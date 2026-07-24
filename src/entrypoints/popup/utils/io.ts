@@ -1,3 +1,5 @@
+import {BLOCK_DETECT_MODE_TYPE_NAMES as blockDetectModeTypeNames} from "@/core/block";
+
 export const copyToClipboard = async (payload: unknown) => {
     try {
         await navigator.clipboard.writeText(JSON.stringify(payload));
@@ -85,5 +87,3 @@ export const normalizeMemoImportMap = (value: unknown): Record<string, Refresher
 
     return Object.fromEntries(Object.entries(value).filter(([, memo]) => isMemoImportValue(memo)));
 };
-
-import {BLOCK_DETECT_MODE_TYPE_NAMES as blockDetectModeTypeNames} from "@/core/block";
