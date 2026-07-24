@@ -121,7 +121,7 @@ export const previewRequest = {
     },
 
     async post(link: string, gallery: string, id: string, signal: AbortSignal): Promise<IPostInfo> {
-        const response = await ky
+        const response = await kyClient
             .get(`${http.urls.base}${http.galleryType(link, "/")}${http.urls.view}${gallery}&no=${id}`, {signal})
             .text();
         return parsePostInfo(id, response);
