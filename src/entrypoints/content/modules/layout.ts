@@ -152,26 +152,14 @@ export default {
             this.memory.resize();
         }
 
-        this.update.hideGalleryView.bind(this)(this.status.hideGalleryView);
-        this.update.hideUselessView.bind(this)(this.status.hideUselessView);
-        this.update.hideNft.bind(this)(this.status.hideNft);
-        this.update.hideGalleryImage.bind(this)(this.status.hideGalleryImage);
-        this.update.pushToRight.bind(this)(this.status.pushToRight);
-        this.update.removeNotice.bind(this)(this.status.removeNotice);
-        this.update.removeDCNotice.bind(this)(this.status.removeDCNotice);
-        this.update.removeGamemeca.bind(this)(this.status.removeGamemeca);
+        const toggleKeys = ["hideGalleryView", "hideUselessView", "hideNft", "hideGalleryImage", "pushToRight", "removeNotice", "removeDCNotice", "removeGamemeca"] as const;
+        for (const key of toggleKeys) (this.update[key] as (v: boolean) => void).call(this, this.status[key]);
     },
     revoke() {
         if (this.memory.resize) window.removeEventListener("resize", this.memory.resize);
 
-        this.update.hideGalleryView.bind(this)(false);
-        this.update.hideUselessView.bind(this)(false);
-        this.update.hideNft.bind(this)(false);
-        this.update.hideGalleryImage.bind(this)(false);
-        this.update.pushToRight.bind(this)(false);
-        this.update.removeNotice.bind(this)(false);
-        this.update.removeDCNotice.bind(this)(false);
-        this.update.removeGamemeca.bind(this)(false);
+        const toggleKeys = ["hideGalleryView", "hideUselessView", "hideNft", "hideGalleryImage", "pushToRight", "removeNotice", "removeDCNotice", "removeGamemeca"] as const;
+        for (const key of toggleKeys) (this.update[key] as (v: boolean) => void).call(this, false);
     }
 } as RefresherModule<{
     memory: {
