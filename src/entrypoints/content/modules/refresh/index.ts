@@ -77,6 +77,7 @@ export default {
         this.memory.controller = null;
     }
 } as RefresherModule<{
+    data: {};
     memory: RefreshMemory;
     shortcuts: {
         refreshLists(): void;

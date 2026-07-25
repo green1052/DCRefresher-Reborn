@@ -57,7 +57,8 @@ export default defineConfig({
     },
     vite: () => ({
         build: {
-            target: "ES2024"
+            target: "ESNext",
+            cssMinify: "esbuild"
         }
     })
 });

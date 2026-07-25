@@ -10,6 +10,7 @@ import {getType} from "@/utils/user";
 import {insertIntoWriterArea} from "@/utils/userDataInsert";
 
 type UserinfoModule = RefresherModule<{
+    data: {};
     memory: {
         always: string | null;
         requestBlock: (() => void) | null;

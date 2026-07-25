@@ -154,14 +154,15 @@ export default {
             this.memory.resize();
         }
 
-        for (const key of TOGGLE_KEYS) (this.update[key] as (v: boolean) => void).call(this, this.status[key]);
+        for (const key of TOGGLE_KEYS) (this.update![key] as (v: boolean) => void).call(this, this.status[key]);
     },
     revoke() {
         if (this.memory.resize) window.removeEventListener("resize", this.memory.resize);
 
-        for (const key of TOGGLE_KEYS) (this.update[key] as (v: boolean) => void).call(this, false);
+        for (const key of TOGGLE_KEYS) (this.update![key] as (v: boolean) => void).call(this, false);
     }
 } as RefresherModule<{
+    data: {};
     memory: {
         resize: (() => void) | null;
     };

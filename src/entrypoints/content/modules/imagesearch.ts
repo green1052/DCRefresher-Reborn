@@ -36,6 +36,7 @@ export default {
         if (this.memory.sauceNao) this.memory.sauceNao();
     }
 } as RefresherModule<{
+    data: {};
     memory: {
         sauceNao: (() => void) | null;
         currentImage: string | null;

@@ -82,6 +82,7 @@ export default {
         }
     }
 } as RefresherModule<{
+    data: {};
     memory: {
         submitButton: string;
         beforeUnloadHandler: ((ev: BeforeUnloadEvent) => void) | null;

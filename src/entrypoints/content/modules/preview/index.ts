@@ -215,7 +215,8 @@ export default {
             default: false
         }
     } satisfies PreviewSettingsMap,
-    async func() {
+    data: {},
+    async func(this: RefresherModule<{ data: {}; memory: PreviewMemory; settings: PreviewSettingsMap }>) {
         this.memory.controller = new PreviewController(
             this.status as PreviewStatus,
             postCaches,
@@ -224,11 +225,12 @@ export default {
         );
         await this.memory.controller.setup();
     },
-    revoke() {
+    revoke(this: RefresherModule<{ data: {}; memory: PreviewMemory; settings: PreviewSettingsMap }>) {
         this.memory.controller?.destroy();
         this.memory.controller = null;
     }
-} as RefresherModule<{
+} as unknown as RefresherModule<{
+    data: {};
     memory: PreviewMemory;
     settings: PreviewSettingsMap;
 }>;

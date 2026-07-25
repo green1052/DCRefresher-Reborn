@@ -65,18 +65,19 @@ export default {
     func() {
         document.documentElement.classList.add("refresherFont");
 
-        this.update.changeDCFont.bind(this)(this.status.changeDCFont);
-        this.update.customFonts.bind(this)(this.status.customFonts);
-        this.update.bodyFontSize.bind(this)(this.status.bodyFontSize);
+        this.update!.changeDCFont.bind(this)(this.status.changeDCFont);
+        this.update!.customFonts.bind(this)(this.status.customFonts);
+        this.update!.bodyFontSize.bind(this)(this.status.bodyFontSize);
     },
     revoke() {
         document.documentElement.classList.remove("refresherFont");
 
-        this.update.changeDCFont.bind(this)(false);
+        this.update!.changeDCFont.bind(this)(false);
         document.getElementById("refresherFontStyle")?.remove();
         document.getElementById("refresherFontStyleSize")?.remove();
     }
 } as RefresherModule<{
+    data: {};
     memory: {
         uuid: string | null;
     };

@@ -7,6 +7,7 @@ import {queryString} from "@/http/http";
 import {handleBlockRequest} from "./request";
 
 type BlockModule = RefresherModule<{
+    data: {};
     memory: {
         uuid: string | null;
         uuid2: string | null;
