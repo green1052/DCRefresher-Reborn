@@ -163,43 +163,28 @@ export function createScrollSkipHandler(
             ctx.scrolledCountRef.value = 0;
         }
 
-        if (ev.deltaY < 0) {
-            appStore?.setScrollMode("top");
+        const isUp = ev.deltaY < 0;
+        const atEdge = isUp ? scrolledTop : scrolledToBottom;
+        const direction = isUp ? "prev" : "next";
+        const delta = isUp ? -1 : 1;
 
-            if (!scrolledTop) {
-                appStore?.clearScrollMode();
-            }
+        appStore?.setScrollMode(isUp ? "top" : "bottom");
 
-            if (!scrolledTop || !preData) return;
-
-            if (ctx.scrolledCountRef.value++ < 1) return;
-            ctx.scrolledCountRef.value = 0;
-
-            preData.id = getAdjacentPostNo("prev", ctx.postFetchedDataRef) || (Number(ctx.getPostFetchedId()) - 1).toString();
-            ctx.newPostWithData(preData, historySkip);
-            groupStore.scrollTop = 0;
-
+        if (!atEdge) {
             appStore?.clearScrollMode();
-        } else {
-            appStore?.setScrollMode("bottom");
-
-            if (!scrolledToBottom) {
-                appStore?.clearScrollMode();
-            }
-
-            if (!scrolledToBottom || !preData) {
-                return;
-            }
-
-            if (ctx.scrolledCountRef.value++ < 1) return;
-            ctx.scrolledCountRef.value = 0;
-
-            preData.id = getAdjacentPostNo("next", ctx.postFetchedDataRef) || (Number(ctx.getPostFetchedId()) + 1).toString();
-            ctx.newPostWithData(preData, historySkip);
-
-            groupStore.scrollTop = 0;
-            appStore?.clearScrollMode();
+            return;
         }
+
+        if (!preData) return;
+
+        if (ctx.scrolledCountRef.value++ < 1) return;
+        ctx.scrolledCountRef.value = 0;
+
+        preData.id = getAdjacentPostNo(direction, ctx.postFetchedDataRef) || (Number(ctx.getPostFetchedId()) + delta).toString();
+        ctx.newPostWithData(preData, historySkip);
+        groupStore.scrollTop = 0;
+
+        appStore?.clearScrollMode();
     };
 }
 

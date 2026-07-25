@@ -77,6 +77,27 @@ const getManageUrl = (
     return galleryType === "mini/" ? miniUrl : normalUrl;
 };
 
+const manageAction = async (
+    args: GalleryHTTPRequestArguments,
+    set: boolean,
+    idParam: string,
+    miniUrl: string,
+    normalUrl: string
+): Promise<string | ManagementResponse> => {
+    const link = requireLink(args);
+
+    const params = createParams(link);
+    params.set("mode", set ? "SET" : "REL");
+    params.set("id", args.gallery);
+    params.set(idParam, args.id);
+
+    const response = await client(getManageUrl(link, miniUrl, normalUrl), {body: params});
+
+    const parsed = parseJsonSafely(response);
+    if (isManagementResponse(parsed)) return parsed;
+    return String(parsed);
+};
+
 export const previewRequest = {
     async bump(args: GalleryHTTPRequestArguments): Promise<unknown> {
         const params = createParams(location.href);
@@ -199,42 +220,14 @@ export const previewRequest = {
         args: GalleryHTTPRequestArguments,
         set: boolean
     ): Promise<string | ManagementResponse> {
-        const link = requireLink(args);
-
-        const params = createParams(link);
-        params.set("mode", set ? "SET" : "REL");
-        params.set("id", args.gallery);
-        params.set("no", args.id);
-
-        const response = await client(
-            getManageUrl(link, http.urls.manage.setNoticeMini, http.urls.manage.setNotice),
-            {body: params}
-        );
-
-        const parsed = parseJsonSafely(response);
-        if (isManagementResponse(parsed)) return parsed;
-        return String(parsed);
+        return manageAction(args, set, "no", http.urls.manage.setNoticeMini, http.urls.manage.setNotice);
     },
 
     async setRecommend(
         args: GalleryHTTPRequestArguments,
         set: boolean
     ): Promise<string | ManagementResponse> {
-        const link = requireLink(args);
-
-        const params = createParams(link);
-        params.set("id", args.gallery);
-        params.set("mode", set ? "SET" : "REL");
-        params.set("nos[]", args.id);
-
-        const response = await client(
-            getManageUrl(link, http.urls.manage.setRecommendMini, http.urls.manage.setRecommend),
-            {body: params}
-        );
-
-        const parsed = parseJsonSafely(response);
-        if (isManagementResponse(parsed)) return parsed;
-        return String(parsed);
+        return manageAction(args, set, "nos[]", http.urls.manage.setRecommendMini, http.urls.manage.setRecommend);
     },
 
     async captcha(args: GalleryHTTPRequestArguments, kcaptchaType: "comment" | "recommend"): Promise<string> {

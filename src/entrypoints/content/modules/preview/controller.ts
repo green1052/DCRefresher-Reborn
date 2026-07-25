@@ -247,12 +247,21 @@ export class PreviewController {
         return controller.signal;
     }
 
+    private buildFrames(preData: GalleryPreData, signal: AbortSignal, historySkip?: boolean): void {
+        if (!this.frame) return;
+        const frm = this.frame;
+        this.buildBodyFrame(frm.frames[0], preData, signal, historySkip);
+        this.buildCommentFrame(frm.frames[1], preData, signal);
+
+        if (this.status.toggleAdminPanel && document.querySelector(".useradmin_btnbox button")) {
+            panel.admin(preData, frm, this.status.toggleBlur, eventBus, this.status.useKeyPress, previewRequest);
+        }
+    }
+
     private newPostWithData(preData: GalleryPreData, historySkip?: boolean): void {
         if (!this.frame) return;
         const frm = this.frame;
-
         const bodyFrame = frm.frames[0];
-        const commentFrame = frm.frames[1];
 
         if (bodyFrame.data.load) return;
 
@@ -264,12 +273,7 @@ export class PreviewController {
         preData.title = "로딩 중...";
         bodyFrame.contents = "로딩 중...";
 
-        this.buildBodyFrame(bodyFrame, preData, signal, historySkip);
-        this.buildCommentFrame(commentFrame, preData, signal);
-
-        if (this.status.toggleAdminPanel && document.querySelector(".useradmin_btnbox button")) {
-            panel.admin(preData, frm, this.status.toggleBlur, eventBus, this.status.useKeyPress, previewRequest);
-        }
+        this.buildFrames(preData, signal, historySkip);
     }
 
     private previewFrame(ev: MouseEvent | null, prd?: GalleryPreData, historySkip?: boolean): void {
@@ -304,12 +308,7 @@ export class PreviewController {
         this.frameClosed = false;
         frm.frames[0].collapse = collapseView;
 
-        this.buildBodyFrame(frm.frames[0], preData, signal, historySkip);
-        this.buildCommentFrame(frm.frames[1], preData, signal);
-
-        if (this.status.toggleAdminPanel && document.querySelector(".useradmin_btnbox button") !== null) {
-            panel.admin(preData, frm, this.status.toggleBlur, eventBus, this.status.useKeyPress, previewRequest);
-        }
+        this.buildFrames(preData, signal, historySkip);
 
         setTimeout(frm.app.fadeIn, 0);
 

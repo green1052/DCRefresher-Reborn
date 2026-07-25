@@ -401,20 +401,15 @@ export function handleDeleteComment(
             : previewRequest.userDeleteComment(preData, commentId, signal, password)
     )
         .then((v) => {
-            if (typeof v === "boolean") {
-                if (!v) return false;
-                return v;
-            }
+            if (typeof v === "boolean") return v;
 
             if (v.includes("||")) {
-                const parsed = v.split("||");
-                if (parsed[0] !== "true") {
-                    toast.show(parsed[1], "error");
+                const [result, msg] = v.split("||");
+                if (result !== "true") {
+                    toast.show(msg, "error");
                     return false;
                 }
-            }
-
-            if (v[0] !== "{") {
+            } else if (v[0] !== "{") {
                 if (v !== "true") {
                     toast.show(v, "error");
                     return false;
