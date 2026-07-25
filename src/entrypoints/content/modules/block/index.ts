@@ -240,18 +240,11 @@ export default {
     },
     revoke() {
         if (this.memory.uuid) filter.remove(this.memory.uuid);
-
         if (this.memory.uuid2) filter.remove(this.memory.uuid2);
 
-        if (this.memory.addBlock) this.memory.addBlock();
-
-        if (this.memory.requestBlock) this.memory.requestBlock();
-
-        if (this.memory.blockSelected) this.memory.blockSelected();
-
-        if (this.memory.dcconSelected) this.memory.dcconSelected();
-
-        if (this.memory.dcconAllSelected) this.memory.dcconAllSelected();
+        for (const key of ["addBlock", "requestBlock", "blockSelected", "dcconSelected", "dcconAllSelected"] as const) {
+            this.memory[key]?.();
+        }
 
         if (this.memory.contextMenuHandler) {
             document.removeEventListener("contextmenu", this.memory.contextMenuHandler, true);

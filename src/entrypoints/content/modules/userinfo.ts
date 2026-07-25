@@ -120,9 +120,10 @@ const memoAdd = (ctx: UserinfoModule, element: HTMLElement): void => {
     if (element.dataset.refresherMemo === "true") return;
 
     const memoData: RefresherMemoValue | null | undefined =
-        (element.dataset.uid ? memo.get("UID", element.dataset.uid) : null) ??
-        (element.dataset.ip ? memo.get("IP", element.dataset.ip) : null) ??
-        (element.dataset.nick ? memo.get("NICK", element.dataset.nick) : null);
+        (element.dataset.uid && memo.get("UID", element.dataset.uid)) ||
+        (element.dataset.ip && memo.get("IP", element.dataset.ip)) ||
+        (element.dataset.nick && memo.get("NICK", element.dataset.nick)) ||
+        null;
 
     if (!memoData) return;
 

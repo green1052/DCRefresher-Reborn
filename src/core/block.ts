@@ -259,28 +259,33 @@ export const check = (type: RefresherBlockType, content: string, gallery?: strin
             const regexd = getCompiledRegex(v.content);
             if (!regexd) return false;
             const match = content.match(regexd);
+            const matched = match?.[0] === content;
+            const hasMatch = match !== null;
 
             switch (mode) {
                 case BLOCK_DETECT_MODE.SAME:
-                    return match?.[0] === content;
+                    return matched;
                 case BLOCK_DETECT_MODE.CONTAIN:
-                    return match !== null;
+                    return hasMatch;
                 case BLOCK_DETECT_MODE.NOT_SAME:
-                    return match?.[0] !== content;
+                    return !matched;
                 case BLOCK_DETECT_MODE.NOT_CONTAIN:
-                    return match === null;
+                    return !hasMatch;
             }
         }
 
+        const same = v.content === content;
+        const contains = content.includes(v.content);
+
         switch (mode) {
             case BLOCK_DETECT_MODE.SAME:
-                return v.content === content;
+                return same;
             case BLOCK_DETECT_MODE.CONTAIN:
-                return content.includes(v.content);
+                return contains;
             case BLOCK_DETECT_MODE.NOT_SAME:
-                return v.content !== content;
+                return !same;
             case BLOCK_DETECT_MODE.NOT_CONTAIN:
-                return !content.includes(v.content);
+                return !contains;
         }
     });
 

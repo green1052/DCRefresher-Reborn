@@ -6,13 +6,7 @@ const rKey = "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K"
 const rRegex = /[^A-Za-z0-9+/=]/g;
 
 const decode = (r: string) => {
-    let a;
-    let e;
-    let n;
-    let t;
-    let f;
-    let d;
-    let h;
+    let a: number, e: number, n: number, t: number, f: number, d: number, h: number;
     let o = "";
     let c = 0;
 

@@ -1,3 +1,5 @@
+const TOGGLE_KEYS = ["hideGalleryView", "hideUselessView", "hideNft", "hideGalleryImage", "pushToRight", "removeNotice", "removeDCNotice", "removeGamemeca"] as const;
+
 const hideSticky = (hide: boolean) => {
     const sticky = document.querySelector<HTMLElement>(".stickyunit");
     if (sticky) sticky.style.display = hide ? "none" : "initial";
@@ -152,14 +154,12 @@ export default {
             this.memory.resize();
         }
 
-        const toggleKeys = ["hideGalleryView", "hideUselessView", "hideNft", "hideGalleryImage", "pushToRight", "removeNotice", "removeDCNotice", "removeGamemeca"] as const;
-        for (const key of toggleKeys) (this.update[key] as (v: boolean) => void).call(this, this.status[key]);
+        for (const key of TOGGLE_KEYS) (this.update[key] as (v: boolean) => void).call(this, this.status[key]);
     },
     revoke() {
         if (this.memory.resize) window.removeEventListener("resize", this.memory.resize);
 
-        const toggleKeys = ["hideGalleryView", "hideUselessView", "hideNft", "hideGalleryImage", "pushToRight", "removeNotice", "removeDCNotice", "removeGamemeca"] as const;
-        for (const key of toggleKeys) (this.update[key] as (v: boolean) => void).call(this, false);
+        for (const key of TOGGLE_KEYS) (this.update[key] as (v: boolean) => void).call(this, false);
     }
 } as RefresherModule<{
     memory: {
