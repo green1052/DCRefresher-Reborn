@@ -91,6 +91,16 @@ export class PreviewFrame {
     readonly state: ReturnType<typeof createInitialState>;
     functions: FrameFunctions;
 
+    declare title: string;
+    declare subtitle: string;
+    declare contents: string | undefined;
+    declare upvotes: string | undefined;
+    declare fixedUpvotes: string | undefined;
+    declare downvotes: string | undefined;
+    declare error: { title: string; detail: string } | undefined;
+    declare collapse: boolean | undefined;
+    declare data: FrameData;
+
     private closeHandlers = new Set<CloseHandler>();
 
     constructor(options: FrameOptions = {}) {
@@ -151,8 +161,6 @@ export class PreviewFrame {
         this.closeHandlers.forEach((handler) => handler());
     }
 }
-
-export type {FrameOptions, FrameData, FrameFunctions};
 
 export interface FrameStackOption {
     background?: boolean;
