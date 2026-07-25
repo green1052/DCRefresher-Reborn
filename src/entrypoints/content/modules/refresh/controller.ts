@@ -152,19 +152,19 @@ export class RefreshController {
             this.memory.refresh = 0;
         }
 
-        if (this.memory.visibilityChangeHandler) {
-            document.removeEventListener("visibilitychange", this.memory.visibilityChangeHandler);
-            this.memory.visibilityChangeHandler = null;
-        }
-
-        if (this.memory.pageShowHandler) {
-            window.removeEventListener("pageshow", this.memory.pageShowHandler);
-            this.memory.pageShowHandler = null;
-        }
-
-        if (this.memory.popStateHandler) {
-            window.removeEventListener("popstate", this.memory.popStateHandler);
-            this.memory.popStateHandler = null;
+        const domEvents: [string, string | null][] = [
+            ["visibilitychange", "visibilityChangeHandler"],
+            ["pageshow", "pageShowHandler"],
+            ["popstate", "popStateHandler"]
+        ];
+        for (const [event, key] of domEvents) {
+            const handler = this.memory[key as keyof RefreshMemory] as (() => void) | null;
+            if (handler) {
+                key === "visibilitychange"
+                    ? document.removeEventListener(event, handler)
+                    : window.removeEventListener(event, handler as EventListener);
+                (this.memory as Record<string, unknown>)[key] = null;
+            }
         }
 
         if (this.memory.controlButtonFilterId) {
@@ -179,16 +179,10 @@ export class RefreshController {
             this.memory.uuid = null;
         }
 
-        if (this.memory.uuid2) {
-            this.memory.uuid2();
-            this.memory.uuid2 = null;
-        }
-
-        if (this.memory.refreshRequest) {
-            this.memory.refreshRequest();
-            this.memory.refreshRequest = null;
-        }
-
+        this.memory.uuid2?.();
+        this.memory.uuid2 = null;
+        this.memory.refreshRequest?.();
+        this.memory.refreshRequest = null;
         this.memory.load = null;
     }
 

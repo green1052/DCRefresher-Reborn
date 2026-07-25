@@ -24,8 +24,12 @@ export interface LoadFunctionContext {
 const MINIMUM_REFRESH_INTERVAL = 2000;
 const DEFAULT_TIMEOUT_OFFSET = 100;
 
+const escapeRegex = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const highlightSearchResults = (newList: HTMLElement, searchValue: string): void => {
     if (!searchValue) return;
+    const escaped = escapeRegex(searchValue);
+    const regex = new RegExp(escaped, "g");
     for (const gallTit of newList.querySelectorAll<HTMLElement>(".gall_tit")) {
         const a = gallTit.querySelector<HTMLElement>("a:first-child");
         if (!a) continue;
@@ -35,10 +39,7 @@ const highlightSearchResults = (newList: HTMLElement, searchValue: string): void
             classList += " spoiler";
         }
 
-        const subject = a.innerHTML;
-        if (subject.includes(searchValue)) {
-            a.innerHTML = subject.replace(searchValue, `<span class="${classList}">${searchValue}</span>`);
-        }
+        a.innerHTML = a.innerHTML.replace(regex, `<span class="${classList}">${searchValue}</span>`);
     }
 };
 

@@ -179,14 +179,11 @@ onMessage("updateSettingValue", ({data}) => {
 onMessage("executeShortcut", ({data}) => {
     if (typeof data !== "string") return;
 
-    for (const key of Object.keys(moduleStore)) {
-        const module = moduleStore[key] as RefresherModule;
-        if (
-            module &&
-            typeof module.shortcuts === "object" &&
-            typeof (module.shortcuts as Record<string, () => void>)[data] === "function"
-        ) {
-            (module.shortcuts as Record<string, () => void>)[data].bind(module)();
+    for (const module of Object.values(moduleStore)) {
+        const shortcuts = (module as RefresherModule).shortcuts as Record<string, () => void> | undefined;
+        if (shortcuts && typeof shortcuts[data] === "function") {
+            shortcuts[data].bind(module)();
+            return;
         }
     }
 });
