@@ -105,75 +105,22 @@ export class PreviewFrame {
             writeComment: noopAsyncResult,
             deleteComment: noopAsyncResult
         };
-    }
 
-    // reactive state에 직접 접근 (getter/setter boilerplate 제거)
-    get title(): string {
-        return this.state.title;
-    }
-
-    set title(v: string) {
-        this.state.title = v;
-    }
-
-    get subtitle(): string {
-        return this.state.subtitle;
-    }
-
-    set subtitle(v: string) {
-        this.state.subtitle = v;
-    }
-
-    get contents(): string | undefined {
-        return this.state.contents;
-    }
-
-    set contents(v: string | undefined) {
-        this.state.contents = v;
-    }
-
-    get upvotes(): string | undefined {
-        return this.state.upvotes;
-    }
-
-    set upvotes(v: string | undefined) {
-        this.state.upvotes = v;
-    }
-
-    get fixedUpvotes(): string | undefined {
-        return this.state.fixedUpvotes;
-    }
-
-    set fixedUpvotes(v: string | undefined) {
-        this.state.fixedUpvotes = v;
-    }
-
-    get downvotes(): string | undefined {
-        return this.state.downvotes;
-    }
-
-    set downvotes(v: string | undefined) {
-        this.state.downvotes = v;
-    }
-
-    get error(): { title: string; detail: string } | undefined {
-        return this.state.error;
-    }
-
-    set error(v: { title: string; detail: string } | undefined) {
-        this.state.error = v;
-    }
-
-    get collapse(): boolean | undefined {
-        return this.state.collapse;
-    }
-
-    set collapse(v: boolean | undefined) {
-        this.state.collapse = v;
-    }
-
-    get data(): FrameData {
-        return this.state.data;
+        const stateKeys = new Set(Object.keys(this.state));
+        return new Proxy(this, {
+            get(target, prop, receiver) {
+                if (typeof prop === "string" && stateKeys.has(prop)) {
+                    return Reflect.get(target.state, prop, receiver);
+                }
+                return Reflect.get(target, prop, receiver);
+            },
+            set(target, prop, value, receiver) {
+                if (typeof prop === "string" && stateKeys.has(prop)) {
+                    return Reflect.set(target.state, prop, value, receiver);
+                }
+                return Reflect.set(target, prop, value, receiver);
+            }
+        });
     }
 
     // 초기 상태로 일괄 리셋 (팩토리 재사용으로 자동화)
