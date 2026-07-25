@@ -2,6 +2,19 @@ import {moduleEnableStorage, moduleSettingStorage} from "@/storage/wxtStorage";
 import {sendMessage} from "@/http/messaging";
 import {computed, nextTick, onMounted, ref} from "vue";
 
+const sendToAllDcTabs = async (type: string, data: Record<string, unknown>): Promise<void> => {
+    const tabs = await browser.tabs.query({});
+    await Promise.all(
+        tabs
+            .filter((tab) => tab.id && tab.url?.includes("dcinside.com"))
+            .map((tab) =>
+                sendMessage(type as never, data as never, tab.id!).catch((e) =>
+                    console.error(`Failed to send to tab ${tab.id}:`, e)
+                )
+            )
+    );
+};
+
 export function useSettings() {
     const modules = ref<ModuleSchemaMap>({});
     const settings = ref<Record<string, Record<string, RefresherSettings>>>({});
@@ -72,21 +85,7 @@ export function useSettings() {
 
         try {
             await moduleSettingStorage(module, key).setValue(value as string | number | boolean);
-
-            const tabs = await browser.tabs.query({});
-            await Promise.all(
-                tabs
-                    .filter((tab) => tab.id && tab.url?.includes("dcinside.com"))
-                    .map((tab) =>
-                        sendMessage("updateSettingValue", {
-                            name: module,
-                            key,
-                            value: value as string | number | boolean
-                        }, tab.id!).catch((e) =>
-                            console.error(`Failed to send to tab ${tab.id}:`, e)
-                        )
-                    )
-            );
+            await sendToAllDcTabs("updateSettingValue", {name: module, key, value: value as string | number | boolean});
         } catch (e) {
             (setting.value as unknown) = previousValue;
 
@@ -145,17 +144,7 @@ export function useSettings() {
             modules.value[name].enable = value;
         }
         await moduleEnableStorage(name).setValue(value);
-
-        const tabs = await browser.tabs.query({});
-        await Promise.all(
-            tabs
-                .filter((tab) => tab.id && tab.url?.includes("dcinside.com"))
-                .map((tab) =>
-                    sendMessage("updateModuleStatus", {name, value}, tab.id!).catch((e) =>
-                        console.error(`Failed to send to tab ${tab.id}:`, e)
-                    )
-                )
-        );
+        await sendToAllDcTabs("updateModuleStatus", {name, value});
     };
 
     return {

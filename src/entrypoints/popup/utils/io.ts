@@ -1,4 +1,5 @@
-import {BLOCK_DETECT_MODE_TYPE_NAMES as blockDetectModeTypeNames} from "@/core/block";
+import {isBlockValue, normalizeBlockList, normalizeBlockMode} from "@/core/block";
+import {isMemoValue, normalizeMemoMap} from "@/core/memo";
 
 export const copyToClipboard = async (payload: unknown) => {
     try {
@@ -26,63 +27,6 @@ export const parseImportData = (example: string) => {
     }
 };
 
-export const isBlockImportValue = (value: unknown): value is RefresherBlockValue => {
-    if (!value || typeof value !== "object") return false;
-
-    const blockValue = value as Partial<RefresherBlockValue>;
-    return (
-        typeof blockValue.content === "string" &&
-        typeof blockValue.isRegex === "boolean" &&
-        (blockValue.gallery === undefined || typeof blockValue.gallery === "string") &&
-        (blockValue.extra === undefined || typeof blockValue.extra === "string") &&
-        (blockValue.mode === undefined || Object.hasOwn(blockDetectModeTypeNames, blockValue.mode))
-    );
-};
-
-export const normalizeBlockImportList = (value: unknown): RefresherBlockValue[] => {
-    if (typeof value === "string") {
-        try {
-            return normalizeBlockImportList(JSON.parse(value));
-        } catch {
-            return [];
-        }
-    }
-
-    return Array.isArray(value) ? value.filter(isBlockImportValue) : [];
-};
-
-export const normalizeBlockModeValue = (value: unknown): RefresherBlockDetectMode | undefined => {
-    if (typeof value !== "string") return;
-    if (Object.hasOwn(blockDetectModeTypeNames, value)) return value as RefresherBlockDetectMode;
-
-    try {
-        return normalizeBlockModeValue(JSON.parse(value));
-    } catch {
-        return;
-    }
-};
-
-export const isMemoImportValue = (value: unknown): value is RefresherMemoValue => {
-    if (!value || typeof value !== "object") return false;
-
-    const memoValue = value as Partial<RefresherMemoValue>;
-    return (
-        typeof memoValue.text === "string" &&
-        typeof memoValue.color === "string" &&
-        (memoValue.gallery === undefined || typeof memoValue.gallery === "string")
-    );
-};
-
-export const normalizeMemoImportMap = (value: unknown): Record<string, RefresherMemoValue> => {
-    if (typeof value === "string") {
-        try {
-            return normalizeMemoImportMap(JSON.parse(value));
-        } catch {
-            return {};
-        }
-    }
-
-    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-
-    return Object.fromEntries(Object.entries(value).filter(([, memo]) => isMemoImportValue(memo)));
-};
+export const normalizeBlockImportList = normalizeBlockList;
+export const normalizeBlockModeValue = (value: unknown) => normalizeBlockMode(value, "SAME");
+export const normalizeMemoImportMap = normalizeMemoMap;

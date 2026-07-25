@@ -4,9 +4,6 @@ import {sendMessage} from "@/http/messaging";
 import {onMounted, reactive} from "vue";
 import {copyToClipboard, normalizeMemoImportMap, parseImportData} from "../utils/io";
 
-const memoKeyNames = MEMO_TYPE_NAMES;
-const memoTypes = MEMO_TYPES;
-
 export function useMemos() {
     const memos = reactive<{ [key in RefresherMemoType]: { [key: string]: RefresherMemoValue } }>({
         UID: {},
@@ -43,7 +40,7 @@ export function useMemos() {
     };
 
     const removeAllMemoUser = async (type: RefresherMemoType) => {
-        if (!confirm(`${memoKeyNames[type]} 메모를 모두 삭제할까요?`)) return;
+        if (!confirm(`${MEMO_TYPE_NAMES[type]} 메모를 모두 삭제할까요?`)) return;
         memos[type] = {};
         await memoStorage[type].setValue({});
     };
@@ -67,7 +64,7 @@ export function useMemos() {
         if (!data) return;
 
         for (const [key, value] of Object.entries(data)) {
-            if (!(memoTypes as readonly string[]).includes(key)) continue;
+            if (!(MEMO_TYPES as readonly string[]).includes(key)) continue;
 
             const type = key as RefresherMemoType;
             const target = memos[type];
@@ -89,8 +86,8 @@ export function useMemos() {
 
     return {
         memos,
-        memoKeyNames,
-        memoTypes,
+        memoKeyNames: MEMO_TYPE_NAMES,
+        memoTypes: MEMO_TYPES,
         removeMemoUser,
         removeAllMemoUser,
         addMemoUser,
