@@ -75,7 +75,7 @@ let blockModeCache: BlockModeCache = {
     TAB: BLOCK_DETECT_MODE.SAME
 };
 
-const isBlockValue = (value: unknown): value is RefresherBlockValue => {
+export const isBlockValue = (value: unknown): value is RefresherBlockValue => {
     if (!value || typeof value !== "object") return false;
 
     const blockValue = value as Partial<RefresherBlockValue>;
@@ -88,7 +88,7 @@ const isBlockValue = (value: unknown): value is RefresherBlockValue => {
     );
 };
 
-const normalizeBlockList = (value: unknown): RefresherBlockValue[] => {
+export const normalizeBlockList = (value: unknown): RefresherBlockValue[] => {
     if (typeof value === "string") {
         try {
             return normalizeBlockList(JSON.parse(value));
@@ -100,7 +100,7 @@ const normalizeBlockList = (value: unknown): RefresherBlockValue[] => {
     return Array.isArray(value) ? value.filter(isBlockValue) : [];
 };
 
-const normalizeBlockMode = (
+export const normalizeBlockMode = (
     value: unknown,
     fallback: RefresherBlockDetectMode
 ): RefresherBlockDetectMode => {

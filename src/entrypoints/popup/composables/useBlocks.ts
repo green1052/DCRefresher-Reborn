@@ -3,10 +3,6 @@ import {BLOCK_DETECT_MODE_TYPE_NAMES, TYPE_NAMES as BLOCK_TYPE_NAMES} from "@/co
 import {onMounted, reactive, ref} from "vue";
 import {copyToClipboard, normalizeBlockImportList, normalizeBlockModeValue, parseImportData} from "../utils/io";
 
-const blockKeyNames = BLOCK_TYPE_NAMES;
-const blockDetectModeTypeNames = BLOCK_DETECT_MODE_TYPE_NAMES;
-const blockTypes = BLOCK_TYPES;
-
 export function useBlocks() {
     const blocks = reactive<{ [key in RefresherBlockType]: RefresherBlockValue[] }>({
         NICK: [],
@@ -65,7 +61,7 @@ export function useBlocks() {
 
     const confirmAddBlock = async () => {
         if (!blockFormData.content.trim()) {
-            alert(`${blockKeyNames[currentBlockType.value]} 값을 입력해주세요.`);
+            alert(`${BLOCK_TYPE_NAMES[currentBlockType.value]} 값을 입력해주세요.`);
             return;
         }
 
@@ -80,7 +76,7 @@ export function useBlocks() {
         }
 
         if (blockFormData.mode && blockFormData.mode !== "NONE") {
-            extra.push(`[${blockDetectModeTypeNames[blockFormData.mode]}]`);
+            extra.push(`[${BLOCK_DETECT_MODE_TYPE_NAMES[blockFormData.mode]}]`);
         }
 
         blocks[currentBlockType.value].push({
@@ -101,7 +97,7 @@ export function useBlocks() {
     };
 
     const removeAllBlockedUser = async (key: RefresherBlockType) => {
-        if (!confirm(`${blockKeyNames[key]} 차단 목록을 모두 삭제할까요?`)) return;
+        if (!confirm(`${BLOCK_TYPE_NAMES[key]} 차단 목록을 모두 삭제할까요?`)) return;
         blocks[key] = [];
         await blockStorage[key].setValue([]);
     };
@@ -112,7 +108,7 @@ export function useBlocks() {
             return;
         }
 
-        const result = prompt(`바꿀 ${blockKeyNames[key]} 값을 입력하세요.`);
+        const result = prompt(`바꿀 ${BLOCK_TYPE_NAMES[key]} 값을 입력하세요.`);
 
         if (!result) return;
 
@@ -136,7 +132,7 @@ export function useBlocks() {
         if (!data) return;
 
         for (const [key, value] of Object.entries(data)) {
-            if (!(blockTypes as readonly string[]).includes(key)) continue;
+            if (!(BLOCK_TYPES as readonly string[]).includes(key)) continue;
 
             const type = key as RefresherBlockType;
             const target = normalizeBlockImportList(blocks[type]);
@@ -164,9 +160,9 @@ export function useBlocks() {
     return {
         blocks,
         blockModes,
-        blockKeyNames,
-        blockDetectModeTypeNames,
-        blockTypes,
+        blockKeyNames: BLOCK_TYPE_NAMES,
+        blockDetectModeTypeNames: BLOCK_DETECT_MODE_TYPE_NAMES,
+        blockTypes: BLOCK_TYPES,
         showBlockDialog,
         currentBlockType,
         blockFormData,

@@ -16,7 +16,7 @@ let memoCache: MemoCache = {
     IP: {}
 };
 
-const isMemoValue = (value: unknown): value is RefresherMemoValue => {
+export const isMemoValue = (value: unknown): value is RefresherMemoValue => {
     if (!value || typeof value !== "object") return false;
 
     const memoValue = value as Partial<RefresherMemoValue>;
@@ -27,7 +27,7 @@ const isMemoValue = (value: unknown): value is RefresherMemoValue => {
     );
 };
 
-const normalizeMemoMap = (value: unknown): Record<string, RefresherMemoValue> => {
+export const normalizeMemoMap = (value: unknown): Record<string, RefresherMemoValue> => {
     if (typeof value === "string") {
         try {
             return normalizeMemoMap(JSON.parse(value));
