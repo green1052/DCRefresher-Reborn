@@ -120,13 +120,13 @@ export class PreviewFrame {
         return new Proxy(this, {
             get(target, prop, receiver) {
                 if (typeof prop === "string" && stateKeys.has(prop)) {
-                    return Reflect.get(target.state, prop, receiver);
+                    return Reflect.get(target.state, prop, target.state);
                 }
                 return Reflect.get(target, prop, receiver);
             },
             set(target, prop, value, receiver) {
                 if (typeof prop === "string" && stateKeys.has(prop)) {
-                    return Reflect.set(target.state, prop, value, receiver);
+                    return Reflect.set(target.state, prop, value, target.state);
                 }
                 return Reflect.set(target, prop, value, receiver);
             }
