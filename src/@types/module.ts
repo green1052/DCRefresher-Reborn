@@ -11,7 +11,7 @@ declare global {
         type: Type;
         name: string;
         desc: string;
-        value: Value;
+        value?: Value;
         default: Value;
     }
 

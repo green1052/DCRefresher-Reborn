@@ -1,12 +1,7 @@
 import {onMessage, sendMessage} from "@/http/messaging";
-import {migrateLocalStorageData} from "@/storage/migration";
 import {databaseStorage} from "@/storage/wxtStorage";
 
 export default defineBackground(() => {
-    migrateLocalStorageData().catch((error) => {
-        console.error("Storage migration error:", error);
-    });
-
     // ===== Broadcast: popup/content → background → 모든 탭 =====
     onMessage("broadcast", async ({data}) => {
         const {type, data: payload} = data;
