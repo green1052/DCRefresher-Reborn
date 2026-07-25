@@ -64,12 +64,12 @@ declare global {
         /**
          * 모듈 데이터를 영속적으로 저장하고 싶을 때 사용하는 객체. 이 객체에 값을 저장하면 확장 프로그램이 로드될 때 마다 해당 값을 불러옵니다.
          */
-        data: T["data"];
+        data?: T["data"];
 
         /**
          * 해당 모듈이 가질 메모리 값. 모듈에 일시적으로 데이터를 저장하고 싶을 때 사용됩니다.
          */
-        memory: T["memory"];
+        memory?: T["memory"];
 
         /**
          * 모듈을 사용 설정할지에 대한 여부 값. 사용자가 설정하는 값이므로 가급적 프로그램적으로 이 값을 변경하지 마세요.
@@ -89,14 +89,14 @@ declare global {
         /**
          * 단축키가 입력되면 실행할 함수를 정의합니다.
          */
-        shortcuts: T["shortcuts"] extends Record<string, () => void | Promise<void>>
+        shortcuts?: T["shortcuts"] extends Record<string, () => void | Promise<void>>
             ? Record<keyof T["shortcuts"], (this: RefresherModule<T>) => void | Promise<void>>
             : Record<string, () => void | Promise<void>> | undefined;
 
         /**
          * 설정이 업데이트 됐을 시 호출할 함수를 정의합니다.
          */
-        update: T["settings"] extends Record<string, RefresherSettings>
+        update?: T["settings"] extends Record<string, RefresherSettings>
             ? {
                 [K in keyof T["settings"]]: (
                     this: RefresherModule<T>,
