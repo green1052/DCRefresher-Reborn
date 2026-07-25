@@ -49,22 +49,12 @@ export function useSettings() {
 
     const settingsCount = (obj: Record<string, RefresherSettings>) => {
         if (!obj) return 0;
-        return Object.values(obj).filter((v) => !v?.advanced).length;
-    };
-
-    const advancedSettingsCount = (obj: Record<string, RefresherSettings>) => {
-        return Object.values(obj).filter((v) => v?.advanced === true).length;
+        return Object.values(obj).length;
     };
 
     const modulesWithBasicSettings = computed(() => {
         return Object.keys(settings.value).filter(
             (module) => settings.value[module] && settingsCount(settings.value[module]) > 0
-        );
-    });
-
-    const modulesWithAdvancedSettings = computed(() => {
-        return Object.keys(settings.value).filter(
-            (module) => settings.value[module] && advancedSettingsCount(settings.value[module]) > 0
         );
     });
 
@@ -174,7 +164,6 @@ export function useSettings() {
         hasSettings,
         hasModules,
         modulesWithBasicSettings,
-        modulesWithAdvancedSettings,
         updateUserSetting,
         updateModuleStatus,
         typeWrap,

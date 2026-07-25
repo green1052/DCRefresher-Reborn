@@ -1,9 +1,211 @@
-import {type App, createApp} from "vue";
+import {type App, createApp, reactive} from "vue";
 
 import frameRoot from "./components/frame/frameComponent.vue";
-import {type FrameOptions, PreviewFrame} from "./previewFrame";
+import type {User} from "@/utils/user";
 
-export type {FrameOptions, FrameData, FrameFunctions} from "./previewFrame";
+export interface FrameOptions {
+    relative?: boolean;
+    center?: boolean;
+    preview?: boolean;
+    blur?: boolean;
+}
+
+export interface FrameData {
+    load: boolean;
+    buttons: boolean;
+    disabledDownvote: boolean;
+    user: User | undefined;
+    date: Date | undefined;
+    expire: Date | undefined;
+    views: string | undefined;
+    useWriteComment: boolean;
+    comments: DcinsideComments | undefined;
+    postUserId: string | undefined;
+    type: string;
+    useImageBlock: boolean;
+}
+
+export interface FrameFunctions {
+    vote: (type: number) => Promise<boolean>;
+    share: () => Promise<boolean>;
+    load: (useCache?: boolean) => Promise<void>;
+    retry: (useCache?: boolean) => void;
+    openOriginal: () => Promise<boolean>;
+    writeComment: (
+        type: "text" | "dccon",
+        memo: string | DcinsideDccon[],
+        commentNo: string | null,
+        replyNo: string | null,
+        user: { name: string; pw?: string },
+        bigDccon: boolean
+    ) => Promise<boolean>;
+    deleteComment: (commentId: string, password: string, admin: boolean) => Promise<boolean>;
+}
+
+type CloseHandler = () => void;
+
+const noopAsync = async () => {
+};
+const noopAsyncResult = async () => false;
+const noop = () => {
+};
+
+// 초기 상태 팩토리 (reset 재사용)
+const createInitialState = (): {
+    title: string;
+    subtitle: string;
+    contents: string | undefined;
+    upvotes: string | undefined;
+    fixedUpvotes: string | undefined;
+    downvotes: string | undefined;
+    error: { title: string; detail: string } | undefined;
+    collapse: boolean | undefined;
+    data: FrameData;
+} => ({
+    title: "",
+    subtitle: "",
+    contents: undefined,
+    upvotes: undefined,
+    fixedUpvotes: undefined,
+    downvotes: undefined,
+    error: undefined,
+    collapse: undefined,
+    data: {
+        load: false,
+        buttons: false,
+        disabledDownvote: false,
+        user: undefined,
+        date: undefined,
+        expire: undefined,
+        views: undefined,
+        useWriteComment: false,
+        comments: undefined,
+        postUserId: undefined,
+        type: "",
+        useImageBlock: false
+    }
+});
+
+export class PreviewFrame {
+    readonly options: FrameOptions;
+    readonly state: ReturnType<typeof createInitialState>;
+    functions: FrameFunctions;
+
+    private closeHandlers = new Set<CloseHandler>();
+
+    constructor(options: FrameOptions = {}) {
+        this.options = options;
+        this.state = reactive(createInitialState());
+        this.functions = {
+            vote: noopAsyncResult,
+            share: noopAsyncResult,
+            load: noopAsync,
+            retry: noop,
+            openOriginal: noopAsyncResult,
+            writeComment: noopAsyncResult,
+            deleteComment: noopAsyncResult
+        };
+    }
+
+    // reactive state에 직접 접근 (getter/setter boilerplate 제거)
+    get title(): string {
+        return this.state.title;
+    }
+
+    set title(v: string) {
+        this.state.title = v;
+    }
+
+    get subtitle(): string {
+        return this.state.subtitle;
+    }
+
+    set subtitle(v: string) {
+        this.state.subtitle = v;
+    }
+
+    get contents(): string | undefined {
+        return this.state.contents;
+    }
+
+    set contents(v: string | undefined) {
+        this.state.contents = v;
+    }
+
+    get upvotes(): string | undefined {
+        return this.state.upvotes;
+    }
+
+    set upvotes(v: string | undefined) {
+        this.state.upvotes = v;
+    }
+
+    get fixedUpvotes(): string | undefined {
+        return this.state.fixedUpvotes;
+    }
+
+    set fixedUpvotes(v: string | undefined) {
+        this.state.fixedUpvotes = v;
+    }
+
+    get downvotes(): string | undefined {
+        return this.state.downvotes;
+    }
+
+    set downvotes(v: string | undefined) {
+        this.state.downvotes = v;
+    }
+
+    get error(): { title: string; detail: string } | undefined {
+        return this.state.error;
+    }
+
+    set error(v: { title: string; detail: string } | undefined) {
+        this.state.error = v;
+    }
+
+    get collapse(): boolean | undefined {
+        return this.state.collapse;
+    }
+
+    set collapse(v: boolean | undefined) {
+        this.state.collapse = v;
+    }
+
+    get data(): FrameData {
+        return this.state.data;
+    }
+
+    // 초기 상태로 일괄 리셋 (팩토리 재사용으로 자동화)
+    reset(): void {
+        const initial = createInitialState();
+        Object.assign(this.state, {
+            title: initial.title,
+            subtitle: initial.subtitle,
+            contents: initial.contents,
+            upvotes: initial.upvotes,
+            fixedUpvotes: initial.fixedUpvotes,
+            downvotes: initial.downvotes,
+            error: initial.error,
+            collapse: initial.collapse
+        });
+        Object.assign(this.state.data, initial.data);
+    }
+
+    onClose(handler: CloseHandler): void {
+        this.closeHandlers.add(handler);
+    }
+
+    offClose(handler: CloseHandler): void {
+        this.closeHandlers.delete(handler);
+    }
+
+    emitClose(): void {
+        this.closeHandlers.forEach((handler) => handler());
+    }
+}
+
+export type {FrameOptions, FrameData, FrameFunctions};
 
 export interface FrameStackOption {
     background?: boolean;

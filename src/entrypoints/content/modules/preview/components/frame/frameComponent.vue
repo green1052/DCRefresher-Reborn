@@ -62,7 +62,7 @@ import RefresherFrame from "./frame.vue";
 import upvoteIcon from "@/assets/icons/upvote.webp?no-inline";
 import downvoteIcon from "@/assets/icons/downvote.webp?no-inline";
 import RefresherScroll from "./scroll.vue";
-import type {PreviewFrame} from "../../previewFrame";
+import type {PreviewFrame} from "../../frame";
 import type {FrameStackOption} from "../../frame";
 import {useFrameFade} from "../../composables/useFrameFade";
 

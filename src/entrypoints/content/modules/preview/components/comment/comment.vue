@@ -81,7 +81,7 @@ import {computed, ref} from "vue";
 import {useMeDetection} from "@/entrypoints/content/composables/useMeDetection";
 import TimeStamp from "@/components/timestamp.vue";
 import User from "@/components/user.vue";
-import {handleDcconContextMenu, parseCommentDate, parseVoiceData} from "../../commentUtils";
+import {handleDcconContextMenu, parseCommentDate, parseVoiceData} from "../../comments";
 
 interface Props {
   comment: DcinsideCommentObject;

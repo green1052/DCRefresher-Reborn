@@ -168,7 +168,7 @@ const createContextMenuHandler = (ctx: BlockModule): ((event: MouseEvent) => voi
 const setupMessageHandlers = (ctx: BlockModule): void => {
     ctx.memory.addBlock = eventBus.on(
         "refresherUserContextMenu",
-        (nick: string, uid: string, ip: string, code: string, packageIdx: string) => {
+        (nick: string | null, uid: string | null, ip: string | null, code: string | null, packageIdx: string | null) => {
             ctx.memory.selected = {nick, uid, ip, code, packageIdx};
             ctx.memory.lastSelect = Date.now();
         }

@@ -1,4 +1,4 @@
-import type {PreviewFrame} from "./previewFrame";
+import type {PreviewFrame} from "./frame";
 import * as block from "@/core/block";
 import eventBus from "@/core/eventbus";
 import {panel} from "./panel";
@@ -105,7 +105,7 @@ function renderPostContent(
     }
 
     frame.data.buttons = true;
-    frame.data.views = `조회 ${postInfo.views}회`;
+    if (postInfo.views !== undefined) frame.data.views = `조회 ${postInfo.views}회`;
 }
 
 export function makeBodyFrame(ctx: BodyFrameContext): void {

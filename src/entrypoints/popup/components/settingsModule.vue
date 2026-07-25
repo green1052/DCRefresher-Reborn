@@ -32,17 +32,11 @@ interface Props {
   moduleName: string;
   moduleSettings: Record<string, RefresherSettings>;
   moduleEnabled: boolean;
-  showAdvanced: boolean;
 }
 
 const props = defineProps<Props>();
 
 const moveToModuleTab = inject<(moduleName: string) => void>("moveToModuleTab")!;
 
-const filteredSettings = computed(() => {
-  return Object.keys(props.moduleSettings).filter((settingKey) => {
-    const setting = props.moduleSettings[settingKey];
-    return props.showAdvanced ? setting?.advanced : !setting?.advanced;
-  });
-});
+const filteredSettings = computed(() => Object.keys(props.moduleSettings));
 </script>

@@ -81,6 +81,11 @@ function parseRandomParams(dom: Document, postInfo: IPostInfo): void {
 
 export function parsePostInfo(id: string, body: string): IPostInfo {
     const dom = domParser.parseFromString(body, "text/html");
+
+    if (!dom.querySelector(".gallview_head, .writing_view_box, .title_subject")) {
+        throw new Error("게시글을 불러오지 못했습니다. (비정상 접근 응답)");
+    }
+
     const postInfo: IPostInfo = {id};
 
     postInfo.dom = dom;

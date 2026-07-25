@@ -1,18 +1,19 @@
 import type {FrameScrollApi} from "./frame";
-import type {PreviewFrame} from "./previewFrame";
+import type {PreviewFrame} from "./frame";
 import type {PostFetchedDataRef} from "./bodyFrame";
 import eventBus from "@/core/eventbus";
 import {PostCache} from "./cache";
 import {previewRequest} from "./request";
 import toast from "@/utils/toast";
-import {createWriteComment, waitForCommentIdLoaded} from "./commentWriteUtils";
-import {handleDeleteComment} from "./commentDeleteUtils";
 import {
     type CommentFilterContext,
+    createWriteComment,
     filterAndProcessComments,
+    handleDeleteComment,
     restoreDeletedComments,
-    restoreFromCacheIfEmpty
-} from "./commentFilterUtils";
+    restoreFromCacheIfEmpty,
+    waitForCommentIdLoaded
+} from "./comments";
 
 export interface CommentFrameContext {
     frame: PreviewFrame;

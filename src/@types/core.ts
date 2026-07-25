@@ -1,13 +1,6 @@
 export {};
 
 declare global {
-    interface RefresherFilteringLists {
-        func: (element: HTMLElement) => void;
-        scope: string;
-        options?: RefresherFilteringOptions;
-        expire?: () => void;
-    }
-
     interface RefresherFilteringOptions {
         neverExpire?: boolean;
         skipIfNotExists?: boolean;

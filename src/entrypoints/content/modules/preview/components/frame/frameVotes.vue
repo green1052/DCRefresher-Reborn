@@ -32,7 +32,7 @@
 <script lang="ts" setup>
 import {computed} from "vue";
 
-import type {PreviewFrame} from "../../previewFrame";
+import type {PreviewFrame} from "../../frame";
 import PreviewButton from "@/components/previewButton.vue";
 
 interface Props {
@@ -45,11 +45,14 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const upvoteText = computed(() =>
-    props.frame.upvotes === undefined && props.frame.fixedUpvotes === undefined
-        ? "X"
-        : `${props.frame.upvotes} (${props.frame.fixedUpvotes})`
-);
+const upvoteText = computed(() => {
+    if (props.frame.upvotes === undefined) {
+        return props.frame.fixedUpvotes === undefined ? "X" : `X (${props.frame.fixedUpvotes})`;
+    }
+    return props.frame.fixedUpvotes === undefined
+        ? props.frame.upvotes
+        : `${props.frame.upvotes} (${props.frame.fixedUpvotes})`;
+});
 </script>
 
 <style lang="scss" scoped>
