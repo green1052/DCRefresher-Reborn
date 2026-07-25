@@ -152,7 +152,7 @@ export class RefreshController {
             this.memory.refresh = 0;
         }
 
-        const domEvents: [string, string | null][] = [
+        const domEvents: [string, string][] = [
             ["visibilitychange", "visibilityChangeHandler"],
             ["pageshow", "pageShowHandler"],
             ["popstate", "popStateHandler"]
@@ -163,7 +163,7 @@ export class RefreshController {
                 key === "visibilitychange"
                     ? document.removeEventListener(event, handler)
                     : window.removeEventListener(event, handler as EventListener);
-                (this.memory as Record<string, unknown>)[key] = null;
+                (this.memory as unknown as Record<string, unknown>)[key] = null;
             }
         }
 
