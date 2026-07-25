@@ -1,4 +1,4 @@
-import {onMounted, ref, shallowRef, watch, type Ref} from "vue";
+import {onMounted, ref, type Ref, shallowRef, watch} from "vue";
 
 import toast from "@/utils/toast";
 import type {Nullable} from "@/utils/types";

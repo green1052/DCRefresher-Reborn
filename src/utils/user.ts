@@ -139,7 +139,9 @@ export class User {
         if (!this.id) return;
 
         const manageModule = modules.get("관리");
-        const ratioData = manageModule?.data as { ratio?: Record<string, { article: number; comment: number; date: number }> } | undefined;
+        const ratioData = manageModule?.data as {
+            ratio?: Record<string, { article: number; comment: number; date: number }>
+        } | undefined;
         const r = ratioData?.ratio?.[this.id];
 
         if (!r) return;

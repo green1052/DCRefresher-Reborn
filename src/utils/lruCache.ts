@@ -9,6 +9,10 @@ export class LRUCache<K, V> {
         this.maxSize = maxSize;
     }
 
+    get size(): number {
+        return this.cache.size;
+    }
+
     get(key: K): V | undefined {
         const value = this.cache.get(key);
         if (value === undefined) return undefined;
@@ -44,10 +48,6 @@ export class LRUCache<K, V> {
 
     clear(): void {
         this.cache.clear();
-    }
-
-    get size(): number {
-        return this.cache.size;
     }
 }
 

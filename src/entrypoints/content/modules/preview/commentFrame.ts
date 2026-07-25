@@ -1,7 +1,5 @@
-import type {FrameScrollApi} from "./frame";
-import type {PreviewFrame} from "./frame";
+import type {FrameScrollApi, PreviewFrame} from "./frame";
 import type {PostFetchedDataRef} from "./bodyFrame";
-import eventBus from "@/core/eventbus";
 import {PostCache} from "./cache";
 import {previewRequest} from "./request";
 import toast from "@/utils/toast";

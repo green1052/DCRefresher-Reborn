@@ -49,7 +49,7 @@ export function parseVoiceData(memo: string): VoiceData | null {
     return {
         iframe: hasIframe,
         src: hasIframe
-            ? parts[0].split('src="')[1].split('"')[0]
+            ? parts[0].split("src=\"")[1].split("\"")[0]
             : "https://vr.dcinside.com/" + parts[0],
         memo: parts[1]
     };

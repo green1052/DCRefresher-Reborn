@@ -1,254 +1,254 @@
 .refresherCompact {
-  min-width: unset;
-
-  .visit_bookmark {
-    width: 95% !important;
-  }
-
-  .wrap_inner {
-    width: unset;
-  }
-
-  .list_wrap,
-  .view_wrap {
     min-width: unset;
-    width: 100%;
-  }
 
-  .width1160 .dchead,
-  .width1160 .gnb,
-  .width1160 #container,
-  .width1160 .info_policy,
-  .width1160 .copyright {
-    width: unset;
-  }
-
-  .dchead {
-    height: 100px;
-  }
-
-  .list_wrap .dc_logo,
-  .gnb_bar {
-    display: none;
-  }
-
-  .width1160 .top_search {
-    display: none;
-  }
-
-  .area_links {
-    right: 13px;
-  }
-
-  .dc_logo {
-    display: none;
-  }
-
-  .gall_exposure,
-  .minor_ranking_box,
-  .listwrap .issue_contentbox {
-    display: none;
-  }
-
-  .right_content {
-    float: initial;
-    width: initial;
-
-    .user_info,
-    .user_option,
-    .rightbanner1,
-    #my_minor_pop,
-    article {
-      display: none;
+    .visit_bookmark {
+        width: 95% !important;
     }
-  }
 
-  .list_array_option,
-  .listwrap .visit_list,
-  .listwrap .issuebox {
-    width: 100% !important;
-  }
+    .wrap_inner {
+        width: unset;
+    }
 
-  .listwrap .visit_history {
-    width: 98.5%;
-  }
+    .list_wrap,
+    .view_wrap {
+        min-width: unset;
+        width: 100%;
+    }
 
-  .listwrap .visit_list {
-    display: contents;
-  }
+    .width1160 .dchead,
+    .width1160 .gnb,
+    .width1160 #container,
+    .width1160 .info_policy,
+    .width1160 .copyright {
+        width: unset;
+    }
 
-  .array_tab button {
-    width: 72px;
-  }
+    .dchead {
+        height: 100px;
+    }
 
-  .page_head h2 {
-    font-size: 23px;
-  }
+    .list_wrap .dc_logo,
+    .gnb_bar {
+        display: none;
+    }
 
-  .left_content .visit_list li a {
-    width: 60px;
-  }
+    .width1160 .top_search {
+        display: none;
+    }
 
-  .gall_issuebox {
-    padding-top: unset;
-  }
+    .area_links {
+        right: 13px;
+    }
 
-  .listwrap .minor_intro_box {
-    padding: 0 0 0 2px;
-  }
+    .dc_logo {
+        display: none;
+    }
 
-  main.listwrap {
-    display: flex;
-  }
+    .gall_exposure,
+    .minor_ranking_box,
+    .listwrap .issue_contentbox {
+        display: none;
+    }
 
-  .width1160 .wrap_inner {
-    margin-left: auto;
-    margin-right: auto;
-    max-width: 1000px;
-    width: 95%;
-  }
+    .right_content {
+        float: initial;
+        width: initial;
 
-  .width1160 .dc_all {
-    display: none;
-  }
+        .user_info,
+        .user_option,
+        .rightbanner1,
+        #my_minor_pop,
+        article {
+            display: none;
+        }
+    }
 
-  .ad_bottom_list {
-    display: none;
-  }
+    .list_array_option,
+    .listwrap .visit_list,
+    .listwrap .issuebox {
+        width: 100% !important;
+    }
 
-  .input_write_tit {
-    float: initial;
-  }
+    .listwrap .visit_history {
+        width: 98.5%;
+    }
+
+    .listwrap .visit_list {
+        display: contents;
+    }
+
+    .array_tab button {
+        width: 72px;
+    }
+
+    .page_head h2 {
+        font-size: 23px;
+    }
+
+    .left_content .visit_list li a {
+        width: 60px;
+    }
+
+    .gall_issuebox {
+        padding-top: unset;
+    }
+
+    .listwrap .minor_intro_box {
+        padding: 0 0 0 2px;
+    }
+
+    main.listwrap {
+        display: flex;
+    }
+
+    .width1160 .wrap_inner {
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 1000px;
+        width: 95%;
+    }
+
+    .width1160 .dc_all {
+        display: none;
+    }
+
+    .ad_bottom_list {
+        display: none;
+    }
+
+    .input_write_tit {
+        float: initial;
+    }
 }
 
 .refresherCompactView {
-  .cmt_write_box {
-    display: flex;
-  }
-
-  .width1160 .left_content {
-    width: unset !important;
-  }
-
-  .width1160 .wrap_inner {
-    margin-left: auto;
-    margin-right: auto;
-    max-width: 1200px;
-    width: 95%;
-  }
-
-  .cmt_txt_cont {
-    margin-left: 20px;
-
-    textarea {
-      width: 100px;
-
-      @media screen and (min-width: 1220px) {
-        width: 956px !important;
-      }
-
-      @media screen and (min-width: 1145px) and (max-width: 1220px) {
-        width: 882px !important;
-      }
-
-      @media screen and (min-width: 1070px) and (max-width: 1145px) {
-        width: 808px !important;
-      }
-
-      @media screen and (min-width: 1015px) and (max-width: 1070px) {
-        width: 758px !important;
-      }
-
-      @media screen and (min-width: 960px) and (max-width: 1015px) {
-        width: 708px !important;
-      }
-
-      @media screen and (min-width: 850px) and (max-width: 960px) {
-        width: 608px !important;
-      }
-
-      @media screen and (min-width: 740px) and (max-width: 850px) {
-        width: 508px !important;
-      }
-
-      @media screen and (min-width: 630px) and (max-width: 740px) {
-        width: 400px !important;
-      }
-
-      @media screen and (min-width: 520px) and (max-width: 630px) {
-        width: 300px !important;
-      }
-
-      @media screen and (min-width: 410px) and (max-width: 520px) {
-        width: 200px !important;
-      }
+    .cmt_write_box {
+        display: flex;
     }
-  }
+
+    .width1160 .left_content {
+        width: unset !important;
+    }
+
+    .width1160 .wrap_inner {
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 1200px;
+        width: 95%;
+    }
+
+    .cmt_txt_cont {
+        margin-left: 20px;
+
+        textarea {
+            width: 100px;
+
+            @media screen and (min-width: 1220px) {
+                width: 956px !important;
+            }
+
+            @media screen and (min-width: 1145px) and (max-width: 1220px) {
+                width: 882px !important;
+            }
+
+            @media screen and (min-width: 1070px) and (max-width: 1145px) {
+                width: 808px !important;
+            }
+
+            @media screen and (min-width: 1015px) and (max-width: 1070px) {
+                width: 758px !important;
+            }
+
+            @media screen and (min-width: 960px) and (max-width: 1015px) {
+                width: 708px !important;
+            }
+
+            @media screen and (min-width: 850px) and (max-width: 960px) {
+                width: 608px !important;
+            }
+
+            @media screen and (min-width: 740px) and (max-width: 850px) {
+                width: 508px !important;
+            }
+
+            @media screen and (min-width: 630px) and (max-width: 740px) {
+                width: 400px !important;
+            }
+
+            @media screen and (min-width: 520px) and (max-width: 630px) {
+                width: 300px !important;
+            }
+
+            @media screen and (min-width: 410px) and (max-width: 520px) {
+                width: 200px !important;
+            }
+        }
+    }
 }
 
 .refresherHideGalleryView {
-  .issue_wrap,
-  #visit_history {
-    display: none;
-  }
+    .issue_wrap,
+    #visit_history {
+        display: none;
+    }
 }
 
 .refresherHideUselessView section.right_content article {
-  display: none;
+    display: none;
 }
 
 .refresherHideUselessView.refresherPushToRight {
-  .stickyunit, ._BTN_AD_ {
-    display: none !important;
-  }
+    .stickyunit, ._BTN_AD_ {
+        display: none !important;
+    }
 
-  .list_array_option,
-  .listwrap .left_content,
-  .listwrap .issuebox {
-    width: 1160px;
-  }
+    .list_array_option,
+    .listwrap .left_content,
+    .listwrap .issuebox {
+        width: 1160px;
+    }
 
-  .listwrap .minor_intro_box,
-  .listwrap .visit_list {
-    width: 1000px;
-  }
+    .listwrap .minor_intro_box,
+    .listwrap .visit_list {
+        width: 1000px;
+    }
 
-  .listwrap .visit_history {
-    width: 1134px;
-  }
+    .listwrap .visit_history {
+        width: 1134px;
+    }
 
-  .list_wrap.width1160 .newvisit_history {
-    width: unset;
-  }
+    .list_wrap.width1160 .newvisit_history {
+        width: unset;
+    }
 }
 
 .refresherHideNtf {
-  .btn_nftbox,
-  .nft_informationwrap {
-    display: none;
-  }
+    .btn_nftbox,
+    .nft_informationwrap {
+        display: none;
+    }
 }
 
 .refresherHideGalleryImage {
-  #zzbang_div {
-    display: none;
-  }
+    #zzbang_div {
+        display: none;
+    }
 }
 
 .refresherHideNotice {
-  tr:has(em[class*=icon_notice]) {
-    display: none;
-  }
+    tr:has(em[class*=icon_notice]) {
+        display: none;
+    }
 }
 
 .refresherHideDCNotice {
-  tr[class*=ub-content]:has(> td[user_name=운영자]) {
-    display: none;
-  }
+    tr[class*=ub-content]:has(> td[user_name=운영자]) {
+        display: none;
+    }
 }
 
 .refresherHideGamemeca {
-  tr[data-type=icon_fnews] {
-    display: none;
-  }
+    tr[data-type=icon_fnews] {
+        display: none;
+    }
 }
