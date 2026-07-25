@@ -94,6 +94,7 @@ export default {
         }
     }
 } as RefresherModule<{
+    data: {};
     memory: {
         contentViewUUID: (() => void) | null;
         loadHandler: (() => void) | null;
