@@ -1,5 +1,4 @@
 import {databaseStorage} from "@/storage/wxtStorage";
-import {normalizeStorageData} from "@/storage/migration";
 import {ref} from "vue";
 
 const replaceLocalStorage = async (data: Record<string, unknown>): Promise<void> => {
@@ -69,7 +68,7 @@ export function useData() {
             if (preservedIp) preserved["refresher:database:ip"] = preservedIp;
             if (preservedBan) preserved["refresher:database:ban"] = preservedBan;
 
-            await replaceLocalStorage(normalizeStorageData({...data, ...preserved}));
+            await replaceLocalStorage({...data, ...preserved});
             alert("데이터를 복원했습니다. 새탭에서 디시인사이드를 열어주세요.");
         } catch {
             alert("데이터를 복원하는데 실패했습니다.");
@@ -103,7 +102,7 @@ export function useData() {
 
         loading.value = true;
         try {
-            const data = normalizeStorageData(parseStorageImport(input));
+            const data = parseStorageImport(input);
             await replaceLocalStorage(data);
             alert("데이터를 가져왔습니다. 새탭에서 디시인사이드를 열어주세요.");
         } catch {
