@@ -191,7 +191,7 @@ const setupWriterDisplay = (ctx: ManageModule): string =>
 const handleNewPostList = async (ctx: ManageModule, articles: HTMLElement[]): Promise<void> => {
     const limitedArticles = articles.slice(0, 10);
 
-    const ratioTargets: {article: HTMLElement; writer: HTMLElement | null; uid: string}[] = [];
+    const ratioTargets: { article: HTMLElement; writer: HTMLElement | null; uid: string }[] = [];
 
     for (const article of limitedArticles) {
         const writer = article.querySelector<HTMLElement>(".ub-writer");

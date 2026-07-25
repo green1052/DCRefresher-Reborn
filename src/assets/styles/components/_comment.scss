@@ -5,11 +5,11 @@
 // ============================================================
 
 html:has(#css-darkmode) {
-  .refresher-user {
-    &[data-me="true"] {
-      background-color: var(--refresher-user-me-bg);
+    .refresher-user {
+        &[data-me="true"] {
+            background-color: var(--refresher-user-me-bg);
+        }
     }
-  }
 }
 
 // ============================================================
@@ -17,5 +17,5 @@ html:has(#css-darkmode) {
 // ============================================================
 
 .cmt_nickbox {
-  display: flex;
+    display: flex;
 }

@@ -9,107 +9,107 @@
 // ============================================================
 
 html:has(#css-darkmode) {
-  // OG cards invert
-  .refresher-preview-contents-actual {
-    .og-wrap, .og-img {
-      filter: invert(1) !important;
-    }
-  }
-
-  // Comment icons invert
-  .refresher-comment svg {
-    filter: invert(1);
-  }
-
-  // Frame / mini-preview border + read-more gradient
-  .refresher-frame,
-  .refresher-mini-preview {
-    border: 1px solid var(--refresher-border);
-
-    &.blur {
-      background-color: var(--refresher-bg-blur);
+    // OG cards invert
+    .refresher-preview-contents-actual {
+        .og-wrap, .og-img {
+            filter: invert(1) !important;
+        }
     }
 
-    & .read-more {
-      background-image: linear-gradient(transparent 0%, black 80%);
-    }
-  }
-
-  // Tooltip border
-  .refresher-tooltip {
-    border: 1px solid var(--refresher-border);
-
-    &.blur {
-      background-color: var(--refresher-bg-blur);
-    }
-  }
-
-  // Frame outer overlay
-  .refresher-frame-outer {
-    &.background {
-      background-color: var(--refresher-bg-overlay);
-    }
-  }
-
-  // Management panel
-  .refresher-management-panel {
-    border: 1px solid var(--refresher-border);
-
-    &.blur {
-      backdrop-filter: blur(5px) saturate(150%);
-      background-color: var(--refresher-bg-blur);
+    // Comment icons invert
+    .refresher-comment svg {
+        filter: invert(1);
     }
 
-    .button {
-      &:hover {
-        background: rgba(110, 110, 110, 0.5);
-      }
+    // Frame / mini-preview border + read-more gradient
+    .refresher-frame,
+    .refresher-mini-preview {
+        border: 1px solid var(--refresher-border);
+
+        &.blur {
+            background-color: var(--refresher-bg-blur);
+        }
+
+        & .read-more {
+            background-image: linear-gradient(transparent 0%, black 80%);
+        }
     }
 
-    img {
-      filter: invert(1);
-    }
-  }
+    // Tooltip border
+    .refresher-tooltip {
+        border: 1px solid var(--refresher-border);
 
-  // Popups (block / captcha / cache)
-  .refresher-block-popup,
-  .refresher-captcha-popup,
-  .refresher-cache-popup {
-    border: 1px solid var(--refresher-border);
-    color: white;
-  }
-
-  // Preview media placeholder bg
-  .refresher-frame.preview .refresher-preview-contents {
-    embed,
-    img,
-    video {
-      background-color: #333;
-    }
-  }
-
-  // Stealth control button
-  .stealth_control_button {
-    background: var(--refresher-bg-blur);
-    border: 1px solid var(--refresher-border);
-
-    &.blur {
-      backdrop-filter: blur(5px) saturate(150%);
-      background-color: var(--refresher-bg-blur);
+        &.blur {
+            background-color: var(--refresher-bg-blur);
+        }
     }
 
-    .button {
-      p {
-        color: var(--refresher-text-muted);
-      }
-
-      &:hover {
-        background: rgba(110, 110, 110, 0.5);
-      }
+    // Frame outer overlay
+    .refresher-frame-outer {
+        &.background {
+            background-color: var(--refresher-bg-overlay);
+        }
     }
 
-    img {
-      filter: invert(1);
+    // Management panel
+    .refresher-management-panel {
+        border: 1px solid var(--refresher-border);
+
+        &.blur {
+            backdrop-filter: blur(5px) saturate(150%);
+            background-color: var(--refresher-bg-blur);
+        }
+
+        .button {
+            &:hover {
+                background: rgba(110, 110, 110, 0.5);
+            }
+        }
+
+        img {
+            filter: invert(1);
+        }
     }
-  }
+
+    // Popups (block / captcha / cache)
+    .refresher-block-popup,
+    .refresher-captcha-popup,
+    .refresher-cache-popup {
+        border: 1px solid var(--refresher-border);
+        color: white;
+    }
+
+    // Preview media placeholder bg
+    .refresher-frame.preview .refresher-preview-contents {
+        embed,
+        img,
+        video {
+            background-color: #333;
+        }
+    }
+
+    // Stealth control button
+    .stealth_control_button {
+        background: var(--refresher-bg-blur);
+        border: 1px solid var(--refresher-border);
+
+        &.blur {
+            backdrop-filter: blur(5px) saturate(150%);
+            background-color: var(--refresher-bg-blur);
+        }
+
+        .button {
+            p {
+                color: var(--refresher-text-muted);
+            }
+
+            &:hover {
+                background: rgba(110, 110, 110, 0.5);
+            }
+        }
+
+        img {
+            filter: invert(1);
+        }
+    }
 }

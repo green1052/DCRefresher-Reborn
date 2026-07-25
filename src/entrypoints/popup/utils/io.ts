@@ -1,5 +1,5 @@
-import {isBlockValue, normalizeBlockList, normalizeBlockMode} from "@/core/block";
-import {isMemoValue, normalizeMemoMap} from "@/core/memo";
+import {normalizeBlockList, normalizeBlockMode} from "@/core/block";
+import {normalizeMemoMap} from "@/core/memo";
 
 export const copyToClipboard = async (payload: unknown) => {
     try {

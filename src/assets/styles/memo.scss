@@ -1,278 +1,278 @@
 @use "./variables" as *;
 
 .refresher-memo-overlay {
-  align-items: center;
-  background-color: var(--refresher-bg-overlay);
-  display: flex;
-  inset: 0;
-  justify-content: center;
-  opacity: 0;
-  position: fixed;
-  transition: opacity 200ms cubic-bezier(0.19, 1, 0.22, 1);
-  z-index: $z-overlay;
-
-  &.visible {
-    opacity: 1;
-  }
-
-  &.leaving {
+    align-items: center;
+    background-color: var(--refresher-bg-overlay);
+    display: flex;
+    inset: 0;
+    justify-content: center;
     opacity: 0;
-  }
+    position: fixed;
+    transition: opacity 200ms cubic-bezier(0.19, 1, 0.22, 1);
+    z-index: $z-overlay;
+
+    &.visible {
+        opacity: 1;
+    }
+
+    &.leaving {
+        opacity: 0;
+    }
 }
 
 .refresher-memo-dialog {
-  align-items: stretch;
-  backdrop-filter: blur(5px) saturate(150%);
-  background-color: var(--refresher-bg-popup);
-  border-radius: $radius-md;
-  box-shadow: 0 8px 32px rgba(51, 51, 51, 0.3);
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  min-width: 360px;
-  padding: 24px 28px;
-  transform: scale(0.96) translateY(8px);
-  transition: transform 200ms cubic-bezier(0.19, 1, 0.22, 1);
+    align-items: stretch;
+    backdrop-filter: blur(5px) saturate(150%);
+    background-color: var(--refresher-bg-popup);
+    border-radius: $radius-md;
+    box-shadow: 0 8px 32px rgba(51, 51, 51, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 360px;
+    padding: 24px 28px;
+    transform: scale(0.96) translateY(8px);
+    transition: transform 200ms cubic-bezier(0.19, 1, 0.22, 1);
 
-  .refresher-memo-overlay.visible & {
-    transform: scale(1) translateY(0);
-  }
+    .refresher-memo-overlay.visible & {
+        transform: scale(1) translateY(0);
+    }
 }
 
 .refresher-memo-header {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 4px;
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
 
-  h3 {
-    font-size: 18px;
-    font-weight: 700;
-    margin: 0;
-  }
+    h3 {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+    }
 }
 
 .refresher-memo-close {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  height: 28px;
-  opacity: 0.5;
-  padding: 0;
-  position: relative;
-  transition: opacity $duration-normal $ease-out-expo;
-  width: 28px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    height: 28px;
+    opacity: 0.5;
+    padding: 0;
+    position: relative;
+    transition: opacity $duration-normal $ease-out-expo;
+    width: 28px;
 
-  &:hover {
-    opacity: 1;
-  }
+    &:hover {
+        opacity: 1;
+    }
 
-  &::before,
-  &::after {
-    background-color: var(--refresher-text);
-    content: "";
-    height: 2px;
-    left: 50%;
-    position: absolute;
-    top: 50%;
-    width: 18px;
-  }
+    &::before,
+    &::after {
+        background-color: var(--refresher-text);
+        content: "";
+        height: 2px;
+        left: 50%;
+        position: absolute;
+        top: 50%;
+        width: 18px;
+    }
 
-  &::before {
-    transform: translate(-50%, -50%) rotate(45deg);
-  }
+    &::before {
+        transform: translate(-50%, -50%) rotate(45deg);
+    }
 
-  &::after {
-    transform: translate(-50%, -50%) rotate(-45deg);
-  }
+    &::after {
+        transform: translate(-50%, -50%) rotate(-45deg);
+    }
 }
 
 .refresher-memo-target {
-  align-items: baseline;
-  display: flex;
-  gap: 8px;
+    align-items: baseline;
+    display: flex;
+    gap: 8px;
 
-  .refresher-memo-target-label {
-    color: var(--refresher-text-tertiary);
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
+    .refresher-memo-target-label {
+        color: var(--refresher-text-tertiary);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
 
-  .refresher-memo-target-value {
-    color: var(--refresher-text-secondary);
-    font-size: 14px;
-  }
+    .refresher-memo-target-value {
+        color: var(--refresher-text-secondary);
+        font-size: 14px;
+    }
 }
 
 .refresher-memo-segment {
-  background-color: rgba(128, 128, 128, 0.1);
-  border-radius: $radius-sm;
-  display: flex;
-  gap: 4px;
-  padding: 4px;
+    background-color: rgba(128, 128, 128, 0.1);
+    border-radius: $radius-sm;
+    display: flex;
+    gap: 4px;
+    padding: 4px;
 
-  .refresher-memo-seg {
-    background: transparent;
-    border: none;
-    border-radius: 8px;
-    color: var(--refresher-text-secondary);
-    cursor: pointer;
-    flex: 1;
-    font-size: 14px;
-    font-weight: 500;
-    padding: 8px 0;
-    transition: all $duration-normal $ease-out-expo;
+    .refresher-memo-seg {
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        color: var(--refresher-text-secondary);
+        cursor: pointer;
+        flex: 1;
+        font-size: 14px;
+        font-weight: 500;
+        padding: 8px 0;
+        transition: all $duration-normal $ease-out-expo;
 
-    &:hover:not(.disabled):not(.active) {
-      background-color: rgba(128, 128, 128, 0.1);
-      color: var(--refresher-text);
+        &:hover:not(.disabled):not(.active) {
+            background-color: rgba(128, 128, 128, 0.1);
+            color: var(--refresher-text);
+        }
+
+        &.active {
+            background-color: var(--refresher-bg);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+            color: var(--refresher-text);
+            font-weight: 600;
+        }
+
+        &.disabled {
+            color: var(--refresher-text-tertiary);
+            cursor: not-allowed;
+            opacity: 0.4;
+        }
     }
-
-    &.active {
-      background-color: var(--refresher-bg);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-      color: var(--refresher-text);
-      font-weight: 600;
-    }
-
-    &.disabled {
-      color: var(--refresher-text-tertiary);
-      cursor: not-allowed;
-      opacity: 0.4;
-    }
-  }
 }
 
 .refresher-memo-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 
-  label {
-    color: var(--refresher-text-secondary);
-    font-size: 13px;
-    font-weight: 600;
-  }
-
-  input[type="text"] {
-    background-color: var(--refresher-input-bg);
-    border: 1px solid var(--refresher-border-light);
-    border-radius: $radius-sm;
-    color: var(--refresher-text);
-    font-size: 14px;
-    outline: none;
-    padding: 10px 12px;
-    transition: all $duration-normal $ease-out-expo;
-
-    &::placeholder {
-      color: var(--refresher-text-tertiary);
+    label {
+        color: var(--refresher-text-secondary);
+        font-size: 13px;
+        font-weight: 600;
     }
 
-    &:focus {
-      border-color: var(--refresher-input-focus);
-      box-shadow: 0 0 0 2px rgba(0, 120, 255, 0.15);
+    input[type="text"] {
+        background-color: var(--refresher-input-bg);
+        border: 1px solid var(--refresher-border-light);
+        border-radius: $radius-sm;
+        color: var(--refresher-text);
+        font-size: 14px;
+        outline: none;
+        padding: 10px 12px;
+        transition: all $duration-normal $ease-out-expo;
+
+        &::placeholder {
+            color: var(--refresher-text-tertiary);
+        }
+
+        &:focus {
+            border-color: var(--refresher-input-focus);
+            box-shadow: 0 0 0 2px rgba(0, 120, 255, 0.15);
+        }
     }
-  }
 }
 
 .refresher-memo-color-field {
-  .refresher-memo-color-wrap {
-    align-items: center;
-    display: flex;
-    gap: 8px;
-  }
-
-  input[type="color"] {
-    border: 1px solid var(--refresher-border-light);
-    border-radius: $radius-sm;
-    cursor: pointer;
-    height: 36px;
-    padding: 2px;
-    width: 60px;
-  }
-
-  .refresher-memo-color-random {
-    background-color: rgba(128, 128, 128, 0.1);
-    border: none;
-    border-radius: $radius-sm;
-    color: var(--refresher-text-secondary);
-    cursor: pointer;
-    font-size: 12px;
-    height: 36px;
-    padding: 0 12px;
-    transition: all $duration-normal $ease-out-expo;
-
-    &:hover {
-      background-color: rgba(128, 128, 128, 0.2);
-      color: var(--refresher-text);
+    .refresher-memo-color-wrap {
+        align-items: center;
+        display: flex;
+        gap: 8px;
     }
-  }
+
+    input[type="color"] {
+        border: 1px solid var(--refresher-border-light);
+        border-radius: $radius-sm;
+        cursor: pointer;
+        height: 36px;
+        padding: 2px;
+        width: 60px;
+    }
+
+    .refresher-memo-color-random {
+        background-color: rgba(128, 128, 128, 0.1);
+        border: none;
+        border-radius: $radius-sm;
+        color: var(--refresher-text-secondary);
+        cursor: pointer;
+        font-size: 12px;
+        height: 36px;
+        padding: 0 12px;
+        transition: all $duration-normal $ease-out-expo;
+
+        &:hover {
+            background-color: rgba(128, 128, 128, 0.2);
+            color: var(--refresher-text);
+        }
+    }
 }
 
 .refresher-memo-actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  margin-top: 4px;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 4px;
 
-  .refresher-memo-btn {
-    border: none;
-    border-radius: $radius-sm;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    min-width: 80px;
-    padding: 10px 20px;
-    transition: all $duration-normal $ease-out-expo;
+    .refresher-memo-btn {
+        border: none;
+        border-radius: $radius-sm;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        min-width: 80px;
+        padding: 10px 20px;
+        transition: all $duration-normal $ease-out-expo;
 
-    &.primary {
-      background-color: var(--refresher-primary);
-      color: #fff;
+        &.primary {
+            background-color: var(--refresher-primary);
+            color: #fff;
 
-      &:hover {
-        background-color: var(--refresher-primary-hover);
-      }
+            &:hover {
+                background-color: var(--refresher-primary-hover);
+            }
 
-      &:active {
-        background-color: var(--refresher-primary-active);
-      }
+            &:active {
+                background-color: var(--refresher-primary-active);
+            }
+        }
+
+        &.danger {
+            background-color: transparent;
+            border: 1px solid var(--refresher-border-light);
+            color: var(--refresher-danger);
+
+            &:hover {
+                background-color: var(--refresher-danger);
+                color: #fff;
+            }
+        }
     }
-
-    &.danger {
-      background-color: transparent;
-      border: 1px solid var(--refresher-border-light);
-      color: var(--refresher-danger);
-
-      &:hover {
-        background-color: var(--refresher-danger);
-        color: #fff;
-      }
-    }
-  }
 }
 
 html:has(#css-darkmode) {
-  .refresher-memo-segment {
-    background-color: rgba(255, 255, 255, 0.06);
-  }
-
-  .refresher-memo-seg {
-    &.active {
-      background-color: rgba(255, 255, 255, 0.12);
+    .refresher-memo-segment {
+        background-color: rgba(255, 255, 255, 0.06);
     }
-  }
 
-  .refresher-memo-color-random {
-    background-color: rgba(255, 255, 255, 0.06);
-
-    &:hover {
-      background-color: rgba(255, 255, 255, 0.12);
+    .refresher-memo-seg {
+        &.active {
+            background-color: rgba(255, 255, 255, 0.12);
+        }
     }
-  }
 
-  .refresher-memo-field input[type="text"] {
-    border-color: var(--refresher-border);
-  }
+    .refresher-memo-color-random {
+        background-color: rgba(255, 255, 255, 0.06);
+
+        &:hover {
+            background-color: rgba(255, 255, 255, 0.12);
+        }
+    }
+
+    .refresher-memo-field input[type="text"] {
+        border-color: var(--refresher-border);
+    }
 }
