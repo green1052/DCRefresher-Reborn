@@ -49,7 +49,7 @@ export default {
         changeDCFont(value) {
             document.documentElement.classList.toggle("refresherChangeDCFont", value);
         },
-        bodyFontSize(fontSize) {
+        bodyFontSize(fontSize: number) {
             let fontElement = document.getElementById("refresherFontStyleSize") as HTMLStyleElement | null;
 
             if (!fontElement) {
