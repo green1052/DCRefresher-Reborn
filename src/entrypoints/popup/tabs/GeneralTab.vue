@@ -34,7 +34,6 @@
             :module-enabled="modules[moduleName]?.enable ?? false"
             :module-name="moduleName"
             :module-settings="settings[moduleName]"
-            :show-advanced="false"
         />
       </div>
     </div>

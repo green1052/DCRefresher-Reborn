@@ -36,11 +36,9 @@ export type BlockModeCache = Record<RefresherBlockType, RefresherBlockDetectMode
 // LRU 캐시 - 최대 500개 항목으로 메모리 누수 방지
 const MAX_CACHE_SIZE = 500;
 const regexCache = new LRUCache<string, RegExp>(MAX_CACHE_SIZE);
-const advancedFnCache = new LRUCache<string, (...args: unknown[]) => unknown>(MAX_CACHE_SIZE);
 
 const clearCompiledCaches = (): void => {
     regexCache.clear();
-    advancedFnCache.clear();
 };
 
 const getCompiledRegex = (pattern: string): RegExp | null => {
@@ -50,20 +48,6 @@ const getCompiledRegex = (pattern: string): RegExp | null => {
         const regex = new RegExp(pattern);
         regexCache.set(pattern, regex);
         return regex;
-    } catch {
-        return null;
-    }
-};
-
-// advanced 차단: new Function 평가 (사용자 신뢰 설정이지만 주의 필요)
-// 캐시 크기 제한으로 메모리 누수 방지, LRU로 오래된 항목 자동 제거
-const getCompiledAdvancedFn = (content: string): ((...args: unknown[]) => unknown) | null => {
-    const cached = advancedFnCache.get(content);
-    if (cached) return cached;
-    try {
-        const fn = new Function("type", "content", "gallery", content) as (...args: unknown[]) => unknown;
-        advancedFnCache.set(content, fn);
-        return fn;
     } catch {
         return null;
     }
@@ -98,7 +82,6 @@ const isBlockValue = (value: unknown): value is RefresherBlockValue => {
     return (
         typeof blockValue.content === "string" &&
         typeof blockValue.isRegex === "boolean" &&
-        typeof blockValue.isAdvanced === "boolean" &&
         (blockValue.gallery === undefined || typeof blockValue.gallery === "string") &&
         (blockValue.extra === undefined || typeof blockValue.extra === "string") &&
         (blockValue.mode === undefined || checkValidMode(blockValue.mode))
@@ -184,7 +167,6 @@ const InternalAddToList = async (
     type: RefresherBlockType,
     content: string,
     isRegex: boolean,
-    isAdvanced: boolean,
     gallery?: string,
     extra?: string,
     mode?: RefresherBlockDetectMode
@@ -194,7 +176,6 @@ const InternalAddToList = async (
     const newItem: RefresherBlockValue = {
         content,
         isRegex,
-        isAdvanced,
         gallery,
         extra,
         mode
@@ -218,7 +199,6 @@ const InternalUpdateMode = async (type: RefresherBlockType, mode: RefresherBlock
  * @param type 차단 종류
  * @param content 차단 내용
  * @param isRegex 정규식인지에 대한 여부
- * @param isAdvanced 고급 차단인지에 대한 여부
  * @param gallery 특정 갤러리에만 해당하면 갤러리의 ID 값
  * @param extra 차단 목록에서의 식별을 위한 추가 값
  * @param mode 차단 모드
@@ -227,7 +207,6 @@ export const add = (
     type: RefresherBlockType,
     content: string,
     isRegex: boolean,
-    isAdvanced: boolean,
     gallery?: string,
     extra?: string,
     mode?: RefresherBlockDetectMode
@@ -237,7 +216,7 @@ export const add = (
     if (mode && !checkValidMode(mode))
         throw new Error(`${mode} is not a valid mode. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`);
 
-    return InternalAddToList(type, content, isRegex, isAdvanced, gallery, extra, mode);
+    return InternalAddToList(type, content, isRegex, gallery, extra, mode);
 };
 
 /**
@@ -273,17 +252,6 @@ export const check = (type: RefresherBlockType, content: string, gallery?: strin
 
     const result = cache.some((v) => {
         if (v.gallery && v.gallery !== gallery) return false;
-
-        if (v.isAdvanced) {
-            const fn = getCompiledAdvancedFn(v.content);
-            if (!fn) return false;
-            try {
-                const response = fn(type, content, gallery);
-                return typeof response === "boolean" ? response : false;
-            } catch {
-                return false;
-            }
-        }
 
         const mode = v.mode ?? blockModeCache[type];
 

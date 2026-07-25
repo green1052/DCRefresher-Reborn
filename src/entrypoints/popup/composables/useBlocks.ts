@@ -86,7 +86,6 @@ export function useBlocks() {
         blocks[currentBlockType.value].push({
             content: blockFormData.content.trim(),
             isRegex: blockFormData.isRegex,
-            isAdvanced: false,
             extra: extra.length ? extra.join(" ") : undefined,
             gallery: blockFormData.gallery.trim() || undefined,
             mode: blockFormData.mode === "NONE" ? undefined : blockFormData.mode

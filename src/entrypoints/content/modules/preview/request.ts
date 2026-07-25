@@ -31,6 +31,10 @@ const kyClient = ky.create({
     fetch: http.contentFetch
 });
 
+const htmlClient = ky.create({
+    fetch: http.contentFetch
+});
+
 const client = (url: Input, options?: Options): Promise<string> => {
     return kyClient(url, options).text();
 };
@@ -121,7 +125,7 @@ export const previewRequest = {
     },
 
     async post(link: string, gallery: string, id: string, signal: AbortSignal): Promise<IPostInfo> {
-        const response = await kyClient
+        const response = await htmlClient
             .get(`${http.urls.base}${http.galleryType(link, "/")}${http.urls.view}${gallery}&no=${id}`, {signal})
             .text();
         return parsePostInfo(id, response);

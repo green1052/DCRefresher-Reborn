@@ -2,15 +2,16 @@ import eventBus from "@/core/eventbus";
 import filter from "@/core/filtering";
 import modules from "@/core/modules";
 import Frame, {type FrameScrollApi} from "./frame";
-import type {PreviewFrame} from "./previewFrame";
+import type {PreviewFrame} from "./frame";
 import {makeBodyFrame, type PostFetchedDataRef} from "./bodyFrame";
 import {makeCommentFrame} from "./commentFrame";
 import {previewRequest} from "./request";
 import {blockPreset, closeAllPopups, panel} from "./panel";
 import {type MiniPreviewState} from "./miniPreview";
-import {getRelevantData} from "./getRelevantData";
+import {getRelevantData} from "./previewInputHandler";
 import type {PostCache} from "./cache";
-import {ScrollDetection} from "./scrollDetection";
+import {ScrollDetection} from "./scroll";
+
 import {
     type PreviewInputContext,
     attachElementHandlers,
@@ -21,8 +22,7 @@ import {
     type ScrollNavigationContext,
     createNavigationKeyHandler,
     createScrollSkipHandler
-} from "./previewScrollNavigation";
-
+} from "./scroll";
 export interface PreviewStatus {
     tooltipMode: boolean;
     tooltipMediaHide: boolean;

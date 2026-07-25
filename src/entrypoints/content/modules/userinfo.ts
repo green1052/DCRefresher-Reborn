@@ -158,7 +158,7 @@ const setupWriterInfoFilter = (ctx: UserinfoModule): string =>
 const setupContextMenuHandler = (ctx: UserinfoModule): (() => void) =>
     eventBus.on(
         "refresherUserContextMenu",
-        (nick: string, uid: string, ip: string) => {
+        (nick: string | null, uid: string | null, ip: string | null) => {
             ctx.memory.selected = {NICK: nick, UID: uid, IP: ip};
             ctx.memory.lastSelect = Date.now();
         }

@@ -49,6 +49,8 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const userDescription = computed(() => {
+  if (!props.user.id && !props.user.ip) return "";
+
   if (props.user.isMember()) {
     const ban = props.user.ban;
     const ratio = props.user.ratio;

@@ -13,14 +13,11 @@ declare global {
         desc: string;
         value: Value;
         default: Value;
-        advanced?: boolean;
     }
 
-    interface RefresherCheckSettings extends RefresherBaseSettings<"check", boolean> {
-    }
+    type RefresherCheckSettings = RefresherBaseSettings<"check", boolean>;
 
-    interface RefresherTextSettings extends RefresherBaseSettings<"text", string> {
-    }
+    type RefresherTextSettings = RefresherBaseSettings<"text", string>;
 
     interface RefresherRangeSettings extends RefresherBaseSettings<"range", number> {
         min: number;
@@ -30,14 +27,14 @@ declare global {
     }
 
     interface RefresherOptionSettings extends RefresherBaseSettings<"option", string> {
-        items: unknown;
+        items: Record<string, string>;
     }
 
     interface RefresherModuleGeneric {
-        data?: Record<string, unknown> | undefined;
-        memory?: Record<string, unknown> | undefined;
-        settings?: Record<string, RefresherSettings> | undefined;
-        shortcuts?: Record<string, () => void> | undefined;
+        data?: Record<string, unknown>;
+        memory?: Record<string, unknown>;
+        settings?: Record<string, RefresherSettings>;
+        shortcuts?: Record<string, () => void | Promise<void>>;
     }
 
     interface RefresherModule<T extends RefresherModuleGeneric = RefresherModuleGeneric> {

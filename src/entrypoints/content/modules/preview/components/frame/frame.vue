@@ -173,7 +173,7 @@
 <script lang="ts" setup>
 import {computed, onMounted, ref} from "vue";
 
-import type {PreviewFrame} from "../../previewFrame";
+import type {PreviewFrame} from "../../frame";
 import Comment from "../comment/comment.vue";
 import CountDown from "@/components/countdown.vue";
 import FrameError from "./frameError.vue";

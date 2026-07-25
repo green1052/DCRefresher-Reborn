@@ -25,7 +25,6 @@ const isBlockValue = (value: unknown): value is RefresherBlockValue => {
     return (
         typeof blockValue.content === "string" &&
         typeof blockValue.isRegex === "boolean" &&
-        typeof blockValue.isAdvanced === "boolean" &&
         (blockValue.gallery === undefined || typeof blockValue.gallery === "string") &&
         (blockValue.extra === undefined || typeof blockValue.extra === "string") &&
         (blockValue.mode === undefined || isBlockMode(blockValue.mode))

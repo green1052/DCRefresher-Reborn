@@ -12,11 +12,6 @@ interface DcconDetailResponse {
     detail: Array<{ path: string }>;
 }
 
-export interface BlockRequestArgs {
-    target: "user" | "dccon";
-    blockAllDccon?: boolean;
-}
-
 export interface BlockSelected {
     nick: string | null;
     uid: string | null;
@@ -26,7 +21,7 @@ export interface BlockSelected {
 }
 
 export const handleBlockRequest = async (
-    args: BlockRequestArgs,
+    args: BlockRequestOptions,
     selected: BlockSelected,
     lastSelectAge: number
 ): Promise<void> => {
@@ -75,7 +70,6 @@ export const handleBlockRequest = async (
                         "DCCON",
                         `^(${paths.join("|")})$`,
                         true,
-                        false,
                         undefined,
                         `[묶음] ${title} [${packageIdx}]`
                     );
@@ -84,7 +78,6 @@ export const handleBlockRequest = async (
                         await block.add(
                             "DCCON",
                             path,
-                            false,
                             false,
                             undefined,
                             `${title} [${packageIdx}]`
@@ -96,7 +89,7 @@ export const handleBlockRequest = async (
                 return;
             }
 
-            await block.add("DCCON", code, false, false, undefined, `${title} [${packageIdx}]`);
+            await block.add("DCCON", code, false, undefined, `${title} [${packageIdx}]`);
             toast.show(`${title} ${block.TYPE_NAMES.DCCON}을 차단했습니다.`);
         } catch (error) {
             console.error("Failed to block dccon:", error);
@@ -123,7 +116,7 @@ export const handleBlockRequest = async (
     }
 
     try {
-        await block.add(type, value, false, false, undefined, selected.nick ?? value);
+        await block.add(type, value, false, undefined, selected.nick ?? value);
         toast.show(`${block.TYPE_NAMES[type]} ${value}을(를) 차단했습니다.`);
     } catch (error) {
         console.error("Failed to save blocked user:", error);

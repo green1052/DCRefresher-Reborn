@@ -39,10 +39,6 @@
           v-if="tab === 0"
           key="tab1"
       />
-      <AdvancedTab
-          v-else-if="tab === 1"
-          key="tab2"
-      />
       <BlockTab
           v-else-if="tab === 2"
           key="tab3"
@@ -72,7 +68,6 @@ import {provide, ref} from "vue";
 
 import BlockDialog from "./components/BlockDialog.vue";
 import GeneralTab from "./tabs/GeneralTab.vue";
-import AdvancedTab from "./tabs/AdvancedTab.vue";
 import BlockTab from "./tabs/BlockTab.vue";
 import MemoTab from "./tabs/MemoTab.vue";
 import ModuleTab from "./tabs/ModuleTab.vue";
@@ -87,7 +82,6 @@ import {useData} from "./composables/useData";
 const tab = ref(0);
 const tabs = [
   {id: 0, label: "일반"},
-  {id: 1, label: "고급"},
   {id: 2, label: "차단"},
   {id: 3, label: "메모"},
   {id: 4, label: "모듈"},
