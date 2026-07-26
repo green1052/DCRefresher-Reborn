@@ -15,7 +15,7 @@
         />
         <refresher-range
             v-else-if="setting.type === 'range'"
-            v-model="rangeValue"
+            :model-value="Number(setting.value)"
             :disabled="!moduleEnabled"
             :max="setting.max"
             :min="setting.min"
@@ -35,7 +35,7 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, inject} from "vue";
+import {inject} from "vue";
 import RefresherCheckbox from "./checkbox.vue";
 import RefresherOptions from "./options.vue";
 import RefresherRange from "./range.vue";
@@ -51,11 +51,6 @@ interface Props {
 const props = defineProps<Props>();
 
 const updateUserSetting = inject<(module: string, key: string, value: unknown) => void>("updateUserSetting")!;
-
-const rangeValue = computed({
-    get: () => Number(props.setting.value),
-    set: () => {}
-});
 
 const onChange = (value: unknown) => {
     updateUserSetting(props.moduleName, props.settingKey, value);
