@@ -22,7 +22,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const {stampMode, stamp, locale, changeStamp} = useRelativeTime({
-    date: props.date,
+    date: () => props.date,
     mode: "remaining",
     interval: 5000
 });

@@ -1,4 +1,13 @@
-import {computed, type ComputedRef, onBeforeUnmount, onMounted, ref, type Ref} from "vue";
+import {
+    computed,
+    type ComputedRef,
+    type MaybeRefOrGetter,
+    onBeforeUnmount,
+    onMounted,
+    ref,
+    type Ref,
+    toValue
+} from "vue";
 
 const s = 1000;
 const m = s * 60;
@@ -11,7 +20,8 @@ const timeCounts = [y, w, d, h, m, s];
 const timeFilters = ["년", "주", "일", "시간", "분", "초"];
 
 interface UseRelativeTimeOptions {
-    date: Date;
+    // getter로 넘겨야 date가 바뀔 때(미리보기 글 이동 등) 표시도 따라간다
+    date: MaybeRefOrGetter<Date>;
     mode: "elapsed" | "remaining";
     interval?: number;
     fallbackText?: string;
@@ -19,7 +29,7 @@ interface UseRelativeTimeOptions {
 
 interface UseRelativeTimeReturn {
     stampMode: Ref<boolean>;
-    stamp: Ref<string>;
+    stamp: ComputedRef<string>;
     locale: ComputedRef<string>;
     changeStamp: () => void;
 }
@@ -50,25 +60,29 @@ export function useRelativeTime({
     };
 
     const stampMode = ref(false);
-    const stamp = ref("");
-    const updates = ref<ReturnType<typeof setInterval> | null>(null);
+    const tick = ref(0);
+    let updates: ReturnType<typeof setInterval> | null = null;
 
-    const locale = computed(() => date.toLocaleString());
+    // tick(주기 갱신)과 date 변경 양쪽 모두에 반응한다
+    const stamp = computed(() => {
+        void tick.value;
+        return convertTime(toValue(date));
+    });
+    const locale = computed(() => toValue(date).toLocaleString());
 
     const changeStamp = () => {
         stampMode.value = !stampMode.value;
     };
 
     onMounted(() => {
-        stamp.value = convertTime(date);
-        updates.value = setInterval(() => {
-            stamp.value = convertTime(date);
+        updates = setInterval(() => {
+            tick.value++;
         }, interval);
     });
 
     onBeforeUnmount(() => {
-        if (updates.value !== null) {
-            clearInterval(updates.value);
+        if (updates !== null) {
+            clearInterval(updates);
         }
     });
 
