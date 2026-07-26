@@ -12,7 +12,6 @@ declare global {
     }
 
     interface RefresherEventMap {
-        refresh: [];
         refresherUpdateSetting: [string, string, unknown];
         refresherSettingsSync: [Record<string, Record<string, RefresherSettings>>];
         refresherUpdateUserMemo: [];

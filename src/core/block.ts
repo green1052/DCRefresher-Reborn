@@ -1,5 +1,4 @@
 import {BLOCK_TYPES, blockModeStorage, blockStorage} from "@/storage/wxtStorage";
-import {eventBus} from "./eventbus";
 import {LRUCache} from "@/utils/lruCache";
 
 export const TYPE_NAMES: Record<RefresherBlockType, string> = {
@@ -137,13 +136,11 @@ export const normalizeBlockMode = (
             if (!newValue) return;
             blockCache[key] = normalizeBlockList(newValue);
             clearCompiledCaches();
-            eventBus.emit("refresh");
         });
 
         blockModeStorage[key].watch((newValue) => {
             if (!newValue) return;
             blockModeCache[key] = normalizeBlockMode(newValue, blockModeCache[key]);
-            eventBus.emit("refresh");
         });
     }
 })();

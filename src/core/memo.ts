@@ -48,7 +48,6 @@ export const normalizeMemoMap = (value: unknown): Record<string, RefresherMemoVa
 
         memoStorage[key].watch((newValue) => {
             memoCache[key] = normalizeMemoMap(newValue);
-            eventBus.emit("refresh");
         });
     }
 })();
