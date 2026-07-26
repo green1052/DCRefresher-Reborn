@@ -100,7 +100,8 @@ declare global {
             ? {
                 [K in keyof T["settings"]]: (
                     this: RefresherModule<T>,
-                    value: T["settings"][K]["value"]
+                    // 저장값은 항상 default 타입으로 정규화되므로 undefined가 아니다
+                    value: T["settings"][K]["default"]
                 ) => void | Promise<void>;
             }
             : Record<string, (value: unknown) => void | Promise<void>> | undefined;
