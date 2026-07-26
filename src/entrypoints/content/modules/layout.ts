@@ -159,6 +159,10 @@ export default {
     revoke() {
         if (this.memory.resize) window.removeEventListener("resize", this.memory.resize);
 
+        // 컴팩트 모드는 update 훅이 없어서 여기서 직접 되돌린다.
+        hideSticky(false);
+        document.documentElement.classList.remove("refresherCompact", "refresherCompactView");
+
         for (const key of TOGGLE_KEYS) (this.update![key] as (v: boolean) => void).call(this, false);
     }
 } as RefresherModule<{

@@ -32,13 +32,26 @@ type BlockModule = RefresherModule<{
     };
 }>;
 
+// 모듈을 껐을 때 되돌리려면 우리가 숨긴 요소를 표시해둬야 한다.
 const hideElement = (element: HTMLElement, blur = false): void => {
     if (blur) {
         element.classList.add("refresherBlur");
         return;
     }
 
+    element.classList.add("refresherBlocked");
     element.style.display = "none";
+};
+
+const restoreHiddenElements = (): void => {
+    for (const element of document.querySelectorAll<HTMLElement>(".refresherBlocked")) {
+        element.style.removeProperty("display");
+        element.classList.remove("refresherBlocked");
+    }
+
+    for (const element of document.querySelectorAll(".refresherBlur")) {
+        element.classList.remove("refresherBlur");
+    }
 };
 
 const hideWithReply = (target: HTMLElement, ctx: BlockModule): void => {
@@ -251,5 +264,7 @@ export default {
             document.removeEventListener("contextmenu", this.memory.contextMenuHandler, true);
             this.memory.contextMenuHandler = null;
         }
+
+        restoreHiddenElements();
     }
 } as BlockModule;

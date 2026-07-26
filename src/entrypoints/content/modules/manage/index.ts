@@ -108,7 +108,8 @@ const setupCheckboxHandlers = (ctx: ManageModule): string =>
                 }
 
                 if (type && target && ctx.status.checkAllTargetUser && ev.shiftKey) {
-                    for (const post of document.querySelectorAll<HTMLElement>(`.ub-writer[${type}="${target}"]`)) {
+                    // 닉네임에 따옴표 등이 들어가면 selector가 깨진다.
+                    for (const post of document.querySelectorAll<HTMLElement>(`.ub-writer[${type}=${CSS.escape(target)}]`)) {
                         const checkbox = post.parentElement?.querySelector<HTMLInputElement>(".article_chkbox");
                         if (checkbox) checkbox.checked = (ev.target as HTMLInputElement).checked;
                     }
@@ -239,13 +240,12 @@ const handleNewPostList = async (ctx: ManageModule, articles: HTMLElement[]): Pr
             }))
         );
 
+        // 한 번만 대입한다. data는 Proxy라 대입할 때마다 스토리지에 쓴다.
+        const updated = {...ctx.data.ratio};
         for (const {uid, result} of fetchedResults) {
-            if (result) {
-                const deepCopy = {...ctx.data.ratio};
-                deepCopy[uid] = result;
-                ctx.data.ratio = deepCopy;
-            }
+            if (result) updated[uid] = result;
         }
+        ctx.data.ratio = updated;
     }
 
     for (const {article, writer, uid} of ratioTargets) {
@@ -349,5 +349,15 @@ export default {
         if (this.memory.always) filter.remove(this.memory.always);
         if (this.memory.newPostListEvent) this.memory.newPostListEvent();
         if (this.memory.content) filter.remove(this.memory.content);
+
+        // 관리 모듈이 붙인 표시만 걷어낸다 (유저 정보 모듈 것과 클래스가 겹치지 않음).
+        for (const span of document.querySelectorAll(".refresherUserData.ratio, .refresherUserData.permBan")) {
+            span.remove();
+        }
+
+        for (const element of document.querySelectorAll<HTMLElement>("[data-refresher-ratio], [data-refresher-perm-ban]")) {
+            delete element.dataset.refresherRatio;
+            delete element.dataset.refresherPermBan;
+        }
     }
 } as ManageModule;
