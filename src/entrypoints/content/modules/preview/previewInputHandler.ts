@@ -1,5 +1,4 @@
 import {miniPreviewClose, miniPreviewCreate, miniPreviewMove, type MiniPreviewState} from "./miniPreview";
-import {previewRequest} from "./request";
 import type {PostCache} from "./cache";
 import type {PreviewStatus} from "./controller";
 
@@ -151,8 +150,7 @@ export function attachElementHandlers(
                 ctx.status.tooltipMediaHide,
                 ctx.status.tooltipInteraction,
                 getRelevantData,
-                ctx.postCaches,
-                previewRequest
+                ctx.postCaches
             );
 
             if (ctx.status.tooltipInteraction)

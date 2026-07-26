@@ -191,16 +191,8 @@ const blur = (): void => {
     inputFocusRef.value = false;
 };
 
-const onKeyDown = (ev: KeyboardEvent): KeyboardEvent | void => {
-    if (ev.shiftKey && ev.key === "Enter") {
-        return ev;
-    }
-
-    if (ev.key !== "Enter") {
-        return ev;
-    }
-
-    write();
+const onKeyDown = (ev: KeyboardEvent): void => {
+    if (ev.key === "Enter" && !ev.shiftKey) void write();
 };
 </script>
 

@@ -294,7 +294,7 @@ const incrementCommentKey = () => {
     commentKey.value++;
 };
 
-defineExpose({commentKey, incrementCommentKey});
+defineExpose({incrementCommentKey});
 </script>
 
 <style lang="scss">

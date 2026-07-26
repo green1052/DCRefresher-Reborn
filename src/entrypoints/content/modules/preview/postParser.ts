@@ -79,6 +79,13 @@ function parseRandomParams(dom: Document, postInfo: IPostInfo): void {
     }
 }
 
+// lazy-load 이미지의 원본 src 복원. bodyFrame/miniPreview 공용.
+export function restoreImageSources(root: ParentNode): void {
+    for (const element of root.querySelectorAll("img[data-original]")) {
+        element.setAttribute("src", element.getAttribute("data-original")!);
+    }
+}
+
 export function parsePostInfo(id: string, body: string): IPostInfo {
     const dom = domParser.parseFromString(body, "text/html");
 

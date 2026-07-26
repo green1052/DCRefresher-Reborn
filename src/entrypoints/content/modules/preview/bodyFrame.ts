@@ -1,9 +1,10 @@
 import type {PreviewFrame} from "./frame";
 import * as block from "@/core/block";
 import eventBus from "@/core/eventbus";
-import {panel} from "./panel";
+import {requestWithCaptcha} from "./panel";
 import * as http from "@/http/http";
-import {previewRequest} from "./request";
+import {fetchPostWithCache, previewRequest} from "./request";
+import {restoreImageSources} from "./postParser";
 import {PostCache} from "./cache";
 import toast from "@/utils/toast";
 
@@ -26,32 +27,6 @@ export interface BodyFrameContext {
     getGroupElement: () => HTMLElement | undefined;
 }
 
-// 게시글 정보 조회 (캐시 우선)
-async function fetchPostInfo(
-    preData: GalleryPreData,
-    signal: AbortSignal,
-    postCaches: PostCache,
-    useCache: boolean,
-    disableCache: boolean
-): Promise<IPostInfo> {
-    const cacheKey = PostCache.key(preData.gallery, preData.id);
-
-    if (useCache && !disableCache) {
-        const cache = postCaches.get(cacheKey);
-        if (cache?.post !== undefined) {
-            return cache.post as IPostInfo;
-        }
-    }
-
-    const response = await previewRequest.post(preData.link!, preData.gallery, preData.id, signal);
-
-    if (!response) throw new Error("Can not fetch post data.");
-
-    postCaches.set(cacheKey, {date: Date.now(), post: response});
-
-    return response as IPostInfo;
-}
-
 // 게시글 콘텐츠 렌더링 (이미지/GIF 처리, 차단 체크, 필드 할당)
 function renderPostContent(
     frame: PreviewFrame,
@@ -69,9 +44,7 @@ function renderPostContent(
 
     const dom = new DOMParser().parseFromString(postInfo.contents!, "text/html");
 
-    for (const element of dom.querySelectorAll("img[data-original]")) {
-        element.setAttribute("src", element.getAttribute("data-original")!);
-    }
+    restoreImageSources(dom);
 
     if (gifControl) {
         for (const element of dom.querySelectorAll("video")) {
@@ -152,10 +125,6 @@ export function makeBodyFrame(ctx: BodyFrameContext): void {
 
         const postFetched = postFetchedDataRef.value;
 
-        const codeSrc = postFetched.requireCaptcha
-            ? await previewRequest.captcha(preData, "recommend")
-            : undefined;
-
         const req = async (captcha?: string) => {
             const response = await previewRequest.vote(
                 preData.gallery,
@@ -176,7 +145,7 @@ export function makeBodyFrame(ctx: BodyFrameContext): void {
             return false;
         };
 
-        return codeSrc ? panel.captcha(codeSrc, req) : req();
+        return requestWithCaptcha(preData, "recommend", postFetched.requireCaptcha ?? false, req);
     };
 
     frame.functions.share = async () => {
@@ -192,7 +161,7 @@ export function makeBodyFrame(ctx: BodyFrameContext): void {
         frame.error = undefined;
 
         try {
-            const postInfo = await fetchPostInfo(preData, signal, postCaches, useCache, disableCache);
+            const postInfo = await fetchPostWithCache(postCaches, preData, signal, useCache && !disableCache);
             postFetchedDataRef.value = postInfo;
 
             if (colorPreviewLink) {

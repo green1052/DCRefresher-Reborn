@@ -171,15 +171,11 @@ export interface FrameStackOption {
 export interface FrameScrollApi {
     setScrollMode: (mode: "top" | "bottom" | "none") => void;
     clearScrollMode: () => void;
-    body: () => PreviewFrame;
-    comment: () => PreviewFrame;
     close: () => void;
     fadeIn: () => void;
-    fadeOut: () => void;
     closed: boolean;
     inputFocus: boolean;
     groupElement: HTMLElement | undefined;
-    bodyFrameRef: { incrementCommentKey?: () => void } | null;
     commentFrameRef: { incrementCommentKey?: () => void } | null;
     onClose: (handler: () => void) => void;
 }

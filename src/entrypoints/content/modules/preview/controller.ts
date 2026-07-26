@@ -183,10 +183,6 @@ export class PreviewController {
         return this.frame?.app;
     }
 
-    private getPostFetchedId(): string {
-        return this.postFetchedDataRef.value?.id ?? "";
-    }
-
     private clearRefreshInterval(): void {
         if (this.refreshIntervalId) {
             window.clearInterval(this.refreshIntervalId);
@@ -339,8 +335,7 @@ export class PreviewController {
             getAppStore: () => this.appStore,
             getGroupStore: () => this.groupStore,
             scrolledCountRef: this.scrolledCountRef,
-            newPostWithData: (pd, hs) => this.newPostWithData(pd, hs),
-            getPostFetchedId: () => this.getPostFetchedId()
+            newPostWithData: (pd, hs) => this.newPostWithData(pd, hs)
         };
 
         detector.listen("scroll", createScrollSkipHandler(scrollCtx, preData, historySkip));

@@ -5,7 +5,7 @@ import captchaPopup from "./components/popup/captchaPopup.vue";
 import adminPanel from "./components/popup/adminPanel.vue";
 
 import type Frame from "./frame";
-import type {PreviewRequest} from "./request";
+import {previewRequest, type PreviewRequest} from "./request";
 import type {TypedEventBus} from "@/core/eventbus";
 import toast from "@/utils/toast";
 
@@ -52,6 +52,19 @@ export const closeAllPopups = (): void => {
     }
     mountedPopups.clear();
 };
+
+// 캡차가 필요하면 팝업을 거쳐, 아니면 바로 요청 실행. 추천/댓글 작성 공용.
+export async function requestWithCaptcha(
+    preData: GalleryPreData,
+    kcaptchaType: "comment" | "recommend",
+    required: boolean,
+    req: (captcha?: string) => Promise<boolean>
+): Promise<boolean> {
+    if (!required) return req();
+
+    const src = await previewRequest.captcha(preData, kcaptchaType);
+    return panel.captcha(src, req);
+}
 
 export const panel = {
     block(
