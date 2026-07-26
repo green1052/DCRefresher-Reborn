@@ -60,9 +60,6 @@ export const commentGallTypes: Record<string, string> = {
     person: "PR"
 };
 
-export const viewRegex = /\/board\/view\//;
-export const mgall = /dcinside\.com\/mgallery/;
-
 /**
  * 마이너 갤러리인지를 확인하여 boolean을 반환합니다.
  * @param url 확인할 URL
@@ -143,8 +140,6 @@ export const queryString = (name: string): string | null => new URLSearchParams(
 export default {
     urls,
     types,
-    viewRegex,
-    mgall,
     checkMinor,
     checkMini,
     checkPerson,
