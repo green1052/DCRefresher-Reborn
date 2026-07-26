@@ -761,6 +761,27 @@ body {
 }
 
 // ============================================================
+// Form controls / cards 토큰 (popup 전용 — content css에 중복 방출 방지)
+// ============================================================
+
+:root {
+    --refresher-green: #4caf50;
+    --refresher-green-ring: rgba(76, 175, 80, 0.2);
+    --refresher-control-track: #e0e0e0;
+    --refresher-control-thumb: #fff;
+    --refresher-control-thumb-shadow: rgba(0, 0, 0, 0.2);
+    --refresher-field-bg: #fff;
+    --refresher-field-border: #aaa;
+    --refresher-field-text: #000;
+    --refresher-field-disabled-bg: #f5f5f5;
+    --refresher-field-disabled-text: #999;
+    --refresher-option-hover: #f0f0f0;
+    --refresher-text-strong: #333;
+    --refresher-card-bg: #f8f8f8;
+    --refresher-highlight: #afdbff;
+}
+
+// ============================================================
 // Dark mode (popup uses prefers-color-scheme)
 // ============================================================
 
@@ -774,6 +795,21 @@ body {
         --refresher-bg-overlay: rgba(0, 0, 0, 0.6);
         --refresher-bg-popup: rgba(34, 34, 34, 0.9);
         --refresher-border-light: #555;
+
+        --refresher-green: #66bb6a;
+        --refresher-green-ring: rgba(102, 187, 106, 0.2);
+        --refresher-control-track: #555;
+        --refresher-control-thumb: #f5f5f5;
+        --refresher-control-thumb-shadow: rgba(255, 255, 255, 0.1);
+        --refresher-field-bg: #3b3b3b;
+        --refresher-field-border: #5a5a5a;
+        --refresher-field-text: #fff;
+        --refresher-field-disabled-bg: #2a2a2a;
+        --refresher-field-disabled-text: #666;
+        --refresher-option-hover: #4a4a4a;
+        --refresher-text-strong: #e0e0e0;
+        --refresher-card-bg: #2c2c2c;
+        --refresher-highlight: #223957;
     }
 
     body {

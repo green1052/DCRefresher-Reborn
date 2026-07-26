@@ -42,9 +42,10 @@ const handleChange = (ev: Event) => {
 
 <style lang="scss" scoped>
 .refresher-options {
-    background-color: white;
-    border: 1px solid #ccc;
+    background-color: var(--refresher-field-bg);
+    border: 1px solid var(--refresher-field-border);
     border-radius: 4px;
+    color: var(--refresher-field-text);
     cursor: pointer;
     display: inline-block;
     font-size: 15px;
@@ -55,60 +56,29 @@ const handleChange = (ev: Event) => {
     width: 150px;
 
     &:focus {
-        border-color: #4caf50;
-        box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        border-color: var(--refresher-green);
+        box-shadow: 0 0 0 2px var(--refresher-green-ring);
         outline: none;
     }
 
     &:disabled {
-        background-color: #f5f5f5;
-        color: #999;
+        background-color: var(--refresher-field-disabled-bg);
+        color: var(--refresher-field-disabled-text);
         cursor: not-allowed;
     }
 
     option {
-        background-color: white;
-        color: black;
+        background-color: var(--refresher-field-bg);
+        color: var(--refresher-field-text);
         padding: 4px 8px;
 
         &:hover {
-            background-color: #f0f0f0;
+            background-color: var(--refresher-option-hover);
         }
 
         &:checked {
-            background-color: #4caf50;
+            background-color: var(--refresher-green);
             color: white;
-        }
-    }
-}
-
-@media (prefers-color-scheme: dark) {
-    .refresher-options {
-        background-color: #3b3b3b;
-        border-color: rgb(90, 90, 90);
-        color: white;
-
-        &:focus {
-            border-color: #66bb6a;
-            box-shadow: 0 0 0 2px rgba(102, 187, 106, 0.2);
-        }
-
-        &:disabled {
-            background-color: #2a2a2a;
-            color: #666;
-        }
-
-        option {
-            background-color: #3b3b3b;
-            color: white;
-
-            &:hover {
-                background-color: #4a4a4a;
-            }
-
-            &:checked {
-                background-color: #66bb6a;
-            }
         }
     }
 }

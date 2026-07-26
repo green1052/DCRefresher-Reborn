@@ -64,7 +64,7 @@ const handleChange = () => {
     input {
         -webkit-appearance: none;
         appearance: none;
-        background: #ddd;
+        background: var(--refresher-control-track);
         border-radius: 3px;
         flex: 1;
         height: 6px;
@@ -74,7 +74,7 @@ const handleChange = () => {
         &::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            background: #4caf50;
+            background: var(--refresher-green);
             border-radius: 50%;
             cursor: pointer;
             height: 18px;
@@ -82,13 +82,13 @@ const handleChange = () => {
             width: 18px;
 
             &:hover {
-                box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.2);
+                box-shadow: 0 0 0 4px var(--refresher-green-ring);
                 transform: scale(1.1);
             }
         }
 
         &::-moz-range-thumb {
-            background: #4caf50;
+            background: var(--refresher-green);
             border: none;
             border-radius: 50%;
             cursor: pointer;
@@ -97,7 +97,7 @@ const handleChange = () => {
             width: 18px;
 
             &:hover {
-                box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.2);
+                box-shadow: 0 0 0 4px var(--refresher-green-ring);
                 transform: scale(1.1);
             }
         }
@@ -127,7 +127,7 @@ const handleChange = () => {
     }
 
     .indicator {
-        color: #a0a0a0;
+        color: var(--refresher-text-tertiary);
         font-size: 12px;
         font-weight: 500;
         min-width: 40px;
@@ -135,31 +135,4 @@ const handleChange = () => {
     }
 }
 
-@media (prefers-color-scheme: dark) {
-    .refresher-range {
-        input {
-            background: #555;
-
-            &::-webkit-slider-thumb {
-                background: #66bb6a;
-
-                &:hover {
-                    box-shadow: 0 0 0 4px rgba(102, 187, 106, 0.2);
-                }
-            }
-
-            &::-moz-range-thumb {
-                background: #66bb6a;
-
-                &:hover {
-                    box-shadow: 0 0 0 4px rgba(102, 187, 106, 0.2);
-                }
-            }
-        }
-
-        .indicator {
-            color: #ccc;
-        }
-    }
-}
 </style>
