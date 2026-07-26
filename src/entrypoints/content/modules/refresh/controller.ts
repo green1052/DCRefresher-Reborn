@@ -32,6 +32,7 @@ interface RefreshMemory {
     visibilityChangeHandler: (() => void) | null;
     pageShowHandler: ((event: PageTransitionEvent) => void) | null;
     popStateHandler: (() => void) | null;
+    paginationAbort: AbortController | null;
 }
 
 const bindPaginationAnchor = (anchor: HTMLAnchorElement, memory: RefreshMemory): void => {
@@ -51,7 +52,14 @@ const bindPaginationAnchor = (anchor: HTMLAnchorElement, memory: RefreshMemory):
 
         const scrollTarget = document.querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head");
         scrollTarget?.scrollIntoView({behavior: "smooth", block: "start"});
-    });
+    }, {signal: memory.paginationAbort?.signal});
+};
+
+// onclick으로 기본 이동을 막아뒀기 때문에, 모듈을 끄면 되돌려줘야 페이지 넘기기가 다시 동작한다.
+const unbindPaginationAnchors = (): void => {
+    for (const anchor of document.querySelectorAll<HTMLAnchorElement>(`${PAGING_SELECTOR} a`)) {
+        anchor.onclick = null;
+    }
 };
 
 export class RefreshController {
@@ -78,7 +86,8 @@ export class RefreshController {
             controlButtonFilterId: null,
             visibilityChangeHandler: null,
             pageShowHandler: null,
-            popStateHandler: null
+            popStateHandler: null,
+            paginationAbort: null
         };
     }
 
@@ -145,27 +154,32 @@ export class RefreshController {
     }
 
     destroy(): void {
-        document.body.classList.remove("refresherDoNotColorVisited");
+        // setup()에서 documentElement에 붙인다.
+        document.documentElement.classList.remove("refresherDoNotColorVisited");
 
         if (this.memory.refresh) {
             window.clearTimeout(this.memory.refresh);
             this.memory.refresh = 0;
         }
 
-        const domEvents: [string, string][] = [
-            ["visibilitychange", "visibilityChangeHandler"],
-            ["pageshow", "pageShowHandler"],
-            ["popstate", "popStateHandler"]
-        ];
-        for (const [event, key] of domEvents) {
-            const handler = this.memory[key as keyof RefreshMemory] as (() => void) | null;
-            if (handler) {
-                key === "visibilitychange"
-                    ? document.removeEventListener(event, handler)
-                    : window.removeEventListener(event, handler as EventListener);
-                (this.memory as unknown as Record<string, unknown>)[key] = null;
-            }
+        if (this.memory.visibilityChangeHandler) {
+            document.removeEventListener("visibilitychange", this.memory.visibilityChangeHandler);
+            this.memory.visibilityChangeHandler = null;
         }
+
+        if (this.memory.pageShowHandler) {
+            window.removeEventListener("pageshow", this.memory.pageShowHandler as EventListener);
+            this.memory.pageShowHandler = null;
+        }
+
+        if (this.memory.popStateHandler) {
+            window.removeEventListener("popstate", this.memory.popStateHandler);
+            this.memory.popStateHandler = null;
+        }
+
+        this.memory.paginationAbort?.abort();
+        this.memory.paginationAbort = null;
+        unbindPaginationAnchors();
 
         if (this.memory.controlButtonFilterId) {
             filter.remove(this.memory.controlButtonFilterId, true);
@@ -285,6 +299,8 @@ export class RefreshController {
     }
 
     private setupPagination(): void {
+        this.memory.paginationAbort = new AbortController();
+
         this.memory.uuid = filter.add<HTMLAnchorElement>(
             `${PAGING_SELECTOR} a`,
             (element) => bindPaginationAnchor(element, this.memory)

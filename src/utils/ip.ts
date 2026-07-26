@@ -3,37 +3,24 @@ import type {Nullable} from "./types";
 import {databaseStorage} from "@/storage/wxtStorage";
 
 let ipData: Record<string, string> = {};
-let ipDataReady: Promise<void> | null = null;
 
-const initIpData = (): Promise<void> => {
-    if (!ipDataReady) {
-        ipDataReady = (async () => {
-            ipData = await databaseStorage.ip.getValue();
-        })();
-    }
-    return ipDataReady;
-};
+void (async () => {
+    ipData = await databaseStorage.ip.getValue();
 
-void initIpData();
+    // 백그라운드가 주기적으로 DB를 갱신하므로 열려 있는 탭도 따라가야 한다.
+    databaseStorage.ip.watch((newValue) => {
+        ipData = newValue ?? {};
+    });
+})();
 
-export const ISPData = (ip: string): ISPInfo => {
-    if (!Object.keys(ipData).length) return {name: undefined, color: "#6495ed"};
+export const ISPData = (ip: string): ISPInfo => ({
+    name: ipData[ip],
+    color: "#6495ed"
+});
 
-    return {
-        name: ipData?.[ip],
-        color: "#6495ed"
-    };
-};
-
-export const format = (data: ISPInfo): Nullable<string> => {
-    const {name} = data;
-    return name ?? null;
-};
-
-export const ensureIpDataReady = (): Promise<void> => initIpData();
+export const format = (data: ISPInfo): Nullable<string> => data.name ?? null;
 
 export default {
     ISPData,
-    format,
-    ensureIpDataReady
+    format
 };

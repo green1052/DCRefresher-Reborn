@@ -1,4 +1,4 @@
-export function insertIntoWriterArea(element: HTMLElement, span: HTMLElement): boolean {
+export function insertIntoWriterArea(element: HTMLElement, span: HTMLElement): void {
     if (element.dataset.ip) {
         const addBox = element.querySelector<HTMLElement>(".addbox");
 
@@ -18,7 +18,7 @@ export function insertIntoWriterArea(element: HTMLElement, span: HTMLElement): b
                     addBox.appendChild(span);
                 }
             }
-            return true;
+            return;
         }
 
         const fl = element.querySelector<HTMLElement>(".fl > span");
@@ -26,13 +26,13 @@ export function insertIntoWriterArea(element: HTMLElement, span: HTMLElement): b
             const flIpQuery = fl.querySelector<HTMLElement>(".ip, .writer_nikcon");
             if (flIpQuery) fl.insertBefore(span, flIpQuery.nextSibling);
             else fl.appendChild(span);
-            return true;
+            return;
         }
 
         const userData = element.querySelector<HTMLElement>(".refresherUserData");
         if (userData) element.insertBefore(span, userData);
         else element.appendChild(span);
-        return true;
+        return;
     }
 
     const addBox = element.querySelector<HTMLElement>(".addbox");
@@ -40,9 +40,8 @@ export function insertIntoWriterArea(element: HTMLElement, span: HTMLElement): b
         const userData = element.querySelector<HTMLElement>(".refresherUserData");
         if (userData) addBox.insertBefore(span, userData);
         else addBox.appendChild(span);
-        return true;
+        return;
     }
 
     element.appendChild(span);
-    return true;
 }
