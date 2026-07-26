@@ -2,6 +2,14 @@ import {onMessage, sendMessage} from "@/http/messaging";
 import {databaseStorage} from "@/storage/wxtStorage";
 
 export default defineBackground(() => {
+    // ponytail: broadcast 타입은 런타임에만 정해지므로 캐스팅.
+    // 원시 tabs.sendMessage는 @webext-core/messaging 봉투(timestamp 등)가 없어 수신측에서 무시됨.
+    const sendToTab = sendMessage as (
+        type: string,
+        data: unknown,
+        tabId: number
+    ) => Promise<unknown>;
+
     // ===== Broadcast: popup/content → background → 모든 탭 =====
     onMessage("broadcast", async ({data}) => {
         const {type, data: payload} = data;
@@ -13,7 +21,7 @@ export default defineBackground(() => {
             for (const tab of tabs) {
                 if (!tab.id) continue;
                 promises.push(
-                    browser.tabs.sendMessage(tab.id, {type, data: payload}).catch(() => {
+                    sendToTab(type, payload, tab.id).catch(() => {
                     })
                 );
             }
