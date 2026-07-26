@@ -131,9 +131,7 @@ const updateText = (ev: InputEvent) => {
     text.value = (ev.target as HTMLTextAreaElement).value;
 };
 
-const renderDcconPopup = (): void => {
-    props.renderDcconPopup();
-};
+const renderDcconPopup = (): boolean => props.renderDcconPopup();
 
 const write = async (): Promise<boolean> => {
     disabled.value = true;

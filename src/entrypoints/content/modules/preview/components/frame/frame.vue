@@ -162,7 +162,7 @@
                 v-if="showVotes"
                 :downvote="() => frame.functions.vote(0)"
                 :frame="frame"
-                :original="() => { void frame.functions.openOriginal(); return Promise.resolve(true); }"
+                :original="async () => { void frame.functions.openOriginal(); return true; }"
                 :share="() => frame.functions.share()"
                 :upvote="() => frame.functions.vote(1)"
             />

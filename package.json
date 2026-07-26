@@ -12,6 +12,7 @@
         "build:chrome": "wxt build",
         "build:firefox": "wxt build -b firefox",
         "zip": "wxt zip && wxt zip -b firefox",
+        "check": "vue-tsc --noEmit",
         "postinstall": "wxt prepare"
     },
     "dependencies": {
@@ -26,6 +27,8 @@
         "js-cookie": "^3.0.8",
         "ky": "^2.0.2",
         "sass": "^1.102.0",
+        "typescript": "^5",
+        "vue-tsc": "^3.3.8",
         "webextension-polyfill": "^0.12.0",
         "wxt": "^0.20.27"
     },

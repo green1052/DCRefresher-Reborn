@@ -47,13 +47,13 @@ const props = withDefaults(defineProps<Props>(), {
 const error = ref(0);
 
 const iconMap: Record<string, string> = {
-    upvote: browser.runtime.getURL(upvoteIcon),
-    downvote: browser.runtime.getURL(downvoteIcon),
-    share: browser.runtime.getURL(shareIcon),
-    newtab: browser.runtime.getURL(newtabIcon),
-    write: browser.runtime.getURL(writeIcon),
-    refresh: browser.runtime.getURL(refreshIcon),
-    dccon: browser.runtime.getURL(dcconIcon)
+    upvote: browser.runtime.getURL(upvoteIcon as never),
+    downvote: browser.runtime.getURL(downvoteIcon as never),
+    share: browser.runtime.getURL(shareIcon as never),
+    newtab: browser.runtime.getURL(newtabIcon as never),
+    write: browser.runtime.getURL(writeIcon as never),
+    refresh: browser.runtime.getURL(refreshIcon as never),
+    dccon: browser.runtime.getURL(dcconIcon as never)
 };
 
 const iconSrc = computed(() => iconMap[String(props.id)]);

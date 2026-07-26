@@ -54,6 +54,7 @@
 
 <script lang="ts" setup>
 import {inject, onMounted} from "vue";
+import type {useData} from "../composables/useData";
 
 const {
     lastUpdate,
@@ -64,7 +65,7 @@ const {
     exportData,
     importData,
     clearData
-} = inject("data")!;
+} = inject<ReturnType<typeof useData>>("data")!;
 
 onMounted(refreshLastUpdate);
 </script>

@@ -50,6 +50,7 @@
 import {inject} from "vue";
 import RefresherBubble from "../components/bubble.vue";
 import {PlusIcon, RemoveIcon} from "../components/icons";
+import type {useMemos} from "../composables/useMemos";
 
 const {
     memos,
@@ -61,7 +62,7 @@ const {
     editMemoUser,
     exportMemo,
     importMemo
-} = inject("memos")!;
+} = inject<ReturnType<typeof useMemos>>("memos")!;
 
 const open = (url: string) => {
     browser.tabs.create({url});

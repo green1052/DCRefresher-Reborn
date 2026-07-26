@@ -20,6 +20,7 @@
 <script lang="ts" setup>
 import {inject} from "vue";
 import RefresherCheckbox from "./checkbox.vue";
+import type {useSettings} from "../composables/useSettings";
 
 interface Props {
     name: string;
@@ -29,7 +30,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const {updateModuleStatus} = inject("settings")!;
+const {updateModuleStatus} = inject<ReturnType<typeof useSettings>>("settings")!;
 
 const handleToggle = async (value: boolean) => {
     try {

@@ -18,7 +18,7 @@
             </div>
 
             <div class="refresh" @click="getDcconList(true)">
-                <img :src="browser.runtime.getURL(refreshIcon)"/>
+                <img :src="browser.runtime.getURL(refreshIcon as never)"/>
             </div>
 
             <div

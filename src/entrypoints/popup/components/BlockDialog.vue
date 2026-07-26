@@ -55,7 +55,6 @@
 </template>
 
 <script lang="ts" setup>
-import type {RefresherBlockDetectMode} from "@/@types/block";
 import RefresherInput from "./refresherInput.vue";
 import RefresherCheckbox from "./checkbox.vue";
 import RefresherOptions from "./options.vue";
