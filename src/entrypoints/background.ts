@@ -11,23 +11,28 @@ export default defineBackground(() => {
     ) => Promise<unknown>;
 
     // ===== Broadcast: popup/content → background → 모든 탭 =====
+    const broadcastToTabs = async (type: string, payload?: unknown): Promise<number> => {
+        const tabs = await browser.tabs.query({url: ["https://*.dcinside.com/*"]});
+        const promises: Promise<unknown>[] = [];
+
+        for (const tab of tabs) {
+            if (!tab.id) continue;
+            promises.push(
+                sendToTab(type, payload, tab.id).catch(() => {
+                })
+            );
+        }
+
+        await Promise.all(promises);
+        return promises.length;
+    };
+
     onMessage("broadcast", async ({data}) => {
         const {type, data: payload} = data;
 
         try {
-            const tabs = await browser.tabs.query({url: ["https://*.dcinside.com/*"]});
-            const promises: Promise<unknown>[] = [];
-
-            for (const tab of tabs) {
-                if (!tab.id) continue;
-                promises.push(
-                    sendToTab(type, payload, tab.id).catch(() => {
-                    })
-                );
-            }
-
-            await Promise.all(promises);
-            return {success: true, sentTo: promises.length};
+            const sentTo = await broadcastToTabs(type, payload);
+            return {success: true, sentTo};
         } catch (e) {
             console.error("Broadcast error:", e);
             return {success: false, error: e};
@@ -85,11 +90,11 @@ export default defineBackground(() => {
     });
 
     browser.runtime.onStartup.addListener(createContextMenus);
-    browser.runtime.onInstalled.addListener(createContextMenus);
 
     // ===== Commands: 단축키 → 모든 탭에 broadcast =====
+    // runtime.sendMessage는 보낸 컨텍스트(background 자신)에는 전달되지 않으므로 직접 호출
     browser.commands.onCommand.addListener((command) => {
-        sendMessage("broadcast", {type: "executeShortcut", data: command});
+        void broadcastToTabs("executeShortcut", command);
     });
 
     // ===== Database Update =====
