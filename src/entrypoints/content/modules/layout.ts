@@ -40,8 +40,7 @@ export default {
             min: 100,
             max: screen.width,
             step: 1,
-            unit: "px",
-            value: 1
+            unit: "px"
         },
         forceCompact: {
             name: "컴팩트 모드 강제 사용",
@@ -50,7 +49,7 @@ export default {
             default: false
         },
         useCompactModeOnView: {
-            name: "컴팩트 모드 강제 사용",
+            name: "게시글 보기 컴팩트 모드",
             desc: "게시글 보기에서도 컴팩트 모드를 사용하도록 설정합니다.",
             type: "check",
             default: true
