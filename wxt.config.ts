@@ -7,7 +7,7 @@ export default defineConfig({
         "@wxt-dev/webextension-polyfill",
         "@wxt-dev/module-vue"
     ],
-    manifest: {
+    manifest: ({browser}) => ({
         name: "DCRefresher Reborn",
         description: "디시인사이드 개선 확장 프로그램",
         permissions: [
@@ -47,14 +47,17 @@ export default defineConfig({
                 description: "스텔스 모드: 일시 비활성화"
             }
         },
-        browser_specific_settings: {
-            gecko: {
-                // AMO에 등록된 ID (구 manifest_v2/v3에서 사용하던 값과 동일해야 업데이트로 인식됨)
-                id: "dcrefresher-reborn@green1052",
-                data_collection_permissions: {
-                    required: ["none"]
+        // Chrome은 이 키를 모른다 — Firefox 빌드에만 포함
+        ...(browser === "firefox" && {
+            browser_specific_settings: {
+                gecko: {
+                    // AMO에 등록된 ID (구 manifest_v2/v3에서 사용하던 값과 동일해야 업데이트로 인식됨)
+                    id: "dcrefresher-reborn@green1052",
+                    data_collection_permissions: {
+                        required: ["none"]
+                    }
                 }
             }
-        }
-    }
+        })
+    })
 });
