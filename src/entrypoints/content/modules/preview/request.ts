@@ -255,9 +255,6 @@ export const previewRequest = {
     ): Promise<boolean | string> {
         if (!preData.link) return false;
 
-        const typeName = http.galleryTypeName(preData.link);
-        if (!typeName.length) return false;
-
         const url = http.checkMini(preData.link) ? http.urls.manage.deleteCommentMini : http.urls.manage.deleteComment;
 
         const params = createParams(preData.link);
@@ -275,9 +272,6 @@ export const previewRequest = {
         password?: string
     ): Promise<boolean | string> {
         if (!preData.link) return false;
-
-        const typeName = http.galleryTypeName(preData.link);
-        if (!typeName.length) return false;
 
         const params = createParams(preData.link);
         params.set("id", preData.gallery);
