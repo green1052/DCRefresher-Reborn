@@ -20,11 +20,11 @@ export class PostCache {
         return `${gallery}:${id}`;
     }
 
-    get(id: string, ignoreTimeout = false): CacheEntry | undefined {
+    get(id: string): CacheEntry | undefined {
         const cache = this.#caches.get(id);
         if (!cache) return undefined;
 
-        if (!ignoreTimeout && Date.now() - cache.date > CACHE_TIMEOUT) return undefined;
+        if (Date.now() - cache.date > CACHE_TIMEOUT) return undefined;
 
         return cache;
     }

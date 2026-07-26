@@ -182,11 +182,6 @@ const InternalAddToList = async (
     await blockStorage[type].setValue(blockCache[type]);
 };
 
-const InternalUpdateMode = async (type: RefresherBlockType, mode: RefresherBlockDetectMode) => {
-    blockModeCache[type] = mode;
-    await blockModeStorage[type].setValue(mode);
-};
-
 /**
  * 차단 목록에 추가합니다.
  *
@@ -211,21 +206,6 @@ export const add = (
         throw new Error(`${mode} is not a valid mode. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`);
 
     return InternalAddToList(type, content, isRegex, gallery, extra, mode);
-};
-
-/**
- * 주어진 type의 차단의 모드를 변경합니다.
- *
- * @param type 차단 종류
- * @param mode 차단 모드
- */
-export const updateMode = (type: RefresherBlockType, mode: RefresherBlockDetectMode): Promise<void> => {
-    if (!checkValidType(type)) throw new Error(`${type} is not a valid type. requires one of [${BLOCK_TYPES.join(", ")}]`);
-
-    if (!checkValidMode(mode))
-        throw new Error(`${mode} is not a valid mode. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`);
-
-    return InternalUpdateMode(type, mode);
 };
 
 /**
@@ -295,19 +275,10 @@ export const checkAll = (obj: Partial<Record<RefresherBlockType, string | null>>
     return false;
 };
 
-/**
- * 차단 모드를 구합니다.
- */
-export const getBlockMode = (type: RefresherBlockType) => {
-    return blockModeCache[type];
-};
-
 export default {
     TYPE_NAMES,
     BLOCK_DETECT_MODE_TYPE_NAMES,
     add,
-    updateMode,
     check,
-    checkAll,
-    getBlockMode
+    checkAll
 };
