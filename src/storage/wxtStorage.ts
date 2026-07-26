@@ -60,3 +60,10 @@ export const databaseStorage = {
     version: storage.defineItem<string>("local:refresher:database:version", {defaultValue: ""}),
     lastUpdate: storage.defineItem<number>("local:refresher:database:lastUpdate", {defaultValue: 0})
 };
+
+// ===== 백업 (Backup) =====
+
+// 클라우드 백업 시각. databaseStorage.lastUpdate(IP/차단 DB 갱신 시각)와 별개 키여야 함.
+export const backupStorage = {
+    lastUpdate: storage.defineItem<number>("local:refresher:backup:lastUpdate", {defaultValue: 0})
+};

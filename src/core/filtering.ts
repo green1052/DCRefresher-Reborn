@@ -14,28 +14,13 @@ let sharedObserver: MutationObserver | null = null;
 let pendingMutations: MutationRecord[] = [];
 let flushScheduled = false;
 
-// selector 캐싱: 컴파일된 정규식/필터 함수 재사용 (scope 문자열이 같으면 캐시 히트)
-const selectorCache = new Map<string, (el: HTMLElement) => boolean>();
-
-const getSelectorMatcher = (scope: string): ((el: HTMLElement) => boolean) => {
-    let matcher = selectorCache.get(scope);
-    if (matcher) return matcher;
-
+// 잘못된 selector가 들어와도 필터 전체가 죽지 않도록 감싼다.
+const matchesSelector = (el: HTMLElement, scope: string): boolean => {
     try {
-        // matches()를 사용하는 matcher 생성 (정규식 아님, CSS selector)
-        matcher = (el: HTMLElement): boolean => {
-            try {
-                return el.matches(scope);
-            } catch {
-                return false;
-            }
-        };
+        return el.matches(scope);
     } catch {
-        matcher = (): boolean => false;
+        return false;
     }
-
-    selectorCache.set(scope, matcher);
-    return matcher;
 };
 
 const collectAddedElements = (mutations: MutationRecord[]): HTMLElement[] => {
@@ -60,16 +45,15 @@ const matchAllScopes = (
 
     if (neverExpireIds.size === 0 || addedElements.length === 0) return result;
 
-    // neverExpire 필터들의 scope matcher 미리 준비
-    const matchers: { id: string; scope: string; matcher: (el: HTMLElement) => boolean }[] = [];
+    const scopes: { id: string; scope: string }[] = [];
     for (const id of neverExpireIds) {
         const entry = lists.get(id);
         if (!entry) continue;
-        matchers.push({id, scope: entry.scope, matcher: getSelectorMatcher(entry.scope)});
+        scopes.push({id, scope: entry.scope});
     }
 
     for (const el of addedElements) {
-        for (const {id, scope, matcher} of matchers) {
+        for (const {id, scope} of scopes) {
             let matches = result.get(id);
             if (!matches) {
                 matches = new Set();
@@ -77,7 +61,7 @@ const matchAllScopes = (
             }
 
             // 1. el 자체가 scope에 매칭
-            if (matcher(el)) {
+            if (matchesSelector(el, scope)) {
                 matches.add(el);
             }
 
@@ -105,7 +89,7 @@ const matchAllScopes = (
     return result;
 };
 
-const runFilter = async (entry: FilterEntry, elements: Iterable<HTMLElement>): Promise<void> => {
+const runFilter = (entry: FilterEntry, elements: Iterable<HTMLElement>): void => {
     for (const element of elements) {
         entry.func(element);
     }
@@ -127,7 +111,7 @@ const flushPendingMutations = (): void => {
     for (const [id, matches] of matchesByFilter) {
         const entry = lists.get(id);
         if (!entry || matches.size === 0) continue;
-        void runFilter(entry, matches);
+        runFilter(entry, matches);
     }
 };
 
@@ -167,7 +151,7 @@ const setupNeverExpire = (id: string): void => {
 
     const existing = document.documentElement.querySelectorAll<HTMLElement>(entry.scope);
     if (existing.length > 0) {
-        void runFilter(entry, existing);
+        runFilter(entry, existing);
     }
 
     neverExpireIds.add(id);
@@ -198,11 +182,10 @@ const findElements = (scope: string, parent: HTMLElement): Promise<Iterable<HTML
             const addedElements = collectAddedElements(mutations);
             if (addedElements.length === 0) return;
 
-            const matcher = getSelectorMatcher(scope);
             const matches = new Set<HTMLElement>();
 
             for (const el of addedElements) {
-                if (matcher(el)) matches.add(el);
+                if (matchesSelector(el, scope)) matches.add(el);
 
                 try {
                     for (const matched of el.querySelectorAll<HTMLElement>(scope)) {
@@ -250,7 +233,7 @@ export const filter = {
             oneShotEntries.map(async ([, entry]) => {
                 try {
                     const elements = await findElements(entry.scope, document.documentElement);
-                    await runFilter(entry, elements);
+                    runFilter(entry, elements);
                 } catch (e) {
                     if (!entry.options?.skipIfNotExists) throw e;
                 }

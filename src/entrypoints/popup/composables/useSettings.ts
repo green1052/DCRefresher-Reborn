@@ -2,17 +2,13 @@ import {moduleEnableStorage, moduleSettingStorage} from "@/storage/wxtStorage";
 import {sendMessage} from "@/http/messaging";
 import {computed, nextTick, onMounted, ref} from "vue";
 
+// 백그라운드가 디시 탭 전체로 뿌려준다.
 const sendToAllDcTabs = async (type: string, data: Record<string, unknown>): Promise<void> => {
-    const tabs = await browser.tabs.query({});
-    await Promise.all(
-        tabs
-            .filter((tab) => tab.id && tab.url?.includes("dcinside.com"))
-            .map((tab) =>
-                sendMessage(type as never, data as never, tab.id!).catch((e) =>
-                    console.error(`Failed to send to tab ${tab.id}:`, e)
-                )
-            )
-    );
+    try {
+        await sendMessage("broadcast", {type, data});
+    } catch (e) {
+        console.error(`Failed to broadcast ${type}:`, e);
+    }
 };
 
 export function useSettings() {
@@ -21,8 +17,8 @@ export function useSettings() {
 
     onMounted(async () => {
         try {
-            const tabs = await browser.tabs.query({});
-            const dcTab = tabs.find((tab) => tab.id && tab.url?.includes("dcinside.com"));
+            const tabs = await browser.tabs.query({url: ["https://*.dcinside.com/*"]});
+            const dcTab = tabs.find((tab) => tab.id);
             if (!dcTab?.id) {
                 return;
             }
