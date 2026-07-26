@@ -1,5 +1,4 @@
 import eventBus from "@/core/eventbus";
-import * as http from "@/http/http";
 import * as block from "@/core/block";
 import {submitComment} from "@/utils/comment";
 import {extractDcconCode} from "@/utils/dccon";
@@ -13,8 +12,9 @@ import type {PostFetchedDataRef} from "./bodyFrame";
 
 // 댓글 날짜 파싱 (연도 없으면 현재 연도 추가)
 export function parseCommentDate(str: string): string {
-    const hasYear = str.substring(0, 4).match(/\./);
-    return hasYear
+    // 앞 4자리에 점이 있으면 "MM.DD ..." 형태 (연도 없음)
+    const missingYear = str.substring(0, 4).match(/\./);
+    return missingYear
         ? `${new Date().getFullYear()}-${str.replace(/\./g, "-")}`
         : str.replace(/\./g, "-");
 }
@@ -391,9 +391,6 @@ export function handleDeleteComment(
 
         deletePressCount[commentId] = 0;
     }
-
-    const typeName = http.galleryTypeName(preData.link);
-    if (!typeName.length) return Promise.resolve(false);
 
     return (
         admin && !password

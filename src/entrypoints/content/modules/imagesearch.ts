@@ -17,7 +17,7 @@ export default {
         };
         window.addEventListener("contextmenu", this.memory.contextMenuHandler);
 
-        const foo = (targetUrl: string) => {
+        const searchWith = (targetUrl: string) => {
             if (!this.memory.currentImage?.includes("viewimage.php")) return;
 
             const url = new URL(this.memory.currentImage);
@@ -27,7 +27,7 @@ export default {
             window.open(targetUrl.replace("[url]", encodeURIComponent(url.toString())));
         };
 
-        this.memory.sauceNao = onMessage("searchSauceNao", () => foo("https://saucenao.com/search.php?url=[url]"));
+        this.memory.sauceNao = onMessage("searchSauceNao", () => searchWith("https://saucenao.com/search.php?url=[url]"));
     },
     revoke() {
         if (this.memory.contextMenuHandler) {
