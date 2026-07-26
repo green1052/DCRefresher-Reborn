@@ -12,13 +12,15 @@ export function useMemos() {
     });
 
     onMounted(async () => {
-        for (const type of MEMO_TYPES) {
-            memos[type] = normalizeMemoMap(await memoStorage[type].getValue());
+        await Promise.all(
+            MEMO_TYPES.map(async (type) => {
+                memos[type] = normalizeMemoMap(await memoStorage[type].getValue());
 
-            memoStorage[type].watch((newValue) => {
-                memos[type] = normalizeMemoMap(newValue);
-            });
-        }
+                memoStorage[type].watch((newValue) => {
+                    memos[type] = normalizeMemoMap(newValue);
+                });
+            })
+        );
     });
 
     // 메모 입력창은 현재 보고 있는 탭에서만 떠야 한다. 브로드캐스트하면 열려 있는

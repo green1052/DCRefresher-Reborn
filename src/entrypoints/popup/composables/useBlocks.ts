@@ -36,17 +36,24 @@ export function useBlocks() {
     });
 
     onMounted(async () => {
-        for (const type of BLOCK_TYPES) {
-            blocks[type] = normalizeBlockList(await blockStorage[type].getValue());
-            blockModes.value[type] = normalizeBlockMode(await blockModeStorage[type].getValue(), "SAME");
+        await Promise.all(
+            BLOCK_TYPES.map(async (type) => {
+                const [storedBlocks, storedMode] = await Promise.all([
+                    blockStorage[type].getValue(),
+                    blockModeStorage[type].getValue()
+                ]);
 
-            blockStorage[type].watch((newValue) => {
-                blocks[type] = normalizeBlockList(newValue);
-            });
-            blockModeStorage[type].watch((newValue) => {
-                blockModes.value[type] = normalizeBlockMode(newValue, "SAME");
-            });
-        }
+                blocks[type] = normalizeBlockList(storedBlocks);
+                blockModes.value[type] = normalizeBlockMode(storedMode, "SAME");
+
+                blockStorage[type].watch((newValue) => {
+                    blocks[type] = normalizeBlockList(newValue);
+                });
+                blockModeStorage[type].watch((newValue) => {
+                    blockModes.value[type] = normalizeBlockMode(newValue, "SAME");
+                });
+            })
+        );
     });
 
     const closeBlockDialog = () => {
