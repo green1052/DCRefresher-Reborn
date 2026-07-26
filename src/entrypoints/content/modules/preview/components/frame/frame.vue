@@ -160,11 +160,14 @@
 
             <FrameVotes
                 v-if="showVotes"
-                :downvote="() => frame.functions.vote(0)"
-                :frame="frame"
-                :original="async () => { void frame.functions.openOriginal(); return true; }"
-                :share="() => frame.functions.share()"
-                :upvote="() => frame.functions.vote(1)"
+                :disabled-downvote="frame.data.disabledDownvote"
+                :downvote="downvote"
+                :downvotes="frame.downvotes"
+                :fixed-upvotes="frame.fixedUpvotes"
+                :original="openOriginal"
+                :share="share"
+                :upvote="upvote"
+                :upvotes="frame.upvotes"
             />
         </div>
     </div>
@@ -226,6 +229,15 @@ const beforeEnter = (el: Element) => {
 
 const onEnter = (el: Element) => {
     (el as HTMLElement).style.transitionDelay = "";
+};
+
+const upvote = () => props.frame.functions.vote(1);
+const downvote = () => props.frame.functions.vote(0);
+const share = () => props.frame.functions.share();
+
+const openOriginal = async (): Promise<boolean> => {
+    void props.frame.functions.openOriginal();
+    return true;
 };
 
 // 댓글 새로고침 (retry 래핑)

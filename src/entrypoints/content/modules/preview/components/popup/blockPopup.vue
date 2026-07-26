@@ -37,10 +37,6 @@ const reasons = [
     {value: 0, label: "직접 입력"}
 ];
 
-const onReasonChange = (): void => {
-    // reasonText input visibility is controlled by v-show in template
-};
-
 const submit = (): void => {
     emit("submit", {
         avoidHour: avoidHour.value,
@@ -72,8 +68,7 @@ const submit = (): void => {
                 <h3>차단 사유</h3>
                 <div class="block_reason">
                     <label v-for="r in reasons" :key="r.value">
-                        <input v-model="avoidReason" :value="r.value" name="reason" type="radio"
-                               @change="onReasonChange"/>
+                        <input v-model="avoidReason" :value="r.value" name="reason" type="radio"/>
                         {{ r.label }}
                     </label>
                 </div>

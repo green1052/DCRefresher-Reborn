@@ -90,8 +90,9 @@ const commentFrameRef = ref<{ incrementCommentKey?: () => void } | null>(null);
 
 provide("refresherInputFocus", inputFocus);
 
-const background = ref(props.option?.background ?? false);
-const blur = ref(props.option?.blur ?? false);
+// 마운트 후 바뀌지 않는 옵션이므로 반응형 불필요
+const background = props.option?.background ?? false;
+const blur = props.option?.blur ?? false;
 const onScroll = props.option?.onScroll;
 
 // 페이드 전환 컴포저블 (fade/closed/fadeIn/fadeOut, body overflow, timer 관리)
