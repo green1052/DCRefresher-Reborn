@@ -63,7 +63,11 @@ export function makeCommentFrame(ctx: CommentFrameContext): void {
         ctx.clearRefreshInterval();
         if (autoRefreshComment) {
             ctx.setRefreshInterval(
-                window.setInterval(() => frame.functions.retry(false), commentRefreshInterval)
+                window.setInterval(() => {
+                    // 숨김 탭에서는 자동 새로고침 요청을 보내지 않는다
+                    if (document.hidden) return;
+                    frame.functions.retry(false);
+                }, commentRefreshInterval)
             );
         }
     });
