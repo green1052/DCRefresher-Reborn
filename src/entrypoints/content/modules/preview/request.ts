@@ -3,6 +3,7 @@ import ky, {Input, Options} from "ky";
 
 import * as http from "@/http/http";
 import {parsePostInfo} from "./postParser";
+import {PostCache} from "./cache";
 
 export interface GalleryHTTPRequestArguments {
     gallery: string;
@@ -294,3 +295,26 @@ export const previewRequest = {
 };
 
 export type PreviewRequest = typeof previewRequest;
+
+// 게시글 조회 (캐시 우선). bodyFrame/miniPreview 공용.
+export async function fetchPostWithCache(
+    postCaches: PostCache,
+    preData: GalleryPreData,
+    signal: AbortSignal,
+    useCache: boolean
+): Promise<IPostInfo> {
+    const cacheKey = PostCache.key(preData.gallery, preData.id);
+
+    if (useCache) {
+        const cached = postCaches.get(cacheKey)?.post;
+        if (cached) return cached;
+    }
+
+    const response = await previewRequest.post(preData.link ?? "", preData.gallery, preData.id, signal);
+
+    if (!response) throw new Error("Can not fetch post data.");
+
+    postCaches.set(cacheKey, {date: Date.now(), post: response});
+
+    return response;
+}

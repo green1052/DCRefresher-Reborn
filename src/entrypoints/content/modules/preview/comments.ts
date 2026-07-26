@@ -3,7 +3,7 @@ import * as http from "@/http/http";
 import * as block from "@/core/block";
 import {submitComment} from "@/utils/comment";
 import {User} from "@/utils/user";
-import {panel} from "./panel";
+import {requestWithCaptcha} from "./panel";
 import {previewRequest} from "./request";
 import toast from "@/utils/toast";
 import type {PreviewFrame} from "./frame";
@@ -294,8 +294,6 @@ export function createWriteComment(
             return false;
         }
 
-        const requireCapCode = postFetchedDataRef.value.requireCommentCaptcha;
-        const codeSrc = requireCapCode ? await previewRequest.captcha(preData, "comment") : undefined;
         const grecaptcha = await getGrecaptchaToken();
 
         const req = async (captcha?: string) => {
@@ -325,7 +323,12 @@ export function createWriteComment(
             return true;
         };
 
-        return codeSrc ? await panel.captcha(codeSrc, req) : req();
+        return requestWithCaptcha(
+            preData,
+            "comment",
+            postFetchedDataRef.value.requireCommentCaptcha ?? false,
+            req
+        );
     };
 }
 

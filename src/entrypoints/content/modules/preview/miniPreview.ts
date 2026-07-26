@@ -1,6 +1,7 @@
 import * as block from "@/core/block";
 import {PostCache} from "./cache";
-import type {PreviewRequest} from "./request";
+import {fetchPostWithCache} from "./request";
+import {restoreImageSources} from "./postParser";
 
 export interface MiniPreviewState {
     element: HTMLDivElement;
@@ -41,35 +42,10 @@ export function createMiniPreview(): MiniPreviewState {
 function parsePreviewContent(contents: string): string {
     const dom = new DOMParser().parseFromString(contents, "text/html");
 
-    for (const element of dom.querySelectorAll("img[data-original]")) {
-        element.setAttribute("src", element.getAttribute("data-original")!);
-    }
+    restoreImageSources(dom);
 
     const content = dom.body.innerHTML;
     return block.check("TEXT", content) ? "게시글 내용이 차단됐습니다." : content;
-}
-
-// 게시글 정보 로드 (캐시 우선)
-async function loadPostForPreview(
-    state: MiniPreviewState,
-    preData: GalleryPreData,
-    postCaches: PostCache,
-    request: PreviewRequest
-): Promise<IPostInfo> {
-    const cacheKey = PostCache.key(preData.gallery, preData.id);
-    const cache = postCaches.get(cacheKey);
-
-    if (cache?.post) {
-        return cache.post;
-    }
-
-    const response = await request.post(preData.link ?? "", preData.gallery, preData.id, state.controller.signal);
-
-    if (!response) throw new Error("No response");
-
-    postCaches.set(cacheKey, {date: Date.now(), post: response});
-
-    return response;
 }
 
 export function miniPreviewCreate(
@@ -79,8 +55,7 @@ export function miniPreviewCreate(
     hide: boolean,
     interaction: boolean,
     getRelevantDataFn: (ev: MouseEvent) => GalleryPreData,
-    postCaches: PostCache,
-    request: PreviewRequest
+    postCaches: PostCache
 ): void {
     if (!use) return;
 
@@ -95,7 +70,7 @@ export function miniPreviewCreate(
 
         state.lastTimeout = window.setTimeout(() => {
             if (!state.cursorOut && state.lastElement === ev.target) {
-                miniPreviewCreate(state, ev, use, hide, interaction, getRelevantDataFn, postCaches, request);
+                miniPreviewCreate(state, ev, use, hide, interaction, getRelevantDataFn, postCaches);
             }
             state.cursorOut = false;
         }, 150);
@@ -128,7 +103,7 @@ export function miniPreviewCreate(
     const selector = state.element.querySelector(".refresher-mini-preview-contents");
     if (!selector) return;
 
-    loadPostForPreview(state, preData, postCaches, request)
+    fetchPostWithCache(postCaches, preData, state.controller.signal, true)
         .then((v) => {
             selector.innerHTML = parsePreviewContent(v.contents!);
             selector.querySelector(".write_div")?.setAttribute("style", "");

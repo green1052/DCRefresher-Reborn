@@ -18,7 +18,6 @@
         >
             <RefresherFrame
                 v-if="frames[0]"
-                ref="bodyFrameRef"
                 :frame="frames[0]"
                 :index="0"
             />
@@ -85,7 +84,6 @@ const scrollModeTop = ref(false);
 const scrollModeBottom = ref(false);
 const inputFocus = ref(false);
 const groupElement = ref<HTMLElement>();
-const bodyFrameRef = ref<{ incrementCommentKey?: () => void } | null>(null);
 const commentFrameRef = ref<{ incrementCommentKey?: () => void } | null>(null);
 
 provide("refresherInputFocus", inputFocus);
@@ -102,7 +100,7 @@ const {fade, closed, fadeIn, fadeOut} = useFrameFade(() => {
 
 const onKeyUp = (ev: KeyboardEvent) => {
     if (ev.code === "Escape" && !closed.value) {
-        outerClick();
+        close();
     }
 };
 
@@ -118,7 +116,7 @@ const clickHandle = (ev: MouseEvent) => {
     const selection = window.getSelection();
     if (selection && selection.toString().length !== 0) return;
 
-    outerClick();
+    close();
 };
 
 const wheelHandle = (ev: WheelEvent) => {
@@ -134,12 +132,10 @@ const setScrollMode = (mode: "top" | "bottom" | "none") => {
 
 const clearScrollMode = () => setScrollMode("none");
 
-const outerClick = () => {
+const close = () => {
     emit("close");
     fadeOut();
 };
-
-const close = () => outerClick();
 
 const onClose = (handler: () => void) => {
     props.frames.forEach((frame) => frame.onClose(handler));
@@ -155,21 +151,14 @@ onBeforeUnmount(() => {
 });
 
 defineExpose({
-    frames: props.frames,
-    fade,
     closed,
     inputFocus,
     groupElement,
-    bodyFrameRef,
     commentFrameRef,
-    body: () => props.frames[0],
-    comment: () => props.frames[1],
     setScrollMode,
     clearScrollMode,
-    outerClick,
     close,
     fadeIn,
-    fadeOut,
     onClose
 });
 </script>

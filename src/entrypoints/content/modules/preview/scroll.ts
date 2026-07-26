@@ -121,7 +121,6 @@ export interface ScrollNavigationContext {
     getGroupStore: () => HTMLElement;
     scrolledCountRef: { value: number };
     newPostWithData: (preData: GalleryPreData, historySkip?: boolean) => void;
-    getPostFetchedId: () => string;
 }
 
 // 인접 게시글 번호 조회
@@ -145,6 +144,30 @@ export function getAdjacentPostNo(
     return adjacentPost.getAttribute("data-no") ?? undefined;
 }
 
+// 인접(없으면 번호 ±1) 게시글로 이동. 스크롤/키보드 내비게이션 공용.
+function goToAdjacentPost(
+    ctx: ScrollNavigationContext,
+    preData: GalleryPreData,
+    direction: "next" | "prev",
+    historySkip?: boolean
+): void {
+    const currentId = ctx.postFetchedDataRef.value?.id;
+    const delta = direction === "prev" ? -1 : 1;
+    const target =
+        getAdjacentPostNo(direction, ctx.postFetchedDataRef) ||
+        (currentId ? (Number(currentId) + delta).toString() : "");
+
+    if (!target) return;
+
+    preData.id = target;
+    ctx.newPostWithData(preData, historySkip);
+
+    const groupStore = ctx.getGroupStore();
+    if (groupStore) groupStore.scrollTop = 0;
+
+    ctx.getAppStore()?.clearScrollMode();
+}
+
 // 스크롤 시 다음/이전 게시글 이동
 export function createScrollSkipHandler(
     ctx: ScrollNavigationContext,
@@ -165,8 +188,6 @@ export function createScrollSkipHandler(
 
         const isUp = ev.deltaY < 0;
         const atEdge = isUp ? scrolledTop : scrolledToBottom;
-        const direction = isUp ? "prev" : "next";
-        const delta = isUp ? -1 : 1;
 
         appStore?.setScrollMode(isUp ? "top" : "bottom");
 
@@ -180,11 +201,7 @@ export function createScrollSkipHandler(
         if (ctx.scrolledCountRef.value++ < 1) return;
         ctx.scrolledCountRef.value = 0;
 
-        preData.id = getAdjacentPostNo(direction, ctx.postFetchedDataRef) || (Number(ctx.getPostFetchedId()) + delta).toString();
-        ctx.newPostWithData(preData, historySkip);
-        groupStore.scrollTop = 0;
-
-        appStore?.clearScrollMode();
+        goToAdjacentPost(ctx, preData, isUp ? "prev" : "next", historySkip);
     };
 }
 
@@ -203,21 +220,6 @@ export function createNavigationKeyHandler(
 
         keyboardEvent.preventDefault();
 
-        const isPageUp = keyboardEvent.key === "PageUp";
-        const currentId = ctx.postFetchedDataRef.value?.id;
-        const fallbackId = currentId ? (Number(currentId) + (isPageUp ? -1 : 1)).toString() : "";
-        const nextPostNo = isPageUp
-            ? getAdjacentPostNo("prev", ctx.postFetchedDataRef) || fallbackId
-            : getAdjacentPostNo("next", ctx.postFetchedDataRef) || fallbackId;
-
-        preData.id = nextPostNo;
-        ctx.newPostWithData(preData, historySkip);
-
-        const groupStore = ctx.getGroupStore();
-        if (groupStore) {
-            groupStore.scrollTop = 0;
-        }
-
-        ctx.getAppStore()?.clearScrollMode();
+        goToAdjacentPost(ctx, preData, keyboardEvent.key === "PageUp" ? "prev" : "next", historySkip);
     };
 }
