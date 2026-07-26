@@ -136,6 +136,8 @@ export function makeCommentFrame(ctx: CommentFrameContext): void {
                 (commentCounts !== threadCounts && `쓰레드 ${threadCounts}개, 총 댓글`) || ""
             } ${commentCounts}개`;
 
+            // 글쓴이 표시(useMeDetection)용. 본문 로드 전이면 undefined, 다음 새로고침 때 채워진다.
+            frame.data.postUserId = postFetchedDataRef.value?.user?.id ?? undefined;
             frame.data.comments = comments;
 
             if (needRefresh) {

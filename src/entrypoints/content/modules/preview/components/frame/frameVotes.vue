@@ -8,10 +8,10 @@
                 class="refresher-upvote"
             />
             <PreviewButton
-                v-if="!frame.data.disabledDownvote"
+                v-if="!disabledDownvote"
                 id="downvote"
                 :click="downvote"
-                :text="frame.downvotes ?? 'X'"
+                :text="downvotes ?? 'X'"
                 class="refresher-downvote"
             />
             <PreviewButton
@@ -32,11 +32,13 @@
 <script lang="ts" setup>
 import {computed} from "vue";
 
-import type {PreviewFrame} from "../../frame";
 import PreviewButton from "@/components/previewButton.vue";
 
 interface Props {
-    frame: PreviewFrame;
+    upvotes?: string;
+    fixedUpvotes?: string;
+    downvotes?: string;
+    disabledDownvote?: boolean;
     upvote: () => Promise<boolean>;
     downvote: () => Promise<boolean>;
     share: () => Promise<boolean>;
@@ -46,12 +48,8 @@ interface Props {
 const props = defineProps<Props>();
 
 const upvoteText = computed(() => {
-    if (props.frame.upvotes === undefined) {
-        return props.frame.fixedUpvotes === undefined ? "X" : `X (${props.frame.fixedUpvotes})`;
-    }
-    return props.frame.fixedUpvotes === undefined
-        ? props.frame.upvotes
-        : `${props.frame.upvotes} (${props.frame.fixedUpvotes})`;
+    const base = props.upvotes ?? "X";
+    return props.fixedUpvotes === undefined ? base : `${base} (${props.fixedUpvotes})`;
 });
 </script>
 

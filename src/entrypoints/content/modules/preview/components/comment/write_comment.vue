@@ -106,8 +106,9 @@ const props = withDefaults(defineProps<Props>(), {
     func: undefined,
     reply: () => ({commentNo: null, replyNo: null}),
     renderDcconPopup: () => false,
-    getDccon: () => () => [],
-    getBigDccon: () => () => false
+    // 함수 타입 prop의 default는 팩토리가 아니라 값 그대로 쓰인다
+    getDccon: () => [],
+    getBigDccon: () => false
 });
 
 const emit = defineEmits<{

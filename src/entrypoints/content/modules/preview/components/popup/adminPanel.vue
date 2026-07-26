@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {onMounted, onUnmounted, ref} from "vue";
+import {computed, onMounted, onUnmounted, ref} from "vue";
 
 import pinIcon from "@/assets/icons/pin.webp?no-inline";
 import upvoteIcon from "@/assets/icons/upvote.webp?no-inline";
@@ -33,37 +33,19 @@ const downvoteUrl = browser.runtime.getURL(downvoteIcon as never);
 const blockUrl = browser.runtime.getURL(blockIcon as never);
 const deleteUrl = browser.runtime.getURL(deleteIcon as never);
 
-const recommendImg = ref(upvoteUrl);
-const recommendLabel = ref("개념글 등록");
-const pinLabel = ref("공지로 등록");
+const pinLabel = computed(() => (setAsNotice.value ? "공지로 등록" : "공지 등록 해제"));
+const recommendLabel = computed(() => (setAsRecommend.value ? "개념글 등록" : "개념글 해제"));
+const recommendImg = computed(() => (setAsRecommend.value ? upvoteUrl : downvoteUrl));
 
-// 응답 처리 통합 (핸들러 중복 제거)
-const handleResponse = (response: unknown): void => {
-    props.emitRefreshRequest();
-
-    if (typeof response === "object" && response !== null) {
-        const r = response as { msg: string; result: string };
-        toast.show(r.msg, r.result === "success" ? "info" : "error");
-        return;
-    }
-
-    toast.show(String(response), "error");
-};
-
-// 토글 응답 처리 (pin/recommend 공통 패턴)
-const handleToggleResponse = (
-    response: unknown,
-    toggleRef: { value: boolean },
-    updateLabel: () => void
-): void => {
+// 성공 시 onSuccess 실행. pin/recommend는 토글 반전에 사용한다.
+const handleResponse = (response: unknown, onSuccess?: () => void): void => {
     props.emitRefreshRequest();
 
     if (typeof response === "object" && response !== null) {
         const r = response as { msg: string; result: string };
         if (r.result === "success") {
             toast.show(r.msg);
-            toggleRef.value = !toggleRef.value;
-            updateLabel();
+            onSuccess?.();
         } else {
             toast.show(r.msg, "error");
         }
@@ -75,17 +57,16 @@ const handleToggleResponse = (
 
 const pin = (): void => {
     props.request.setNotice(props.preData, setAsNotice.value).then((response) => {
-        handleToggleResponse(response, setAsNotice, () => {
-            pinLabel.value = setAsNotice.value ? "공지로 등록" : "공지 등록 해제";
+        handleResponse(response, () => {
+            setAsNotice.value = !setAsNotice.value;
         });
     });
 };
 
 const recommend = (): void => {
     props.request.setRecommend(props.preData, setAsRecommend.value).then((response) => {
-        handleToggleResponse(response, setAsRecommend, () => {
-            recommendImg.value = setAsRecommend.value ? upvoteUrl : downvoteUrl;
-            recommendLabel.value = setAsRecommend.value ? "개념글 등록" : "개념글 해제";
+        handleResponse(response, () => {
+            setAsRecommend.value = !setAsRecommend.value;
         });
     });
 };
@@ -113,29 +94,32 @@ const bump = (): void => {
     props.request.bump(props.preData).then(handleResponse);
 };
 
-// 키 입력 카운트 (D=삭제, B=차단, 2회 연속)
-const keyCounts = ref<Record<string, [number, number]>>({});
+// 키 입력 카운트 (D=삭제, B=차단, 2회 연속). 템플릿에 안 쓰이므로 반응형 불필요.
+const keyCounts: Record<string, [number, number]> = {};
 
 const onKeyPress = (ev: KeyboardEvent): void => {
     if (ev.code !== "KeyB" && ev.code !== "KeyD") return;
 
-    if (!keyCounts.value[ev.code]) keyCounts.value[ev.code] = [Date.now(), 0];
-    if (Date.now() - keyCounts.value[ev.code][0] > 1000) keyCounts.value[ev.code] = [Date.now(), 0];
+    if (!keyCounts[ev.code] || Date.now() - keyCounts[ev.code][0] > 1000) {
+        keyCounts[ev.code] = [Date.now(), 0];
+    }
 
-    keyCounts.value[ev.code][0] = Date.now();
-    keyCounts.value[ev.code][1]++;
+    keyCounts[ev.code][0] = Date.now();
+    keyCounts[ev.code][1]++;
+
+    const count = keyCounts[ev.code][1];
 
     if (ev.code === "KeyD") {
-        if (keyCounts.value[ev.code][1] >= 2) {
+        if (count >= 2) {
             doDelete();
-            keyCounts.value[ev.code][1] = 0;
+            keyCounts[ev.code][1] = 0;
         } else {
             toast.show("한번 더 D키를 누르면 게시글을 삭제합니다.", "warning", 1000);
         }
-    } else if (ev.code === "KeyB") {
-        if (keyCounts.value[ev.code][1] >= 2) {
+    } else {
+        if (count >= 2) {
             doBlockWithPreset();
-            keyCounts.value[ev.code][1] = 0;
+            keyCounts[ev.code][1] = 0;
         } else {
             toast.show("한번 더 B키를 누르면 차단합니다.", "warning", 1000);
         }
