@@ -152,9 +152,6 @@ export function attachElementHandlers(
                 getRelevantData,
                 ctx.postCaches
             );
-
-            if (ctx.status.tooltipInteraction)
-                miniPreviewMove(ctx.miniPreview, ev, ctx.status.tooltipMode, ctx.status.tooltipInteraction);
         }, ctx.status.tooltipDelay);
     }, {signal});
 
