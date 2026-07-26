@@ -89,6 +89,11 @@ export function useBlocks() {
             extra.push(`[${BLOCK_DETECT_MODE_TYPE_NAMES[blockFormData.mode]}]`);
         }
 
+        // core block.add(removeExists)와 동일하게 같은 content는 교체
+        blocks[currentBlockType.value] = blocks[currentBlockType.value].filter(
+            (v) => v.content !== blockFormData.content.trim()
+        );
+
         blocks[currentBlockType.value].push({
             content: blockFormData.content.trim(),
             isRegex: blockFormData.isRegex,
