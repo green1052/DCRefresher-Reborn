@@ -23,6 +23,22 @@ const matchesSelector = (el: HTMLElement, scope: string): boolean => {
     }
 };
 
+// el 자체 → 자손(querySelectorAll) → 조상(closest) 순으로 scope 매칭 요소 수집
+const collectScopeMatches = (el: HTMLElement, scope: string, matches: Set<HTMLElement>): void => {
+    if (matchesSelector(el, scope)) matches.add(el);
+
+    try {
+        for (const matched of el.querySelectorAll<HTMLElement>(scope)) {
+            matches.add(matched);
+        }
+    } catch {
+        // invalid selector - skip
+    }
+
+    const matchingParent = el.parentElement?.closest<HTMLElement>(scope);
+    if (matchingParent) matches.add(matchingParent);
+};
+
 const collectAddedElements = (mutations: MutationRecord[]): HTMLElement[] => {
     const elements: HTMLElement[] = [];
 
@@ -60,29 +76,7 @@ const matchAllScopes = (
                 result.set(id, matches);
             }
 
-            // 1. el 자체가 scope에 매칭
-            if (matchesSelector(el, scope)) {
-                matches.add(el);
-            }
-
-            // 2. el의 자손 중 scope에 매칭
-            let descendants: NodeListOf<HTMLElement> | undefined;
-            try {
-                descendants = el.querySelectorAll<HTMLElement>(scope);
-            } catch {
-                // invalid selector - skip
-            }
-            if (descendants) {
-                for (const matched of descendants) {
-                    matches.add(matched);
-                }
-            }
-
-            // 3. el의 조상 중 scope에 매칭 (closest)
-            const matchingParent = el.parentElement?.closest<HTMLElement>(scope);
-            if (matchingParent) {
-                matches.add(matchingParent);
-            }
+            collectScopeMatches(el, scope, matches);
         }
     }
 
@@ -185,18 +179,7 @@ const findElements = (scope: string, parent: HTMLElement): Promise<Iterable<HTML
             const matches = new Set<HTMLElement>();
 
             for (const el of addedElements) {
-                if (matchesSelector(el, scope)) matches.add(el);
-
-                try {
-                    for (const matched of el.querySelectorAll<HTMLElement>(scope)) {
-                        matches.add(matched);
-                    }
-                } catch {
-                    // invalid selector
-                }
-
-                const matchingParent = el.parentElement?.closest<HTMLElement>(scope);
-                if (matchingParent) matches.add(matchingParent);
+                collectScopeMatches(el, scope, matches);
             }
 
             if (matches.size > 0) {

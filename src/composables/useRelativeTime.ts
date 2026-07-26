@@ -76,6 +76,8 @@ export function useRelativeTime({
 
     onMounted(() => {
         updates = setInterval(() => {
+            // 숨김 탭에서는 표시 갱신이 무의미하므로 스킵
+            if (document.hidden) return;
             tick.value++;
         }, interval);
     });

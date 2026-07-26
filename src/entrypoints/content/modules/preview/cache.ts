@@ -33,8 +33,4 @@ export class PostCache {
     set(id: string, data: CacheEntry): void {
         this.#caches.set(id, {...this.#caches.get(id), ...data});
     }
-
-    delete(id: string): boolean {
-        return this.#caches.delete(id);
-    }
 }
