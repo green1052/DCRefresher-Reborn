@@ -126,18 +126,22 @@ export const panel = {
         });
     },
 
-    async captcha(src: string, callback: (captcha: string) => void): Promise<boolean> {
-        const instance = mountPopup(captchaPopup, {
-            src,
-            onSubmit: (captcha: string) => {
-                callback(captcha);
-                unmountPopup(instance);
-            },
-            onClose: () => {
-                unmountPopup(instance);
-            }
+    // 콜백(추천/댓글 요청)의 실제 결과로 resolve한다. 닫으면 false.
+    // 프레임 닫힘 등으로 closeAllPopups가 팝업을 제거하면 영영 resolve되지 않지만,
+    // 그 시점엔 결과를 기다리는 쪽도 함께 사라지므로 무해하다.
+    captcha(src: string, callback: (captcha: string) => Promise<boolean> | boolean): Promise<boolean> {
+        return new Promise((resolve) => {
+            const instance = mountPopup(captchaPopup, {
+                src,
+                onSubmit: (captcha: string) => {
+                    unmountPopup(instance);
+                    resolve(Promise.resolve(callback(captcha)).catch(() => false));
+                },
+                onClose: () => {
+                    unmountPopup(instance);
+                    resolve(false);
+                }
+            });
         });
-
-        return true;
     }
 };
