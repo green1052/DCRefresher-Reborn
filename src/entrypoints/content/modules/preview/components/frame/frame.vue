@@ -268,9 +268,10 @@ const writeComment = async (
     selectedBigDccon: boolean
 ): Promise<boolean> => {
     try {
-        await props.frame.functions.writeComment(type, memo, commentNo, replyNo, user, selectedBigDccon);
-        void retry();
-        return true;
+        // 실패(false)를 그대로 돌려줘야 write_comment가 입력 내용을 비우지 않는다
+        const ok = await props.frame.functions.writeComment(type, memo, commentNo, replyNo, user, selectedBigDccon);
+        if (ok) void retry();
+        return ok;
     } catch {
         return false;
     }

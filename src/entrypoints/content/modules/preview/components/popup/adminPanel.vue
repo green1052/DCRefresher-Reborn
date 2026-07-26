@@ -100,6 +100,9 @@ const keyCounts: Record<string, [number, number]> = {};
 const onKeyPress = (ev: KeyboardEvent): void => {
     if (ev.code !== "KeyB" && ev.code !== "KeyD") return;
 
+    // 댓글 입력 등 타이핑 중 D/B 연타로 삭제/차단이 나가면 안 된다
+    if ((ev.target as HTMLElement).closest("input, textarea, [contenteditable=true]")) return;
+
     if (!keyCounts[ev.code] || Date.now() - keyCounts[ev.code][0] > 1000) {
         keyCounts[ev.code] = [Date.now(), 0];
     }
