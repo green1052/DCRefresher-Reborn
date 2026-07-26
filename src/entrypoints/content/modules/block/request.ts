@@ -65,7 +65,7 @@ export const handleBlockRequest = async (
                 );
 
                 if (blockBundle) {
-                    const paths = json.detail.map(({path}) => path);
+                    const paths = json.detail.map(({path}) => RegExp.escape(path));
                     await block.add(
                         "DCCON",
                         `^(${paths.join("|")})$`,
