@@ -14,6 +14,17 @@ const replaceLocalStorage = async (data: Record<string, unknown>): Promise<void>
     }
 };
 
+const DATABASE_PREFIX = "refresher:database:";
+
+// IP/차단 데이터베이스는 용량이 커서 백업/내보내기에서 제외한다
+const getLocalDataWithoutDatabase = async (): Promise<Record<string, unknown>> => {
+    const data = await browser.storage.local.get(null);
+    for (const key of Object.keys(data)) {
+        if (key.startsWith(DATABASE_PREFIX)) delete data[key];
+    }
+    return data;
+};
+
 const parseStorageImport = (input: string): Record<string, unknown> => {
     const parsed = JSON.parse(input) as unknown;
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -34,11 +45,7 @@ export function useData() {
     const backupCloud = async (): Promise<void> => {
         loading.value = true;
         try {
-            const data = await browser.storage.local.get(null);
-            const prefix = "refresher:database:";
-            for (const key of Object.keys(data)) {
-                if (key.startsWith(prefix)) delete data[key];
-            }
+            const data = await getLocalDataWithoutDatabase();
 
             await browser.storage.sync.clear();
             await browser.storage.sync.set(data);
@@ -60,9 +67,11 @@ export function useData() {
 
         loading.value = true;
         try {
-            const data = await browser.storage.sync.get();
-            const preservedIp = await databaseStorage.ip.getValue();
-            const preservedBan = await databaseStorage.ban.getValue();
+            const [data, preservedIp, preservedBan] = await Promise.all([
+                browser.storage.sync.get(),
+                databaseStorage.ip.getValue(),
+                databaseStorage.ban.getValue()
+            ]);
 
             const preserved: Record<string, unknown> = {};
             if (preservedIp) preserved["refresher:database:ip"] = preservedIp;
@@ -80,11 +89,7 @@ export function useData() {
     const exportData = async (): Promise<void> => {
         loading.value = true;
         try {
-            const data = await browser.storage.local.get();
-            const prefix = "refresher:database:";
-            for (const key of Object.keys(data)) {
-                if (key.startsWith(prefix)) delete data[key];
-            }
+            const data = await getLocalDataWithoutDatabase();
 
             await navigator.clipboard.writeText(JSON.stringify(data));
             alert("데이터를 클립보드로 내보냈습니다.");

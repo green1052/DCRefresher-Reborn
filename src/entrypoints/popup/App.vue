@@ -1,5 +1,5 @@
 <template>
-    <div id="refresher-app">
+    <div id="refresher-app" :class="{ 'options-page': optionsPage }">
         <BlockDialog
             :block-detect-mode-type-names="blockDetectModeTypeNames"
             :block-key-names="blockKeyNames"
@@ -23,6 +23,7 @@
                 </p>
             </div>
             <button
+                v-if="!optionsPage"
                 class="open-options-btn"
                 title="전체 설정 페이지 열기"
                 @click="openOptions"
@@ -40,24 +41,24 @@
                 key="tab1"
             />
             <BlockTab
+                v-else-if="tab === 1"
+                key="tab2"
+            />
+            <MemoTab
                 v-else-if="tab === 2"
                 key="tab3"
             />
-            <MemoTab
+            <ModuleTab
                 v-else-if="tab === 3"
                 key="tab4"
             />
-            <ModuleTab
+            <ShortcutTab
                 v-else-if="tab === 4"
                 key="tab5"
             />
-            <ShortcutTab
+            <DataTab
                 v-else-if="tab === 5"
                 key="tab6"
-            />
-            <DataTab
-                v-else-if="tab === 6"
-                key="tab7"
             />
         </transition-group>
     </div>
@@ -79,14 +80,16 @@ import {useMemos} from "./composables/useMemos";
 import {useSettings} from "./composables/useSettings";
 import {useData} from "./composables/useData";
 
+defineProps<{ optionsPage?: boolean }>();
+
 const tab = ref(0);
 const tabs = [
     {id: 0, label: "일반"},
-    {id: 2, label: "차단"},
-    {id: 3, label: "메모"},
-    {id: 4, label: "모듈"},
-    {id: 5, label: "단축키"},
-    {id: 6, label: "데이터"}
+    {id: 1, label: "차단"},
+    {id: 2, label: "메모"},
+    {id: 3, label: "모듈"},
+    {id: 4, label: "단축키"},
+    {id: 5, label: "데이터"}
 ] as const;
 
 const blocksComposable = useBlocks();
@@ -107,7 +110,7 @@ const {
 const {moveToModuleTab: moveToModuleTabRaw} = settingsComposable;
 
 const moveToModuleTab = (moduleName: string) => {
-    tab.value = 4;
+    tab.value = 3;
     moveToModuleTabRaw(moduleName);
 };
 

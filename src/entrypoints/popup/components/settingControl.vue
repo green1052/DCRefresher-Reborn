@@ -4,14 +4,14 @@
             v-if="setting.type === 'check'"
             v-model="setting.value"
             :disabled="!moduleEnabled"
-            @change="onCheckChange"
+            @change="onChange"
         />
         <refresher-input
             v-else-if="setting.type === 'text'"
             :disabled="!moduleEnabled"
             :placeholder="setting.default"
             :value="setting.value"
-            @change="onTextChange"
+            @change="onChange"
         />
         <refresher-range
             v-else-if="setting.type === 'range'"
@@ -22,14 +22,14 @@
             :placeholder="String(setting.default)"
             :step="setting.step"
             :unit="setting.unit"
-            @change="onRangeChange"
+            @change="onChange"
         />
         <refresher-options
             v-else-if="setting.type === 'option'"
             :disabled="!moduleEnabled"
             :options="setting.items as Record<string, string>"
             :value="setting.value"
-            @change="onOptionChange"
+            @change="onChange"
         />
     </div>
 </template>
@@ -57,19 +57,7 @@ const rangeValue = computed({
     set: () => {}
 });
 
-const onCheckChange = (value: boolean) => {
-    updateUserSetting(props.moduleName, props.settingKey, value);
-};
-
-const onTextChange = (value: string) => {
-    updateUserSetting(props.moduleName, props.settingKey, value);
-};
-
-const onRangeChange = (value: number) => {
-    updateUserSetting(props.moduleName, props.settingKey, value);
-};
-
-const onOptionChange = (value: string) => {
+const onChange = (value: unknown) => {
     updateUserSetting(props.moduleName, props.settingKey, value);
 };
 </script>
