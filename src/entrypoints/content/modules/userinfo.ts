@@ -146,10 +146,6 @@ const setupWriterInfoFilter = (ctx: UserinfoModule): string =>
     filter.add(
         ".ub-writer:not([user_name])",
         (element) => {
-            if (element.dataset.refresherUserInfoHandler !== "true") {
-                element.dataset.refresherUserInfoHandler = "true";
-            }
-
             ipInfoAdd(ctx, element);
             idInfoAdd(ctx, element);
             memoAdd(ctx, element);
