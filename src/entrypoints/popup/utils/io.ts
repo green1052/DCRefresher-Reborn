@@ -1,6 +1,3 @@
-import {normalizeBlockList, normalizeBlockMode} from "@/core/block";
-import {normalizeMemoMap} from "@/core/memo";
-
 export const copyToClipboard = async (payload: unknown) => {
     try {
         await navigator.clipboard.writeText(JSON.stringify(payload));
@@ -26,7 +23,3 @@ export const parseImportData = (example: string) => {
         return null;
     }
 };
-
-export const normalizeBlockImportList = normalizeBlockList;
-export const normalizeBlockModeValue = (value: unknown) => normalizeBlockMode(value, "SAME");
-export const normalizeMemoImportMap = normalizeMemoMap;

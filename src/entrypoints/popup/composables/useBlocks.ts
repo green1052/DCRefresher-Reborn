@@ -1,7 +1,12 @@
 import {BLOCK_TYPES, blockModeStorage, blockStorage} from "@/storage/wxtStorage";
-import {BLOCK_DETECT_MODE_TYPE_NAMES, TYPE_NAMES as BLOCK_TYPE_NAMES} from "@/core/block";
+import {
+    BLOCK_DETECT_MODE_TYPE_NAMES,
+    TYPE_NAMES as BLOCK_TYPE_NAMES,
+    normalizeBlockList,
+    normalizeBlockMode
+} from "@/core/block";
 import {onMounted, reactive, ref} from "vue";
-import {copyToClipboard, normalizeBlockImportList, normalizeBlockModeValue, parseImportData} from "../utils/io";
+import {copyToClipboard, parseImportData} from "../utils/io";
 
 export function useBlocks() {
     const blocks = reactive<{ [key in RefresherBlockType]: RefresherBlockValue[] }>({
@@ -32,16 +37,14 @@ export function useBlocks() {
 
     onMounted(async () => {
         for (const type of BLOCK_TYPES) {
-            blocks[type] = normalizeBlockImportList(await blockStorage[type].getValue());
-            const mode = normalizeBlockModeValue(await blockModeStorage[type].getValue());
-            if (mode) blockModes.value[type] = mode;
+            blocks[type] = normalizeBlockList(await blockStorage[type].getValue());
+            blockModes.value[type] = normalizeBlockMode(await blockModeStorage[type].getValue(), "SAME");
 
             blockStorage[type].watch((newValue) => {
-                blocks[type] = normalizeBlockImportList(newValue);
+                blocks[type] = normalizeBlockList(newValue);
             });
             blockModeStorage[type].watch((newValue) => {
-                const mode = normalizeBlockModeValue(newValue);
-                if (mode) blockModes.value[type] = mode;
+                blockModes.value[type] = normalizeBlockMode(newValue, "SAME");
             });
         }
     });
@@ -135,12 +138,12 @@ export function useBlocks() {
             if (!(BLOCK_TYPES as readonly string[]).includes(key)) continue;
 
             const type = key as RefresherBlockType;
-            const target = normalizeBlockImportList(blocks[type]);
+            const target = normalizeBlockList(blocks[type]);
             if (!Array.isArray(value)) continue;
 
             blocks[type] = target;
 
-            for (const block of normalizeBlockImportList(value)) {
+            for (const block of normalizeBlockList(value)) {
                 if (
                     target.some((v) => v.content === block.content) &&
                     !confirm(`${block.content}가 이미 존재합니다. 추가하시겠습니까?`)

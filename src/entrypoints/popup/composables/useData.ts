@@ -1,4 +1,4 @@
-import {databaseStorage} from "@/storage/wxtStorage";
+import {backupStorage, databaseStorage} from "@/storage/wxtStorage";
 import {ref} from "vue";
 
 const replaceLocalStorage = async (data: Record<string, unknown>): Promise<void> => {
@@ -28,7 +28,7 @@ export function useData() {
     const loading = ref(false);
 
     const refreshLastUpdate = async () => {
-        lastUpdate.value = await databaseStorage.lastUpdate.getValue();
+        lastUpdate.value = await backupStorage.lastUpdate.getValue();
     };
 
     const backupCloud = async (): Promise<void> => {
@@ -45,7 +45,7 @@ export function useData() {
 
             const now = Date.now();
             lastUpdate.value = now;
-            await databaseStorage.lastUpdate.setValue(now);
+            await backupStorage.lastUpdate.setValue(now);
             alert("데이터를 클라우드에 백업했습니다.");
         } catch (error) {
             console.error("Cloud backup failed:", error);

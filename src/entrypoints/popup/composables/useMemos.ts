@@ -1,8 +1,8 @@
 import {MEMO_TYPES, memoStorage} from "@/storage/wxtStorage";
-import {TYPE_NAMES as MEMO_TYPE_NAMES} from "@/core/memo";
+import {TYPE_NAMES as MEMO_TYPE_NAMES, normalizeMemoMap} from "@/core/memo";
 import {sendMessage} from "@/http/messaging";
 import {onMounted, reactive} from "vue";
-import {copyToClipboard, normalizeMemoImportMap, parseImportData} from "../utils/io";
+import {copyToClipboard, parseImportData} from "../utils/io";
 
 export function useMemos() {
     const memos = reactive<{ [key in RefresherMemoType]: { [key: string]: RefresherMemoValue } }>({
@@ -13,25 +13,28 @@ export function useMemos() {
 
     onMounted(async () => {
         for (const type of MEMO_TYPES) {
-            memos[type] = normalizeMemoImportMap(await memoStorage[type].getValue());
+            memos[type] = normalizeMemoMap(await memoStorage[type].getValue());
 
             memoStorage[type].watch((newValue) => {
-                memos[type] = normalizeMemoImportMap(newValue);
+                memos[type] = normalizeMemoMap(newValue);
             });
         }
     });
 
+    // 메모 입력창은 현재 보고 있는 탭에서만 떠야 한다. 브로드캐스트하면 열려 있는
+    // 모든 디시 탭에서 창이 뜨고, 각각이 따로 저장돼버림.
     const requestMemoAsk = async (type: RefresherMemoType, user: string) => {
-        try {
-            await sendMessage("broadcast", {
-                type: "refresherRequestMemoAsk",
-                data: {
-                    type,
-                    user
-                }
-            });
-        } catch {
+        const [tab] = await browser.tabs.query({active: true, currentWindow: true});
+
+        // 유저 정보 모듈이 붙는 페이지(/board/view, /board/lists)에서만 메모 창이 뜬다.
+        if (!tab?.id || !/^https:\/\/gall\.dcinside\.com\/(.*\/)?board\/(view|lists)/.test(tab.url ?? "")) {
+            alert("디시인사이드 게시판(글 목록 / 글 보기) 탭에서 사용해주세요.");
+            return;
         }
+
+        // ponytail: 응답은 사용자가 창을 닫아야 오므로 기다리지 않는다.
+        sendMessage("refresherRequestMemoAsk", {type, user}, tab.id).catch(() => {
+        });
     };
 
     const removeMemoUser = async (type: RefresherMemoType, user: string) => {
@@ -68,7 +71,7 @@ export function useMemos() {
 
             const type = key as RefresherMemoType;
             const target = memos[type];
-            const importedMemos = normalizeMemoImportMap(value);
+            const importedMemos = normalizeMemoMap(value);
 
             for (const [id, memo] of Object.entries(importedMemos)) {
                 if (target[id] && !confirm(`${id}에 대한 메모가 이미 존재합니다. 덮어쓰시겠습니까?`)) {

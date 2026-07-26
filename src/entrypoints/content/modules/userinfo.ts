@@ -291,5 +291,13 @@ export default {
         for (const element of document.querySelectorAll(".refresherUserData")) {
             element.remove();
         }
+
+        // 표시 여부 마커를 지워야 모듈을 다시 켰을 때 정보가 새로 붙는다.
+        // refresherMemoHandler는 contextmenu 리스너가 그대로 남아 있으므로 지우면 안 됨.
+        for (const element of document.querySelectorAll<HTMLElement>(".ub-writer")) {
+            delete element.dataset.refresherIp;
+            delete element.dataset.refresherId;
+            delete element.dataset.refresherMemo;
+        }
     }
 } as UserinfoModule;
