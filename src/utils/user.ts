@@ -23,9 +23,6 @@ const USERTYPE: ObjectEnum<UserType> = {
     FIXED_MANAGER: "FIXED_MANAGER"
 };
 
-// 더 이상 비동기 초기화가 필요 없음 (데이터는 modules.ts에서 직접 읽기)
-export const ensureUserDataReady = (): Promise<void> => Promise.resolve();
-
 const FILE_NAME_MAP = new Map<string, UserType>([
     ["managernik.gif", USERTYPE.HALF_FIXED_MANAGER],
     ["fix_managernik.gif", USERTYPE.FIXED_MANAGER],
@@ -165,6 +162,5 @@ export class User {
 
 export default {
     getType,
-    User,
-    ensureUserDataReady
+    User
 };

@@ -145,7 +145,7 @@ export function createLoadFunction(ctx: LoadFunctionContext): (customURL?: strin
                 }
 
                 if (ctx.isPageView && no === ctx.currentPostNo) {
-                    element.classList.add("crt>");
+                    element.classList.add("crt");
                     const gallNum = element.querySelector<HTMLElement>(".gall_num");
                     if (gallNum) gallNum.innerHTML = `<span class="sp_img crt_icon"> </span>`;
                     continue;
