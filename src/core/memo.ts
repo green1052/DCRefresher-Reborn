@@ -41,16 +41,15 @@ export const normalizeMemoMap = (value: unknown): Record<string, RefresherMemoVa
     return Object.fromEntries(Object.entries(value).filter(([, memo]) => isMemoValue(memo)));
 };
 
-(async () => {
-    for (const key of MEMO_TYPES) {
-        const memo = await memoStorage[key].getValue();
-        memoCache[key] = normalizeMemoMap(memo);
+void Promise.all(
+    MEMO_TYPES.map(async (key) => {
+        memoCache[key] = normalizeMemoMap(await memoStorage[key].getValue());
 
         memoStorage[key].watch((newValue) => {
             memoCache[key] = normalizeMemoMap(newValue);
         });
-    }
-})();
+    })
+);
 
 const InternalAddToList = async (type: RefresherMemoType, user: string, text: string, color: string, gallery?: string) => {
     memoCache[type][user] = {

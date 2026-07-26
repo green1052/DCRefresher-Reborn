@@ -105,10 +105,8 @@ export const view = (url: string): string => {
         [types.PERSON]: urls.gall.person
     }[galleryType(url)];
 
-    const urlParse = new URL(url);
-    const queries = new URLSearchParams(url.replace(urlParse.origin + urlParse.pathname, ""));
-
-    if (queries.has("no")) queries.delete("no");
+    const queries = new URL(url).searchParams;
+    queries.delete("no");
 
     return type + "board/lists?" + queries.toString();
 };

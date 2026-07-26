@@ -123,8 +123,9 @@ export function createLoadFunction(ctx: LoadFunctionContext): (customURL?: strin
 
             const newPostList: HTMLElement[] = [];
 
+            // innerText는 라이브 DOM에서 리플로우를 강제하므로 textContent 사용
             const extractPostNumber = (element: HTMLElement): string => {
-                return element.dataset.no ?? element.querySelector<HTMLElement>(".gall_num")?.innerText ?? "";
+                return element.dataset.no ?? element.querySelector<HTMLElement>(".gall_num")?.textContent ?? "";
             };
 
             const oldCache = Array.from(oldList.querySelectorAll<HTMLElement>(".ub-content")).map(extractPostNumber);

@@ -29,22 +29,27 @@ export function useSettings() {
             const enableMap: ModuleSchemaMap = {};
             const settingsMap: Record<string, Record<string, RefresherSettings>> = {};
 
-            for (const [moduleName, moduleSchema] of Object.entries(schema)) {
-                settingsMap[moduleName] = moduleSchema.settings ?? {};
+            await Promise.all(
+                Object.entries(schema).map(async ([moduleName, moduleSchema]) => {
+                    settingsMap[moduleName] = moduleSchema.settings ?? {};
 
-                for (const [key, setting] of Object.entries(settingsMap[moduleName])) {
-                    const stored = await moduleSettingStorage(moduleName, key).getValue();
-                    if (stored !== null && stored !== undefined) {
-                        (setting.value as unknown) = stored;
-                    }
-                }
+                    const enablePromise = moduleEnableStorage(moduleName).getValue();
 
-                const storedEnable = await moduleEnableStorage(moduleName).getValue();
-                enableMap[moduleName] = {
-                    ...moduleSchema,
-                    enable: storedEnable ?? moduleSchema.default_enable
-                };
-            }
+                    await Promise.all(
+                        Object.entries(settingsMap[moduleName]).map(async ([key, setting]) => {
+                            const stored = await moduleSettingStorage(moduleName, key).getValue();
+                            if (stored !== null && stored !== undefined) {
+                                (setting.value as unknown) = stored;
+                            }
+                        })
+                    );
+
+                    enableMap[moduleName] = {
+                        ...moduleSchema,
+                        enable: (await enablePromise) ?? moduleSchema.default_enable
+                    };
+                })
+            );
 
             settings.value = settingsMap;
             modules.value = enableMap;

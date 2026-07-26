@@ -230,12 +230,7 @@ export function filterAndProcessComments(
         return true;
     });
 
-    const threadCounts =
-        comments.comments.length === 0
-            ? 0
-            : comments.comments
-                .map((v: DcinsideCommentObject) => Number(v.depth === 0))
-                .reduce((a: number, b: number) => a + b);
+    const threadCounts = comments.comments.filter((v) => v.depth === 0).length;
     const commentCounts = comments.comments.length;
 
     return {comments, threadCounts, commentCounts};

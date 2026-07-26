@@ -77,23 +77,10 @@ export default defineBackground(() => {
 
     browser.contextMenus.onClicked.addListener((info, tab) => {
         if (!tab?.id) return;
-        // 타입 안전 메시징: 활성 탭에 전달
-        switch (info.menuItemId) {
-            case "blockSelected":
-                sendMessage("blockSelected", undefined, tab.id).catch(() => {});
-                break;
-            case "memoSelected":
-                sendMessage("memoSelected", undefined, tab.id).catch(() => {});
-                break;
-            case "dcconSelected":
-                sendMessage("dcconSelected", undefined, tab.id).catch(() => {});
-                break;
-            case "dcconAllSelected":
-                sendMessage("dcconAllSelected", undefined, tab.id).catch(() => {});
-                break;
-            case "searchSauceNao":
-                sendMessage("searchSauceNao", undefined, tab.id).catch(() => {});
-                break;
+
+        // 메뉴 id == 메시지 타입. 클릭한 탭에만 전달한다.
+        if (contextMenuItems.some((item) => item.id === info.menuItemId)) {
+            sendToTab(String(info.menuItemId), undefined, tab.id).catch(() => {});
         }
     });
 

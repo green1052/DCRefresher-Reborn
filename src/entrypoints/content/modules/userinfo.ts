@@ -166,6 +166,29 @@ const setupContextMenuHandler = (ctx: UserinfoModule): (() => void) =>
         }
     );
 
+const applyMemoResult = async (
+    selected: NullableProperties<Record<RefresherMemoType, string>>,
+    type: RefresherMemoType,
+    value: string
+): Promise<void> => {
+    // 창을 닫으면 memoAsk가 reject되므로 조용히 무시한다.
+    const obj = await memoAsk(selected, memo, type, value).catch(() => null);
+    if (!obj) return;
+
+    if (!obj.text) {
+        if (memo.get(obj.type, obj.value)) {
+            memo.remove(obj.type, obj.value);
+            return;
+        }
+
+        toast.show(`해당하는 ${memo.TYPE_NAMES[obj.type]}을(를) 가진 사용자 메모가 없습니다.`, "error");
+        return;
+    }
+
+    memo.add(obj.type, obj.value, obj.text, obj.color);
+    toast.show(`${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 추가했습니다.`);
+};
+
 const setupMemoAskHandler = (ctx: UserinfoModule): (() => void) =>
     onMessage(
         "refresherRequestMemoAsk",
@@ -179,22 +202,7 @@ const setupMemoAskHandler = (ctx: UserinfoModule): (() => void) =>
 
             (selected[type] as string) = user;
 
-            const obj = await memoAsk(selected, memo, type, user);
-
-            if (!obj.text) {
-                if (memo.get(obj.type, obj.value)) {
-                    memo.remove(obj.type, obj.value);
-                    return;
-                }
-
-                toast.show(`해당하는 ${memo.TYPE_NAMES[obj.type]}을(를) 가진 사용자 메모가 없습니다.`, "error");
-
-                return;
-            }
-
-            toast.show(`${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 변경했습니다.`);
-
-            memo.add(obj.type, obj.value, obj.text, obj.color);
+            await applyMemoResult(selected, type, user);
         }
     );
 
@@ -219,22 +227,7 @@ const setupUpdateUserMemoHandler = (ctx: UserinfoModule): (() => void) =>
             return;
         }
 
-        const obj = await memoAsk(ctx.memory.selected, memo, type, value);
-
-        if (!obj.text) {
-            if (memo.get(obj.type, obj.value)) {
-                memo.remove(obj.type, obj.value);
-                return;
-            }
-
-            toast.show(`해당하는 ${memo.TYPE_NAMES[obj.type]}을(를) 가진 사용자 메모가 없습니다.`, "error");
-
-            return;
-        }
-
-        memo.add(obj.type, obj.value, obj.text, obj.color);
-
-        toast.show(`${memo.TYPE_NAMES[obj.type]} ${obj.value}에 메모를 추가했습니다.`);
+        await applyMemoResult(ctx.memory.selected, type, value);
     });
 
 export default {

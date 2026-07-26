@@ -78,11 +78,8 @@ export class User {
         this.ip_data = null;
         this.ip_color = null;
 
-        this.nick = nick;
-        this.id = id;
         this.ip = ip;
 
-        this.icon = icon;
         this.type = getType(this.icon);
         this.memo = null;
         this.ratio = null;
@@ -108,24 +105,14 @@ export class User {
     }
 
     static fromDom(dom: HTMLElement | null): User {
-        const user = new User("", null, null, null);
+        if (!dom) return new User("", null, null, null);
 
-        if (!dom) return user;
+        const id = dom.dataset.uid || null;
+        const icon = id
+            ? dom.querySelector<HTMLImageElement>("a.writer_nikcon img")?.getAttribute("src") ?? null
+            : null;
 
-        user.nick = dom.dataset.nick || "오류";
-        user.id = dom.dataset.uid || null;
-
-        const ipVal = dom.dataset.ip;
-        user.ip = ipVal ? String(ipVal) : null;
-
-        user.icon = user.id ? dom.querySelector<HTMLImageElement>("a.writer_nikcon img")?.getAttribute("src") ?? null : null;
-        user.type = getType(user.icon);
-
-        user.getMemo();
-        user.getRatio();
-        user.getBan();
-
-        return user;
+        return new User(dom.dataset.nick || "오류", id, dom.dataset.ip || null, icon);
     }
 
     getMemo(): void {
