@@ -7,7 +7,7 @@ import downvoteIcon from "@/assets/icons/downvote.webp?no-inline";
 import blockIcon from "@/assets/icons/block.webp?no-inline";
 import deleteIcon from "@/assets/icons/delete.webp?no-inline";
 import toast from "@/utils/toast";
-import type {PreviewRequest} from "../../request";
+import {handleManageResponse, type PreviewRequest} from "../../request";
 import type {BlockPreset} from "../../panel";
 
 const props = defineProps<{
@@ -40,19 +40,7 @@ const recommendImg = computed(() => (setAsRecommend.value ? upvoteUrl : downvote
 // 성공 시 onSuccess 실행. pin/recommend는 토글 반전에 사용한다.
 const handleResponse = (response: unknown, onSuccess?: () => void): void => {
     props.emitRefreshRequest();
-
-    if (typeof response === "object" && response !== null) {
-        const r = response as { msg: string; result: string };
-        if (r.result === "success") {
-            toast.show(r.msg);
-            onSuccess?.();
-        } else {
-            toast.show(r.msg, "error");
-        }
-        return;
-    }
-
-    toast.show(String(response), "error");
+    handleManageResponse(response, onSuccess);
 };
 
 const pin = (): void => {
