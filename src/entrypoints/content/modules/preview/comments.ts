@@ -2,6 +2,7 @@ import eventBus from "@/core/eventbus";
 import * as http from "@/http/http";
 import * as block from "@/core/block";
 import {submitComment} from "@/utils/comment";
+import {extractDcconCode} from "@/utils/dccon";
 import {User} from "@/utils/user";
 import {requestWithCaptcha} from "./panel";
 import {previewRequest} from "./request";
@@ -28,7 +29,7 @@ export function handleDcconContextMenu(e: MouseEvent): void {
     const src = element.getAttribute("src");
     if (!src) return;
 
-    const code = src.replace(/^.*no=/g, "").replace(/^&.*$/g, "");
+    const code = extractDcconCode(src);
 
     eventBus.emit("refresherUserContextMenu", null, null, null, code, null);
 }

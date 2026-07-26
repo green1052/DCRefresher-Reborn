@@ -48,6 +48,9 @@ export default {
 
         this.memory.submitButton = filter.add<HTMLButtonElement>("button.write", (element) => {
             element.addEventListener("click", () => {
+                // 리스너는 revoke 후에도 버튼에 남으므로 여기서 활성 여부를 확인해야 한다
+                if (!this.enable) return;
+
                 const editor = document.querySelector<HTMLElement>(".note-editable");
 
                 if (this.status.header && editor) {
