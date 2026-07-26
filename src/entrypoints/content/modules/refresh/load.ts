@@ -182,7 +182,6 @@ export function createLoadFunction(ctx: LoadFunctionContext): (customURL?: strin
             oldList.replaceWith(newList);
 
             if (newPostList.length) eventBus.emit("newPostList", newPostList);
-            eventBus.emit("refresh");
 
             return true;
         } finally {
