@@ -4,6 +4,7 @@ import filter from "@/core/filtering";
 import {eventBus} from "@/core/eventbus";
 import {onMessage} from "@/http/messaging";
 import {queryString} from "@/http/http";
+import {extractDcconCode} from "@/utils/dccon";
 import {handleBlockRequest} from "./request";
 
 type BlockModule = RefresherModule<{
@@ -127,7 +128,7 @@ const setupDcconBlockFilter = (ctx: BlockModule, gallery: string | null): string
             if (!gallery) return;
 
             const src = element.getAttribute("src") ?? element.getAttribute("data-src") ?? "";
-            const dccon = src.replace(/^.*no=/g, "").replace(/^&.*$/g, "");
+            const dccon = extractDcconCode(src);
 
             if (block.check("DCCON", dccon, gallery)) {
                 const comment = element.closest<HTMLElement>(".ub-content");
@@ -147,9 +148,7 @@ const createContextMenuHandler = (ctx: BlockModule): ((event: MouseEvent) => voi
 
         const dccon = event.target.closest<HTMLImageElement>(".written_dccon");
         if (dccon) {
-            const code = (dccon.src || dccon.dataset.src || "")
-                .replace(/^.*no=/g, "")
-                .replace(/^&.*$/g, "");
+            const code = extractDcconCode(dccon.src || dccon.dataset.src || "");
 
             ctx.memory.selected = {
                 nick: null,
