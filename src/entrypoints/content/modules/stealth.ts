@@ -5,7 +5,8 @@ import toast from "@/utils/toast";
 const CONTROL_BUTTON = ".stealth_control_button";
 const TEMPORARY_STEALTH = "stlth";
 
-const tempButtonCreate = (element: HTMLElement): void => {
+// mount는 버튼을 붙일 위치일 뿐이다. stlth 토글은 CSS가 보는 documentElement에 해야 한다.
+const tempButtonCreate = (mount: HTMLElement): void => {
     if (document.querySelector(CONTROL_BUTTON)) return;
 
     const buttonFrame = document.createElement("div");
@@ -21,16 +22,11 @@ const tempButtonCreate = (element: HTMLElement): void => {
     const buttonText = buttonFrame.querySelector<HTMLElement>("#temp_button_text")!;
 
     button.addEventListener("click", () => {
-        if (element.classList.contains(TEMPORARY_STEALTH)) {
-            element.classList.remove(TEMPORARY_STEALTH);
-            buttonText.innerText = "이미지 보이기";
-        } else {
-            element.classList.add(TEMPORARY_STEALTH);
-            buttonText.innerText = "이미지 숨기기";
-        }
+        const shown = document.documentElement.classList.toggle(TEMPORARY_STEALTH);
+        buttonText.innerText = shown ? "이미지 숨기기" : "이미지 보이기";
     });
 
-    element.prepend(buttonFrame);
+    mount.prepend(buttonFrame);
 };
 
 export default {
