@@ -61,8 +61,6 @@ function parseCommentInfo(body: string, dom: Document, postInfo: IPostInfo): voi
 
 // 상태 플래그 및 사용자 정보 추출
 function parseFlagsAndUser(dom: Document, postInfo: IPostInfo): void {
-    const noticeElement = dom.querySelector<HTMLElement>(".user_control .option_box li:first-child");
-    postInfo.isNotice = noticeElement?.innerHTML !== "공지 등록";
     postInfo.isAdult = dom.head.innerHTML.includes("/error/adult");
     postInfo.requireCaptcha = !!dom.querySelector(".recommend_kapcode");
     postInfo.requireCommentCaptcha = !!dom.querySelector(".cmt_write_box input[name=comment_code]");

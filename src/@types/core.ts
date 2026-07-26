@@ -13,7 +13,6 @@ declare global {
 
     interface RefresherEventMap {
         refresherUpdateSetting: [string, string, unknown];
-        refresherSettingsSync: [Record<string, Record<string, RefresherSettings>>];
         refresherUpdateUserMemo: [];
         refresherUserContextMenu: [string | null, string | null, string | null, string | null, string | null];
         refresherRequestBlock: [BlockRequestOptions];
@@ -23,6 +22,5 @@ declare global {
         newPostList: [HTMLElement[]];
         refresherGetPost: [Document];
         refreshRequest: [];
-        refresherModuleConfig: [string, Record<string, unknown>];
     }
 }
