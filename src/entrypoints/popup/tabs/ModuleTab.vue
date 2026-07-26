@@ -22,6 +22,7 @@
 <script lang="ts" setup>
 import {inject} from "vue";
 import RefresherModule from "../components/module.vue";
+import type {useSettings} from "../composables/useSettings";
 
-const {modules, hasModules} = inject("settings")!;
+const {modules, hasModules} = inject<ReturnType<typeof useSettings>>("settings")!;
 </script>

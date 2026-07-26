@@ -86,6 +86,7 @@
 import {inject} from "vue";
 import RefresherBubble from "../components/bubble.vue";
 import {PlusIcon, RemoveIcon} from "../components/icons";
+import type {useBlocks} from "../composables/useBlocks";
 
 const {
     blocks,
@@ -100,5 +101,5 @@ const {
     editBlockMode,
     exportBlock,
     importBlock
-} = inject("blocks")!;
+} = inject<ReturnType<typeof useBlocks>>("blocks")!;
 </script>

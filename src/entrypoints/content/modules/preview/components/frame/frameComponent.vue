@@ -65,8 +65,8 @@ import RefresherScroll from "./scroll.vue";
 import type {FrameStackOption, PreviewFrame} from "../../frame";
 import {useFrameFade} from "../../composables/useFrameFade";
 
-const upvoteUrl = browser.runtime.getURL(upvoteIcon);
-const downvoteUrl = browser.runtime.getURL(downvoteIcon);
+const upvoteUrl = browser.runtime.getURL(upvoteIcon as never);
+const downvoteUrl = browser.runtime.getURL(downvoteIcon as never);
 
 interface Props {
     frames: PreviewFrame[];

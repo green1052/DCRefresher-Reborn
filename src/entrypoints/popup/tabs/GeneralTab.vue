@@ -44,13 +44,14 @@
 import {ref} from "vue";
 import iconUrl from "@/assets/icon.png";
 import SettingsModule from "../components/settingsModule.vue";
+import type {useSettings} from "../composables/useSettings";
 
 const {
     modules,
     settings,
     hasSettings,
     modulesWithBasicSettings
-} = inject("settings")!;
+} = inject<ReturnType<typeof useSettings>>("settings")!;
 
 const version = ref(
     import.meta.env.DEV
