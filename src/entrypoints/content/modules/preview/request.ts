@@ -2,6 +2,7 @@ import Cookies from "js-cookie";
 import ky, {Input, Options} from "ky";
 
 import * as http from "@/http/http";
+import toast from "@/utils/toast";
 import {parsePostInfo} from "./postParser";
 import {PostCache} from "./cache";
 
@@ -55,6 +56,22 @@ const isManagementResponse = (value: unknown): value is ManagementResponse => {
         typeof (value as ManagementResponse).msg === "string" &&
         ((value as ManagementResponse).result === "success" || (value as ManagementResponse).result === "fail")
     );
+};
+
+// 관리 API 응답({msg, result} 또는 문자열)을 토스트로 표시. 성공 시 onSuccess 실행.
+export const handleManageResponse = (response: unknown, onSuccess?: () => void): void => {
+    if (typeof response === "object" && response !== null) {
+        const r = response as { msg: string; result: string };
+        if (r.result === "success") {
+            toast.show(r.msg);
+            onSuccess?.();
+        } else {
+            toast.show(r.msg, "error");
+        }
+        return;
+    }
+
+    toast.show(String(response), "error");
 };
 
 const requireLink = (args: GalleryHTTPRequestArguments): string => {

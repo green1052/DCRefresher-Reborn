@@ -5,9 +5,8 @@ import captchaPopup from "./components/popup/captchaPopup.vue";
 import adminPanel from "./components/popup/adminPanel.vue";
 
 import type Frame from "./frame";
-import {previewRequest, type PreviewRequest} from "./request";
+import {handleManageResponse, previewRequest, type PreviewRequest} from "./request";
 import type {TypedEventBus} from "@/core/eventbus";
-import toast from "@/utils/toast";
 
 export interface BlockPreset {
     day: string;
@@ -119,18 +118,9 @@ export const panel = {
                         request.block(preData, avoidHour, avoidReason, avoidReasonTxt, delChk, userType).then((response) => {
                             eventBus.emit("refreshRequest");
 
-                            if (typeof response === "object" && response !== null) {
-                                const r = response as { msg: string; result: string };
-                                if (r.result === "success") {
-                                    toast.show(r.msg);
-                                    if (delChk) frame.app?.close();
-                                } else {
-                                    toast.show(r.msg, "error");
-                                }
-                                return;
-                            }
-
-                            toast.show(String(response), "error");
+                            handleManageResponse(response, () => {
+                                if (delChk) frame.app?.close();
+                            });
                         });
                     },
                     () => {}
