@@ -24,12 +24,12 @@
             >
                 <textarea
                     id="comment_main"
+                    v-model="text"
                     :disabled="disabled || dcconCount > 0"
                     :placeholder="dcconCount > 0 ? '디시콘이 선택됐습니다.' : '댓글 입력...'"
                     autocomplete="new-password"
                     @blur="blur"
                     @focus="focus"
-                    @input="updateText"
                     @keydown="onKeyDown"
                 />
             </div>
@@ -128,10 +128,6 @@ const inputFocusRef = inject<Ref<boolean>>("refresherInputFocus", ref(false));
 
 const dcconCount = computed(() => props.getDccon().length);
 
-const updateText = (ev: InputEvent) => {
-    text.value = (ev.target as HTMLTextAreaElement).value;
-};
-
 const renderDcconPopup = (): boolean => props.renderDcconPopup();
 
 const write = async (): Promise<boolean> => {
@@ -168,8 +164,6 @@ const write = async (): Promise<boolean> => {
         }
 
         text.value = "";
-        const commentMain = document.querySelector<HTMLInputElement>("#comment_main");
-        if (commentMain) commentMain.value = "";
 
         emit("setDccon", []);
         emit("setBigDccon", false);

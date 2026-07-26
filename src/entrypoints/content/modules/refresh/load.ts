@@ -71,19 +71,18 @@ const archiveDeletedPosts = (
     newPostCount: number
 ): void => {
     const newCacheSet = new Set(newCache);
-    const deletedPosts = oldCache.filter((postNo) => postNo && !newCacheSet.has(postNo));
+    // insertBefore로 oldList가 줄어들어도 인덱스가 안 밀리게 미리 배열로 고정
+    const oldChildren = Array.from(oldList.children) as HTMLElement[];
 
-    deletedPosts.forEach((deletedNo) => {
-        const originalIndex = oldCache.indexOf(deletedNo);
-        if (originalIndex !== -1) {
-            const insertIndex = originalIndex + newPostCount;
-            const oldChild = oldList.children[originalIndex] as HTMLElement | undefined;
-            if (oldChild) {
-                oldChild.classList.add("refresher-deleted");
-                const refChild = newListChildren[insertIndex] ?? null;
-                newList.insertBefore(oldChild, refChild);
-            }
-        }
+    oldCache.forEach((postNo, originalIndex) => {
+        if (!postNo || newCacheSet.has(postNo)) return;
+
+        const oldChild = oldChildren[originalIndex];
+        if (!oldChild) return;
+
+        oldChild.classList.add("refresher-deleted");
+        const refChild = newListChildren[originalIndex + newPostCount] ?? null;
+        newList.insertBefore(oldChild, refChild);
     });
 };
 

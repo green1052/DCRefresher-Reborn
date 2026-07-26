@@ -294,7 +294,8 @@ export function createWriteComment(
             return false;
         }
 
-        const grecaptcha = await getGrecaptchaToken();
+        // 캡차 팝업과 병렬로 토큰(최대 3초)을 미리 받아둔다
+        const grecaptchaPromise = getGrecaptchaToken();
 
         const req = async (captcha?: string) => {
             const postData: GalleryPreData = {
@@ -312,7 +313,7 @@ export function createWriteComment(
                 replyNo,
                 bigDccon,
                 captcha,
-                grecaptcha
+                await grecaptchaPromise
             );
 
             if (res.result === "false" || res.result === "PreNotWorking") {

@@ -115,10 +115,16 @@ export function miniPreviewCreate(
         });
 
     state.element.querySelector("h3")!.textContent = preData.title ?? "";
+
+    // 표시 직후 커서 위치로 즉시 이동 (hide 가드 때문에 이전 mousemove는 무시됐음)
+    miniPreviewMove(state, ev, use, interaction);
 }
 
 export function miniPreviewMove(state: MiniPreviewState, ev: MouseEvent, use: boolean, interaction: boolean): void {
     if (!use) return;
+
+    // 숨겨진 상태에선 mousemove마다 getBoundingClientRect(강제 리플로우)를 돌릴 필요 없음
+    if (state.element.classList.contains("hide")) return;
 
     const rect = state.element.getBoundingClientRect();
     const width = rect.width;
