@@ -3,6 +3,7 @@ import filter from "@/core/filtering";
 import eventBus from "@/core/eventbus";
 import {deletePost, fetchRatio, getPermBanFor, type RatioInfo} from "./helpers";
 import {getBanReverseIndex} from "@/utils/ban";
+import {insertWriterSpan} from "@/utils/userDataInsert";
 
 type ManageModule = RefresherModule<{
     data: {
@@ -38,26 +39,6 @@ const createRatioSpan = (ratio: RatioInfo, alarmRatio: number): HTMLSpanElement 
     }
 
     return span;
-};
-
-const insertSpanNearWriter = (element: HTMLElement, span: HTMLElement): void => {
-    const addBox = element.querySelector<HTMLElement>(".addbox");
-
-    if (addBox) {
-        const flIpQuery = addBox.querySelector<HTMLElement>(".writer_nikcon, .ip");
-        addBox.insertBefore(span, flIpQuery?.nextSibling ?? null);
-        return;
-    }
-
-    const fl = element.querySelector<HTMLElement>(".fl > span");
-    if (fl) {
-        const flIpQuery = fl.querySelector<HTMLElement>(".writer_nikcon, .ip");
-        if (flIpQuery) fl.insertBefore(span, flIpQuery.nextSibling);
-        else fl.appendChild(span);
-        return;
-    }
-
-    element.appendChild(span);
 };
 
 const setupGifControl = (ctx: ManageModule): string =>
@@ -172,7 +153,7 @@ const setupWriterDisplay = (ctx: ManageModule): string =>
                     text.textContent = `[${permBan}]`;
                     text.title = permBan;
 
-                    insertSpanNearWriter(element, text);
+                    insertWriterSpan(element, text, "after-icon");
                 }
             }
 
@@ -183,7 +164,7 @@ const setupWriterDisplay = (ctx: ManageModule): string =>
                 if (!ratio) return;
 
                 element.dataset.refresherRatio = "true";
-                insertSpanNearWriter(element, createRatioSpan(ratio, ctx.status.alarmRatio));
+                insertWriterSpan(element, createRatioSpan(ratio, ctx.status.alarmRatio), "after-icon");
             }
         },
         {neverExpire: true}

@@ -7,7 +7,7 @@ import {memoAsk} from "@/utils/memoAsk";
 import toast from "@/utils/toast";
 import type {Nullable, NullableProperties} from "@/utils/types";
 import {getType} from "@/utils/user";
-import {insertIntoWriterArea} from "@/utils/userDataInsert";
+import {insertWriterSpan} from "@/utils/userDataInsert";
 
 type UserinfoModule = RefresherModule<{
     data: {};
@@ -137,7 +137,7 @@ const memoAdd = (ctx: UserinfoModule, element: HTMLElement): void => {
         text.style.color = memoData.color;
     }
 
-    insertIntoWriterArea(element, text);
+    insertWriterSpan(element, text, "before-ip");
 
     element.dataset.refresherMemo = "true";
 };
