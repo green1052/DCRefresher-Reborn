@@ -179,3 +179,79 @@ onUnmounted(() => {
         </div>
     </div>
 </template>
+
+<style lang="scss">
+@use "@/assets/styles/variables" as *;
+
+.refresher-management-panel {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 0 $radius-md $radius-md 0;
+    display: grid;
+    height: 60%;
+    left: 0;
+    position: fixed;
+    top: 20%;
+    transition: all $duration-normal $ease-out-expo;
+    user-select: none;
+    width: 100px;
+    z-index: $z-overlay;
+
+    &.blur {
+        background-color: var(--refresher-bg-blur);
+    }
+
+    .button {
+        border-radius: $radius-md;
+        display: grid;
+        height: 80px;
+        margin: auto;
+        transition: all $duration-normal $ease-out-expo;
+        width: 80px;
+
+        img {
+            height: 60px;
+            margin: auto;
+            width: 60px;
+        }
+
+        p {
+            color: var(--refresher-text);
+            text-align: center;
+        }
+
+        &:hover {
+            background: rgba(255, 255, 255, 1);
+        }
+    }
+
+    .button.delete,
+    .button.block {
+        &:hover {
+            img {
+                filter: invert(22%) sepia(85%) saturate(5841%) hue-rotate(355deg) brightness(92%) contrast(126%);
+            }
+
+            p {
+                color: #f00;
+            }
+        }
+    }
+}
+
+html:has(#css-darkmode) .refresher-management-panel {
+    border: 1px solid var(--refresher-border);
+
+    &.blur {
+        backdrop-filter: blur(5px) saturate(150%);
+        background-color: var(--refresher-bg-blur);
+    }
+
+    .button:hover {
+        background: rgba(110, 110, 110, 0.5);
+    }
+
+    img {
+        filter: invert(1);
+    }
+}
+</style>

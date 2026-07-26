@@ -38,19 +38,6 @@
     }
 }
 
-@keyframes spin {
-    0%,
-    100% {
-        opacity: 1;
-        transform: rotateY(0deg);
-    }
-
-    50% {
-        opacity: 0.6;
-        transform: rotateY(360deg);
-    }
-}
-
 // ============================================================
 // Compact view
 // ============================================================
@@ -73,8 +60,9 @@
 // Do-not-color-visited (Firefox workaround)
 // ============================================================
 
-.refresherDoNotColorVisited {
-    // Applied to html element
+// ponytail: 규칙이 비어 있어 옵션이 무동작이었음. 방문 링크를 일반 링크와 같은 색으로 고정.
+.refresherDoNotColorVisited .gall_list a:visited {
+    color: inherit !important;
 }
 
 // ============================================================

@@ -141,47 +141,9 @@
         margin-left: 20px;
 
         textarea {
-            width: 100px;
-
-            @media screen and (min-width: 1220px) {
-                width: 956px !important;
-            }
-
-            @media screen and (min-width: 1145px) and (max-width: 1220px) {
-                width: 882px !important;
-            }
-
-            @media screen and (min-width: 1070px) and (max-width: 1145px) {
-                width: 808px !important;
-            }
-
-            @media screen and (min-width: 1015px) and (max-width: 1070px) {
-                width: 758px !important;
-            }
-
-            @media screen and (min-width: 960px) and (max-width: 1015px) {
-                width: 708px !important;
-            }
-
-            @media screen and (min-width: 850px) and (max-width: 960px) {
-                width: 608px !important;
-            }
-
-            @media screen and (min-width: 740px) and (max-width: 850px) {
-                width: 508px !important;
-            }
-
-            @media screen and (min-width: 630px) and (max-width: 740px) {
-                width: 400px !important;
-            }
-
-            @media screen and (min-width: 520px) and (max-width: 630px) {
-                width: 300px !important;
-            }
-
-            @media screen and (min-width: 410px) and (max-width: 520px) {
-                width: 200px !important;
-            }
+            // ponytail: 기존 10단 미디어쿼리(410~1220px 구간별 고정 폭)를 근사한 선형 식으로 축약.
+            // 구간별 오차 수 px 수준. 깨지는 해상도 발견 시 해당 구간만 미디어쿼리로 되살릴 것.
+            width: clamp(100px, calc(100vw - 264px), 956px) !important;
         }
     }
 }

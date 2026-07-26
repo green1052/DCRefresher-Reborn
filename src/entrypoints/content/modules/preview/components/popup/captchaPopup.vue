@@ -37,3 +37,52 @@ onMounted(() => {
         </button>
     </div>
 </template>
+
+<style lang="scss">
+@use "@/assets/styles/variables" as *;
+@use "@/assets/styles/components/popup" as *;
+
+.refresher-captcha-popup {
+    @include popup-shell;
+
+    height: 150px;
+    left: calc(50% - 160px);
+    top: calc(50% - 75px);
+    width: 320px;
+
+    & > p {
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    input {
+        border: 1px solid #777;
+        border-radius: $radius-md;
+        height: 30px;
+        outline: none;
+        text-decoration: none;
+        transition: all $duration-normal $ease-out-expo;
+        width: 100%;
+
+        &:focus,
+        &:hover {
+            box-shadow: inset 0 0 4px rgba(60, 71, 144, 0.5);
+        }
+    }
+
+    .refresher-preview-button {
+        bottom: 5%;
+        position: absolute;
+        right: 0;
+    }
+
+    .refresher-vote-text {
+        margin: auto;
+    }
+}
+
+html:has(#css-darkmode) .refresher-captcha-popup {
+    border: 1px solid var(--refresher-border);
+    color: white;
+}
+</style>

@@ -147,27 +147,5 @@
         }
     }
 
-    &:has(#css-darkmode) .stealth_control_button {
-        background: $dark-tint-light-opacity;
-        border: 1px solid #505050;
-
-        &.blur {
-            backdrop-filter: blur(5px) saturate(150%);
-            background-color: $dark-tint-light-opacity;
-        }
-
-        .button {
-            p {
-                color: $dark-text-color;
-            }
-
-            &:hover {
-                background: rgba(110, 110, 110, 0.5);
-            }
-        }
-
-        img {
-            filter: invert(1);
-        }
-    }
+    // 다크모드 버튼 스타일은 darkmode.scss의 .stealth_control_button 블록과 중복이라 제거함
 }

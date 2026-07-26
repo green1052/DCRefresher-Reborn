@@ -97,3 +97,49 @@ const submit = (): void => {
         </div>
     </div>
 </template>
+
+<style lang="scss">
+@use "@/assets/styles/variables" as *;
+@use "@/assets/styles/components/popup" as *;
+
+.refresher-block-popup {
+    @include popup-shell;
+
+    height: 320px;
+    left: calc(120px);
+    top: calc(50% - 160px);
+    width: 420px;
+
+    .contents {
+        margin-top: 30px;
+
+        & > div {
+            margin-bottom: 20px;
+        }
+
+        input[type=text] {
+            border-radius: 6px;
+            height: 33px;
+            margin-top: 5px;
+            width: 100%;
+        }
+
+        button {
+            background-color: var(--refresher-danger);
+            border-radius: $radius-md;
+            color: #fff;
+            display: block;
+            height: 40px;
+            margin-left: auto;
+            margin-top: 10px;
+            position: relative;
+            width: 120px;
+        }
+    }
+}
+
+html:has(#css-darkmode) .refresher-block-popup {
+    border: 1px solid var(--refresher-border);
+    color: white;
+}
+</style>
