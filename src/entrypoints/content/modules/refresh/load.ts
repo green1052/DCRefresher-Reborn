@@ -24,12 +24,10 @@ export interface LoadFunctionContext {
 const MINIMUM_REFRESH_INTERVAL = 2000;
 const DEFAULT_TIMEOUT_OFFSET = 100;
 
-const escapeRegex = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
+// innerHTML 정규식 치환은 마크업을 깨거나 검색어를 HTML로 주입하므로 텍스트 노드만 순회
 const highlightSearchResults = (newList: HTMLElement, searchValue: string): void => {
     if (!searchValue) return;
-    const escaped = escapeRegex(searchValue);
-    const regex = new RegExp(escaped, "g");
+
     for (const gallTit of newList.querySelectorAll<HTMLElement>(".gall_tit")) {
         const a = gallTit.querySelector<HTMLElement>("a:first-child");
         if (!a) continue;
@@ -39,7 +37,28 @@ const highlightSearchResults = (newList: HTMLElement, searchValue: string): void
             classList += " spoiler";
         }
 
-        a.innerHTML = a.innerHTML.replace(regex, `<span class="${classList}">${searchValue}</span>`);
+        const walker = a.ownerDocument.createTreeWalker(a, NodeFilter.SHOW_TEXT);
+        const textNodes: Text[] = [];
+        while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
+
+        for (const node of textNodes) {
+            const text = node.data;
+            if (!text.includes(searchValue)) continue;
+
+            const fragment = a.ownerDocument.createDocumentFragment();
+            let index = 0;
+            let found;
+            while ((found = text.indexOf(searchValue, index)) !== -1) {
+                fragment.append(text.slice(index, found));
+                const span = a.ownerDocument.createElement("span");
+                span.className = classList;
+                span.textContent = searchValue;
+                fragment.append(span);
+                index = found + searchValue.length;
+            }
+            fragment.append(text.slice(index));
+            node.replaceWith(fragment);
+        }
     }
 };
 
