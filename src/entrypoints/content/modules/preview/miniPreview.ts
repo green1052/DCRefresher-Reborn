@@ -117,7 +117,8 @@ export function miniPreviewCreate(
             state.element.style.overflow = "auto";
         }
 
-        state.element.innerHTML = `<h3>${preData.title}</h3><br><div class="refresher-mini-preview-contents${
+        // 제목은 유저 입력이므로 아래에서 textContent로만 넣는다.
+        state.element.innerHTML = `<h3></h3><br><div class="refresher-mini-preview-contents${
             hide ? " media-hide" : ""
         }"></div>${interaction ? "" : "<p class=read-more>더 읽으려면 클릭하세요.</p>"}`;
         document.body.appendChild(state.element);
@@ -138,7 +139,7 @@ export function miniPreviewCreate(
                 : `게시글을 새로 가져올 수 없습니다: ${error}`;
         });
 
-    state.element.querySelector("h3")!.innerHTML = preData.title ?? "";
+    state.element.querySelector("h3")!.textContent = preData.title ?? "";
 }
 
 export function miniPreviewMove(state: MiniPreviewState, ev: MouseEvent, use: boolean, interaction: boolean): void {

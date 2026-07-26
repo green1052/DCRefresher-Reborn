@@ -118,20 +118,17 @@ export const normalizeBlockMode = (
     return fallback;
 };
 
-// Initialize cache and watchers from wxt/storage
-(async () => {
-    for (const key of BLOCK_TYPES) {
-        // Initial load
-        const storedBlocks = normalizeBlockList(await blockStorage[key].getValue());
-        const storedMode = normalizeBlockMode(
-            await blockModeStorage[key].getValue(),
-            blockModeCache[key]
-        );
+// Initialize cache and watchers from wxt/storage (타입별 병렬 로드)
+void Promise.all(
+    BLOCK_TYPES.map(async (key) => {
+        const [storedBlocks, storedMode] = await Promise.all([
+            blockStorage[key].getValue(),
+            blockModeStorage[key].getValue()
+        ]);
 
-        blockCache[key] = storedBlocks;
-        blockModeCache[key] = storedMode;
+        blockCache[key] = normalizeBlockList(storedBlocks);
+        blockModeCache[key] = normalizeBlockMode(storedMode, blockModeCache[key]);
 
-        // Watch for changes
         blockStorage[key].watch((newValue) => {
             if (!newValue) return;
             blockCache[key] = normalizeBlockList(newValue);
@@ -142,8 +139,8 @@ export const normalizeBlockMode = (
             if (!newValue) return;
             blockModeCache[key] = normalizeBlockMode(newValue, blockModeCache[key]);
         });
-    }
-})();
+    })
+);
 
 const checkValidType = (type: string) => {
     return BLOCK_TYPES.some((key) => key === type);
@@ -256,33 +253,28 @@ export const check = (type: RefresherBlockType, content: string, gallery?: strin
             const regexd = getCompiledRegex(v.content);
             if (!regexd) return false;
             const match = content.match(regexd);
-            const matched = match?.[0] === content;
-            const hasMatch = match !== null;
 
             switch (mode) {
                 case BLOCK_DETECT_MODE.SAME:
-                    return matched;
+                    return match?.[0] === content;
                 case BLOCK_DETECT_MODE.CONTAIN:
-                    return hasMatch;
+                    return match !== null;
                 case BLOCK_DETECT_MODE.NOT_SAME:
-                    return !matched;
+                    return match?.[0] !== content;
                 case BLOCK_DETECT_MODE.NOT_CONTAIN:
-                    return !hasMatch;
+                    return match === null;
             }
         }
 
-        const same = v.content === content;
-        const contains = content.includes(v.content);
-
         switch (mode) {
             case BLOCK_DETECT_MODE.SAME:
-                return same;
+                return v.content === content;
             case BLOCK_DETECT_MODE.CONTAIN:
-                return contains;
+                return content.includes(v.content);
             case BLOCK_DETECT_MODE.NOT_SAME:
-                return !same;
+                return v.content !== content;
             case BLOCK_DETECT_MODE.NOT_CONTAIN:
-                return !contains;
+                return !content.includes(v.content);
         }
     });
 

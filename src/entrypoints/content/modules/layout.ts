@@ -14,16 +14,11 @@ const updateWindowSize = (forceActive: boolean, active: number | string, width: 
 
     if (forceActive || active >= width) {
         hideSticky(true);
-
-        if (!docEl.classList.contains("refresherCompact")) {
-            if (isView) docEl.classList.add("refresherCompactView");
-
-            docEl.classList.add("refresherCompact");
-        }
+        if (isView) docEl.classList.add("refresherCompactView");
+        docEl.classList.add("refresherCompact");
     } else {
         hideSticky(false);
-        docEl.classList.remove("refresherCompact");
-        docEl.classList.remove("refresherCompactView");
+        docEl.classList.remove("refresherCompact", "refresherCompactView");
     }
 };
 
