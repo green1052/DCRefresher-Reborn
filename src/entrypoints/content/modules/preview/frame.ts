@@ -153,10 +153,6 @@ export class PreviewFrame {
         this.closeHandlers.add(handler);
     }
 
-    offClose(handler: CloseHandler): void {
-        this.closeHandlers.delete(handler);
-    }
-
     emitClose(): void {
         this.closeHandlers.forEach((handler) => handler());
     }
