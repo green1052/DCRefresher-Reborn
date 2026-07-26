@@ -263,9 +263,9 @@ export class PreviewController {
         if (bodyFrame.data.load) return;
 
         const signal = this.renewPreviewSignal();
-        const params = new URLSearchParams(preData.link);
-        params.set("no", preData.id);
-        preData.link = decodeURIComponent(params.toString());
+        const url = new URL(preData.link ?? location.href, location.href);
+        url.searchParams.set("no", preData.id);
+        preData.link = url.href;
 
         preData.title = "로딩 중...";
         bodyFrame.contents = "로딩 중...";

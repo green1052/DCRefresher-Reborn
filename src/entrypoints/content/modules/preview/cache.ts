@@ -17,7 +17,7 @@ export class PostCache {
     }
 
     static key(gallery: string, id: string): string {
-        return `${gallery}${id}`;
+        return `${gallery}:${id}`;
     }
 
     get(id: string, ignoreTimeout = false): CacheEntry | undefined {

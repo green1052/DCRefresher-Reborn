@@ -61,11 +61,11 @@ export function makeCommentFrame(ctx: CommentFrameContext): void {
         frame.functions.writeComment = createWriteComment(preData, postDom, postFetchedDataRef, signal);
 
         ctx.clearRefreshInterval();
-        ctx.setRefreshInterval(
-            window.setInterval(() => {
-                if (autoRefreshComment) frame.functions.retry(false);
-            }, commentRefreshInterval)
-        );
+        if (autoRefreshComment) {
+            ctx.setRefreshInterval(
+                window.setInterval(() => frame.functions.retry(false), commentRefreshInterval)
+            );
+        }
     });
 
     // 댓글 삭제 핸들러
