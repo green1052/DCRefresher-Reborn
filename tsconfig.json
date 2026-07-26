@@ -1,8 +1,3 @@
 {
-    "extends": "./.wxt/tsconfig.json",
-    "compilerOptions": {
-        "types": [
-            "bun"
-        ]
-    }
+    "extends": "./.wxt/tsconfig.json"
 }
