@@ -49,6 +49,8 @@ export default defineConfig({
         },
         browser_specific_settings: {
             gecko: {
+                // AMO에 등록된 ID (구 manifest_v2/v3에서 사용하던 값과 동일해야 업데이트로 인식됨)
+                id: "dcrefresher-reborn@green1052",
                 data_collection_permissions: {
                     required: ["none"]
                 }
