@@ -43,7 +43,7 @@ const handleToggle = async (value: boolean) => {
 
 <style lang="scss" scoped>
 .refresher-module {
-    background-color: #f8f8f8;
+    background-color: var(--refresher-card-bg);
     border-radius: 13.3px;
     display: flex;
     margin-bottom: 5px;
@@ -60,32 +60,32 @@ const handleToggle = async (value: boolean) => {
         letter-spacing: -0.66px;
 
         .title {
-            color: #333;
+            color: var(--refresher-text-strong);
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 4px;
         }
 
         .desc {
-            color: #666;
+            color: var(--refresher-text-secondary);
             font-size: 14px;
             line-height: 1.4;
             margin-bottom: 4px;
         }
 
         .mute {
-            color: #a0a0a0;
+            color: var(--refresher-text-tertiary);
             font-size: 12px;
             letter-spacing: -0.66px;
 
             .link {
-                border-bottom: 1px solid #a0a0a0;
+                border-bottom: 1px solid var(--refresher-text-tertiary);
                 cursor: pointer;
                 transition: color 0.25s cubic-bezier(0.19, 1, 0.22, 1);
 
                 &:hover {
-                    border-bottom-color: #4caf50;
-                    color: #4caf50;
+                    border-bottom-color: var(--refresher-green);
+                    color: var(--refresher-green);
                 }
             }
         }
@@ -100,58 +100,16 @@ const handleToggle = async (value: boolean) => {
     }
 }
 
+// CSS 변수는 keyframe 내에서도 요소 기준으로 해석되므로 라이트/다크 공용
 @keyframes highlight-blink {
     0%,
     50% {
-        background-color: #afdbff;
+        background-color: var(--refresher-highlight);
     }
 
     40%,
     100% {
-        background-color: #f8f8f8;
-    }
-}
-
-@keyframes highlight-blink-dark {
-    0%,
-    50% {
-        background-color: #223957;
-    }
-
-    40%,
-    100% {
-        background-color: #2c2c2c;
-    }
-}
-
-@media (prefers-color-scheme: dark) {
-    .refresher-module {
-        background-color: #2c2c2c;
-
-        &.highlight {
-            animation: highlight-blink-dark 1s;
-        }
-
-        .left {
-            .title {
-                color: #e0e0e0;
-            }
-
-            .desc {
-                color: #b0b0b0;
-            }
-
-            .mute {
-                color: #888;
-
-                .link {
-                    &:hover {
-                        border-bottom-color: #66bb6a;
-                        color: #66bb6a;
-                    }
-                }
-            }
-        }
+        background-color: var(--refresher-card-bg);
     }
 }
 </style>

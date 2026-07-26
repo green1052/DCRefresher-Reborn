@@ -45,53 +45,29 @@ const handleChange = (ev: Event) => {
     display: flex;
 
     input {
-        background-color: #fff;
-        border: 1px solid #aaa;
+        background-color: var(--refresher-field-bg);
+        border: 1px solid var(--refresher-field-border);
         border-radius: 9px;
-        color: black;
+        color: var(--refresher-field-text);
         font-size: 15px;
         min-width: 150px;
         padding: 4px 16px;
         transition: all 0.25s cubic-bezier(0.19, 1, 0.22, 1);
 
         &:focus {
-            border-color: #4caf50;
-            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+            border-color: var(--refresher-green);
+            box-shadow: 0 0 0 2px var(--refresher-green-ring);
             outline: none;
         }
 
         &:disabled {
-            background-color: #f5f5f5;
-            color: #999;
+            background-color: var(--refresher-field-disabled-bg);
+            color: var(--refresher-field-disabled-text);
             cursor: not-allowed;
         }
 
         &::placeholder {
-            color: #999;
-        }
-    }
-}
-
-@media (prefers-color-scheme: dark) {
-    .refresher-input {
-        input {
-            background-color: #3b3b3b;
-            border: 1px solid rgb(90, 90, 90);
-            color: white;
-
-            &:focus {
-                border-color: #66bb6a;
-                box-shadow: 0 0 0 2px rgba(102, 187, 106, 0.2);
-            }
-
-            &:disabled {
-                background-color: #2a2a2a;
-                color: #666;
-            }
-
-            &::placeholder {
-                color: #666;
-            }
+            color: var(--refresher-field-disabled-text);
         }
     }
 }
