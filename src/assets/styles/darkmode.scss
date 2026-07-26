@@ -1,5 +1,4 @@
 @use "variables" as *;
-@use "sass:color";
 
 // ============================================================
 // Dark mode overrides — site uses #css-darkmode flag
@@ -35,15 +34,6 @@ html:has(#css-darkmode) {
         }
     }
 
-    // Tooltip border
-    .refresher-tooltip {
-        border: 1px solid var(--refresher-border);
-
-        &.blur {
-            background-color: var(--refresher-bg-blur);
-        }
-    }
-
     // Frame outer overlay
     .refresher-frame-outer {
         &.background {
@@ -51,33 +41,7 @@ html:has(#css-darkmode) {
         }
     }
 
-    // Management panel
-    .refresher-management-panel {
-        border: 1px solid var(--refresher-border);
-
-        &.blur {
-            backdrop-filter: blur(5px) saturate(150%);
-            background-color: var(--refresher-bg-blur);
-        }
-
-        .button {
-            &:hover {
-                background: rgba(110, 110, 110, 0.5);
-            }
-        }
-
-        img {
-            filter: invert(1);
-        }
-    }
-
-    // Popups (block / captcha / cache)
-    .refresher-block-popup,
-    .refresher-captcha-popup,
-    .refresher-cache-popup {
-        border: 1px solid var(--refresher-border);
-        color: white;
-    }
+    // 관리 패널/차단/캡차 팝업 다크모드는 각 SFC(<style>)로 이동
 
     // Preview media placeholder bg
     .refresher-frame.preview .refresher-preview-contents {
