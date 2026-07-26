@@ -63,7 +63,6 @@ export class PreviewController {
     private imageBlockClickHandler: ((ev: MouseEvent) => void) | null = null;
     private elementEventController: AbortController | null = null;
     private previewAbortController: AbortController | null = null;
-    private previewSignal: AbortSignal | null = null;
     private refreshIntervalId: number | null = null;
 
     private readonly preventOpenRef = {value: false};
@@ -148,7 +147,6 @@ export class PreviewController {
 
         this.previewAbortController?.abort();
         this.previewAbortController = null;
-        this.previewSignal = null;
         this.elementEventController?.abort();
         this.elementEventController = null;
 
@@ -243,7 +241,6 @@ export class PreviewController {
 
         const controller = new AbortController();
         this.previewAbortController = controller;
-        this.previewSignal = controller.signal;
         return controller.signal;
     }
 
@@ -368,13 +365,12 @@ export class PreviewController {
 
         this.previewAbortController?.abort();
         this.previewAbortController = null;
-        this.previewSignal = null;
 
         closeAllPopups();
-        if (this.previewNavigationKeyDown) {
-            document.removeEventListener("keydown", this.previewNavigationKeyDown);
-            this.previewNavigationKeyDown = null;
-        }
+
+        // keydown 핸들러는 그대로 둔다. 프레임은 한 번만 만들어지므로 여기서 떼면
+        // 두 번째로 미리보기를 열었을 때 PageUp/PageDown이 죽는다.
+        // 닫힌 상태는 핸들러가 알아서 무시한다.
 
         if (!this.historyClose && this.titleStore) {
             history.pushState(null, this.titleStore, this.urlStore);
@@ -387,7 +383,7 @@ export class PreviewController {
         }
 
         this.appStore?.clearScrollMode();
-        if (this.refreshIntervalId) window.clearInterval(this.refreshIntervalId);
+        this.clearRefreshInterval();
     }
 
     private handlePopState(ev: PopStateEvent): void {

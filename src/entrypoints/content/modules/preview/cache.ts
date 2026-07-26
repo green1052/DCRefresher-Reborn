@@ -1,3 +1,5 @@
+import {LRUCache} from "@/utils/lruCache";
+
 export interface CacheEntry {
     date: number;
     post?: IPostInfo;
@@ -5,11 +7,13 @@ export interface CacheEntry {
     deleted?: boolean;
 }
 
+const CACHE_TIMEOUT = 1000 * 60;
+
 export class PostCache {
-    #caches: Map<string, CacheEntry> = new Map();
+    readonly #caches: LRUCache<string, CacheEntry>;
 
-    constructor(private readonly maxCacheSize: number = 50) {
-
+    constructor(maxCacheSize = 50) {
+        this.#caches = new LRUCache(maxCacheSize);
     }
 
     static key(gallery: string, id: string): string {
@@ -20,34 +24,14 @@ export class PostCache {
         const cache = this.#caches.get(id);
         if (!cache) return undefined;
 
-        if (!ignoreTimeout && Date.now() - cache.date > 1000 * 60) {
-            return undefined;
-        }
-
-        // LRU: 접근 시 최근 사용 위치로 이동
-        this.#caches.delete(id);
-        this.#caches.set(id, cache);
+        if (!ignoreTimeout && Date.now() - cache.date > CACHE_TIMEOUT) return undefined;
 
         return cache;
     }
 
+    // 본문과 댓글이 따로 들어오므로 기존 항목에 합친다.
     set(id: string, data: CacheEntry): void {
-        // 이미 존재하면 기존 항목을 삭제하여 LRU 순서 갱신
-        if (this.#caches.has(id)) {
-            this.#caches.delete(id);
-        } else if (this.#caches.size >= this.maxCacheSize) {
-            // 가장 오래된 항목 제거 (Map의 첫 번째 항목)
-            const oldestKey = this.#caches.keys().next().value;
-            if (oldestKey !== undefined) {
-                this.#caches.delete(oldestKey);
-            }
-        }
-
-        const existing = this.#caches.get(id);
-        this.#caches.set(id, {
-            ...(existing ?? {}),
-            ...data
-        });
+        this.#caches.set(id, {...this.#caches.get(id), ...data});
     }
 
     delete(id: string): boolean {
