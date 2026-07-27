@@ -41,7 +41,7 @@ export function useMemos() {
 
     const removeMemoUser = async (type: RefresherMemoType, user: string) => {
         delete memos[type][user];
-        await memoStorage[type].setValue(memos[type]);
+        await memoStorage[type].setValue(JSON.parse(JSON.stringify(memos[type])));
     };
 
     const removeAllMemoUser = async (type: RefresherMemoType) => {
@@ -83,7 +83,7 @@ export function useMemos() {
                 target[id] = memo;
             }
 
-            await memoStorage[type].setValue({...target});
+            await memoStorage[type].setValue(JSON.parse(JSON.stringify(target)));
         }
 
         alert("가져오기에 성공했습니다.");
