@@ -1,6 +1,6 @@
 import Cookies from "js-cookie";
-import ky from "ky";
 import type {Input, Options} from "ky";
+import ky from "ky";
 
 import * as http from "@/http/http";
 import toast from "@/utils/toast";

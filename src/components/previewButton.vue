@@ -29,16 +29,9 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, ref, type Component} from "vue";
+import {type Component, computed, ref} from "vue";
 
-import {
-    ChevronUp,
-    ChevronDown,
-    Share2,
-    ExternalLink,
-    PencilLine,
-    RefreshCw
-} from "lucide-vue-next";
+import {ChevronDown, ChevronUp, ExternalLink, PencilLine, RefreshCw, Share2} from "lucide-vue-next";
 import dcconIcon from "@/assets/icons/dccon.webp?no-inline";
 
 interface Props {

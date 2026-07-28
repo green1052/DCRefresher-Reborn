@@ -1,5 +1,5 @@
 import {MEMO_TYPES, memoStorage} from "@/storage/wxtStorage";
-import {TYPE_NAMES as MEMO_TYPE_NAMES, normalizeMemoMap} from "@/core/memo";
+import {normalizeMemoMap, TYPE_NAMES as MEMO_TYPE_NAMES} from "@/core/memo";
 import {sendMessage} from "@/http/messaging";
 import {onMounted, reactive} from "vue";
 import {copyToClipboard, parseImportData} from "../utils/io";

@@ -1,9 +1,9 @@
 import {BLOCK_TYPES, blockModeStorage, blockStorage} from "@/storage/wxtStorage";
 import {
     BLOCK_DETECT_MODE_TYPE_NAMES,
-    TYPE_NAMES as BLOCK_TYPE_NAMES,
     normalizeBlockList,
-    normalizeBlockMode
+    normalizeBlockMode,
+    TYPE_NAMES as BLOCK_TYPE_NAMES
 } from "@/core/block";
 import {onMounted, reactive, ref} from "vue";
 import {copyToClipboard, parseImportData} from "../utils/io";

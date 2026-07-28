@@ -58,7 +58,7 @@
 import {onBeforeUnmount, onMounted, provide, ref} from "vue";
 
 import RefresherFrame from "./frame.vue";
-import {ChevronUp, ChevronDown} from "lucide-vue-next";
+import {ChevronDown, ChevronUp} from "lucide-vue-next";
 import RefresherScroll from "./scroll.vue";
 import type {FrameStackOption, PreviewFrame} from "../../frame";
 import {useFrameFade} from "../../composables/useFrameFade";
