@@ -1,9 +1,10 @@
 import eventBus from "@/core/eventbus";
-import changeIcon from "@/assets/icons/change.webp?no-inline";
 import toast from "@/utils/toast";
 
 const CONTROL_BUTTON = ".stealth_control_button";
 const TEMPORARY_STEALTH = "stlth";
+
+const EYE_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
 
 // mount는 버튼을 붙일 위치일 뿐이다. stlth 토글은 CSS가 보는 documentElement에 해야 한다.
 const tempButtonCreate = (mount: HTMLElement): void => {
@@ -12,9 +13,9 @@ const tempButtonCreate = (mount: HTMLElement): void => {
     const buttonFrame = document.createElement("div");
     buttonFrame.classList.add(CONTROL_BUTTON.replace(".", ""));
     buttonFrame.classList.add("blur");
-    buttonFrame.innerHTML = `      
+    buttonFrame.innerHTML = `
   <div class="button" id ="tempview">
-    <img src="${browser.runtime.getURL(changeIcon as never)}"></img>
+    ${EYE_SVG}
     <p id="temp_button_text">이미지 보이기</p>
   </div>
 `;

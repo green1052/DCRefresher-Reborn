@@ -29,12 +29,12 @@
             />
 
             <div id="scroll">
-                <img
-                    :src="upvoteUrl"
+                <ChevronUp
+                    class="scroll-icon"
                     @click="() => clickScroll('up')"
                 />
-                <img
-                    :src="downvoteUrl"
+                <ChevronDown
+                    class="scroll-icon"
                     @click="() => clickScroll('down')"
                 />
             </div>
@@ -58,14 +58,10 @@
 import {onBeforeUnmount, onMounted, provide, ref} from "vue";
 
 import RefresherFrame from "./frame.vue";
-import upvoteIcon from "@/assets/icons/upvote.webp?no-inline";
-import downvoteIcon from "@/assets/icons/downvote.webp?no-inline";
+import {ChevronUp, ChevronDown} from "lucide-vue-next";
 import RefresherScroll from "./scroll.vue";
 import type {FrameStackOption, PreviewFrame} from "../../frame";
 import {useFrameFade} from "../../composables/useFrameFade";
-
-const upvoteUrl = browser.runtime.getURL(upvoteIcon as never);
-const downvoteUrl = browser.runtime.getURL(downvoteIcon as never);
 
 interface Props {
     frames: PreviewFrame[];
@@ -235,5 +231,13 @@ defineExpose({
     user-select: none;
     width: 100px;
     z-index: $z-tooltip;
+
+    .scroll-icon {
+        color: var(--refresher-text);
+        cursor: pointer;
+        height: 30px;
+        margin: auto;
+        width: 30px;
+    }
 }
 </style>

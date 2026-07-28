@@ -34,8 +34,7 @@
         <PreviewButton
             id="refresh"
             :click="retry"
-            class="refresher-writecomment primary"
-            text="다시 시도"
+            class="refresher-writecomment"
         />
     </div>
 </template>

@@ -18,7 +18,7 @@
             </div>
 
             <div class="refresh" @click="getDcconList(true)">
-                <img :src="browser.runtime.getURL(refreshIcon as never)"/>
+                <RefreshCw class="refresh-icon"/>
             </div>
 
             <div
@@ -95,8 +95,8 @@
 <script lang="ts" setup>
 import Cookies from "js-cookie";
 import {client as ky} from "@/http/http";
-import refreshIcon from "@/assets/icons/refresh.webp?no-inline";
 import {onMounted, ref} from "vue";
+import {RefreshCw} from "lucide-vue-next";
 
 import RefresherLoader from "./loader.vue";
 
@@ -233,6 +233,12 @@ $dark-tint-light: #292929;
         margin-top: -5px;
 
         img {
+            height: 25px;
+            width: 25px;
+        }
+
+        .refresh-icon {
+            color: var(--refresher-text);
             height: 25px;
             width: 25px;
         }

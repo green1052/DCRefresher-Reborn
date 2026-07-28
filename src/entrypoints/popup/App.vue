@@ -28,10 +28,7 @@
                 title="전체 설정 페이지 열기"
                 @click="openOptions"
             >
-                <svg fill="none" height="14" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14"
-                     xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15 3h6v6M10 14L21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                </svg>
+                <ExternalLink :size="14"/>
             </button>
         </div>
 
@@ -67,6 +64,7 @@
 <script lang="ts" setup>
 import {provide, ref} from "vue";
 
+import {ExternalLink} from "lucide-vue-next";
 import BlockDialog from "./components/BlockDialog.vue";
 import GeneralTab from "./tabs/GeneralTab.vue";
 import BlockTab from "./tabs/BlockTab.vue";
