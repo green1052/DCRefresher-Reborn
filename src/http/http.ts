@@ -128,7 +128,7 @@ export const mergeParamURL = (origin: string, getFrom: string): string => {
  * URL에서 갤러리 종류를 확인하여 갤러리 종류 이름을 반환합니다.
  * (mgallery, mini, '')
  */
-export const galleryTypeName = (url: string): string => commentGallTypes[galleryType(url)];
+export const galleryTypeName = (url: string): string => commentGallTypes[galleryType(url)] ?? "";
 
 /**
  * 현재 URL의 query를 가져옵니다.

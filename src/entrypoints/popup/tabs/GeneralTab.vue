@@ -33,7 +33,7 @@
                     :key="moduleName"
                     :module-enabled="modules[moduleName]?.enable ?? false"
                     :module-name="moduleName"
-                    :module-settings="settings[moduleName]"
+                    :module-settings="settings[moduleName] ?? {}"
                 />
             </div>
         </div>

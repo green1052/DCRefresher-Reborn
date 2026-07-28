@@ -147,7 +147,7 @@ export async function submitComment(
     const [result, message] = response.split("||");
 
     return {
-        result,
+        result: result ?? "",
         message
     };
 }
