@@ -127,7 +127,11 @@ export function useBlocks() {
 
         if (!result) return;
 
-        blocks[key][index].content = result;
+        if (blocks[key] && blocks[key][index]) {
+            blocks[key][index].content = result;
+        } else {
+            return;
+        }
         await blockStorage[key].setValue(JSON.parse(JSON.stringify(blocks[key])));
     };
 
