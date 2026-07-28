@@ -41,8 +41,7 @@
             <PreviewButton
                 id="write"
                 :click="write"
-                class="refresher-writecomment primary"
-                text="작성"
+                class="refresher-writecomment"
             />
         </div>
         <div

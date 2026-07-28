@@ -1,7 +1,10 @@
 <template>
     <div
+        :data-collapsed="collapsed"
         :data-deleted="comment.is_delete !== '0'"
         :data-depth="comment.depth"
+        :data-has-replies="comment.depth === 0 && replyCount > 0"
+        :data-last-reply="lastReply"
         class="refresher-comment"
     >
         <div class="meta">
@@ -9,14 +12,23 @@
                 :me="me"
                 :user="comment.user"
             />
+            <div
+                v-if="comment.depth === 0 && replyCount > 1"
+                class="refresher-reply-toggle"
+                @click="toggleCollapse"
+            >
+                <ChevronDown class="toggle-icon"/>
+            </div>
             <div class="float-right">
-                <p
+                <div
                     v-if="useWriteComment"
+                    :class="{ active: reply.replyNo === comment.no }"
                     class="refresher-reply"
                     @click="setReply"
                 >
-                    {{ reply.replyNo === comment.no ? "답글 해제" : "답글" }}
-                </p>
+                    <Check v-if="reply.replyNo === comment.no" class="reply-icon"/>
+                    <Reply v-else class="reply-icon"/>
+                </div>
 
                 <TimeStamp :date="new Date(parsedDate)"/>
                 <div
@@ -27,21 +39,7 @@
                     class="delete"
                     @click="safeDelete"
                 >
-                    <svg
-                        fill="black"
-                        height="14px"
-                        viewBox="0 0 24 24"
-                        width="14px"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <path
-                            d="M0 0h24v24H0z"
-                            fill="none"
-                        />
-                        <path
-                            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
-                        />
-                    </svg>
+                    <X class="delete-icon"/>
                 </div>
             </div>
         </div>
@@ -78,6 +76,7 @@
 <script lang="ts" setup>
 import {computed, ref} from "vue";
 
+import {ChevronDown, Check, Reply, X} from "lucide-vue-next";
 import {useMeDetection} from "@/entrypoints/content/composables/useMeDetection";
 import TimeStamp from "@/components/timestamp.vue";
 import User from "@/components/user.vue";
@@ -90,6 +89,9 @@ interface Props {
     postUser?: string;
     delete?: (no: string, password: string, isAdmin: boolean) => void;
     reply?: { commentNo: string | null; replyNo: string | null };
+    replyCount?: number;
+    lastReply?: boolean;
+    collapsed?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -97,11 +99,15 @@ const props = withDefaults(defineProps<Props>(), {
     useWriteComment: false,
     postUser: "",
     delete: undefined,
-    reply: () => ({commentNo: null, replyNo: null})
+    reply: () => ({commentNo: null, replyNo: null}),
+    replyCount: 0,
+    lastReply: false,
+    collapsed: false
 });
 
 const emit = defineEmits<{
     "update:reply": [reply: { commentNo: string | null; replyNo: string | null }];
+    "toggle-collapse": [no: string];
 }>();
 
 const isAdmin = ref(!!document.querySelector(".useradmin_btnbox button"));
@@ -149,6 +155,10 @@ const setReply = () => {
         replyNo: props.reply.replyNo === props.comment.no ? null : props.comment.no
     });
 };
+
+const toggleCollapse = () => {
+    emit("toggle-collapse", props.comment.no);
+};
 </script>
 
 <style lang="scss" scoped>
@@ -161,13 +171,104 @@ const setReply = () => {
         opacity: 0.4;
     }
 
+    // 부모 댓글: 답글 있으면 마진 제거 (첫 답글과 붙게)
+    &[data-depth="0"][data-has-replies="true"] {
+        margin-bottom: 0;
+    }
+
+    // 대댓글: ㄴ 트리 라인. 부모 왼쪽에서 자식 중앙까지 선.
+    &[data-depth="1"] {
+        margin-bottom: 0;
+        margin-left: 0;
+        padding-left: 14px;
+        padding-top: 2vh;
+    }
+
+    // 첫 답글: 부모와 붙게
+    &[data-depth="1"]:first-of-type {
+        padding-top: 0;
+    }
+
+    // ㄴ 꺾임: 수직선 위쪽 ~ 자식 중앙, 수평선.
+    &[data-depth="1"]::before {
+        border-bottom: 2px solid var(--refresher-border-light);
+        border-left: 2px solid var(--refresher-border-light);
+        content: "";
+        height: 50%;
+        left: 0;
+        position: absolute;
+        top: 0;
+        width: 12px;
+    }
+
+    // 첫 답글: 부모와 붙어 선 연결
+    &[data-depth="1"]:first-of-type::before {
+        top: 0;
+    }
+
+    // 수직선 아래쪽: 자식 중앙 ~ 다음 답글
+    &[data-depth="1"]::after {
+        border-left: 2px solid var(--refresher-border-light);
+        content: "";
+        height: 50%;
+        left: 0;
+        position: absolute;
+        top: 50%;
+        width: 0;
+    }
+
+    // 마지막 답글: 아래 수직선 없음 + 다음 부모와 간격
+    &[data-depth="1"][data-last-reply="true"] {
+        margin-bottom: 2vh;
+
+        &::after {
+            display: none;
+        }
+    }
+
+    .refresher-reply-toggle {
+        align-items: center;
+        background: rgba(170, 170, 170, 0.2);
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        line-height: 1;
+        margin-left: 6px;
+        opacity: 0.7;
+        padding: 2px;
+
+        &:hover {
+            opacity: 1;
+        }
+
+        svg {
+            transition: transform 0.2s ease;
+        }
+    }
+
+    &[data-collapsed="true"] .refresher-reply-toggle svg {
+        transform: rotate(-90deg);
+    }
+
     .meta {
+        align-items: center;
         display: flex;
 
         .refresher-reply {
+            align-items: center;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 12px;
+            display: flex;
             opacity: 0.6;
+
+            &:hover {
+                opacity: 1;
+            }
+
+            &.active {
+                background: rgba(170, 170, 170, 0.2);
+                opacity: 1;
+            }
         }
 
         .float-right {

@@ -1,11 +1,7 @@
 <script lang="ts" setup>
-import {computed, onMounted, onUnmounted, ref} from "vue";
+import {computed, onMounted, onUnmounted, ref, type Component} from "vue";
 
-import pinIcon from "@/assets/icons/pin.webp?no-inline";
-import upvoteIcon from "@/assets/icons/upvote.webp?no-inline";
-import downvoteIcon from "@/assets/icons/downvote.webp?no-inline";
-import blockIcon from "@/assets/icons/block.webp?no-inline";
-import deleteIcon from "@/assets/icons/delete.webp?no-inline";
+import {Pin, ChevronUp, ChevronDown, Ban, Trash2} from "lucide-vue-next";
 import toast from "@/utils/toast";
 import {handleManageResponse, type PreviewRequest} from "../../request";
 import type {BlockPreset} from "../../panel";
@@ -27,15 +23,15 @@ const emit = defineEmits<{
 const setAsNotice = ref(!props.preData.notice);
 const setAsRecommend = ref(!props.preData.recommend);
 
-const pinUrl = browser.runtime.getURL(pinIcon as never);
-const upvoteUrl = browser.runtime.getURL(upvoteIcon as never);
-const downvoteUrl = browser.runtime.getURL(downvoteIcon as never);
-const blockUrl = browser.runtime.getURL(blockIcon as never);
-const deleteUrl = browser.runtime.getURL(deleteIcon as never);
+const pinComp: Component = Pin;
+const upvoteComp: Component = ChevronUp;
+const downvoteComp: Component = ChevronDown;
+const blockComp: Component = Ban;
+const deleteComp: Component = Trash2;
 
 const pinLabel = computed(() => (setAsNotice.value ? "공지로 등록" : "공지 등록 해제"));
 const recommendLabel = computed(() => (setAsRecommend.value ? "개념글 등록" : "개념글 해제"));
-const recommendImg = computed(() => (setAsRecommend.value ? upvoteUrl : downvoteUrl));
+const recommendComp = computed(() => (setAsRecommend.value ? upvoteComp : downvoteComp));
 
 // 성공 시 onSuccess 실행. pin/recommend는 토글 반전에 사용한다.
 const handleResponse = (response: unknown, onSuccess?: () => void): void => {
@@ -133,23 +129,23 @@ onUnmounted(() => {
 <template>
     <div id="refresher-management-panel" :class="{ blur: toggleBlur }" class="refresher-management-panel">
         <div class="button pin" @click="pin">
-            <img :src="pinUrl" alt="pin"/>
+            <component :is="pinComp" class="refresher-mgmt-icon"/>
             <p>{{ pinLabel }}</p>
         </div>
         <div class="button recommend" @click="recommend">
-            <img :src="recommendImg" alt="recommend"/>
+            <component :is="recommendComp" class="refresher-mgmt-icon"/>
             <p>{{ recommendLabel }}</p>
         </div>
         <div class="button block" @click="emit('openBlock')">
-            <img :src="blockUrl" alt="block"/>
+            <component :is="blockComp" class="refresher-mgmt-icon"/>
             <p>차단 (B)</p>
         </div>
         <div class="button delete" @click="doDelete">
-            <img :src="deleteUrl" alt="delete"/>
+            <component :is="deleteComp" class="refresher-mgmt-icon"/>
             <p>삭제 (D)</p>
         </div>
         <div class="button bump" @click="bump">
-            <img :src="upvoteUrl" alt="upvote"/>
+            <component :is="upvoteComp" class="refresher-mgmt-icon"/>
             <p>끌올</p>
         </div>
     </div>
@@ -189,6 +185,12 @@ onUnmounted(() => {
             width: 60px;
         }
 
+        .refresher-mgmt-icon {
+            height: 48px;
+            margin: auto;
+            width: 48px;
+        }
+
         p {
             color: var(--refresher-text);
             text-align: center;
@@ -202,6 +204,7 @@ onUnmounted(() => {
     .button.delete,
     .button.block {
         &:hover {
+            .refresher-mgmt-icon,
             img {
                 filter: invert(22%) sepia(85%) saturate(5841%) hue-rotate(355deg) brightness(92%) contrast(126%);
             }
@@ -227,6 +230,10 @@ html:has(#css-darkmode) .refresher-management-panel {
 
     img {
         filter: invert(1);
+    }
+
+    .refresher-mgmt-icon {
+        color: $dark-text-color-bright;
     }
 }
 </style>

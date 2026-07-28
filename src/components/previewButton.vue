@@ -3,10 +3,17 @@
         class="refresher-preview-button"
         @click="safeClick"
     >
-        <transition v-if="id" name="refresher-shake">
+        <transition v-if="iconComp" name="refresher-shake">
+            <component
+                :is="iconComp"
+                :key="error"
+                class="refresher-preview-icon"
+            />
+        </transition>
+        <transition v-else-if="id === 'dccon'" name="refresher-shake">
             <img
                 :key="error"
-                :src="iconSrc"
+                :src="dcconSrc"
             />
         </transition>
         <transition v-if="text" name="refresher-shake">
@@ -22,14 +29,16 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, ref} from "vue";
+import {computed, ref, type Component} from "vue";
 
-import upvoteIcon from "@/assets/icons/upvote.webp?no-inline";
-import downvoteIcon from "@/assets/icons/downvote.webp?no-inline";
-import shareIcon from "@/assets/icons/share.webp?no-inline";
-import newtabIcon from "@/assets/icons/newtab.webp?no-inline";
-import writeIcon from "@/assets/icons/write.webp?no-inline";
-import refreshIcon from "@/assets/icons/refresh.webp?no-inline";
+import {
+    ChevronUp,
+    ChevronDown,
+    Share2,
+    ExternalLink,
+    PencilLine,
+    RefreshCw
+} from "lucide-vue-next";
 import dcconIcon from "@/assets/icons/dccon.webp?no-inline";
 
 interface Props {
@@ -46,17 +55,17 @@ const props = withDefaults(defineProps<Props>(), {
 
 const error = ref(0);
 
-const iconMap: Record<string, string> = {
-    upvote: browser.runtime.getURL(upvoteIcon as never),
-    downvote: browser.runtime.getURL(downvoteIcon as never),
-    share: browser.runtime.getURL(shareIcon as never),
-    newtab: browser.runtime.getURL(newtabIcon as never),
-    write: browser.runtime.getURL(writeIcon as never),
-    refresh: browser.runtime.getURL(refreshIcon as never),
-    dccon: browser.runtime.getURL(dcconIcon as never)
+const iconMap: Record<string, Component> = {
+    upvote: ChevronUp,
+    downvote: ChevronDown,
+    share: Share2,
+    newtab: ExternalLink,
+    write: PencilLine,
+    refresh: RefreshCw
 };
 
-const iconSrc = computed(() => iconMap[String(props.id)]);
+const iconComp = computed(() => iconMap[String(props.id)]);
+const dcconSrc = browser.runtime.getURL(dcconIcon as never);
 
 const safeClick = async (): Promise<boolean> => {
     if (!props.click) return false;
@@ -145,7 +154,8 @@ const safeClick = async (): Promise<boolean> => {
         height: 38px;
         width: 120px;
 
-        img {
+        img,
+        .refresher-preview-icon {
             margin: auto 0 auto auto;
         }
     }
@@ -154,6 +164,12 @@ const safeClick = async (): Promise<boolean> => {
         height: 30px;
         margin-top: 5px;
         width: 30px;
+    }
+
+    .refresher-preview-icon {
+        height: 24px;
+        margin: auto;
+        width: 24px;
     }
 
     p {
@@ -208,6 +224,10 @@ html:has(#css-darkmode) {
 
         img {
             filter: invert(1);
+        }
+
+        .refresher-preview-icon {
+            color: $dark-text-color-bright;
         }
     }
 }

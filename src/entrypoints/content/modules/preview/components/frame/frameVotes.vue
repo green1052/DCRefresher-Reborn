@@ -17,13 +17,11 @@
             <PreviewButton
                 id="share"
                 :click="share"
-                class="refresher-share primary"
-                text="공유"
+                class="refresher-share"
             />
             <PreviewButton
                 id="newtab"
                 :click="original"
-                text="원본 보기"
             />
         </div>
     </div>

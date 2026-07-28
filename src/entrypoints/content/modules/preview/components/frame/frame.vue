@@ -54,13 +54,11 @@
                             id="write"
                             :click="toCommentWrite"
                             class="refresher-comment-controls"
-                            text="댓글 쓰기"
                         />
                         <PreviewButton
                             id="refresh"
                             :click="retry"
                             class="refresher-comment-controls"
-                            text="새로고침"
                         />
                     </div>
                 </div>
@@ -133,14 +131,18 @@
                             @before-enter="beforeEnter"
                         >
                             <Comment
-                                v-for="(comment, i) in frame.data.comments.comments"
+                                v-for="(comment, i) in visibleComments"
                                 :key="comment.no"
                                 v-model:reply="reply"
+                                :collapsed="isCollapsed(comment)"
                                 :comment="comment"
                                 :delete="frame.functions.deleteComment"
                                 :index="i + 1"
+                                :last-reply="comment.depth === 1 && isLastReply(comment)"
                                 :post-user="frame.data.postUserId"
+                                :reply-count="replyCount(comment)"
                                 :use-write-comment="frame.data.useWriteComment"
+                                @toggle-collapse="toggleCollapse"
                             />
                         </transition-group>
                     </div>
@@ -219,6 +221,52 @@ const hasComments = computed(() =>
     props.frame.data.comments?.comments && props.frame.data.comments.comments.length > 0
 );
 
+// ponytail: Map for collapse state. Set when collapse toggled; per-post reset via commentKey.
+const collapsedParents = ref(new Set<string>());
+
+const allComments = computed<DcinsideCommentObject[]>(() =>
+    props.frame.data.comments?.comments ?? []
+);
+
+// 부모 no -> 마지막 답글 no 맵 (선 끝 처리용)
+const lastReplyByParent = computed<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    for (const c of allComments.value) {
+        if (c.depth === 1 && c.c_no) {
+            map[c.c_no] = c.no;
+        }
+    }
+    return map;
+});
+
+const replyCount = (comment: DcinsideCommentObject): number =>
+    comment.depth === 0
+        ? allComments.value.filter((c) => c.depth === 1 && c.c_no === comment.no).length
+        : 0;
+
+const isCollapsed = (comment: DcinsideCommentObject): boolean =>
+    comment.depth === 0 && collapsedParents.value.has(comment.no);
+
+const isLastReply = (comment: DcinsideCommentObject): boolean =>
+    comment.depth === 1 && !!comment.c_no && lastReplyByParent.value[comment.c_no] === comment.no;
+
+const toggleCollapse = (no: string) => {
+    const next = new Set(collapsedParents.value);
+    if (next.has(no)) next.delete(no);
+    else next.add(no);
+    collapsedParents.value = next;
+};
+
+const visibleComments = computed<DcinsideCommentObject[]>(() => {
+    const list = allComments.value;
+    if (list.length === 0) return list;
+    const collapsed = collapsedParents.value;
+    if (collapsed.size === 0) return list;
+    return list.filter((c) =>
+        c.depth === 0 || !collapsed.has(c.c_no as string)
+    );
+});
+
 const showVotes = computed(() =>
     props.frame.data.comments === undefined && props.frame.data.buttons
 );
@@ -285,6 +333,7 @@ const resetFrameState = () => {
     bigDccon.value = false;
     closeDccon();
     commentKey.value = 0;
+    collapsedParents.value = new Set();
 };
 
 onMounted(() => {
@@ -293,6 +342,7 @@ onMounted(() => {
 
 const incrementCommentKey = () => {
     commentKey.value++;
+    collapsedParents.value = new Set();
 };
 
 defineExpose({incrementCommentKey});
