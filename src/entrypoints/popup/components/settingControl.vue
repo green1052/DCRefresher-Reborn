@@ -15,10 +15,10 @@
         />
         <refresher-range
             v-else-if="setting.type === 'range'"
-            :model-value="Number(setting.value)"
             :disabled="!moduleEnabled"
             :max="setting.max"
             :min="setting.min"
+            :model-value="Number(setting.value)"
             :placeholder="String(setting.default)"
             :step="setting.step"
             :unit="setting.unit"

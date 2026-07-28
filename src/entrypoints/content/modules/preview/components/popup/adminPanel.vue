@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import {computed, onMounted, onUnmounted, ref, type Component} from "vue";
+import {type Component, computed, onMounted, onUnmounted, ref} from "vue";
 
-import {Pin, ChevronUp, ChevronDown, Ban, Trash2} from "lucide-vue-next";
+import {Ban, ChevronDown, ChevronUp, Pin, Trash2} from "lucide-vue-next";
 import toast from "@/utils/toast";
 import {handleManageResponse, type PreviewRequest} from "../../request";
 import type {BlockPreset} from "../../panel";

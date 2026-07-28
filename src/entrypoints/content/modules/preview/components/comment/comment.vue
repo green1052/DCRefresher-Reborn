@@ -76,7 +76,7 @@
 <script lang="ts" setup>
 import {computed, ref} from "vue";
 
-import {ChevronDown, Check, Reply, X} from "lucide-vue-next";
+import {Check, ChevronDown, Reply, X} from "lucide-vue-next";
 import {useMeDetection} from "@/entrypoints/content/composables/useMeDetection";
 import TimeStamp from "@/components/timestamp.vue";
 import User from "@/components/user.vue";
