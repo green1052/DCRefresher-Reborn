@@ -168,6 +168,10 @@ export function filterAndProcessComments(
 
     // User 객체 생성
     comments.comments.forEach((v: DcinsideCommentObject) => {
+        v.memo = v.memo.replace(/data-dcconoverstatus="false"/g, 'data-dcconoverstatus="true"');
+        v.memo = v.memo.replace(/\s+onmousedown\s*=\s*"[^"]*"/gi, "");
+        v.memo = v.memo.replace(/\bwritten_dccon\b/g, "");
+        v.memo = v.memo.replace(/\s*style\s*=\s*"[^"]*"/gi, "");
         v.user = new User(
             v.name,
             v.user_id || null,
