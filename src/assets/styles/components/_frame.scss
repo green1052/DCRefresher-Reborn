@@ -23,6 +23,13 @@
     }
 }
 
+.refresher-preview-contents-actual {
+    img,
+    video {
+        max-width: 100%;
+    }
+}
+
 .refresher-frame.preview[data-load="false"] {
     .refresher-loader {
         display: none;

@@ -46,6 +46,10 @@ function renderPostContent(
 
     restoreImageSources(dom);
 
+    for (const img of dom.querySelectorAll("img, video")) {
+        img.removeAttribute("style");
+    }
+
     if (gifControl) {
         for (const element of dom.querySelectorAll("video")) {
             const src = element.getAttribute("data-src");
