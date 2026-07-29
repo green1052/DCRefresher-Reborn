@@ -138,6 +138,11 @@
         font-size: 14px;
 
         &.dccon {
+            display: flex;
+            flex-wrap: wrap;
+            position: relative;
+            width: fit-content;
+
             img,
             video {
                 height: 100px;

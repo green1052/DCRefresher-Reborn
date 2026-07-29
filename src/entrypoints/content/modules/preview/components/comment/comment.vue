@@ -61,6 +61,7 @@
         </div>
         <p
             v-else-if="/<(img|video) class=/.test(comment.memo)"
+            :data-bigdccon="/\bbigdccon\b/.test(comment.memo) || undefined"
             class="refresher-comment-content dccon"
             @contextmenu="handleDcconContextMenu"
             v-html="comment.memo.replace(/(?<!(dc|<))img/gi, '/><img')"
