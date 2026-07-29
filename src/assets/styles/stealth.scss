@@ -20,6 +20,9 @@
     }
 
     div.comment_box .comment_dccon {
+        position: relative;
+        width: fit-content;
+
         &:not(:hover) {
             border: 1px solid $dark-dc-color-deep;
 
@@ -32,13 +35,13 @@
 
             &::before {
                 align-items: center;
+                border-radius: 0;
                 content: "디시콘 표시";
                 display: flex;
                 font-weight: bold;
-                height: 100px;
+                inset: 0;
                 justify-content: space-around;
                 position: absolute;
-                width: 100px;
             }
         }
     }
@@ -70,24 +73,27 @@
     }
 
     //Preview - dccon
-    div.refresher-preview-comments .dccon:not(:hover) {
-        img,
-        video {
-            visibility: hidden;
-        }
+    div.refresher-preview-comments .dccon {
+        position: relative;
 
-        &::before {
-            align-items: center;
-            border: 1px solid $dark-dc-color-deep;
-            border-radius: 10px;
-            box-sizing: border-box;
-            content: "디시콘 표시";
-            display: flex;
-            font-weight: bold;
-            height: 100px;
-            justify-content: space-around;
-            position: absolute;
-            width: 100px;
+        &:not(:hover) {
+            img,
+            video {
+                visibility: hidden;
+            }
+
+            &::before {
+                align-items: center;
+                border: 1px solid $dark-dc-color-deep;
+                border-radius: 0;
+                box-sizing: border-box;
+                content: "디시콘 표시";
+                display: flex;
+                font-weight: bold;
+                inset: 0;
+                justify-content: space-around;
+                position: absolute;
+            }
         }
     }
 
