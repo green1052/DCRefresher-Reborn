@@ -17,7 +17,7 @@
                 class="refresher-reply-toggle"
                 @click="toggleCollapse"
             >
-                <ChevronDown class="toggle-icon"/>
+                <ChevronDown :size="14" class="toggle-icon"/>
             </div>
             <div class="float-right">
                 <div
@@ -26,8 +26,8 @@
                     class="refresher-reply"
                     @click="setReply"
                 >
-                    <Check v-if="reply.replyNo === comment.no" class="reply-icon"/>
-                    <Reply v-else class="reply-icon"/>
+                    <Check v-if="reply.replyNo === comment.no" :size="14" class="reply-icon"/>
+                    <Reply v-else :size="14" class="reply-icon"/>
                 </div>
 
                 <TimeStamp :date="new Date(parsedDate)"/>
@@ -39,7 +39,7 @@
                     class="delete"
                     @click="safeDelete"
                 >
-                    <X class="delete-icon"/>
+                    <X :size="14" class="delete-icon"/>
                 </div>
             </div>
         </div>
@@ -176,6 +176,11 @@ const toggleCollapse = () => {
         margin-bottom: 0;
     }
 
+    // 접힌 부모 댓글: 답글 숨겨지므로 간격 복원
+    &[data-depth="0"][data-collapsed="true"] {
+        margin-bottom: 2vh;
+    }
+
     // 대댓글: ㄴ 트리 라인. 부모 왼쪽에서 자식 중앙까지 선.
     &[data-depth="1"] {
         margin-bottom: 0;
@@ -196,6 +201,7 @@ const toggleCollapse = () => {
         content: "";
         height: 50%;
         left: 0;
+        opacity: 0.6;
         position: absolute;
         top: 0;
         width: 12px;
@@ -212,6 +218,7 @@ const toggleCollapse = () => {
         content: "";
         height: 50%;
         left: 0;
+        opacity: 0.6;
         position: absolute;
         top: 50%;
         width: 0;
@@ -235,7 +242,7 @@ const toggleCollapse = () => {
         line-height: 1;
         margin-left: 6px;
         opacity: 0.7;
-        padding: 2px;
+        padding: 1px;
 
         &:hover {
             opacity: 1;
@@ -260,6 +267,7 @@ const toggleCollapse = () => {
             cursor: pointer;
             display: flex;
             opacity: 0.6;
+            padding: 1px;
 
             &:hover {
                 opacity: 1;
@@ -272,13 +280,14 @@ const toggleCollapse = () => {
         }
 
         .float-right {
+            align-items: center;
             display: flex;
+            gap: 6px;
             margin-left: auto;
         }
     }
 
     .refresher-timestamp {
-        margin-left: 2vw;
         white-space: nowrap;
     }
 
@@ -287,9 +296,8 @@ const toggleCollapse = () => {
         border-radius: 50%;
         cursor: pointer;
         display: flex;
-        height: 20px;
-        margin-left: 10px;
-        width: 20px;
+        height: 18px;
+        width: 18px;
 
         &:hover {
             background-color: rgba(170, 170, 170, 0.45);

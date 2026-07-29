@@ -25,7 +25,8 @@
 
             box-sizing: border-box;
 
-            .written_dccon {
+            img,
+            video {
                 visibility: hidden;
             }
 
@@ -70,7 +71,8 @@
 
     //Preview - dccon
     div.refresher-preview-comments .dccon:not(:hover) {
-        .written_dccon {
+        img,
+        video {
             visibility: hidden;
         }
 
