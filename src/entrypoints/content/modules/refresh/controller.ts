@@ -288,13 +288,11 @@ export class RefreshController {
     }
 
     private setupPopStateHandler(): void {
-        const handlePopState = (): void => {
+        this.memory.popStateHandler = (): void => {
             if (this.memory.refresh) window.clearTimeout(this.memory.refresh);
             this.memory.calledByPageTurn = true;
             this.scheduleNextRefresh();
         };
-
-        this.memory.popStateHandler = handlePopState;
         window.addEventListener("popstate", this.memory.popStateHandler);
     }
 
@@ -307,6 +305,8 @@ export class RefreshController {
         );
 
         this.memory.uuid2 = eventBus.on("refresherGetPost", (parsedBody) => {
+            if (!parsedBody) return;
+
             const pagingBox = parsedBody.querySelector(PAGING_SELECTOR);
             const currentBottomPagingBox = document.querySelector(PAGING_SELECTOR);
 

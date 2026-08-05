@@ -96,7 +96,7 @@ export function createLoadFunction(ctx: LoadFunctionContext): (customURL?: strin
         memory.loading = true;
 
         try {
-            if (Date.now() < memory.lastRefresh + MINIMUM_REFRESH_INTERVAL) {
+            if (!force && Date.now() < memory.lastRefresh + MINIMUM_REFRESH_INTERVAL) {
                 return false;
             }
 
@@ -127,10 +127,11 @@ export function createLoadFunction(ctx: LoadFunctionContext): (customURL?: strin
             const response = await client.get(url, {timeout: memory.delay - DEFAULT_TIMEOUT_OFFSET}).text();
             const dom = new DOMParser().parseFromString(response, "text/html");
 
-            eventBus.emit("refresherGetPost", dom);
-
             const oldList = document.querySelector<HTMLElement>(".gall_list:not([id]) tbody");
             const newList = dom.querySelector<HTMLElement>(".gall_list:not([id]) tbody");
+
+            eventBus.emit("refresherGetPost", dom);
+
             if (!oldList || !newList) return false;
 
             const newListChildren = Array.from(newList.children) as HTMLElement[];
