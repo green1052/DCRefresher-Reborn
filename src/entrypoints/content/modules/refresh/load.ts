@@ -73,9 +73,12 @@ const archiveDeletedPosts = (
     const newCacheSet = new Set(newCache);
     // insertBefore로 oldList가 줄어들어도 인덱스가 안 밀리게 미리 배열로 고정
     const oldChildren = Array.from(oldList.children) as HTMLElement[];
+    const cap = oldChildren.length;
 
     oldCache.forEach((postNo, originalIndex) => {
         if (!postNo || newCacheSet.has(postNo)) return;
+        // 상단에 newPostCount개 새 글이 밀려들어오면 하단 newPostCount개는 스크롤오프(삭제 아님)
+        if (originalIndex >= oldCache.length - newPostCount) return;
 
         const oldChild = oldChildren[originalIndex];
         if (!oldChild) return;
@@ -84,6 +87,11 @@ const archiveDeletedPosts = (
         const refChild = newListChildren[originalIndex + newPostCount] ?? null;
         newList.insertBefore(oldChild, refChild);
     });
+
+    // 삭제 글 재삽입으로 cap 초과 시 바닥 잘라내기(원래 페이지 크기 유지)
+    while (newList.children.length > cap) {
+        newList.lastElementChild?.remove();
+    }
 };
 
 export function createLoadFunction(ctx: LoadFunctionContext): (customURL?: string, force?: boolean) => Promise<boolean> {
