@@ -28,6 +28,19 @@
     video {
         max-width: 100%;
     }
+
+    iframe {
+        width: 100vw;
+        height: 100vh;
+        transform: scale(0.8);
+        transform-origin: left;
+        margin-left: -7px;
+        margin-bottom: -390px;
+    }
+}
+
+.dc_mv {
+    width: 999px !important;
 }
 
 .refresher-frame.preview[data-load="false"] {
