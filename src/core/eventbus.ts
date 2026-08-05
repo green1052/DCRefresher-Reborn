@@ -1,21 +1,39 @@
 type RefresherEventListener<T extends unknown[]> = (...args: T) => void;
 
 export class TypedEventBus {
-    private target = new EventTarget();
+    private listeners = new Map<string, Set<Function>>();
 
     on<K extends keyof RefresherEventMap>(event: K, callback: RefresherEventListener<RefresherEventMap[K]>, options?: {
         once?: boolean
     }): () => void {
-        const handler = (e: Event) => {
-            const args = (e as CustomEvent).detail as RefresherEventMap[K];
-            callback(...args);
+        const key = event as string;
+        let set = this.listeners.get(key);
+        if (!set) {
+            set = new Set();
+            this.listeners.set(key, set);
+        }
+
+        const wrapped = options?.once
+            ? (...args: unknown[]) => {
+                  set!.delete(wrapped);
+                  callback(...(args as RefresherEventMap[K]));
+              }
+            : (callback as unknown as Function);
+
+        set.add(wrapped);
+
+        return () => {
+            set!.delete(wrapped);
+            if (set!.size === 0) this.listeners.delete(key);
         };
-        this.target.addEventListener(event as string, handler, options?.once ? {once: true} : undefined);
-        return () => this.target.removeEventListener(event as string, handler);
     }
 
     emit<K extends keyof RefresherEventMap>(event: K, ...args: RefresherEventMap[K]): void {
-        this.target.dispatchEvent(new CustomEvent(event as string, {detail: args}));
+        const set = this.listeners.get(event as string);
+        if (!set) return;
+        for (const fn of set) {
+            (fn as (...a: RefresherEventMap[K]) => void)(...args);
+        }
     }
 
     emitNextTick<K extends keyof RefresherEventMap>(event: K, ...args: RefresherEventMap[K]): void {
