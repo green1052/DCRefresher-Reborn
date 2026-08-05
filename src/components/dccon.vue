@@ -216,7 +216,7 @@ $dark-tint-light: #292929;
     top: calc(50% - 300px);
     width: 620px;
 
-    z-index: 2001;
+    z-index: 5002;
 
     & > p {
         font-size: 18px;
