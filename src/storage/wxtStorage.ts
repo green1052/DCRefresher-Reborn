@@ -67,3 +67,12 @@ export const databaseStorage = {
 export const backupStorage = {
     lastUpdate: storage.defineItem<number>("local:refresher:backup:lastUpdate", {defaultValue: 0})
 };
+
+// 스토리지 값 초기 로드 + 변경 감시를 한 번에 등록한다.
+export const onStorageValue = <T>(
+    item: { getValue: () => Promise<T>; watch: (cb: (value: T) => void) => void },
+    handler: (value: T) => void
+): void => {
+    void (async () => handler(await item.getValue()))();
+    item.watch(handler);
+};
