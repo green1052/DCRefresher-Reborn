@@ -2,7 +2,7 @@ import {onMounted, ref, type Ref, shallowRef, watch} from "vue";
 
 import toast from "@/utils/toast";
 import type {Nullable} from "@/utils/types";
-import {User} from "@/utils/user";
+import {getLoggedInUserInfo, User} from "@/utils/user";
 
 export interface CommentUserState {
     user: Ref<Nullable<User>>;
@@ -35,27 +35,16 @@ export function useCommentUser(): CommentUserState {
     });
 
     onMounted(() => {
-        const gallogName = document.querySelector("#login_box > .user_info .nickname > em");
-        const fixedName = gallogName && gallogName.innerHTML ? gallogName.innerHTML : null;
+        const fixed = getLoggedInUserInfo();
 
-        if (fixedName) {
-            fixedUser.value = true;
-
-            const gallogIcon = document.querySelector("#login_box > .user_info > .writer_nikcon");
-            if (gallogIcon) {
-                const attribute = gallogIcon.getAttribute("onclick");
-                if (attribute) {
-                    const match = /window\.open\('\/\/gallog\.dcinside\.com\/(\w*)'\);/.exec(attribute);
-                    if (match && match[1]) {
-                        const id = match[1];
-                        const imgElement = gallogIcon.querySelector("img");
-                        const src = imgElement ? imgElement.src : null;
-                        user.value = new User(fixedName, id, null, src);
-                    }
-                }
-            }
-        } else {
+        if (!fixed) {
             user.value = new User(unsignedUserID.value, null, "127.0.0.1", null);
+            return;
+        }
+
+        fixedUser.value = true;
+        if (fixed.id) {
+            user.value = new User(fixed.name, fixed.id, null, fixed.iconSrc);
         }
     });
 

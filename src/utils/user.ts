@@ -58,6 +58,28 @@ export const getType = (icon: string | null): UserType => {
     return FILE_NAME_MAP.get(fileName) ?? USERTYPE.UNFIXED;
 };
 
+export interface LoginUserInfo {
+    name: string;
+    id: string | null;
+    iconSrc: string | null;
+}
+
+// 로그인 박스에서 고정닉 정보(닉네임, gallog ID, 닉콘)를 추출한다.
+export const getLoggedInUserInfo = (): LoginUserInfo | null => {
+    const nameElement = document.querySelector("#login_box > .user_info .nickname > em");
+    if (!nameElement || !nameElement.innerHTML) return null;
+
+    const gallogIcon = document.querySelector<HTMLElement>("#login_box > .user_info > .writer_nikcon");
+    const attribute = gallogIcon?.getAttribute("onclick") ?? null;
+    const match = attribute ? /window\.open\('\/\/gallog\.dcinside\.com\/(\w*)'\);/.exec(attribute) : null;
+
+    return {
+        name: nameElement.innerHTML,
+        id: match?.[1] || null,
+        iconSrc: gallogIcon?.querySelector("img")?.src ?? null
+    };
+};
+
 export class User {
     ip_data: Nullable<string>;
     ip_color: Nullable<string>;
