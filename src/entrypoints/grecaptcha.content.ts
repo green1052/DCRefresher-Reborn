@@ -1,13 +1,8 @@
+import {EXCLUDED_DCINSIDE_MATCHES} from "@/utils/excludeMatches";
+
 export default defineContentScript({
     matches: ["https://*.dcinside.com/*"],
-    excludeMatches: [
-        "https://event.dcinside.com/*",
-        "https://h5.dcinside.com/*",
-        "https://m.dcinside.com/*",
-        "https://mall.dcinside.com/*",
-        "https://wiki.dcinside.com/*",
-        "https://gallog.dcinside.com/*"
-    ],
+    excludeMatches: EXCLUDED_DCINSIDE_MATCHES,
     world: "MAIN",
     runAt: "document_end",
     main() {
