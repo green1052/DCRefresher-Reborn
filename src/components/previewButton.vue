@@ -86,9 +86,9 @@ const safeClick = async (): Promise<boolean> => {
     user-select: none;
 
 
-    &.primary {
+    &.primary,
+    &.sub {
         backdrop-filter: blur(10px) saturate(180%);
-        background-color: rgba(0, 110, 255, 0.8);
 
         p {
             color: rgba(255, 255, 255, 0.87);
@@ -101,19 +101,12 @@ const safeClick = async (): Promise<boolean> => {
         }
     }
 
+    &.primary {
+        background-color: rgba(0, 110, 255, 0.8);
+    }
+
     &.sub {
-        backdrop-filter: blur(10px) saturate(180%);
         background-color: rgba(106, 122, 143, 0.8);
-
-        p {
-            color: rgba(255, 255, 255, 0.87);
-            filter: saturate(130%);
-            font-weight: 500;
-        }
-
-        * {
-            filter: invert(1);
-        }
     }
 
     &.refresher-writecomment img {
