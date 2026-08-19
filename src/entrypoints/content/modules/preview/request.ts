@@ -80,22 +80,6 @@ const requireLink = (args: GalleryHTTPRequestArguments): string => {
     return args.link;
 };
 
-const createParams = (link?: string): URLSearchParams => {
-    const params = new URLSearchParams();
-    params.set("ci_t", Cookies.get("ci_c") ?? "");
-    if (link) params.set("_GALLTYPE_", http.galleryTypeName(link));
-    return params;
-};
-
-const getManageUrl = (
-    link: string,
-    miniUrl: string,
-    normalUrl: string
-): string => {
-    const galleryType = http.galleryType(link, "/");
-    return galleryType === "mini/" ? miniUrl : normalUrl;
-};
-
 const manageAction = async (
     args: GalleryHTTPRequestArguments,
     set: boolean,
@@ -105,12 +89,12 @@ const manageAction = async (
 ): Promise<string | ManagementResponse> => {
     const link = requireLink(args);
 
-    const params = createParams(link);
+    const params = http.createAuthParams(link);
     params.set("mode", set ? "SET" : "REL");
     params.set("id", args.gallery);
     params.set(idParam, args.id);
 
-    const response = await client(getManageUrl(link, miniUrl, normalUrl), {body: params});
+    const response = await client(http.manageUrl(link, miniUrl, normalUrl), {body: params});
 
     const parsed = parseJsonSafely(response);
     if (isManagementResponse(parsed)) return parsed;
@@ -119,12 +103,12 @@ const manageAction = async (
 
 export const previewRequest = {
     async bump(args: GalleryHTTPRequestArguments): Promise<unknown> {
-        const params = createParams(location.href);
+        const params = http.createAuthParams(location.href);
         params.set("id", args.gallery);
         params.set("nos[]", args.id);
 
         const response = await client(
-            getManageUrl(location.href, http.urls.manage.bumpMini, http.urls.manage.bump),
+            http.manageUrl(location.href, http.urls.manage.bumpMini, http.urls.manage.bump),
             {body: params}
         );
 
@@ -146,7 +130,7 @@ export const previewRequest = {
             expires: new Date(Date.now() + 3 * 60 * 60 * 1000)
         });
 
-        const params = createParams(link);
+        const params = http.createAuthParams(link);
 
         if (vCurT) params.set("v_cur_t", vCurT);
         if (randomParam) params.set(randomParam.name, randomParam.value);
@@ -174,7 +158,7 @@ export const previewRequest = {
     async comments(args: GalleryHTTPRequestArguments, signal: AbortSignal): Promise<DcinsideComments> {
         const link = requireLink(args);
 
-        const params = createParams(link);
+        const params = http.createAuthParams(link);
         params.set("id", args.gallery);
         params.set("no", args.id);
         params.set("cmt_id", args.commentId ?? args.gallery);
@@ -195,12 +179,12 @@ export const previewRequest = {
     async delete(args: GalleryHTTPRequestArguments): Promise<unknown> {
         const link = requireLink(args);
 
-        const params = createParams(link);
+        const params = http.createAuthParams(link);
         params.set("id", args.gallery);
         params.set("nos[]", args.id);
 
         const response = await client(
-            getManageUrl(link, http.urls.manage.deleteMini, http.urls.manage.delete),
+            http.manageUrl(link, http.urls.manage.deleteMini, http.urls.manage.delete),
             {body: params}
         );
 
@@ -217,7 +201,7 @@ export const previewRequest = {
     ): Promise<unknown> {
         const link = requireLink(args);
 
-        const params = createParams(link);
+        const params = http.createAuthParams(link);
         params.set("id", args.gallery);
         params.set("nos[]", args.id);
         params.set("parent", "");
@@ -228,7 +212,7 @@ export const previewRequest = {
         params.set("avoid_type_chk", userType.toString());
 
         const response = await client(
-            getManageUrl(link, http.urls.manage.blockMini, http.urls.manage.block),
+            http.manageUrl(link, http.urls.manage.blockMini, http.urls.manage.block),
             {body: params}
         );
 
@@ -275,7 +259,7 @@ export const previewRequest = {
 
         const url = http.checkMini(preData.link) ? http.urls.manage.deleteCommentMini : http.urls.manage.deleteComment;
 
-        const params = createParams(preData.link);
+        const params = http.createAuthParams(preData.link);
         params.set("id", preData.gallery);
         params.set("pno", preData.id);
         params.set("cmt_nos[]", commentId);
@@ -291,7 +275,7 @@ export const previewRequest = {
     ): Promise<boolean | string> {
         if (!preData.link) return false;
 
-        const params = createParams(preData.link);
+        const params = http.createAuthParams(preData.link);
         params.set("id", preData.gallery);
         params.set("re_no", commentId);
         params.set("mode", "del");
