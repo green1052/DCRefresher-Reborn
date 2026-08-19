@@ -107,7 +107,7 @@
 
     .stealth_control_button {
         background: rgba(255, 255, 255, 0.8);
-        border-radius: 0 13.3px 13.3px 0;
+        border-radius: 0 $radius-md $radius-md 0;
         bottom: 20px;
         display: grid;
         font-size: 13px;
@@ -115,7 +115,7 @@
         left: -1px;
         position: fixed;
         transform: translateX(-50px);
-        transition: 0.3s all cubic-bezier(0.19, 1, 0.22, 1);
+        transition: $duration-normal all $ease-out-expo;
         user-select: none;
         width: 80px;
         z-index: 2002;
@@ -125,12 +125,12 @@
         }
 
         .button {
-            border-radius: 13.3px;
+            border-radius: $radius-md;
             display: grid;
             height: 60px;
             margin: auto;
             padding: 5px;
-            transition: 0.3s all cubic-bezier(0.19, 1, 0.22, 1);
+            transition: $duration-normal all $ease-out-expo;
             width: 60px;
 
             img {
