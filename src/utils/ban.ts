@@ -1,4 +1,4 @@
-import {databaseStorage} from "@/storage/wxtStorage";
+import {databaseStorage, onStorageValue} from "@/storage/wxtStorage";
 
 let banReverseIndex: Map<string, string[]> = new Map();
 
@@ -17,14 +17,10 @@ export const buildBanReverseIndex = (ban: Record<string, string[]>): Map<string,
     return index;
 };
 
-void (async () => {
-    banReverseIndex = buildBanReverseIndex(await databaseStorage.ban.getValue());
-
-    // 백그라운드가 주기적으로 DB를 갱신하므로 열려 있는 탭도 따라가야 한다.
-    databaseStorage.ban.watch((newValue) => {
-        banReverseIndex = buildBanReverseIndex(newValue ?? {});
-    });
-})();
+// 백그라운드가 주기적으로 DB를 갱신하므로 열려 있는 탭도 따라가야 한다.
+onStorageValue(databaseStorage.ban, (newValue) => {
+    banReverseIndex = buildBanReverseIndex(newValue ?? {});
+});
 
 export const getBan = (userId: string): string | null => {
     const bannedFrom = banReverseIndex.get(userId);
