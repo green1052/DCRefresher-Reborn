@@ -462,15 +462,12 @@ body {
     }
 
     .icon-backdrop {
+        animation: refresher-logo-animation 5s infinite;
+        filter: saturate(200%) blur(8px);
         height: 60px;
         left: 2px;
         right: 2px;
         width: 60px;
-    }
-
-    .icon-backdrop {
-        animation: refresher-logo-animation 5s infinite;
-        filter: saturate(200%) blur(8px);
         z-index: -1;
     }
 
@@ -748,7 +745,7 @@ body {
     display: none;
 }
 
-.refresher-slide-left-enter,
+.refresher-slide-left-enter-from,
 .refresher-slide-left-leave-to {
     opacity: 0;
     position: absolute;
@@ -837,19 +834,12 @@ body {
         .refresher-setting-category {
             .refresher-setting {
                 .info {
-                    h4 {
-                        font-size: 16px;
-                        font-weight: 500;
-                    }
-
                     p {
                         color: rgb(190, 190, 190);
-                        font-size: 14px;
                     }
 
                     .mute {
                         color: rgb(100, 100, 100);
-                        font-size: 12px;
                     }
                 }
 
@@ -901,26 +891,6 @@ body {
         .refresher-module {
             &.highlight {
                 animation: highlight-blink-dark 1s;
-            }
-        }
-
-        .tab2 {
-            h3 {
-                .plus {
-                    &:hover {
-                        background-color: var(--refresher-bg-overlay);
-                    }
-                }
-            }
-
-            .gallery {
-                color: var(--refresher-text-tertiary);
-            }
-
-            .lists {
-                p {
-                    color: var(--refresher-text-tertiary);
-                }
             }
         }
 
