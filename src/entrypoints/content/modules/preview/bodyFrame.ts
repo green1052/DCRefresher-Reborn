@@ -46,7 +46,7 @@ function renderPostContent(
 
     restoreImageSources(dom);
 
-    for (const img of dom.querySelectorAll("img, video, iframe")) {
+    for (const img of dom.querySelectorAll("img, video")) {
         img.removeAttribute("style");
     }
 
