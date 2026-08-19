@@ -79,9 +79,10 @@
                                 v-text="frame.data.views"
                             />
                         </div>
-                        <CountDown
+                        <TimeStamp
                             v-if="frame.data.expire"
                             :date="frame.data.expire"
+                            mode="remaining"
                         />
                     </div>
                 </div>
@@ -180,12 +181,11 @@ import {computed, onMounted, ref} from "vue";
 
 import type {PreviewFrame} from "../../frame";
 import Comment from "../comment/comment.vue";
-import CountDown from "@/components/countdown.vue";
+import TimeStamp from "@/components/timestamp.vue";
 import FrameError from "./frameError.vue";
 import FrameVotes from "./frameVotes.vue";
 import RefresherLoader from "@/components/loader.vue";
 import PreviewButton from "@/components/previewButton.vue";
-import TimeStamp from "@/components/timestamp.vue";
 import User from "@/components/user.vue";
 import WriteComment from "../comment/write_comment.vue";
 import {useDcconPopup} from "@/entrypoints/content/composables/useDcconPopup";
