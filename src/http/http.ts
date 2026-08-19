@@ -60,23 +60,26 @@ export const commentGallTypes: Record<string, string> = {
     person: "PR"
 };
 
+const checkGalleryPath = (url: string | undefined, type: string): boolean =>
+    new RegExp(`\\.com\\/${type}`).test(url || location.href);
+
 /**
  * 마이너 갤러리인지를 확인하여 boolean을 반환합니다.
  * @param url 확인할 URL
  */
-export const checkMinor = (url?: string): boolean => /\.com\/mgallery/.test(url || location.href);
+export const checkMinor = (url?: string): boolean => checkGalleryPath(url, types.MINOR);
 
 /**
  * 미니 갤러리인지를 확인하여 boolean을 반환합니다.
  * @param url 확인할 URL
  */
-export const checkMini = (url?: string): boolean => /\.com\/mini/.test(url || location.href);
+export const checkMini = (url?: string): boolean => checkGalleryPath(url, types.MINI);
 
 /**
  * 인물 갤러리인지를 확인하여 boolean을 반환합니다.
  * @param url 확인할 URL
  */
-export const checkPerson = (url?: string): boolean => /\.com\/person/.test(url || location.href);
+export const checkPerson = (url?: string): boolean => checkGalleryPath(url, types.PERSON);
 
 /**
  * URL에서 갤러리 종류를 확인하여 반환합니다.
