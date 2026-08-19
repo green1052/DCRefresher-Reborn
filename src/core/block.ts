@@ -157,7 +157,7 @@ const removeExists = (type: RefresherBlockType, content: string) => {
 // Internal update helpers now just update storage. The watcher updates local cache.
 // However, to keep synchronous operations working smoothly (avoid race conditions in same context),
 // we update local cache immediately as well.
-const InternalAddToList = async (
+const internalAddToList = async (
     type: RefresherBlockType,
     content: string,
     isRegex: boolean,
@@ -205,7 +205,7 @@ export const add = (
     if (mode && !checkValidMode(mode))
         throw new Error(`${mode} is not a valid mode. requires one of [${BLOCK_DETECT_MODE_KEYS.join(", ")}]`);
 
-    return InternalAddToList(type, content, isRegex, gallery, extra, mode);
+    return internalAddToList(type, content, isRegex, gallery, extra, mode);
 };
 
 /**

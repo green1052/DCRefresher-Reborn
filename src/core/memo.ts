@@ -51,7 +51,7 @@ void Promise.all(
     })
 );
 
-const InternalAddToList = async (type: RefresherMemoType, user: string, text: string, color: string, gallery?: string) => {
+const internalAddToList = async (type: RefresherMemoType, user: string, text: string, color: string, gallery?: string) => {
     memoCache[type][user] = {
         text,
         color,
@@ -72,12 +72,12 @@ const checkValidType = (type: string) => MEMO_TYPES.some((key) => key === type);
  * @param color 메모 색상
  * @param gallery 특정 갤러리에만 해당하면 갤러리의 ID 값
  */
-export const add = (type: RefresherMemoType, user: string, text: string, color: string, gallery?: string): void => {
+export const add = async (type: RefresherMemoType, user: string, text: string, color: string, gallery?: string): Promise<void> => {
     if (!checkValidType(type)) {
-        throw new Error(`${type} is not a valid mode. requires one of [${MEMO_TYPES.join(", ")}]`);
+        throw new Error(`${type} is not a valid type. requires one of [${MEMO_TYPES.join(", ")}]`);
     }
 
-    InternalAddToList(type, user, text, color, gallery);
+    await internalAddToList(type, user, text, color, gallery);
 };
 
 /**
@@ -88,7 +88,7 @@ export const add = (type: RefresherMemoType, user: string, text: string, color: 
  */
 export const get = (type: RefresherMemoType, user: string): RefresherMemoValue | undefined => {
     if (!checkValidType(type)) {
-        throw new Error(`${type} is not a valid mode. requires one of [${MEMO_TYPES.join(", ")}]`);
+        throw new Error(`${type} is not a valid type. requires one of [${MEMO_TYPES.join(", ")}]`);
     }
 
     return memoCache[type][user];
@@ -102,7 +102,7 @@ export const get = (type: RefresherMemoType, user: string): RefresherMemoValue |
  */
 export const remove = async (type: RefresherMemoType, user: string): Promise<void> => {
     if (!checkValidType(type)) {
-        throw new Error(`${type} is not a valid mode. requires one of [${MEMO_TYPES.join(", ")}]`);
+        throw new Error(`${type} is not a valid type. requires one of [${MEMO_TYPES.join(", ")}]`);
     }
 
     delete memoCache[type][user];
