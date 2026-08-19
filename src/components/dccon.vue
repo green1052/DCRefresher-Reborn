@@ -198,7 +198,7 @@ onMounted(getDcconList);
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/variables" as *;
+@use "@/assets/styles/tokens" as *;
 
 $dark-tint-light: #292929;
 

@@ -152,7 +152,7 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss">
-@use "@/assets/styles/variables" as *;
+@use "@/assets/styles/tokens" as *;
 
 .refresher-management-panel {
     background: rgba(255, 255, 255, 0.8);

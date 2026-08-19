@@ -74,7 +74,7 @@ const safeClick = async (): Promise<boolean> => {
 </script>
 
 <style lang="scss">
-@use "@/assets/styles/variables" as *;
+@use "@/assets/styles/tokens" as *;
 
 .refresher-preview-button {
     background-color: transparent;
