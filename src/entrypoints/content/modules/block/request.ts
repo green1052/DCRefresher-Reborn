@@ -1,4 +1,3 @@
-import Cookies from "js-cookie";
 import http, {client as ky} from "@/http/http";
 
 import block from "@/core/block";
@@ -38,8 +37,7 @@ export const handleBlockRequest = async (
             return;
         }
 
-        const params = new URLSearchParams();
-        params.set("ci_t", Cookies.get("ci_c") ?? "");
+        const params = http.createAuthParams();
         params.set("code", code);
 
         try {

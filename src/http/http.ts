@@ -1,3 +1,4 @@
+import Cookies from "js-cookie";
 import ky from "ky";
 
 const g = globalThis as any;
@@ -140,6 +141,24 @@ export const galleryTypeName = (url: string): string => commentGallTypes[gallery
  */
 export const queryString = (name: string): string | null => new URLSearchParams(location.search).get(name);
 
+/**
+ * 디시 AJAX 요청용 기본 파라미터(ci_t, 필요 시 _GALLTYPE_)를 생성합니다.
+ *
+ * @param link _GALLTYPE_ 계산에 사용할 URL (생략 시 ci_t만 설정)
+ */
+export const createAuthParams = (link?: string): URLSearchParams => {
+    const params = new URLSearchParams();
+    params.set("ci_t", Cookies.get("ci_c") ?? "");
+    if (link) params.set("_GALLTYPE_", galleryTypeName(link));
+    return params;
+};
+
+/**
+ * 미니 갤러리 여부에 따라 관리 API URL을 선택합니다.
+ */
+export const manageUrl = (link: string, miniUrl: string, normalUrl: string): string =>
+    galleryType(link, "/") === "mini/" ? miniUrl : normalUrl;
+
 export default {
     urls,
     types,
@@ -151,6 +170,8 @@ export default {
     mergeParamURL,
     galleryTypeName,
     queryString,
+    createAuthParams,
+    manageUrl,
     client,
     contentFetch
 };

@@ -93,8 +93,7 @@
 </template>
 
 <script lang="ts" setup>
-import Cookies from "js-cookie";
-import {client as ky} from "@/http/http";
+import {client as ky, createAuthParams} from "@/http/http";
 import {onMounted, ref} from "vue";
 import {RefreshCw} from "lucide-vue-next";
 
@@ -143,8 +142,7 @@ const getDcconList = async (refresh = false) => {
     }
 
     try {
-        const params = new URLSearchParams();
-        params.set("ci_t", Cookies.get("ci_c") ?? "");
+        const params = createAuthParams();
         params.set("target", "icon");
         params.set("page", String(currentPage.value));
 

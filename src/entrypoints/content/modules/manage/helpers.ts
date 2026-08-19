@@ -1,20 +1,15 @@
-import Cookies from "js-cookie";
 import http, {client as ky} from "@/http/http";
 
 export const deletePost = async (id: string): Promise<void> => {
     if (!id) return;
 
-    const galleryType = http.galleryType(location.href, "/");
-
-    const params = new URLSearchParams();
-    params.set("ci_t", Cookies.get("ci_c") ?? "");
+    const params = http.createAuthParams(location.href);
     const galleryIdInput = document.querySelector<HTMLInputElement>("#gallery_id");
     params.set("id", galleryIdInput?.value ?? "");
     params.set("nos[]", id);
-    params.set("_GALLTYPE_", http.galleryTypeName(location.href));
 
     try {
-        await ky.post(galleryType === "mini/" ? http.urls.manage.deleteMini : http.urls.manage.delete, {
+        await ky.post(http.manageUrl(location.href, http.urls.manage.deleteMini, http.urls.manage.delete), {
             headers: {
                 "X-Requested-With": "XMLHttpRequest"
             },
@@ -43,8 +38,7 @@ export interface RatioInfo {
 }
 
 export const fetchRatio = async (uid: string): Promise<RatioInfo | undefined> => {
-    const params = new URLSearchParams();
-    params.set("ci_t", Cookies.get("ci_c") ?? "");
+    const params = http.createAuthParams();
     params.set("user_id", uid);
 
     const response = await ky
