@@ -1,17 +1,3 @@
-@use "../variables" as *;
-
-// ============================================================
-// User badge — dark mode override (global, rest in user.vue)
-// ============================================================
-
-html:has(#css-darkmode) {
-    .refresher-user {
-        &[data-me="true"] {
-            background-color: var(--refresher-user-me-bg);
-        }
-    }
-}
-
 // ============================================================
 // cmt_nickbox (layout, used outside component scope)
 // ============================================================
