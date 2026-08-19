@@ -4,6 +4,7 @@ import "@/core/block";
 
 import filter from "@/core/filtering";
 import modules from "@/core/modules";
+import {EXCLUDED_DCINSIDE_MATCHES} from "@/utils/excludeMatches";
 
 const moduleLoaders = import.meta.glob<{ default: RefresherModule }>([
     "./modules/*/index.ts",
@@ -12,14 +13,7 @@ const moduleLoaders = import.meta.glob<{ default: RefresherModule }>([
 
 export default defineContentScript({
     matches: ["https://*.dcinside.com/*"],
-    excludeMatches: [
-        "https://event.dcinside.com/*",
-        "https://h5.dcinside.com/*",
-        "https://m.dcinside.com/*",
-        "https://mall.dcinside.com/*",
-        "https://wiki.dcinside.com/*",
-        "https://gallog.dcinside.com/*"
-    ],
+    excludeMatches: EXCLUDED_DCINSIDE_MATCHES,
     runAt: "document_start",
     async main() {
         const loadedModules = await Promise.all(
