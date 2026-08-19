@@ -83,6 +83,8 @@ defineExpose({
 </script>
 
 <style lang="scss" scoped>
+@use "@/assets/styles/variables" as *;
+
 $tablet: 768px;
 $desktop: 1024px;
 
@@ -98,7 +100,7 @@ $desktop: 1024px;
     max-width: 50vw;
     position: fixed;
     right: 5vw;
-    transition: 0.3s background cubic-bezier(0.19, 1, 0.22, 1);
+    transition: 0.3s background $ease-out-expo;
     user-select: none;
     z-index: 2002;
 
@@ -167,7 +169,7 @@ $desktop: 1024px;
         .button {
             cursor: pointer;
             opacity: 0.25;
-            transition: 200ms opacity cubic-bezier(0.19, 1, 0.22, 1);
+            transition: 200ms opacity $ease-out-expo;
         }
 
         .button:hover {
@@ -231,24 +233,6 @@ html:has(#css-darkmode) {
     width: 100%;
 }
 
-@keyframes shake {
-    0% {
-        transform: translate3d(-2px, 0, 0);
-    }
-
-    25% {
-        transform: translate3d(2px, 0, 0);
-    }
-
-    50% {
-        transform: translate3d(-2px, 0, 0);
-    }
-
-    75% {
-        transform: translate3d(2px, 0, 0);
-    }
-}
-
 .refresher-toast-enter-active {
     transition: all 250ms cubic-bezier(0, 0, 0.2, 1);
 }
@@ -257,7 +241,7 @@ html:has(#css-darkmode) {
     transition: all 200ms cubic-bezier(0.4, 0, 1, 1);
 }
 
-.refresher-toast-enter,
+.refresher-toast-enter-from,
 .refresher-toast-leave-to {
     opacity: 0;
     transform: translateY(10px);
