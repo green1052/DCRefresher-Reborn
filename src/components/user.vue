@@ -2,7 +2,7 @@
     <div
         :class="{ cursor: !!user.id }"
         :data-me="me"
-        :title="title"
+        :title="userDescription"
         class="refresher-user"
         @click="clickHandle"
         @contextmenu="contextMenu"
@@ -25,7 +25,7 @@
                 v-if="!(me && user.isLogout())"
                 class="refresher-user-info"
             >
-                {{ userInfo }}
+                {{ userDescription }}
             </span>
         </div>
     </div>
@@ -60,9 +60,6 @@ const userDescription = computed(() => {
 
     return `(${props.user.ip})${props.user.ip_data ? ` [${props.user.ip_data}]` : ""}`;
 });
-
-const title = userDescription;
-const userInfo = userDescription;
 
 const clickHandle = (): void => {
     if (typeof props.click === "function") {
