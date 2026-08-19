@@ -1,5 +1,7 @@
+@use "./variables" as *;
+
 .refresher-opacity-enter-active {
-    transition: all 450ms cubic-bezier(0.19, 1, 0.22, 1);
+    transition: all $duration-slow $ease-out-expo;
 }
 
 .refresher-opacity-leave-active {
@@ -17,7 +19,7 @@
 }
 
 .refresher-slide-up-enter-active {
-    transition: all 450ms cubic-bezier(0.19, 1, 0.22, 1);
+    transition: all $duration-slow $ease-out-expo;
 }
 
 .refresher-slide-up-leave-active {
@@ -40,7 +42,7 @@
 .refresher-next-post-leave-active,
 .refresher-prev-post-enter-active,
 .refresher-prev-post-leave-active {
-    transition: all 450ms cubic-bezier(0.19, 1, 0.22, 1);
+    transition: all $duration-slow $ease-out-expo;
 }
 
 .refresher-next-post-enter-from,
@@ -70,7 +72,7 @@
     backface-visibility: hidden;
     perspective: 1000px;
     transform: translate3d(0, 0, 0);
-    transition: all 450ms cubic-bezier(0.19, 1, 0.22, 1);
+    transition: all $duration-slow $ease-out-expo;
 }
 
 .refresher-shake-leave-active {
