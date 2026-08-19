@@ -10,7 +10,6 @@ $shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
 // ---- Radius ----
 $radius-md: 13.3px;
 $radius-sm: 10px;
-$radius-pill: 50px;
 
 // ---- Easing ----
 $ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
@@ -116,12 +115,10 @@ html:has(#css-darkmode) {
 // ============================================================
 
 // Dark Mode Colors
-$dark-tint-light: #292929;
 $dark-tint2: #3d3d3d;
 
 $dark-text-color: #ccc;
 $dark-text-color-bright: #fff;
 
-$dark-dc-color: #4987f7;
 $dark-dc-color-deep: #113475;
 $dark-highlight: #176ef1d5;
