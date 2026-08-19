@@ -1,6 +1,7 @@
 import filter from "@/core/filtering";
 
 import eventBus from "@/core/eventbus";
+import {enableVideoControls} from "@/utils/video";
 import {deletePost, fetchRatio, getPermBanFor, type RatioInfo} from "./helpers";
 import {getBanReverseIndex} from "@/utils/ban";
 import {insertWriterSpan} from "@/utils/userDataInsert";
@@ -47,12 +48,7 @@ const setupGifControl = (ctx: ManageModule): string =>
         (element) => {
             if (!ctx.status.enableGifControl) return;
 
-            const src = element.getAttribute("data-src");
-
-            if (src?.includes("dcinside.com/dccon.php")) return;
-
-            element.removeAttribute("onmousedown");
-            element.setAttribute("controls", "");
+            enableVideoControls(element);
         },
         {skipIfNotExists: true}
     );
