@@ -97,8 +97,6 @@
         }
     }
 
-    &:has(#css-darkmode),
-    div.refresher-preview-comments,
     .coment_dccon_img:not(:hover) {
         &::before {
             border: 1px solid $dark-tint2;
