@@ -121,6 +121,10 @@
 }
 
 .refresherCompactView {
+    .write_div {
+        max-width: calc(100vw - 5%);
+    }
+
     .cmt_write_box {
         display: flex;
     }
