@@ -42,14 +42,16 @@ const handleToggle = async (value: boolean) => {
 </script>
 
 <style lang="scss" scoped>
+@use "@/assets/styles/variables" as *;
+
 .refresher-module {
     background-color: var(--refresher-card-bg);
-    border-radius: 13.3px;
+    border-radius: $radius-md;
     display: flex;
     margin-bottom: 5px;
     padding: 13px 23px;
     position: relative;
-    transition: all 0.25s cubic-bezier(0.19, 1, 0.22, 1);
+    transition: all 0.25s $ease-out-expo;
 
     &.highlight {
         animation: highlight-blink 1s;
@@ -81,7 +83,7 @@ const handleToggle = async (value: boolean) => {
             .link {
                 border-bottom: 1px solid var(--refresher-text-tertiary);
                 cursor: pointer;
-                transition: color 0.25s cubic-bezier(0.19, 1, 0.22, 1);
+                transition: color 0.25s $ease-out-expo;
 
                 &:hover {
                     border-bottom-color: var(--refresher-green);

@@ -40,6 +40,8 @@ const handleChange = (ev: Event) => {
 </script>
 
 <style lang="scss" scoped>
+@use "@/assets/styles/variables" as *;
+
 .refresher-input {
     align-items: center;
     display: flex;
@@ -52,7 +54,7 @@ const handleChange = (ev: Event) => {
         font-size: 15px;
         min-width: 150px;
         padding: 4px 16px;
-        transition: all 0.25s cubic-bezier(0.19, 1, 0.22, 1);
+        transition: all 0.25s $ease-out-expo;
 
         &:focus {
             border-color: var(--refresher-green);

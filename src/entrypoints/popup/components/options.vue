@@ -41,6 +41,8 @@ const handleChange = (ev: Event) => {
 </script>
 
 <style lang="scss" scoped>
+@use "@/assets/styles/variables" as *;
+
 .refresher-options {
     background-color: var(--refresher-field-bg);
     border: 1px solid var(--refresher-field-border);
@@ -52,7 +54,7 @@ const handleChange = (ev: Event) => {
     height: 25px;
     overflow: hidden;
     position: relative;
-    transition: all 0.25s cubic-bezier(0.19, 1, 0.22, 1);
+    transition: all 0.25s $ease-out-expo;
     width: 150px;
 
     &:focus {
