@@ -23,6 +23,10 @@
 .cmt_info,
 .addbox,
 .reply_info {
+    .nickname {
+        max-width: unset !important;
+    }
+
     .refresherUserData {
         margin-left: 3px;
     }
