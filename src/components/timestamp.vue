@@ -1,7 +1,7 @@
 <template>
     <div
         :title="locale"
-        class="refresher-timestamp"
+        :class="mode === 'remaining' ? 'refresher-countdown' : 'refresher-timestamp'"
         @click="changeStamp"
     >
         <transition name="refresher-opacity">
@@ -17,14 +17,17 @@ import {useRelativeTime} from "@/composables/useRelativeTime";
 
 interface Props {
     date: Date;
+    mode?: "elapsed" | "remaining";
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+    mode: "elapsed"
+});
 
 const {stampMode, stamp, locale, changeStamp} = useRelativeTime({
     date: () => props.date,
-    mode: "elapsed",
-    interval: 3000
+    mode: props.mode,
+    interval: props.mode === "remaining" ? 5000 : 3000
 });
 </script>
 
@@ -35,5 +38,12 @@ const {stampMode, stamp, locale, changeStamp} = useRelativeTime({
     font-size: 12px;
     font-weight: 100;
     opacity: 0.6;
+}
+
+.refresher-countdown {
+    font-size: 12px;
+    font-weight: 100;
+    opacity: 0.6;
+    color: var(--refresher-danger);
 }
 </style>
