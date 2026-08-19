@@ -102,13 +102,13 @@ export function useBlocks() {
             mode: blockFormData.mode === "NONE" ? undefined : blockFormData.mode
         });
 
-        await blockStorage[currentBlockType.value].setValue(JSON.parse(JSON.stringify(blocks[currentBlockType.value])));
+        await blockStorage[currentBlockType.value].setValue(structuredClone(blocks[currentBlockType.value]));
         closeBlockDialog();
     };
 
     const removeBlockedUser = async (key: RefresherBlockType, index: number) => {
         blocks[key].splice(index, 1);
-        await blockStorage[key].setValue(JSON.parse(JSON.stringify(blocks[key])));
+        await blockStorage[key].setValue(structuredClone(blocks[key]));
     };
 
     const removeAllBlockedUser = async (key: RefresherBlockType) => {
@@ -132,7 +132,7 @@ export function useBlocks() {
         } else {
             return;
         }
-        await blockStorage[key].setValue(JSON.parse(JSON.stringify(blocks[key])));
+        await blockStorage[key].setValue(structuredClone(blocks[key]));
     };
 
     const editBlockMode = async () => {
@@ -170,7 +170,7 @@ export function useBlocks() {
                 target.push(block);
             }
 
-            await blockStorage[type].setValue(JSON.parse(JSON.stringify(target)));
+            await blockStorage[type].setValue(structuredClone(target));
         }
 
         alert("가져오기에 성공했습니다.");
