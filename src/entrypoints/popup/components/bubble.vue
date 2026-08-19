@@ -72,10 +72,12 @@ const handleRemoveClick = () => {
 </script>
 
 <style lang="scss">
+@use "@/assets/styles/variables" as *;
+
 .refresher-bubble {
     background-color: #f9f9f9;
     border: 1px solid #d6d6d6;
-    border-radius: 13.3px;
+    border-radius: $radius-md;
     display: flex;
     font-size: 14px;
     font-weight: normal;
@@ -108,7 +110,7 @@ const handleRemoveClick = () => {
 
         text-align: center;
 
-        transition: 0.25s all cubic-bezier(0.19, 1, 0.22, 1);
+        transition: 0.25s all $ease-out-expo;
 
         width: 20px;
 

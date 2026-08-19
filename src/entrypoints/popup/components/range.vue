@@ -56,6 +56,8 @@ const handleChange = () => {
 </script>
 
 <style lang="scss" scoped>
+@use "@/assets/styles/variables" as *;
+
 .refresher-range {
     align-items: center;
     display: flex;
@@ -69,7 +71,7 @@ const handleChange = () => {
         flex: 1;
         height: 6px;
         outline: none;
-        transition: background 0.25s cubic-bezier(0.19, 1, 0.22, 1);
+        transition: background 0.25s $ease-out-expo;
 
         &::-webkit-slider-thumb {
             -webkit-appearance: none;
@@ -78,7 +80,7 @@ const handleChange = () => {
             border-radius: 50%;
             cursor: pointer;
             height: 18px;
-            transition: all 0.25s cubic-bezier(0.19, 1, 0.22, 1);
+            transition: all 0.25s $ease-out-expo;
             width: 18px;
 
             &:hover {
@@ -93,7 +95,7 @@ const handleChange = () => {
             border-radius: 50%;
             cursor: pointer;
             height: 18px;
-            transition: all 0.25s cubic-bezier(0.19, 1, 0.22, 1);
+            transition: all 0.25s $ease-out-expo;
             width: 18px;
 
             &:hover {

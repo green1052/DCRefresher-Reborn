@@ -190,6 +190,8 @@ const onKeyDown = (ev: KeyboardEvent): void => {
 </script>
 
 <style lang="scss" scoped>
+@use "@/assets/styles/variables" as *;
+
 .refresher-write-comment {
     display: flex;
     flex-direction: column;
@@ -197,7 +199,7 @@ const onKeyDown = (ev: KeyboardEvent): void => {
 
     .refresher-comment-util {
         opacity: 0;
-        transition: opacity 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+        transition: opacity 0.2s $ease-out-expo;
 
         &.refresher-comment-util-show {
             opacity: 1;
@@ -331,7 +333,7 @@ html:has(#css-darkmode) {
         height: 2px;
         left: 0;
         position: absolute;
-        transition: 0.3s all cubic-bezier(0.19, 1, 0.22, 1);
+        transition: 0.3s all $ease-out-expo;
         width: 0;
         z-index: 10;
     }
@@ -345,7 +347,7 @@ html:has(#css-darkmode) {
         font-size: 14px;
         height: 100%;
         outline: none;
-        transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+        transition: all 0.3s $ease-out-expo;
         width: 100%;
     }
 }

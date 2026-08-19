@@ -85,6 +85,8 @@ const handlePointerOut = () => {
 </script>
 
 <style lang="scss" scoped>
+@use "@/assets/styles/variables" as *;
+
 .refresher-checkbox {
     background-color: var(--refresher-control-track);
     border-radius: 25px;
@@ -92,7 +94,7 @@ const handlePointerOut = () => {
     display: flex;
     height: 20px;
     position: relative;
-    transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+    transition: all 0.3s $ease-out-expo;
     width: 38px;
 
     &[data-on="true"] {
@@ -113,7 +115,7 @@ const handlePointerOut = () => {
         left: 2px;
         position: absolute;
         top: 2px;
-        transition: transform 0.25s cubic-bezier(0.19, 1, 0.22, 1);
+        transition: transform 0.25s $ease-out-expo;
         width: 16px;
 
         &:active {

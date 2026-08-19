@@ -82,7 +82,7 @@ const safeClick = async (): Promise<boolean> => {
     display: flex;
     margin-right: 15px;
 
-    transition: all 0.25s cubic-bezier(0.19, 1, 0.22, 1);
+    transition: all 0.25s $ease-out-expo;
     user-select: none;
 
 
