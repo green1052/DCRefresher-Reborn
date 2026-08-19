@@ -83,7 +83,7 @@ defineExpose({
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/variables" as *;
+@use "@/assets/styles/tokens" as *;
 
 $tablet: 768px;
 $desktop: 1024px;

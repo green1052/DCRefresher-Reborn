@@ -1,0 +1,32 @@
+// ============================================================
+// Design Tokens (pure SCSS variables — emits no CSS)
+// ============================================================
+
+// ---- Shadows ----
+$shadow-1dp: 0px 0px 16px rgba(0, 0, 0, 0.08);
+$shadow-2dp: 0px 0px 16px rgba(0, 0, 0, 0.12);
+$shadow-3dp: 0px 0px 16px rgba(0, 0, 0, 0.24);
+
+// ---- Radius ----
+$radius-md: 13.3px;
+$radius-sm: 10px;
+
+// ---- Easing ----
+$ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+
+// ---- Durations ----
+$duration-fast: 150ms;
+$duration-normal: 300ms;
+$duration-slow: 450ms;
+
+// ---- Z-index scale ----
+$z-tooltip: 5000;
+$z-popup: 5001;
+$z-overlay: 5002;
+
+// ---- Legacy dark colors ----
+$dark-tint2: #3d3d3d;
+$dark-text-color: #ccc;
+$dark-text-color-bright: #fff;
+$dark-dc-color-deep: #113475;
+$dark-highlight: #176ef1d5;

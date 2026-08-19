@@ -349,7 +349,7 @@ defineExpose({incrementCommentKey});
 </script>
 
 <style lang="scss">
-@use "@/assets/styles/variables" as *;
+@use "@/assets/styles/tokens" as *;
 
 .refresher-frame {
     background-color: var(--refresher-bg);

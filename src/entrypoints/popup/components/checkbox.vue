@@ -85,7 +85,7 @@ const handlePointerOut = () => {
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/variables" as *;
+@use "@/assets/styles/tokens" as *;
 
 .refresher-checkbox {
     background-color: var(--refresher-control-track);

@@ -39,7 +39,7 @@ onMounted(() => {
 </template>
 
 <style lang="scss">
-@use "@/assets/styles/variables" as *;
+@use "@/assets/styles/tokens" as *;
 @use "@/assets/styles/components/popup" as *;
 
 .refresher-captcha-popup {

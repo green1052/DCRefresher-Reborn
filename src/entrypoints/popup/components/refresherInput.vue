@@ -40,7 +40,7 @@ const handleChange = (ev: Event) => {
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/variables" as *;
+@use "@/assets/styles/tokens" as *;
 
 .refresher-input {
     align-items: center;

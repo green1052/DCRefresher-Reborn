@@ -190,7 +190,7 @@ const onKeyDown = (ev: KeyboardEvent): void => {
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/variables" as *;
+@use "@/assets/styles/tokens" as *;
 
 .refresher-write-comment {
     display: flex;

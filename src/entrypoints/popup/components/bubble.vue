@@ -72,7 +72,7 @@ const handleRemoveClick = () => {
 </script>
 
 <style lang="scss">
-@use "@/assets/styles/variables" as *;
+@use "@/assets/styles/tokens" as *;
 
 .refresher-bubble {
     background-color: #f9f9f9;
