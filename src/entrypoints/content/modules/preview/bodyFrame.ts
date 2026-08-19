@@ -7,6 +7,7 @@ import {fetchPostWithCache, previewRequest} from "./request";
 import {restoreImageSources} from "./postParser";
 import {PostCache} from "./cache";
 import toast from "@/utils/toast";
+import {enableVideoControls} from "@/utils/video";
 
 export interface PostFetchedDataRef {
     value: IPostInfo | undefined;
@@ -51,12 +52,8 @@ function renderPostContent(
     }
 
     if (gifControl) {
-        for (const element of dom.querySelectorAll("video")) {
-            const src = element.getAttribute("data-src");
-            if (src?.includes("dcinside.com/dccon.php")) continue;
-
-            element.removeAttribute("onmousedown");
-            element.setAttribute("controls", "");
+        for (const video of dom.querySelectorAll<HTMLVideoElement>("video")) {
+            enableVideoControls(video);
         }
     }
 
