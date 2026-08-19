@@ -1,6 +1,7 @@
 import {onBeforeUnmount, ref, type Ref} from "vue";
 
 import eventBus from "@/core/eventbus";
+import {getLoggedInUserInfo} from "@/utils/user";
 
 interface UseMeDetectionOptions {
     userId: string;
@@ -25,30 +26,12 @@ export function useMeDetection({userId, postUser}: UseMeDetectionOptions): UseMe
         return clickAttr.replace(/window\.open\('\/\/gallog\.dcinside\.com\//g, "").replace(/'\);/g, "");
     };
 
-    const checkFixedName = (): { id: string; name: string } | null => {
-        const fixedNameElement = document.querySelector("#login_box > .user_info .nickname > em");
-        if (!fixedNameElement || !fixedNameElement.innerHTML) return null;
-
-        const gallogIcon = document.querySelector<HTMLElement>("#login_box > .user_info > .writer_nikcon");
-        if (!gallogIcon) return null;
-
-        const attribute = gallogIcon.getAttribute("onclick");
-        if (!attribute) return null;
-
-        const match = /window\.open\('\/\/gallog\.dcinside\.com\/(\w*)'\);/.exec(attribute);
-        if (!match || !match[1]) return null;
-
-        return {id: match[1], name: fixedNameElement.innerHTML};
-    };
-
     const setup = () => {
         if (!userId) return;
 
-        const fixed = checkFixedName();
-        if (fixed) {
-            if (userId === fixed.id) {
-                me.value = true;
-            }
+        const fixed = getLoggedInUserInfo();
+        if (fixed?.id && userId === fixed.id) {
+            me.value = true;
         }
 
         const gallogId = checkGallogId();
