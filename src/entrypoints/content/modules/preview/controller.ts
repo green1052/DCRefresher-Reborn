@@ -1,5 +1,4 @@
 import eventBus from "@/core/eventbus";
-import filter from "@/core/filtering";
 import modules, {MODULE_ID} from "@/core/modules";
 import type {PreviewFrame} from "./frame";
 import Frame, {type FrameScrollApi} from "./frame";
@@ -9,10 +8,10 @@ import {previewRequest} from "./request";
 import {blockPreset, closeAllPopups, panel} from "./panel";
 import {type MiniPreviewState} from "./miniPreview";
 import {
-    attachElementHandlers,
     createImageBlockClickHandler,
     createMousePressHandler,
     getRelevantData,
+    setupDelegatedPreviewHandlers,
     type PreviewInputContext
 } from "./previewInputHandler";
 import type {PostCache} from "./cache";
@@ -58,7 +57,6 @@ export class PreviewController {
     private replyConfig = false;
     private gifControlConfig = false;
 
-    private filterUuid: string | null = null;
     private popStateHandler: ((ev: PopStateEvent) => void) | null = null;
     private imageBlockClickHandler: ((ev: MouseEvent) => void) | null = null;
     private elementEventController: AbortController | null = null;
@@ -109,11 +107,7 @@ export class PreviewController {
 
         const handleMousePress = createMousePressHandler(inputCtx);
 
-        this.filterUuid = filter.add(
-            `.gall_list .ub-content${this.status.expandRecognizeRange ? "" : " .ub-word"}`,
-            (element: HTMLElement) => attachElementHandlers(element, handleMousePress, elementEventSignal, inputCtx),
-            {neverExpire: true}
-        );
+        setupDelegatedPreviewHandlers(inputCtx, handleMousePress, elementEventSignal);
 
         this.popStateHandler = (ev: PopStateEvent) => this.handlePopState(ev);
         window.addEventListener("popstate", this.popStateHandler);
@@ -122,9 +116,6 @@ export class PreviewController {
     destroy(): void {
         if (this.destroyed) return;
         this.destroyed = true;
-
-        if (this.filterUuid) filter.remove(this.filterUuid, true);
-        this.filterUuid = null;
 
         if (this.popStateHandler) {
             window.removeEventListener("popstate", this.popStateHandler);
