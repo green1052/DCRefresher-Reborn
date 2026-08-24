@@ -24,7 +24,8 @@
     }
 
     .dchead {
-        height: 100px;
+        height: auto;
+        min-height: 36px;
     }
 
     .gnb_bar {
@@ -37,6 +38,7 @@
 
     .area_links {
         right: 13px;
+        top: 6px;
     }
 
     .dc_logo {
@@ -113,6 +115,15 @@
 
     .ad_bottom_list {
         display: none;
+    }
+
+    .issue_wrap .banner_box,
+    #ad-layer,
+    .ad-layer,
+    #ad-layer-closer,
+    .ad-layer-closer,
+    #hdline_ban {
+        display: none !important;
     }
 
     .input_write_tit {
