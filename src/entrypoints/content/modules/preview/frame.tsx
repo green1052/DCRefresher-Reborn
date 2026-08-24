@@ -45,120 +45,64 @@ export interface FrameFunctions {
 
 type CloseHandler = () => void;
 
-const noopAsync = async () => {
-};
-const noopAsyncResult = async () => false;
-const noop = () => {
-};
+// 초기 data 팩토리 (reset 재사용)
+const createInitialData = (): FrameData => ({
+    load: false,
+    buttons: false,
+    disabledDownvote: false,
+    user: undefined,
+    date: undefined,
+    expire: undefined,
+    views: undefined,
+    useWriteComment: false,
+    comments: undefined,
+    postUserId: undefined,
+    type: "",
+    useImageBlock: false
+});
 
-// 초기 상태 팩토리 (reset 재사용)
-const createInitialState = (): {
-    title: string;
-    subtitle: string;
+export class PreviewFrame {
+    readonly options: FrameOptions;
+    functions: FrameFunctions;
+
+    title = "";
+    subtitle = "";
     contents: string | undefined;
     upvotes: string | undefined;
     fixedUpvotes: string | undefined;
     downvotes: string | undefined;
     error: { title: string; detail: string } | undefined;
     collapse: boolean | undefined;
-    data: FrameData;
-} => ({
-    title: "",
-    subtitle: "",
-    contents: undefined,
-    upvotes: undefined,
-    fixedUpvotes: undefined,
-    downvotes: undefined,
-    error: undefined,
-    collapse: undefined,
-    data: {
-        load: false,
-        buttons: false,
-        disabledDownvote: false,
-        user: undefined,
-        date: undefined,
-        expire: undefined,
-        views: undefined,
-        useWriteComment: false,
-        comments: undefined,
-        postUserId: undefined,
-        type: "",
-        useImageBlock: false
-    }
-});
-
-const stateKeys = new Set(Object.keys(createInitialState()));
-
-export class PreviewFrame {
-    readonly options: FrameOptions;
-    readonly state: ReturnType<typeof createInitialState>;
-    functions: FrameFunctions;
-
-    declare title: string;
-    declare subtitle: string;
-    declare contents: string | undefined;
-    declare upvotes: string | undefined;
-    declare fixedUpvotes: string | undefined;
-    declare downvotes: string | undefined;
-    declare error: { title: string; detail: string } | undefined;
-    declare collapse: boolean | undefined;
-    declare data: FrameData;
+    data: FrameData = createInitialData();
 
     private version = 0;
     private readonly listeners = new Set<() => void>();
     private readonly closeHandlers = new Set<CloseHandler>();
-    // frame.data.load = true 같은 중첩 쓰기도 구독자에게 알린다
-    private dataProxy: FrameData;
 
     constructor(options: FrameOptions = {}) {
         this.options = options;
-        this.state = createInitialState();
         this.functions = {
-            vote: noopAsyncResult,
-            share: noopAsyncResult,
-            load: noopAsync,
-            retry: noop,
-            openOriginal: noopAsyncResult,
-            writeComment: noopAsyncResult,
-            deleteComment: noopAsyncResult
-        };
-        this.dataProxy = this.wrapData(this.state.data);
-
-        const self = this;
-        return new Proxy(this, {
-            get(target, prop, receiver) {
-                if (prop === "data") return self.dataProxy;
-                if (typeof prop === "string" && stateKeys.has(prop)) {
-                    return Reflect.get(target.state, prop);
-                }
-                return Reflect.get(target, prop, receiver);
+            vote: async () => false,
+            share: async () => false,
+            load: async () => {
             },
-            set(target, prop, value, receiver) {
-                if (prop === "data") {
-                    target.state.data = value as FrameData;
-                    self.dataProxy = self.wrapData(target.state.data);
-                    self.notify();
-                    return true;
-                }
-                if (typeof prop === "string" && stateKeys.has(prop)) {
-                    const result = Reflect.set(target.state, prop, value);
-                    self.notify();
-                    return result;
-                }
-                return Reflect.set(target, prop, value, receiver);
-            }
-        }) as PreviewFrame;
+            retry: () => {
+            },
+            openOriginal: async () => false,
+            writeComment: async () => false,
+            deleteComment: async () => false
+        };
     }
 
-    private wrapData(data: FrameData): FrameData {
-        const self = this;
-        return new Proxy(data, {
-            set(target, prop, value, receiver) {
-                const result = Reflect.set(target, prop, value, receiver);
-                self.notify();
-                return result;
-            }
-        });
+    // 상태 일괄 갱신 - 한 번의 알림으로 React를 재렌더링한다.
+    patch(part: Partial<Omit<PreviewFrame, "options" | "functions" | "data">>): void {
+        Object.assign(this, part);
+        this.notify();
+    }
+
+    patchData(part: Partial<FrameData>): void {
+        Object.assign(this.data, part);
+        this.notify();
     }
 
     // useSyncExternalStore용 구독 API
@@ -178,20 +122,17 @@ export class PreviewFrame {
         }
     }
 
-    // 초기 상태로 일괄 리셋 (팩토리 재사용으로 자동화)
+    // 초기 상태로 일괄 리셋
     reset(): void {
-        const initial = createInitialState();
-        Object.assign(this.state, {
-            title: initial.title,
-            subtitle: initial.subtitle,
-            contents: initial.contents,
-            upvotes: initial.upvotes,
-            fixedUpvotes: initial.fixedUpvotes,
-            downvotes: initial.downvotes,
-            error: initial.error,
-            collapse: initial.collapse
-        });
-        Object.assign(this.state.data, initial.data);
+        this.title = "";
+        this.subtitle = "";
+        this.contents = undefined;
+        this.upvotes = undefined;
+        this.fixedUpvotes = undefined;
+        this.downvotes = undefined;
+        this.error = undefined;
+        this.collapse = undefined;
+        Object.assign(this.data, createInitialData());
         this.notify();
     }
 

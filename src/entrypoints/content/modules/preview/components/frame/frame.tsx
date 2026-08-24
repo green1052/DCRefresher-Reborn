@@ -113,7 +113,7 @@ export default function Frame({frame, index, registerIncrement}: Props) {
 
     // 접힌 상태 펼치기
     const expandCollapse = () => {
-        frame.collapse = false;
+        frame.patch({collapse: false});
         void frame.functions.load();
     };
 

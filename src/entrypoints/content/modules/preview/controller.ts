@@ -264,7 +264,7 @@ export class PreviewController {
         preData.link = url.href;
 
         preData.title = "로딩 중...";
-        bodyFrame.contents = "로딩 중...";
+        bodyFrame.patch({contents: "로딩 중..."});
 
         this.buildFrames(preData, signal, historySkip);
     }
@@ -299,7 +299,7 @@ export class PreviewController {
 
         frm.app.closed = false;
         this.frameClosed = false;
-        frm.frames[0].collapse = collapseView;
+        frm.frames[0].patch({collapse: collapseView});
 
         this.buildFrames(preData, signal, historySkip);
 

@@ -44,10 +44,8 @@ export function makeCommentFrame(ctx: CommentFrameContext): void {
         getFrameApp
     } = ctx;
 
-    frame.data.load = true;
-    frame.title = "댓글";
-    frame.subtitle = "로딩 중...";
-    frame.data.useWriteComment = experimentalComment;
+    frame.patch({title: "댓글", subtitle: "로딩 중..."});
+    frame.patchData({load: true, useWriteComment: experimentalComment});
 
     // RefresherPostCommentIDLoaded 대기 후 writeComment 설정
     waitForCommentIdLoaded(signal).then((postData) => {
@@ -76,8 +74,8 @@ export function makeCommentFrame(ctx: CommentFrameContext): void {
 
     // 댓글 로드
     frame.functions.load = async (useCache = true) => {
-        frame.data.load = true;
-        frame.error = undefined;
+        frame.patchData({load: true});
+        frame.patch({error: undefined});
 
         const cacheKey = PostCache.key(preData.gallery, preData.id);
         const filterCtx: CommentFilterContext = {
@@ -134,13 +132,17 @@ export function makeCommentFrame(ctx: CommentFrameContext): void {
                 needRefresh = restored.needRefresh;
             }
 
-            frame.subtitle = `${
-                (commentCounts !== threadCounts && `쓰레드 ${threadCounts}개, 총 댓글`) || ""
-            } ${commentCounts}개`;
+            frame.patch({
+                subtitle: `${
+                    (commentCounts !== threadCounts && `쓰레드 ${threadCounts}개, 총 댓글`) || ""
+                } ${commentCounts}개`
+            });
 
             // 글쓴이 표시(useMeDetection)용. 본문 로드 전이면 undefined, 다음 새로고침 때 채워진다.
-            frame.data.postUserId = postFetchedDataRef.value?.user?.id ?? undefined;
-            frame.data.comments = comments;
+            frame.patchData({
+                postUserId: postFetchedDataRef.value?.user?.id ?? undefined,
+                comments
+            });
 
             if (needRefresh) {
                 getFrameApp()?.commentFrameRef?.incrementCommentKey?.();
@@ -149,10 +151,10 @@ export function makeCommentFrame(ctx: CommentFrameContext): void {
             if (frame.data.comments) {
                 toast.show(String(e), "error");
             } else {
-                frame.error = {title: "댓글", detail: String(e)};
+                frame.patch({error: {title: "댓글", detail: String(e)}});
             }
         } finally {
-            frame.data.load = false;
+            frame.patchData({load: false});
         }
     };
 
