@@ -15,7 +15,7 @@ jobs:
                 uses: oven-sh/setup-bun@v2
 
             -   name: Install Dependencies
-                run: bun ci
+                run: bun install --frozen-lockfile
 
             -   name: Build
                 run: bun zip
