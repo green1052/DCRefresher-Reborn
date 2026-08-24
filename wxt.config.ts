@@ -5,7 +5,6 @@ export default defineConfig({
     modules: [
         "@wxt-dev/auto-icons",
         "@wxt-dev/webextension-polyfill",
-        "@wxt-dev/module-vue",
         "@wxt-dev/module-react"
     ],
     manifest: {

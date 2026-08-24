@@ -12,7 +12,7 @@
         "build:chrome": "wxt build",
         "build:firefox": "wxt build -b firefox",
         "zip": "wxt zip && wxt zip -b firefox",
-        "check": "vue-tsgo --noEmit",
+        "check": "tsc --noEmit",
         "postinstall": "wxt prepare"
     },
     "dependencies": {
@@ -21,10 +21,8 @@
         "js-cookie": "^3.0.8",
         "ky": "^2.0.2",
         "lucide-react": "^1.33.0",
-        "lucide-vue-next": "^1.0.0",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
-        "vue": "^3.5.41",
         "webextension-polyfill": "^0.12.0"
     },
     "devDependencies": {
@@ -33,9 +31,7 @@
         "@types/react-dom": "^19.2.5",
         "@wxt-dev/auto-icons": "^1.1.2",
         "@wxt-dev/module-react": "^1.2.2",
-        "@wxt-dev/module-vue": "^1.0.3",
         "sass": "^1.102.0",
-        "vue-tsgo": "^0.3.0",
         "wxt": "^0.21.4"
     },
     "private": true,
