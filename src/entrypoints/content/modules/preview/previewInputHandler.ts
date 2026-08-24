@@ -84,47 +84,51 @@ export function createImageBlockClickHandler(): (ev: MouseEvent) => void {
     };
 }
 
-// 요소에 미리보기 이벤트 핸들러 등록
-export function attachElementHandlers(
-    element: HTMLElement,
+// 문서 레벨 이벤트 위임. 목록 새로고침으로 행이 교체돼도 리스너가 살아있고,
+// 분리된 노드를 리스너가 붙잡아 두던 누수도 사라진다.
+export function setupDelegatedPreviewHandlers(
+    ctx: PreviewInputContext,
     handleMousePress: (ev: MouseEvent) => void,
-    signal: AbortSignal,
-    ctx: PreviewInputContext
+    signal: AbortSignal
 ): void {
-    if (element.dataset.refresherPreview === "true") return;
+    const tooltipTimers = new Map<Element, number>();
 
-    let timer: number | undefined;
+    signal.addEventListener("abort", () => {
+        for (const timer of tooltipTimers.values()) {
+            window.clearTimeout(timer);
+        }
+        tooltipTimers.clear();
+    }, {once: true});
 
-    element.dataset.refresherPreview = "true";
-    signal.addEventListener(
-        "abort",
-        () => {
-            if (typeof timer === "number") {
-                window.clearTimeout(timer);
-            }
-            delete element.dataset.refresherPreview;
-        },
-        {once: true}
-    );
+    const matchElement = (ev: Event): HTMLElement | null =>
+        (ev.target as HTMLElement).closest<HTMLElement>(
+            ctx.status.expandRecognizeRange ? ".ub-content" : ".ub-word"
+        );
 
-    element.addEventListener("mouseup", handleMousePress, {signal});
-    element.addEventListener("mousedown", handleMousePress, {signal});
-    element.addEventListener(ctx.status.reversePreviewKey ? "click" : "contextmenu", (ev) => {
+    const clearTimer = (element: Element): void => {
+        const timer = tooltipTimers.get(element);
+        if (timer !== undefined) {
+            window.clearTimeout(timer);
+            tooltipTimers.delete(element);
+        }
+    };
+
+    // 미리보기 열기 (반전 설정이면 좌클릭, 아니면 우클릭)
+    document.addEventListener(ctx.status.reversePreviewKey ? "click" : "contextmenu", (ev) => {
+        const element = matchElement(ev);
+        if (!element || !element.closest(".gall_list")) return;
         if (element.closest(".us-post")?.classList.contains("refresherBlur")) return;
 
-        if (typeof timer === "number") {
-            window.clearTimeout(timer);
-            timer = undefined;
-        }
-
-        ctx.previewFrame(ev);
+        clearTimer(element);
+        ctx.previewFrame(ev as MouseEvent);
     }, {signal});
 
+    // 좌클릭 미리보기 반전 시 원래 우클릭 동작(게시글 이동) 유지
     if (ctx.status.reversePreviewKey) {
-        element.addEventListener("contextmenu", (e) => {
-            e.preventDefault();
+        document.addEventListener("contextmenu", (ev) => {
+            ev.preventDefault();
 
-            const target = e.target as HTMLAnchorElement;
+            const target = ev.target as HTMLAnchorElement;
 
             location.href =
                 target.getAttribute("href") ??
@@ -133,41 +137,48 @@ export function attachElementHandlers(
         }, {signal});
     }
 
-    element.addEventListener("mouseenter", (ev) => {
+    document.addEventListener("mouseup", handleMousePress, {signal});
+    document.addEventListener("mousedown", handleMousePress, {signal});
+
+    // 툴팁 미리보기
+    document.addEventListener("mouseover", (ev) => {
+        const element = matchElement(ev);
+        if (!element) return;
+
         if (
             !ctx.status.tooltipMode ||
             element.closest(".us-post")?.classList.contains("refresherBlur") ||
-            typeof timer === "number" ||
+            tooltipTimers.has(element) ||
             (ctx.status.tooltipRatioDisable && element.closest(".us-post")?.querySelector(".ratio[style]"))
-        )
+        ) {
             return;
+        }
 
-        timer = window.setTimeout(() => {
+        tooltipTimers.set(element, window.setTimeout(() => {
+            tooltipTimers.delete(element);
             miniPreviewCreate(
                 ctx.miniPreview,
-                ev,
+                ev as MouseEvent,
                 ctx.status.tooltipMode,
                 ctx.status.tooltipMediaHide,
                 ctx.status.tooltipInteraction,
                 getRelevantData,
                 ctx.postCaches
             );
-        }, ctx.status.tooltipDelay);
+        }, ctx.status.tooltipDelay));
     }, {signal});
 
-    element.addEventListener("mousemove", (ev) => {
-        if (ctx.status.tooltipMode && !ctx.status.tooltipInteraction)
+    document.addEventListener("mousemove", (ev) => {
+        if (ctx.status.tooltipMode && !ctx.status.tooltipInteraction) {
             miniPreviewMove(ctx.miniPreview, ev, ctx.status.tooltipMode, ctx.status.tooltipInteraction);
+        }
     }, {signal});
 
-    element.addEventListener("mouseleave", () => {
-        if (!ctx.status.tooltipMode) return;
-
-        if (typeof timer === "number") {
-            window.clearTimeout(timer);
-            timer = undefined;
+    document.addEventListener("mouseout", (ev) => {
+        const element = matchElement(ev);
+        if (element && (!ev.relatedTarget || !element.contains(ev.relatedTarget as Node))) {
+            clearTimer(element);
+            miniPreviewClose(ctx.miniPreview, ctx.status.tooltipMode);
         }
-
-        miniPreviewClose(ctx.miniPreview, ctx.status.tooltipMode);
     }, {signal});
 }
