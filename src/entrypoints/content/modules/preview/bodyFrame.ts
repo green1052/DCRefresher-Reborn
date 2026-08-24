@@ -36,10 +36,12 @@ function renderPostContent(
     gifControl: boolean
 ): void {
     if (postInfo.isAdult) {
-        frame.error = {
-            title: "성인 인증이 필요한 게시글입니다.",
-            detail: "성인 인증을 하신 후 다시 시도해주세요."
-        };
+        frame.patch({
+            error: {
+                title: "성인 인증이 필요한 게시글입니다.",
+                detail: "성인 인증을 하신 후 다시 시도해주세요."
+            }
+        });
         return;
     }
 
@@ -57,29 +59,24 @@ function renderPostContent(
         }
     }
 
-    frame.contents = block.check("TEXT", dom.body.innerHTML, gallery)
-        ? "게시글 내용이 차단됐습니다."
-        : dom.body.innerHTML;
+    frame.patch({
+        contents: block.check("TEXT", dom.body.innerHTML, gallery)
+            ? "게시글 내용이 차단됐습니다."
+            : dom.body.innerHTML,
+        upvotes: postInfo.upvotes,
+        fixedUpvotes: postInfo.fixedUpvotes,
+        downvotes: postInfo.downvotes,
+        ...(frame.title !== postInfo.title ? {title: postInfo.title!} : {})
+    });
 
-    frame.upvotes = postInfo.upvotes;
-    frame.fixedUpvotes = postInfo.fixedUpvotes;
-    frame.downvotes = postInfo.downvotes;
-
-    if (frame.title !== postInfo.title) frame.title = postInfo.title!;
-
-    frame.data.disabledDownvote = postInfo.disabledDownvote ?? false;
-    frame.data.user = postInfo.user;
-
-    if (postInfo.date) {
-        frame.data.date = new Date(postInfo.date.replace(/\./g, "-"));
-    }
-
-    if (postInfo.expire) {
-        frame.data.expire = new Date(postInfo.expire);
-    }
-
-    frame.data.buttons = true;
-    if (postInfo.views !== undefined) frame.data.views = `조회 ${postInfo.views}회`;
+    frame.patchData({
+        disabledDownvote: postInfo.disabledDownvote ?? false,
+        user: postInfo.user,
+        ...(postInfo.date ? {date: new Date(postInfo.date.replace(/\./g, "-"))} : {}),
+        ...(postInfo.expire ? {expire: new Date(postInfo.expire)} : {}),
+        buttons: true,
+        ...(postInfo.views !== undefined ? {views: `조회 ${postInfo.views}회`} : {})
+    });
 }
 
 export function makeBodyFrame(ctx: BodyFrameContext): void {
@@ -97,11 +94,8 @@ export function makeBodyFrame(ctx: BodyFrameContext): void {
         postFetchedDataRef
     } = ctx;
 
-    frame.data.load = true;
-    frame.title = preData.title!;
-    frame.data.buttons = true;
-    frame.data.type = preData.type!;
-    frame.data.useImageBlock = blockImage;
+    frame.patchData({load: true, buttons: true, type: preData.type!, useImageBlock: blockImage});
+    frame.patch({title: preData.title!});
 
     if (colorPreviewLink) {
         const title = `${preData.title} - ${document.title.split("-").slice(-1)[0].trim()}`;
@@ -138,7 +132,7 @@ export function makeBodyFrame(ctx: BodyFrameContext): void {
             );
 
             if (response.result === "true") {
-                frame[type ? "upvotes" : "downvotes"] = response.counts.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                frame.patch(type ? {upvotes: response.counts.replace(/\B(?=(\d{3})+(?!\d))/g, ",")} : {downvotes: response.counts.replace(/\B(?=(\d{3})+(?!\d))/g, ",")});
                 return true;
             }
 
@@ -158,8 +152,8 @@ export function makeBodyFrame(ctx: BodyFrameContext): void {
     };
 
     frame.functions.load = async (useCache = true) => {
-        frame.data.load = true;
-        frame.error = undefined;
+        frame.patchData({load: true});
+        frame.patch({error: undefined});
 
         try {
             const postInfo = await fetchPostWithCache(postCaches, preData, signal, useCache && !disableCache);
@@ -184,14 +178,16 @@ export function makeBodyFrame(ctx: BodyFrameContext): void {
                 eventBus.emitNextTick("contentPreview", ctx.getGroupElement()!);
             }
         } catch (error) {
-            frame.error = {
-                title: "게시글",
-                detail: String(error)
-            };
+            frame.patch({
+                error: {
+                    title: "게시글",
+                    detail: String(error)
+                }
+            });
 
             console.error("Error occured while loading a post.", error);
         } finally {
-            frame.data.load = false;
+            frame.patchData({load: false});
         }
     };
 
