@@ -1,5 +1,5 @@
 import {backupStorage, databaseStorage} from "@/storage/wxtStorage";
-import {ref} from "vue";
+import {useCallback, useState} from "react";
 
 const replaceLocalStorage = async (data: Record<string, unknown>): Promise<void> => {
     const previousData = await browser.storage.local.get(null);
@@ -35,15 +35,15 @@ const parseStorageImport = (input: string): Record<string, unknown> => {
 };
 
 export function useData() {
-    const lastUpdate = ref(-1);
-    const loading = ref(false);
+    const [lastUpdate, setLastUpdate] = useState(-1);
+    const [loading, setLoading] = useState(false);
 
-    const refreshLastUpdate = async () => {
-        lastUpdate.value = await backupStorage.lastUpdate.getValue();
-    };
+    const refreshLastUpdate = useCallback(async () => {
+        setLastUpdate(await backupStorage.lastUpdate.getValue());
+    }, []);
 
     const backupCloud = async (): Promise<void> => {
-        loading.value = true;
+        setLoading(true);
         try {
             const data = await getLocalDataWithoutDatabase();
 
@@ -51,21 +51,21 @@ export function useData() {
             await browser.storage.sync.set(data);
 
             const now = Date.now();
-            lastUpdate.value = now;
+            setLastUpdate(now);
             await backupStorage.lastUpdate.setValue(now);
             alert("데이터를 클라우드에 백업했습니다.");
         } catch (error) {
             console.error("Cloud backup failed:", error);
             alert("데이터를 클라우드에 백업하는데 실패했습니다.");
         } finally {
-            loading.value = false;
+            setLoading(false);
         }
     };
 
     const recoverCloud = async (): Promise<void> => {
         if (!confirm("클라우드 백업으로 현재 설정을 교체할까요?")) return;
 
-        loading.value = true;
+        setLoading(true);
         try {
             const [data, preservedIp, preservedBan] = await Promise.all([
                 browser.storage.sync.get(),
@@ -82,12 +82,12 @@ export function useData() {
         } catch {
             alert("데이터를 복원하는데 실패했습니다.");
         } finally {
-            loading.value = false;
+            setLoading(false);
         }
     };
 
     const exportData = async (): Promise<void> => {
-        loading.value = true;
+        setLoading(true);
         try {
             const data = await getLocalDataWithoutDatabase();
 
@@ -96,7 +96,7 @@ export function useData() {
         } catch {
             alert("데이터를 클립보드로 내보내는데 실패했습니다.");
         } finally {
-            loading.value = false;
+            setLoading(false);
         }
     };
 
@@ -105,7 +105,7 @@ export function useData() {
 
         if (!input) return;
 
-        loading.value = true;
+        setLoading(true);
         try {
             const data = parseStorageImport(input);
             await replaceLocalStorage(data);
@@ -113,21 +113,21 @@ export function useData() {
         } catch {
             alert("데이터를 가져오는데 실패했습니다.");
         } finally {
-            loading.value = false;
+            setLoading(false);
         }
     };
 
     const clearData = async (): Promise<void> => {
         if (!confirm("모든 설정과 사용자 데이터를 초기화할까요?")) return;
 
-        loading.value = true;
+        setLoading(true);
         try {
             await browser.storage.local.clear();
             alert("데이터를 초기화했습니다. 새탭에서 디시인사이드를 열어주세요.");
         } catch {
             alert("데이터를 초기화하는데 실패했습니다.");
         } finally {
-            loading.value = false;
+            setLoading(false);
         }
     };
 

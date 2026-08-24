@@ -1,0 +1,33 @@
+@use "@/assets/styles/tokens" as *;
+
+.refresher-input {
+    align-items: center;
+    display: flex;
+
+    input {
+        background-color: var(--refresher-field-bg);
+        border: 1px solid var(--refresher-field-border);
+        border-radius: 9px;
+        color: var(--refresher-field-text);
+        font-size: 15px;
+        min-width: 150px;
+        padding: 4px 16px;
+        transition: all 0.25s $ease-out-expo;
+
+        &:focus {
+            border-color: var(--refresher-green);
+            box-shadow: 0 0 0 2px var(--refresher-green-ring);
+            outline: none;
+        }
+
+        &:disabled {
+            background-color: var(--refresher-field-disabled-bg);
+            color: var(--refresher-field-disabled-text);
+            cursor: not-allowed;
+        }
+
+        &::placeholder {
+            color: var(--refresher-field-disabled-text);
+        }
+    }
+}

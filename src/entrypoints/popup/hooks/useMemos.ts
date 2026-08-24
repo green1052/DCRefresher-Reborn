@@ -1,21 +1,21 @@
 import {memoStorage, MEMO_TYPES} from "@/storage/wxtStorage";
 import {TYPE_NAMES as MEMO_TYPE_NAMES, normalizeMemoMap, watchMemoStorages} from "@/core/memo";
 import {sendMessage} from "@/http/messaging";
-import {onMounted, reactive} from "vue";
+import {useEffect, useState} from "react";
 import {copyToClipboard, parseImportData} from "../utils/io";
 
 export function useMemos() {
-    const memos = reactive<{ [key in RefresherMemoType]: { [key: string]: RefresherMemoValue } }>({
+    const [memos, setMemos] = useState<{ [key in RefresherMemoType]: { [key: string]: RefresherMemoValue } }>({
         UID: {},
         NICK: {},
         IP: {}
     });
 
-    onMounted(() => {
+    useEffect(() => {
         watchMemoStorages((type, loaded) => {
-            memos[type] = loaded;
+            setMemos((prev) => ({...prev, [type]: loaded}));
         });
-    });
+    }, []);
 
     // 메모 입력창은 현재 보고 있는 탭에서만 떠야 한다. 브로드캐스트하면 열려 있는
     // 모든 디시 탭에서 창이 뜨고, 각각이 따로 저장돼버림.
@@ -34,13 +34,15 @@ export function useMemos() {
     };
 
     const removeMemoUser = async (type: RefresherMemoType, user: string) => {
-        delete memos[type][user];
-        await memoStorage[type].setValue(structuredClone(memos[type]));
+        const next = {...memos[type]};
+        delete next[user];
+        setMemos((prev) => ({...prev, [type]: next}));
+        await memoStorage[type].setValue(structuredClone(next));
     };
 
     const removeAllMemoUser = async (type: RefresherMemoType) => {
         if (!confirm(`${MEMO_TYPE_NAMES[type]} 메모를 모두 삭제할까요?`)) return;
-        memos[type] = {};
+        setMemos((prev) => ({...prev, [type]: {}}));
         await memoStorage[type].setValue({});
     };
 
@@ -66,7 +68,7 @@ export function useMemos() {
             if (!(MEMO_TYPES as readonly string[]).includes(key)) continue;
 
             const type = key as RefresherMemoType;
-            const target = memos[type];
+            const target = {...memos[type]};
             const importedMemos = normalizeMemoMap(value);
 
             for (const [id, memo] of Object.entries(importedMemos)) {
@@ -77,6 +79,7 @@ export function useMemos() {
                 target[id] = memo;
             }
 
+            setMemos((prev) => ({...prev, [type]: target}));
             await memoStorage[type].setValue(structuredClone(target));
         }
 

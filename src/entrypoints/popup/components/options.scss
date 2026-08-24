@@ -1,46 +1,3 @@
-<template>
-    <select
-        :disabled="disabled"
-        :value="value"
-        class="refresher-options"
-        @change="handleChange"
-    >
-        <option
-            v-for="(optionValue, key) in options"
-            :key="key"
-            :value="key"
-        >
-            {{ optionValue }}
-        </option>
-    </select>
-</template>
-
-<script lang="ts" setup>
-interface Props {
-    options?: Record<string, string>;
-    value?: string;
-    disabled?: boolean;
-}
-
-withDefaults(defineProps<Props>(), {
-    options: () => ({}),
-    value: "",
-    disabled: false
-});
-
-const emit = defineEmits<{
-    "update:value": [value: string];
-    change: [value: string];
-}>();
-
-const handleChange = (ev: Event) => {
-    const target = ev.target as HTMLSelectElement;
-    emit("update:value", target.value);
-    emit("change", target.value);
-};
-</script>
-
-<style lang="scss" scoped>
 @use "@/assets/styles/tokens" as *;
 
 .refresher-options {
@@ -84,4 +41,3 @@ const handleChange = (ev: Event) => {
         }
     }
 }
-</style>
