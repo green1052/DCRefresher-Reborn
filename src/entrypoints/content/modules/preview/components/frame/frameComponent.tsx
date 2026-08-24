@@ -135,6 +135,9 @@ export default function FrameComponent({frames, option = {}, apiRef}: Props) {
             get closed() {
                 return closedRef.current;
             },
+            set closed(v: boolean) {
+                setClosed(v);
+            },
             get inputFocus() {
                 return inputFocus.current;
             },
