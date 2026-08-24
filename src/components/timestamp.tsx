@@ -17,17 +17,41 @@ interface Props {
     mode?: "elapsed" | "remaining";
 }
 
+// 공유 티커 - 컴포넌트마다 setInterval을 만들지 않고 주기별로 하나만 운용
+const tickers = new Map<number, { refCount: number; subscribers: Set<() => void>; timer: number }>();
+
+function subscribeTick(interval: number, cb: () => void): () => void {
+    let entry = tickers.get(interval);
+    if (!entry) {
+        const subscribers = new Set<() => void>();
+        const timer = window.setInterval(() => {
+            if (document.hidden) return;
+            subscribers.forEach((f) => f());
+        }, interval);
+        entry = {refCount: 0, subscribers, timer};
+        tickers.set(interval, entry);
+    }
+
+    entry.refCount++;
+    entry.subscribers.add(cb);
+
+    return () => {
+        entry.subscribers.delete(cb);
+        entry.refCount--;
+        if (entry.refCount === 0) {
+            window.clearInterval(entry.timer);
+            tickers.delete(interval);
+        }
+    };
+}
+
 // 상대 시간 표시 훅 (주기 갱신, 숨김 탭 스킵)
 function useRelativeTime(date: Date, mode: "elapsed" | "remaining", interval: number) {
     const [stampMode, setStampMode] = useState(false);
     const [, setTick] = useState(0);
 
     useEffect(() => {
-        const updates = setInterval(() => {
-            if (document.hidden) return;
-            setTick((t) => t + 1);
-        }, interval);
-        return () => clearInterval(updates);
+        return subscribeTick(interval, () => setTick((t) => t + 1));
     }, [interval]);
 
     const convertTime = (target: Date): string => {
