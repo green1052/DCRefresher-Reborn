@@ -20,6 +20,19 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
     return typeof value === "object" && value !== null && !Array.isArray(value);
 };
 
+// mod.data 연속 할당을 마이크로태스크마다 한 번의 스토리지 쓰기로 합친다.
+const scheduledDataWrites = new Set<string>();
+
+const scheduleDataWrite = (name: string): void => {
+    if (scheduledDataWrites.has(name)) return;
+    scheduledDataWrites.add(name);
+    queueMicrotask(() => {
+        scheduledDataWrites.delete(name);
+        const mod = moduleStore[name];
+        if (mod) void moduleDataStorage(name).setValue(mod.data as Record<string, unknown>);
+    });
+};
+
 const runModule = async (module: RefresherModule): Promise<void> => {
     if (typeof module.func === "function") {
         await module.func();
@@ -112,13 +125,13 @@ export const modules = {
                     mod.data = new Proxy(currentData, {
                         set(target, p, newValue, receiver) {
                             const result = Reflect.set(target, p, newValue, receiver);
-                            moduleDataStorage(mod.name).setValue(target);
+                            scheduleDataWrite(mod.name);
                             return result;
                         },
 
                         deleteProperty(target, p) {
                             const result = Reflect.deleteProperty(target, p);
-                            moduleDataStorage(mod.name).setValue(target);
+                            scheduleDataWrite(mod.name);
                             return result;
                         }
                     });
