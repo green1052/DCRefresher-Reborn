@@ -96,14 +96,14 @@ export function useBlocks() {
         });
 
         setBlocks((prev) => ({...prev, [currentBlockType]: next}));
-        await blockStorage[currentBlockType].setValue(structuredClone(next));
+        await blockStorage[currentBlockType].setValue(next);
         closeBlockDialog();
     };
 
     const removeBlockedUser = async (key: RefresherBlockType, index: number) => {
         const next = blocks[key].filter((_, i) => i !== index);
         setBlocks((prev) => ({...prev, [key]: next}));
-        await blockStorage[key].setValue(structuredClone(next));
+        await blockStorage[key].setValue(next);
     };
 
     const removeAllBlockedUser = async (key: RefresherBlockType) => {
@@ -125,7 +125,7 @@ export function useBlocks() {
         if (blocks[key] && blocks[key][index]) {
             const next = blocks[key].map((v, i) => (i === index ? {...v, content: result} : v));
             setBlocks((prev) => ({...prev, [key]: next}));
-            await blockStorage[key].setValue(structuredClone(next));
+            await blockStorage[key].setValue(next);
         }
     };
 
@@ -167,7 +167,7 @@ export function useBlocks() {
             }
 
             setBlocks((prev) => ({...prev, [type]: [...target]}));
-            await blockStorage[type].setValue(structuredClone(target));
+            await blockStorage[type].setValue(target);
         }
 
         alert("가져오기에 성공했습니다.");

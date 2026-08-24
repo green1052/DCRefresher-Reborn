@@ -2,9 +2,6 @@ export default {
     name: "폰트 교체",
     description: "페이지에 전반적으로 표시되는 폰트를 교체합니다.",
     status: {},
-    memory: {
-        uuid: null
-    },
     enable: true,
     default_enable: true,
     settings: {

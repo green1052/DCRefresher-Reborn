@@ -22,6 +22,17 @@ interface Props {
     onToggleCollapse: (no: string) => void;
 }
 
+// 페이지당 고정값 - 인스턴스마다 DOM 쿼리 반복 방지
+const isAdminCache: unique symbol = Symbol("isAdmin");
+let cachedIsAdmin: boolean | typeof isAdminCache = isAdminCache;
+
+function getIsAdmin(): boolean {
+    if (cachedIsAdmin === isAdminCache) {
+        cachedIsAdmin = !!document.querySelector(".useradmin_btnbox button");
+    }
+    return cachedIsAdmin;
+}
+
 export default function Comment({
     comment,
     useWriteComment = false,
@@ -34,7 +45,7 @@ export default function Comment({
     onUpdateReply,
     onToggleCollapse
 }: Props) {
-    const isAdmin = useMemo(() => !!document.querySelector(".useradmin_btnbox button"), []);
+    const isAdmin = getIsAdmin();
 
     const {me} = useMeDetection({
         userId: comment.user.id ?? "",

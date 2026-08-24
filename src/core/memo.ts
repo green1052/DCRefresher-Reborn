@@ -91,11 +91,8 @@ export const add = async (type: RefresherMemoType, user: string, text: string, c
  * @param type 메모 종류
  * @param user 유저
  */
+// 타입은 컴파일 타임에 보장되므로 런타임 검증 생략 (핫 패스)
 export const get = (type: RefresherMemoType, user: string): RefresherMemoValue | undefined => {
-    if (!checkValidType(type)) {
-        throw new Error(`${type} is not a valid type. requires one of [${MEMO_TYPES.join(", ")}]`);
-    }
-
     return memoCache[type][user];
 };
 

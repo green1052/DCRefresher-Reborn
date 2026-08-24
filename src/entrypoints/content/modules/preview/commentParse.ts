@@ -1,5 +1,6 @@
 import eventBus from "@/core/eventbus";
 import {extractDcconCode} from "@/utils/dccon";
+import {LRUCache} from "@/utils/lruCache";
 
 // 댓글 날짜 파싱 (연도 없으면 현재 연도 추가)
 export function parseCommentDate(str: string): string {
@@ -47,8 +48,8 @@ export function parseVoiceData(memo: string): VoiceData | null {
     };
 }
 
-// gallog_icon HTML 파싱 결과 캐싱 (DOMParser 반복 생성 방지)
-const gallogIconCache = new Map<string, string | null>();
+// gallog_icon HTML 파싱 결과 캐싱 (DOMParser 반복 생성 방지, 크기 제한)
+const gallogIconCache = new LRUCache<string, string | null>(500);
 
 export const extractIconFromGallog = (gallogIcon: string): string | null => {
     const cached = gallogIconCache.get(gallogIcon);

@@ -101,10 +101,19 @@ export function filterAndProcessComments(
 
     // User 객체 생성
     comments.comments.forEach((v: DcinsideCommentObject) => {
-        v.memo = v.memo.replace(/data-dcconoverstatus="false"/g, 'data-dcconoverstatus="true"');
-        v.memo = v.memo.replace(/\s+onmousedown\s*=\s*"[^"]*"/gi, "");
-        v.memo = v.memo.replace(/\bwritten_dccon\b/g, "");
-        v.memo = v.memo.replace(/\s*style\s*=\s*"[^"]*"/gi, "");
+        // 정규식 4번 완탐 대신 includes 가드 (대부분 미매치)
+        if (v.memo.includes("data-dcconoverstatus")) {
+            v.memo = v.memo.replace(/data-dcconoverstatus="false"/g, 'data-dcconoverstatus="true"');
+        }
+        if (v.memo.includes("onmousedown")) {
+            v.memo = v.memo.replace(/\s+onmousedown\s*=\s*"[^"]*"/gi, "");
+        }
+        if (v.memo.includes("written_dccon")) {
+            v.memo = v.memo.replace(/\bwritten_dccon\b/g, "");
+        }
+        if (v.memo.includes("style=")) {
+            v.memo = v.memo.replace(/\s*style\s*=\s*"[^"]*"/gi, "");
+        }
         v.user = new User(
             v.name,
             v.user_id || null,

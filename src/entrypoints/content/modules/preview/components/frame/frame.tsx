@@ -54,18 +54,18 @@ export default function Frame({frame, index, registerIncrement}: Props) {
 
     const allComments: DcinsideCommentObject[] = data.comments?.comments ?? [];
 
-    // 부모 no -> 마지막 답글 no 맵 (선 끝 처리용)
+    // 부모 no -> 답글 수 / 마지막 답글 no (한 번 순회로 계산)
+    const replyCountByParent: Record<string, number> = {};
     const lastReplyByParent: Record<string, string> = {};
     for (const c of allComments) {
         if (c.depth === 1 && c.c_no) {
+            replyCountByParent[c.c_no] = (replyCountByParent[c.c_no] ?? 0) + 1;
             lastReplyByParent[c.c_no] = c.no;
         }
     }
 
     const replyCount = (comment: DcinsideCommentObject): number =>
-        comment.depth === 0
-            ? allComments.filter((c) => c.depth === 1 && c.c_no === comment.no).length
-            : 0;
+        comment.depth === 0 ? (replyCountByParent[comment.no] ?? 0) : 0;
 
     const isCollapsed = (comment: DcinsideCommentObject): boolean =>
         comment.depth === 0 && collapsedParents.has(comment.no);
