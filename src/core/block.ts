@@ -184,7 +184,6 @@ const internalAddToList = async (
         mode
     };
 
-    blockCache[type] = normalizeBlockList(blockCache[type]);
     blockCache[type].push(newItem);
     clearCompiledCaches();
 
