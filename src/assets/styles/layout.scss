@@ -116,6 +116,14 @@
         display: none;
     }
 
+    .issue_wrap .banner_box,
+    #ad-layer,
+    .ad-layer,
+    #ad-layer-closer,
+    .ad-layer-closer {
+        display: none !important;
+    }
+
     .input_write_tit {
         float: initial;
     }
