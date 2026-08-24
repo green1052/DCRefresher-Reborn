@@ -6,6 +6,14 @@ import settings from "./settings";
 
 export type ModuleStore = Record<string, RefresherModule>;
 
+// 다른 모듈에서 modules.get()으로 참조하는 모듈 이름.
+// 모듈의 name을 바꾸면 여기도 함께 바꿔야 한다.
+export const MODULE_ID = {
+    PREVIEW: "미리보기",
+    BLOCK: "컨텐츠 차단",
+    MANAGE: "관리"
+} as const;
+
 const moduleStore: ModuleStore = {};
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {

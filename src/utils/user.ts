@@ -1,5 +1,5 @@
 import memo from "@/core/memo";
-import modules from "@/core/modules";
+import modules, {MODULE_ID} from "@/core/modules";
 import ip from "./ip";
 import ban from "./ban";
 import type {Nullable, ObjectEnum} from "./types";
@@ -144,7 +144,7 @@ export class User {
     getRatio(): void {
         if (!this.id) return;
 
-        const manageModule = modules.get("관리");
+        const manageModule = modules.get(MODULE_ID.MANAGE);
         const ratioData = manageModule?.data as {
             ratio?: Record<string, { article: number; comment: number; date: number }>
         } | undefined;
@@ -168,8 +168,3 @@ export class User {
         return this.id !== null;
     }
 }
-
-export default {
-    getType,
-    User
-};

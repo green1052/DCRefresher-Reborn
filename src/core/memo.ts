@@ -8,7 +8,7 @@ export const TYPE_NAMES = {
     IP: "IP"
 };
 
-export type MemoCache = Record<RefresherMemoType, Record<string, RefresherMemoValue>>;
+type MemoCache = Record<RefresherMemoType, Record<string, RefresherMemoValue>>;
 
 let memoCache: MemoCache = {
     UID: {},
@@ -16,7 +16,7 @@ let memoCache: MemoCache = {
     IP: {}
 };
 
-export const isMemoValue = (value: unknown): value is RefresherMemoValue => {
+const isMemoValue = (value: unknown): value is RefresherMemoValue => {
     if (!value || typeof value !== "object") return false;
 
     const memoValue = value as Partial<RefresherMemoValue>;
@@ -41,15 +41,20 @@ export const normalizeMemoMap = (value: unknown): Record<string, RefresherMemoVa
     return Object.fromEntries(Object.entries(value).filter(([, memo]) => isMemoValue(memo)));
 };
 
-void Promise.all(
-    MEMO_TYPES.map(async (key) => {
-        memoCache[key] = normalizeMemoMap(await memoStorage[key].getValue());
+// 메모 스토리지의 초기 로드 + 변경 감시를 등록한다.
+// 콘텐츠 스크립트(core/memo.ts)와 팝업(useMemos)이 같은 로직을 공유한다.
+export const watchMemoStorages = (
+    onMemo: (type: RefresherMemoType, memos: Record<string, RefresherMemoValue>) => void
+): void => {
+    for (const type of MEMO_TYPES) {
+        void memoStorage[type].getValue().then((value) => onMemo(type, normalizeMemoMap(value)));
+        memoStorage[type].watch((value) => onMemo(type, normalizeMemoMap(value)));
+    }
+};
 
-        memoStorage[key].watch((newValue) => {
-            memoCache[key] = normalizeMemoMap(newValue);
-        });
-    })
-);
+watchMemoStorages((type, memos) => {
+    memoCache[type] = memos;
+});
 
 const internalAddToList = async (type: RefresherMemoType, user: string, text: string, color: string, gallery?: string) => {
     memoCache[type][user] = {

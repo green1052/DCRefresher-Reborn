@@ -28,9 +28,9 @@ const BLOCK_DETECT_MODE: ObjectEnum<RefresherBlockDetectMode> = {
 
 const BLOCK_DETECT_MODE_KEYS = Object.keys(BLOCK_DETECT_MODE) as RefresherBlockDetectMode[];
 
-export type BlockCache = Record<RefresherBlockType, RefresherBlockValue[]>;
+type BlockCache = Record<RefresherBlockType, RefresherBlockValue[]>;
 
-export type BlockModeCache = Record<RefresherBlockType, RefresherBlockDetectMode>;
+type BlockModeCache = Record<RefresherBlockType, RefresherBlockDetectMode>;
 
 // LRU 캐시 - 최대 500개 항목으로 메모리 누수 방지
 const MAX_CACHE_SIZE = 500;
@@ -74,7 +74,7 @@ let blockModeCache: BlockModeCache = {
     TAB: BLOCK_DETECT_MODE.SAME
 };
 
-export const isBlockValue = (value: unknown): value is RefresherBlockValue => {
+const isBlockValue = (value: unknown): value is RefresherBlockValue => {
     if (!value || typeof value !== "object") return false;
 
     const blockValue = value as Partial<RefresherBlockValue>;
@@ -118,28 +118,30 @@ export const normalizeBlockMode = (
     return fallback;
 };
 
-// Initialize cache and watchers from wxt/storage (타입별 병렬 로드)
-void Promise.all(
-    BLOCK_TYPES.map(async (key) => {
-        const [storedBlocks, storedMode] = await Promise.all([
-            blockStorage[key].getValue(),
-            blockModeStorage[key].getValue()
-        ]);
+// 차단 목록/모드 스토리지의 초기 로드 + 변경 감시를 등록한다.
+// 콘텐츠 스크립트(core/block.ts)와 팝업(useBlocks)이 같은 로직을 공유한다.
+export const watchBlockStorages = (
+    onList: (type: RefresherBlockType, blocks: RefresherBlockValue[]) => void,
+    onMode: (type: RefresherBlockType, mode: RefresherBlockDetectMode) => void
+): void => {
+    for (const type of BLOCK_TYPES) {
+        void blockStorage[type].getValue().then((value) => onList(type, normalizeBlockList(value)));
+        blockStorage[type].watch((value) => onList(type, normalizeBlockList(value)));
 
-        blockCache[key] = normalizeBlockList(storedBlocks);
-        blockModeCache[key] = normalizeBlockMode(storedMode, blockModeCache[key]);
+        void blockModeStorage[type].getValue().then((value) => onMode(type, normalizeBlockMode(value, "SAME")));
+        blockModeStorage[type].watch((value) => onMode(type, normalizeBlockMode(value, "SAME")));
+    }
+};
 
-        blockStorage[key].watch((newValue) => {
-            if (!newValue) return;
-            blockCache[key] = normalizeBlockList(newValue);
-            clearCompiledCaches();
-        });
-
-        blockModeStorage[key].watch((newValue) => {
-            if (!newValue) return;
-            blockModeCache[key] = normalizeBlockMode(newValue, blockModeCache[key]);
-        });
-    })
+// Initialize cache and watchers from wxt/storage
+watchBlockStorages(
+    (type, blocks) => {
+        blockCache[type] = blocks;
+        clearCompiledCaches();
+    },
+    (type, mode) => {
+        blockModeCache[type] = mode;
+    }
 );
 
 const checkValidType = (type: string) => {

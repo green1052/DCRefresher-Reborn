@@ -1,4 +1,4 @@
-import http, {client as ky} from "@/http/http";
+import http, {ajaxClient} from "@/http/http";
 
 import block from "@/core/block";
 import toast from "@/utils/toast";
@@ -41,14 +41,9 @@ export const handleBlockRequest = async (
         params.set("code", code);
 
         try {
-            const json = await ky
-                .post(http.urls.dccon.detail, {
-                    headers: {
-                        "X-Requested-With": "XMLHttpRequest"
-                    },
-                    body: params
-                })
-                .json<DcconDetailResponse>();
+            const json = await ajaxClient(http.urls.dccon.detail, {
+                body: params
+            }).json<DcconDetailResponse>();
 
             if (!json?.info) {
                 throw new Error("디시콘 상세 정보가 없습니다.");

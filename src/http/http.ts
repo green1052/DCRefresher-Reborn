@@ -11,6 +11,15 @@ export const contentFetch: typeof fetch = fetchFn;
 
 export const client = ky.create({fetch: contentFetch});
 
+// 디시 AJAX 요청용 클라이언트 (POST + X-Requested-With 기본값)
+export const ajaxClient = ky.create({
+    fetch: contentFetch,
+    method: "POST",
+    headers: {
+        "X-Requested-With": "XMLHttpRequest"
+    }
+});
+
 export const urls = {
     base: "https://gall.dcinside.com/",
     gall: {
@@ -54,7 +63,7 @@ export const types = {
     PERSON: "person"
 };
 
-export const commentGallTypes: Record<string, string> = {
+const commentGallTypes: Record<string, string> = {
     "": "G",
     mgallery: "M",
     mini: "MI",
@@ -173,5 +182,6 @@ export default {
     createAuthParams,
     manageUrl,
     client,
+    ajaxClient,
     contentFetch
 };
