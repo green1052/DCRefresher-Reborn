@@ -1,0 +1,150 @@
+@use "@/assets/styles/tokens" as *;
+
+.refresher-comment {
+    position: relative;
+
+    &[data-deleted="true"] {
+        opacity: 0.4;
+    }
+
+    // 부모 댓글: 답글 있으면 마진 제거 (첫 답글과 붙게)
+    &[data-depth="0"][data-has-replies="true"] {
+        margin-bottom: 0;
+    }
+
+    // 접힌 부모 댓글: 답글 숨겨지므로 간격 복원
+    &[data-depth="0"][data-collapsed="true"] {
+        margin-bottom: 2vh;
+    }
+
+    // 대댓글: ㄴ 트리 라인. 부모 왼쪽에서 자식 중앙까지 선.
+    &[data-depth="1"] {
+        margin-bottom: 0;
+        margin-left: 0;
+        padding-left: 14px;
+        padding-top: 2vh;
+    }
+
+    // 첫 답글: 부모와 붙게
+    &[data-depth="1"]:first-of-type {
+        padding-top: 0;
+    }
+
+    // ㄴ 꺾임: 수직선 위쪽 ~ 자식 중앙, 수평선.
+    &[data-depth="1"]::before {
+        border-bottom: 2px solid var(--refresher-border-light);
+        border-left: 2px solid var(--refresher-border-light);
+        content: "";
+        height: 50%;
+        left: 0;
+        opacity: 0.6;
+        position: absolute;
+        top: 0;
+        width: 12px;
+    }
+
+    // 첫 답글: 부모와 붙어 선 연결
+    &[data-depth="1"]:first-of-type::before {
+        top: 0;
+    }
+
+    // 수직선 아래쪽: 자식 중앙 ~ 다음 답글
+    &[data-depth="1"]::after {
+        border-left: 2px solid var(--refresher-border-light);
+        content: "";
+        height: 50%;
+        left: 0;
+        opacity: 0.6;
+        position: absolute;
+        top: 50%;
+        width: 0;
+    }
+
+    // 마지막 답글: 아래 수직선 없음 + 다음 부모와 간격
+    &[data-depth="1"][data-last-reply="true"] {
+        margin-bottom: 2vh;
+
+        &::after {
+            display: none;
+        }
+    }
+
+    .refresher-reply-toggle {
+        align-items: center;
+        background: rgba(170, 170, 170, 0.2);
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        line-height: 1;
+        margin-left: 6px;
+        opacity: 0.7;
+        padding: 1px;
+
+        &:hover {
+            opacity: 1;
+        }
+
+        svg {
+            transition: transform 0.2s ease;
+        }
+    }
+
+    &[data-collapsed="true"] .refresher-reply-toggle svg {
+        transform: rotate(-90deg);
+    }
+
+    .meta {
+        align-items: center;
+        display: flex;
+
+        .refresher-reply {
+            align-items: center;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            opacity: 0.6;
+            padding: 1px;
+
+            &:hover {
+                opacity: 1;
+            }
+
+            &.active {
+                background: rgba(170, 170, 170, 0.2);
+                opacity: 1;
+            }
+        }
+
+        .float-right {
+            align-items: center;
+            display: flex;
+            gap: 6px;
+            margin-left: auto;
+        }
+    }
+
+    .refresher-timestamp {
+        white-space: nowrap;
+    }
+
+    .delete {
+        background-color: rgba(170, 170, 170, 0.32);
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        height: 18px;
+        width: 18px;
+
+        &:hover {
+            background-color: rgba(170, 170, 170, 0.45);
+        }
+
+        &:active {
+            background-color: rgba(170, 170, 170, 0.6);
+        }
+
+        svg {
+            margin: auto;
+        }
+    }
+}

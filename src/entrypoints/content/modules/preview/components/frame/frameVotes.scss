@@ -1,0 +1,10 @@
+.refresher-preview-votes {
+    display: flex;
+    margin-top: 2.5vh;
+    position: relative;
+
+    & > div {
+        display: flex;
+        margin: auto;
+    }
+}

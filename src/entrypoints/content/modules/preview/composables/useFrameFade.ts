@@ -1,42 +1,46 @@
-import {onBeforeUnmount, ref, watch} from "vue";
+import {useCallback, useEffect, useRef, useState} from "react";
 
-// 프레임 페이드 인/아웃 전환 관리 컴포저블
+// 프레임 페이드 인/아웃 전환 관리 훅
 // closed 상태에 따라 body overflow 제어, fadeOutTimer 관리
 export function useFrameFade(onClosed?: () => void) {
-    const fade = ref(false);
-    const closed = ref(false);
-    let fadeOutTimer: number | null = null;
+    const [fade, setFade] = useState(false);
+    const [closed, setClosed] = useState(false);
+    const fadeOutTimer = useRef<number | null>(null);
+    const onClosedRef = useRef(onClosed);
+    onClosedRef.current = onClosed;
 
-    watch(closed, (val: boolean) => {
-        document.body.style.overflow = val ? "" : "hidden";
-        if (val) onClosed?.();
-    });
+    useEffect(() => {
+        document.body.style.overflow = closed ? "" : "hidden";
+        if (closed) onClosedRef.current?.();
+    }, [closed]);
 
-    const fadeIn = () => {
-        fade.value = true;
-        closed.value = false;
-    };
+    const fadeIn = useCallback(() => {
+        setFade(true);
+        setClosed(false);
+    }, []);
 
-    const fadeOut = () => {
-        fade.value = false;
+    const fadeOut = useCallback(() => {
+        setFade(false);
 
-        if (fadeOutTimer !== null) {
-            window.clearTimeout(fadeOutTimer);
+        if (fadeOutTimer.current !== null) {
+            window.clearTimeout(fadeOutTimer.current);
         }
 
-        fadeOutTimer = window.setTimeout(() => {
-            closed.value = true;
-            fadeOutTimer = null;
+        fadeOutTimer.current = window.setTimeout(() => {
+            setClosed(true);
+            fadeOutTimer.current = null;
         }, 251);
-    };
+    }, []);
 
-    onBeforeUnmount(() => {
-        document.body.style.overflow = "";
-        if (fadeOutTimer !== null) {
-            window.clearTimeout(fadeOutTimer);
-            fadeOutTimer = null;
-        }
-    });
+    useEffect(() => {
+        return () => {
+            document.body.style.overflow = "";
+            if (fadeOutTimer.current !== null) {
+                window.clearTimeout(fadeOutTimer.current);
+                fadeOutTimer.current = null;
+            }
+        };
+    }, []);
 
     return {fade, closed, fadeIn, fadeOut};
 }

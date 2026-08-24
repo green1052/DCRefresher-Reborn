@@ -1,16 +1,3 @@
-<template>
-    <transition name="refresher-opacity">
-        <div class="refresher-loader spinner">
-            <div
-                v-for="i in 12"
-                :key="i"
-                class="spinner-blade"
-            />
-        </div>
-    </transition>
-</template>
-
-<style lang="scss">
 .spinner {
     height: 40px;
     position: relative;
@@ -63,4 +50,3 @@
     margin: auto;
     position: relative;
 }
-</style>

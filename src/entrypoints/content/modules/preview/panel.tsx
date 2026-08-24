@@ -1,8 +1,8 @@
-import type {App} from "vue";
+import {type Root, createRoot} from "react-dom/client";
 
-import blockPopup from "./components/popup/blockPopup.vue";
-import captchaPopup from "./components/popup/captchaPopup.vue";
-import adminPanel from "./components/popup/adminPanel.vue";
+import blockPopup from "./components/popup/blockPopup";
+import captchaPopup from "./components/popup/captchaPopup";
+import adminPanel from "./components/popup/adminPanel";
 
 import type Frame from "./frame";
 import {handleManageResponse, previewRequest, type PreviewRequest} from "./request";
@@ -23,27 +23,28 @@ export const blockPreset: BlockPreset = {
 };
 
 interface MountedPopup {
-    app: App;
+    root: Root;
     element: HTMLDivElement;
 }
 
 const mountedPopups = new Set<MountedPopup>();
 
-const mountPopup = (component: typeof blockPopup | typeof captchaPopup | typeof adminPanel, props: Record<string, unknown>): MountedPopup => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mountPopup(Component: React.ComponentType<any>, props: Record<string, unknown>): MountedPopup {
     const element = document.createElement("div");
-    const app = createApp(component, props);
-    app.mount(element);
+    const root = createRoot(element);
+    root.render(<Component {...props}/>);
     document.body.appendChild(element);
-    const instance = {app, element};
+    const instance = {root, element};
     mountedPopups.add(instance);
     return instance;
-};
+}
 
-const unmountPopup = (instance: MountedPopup): void => {
-    instance.app.unmount();
+function unmountPopup(instance: MountedPopup): void {
+    instance.root.unmount();
     instance.element.remove();
     mountedPopups.delete(instance);
-};
+}
 
 export const closeAllPopups = (): void => {
     for (const instance of mountedPopups) {
@@ -82,9 +83,8 @@ export const panel = {
                 avoidReason: number;
                 avoidReasonTxt: string;
                 delChk: number;
-                userType: number
-            }) => {
-                callback(payload.avoidHour, payload.avoidReason, payload.avoidReasonTxt, payload.delChk, payload.userType);
+                userType: number;
+            }) => {                callback(payload.avoidHour, payload.avoidReason, payload.avoidReasonTxt, payload.delChk, payload.userType);
                 unmountPopup(instance);
             },
             onClose: () => {
