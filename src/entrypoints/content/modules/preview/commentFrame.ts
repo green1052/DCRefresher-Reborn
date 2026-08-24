@@ -5,13 +5,11 @@ import {previewRequest} from "./request";
 import toast from "@/utils/toast";
 import {
     type CommentFilterContext,
-    createWriteComment,
     filterAndProcessComments,
-    handleDeleteComment,
     restoreDeletedComments,
-    restoreFromCacheIfEmpty,
-    waitForCommentIdLoaded
-} from "./comments";
+    restoreFromCacheIfEmpty
+} from "./commentFilter";
+import {createWriteComment, handleDeleteComment, waitForCommentIdLoaded} from "./commentActions";
 
 export interface CommentFrameContext {
     frame: PreviewFrame;

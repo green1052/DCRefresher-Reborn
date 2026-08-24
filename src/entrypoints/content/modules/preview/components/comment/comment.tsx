@@ -4,7 +4,7 @@ import {useMemo} from "react";
 import Timestamp from "@/components/timestamp";
 import UserComponent from "@/components/user";
 import {useMeDetection} from "@/entrypoints/content/composables/useMeDetection";
-import {handleDcconContextMenu, parseCommentDate, parseVoiceData} from "../../comments";
+import {handleDcconContextMenu, parseCommentDate, parseVoiceData} from "../../commentParse";
 
 import "./comment.scss";
 
