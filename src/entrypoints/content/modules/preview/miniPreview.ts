@@ -10,7 +10,6 @@ export interface MiniPreviewState {
     controller: AbortController;
     lastElement: EventTarget | null;
     lastTimeout: number;
-    shouldOutHandle: boolean;
     cursorOut: boolean;
     isHovered: boolean;
 }
@@ -23,7 +22,6 @@ export function createMiniPreview(): MiniPreviewState {
         controller: new AbortController(),
         lastElement: null,
         lastTimeout: 0,
-        shouldOutHandle: false,
         cursorOut: false,
         isHovered: false
     };
