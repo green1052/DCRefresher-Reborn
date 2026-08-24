@@ -1,6 +1,6 @@
 import eventBus from "@/core/eventbus";
 import filter from "@/core/filtering";
-import modules from "@/core/modules";
+import modules, {MODULE_ID} from "@/core/modules";
 import type {PreviewFrame} from "./frame";
 import Frame, {type FrameScrollApi} from "./frame";
 import {makeBodyFrame, type PostFetchedDataRef} from "./bodyFrame";
@@ -157,12 +157,12 @@ export class PreviewController {
     }
 
     private async loadConfigs(): Promise<void> {
-        const blockModule = modules.get("컨텐츠 차단");
+        const blockModule = modules.get(MODULE_ID.BLOCK);
         const blockStatus = blockModule?.status as { blur?: boolean; replyRemove?: boolean } | undefined;
         this.blurConfig = Boolean(blockStatus?.blur);
         this.replyConfig = Boolean(blockStatus?.replyRemove);
 
-        const manageModule = modules.get("관리");
+        const manageModule = modules.get(MODULE_ID.MANAGE);
         const manageStatus = manageModule?.status as { enableGifControl?: boolean } | undefined;
         this.gifControlConfig = Boolean(manageStatus?.enableGifControl);
     }

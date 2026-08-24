@@ -42,7 +42,7 @@ window.addEventListener("keydown", (ev) => {
     }
 });
 
-export const show = (
+const show = (
     content: string,
     type: ToastLevel = "info",
     autoClose: number = 5000,

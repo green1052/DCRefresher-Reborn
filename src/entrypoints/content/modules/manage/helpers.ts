@@ -1,4 +1,4 @@
-import http, {client as ky} from "@/http/http";
+import http, {ajaxClient} from "@/http/http";
 
 export const deletePost = async (id: string): Promise<void> => {
     if (!id) return;
@@ -9,10 +9,7 @@ export const deletePost = async (id: string): Promise<void> => {
     params.set("nos[]", id);
 
     try {
-        await ky.post(http.manageUrl(location.href, http.urls.manage.deleteMini, http.urls.manage.delete), {
-            headers: {
-                "X-Requested-With": "XMLHttpRequest"
-            },
+        await ajaxClient(http.manageUrl(location.href, http.urls.manage.deleteMini, http.urls.manage.delete), {
             body: params
         });
     } catch (e) {
@@ -41,14 +38,9 @@ export const fetchRatio = async (uid: string): Promise<RatioInfo | undefined> =>
     const params = http.createAuthParams();
     params.set("user_id", uid);
 
-    const response = await ky
-        .post("https://gall.dcinside.com/api/gallog_user_layer/gallog_content_reple", {
-            body: params,
-            headers: {
-                "X-Requested-With": "XMLHttpRequest"
-            }
-        })
-        .text();
+    const response = await ajaxClient("https://gall.dcinside.com/api/gallog_user_layer/gallog_content_reple", {
+        body: params
+    }).text();
 
     const [article, comment] = response.split(",").map(Number);
 

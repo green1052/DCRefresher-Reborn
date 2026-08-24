@@ -21,7 +21,7 @@ export interface LoadFunctionContext {
     setOriginalLocation: (url: string) => void;
 }
 
-const MINIMUM_REFRESH_INTERVAL = 2000;
+export const MINIMUM_REFRESH_INTERVAL = 2000;
 const DEFAULT_TIMEOUT_OFFSET = 100;
 
 // innerHTML 정규식 치환은 마크업을 깨거나 검색어를 HTML로 주입하므로 텍스트 노드만 순회

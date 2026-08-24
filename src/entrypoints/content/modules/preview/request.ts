@@ -1,7 +1,7 @@
 import Cookies from "js-cookie";
 import type {Input, Options} from "ky";
-import ky from "ky";
 
+import {ajaxClient, client as htmlClient} from "@/http/http";
 import * as http from "@/http/http";
 import toast from "@/utils/toast";
 import {parsePostInfo} from "./postParser";
@@ -26,20 +26,8 @@ interface ManagementResponse {
     result: "success" | "fail";
 }
 
-const kyClient = ky.create({
-    method: "POST",
-    headers: {
-        "X-Requested-With": "XMLHttpRequest"
-    },
-    fetch: http.contentFetch
-});
-
-const htmlClient = ky.create({
-    fetch: http.contentFetch
-});
-
 const client = (url: Input, options?: Options): Promise<string> => {
-    return kyClient(url, options).text();
+    return ajaxClient(url, options).text();
 };
 
 const parseJsonSafely = (response: string): unknown => {

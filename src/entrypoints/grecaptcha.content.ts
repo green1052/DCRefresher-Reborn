@@ -19,7 +19,7 @@ export default defineContentScript({
         };
 
         const script = document.createElement("script");
-        script.src = "https://www.google.com/recaptcha/api.js?render=6Lc-Fr0UAAAAAOdqLYqPy53MxlRMIXpNXFvBliwI";
+        script.src = `https://www.google.com/recaptcha/api.js?render=${grecaptchaSiteKey}`;
         script.async = true;
         script.onload = () => {
             window.addEventListener("message", (event) => {

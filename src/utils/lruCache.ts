@@ -38,5 +38,3 @@ export class LRUCache<K, V> {
         this.cache.clear();
     }
 }
-
-export default LRUCache;

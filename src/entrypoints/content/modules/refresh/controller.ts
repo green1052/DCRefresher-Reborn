@@ -1,10 +1,9 @@
 import eventBus from "@/core/eventbus";
 import filter from "@/core/filtering";
-import modules from "@/core/modules";
+import modules, {MODULE_ID} from "@/core/modules";
 import http, {queryString} from "@/http/http";
-import {createLoadFunction} from "./load";
+import {createLoadFunction, MINIMUM_REFRESH_INTERVAL} from "./load";
 
-const MINIMUM_REFRESH_INTERVAL = 2000;
 const PAGING_SELECTOR = ".left_content article:has(.gall_listwrap) .bottom_paging_box";
 
 export interface RefreshStatus {
@@ -233,7 +232,7 @@ export class RefreshController {
 
     private async loadArchiveConfig(): Promise<void> {
         // 결합 분리: modules.ts에서 직접 읽기 (모듈 로드 완료 후이므로 데이터 보장)
-        const previewModule = modules.get("미리보기");
+        const previewModule = modules.get(MODULE_ID.PREVIEW);
         const previewStatus = previewModule?.status as { archiveArticle?: boolean } | undefined;
         this.memory.archiveArticleConfig = Boolean(previewStatus?.archiveArticle);
     }

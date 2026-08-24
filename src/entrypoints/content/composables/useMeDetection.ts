@@ -16,27 +16,13 @@ export function useMeDetection({userId, postUser}: UseMeDetectionOptions): UseMe
     const me = ref(false);
     let eventBusUuid: (() => void) | null = null;
 
-    const checkGallogId = (): string | null => {
-        const gallogImageElement = document.querySelector<HTMLElement>("#login_box .user_info .writer_nikcon");
-        if (!gallogImageElement) return null;
-
-        const clickAttr = gallogImageElement.getAttribute("onclick");
-        if (!clickAttr) return null;
-
-        return clickAttr.replace(/window\.open\('\/\/gallog\.dcinside\.com\//g, "").replace(/'\);/g, "");
-    };
-
     const setup = () => {
         if (!userId) return;
 
+        // getLoggedInUserInfo가 로그인 박스에서 gallog ID를 이미 추출한다.
         const fixed = getLoggedInUserInfo();
-        if (fixed?.id && userId === fixed.id) {
-            me.value = true;
-        }
-
-        const gallogId = checkGallogId();
-        if (gallogId) {
-            me.value = gallogId === userId;
+        if (fixed?.id) {
+            me.value = fixed.id === userId;
         }
 
         if (!me.value && postUser) {

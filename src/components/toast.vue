@@ -21,7 +21,7 @@
                     class="button"
                     @click="hide"
                 >
-                    <i class="material-icons">X</i>
+                    <i>X</i>
                 </div>
             </div>
         </div>
@@ -152,11 +152,6 @@ $desktop: 1024px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-        }
-
-        .text .material-icons {
-            margin-left: 10px;
-            margin-right: 5px;
         }
 
         .text {

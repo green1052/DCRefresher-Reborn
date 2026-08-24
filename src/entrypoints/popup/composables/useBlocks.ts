@@ -1,9 +1,9 @@
-import {BLOCK_TYPES, blockModeStorage, blockStorage} from "@/storage/wxtStorage";
+import {blockModeStorage, blockStorage, BLOCK_TYPES} from "@/storage/wxtStorage";
 import {
     BLOCK_DETECT_MODE_TYPE_NAMES,
     normalizeBlockList,
-    normalizeBlockMode,
-    TYPE_NAMES as BLOCK_TYPE_NAMES
+    TYPE_NAMES as BLOCK_TYPE_NAMES,
+    watchBlockStorages
 } from "@/core/block";
 import {onMounted, reactive, ref} from "vue";
 import {copyToClipboard, parseImportData} from "../utils/io";
@@ -35,24 +35,14 @@ export function useBlocks() {
         mode: "NONE"
     });
 
-    onMounted(async () => {
-        await Promise.all(
-            BLOCK_TYPES.map(async (type) => {
-                const [storedBlocks, storedMode] = await Promise.all([
-                    blockStorage[type].getValue(),
-                    blockModeStorage[type].getValue()
-                ]);
-
-                blocks[type] = normalizeBlockList(storedBlocks);
-                blockModes.value[type] = normalizeBlockMode(storedMode, "SAME");
-
-                blockStorage[type].watch((newValue) => {
-                    blocks[type] = normalizeBlockList(newValue);
-                });
-                blockModeStorage[type].watch((newValue) => {
-                    blockModes.value[type] = normalizeBlockMode(newValue, "SAME");
-                });
-            })
+    onMounted(() => {
+        watchBlockStorages(
+            (type, list) => {
+                blocks[type] = list;
+            },
+            (type, mode) => {
+                blockModes.value[type] = mode;
+            }
         );
     });
 
