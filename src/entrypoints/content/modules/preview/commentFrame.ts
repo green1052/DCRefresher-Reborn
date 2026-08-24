@@ -11,6 +11,9 @@ import {
 } from "./commentFilter";
 import {createWriteComment, handleDeleteComment, waitForCommentIdLoaded} from "./commentActions";
 
+// 마지막으로 반영한 댓글 목록 시그니처 (no-op 새로고침 스킵용)
+const lastCommentSignature = new WeakMap<PreviewFrame, string>();
+
 export interface CommentFrameContext {
     frame: PreviewFrame;
     preData: GalleryPreData;
@@ -132,17 +135,23 @@ export function makeCommentFrame(ctx: CommentFrameContext): void {
                 needRefresh = restored.needRefresh;
             }
 
-            frame.patch({
-                subtitle: `${
-                    (commentCounts !== threadCounts && `쓰레드 ${threadCounts}개, 총 댓글`) || ""
-                } ${commentCounts}개`
-            });
+            const nextSubtitle = `${
+                (commentCounts !== threadCounts && `쓰레드 ${threadCounts}개, 총 댓글`) || ""
+            } ${commentCounts}개`;
+            const signature = comments.comments?.map((c) => c.no).join(",") ?? "";
 
-            // 글쓴이 표시(useMeDetection)용. 본문 로드 전이면 undefined, 다음 새로고침 때 채워진다.
-            frame.patchData({
-                postUserId: postFetchedDataRef.value?.user?.id ?? undefined,
-                comments
-            });
+            // 자동 새로고침에서 내용이 그대로면 재렌더링하지 않는다.
+            if (lastCommentSignature.get(frame) !== signature || frame.subtitle !== nextSubtitle) {
+                lastCommentSignature.set(frame, signature);
+
+                frame.patch({subtitle: nextSubtitle});
+
+                // 글쓴이 표시(useMeDetection)용. 본문 로드 전이면 undefined, 다음 새로고침 때 채워진다.
+                frame.patchData({
+                    postUserId: postFetchedDataRef.value?.user?.id ?? undefined,
+                    comments
+                });
+            }
 
             if (needRefresh) {
                 getFrameApp()?.commentFrameRef?.incrementCommentKey?.();
