@@ -1,47 +1,3 @@
-<template>
-    <div class="refresher-module">
-        <div class="left">
-            <p class="title">
-                {{ name }}
-            </p>
-            <p class="desc">
-                {{ desc }}
-            </p>
-        </div>
-        <div class="right">
-            <RefresherCheckbox
-                :model-value="enabled"
-                @change="handleToggle"
-            />
-        </div>
-    </div>
-</template>
-
-<script lang="ts" setup>
-import {inject} from "vue";
-import RefresherCheckbox from "./checkbox.vue";
-import type {useSettings} from "../composables/useSettings";
-
-interface Props {
-    name: string;
-    desc: string;
-    enabled: boolean;
-}
-
-const props = defineProps<Props>();
-
-const {updateModuleStatus} = inject<ReturnType<typeof useSettings>>("settings")!;
-
-const handleToggle = async (value: boolean) => {
-    try {
-        await updateModuleStatus(props.name, value);
-    } catch (error) {
-        console.error("Failed to update module status:", error);
-    }
-};
-</script>
-
-<style lang="scss" scoped>
 @use "@/assets/styles/tokens" as *;
 
 .refresher-module {
@@ -114,4 +70,3 @@ const handleToggle = async (value: boolean) => {
         background-color: var(--refresher-card-bg);
     }
 }
-</style>

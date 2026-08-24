@@ -1,6 +1,6 @@
 import {moduleEnableStorage, moduleSettingStorage} from "@/storage/wxtStorage";
 import {sendMessage} from "@/http/messaging";
-import {computed, nextTick, onMounted, ref} from "vue";
+import {useEffect, useState} from "react";
 
 // 백그라운드가 디시 탭 전체로 뿌려준다.
 const sendToAllDcTabs = async (type: string, data: Record<string, unknown>): Promise<void> => {
@@ -12,65 +12,58 @@ const sendToAllDcTabs = async (type: string, data: Record<string, unknown>): Pro
 };
 
 export function useSettings() {
-    const modules = ref<ModuleSchemaMap>({});
-    const settings = ref<Record<string, Record<string, RefresherSettings>>>({});
+    const [modules, setModules] = useState<ModuleSchemaMap>({});
+    const [settings, setSettings] = useState<Record<string, Record<string, RefresherSettings>>>({});
 
-    onMounted(async () => {
-        try {
-            const tabs = await browser.tabs.query({url: ["https://*.dcinside.com/*"]});
-            const dcTab = tabs.find((tab) => tab.id);
-            if (!dcTab?.id) {
-                return;
+    useEffect(() => {
+        void (async () => {
+            try {
+                const tabs = await browser.tabs.query({url: ["https://*.dcinside.com/*"]});
+                const dcTab = tabs.find((tab) => tab.id);
+                if (!dcTab?.id) {
+                    return;
+                }
+
+                const schema = await sendMessage("getSchema", undefined, {tabId: dcTab.id});
+                if (!schema) return;
+
+                const enableMap: ModuleSchemaMap = {};
+                const settingsMap: Record<string, Record<string, RefresherSettings>> = {};
+
+                await Promise.all(
+                    Object.entries(schema).map(async ([moduleName, moduleSchema]) => {
+                        settingsMap[moduleName] = moduleSchema.settings ?? {};
+
+                        const enablePromise = moduleEnableStorage(moduleName).getValue();
+
+                        await Promise.all(
+                            Object.entries(settingsMap[moduleName]).map(async ([key, setting]) => {
+                                const stored = await moduleSettingStorage(moduleName, key).getValue();
+                                if (stored !== null && stored !== undefined) {
+                                    settingsMap[moduleName][key] = {...setting, value: stored} as RefresherSettings;
+                                }
+                            })
+                        );
+
+                        enableMap[moduleName] = {
+                            ...moduleSchema,
+                            enable: (await enablePromise) ?? moduleSchema.default_enable
+                        };
+                    })
+                );
+
+                setSettings(settingsMap);
+                setModules(enableMap);
+            } catch (e) {
+                console.error("Failed to load module schema:", e);
             }
-
-            const schema = await sendMessage("getSchema", undefined, {tabId: dcTab.id});
-            if (!schema) return;
-
-            const enableMap: ModuleSchemaMap = {};
-            const settingsMap: Record<string, Record<string, RefresherSettings>> = {};
-
-            await Promise.all(
-                Object.entries(schema).map(async ([moduleName, moduleSchema]) => {
-                    settingsMap[moduleName] = moduleSchema.settings ?? {};
-
-                    const enablePromise = moduleEnableStorage(moduleName).getValue();
-
-                    await Promise.all(
-                        Object.entries(settingsMap[moduleName]).map(async ([key, setting]) => {
-                            const stored = await moduleSettingStorage(moduleName, key).getValue();
-                            if (stored !== null && stored !== undefined) {
-                                (setting.value as unknown) = stored;
-                            }
-                        })
-                    );
-
-                    enableMap[moduleName] = {
-                        ...moduleSchema,
-                        enable: (await enablePromise) ?? moduleSchema.default_enable
-                    };
-                })
-            );
-
-            settings.value = settingsMap;
-            modules.value = enableMap;
-        } catch (e) {
-            console.error("Failed to load module schema:", e);
-        }
-    });
-
-    const hasSettings = computed(() => Object.keys(settings.value).length > 0);
-    const hasModules = computed(() => Object.keys(modules.value).length > 0);
+        })();
+    }, []);
 
     const settingsCount = (obj: Record<string, RefresherSettings>) => {
         if (!obj) return 0;
         return Object.values(obj).length;
     };
-
-    const modulesWithBasicSettings = computed(() => {
-        return Object.keys(settings.value).filter(
-            (module) => settings.value[module] && settingsCount(settings.value[module]) > 0
-        );
-    });
 
     const updateUserSetting = async (
         module: string | undefined,
@@ -78,17 +71,25 @@ export function useSettings() {
         value: unknown
     ) => {
         if (!module || !key) return;
-        const setting = settings.value[module]?.[key];
+
+        const setting = settings[module]?.[key];
         if (!setting) return;
 
         const previousValue = setting.value;
-        (setting.value as unknown) = value;
+
+        setSettings((prev) => ({
+            ...prev,
+            [module]: {...prev[module], [key]: {...setting, value} as RefresherSettings}
+        }));
 
         try {
             await moduleSettingStorage(module, key).setValue(value as string | number | boolean);
             await sendToAllDcTabs("updateSettingValue", {name: module, key, value: value as string | number | boolean});
         } catch (e) {
-            (setting.value as unknown) = previousValue;
+            setSettings((prev) => ({
+                ...prev,
+                [module]: {...prev[module], [key]: {...setting, value: previousValue} as RefresherSettings}
+            }));
 
             try {
                 await moduleSettingStorage(module, key).setValue(previousValue as string | number | boolean);
@@ -113,7 +114,7 @@ export function useSettings() {
     };
 
     const moveToModuleTab = (moduleName: string) => {
-        nextTick(() => {
+        requestAnimationFrame(() => {
             const app = document.querySelector<HTMLElement>("#refresher-app");
             if (!app) return;
 
@@ -141,9 +142,9 @@ export function useSettings() {
     };
 
     const updateModuleStatus = async (name: string, value: boolean) => {
-        if (modules.value[name]) {
-            modules.value[name].enable = value;
-        }
+        setModules((prev) =>
+            prev[name] ? {...prev, [name]: {...prev[name], enable: value}} : prev
+        );
         await moduleEnableStorage(name).setValue(value);
         await sendToAllDcTabs("updateModuleStatus", {name, value});
     };
@@ -151,9 +152,11 @@ export function useSettings() {
     return {
         modules,
         settings,
-        hasSettings,
-        hasModules,
-        modulesWithBasicSettings,
+        hasSettings: Object.keys(settings).length > 0,
+        hasModules: Object.keys(modules).length > 0,
+        modulesWithBasicSettings: Object.keys(settings).filter(
+            (module) => settings[module] && settingsCount(settings[module]) > 0
+        ),
         updateUserSetting,
         updateModuleStatus,
         typeWrap,

@@ -5,63 +5,68 @@ import {
     TYPE_NAMES as BLOCK_TYPE_NAMES,
     watchBlockStorages
 } from "@/core/block";
-import {onMounted, reactive, ref} from "vue";
+import {useCallback, useEffect, useState} from "react";
 import {copyToClipboard, parseImportData} from "../utils/io";
 
-export function useBlocks() {
-    const blocks = reactive<{ [key in RefresherBlockType]: RefresherBlockValue[] }>({
-        NICK: [],
-        ID: [],
-        IP: [],
-        TITLE: [],
-        TEXT: [],
-        COMMENT: [],
-        DCCON: [],
-        TAB: []
-    });
-    const blockModes = ref<Partial<Record<RefresherBlockType, RefresherBlockDetectMode>>>({});
+export interface BlockFormData {
+    content: string;
+    isRegex: boolean;
+    gallery: string;
+    mode: RefresherBlockDetectMode | "NONE";
+}
 
-    const showBlockDialog = ref(false);
-    const currentBlockType = ref<RefresherBlockType>("NICK");
-    const blockFormData = reactive<{
-        content: string;
-        isRegex: boolean;
-        gallery: string;
-        mode: RefresherBlockDetectMode | "NONE";
-    }>({
+const EMPTY_BLOCKS: Record<RefresherBlockType, RefresherBlockValue[]> = {
+    NICK: [],
+    ID: [],
+    IP: [],
+    TITLE: [],
+    TEXT: [],
+    COMMENT: [],
+    DCCON: [],
+    TAB: []
+};
+
+export function useBlocks() {
+    const [blocks, setBlocks] = useState(EMPTY_BLOCKS);
+    const [blockModes, setBlockModes] = useState<Partial<Record<RefresherBlockType, RefresherBlockDetectMode>>>({});
+
+    const [showBlockDialog, setShowBlockDialog] = useState(false);
+    const [currentBlockType, setCurrentBlockType] = useState<RefresherBlockType>("NICK");
+    const [blockFormData, setBlockFormData] = useState<BlockFormData>({
         content: "",
         isRegex: false,
         gallery: "",
         mode: "NONE"
     });
 
-    onMounted(() => {
+    useEffect(() => {
         watchBlockStorages(
             (type, list) => {
-                blocks[type] = list;
+                setBlocks((prev) => ({...prev, [type]: list}));
             },
             (type, mode) => {
-                blockModes.value[type] = mode;
+                setBlockModes((prev) => ({...prev, [type]: mode}));
             }
         );
-    });
+    }, []);
 
     const closeBlockDialog = () => {
-        showBlockDialog.value = false;
+        setShowBlockDialog(false);
     };
 
     const openBlockDialog = (type: RefresherBlockType) => {
-        currentBlockType.value = type;
-        blockFormData.content = "";
-        blockFormData.isRegex = false;
-        blockFormData.gallery = "";
-        blockFormData.mode = "NONE";
-        showBlockDialog.value = true;
+        setCurrentBlockType(type);
+        setBlockFormData({content: "", isRegex: false, gallery: "", mode: "NONE"});
+        setShowBlockDialog(true);
+    };
+
+    const updateBlockForm = (patch: Partial<BlockFormData>) => {
+        setBlockFormData((prev) => ({...prev, ...patch}));
     };
 
     const confirmAddBlock = async () => {
         if (!blockFormData.content.trim()) {
-            alert(`${BLOCK_TYPE_NAMES[currentBlockType.value]} 값을 입력해주세요.`);
+            alert(`${BLOCK_TYPE_NAMES[currentBlockType]} 값을 입력해주세요.`);
             return;
         }
 
@@ -80,11 +85,9 @@ export function useBlocks() {
         }
 
         // core block.add(removeExists)와 동일하게 같은 content는 교체
-        blocks[currentBlockType.value] = blocks[currentBlockType.value].filter(
-            (v) => v.content !== blockFormData.content.trim()
-        );
+        const next = blocks[currentBlockType].filter((v) => v.content !== blockFormData.content.trim());
 
-        blocks[currentBlockType.value].push({
+        next.push({
             content: blockFormData.content.trim(),
             isRegex: blockFormData.isRegex,
             extra: extra.length ? extra.join(" ") : undefined,
@@ -92,18 +95,20 @@ export function useBlocks() {
             mode: blockFormData.mode === "NONE" ? undefined : blockFormData.mode
         });
 
-        await blockStorage[currentBlockType.value].setValue(structuredClone(blocks[currentBlockType.value]));
+        setBlocks((prev) => ({...prev, [currentBlockType]: next}));
+        await blockStorage[currentBlockType].setValue(structuredClone(next));
         closeBlockDialog();
     };
 
     const removeBlockedUser = async (key: RefresherBlockType, index: number) => {
-        blocks[key].splice(index, 1);
-        await blockStorage[key].setValue(structuredClone(blocks[key]));
+        const next = blocks[key].filter((_, i) => i !== index);
+        setBlocks((prev) => ({...prev, [key]: next}));
+        await blockStorage[key].setValue(structuredClone(next));
     };
 
     const removeAllBlockedUser = async (key: RefresherBlockType) => {
         if (!confirm(`${BLOCK_TYPE_NAMES[key]} 차단 목록을 모두 삭제할까요?`)) return;
-        blocks[key] = [];
+        setBlocks((prev) => ({...prev, [key]: []}));
         await blockStorage[key].setValue([]);
     };
 
@@ -118,19 +123,22 @@ export function useBlocks() {
         if (!result) return;
 
         if (blocks[key] && blocks[key][index]) {
-            blocks[key][index].content = result;
-        } else {
-            return;
+            const next = blocks[key].map((v, i) => (i === index ? {...v, content: result} : v));
+            setBlocks((prev) => ({...prev, [key]: next}));
+            await blockStorage[key].setValue(structuredClone(next));
         }
-        await blockStorage[key].setValue(structuredClone(blocks[key]));
     };
 
     const editBlockMode = async () => {
         for (const type of BLOCK_TYPES) {
-            const mode = blockModes.value[type];
+            const mode = blockModes[type];
             if (mode) await blockModeStorage[type].setValue(mode);
         }
     };
+
+    const setBlockMode = useCallback((type: RefresherBlockType, mode: RefresherBlockDetectMode) => {
+        setBlockModes((prev) => ({...prev, [type]: mode}));
+    }, []);
 
     const exportBlock = () => copyToClipboard(blocks);
 
@@ -147,8 +155,6 @@ export function useBlocks() {
             const target = normalizeBlockList(blocks[type]);
             if (!Array.isArray(value)) continue;
 
-            blocks[type] = target;
-
             for (const block of normalizeBlockList(value)) {
                 if (
                     target.some((v) => v.content === block.content) &&
@@ -160,6 +166,7 @@ export function useBlocks() {
                 target.push(block);
             }
 
+            setBlocks((prev) => ({...prev, [type]: [...target]}));
             await blockStorage[type].setValue(structuredClone(target));
         }
 
@@ -169,12 +176,14 @@ export function useBlocks() {
     return {
         blocks,
         blockModes,
+        setBlockMode,
         blockKeyNames: BLOCK_TYPE_NAMES,
         blockDetectModeTypeNames: BLOCK_DETECT_MODE_TYPE_NAMES,
         blockTypes: BLOCK_TYPES,
         showBlockDialog,
         currentBlockType,
         blockFormData,
+        updateBlockForm,
         openBlockDialog,
         closeBlockDialog,
         confirmAddBlock,
