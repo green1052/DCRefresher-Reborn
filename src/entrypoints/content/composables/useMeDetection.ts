@@ -1,4 +1,4 @@
-import {onBeforeUnmount, ref, type Ref} from "vue";
+import {useEffect, useState} from "react";
 
 import eventBus from "@/core/eventbus";
 import {getLoggedInUserInfo} from "@/utils/user";
@@ -8,41 +8,37 @@ interface UseMeDetectionOptions {
     postUser?: string;
 }
 
-interface UseMeDetectionReturn {
-    me: Ref<boolean>;
-}
+export function useMeDetection({userId, postUser}: UseMeDetectionOptions): { me: boolean } {
+    const [me, setMe] = useState(false);
 
-export function useMeDetection({userId, postUser}: UseMeDetectionOptions): UseMeDetectionReturn {
-    const me = ref(false);
-    let eventBusUuid: (() => void) | null = null;
-
-    const setup = () => {
+    useEffect(() => {
         if (!userId) return;
 
         // getLoggedInUserInfo가 로그인 박스에서 gallog ID를 이미 추출한다.
         const fixed = getLoggedInUserInfo();
+
+        let matched = false;
         if (fixed?.id) {
-            me.value = fixed.id === userId;
+            matched = fixed.id === userId;
+            setMe(matched);
         }
 
-        if (!me.value && postUser) {
-            me.value = postUser === userId;
-        }
+        let eventBusUuid: (() => void) | null = null;
 
-        if (!me.value && !postUser) {
+        if (!matched && postUser) {
+            setMe(postUser === userId);
+        } else if (!matched && !postUser) {
             eventBusUuid = eventBus.on("RefresherPostDataLoaded", (obj) => {
-                me.value = obj.user?.id === userId;
+                setMe(obj.user?.id === userId);
             });
         }
-    };
 
-    setup();
-
-    onBeforeUnmount(() => {
-        if (eventBusUuid) {
-            eventBusUuid();
-        }
-    });
+        return () => {
+            if (eventBusUuid) {
+                eventBusUuid();
+            }
+        };
+    }, [userId, postUser]);
 
     return {me};
 }

@@ -1,6 +1,7 @@
-import {createApp} from "vue";
+import {createRoot} from "react-dom/client";
+import {flushSync} from "react-dom";
 
-import Toast, {type ToastLevel} from "@/components/toast.vue";
+import Toast, {type ToastLevel, toastApiHolder} from "@/components/toast";
 
 const div = document.createElement("div");
 div.className = "refresher-toast";
@@ -13,22 +14,22 @@ type PendingToast = {
     onClick?: ToastClickHandler;
 };
 
-type ToastExposed = {
-    show: (content: string, type: ToastLevel, autoClose: number, onClick?: ToastClickHandler) => void;
-    hide: () => void;
-    isOpen: () => boolean;
-};
-
-let instance: ToastExposed | null = null;
+let instance: { show: (content: string, type: ToastLevel, autoClose: number, onClick?: ToastClickHandler) => void; hide: () => void; isOpen: () => boolean } | null = null;
 const pendingToasts: PendingToast[] = [];
 
 const mountToast = () => {
     if (instance || !document.body) return;
     document.body.appendChild(div);
-    instance = createApp(Toast).mount(div) as unknown as ToastExposed;
+
+    const root = createRoot(div);
+    flushSync(() => {
+        root.render(<Toast/>);
+    });
+
+    instance = toastApiHolder.current;
 
     for (const toast of pendingToasts.splice(0, pendingToasts.length)) {
-        instance.show(toast.content, toast.type, toast.autoClose, toast.onClick);
+        instance?.show(toast.content, toast.type, toast.autoClose, toast.onClick);
     }
 };
 

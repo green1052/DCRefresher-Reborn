@@ -1,6 +1,7 @@
-import {type App, createApp, reactive} from "vue";
+import {type Root, createRoot} from "react-dom/client";
+import {flushSync} from "react-dom";
 
-import frameRoot from "./components/frame/frameComponent.vue";
+import FrameComponent from "./components/frame/frameComponent";
 import type {User} from "@/utils/user";
 
 export interface FrameOptions {
@@ -86,6 +87,8 @@ const createInitialState = (): {
     }
 });
 
+const stateKeys = new Set(Object.keys(createInitialState()));
+
 export class PreviewFrame {
     readonly options: FrameOptions;
     readonly state: ReturnType<typeof createInitialState>;
@@ -101,11 +104,15 @@ export class PreviewFrame {
     declare collapse: boolean | undefined;
     declare data: FrameData;
 
-    private closeHandlers = new Set<CloseHandler>();
+    private version = 0;
+    private readonly listeners = new Set<() => void>();
+    private readonly closeHandlers = new Set<CloseHandler>();
+    // frame.data.load = true 같은 중첩 쓰기도 구독자에게 알린다
+    private dataProxy: FrameData;
 
     constructor(options: FrameOptions = {}) {
         this.options = options;
-        this.state = reactive(createInitialState());
+        this.state = createInitialState();
         this.functions = {
             vote: noopAsyncResult,
             share: noopAsyncResult,
@@ -115,22 +122,60 @@ export class PreviewFrame {
             writeComment: noopAsyncResult,
             deleteComment: noopAsyncResult
         };
+        this.dataProxy = this.wrapData(this.state.data);
 
-        const stateKeys = new Set(Object.keys(this.state));
+        const self = this;
         return new Proxy(this, {
             get(target, prop, receiver) {
+                if (prop === "data") return self.dataProxy;
                 if (typeof prop === "string" && stateKeys.has(prop)) {
-                    return Reflect.get(target.state, prop, target.state);
+                    return Reflect.get(target.state, prop);
                 }
                 return Reflect.get(target, prop, receiver);
             },
             set(target, prop, value, receiver) {
+                if (prop === "data") {
+                    target.state.data = value as FrameData;
+                    self.dataProxy = self.wrapData(target.state.data);
+                    self.notify();
+                    return true;
+                }
                 if (typeof prop === "string" && stateKeys.has(prop)) {
-                    return Reflect.set(target.state, prop, value, target.state);
+                    const result = Reflect.set(target.state, prop, value);
+                    self.notify();
+                    return result;
                 }
                 return Reflect.set(target, prop, value, receiver);
             }
+        }) as PreviewFrame;
+    }
+
+    private wrapData(data: FrameData): FrameData {
+        const self = this;
+        return new Proxy(data, {
+            set(target, prop, value, receiver) {
+                const result = Reflect.set(target, prop, value, receiver);
+                self.notify();
+                return result;
+            }
         });
+    }
+
+    // useSyncExternalStore용 구독 API
+    subscribe = (listener: () => void): (() => void) => {
+        this.listeners.add(listener);
+        return () => {
+            this.listeners.delete(listener);
+        };
+    };
+
+    getSnapshot = (): number => this.version;
+
+    private notify(): void {
+        this.version++;
+        for (const listener of this.listeners) {
+            listener();
+        }
     }
 
     // 초기 상태로 일괄 리셋 (팩토리 재사용으로 자동화)
@@ -147,6 +192,7 @@ export class PreviewFrame {
             collapse: initial.collapse
         });
         Object.assign(this.state.data, initial.data);
+        this.notify();
     }
 
     onClose(handler: CloseHandler): void {
@@ -180,7 +226,7 @@ export default class Frame {
     readonly frames: PreviewFrame[];
     readonly app: FrameScrollApi;
     private readonly rootElement: HTMLElement;
-    private readonly vueApp: App<Element>;
+    private readonly root: Root;
 
     constructor(children: FrameOptions[], option: FrameStackOption) {
         if (document.readyState === "loading") {
@@ -192,17 +238,24 @@ export default class Frame {
         this.rootElement = document.createElement("refresher-frame-outer");
         document.body.appendChild(this.rootElement);
 
-        this.vueApp = createApp(frameRoot, {
-            frames: this.frames,
-            option
+        const apiRef: { current: FrameScrollApi | null } = {current: null};
+
+        this.root = createRoot(this.rootElement);
+        flushSync(() => {
+            this.root.render(
+                <FrameComponent
+                    apiRef={apiRef}
+                    frames={this.frames}
+                    option={option}
+                />
+            );
         });
 
-        const mounted = this.vueApp.mount(this.rootElement) as unknown as FrameScrollApi;
-        this.app = mounted;
+        this.app = apiRef.current as FrameScrollApi;
     }
 
     destroy(): void {
-        this.vueApp.unmount();
+        this.root.unmount();
         this.rootElement.remove();
     }
 }

@@ -1,0 +1,80 @@
+@use "@/assets/styles/tokens" as *;
+
+.refresher-frame-outer {
+    display: flex;
+    left: 0;
+    margin: 0;
+    min-height: 100%;
+    opacity: 0;
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: $z-tooltip;
+
+    &.background {
+        background-color: var(--refresher-bg-overlay);
+    }
+
+    &.blur {
+        backdrop-filter: blur(5px) saturate(150%);
+    }
+
+    &.center {
+        align-items: center;
+        justify-content: center;
+    }
+
+    &.fadeIn {
+        opacity: 1;
+        transition: 0.6s opacity $ease-out-expo;
+
+        .refresher-frame {
+            transform: translateY(0px);
+            transition: 0.5s transform $ease-out-expo;
+        }
+    }
+
+    &.fadeOut {
+        opacity: 0;
+        pointer-events: none;
+        transition: 0.25s opacity $ease-out-expo;
+
+        .refresher-frame {
+            transform: translateY(10px);
+            transition: 0.25s transform $ease-out-expo;
+        }
+    }
+
+    &.stack {
+        display: block;
+        min-height: 100%;
+    }
+}
+
+.refresher-group {
+    display: block;
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    position: absolute;
+    width: 100%;
+}
+
+#scroll {
+    bottom: 5px;
+    display: grid;
+    position: fixed;
+    right: 0;
+    user-select: none;
+    width: 100px;
+    z-index: $z-tooltip;
+
+    .scroll-icon {
+        color: var(--refresher-text);
+        cursor: pointer;
+        height: 30px;
+        margin: auto;
+        width: 30px;
+    }
+}

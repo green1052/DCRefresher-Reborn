@@ -1,0 +1,51 @@
+@use "@/assets/styles/tokens" as *;
+
+.refresher-frame {
+    background-color: var(--refresher-bg);
+    border-radius: $radius-md;
+    box-shadow: $shadow-2dp;
+    display: block;
+    max-width: 700px;
+    min-height: 100px;
+    min-width: 100px;
+    overflow: hidden;
+    padding: 3vh 2.5vw;
+    pointer-events: all;
+    position: absolute;
+    transform: translateY(10px);
+    width: 70%;
+
+    @media screen and (max-width: 900px) {
+        max-width: 90%;
+        padding: 3vh 4vw;
+    }
+
+    &.blur {
+        backdrop-filter: blur(5px) saturate(150%);
+        background-color: var(--refresher-bg-blur);
+    }
+
+    &.center {
+        margin: auto;
+    }
+
+    &.preview {
+        min-height: 100px;
+        min-width: 30vw;
+    }
+
+    &.relative {
+        margin-bottom: 10px;
+        position: relative;
+    }
+
+    &.x-center {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    &.y-center {
+        margin-bottom: auto;
+        margin-top: auto;
+    }
+}
