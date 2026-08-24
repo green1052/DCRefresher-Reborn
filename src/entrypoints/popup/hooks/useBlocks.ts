@@ -40,7 +40,7 @@ export function useBlocks() {
     });
 
     useEffect(() => {
-        watchBlockStorages(
+        return watchBlockStorages(
             (type, list) => {
                 setBlocks((prev) => ({...prev, [type]: list}));
             },

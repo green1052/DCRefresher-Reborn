@@ -12,7 +12,7 @@ export function useMemos() {
     });
 
     useEffect(() => {
-        watchMemoStorages((type, loaded) => {
+        return watchMemoStorages((type, loaded) => {
             setMemos((prev) => ({...prev, [type]: loaded}));
         });
     }, []);
