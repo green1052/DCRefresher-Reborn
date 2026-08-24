@@ -43,7 +43,7 @@ export default {
     name: "미리보기",
     description: "글을 오른쪽 클릭 했을때 미리보기 창을 만들어줍니다.",
     url: /\/board\/(view|lists)/,
-    status: {},
+    status: {} as PreviewSettingsMap extends Record<string, RefresherSettings> ? { [K in keyof PreviewSettingsMap]: PreviewSettingsMap[K]["default"] } : never,
     memory: {
         controller: null
     },
@@ -229,7 +229,7 @@ export default {
         this.memory.controller?.destroy();
         this.memory.controller = null;
     }
-} as unknown as RefresherModule<{
+} as RefresherModule<{
     data: {};
     memory: PreviewMemory;
     settings: PreviewSettingsMap;
