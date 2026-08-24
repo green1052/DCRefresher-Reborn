@@ -1,0 +1,18 @@
+// Form controls / cards 토큰 (popup 전용 — content css에 중복 방출 방지)
+
+:root {
+    --refresher-green: #4caf50;
+    --refresher-green-ring: rgba(76, 175, 80, 0.2);
+    --refresher-control-track: #e0e0e0;
+    --refresher-control-thumb: #fff;
+    --refresher-control-thumb-shadow: rgba(0, 0, 0, 0.2);
+    --refresher-field-bg: #fff;
+    --refresher-field-border: #aaa;
+    --refresher-field-text: #000;
+    --refresher-field-disabled-bg: #f5f5f5;
+    --refresher-field-disabled-text: #999;
+    --refresher-option-hover: #f0f0f0;
+    --refresher-text-strong: #333;
+    --refresher-card-bg: #f8f8f8;
+    --refresher-highlight: #afdbff;
+}

@@ -1,0 +1,90 @@
+@use "../../../assets/styles/variables" as *;
+
+// 모듈 카드 / 빈 상태 / 단축키 목록
+
+.refresher-module {
+    border-radius: $radius-md;
+    display: flex;
+    margin-bottom: 5px;
+    padding: 13px 23px;
+    position: relative;
+
+    &.highlight {
+        animation: highlight-blink 1s;
+    }
+
+    .left {
+        letter-spacing: -0.66px;
+
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .desc {
+            font-size: 14px;
+        }
+
+        .mute {
+            color: var(--refresher-text-tertiary);
+            font-size: 12px;
+            letter-spacing: -0.66px;
+
+            .link {
+                border-bottom: 1px solid var(--refresher-text-tertiary);
+                cursor: pointer;
+            }
+        }
+    }
+
+    .right {
+        margin-bottom: auto;
+        margin-left: auto;
+        margin-top: auto;
+    }
+}
+
+.refresher-no-modules {
+    margin-left: 15px;
+    margin-top: 160px;
+
+    h3 {
+        color: var(--refresher-text-tertiary);
+        font-size: 28px;
+        letter-spacing: -2.66px;
+        line-height: 1;
+    }
+
+    p {
+        font-size: 16px;
+        font-weight: bold;
+    }
+}
+
+.shortcut-lists {
+    margin-bottom: 20px;
+}
+
+.refresher-shortcut {
+    border-radius: $radius-md;
+    display: flex;
+    margin-bottom: 5px;
+    padding: 8px 16px;
+
+    .key {
+        display: flex;
+        margin-left: auto;
+
+        .refresher-bubble {
+            margin-right: 5px;
+
+            &:last-child {
+                margin-right: unset;
+            }
+        }
+    }
+
+    &:last-child {
+        margin-bottom: unset;
+    }
+}
