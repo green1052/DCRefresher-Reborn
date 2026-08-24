@@ -44,17 +44,24 @@ export const setStore = (module: string, key: string, value: string | number | b
     setting.value = normalizedValue;
 };
 
-export const load = async (module: string, key: string, settings: RefresherSettings): Promise<unknown> => {
+export const load = async (
+    module: string,
+    key: string,
+    settings: RefresherSettings,
+    storedValue?: unknown
+): Promise<unknown> => {
     settingsStore[module] ??= {};
 
-    const storedValue = await moduleSettingStorage(module, key).getValue();
+    if (storedValue === undefined) {
+        storedValue = await moduleSettingStorage(module, key).getValue();
+    }
     const value = normalizeSettingValue(settings, storedValue ?? settings.default);
     settings.value = value;
 
     settingsStore[module][key] = settings;
 
     if (storedValue !== undefined && storedValue !== null && storedValue !== value) {
-        await moduleSettingStorage(module, key).setValue(value);
+        void moduleSettingStorage(module, key).setValue(value);
     }
 
     return value;

@@ -27,30 +27,28 @@ export function useSettings() {
                 const schema = await sendMessage("getSchema", undefined, {tabId: dcTab.id});
                 if (!schema) return;
 
+                // 스토리지 IPC를 한 번으로 줄인다.
+                const snapshot = await browser.storage.local.get(null);
+
                 const enableMap: ModuleSchemaMap = {};
                 const settingsMap: Record<string, Record<string, RefresherSettings>> = {};
 
-                await Promise.all(
-                    Object.entries(schema).map(async ([moduleName, moduleSchema]) => {
-                        settingsMap[moduleName] = moduleSchema.settings ?? {};
+                for (const [moduleName, moduleSchema] of Object.entries(schema)) {
+                    settingsMap[moduleName] = moduleSchema.settings ?? {};
 
-                        const enablePromise = moduleEnableStorage(moduleName).getValue();
+                    for (const [key, setting] of Object.entries(settingsMap[moduleName])) {
+                        const stored = snapshot[`refresher:module:${moduleName}:setting:${key}`];
+                        if (stored !== null && stored !== undefined) {
+                            settingsMap[moduleName][key] = {...setting, value: stored} as RefresherSettings;
+                        }
+                    }
 
-                        await Promise.all(
-                            Object.entries(settingsMap[moduleName]).map(async ([key, setting]) => {
-                                const stored = await moduleSettingStorage(moduleName, key).getValue();
-                                if (stored !== null && stored !== undefined) {
-                                    settingsMap[moduleName][key] = {...setting, value: stored} as RefresherSettings;
-                                }
-                            })
-                        );
-
-                        enableMap[moduleName] = {
-                            ...moduleSchema,
-                            enable: (await enablePromise) ?? moduleSchema.default_enable
-                        };
-                    })
-                );
+                    enableMap[moduleName] = {
+                        ...moduleSchema,
+                        enable: (snapshot[`refresher:module:${moduleName}:enable`] as boolean | null | undefined) ??
+                            moduleSchema.default_enable
+                    };
+                }
 
                 setSettings(settingsMap);
                 setModules(enableMap);

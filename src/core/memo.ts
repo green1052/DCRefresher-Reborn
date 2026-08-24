@@ -43,13 +43,20 @@ export const normalizeMemoMap = (value: unknown): Record<string, RefresherMemoVa
 
 // 메모 스토리지의 초기 로드 + 변경 감시를 등록한다.
 // 콘텐츠 스크립트(core/memo.ts)와 팝업(useMemos)이 같은 로직을 공유한다.
+// 반환값: 감시 해제 함수 (팝업 등 이중 등록 방지용 클린업).
 export const watchMemoStorages = (
     onMemo: (type: RefresherMemoType, memos: Record<string, RefresherMemoValue>) => void
-): void => {
+): (() => void) => {
+    const unwatchers: (() => void)[] = [];
+
     for (const type of MEMO_TYPES) {
         void memoStorage[type].getValue().then((value) => onMemo(type, normalizeMemoMap(value)));
-        memoStorage[type].watch((value) => onMemo(type, normalizeMemoMap(value)));
+        unwatchers.push(memoStorage[type].watch((value) => onMemo(type, normalizeMemoMap(value))));
     }
+
+    return () => {
+        for (const unwatch of unwatchers) unwatch();
+    };
 };
 
 watchMemoStorages((type, memos) => {

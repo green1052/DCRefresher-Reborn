@@ -120,17 +120,24 @@ export const normalizeBlockMode = (
 
 // 차단 목록/모드 스토리지의 초기 로드 + 변경 감시를 등록한다.
 // 콘텐츠 스크립트(core/block.ts)와 팝업(useBlocks)이 같은 로직을 공유한다.
+// 반환값: 감시 해제 함수 (팝업 등 이중 등록 방지용 클린업).
 export const watchBlockStorages = (
     onList: (type: RefresherBlockType, blocks: RefresherBlockValue[]) => void,
     onMode: (type: RefresherBlockType, mode: RefresherBlockDetectMode) => void
-): void => {
+): (() => void) => {
+    const unwatchers: (() => void)[] = [];
+
     for (const type of BLOCK_TYPES) {
         void blockStorage[type].getValue().then((value) => onList(type, normalizeBlockList(value)));
-        blockStorage[type].watch((value) => onList(type, normalizeBlockList(value)));
+        unwatchers.push(blockStorage[type].watch((value) => onList(type, normalizeBlockList(value))));
 
         void blockModeStorage[type].getValue().then((value) => onMode(type, normalizeBlockMode(value, "SAME")));
-        blockModeStorage[type].watch((value) => onMode(type, normalizeBlockMode(value, "SAME")));
+        unwatchers.push(blockModeStorage[type].watch((value) => onMode(type, normalizeBlockMode(value, "SAME"))));
     }
+
+    return () => {
+        for (const unwatch of unwatchers) unwatch();
+    };
 };
 
 // Initialize cache and watchers from wxt/storage

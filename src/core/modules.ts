@@ -79,6 +79,13 @@ const isSettingUpdatePayload = (value: unknown): value is SettingUpdatePayload =
     );
 };
 
+// 스타트업 스토리지 IPC를 한 번으로 줄인다 (키: refresher:module:*).
+let storageSnapshot: Promise<Record<string, unknown>> | null = null;
+const getStorageSnapshot = (): Promise<Record<string, unknown>> => {
+    storageSnapshot ??= browser.storage.local.get(null);
+    return storageSnapshot;
+};
+
 export const modules = {
     lists: (): ModuleStore => moduleStore,
     load: (module: unknown): Promise<void> =>
@@ -88,60 +95,50 @@ export const modules = {
         if (!mod) throw new Error("Module is not defined.");
         if (moduleStore[mod.name]) throw new Error(`${mod.name} is already registered.`);
 
-        const promises: Promise<void>[] = [];
+        const snapshot = await getStorageSnapshot();
 
-        promises.push(
-            moduleEnableStorage(mod.name).getValue().then((enable) => {
-                if (enable === null || enable === undefined) {
-                    moduleEnableStorage(mod.name).setValue(mod.default_enable);
-                    mod.enable = mod.default_enable;
-                    return;
-                }
-
-                mod.enable = enable;
-            })
-        );
+        const enable = snapshot[`refresher:module:${mod.name}:enable`] as boolean | null | undefined;
+        if (enable === null || enable === undefined) {
+            void moduleEnableStorage(mod.name).setValue(mod.default_enable);
+            mod.enable = mod.default_enable;
+        } else {
+            mod.enable = enable;
+        }
 
         if (typeof mod.settings === "object") {
             (mod as { status?: Record<string, unknown> }).status ??= {};
 
-            promises.push(
-                ...Object.entries(mod.settings).map(async ([key, value]) => {
-                    const loaded = await settings.load(mod.name, key, value);
-                    (mod.status as Record<string, unknown>)[key] = loaded;
-                })
-            );
+            for (const [key, value] of Object.entries(mod.settings)) {
+                const stored = snapshot[`refresher:module:${mod.name}:setting:${key}`];
+                const loaded = await settings.load(mod.name, key, value, stored);
+                (mod.status as Record<string, unknown>)[key] = loaded;
+            }
         }
 
         if (typeof mod.data === "object") {
-            promises.push(
-                moduleDataStorage(mod.name).getValue().then((data) => {
-                    const currentData = isRecord(data)
-                        ? data
-                        : isRecord(mod.data)
-                            ? {...mod.data}
-                            : {};
+            const data = snapshot[`refresher:module:${mod.name}:data`];
+            const currentData = isRecord(data)
+                ? data
+                : isRecord(mod.data)
+                    ? {...mod.data}
+                    : {};
 
-                    mod.data = new Proxy(currentData, {
-                        set(target, p, newValue, receiver) {
-                            const result = Reflect.set(target, p, newValue, receiver);
-                            scheduleDataWrite(mod.name);
-                            return result;
-                        },
+            mod.data = new Proxy(currentData, {
+                set(target, p, newValue, receiver) {
+                    const result = Reflect.set(target, p, newValue, receiver);
+                    scheduleDataWrite(mod.name);
+                    return result;
+                },
 
-                        deleteProperty(target, p) {
-                            const result = Reflect.deleteProperty(target, p);
-                            scheduleDataWrite(mod.name);
-                            return result;
-                        }
-                    });
-                })
-            );
+                deleteProperty(target, p) {
+                    const result = Reflect.deleteProperty(target, p);
+                    scheduleDataWrite(mod.name);
+                    return result;
+                }
+            });
         }
 
         moduleStore[mod.name] = mod;
-
-        await Promise.all(promises);
 
         if (!mod.enable || mod.url?.test(location.href) === false) return;
 
