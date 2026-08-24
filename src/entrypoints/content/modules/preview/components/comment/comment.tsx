@@ -1,5 +1,5 @@
 import {Check, ChevronDown, Reply, X} from "lucide-react";
-import {useMemo} from "react";
+import {memo, useMemo} from "react";
 
 import Timestamp from "@/components/timestamp";
 import UserComponent from "@/components/user";
@@ -33,7 +33,7 @@ function getIsAdmin(): boolean {
     return cachedIsAdmin;
 }
 
-export default function Comment({
+function Comment({
     comment,
     useWriteComment = false,
     postUser = "",
@@ -185,3 +185,5 @@ export default function Comment({
         </div>
     );
 }
+
+export default memo(Comment);

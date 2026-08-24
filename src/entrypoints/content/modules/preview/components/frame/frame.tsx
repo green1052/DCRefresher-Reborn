@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState, useSyncExternalStore} from "react";
+import {useCallback, useEffect, useRef, useState, useSyncExternalStore} from "react";
 
 import Loader from "@/components/loader";
 import PreviewButton from "@/components/previewButton";
@@ -73,14 +73,14 @@ export default function Frame({frame, index, registerIncrement}: Props) {
     const isLastReply = (comment: DcinsideCommentObject): boolean =>
         comment.depth === 1 && !!comment.c_no && lastReplyByParent[comment.c_no] === comment.no;
 
-    const toggleCollapse = (no: string) => {
+    const toggleCollapse = useCallback((no: string) => {
         setCollapsedParents((prev) => {
             const next = new Set(prev);
             if (next.has(no)) next.delete(no);
             else next.add(no);
             return next;
         });
-    };
+    }, []);
 
     const visibleComments: DcinsideCommentObject[] = collapsedParents.size === 0
         ? allComments
