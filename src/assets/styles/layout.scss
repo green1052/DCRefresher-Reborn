@@ -126,7 +126,9 @@
     .ad_left_wing_list_top,
     .ad_right_wing_list_top,
     .ad_left_wing_list_top + div,
-    div:has(> a[href*="_wing_"]) {
+    div:has(> a[href*="_wing_"]),
+    div:has(> ins.adsbygoogle),
+    div:has(> ins.kakao_ad_area) {
         display: none !important;
     }
 
