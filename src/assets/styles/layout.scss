@@ -122,7 +122,11 @@
     .ad-layer,
     #ad-layer-closer,
     .ad-layer-closer,
-    #hdline_ban {
+    #hdline_ban,
+    .ad_left_wing_list_top,
+    .ad_right_wing_list_top,
+    .ad_left_wing_list_top + div,
+    div:has(> a[href*="_wing_"]) {
         display: none !important;
     }
 
