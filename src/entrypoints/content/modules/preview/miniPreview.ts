@@ -13,6 +13,9 @@ export interface MiniPreviewState {
     shouldOutHandle: boolean;
     cursorOut: boolean;
     isHovered: boolean;
+    closeTimeout: number;
+    interaction: boolean;
+    lastPostId: string;
 }
 
 export function createMiniPreview(): MiniPreviewState {
@@ -25,14 +28,24 @@ export function createMiniPreview(): MiniPreviewState {
         lastTimeout: 0,
         shouldOutHandle: false,
         cursorOut: false,
-        isHovered: false
+        isHovered: false,
+        closeTimeout: 0,
+        interaction: false,
+        lastPostId: ""
     };
 
     state.element.addEventListener("mouseenter", () => {
         state.isHovered = true;
+        miniPreviewCancelClose(state);
     });
     state.element.addEventListener("mouseleave", () => {
         state.isHovered = false;
+
+        // 요소 mouseleave는 이미 지나갔으므로 툴팁을 벗어나면 여기서 닫아야 한다.
+        // 요소로 바로 복귀하는 경우를 위해 유예를 둔다.
+        if (state.interaction && !state.element.classList.contains("hide")) {
+            scheduleGraceClose(state);
+        }
     });
 
     return state;
@@ -83,10 +96,16 @@ export function miniPreviewCreate(
     const preData = getRelevantDataFn(ev);
     if (!preData) return;
 
+    // 같은 글의 툴팁이 이미 열려 있으면 재요청/재배치하지 않음 (#257)
+    if (!state.element.classList.contains("hide") && preData.id && preData.id === state.lastPostId) return;
+    state.lastPostId = preData.id;
+
     state.element.classList.remove("hide");
     state.element.classList.add("refresher-mini-preview");
 
     if (!state.init) {
+        state.interaction = interaction;
+
         if (interaction) {
             state.element.style.pointerEvents = "auto";
             state.element.style.overflow = "auto";
@@ -135,8 +154,34 @@ export function miniPreviewMove(state: MiniPreviewState, ev: MouseEvent, use: bo
     state.element.style.transform = `translate(${x}px, ${y}px)`;
 }
 
-export function miniPreviewClose(state: MiniPreviewState, use: boolean): void {
+// 요소 mouseleave가 툴팁 mouseenter보다 먼저 발생하는 race 방지용 유예 (#257)
+function scheduleGraceClose(state: MiniPreviewState): void {
+    if (state.closeTimeout) return;
+
+    state.cursorOut = true;
+    state.closeTimeout = window.setTimeout(() => {
+        state.closeTimeout = 0;
+        miniPreviewClose(state, true, false);
+    }, 150);
+}
+
+export function miniPreviewCancelClose(state: MiniPreviewState): void {
+    if (state.closeTimeout) {
+        window.clearTimeout(state.closeTimeout);
+        state.closeTimeout = 0;
+    }
+}
+
+export function miniPreviewClose(state: MiniPreviewState, use: boolean, interaction = false): void {
     if (state.isHovered) return;
+
+    // 상호작용 툴팁은 커서가 요소에서 툴팁으로 이동하는 사이 닫히지 않도록 유예를 둔다.
+    if (interaction && !state.element.classList.contains("hide")) {
+        scheduleGraceClose(state);
+        return;
+    }
+
+    miniPreviewCancelClose(state);
 
     state.cursorOut = true;
 
