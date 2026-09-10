@@ -1,4 +1,4 @@
-import {miniPreviewClose, miniPreviewCreate, miniPreviewMove, type MiniPreviewState} from "./miniPreview";
+import {miniPreviewCancelClose, miniPreviewClose, miniPreviewCreate, miniPreviewMove, type MiniPreviewState} from "./miniPreview";
 import type {PostCache} from "./cache";
 import type {PreviewStatus} from "./controller";
 
@@ -145,6 +145,9 @@ export function setupDelegatedPreviewHandlers(
         const element = matchElement(ev);
         if (!element) return;
 
+        // 요소/툴팁 사이 이동 시 닫기 유예 취소
+        miniPreviewCancelClose(ctx.miniPreview);
+
         if (
             !ctx.status.tooltipMode ||
             element.closest(".us-post")?.classList.contains("refresherBlur") ||
@@ -178,7 +181,7 @@ export function setupDelegatedPreviewHandlers(
         const element = matchElement(ev);
         if (element && (!ev.relatedTarget || !element.contains(ev.relatedTarget as Node))) {
             clearTimer(element);
-            miniPreviewClose(ctx.miniPreview, ctx.status.tooltipMode);
+            miniPreviewClose(ctx.miniPreview, ctx.status.tooltipMode, ctx.status.tooltipInteraction);
         }
     }, {signal});
 }
