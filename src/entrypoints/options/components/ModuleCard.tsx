@@ -1,4 +1,4 @@
-import {Card, Flex, Switch, Text} from "@radix-ui/themes";
+import * as Switch from "@radix-ui/react-switch";
 import {useEffect, useRef} from "react";
 
 import {useAppContext} from "../../popup/context";
@@ -23,21 +23,24 @@ export default function ModuleCard({name, desc, enabled}: Props) {
     }, [highlighted]);
 
     return (
-        <Card
+        <div
+            className="card"
             ref={rootRef}
-            size="2"
-            style={highlighted ? {outline: "2px solid var(--accent-a9)"} : undefined}
+            style={highlighted ? {outline: "2px solid var(--accent)"} : undefined}
         >
-            <Flex align="center" gap="3" justify="between">
+            <div className="row" style={{gap: 12, justifyContent: "space-between"}}>
                 <div>
-                    <Text as="div" size="3" weight="medium">{name}</Text>
-                    <Text as="div" color="gray" size="1">{desc}</Text>
+                    <div className="heading">{name}</div>
+                    <div className="text-muted">{desc}</div>
                 </div>
-                <Switch
+                <Switch.Root
                     checked={enabled}
+                    className="switch"
                     onCheckedChange={(value) => void settings.updateModuleStatus(name, value)}
-                />
-            </Flex>
-        </Card>
+                >
+                    <Switch.Thumb className="switch-thumb"/>
+                </Switch.Root>
+            </div>
+        </div>
     );
 }

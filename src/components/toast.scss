@@ -4,11 +4,11 @@ $tablet: 768px;
 $desktop: 1024px;
 
 .refresher-toast {
-    background-color: var(--color-panel-solid);
-    border: 1px solid var(--gray-a5);
+    background-color: #fff;
+    border: 1px solid transparent;
     border-radius: 13.3px;
     bottom: 5vh;
-    color: var(--gray-12);
+    color: #000;
     display: -webkit-flex;
     display: flex;
     height: 62px;
@@ -31,11 +31,11 @@ $desktop: 1024px;
     }
 
     &.hover:hover {
-        background-color: var(--gray-3);
+        background-color: rgb(249, 249, 249);
     }
 
     &.hover:active {
-        background-color: var(--gray-4);
+        background-color: rgb(233, 233, 233);
     }
 
     .contents,
@@ -93,13 +93,39 @@ $desktop: 1024px;
 }
 
 .refresher-toast[data-type="error"] {
-    background-color: var(--red-9);
+    background-color: #ff6464;
     color: #fff;
 }
 
 .refresher-toast[data-type="warning"] {
-    background-color: var(--amber-9);
+    background-color: #f7af15;
     color: #fff;
+}
+
+html:has(#css-darkmode) {
+    .refresher-toast {
+        background-color: #333;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: rgb(219, 219, 219);
+
+        &.hover:hover {
+            background-color: #393939;
+        }
+
+        &.hover:active {
+            background-color: #424242;
+        }
+    }
+
+    .refresher-toast[data-type="error"] {
+        background-color: #d41717;
+        color: #fff;
+    }
+
+    .refresher-toast[data-type="warning"] {
+        background-color: #eeb02b;
+        color: #000;
+    }
 }
 
 .refresher-toast::after {

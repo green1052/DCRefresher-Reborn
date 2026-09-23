@@ -1,4 +1,6 @@
-import {Button, Dialog, Flex, Select, Switch, Text, TextField} from "@radix-ui/themes";
+import * as Dialog from "@radix-ui/react-dialog";
+import * as Select from "@radix-ui/react-select";
+import * as Switch from "@radix-ui/react-switch";
 import {useEffect, useState} from "react";
 
 import type {BlockFormData} from "../../popup/hooks/useBlocks";
@@ -42,70 +44,87 @@ export default function BlockAddDialog() {
             }}
             open={showBlockDialog}
         >
-            <Dialog.Content maxWidth="480px">
-                <Dialog.Title>{blockKeyNames[currentBlockType]} 차단 추가</Dialog.Title>
+            <Dialog.Portal>
+                <Dialog.Overlay className="dialog-overlay"/>
+                <Dialog.Content className="dialog-content">
+                    <Dialog.Title className="dialog-title">
+                        {blockKeyNames[currentBlockType]} 차단 추가
+                    </Dialog.Title>
 
-                <Flex direction="column" gap="4" mt="4">
-                    <Flex align="center" gap="3" justify="between">
-                        <Text size="2" weight="medium">{blockKeyNames[currentBlockType]}</Text>
-                        <TextField.Root
-                            onChange={(ev) => patch({content: ev.target.value})}
-                            onKeyDown={(ev) => {
-                                if (ev.key === "Enter") confirm();
-                            }}
-                            placeholder={`${blockKeyNames[currentBlockType]} 값을 입력하세요`}
-                            size="2"
-                            style={{width: 260}}
-                            value={formData.content}
-                        />
-                    </Flex>
+                    <div className="dialog-body">
+                        <div className="row" style={{gap: 12, justifyContent: "space-between"}}>
+                            <div style={{fontSize: 13, fontWeight: 500}}>{blockKeyNames[currentBlockType]}</div>
+                            <input
+                                className="input"
+                                onChange={(ev) => patch({content: ev.target.value})}
+                                onKeyDown={(ev) => {
+                                    if (ev.key === "Enter") confirm();
+                                }}
+                                placeholder={`${blockKeyNames[currentBlockType]} 값을 입력하세요`}
+                                style={{width: 260}}
+                                value={formData.content}
+                            />
+                        </div>
 
-                    <Flex align="center" gap="3" justify="between">
-                        <Text size="2" weight="medium">정규식 사용</Text>
-                        <Switch
-                            checked={formData.isRegex}
-                            onCheckedChange={(value) => patch({isRegex: value})}
-                        />
-                    </Flex>
+                        <div className="row" style={{gap: 12, justifyContent: "space-between"}}>
+                            <div style={{fontSize: 13, fontWeight: 500}}>정규식 사용</div>
+                            <Switch.Root
+                                checked={formData.isRegex}
+                                className="switch"
+                                onCheckedChange={(value) => patch({isRegex: value})}
+                            >
+                                <Switch.Thumb className="switch-thumb"/>
+                            </Switch.Root>
+                        </div>
 
-                    <Flex align="center" gap="3" justify="between">
-                        <Text size="2" weight="medium">특정 갤러리 차단 (선택)</Text>
-                        <TextField.Root
-                            onChange={(ev) => patch({gallery: ev.target.value})}
-                            placeholder="갤러리 ID"
-                            size="2"
-                            style={{width: 260}}
-                            value={formData.gallery}
-                        />
-                    </Flex>
+                        <div className="row" style={{gap: 12, justifyContent: "space-between"}}>
+                            <div style={{fontSize: 13, fontWeight: 500}}>특정 갤러리 차단 (선택)</div>
+                            <input
+                                className="input"
+                                onChange={(ev) => patch({gallery: ev.target.value})}
+                                placeholder="갤러리 ID"
+                                style={{width: 260}}
+                                value={formData.gallery}
+                            />
+                        </div>
 
-                    <Flex align="center" gap="3" justify="between">
-                        <Text size="2" weight="medium">차단 모드</Text>
-                        <Select.Root
-                            onValueChange={(value) => patch({mode: value as RefresherBlockDetectMode | "NONE"})}
-                            size="2"
-                            value={formData.mode}
-                        >
-                            <Select.Trigger style={{width: 260}}/>
-                            <Select.Content>
-                                <Select.Item value="NONE">기본값</Select.Item>
-                                {Object.entries(blockDetectModeTypeNames).map(([key, label]) => (
-                                    <Select.Item key={key} value={key}>
-                                        {label}
-                                    </Select.Item>
-                                ))}
-                            </Select.Content>
-                        </Select.Root>
-                    </Flex>
+                        <div className="row" style={{gap: 12, justifyContent: "space-between"}}>
+                            <div style={{fontSize: 13, fontWeight: 500}}>차단 모드</div>
+                            <Select.Root
+                                onValueChange={(value) => patch({mode: value as RefresherBlockDetectMode | "NONE"})}
+                                value={formData.mode}
+                            >
+                                <Select.Trigger
+                                    aria-label="차단 모드"
+                                    className="select-trigger"
+                                    style={{width: 260}}
+                                >
+                                    <Select.Value/>
+                                </Select.Trigger>
+                                <Select.Portal>
+                                    <Select.Content className="select-content">
+                                        <Select.Viewport className="select-viewport">
+                                            <Select.Item className="select-item" value="NONE">기본값</Select.Item>
+                                            {Object.entries(blockDetectModeTypeNames).map(([key, label]) => (
+                                                <Select.Item className="select-item" key={key} value={key}>
+                                                    {label}
+                                                </Select.Item>
+                                            ))}
+                                        </Select.Viewport>
+                                    </Select.Content>
+                                </Select.Portal>
+                            </Select.Root>
+                        </div>
 
-                    <Flex gap="3" justify="end" mt="2">
-                        <Dialog.Close>
-                            <Button color="gray" variant="soft">취소</Button>
-                        </Dialog.Close>
-                        <Button onClick={confirm}>추가</Button>
-                    </Flex>
-                </Flex>
-            </Dialog.Content>
+                        <div className="dialog-actions" style={{marginTop: 0}}>
+                            <Dialog.Close asChild>
+                                <button className="btn btn-soft">취소</button>
+                            </Dialog.Close>
+                            <button className="btn" onClick={confirm}>추가</button>
+                        </div>
+                    </div>
+                </Dialog.Content>
+            </Dialog.Portal>
         </Dialog.Root>
     );
 }

@@ -1,4 +1,4 @@
-import {Button, Card, Flex, Heading, IconButton, Select, Text} from "@radix-ui/themes";
+import * as Select from "@radix-ui/react-select";
 import {Plus, X} from "lucide-react";
 
 import {useAppContext} from "../../popup/context";
@@ -22,55 +22,60 @@ export default function BlockTab() {
     } = blocks;
 
     return (
-        <Flex direction="column" gap="4" pt="4">
-            <Card size="2">
-                <Flex align="center" gap="3" mb="3">
-                    <Heading size="3">데이터 관리</Heading>
-                    <Button onClick={() => void exportBlock()} size="1" variant="soft">내보내기</Button>
-                    <Button onClick={() => void importBlock()} size="1" variant="soft">가져오기</Button>
-                </Flex>
+        <div className="col" style={{gap: 16, paddingTop: 16}}>
+            <div className="card">
+                <div className="row" style={{gap: 12, marginBottom: 12}}>
+                    <div className="heading">데이터 관리</div>
+                    <button className="btn btn-soft" onClick={() => void exportBlock()}>내보내기</button>
+                    <button className="btn btn-soft" onClick={() => void importBlock()}>가져오기</button>
+                </div>
 
-                <Heading size="3" mb="2">차단 모드</Heading>
-                <Flex direction="column" gap="2">
+                <div className="heading" style={{marginBottom: 8}}>차단 모드</div>
+                <div className="col" style={{gap: 8}}>
                     {blockTypes.map((key) => (
-                        <Flex align="center" gap="3" key={key}>
-                            <Text size="2" style={{width: 120}}>{blockKeyNames[key]}</Text>
+                        <div className="row" style={{gap: 12}} key={key}>
+                            <div style={{fontSize: 13, width: 120}}>{blockKeyNames[key]}</div>
                             <Select.Root
                                 onValueChange={(value) => setBlockMode(key, value as RefresherBlockDetectMode)}
-                                size="2"
                                 value={blockModes[key] ?? "SAME"}
                             >
-                                <Select.Trigger/>
-                                <Select.Content>
-                                    {Object.entries(blockDetectModeTypeNames).map(([modeKey, label]) => (
-                                        <Select.Item key={modeKey} value={modeKey}>
-                                            {label}
-                                        </Select.Item>
-                                    ))}
-                                </Select.Content>
+                                <Select.Trigger aria-label="차단 모드" className="select-trigger">
+                                    <Select.Value/>
+                                </Select.Trigger>
+                                <Select.Portal>
+                                    <Select.Content className="select-content">
+                                        <Select.Viewport className="select-viewport">
+                                            {Object.entries(blockDetectModeTypeNames).map(([modeKey, label]) => (
+                                                <Select.Item className="select-item" key={modeKey} value={modeKey}>
+                                                    {label}
+                                                </Select.Item>
+                                            ))}
+                                        </Select.Viewport>
+                                    </Select.Content>
+                                </Select.Portal>
                             </Select.Root>
-                        </Flex>
+                        </div>
                     ))}
-                </Flex>
-            </Card>
+                </div>
+            </div>
 
             {blockTypes.map((key) => (
-                <Card key={key} size="2">
-                    <Flex align="center" gap="2" mb="3">
-                        <Heading size="3">
+                <div className="card" key={key}>
+                    <div className="row" style={{gap: 8, marginBottom: 12}}>
+                        <div className="heading">
                             {blockKeyNames[key]} ({blockLists[key].length}개)
-                        </Heading>
-                        <IconButton onClick={() => openBlockDialog(key)} size="1" variant="soft">
+                        </div>
+                        <button className="icon-btn" onClick={() => openBlockDialog(key)}>
                             <Plus size={16}/>
-                        </IconButton>
-                        <IconButton color="red" onClick={() => void removeAllBlockedUser(key)} size="1" variant="soft">
+                        </button>
+                        <button className="icon-btn" onClick={() => void removeAllBlockedUser(key)}>
                             <X size={14}/>
-                        </IconButton>
-                    </Flex>
+                        </button>
+                    </div>
 
-                    <Flex gap="2" wrap="wrap">
+                    <div className="row" style={{gap: 8, flexWrap: "wrap"}}>
                         {blockLists[key].length === 0 && (
-                            <Text color="gray" size="1">차단된 {blockKeyNames[key]} 없음</Text>
+                            <div className="text-muted">차단된 {blockKeyNames[key]} 없음</div>
                         )}
                         {blockLists[key].map((blocked, i) => (
                             <Bubble
@@ -87,9 +92,9 @@ export default function BlockTab() {
                                 textclick={() => void editBlockedUser(key, blocked.content)}
                             />
                         ))}
-                    </Flex>
-                </Card>
+                    </div>
+                </div>
             ))}
-        </Flex>
+        </div>
     );
 }

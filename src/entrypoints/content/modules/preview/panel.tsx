@@ -1,6 +1,5 @@
 import {type Root, createRoot} from "react-dom/client";
 
-import ContentTheme from "@/components/ContentTheme";
 import blockPopup from "./components/popup/blockPopup";
 import captchaPopup from "./components/popup/captchaPopup";
 import adminPanel from "./components/popup/adminPanel";
@@ -34,11 +33,7 @@ const mountedPopups = new Set<MountedPopup>();
 function mountPopup(Component: React.ComponentType<any>, props: Record<string, unknown>): MountedPopup {
     const element = document.createElement("div");
     const root = createRoot(element);
-    root.render(
-        <ContentTheme>
-            <Component {...props}/>
-        </ContentTheme>
-    );
+    root.render(<Component {...props}/>);
     document.body.appendChild(element);
     const instance = {root, element};
     mountedPopups.add(instance);

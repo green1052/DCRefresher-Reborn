@@ -1,7 +1,6 @@
 import {type Root, createRoot} from "react-dom/client";
 import {flushSync} from "react-dom";
 
-import ContentTheme from "@/components/ContentTheme";
 import FrameComponent from "./components/frame/frameComponent";
 import type {User} from "@/utils/user";
 
@@ -185,13 +184,11 @@ export default class Frame {
         this.root = createRoot(this.rootElement);
         flushSync(() => {
             this.root.render(
-                <ContentTheme>
-                    <FrameComponent
-                        apiRef={apiRef}
-                        frames={this.frames}
-                        option={option}
-                    />
-                </ContentTheme>
+                <FrameComponent
+                    apiRef={apiRef}
+                    frames={this.frames}
+                    option={option}
+                />
             );
         });
 

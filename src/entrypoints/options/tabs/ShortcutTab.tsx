@@ -1,5 +1,4 @@
 import type {Browser} from "#imports";
-import {Badge, Button, Card, Flex, Text} from "@radix-ui/themes";
 import {useEffect, useState} from "react";
 
 export default function ShortcutTab() {
@@ -16,26 +15,25 @@ export default function ShortcutTab() {
     }, []);
 
     return (
-        <Flex direction="column" gap="3" pt="4">
+        <div className="col" style={{gap: 12, paddingTop: 16}}>
             {shortcuts.map((shortcut) =>
                 shortcut.description?.length ? (
-                    <Card key={shortcut.name} size="1">
-                        <Flex align="center" gap="3" justify="between">
-                            <Text size="2">{shortcut.description}</Text>
-                            <Badge variant="surface">{shortcut.shortcut || "없음"}</Badge>
-                        </Flex>
-                    </Card>
+                    <div className="card" key={shortcut.name}>
+                        <div className="row" style={{gap: 12, justifyContent: "space-between"}}>
+                            <div style={{fontSize: 13}}>{shortcut.description}</div>
+                            <span className="badge">{shortcut.shortcut || "없음"}</span>
+                        </div>
+                    </div>
                 ) : null
             )}
 
-            <Button
+            <button
+                className="btn btn-soft"
                 onClick={openShortcutSettings}
-                size="1"
                 style={{alignSelf: "flex-start"}}
-                variant="soft"
             >
                 단축키 설정
-            </Button>
-        </Flex>
+            </button>
+        </div>
     );
 }

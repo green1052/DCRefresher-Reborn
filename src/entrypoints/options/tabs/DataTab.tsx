@@ -1,4 +1,3 @@
-import {Button, Card, Flex, Heading, Text} from "@radix-ui/themes";
 import {useEffect} from "react";
 
 import {useAppContext} from "../../popup/context";
@@ -12,37 +11,37 @@ export default function DataTab() {
     }, [refreshLastUpdate]);
 
     return (
-        <Card size="2">
-            <Flex direction="column" gap="4" mt="4">
-                <Heading size="3">데이터 관리</Heading>
+        <div className="card">
+            <div className="col" style={{gap: 16, paddingTop: 16}}>
+                <div className="heading">데이터 관리</div>
 
-                <Flex gap="3">
-                    <Button disabled={loading} onClick={() => void backupCloud()} variant="soft">
+                <div className="row" style={{gap: 12}}>
+                    <button className="btn btn-soft" disabled={loading} onClick={() => void backupCloud()}>
                         클라우드 백업
-                    </Button>
-                    <Button disabled={loading} onClick={() => void recoverCloud()} variant="soft">
+                    </button>
+                    <button className="btn btn-soft" disabled={loading} onClick={() => void recoverCloud()}>
                         클라우드 복원
-                    </Button>
-                </Flex>
+                    </button>
+                </div>
 
                 {lastUpdate > 0 && (
-                    <Text color="gray" size="1">
+                    <div className="text-muted">
                         마지막 백업: {new Date(lastUpdate).toLocaleString()}
-                    </Text>
+                    </div>
                 )}
 
-                <Flex gap="3">
-                    <Button disabled={loading} onClick={() => void exportData()} variant="soft">
+                <div className="row" style={{gap: 12}}>
+                    <button className="btn btn-soft" disabled={loading} onClick={() => void exportData()}>
                         데이터 내보내기
-                    </Button>
-                    <Button disabled={loading} onClick={() => void importData()} variant="soft">
+                    </button>
+                    <button className="btn btn-soft" disabled={loading} onClick={() => void importData()}>
                         데이터 가져오기
-                    </Button>
-                    <Button color="red" disabled={loading} onClick={() => void clearData()} variant="soft">
+                    </button>
+                    <button className="btn btn-danger-soft" disabled={loading} onClick={() => void clearData()}>
                         ⚠️ 데이터 초기화 ⚠️
-                    </Button>
-                </Flex>
-            </Flex>
-        </Card>
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 }

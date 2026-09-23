@@ -1,5 +1,4 @@
 import {useContext, useState} from "react";
-import {TextField} from "@radix-ui/themes";
 
 import toast from "@/utils/toast";
 import PreviewButton from "@/components/previewButton";
@@ -128,23 +127,21 @@ export default function WriteComment({
                 onSubmit={(ev) => ev.preventDefault()}
                 style={{display: editUser ? undefined : "none"}}
             >
-                <TextField.Root
+                <input
                     onChange={(ev) => {
                         changeUnsignedUserID(ev.target.value);
                         validCheck("id", ev.target.value);
                     }}
                     placeholder="닉네임"
-                    size="2"
                     type="text"
                     value={unsignedUserID}
                 />
-                <TextField.Root
+                <input
                     onChange={(ev) => {
                         changeUnsignedUserPW(ev.target.value);
                         validCheck("pw", ev.target.value);
                     }}
                     placeholder="비밀번호"
-                    size="2"
                     type="password"
                     value={unsignedUserPW}
                 />

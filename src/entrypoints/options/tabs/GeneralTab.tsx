@@ -1,4 +1,3 @@
-import {Box, Callout, Card, Flex, Heading, Link, Text} from "@radix-ui/themes";
 import {ChevronRight} from "lucide-react";
 
 import iconUrl from "@/assets/icon.png";
@@ -22,55 +21,51 @@ export default function GeneralTab() {
         : browser.runtime.getManifest().version;
 
     return (
-        <Flex direction="column" gap="4" pt="4">
-            <Card size="3">
-                <Flex align="center" gap="4">
+        <div className="col" style={{gap: 16, paddingTop: 16}}>
+            <div className="card">
+                <div className="row" style={{gap: 16}}>
                     <img
                         height={64}
                         src={iconUrl}
                         width={64}
                     />
-                    <Box>
-                        <Heading size="4">DCRefresher Reborn</Heading>
-                        <Text as="div" color="gray" size="1">v{version}</Text>
-                        <Flex gap="3" mt="1">
+                    <div>
+                        <div className="heading" style={{fontSize: 16}}>DCRefresher Reborn</div>
+                        <div className="text-muted">v{version}</div>
+                        <div className="row" style={{gap: 12, marginTop: 4}}>
                             {links.map((link) => (
-                                <Link
+                                <a
+                                    className="link"
                                     href={link.url}
                                     key={link.url}
-                                    size="1"
                                     target="_blank"
                                 >
                                     {link.text}
-                                </Link>
+                                </a>
                             ))}
-                        </Flex>
-                    </Box>
-                </Flex>
-            </Card>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             {!hasSettings ? (
-                <Callout.Root color="gray">
-                    <Callout.Text>우선 디시인사이드 페이지를 열고 설정 해주세요.</Callout.Text>
-                </Callout.Root>
+                <div className="callout">우선 디시인사이드 페이지를 열고 설정 해주세요.</div>
             ) : (
                 modulesWithBasicSettings.map((moduleName) => (
-                    <Card key={moduleName} size="3">
-                        <Flex
-                            align="center"
-                            gap="1"
-                            mb="2"
+                    <div className="card" key={moduleName}>
+                        <div
+                            className="row"
                             onClick={() => moveToModuleTab(moduleName)}
-                            style={{cursor: "pointer"}}
+                            style={{cursor: "pointer", gap: 4, marginBottom: 8}}
                         >
-                            <Heading size="3">
+                            <div className="heading">
                                 {moduleName}
                                 {modules[moduleName]?.enable ? "" : " (비활성화)"}
-                            </Heading>
+                            </div>
                             <ChevronRight size={16}/>
-                        </Flex>
+                        </div>
 
-                        <Flex direction="column">
+                        <div className="col">
                             {Object.keys(moduleSettings[moduleName] ?? {}).map((settingKey) => (
                                 <SettingItem
                                     key={`${moduleName}-${settingKey}`}
@@ -80,10 +75,10 @@ export default function GeneralTab() {
                                     settingKey={settingKey}
                                 />
                             ))}
-                        </Flex>
-                    </Card>
+                        </div>
+                    </div>
                 ))
             )}
-        </Flex>
+        </div>
     );
 }

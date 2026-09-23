@@ -1,6 +1,4 @@
-import {Button, IconButton, Text, TextField} from "@radix-ui/themes";
-import {X} from "lucide-react";
-import {useState} from "react";
+import {useEffect, useRef, useState} from "react";
 
 import "./captchaPopup.scss";
 
@@ -12,43 +10,46 @@ interface Props {
 
 export default function CaptchaPopup({src, onSubmit, onClose}: Props) {
     const [input, setInput] = useState("");
+    const inputRef = useRef<HTMLInputElement>(null);
 
     const submit = (): void => {
         if (!input) return;
         onSubmit(input);
     };
 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            inputRef.current?.focus();
+        }, 0);
+        return () => clearTimeout(timer);
+    }, []);
+
     return (
         <div className="refresher-captcha-popup">
-            <Text size="4" weight="bold">코드 입력</Text>
-            <IconButton
-                color="gray"
+            <p>코드 입력</p>
+            <div
+                className="close"
                 onClick={onClose}
-                style={{position: "absolute", right: 10, top: 10}}
-                title="닫기"
-                variant="ghost"
             >
-                <X height={16} width={16}/>
-            </IconButton>
+                <div className="cross"></div>
+                <div className="cross"></div>
+            </div>
             <img src={src}/>
-            <TextField.Root
-                autoFocus
-                mt="2"
+            <input
                 onChange={(ev) => setInput(ev.target.value)}
                 onKeyDown={(ev) => {
                     if (ev.key === "Enter") submit();
                 }}
-                size="2"
-                style={{width: "100%"}}
+                ref={inputRef}
+                type="text"
                 value={input}
             />
-            <Button
+            <button
                 className="refresher-preview-button primary"
                 onClick={submit}
-                variant="solid"
             >
-                <Text className="refresher-vote-text">전송</Text>
-            </Button>
+                <p className="refresher-vote-text">전송</p>
+            </button>
         </div>
     );
 }

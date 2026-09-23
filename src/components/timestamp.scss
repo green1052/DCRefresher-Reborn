@@ -1,0 +1,14 @@
+.refresher-timestamp {
+    cursor: pointer;
+    text-align: right;
+    font-size: 12px;
+    font-weight: 100;
+    opacity: 0.6;
+}
+
+.refresher-countdown {
+    font-size: 12px;
+    font-weight: 100;
+    opacity: 0.6;
+    color: var(--refresher-danger);
+}

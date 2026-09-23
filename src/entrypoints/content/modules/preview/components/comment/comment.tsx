@@ -3,7 +3,6 @@ import {memo, useMemo} from "react";
 
 import Timestamp from "@/components/timestamp";
 import UserComponent from "@/components/user";
-import {ui} from "@/entrypoints/options/components/UiService";
 import {useMeDetection} from "@/entrypoints/content/composables/useMeDetection";
 import {DCCON_MEMO_PATTERN, handleDcconContextMenu, parseCommentDate, parseVoiceData} from "../../commentParse";
 
@@ -55,13 +54,13 @@ function Comment({
         return parseVoiceData(comment.memo);
     }, [comment.vr_player, comment.memo]);
 
-    const safeDelete = async (): Promise<void> => {
+    const safeDelete = (): void => {
         if (!deleteFn) return;
 
         let password: string = "";
 
         if (!isAdmin && comment.my_cmt === "N") {
-            password = (await ui.prompt("비밀번호를 입력하세요.")) ?? "";
+            password = prompt("비밀번호를 입력하세요.") ?? "";
 
             if (!password) return;
         }
@@ -135,7 +134,7 @@ function Comment({
                         (comment.del_btn === "Y" || comment.my_cmt === "Y" || isAdmin || comment.user.isLogout()) && (
                             <div
                                 className="delete"
-                                onClick={() => void safeDelete()}
+                                onClick={safeDelete}
                             >
                                 <X
                                     className="delete-icon"

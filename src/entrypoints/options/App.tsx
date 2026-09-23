@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {Box, Container, Flex, IconButton, Theme, Tabs} from "@radix-ui/themes";
+import * as Tabs from "@radix-ui/react-tabs";
 import {ExternalLink} from "lucide-react";
 
 import {AppContext, type AppContextValue} from "../popup/context";
@@ -16,7 +16,6 @@ import MemoTab from "./tabs/MemoTab";
 import ModuleTab from "./tabs/ModuleTab";
 import ShortcutTab from "./tabs/ShortcutTab";
 
-import "@radix-ui/themes/styles.css";
 import "./options.scss";
 
 const useSystemAppearance = (): "light" | "dark" => {
@@ -37,6 +36,10 @@ export default function App({embedded = false}: {embedded?: boolean}) {
     const appearance = useSystemAppearance();
     const [tab, setTab] = useState("general");
     const [highlightModule, setHighlightModule] = useState<string | null>(null);
+
+    useEffect(() => {
+        document.documentElement.dataset.theme = appearance;
+    }, [appearance]);
 
     const blocks = useBlocks();
     const memos = useMemos();
@@ -64,31 +67,33 @@ export default function App({embedded = false}: {embedded?: boolean}) {
             <BlockAddDialog/>
             <UiService/>
 
-            <Tabs.Root onValueChange={setTab} value={tab}>
-                <Flex align="center" gap="3" justify="between" mb="2">
-                    <Tabs.List>
-                        <Tabs.Trigger value="general">일반</Tabs.Trigger>
-                        <Tabs.Trigger value="block">차단</Tabs.Trigger>
-                        <Tabs.Trigger value="memo">메모</Tabs.Trigger>
-                        <Tabs.Trigger value="module">모듈</Tabs.Trigger>
-                        <Tabs.Trigger value="shortcut">단축키</Tabs.Trigger>
-                        <Tabs.Trigger value="data">데이터</Tabs.Trigger>
+            <Tabs.Root
+                onValueChange={setTab}
+                style={{display: "flex", flexDirection: "column", flexGrow: embedded ? 1 : 0, minHeight: 0}}
+                value={tab}
+            >
+                <div className="row" style={{justifyContent: "space-between", marginBottom: 8}}>
+                    <Tabs.List className="tabs-list">
+                        <Tabs.Trigger className="tabs-trigger" value="general">일반</Tabs.Trigger>
+                        <Tabs.Trigger className="tabs-trigger" value="block">차단</Tabs.Trigger>
+                        <Tabs.Trigger className="tabs-trigger" value="memo">메모</Tabs.Trigger>
+                        <Tabs.Trigger className="tabs-trigger" value="module">모듈</Tabs.Trigger>
+                        <Tabs.Trigger className="tabs-trigger" value="shortcut">단축키</Tabs.Trigger>
+                        <Tabs.Trigger className="tabs-trigger" value="data">데이터</Tabs.Trigger>
                     </Tabs.List>
 
                     {embedded && (
-                        <IconButton
-                            color="gray"
+                        <button
+                            className="icon-btn"
                             onClick={() => void browser.runtime.openOptionsPage()}
-                            size="2"
                             title="전체 설정 페이지 열기"
-                            variant="ghost"
                         >
                             <ExternalLink size={14}/>
-                        </IconButton>
+                        </button>
                     )}
-                </Flex>
+                </div>
 
-                <Box style={embedded ? {flexGrow: 1, overflowY: "auto"} : undefined}>
+                <div className={embedded ? "grow" : undefined}>
                     <Tabs.Content value="general">
                         <GeneralTab/>
                     </Tabs.Content>
@@ -107,24 +112,10 @@ export default function App({embedded = false}: {embedded?: boolean}) {
                     <Tabs.Content value="data">
                         <DataTab/>
                     </Tabs.Content>
-                </Box>
+                </div>
             </Tabs.Root>
         </AppContext.Provider>
     );
 
-    return (
-        <Theme appearance={appearance} grayColor="slate" radius="medium">
-            {embedded ? (
-                <Box
-                    px="4"
-                    py="3"
-                    style={{display: "flex", flexDirection: "column", height: "100%", width: 700}}
-                >
-                    {content}
-                </Box>
-            ) : (
-                <Container px="4" py="6" size="3">{content}</Container>
-            )}
-        </Theme>
-    );
+    return embedded ? <div className="app-embedded">{content}</div> : <div className="app-page">{content}</div>;
 }

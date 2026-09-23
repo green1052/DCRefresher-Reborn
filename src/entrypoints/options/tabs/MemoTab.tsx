@@ -1,4 +1,3 @@
-import {Button, Card, Flex, Heading, IconButton, Text} from "@radix-ui/themes";
 import {Plus, X} from "lucide-react";
 
 import {useAppContext} from "../../popup/context";
@@ -23,39 +22,38 @@ export default function MemoTab() {
     };
 
     return (
-        <Flex direction="column" gap="4" pt="4">
-            <Card size="2">
-                <Flex align="center" gap="3">
-                    <Heading size="3">데이터 관리</Heading>
-                    <Button onClick={() => void exportMemo()} size="1" variant="soft">내보내기</Button>
-                    <Button onClick={() => void importMemo()} size="1" variant="soft">가져오기</Button>
-                    <Button
+        <div className="col" style={{gap: 16, paddingTop: 16}}>
+            <div className="card">
+                <div className="row" style={{gap: 12}}>
+                    <div className="heading">데이터 관리</div>
+                    <button className="btn btn-soft" onClick={() => void exportMemo()}>내보내기</button>
+                    <button className="btn btn-soft" onClick={() => void importMemo()}>가져오기</button>
+                    <button
+                        className="btn btn-soft"
                         onClick={() => open("https://dcrefresher.green1052.com/utils/convert-memo")}
-                        size="1"
-                        variant="soft"
                     >
                         메모 변환
-                    </Button>
-                </Flex>
-            </Card>
+                    </button>
+                </div>
+            </div>
 
             {memoTypes.map((key) => (
-                <Card key={key} size="2">
-                    <Flex align="center" gap="2" mb="3">
-                        <Heading size="3">
+                <div className="card" key={key}>
+                    <div className="row" style={{gap: 8, marginBottom: 12}}>
+                        <div className="heading">
                             {memoKeyNames[key]} ({Object.keys(memoLists[key]).length}개)
-                        </Heading>
-                        <IconButton onClick={() => void addMemoUser(key)} size="1" variant="soft">
+                        </div>
+                        <button className="icon-btn" onClick={() => void addMemoUser(key)}>
                             <Plus size={16}/>
-                        </IconButton>
-                        <IconButton color="red" onClick={() => void removeAllMemoUser(key)} size="1" variant="soft">
+                        </button>
+                        <button className="icon-btn" onClick={() => void removeAllMemoUser(key)}>
                             <X size={14}/>
-                        </IconButton>
-                    </Flex>
+                        </button>
+                    </div>
 
-                    <Flex gap="2" wrap="wrap">
+                    <div className="row" style={{gap: 8, flexWrap: "wrap"}}>
                         {Object.keys(memoLists[key]).length === 0 && (
-                            <Text color="gray" size="1">{memoKeyNames[key]} 메모 없음</Text>
+                            <div className="text-muted">{memoKeyNames[key]} 메모 없음</div>
                         )}
                         {Object.entries(memoLists[key]).map(([user, memo]) => (
                             <Bubble
@@ -65,9 +63,9 @@ export default function MemoTab() {
                                 textclick={() => void editMemoUser(key, user)}
                             />
                         ))}
-                    </Flex>
-                </Card>
+                    </div>
+                </div>
             ))}
-        </Flex>
+        </div>
     );
 }

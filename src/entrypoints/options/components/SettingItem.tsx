@@ -1,4 +1,5 @@
-import {Box, Flex, Select, Slider, Switch, Text, TextField} from "@radix-ui/themes";
+import * as Select from "@radix-ui/react-select";
+import * as Switch from "@radix-ui/react-switch";
 
 import {useAppContext} from "../../popup/context";
 
@@ -19,65 +20,78 @@ export default function SettingItem({setting, settingKey, moduleName, moduleEnab
     };
 
     return (
-        <Flex align="center" gap="4" justify="between" py="2">
-            <Box style={{maxWidth: "60%"}}>
-                <Text as="div" size="2" weight="medium">{setting.name}</Text>
-                <Text as="div" color="gray" size="1">{setting.desc}</Text>
-                <Text as="div" color="gray" size="1">
+        <div className="setting-row">
+            <div className="setting-labels">
+                <div style={{fontSize: 13, fontWeight: 500}}>{setting.name}</div>
+                <div className="text-muted">{setting.desc}</div>
+                <div className="text-muted">
                     (기본 값 : {String(settings.typeWrap(setting.default))})
-                </Text>
-            </Box>
+                </div>
+            </div>
 
             {setting.type === "check" && (
-                <Switch
+                <Switch.Root
                     checked={Boolean(setting.value)}
+                    className="switch"
                     disabled={!moduleEnabled}
                     onCheckedChange={onChange}
-                />
+                >
+                    <Switch.Thumb className="switch-thumb"/>
+                </Switch.Root>
             )}
             {setting.type === "text" && (
-                <TextField.Root
+                <input
+                    className="input"
                     disabled={!moduleEnabled}
                     onChange={(ev) => onChange(ev.target.value)}
                     placeholder={setting.default}
-                    size="2"
                     style={{width: CONTROL_WIDTH}}
                     value={String(setting.value ?? "")}
                 />
             )}
             {setting.type === "range" && (
-                <Flex align="center" gap="2">
-                    <Slider
+                <div className="row" style={{gap: 8}}>
+                    <input
                         disabled={!moduleEnabled}
                         max={setting.max}
                         min={setting.min}
-                        onValueChange={(value) => onChange(value[0])}
+                        onChange={(ev) => onChange(Number(ev.target.value))}
                         step={setting.step}
                         style={{width: CONTROL_WIDTH - 48}}
-                        value={[Number(setting.value)]}
+                        type="range"
+                        value={Number(setting.value)}
                     />
-                    <Text color="gray" size="1" style={{width: 44}}>
+                    <div className="text-muted" style={{width: 44}}>
                         {Number(setting.value)}{setting.unit}
-                    </Text>
-                </Flex>
+                    </div>
+                </div>
             )}
             {setting.type === "option" && (
                 <Select.Root
                     disabled={!moduleEnabled}
                     onValueChange={onChange}
-                    size="2"
                     value={String(setting.value ?? "")}
                 >
-                    <Select.Trigger style={{width: CONTROL_WIDTH}}/>
-                    <Select.Content>
-                        {Object.entries(setting.items).map(([key, label]) => (
-                            <Select.Item key={key} value={key}>
-                                {label}
-                            </Select.Item>
-                        ))}
-                    </Select.Content>
+                    <Select.Trigger
+                        aria-label={setting.name}
+                        className="select-trigger"
+                        style={{width: CONTROL_WIDTH}}
+                    >
+                        <Select.Value/>
+                    </Select.Trigger>
+                    <Select.Portal>
+                        <Select.Content className="select-content">
+                            <Select.Viewport className="select-viewport">
+                                {Object.entries(setting.items).map(([key, label]) => (
+                                    <Select.Item className="select-item" key={key} value={key}>
+                                        {label}
+                                    </Select.Item>
+                                ))}
+                            </Select.Viewport>
+                        </Select.Content>
+                    </Select.Portal>
                 </Select.Root>
             )}
-        </Flex>
+        </div>
     );
 }

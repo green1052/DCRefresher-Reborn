@@ -1,5 +1,4 @@
 import {useCallback, useEffect, useRef, useState, useSyncExternalStore} from "react";
-import {Text} from "@radix-ui/themes";
 
 import Loader from "@/components/loader";
 import PreviewButton from "@/components/previewButton";
@@ -226,9 +225,9 @@ export default function Frame({frame, index, registerIncrement}: Props) {
                     {frame.collapse ? (
                         <div className="refresher-preview-contents">
                             <div className="refresher-collapse-text">
-                                <Text as="div" onClick={expandCollapse} size="4" weight="bold">
+                                <h3 onClick={expandCollapse}>
                                     댓글 보기를 클릭하여 댓글만 표시합니다. 여기를 눌러 글을 볼 수 있습니다.
-                                </Text>
+                                </h3>
                             </div>
                         </div>
                     ) : (
@@ -245,7 +244,7 @@ export default function Frame({frame, index, registerIncrement}: Props) {
                                     {!hasComments ? (
                                         <div>
                                             <div className="refresher-nocomment-wrap">
-                                                <Text as="div" size="4" weight="bold">댓글이 없습니다.</Text>
+                                                <h3>댓글이 없습니다.</h3>
                                             </div>
                                         </div>
                                     ) : (

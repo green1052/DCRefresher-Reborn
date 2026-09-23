@@ -1,4 +1,3 @@
-import {Badge, IconButton} from "@radix-ui/themes";
 import {X} from "lucide-react";
 
 interface Props {
@@ -14,7 +13,7 @@ export default function Bubble({text = "", image, gallery, extra, remove, textcl
     const displayText = text + (extra ? ` (${extra})` : "");
 
     return (
-        <Badge radius="full" variant="soft">
+        <span className="badge">
             <span
                 onClick={textclick}
                 style={{cursor: textclick ? "pointer" : undefined}}
@@ -30,15 +29,10 @@ export default function Bubble({text = "", image, gallery, extra, remove, textcl
                 {gallery && ` (${gallery})`}
             </span>
             {remove && (
-                <IconButton
-                    color="gray"
-                    onClick={remove}
-                    size="1"
-                    variant="ghost"
-                >
+                <button className="badge-x" onClick={remove}>
                     <X size={12}/>
-                </IconButton>
+                </button>
             )}
-        </Badge>
+        </span>
     );
 }

@@ -1,7 +1,9 @@
-import {Button, Text} from "@radix-ui/themes";
 import {ChevronDown, ChevronUp, ExternalLink, PencilLine, RefreshCw, Share2} from "lucide-react";
+import {useState} from "react";
 
 import dcconIcon from "@/assets/icons/dccon.webp?no-inline";
+
+import "./previewButton.scss";
 
 interface Props {
     id?: string | number;
@@ -20,17 +22,27 @@ const iconMap: Record<string, React.ComponentType<{className?: string}>> = {
 };
 
 export default function PreviewButton({id = "", text = "", className, click}: Props) {
+    const [error, setError] = useState(0);
+
     const IconComp = iconMap[String(id)];
     const dcconSrc = browser.runtime.getURL(dcconIcon as never);
 
-    const variant = className?.includes("primary") ? "solid" : className?.includes("sub") ? "soft" : "ghost";
+    const safeClick = async (): Promise<boolean> => {
+        if (!click) return false;
+
+        const result = await click();
+
+        if (!result) {
+            setError(Math.random());
+        }
+
+        return result;
+    };
 
     return (
-        <Button
+        <div
             className={className ? `refresher-preview-button ${className}` : "refresher-preview-button"}
-            onClick={() => void click?.()}
-            size="2"
-            variant={variant}
+            onClick={() => void safeClick()}
         >
             {IconComp && (
                 <IconComp className="refresher-preview-icon"/>
@@ -39,14 +51,13 @@ export default function PreviewButton({id = "", text = "", className, click}: Pr
                 <img src={dcconSrc}/>
             )}
             {text && (
-                <Text
+                <p
                     className="refresher-vote-text"
                     id={`refresher-${id}-counts`}
-                    size="2"
                 >
                     {text}
-                </Text>
+                </p>
             )}
-        </Button>
+        </div>
     );
 }
