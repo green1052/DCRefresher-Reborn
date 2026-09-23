@@ -3,38 +3,39 @@
 
 // ============================================================
 // Light theme (default) — CSS custom properties
+// popup/options의 --ui-* 팔레트(src/ui/service.scss)와 정렬한다.
 // ============================================================
 :root {
-    --refresher-bg: #fff;
-    --refresher-bg-blur: rgba(245, 245, 245, 0.85);
-    --refresher-bg-overlay: rgba(221, 221, 221, 0.6);
-    --refresher-bg-popup: rgba(255, 255, 255, 0.85);
+    --refresher-bg: #ffffff;
+    --refresher-bg-blur: rgba(255, 255, 255, 0.85);
+    --refresher-bg-overlay: rgba(20, 22, 25, 0.45);
+    --refresher-bg-popup: rgba(255, 255, 255, 0.92);
 
-    --refresher-text: #000;
-    --refresher-text-muted: rgb(170, 170, 170);
-    --refresher-text-secondary: #666;
-    --refresher-text-tertiary: #a0a0a0;
+    --refresher-text: #191c20;
+    --refresher-text-muted: #6b7280;
+    --refresher-text-secondary: #6b7280;
+    --refresher-text-tertiary: #9aa1ad;
 
-    --refresher-border: #505050;
-    --refresher-border-light: #d6d6d6;
+    --refresher-border: #c6cbd2;
+    --refresher-border-light: #e3e6ea;
 
-    --refresher-primary: rgb(0, 110, 255);
-    --refresher-primary-hover: rgba(0, 110, 255, 0.7);
-    --refresher-primary-active: rgba(0, 110, 255, 0.6);
+    --refresher-primary: #2563eb;
+    --refresher-primary-hover: rgba(37, 99, 235, 0.7);
+    --refresher-primary-active: rgba(37, 99, 235, 0.6);
 
-    --refresher-danger: #fb4c4c;
+    --refresher-danger: #dc2626;
     --refresher-success: #35d08f;
 
-    --refresher-link: rgb(0, 140, 255);
-    --refresher-link-hover: rgb(0, 120, 255);
-    --refresher-link-active: rgb(0, 100, 255);
+    --refresher-link: #2563eb;
+    --refresher-link-hover: #1d4ed8;
+    --refresher-link-active: #1e40af;
 
-    --refresher-input-border: #000;
-    --refresher-input-bg: transparent;
-    --refresher-input-focus: rgb(0, 120, 255);
+    --refresher-input-border: #c6cbd2;
+    --refresher-input-bg: #ffffff;
+    --refresher-input-focus: #2563eb;
 
-    --refresher-close-cross: #000;
-    --refresher-close-cross-hover: rgb(49, 49, 49);
+    --refresher-close-cross: #191c20;
+    --refresher-close-cross-hover: #6b7280;
 
     --refresher-accent-yellow: rgb(241, 206, 50);
     --refresher-accent-blue: rgb(50, 139, 241);
@@ -43,46 +44,48 @@
 
     --refresher-deleted-bg: #e8645f;
 
-    --refresher-user-me-bg: rgba(0, 110, 255, 0.5);
+    --refresher-user-me-bg: rgba(37, 99, 235, 0.5);
 
-    --refresher-scrollbar-track: #f1f1f1;
-    --refresher-scrollbar-thumb: #888;
-    --refresher-scrollbar-thumb-hover: #555;
+    --refresher-scrollbar-track: #f1f2f4;
+    --refresher-scrollbar-thumb: #c3c7cd;
+    --refresher-scrollbar-thumb-hover: #a8adb4;
 }
 
 // ============================================================
 // Dark theme — override via site darkmode flag
 // ============================================================
 html:has(#css-darkmode) {
-    --refresher-bg: #292929;
-    --refresher-bg-blur: rgba(41, 41, 41, 0.85);
-    --refresher-bg-overlay: rgba(82, 82, 82, 0.6);
-    --refresher-bg-popup: #292929;
+    --refresher-bg: #1c1f24;
+    --refresher-bg-blur: rgba(28, 31, 36, 0.85);
+    --refresher-bg-overlay: rgba(0, 0, 0, 0.6);
+    --refresher-bg-popup: #1c1f24;
 
-    --refresher-text: #fff;
-    --refresher-text-muted: #ccc;
-    --refresher-text-secondary: #b0b0b0;
-    --refresher-text-tertiary: #888;
+    --refresher-text: #e7e9ec;
+    --refresher-text-muted: #9aa1ad;
+    --refresher-text-secondary: #b0b5bd;
+    --refresher-text-tertiary: #6b7280;
 
-    --refresher-border: #505050;
-    --refresher-border-light: #505050;
+    --refresher-border: #3a4048;
+    --refresher-border-light: #2c3138;
 
-    --refresher-primary: #4987f7;
-    --refresher-primary-hover: rgba(0, 110, 255, 0.28);
-    --refresher-primary-active: rgba(0, 110, 255, 0.22);
+    --refresher-primary: #5b9dff;
+    --refresher-primary-hover: rgba(91, 157, 255, 0.28);
+    --refresher-primary-active: rgba(91, 157, 255, 0.22);
 
-    --refresher-link: #176ef1d5;
+    --refresher-link: #5b9dff;
+    --refresher-link-hover: #7fb2ff;
+    --refresher-link-active: #9cc5ff;
 
-    --refresher-input-border: #fff;
-    --refresher-input-bg: transparent;
-    --refresher-input-focus: rgb(38, 55, 73);
+    --refresher-input-border: #3a4048;
+    --refresher-input-bg: #1c1f24;
+    --refresher-input-focus: #5b9dff;
 
-    --refresher-close-cross: #fff;
-    --refresher-close-cross-hover: rgb(202, 202, 202);
+    --refresher-close-cross: #e7e9ec;
+    --refresher-close-cross-hover: #9aa1ad;
 
-    --refresher-user-me-bg: rgb(20, 109, 243);
+    --refresher-user-me-bg: rgba(91, 157, 255, 0.4);
 
-    --refresher-scrollbar-track: #292929;
-    --refresher-scrollbar-thumb: #555;
-    --refresher-scrollbar-thumb-hover: #777;
+    --refresher-scrollbar-track: #1c1f24;
+    --refresher-scrollbar-thumb: #3a4048;
+    --refresher-scrollbar-thumb-hover: #4a525b;
 }

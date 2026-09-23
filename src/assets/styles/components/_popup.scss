@@ -8,8 +8,9 @@
 @mixin popup-shell {
     backdrop-filter: blur(5px) saturate(150%);
     background-color: var(--refresher-bg-popup);
+    border: 1px solid var(--refresher-border-light);
     border-radius: $radius-md;
-    box-shadow: 0 0 16px rgba(51, 51, 51, 0.3);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
     padding: 20px 30px;
     position: fixed;
     z-index: $z-popup;
