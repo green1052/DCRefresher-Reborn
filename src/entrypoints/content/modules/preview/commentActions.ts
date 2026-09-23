@@ -106,6 +106,12 @@ export function createWriteComment(
 // RefresherPostCommentIDLoaded 이벤트 대기
 export function waitForCommentIdLoaded(signal: AbortSignal): Promise<GalleryPreData | null> {
     return new Promise<GalleryPreData | null>((resolve) => {
+        // 등록 시점에 이미 취소됐으면 abort 이벤트가 다시 오지 않아 영구 대기한다.
+        if (signal.aborted) {
+            resolve(null);
+            return;
+        }
+
         let eventId: (() => void) | null = null;
 
         const abortHandler = () => {

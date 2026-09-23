@@ -1,5 +1,13 @@
 import eventBus from "@/core/eventbus";
+import {modules, MODULE_ID} from "@/core/modules";
 import http, {client, queryString} from "@/http/http";
+
+// "삭제된 글 보존"은 미리보기 모듈의 설정. 등록 순서와 무관하게 쓰는 시점에 읽는다.
+const isPreviewArchiveEnabled = (): boolean =>
+    Boolean(
+        (modules.get(MODULE_ID.PREVIEW)?.status as {archiveArticle?: boolean} | undefined)
+            ?.archiveArticle
+    );
 
 export interface LoadFunctionContext {
     memory: {
@@ -9,7 +17,6 @@ export interface LoadFunctionContext {
         new_counts: number;
         calledByPageTurn: boolean;
         delay: number;
-        archiveArticleConfig: boolean;
     };
     status: {
         fadeIn: boolean;
@@ -202,7 +209,7 @@ export function createLoadFunction(ctx: LoadFunctionContext): (customURL?: strin
                     });
                 }
 
-                if (memory.archiveArticleConfig) {
+                if (isPreviewArchiveEnabled()) {
                     archiveDeletedPosts(oldList, newList, newListChildren, oldCache, newCache, newPostList.length);
                 }
             }

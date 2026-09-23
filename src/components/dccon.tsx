@@ -1,5 +1,5 @@
 import {RefreshCw} from "lucide-react";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 
 import {client as ky, createAuthParams} from "@/http/http";
 
@@ -22,6 +22,9 @@ export default function DcconPopup({onClickDccon, onCloseDccon}: Props) {
     const [bigDccon, setBigDccon] = useState(false);
     const [selectedDccon, setSelectedDccon] = useState<DcinsideDccon[]>([]);
 
+    // 페이저 연타 시 응답 역전을 가리기 위한 요청 일련번호. 응답이 역전되면 최신 요청만 화면에 반영.
+    const requestId = useRef(0);
+
     const close = () => {
         onCloseDccon();
     };
@@ -31,6 +34,8 @@ export default function DcconPopup({onClickDccon, onCloseDccon}: Props) {
             setCurrentDccon(dcconList[page][0].detail);
             return;
         }
+
+        const id = ++requestId.current;
 
         try {
             const params = createAuthParams();
@@ -44,19 +49,27 @@ export default function DcconPopup({onClickDccon, onCloseDccon}: Props) {
                 .json<DcinsideDcconDetail>();
 
             if (response.target === "shop") {
-                alert("사용 가능한 디시콘이 없습니다.");
-                close();
+                if (id === requestId.current) {
+                    alert("사용 가능한 디시콘이 없습니다.");
+                    close();
+                }
                 return;
             }
 
+            // 어느 페이지의 응답이든 캐시에는 누적한다.
             setDcconList((prev) => ({
                 ...prev,
                 [page]: response.list
             }));
 
+            // 응답 역전: 더 최신 요청이 기다리고 있다면 화면 갱신은 그쪽에 맡긴다.
+            if (id !== requestId.current) return;
+
             setMaxPage(response.max_page);
             setCurrentDccon(response.list[0].detail);
         } catch {
+            if (id !== requestId.current) return;
+
             alert("디시콘을 불러오는데 실패했습니다.");
             close();
         }

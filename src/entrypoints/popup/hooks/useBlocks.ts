@@ -64,12 +64,16 @@ export function useBlocks() {
         setBlockFormData((prev) => ({...prev, ...patch}));
     };
 
+    // 팝업이 열려 있는 동안 콘텐츠 탭에서도 목록이 바뀐다. 갱신은 스토리지 최신값을 읽어
+    // 계산한 뒤 반영한다(레거시 스냅샷 RMW는 동시 쓰기를 지운다). setBlocks는 팝업의 watcher가
+    // setValue를 반영하기 전까지 즉시 반응용으로 유지.
     const confirmAddBlock = async () => {
         if (!blockFormData.content.trim()) {
             alert(`${BLOCK_TYPE_NAMES[currentBlockType]} 값을 입력해주세요.`);
             return;
         }
 
+        const content = blockFormData.content.trim();
         const extra: string[] = [];
 
         if (blockFormData.isRegex) {
@@ -84,11 +88,12 @@ export function useBlocks() {
             extra.push(`[${BLOCK_DETECT_MODE_TYPE_NAMES[blockFormData.mode]}]`);
         }
 
-        // core block.add와 동일하게 같은 content는 교체
-        const next = blocks[currentBlockType].filter((v) => v.content !== blockFormData.content.trim());
+        const next = normalizeBlockList(await blockStorage[currentBlockType].getValue()).filter(
+            (v) => v.content !== content
+        );
 
         next.push({
-            content: blockFormData.content.trim(),
+            content,
             isRegex: blockFormData.isRegex,
             extra: extra.length ? extra.join(" ") : undefined,
             gallery: blockFormData.gallery.trim() || undefined,
@@ -100,8 +105,10 @@ export function useBlocks() {
         closeBlockDialog();
     };
 
-    const removeBlockedUser = async (key: RefresherBlockType, index: number) => {
-        const next = blocks[key].filter((_, i) => i !== index);
+    const removeBlockedUser = async (key: RefresherBlockType, content: string) => {
+        const next = normalizeBlockList(await blockStorage[key].getValue()).filter(
+            (v) => v.content !== content
+        );
         setBlocks((prev) => ({...prev, [key]: next}));
         await blockStorage[key].setValue(next);
     };
@@ -112,7 +119,7 @@ export function useBlocks() {
         await blockStorage[key].setValue([]);
     };
 
-    const editBlockedUser = async (key: RefresherBlockType, index: number) => {
+    const editBlockedUser = async (key: RefresherBlockType, content: string) => {
         if (key === "DCCON") {
             alert("디시콘 수정은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
             return;
@@ -122,11 +129,11 @@ export function useBlocks() {
 
         if (!result) return;
 
-        if (blocks[key] && blocks[key][index]) {
-            const next = blocks[key].map((v, i) => (i === index ? {...v, content: result} : v));
-            setBlocks((prev) => ({...prev, [key]: next}));
-            await blockStorage[key].setValue(next);
-        }
+        const next = normalizeBlockList(await blockStorage[key].getValue()).map((v) =>
+            v.content === content ? {...v, content: result} : v
+        );
+        setBlocks((prev) => ({...prev, [key]: next}));
+        await blockStorage[key].setValue(next);
     };
 
     const editBlockMode = async () => {
@@ -152,7 +159,8 @@ export function useBlocks() {
             if (!(BLOCK_TYPES as readonly string[]).includes(key)) continue;
 
             const type = key as RefresherBlockType;
-            const target = normalizeBlockList(blocks[type]);
+            // confirm 대화상자 동안에도 다른 탭이 쓸 수 있으므로 타입마다 최신값을 읽는다.
+            const target = normalizeBlockList(await blockStorage[type].getValue());
             if (!Array.isArray(value)) continue;
 
             for (const block of normalizeBlockList(value)) {

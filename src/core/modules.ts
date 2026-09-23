@@ -83,11 +83,9 @@ export const modules = {
 
         if (typeof mod.data === "object") {
             const data = snapshot[`refresher:module:${mod.name}:data`];
-            const currentData = isRecord(data)
-                ? data
-                : isRecord(mod.data)
-                    ? {...mod.data}
-                    : {};
+            // 저장값에 없는 키는 코드 기본값으로 채운다. 신규 필드 추가 시 기존 유저도 값 보장.
+            const defaults = isRecord(mod.data) ? mod.data : {};
+            const currentData = isRecord(data) ? {...defaults, ...data} : {...defaults};
 
             mod.data = new Proxy(currentData, {
                 set(target, p, newValue, receiver) {

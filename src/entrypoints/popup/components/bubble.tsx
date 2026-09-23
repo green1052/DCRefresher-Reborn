@@ -5,7 +5,6 @@ import "./bubble.scss";
 interface Props {
     text?: string;
     image?: string;
-    isRegex?: boolean;
     gallery?: string;
     extra?: string;
     remove?: () => void;

@@ -26,12 +26,12 @@ interface RefreshMemory {
     load: ((customURL?: string, force?: boolean) => Promise<boolean>) | null;
     paused: boolean;
     loading: boolean;
-    archiveArticleConfig: boolean;
     controlButtonFilterId: string | null;
     visibilityChangeHandler: (() => void) | null;
     pageShowHandler: ((event: PageTransitionEvent) => void) | null;
     popStateHandler: (() => void) | null;
     paginationAbort: AbortController | null;
+    scheduleNextRefresh: ((skipLoad?: boolean) => void) | null;
 }
 
 const bindPaginationAnchor = (anchor: HTMLAnchorElement, memory: RefreshMemory): void => {
@@ -47,7 +47,10 @@ const bindPaginationAnchor = (anchor: HTMLAnchorElement, memory: RefreshMemory):
         memory.calledByPageTurn = true;
 
         if (memory.refresh) window.clearTimeout(memory.refresh);
-        if (!(await memory.load?.(location.href, true))) return;
+        const loaded = await memory.load?.(location.href, true);
+        // 로드 성공/실패와 무관하게 재무장. 안 그러면 자동 새로고침이 영구 정지한다.
+        memory.scheduleNextRefresh?.(true);
+        if (!loaded) return;
 
         const scrollTarget = document.querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head");
         scrollTarget?.scrollIntoView({behavior: "smooth", block: "start"});
@@ -81,18 +84,17 @@ export class RefreshController {
             load: null,
             paused: false,
             loading: false,
-            archiveArticleConfig: false,
             controlButtonFilterId: null,
             visibilityChangeHandler: null,
             pageShowHandler: null,
             popStateHandler: null,
-            paginationAbort: null
+            paginationAbort: null,
+            scheduleNextRefresh: null
         };
     }
 
     async setup(): Promise<void> {
         this.setupControlButton();
-        await this.loadArchiveConfig();
 
         if (this.status.doNotColorVisited) {
             document.documentElement.classList.add("refresherDoNotColorVisited");
@@ -197,6 +199,7 @@ export class RefreshController {
         this.memory.refreshRequest?.();
         this.memory.refreshRequest = null;
         this.memory.load = null;
+        this.memory.scheduleNextRefresh = null;
     }
 
     private updateRefreshText(button?: HTMLElement | null): void {
@@ -230,13 +233,6 @@ export class RefreshController {
         });
     }
 
-    private async loadArchiveConfig(): Promise<void> {
-        // 결합 분리: modules.ts에서 직접 읽기 (모듈 로드 완료 후이므로 데이터 보장)
-        const previewModule = modules.get(MODULE_ID.PREVIEW);
-        const previewStatus = previewModule?.status as { archiveArticle?: boolean } | undefined;
-        this.memory.archiveArticleConfig = Boolean(previewStatus?.archiveArticle);
-    }
-
     private scheduleNextRefresh = (skipLoad = false): void => {
         if (!skipLoad) this.memory.load?.();
 
@@ -247,6 +243,9 @@ export class RefreshController {
     };
 
     private setupScheduling(): void {
+        // 파 pUp/refreshRequest 등 임의 지점에서 재무장할 수 있게 메모리에 노출.
+        this.memory.scheduleNextRefresh = this.scheduleNextRefresh;
+
         const handleVisibilityChange = (): void => {
             if (!document.hidden) {
                 const timeSinceLastRefresh = Date.now() - this.memory.lastRefresh;
@@ -283,6 +282,7 @@ export class RefreshController {
             }
 
             this.memory.load?.(undefined, true);
+            this.scheduleNextRefresh(true);
         });
     }
 

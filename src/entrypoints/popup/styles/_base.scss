@@ -121,10 +121,6 @@ body {
         }
     }
 
-    .refresher-add-block-popup {
-        display: flex;
-    }
-
     .refresher-shortcut,
     .refresher-setting-category,
     .refresher-module {
@@ -269,10 +265,6 @@ body {
         width: 150px;
     }
 
-    .clickable-icon {
-        cursor: pointer;
-    }
-
     .section-header {
         margin-bottom: 15px;
     }
@@ -388,8 +380,7 @@ body {
         position: relative;
         width: 64px;
 
-        .icon,
-        .icon-backdrop {
+        .icon {
             position: absolute;
         }
     }
@@ -397,16 +388,6 @@ body {
     .icon {
         height: 64px;
         width: 64px;
-    }
-
-    .icon-backdrop {
-        animation: refresher-logo-animation 5s infinite;
-        filter: saturate(200%) blur(8px);
-        height: 60px;
-        left: 2px;
-        right: 2px;
-        width: 60px;
-        z-index: -1;
     }
 
     .tab0 .info {

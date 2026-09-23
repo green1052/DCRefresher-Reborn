@@ -31,8 +31,9 @@ export const setStore = (module: string, key: string, value: string | number | b
     const normalizedValue = normalizeSettingValue(setting, value);
     if (setting.value === normalizedValue) return;
 
-    eventBus.emit("refresherUpdateSetting", module, key, normalizedValue);
+    // 리스너가 emit 도중 값을 읽어도 항상 최신 값이도록 갱신이 먼저.
     setting.value = normalizedValue;
+    eventBus.emit("refresherUpdateSetting", module, key, normalizedValue);
 };
 
 export const load = async (
@@ -43,9 +44,7 @@ export const load = async (
 ): Promise<unknown> => {
     settingsStore[module] ??= {};
 
-    if (storedValue === undefined) {
-        storedValue = await moduleSettingStorage(module, key).getValue();
-    }
+    // storedValue는 modules.register가 storage 스냅샷에서 넘겨준다. 없으면 저장된 적 없는 것.
     const value = normalizeSettingValue(settings, storedValue ?? settings.default);
     settings.value = value;
 

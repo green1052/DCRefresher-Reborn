@@ -1,7 +1,7 @@
 import Cookies from "js-cookie";
 import ky from "ky";
 
-export const contentFetch: typeof fetch = window.fetch.bind(window);
+const contentFetch: typeof fetch = window.fetch.bind(window);
 
 export const client = ky.create({fetch: contentFetch});
 
@@ -50,7 +50,7 @@ export const urls = {
     }
 };
 
-export const types = {
+const types = {
     MAJOR: "",
     MINOR: "mgallery",
     MINI: "mini",
@@ -64,14 +64,21 @@ const commentGallTypes: Record<string, string> = {
     person: "PR"
 };
 
+// 호출마다 재생성하지 않도록 모듈 상수로.
+const GALLERY_PATH_TESTS: Record<string, RegExp> = {
+    [types.MINOR]: new RegExp(`\\.com\\/${types.MINOR}`),
+    [types.MINI]: new RegExp(`\\.com\\/${types.MINI}`),
+    [types.PERSON]: new RegExp(`\\.com\\/${types.PERSON}`)
+};
+
 const checkGalleryPath = (url: string | undefined, type: string): boolean =>
-    new RegExp(`\\.com\\/${type}`).test(url || location.href);
+    GALLERY_PATH_TESTS[type].test(url || location.href);
 
 /**
  * 마이너 갤러리인지를 확인하여 boolean을 반환합니다.
  * @param url 확인할 URL
  */
-export const checkMinor = (url?: string): boolean => checkGalleryPath(url, types.MINOR);
+const checkMinor = (url?: string): boolean => checkGalleryPath(url, types.MINOR);
 
 /**
  * 미니 갤러리인지를 확인하여 boolean을 반환합니다.
@@ -83,7 +90,7 @@ export const checkMini = (url?: string): boolean => checkGalleryPath(url, types.
  * 인물 갤러리인지를 확인하여 boolean을 반환합니다.
  * @param url 확인할 URL
  */
-export const checkPerson = (url?: string): boolean => checkGalleryPath(url, types.PERSON);
+const checkPerson = (url?: string): boolean => checkGalleryPath(url, types.PERSON);
 
 /**
  * URL에서 갤러리 종류를 확인하여 반환합니다.
@@ -164,10 +171,6 @@ export const manageUrl = (link: string, miniUrl: string, normalUrl: string): str
 
 export default {
     urls,
-    types,
-    checkMinor,
-    checkMini,
-    checkPerson,
     galleryType,
     view,
     mergeParamURL,
@@ -176,6 +179,5 @@ export default {
     createAuthParams,
     manageUrl,
     client,
-    ajaxClient,
-    contentFetch
+    ajaxClient
 };

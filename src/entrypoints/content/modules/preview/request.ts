@@ -1,7 +1,7 @@
 import Cookies from "js-cookie";
 import type {Input, Options} from "ky";
 
-import {ajaxClient, client as htmlClient} from "@/http/http";
+import {ajaxClient, checkMini, client as htmlClient} from "@/http/http";
 import * as http from "@/http/http";
 import toast from "@/utils/toast";
 import {parsePostInfo} from "./postParser";
@@ -245,7 +245,7 @@ export const previewRequest = {
     ): Promise<boolean | string> {
         if (!preData.link) return false;
 
-        const url = http.checkMini(preData.link) ? http.urls.manage.deleteCommentMini : http.urls.manage.deleteComment;
+        const url = checkMini(preData.link) ? http.urls.manage.deleteCommentMini : http.urls.manage.deleteComment;
 
         const params = http.createAuthParams(preData.link);
         params.set("id", preData.gallery);

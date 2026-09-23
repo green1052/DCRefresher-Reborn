@@ -101,7 +101,8 @@ export async function submitComment(
         };
     }
 
-    const params = new URLSearchParams(secretKey(dom));
+    // secretKey가 이미 URLSearchParams를 만들어 반환한다. 복제는 불필요.
+    const params = secretKey(dom);
     params.set("service_code", code);
     params.set("c_gall_id", preData.gallery);
     params.set("c_gall_no", preData.id);

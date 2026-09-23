@@ -1,4 +1,4 @@
-import {MEMO_TYPES, memoStorage} from "@/storage/wxtStorage";
+import {MEMO_TYPES, memoStorage, onStorageValue} from "@/storage/wxtStorage";
 import {onMessage} from "@/http/messaging";
 import eventBus from "./eventbus";
 
@@ -50,8 +50,7 @@ export const watchMemoStorages = (
     const unwatchers: (() => void)[] = [];
 
     for (const type of MEMO_TYPES) {
-        void memoStorage[type].getValue().then((value) => onMemo(type, normalizeMemoMap(value)));
-        unwatchers.push(memoStorage[type].watch((value) => onMemo(type, normalizeMemoMap(value))));
+        unwatchers.push(onStorageValue(memoStorage[type], (value) => onMemo(type, normalizeMemoMap(value))));
     }
 
     return () => {

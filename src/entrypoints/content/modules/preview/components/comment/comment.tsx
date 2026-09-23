@@ -22,15 +22,10 @@ interface Props {
     onToggleCollapse: (no: string) => void;
 }
 
-// 페이지당 고정값 - 인스턴스마다 DOM 쿼리 반복 방지
-const isAdminCache: unique symbol = Symbol("isAdmin");
-let cachedIsAdmin: boolean | typeof isAdminCache = isAdminCache;
-
+// 목록 페이지(관리 버튼 박스 없음)에서 열린 프레임과 게시글 페이지(버튼 박스 있음)에서 열린
+// 프레임의 값이 달라야 하므로 모듈 레벨 캐시 없이 프레임마다 다시 읽는다.
 function getIsAdmin(): boolean {
-    if (cachedIsAdmin === isAdminCache) {
-        cachedIsAdmin = !!document.querySelector(".useradmin_btnbox button");
-    }
-    return cachedIsAdmin;
+    return !!document.querySelector(".useradmin_btnbox button");
 }
 
 function Comment({

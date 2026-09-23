@@ -82,31 +82,21 @@ export default function BlockTab() {
 
                     <div className="lists">
                         {blockLists[key].length === 0 && <p>차단된 {blockKeyNames[key]} 없음</p>}
-                        {key !== "DCCON" &&
-                            blockLists[key].map((blocked, i) => (
-                                <Bubble
-                                    extra={blocked.extra}
-                                    gallery={blocked.gallery}
-                                    isRegex={blocked.isRegex}
-                                    key={`block:${i}`}
-                                    remove={() => void removeBlockedUser(key, i)}
-                                    text={blocked.content}
-                                    textclick={() => void editBlockedUser(key, i)}
-                                />
-                            ))}
-                        {key === "DCCON" &&
-                            blockLists[key].map((blocked, i) => (
-                                <Bubble
-                                    extra={blocked.extra}
-                                    gallery={blocked.gallery}
-                                    image={`https://image.dcinside.com/dccon.php?no=${blocked.isRegex ? (blocked.content.match(/^\^\((\w*)\|/)?.at(1) ?? blocked.content) : blocked.content}`}
-                                    isRegex={blocked.isRegex}
-                                    key={`block:${i}`}
-                                    remove={() => void removeBlockedUser(key, i)}
-                                    text={blocked.content}
-                                    textclick={() => void editBlockedUser(key, i)}
-                                />
-                            ))}
+                        {blockLists[key].map((blocked, i) => (
+                            <Bubble
+                                extra={blocked.extra}
+                                gallery={blocked.gallery}
+                                image={
+                                    key === "DCCON"
+                                        ? `https://image.dcinside.com/dccon.php?no=${blocked.isRegex ? (blocked.content.match(/^\^\((\w*)\|/)?.at(1) ?? blocked.content) : blocked.content}`
+                                        : undefined
+                                }
+                                key={`${blocked.content}:${i}`}
+                                remove={() => void removeBlockedUser(key, blocked.content)}
+                                text={blocked.content}
+                                textclick={() => void editBlockedUser(key, blocked.content)}
+                            />
+                        ))}
                     </div>
                 </div>
             ))}

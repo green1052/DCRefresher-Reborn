@@ -1,4 +1,4 @@
-import {BLOCK_TYPES, blockModeStorage, blockStorage} from "@/storage/wxtStorage";
+import {BLOCK_TYPES, blockModeStorage, blockStorage, onStorageValue} from "@/storage/wxtStorage";
 import {LRUCache} from "@/utils/lruCache";
 
 export const TYPE_NAMES: Record<RefresherBlockType, string> = {
@@ -63,13 +63,15 @@ let blockCache: BlockCache = {
     TAB: []
 };
 
+// 스토리지 기본값(wxtStorage)과 동일. 저장값이 없으면 SAME. 과거 여기에 TITLE/TEXT/COMMENT가
+// CONTAIN이었으나 즉시 덮여 쓰이는 죽은 값이었다.
 let blockModeCache: BlockModeCache = {
     NICK: BLOCK_DETECT_MODE.SAME,
     ID: BLOCK_DETECT_MODE.SAME,
     IP: BLOCK_DETECT_MODE.SAME,
-    TITLE: BLOCK_DETECT_MODE.CONTAIN,
-    TEXT: BLOCK_DETECT_MODE.CONTAIN,
-    COMMENT: BLOCK_DETECT_MODE.CONTAIN,
+    TITLE: BLOCK_DETECT_MODE.SAME,
+    TEXT: BLOCK_DETECT_MODE.SAME,
+    COMMENT: BLOCK_DETECT_MODE.SAME,
     DCCON: BLOCK_DETECT_MODE.SAME,
     TAB: BLOCK_DETECT_MODE.SAME
 };
@@ -99,7 +101,7 @@ export const normalizeBlockList = (value: unknown): RefresherBlockValue[] => {
     return Array.isArray(value) ? value.filter(isBlockValue) : [];
 };
 
-export const normalizeBlockMode = (
+const normalizeBlockMode = (
     value: unknown,
     fallback: RefresherBlockDetectMode
 ): RefresherBlockDetectMode => {
@@ -128,11 +130,12 @@ export const watchBlockStorages = (
     const unwatchers: (() => void)[] = [];
 
     for (const type of BLOCK_TYPES) {
-        void blockStorage[type].getValue().then((value) => onList(type, normalizeBlockList(value)));
-        unwatchers.push(blockStorage[type].watch((value) => onList(type, normalizeBlockList(value))));
-
-        void blockModeStorage[type].getValue().then((value) => onMode(type, normalizeBlockMode(value, "SAME")));
-        unwatchers.push(blockModeStorage[type].watch((value) => onMode(type, normalizeBlockMode(value, "SAME"))));
+        unwatchers.push(
+            onStorageValue(blockStorage[type], (value) => onList(type, normalizeBlockList(value))),
+            onStorageValue(blockModeStorage[type], (value) =>
+                onMode(type, normalizeBlockMode(value, BLOCK_DETECT_MODE.SAME))
+            )
+        );
     }
 
     return () => {
@@ -152,11 +155,11 @@ watchBlockStorages(
 );
 
 const checkValidType = (type: string) => {
-    return BLOCK_TYPES.some((key) => key === type);
+    return BLOCK_TYPES.includes(type as RefresherBlockType);
 };
 
 const checkValidMode = (mode: string) => {
-    return Object.keys(BLOCK_DETECT_MODE).some((key) => mode === key);
+    return BLOCK_DETECT_MODE_KEYS.includes(mode as RefresherBlockDetectMode);
 };
 
 // Internal update helpers now just update storage. The watcher updates local cache.

@@ -126,14 +126,15 @@ export function setupDelegatedPreviewHandlers(
     // 좌클릭 미리보기 반전 시 원래 우클릭 동작(게시글 이동) 유지
     if (ctx.status.reversePreviewKey) {
         document.addEventListener("contextmenu", (ev) => {
+            // 링크가 없는 곳(빈 공백 등)은 기본 컨텍스트 메뉴를 살려둔다.
+            const target = ev.target as HTMLElement;
+            const href =
+                target.getAttribute?.("href") ??
+                target.closest?.(".us-post")?.querySelector("a:not(.reply_numbox)")?.getAttribute("href");
+            if (!href) return;
+
             ev.preventDefault();
-
-            const target = ev.target as HTMLAnchorElement;
-
-            location.href =
-                target.getAttribute("href") ??
-                target.closest(".us-post")?.querySelector("a:not(.reply_numbox)")?.getAttribute("href") ??
-                location.href;
+            location.href = href;
         }, {signal});
     }
 

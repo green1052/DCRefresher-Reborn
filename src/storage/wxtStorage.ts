@@ -69,10 +69,13 @@ export const backupStorage = {
 };
 
 // 스토리지 값 초기 로드 + 변경 감시를 한 번에 등록한다.
+// 감시를 먼저 등록한 뒤 초기값을 읽는다. 읽는 동안 변경돼도 watch가 놓치지 않는다.
+// 반환값: 감시 해제 함수.
 export const onStorageValue = <T>(
-    item: { getValue: () => Promise<T>; watch: (cb: (value: T) => void) => void },
+    item: { getValue: () => Promise<T>; watch: (cb: (value: T) => void) => () => void },
     handler: (value: T) => void
-): void => {
+): (() => void) => {
+    const unwatch = item.watch(handler);
     void (async () => handler(await item.getValue()))();
-    item.watch(handler);
+    return unwatch;
 };

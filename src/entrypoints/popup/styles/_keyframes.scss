@@ -1,16 +1,5 @@
 // 팝업 애니메이션 키프레임
 
-@keyframes refresher-logo-animation {
-    0%,
-    100% {
-        filter: saturate(200%) blur(6px);
-    }
-
-    50% {
-        filter: saturate(400%) blur(12px);
-    }
-}
-
 @keyframes highlight-blink {
     0%,
     50% {

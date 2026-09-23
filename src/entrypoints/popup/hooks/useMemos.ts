@@ -33,11 +33,13 @@ export function useMemos() {
         });
     };
 
+    // 팝업이 열려 있는 동안 콘텐츠 탭에서도 메모가 바뀐다. 스토리지 최신값을 읽어 반영한다.
+    // setMemos는 watcher가 setValue를 반영하기 전까지 즉시 반응용으로 유지.
     const removeMemoUser = async (type: RefresherMemoType, user: string) => {
-        const next = {...memos[type]};
+        const next = normalizeMemoMap(await memoStorage[type].getValue());
         delete next[user];
         setMemos((prev) => ({...prev, [type]: next}));
-        await memoStorage[type].setValue(structuredClone(next));
+        await memoStorage[type].setValue(next);
     };
 
     const removeAllMemoUser = async (type: RefresherMemoType) => {
@@ -68,7 +70,8 @@ export function useMemos() {
             if (!(MEMO_TYPES as readonly string[]).includes(key)) continue;
 
             const type = key as RefresherMemoType;
-            const target = {...memos[type]};
+            // confirm 대화상자 동안에도 다른 탭이 쓸 수 있으므로 타입마다 최신값을 읽는다.
+            const target = normalizeMemoMap(await memoStorage[type].getValue());
             const importedMemos = normalizeMemoMap(value);
 
             for (const [id, memo] of Object.entries(importedMemos)) {
@@ -80,7 +83,7 @@ export function useMemos() {
             }
 
             setMemos((prev) => ({...prev, [type]: target}));
-            await memoStorage[type].setValue(structuredClone(target));
+            await memoStorage[type].setValue(target);
         }
 
         alert("가져오기에 성공했습니다.");
