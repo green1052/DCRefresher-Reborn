@@ -12,7 +12,6 @@
         "build:chrome": "wxt build",
         "build:firefox": "wxt build -b firefox",
         "zip": "wxt zip && wxt zip -b firefox",
-        "check": "tsc --noEmit",
         "postinstall": "wxt prepare"
     },
     "dependencies": {
@@ -38,5 +37,8 @@
     "private": true,
     "peerDependencies": {
         "typescript": "^7.0.2"
-    }
+    },
+    "trustedDependencies": [
+        "@parcel/watcher"
+    ]
 }
