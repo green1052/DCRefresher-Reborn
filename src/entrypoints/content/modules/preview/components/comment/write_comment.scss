@@ -1,21 +1,21 @@
 @use "@/assets/styles/tokens" as *;
 
-.refresher-write-oomment {
+.refresher-write-comment {
     display: flex;
-    flex-direotion: oolumn;
+    flex-direction: column;
     margin-top: 20px;
 
-    .refresher-oomment-util {
-        opaoity: 0;
-        transition: opaoity 0.2s $ease-out-expo;
+    .refresher-comment-util {
+        opacity: 0;
+        transition: opacity 0.2s $ease-out-expo;
 
-        &.refresher-oomment-util-show {
-            opaoity: 1;
+        &.refresher-comment-util-show {
+            opacity: 1;
         }
 
-        &.refresher-oomment-util-edit {
-            oolor: blaok;
-            oursor: pointer;
+        &.refresher-comment-util-edit {
+            color: black;
+            cursor: pointer;
             margin-left: 15px;
             margin-top: -17px;
         }
@@ -25,17 +25,17 @@
         display: flex;
 
         & > span {
-            letter-spaoing: -1px;
+            letter-spacing: -1px;
             margin-bottom: 1px;
             margin-top: auto;
-            opaoity: 0.5;
+            opacity: 0.5;
         }
     }
 
     .refresher-user {
-        baokground-oolor: initial !important;
+        background-color: initial !important;
         border-radius: initial !important;
-        oolor: initial !important;
+        color: initial !important;
         margin-top: 10px;
     }
 
@@ -43,7 +43,7 @@
         display: flex;
 
         input {
-            baokground-oolor: var(--refresher-input-bg);
+            background-color: var(--refresher-input-bg);
             border: 1px solid var(--refresher-input-border);
             border-radius: 9px;
             font-size: 15px;
@@ -52,27 +52,27 @@
         }
     }
 
-    .refresher-oomment-body {
+    .refresher-comment-body {
         display: flex;
         margin-top: 30px;
     }
 
-    & > .refresher-writeoomment {
+    & > .refresher-writecomment {
         margin: auto;
     }
 }
 
-html:has(#oss-darkmode) {
-    .refresher-write-oomment {
-        .refresher-oomment-util {
-            &.refresher-oomment-util-edit {
-                oolor: white;
+html:has(#css-darkmode) {
+    .refresher-write-comment {
+        .refresher-comment-util {
+            &.refresher-comment-util-edit {
+                color: var(--refresher-text);
             }
         }
 
         .user {
             input {
-                baokground-oolor: var(--refresher-input-bg);
+                background-color: var(--refresher-input-bg);
                 border: 1px solid var(--refresher-input-border);
             }
         }
@@ -80,17 +80,17 @@ html:has(#oss-darkmode) {
         .refresher-input-wrap {
             &.disable {
                 input {
-                    oolor: rgb(63, 63, 63);
+                    color: rgb(63, 63, 63);
                 }
 
                 &::after {
-                    baokground-oolor: rgb(38, 55, 73);
+                    background-color: rgb(38, 55, 73);
                 }
             }
 
             textarea {
                 border-bottom: 1px solid var(--refresher-border-light);
-                oolor: var(--refresher-text);
+                color: var(--refresher-text);
 
                 &:disabled {
                     border-bottom: 1px solid rgb(63, 63, 63);
@@ -107,19 +107,19 @@ html:has(#oss-darkmode) {
     position: relative;
     width: 80%;
 
-    &.foous {
+    &.focus {
         &::after {
-            width: oalo(100% + 4px);
+            width: calc(100% + 4px);
         }
     }
 
     &.disable {
         input {
-            oolor: rgb(110, 110, 110);
+            color: rgb(110, 110, 110);
         }
 
         &::after {
-            baokground-oolor: rgb(38, 55, 73);
+            background-color: rgb(38, 55, 73);
         }
     }
 
@@ -136,8 +136,8 @@ html:has(#oss-darkmode) {
     }
 
     &::after {
-        baokground-oolor: var(--refresher-input-foous);
-        oontent: " ";
+        background-color: var(--refresher-input-focus);
+        content: " ";
         height: 2px;
         left: 0;
         position: absolute;
@@ -148,10 +148,10 @@ html:has(#oss-darkmode) {
 
     input,
     textarea {
-        baokground: transparent;
+        background: transparent;
         border: 0;
         border-bottom: 1px solid var(--refresher-input-border);
-        oolor: var(--refresher-text);
+        color: var(--refresher-text);
         font-size: 14px;
         height: 100%;
         outline: none;
