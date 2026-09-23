@@ -233,8 +233,8 @@ export class PreviewController {
     private buildFrames(preData: GalleryPreData, signal: AbortSignal, historySkip?: boolean): void {
         if (!this.frame) return;
         const frm = this.frame;
-        this.buildBodyFrame(frm.frames[0], preData, signal, historySkip);
-        this.buildCommentFrame(frm.frames[1], preData, signal);
+        this.buildBodyFrame(frm.frames.body, preData, signal, historySkip);
+        this.buildCommentFrame(frm.frames.comments, preData, signal);
 
         if (this.status.toggleAdminPanel && document.querySelector(".useradmin_btnbox button")) {
             panel.admin(preData, frm, this.status.toggleBlur, eventBus, this.status.useKeyPress, previewRequest);
@@ -244,7 +244,7 @@ export class PreviewController {
     private newPostWithData(preData: GalleryPreData, historySkip?: boolean): void {
         if (!this.frame) return;
         const frm = this.frame;
-        const bodyFrame = frm.frames[0];
+        const bodyFrame = frm.frames.body;
 
         if (bodyFrame.data.load) return;
 
@@ -289,7 +289,7 @@ export class PreviewController {
 
         frm.app.closed = false;
         this.frameClosed = false;
-        frm.frames[0].patch({collapse: collapseView});
+        frm.frames.body.patch({collapse: collapseView});
 
         this.buildFrames(preData, signal, historySkip);
 
@@ -302,10 +302,7 @@ export class PreviewController {
         const detector = new ScrollDetection();
 
         this.frame = new Frame(
-            [
-                {relative: true, center: true, preview: true, blur: this.status.toggleBlur},
-                {relative: true, center: true, preview: true, blur: this.status.toggleBlur}
-            ],
+            {relative: true, center: true, preview: true, blur: this.status.toggleBlur},
             {
                 background: true,
                 onScroll: (ev: WheelEvent, group: HTMLElement) => {

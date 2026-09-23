@@ -163,18 +163,28 @@ export interface FrameScrollApi {
     onClose: (handler: () => void) => void;
 }
 
+// 미리보기 프레임은 본문(body)과 댓글(comments) 두 개로 고정이다.
+// 위치 배열 대신 이름으로 접근해 controller와 컴포넌트의 암묵적 커플링을 제거한다.
+export interface FramePair {
+    body: PreviewFrame;
+    comments: PreviewFrame;
+}
+
 export default class Frame {
-    readonly frames: PreviewFrame[];
+    readonly frames: FramePair;
     readonly app: FrameScrollApi;
     private readonly rootElement: HTMLElement;
     private readonly root: Root;
 
-    constructor(children: FrameOptions[], option: FrameStackOption) {
+    constructor(options: FrameOptions, option: FrameStackOption) {
         if (document.readyState === "loading") {
             throw new Error("Frame is not available before DOMContentLoaded event. (DOM isn't accessible)");
         }
 
-        this.frames = children.map((child) => new PreviewFrame(child));
+        this.frames = {
+            body: new PreviewFrame(options),
+            comments: new PreviewFrame(options)
+        };
 
         this.rootElement = document.createElement("refresher-frame-outer");
         document.body.appendChild(this.rootElement);

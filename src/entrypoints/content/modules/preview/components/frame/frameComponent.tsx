@@ -1,6 +1,6 @@
 import {ChevronDown, ChevronUp} from "lucide-react";
 import {createContext, useEffect, useRef, useState} from "react";
-import type {FrameScrollApi, FrameStackOption, PreviewFrame} from "../../frame";
+import type {FramePair, FrameScrollApi, FrameStackOption} from "../../frame";
 
 import Frame from "./frame";
 import ScrollIndicator from "./scroll";
@@ -11,7 +11,7 @@ import "./frameComponent.scss";
 export const InputFocusContext = createContext<{ current: boolean }>({current: false});
 
 interface Props {
-    frames: PreviewFrame[];
+    frames: FramePair;
     option?: FrameStackOption;
     apiRef: { current: FrameScrollApi | null };
 }
@@ -74,7 +74,7 @@ export default function FrameComponent({frames, option = {}, apiRef}: Props) {
 
     useEffect(() => {
         document.body.style.overflow = closed ? "" : "hidden";
-        if (closed) frames.forEach((frame) => frame.emitClose());
+        if (closed) Object.values(frames).forEach((frame) => frame.emitClose());
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [closed]);
 
@@ -113,7 +113,7 @@ export default function FrameComponent({frames, option = {}, apiRef}: Props) {
     const clearScrollMode = () => setScrollMode("none");
 
     const onClose = (handler: () => void) => {
-        frames.forEach((frame) => frame.onClose(handler));
+        Object.values(frames).forEach((frame) => frame.onClose(handler));
     };
 
     // 명령형 API (Frame 클래스가 사용)
@@ -162,15 +162,15 @@ export default function FrameComponent({frames, option = {}, apiRef}: Props) {
                     onWheel={wheelHandle}
                     ref={groupElement}
                 >
-                    {frames[0] && (
+                    {frames.body && (
                         <Frame
-                            frame={frames[0]}
+                            frame={frames.body}
                             index={0}
                         />
                     )}
-                    {frames[1] && (
+                    {frames.comments && (
                         <Frame
-                            frame={frames[1]}
+                            frame={frames.comments}
                             index={1}
                             registerIncrement={(fn) => {
                                 commentFrameRef.current = {incrementCommentKey: fn};
