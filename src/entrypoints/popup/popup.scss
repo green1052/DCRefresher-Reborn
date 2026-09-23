@@ -6,6 +6,13 @@
     height: 100%;
 }
 
+/* 전체 설정 창 - 같은 UI를 넓은 뷰포트에서 보여준다. */
+.popup-shell.page {
+    height: 100vh;
+    margin: 0 auto;
+    max-width: 960px;
+}
+
 .popup-header {
     align-items: center;
     border-bottom: 1px solid var(--border);

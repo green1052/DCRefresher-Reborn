@@ -42,7 +42,8 @@ const NAV = [
     {value: "data", label: "데이터", icon: Database}
 ];
 
-export default function App() {
+// page=true면 전체 설정 창(넓은 뷰)으로, 아니면 브라우저 액션 팝업(고정폭)으로 렌더한다.
+export default function App({page = false}: {page?: boolean}) {
     const appearance = useSystemAppearance();
     const [tab, setTab] = useState("general");
     const [highlightModule, setHighlightModule] = useState<string | null>(null);
@@ -81,19 +82,21 @@ export default function App() {
             <BlockAddDialog/>
             <UiService/>
 
-            <div className="popup-shell">
+            <div className={page ? "popup-shell page" : "popup-shell"}>
                 <header className="popup-header">
                     <img className="popup-header-icon" src={iconUrl}/>
                     <span className="popup-title">DCRefresher Reborn</span>
                     <span className="popup-version">v{version}</span>
-                    <button
-                        className="icon-btn"
-                        onClick={() => void browser.runtime.openOptionsPage()}
-                        style={{marginLeft: "auto"}}
-                        title="전체 설정 페이지 열기"
-                    >
-                        <ExternalLink size={14}/>
-                    </button>
+                    {!page && (
+                        <button
+                            className="icon-btn"
+                            onClick={() => void browser.runtime.openOptionsPage()}
+                            style={{marginLeft: "auto"}}
+                            title="전체 설정 페이지 열기"
+                        >
+                            <ExternalLink size={14}/>
+                        </button>
+                    )}
                 </header>
 
                 <Tabs.Root className="popup-main" onValueChange={setTab} orientation="vertical" value={tab}>
