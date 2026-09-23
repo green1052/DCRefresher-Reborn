@@ -81,7 +81,7 @@ export function useSettings() {
         const setting = settings[module]?.[key];
         if (!setting) return;
 
-        // 저장 전에 코어와 같은 규칙으로 정규화. 코어의 setStore는 같은 값이면 조용히 통과하므로
+        // 저장 전에 코어와 같은 규칙으로 정규화. 코어(applySettingValue)는 같은 값이면 조용히 통과하므로
         // 스토리지에 쓰여진 값이 곧 최종값이 된다.
         const normalizedValue = normalizeSettingValue(setting, value);
 

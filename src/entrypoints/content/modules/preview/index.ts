@@ -230,7 +230,7 @@ export default {
         this.memory.controller?.destroy();
         this.memory.controller = null;
     }
-} as RefresherModule<{
+} satisfies RefresherModule<{
     data: {};
     memory: PreviewMemory;
     settings: PreviewSettingsMap;

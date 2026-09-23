@@ -18,6 +18,7 @@ export default {
     name: "글 목록 새로고침",
     description: "글 목록을 자동으로 새로고침합니다.",
     url: /\/board\/(view|lists)/,
+    data: {},
     status: {},
     memory: {
         controller: null
@@ -76,7 +77,7 @@ export default {
         this.memory.controller?.destroy();
         this.memory.controller = null;
     }
-} as RefresherModule<{
+} satisfies RefresherModule<{
     data: {};
     memory: RefreshMemory;
     shortcuts: {

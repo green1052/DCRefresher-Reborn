@@ -1,11 +1,5 @@
 import {moduleSettingStorage} from "@/storage/wxtStorage";
 
-import eventBus from "./eventbus";
-
-export type SettingsStore = Record<string, Record<string, RefresherSettings>>;
-
-const settingsStore: SettingsStore = {};
-
 export const normalizeSettingValue = (
     settings: RefresherSettings,
     value: unknown
@@ -25,40 +19,19 @@ export const normalizeSettingValue = (
     }
 };
 
-export const setStore = (module: string, key: string, value: string | number | boolean): void => {
-    const setting = settingsStore[module]?.[key];
-    if (!setting) return;
-
-    const normalizedValue = normalizeSettingValue(setting, value);
-    if (setting.value === normalizedValue) return;
-
-    // 리스너가 emit 도중 값을 읽어도 항상 최신 값이도록 갱신이 먼저.
-    setting.value = normalizedValue;
-    eventBus.emit("refresherUpdateSetting", module, key, normalizedValue);
-};
-
+// 저장값을 정규화해 settings.value에 채운다. 값 전파(모듈 update 호출)는 modules가 담당한다.
 export const load = async (
     module: string,
     key: string,
     settings: RefresherSettings,
     storedValue?: unknown
 ): Promise<unknown> => {
-    settingsStore[module] ??= {};
-
-    // storedValue는 modules.register가 storage 스냅샷에서 넘겨준다. 없으면 저장된 적 없는 것.
     const value = normalizeSettingValue(settings, storedValue ?? settings.default);
     settings.value = value;
-
-    settingsStore[module][key] = settings;
 
     if (storedValue !== undefined && storedValue !== null && storedValue !== value) {
         void moduleSettingStorage(module, key).setValue(value);
     }
 
     return value;
-};
-
-export default {
-    setStore,
-    load
 };

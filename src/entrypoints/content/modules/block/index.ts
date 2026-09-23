@@ -212,6 +212,7 @@ export default {
     name: MODULE_ID.BLOCK,
     description: "유저, 컨텐츠 등의 보고 싶지 않은 컨텐츠들을 삭제합니다.",
     url: /\/board\/(view|lists)/,
+    data: {},
     status: {},
     memory: {
         uuid: null,
@@ -270,4 +271,4 @@ export default {
 
         restoreHiddenElements();
     }
-} as BlockModule;
+} satisfies BlockModule;

@@ -25,6 +25,7 @@ const updateWindowSize = (forceActive: boolean, active: number | string, width: 
 export default {
     name: "레이아웃 수정",
     description: "디시 레이아웃을 변경할 수 있도록 도와줍니다.",
+    data: {},
     status: {},
     memory: {
         resize: null
@@ -105,10 +106,10 @@ export default {
     },
     update: {
         activePixel(value: number) {
-            updateWindowSize(this.status.forceCompact, value, innerWidth);
+            updateWindowSize(this.status.forceCompact!, value, innerWidth);
         },
         forceCompact(value: boolean) {
-            updateWindowSize(value, this.status.activePixel, innerWidth);
+            updateWindowSize(value, this.status.activePixel!, innerWidth);
         },
         hideGalleryView(value: boolean) {
             document.documentElement.classList.toggle("refresherHideGalleryView", value);
@@ -142,13 +143,13 @@ export default {
         const isPageView = location.href.includes("board/view");
 
         if (!isPageView || (isPageView && this.status.useCompactModeOnView)) {
-            this.memory.resize = () => updateWindowSize(this.status.forceCompact, this.status.activePixel, innerWidth);
+            this.memory.resize = () => updateWindowSize(this.status.forceCompact!, this.status.activePixel!, innerWidth);
 
             window.addEventListener("resize", this.memory.resize);
             this.memory.resize();
         }
 
-        for (const key of TOGGLE_KEYS) (this.update![key] as (v: boolean) => void).call(this, this.status[key]);
+        for (const key of TOGGLE_KEYS) this.update![key]!.call(this, this.status[key]!);
     },
     revoke() {
         if (this.memory.resize) window.removeEventListener("resize", this.memory.resize);
@@ -157,9 +158,9 @@ export default {
         hideSticky(false);
         document.documentElement.classList.remove("refresherCompact", "refresherCompactView");
 
-        for (const key of TOGGLE_KEYS) (this.update![key] as (v: boolean) => void).call(this, false);
+        for (const key of TOGGLE_KEYS) this.update![key]!.call(this, false);
     }
-} as RefresherModule<{
+} satisfies RefresherModule<{
     data: {};
     memory: {
         resize: (() => void) | null;

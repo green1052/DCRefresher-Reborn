@@ -3,6 +3,8 @@ import {onMessage} from "@/http/messaging";
 export default {
     name: "이미지 검색",
     description: "이미지를 검색합니다.",
+    data: {},
+    status: {},
     memory: {
         sauceNao: null as (() => void) | null,
         currentImage: null,
@@ -10,6 +12,7 @@ export default {
     },
     enable: true,
     default_enable: true,
+    settings: {},
     func() {
         this.memory.contextMenuHandler = (ev: MouseEvent) => {
             if (!(ev.target instanceof HTMLImageElement)) return;
@@ -35,7 +38,7 @@ export default {
         }
         if (this.memory.sauceNao) this.memory.sauceNao();
     }
-} as RefresherModule<{
+} satisfies RefresherModule<{
     data: {};
     memory: {
         sauceNao: (() => void) | null;

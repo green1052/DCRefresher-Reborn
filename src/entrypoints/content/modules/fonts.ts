@@ -1,7 +1,9 @@
 export default {
     name: "폰트 교체",
     description: "페이지에 전반적으로 표시되는 폰트를 교체합니다.",
+    data: {},
     status: {},
+    memory: {},
     enable: true,
     default_enable: true,
     settings: {
@@ -67,22 +69,20 @@ export default {
     func() {
         document.documentElement.classList.add("refresherFont");
 
-        this.update!.changeDCFont.bind(this)(this.status.changeDCFont);
-        this.update!.customFonts.bind(this)(this.status.customFonts);
-        this.update!.bodyFontSize.bind(this)(this.status.bodyFontSize);
+        this.update!.changeDCFont!.call(this, this.status.changeDCFont!);
+        this.update!.customFonts!.call(this, this.status.customFonts!);
+        this.update!.bodyFontSize!.call(this, this.status.bodyFontSize!);
     },
     revoke() {
         document.documentElement.classList.remove("refresherFont");
 
-        this.update!.changeDCFont.bind(this)(false);
+        this.update!.changeDCFont!.call(this, false);
         document.getElementById("refresherFontStyle")?.remove();
         document.getElementById("refresherFontStyleSize")?.remove();
     }
-} as RefresherModule<{
+} satisfies RefresherModule<{
     data: {};
-    memory: {
-        uuid: string | null;
-    };
+    memory: {};
     settings: {
         customFonts: RefresherTextSettings;
         changeDCFont: RefresherCheckSettings;

@@ -227,6 +227,7 @@ export default {
     name: "유저 정보",
     description: "사용자의 IP, 아이디 정보, 메모를 표시합니다.",
     url: /\/board\/(view|lists)/,
+    data: {},
     status: {},
     memory: {
         always: null,
@@ -286,4 +287,4 @@ export default {
             delete element.dataset.refresherMemo;
         }
     }
-} as UserinfoModule;
+} satisfies UserinfoModule;

@@ -2,7 +2,7 @@ import {moduleDataStorage, moduleEnableStorage} from "@/storage/wxtStorage";
 import {onMessage} from "@/http/messaging";
 import eventBus from "./eventbus";
 import filter from "./filtering";
-import settings from "./settings";
+import {load as loadSetting, normalizeSettingValue} from "./settings";
 
 // 다른 모듈에서 modules.get()으로 참조하는 모듈 이름.
 // 모듈의 name을 바꾸면 여기도 함께 바꿔야 한다.
@@ -71,14 +71,13 @@ export const modules = {
         if (typeof mod.settings === "object") {
             for (const [key, value] of Object.entries(mod.settings)) {
                 const stored = snapshot[`refresher:module:${mod.name}:setting:${key}`];
-                await settings.load(mod.name, key, value, stored);
+                await loadSetting(mod.name, key, value, stored);
             }
 
-            // status는 settings의 읽기 전용 뷰. 값의 단일 출처는 settings[key].value고
-            // setStore(팝업→storage→onChanged)가 그것만 갱신한다. 이제 양쪽 동기화가 아니다.
+            // status는 settings의 읽기 뷰. 값의 단일 출처는 settings[key].value고
+            // applySettingValue(팝업→storage→onChanged)가 그것만 갱신한다.
             mod.status = new Proxy({} as typeof mod.status, {
-                get: (_target, key: string) =>
-                    (mod.settings as Record<string, {value?: unknown}> | undefined)?.[key]?.value
+                get: (_target, key: string) => mod.settings?.[key]?.value
             });
         }
 
@@ -156,6 +155,19 @@ const applyModuleStatus = async (name: string, value: boolean): Promise<void> =>
     await revokeModule(mod);
 };
 
+// 팝업이 스토리지에 쓴 설정값을 정규화해 모듈에 반영한다. 변동분만 리스너(모듈 update)에 전파한다.
+const applySettingValue = (name: string, key: string, value: string | number | boolean): void => {
+    const setting = moduleStore[name]?.settings?.[key];
+    if (!setting) return;
+
+    const normalizedValue = normalizeSettingValue(setting, value);
+    if (setting.value === normalizedValue) return;
+
+    // 리스너가 emit 도중 값을 읽어도 항상 최신 값이도록 갱신이 먼저.
+    setting.value = normalizedValue;
+    eventBus.emit("refresherUpdateSetting", name, key, normalizedValue);
+};
+
 browser.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== "local") return;
 
@@ -168,7 +180,7 @@ browser.storage.onChanged.addListener((changes, areaName) => {
 
         const settingMatch = MODULE_SETTING_KEY.exec(key);
         if (settingMatch) {
-            settings.setStore(settingMatch[1], settingMatch[2], newValue as string | number | boolean);
+            applySettingValue(settingMatch[1], settingMatch[2], newValue as string | number | boolean);
         }
     }
 });
@@ -177,7 +189,7 @@ onMessage("executeShortcut", ({data}) => {
     if (typeof data !== "string") return;
 
     for (const module of Object.values(moduleStore)) {
-        const shortcuts = (module as RefresherModule).shortcuts as Record<string, () => void> | undefined;
+        const shortcuts = module.shortcuts;
         if (shortcuts && typeof shortcuts[data] === "function") {
             shortcuts[data].bind(module)();
             return;
@@ -189,7 +201,7 @@ eventBus.on("refresherUpdateSetting", (mod, key, value) => {
     const module = moduleStore[mod];
     if (!module?.enable || !module.update) return;
 
-    const handler = (module.update as Record<string, (value: unknown) => void | Promise<void>>)[key];
+    const handler = module.update[key];
     if (typeof handler !== "function") return;
 
     return handler.call(module, value);

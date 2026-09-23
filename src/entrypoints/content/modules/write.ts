@@ -4,6 +4,7 @@ export default {
     name: "글쓰기",
     description: "글쓰기 페이지를 변경합니다.",
     url: /\/board\/(write|modify)/,
+    data: {},
     status: {},
     memory: {
         submitButton: "",
@@ -84,7 +85,7 @@ export default {
             this.memory.beforeUnloadHandler = null;
         }
     }
-} as RefresherModule<{
+} satisfies RefresherModule<{
     data: {};
     memory: {
         submitButton: string;

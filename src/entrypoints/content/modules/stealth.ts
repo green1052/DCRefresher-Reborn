@@ -33,12 +33,15 @@ const tempButtonCreate = (mount: HTMLElement): void => {
 export default {
     name: "스텔스 모드",
     description: "페이지내에서 표시되는 이미지를 비활성화합니다.",
+    data: {},
+    status: {},
     memory: {
         contentViewUUID: null,
         loadHandler: null
     },
     enable: false,
     default_enable: false,
+    settings: {},
     shortcuts: {
         stealthPause() {
             const button = document.querySelector<HTMLElement>(`${CONTROL_BUTTON} > #tempview`);
@@ -90,7 +93,7 @@ export default {
             this.memory.loadHandler = null;
         }
     }
-} as RefresherModule<{
+} satisfies RefresherModule<{
     data: {};
     memory: {
         contentViewUUID: (() => void) | null;

@@ -162,7 +162,7 @@ const setupWriterDisplay = (ctx: ManageModule): string =>
                 if (!ratio) return;
 
                 element.dataset.refresherRatio = "true";
-                insertWriterSpan(element, createRatioSpan(ratio, ctx.status.alarmRatio), "after-icon");
+                insertWriterSpan(element, createRatioSpan(ratio, ctx.status.alarmRatio!), "after-icon");
             }
         },
         {neverExpire: true}
@@ -235,7 +235,7 @@ const handleNewPostList = async (ctx: ManageModule, articles: HTMLElement[]): Pr
         const ratio = ctx.data.ratio?.[uid];
         if (!ratio) continue;
 
-        const ratioSpan = createRatioSpan(ratio, ctx.status.alarmRatio);
+        const ratioSpan = createRatioSpan(ratio, ctx.status.alarmRatio!);
 
         if (article.dataset.refresherRatio === "true") {
             article.querySelector(".ratio")?.replaceWith(ratioSpan);
@@ -250,8 +250,8 @@ const handleNewPostList = async (ctx: ManageModule, articles: HTMLElement[]): Pr
 export default {
     name: MODULE_ID.MANAGE,
     description: "무급 노예들을 위한 여러 편의 기능을 제공합니다.",
-    url: /\/board\/(view|lists)/,
     status: {},
+    url: /\/board\/(view|lists)/,
     data: {
         ratio: {}
     },
@@ -296,7 +296,8 @@ export default {
             default: 0,
             min: 0,
             max: 5000,
-            step: 10
+            step: 10,
+            unit: "개"
         },
         deleteViaCtrl: {
             name: "Ctrl로 삭제",
@@ -343,4 +344,4 @@ export default {
             delete element.dataset.refresherPermBan;
         }
     }
-} as ManageModule;
+} satisfies ManageModule;

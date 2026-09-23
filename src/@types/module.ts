@@ -55,10 +55,12 @@ declare global {
         url?: RegExp;
 
         /**
-         * 해당 모듈이 가질 상탯값. 모듈 설정 저장용으로 사용됩니다.
+         * 해당 모듈이 가질 상탯값. 설정의 현재값 읽기 뷰.
+         * register가 settings 기반으로 채운다(단일 출처: settings[key].value). 정의에는 없다.
+         * 값이 없을 수 있으니 참조 시 checked/!로 쓴다.
          */
         status: T["settings"] extends Record<string, RefresherSettings>
-            ? { [K in keyof T["settings"]]: T["settings"][K]["default"] }
+            ? Partial<{ [K in keyof T["settings"]]: T["settings"][K]["default"] }>
             : Record<string, unknown>;
 
         /**
@@ -95,15 +97,16 @@ declare global {
 
         /**
          * 설정이 업데이트 됐을 시 호출할 함수를 정의합니다.
+         * 모든 설정에 핸들러가 필요한 건 아니다(예: useCompactModeOnView는 func에서만 읽는다).
          */
         update?: T["settings"] extends Record<string, RefresherSettings>
-            ? {
-                [K in keyof T["settings"]]: (
-                    this: RefresherModule<T>,
-                    // 저장값은 항상 default 타입으로 정규화되므로 undefined가 아니다
-                    value: T["settings"][K]["default"]
-                ) => void | Promise<void>;
-            }
+            ? Partial<{
+                  [K in keyof T["settings"]]: (
+                      this: RefresherModule<T>,
+                      // 저장값은 항상 default 타입으로 정규화되므로 undefined가 아니다
+                      value: T["settings"][K]["default"]
+                  ) => void | Promise<void>;
+              }>
             : Record<string, (value: unknown) => void | Promise<void>> | undefined;
 
         /**
