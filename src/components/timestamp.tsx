@@ -1,6 +1,5 @@
+import {Text} from "@radix-ui/themes";
 import {useCallback, useEffect, useState} from "react";
-
-import "./timestamp.scss";
 
 const s = 1000;
 const m = s * 60;
@@ -89,14 +88,18 @@ export default function Timestamp({date, mode = "elapsed"}: Props) {
     const {stampMode, stamp, locale, changeStamp} = useRelativeTime(date, mode, mode === "remaining" ? 5000 : 3000);
 
     return (
-        <div
+        <Text
+            as="div"
             className={mode === "remaining" ? "refresher-countdown" : "refresher-timestamp"}
+            color={mode === "remaining" ? "red" : undefined}
             onClick={changeStamp}
+            size="1"
+            style={{cursor: "pointer", opacity: 0.6, textAlign: "right"}}
             title={locale}
         >
             <span key={`stamp${stampMode}`}>
                 {stampMode ? locale : stamp}
             </span>
-        </div>
+        </Text>
     );
 }

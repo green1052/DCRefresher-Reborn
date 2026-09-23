@@ -1,11 +1,9 @@
-import {RefreshCw} from "lucide-react";
+import {Box, Checkbox, Flex, Heading, IconButton, ScrollArea, Separator, Spinner, Text} from "@radix-ui/themes";
+import {ChevronLeft, ChevronRight, RefreshCw, X} from "lucide-react";
 import {useEffect, useRef, useState} from "react";
 
 import * as http from "@/http/http";
-
-import Loader from "./loader";
-
-import "./dccon.scss";
+import toast from "@/utils/toast";
 
 interface Props {
     onClickDccon: (dccons: DcinsideDccon[], bigDccon: boolean) => void;
@@ -50,7 +48,7 @@ export default function DcconPopup({onClickDccon, onCloseDccon}: Props) {
 
             if (response.target === "shop") {
                 if (id === requestId.current) {
-                    alert("사용 가능한 디시콘이 없습니다.");
+                    toast.show("사용 가능한 디시콘이 없습니다.");
                     close();
                 }
                 return;
@@ -70,7 +68,7 @@ export default function DcconPopup({onClickDccon, onCloseDccon}: Props) {
         } catch {
             if (id !== requestId.current) return;
 
-            alert("디시콘을 불러오는데 실패했습니다.");
+            toast.show("디시콘을 불러오는데 실패했습니다.");
             close();
         }
     };
@@ -113,103 +111,137 @@ export default function DcconPopup({onClickDccon, onCloseDccon}: Props) {
     }, []);
 
     return (
-        <div className="refresher-dccon-popup">
-            <div className="dccon-header">
-                <h3>디시콘</h3>
+        <Box
+            className="refresher-dccon-popup"
+            style={{
+                backdropFilter: "blur(5px) saturate(150%)",
+                background: "var(--color-panel-solid)",
+                border: "1px solid var(--gray-a5)",
+                borderRadius: "var(--radius-4)",
+                boxShadow: "var(--shadow-5)",
+                height: 500,
+                left: "calc(50% - 350px)",
+                padding: "20px 30px",
+                position: "fixed",
+                top: "calc(50% - 300px)",
+                width: 620,
+                zIndex: 5002
+            }}
+        >
+            <Flex align="center" gap="3">
+                <Heading size="4">디시콘</Heading>
 
-                <div className="dccon-options">
-                    <input
-                        checked={doubleDccon}
-                        onChange={(ev) => setDoubleDccon(ev.target.checked)}
-                        type="checkbox"
-                    />
-                    <label>더블콘</label>
+                <Flex align="center" gap="3" ml="auto">
+                    <Flex align="center" gap="1">
+                        <Checkbox
+                            checked={doubleDccon}
+                            onCheckedChange={(value) => setDoubleDccon(value === true)}
+                            size="1"
+                        />
+                        <Text size="1">더블콘</Text>
+                    </Flex>
 
-                    <input
-                        checked={bigDccon}
-                        onChange={(ev) => setBigDccon(ev.target.checked)}
-                        type="checkbox"
-                    />
-                    <label>대왕콘</label>
-                </div>
+                    <Flex align="center" gap="1">
+                        <Checkbox
+                            checked={bigDccon}
+                            onCheckedChange={(value) => setBigDccon(value === true)}
+                            size="1"
+                        />
+                        <Text size="1">대왕콘</Text>
+                    </Flex>
+                </Flex>
 
-                <div
-                    className="refresh"
+                <IconButton
+                    color="gray"
                     onClick={() => void getDcconList(true)}
+                    title="새로고침"
+                    variant="ghost"
                 >
-                    <RefreshCw className="refresh-icon"/>
-                </div>
+                    <RefreshCw height={16} width={16}/>
+                </IconButton>
 
-                <div
-                    className="close"
-                    onClick={close}
-                >
-                    <div className="cross"/>
-                    <div className="cross"/>
-                </div>
-            </div>
+                <IconButton color="gray" onClick={close} title="닫기" variant="ghost">
+                    <X height={16} width={16}/>
+                </IconButton>
+            </Flex>
 
             {!Object.keys(dcconList).length ? (
-                <Loader/>
+                <Flex align="center" justify="center" style={{height: "calc(100% - 40px)"}}>
+                    <Spinner size="3"/>
+                </Flex>
             ) : (
-                <>
-                    <hr/>
-
-                    <ul className="dccon-pager">
-                        <li
-                            className="pager-prev"
-                            onClick={pageDown}
-                        >
-                            &lt;
-                        </li>
-                        {(dcconList[currentPage] ?? []).map((dccon) => (
-                            <li
-                                className="pager-item"
-                                key={dccon.title}
+                <Flex direction="column" gap="3" mt="3" style={{height: "calc(100% - 40px)"}}>
+                    <ScrollArea scrollbars="horizontal" type="hover">
+                        <Flex align="center" gap="2" style={{paddingRight: 8}}>
+                            <IconButton
+                                color="gray"
+                                onClick={pageDown}
+                                title="이전"
+                                variant="ghost"
                             >
+                                <ChevronLeft height={18} width={18}/>
+                            </IconButton>
+
+                            {(dcconList[currentPage] ?? []).map((dccon) => (
                                 <img
                                     alt={dccon.title}
-                                    className="pager-img"
+                                    key={dccon.title}
                                     onClick={() => dcconListClick(dccon.detail)}
                                     src={dccon.main_img_url}
+                                    style={{
+                                        cursor: "pointer",
+                                        flexShrink: 0,
+                                        height: 53,
+                                        objectFit: "cover"
+                                    }}
                                 />
-                            </li>
-                        ))}
-                        <li
-                            className="pager-next"
-                            onClick={pageUp}
-                        >
-                            &gt;
-                        </li>
-                    </ul>
+                            ))}
 
-                    <hr/>
+                            <IconButton
+                                color="gray"
+                                onClick={pageUp}
+                                title="다음"
+                                variant="ghost"
+                            >
+                                <ChevronRight height={18} width={18}/>
+                            </IconButton>
+                        </Flex>
+                    </ScrollArea>
 
-                    <div className="dccon-grid-wrap">
+                    <Separator size="4"/>
+
+                    <ScrollArea style={{flexGrow: 1}} type="hover">
                         {firstLoad ? (
-                            <h2 className="dccon-placeholder">
-                                디시콘을 클릭해주세요.
-                            </h2>
+                            <Flex align="center" justify="center" style={{height: "100%"}}>
+                                <Text size="4" weight="bold">디시콘을 클릭해주세요.</Text>
+                            </Flex>
                         ) : (
-                            <ul className="dccon-grid">
+                            <Box
+                                style={{
+                                    display: "grid",
+                                    gap: 4,
+                                    gridTemplateColumns: "repeat(6, 1fr)"
+                                }}
+                            >
                                 {(currentDccon ?? []).map((dccon) => (
-                                    <li
-                                        className="dccon-grid-item"
+                                    <img
+                                        alt={dccon.title}
                                         key={dccon.detail_idx}
                                         onClick={() => dcconClick(dccon)}
-                                    >
-                                        <img
-                                            alt={dccon.title}
-                                            className="dccon-grid-img"
-                                            src={dccon.list_img}
-                                        />
-                                    </li>
+                                        src={dccon.list_img}
+                                        style={{
+                                            cursor: "pointer",
+                                            height: 100,
+                                            objectFit: "contain",
+                                            width: "100%"
+                                        }}
+                                    />
                                 ))}
-                            </ul>
+                            </Box>
                         )}
-                    </div>
-                </>
+                    </ScrollArea>
+                </Flex>
             )}
-        </div>
+        </Box>
     );
 }

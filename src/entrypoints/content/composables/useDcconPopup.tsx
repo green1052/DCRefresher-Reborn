@@ -1,5 +1,6 @@
 import {createRoot, type Root} from "react-dom/client";
 
+import ContentTheme from "@/components/ContentTheme";
 import DcconPopup from "@/components/dccon";
 
 let mounted: { root: Root; element: HTMLDivElement } | null = null;
@@ -22,13 +23,15 @@ export const renderDcconPopup = (
 
     const root = createRoot(element);
     root.render(
-        <DcconPopup
-            onClickDccon={(dccons, bigDccon) => {
-                onClickDccon(dccons, bigDccon);
-                closeDcconPopup();
-            }}
-            onCloseDccon={closeDcconPopup}
-        />
+        <ContentTheme>
+            <DcconPopup
+                onClickDccon={(dccons, bigDccon) => {
+                    onClickDccon(dccons, bigDccon);
+                    closeDcconPopup();
+                }}
+                onCloseDccon={closeDcconPopup}
+            />
+        </ContentTheme>
     );
 
     mounted = {root, element};

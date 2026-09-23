@@ -1,13 +1,23 @@
+import {Flex, Text} from "@radix-ui/themes";
 import eventBus from "@/core/eventbus";
 import {User} from "@/utils/user";
-
-import "./user.scss";
 
 interface Props {
     user: User;
     me?: boolean;
     click?: (user: User) => void;
 }
+
+// 고정/부고정/매니저 등 유저 타입별 아이콘 점 색
+const ICON_COLORS: Record<string, string> = {
+    UNFIXED: "var(--gray-3)",
+    HALF_FIXED: "var(--gray-9)",
+    FIXED: "var(--yellow-9)",
+    HALF_FIXED_SUB_MANAGER: "var(--blue-9)",
+    FIXED_SUB_MANAGER: "var(--blue-9)",
+    HALF_FIXED_MANAGER: "var(--orange-9)",
+    FIXED_MANAGER: "var(--orange-9)"
+};
 
 export default function UserComponent({user, me = false, click}: Props) {
     const userDescription = (() => {
@@ -45,34 +55,52 @@ export default function UserComponent({user, me = false, click}: Props) {
     };
 
     return (
-        <div
+        <Flex
+            align="center"
             className={user.id ? "refresher-user cursor" : "refresher-user"}
             data-me={me}
+            gap="1"
             onClick={clickHandle}
             onContextMenu={contextMenu}
+            style={{
+                maxWidth: "calc(100% - 170px)",
+                ...(me ? {background: "var(--accent-a6)", borderRadius: 5, color: "white"} : {})
+            }}
             title={userDescription}
         >
-            <div className="refresher-user-content">
-                <span
-                    className="refresher-user-icon"
-                    data-icon={user.icon}
-                    data-type={user.type}
-                />
-                <span className="refresher-user-nick">{user.nick}</span>
-                {user.memo && (
-                    <span
-                        className="refresher-user-memo"
-                        style={{color: user.memo.color}}
-                    >
-                        [{user.memo.text}]
-                    </span>
-                )}
-                {!(me && user.isLogout()) && (
-                    <span className="refresher-user-info">
-                        {userDescription}
-                    </span>
-                )}
-            </div>
-        </div>
+            <span
+                style={{
+                    background: ICON_COLORS[user.type ?? "UNFIXED"] ?? "var(--gray-3)",
+                    borderRadius: "50%",
+                    boxShadow: "var(--shadow-3)",
+                    display: "block",
+                    flexShrink: 0,
+                    height: 9,
+                    width: 9
+                }}
+            />
+            <Text className="refresher-user-nick" size="2" style={{whiteSpace: "nowrap"}} weight="bold">
+                {user.nick}
+            </Text>
+            {user.memo && (
+                <Text size="1" style={{color: user.memo.color, whiteSpace: "nowrap"}}>
+                    [{user.memo.text}]
+                </Text>
+            )}
+            {!(me && user.isLogout()) && (
+                <Text
+                    className="refresher-user-info"
+                    color="gray"
+                    size="1"
+                    style={{
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap"
+                    }}
+                >
+                    {userDescription}
+                </Text>
+            )}
+        </Flex>
     );
 }
