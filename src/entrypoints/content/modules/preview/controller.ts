@@ -73,7 +73,6 @@ export class PreviewController {
     private currentPreData: GalleryPreData | null = null;
     private readonly postFetchedDataRef: PostFetchedDataRef = {value: undefined};
 
-    private appStore: FrameScrollApi | undefined;
     private groupStore!: HTMLElement;
     private readonly scrolledCountRef = {value: 0};
 
@@ -312,7 +311,6 @@ export class PreviewController {
                 onScroll: (ev: WheelEvent, group: HTMLElement) => {
                     if (!this.status.scrollToSkip) return;
 
-                    this.appStore = this.frame?.app;
                     this.groupStore = group;
 
                     detector.addMouseEvent(ev);
@@ -323,7 +321,7 @@ export class PreviewController {
 
         const scrollCtx: ScrollNavigationContext = {
             postFetchedDataRef: this.postFetchedDataRef,
-            getAppStore: () => this.appStore,
+            getAppStore: () => this.frame?.app,
             getGroupStore: () => this.groupStore,
             scrolledCountRef: this.scrolledCountRef,
             newPostWithData: (pd, hs) => this.newPostWithData(pd, hs)
@@ -368,7 +366,7 @@ export class PreviewController {
             document.title = this.titleStore;
         }
 
-        this.appStore?.clearScrollMode();
+        this.frame?.app.clearScrollMode();
         this.clearRefreshInterval();
     }
 
