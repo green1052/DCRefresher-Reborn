@@ -99,7 +99,9 @@ export default function BlockAddDialog() {
                                     className="select-trigger"
                                     style={{width: 260}}
                                 >
-                                    <Select.Value/>
+                                    <Select.Value>
+                                        {formData.mode === "NONE" ? "기본값" : blockDetectModeTypeNames[formData.mode]}
+                                    </Select.Value>
                                 </Select.Trigger>
                                 <Select.Portal>
                                     <Select.Content className="select-content">

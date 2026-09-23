@@ -77,7 +77,9 @@ export default function SettingItem({setting, settingKey, moduleName, moduleEnab
                         className="select-trigger"
                         style={{width: CONTROL_WIDTH}}
                     >
-                        <Select.Value/>
+                        <Select.Value>
+                            {setting.items[String(setting.value ?? "")] ?? String(setting.default)}
+                        </Select.Value>
                     </Select.Trigger>
                     <Select.Portal>
                         <Select.Content className="select-content">

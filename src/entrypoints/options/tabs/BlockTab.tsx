@@ -40,7 +40,9 @@ export default function BlockTab() {
                                 value={blockModes[key] ?? "SAME"}
                             >
                                 <Select.Trigger aria-label="차단 모드" className="select-trigger">
-                                    <Select.Value/>
+                                    <Select.Value>
+                                        {blockDetectModeTypeNames[blockModes[key] ?? "SAME"]}
+                                    </Select.Value>
                                 </Select.Trigger>
                                 <Select.Portal>
                                     <Select.Content className="select-content">
