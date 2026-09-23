@@ -4,14 +4,12 @@ interface Props {
     value?: string;
     placeholder?: string;
     disabled?: boolean;
-    onInput?: (value: string) => void;
     onChange?: (value: string) => void;
     onKeyUpEnter?: () => void;
 }
 
-export default function RefresherInput({value = "", placeholder, disabled = false, onInput, onChange, onKeyUpEnter}: Props) {
+export default function RefresherInput({value = "", placeholder, disabled = false, onChange, onKeyUpEnter}: Props) {
     const handleChange = (ev: React.ChangeEvent<HTMLInputElement>) => {
-        onInput?.(ev.target.value);
         onChange?.(ev.target.value);
     };
 

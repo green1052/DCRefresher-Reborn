@@ -13,19 +13,21 @@ export const BLOCK_TYPES: RefresherBlockType[] = [
 
 export const MEMO_TYPES: RefresherMemoType[] = ["UID", "NICK", "IP"];
 
+type StorageItem<T> = ReturnType<typeof storage.defineItem<T>>;
+
 export const blockStorage = BLOCK_TYPES.reduce((acc, type) => {
     acc[type] = storage.defineItem<RefresherBlockValue[]>(`local:refresher:block:${type}`, {
         defaultValue: []
     });
     return acc;
-}, {} as Record<RefresherBlockType, ReturnType<typeof storage.defineItem<RefresherBlockValue[]>>>);
+}, {} as Record<RefresherBlockType, StorageItem<RefresherBlockValue[]>>);
 
 export const blockModeStorage = BLOCK_TYPES.reduce((acc, type) => {
     acc[type] = storage.defineItem<RefresherBlockDetectMode>(`local:refresher:block:${type}:mode`, {
         defaultValue: "SAME"
     });
     return acc;
-}, {} as Record<RefresherBlockType, ReturnType<typeof storage.defineItem<RefresherBlockDetectMode>>>);
+}, {} as Record<RefresherBlockType, StorageItem<RefresherBlockDetectMode>>);
 
 // ===== 메모 (Memo) =====
 
@@ -34,7 +36,7 @@ export const memoStorage = MEMO_TYPES.reduce((acc, type) => {
         defaultValue: {}
     });
     return acc;
-}, {} as Record<RefresherMemoType, ReturnType<typeof storage.defineItem<Record<string, RefresherMemoValue>>>>);
+}, {} as Record<RefresherMemoType, StorageItem<Record<string, RefresherMemoValue>>>);
 
 // ===== 모듈 (Module) =====
 
@@ -72,10 +74,11 @@ export const backupStorage = {
 // 감시를 먼저 등록한 뒤 초기값을 읽는다. 읽는 동안 변경돼도 watch가 놓치지 않는다.
 // 반환값: 감시 해제 함수.
 export const onStorageValue = <T>(
-    item: { getValue: () => Promise<T>; watch: (cb: (value: T) => void) => () => void },
+    item: StorageItem<T>,
     handler: (value: T) => void
 ): (() => void) => {
-    const unwatch = item.watch(handler);
-    void (async () => handler(await item.getValue()))();
+    // defaultValue를 항상 지정하므로 null은 키가 지워졌을 때만 나온다. (우리는 지우지 않음)
+    const unwatch = item.watch((value) => handler(value as T));
+    void (async () => handler((await item.getValue()) as T))();
     return unwatch;
 };

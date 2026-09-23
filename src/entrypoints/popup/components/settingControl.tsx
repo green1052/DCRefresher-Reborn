@@ -41,7 +41,6 @@ export default function SettingControl({setting, settingKey, moduleName, moduleE
                     max={setting.max}
                     min={setting.min}
                     onChange={onChange}
-                    placeholder={String(setting.default)}
                     step={setting.step}
                     unit={setting.unit}
                     value={Number(setting.value)}

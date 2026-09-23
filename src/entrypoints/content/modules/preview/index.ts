@@ -2,6 +2,7 @@ import {PreviewController, type PreviewStatus} from "./controller";
 import {PostCache} from "./cache";
 import {createMiniPreview, type MiniPreviewState} from "./miniPreview";
 import * as http from "@/http/http";
+import {MODULE_ID} from "@/core/modules";
 
 interface PreviewMemory {
     controller: PreviewController | null;
@@ -40,10 +41,10 @@ const postCaches = new PostCache();
 const miniPreview: MiniPreviewState = createMiniPreview();
 
 export default {
-    name: "미리보기",
+    name: MODULE_ID.PREVIEW,
     description: "글을 오른쪽 클릭 했을때 미리보기 창을 만들어줍니다.",
     url: /\/board\/(view|lists)/,
-    status: {} as PreviewSettingsMap extends Record<string, RefresherSettings> ? { [K in keyof PreviewSettingsMap]: PreviewSettingsMap[K]["default"] } : never,
+    status: {} as {[K in keyof PreviewSettingsMap]: PreviewSettingsMap[K]["default"]},
     memory: {
         controller: null
     },

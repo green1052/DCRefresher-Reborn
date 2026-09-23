@@ -1,4 +1,5 @@
 import {moduleEnableStorage, moduleSettingStorage} from "@/storage/wxtStorage";
+import {normalizeSettingValue} from "@/core/settings";
 import {sendMessage} from "@/http/messaging";
 import {useEffect, useState} from "react";
 
@@ -42,10 +43,12 @@ export function useSettings() {
                     settingsMap[moduleName] = moduleSchema.settings ?? {};
 
                     for (const [key, setting] of Object.entries(settingsMap[moduleName])) {
+                        // 저장값은 무조건 정규화. 코어와 같은 규칙(range 클램프, option items 검증)을 쓴다.
                         const stored = snapshot[`refresher:module:${moduleName}:setting:${key}`];
-                        if (stored !== null && stored !== undefined) {
-                            settingsMap[moduleName][key] = {...setting, value: stored} as RefresherSettings;
-                        }
+                        settingsMap[moduleName][key] = {
+                            ...setting,
+                            value: normalizeSettingValue(setting, stored ?? setting.value)
+                        } as RefresherSettings;
                     }
 
                     enableMap[moduleName] = {
@@ -78,9 +81,13 @@ export function useSettings() {
         const setting = settings[module]?.[key];
         if (!setting) return;
 
+        // 저장 전에 코어와 같은 규칙으로 정규화. 코어의 setStore는 같은 값이면 조용히 통과하므로
+        // 스토리지에 쓰여진 값이 곧 최종값이 된다.
+        const normalizedValue = normalizeSettingValue(setting, value);
+
         setSettings((prev) => ({
             ...prev,
-            [module]: {...prev[module], [key]: {...setting, value} as RefresherSettings}
+            [module]: {...prev[module], [key]: {...setting, value: normalizedValue} as RefresherSettings}
         }));
 
         const id = `${module}:${key}`;
@@ -113,7 +120,7 @@ export function useSettings() {
             }, SETTING_WRITE_DELAY),
             module,
             key,
-            value: value as string | number | boolean,
+            value: normalizedValue,
             previousValue
         };
 

@@ -4,7 +4,6 @@ import "./range.scss";
 
 interface Props {
     value?: number;
-    placeholder?: string;
     max?: number;
     min?: number;
     step?: number;
@@ -15,7 +14,6 @@ interface Props {
 
 export default function Range({
     value = 0,
-    placeholder,
     max = 100,
     min = 0,
     step = 1,
@@ -42,7 +40,6 @@ export default function Range({
                 max={max}
                 min={min}
                 onChange={handleChange}
-                placeholder={placeholder}
                 step={step}
                 type="range"
                 value={currentValue}

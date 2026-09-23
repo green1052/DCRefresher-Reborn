@@ -6,7 +6,7 @@ export type SettingsStore = Record<string, Record<string, RefresherSettings>>;
 
 const settingsStore: SettingsStore = {};
 
-const normalizeSettingValue = (
+export const normalizeSettingValue = (
     settings: RefresherSettings,
     value: unknown
 ): string | number | boolean => {
@@ -20,7 +20,8 @@ const normalizeSettingValue = (
                 ? Math.min(settings.max, Math.max(settings.min, value))
                 : settings.default;
         case "option":
-            return typeof value === "string" ? value : settings.default;
+            // items에 없는 값이면 셀렉트가 빈 채로 표시되므로 기본값으로.
+            return typeof value === "string" && value in settings.items ? value : settings.default;
     }
 };
 

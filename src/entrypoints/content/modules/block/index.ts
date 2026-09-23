@@ -2,6 +2,7 @@ import block from "@/core/block";
 import filter from "@/core/filtering";
 
 import {eventBus} from "@/core/eventbus";
+import {MODULE_ID} from "@/core/modules";
 import {onMessage} from "@/http/messaging";
 import * as http from "@/http/http";
 import {extractDcconCode} from "@/utils/dccon";
@@ -208,7 +209,7 @@ const setupMessageHandlers = (ctx: BlockModule): void => {
 };
 
 export default {
-    name: "컨텐츠 차단",
+    name: MODULE_ID.BLOCK,
     description: "유저, 컨텐츠 등의 보고 싶지 않은 컨텐츠들을 삭제합니다.",
     url: /\/board\/(view|lists)/,
     status: {},
