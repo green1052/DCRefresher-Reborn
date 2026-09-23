@@ -19,7 +19,7 @@ interface Props {
         bigDccon: boolean
     ) => Promise<boolean>;
     reply?: { commentNo: string | null; replyNo: string | null };
-    renderDcconPopup?: () => boolean;
+    openDcconPopup?: () => void;
     getDccon?: () => DcinsideDccon[];
     getBigDccon?: () => boolean;
     onSetDccon: (dccons: DcinsideDccon[]) => void;
@@ -30,7 +30,7 @@ interface Props {
 export default function WriteComment({
     func,
     reply = {commentNo: null, replyNo: null},
-    renderDcconPopup,
+    openDcconPopup,
     getDccon,
     getBigDccon,
     onSetDccon,
@@ -162,7 +162,10 @@ export default function WriteComment({
                 </div>
                 <PreviewButton
                     className="refresher-writecomment"
-                    click={() => renderDcconPopup?.() ?? false}
+                    click={() => {
+                        openDcconPopup?.();
+                        return false;
+                    }}
                     id="dccon"
                 />
                 <PreviewButton

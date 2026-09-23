@@ -4,7 +4,7 @@ import Loader from "@/components/loader";
 import PreviewButton from "@/components/previewButton";
 import Timestamp from "@/components/timestamp";
 import UserComponent from "@/components/user";
-import {closeDcconPopup, renderDcconPopup} from "@/entrypoints/content/composables/useDcconPopup";
+import DcconPopup from "@/components/dccon";
 
 import Comment from "../comment/comment";
 import WriteComment from "../comment/write_comment";
@@ -35,6 +35,7 @@ export default function Frame({frame, index, registerIncrement}: Props) {
 
     const [dccon, setDccon] = useState<DcinsideDccon[]>([]);
     const [bigDccon, setBigDccon] = useState(false);
+    const [showDcconPopup, setShowDcconPopup] = useState(false);
     const dcconRef = useRef(dccon);
     dcconRef.current = dccon;
     const bigDcconRef = useRef(bigDccon);
@@ -150,7 +151,7 @@ export default function Frame({frame, index, registerIncrement}: Props) {
         setReply({commentNo: null, replyNo: null});
         setDccon([]);
         setBigDccon(false);
-        closeDcconPopup();
+        setShowDcconPopup(false);
         setCommentKey(0);
         setCollapsedParents(new Set());
     };
@@ -287,12 +288,7 @@ export default function Frame({frame, index, registerIncrement}: Props) {
                                             onSetBigDccon={setBigDccon}
                                             onSetDccon={setDccon}
                                             onUpdateReply={setReply}
-                                            renderDcconPopup={() =>
-                                                renderDcconPopup((selected, big) => {
-                                                    setDccon(selected);
-                                                    setBigDccon(big);
-                                                })
-                                            }
+                                            openDcconPopup={() => setShowDcconPopup(true)}
                                             reply={reply}
                                         />
                                     )}
@@ -311,6 +307,17 @@ export default function Frame({frame, index, registerIncrement}: Props) {
                             share={share}
                             upvote={upvote}
                             upvotes={frame.upvotes}
+                        />
+                    )}
+
+                    {showDcconPopup && (
+                        <DcconPopup
+                            onClickDccon={(dccons, big) => {
+                                setDccon(dccons);
+                                setBigDccon(big);
+                                setShowDcconPopup(false);
+                            }}
+                            onCloseDccon={() => setShowDcconPopup(false)}
                         />
                     )}
                 </div>

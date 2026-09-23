@@ -1,4 +1,4 @@
-import {type Root, createRoot} from "react-dom/client";
+import {mountReactNode, unmountReactNode, type MountedReactNode} from "@/utils/reactMount";
 
 import blockPopup from "./components/popup/blockPopup";
 import captchaPopup from "./components/popup/captchaPopup";
@@ -22,27 +22,19 @@ export const blockPreset: BlockPreset = {
     user_type: false
 };
 
-interface MountedPopup {
-    root: Root;
-    element: HTMLDivElement;
-}
+type MountedPopup = MountedReactNode;
 
 const mountedPopups = new Set<MountedPopup>();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mountPopup(Component: React.ComponentType<any>, props: Record<string, unknown>): MountedPopup {
-    const element = document.createElement("div");
-    const root = createRoot(element);
-    root.render(<Component {...props}/>);
-    document.body.appendChild(element);
-    const instance = {root, element};
+    const instance = mountReactNode(Component, props);
     mountedPopups.add(instance);
     return instance;
 }
 
 function unmountPopup(instance: MountedPopup): void {
-    instance.root.unmount();
-    instance.element.remove();
+    unmountReactNode(instance);
     mountedPopups.delete(instance);
 }
 
