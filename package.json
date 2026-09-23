@@ -15,6 +15,7 @@
         "postinstall": "wxt prepare"
     },
     "dependencies": {
+        "@radix-ui/themes": "^3.3.0",
         "@webext-core/messaging": "^4.0.0",
         "@wxt-dev/webextension-polyfill": "^1.0.0",
         "ky": "^2.1.0",

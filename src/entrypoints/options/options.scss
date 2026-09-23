@@ -1,40 +1,21 @@
-/* options 페이지 전용 - popup 고정 크기/위치 제거 */
-html, body {
-    height: auto;
-    min-height: 100vh;
-    overflow-y: auto;
-    margin: 0;
-    padding: 0;
+/* options 페이지 전용 - Radix Themes 베이스에 최소만 얹는다. */
+:root {
+    color-scheme: light dark;
 }
 
-#refresher-app.options-page {
-    width: 100% !important;
-    height: auto !important;
-    min-height: 100vh;
-    max-width: none !important;
-    margin: 0 !important;
-    border-radius: 0 !important;
-    overflow: visible;
-    display: block;
+body {
+    margin: 0;
+}
 
-    .refresher-title-zone {
-        position: relative !important;
-        width: 100%;
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 10px 24px;
-        box-sizing: border-box;
-        z-index: auto;
-    }
+/* 브라우저 액션 팝업. 팝업 창 크기는 루트(html) 박스를 따라가므로 html+body 둘 다 고정한다.
+   #app까지 100% 체인을 이어야 내부 스크롤 영역이 실제로 만들어진다. */
+html.popup-mode,
+html.popup-mode body {
+    height: 600px;
+    overflow: hidden;
+    width: 700px;
+}
 
-    .tab {
-        position: relative !important;
-        width: 100% !important;
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px 24px 40px;
-        height: auto !important;
-        box-sizing: border-box;
-        overflow-y: visible;
-    }
+html.popup-mode #app {
+    height: 100%;
 }
