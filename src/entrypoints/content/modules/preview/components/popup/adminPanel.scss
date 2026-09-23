@@ -1,7 +1,7 @@
 @use "@/assets/styles/tokens" as *;
 
 .refresher-management-panel {
-    background: rgba(255, 255, 255, 0.8);
+    background: var(--refresher-bg-popup);
     border-radius: 0 $radius-md $radius-md 0;
     display: grid;
     height: 60%;
@@ -43,7 +43,7 @@
         }
 
         &:hover {
-            background: rgba(255, 255, 255, 1);
+            background: var(--refresher-bg);
         }
     }
 
@@ -56,7 +56,7 @@
             }
 
             p {
-                color: #f00;
+                color: var(--refresher-danger);
             }
         }
     }
@@ -79,6 +79,6 @@ html:has(#css-darkmode) .refresher-management-panel {
     }
 
     .refresher-mgmt-icon {
-        color: $dark-text-color-bright;
+        color: var(--refresher-text);
     }
 }

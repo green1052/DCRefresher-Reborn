@@ -4,11 +4,11 @@ $tablet: 768px;
 $desktop: 1024px;
 
 .refresher-toast {
-    background-color: #fff;
+    background-color: var(--refresher-bg);
     border: 1px solid transparent;
     border-radius: 13.3px;
     bottom: 5vh;
-    color: #000;
+    color: var(--refresher-text);
     display: -webkit-flex;
     display: flex;
     height: 62px;
@@ -93,7 +93,7 @@ $desktop: 1024px;
 }
 
 .refresher-toast[data-type="error"] {
-    background-color: #ff6464;
+    background-color: var(--refresher-danger);
     color: #fff;
 }
 
@@ -104,9 +104,9 @@ $desktop: 1024px;
 
 html:has(#css-darkmode) {
     .refresher-toast {
-        background-color: #333;
+        background-color: var(--refresher-bg);
         border: 1px solid rgba(255, 255, 255, 0.12);
-        color: rgb(219, 219, 219);
+        color: var(--refresher-text);
 
         &.hover:hover {
             background-color: #393939;
@@ -118,13 +118,13 @@ html:has(#css-darkmode) {
     }
 
     .refresher-toast[data-type="error"] {
-        background-color: #d41717;
+        background-color: var(--refresher-danger);
         color: #fff;
     }
 
     .refresher-toast[data-type="warning"] {
         background-color: #eeb02b;
-        color: #000;
+        color: var(--refresher-text);
     }
 }
 

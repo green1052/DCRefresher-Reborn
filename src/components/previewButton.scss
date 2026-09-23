@@ -26,11 +26,11 @@
     }
 
     &.primary {
-        background-color: rgba(0, 110, 255, 0.8);
+        background-color: var(--refresher-primary);
     }
 
     &.sub {
-        background-color: rgba(106, 122, 143, 0.8);
+        background-color: var(--refresher-primary-active);
     }
 
     &.refresher-writecomment img {
@@ -39,7 +39,7 @@
 
     &:hover {
         backdrop-filter: blur(10px) saturate(200%);
-        background-color: rgba(0, 110, 255, 0.7);
+        background-color: var(--refresher-primary-hover);
 
         box-shadow: $shadow-2dp;
 
@@ -52,7 +52,7 @@
 
     &:active {
         backdrop-filter: blur(10px) saturate(220%);
-        background-color: rgba(0, 110, 255, 0.6);
+        background-color: var(--refresher-primary-active);
         box-shadow: $shadow-1dp;
 
         * {
@@ -83,7 +83,7 @@
     }
 
     p {
-        color: #000;
+        color: var(--refresher-text);
         font-size: 16px;
         font-weight: lighter;
 
@@ -98,14 +98,14 @@ html:has(#css-darkmode) {
         box-shadow: none;
 
         &.primary {
-            background-color: rgba(0, 110, 255, 0.32);
+            background-color: var(--refresher-primary-active);
 
             &:hover {
-                background-color: rgba(0, 110, 255, 0.28);
+                background-color: var(--refresher-primary-hover);
             }
 
             &:active {
-                background-color: rgba(0, 110, 255, 0.22);
+                background-color: var(--refresher-primary-active);
             }
         }
 
