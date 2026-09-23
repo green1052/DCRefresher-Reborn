@@ -181,7 +181,7 @@ export default {
         },
         blockPresetUserType: {
             name: "관리 패널 > 차단 프리셋 > 식별 코드 차단 시 IP 동시 차단",
-            desc: "차단 시 선택한 글을 삭제합니다.",
+            desc: "차단 시 해당 유저의 IP를 함께 차단합니다.",
             type: "check",
             default: false
         },
