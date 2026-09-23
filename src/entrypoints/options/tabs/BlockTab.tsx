@@ -1,4 +1,3 @@
-import {Select} from "radix-ui";
 import {Plus, X} from "lucide-react";
 
 import {useAppContext} from "../../popup/context";
@@ -35,27 +34,17 @@ export default function BlockTab() {
                     {blockTypes.map((key) => (
                         <div className="row" style={{gap: 12}} key={key}>
                             <div style={{fontSize: 13, width: 120}}>{blockKeyNames[key]}</div>
-                            <Select.Root
-                                onValueChange={(value) => setBlockMode(key, value as RefresherBlockDetectMode)}
+                            <select
+                                className="native-select"
+                                onChange={(ev) => setBlockMode(key, ev.target.value as RefresherBlockDetectMode)}
                                 value={blockModes[key] ?? "SAME"}
                             >
-                                <Select.Trigger aria-label="차단 모드" className="select-trigger">
-                                    <Select.Value>
-                                        {blockDetectModeTypeNames[blockModes[key] ?? "SAME"]}
-                                    </Select.Value>
-                                </Select.Trigger>
-                                <Select.Portal>
-                                    <Select.Content className="select-content">
-                                        <Select.Viewport className="select-viewport">
-                                            {Object.entries(blockDetectModeTypeNames).map(([modeKey, label]) => (
-                                                <Select.Item className="select-item" key={modeKey} value={modeKey}>
-                                                    {label}
-                                                </Select.Item>
-                                            ))}
-                                        </Select.Viewport>
-                                    </Select.Content>
-                                </Select.Portal>
-                            </Select.Root>
+                                {Object.entries(blockDetectModeTypeNames).map(([modeKey, label]) => (
+                                    <option key={modeKey} value={modeKey}>
+                                        {label}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     ))}
                 </div>

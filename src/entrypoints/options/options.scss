@@ -218,70 +218,32 @@ input[type="range"] {
     transform: translateX(16px);
 }
 
-/* 셀렉트 */
-.select-trigger {
-    all: unset;
-    align-items: center;
+/* 셀렉트 — 네이티브 select를 트리거 룩에 맞춘다. 클릭/키보드/a11y는 OS가 보장. */
+.native-select {
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 8px;
     box-sizing: border-box;
     color: var(--text);
     cursor: pointer;
-    display: inline-flex;
     font: inherit;
     font-size: 13px;
-    gap: 8px;
-    justify-content: space-between;
+    outline: none;
     padding: 6px 10px;
 }
 
-.select-trigger[data-disabled] {
-    cursor: not-allowed;
-    opacity: 0.5;
-}
-
-.select-trigger:hover:not([data-disabled]) {
+.native-select:hover,
+.native-select:focus {
     border-color: var(--accent);
 }
 
-.select-trigger[data-state="open"] {
-    border-color: var(--accent);
+.native-select:focus {
     box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
-.select-content {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    padding: 4px;
-    z-index: 100;
-}
-
-.select-item {
-    all: unset;
-    align-items: center;
-    border-radius: 6px;
-    color: var(--text);
-    cursor: pointer;
-    display: flex;
-    font-size: 13px;
-    padding: 6px 10px;
-}
-
-.select-item[data-highlighted] {
-    background: var(--accent-soft);
-}
-
-.select-item[data-state="checked"] {
-    color: var(--accent);
-    font-weight: 600;
-}
-
-.select-viewport {
-    max-height: 220px;
+.native-select:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
 }
 
 /* 다이얼로그/토스트는 service.scss */

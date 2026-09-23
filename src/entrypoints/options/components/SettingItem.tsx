@@ -1,4 +1,3 @@
-import {Select} from "radix-ui";
 import {Switch} from "radix-ui";
 
 import {useAppContext} from "../../popup/context";
@@ -67,32 +66,19 @@ export default function SettingItem({setting, settingKey, moduleName, moduleEnab
                 </div>
             )}
             {setting.type === "option" && (
-                <Select.Root
+                <select
+                    className="native-select"
                     disabled={!moduleEnabled}
-                    onValueChange={onChange}
+                    onChange={(ev) => onChange(ev.target.value)}
+                    style={{width: CONTROL_WIDTH}}
                     value={String(setting.value ?? "")}
                 >
-                    <Select.Trigger
-                        aria-label={setting.name}
-                        className="select-trigger"
-                        style={{width: CONTROL_WIDTH}}
-                    >
-                        <Select.Value>
-                            {setting.items[String(setting.value ?? "")] ?? String(setting.default)}
-                        </Select.Value>
-                    </Select.Trigger>
-                    <Select.Portal>
-                        <Select.Content className="select-content">
-                            <Select.Viewport className="select-viewport">
-                                {Object.entries(setting.items).map(([key, label]) => (
-                                    <Select.Item className="select-item" key={key} value={key}>
-                                        {label}
-                                    </Select.Item>
-                                ))}
-                            </Select.Viewport>
-                        </Select.Content>
-                    </Select.Portal>
-                </Select.Root>
+                    {Object.entries(setting.items).map(([key, label]) => (
+                        <option key={key} value={key}>
+                            {label}
+                        </option>
+                    ))}
+                </select>
             )}
         </div>
     );

@@ -1,5 +1,4 @@
 import {Dialog} from "radix-ui";
-import {Select} from "radix-ui";
 import {Switch} from "radix-ui";
 import {useEffect, useState} from "react";
 
@@ -90,32 +89,19 @@ export default function BlockAddDialog() {
 
                         <div className="row" style={{gap: 12, justifyContent: "space-between"}}>
                             <div style={{fontSize: 13, fontWeight: 500}}>차단 모드</div>
-                            <Select.Root
-                                onValueChange={(value) => patch({mode: value as RefresherBlockDetectMode | "NONE"})}
+                            <select
+                                className="native-select"
+                                onChange={(ev) => patch({mode: ev.target.value as RefresherBlockDetectMode | "NONE"})}
+                                style={{width: 260}}
                                 value={formData.mode}
                             >
-                                <Select.Trigger
-                                    aria-label="차단 모드"
-                                    className="select-trigger"
-                                    style={{width: 260}}
-                                >
-                                    <Select.Value>
-                                        {formData.mode === "NONE" ? "기본값" : blockDetectModeTypeNames[formData.mode]}
-                                    </Select.Value>
-                                </Select.Trigger>
-                                <Select.Portal>
-                                    <Select.Content className="select-content">
-                                        <Select.Viewport className="select-viewport">
-                                            <Select.Item className="select-item" value="NONE">기본값</Select.Item>
-                                            {Object.entries(blockDetectModeTypeNames).map(([key, label]) => (
-                                                <Select.Item className="select-item" key={key} value={key}>
-                                                    {label}
-                                                </Select.Item>
-                                            ))}
-                                        </Select.Viewport>
-                                    </Select.Content>
-                                </Select.Portal>
-                            </Select.Root>
+                                <option value="NONE">기본값</option>
+                                {Object.entries(blockDetectModeTypeNames).map(([key, label]) => (
+                                    <option key={key} value={key}>
+                                        {label}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         <div className="dialog-actions" style={{marginTop: 0}}>
