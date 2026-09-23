@@ -3,6 +3,7 @@ import {TYPE_NAMES as MEMO_TYPE_NAMES, normalizeMemoMap, watchMemoStorages} from
 import {sendMessage} from "@/http/messaging";
 import {useEffect, useState} from "react";
 import {copyToClipboard, parseImportData} from "../utils/io";
+import {ui} from "../../options/components/UiService";
 
 export function useMemos() {
     const [memos, setMemos] = useState<{ [key in RefresherMemoType]: { [key: string]: RefresherMemoValue } }>({
@@ -24,7 +25,7 @@ export function useMemos() {
 
         // 유저 정보 모듈이 붙는 페이지(/board/view, /board/lists)에서만 메모 창이 뜬다.
         if (!tab?.id || !/^https:\/\/gall\.dcinside\.com\/(.*\/)?board\/(view|lists)/.test(tab.url ?? "")) {
-            alert("디시인사이드 게시판(글 목록 / 글 보기) 탭에서 사용해주세요.");
+            ui.alert("디시인사이드 게시판(글 목록 / 글 보기) 탭에서 사용해주세요.");
             return;
         }
 
@@ -43,13 +44,13 @@ export function useMemos() {
     };
 
     const removeAllMemoUser = async (type: RefresherMemoType) => {
-        if (!confirm(`${MEMO_TYPE_NAMES[type]} 메모를 모두 삭제할까요?`)) return;
+        if (!(await ui.confirm(`${MEMO_TYPE_NAMES[type]} 메모를 모두 삭제할까요?`))) return;
         setMemos((prev) => ({...prev, [type]: {}}));
         await memoStorage[type].setValue({});
     };
 
     const addMemoUser = async (type: RefresherMemoType) => {
-        const user = prompt("메모 대상을 입력하세요.");
+        const user = await ui.prompt("메모 대상을 입력하세요.");
 
         if (!user) return;
 
@@ -63,7 +64,7 @@ export function useMemos() {
     const exportMemo = () => copyToClipboard(memos);
 
     const importMemo = async () => {
-        const data = parseImportData(`예시: {"UID":{},"NICK":{},"IP":{}}`);
+        const data = await parseImportData(`예시: {"UID":{},"NICK":{},"IP":{}}`);
         if (!data) return;
 
         for (const [key, value] of Object.entries(data)) {
@@ -75,7 +76,7 @@ export function useMemos() {
             const importedMemos = normalizeMemoMap(value);
 
             for (const [id, memo] of Object.entries(importedMemos)) {
-                if (target[id] && !confirm(`${id}에 대한 메모가 이미 존재합니다. 덮어쓰시겠습니까?`)) {
+                if (target[id] && !(await ui.confirm(`${id}에 대한 메모가 이미 존재합니다. 덮어쓰시겠습니까?`))) {
                     continue;
                 }
 
@@ -86,7 +87,7 @@ export function useMemos() {
             await memoStorage[type].setValue(target);
         }
 
-        alert("가져오기에 성공했습니다.");
+        ui.alert("가져오기에 성공했습니다.");
     };
 
     return {

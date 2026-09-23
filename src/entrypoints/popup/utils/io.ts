@@ -1,14 +1,16 @@
+import {ui} from "../../options/components/UiService";
+
 export const copyToClipboard = async (payload: unknown) => {
     try {
         await navigator.clipboard.writeText(JSON.stringify(payload));
-        alert("클립보드에 복사되었습니다.");
+        ui.alert("클립보드에 복사되었습니다.");
     } catch {
-        alert("클립보드에 복사하지 못했습니다.");
+        ui.alert("클립보드에 복사하지 못했습니다.");
     }
 };
 
-export const parseImportData = (example: string) => {
-    const result = prompt("가져올 데이터를 입력하세요.", example);
+export const parseImportData = async (example: string) => {
+    const result = await ui.prompt("가져올 데이터를 입력하세요.", example);
     if (!result) return null;
 
     try {
@@ -19,7 +21,7 @@ export const parseImportData = (example: string) => {
 
         return parsed as Record<string, unknown>;
     } catch {
-        alert("데이터가 잘못됐습니다.");
+        ui.alert("데이터가 잘못됐습니다.");
         return null;
     }
 };

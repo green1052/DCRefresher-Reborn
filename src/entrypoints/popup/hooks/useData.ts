@@ -1,5 +1,6 @@
 import {backupStorage} from "@/storage/wxtStorage";
 import {useCallback, useState} from "react";
+import {ui} from "../../options/components/UiService";
 
 const STORAGE_KEY_PREFIX = "refresher:";
 const DATABASE_PREFIX = "refresher:database:";
@@ -73,29 +74,29 @@ export function useData() {
             const now = Date.now();
             setLastUpdate(now);
             await backupStorage.lastUpdate.setValue(now);
-            alert("설정을 클라우드에 백업했습니다. (차단 목록·메모 제외)");
+            ui.alert("설정을 클라우드에 백업했습니다. (차단 목록·메모 제외)");
         } catch (error) {
             console.error("Cloud backup failed:", error);
-            alert("데이터를 클라우드에 백업하는데 실패했습니다.");
+            ui.alert("데이터를 클라우드에 백업하는데 실패했습니다.");
         } finally {
             setLoading(false);
         }
     };
 
     const recoverCloud = async (): Promise<void> => {
-        if (!confirm("클라우드 백업(설정)으로 현재 설정을 교체할까요? 차단 목록과 메모는 유지됩니다.")) return;
+        if (!(await ui.confirm("클라우드 백업(설정)으로 현재 설정을 교체할까요? 차단 목록과 메모는 유지됩니다."))) return;
 
         setLoading(true);
         try {
             const data = getSyncScopedData(await browser.storage.sync.get());
             if (Object.keys(data).length === 0) {
-                alert("클라우드에 백업된 설정이 없습니다.");
+                ui.alert("클라우드에 백업된 설정이 없습니다.");
                 return;
             }
             await browser.storage.local.set(data);
-            alert("설정을 복원했습니다. 새탭에서 디시인사이드를 열어주세요.");
+            ui.alert("설정을 복원했습니다. 새탭에서 디시인사이드를 열어주세요.");
         } catch {
-            alert("데이터를 복원하는데 실패했습니다.");
+            ui.alert("데이터를 복원하는데 실패했습니다.");
         } finally {
             setLoading(false);
         }
@@ -107,16 +108,16 @@ export function useData() {
             const data = await getLocalDataWithoutDatabase();
 
             await navigator.clipboard.writeText(JSON.stringify(data));
-            alert("데이터를 클립보드로 내보냈습니다.");
+            ui.alert("데이터를 클립보드로 내보냈습니다.");
         } catch {
-            alert("데이터를 클립보드로 내보내는데 실패했습니다.");
+            ui.alert("데이터를 클립보드로 내보내는데 실패했습니다.");
         } finally {
             setLoading(false);
         }
     };
 
     const importData = async (): Promise<void> => {
-        const input = prompt("데이터를 입력해주세요.");
+        const input = await ui.prompt("데이터를 입력해주세요.");
 
         if (!input) return;
 
@@ -124,23 +125,23 @@ export function useData() {
         try {
             const data = parseStorageImport(input);
             await replaceLocalStorage(data);
-            alert("데이터를 가져왔습니다. 새탭에서 디시인사이드를 열어주세요.");
+            ui.alert("데이터를 가져왔습니다. 새탭에서 디시인사이드를 열어주세요.");
         } catch {
-            alert("데이터를 가져오는데 실패했습니다.");
+            ui.alert("데이터를 가져오는데 실패했습니다.");
         } finally {
             setLoading(false);
         }
     };
 
     const clearData = async (): Promise<void> => {
-        if (!confirm("모든 설정과 사용자 데이터를 초기화할까요?")) return;
+        if (!(await ui.confirm("모든 설정과 사용자 데이터를 초기화할까요?"))) return;
 
         setLoading(true);
         try {
             await browser.storage.local.clear();
-            alert("데이터를 초기화했습니다. 새탭에서 디시인사이드를 열어주세요.");
+            ui.alert("데이터를 초기화했습니다. 새탭에서 디시인사이드를 열어주세요.");
         } catch {
-            alert("데이터를 초기화하는데 실패했습니다.");
+            ui.alert("데이터를 초기화하는데 실패했습니다.");
         } finally {
             setLoading(false);
         }

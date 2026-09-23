@@ -8,6 +8,7 @@ import {useData} from "../popup/hooks/useData";
 import {useMemos} from "../popup/hooks/useMemos";
 import {useSettings} from "../popup/hooks/useSettings";
 import BlockAddDialog from "./components/BlockAddDialog";
+import UiService from "./components/UiService";
 import BlockTab from "./tabs/BlockTab";
 import DataTab from "./tabs/DataTab";
 import GeneralTab from "./tabs/GeneralTab";
@@ -61,6 +62,7 @@ export default function App({embedded = false}: {embedded?: boolean}) {
     const content = (
         <AppContext.Provider value={ctx}>
             <BlockAddDialog/>
+            <UiService/>
 
             <Tabs.Root onValueChange={setTab} value={tab}>
                 <Flex align="center" gap="3" justify="between" mb="2">

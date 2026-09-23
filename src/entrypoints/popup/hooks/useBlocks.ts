@@ -7,6 +7,7 @@ import {
 } from "@/core/block";
 import {useCallback, useEffect, useState} from "react";
 import {copyToClipboard, parseImportData} from "../utils/io";
+import {ui} from "../../options/components/UiService";
 
 export interface BlockFormData {
     content: string;
@@ -58,7 +59,7 @@ export function useBlocks() {
     // setValue를 반영하기 전까지 즉시 반응용으로 유지.
     const confirmAddBlock = async (data: BlockFormData) => {
         if (!data.content.trim()) {
-            alert(`${BLOCK_TYPE_NAMES[currentBlockType]} 값을 입력해주세요.`);
+            ui.alert(`${BLOCK_TYPE_NAMES[currentBlockType]} 값을 입력해주세요.`);
             return;
         }
 
@@ -103,18 +104,18 @@ export function useBlocks() {
     };
 
     const removeAllBlockedUser = async (key: RefresherBlockType) => {
-        if (!confirm(`${BLOCK_TYPE_NAMES[key]} 차단 목록을 모두 삭제할까요?`)) return;
+        if (!(await ui.confirm(`${BLOCK_TYPE_NAMES[key]} 차단 목록을 모두 삭제할까요?`))) return;
         setBlocks((prev) => ({...prev, [key]: []}));
         await blockStorage[key].setValue([]);
     };
 
     const editBlockedUser = async (key: RefresherBlockType, content: string) => {
         if (key === "DCCON") {
-            alert("디시콘 수정은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
+            ui.alert("디시콘 수정은 아직 지원하지 않습니다, 우클릭 메뉴를 이용해주세요.");
             return;
         }
 
-        const result = prompt(`바꿀 ${BLOCK_TYPE_NAMES[key]} 값을 입력하세요.`);
+        const result = await ui.prompt(`바꿀 ${BLOCK_TYPE_NAMES[key]} 값을 입력하세요.`);
 
         if (!result) return;
 
@@ -134,7 +135,7 @@ export function useBlocks() {
     const exportBlock = () => copyToClipboard(blocks);
 
     const importBlock = async () => {
-        const data = parseImportData(
+        const data = await parseImportData(
             `예시: {"NICK":[],"ID":[],"IP":[],"TITLE":[],"TEXT":[],"COMMENT":[],"DCCON":[],"TAB":[]}`
         );
         if (!data) return;
@@ -150,7 +151,7 @@ export function useBlocks() {
             for (const block of normalizeBlockList(value)) {
                 if (
                     target.some((v) => v.content === block.content) &&
-                    !confirm(`${block.content}가 이미 존재합니다. 추가하시겠습니까?`)
+                    !(await ui.confirm(`${block.content}가 이미 존재합니다. 추가하시겠습니까?`))
                 ) {
                     continue;
                 }
@@ -162,7 +163,7 @@ export function useBlocks() {
             await blockStorage[type].setValue(target);
         }
 
-        alert("가져오기에 성공했습니다.");
+        ui.alert("가져오기에 성공했습니다.");
     };
 
     return {
