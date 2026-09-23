@@ -2,7 +2,7 @@ import {useState} from "react";
 
 import "./blockPopup.scss";
 
-export interface BlockPopupPayload {
+interface BlockPopupPayload {
     avoidHour: number;
     avoidReason: number;
     avoidReasonTxt: string;

@@ -1,4 +1,3 @@
-import Cookies from "js-cookie";
 import ky from "ky";
 
 const contentFetch: typeof fetch = window.fetch.bind(window);
@@ -158,7 +157,17 @@ export const queryString = (name: string): string | null => new URLSearchParams(
  */
 export const createAuthParams = (link?: string): URLSearchParams => {
     const params = new URLSearchParams();
-    params.set("ci_t", Cookies.get("ci_c") ?? "");
+
+    // js-cookie 대체. 기존과 동일하게 디코드 실패 시 원문을 사용한다.
+    const ciCookie = /(?:^|;\s*)ci_c=([^;]*)/.exec(document.cookie)?.[1] ?? "";
+    let ciT: string;
+    try {
+        ciT = decodeURIComponent(ciCookie);
+    } catch {
+        ciT = ciCookie;
+    }
+    params.set("ci_t", ciT);
+
     if (link) params.set("_GALLTYPE_", galleryTypeName(link));
     return params;
 };

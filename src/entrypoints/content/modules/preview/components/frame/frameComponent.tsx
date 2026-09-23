@@ -1,5 +1,5 @@
 import {ChevronDown, ChevronUp} from "lucide-react";
-import {createContext, useContext, useEffect, useRef, useState} from "react";
+import {createContext, useEffect, useRef, useState} from "react";
 import type {FrameScrollApi, FrameStackOption, PreviewFrame} from "../../frame";
 
 import Frame from "./frame";
@@ -9,8 +9,6 @@ import "./frameComponent.scss";
 
 // 댓글 입력 포커스 상태 공유 (write_comment가 소비)
 export const InputFocusContext = createContext<{ current: boolean }>({current: false});
-
-export const useInputFocus = () => useContext(InputFocusContext);
 
 interface Props {
     frames: PreviewFrame[];

@@ -2,7 +2,7 @@ import {databaseStorage, onStorageValue} from "@/storage/wxtStorage";
 
 let banReverseIndex: Map<string, string[]> = new Map();
 
-export const buildBanReverseIndex = (ban: Record<string, string[]>): Map<string, string[]> => {
+const buildBanReverseIndex = (ban: Record<string, string[]>): Map<string, string[]> => {
     const index = new Map<string, string[]>();
     for (const [reason, userIds] of Object.entries(ban)) {
         for (const userId of userIds) {
@@ -22,16 +22,15 @@ onStorageValue(databaseStorage.ban, (newValue) => {
     banReverseIndex = buildBanReverseIndex(newValue ?? {});
 });
 
-export const getBan = (userId: string): string | null => {
+export const getBanReverseIndex = (): Map<string, string[]> => banReverseIndex;
+
+const getBan = (userId: string): string | null => {
     const bannedFrom = banReverseIndex.get(userId);
     if (!bannedFrom || bannedFrom.length === 0) return null;
     return bannedFrom.join(", ");
 };
 
-export const getBanReverseIndex = (): Map<string, string[]> => banReverseIndex;
-
 export default {
     getBan,
-    getBanReverseIndex,
-    buildBanReverseIndex
+    getBanReverseIndex
 };

@@ -14,7 +14,7 @@ import {createWriteComment, handleDeleteComment, waitForCommentIdLoaded} from ".
 // 마지막으로 반영한 댓글 목록 시그니처 (no-op 새로고침 스킵용)
 const lastCommentSignature = new WeakMap<PreviewFrame, string>();
 
-export interface CommentFrameContext {
+interface CommentFrameContext {
     frame: PreviewFrame;
     preData: GalleryPreData;
     signal: AbortSignal;

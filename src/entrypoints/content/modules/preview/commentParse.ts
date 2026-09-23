@@ -27,7 +27,7 @@ export function handleDcconContextMenu(e: MouseEvent): void {
 }
 
 // 음성 댓글 데이터 파싱
-export interface VoiceData {
+interface VoiceData {
     iframe: boolean;
     src: string;
     memo: string;

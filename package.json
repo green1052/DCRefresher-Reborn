@@ -17,7 +17,6 @@
     "dependencies": {
         "@webext-core/messaging": "^4.0.0",
         "@wxt-dev/webextension-polyfill": "^1.0.0",
-        "js-cookie": "^3.0.8",
         "ky": "^2.1.0",
         "lucide-react": "^1.43.0",
         "react": "^19.2.8",
@@ -25,7 +24,6 @@
         "webextension-polyfill": "^0.12.0"
     },
     "devDependencies": {
-        "@types/js-cookie": "^3.0.6",
         "@types/react": "^19.2.18",
         "@types/react-dom": "^19.2.7",
         "@wxt-dev/auto-icons": "^1.1.2",

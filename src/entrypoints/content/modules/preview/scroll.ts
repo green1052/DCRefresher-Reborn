@@ -124,7 +124,7 @@ export interface ScrollNavigationContext {
 }
 
 // 인접 게시글 번호 조회
-export function getAdjacentPostNo(
+function getAdjacentPostNo(
     direction: "next" | "prev",
     postFetchedDataRef: PostFetchedDataRef
 ): string | undefined {

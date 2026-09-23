@@ -4,14 +4,14 @@ import {flushSync} from "react-dom";
 import FrameComponent from "./components/frame/frameComponent";
 import type {User} from "@/utils/user";
 
-export interface FrameOptions {
+interface FrameOptions {
     relative?: boolean;
     center?: boolean;
     preview?: boolean;
     blur?: boolean;
 }
 
-export interface FrameData {
+interface FrameData {
     load: boolean;
     buttons: boolean;
     disabledDownvote: boolean;
@@ -26,7 +26,7 @@ export interface FrameData {
     useImageBlock: boolean;
 }
 
-export interface FrameFunctions {
+interface FrameFunctions {
     vote: (type: number) => Promise<boolean>;
     share: () => Promise<boolean>;
     load: (useCache?: boolean) => Promise<void>;

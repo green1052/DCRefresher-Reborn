@@ -1,4 +1,3 @@
-import Cookies from "js-cookie";
 import type {Input, Options} from "ky";
 
 import {ajaxClient, checkMini, client as htmlClient} from "@/http/http";
@@ -7,7 +6,7 @@ import toast from "@/utils/toast";
 import {parsePostInfo} from "./postParser";
 import {PostCache} from "./cache";
 
-export interface GalleryHTTPRequestArguments {
+interface GalleryHTTPRequestArguments {
     gallery: string;
     id: string;
     commentId?: string;
@@ -112,11 +111,10 @@ export const previewRequest = {
         vCurT?: string,
         randomParam?: { name: string; value: string }
     ): Promise<VoteResponse> {
-        Cookies.set(`${gallId}${postId}_Firstcheck${type ? "" : "_down"}`, "Y", {
-            path: "/",
-            domain: "dcinside.com",
-            expires: new Date(Date.now() + 3 * 60 * 60 * 1000)
-        });
+        // 투표 체크 쿠키 (js-cookie 대체: 3시간 후 만료, 동일 속성)
+        document.cookie =
+            `${gallId}${postId}_Firstcheck${type ? "" : "_down"}=Y;` +
+            `expires=${new Date(Date.now() + 3 * 60 * 60 * 1000).toUTCString()};path=/;domain=dcinside.com`;
 
         const params = http.createAuthParams(link);
 

@@ -1,5 +1,6 @@
+import {Plus, X} from "lucide-react";
+
 import Bubble from "../components/bubble";
-import {PlusIcon, RemoveIcon} from "../components/icons";
 import {useAppContext} from "../context";
 
 export default function BlockTab() {
@@ -70,13 +71,13 @@ export default function BlockTab() {
                             className="plus"
                             onClick={() => openBlockDialog(key)}
                         >
-                            <PlusIcon/>
+                            <Plus size={18}/>
                         </span>
                         <span
                             className="remove"
                             onClick={() => void removeAllBlockedUser(key)}
                         >
-                            <RemoveIcon/>
+                            <X size={14}/>
                         </span>
                     </h3>
 

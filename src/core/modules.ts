@@ -4,8 +4,6 @@ import eventBus from "./eventbus";
 import filter from "./filtering";
 import settings from "./settings";
 
-export type ModuleStore = Record<string, RefresherModule>;
-
 // 다른 모듈에서 modules.get()으로 참조하는 모듈 이름.
 // 모듈의 name을 바꾸면 여기도 함께 바꿔야 한다.
 export const MODULE_ID = {
@@ -14,7 +12,7 @@ export const MODULE_ID = {
     MANAGE: "관리"
 } as const;
 
-const moduleStore: ModuleStore = {};
+const moduleStore: Record<string, RefresherModule> = {};
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
     return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -53,7 +51,6 @@ const getStorageSnapshot = (): Promise<Record<string, unknown>> => {
 };
 
 export const modules = {
-    lists: (): ModuleStore => moduleStore,
     load: (module: unknown): Promise<void> =>
         modules.register(module as RefresherModule),
     register: async (module: unknown): Promise<void> => {

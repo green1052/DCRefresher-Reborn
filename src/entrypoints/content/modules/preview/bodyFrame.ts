@@ -13,7 +13,7 @@ export interface PostFetchedDataRef {
     value: IPostInfo | undefined;
 }
 
-export interface BodyFrameContext {
+interface BodyFrameContext {
     frame: PreviewFrame;
     preData: GalleryPreData;
     signal: AbortSignal;

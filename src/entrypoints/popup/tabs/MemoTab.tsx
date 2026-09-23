@@ -1,5 +1,6 @@
+import {Plus, X} from "lucide-react";
+
 import Bubble from "../components/bubble";
-import {PlusIcon, RemoveIcon} from "../components/icons";
 import {useAppContext} from "../context";
 
 export default function MemoTab() {
@@ -43,13 +44,13 @@ export default function MemoTab() {
                             className="plus"
                             onClick={() => void addMemoUser(key)}
                         >
-                            <PlusIcon/>
+                            <Plus size={18}/>
                         </span>
                         <span
                             className="remove"
                             onClick={() => void removeAllMemoUser(key)}
                         >
-                            <RemoveIcon/>
+                            <X size={14}/>
                         </span>
                     </h3>
 
