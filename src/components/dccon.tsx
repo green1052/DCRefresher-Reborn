@@ -1,4 +1,5 @@
 import {RefreshCw} from "lucide-react";
+import {Checkbox} from "radix-ui";
 import {useEffect, useRef, useState} from "react";
 
 import * as http from "@/http/http";
@@ -120,19 +121,27 @@ export default function DcconPopup({onClickDccon, onCloseDccon}: Props) {
                 <h3>디시콘</h3>
 
                 <div className="dccon-options">
-                    <input
-                        checked={doubleDccon}
-                        onChange={(ev) => setDoubleDccon(ev.target.checked)}
-                        type="checkbox"
-                    />
-                    <label>더블콘</label>
+                    <label className="ui-option">
+                        <Checkbox.Root
+                            checked={doubleDccon}
+                            className="ui-checkbox"
+                            onCheckedChange={(value) => setDoubleDccon(value === true)}
+                        >
+                            <Checkbox.Indicator className="ui-check"/>
+                        </Checkbox.Root>
+                        더블콘
+                    </label>
 
-                    <input
-                        checked={bigDccon}
-                        onChange={(ev) => setBigDccon(ev.target.checked)}
-                        type="checkbox"
-                    />
-                    <label>대왕콘</label>
+                    <label className="ui-option">
+                        <Checkbox.Root
+                            checked={bigDccon}
+                            className="ui-checkbox"
+                            onCheckedChange={(value) => setBigDccon(value === true)}
+                        >
+                            <Checkbox.Indicator className="ui-check"/>
+                        </Checkbox.Root>
+                        대왕콘
+                    </label>
                 </div>
 
                 <div

@@ -1,5 +1,5 @@
-import * as AlertDialog from "@radix-ui/react-alert-dialog";
-import * as Dialog from "@radix-ui/react-dialog";
+import {AlertDialog} from "radix-ui";
+import {Dialog} from "radix-ui";
 import {useEffect, useState} from "react";
 
 interface ConfirmRequest {

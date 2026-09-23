@@ -1,4 +1,5 @@
 import * as http from "@/http/http";
+import {ui} from "@/entrypoints/options/components/UiService";
 
 import block from "@/core/block";
 import toast from "@/utils/toast";
@@ -53,7 +54,7 @@ export const handleBlockRequest = async (
             const packageIdx = json.info.package_idx;
 
             if (args.blockAllDccon) {
-                const blockBundle = confirm(
+                const blockBundle = await ui.confirm(
                     "디시콘을 묶어서 차단하시겠습니까? (차단 목록에서는 한개로 표시됩니다.)"
                 );
 

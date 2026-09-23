@@ -1,5 +1,8 @@
-/* options/popup 공통 디자인 시스템 - Radix primitives 위에 얹는 자체 스타일.
+/* options 페이지 전용 - primitives 위에 얹는 자체 스타일.
+   다이얼로그/토스트/버튼/체크박스/라디오 공통 스타일은 @/ui/service.scss 참조.
    다크모드는 useSystemAppearance가 html[data-theme]으로 설정한다. */
+@use "@/ui/service";
+
 :root {
     color-scheme: light;
 
@@ -123,42 +126,7 @@ html.popup-mode #app {
     padding: 12px 16px;
 }
 
-/* 버튼 */
-.btn {
-    align-items: center;
-    background: var(--accent);
-    border: 1px solid transparent;
-    border-radius: 8px;
-    color: #fff;
-    cursor: pointer;
-    display: inline-flex;
-    font: inherit;
-    font-size: 13px;
-    gap: 6px;
-    justify-content: center;
-    padding: 6px 12px;
-}
-
-.btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-}
-
-.btn:hover:not(:disabled) {
-    filter: brightness(1.08);
-}
-
-.btn-soft {
-    background: transparent;
-    border-color: var(--border);
-    color: var(--text);
-}
-
-.btn-soft:hover:not(:disabled) {
-    background: var(--accent-soft);
-    filter: none;
-}
-
+/* 버튼 베이스(.btn/.btn-soft)는 service.scss */
 .btn-danger-soft {
     background: var(--danger-soft);
     color: var(--danger);
@@ -365,82 +333,7 @@ input[type="range"] {
     max-height: 220px;
 }
 
-/* 다이얼로그 (Dialog/AlertDialog 공용) */
-.dialog-overlay {
-    background: rgba(0, 0, 0, 0.45);
-    inset: 0;
-    position: fixed;
-    z-index: 90;
-}
-
-.dialog-content {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    left: 50%;
-    max-width: 480px;
-    padding: 20px;
-    position: fixed;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: calc(100% - 32px);
-    z-index: 100;
-}
-
-.dialog-content.alert {
-    max-width: 420px;
-}
-
-.dialog-title {
-    color: var(--text);
-    font-size: 15px;
-    font-weight: 600;
-    margin: 0;
-}
-
-.dialog-desc {
-    color: var(--muted);
-    font-size: 13px;
-    margin: 8px 0 0;
-}
-
-.dialog-body {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    margin-top: 16px;
-}
-
-.dialog-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-    margin-top: 16px;
-}
-
-/* 토스트 */
-.toast-wrap {
-    align-items: center;
-    bottom: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    left: 50%;
-    pointer-events: none;
-    position: fixed;
-    transform: translateX(-50%);
-    z-index: 200;
-}
-
-.toast {
-    background: var(--text);
-    border-radius: 8px;
-    box-shadow: var(--shadow);
-    color: var(--bg);
-    font-size: 13px;
-    padding: 8px 16px;
-}
+/* 다이얼로그/토스트는 service.scss */
 
 /* 세팅 행 */
 .setting-row {

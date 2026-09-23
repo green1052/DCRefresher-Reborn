@@ -1,4 +1,4 @@
-import * as Switch from "@radix-ui/react-switch";
+import {Switch} from "radix-ui";
 import {useEffect, useRef} from "react";
 
 import {useAppContext} from "../../popup/context";

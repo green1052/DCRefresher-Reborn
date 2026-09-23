@@ -1,5 +1,5 @@
-import * as Select from "@radix-ui/react-select";
-import * as Switch from "@radix-ui/react-switch";
+import {Select} from "radix-ui";
+import {Switch} from "radix-ui";
 
 import {useAppContext} from "../../popup/context";
 

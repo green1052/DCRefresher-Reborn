@@ -1,3 +1,4 @@
+import {Checkbox, RadioGroup} from "radix-ui";
 import {useState} from "react";
 
 import "./blockPopup.scss";
@@ -63,37 +64,37 @@ export default function BlockPopup({onSubmit, onClose}: Props) {
             <div className="contents">
                 <div className="block">
                     <h3>차단 기간</h3>
-                    <div className="block_duration">
+                    <RadioGroup.Root
+                        className="block_duration"
+                        onValueChange={(value) => setAvoidHour(Number(value))}
+                        value={String(avoidHour)}
+                    >
                         {durations.map((d) => (
-                            <label key={d.value}>
-                                <input
-                                    checked={avoidHour === d.value}
-                                    name="duration"
-                                    onChange={() => setAvoidHour(d.value)}
-                                    type="radio"
-                                    value={d.value}
-                                />
+                            <label className="ui-option" key={d.value}>
+                                <RadioGroup.Item className="ui-radio" value={String(d.value)}>
+                                    <RadioGroup.Indicator className="ui-radio-dot"/>
+                                </RadioGroup.Item>
                                 {d.label}
                             </label>
                         ))}
-                    </div>
+                    </RadioGroup.Root>
                 </div>
                 <div className="block">
                     <h3>차단 사유</h3>
-                    <div className="block_reason">
+                    <RadioGroup.Root
+                        className="block_reason"
+                        onValueChange={(value) => setAvoidReason(Number(value))}
+                        value={String(avoidReason)}
+                    >
                         {reasons.map((r) => (
-                            <label key={r.value}>
-                                <input
-                                    checked={avoidReason === r.value}
-                                    name="reason"
-                                    onChange={() => setAvoidReason(r.value)}
-                                    type="radio"
-                                    value={r.value}
-                                />
+                            <label className="ui-option" key={r.value}>
+                                <RadioGroup.Item className="ui-radio" value={String(r.value)}>
+                                    <RadioGroup.Indicator className="ui-radio-dot"/>
+                                </RadioGroup.Item>
                                 {r.label}
                             </label>
                         ))}
-                    </div>
+                    </RadioGroup.Root>
                     <input
                         name="reason_text"
                         onChange={(ev) => setReasonText(ev.target.value)}
@@ -105,20 +106,26 @@ export default function BlockPopup({onSubmit, onClose}: Props) {
                 </div>
                 <div className="block">
                     <h3>선택한 글 삭제</h3>
-                    <input
-                        checked={remove}
-                        name="remove"
-                        onChange={(ev) => setRemove(ev.target.checked)}
-                        type="checkbox"
-                    />
+                    <label className="ui-option">
+                        <Checkbox.Root
+                            checked={remove}
+                            className="ui-checkbox"
+                            onCheckedChange={(value) => setRemove(value === true)}
+                        >
+                            <Checkbox.Indicator className="ui-check"/>
+                        </Checkbox.Root>
+                    </label>
 
                     <h3>식별 코드 차단 시 IP 동시 차단</h3>
-                    <input
-                        checked={userType}
-                        name="user-type"
-                        onChange={(ev) => setUserType(ev.target.checked)}
-                        type="checkbox"
-                    />
+                    <label className="ui-option">
+                        <Checkbox.Root
+                            checked={userType}
+                            className="ui-checkbox"
+                            onCheckedChange={(value) => setUserType(value === true)}
+                        >
+                            <Checkbox.Indicator className="ui-check"/>
+                        </Checkbox.Root>
+                    </label>
 
                     <button
                         className="go-block"

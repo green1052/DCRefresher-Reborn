@@ -1,4 +1,4 @@
-import * as Select from "@radix-ui/react-select";
+import {Select} from "radix-ui";
 import {Plus, X} from "lucide-react";
 
 import {useAppContext} from "../../popup/context";

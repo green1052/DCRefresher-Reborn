@@ -1,0 +1,204 @@
+/* options/popup/content 공용 다이얼로그·토스트·버튼·폼 컨트롤 스타일.
+   options는 html[data-theme=dark], content는 디시 다크모드(#css-darkmode)로 전환한다. */
+:root {
+    --ui-panel: #ffffff;
+    --ui-text: #191c20;
+    --ui-muted: #6b7280;
+    --ui-border: #d1d5da;
+    --ui-accent: #2563eb;
+    --ui-accent-soft: rgba(37, 99, 235, 0.12);
+    --ui-overlay: rgba(0, 0, 0, 0.45);
+    --ui-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+    --ui-radius: 10px;
+}
+
+html[data-theme="dark"],
+html:has(#css-darkmode) {
+    --ui-panel: #1c1f24;
+    --ui-text: #e7e9ec;
+    --ui-muted: #9aa1ad;
+    --ui-border: #3a4048;
+    --ui-accent: #5b9dff;
+    --ui-accent-soft: rgba(91, 157, 255, 0.16);
+    --ui-overlay: rgba(0, 0, 0, 0.6);
+    --ui-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+/* 다이얼로그 (Dialog/AlertDialog 공용) */
+.dialog-overlay {
+    background: var(--ui-overlay);
+    inset: 0;
+    position: fixed;
+    z-index: 90;
+}
+
+.dialog-content {
+    background: var(--ui-panel);
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius);
+    box-shadow: var(--ui-shadow);
+    color: var(--ui-text);
+    left: 50%;
+    max-width: 480px;
+    padding: 20px;
+    position: fixed;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100% - 32px);
+    z-index: 100;
+}
+
+.dialog-content.alert {
+    max-width: 420px;
+}
+
+.dialog-title {
+    color: var(--ui-text);
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.dialog-desc {
+    color: var(--ui-muted);
+    font-size: 13px;
+    margin: 8px 0 0;
+}
+
+.dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 16px;
+}
+
+.dialog-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 16px;
+}
+
+/* 토스트 */
+.toast-wrap {
+    align-items: center;
+    bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    left: 50%;
+    pointer-events: none;
+    position: fixed;
+    transform: translateX(-50%);
+    z-index: 200;
+}
+
+.toast {
+    background: var(--ui-text);
+    border-radius: 8px;
+    box-shadow: var(--ui-shadow);
+    color: var(--ui-panel);
+    font-size: 13px;
+    padding: 8px 16px;
+}
+
+/* 버튼 */
+.btn {
+    align-items: center;
+    background: var(--ui-accent);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 13px;
+    gap: 6px;
+    justify-content: center;
+    padding: 6px 12px;
+}
+
+.btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.btn:hover:not(:disabled) {
+    filter: brightness(1.08);
+}
+
+.btn-soft {
+    background: transparent;
+    border-color: var(--ui-border);
+    color: var(--ui-text);
+}
+
+.btn-soft:hover:not(:disabled) {
+    background: var(--ui-accent-soft);
+    filter: none;
+}
+
+/* Checkbox/RadioGroup 프리미티브용 컨트롤 */
+.ui-option {
+    align-items: center;
+    cursor: pointer;
+    display: inline-flex;
+    gap: 5px;
+    user-select: none;
+}
+
+.ui-checkbox {
+    all: unset;
+    align-items: center;
+    background: var(--ui-panel);
+    border: 1px solid var(--ui-border);
+    border-radius: 3px;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: inline-flex;
+    height: 14px;
+    justify-content: center;
+    width: 14px;
+}
+
+.ui-checkbox[data-state="checked"] {
+    background: var(--ui-accent);
+    border-color: var(--ui-accent);
+}
+
+.ui-check {
+    color: #fff;
+    font-size: 11px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.ui-check::after {
+    content: "✓";
+}
+
+.ui-radio {
+    all: unset;
+    align-items: center;
+    background: var(--ui-panel);
+    border: 1px solid var(--ui-border);
+    border-radius: 50%;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: inline-flex;
+    height: 14px;
+    justify-content: center;
+    width: 14px;
+}
+
+.ui-radio[data-state="checked"] {
+    border-color: var(--ui-accent);
+}
+
+.ui-radio-dot {
+    background: var(--ui-accent);
+    border-radius: 50%;
+    display: block;
+    height: 6px;
+    width: 6px;
+}

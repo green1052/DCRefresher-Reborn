@@ -1,6 +1,6 @@
-import * as Dialog from "@radix-ui/react-dialog";
-import * as Select from "@radix-ui/react-select";
-import * as Switch from "@radix-ui/react-switch";
+import {Dialog} from "radix-ui";
+import {Select} from "radix-ui";
+import {Switch} from "radix-ui";
 import {useEffect, useState} from "react";
 
 import type {BlockFormData} from "../../popup/hooks/useBlocks";

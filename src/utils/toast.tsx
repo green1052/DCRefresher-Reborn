@@ -2,7 +2,10 @@ import {createRoot} from "react-dom/client";
 import {flushSync} from "react-dom";
 import {useLayoutEffect, useRef, useState} from "react";
 
+import UiService from "@/entrypoints/options/components/UiService";
+
 import "@/components/toast.scss";
+import "@/ui/service.scss";
 
 type ToastLevel = "info" | "error" | "warning" | "cake";
 
@@ -109,7 +112,12 @@ const mountToast = () => {
 
     const root = createRoot(div);
     flushSync(() => {
-        root.render(<Toast/>);
+        root.render(
+            <>
+                <UiService/>
+                <Toast/>
+            </>
+        );
     });
 
     instance = toastApiHolder.current;
