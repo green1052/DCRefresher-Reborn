@@ -1,5 +1,7 @@
 import type {NullableProperties} from "./types";
 
+import toast from "@/utils/toast";
+
 export interface MemoAskResult {
     text: string;
     color: string;
@@ -145,7 +147,7 @@ export function memoAsk(
         dialog.querySelector<HTMLButtonElement>(".refresher-memo-btn[data-update=true]")!.addEventListener("click", () => {
             onDismiss = null;
             if (memoInput.value.length > 160) {
-                alert("160자를 초과할 수 없습니다.");
+                toast.show("160자를 초과할 수 없습니다.", "error");
                 return;
             }
 
