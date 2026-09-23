@@ -69,13 +69,17 @@ export const modules = {
         }
 
         if (typeof mod.settings === "object") {
-            (mod as { status?: Record<string, unknown> }).status ??= {};
-
             for (const [key, value] of Object.entries(mod.settings)) {
                 const stored = snapshot[`refresher:module:${mod.name}:setting:${key}`];
-                const loaded = await settings.load(mod.name, key, value, stored);
-                (mod.status as Record<string, unknown>)[key] = loaded;
+                await settings.load(mod.name, key, value, stored);
             }
+
+            // status는 settings의 읽기 전용 뷰. 값의 단일 출처는 settings[key].value고
+            // setStore(팝업→storage→onChanged)가 그것만 갱신한다. 이제 양쪽 동기화가 아니다.
+            mod.status = new Proxy({} as typeof mod.status, {
+                get: (_target, key: string) =>
+                    (mod.settings as Record<string, {value?: unknown}> | undefined)?.[key]?.value
+            });
         }
 
         if (typeof mod.data === "object") {
@@ -182,16 +186,11 @@ onMessage("executeShortcut", ({data}) => {
 });
 
 eventBus.on("refresherUpdateSetting", (mod, key, value) => {
-    const module = moduleStore[mod] as RefresherModule;
+    const module = moduleStore[mod];
+    if (!module?.enable || !module.update) return;
 
-    if (module !== undefined) {
-        (module as { status?: Record<string, unknown> }).status ??= {};
-        (module.status as Record<string, unknown>)[key] = value;
-    } else {
-        return;
-    }
+    const handler = (module.update as Record<string, (value: unknown) => void | Promise<void>>)[key];
+    if (typeof handler !== "function") return;
 
-    if (!module.enable || !module.update || typeof (module.update as Record<string, (value: unknown) => void>)[key] !== "function") return;
-
-    return (module.update as Record<string, (value: unknown) => void>)[key].bind(module)(value);
+    return handler.call(module, value);
 });

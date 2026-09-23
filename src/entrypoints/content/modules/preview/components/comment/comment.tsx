@@ -4,7 +4,7 @@ import {memo, useMemo} from "react";
 import Timestamp from "@/components/timestamp";
 import UserComponent from "@/components/user";
 import {useMeDetection} from "@/entrypoints/content/composables/useMeDetection";
-import {handleDcconContextMenu, parseCommentDate, parseVoiceData} from "../../commentParse";
+import {DCCON_MEMO_PATTERN, handleDcconContextMenu, parseCommentDate, parseVoiceData} from "../../commentParse";
 
 import "./comment.scss";
 
@@ -164,7 +164,7 @@ function Comment({
                         </p>
                     )}
                 </div>
-            ) : /<(img|video) class=/.test(comment.memo) ? (
+            ) : DCCON_MEMO_PATTERN.test(comment.memo) ? (
                 <p
                     className="refresher-comment-content dccon"
                     data-bigdccon={/\bbigdccon\b/.test(comment.memo) || undefined}

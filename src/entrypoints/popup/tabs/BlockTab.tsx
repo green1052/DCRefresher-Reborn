@@ -16,7 +16,6 @@ export default function BlockTab() {
         removeBlockedUser,
         removeAllBlockedUser,
         editBlockedUser,
-        editBlockMode,
         exportBlock,
         importBlock
     } = blocks;
@@ -41,10 +40,7 @@ export default function BlockTab() {
                     >
                         <label>{blockKeyNames[key]}:</label>
                         <select
-                            onChange={(ev) => {
-                                setBlockMode(key, ev.target.value as RefresherBlockDetectMode);
-                                void editBlockMode();
-                            }}
+                            onChange={(ev) => setBlockMode(key, ev.target.value as RefresherBlockDetectMode)}
                             value={blockModes[key] ?? "SAME"}
                         >
                             {Object.entries(blockDetectModeTypeNames).map(([key2, value2]) => (

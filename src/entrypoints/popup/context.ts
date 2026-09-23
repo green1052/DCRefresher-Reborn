@@ -10,6 +10,9 @@ export interface AppContextValue {
     memos: ReturnType<typeof useMemos>;
     settings: ReturnType<typeof useSettings>;
     data: ReturnType<typeof useData>;
+    // 일반 탭에서 모듈을 골랐을 때 모듈 탭의 해당 카드를 잠깐 강조한다.
+    highlightModule: string | null;
+    dismissHighlightModule: () => void;
     moveToModuleTab: (moduleName: string) => void;
 }
 

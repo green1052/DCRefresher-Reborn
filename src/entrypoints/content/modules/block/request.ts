@@ -1,4 +1,4 @@
-import http, {ajaxClient} from "@/http/http";
+import * as http from "@/http/http";
 
 import block from "@/core/block";
 import toast from "@/utils/toast";
@@ -41,7 +41,7 @@ export const handleBlockRequest = async (
         params.set("code", code);
 
         try {
-            const json = await ajaxClient(http.urls.dccon.detail, {
+            const json = await http.ajaxClient(http.urls.dccon.detail, {
                 body: params
             }).json<DcconDetailResponse>();
 

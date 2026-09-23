@@ -1,7 +1,7 @@
 import {PreviewController, type PreviewStatus} from "./controller";
 import {PostCache} from "./cache";
 import {createMiniPreview, type MiniPreviewState} from "./miniPreview";
-import {queryString} from "@/http/http";
+import * as http from "@/http/http";
 
 interface PreviewMemory {
     controller: PreviewController | null;
@@ -221,7 +221,7 @@ export default {
             this.status as PreviewStatus,
             postCaches,
             miniPreview,
-            queryString("id") ?? undefined
+            http.queryString("id") ?? undefined
         );
         await this.memory.controller.setup();
     },

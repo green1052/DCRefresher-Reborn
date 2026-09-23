@@ -1,6 +1,6 @@
 import eventBus from "@/core/eventbus";
 import {modules, MODULE_ID} from "@/core/modules";
-import http, {client, queryString} from "@/http/http";
+import * as http from "@/http/http";
 
 // "삭제된 글 보존"은 미리보기 모듈의 설정. 등록 순서와 무관하게 쓰는 시점에 읽는다.
 const isPreviewArchiveEnabled = (): boolean =>
@@ -139,7 +139,7 @@ export function createLoadFunction(ctx: LoadFunctionContext): (customURL?: strin
 
             const url = http.view(originalLocation);
 
-            const response = await client.get(url, {timeout: memory.delay - DEFAULT_TIMEOUT_OFFSET}).text();
+            const response = await http.client.get(url, {timeout: memory.delay - DEFAULT_TIMEOUT_OFFSET}).text();
             const dom = new DOMParser().parseFromString(response, "text/html");
 
             const oldList = document.querySelector<HTMLElement>(".gall_list:not([id]) tbody");
@@ -196,7 +196,7 @@ export function createLoadFunction(ctx: LoadFunctionContext): (customURL?: strin
             if (memory.calledByPageTurn) {
                 memory.calledByPageTurn = false;
 
-                if (queryString("s_keyword")) {
+                if (http.queryString("s_keyword")) {
                     const searchInput = document.querySelector<HTMLInputElement>("#sch_q");
                     const searchValue = searchInput?.value ?? "";
                     highlightSearchResults(newList, searchValue);

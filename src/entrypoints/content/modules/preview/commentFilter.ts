@@ -1,6 +1,6 @@
 import * as block from "@/core/block";
 import {User} from "@/utils/user";
-import {extractIconFromGallog} from "./commentParse";
+import {DCCON_MEMO_PATTERN, extractDcconNo, extractIconFromGallog} from "./commentParse";
 import type {PostCache} from "./cache";
 
 export interface CommentFilterContext {
@@ -149,12 +149,10 @@ export function filterAndProcessComments(
             check.IP = comment.ip;
         }
 
-        if (/<(img|video) class=/.test(comment.memo)) {
-            const match = /https:\/\/dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g.exec(
-                comment.memo
-            );
-            if (!match) return true;
-            check.DCCON = match[1];
+        if (DCCON_MEMO_PATTERN.test(comment.memo)) {
+            const dcconNo = extractDcconNo(comment.memo);
+            if (!dcconNo) return true;
+            check.DCCON = dcconNo;
         } else {
             check.COMMENT = comment.memo;
         }

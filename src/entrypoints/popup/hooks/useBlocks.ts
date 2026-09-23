@@ -32,12 +32,6 @@ export function useBlocks() {
 
     const [showBlockDialog, setShowBlockDialog] = useState(false);
     const [currentBlockType, setCurrentBlockType] = useState<RefresherBlockType>("NICK");
-    const [blockFormData, setBlockFormData] = useState<BlockFormData>({
-        content: "",
-        isRegex: false,
-        gallery: "",
-        mode: "NONE"
-    });
 
     useEffect(() => {
         return watchBlockStorages(
@@ -56,36 +50,31 @@ export function useBlocks() {
 
     const openBlockDialog = (type: RefresherBlockType) => {
         setCurrentBlockType(type);
-        setBlockFormData({content: "", isRegex: false, gallery: "", mode: "NONE"});
         setShowBlockDialog(true);
-    };
-
-    const updateBlockForm = (patch: Partial<BlockFormData>) => {
-        setBlockFormData((prev) => ({...prev, ...patch}));
     };
 
     // 팝업이 열려 있는 동안 콘텐츠 탭에서도 목록이 바뀐다. 갱신은 스토리지 최신값을 읽어
     // 계산한 뒤 반영한다(레거시 스냅샷 RMW는 동시 쓰기를 지운다). setBlocks는 팝업의 watcher가
     // setValue를 반영하기 전까지 즉시 반응용으로 유지.
-    const confirmAddBlock = async () => {
-        if (!blockFormData.content.trim()) {
+    const confirmAddBlock = async (data: BlockFormData) => {
+        if (!data.content.trim()) {
             alert(`${BLOCK_TYPE_NAMES[currentBlockType]} 값을 입력해주세요.`);
             return;
         }
 
-        const content = blockFormData.content.trim();
+        const content = data.content.trim();
         const extra: string[] = [];
 
-        if (blockFormData.isRegex) {
+        if (data.isRegex) {
             extra.push("[정규식]");
         }
 
-        if (blockFormData.gallery.trim()) {
-            extra.push(`[갤러리: ${blockFormData.gallery.trim()}]`);
+        if (data.gallery.trim()) {
+            extra.push(`[갤러리: ${data.gallery.trim()}]`);
         }
 
-        if (blockFormData.mode && blockFormData.mode !== "NONE") {
-            extra.push(`[${BLOCK_DETECT_MODE_TYPE_NAMES[blockFormData.mode]}]`);
+        if (data.mode && data.mode !== "NONE") {
+            extra.push(`[${BLOCK_DETECT_MODE_TYPE_NAMES[data.mode]}]`);
         }
 
         const next = normalizeBlockList(await blockStorage[currentBlockType].getValue()).filter(
@@ -94,10 +83,10 @@ export function useBlocks() {
 
         next.push({
             content,
-            isRegex: blockFormData.isRegex,
+            isRegex: data.isRegex,
             extra: extra.length ? extra.join(" ") : undefined,
-            gallery: blockFormData.gallery.trim() || undefined,
-            mode: blockFormData.mode === "NONE" ? undefined : blockFormData.mode
+            gallery: data.gallery.trim() || undefined,
+            mode: data.mode === "NONE" ? undefined : data.mode
         });
 
         setBlocks((prev) => ({...prev, [currentBlockType]: next}));
@@ -136,15 +125,10 @@ export function useBlocks() {
         await blockStorage[key].setValue(next);
     };
 
-    const editBlockMode = async () => {
-        for (const type of BLOCK_TYPES) {
-            const mode = blockModes[type];
-            if (mode) await blockModeStorage[type].setValue(mode);
-        }
-    };
-
+    // 바뀐 타입 하나만 저장한다. 전체 재기록은 타입 8개 키를 전부 생성해버린다.
     const setBlockMode = useCallback((type: RefresherBlockType, mode: RefresherBlockDetectMode) => {
         setBlockModes((prev) => ({...prev, [type]: mode}));
+        void blockModeStorage[type].setValue(mode);
     }, []);
 
     const exportBlock = () => copyToClipboard(blocks);
@@ -190,15 +174,12 @@ export function useBlocks() {
         blockTypes: BLOCK_TYPES,
         showBlockDialog,
         currentBlockType,
-        blockFormData,
-        updateBlockForm,
         openBlockDialog,
         closeBlockDialog,
         confirmAddBlock,
         removeBlockedUser,
         removeAllBlockedUser,
         editBlockedUser,
-        editBlockMode,
         exportBlock,
         importBlock
     };

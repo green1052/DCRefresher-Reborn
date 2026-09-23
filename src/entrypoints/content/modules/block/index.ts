@@ -3,7 +3,7 @@ import filter from "@/core/filtering";
 
 import {eventBus} from "@/core/eventbus";
 import {onMessage} from "@/http/messaging";
-import {queryString} from "@/http/http";
+import * as http from "@/http/http";
 import {extractDcconCode} from "@/utils/dccon";
 import {handleBlockRequest} from "./request";
 
@@ -179,13 +179,16 @@ const createContextMenuHandler = (ctx: BlockModule): ((event: MouseEvent) => voi
 };
 
 const setupMessageHandlers = (ctx: BlockModule): void => {
-    ctx.memory.addBlock = eventBus.on(
-        "refresherUserContextMenu",
-        (nick: string | null, uid: string | null, ip: string | null, code: string | null, packageIdx: string | null) => {
-            ctx.memory.selected = {nick, uid, ip, code, packageIdx};
-            ctx.memory.lastSelect = Date.now();
-        }
-    );
+    ctx.memory.addBlock = eventBus.on("refresherUserContextMenu", (data) => {
+        ctx.memory.selected = {
+            nick: data.nick,
+            uid: data.id,
+            ip: data.ip,
+            code: data.code,
+            packageIdx: data.packageIdx
+        };
+        ctx.memory.lastSelect = Date.now();
+    });
 
     ctx.memory.blockSelected = onMessage("blockSelected", () => {
         eventBus.emit("refresherRequestBlock", {target: "user"});
@@ -244,7 +247,7 @@ export default {
         }
     },
     func() {
-        const gallery = queryString("id");
+        const gallery = http.queryString("id");
 
         this.memory.uuid = setupWriterBlockFilter(this, gallery);
         this.memory.uuid2 = setupDcconBlockFilter(this, gallery);

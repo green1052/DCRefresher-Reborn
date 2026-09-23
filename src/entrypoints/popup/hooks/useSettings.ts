@@ -132,34 +132,6 @@ export function useSettings() {
         return value;
     };
 
-    const moveToModuleTab = (moduleName: string) => {
-        requestAnimationFrame(() => {
-            const app = document.querySelector<HTMLElement>("#refresher-app");
-            if (!app) return;
-
-            for (const element of app.querySelectorAll<HTMLElement>(".refresher-module.highlight")) {
-                element.classList.remove("highlight");
-            }
-
-            for (const element of app.querySelectorAll<HTMLElement>(".tab .refresher-module .title")) {
-                if (element.textContent !== moduleName) continue;
-
-                element.parentElement?.parentElement?.classList.add("highlight");
-
-                element.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center"
-                });
-
-                setTimeout(() => {
-                    for (const el of app.querySelectorAll<HTMLElement>(".refresher-module.highlight")) {
-                        el.classList.remove("highlight");
-                    }
-                }, 1000);
-            }
-        });
-    };
-
     const updateModuleStatus = async (name: string, value: boolean) => {
         setModules((prev) =>
             prev[name] ? {...prev, [name]: {...prev[name], enable: value}} : prev
@@ -177,7 +149,6 @@ export function useSettings() {
         ),
         updateUserSetting,
         updateModuleStatus,
-        typeWrap,
-        moveToModuleTab
+        typeWrap
     };
 }

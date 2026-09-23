@@ -154,13 +154,10 @@ const setupWriterInfoFilter = (ctx: UserinfoModule): string =>
     );
 
 const setupContextMenuHandler = (ctx: UserinfoModule): (() => void) =>
-    eventBus.on(
-        "refresherUserContextMenu",
-        (nick: string | null, uid: string | null, ip: string | null) => {
-            ctx.memory.selected = {NICK: nick, UID: uid, IP: ip};
-            ctx.memory.lastSelect = Date.now();
-        }
-    );
+    eventBus.on("refresherUserContextMenu", (data) => {
+        ctx.memory.selected = {NICK: data.nick, UID: data.id, IP: data.ip};
+        ctx.memory.lastSelect = Date.now();
+    });
 
 const applyMemoResult = async (
     selected: NullableProperties<Record<RefresherMemoType, string>>,

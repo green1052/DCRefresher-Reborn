@@ -27,15 +27,17 @@ const tabs = [
 
 export default function App({optionsPage}: { optionsPage?: boolean }) {
     const [tab, setTab] = useState(0);
+    const [highlightModule, setHighlightModule] = useState<string | null>(null);
 
     const blocksComposable = useBlocks();
     const memosComposable = useMemos();
     const settingsComposable = useSettings();
     const dataComposable = useData();
 
+    // 일반 탭의 모듈 카드를 누르면 모듈 탭으로 이동해 해당 모듈을 잠깐 강조한다.
     const moveToModuleTab = (moduleName: string) => {
         setTab(3);
-        settingsComposable.moveToModuleTab(moduleName);
+        setHighlightModule(moduleName);
     };
 
     const ctx: AppContextValue = {
@@ -43,6 +45,8 @@ export default function App({optionsPage}: { optionsPage?: boolean }) {
         memos: memosComposable,
         settings: settingsComposable,
         data: dataComposable,
+        highlightModule,
+        dismissHighlightModule: () => setHighlightModule(null),
         moveToModuleTab
     };
 
@@ -57,10 +61,8 @@ export default function App({optionsPage}: { optionsPage?: boolean }) {
                     blockDetectModeTypeNames={blocksComposable.blockDetectModeTypeNames}
                     blockKeyNames={blocksComposable.blockKeyNames}
                     currentBlockType={blocksComposable.currentBlockType}
-                    formData={blocksComposable.blockFormData}
-                    onChange={blocksComposable.updateBlockForm}
                     onClose={blocksComposable.closeBlockDialog}
-                    onConfirm={() => void blocksComposable.confirmAddBlock()}
+                    onConfirm={(data) => void blocksComposable.confirmAddBlock(data)}
                     visible={blocksComposable.showBlockDialog}
                 />
 

@@ -1,5 +1,4 @@
 import * as http from "@/http/http";
-import {ajaxClient} from "@/http/http";
 import type {Nullable} from "@/utils/types";
 
 const rKey = "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K";
@@ -136,7 +135,7 @@ export async function submitComment(
 
     const url = typeof memo === "string" ? http.urls.comments_submit : http.urls.dccon_comments_submit;
 
-    const response = await ajaxClient(url, {body: params}).text();
+    const response = await http.ajaxClient(url, {body: params}).text();
 
     const [result, message] = response.split("||");
 

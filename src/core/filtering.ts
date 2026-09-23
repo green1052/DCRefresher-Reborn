@@ -213,9 +213,11 @@ export const filter = {
         }
 
         await Promise.all(
-            oneShotEntries.map(async ([, entry]) => {
+            oneShotEntries.map(async ([id, entry]) => {
                 try {
                     const elements = await findElements(entry.scope, document.documentElement);
+                    // 대기(최대 3초) 사이에 모듈이 비활성돼 필터가 해제됐으면 무시.
+                    if (!lists.has(id)) return;
                     runFilter(entry, elements);
                 } catch (e) {
                     if (!entry.options?.skipIfNotExists) throw e;
@@ -234,7 +236,9 @@ export const filter = {
             return Promise.resolve();
         }
 
-        return findElements(entry.scope, document.documentElement).then((e) => runFilter(entry, e));
+        return findElements(entry.scope, document.documentElement).then((e) => {
+            if (lists.has(id)) runFilter(entry, e);
+        });
     },
 
     add: <T = HTMLElement>(

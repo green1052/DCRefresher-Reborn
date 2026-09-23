@@ -1,7 +1,7 @@
 import {RefreshCw} from "lucide-react";
 import {useEffect, useRef, useState} from "react";
 
-import {client as ky, createAuthParams} from "@/http/http";
+import * as http from "@/http/http";
 
 import Loader from "./loader";
 
@@ -38,11 +38,11 @@ export default function DcconPopup({onClickDccon, onCloseDccon}: Props) {
         const id = ++requestId.current;
 
         try {
-            const params = createAuthParams();
+            const params = http.createAuthParams();
             params.set("target", "icon");
             params.set("page", String(page));
 
-            const response = await ky
+            const response = await http.client
                 .post("https://gall.dcinside.com/dccon/lists", {
                     body: params
                 })

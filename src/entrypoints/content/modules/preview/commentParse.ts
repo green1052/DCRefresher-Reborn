@@ -23,8 +23,14 @@ export function handleDcconContextMenu(e: MouseEvent): void {
 
     const code = extractDcconCode(src);
 
-    eventBus.emit("refresherUserContextMenu", null, null, null, code, null);
+    eventBus.emit("refresherUserContextMenu", {nick: null, id: null, ip: null, code, packageIdx: null});
 }
+
+// 디시콘 메모 판별/식별: 차단 필터와 댓글 렌더가 같은 마크업을 알아야 하므로 단일 출처.
+export const DCCON_MEMO_PATTERN = /<(img|video) class=/;
+
+export const extractDcconNo = (memo: string): string | null =>
+    /https:\/\/dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/.exec(memo)?.[1] ?? null;
 
 // 음성 댓글 데이터 파싱
 interface VoiceData {

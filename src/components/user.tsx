@@ -35,7 +35,13 @@ export default function UserComponent({user, me = false, click}: Props) {
     };
 
     const contextMenu = (): void => {
-        eventBus.emit("refresherUserContextMenu", user.nick, user.id, user.ip, null, null);
+        eventBus.emit("refresherUserContextMenu", {
+            nick: user.nick,
+            id: user.id,
+            ip: user.ip,
+            code: null,
+            packageIdx: null
+        });
     };
 
     return (

@@ -1,7 +1,7 @@
 import eventBus from "@/core/eventbus";
 import filter from "@/core/filtering";
 import modules, {MODULE_ID} from "@/core/modules";
-import http, {queryString} from "@/http/http";
+import * as http from "@/http/http";
 import {createLoadFunction, MINIMUM_REFRESH_INTERVAL} from "./load";
 
 const PAGING_SELECTOR = ".left_content article:has(.gall_listwrap) .bottom_paging_box";
@@ -103,9 +103,9 @@ export class RefreshController {
         const urlSearchParams = new URLSearchParams(location.search);
         const currentPostNo = urlSearchParams.get("no");
         const isPageView = location.href.includes("/board/view");
-        const searchType = queryString("s_type");
+        const searchType = http.queryString("s_type");
 
-        if (this.status.noRefreshOnSearch && queryString("s_keyword")) {
+        if (this.status.noRefreshOnSearch && http.queryString("s_keyword")) {
             this.memory.paused = true;
             this.updateRefreshText();
         }

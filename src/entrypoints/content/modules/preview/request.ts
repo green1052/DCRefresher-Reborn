@@ -1,6 +1,5 @@
 import type {Input, Options} from "ky";
 
-import {ajaxClient, checkMini, client as htmlClient} from "@/http/http";
 import * as http from "@/http/http";
 import toast from "@/utils/toast";
 import {parsePostInfo} from "./postParser";
@@ -26,7 +25,7 @@ interface ManagementResponse {
 }
 
 const client = (url: Input, options?: Options): Promise<string> => {
-    return ajaxClient(url, options).text();
+    return http.ajaxClient(url, options).text();
 };
 
 const parseJsonSafely = (response: string): unknown => {
@@ -135,7 +134,7 @@ export const previewRequest = {
     },
 
     async post(link: string, gallery: string, id: string, signal: AbortSignal): Promise<IPostInfo> {
-        const response = await htmlClient
+        const response = await http.client
             .get(`${http.urls.base}${http.galleryType(link, "/")}${http.urls.view}${gallery}&no=${id}`, {signal})
             .text();
         return parsePostInfo(id, response);
@@ -243,7 +242,7 @@ export const previewRequest = {
     ): Promise<boolean | string> {
         if (!preData.link) return false;
 
-        const url = checkMini(preData.link) ? http.urls.manage.deleteCommentMini : http.urls.manage.deleteComment;
+        const url = http.checkMini(preData.link) ? http.urls.manage.deleteCommentMini : http.urls.manage.deleteComment;
 
         const params = http.createAuthParams(preData.link);
         params.set("id", preData.gallery);

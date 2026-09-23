@@ -177,16 +177,3 @@ export const createAuthParams = (link?: string): URLSearchParams => {
  */
 export const manageUrl = (link: string, miniUrl: string, normalUrl: string): string =>
     galleryType(link, "/") === "mini/" ? miniUrl : normalUrl;
-
-export default {
-    urls,
-    galleryType,
-    view,
-    mergeParamURL,
-    galleryTypeName,
-    queryString,
-    createAuthParams,
-    manageUrl,
-    client,
-    ajaxClient
-};

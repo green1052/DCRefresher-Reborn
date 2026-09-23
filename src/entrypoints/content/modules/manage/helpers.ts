@@ -1,4 +1,4 @@
-import http, {ajaxClient} from "@/http/http";
+import * as http from "@/http/http";
 
 export const deletePost = async (id: string): Promise<void> => {
     if (!id) return;
@@ -9,7 +9,7 @@ export const deletePost = async (id: string): Promise<void> => {
     params.set("nos[]", id);
 
     try {
-        await ajaxClient(http.manageUrl(location.href, http.urls.manage.deleteMini, http.urls.manage.delete), {
+        await http.ajaxClient(http.manageUrl(location.href, http.urls.manage.deleteMini, http.urls.manage.delete), {
             body: params
         });
     } catch (e) {
@@ -38,7 +38,7 @@ export const fetchRatio = async (uid: string): Promise<RatioInfo | undefined> =>
     const params = http.createAuthParams();
     params.set("user_id", uid);
 
-    const response = await ajaxClient("https://gall.dcinside.com/api/gallog_user_layer/gallog_content_reple", {
+    const response = await http.ajaxClient("https://gall.dcinside.com/api/gallog_user_layer/gallog_content_reple", {
         body: params
     }).text();
 
