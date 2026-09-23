@@ -1,3 +1,5 @@
+import {Text} from "@radix-ui/themes";
+
 import PreviewButton from "@/components/previewButton";
 
 import "./frameError.scss";
@@ -12,11 +14,11 @@ export default function FrameError({error, retry}: Props) {
 
     return (
         <div className="refresher-preview-contents refresher-error">
-            <h3>{error?.title || "알 수 없는 오류"}</h3>
+            <Text as="div" size="4" weight="bold">{error?.title || "알 수 없는 오류"}</Text>
             <br/>
             <br/>
             <br/>
-            <p>가능한 경우:</p>
+            <Text as="p">가능한 경우:</Text>
 
             {!detail && (
                 <ul>
@@ -50,7 +52,7 @@ export default function FrameError({error, retry}: Props) {
                 </ul>
             )}
             <br/>
-            <span className="refresher-mute">{detail}</span>
+            <Text as="span" className="refresher-mute" color="gray">{detail}</Text>
             <br/>
             <br/>
             <PreviewButton

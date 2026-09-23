@@ -1,3 +1,5 @@
+import {Button, Checkbox, Flex, IconButton, Select, Text, TextField} from "@radix-ui/themes";
+import {X} from "lucide-react";
 import {useState} from "react";
 
 import "./blockPopup.scss";
@@ -53,79 +55,79 @@ export default function BlockPopup({onSubmit, onClose}: Props) {
 
     return (
         <div className="refresher-block-popup">
-            <div
-                className="close"
+            <IconButton
+                color="gray"
                 onClick={onClose}
+                style={{position: "absolute", right: 10, top: 10}}
+                title="닫기"
+                variant="ghost"
             >
-                <div className="cross"></div>
-                <div className="cross"></div>
-            </div>
+                <X height={16} width={16}/>
+            </IconButton>
             <div className="contents">
                 <div className="block">
-                    <h3>차단 기간</h3>
-                    <div className="block_duration">
-                        {durations.map((d) => (
-                            <label key={d.value}>
-                                <input
-                                    checked={avoidHour === d.value}
-                                    name="duration"
-                                    onChange={() => setAvoidHour(d.value)}
-                                    type="radio"
-                                    value={d.value}
-                                />
-                                {d.label}
-                            </label>
-                        ))}
-                    </div>
-                </div>
-                <div className="block">
-                    <h3>차단 사유</h3>
-                    <div className="block_reason">
-                        {reasons.map((r) => (
-                            <label key={r.value}>
-                                <input
-                                    checked={avoidReason === r.value}
-                                    name="reason"
-                                    onChange={() => setAvoidReason(r.value)}
-                                    type="radio"
-                                    value={r.value}
-                                />
-                                {r.label}
-                            </label>
-                        ))}
-                    </div>
-                    <input
-                        name="reason_text"
-                        onChange={(ev) => setReasonText(ev.target.value)}
-                        placeholder="차단 사유 직접 입력 (한글 20자 이내)"
-                        style={avoidReason === 0 ? undefined : {display: "none"}}
-                        type="text"
-                        value={reasonText}
-                    />
-                </div>
-                <div className="block">
-                    <h3>선택한 글 삭제</h3>
-                    <input
-                        checked={remove}
-                        name="remove"
-                        onChange={(ev) => setRemove(ev.target.checked)}
-                        type="checkbox"
-                    />
-
-                    <h3>식별 코드 차단 시 IP 동시 차단</h3>
-                    <input
-                        checked={userType}
-                        name="user-type"
-                        onChange={(ev) => setUserType(ev.target.checked)}
-                        type="checkbox"
-                    />
-
-                    <button
-                        className="go-block"
-                        onClick={submit}
+                    <Text as="div" size="2" weight="bold">차단 기간</Text>
+                    <Select.Root
+                        onValueChange={(value) => setAvoidHour(Number(value))}
+                        size="2"
+                        value={String(avoidHour)}
                     >
-                        차단
-                    </button>
+                        <Select.Trigger mt="2" style={{width: "100%"}}/>
+                        <Select.Content>
+                            {durations.map((d) => (
+                                <Select.Item key={d.value} value={String(d.value)}>
+                                    {d.label}
+                                </Select.Item>
+                            ))}
+                        </Select.Content>
+                    </Select.Root>
+                </div>
+                <div className="block">
+                    <Text as="div" size="2" weight="bold">차단 사유</Text>
+                    <Select.Root
+                        onValueChange={(value) => setAvoidReason(Number(value))}
+                        size="2"
+                        value={String(avoidReason)}
+                    >
+                        <Select.Trigger mt="2" style={{width: "100%"}}/>
+                        <Select.Content>
+                            {reasons.map((r) => (
+                                <Select.Item key={r.value} value={String(r.value)}>
+                                    {r.label}
+                                </Select.Item>
+                            ))}
+                        </Select.Content>
+                    </Select.Root>
+                    {avoidReason === 0 && (
+                        <TextField.Root
+                            mt="2"
+                            onChange={(ev) => setReasonText(ev.target.value)}
+                            placeholder="차단 사유 직접 입력 (한글 20자 이내)"
+                            size="2"
+                            style={{width: "100%"}}
+                            value={reasonText}
+                        />
+                    )}
+                </div>
+                <div className="block">
+                    <Flex align="center" gap="2">
+                        <Checkbox
+                            checked={remove}
+                            onCheckedChange={(value) => setRemove(value === true)}
+                            size="1"
+                        />
+                        <Text size="2">선택한 글 삭제</Text>
+                    </Flex>
+                    <Flex align="center" gap="2" mt="2">
+                        <Checkbox
+                            checked={userType}
+                            onCheckedChange={(value) => setUserType(value === true)}
+                            size="1"
+                        />
+                        <Text size="2">식별 코드 차단 시 IP 동시 차단</Text>
+                    </Flex>
+
+                    <Button color="red" mt="3" onClick={submit}>차단</Button>
                 </div>
             </div>
         </div>

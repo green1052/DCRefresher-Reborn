@@ -3,6 +3,7 @@ import {flushSync} from "react-dom";
 import {useLayoutEffect, useRef, useState} from "react";
 
 import ContentTheme from "@/components/ContentTheme";
+import UiService from "@/entrypoints/options/components/UiService";
 
 import "@/components/toast.scss";
 
@@ -113,6 +114,7 @@ const mountToast = () => {
     flushSync(() => {
         root.render(
             <ContentTheme>
+                <UiService/>
                 <Toast/>
             </ContentTheme>
         );
