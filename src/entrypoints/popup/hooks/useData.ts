@@ -1,20 +1,26 @@
-import {backupStorage, databaseStorage} from "@/storage/wxtStorage";
+import {backupStorage} from "@/storage/wxtStorage";
 import {useCallback, useState} from "react";
 
+const STORAGE_KEY_PREFIX = "refresher:";
+const DATABASE_PREFIX = "refresher:database:";
+const SYNC_KEY_PREFIX = "refresher:module:";
+
+// clear+set 사이 watcher가 빈 값을 관찰하지 않도록 set 후 사라진 키만 제거한다.
 const replaceLocalStorage = async (data: Record<string, unknown>): Promise<void> => {
     const previousData = await browser.storage.local.get(null);
 
     try {
-        await browser.storage.local.clear();
         await browser.storage.local.set(data);
+        const dataKeys = new Set(Object.keys(data));
+        const removedKeys = Object.keys(previousData).filter((key) => !dataKeys.has(key));
+        if (removedKeys.length > 0) {
+            await browser.storage.local.remove(removedKeys);
+        }
     } catch (error) {
-        await browser.storage.local.clear();
-        await browser.storage.local.set(previousData);
+        await replaceLocalStorage(previousData);
         throw error;
     }
 };
-
-const DATABASE_PREFIX = "refresher:database:";
 
 // IP/차단 데이터베이스는 용량이 커서 백업/내보내기에서 제외한다
 const getLocalDataWithoutDatabase = async (): Promise<Record<string, unknown>> => {
@@ -25,13 +31,27 @@ const getLocalDataWithoutDatabase = async (): Promise<Record<string, unknown>> =
     return data;
 };
 
+// sync은 item당 8KB 제한이 있어 설정(enable/setting)만 다룬다.
+// block/memo는 단일 키가 제한을 초과할 수 있고 module data는 탭에서 재수집된다.
+const getSyncScopedData = (data: Record<string, unknown>): Record<string, unknown> =>
+    Object.fromEntries(
+        Object.entries(data).filter(([key]) => key.startsWith(SYNC_KEY_PREFIX) && !key.endsWith(":data"))
+    );
+
 const parseStorageImport = (input: string): Record<string, unknown> => {
     const parsed = JSON.parse(input) as unknown;
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
         throw new Error("가져오기 데이터는 JSON 객체여야 합니다.");
     }
 
-    return parsed as Record<string, unknown>;
+    const valid = Object.entries(parsed as Record<string, unknown>).filter(([key]) =>
+        key.startsWith(STORAGE_KEY_PREFIX)
+    );
+    if (valid.length === 0) {
+        throw new Error("가져올 데이터가 없습니다.");
+    }
+
+    return Object.fromEntries(valid);
 };
 
 export function useData() {
@@ -45,7 +65,7 @@ export function useData() {
     const backupCloud = async (): Promise<void> => {
         setLoading(true);
         try {
-            const data = await getLocalDataWithoutDatabase();
+            const data = getSyncScopedData(await browser.storage.local.get(null));
 
             await browser.storage.sync.clear();
             await browser.storage.sync.set(data);
@@ -53,7 +73,7 @@ export function useData() {
             const now = Date.now();
             setLastUpdate(now);
             await backupStorage.lastUpdate.setValue(now);
-            alert("데이터를 클라우드에 백업했습니다.");
+            alert("설정을 클라우드에 백업했습니다. (차단 목록·메모 제외)");
         } catch (error) {
             console.error("Cloud backup failed:", error);
             alert("데이터를 클라우드에 백업하는데 실패했습니다.");
@@ -63,22 +83,17 @@ export function useData() {
     };
 
     const recoverCloud = async (): Promise<void> => {
-        if (!confirm("클라우드 백업으로 현재 설정을 교체할까요?")) return;
+        if (!confirm("클라우드 백업(설정)으로 현재 설정을 교체할까요? 차단 목록과 메모는 유지됩니다.")) return;
 
         setLoading(true);
         try {
-            const [data, preservedIp, preservedBan] = await Promise.all([
-                browser.storage.sync.get(),
-                databaseStorage.ip.getValue(),
-                databaseStorage.ban.getValue()
-            ]);
-
-            const preserved: Record<string, unknown> = {};
-            if (preservedIp) preserved["refresher:database:ip"] = preservedIp;
-            if (preservedBan) preserved["refresher:database:ban"] = preservedBan;
-
-            await replaceLocalStorage({...data, ...preserved});
-            alert("데이터를 복원했습니다. 새탭에서 디시인사이드를 열어주세요.");
+            const data = getSyncScopedData(await browser.storage.sync.get());
+            if (Object.keys(data).length === 0) {
+                alert("클라우드에 백업된 설정이 없습니다.");
+                return;
+            }
+            await browser.storage.local.set(data);
+            alert("설정을 복원했습니다. 새탭에서 디시인사이드를 열어주세요.");
         } catch {
             alert("데이터를 복원하는데 실패했습니다.");
         } finally {

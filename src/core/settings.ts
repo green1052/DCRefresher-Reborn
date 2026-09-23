@@ -24,22 +24,13 @@ const normalizeSettingValue = (
     }
 };
 
-export const set = async (module: string, key: string, value: string | number | boolean): Promise<void> => {
-    const setting = settingsStore[module]?.[key];
-    if (!setting) return;
-
-    const normalizedValue = normalizeSettingValue(setting, value);
-    eventBus.emit("refresherUpdateSetting", module, key, normalizedValue);
-
-    setting.value = normalizedValue;
-    await moduleSettingStorage(module, key).setValue(normalizedValue);
-};
-
 export const setStore = (module: string, key: string, value: string | number | boolean): void => {
     const setting = settingsStore[module]?.[key];
     if (!setting) return;
 
     const normalizedValue = normalizeSettingValue(setting, value);
+    if (setting.value === normalizedValue) return;
+
     eventBus.emit("refresherUpdateSetting", module, key, normalizedValue);
     setting.value = normalizedValue;
 };
@@ -68,7 +59,6 @@ export const load = async (
 };
 
 export default {
-    set,
     setStore,
     load
 };

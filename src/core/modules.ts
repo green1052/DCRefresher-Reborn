@@ -45,40 +45,6 @@ const revokeModule = async (module: RefresherModule): Promise<void> => {
     }
 };
 
-type ModuleStatusPayload = {
-    name: string;
-    value: boolean;
-};
-
-type SettingUpdatePayload = {
-    name: string;
-    key: string;
-    value: string | number | boolean;
-};
-
-const isModuleStatusPayload = (value: unknown): value is ModuleStatusPayload => {
-    return (
-        typeof value === "object" &&
-        value !== null &&
-        "name" in value &&
-        "value" in value &&
-        typeof value.name === "string" &&
-        typeof value.value === "boolean"
-    );
-};
-
-const isSettingUpdatePayload = (value: unknown): value is SettingUpdatePayload => {
-    return (
-        typeof value === "object" &&
-        value !== null &&
-        "name" in value &&
-        "key" in value &&
-        "value" in value &&
-        typeof value.name === "string" &&
-        typeof value.key === "string"
-    );
-};
-
 // 스타트업 스토리지 IPC를 한 번으로 줄인다 (키: refresher:module:*).
 let storageSnapshot: Promise<Record<string, unknown>> | null = null;
 const getStorageSnapshot = (): Promise<Record<string, unknown>> => {
@@ -165,17 +131,19 @@ onMessage("getSchema", () => {
     return schema;
 });
 
-onMessage("updateModuleStatus", async ({data}) => {
-    if (!isModuleStatusPayload(data) || !moduleStore[data.name]) return;
+// ===== 설정 전파: 팝업이 스토리지에 쓰면 onChanged로 콘텐츠에 반영한다 (메시지 릴레이 대체) =====
 
-    if (moduleStore[data.name].enable === data.value) return;
+const MODULE_ENABLE_KEY = /^refresher:module:([^:]+):enable$/;
+const MODULE_SETTING_KEY = /^refresher:module:([^:]+):setting:(.+)$/;
 
-    moduleStore[data.name].enable = data.value;
-    moduleEnableStorage(data.name).setValue(data.value);
+const applyModuleStatus = async (name: string, value: boolean): Promise<void> => {
+    const mod = moduleStore[name];
+    if (!mod || mod.enable === value) return;
+    mod.enable = value;
 
-    if (data.value) {
+    if (value) {
         const existingFilterIds = new Set(filter.ids());
-        await runModule(moduleStore[data.name]);
+        await runModule(mod);
 
         for (const filterId of filter.ids()) {
             if (!existingFilterIds.has(filterId)) {
@@ -186,12 +154,24 @@ onMessage("updateModuleStatus", async ({data}) => {
         return;
     }
 
-    await revokeModule(moduleStore[data.name]);
-});
+    await revokeModule(mod);
+};
 
-onMessage("updateSettingValue", ({data}) => {
-    if (!isSettingUpdatePayload(data)) return;
-    settings.setStore(data.name, data.key, data.value);
+browser.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== "local") return;
+
+    for (const [key, {newValue}] of Object.entries(changes)) {
+        const enableMatch = MODULE_ENABLE_KEY.exec(key);
+        if (enableMatch && typeof newValue === "boolean") {
+            void applyModuleStatus(enableMatch[1], newValue);
+            continue;
+        }
+
+        const settingMatch = MODULE_SETTING_KEY.exec(key);
+        if (settingMatch) {
+            settings.setStore(settingMatch[1], settingMatch[2], newValue as string | number | boolean);
+        }
+    }
 });
 
 onMessage("executeShortcut", ({data}) => {

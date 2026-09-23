@@ -159,13 +159,10 @@ const checkValidMode = (mode: string) => {
     return Object.keys(BLOCK_DETECT_MODE).some((key) => mode === key);
 };
 
-const removeExists = (type: RefresherBlockType, content: string) => {
-    blockCache[type] = normalizeBlockList(blockCache[type]).filter((value) => value.content !== content);
-};
-
 // Internal update helpers now just update storage. The watcher updates local cache.
 // However, to keep synchronous operations working smoothly (avoid race conditions in same context),
 // we update local cache immediately as well.
+// ponytail: getValue~setValue 사이 수 ms의 TOCTOU 창은 남는다. 완전 원자성이 필요하면 background 직렬화 엔드포인트로.
 const internalAddToList = async (
     type: RefresherBlockType,
     content: string,
@@ -174,20 +171,17 @@ const internalAddToList = async (
     extra?: string,
     mode?: RefresherBlockDetectMode
 ) => {
-    removeExists(type, content);
+    // 오래된 캐시를 통째로 저장해 다른 탭의 동시 추가를 지우는 일을 막는다. 최신 값을 읽어 병합.
+    const next = normalizeBlockList(await blockStorage[type].getValue()).filter(
+        (value) => value.content !== content
+    );
 
-    const newItem: RefresherBlockValue = {
-        content,
-        isRegex,
-        gallery,
-        extra,
-        mode
-    };
+    next.push({content, isRegex, gallery, extra, mode});
 
-    blockCache[type].push(newItem);
+    blockCache[type] = next;
     clearCompiledCaches();
 
-    await blockStorage[type].setValue(blockCache[type]);
+    await blockStorage[type].setValue(next);
 };
 
 /**

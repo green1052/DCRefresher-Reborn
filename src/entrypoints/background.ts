@@ -1,43 +1,14 @@
-import {onMessage, sendMessage} from "@/http/messaging";
+import {sendMessage} from "@/http/messaging";
 import {databaseStorage} from "@/storage/wxtStorage";
 
 export default defineBackground(() => {
-    // ponytail: broadcast 타입은 런타임에만 정해지므로 캐스팅.
+    // ponytail: tabs 전송 타입은 런타임에만 정해지므로 캐스팅.
     // 원시 tabs.sendMessage는 @webext-core/messaging 봉투(timestamp 등)가 없어 수신측에서 무시됨.
     const sendToTab = sendMessage as (
         type: string,
         data: unknown,
         tabId: number
     ) => Promise<unknown>;
-
-    // ===== Broadcast: popup/content → background → 모든 탭 =====
-    const broadcastToTabs = async (type: string, payload?: unknown): Promise<number> => {
-        const tabs = await browser.tabs.query({url: ["https://*.dcinside.com/*"]});
-        const promises: Promise<unknown>[] = [];
-
-        for (const tab of tabs) {
-            if (!tab.id) continue;
-            promises.push(
-                sendToTab(type, payload, tab.id).catch(() => {
-                })
-            );
-        }
-
-        await Promise.all(promises);
-        return promises.length;
-    };
-
-    onMessage("broadcast", async ({data}) => {
-        const {type, data: payload} = data;
-
-        try {
-            const sentTo = await broadcastToTabs(type, payload);
-            return {success: true, sentTo};
-        } catch (e) {
-            console.error("Broadcast error:", e);
-            return {success: false, error: e};
-        }
-    });
 
     // ===== Context Menus =====
     const contextMenuItems: Browser.contextMenus.CreateProperties[] = [
@@ -91,10 +62,13 @@ export default defineBackground(() => {
 
     browser.runtime.onStartup.addListener(createContextMenus);
 
-    // ===== Commands: 단축키 → 모든 탭에 broadcast =====
+    // ===== Commands: 단축키 → 활성 탭에만 전달 =====
     // runtime.sendMessage는 보낸 컨텍스트(background 자신)에는 전달되지 않으므로 직접 호출
-    browser.commands.onCommand.addListener((command) => {
-        void broadcastToTabs("executeShortcut", command);
+    browser.commands.onCommand.addListener(async (command) => {
+        const [tab] = await browser.tabs.query({active: true, currentWindow: true});
+        if (tab?.id) {
+            sendToTab("executeShortcut", command, tab.id).catch(() => {});
+        }
     });
 
     // ===== Database Update =====

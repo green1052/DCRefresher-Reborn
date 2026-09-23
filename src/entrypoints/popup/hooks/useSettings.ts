@@ -2,14 +2,19 @@ import {moduleEnableStorage, moduleSettingStorage} from "@/storage/wxtStorage";
 import {sendMessage} from "@/http/messaging";
 import {useEffect, useState} from "react";
 
-// 백그라운드가 디시 탭 전체로 뿌려준다.
-const sendToAllDcTabs = async (type: string, data: Record<string, unknown>): Promise<void> => {
-    try {
-        await sendMessage("broadcast", {type, data});
-    } catch (e) {
-        console.error(`Failed to broadcast ${type}:`, e);
+// 타이핑/슬라이더 드래그마다 스토리지 쓰기가 발생하지 않도록 쓰기를 지연 병합한다.
+const SETTING_WRITE_DELAY = 300;
+
+const pendingSettingWrites = new Map<
+    string,
+    {
+        timer: ReturnType<typeof setTimeout>;
+        module: string;
+        key: string;
+        value: string | number | boolean;
+        previousValue: unknown;
     }
-};
+>();
 
 export function useSettings() {
     const [modules, setModules] = useState<ModuleSchemaMap>({});
@@ -63,7 +68,7 @@ export function useSettings() {
         return Object.values(obj).length;
     };
 
-    const updateUserSetting = async (
+    const updateUserSetting = (
         module: string | undefined,
         key: string | undefined,
         value: unknown
@@ -73,30 +78,46 @@ export function useSettings() {
         const setting = settings[module]?.[key];
         if (!setting) return;
 
-        const previousValue = setting.value;
-
         setSettings((prev) => ({
             ...prev,
             [module]: {...prev[module], [key]: {...setting, value} as RefresherSettings}
         }));
 
-        try {
-            await moduleSettingStorage(module, key).setValue(value as string | number | boolean);
-            await sendToAllDcTabs("updateSettingValue", {name: module, key, value: value as string | number | boolean});
-        } catch (e) {
-            setSettings((prev) => ({
-                ...prev,
-                [module]: {...prev[module], [key]: {...setting, value: previousValue} as RefresherSettings}
-            }));
+        const id = `${module}:${key}`;
+        const previousValue = pendingSettingWrites.get(id)?.previousValue ?? setting.value;
 
-            try {
-                await moduleSettingStorage(module, key).setValue(previousValue as string | number | boolean);
-            } catch (rollbackError) {
-                console.error("Failed to rollback user setting:", rollbackError);
-            }
+        const existing = pendingSettingWrites.get(id);
+        if (existing) clearTimeout(existing.timer);
 
-            console.error("Failed to update user setting:", e);
-        }
+        const pending = {
+            timer: setTimeout(() => {
+                void (async () => {
+                    pendingSettingWrites.delete(id);
+                    try {
+                        await moduleSettingStorage(pending.module, pending.key).setValue(pending.value);
+                    } catch (e) {
+                        console.error("Failed to update user setting:", e);
+
+                        setSettings((prev) => ({
+                            ...prev,
+                            [module]: {
+                                ...prev[module],
+                                [key]: {...setting, value: previousValue} as RefresherSettings
+                            }
+                        }));
+                        moduleSettingStorage(pending.module, pending.key)
+                            .setValue(previousValue as string | number | boolean)
+                            .catch(() => {});
+                    }
+                })();
+            }, SETTING_WRITE_DELAY),
+            module,
+            key,
+            value: value as string | number | boolean,
+            previousValue
+        };
+
+        pendingSettingWrites.set(id, pending);
     };
 
     const typeWrap = (value: unknown) => {
@@ -144,7 +165,6 @@ export function useSettings() {
             prev[name] ? {...prev, [name]: {...prev[name], enable: value}} : prev
         );
         await moduleEnableStorage(name).setValue(value);
-        await sendToAllDcTabs("updateModuleStatus", {name, value});
     };
 
     return {

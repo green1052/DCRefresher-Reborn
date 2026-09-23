@@ -1,6 +1,8 @@
 import filter from "@/core/filtering";
 
 import eventBus from "@/core/eventbus";
+import {MODULE_ID} from "@/core/modules";
+import {moduleDataStorage} from "@/storage/wxtStorage";
 import {enableVideoControls} from "@/utils/video";
 import {deletePost, fetchRatio, getPermBanFor, type RatioInfo} from "./helpers";
 import {getBanReverseIndex} from "@/utils/ban";
@@ -217,8 +219,12 @@ const handleNewPostList = async (ctx: ManageModule, articles: HTMLElement[]): Pr
             }))
         );
 
+        // 다른 탭이 저장한 ratio까지 보존하기 위해 최신 스토리지 값을 읽어 병합한다.
         // 한 번만 대입한다. data는 Proxy라 대입할 때마다 스토리지에 쓴다.
-        const updated = {...ctx.data.ratio};
+        const stored = (await moduleDataStorage(MODULE_ID.MANAGE).getValue()) as {
+            ratio?: Record<string, RatioInfo>;
+        } | null;
+        const updated = {...stored?.ratio};
         for (const {uid, result} of fetchedResults) {
             if (result) updated[uid] = result;
         }

@@ -84,7 +84,7 @@ export function useBlocks() {
             extra.push(`[${BLOCK_DETECT_MODE_TYPE_NAMES[blockFormData.mode]}]`);
         }
 
-        // core block.add(removeExists)와 동일하게 같은 content는 교체
+        // core block.add와 동일하게 같은 content는 교체
         const next = blocks[currentBlockType].filter((v) => v.content !== blockFormData.content.trim());
 
         next.push({

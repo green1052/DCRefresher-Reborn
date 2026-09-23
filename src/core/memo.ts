@@ -63,14 +63,18 @@ watchMemoStorages((type, memos) => {
     memoCache[type] = memos;
 });
 
+// ponytail: getValue~setValue 사이 창은 남는다. 다른 탭 동시 쓰기 보존이 목적이지 원자성은 아님.
 const internalAddToList = async (type: RefresherMemoType, user: string, text: string, color: string, gallery?: string) => {
-    memoCache[type][user] = {
+    // 오래된 캐시를 통째로 저장해 다른 탭의 동시 쓰기를 지우는 일을 막는다. 최신 값을 읽어 병합.
+    const latest = normalizeMemoMap(await memoStorage[type].getValue());
+    latest[user] = {
         text,
         color,
         gallery
     };
+    memoCache[type] = latest;
 
-    await memoStorage[type].setValue({...memoCache[type]});
+    await memoStorage[type].setValue({...latest});
 };
 
 const checkValidType = (type: string) => MEMO_TYPES.some((key) => key === type);
@@ -114,8 +118,11 @@ export const remove = async (type: RefresherMemoType, user: string): Promise<voi
         throw new Error(`${type} is not a valid type. requires one of [${MEMO_TYPES.join(", ")}]`);
     }
 
-    delete memoCache[type][user];
-    await memoStorage[type].setValue({...memoCache[type]});
+    const latest = normalizeMemoMap(await memoStorage[type].getValue());
+    delete latest[user];
+    memoCache[type] = latest;
+
+    await memoStorage[type].setValue({...latest});
 };
 
 onMessage("memoSelected", () => {

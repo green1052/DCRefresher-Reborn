@@ -1,13 +1,7 @@
 import Cookies from "js-cookie";
 import ky from "ky";
 
-const g = globalThis as any;
-const fetchFn: typeof fetch =
-    typeof g.content?.fetch === "function"
-        ? g.content.fetch.bind(g.content)
-        : window.fetch.bind(window);
-
-export const contentFetch: typeof fetch = fetchFn;
+export const contentFetch: typeof fetch = window.fetch.bind(window);
 
 export const client = ky.create({fetch: contentFetch});
 
