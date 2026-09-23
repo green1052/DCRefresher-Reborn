@@ -37,31 +37,6 @@ export default function FrameComponent({frames, option = {}, apiRef}: Props) {
     const [fade, setFade] = useState(false);
     const fadeOutTimer = useRef<number | null>(null);
 
-    useEffect(() => {
-        document.body.style.overflow = "hidden";
-        document.addEventListener("keyup", onKeyUp);
-        return () => {
-            document.removeEventListener("keyup", onKeyUp);
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    useEffect(() => {
-        document.body.style.overflow = closed ? "" : "hidden";
-        if (closed) frames.forEach((frame) => frame.emitClose());
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [closed]);
-
-    useEffect(() => {
-        return () => {
-            document.body.style.overflow = "";
-            if (fadeOutTimer.current !== null) {
-                window.clearTimeout(fadeOutTimer.current);
-                fadeOutTimer.current = null;
-            }
-        };
-    }, []);
-
     const fadeIn = () => {
         setFade(true);
         setClosed(false);
@@ -80,14 +55,28 @@ export default function FrameComponent({frames, option = {}, apiRef}: Props) {
         }, 251);
     };
 
+    const close = fadeOut;
+
     useEffect(() => {
+        document.body.style.overflow = "hidden";
+        document.addEventListener("keyup", onKeyUp);
         fadeIn();
+        return () => {
+            document.body.style.overflow = "";
+            document.removeEventListener("keyup", onKeyUp);
+            if (fadeOutTimer.current !== null) {
+                window.clearTimeout(fadeOutTimer.current);
+                fadeOutTimer.current = null;
+            }
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const close = () => {
-        fadeOut();
-    };
+    useEffect(() => {
+        document.body.style.overflow = closed ? "" : "hidden";
+        if (closed) frames.forEach((frame) => frame.emitClose());
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [closed]);
 
     const onKeyUp = (ev: KeyboardEvent) => {
         if (ev.code === "Escape" && !closedRef.current) {

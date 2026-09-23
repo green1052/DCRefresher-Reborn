@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef, useState, useSyncExternalStore} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore} from "react";
 
 import Loader from "@/components/loader";
 import PreviewButton from "@/components/previewButton";
@@ -20,6 +20,8 @@ interface Props {
     index: number;
     registerIncrement?: (fn: () => void) => void;
 }
+
+const NO_COMMENTS: DcinsideCommentObject[] = [];
 
 export default function Frame({frame, index, registerIncrement}: Props) {
     useSyncExternalStore(frame.subscribe, frame.getSnapshot);
@@ -52,17 +54,23 @@ export default function Frame({frame, index, registerIncrement}: Props) {
 
     const hasComments = !!data.comments?.comments && data.comments.comments.length > 0;
 
-    const allComments: DcinsideCommentObject[] = data.comments?.comments ?? [];
+    const allComments: DcinsideCommentObject[] = useMemo(
+        () => data.comments?.comments ?? NO_COMMENTS,
+        [data.comments]
+    );
 
     // 부모 no -> 답글 수 / 마지막 답글 no (한 번 순회로 계산)
-    const replyCountByParent: Record<string, number> = {};
-    const lastReplyByParent: Record<string, string> = {};
-    for (const c of allComments) {
-        if (c.depth === 1 && c.c_no) {
-            replyCountByParent[c.c_no] = (replyCountByParent[c.c_no] ?? 0) + 1;
-            lastReplyByParent[c.c_no] = c.no;
+    const {replyCountByParent, lastReplyByParent} = useMemo(() => {
+        const replyCountByParent: Record<string, number> = {};
+        const lastReplyByParent: Record<string, string> = {};
+        for (const c of allComments) {
+            if (c.depth === 1 && c.c_no) {
+                replyCountByParent[c.c_no] = (replyCountByParent[c.c_no] ?? 0) + 1;
+                lastReplyByParent[c.c_no] = c.no;
+            }
         }
-    }
+        return {replyCountByParent, lastReplyByParent};
+    }, [allComments]);
 
     const replyCount = (comment: DcinsideCommentObject): number =>
         comment.depth === 0 ? (replyCountByParent[comment.no] ?? 0) : 0;
@@ -82,11 +90,11 @@ export default function Frame({frame, index, registerIncrement}: Props) {
         });
     }, []);
 
-    const visibleComments: DcinsideCommentObject[] = collapsedParents.size === 0
+    const visibleComments: DcinsideCommentObject[] = useMemo(() => collapsedParents.size === 0
         ? allComments
         : allComments.filter((c) =>
             c.depth === 0 || !collapsedParents.has(c.c_no as string)
-        );
+        ), [allComments, collapsedParents]);
 
     const showVotes = data.comments === undefined && data.buttons;
 
