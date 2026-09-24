@@ -259,6 +259,8 @@ body {
 }
 
 .refresher-slider-thumb {
+    position: absolute;
+    top: 50%;
     display: block;
     width: 12px;
     height: 12px;
@@ -266,6 +268,7 @@ body {
     background: #fff;
     border: 1px solid var(--refresher-accent);
     box-shadow: 0 1px 2px rgb(0 0 0 / 25%);
+    transform: translate(-50%, -50%);
     cursor: pointer;
 }
 

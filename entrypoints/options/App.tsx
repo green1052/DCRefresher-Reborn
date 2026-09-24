@@ -2,6 +2,8 @@ import {ExternalLink} from "lucide-react";
 import {Tabs} from "radix-ui";
 import {useEffect} from "react";
 
+import logoUrl from "@/assets/icon.png";
+
 import {BlockTab} from "./BlockTab";
 import {DataTab} from "./DataTab";
 import {GeneralTab} from "./GeneralTab";
@@ -68,7 +70,10 @@ export function App({optionsPage = false}: {optionsPage?: boolean}) {
     return (
         <div className={`refresher-app${optionsPage ? " refresher-options" : ""}`}>
             <header className="refresher-header">
-                <h1>DCRefresher</h1>
+                <img className="refresher-header-logo" src={logoUrl} alt="" />
+                <h1>
+                    DCRefresher <span className="refresher-header-reborn">Reborn</span>
+                </h1>
                 {!optionsPage && (
                     <button
                         className="refresher-open-options"
