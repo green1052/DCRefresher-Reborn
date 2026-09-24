@@ -74,12 +74,8 @@ export const UserCard = ({user}: {user: UserCardData}) => {
     const isp = user.ip ? ISPData(user.ip).name : undefined;
 
     const openMenu = (event: MouseEvent): void => {
-        event.preventDefault();
-
-        const ui = useUiStore.getState();
-        ui.setSelected({nick: user.nick, uid: user.id, ip: user.ip});
-        ui.closeBubble();
-        ui.openBubble(event.clientX, event.clientY);
+        // 우클릭 선택 정보 저장 — 동작은 배경 컨텍스트 메뉴가 담당
+        useUiStore.getState().setSelected({nick: user.nick, uid: user.id, ip: user.ip});
     };
 
     return (
@@ -91,7 +87,9 @@ export const UserCard = ({user}: {user: UserCardData}) => {
                         <img src={user.image} alt="" />
                     </span>
                 )}
-                {(user.id || user.ip) && <span className="refresher-user-info">({user.id || user.ip})</span>}
+                {[user.id, user.ip].filter(Boolean).length > 0 && (
+                    <span className="refresher-user-info">({[user.id, user.ip].filter(Boolean).join(" / ")})</span>
+                )}
                 {isp && (
                     <span className="refresherUserData" style={{color: "#6495ed"}} title={isp}>
                         [{isp}]

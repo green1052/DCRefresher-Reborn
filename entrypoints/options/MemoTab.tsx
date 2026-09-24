@@ -1,5 +1,5 @@
 import {Plus, X} from "lucide-react";
-import {Badge, Box, Button, Dialog, Flex, IconButton, Link, Text, TextField} from "@radix-ui/themes";
+import {Badge, Box, Button, Dialog, Flex, IconButton, Link, Table, Text, TextField} from "@radix-ui/themes";
 import {useState} from "react";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
@@ -188,34 +188,48 @@ export function MemoTab() {
                         {Object.keys(map).length === 0 ? (
                             <Empty>{MEMO_TYPE_NAMES[type]} 메모 없음</Empty>
                         ) : (
-                            <Flex wrap="wrap" gap="2">
-                                {Object.entries(map).map(([user, entry]) => (
-                                    <Flex key={user} align="center" gap="1" style={{border: "1px solid var(--gray-a5)", borderRadius: 999, padding: "2px 6px"}}>
-                                        <Box
-                                            asChild
-                                            style={{
-                                                background: "none",
-                                                border: "none",
-                                                padding: 0,
-                                                cursor: "pointer",
-                                                color: "var(--gray-12)",
-                                                font: "inherit",
-                                                maxWidth: 240,
-                                                overflow: "hidden",
-                                                textOverflow: "ellipsis",
-                                                whiteSpace: "nowrap"
-                                            }}
+                            <Table.Root variant="surface">
+                                <Table.Header>
+                                    <Table.Row>
+                                        <Table.ColumnHeaderCell>대상</Table.ColumnHeaderCell>
+                                        <Table.ColumnHeaderCell>메모</Table.ColumnHeaderCell>
+                                        <Table.ColumnHeaderCell />
+                                    </Table.Row>
+                                </Table.Header>
+                                <Table.Body>
+                                    {Object.entries(map).map(([user, entry]) => (
+                                        <Table.Row
+                                            key={user}
+                                            style={{cursor: "pointer"}}
+                                            onClick={() => setForm({type, user, text: entry.text, color: entry.color})}
                                         >
-                                            <button type="button" title={entry.text} onClick={() => setForm({type, user, text: entry.text, color: entry.color})}>
-                                                {user} ({entry.text.slice(0, 10)})
-                                            </button>
-                                        </Box>
-                                        <IconButton variant="ghost" color="gray" size="2" title="삭제" onClick={() => void removeMemo(type, user)}>
-                                            <X size={12} />
-                                        </IconButton>
-                                    </Flex>
-                                ))}
-                            </Flex>
+                                            <Table.RowHeaderCell>
+                                                <Flex align="center" gap="2">
+                                                    <span style={{width: 10, height: 10, borderRadius: "50%", background: entry.color, flex: "none"}} />
+                                                    <Text weight="medium">{user}</Text>
+                                                </Flex>
+                                            </Table.RowHeaderCell>
+                                            <Table.Cell>
+                                                <Text color="gray">{entry.text}</Text>
+                                            </Table.Cell>
+                                            <Table.Cell width={44}>
+                                                <IconButton
+                                                    variant="ghost"
+                                                    color="gray"
+                                                    size="1"
+                                                    title="삭제"
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        void removeMemo(type, user);
+                                                    }}
+                                                >
+                                                    <X size={12} />
+                                                </IconButton>
+                                            </Table.Cell>
+                                        </Table.Row>
+                                    ))}
+                                </Table.Body>
+                            </Table.Root>
                         )}
                     </Section>
                 );

@@ -29,14 +29,11 @@ export interface MemoTargetState {
 interface UiState {
     toast: ToastData | null;
     selected: SelectedUser | null;
-    bubble: {x: number; y: number} | null;
     memo: MemoTargetState | null;
 
     showToast: (content: string, type?: ToastLevel, autoClose?: number, onClick?: () => void) => void;
     dismissToast: (id?: number) => void;
     setSelected: (user: Omit<SelectedUser, "at">) => void;
-    openBubble: (x: number, y: number) => void;
-    closeBubble: () => void;
     /** 마지막 선택(10초) 대상으로 메모 다이얼로그. 만료시 토스트 */
     openMemoForSelected: () => void;
     openMemo: (targets: Partial<Record<MemoType, string>>, initialType: MemoType) => void;
@@ -50,7 +47,6 @@ let toastSeq = 0;
 export const useUiStore = create<UiState>((set, get) => ({
     toast: null,
     selected: null,
-    bubble: null,
     memo: null,
 
     showToast: (content, type = "info", autoClose = 5000, onClick) => {
@@ -66,9 +62,6 @@ export const useUiStore = create<UiState>((set, get) => ({
         set({selected: {...user, at: Date.now()}});
     },
 
-    openBubble: (x, y) => set({bubble: {x, y}}),
-    closeBubble: () => set({bubble: null}),
-
     openMemoForSelected: () => {
         const {selected, showToast} = get();
         if (!selected || Date.now() - selected.at > SELECTION_TIMEOUT) {
@@ -81,11 +74,11 @@ export const useUiStore = create<UiState>((set, get) => ({
         if (selected.uid) targets.UID = selected.uid;
         if (selected.ip) targets.IP = selected.ip;
 
-        set({bubble: null, memo: {targets, initialType: selected.uid ? "UID" : selected.ip ? "IP" : "NICK"}});
+        set({memo: {targets, initialType: selected.uid ? "UID" : selected.ip ? "IP" : "NICK"}});
     },
 
     openMemo: (targets, initialType) => {
-        set({bubble: null, memo: {targets, initialType}});
+        set({memo: {targets, initialType}});
     },
 
     closeMemo: () => set({memo: null})

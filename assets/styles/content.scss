@@ -159,48 +159,6 @@ button[data-refresher-refresh] {
     }
 }
 
-/* ===== 유저 버블 ===== */
-
-.refresher-bubble {
-    position: fixed;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 180px;
-    padding: 10px;
-    border: 1px solid #e4e4e7;
-    border-radius: 8px;
-    background: #fff;
-    box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
-    pointer-events: auto;
-    z-index: 2147483600;
-    animation: dcrToastIn 0.15s cubic-bezier(0.19, 1, 0.22, 1);
-}
-
-.refresher-bubble-value {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    font-size: 12px;
-
-    strong {
-        font-weight: 600;
-    }
-}
-
-.refresher-bubble-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 2px;
-
-    .refresher-button {
-        padding: 4px 8px;
-        font-size: 11px;
-    }
-}
-
 /* ===== 세그먼트 (메모 타입) ===== */
 
 .refresher-segment {
@@ -288,14 +246,8 @@ tr.gall_writer {
 /* ===== 다크 모드 (표시 요소) ===== */
 
 html:has(#css-darkmode) {
-    #refresher-root,
-    .refresher-bubble {
+    #refresher-root {
         color: #fafafa;
-    }
-
-    .refresher-bubble {
-        background: #18181b;
-        border-color: #3f3f46;
     }
 
     .refresher-segment {

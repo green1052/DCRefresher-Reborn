@@ -1,4 +1,4 @@
-import {Badge, Box, Button, Flex, IconButton, Text} from "@radix-ui/themes";
+import {Badge, IconButton, Table, Text} from "@radix-ui/themes";
 import {Plus, X} from "lucide-react";
 import {useState} from "react";
 
@@ -96,42 +96,51 @@ export function BlockTab() {
                         {list.length === 0 ? (
                             <Empty>차단된 {TYPE_NAMES[type]} 없음</Empty>
                         ) : (
-                            <Flex wrap="wrap" gap="2">
-                                {list.map((entry) => (
-                                    <Flex key={entry.id} align="center" gap="1" style={{border: "1px solid var(--gray-a5)", borderRadius: 999, padding: "2px 6px"}}>
-                                        <Box
-                                            asChild
-                                            style={{
-                                                background: "none",
-                                                border: "none",
-                                                padding: 0,
-                                                cursor: "pointer",
-                                                color: "var(--gray-12)",
-                                                font: "inherit",
-                                                maxWidth: 240,
-                                                overflow: "hidden",
-                                                textOverflow: "ellipsis",
-                                                whiteSpace: "nowrap"
-                                            }}
+                            <Table.Root variant="surface">
+                                <Table.Header>
+                                    <Table.Row>
+                                        <Table.ColumnHeaderCell>항목</Table.ColumnHeaderCell>
+                                        <Table.ColumnHeaderCell>정보</Table.ColumnHeaderCell>
+                                        <Table.ColumnHeaderCell />
+                                    </Table.Row>
+                                </Table.Header>
+                                <Table.Body>
+                                    {list.map((entry) => (
+                                        <Table.Row
+                                            key={entry.id}
+                                            style={{cursor: "pointer"}}
+                                            onClick={() => setDialog({type, initial: entry})}
                                         >
-                                            <button type="button" onClick={() => setDialog({type, initial: entry})}>
+                                            <Table.RowHeaderCell>
                                                 {type === "DCCON" ? (
                                                     <img src={dcconImage(entry)} alt={entry.extra ?? entry.content} style={{display: "block", height: 40}} />
                                                 ) : (
-                                                    <>
-                                                        {entry.content}
-                                                        {entry.extra ? ` (${entry.extra})` : ""}
-                                                        {entry.gallery ? ` (${entry.gallery})` : ""}
-                                                    </>
+                                                    <Text weight="medium">{entry.content}</Text>
                                                 )}
-                                            </button>
-                                        </Box>
-                                        <IconButton variant="ghost" color="gray" size="2" title="삭제" onClick={() => void removeEntry(type, entry.id)}>
-                                            <X size={12} />
-                                        </IconButton>
-                                    </Flex>
-                                ))}
-                            </Flex>
+                                            </Table.RowHeaderCell>
+                                            <Table.Cell>
+                                                <Text size="2" color="gray">
+                                                    {[entry.gallery ? `갤러리: ${entry.gallery}` : null, entry.extra].filter(Boolean).join(" · ") || "—"}
+                                                </Text>
+                                            </Table.Cell>
+                                            <Table.Cell width={44}>
+                                                <IconButton
+                                                    variant="ghost"
+                                                    color="gray"
+                                                    size="1"
+                                                    title="삭제"
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        void removeEntry(type, entry.id);
+                                                    }}
+                                                >
+                                                    <X size={12} />
+                                                </IconButton>
+                                            </Table.Cell>
+                                        </Table.Row>
+                                    ))}
+                                </Table.Body>
+                            </Table.Root>
                         )}
                     </Section>
                 );

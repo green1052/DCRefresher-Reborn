@@ -100,6 +100,7 @@ const setupSelection = (ctx: ModuleContext): void => {
 
         const ui = useUiStore.getState();
 
+        // 우클릭 선택 정보 저장 — 동작은 배경 컨텍스트 메뉴가 담당
         if (dcconElement) {
             const media = (dcconElement as HTMLImageElement).src
                 ? (dcconElement as HTMLImageElement)
@@ -115,11 +116,6 @@ const setupSelection = (ctx: ModuleContext): void => {
 
             ui.setSelected({nick, uid, ip});
         }
-
-        // 유저 버블: 네이티브 우클릭 메뉴 대체
-        event.preventDefault();
-        ui.closeBubble();
-        ui.openBubble(event.clientX, event.clientY);
     };
 
     document.addEventListener("contextmenu", onContextMenu, true);
