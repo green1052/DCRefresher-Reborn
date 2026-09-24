@@ -14,6 +14,7 @@ export default defineConfig({
             "activeTab",
             "contextMenus",
             "storage",
+            "tabs",
             "scripting",
             "unlimitedStorage",
             "clipboardWrite"
