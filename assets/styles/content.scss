@@ -326,6 +326,42 @@ html:has(#css-darkmode) {
     }
 }
 
+.refresher-scroll {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    height: 40%;
+    color: #fff;
+    pointer-events: none;
+    background: linear-gradient(to top, rgb(12 23 53 / 70%), rgb(32 42 72 / 30%), transparent);
+
+    .center {
+        position: relative;
+        top: 20%;
+        margin: auto;
+
+        p {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: -1.66px;
+        }
+    }
+
+    &.top {
+        top: 0;
+        bottom: unset;
+        background: linear-gradient(to bottom, rgb(12 23 53 / 70%), rgb(32 42 72 / 30%), transparent);
+
+        .center {
+            top: unset;
+            bottom: 20%;
+        }
+    }
+}
+
 @keyframes refPreviewIn {
     0% {
         opacity: 0;

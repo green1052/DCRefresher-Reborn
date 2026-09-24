@@ -148,6 +148,8 @@ export const Frame = () => {
     const commentsOnly = usePreviewStore((s) => s.commentsOnly);
     const imageBlocked = usePreviewStore((s) => s.imageBlocked);
 
+    const [scrollEdge, setScrollEdge] = useState<"top" | "bottom" | null>(null);
+
     const edge = useRef({count: 0, at: 0});
 
     useEffect(() => {
@@ -216,17 +218,22 @@ export const Frame = () => {
                 dir > 0
                     ? scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 2
                     : scroller.scrollTop <= 2;
-            if (!atEdge) return;
 
-            const now = Date.now();
-            if (now - edge.current.at > 500) {
-                edge.current.at = now;
-                useUiStore
-                    .getState()
-                    .showToast(dir > 0 ? "한 번 더 스크롤하면 다음 게시글로 넘어갑니다." : "한 번 더 스크롤하면 이전 게시글로 넘어갑니다.", "info", 1800);
+            if (!atEdge) {
+                if (edge.current.count !== 0) {
+                    edge.current = {count: 0, at: 0};
+                    setScrollEdge(null);
+                }
                 return;
             }
-            edge.current.at = now;
+
+            setScrollEdge(dir > 0 ? "bottom" : "top");
+
+            if (edge.current.count++ < 1) return;
+            edge.current.count = 0;
+
+            scroller.scrollTop = 0;
+            setScrollEdge(null);
             goToAdjacent(dir);
         };
 
@@ -235,6 +242,8 @@ export const Frame = () => {
         return () => {
             window.removeEventListener("keydown", onKey);
             window.removeEventListener("wheel", onWheel);
+            edge.current = {count: 0, at: 0};
+            setScrollEdge(null);
         };
     }, [visible]);
 
@@ -322,6 +331,13 @@ export const Frame = () => {
                     <div className="refresher-loader" />
                 </div>
             </div>
+            {scrollEdge && (
+                <div className={"refresher-scroll" + (scrollEdge === "top" ? " top" : "")}>
+                    <div className="center">
+                        <p>한번 더 스크롤 하면 {scrollEdge === "top" ? "이전" : "다음"} 게시글을 봅니다.</p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
