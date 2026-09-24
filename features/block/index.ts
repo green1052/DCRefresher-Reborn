@@ -125,12 +125,13 @@ const setupSelection = (ctx: ModuleContext): void => {
     document.addEventListener("contextmenu", onContextMenu, true);
     ctx.addCleanup(() => document.removeEventListener("contextmenu", onContextMenu, true));
 
-    ctx.bus.on("refresherRequestBlock", ({data: options}) => {
+    const offRequestBlock = ctx.bus.on("refresherRequestBlock", ({data: options}) => {
         void handleBlockRequest(options, useUiStore.getState().selected);
     });
+    ctx.addCleanup(() => void offRequestBlock());
 };
 
-export const restoreHiddenElements = (): void => {
+const restoreHiddenElements = (): void => {
     for (const element of document.querySelectorAll<HTMLElement>(".refresherBlocked")) {
         element.classList.remove("refresherBlocked");
         element.style.display = "";

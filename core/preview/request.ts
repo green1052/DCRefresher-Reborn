@@ -1,6 +1,7 @@
 import {http} from "@/core/http/client";
 import {galleryType, galleryTypeName, urls} from "@/core/http/urls";
 import type {DcinsideDccon, GalleryPreData, IPostInfo} from "@/features/types";
+import {getCookie, setCookie} from "@/utils/cookie";
 
 import {parsePostInfo} from "./parser";
 import type {CommentListResponse, DcinsideComment} from "./cache";
@@ -8,7 +9,7 @@ import type {CommentListResponse, DcinsideComment} from "./cache";
 const HEADERS = {"X-Requested-With": "XMLHttpRequest"};
 
 const commonBody = async (link?: string): Promise<URLSearchParams> =>
-    new URLSearchParams({ci_t: (await cookieStore.get("ci_c"))?.value ?? "", _GALLTYPE_: galleryTypeName(link ?? "")});
+    new URLSearchParams({ci_t: (await getCookie("ci_c")) ?? "", _GALLTYPE_: galleryTypeName(link ?? "")});
 
 const isMini = (link?: string): boolean => galleryType(link ?? "", "/") === "mini/";
 
@@ -56,7 +57,7 @@ export interface VoteResult {
 export const vote = async (preData: GalleryPreData, postInfo: IPostInfo, mode: "U" | "D", code?: string): Promise<VoteResult> => {
     const cookieName = `${preData.gallery}${preData.id}_Firstcheck${mode === "U" ? "" : "_down"}`;
 
-    if ((await cookieStore.get(cookieName))?.value) return {success: false};
+    if (await getCookie(cookieName)) return {success: false};
 
     const body = await commonBody(preData.link);
     body.set("id", preData.gallery);
@@ -71,7 +72,7 @@ export const vote = async (preData: GalleryPreData, postInfo: IPostInfo, mode: "
     const [result, counts, fixedCounts] = response.split("||");
 
     if (result === "SUCCESS") {
-        await cookieStore.set({name: cookieName, value: "Y", expires: Date.now() + 3 * 3600_000, path: "/"});
+        await setCookie({name: cookieName, value: "Y", expires: Date.now() + 3 * 3600_000, path: "/"});
 
         return {success: true, counts, fixedCounts};
     }
@@ -178,7 +179,7 @@ export const userDeleteComment = async (preData: GalleryPreData, commentId: stri
     await http.post(urls.comment_remove, {headers: HEADERS, body});
 };
 
-/** 댓글/디시콘 작성 (v5 utils/comment 이식) */
+/** 댓글/디시콘 작성 */
 export const submitComment = async (
     preData: GalleryPreData,
     user: { name: string; pw?: string },

@@ -6,14 +6,12 @@ export const urls = {
         minor: "https://gall.dcinside.com/mgallery/",
         person: "https://gall.dcinside.com/person/"
     },
-    view: "board/view/?id=",
     vote: "https://gall.dcinside.com/board/recommend/vote",
     manage: {
         bump: "https://gall.dcinside.com/ajax/minor_manager_board_ajax/update_bump",
         bumpMini: "https://gall.dcinside.com/ajax/mini_manager_board_ajax/update_bump",
         delete: "https://gall.dcinside.com/ajax/minor_manager_board_ajax/delete_list",
         deleteMini: "https://gall.dcinside.com/ajax/mini_manager_board_ajax/delete_list",
-        deleteUser: "https://gall.dcinside.com/board/forms/delete_submit",
         deleteComment: "https://gall.dcinside.com/ajax/minor_manager_board_ajax/delete_comment",
         deleteCommentMini: "https://gall.dcinside.com/ajax/mini_manager_board_ajax/delete_comment",
         setNotice: "https://gall.dcinside.com/ajax/minor_manager_board_ajax/set_notice",
@@ -29,12 +27,9 @@ export const urls = {
     comment_remove: "https://gall.dcinside.com/board/comment/comment_delete_submit",
     dccon: {
         lists: "https://gall.dcinside.com/dccon/lists",
-        detail: "https://gall.dcinside.com/dccon/package_detail",
-        info: "https://dccon.dcinside.com/index/get_info",
-        buy: "https://dccon.dcinside.com/index/buy"
+        detail: "https://gall.dcinside.com/dccon/package_detail"
     },
     database: {
-        base: "https://dcrefresher.green1052.com/data",
         version: "https://dcrefresher.green1052.com/data/version",
         ip: "https://dcrefresher.green1052.com/data/ip.json",
         ban: "https://dcrefresher.green1052.com/data/ban.json"

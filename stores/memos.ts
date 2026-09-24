@@ -1,6 +1,5 @@
 import {create} from "zustand";
 
-import {isMemoEntry} from "@/core/memo";
 import {MEMO_TYPES, memoStorage} from "@/core/storage/items";
 import type {MemoEntry, MemoType} from "@/core/storage/types";
 
@@ -61,13 +60,3 @@ export const useMemosStore = create<MemosState>((set, get) => ({
         await memoStorage[type].setValue({});
     }
 }));
-
-export const pickMemo = (memos: Record<MemoType, Record<string, MemoEntry>>, targets: Partial<Record<MemoType, string>>): MemoEntry | undefined => {
-    for (const type of MEMO_TYPES) {
-        const user = targets[type];
-        if (!user) continue;
-        const memo = memos[type][user];
-        if (memo && isMemoEntry(memo)) return memo;
-    }
-    return undefined;
-};

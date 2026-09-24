@@ -267,10 +267,10 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     requestRefresh: () => get().refreshHook?.(),
     requestManage: (kind) => get().manageHook?.(kind),
     setHooks: ({open, close, refresh, manage}) =>
-        set((state) => ({
-            openHook: open ?? state.openHook,
-            closeHook: close ?? state.closeHook,
-            refreshHook: refresh ?? state.refreshHook,
-            manageHook: manage ?? state.manageHook
-        }))
+        set({
+            openHook: open ?? null,
+            closeHook: close ?? null,
+            refreshHook: refresh ?? null,
+            manageHook: manage ?? null
+        })
 }));

@@ -214,7 +214,7 @@ const refreshModule: ModuleDefinition = {
                     });
                 }
 
-                // 미리보기 모듈의 삭제글 보존(M4): modules.use("preview")의 archive 기능 사용
+                // 미리보기 모듈의 삭제글 보존(archiveArticle)은 캐시에 이미 반영됨
 
                 oldList.replaceWith(newList);
 
@@ -317,13 +317,14 @@ const refreshModule: ModuleDefinition = {
         }
 
         // ===== 페이징 박스 갱신 (refresherGetPost) =====
-        eventBus.on("refresherGetPost", ({data: dom}) => {
+        const offGetPost = eventBus.on("refresherGetPost", ({data: dom}) => {
             const source = dom.querySelector<HTMLElement>(PAGING_SELECTOR);
             const destination = document.querySelector<HTMLElement>(PAGING_SELECTOR);
             if (source && destination && source.innerHTML !== destination.innerHTML) {
                 destination.innerHTML = source.innerHTML;
             }
         });
+        ctx.addCleanup(() => void offGetPost());
 
         const api: RefreshApi = {
             refreshLists: async () => {
@@ -355,7 +356,6 @@ const refreshModule: ModuleDefinition = {
         document.documentElement.classList.remove("refresherDoNotColorVisited");
 
         for (const anchor of document.querySelectorAll<HTMLAnchorElement>("a[data-refresher-paged]")) {
-            anchor.onclick = null;
             delete anchor.dataset.refresherPaged;
         }
     }

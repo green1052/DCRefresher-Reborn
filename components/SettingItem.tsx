@@ -129,7 +129,12 @@ const OrderControl = ({schema, value, disabled, onChange}: NarrowProps<"order">)
                         background: over === index && dragging !== null ? "var(--gray-a3)" : undefined
                     }}
                     draggable={!disabled}
-                    onDragStart={() => setDragging(index)}
+                    onDragStart={(event) => {
+                        // Firefox는 dataTransfer에 데이터가 없으면 드래그 시작을 안 함
+                        event.dataTransfer.setData("text/plain", String(index));
+                        event.dataTransfer.effectAllowed = "move";
+                        setDragging(index);
+                    }}
                     onDragEnd={() => {
                         setDragging(null);
                         setOver(null);

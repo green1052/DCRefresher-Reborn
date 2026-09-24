@@ -22,12 +22,6 @@ const settings: NonNullable<ModuleDefinition["settings"]> = {
         step: 50,
         unit: "ms"
     },
-    tooltipRatioDisable: {
-        type: "check",
-        name: "미니 미리보기 글/댓글 비율 강조 비활성화",
-        desc: "미니 미리보기의 글/댓글 비율 강조를 끕니다.",
-        default: false
-    },
     reversePreviewKey: {type: "check", name: "미리보기 키 반전", desc: "좌클릭으로 미리보기, 우클릭으로 게시글 이동을 사용합니다.", default: false},
     longPressDelay: {
         type: "range",
@@ -136,6 +130,7 @@ const controller = (ctx: ModuleContext) => {
     const ui = useUiStore.getState();
 
     let abort: AbortController | null = null;
+    let rowHandlers: AbortController = new AbortController();
     let savedHistory: { title: string; url: string; state: unknown } | null = null;
     let refreshTimer = 0;
     let pressStart = 0;
@@ -149,6 +144,13 @@ const controller = (ctx: ModuleContext) => {
 
     const galName = (): string => document.querySelector("h1")?.textContent?.trim() || "디시인사이드";
 
+    // 인라인 이벤트 핸들러/style 제거 (본문+미니 공용)
+    const sanitizeContents = (raw: string): string =>
+        raw
+            .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*')/g, "")
+            .replace(/\sstyle\s*=\s*("[^"]*"|'[^']*')/g, "")
+            .replaceAll("<video", "<video controls");
+
     const processContents = (preData: GalleryPreData, postInfo: IPostInfo): IPostInfo => {
         const raw = postInfo.contents ?? "";
 
@@ -156,11 +158,7 @@ const controller = (ctx: ModuleContext) => {
             return {...postInfo, contents: "게시글 내용이 차단됐습니다."};
         }
 
-        const contents = raw
-            .replace(/ (style|onmousedown|onmouseout|onmouseover)="[^"]*"/g, "")
-            .replaceAll("<video", "<video controls");
-
-        return {...postInfo, contents};
+        return {...postInfo, contents: sanitizeContents(raw)};
     };
 
     const applyComments = (preData: GalleryPreData, raw: DcinsideComment[]) => {
@@ -276,7 +274,8 @@ const controller = (ctx: ModuleContext) => {
         after.setAdminVisible(Boolean(ctx.settings.toggleAdminPanel) && Boolean(document.querySelector(".useradmin_btnbox button")));
 
         if (!historySkip) {
-            savedHistory = {title: document.title, url: location.href, state: history.state};
+            // 미리보기가 이미 열려 있으면(다음 글 전환) 최초 히스토리 유지 — 아니면 close가 가짜 URL을 복원함
+            if (!st.visible) savedHistory = {title: document.title, url: location.href, state: history.state};
             if (ctx.settings.colorPreviewLink) {
                 const newTitle = `${preData.title ?? document.title} - ${galName()}`;
                 history.pushState({refresher: 1, preData}, newTitle, preData.link);
@@ -417,6 +416,9 @@ const controller = (ctx: ModuleContext) => {
             contents = "게시글 내용이 차단됐습니다.";
         } else if (ctx.settings.tooltipMediaHide === true) {
             contents = contents.replace(/<(img|video|iframe|audio|embed|source)[^>]*>/g, "").replace(/<\/(video|iframe|audio|source)>/g, "");
+        } else {
+            // 본문과 동일한 정제 적용
+            contents = sanitizeContents(contents);
         }
 
         lastMiniAt = Date.now();
@@ -458,7 +460,7 @@ const controller = (ctx: ModuleContext) => {
     };
 
     // ── 행 이벤트 ────────────────────────────────────────────────
-    // v5와 동일: mousedown 기록 → mouseup에서 길게 누름 판정 → contextmenu에서 소비
+    // mousedown 기록 → mouseup에서 길게 누름 판정 → contextmenu에서 소비
     const onMouseDown = (event: MouseEvent) => {
         if (event.button !== 2) return;
         pressStart = Date.now();
@@ -540,15 +542,17 @@ const controller = (ctx: ModuleContext) => {
         element.dataset.refresherPreviewBound = "1";
         element.dataset.refresherPreviewMode = mode;
 
-        element.addEventListener("mousedown", onMouseDown);
-        element.addEventListener("mouseup", onMouseUp);
-        element.addEventListener("contextmenu", onContextMenu);
-        element.addEventListener("click", onClick);
+        const options = {signal: rowHandlers.signal};
+
+        element.addEventListener("mousedown", onMouseDown, options);
+        element.addEventListener("mouseup", onMouseUp, options);
+        element.addEventListener("contextmenu", onContextMenu, options);
+        element.addEventListener("click", onClick, options);
 
         if (mode === "word") {
-            element.addEventListener("mouseenter", onMiniEnter);
-            element.addEventListener("mousemove", onMiniMove);
-            element.addEventListener("mouseleave", onMiniLeave);
+            element.addEventListener("mouseenter", onMiniEnter, options);
+            element.addEventListener("mousemove", onMiniMove, options);
+            element.addEventListener("mouseleave", onMiniLeave, options);
         }
     };
 
@@ -570,7 +574,16 @@ const controller = (ctx: ModuleContext) => {
     ctx.addCleanup(() => {
         window.removeEventListener("keydown", onKey);
         window.removeEventListener("popstate", onPopState);
+
+        // 바인딩된 행의 리스너 전부 해제 + 재바인딩 허용
+        rowHandlers.abort();
+        for (const element of document.querySelectorAll<HTMLElement>("[data-refresher-preview-bound]")) {
+            delete element.dataset.refresherPreviewBound;
+            delete element.dataset.refresherPreviewMode;
+        }
+
         close();
+        store.getState().setHooks({});
     });
 
     store.getState().setHooks({
@@ -586,7 +599,7 @@ const previewModule: ModuleDefinition = {
     name: "미리보기",
     description: "글 목록에서 클릭 또는 우클릭으로 미리보기 창을 띄워줍니다.",
     defaultEnable: true,
-    urls: [/gall\.dcinside\.com/],
+    urls: [/\.dcinside\.com\/board\/(view|lists)/],
     settings,
     setup: (ctx) => {
         controller(ctx);

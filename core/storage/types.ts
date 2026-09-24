@@ -29,5 +29,3 @@ export interface StoredDB {
 export type SettingValue = boolean | number | string | string[];
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
-
-export type BackupMeta = number;

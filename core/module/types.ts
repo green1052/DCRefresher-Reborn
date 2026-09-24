@@ -73,15 +73,3 @@ export interface ModuleSchema {
     /** 설정 현재값. settings 키와 1:1 (settings가 없으면 없음) */
     values?: Record<string, SettingValue>;
 }
-
-/** 다른 모듈이 사용할 수 있는 읽기 전용 핸들 */
-export interface ModuleHandle {
-    id: string;
-    name: string;
-    enable: boolean;
-    running: boolean;
-    settings: Readonly<Record<string, SettingValue>>;
-    data: Readonly<Record<string, JsonValue>>;
-    /** setup()의 리턴값. 비활성/미실행이면 undefined */
-    api?: unknown;
-}

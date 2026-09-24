@@ -5,7 +5,7 @@ const FONT_SIZE_STYLE_ID = "refresherFontStyleSize";
 
 const DEFAULT_FONTS = "Noto Sans CJK KR, NanumGothic";
 
-// v5: DC 본체 셀렉터 + 확장 UI. changeDCFont가 켜져야 DC측 규칙이 적용된다.
+// DC 본체 셀렉터 + 확장 UI. changeDCFont가 켜져야 DC측 규칙이 적용된다.
 const DC_FONT_TARGETS =
     ".refresherChangeDCFont .btn_cmt_close, .refresherChangeDCFont .btn_cmt_open, .refresherChangeDCFont .gall_list, .refresherChangeDCFont .view_comment div, .refresherChangeDCFont .view_content_wrap, .refresherChangeDCFont body, .refresherChangeDCFont button, .refresherChangeDCFont input";
 const EXTENSION_FONT_TARGETS =
@@ -35,6 +35,22 @@ const quoteFonts = (value: string): string =>
         .map((font) => `"${font.trim().replace(/"/g, "\\\"")}"`)
         .filter(Boolean)
         .join(", ");
+
+// 모든 규칙이 상호 의존(커스텀폰트는 changeDCFont 켜짐 여부)하므로 변경시 전부 재적용
+const applyAll = (ctx: ModuleContext): void => {
+    const raw = String(ctx.settings.customFonts ?? "").trim() || DEFAULT_FONTS;
+    const enabled = ctx.settings.changeDCFont === true;
+    const targets = enabled ? `${DC_FONT_TARGETS}, ${EXTENSION_FONT_TARGETS}` : EXTENSION_FONT_TARGETS;
+    const size = Number(ctx.settings.bodyFontSize);
+
+    document.documentElement.classList.toggle("refresherChangeDCFont", enabled);
+    placeStyle(FONT_STYLE_ID, `${targets} { font-family: ${quoteFonts(raw)}, sans-serif; }`);
+    placeStyle(
+        FONT_SIZE_STYLE_ID,
+        `.refresherChangeDCFont .write_div { font-size: ${size}px; }
+        .refresherFont .refresher-preview-contents-actual { font-size: ${size + 2}px; }`
+    );
+};
 
 const fontsModule: ModuleDefinition = {
     id: "fonts",
@@ -71,43 +87,11 @@ const fontsModule: ModuleDefinition = {
         currentCtx = ctx;
         document.documentElement.classList.add("refresherFont");
 
-        const applyAll = (): void => {
-            const raw = String(currentCtx?.settings.customFonts ?? "").trim() || DEFAULT_FONTS;
-            const enabled = currentCtx?.settings.changeDCFont === true;
-            const targets = enabled ? `${DC_FONT_TARGETS}, ${EXTENSION_FONT_TARGETS}` : EXTENSION_FONT_TARGETS;
-            const size = Number(currentCtx?.settings.bodyFontSize);
-
-            document.documentElement.classList.toggle("refresherChangeDCFont", enabled);
-            placeStyle(FONT_STYLE_ID, `${targets} { font-family: ${quoteFonts(raw)}, sans-serif; }`);
-            placeStyle(
-                FONT_SIZE_STYLE_ID,
-                `.refresherChangeDCFont .write_div { font-size: ${size}px; }
-                .refresherFont .refresher-preview-contents-actual { font-size: ${size + 2}px; }`
-            );
-        };
-
-        applyAll();
+        applyAll(ctx);
     },
 
     onChanged() {
-        // 모든 규칙이 상호 의존(커스텀폰트는 changeDCFont 켜짐여부)하므로 변경시 전부 재적용
-        if (currentCtx) {
-            document.documentElement.classList.add("refresherFont");
-            const ctx = currentCtx;
-
-            const raw = String(ctx.settings.customFonts ?? "").trim() || DEFAULT_FONTS;
-            const enabled = ctx.settings.changeDCFont === true;
-            const targets = enabled ? `${DC_FONT_TARGETS}, ${EXTENSION_FONT_TARGETS}` : EXTENSION_FONT_TARGETS;
-            const size = Number(ctx.settings.bodyFontSize);
-
-            document.documentElement.classList.toggle("refresherChangeDCFont", enabled);
-            placeStyle(FONT_STYLE_ID, `${targets} { font-family: ${quoteFonts(raw)}, sans-serif; }`);
-            placeStyle(
-                FONT_SIZE_STYLE_ID,
-                `.refresherChangeDCFont .write_div { font-size: ${size}px; }
-                .refresherFont .refresher-preview-contents-actual { font-size: ${size + 2}px; }`
-            );
-        }
+        if (currentCtx) applyAll(currentCtx);
     },
 
     revoke() {

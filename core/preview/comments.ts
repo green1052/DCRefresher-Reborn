@@ -14,14 +14,17 @@ const GALLOG_DCCON = /dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/;
 const cleanMemo = (memo: string): string =>
     memo
         .replace(/data-dcconoverstatus="?\w+"?/g, "data-dcconoverstatus=\"true\"")
-        .replace(/ onmousedown="[^"]*"/g, "")
-        .replace(/ style="[^"]*"/g, "");
+        .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*')/g, "")
+        .replace(/\sstyle\s*=\s*("[^"]*"|'[^']*')/g, "");
 
 const extractVoice = (memo: string): { memo: string; voice?: { src: string } } | undefined => {
     if (!memo.includes("@^dc^@")) return;
 
     const [display = "", raw = ""] = memo.split("@^dc^@");
     const src = raw.includes("<iframe") ? (raw.match(/src="([^"]+)"/)?.[1] ?? "") : `https://vr.dcinside.com/${raw}`;
+
+    // 음성댓글 호스트만 허용 — 임의 iframe 차단
+    if (!src.startsWith("https://vr.dcinside.com/")) return;
 
     return {memo: display, voice: {src}};
 };
@@ -32,8 +35,9 @@ export const processComments = (
     preData: GalleryPreData,
     ctx: ModuleContext
 ): { list: ProcessedComment[]; threads: number; totalCnt: number } => {
-    // 아카이브(삭제글 보존)
-    let list: ProcessedComment[] = ctx.settings.archiveArticle === true ? (restoreArchive(preData, raw) as ProcessedComment[]) : (raw as ProcessedComment[]);
+    // 캐시된 원본을 보호하기 위해 복사본에서 가공
+    const source = ctx.settings.archiveArticle === true ? restoreArchive(preData, raw) : raw;
+    let list: ProcessedComment[] = source.map((comment) => ({...comment}));
 
     // 댓글돌이(COMMENT_BOY) 제거
     list = list.filter((comment) => String(comment.nicktype) !== "COMMENT_BOY");

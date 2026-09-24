@@ -35,7 +35,7 @@ const emptyEntries = (): Record<BlockType, BlockEntry[]> => ({
     TAB: []
 });
 
-/** 같은 content+gallery는 교체 (v5 block.add 규칙) */
+/** 같은 content+gallery는 교체 */
 const dedupe = (list: BlockEntry[], content: string, gallery: string | undefined, keepId?: string): BlockEntry[] =>
     list.filter((entry) => entry.id === keepId || !(entry.content === content && (entry.gallery ?? "") === (gallery ?? "")));
 

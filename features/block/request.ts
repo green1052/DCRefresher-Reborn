@@ -3,6 +3,7 @@ import {block} from "@/core/block";
 import {http} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import type {BlockType, DetectMode} from "@/core/storage/types";
+import {getCookie} from "@/utils/cookie";
 import {type SelectedUser, useUiStore} from "@/stores/ui";
 
 interface DcconDetailResponse {
@@ -33,7 +34,7 @@ const blockDccon = async (selected: SelectedUser, blockAllDccon?: boolean): Prom
 
     const response = await http.post(urls.dccon.detail, {
         headers: {"X-Requested-With": "XMLHttpRequest"},
-        body: new URLSearchParams({ci_t: (await cookieStore.get("ci_c"))?.value ?? "", code})
+        body: new URLSearchParams({ci_t: (await getCookie("ci_c")) ?? "", code})
     }).json<DcconDetailResponse>();
 
     const extra = `${response.info.title} [${response.info.package_idx}]`;
@@ -71,7 +72,7 @@ export const handleBlockRequest = async (options: BlockRequestOptions, selected:
     }
 };
 
-/** 차단 다이얼로그/컨텍스트에서 만들 extra (v5: [정규식] [갤러리: X] [모드명] 순) */
+/** 차단 다이얼로그/컨텍스트에서 만들 extra ([정규식] [갤러리: X] [모드명] 순) */
 export const composeExtra = (fields: {
     isRegex: boolean;
     gallery?: string;

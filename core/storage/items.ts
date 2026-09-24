@@ -47,9 +47,6 @@ export const DEFAULT_DETECT_MODE: Record<BlockType, DetectMode> = {
 const blockItem = (type: BlockType) =>
     storage.defineItem<BlockEntry[]>(`local:refresher:block:${type}`, {defaultValue: []});
 
-const memoItem = (type: MemoType) =>
-    storage.defineItem<Record<string, MemoEntry>>(`local:refresher:memo:${type}`, {defaultValue: {}});
-
 export const blockStorage = Object.fromEntries(
     BLOCK_TYPES.map((type) => [type, blockItem(type)])
 ) as Record<BlockType, WxtStorageItem<BlockEntry[], {}>>;

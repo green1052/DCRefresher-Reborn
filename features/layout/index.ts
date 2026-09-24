@@ -16,7 +16,7 @@ const TOGGLE_SETTINGS = [
 const applyCompact = (ctx: ModuleContext): void => {
     const compact = window.innerWidth <= Number(ctx.settings.activePixel) || ctx.settings.forceCompact === true;
     const isView = location.href.includes("/board/view");
-    // /board/view에서 게시글 보기 컴팩트 모드가 꺼져있으면 컴팩트 계산 자체를 생략 (v5)
+    // /board/view에서 게시글 보기 컴팩트 모드가 꺼져있으면 컴팩트 계산 자체를 생략
     const useCompact = compact && (!isView || ctx.settings.useCompactModeOnView === true);
 
     document.documentElement.classList.toggle("refresherCompact", useCompact);
@@ -28,7 +28,7 @@ const applyCompact = (ctx: ModuleContext): void => {
 };
 
 const applyToggle = (key: string, value: unknown): void => {
-    // 게시글 보기 화면에서는 갤러리 공지 토글을 스킵 (v5: ?exception_mode=notice)
+    // 게시글 보기 화면에서는 갤러리 공지 토글을 스킵 (?exception_mode=notice)
     if (key === "removeNotice" && location.search.includes("exception_mode=notice")) return;
 
     const target = TOGGLE_SETTINGS.find(([settingKey]) => settingKey === key);
@@ -50,7 +50,7 @@ const layoutModule: ModuleDefinition = {
             desc: "브라우저 가로가 이 값 보다 작을 경우 컴팩트 모드를 활성화합니다.",
             default: 900,
             min: 100,
-            max: typeof screen !== "undefined" ? screen.width : 1920,
+            max: screen.width,
             step: 1,
             unit: "px"
         },

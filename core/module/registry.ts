@@ -2,7 +2,7 @@ import {filter, type FilterOptions} from "@/core/filtering";
 import {eventBus} from "@/core/eventbus/bus";
 import {moduleDataStorage, moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
 import type {JsonValue, SettingValue} from "@/core/storage/types";
-import type {ModuleContext, ModuleDefinition, ModuleHandle, ModuleSchema, SettingSchema} from "./types";
+import type {ModuleContext, ModuleDefinition, ModuleSchema, SettingSchema} from "./types";
 
 interface ModuleInstance {
     def: ModuleDefinition;
@@ -76,9 +76,16 @@ const start = async (instance: ModuleInstance): Promise<void> => {
     instance.ctx = ctx;
     instance.disposers = disposers;
     instance.running = true;
-    instance.api = (await instance.def.setup(ctx)) ?? undefined;
 
-    // setup 중 새로 등록된 필터를 즉시 1회 실행 (v5: modules.updateModuleStatus와 동일)
+    try {
+        instance.api = (await instance.def.setup(ctx)) ?? undefined;
+    } catch (error) {
+        // 실패한 모듈은 반쪽 상태로 두지 않는다
+        stop(instance);
+        throw error;
+    }
+
+    // setup 중 새로 등록된 필터를 즉시 1회 실행
     await Promise.all(
         filter.ids()
             .filter((id) => !before.has(id))
@@ -161,22 +168,6 @@ const applySettings = (def: ModuleDefinition, stored: Record<string, unknown>): 
 };
 
 export const modules = {
-    /** 활성 중인 모듈의 읽기 전용 핸들. 미등록/비활성이면 undefined */
-    use: (id: string): ModuleHandle | undefined => {
-        const instance = instances.get(id);
-        if (!instance || !instance.running) return undefined;
-
-        return {
-            id: instance.def.id,
-            name: instance.def.name,
-            enable: instance.enable,
-            running: instance.running,
-            settings: instance.settings,
-            data: instance.data,
-            api: instance.api
-        };
-    },
-
     /** popup 렌더링용 스키마 목록 (JSON-serializable) */
     getSchema: (): ModuleSchema[] =>
         Array.from(instances.values()).map((instance) => ({

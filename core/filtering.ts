@@ -199,28 +199,6 @@ const findElements = (scope: string, parent: HTMLElement): Promise<Iterable<HTML
 export const filter = {
     ids: (): string[] => Array.from(lists.keys()),
 
-    run: async (): Promise<void> => {
-        const oneShotEntries = Array.from(lists.entries()).filter(([, entry]) => !entry.options?.neverExpire);
-
-        const neverExpireEntries = Array.from(lists.entries()).filter(([, entry]) => entry.options?.neverExpire);
-
-        for (const [id, entry] of neverExpireEntries) {
-            entry.expire?.();
-            setupNeverExpire(id);
-        }
-
-        await Promise.all(
-            oneShotEntries.map(async ([, entry]) => {
-                try {
-                    const elements = await findElements(entry.scope, document.documentElement);
-                    runFilter(entry, elements);
-                } catch (e) {
-                    if (!entry.options?.skipIfNotExists) throw e;
-                }
-            })
-        );
-    },
-
     runSpecific: (id: string): Promise<void> => {
         const entry = lists.get(id);
         if (!entry) return Promise.resolve();
@@ -246,17 +224,9 @@ export const filter = {
         return () => filter.remove(uuid);
     },
 
-    remove: (uuid: string, skip?: boolean): void => {
-        if (!uuid) {
-            if (skip) return;
-            throw new Error("Given UUID is not valid.");
-        }
-
+    remove: (uuid: string): void => {
         const entry = lists.get(uuid);
-        if (!entry) {
-            if (skip) return;
-            throw new Error("Given UUID is not exists in the list.");
-        }
+        if (!entry) return;
 
         if (entry.options?.neverExpire && typeof entry.expire === "function") {
             entry.expire();

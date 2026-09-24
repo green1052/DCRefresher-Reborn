@@ -1,5 +1,6 @@
-import {useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {Send, Smile, X} from "lucide-react";
+import {storage} from "wxt/utils/storage";
 
 import {captchaImage, submitComment} from "@/core/preview/request";
 import {getGrecaptchaToken} from "../grecaptcha";
@@ -11,18 +12,34 @@ import {usePreviewStore} from "./previewStore";
 
 const randomPassword = (): string => Math.random().toString(36).slice(2, 10);
 
+// 비회원 자격은 확장 isolated storage에만 보관 (페이지 world 접근 차단)
+const nonmemberStorage = storage.defineItem<{nick: string; pw: string}>("local:refresher:nonmember", {
+    defaultValue: {nick: "", pw: ""}
+});
+
 /** 댓글 작성 폼 */
 export const WriteComment = () => {
     const reply = usePreviewStore((s) => s.reply);
     const [login] = useState(() => Boolean(document.querySelector("#login_box .user_info .nickname > em")));
-    const [nick, setNick] = useState(() => localStorage.getItem("refresher:nonmember:nick") ?? "ㅇㅇ");
-    const [password, setPassword] = useState(() => localStorage.getItem("refresher:nonmember:pw") ?? randomPassword());
+    const [nick, setNick] = useState("ㅇㅇ");
+    const [password, setPassword] = useState("");
     const [dccons, setDccons] = useState<DcinsideDccon[]>([]);
     const [bigDccon, setBigDccon] = useState(false);
     const [dcconOpen, setDcconOpen] = useState(false);
     const [showInputs, setShowInputs] = useState(false);
     const [hovered, setHovered] = useState(false);
     const textarea = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        void nonmemberStorage.getValue().then((saved) => {
+            setNick(saved.nick || "ㅇㅇ");
+            setPassword(saved.pw || randomPassword());
+        });
+    }, []);
+
+    const saveNonmember = (next: {nick?: string; pw?: string}): void => {
+        void nonmemberStorage.getValue().then((prev) => void nonmemberStorage.setValue({nick: next.nick ?? prev.nick, pw: next.pw ?? prev.pw}));
+    };
 
     const submit = async (): Promise<void> => {
         const st = usePreviewStore.getState();
@@ -82,7 +99,7 @@ export const WriteComment = () => {
                         maxLength={20}
                         onChange={(event) => {
                             setNick(event.target.value);
-                            localStorage.setItem("refresher:nonmember:nick", event.target.value);
+                            saveNonmember({nick: event.target.value});
                         }}
                     />
                     <input
@@ -91,7 +108,7 @@ export const WriteComment = () => {
                         placeholder="비밀번호"
                         onChange={(event) => {
                             setPassword(event.target.value);
-                            localStorage.setItem("refresher:nonmember:pw", event.target.value);
+                            saveNonmember({pw: event.target.value});
                         }}
                     />
                 </div>

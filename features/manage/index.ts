@@ -1,6 +1,7 @@
 import {http} from "@/core/http/client";
 import type {ModuleDefinition} from "@/core/module/types";
 import {galleryType, galleryTypeName, urls} from "@/core/http/urls";
+import {getCookie} from "@/utils/cookie";
 
 const manageModule: ModuleDefinition = {
     id: "manage",
@@ -43,6 +44,9 @@ const manageModule: ModuleDefinition = {
     },
 
     setup(ctx) {
+        // 행/체크박스 핸들러 일괄 해제용 (revoke에서 abort)
+        const handlers = new AbortController();
+
         // ===== GIF 조작 =====
         ctx.addFilter(
             ".gallview_contents video",
@@ -73,8 +77,7 @@ const manageModule: ModuleDefinition = {
                 element.addEventListener("click", (event) => {
                     const source = event.target as HTMLInputElement;
 
-                    if (ctx.settings.checkAllTargetUser && event.shiftKey && (uid || ip || nick)) {
-                        const key = uid ? "uid" : ip ? "ip" : "nick";
+                    if (ctx.settings.checkAllTargetUser && event.shiftKey && (uid || ip || nick)) {                        const key = uid ? "uid" : ip ? "ip" : "nick";
                         const value: string = (uid ?? ip ?? nick) as string;
 
                         for (const other of document.querySelectorAll<HTMLElement>(`.ub-writer[data-${key}="${CSS.escape(value)}"]`)) {
@@ -98,13 +101,13 @@ const manageModule: ModuleDefinition = {
                             sibling = sibling.nextElementSibling;
                         }
                     }
-                });
+                }, {signal: handlers.signal});
 
                 element.addEventListener("mouseover", (event) => {
                     if (ctx.settings.checkViaShift && event.shiftKey && !(element instanceof HTMLInputElement && element.checked)) {
                         if (element instanceof HTMLInputElement) element.checked = true;
                     }
-                });
+                }, {signal: handlers.signal});
             },
             {neverExpire: true}
         );
@@ -117,7 +120,7 @@ const manageModule: ModuleDefinition = {
                 await http.post(isMini ? urls.manage.deleteMini : urls.manage.delete, {
                     headers: {"X-Requested-With": "XMLHttpRequest"},
                     body: new URLSearchParams({
-                        ci_t: (await cookieStore.get("ci_c"))?.value ?? "",
+                        ci_t: (await getCookie("ci_c")) ?? "",
                         id: document.querySelector<HTMLInputElement>("#gallery_id")?.value ?? "",
                         "nos[]": postId,
                         _GALLTYPE_: galleryTypeName(location.href)
@@ -143,19 +146,19 @@ const manageModule: ModuleDefinition = {
                     event.preventDefault();
                     event.stopPropagation();
                     void deletePost(postId);
-                });
+                }, {signal: handlers.signal});
             },
             {neverExpire: true}
         );
-    },
 
-    revoke(ctx) {
-        for (const element of document.querySelectorAll<HTMLElement>("[data-refresher-manage-handler], [data-refresher-manage-click]")) {
-            delete element.dataset.refresherManageHandler;
-            delete element.dataset.refresherManageClick;
-        }
+        ctx.addCleanup(() => {
+            handlers.abort();
 
-        void ctx;
+            for (const element of document.querySelectorAll<HTMLElement>("[data-refresher-manage-handler], [data-refresher-manage-click]")) {
+                delete element.dataset.refresherManageHandler;
+                delete element.dataset.refresherManageClick;
+            }
+        });
     }
 };
 

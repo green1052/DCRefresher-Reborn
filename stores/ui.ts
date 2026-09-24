@@ -2,7 +2,7 @@ import {create} from "zustand";
 
 import type {MemoType} from "@/core/storage/types";
 
-export type ToastLevel = "info" | "error" | "warning" | "cake";
+export type ToastLevel = "info" | "error" | "warning";
 
 export interface ToastData {
     id: number;
@@ -72,7 +72,7 @@ export const useUiStore = create<UiState>((set, get) => ({
     openMemoForSelected: () => {
         const {selected, showToast} = get();
         if (!selected || Date.now() - selected.at > SELECTION_TIMEOUT) {
-            showToast("차단할 대상을 다시 오른쪽 클릭해주세요.");
+            showToast("메모할 대상을 다시 오른쪽 클릭해주세요.");
             return;
         }
 

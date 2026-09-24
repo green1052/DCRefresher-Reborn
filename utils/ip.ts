@@ -15,7 +15,7 @@ export interface IPData {
     color: string;
 }
 
-/** IP → ISP 데이터. 색은 고정 (v5: #6495ed) */
+/** IP → ISP 데이터. 색은 고정 (#6495ed) */
 export const ISPData = (ip: string): IPData => ({
     name: ipData[ip],
     color: "#6495ed"

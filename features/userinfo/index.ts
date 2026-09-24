@@ -5,6 +5,7 @@ import {eventBus} from "@/core/eventbus/bus";
 import {MEMO_TYPES, memoStorage} from "@/core/storage/items";
 import type {JsonValue, MemoEntry, MemoType} from "@/core/storage/types";
 import {format as formatIP, ISPData} from "@/utils/ip";
+import {getCookie} from "@/utils/cookie";
 import {getBan} from "@/utils/ban";
 import {getType} from "@/utils/user";
 import {insertWriterSpan} from "@/utils/userDataInsert";
@@ -47,11 +48,11 @@ const makePermBanSpan = (reasons: string): HTMLElement => {
 const fetchRatio = async (uid: string): Promise<RatioInfo | undefined> => {
     const text = await http.post(GALLOG_API, {
         headers: {"X-Requested-With": "XMLHttpRequest"},
-        body: new URLSearchParams({ci_t: (await cookieStore.get("ci_c"))?.value ?? "", user_id: uid})
+        body: new URLSearchParams({ci_t: (await getCookie("ci_c")) ?? "", user_id: uid})
     }).text();
 
     const [article, comment] = text.split(",").map(Number);
-    if (Number.isNaN(article) || Number.isNaN(comment) || article === undefined || comment === undefined) return undefined;
+    if (article === undefined || comment === undefined || Number.isNaN(article) || Number.isNaN(comment)) return undefined;
 
     return {article, comment, date: Date.now()};
 };
@@ -214,13 +215,15 @@ const userinfoModule: ModuleDefinition = {
                 const fresh = results.filter((entry): entry is [string, RatioInfo] => Boolean(entry[1]));
                 if (fresh.length === 0) return;
 
-                // 1회 대입 (Proxy → 스토리지 증분 쓰기 방지)
+                // 1시간 캐시(Proxy 스토리지) — 쓰기 시점 최신 값에서 증분 병합
                 ctx.data.ratio = {
-                    ...(ratios as Record<string, RatioInfo>),
+                    ...asRatios(ctx.data.ratio),
                     ...Object.fromEntries(fresh.map(([uid, info]) => [uid, {...info, date: Date.now()}]))
                 } as JsonValue;
 
                 rebuildAll(ctx);
+            }).catch(() => {
+                // 글댓비 조회 실패는 배지만 못 보여줄 뿐
             });
         });
 

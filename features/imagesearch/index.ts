@@ -29,7 +29,8 @@ const imagesearchModule: ModuleDefinition = {
         window.addEventListener("contextmenu", onContextMenu);
         ctx.addCleanup(() => window.removeEventListener("contextmenu", onContextMenu));
 
-        ctx.bus.on("imageSearch", () => searchWith("https://saucenao.com/search.php?url=[url]"));
+        const offImageSearch = ctx.bus.on("imageSearch", () => searchWith("https://saucenao.com/search.php?url=[url]"));
+        ctx.addCleanup(() => void offImageSearch());
     }
 };
 

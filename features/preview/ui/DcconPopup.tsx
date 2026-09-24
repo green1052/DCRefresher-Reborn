@@ -5,6 +5,7 @@ import {Dialog, Switch} from "radix-ui";
 import {http} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import type {DcinsideDccon, DcinsideDcconDetail, DcinsideDcconDetailList} from "@/features/types";
+import {getCookie} from "@/utils/cookie";
 import {useUiStore} from "@/stores/ui";
 
 interface DcconPopupProps {
@@ -42,7 +43,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
         setLoading(true);
         try {
             const body = new URLSearchParams({
-                ci_t: (await cookieStore.get("ci_c"))?.value ?? "",
+                ci_t: (await getCookie("ci_c")) ?? "",
                 target: "icon",
                 page: String(targetPage)
             });
