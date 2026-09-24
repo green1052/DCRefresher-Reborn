@@ -52,6 +52,15 @@ export default defineContentScript({
             useUiStore.getState().openMemo({[data.type]: data.user}, data.type);
         });
 
+        // ===== 메시징 (옵션→탭) =====
+        onMessage("refresher:getModuleSchema", () => modules.getSchema());
+
+        onMessage("refresher:toggleModule", async ({data}) => {
+            await modules.toggle(data.id, data.value);
+        });
+
+        onMessage("refresher:setSetting", async ({data}) => modules.setSetting(data.id, data.key, data.value));
+
         // ===== 오버레이 마운트 =====
         const mountOverlay = (): void => {
             if (document.getElementById("refresher-root")) return;
