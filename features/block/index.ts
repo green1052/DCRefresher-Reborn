@@ -98,8 +98,6 @@ const setupSelection = (ctx: ModuleContext): void => {
         const hitElement = dcconElement ?? target.closest<HTMLElement>(".ub-writer");
         if (!hitElement) return;
 
-        console.log("[refresher] 우클릭 감지:", hitElement.className, {...hitElement.dataset});
-
         const ui = useUiStore.getState();
 
         if (dcconElement) {
@@ -122,7 +120,6 @@ const setupSelection = (ctx: ModuleContext): void => {
         event.preventDefault();
         ui.closeBubble();
         ui.openBubble(event.clientX, event.clientY);
-        console.log("[refresher] 버블 열림:", event.clientX, event.clientY);
     };
 
     document.addEventListener("contextmenu", onContextMenu, true);
@@ -168,7 +165,6 @@ const blockModule: ModuleDefinition = {
 
     setup(ctx) {
         const gallery = queryString("id") ?? undefined;
-        console.log("[refresher] block 모듈 시작, gallery:", gallery);
 
         setupFilters(ctx, gallery);
         setupSelection(ctx);

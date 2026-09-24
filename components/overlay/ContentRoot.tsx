@@ -72,8 +72,6 @@ const BubbleHost = () => {
 
     if (!bubble || !selected) return null;
 
-    console.log("[refresher] 버블 렌더:", selected.nick, selected.uid, selected.ip, selected.dccon);
-
     const close = (): void => useUiStore.getState().closeBubble();
     const copy = (value: string): void => {
         close();

@@ -23,7 +23,6 @@ const blockUser = async (selected: SelectedUser): Promise<void> => {
 
     const type: BlockType = selected.uid ? "ID" : selected.ip ? "IP" : "NICK";
     await block.add(type, {content: value, isRegex: false, extra: selected.nick ?? value});
-    console.log("[refresher] 차단 추가:", type, value);
 
     useUiStore.getState().showToast(`차단 목록에 추가했습니다. (${type}: ${value})`);
 };
@@ -58,7 +57,6 @@ const blockDccon = async (selected: SelectedUser, blockAllDccon?: boolean): Prom
 
 /** eventBus "refresherRequestBlock" 처리. 마지막 선택은 10초까지 유효 */
 export const handleBlockRequest = async (options: BlockRequestOptions, selected: SelectedUser | null): Promise<void> => {
-    console.log("[refresher] 차단 요청 수신:", options, selected);
     if (!selected || Date.now() - selected.at > 10_000) {
         useUiStore.getState().showToast("차단할 대상을 다시 오른쪽 클릭해주세요.");
         return;
