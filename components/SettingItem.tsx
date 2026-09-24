@@ -11,6 +11,8 @@ interface SettingItemProps {
     onChange: (value: SettingValue) => void;
 }
 
+type NarrowProps<T extends SettingSchema["type"]> = Omit<SettingItemProps, "schema"> & {schema: Extract<SettingSchema, {type: T}>};
+
 const formatDefault = (schema: SettingSchema): string => {
     switch (schema.type) {
         case "check":
@@ -24,7 +26,7 @@ const formatDefault = (schema: SettingSchema): string => {
     }
 };
 
-const TextControl = ({schema, value, disabled, onChange}: SettingItemProps) => {
+const TextControl = ({schema, value, disabled, onChange}: NarrowProps<"text">) => {
     const [draft, setDraft] = useState(String(value));
 
     useEffect(() => {
@@ -46,7 +48,7 @@ const TextControl = ({schema, value, disabled, onChange}: SettingItemProps) => {
     );
 };
 
-const RangeControl = ({schema, value, disabled, onChange}: SettingItemProps) => {
+const RangeControl = ({schema, value, disabled, onChange}: NarrowProps<"range">) => {
     // NaN 방어: value가 undefined/문자열이면 기본값으로 (NaN이면 thumb 위치 계산이 깨짐)
     const initial = Number(value);
     const [draft, setDraft] = useState(Number.isFinite(initial) ? initial : schema.default);
@@ -56,8 +58,9 @@ const RangeControl = ({schema, value, disabled, onChange}: SettingItemProps) => 
         setDraft(Number.isFinite(next) ? next : schema.default);
     }, [value, schema.default]);
 
+    // rt-SliderRoot는 width:stretch(부모 100%) — 부모 폭을 고정해야 트랙이 그려짐
     return (
-        <Flex align="center" gap="3">
+        <Flex align="center" gap="3" style={{width: 240}}>
             <Slider
                 size="2"
                 min={schema.min}
@@ -83,8 +86,9 @@ const RangeControl = ({schema, value, disabled, onChange}: SettingItemProps) => 
     );
 };
 
-const OrderControl = ({schema, value, disabled, onChange}: SettingItemProps) => {
-    if (schema.type !== "order") return null;
+const OrderControl = ({schema, value, disabled, onChange}: NarrowProps<"order">) => {
+    const [dragging, setDragging] = useState<number | null>(null);
+    const [over, setOver] = useState<number | null>(null);
 
     // 정규화 보증에도 스키마 밖 항목은 방어
     const order = [...(value as string[]).filter((key) => key in schema.items)];
@@ -92,38 +96,56 @@ const OrderControl = ({schema, value, disabled, onChange}: SettingItemProps) => 
         if (key in schema.items && !order.includes(key)) order.push(key);
     }
 
-    const move = (index: number, delta: number): void => {
-        const next = [...order];
-        const target = next[index];
-        const swapped = next[index + delta];
-        if (target === undefined || swapped === undefined) return;
+    const drop = (to: number): void => {
+        if (dragging === null || dragging === to) {
+            setDragging(null);
+            setOver(null);
+            return;
+        }
 
-        next[index] = swapped;
-        next[index + delta] = target;
+        const next = [...order];
+        const [moved] = next.splice(dragging, 1);
+        next.splice(to, 0, moved!);
         onChange(next);
+        setDragging(null);
+        setOver(null);
     };
 
     return (
-        <Flex direction="column" gap="2" align="end">
+        <Flex direction="column" gap="1" style={{minWidth: 180}}>
             {order.map((key, index) => (
-                <Flex key={key} align="center" gap="2">
-                    <Text size="2">{schema.items[key] ?? key}</Text>
-                    <Flex gap="1">
-                        <Box asChild style={{padding: 0}}>
-                            <button type="button" disabled={disabled || index === 0} onClick={() => move(index, -1)} aria-label="위로">
-                                <Text size="2" color={disabled || index === 0 ? "gray" : undefined}>
-                                    ↑
-                                </Text>
-                            </button>
-                        </Box>
-                        <Box asChild style={{padding: 0}}>
-                            <button type="button" disabled={disabled || index === order.length - 1} onClick={() => move(index, 1)} aria-label="아래로">
-                                <Text size="2" color={disabled || index === order.length - 1 ? "gray" : undefined}>
-                                    ↓
-                                </Text>
-                            </button>
-                        </Box>
-                    </Flex>
+                <Flex
+                    key={key}
+                    align="center"
+                    gap="2"
+                    py="1"
+                    px="2"
+                    style={{
+                        borderRadius: 6,
+                        cursor: disabled ? "default" : "grab",
+                        opacity: dragging === index ? 0.4 : 1,
+                        background: over === index && dragging !== null ? "var(--gray-a3)" : undefined
+                    }}
+                    draggable={!disabled}
+                    onDragStart={() => setDragging(index)}
+                    onDragEnd={() => {
+                        setDragging(null);
+                        setOver(null);
+                    }}
+                    onDragOver={(event) => {
+                        if (disabled) return;
+                        event.preventDefault();
+                        setOver(index);
+                    }}
+                    onDragLeave={() => setOver(null)}
+                    onDrop={(event) => {
+                        event.preventDefault();
+                        drop(index);
+                    }}
+                >
+                    <Text size="2" style={{flex: 1}}>
+                        {schema.items[key] ?? key}
+                    </Text>
                 </Flex>
             ))}
         </Flex>
