@@ -8,6 +8,8 @@ interface ModulesState {
     schemas: ModuleSchema[];
     /** 콘텐츠 스크립트가 없는 탭(스키마 로드 실패) 여부 */
     unavailable: boolean;
+    /** 현재 활성 디시인사이드 탭 (messaging 대상) */
+    tabId?: number;
     setSchemas: (schemas: ModuleSchema[]) => void;
     setUnavailable: (unavailable: boolean) => void;
     toggle: (id: string, value: boolean, tabId?: number) => Promise<void>;

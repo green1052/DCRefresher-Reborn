@@ -4,4 +4,4 @@ node_modules
 web-ext.config.ts
 .idea
 .env
-PLAN.md
+PLAN.md.release-tree

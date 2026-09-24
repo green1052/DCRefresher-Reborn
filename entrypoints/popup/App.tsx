@@ -2,16 +2,19 @@ import {ExternalLink} from "lucide-react";
 import {Tabs} from "radix-ui";
 import {useEffect} from "react";
 
+import {BlockTab} from "./BlockTab";
+import {DataTab} from "./DataTab";
+import {MemoTab} from "./MemoTab";
+import {ModuleTab} from "./ModuleTab";
 import {sendMessage} from "@/core/messaging/protocol";
+import {initBlocksStore} from "@/stores/blocks";
+import {initMemosStore} from "@/stores/memos";
 import {useModulesStore} from "@/stores/modules";
 
-import {DataTab} from "./DataTab";
-import {ModuleTab} from "./ModuleTab";
-
 const TABS: {id: string; label: string; content: React.ReactNode}[] = [
-    {id: "general", label: "일반", content: <div className="empty">일반 설정 (M2)</div>},
-    {id: "block", label: "차단", content: <div className="empty">차단 관리 (M2)</div>},
-    {id: "memo", label: "메모", content: <div className="empty">메모 관리 (M2)</div>},
+    {id: "general", label: "일반", content: <div className="empty">일반 설정 (M5)</div>},
+    {id: "block", label: "차단", content: <BlockTab />},
+    {id: "memo", label: "메모", content: <MemoTab />},
     {id: "module", label: "모듈", content: <ModuleTab />},
     {id: "shortcut", label: "단축키", content: <div className="empty">단축키 (M5)</div>},
     {id: "data", label: "데이터", content: <DataTab />}
@@ -22,12 +25,19 @@ export function App({optionsPage = false}: {optionsPage?: boolean}) {
     const setUnavailable = useModulesStore((state) => state.setUnavailable);
 
     useEffect(() => {
+        void initBlocksStore();
+        void initMemosStore();
+    }, []);
+
+    useEffect(() => {
         void (async () => {
             const [tab] = await browser.tabs.query({active: true, currentWindow: true});
             if (!tab || !tab.id || !tab.url?.includes("dcinside.com")) {
                 setUnavailable(true);
                 return;
             }
+
+            useModulesStore.setState({tabId: tab.id});
 
             try {
                 setSchemas(await sendMessage("dcr:getModuleSchema", undefined, {tabId: tab.id}));

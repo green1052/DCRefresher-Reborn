@@ -21,6 +21,8 @@ export interface ModuleContext {
     bus: TypedEventBus<ModuleEventMap>;
     /** 요소 필터 등록. 해제 함수 반환 (disable시 자동 해제) */
     addFilter(scope: string, callback: (element: HTMLElement) => void, options?: FilterOptions): () => void;
+    /** 해제 함수 등록 (이벤트 리스너, DOM 리스너 등). disable시 자동 해제 */
+    addCleanup(dispose: () => void): void;
 }
 
 export interface ModuleDefinition {
@@ -37,10 +39,12 @@ export interface ModuleDefinition {
     settings?: Record<string, SettingSchema>;
     /** 활성화시 실행. 리턴값은 다른 모듈이 modules.use(id)로 접근하는 공개 API */
     setup(ctx: ModuleContext): unknown | void;
-    /** 비활성화시 실행 (DOM 정리 등) */
-    revoke?(): void;
+    /** 비활성화시 실행 (DOM 정리 등). cleanup(disposer)은 이후 자동 해제 */
+    revoke?(ctx: ModuleContext): void;
     /** 활성 중 설정이 변경됐을 때 실행 */
     onChanged?(key: string, value: SettingValue): void;
+    /** 단축키 (commands). registry가 활성 모듈에만 전달. api = setup()의 리턴값 */
+    shortcuts?: Record<string, (ctx: ModuleContext, api: unknown) => void | Promise<void>>;
 }
 
 /** popup이 렌더링할 모듈 스키마 (JSON-serializable) */

@@ -1,0 +1,212 @@
+import {Plus, X} from "lucide-react";
+import {useState} from "react";
+
+import {MEMO_TYPES, MEMO_TYPE_NAMES} from "@/core/storage/items";
+import type {MemoEntry, MemoType} from "@/core/storage/types";
+import {useMemosStore} from "@/stores/memos";
+
+const MEMO_TARGET = "https://dcrefresher.green1052.com/utils/convert-memo";
+
+const randomColor = (): string => `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0")}`;
+
+interface MemoFormState {
+    type: MemoType;
+    user: string;
+    text: string;
+    color: string;
+}
+
+const MemoFormDialog = ({
+    initial,
+    onClose,
+    onSubmit
+}: {
+    initial: MemoFormState;
+    onClose: () => void;
+    onSubmit: (state: MemoFormState) => Promise<void>;
+}) => {
+    const [state, setState] = useState<MemoFormState>(initial);
+    const [error, setError] = useState("");
+
+    const editing = Boolean(initial.user);
+
+    const submit = async (): Promise<void> => {
+        if (!state.user.trim()) {
+            setError("메모 대상을 입력해주세요.");
+            return;
+        }
+
+        await onSubmit(state);
+        onClose();
+    };
+
+    return (
+        <div className="dcr-overlay" onMouseDown={onClose}>
+            <div className="dcr-dialog" onMouseDown={(event) => event.stopPropagation()}>
+                <h3 className="dcr-dialog-title">메모 {editing ? "수정" : "추가"}</h3>
+
+                <div className="dcr-field">
+                    <span className="dcr-field-label">종류</span>
+                    <select
+                        className="dcr-select"
+                        value={state.type}
+                        disabled={editing}
+                        onChange={(event) => setState((prev) => ({...prev, type: event.target.value as MemoType}))}
+                    >
+                        {MEMO_TYPES.map((type) => (
+                            <option key={type} value={type}>
+                                {MEMO_TYPE_NAMES[type]}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="dcr-field">
+                    <span className="dcr-field-label">대상</span>
+                    <input
+                        className="dcr-input"
+                        placeholder="유저, 닉네임 또는 IP"
+                        value={state.user}
+                        disabled={editing}
+                        onChange={(event) => setState((prev) => ({...prev, user: event.target.value.trim()}))}
+                    />
+                </div>
+
+                <div className="dcr-field">
+                    <span className="dcr-field-label">메모</span>
+                    <input
+                        className="dcr-input"
+                        maxLength={160}
+                        placeholder="메모를 입력해주세요 (160자 제한)"
+                        value={state.text}
+                        onChange={(event) => setState((prev) => ({...prev, text: event.target.value}))}
+                        onKeyDown={(event) => event.key === "Enter" && void submit()}
+                        autoFocus
+                    />
+                </div>
+
+                <div className="dcr-field">
+                    <span className="dcr-field-label">색상</span>
+                    <span className="dcr-color-row">
+                        <input
+                            type="color"
+                            className="dcr-color"
+                            value={state.color}
+                            onChange={(event) => setState((prev) => ({...prev, color: event.target.value}))}
+                        />
+                        <button type="button" className="dcr-button" onClick={() => setState((prev) => ({...prev, color: randomColor()}))}>
+                            랜덤
+                        </button>
+                    </span>
+                </div>
+
+                {error && <p className="dcr-error">{error}</p>}
+
+                <div className="dcr-dialog-actions">
+                    <button type="button" className="dcr-button" onClick={onClose}>
+                        취소
+                    </button>
+                    <button type="button" className="dcr-button dcr-primary" onClick={() => void submit()}>
+                        {editing ? "수정" : "추가"}
+                    </button>
+                </div>
+
+                <button type="button" className="dcr-dialog-close" aria-label="닫기" onClick={onClose}>
+                    ×
+                </button>
+            </div>
+        </div>
+    );
+};
+
+export function MemoTab() {
+    const memos = useMemosStore((state) => state.memos);
+    const setMemo = useMemosStore((state) => state.setMemo);
+    const removeMemo = useMemosStore((state) => state.removeMemo);
+    const clearType = useMemosStore((state) => state.clearType);
+
+    const [form, setForm] = useState<MemoFormState | null>(null);
+
+    return (
+        <div>
+            <h2 className="dcr-section-title">데이터 관리</h2>
+            <p className="dcr-section-desc">
+                <button type="button" className="dcr-link" onClick={() => window.open(MEMO_TARGET, "_blank")}>
+                    메모 변환
+                </button>
+            </p>
+
+            {MEMO_TYPES.map((type) => {
+                const map = memos[type];
+
+                return (
+                    <section key={type} className="dcr-section">
+                        <header className="dcr-section-head">
+                            <h3>
+                                {MEMO_TYPE_NAMES[type]} ({Object.keys(map).length}개)
+                            </h3>
+                            <span className="dcr-section-actions">
+                                <button
+                                    type="button"
+                                    className="dcr-icon-button"
+                                    title="추가"
+                                    onClick={() => setForm({type, user: "", text: "", color: randomColor()})}
+                                >
+                                    <Plus size={16} />
+                                </button>
+                                <button
+                                    type="button"
+                                    className="dcr-icon-button"
+                                    title="전체 삭제"
+                                    disabled={Object.keys(map).length === 0}
+                                    onClick={() => {
+                                        if (confirm(`${MEMO_TYPE_NAMES[type]} 메모를 모두 삭제할까요?`)) void clearType(type);
+                                    }}
+                                >
+                                    <X size={14} />
+                                </button>
+                            </span>
+                        </header>
+
+                        {Object.keys(map).length === 0 ? (
+                            <p className="empty">{MEMO_TYPE_NAMES[type]} 메모 없음</p>
+                        ) : (
+                            <div className="dcr-chip-list">
+                                {Object.entries(map).map(([user, entry]) => (
+                                    <span key={user} className="dcr-chip">
+                                        <button
+                                            type="button"
+                                            className="dcr-chip-text"
+                                            title={entry.text}
+                                            onClick={() => setForm({type, user, text: entry.text, color: entry.color})}
+                                        >
+                                            {user} ({entry.text.slice(0, 10)})
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="dcr-chip-remove"
+                                            title="삭제"
+                                            onClick={() => void removeMemo(type, user)}
+                                        >
+                                            ×
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                );
+            })}
+
+            {form && (
+                <MemoFormDialog
+                    initial={form}
+                    onClose={() => setForm(null)}
+                    onSubmit={(next) => setMemo(next.type, next.user, {text: next.text, color: next.color})}
+                />
+            )}
+        </div>
+    );
+}
+
+export type {MemoEntry};

@@ -1,0 +1,129 @@
+import {Plus, X} from "lucide-react";
+import {useState} from "react";
+
+import {BlockDialog} from "@/components/BlockDialog";
+import {BLOCK_TYPES, TYPE_NAMES, DETECT_MODE_NAMES} from "@/core/storage/items";
+import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
+import type {BlockInputFields} from "@/stores/blocks";
+import {useBlocksStore} from "@/stores/blocks";
+
+/** 디시콘 이미지 (묶음 정규식이면 첫 코드) */
+const dcconImage = (entry: BlockEntry): string => {
+    const code = entry.isRegex ? (entry.content.match(/^\^\((\w+)\|/)?.[1] ?? entry.content) : entry.content;
+    return `https://image.dcinside.com/dccon.php?no=${code}`;
+};
+
+export function BlockTab() {
+    const entries = useBlocksStore((state) => state.entries);
+    const defaults = useBlocksStore((state) => state.defaults);
+    const addEntry = useBlocksStore((state) => state.addEntry);
+    const updateEntry = useBlocksStore((state) => state.updateEntry);
+    const removeEntry = useBlocksStore((state) => state.removeEntry);
+    const clearType = useBlocksStore((state) => state.clearType);
+    const setDefault = useBlocksStore((state) => state.setDefault);
+
+    const [dialog, setDialog] = useState<{type: BlockType; initial: BlockEntry | null} | null>(null);
+
+    const handleSubmit = async (fields: BlockInputFields): Promise<void> => {
+        if (!dialog) return;
+
+        // 디시콘은 생성시 부여된 별명("제목 [패키지번호]")을 유지
+        const next = dialog.type === "DCCON" && dialog.initial?.extra ? {...fields, extra: dialog.initial.extra} : fields;
+
+        if (dialog.initial) await updateEntry(dialog.type, dialog.initial.id, next);
+        else await addEntry(dialog.type, next);
+
+        setDialog(null);
+    };
+
+    return (
+        <div>
+            <h2 className="dcr-section-title">차단 모드</h2>
+            <p className="dcr-section-desc">기본 차단 판별 방식입니다. 개별 항목의 모드가 우선합니다.</p>
+
+            {BLOCK_TYPES.map((type) => (
+                <div key={`mode-${type}`} className="dcr-field">
+                    <span className="dcr-field-label">{TYPE_NAMES[type]}</span>
+                    <select
+                        className="dcr-select"
+                        value={defaults[type]}
+                        onChange={(event) => void setDefault(type, event.target.value as DetectMode)}
+                    >
+                        {Object.entries(DETECT_MODE_NAMES).map(([key, label]) => (
+                            <option key={key} value={key}>
+                                {label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            ))}
+
+            {BLOCK_TYPES.map((type) => {
+                const list = entries[type];
+
+                return (
+                    <section key={type} className="dcr-section">
+                        <header className="dcr-section-head">
+                            <h3>
+                                {TYPE_NAMES[type]} ({list.length}개)
+                            </h3>
+                            <span className="dcr-section-actions">
+                                <button type="button" className="dcr-icon-button" title="추가" onClick={() => setDialog({type, initial: null})}>
+                                    <Plus size={16} />
+                                </button>
+                                <button
+                                    type="button"
+                                    className="dcr-icon-button"
+                                    title="전체 삭제"
+                                    disabled={list.length === 0}
+                                    onClick={() => {
+                                        if (confirm(`${TYPE_NAMES[type]} 차단 목록을 모두 삭제할까요?`)) void clearType(type);
+                                    }}
+                                >
+                                    <X size={14} />
+                                </button>
+                            </span>
+                        </header>
+
+                        {list.length === 0 ? (
+                            <p className="empty">차단된 {TYPE_NAMES[type]} 없음</p>
+                        ) : (
+                            <div className="dcr-chip-list">
+                                {list.map((entry) => (
+                                    <span key={entry.id} className="dcr-chip">
+                                        {type === "DCCON" ? (
+                                            <button type="button" className="dcr-chip-text" onClick={() => setDialog({type, initial: entry})}>
+                                                <img className="dcr-chip-image" src={dcconImage(entry)} alt={entry.extra ?? entry.content} />
+                                            </button>
+                                        ) : (
+                                            <button type="button" className="dcr-chip-text" onClick={() => setDialog({type, initial: entry})}>
+                                                {entry.content}
+                                                {entry.extra ? ` (${entry.extra})` : ""}
+                                                {entry.gallery ? ` (${entry.gallery})` : ""}
+                                            </button>
+                                        )}
+                                        <button type="button" className="dcr-chip-remove" title="삭제" onClick={() => void removeEntry(type, entry.id)}>
+                                            ×
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                );
+            })}
+
+            {dialog && (
+                <BlockDialog
+                    open
+                    type={dialog.type}
+                    typeNames={TYPE_NAMES}
+                    modeNames={DETECT_MODE_NAMES}
+                    initial={dialog.initial}
+                    onClose={() => setDialog(null)}
+                    onSubmit={handleSubmit}
+                />
+            )}
+        </div>
+    );
+}

@@ -11,6 +11,7 @@ interface ModuleInstance {
     settings: Record<string, SettingValue>;
     data: Record<string, JsonValue>;
     disposers: (() => void)[];
+    ctx?: ModuleContext;
     api?: unknown;
 }
 
@@ -66,9 +67,13 @@ const start = async (instance: ModuleInstance): Promise<void> => {
             const disposer = filter.add(scope, callback, options);
             disposers.push(disposer);
             return disposer;
+        },
+        addCleanup: (dispose: () => void) => {
+            disposers.push(dispose);
         }
     };
 
+    instance.ctx = ctx;
     instance.disposers = disposers;
     instance.running = true;
     instance.api = (await instance.def.setup(ctx)) ?? undefined;
@@ -86,10 +91,11 @@ const stop = (instance: ModuleInstance): void => {
     instance.running = false;
     instance.api = undefined;
 
+    if (instance.def.revoke && instance.ctx) instance.def.revoke(instance.ctx);
+
     for (const disposer of instance.disposers) disposer();
     instance.disposers = [];
-
-    instance.def.revoke?.();
+    instance.ctx = undefined;
 };
 
 const register = async (def: ModuleDefinition, enable: boolean): Promise<void> => {
@@ -200,8 +206,7 @@ export const modules = {
     },
 
     /** 설정값 변경 (popup→messaging 경로). 저장 + 즉시 적용. 정규화된 값 반환 */
-    setSetting: async (id: string, key: string, value: SettingValue): Promise<SettingValue> => {
-        const instance = instances.get(id);
+    setSetting: async (id: string, key: string, value: SettingValue): Promise<SettingValue> => {        const instance = instances.get(id);
         if (!instance || !instance.def.settings || !(key in instance.def.settings)) return value;
 
         const schema = instance.def.settings[key];
@@ -221,6 +226,16 @@ export const modules = {
         }
 
         return nextValue;
+    },
+
+    /** 단축키 실행 (commands→broadcast). 활성 모듈의 shortcuts만 */
+    runShortcut: (command: string): void => {
+        for (const instance of instances.values()) {
+            if (!instance.running || !instance.enable) continue;
+
+            const shortcut = instance.def.shortcuts?.[command];
+            if (shortcut && instance.ctx) void shortcut(instance.ctx, instance.api);
+        }
     }
 };
 

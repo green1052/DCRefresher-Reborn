@@ -8,7 +8,7 @@ export interface BlockEntry {
     id: string;
     content: string;
     isRegex: boolean;
-    mode: DetectMode;
+    mode?: DetectMode;
     gallery?: string;
     extra?: string;
 }

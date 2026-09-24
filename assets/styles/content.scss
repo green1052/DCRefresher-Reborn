@@ -1,1 +1,254 @@
-/* 콘텐츠 스크립트 스타일 — M2에서 오버레이/배지 스타일 추가 */
+@use "ui" as *;
+
+/* ===== DCinside 콘텐츠 주입 스타일 ===== */
+
+:root {
+    --dcr-bg: #fff;
+    --dcr-fg: #1c1c1c;
+    --dcr-muted: #71717a;
+    --dcr-border: #e4e4e7;
+    --dcr-accent: #3b82f6;
+    --dcr-radius: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --dcr-bg: #18181b;
+        --dcr-fg: #fafafa;
+        --dcr-muted: #a1a1aa;
+        --dcr-border: #3f3f46;
+    }
+}
+
+#dcr-root {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2147483000;
+    font: 13px/1.5 -apple-system, "Segoe UI", "맑은 고딕", sans-serif;
+    color: #1c1c1c;
+}
+
+/* ===== 차단 마커 ===== */
+
+.refresherBlur {
+    filter: blur(5px);
+    opacity: 0.5;
+}
+
+/* ===== 새 게시글 효과 ===== */
+
+.refresherNewPost {
+    animation: refTopIn 0.362s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.refresherNewPost * {
+    animation: refFadeIn 0.662s cubic-bezier(0.19, 1, 0.22, 1);
+    animation-delay: 0ms;
+}
+
+@keyframes refTopIn {
+    0% {
+        transform: translateY(-10px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+@keyframes refFadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+/* ===== 삭제된 글 (미리보기, M4) ===== */
+
+.refresher-deleted {
+    background-color: #e8645f1a !important;
+}
+
+/* ===== 방문 링크 색상 비활성화 (Firefox 대응) ===== */
+
+.refresherDoNotColorVisited .gall_list a:visited {
+    color: inherit !important;
+}
+
+/* ===== 새로고침 제어 버튼 ===== */
+
+button[data-dcr-refresh] {
+    margin-left: 4px;
+    padding: 3px 8px;
+    border: 1px solid #d3d3d3;
+    border-radius: 4px;
+    background: #f5f5f5;
+    color: #333;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+/* ===== 토스트 ===== */
+
+.dcr-toast {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 320px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #333333f2;
+    color: #fff;
+    font-size: 12px;
+    pointer-events: auto;
+    box-shadow: 0 6px 20px rgb(0 0 0 / 30%);
+    z-index: 2147483002;
+    animation: dcrToastIn 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.dcr-toast-error {
+    background: #ff6464f2;
+}
+
+.dcr-toast-warning {
+    background: #f7af15f2;
+    color: #1c1c1c;
+}
+
+.dcr-toast-close {
+    flex: none;
+    padding: 0 2px;
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.8;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
+@keyframes dcrToastIn {
+    0% {
+        transform: translateY(8px);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* ===== 유저 버블 ===== */
+
+.dcr-bubble {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 180px;
+    padding: 10px;
+    border: 1px solid #e4e4e7;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
+    pointer-events: auto;
+    z-index: 2147483001;
+    animation: dcrToastIn 0.15s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.dcr-bubble-value {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+
+    strong {
+        font-weight: 600;
+    }
+}
+
+.dcr-bubble-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
+
+    .dcr-button {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+}
+
+/* ===== 세그먼트 (메모 타입) ===== */
+
+.dcr-segment {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 10px;
+    padding: 2px;
+    border: 1px solid #e4e4e7;
+    border-radius: 6px;
+}
+
+.dcr-segment-item {
+    flex: 1;
+    padding: 4px 0;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    color: #71717a;
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+
+    &:disabled {
+        opacity: 0.4;
+        cursor: default;
+    }
+
+    &[data-active] {
+        background: #3b82f6;
+        color: #fff;
+    }
+}
+
+/* ===== 다크 모드 (표시 요소) ===== */
+
+@media (prefers-color-scheme: dark) {
+    #dcr-root,
+    .dcr-bubble {
+        color: #fafafa;
+    }
+
+    .dcr-bubble {
+        background: #18181b;
+        border-color: #3f3f46;
+    }
+
+    .dcr-segment {
+        border-color: #3f3f46;
+    }
+
+    .dcr-segment-item {
+        color: #a1a1aa;
+    }
+
+    button[data-dcr-refresh] {
+        background: #27272a;
+        border-color: #3f3f46;
+        color: #fafafa;
+    }
+}
