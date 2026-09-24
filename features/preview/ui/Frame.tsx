@@ -221,8 +221,9 @@ export const Frame = () => {
             }}
         >
             <Dialog.Portal>
-                <Dialog.Overlay
+                <div
                     className={"refresher-frame-outer" + (blurBackground ? " blurred" : "") + (fading ? " fading" : "")}
+                    onPointerDown={() => usePreviewStore.getState().requestClose()}
                 />
                 <Dialog.Content
                     className={"refresher-frame preview" + (fading ? " fading" : "")}
