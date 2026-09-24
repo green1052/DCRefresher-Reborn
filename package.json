@@ -1,0 +1,39 @@
+{
+    "name": "dcrefresher-reborn",
+    "description": "디시인사이드 개선 확장 프로그램",
+    "private": true,
+    "version": "6.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "wxt",
+        "dev:firefox": "wxt -b firefox",
+        "build": "wxt build",
+        "build:firefox": "wxt build -b firefox",
+        "zip": "wxt zip",
+        "zip:firefox": "wxt zip -b firefox",
+        "compile": "tsc --noEmit",
+        "postinstall": "wxt prepare"
+    },
+    "dependencies": {
+        "@webext-core/messaging": "^4.0.0",
+        "@webext-core/proxy-service": "^3.0.2",
+        "@wxt-dev/webextension-polyfill": "^1.0.0",
+        "ky": "^2.1.0",
+        "lucide-react": "^1.48.0",
+        "radix-ui": "^1.6.7",
+        "react": "^19.3.0",
+        "react-dom": "^19.3.0",
+        "sass": "^1.105.0",
+        "webextension-polyfill": "^0.12.0",
+        "zustand": "^5.0.15"
+    },
+    "devDependencies": {
+        "@types/react": "^19.3.0",
+        "@types/react-dom": "^19.3.0",
+        "@wxt-dev/auto-icons": "^1.1.2",
+        "@wxt-dev/module-react": "^1.2.2",
+        "typescript": "^7.0.2",
+        "web-ext": "^10.7.0",
+        "wxt": "^0.21.4"
+    }
+}
