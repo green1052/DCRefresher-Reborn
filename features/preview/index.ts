@@ -153,8 +153,6 @@ const controller = (ctx: ModuleContext) => {
 
             const processed = processContents(preData, postInfo);
             store.getState().setPost(processed);
-            eventBus.emit("postDataLoaded", processed);
-            eventBus.emit("postCommentIdLoaded", processed.commentId, processed.commentNo);
 
             await loadComments(preData, processed, mySignal);
         } catch (error) {

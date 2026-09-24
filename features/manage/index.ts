@@ -241,7 +241,7 @@ const manageModule: ModuleDefinition = {
         );
 
         // ===== 새 글: 갱차 표시 + 글댓비 갱신 (1시간 캐시, 첫 10개) =====
-        const offNewPostList = eventBus.on("newPostList", (elements) => {
+        const offNewPostList = eventBus.on("newPostList", ({data: elements}) => {
             const ratios = asRatios(ctx.data.ratio);
             const stale: string[] = [];
 

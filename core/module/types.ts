@@ -1,7 +1,7 @@
 import type {FilterOptions} from "@/core/filtering";
-import type {TypedEventBus} from "@/core/eventbus/bus";
-import type {ModuleEventMap} from "@/core/eventbus/types";
+import type {ModuleEventData} from "@/core/eventbus/types";
 import type {JsonValue, SettingValue} from "@/core/storage/types";
+import type Emittery from "emittery";
 
 export type SettingSchema =
     | {type: "check"; name: string; desc: string; default: boolean}
@@ -18,7 +18,7 @@ export interface ModuleContext {
     /** 모듈 영속 데이터 (Proxy, 변경시 즉시 저장) */
     data: Record<string, JsonValue>;
     /** 모듈 간 이벤트 버스 */
-    bus: TypedEventBus<ModuleEventMap>;
+    bus: Emittery<ModuleEventData>;
     /** 요소 필터 등록. 해제 함수 반환 (disable시 자동 해제) */
     addFilter(scope: string, callback: (element: HTMLElement) => void, options?: FilterOptions): () => void;
     /** 해제 함수 등록 (이벤트 리스너, DOM 리스너 등). disable시 자동 해제 */

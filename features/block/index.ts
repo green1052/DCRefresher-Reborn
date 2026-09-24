@@ -1,7 +1,6 @@
 import {block} from "@/core/block";
 import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
 import {queryString} from "@/core/http/urls";
-import {eventBus} from "@/core/eventbus/bus";
 import {useUiStore} from "@/stores/ui";
 
 import {handleBlockRequest} from "./request";
@@ -112,13 +111,11 @@ const setupSelection = (ctx: ModuleContext): void => {
 
             const code = extractDcconCode(src);
             ui.setSelected({dccon: code});
-            eventBus.emit("refresherUserContextMenu", null, null, null, code, null);
         } else {
             const {nick, uid, ip} = hitElement.dataset;
             if (!nick && !uid && !ip) return;
 
             ui.setSelected({nick, uid, ip});
-            eventBus.emit("refresherUserContextMenu", nick ?? null, uid ?? null, ip ?? null, null, null);
         }
 
         // 유저 버블: 네이티브 우클릭 메뉴 대체
@@ -131,7 +128,7 @@ const setupSelection = (ctx: ModuleContext): void => {
     document.addEventListener("contextmenu", onContextMenu, true);
     ctx.addCleanup(() => document.removeEventListener("contextmenu", onContextMenu, true));
 
-    ctx.bus.on("refresherRequestBlock", (options) => {
+    ctx.bus.on("refresherRequestBlock", ({data: options}) => {
         void handleBlockRequest(options, useUiStore.getState().selected);
     });
 };

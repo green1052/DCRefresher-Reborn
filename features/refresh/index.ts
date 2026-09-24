@@ -320,7 +320,7 @@ const refreshModule: ModuleDefinition = {
         }
 
         // ===== 페이징 박스 갱신 (refresherGetPost) =====
-        eventBus.on("refresherGetPost", (dom) => {
+        eventBus.on("refresherGetPost", ({data: dom}) => {
             const source = dom.querySelector<HTMLElement>(PAGING_SELECTOR);
             const destination = document.querySelector<HTMLElement>(PAGING_SELECTOR);
             if (source && destination && source.innerHTML !== destination.innerHTML) {
