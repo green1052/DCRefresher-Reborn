@@ -17,7 +17,7 @@ export const RefresherSelect = ({value, options, disabled, onChange}: RefresherS
         disabled={disabled}
         onValueChange={(next) => onChange(next === NONE ? "" : next)}
     >
-        <Select.Trigger style={{minWidth: 140}} />
+        <Select.Trigger style={{minWidth: 140}}/>
         <Select.Content>
             {options.map(([key, label]) => (
                 <Select.Item key={key} value={key || NONE}>

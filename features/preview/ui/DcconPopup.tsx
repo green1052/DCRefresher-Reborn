@@ -113,27 +113,29 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                         <div className="dccon-toolbar-toggles">
                             <label className="dccon-toggle">
                                 더블콘
-                                <Switch.Root className="refresher-switch-root" checked={doubleDccon} onCheckedChange={setDoubleDccon}>
-                                    <Switch.Thumb className="refresher-switch-thumb" />
+                                <Switch.Root className="refresher-switch-root" checked={doubleDccon}
+                                             onCheckedChange={setDoubleDccon}>
+                                    <Switch.Thumb className="refresher-switch-thumb"/>
                                 </Switch.Root>
                             </label>
                             <label className="dccon-toggle">
                                 대왕콘
-                                <Switch.Root className="refresher-switch-root" checked={bigDccon} onCheckedChange={setBigDccon}>
-                                    <Switch.Thumb className="refresher-switch-thumb" />
+                                <Switch.Root className="refresher-switch-root" checked={bigDccon}
+                                             onCheckedChange={setBigDccon}>
+                                    <Switch.Thumb className="refresher-switch-thumb"/>
                                 </Switch.Root>
                             </label>
                         </div>
                         <Dialog.Close asChild>
                             <button type="button" className="refresher-popup-close">
-                                <X size={18} />
+                                <X size={18}/>
                             </button>
                         </Dialog.Close>
                     </div>
 
                     {doubleDccon && selected.length > 0 && (
                         <div className="dccon-selected">
-                            <img src={selected[0]!.list_img} alt={selected[0]!.title} />
+                            <img src={selected[0]!.list_img} alt={selected[0]!.title}/>
                             <span>더블콘 {selected.length}/2 — 하나만 더 선택</span>
                             <button type="button" onClick={() => setSelected([])}>
                                 초기화
@@ -143,44 +145,49 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
 
                     <div className="dccon-packages" ref={packagesRef}>
                         {loading && visible.length === 0
-                            ? Array.from({length: 8}, (_, index) => <span key={index} className="dccon-skeleton" />)
+                            ? Array.from({length: 8}, (_, index) => <span key={index} className="dccon-skeleton"/>)
                             : visible.map((pack) => (
-                                  <button
-                                      type="button"
-                                      key={pack.package_idx}
-                                      className={activePackage === pack.package_idx ? "active" : undefined}
-                                      title={pack.title}
-                                      onClick={(event) => {
-                                          openPackage(pack);
-                                          event.currentTarget.scrollIntoView({behavior: "smooth", block: "nearest", inline: "center"});
-                                      }}
-                                  >
-                                      <img src={pack.main_img_url} alt={pack.title} />
-                                  </button>
-                              ))}
+                                <button
+                                    type="button"
+                                    key={pack.package_idx}
+                                    className={activePackage === pack.package_idx ? "active" : undefined}
+                                    title={pack.title}
+                                    onClick={(event) => {
+                                        openPackage(pack);
+                                        event.currentTarget.scrollIntoView({
+                                            behavior: "smooth",
+                                            block: "nearest",
+                                            inline: "center"
+                                        });
+                                    }}
+                                >
+                                    <img src={pack.main_img_url} alt={pack.title}/>
+                                </button>
+                            ))}
                     </div>
 
                     <div className="dccon-grid-wrap">
                         <div className="dccon-grid">
                             {loading && current.length === 0
-                                ? Array.from({length: 18}, (_, index) => <span key={index} className="dccon-skeleton" />)
+                                ? Array.from({length: 18}, (_, index) => <span key={index} className="dccon-skeleton"/>)
                                 : current.map((dccon) => (
-                                      <button type="button" key={dccon.detail_idx} title={dccon.title} onClick={() => clickDccon(dccon)}>
-                                          <img src={dccon.list_img} alt={dccon.title} />
-                                      </button>
-                                  ))}
+                                    <button type="button" key={dccon.detail_idx} title={dccon.title}
+                                            onClick={() => clickDccon(dccon)}>
+                                        <img src={dccon.list_img} alt={dccon.title}/>
+                                    </button>
+                                ))}
                         </div>
                     </div>
 
                     <div className="dccon-footer">
                         <button type="button" onClick={() => movePage(-1)} title="이전 패키지 목록">
-                            <ChevronLeft size={16} />
+                            <ChevronLeft size={16}/>
                         </button>
                         <span>
                             {page + 1} / {maxPage + 1}
                         </span>
                         <button type="button" onClick={() => movePage(1)} title="다음 패키지 목록">
-                            <ChevronRight size={16} />
+                            <ChevronRight size={16}/>
                         </button>
                     </div>
                 </Dialog.Content>

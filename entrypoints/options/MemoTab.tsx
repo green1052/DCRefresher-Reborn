@@ -1,11 +1,11 @@
-import {Plus, X, Download, Upload} from "lucide-react";
-import {Badge, Box, Button, Dialog, Flex, IconButton, Table, Text, TextField, TextArea} from "@radix-ui/themes";
+import {Download, Plus, Upload, X} from "lucide-react";
+import {Badge, Box, Button, Dialog, Flex, IconButton, Table, Text, TextArea, TextField} from "@radix-ui/themes";
 import {useState} from "react";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
 import {isMemoEntry} from "@/core/memo";
-import {memoStorage, MEMO_TYPES, MEMO_TYPE_NAMES} from "@/core/storage/items";
+import {MEMO_TYPE_NAMES, MEMO_TYPES, memoStorage} from "@/core/storage/items";
 import type {MemoEntry, MemoType} from "@/core/storage/types";
 import {useMemosStore} from "@/stores/memos";
 
@@ -21,10 +21,10 @@ interface MemoFormState {
 }
 
 const MemoFormDialog = ({
-    initial,
-    onClose,
-    onSubmit
-}: {
+                            initial,
+                            onClose,
+                            onSubmit
+                        }: {
     initial: MemoFormState;
     onClose: () => void;
     onSubmit: (state: MemoFormState) => Promise<void>;
@@ -97,9 +97,17 @@ const MemoFormDialog = ({
                                 type="color"
                                 value={state.color}
                                 onChange={(event) => setState((prev) => ({...prev, color: event.target.value}))}
-                                style={{width: 36, height: 28, padding: 0, border: 0, background: "none", cursor: "pointer"}}
+                                style={{
+                                    width: 36,
+                                    height: 28,
+                                    padding: 0,
+                                    border: 0,
+                                    background: "none",
+                                    cursor: "pointer"
+                                }}
                             />
-                            <Button size="2" variant="soft" onClick={() => setState((prev) => ({...prev, color: randomColor()}))}>
+                            <Button size="2" variant="soft"
+                                    onClick={() => setState((prev) => ({...prev, color: randomColor()}))}>
                                 랜덤
                             </Button>
                         </Flex>
@@ -176,11 +184,13 @@ export function MemoTab() {
                 title="메모"
                 actions={
                     <>
-                        <IconButton size="2" variant="ghost" color="gray" title="내보내기" onClick={() => void exportMemos()}>
-                            <Download size={16} />
+                        <IconButton size="2" variant="ghost" color="gray" title="내보내기"
+                                    onClick={() => void exportMemos()}>
+                            <Download size={16}/>
                         </IconButton>
-                        <IconButton size="2" variant="ghost" color="gray" title="가져오기" onClick={() => setImportOpen(true)}>
-                            <Upload size={16} />
+                        <IconButton size="2" variant="ghost" color="gray" title="가져오기"
+                                    onClick={() => setImportOpen(true)}>
+                            <Upload size={16}/>
                         </IconButton>
                     </>
                 }
@@ -192,7 +202,8 @@ export function MemoTab() {
                         <Box key={type} mb="4" mt={index > 0 ? "4" : undefined}>
                             <Flex justify="between" align="center" mb="2">
                                 <Text size="2" weight="bold">
-                                    {MEMO_TYPE_NAMES[type]} <Badge color="gray" variant="soft">{Object.keys(map).length}개</Badge>
+                                    {MEMO_TYPE_NAMES[type]} <Badge color="gray"
+                                                                   variant="soft">{Object.keys(map).length}개</Badge>
                                 </Text>
                                 <Flex gap="2">
                                     <IconButton
@@ -202,7 +213,7 @@ export function MemoTab() {
                                         title="추가"
                                         onClick={() => setForm({type, user: "", text: "", color: randomColor()})}
                                     >
-                                        <Plus size={14} />
+                                        <Plus size={14}/>
                                     </IconButton>
                                     <IconButton
                                         variant="ghost"
@@ -212,7 +223,7 @@ export function MemoTab() {
                                         disabled={Object.keys(map).length === 0}
                                         onClick={() => setClearConfirm(type)}
                                     >
-                                        <X size={12} />
+                                        <X size={12}/>
                                     </IconButton>
                                 </Flex>
                             </Flex>
@@ -225,7 +236,7 @@ export function MemoTab() {
                                         <Table.Row>
                                             <Table.ColumnHeaderCell>대상</Table.ColumnHeaderCell>
                                             <Table.ColumnHeaderCell>메모</Table.ColumnHeaderCell>
-                                            <Table.ColumnHeaderCell />
+                                            <Table.ColumnHeaderCell/>
                                         </Table.Row>
                                     </Table.Header>
                                     <Table.Body>
@@ -233,11 +244,22 @@ export function MemoTab() {
                                             <Table.Row
                                                 key={user}
                                                 style={{cursor: "pointer"}}
-                                                onClick={() => setForm({type, user, text: entry.text, color: entry.color})}
+                                                onClick={() => setForm({
+                                                    type,
+                                                    user,
+                                                    text: entry.text,
+                                                    color: entry.color
+                                                })}
                                             >
                                                 <Table.RowHeaderCell>
                                                     <Flex align="center" gap="2">
-                                                        <span style={{width: 10, height: 10, borderRadius: "50%", background: entry.color, flex: "none"}} />
+                                                        <span style={{
+                                                            width: 10,
+                                                            height: 10,
+                                                            borderRadius: "50%",
+                                                            background: entry.color,
+                                                            flex: "none"
+                                                        }}/>
                                                         <Text weight="medium">{user}</Text>
                                                     </Flex>
                                                 </Table.RowHeaderCell>
@@ -255,7 +277,7 @@ export function MemoTab() {
                                                             void removeMemo(type, user);
                                                         }}
                                                     >
-                                                        <X size={12} />
+                                                        <X size={12}/>
                                                     </IconButton>
                                                 </Table.Cell>
                                             </Table.Row>
@@ -288,7 +310,8 @@ export function MemoTab() {
                 onClose={() => setClearConfirm(null)}
             />
 
-            <ConfirmDialog open={notice !== null} title={notice ?? ""} cancelLabel={null} onClose={() => setNotice(null)} onConfirm={() => setNotice(null)} />
+            <ConfirmDialog open={notice !== null} title={notice ?? ""} cancelLabel={null}
+                           onClose={() => setNotice(null)} onConfirm={() => setNotice(null)}/>
 
             <Dialog.Root open={importOpen} onOpenChange={(next) => !next && setImportOpen(false)}>
                 <Dialog.Content style={{maxWidth: 520}}>
@@ -297,7 +320,9 @@ export function MemoTab() {
                         내보낸 JSON 데이터를 붙여넣어주세요.
                     </Dialog.Description>
 
-                    <TextArea placeholder="JSON 데이터" value={importText} onChange={(event) => setImportText(event.target.value)} style={{minHeight: 160}} autoFocus />
+                    <TextArea placeholder="JSON 데이터" value={importText}
+                              onChange={(event) => setImportText(event.target.value)} style={{minHeight: 160}}
+                              autoFocus/>
 
                     <Flex gap="3" justify="end" mt="4">
                         <Dialog.Close>

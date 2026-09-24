@@ -91,11 +91,11 @@ const BlockPopup = () => {
             }}
         >
             <Dialog.Portal>
-                <Dialog.Overlay className="refresher-overlay" style={{background: "transparent"}} />
+                <Dialog.Overlay className="refresher-overlay" style={{background: "transparent"}}/>
                 <Dialog.Content className="refresher-block-popup" onOpenAutoFocus={(event) => event.preventDefault()}>
                     <Dialog.Close asChild>
                         <button type="button" className="refresher-popup-close">
-                            <X size={14} />
+                            <X size={14}/>
                         </button>
                     </Dialog.Close>
 
@@ -103,48 +103,52 @@ const BlockPopup = () => {
                         <h3>유저 차단</h3>
                     </Dialog.Title>
 
-            <div className="refresher-block-popup-section">
-                <h4>기간</h4>
-                {BLOCK_DAYS.map(([value, label]) => (
-                    <label key={value}>
-                        <input type="radio" name="block-day" value={value} checked={day === value} onChange={() => setDay(value)} />
-                        {label}
-                    </label>
-                ))}
-            </div>
+                    <div className="refresher-block-popup-section">
+                        <h4>기간</h4>
+                        {BLOCK_DAYS.map(([value, label]) => (
+                            <label key={value}>
+                                <input type="radio" name="block-day" value={value} checked={day === value}
+                                       onChange={() => setDay(value)}/>
+                                {label}
+                            </label>
+                        ))}
+                    </div>
 
-            <div className="refresher-block-popup-section">
-                <h4>사유</h4>
-                {BLOCK_REASONS.map(([value, label]) => (
-                    <label key={value}>
-                        <input type="radio" name="block-reason" value={value} checked={reason === value} onChange={() => setReason(value)} />
-                        {label}
-                    </label>
-                ))}
-                {reason === "0" && (
-                    <input
-                        value={custom}
-                        placeholder="차단 사유 직접 입력 (한글 20자 이내)"
-                        maxLength={20}
-                        onChange={(event) => setCustom(event.target.value)}
-                    />
-                )}
-            </div>
+                    <div className="refresher-block-popup-section">
+                        <h4>사유</h4>
+                        {BLOCK_REASONS.map(([value, label]) => (
+                            <label key={value}>
+                                <input type="radio" name="block-reason" value={value} checked={reason === value}
+                                       onChange={() => setReason(value)}/>
+                                {label}
+                            </label>
+                        ))}
+                        {reason === "0" && (
+                            <input
+                                value={custom}
+                                placeholder="차단 사유 직접 입력 (한글 20자 이내)"
+                                maxLength={20}
+                                onChange={(event) => setCustom(event.target.value)}
+                            />
+                        )}
+                    </div>
 
-            <div className="refresher-block-popup-section">
-                <label>
-                    <input type="checkbox" checked={delChk} onChange={(event) => setDelChk(event.target.checked)} />
-                    선택한 글 삭제
-                </label>
-                <label>
-                    <input type="checkbox" checked={userTypeChk} onChange={(event) => setUserTypeChk(event.target.checked)} />
-                    식별 코드 차단 시 IP 동시 차단
-                </label>
-            </div>
+                    <div className="refresher-block-popup-section">
+                        <label>
+                            <input type="checkbox" checked={delChk}
+                                   onChange={(event) => setDelChk(event.target.checked)}/>
+                            선택한 글 삭제
+                        </label>
+                        <label>
+                            <input type="checkbox" checked={userTypeChk}
+                                   onChange={(event) => setUserTypeChk(event.target.checked)}/>
+                            식별 코드 차단 시 IP 동시 차단
+                        </label>
+                    </div>
 
-            <button type="button" className="go-block" onClick={() => void submit()}>
-                차단
-            </button>
+                    <button type="button" className="go-block" onClick={() => void submit()}>
+                        차단
+                    </button>
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>
@@ -174,18 +178,18 @@ const CaptchaPopup = () => {
             }}
         >
             <Dialog.Portal>
-                <Dialog.Overlay className="refresher-overlay" style={{background: "transparent"}} />
+                <Dialog.Overlay className="refresher-overlay" style={{background: "transparent"}}/>
                 <Dialog.Content className="refresher-captcha-popup">
                     <Dialog.Close asChild>
                         <button type="button" className="refresher-popup-close">
-                            <X size={14} />
+                            <X size={14}/>
                         </button>
                     </Dialog.Close>
 
                     <Dialog.Title asChild>
                         <h3>코드 입력</h3>
                     </Dialog.Title>
-                    <img src={captcha.url} alt="captcha" />
+                    <img src={captcha.url} alt="captcha"/>
                     <input
                         autoFocus
                         value={code}
@@ -211,9 +215,9 @@ export const Popups = () => {
 
     return (
         <>
-            {adminVisible && <AdminPanel />}
-            {blockPopup && <BlockPopup />}
-            {captcha && <CaptchaPopup key={captcha.url} />}
+            {adminVisible && <AdminPanel/>}
+            {blockPopup && <BlockPopup/>}
+            {captcha && <CaptchaPopup key={captcha.url}/>}
         </>
     );
 };

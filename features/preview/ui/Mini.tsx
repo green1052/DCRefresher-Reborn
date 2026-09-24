@@ -37,7 +37,7 @@ export const Mini = () => {
             <h3 className="refresher-title-post" onClick={openFull}>
                 {mini.title}
             </h3>
-            <div className="refresher-mini-preview-contents" dangerouslySetInnerHTML={{__html: mini.contents}} />
+            <div className="refresher-mini-preview-contents" dangerouslySetInnerHTML={{__html: mini.contents}}/>
             <span className="refresher-read-more" onClick={openFull}>
                 {mini.preData.title ?? "게시글 더 보기"}
             </span>

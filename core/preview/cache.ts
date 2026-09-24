@@ -15,7 +15,7 @@ export interface DcinsideComment {
     user_id: string;
     name: string;
     password?: string;
-   GallogIcon?: string;
+    GallogIcon?: string;
     gallog_icon?: string;
     ip: string;
     memo: string;
@@ -25,12 +25,14 @@ export interface DcinsideComment {
     date_time: string;
     reg_date?: string;
     reply_num?: number;
+
     [key: string]: unknown;
 }
 
 export interface CommentListResponse {
     list: DcinsideComment[];
     total_cnt: number;
+
     [key: string]: unknown;
 }
 

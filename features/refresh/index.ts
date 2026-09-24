@@ -1,6 +1,6 @@
 import {http} from "@/core/http/client";
-import {mergeParamURL, queryString, urls, view} from "@/core/http/urls";
-import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
+import {mergeParamURL, queryString, view} from "@/core/http/urls";
+import type {ModuleDefinition} from "@/core/module/types";
 import {eventBus} from "@/core/eventbus/bus";
 import {useUiStore} from "@/stores/ui";
 
@@ -12,6 +12,7 @@ let button: HTMLButtonElement | null = null;
 
 interface RefreshApi {
     refreshLists(): Promise<void>;
+
     togglePause(): void;
 }
 
@@ -148,7 +149,7 @@ const refreshModule: ModuleDefinition = {
             if (isAdmin && document.querySelector<HTMLInputElement>(".article_chkbox:checked")) return false;
             if (document.querySelector(".user_data.add")) return false;
 
-            const managerCheckbox = document.querySelector<HTMLTemplateElement>('#minor_td-tmpl[type="text/x-jquery-tmpl"]')?.innerHTML ?? "";
+            const managerCheckbox = document.querySelector<HTMLTemplateElement>("#minor_td-tmpl[type=\"text/x-jquery-tmpl\"]")?.innerHTML ?? "";
 
             loading = true;
 
@@ -196,7 +197,7 @@ const refreshModule: ModuleDefinition = {
                     if (isPageView && no === currentPostNo) {
                         element.classList.add("crt");
                         const gallNum = element.querySelector<HTMLElement>(".gall_num");
-                        if (gallNum) gallNum.innerHTML = '<span class="sp_img crt_icon"> </span>';
+                        if (gallNum) gallNum.innerHTML = "<span class=\"sp_img crt_icon\"> </span>";
                         continue;
                     }
 

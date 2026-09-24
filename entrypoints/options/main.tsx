@@ -27,10 +27,10 @@ const Root = () => {
     return (
         <StrictMode>
             <Theme appearance={appearance} accentColor="blue" radius="medium" scaling="110%">
-                <App />
+                <App/>
             </Theme>
         </StrictMode>
     );
 };
 
-createRoot(document.getElementById("root")!).render(<Root />);
+createRoot(document.getElementById("root")!).render(<Root/>);

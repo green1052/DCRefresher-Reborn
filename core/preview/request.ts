@@ -38,7 +38,10 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: IPostInfo
     body.set("e_s_n_o", postInfo.dom?.querySelector<HTMLInputElement>("#e_s_n_o")?.value ?? "");
     body.set("comment_page", "1");
 
-    const response = await http.post(urls.comments, {headers: HEADERS, body, signal}).json<{comments: DcinsideComment[] | null; total_cnt: number | string}>();
+    const response = await http.post(urls.comments, {headers: HEADERS, body, signal}).json<{
+        comments: DcinsideComment[] | null;
+        total_cnt: number | string
+    }>();
 
     return {total_cnt: Number(response.total_cnt), list: response.comments ?? []};
 };
@@ -126,7 +129,10 @@ export const setNotice = async (preData: GalleryPreData, notice: boolean): Promi
     body.set("id", preData.gallery);
     body.set("no", preData.id);
 
-    await http.post(manageUrl(preData.link, urls.manage.setNotice, urls.manage.setNoticeMini), {headers: HEADERS, body});
+    await http.post(manageUrl(preData.link, urls.manage.setNotice, urls.manage.setNoticeMini), {
+        headers: HEADERS,
+        body
+    });
 };
 
 /** 개념글 등록/해제 */
@@ -136,7 +142,10 @@ export const setRecommend = async (preData: GalleryPreData, recommend: boolean):
     body.set("id", preData.gallery);
     body.set("nos[]", preData.id);
 
-    await http.post(manageUrl(preData.link, urls.manage.setRecommend, urls.manage.setRecommendMini), {headers: HEADERS, body});
+    await http.post(manageUrl(preData.link, urls.manage.setRecommend, urls.manage.setRecommendMini), {
+        headers: HEADERS,
+        body
+    });
 };
 
 /** 이미지 캡챠 URL */
@@ -150,7 +159,10 @@ export const adminDeleteComment = async (preData: GalleryPreData, commentId: str
     body.set("pno", preData.id);
     body.set("cmt_nos[]", commentId);
 
-    await http.post(manageUrl(preData.link, urls.manage.deleteComment, urls.manage.deleteCommentMini), {headers: HEADERS, body});
+    await http.post(manageUrl(preData.link, urls.manage.deleteComment, urls.manage.deleteCommentMini), {
+        headers: HEADERS,
+        body
+    });
 };
 
 /** 유저 댓글 삭제 */
@@ -169,7 +181,7 @@ export const userDeleteComment = async (preData: GalleryPreData, commentId: stri
 /** 댓글/디시콘 작성 (v5 utils/comment 이식) */
 export const submitComment = async (
     preData: GalleryPreData,
-    user: {name: string; pw?: string},
+    user: { name: string; pw?: string },
     postDom: Document,
     memo: string | DcinsideDccon[],
     commentNo: string | null,
@@ -177,7 +189,7 @@ export const submitComment = async (
     bigDccon: boolean,
     captcha?: string,
     grecaptcha?: string
-): Promise<{result: string; message?: string}> => {
+): Promise<{ result: string; message?: string }> => {
     const dom = postDom;
 
     const code = (() => {

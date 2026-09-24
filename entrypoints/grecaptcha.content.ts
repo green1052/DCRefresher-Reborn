@@ -15,11 +15,11 @@ export default defineContentScript({
 
         interface GrecaptchaRuntime {
             ready: (callback: () => void) => void;
-            execute: (siteKey: string, options: {action: string}) => Promise<string>;
+            execute: (siteKey: string, options: { action: string }) => Promise<string>;
         }
 
         const getGrecaptcha = (): GrecaptchaRuntime | null => {
-            const scope = window as Window & {grecaptcha?: GrecaptchaRuntime};
+            const scope = window as Window & { grecaptcha?: GrecaptchaRuntime };
             return scope.grecaptcha ?? null;
         };
 

@@ -1,7 +1,7 @@
 import {create} from "zustand";
 
 import {isMemoEntry} from "@/core/memo";
-import {memoStorage, MEMO_TYPES} from "@/core/storage/items";
+import {MEMO_TYPES, memoStorage} from "@/core/storage/items";
 import type {MemoEntry, MemoType} from "@/core/storage/types";
 
 interface MemosState {

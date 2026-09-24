@@ -1,10 +1,10 @@
 import {Dialog} from "radix-ui";
 import {useEffect, useState} from "react";
 
-import {MEMO_TYPES, MEMO_TYPE_NAMES} from "@/core/storage/items";
+import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import type {MemoType} from "@/core/storage/types";
 import {useMemosStore} from "@/stores/memos";
-import {useUiStore, type MemoTargetState} from "@/stores/ui";
+import {type MemoTargetState, useUiStore} from "@/stores/ui";
 
 const TYPE_LABELS: Record<MemoType, string> = {NICK: "닉네임", UID: "아이디", IP: "IP"};
 
@@ -57,7 +57,7 @@ const MemoDialogInner = ({state}: MemoDialogProps) => {
 
     return (
         <Dialog.Portal>
-            <Dialog.Overlay className="refresher-overlay" />
+            <Dialog.Overlay className="refresher-overlay"/>
             <Dialog.Content className="refresher-dialog">
                 <Dialog.Title className="refresher-dialog-title">메모 추가</Dialog.Title>
                 <Dialog.Description className="refresher-dialog-desc">
@@ -90,7 +90,8 @@ const MemoDialogInner = ({state}: MemoDialogProps) => {
                 />
 
                 <div className="refresher-color-row">
-                    <input type="color" className="refresher-color" value={color} onChange={(event) => setColor(event.target.value)} />
+                    <input type="color" className="refresher-color" value={color}
+                           onChange={(event) => setColor(event.target.value)}/>
                     <button type="button" className="refresher-button" onClick={() => setColor(randomColor())}>
                         랜덤
                     </button>
@@ -131,7 +132,7 @@ export const MemoDialog = () => {
 
     return (
         <Dialog.Root open onOpenChange={(open) => !open && closeMemo()}>
-            <MemoDialogInner key={JSON.stringify(memo)} state={memo} />
+            <MemoDialogInner key={JSON.stringify(memo)} state={memo}/>
         </Dialog.Root>
     );
 };

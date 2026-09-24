@@ -2,13 +2,13 @@ import {Fragment, useEffect, useState} from "react";
 import {ExternalLink, Eye, ThumbsDown, ThumbsUp} from "lucide-react";
 import {Dialog} from "radix-ui";
 
-import {vote, captchaImage} from "@/core/preview/request";
+import {captchaImage, vote} from "@/core/preview/request";
 import {modules} from "@/core/module/registry";
 import {useUiStore} from "@/stores/ui";
 
 import {buildPreData} from "../index";
 import {Comment, UserCard} from "./Comment";
-import {usePreviewStore, type ErrorState} from "./previewStore";
+import {type ErrorState, usePreviewStore} from "./previewStore";
 import {WriteComment} from "./WriteComment";
 
 const CountDown = () => {
@@ -71,24 +71,25 @@ const Votes = () => {
     return (
         <div className="refresher-votes">
             <button type="button" className="up" title="추천" onClick={() => void onVote("U")}>
-                <ThumbsUp size={18} />
+                <ThumbsUp size={18}/>
                 {upvotes || "X"}
                 {fixedUpvotes ? ` (${fixedUpvotes})` : ""}
             </button>
             {downvotes !== undefined && (
                 <button type="button" className="down" title="비추천" onClick={() => void onVote("D")}>
-                    <ThumbsDown size={18} />
+                    <ThumbsDown size={18}/>
                     {downvotes}
                 </button>
             )}
-            <button type="button" title="새 탭으로 열기" onClick={() => window.open(preData?.link ?? location.href, "_blank")}>
-                <ExternalLink size={18} />
+            <button type="button" title="새 탭으로 열기"
+                    onClick={() => window.open(preData?.link ?? location.href, "_blank")}>
+                <ExternalLink size={18}/>
             </button>
         </div>
     );
 };
 
-const ErrorBlock = ({error}: {error: ErrorState}) => {
+const ErrorBlock = ({error}: { error: ErrorState }) => {
     const preData = usePreviewStore((s) => s.preData);
     const {detail} = error;
 
@@ -131,9 +132,9 @@ const CommentList = () => {
 
                 return (
                     <Fragment key={parent.no}>
-                        <Comment comment={parent} depth={0} replyCount={replies.length} />
+                        <Comment comment={parent} depth={0} replyCount={replies.length}/>
                         {!isCollapsed &&
-                            replies.map((child) => <Comment key={child.no} comment={child} depth={1} replyCount={0} />)}
+                            replies.map((child) => <Comment key={child.no} comment={child} depth={1} replyCount={0}/>)}
                     </Fragment>
                 );
             })}
@@ -248,19 +249,19 @@ export const Frame = () => {
                     <div className="refresher-preview-title-zone">
                         <div className="refresher-preview-title-text">
                             <Dialog.Title asChild>
-                                <h3 className="refresher-preview-title" dangerouslySetInnerHTML={{__html: title}} />
+                                <h3 className="refresher-preview-title" dangerouslySetInnerHTML={{__html: title}}/>
                             </Dialog.Title>
                         </div>
                     </div>
 
                     {post && (
                         <div className="refresher-preview-meta">
-                            <UserCard user={post.user ?? {}} />
+                            <UserCard user={post.user ?? {}}/>
                             <div className="float-right">
                                 <div className="date-views">
-                                    <CountDown />
+                                    <CountDown/>
                                     <div className="refresher-views">
-                                        <Eye size={13} />
+                                        <Eye size={13}/>
                                         {views}
                                     </div>
                                 </div>
@@ -270,11 +271,12 @@ export const Frame = () => {
 
                     <div className="refresher-preview-contents">
                         {commentsOnly ? (
-                            <h3 className="refresher-preview-comments-only" onClick={() => usePreviewStore.getState().setCommentsOnly(false)}>
+                            <h3 className="refresher-preview-comments-only"
+                                onClick={() => usePreviewStore.getState().setCommentsOnly(false)}>
                                 댓글만 표시 중입니다. 여기를 눌러 원문을 볼 수 있습니다.
                             </h3>
                         ) : error ? (
-                            <ErrorBlock error={error} />
+                            <ErrorBlock error={error}/>
                         ) : (
                             <>
                                 <div
@@ -287,7 +289,7 @@ export const Frame = () => {
                                     }}
                                     dangerouslySetInnerHTML={{__html: contents ?? ""}}
                                 />
-                                <Votes />
+                                <Votes/>
                             </>
                         )}
                     </div>
@@ -300,14 +302,14 @@ export const Frame = () => {
                                     <div className="refresher-nocomment">댓글이 없습니다.</div>
                                 </div>
                             ) : (
-                                <CommentList />
+                                <CommentList/>
                             )}
                         </>
                     )}
 
-                    {post && <WriteComment />}
+                    {post && <WriteComment/>}
 
-                    <div className="refresher-loader" />
+                    <div className="refresher-loader"/>
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>

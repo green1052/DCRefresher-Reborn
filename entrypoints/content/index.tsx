@@ -47,7 +47,7 @@ export default defineContentScript({
             const host = document.createElement("div");
             host.id = "refresher-root";
             document.body.append(host);
-            createRoot(host).render(<ContentRoot />);
+            createRoot(host).render(<ContentRoot/>);
         };
 
         if (document.readyState === "loading") {

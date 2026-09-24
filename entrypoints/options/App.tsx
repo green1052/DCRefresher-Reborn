@@ -12,13 +12,13 @@ import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
 import {useModulesStore} from "@/stores/modules";
 
-const TABS: {id: string; label: string; content: React.ReactNode}[] = [
-    {id: "general", label: "일반", content: <GeneralTab />},
-    {id: "block", label: "차단", content: <BlockTab />},
-    {id: "memo", label: "메모", content: <MemoTab />},
-    {id: "module", label: "모듈", content: <ModuleTab />},
-    {id: "shortcut", label: "단축키", content: <ShortcutTab />},
-    {id: "data", label: "데이터", content: <DataTab />}
+const TABS: { id: string; label: string; content: React.ReactNode }[] = [
+    {id: "general", label: "일반", content: <GeneralTab/>},
+    {id: "block", label: "차단", content: <BlockTab/>},
+    {id: "memo", label: "메모", content: <MemoTab/>},
+    {id: "module", label: "모듈", content: <ModuleTab/>},
+    {id: "shortcut", label: "단축키", content: <ShortcutTab/>},
+    {id: "data", label: "데이터", content: <DataTab/>}
 ];
 
 export function App() {
@@ -52,7 +52,7 @@ export function App() {
 
         void detect();
 
-        const onUpdated = (tabId: number, changeInfo: {status?: string}, tab: {url?: string}): void => {
+        const onUpdated = (tabId: number, changeInfo: { status?: string }, tab: { url?: string }): void => {
             if (changeInfo.status === "complete" && tab.url?.includes("dcinside.com")) void detect();
         };
 
@@ -62,7 +62,14 @@ export function App() {
 
     return (
         <Tabs.Root defaultValue="general" style={{display: "flex", flex: 1, minHeight: "100vh"}}>
-            <Box style={{flex: "none", padding: 16, alignSelf: "flex-start", position: "sticky", top: 0, height: "100%"}}>
+            <Box style={{
+                flex: "none",
+                padding: 16,
+                alignSelf: "flex-start",
+                position: "sticky",
+                top: 0,
+                height: "100%"
+            }}>
                 <Tabs.List
                     style={{
                         flexDirection: "column",
@@ -75,7 +82,8 @@ export function App() {
                     }}
                 >
                     {TABS.map((tab) => (
-                        <Tabs.Trigger key={tab.id} value={tab.id} style={{justifyContent: "flex-start", borderRadius: 8, padding: "8px 14px"}}>
+                        <Tabs.Trigger key={tab.id} value={tab.id}
+                                      style={{justifyContent: "flex-start", borderRadius: 8, padding: "8px 14px"}}>
                             {tab.label}
                         </Tabs.Trigger>
                     ))}

@@ -2,22 +2,22 @@ import {block} from "@/core/block";
 import type {GalleryPreData} from "@/features/types";
 import type {ModuleContext} from "@/core/module/types";
 
-import {restoreArchive, setDeleted, type DcinsideComment} from "./cache";
+import {type DcinsideComment, restoreArchive, setDeleted} from "./cache";
 
 export interface ProcessedComment extends DcinsideComment {
     /** 음성댓글 — vr_player */
-    voice?: {src: string};
+    voice?: { src: string };
 }
 
 const GALLOG_DCCON = /dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/;
 
 const cleanMemo = (memo: string): string =>
     memo
-        .replace(/data-dcconoverstatus="?\w+"?/g, 'data-dcconoverstatus="true"')
+        .replace(/data-dcconoverstatus="?\w+"?/g, "data-dcconoverstatus=\"true\"")
         .replace(/ onmousedown="[^"]*"/g, "")
         .replace(/ style="[^"]*"/g, "");
 
-const extractVoice = (memo: string): {memo: string; voice?: {src: string}} | undefined => {
+const extractVoice = (memo: string): { memo: string; voice?: { src: string } } | undefined => {
     if (!memo.includes("@^dc^@")) return;
 
     const [display = "", raw = ""] = memo.split("@^dc^@");
@@ -31,7 +31,7 @@ export const processComments = (
     raw: DcinsideComment[],
     preData: GalleryPreData,
     ctx: ModuleContext
-): {list: ProcessedComment[]; threads: number; totalCnt: number} => {
+): { list: ProcessedComment[]; threads: number; totalCnt: number } => {
     // 아카이브(삭제글 보존)
     let list: ProcessedComment[] = ctx.settings.archiveArticle === true ? (restoreArchive(preData, raw) as ProcessedComment[]) : (raw as ProcessedComment[]);
 

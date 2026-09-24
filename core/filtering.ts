@@ -64,7 +64,7 @@ const matchAllScopes = (addedElements: HTMLElement[]): Map<string, Set<HTMLEleme
 
     if (neverExpireIds.size === 0 || addedElements.length === 0) return result;
 
-    const scopes: {id: string; scope: string}[] = [];
+    const scopes: { id: string; scope: string }[] = [];
     for (const id of neverExpireIds) {
         const entry = lists.get(id);
         if (!entry) continue;

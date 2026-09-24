@@ -2,7 +2,6 @@ import {Button, Checkbox, Dialog, Flex, Text, TextField} from "@radix-ui/themes"
 import {useEffect, useState} from "react";
 
 import {RefresherSelect} from "@/components/RefresherSelect";
-import {DETECT_MODE_NAMES} from "@/core/storage/items";
 import {composeExtra} from "@/features/block/request";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import type {BlockInputFields} from "@/stores/blocks";
@@ -77,14 +76,15 @@ export const BlockDialog = ({open, type, typeNames, modeNames, initial, onClose,
                     </label>
 
                     <Text size="2">
-                        <Checkbox checked={isRegex} onCheckedChange={(value) => setIsRegex(value === true)} /> 정규식
+                        <Checkbox checked={isRegex} onCheckedChange={(value) => setIsRegex(value === true)}/> 정규식
                     </Text>
 
                     <label>
                         <Text as="div" size="2" color="gray" mb="1">
                             특정 갤러리 차단 (선택)
                         </Text>
-                        <TextField.Root placeholder="갤러리 ID" value={gallery} onChange={(event) => setGallery(event.target.value)} />
+                        <TextField.Root placeholder="갤러리 ID" value={gallery}
+                                        onChange={(event) => setGallery(event.target.value)}/>
                     </label>
 
                     <Flex justify="between" align="center">

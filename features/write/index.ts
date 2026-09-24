@@ -1,4 +1,4 @@
-import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
+import type {ModuleDefinition} from "@/core/module/types";
 
 let boundButton: HTMLButtonElement | null = null;
 let boundClick: ((event: MouseEvent) => void) | null = null;

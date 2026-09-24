@@ -28,7 +28,8 @@ export function ModuleTab() {
                                 {schema.description}
                             </Text>
                         </Box>
-                        <Switch size="2" checked={schema.enable} onCheckedChange={(value) => void toggle(schema.id, value, tabId)} />
+                        <Switch size="2" checked={schema.enable}
+                                onCheckedChange={(value) => void toggle(schema.id, value, tabId)}/>
                     </Flex>
                 </Box>
             ))}

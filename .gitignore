@@ -4,5 +4,4 @@
 node_modules
 .env
 web-ext.config.ts
-PLAN.md
 .release-tree

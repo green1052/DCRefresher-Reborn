@@ -1,5 +1,5 @@
 import {http} from "@/core/http/client";
-import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
+import type {ModuleDefinition} from "@/core/module/types";
 import {galleryType, galleryTypeName, urls} from "@/core/http/urls";
 
 const manageModule: ModuleDefinition = {

@@ -93,7 +93,7 @@ const layoutModule: ModuleDefinition = {
         pushToRight: {
             type: "check",
             name: "본문 영역 전체로 확장",
-            desc: '"잡다 링크 숨기기" 옵션이 켜진 경우 본문 영역을 확장합니다.',
+            desc: "\"잡다 링크 숨기기\" 옵션이 켜진 경우 본문 영역을 확장합니다.",
             default: false
         },
         removeNotice: {

@@ -157,7 +157,7 @@ export function DataTab() {
                 }
                 right={
                     <Button size="2" variant="soft" disabled={loading} onClick={() => void forceUpdate()}>
-                        <RefreshCw size={12} /> 지금 갱신
+                        <RefreshCw size={12}/> 지금 갱신
                     </Button>
                 }
             />
@@ -203,7 +203,8 @@ export function DataTab() {
                 </Button>
             </Flex>
 
-            <ConfirmDialog open={notice !== null} title={notice ?? ""} cancelLabel={null} onClose={() => setNotice(null)} onConfirm={() => setNotice(null)} />
+            <ConfirmDialog open={notice !== null} title={notice ?? ""} cancelLabel={null}
+                           onClose={() => setNotice(null)} onConfirm={() => setNotice(null)}/>
 
             <ConfirmDialog
                 open={confirming !== null}

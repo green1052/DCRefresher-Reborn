@@ -1,7 +1,7 @@
 import {create} from "zustand";
 
 import {isBlockEntry} from "@/core/block";
-import {blockDefaultsStorage, blockStorage, BLOCK_TYPES, DEFAULT_DETECT_MODE} from "@/core/storage/items";
+import {BLOCK_TYPES, blockDefaultsStorage, blockStorage, DEFAULT_DETECT_MODE} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 
 export interface BlockInputFields {

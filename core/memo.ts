@@ -1,4 +1,4 @@
-import {memoStorage, MEMO_TYPES, MEMO_TYPE_NAMES} from "@/core/storage/items";
+import {MEMO_TYPE_NAMES, MEMO_TYPES, memoStorage} from "@/core/storage/items";
 import type {MemoEntry, MemoType} from "@/core/storage/types";
 
 const caches: Record<MemoType, Record<string, MemoEntry>> = {

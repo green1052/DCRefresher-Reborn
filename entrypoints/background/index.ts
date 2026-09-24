@@ -1,5 +1,5 @@
 import {registerDatabaseService} from "@/core/services/database";
-import {CONTEXT_MENUS, sendMessage, type ContextMenuAction} from "@/core/messaging/protocol";
+import {CONTEXT_MENUS, type ContextMenuAction, sendMessage} from "@/core/messaging/protocol";
 import {dbStorage} from "@/core/storage/items";
 
 const DATABASE_UPDATE_INTERVAL = 604_800_000; // 7일

@@ -4,9 +4,9 @@ import {MemoDialog} from "./MemoDialog";
 import {PreviewHost} from "@/features/preview/ui/PreviewHost";
 import {eventBus} from "@/core/eventbus/bus";
 import {ISPData} from "@/utils/ip";
-import {useUiStore, type ToastData} from "@/stores/ui";
+import {type ToastData, useUiStore} from "@/stores/ui";
 
-const ToastItem = ({toast}: {toast: ToastData}) => {
+const ToastItem = ({toast}: { toast: ToastData }) => {
     useEffect(() => {
         if (toast.autoClose <= 0) return;
         const timer = setTimeout(() => useUiStore.getState().dismissToast(toast.id), toast.autoClose);
@@ -33,13 +33,13 @@ const ToastItem = ({toast}: {toast: ToastData}) => {
 const ToastHost = () => {
     const toast = useUiStore((s) => s.toast);
     if (!toast) return null;
-    return <ToastItem key={toast.id} toast={toast} />;
+    return <ToastItem key={toast.id} toast={toast}/>;
 };
 
 const COPY_FIELDS = [["nick", "닉네임"]] as const;
 
 /** 아이디와 IP는 한 줄에 병합: "uid (IP)" */
-const identityValue = (selected: {uid?: string; ip?: string}): string | undefined => {
+const identityValue = (selected: { uid?: string; ip?: string }): string | undefined => {
     if (selected.uid) return selected.ip ? `${selected.uid} (${selected.ip})` : selected.uid;
     return selected.ip;
 };
@@ -168,7 +168,8 @@ const BubbleHost = () => {
                 >
                     유저 차단
                 </button>
-                <button type="button" className="refresher-button" onClick={() => useUiStore.getState().openMemoForSelected()}>
+                <button type="button" className="refresher-button"
+                        onClick={() => useUiStore.getState().openMemoForSelected()}>
                     메모
                 </button>
                 {selected.uid && (
@@ -191,14 +192,14 @@ const BubbleHost = () => {
 const MemoHost = () => {
     const memo = useUiStore((s) => s.memo);
     if (!memo) return null;
-    return <MemoDialog key={JSON.stringify(memo)} />;
+    return <MemoDialog key={JSON.stringify(memo)}/>;
 };
 
 export const ContentRoot = () => (
     <>
-        <ToastHost />
-        <BubbleHost />
-        <MemoHost />
-        <PreviewHost />
+        <ToastHost/>
+        <BubbleHost/>
+        <MemoHost/>
+        <PreviewHost/>
     </>
 );

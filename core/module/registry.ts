@@ -1,6 +1,6 @@
 import {filter, type FilterOptions} from "@/core/filtering";
 import {eventBus} from "@/core/eventbus/bus";
-import {modulesStorage, moduleDataStorage, moduleSettingsStorage} from "@/core/storage/items";
+import {moduleDataStorage, moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
 import type {JsonValue, SettingValue} from "@/core/storage/types";
 import type {ModuleContext, ModuleDefinition, ModuleHandle, ModuleSchema, SettingSchema} from "./types";
 
@@ -206,7 +206,8 @@ export const modules = {
     },
 
     /** 설정값 변경 (popup→messaging 경로). 저장 + 즉시 적용. 정규화된 값 반환 */
-    setSetting: async (id: string, key: string, value: SettingValue): Promise<SettingValue> => {        const instance = instances.get(id);
+    setSetting: async (id: string, key: string, value: SettingValue): Promise<SettingValue> => {
+        const instance = instances.get(id);
         if (!instance || !instance.def.settings || !(key in instance.def.settings)) return value;
 
         const schema = instance.def.settings[key];

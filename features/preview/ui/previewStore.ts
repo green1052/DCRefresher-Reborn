@@ -9,7 +9,7 @@ export interface PreviewUser {
     ip?: string;
     Type?: string;
     image?: string;
-    memo?: {text: string; color: string};
+    memo?: { text: string; color: string };
 }
 
 export interface ErrorState {
@@ -46,7 +46,7 @@ interface PreviewState {
     comments: ProcessedComment[] | undefined;
     commentTotal: number | undefined;
     collapsed: Set<string>;
-    reply: {commentNo: string | null; replyNo: string | null};
+    reply: { commentNo: string | null; replyNo: string | null };
     showWrite: boolean;
     /** 댓글만 보기 (reply_num 클릭) */
     commentsOnly: boolean;
@@ -58,9 +58,9 @@ interface PreviewState {
     adminVisible: boolean;
 
     blockPopup: boolean;
-    captcha: {url: string; resolve: (code: string) => void} | null;
+    captcha: { url: string; resolve: (code: string) => void } | null;
 
-    mini: {preData: GalleryPreData; x: number; y: number; title: string; contents: string} | null;
+    mini: { preData: GalleryPreData; x: number; y: number; title: string; contents: string } | null;
 
     /** controller 연결 (setup에서 주입) */
     openHook: ((preData: GalleryPreData, commentsOnly?: boolean) => void) | null;
@@ -76,7 +76,7 @@ interface PreviewState {
     setVotes: (counts: string, fixedCounts: string) => void;
     close: () => void;
     toggleCollapse: (no: string) => void;
-    setReply: (reply: {commentNo: string | null; replyNo: string | null}) => void;
+    setReply: (reply: { commentNo: string | null; replyNo: string | null }) => void;
     setShowWrite: (show: boolean) => void;
     setCommentsOnly: (only: boolean) => void;
     setImageBlocked: (blocked: boolean) => void;
@@ -87,7 +87,7 @@ interface PreviewState {
     closeBlockPopup: () => void;
     openCaptcha: (url: string) => Promise<string>;
     closeCaptcha: () => void;
-    openMini: (data: {preData: GalleryPreData; x: number; y: number; title: string; contents: string}) => void;
+    openMini: (data: { preData: GalleryPreData; x: number; y: number; title: string; contents: string }) => void;
     closeMini: () => void;
     requestOpen: (preData: GalleryPreData, commentsOnly?: boolean) => void;
     requestClose: () => void;
@@ -210,7 +210,15 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     close: () => {
         const captcha = get().captcha;
         captcha?.resolve("");
-        set({visible: false, fading: true, comments: undefined, blockPopup: false, captcha: null, showWrite: false, reply: {commentNo: null, replyNo: null}});
+        set({
+            visible: false,
+            fading: true,
+            comments: undefined,
+            blockPopup: false,
+            captcha: null,
+            showWrite: false,
+            reply: {commentNo: null, replyNo: null}
+        });
         window.setTimeout(() => set({fading: false}), 200);
     },
 

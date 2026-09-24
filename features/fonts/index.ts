@@ -1,5 +1,4 @@
 import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
-import type {SettingValue} from "@/core/storage/types";
 
 const FONT_STYLE_ID = "refresherFontStyle";
 const FONT_SIZE_STYLE_ID = "refresherFontStyleSize";
@@ -33,7 +32,7 @@ let currentCtx: ModuleContext | null = null;
 const quoteFonts = (value: string): string =>
     value
         .split(",")
-        .map((font) => `"${font.trim().replace(/"/g, '\\"')}"`)
+        .map((font) => `"${font.trim().replace(/"/g, "\\\"")}"`)
         .filter(Boolean)
         .join(", ");
 

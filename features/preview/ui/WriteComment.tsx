@@ -118,14 +118,14 @@ export const WriteComment = () => {
                             setBigDccon(false);
                         }}
                     >
-                        <X size={18} />
+                        <X size={18}/>
                     </button>
                 )}
                 <button type="button" title="디시콘" onClick={() => setDcconOpen(true)}>
-                    <Smile size={18} />
+                    <Smile size={18}/>
                 </button>
                 <button type="button" className="primary" title="작성" onClick={() => void submit()}>
-                    <Send size={18} />
+                    <Send size={18}/>
                 </button>
             </div>
             <div className="refresher-write-comment-controls">

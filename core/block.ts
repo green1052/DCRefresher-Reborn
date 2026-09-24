@@ -1,4 +1,4 @@
-import {blockDefaultsStorage, blockStorage, BLOCK_TYPES, DEFAULT_DETECT_MODE, DETECT_MODES} from "@/core/storage/items";
+import {BLOCK_TYPES, blockDefaultsStorage, blockStorage, DEFAULT_DETECT_MODE, DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {LRUCache} from "lru-cache";
 
@@ -155,7 +155,10 @@ export const remove = async (type: BlockType, id: string): Promise<void> => {
     await blockStorage[type].setValue(caches[type]);
 };
 
-export const update = async (type: BlockType, id: string, input: Partial<BlockInput> & {content: string; isRegex: boolean}): Promise<void> => {
+export const update = async (type: BlockType, id: string, input: Partial<BlockInput> & {
+    content: string;
+    isRegex: boolean
+}): Promise<void> => {
     const list = caches[type].filter((entry) => entry.id !== id && !(entry.content === input.content && (entry.gallery ?? "") === (input.gallery ?? "")));
 
     const current = caches[type].find((entry) => entry.id === id);

@@ -14,15 +14,15 @@ interface ConfirmDialogProps {
 
 /** Themes Dialog 기반 confirm()/alert() 대체. 외부 클릭/Esc로 닫힘 */
 export const ConfirmDialog = ({
-    open,
-    title,
-    description,
-    confirmLabel = "확인",
-    cancelLabel = "취소",
-    danger,
-    onConfirm,
-    onClose
-}: ConfirmDialogProps) => (
+                                  open,
+                                  title,
+                                  description,
+                                  confirmLabel = "확인",
+                                  cancelLabel = "취소",
+                                  danger,
+                                  onConfirm,
+                                  onClose
+                              }: ConfirmDialogProps) => (
     <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
         <Dialog.Content style={{maxWidth: 440}}>
             <Dialog.Title>{title}</Dialog.Title>

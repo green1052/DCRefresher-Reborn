@@ -1,4 +1,4 @@
-import {useEffect, useState, type MouseEvent} from "react";
+import {type MouseEvent, useEffect, useState} from "react";
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
 
 import {adminDeleteComment, userDeleteComment} from "@/core/preview/request";
@@ -40,7 +40,7 @@ const extractIcon = (html: string | undefined): string | undefined =>
 
 const extractIp = (html: string | undefined): string | undefined => html?.match(/class=["']?ip["']?[^>]*>\s*\(([^)]+)\)/)?.[1];
 
-const TimeStamp = ({date}: {date: string}) => {
+const TimeStamp = ({date}: { date: string }) => {
     const parsed = parseDate(date);
     const [absolute, setAbsolute] = useState(false);
     const [, force] = useState(0);
@@ -70,7 +70,7 @@ export interface UserCardData {
     image?: string;
 }
 
-export const UserCard = ({user}: {user: UserCardData}) => {
+export const UserCard = ({user}: { user: UserCardData }) => {
     const isp = user.ip ? ISPData(user.ip).name : undefined;
 
     const openMenu = (event: MouseEvent): void => {
@@ -88,7 +88,7 @@ export const UserCard = ({user}: {user: UserCardData}) => {
                 <span className="refresher-user-nick">{user.nick ?? user.id ?? user.ip}</span>
                 {user.image && (
                     <span className="refresher-user-icon">
-                        <img src={user.image} alt="" />
+                        <img src={user.image} alt=""/>
                     </span>
                 )}
                 {[user.id, user.ip].filter(Boolean).length > 0 && (
@@ -156,7 +156,12 @@ export const Comment = ({comment, depth, replyCount}: CommentProps) => {
             data-deleted={isDeleted ? "true" : undefined}
         >
             <div className="refresher-comment-meta">
-                <UserCard user={{nick: comment.name, id: comment.user_id, ip: comment.ip || extractIp(comment.gallog_icon) || extractIp(comment.nickname as string | undefined), image: extractIcon(comment.gallog_icon)}} />
+                <UserCard user={{
+                    nick: comment.name,
+                    id: comment.user_id,
+                    ip: comment.ip || extractIp(comment.gallog_icon) || extractIp(comment.nickname as string | undefined),
+                    image: extractIcon(comment.gallog_icon)
+                }}/>
                 {depth === 0 && replyCount > 1 && (
                     <button
                         type="button"
@@ -164,7 +169,7 @@ export const Comment = ({comment, depth, replyCount}: CommentProps) => {
                         title="답글 접기"
                         onClick={() => toggleCollapse(comment.no)}
                     >
-                        <ChevronDown size={16} style={{transform: collapsed ? "rotate(-90deg)" : undefined}} />
+                        <ChevronDown size={16} style={{transform: collapsed ? "rotate(-90deg)" : undefined}}/>
                     </button>
                 )}
                 <div className="refresher-comment-controls-container">
@@ -179,25 +184,27 @@ export const Comment = ({comment, depth, replyCount}: CommentProps) => {
                                 })
                             }
                         >
-                            {reply.replyNo === comment.no ? <Check size={15} /> : <ReplyIcon size={15} />}
+                            {reply.replyNo === comment.no ? <Check size={15}/> : <ReplyIcon size={15}/>}
                         </button>
                     )}
                     {canDelete && (
-                        <button type="button" className="refresher-comment-controls" title="댓글 삭제" onClick={() => void onDelete()}>
-                            <X size={15} />
+                        <button type="button" className="refresher-comment-controls" title="댓글 삭제"
+                                onClick={() => void onDelete()}>
+                            <X size={15}/>
                         </button>
                     )}
-                    <TimeStamp date={String(comment.reg_date ?? comment.date_time ?? "")} />
+                    <TimeStamp date={String(comment.reg_date ?? comment.date_time ?? "")}/>
                 </div>
             </div>
             <div className="refresher-comment-content-inner">
                 {comment.voice &&
                     (comment.voice.src.startsWith("https://vr.dcinside.com") ? (
-                        <audio controls src={comment.voice.src} />
+                        <audio controls src={comment.voice.src}/>
                     ) : (
-                        <iframe src={comment.voice.src} width={280} height={54} style={{border: 0}} title="voice" />
+                        <iframe src={comment.voice.src} width={280} height={54} style={{border: 0}} title="voice"/>
                     ))}
-                <div className={"refresher-comment-content" + (isDccon ? " dccon" : "")} dangerouslySetInnerHTML={{__html: html}} />
+                <div className={"refresher-comment-content" + (isDccon ? " dccon" : "")}
+                     dangerouslySetInnerHTML={{__html: html}}/>
             </div>
         </div>
     );

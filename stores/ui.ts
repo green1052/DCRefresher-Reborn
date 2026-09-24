@@ -29,7 +29,7 @@ export interface MemoTargetState {
 interface UiState {
     toast: ToastData | null;
     selected: SelectedUser | null;
-    bubble: {x: number; y: number} | null;
+    bubble: { x: number; y: number } | null;
     memo: MemoTargetState | null;
 
     showToast: (content: string, type?: ToastLevel, autoClose?: number, onClick?: () => void) => void;

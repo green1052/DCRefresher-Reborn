@@ -4,35 +4,89 @@ import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
 import type {GalleryPreData, IPostInfo} from "@/features/types";
 import {useUiStore} from "@/stores/ui";
 
-import {getEntry, setEntry, type DcinsideComment} from "@/core/preview/cache";
+import {type DcinsideComment, getEntry, setEntry} from "@/core/preview/cache";
 import {processComments} from "@/core/preview/comments";
-import {bump, blockUser, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
-import {usePreviewStore, type ErrorState, type ManageKind} from "./ui/previewStore";
+import {blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
+import {type ErrorState, type ManageKind, usePreviewStore} from "./ui/previewStore";
 
 const settings: NonNullable<ModuleDefinition["settings"]> = {
     tooltipMode: {type: "check", name: "미니 미리보기 표시", desc: "게시글에 마우스를 올리면 미리보기를 표시합니다.", default: false},
     tooltipMediaHide: {type: "check", name: "미니 미리보기 미디어 숨기기", desc: "미니 미리보기에서 이미지와 동영상을 숨깁니다.", default: false},
-    tooltipDelay: {type: "range", name: "미니 미리보기 딜레이", desc: "미니 미리보기가 표시되기까지의 지연 시간입니다.", default: 0, min: 0, max: 1000, step: 50, unit: "ms"},
+    tooltipDelay: {
+        type: "range",
+        name: "미니 미리보기 딜레이",
+        desc: "미니 미리보기가 표시되기까지의 지연 시간입니다.",
+        default: 0,
+        min: 0,
+        max: 1000,
+        step: 50,
+        unit: "ms"
+    },
     tooltipInteraction: {type: "check", name: "미니 미리보기 상호작용", desc: "미니 미리보기 위에서 마우스를 사용할 수 있게 합니다.", default: false},
-    tooltipRatioDisable: {type: "check", name: "미니 미리보기 글/댓글 비율 강조 비활성화", desc: "미니 미리보기의 글/댓글 비율 강조를 끕니다.", default: false},
+    tooltipRatioDisable: {
+        type: "check",
+        name: "미니 미리보기 글/댓글 비율 강조 비활성화",
+        desc: "미니 미리보기의 글/댓글 비율 강조를 끕니다.",
+        default: false
+    },
     reversePreviewKey: {type: "check", name: "미리보기 키 반전", desc: "좌클릭으로 미리보기, 우클릭으로 게시글 이동을 사용합니다.", default: false},
-    longPressDelay: {type: "range", name: "길게 누르기 판정 시간", desc: "이 시간보다 짧게 누르면 미리보기가 열립니다.", default: 300, min: 200, max: 2000, step: 50, unit: "ms"},
+    longPressDelay: {
+        type: "range",
+        name: "길게 누르기 판정 시간",
+        desc: "이 시간보다 짧게 누르면 미리보기가 열립니다.",
+        default: 300,
+        min: 200,
+        max: 2000,
+        step: 50,
+        unit: "ms"
+    },
     colorPreviewLink: {type: "check", name: "게시글 URL 변경", desc: "미리보기로 본 게시글의 주소와 제목을 변경합니다.", default: true},
     autoRefreshComment: {type: "check", name: "댓글 자동 새로고침", desc: "일정 주기로 댓글을 자동으로 새로고침합니다.", default: false},
-    commentRefreshInterval: {type: "range", name: "댓글 자동 새로고침 주기", desc: "댓글 자동 새로고침 주기입니다.", default: 10000, min: 3000, max: 20000, step: 100, unit: "ms"},
+    commentRefreshInterval: {
+        type: "range",
+        name: "댓글 자동 새로고침 주기",
+        desc: "댓글 자동 새로고침 주기입니다.",
+        default: 10000,
+        min: 3000,
+        max: 20000,
+        step: 100,
+        unit: "ms"
+    },
     toggleBlur: {type: "check", name: "게시글 배경 블러", desc: "게시글 배경을 흐리게 표시합니다.", default: true},
     toggleBackgroundBlur: {type: "check", name: "바깥 배경 블러", desc: "미리보기 바깥 배경을 흐리게 표시합니다.", default: true},
     toggleAdminPanel: {type: "check", name: "관리 패널 활성화", desc: "관리 권한이 있을 때 관리 패널을 표시합니다.", default: true},
     useKeyPress: {type: "check", name: "단축키로 댓글 관리", desc: "D/B 키로 빠르게 삭제/차단합니다.", default: true},
-    blockPresetDay: {type: "option", name: "차단 프리셋 - 차단 기간", desc: "B키 단축 차단의 기본 차단 기간입니다.", default: "1", items: {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"}},
-    blockPresetReason: {type: "text", name: "차단 프리셋 - 차단 사유", desc: "B키 단축 차단의 기본 차단 사유입니다. (한글 20자 이내)", default: "", placeholder: "차단 사유 직접 입력 (한글 20자 이내)"},
+    blockPresetDay: {
+        type: "option",
+        name: "차단 프리셋 - 차단 기간",
+        desc: "B키 단축 차단의 기본 차단 기간입니다.",
+        default: "1",
+        items: {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"}
+    },
+    blockPresetReason: {
+        type: "text",
+        name: "차단 프리셋 - 차단 사유",
+        desc: "B키 단축 차단의 기본 차단 사유입니다. (한글 20자 이내)",
+        default: "",
+        placeholder: "차단 사유 직접 입력 (한글 20자 이내)"
+    },
     blockPresetDelete: {type: "check", name: "차단 프리셋 - 선택한 글 삭제", desc: "B키 단축 차단 시 게시글도 함께 삭제합니다.", default: false},
-    blockPresetUserType: {type: "check", name: "차단 프리셋 - IP 동시 차단", desc: "B키 단축 차단 시 식별 코드 차단과 함께 IP도 차단합니다.", default: false},
+    blockPresetUserType: {
+        type: "check",
+        name: "차단 프리셋 - IP 동시 차단",
+        desc: "B키 단축 차단 시 식별 코드 차단과 함께 IP도 차단합니다.",
+        default: false
+    },
     expandRecognizeRange: {type: "check", name: "게시글 인식 범위 확장", desc: "행 전체를 클릭해도 미리보기가 열리게 합니다.", default: false},
     experimentalComment: {type: "check", name: "실험적 댓글 기능", desc: "실험적 댓글 기능을 활성화합니다.", default: false},
     disableCache: {type: "check", name: "캐시 비활성화", desc: "미리보기 캐시를 사용하지 않습니다.", default: false},
     archiveArticle: {type: "check", name: "삭제된 글과 댓글 보존", desc: "캐시된 게시글이 삭제되어도 이전 내용을 보여줍니다.", default: false},
-    blockImage: {type: "check", name: "이미지가 없는 게시글 이미지 차단", desc: "본문 이미지를 기본으로 숨깁니다. 미리보기에서 버튼으로 다시 볼 수 있습니다.", default: false}
+    blockImage: {
+        type: "check",
+        name: "이미지가 없는 게시글 이미지 차단",
+        desc: "본문 이미지를 기본으로 숨깁니다. 미리보기에서 버튼으로 다시 볼 수 있습니다.",
+        default: false
+    }
 };
 
 export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
@@ -73,7 +127,7 @@ const controller = (ctx: ModuleContext) => {
     const ui = useUiStore.getState();
 
     let abort: AbortController | null = null;
-    let savedHistory: {title: string; url: string; state: unknown} | null = null;
+    let savedHistory: { title: string; url: string; state: unknown } | null = null;
     let refreshTimer = 0;
     let pressStart = 0;
     let lastKey = "";
@@ -232,7 +286,7 @@ const controller = (ctx: ModuleContext) => {
     const handleManageResponse = (response: unknown) => {
         if (!response || typeof response !== "object") return;
 
-        const {msg, result} = response as {msg?: string; result?: string};
+        const {msg, result} = response as { msg?: string; result?: string };
         if (typeof msg !== "string" || !msg) return;
 
         ui.showToast(msg, result === "success" ? "info" : "error");
@@ -315,7 +369,7 @@ const controller = (ctx: ModuleContext) => {
             return;
         }
 
-        const state = event.state as {refresher?: number; preData?: GalleryPreData} | null;
+        const state = event.state as { refresher?: number; preData?: GalleryPreData } | null;
         if (state?.refresher === 1 && state.preData) {
             open(state.preData, false, true);
         }
@@ -473,7 +527,12 @@ const controller = (ctx: ModuleContext) => {
         close();
     });
 
-    store.getState().setHooks({open, close: () => close(), refresh: () => void refreshComments(), manage: (kind) => void manage(kind)});
+    store.getState().setHooks({
+        open,
+        close: () => close(),
+        refresh: () => void refreshComments(),
+        manage: (kind) => void manage(kind)
+    });
 };
 
 const previewModule: ModuleDefinition = {

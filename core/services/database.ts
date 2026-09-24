@@ -1,4 +1,4 @@
-import {createProxyService, registerService, type ProxyServiceKey} from "@webext-core/proxy-service";
+import {createProxyService, type ProxyServiceKey, registerService} from "@webext-core/proxy-service";
 
 import {http} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
@@ -7,6 +7,7 @@ import {dbStorage} from "@/core/storage/items";
 export interface DatabaseService {
     /** IP/밴 데이터베이스를 강제로 다시 내려받아 저장 */
     forceUpdate(): Promise<void>;
+
     lastUpdate(): Promise<number>;
 }
 

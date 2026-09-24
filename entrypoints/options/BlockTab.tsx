@@ -1,12 +1,12 @@
 import {Badge, Box, Button, Dialog, Flex, IconButton, Table, Text, TextArea} from "@radix-ui/themes";
-import {Plus, X, Download, Upload} from "lucide-react";
+import {Download, Plus, Upload, X} from "lucide-react";
 import {useState} from "react";
 
 import {BlockDialog} from "@/components/BlockDialog";
 import {ConfirmDialog} from "@/components/ConfirmDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
 import {isBlockEntry} from "@/core/block";
-import {BLOCK_TYPES, TYPE_NAMES, DETECT_MODE_NAMES} from "@/core/storage/items";
+import {BLOCK_TYPES, DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import type {BlockInputFields} from "@/stores/blocks";
 import {useBlocksStore} from "@/stores/blocks";
@@ -29,7 +29,7 @@ export function BlockTab() {
     const setDefault = useBlocksStore((state) => state.setDefault);
     const setEntries = useBlocksStore((state) => state.setEntries);
 
-    const [dialog, setDialog] = useState<{type: BlockType; initial: BlockEntry | null} | null>(null);
+    const [dialog, setDialog] = useState<{ type: BlockType; initial: BlockEntry | null } | null>(null);
     const [clearConfirm, setClearConfirm] = useState<BlockType | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
     const [importOpen, setImportOpen] = useState(false);
@@ -64,7 +64,10 @@ export function BlockTab() {
         if (!dialog) return;
 
         // 디시콘은 생성시 부여된 별명("제목 [패키지번호]")을 유지
-        const next = dialog.type === "DCCON" && dialog.initial?.extra ? {...fields, extra: dialog.initial.extra} : fields;
+        const next = dialog.type === "DCCON" && dialog.initial?.extra ? {
+            ...fields,
+            extra: dialog.initial.extra
+        } : fields;
 
         if (dialog.initial) await updateEntry(dialog.type, dialog.initial.id, next);
         else await addEntry(dialog.type, next);
@@ -78,11 +81,13 @@ export function BlockTab() {
                 title="차단"
                 actions={
                     <>
-                        <IconButton size="2" variant="ghost" color="gray" title="내보내기" onClick={() => void exportBlocks()}>
-                            <Download size={16} />
+                        <IconButton size="2" variant="ghost" color="gray" title="내보내기"
+                                    onClick={() => void exportBlocks()}>
+                            <Download size={16}/>
                         </IconButton>
-                        <IconButton size="2" variant="ghost" color="gray" title="가져오기" onClick={() => setImportOpen(true)}>
-                            <Upload size={16} />
+                        <IconButton size="2" variant="ghost" color="gray" title="가져오기"
+                                    onClick={() => setImportOpen(true)}>
+                            <Upload size={16}/>
                         </IconButton>
                     </>
                 }
@@ -120,8 +125,9 @@ export function BlockTab() {
                                     {TYPE_NAMES[type]} <Badge color="gray" variant="soft">{list.length}개</Badge>
                                 </Text>
                                 <Flex gap="2">
-                                    <IconButton variant="ghost" color="gray" size="1" title="추가" onClick={() => setDialog({type, initial: null})}>
-                                        <Plus size={14} />
+                                    <IconButton variant="ghost" color="gray" size="1" title="추가"
+                                                onClick={() => setDialog({type, initial: null})}>
+                                        <Plus size={14}/>
                                     </IconButton>
                                     <IconButton
                                         variant="ghost"
@@ -131,7 +137,7 @@ export function BlockTab() {
                                         disabled={list.length === 0}
                                         onClick={() => setClearConfirm(type)}
                                     >
-                                        <X size={12} />
+                                        <X size={12}/>
                                     </IconButton>
                                 </Flex>
                             </Flex>
@@ -144,7 +150,7 @@ export function BlockTab() {
                                         <Table.Row>
                                             <Table.ColumnHeaderCell>항목</Table.ColumnHeaderCell>
                                             <Table.ColumnHeaderCell>정보</Table.ColumnHeaderCell>
-                                            <Table.ColumnHeaderCell />
+                                            <Table.ColumnHeaderCell/>
                                         </Table.Row>
                                     </Table.Header>
                                     <Table.Body>
@@ -156,7 +162,8 @@ export function BlockTab() {
                                             >
                                                 <Table.RowHeaderCell>
                                                     {type === "DCCON" ? (
-                                                        <img src={dcconImage(entry)} alt={entry.extra ?? entry.content} style={{display: "block", height: 40}} />
+                                                        <img src={dcconImage(entry)} alt={entry.extra ?? entry.content}
+                                                             style={{display: "block", height: 40}}/>
                                                     ) : (
                                                         <Text weight="medium">{entry.content}</Text>
                                                     )}
@@ -177,7 +184,7 @@ export function BlockTab() {
                                                             void removeEntry(type, entry.id);
                                                         }}
                                                     >
-                                                        <X size={12} />
+                                                        <X size={12}/>
                                                     </IconButton>
                                                 </Table.Cell>
                                             </Table.Row>
@@ -214,7 +221,8 @@ export function BlockTab() {
                 onClose={() => setClearConfirm(null)}
             />
 
-            <ConfirmDialog open={notice !== null} title={notice ?? ""} cancelLabel={null} onClose={() => setNotice(null)} onConfirm={() => setNotice(null)} />
+            <ConfirmDialog open={notice !== null} title={notice ?? ""} cancelLabel={null}
+                           onClose={() => setNotice(null)} onConfirm={() => setNotice(null)}/>
 
             <Dialog.Root open={importOpen} onOpenChange={(next) => !next && setImportOpen(false)}>
                 <Dialog.Content style={{maxWidth: 520}}>
@@ -223,7 +231,9 @@ export function BlockTab() {
                         내보낸 JSON 데이터를 붙여넣어주세요.
                     </Dialog.Description>
 
-                    <TextArea placeholder="JSON 데이터" value={importText} onChange={(event) => setImportText(event.target.value)} style={{minHeight: 160}} autoFocus />
+                    <TextArea placeholder="JSON 데이터" value={importText}
+                              onChange={(event) => setImportText(event.target.value)} style={{minHeight: 160}}
+                              autoFocus/>
 
                     <Flex gap="3" justify="end" mt="4">
                         <Dialog.Close>

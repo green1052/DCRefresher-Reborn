@@ -4,11 +4,20 @@ import type {JsonValue, SettingValue} from "@/core/storage/types";
 import type Emittery from "emittery";
 
 export type SettingSchema =
-    | {type: "check"; name: string; desc: string; default: boolean}
-    | {type: "text"; name: string; desc: string; default: string; placeholder?: string}
-    | {type: "range"; name: string; desc: string; default: number; min: number; max: number; step: number; unit: string}
-    | {type: "option"; name: string; desc: string; default: string; items: Record<string, string>}
-    | {type: "order"; name: string; desc: string; default: string[]; items: Record<string, string>};
+    | { type: "check"; name: string; desc: string; default: boolean }
+    | { type: "text"; name: string; desc: string; default: string; placeholder?: string }
+    | {
+    type: "range";
+    name: string;
+    desc: string;
+    default: number;
+    min: number;
+    max: number;
+    step: number;
+    unit: string
+}
+    | { type: "option"; name: string; desc: string; default: string; items: Record<string, string> }
+    | { type: "order"; name: string; desc: string; default: string[]; items: Record<string, string> };
 
 export interface ModuleContext {
     /** 모듈 id */
@@ -19,8 +28,10 @@ export interface ModuleContext {
     data: Record<string, JsonValue>;
     /** 모듈 간 이벤트 버스 */
     bus: Emittery<ModuleEventData>;
+
     /** 요소 필터 등록. 해제 함수 반환 (disable시 자동 해제) */
     addFilter(scope: string, callback: (element: HTMLElement) => void, options?: FilterOptions): () => void;
+
     /** 해제 함수 등록 (이벤트 리스너, DOM 리스너 등). disable시 자동 해제 */
     addCleanup(dispose: () => void): void;
 }
@@ -37,14 +48,17 @@ export interface ModuleDefinition {
     defaultEnable?: boolean;
     /** 설정 스키마 (popup의 모듈 탭에서 렌더링됨) */
     settings?: Record<string, SettingSchema>;
-    /** 활성화시 실행. 리턴값은 다른 모듈이 modules.use(id)로 접근하는 공개 API */
-    setup(ctx: ModuleContext): unknown | void;
-    /** 비활성화시 실행 (DOM 정리 등). cleanup(disposer)은 이후 자동 해제 */
-    revoke?(ctx: ModuleContext): void;
-    /** 활성 중 설정이 변경됐을 때 실행 */
-    onChanged?(key: string, value: SettingValue): void;
     /** 단축키 (commands). registry가 활성 모듈에만 전달. api = setup()의 리턴값 */
     shortcuts?: Record<string, (ctx: ModuleContext, api: unknown) => void | Promise<void>>;
+
+    /** 활성화시 실행. 리턴값은 다른 모듈이 modules.use(id)로 접근하는 공개 API */
+    setup(ctx: ModuleContext): unknown | void;
+
+    /** 비활성화시 실행 (DOM 정리 등). cleanup(disposer)은 이후 자동 해제 */
+    revoke?(ctx: ModuleContext): void;
+
+    /** 활성 중 설정이 변경됐을 때 실행 */
+    onChanged?(key: string, value: SettingValue): void;
 }
 
 /** popup이 렌더링할 모듈 스키마 (JSON-serializable) */

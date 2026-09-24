@@ -2,9 +2,9 @@ import * as memoCore from "@/core/memo";
 import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
 import {http} from "@/core/http/client";
 import {eventBus} from "@/core/eventbus/bus";
-import {memoStorage, MEMO_TYPES} from "@/core/storage/items";
+import {MEMO_TYPES, memoStorage} from "@/core/storage/items";
 import type {JsonValue, MemoEntry, MemoType} from "@/core/storage/types";
-import {ISPData, format as formatIP} from "@/utils/ip";
+import {format as formatIP, ISPData} from "@/utils/ip";
 import {getBan} from "@/utils/ban";
 import {getType} from "@/utils/user";
 import {insertWriterSpan} from "@/utils/userDataInsert";
@@ -63,17 +63,14 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
     const badges = document.createElement("span");
     badges.className = "refresher-user-badges";
 
-    // uid와 ip는 DC DOM상 동시에 존재하지 않음 (고정닉=uid, 유동닉=ip). 둘 중 있는 것 표시
     const appendIdentity = (): void => {
         if (uid) {
-            // v5: .ub-writer의 첫 번째 이미지 = 닉콘
             const image = element.querySelector<HTMLImageElement>("img")?.src;
 
             const type = image ? getType(image) : "NONE";
             const isFixed = type.startsWith("FIXED");
             const isHalfFixed = type.startsWith("HALF_FIXED");
 
-            // 유동닉은 항상 표시 (v5: 고정/반고정만 설정으로 숨김)
             const show = isFixed ? ctx.settings.showFixedNickUID === true : isHalfFixed ? ctx.settings.showHalfFixedNickUID === true : true;
 
             if (show) badges.append(buildBadgeSpan(`(${uid})`, undefined, uid, "ip refresherUserData"));

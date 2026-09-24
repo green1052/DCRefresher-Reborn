@@ -1,4 +1,4 @@
-import {Box, Flex, Heading, Link, Text} from "@radix-ui/themes";
+import {Box, Flex, Link, Text} from "@radix-ui/themes";
 
 import logoUrl from "@/assets/icon.png";
 import {SettingItem} from "@/components/SettingItem";
@@ -25,15 +25,15 @@ export function GeneralTab() {
             <Section
                 title={
                     <Flex align="center" gap="3">
-                        <img src={logoUrl} alt="" width={44} height={44} style={{borderRadius: 10}} />
+                        <img src={logoUrl} alt="" width={44} height={44} style={{borderRadius: 10}}/>
                         <Box>
-                            DCRefresher <Text color="blue">Reborn</Text>
+                            DCRefresher Reborn
                         </Box>
                     </Flex>
                 }
                 actions={
                     <Text size="2" color="gray">
-                        v{browser.runtime.getManifest().version}
+                        v{import.meta.env.DEV ? `${browser.runtime.getManifest().version}-dev` : browser.runtime.getManifest().version}
                     </Text>
                 }
             >
@@ -52,7 +52,7 @@ export function GeneralTab() {
                 if (!schema.settings) return null;
 
                 return (
-                    <Section key={schema.id} title={schema.name} desc={schema.description}>
+                    <Section key={schema.id} title={schema.name}>
                         {Object.entries(schema.settings).map(([key, settingSchema]) => (
                             <SettingItem
                                 key={key}

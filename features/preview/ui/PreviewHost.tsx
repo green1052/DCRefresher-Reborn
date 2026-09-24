@@ -4,8 +4,8 @@ import {Popups} from "./Popups";
 
 export const PreviewHost = () => (
     <>
-        <Frame />
-        <Popups />
-        <Mini />
+        <Frame/>
+        <Popups/>
+        <Mini/>
     </>
 );

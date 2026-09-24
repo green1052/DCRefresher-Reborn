@@ -11,7 +11,9 @@ interface SettingItemProps {
     onChange: (value: SettingValue) => void;
 }
 
-type NarrowProps<T extends SettingSchema["type"]> = Omit<SettingItemProps, "schema"> & {schema: Extract<SettingSchema, {type: T}>};
+type NarrowProps<T extends SettingSchema["type"]> = Omit<SettingItemProps, "schema"> & {
+    schema: Extract<SettingSchema, { type: T }>
+};
 
 const formatDefault = (schema: SettingSchema): string => {
     switch (schema.type) {
@@ -185,11 +187,13 @@ export const SettingItem = ({schema, value, disabled, onChange}: SettingItemProp
 
             <Box>
                 {schema.type === "check" && (
-                    <Switch size="2" checked={Boolean(value)} disabled={disabled} onCheckedChange={(checked) => onChange(checked)} />
+                    <Switch size="2" checked={Boolean(value)} disabled={disabled}
+                            onCheckedChange={(checked) => onChange(checked)}/>
                 )}
                 {schema.type === "option" && (
-                    <Select.Root size="2" value={String(value)} disabled={disabled} onValueChange={(selected) => onChange(selected)}>
-                        <Select.Trigger style={{minWidth: 120}} />
+                    <Select.Root size="2" value={String(value)} disabled={disabled}
+                                 onValueChange={(selected) => onChange(selected)}>
+                        <Select.Trigger style={{minWidth: 120}}/>
                         <Select.Content>
                             {Object.entries(schema.items).map(([key, label]) => (
                                 <Select.Item key={key} value={key}>
