@@ -1,42 +1,16 @@
+import Emittery from "emittery";
+
 import type {ModuleEventMap} from "./types";
 
-type EventListener<T extends unknown[]> = (...args: T) => void;
-
 export class TypedEventBus<M extends {[K in keyof M]: unknown[]}> {
-    private listeners = new Map<keyof M & string, Set<Function>>();
+    private readonly emitter = new Emittery<Record<string, unknown[]>>();
 
-    on<K extends keyof M & string>(event: K, callback: EventListener<M[K]>, options?: {once?: boolean}): () => void {
-        let set = this.listeners.get(event);
-        if (!set) {
-            set = new Set();
-            this.listeners.set(event, set);
-        }
-
-        const wrapped = options?.once
-            ? (...args: unknown[]) => {
-                set.delete(wrapped);
-                callback(...(args as M[K]));
-            }
-            : (callback as unknown as Function);
-
-        set.add(wrapped);
-
-        return () => {
-            set.delete(wrapped);
-            if (set.size === 0) this.listeners.delete(event);
-        };
+    public on<K extends keyof M & string>(event: K, callback: (...args: M[K]) => void): () => void {
+        return this.emitter.on(event, (args: unknown) => callback(...(args as M[K])));
     }
 
-    emit<K extends keyof M & string>(event: K, ...args: M[K]): void {
-        const set = this.listeners.get(event);
-        if (!set) return;
-        for (const fn of [...set]) {
-            (fn as EventListener<M[K]>)(...args);
-        }
-    }
-
-    emitNextTick<K extends keyof M & string>(event: K, ...args: M[K]): void {
-        setTimeout(() => this.emit(event, ...args), 0);
+    public emit<K extends keyof M & string>(event: K, ...args: M[K]): void {
+        this.emitter.emit(event, args).catch(() => {});
     }
 }
 

@@ -1,6 +1,7 @@
 import {Plus, X} from "lucide-react";
 import {useState} from "react";
 
+import {RefresherSelect} from "@/components/RefresherSelect";
 import {MEMO_TYPES, MEMO_TYPE_NAMES} from "@/core/storage/items";
 import type {MemoEntry, MemoType} from "@/core/storage/types";
 import {useMemosStore} from "@/stores/memos";
@@ -47,18 +48,12 @@ const MemoFormDialog = ({
 
                 <div className="refresher-field">
                     <span className="refresher-field-label">종류</span>
-                    <select
-                        className="refresher-select"
+                    <RefresherSelect
                         value={state.type}
                         disabled={editing}
-                        onChange={(event) => setState((prev) => ({...prev, type: event.target.value as MemoType}))}
-                    >
-                        {MEMO_TYPES.map((type) => (
-                            <option key={type} value={type}>
-                                {MEMO_TYPE_NAMES[type]}
-                            </option>
-                        ))}
-                    </select>
+                        onChange={(next) => setState((prev) => ({...prev, type: next as MemoType}))}
+                        options={MEMO_TYPES.map((type) => [type, MEMO_TYPE_NAMES[type]] as [string, string])}
+                    />
                 </div>
 
                 <div className="refresher-field">

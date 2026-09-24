@@ -1,6 +1,7 @@
 import {Dialog} from "radix-ui";
 import {useEffect, useState} from "react";
 
+import {RefresherSelect} from "@/components/RefresherSelect";
 import {DETECT_MODE_NAMES} from "@/core/storage/items";
 import {composeExtra} from "@/features/block/request";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
@@ -88,14 +89,7 @@ export const BlockDialog = ({open, type, typeNames, modeNames, initial, onClose,
 
                     <div className="refresher-field">
                         <span className="refresher-field-label">차단 모드</span>
-                        <select className="refresher-select" value={mode} onChange={(event) => setMode(event.target.value as DetectMode | "")}>
-                            <option value="">기본값</option>
-                            {Object.entries(modeNames).map(([key, label]) => (
-                                <option key={key} value={key}>
-                                    {label}
-                                </option>
-                            ))}
-                        </select>
+                        <RefresherSelect value={mode} onChange={(next) => setMode(next as DetectMode | "")} options={[["", "기본값"], ...Object.entries(modeNames)]} />
                     </div>
 
                     {error && <p className="refresher-error">{error}</p>}

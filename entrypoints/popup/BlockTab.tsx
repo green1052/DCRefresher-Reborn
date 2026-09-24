@@ -2,6 +2,7 @@ import {Plus, X} from "lucide-react";
 import {useState} from "react";
 
 import {BlockDialog} from "@/components/BlockDialog";
+import {RefresherSelect} from "@/components/RefresherSelect";
 import {BLOCK_TYPES, TYPE_NAMES, DETECT_MODE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import type {BlockInputFields} from "@/stores/blocks";
@@ -44,17 +45,7 @@ export function BlockTab() {
             {BLOCK_TYPES.map((type) => (
                 <div key={`mode-${type}`} className="refresher-field">
                     <span className="refresher-field-label">{TYPE_NAMES[type]}</span>
-                    <select
-                        className="refresher-select"
-                        value={defaults[type]}
-                        onChange={(event) => void setDefault(type, event.target.value as DetectMode)}
-                    >
-                        {Object.entries(DETECT_MODE_NAMES).map(([key, label]) => (
-                            <option key={key} value={key}>
-                                {label}
-                            </option>
-                        ))}
-                    </select>
+                    <RefresherSelect value={defaults[type]} onChange={(next) => void setDefault(type, next as DetectMode)} options={Object.entries(DETECT_MODE_NAMES)} />
                 </div>
             ))}
 

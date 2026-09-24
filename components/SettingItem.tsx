@@ -1,6 +1,7 @@
 import {Switch} from "radix-ui";
 import {useEffect, useState} from "react";
 
+import {RefresherSelect} from "@/components/RefresherSelect";
 import type {SettingSchema} from "@/core/module/types";
 import type {SettingValue} from "@/core/storage/types";
 
@@ -145,18 +146,7 @@ export const SettingItem = ({schema, value, disabled, onChange}: SettingItemProp
                     </Switch.Root>
                 )}
                 {schema.type === "option" && (
-                    <select
-                        className="refresher-select"
-                        value={String(value)}
-                        disabled={disabled}
-                        onChange={(event) => onChange(event.target.value)}
-                    >
-                        {Object.entries(schema.items).map(([key, label]) => (
-                            <option key={key} value={key}>
-                                {label}
-                            </option>
-                        ))}
-                    </select>
+                    <RefresherSelect value={String(value)} disabled={disabled} onChange={onChange} options={Object.entries(schema.items)} />
                 )}
                 {schema.type === "text" && <TextControl {...{schema, value, disabled, onChange}} />}
                 {schema.type === "range" && <RangeControl {...{schema, value, disabled, onChange}} />}
