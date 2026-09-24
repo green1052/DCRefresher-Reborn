@@ -10,7 +10,7 @@ const DEFAULT_FONTS = "Noto Sans CJK KR, NanumGothic";
 const DC_FONT_TARGETS =
     ".refresherChangeDCFont .btn_cmt_close, .refresherChangeDCFont .btn_cmt_open, .refresherChangeDCFont .gall_list, .refresherChangeDCFont .view_comment div, .refresherChangeDCFont .view_content_wrap, .refresherChangeDCFont body, .refresherChangeDCFont button, .refresherChangeDCFont input";
 const EXTENSION_FONT_TARGETS =
-    ".refresherFont .refresher-block-popup, .refresherFont .refresher-captcha-popup, .refresherFont .refresher-frame, .refresherFont .refresher-popup, .refresherFont .refresher-dialog, .refresherFont .refresher-toast";
+    ".refresherFont .refresher-block-popup, .refresherFont .refresher-captcha-popup, .refresherFont .refresher-frame, .refresherFont .refresher-popup, .refresherFont .refresher-dialog, .refresherFont .refresher-bubble, .refresherFont .refresher-toast";
 
 const placeStyle = (id: string, css: string): void => {
     let style = document.head.querySelector<HTMLStyleElement>(`#${id}`);

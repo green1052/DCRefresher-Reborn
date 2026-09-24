@@ -185,11 +185,11 @@ export function MemoTab() {
                     </>
                 }
             >
-                {MEMO_TYPES.map((type) => {
+                {MEMO_TYPES.map((type, index) => {
                     const map = memos[type];
 
                     return (
-                        <Box key={type} mb="4">
+                        <Box key={type} mb="4" mt={index > 0 ? "4" : undefined}>
                             <Flex justify="between" align="center" mb="2">
                                 <Text size="2" weight="bold">
                                     {MEMO_TYPE_NAMES[type]} <Badge color="gray" variant="soft">{Object.keys(map).length}개</Badge>

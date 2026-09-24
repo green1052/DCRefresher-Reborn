@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useState, type MouseEvent} from "react";
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
 
 import {adminDeleteComment, userDeleteComment} from "@/core/preview/request";
@@ -73,8 +73,17 @@ export interface UserCardData {
 export const UserCard = ({user}: {user: UserCardData}) => {
     const isp = user.ip ? ISPData(user.ip).name : undefined;
 
+    const openMenu = (event: MouseEvent): void => {
+        event.preventDefault();
+
+        const ui = useUiStore.getState();
+        ui.setSelected({nick: user.nick, uid: user.id, ip: user.ip});
+        ui.closeBubble();
+        ui.openBubble(event.clientX, event.clientY);
+    };
+
     return (
-        <div className="refresher-user">
+        <div className="refresher-user" onContextMenu={openMenu}>
             <div className="refresher-user-content">
                 <span className="refresher-user-nick">{user.nick ?? user.id ?? user.ip}</span>
                 {user.image && (

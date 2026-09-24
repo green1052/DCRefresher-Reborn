@@ -75,7 +75,7 @@ export function BlockTab() {
     return (
         <Box>
             <Section
-                title="차단 모드"
+                title="차단"
                 actions={
                     <>
                         <IconButton size="2" variant="ghost" color="gray" title="내보내기" onClick={() => void exportBlocks()}>
@@ -87,106 +87,108 @@ export function BlockTab() {
                     </>
                 }
             >
-                {BLOCK_TYPES.map((type) => (
-                    <Row
-                        key={`mode-${type}`}
-                        left={
-                            <Text size="2" color="gray">
-                                {TYPE_NAMES[type]}
-                            </Text>
-                        }
-                        right={
-                            <RefresherSelect
-                                value={defaults[type]}
-                                onChange={(next) => void setDefault(type, next as DetectMode)}
-                                options={Object.entries(DETECT_MODE_NAMES)}
-                            />
-                        }
-                    />
-                ))}
-            </Section>
+                <Box mb="4">
+                    <Text as="div" size="2" weight="bold" mb="2">
+                        차단 모드
+                    </Text>
+                    {BLOCK_TYPES.map((type) => (
+                        <Row
+                            key={`mode-${type}`}
+                            left={
+                                <Text size="2" color="gray">
+                                    {TYPE_NAMES[type]}
+                                </Text>
+                            }
+                            right={
+                                <RefresherSelect
+                                    value={defaults[type]}
+                                    onChange={(next) => void setDefault(type, next as DetectMode)}
+                                    options={Object.entries(DETECT_MODE_NAMES)}
+                                />
+                            }
+                        />
+                    ))}
+                </Box>
 
-            {BLOCK_TYPES.map((type) => {
-                const list = entries[type];
+                {BLOCK_TYPES.map((type) => {
+                    const list = entries[type];
 
-                return (
-                    <Section
-                        key={type}
-                        title={
-                            <>
-                                {TYPE_NAMES[type]} <Badge color="gray" variant="soft">{list.length}개</Badge>
-                            </>
-                        }
-                        actions={
-                            <>
-                                <IconButton variant="ghost" color="gray" size="2" title="추가" onClick={() => setDialog({type, initial: null})}>
-                                    <Plus size={16} />
-                                </IconButton>
-                                <IconButton
-                                    variant="ghost"
-                                    color="gray"
-                                    size="2"
-                                    title="전체 삭제"
-                                    disabled={list.length === 0}
-                                    onClick={() => setClearConfirm(type)}
-                                >
-                                    <X size={14} />
-                                </IconButton>
-                            </>
-                        }
-                    >
-                        {list.length === 0 ? (
-                            <Empty>차단된 {TYPE_NAMES[type]} 없음</Empty>
-                        ) : (
-                            <Table.Root variant="surface">
-                                <Table.Header>
-                                    <Table.Row>
-                                        <Table.ColumnHeaderCell>항목</Table.ColumnHeaderCell>
-                                        <Table.ColumnHeaderCell>정보</Table.ColumnHeaderCell>
-                                        <Table.ColumnHeaderCell />
-                                    </Table.Row>
-                                </Table.Header>
-                                <Table.Body>
-                                    {list.map((entry) => (
-                                        <Table.Row
-                                            key={entry.id}
-                                            style={{cursor: "pointer"}}
-                                            onClick={() => setDialog({type, initial: entry})}
-                                        >
-                                            <Table.RowHeaderCell>
-                                                {type === "DCCON" ? (
-                                                    <img src={dcconImage(entry)} alt={entry.extra ?? entry.content} style={{display: "block", height: 40}} />
-                                                ) : (
-                                                    <Text weight="medium">{entry.content}</Text>
-                                                )}
-                                            </Table.RowHeaderCell>
-                                            <Table.Cell>
-                                                <Text size="2" color="gray">
-                                                    {[entry.gallery ? `갤러리: ${entry.gallery}` : null, entry.extra].filter(Boolean).join(" · ") || "—"}
-                                                </Text>
-                                            </Table.Cell>
-                                            <Table.Cell width="48px">
-                                                <IconButton
-                                                    variant="ghost"
-                                                    color="gray"
-                                                    size="1"
-                                                    title="삭제"
-                                                    onClick={(event) => {
-                                                        event.stopPropagation();
-                                                        void removeEntry(type, entry.id);
-                                                    }}
-                                                >
-                                                    <X size={12} />
-                                                </IconButton>
-                                            </Table.Cell>
+                    return (
+                        <Box key={type} mb="4">
+                            <Flex justify="between" align="center" mb="2">
+                                <Text size="2" weight="bold">
+                                    {TYPE_NAMES[type]} <Badge color="gray" variant="soft">{list.length}개</Badge>
+                                </Text>
+                                <Flex gap="2">
+                                    <IconButton variant="ghost" color="gray" size="1" title="추가" onClick={() => setDialog({type, initial: null})}>
+                                        <Plus size={14} />
+                                    </IconButton>
+                                    <IconButton
+                                        variant="ghost"
+                                        color="gray"
+                                        size="1"
+                                        title="전체 삭제"
+                                        disabled={list.length === 0}
+                                        onClick={() => setClearConfirm(type)}
+                                    >
+                                        <X size={12} />
+                                    </IconButton>
+                                </Flex>
+                            </Flex>
+
+                            {list.length === 0 ? (
+                                <Empty>차단된 {TYPE_NAMES[type]} 없음</Empty>
+                            ) : (
+                                <Table.Root variant="surface">
+                                    <Table.Header>
+                                        <Table.Row>
+                                            <Table.ColumnHeaderCell>항목</Table.ColumnHeaderCell>
+                                            <Table.ColumnHeaderCell>정보</Table.ColumnHeaderCell>
+                                            <Table.ColumnHeaderCell />
                                         </Table.Row>
-                                    ))}
-                                </Table.Body>
-                            </Table.Root>
-                        )}
-                    </Section>
-                );
-            })}
+                                    </Table.Header>
+                                    <Table.Body>
+                                        {list.map((entry) => (
+                                            <Table.Row
+                                                key={entry.id}
+                                                style={{cursor: "pointer"}}
+                                                onClick={() => setDialog({type, initial: entry})}
+                                            >
+                                                <Table.RowHeaderCell>
+                                                    {type === "DCCON" ? (
+                                                        <img src={dcconImage(entry)} alt={entry.extra ?? entry.content} style={{display: "block", height: 40}} />
+                                                    ) : (
+                                                        <Text weight="medium">{entry.content}</Text>
+                                                    )}
+                                                </Table.RowHeaderCell>
+                                                <Table.Cell>
+                                                    <Text size="2" color="gray">
+                                                        {[entry.gallery ? `갤러리: ${entry.gallery}` : null, entry.extra].filter(Boolean).join(" · ") || "—"}
+                                                    </Text>
+                                                </Table.Cell>
+                                                <Table.Cell width="48px">
+                                                    <IconButton
+                                                        variant="ghost"
+                                                        color="gray"
+                                                        size="1"
+                                                        title="삭제"
+                                                        onClick={(event) => {
+                                                            event.stopPropagation();
+                                                            void removeEntry(type, entry.id);
+                                                        }}
+                                                    >
+                                                        <X size={12} />
+                                                    </IconButton>
+                                                </Table.Cell>
+                                            </Table.Row>
+                                        ))}
+                                    </Table.Body>
+                                </Table.Root>
+                            )}
+                        </Box>
+                    );
+                })}
+            </Section>
 
             {dialog && (
                 <BlockDialog
