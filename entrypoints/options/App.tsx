@@ -32,22 +32,34 @@ export function App({optionsPage = false}: {optionsPage?: boolean}) {
     }, []);
 
     useEffect(() => {
-        void (async () => {
+        const detect = async (): Promise<void> => {
             const tabs = await browser.tabs.query({url: "*://*.dcinside.com/*"});
-            const tab = tabs.find((t) => t.id);
-            if (!tab?.id) {
-                setUnavailable(true);
-                return;
+
+            for (const tab of tabs) {
+                if (!tab.id) continue;
+
+                try {
+                    const schemas = await sendMessage("refresher:getModuleSchema", undefined, {tabId: tab.id});
+                    useModulesStore.setState({tabId: tab.id, unavailable: false});
+                    setSchemas(schemas);
+                    return;
+                } catch {
+                    // 이 탭의 콘텐츠 스크립트 무응답 (확장 리로드 직후 등) — 다음 탭 시도
+                }
             }
 
-            useModulesStore.setState({tabId: tab.id});
+            setUnavailable(true);
+        };
 
-            try {
-                setSchemas(await sendMessage("refresher:getModuleSchema", undefined, {tabId: tab.id}));
-            } catch {
-                setUnavailable(true);
-            }
-        })();
+        void detect();
+
+        // DC 탭 새로고침/이동 시 자동 재시도
+        const onUpdated = (tabId: number, changeInfo: {status?: string}, tab: {url?: string}): void => {
+            if (changeInfo.status === "complete" && tab.url?.includes("dcinside.com")) void detect();
+        };
+
+        browser.tabs.onUpdated.addListener(onUpdated);
+        return () => browser.tabs.onUpdated.removeListener(onUpdated);
     }, [setSchemas, setUnavailable]);
 
     return (
