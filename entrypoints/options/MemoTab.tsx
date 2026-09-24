@@ -1,5 +1,5 @@
 import {Plus, X, Download, Upload} from "lucide-react";
-import {Badge, Box, Button, Dialog, Flex, IconButton, Link, Table, Text, TextField, TextArea} from "@radix-ui/themes";
+import {Badge, Box, Button, Dialog, Flex, IconButton, Table, Text, TextField, TextArea} from "@radix-ui/themes";
 import {useState} from "react";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
@@ -10,8 +10,6 @@ import type {MemoEntry, MemoType} from "@/core/storage/types";
 import {useMemosStore} from "@/stores/memos";
 
 import {Empty, Section} from "./Layout";
-
-const MEMO_TARGET = "https://dcrefresher.green1052.com/utils/convert-memo";
 
 const randomColor = (): string => `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0")}`;
 
@@ -175,12 +173,7 @@ export function MemoTab() {
     return (
         <Box>
             <Section
-                title="데이터 관리"
-                desc={
-                    <Link href={MEMO_TARGET} target="_blank" rel="noreferrer">
-                        메모 변환
-                    </Link>
-                }
+                title="메모"
                 actions={
                     <>
                         <IconButton size="2" variant="ghost" color="gray" title="내보내기" onClick={() => void exportMemos()}>
@@ -192,95 +185,88 @@ export function MemoTab() {
                     </>
                 }
             >
-                <Text size="2" color="gray">
-                    갤로그/미리보기 등에서 유저 메모를 표시합니다.
-                </Text>
-            </Section>
+                {MEMO_TYPES.map((type) => {
+                    const map = memos[type];
 
-            {MEMO_TYPES.map((type) => {
-                const map = memos[type];
+                    return (
+                        <Box key={type} mb="4">
+                            <Flex justify="between" align="center" mb="2">
+                                <Text size="2" weight="bold">
+                                    {MEMO_TYPE_NAMES[type]} <Badge color="gray" variant="soft">{Object.keys(map).length}개</Badge>
+                                </Text>
+                                <Flex gap="2">
+                                    <IconButton
+                                        variant="ghost"
+                                        color="gray"
+                                        size="1"
+                                        title="추가"
+                                        onClick={() => setForm({type, user: "", text: "", color: randomColor()})}
+                                    >
+                                        <Plus size={14} />
+                                    </IconButton>
+                                    <IconButton
+                                        variant="ghost"
+                                        color="gray"
+                                        size="1"
+                                        title="전체 삭제"
+                                        disabled={Object.keys(map).length === 0}
+                                        onClick={() => setClearConfirm(type)}
+                                    >
+                                        <X size={12} />
+                                    </IconButton>
+                                </Flex>
+                            </Flex>
 
-                return (
-                    <Section
-                        key={type}
-                        title={
-                            <>
-                                {MEMO_TYPE_NAMES[type]} <Badge color="gray" variant="soft">{Object.keys(map).length}개</Badge>
-                            </>
-                        }
-                        actions={
-                            <>
-                                <IconButton
-                                    variant="ghost"
-                                    color="gray"
-                                    size="2"
-                                    title="추가"
-                                    onClick={() => setForm({type, user: "", text: "", color: randomColor()})}
-                                >
-                                    <Plus size={16} />
-                                </IconButton>
-                                <IconButton
-                                    variant="ghost"
-                                    color="gray"
-                                    size="2"
-                                    title="전체 삭제"
-                                    disabled={Object.keys(map).length === 0}
-                                    onClick={() => setClearConfirm(type)}
-                                >
-                                    <X size={14} />
-                                </IconButton>
-                            </>
-                        }
-                    >
-                        {Object.keys(map).length === 0 ? (
-                            <Empty>{MEMO_TYPE_NAMES[type]} 메모 없음</Empty>
-                        ) : (
-                            <Table.Root variant="surface">
-                                <Table.Header>
-                                    <Table.Row>
-                                        <Table.ColumnHeaderCell>대상</Table.ColumnHeaderCell>
-                                        <Table.ColumnHeaderCell>메모</Table.ColumnHeaderCell>
-                                        <Table.ColumnHeaderCell />
-                                    </Table.Row>
-                                </Table.Header>
-                                <Table.Body>
-                                    {Object.entries(map).map(([user, entry]) => (
-                                        <Table.Row
-                                            key={user}
-                                            style={{cursor: "pointer"}}
-                                            onClick={() => setForm({type, user, text: entry.text, color: entry.color})}
-                                        >
-                                            <Table.RowHeaderCell>
-                                                <Flex align="center" gap="2">
-                                                    <span style={{width: 10, height: 10, borderRadius: "50%", background: entry.color, flex: "none"}} />
-                                                    <Text weight="medium">{user}</Text>
-                                                </Flex>
-                                            </Table.RowHeaderCell>
-                                            <Table.Cell>
-                                                <Text color="gray">{entry.text}</Text>
-                                            </Table.Cell>
-                                            <Table.Cell width="48px">
-                                                <IconButton
-                                                    variant="ghost"
-                                                    color="gray"
-                                                    size="1"
-                                                    title="삭제"
-                                                    onClick={(event) => {
-                                                        event.stopPropagation();
-                                                        void removeMemo(type, user);
-                                                    }}
-                                                >
-                                                    <X size={12} />
-                                                </IconButton>
-                                            </Table.Cell>
+                            {Object.keys(map).length === 0 ? (
+                                <Empty>{MEMO_TYPE_NAMES[type]} 메모 없음</Empty>
+                            ) : (
+                                <Table.Root variant="surface">
+                                    <Table.Header>
+                                        <Table.Row>
+                                            <Table.ColumnHeaderCell>대상</Table.ColumnHeaderCell>
+                                            <Table.ColumnHeaderCell>메모</Table.ColumnHeaderCell>
+                                            <Table.ColumnHeaderCell />
                                         </Table.Row>
-                                    ))}
-                                </Table.Body>
-                            </Table.Root>
-                        )}
-                    </Section>
-                );
-            })}
+                                    </Table.Header>
+                                    <Table.Body>
+                                        {Object.entries(map).map(([user, entry]) => (
+                                            <Table.Row
+                                                key={user}
+                                                style={{cursor: "pointer"}}
+                                                onClick={() => setForm({type, user, text: entry.text, color: entry.color})}
+                                            >
+                                                <Table.RowHeaderCell>
+                                                    <Flex align="center" gap="2">
+                                                        <span style={{width: 10, height: 10, borderRadius: "50%", background: entry.color, flex: "none"}} />
+                                                        <Text weight="medium">{user}</Text>
+                                                    </Flex>
+                                                </Table.RowHeaderCell>
+                                                <Table.Cell>
+                                                    <Text color="gray">{entry.text}</Text>
+                                                </Table.Cell>
+                                                <Table.Cell width="48px">
+                                                    <IconButton
+                                                        variant="ghost"
+                                                        color="gray"
+                                                        size="1"
+                                                        title="삭제"
+                                                        onClick={(event) => {
+                                                            event.stopPropagation();
+                                                            void removeMemo(type, user);
+                                                        }}
+                                                    >
+                                                        <X size={12} />
+                                                    </IconButton>
+                                                </Table.Cell>
+                                            </Table.Row>
+                                        ))}
+                                    </Table.Body>
+                                </Table.Root>
+                            )}
+                        </Box>
+                    );
+                })}
+            </Section>
 
             {form && (
                 <MemoFormDialog
