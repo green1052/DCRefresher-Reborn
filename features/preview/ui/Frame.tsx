@@ -212,6 +212,10 @@ export const Frame = () => {
     const dataLoad = error ? "false" : loading || !post ? "true" : "false";
     const blurBackground = modules.use("preview")?.settings.toggleBackgroundBlur === true;
 
+    // 디시콘/차단/캡챠 팝업이 열려 있으면 프레임 클릭으로 미리보기를 닫지 않는다
+    const popupOpen = (): boolean =>
+        Boolean(document.querySelector(".refresher-dccon-popup, .refresher-block-popup, .refresher-captcha-popup"));
+
     return (
         <Dialog.Root
             open
@@ -223,7 +227,10 @@ export const Frame = () => {
             <Dialog.Portal>
                 <div
                     className={"refresher-frame-outer" + (blurBackground ? " blurred" : "") + (fading ? " fading" : "")}
-                    onPointerDown={() => usePreviewStore.getState().requestClose()}
+                    onPointerDown={() => {
+                        if (popupOpen()) return;
+                        usePreviewStore.getState().requestClose();
+                    }}
                 />
                 <Dialog.Content
                     className={"refresher-frame preview" + (fading ? " fading" : "")}
@@ -231,11 +238,11 @@ export const Frame = () => {
                     onOpenAutoFocus={(event) => event.preventDefault()}
                     onPointerDownOutside={(event) => {
                         const target = event.detail.originalEvent.target as Element | null;
-                        if (!target?.closest(".refresher-frame-outer")) event.preventDefault();
+                        if (popupOpen() || !target?.closest(".refresher-frame-outer")) event.preventDefault();
                     }}
                     onInteractOutside={(event) => {
                         const target = event.detail.originalEvent.target as Element | null;
-                        if (!target?.closest(".refresher-frame-outer")) event.preventDefault();
+                        if (popupOpen() || !target?.closest(".refresher-frame-outer")) event.preventDefault();
                     }}
                 >
                     <div className="refresher-preview-title-zone">
