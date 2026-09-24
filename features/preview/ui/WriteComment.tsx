@@ -1,4 +1,5 @@
 import {useRef, useState} from "react";
+import {Send, Smile, X} from "lucide-react";
 
 import {captchaImage, submitComment} from "@/core/preview/request";
 import {getGrecaptchaToken} from "../grecaptcha";
@@ -95,18 +96,38 @@ export const WriteComment = () => {
                     />
                 </div>
             )}
-            <textarea
-                id="comment_main"
-                ref={textarea}
-                disabled={dccons.length > 0}
-                placeholder={dccons.length > 0 ? "디시콘이 선택됐습니다." : "댓글 입력..."}
-                onKeyDown={(event) => {
-                    if (event.key === "Enter" && !event.shiftKey) {
-                        event.preventDefault();
-                        void submit();
-                    }
-                }}
-            />
+            <div className="refresher-write-comment-row">
+                <textarea
+                    id="comment_main"
+                    ref={textarea}
+                    disabled={dccons.length > 0}
+                    placeholder={dccons.length > 0 ? "디시콘이 선택됐습니다." : "댓글 입력..."}
+                    onKeyDown={(event) => {
+                        if (event.key === "Enter" && !event.shiftKey) {
+                            event.preventDefault();
+                            void submit();
+                        }
+                    }}
+                />
+                {dccons.length > 0 && (
+                    <button
+                        type="button"
+                        title="콘 취소"
+                        onClick={() => {
+                            setDccons([]);
+                            setBigDccon(false);
+                        }}
+                    >
+                        <X size={18} />
+                    </button>
+                )}
+                <button type="button" title="디시콘" onClick={() => setDcconOpen(true)}>
+                    <Smile size={18} />
+                </button>
+                <button type="button" className="primary" title="작성" onClick={() => void submit()}>
+                    <Send size={18} />
+                </button>
+            </div>
             <div className="refresher-write-comment-controls">
                 <span
                     className="refresher-write-comment-whoami"
@@ -125,25 +146,6 @@ export const WriteComment = () => {
                         ? "클릭하면 작성자 정보를 수정합니다."
                         : `${login ? "회원 계정" : nick}(으)로 ${reply.replyNo ? "답글" : dccons.length > 0 ? "디시콘" : "댓글"} 작성 중`}
                 </span>
-                <div className="refresher-write-comment-buttons">
-                    {dccons.length > 0 && (
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setDccons([]);
-                                setBigDccon(false);
-                            }}
-                        >
-                            콘 취소
-                        </button>
-                    )}
-                    <button type="button" onClick={() => setDcconOpen(true)}>
-                        디시콘
-                    </button>
-                    <button type="button" className="primary" onClick={() => void submit()}>
-                        작성
-                    </button>
-                </div>
             </div>
             {dcconOpen && (
                 <DcconPopup

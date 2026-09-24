@@ -2,7 +2,7 @@ import {Fragment, useEffect, useState} from "react";
 import {ExternalLink, Eye, ThumbsDown, ThumbsUp} from "lucide-react";
 import {Dialog} from "radix-ui";
 
-import {vote} from "@/core/preview/request";
+import {vote, captchaImage} from "@/core/preview/request";
 import {useUiStore} from "@/stores/ui";
 
 import {buildPreData} from "../index";
@@ -47,7 +47,13 @@ const Votes = () => {
     const onVote = async (mode: "U" | "D"): Promise<void> => {
         if (!preData || !post) return;
         try {
-            const result = await vote(preData, post, mode);
+            let code: string | undefined;
+            if (post.requireCaptcha) {
+                code = await usePreviewStore.getState().openCaptcha(captchaImage(preData, "recommend"));
+                if (!code) return;
+            }
+
+            const result = await vote(preData, post, mode, code);
             if (result.success) {
                 usePreviewStore.getState().setVotes(result.counts ?? upvotes ?? "X", result.fixedCounts ?? "");
                 useUiStore

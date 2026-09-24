@@ -93,10 +93,14 @@
         gap: 6px;
         padding: 2px;
         overflow-x: auto;
-        scrollbar-width: none;
 
         &::-webkit-scrollbar {
-            display: none;
+            height: 6px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            border-radius: 4px;
+            background: #e4e4e7;
         }
 
         button {
@@ -243,6 +247,10 @@ html:has(#css-darkmode) {
 
         .dccon-selected {
             background: rgb(46 105 173 / 15%);
+        }
+
+        .dccon-packages::-webkit-scrollbar-thumb {
+            background: #3f3f46;
         }
 
         .dccon-grid button:hover img {

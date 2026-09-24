@@ -50,7 +50,7 @@ export interface VoteResult {
 }
 
 /** 추천/비추천. 3시간 쿠키(Firstcheck)로 중복 방지 */
-export const vote = async (preData: GalleryPreData, postInfo: IPostInfo, mode: "U" | "D"): Promise<VoteResult> => {
+export const vote = async (preData: GalleryPreData, postInfo: IPostInfo, mode: "U" | "D", code?: string): Promise<VoteResult> => {
     const cookieName = `${preData.gallery}${preData.id}_Firstcheck${mode === "U" ? "" : "_down"}`;
 
     if ((await cookieStore.get(cookieName))?.value) return {success: false};
@@ -59,7 +59,7 @@ export const vote = async (preData: GalleryPreData, postInfo: IPostInfo, mode: "
     body.set("id", preData.gallery);
     body.set("no", preData.id);
     body.set("mode", mode);
-    body.set("code_recommend", postInfo.dom?.querySelector<HTMLInputElement>("input[name=code_recommend]")?.value ?? "");
+    body.set("code_recommend", code ?? postInfo.dom?.querySelector<HTMLInputElement>("input[name=code_recommend]")?.value ?? "");
     body.set("link_id", preData.gallery);
     if (postInfo.v_cur_t) body.set("v_cur_t", postInfo.v_cur_t);
     if (postInfo.randomParam) body.set(postInfo.randomParam.name, postInfo.randomParam.value);

@@ -176,10 +176,16 @@
             content: "";
             position: absolute;
             top: 0;
-            bottom: 50%;
+            bottom: 0;
             left: 36px;
             width: 2px;
             background: #e4e4e7;
+        }
+
+        // 마지막 대댓글은 ㄴ 끝에서 수직선 종료
+        &:has(+ .refresher-comment[data-depth="0"])::before,
+        &:last-child::before {
+            bottom: 50%;
         }
 
         &::after {
@@ -378,6 +384,7 @@
     flex-direction: column;
     gap: 6px;
     margin-top: 12px;
+    padding: 0 24px 12px;
 
     .refresher-write-comment-inputs {
         display: flex;
@@ -394,48 +401,60 @@
         }
     }
 
-    #comment_main {
-        width: 100%;
-        height: 64px;
-        padding: 6px 8px;
-        border: 1px solid #e4e4e7;
-        border-radius: 4px;
-        box-sizing: border-box;
-        resize: vertical;
-        font: inherit;
-        font-size: 13px;
-    }
-
-    .refresher-write-comment-whoami {
-        color: #71717a;
-        font-size: 11px;
-    }
-
-    .refresher-write-comment-buttons {
+    .refresher-write-comment-row {
         display: flex;
+        align-items: flex-end;
         gap: 6px;
 
-        button {
-            padding: 4px 12px;
+        #comment_main {
+            flex: 1;
+            min-width: 0;
+            height: 72px;
+            padding: 8px 10px;
             border: 1px solid #e4e4e7;
-            border-radius: 4px;
-            background: #fafafa;
-            color: #1c1c1c;
+            border-radius: 6px;
+            box-sizing: border-box;
+            resize: vertical;
             font: inherit;
-            font-size: 12px;
-            cursor: pointer;
+            font-size: 14px;
+        }
 
-            &:disabled {
-                opacity: 0.5;
-                cursor: default;
+        button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: none;
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            margin-bottom: 1px;
+            border: 1px solid #e4e4e7;
+            border-radius: 8px;
+            background: #fafafa;
+            color: #71717a;
+            cursor: pointer;
+            transition: background 0.12s ease;
+
+            &:hover {
+                background: #f0f0f2;
+                color: #1c1c1c;
             }
 
             &.primary {
                 border-color: transparent;
                 background: #2e69ad;
                 color: #fff;
+
+                &:hover {
+                    background: #245a96;
+                }
             }
         }
+    }
+
+    .refresher-write-comment-whoami {
+        color: #71717a;
+        font-size: 13px;
     }
 }
 
@@ -463,7 +482,7 @@
         border: none;
         color: #71717a;
         font: inherit;
-        font-size: 12px;
+        font-size: 13px;
         cursor: pointer;
 
         &:hover {
@@ -511,6 +530,12 @@
     .refresher-user-info {
         color: #a1a1aa;
         font-size: 12px;
+    }
+
+    .refresherUserData {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 }
 
@@ -590,7 +615,7 @@ html:has(#css-darkmode) {
     .refresher-preview-title-controls button,
     .refresher-error button,
     .refresher-votes button,
-    .refresher-write-comment .refresher-write-comment-buttons button:not(.primary) {
+    .refresher-write-comment .refresher-write-comment-row button:not(.primary) {
         background: #27272a;
         border-color: #3f3f46;
         color: #fafafa;

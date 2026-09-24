@@ -155,18 +155,18 @@ export const Comment = ({comment, depth, replyCount}: CommentProps) => {
         >
             <div className="refresher-comment-meta">
                 <UserCard user={{nick: comment.name, id: comment.user_id, ip: comment.ip || extractIp(comment.gallog_icon) || extractIp(comment.nickname as string | undefined), image: extractIcon(comment.gallog_icon)}} />
+                {depth === 0 && replyCount > 1 && (
+                    <button
+                        type="button"
+                        className="refresher-comment-controls"
+                        title="답글 접기"
+                        onClick={() => toggleCollapse(comment.no)}
+                    >
+                        <ChevronDown size={16} style={{transform: collapsed ? "rotate(-90deg)" : undefined}} />
+                        {replyCount}
+                    </button>
+                )}
                 <div className="refresher-comment-controls-container">
-                    {depth === 0 && replyCount > 1 && (
-                        <button
-                            type="button"
-                            className="refresher-comment-controls"
-                            title="답글 접기"
-                            onClick={() => toggleCollapse(comment.no)}
-                        >
-                            <ChevronDown size={14} style={{transform: collapsed ? "rotate(-90deg)" : undefined}} />
-                            {comment.name} ({replyCount})
-                        </button>
-                    )}
                     {!isDeleted && (
                         <button
                             type="button"
@@ -178,12 +178,12 @@ export const Comment = ({comment, depth, replyCount}: CommentProps) => {
                                 })
                             }
                         >
-                            {reply.replyNo === comment.no ? <Check size={12} /> : <ReplyIcon size={12} />}
+                            {reply.replyNo === comment.no ? <Check size={15} /> : <ReplyIcon size={15} />}
                         </button>
                     )}
                     {canDelete && (
                         <button type="button" className="refresher-comment-controls" title="댓글 삭제" onClick={() => void onDelete()}>
-                            <X size={12} />
+                            <X size={15} />
                         </button>
                     )}
                     <TimeStamp date={String(comment.reg_date ?? comment.date_time ?? "")} />

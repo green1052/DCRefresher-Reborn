@@ -187,7 +187,7 @@ const controller = (ctx: ModuleContext) => {
         store.getState().close();
     };
 
-    const open = (preData: GalleryPreData, commentsOnly = false) => {
+    const open = (preData: GalleryPreData, commentsOnly = false, historySkip = false) => {
         const st = store.getState();
 
         if (st.visible && st.preData?.id === preData.id && st.preData?.gallery === preData.gallery) {
@@ -211,11 +211,13 @@ const controller = (ctx: ModuleContext) => {
         after.setRecommend(Boolean(preData.recommend));
         after.setAdminVisible(Boolean(ctx.settings.toggleAdminPanel) && Boolean(document.querySelector(".useradmin_btnbox button")));
 
-        savedHistory = {title: document.title, url: location.href, state: history.state};
-        if (ctx.settings.colorPreviewLink) {
-            const newTitle = `${preData.title ?? document.title} - ${galName()}`;
-            history.pushState({refresher: 1}, newTitle, preData.link);
-            document.title = newTitle;
+        if (!historySkip) {
+            savedHistory = {title: document.title, url: location.href, state: history.state};
+            if (ctx.settings.colorPreviewLink) {
+                const newTitle = `${preData.title ?? document.title} - ${galName()}`;
+                history.pushState({refresher: 1, preData}, newTitle, preData.link);
+                document.title = newTitle;
+            }
         }
 
         if (ctx.settings.autoRefreshComment === true) {
@@ -307,8 +309,18 @@ const controller = (ctx: ModuleContext) => {
         }
     };
 
-    const onPopState = () => {
-        if (store.getState().visible) close(true);
+    const onPopState = (event: PopStateEvent) => {
+        const st = store.getState();
+
+        if (st.visible) {
+            close(true);
+            return;
+        }
+
+        const state = event.state as {refresher?: number; preData?: GalleryPreData} | null;
+        if (state?.refresher === 1 && state.preData) {
+            open(state.preData, false, true);
+        }
     };
 
     // ── 미니 미리보기 ────────────────────────────────────────────
