@@ -41,14 +41,14 @@ const MemoFormDialog = ({
     };
 
     return (
-        <div className="dcr-overlay" onMouseDown={onClose}>
-            <div className="dcr-dialog" onMouseDown={(event) => event.stopPropagation()}>
-                <h3 className="dcr-dialog-title">메모 {editing ? "수정" : "추가"}</h3>
+        <div className="refresher-overlay" onMouseDown={onClose}>
+            <div className="refresher-dialog" onMouseDown={(event) => event.stopPropagation()}>
+                <h3 className="refresher-dialog-title">메모 {editing ? "수정" : "추가"}</h3>
 
-                <div className="dcr-field">
-                    <span className="dcr-field-label">종류</span>
+                <div className="refresher-field">
+                    <span className="refresher-field-label">종류</span>
                     <select
-                        className="dcr-select"
+                        className="refresher-select"
                         value={state.type}
                         disabled={editing}
                         onChange={(event) => setState((prev) => ({...prev, type: event.target.value as MemoType}))}
@@ -61,10 +61,10 @@ const MemoFormDialog = ({
                     </select>
                 </div>
 
-                <div className="dcr-field">
-                    <span className="dcr-field-label">대상</span>
+                <div className="refresher-field">
+                    <span className="refresher-field-label">대상</span>
                     <input
-                        className="dcr-input"
+                        className="refresher-input"
                         placeholder="유저, 닉네임 또는 IP"
                         value={state.user}
                         disabled={editing}
@@ -72,10 +72,10 @@ const MemoFormDialog = ({
                     />
                 </div>
 
-                <div className="dcr-field">
-                    <span className="dcr-field-label">메모</span>
+                <div className="refresher-field">
+                    <span className="refresher-field-label">메모</span>
                     <input
-                        className="dcr-input"
+                        className="refresher-input"
                         maxLength={160}
                         placeholder="메모를 입력해주세요 (160자 제한)"
                         value={state.text}
@@ -85,33 +85,33 @@ const MemoFormDialog = ({
                     />
                 </div>
 
-                <div className="dcr-field">
-                    <span className="dcr-field-label">색상</span>
-                    <span className="dcr-color-row">
+                <div className="refresher-field">
+                    <span className="refresher-field-label">색상</span>
+                    <span className="refresher-color-row">
                         <input
                             type="color"
-                            className="dcr-color"
+                            className="refresher-color"
                             value={state.color}
                             onChange={(event) => setState((prev) => ({...prev, color: event.target.value}))}
                         />
-                        <button type="button" className="dcr-button" onClick={() => setState((prev) => ({...prev, color: randomColor()}))}>
+                        <button type="button" className="refresher-button" onClick={() => setState((prev) => ({...prev, color: randomColor()}))}>
                             랜덤
                         </button>
                     </span>
                 </div>
 
-                {error && <p className="dcr-error">{error}</p>}
+                {error && <p className="refresher-error">{error}</p>}
 
-                <div className="dcr-dialog-actions">
-                    <button type="button" className="dcr-button" onClick={onClose}>
+                <div className="refresher-dialog-actions">
+                    <button type="button" className="refresher-button" onClick={onClose}>
                         취소
                     </button>
-                    <button type="button" className="dcr-button dcr-primary" onClick={() => void submit()}>
+                    <button type="button" className="refresher-button refresher-primary" onClick={() => void submit()}>
                         {editing ? "수정" : "추가"}
                     </button>
                 </div>
 
-                <button type="button" className="dcr-dialog-close" aria-label="닫기" onClick={onClose}>
+                <button type="button" className="refresher-dialog-close" aria-label="닫기" onClick={onClose}>
                     ×
                 </button>
             </div>
@@ -129,9 +129,9 @@ export function MemoTab() {
 
     return (
         <div>
-            <h2 className="dcr-section-title">데이터 관리</h2>
-            <p className="dcr-section-desc">
-                <button type="button" className="dcr-link" onClick={() => window.open(MEMO_TARGET, "_blank")}>
+            <h2 className="refresher-section-title">데이터 관리</h2>
+            <p className="refresher-section-desc">
+                <button type="button" className="refresher-link" onClick={() => window.open(MEMO_TARGET, "_blank")}>
                     메모 변환
                 </button>
             </p>
@@ -140,15 +140,15 @@ export function MemoTab() {
                 const map = memos[type];
 
                 return (
-                    <section key={type} className="dcr-section">
-                        <header className="dcr-section-head">
+                    <section key={type} className="refresher-section">
+                        <header className="refresher-section-head">
                             <h3>
                                 {MEMO_TYPE_NAMES[type]} ({Object.keys(map).length}개)
                             </h3>
-                            <span className="dcr-section-actions">
+                            <span className="refresher-section-actions">
                                 <button
                                     type="button"
-                                    className="dcr-icon-button"
+                                    className="refresher-icon-button"
                                     title="추가"
                                     onClick={() => setForm({type, user: "", text: "", color: randomColor()})}
                                 >
@@ -156,7 +156,7 @@ export function MemoTab() {
                                 </button>
                                 <button
                                     type="button"
-                                    className="dcr-icon-button"
+                                    className="refresher-icon-button"
                                     title="전체 삭제"
                                     disabled={Object.keys(map).length === 0}
                                     onClick={() => {
@@ -171,12 +171,12 @@ export function MemoTab() {
                         {Object.keys(map).length === 0 ? (
                             <p className="empty">{MEMO_TYPE_NAMES[type]} 메모 없음</p>
                         ) : (
-                            <div className="dcr-chip-list">
+                            <div className="refresher-chip-list">
                                 {Object.entries(map).map(([user, entry]) => (
-                                    <span key={user} className="dcr-chip">
+                                    <span key={user} className="refresher-chip">
                                         <button
                                             type="button"
-                                            className="dcr-chip-text"
+                                            className="refresher-chip-text"
                                             title={entry.text}
                                             onClick={() => setForm({type, user, text: entry.text, color: entry.color})}
                                         >
@@ -184,7 +184,7 @@ export function MemoTab() {
                                         </button>
                                         <button
                                             type="button"
-                                            className="dcr-chip-remove"
+                                            className="refresher-chip-remove"
                                             title="삭제"
                                             onClick={() => void removeMemo(type, user)}
                                         >

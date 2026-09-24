@@ -57,19 +57,19 @@ const MemoDialogInner = ({state}: MemoDialogProps) => {
 
     return (
         <Dialog.Portal>
-            <Dialog.Overlay className="dcr-overlay" />
-            <Dialog.Content className="dcr-dialog">
-                <Dialog.Title className="dcr-dialog-title">메모 추가</Dialog.Title>
-                <Dialog.Description className="dcr-dialog-desc">
+            <Dialog.Overlay className="refresher-overlay" />
+            <Dialog.Content className="refresher-dialog">
+                <Dialog.Title className="refresher-dialog-title">메모 추가</Dialog.Title>
+                <Dialog.Description className="refresher-dialog-desc">
                     {MEMO_TYPE_NAMES[type]}: {value}
                 </Dialog.Description>
 
-                <div className="dcr-segment">
+                <div className="refresher-segment">
                     {MEMO_TYPES.map((memoType) => (
                         <button
                             key={memoType}
                             type="button"
-                            className="dcr-segment-item"
+                            className="refresher-segment-item"
                             data-active={type === memoType || undefined}
                             disabled={!state.targets[memoType]}
                             onClick={() => switchType(memoType)}
@@ -80,7 +80,7 @@ const MemoDialogInner = ({state}: MemoDialogProps) => {
                 </div>
 
                 <input
-                    className="dcr-input"
+                    className="refresher-input"
                     maxLength={160}
                     placeholder="메모를 입력해주세요 (160자 제한)"
                     value={text}
@@ -89,18 +89,18 @@ const MemoDialogInner = ({state}: MemoDialogProps) => {
                     autoFocus
                 />
 
-                <div className="dcr-color-row">
-                    <input type="color" className="dcr-color" value={color} onChange={(event) => setColor(event.target.value)} />
-                    <button type="button" className="dcr-button" onClick={() => setColor(randomColor())}>
+                <div className="refresher-color-row">
+                    <input type="color" className="refresher-color" value={color} onChange={(event) => setColor(event.target.value)} />
+                    <button type="button" className="refresher-button" onClick={() => setColor(randomColor())}>
                         랜덤
                     </button>
                 </div>
 
-                <div className="dcr-dialog-actions">
+                <div className="refresher-dialog-actions">
                     {existing && (
                         <button
                             type="button"
-                            className="dcr-button dcr-danger"
+                            className="refresher-button refresher-danger"
                             onClick={() => {
                                 void removeMemo(type, value);
                                 closeMemo();
@@ -109,13 +109,13 @@ const MemoDialogInner = ({state}: MemoDialogProps) => {
                             삭제
                         </button>
                     )}
-                    <button type="button" className="dcr-button dcr-primary" onClick={() => void submit()}>
+                    <button type="button" className="refresher-button refresher-primary" onClick={() => void submit()}>
                         추가
                     </button>
                 </div>
 
                 <Dialog.Close asChild>
-                    <button type="button" className="dcr-dialog-close" aria-label="닫기">
+                    <button type="button" className="refresher-dialog-close" aria-label="닫기">
                         ×
                     </button>
                 </Dialog.Close>

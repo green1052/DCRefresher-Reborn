@@ -52,19 +52,19 @@ export const BlockDialog = ({open, type, typeNames, modeNames, initial, onClose,
     return (
         <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
             <Dialog.Portal>
-                <Dialog.Overlay className="dcr-overlay" />
-                <Dialog.Content className="dcr-dialog">
-                    <Dialog.Title className="dcr-dialog-title">
+                <Dialog.Overlay className="refresher-overlay" />
+                <Dialog.Content className="refresher-dialog">
+                    <Dialog.Title className="refresher-dialog-title">
                         {typeNames[type]} 차단 {initial ? "수정" : "추가"}
                     </Dialog.Title>
-                    <Dialog.Description className="dcr-dialog-desc">
+                    <Dialog.Description className="refresher-dialog-desc">
                         {initial ? `${typeNames[type]} 항목을 수정합니다.` : `${typeNames[type]} 차단 항목을 추가합니다.`}
                     </Dialog.Description>
 
-                    <div className="dcr-field">
-                        <span className="dcr-field-label">값</span>
+                    <div className="refresher-field">
+                        <span className="refresher-field-label">값</span>
                         <input
-                            className="dcr-input"
+                            className="refresher-input"
                             placeholder={`${typeNames[type]} 값을 입력하세요`}
                             value={content}
                             onChange={(event) => setContent(event.target.value)}
@@ -73,22 +73,22 @@ export const BlockDialog = ({open, type, typeNames, modeNames, initial, onClose,
                         />
                     </div>
 
-                    <div className="dcr-field">
-                        <span className="dcr-field-label">정규식 사용</span>
-                        <label className="dcr-check-row">
-                            <input type="checkbox" className="dcr-check-plain" checked={isRegex} onChange={(event) => setIsRegex(event.target.checked)} />
+                    <div className="refresher-field">
+                        <span className="refresher-field-label">정규식 사용</span>
+                        <label className="refresher-check-row">
+                            <input type="checkbox" className="refresher-check-plain" checked={isRegex} onChange={(event) => setIsRegex(event.target.checked)} />
                             정규식
                         </label>
                     </div>
 
-                    <div className="dcr-field">
-                        <span className="dcr-field-label">특정 갤러리 차단 (선택)</span>
-                        <input className="dcr-input" placeholder="갤러리 ID" value={gallery} onChange={(event) => setGallery(event.target.value)} />
+                    <div className="refresher-field">
+                        <span className="refresher-field-label">특정 갤러리 차단 (선택)</span>
+                        <input className="refresher-input" placeholder="갤러리 ID" value={gallery} onChange={(event) => setGallery(event.target.value)} />
                     </div>
 
-                    <div className="dcr-field">
-                        <span className="dcr-field-label">차단 모드</span>
-                        <select className="dcr-select" value={mode} onChange={(event) => setMode(event.target.value as DetectMode | "")}>
+                    <div className="refresher-field">
+                        <span className="refresher-field-label">차단 모드</span>
+                        <select className="refresher-select" value={mode} onChange={(event) => setMode(event.target.value as DetectMode | "")}>
                             <option value="">기본값</option>
                             {Object.entries(modeNames).map(([key, label]) => (
                                 <option key={key} value={key}>
@@ -98,19 +98,19 @@ export const BlockDialog = ({open, type, typeNames, modeNames, initial, onClose,
                         </select>
                     </div>
 
-                    {error && <p className="dcr-error">{error}</p>}
+                    {error && <p className="refresher-error">{error}</p>}
 
-                    <div className="dcr-dialog-actions">
-                        <button type="button" className="dcr-button" onClick={onClose}>
+                    <div className="refresher-dialog-actions">
+                        <button type="button" className="refresher-button" onClick={onClose}>
                             취소
                         </button>
-                        <button type="button" className="dcr-button dcr-primary" onClick={submit}>
+                        <button type="button" className="refresher-button refresher-primary" onClick={submit}>
                             {initial ? "수정" : "추가"}
                         </button>
                     </div>
 
                     <Dialog.Close asChild>
-                        <button type="button" className="dcr-dialog-close" aria-label="닫기">
+                        <button type="button" className="refresher-dialog-close" aria-label="닫기">
                             ×
                         </button>
                     </Dialog.Close>

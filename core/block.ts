@@ -1,6 +1,6 @@
 import {blockDefaultsStorage, blockStorage, BLOCK_TYPES, DEFAULT_DETECT_MODE, DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
-import {LRUCache} from "@/core/lru";
+import {LRUCache} from "lru-cache";
 
 const caches: Record<BlockType, BlockEntry[]> = {
     NICK: [],
@@ -16,7 +16,7 @@ const caches: Record<BlockType, BlockEntry[]> = {
 const defaults: Record<BlockType, DetectMode> = {...DEFAULT_DETECT_MODE};
 
 // LRU 캐시 - 정규식 컴파일 누수 방지
-const regexCache = new LRUCache<string, RegExp>(500);
+const regexCache = new LRUCache<string, RegExp>({max: 500});
 
 export const isBlockEntry = (value: unknown): value is BlockEntry => {
     if (!value || typeof value !== "object") return false;

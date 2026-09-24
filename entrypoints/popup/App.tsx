@@ -40,7 +40,7 @@ export function App({optionsPage = false}: {optionsPage?: boolean}) {
             useModulesStore.setState({tabId: tab.id});
 
             try {
-                setSchemas(await sendMessage("dcr:getModuleSchema", undefined, {tabId: tab.id}));
+                setSchemas(await sendMessage("refresher:getModuleSchema", undefined, {tabId: tab.id}));
             } catch {
                 setUnavailable(true);
             }
@@ -48,12 +48,12 @@ export function App({optionsPage = false}: {optionsPage?: boolean}) {
     }, [setSchemas, setUnavailable]);
 
     return (
-        <div className={`dcr-app${optionsPage ? " dcr-options" : ""}`}>
-            <header className="dcr-header">
+        <div className={`refresher-app${optionsPage ? " refresher-options" : ""}`}>
+            <header className="refresher-header">
                 <h1>DCRefresher</h1>
                 {!optionsPage && (
                     <button
-                        className="dcr-open-options"
+                        className="refresher-open-options"
                         title="전체 설정 페이지 열기"
                         onClick={() => void browser.runtime.openOptionsPage()}
                     >
@@ -63,16 +63,16 @@ export function App({optionsPage = false}: {optionsPage?: boolean}) {
             </header>
 
             <Tabs.Root defaultValue="general">
-                <Tabs.List className="dcr-tabs-list">
+                <Tabs.List className="refresher-tabs-list">
                     {TABS.map((tab) => (
-                        <Tabs.Trigger key={tab.id} value={tab.id} className="dcr-tab-trigger">
+                        <Tabs.Trigger key={tab.id} value={tab.id} className="refresher-tab-trigger">
                             {tab.label}
                         </Tabs.Trigger>
                     ))}
                 </Tabs.List>
 
                 {TABS.map((tab) => (
-                    <Tabs.Content key={tab.id} value={tab.id} className="dcr-tab-content">
+                    <Tabs.Content key={tab.id} value={tab.id} className="refresher-tab-content">
                         {tab.content}
                     </Tabs.Content>
                 ))}

@@ -45,35 +45,35 @@ export const DEFAULT_DETECT_MODE: Record<BlockType, DetectMode> = {
 };
 
 const blockItem = (type: BlockType) =>
-    storage.defineItem<BlockEntry[]>(`local:dcr:block:${type}`, {defaultValue: []});
+    storage.defineItem<BlockEntry[]>(`local:refresher:block:${type}`, {defaultValue: []});
 
 const memoItem = (type: MemoType) =>
-    storage.defineItem<Record<string, MemoEntry>>(`local:dcr:memo:${type}`, {defaultValue: {}});
+    storage.defineItem<Record<string, MemoEntry>>(`local:refresher:memo:${type}`, {defaultValue: {}});
 
 export const blockStorage = Object.fromEntries(
     BLOCK_TYPES.map((type) => [type, blockItem(type)])
 ) as Record<BlockType, WxtStorageItem<BlockEntry[], {}>>;
 
-export const blockDefaultsStorage = storage.defineItem<Record<BlockType, DetectMode>>("local:dcr:block:defaults", {
+export const blockDefaultsStorage = storage.defineItem<Record<BlockType, DetectMode>>("local:refresher:block:defaults", {
     defaultValue: {...DEFAULT_DETECT_MODE}
 });
 
 export const memoStorage = Object.fromEntries(
-    MEMO_TYPES.map((type) => [type, storage.defineItem<Record<string, MemoEntry>>(`local:dcr:memo:${type}`, {defaultValue: {}})])
+    MEMO_TYPES.map((type) => [type, storage.defineItem<Record<string, MemoEntry>>(`local:refresher:memo:${type}`, {defaultValue: {}})])
 ) as Record<MemoType, WxtStorageItem<Record<string, MemoEntry>, {}>>;
 
-export const modulesStorage = storage.defineItem<Record<string, boolean>>("local:dcr:modules", {defaultValue: {}});
+export const modulesStorage = storage.defineItem<Record<string, boolean>>("local:refresher:modules", {defaultValue: {}});
 
 export const moduleSettingsStorage = (id: string) =>
-    storage.defineItem<Record<string, SettingValue>>(`local:dcr:module:${id}:settings`, {defaultValue: {}});
+    storage.defineItem<Record<string, SettingValue>>(`local:refresher:module:${id}:settings`, {defaultValue: {}});
 
 export const moduleDataStorage = (id: string) =>
-    storage.defineItem<Record<string, JsonValue>>(`local:dcr:module:${id}:data`, {defaultValue: {}});
+    storage.defineItem<Record<string, JsonValue>>(`local:refresher:module:${id}:data`, {defaultValue: {}});
 
-export const dbStorage = storage.defineItem<StoredDB>("local:dcr:db", {
+export const dbStorage = storage.defineItem<StoredDB>("local:refresher:db", {
     defaultValue: {version: "", lastUpdate: 0, ip: {}, ban: {}}
 });
 
 export const backupStorage = {
-    lastUpdate: storage.defineItem<number>("local:dcr:backup:lastUpdate", {defaultValue: 0})
+    lastUpdate: storage.defineItem<number>("local:refresher:backup:lastUpdate", {defaultValue: 0})
 };

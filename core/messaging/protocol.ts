@@ -25,17 +25,17 @@ export const CONTEXT_MENUS: {
 
 interface ProtocolMap {
     /** 배경 → 탭: 컨텍스트 메뉴 클릭. 선택된 유저 정보는 콘텐츠의 contextmenu 리스너가 이미 갖고 있다 */
-    "dcr:contextMenu"(data: ContextMenuAction): void;
+    "refresher:contextMenu"(data: ContextMenuAction): void;
     /** 배경 → 탭: 단축키 실행 (commands) */
-    "dcr:executeShortcut"(data: string): void;
+    "refresher:executeShortcut"(data: string): void;
     /** 팝업 → 탭: 모듈 스키마 + 현재값 */
-    "dcr:getModuleSchema"(): ModuleSchema[];
+    "refresher:getModuleSchema"(): ModuleSchema[];
     /** 팝업 → 탭: 모듈 토글 */
-    "dcr:toggleModule"(data: {id: string; value: boolean}): void;
+    "refresher:toggleModule"(data: {id: string; value: boolean}): void;
     /** 팝업 → 탭: 설정 변경. 정규화된 값을 반환 */
-    "dcr:setSetting"(data: {id: string; key: string; value: SettingValue}): SettingValue;
+    "refresher:setSetting"(data: {id: string; key: string; value: SettingValue}): SettingValue;
     /** 팝업 → 탭: 메모 입력 요청 */
-    "dcr:askMemo"(data: {type: MemoType; user: string}): void;
+    "refresher:askMemo"(data: {type: MemoType; user: string}): void;
 }
 
 export const {sendMessage, onMessage} = defineExtensionMessaging<ProtocolMap>();

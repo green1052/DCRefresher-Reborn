@@ -17,18 +17,18 @@ export function ModuleTab() {
     return (
         <div>
             {schemas.map((schema) => (
-                <section key={schema.id} className="dcr-section">
-                    <header className="dcr-section-head">
-                        <div className="dcr-module-text">
-                            <div className="dcr-module-name">{schema.name}</div>
-                            <div className="dcr-module-desc">{schema.description}</div>
+                <section key={schema.id} className="refresher-section">
+                    <header className="refresher-section-head">
+                        <div className="refresher-module-text">
+                            <div className="refresher-module-name">{schema.name}</div>
+                            <div className="refresher-module-desc">{schema.description}</div>
                         </div>
                         <Switch.Root
-                            className="dcr-switch-root"
+                            className="refresher-switch-root"
                             checked={schema.enable}
                             onCheckedChange={(value) => void toggle(schema.id, value, tabId)}
                         >
-                            <Switch.Thumb className="dcr-switch-thumb" />
+                            <Switch.Thumb className="refresher-switch-thumb" />
                         </Switch.Root>
                     </header>
 

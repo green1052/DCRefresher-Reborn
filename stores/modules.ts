@@ -25,7 +25,7 @@ export const useModulesStore = create<ModulesState>((set, get) => ({
 
     toggle: async (id, value, tabId) => {
         set({schemas: get().schemas.map((schema) => (schema.id === id ? {...schema, enable: value} : schema))});
-        if (tabId) await sendMessage("dcr:toggleModule", {id, value}, {tabId}).catch(() => {});
+        if (tabId) await sendMessage("refresher:toggleModule", {id, value}, {tabId}).catch(() => {});
     },
 
     changeSetting: async (id, key, value, tabId) => {
@@ -41,7 +41,7 @@ export const useModulesStore = create<ModulesState>((set, get) => ({
         if (!tabId) return;
 
         try {
-            const applied = await sendMessage("dcr:setSetting", {id, key, value}, {tabId});
+            const applied = await sendMessage("refresher:setSetting", {id, key, value}, {tabId});
             set({
                 schemas: get().schemas.map((schema) =>
                     schema.id === id && schema.settings

@@ -18,7 +18,7 @@ export default defineBackground(() => {
     browser.contextMenus.onClicked.addListener(async (info, tab) => {
         if (!tab?.id) return;
         if (CONTEXT_MENUS.some((menu) => menu.id === info.menuItemId)) {
-            await sendMessage("dcr:contextMenu", info.menuItemId as ContextMenuAction, {tabId: tab.id}).catch(() => {});
+            await sendMessage("refresher:contextMenu", info.menuItemId as ContextMenuAction, {tabId: tab.id}).catch(() => {});
         }
     });
 
@@ -31,7 +31,7 @@ export default defineBackground(() => {
         await Promise.all(
             tabs
                 .filter((tab) => tab.id)
-                .map((tab) => sendMessage("dcr:executeShortcut", command, {tabId: tab.id!}).catch(() => {}))
+                .map((tab) => sendMessage("refresher:executeShortcut", command, {tabId: tab.id!}).catch(() => {}))
         );
     });
 

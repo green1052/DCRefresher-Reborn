@@ -14,6 +14,10 @@ export default defineConfig({
             "clipboardWrite"
         ],
         host_permissions: ["https://*.dcinside.com/*"],
+        options_ui: {
+            page: "options.html",
+            open_in_tab: true
+        },
         web_accessible_resources: [
             {
                 resources: ["assets/*.webp"],

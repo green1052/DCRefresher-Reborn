@@ -38,14 +38,14 @@ export function BlockTab() {
 
     return (
         <div>
-            <h2 className="dcr-section-title">차단 모드</h2>
-            <p className="dcr-section-desc">기본 차단 판별 방식입니다. 개별 항목의 모드가 우선합니다.</p>
+            <h2 className="refresher-section-title">차단 모드</h2>
+            <p className="refresher-section-desc">기본 차단 판별 방식입니다. 개별 항목의 모드가 우선합니다.</p>
 
             {BLOCK_TYPES.map((type) => (
-                <div key={`mode-${type}`} className="dcr-field">
-                    <span className="dcr-field-label">{TYPE_NAMES[type]}</span>
+                <div key={`mode-${type}`} className="refresher-field">
+                    <span className="refresher-field-label">{TYPE_NAMES[type]}</span>
                     <select
-                        className="dcr-select"
+                        className="refresher-select"
                         value={defaults[type]}
                         onChange={(event) => void setDefault(type, event.target.value as DetectMode)}
                     >
@@ -62,18 +62,18 @@ export function BlockTab() {
                 const list = entries[type];
 
                 return (
-                    <section key={type} className="dcr-section">
-                        <header className="dcr-section-head">
+                    <section key={type} className="refresher-section">
+                        <header className="refresher-section-head">
                             <h3>
                                 {TYPE_NAMES[type]} ({list.length}개)
                             </h3>
-                            <span className="dcr-section-actions">
-                                <button type="button" className="dcr-icon-button" title="추가" onClick={() => setDialog({type, initial: null})}>
+                            <span className="refresher-section-actions">
+                                <button type="button" className="refresher-icon-button" title="추가" onClick={() => setDialog({type, initial: null})}>
                                     <Plus size={16} />
                                 </button>
                                 <button
                                     type="button"
-                                    className="dcr-icon-button"
+                                    className="refresher-icon-button"
                                     title="전체 삭제"
                                     disabled={list.length === 0}
                                     onClick={() => {
@@ -88,21 +88,21 @@ export function BlockTab() {
                         {list.length === 0 ? (
                             <p className="empty">차단된 {TYPE_NAMES[type]} 없음</p>
                         ) : (
-                            <div className="dcr-chip-list">
+                            <div className="refresher-chip-list">
                                 {list.map((entry) => (
-                                    <span key={entry.id} className="dcr-chip">
+                                    <span key={entry.id} className="refresher-chip">
                                         {type === "DCCON" ? (
-                                            <button type="button" className="dcr-chip-text" onClick={() => setDialog({type, initial: entry})}>
-                                                <img className="dcr-chip-image" src={dcconImage(entry)} alt={entry.extra ?? entry.content} />
+                                            <button type="button" className="refresher-chip-text" onClick={() => setDialog({type, initial: entry})}>
+                                                <img className="refresher-chip-image" src={dcconImage(entry)} alt={entry.extra ?? entry.content} />
                                             </button>
                                         ) : (
-                                            <button type="button" className="dcr-chip-text" onClick={() => setDialog({type, initial: entry})}>
+                                            <button type="button" className="refresher-chip-text" onClick={() => setDialog({type, initial: entry})}>
                                                 {entry.content}
                                                 {entry.extra ? ` (${entry.extra})` : ""}
                                                 {entry.gallery ? ` (${entry.gallery})` : ""}
                                             </button>
                                         )}
-                                        <button type="button" className="dcr-chip-remove" title="삭제" onClick={() => void removeEntry(type, entry.id)}>
+                                        <button type="button" className="refresher-chip-remove" title="삭제" onClick={() => void removeEntry(type, entry.id)}>
                                             ×
                                         </button>
                                     </span>

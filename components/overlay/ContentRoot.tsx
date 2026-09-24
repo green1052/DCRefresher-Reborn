@@ -1,6 +1,7 @@
 import {useEffect} from "react";
 
 import {MemoDialog} from "./MemoDialog";
+import {PreviewHost} from "@/features/preview/ui/PreviewHost";
 import {eventBus} from "@/core/eventbus/bus";
 import {useUiStore, type ToastData} from "@/stores/ui";
 
@@ -12,11 +13,11 @@ const ToastItem = ({toast}: {toast: ToastData}) => {
     }, [toast]);
 
     return (
-        <div className={`dcr-toast dcr-toast-${toast.type}`} onClick={toast.onClick}>
-            <span className="dcr-toast-content">{toast.content}</span>
+        <div className={`refresher-toast refresher-toast-${toast.type}`} onClick={toast.onClick}>
+            <span className="refresher-toast-content">{toast.content}</span>
             <button
                 type="button"
-                className="dcr-toast-close"
+                className="refresher-toast-close"
                 onClick={(event) => {
                     event.stopPropagation();
                     useUiStore.getState().dismissToast(toast.id);
@@ -52,7 +53,7 @@ const BubbleHost = () => {
         };
         const onScroll = (): void => useUiStore.getState().closeBubble();
         const onMouseDown = (event: MouseEvent): void => {
-            if (!(event.target instanceof Element) || !event.target.closest(".dcr-bubble")) {
+            if (!(event.target instanceof Element) || !event.target.closest(".refresher-bubble")) {
                 useUiStore.getState().closeBubble();
             }
         };
@@ -78,12 +79,12 @@ const BubbleHost = () => {
 
     if (selected.dccon) {
         return (
-            <div className="dcr-bubble" style={{left: bubble.x + 8, top: bubble.y + 8}}>
-                <div className="dcr-bubble-value">디시콘: {selected.dccon}</div>
-                <div className="dcr-bubble-actions">
+            <div className="refresher-bubble" style={{left: bubble.x + 8, top: bubble.y + 8}}>
+                <div className="refresher-bubble-value">디시콘: {selected.dccon}</div>
+                <div className="refresher-bubble-actions">
                     <button
                         type="button"
-                        className="dcr-button dcr-primary"
+                        className="refresher-button refresher-primary"
                         onClick={() => {
                             eventBus.emit("refresherRequestBlock", {target: "dccon"});
                             close();
@@ -93,7 +94,7 @@ const BubbleHost = () => {
                     </button>
                     <button
                         type="button"
-                        className="dcr-button"
+                        className="refresher-button"
                         onClick={() => {
                             eventBus.emit("refresherRequestBlock", {target: "dccon", blockAllDccon: true});
                             close();
@@ -107,24 +108,24 @@ const BubbleHost = () => {
     }
 
     return (
-        <div className="dcr-bubble" style={{left: bubble.x + 8, top: bubble.y + 8}}>
+        <div className="refresher-bubble" style={{left: bubble.x + 8, top: bubble.y + 8}}>
             {COPY_FIELDS.map(([key, label]) =>
                 selected[key] ? (
-                    <div key={key} className="dcr-bubble-value">
+                    <div key={key} className="refresher-bubble-value">
                         <span>
                             {label}: <strong>{selected[key]}</strong>
                         </span>
-                        <button type="button" className="dcr-button" onClick={() => copy(selected[key]!)}>
+                        <button type="button" className="refresher-button" onClick={() => copy(selected[key]!)}>
                             복사
                         </button>
                     </div>
                 ) : null
             )}
 
-            <div className="dcr-bubble-actions">
+            <div className="refresher-bubble-actions">
                 <button
                     type="button"
-                    className="dcr-button dcr-primary"
+                    className="refresher-button refresher-primary"
                     onClick={() => {
                         eventBus.emit("refresherRequestBlock", {target: "user"});
                         close();
@@ -132,13 +133,13 @@ const BubbleHost = () => {
                 >
                     유저 차단
                 </button>
-                <button type="button" className="dcr-button" onClick={() => useUiStore.getState().openMemoForSelected()}>
+                <button type="button" className="refresher-button" onClick={() => useUiStore.getState().openMemoForSelected()}>
                     메모
                 </button>
                 {selected.uid && (
                     <button
                         type="button"
-                        className="dcr-button"
+                        className="refresher-button"
                         onClick={() => {
                             window.open(`https://gallog.dcinside.com/${selected.uid}`, "_blank");
                             close();
@@ -163,5 +164,6 @@ export const ContentRoot = () => (
         <ToastHost />
         <BubbleHost />
         <MemoHost />
+        <PreviewHost />
     </>
 );

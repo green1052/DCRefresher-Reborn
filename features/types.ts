@@ -39,3 +39,6 @@ export interface PostInfo {
     randomParam?: {name: string; value: string};
     dom?: Document;
 }
+
+/** 하위 호환 별칭 (parser/cache/request) */
+export type IPostInfo = PostInfo;

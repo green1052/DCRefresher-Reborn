@@ -26,12 +26,12 @@ export function DataTab() {
 
     return (
         <div>
-            <div className="dcr-module-row">
-                <div className="dcr-module-text">
-                    <div className="dcr-module-name">IP/밴 데이터베이스</div>
-                    <div className="dcr-module-desc">마지막 갱신: {formatTime(lastUpdate)}</div>
+            <div className="refresher-module-row">
+                <div className="refresher-module-text">
+                    <div className="refresher-module-name">IP/밴 데이터베이스</div>
+                    <div className="refresher-module-desc">마지막 갱신: {formatTime(lastUpdate)}</div>
                 </div>
-                <button className="dcr-button" disabled={loading} onClick={() => void forceUpdate()}>
+                <button className="refresher-button" disabled={loading} onClick={() => void forceUpdate()}>
                     <RefreshCw size={12} /> 지금 갱신
                 </button>
             </div>

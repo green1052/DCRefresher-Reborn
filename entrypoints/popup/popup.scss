@@ -1,20 +1,20 @@
 @use "../../assets/styles/ui" as *;
 
 :root {
-    --dcr-bg: #fff;
-    --dcr-fg: #1c1c1c;
-    --dcr-muted: #71717a;
-    --dcr-border: #e4e4e7;
-    --dcr-accent: #3b82f6;
-    --dcr-radius: 8px;
+    --refresher-bg: #fff;
+    --refresher-fg: #1c1c1c;
+    --refresher-muted: #71717a;
+    --refresher-border: #e4e4e7;
+    --refresher-accent: #3b82f6;
+    --refresher-radius: 8px;
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --dcr-bg: #18181b;
-        --dcr-fg: #fafafa;
-        --dcr-muted: #a1a1aa;
-        --dcr-border: #3f3f46;
+        --refresher-bg: #18181b;
+        --refresher-fg: #fafafa;
+        --refresher-muted: #a1a1aa;
+        --refresher-border: #3f3f46;
     }
 }
 
@@ -29,30 +29,30 @@ body {
     width: 380px;
     max-height: 560px;
     overflow: hidden;
-    background: var(--dcr-bg);
-    color: var(--dcr-fg);
+    background: var(--refresher-bg);
+    color: var(--refresher-fg);
     font: 13px/1.5 -apple-system, "Segoe UI", "맑은 고딕", sans-serif;
 }
 
-.dcr-app {
+.refresher-app {
     display: flex;
     flex-direction: column;
     height: 100vh;
 }
 
-.dcr-options.dcr-app {
+.refresher-options.refresher-app {
     max-width: 1200px;
     height: auto;
     min-height: 100vh;
     margin: 0 auto;
 }
 
-.dcr-header {
+.refresher-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 10px 12px;
-    border-bottom: 1px solid var(--dcr-border);
+    border-bottom: 1px solid var(--refresher-border);
 
     h1 {
         margin: 0;
@@ -60,75 +60,75 @@ body {
     }
 }
 
-.dcr-open-options {
+.refresher-open-options {
     display: flex;
     align-items: center;
     padding: 4px;
     background: none;
     border: none;
     border-radius: 4px;
-    color: var(--dcr-muted);
+    color: var(--refresher-muted);
     cursor: pointer;
 
     &:hover {
-        color: var(--dcr-fg);
-        background: var(--dcr-border);
+        color: var(--refresher-fg);
+        background: var(--refresher-border);
     }
 }
 
-.dcr-tabs-list {
+.refresher-tabs-list {
     display: flex;
     gap: 2px;
     padding: 6px 6px 0;
-    border-bottom: 1px solid var(--dcr-border);
+    border-bottom: 1px solid var(--refresher-border);
 }
 
-.dcr-tab-trigger {
+.refresher-tab-trigger {
     padding: 6px 10px;
     background: none;
     border: 1px solid transparent;
     border-bottom: 0;
     border-radius: 6px 6px 0 0;
     margin-bottom: -1px;
-    color: var(--dcr-muted);
+    color: var(--refresher-muted);
     font: inherit;
     cursor: pointer;
 
     &:hover {
-        color: var(--dcr-fg);
+        color: var(--refresher-fg);
     }
 
     &[data-state="active"] {
-        color: var(--dcr-fg);
+        color: var(--refresher-fg);
         font-weight: 600;
-        border-color: var(--dcr-border);
-        background: var(--dcr-bg);
+        border-color: var(--refresher-border);
+        background: var(--refresher-bg);
     }
 }
 
-.dcr-tab-content {
+.refresher-tab-content {
     flex: 1;
     padding: 10px;
     overflow-y: auto;
 }
 
-.dcr-section {
+.refresher-section {
     padding: 8px 0;
-    border-bottom: 1px solid var(--dcr-border);
+    border-bottom: 1px solid var(--refresher-border);
 }
 
-.dcr-section-title {
+.refresher-section-title {
     margin: 6px 0 2px;
     font-size: 13px;
 }
 
-.dcr-section-desc {
+.refresher-section-desc {
     margin: 0 0 6px;
     font-size: 11px;
-    color: var(--dcr-muted);
+    color: var(--refresher-muted);
 }
 
-.dcr-section-head {
+.refresher-section-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -141,24 +141,24 @@ body {
     }
 }
 
-.dcr-section-actions {
+.refresher-section-actions {
     display: flex;
     gap: 2px;
 }
 
-.dcr-icon-button {
+.refresher-icon-button {
     display: flex;
     align-items: center;
     padding: 3px;
     background: none;
     border: none;
     border-radius: 4px;
-    color: var(--dcr-muted);
+    color: var(--refresher-muted);
     cursor: pointer;
 
     &:hover:not(:disabled) {
-        color: var(--dcr-fg);
-        background: var(--dcr-border);
+        color: var(--refresher-fg);
+        background: var(--refresher-border);
     }
 
     &:disabled {
@@ -167,51 +167,51 @@ body {
     }
 }
 
-.dcr-module-row {
+.refresher-module-row {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 8px 0;
-    border-bottom: 1px solid var(--dcr-border);
+    border-bottom: 1px solid var(--refresher-border);
 }
 
-.dcr-module-text {
+.refresher-module-text {
     flex: 1;
     min-width: 0;
 }
 
-.dcr-module-name {
+.refresher-module-name {
     font-weight: 600;
 }
 
-.dcr-module-desc {
+.refresher-module-desc {
     font-size: 12px;
-    color: var(--dcr-muted);
+    color: var(--refresher-muted);
 }
 
-.dcr-setting-row {
+.refresher-setting-row {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 8px 0;
-    border-bottom: 1px dashed var(--dcr-border);
+    border-bottom: 1px dashed var(--refresher-border);
 
     &:last-child {
         border-bottom: 0;
     }
 
-    &[data-changed] .dcr-module-name::after {
+    &[data-changed] .refresher-module-name::after {
         content: " •";
-        color: var(--dcr-accent);
+        color: var(--refresher-accent);
     }
 }
 
-.dcr-setting-text {
+.refresher-setting-text {
     flex: 1;
     min-width: 0;
 }
 
-.dcr-setting-control {
+.refresher-setting-control {
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -219,30 +219,30 @@ body {
     max-width: 55%;
 }
 
-.dcr-setting-default {
+.refresher-setting-default {
     font-size: 11px;
-    color: var(--dcr-muted);
+    color: var(--refresher-muted);
     opacity: 0.8;
 }
 
-.dcr-range {
+.refresher-range {
     display: flex;
     align-items: center;
     gap: 6px;
 
     input[type="range"] {
         width: 110px;
-        accent-color: var(--dcr-accent);
+        accent-color: var(--refresher-accent);
     }
 }
 
-.dcr-range-value {
+.refresher-range-value {
     font-size: 11px;
-    color: var(--dcr-fg);
+    color: var(--refresher-fg);
     white-space: nowrap;
 }
 
-.dcr-check-row {
+.refresher-check-row {
     display: flex;
     align-items: center;
     gap: 4px;
@@ -250,13 +250,13 @@ body {
     cursor: pointer;
 }
 
-.dcr-order {
+.refresher-order {
     margin: 0;
     padding: 0;
     list-style: none;
 }
 
-.dcr-order-item {
+.refresher-order-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -265,37 +265,37 @@ body {
     font-size: 12px;
 }
 
-.dcr-order-actions {
+.refresher-order-actions {
     display: flex;
     gap: 2px;
 
-    .dcr-button {
+    .refresher-button {
         padding: 2px 6px;
     }
 }
 
-.dcr-chip-list {
+.refresher-chip-list {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
 }
 
-.dcr-chip {
+.refresher-chip {
     display: inline-flex;
     align-items: center;
     gap: 2px;
     padding: 2px 4px 2px 8px;
-    border: 1px solid var(--dcr-border);
+    border: 1px solid var(--refresher-border);
     border-radius: 999px;
-    background: var(--dcr-bg);
+    background: var(--refresher-bg);
     font-size: 11px;
 }
 
-.dcr-chip-text {
+.refresher-chip-text {
     padding: 0;
     background: none;
     border: none;
-    color: var(--dcr-fg);
+    color: var(--refresher-fg);
     font: inherit;
     font-size: 11px;
     cursor: pointer;
@@ -305,21 +305,21 @@ body {
     white-space: nowrap;
 
     &:hover {
-        color: var(--dcr-accent);
+        color: var(--refresher-accent);
     }
 }
 
-.dcr-chip-image {
+.refresher-chip-image {
     display: block;
     height: 40px;
 }
 
-.dcr-chip-remove {
+.refresher-chip-remove {
     padding: 0 4px;
     background: none;
     border: none;
     border-radius: 50%;
-    color: var(--dcr-muted);
+    color: var(--refresher-muted);
     font-size: 12px;
     line-height: 1;
     cursor: pointer;
@@ -329,27 +329,27 @@ body {
     }
 }
 
-.dcr-color-row {
+.refresher-color-row {
     display: flex;
     align-items: center;
     gap: 6px;
 }
 
-.dcr-color {
+.refresher-color {
     width: 28px;
     height: 24px;
     padding: 0;
-    border: 1px solid var(--dcr-border);
+    border: 1px solid var(--refresher-border);
     border-radius: 4px;
     background: none;
     cursor: pointer;
 }
 
-.dcr-link {
+.refresher-link {
     padding: 0;
     background: none;
     border: none;
-    color: var(--dcr-accent);
+    color: var(--refresher-accent);
     font: inherit;
     font-size: 11px;
     text-decoration: underline;
@@ -359,5 +359,5 @@ body {
 .empty {
     padding: 24px;
     text-align: center;
-    color: var(--dcr-muted);
+    color: var(--refresher-muted);
 }

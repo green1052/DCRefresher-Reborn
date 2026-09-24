@@ -63,7 +63,7 @@ const stealthModule: ModuleDefinition = {
             ctx.addCleanup(() => window.removeEventListener("load", onLoad));
         }
 
-        // v6: 오버레이(#dcr-root)가 React 루트로 영속 마운트되므로 contentPreview 재마운트는 불필요
+        // v6: 오버레이(#refresher-root)가 React 루트로 영속 마운트되므로 contentPreview 재마운트는 불필요
     },
 
     revoke() {

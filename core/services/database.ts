@@ -10,7 +10,7 @@ export interface DatabaseService {
     lastUpdate(): Promise<number>;
 }
 
-export const DATABASE_SERVICE_KEY = "dcr:database" as ProxyServiceKey<DatabaseService>;
+export const DATABASE_SERVICE_KEY = "refresher:database" as ProxyServiceKey<DatabaseService>;
 
 /** background 이외 컨텍스트에서 사용하는 프록시 */
 export const DatabaseService: DatabaseService = createProxyService(DATABASE_SERVICE_KEY);

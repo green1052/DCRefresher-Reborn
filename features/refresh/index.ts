@@ -120,7 +120,7 @@ const refreshModule: ModuleDefinition = {
         ctx.addFilter(
             ".page_head > .gall_issuebox",
             (element) => {
-                if (element.querySelector("button[data-dcr-refresh]")) return;
+                if (element.querySelector("button[data-refresher-refresh]")) return;
 
                 button = document.createElement("button");
                 button.dataset.dcrRefresh = "true";
@@ -287,7 +287,7 @@ const refreshModule: ModuleDefinition = {
         // ===== 인페이지 페이지 전환 =====
         if (ctx.settings.useBetterBrowse) {
             ctx.addFilter(
-                `${PAGING_SELECTOR} a:not([data-dcr-paged])`,
+                `${PAGING_SELECTOR} a:not([data-refresher-paged])`,
                 (anchor) => {
                     if (!(anchor instanceof HTMLAnchorElement)) return;
 
@@ -357,7 +357,7 @@ const refreshModule: ModuleDefinition = {
 
         document.documentElement.classList.remove("refresherDoNotColorVisited");
 
-        for (const anchor of document.querySelectorAll<HTMLAnchorElement>("a[data-dcr-paged]")) {
+        for (const anchor of document.querySelectorAll<HTMLAnchorElement>("a[data-refresher-paged]")) {
             anchor.onclick = null;
             delete anchor.dataset.dcrPaged;
         }

@@ -35,7 +35,7 @@ const TextControl = ({schema, value, disabled, onChange}: SettingItemProps) => {
 
     return (
         <input
-            className="dcr-input"
+            className="refresher-input"
             type="text"
             placeholder={String(schema.default)}
             value={draft}
@@ -59,8 +59,8 @@ const RangeControl = ({schema, value, disabled, onChange}: SettingItemProps) => 
     }, [value]);
 
     return (
-        <div className="dcr-range">
-            <span className="dcr-range-value">
+        <div className="refresher-range">
+            <span className="refresher-range-value">
                 {draft}
                 {schema.unit}
             </span>
@@ -104,17 +104,17 @@ const OrderControl = ({schema, value, disabled, onChange}: SettingItemProps) => 
     };
 
     return (
-        <ul className="dcr-order">
+        <ul className="refresher-order">
             {order.map((key, index) => (
-                <li key={key} className="dcr-order-item">
+                <li key={key} className="refresher-order-item">
                     <span>{schema.items[key] ?? key}</span>
-                    <span className="dcr-order-actions">
-                        <button type="button" className="dcr-button" disabled={disabled || index === 0} onClick={() => move(index, -1)}>
+                    <span className="refresher-order-actions">
+                        <button type="button" className="refresher-button" disabled={disabled || index === 0} onClick={() => move(index, -1)}>
                             ↑
                         </button>
                         <button
                             type="button"
-                            className="dcr-button"
+                            className="refresher-button"
                             disabled={disabled || index === order.length - 1}
                             onClick={() => move(index, 1)}
                         >
@@ -131,22 +131,22 @@ export const SettingItem = ({schema, value, disabled, onChange}: SettingItemProp
     const changed = value !== schema.default;
 
     return (
-        <div className="dcr-setting-row" data-changed={changed || undefined}>
-            <div className="dcr-setting-text">
-                <div className="dcr-module-name">{schema.name}</div>
-                <div className="dcr-module-desc">{schema.desc}</div>
-                <div className="dcr-setting-default">(기본 값 : {formatDefault(schema)})</div>
+        <div className="refresher-setting-row" data-changed={changed || undefined}>
+            <div className="refresher-setting-text">
+                <div className="refresher-module-name">{schema.name}</div>
+                <div className="refresher-module-desc">{schema.desc}</div>
+                <div className="refresher-setting-default">(기본 값 : {formatDefault(schema)})</div>
             </div>
 
-            <div className="dcr-setting-control">
+            <div className="refresher-setting-control">
                 {schema.type === "check" && (
-                    <Switch.Root className="dcr-switch-root" checked={Boolean(value)} disabled={disabled} onCheckedChange={onChange}>
-                        <Switch.Thumb className="dcr-switch-thumb" />
+                    <Switch.Root className="refresher-switch-root" checked={Boolean(value)} disabled={disabled} onCheckedChange={onChange}>
+                        <Switch.Thumb className="refresher-switch-thumb" />
                     </Switch.Root>
                 )}
                 {schema.type === "option" && (
                     <select
-                        className="dcr-select"
+                        className="refresher-select"
                         value={String(value)}
                         disabled={disabled}
                         onChange={(event) => onChange(event.target.value)}

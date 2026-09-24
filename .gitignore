@@ -1,7 +1,8 @@
-node_modules
+.idea
 .output
 .wxt
-web-ext.config.ts
-.idea
+node_modules
 .env
-PLAN.md.release-tree
+web-ext.config.ts
+PLAN.md
+.release-tree

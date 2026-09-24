@@ -26,7 +26,7 @@ export default defineContentScript({
     runAt: "document_start",
     async main() {
         // ===== 메시징 (팝업→탭, 배경→탭) =====
-        onMessage("dcr:contextMenu", ({data: action}) => {
+        onMessage("refresher:contextMenu", ({data: action}) => {
             switch (action) {
                 case "blockSelected":
                     eventBus.emit("refresherRequestBlock", {target: "user"});
@@ -46,18 +46,18 @@ export default defineContentScript({
             }
         });
 
-        onMessage("dcr:executeShortcut", ({data: command}) => modules.runShortcut(command));
+        onMessage("refresher:executeShortcut", ({data: command}) => modules.runShortcut(command));
 
-        onMessage("dcr:askMemo", ({data}) => {
+        onMessage("refresher:askMemo", ({data}) => {
             useUiStore.getState().openMemo({[data.type]: data.user}, data.type);
         });
 
         // ===== 오버레이 마운트 =====
         const mountOverlay = (): void => {
-            if (document.getElementById("dcr-root")) return;
+            if (document.getElementById("refresher-root")) return;
 
             const host = document.createElement("div");
-            host.id = "dcr-root";
+            host.id = "refresher-root";
             document.body.append(host);
             createRoot(host).render(<ContentRoot />);
         };

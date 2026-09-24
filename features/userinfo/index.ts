@@ -24,7 +24,7 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
 
     const {nick, uid, ip} = element.dataset;
     const badges = document.createElement("span");
-    badges.className = "dcr-user-badges";
+    badges.className = "refresher-user-badges";
 
     // 설정 순서대로 배지 생성 (order에 없는 키는 스키마에 없음)
     for (const key of ctx.settings.badgeOrder as BadgeKey[]) {
@@ -65,9 +65,9 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
 };
 
 const rebuildAll = (ctx: ModuleContext): void => {
-    for (const element of document.querySelectorAll<HTMLElement>(".ub-writer[data-dcr-user-info]")) {
+    for (const element of document.querySelectorAll<HTMLElement>(".ub-writer[data-refresher-user-info]")) {
         delete element.dataset.dcrUserInfo;
-        element.querySelector(".dcr-user-badges")?.remove();
+        element.querySelector(".refresher-user-badges")?.remove();
         process(ctx, element);
     }
 };
@@ -130,11 +130,11 @@ const userinfoModule: ModuleDefinition = {
     },
 
     revoke() {
-        for (const element of document.querySelectorAll<HTMLElement>(".ub-writer[data-dcr-user-info]")) {
+        for (const element of document.querySelectorAll<HTMLElement>(".ub-writer[data-refresher-user-info]")) {
             delete element.dataset.dcrUserInfo;
         }
 
-        for (const element of document.querySelectorAll<HTMLElement>(".dcr-user-badges")) {
+        for (const element of document.querySelectorAll<HTMLElement>(".refresher-user-badges")) {
             element.remove();
         }
     }

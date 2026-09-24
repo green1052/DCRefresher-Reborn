@@ -3,7 +3,6 @@ import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
 import {galleryType, galleryTypeName, urls} from "@/core/http/urls";
 import type {JsonValue} from "@/core/storage/types";
 import {eventBus} from "@/core/eventbus/bus";
-import {getCookie} from "@/utils/cookie";
 import {getBan} from "@/utils/ban";
 import {insertWriterSpan} from "@/utils/userDataInsert";
 
@@ -40,7 +39,7 @@ const makePermBanSpan = (reasons: string): HTMLElement => {
 const fetchRatio = async (uid: string): Promise<RatioInfo | undefined> => {
     const text = await http.post(GALLOG_API, {
         headers: {"X-Requested-With": "XMLHttpRequest"},
-        body: new URLSearchParams({ci_t: getCookie("ci_c") ?? "", user_id: uid})
+        body: new URLSearchParams({ci_t: (await cookieStore.get("ci_c"))?.value ?? "", user_id: uid})
     }).text();
 
     const [article, comment] = text.split(",").map(Number);
@@ -186,7 +185,7 @@ const manageModule: ModuleDefinition = {
                 await http.post(isMini ? urls.manage.deleteMini : urls.manage.delete, {
                     headers: {"X-Requested-With": "XMLHttpRequest"},
                     body: new URLSearchParams({
-                        ci_t: getCookie("ci_c") ?? "",
+                        ci_t: (await cookieStore.get("ci_c"))?.value ?? "",
                         id: document.querySelector<HTMLInputElement>("#gallery_id")?.value ?? "",
                         "nos[]": postId,
                         _GALLTYPE_: galleryTypeName(location.href)
