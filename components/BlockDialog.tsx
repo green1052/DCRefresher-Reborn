@@ -63,7 +63,7 @@ export const BlockDialog = ({open, type, typeNames, modeNames, initial, onClose,
                 <Flex direction="column" gap="3">
                     <label>
                         <Flex justify="between" mb="1">
-                            <Text size="1" color="gray">
+                            <Text size="2" color="gray">
                                 값
                             </Text>
                         </Flex>
@@ -81,14 +81,14 @@ export const BlockDialog = ({open, type, typeNames, modeNames, initial, onClose,
                     </Text>
 
                     <label>
-                        <Text as="div" size="1" color="gray" mb="1">
+                        <Text as="div" size="2" color="gray" mb="1">
                             특정 갤러리 차단 (선택)
                         </Text>
                         <TextField.Root placeholder="갤러리 ID" value={gallery} onChange={(event) => setGallery(event.target.value)} />
                     </label>
 
                     <Flex justify="between" align="center">
-                        <Text size="1" color="gray">
+                        <Text size="2" color="gray">
                             차단 모드
                         </Text>
                         <RefresherSelect
@@ -99,7 +99,7 @@ export const BlockDialog = ({open, type, typeNames, modeNames, initial, onClose,
                     </Flex>
 
                     {error && (
-                        <Text size="1" color="red">
+                        <Text size="2" color="red">
                             {error}
                         </Text>
                     )}

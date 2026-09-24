@@ -156,7 +156,7 @@ export function DataTab() {
                     </Flex>
                 }
                 right={
-                    <Button size="1" variant="soft" disabled={loading} onClick={() => void forceUpdate()}>
+                    <Button size="2" variant="soft" disabled={loading} onClick={() => void forceUpdate()}>
                         <RefreshCw size={12} /> 지금 갱신
                     </Button>
                 }
@@ -175,25 +175,25 @@ export function DataTab() {
                 }
             />
             <Flex gap="2" wrap="wrap" pt="2" pb="4">
-                <Button size="1" variant="soft" disabled={loading} onClick={() => void backupCloud()}>
+                <Button size="2" variant="soft" disabled={loading} onClick={() => void backupCloud()}>
                     클라우드 백업
                 </Button>
                 <Button
-                    size="1"
+                    size="2"
                     variant="soft"
                     disabled={loading}
                     onClick={() => setConfirming({title: "클라우드 백업으로 현재 설정을 교체할까요?", action: recoverCloud})}
                 >
                     클라우드 복원
                 </Button>
-                <Button size="1" variant="soft" disabled={loading} onClick={() => void exportData()}>
+                <Button size="2" variant="soft" disabled={loading} onClick={() => void exportData()}>
                     데이터 내보내기
                 </Button>
-                <Button size="1" variant="soft" disabled={loading} onClick={() => setImportOpen(true)}>
+                <Button size="2" variant="soft" disabled={loading} onClick={() => setImportOpen(true)}>
                     데이터 가져오기
                 </Button>
                 <Button
-                    size="1"
+                    size="2"
                     variant="soft"
                     color="red"
                     disabled={loading}

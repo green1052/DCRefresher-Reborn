@@ -64,7 +64,7 @@ const MemoFormDialog = ({
                     </Flex>
 
                     <label>
-                        <Text as="div" size="1" color="gray" mb="1">
+                        <Text as="div" size="2" color="gray" mb="1">
                             대상
                         </Text>
                         <TextField.Root
@@ -76,7 +76,7 @@ const MemoFormDialog = ({
                     </label>
 
                     <label>
-                        <Text as="div" size="1" color="gray" mb="1">
+                        <Text as="div" size="2" color="gray" mb="1">
                             메모
                         </Text>
                         <TextField.Root
@@ -100,14 +100,14 @@ const MemoFormDialog = ({
                                 onChange={(event) => setState((prev) => ({...prev, color: event.target.value}))}
                                 style={{width: 36, height: 28, padding: 0, border: 0, background: "none", cursor: "pointer"}}
                             />
-                            <Button size="1" variant="soft" onClick={() => setState((prev) => ({...prev, color: randomColor()}))}>
+                            <Button size="2" variant="soft" onClick={() => setState((prev) => ({...prev, color: randomColor()}))}>
                                 랜덤
                             </Button>
                         </Flex>
                     </Flex>
 
                     {error && (
-                        <Text size="1" color="red">
+                        <Text size="2" color="red">
                             {error}
                         </Text>
                     )}
@@ -166,7 +166,7 @@ export function MemoTab() {
                                 <IconButton
                                     variant="ghost"
                                     color="gray"
-                                    size="1"
+                                    size="2"
                                     title="추가"
                                     onClick={() => setForm({type, user: "", text: "", color: randomColor()})}
                                 >
@@ -175,7 +175,7 @@ export function MemoTab() {
                                 <IconButton
                                     variant="ghost"
                                     color="gray"
-                                    size="1"
+                                    size="2"
                                     title="전체 삭제"
                                     disabled={Object.keys(map).length === 0}
                                     onClick={() => setClearConfirm(type)}
@@ -210,7 +210,7 @@ export function MemoTab() {
                                                 {user} ({entry.text.slice(0, 10)})
                                             </button>
                                         </Box>
-                                        <IconButton variant="ghost" color="gray" size="1" title="삭제" onClick={() => void removeMemo(type, user)}>
+                                        <IconButton variant="ghost" color="gray" size="2" title="삭제" onClick={() => void removeMemo(type, user)}>
                                             <X size={12} />
                                         </IconButton>
                                     </Flex>

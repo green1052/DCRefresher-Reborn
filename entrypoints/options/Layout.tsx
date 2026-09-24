@@ -3,10 +3,10 @@ import type {ReactNode} from "react";
 
 /** 옵션 페이지 전용 레이아웃 — 스타일은 Radix Themes 프롭만 사용 */
 export const Section = ({title, desc, actions, children}: {title?: ReactNode; desc?: ReactNode; actions?: ReactNode; children: ReactNode}) => (
-    <Card variant="ghost" size="2" style={{boxShadow: "none"}} mb="4">
+    <Card variant="surface" size="3" style={{boxShadow: "none"}} mb="4">
         {(title || actions) && (
             <Flex justify="between" align="center" mb="2">
-                {title && <Heading size="3">{title}</Heading>}
+                {title && <Heading size="4">{title}</Heading>}
                 {actions && (
                     <Flex gap="2" align="center">
                         {actions}

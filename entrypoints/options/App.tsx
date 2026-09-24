@@ -1,7 +1,5 @@
-import {Box, Flex, Heading, Tabs, Text} from "@radix-ui/themes";
+import {Box, Tabs} from "@radix-ui/themes";
 import {useEffect} from "react";
-
-import logoUrl from "@/assets/icon.png";
 
 import {BlockTab} from "./BlockTab";
 import {DataTab} from "./DataTab";
@@ -63,31 +61,22 @@ export function App() {
     }, [setSchemas, setUnavailable]);
 
     return (
-        <Flex direction="column" minHeight="100vh">
-            <Flex align="center" gap="2" px="6" py="3" style={{borderBottom: "1px solid var(--gray-a5)"}}>
-                <img src={logoUrl} alt="" width={36} height={36} style={{borderRadius: 8}} />
-                <Heading size="6">
-                    DCRefresher <Text color="blue">Reborn</Text>
-                </Heading>
-            </Flex>
+        <Tabs.Root defaultValue="general" style={{display: "flex", flex: 1, minHeight: "100vh"}}>
+            <Tabs.List style={{flexDirection: "column", alignItems: "stretch", width: 220, gap: 2, padding: 16, borderRight: "1px solid var(--gray-a5)", alignSelf: "flex-start", position: "sticky", top: 0}}>
+                {TABS.map((tab) => (
+                    <Tabs.Trigger key={tab.id} value={tab.id}>
+                        {tab.label}
+                    </Tabs.Trigger>
+                ))}
+            </Tabs.List>
 
-            <Tabs.Root defaultValue="general" style={{display: "flex", flex: 1, minHeight: 0}}>
-                <Tabs.List style={{flexDirection: "column", alignItems: "stretch", width: 200, gap: 2, padding: 16, borderRight: "1px solid var(--gray-a5)", alignSelf: "flex-start", position: "sticky", top: 0}}>
-                    {TABS.map((tab) => (
-                        <Tabs.Trigger key={tab.id} value={tab.id}>
-                            {tab.label}
-                        </Tabs.Trigger>
-                    ))}
-                </Tabs.List>
-
-                <Box style={{flex: 1, minWidth: 0, padding: "24px 32px 48px"}}>
-                    {TABS.map((tab) => (
-                        <Tabs.Content key={tab.id} value={tab.id} style={{paddingTop: 0}}>
-                            {tab.content}
-                        </Tabs.Content>
-                    ))}
-                </Box>
-            </Tabs.Root>
-        </Flex>
+            <Box style={{flex: 1, minWidth: 0, padding: "24px 32px 48px"}}>
+                {TABS.map((tab) => (
+                    <Tabs.Content key={tab.id} value={tab.id} style={{paddingTop: 0}}>
+                        {tab.content}
+                    </Tabs.Content>
+                ))}
+            </Box>
+        </Tabs.Root>
     );
 }

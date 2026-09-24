@@ -12,12 +12,12 @@ const NONE = "__none__";
 
 export const RefresherSelect = ({value, options, disabled, onChange}: RefresherSelectProps) => (
     <Select.Root
-        size="1"
+        size="2"
         value={value || NONE}
         disabled={disabled}
         onValueChange={(next) => onChange(next === NONE ? "" : next)}
     >
-        <Select.Trigger style={{minWidth: 120}} />
+        <Select.Trigger style={{minWidth: 140}} />
         <Select.Content>
             {options.map(([key, label]) => (
                 <Select.Item key={key} value={key || NONE}>

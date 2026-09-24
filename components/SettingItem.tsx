@@ -35,7 +35,7 @@ const TextControl = ({schema, value, disabled, onChange}: SettingItemProps) => {
 
     return (
         <TextField.Root
-            size="1"
+            size="2"
             placeholder={String(schema.default)}
             value={draft}
             disabled={disabled}
@@ -59,7 +59,7 @@ const RangeControl = ({schema, value, disabled, onChange}: SettingItemProps) => 
 
     return (
         <Slider
-            size="1"
+            size="2"
             min={schema.min}
             max={schema.max}
             step={schema.step}
@@ -98,18 +98,18 @@ const OrderControl = ({schema, value, disabled, onChange}: SettingItemProps) => 
         <Flex direction="column" gap="2" align="end">
             {order.map((key, index) => (
                 <Flex key={key} align="center" gap="2">
-                    <Text size="1">{schema.items[key] ?? key}</Text>
+                    <Text size="2">{schema.items[key] ?? key}</Text>
                     <Flex gap="1">
                         <Box asChild style={{padding: 0}}>
                             <button type="button" disabled={disabled || index === 0} onClick={() => move(index, -1)} aria-label="위로">
-                                <Text size="1" color={disabled || index === 0 ? "gray" : undefined}>
+                                <Text size="2" color={disabled || index === 0 ? "gray" : undefined}>
                                     ↑
                                 </Text>
                             </button>
                         </Box>
                         <Box asChild style={{padding: 0}}>
                             <button type="button" disabled={disabled || index === order.length - 1} onClick={() => move(index, 1)} aria-label="아래로">
-                                <Text size="1" color={disabled || index === order.length - 1 ? "gray" : undefined}>
+                                <Text size="2" color={disabled || index === order.length - 1 ? "gray" : undefined}>
                                     ↓
                                 </Text>
                             </button>
@@ -136,20 +136,20 @@ export const SettingItem = ({schema, value, disabled, onChange}: SettingItemProp
                         </Text>
                     )}
                 </Text>
-                <Text as="div" size="1" color="gray">
+                <Text as="div" size="2" color="gray">
                     {schema.desc}
                 </Text>
-                <Text as="div" size="1" color="gray">
+                <Text as="div" size="2" color="gray">
                     기본 값 : {formatDefault(schema)}
                 </Text>
             </Box>
 
             <Box>
                 {schema.type === "check" && (
-                    <Switch size="1" checked={Boolean(value)} disabled={disabled} onCheckedChange={(checked) => onChange(checked)} />
+                    <Switch size="2" checked={Boolean(value)} disabled={disabled} onCheckedChange={(checked) => onChange(checked)} />
                 )}
                 {schema.type === "option" && (
-                    <Select.Root size="1" value={String(value)} disabled={disabled} onValueChange={(selected) => onChange(selected)}>
+                    <Select.Root size="2" value={String(value)} disabled={disabled} onValueChange={(selected) => onChange(selected)}>
                         <Select.Trigger style={{minWidth: 120}} />
                         <Select.Content>
                             {Object.entries(schema.items).map(([key, label]) => (

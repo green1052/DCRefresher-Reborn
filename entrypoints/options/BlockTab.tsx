@@ -77,13 +77,13 @@ export function BlockTab() {
                         }
                         actions={
                             <>
-                                <IconButton variant="ghost" color="gray" size="1" title="추가" onClick={() => setDialog({type, initial: null})}>
+                                <IconButton variant="ghost" color="gray" size="2" title="추가" onClick={() => setDialog({type, initial: null})}>
                                     <Plus size={16} />
                                 </IconButton>
                                 <IconButton
                                     variant="ghost"
                                     color="gray"
-                                    size="1"
+                                    size="2"
                                     title="전체 삭제"
                                     disabled={list.length === 0}
                                     onClick={() => setClearConfirm(type)}
@@ -126,7 +126,7 @@ export function BlockTab() {
                                                 )}
                                             </button>
                                         </Box>
-                                        <IconButton variant="ghost" color="gray" size="1" title="삭제" onClick={() => void removeEntry(type, entry.id)}>
+                                        <IconButton variant="ghost" color="gray" size="2" title="삭제" onClick={() => void removeEntry(type, entry.id)}>
                                             <X size={12} />
                                         </IconButton>
                                     </Flex>

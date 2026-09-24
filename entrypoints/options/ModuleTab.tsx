@@ -25,7 +25,7 @@ export function ModuleTab() {
                             {schema.name}
                         </Text>
                     }
-                    right={<Switch size="1" checked={schema.enable} onCheckedChange={(value) => void toggle(schema.id, value, tabId)} />}
+                    right={<Switch size="2" checked={schema.enable} onCheckedChange={(value) => void toggle(schema.id, value, tabId)} />}
                 />
             ))}
         </Section>
