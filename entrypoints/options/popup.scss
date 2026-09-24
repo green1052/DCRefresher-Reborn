@@ -26,12 +26,13 @@ body,
 }
 
 body {
-    width: 380px;
-    max-height: 560px;
-    overflow: hidden;
     background: var(--refresher-bg);
     color: var(--refresher-fg);
-    font: 13px/1.5 -apple-system, "Segoe UI", "맑은 고딕", sans-serif;
+    font: 14px/1.6 -apple-system, "Segoe UI", "맑은 고딕", sans-serif;
+}
+
+html {
+    scrollbar-gutter: stable;
 }
 
 .refresher-app {
@@ -117,12 +118,12 @@ body {
 
 .refresher-section-title {
     margin: 6px 0 2px;
-    font-size: 13px;
+    font-size: 16px;
 }
 
 .refresher-section-desc {
     margin: 0 0 6px;
-    font-size: 11px;
+    font-size: 13px;
     color: var(--refresher-muted);
 }
 
@@ -134,7 +135,7 @@ body {
 
     h3 {
         margin: 0;
-        font-size: 12px;
+        font-size: 15px;
         font-weight: 700;
     }
 }
@@ -183,7 +184,7 @@ body {
 }
 
 .refresher-module-desc {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--refresher-muted);
 }
 
@@ -218,7 +219,7 @@ body {
 }
 
 .refresher-setting-default {
-    font-size: 11px;
+    font-size: 13px;
     color: var(--refresher-muted);
     opacity: 0.8;
 }
@@ -230,11 +231,13 @@ body {
 }
 
 .refresher-slider {
-    width: 110px;
-    height: 18px;
+    position: relative;
     display: flex;
     align-items: center;
+    width: 150px;
+    height: 24px;
     touch-action: none;
+    user-select: none;
 
     &:disabled {
         opacity: 0.5;
@@ -244,34 +247,37 @@ body {
 .refresher-slider-track {
     position: relative;
     flex: 1;
-    height: 4px;
-    border-radius: 2px;
+    height: 6px;
+    border-radius: 3px;
     background: var(--refresher-border);
 }
 
 .refresher-slider-range {
     position: absolute;
     height: 100%;
-    border-radius: 2px;
+    border-radius: 3px;
     background: var(--refresher-accent);
 }
 
 .refresher-slider-thumb {
-    position: absolute;
-    top: 50%;
     display: block;
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
+    margin: 0;
     border-radius: 50%;
     background: #fff;
-    border: 1px solid var(--refresher-accent);
-    box-shadow: 0 1px 2px rgb(0 0 0 / 25%);
-    transform: translate(-50%, -50%);
-    cursor: pointer;
+    border: 2px solid var(--refresher-accent);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
+    cursor: grab;
+
+    &:active {
+        cursor: grabbing;
+        border-color: var(--refresher-fg);
+    }
 }
 
 .refresher-range-value {
-    font-size: 11px;
+    font-size: 13px;
     color: var(--refresher-fg);
     white-space: nowrap;
 }
@@ -280,7 +286,7 @@ body {
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 12px;
+    font-size: 13px;
     cursor: pointer;
 }
 
@@ -296,7 +302,7 @@ body {
     justify-content: space-between;
     gap: 6px;
     padding: 2px 0;
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .refresher-order-actions {
@@ -322,7 +328,7 @@ body {
     border: 1px solid var(--refresher-border);
     border-radius: 999px;
     background: var(--refresher-bg);
-    font-size: 11px;
+    font-size: 13px;
 }
 
 .refresher-chip-text {
@@ -331,7 +337,7 @@ body {
     border: none;
     color: var(--refresher-fg);
     font: inherit;
-    font-size: 11px;
+    font-size: 13px;
     cursor: pointer;
     max-width: 200px;
     overflow: hidden;
@@ -354,7 +360,7 @@ body {
     border: none;
     border-radius: 50%;
     color: var(--refresher-muted);
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1;
     cursor: pointer;
 
@@ -385,7 +391,7 @@ body {
     border: none;
     color: var(--refresher-accent);
     font: inherit;
-    font-size: 11px;
+    font-size: 13px;
     text-decoration: underline;
     cursor: pointer;
 }

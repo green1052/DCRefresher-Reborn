@@ -33,7 +33,7 @@
 
 .refresher-dialog-desc {
     margin: 0 0 10px;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--refresher-muted);
 }
 
@@ -66,7 +66,7 @@
     > label,
     > span.refresher-field-label {
         flex: none;
-        font-size: 12px;
+        font-size: 13px;
         color: var(--refresher-muted);
     }
 
@@ -85,7 +85,7 @@
     background: var(--refresher-bg);
     color: var(--refresher-fg);
     font: inherit;
-    font-size: 12px;
+    font-size: 13px;
 
     &:focus {
         outline: none;
@@ -116,7 +116,7 @@
     border-radius: 6px;
     background: var(--refresher-bg);
     color: var(--refresher-fg);
-    font-size: 12px;
+    font-size: 13px;
     box-shadow: 0 4px 12px rgb(0 0 0 / 25%);
 }
 
@@ -137,7 +137,7 @@
 
 .refresher-error {
     margin: 4px 0 0;
-    font-size: 11px;
+    font-size: 12px;
     color: #ff6464;
 }
 
@@ -158,7 +158,7 @@
     background: none;
     color: var(--refresher-fg);
     font: inherit;
-    font-size: 12px;
+    font-size: 13px;
     cursor: pointer;
 
     &:hover:not(:disabled) {
@@ -197,9 +197,9 @@
 .refresher-switch-root {
     position: relative;
     flex: none;
-    width: 32px;
-    height: 18px;
-    border-radius: 9px;
+    width: 44px;
+    height: 24px;
+    border-radius: 999px;
     background: var(--refresher-border);
     cursor: pointer;
     transition: background 0.15s;
@@ -217,18 +217,19 @@
 .refresher-switch-thumb {
     position: absolute;
     top: 2px;
-    left: 2px;
+    left: 0;
     display: block;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
     background: #fff;
-    box-shadow: 0 1px 2px rgb(0 0 0 / 25%);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
+    transform: translateX(2px);
     transition: transform 0.15s;
 }
 
 .refresher-switch-root[data-state="checked"] .refresher-switch-thumb {
-    transform: translateX(14px);
+    transform: translateX(22px);
 }
 
 .refresher-checkbox {
@@ -265,7 +266,7 @@
     background: var(--refresher-bg);
     color: var(--refresher-fg);
     font: inherit;
-    font-size: 12px;
+    font-size: 13px;
     resize: vertical;
 
     &:focus {

@@ -36,11 +36,13 @@ const ToastHost = () => {
     return <ToastItem key={toast.id} toast={toast} />;
 };
 
-const COPY_FIELDS = [
-    ["nick", "닉네임"],
-    ["uid", "아이디"],
-    ["ip", "IP"]
-] as const;
+const COPY_FIELDS = [["nick", "닉네임"]] as const;
+
+/** 아이디와 IP는 한 줄에 병합: "uid (IP)" */
+const identityValue = (selected: {uid?: string; ip?: string}): string | undefined => {
+    if (selected.uid) return selected.ip ? `${selected.uid} (${selected.ip})` : selected.uid;
+    return selected.ip;
+};
 
 const BubbleHost = () => {
     const bubble = useUiStore((s) => s.bubble);
@@ -126,6 +128,22 @@ const BubbleHost = () => {
                     </div>
                 ) : null
             )}
+            {(() => {
+                const identity = identityValue(selected);
+                if (!identity) return null;
+                return (
+                    <div
+                        className="refresher-bubble-value"
+                        style={{cursor: "pointer"}}
+                        title="클릭하면 복사됩니다."
+                        onClick={() => copy(identity)}
+                    >
+                        <span>
+                            아이디/IP: <strong>{identity}</strong>
+                        </span>
+                    </div>
+                );
+            })()}
             {isp && (
                 <div
                     className="refresher-bubble-value"
