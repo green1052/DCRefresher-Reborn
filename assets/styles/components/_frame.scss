@@ -110,8 +110,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: 12px 24px;
-    border-bottom: 1px solid #f0f0f2;
+    padding: 6px 24px 10px;
 
     .refresher-views {
         display: inline-flex;
@@ -324,25 +323,42 @@
 
 .refresher-votes {
     display: flex;
-    gap: 6px;
-    margin-top: 8px;
+    gap: 4px;
+    margin-top: 12px;
 
     button {
-        padding: 4px 10px;
-        border: 1px solid #e4e4e7;
-        border-radius: 4px;
-        background: #fafafa;
-        color: #1c1c1c;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 10px;
+        border: none;
+        border-radius: 6px;
+        background: none;
+        color: #71717a;
         font: inherit;
-        font-size: 12px;
+        font-size: 13px;
+        font-weight: 600;
         cursor: pointer;
+        transition: background 0.12s ease;
+
+        &:hover {
+            background: #f4f4f5;
+        }
 
         &.up {
             color: #2e69ad;
+
+            &:hover {
+                background: rgb(46 105 173 / 10%);
+            }
         }
 
         &.down {
             color: #c92a2a;
+
+            &:hover {
+                background: rgb(201 42 42 / 10%);
+            }
         }
     }
 }

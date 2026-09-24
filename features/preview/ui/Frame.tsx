@@ -1,5 +1,5 @@
 import {Fragment, useEffect, useState} from "react";
-import {Eye, X} from "lucide-react";
+import {ExternalLink, Eye, ThumbsDown, ThumbsUp} from "lucide-react";
 import {Dialog} from "radix-ui";
 
 import {vote} from "@/core/preview/request";
@@ -56,26 +56,19 @@ const Votes = () => {
 
     return (
         <div className="refresher-votes">
-            <button type="button" className="up" onClick={() => void onVote("U")}>
-                추천 {upvotes || "X"}
+            <button type="button" className="up" title="추천" onClick={() => void onVote("U")}>
+                <ThumbsUp size={15} />
+                {upvotes || "X"}
                 {fixedUpvotes ? ` (${fixedUpvotes})` : ""}
             </button>
             {downvotes !== undefined && (
-                <button type="button" className="down" onClick={() => void onVote("D")}>
-                    비추천 {downvotes}
+                <button type="button" className="down" title="비추천" onClick={() => void onVote("D")}>
+                    <ThumbsDown size={15} />
+                    {downvotes}
                 </button>
             )}
-            <button
-                type="button"
-                onClick={() => {
-                    void navigator.clipboard.writeText(location.href);
-                    useUiStore.getState().showToast("URL을 복사했습니다.");
-                }}
-            >
-                공유
-            </button>
-            <button type="button" onClick={() => window.open(preData?.link ?? location.href, "_blank")}>
-                새 탭
+            <button type="button" title="새 탭으로 열기" onClick={() => window.open(preData?.link ?? location.href, "_blank")}>
+                <ExternalLink size={15} />
             </button>
         </div>
     );
@@ -218,28 +211,12 @@ export const Frame = () => {
                     data-load={dataLoad}
                     onOpenAutoFocus={(event) => event.preventDefault()}
                 >
-                    <Dialog.Close asChild>
-                        <button type="button" className="refresher-preview-close">
-                            <X size={16} />
-                        </button>
-                    </Dialog.Close>
-
                     <div className="refresher-preview-title-zone">
                         <div className="refresher-preview-title-text">
                             <Dialog.Title asChild>
                                 <h3 className="refresher-preview-title" dangerouslySetInnerHTML={{__html: title}} />
                             </Dialog.Title>
                         </div>
-                        {post && (
-                            <div className="refresher-preview-title-controls">
-                                <button type="button" onClick={() => document.getElementById("comment_main")?.focus()}>
-                                    작성
-                                </button>
-                                <button type="button" onClick={() => usePreviewStore.getState().requestRefresh()}>
-                                    갱신
-                                </button>
-                            </div>
-                        )}
                     </div>
 
                     {post && (
@@ -276,11 +253,10 @@ export const Frame = () => {
                                     }}
                                     dangerouslySetInnerHTML={{__html: contents ?? ""}}
                                 />
+                                <Votes />
                             </>
                         )}
                     </div>
-
-                    {post && !error && !commentsOnly && <Votes />}
 
                     {comments !== undefined && (
                         <>

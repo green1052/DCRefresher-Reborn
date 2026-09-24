@@ -60,8 +60,8 @@ export const vote = async (preData: GalleryPreData, postInfo: IPostInfo, mode: "
     body.set("no", preData.id);
     body.set("mode", mode);
     body.set("code_recommend", postInfo.dom?.querySelector<HTMLInputElement>("input[name=code_recommend]")?.value ?? "");
-    body.set("link_id", postInfo.dom?.querySelector<HTMLInputElement>("input[name=link_id]")?.value ?? "");
-    body.set("v_cur_t", postInfo.v_cur_t ?? "");
+    body.set("link_id", preData.gallery);
+    if (postInfo.v_cur_t) body.set("v_cur_t", postInfo.v_cur_t);
     if (postInfo.randomParam) body.set(postInfo.randomParam.name, postInfo.randomParam.value);
 
     const response = await http.post(urls.vote, {headers: HEADERS, body}).text();

@@ -20,6 +20,7 @@ export const WriteComment = () => {
     const [bigDccon, setBigDccon] = useState(false);
     const [dcconOpen, setDcconOpen] = useState(false);
     const [showInputs, setShowInputs] = useState(false);
+    const [hovered, setHovered] = useState(false);
     const textarea = useRef<HTMLTextAreaElement>(null);
 
     const submit = async (): Promise<void> => {
@@ -110,12 +111,19 @@ export const WriteComment = () => {
                 <span
                     className="refresher-write-comment-whoami"
                     style={login ? undefined : {cursor: "pointer"}}
-                    title={login ? undefined : "클릭하면 작성자 정보를 수정합니다."}
+                    onMouseEnter={() => {
+                        if (!login) setHovered(true);
+                    }}
+                    onMouseLeave={() => {
+                        if (!login) setHovered(false);
+                    }}
                     onClick={() => {
                         if (!login) setShowInputs((v) => !v);
                     }}
                 >
-                    {login ? "회원 계정" : nick}(으)로 {reply.replyNo ? "답글" : dccons.length > 0 ? "디시콘" : "댓글"} 작성 중
+                    {!login && hovered
+                        ? "클릭하면 작성자 정보를 수정합니다."
+                        : `${login ? "회원 계정" : nick}(으)로 ${reply.replyNo ? "답글" : dccons.length > 0 ? "디시콘" : "댓글"} 작성 중`}
                 </span>
                 <div className="refresher-write-comment-buttons">
                     {dccons.length > 0 && (
