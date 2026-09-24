@@ -151,7 +151,7 @@ export const Frame = () => {
 
     const [scrollEdge, setScrollEdge] = useState<"top" | "bottom" | null>(null);
 
-    const edge = useRef({count: 0, at: 0, suppress: false});
+    const edge = useRef({count: 0});
 
     useEffect(() => {
         if (!visible) return;
@@ -215,32 +215,23 @@ export const Frame = () => {
             const scroller = (event.target as HTMLElement | null)?.closest?.(".refresher-frame");
             if (!scroller) return;
 
-            const dir = event.deltaY > 0 ? 1 : -1;
-            const atEdge =
-                dir > 0
-                    ? scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 2
-                    : scroller.scrollTop <= 2;
+            const scrolledTop = scroller.scrollTop === 0;
+            const scrolledBottom = Math.abs(Math.floor(scroller.scrollHeight - scroller.scrollTop) - scroller.clientHeight) < 2;
 
-            if (!atEdge) {
-                if (edge.current.count !== 0 || edge.current.suppress) {
-                    edge.current = {count: 0, at: 0, suppress: false};
-                    setScrollEdge(null);
-                }
-                return;
-            }
+            if (!scrolledTop && !scrolledBottom) edge.current.count = 0;
 
-            // 이동 직후 잔여 관성 이벤트는 무시
-            if (edge.current.suppress) return;
+            const isUp = event.deltaY < 0;
+            const atEdge = isUp ? scrolledTop : scrolledBottom;
 
-            setScrollEdge(dir > 0 ? "bottom" : "top");
+            setScrollEdge(atEdge ? (isUp ? "top" : "bottom") : null);
 
+            if (!atEdge) return;
             if (edge.current.count++ < 1) return;
             edge.current.count = 0;
 
             scroller.scrollTop = 0;
             setScrollEdge(null);
-            edge.current = {count: 0, at: Date.now(), suppress: true};
-            goToAdjacent(dir);
+            goToAdjacent(isUp ? -1 : 1);
         });
 
         const onWheel = (event: WheelEvent): void => {
@@ -253,7 +244,7 @@ export const Frame = () => {
         return () => {
             window.removeEventListener("keydown", onKey);
             window.removeEventListener("wheel", onWheel);
-            edge.current = {count: 0, at: 0, suppress: false};
+            edge.current = {count: 0};
             setScrollEdge(null);
         };
     }, [visible]);
@@ -307,7 +298,7 @@ export const Frame = () => {
                     <div className="refresher-preview-contents">
                         {commentsOnly ? (
                             <h3 className="refresher-preview-comments-only" onClick={() => usePreviewStore.getState().setCommentsOnly(false)}>
-                                댓글 보기를 클릭하여 댓글만 표시합니다. 여기를 눌러 글을 볼 수 있습니다.
+                                댓글만 표시 중입니다. 여기를 눌러 원문을 볼 수 있습니다.
                             </h3>
                         ) : error ? (
                             <ErrorBlock error={error} />
