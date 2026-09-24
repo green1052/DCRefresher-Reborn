@@ -1,0 +1,16 @@
+body {
+    width: auto;
+    max-width: none;
+    max-height: none;
+    overflow: auto;
+    min-height: 100vh;
+}
+
+.dcr-app.dcr-options {
+    max-width: 1200px;
+    height: auto;
+    min-height: 100vh;
+    margin: 0 auto;
+    border: 1px solid var(--dcr-border);
+    border-top: 0;
+}
