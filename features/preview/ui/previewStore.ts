@@ -198,6 +198,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
             date: post.date ? new Date(post.date) : undefined,
             expire: post.expire ? new Date(post.expire) : undefined,
             views: post.views,
+            contents: post.contents,
             upvotes: post.upvotes,
             fixedUpvotes: post.fixedUpvotes,
             downvotes: post.disabledDownvote ? undefined : post.downvotes
