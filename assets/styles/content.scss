@@ -112,7 +112,7 @@ button[data-refresher-refresh] {
     font-size: 12px;
     pointer-events: auto;
     box-shadow: 0 6px 20px rgb(0 0 0 / 30%);
-    z-index: 2147483002;
+    z-index: 2147483600;
     animation: dcrToastIn 0.2s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
@@ -167,7 +167,7 @@ button[data-refresher-refresh] {
     background: #fff;
     box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
     pointer-events: auto;
-    z-index: 2147483001;
+    z-index: 2147483600;
     animation: dcrToastIn 0.15s cubic-bezier(0.19, 1, 0.22, 1);
 }
 

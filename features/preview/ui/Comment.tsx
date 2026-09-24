@@ -37,6 +37,8 @@ const relative = (date: Date): string => {
 const extractIcon = (html: string | undefined): string | undefined =>
     new DOMParser().parseFromString(html ?? "", "text/html").querySelector("a.writer_nikcon img")?.getAttribute("src") ?? undefined;
 
+const extractIp = (html: string | undefined): string | undefined => html?.match(/class=["']ip["'][^>]*>\(([^)]+)\)/)?.[1];
+
 const TimeStamp = ({date}: {date: string}) => {
     const parsed = parseDate(date);
     const [absolute, setAbsolute] = useState(false);
@@ -144,7 +146,7 @@ export const Comment = ({comment, depth, replyCount}: CommentProps) => {
             data-deleted={isDeleted ? "true" : undefined}
         >
             <div className="refresher-comment-meta">
-                <UserCard user={{nick: comment.name, id: comment.user_id, ip: comment.ip, image: extractIcon(comment.gallog_icon)}} />
+                <UserCard user={{nick: comment.name, id: comment.user_id, ip: comment.ip || extractIp(comment.gallog_icon), image: extractIcon(comment.gallog_icon)}} />
                 <div className="refresher-comment-controls-container">
                     {depth === 0 && replyCount > 1 && (
                         <button

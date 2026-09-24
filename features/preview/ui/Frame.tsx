@@ -231,8 +231,9 @@ export const Frame = () => {
 
             // 연속 휠 이벤트(관성)는 하나의 제스처로 취급
             const now = Date.now();
-            if (now - edge.current.at <= 100) return;
+            const sameGesture = now - edge.current.at <= 100;
             edge.current.at = now;
+            if (sameGesture) return;
 
             if (edge.current.count++ < 1) return;
             edge.current.count = 0;
