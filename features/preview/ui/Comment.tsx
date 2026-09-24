@@ -1,7 +1,6 @@
-import {useEffect, useState} from "react";
+import {useEffect, useState, type MouseEvent} from "react";
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
 
-import {eventBus} from "@/core/eventbus/bus";
 import {adminDeleteComment, userDeleteComment} from "@/core/preview/request";
 import type {ProcessedComment} from "@/core/preview/comments";
 import {useUiStore} from "@/stores/ui";
@@ -68,27 +67,30 @@ export interface UserCardData {
     image?: string;
 }
 
-export const UserCard = ({user}: {user: UserCardData}) => (
-    <div
-        className="refresher-user"
-        style={{cursor: user.id ? "pointer" : undefined}}
-        onClick={
-            user.id
-                ? () => eventBus.emit("refresherUserContextMenu", user.nick ?? null, user.id ?? null, user.ip ?? null, null, null)
-                : undefined
-        }
-    >
-        <div className="refresher-user-content">
-            <span className="refresher-user-nick">{user.nick ?? user.id ?? user.ip}</span>
-            {user.image && (
-                <span className="refresher-user-icon">
-                    <img src={user.image} alt="" />
-                </span>
-            )}
-            {(user.id || user.ip) && <span className="refresher-user-info">({user.id ?? user.ip})</span>}
+export const UserCard = ({user}: {user: UserCardData}) => {
+    const openMenu = (event: MouseEvent): void => {
+        event.preventDefault();
+
+        const ui = useUiStore.getState();
+        ui.setSelected({nick: user.nick, uid: user.id, ip: user.ip});
+        ui.closeBubble();
+        ui.openBubble(event.clientX, event.clientY);
+    };
+
+    return (
+        <div className="refresher-user" style={{cursor: "pointer"}} onClick={openMenu} onContextMenu={openMenu}>
+            <div className="refresher-user-content">
+                <span className="refresher-user-nick">{user.nick ?? user.id ?? user.ip}</span>
+                {user.image && (
+                    <span className="refresher-user-icon">
+                        <img src={user.image} alt="" />
+                    </span>
+                )}
+                {(user.id || user.ip) && <span className="refresher-user-info">({user.id || user.ip})</span>}
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 interface CommentProps {
     comment: ProcessedComment;

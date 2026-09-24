@@ -53,7 +53,7 @@ export const parsePostInfo = (html: string, id: string): IPostInfo | undefined =
     return {
         id,
         header,
-        title: strip(dom.querySelector<HTMLElement>(".title_subject")?.textContent),
+        title: strip(dom.querySelector<HTMLElement>(".title_subject")?.innerHTML?.replace(/<script[\s\S]*?<\/script>/g, "")),
         date: strip(dom.querySelector<HTMLElement>(".fl > .gall_date")?.textContent),
         expire: strip(
             dom.querySelector<HTMLElement>(".view_content_wrap div.fl > span.mini_autodeltime > div.pop_tipbox > div")?.textContent,

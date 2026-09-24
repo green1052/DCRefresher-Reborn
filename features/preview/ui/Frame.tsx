@@ -229,6 +229,11 @@ export const Frame = () => {
 
             setScrollEdge(dir > 0 ? "bottom" : "top");
 
+            // 연속 휠 이벤트(관성)는 하나의 제스처로 취급
+            const now = Date.now();
+            if (now - edge.current.at <= 100) return;
+            edge.current.at = now;
+
             if (edge.current.count++ < 1) return;
             edge.current.count = 0;
 
