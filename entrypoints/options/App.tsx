@@ -1,4 +1,4 @@
-import {Tabs} from "@radix-ui/themes";
+import {Box, Flex, Heading, Tabs, Text} from "@radix-ui/themes";
 import {ExternalLink} from "lucide-react";
 import {useEffect} from "react";
 
@@ -55,7 +55,6 @@ export function App({optionsPage = false}: {optionsPage?: boolean}) {
 
         void detect();
 
-        // DC 탭 새로고침/이동 시 자동 재시도
         const onUpdated = (tabId: number, changeInfo: {status?: string}, tab: {url?: string}): void => {
             if (changeInfo.status === "complete" && tab.url?.includes("dcinside.com")) void detect();
         };
@@ -65,38 +64,47 @@ export function App({optionsPage = false}: {optionsPage?: boolean}) {
     }, [setSchemas, setUnavailable]);
 
     return (
-        <div className={`refresher-app${optionsPage ? " refresher-options" : ""}`}>
-            <header className="refresher-header">
-                <img className="refresher-header-logo" src={logoUrl} alt="" />
-                <h1>
-                    DCRefresher <span className="refresher-header-reborn">Reborn</span>
-                </h1>
-                {!optionsPage && (
-                    <button
-                        className="refresher-open-options"
-                        title="전체 설정 페이지 열기"
-                        onClick={() => void browser.runtime.openOptionsPage()}
+        <Flex direction="column" minHeight="100vh">
+            <Flex align="center" gap="2" px="6" py="3" style={{borderBottom: "1px solid var(--gray-a5)"}}>
+                <img src={logoUrl} alt="" width={36} height={36} style={{borderRadius: 8}} />
+                <Heading size="6">
+                    DCRefresher <Text color="blue">Reborn</Text>
+                </Heading>
+                {optionsPage && (
+                    <Box
+                        asChild
+                        style={{
+                            marginLeft: "auto",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            color: "var(--gray-9)"
+                        }}
                     >
-                        <ExternalLink size={14} />
-                    </button>
+                        <button type="button" title="전체 설정 페이지 열기" onClick={() => void browser.runtime.openOptionsPage()}>
+                            <ExternalLink size={14} />
+                        </button>
+                    </Box>
                 )}
-            </header>
+            </Flex>
 
-            <Tabs.Root defaultValue="general" className="refresher-tabs">
-                <Tabs.List className="refresher-tabs-list" aria-orientation="vertical">
+            <Tabs.Root defaultValue="general" style={{display: "flex", flex: 1, minHeight: 0}}>
+                <Tabs.List style={{flexDirection: "column", alignItems: "stretch", width: 200, gap: 2, padding: 16, borderRight: "1px solid var(--gray-a5)", alignSelf: "flex-start", position: "sticky", top: 0}}>
                     {TABS.map((tab) => (
-                        <Tabs.Trigger key={tab.id} value={tab.id} className="refresher-tab-trigger">
+                        <Tabs.Trigger key={tab.id} value={tab.id}>
                             {tab.label}
                         </Tabs.Trigger>
                     ))}
                 </Tabs.List>
 
-                {TABS.map((tab) => (
-                    <Tabs.Content key={tab.id} value={tab.id} className="refresher-tab-content">
-                        {tab.content}
-                    </Tabs.Content>
-                ))}
+                <Box style={{flex: 1, minWidth: 0, padding: "24px 32px 48px"}}>
+                    {TABS.map((tab) => (
+                        <Tabs.Content key={tab.id} value={tab.id} style={{paddingTop: 0}}>
+                            {tab.content}
+                        </Tabs.Content>
+                    ))}
+                </Box>
             </Tabs.Root>
-        </div>
+        </Flex>
     );
 }

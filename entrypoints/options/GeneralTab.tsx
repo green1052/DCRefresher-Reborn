@@ -1,6 +1,8 @@
-import {Link} from "@radix-ui/themes";
+import {Box, Flex, Link, Text} from "@radix-ui/themes";
 
 import {useModulesStore} from "@/stores/modules";
+
+import {Empty, Section} from "./Layout";
 
 const LINKS: [string, string][] = [
     ["GitHub", "https://github.com/green1052/DCRefresher-Reborn"],
@@ -14,21 +16,21 @@ export function GeneralTab() {
     const unavailable = useModulesStore((state) => state.unavailable);
 
     return (
-        <div>
-            <div className="refresher-module-row">
-                <div className="refresher-module-text">
-                    <div className="refresher-module-name">DCRefresher Reborn</div>
-                    <div className="refresher-module-desc">
-                        {browser.runtime.getManifest().version}
-                        {LINKS.map(([text, url]) => (
-                            <Link key={url} href={url} target="_blank" rel="noreferrer" style={{marginRight: 8}}>
-                                {text}
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-            </div>
-            {unavailable && <div className="empty">우선 디시인사이드 페이지를 열고 설정해주세요.</div>}
-        </div>
+        <Box>
+            <Section title="DCRefresher Reborn">
+                <Text as="div" size="2" color="gray" mb="2">
+                    버전 {browser.runtime.getManifest().version}
+                </Text>
+                <Flex gap="4" wrap="wrap">
+                    {LINKS.map(([text, url]) => (
+                        <Link key={url} href={url} target="_blank" rel="noreferrer">
+                            {text}
+                        </Link>
+                    ))}
+                </Flex>
+            </Section>
+
+            {unavailable && <Empty>우선 디시인사이드 페이지를 열고 설정해주세요.</Empty>}
+        </Box>
     );
 }

@@ -1,5 +1,5 @@
 import {Plus, X} from "lucide-react";
-import {Button, Dialog, Flex, IconButton, Link, Text, TextField} from "@radix-ui/themes";
+import {Badge, Box, Button, Dialog, Flex, IconButton, Link, Text, TextField} from "@radix-ui/themes";
 import {useState} from "react";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
@@ -7,6 +7,8 @@ import {RefresherSelect} from "@/components/RefresherSelect";
 import {MEMO_TYPES, MEMO_TYPE_NAMES} from "@/core/storage/items";
 import type {MemoEntry, MemoType} from "@/core/storage/types";
 import {useMemosStore} from "@/stores/memos";
+
+import {Empty, Section} from "./Layout";
 
 const MEMO_TARGET = "https://dcrefresher.green1052.com/utils/convert-memo";
 
@@ -134,24 +136,33 @@ export function MemoTab() {
     const [clearConfirm, setClearConfirm] = useState<MemoType | null>(null);
 
     return (
-        <div>
-            <h2 className="refresher-section-title">데이터 관리</h2>
-            <p className="refresher-section-desc">
-                <Link href={MEMO_TARGET} target="_blank" rel="noreferrer">
-                    메모 변환
-                </Link>
-            </p>
+        <Box>
+            <Section
+                title="데이터 관리"
+                desc={
+                    <Link href={MEMO_TARGET} target="_blank" rel="noreferrer">
+                        메모 변환
+                    </Link>
+                }
+            >
+                <Text size="2" color="gray">
+                    갤로그/미리보기 등에서 유저 메모를 표시합니다.
+                </Text>
+            </Section>
 
             {MEMO_TYPES.map((type) => {
                 const map = memos[type];
 
                 return (
-                    <section key={type} className="refresher-section">
-                        <header className="refresher-section-head">
-                            <h3>
-                                {MEMO_TYPE_NAMES[type]} ({Object.keys(map).length}개)
-                            </h3>
-                            <span className="refresher-section-actions">
+                    <Section
+                        key={type}
+                        title={
+                            <>
+                                {MEMO_TYPE_NAMES[type]} <Badge color="gray" variant="soft">{Object.keys(map).length}개</Badge>
+                            </>
+                        }
+                        actions={
+                            <>
                                 <IconButton
                                     variant="ghost"
                                     color="gray"
@@ -171,37 +182,42 @@ export function MemoTab() {
                                 >
                                     <X size={14} />
                                 </IconButton>
-                            </span>
-                        </header>
-
+                            </>
+                        }
+                    >
                         {Object.keys(map).length === 0 ? (
-                            <p className="empty">{MEMO_TYPE_NAMES[type]} 메모 없음</p>
+                            <Empty>{MEMO_TYPE_NAMES[type]} 메모 없음</Empty>
                         ) : (
-                            <div className="refresher-chip-list">
+                            <Flex wrap="wrap" gap="2">
                                 {Object.entries(map).map(([user, entry]) => (
-                                    <span key={user} className="refresher-chip">
-                                        <button
-                                            type="button"
-                                            className="refresher-chip-text"
-                                            title={entry.text}
-                                            onClick={() => setForm({type, user, text: entry.text, color: entry.color})}
+                                    <Flex key={user} align="center" gap="1" style={{border: "1px solid var(--gray-a5)", borderRadius: 999, padding: "2px 6px"}}>
+                                        <Box
+                                            asChild
+                                            style={{
+                                                background: "none",
+                                                border: "none",
+                                                padding: 0,
+                                                cursor: "pointer",
+                                                color: "var(--gray-12)",
+                                                font: "inherit",
+                                                maxWidth: 240,
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                                whiteSpace: "nowrap"
+                                            }}
                                         >
-                                            {user} ({entry.text.slice(0, 10)})
-                                        </button>
-                                        <IconButton
-                                            variant="ghost"
-                                            color="gray"
-                                            size="1"
-                                            title="삭제"
-                                            onClick={() => void removeMemo(type, user)}
-                                        >
+                                            <button type="button" title={entry.text} onClick={() => setForm({type, user, text: entry.text, color: entry.color})}>
+                                                {user} ({entry.text.slice(0, 10)})
+                                            </button>
+                                        </Box>
+                                        <IconButton variant="ghost" color="gray" size="1" title="삭제" onClick={() => void removeMemo(type, user)}>
                                             <X size={12} />
                                         </IconButton>
-                                    </span>
+                                    </Flex>
                                 ))}
-                            </div>
+                            </Flex>
                         )}
-                    </section>
+                    </Section>
                 );
             })}
 
@@ -224,7 +240,7 @@ export function MemoTab() {
                 }}
                 onClose={() => setClearConfirm(null)}
             />
-        </div>
+        </Box>
     );
 }
 

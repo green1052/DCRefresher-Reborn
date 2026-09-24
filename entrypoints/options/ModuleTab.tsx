@@ -1,7 +1,9 @@
-import {Switch} from "@radix-ui/themes";
+import {Badge, Box, Flex, Heading, Switch, Text} from "@radix-ui/themes";
 
 import {SettingItem} from "@/components/SettingItem";
 import {useModulesStore} from "@/stores/modules";
+
+import {Empty, Section} from "./Layout";
 
 export function ModuleTab() {
     const schemas = useModulesStore((state) => state.schemas);
@@ -10,25 +12,28 @@ export function ModuleTab() {
     const toggle = useModulesStore((state) => state.toggle);
     const changeSetting = useModulesStore((state) => state.changeSetting);
 
-    if (unavailable) return <div className="empty">디시인사이드 탭을 열어주세요.</div>;
+    if (unavailable) return <Empty>디시인사이드 탭을 열어주세요.</Empty>;
 
-    if (schemas.length === 0) return <div className="empty">모듈이 없습니다.</div>;
+    if (schemas.length === 0) return <Empty>모듈이 없습니다.</Empty>;
 
     return (
-        <div>
+        <Box>
             {schemas.map((schema) => (
-                <section key={schema.id} className="refresher-section">
-                    <header className="refresher-section-head">
-                        <div className="refresher-module-text">
-                            <div className="refresher-module-name">{schema.name}</div>
-                            <div className="refresher-module-desc">{schema.description}</div>
-                        </div>
-                        <Switch
-                            size="1"
-                            checked={schema.enable}
-                            onCheckedChange={(value) => void toggle(schema.id, value, tabId)}
-                        />
-                    </header>
+                <Section
+                    key={schema.id}
+                    title={schema.name}
+                    actions={
+                        <>
+                            <Text size="1" color="gray" mr="2">
+                                {schema.running ? "활성" : "비활성"}
+                            </Text>
+                            <Switch size="1" checked={schema.enable} onCheckedChange={(value) => void toggle(schema.id, value, tabId)} />
+                        </>
+                    }
+                >
+                    <Text as="div" size="2" color="gray" mb="3">
+                        {schema.description}
+                    </Text>
 
                     {schema.settings &&
                         Object.entries(schema.settings).map(([key, settingSchema]) => (
@@ -40,8 +45,8 @@ export function ModuleTab() {
                                 onChange={(value) => void changeSetting(schema.id, key, value, tabId)}
                             />
                         ))}
-                </section>
+                </Section>
             ))}
-        </div>
+        </Box>
     );
 }

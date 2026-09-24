@@ -1,4 +1,4 @@
-import {Button, Select, Slider, Switch, TextField} from "@radix-ui/themes";
+import {Box, Flex, Select, Slider, Switch, Text, TextField} from "@radix-ui/themes";
 import {useEffect, useState} from "react";
 
 import type {SettingSchema} from "@/core/module/types";
@@ -65,8 +65,9 @@ const RangeControl = ({schema, value, disabled, onChange}: SettingItemProps) => 
             step={schema.step}
             value={[draft]}
             disabled={disabled}
-            onValueChange={([next]) => setDraft(next ?? 0)}
-            onValueCommit={([next]) => {
+            onValueChange={(values) => setDraft(values[0] ?? 0)}
+            onValueCommit={(values) => {
+                const next = values[0];
                 if (next !== undefined && next !== value) onChange(next);
             }}
         />
@@ -94,19 +95,29 @@ const OrderControl = ({schema, value, disabled, onChange}: SettingItemProps) => 
     };
 
     return (
-        <div style={{display: "flex", flexDirection: "column", gap: 2}}>
+        <Flex direction="column" gap="2" align="end">
             {order.map((key, index) => (
-                <span key={key} style={{display: "flex", alignItems: "center", gap: 4}}>
-                    <Button size="1" variant="soft" disabled={disabled || index === 0} onClick={() => move(index, -1)}>
-                        ↑
-                    </Button>
-                    <Button size="1" variant="soft" disabled={disabled || index === order.length - 1} onClick={() => move(index, 1)}>
-                        ↓
-                    </Button>
-                    {schema.items[key] ?? key}
-                </span>
+                <Flex key={key} align="center" gap="2">
+                    <Text size="1">{schema.items[key] ?? key}</Text>
+                    <Flex gap="1">
+                        <Box asChild style={{padding: 0}}>
+                            <button type="button" disabled={disabled || index === 0} onClick={() => move(index, -1)} aria-label="위로">
+                                <Text size="1" color={disabled || index === 0 ? "gray" : undefined}>
+                                    ↑
+                                </Text>
+                            </button>
+                        </Box>
+                        <Box asChild style={{padding: 0}}>
+                            <button type="button" disabled={disabled || index === order.length - 1} onClick={() => move(index, 1)} aria-label="아래로">
+                                <Text size="1" color={disabled || index === order.length - 1 ? "gray" : undefined}>
+                                    ↓
+                                </Text>
+                            </button>
+                        </Box>
+                    </Flex>
+                </Flex>
             ))}
-        </div>
+        </Flex>
     );
 };
 
@@ -114,25 +125,32 @@ export const SettingItem = ({schema, value, disabled, onChange}: SettingItemProp
     const changed = value !== schema.default;
 
     return (
-        <div className="refresher-setting-row" data-changed={changed || undefined}>
-            <div className="refresher-setting-text">
-                <div className="refresher-module-name">{schema.name}</div>
-                <div className="refresher-module-desc">{schema.desc}</div>
-                <div className="refresher-setting-default">(기본 값 : {formatDefault(schema)})</div>
-            </div>
+        <Flex justify="between" align="center" gap="3" py="2">
+            <Box style={{flex: 1, minWidth: 0}}>
+                <Text as="div" size="2" weight={changed ? "bold" : "regular"}>
+                    {schema.name}
+                    {changed && (
+                        <Text color="blue">
+                            {" "}
+                            •
+                        </Text>
+                    )}
+                </Text>
+                <Text as="div" size="1" color="gray">
+                    {schema.desc}
+                </Text>
+                <Text as="div" size="1" color="gray">
+                    기본 값 : {formatDefault(schema)}
+                </Text>
+            </Box>
 
-            <div className="refresher-setting-control">
+            <Box>
                 {schema.type === "check" && (
                     <Switch size="1" checked={Boolean(value)} disabled={disabled} onCheckedChange={(checked) => onChange(checked)} />
                 )}
                 {schema.type === "option" && (
-                    <Select.Root
-                        size="1"
-                        value={String(value)}
-                        disabled={disabled}
-                        onValueChange={(selected) => onChange(selected)}
-                    >
-                        <Select.Trigger />
+                    <Select.Root size="1" value={String(value)} disabled={disabled} onValueChange={(selected) => onChange(selected)}>
+                        <Select.Trigger style={{minWidth: 120}} />
                         <Select.Content>
                             {Object.entries(schema.items).map(([key, label]) => (
                                 <Select.Item key={key} value={key}>
@@ -145,7 +163,7 @@ export const SettingItem = ({schema, value, disabled, onChange}: SettingItemProp
                 {schema.type === "text" && <TextControl {...{schema, value, disabled, onChange}} />}
                 {schema.type === "range" && <RangeControl {...{schema, value, disabled, onChange}} />}
                 {schema.type === "order" && <OrderControl {...{schema, value, disabled, onChange}} />}
-            </div>
-        </div>
+            </Box>
+        </Flex>
     );
 };

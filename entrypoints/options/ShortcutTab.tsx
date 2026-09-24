@@ -1,5 +1,7 @@
-import {Button} from "@radix-ui/themes";
+import {Button, Flex, Text} from "@radix-ui/themes";
 import {useEffect, useState} from "react";
+
+import {Empty} from "./Layout";
 
 interface ShortcutCommand {
     name?: string;
@@ -15,18 +17,18 @@ export function ShortcutTab() {
     }, []);
 
     return (
-        <div>
+        <Flex direction="column" gap="3">
             {shortcuts
                 .filter((shortcut) => shortcut.description)
                 .map((shortcut) => (
-                    <div key={shortcut.name} className="refresher-module-row">
-                        <div className="refresher-module-text">
-                            <div className="refresher-module-name">{shortcut.description}</div>
-                        </div>
-                        <span className="refresher-module-desc">{shortcut.shortcut || "없음"}</span>
-                    </div>
+                    <Flex key={shortcut.name} justify="between" align="center" py="2">
+                        <Text size="2">{shortcut.description}</Text>
+                        <Text size="2" color="gray">
+                            {shortcut.shortcut || "없음"}
+                        </Text>
+                    </Flex>
                 ))}
-            <div className="empty">
+            <Empty>
                 <Button
                     variant="soft"
                     onClick={() =>
@@ -35,7 +37,7 @@ export function ShortcutTab() {
                 >
                     단축키 설정
                 </Button>
-            </div>
-        </div>
+            </Empty>
+        </Flex>
     );
 }

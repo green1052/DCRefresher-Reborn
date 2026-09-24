@@ -6,6 +6,8 @@ import {ConfirmDialog} from "@/components/ConfirmDialog";
 import {DatabaseService} from "@/core/services/database";
 import {backupStorage, dbStorage} from "@/core/storage/items";
 
+import {Row} from "./Layout";
+
 const formatTime = (lastUpdate: number): string =>
     lastUpdate === 0 ? "기록 없음" : new Date(lastUpdate).toLocaleString("ko-KR");
 
@@ -142,22 +144,36 @@ export function DataTab() {
 
     return (
         <div>
-            <div className="refresher-module-row">
-                <div className="refresher-module-text">
-                    <div className="refresher-module-name">IP/밴 데이터베이스</div>
-                    <div className="refresher-module-desc">마지막 갱신: {formatTime(lastUpdate)}</div>
-                </div>
-                <Button size="1" variant="soft" disabled={loading} onClick={() => void forceUpdate()}>
-                    <RefreshCw size={12} /> 지금 갱신
-                </Button>
-            </div>
+            <Row
+                left={
+                    <Flex direction="column">
+                        <Text size="2" weight="bold">
+                            IP/밴 데이터베이스
+                        </Text>
+                        <Text size="2" color="gray">
+                            마지막 갱신: {formatTime(lastUpdate)}
+                        </Text>
+                    </Flex>
+                }
+                right={
+                    <Button size="1" variant="soft" disabled={loading} onClick={() => void forceUpdate()}>
+                        <RefreshCw size={12} /> 지금 갱신
+                    </Button>
+                }
+            />
 
-            <div className="refresher-module-row">
-                <div className="refresher-module-text">
-                    <div className="refresher-module-name">데이터 관리</div>
-                    <div className="refresher-module-desc">마지막 백업: {formatTime(backupAt)}</div>
-                </div>
-            </div>
+            <Row
+                left={
+                    <Flex direction="column">
+                        <Text size="2" weight="bold">
+                            데이터 관리
+                        </Text>
+                        <Text size="2" color="gray">
+                            마지막 백업: {formatTime(backupAt)}
+                        </Text>
+                    </Flex>
+                }
+            />
             <Flex gap="2" wrap="wrap" pt="2" pb="4">
                 <Button size="1" variant="soft" disabled={loading} onClick={() => void backupCloud()}>
                     클라우드 백업

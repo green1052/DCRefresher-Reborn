@@ -1,5 +1,5 @@
+import {Badge, Box, Button, Flex, IconButton, Text} from "@radix-ui/themes";
 import {Plus, X} from "lucide-react";
-import {IconButton} from "@radix-ui/themes";
 import {useState} from "react";
 
 import {BlockDialog} from "@/components/BlockDialog";
@@ -9,6 +9,8 @@ import {BLOCK_TYPES, TYPE_NAMES, DETECT_MODE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import type {BlockInputFields} from "@/stores/blocks";
 import {useBlocksStore} from "@/stores/blocks";
+
+import {Empty, Row, Section} from "./Layout";
 
 /** 디시콘 이미지 (묶음 정규식이면 첫 코드) */
 const dcconImage = (entry: BlockEntry): string => {
@@ -41,27 +43,40 @@ export function BlockTab() {
     };
 
     return (
-        <div>
-            <h2 className="refresher-section-title">차단 모드</h2>
-            <p className="refresher-section-desc">기본 차단 판별 방식입니다. 개별 항목의 모드가 우선합니다.</p>
-
-            {BLOCK_TYPES.map((type) => (
-                <div key={`mode-${type}`} className="refresher-field">
-                    <span className="refresher-field-label">{TYPE_NAMES[type]}</span>
-                    <RefresherSelect value={defaults[type]} onChange={(next) => void setDefault(type, next as DetectMode)} options={Object.entries(DETECT_MODE_NAMES)} />
-                </div>
-            ))}
+        <Box>
+            <Section title="차단 모드" desc="기본 차단 판별 방식입니다. 개별 항목의 모드가 우선합니다.">
+                {BLOCK_TYPES.map((type) => (
+                    <Row
+                        key={`mode-${type}`}
+                        left={
+                            <Text size="2" color="gray">
+                                {TYPE_NAMES[type]}
+                            </Text>
+                        }
+                        right={
+                            <RefresherSelect
+                                value={defaults[type]}
+                                onChange={(next) => void setDefault(type, next as DetectMode)}
+                                options={Object.entries(DETECT_MODE_NAMES)}
+                            />
+                        }
+                    />
+                ))}
+            </Section>
 
             {BLOCK_TYPES.map((type) => {
                 const list = entries[type];
 
                 return (
-                    <section key={type} className="refresher-section">
-                        <header className="refresher-section-head">
-                            <h3>
-                                {TYPE_NAMES[type]} ({list.length}개)
-                            </h3>
-                            <span className="refresher-section-actions">
+                    <Section
+                        key={type}
+                        title={
+                            <>
+                                {TYPE_NAMES[type]} <Badge color="gray" variant="soft">{list.length}개</Badge>
+                            </>
+                        }
+                        actions={
+                            <>
                                 <IconButton variant="ghost" color="gray" size="1" title="추가" onClick={() => setDialog({type, initial: null})}>
                                     <Plus size={16} />
                                 </IconButton>
@@ -75,40 +90,50 @@ export function BlockTab() {
                                 >
                                     <X size={14} />
                                 </IconButton>
-                            </span>
-                        </header>
-
+                            </>
+                        }
+                    >
                         {list.length === 0 ? (
-                            <p className="empty">차단된 {TYPE_NAMES[type]} 없음</p>
+                            <Empty>차단된 {TYPE_NAMES[type]} 없음</Empty>
                         ) : (
-                            <div className="refresher-chip-list">
+                            <Flex wrap="wrap" gap="2">
                                 {list.map((entry) => (
-                                    <span key={entry.id} className="refresher-chip">
-                                        {type === "DCCON" ? (
-                                            <button type="button" className="refresher-chip-text" onClick={() => setDialog({type, initial: entry})}>
-                                                <img className="refresher-chip-image" src={dcconImage(entry)} alt={entry.extra ?? entry.content} />
-                                            </button>
-                                        ) : (
-                                            <button type="button" className="refresher-chip-text" onClick={() => setDialog({type, initial: entry})}>
-                                                {entry.content}
-                                                {entry.extra ? ` (${entry.extra})` : ""}
-                                                {entry.gallery ? ` (${entry.gallery})` : ""}
-                                            </button>
-                                        )}
-                                        <IconButton
-                                            variant="ghost"
-                                            color="gray"
-                                            size="1"
-                                            title="삭제"
-                                            onClick={() => void removeEntry(type, entry.id)}
+                                    <Flex key={entry.id} align="center" gap="1" style={{border: "1px solid var(--gray-a5)", borderRadius: 999, padding: "2px 6px"}}>
+                                        <Box
+                                            asChild
+                                            style={{
+                                                background: "none",
+                                                border: "none",
+                                                padding: 0,
+                                                cursor: "pointer",
+                                                color: "var(--gray-12)",
+                                                font: "inherit",
+                                                maxWidth: 240,
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                                whiteSpace: "nowrap"
+                                            }}
                                         >
+                                            <button type="button" onClick={() => setDialog({type, initial: entry})}>
+                                                {type === "DCCON" ? (
+                                                    <img src={dcconImage(entry)} alt={entry.extra ?? entry.content} style={{display: "block", height: 40}} />
+                                                ) : (
+                                                    <>
+                                                        {entry.content}
+                                                        {entry.extra ? ` (${entry.extra})` : ""}
+                                                        {entry.gallery ? ` (${entry.gallery})` : ""}
+                                                    </>
+                                                )}
+                                            </button>
+                                        </Box>
+                                        <IconButton variant="ghost" color="gray" size="1" title="삭제" onClick={() => void removeEntry(type, entry.id)}>
                                             <X size={12} />
                                         </IconButton>
-                                    </span>
+                                    </Flex>
                                 ))}
-                            </div>
+                            </Flex>
                         )}
-                    </section>
+                    </Section>
                 );
             })}
 
@@ -135,6 +160,6 @@ export function BlockTab() {
                 }}
                 onClose={() => setClearConfirm(null)}
             />
-        </div>
+        </Box>
     );
 }
