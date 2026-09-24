@@ -3,6 +3,7 @@ import {block} from "@/core/block";
 import {http} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import type {BlockType, DetectMode} from "@/core/storage/types";
+import {getCookie} from "@/utils/cookie";
 import {useUiStore, type SelectedUser} from "@/stores/ui";
 
 interface DcconDetailResponse {
@@ -15,13 +16,6 @@ interface DcconDetailResponse {
     }[];
 }
 
-/** document.cookie에서 단일 쿠키 값 추출 (js-cookie 대신 미니 구현) */
-const getCookie = (name: string): string | undefined => {
-    for (const part of document.cookie.split(/; */)) {
-        if (part.startsWith(`${name}=`)) return decodeURIComponent(part.slice(name.length + 1));
-    }
-    return undefined;
-};
 
 /** 유저 차단: uid > ip > nick 우선순위 */
 const blockUser = async (selected: SelectedUser): Promise<void> => {

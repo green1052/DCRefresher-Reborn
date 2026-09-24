@@ -1,4 +1,6 @@
 import "@/assets/styles/content.scss";
+import "@/assets/styles/stealth.scss";
+import "@/assets/styles/layout.scss";
 
 import {createRoot} from "react-dom/client";
 
@@ -39,7 +41,7 @@ export default defineContentScript({
                     useUiStore.getState().openMemoForSelected();
                     break;
                 case "searchSauceNao":
-                    // imagesearch 모듈(M3)
+                    eventBus.emit("imageSearch");
                     break;
             }
         });

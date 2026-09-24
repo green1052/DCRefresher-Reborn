@@ -25,6 +25,8 @@ export interface ModuleEventMap {
     refreshRequest: [];
     /** 목록에서 파싱된 게시글 정보 */
     postListParsed: [posts: GalleryPreData[]];
+    /** 이미지 컨텍스트 메뉴(SauceNao) 요청 */
+    imageSearch: [];
 }
 
 export type BlockRequestOptions = {

@@ -225,6 +225,57 @@ button[data-dcr-refresh] {
     }
 }
 
+/* ===== 본문 링크 / 유저 데이터 / 작성자 셀 (v5 base/_writer) ===== */
+
+.write_div > :not(.dc_series) > .lnk {
+    background-color: rgb(248 248 248);
+    border-radius: 5px;
+    color: var(--refresher-link);
+    padding: 2px 4px;
+    transition: color 300ms cubic-bezier(0.19, 1, 0.22, 1);
+
+    &:hover {
+        color: var(--refresher-link-hover);
+    }
+
+    &:active {
+        color: var(--refresher-link-active);
+    }
+}
+
+.fl,
+.cmt_info,
+.addbox,
+.reply_info {
+    .nickname {
+        max-width: unset !important;
+    }
+
+    .refresherUserData {
+        margin-left: 3px;
+    }
+}
+
+.gall_writer {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:has(.user_data.add) {
+        overflow: unset !important;
+    }
+
+    .addbox {
+        display: initial !important;
+    }
+}
+
+tr.gall_writer {
+    display: table-cell;
+    text-align: center;
+    vertical-align: middle;
+}
+
 /* ===== 다크 모드 (표시 요소) ===== */
 
 @media (prefers-color-scheme: dark) {

@@ -93,7 +93,7 @@ public/       # icon*.png, 웹리소스
 ## 마일스톤
 
 - [x] **M1 골격**: 의존성, wxt.config(manifest 이식), core(storage/http/eventbus/filtering/module/messaging/proxy), background(메뉴/단축키/DB), content 부트스트랩, popup 6탭 골격(Radix Tabs), options wrapper, 빌드 — *주의: Firefox 빌드 기본 = **MV2** (`.output/firefox-mv2`), chrome = `.output/chrome-mv3`. proxy-service는 DatabaseService로 e2e 검증(DataTab "지금 갱신"). BroadcastService는 불필요—신규시 추가. 커밋 규칙: 영어 메시지(feat:/deps:/chore:), PLAN.md는 미추적(.gitignore). 브랜치명 `rereborn`(오타, 유지). release 참조용 worktree: `.release-tree`*
-- [ ] **M2 데이터 기능**: block/memo 코어+모듈, popup Block/Memo탭 + 차단 Dialog(공용), refresh 모듈+단축키, 오버레이 루트(토스트/메모Dialog/버블), ModuleTab 설정 컨트롤 렌더(SettingControl 5종)
+- [x] **M2 데이터 기능**: block/memo 코어+모듈, popup Block/Memo탭 + 차단 Dialog(공용), refresh 모듈+단축키, 오버레이 루트(토스트/메모Dialog/버블), ModuleTab 설정 컨트롤 렌더(SettingControl 5종) — *커밋 daf05f8c. 비고:BlockDialog는 popup 전용(content는 버블→즉시 등록), DCCON 수정도 허용(v5는 alert), popup 내보내기/가져오기=M5, 필요시 MANUAL 문서: 우클릭=버블(네이티브 메뉴 대체, .ub-writer/.written_dccon), 확장 컨텍스트 메뉴=10초 내 마지막 선택 대상.*
 - [ ] **M3 단순 모듈**: stealth, userinfo(IP/밴 DB+배지순서), fonts, layout, imagesearch, write, manage, 컨텍스트 메뉴 연결
 - [ ] **M4 미리보기**: 파서/컨트롤러(TS) → React 오버레이 → 댓글/디시콘/캡챠/어드민/블록팝업, 미니 미리보기
 - [ ] **M5 마무리**: Data탭(백업/복원/클라우드), Shortcut탭, options/dark, grecaptcha.content, 리소스, 양쪽 빌드+수동 테스트
