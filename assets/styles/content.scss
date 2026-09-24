@@ -360,6 +360,7 @@ html:has(#css-darkmode) {
     max-height: 80vh;
     margin: 10vh 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 24px 28px;
     border-radius: 8px;
     background: #fff;

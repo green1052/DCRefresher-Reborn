@@ -114,12 +114,12 @@ const CommentList = () => {
     const comments = usePreviewStore((s) => s.comments)!;
     const collapsed = usePreviewStore((s) => s.collapsed);
 
-    const parents = comments.filter((comment) => !comment.c_no || comment.c_no === "0");
+    const parents = comments.filter((comment) => comment.depth === 0);
 
     return (
         <div className="refresher-preview-comments">
             {parents.map((parent) => {
-                const replies = comments.filter((comment) => comment.c_no === parent.no);
+                const replies = comments.filter((comment) => comment.depth === 1 && comment.c_no === parent.no);
                 const isCollapsed = collapsed.has(parent.no);
 
                 return (
@@ -153,6 +153,18 @@ export const Frame = () => {
     useEffect(() => {
         if (!visible) return;
 
+        const html = document.documentElement;
+        const previous = html.style.overflow;
+        html.style.overflow = "hidden";
+
+        return () => {
+            html.style.overflow = previous;
+        };
+    }, [visible]);
+
+    useEffect(() => {
+        if (!visible) return;
+
         const scrollSkip = modules.use("preview")?.settings.scrollToSkip !== false;
 
         const goToAdjacent = (dir: number): void => {
@@ -171,7 +183,10 @@ export const Frame = () => {
 
             const next = rows[index + dir];
             const nextPre = next ? buildPreData(next) : null;
-            if (nextPre) st.requestOpen(nextPre);
+            if (nextPre) {
+                st.requestOpen(nextPre);
+                useUiStore.getState().showToast(dir > 0 ? "다음 게시글로 이동했습니다." : "이전 게시글로 이동했습니다.");
+            }
         };
 
         const onKey = (event: KeyboardEvent): void => {

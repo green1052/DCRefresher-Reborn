@@ -8,12 +8,16 @@ import {useUiStore} from "@/stores/ui";
 
 import {usePreviewStore} from "./previewStore";
 
-const parseDate = (value: string): Date => new Date(value.replace(/\./g, "-"));
+const parseDate = (value: string): Date => {
+    const missingYear = value.substring(0, 4).match(/\./);
+
+    return new Date((missingYear ? `${new Date().getFullYear()}-` : "") + value.replace(/\./g, "-"));
+};
 
 const relative = (date: Date): string => {
-    const diff = date.getTime() - Date.now();
-    if (Number.isNaN(diff) || diff < 0) return "이미 삭제 됨";
-    if (diff < 3000) return "잠시 후";
+    const diff = Date.now() - date.getTime();
+    if (Number.isNaN(diff) || diff < 0) return date.toLocaleString();
+    if (diff < 3000) return "방금 전";
 
     const units: [string, number][] = [
         ["년", 31_536_000_000],
@@ -25,11 +29,14 @@ const relative = (date: Date): string => {
     ];
 
     for (const [label, ms] of units) {
-        if (diff >= ms) return `${Math.floor(diff / ms)}${label} 후`;
+        if (diff >= ms) return `${Math.floor(diff / ms)}${label} 전`;
     }
 
-    return "이미 삭제 됨";
+    return date.toLocaleString();
 };
+
+const extractIcon = (html: string | undefined): string | undefined =>
+    new DOMParser().parseFromString(html ?? "", "text/html").querySelector("a.writer_nikcon img")?.getAttribute("src") ?? undefined;
 
 const TimeStamp = ({date}: {date: string}) => {
     const parsed = parseDate(date);
@@ -135,7 +142,7 @@ export const Comment = ({comment, depth, replyCount}: CommentProps) => {
             data-deleted={isDeleted ? "true" : undefined}
         >
             <div className="refresher-comment-meta">
-                <UserCard user={{nick: comment.name, id: comment.user_id, ip: comment.ip, image: comment.gallog_icon}} />
+                <UserCard user={{nick: comment.name, id: comment.user_id, ip: comment.ip, image: extractIcon(comment.gallog_icon)}} />
                 <div className="refresher-comment-controls-container">
                     {depth === 0 && replyCount > 1 && (
                         <button
@@ -167,7 +174,7 @@ export const Comment = ({comment, depth, replyCount}: CommentProps) => {
                             <X size={12} />
                         </button>
                     )}
-                    <TimeStamp date={String(comment.date_time ?? "")} />
+                    <TimeStamp date={String(comment.reg_date ?? comment.date_time ?? "")} />
                 </div>
             </div>
             <div className="refresher-comment-content-inner">

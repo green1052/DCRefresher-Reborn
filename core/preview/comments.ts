@@ -35,6 +35,9 @@ export const processComments = (
     // 아카이브(삭제글 보존)
     let list: ProcessedComment[] = ctx.settings.archiveArticle === true ? (restoreArchive(preData, raw) as ProcessedComment[]) : (raw as ProcessedComment[]);
 
+    // 댓글돌이(COMMENT_BOY) 제거
+    list = list.filter((comment) => String(comment.nicktype) !== "COMMENT_BOY");
+
     // 속성 정리
     for (const comment of list) {
         comment.memo = cleanMemo(String(comment.memo ?? ""));
@@ -99,7 +102,7 @@ export const processComments = (
         setDeleted(preData, deleted);
     }
 
-    const threads = list.filter((comment) => !comment.c_no || comment.c_no === "0").length;
+    const threads = list.filter((comment) => comment.depth === 0).length;
 
     return {list, threads, totalCnt: list.length};
 };

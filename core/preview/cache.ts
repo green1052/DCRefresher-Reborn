@@ -23,6 +23,7 @@ export interface DcinsideComment {
     del_btn?: "Y" | "N";
     my_cmt?: "Y" | "N";
     date_time: string;
+    reg_date?: string;
     reply_num?: number;
     [key: string]: unknown;
 }
