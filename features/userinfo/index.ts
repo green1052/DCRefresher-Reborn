@@ -26,28 +26,35 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
     const badges = document.createElement("span");
     badges.className = "refresher-user-badges";
 
-    // 설정 순서대로 배지 생성 (order에 없는 키는 스키마에 없음)
-    for (const key of ctx.settings.badgeOrder as BadgeKey[]) {
-        if (key === "UID" && uid) {
+    // uid와 ip는 DC DOM상 동시에 존재하지 않음 (고정닉=uid, 유동닉=ip). 둘 중 있는 것 표시
+    const appendIdentity = (): void => {
+        if (uid) {
             // v5: .ub-writer의 첫 번째 이미지 = 닉콘
             const image = element.querySelector<HTMLImageElement>("img")?.src;
 
-            if (image) {
-                const type = getType(image);
-                const isFixed = type.startsWith("FIXED");
-                const isHalfFixed = type.startsWith("HALF_FIXED");
+            const type = image ? getType(image) : "NONE";
+            const isFixed = type.startsWith("FIXED");
+            const isHalfFixed = type.startsWith("HALF_FIXED");
 
-                // 유동닉은 항상 표시 (v5: 고정/반고정만 설정으로 숨김)
-                const show = isFixed ? ctx.settings.showFixedNickUID === true : isHalfFixed ? ctx.settings.showHalfFixedNickUID === true : true;
+            // 유동닉은 항상 표시 (v5: 고정/반고정만 설정으로 숨김)
+            const show = isFixed ? ctx.settings.showFixedNickUID === true : isHalfFixed ? ctx.settings.showHalfFixedNickUID === true : true;
 
-                if (show) badges.append(buildBadgeSpan(`(${uid})`, undefined, uid, "ip refresherUserData"));
-            }
+            if (show) badges.append(buildBadgeSpan(`(${uid})`, undefined, uid, "ip refresherUserData"));
+            return;
         }
 
-        if (key === "IP" && ip && ctx.settings.showIpInfo === true) {
+        if (ip && ctx.settings.showIpInfo === true) {
             const ipData = ISPData(ip);
             const formatted = formatIP(ipData);
             if (formatted) badges.append(buildBadgeSpan(`[${formatted}]`, ipData.color, formatted));
+        }
+    };
+
+    let identityAppended = false;
+    for (const key of ctx.settings.badgeOrder as BadgeKey[]) {
+        if ((key === "UID" || key === "IP") && !identityAppended) {
+            appendIdentity();
+            identityAppended = true;
         }
 
         if (key === "MEMO") {

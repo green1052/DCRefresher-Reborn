@@ -43,8 +43,7 @@ export function BlockTab() {
     };
 
     return (
-        <Box>
-            <Section title="차단 모드" desc="기본 차단 판별 방식입니다. 개별 항목의 모드가 우선합니다.">
+        <Box>            <Section title="차단 모드" desc="기본 차단 판별 방식입니다. 개별 항목의 모드가 우선합니다.">
                 {BLOCK_TYPES.map((type) => (
                     <Row
                         key={`mode-${type}`}
