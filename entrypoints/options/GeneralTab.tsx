@@ -1,5 +1,6 @@
-import {Box, Flex, Link, Text} from "@radix-ui/themes";
+import {Box, Flex, Heading, Link, Text} from "@radix-ui/themes";
 
+import logoUrl from "@/assets/icon.png";
 import {SettingItem} from "@/components/SettingItem";
 import {useModulesStore} from "@/stores/modules";
 
@@ -21,10 +22,21 @@ export function GeneralTab() {
 
     return (
         <Box>
-            <Section title="DCRefresher Reborn">
-                <Text as="div" size="2" color="gray" mb="2">
-                    버전 {browser.runtime.getManifest().version}
-                </Text>
+            <Section
+                title={
+                    <Flex align="center" gap="3">
+                        <img src={logoUrl} alt="" width={44} height={44} style={{borderRadius: 10}} />
+                        <Box>
+                            DCRefresher <Text color="blue">Reborn</Text>
+                        </Box>
+                    </Flex>
+                }
+                actions={
+                    <Text size="2" color="gray">
+                        v{browser.runtime.getManifest().version}
+                    </Text>
+                }
+            >
                 <Flex gap="4" wrap="wrap">
                     {LINKS.map(([text, url]) => (
                         <Link key={url} href={url} target="_blank" rel="noreferrer">

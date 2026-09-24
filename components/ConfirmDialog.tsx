@@ -1,4 +1,4 @@
-import {AlertDialog, Button, Flex} from "@radix-ui/themes";
+import {Button, Dialog, Flex} from "@radix-ui/themes";
 
 interface ConfirmDialogProps {
     open: boolean;
@@ -12,7 +12,7 @@ interface ConfirmDialogProps {
     onClose: () => void;
 }
 
-/** Radix Themes AlertDialog 래퍼 — confirm()/alert() 대체 */
+/** Themes Dialog 기반 confirm()/alert() 대체. 외부 클릭/Esc로 닫힘 */
 export const ConfirmDialog = ({
     open,
     title,
@@ -23,25 +23,25 @@ export const ConfirmDialog = ({
     onConfirm,
     onClose
 }: ConfirmDialogProps) => (
-    <AlertDialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
-        <AlertDialog.Content style={{maxWidth: 440}}>
-            <AlertDialog.Title>{title}</AlertDialog.Title>
-            {description && <AlertDialog.Description size="2">{description}</AlertDialog.Description>}
+    <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
+        <Dialog.Content style={{maxWidth: 440}}>
+            <Dialog.Title>{title}</Dialog.Title>
+            {description && (
+                <Dialog.Description size="2">{description}</Dialog.Description>
+            )}
 
             <Flex gap="3" justify="end" mt="4">
                 {cancelLabel !== null && (
-                    <AlertDialog.Cancel>
+                    <Dialog.Close>
                         <Button variant="soft" color="gray">
                             {cancelLabel}
                         </Button>
-                    </AlertDialog.Cancel>
+                    </Dialog.Close>
                 )}
-                <AlertDialog.Action>
-                    <Button color={danger ? "red" : undefined} variant={danger ? "soft" : "solid"} onClick={onConfirm}>
-                        {confirmLabel}
-                    </Button>
-                </AlertDialog.Action>
+                <Button color={danger ? "red" : undefined} variant={danger ? "soft" : "solid"} onClick={onConfirm}>
+                    {confirmLabel}
+                </Button>
             </Flex>
-        </AlertDialog.Content>
-    </AlertDialog.Root>
+        </Dialog.Content>
+    </Dialog.Root>
 );

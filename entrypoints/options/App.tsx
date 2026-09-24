@@ -62,13 +62,25 @@ export function App() {
 
     return (
         <Tabs.Root defaultValue="general" style={{display: "flex", flex: 1, minHeight: "100vh"}}>
-            <Tabs.List style={{flexDirection: "column", alignItems: "stretch", width: 220, gap: 2, padding: 16, borderRight: "1px solid var(--gray-a5)", alignSelf: "flex-start", position: "sticky", top: 0}}>
-                {TABS.map((tab) => (
-                    <Tabs.Trigger key={tab.id} value={tab.id}>
-                        {tab.label}
-                    </Tabs.Trigger>
-                ))}
-            </Tabs.List>
+            <Box style={{flex: "none", padding: 16, alignSelf: "flex-start", position: "sticky", top: 0, height: "100%"}}>
+                <Tabs.List
+                    style={{
+                        flexDirection: "column",
+                        alignItems: "stretch",
+                        width: 200,
+                        gap: 4,
+                        padding: 8,
+                        backgroundColor: "var(--gray-a3)",
+                        borderRadius: 12
+                    }}
+                >
+                    {TABS.map((tab) => (
+                        <Tabs.Trigger key={tab.id} value={tab.id} style={{justifyContent: "flex-start", borderRadius: 8, padding: "8px 14px"}}>
+                            {tab.label}
+                        </Tabs.Trigger>
+                    ))}
+                </Tabs.List>
+            </Box>
 
             <Box style={{flex: 1, minWidth: 0, padding: "24px 32px 48px"}}>
                 {TABS.map((tab) => (
