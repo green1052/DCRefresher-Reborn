@@ -25,8 +25,6 @@ const formatDefault = (schema: SettingSchema): string => {
 };
 
 const TextControl = ({schema, value, disabled, onChange}: SettingItemProps) => {
-    if (schema.type !== "text") return null;
-
     const [draft, setDraft] = useState(String(value));
 
     useEffect(() => {
@@ -49,28 +47,39 @@ const TextControl = ({schema, value, disabled, onChange}: SettingItemProps) => {
 };
 
 const RangeControl = ({schema, value, disabled, onChange}: SettingItemProps) => {
-    if (schema.type !== "range") return null;
-
-    const [draft, setDraft] = useState(Number(value));
+    // NaN 방어: value가 undefined/문자열이면 기본값으로 (NaN이면 thumb 위치 계산이 깨짐)
+    const initial = Number(value);
+    const [draft, setDraft] = useState(Number.isFinite(initial) ? initial : schema.default);
 
     useEffect(() => {
-        setDraft(Number(value));
-    }, [value]);
+        const next = Number(value);
+        setDraft(Number.isFinite(next) ? next : schema.default);
+    }, [value, schema.default]);
 
     return (
-        <Slider
-            size="2"
-            min={schema.min}
-            max={schema.max}
-            step={schema.step}
-            value={[draft]}
-            disabled={disabled}
-            onValueChange={(values) => setDraft(values[0] ?? 0)}
-            onValueCommit={(values) => {
-                const next = values[0];
-                if (next !== undefined && next !== value) onChange(next);
-            }}
-        />
+        <Flex align="center" gap="3">
+            <Slider
+                size="2"
+                min={schema.min}
+                max={schema.max}
+                step={schema.step}
+                value={[draft]}
+                disabled={disabled}
+                style={{flex: 1}}
+                onValueChange={(values) => {
+                    const next = values[0];
+                    if (next !== undefined) setDraft(next);
+                }}
+                onValueCommit={(values) => {
+                    const next = values[0];
+                    if (next !== undefined && next !== value) onChange(next);
+                }}
+            />
+            <Text size="2" weight="bold" style={{minWidth: 56, textAlign: "right", fontVariantNumeric: "tabular-nums"}}>
+                {draft}
+                {schema.unit}
+            </Text>
+        </Flex>
     );
 };
 
