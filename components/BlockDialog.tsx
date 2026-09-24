@@ -1,4 +1,5 @@
-import {Dialog} from "radix-ui";
+import {Check} from "lucide-react";
+import {Checkbox, Dialog} from "radix-ui";
 import {useEffect, useState} from "react";
 
 import {RefresherSelect} from "@/components/RefresherSelect";
@@ -77,7 +78,15 @@ export const BlockDialog = ({open, type, typeNames, modeNames, initial, onClose,
                     <div className="refresher-field">
                         <span className="refresher-field-label">정규식 사용</span>
                         <label className="refresher-check-row">
-                            <input type="checkbox" className="refresher-check-plain" checked={isRegex} onChange={(event) => setIsRegex(event.target.checked)} />
+                            <Checkbox.Root
+                                className="refresher-checkbox"
+                                checked={isRegex}
+                                onCheckedChange={(value) => setIsRegex(value === true)}
+                            >
+                                <Checkbox.Indicator>
+                                    <Check size={12} />
+                                </Checkbox.Indicator>
+                            </Checkbox.Root>
                             정규식
                         </label>
                     </div>

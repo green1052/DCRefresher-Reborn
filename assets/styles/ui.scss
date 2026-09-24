@@ -229,6 +229,45 @@
     }
 }
 
-.refresher-check-plain {
-    accent-color: var(--refresher-accent);
+.refresher-checkbox {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--refresher-border);
+    border-radius: 4px;
+    background: var(--refresher-bg);
+    color: transparent;
+    cursor: pointer;
+
+    &[data-state="checked"] {
+        background: var(--refresher-accent);
+        border-color: var(--refresher-accent);
+        color: #fff;
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+}
+
+.refresher-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 6px 8px;
+    border: 1px solid var(--refresher-border);
+    border-radius: 6px;
+    background: var(--refresher-bg);
+    color: var(--refresher-fg);
+    font: inherit;
+    font-size: 12px;
+    resize: vertical;
+
+    &:focus {
+        outline: none;
+        border-color: var(--refresher-accent);
+    }
 }

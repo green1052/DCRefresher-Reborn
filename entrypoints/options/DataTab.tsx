@@ -1,6 +1,8 @@
 import {RefreshCw} from "lucide-react";
+import {Dialog} from "radix-ui";
 import {useEffect, useState} from "react";
 
+import {ConfirmDialog} from "@/components/ConfirmDialog";
 import {DatabaseService} from "@/core/services/database";
 import {backupStorage, dbStorage} from "@/core/storage/items";
 
@@ -35,10 +37,19 @@ const parseImport = (input: string): Record<string, unknown> => {
     return parsed as Record<string, unknown>;
 };
 
+interface ConfirmState {
+    title: string;
+    action: () => Promise<void>;
+}
+
 export function DataTab() {
     const [lastUpdate, setLastUpdate] = useState(0);
     const [backupAt, setBackupAt] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [notice, setNotice] = useState<string | null>(null);
+    const [confirming, setConfirming] = useState<ConfirmState | null>(null);
+    const [importOpen, setImportOpen] = useState(false);
+    const [importText, setImportText] = useState("");
 
     useEffect(() => {
         void DatabaseService.lastUpdate().then(setLastUpdate);
@@ -66,17 +77,15 @@ export function DataTab() {
             const now = Date.now();
             setBackupAt(now);
             await backupStorage.lastUpdate.setValue(now);
-            alert("데이터를 클라우드에 백업했습니다.");
+            setNotice("데이터를 클라우드에 백업했습니다.");
         } catch {
-            alert("데이터를 클라우드에 백업하는데 실패했습니다.");
+            setNotice("데이터를 클라우드에 백업하는데 실패했습니다.");
         } finally {
             setLoading(false);
         }
     };
 
     const recoverCloud = async (): Promise<void> => {
-        if (!confirm("클라우드 백업으로 현재 설정을 교체할까요?")) return;
-
         setLoading(true);
         try {
             const [data, db] = await Promise.all([browser.storage.sync.get(), dbStorage.getValue()]);
@@ -84,9 +93,9 @@ export function DataTab() {
             if (db.ip && Object.keys(db.ip).length > 0) merged["refresher:db"] = db;
 
             await replaceLocalStorage(merged);
-            alert("데이터를 복원했습니다. 새 탭에서 디시인사이드를 열어주세요.");
+            setNotice("데이터를 복원했습니다. 새 탭에서 디시인사이드를 열어주세요.");
         } catch {
-            alert("데이터를 복원하는데 실패했습니다.");
+            setNotice("데이터를 복원하는데 실패했습니다.");
         } finally {
             setLoading(false);
         }
@@ -97,38 +106,35 @@ export function DataTab() {
         try {
             const data = await getLocalDataWithoutDatabase();
             await navigator.clipboard.writeText(JSON.stringify(data));
-            alert("데이터를 클립보드로 내보냈습니다.");
+            setNotice("데이터를 클립보드로 내보냈습니다.");
         } catch {
-            alert("데이터를 클립보드로 내보내는데 실패했습니다.");
+            setNotice("데이터를 클립보드로 내보내는데 실패했습니다.");
         } finally {
             setLoading(false);
         }
     };
 
-    const importData = async (): Promise<void> => {
-        const input = prompt("데이터를 입력해주세요.");
-        if (!input) return;
-
+    const submitImport = async (): Promise<void> => {
         setLoading(true);
         try {
-            await replaceLocalStorage(parseImport(input));
-            alert("데이터를 가져왔습니다. 새 탭에서 디시인사이드를 열어주세요.");
+            await replaceLocalStorage(parseImport(importText));
+            setImportOpen(false);
+            setImportText("");
+            setNotice("데이터를 가져왔습니다. 새 탭에서 디시인사이드를 열어주세요.");
         } catch {
-            alert("데이터를 가져오는데 실패했습니다.");
+            setNotice("데이터를 가져오는데 실패했습니다.");
         } finally {
             setLoading(false);
         }
     };
 
     const clearData = async (): Promise<void> => {
-        if (!confirm("모든 설정과 사용자 데이터를 초기화할까요?")) return;
-
         setLoading(true);
         try {
             await browser.storage.local.clear();
-            alert("데이터를 초기화했습니다. 새 탭에서 디시인사이드를 열어주세요.");
+            setNotice("데이터를 초기화했습니다. 새 탭에서 디시인사이드를 열어주세요.");
         } catch {
-            alert("데이터를 초기화하는데 실패했습니다.");
+            setNotice("데이터를 초기화하는데 실패했습니다.");
         } finally {
             setLoading(false);
         }
@@ -156,19 +162,77 @@ export function DataTab() {
                 <button className="refresher-button" disabled={loading} onClick={() => void backupCloud()}>
                     클라우드 백업
                 </button>
-                <button className="refresher-button" disabled={loading} onClick={() => void recoverCloud()}>
+                <button
+                    className="refresher-button"
+                    disabled={loading}
+                    onClick={() => setConfirming({title: "클라우드 백업으로 현재 설정을 교체할까요?", action: recoverCloud})}
+                >
                     클라우드 복원
                 </button>
                 <button className="refresher-button" disabled={loading} onClick={() => void exportData()}>
                     데이터 내보내기
                 </button>
-                <button className="refresher-button" disabled={loading} onClick={() => void importData()}>
+                <button className="refresher-button" disabled={loading} onClick={() => setImportOpen(true)}>
                     데이터 가져오기
                 </button>
-                <button className="refresher-button" disabled={loading} onClick={() => void clearData()}>
+                <button
+                    className="refresher-button"
+                    disabled={loading}
+                    onClick={() => setConfirming({title: "모든 설정과 사용자 데이터를 초기화할까요?", action: clearData})}
+                >
                     ⚠️ 데이터 초기화 ⚠️
                 </button>
             </div>
+
+            <ConfirmDialog open={notice !== null} title={notice ?? ""} cancelLabel={null} onClose={() => setNotice(null)} onConfirm={() => setNotice(null)} />
+
+            <ConfirmDialog
+                open={confirming !== null}
+                title={confirming?.title ?? ""}
+                confirmLabel="확인"
+                danger
+                onConfirm={() => {
+                    const target = confirming;
+                    setConfirming(null);
+                    if (target) void target.action();
+                }}
+                onClose={() => setConfirming(null)}
+            />
+
+            <Dialog.Root open={importOpen} onOpenChange={(next) => !next && setImportOpen(false)}>
+                <Dialog.Portal>
+                    <Dialog.Overlay className="refresher-overlay" />
+                    <Dialog.Content className="refresher-dialog">
+                        <Dialog.Title className="refresher-dialog-title">데이터 가져오기</Dialog.Title>
+                        <Dialog.Description className="refresher-dialog-desc">내보낸 JSON 데이터를 붙여넣어주세요.</Dialog.Description>
+
+                        <textarea
+                            className="refresher-textarea"
+                            placeholder="JSON 데이터"
+                            value={importText}
+                            onChange={(event) => setImportText(event.target.value)}
+                            autoFocus
+                        />
+
+                        <div className="refresher-dialog-actions">
+                            <Dialog.Close asChild>
+                                <button type="button" className="refresher-button">
+                                    취소
+                                </button>
+                            </Dialog.Close>
+                            <button type="button" className="refresher-button refresher-primary" disabled={loading} onClick={() => void submitImport()}>
+                                가져오기
+                            </button>
+                        </div>
+
+                        <Dialog.Close asChild>
+                            <button type="button" className="refresher-dialog-close" aria-label="닫기">
+                                ×
+                            </button>
+                        </Dialog.Close>
+                    </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
         </div>
     );
 }

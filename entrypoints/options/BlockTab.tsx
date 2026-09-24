@@ -2,6 +2,7 @@ import {Plus, X} from "lucide-react";
 import {useState} from "react";
 
 import {BlockDialog} from "@/components/BlockDialog";
+import {ConfirmDialog} from "@/components/ConfirmDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
 import {BLOCK_TYPES, TYPE_NAMES, DETECT_MODE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
@@ -24,6 +25,7 @@ export function BlockTab() {
     const setDefault = useBlocksStore((state) => state.setDefault);
 
     const [dialog, setDialog] = useState<{type: BlockType; initial: BlockEntry | null} | null>(null);
+    const [clearConfirm, setClearConfirm] = useState<BlockType | null>(null);
 
     const handleSubmit = async (fields: BlockInputFields): Promise<void> => {
         if (!dialog) return;
@@ -67,9 +69,7 @@ export function BlockTab() {
                                     className="refresher-icon-button"
                                     title="전체 삭제"
                                     disabled={list.length === 0}
-                                    onClick={() => {
-                                        if (confirm(`${TYPE_NAMES[type]} 차단 목록을 모두 삭제할까요?`)) void clearType(type);
-                                    }}
+                                    onClick={() => setClearConfirm(type)}
                                 >
                                     <X size={14} />
                                 </button>
@@ -115,6 +115,18 @@ export function BlockTab() {
                     onSubmit={handleSubmit}
                 />
             )}
+
+            <ConfirmDialog
+                open={clearConfirm !== null}
+                title={`${clearConfirm ? TYPE_NAMES[clearConfirm] : ""} 차단 목록을 모두 삭제할까요?`}
+                confirmLabel="삭제"
+                danger
+                onConfirm={() => {
+                    if (clearConfirm) void clearType(clearConfirm);
+                    setClearConfirm(null);
+                }}
+                onClose={() => setClearConfirm(null)}
+            />
         </div>
     );
 }

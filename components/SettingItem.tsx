@@ -1,4 +1,4 @@
-import {Switch} from "radix-ui";
+import {Slider, Switch} from "radix-ui";
 import {useEffect, useState} from "react";
 
 import {RefresherSelect} from "@/components/RefresherSelect";
@@ -65,21 +65,24 @@ const RangeControl = ({schema, value, disabled, onChange}: SettingItemProps) => 
                 {draft}
                 {schema.unit}
             </span>
-            <input
-                type="range"
+            <Slider.Root
+                className="refresher-slider"
                 min={schema.min}
                 max={schema.max}
                 step={schema.step}
-                value={draft}
+                value={[draft]}
                 disabled={disabled}
-                onChange={(event) => setDraft(Number(event.target.value))}
-                onPointerUp={() => {
-                    if (draft !== value) onChange(draft);
+                onValueChange={(values) => setDraft(values[0] ?? 0)}
+                onValueCommit={(values) => {
+                    const next = values[0];
+                    if (next !== undefined && next !== value) onChange(next);
                 }}
-                onBlur={() => {
-                    if (draft !== value) onChange(draft);
-                }}
-            />
+            >
+                <Slider.Track className="refresher-slider-track">
+                    <Slider.Range className="refresher-slider-range" />
+                </Slider.Track>
+                <Slider.Thumb className="refresher-slider-thumb" />
+            </Slider.Root>
         </div>
     );
 };
