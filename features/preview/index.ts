@@ -372,6 +372,18 @@ const controller = (ctx: ModuleContext) => {
 
     const onContextMenu = (event: MouseEvent) => {
         const element = event.currentTarget as HTMLElement;
+        const target = event.target as HTMLElement;
+
+        // 댓글 수 링크 → 댓글만 보기 (행 모드 가드보다 먼저)
+        if (target.closest(".reply_numbox")) {
+            const preData = buildPreData(element);
+            if (preData) {
+                event.preventDefault();
+                open(preData, true);
+            }
+            return;
+        }
+
         if (element.dataset.refresherPreviewMode === "row" && ctx.settings.expandRecognizeRange !== true) return;
 
         const preData = buildPreData(element);

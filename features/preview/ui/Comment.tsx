@@ -2,7 +2,6 @@ import {useEffect, useState, type MouseEvent} from "react";
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
 
 import {adminDeleteComment, userDeleteComment} from "@/core/preview/request";
-import {dbStorage} from "@/core/storage/items";
 import {ISPData} from "@/utils/ip";
 import type {ProcessedComment} from "@/core/preview/comments";
 import {useUiStore} from "@/stores/ui";
@@ -41,19 +40,6 @@ const extractIcon = (html: string | undefined): string | undefined =>
 
 const extractIp = (html: string | undefined): string | undefined => html?.match(/class=["']?ip["']?[^>]*>\s*\(([^)]+)\)/)?.[1];
 
-const useIsp = (ip: string | undefined): string | undefined => {
-    const [isp, setIsp] = useState<string | undefined>(() => (ip ? ISPData(ip).name : undefined));
-
-    useEffect(() => {
-        if (!ip) return;
-
-        setIsp(ISPData(ip).name);
-        return dbStorage.watch((next) => setIsp(next?.ip[ip]));
-    }, [ip]);
-
-    return isp;
-};
-
 const TimeStamp = ({date}: {date: string}) => {
     const parsed = parseDate(date);
     const [absolute, setAbsolute] = useState(false);
@@ -85,7 +71,7 @@ export interface UserCardData {
 }
 
 export const UserCard = ({user}: {user: UserCardData}) => {
-    const isp = useIsp(user.ip);
+    const isp = user.ip ? ISPData(user.ip).name : undefined;
 
     const openMenu = (event: MouseEvent): void => {
         event.preventDefault();
