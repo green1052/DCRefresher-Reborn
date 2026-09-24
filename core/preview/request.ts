@@ -1,6 +1,6 @@
 import {http} from "@/core/http/client";
 import {galleryType, galleryTypeName, urls} from "@/core/http/urls";
-import type {GalleryPreData, IPostInfo} from "@/features/types";
+import type {DcinsideDccon, GalleryPreData, IPostInfo} from "@/features/types";
 
 import {parsePostInfo} from "./parser";
 import type {CommentListResponse, DcinsideComment} from "./cache";
@@ -171,9 +171,10 @@ export const submitComment = async (
     preData: GalleryPreData,
     user: {name: string; pw?: string},
     postDom: Document,
-    memo: string,
+    memo: string | DcinsideDccon[],
     commentNo: string | null,
     replyNo: string | null,
+    bigDccon: boolean,
     captcha?: string,
     grecaptcha?: string
 ): Promise<{result: string; message?: string}> => {
@@ -258,9 +259,21 @@ export const submitComment = async (
     if (captcha) params.set("code", captcha);
     if (grecaptcha) params.set("g-recaptcha-response", grecaptcha);
 
-    params.set("memo", memo);
+    if (bigDccon) params.set("bigdccon", "1");
 
-    const response = await http.post(urls.comments_submit, {headers: HEADERS, body: params}).text();
+    if (typeof memo === "string") {
+        params.set("memo", memo);
+    } else {
+        params.set("input_type", "comment");
+        if (memo.length > 1) params.set("double_con_chk", "1");
+        params.set("package_idx", memo.map((dccon) => dccon.package_idx).join(","));
+        params.set("detail_idx", memo.map((dccon) => dccon.detail_idx).join(","));
+    }
+
+    const response = await http.post(typeof memo === "string" ? urls.comments_submit : urls.dccon_comments_submit, {
+        headers: HEADERS,
+        body: params
+    }).text();
     const [result, message] = response.split("||");
 
     return {result: result ?? "", message};

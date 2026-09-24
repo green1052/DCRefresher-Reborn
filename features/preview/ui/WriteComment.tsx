@@ -1,8 +1,11 @@
 import {useRef, useState} from "react";
 
 import {captchaImage, submitComment} from "@/core/preview/request";
+import {getGrecaptchaToken} from "../grecaptcha";
+import type {DcinsideDccon} from "@/features/types";
 import {useUiStore} from "@/stores/ui";
 
+import {DcconPopup} from "./DcconPopup";
 import {usePreviewStore} from "./previewStore";
 
 const randomPassword = (): string => Math.random().toString(36).slice(2, 10);
@@ -13,12 +16,18 @@ export const WriteComment = () => {
     const [login] = useState(() => Boolean(document.querySelector("#login_box .user_info .nickname > em")));
     const [nick, setNick] = useState(() => localStorage.getItem("refresher:nonmember:nick") ?? "ㅇㅇ");
     const [password, setPassword] = useState(() => localStorage.getItem("refresher:nonmember:pw") ?? randomPassword());
+    const [dccons, setDccons] = useState<DcinsideDccon[]>([]);
+    const [bigDccon, setBigDccon] = useState(false);
+    const [dcconOpen, setDcconOpen] = useState(false);
     const textarea = useRef<HTMLTextAreaElement>(null);
 
     const submit = async (): Promise<void> => {
         const st = usePreviewStore.getState();
-        const memo = textarea.current?.value.trim() ?? "";
-        if (!st.preData || !st.post || !memo) return;
+        const text = textarea.current?.value.trim() ?? "";
+        const useDccon = dccons.length > 0;
+
+        if (!st.preData || !st.post) return;
+        if (!useDccon && !text) return;
 
         if (!login && (!nick || !password)) {
             useUiStore.getState().showToast("아이디 혹은 비밀번호를 입력하지 않았습니다.", "error");
@@ -32,18 +41,24 @@ export const WriteComment = () => {
                 if (!code) return;
             }
 
+            const token = await getGrecaptchaToken("comment");
+
             const response = await submitComment(
                 st.preData,
                 {name: login ? "" : nick, pw: login ? undefined : password},
                 st.post.dom ?? document,
-                memo,
+                useDccon ? dccons : text,
                 st.reply.commentNo,
                 st.reply.replyNo,
-                code
+                useDccon && bigDccon,
+                code,
+                token
             );
 
             if (response.result === "SUCCESS") {
                 if (textarea.current) textarea.current.value = "";
+                setDccons([]);
+                setBigDccon(false);
                 st.setReply({commentNo: null, replyNo: null});
                 st.requestRefresh();
             } else {
@@ -81,7 +96,8 @@ export const WriteComment = () => {
             <textarea
                 id="comment_main"
                 ref={textarea}
-                placeholder="댓글 입력..."
+                disabled={dccons.length > 0}
+                placeholder={dccons.length > 0 ? "디시콘이 선택됐습니다." : "댓글 입력..."}
                 onKeyDown={(event) => {
                     if (event.key === "Enter" && !event.shiftKey) {
                         event.preventDefault();
@@ -91,10 +107,21 @@ export const WriteComment = () => {
             />
             <div className="refresher-write-comment-controls">
                 <span className="refresher-write-comment-whoami">
-                    {login ? "회원 계정" : nick}(으)로 {reply.replyNo ? "답글" : "댓글"} 작성 중
+                    {login ? "회원 계정" : nick}(으)로 {reply.replyNo ? "답글" : dccons.length > 0 ? "디시콘" : "댓글"} 작성 중
                 </span>
                 <div className="refresher-write-comment-buttons">
-                    <button type="button" disabled title="디시콘 입력기는 추후 지원됩니다.">
+                    {dccons.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setDccons([]);
+                                setBigDccon(false);
+                            }}
+                        >
+                            콘 취소
+                        </button>
+                    )}
+                    <button type="button" onClick={() => setDcconOpen(true)}>
                         디시콘
                     </button>
                     <button type="button" className="primary" onClick={() => void submit()}>
@@ -102,6 +129,16 @@ export const WriteComment = () => {
                     </button>
                 </div>
             </div>
+            {dcconOpen && (
+                <DcconPopup
+                    onSelect={(selected, big) => {
+                        setDccons(selected);
+                        setBigDccon(big);
+                        setDcconOpen(false);
+                    }}
+                    onClose={() => setDcconOpen(false)}
+                />
+            )}
         </div>
     );
 };

@@ -28,6 +28,7 @@ export const urls = {
     dccon_comments_submit: "https://gall.dcinside.com/dccon/insert_icon",
     comment_remove: "https://gall.dcinside.com/board/comment/comment_delete_submit",
     dccon: {
+        lists: "https://gall.dcinside.com/dccon/lists",
         detail: "https://gall.dcinside.com/dccon/package_detail",
         info: "https://dccon.dcinside.com/index/get_info",
         buy: "https://dccon.dcinside.com/index/buy"
