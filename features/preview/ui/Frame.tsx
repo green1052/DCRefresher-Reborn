@@ -228,6 +228,12 @@ export const Frame = () => {
                     className={"refresher-frame preview" + (fading ? " fading" : "")}
                     data-load={dataLoad}
                     onOpenAutoFocus={(event) => event.preventDefault()}
+                    onPointerDownOutside={(event) => {
+                        if (!(event.target as Element | null)?.closest(".refresher-frame-outer")) event.preventDefault();
+                    }}
+                    onInteractOutside={(event) => {
+                        if (!(event.target as Element | null)?.closest(".refresher-frame-outer")) event.preventDefault();
+                    }}
                 >
                     <div className="refresher-preview-title-zone">
                         <div className="refresher-preview-title-text">

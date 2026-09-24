@@ -3,6 +3,7 @@ import {useEffect} from "react";
 import {MemoDialog} from "./MemoDialog";
 import {PreviewHost} from "@/features/preview/ui/PreviewHost";
 import {eventBus} from "@/core/eventbus/bus";
+import {ISPData} from "@/utils/ip";
 import {useUiStore, type ToastData} from "@/stores/ui";
 
 const ToastItem = ({toast}: {toast: ToastData}) => {
@@ -80,7 +81,6 @@ const BubbleHost = () => {
     if (selected.dccon) {
         return (
             <div className="refresher-bubble" style={{left: bubble.x + 8, top: bubble.y + 8}}>
-                <div className="refresher-bubble-value">디시콘: {selected.dccon}</div>
                 <div className="refresher-bubble-actions">
                     <button
                         type="button"
@@ -107,19 +107,36 @@ const BubbleHost = () => {
         );
     }
 
+    const isp = selected.ip ? ISPData(selected.ip).name : undefined;
+
     return (
         <div className="refresher-bubble" style={{left: bubble.x + 8, top: bubble.y + 8}}>
             {COPY_FIELDS.map(([key, label]) =>
                 selected[key] ? (
-                    <div key={key} className="refresher-bubble-value">
+                    <div
+                        key={key}
+                        className="refresher-bubble-value"
+                        style={{cursor: "pointer"}}
+                        title="클릭하면 복사됩니다."
+                        onClick={() => copy(selected[key]!)}
+                    >
                         <span>
                             {label}: <strong>{selected[key]}</strong>
                         </span>
-                        <button type="button" className="refresher-button" onClick={() => copy(selected[key]!)}>
-                            복사
-                        </button>
                     </div>
                 ) : null
+            )}
+            {isp && (
+                <div
+                    className="refresher-bubble-value"
+                    style={{cursor: "pointer"}}
+                    title="클릭하면 복사됩니다."
+                    onClick={() => copy(isp)}
+                >
+                    <span>
+                        ISP: <strong>{isp}</strong>
+                    </span>
+                </div>
             )}
 
             <div className="refresher-bubble-actions">

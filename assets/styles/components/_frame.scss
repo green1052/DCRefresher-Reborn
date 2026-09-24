@@ -87,8 +87,7 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
-    padding: 18px 24px 14px;
-    border-bottom: 1px solid #f0f0f2;
+    padding: 18px 24px 10px;
 
     .refresher-preview-title-text {
         min-width: 0;
@@ -96,7 +95,7 @@
 
     .refresher-preview-title {
         margin: 0;
-        font-size: 18px;
+        font-size: 20px;
         font-weight: 700;
         letter-spacing: -0.4px;
         line-height: 1.35;
@@ -114,14 +113,14 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: 6px 24px 10px;
+    padding: 4px 24px 10px;
 
     .refresher-views {
         display: inline-flex;
         align-items: center;
         gap: 4px;
         color: #a1a1aa;
-        font-size: 12px;
+        font-size: 14px;
     }
 }
 
@@ -503,7 +502,7 @@
     margin-left: 5px;
     color: var(--refresher-danger, #f5222d);
     opacity: 0.6;
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .refresher-user {
@@ -519,19 +518,19 @@
     }
 
     .refresher-user-icon img {
-        width: 16px;
-        height: 16px;
+        width: 15px;
+        height: 15px;
         border-radius: 2px;
     }
 
     .refresher-user-nick {
-        font-size: 14px;
+        font-size: 15px;
         font-weight: 600;
     }
 
     .refresher-user-info {
         color: #a1a1aa;
-        font-size: 12px;
+        font-size: 13px;
     }
 
     .refresherUserData {
