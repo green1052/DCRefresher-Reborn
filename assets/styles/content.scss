@@ -97,11 +97,11 @@ html:has(#css-darkmode) {
     border-radius: 8px;
     background: #333333f2;
     color: #fff;
-    font-size: 12px;
+    font-size: 15px;
     pointer-events: auto;
     box-shadow: 0 6px 20px rgb(0 0 0 / 30%);
     z-index: 2147483600;
-    animation: dcrToastIn 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+    animation: refresherToastIn 0.2s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 .refresher-toast-error {
@@ -129,7 +129,7 @@ html:has(#css-darkmode) {
     }
 }
 
-@keyframes dcrToastIn {
+@keyframes refresherToastIn {
     0% {
         transform: translateY(8px);
         opacity: 0;
@@ -156,7 +156,7 @@ html:has(#css-darkmode) {
     box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
     pointer-events: auto;
     z-index: 2147483600;
-    animation: dcrToastIn 0.15s cubic-bezier(0.19, 1, 0.22, 1);
+    animation: refresherToastIn 0.15s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 .refresher-bubble-value {

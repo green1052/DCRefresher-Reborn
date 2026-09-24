@@ -61,9 +61,9 @@ const writeModule: ModuleDefinition = {
         ctx.addFilter(
             "button.write",
             (element) => {
-                if (!(element instanceof HTMLButtonElement) || element.dataset.dcrWriteBound === "1") return;
+                if (!(element instanceof HTMLButtonElement) || element.dataset.refresherWriteBound === "1") return;
 
-                element.dataset.dcrWriteBound = "1";
+                element.dataset.refresherWriteBound = "1";
                 boundClick = onSubmitClick;
                 element.addEventListener("click", boundClick);
                 boundButton = element;
@@ -85,8 +85,7 @@ const writeModule: ModuleDefinition = {
 
     revoke(ctx) {
         if (boundButton && boundClick) {
-            const clickHandler = boundClick;
-            boundButton.removeEventListener("click", clickHandler);
+            boundButton.removeEventListener("click", boundClick);
         }
 
         boundButton = null;
