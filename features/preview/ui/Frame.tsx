@@ -3,6 +3,7 @@ import {ExternalLink, Eye, ThumbsDown, ThumbsUp} from "lucide-react";
 import {Dialog} from "radix-ui";
 
 import {vote, captchaImage} from "@/core/preview/request";
+import {modules} from "@/core/module/registry";
 import {useUiStore} from "@/stores/ui";
 
 import {buildPreData} from "../index";
@@ -209,6 +210,7 @@ export const Frame = () => {
     if (!visible && !fading) return null;
 
     const dataLoad = error ? "false" : loading || !post ? "true" : "false";
+    const blurBackground = modules.use("preview")?.settings.toggleBackgroundBlur === true;
 
     return (
         <Dialog.Root
@@ -219,7 +221,9 @@ export const Frame = () => {
             }}
         >
             <Dialog.Portal>
-                <Dialog.Overlay className={"refresher-frame-outer" + (fading ? " fading" : "")} />
+                <Dialog.Overlay
+                    className={"refresher-frame-outer" + (blurBackground ? " blurred" : "") + (fading ? " fading" : "")}
+                />
                 <Dialog.Content
                     className={"refresher-frame preview" + (fading ? " fading" : "")}
                     data-load={dataLoad}

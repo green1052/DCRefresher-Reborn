@@ -102,10 +102,10 @@ const setupSelection = (ctx: ModuleContext): void => {
         const ui = useUiStore.getState();
 
         if (dcconElement) {
-            const img = (dcconElement as HTMLImageElement).src
+            const media = (dcconElement as HTMLImageElement).src
                 ? (dcconElement as HTMLImageElement)
-                : dcconElement.querySelector("img");
-            const src = img?.getAttribute("src") ?? img?.getAttribute("data-src");
+                : (dcconElement.querySelector("img, video, source") ?? dcconElement);
+            const src = media.getAttribute("src") ?? media.getAttribute("data-src");
             if (!src) return;
 
             const code = extractDcconCode(src);
