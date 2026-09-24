@@ -1,5 +1,6 @@
 import {useState} from "react";
 import {X} from "lucide-react";
+import {Dialog} from "radix-ui";
 
 import {eventBus} from "@/core/eventbus/bus";
 import {blockUser} from "@/core/preview/request";
@@ -83,12 +84,24 @@ const BlockPopup = () => {
     };
 
     return (
-        <div className="refresher-block-popup">
-            <button type="button" className="refresher-popup-close" onClick={() => usePreviewStore.getState().closeBlockPopup()}>
-                <X size={14} />
-            </button>
+        <Dialog.Root
+            open
+            onOpenChange={(open) => {
+                if (!open) usePreviewStore.getState().closeBlockPopup();
+            }}
+        >
+            <Dialog.Portal>
+                <Dialog.Overlay className="refresher-overlay" />
+                <Dialog.Content className="refresher-block-popup" onOpenAutoFocus={(event) => event.preventDefault()}>
+                    <Dialog.Close asChild>
+                        <button type="button" className="refresher-popup-close">
+                            <X size={14} />
+                        </button>
+                    </Dialog.Close>
 
-            <h3>유저 차단</h3>
+                    <Dialog.Title asChild>
+                        <h3>유저 차단</h3>
+                    </Dialog.Title>
 
             <div className="refresher-block-popup-section">
                 <h4>기간</h4>
@@ -132,7 +145,9 @@ const BlockPopup = () => {
             <button type="button" className="go-block" onClick={() => void submit()}>
                 차단
             </button>
-        </div>
+                </Dialog.Content>
+            </Dialog.Portal>
+        </Dialog.Root>
     );
 };
 
@@ -148,32 +163,44 @@ const CaptchaPopup = () => {
         usePreviewStore.getState().closeCaptcha();
     };
 
-    const cancel = (): void => {
-        captcha.resolve("");
-        usePreviewStore.getState().closeCaptcha();
-    };
-
     return (
-        <div className="refresher-captcha-popup">
-            <button type="button" className="refresher-popup-close" onClick={cancel}>
-                <X size={14} />
-            </button>
+        <Dialog.Root
+            open
+            onOpenChange={(open) => {
+                if (!open) {
+                    captcha.resolve("");
+                    usePreviewStore.getState().closeCaptcha();
+                }
+            }}
+        >
+            <Dialog.Portal>
+                <Dialog.Overlay className="refresher-overlay" />
+                <Dialog.Content className="refresher-captcha-popup">
+                    <Dialog.Close asChild>
+                        <button type="button" className="refresher-popup-close">
+                            <X size={14} />
+                        </button>
+                    </Dialog.Close>
 
-            <h3>코드 입력</h3>
-            <img src={captcha.url} alt="captcha" />
-            <input
-                autoFocus
-                value={code}
-                placeholder="코드"
-                onKeyDown={(event) => {
-                    if (event.key === "Enter") send();
-                }}
-                onChange={(event) => setCode(event.target.value)}
-            />
-            <button type="button" onClick={send}>
-                전송
-            </button>
-        </div>
+                    <Dialog.Title asChild>
+                        <h3>코드 입력</h3>
+                    </Dialog.Title>
+                    <img src={captcha.url} alt="captcha" />
+                    <input
+                        autoFocus
+                        value={code}
+                        placeholder="코드"
+                        onKeyDown={(event) => {
+                            if (event.key === "Enter") send();
+                        }}
+                        onChange={(event) => setCode(event.target.value)}
+                    />
+                    <button type="button" onClick={send}>
+                        전송
+                    </button>
+                </Dialog.Content>
+            </Dialog.Portal>
+        </Dialog.Root>
     );
 };
 

@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {ChevronLeft, ChevronRight, RefreshCw, X} from "lucide-react";
+import {ChevronLeft, ChevronRight, X} from "lucide-react";
 import {Dialog, Switch} from "radix-ui";
 
 import {http} from "@/core/http/client";
@@ -29,9 +29,9 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
         setCurrent(pack.detail);
     };
 
-    const getList = async (targetPage: number, refresh = false): Promise<void> => {
+    const getList = async (targetPage: number): Promise<void> => {
         const cached = packages[targetPage];
-        if (!refresh && cached) {
+        if (cached) {
             if (cached[0]) openPackage(cached[0]);
             setLoading(false);
             return;
@@ -125,9 +125,6 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                                 </Switch.Root>
                             </label>
                         </div>
-                        <button type="button" className="dccon-refresh" onClick={() => void getList(page, true)} title="새로고침">
-                            <RefreshCw size={15} />
-                        </button>
                     </div>
 
                     {doubleDccon && selected.length > 0 && (
