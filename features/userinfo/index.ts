@@ -20,7 +20,7 @@ const buildBadgeSpan = (text: string, color?: string, title?: string, className 
 };
 
 const process = (ctx: ModuleContext, element: HTMLElement): void => {
-    if (element.dataset.dcrUserInfo === "1") return;
+    if (element.dataset.refresherUserInfo === "1") return;
 
     const {nick, uid, ip} = element.dataset;
     const badges = document.createElement("span");
@@ -60,13 +60,13 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
 
     if (badges.children.length === 0) return;
 
-    element.dataset.dcrUserInfo = "1";
+    element.dataset.refresherUserInfo = "1";
     insertWriterSpan(element, badges, "after-icon");
 };
 
 const rebuildAll = (ctx: ModuleContext): void => {
     for (const element of document.querySelectorAll<HTMLElement>(".ub-writer[data-refresher-user-info]")) {
-        delete element.dataset.dcrUserInfo;
+        delete element.dataset.refresherUserInfo;
         element.querySelector(".refresher-user-badges")?.remove();
         process(ctx, element);
     }
@@ -131,7 +131,7 @@ const userinfoModule: ModuleDefinition = {
 
     revoke() {
         for (const element of document.querySelectorAll<HTMLElement>(".ub-writer[data-refresher-user-info]")) {
-            delete element.dataset.dcrUserInfo;
+            delete element.dataset.refresherUserInfo;
         }
 
         for (const element of document.querySelectorAll<HTMLElement>(".refresher-user-badges")) {

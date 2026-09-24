@@ -123,7 +123,7 @@ const refreshModule: ModuleDefinition = {
                 if (element.querySelector("button[data-refresher-refresh]")) return;
 
                 button = document.createElement("button");
-                button.dataset.dcrRefresh = "true";
+                button.dataset.refresherRefresh = "true";
                 button.textContent = paused ? "새로고침: 꺼짐" : "새로고침: 켜짐";
                 button.addEventListener("click", () => {
                     paused = !paused;
@@ -291,7 +291,7 @@ const refreshModule: ModuleDefinition = {
                 (anchor) => {
                     if (!(anchor instanceof HTMLAnchorElement)) return;
 
-                    anchor.dataset.dcrPaged = "true";
+                    anchor.dataset.refresherPaged = "true";
                     if (anchor.getAttribute("href")?.startsWith("javascript:")) return;
 
                     anchor.addEventListener(
@@ -359,7 +359,7 @@ const refreshModule: ModuleDefinition = {
 
         for (const anchor of document.querySelectorAll<HTMLAnchorElement>("a[data-refresher-paged]")) {
             anchor.onclick = null;
-            delete anchor.dataset.dcrPaged;
+            delete anchor.dataset.refresherPaged;
         }
     }
 };
