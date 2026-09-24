@@ -6,6 +6,7 @@ import {modules} from "@/core/module/registry";
 import {useUiStore} from "@/stores/ui";
 
 import {buildPreData} from "../index";
+import {ScrollDetection} from "../scroll";
 import {Comment, UserCard} from "./Comment";
 import {usePreviewStore, type ErrorState} from "./previewStore";
 import {WriteComment} from "./WriteComment";
@@ -150,7 +151,7 @@ export const Frame = () => {
 
     const [scrollEdge, setScrollEdge] = useState<"top" | "bottom" | null>(null);
 
-    const edge = useRef({count: 0, at: 0});
+    const edge = useRef({count: 0, at: 0, suppress: false});
 
     useEffect(() => {
         if (!visible) return;
@@ -207,9 +208,10 @@ export const Frame = () => {
             }
         };
 
-        const onWheel = (event: WheelEvent): void => {
-            if (!scrollSkip || Math.abs(event.deltaY) < 2) return;
+        // v5 ScrollDetection — 휠 제스처 단위로 판별
+        const detector = new ScrollDetection();
 
+        detector.listen("scroll", (event: WheelEvent) => {
             const scroller = (event.target as HTMLElement | null)?.closest?.(".refresher-frame");
             if (!scroller) return;
 
@@ -220,27 +222,30 @@ export const Frame = () => {
                     : scroller.scrollTop <= 2;
 
             if (!atEdge) {
-                if (edge.current.count !== 0) {
-                    edge.current = {count: 0, at: 0};
+                if (edge.current.count !== 0 || edge.current.suppress) {
+                    edge.current = {count: 0, at: 0, suppress: false};
                     setScrollEdge(null);
                 }
                 return;
             }
 
-            setScrollEdge(dir > 0 ? "bottom" : "top");
+            // 이동 직후 잔여 관성 이벤트는 무시
+            if (edge.current.suppress) return;
 
-            // 연속 휠 이벤트(관성)는 하나의 제스처로 취급
-            const now = Date.now();
-            const sameGesture = now - edge.current.at <= 100;
-            edge.current.at = now;
-            if (sameGesture) return;
+            setScrollEdge(dir > 0 ? "bottom" : "top");
 
             if (edge.current.count++ < 1) return;
             edge.current.count = 0;
 
             scroller.scrollTop = 0;
             setScrollEdge(null);
+            edge.current = {count: 0, at: Date.now(), suppress: true};
             goToAdjacent(dir);
+        });
+
+        const onWheel = (event: WheelEvent): void => {
+            if (!scrollSkip) return;
+            detector.addMouseEvent(event);
         };
 
         window.addEventListener("keydown", onKey);
@@ -248,7 +253,7 @@ export const Frame = () => {
         return () => {
             window.removeEventListener("keydown", onKey);
             window.removeEventListener("wheel", onWheel);
-            edge.current = {count: 0, at: 0};
+            edge.current = {count: 0, at: 0, suppress: false};
             setScrollEdge(null);
         };
     }, [visible]);
@@ -337,7 +342,7 @@ export const Frame = () => {
                     <div className="refresher-loader" />
                 </div>
             </div>
-            {scrollEdge && (
+            {scrollEdge && !loading && (
                 <div className={"refresher-scroll" + (scrollEdge === "top" ? " top" : "")}>
                     <div className="center">
                         <p>한번 더 스크롤 하면 {scrollEdge === "top" ? "이전" : "다음"} 게시글을 봅니다.</p>
