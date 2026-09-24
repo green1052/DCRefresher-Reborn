@@ -19,6 +19,7 @@ export const WriteComment = () => {
     const [dccons, setDccons] = useState<DcinsideDccon[]>([]);
     const [bigDccon, setBigDccon] = useState(false);
     const [dcconOpen, setDcconOpen] = useState(false);
+    const [showInputs, setShowInputs] = useState(false);
     const textarea = useRef<HTMLTextAreaElement>(null);
 
     const submit = async (): Promise<void> => {
@@ -71,7 +72,7 @@ export const WriteComment = () => {
 
     return (
         <div className="refresher-write-comment">
-            {!login && (
+            {!login && showInputs && (
                 <div className="refresher-write-comment-inputs">
                     <input
                         value={nick}
@@ -106,7 +107,14 @@ export const WriteComment = () => {
                 }}
             />
             <div className="refresher-write-comment-controls">
-                <span className="refresher-write-comment-whoami">
+                <span
+                    className="refresher-write-comment-whoami"
+                    style={login ? undefined : {cursor: "pointer"}}
+                    title={login ? undefined : "클릭하면 작성자 정보를 수정합니다."}
+                    onClick={() => {
+                        if (!login) setShowInputs((v) => !v);
+                    }}
+                >
                     {login ? "회원 계정" : nick}(으)로 {reply.replyNo ? "답글" : dccons.length > 0 ? "디시콘" : "댓글"} 작성 중
                 </span>
                 <div className="refresher-write-comment-buttons">

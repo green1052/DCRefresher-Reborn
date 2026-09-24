@@ -1,5 +1,5 @@
 import {Fragment, useEffect, useState} from "react";
-import {X} from "lucide-react";
+import {Eye, X} from "lucide-react";
 import {Dialog} from "radix-ui";
 
 import {vote} from "@/core/preview/request";
@@ -229,7 +229,6 @@ export const Frame = () => {
                             <Dialog.Title asChild>
                                 <h3 className="refresher-preview-title" dangerouslySetInnerHTML={{__html: title}} />
                             </Dialog.Title>
-                            {subtitle && <div className="refresher-preview-title-mute">{subtitle}</div>}
                         </div>
                         {post && (
                             <div className="refresher-preview-title-controls">
@@ -249,7 +248,10 @@ export const Frame = () => {
                             <div className="float-right">
                                 <div className="date-views">
                                     <CountDown />
-                                    <div className="refresher-views">{views}</div>
+                                    <div className="refresher-views">
+                                        <Eye size={13} />
+                                        {views}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -274,19 +276,24 @@ export const Frame = () => {
                                     }}
                                     dangerouslySetInnerHTML={{__html: contents ?? ""}}
                                 />
-                                {comments === undefined && <Votes />}
                             </>
                         )}
                     </div>
 
-                    {comments !== undefined &&
-                        (comments.length === 0 ? (
-                            <div className="refresher-nocomment-wrap">
-                                <div className="refresher-nocomment">댓글이 없습니다.</div>
-                            </div>
-                        ) : (
-                            <CommentList />
-                        ))}
+                    {post && !error && !commentsOnly && <Votes />}
+
+                    {comments !== undefined && (
+                        <>
+                            <div className="refresher-preview-comments-header">{subtitle}</div>
+                            {comments.length === 0 ? (
+                                <div className="refresher-nocomment-wrap">
+                                    <div className="refresher-nocomment">댓글이 없습니다.</div>
+                                </div>
+                            ) : (
+                                <CommentList />
+                            )}
+                        </>
+                    )}
 
                     {post && <WriteComment />}
 
