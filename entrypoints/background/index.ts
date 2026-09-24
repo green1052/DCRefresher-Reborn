@@ -7,7 +7,7 @@ const DATABASE_UPDATE_INTERVAL = 604_800_000; // 7일
 export default defineBackground(() => {
     const databaseService = registerDatabaseService();
 
-    // ===== Context Menus =====
+    // ===== Context Menus (SauceNao) =====
     const createContextMenus = async () => {
         await browser.contextMenus.removeAll();
         for (const {id, title, contexts} of CONTEXT_MENUS) {

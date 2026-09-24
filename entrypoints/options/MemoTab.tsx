@@ -1,10 +1,11 @@
-import {Plus, X} from "lucide-react";
-import {Badge, Box, Button, Dialog, Flex, IconButton, Link, Table, Text, TextField} from "@radix-ui/themes";
+import {Plus, X, Download, Upload} from "lucide-react";
+import {Badge, Box, Button, Dialog, Flex, IconButton, Link, Table, Text, TextField, TextArea} from "@radix-ui/themes";
 import {useState} from "react";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
-import {MEMO_TYPES, MEMO_TYPE_NAMES} from "@/core/storage/items";
+import {isMemoEntry} from "@/core/memo";
+import {memoStorage, MEMO_TYPES, MEMO_TYPE_NAMES} from "@/core/storage/items";
 import type {MemoEntry, MemoType} from "@/core/storage/types";
 import {useMemosStore} from "@/stores/memos";
 
@@ -131,9 +132,45 @@ export function MemoTab() {
     const setMemo = useMemosStore((state) => state.setMemo);
     const removeMemo = useMemosStore((state) => state.removeMemo);
     const clearType = useMemosStore((state) => state.clearType);
+    const setMemosRaw = useMemosStore((state) => state.setMemosRaw);
 
     const [form, setForm] = useState<MemoFormState | null>(null);
     const [clearConfirm, setClearConfirm] = useState<MemoType | null>(null);
+    const [notice, setNotice] = useState<string | null>(null);
+    const [importOpen, setImportOpen] = useState(false);
+    const [importText, setImportText] = useState("");
+
+    const exportMemos = async (): Promise<void> => {
+        try {
+            await navigator.clipboard.writeText(JSON.stringify(memos));
+            setNotice("메모를 클립보드로 내보냈습니다.");
+        } catch {
+            setNotice("메모를 내보내는데 실패했습니다.");
+        }
+    };
+
+    const submitImport = async (): Promise<void> => {
+        try {
+            const parsed = JSON.parse(importText) as Record<string, unknown>;
+            for (const type of MEMO_TYPES) {
+                const map = parsed[type];
+                if (!map || typeof map !== "object") continue;
+
+                const next: Record<string, MemoEntry> = {};
+                for (const [user, entry] of Object.entries(map as Record<string, unknown>)) {
+                    if (isMemoEntry(entry)) next[user] = entry;
+                }
+
+                setMemosRaw(type, next);
+                await memoStorage[type].setValue(next);
+            }
+            setImportOpen(false);
+            setImportText("");
+            setNotice("메모를 가져왔습니다.");
+        } catch {
+            setNotice("메모를 가져오는데 실패했습니다.");
+        }
+    };
 
     return (
         <Box>
@@ -143,6 +180,16 @@ export function MemoTab() {
                     <Link href={MEMO_TARGET} target="_blank" rel="noreferrer">
                         메모 변환
                     </Link>
+                }
+                actions={
+                    <>
+                        <IconButton size="2" variant="ghost" color="gray" title="내보내기" onClick={() => void exportMemos()}>
+                            <Download size={16} />
+                        </IconButton>
+                        <IconButton size="2" variant="ghost" color="gray" title="가져오기" onClick={() => setImportOpen(true)}>
+                            <Upload size={16} />
+                        </IconButton>
+                    </>
                 }
             >
                 <Text size="2" color="gray">
@@ -254,6 +301,28 @@ export function MemoTab() {
                 }}
                 onClose={() => setClearConfirm(null)}
             />
+
+            <ConfirmDialog open={notice !== null} title={notice ?? ""} cancelLabel={null} onClose={() => setNotice(null)} onConfirm={() => setNotice(null)} />
+
+            <Dialog.Root open={importOpen} onOpenChange={(next) => !next && setImportOpen(false)}>
+                <Dialog.Content style={{maxWidth: 520}}>
+                    <Dialog.Title>메모 가져오기</Dialog.Title>
+                    <Dialog.Description size="2" mb="3">
+                        내보낸 JSON 데이터를 붙여넣어주세요.
+                    </Dialog.Description>
+
+                    <TextArea placeholder="JSON 데이터" value={importText} onChange={(event) => setImportText(event.target.value)} style={{minHeight: 160}} autoFocus />
+
+                    <Flex gap="3" justify="end" mt="4">
+                        <Dialog.Close>
+                            <Button variant="soft" color="gray">
+                                취소
+                            </Button>
+                        </Dialog.Close>
+                        <Button onClick={() => void submitImport()}>가져오기</Button>
+                    </Flex>
+                </Dialog.Content>
+            </Dialog.Root>
         </Box>
     );
 }

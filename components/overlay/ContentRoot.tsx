@@ -1,6 +1,5 @@
 import {useEffect} from "react";
 
-import {MemoDialog} from "./MemoDialog";
 import {PreviewHost} from "@/features/preview/ui/PreviewHost";
 import {useUiStore, type ToastData} from "@/stores/ui";
 
@@ -34,16 +33,9 @@ const ToastHost = () => {
     return <ToastItem key={toast.id} toast={toast} />;
 };
 
-const MemoHost = () => {
-    const memo = useUiStore((s) => s.memo);
-    if (!memo) return null;
-    return <MemoDialog key={JSON.stringify(memo)} />;
-};
-
 export const ContentRoot = () => (
     <>
         <ToastHost />
-        <MemoHost />
         <PreviewHost />
     </>
 );

@@ -1,10 +1,11 @@
-import {Badge, Box, IconButton, Table, Text} from "@radix-ui/themes";
-import {Plus, X} from "lucide-react";
+import {Badge, Box, Button, Dialog, Flex, IconButton, Table, Text, TextArea} from "@radix-ui/themes";
+import {Plus, X, Download, Upload} from "lucide-react";
 import {useState} from "react";
 
 import {BlockDialog} from "@/components/BlockDialog";
 import {ConfirmDialog} from "@/components/ConfirmDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
+import {isBlockEntry} from "@/core/block";
 import {BLOCK_TYPES, TYPE_NAMES, DETECT_MODE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import type {BlockInputFields} from "@/stores/blocks";
@@ -26,9 +27,38 @@ export function BlockTab() {
     const removeEntry = useBlocksStore((state) => state.removeEntry);
     const clearType = useBlocksStore((state) => state.clearType);
     const setDefault = useBlocksStore((state) => state.setDefault);
+    const setEntries = useBlocksStore((state) => state.setEntries);
 
     const [dialog, setDialog] = useState<{type: BlockType; initial: BlockEntry | null} | null>(null);
     const [clearConfirm, setClearConfirm] = useState<BlockType | null>(null);
+    const [notice, setNotice] = useState<string | null>(null);
+    const [importOpen, setImportOpen] = useState(false);
+    const [importText, setImportText] = useState("");
+
+    const exportBlocks = async (): Promise<void> => {
+        try {
+            await navigator.clipboard.writeText(JSON.stringify(entries));
+            setNotice("차단 목록을 클립보드로 내보냈습니다.");
+        } catch {
+            setNotice("차단 목록을 내보내는데 실패했습니다.");
+        }
+    };
+
+    const submitImport = async (): Promise<void> => {
+        try {
+            const parsed = JSON.parse(importText) as Record<string, unknown>;
+            for (const type of BLOCK_TYPES) {
+                const list = parsed[type];
+                if (!Array.isArray(list)) continue;
+                await setEntries(type, list.filter(isBlockEntry));
+            }
+            setImportOpen(false);
+            setImportText("");
+            setNotice("차단 목록을 가져왔습니다.");
+        } catch {
+            setNotice("차단 목록을 가져오는데 실패했습니다.");
+        }
+    };
 
     const handleSubmit = async (fields: BlockInputFields): Promise<void> => {
         if (!dialog) return;
@@ -44,7 +74,19 @@ export function BlockTab() {
 
     return (
         <Box>
-            <Section title="차단 모드" desc="기본 차단 판별 방식입니다. 개별 항목의 모드가 우선합니다.">
+            <Section
+                title="차단 모드"
+                actions={
+                    <>
+                        <IconButton size="2" variant="ghost" color="gray" title="내보내기" onClick={() => void exportBlocks()}>
+                            <Download size={16} />
+                        </IconButton>
+                        <IconButton size="2" variant="ghost" color="gray" title="가져오기" onClick={() => setImportOpen(true)}>
+                            <Upload size={16} />
+                        </IconButton>
+                    </>
+                }
+            >
                 {BLOCK_TYPES.map((type) => (
                     <Row
                         key={`mode-${type}`}
@@ -169,6 +211,28 @@ export function BlockTab() {
                 }}
                 onClose={() => setClearConfirm(null)}
             />
+
+            <ConfirmDialog open={notice !== null} title={notice ?? ""} cancelLabel={null} onClose={() => setNotice(null)} onConfirm={() => setNotice(null)} />
+
+            <Dialog.Root open={importOpen} onOpenChange={(next) => !next && setImportOpen(false)}>
+                <Dialog.Content style={{maxWidth: 520}}>
+                    <Dialog.Title>차단 목록 가져오기</Dialog.Title>
+                    <Dialog.Description size="2" mb="3">
+                        내보낸 JSON 데이터를 붙여넣어주세요.
+                    </Dialog.Description>
+
+                    <TextArea placeholder="JSON 데이터" value={importText} onChange={(event) => setImportText(event.target.value)} style={{minHeight: 160}} autoFocus />
+
+                    <Flex gap="3" justify="end" mt="4">
+                        <Dialog.Close>
+                            <Button variant="soft" color="gray">
+                                취소
+                            </Button>
+                        </Dialog.Close>
+                        <Button onClick={() => void submitImport()}>가져오기</Button>
+                    </Flex>
+                </Dialog.Content>
+            </Dialog.Root>
         </Box>
     );
 }

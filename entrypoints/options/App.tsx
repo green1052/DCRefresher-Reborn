@@ -1,4 +1,5 @@
 import {Box, Tabs} from "@radix-ui/themes";
+import {ClipboardList, Database, LayoutGrid, Package, Settings, SquareSlash} from "lucide-react";
 import {useEffect} from "react";
 
 import {BlockTab} from "./BlockTab";
@@ -12,13 +13,13 @@ import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
 import {useModulesStore} from "@/stores/modules";
 
-const TABS: {id: string; label: string; content: React.ReactNode}[] = [
-    {id: "general", label: "일반", content: <GeneralTab />},
-    {id: "block", label: "차단", content: <BlockTab />},
-    {id: "memo", label: "메모", content: <MemoTab />},
-    {id: "module", label: "모듈", content: <ModuleTab />},
-    {id: "shortcut", label: "단축키", content: <ShortcutTab />},
-    {id: "data", label: "데이터", content: <DataTab />}
+const TABS: {id: string; label: string; icon: React.ComponentType<{size?: number}>; content: React.ReactNode}[] = [
+    {id: "general", label: "일반", icon: Settings, content: <GeneralTab />},
+    {id: "block", label: "차단", icon: SquareSlash, content: <BlockTab />},
+    {id: "memo", label: "메모", icon: ClipboardList, content: <MemoTab />},
+    {id: "module", label: "모듈", icon: Package, content: <ModuleTab />},
+    {id: "shortcut", label: "단축키", icon: LayoutGrid, content: <ShortcutTab />},
+    {id: "data", label: "데이터", icon: Database, content: <DataTab />}
 ];
 
 export function App() {
@@ -75,7 +76,8 @@ export function App() {
                     }}
                 >
                     {TABS.map((tab) => (
-                        <Tabs.Trigger key={tab.id} value={tab.id} style={{justifyContent: "flex-start", borderRadius: 8, padding: "8px 14px"}}>
+                        <Tabs.Trigger key={tab.id} value={tab.id} style={{display: "flex", alignItems: "center", gap: 8, borderRadius: 8, padding: "8px 14px"}}>
+                            <tab.icon size={16} />
                             {tab.label}
                         </Tabs.Trigger>
                     ))}

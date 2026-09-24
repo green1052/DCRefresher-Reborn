@@ -1,9 +1,6 @@
 import {block} from "@/core/block";
 import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
 import {queryString} from "@/core/http/urls";
-import {useUiStore} from "@/stores/ui";
-
-import {handleBlockRequest} from "./request";
 
 /** 디시콘 이미지 URL에서 디시콘 코드(no 파라미터) 추출 */
 const extractDcconCode = (src: string): string => src.replace(/^.*no=/, "").replace(/&.*$/, "");
@@ -89,43 +86,6 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): void => 
     );
 };
 
-const setupSelection = (ctx: ModuleContext): void => {
-    const onContextMenu = (event: MouseEvent): void => {
-        const target = event.target;
-        if (!(target instanceof Element)) return;
-
-        const dcconElement = target.closest<HTMLElement>(".written_dccon");
-        const hitElement = dcconElement ?? target.closest<HTMLElement>(".ub-writer");
-        if (!hitElement) return;
-
-        const ui = useUiStore.getState();
-
-        // 우클릭 선택 정보 저장 — 동작은 배경 컨텍스트 메뉴가 담당
-        if (dcconElement) {
-            const media = (dcconElement as HTMLImageElement).src
-                ? (dcconElement as HTMLImageElement)
-                : (dcconElement.querySelector("img, video, source") ?? dcconElement);
-            const src = media.getAttribute("src") ?? media.getAttribute("data-src");
-            if (!src) return;
-
-            const code = extractDcconCode(src);
-            ui.setSelected({dccon: code});
-        } else {
-            const {nick, uid, ip} = hitElement.dataset;
-            if (!nick && !uid && !ip) return;
-
-            ui.setSelected({nick, uid, ip});
-        }
-    };
-
-    document.addEventListener("contextmenu", onContextMenu, true);
-    ctx.addCleanup(() => document.removeEventListener("contextmenu", onContextMenu, true));
-
-    ctx.bus.on("refresherRequestBlock", ({data: options}) => {
-        void handleBlockRequest(options, useUiStore.getState().selected);
-    });
-};
-
 export const restoreHiddenElements = (): void => {
     for (const element of document.querySelectorAll<HTMLElement>(".refresherBlocked")) {
         element.classList.remove("refresherBlocked");
@@ -163,7 +123,6 @@ const blockModule: ModuleDefinition = {
         const gallery = queryString("id") ?? undefined;
 
         setupFilters(ctx, gallery);
-        setupSelection(ctx);
     },
 
     revoke() {

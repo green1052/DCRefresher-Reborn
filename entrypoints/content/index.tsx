@@ -11,7 +11,6 @@ import * as memoCore from "@/core/memo";
 import {onMessage} from "@/core/messaging/protocol";
 import {loadAll, modules} from "@/core/module/registry";
 import features from "@/features";
-import {useUiStore} from "@/stores/ui";
 
 export default defineContentScript({
     matches: ["https://*.dcinside.com/*"],
@@ -25,32 +24,12 @@ export default defineContentScript({
     ],
     runAt: "document_start",
     async main() {
-        // ===== 메시징 (팝업→탭, 배경→탭) =====
+        // ===== 메시징 (배경→탭) =====
         onMessage("refresher:contextMenu", ({data: action}) => {
-            switch (action) {
-                case "blockSelected":
-                    eventBus.emit("refresherRequestBlock", {target: "user"});
-                    break;
-                case "dcconSelected":
-                    eventBus.emit("refresherRequestBlock", {target: "dccon"});
-                    break;
-                case "dcconAllSelected":
-                    eventBus.emit("refresherRequestBlock", {target: "dccon", blockAllDccon: true});
-                    break;
-                case "memoSelected":
-                    useUiStore.getState().openMemoForSelected();
-                    break;
-                case "searchSauceNao":
-                    eventBus.emit("imageSearch");
-                    break;
-            }
+            if (action === "searchSauceNao") eventBus.emit("imageSearch");
         });
 
         onMessage("refresher:executeShortcut", ({data: command}) => modules.runShortcut(command));
-
-        onMessage("refresher:askMemo", ({data}) => {
-            useUiStore.getState().openMemo({[data.type]: data.user}, data.type);
-        });
 
         // ===== 메시징 (옵션→탭) =====
         onMessage("refresher:getModuleSchema", () => modules.getSchema());

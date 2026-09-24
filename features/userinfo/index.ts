@@ -107,10 +107,10 @@ const userinfoModule: ModuleDefinition = {
         },
         badgeOrder: {
             type: "order",
-            name: "정보 배지 순서",
+            name: "정보 배치 순서",
             desc: "유저 정보 배지의 표시 순서를 정합니다.",
-            items: {UID: "유저 ID", IP: "IP 정보", MEMO: "메모"},
-            default: ["UID", "IP", "MEMO"]
+            items: {UID: "유저 ID / IP", MEMO: "메모"},
+            default: ["UID", "MEMO"]
         }
     },
 

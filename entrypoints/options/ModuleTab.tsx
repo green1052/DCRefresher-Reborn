@@ -1,8 +1,8 @@
-import {Box, Switch, Text} from "@radix-ui/themes";
+import {Box, Switch} from "@radix-ui/themes";
 
 import {useModulesStore} from "@/stores/modules";
 
-import {Empty, Row, Section} from "./Layout";
+import {Empty, Section} from "./Layout";
 
 /** 모듈 on/off만 표시. 세부 설정은 일반 탭에 있다 */
 export function ModuleTab() {
@@ -16,18 +16,17 @@ export function ModuleTab() {
     if (schemas.length === 0) return <Empty>모듈이 없습니다.</Empty>;
 
     return (
-        <Section title="모듈" desc="모듈을 켜고 끕니다. 세부 설정은 일반 탭에 있습니다.">
+        <Box>
             {schemas.map((schema) => (
-                <Row
+                <Section
                     key={schema.id}
-                    left={
-                        <Text size="2" color={schema.enable ? undefined : "gray"}>
-                            {schema.name}
-                        </Text>
-                    }
-                    right={<Switch size="2" checked={schema.enable} onCheckedChange={(value) => void toggle(schema.id, value, tabId)} />}
-                />
+                    title={schema.name}
+                    desc={schema.description}
+                    actions={<Switch size="2" checked={schema.enable} onCheckedChange={(value) => void toggle(schema.id, value, tabId)} />}
+                >
+                    {null}
+                </Section>
             ))}
-        </Section>
+        </Box>
     );
 }
