@@ -1,4 +1,4 @@
-import {Box, Switch} from "@radix-ui/themes";
+import {Box, Flex, Switch, Text} from "@radix-ui/themes";
 
 import {useModulesStore} from "@/stores/modules";
 
@@ -16,17 +16,22 @@ export function ModuleTab() {
     if (schemas.length === 0) return <Empty>모듈이 없습니다.</Empty>;
 
     return (
-        <Box>
-            {schemas.map((schema) => (
-                <Section
-                    key={schema.id}
-                    title={schema.name}
-                    desc={schema.description}
-                    actions={<Switch size="2" checked={schema.enable} onCheckedChange={(value) => void toggle(schema.id, value, tabId)} />}
-                >
-                    {null}
-                </Section>
+        <Section title="모듈">
+            {schemas.map((schema, index) => (
+                <Box key={schema.id} mb="4" mt={index > 0 ? "4" : undefined}>
+                    <Flex justify="between" align="center" gap="3">
+                        <Box style={{flex: 1, minWidth: 0}}>
+                            <Text size="2" weight="bold">
+                                {schema.name}
+                            </Text>
+                            <Text as="div" size="2" color="gray">
+                                {schema.description}
+                            </Text>
+                        </Box>
+                        <Switch size="2" checked={schema.enable} onCheckedChange={(value) => void toggle(schema.id, value, tabId)} />
+                    </Flex>
+                </Box>
             ))}
-        </Box>
+        </Section>
     );
 }
