@@ -1,5 +1,4 @@
 import {Box, Flex, Heading, Tabs, Text} from "@radix-ui/themes";
-import {ExternalLink} from "lucide-react";
 import {useEffect} from "react";
 
 import logoUrl from "@/assets/icon.png";
@@ -24,7 +23,7 @@ const TABS: {id: string; label: string; content: React.ReactNode}[] = [
     {id: "data", label: "데이터", content: <DataTab />}
 ];
 
-export function App({optionsPage = false}: {optionsPage?: boolean}) {
+export function App() {
     const setSchemas = useModulesStore((state) => state.setSchemas);
     const setUnavailable = useModulesStore((state) => state.setUnavailable);
 
@@ -70,22 +69,6 @@ export function App({optionsPage = false}: {optionsPage?: boolean}) {
                 <Heading size="6">
                     DCRefresher <Text color="blue">Reborn</Text>
                 </Heading>
-                {optionsPage && (
-                    <Box
-                        asChild
-                        style={{
-                            marginLeft: "auto",
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            color: "var(--gray-9)"
-                        }}
-                    >
-                        <button type="button" title="전체 설정 페이지 열기" onClick={() => void browser.runtime.openOptionsPage()}>
-                            <ExternalLink size={14} />
-                        </button>
-                    </Box>
-                )}
             </Flex>
 
             <Tabs.Root defaultValue="general" style={{display: "flex", flex: 1, minHeight: 0}}>
