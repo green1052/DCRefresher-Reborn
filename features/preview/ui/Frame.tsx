@@ -208,24 +208,23 @@ export const Frame = () => {
             }
         };
 
-        // v5 ScrollDetection — 휠 제스처 단위로 판별
+        // v5 ScrollDetection — 휠 제스처 단위로 이동 판별
         const detector = new ScrollDetection();
 
         detector.listen("scroll", (event: WheelEvent) => {
             const scroller = (event.target as HTMLElement | null)?.closest?.(".refresher-frame");
             if (!scroller) return;
 
+            const isUp = event.deltaY < 0;
             const scrolledTop = scroller.scrollTop === 0;
             const scrolledBottom = Math.abs(Math.floor(scroller.scrollHeight - scroller.scrollTop) - scroller.clientHeight) < 2;
-
-            if (!scrolledTop && !scrolledBottom) edge.current.count = 0;
-
-            const isUp = event.deltaY < 0;
             const atEdge = isUp ? scrolledTop : scrolledBottom;
 
-            setScrollEdge(atEdge ? (isUp ? "top" : "bottom") : null);
+            if (!atEdge) {
+                edge.current.count = 0;
+                return;
+            }
 
-            if (!atEdge) return;
             if (edge.current.count++ < 1) return;
             edge.current.count = 0;
 
@@ -236,6 +235,17 @@ export const Frame = () => {
 
         const onWheel = (event: WheelEvent): void => {
             if (!scrollSkip) return;
+
+            const scroller = (event.target as HTMLElement | null)?.closest?.(".refresher-frame");
+            if (!scroller) return;
+
+            const scrolledTop = scroller.scrollTop === 0;
+            const scrolledBottom = Math.abs(Math.floor(scroller.scrollHeight - scroller.scrollTop) - scroller.clientHeight) < 2;
+            const isUp = event.deltaY < 0;
+            const atEdge = isUp ? scrolledTop : scrolledBottom;
+
+            setScrollEdge(atEdge ? (isUp ? "top" : "bottom") : null);
+
             detector.addMouseEvent(event);
         };
 

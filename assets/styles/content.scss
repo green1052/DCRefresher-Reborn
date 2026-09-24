@@ -336,6 +336,7 @@ html:has(#css-darkmode) {
     height: 40%;
     color: #fff;
     pointer-events: none;
+    animation: refPreviewIn 0.15s cubic-bezier(0.19, 1, 0.22, 1);
     background: linear-gradient(to top, rgb(12 23 53 / 70%), rgb(32 42 72 / 30%), transparent);
 
     .center {

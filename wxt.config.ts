@@ -2,6 +2,11 @@ import {defineConfig} from "wxt";
 
 export default defineConfig({
     modules: ["@wxt-dev/module-react", "@wxt-dev/webextension-polyfill", "@wxt-dev/auto-icons"],
+    react: {
+        vite: {
+            compiler: true
+        }
+    },
     manifest: {
         name: "DCRefresher Reborn",
         description: "디시인사이드 개선 확장 프로그램",
@@ -13,11 +18,7 @@ export default defineConfig({
             "unlimitedStorage",
             "clipboardWrite"
         ],
-        host_permissions: ["https://*.dcinside.com/*"],
-        options_ui: {
-            page: "options.html",
-            open_in_tab: true
-        },
+        host_permissions: ["https://*.dcinside.com/*", "https://dcrefresher.green1052.com/*"],
         web_accessible_resources: [
             {
                 resources: ["assets/*.webp"],

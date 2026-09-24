@@ -2,6 +2,7 @@ import {useEffect, useState, type MouseEvent} from "react";
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
 
 import {adminDeleteComment, userDeleteComment} from "@/core/preview/request";
+import {getIsp, subscribeIsp} from "@/core/ip";
 import type {ProcessedComment} from "@/core/preview/comments";
 import {useUiStore} from "@/stores/ui";
 
@@ -39,6 +40,18 @@ const extractIcon = (html: string | undefined): string | undefined =>
 
 const extractIp = (html: string | undefined): string | undefined => html?.match(/class=["']?ip["']?[^>]*>\s*\(([^)]+)\)/)?.[1];
 
+const useIsp = (ip: string | undefined): string | undefined => {
+    const [isp, setIsp] = useState<string | undefined>(() => (ip ? getIsp(ip) : undefined));
+
+    useEffect(() => {
+        if (!ip) return;
+        setIsp(getIsp(ip));
+        return subscribeIsp(() => setIsp(getIsp(ip)));
+    }, [ip]);
+
+    return isp;
+};
+
 const TimeStamp = ({date}: {date: string}) => {
     const parsed = parseDate(date);
     const [absolute, setAbsolute] = useState(false);
@@ -70,6 +83,8 @@ export interface UserCardData {
 }
 
 export const UserCard = ({user}: {user: UserCardData}) => {
+    const isp = useIsp(user.ip);
+
     const openMenu = (event: MouseEvent): void => {
         event.preventDefault();
 
@@ -89,6 +104,11 @@ export const UserCard = ({user}: {user: UserCardData}) => {
                     </span>
                 )}
                 {(user.id || user.ip) && <span className="refresher-user-info">({user.id || user.ip})</span>}
+                {isp && (
+                    <span className="refresherUserData" style={{color: "#6495ed"}} title={isp}>
+                        [{isp}]
+                    </span>
+                )}
             </div>
         </div>
     );
