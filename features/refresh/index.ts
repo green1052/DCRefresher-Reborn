@@ -7,7 +7,6 @@ import {useUiStore} from "@/stores/ui";
 const MINIMUM_REFRESH_INTERVAL = 2000;
 const PAGING_SELECTOR = ".left_content article:has(.gall_listwrap) .bottom_paging_box";
 
-// 제어 버튼 (revoke에서 제거 — setup/def-revoke가 공유)
 let button: HTMLButtonElement | null = null;
 
 interface RefreshApi {
@@ -113,10 +112,6 @@ const refreshModule: ModuleDefinition = {
         let calledByPageTurn = false;
         const paginationAbort = new AbortController();
 
-        const updateButtonText = (): void => {
-            if (button) button.textContent = paused ? "새로고침: 꺼짐" : "새로고침: 켜짐";
-        };
-
         // 제어 버튼
         ctx.addFilter(
             ".page_head > .gall_issuebox",
@@ -124,6 +119,7 @@ const refreshModule: ModuleDefinition = {
                 if (element.querySelector("button[data-refresher-refresh]")) return;
 
                 button = document.createElement("button");
+                button.type = "button";
                 button.dataset.refresherRefresh = "true";
                 button.textContent = paused ? "새로고침: 꺼짐" : "새로고침: 켜짐";
                 button.addEventListener("click", () => {

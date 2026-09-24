@@ -83,24 +83,6 @@ html:has(#css-darkmode) {
     color: inherit !important;
 }
 
-/* ===== 새로고침 제어 버튼 ===== */
-
-button[data-refresher-refresh] {
-    margin-left: 4px;
-    padding: 4px 10px;
-    border: 1px solid #d5d5d5;
-    border-radius: 4px;
-    background: #fff;
-    color: #555;
-    font-size: 12px;
-    cursor: pointer;
-
-    &:hover {
-        border-color: #aaa;
-        color: #333;
-    }
-}
-
 /* ===== 토스트 ===== */
 
 .refresher-toast {
@@ -304,11 +286,5 @@ html:has(#css-darkmode) {
 
     .refresher-segment-item {
         color: #a1a1aa;
-    }
-
-    button[data-refresher-refresh] {
-        background: #27272a;
-        border-color: #3f3f46;
-        color: #fafafa;
     }
 }
