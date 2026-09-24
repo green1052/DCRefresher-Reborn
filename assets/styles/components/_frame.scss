@@ -11,10 +11,6 @@
     z-index: 2147483100;
     animation: refPreviewIn 0.15s cubic-bezier(0.19, 1, 0.22, 1);
 
-    &.blurred {
-        backdrop-filter: blur(5px);
-    }
-
     &.fading {
         pointer-events: none;
         animation: refPreviewOut 0.15s forwards;

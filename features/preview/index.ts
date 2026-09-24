@@ -22,7 +22,6 @@ const settings: NonNullable<ModuleDefinition["settings"]> = {
         step: 50,
         unit: "ms"
     },
-    tooltipInteraction: {type: "check", name: "미니 미리보기 상호작용", desc: "미니 미리보기 위에서 마우스를 사용할 수 있게 합니다.", default: false},
     tooltipRatioDisable: {
         type: "check",
         name: "미니 미리보기 글/댓글 비율 강조 비활성화",
@@ -33,7 +32,7 @@ const settings: NonNullable<ModuleDefinition["settings"]> = {
     longPressDelay: {
         type: "range",
         name: "길게 누르기 판정 시간",
-        desc: "이 시간보다 짧게 누르면 미리보기가 열립니다.",
+        desc: "마우스 오른쪽 버튼을 해당 밀리초 이상 눌러 뗄 때 기본 우클릭 메뉴가 나오게 합니다.",
         default: 300,
         min: 200,
         max: 2000,
@@ -52,8 +51,6 @@ const settings: NonNullable<ModuleDefinition["settings"]> = {
         step: 100,
         unit: "ms"
     },
-    toggleBlur: {type: "check", name: "게시글 배경 블러", desc: "게시글 배경을 흐리게 표시합니다.", default: true},
-    toggleBackgroundBlur: {type: "check", name: "바깥 배경 블러", desc: "미리보기 바깥 배경을 흐리게 표시합니다.", default: true},
     toggleAdminPanel: {type: "check", name: "관리 패널 활성화", desc: "관리 권한이 있을 때 관리 패널을 표시합니다.", default: true},
     useKeyPress: {type: "check", name: "단축키로 댓글 관리", desc: "D/B 키로 빠르게 삭제/차단합니다.", default: true},
     blockPresetDay: {
@@ -78,13 +75,12 @@ const settings: NonNullable<ModuleDefinition["settings"]> = {
         default: false
     },
     expandRecognizeRange: {type: "check", name: "게시글 인식 범위 확장", desc: "행 전체를 클릭해도 미리보기가 열리게 합니다.", default: false},
-    experimentalComment: {type: "check", name: "실험적 댓글 기능", desc: "실험적 댓글 기능을 활성화합니다.", default: false},
     disableCache: {type: "check", name: "캐시 비활성화", desc: "미리보기 캐시를 사용하지 않습니다.", default: false},
     archiveArticle: {type: "check", name: "삭제된 글과 댓글 보존", desc: "캐시된 게시글이 삭제되어도 이전 내용을 보여줍니다.", default: false},
     blockImage: {
         type: "check",
-        name: "이미지가 없는 게시글 이미지 차단",
-        desc: "본문 이미지를 기본으로 숨깁니다. 미리보기에서 버튼으로 다시 볼 수 있습니다.",
+        name: "이미지 아이콘 없는 게시글 이미지 차단",
+        desc: "이미지가 없는 게시글에 이미지가 있을 경우 차단합니다.",
         default: false
     }
 };
@@ -109,14 +105,27 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
 
     const row = (element.closest(".ub-content") as HTMLElement | null) ?? element;
 
+    // 목록 아이콘 클래스에서 게시글 타입 추출 (이미지 아이콘 없는 글 판별)
+    const icon = row.querySelector<HTMLElement>(".icon_img");
+    let type = "icon_txt";
+    let notice = false;
+    let recommend = false;
+
+    if (icon) {
+        const classes = icon.getAttribute("class") ?? "";
+        type = classes.split(" ").at(-1) ?? "icon_txt";
+        notice = classes.includes("icon_notice");
+        recommend = classes.includes("icon_recomimg");
+    }
+
     return {
         gallery: gallery ?? "",
         id: id ?? "",
         title: anchor.textContent?.trim() || undefined,
         link: url.href,
-        notice: Boolean(row.querySelector(".icon_notice")),
-        recommend: Boolean(row.querySelector(".icon_recomimg")),
-        type: ""
+        notice,
+        recommend,
+        type
     };
 };
 
@@ -130,9 +139,11 @@ const controller = (ctx: ModuleContext) => {
     let savedHistory: { title: string; url: string; state: unknown } | null = null;
     let refreshTimer = 0;
     let pressStart = 0;
+    let preventOpen = false;
     let lastKey = "";
     let lastKeyTime = 0;
     let miniTimer = 0;
+    let miniAbort: AbortController | null = null;
     let lastMiniAt = 0;
     let lastMiniId = "";
 
@@ -258,7 +269,8 @@ const controller = (ctx: ModuleContext) => {
         const after = store.getState();
 
         if (commentsOnly) after.setCommentsOnly(true);
-        after.setImageBlocked(ctx.settings.blockImage === true);
+        // 목록에 이미지 아이콘이 없는(텍스트) 글만 본문 이미지 숨김
+        after.setImageBlocked(ctx.settings.blockImage === true && preData.type === "icon_txt");
         after.setNotice(Boolean(preData.notice));
         after.setRecommend(Boolean(preData.recommend));
         after.setAdminVisible(Boolean(ctx.settings.toggleAdminPanel) && Boolean(document.querySelector(".useradmin_btnbox button")));
@@ -376,17 +388,29 @@ const controller = (ctx: ModuleContext) => {
     };
 
     // ── 미니 미리보기 ────────────────────────────────────────────
-    const showMini = (element: HTMLElement, x: number, y: number) => {
-        const st = store.getState();
-        if (!st.preData && !element) return;
+    const showMini = async (element: HTMLElement, x: number, y: number) => {
+        if (!element) return;
 
-        const preData = element.closest(".ub-content") instanceof HTMLElement || element.tagName === "A" ? buildPreData(element) : null;
+        const preData = buildPreData(element);
         if (!preData) return;
 
         if (preData.id === lastMiniId && Date.now() - lastMiniAt < 150) return;
 
-        const post = getEntry(preData)?.post;
-        if (!post) return;
+        let post = getEntry(preData)?.post;
+
+        // 캐시에 없으면 서버에서 가져옴
+        if (!post) {
+            miniAbort?.abort();
+            miniAbort = new AbortController();
+            const signal = miniAbort.signal;
+
+            try {
+                post = await fetchPost(preData, signal);
+                setEntry(preData, {post});
+            } catch {
+                return;
+            }
+        }
 
         let contents = post.contents ?? "";
         if (block.checkAll({TEXT: contents.replace(/<[^>]+>/g, " ").trim()}, preData.gallery)) {
@@ -398,8 +422,8 @@ const controller = (ctx: ModuleContext) => {
         lastMiniAt = Date.now();
         lastMiniId = preData.id;
 
-        st.closeMini();
-        st.openMini({
+        usePreviewStore.getState().closeMini();
+        usePreviewStore.getState().openMini({
             preData,
             x: Math.max(0, Math.min(x + 16, window.innerWidth - 340)),
             y: Math.max(0, Math.min(y + 16, window.innerHeight - 220)),
@@ -410,7 +434,7 @@ const controller = (ctx: ModuleContext) => {
 
     const onMiniEnter = (event: MouseEvent) => {
         if (ctx.settings.tooltipMode !== true) return;
-        if (store.getState().visible) return;
+        if (usePreviewStore.getState().visible) return;
 
         const element = event.currentTarget as HTMLElement;
         const x = event.clientX;
@@ -418,19 +442,35 @@ const controller = (ctx: ModuleContext) => {
 
         if (miniTimer) window.clearTimeout(miniTimer);
         const delay = Number(ctx.settings.tooltipDelay) || 0;
-        miniTimer = window.setTimeout(() => showMini(element, x, y), delay);
+        miniTimer = window.setTimeout(() => void showMini(element, x, y), delay);
+    };
+
+    const onMiniMove = (event: MouseEvent) => {
+        usePreviewStore.getState().moveMini(event.clientX, event.clientY);
     };
 
     const onMiniLeave = () => {
         if (miniTimer) window.clearTimeout(miniTimer);
         miniTimer = 0;
-        if (ctx.settings.tooltipInteraction !== true) store.getState().closeMini();
+        miniAbort?.abort();
+        miniAbort = null;
+        usePreviewStore.getState().closeMini();
     };
 
     // ── 행 이벤트 ────────────────────────────────────────────────
+    // v5와 동일: mousedown 기록 → mouseup에서 길게 누름 판정 → contextmenu에서 소비
     const onMouseDown = (event: MouseEvent) => {
         if (event.button !== 2) return;
         pressStart = Date.now();
+        preventOpen = false;
+    };
+
+    const onMouseUp = (event: MouseEvent) => {
+        if (event.button !== 2 || pressStart === 0) return;
+
+        const delay = Number(ctx.settings.longPressDelay) || 300;
+        if (Date.now() - delay > pressStart) preventOpen = true;
+        pressStart = 0;
     };
 
     const onContextMenu = (event: MouseEvent) => {
@@ -458,10 +498,14 @@ const controller = (ctx: ModuleContext) => {
             return;
         }
 
-        if (Date.now() - pressStart < (Number(ctx.settings.longPressDelay) || 300)) {
-            event.preventDefault();
-            open(preData);
+        // 길게 눌렀으면 기본 우클릭 메뉴, 짧게 눌렀으면 미리보기
+        if (preventOpen) {
+            preventOpen = false;
+            return;
         }
+
+        event.preventDefault();
+        open(preData);
     };
 
     const onClick = (event: MouseEvent) => {
@@ -497,11 +541,13 @@ const controller = (ctx: ModuleContext) => {
         element.dataset.refresherPreviewMode = mode;
 
         element.addEventListener("mousedown", onMouseDown);
+        element.addEventListener("mouseup", onMouseUp);
         element.addEventListener("contextmenu", onContextMenu);
         element.addEventListener("click", onClick);
 
         if (mode === "word") {
             element.addEventListener("mouseenter", onMiniEnter);
+            element.addEventListener("mousemove", onMiniMove);
             element.addEventListener("mouseleave", onMiniLeave);
         }
     };

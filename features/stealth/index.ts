@@ -1,4 +1,5 @@
 import type {ModuleDefinition} from "@/core/module/types";
+import {eventBus} from "@/core/eventbus/bus";
 import {useUiStore} from "@/stores/ui";
 
 const CONTROL_BUTTON = ".stealth_control_button";
@@ -55,6 +56,10 @@ const stealthModule: ModuleDefinition = {
     setup(ctx) {
         document.documentElement.classList.add("refresherStealth");
 
+        const ensureButton = (): void => {
+            if (!document.querySelector(CONTROL_BUTTON)) tempButtonCreate(document.documentElement);
+        };
+
         if (document.readyState === "complete") {
             tempButtonCreate(document.documentElement);
         } else {
@@ -63,7 +68,9 @@ const stealthModule: ModuleDefinition = {
             ctx.addCleanup(() => window.removeEventListener("load", onLoad));
         }
 
-        // v6: 오버레이(#refresher-root)가 React 루트로 영속 마운트되므로 contentPreview 재마운트는 불필요
+        // DC는 SPA처럼 페이지를 갈아끼우므로 버튼이 사라지면 새 목록마다 재생성
+        const offNewPostList = eventBus.on("newPostList", () => ensureButton());
+        ctx.addCleanup(() => void offNewPostList());
     },
 
     revoke() {

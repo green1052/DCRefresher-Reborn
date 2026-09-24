@@ -89,6 +89,7 @@ interface PreviewState {
     closeCaptcha: () => void;
     openMini: (data: { preData: GalleryPreData; x: number; y: number; title: string; contents: string }) => void;
     closeMini: () => void;
+    moveMini: (clientX: number, clientY: number) => void;
     requestOpen: (preData: GalleryPreData, commentsOnly?: boolean) => void;
     requestClose: () => void;
     requestRefresh: () => void;
@@ -248,6 +249,18 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
 
     openMini: (data) => set({mini: data}),
     closeMini: () => set({mini: null}),
+    moveMini: (clientX, clientY) =>
+        set((state) =>
+            state.mini
+                ? {
+                      mini: {
+                          ...state.mini,
+                          x: Math.max(0, Math.min(clientX + 16, window.innerWidth - 340)),
+                          y: Math.max(0, Math.min(clientY + 16, window.innerHeight - 220))
+                      }
+                  }
+                : state
+        ),
 
     requestOpen: (preData, commentsOnly) => get().openHook?.(preData, commentsOnly),
     requestClose: () => get().closeHook?.(),

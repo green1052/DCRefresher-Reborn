@@ -3,7 +3,6 @@ import {ExternalLink, Eye, ThumbsDown, ThumbsUp} from "lucide-react";
 import {Dialog} from "radix-ui";
 
 import {captchaImage, vote} from "@/core/preview/request";
-import {modules} from "@/core/module/registry";
 import {useUiStore} from "@/stores/ui";
 
 import {buildPreData} from "../index";
@@ -211,7 +210,6 @@ export const Frame = () => {
     if (!visible && !fading) return null;
 
     const dataLoad = error ? "false" : loading || !post ? "true" : "false";
-    const blurBackground = modules.use("preview")?.settings.toggleBackgroundBlur === true;
 
     // 디시콘/차단/캡챠 팝업이 열려 있으면 프레임 클릭으로 미리보기를 닫지 않는다
     const popupOpen = (): boolean =>
@@ -227,7 +225,7 @@ export const Frame = () => {
         >
             <Dialog.Portal>
                 <div
-                    className={"refresher-frame-outer" + (blurBackground ? " blurred" : "") + (fading ? " fading" : "")}
+                    className={"refresher-frame-outer" + (fading ? " fading" : "")}
                     onPointerDown={() => {
                         if (popupOpen()) return;
                         usePreviewStore.getState().requestClose();

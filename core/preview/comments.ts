@@ -43,10 +43,7 @@ export const processComments = (
         comment.memo = cleanMemo(String(comment.memo ?? ""));
     }
 
-    // 차단 (blur면 내용 치환+is_delete, 아니면 행 제거 + 대댓 연쇄)
-    const useBlur = ctx.settings.toggleBlur === true;
-    const removed = new Set<string>();
-
+    // 차단: 내용 치환 + is_delete (행 제거 대신)
     for (const comment of list) {
         if (comment.is_delete === "1") continue;
 
@@ -66,20 +63,8 @@ export const processComments = (
 
         if (!blocked) continue;
 
-        if (useBlur) {
-            comment.memo = "댓글 내용이 차단됐습니다.";
-            comment.is_delete = "1";
-        } else {
-            removed.add(comment.no);
-        }
-    }
-
-    if (removed.size > 0) {
-        list = list.filter((comment) => {
-            if (removed.has(comment.no)) return false;
-            if (comment.c_no && removed.has(comment.c_no) && comment.no !== comment.c_no) return false;
-            return true;
-        });
+        comment.memo = "댓글 내용이 차단됐습니다.";
+        comment.is_delete = "1";
     }
 
     // 음성 분리
