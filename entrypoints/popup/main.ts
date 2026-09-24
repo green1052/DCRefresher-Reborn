@@ -1,4 +1,4 @@
-void (async () => {
+(async () => {
     await browser.runtime.openOptionsPage();
     window.close();
 })();

@@ -33,8 +33,9 @@ export function App({optionsPage = false}: {optionsPage?: boolean}) {
 
     useEffect(() => {
         void (async () => {
-            const [tab] = await browser.tabs.query({active: true, currentWindow: true});
-            if (!tab || !tab.id || !tab.url?.includes("dcinside.com")) {
+            const tabs = await browser.tabs.query({url: "*://*.dcinside.com/*"});
+            const tab = tabs.find((t) => t.id);
+            if (!tab?.id) {
                 setUnavailable(true);
                 return;
             }
@@ -64,7 +65,7 @@ export function App({optionsPage = false}: {optionsPage?: boolean}) {
                 )}
             </header>
 
-            <Tabs.Root defaultValue="general">
+            <Tabs.Root defaultValue="general" className="refresher-tabs">
                 <Tabs.List className="refresher-tabs-list">
                     {TABS.map((tab) => (
                         <Tabs.Trigger key={tab.id} value={tab.id} className="refresher-tab-trigger">
