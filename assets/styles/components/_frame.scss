@@ -125,7 +125,7 @@
     padding: 10px 24px 4px;
     border-top: 1px solid #f0f0f2;
     color: #a1a1aa;
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .refresher-preview-contents {
@@ -163,7 +163,7 @@
 
 .refresher-comment {
     position: relative;
-    padding: 10px 24px;
+    padding: 12px 24px;
 
     &:hover {
         background: #fafafa;
@@ -175,11 +175,20 @@
         &::before {
             content: "";
             position: absolute;
-            top: 10px;
-            bottom: 10px;
+            top: 0;
+            bottom: 50%;
             left: 36px;
             width: 2px;
-            border-radius: 2px;
+            background: #e4e4e7;
+        }
+
+        &::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 36px;
+            width: 16px;
+            height: 2px;
             background: #e4e4e7;
         }
     }
@@ -190,8 +199,8 @@
 }
 
 .refresher-comment-content {
-    font-size: 14px;
-    line-height: 1.6;
+    font-size: 15px;
+    line-height: 1.7;
     word-break: break-word;
 
     img,
@@ -323,20 +332,21 @@
 
 .refresher-votes {
     display: flex;
-    gap: 4px;
+    justify-content: center;
+    gap: 8px;
     margin-top: 12px;
 
     button {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        padding: 5px 10px;
+        gap: 6px;
+        padding: 8px 14px;
         border: none;
-        border-radius: 6px;
+        border-radius: 8px;
         background: none;
         color: #71717a;
         font: inherit;
-        font-size: 13px;
+        font-size: 15px;
         font-weight: 600;
         cursor: pointer;
         transition: background 0.12s ease;
@@ -453,7 +463,7 @@
         border: none;
         color: #71717a;
         font: inherit;
-        font-size: 11px;
+        font-size: 12px;
         cursor: pointer;
 
         &:hover {
@@ -465,7 +475,7 @@
 .refresher-timestamp {
     cursor: pointer;
     color: #a1a1aa;
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .refresher-countdown {
@@ -494,13 +504,13 @@
     }
 
     .refresher-user-nick {
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 600;
     }
 
     .refresher-user-info {
         color: #a1a1aa;
-        font-size: 11px;
+        font-size: 12px;
     }
 }
 
@@ -563,7 +573,8 @@ html:has(#css-darkmode) {
         border-color: #27272a;
     }
 
-    .refresher-comment[data-depth="1"]::before {
+    .refresher-comment[data-depth="1"]::before,
+    .refresher-comment[data-depth="1"]::after {
         background: #3f3f46;
     }
 

@@ -48,7 +48,14 @@ const Votes = () => {
         if (!preData || !post) return;
         try {
             const result = await vote(preData, post, mode);
-            if (result.success) usePreviewStore.getState().setVotes(result.counts ?? upvotes ?? "X", result.fixedCounts ?? "");
+            if (result.success) {
+                usePreviewStore.getState().setVotes(result.counts ?? upvotes ?? "X", result.fixedCounts ?? "");
+                useUiStore
+                    .getState()
+                    .showToast(`${mode === "U" ? "추천" : "비추천"}되었습니다. (총 ${result.counts ?? upvotes ?? "?"}표)`);
+            } else {
+                useUiStore.getState().showToast("이미 처리했거나 처리에 실패했습니다.", "error");
+            }
         } catch {
             useUiStore.getState().showToast("추천 처리 중 오류가 발생했습니다.", "error");
         }
@@ -57,18 +64,18 @@ const Votes = () => {
     return (
         <div className="refresher-votes">
             <button type="button" className="up" title="추천" onClick={() => void onVote("U")}>
-                <ThumbsUp size={15} />
+                <ThumbsUp size={18} />
                 {upvotes || "X"}
                 {fixedUpvotes ? ` (${fixedUpvotes})` : ""}
             </button>
             {downvotes !== undefined && (
                 <button type="button" className="down" title="비추천" onClick={() => void onVote("D")}>
-                    <ThumbsDown size={15} />
+                    <ThumbsDown size={18} />
                     {downvotes}
                 </button>
             )}
             <button type="button" title="새 탭으로 열기" onClick={() => window.open(preData?.link ?? location.href, "_blank")}>
-                <ExternalLink size={15} />
+                <ExternalLink size={18} />
             </button>
         </div>
     );
@@ -200,6 +207,7 @@ export const Frame = () => {
     return (
         <Dialog.Root
             open
+            modal={false}
             onOpenChange={(open) => {
                 if (!open) usePreviewStore.getState().requestClose();
             }}

@@ -83,7 +83,7 @@ export const UserCard = ({user}: {user: UserCardData}) => {
     };
 
     return (
-        <div className="refresher-user" style={{cursor: "pointer"}} onClick={openMenu} onContextMenu={openMenu}>
+        <div className="refresher-user" onContextMenu={openMenu}>
             <div className="refresher-user-content">
                 <span className="refresher-user-nick">{user.nick ?? user.id ?? user.ip}</span>
                 {user.image && (
@@ -164,7 +164,7 @@ export const Comment = ({comment, depth, replyCount}: CommentProps) => {
                             onClick={() => toggleCollapse(comment.no)}
                         >
                             <ChevronDown size={14} style={{transform: collapsed ? "rotate(-90deg)" : undefined}} />
-                            {replyCount}
+                            {comment.name} ({replyCount})
                         </button>
                     )}
                     {!isDeleted && (
