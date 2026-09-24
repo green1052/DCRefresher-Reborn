@@ -32,7 +32,7 @@ export class ScrollDetection {
 
     emit(event: string, ...args: unknown[]): void {
         this.events[event]?.forEach((func) => {
-            func(...args);
+            (func as (...a: unknown[]) => void)(...args);
         });
     }
 
@@ -63,7 +63,7 @@ export class ScrollDetection {
         }
 
         if (this.session.delta.length !== 0) {
-            const lastDelta = this.session.delta[this.session.delta.length - 1];
+            const lastDelta = this.session.delta[this.session.delta.length - 1] ?? 0;
 
             if (lastDelta === FIXED_DELTA_VALUE && this.average(this.session.delta) === FIXED_DELTA_VALUE) {
                 // FIXED 모드: delta 절댓값이 100으로 고정 (마우스)
