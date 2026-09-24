@@ -1,5 +1,6 @@
 import {useEffect, useState} from "react";
-import {RefreshCw, X} from "lucide-react";
+import {ChevronLeft, ChevronRight, RefreshCw, X} from "lucide-react";
+import {Dialog, Switch} from "radix-ui";
 
 import {http} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
@@ -11,21 +12,26 @@ interface DcconPopupProps {
     onClose: () => void;
 }
 
-/** 디시콘 선택 팝업 (v5 components/dccon.vue 이식) */
+/** 디시콘 선택 팝업 */
 export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
-    const [firstLoad, setFirstLoad] = useState(true);
     const [page, setPage] = useState(0);
     const [maxPage, setMaxPage] = useState(1);
     const [packages, setPackages] = useState<Record<number, DcinsideDcconDetailList[]>>({});
-    const [current, setCurrent] = useState<DcinsideDccon[] | null>(null);
+    const [activePackage, setActivePackage] = useState<string | null>(null);
+    const [current, setCurrent] = useState<DcinsideDccon[]>([]);
     const [doubleDccon, setDoubleDccon] = useState(false);
     const [bigDccon, setBigDccon] = useState(false);
     const [selected, setSelected] = useState<DcinsideDccon[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const openPackage = (pack: DcinsideDcconDetailList): void => {
+        setActivePackage(pack.package_idx);
+        setCurrent(pack.detail);
+    };
+
     const getList = async (targetPage: number, refresh = false): Promise<void> => {
         if (!refresh && packages[targetPage]) {
-            setCurrent(packages[targetPage][0]?.detail ?? null);
+            openPackage(packages[targetPage][0]);
             setLoading(false);
             return;
         }
@@ -48,7 +54,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
 
             setPackages((prev) => ({...prev, [targetPage]: response.list}));
             setMaxPage(response.max_page);
-            setCurrent(response.list[0]?.detail ?? null);
+            if (response.list[0]) openPackage(response.list[0]);
         } catch {
             useUiStore.getState().showToast("디시콘을 불러오는데 실패했습니다.", "error");
             onClose();
@@ -84,67 +90,96 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
         setSelected(next);
     };
 
+    const visible = packages[page] ?? [];
+
     return (
-        <div className="refresher-dccon-popup">
-            <button type="button" className="refresher-popup-close" onClick={onClose}>
-                <X size={14} />
-            </button>
+        <Dialog.Root
+            open
+            onOpenChange={(open) => {
+                if (!open) onClose();
+            }}
+        >
+            <Dialog.Portal>
+                <Dialog.Overlay className="refresher-overlay" />
+                <Dialog.Content className="refresher-dccon-popup" onOpenAutoFocus={(event) => event.preventDefault()}>
+                    <Dialog.Close asChild>
+                        <button type="button" className="refresher-popup-close">
+                            <X size={14} />
+                        </button>
+                    </Dialog.Close>
 
-            <div className="dccon-header">
-                <h3>디시콘</h3>
-                <label>
-                    <input type="checkbox" checked={doubleDccon} onChange={(event) => setDoubleDccon(event.target.checked)} />
-                    더블콘
-                </label>
-                <label>
-                    <input type="checkbox" checked={bigDccon} onChange={(event) => setBigDccon(event.target.checked)} />
-                    대왕콘
-                </label>
-                <button type="button" className="dccon-refresh" onClick={() => void getList(page, true)} title="새로고침">
-                    <RefreshCw size={16} />
-                </button>
-            </div>
+                    <div className="dccon-toolbar">
+                        <Dialog.Title>디시콘</Dialog.Title>
+                        <div className="dccon-toolbar-toggles">
+                            <label className="dccon-toggle">
+                                더블콘
+                                <Switch.Root className="refresher-switch-root" checked={doubleDccon} onCheckedChange={setDoubleDccon}>
+                                    <Switch.Thumb className="refresher-switch-thumb" />
+                                </Switch.Root>
+                            </label>
+                            <label className="dccon-toggle">
+                                대왕콘
+                                <Switch.Root className="refresher-switch-root" checked={bigDccon} onCheckedChange={setBigDccon}>
+                                    <Switch.Thumb className="refresher-switch-thumb" />
+                                </Switch.Root>
+                            </label>
+                        </div>
+                        <button type="button" className="dccon-refresh" onClick={() => void getList(page, true)} title="새로고침">
+                            <RefreshCw size={15} />
+                        </button>
+                    </div>
 
-            {loading && !current ? (
-                <div className="dccon-loading">불러오는 중...</div>
-            ) : (
-                <>
-                    <ul className="dccon-pager">
-                        <li className="pager-btn" onClick={() => movePage(-1)}>
-                            {"<"}
-                        </li>
-                        {(packages[page] ?? []).map((pack) => (
-                            <li
-                                key={pack.package_idx}
-                                className="pager-item"
-                                onClick={() => {
-                                    setFirstLoad(false);
-                                    setCurrent(pack.detail);
-                                }}
-                            >
-                                <img src={pack.main_img_url} alt={pack.title} />
-                            </li>
-                        ))}
-                        <li className="pager-btn" onClick={() => movePage(1)}>
-                            {">"}
-                        </li>
-                    </ul>
+                    {doubleDccon && selected.length > 0 && (
+                        <div className="dccon-selected">
+                            <img src={selected[0].list_img} alt={selected[0].title} />
+                            <span>더블콘 {selected.length}/2 — 하나만 더 선택</span>
+                            <button type="button" onClick={() => setSelected([])}>
+                                초기화
+                            </button>
+                        </div>
+                    )}
+
+                    <div className="dccon-packages">
+                        {loading && visible.length === 0
+                            ? Array.from({length: 8}, (_, index) => <span key={index} className="dccon-skeleton" />)
+                            : visible.map((pack) => (
+                                  <button
+                                      type="button"
+                                      key={pack.package_idx}
+                                      className={activePackage === pack.package_idx ? "active" : undefined}
+                                      title={pack.title}
+                                      onClick={() => openPackage(pack)}
+                                  >
+                                      <img src={pack.main_img_url} alt={pack.title} />
+                                  </button>
+                              ))}
+                    </div>
 
                     <div className="dccon-grid-wrap">
-                        {firstLoad ? (
-                            <div className="dccon-placeholder">디시콘을 클릭해주세요.</div>
-                        ) : (
-                            <ul className="dccon-grid">
-                                {(current ?? []).map((dccon) => (
-                                    <li key={dccon.detail_idx} onClick={() => clickDccon(dccon)}>
-                                        <img src={dccon.list_img} alt={dccon.title} />
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
+                        <div className="dccon-grid">
+                            {loading && current.length === 0
+                                ? Array.from({length: 18}, (_, index) => <span key={index} className="dccon-skeleton" />)
+                                : current.map((dccon) => (
+                                      <button type="button" key={dccon.detail_idx} title={dccon.title} onClick={() => clickDccon(dccon)}>
+                                          <img src={dccon.list_img} alt={dccon.title} />
+                                      </button>
+                                  ))}
+                        </div>
                     </div>
-                </>
-            )}
-        </div>
+
+                    <div className="dccon-footer">
+                        <button type="button" onClick={() => movePage(-1)} title="이전 패키지 목록">
+                            <ChevronLeft size={16} />
+                        </button>
+                        <span>
+                            {page + 1} / {maxPage + 1}
+                        </span>
+                        <button type="button" onClick={() => movePage(1)} title="다음 패키지 목록">
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+                </Dialog.Content>
+            </Dialog.Portal>
+        </Dialog.Root>
     );
 };

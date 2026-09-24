@@ -1048,87 +1048,133 @@ html:has(#css-darkmode) {
     left: 50%;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    width: min(620px, 94vw);
-    height: 500px;
+    gap: 12px;
+    width: min(640px, 94vw);
+    height: min(540px, 86vh);
+    padding: 18px 20px;
     transform: translate(-50%, -50%);
     pointer-events: auto;
     z-index: 2147483300;
 
-    .dccon-header {
+    .dccon-toolbar {
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: 10px;
 
         h3 {
             margin: 0;
-            font-size: 16px;
+            font-size: 15px;
+            font-weight: 700;
         }
 
-        label {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            color: #52525b;
-            font-size: 12px;
-            cursor: pointer;
+        .dccon-toolbar-toggles {
+            display: flex;
+            gap: 14px;
+            margin-left: auto;
+            margin-right: 30px;
+
+            .dccon-toggle {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                color: #52525b;
+                font-size: 12px;
+                cursor: pointer;
+            }
         }
 
         .dccon-refresh {
             display: inline-flex;
-            padding: 4px;
-            margin-left: auto;
+            padding: 5px;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             background: none;
             color: #71717a;
             cursor: pointer;
 
             &:hover {
                 color: #1c1c1c;
+                transform: rotate(90deg);
             }
+
+            transition: transform 0.3s ease;
         }
     }
 
-    .dccon-loading {
-        padding: 40px 0;
-        color: #a1a1aa;
-        font-size: 13px;
-        text-align: center;
-    }
-
-    .dccon-pager {
+    .dccon-selected {
         display: flex;
-        gap: 4px;
-        padding-bottom: 10px;
-        overflow-x: auto;
-        user-select: none;
-        list-style: none;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border: 1px solid #2e69ad;
+        border-radius: 8px;
+        background: rgb(46 105 173 / 6%);
 
-        .pager-btn {
-            padding: 0 8px;
+        img {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+        }
+
+        span {
+            flex: 1;
+            color: #2e69ad;
+            font-size: 12px;
+        }
+
+        button {
+            padding: 2px 8px;
+            border: 1px solid #e4e4e7;
+            border-radius: 6px;
+            background: none;
             color: #71717a;
-            font-size: 18px;
+            font: inherit;
+            font-size: 11px;
             cursor: pointer;
 
             &:hover {
                 color: #1c1c1c;
             }
         }
+    }
 
-        .pager-item {
+    .dccon-packages {
+        display: flex;
+        gap: 6px;
+        padding: 2px;
+        overflow-x: auto;
+
+        &::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            border-radius: 4px;
+            background: #e4e4e7;
+        }
+
+        button {
             flex: none;
+            padding: 2px;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            background: none;
             cursor: pointer;
 
             img {
-                width: 53px;
-                height: 53px;
+                display: block;
+                width: 52px;
+                height: 52px;
                 object-fit: cover;
-                border-radius: 4px;
+                border-radius: 8px;
             }
 
             &:hover img {
                 opacity: 0.8;
+            }
+
+            &.active {
+                border-color: #2e69ad;
             }
         }
     }
@@ -1137,37 +1183,96 @@ html:has(#css-darkmode) {
         flex: 1;
         min-height: 0;
         overflow-y: auto;
-    }
 
-    .dccon-placeholder {
-        padding: 60px 0;
-        color: #a1a1aa;
-        font-size: 14px;
-        text-align: center;
+        &::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            border-radius: 6px;
+            background: #d4d4d8;
+        }
     }
 
     .dccon-grid {
         display: grid;
-        gap: 4px;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-        grid-template-columns: repeat(6, 1fr);
+        gap: 6px;
+        grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
 
-        li {
+        button {
+            padding: 0;
+            border: none;
+            border-radius: 8px;
+            background: none;
             cursor: pointer;
+
+            img {
+                width: 100%;
+                height: 78px;
+                object-fit: contain;
+                border-radius: 8px;
+                transition: transform 0.12s ease, background 0.12s ease;
+            }
+
+            &:hover img {
+                background: #f4f4f5;
+                transform: scale(1.06);
+            }
+        }
+    }
+
+    .dccon-skeleton {
+        display: block;
+        border-radius: 8px;
+        background: linear-gradient(100deg, #f4f4f5 40%, #fafafa 50%, #f4f4f5 60%);
+        background-size: 200% 100%;
+        animation: dcconShimmer 1.2s infinite linear;
+    }
+
+    .dccon-packages .dccon-skeleton {
+        flex: none;
+        width: 52px;
+        height: 52px;
+    }
+
+    .dccon-grid .dccon-skeleton {
+        width: 100%;
+        height: 78px;
+    }
+
+    .dccon-footer {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+
+        span {
+            color: #a1a1aa;
+            font-size: 12px;
+            min-width: 56px;
+            text-align: center;
         }
 
-        img {
-            width: 100%;
-            height: 90px;
-            object-fit: contain;
-            border-radius: 4px;
-        }
+        button {
+            display: inline-flex;
+            padding: 4px;
+            border: none;
+            border-radius: 6px;
+            background: none;
+            color: #71717a;
+            cursor: pointer;
 
-        li:hover img {
-            background: #f4f4f5;
+            &:hover {
+                color: #1c1c1c;
+                background: #f4f4f5;
+            }
         }
+    }
+}
+
+@keyframes dcconShimmer {
+    to {
+        background-position: -200% 0;
     }
 }
 
@@ -1177,21 +1282,61 @@ html:has(#css-darkmode) {
         border-color: #3f3f46;
         color: #fafafa;
 
-        .dccon-header label {
-            color: #a1a1aa;
-        }
-
-        .dccon-refresh,
-        .dccon-pager .pager-btn {
+        .dccon-toolbar-toggles button {
+            background: #27272a;
+            border-color: #3f3f46;
             color: #a1a1aa;
 
             &:hover {
                 color: #fafafa;
             }
+
+            &.on {
+                border-color: #2e69ad;
+                background: #2e69ad;
+                color: #fff;
+            }
         }
 
-        .dccon-grid li:hover img {
+        .dccon-toolbar-toggles .dccon-toggle {
+            color: #a1a1aa;
+        }
+
+        .dccon-refresh,
+        .dccon-footer button {
+            color: #a1a1aa;
+
+            &:hover {
+                color: #fafafa;
+                background: #27272a;
+            }
+        }
+
+        .dccon-selected {
+            background: rgb(46 105 173 / 15%);
+        }
+
+        .dccon-packages {
+            &::-webkit-scrollbar-thumb {
+                background: #3f3f46;
+            }
+
+            button:hover img {
+                opacity: 0.8;
+            }
+        }
+
+        .dccon-grid button:hover img {
             background: #27272a;
+        }
+
+        .dccon-grid-wrap::-webkit-scrollbar-thumb {
+            background: #3f3f46;
+        }
+
+        .dccon-skeleton {
+            background: linear-gradient(100deg, #27272a 40%, #3f3f46 50%, #27272a 60%);
+            background-size: 200% 100%;
         }
     }
 }
