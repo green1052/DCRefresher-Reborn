@@ -5,7 +5,7 @@
 // ============================================================
 
 @mixin popup-shell {
-    background-color: var(--refresher-bg-popup);
+    background-color: #fff;
     border-radius: $radius-md;
     box-shadow: 0 0 16px rgba(51, 51, 51, 0.3);
     padding: 20px 30px;
@@ -147,6 +147,12 @@
 /* ===== 다크 모드 ===== */
 
 html:has(#css-darkmode) {
+    .refresher-block-popup,
+    .refresher-captcha-popup {
+        background: #18181b;
+        color: #fafafa;
+    }
+
     .refresher-block-popup input[type="text"],
     .refresher-captcha-popup input {
         background: #27272a;
