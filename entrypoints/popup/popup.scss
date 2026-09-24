@@ -356,6 +356,13 @@ body {
     cursor: pointer;
 }
 
+.refresher-data-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 0 12px;
+}
+
 .empty {
     padding: 24px;
     text-align: center;

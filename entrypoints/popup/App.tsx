@@ -4,19 +4,21 @@ import {useEffect} from "react";
 
 import {BlockTab} from "./BlockTab";
 import {DataTab} from "./DataTab";
+import {GeneralTab} from "./GeneralTab";
 import {MemoTab} from "./MemoTab";
 import {ModuleTab} from "./ModuleTab";
+import {ShortcutTab} from "./ShortcutTab";
 import {sendMessage} from "@/core/messaging/protocol";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
 import {useModulesStore} from "@/stores/modules";
 
 const TABS: {id: string; label: string; content: React.ReactNode}[] = [
-    {id: "general", label: "일반", content: <div className="empty">일반 설정 (M5)</div>},
+    {id: "general", label: "일반", content: <GeneralTab />},
     {id: "block", label: "차단", content: <BlockTab />},
     {id: "memo", label: "메모", content: <MemoTab />},
     {id: "module", label: "모듈", content: <ModuleTab />},
-    {id: "shortcut", label: "단축키", content: <div className="empty">단축키 (M5)</div>},
+    {id: "shortcut", label: "단축키", content: <ShortcutTab />},
     {id: "data", label: "데이터", content: <DataTab />}
 ];
 
