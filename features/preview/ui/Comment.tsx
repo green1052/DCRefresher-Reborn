@@ -163,7 +163,6 @@ export const Comment = ({comment, depth, replyCount}: CommentProps) => {
                         onClick={() => toggleCollapse(comment.no)}
                     >
                         <ChevronDown size={16} style={{transform: collapsed ? "rotate(-90deg)" : undefined}} />
-                        {replyCount}
                     </button>
                 )}
                 <div className="refresher-comment-controls-container">

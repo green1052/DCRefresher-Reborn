@@ -1,8 +1,8 @@
 import {StrictMode} from "react";
 import {createRoot} from "react-dom/client";
 
-import "../popup/popup.scss";
-import {App} from "../popup/App";
+import "./popup.scss";
+import {App} from "./App";
 
 import "./options.scss";
 
