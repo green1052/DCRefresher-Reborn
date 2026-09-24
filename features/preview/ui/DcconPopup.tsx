@@ -30,8 +30,9 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
     };
 
     const getList = async (targetPage: number, refresh = false): Promise<void> => {
-        if (!refresh && packages[targetPage]) {
-            openPackage(packages[targetPage][0]);
+        const cached = packages[targetPage];
+        if (!refresh && cached) {
+            if (cached[0]) openPackage(cached[0]);
             setLoading(false);
             return;
         }
@@ -131,7 +132,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
 
                     {doubleDccon && selected.length > 0 && (
                         <div className="dccon-selected">
-                            <img src={selected[0].list_img} alt={selected[0].title} />
+                            <img src={selected[0]!.list_img} alt={selected[0]!.title} />
                             <span>더블콘 {selected.length}/2 — 하나만 더 선택</span>
                             <button type="button" onClick={() => setSelected([])}>
                                 초기화
