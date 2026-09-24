@@ -20,10 +20,7 @@ const viewUrl = (link: string | undefined, gallery: string, id: string): string 
 
 /** 게시글 HTML → IPostInfo */
 export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): Promise<IPostInfo> => {
-    const response = await http.get(viewUrl(preData.link, preData.gallery, preData.id), {
-        headers: HEADERS,
-        signal
-    }).text();
+    const response = await http.get(viewUrl(preData.link, preData.gallery, preData.id), {signal}).text();
 
     const postInfo = parsePostInfo(response, preData.id);
     if (!postInfo) throw new Error("404");

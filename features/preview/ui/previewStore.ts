@@ -210,6 +210,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
         const captcha = get().captcha;
         captcha?.resolve("");
         set({visible: false, fading: true, comments: undefined, blockPopup: false, captcha: null, showWrite: false, reply: {commentNo: null, replyNo: null}});
+        window.setTimeout(() => set({fading: false}), 200);
     },
 
     toggleCollapse: (no) =>
