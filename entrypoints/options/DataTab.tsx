@@ -6,7 +6,7 @@ import {ConfirmDialog} from "@/components/ConfirmDialog";
 import {DatabaseService} from "@/core/services/database";
 import {backupStorage, dbStorage} from "@/core/storage/items";
 
-import {Row} from "./Layout";
+import {Row, Section} from "./Layout";
 
 const formatTime = (lastUpdate: number): string =>
     lastUpdate === 0 ? "기록 없음" : new Date(lastUpdate).toLocaleString("ko-KR");
@@ -143,7 +143,7 @@ export function DataTab() {
     };
 
     return (
-        <div>
+        <Section title="데이터">
             <Row
                 left={
                     <Flex direction="column">
@@ -174,7 +174,7 @@ export function DataTab() {
                     </Flex>
                 }
             />
-            <Flex gap="2" wrap="wrap" pt="2" pb="4">
+            <Flex gap="2" wrap="wrap" pt="2">
                 <Button size="2" variant="soft" disabled={loading} onClick={() => void backupCloud()}>
                     클라우드 백업
                 </Button>
@@ -245,6 +245,6 @@ export function DataTab() {
                     </Flex>
                 </Dialog.Content>
             </Dialog.Root>
-        </div>
+        </Section>
     );
 }

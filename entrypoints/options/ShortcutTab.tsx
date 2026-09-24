@@ -1,7 +1,7 @@
 import {Button, Flex, Text} from "@radix-ui/themes";
 import {useEffect, useState} from "react";
 
-import {Empty} from "./Layout";
+import {Section} from "./Layout";
 
 interface ShortcutCommand {
     name?: string;
@@ -17,7 +17,7 @@ export function ShortcutTab() {
     }, []);
 
     return (
-        <Flex direction="column" gap="3">
+        <Section title="단축키">
             {shortcuts
                 .filter((shortcut) => shortcut.description)
                 .map((shortcut) => (
@@ -28,7 +28,8 @@ export function ShortcutTab() {
                         </Text>
                     </Flex>
                 ))}
-            <Empty>
+
+            <Flex justify="center" pt="4">
                 <Button
                     variant="soft"
                     onClick={() =>
@@ -37,7 +38,7 @@ export function ShortcutTab() {
                 >
                     단축키 설정
                 </Button>
-            </Empty>
-        </Flex>
+            </Flex>
+        </Section>
     );
 }

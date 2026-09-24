@@ -91,7 +91,7 @@ const BlockPopup = () => {
             }}
         >
             <Dialog.Portal>
-                <Dialog.Overlay className="refresher-overlay" />
+                <Dialog.Overlay className="refresher-overlay" style={{background: "transparent"}} />
                 <Dialog.Content className="refresher-block-popup" onOpenAutoFocus={(event) => event.preventDefault()}>
                     <Dialog.Close asChild>
                         <button type="button" className="refresher-popup-close">
@@ -174,7 +174,7 @@ const CaptchaPopup = () => {
             }}
         >
             <Dialog.Portal>
-                <Dialog.Overlay className="refresher-overlay" />
+                <Dialog.Overlay className="refresher-overlay" style={{background: "transparent"}} />
                 <Dialog.Content className="refresher-captcha-popup">
                     <Dialog.Close asChild>
                         <button type="button" className="refresher-popup-close">

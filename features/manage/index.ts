@@ -1,52 +1,6 @@
 import {http} from "@/core/http/client";
 import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
 import {galleryType, galleryTypeName, urls} from "@/core/http/urls";
-import type {JsonValue} from "@/core/storage/types";
-import {eventBus} from "@/core/eventbus/bus";
-import {getBan} from "@/utils/ban";
-import {insertWriterSpan} from "@/utils/userDataInsert";
-
-interface RatioInfo {
-    article: number;
-    comment: number;
-    date: number;
-}
-
-const GALLOG_API = "https://gall.dcinside.com/api/gallog_user_layer/gallog_content_reple";
-
-const asRatios = (value: JsonValue | undefined): Record<string, RatioInfo> => (value ?? {}) as unknown as Record<string, RatioInfo>;
-
-const makeSpan = (className: string, text: string): HTMLElement => {
-    const span = document.createElement("span");
-    span.className = className;
-    span.textContent = text;
-    span.title = text;
-    return span;
-};
-
-const makeRatioSpan = (info: RatioInfo, alarmRatio: number): HTMLElement => {
-    const span = makeSpan("ip ratio refresherUserData", `[${info.article}/${info.comment}]`);
-    if (alarmRatio > 0 && info.article + info.comment <= alarmRatio) span.style.color = "red";
-    return span;
-};
-
-const makePermBanSpan = (reasons: string): HTMLElement => {
-    const span = makeSpan("ip permBan refresherUserData", `[${reasons}]`);
-    span.style.color = "#e8645f";
-    return span;
-};
-
-const fetchRatio = async (uid: string): Promise<RatioInfo | undefined> => {
-    const text = await http.post(GALLOG_API, {
-        headers: {"X-Requested-With": "XMLHttpRequest"},
-        body: new URLSearchParams({ci_t: (await cookieStore.get("ci_c"))?.value ?? "", user_id: uid})
-    }).text();
-
-    const [article, comment] = text.split(",").map(Number);
-    if (Number.isNaN(article) || Number.isNaN(comment) || article === undefined || comment === undefined) return undefined;
-
-    return {article, comment, date: Date.now()};
-};
 
 const manageModule: ModuleDefinition = {
     id: "manage",
@@ -74,32 +28,10 @@ const manageModule: ModuleDefinition = {
             desc: "Ctrl키를 누른 상태로 댓글을 클릭하면 대댓글도 체크합니다.",
             default: false
         },
-        checkRatio: {
-            type: "check",
-            name: "글댓비 표시",
-            desc: "글댓비를 표시합니다. (1시간 마다 갱신, 새 글 작성시에만 조회)",
-            default: false
-        },
-        alarmRatio: {
-            type: "range",
-            name: "깡계 알림",
-            desc: "글댓합이 설정한 값 이하일 때 강조 표시합니다. (0이면 비활성화)",
-            default: 0,
-            min: 0,
-            max: 5000,
-            step: 10,
-            unit: "개"
-        },
         deleteViaCtrl: {
             type: "check",
             name: "Ctrl로 삭제",
             desc: "Ctrl키를 누른 상태로 게시글을 클릭해 삭제합니다.",
-            default: false
-        },
-        checkPermBan: {
-            type: "check",
-            name: "갱차 조회",
-            desc: "갱신 차단 여부를 조회합니다.",
             default: false
         },
         enableGifControl: {
@@ -157,7 +89,7 @@ const manageModule: ModuleDefinition = {
                         const commentItem = element.closest<HTMLElement>("li");
                         if (!commentItem?.id.startsWith("reply_")) return;
 
-                        // 원댓글(reply_1) 다음에 붙는 대댓글(reply_1_2)
+                        // 댓글(reply_1)과 그 아래 대댓글(reply_1_2)
                         let sibling = commentItem.nextElementSibling;
                         while (sibling instanceof HTMLElement && /^reply_\d+_\d+/.test(sibling.id)) {
                             sibling.querySelectorAll<HTMLInputElement>(".article_chkbox").forEach((box) => {
@@ -215,103 +147,12 @@ const manageModule: ModuleDefinition = {
             },
             {neverExpire: true}
         );
-
-        // ===== 갱차 / 글댓비 표시 =====
-        ctx.addFilter(
-            ".ub-writer:not([user_name])",
-            (element) => {
-                const uid = element.dataset.uid;
-                if (!uid) return;
-
-                if (ctx.settings.checkPermBan && element.dataset.refresherPermBan !== "true") {
-                    element.dataset.refresherPermBan = "true";
-
-                    const reasons = getBan(uid);
-                    if (reasons) insertWriterSpan(element, makePermBanSpan(reasons), "after-icon");
-                }
-
-                if (ctx.settings.checkRatio && element.dataset.refresherRatio !== "true") {
-                    element.dataset.refresherRatio = "true";
-
-                    const cached = asRatios(ctx.data.ratio)[uid];
-                    if (cached) insertWriterSpan(element, makeRatioSpan(cached, Number(ctx.settings.alarmRatio)), "after-icon");
-                }
-            },
-            {neverExpire: true}
-        );
-
-        // ===== 새 글: 갱차 표시 + 글댓비 갱신 (1시간 캐시, 첫 10개) =====
-        const offNewPostList = eventBus.on("newPostList", ({data: elements}) => {
-            const ratios = asRatios(ctx.data.ratio);
-            const stale: string[] = [];
-
-            for (const post of elements.slice(0, 10)) {
-                const writer = post.querySelector<HTMLElement>(".ub-writer");
-                const uid = writer?.dataset.uid;
-                if (!writer || !uid) continue;
-
-                if (ctx.settings.checkPermBan) {
-                    const reasons = getBan(uid);
-                    const existing = writer.querySelector<HTMLElement>(".permBan");
-
-                    if (reasons) {
-                        const span = makePermBanSpan(reasons);
-                        existing ? existing.replaceWith(span) : writer.append(span);
-                    } else {
-                        existing?.remove();
-                    }
-                }
-
-                if (ctx.settings.checkRatio) {
-                    const cached = ratios[uid];
-
-                    if (cached && Date.now() - cached.date <= 3600_000) {
-                        const span = makeRatioSpan(cached, Number(ctx.settings.alarmRatio));
-                        const existing = writer.querySelector<HTMLElement>(".ratio");
-                        existing ? existing.replaceWith(span) : writer.append(span);
-                    } else if (!stale.includes(uid)) {
-                        stale.push(uid);
-                    }
-                }
-            }
-
-            if (stale.length === 0) return;
-
-            void Promise.all(stale.map(async (uid) => [uid, await fetchRatio(uid)] as const)).then((results) => {
-                const fresh = results.filter((entry): entry is [string, RatioInfo] => Boolean(entry[1]));
-                if (fresh.length === 0) return;
-
-                // 1회 대입 (Proxy → 스토리지 증분 쓰기 방지)
-                ctx.data.ratio = {
-                    ...(asRatios(ctx.data.ratio) as Record<string, RatioInfo>),
-                    ...Object.fromEntries(fresh.map(([uid, info]) => [uid, {...info, date: Date.now()}]))
-                } as JsonValue;
-
-                for (const post of elements.slice(0, 10)) {
-                    const writer = post.querySelector<HTMLElement>(".ub-writer");
-                    if (!writer?.dataset.uid) continue;
-
-                    const match = fresh.find(([uid]) => uid === writer.dataset.uid);
-                    if (!match) continue;
-
-                    const span = makeRatioSpan(match[1], Number(ctx.settings.alarmRatio));
-                    const existing = writer.querySelector<HTMLElement>(".ratio");
-                    existing ? existing.replaceWith(span) : writer.append(span);
-                }
-            });
-        });
-
-        ctx.addCleanup(() => offNewPostList());
     },
 
     revoke(ctx) {
-        for (const element of document.querySelectorAll<HTMLElement>(".refresherUserData.ratio, .refresherUserData.permBan")) {
-            element.remove();
-        }
-
-        for (const element of document.querySelectorAll<HTMLElement>("[data-refresher-ratio], [data-refresher-perm-ban]")) {
-            delete element.dataset.refresherRatio;
-            delete element.dataset.refresherPermBan;
+        for (const element of document.querySelectorAll<HTMLElement>("[data-refresher-manage-handler], [data-refresher-manage-click]")) {
+            delete element.dataset.refresherManageHandler;
+            delete element.dataset.refresherManageClick;
         }
 
         void ctx;
