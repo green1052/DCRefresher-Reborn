@@ -393,16 +393,153 @@ html:has(#css-darkmode) {
 
 .refresher-frame {
     position: relative;
+    display: flex;
+    flex-direction: column;
     width: min(900px, 94vw);
-    max-height: 80vh;
-    margin: 10vh 0;
+    max-height: 85vh;
+    margin: 7.5vh 0;
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 24px 28px;
-    border-radius: 8px;
+    border: 1px solid rgb(0 0 0 / 8%);
+    border-radius: 16px;
     background: #fff;
     color: #1c1c1c;
-    box-shadow: 0 12px 40px rgb(0 0 0 / 30%);
+    box-shadow: 0 24px 80px rgb(0 0 0 / 35%);
+
+    &::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        border: 3px solid transparent;
+        border-radius: 8px;
+        background: #d4d4d8;
+        background-clip: padding-box;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+        background: #a1a1aa;
+        background-clip: padding-box;
+    }
+}
+
+.refresher-preview-title-zone {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 24px 14px;
+    border-bottom: 1px solid #f0f0f2;
+    background: rgb(255 255 255 / 92%);
+    backdrop-filter: blur(8px);
+
+    .refresher-preview-title-text {
+        min-width: 0;
+    }
+
+    .refresher-preview-title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: -0.4px;
+        line-height: 1.35;
+    }
+
+    .refresher-preview-title-mute {
+        margin-top: 4px;
+        color: #a1a1aa;
+        font-size: 12px;
+    }
+}
+
+.refresher-preview-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 24px;
+    border-bottom: 1px solid #f0f0f2;
+
+    .refresher-views {
+        color: #a1a1aa;
+        font-size: 12px;
+    }
+}
+
+.refresher-preview-contents {
+    padding: 20px 24px 12px;
+
+    .refresher-preview-contents-actual {
+        font-size: 14px;
+        line-height: 1.65;
+        word-break: break-word;
+
+        img,
+        video,
+        iframe {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+    }
+}
+
+.refresher-preview-comments {
+    margin-top: 4px;
+    padding: 6px 0;
+    border-top: 1px solid #f0f0f2;
+}
+
+.refresher-comment {
+    position: relative;
+    padding: 10px 24px;
+
+    &:hover {
+        background: #fafafa;
+    }
+
+    &[data-depth="1"] {
+        padding-left: 52px;
+
+        &::before {
+            content: "";
+            position: absolute;
+            top: 10px;
+            bottom: 10px;
+            left: 36px;
+            width: 2px;
+            border-radius: 2px;
+            background: #e4e4e7;
+        }
+    }
+
+    &[data-deleted="true"] .refresher-comment-content {
+        color: #a1a1aa;
+    }
+}
+
+.refresher-comment-content {
+    font-size: 14px;
+    line-height: 1.6;
+    word-break: break-word;
+
+    img,
+    video {
+        max-width: 100%;
+        border-radius: 6px;
+    }
+}
+
+.refresher-nocomment-wrap {
+    padding: 36px 24px;
+    text-align: center;
+
+    .refresher-nocomment {
+        color: #a1a1aa;
+        font-size: 13px;
+    }
 }
 
 .refresher-frame.preview .refresher-loader {
@@ -844,6 +981,31 @@ html:has(#css-darkmode) {
     .refresher-mini-preview {
         background: #18181b;
         color: #fafafa;
+        border-color: #3f3f46;
+    }
+
+    .refresher-preview-title-zone {
+        border-bottom-color: #27272a;
+        background: rgb(24 24 27 / 92%);
+    }
+
+    .refresher-preview-meta,
+    .refresher-preview-comments,
+    .refresher-comment[data-depth="1"]::before {
+        border-color: #27272a;
+    }
+
+    .refresher-comment[data-depth="1"]::before {
+        background: #3f3f46;
+    }
+
+    .refresher-comment:hover {
+        background: #1f1f23;
+    }
+
+    .refresher-frame::-webkit-scrollbar-thumb {
+        background: #3f3f46;
+        background-clip: padding-box;
     }
 
     .refresher-preview-title-controls button,
