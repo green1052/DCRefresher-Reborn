@@ -107,7 +107,6 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
             }}
         >
             <Dialog.Portal>
-                <Dialog.Overlay className="refresher-overlay" />
                 <Dialog.Content className="refresher-dccon-popup" onOpenAutoFocus={(event) => event.preventDefault()}>
                     <div className="dccon-toolbar">
                         <Dialog.Title>디시콘</Dialog.Title>

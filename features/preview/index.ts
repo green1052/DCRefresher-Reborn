@@ -21,7 +21,7 @@ const settings: NonNullable<ModuleDefinition["settings"]> = {
     autoRefreshComment: {type: "check", name: "댓글 자동 새로고침", desc: "일정 주기로 댓글을 자동으로 새로고침합니다.", default: false},
     commentRefreshInterval: {type: "range", name: "댓글 자동 새로고침 주기", desc: "댓글 자동 새로고침 주기입니다.", default: 10000, min: 3000, max: 20000, step: 100, unit: "ms"},
     toggleBlur: {type: "check", name: "게시글 배경 블러", desc: "게시글 배경을 흐리게 표시합니다.", default: true},
-    toggleBackgroundBlur: {type: "check", name: "바깥 배경 블러", desc: "미리보기 바깥 배경을 흐리게 표시합니다.", default: false},
+    toggleBackgroundBlur: {type: "check", name: "바깥 배경 블러", desc: "미리보기 바깥 배경을 흐리게 표시합니다.", default: true},
     toggleAdminPanel: {type: "check", name: "관리 패널 활성화", desc: "관리 권한이 있을 때 관리 패널을 표시합니다.", default: true},
     useKeyPress: {type: "check", name: "단축키로 댓글 관리", desc: "D/B 키로 빠르게 삭제/차단합니다.", default: true},
     blockPresetDay: {type: "option", name: "차단 프리셋 - 차단 기간", desc: "B키 단축 차단의 기본 차단 기간입니다.", default: "1", items: {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"}},

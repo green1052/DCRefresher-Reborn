@@ -229,10 +229,12 @@ export const Frame = () => {
                     data-load={dataLoad}
                     onOpenAutoFocus={(event) => event.preventDefault()}
                     onPointerDownOutside={(event) => {
-                        if (!(event.target as Element | null)?.closest(".refresher-frame-outer")) event.preventDefault();
+                        const target = event.detail.originalEvent.target as Element | null;
+                        if (!target?.closest(".refresher-frame-outer")) event.preventDefault();
                     }}
                     onInteractOutside={(event) => {
-                        if (!(event.target as Element | null)?.closest(".refresher-frame-outer")) event.preventDefault();
+                        const target = event.detail.originalEvent.target as Element | null;
+                        if (!target?.closest(".refresher-frame-outer")) event.preventDefault();
                     }}
                 >
                     <div className="refresher-preview-title-zone">
