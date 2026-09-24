@@ -212,7 +212,7 @@ export function MemoTab() {
                                             <Table.Cell>
                                                 <Text color="gray">{entry.text}</Text>
                                             </Table.Cell>
-                                            <Table.Cell width={44}>
+                                            <Table.Cell width="48px">
                                                 <IconButton
                                                     variant="ghost"
                                                     color="gray"

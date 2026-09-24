@@ -1,4 +1,4 @@
-import {Badge, IconButton, Table, Text} from "@radix-ui/themes";
+import {Badge, Box, IconButton, Table, Text} from "@radix-ui/themes";
 import {Plus, X} from "lucide-react";
 import {useState} from "react";
 
@@ -43,7 +43,8 @@ export function BlockTab() {
     };
 
     return (
-        <Box>            <Section title="차단 모드" desc="기본 차단 판별 방식입니다. 개별 항목의 모드가 우선합니다.">
+        <Box>
+            <Section title="차단 모드" desc="기본 차단 판별 방식입니다. 개별 항목의 모드가 우선합니다.">
                 {BLOCK_TYPES.map((type) => (
                     <Row
                         key={`mode-${type}`}
@@ -122,7 +123,7 @@ export function BlockTab() {
                                                     {[entry.gallery ? `갤러리: ${entry.gallery}` : null, entry.extra].filter(Boolean).join(" · ") || "—"}
                                                 </Text>
                                             </Table.Cell>
-                                            <Table.Cell width={44}>
+                                            <Table.Cell width="48px">
                                                 <IconButton
                                                     variant="ghost"
                                                     color="gray"
