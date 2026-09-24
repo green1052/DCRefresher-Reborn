@@ -1,0 +1,43 @@
+name: Release
+on:
+    push:
+        tags:
+            - "*.*.*"
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v7
+
+            -   name: Setup Bun
+                uses: oven-sh/setup-bun@v2
+
+            -   name: Install Dependencies
+                run: bun ci
+
+            -   name: Build
+                run: bun zip && bun zip:firefox
+
+            -   name: Release
+                uses: softprops/action-gh-release@v3
+                with:
+                    files: |
+                        .output/*-firefox.zip
+                        .output/*-chrome.zip
+                    generate_release_notes: true
+
+            -   name: Submit to stores
+                run: |
+                    bun wxt submit \
+                    --chrome-zip .output/*-chrome.zip \
+                    --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip
+                env:
+                    CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+                    CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+                    CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+                    CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+                    FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
+                    FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
+                    FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
