@@ -1,12 +1,11 @@
-import {Fragment, useEffect, useRef, useState} from "react";
+import {Fragment, useEffect, useState} from "react";
 import {X} from "lucide-react";
+import {Dialog} from "radix-ui";
 
 import {vote} from "@/core/preview/request";
-import {modules} from "@/core/module/registry";
 import {useUiStore} from "@/stores/ui";
 
 import {buildPreData} from "../index";
-import {ScrollDetection} from "../scroll";
 import {Comment, UserCard} from "./Comment";
 import {usePreviewStore, type ErrorState} from "./previewStore";
 import {WriteComment} from "./WriteComment";
@@ -149,10 +148,6 @@ export const Frame = () => {
     const commentsOnly = usePreviewStore((s) => s.commentsOnly);
     const imageBlocked = usePreviewStore((s) => s.imageBlocked);
 
-    const [scrollEdge, setScrollEdge] = useState<"top" | "bottom" | null>(null);
-
-    const edge = useRef({count: 0});
-
     useEffect(() => {
         if (!visible) return;
 
@@ -167,8 +162,6 @@ export const Frame = () => {
 
     useEffect(() => {
         if (!visible) return;
-
-        const scrollSkip = modules.use("preview")?.settings.scrollToSkip !== false;
 
         const goToAdjacent = (dir: number): void => {
             const st = usePreviewStore.getState();
@@ -190,11 +183,6 @@ export const Frame = () => {
         };
 
         const onKey = (event: KeyboardEvent): void => {
-            if (event.key === "Escape") {
-                usePreviewStore.getState().requestClose();
-                return;
-            }
-
             const target = event.target;
             if (target instanceof HTMLElement && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable))
                 return;
@@ -208,55 +196,8 @@ export const Frame = () => {
             }
         };
 
-        // v5 ScrollDetection — 휠 제스처 단위로 이동 판별
-        const detector = new ScrollDetection();
-
-        detector.listen("scroll", (event: WheelEvent) => {
-            const scroller = (event.target as HTMLElement | null)?.closest?.(".refresher-frame");
-            if (!scroller) return;
-
-            const isUp = event.deltaY < 0;
-            const scrolledTop = scroller.scrollTop === 0;
-            const scrolledBottom = Math.abs(Math.floor(scroller.scrollHeight - scroller.scrollTop) - scroller.clientHeight) < 2;
-            const atEdge = isUp ? scrolledTop : scrolledBottom;
-
-            if (!atEdge) {
-                edge.current.count = 0;
-                return;
-            }
-
-            if (edge.current.count++ < 1) return;
-            edge.current.count = 0;
-
-            scroller.scrollTop = 0;
-            setScrollEdge(null);
-            goToAdjacent(isUp ? -1 : 1);
-        });
-
-        const onWheel = (event: WheelEvent): void => {
-            if (!scrollSkip) return;
-
-            const scroller = (event.target as HTMLElement | null)?.closest?.(".refresher-frame");
-            if (!scroller) return;
-
-            const scrolledTop = scroller.scrollTop === 0;
-            const scrolledBottom = Math.abs(Math.floor(scroller.scrollHeight - scroller.scrollTop) - scroller.clientHeight) < 2;
-            const isUp = event.deltaY < 0;
-            const atEdge = isUp ? scrolledTop : scrolledBottom;
-
-            setScrollEdge(atEdge ? (isUp ? "top" : "bottom") : null);
-
-            detector.addMouseEvent(event);
-        };
-
         window.addEventListener("keydown", onKey);
-        window.addEventListener("wheel", onWheel, {passive: true});
-        return () => {
-            window.removeEventListener("keydown", onKey);
-            window.removeEventListener("wheel", onWheel);
-            edge.current = {count: 0};
-            setScrollEdge(null);
-        };
+        return () => window.removeEventListener("keydown", onKey);
     }, [visible]);
 
     if (!visible && !fading) return null;
@@ -264,21 +205,30 @@ export const Frame = () => {
     const dataLoad = error ? "false" : loading || !post ? "true" : "false";
 
     return (
-        <div className={"refresher-frame-outer" + (fading ? " fading" : "")}>
-            <div
-                className="refresher-group"
-                onClick={(event) => {
-                    if (event.target === event.currentTarget) usePreviewStore.getState().requestClose();
-                }}
-            >
-                <div className="refresher-frame preview" data-load={dataLoad}>
-                    <button type="button" className="refresher-preview-close" onClick={() => usePreviewStore.getState().requestClose()}>
-                        <X size={16} />
-                    </button>
+        <Dialog.Root
+            open
+            onOpenChange={(open) => {
+                if (!open) usePreviewStore.getState().requestClose();
+            }}
+        >
+            <Dialog.Portal>
+                <Dialog.Overlay className={"refresher-frame-outer" + (fading ? " fading" : "")} />
+                <Dialog.Content
+                    className={"refresher-frame preview" + (fading ? " fading" : "")}
+                    data-load={dataLoad}
+                    onOpenAutoFocus={(event) => event.preventDefault()}
+                >
+                    <Dialog.Close asChild>
+                        <button type="button" className="refresher-preview-close">
+                            <X size={16} />
+                        </button>
+                    </Dialog.Close>
 
                     <div className="refresher-preview-title-zone">
                         <div className="refresher-preview-title-text">
-                            <h3 className="refresher-preview-title" dangerouslySetInnerHTML={{__html: title}} />
+                            <Dialog.Title asChild>
+                                <h3 className="refresher-preview-title" dangerouslySetInnerHTML={{__html: title}} />
+                            </Dialog.Title>
                             {subtitle && <div className="refresher-preview-title-mute">{subtitle}</div>}
                         </div>
                         {post && (
@@ -341,15 +291,8 @@ export const Frame = () => {
                     {post && <WriteComment />}
 
                     <div className="refresher-loader" />
-                </div>
-            </div>
-            {scrollEdge && !loading && (
-                <div className={"refresher-scroll" + (scrollEdge === "top" ? " top" : "")}>
-                    <div className="center">
-                        <p>한번 더 스크롤 하면 {scrollEdge === "top" ? "이전" : "다음"} 게시글을 봅니다.</p>
-                    </div>
-                </div>
-            )}
-        </div>
+                </Dialog.Content>
+            </Dialog.Portal>
+        </Dialog.Root>
     );
 };

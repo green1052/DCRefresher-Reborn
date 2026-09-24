@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {ChevronLeft, ChevronRight, X} from "lucide-react";
 import {Dialog, Switch} from "radix-ui";
 
@@ -23,6 +23,8 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
     const [bigDccon, setBigDccon] = useState(false);
     const [selected, setSelected] = useState<DcinsideDccon[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const packagesRef = useRef<HTMLDivElement>(null);
 
     const openPackage = (pack: DcinsideDcconDetailList): void => {
         setActivePackage(pack.package_idx);
@@ -70,6 +72,10 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    useEffect(() => {
+        if (packagesRef.current) packagesRef.current.scrollLeft = 0;
+    }, [page]);
+
     const movePage = (delta: number): void => {
         const next = page === 0 && delta < 0 ? maxPage : page === maxPage && delta > 0 ? 0 : page + delta;
         setPage(next);
@@ -103,12 +109,6 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
             <Dialog.Portal>
                 <Dialog.Overlay className="refresher-overlay" />
                 <Dialog.Content className="refresher-dccon-popup" onOpenAutoFocus={(event) => event.preventDefault()}>
-                    <Dialog.Close asChild>
-                        <button type="button" className="refresher-popup-close">
-                            <X size={14} />
-                        </button>
-                    </Dialog.Close>
-
                     <div className="dccon-toolbar">
                         <Dialog.Title>디시콘</Dialog.Title>
                         <div className="dccon-toolbar-toggles">
@@ -125,6 +125,11 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                                 </Switch.Root>
                             </label>
                         </div>
+                        <Dialog.Close asChild>
+                            <button type="button" className="refresher-popup-close">
+                                <X size={18} />
+                            </button>
+                        </Dialog.Close>
                     </div>
 
                     {doubleDccon && selected.length > 0 && (
@@ -137,7 +142,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                         </div>
                     )}
 
-                    <div className="dccon-packages">
+                    <div className="dccon-packages" ref={packagesRef}>
                         {loading && visible.length === 0
                             ? Array.from({length: 8}, (_, index) => <span key={index} className="dccon-skeleton" />)
                             : visible.map((pack) => (
@@ -146,7 +151,10 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                                       key={pack.package_idx}
                                       className={activePackage === pack.package_idx ? "active" : undefined}
                                       title={pack.title}
-                                      onClick={() => openPackage(pack)}
+                                      onClick={(event) => {
+                                          openPackage(pack);
+                                          event.currentTarget.scrollIntoView({behavior: "smooth", block: "nearest", inline: "center"});
+                                      }}
                                   >
                                       <img src={pack.main_img_url} alt={pack.title} />
                                   </button>

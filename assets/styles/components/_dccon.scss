@@ -17,6 +17,13 @@
     pointer-events: auto;
     z-index: 2147483300;
 
+    .refresher-popup-close {
+        position: static;
+        top: unset;
+        right: unset;
+        padding: 4px;
+    }
+
     .dccon-toolbar {
         display: flex;
         align-items: center;
@@ -32,7 +39,6 @@
             display: flex;
             gap: 14px;
             margin-left: auto;
-            margin-right: 30px;
 
             .dccon-toggle {
                 display: inline-flex;
@@ -87,14 +93,10 @@
         gap: 6px;
         padding: 2px;
         overflow-x: auto;
+        scrollbar-width: none;
 
         &::-webkit-scrollbar {
-            height: 6px;
-        }
-
-        &::-webkit-scrollbar-thumb {
-            border-radius: 4px;
-            background: #e4e4e7;
+            display: none;
         }
 
         button {
@@ -241,12 +243,6 @@ html:has(#css-darkmode) {
 
         .dccon-selected {
             background: rgb(46 105 173 / 15%);
-        }
-
-        .dccon-packages {
-            &::-webkit-scrollbar-thumb {
-                background: #3f3f46;
-            }
         }
 
         .dccon-grid button:hover img {

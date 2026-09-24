@@ -5,8 +5,6 @@
 .refresher-frame-outer {
     position: fixed;
     inset: 0;
-    display: flex;
-    justify-content: center;
     overflow: hidden;
     background: rgb(0 0 0 / 25%);
     pointer-events: auto;
@@ -16,43 +14,6 @@
     &.fading {
         pointer-events: none;
         animation: refPreviewOut 0.15s forwards;
-    }
-}
-
-.refresher-scroll {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    display: flex;
-    justify-content: center;
-    width: 100%;
-    height: 40%;
-    color: #fff;
-    pointer-events: none;
-    animation: refPreviewIn 0.15s cubic-bezier(0.19, 1, 0.22, 1);
-    background: linear-gradient(to top, rgb(12 23 53 / 70%), rgb(32 42 72 / 30%), transparent);
-
-    .center {
-        position: relative;
-        top: 20%;
-        margin: auto;
-
-        p {
-            font-size: 24px;
-            font-weight: bold;
-            letter-spacing: -1.66px;
-        }
-    }
-
-    &.top {
-        top: 0;
-        bottom: unset;
-        background: linear-gradient(to bottom, rgb(12 23 53 / 70%), rgb(32 42 72 / 30%), transparent);
-
-        .center {
-            top: unset;
-            bottom: 20%;
-        }
     }
 }
 
@@ -76,21 +37,14 @@
     }
 }
 
-.refresher-group {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-}
-
 .refresher-frame {
-    position: relative;
+    position: fixed;
+    top: 50%;
+    left: 50%;
     display: flex;
     flex-direction: column;
     width: min(900px, 94vw);
     max-height: 85vh;
-    margin: 7.5vh 0;
     overflow-y: auto;
     overscroll-behavior: contain;
     border: 1px solid rgb(0 0 0 / 8%);
@@ -98,6 +52,13 @@
     background: #fff;
     color: #1c1c1c;
     box-shadow: 0 24px 80px rgb(0 0 0 / 35%);
+    transform: translate(-50%, -50%);
+    animation: refPreviewIn 0.15s cubic-bezier(0.19, 1, 0.22, 1);
+
+    &.fading {
+        pointer-events: none;
+        animation: refPreviewOut 0.15s forwards;
+    }
 
     &::-webkit-scrollbar {
         width: 10px;
@@ -482,6 +443,7 @@
 }
 
 .refresher-timestamp {
+    cursor: pointer;
     color: #a1a1aa;
     font-size: 11px;
 }

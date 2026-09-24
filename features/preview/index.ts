@@ -17,7 +17,6 @@ const settings: NonNullable<ModuleDefinition["settings"]> = {
     tooltipRatioDisable: {type: "check", name: "미니 미리보기 글/댓글 비율 강조 비활성화", desc: "미니 미리보기의 글/댓글 비율 강조를 끕니다.", default: false},
     reversePreviewKey: {type: "check", name: "미리보기 키 반전", desc: "좌클릭으로 미리보기, 우클릭으로 게시글 이동을 사용합니다.", default: false},
     longPressDelay: {type: "range", name: "길게 누르기 판정 시간", desc: "이 시간보다 짧게 누르면 미리보기가 열립니다.", default: 300, min: 200, max: 2000, step: 50, unit: "ms"},
-    scrollToSkip: {type: "check", name: "스크롤로 게시글 이동", desc: "미리보기에서 스크롤 끝에서 한 번 더 스크롤하면 이전/다음 게시글을 표시합니다.", default: true},
     colorPreviewLink: {type: "check", name: "게시글 URL 변경", desc: "미리보기로 본 게시글의 주소와 제목을 변경합니다.", default: true},
     autoRefreshComment: {type: "check", name: "댓글 자동 새로고침", desc: "일정 주기로 댓글을 자동으로 새로고침합니다.", default: false},
     commentRefreshInterval: {type: "range", name: "댓글 자동 새로고침 주기", desc: "댓글 자동 새로고침 주기입니다.", default: 10000, min: 3000, max: 20000, step: 100, unit: "ms"},
