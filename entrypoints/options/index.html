@@ -6,19 +6,17 @@
         <meta content="true" name="wxt.open_in_tab">
         <title>DCRefresher Reborn</title>
         <style>
-            .rt-Switch,
-            .rt-SwitchThumb,
-            .rt-TabListTrigger,
-            .rt-BaseMenuTrigger,
-            .rt-SliderThumb,
-            .rt-SelectTrigger {
-                cursor: pointer;
-            }
-
-            .rt-Switch:disabled,
-            .rt-SliderRoot:disabled,
-            .rt-SelectTrigger:disabled {
-                cursor: default;
+            /* Radix Themes 공식 cursor 토큰 — https://www.radix-ui.com/themes/docs/theme/cursors */
+            .radix-themes {
+                --cursor-button: pointer;
+                --cursor-checkbox: pointer;
+                --cursor-disabled: default;
+                --cursor-link: pointer;
+                --cursor-menu-item: pointer;
+                --cursor-radio: pointer;
+                --cursor-slider-thumb: grab;
+                --cursor-slider-thumb-active: grabbing;
+                --cursor-switch: pointer;
             }
         </style>
     </head>
