@@ -6,7 +6,7 @@ v5(release 브랜치, Vue) 기능 1:1 이식, React 재작성. 마이그레이�
 
 | 항목 | 결정 |
 |---|---|
-| 스택 | React 19 + WXT 0.21 + TypeScript, Zustand(상태), ky(HTTP), @webext-core/proxy-service(background RPC) + @webext-core/messaging(탭 단건) |
+| 스택 | React 19 (React Compiler: `react.vite.compiler: true` / oxc-transform-react) + WXT 0.21 + TypeScript, Zustand(상태), ky(HTTP), @webext-core/proxy-service(background RPC) + @webext-core/messaging(탭 단건) |
 | Radix | `radix-ui` 통합 패키지. Select만 네이티브 `<select>` |
 | 데이터 | 전부 `storage.local`. 프리픽스 `local:dcr:*`. 마이그레이션 없음 |
 | 클라우드 백업 | `storage.sync` 매체 (local→sync, DB 제외 / 복원시 DB 보존) — release와 동일 방식 |
