@@ -27,7 +27,7 @@ const Root = () => {
     return (
         <StrictMode>
             <Theme appearance={appearance} accentColor="blue" radius="medium">
-                <App optionsPage />
+                <App />
             </Theme>
         </StrictMode>
     );
