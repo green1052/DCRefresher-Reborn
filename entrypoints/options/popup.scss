@@ -1,3 +1,5 @@
+/* 옵션 페이지 — 레이아웃 전용. 컨트롤 스타일은 Radix Themes가 담당 */
+
 @use "../../assets/styles/ui" as *;
 
 :root {
@@ -27,11 +29,10 @@ body,
 
 body {
     background: var(--refresher-bg);
-    color: var(--refresher-fg);
     font: 14px/1.6 -apple-system, "Segoe UI", "맑은 고딕", sans-serif;
 }
 
-/* 스크롤바 숨김 — 스크롤 자체는 동작 */
+/* 페이지 스크롤바 숨김 — 스크롤 자체는 동작 */
 html {
     scrollbar-width: none;
 }
@@ -46,91 +47,77 @@ body::-webkit-scrollbar {
 .refresher-app {
     display: flex;
     flex-direction: column;
-    height: 100vh;
-}
-
-.refresher-options.refresher-app {
-    height: auto;
     min-height: 100vh;
 }
+
+/* ===== 헤더 ===== */
 
 .refresher-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 10px 12px;
+    gap: 8px;
+    padding: 16px 24px;
     border-bottom: 1px solid var(--refresher-border);
 
     h1 {
         margin: 0;
-        font-size: 15px;
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
     }
 }
 
-.refresher-open-options {
-    display: flex;
-    align-items: center;
-    padding: 4px;
-    background: none;
-    border: none;
-    border-radius: 4px;
-    color: var(--refresher-muted);
-    cursor: pointer;
+.refresher-header-logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+}
 
-    &:hover {
-        color: var(--refresher-fg);
-        background: var(--refresher-border);
-    }
+.refresher-header-reborn {
+    font-weight: 400;
+    color: var(--refresher-accent);
+}
+
+/* ===== 사이드바 탭 ===== */
+
+.refresher-tabs {
+    display: flex;
+    flex: 1;
+    min-height: 0;
 }
 
 .refresher-tabs-list {
-    display: flex;
+    flex: none;
+    flex-direction: column;
     gap: 2px;
-    padding: 6px 6px 0;
-    border-bottom: 1px solid var(--refresher-border);
-}
-
-.refresher-tab-trigger {
-    padding: 6px 10px;
-    background: none;
-    border: 1px solid transparent;
-    border-bottom: 0;
-    border-radius: 6px 6px 0 0;
-    margin-bottom: -1px;
-    color: var(--refresher-muted);
-    font: inherit;
-    cursor: pointer;
-
-    &:hover {
-        color: var(--refresher-fg);
-    }
-
-    &[data-state="active"] {
-        color: var(--refresher-fg);
-        font-weight: 600;
-        border-color: var(--refresher-border);
-        background: var(--refresher-bg);
-    }
+    width: 200px;
+    padding: 16px 12px;
+    border-right: 1px solid var(--refresher-border);
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
 }
 
 .refresher-tab-content {
     flex: 1;
-    padding: 10px;
-    overflow-y: auto;
+    min-width: 0;
+    padding: 24px 32px 48px;
 }
 
+/* ===== 섹션/행 ===== */
+
 .refresher-section {
-    padding: 8px 0;
+    padding: 12px 0;
     border-bottom: 1px solid var(--refresher-border);
 }
 
 .refresher-section-title {
-    margin: 6px 0 2px;
+    margin: 8px 0 2px;
     font-size: 16px;
 }
 
 .refresher-section-desc {
-    margin: 0 0 6px;
+    margin: 0 0 8px;
     font-size: 13px;
     color: var(--refresher-muted);
 }
@@ -139,7 +126,7 @@ body::-webkit-scrollbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 
     h3 {
         margin: 0;
@@ -148,37 +135,11 @@ body::-webkit-scrollbar {
     }
 }
 
-.refresher-section-actions {
-    display: flex;
-    gap: 2px;
-}
-
-.refresher-icon-button {
-    display: flex;
-    align-items: center;
-    padding: 3px;
-    background: none;
-    border: none;
-    border-radius: 4px;
-    color: var(--refresher-muted);
-    cursor: pointer;
-
-    &:hover:not(:disabled) {
-        color: var(--refresher-fg);
-        background: var(--refresher-border);
-    }
-
-    &:disabled {
-        opacity: 0.4;
-        cursor: default;
-    }
-}
-
 .refresher-module-row {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 0;
+    padding: 10px 0;
     border-bottom: 1px solid var(--refresher-border);
 }
 
@@ -199,8 +160,8 @@ body::-webkit-scrollbar {
 .refresher-setting-row {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 0;
+    gap: 16px;
+    padding: 10px 0;
     border-bottom: 1px dashed var(--refresher-border);
 
     &:last-child {
@@ -223,104 +184,15 @@ body::-webkit-scrollbar {
     align-items: center;
     justify-content: flex-end;
     flex: none;
-    max-width: 55%;
 }
 
 .refresher-setting-default {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--refresher-muted);
     opacity: 0.8;
 }
 
-.refresher-range {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.refresher-slider {
-    position: relative;
-    display: flex;
-    align-items: center;
-    width: 150px;
-    height: 24px;
-    touch-action: none;
-    user-select: none;
-
-    &:disabled {
-        opacity: 0.5;
-    }
-}
-
-.refresher-slider-track {
-    position: relative;
-    flex: 1;
-    height: 6px;
-    border-radius: 3px;
-    background: var(--refresher-border);
-}
-
-.refresher-slider-range {
-    position: absolute;
-    height: 100%;
-    border-radius: 3px;
-    background: var(--refresher-accent);
-}
-
-.refresher-slider-thumb {
-    display: block;
-    width: 16px;
-    height: 16px;
-    margin: 0;
-    border-radius: 50%;
-    background: #fff;
-    border: 2px solid var(--refresher-accent);
-    box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
-    cursor: grab;
-
-    &:active {
-        cursor: grabbing;
-        border-color: var(--refresher-fg);
-    }
-}
-
-.refresher-range-value {
-    font-size: 13px;
-    color: var(--refresher-fg);
-    white-space: nowrap;
-}
-
-.refresher-check-row {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 13px;
-    cursor: pointer;
-}
-
-.refresher-order {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.refresher-order-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    padding: 2px 0;
-    font-size: 13px;
-}
-
-.refresher-order-actions {
-    display: flex;
-    gap: 2px;
-
-    .refresher-button {
-        padding: 2px 6px;
-    }
-}
+/* ===== 칩 목록 ===== */
 
 .refresher-chip-list {
     display: flex;
@@ -347,7 +219,7 @@ body::-webkit-scrollbar {
     font: inherit;
     font-size: 13px;
     cursor: pointer;
-    max-width: 200px;
+    max-width: 240px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -362,57 +234,9 @@ body::-webkit-scrollbar {
     height: 40px;
 }
 
-.refresher-chip-remove {
-    padding: 0 4px;
-    background: none;
-    border: none;
-    border-radius: 50%;
-    color: var(--refresher-muted);
-    font-size: 13px;
-    line-height: 1;
-    cursor: pointer;
-
-    &:hover {
-        color: #ff6464;
-    }
-}
-
-.refresher-color-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.refresher-color {
-    width: 28px;
-    height: 24px;
-    padding: 0;
-    border: 1px solid var(--refresher-border);
-    border-radius: 4px;
-    background: none;
-    cursor: pointer;
-}
-
-.refresher-link {
-    padding: 0;
-    background: none;
-    border: none;
-    color: var(--refresher-accent);
-    font: inherit;
-    font-size: 13px;
-    text-decoration: underline;
-    cursor: pointer;
-}
-
-.refresher-data-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    padding: 8px 0 12px;
-}
-
 .empty {
-    padding: 24px;
+    padding: 48px 24px;
     text-align: center;
     color: var(--refresher-muted);
+    font-size: 14px;
 }

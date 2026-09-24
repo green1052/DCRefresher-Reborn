@@ -1,4 +1,4 @@
-import {Switch} from "radix-ui";
+import {Switch} from "@radix-ui/themes";
 
 import {SettingItem} from "@/components/SettingItem";
 import {useModulesStore} from "@/stores/modules";
@@ -23,13 +23,11 @@ export function ModuleTab() {
                             <div className="refresher-module-name">{schema.name}</div>
                             <div className="refresher-module-desc">{schema.description}</div>
                         </div>
-                        <Switch.Root
-                            className="refresher-switch-root"
+                        <Switch
+                            size="1"
                             checked={schema.enable}
                             onCheckedChange={(value) => void toggle(schema.id, value, tabId)}
-                        >
-                            <Switch.Thumb className="refresher-switch-thumb" />
-                        </Switch.Root>
+                        />
                     </header>
 
                     {schema.settings &&

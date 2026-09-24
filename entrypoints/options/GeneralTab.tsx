@@ -1,3 +1,5 @@
+import {Link} from "@radix-ui/themes";
+
 import {useModulesStore} from "@/stores/modules";
 
 const LINKS: [string, string][] = [
@@ -19,9 +21,9 @@ export function GeneralTab() {
                     <div className="refresher-module-desc">
                         {browser.runtime.getManifest().version}
                         {LINKS.map(([text, url]) => (
-                            <a key={url} href={url} target="_blank" rel="noreferrer">
+                            <Link key={url} href={url} target="_blank" rel="noreferrer" style={{marginRight: 8}}>
                                 {text}
-                            </a>
+                            </Link>
                         ))}
                     </div>
                 </div>

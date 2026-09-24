@@ -1,5 +1,5 @@
 import {RefreshCw} from "lucide-react";
-import {Dialog} from "radix-ui";
+import {Button, Dialog, Flex, Text, TextArea} from "@radix-ui/themes";
 import {useEffect, useState} from "react";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
@@ -147,9 +147,9 @@ export function DataTab() {
                     <div className="refresher-module-name">IP/밴 데이터베이스</div>
                     <div className="refresher-module-desc">마지막 갱신: {formatTime(lastUpdate)}</div>
                 </div>
-                <button className="refresher-button" disabled={loading} onClick={() => void forceUpdate()}>
+                <Button size="1" variant="soft" disabled={loading} onClick={() => void forceUpdate()}>
                     <RefreshCw size={12} /> 지금 갱신
-                </button>
+                </Button>
             </div>
 
             <div className="refresher-module-row">
@@ -158,31 +158,34 @@ export function DataTab() {
                     <div className="refresher-module-desc">마지막 백업: {formatTime(backupAt)}</div>
                 </div>
             </div>
-            <div className="refresher-data-actions">
-                <button className="refresher-button" disabled={loading} onClick={() => void backupCloud()}>
+            <Flex gap="2" wrap="wrap" pt="2" pb="4">
+                <Button size="1" variant="soft" disabled={loading} onClick={() => void backupCloud()}>
                     클라우드 백업
-                </button>
-                <button
-                    className="refresher-button"
+                </Button>
+                <Button
+                    size="1"
+                    variant="soft"
                     disabled={loading}
                     onClick={() => setConfirming({title: "클라우드 백업으로 현재 설정을 교체할까요?", action: recoverCloud})}
                 >
                     클라우드 복원
-                </button>
-                <button className="refresher-button" disabled={loading} onClick={() => void exportData()}>
+                </Button>
+                <Button size="1" variant="soft" disabled={loading} onClick={() => void exportData()}>
                     데이터 내보내기
-                </button>
-                <button className="refresher-button" disabled={loading} onClick={() => setImportOpen(true)}>
+                </Button>
+                <Button size="1" variant="soft" disabled={loading} onClick={() => setImportOpen(true)}>
                     데이터 가져오기
-                </button>
-                <button
-                    className="refresher-button"
+                </Button>
+                <Button
+                    size="1"
+                    variant="soft"
+                    color="red"
                     disabled={loading}
                     onClick={() => setConfirming({title: "모든 설정과 사용자 데이터를 초기화할까요?", action: clearData})}
                 >
-                    ⚠️ 데이터 초기화 ⚠️
-                </button>
-            </div>
+                    데이터 초기화
+                </Button>
+            </Flex>
 
             <ConfirmDialog open={notice !== null} title={notice ?? ""} cancelLabel={null} onClose={() => setNotice(null)} onConfirm={() => setNotice(null)} />
 
@@ -200,38 +203,31 @@ export function DataTab() {
             />
 
             <Dialog.Root open={importOpen} onOpenChange={(next) => !next && setImportOpen(false)}>
-                <Dialog.Portal>
-                    <Dialog.Overlay className="refresher-overlay" />
-                    <Dialog.Content className="refresher-dialog">
-                        <Dialog.Title className="refresher-dialog-title">데이터 가져오기</Dialog.Title>
-                        <Dialog.Description className="refresher-dialog-desc">내보낸 JSON 데이터를 붙여넣어주세요.</Dialog.Description>
+                <Dialog.Content style={{maxWidth: 520}}>
+                    <Dialog.Title>데이터 가져오기</Dialog.Title>
+                    <Dialog.Description size="2" mb="3">
+                        내보낸 JSON 데이터를 붙여넣어주세요.
+                    </Dialog.Description>
 
-                        <textarea
-                            className="refresher-textarea"
-                            placeholder="JSON 데이터"
-                            value={importText}
-                            onChange={(event) => setImportText(event.target.value)}
-                            autoFocus
-                        />
+                    <TextArea
+                        placeholder="JSON 데이터"
+                        value={importText}
+                        onChange={(event) => setImportText(event.target.value)}
+                        style={{minHeight: 160}}
+                        autoFocus
+                    />
 
-                        <div className="refresher-dialog-actions">
-                            <Dialog.Close asChild>
-                                <button type="button" className="refresher-button">
-                                    취소
-                                </button>
-                            </Dialog.Close>
-                            <button type="button" className="refresher-button refresher-primary" disabled={loading} onClick={() => void submitImport()}>
-                                가져오기
-                            </button>
-                        </div>
-
-                        <Dialog.Close asChild>
-                            <button type="button" className="refresher-dialog-close" aria-label="닫기">
-                                ×
-                            </button>
+                    <Flex gap="3" justify="end" mt="4">
+                        <Dialog.Close>
+                            <Button variant="soft" color="gray">
+                                취소
+                            </Button>
                         </Dialog.Close>
-                    </Dialog.Content>
-                </Dialog.Portal>
+                        <Button disabled={loading} onClick={() => void submitImport()}>
+                            가져오기
+                        </Button>
+                    </Flex>
+                </Dialog.Content>
             </Dialog.Root>
         </div>
     );

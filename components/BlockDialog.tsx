@@ -1,5 +1,4 @@
-import {Check} from "lucide-react";
-import {Checkbox, Dialog} from "radix-ui";
+import {Button, Checkbox, Dialog, Flex, Text, TextField} from "@radix-ui/themes";
 import {useEffect, useState} from "react";
 
 import {RefresherSelect} from "@/components/RefresherSelect";
@@ -53,72 +52,68 @@ export const BlockDialog = ({open, type, typeNames, modeNames, initial, onClose,
 
     return (
         <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
-            <Dialog.Portal>
-                <Dialog.Overlay className="refresher-overlay" />
-                <Dialog.Content className="refresher-dialog">
-                    <Dialog.Title className="refresher-dialog-title">
-                        {typeNames[type]} 차단 {initial ? "수정" : "추가"}
-                    </Dialog.Title>
-                    <Dialog.Description className="refresher-dialog-desc">
-                        {initial ? `${typeNames[type]} 항목을 수정합니다.` : `${typeNames[type]} 차단 항목을 추가합니다.`}
-                    </Dialog.Description>
+            <Dialog.Content style={{maxWidth: 480}}>
+                <Dialog.Title>
+                    {typeNames[type]} 차단 {initial ? "수정" : "추가"}
+                </Dialog.Title>
+                <Dialog.Description size="2" mb="4">
+                    {initial ? `${typeNames[type]} 항목을 수정합니다.` : `${typeNames[type]} 차단 항목을 추가합니다.`}
+                </Dialog.Description>
 
-                    <div className="refresher-field">
-                        <span className="refresher-field-label">값</span>
-                        <input
-                            className="refresher-input"
+                <Flex direction="column" gap="3">
+                    <label>
+                        <Flex justify="between" mb="1">
+                            <Text size="1" color="gray">
+                                값
+                            </Text>
+                        </Flex>
+                        <TextField.Root
                             placeholder={`${typeNames[type]} 값을 입력하세요`}
                             value={content}
                             onChange={(event) => setContent(event.target.value)}
                             onKeyDown={(event) => event.key === "Enter" && submit()}
                             autoFocus
                         />
-                    </div>
+                    </label>
 
-                    <div className="refresher-field">
-                        <span className="refresher-field-label">정규식 사용</span>
-                        <label className="refresher-check-row">
-                            <Checkbox.Root
-                                className="refresher-checkbox"
-                                checked={isRegex}
-                                onCheckedChange={(value) => setIsRegex(value === true)}
-                            >
-                                <Checkbox.Indicator>
-                                    <Check size={12} />
-                                </Checkbox.Indicator>
-                            </Checkbox.Root>
-                            정규식
-                        </label>
-                    </div>
+                    <Text size="2">
+                        <Checkbox checked={isRegex} onCheckedChange={(value) => setIsRegex(value === true)} /> 정규식
+                    </Text>
 
-                    <div className="refresher-field">
-                        <span className="refresher-field-label">특정 갤러리 차단 (선택)</span>
-                        <input className="refresher-input" placeholder="갤러리 ID" value={gallery} onChange={(event) => setGallery(event.target.value)} />
-                    </div>
+                    <label>
+                        <Text as="div" size="1" color="gray" mb="1">
+                            특정 갤러리 차단 (선택)
+                        </Text>
+                        <TextField.Root placeholder="갤러리 ID" value={gallery} onChange={(event) => setGallery(event.target.value)} />
+                    </label>
 
-                    <div className="refresher-field">
-                        <span className="refresher-field-label">차단 모드</span>
-                        <RefresherSelect value={mode} onChange={(next) => setMode(next as DetectMode | "")} options={[["", "기본값"], ...Object.entries(modeNames)]} />
-                    </div>
+                    <Flex justify="between" align="center">
+                        <Text size="1" color="gray">
+                            차단 모드
+                        </Text>
+                        <RefresherSelect
+                            value={mode}
+                            onChange={(next) => setMode(next as DetectMode | "")}
+                            options={[["", "기본값"], ...Object.entries(modeNames)]}
+                        />
+                    </Flex>
 
-                    {error && <p className="refresher-error">{error}</p>}
+                    {error && (
+                        <Text size="1" color="red">
+                            {error}
+                        </Text>
+                    )}
+                </Flex>
 
-                    <div className="refresher-dialog-actions">
-                        <button type="button" className="refresher-button" onClick={onClose}>
+                <Flex gap="3" justify="end" mt="4">
+                    <Dialog.Close>
+                        <Button variant="soft" color="gray">
                             취소
-                        </button>
-                        <button type="button" className="refresher-button refresher-primary" onClick={submit}>
-                            {initial ? "수정" : "추가"}
-                        </button>
-                    </div>
-
-                    <Dialog.Close asChild>
-                        <button type="button" className="refresher-dialog-close" aria-label="닫기">
-                            ×
-                        </button>
+                        </Button>
                     </Dialog.Close>
-                </Dialog.Content>
-            </Dialog.Portal>
+                    <Button onClick={submit}>{initial ? "수정" : "추가"}</Button>
+                </Flex>
+            </Dialog.Content>
         </Dialog.Root>
     );
 };

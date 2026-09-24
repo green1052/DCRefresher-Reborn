@@ -1,4 +1,4 @@
-import {AlertDialog} from "radix-ui";
+import {AlertDialog, Button, Flex} from "@radix-ui/themes";
 
 interface ConfirmDialogProps {
     open: boolean;
@@ -12,7 +12,7 @@ interface ConfirmDialogProps {
     onClose: () => void;
 }
 
-/** Radix AlertDialog 래퍼 — confirm()/alert() 대체 */
+/** Radix Themes AlertDialog 래퍼 — confirm()/alert() 대체 */
 export const ConfirmDialog = ({
     open,
     title,
@@ -24,24 +24,24 @@ export const ConfirmDialog = ({
     onClose
 }: ConfirmDialogProps) => (
     <AlertDialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
-        <AlertDialog.Portal>
-            <AlertDialog.Overlay className="refresher-overlay" />
-            <AlertDialog.Content className="refresher-dialog">
-                <AlertDialog.Title className="refresher-dialog-title">{title}</AlertDialog.Title>
-                {description && <AlertDialog.Description className="refresher-dialog-desc">{description}</AlertDialog.Description>}
+        <AlertDialog.Content style={{maxWidth: 440}}>
+            <AlertDialog.Title>{title}</AlertDialog.Title>
+            {description && <AlertDialog.Description size="2">{description}</AlertDialog.Description>}
 
-                <div className="refresher-dialog-actions">
-                    {cancelLabel !== null && (
-                        <AlertDialog.Cancel className="refresher-button">{cancelLabel}</AlertDialog.Cancel>
-                    )}
-                    <AlertDialog.Action
-                        className={`refresher-button ${danger ? "refresher-danger" : "refresher-primary"}`}
-                        onClick={onConfirm}
-                    >
+            <Flex gap="3" justify="end" mt="4">
+                {cancelLabel !== null && (
+                    <AlertDialog.Cancel>
+                        <Button variant="soft" color="gray">
+                            {cancelLabel}
+                        </Button>
+                    </AlertDialog.Cancel>
+                )}
+                <AlertDialog.Action>
+                    <Button color={danger ? "red" : undefined} variant={danger ? "soft" : "solid"} onClick={onConfirm}>
                         {confirmLabel}
-                    </AlertDialog.Action>
-                </div>
-            </AlertDialog.Content>
-        </AlertDialog.Portal>
+                    </Button>
+                </AlertDialog.Action>
+            </Flex>
+        </AlertDialog.Content>
     </AlertDialog.Root>
 );

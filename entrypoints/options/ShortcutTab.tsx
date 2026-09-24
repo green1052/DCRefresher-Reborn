@@ -1,3 +1,4 @@
+import {Button} from "@radix-ui/themes";
 import {useEffect, useState} from "react";
 
 interface ShortcutCommand {
@@ -26,15 +27,14 @@ export function ShortcutTab() {
                     </div>
                 ))}
             <div className="empty">
-                <button
-                    type="button"
-                    className="refresher-button"
+                <Button
+                    variant="soft"
                     onClick={() =>
                         void browser.tabs.create({url: import.meta.env.FIREFOX ? "about:addons" : "chrome://extensions/shortcuts"})
                     }
                 >
                     단축키 설정
-                </button>
+                </Button>
             </div>
         </div>
     );

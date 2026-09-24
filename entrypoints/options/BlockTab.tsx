@@ -1,4 +1,5 @@
 import {Plus, X} from "lucide-react";
+import {IconButton} from "@radix-ui/themes";
 import {useState} from "react";
 
 import {BlockDialog} from "@/components/BlockDialog";
@@ -61,18 +62,19 @@ export function BlockTab() {
                                 {TYPE_NAMES[type]} ({list.length}개)
                             </h3>
                             <span className="refresher-section-actions">
-                                <button type="button" className="refresher-icon-button" title="추가" onClick={() => setDialog({type, initial: null})}>
+                                <IconButton variant="ghost" color="gray" size="1" title="추가" onClick={() => setDialog({type, initial: null})}>
                                     <Plus size={16} />
-                                </button>
-                                <button
-                                    type="button"
-                                    className="refresher-icon-button"
+                                </IconButton>
+                                <IconButton
+                                    variant="ghost"
+                                    color="gray"
+                                    size="1"
                                     title="전체 삭제"
                                     disabled={list.length === 0}
                                     onClick={() => setClearConfirm(type)}
                                 >
                                     <X size={14} />
-                                </button>
+                                </IconButton>
                             </span>
                         </header>
 
@@ -93,9 +95,15 @@ export function BlockTab() {
                                                 {entry.gallery ? ` (${entry.gallery})` : ""}
                                             </button>
                                         )}
-                                        <button type="button" className="refresher-chip-remove" title="삭제" onClick={() => void removeEntry(type, entry.id)}>
-                                            ×
-                                        </button>
+                                        <IconButton
+                                            variant="ghost"
+                                            color="gray"
+                                            size="1"
+                                            title="삭제"
+                                            onClick={() => void removeEntry(type, entry.id)}
+                                        >
+                                            <X size={12} />
+                                        </IconButton>
                                     </span>
                                 ))}
                             </div>

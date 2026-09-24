@@ -1,5 +1,5 @@
 import {Plus, X} from "lucide-react";
-import {Dialog} from "radix-ui";
+import {Button, Dialog, Flex, IconButton, Link, Text, TextField} from "@radix-ui/themes";
 import {useState} from "react";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
@@ -45,36 +45,39 @@ const MemoFormDialog = ({
 
     return (
         <Dialog.Root open onOpenChange={(next) => !next && onClose()}>
-            <Dialog.Portal>
-                <Dialog.Overlay className="refresher-overlay" />
-                <Dialog.Content className="refresher-dialog">
-                    <Dialog.Title className="refresher-dialog-title">메모 {editing ? "수정" : "추가"}</Dialog.Title>
+            <Dialog.Content style={{maxWidth: 480}}>
+                <Dialog.Title>메모 {editing ? "수정" : "추가"}</Dialog.Title>
 
-                    <div className="refresher-field">
-                        <span className="refresher-field-label">종류</span>
+                <Flex direction="column" gap="3" mt="3">
+                    <Flex justify="between" align="center">
+                        <Text size="2" color="gray">
+                            종류
+                        </Text>
                         <RefresherSelect
                             value={state.type}
                             disabled={editing}
                             onChange={(next) => setState((prev) => ({...prev, type: next as MemoType}))}
                             options={MEMO_TYPES.map((type) => [type, MEMO_TYPE_NAMES[type]] as [string, string])}
                         />
-                    </div>
+                    </Flex>
 
-                    <div className="refresher-field">
-                        <span className="refresher-field-label">대상</span>
-                        <input
-                            className="refresher-input"
+                    <label>
+                        <Text as="div" size="1" color="gray" mb="1">
+                            대상
+                        </Text>
+                        <TextField.Root
                             placeholder="유저, 닉네임 또는 IP"
                             value={state.user}
                             disabled={editing}
                             onChange={(event) => setState((prev) => ({...prev, user: event.target.value.trim()}))}
                         />
-                    </div>
+                    </label>
 
-                    <div className="refresher-field">
-                        <span className="refresher-field-label">메모</span>
-                        <input
-                            className="refresher-input"
+                    <label>
+                        <Text as="div" size="1" color="gray" mb="1">
+                            메모
+                        </Text>
+                        <TextField.Root
                             maxLength={160}
                             placeholder="메모를 입력해주세요 (160자 제한)"
                             value={state.text}
@@ -82,41 +85,41 @@ const MemoFormDialog = ({
                             onKeyDown={(event) => event.key === "Enter" && void submit()}
                             autoFocus
                         />
-                    </div>
+                    </label>
 
-                    <div className="refresher-field">
-                        <span className="refresher-field-label">색상</span>
-                        <span className="refresher-color-row">
+                    <Flex justify="between" align="center">
+                        <Text size="2" color="gray">
+                            색상
+                        </Text>
+                        <Flex gap="2" align="center">
                             <input
                                 type="color"
-                                className="refresher-color"
                                 value={state.color}
                                 onChange={(event) => setState((prev) => ({...prev, color: event.target.value}))}
+                                style={{width: 36, height: 28, padding: 0, border: 0, background: "none", cursor: "pointer"}}
                             />
-                            <button type="button" className="refresher-button" onClick={() => setState((prev) => ({...prev, color: randomColor()}))}>
+                            <Button size="1" variant="soft" onClick={() => setState((prev) => ({...prev, color: randomColor()}))}>
                                 랜덤
-                            </button>
-                        </span>
-                    </div>
+                            </Button>
+                        </Flex>
+                    </Flex>
 
-                    {error && <p className="refresher-error">{error}</p>}
+                    {error && (
+                        <Text size="1" color="red">
+                            {error}
+                        </Text>
+                    )}
+                </Flex>
 
-                    <div className="refresher-dialog-actions">
-                        <button type="button" className="refresher-button" onClick={onClose}>
+                <Flex gap="3" justify="end" mt="4">
+                    <Dialog.Close>
+                        <Button variant="soft" color="gray">
                             취소
-                        </button>
-                        <button type="button" className="refresher-button refresher-primary" onClick={() => void submit()}>
-                            {editing ? "수정" : "추가"}
-                        </button>
-                    </div>
-
-                    <Dialog.Close asChild>
-                        <button type="button" className="refresher-dialog-close" aria-label="닫기">
-                            ×
-                        </button>
+                        </Button>
                     </Dialog.Close>
-                </Dialog.Content>
-            </Dialog.Portal>
+                    <Button onClick={() => void submit()}>{editing ? "수정" : "추가"}</Button>
+                </Flex>
+            </Dialog.Content>
         </Dialog.Root>
     );
 };
@@ -134,9 +137,9 @@ export function MemoTab() {
         <div>
             <h2 className="refresher-section-title">데이터 관리</h2>
             <p className="refresher-section-desc">
-                <button type="button" className="refresher-link" onClick={() => window.open(MEMO_TARGET, "_blank")}>
+                <Link href={MEMO_TARGET} target="_blank" rel="noreferrer">
                     메모 변환
-                </button>
+                </Link>
             </p>
 
             {MEMO_TYPES.map((type) => {
@@ -149,23 +152,25 @@ export function MemoTab() {
                                 {MEMO_TYPE_NAMES[type]} ({Object.keys(map).length}개)
                             </h3>
                             <span className="refresher-section-actions">
-                                <button
-                                    type="button"
-                                    className="refresher-icon-button"
+                                <IconButton
+                                    variant="ghost"
+                                    color="gray"
+                                    size="1"
                                     title="추가"
                                     onClick={() => setForm({type, user: "", text: "", color: randomColor()})}
                                 >
                                     <Plus size={16} />
-                                </button>
-                                <button
-                                    type="button"
-                                    className="refresher-icon-button"
+                                </IconButton>
+                                <IconButton
+                                    variant="ghost"
+                                    color="gray"
+                                    size="1"
                                     title="전체 삭제"
                                     disabled={Object.keys(map).length === 0}
                                     onClick={() => setClearConfirm(type)}
                                 >
                                     <X size={14} />
-                                </button>
+                                </IconButton>
                             </span>
                         </header>
 
@@ -183,14 +188,15 @@ export function MemoTab() {
                                         >
                                             {user} ({entry.text.slice(0, 10)})
                                         </button>
-                                        <button
-                                            type="button"
-                                            className="refresher-chip-remove"
+                                        <IconButton
+                                            variant="ghost"
+                                            color="gray"
+                                            size="1"
                                             title="삭제"
                                             onClick={() => void removeMemo(type, user)}
                                         >
-                                            ×
-                                        </button>
+                                            <X size={12} />
+                                        </IconButton>
                                     </span>
                                 ))}
                             </div>

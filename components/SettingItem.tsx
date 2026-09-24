@@ -1,7 +1,6 @@
-import {Slider, Switch} from "radix-ui";
+import {Button, Select, Slider, Switch, TextField} from "@radix-ui/themes";
 import {useEffect, useState} from "react";
 
-import {RefresherSelect} from "@/components/RefresherSelect";
 import type {SettingSchema} from "@/core/module/types";
 import type {SettingValue} from "@/core/storage/types";
 
@@ -35,9 +34,8 @@ const TextControl = ({schema, value, disabled, onChange}: SettingItemProps) => {
     }, [value]);
 
     return (
-        <input
-            className="refresher-input"
-            type="text"
+        <TextField.Root
+            size="1"
             placeholder={String(schema.default)}
             value={draft}
             disabled={disabled}
@@ -60,30 +58,18 @@ const RangeControl = ({schema, value, disabled, onChange}: SettingItemProps) => 
     }, [value]);
 
     return (
-        <div className="refresher-range">
-            <span className="refresher-range-value">
-                {draft}
-                {schema.unit}
-            </span>
-            <Slider.Root
-                className="refresher-slider"
-                min={schema.min}
-                max={schema.max}
-                step={schema.step}
-                value={[draft]}
-                disabled={disabled}
-                onValueChange={(values) => setDraft(values[0] ?? 0)}
-                onValueCommit={(values) => {
-                    const next = values[0];
-                    if (next !== undefined && next !== value) onChange(next);
-                }}
-            >
-                <Slider.Track className="refresher-slider-track">
-                    <Slider.Range className="refresher-slider-range" />
-                </Slider.Track>
-                <Slider.Thumb className="refresher-slider-thumb" />
-            </Slider.Root>
-        </div>
+        <Slider
+            size="1"
+            min={schema.min}
+            max={schema.max}
+            step={schema.step}
+            value={[draft]}
+            disabled={disabled}
+            onValueChange={([next]) => setDraft(next ?? 0)}
+            onValueCommit={([next]) => {
+                if (next !== undefined && next !== value) onChange(next);
+            }}
+        />
     );
 };
 
@@ -108,26 +94,19 @@ const OrderControl = ({schema, value, disabled, onChange}: SettingItemProps) => 
     };
 
     return (
-        <ul className="refresher-order">
+        <div style={{display: "flex", flexDirection: "column", gap: 2}}>
             {order.map((key, index) => (
-                <li key={key} className="refresher-order-item">
-                    <span>{schema.items[key] ?? key}</span>
-                    <span className="refresher-order-actions">
-                        <button type="button" className="refresher-button" disabled={disabled || index === 0} onClick={() => move(index, -1)}>
-                            ↑
-                        </button>
-                        <button
-                            type="button"
-                            className="refresher-button"
-                            disabled={disabled || index === order.length - 1}
-                            onClick={() => move(index, 1)}
-                        >
-                            ↓
-                        </button>
-                    </span>
-                </li>
+                <span key={key} style={{display: "flex", alignItems: "center", gap: 4}}>
+                    <Button size="1" variant="soft" disabled={disabled || index === 0} onClick={() => move(index, -1)}>
+                        ↑
+                    </Button>
+                    <Button size="1" variant="soft" disabled={disabled || index === order.length - 1} onClick={() => move(index, 1)}>
+                        ↓
+                    </Button>
+                    {schema.items[key] ?? key}
+                </span>
             ))}
-        </ul>
+        </div>
     );
 };
 
@@ -144,12 +123,24 @@ export const SettingItem = ({schema, value, disabled, onChange}: SettingItemProp
 
             <div className="refresher-setting-control">
                 {schema.type === "check" && (
-                    <Switch.Root className="refresher-switch-root" checked={Boolean(value)} disabled={disabled} onCheckedChange={onChange}>
-                        <Switch.Thumb className="refresher-switch-thumb" />
-                    </Switch.Root>
+                    <Switch size="1" checked={Boolean(value)} disabled={disabled} onCheckedChange={(checked) => onChange(checked)} />
                 )}
                 {schema.type === "option" && (
-                    <RefresherSelect value={String(value)} disabled={disabled} onChange={onChange} options={Object.entries(schema.items)} />
+                    <Select.Root
+                        size="1"
+                        value={String(value)}
+                        disabled={disabled}
+                        onValueChange={(selected) => onChange(selected)}
+                    >
+                        <Select.Trigger />
+                        <Select.Content>
+                            {Object.entries(schema.items).map(([key, label]) => (
+                                <Select.Item key={key} value={key}>
+                                    {label}
+                                </Select.Item>
+                            ))}
+                        </Select.Content>
+                    </Select.Root>
                 )}
                 {schema.type === "text" && <TextControl {...{schema, value, disabled, onChange}} />}
                 {schema.type === "range" && <RangeControl {...{schema, value, disabled, onChange}} />}

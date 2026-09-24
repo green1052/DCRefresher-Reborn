@@ -1,5 +1,5 @@
+import {Tabs} from "@radix-ui/themes";
 import {ExternalLink} from "lucide-react";
-import {Tabs} from "radix-ui";
 import {useEffect} from "react";
 
 import logoUrl from "@/assets/icon.png";
@@ -36,23 +36,20 @@ export function App({optionsPage = false}: {optionsPage?: boolean}) {
     useEffect(() => {
         const detect = async (): Promise<void> => {
             const tabs = await browser.tabs.query({url: "*://*.dcinside.com/*"});
-            console.log("[refresher] DC 탭:", tabs.map((t) => ({id: t.id, url: t.url, status: t.status})));
 
             for (const tab of tabs) {
                 if (!tab.id) continue;
 
                 try {
                     const schemas = await sendMessage("refresher:getModuleSchema", undefined, {tabId: tab.id});
-                    console.log("[refresher] 스키마 수신 성공 (tab " + tab.id + "):", schemas.length, "개 모듈");
                     useModulesStore.setState({tabId: tab.id, unavailable: false});
                     setSchemas(schemas);
                     return;
-                } catch (error) {
-                    console.warn("[refresher] tab " + tab.id + " 실패:", error);
+                } catch {
+                    // 이 탭의 콘텐츠 스크립트 무응답 (확장 리로드 직후 등) — 다음 탭 시도
                 }
             }
 
-            console.warn("[refresher] 살아있는 DC 탭 없음 — unavailable 처리");
             setUnavailable(true);
         };
 
@@ -86,7 +83,7 @@ export function App({optionsPage = false}: {optionsPage?: boolean}) {
             </header>
 
             <Tabs.Root defaultValue="general" className="refresher-tabs">
-                <Tabs.List className="refresher-tabs-list">
+                <Tabs.List className="refresher-tabs-list" aria-orientation="vertical">
                     {TABS.map((tab) => (
                         <Tabs.Trigger key={tab.id} value={tab.id} className="refresher-tab-trigger">
                             {tab.label}

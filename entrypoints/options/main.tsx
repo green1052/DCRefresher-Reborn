@@ -1,13 +1,15 @@
+import "@radix-ui/themes/styles.css";
+import {Theme} from "@radix-ui/themes";
 import {StrictMode} from "react";
 import {createRoot} from "react-dom/client";
 
 import "./popup.scss";
 import {App} from "./App";
 
-import "./options.scss";
-
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
-        <App optionsPage />
+        <Theme appearance="inherit" accentColor="blue" radius="medium">
+            <App optionsPage />
+        </Theme>
     </StrictMode>
 );

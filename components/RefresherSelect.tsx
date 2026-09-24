@@ -1,4 +1,4 @@
-import {Select} from "radix-ui";
+import {Select} from "@radix-ui/themes";
 
 interface RefresherSelectProps {
     value: string;
@@ -7,23 +7,23 @@ interface RefresherSelectProps {
     onChange: (value: string) => void;
 }
 
+/** 값이 빈 문자열인 항목(기본값)을 위한 sentinel */
+const NONE = "__none__";
+
 export const RefresherSelect = ({value, options, disabled, onChange}: RefresherSelectProps) => (
-    <Select.Root value={value || "__none__"} disabled={disabled} onValueChange={(next) => onChange(next === "__none__" ? "" : next)}>
-        <Select.Trigger className="refresher-select">
-            <Select.Value />
-            <Select.Icon>▾</Select.Icon>
-        </Select.Trigger>
-        <Select.Portal>
-            <Select.Content className="refresher-select-content" position="popper" sideOffset={4}>
-                <Select.Viewport>
-                    {options.map(([key, label]) => (
-                        <Select.Item key={key} className="refresher-select-item" value={key || "__none__"}>
-                            <Select.ItemText>{label}</Select.ItemText>
-                            <Select.ItemIndicator>✓</Select.ItemIndicator>
-                        </Select.Item>
-                    ))}
-                </Select.Viewport>
-            </Select.Content>
-        </Select.Portal>
+    <Select.Root
+        size="1"
+        value={value || NONE}
+        disabled={disabled}
+        onValueChange={(next) => onChange(next === NONE ? "" : next)}
+    >
+        <Select.Trigger style={{minWidth: 120}} />
+        <Select.Content>
+            {options.map(([key, label]) => (
+                <Select.Item key={key} value={key || NONE}>
+                    {label}
+                </Select.Item>
+            ))}
+        </Select.Content>
     </Select.Root>
 );
