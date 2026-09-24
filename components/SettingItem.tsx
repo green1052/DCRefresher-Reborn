@@ -152,8 +152,16 @@ const OrderControl = ({schema, value, disabled, onChange}: NarrowProps<"order">)
     );
 };
 
+/** 배열(order)은 요소 비교 — 원복했는데도 참조 차이로 changed로 오판하지 않게 */
+const isChanged = (schema: SettingSchema, value: SettingValue): boolean => {
+    if (Array.isArray(schema.default) && Array.isArray(value)) {
+        return schema.default.length !== value.length || schema.default.some((item, index) => item !== value[index]);
+    }
+    return value !== schema.default;
+};
+
 export const SettingItem = ({schema, value, disabled, onChange}: SettingItemProps) => {
-    const changed = value !== schema.default;
+    const changed = isChanged(schema, value);
 
     return (
         <Flex justify="between" align="center" gap="3" py="2">
