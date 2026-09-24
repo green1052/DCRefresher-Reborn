@@ -3,7 +3,7 @@ import {galleryType, galleryTypeName, urls} from "@/core/http/urls";
 import type {GalleryPreData, IPostInfo} from "@/features/types";
 
 import {parsePostInfo} from "./parser";
-import type {CommentListResponse} from "./cache";
+import type {CommentListResponse, DcinsideComment} from "./cache";
 
 const HEADERS = {"X-Requested-With": "XMLHttpRequest"};
 
@@ -38,7 +38,9 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: IPostInfo
     body.set("e_s_n_o", postInfo.dom?.querySelector<HTMLInputElement>("#e_s_n_o")?.value ?? "");
     body.set("comment_page", "1");
 
-    return http.post(urls.comments, {headers: HEADERS, body, signal}).json<CommentListResponse>();
+    const response = await http.post(urls.comments, {headers: HEADERS, body, signal}).json<{comments: DcinsideComment[] | null; total_cnt: number | string}>();
+
+    return {total_cnt: Number(response.total_cnt), list: response.comments ?? []};
 };
 
 export interface VoteResult {
