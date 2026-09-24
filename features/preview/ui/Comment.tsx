@@ -79,13 +79,13 @@ export const UserCard = ({user}: {user: UserCardData}) => (
         }
     >
         <div className="refresher-user-content">
+            <span className="refresher-user-nick">{user.nick ?? user.id ?? user.ip}</span>
             {user.image && (
                 <span className="refresher-user-icon">
                     <img src={user.image} alt="" />
                 </span>
             )}
-            <span className="refresher-user-nick">{user.nick ?? user.id ?? user.ip}</span>
-            <span className="refresher-user-info">{user.id ?? user.ip}</span>
+            {(user.id || user.ip) && <span className="refresher-user-info">({user.id ?? user.ip})</span>}
         </div>
     </div>
 );

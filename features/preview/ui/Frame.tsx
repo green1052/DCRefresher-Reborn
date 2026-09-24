@@ -183,10 +183,7 @@ export const Frame = () => {
 
             const next = rows[index + dir];
             const nextPre = next ? buildPreData(next) : null;
-            if (nextPre) {
-                st.requestOpen(nextPre);
-                useUiStore.getState().showToast(dir > 0 ? "다음 게시글로 이동했습니다." : "이전 게시글로 이동했습니다.");
-            }
+            if (nextPre) st.requestOpen(nextPre);
         };
 
         const onKey = (event: KeyboardEvent): void => {
@@ -224,6 +221,9 @@ export const Frame = () => {
             const now = Date.now();
             if (now - edge.current.at > 500) {
                 edge.current.at = now;
+                useUiStore
+                    .getState()
+                    .showToast(dir > 0 ? "한 번 더 스크롤하면 다음 게시글로 넘어갑니다." : "한 번 더 스크롤하면 이전 게시글로 넘어갑니다.", "info", 1800);
                 return;
             }
             edge.current.at = now;
