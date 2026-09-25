@@ -12,7 +12,7 @@
 import {BLOCK_TYPES, DETECT_MODES} from "@/core/storage/items";
 import type {BlockType, DetectMode} from "@/core/storage/types";
 
-const V5_MODULE_IDS: Record<string, string | null> = {
+const V5_MODULE_IDS: Record<string, string> = {
     "컨텐츠 차단": "block",
     "미리보기": "preview",
     "글 목록 새로고침": "refresh",
@@ -22,8 +22,7 @@ const V5_MODULE_IDS: Record<string, string | null> = {
     "폰트 교체": "fonts",
     "스텔스 모드": "stealth",
     "이미지 검색": "imagesearch",
-    // v6에 없는 모듈
-    "글쓰기": null
+    "글쓰기": "write"
 };
 
 /** v5 관리 모듈에 있던 설정 중 v6 유저 정보로 옮겨진 것 */
@@ -64,7 +63,7 @@ export const migrateV5 = (data: Snapshot): Snapshot => {
         const id = match ? V5_MODULE_IDS[match[1]!] : undefined;
 
         if (match && id !== undefined) {
-            if (id === null || match[2] === "data" || value === null || value === undefined) continue;
+            if (match[2] === "data" || value === null || value === undefined) continue;
 
             if (match[2] === "enable") {
                 if (typeof value === "boolean") enables[id] = value;
