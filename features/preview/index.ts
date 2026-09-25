@@ -9,11 +9,9 @@ import {useUiStore} from "@/stores/ui";
 import {isTyping} from "@/utils/event";
 import {isGalleryManager} from "@/utils/user";
 import {notifyManage} from "@/utils/notify";
-import {sanitizeHtml} from "@/utils/sanitize";
 
 import {getEntry, setEntry} from "@/core/preview/cache";
 import {ADULT_ERROR} from "@/core/preview/parser";
-import {processComments} from "@/core/preview/comments";
 import {blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {BLOCK_DAYS, BLOCKED_TEXT, type ErrorState, type ManageKind, miniPosition, postTitle, usePreviewStore} from "./ui/previewStore";
 
@@ -154,6 +152,21 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
     };
 };
 
+/** 목록에서 앞(-1)/뒤(1) 글 — 차단·운영자 숨김 행은 건너뛴다 (미리보기는 TEXT 차단만 검사해서 숨긴 글이 그대로 열린다) */
+export const adjacentPreData = (from: GalleryPreData, dir: number): GalleryPreData | null => {
+    const rows = Array.from(document.querySelectorAll<HTMLElement>(".gall_list .ub-content")).filter((row) =>
+        row.checkVisibility() && row.querySelector("a:not(.reply_numbox)")
+    );
+
+    const index = rows.findIndex((row) => {
+        const pre = buildPreData(row);
+        return pre?.id === from.id && pre?.gallery === from.gallery;
+    });
+
+    const next = index < 0 ? undefined : rows[index + dir];
+    return next ? buildPreData(next) : null;
+};
+
 /** 목록에 이미지 아이콘이 없는 글 (텍스트 개념글 포함) — blockImage가 본문 이미지를 가린다 */
 const isTextPost = (preData: GalleryPreData): boolean => preData.type === "icon_txt" || preData.type === "icon_recomtxt";
 
@@ -179,13 +192,18 @@ const controller = (ctx: ModuleContext) => {
     let lastKey = "";
     let lastKeyTime = 0;
     let miniTimer = 0;
-    let miniAbort: AbortController | null = null;
+    // 미니를 띄울 제목 칸 — 받는 사이 떠났으면 띄우지 않는다
+    let miniTarget: HTMLElement | null = null;
+    // 받는 중인 본문 한 칸 — 우클릭 누름·미니·열기·미리 받기가 같이 쓴다. 다른 글을 받으면 앞의 것은 끊는다 (연타해도 쌓이지 않게)
+    let pending: { key: string; ctrl: AbortController; post: Promise<PostInfo> } | null = null;
 
     // 갤러리 이름은 제목 링크의 첫 글자 칸 — h1(로고)엔 인라인 스크립트가, 링크엔 마이너·미니 표시가 섞인다
     const galName = (): string => document.querySelector(".page_head h2 a")?.firstChild?.textContent?.trim() || "디시인사이드";
 
     // 본문 차단도 차단 모듈을 따른다 — 꺼져 있으면 가리지 않는다. 원문은 남겨 '가린 내용 보기'로 다시 보인다 (Frame.tsx)
-    const processContents = (preData: GalleryPreData, postInfo: PostInfo, stripMedia = false): PostInfo => {
+    const processContents = async (preData: GalleryPreData, postInfo: PostInfo, stripMedia = false): Promise<PostInfo> => {
+        // 정화기는 처음 쓸 때 불러온다 — 모든 페이지에서 DOMPurify를 만들지 않게
+        const {sanitizeHtml} = await import("@/utils/sanitize");
         const view = useUiStore.getState().blockView;
         // 페이지와 같은 글자로 본다 (block 모듈 checkText) — 본문 칸째 풀면 디시 스크립트·템플릿 글자가 섞이고 태그 자리가 공백이 돼 '<b>광</b>고'로 비켜 간다
         const writeDiv = postInfo.dom.querySelector(".write_div");
@@ -194,15 +212,34 @@ const controller = (ctx: ModuleContext) => {
         return {...postInfo, contents: sanitizeHtml(postInfo.contents ?? "", {stripMedia}), textBlocked};
     };
 
+    const requestPost = (preData: GalleryPreData): Promise<PostInfo> => {
+        const key = `${preData.gallery}/${preData.id}`;
+        if (pending?.key === key) return pending.post;
+
+        pending?.ctrl.abort();
+        const ctrl = new AbortController();
+        const post = fetchPost(preData, ctrl.signal).then((result) => {
+            setEntry(preData, {post: result});
+            return result;
+        });
+        const slot = {key, ctrl, post};
+        pending = slot;
+
+        // 받은 본문은 캐시에 있으니 끝나면 비운다 — 아무도 기다리지 않는 미리 받기가 실패해도 처리 안 된 거부로 남지 않게 catch
+        void post.catch(() => undefined).finally(() => {
+            if (pending === slot) pending = null;
+        });
+
+        return post;
+    };
+
     /** 캐시에 있으면 캐시, 없으면 받는다. fresh: 방금 받은 본문 — 캐시 것은 1분까지 낡았을 수 있다 */
-    const getPost = async (preData: GalleryPreData, signal: AbortSignal): Promise<{ post: PostInfo; fresh: boolean }> => {
+    const getPost = async (preData: GalleryPreData): Promise<{ post: PostInfo; fresh: boolean }> => {
         const cached = ctx.settings.disableCache !== true ? getEntry(preData)?.post : undefined;
         if (cached) return {post: cached, fresh: false};
 
         try {
-            const post = await fetchPost(preData, signal);
-            setEntry(preData, {post});
-            return {post, fresh: true};
+            return {post: await requestPost(preData), fresh: true};
         } catch (e) {
             // 삭제된 글 보존: 가져오지 못하면 캐시에 남은 이전 본문을 보여준다 (캐시 비활성화여도). 다시 저장해 수명을 늘린다
             const archived = ctx.settings.archiveArticle === true ? getEntry(preData)?.post : undefined;
@@ -224,7 +261,11 @@ const controller = (ctx: ModuleContext) => {
         pulling++;
 
         try {
-            const {list: raw, allowReply} = skip ? {list: [], allowReply: true} : await fetchComments(preData, post, abort!.signal);
+            // 가공(정화·차단)도 처음 쓸 때 불러온다
+            const [{processComments}, {list: raw, allowReply}] = await Promise.all([
+                import("@/core/preview/comments"),
+                skip ? {list: [], allowReply: true} : fetchComments(preData, post, abort!.signal)
+            ]);
             if (store.getState().signalId !== mySignal || seq < shownSeq) return;
             shownSeq = seq;
 
@@ -247,13 +288,13 @@ const controller = (ctx: ModuleContext) => {
         }
     };
 
-    const load = async (preData: GalleryPreData, mySignal: number) => {
+    const load = async (preData: GalleryPreData, mySignal: number, dir: number) => {
         let post: PostInfo;
         let fresh: boolean;
 
         try {
-            ({post, fresh} = await getPost(preData, abort!.signal));
-            post = processContents(preData, post);
+            ({post, fresh} = await getPost(preData));
+            post = await processContents(preData, post);
         } catch (e) {
             if (store.getState().signalId === mySignal) store.getState().setError(errorOf(e));
             return;
@@ -268,6 +309,12 @@ const controller = (ctx: ModuleContext) => {
         } catch {
             // 댓글만 못 받았으면 본문은 그대로 두고 알린다
             if (store.getState().signalId === mySignal) ui.showToast("댓글을 불러오지 못했습니다.", "error");
+        }
+
+        // PageUp/Down으로 넘겼으면 그쪽 다음 글 본문도 미리 받는다 — 댓글은 열 때 받는다
+        if (dir && ctx.settings.disableCache !== true && store.getState().signalId === mySignal) {
+            const next = adjacentPreData(preData, dir);
+            if (next && !getEntry(next)?.post) void requestPost(next);
         }
     };
 
@@ -285,6 +332,8 @@ const controller = (ctx: ModuleContext) => {
     const close = (fromHistory = false) => {
         abort?.abort();
         abort = null;
+        pending?.ctrl.abort();
+        pending = null;
 
         if (refreshTimer) window.clearInterval(refreshTimer);
         refreshTimer = 0;
@@ -293,7 +342,8 @@ const controller = (ctx: ModuleContext) => {
         store.getState().close();
     };
 
-    const open = (preData: GalleryPreData, commentsOnly = false, historySkip = false) => {
+    /** dir: PageUp/Down으로 넘긴 방향 (그쪽 다음 글을 미리 받는다) */
+    const open = (preData: GalleryPreData, commentsOnly = false, historySkip = false, dir = 0) => {
         // 호버 대기·요청 중인 미니가 전체 미리보기 위에 뜨지 않게
         onMiniLeave();
 
@@ -345,7 +395,7 @@ const controller = (ctx: ModuleContext) => {
             }, interval);
         }
 
-        void load(preData, mySignal);
+        void load(preData, mySignal, dir);
     };
 
     const manage = async (kind: ManageKind) => {
@@ -439,26 +489,22 @@ const controller = (ctx: ModuleContext) => {
         const preData = buildPreData(element);
         if (!preData) return;
 
-        miniAbort?.abort();
-        miniAbort = new AbortController();
-
         let post: PostInfo;
         try {
-            ({post} = await getPost(preData, miniAbort.signal));
+            ({post} = await getPost(preData));
+            post = await processContents(preData, post, ctx.settings.tooltipMediaHide === true);
         } catch {
             return;
         }
 
-        const {contents = "", textBlocked} = processContents(preData, post, ctx.settings.tooltipMediaHide === true);
-
-        // 가져오는 사이 전체 미리보기가 열렸으면 그 위에 띄우지 않는다
-        if (usePreviewStore.getState().visible) return;
+        // 가져오는 사이 행을 떠났거나 전체 미리보기가 열렸으면 띄우지 않는다
+        if (miniTarget !== element || usePreviewStore.getState().visible) return;
 
         usePreviewStore.getState().openMini({
             ...miniPosition(x, y),
             title: postTitle(post),
             // 미니는 마우스를 올려 볼 수 없으니 블러도 안내로 가린다
-            contents: textBlocked && !useUiStore.getState().blockView?.revealed ? BLOCKED_TEXT : contents,
+            contents: post.textBlocked && !useUiStore.getState().blockView?.revealed ? BLOCKED_TEXT : post.contents ?? "",
             // 이미지 차단(blockImage)은 전체 미리보기와 같은 것을 가린다 — 안 그러면 거기서 숨긴 이미지가 호버로 보인다
             blockMedia: ctx.settings.blockImage === true && isTextPost(preData)
         });
@@ -472,8 +518,10 @@ const controller = (ctx: ModuleContext) => {
         const x = ev.clientX;
         const y = ev.clientY;
 
+        miniTarget = element;
         if (miniTimer) window.clearTimeout(miniTimer);
-        const delay = Number(ctx.settings.tooltipDelay) || 0;
+        // 적어도 100ms는 머물러야 — 목록을 가로지를 때 행마다 GET이 나가지 않게 (이미 저장된 0이 있어 기본값이 아니라 여기서)
+        const delay = Math.max(Number(ctx.settings.tooltipDelay) || 0, 100);
         miniTimer = window.setTimeout(() => void showMini(element, x, y), delay);
     };
 
@@ -484,8 +532,8 @@ const controller = (ctx: ModuleContext) => {
     const onMiniLeave = () => {
         if (miniTimer) window.clearTimeout(miniTimer);
         miniTimer = 0;
-        miniAbort?.abort();
-        miniAbort = null;
+        // 받는 중인 본문은 끊지 않는다 — 열기가 같은 요청을 이어 쓴다. 다음 호버가 다른 글을 받으면 그때 끊긴다
+        miniTarget = null;
         usePreviewStore.getState().closeMini();
     };
 
@@ -495,6 +543,12 @@ const controller = (ctx: ModuleContext) => {
         if (ev.button !== 2) return;
         pressStart = Date.now();
         preventOpen = false;
+
+        // 윈도우는 우클릭(contextmenu)이 버튼을 뗄 때 온다 — 누르고 있는 동안 본문을 미리 받는다. Shift는 브라우저 메뉴, 키 반전이면 이동
+        if (ev.shiftKey) return;
+        const resolved = resolveTarget(ev);
+        if (!resolved || (!resolved.commentsOnly && ctx.settings.reversePreviewKey === true)) return;
+        if (ctx.settings.disableCache === true || !getEntry(resolved.preData)?.post) void requestPost(resolved.preData);
     };
 
     const onMouseUp = (ev: MouseEvent) => {
@@ -612,7 +666,7 @@ const controller = (ctx: ModuleContext) => {
     });
 
     store.getState().setHooks({
-        open,
+        open: (preData, commentsOnly, dir) => open(preData, commentsOnly, false, dir),
         close: () => close(),
         refresh: () => void refreshComments(),
         manage: (kind) => void manage(kind)

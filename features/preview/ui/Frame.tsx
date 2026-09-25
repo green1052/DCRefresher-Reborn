@@ -8,7 +8,7 @@ import {captchaImage, vote} from "@/core/preview/request";
 import {useUiStore} from "@/stores/ui";
 import {isTyping} from "@/utils/event";
 
-import {buildPreData} from "../index";
+import {adjacentPreData} from "../index";
 import {Comment, TimeStamp, useTick, UserCard} from "./Comment";
 import {BLOCKED_TEXT, type ErrorState, usePreviewStore} from "./previewStore";
 import {WriteComment} from "./WriteComment";
@@ -183,25 +183,11 @@ const ErrorBlock = ({error}: { error: ErrorState }) => {
     );
 };
 
-/** 목록에서 앞(-1)/뒤(1) 글로 — PageUp/Down과 스크롤 끝에서 한 번 더 굴리기가 같이 쓴다 */
+/** 목록에서 앞(-1)/뒤(1) 글로 — PageUp/Down과 스크롤 끝에서 한 번 더 굴리기가 같이 쓴다. 방향을 넘겨 그쪽 다음 글을 미리 받게 한다 */
 const goToAdjacent = (dir: number): void => {
     const st = usePreviewStore.getState();
-    if (!st.preData) return;
-
-    // 차단·운영자 숨김 행은 건너뛴다 — 미리보기는 TEXT 차단만 검사해서 숨긴 글이 그대로 열린다
-    const rows = Array.from(document.querySelectorAll<HTMLElement>(".gall_list .ub-content")).filter((row) =>
-        row.checkVisibility() && row.querySelector("a:not(.reply_numbox)")
-    );
-
-    const index = rows.findIndex((row) => {
-        const pre = buildPreData(row);
-        return pre?.id === st.preData?.id && pre?.gallery === st.preData?.gallery;
-    });
-    if (index < 0) return;
-
-    const next = rows[index + dir];
-    const nextPre = next ? buildPreData(next) : null;
-    if (nextPre) st.requestOpen(nextPre);
+    const next = st.preData && adjacentPreData(st.preData, dir);
+    if (next) st.requestOpen(next, false, dir);
 };
 
 /** 이만큼 쉬었다 굴리면 새 휠 동작으로 본다 — 관성 스크롤은 이벤트가 이보다 촘촘하게 이어진다 */

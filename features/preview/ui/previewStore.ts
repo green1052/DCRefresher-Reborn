@@ -69,7 +69,7 @@ interface PreviewState extends PostState {
     mini: MiniState | null;
 
     /** controller 연결 (setup에서 주입) */
-    openHook: ((preData: GalleryPreData, commentsOnly?: boolean) => void) | null;
+    openHook: ((preData: GalleryPreData, commentsOnly?: boolean, dir?: number) => void) | null;
     closeHook: (() => void) | null;
     refreshHook: (() => void) | null;
     manageHook: ((kind: ManageKind) => void) | null;
@@ -94,12 +94,12 @@ interface PreviewState extends PostState {
     openMini: (data: MiniState) => void;
     closeMini: () => void;
     moveMini: (clientX: number, clientY: number) => void;
-    requestOpen: (preData: GalleryPreData, commentsOnly?: boolean) => void;
+    requestOpen: (preData: GalleryPreData, commentsOnly?: boolean, dir?: number) => void;
     requestClose: () => void;
     requestRefresh: () => void;
     requestManage: (kind: ManageKind) => void;
     setHooks: (hooks: {
-        open?: (preData: GalleryPreData, commentsOnly?: boolean) => void;
+        open?: (preData: GalleryPreData, commentsOnly?: boolean, dir?: number) => void;
         close?: () => void;
         refresh?: () => void;
         manage?: (kind: ManageKind) => void;
@@ -238,7 +238,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
                 : state
         ),
 
-    requestOpen: (preData, commentsOnly) => get().openHook?.(preData, commentsOnly),
+    requestOpen: (preData, commentsOnly, dir) => get().openHook?.(preData, commentsOnly, dir),
     requestClose: () => get().closeHook?.(),
     requestRefresh: () => get().refreshHook?.(),
     requestManage: (kind) => get().manageHook?.(kind),
