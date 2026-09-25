@@ -14,8 +14,10 @@ export default defineConfig({
         name: "DCRefresher Reborn",
         description: "디시인사이드 개선 확장 프로그램",
         minimum_chrome_version: "140",
-        permissions: ["alarms", "contextMenus", "storage", "scripting", "unlimitedStorage", "clipboardWrite"],
+        permissions: ["alarms", "contextMenus", "storage", "unlimitedStorage", "clipboardWrite"],
         host_permissions: ["https://*.dcinside.com/*"],
+        // reCAPTCHA 토큰용 — 콘텐츠 스크립트가 필요할 때만 페이지에 넣는다 (features/preview/grecaptcha.ts)
+        web_accessible_resources: [{resources: ["grecaptcha.js"], matches: ["https://*.dcinside.com/*"]}],
         commands: {
             refreshLists: {
                 suggested_key: {

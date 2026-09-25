@@ -15,9 +15,6 @@ interface ProtocolMap {
 
     /** 배경 → 탭: 단축키 실행 (commands) */
     "refresher:executeShortcut"(data: string): void;
-
-    /** 탭 → 배경: 디시가 reCAPTCHA v3를 요구할 때 그 탭(MAIN world)에서 토큰 받기. 실패하면 undefined */
-    "refresher:grecaptchaToken"(action: "comment_submit" | "insert_icon"): string | undefined;
 }
 
 export const {sendMessage, onMessage} = defineExtensionMessaging<ProtocolMap>();
