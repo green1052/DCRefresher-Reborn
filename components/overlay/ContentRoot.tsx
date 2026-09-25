@@ -4,8 +4,8 @@ import {Popover as PopoverPrimitive} from "radix-ui";
 import {useEffect, useState} from "react";
 
 import {blockingEntries} from "@/core/block";
-import {eventBus} from "@/core/eventbus/bus";
-import type {ModuleEventData} from "@/core/eventbus/types";
+import type {BlockRequestOptions} from "@/core/eventbus/types";
+import {handleBlockRequest} from "@/features/block/request";
 import {PreviewHost} from "@/features/preview/ui/PreviewHost";
 import {type ToastData, useUiStore} from "@/stores/ui";
 import {banReasonsOf, ipInfoOf} from "@/core/database";
@@ -142,12 +142,17 @@ const BubbleHost = () => {
         ? blockingEntries(selected.dccon ? {DCCON: selected.dccon} : {NICK: selected.nick, ID: selected.uid, IP: selected.ip}, queryString("id") ?? undefined, {entries, defaults})
         : [];
 
-    // Popover는 스크롤을 따라가지 않으므로 스크롤시 닫는다
+    // Popover는 스크롤을 따라가지 않으므로 스크롤시 닫는다 — scroll은 섀도 루트 밖으로 나가지 않아 미리보기 스크롤은 루트에서 잡는다
     useEffect(() => {
         if (!bubble) return;
         const onScroll = (): void => useUiStore.getState().closeBubble();
+        const root = overlay.portal?.getRootNode();
         window.addEventListener("scroll", onScroll, true);
-        return () => window.removeEventListener("scroll", onScroll, true);
+        root?.addEventListener("scroll", onScroll, true);
+        return () => {
+            window.removeEventListener("scroll", onScroll, true);
+            root?.removeEventListener("scroll", onScroll, true);
+        };
     }, [bubble]);
 
     if (!bubble || !selected) return null;
@@ -157,8 +162,9 @@ const BubbleHost = () => {
         close();
         void navigator.clipboard.writeText(value).then(() => useUiStore.getState().showToast("복사했습니다."));
     };
-    const requestBlock = (payload: ModuleEventData["refresherRequestBlock"]): void => {
-        eventBus.emit("refresherRequestBlock", payload);
+    // 이벤트로 보내면 차단 모듈이 꺼져 있을 때 아무도 받지 않아 조용히 무시된다 — 직접 부른다
+    const requestBlock = (options: BlockRequestOptions): void => {
+        void handleBlockRequest(options, selected);
         close();
     };
 

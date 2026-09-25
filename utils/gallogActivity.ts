@@ -1,9 +1,11 @@
+import {LRUCache} from "lru-cache";
 import {useEffect, useState} from "react";
 
 import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
+import {useUiStore} from "@/stores/ui";
 
-/** 글/댓글 수 — 갤로그에서 받는다 (세션 동안 캐시, 실패하면 다음에 다시) */
-const activityCache = new Map<string, Promise<GallogActivity | undefined>>();
+/** 글/댓글 수 — 갤로그에서 받는다 (1시간 캐시, 실패하면 다음에 다시) */
+const activityCache = new LRUCache<string, Promise<GallogActivity | undefined>>({max: 500, ttl: 3_600_000});
 
 export type ActivityState = GallogActivity | undefined | "loading" | "error";
 
@@ -17,6 +19,14 @@ export const useGallogActivity = (uid: string | undefined): ActivityState => {
             setState(undefined);
             return;
         }
+
+        // userinfo 글댓비 캐시에 있으면 그 값 — 버블과 작성자 배지의 숫자가 같게, 요청도 아낀다
+        const known = useUiStore.getState().ratios?.cache;
+        if (known && Object.hasOwn(known, uid)) {
+            setState(known[uid]);
+            return;
+        }
+
         let alive = true;
         setState("loading");
 

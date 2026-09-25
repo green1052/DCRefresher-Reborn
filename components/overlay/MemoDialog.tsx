@@ -37,11 +37,13 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const existing = Boolean(memos[type][value]);
 
     const submit = async (): Promise<void> => {
-        if (!text) {
+        // 공백만 있는 메모는 빈 메모로 — 저장하면 빈 "[ ]" 배지가 붙는다
+        const trimmed = text.trim();
+        if (!trimmed) {
             if (existing) await removeMemo(type, value);
             else showToast(`해당하는 ${MEMO_TYPE_NAMES[type]}을(를) 가진 사용자 메모가 없습니다.`, "error");
         } else {
-            await setMemo(type, value, {text, color, gallery: scope});
+            await setMemo(type, value, {text: trimmed, color, gallery: scope});
             showToast(`${MEMO_TYPE_NAMES[type]} ${value}에 메모를 추가했습니다.`);
         }
 
