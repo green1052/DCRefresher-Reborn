@@ -53,13 +53,12 @@ const Votes = () => {
 
             const result = await vote(preData, post, mode, code);
             if (result.success) {
-                // 응답의 수는 누른 쪽 표수다. 비추천의 세 번째 값은 고정 추천 수가 아니라 플래그라 추천 쪽은 건드리지 않는다 (recommend_box.js와 같음)
                 const counts = result.counts ?? (mode === "U" ? upvotes : downvotes);
                 if (mode === "U") usePreviewStore.getState().setVotes(counts ?? "X", result.fixedCounts ?? "");
                 else usePreviewStore.setState({downvotes: counts});
                 useUiStore
                     .getState()
-                    .showToast(`${mode === "U" ? "추천" : "비추천"}되었습니다. (총 ${counts ?? "?"}표)`);
+                    .showToast(`${mode === "U" ? "추천" : "비추천"}되었습니다.`);
             } else {
                 useUiStore.getState().showToast(result.message ?? "처리하지 못했습니다.", "error");
             }
