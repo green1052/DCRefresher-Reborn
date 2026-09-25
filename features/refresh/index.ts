@@ -3,6 +3,7 @@ import {isViewPage, listUrl, mergeParamURL, pagePostNo, queryString, rowPostNo} 
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext} from "@/core/module/types";
 import {eventBus} from "@/core/eventbus/bus";
+import {usePreviewStore} from "@/features/preview/ui/previewStore";
 import {useUiStore} from "@/stores/ui";
 
 const MINIMUM_REFRESH_INTERVAL = 2000;
@@ -158,6 +159,14 @@ export default defineModule({
         let failures = 0;
         // 페이지를 넘긴 주소 — 그 목록으로 갈아끼운 직후 목록 위로 올린다 (진행 중인 요청에 막혀 나중에 받아도)
         let scrollAfter: string | null = null;
+        // 진행 중인 목록 요청 — 주소가 바뀌면 끊는다
+        let inflight: AbortController | null = null;
+        // 지난번 갈아끼운 목록의 tbody HTML — 받은 것이 같으면 파싱·교체를 건너뛴다
+        let lastListHtml = "";
+        // 받아온 행의 원래 HTML (체크박스 칸·강조·효과를 입히기 전) — 순서가 같으면 바뀐 행만 갈아끼운다
+        const rawRows = new WeakMap<Element, string>();
+        // 목록이 화면 가까이 있는지 — 글 보기 아래 목록처럼 멀리 있으면 갈아끼워도 볼 수 없어 쉰다
+        let listNear = true;
 
         // 제어 버튼
         let button: HTMLButtonElement | null = null;
@@ -185,8 +194,12 @@ export default defineModule({
 
         // ===== load =====
         const load = async (customURL?: string, force?: boolean): Promise<boolean> => {
-            // 진행 중인 요청 등으로 이번 호출이 막혀도 다음 새로고침부터는 새 주소를 받도록 먼저 바꿔 둔다
-            if (customURL) originalLocation = customURL;
+            // 진행 중인 요청 등으로 이번 호출이 막혀도 다음 새로고침부터는 새 주소를 받도록 먼저 바꿔 둔다.
+            // 진행 중인 응답은 지난 주소의 목록이라 어차피 버리니 끊는다 — finally가 새 주소로 다시 받는다
+            if (customURL && customURL !== originalLocation) {
+                originalLocation = customURL;
+                inflight?.abort();
+            }
 
             if (loading) {
                 // 관리 동작 뒤 요청 등은 진행 중인 응답이 바뀌기 전 목록일 수 있어 끝난 뒤 다시 받는다 (자동 tick은 겹쳐도 무시)
@@ -201,6 +214,9 @@ export default defineModule({
                 // 새 글은 1페이지에만 들어온다. 뒤 페이지는 갈아끼울 때마다 행이 밀려 읽던 글이 다음 페이지로 사라질 뿐이다
                 const page = new URL(originalLocation).searchParams.get("page");
                 if (page && page !== "1") return false;
+
+                // 미리보기 뒤에서 갈아끼우면 행이 밀려 이전/다음 글이 바뀐다
+                if (!listNear || usePreviewStore.getState().visible) return false;
 
                 // 목록은 통째로 갈아끼워져 커서·키보드 포커스 아래 행이 바뀐다 — 그 위에 있는 동안은 건너뛴다.
                 // 포커스는 :focus-visible만 본다: 글 제목을 마우스로 누르면 링크에 포커스가 남아 목록을 떠나도 계속 멈춘다
@@ -217,6 +233,8 @@ export default defineModule({
             loading = true;
             // 기다리는 동안 뒤로 가기/페이지 이동으로 originalLocation이 바뀔 수 있으니 요청한 주소를 고정
             const target = originalLocation;
+            const controller = new AbortController();
+            inflight = controller;
 
             const fail = (): false => {
                 failures++;
@@ -228,10 +246,22 @@ export default defineModule({
             try {
                 lastRefresh = Date.now();
 
-                // 자동 새로고침만 주기보다 짧게 끊는다 — 사용자가 한 이동은 느린 검색 결과도 기다린다 (timeout: undefined는 기본값을 덮으니 빼야 한다)
-                const response = await http.get(listUrl(target), force ? {} : {timeout: Number(ctx.settings.refreshRate) - 100}).text();
+                // 자동 새로고침만 주기보다 짧게 끊고 재시도하지 않는다 — 실패는 armNext가 주기를 늘려 받는다 (ky 재시도는 Retry-After를 끝없이 기다려 페이지 넘김까지 막는다).
+                // 사용자가 한 이동은 느린 검색 결과도 기다린다 (timeout: undefined는 기본값을 덮으니 빼야 한다)
+                const response = await http.get(listUrl(target), {
+                    signal: controller.signal,
+                    ...(force ? {} : {timeout: Number(ctx.settings.refreshRate) - 100, retry: 0})
+                }).text();
                 // 그 사이 주소가 바뀌었으면 지난 주소의 목록이라 버린다 — finally에서 새 주소로 다시 받는다
                 if (target !== originalLocation) return false;
+
+                // 목록이 그대로면 파싱·교체를 건너뛴다. 응답 전체는 요청마다 바뀌는 값(s_key)이 있어 tbody만 비교한다
+                const start = response.indexOf("<tbody");
+                const listHtml = start === -1 ? "" : response.slice(start, response.indexOf("</tbody>", start));
+                if (!customURL && listHtml && listHtml === lastListHtml) {
+                    failures = 0;
+                    return true;
+                }
 
                 const dom = new DOMParser().parseFromString(response, "text/html");
 
@@ -250,17 +280,20 @@ export default defineModule({
                 const searchType = new URL(target).searchParams.get("s_type");
 
                 const oldRows = Array.from(oldList.querySelectorAll<HTMLTableRowElement>(":scope > tr"));
-                const oldCacheSet = new Set(oldRows.map(rowKey));
+                const oldKeys = oldRows.map(rowKey);
+                const oldCacheSet = new Set(oldKeys);
 
                 const newRows = Array.from(newList.querySelectorAll<HTMLTableRowElement>(":scope > tr"));
+                const newKeys = newRows.map(rowKey);
                 const newPostList: HTMLTableRowElement[] = [];
 
                 // 관리자 목록은 머리에 체크박스 열이 있는데, 받아온 행엔 그 칸이 없다(디시 JS가 나중에 붙임) — 없으면 열이 한 칸씩 밀린다
                 const hasCheckboxColumn = Boolean(oldList.closest("table")?.querySelector("thead .chkbox_th"));
                 const checkboxCell = hasCheckboxColumn ? checkboxCellFactory(oldRows) : null;
 
-                for (const element of newRows) {
-                    const no = rowKey(element);
+                for (const [index, element] of newRows.entries()) {
+                    const no = newKeys[index]!;
+                    rawRows.set(element, element.outerHTML);
 
                     if (checkboxCell && !element.querySelector(".article_chkbox")) {
                         // 댓글 검색 결과에선 댓글 행에만 체크박스가 있다
@@ -296,7 +329,18 @@ export default defineModule({
 
                 // 미리보기 모듈의 삭제글 보존(archiveArticle)은 캐시에 이미 반영됨
 
-                oldList.replaceWith(newList);
+                // 행 순서가 같으면 바뀐 행(조회수 등)만 갈아끼운다 — 그대로인 행은 hover·리스너가 남는다.
+                // 검색 결과는 강조와 글·댓글 행 짝이 얽혀 통째로 바꾼다
+                const sameOrder = !customURL && !queryString("s_keyword") && oldKeys.length === newKeys.length && oldKeys.every((key, index) => key === newKeys[index]);
+                if (sameOrder) {
+                    for (const [index, row] of oldRows.entries()) {
+                        const next = newRows[index]!;
+                        if (rawRows.get(row) !== rawRows.get(next)) row.replaceWith(next);
+                    }
+                } else {
+                    oldList.replaceWith(newList);
+                }
+                lastListHtml = listHtml;
 
                 if (target === scrollAfter) {
                     scrollAfter = null;
@@ -307,10 +351,13 @@ export default defineModule({
 
                 return true;
             } catch (e) {
+                // 주소가 바뀌어 끊은 요청은 실패가 아니다 (파이어폭스에선 오류 종류로 가리기 어려워 신호로 본다)
+                if (controller.signal.aborted) return false;
                 console.error("Refresh failed:", e);
                 return fail();
             } finally {
                 loading = false;
+                inflight = null;
                 if (target !== originalLocation || rerun) {
                     rerun = false;
                     // 주소가 바뀐 건 사용자가 직접 이동한 것이라 그 주소를 넘겨 체크박스 가드를 건너뛰게 한다
@@ -319,7 +366,7 @@ export default defineModule({
             }
         };
 
-        // ===== 스케줄링: 즉시 1회 → 주기+지터 재귀 =====
+        // ===== 스케줄링: 주기+지터 재귀 (첫 요청도 한 주기 뒤 — 파싱 중인 목록을 곧바로 다시 받지 않는다) =====
         // 모듈을 끈 뒤 응답이 오면 armNext가 타이머를 다시 거는 것을 막는다
         let stopped = false;
         const armNext = (): void => {
@@ -333,8 +380,16 @@ export default defineModule({
             timer = window.setTimeout(() => void load().finally(armNext), interval + 500 + Math.random() * 1500);
         };
 
-        void load();
         armNext();
+
+        // 목록이 화면 가까이 돌아오면 쉬는 동안 밀린 목록을 바로 받는다
+        const listObserver = new IntersectionObserver((entries) => {
+            const wasNear = listNear;
+            listNear = entries.at(-1)?.isIntersecting ?? true;
+            if (listNear && !wasNear) void load();
+        }, {rootMargin: "800px"});
+        ctx.addFilter(".gall_listwrap", (element) => listObserver.observe(element));
+        ctx.addCleanup(() => listObserver.disconnect());
 
         const onVisibilityChange = (): void => {
             if (document.hidden) {
