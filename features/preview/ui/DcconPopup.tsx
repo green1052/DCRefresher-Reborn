@@ -9,6 +9,15 @@ import type {DcinsideDccon, DcinsideDcconDetail, DcinsideDcconDetailList} from "
 import {useUiStore} from "@/stores/ui";
 import {csrfToken} from "@/utils/cookie";
 
+/** 디시콘 목록 캐시 — 창을 닫았다 열어도 다시 받지 않는다. 페이지를 새로 열면 비고, 새로 산 디시콘이 보이도록 10분 뒤 만료 */
+const LIST_TTL = 10 * 60_000;
+const listCache = new Map<number, { list: DcinsideDcconDetailList[]; maxPage: number; at: number }>();
+
+const cachedList = (page: number) => {
+    const entry = listCache.get(page);
+    return entry && Date.now() - entry.at < LIST_TTL ? entry : undefined;
+};
+
 interface DcconPopupProps {
     onSelect: (dccons: DcinsideDccon[], bigDccon: boolean) => void;
     onClose: () => void;
@@ -17,8 +26,7 @@ interface DcconPopupProps {
 /** 디시콘 선택 팝업 */
 export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
     const [page, setPage] = useState(0);
-    const [maxPage, setMaxPage] = useState(1);
-    const [packages, setPackages] = useState<Record<number, DcinsideDcconDetailList[]>>({});
+    const [maxPage, setMaxPage] = useState(() => cachedList(0)?.maxPage ?? 1);
     const [activePackage, setActivePackage] = useState<string | null>(null);
     const [current, setCurrent] = useState<DcinsideDccon[]>([]);
     const [doubleDccon, setDoubleDccon] = useState(false);
@@ -34,9 +42,10 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
     };
 
     const getList = async (targetPage: number): Promise<void> => {
-        const cached = packages[targetPage];
+        const cached = cachedList(targetPage);
         if (cached) {
-            if (cached[0]) openPackage(cached[0]);
+            setMaxPage(cached.maxPage);
+            if (cached.list[0]) openPackage(cached.list[0]);
             setLoading(false);
             return;
         }
@@ -57,7 +66,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                 return;
             }
 
-            setPackages((prev) => ({...prev, [targetPage]: response.list}));
+            listCache.set(targetPage, {list: response.list, maxPage: response.max_page, at: Date.now()});
             setMaxPage(response.max_page);
             if (response.list[0]) openPackage(response.list[0]);
         } catch {
@@ -99,7 +108,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
         setSelected(next);
     };
 
-    const visible = packages[page] ?? [];
+    const visible = cachedList(page)?.list ?? [];
 
     return (
         <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
