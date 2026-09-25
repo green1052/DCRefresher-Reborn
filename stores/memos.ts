@@ -17,7 +17,7 @@ const isMemoEntry = (value: unknown): value is MemoEntry => {
     if (!value || typeof value !== "object") return false;
 
     const memo = value as Partial<MemoEntry>;
-    return typeof memo.text === "string" && typeof memo.color === "string";
+    return typeof memo.text === "string" && typeof memo.color === "string" && (memo.gallery === undefined || typeof memo.gallery === "string");
 };
 
 /** 저장소/가져오기 값 → 유효 항목만 */
@@ -49,10 +49,16 @@ export const useMemosStore = create<MemosState>((set, get) => ({
     }
 }));
 
-/** 유저에 달린 메모 (아이디 > IP > 닉네임 순) */
-export const findMemo = (user: { uid?: string; ip?: string; nick?: string }): MemoEntry | undefined => {
+/** 유저에 달린 메모 (아이디 > IP > 닉네임 순). 다른 갤러리 전용 메모는 건너뛴다 */
+export const findMemo = (user: { uid?: string; ip?: string; nick?: string }, gallery?: string | null): MemoEntry | undefined => {
     const {memos} = useMemosStore.getState();
-    return (user.uid && memos.UID[user.uid]) || (user.ip && memos.IP[user.ip]) || (user.nick && memos.NICK[user.nick]) || undefined;
+    const visible = (entry: MemoEntry | undefined): MemoEntry | undefined => (entry && (!entry.gallery || entry.gallery === gallery) ? entry : undefined);
+
+    return (
+        (user.uid ? visible(memos.UID[user.uid]) : undefined) ??
+        (user.ip ? visible(memos.IP[user.ip]) : undefined) ??
+        (user.nick ? visible(memos.NICK[user.nick]) : undefined)
+    );
 };
 
 let initialized: Promise<void> | null = null;

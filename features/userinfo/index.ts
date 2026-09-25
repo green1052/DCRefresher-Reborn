@@ -2,6 +2,7 @@ import {banReasonsOf, ipInfoOf} from "@/core/database";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingGroup} from "@/core/module/types";
 import {fetchGallogActivity} from "@/core/gallog";
+import {queryString} from "@/core/http/urls";
 import {eventBus} from "@/core/eventbus/bus";
 import type {JsonValue} from "@/core/storage/types";
 import {dbStorage} from "@/core/storage/items";
@@ -92,7 +93,7 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
         if (key === "UID") appendIdentity();
 
         if (key === "MEMO") {
-            const memo = findMemo({uid, ip, nick});
+            const memo = findMemo({uid, ip, nick}, queryString("id"));
             if (memo) badges.append(buildBadgeSpan(`[${memo.text}]`, memo.color || undefined, memo.text, "refresherUserData refresherMemoData"));
         }
 

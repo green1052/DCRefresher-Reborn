@@ -18,6 +18,8 @@ export interface BlockEntry {
 export interface MemoEntry {
     text: string;
     color: string;
+    /** 이 갤러리에서만 보이는 메모 (없으면 모든 갤러리) */
+    gallery?: string;
 }
 
 export interface StoredDB {

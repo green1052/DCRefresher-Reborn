@@ -1,7 +1,8 @@
-import {Button, Dialog, Flex, SegmentedControl, Text, TextField} from "@radix-ui/themes";
+import {Button, Checkbox, Dialog, Flex, SegmentedControl, Text, TextField} from "@radix-ui/themes";
 import {Shuffle} from "lucide-react";
 import {useEffect, useState} from "react";
 
+import {queryString} from "@/core/http/urls";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import type {MemoType} from "@/core/storage/types";
 import {useMemosStore} from "@/stores/memos";
@@ -23,12 +24,16 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const [type, setType] = useState<MemoType>(state.initialType);
     const [text, setText] = useState("");
     const [color, setColor] = useState(() => randomColor());
+    // 지금 보고 있는 갤러리 — 여기서만 보이는 메모로 저장할 수 있다
+    const gallery = queryString("id");
+    const [onlyHere, setOnlyHere] = useState(false);
 
     // 열릴 때/타입 전환시 기존 메모로 프리필
     useEffect(() => {
         const existing = memos[type][state.targets[type] ?? ""];
         setText(existing?.text ?? "");
         setColor(existing?.color ?? randomColor());
+        setOnlyHere(Boolean(existing?.gallery));
         // 타입 전환/마운트 시에만 적용
     }, [type]);
 
@@ -40,7 +45,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
             if (existing) await removeMemo(type, value);
             else showToast(`해당하는 ${MEMO_TYPE_NAMES[type]}을(를) 가진 사용자 메모가 없습니다.`, "error");
         } else {
-            await setMemo(type, value, {text, color});
+            await setMemo(type, value, {text, color, gallery: onlyHere && gallery ? gallery : undefined});
             showToast(`${MEMO_TYPE_NAMES[type]} ${value}에 메모를 추가했습니다.`);
         }
 
@@ -89,6 +94,15 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                         </Button>
                     </TextField.Slot>
                 </TextField.Root>
+
+                {gallery && (
+                    <Text as="label" size="2">
+                        <Flex gap="2" align="center">
+                            <Checkbox checked={onlyHere} onCheckedChange={(checked) => setOnlyHere(checked === true)}/>
+                            이 갤러리에서만 ({gallery})
+                        </Flex>
+                    </Text>
+                )}
             </Flex>
 
             <Flex gap="3" justify="end" mt="4">

@@ -17,6 +17,8 @@ interface MemoFormState {
     user: string;
     text: string;
     color: string;
+    /** 비우면 모든 갤러리 */
+    gallery: string;
 }
 
 const MemoFormDialog = ({
@@ -84,6 +86,17 @@ const MemoFormDialog = ({
                             onChange={(event) => setState((prev) => ({...prev, text: event.target.value}))}
                             onKeyDown={(event) => event.key === "Enter" && void submit()}
                             autoFocus
+                        />
+                    </label>
+
+                    <label>
+                        <Text as="div" size="2" color="gray" mb="1">
+                            갤러리
+                        </Text>
+                        <TextField.Root
+                            placeholder="갤러리 ID (비우면 모든 갤러리)"
+                            value={state.gallery}
+                            onChange={(event) => setState((prev) => ({...prev, gallery: event.target.value.trim()}))}
                         />
                     </label>
 
@@ -210,7 +223,7 @@ export function MemoTab() {
                                         onClick={() => setClearConfirm(type)}>
                                     <Trash2 size={14}/> 전체 삭제
                                 </Button>
-                                <Button onClick={() => setForm({type, user: "", text: "", color: randomColor()})}>
+                                <Button onClick={() => setForm({type, user: "", text: "", color: randomColor(), gallery: ""})}>
                                     <Plus size={14}/> 추가
                                 </Button>
                             </Flex>
@@ -232,13 +245,14 @@ export function MemoTab() {
                                                 key={user}
                                                 align="center"
                                                 style={{cursor: "pointer"}}
-                                                onClick={() => setForm({type, user, text: entry.text, color: entry.color})}
+                                                onClick={() => setForm({type, user, text: entry.text, color: entry.color, gallery: entry.gallery ?? ""})}
                                             >
                                                 <Table.RowHeaderCell>
                                                     <Flex align="center" gap="2">
                                                         <Box width="10px" height="10px" flexShrink="0"
                                                              style={{borderRadius: "50%", background: entry.color}}/>
                                                         <Text weight="medium">{user}</Text>
+                                                        {entry.gallery && <Badge size="1" variant="soft" color="gray">{entry.gallery}</Badge>}
                                                     </Flex>
                                                 </Table.RowHeaderCell>
                                                 <Table.Cell>
@@ -272,7 +286,7 @@ export function MemoTab() {
                 <MemoFormDialog
                     initial={form}
                     onClose={() => setForm(null)}
-                    onSubmit={(next) => setMemo(next.type, next.user, {text: next.text, color: next.color})}
+                    onSubmit={(next) => setMemo(next.type, next.user, {text: next.text, color: next.color, gallery: next.gallery || undefined})}
                 />
             )}
 
