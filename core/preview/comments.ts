@@ -1,4 +1,5 @@
 import {isAnyBlocked} from "@/core/block";
+import {sanitizeHtml} from "@/utils/sanitize";
 import type {ModuleContext} from "@/core/module/types";
 
 import {restoreArchive, setEntry} from "./cache";
@@ -12,10 +13,7 @@ export interface ProcessedComment extends DcinsideComment {
 const GALLOG_DCCON = /dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/;
 
 const cleanMemo = (memo: string): string =>
-    memo
-        .replace(/data-dcconoverstatus="?\w+"?/g, "data-dcconoverstatus=\"true\"")
-        .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*')/g, "")
-        .replace(/\sstyle\s*=\s*("[^"]*"|'[^']*')/g, "");
+    sanitizeHtml(memo.replace(/data-dcconoverstatus="?\w+"?/g, "data-dcconoverstatus=\"true\""));
 
 const extractVoice = (memo: string): { memo: string; voice?: { src: string } } | undefined => {
     if (!memo.includes("@^dc^@")) return;
@@ -42,9 +40,11 @@ export const processComments = (
     // 댓글돌이(COMMENT_BOY) 제거
     list = list.filter((comment) => String(comment.nicktype) !== "COMMENT_BOY");
 
-    // 속성 정리
+    // 음성 분리 후 정제 — 음성 URL은 정제(재직렬화)하면 &가 &amp;로 바뀌므로 먼저 떼어낸다
     for (const comment of list) {
-        comment.memo = cleanMemo(String(comment.memo ?? ""));
+        const voice = extractVoice(String(comment.memo ?? ""));
+        if (voice) comment.voice = voice.voice;
+        comment.memo = cleanMemo(voice?.memo ?? String(comment.memo ?? ""));
     }
 
     // 차단: 내용 치환 + is_delete (행 제거 대신)
@@ -68,16 +68,8 @@ export const processComments = (
         if (!blocked) continue;
 
         comment.memo = "댓글 내용이 차단됐습니다.";
+        comment.voice = undefined;
         comment.is_delete = "1";
-    }
-
-    // 음성 분리
-    for (const comment of list) {
-        const voice = extractVoice(comment.memo);
-        if (voice) {
-            comment.memo = voice.memo;
-            comment.voice = voice.voice;
-        }
     }
 
     // 아카이브 마킹 저장

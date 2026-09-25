@@ -1,5 +1,7 @@
-import type {PostInfo} from "./types";
+import {sanitizeHtml} from "@/utils/sanitize";
 import {getType} from "@/utils/user";
+
+import type {PostInfo} from "./types";
 
 /** 본문 이미지의 data-original 복원 (DC지연로딩) */
 const restoreImageSources = (dom: Document): void => {
@@ -53,7 +55,7 @@ export const parsePostInfo = (html: string, id: string): PostInfo | undefined =>
     return {
         id,
         header,
-        title: strip(dom.querySelector<HTMLElement>(".title_subject")?.innerHTML?.replace(/<script[\s\S]*?<\/script>/g, "")),
+        title: strip(sanitizeHtml(dom.querySelector<HTMLElement>(".title_subject")?.innerHTML ?? "")),
         date: strip(dom.querySelector<HTMLElement>(".fl > .gall_date")?.textContent),
         expire: strip(
             dom.querySelector<HTMLElement>(".view_content_wrap div.fl > span.mini_autodeltime > div.pop_tipbox > div")?.textContent,

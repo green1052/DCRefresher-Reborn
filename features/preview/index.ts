@@ -5,6 +5,7 @@ import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
 import type {DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 import {isTyping} from "@/utils/event";
+import {sanitizeHtml} from "@/utils/sanitize";
 
 import {getEntry, setEntry} from "@/core/preview/cache";
 import {processComments} from "@/core/preview/comments";
@@ -146,13 +147,6 @@ const controller = (ctx: ModuleContext) => {
 
     const galName = (): string => document.querySelector("h1")?.textContent?.trim() || "디시인사이드";
 
-    // 인라인 이벤트 핸들러/style 제거 (본문+미니 공용)
-    const sanitizeContents = (raw: string): string =>
-        raw
-            .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*')/g, "")
-            .replace(/\sstyle\s*=\s*("[^"]*"|'[^']*')/g, "")
-            .replaceAll("<video", "<video controls");
-
     const processContents = (preData: GalleryPreData, postInfo: PostInfo): PostInfo => {
         const raw = postInfo.contents ?? "";
 
@@ -160,7 +154,7 @@ const controller = (ctx: ModuleContext) => {
             return {...postInfo, contents: "게시글 내용이 차단됐습니다."};
         }
 
-        return {...postInfo, contents: sanitizeContents(raw)};
+        return {...postInfo, contents: sanitizeHtml(raw)};
     };
 
     const applyComments = (preData: GalleryPreData, raw: DcinsideComment[]) => {
@@ -415,11 +409,8 @@ const controller = (ctx: ModuleContext) => {
         let contents = post.contents ?? "";
         if (isAnyBlocked({TEXT: contents.replace(/<[^>]+>/g, " ").trim()}, preData.gallery)) {
             contents = "게시글 내용이 차단됐습니다.";
-        } else if (ctx.settings.tooltipMediaHide === true) {
-            contents = contents.replace(/<(img|video|iframe|audio|embed|source)[^>]*>/g, "").replace(/<\/(video|iframe|audio|source)>/g, "");
         } else {
-            // 본문과 동일한 정제 적용
-            contents = sanitizeContents(contents);
+            contents = sanitizeHtml(contents, {stripMedia: ctx.settings.tooltipMediaHide === true});
         }
 
         lastMiniAt = Date.now();

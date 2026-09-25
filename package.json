@@ -18,6 +18,7 @@
         "@radix-ui/themes": "^3.3.0",
         "@webext-core/messaging": "^4.0.0",
         "@wxt-dev/webextension-polyfill": "^1.0.0",
+        "dompurify": "^3.4.16",
         "emittery": "^2.0.0",
         "ky": "^2.1.0",
         "lru-cache": "^11.5.3",
