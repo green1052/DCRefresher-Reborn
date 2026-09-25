@@ -143,9 +143,8 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
     };
 
     const isDccon = /<(img|video) class=/.test(comment.memo);
-    const html = isDccon
-        ? comment.memo.replace(/(?<!(dc|<))img/gi, "/><img")
-        : comment.memo.replace(/\n/g, "<br/>");
+    // 붙어 온 디시콘 태그는 comments.ts에서 이미 떼어 놓았다
+    const html = isDccon ? comment.memo : comment.memo.replace(/\n/g, "<br/>");
 
     return (
         <Box className="refresher-comment" data-depth={depth} data-deleted={isDeleted || undefined}

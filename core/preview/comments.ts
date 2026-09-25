@@ -12,8 +12,11 @@ export interface ProcessedComment extends DcinsideComment {
 
 const GALLOG_DCCON = /dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/;
 
+/** 디시콘 2개짜리 댓글은 태그가 `…"img class="written_dccon`처럼 `><` 없이 붙어 온다 — 정화하면 두 번째가 속성으로 먹히므로 먼저 떼어 놓는다 */
+const splitDccons = (memo: string): string => memo.replace(/"\s*(img|video) class="written_dccon/g, "\"><$1 class=\"written_dccon");
+
 const cleanMemo = (memo: string): string =>
-    sanitizeHtml(memo.replace(/data-dcconoverstatus="?\w+"?/g, "data-dcconoverstatus=\"true\""));
+    sanitizeHtml(splitDccons(memo).replace(/data-dcconoverstatus="?\w+"?/g, "data-dcconoverstatus=\"true\""));
 
 const extractVoice = (memo: string): { memo: string; voice?: { src: string } } | undefined => {
     if (!memo.includes("@^dc^@")) return;
