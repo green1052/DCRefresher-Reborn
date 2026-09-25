@@ -1,7 +1,7 @@
 import {Badge, Box, Button, Callout, Flex, Heading, IconButton, Separator, Spinner, Text, Theme, Tooltip} from "@radix-ui/themes";
-import {CircleAlert, Clock, ExternalLink, Eye, ThumbsDown, ThumbsUp} from "lucide-react";
+import {ArrowUp, CircleAlert, Clock, ExternalLink, Eye, MessageSquare, ThumbsDown, ThumbsUp} from "lucide-react";
 import {Dialog} from "radix-ui";
-import {Fragment, useEffect, useState} from "react";
+import {Fragment, useEffect, useRef, useState} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
 import {captchaImage, vote} from "@/core/preview/request";
@@ -167,6 +167,8 @@ export const Frame = () => {
     const comments = usePreviewStore((s) => s.comments);
     const commentsOnly = usePreviewStore((s) => s.commentsOnly);
     const imageBlocked = usePreviewStore((s) => s.imageBlocked);
+    const scroller = useRef<HTMLDivElement>(null);
+    const commentsSection = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!visible) return;
@@ -247,6 +249,8 @@ export const Frame = () => {
                     // 바깥 클릭 닫기는 배경(frame-outer)이 담당. 위에 뜬 팝업/버블 클릭으로 닫히지 않게 막는다
                     onInteractOutside={(event) => event.preventDefault()}
                 >
+                    {/* 스크롤은 안쪽에서 — 바깥이 스크롤되면 스크롤바가 오른쪽 둥근 모서리를 덮는다 */}
+                    <div className="refresher-frame-scroll" ref={scroller}>
                     <Box px="6" pt="5" pb="3">
                         <Dialog.Title asChild>
                             <Heading as="h2" size="6" dangerouslySetInnerHTML={{__html: title}}/>
@@ -302,7 +306,7 @@ export const Frame = () => {
                     </Box>
 
                     {comments !== undefined && (
-                        <>
+                        <Box ref={commentsSection} style={{scrollMarginTop: 0}}>
                             <Separator size="4"/>
                             <Box px="6" pt="3">
                                 <Text size="2" color="gray">{subtitle}</Text>
@@ -312,10 +316,28 @@ export const Frame = () => {
                             ) : (
                                 <CommentList/>
                             )}
-                        </>
+                        </Box>
                     )}
 
                     {post && <WriteComment/>}
+                    </div>
+
+                    <Flex direction="column" gap="2" className="refresher-frame-jump">
+                        <Tooltip content="맨 위로" side="left" container={overlay.portal}>
+                            <IconButton variant="soft" color="gray" radius="full" aria-label="맨 위로"
+                                        onClick={() => scroller.current?.scrollTo({top: 0, behavior: "smooth"})}>
+                                <ArrowUp size={16}/>
+                            </IconButton>
+                        </Tooltip>
+                        {comments !== undefined && (
+                            <Tooltip content="댓글로" side="left" container={overlay.portal}>
+                                <IconButton variant="soft" color="gray" radius="full" aria-label="댓글로"
+                                            onClick={() => commentsSection.current?.scrollIntoView({behavior: "smooth", block: "start"})}>
+                                    <MessageSquare size={16}/>
+                                </IconButton>
+                            </Tooltip>
+                        )}
+                    </Flex>
                 </Dialog.Content>
                 </Theme>
             </Dialog.Portal>

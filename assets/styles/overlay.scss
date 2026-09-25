@@ -79,8 +79,7 @@
     flex-direction: column;
     width: min(1000px, 96vw);
     max-height: 88vh;
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    overflow: hidden;
     border-radius: var(--radius-5);
     background: var(--color-panel-solid);
     box-shadow: var(--shadow-6);
@@ -94,6 +93,22 @@
         pointer-events: none;
         animation: refresher-fade-out 0.15s forwards;
     }
+}
+
+.refresher-frame-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--gray-a8) transparent;
+}
+
+/* 맨 위로 / 댓글로 */
+.refresher-frame-jump {
+    position: absolute;
+    right: var(--space-4);
+    bottom: var(--space-4);
 }
 
 /* ===== 디시 본문/댓글 HTML (페이지 CSS가 안 닿으므로 최소한만) ===== */
