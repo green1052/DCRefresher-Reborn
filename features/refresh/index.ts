@@ -152,11 +152,12 @@ export default defineModule({
         let loading = false;
         let timer = 0;
         let originalLocation = location.href;
-        let calledByPageTurn = false;
         // 강제 로드가 진행 중인 요청에 막혔을 때 끝난 뒤 한 번 더 받기 위한 표시
         let rerun = false;
         // 연달아 실패한 목록 요청 수 — 자동 새로고침 주기를 이만큼 두 배씩 늘린다
         let failures = 0;
+        // 페이지를 넘긴 주소 — 그 목록으로 갈아끼운 직후 목록 위로 올린다 (진행 중인 요청에 막혀 나중에 받아도)
+        let scrollAfter: string | null = null;
 
         // 제어 버튼
         let button: HTMLButtonElement | null = null;
@@ -217,12 +218,18 @@ export default defineModule({
             // 기다리는 동안 뒤로 가기/페이지 이동으로 originalLocation이 바뀔 수 있으니 요청한 주소를 고정
             const target = originalLocation;
 
+            const fail = (): false => {
+                failures++;
+                // 사용자가 한 이동·새로고침은 실패하면 주소만 바뀌고 목록은 그대로라 알린다
+                if (force) useUiStore.getState().showToast("글 목록을 불러오지 못했습니다.", "error");
+                return false;
+            };
+
             try {
                 lastRefresh = Date.now();
 
-                const response = await http.get(listUrl(target), {
-                    timeout: Number(ctx.settings.refreshRate) - 100
-                }).text();
+                // 자동 새로고침만 주기보다 짧게 끊는다 — 사용자가 한 이동은 느린 검색 결과도 기다린다 (timeout: undefined는 기본값을 덮으니 빼야 한다)
+                const response = await http.get(listUrl(target), force ? {} : {timeout: Number(ctx.settings.refreshRate) - 100}).text();
                 // 그 사이 주소가 바뀌었으면 지난 주소의 목록이라 버린다 — finally에서 새 주소로 다시 받는다
                 if (target !== originalLocation) return false;
 
@@ -237,10 +244,7 @@ export default defineModule({
                 if (paging && currentPaging && paging.innerHTML !== currentPaging.innerHTML) currentPaging.innerHTML = paging.innerHTML;
 
                 // 목록 없는 응답(오류·차단 안내 페이지)도 실패로 쳐서 주기를 늘린다
-                if (!oldList || !newList) {
-                    failures++;
-                    return false;
-                }
+                if (!oldList || !newList) return fail();
                 failures = 0;
 
                 const searchType = new URL(target).searchParams.get("s_type");
@@ -281,12 +285,12 @@ export default defineModule({
                     highlightSearchResults(newList, searchValue);
                 }
 
-                if (calledByPageTurn) {
-                    calledByPageTurn = false;
-                } else if (ctx.settings.fadeIn) {
+                // 주소를 바꾼 로드(페이지 넘김·뒤로 가기)는 다른 목록이라 새 글 효과를 넣지 않는다
+                if (!customURL && ctx.settings.fadeIn) {
                     for (const [index, element] of newPostList.entries()) {
                         element.classList.add("refresherNewPost");
-                        element.style.animationDelay = `${(newPostList.length - index) * 50}ms`;
+                        // 새 행이 많아도 마지막 행이 한참 뒤에 나타나지 않게 지연에 상한을 둔다
+                        element.style.animationDelay = `${Math.min(newPostList.length - index, 10) * 50}ms`;
                     }
                 }
 
@@ -294,13 +298,17 @@ export default defineModule({
 
                 oldList.replaceWith(newList);
 
+                if (target === scrollAfter) {
+                    scrollAfter = null;
+                    document.querySelector(isViewPage ? ".view_bottom_btnbox" : ".page_head")?.scrollIntoView({behavior: "smooth", block: "start"});
+                }
+
                 if (newPostList.length > 0) eventBus.emit("newPostList", newPostList);
 
                 return true;
             } catch (e) {
                 console.error("Refresh failed:", e);
-                failures++;
-                return false;
+                return fail();
             } finally {
                 loading = false;
                 if (target !== originalLocation || rerun) {
@@ -338,9 +346,11 @@ export default defineModule({
             armNext();
         };
 
-        // 뒤로/앞으로 가기 — 인페이지 전환으로 쌓인 주소의 목록으로 되돌린다
+        // 뒤로/앞으로 가기 — 인페이지 전환으로 쌓인 주소의 목록으로 되돌린다.
+        // 미리보기가 쌓은 글 주소를 오가는 것은 같은 목록이다 — 다시 받으면 고르던 체크가 풀리고 일시정지를 무시한다
         const onPopState = (): void => {
-            calledByPageTurn = true;
+            if (listUrl(location.href) === listUrl(originalLocation)) return;
+
             window.clearTimeout(timer);
             void load(location.href, true);
             armNext();
@@ -375,17 +385,12 @@ export default defineModule({
 
             ev.preventDefault();
 
-            const newUrl = isViewPage ? mergeParamURL(location.href, anchor.href) : anchor.href;
+            const newUrl = new URL(isViewPage ? mergeParamURL(location.href, anchor.href) : anchor.href, location.href).href;
+            // 지금 페이지를 다시 누르면 기록을 쌓지 않는다
+            if (newUrl !== location.href) history.pushState(null, document.title, newUrl);
 
-            history.pushState(null, document.title, newUrl);
-            calledByPageTurn = true;
-
-            void (async () => {
-                if (!(await load(location.href, true))) return;
-
-                const scrollTarget = document.querySelector(isViewPage ? ".view_bottom_btnbox" : ".page_head");
-                scrollTarget?.scrollIntoView({behavior: "smooth", block: "start"});
-            })();
+            scrollAfter = newUrl;
+            void load(newUrl, true);
         };
 
         document.addEventListener("click", onPagingClick);

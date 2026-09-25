@@ -45,10 +45,16 @@ const GALLERY_TYPE_NAMES: Record<string, string> = {"": "G", "mgallery/": "M", "
 /** 댓글/관리 요청의 _GALLTYPE_ 코드 (G, M, MI, PR) */
 export const galleryTypeName = (url: string): string => GALLERY_TYPE_NAMES[galleryPath(url)] ?? "G";
 
-/** 게시글/목록 URL → 같은 갤러리·쿼리의 목록 URL (no 제거) */
+/**
+ * 게시글/목록 URL → 같은 갤러리·쿼리의 목록 URL. 같은 목록이면 같은 문자열이 되게 글 보기 전용 값(no, t)과 page=1을 빼고 정렬한다
+ * (미리보기가 쌓은 글 주소도 원래 목록과 같게 나온다)
+ */
 export const listUrl = (url: string): string => {
     const queries = new URL(url).searchParams;
     queries.delete("no");
+    queries.delete("t");
+    queries.delete("page", "1");
+    queries.sort();
     return `${urls.base}${galleryPath(url)}board/lists?${queries}`;
 };
 
