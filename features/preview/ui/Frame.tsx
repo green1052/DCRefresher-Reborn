@@ -245,10 +245,17 @@ export const Frame = () => {
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
     const contentsBox = useRef<HTMLDivElement>(null);
+    // 본문 차단: 숨김이면 '가린 내용 보기' 동안만 원문을 흐리게 보인다 (overlay.scss의 data-blocked)
+    const hideText = post?.textBlocked === "hide" && !blockView?.revealed;
 
     // 본문 칸은 댓글만 보기·오류·닫힘일 때 빠졌다가 다시 붙고, 글마다 새로 마운트된다 — 그때도 다시 맞춘다
-    // (같은 글을 캐시로 다시 열면 나머지 값이 모두 같아 visible이 없으면 다시 돌지 않는다)
-    useEffect(() => (contentsBox.current ? fitMovies(contentsBox.current) : undefined), [visible, contents, commentsOnly, error, postKey]);
+    // (같은 글을 캐시로 다시 열면 나머지 값이 모두 같아 visible이 없으면 다시 돌지 않는다). 가린 본문을 드러내면 동영상이 새로 들어온다
+    useEffect(() => (contentsBox.current ? fitMovies(contentsBox.current) : undefined), [visible, contents, commentsOnly, error, postKey, hideText]);
+
+    // 열거나 글을 바꾸면 스크롤 칸에 포커스 — 방향키·스페이스로 바로 스크롤된다
+    useEffect(() => {
+        if (visible) scroller.current?.focus({preventScroll: true});
+    }, [visible, postKey]);
 
     useEffect(() => {
         if (!visible) return;
@@ -288,8 +295,21 @@ export const Frame = () => {
         if (!scrollToSkip || ev.deltaY === 0 || ev.ctrlKey || ev.shiftKey) return;
 
         const box = ev.currentTarget;
+        const target = ev.target as Element;
+        // 포털로 뜬 창(디시콘 등)의 휠도 React 트리를 타고 여기로 온다 — 스크롤 칸 안에서 난 것만 본다
+        if (!box.contains(target)) return;
+
         const dir = ev.deltaY > 0 ? 1 : -1;
-        const atEdge = dir > 0 ? box.scrollTop + box.clientHeight >= box.scrollHeight - 2 : box.scrollTop <= 0;
+        const canScroll = (el: Element): boolean => (dir > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 2 : el.scrollTop > 0);
+        // 안쪽 스크롤 칸(댓글 입력칸 등)이 아직 굴러가면 그쪽 스크롤이다
+        let inner = false;
+        for (let el: Element | null = target; el && el !== box; el = el.parentElement) {
+            if (el.scrollHeight > el.clientHeight && /auto|scroll/.test(getComputedStyle(el).overflowY) && canScroll(el)) {
+                inner = true;
+                break;
+            }
+        }
+        const atEdge = !inner && !canScroll(box);
         const state = wheel.current;
         const newGesture = ev.timeStamp - state.last > WHEEL_GESTURE_GAP;
         state.last = ev.timeStamp;
@@ -308,8 +328,6 @@ export const Frame = () => {
     if (!visible && !fading) return null;
 
     const busy = !error && !post;
-    // 본문 차단: 숨김이면 '가린 내용 보기' 동안만 원문을 흐리게 보인다 (overlay.scss의 data-blocked)
-    const hideText = post?.textBlocked === "hide" && !blockView?.revealed;
 
     return (
         // Themes Dialog는 항상 modal이라 프리미티브를 쓴다 (스크롤 잠금·PageUp/Down 이동을 직접 처리)
@@ -351,7 +369,7 @@ export const Frame = () => {
                     {/* 스크롤은 안쪽에서 — 바깥이 스크롤되면 스크롤바가 오른쪽 둥근 모서리를 덮는다 */}
                     {/* 글마다 새로 마운트 — 캐시 hit이면 한 번에 렌더돼 스크롤 위치와 쓰던 댓글이 다음 글로 넘어간다.
                         signalId는 닫을 때도 올라 페이드아웃 중에 맨 위로 튀므로 글 주소로 건다 */}
-                    <div className="refresher-frame-scroll" ref={scroller} key={postKey} onWheel={onWheel}>
+                    <div className="refresher-frame-scroll" ref={scroller} key={postKey} tabIndex={-1} onWheel={onWheel}>
                     <Box px="6" pt="5" pb="3">
                         <Dialog.Title asChild>
                             <Heading as="h2" size="6">{post ? postTitle(post) : ""}</Heading>
@@ -377,13 +395,14 @@ export const Frame = () => {
                     <Separator size="4"/>
 
                     <Box px="6" pt="5">
-                        {commentsOnly ? (
+                        {/* 오류가 먼저 — 댓글만 보기에서도 본문을 못 받았으면 알린다 */}
+                        {error ? (
+                            <ErrorBlock error={error}/>
+                        ) : commentsOnly ? (
                             <Button variant="soft" color="gray" style={{width: "100%"}} mb="5"
                                     onClick={() => usePreviewStore.setState({commentsOnly: false})}>
                                 댓글만 표시 중입니다. 눌러서 원문 보기
                             </Button>
-                        ) : error ? (
-                            <ErrorBlock error={error}/>
                         ) : (
                             <>
                                 <Box

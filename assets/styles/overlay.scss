@@ -119,6 +119,8 @@
     overscroll-behavior: contain;
     scrollbar-width: thin;
     scrollbar-color: var(--gray-a8) transparent;
+    // 키보드 스크롤용 포커스(tabIndex -1) — 테두리는 그리지 않는다
+    outline: none;
 }
 
 /* 맨 위로 / 댓글로 */
