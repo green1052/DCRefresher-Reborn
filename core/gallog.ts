@@ -14,8 +14,8 @@ export const fetchGallogActivity = async (uid: string): Promise<GallogActivity |
         body: new URLSearchParams({ci_t: await csrfToken(), user_id: uid})
     }).text();
 
-    const [article, comment] = text.split(",").map(Number);
-    if (article === undefined || comment === undefined || Number.isNaN(article) || Number.isNaN(comment)) return undefined;
+    const [article = NaN, comment = NaN] = text.split(",").map(Number);
+    if (!Number.isFinite(article) || !Number.isFinite(comment)) return undefined;
 
     return {article, comment};
 };

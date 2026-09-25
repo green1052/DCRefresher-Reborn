@@ -1,7 +1,7 @@
 import {eventBus} from "@/core/eventbus/bus";
 import {addFilter} from "@/core/filtering";
-import {moduleDataStorage, moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
-import type {JsonValue, SettingValue} from "@/core/storage/types";
+import {moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
+import type {SettingValue} from "@/core/storage/types";
 
 import {areEqual, normalizeSetting} from "./settings";
 import type {ModuleContext, ModuleDefinition} from "./types";
@@ -9,7 +9,6 @@ import type {ModuleContext, ModuleDefinition} from "./types";
 interface ModuleInstance {
     def: ModuleDefinition;
     settings: Record<string, SettingValue>;
-    data: Record<string, JsonValue>;
     /** 실행 중일 때만 존재 */
     running?: { ctx: ModuleContext; disposers: (() => void)[]; api?: unknown };
 }
@@ -25,9 +24,7 @@ const start = async (instance: ModuleInstance): Promise<void> => {
 
     const disposers: (() => void)[] = [];
     const ctx: ModuleContext = {
-        id: instance.def.id,
         settings: instance.settings,
-        data: instance.data,
         bus: eventBus,
         addFilter: (scope, callback) => {
             const dispose = addFilter(scope, callback);
@@ -70,24 +67,10 @@ const applySettings = (instance: ModuleInstance, stored: Record<string, unknown>
     }
 };
 
-/** 모듈 영속 데이터 — 속성을 바꾸면 바로 저장되는 Proxy */
-const persistentData = async (id: string): Promise<Record<string, JsonValue>> => {
-    const item = moduleDataStorage(id);
-    const save = <T>(result: T, target: Record<string, JsonValue>): T => {
-        void item.setValue(target);
-        return result;
-    };
-
-    return new Proxy((await item.getValue()) ?? {}, {
-        set: (target, property, value, receiver) => save(Reflect.set(target, property, value, receiver), target),
-        deleteProperty: (target, property) => save(Reflect.deleteProperty(target, property), target)
-    });
-};
-
 const register = async (def: ModuleDefinition, enable: boolean): Promise<void> => {
     if (instances.has(def.id)) throw new Error(`${def.id} is already registered.`);
 
-    const instance: ModuleInstance = {def, settings: {}, data: await persistentData(def.id)};
+    const instance: ModuleInstance = {def, settings: {}};
     instances.set(def.id, instance);
 
     // 설정은 옵션 페이지가 저장소에 직접 쓰고, 여기서 감시해 반영한다
@@ -105,6 +88,17 @@ export const runShortcut = (command: string): void => {
     for (const {def, running} of instances.values()) {
         const shortcut = def.shortcuts?.[command];
         if (shortcut && running) void shortcut(running.ctx, running.api);
+    }
+};
+
+/** 모든 모듈 중지 (콘텐츠 스크립트 컨텍스트가 무효화됐을 때) — 한 모듈이 실패해도 나머지는 멈춘다 */
+export const stopAll = (): void => {
+    for (const instance of instances.values()) {
+        try {
+            stop(instance);
+        } catch (error) {
+            console.error(error);
+        }
     }
 };
 

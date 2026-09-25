@@ -1,5 +1,5 @@
 import type {ModuleEventData} from "@/core/eventbus/types";
-import type {JsonValue, SettingValue} from "@/core/storage/types";
+import type {SettingValue} from "@/core/storage/types";
 import type Emittery from "emittery";
 
 /** 설정 묶음 — 같은 객체를 group으로 가진 연속된 설정을 옵션 화면에서 한 칸에 모아 보여준다 (값은 설정마다 따로) */
@@ -27,12 +27,8 @@ export type SettingSchema = { group?: SettingGroup } & (
 );
 
 export interface ModuleContext {
-    /** 모듈 id */
-    id: string;
     /** 현재 모듈의 설정값 (live, 읽기 전용) */
     settings: Readonly<Record<string, SettingValue>>;
-    /** 모듈 영속 데이터 (Proxy, 변경시 즉시 저장) */
-    data: Record<string, JsonValue>;
     /** 모듈 간 이벤트 버스 */
     bus: Emittery<ModuleEventData>;
 

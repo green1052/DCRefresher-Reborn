@@ -1,11 +1,11 @@
 import {banReasonsOf, ipInfoOf} from "@/core/database";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingGroup} from "@/core/module/types";
-import {fetchGallogActivity} from "@/core/gallog";
+import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
 import {queryString} from "@/core/http/urls";
 import {eventBus} from "@/core/eventbus/bus";
 import type {JsonValue} from "@/core/storage/types";
-import {dbStorage} from "@/core/storage/items";
+import {dbStorage, moduleDataStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";
 import {useUiStore} from "@/stores/ui";
 import {getType} from "@/utils/user";
@@ -39,6 +39,13 @@ const colorsOf = (ctx: ModuleContext): Record<string, string> =>
 
 const asRatios = (value: JsonValue | undefined): Record<string, RatioInfo> => (value ?? {}) as unknown as Record<string, RatioInfo>;
 
+/** 글댓비 캐시 ({ratio: {uid: RatioInfo}}) — 다른 탭의 쓰기·개발자 탭의 캐시 비우기를 watch로 받는다 */
+const ratioStorage = moduleDataStorage("userinfo");
+let ratios: Record<string, RatioInfo> = {};
+
+/** 글댓비 캐시는 1시간만 쓴다 */
+const isFresh = (info?: RatioInfo): info is RatioInfo => info !== undefined && Date.now() - info.date <= 3600_000;
+
 const buildBadgeSpan = (text: string, color?: string, title?: string, className = "refresherUserData"): HTMLElement => {
     const span = document.createElement("span");
     span.className = className;
@@ -57,13 +64,12 @@ const makeRatioSpan = (info: RatioInfo, alarmRatio: number, colors: Record<strin
 const makePermBanSpan = (reasons: string, color: string): HTMLElement =>
     buildBadgeSpan(`[${reasons}]`, color, reasons, "ip permBan refresherUserData");
 
-const fetchRatio = async (uid: string): Promise<RatioInfo | undefined> => {
-    const activity = await fetchGallogActivity(uid);
-    return activity && {...activity, date: Date.now()};
-};
-
 const process = (ctx: ModuleContext, element: HTMLElement): void => {
     if (element.dataset.refresherUserInfo === "1") return;
+
+    // 작성자마다 불리고 rebuildAll로 페이지 전체가 다시 도므로 호출 안에서 안 바뀌는 값은 한 번만 만든다
+    const colors = colorsOf(ctx);
+    const gallery = queryString("id");
 
     const {nick, uid, ip} = element.dataset;
     const badges = document.createElement("span");
@@ -79,13 +85,13 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
 
             const show = isFixed ? ctx.settings.showFixedNickUID === true : isHalfFixed ? ctx.settings.showHalfFixedNickUID === true : true;
 
-            if (show) badges.append(buildBadgeSpan(`(${uid})`, colorsOf(ctx).uid, uid, "ip refresherUserData"));
+            if (show) badges.append(buildBadgeSpan(`(${uid})`, colors.uid, uid, "ip refresherUserData"));
             return;
         }
 
         if (ip && ctx.settings.showIpInfo === true) {
             const info = ipInfoOf(ip);
-            if (info) badges.append(buildBadgeSpan(`[${info.label}]`, colorsOf(ctx)[info.category], info.title));
+            if (info) badges.append(buildBadgeSpan(`[${info.label}]`, colors[info.category], info.title));
         }
     };
 
@@ -93,20 +99,20 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
         if (key === "UID") appendIdentity();
 
         if (key === "MEMO") {
-            const memo = findMemo({uid, ip, nick}, queryString("id"));
+            const memo = findMemo({uid, ip, nick}, gallery);
             if (memo) badges.append(buildBadgeSpan(`[${memo.text}]`, memo.color || undefined, memo.text, "refresherUserData refresherMemoData"));
         }
 
         if (key === "RATIO" && uid && ctx.settings.checkRatio === true) {
-            const cached = asRatios(ctx.data.ratio)[uid];
-            if (cached && Date.now() - cached.date <= 3600_000) {
-                badges.append(makeRatioSpan(cached, Number(ctx.settings.alarmRatio), colorsOf(ctx)));
+            const cached = ratios[uid];
+            if (isFresh(cached)) {
+                badges.append(makeRatioSpan(cached, Number(ctx.settings.alarmRatio), colors));
             }
         }
 
         if (key === "PERMBAN" && uid && ctx.settings.checkPermBan === true) {
             const reasons = banReasonsOf(uid);
-            if (reasons) badges.append(makePermBanSpan(reasons, colorsOf(ctx).permBan!));
+            if (reasons) badges.append(makePermBanSpan(reasons, colors.permBan!));
         }
     }
 
@@ -117,18 +123,18 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
 };
 
 /** 미리보기 댓글도 같은 색을 쓰게 공유 */
-const publishBadgeColors = (ctx: ModuleContext): void =>
+const publishBadgeColors = (ctx: ModuleContext): void => {
+    const colors = colorsOf(ctx);
     useUiStore.setState({
         badgeColors: {
-            ...colorsOf(ctx),
+            ...colors,
             // 갱차 조회를 끄면 미리보기에서도 숨긴다
-            permBan: ctx.settings.checkPermBan === true ? colorsOf(ctx).permBan : undefined
+            permBan: ctx.settings.checkPermBan === true ? colors.permBan : undefined
         }
     });
+};
 
 const rebuildAll = (ctx: ModuleContext): void => {
-    publishBadgeColors(ctx);
-
     // 배지가 없던 작성자도 포함 — 설정을 켜서 새로 생기는 배지가 있다 (필터 선택자와 같은 대상)
     for (const element of document.querySelectorAll<HTMLElement>(".ub-writer:not([user_name])")) {
         delete element.dataset.refresherUserInfo;
@@ -200,8 +206,13 @@ export default defineModule({
         }
     },
 
-    setup(ctx) {
+    async setup(ctx) {
         publishBadgeColors(ctx);
+
+        ratios = asRatios((await ratioStorage.getValue())?.ratio);
+        const unwatchRatios = ratioStorage.watch((next) => {
+            ratios = asRatios(next?.ratio);
+        });
 
         ctx.addFilter(
             ".ub-writer:not([user_name])",
@@ -220,7 +231,6 @@ export default defineModule({
         const offNewPostList = eventBus.on("newPostList", ({data: elements}) => {
             if (ctx.settings.checkRatio !== true) return;
 
-            const ratios = asRatios(ctx.data.ratio);
             const stale: string[] = [];
 
             for (const post of elements.slice(0, 10)) {
@@ -228,31 +238,33 @@ export default defineModule({
                 const uid = writer?.dataset.uid;
                 if (!uid) continue;
 
-                const cached = ratios[uid];
-                if (!(cached && Date.now() - cached.date <= 3600_000) && !stale.includes(uid)) {
+                if (!isFresh(ratios[uid]) && !stale.includes(uid)) {
                     stale.push(uid);
                 }
             }
 
             if (stale.length === 0) return;
 
-            void Promise.all(stale.map(async (uid) => [uid, await fetchRatio(uid)] as const)).then((results) => {
-                const fresh = results.filter((entry): entry is [string, RatioInfo] => Boolean(entry[1]));
+            // 실패는 uid마다 흡수 — 한 명이 실패했다고 받아 온 나머지까지 버리지 않는다 (실패는 배지만 못 보여줄 뿐)
+            void Promise.all(stale.map(async (uid) => [uid, await fetchGallogActivity(uid).catch(() => undefined)] as const)).then(async (results) => {
+                const fresh = results.filter((entry): entry is [string, GallogActivity] => Boolean(entry[1]));
                 if (fresh.length === 0) return;
 
-                // 1시간 캐시(Proxy 스토리지) — 쓰기 시점 최신 값에서 증분 병합
-                ctx.data.ratio = {
-                    ...asRatios(ctx.data.ratio),
-                    ...Object.fromEntries(fresh.map(([uid, info]) => [uid, {...info, date: Date.now()}]))
-                } as JsonValue;
+                // 저장소의 최신 값에 병합 (다른 탭이 그사이 쓴 것 유지). 만료 항목은 여기서 버린다 — 안 그러면 uid마다 계속 쌓인다
+                const now = Date.now();
+                const stored = asRatios((await ratioStorage.getValue())?.ratio);
+                ratios = Object.fromEntries([
+                    ...Object.entries(stored).filter(([, info]) => isFresh(info)),
+                    ...fresh.map(([uid, info]) => [uid, {...info, date: now}])
+                ]);
+                await ratioStorage.setValue({ratio: ratios as unknown as JsonValue});
 
                 rebuildAll(ctx);
-            }).catch(() => {
-                // 글댓비 조회 실패는 배지만 못 보여줄 뿐
             });
         });
 
         ctx.addCleanup(() => {
+            unwatchRatios();
             unsubscribeMemos();
             unwatchDatabase();
             offNewPostList();
@@ -260,7 +272,8 @@ export default defineModule({
     },
 
     onChanged(ctx) {
-        // 설정(순서/표시여부) 변경시 즉시 재계산
+        // 설정(순서/표시여부) 변경시 즉시 재계산. 배지 색은 설정에만 달렸으니 여기서만 다시 알린다
+        publishBadgeColors(ctx);
         rebuildAll(ctx);
     },
 

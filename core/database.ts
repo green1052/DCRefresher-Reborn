@@ -38,6 +38,8 @@ const load = (db: StoredDB | null): void => {
     bans = new Map();
 
     for (const [reason, uids] of Object.entries(db?.ban ?? {})) {
+        // ban.json은 손으로 올리는 파일 — 값 하나가 배열이 아니어도 여기서 던지면 initDatabase가 실패해 모든 모듈이 죽는다
+        if (!Array.isArray(uids)) continue;
         for (const uid of uids) bans.set(uid, [...(bans.get(uid) ?? []), reason]);
     }
 };
