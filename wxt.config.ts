@@ -10,8 +10,11 @@ export default defineConfig({
     manifest: {
         name: "DCRefresher Reborn",
         description: "디시인사이드 개선 확장 프로그램",
+        // Uint8Array.prototype.toBase64 / Uint8Array.fromBase64 (IP DB·클라우드 백업)
+        minimum_chrome_version: "140",
         permissions: [
             "activeTab",
+            "alarms",
             "contextMenus",
             "storage",
             "tabs",
@@ -49,6 +52,8 @@ export default defineConfig({
         browser_specific_settings: {
             gecko: {
                 id: "dcrefresher-reborn@green1052",
+                // data_collection_permissions도 140부터
+                strict_min_version: "140.0",
                 data_collection_permissions: {
                     required: ["none"]
                 }

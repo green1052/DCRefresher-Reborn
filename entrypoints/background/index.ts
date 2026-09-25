@@ -1,8 +1,10 @@
+import {isBackupTarget, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
 import {CONTEXT_MENUS, type ContextMenuAction, sendMessage} from "@/core/messaging/protocol";
-import {dbStorage} from "@/core/storage/items";
+import {backupStorage, dbStorage} from "@/core/storage/items";
 
 const DATABASE_UPDATE_INTERVAL = 604_800_000; // 7일
+const AUTO_BACKUP_ALARM = "refresher:autoBackup";
 
 export default defineBackground(() => {
     // ===== Context Menus (SauceNao) =====
@@ -50,4 +52,18 @@ export default defineBackground(() => {
             }
         })();
     }
+
+    // ===== 자동 백업: 설정이 바뀌면 마지막 변경 1분 뒤에 백업 (알람을 다시 만들면 미뤄진다) =====
+    // 서비스 워커는 잠들 수 있어 setTimeout 대신 alarms로 기다린다. 켤 때는 옵션 페이지가 바로 한 번 백업한다
+    browser.storage.onChanged.addListener((changes, area) => {
+        if (area !== "local" || !Object.keys(changes).some(isBackupTarget)) return;
+
+        void backupStorage.auto.getValue().then((auto) => {
+            if (auto) void browser.alarms.create(AUTO_BACKUP_ALARM, {delayInMinutes: 1});
+        });
+    });
+
+    browser.alarms.onAlarm.addListener((alarm) => {
+        if (alarm.name === AUTO_BACKUP_ALARM) void runBackup().catch(() => {});
+    });
 });

@@ -35,14 +35,6 @@ const prefixIndex = (ip: string): number | undefined => {
     return a !== undefined && b !== undefined && a >= 0 && a < 256 && b >= 0 && b < 256 ? a * 256 + b : undefined;
 };
 
-const toBase64 = (bytes: Uint8Array): string => {
-    let binary = "";
-    for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-    return btoa(binary);
-};
-
-const fromBase64 = (base64: string): Uint8Array => Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
-
 /** 서버 형식 → 저장 형식 */
 export const compactIpData = (raw: RawIpData): CompactIpData => {
     // 서버에서 온 값 — 예전 형식(대역→이름 객체)이나 깨진 응답이면 여기서 끊는다
@@ -80,12 +72,12 @@ export const compactIpData = (raw: RawIpData): CompactIpData => {
         table[slot] = value + 1;
     }
 
-    return {table: toBase64(new Uint8Array(table.buffer)), orgs, countries, meta, lists};
+    return {table: new Uint8Array(table.buffer).toBase64(), orgs, countries, meta, lists};
 };
 
 /** 저장 형식 → 조회 함수 (표는 한 번만 디코드) */
 export const createIpLookup = (data: CompactIpData): ((ip: string) => IpCandidate[] | undefined) => {
-    const table = new Uint16Array(fromBase64(data.table).buffer);
+    const table = new Uint16Array(Uint8Array.fromBase64(data.table).buffer);
     const metaCount = data.meta.length / 3;
 
     const candidate = (index: number): IpCandidate => ({
