@@ -1,11 +1,9 @@
-import {http} from "@/core/http/client";
+import {ajax, http} from "@/core/http/client";
 import {galleryPath, galleryTypeName, isMiniGallery, urls} from "@/core/http/urls";
 import {csrfToken} from "@/utils/cookie";
 
 import {parsePostInfo} from "./parser";
 import type {CommentListResponse, DcinsideComment, DcinsideDccon, GalleryPreData, PostInfo} from "./types";
-
-const HEADERS = {"X-Requested-With": "XMLHttpRequest"};
 
 const commonBody = async (link?: string): Promise<URLSearchParams> =>
     new URLSearchParams({ci_t: await csrfToken(), _GALLTYPE_: galleryTypeName(link ?? "")});
@@ -38,7 +36,7 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: PostInfo,
     body.set("e_s_n_o", postInfo.dom?.querySelector<HTMLInputElement>("#e_s_n_o")?.value ?? "");
     body.set("comment_page", "1");
 
-    const response = await http.post(urls.comments, {headers: HEADERS, body, signal}).json<{
+    const response = await ajax.post(urls.comments, {body, signal}).json<{
         comments: DcinsideComment[] | null;
         total_cnt: number | string
     }>();
@@ -67,7 +65,7 @@ export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U
     if (postInfo.v_cur_t) body.set("v_cur_t", postInfo.v_cur_t);
     if (postInfo.randomParam) body.set(postInfo.randomParam.name, postInfo.randomParam.value);
 
-    const response = await http.post(urls.vote, {headers: HEADERS, body}).text();
+    const response = await ajax.post(urls.vote, {body}).text();
     const [result, counts, fixedCounts] = response.split("||");
 
     if (result === "SUCCESS") {
@@ -89,7 +87,7 @@ export interface ManageResult {
 }
 
 export const postManage = async (url: string, body: URLSearchParams): Promise<ManageResult> => {
-    const text = (await http.post(url, {headers: HEADERS, body}).text()).trim();
+    const text = (await ajax.post(url, {body}).text()).trim();
 
     try {
         const {result, msg} = JSON.parse(text) as { result?: unknown; msg?: unknown };
@@ -186,7 +184,7 @@ export const userDeleteComment = async (preData: GalleryPreData, commentId: stri
     if (password) body.set("re_password", password);
     body.set("g-recaptcha-response", "");
 
-    await http.post(urls.comment_remove, {headers: HEADERS, body});
+    await ajax.post(urls.comment_remove, {body});
 };
 
 export interface SubmitResult {
@@ -307,8 +305,7 @@ export const submitComment = async (
         params.set("detail_idx", memo.map((dccon) => dccon.detail_idx).join(","));
     }
 
-    const response = await http.post(typeof memo === "string" ? urls.comments_submit : urls.dccon_comments_submit, {
-        headers: HEADERS,
+    const response = await ajax.post(typeof memo === "string" ? urls.comments_submit : urls.dccon_comments_submit, {
         body: params
     }).text();
 
@@ -421,7 +418,7 @@ export const submitTxtcon = async (
     body.set("g-recaptcha-response", "");
     if (grecaptchaToken) body.set("g-recaptcha-token", grecaptchaToken);
 
-    const response = await http.post(urls.txtcon_submit, {headers: HEADERS, body}).text();
+    const response = await ajax.post(urls.txtcon_submit, {body}).text();
 
     return submitResult(response);
 };

@@ -3,7 +3,7 @@ import {ChevronLeft, ChevronRight} from "lucide-react";
 import {useEffect, useRef, useState} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
-import {http} from "@/core/http/client";
+import {ajax} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import type {DcinsideDccon, DcinsideDcconDetail, DcinsideDcconDetailList} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
@@ -49,7 +49,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                 page: String(targetPage)
             });
 
-            const response = await http.post(urls.dccon.lists, {body}).json<DcinsideDcconDetail>();
+            const response = await ajax.post(urls.dccon.lists, {body}).json<DcinsideDcconDetail>();
 
             if (response.target === "shop") {
                 useUiStore.getState().showToast("사용 가능한 디시콘이 없습니다.", "error");

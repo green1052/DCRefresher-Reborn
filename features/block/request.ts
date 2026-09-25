@@ -1,6 +1,6 @@
 import type {BlockRequestOptions} from "@/core/eventbus/types";
 import {useBlocksStore} from "@/stores/blocks";
-import {http} from "@/core/http/client";
+import {ajax} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import type {BlockType, DetectMode} from "@/core/storage/types";
 import {csrfToken} from "@/utils/cookie";
@@ -32,8 +32,7 @@ const blockDccon = async (selected: SelectedUser, blockAllDccon?: boolean): Prom
     const code = selected.dccon;
     if (!code) return;
 
-    const response = await http.post(urls.dccon.detail, {
-        headers: {"X-Requested-With": "XMLHttpRequest"},
+    const response = await ajax.post(urls.dccon.detail, {
         body: new URLSearchParams({ci_t: await csrfToken(), code})
     }).json<DcconDetailResponse>();
 
