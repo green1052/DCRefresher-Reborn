@@ -1,5 +1,5 @@
-import {Box, Button, Flex, Heading, Link, Separator, Text} from "@radix-ui/themes";
-import {Ban, Database, Keyboard, type LucideIcon, NotebookPen, Settings} from "lucide-react";
+import {Box, Button, Flex, Grid, Heading, Separator, Text} from "@radix-ui/themes";
+import {Ban, CircleHelp, Code, Database, Heart, Keyboard, type LucideIcon, MessageCircle, NotebookPen, Settings, Users} from "lucide-react";
 import {useEffect, useState} from "react";
 
 import logoUrl from "@/assets/icon.png";
@@ -22,12 +22,12 @@ const TABS: { id: string; label: string; icon: LucideIcon; content: () => React.
     {id: "data", label: "데이터", icon: Database, content: () => <DataTab/>}
 ];
 
-const LINKS: [string, string][] = [
-    ["GitHub", "https://github.com/green1052/DCRefresher-Reborn"],
-    ["갤러리", "https://gall.dcinside.com/mini/board/lists/?id=bjwg64"],
-    ["Discord", "https://discord.gg/SSW6Zuyjz6"],
-    ["후원", "https://www.buymeacoffee.com/green1052"],
-    ["도움말", "https://dcrefresher.green1052.com"]
+const LINKS: [string, string, LucideIcon][] = [
+    ["GitHub", "https://github.com/green1052/DCRefresher-Reborn", Code],
+    ["갤러리", "https://gall.dcinside.com/mini/board/lists/?id=bjwg64", Users],
+    ["Discord", "https://discord.gg/SSW6Zuyjz6", MessageCircle],
+    ["도움말", "https://dcrefresher.green1052.com", CircleHelp],
+    ["후원", "https://www.buymeacoffee.com/green1052", Heart]
 ];
 
 const VERSION = browser.runtime.getManifest().version + (import.meta.env.DEV ? "-dev" : "");
@@ -129,13 +129,16 @@ const Sidebar = ({tab, onSelect}: { tab: string; onSelect: (id: string) => void 
 
         <Box display={{initial: "none", md: "block"}} mt="auto">
             <Separator size="4" mb="3"/>
-            <Flex gap="3" wrap="wrap" px="2">
-                {LINKS.map(([text, url]) => (
-                    <Link key={url} href={url} target="_blank" rel="noreferrer" size="1" color="gray">
-                        {text}
-                    </Link>
+            <Grid columns="2" gap="1">
+                {LINKS.map(([text, url, Icon]) => (
+                    <Button key={url} asChild size="2" variant="ghost" color="gray"
+                            style={{justifyContent: "flex-start", margin: 0}}>
+                        <a href={url} target="_blank" rel="noreferrer">
+                            <Icon size={14}/> {text}
+                        </a>
+                    </Button>
                 ))}
-            </Flex>
+            </Grid>
             <Text as="p" size="1" color="gray" mt="2" style={{paddingInline: "var(--space-2)"}}>v{VERSION}</Text>
         </Box>
     </Flex>
