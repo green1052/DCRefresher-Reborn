@@ -17,7 +17,6 @@
     "dependencies": {
         "@radix-ui/themes": "^3.3.0",
         "@webext-core/messaging": "^4.0.0",
-        "@webext-core/proxy-service": "^3.0.2",
         "@wxt-dev/webextension-polyfill": "^1.0.0",
         "emittery": "^2.0.0",
         "ky": "^2.1.0",

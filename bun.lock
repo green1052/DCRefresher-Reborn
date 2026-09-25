@@ -7,7 +7,6 @@
       "dependencies": {
         "@radix-ui/themes": "^3.3.0",
         "@webext-core/messaging": "^4.0.0",
-        "@webext-core/proxy-service": "^3.0.2",
         "@wxt-dev/webextension-polyfill": "^1.0.0",
         "emittery": "^2.0.0",
         "ky": "^2.1.0",
@@ -466,8 +465,6 @@
     "@webext-core/match-patterns": ["@webext-core/match-patterns@2.0.0", "", {}, "sha512-EsyMMKfQuSE4rWCjP/TifwvUWlhC/OhiGn5OK3p9F0d57UmtLib0nzguzPKyxM1/kZV7SkE+jYXkE8gsdPRLmw=="],
 
     "@webext-core/messaging": ["@webext-core/messaging@4.0.0", "", { "dependencies": { "@aklinker1/zero-serialize-error": "^1.0.2" }, "peerDependencies": { "@types/chrome": "*" }, "optionalPeers": ["@types/chrome"] }, "sha512-1GWLsiWeIRJ/LpSlI87jU3e4KCDhyTadQEwyhMlLSwXOt5/ui2xkVcE96/clxjxqp/FcUBA00c5iT5I3crjlTQ=="],
-
-    "@webext-core/proxy-service": ["@webext-core/proxy-service@3.0.2", "", { "peerDependencies": { "@webext-core/messaging": ">=1.3.1" } }, "sha512-Cfdxsd+VaFh7ZOvCUzbdqEHIZopRn64BemXcJv3aGQgq98rQ0IVAsLG8M/9yqVcBGtATUvM/Mk2gsVaNcFrZFA=="],
 
     "@wxt-dev/auto-icons": ["@wxt-dev/auto-icons@1.1.2", "", { "dependencies": { "defu": "^6.1.4", "sharp": "^0.35.3" }, "peerDependencies": { "wxt": ">=0.19.0" } }, "sha512-tLBTgvAAPj5n9VTrNVgbkqSvcuKTZjppgrpGq6YnZ+oOj69bqOWQdFRMhHutTcs4tvIvhgJ80LmhwQXhUyyTxA=="],
 

@@ -1,12 +1,11 @@
+import {banReasonsOf, ispOf} from "@/core/database";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext} from "@/core/module/types";
 import {http} from "@/core/http/client";
 import {eventBus} from "@/core/eventbus/bus";
 import type {JsonValue} from "@/core/storage/types";
 import {findMemo, useMemosStore} from "@/stores/memos";
-import {format as formatIP, ISPData} from "@/utils/ip";
 import {getCookie} from "@/utils/cookie";
-import {getBan} from "@/utils/ban";
 import {getType} from "@/utils/user";
 import {insertWriterSpan} from "@/utils/userDataInsert";
 
@@ -79,9 +78,8 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
         }
 
         if (ip && ctx.settings.showIpInfo === true) {
-            const ipData = ISPData(ip);
-            const formatted = formatIP(ipData);
-            if (formatted) badges.append(buildBadgeSpan(`[${formatted}]`, ipData.color, formatted));
+            const isp = ispOf(ip);
+            if (isp) badges.append(buildBadgeSpan(`[${isp}]`, "#6495ed", isp));
         }
     };
 
@@ -101,7 +99,7 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
         }
 
         if (key === "PERMBAN" && uid && ctx.settings.checkPermBan === true) {
-            const reasons = getBan(uid);
+            const reasons = banReasonsOf(uid);
             if (reasons) badges.append(makePermBanSpan(reasons));
         }
     }

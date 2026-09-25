@@ -3,7 +3,7 @@ import {Box, Button, Flex} from "@radix-ui/themes";
 import {useEffect, useState} from "react";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
-import {DatabaseService} from "@/core/services/database";
+import {updateDatabase} from "@/core/database";
 import {backupStorage, dbStorage} from "@/core/storage/items";
 
 import {ImportDialog, Section} from "./Layout";
@@ -53,15 +53,15 @@ export function DataTab() {
     const [importOpen, setImportOpen] = useState(false);
 
     useEffect(() => {
-        void DatabaseService.lastUpdate().then(setLastUpdate);
+        void dbStorage.getValue().then((db) => setLastUpdate(db.lastUpdate));
         void backupStorage.lastUpdate.getValue().then(setBackupAt);
     }, []);
 
     const forceUpdate = async (): Promise<void> => {
         setLoading(true);
         try {
-            await DatabaseService.forceUpdate();
-            setLastUpdate(await DatabaseService.lastUpdate());
+            await updateDatabase();
+            setLastUpdate((await dbStorage.getValue()).lastUpdate);
         } finally {
             setLoading(false);
         }

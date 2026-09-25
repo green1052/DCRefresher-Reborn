@@ -7,7 +7,7 @@ import {eventBus} from "@/core/eventbus/bus";
 import type {ModuleEventData} from "@/core/eventbus/types";
 import {PreviewHost} from "@/features/preview/ui/PreviewHost";
 import {type ToastData, useUiStore} from "@/stores/ui";
-import {ISPData} from "@/utils/ip";
+import {ispOf} from "@/core/database";
 
 import {MemoDialog} from "./MemoDialog";
 import {overlay} from "./shadow";
@@ -110,7 +110,7 @@ const BubbleHost = () => {
     };
 
     const identity = identityValue(selected);
-    const isp = selected.ip ? ISPData(selected.ip).name : undefined;
+    const isp = selected.ip ? ispOf(selected.ip) : undefined;
 
     return (
         <Popover.Root open onOpenChange={(open) => !open && close()}>

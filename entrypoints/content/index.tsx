@@ -8,6 +8,7 @@ import {createRoot} from "react-dom/client";
 import overlayCss from "@/assets/styles/overlay.scss?inline";
 import {ContentRoot} from "@/components/overlay/ContentRoot";
 import {overlay} from "@/components/overlay/shadow";
+import {initDatabase} from "@/core/database";
 import {eventBus} from "@/core/eventbus/bus";
 import {onMessage} from "@/core/messaging/protocol";
 import {loadAll, runShortcut} from "@/core/module/registry";
@@ -71,7 +72,7 @@ export default defineContentScript({
         }
 
         // ===== 모듈 부트스트랩 =====
-        await Promise.all([initBlocksStore(), initMemosStore()]);
+        await Promise.all([initBlocksStore(), initMemosStore(), initDatabase()]);
         await loadAll(features);
     }
 });

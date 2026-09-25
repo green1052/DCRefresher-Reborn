@@ -6,7 +6,7 @@ import {overlay} from "@/components/overlay/shadow";
 import type {ProcessedComment} from "@/core/preview/comments";
 import {adminDeleteComment, userDeleteComment} from "@/core/preview/request";
 import {useUiStore} from "@/stores/ui";
-import {ISPData} from "@/utils/ip";
+import {ispOf} from "@/core/database";
 
 import {usePreviewStore} from "./previewStore";
 
@@ -71,7 +71,7 @@ export interface UserCardData {
 
 /** 작성자 표시. 우클릭하면 유저 버블 */
 export const UserCard = ({user}: { user: UserCardData }) => {
-    const isp = user.ip ? ISPData(user.ip).name : undefined;
+    const isp = user.ip ? ispOf(user.ip) : undefined;
     const info = [user.id, user.ip].filter(Boolean).join(" / ");
 
     const openMenu = (event: MouseEvent): void => {

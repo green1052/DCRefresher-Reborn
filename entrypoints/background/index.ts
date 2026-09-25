@@ -1,12 +1,10 @@
-import {registerDatabaseService} from "@/core/services/database";
+import {updateDatabase} from "@/core/database";
 import {CONTEXT_MENUS, type ContextMenuAction, sendMessage} from "@/core/messaging/protocol";
 import {dbStorage} from "@/core/storage/items";
 
 const DATABASE_UPDATE_INTERVAL = 604_800_000; // 7일
 
 export default defineBackground(() => {
-    const databaseService = registerDatabaseService();
-
     // ===== Context Menus (SauceNao) =====
     const createContextMenus = async () => {
         await browser.contextMenus.removeAll();
@@ -40,7 +38,7 @@ export default defineBackground(() => {
         await createContextMenus();
 
         if (import.meta.env.PROD || !(await dbStorage.getValue()).version) {
-            await databaseService.forceUpdate();
+            await updateDatabase();
         }
     });
 
@@ -48,7 +46,7 @@ export default defineBackground(() => {
         void (async () => {
             const {lastUpdate} = await dbStorage.getValue();
             if (!lastUpdate || Date.now() - lastUpdate > DATABASE_UPDATE_INTERVAL) {
-                await databaseService.forceUpdate();
+                await updateDatabase();
             }
         })();
     }
