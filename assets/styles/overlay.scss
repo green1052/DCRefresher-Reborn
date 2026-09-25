@@ -171,9 +171,48 @@
         background: var(--gray-a2);
     }
 
+    // 유튜브식 답글 트리: 부모 이름 아래에서 내려온 선이 답글마다 ㄴ자로 꺾여 들어간다
+    // (x좌표: 부모 본문 시작 --space-6 + 12px = 답글 안에서 12px)
+    position: relative;
+
+    &[data-thread-open]::after,
+    &[data-depth="1"]::before,
+    &[data-depth="1"]:not([data-last-reply])::after {
+        content: "";
+        position: absolute;
+        border: 0 solid var(--gray-a6);
+        pointer-events: none;
+    }
+
+    // 부모: 본문 아래 여백만큼 세로선 (본문이 여러 줄이어도 글자를 가로지르지 않게) → 첫 답글의 ㄴ으로 이어진다
+    &[data-thread-open]::after {
+        bottom: 0;
+        height: var(--space-2);
+        left: calc(var(--space-6) + 12px);
+        border-left-width: 2px;
+    }
+
     &[data-depth="1"] {
         margin-left: var(--space-6);
-        border-left: 2px solid var(--gray-a5);
+
+        // ㄴ: 위에서 내려와 이름 높이에서 오른쪽으로 꺾인다
+        &::before {
+            top: 0;
+            left: 12px;
+            width: 14px;
+            height: calc(var(--space-2) + 10px);
+            border-left-width: 2px;
+            border-bottom-width: 2px;
+            border-bottom-left-radius: 10px;
+        }
+
+        // 마지막 답글이 아니면 다음 답글까지 세로선을 잇는다
+        &:not([data-last-reply])::after {
+            top: 0;
+            bottom: 0;
+            left: 12px;
+            border-left-width: 2px;
+        }
     }
 
     &[data-deleted] .refresher-comment-html {

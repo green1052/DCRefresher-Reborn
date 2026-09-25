@@ -144,9 +144,9 @@ const CommentList = () => {
 
                 return (
                     <Fragment key={parent.no}>
-                        <Comment comment={parent} depth={0} replyCount={replies.length}/>
+                        <Comment comment={parent} depth={0} replyCount={replies.length} threadOpen={!isCollapsed && replies.length > 0}/>
                         {!isCollapsed &&
-                            replies.map((child) => <Comment key={child.no} comment={child} depth={1} replyCount={0}/>)}
+                            replies.map((child, index) => <Comment key={child.no} comment={child} depth={1} replyCount={0} lastReply={index === replies.length - 1}/>)}
                     </Fragment>
                 );
             })}

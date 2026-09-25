@@ -98,9 +98,13 @@ interface CommentProps {
     comment: ProcessedComment;
     depth: number;
     replyCount: number;
+    /** 답글이 펼쳐진 부모 — 아래로 트리 선을 긋는다 */
+    threadOpen?: boolean;
+    /** 쓰레드의 마지막 답글 — 트리 선이 여기서 끝난다 */
+    lastReply?: boolean;
 }
 
-export const Comment = ({comment, depth, replyCount}: CommentProps) => {
+export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: CommentProps) => {
     const reply = usePreviewStore((s) => s.reply);
     const collapsed = usePreviewStore((s) => s.collapsed.has(comment.no));
     const setReply = usePreviewStore((s) => s.setReply);
@@ -139,7 +143,8 @@ export const Comment = ({comment, depth, replyCount}: CommentProps) => {
         : comment.memo.replace(/\n/g, "<br/>");
 
     return (
-        <Box className="refresher-comment" data-depth={depth} data-deleted={isDeleted || undefined} px="6" py="2">
+        <Box className="refresher-comment" data-depth={depth} data-deleted={isDeleted || undefined}
+             data-thread-open={threadOpen || undefined} data-last-reply={lastReply || undefined} px="6" py="2">
             <Flex justify="between" align="center" gap="2">
                 <Flex align="center" gap="1" minWidth="0">
                     <UserCard user={{
