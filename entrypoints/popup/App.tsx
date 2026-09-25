@@ -1,15 +1,48 @@
-import {Flex, Grid, Heading, IconButton, Separator, Switch, Text} from "@radix-ui/themes";
-import {Settings} from "lucide-react";
+import {Badge, Box, Card, Flex, Grid, IconButton, Switch, Text} from "@radix-ui/themes";
+import {
+    Ban,
+    Eye,
+    EyeOff,
+    Image,
+    LayoutPanelTop,
+    type LucideIcon,
+    NotebookPen,
+    Pause,
+    PenLine,
+    Puzzle,
+    RefreshCw,
+    ScanSearch,
+    Settings,
+    ShieldCheck,
+    SquareMousePointer,
+    Type,
+    UserRound
+} from "lucide-react";
 import {type ReactNode, useEffect, useState} from "react";
 
 import {type PageAction, type PageState, sendMessage} from "@/core/messaging/protocol";
 import features from "@/features";
+import {fontFamilyOf} from "@/features/fonts";
 import {initBlocksStore, useBlocksStore} from "@/stores/blocks";
 import {initMemosStore, useMemosStore} from "@/stores/memos";
 import {initModulesStore, useModulesStore} from "@/stores/modules";
 
 const LOGO_URL = browser.runtime.getURL("/icons/48.png");
 const VERSION = browser.runtime.getManifest().version;
+
+/** 모듈 타일 아이콘 (없으면 퍼즐) */
+const MODULE_ICONS: Record<string, LucideIcon> = {
+    block: Ban,
+    fonts: Type,
+    imagesearch: ScanSearch,
+    layout: LayoutPanelTop,
+    manage: ShieldCheck,
+    preview: SquareMousePointer,
+    refresh: RefreshCw,
+    stealth: EyeOff,
+    userinfo: UserRound,
+    write: PenLine
+};
 
 interface Page {
     tabId: number;
@@ -36,17 +69,27 @@ const openOptions = async (): Promise<void> => {
     window.close();
 };
 
-const Section = ({title, children}: { title: string; children: ReactNode }) => (
-    <Flex direction="column" gap="2">
-        <Text size="1" weight="medium" color="gray">{title}</Text>
-        {children}
+const SectionTitle = ({children, aside}: { children: ReactNode; aside?: ReactNode }) => (
+    <Flex justify="between" align="center" px="1" mb="2">
+        <Text size="1" weight="bold" color="gray">{children}</Text>
+        {aside}
     </Flex>
 );
 
-const SwitchRow = ({label, checked, onChange}: { label: string; checked: boolean; onChange: (value: boolean) => void }) => (
+const ToggleRow = ({icon: Icon, label, desc, checked, onChange}: {
+    icon: LucideIcon;
+    label: string;
+    desc: string;
+    checked: boolean;
+    onChange: () => void;
+}) => (
     <Text as="label" size="2">
-        <Flex justify="between" align="center" gap="2">
-            {label}
+        <Flex align="center" gap="3" py="1">
+            <span className="popup-icon" data-on={checked || undefined}><Icon size={15}/></span>
+            <Box flexGrow="1" minWidth="0">
+                <Text as="div" size="2" weight="medium">{label}</Text>
+                <Text as="div" size="1" color="gray">{desc}</Text>
+            </Box>
             <Switch size="1" checked={checked} onCheckedChange={onChange}/>
         </Flex>
     </Text>
@@ -82,35 +125,62 @@ function PageSection({tabId, gallery, state: initial}: Page) {
     const memoCount = Object.values(memos).flatMap((map) => Object.values(map)).filter(visible).length;
 
     return (
-        <Section title="현재 페이지">
-            <Text size="2" color="gray">차단 {blockCount}개 · 메모 {memoCount}개</Text>
-            {state?.refresh && <SwitchRow label="새로고침 일시정지" checked={state.refresh.paused} onChange={() => act("toggleRefresh")}/>}
-            {state?.stealth && <SwitchRow label="이미지 잠시 보이기" checked={state.stealth.revealed} onChange={() => act("toggleStealth")}/>}
-            {state?.block && (
-                <SwitchRow label={`가린 내용 보기 (${state.block.hidden}개)`} checked={state.block.revealed}
-                           onChange={() => act("toggleBlockReveal")}/>
+        <Box>
+            <SectionTitle aside={
+                <Flex gap="1">
+                    <Badge size="1" variant="soft" color="gray" radius="full"><Ban size={11}/> 차단 {blockCount}</Badge>
+                    <Badge size="1" variant="soft" color="gray" radius="full"><NotebookPen size={11}/> 메모 {memoCount}</Badge>
+                </Flex>
+            }>
+                현재 페이지
+            </SectionTitle>
+
+            {state && (state.refresh || state.stealth || state.block) && (
+                <Card size="1">
+                    <Flex direction="column" gap="1">
+                        {state.refresh && (
+                            <ToggleRow icon={Pause} label="새로고침 일시정지" desc="이 탭의 자동 새로고침을 멈춥니다"
+                                       checked={state.refresh.paused} onChange={() => act("toggleRefresh")}/>
+                        )}
+                        {state.stealth && (
+                            <ToggleRow icon={Image} label="이미지 잠시 보이기" desc="스텔스로 숨긴 이미지를 보입니다"
+                                       checked={state.stealth.revealed} onChange={() => act("toggleStealth")}/>
+                        )}
+                        {state.block && (
+                            <ToggleRow icon={Eye} label="가린 내용 보기" desc={`가린 ${state.block.hidden}개를 흐리게 보입니다`}
+                                       checked={state.block.revealed} onChange={() => act("toggleBlockReveal")}/>
+                        )}
+                    </Flex>
+                </Card>
             )}
-        </Section>
+        </Box>
     );
 }
 
 function ModulesSection() {
     const enables = useModulesStore((state) => state.enables);
     const toggle = useModulesStore((state) => state.toggle);
+    const on = features.filter((feature) => enables[feature.id] ?? true).length;
 
     return (
-        <Section title="모듈">
-            <Grid columns="2" gapX="4" gapY="2">
-                {features.map((feature) => (
-                    <SwitchRow
-                        key={feature.id}
-                        label={feature.name}
-                        checked={enables[feature.id] ?? true}
-                        onChange={(value) => void toggle(feature.id, value)}
-                    />
-                ))}
+        <Box>
+            <SectionTitle aside={<Text size="1" color="gray">{on}/{features.length} 켜짐</Text>}>모듈</SectionTitle>
+            <Grid columns="2" gap="2">
+                {features.map((feature) => {
+                    const Icon = MODULE_ICONS[feature.id] ?? Puzzle;
+                    const enabled = enables[feature.id] ?? true;
+
+                    return (
+                        <button key={feature.id} type="button" className="module-tile" aria-pressed={enabled}
+                                title={feature.description} onClick={() => void toggle(feature.id, !enabled)}>
+                            <Icon size={15}/>
+                            <span className="module-name">{feature.name}</span>
+                            <span className="module-dot"/>
+                        </button>
+                    );
+                })}
             </Grid>
-        </Section>
+        </Box>
     );
 }
 
@@ -128,29 +198,38 @@ export function App() {
         ]).then(([page]) => setLoaded({page}));
     }, []);
 
+    // 폰트 교체 모듈 설정을 팝업에도 (옵션 페이지와 같게)
+    const fontsEnabled = useModulesStore((state) => state.enables.fonts);
+    const customFonts = useModulesStore((state) => state.values.fonts?.customFonts);
+    useEffect(() => {
+        const root = document.documentElement.style;
+        if (fontsEnabled) root.setProperty("--refresher-font", fontFamilyOf(String(customFonts ?? "")));
+        else root.removeProperty("--refresher-font");
+    }, [fontsEnabled, customFonts]);
+
     if (!loaded) return null;
-    const {page} = loaded;
 
     return (
-        <Flex direction="column" gap="3" p="3">
-            <Flex align="center" gap="2">
-                <img src={LOGO_URL} alt="" width={24} height={24} style={{borderRadius: "var(--radius-2)"}}/>
-                <Heading size="3">DCRefresher Reborn</Heading>
-                <Text size="1" color="gray" ml="auto">v{VERSION}</Text>
-                <IconButton size="1" variant="ghost" color="gray" aria-label="설정" title="설정" onClick={() => void openOptions()}>
-                    <Settings size={16}/>
+        <Flex direction="column">
+            <Flex align="center" gap="3" px="4" py="3" className="popup-header">
+                <img src={LOGO_URL} alt="" width={32} height={32} style={{borderRadius: "var(--radius-3)"}}/>
+                <Box flexGrow="1" minWidth="0">
+                    <Text as="div" size="3" weight="bold">DCRefresher Reborn</Text>
+                    <Text as="div" size="1" color="gray">v{VERSION}</Text>
+                </Box>
+                <IconButton size="2" variant="ghost" color="gray" aria-label="설정" title="설정" onClick={() => void openOptions()}>
+                    <Settings size={18}/>
                 </IconButton>
             </Flex>
 
-            {page && (
-                <>
-                    <Separator size="4"/>
-                    <PageSection {...page}/>
-                </>
-            )}
-
-            <Separator size="4"/>
-            <ModulesSection/>
+            <Flex direction="column" gap="4" p="3">
+                {loaded.page ? (
+                    <PageSection {...loaded.page}/>
+                ) : (
+                    <Text size="1" color="gray" align="center">디시인사이드 갤러리에서 열면 이 페이지 설정이 나옵니다.</Text>
+                )}
+                <ModulesSection/>
+            </Flex>
         </Flex>
     );
 }
