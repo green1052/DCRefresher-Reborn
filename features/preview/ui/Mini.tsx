@@ -1,5 +1,4 @@
-import {Box, Card, Heading, Link} from "@radix-ui/themes";
-
+import {Box, Card, Heading} from "@radix-ui/themes";
 import {MINI_HEIGHT, MINI_WIDTH, usePreviewStore} from "./previewStore";
 
 /** 미니 미리보기 (툴팁) — 커서를 따라다니며, 클릭하면 전체 미리보기로 */
@@ -25,14 +24,6 @@ export const Mini = () => {
                 {mini.title}
             </Heading>
             <Box className="refresher-html refresher-mini-contents" dangerouslySetInnerHTML={{__html: mini.contents}}/>
-            <Box mt="2" flexShrink="0">
-                <Link size="1" href={mini.preData.link} onClick={(event) => {
-                    event.preventDefault();
-                    openFull();
-                }}>
-                    {mini.preData.title ?? "게시글 더 보기"}
-                </Link>
-            </Box>
         </Card>
     );
 };
