@@ -74,7 +74,8 @@ export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U
     const response = await ajax.post(urls.vote, {body}).text();
     const [result, counts, fixedCounts] = response.trim().split("||");
 
-    return result === "true" ? {success: true, counts, fixedCounts} : {success: false, message: counts || undefined};
+    // 'false||nomember||메시지'면 문구는 세 번째 칸
+    return result === "true" ? {success: true, counts, fixedCounts} : {success: false, message: (counts === "nomember" ? fixedCounts : counts) || undefined};
 };
 
 const manageUrl = (link: string | undefined, base: string, mini: string): string => (isMini(link) ? mini : base);
@@ -86,6 +87,9 @@ export interface ManageResult {
     message?: string;
 }
 
+// 성공이라고 밝힌 응답만 성공 — 세션이 끊겨 온 HTML이나 "정상적인 접근이 아닙니다." 같은 모르는 응답에 '삭제했습니다'를 띄우지 않게
+const isSuccess = (result: unknown): boolean => result === "success" || result === "true" || result === true;
+
 export const postManage = async (url: string, body: URLSearchParams): Promise<ManageResult> => {
     const text = (await ajax.post(url, {body}).text()).trim();
 
@@ -93,15 +97,15 @@ export const postManage = async (url: string, body: URLSearchParams): Promise<Ma
         const parsed: unknown = JSON.parse(text);
         if (parsed && typeof parsed === "object") {
             const {result, msg} = parsed as { result?: unknown; msg?: unknown };
-            return {success: result !== "fail" && result !== false && result !== "false", message: typeof msg === "string" && msg ? msg : undefined};
+            return {success: isSuccess(result), message: typeof msg === "string" && msg ? msg : undefined};
         }
     } catch {
         // 아래 텍스트 분기로
     }
 
-    // JSON 객체가 아니면 "false||메시지" 같은 텍스트 — 맨 'false'는 JSON 원시값으로 읽혀 구조 분해하면 성공이 되므로 여기서 본다. 빈 응답·'null'은 실패
+    // JSON 객체가 아니면 "false||메시지" 같은 텍스트 — 맨 'true'·'false'는 JSON 원시값으로 읽히므로 여기서 본다
     const [result, message] = text.split("||");
-    return {success: !!result && result !== "false" && result !== "fail" && result !== "null", message: message || undefined};
+    return {success: isSuccess(result), message: message || undefined};
 };
 
 /** 글 하나를 대상으로 하는 관리 요청 — 끌올·삭제는 본문이 같고 주소만 다르다 */
@@ -186,7 +190,7 @@ export const userDeleteComment = async (preData: GalleryPreData, commentId: stri
     if (password) body.set("re_password", password);
     body.set("g-recaptcha-response", "");
 
-    // 'true'만 성공 (v5와 같음) — postManage는 'false'·'fail'이 아닌 텍스트를 모두 성공으로 본다
+    // 'true'만 성공 (v5와 같음) — 관리 요청과 달리 JSON이 아니다
     const {result, message} = submitResult(await ajax.post(urls.comment_remove, {body}).text());
     return {success: result === "true", message};
 };
