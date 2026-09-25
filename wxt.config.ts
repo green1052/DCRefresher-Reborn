@@ -7,6 +7,33 @@ export default defineConfig({
             compiler: true
         }
     },
+    vite: () => ({
+        css: {
+            postcss: {
+                plugins: [
+                    /**
+                     * 오버레이(콘텐츠 스크립트 shadow)에 넣는 Radix CSS만 줄인다 — 옵션·팝업의 styles.css는 그대로.
+                     * - min-width 미디어 블록: 반응형 prop용인데 오버레이는 쓰지 않는다 (CSS의 절반). 오버레이에 {initial, md} 같은 prop을 쓰면 initial로 고정된다
+                     * - U+200D content: DataList 정렬용 한 글자 때문에 CSS 문자열 전체가 2바이트로 저장된다 (오버레이는 DataList를 안 쓴다)
+                     * Radix를 올리면 다시 확인한다
+                     */
+                    {
+                        postcssPlugin: "slim-overlay-radix",
+                        Once(root, {result}) {
+                            if (!result.opts.from?.endsWith("themes/styles.css?inline")) return;
+
+                            root.walkAtRules("media", (rule) => {
+                                if (rule.params.includes("min-width")) rule.remove();
+                            });
+                            root.walkDecls("content", (decl) => {
+                                if (decl.value.includes("\u200d")) decl.remove();
+                            });
+                        }
+                    }
+                ]
+            }
+        }
+    }),
     dev: {
         reloadCommand: "Alt+Shift+R"
     },
