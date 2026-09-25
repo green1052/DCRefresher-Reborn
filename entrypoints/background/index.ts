@@ -1,5 +1,6 @@
 import {isBackupTarget, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
+import {migrateV5Storage} from "@/core/migrate-v5";
 import {CONTEXT_MENUS, type ContextMenuAction, onMessage, sendMessage} from "@/core/messaging/protocol";
 import {backupStorage, dbStorage} from "@/core/storage/items";
 
@@ -80,6 +81,8 @@ export default defineBackground(() => {
 
     // ===== Database: 설치/주기 갱신 =====
     browser.runtime.onInstalled.addListener(async () => {
+        // v5에서 업데이트한 경우 설정을 v6 형식으로 옮긴다 (한시적)
+        await migrateV5Storage();
         await createContextMenus();
 
         if (import.meta.env.PROD || !(await dbStorage.getValue()).version) {

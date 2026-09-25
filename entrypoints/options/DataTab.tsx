@@ -5,6 +5,7 @@ import {useEffect, useState} from "react";
 import {ConfirmDialog} from "@/components/ConfirmDialog";
 import {type BackupSlot, collectLocalData, isBackupTarget, readCloudBackup, readCloudBackupTimes, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
+import {migrateV5} from "@/core/migrate-v5";
 import {backupStorage, dbStorage} from "@/core/storage/items";
 
 import {ImportDialog, Section} from "./Layout";
@@ -20,7 +21,7 @@ const errorMessage = (error: unknown): string => (error instanceof Error ? error
  */
 const replaceSettings = async (data: Record<string, unknown>): Promise<void> => {
     const previous = (await browser.storage.local.get(null)) as Record<string, unknown>;
-    const next = Object.fromEntries(Object.entries(data).filter(([key]) => isBackupTarget(key)));
+    const next = Object.fromEntries(Object.entries(migrateV5(data)).filter(([key]) => isBackupTarget(key)));
     const removed = Object.keys(previous).filter((key) => isBackupTarget(key) && !(key in next));
 
     try {
