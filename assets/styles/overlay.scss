@@ -102,6 +102,11 @@
     animation: refresher-fade-in 0.15s cubic-bezier(0.19, 1, 0.22, 1);
     outline: none;
 
+    // 왼쪽 관리 창(.refresher-admin-panel, 150px)과 겹치지 않게 양옆에 그 폭만큼 비운다 (너무 좁은 창에선 480px은 유지)
+    &[data-admin] {
+        width: min(1000px, 96vw, max(480px, calc(100vw - 2 * (150px + var(--space-3)))));
+    }
+
     &[data-fading] {
         pointer-events: none;
         animation: refresher-fade-out 0.15s forwards;

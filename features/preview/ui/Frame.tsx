@@ -157,6 +157,7 @@ const CommentList = () => {
 export const Frame = () => {
     const visible = usePreviewStore((s) => s.visible);
     const fading = usePreviewStore((s) => s.fading);
+    const adminVisible = usePreviewStore((s) => s.adminVisible);
     const loading = usePreviewStore((s) => s.loading);
     const post = usePreviewStore((s) => s.post);
     const title = usePreviewStore((s) => s.title);
@@ -250,6 +251,7 @@ export const Frame = () => {
                 <Dialog.Content
                     className="refresher-frame"
                     data-fading={fading || undefined}
+                    data-admin={adminVisible || undefined}
                     aria-busy={busy}
                     onOpenAutoFocus={(event) => event.preventDefault()}
                     // 바깥 클릭 닫기는 배경(frame-outer)이 담당. 위에 뜬 팝업/버블 클릭으로 닫히지 않게 막는다
