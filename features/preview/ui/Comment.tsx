@@ -7,6 +7,7 @@ import type {ProcessedComment} from "@/core/preview/comments";
 import {adminDeleteComment, userDeleteComment} from "@/core/preview/request";
 import {useUiStore} from "@/stores/ui";
 import {ispOf} from "@/core/database";
+import {isGalleryManager} from "@/utils/user";
 
 import {usePreviewStore} from "./previewStore";
 
@@ -106,7 +107,7 @@ export const Comment = ({comment, depth, replyCount}: CommentProps) => {
     const toggleCollapse = usePreviewStore((s) => s.toggleCollapse);
 
     const isDeleted = comment.is_delete === "1";
-    const isAdmin = Boolean(document.querySelector(".useradmin_btnbox button"));
+    const isAdmin = isGalleryManager();
     const canDelete =
         !isDeleted && (comment.del_btn === "Y" || comment.my_cmt === "Y" || isAdmin || (!comment.user_id && Boolean(comment.ip)));
     const replying = reply.replyNo === comment.no;

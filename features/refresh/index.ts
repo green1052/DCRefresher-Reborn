@@ -15,6 +15,35 @@ interface RefreshApi {
     togglePause(): void;
 }
 
+/**
+ * 관리자 목록 행의 체크박스 칸을 만드는 함수. 실제 마크업을 따르기 위해 기존 행의 칸을 복제해 글 번호만 바꾸고,
+ * 그런 행이 없으면 디시의 행 템플릿(갤러리 종류별 *_td-tmpl), 그것도 없으면 빈 칸을 쓴다.
+ * 번호 없는 행(설문/AD)은 빈 칸 — 열 정렬만 맞춘다.
+ */
+const checkboxCellFactory = (oldRows: HTMLTableRowElement[]): ((no: string | undefined) => HTMLTableCellElement) => {
+    const sampleRow = oldRows.find((row) => row.dataset.no && row.querySelector(":scope > td .article_chkbox"));
+    let sample = sampleRow?.querySelector<HTMLTableCellElement>(":scope > td:has(.article_chkbox)") ?? null;
+
+    if (!sample) {
+        const template = document.createElement("template");
+        template.innerHTML = document.querySelector("script[type=\"text/x-jquery-tmpl\"][id$=\"_td-tmpl\"]")?.innerHTML.trim() ?? "";
+        const cell = template.content.firstElementChild;
+        sample = cell instanceof HTMLTableCellElement ? cell : null;
+    }
+
+    return (no) => {
+        if (!no || !sample) return document.createElement("td");
+
+        const cell = sample.cloneNode(true) as HTMLTableCellElement;
+        const input = cell.querySelector<HTMLInputElement>("input");
+        if (input) {
+            input.checked = false;
+            if (sampleRow?.dataset.no && input.value === sampleRow.dataset.no) input.value = no;
+        }
+        return cell;
+    };
+};
+
 /** 검색어 강조 (TreeWalker, 텍스트 노드만) */
 const highlightSearchResults = (newList: HTMLElement, searchValue: string): void => {
     if (!searchValue) return;
@@ -140,11 +169,9 @@ export default defineModule({
             if (loading || document.hidden) return false;
             if (!force && (Date.now() - lastRefresh < MINIMUM_REFRESH_INTERVAL || paused)) return false;
 
-            const isAdmin = Boolean(document.querySelector(".useradmin_btnbox button"));
-            if (isAdmin && document.querySelector<HTMLInputElement>(".article_chkbox:checked")) return false;
+            // 관리자가 체크박스로 글을 고르는 중이면 목록을 갈아끼우지 않는다
+            if (document.querySelector<HTMLInputElement>(".article_chkbox:checked")) return false;
             if (document.querySelector(".user_data.add")) return false;
-
-            const managerCheckbox = document.querySelector<HTMLTemplateElement>("#minor_td-tmpl[type=\"text/x-jquery-tmpl\"]")?.innerHTML ?? "";
 
             loading = true;
 
@@ -177,15 +204,17 @@ export default defineModule({
                 const newRows = Array.from(newList.querySelectorAll<HTMLTableRowElement>(":scope > tr"));
                 const newPostList: HTMLTableRowElement[] = [];
 
+                // 관리자 목록은 머리에 체크박스 열이 있는데, 받아온 행엔 그 칸이 없다(디시 JS가 나중에 붙임) — 없으면 열이 한 칸씩 밀린다
+                const hasCheckboxColumn = Boolean(oldList.closest("table")?.querySelector("thead .chkbox_th"));
+                const checkboxCell = hasCheckboxColumn ? checkboxCellFactory(oldRows) : null;
+
                 for (const element of newRows) {
                     const no = element.dataset.no ?? (element.querySelector<HTMLElement>(".gall_num")?.textContent ?? "");
 
-                    if (!isPageView && isAdmin) {
-                        const shouldAddCheckbox =
-                            searchType !== "search_comment" || (searchType === "search_comment" && element.classList.contains("search_comment"));
-
-                        if (shouldAddCheckbox) {
-                            element.insertAdjacentHTML("afterbegin", no === "설문" ? "<td></td>" : managerCheckbox);
+                    if (checkboxCell && !element.querySelector(".article_chkbox")) {
+                        // 댓글 검색 결과에선 댓글 행에만 체크박스가 있다
+                        if (searchType !== "search_comment" || element.classList.contains("search_comment")) {
+                            element.prepend(checkboxCell(element.dataset.no));
                         }
                     }
 

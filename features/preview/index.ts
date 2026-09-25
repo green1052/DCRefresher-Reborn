@@ -5,6 +5,7 @@ import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
 import type {DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 import {isTyping} from "@/utils/event";
+import {isGalleryManager} from "@/utils/user";
 import {sanitizeHtml} from "@/utils/sanitize";
 
 import {getEntry, setEntry} from "@/core/preview/cache";
@@ -267,7 +268,7 @@ const controller = (ctx: ModuleContext) => {
         after.setImageBlocked(ctx.settings.blockImage === true && preData.type === "icon_txt");
         after.setNotice(Boolean(preData.notice));
         after.setRecommend(Boolean(preData.recommend));
-        after.setAdminVisible(Boolean(ctx.settings.toggleAdminPanel) && Boolean(document.querySelector(".useradmin_btnbox button")));
+        after.setAdminVisible(ctx.settings.toggleAdminPanel === true && isGalleryManager());
 
         if (!historySkip) {
             // 미리보기가 이미 열려 있으면(다음 글 전환) 최초 히스토리 유지 — 아니면 close가 가짜 URL을 복원함

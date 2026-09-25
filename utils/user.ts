@@ -35,3 +35,6 @@ export const getType = (iconUrl: string): UserType => {
     const file = iconUrl.split("/").pop() ?? "";
     return TYPE_BY_FILE[file] ?? "UNFIXED";
 };
+
+/** 현재 페이지에서 갤러리 관리 권한이 있는지 — 관리 버튼, 또는 목록 머리의 체크박스 열(미니 갤러리엔 관리 버튼이 없다)로 판단 */
+export const isGalleryManager = (): boolean => Boolean(document.querySelector(".useradmin_btnbox button, .gall_list .chkbox_th"));
