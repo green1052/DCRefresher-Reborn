@@ -1,5 +1,5 @@
 import {Box, Button, Flex, Grid, Heading, Separator, Text} from "@radix-ui/themes";
-import {Ban, Code, Database, Heart, Keyboard, type LucideIcon, MessageCircle, NotebookPen, Settings, Users, Wrench} from "lucide-react";
+import {Ban, Code, Database, Heart, Info, Keyboard, type LucideIcon, MessageCircle, NotebookPen, Settings, Users, Wrench} from "lucide-react";
 import {type MouseEvent, useEffect, useState} from "react";
 
 import {fontFamilyOf} from "@/features/fonts";
@@ -7,6 +7,7 @@ import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
 import {initModulesStore, useModulesStore} from "@/stores/modules";
 
+import {AboutTab} from "./AboutTab";
 import {BlockTab} from "./BlockTab";
 import {DataTab} from "./DataTab";
 import {DcconRain} from "./DcconRain";
@@ -30,6 +31,7 @@ const TABS: TabDef[] = [
     {id: "memo", label: "메모", icon: NotebookPen, content: () => <MemoTab/>},
     {id: "shortcut", label: "단축키", icon: Keyboard, content: () => <ShortcutTab/>},
     {id: "data", label: "데이터", icon: Database, content: () => <DataTab/>},
+    {id: "about", label: "정보", icon: Info, content: () => <AboutTab logo={LOGO_URL} version={VERSION}/>},
     {id: "dev", label: "개발자", icon: Wrench, dev: true, content: ({hideDev}) => <DevTab onHide={hideDev}/>}
 ];
 
