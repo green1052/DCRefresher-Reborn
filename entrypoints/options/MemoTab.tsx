@@ -37,6 +37,11 @@ const MemoFormDialog = ({
             setError("메모 대상을 입력해주세요.");
             return;
         }
+        // 빈 메모도 저장되면 "[]" 배지만 붙는다
+        if (!state.text.trim()) {
+            setError("메모를 입력해주세요.");
+            return;
+        }
         // 추가로 기존 메모를 덮어쓰지 않게 — 고치려면 목록에서 눌러 수정
         if (!editing && Object.hasOwn(useMemosStore.getState().memos[state.type], state.user.trim())) {
             setError("이미 메모가 있습니다.");

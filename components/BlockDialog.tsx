@@ -29,6 +29,15 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
             setError(`${TYPE_NAMES[type]} 값을 입력해주세요.`);
             return;
         }
+        // 틀린 정규식은 차단할 때 조용히 건너뛰어 저장돼도 아무것도 안 걸린다 — 저장 전에 알린다
+        if (isRegex) {
+            try {
+                new RegExp(content.trim());
+            } catch (e) {
+                setError(`정규식이 올바르지 않습니다. ${e instanceof Error ? e.message : String(e)}`);
+                return;
+            }
+        }
 
         try {
             await onSubmit({
