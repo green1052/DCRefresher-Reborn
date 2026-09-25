@@ -221,7 +221,7 @@ export function DataTab() {
             </Section>
 
             <Section title="내보내기 / 가져오기"
-                     desc="IP/밴 데이터베이스와 캐시를 뺀 모든 설정을 JSON으로 옮깁니다. 가져오기는 JSON에 있는 항목만 덮어쓰고 나머지는 그대로 둡니다.">
+                     desc="IP/밴 데이터베이스와 캐시를 뺀 모든 설정을 JSON으로 옮깁니다. 가져오기는 JSON에 든 설정과 목록만 바꾸고, JSON에 없는 것은 그대로 둡니다.">
                 <Flex gap="2" wrap="wrap">
                     <Button variant="soft" disabled={loading} onClick={() => void exportData()}>
                         <Download size={14}/> 클립보드로 내보내기
@@ -261,7 +261,7 @@ export function DataTab() {
 
             {importOpen && (
                 <ImportDialog title="데이터 가져오기"
-                              desc="내보낸 JSON 데이터를 붙여넣어주세요. JSON에 있는 항목만 덮어쓰고, 없는 항목(예: 설정만 든 JSON이면 차단/메모 목록)은 그대로 둡니다."
+                              desc="내보낸 JSON 데이터를 붙여넣어주세요. JSON에 든 설정과 목록만 바꾸고 나머지는 그대로 둡니다. 들어 있는 차단/메모 목록은 합치지 않고 통째로 바꿉니다. 합치려면 차단/메모 탭의 가져오기를 쓰세요."
                               onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
             )}
         </Box>

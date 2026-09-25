@@ -17,8 +17,10 @@ import {usePreviewStore} from "./previewStore";
 
 const parseDate = (value: string): Date => {
     const missingYear = value.substring(0, 4).match(/\./);
+    const local = (missingYear ? `${new Date().getFullYear()}-` : "") + value.replace(/\./g, "-").replace(" ", "T");
 
-    return new Date((missingYear ? `${new Date().getFullYear()}-` : "") + value.replace(/\./g, "-"));
+    // 디시 시각은 한국 시간 — 브라우저 시간대로 읽으면 해외에서 어긋난다
+    return new Date(`${local}+09:00`);
 };
 
 const relative = (date: Date): string => {

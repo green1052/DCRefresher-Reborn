@@ -38,7 +38,7 @@ const settings: NonNullable<ModuleDefinition["settings"]> = {
         type: "check",
         group: FRAME_GROUP,
         name: "바깥 배경 흐리게",
-        desc: "미리보기 창 바깥 배경을 흐리게 처리합니다. (성능 하락 영향 있음)",
+        desc: "미리보기 창 바깥 배경을 흐리게 처리합니다. (성능이 떨어질 수 있음)",
         default: false
     },
     tooltipMode: {type: "check", name: "미니 미리보기 표시", desc: "게시글에 마우스를 올리면 미리보기를 표시합니다.", default: false},

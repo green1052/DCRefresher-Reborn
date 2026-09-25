@@ -234,11 +234,15 @@ export const ListTabs = <T extends string, I>({
                                             <Search size={14}/>
                                         </TextField.Slot>
                                     </TextField.Root>
-                                    {/* 검색 중에도 걸러진 것만이 아니라 이 종류 전부를 지운다 — 확인 문구가 "모두"라고 알린다 */}
+                                    {/* 검색 중에도 걸러진 것만이 아니라 이 종류 전부를 지운다 — 확인 문구에 전체 개수를 적는다 */}
                                     <Button variant="soft" color="red" disabled={total === 0} onClick={() => setClearConfirm(type)}>
                                         <Trash2 size={14}/> 전체 삭제
                                     </Button>
-                                    <Button onClick={() => onAdd(type)}>
+                                    <Button onClick={() => {
+                                        // 검색어에 안 맞는 새 항목이 곧바로 숨어 추가가 안 된 것처럼 보이지 않게
+                                        setQuery("");
+                                        onAdd(type);
+                                    }}>
                                         <Plus size={14}/> 추가
                                     </Button>
                                 </Flex>
@@ -267,7 +271,7 @@ export const ListTabs = <T extends string, I>({
 
             {clearConfirm && (
                 <ConfirmDialog
-                    title={`${names[clearConfirm]} ${object} 모두 삭제할까요?`}
+                    title={`${names[clearConfirm]} ${object} 모두(${items(clearConfirm).length}개) 삭제할까요?`}
                     confirmLabel="삭제"
                     danger
                     onConfirm={() => {

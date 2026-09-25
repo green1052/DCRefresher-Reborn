@@ -222,9 +222,9 @@ export default defineModule({
     },
 
     async setup(ctx) {
-        // 옮긴 값은 설정 감시 → onChanged가 반영해 다시 그린다
-        await migrateShowIpInfo().catch(console.error);
+        // 먼저 그린다 — 옮기는 동안 모듈이 꺼지면 revoke가 지운 뒤에 다시 그리게 된다. 옮긴 값은 설정 감시 → onChanged가 반영한다
         publishBadges(ctx);
+        await migrateShowIpInfo().catch(console.error);
 
         // 조회 중에 모듈이 꺼지면 revoke가 지운 배지·글댓비를 다시 그리지 않게 한다 (setup을 기다리는 동안 꺼져도 마찬가지)
         let alive = true;
