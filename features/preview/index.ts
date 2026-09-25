@@ -428,13 +428,17 @@ const controller = (ctx: ModuleContext) => {
         void load(preData, mySignal, dir);
     };
 
+    // 관리 요청은 하나씩 — 패널을 연타해도 같은 POST가 두 번 가지 않게
+    let managing = false;
+
     const manage = async (kind: ManageKind) => {
         const st = store.getState();
-        if (!st.preData || !st.post) return;
+        if (!st.preData || !st.post || managing) return;
 
         const target = st.preData;
         // 응답 전에 다른 글로 넘어갔으면 표시는 그 글 것이 아니다 — 알림만
         const stillOpen = (): boolean => store.getState().signalId === st.signalId;
+        managing = true;
 
         try {
             // 공지·개념글 표시는 성공했을 때만 바꾼다
@@ -454,12 +458,15 @@ const controller = (ctx: ModuleContext) => {
             }
         } catch {
             ui.showToast("관리 기능 처리 중 오류가 발생했습니다.", "error");
+        } finally {
+            managing = false;
         }
 
         eventBus.emit("refreshRequest");
     };
 
     const blockPreset = async (target: GalleryPreData) => {
+        const signal = store.getState().signalId;
         try {
             const result = await blockUser(target, {
                 avoidHour: String(ctx.settings.blockPresetDay ?? "1"),
@@ -469,7 +476,8 @@ const controller = (ctx: ModuleContext) => {
                 userTypeChk: ctx.settings.blockPresetUserType ? "1" : "0"
             });
 
-            if (notifyManage(result, "차단했습니다.") && ctx.settings.blockPresetDelete) close();
+            // 그새 다른 글로 넘어갔으면 그 글은 닫지 않는다
+            if (notifyManage(result, "차단했습니다.") && ctx.settings.blockPresetDelete && store.getState().signalId === signal) close();
         } catch {
             ui.showToast("차단 처리 중 오류가 발생했습니다.", "error");
         }

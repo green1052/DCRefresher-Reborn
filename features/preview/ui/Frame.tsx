@@ -1,9 +1,10 @@
 import {Badge, Box, Button, Callout, Flex, Heading, IconButton, Separator, Spinner, Text, Theme, Tooltip} from "@radix-ui/themes";
 import {ArrowUp, CircleAlert, Clock, ExternalLink, Eye, MessageSquare, ThumbsDown, ThumbsUp} from "lucide-react";
 import {Dialog} from "radix-ui";
-import {type CSSProperties, Fragment, useEffect, useRef, type WheelEvent} from "react";
+import {type CSSProperties, Fragment, useEffect, useRef, useState, type WheelEvent} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
+import {getEntry, setEntry} from "@/core/preview/cache";
 import {captchaImage, vote} from "@/core/preview/request";
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {PostInfo} from "@/core/preview/types";
@@ -12,6 +13,7 @@ import {isTyping} from "@/utils/event";
 
 import {adjacentPreData} from "../index";
 import {Comment, TimeStamp, useTick, UserCard} from "./Comment";
+import {AdminPanel} from "./Popups";
 import {BLOCKED_TEXT, type ErrorState, parseDate, postTitle, usePreviewStore} from "./previewStore";
 import {WriteComment} from "./WriteComment";
 
@@ -88,10 +90,13 @@ const CountDown = () => {
 const Votes = ({post}: { post: PostInfo }) => {
     const preData = usePreviewStore((s) => s.preData);
     const {upvotes, fixedUpvotes, downvotes} = post;
+    // 보내는 중인 쪽 — 연타로 추천 POST가 두 번 가지 않게
+    const [voting, setVoting] = useState<"U" | "D" | null>(null);
 
     const onVote = async (mode: "U" | "D"): Promise<void> => {
-        if (!preData) return;
+        if (!preData || voting) return;
         const signal = usePreviewStore.getState().signalId;
+        setVoting(mode);
         try {
             let code: string | undefined;
             if (post.requireCaptcha) {
@@ -106,6 +111,9 @@ const Votes = ({post}: { post: PostInfo }) => {
                     : {downvotes: result.counts ?? downvotes};
                 // 응답 전에 다른 글로 넘어갔으면 숫자는 그 글 것이 아니다 — 알림만. 지금 post를 읽어야 동시에 온 추천·비추천이 서로 덮지 않는다
                 usePreviewStore.setState((s) => (s.signalId !== signal || !s.post ? {} : {post: {...s.post, ...counts}}));
+                // 1분 안에 다시 열면 캐시 본문을 쓴다 — 거기 숫자도 고친다
+                const cached = getEntry(preData)?.post;
+                if (cached) setEntry(preData, {post: {...cached, ...counts}});
                 useUiStore
                     .getState()
                     .showToast(`${mode === "U" ? "추천" : "비추천"}되었습니다.`);
@@ -114,18 +122,21 @@ const Votes = ({post}: { post: PostInfo }) => {
             }
         } catch {
             useUiStore.getState().showToast("추천 처리 중 오류가 발생했습니다.", "error");
+        } finally {
+            setVoting(null);
         }
     };
 
     return (
         <Flex justify="center" align="center" gap="3" py="5">
-            <Button size="3" variant="soft" aria-label="추천" onClick={() => void onVote("U")}>
+            <Button size="3" variant="soft" aria-label="추천" loading={voting === "U"} disabled={voting === "D"} onClick={() => void onVote("U")}>
                 <ThumbsUp size={18}/>
                 {upvotes || "X"}
                 {fixedUpvotes && <Text size="2" color="gray">({fixedUpvotes})</Text>}
             </Button>
             {downvotes !== undefined && (
-                <Button size="3" variant="soft" color="gray" aria-label="비추천" onClick={() => void onVote("D")}>
+                <Button size="3" variant="soft" color="gray" aria-label="비추천" loading={voting === "D"} disabled={voting === "U"}
+                        onClick={() => void onVote("D")}>
                     <ThumbsDown size={18}/>
                     {downvotes}
                 </Button>
@@ -486,6 +497,8 @@ export const Frame = () => {
                         )}
                     </Flex>
                 </Dialog.Content>
+                {/* 창 옆에 fixed — Content 안에 두면 transform 때문에 창 기준으로 붙는다 */}
+                {visible && adminVisible && <AdminPanel/>}
                 </Theme>
             </Dialog.Portal>
         </Dialog.Root>

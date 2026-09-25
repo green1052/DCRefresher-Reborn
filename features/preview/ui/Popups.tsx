@@ -31,10 +31,12 @@ const BlockPopup = () => {
     const [sending, setSending] = useState(false);
 
     const submit = async (): Promise<void> => {
-        // 연타로 차단 요청이 두 번 가지 않게 — 끝나면 창이 닫히므로 되돌리지 않는다
+        // 연타로 차단 요청이 두 번 가지 않게
         if (!preData || sending) return;
         setSending(true);
+        const signal = usePreviewStore.getState().signalId;
 
+        let done = false;
         try {
             const result = await blockUser(preData, {
                 avoidHour: day,
@@ -43,12 +45,18 @@ const BlockPopup = () => {
                 delChk: delChk ? "1" : "0",
                 userTypeChk: userTypeChk ? "1" : "0"
             });
-            if (notifyManage(result, "차단했습니다.") && delChk) usePreviewStore.getState().requestClose();
+            done = notifyManage(result, "차단했습니다.");
             eventBus.emit("refreshRequest");
         } catch {
             useUiStore.getState().showToast("차단 처리 중 오류가 발생했습니다.", "error");
         }
-        usePreviewStore.setState({blockPopup: false});
+
+        // 그새 다른 글로 넘어갔으면 창도 미리보기도 그 글 것이다 — 알림만
+        if (usePreviewStore.getState().signalId !== signal) return;
+        // 실패하면 입력을 그대로 두고 다시 보낼 수 있게
+        if (!done) setSending(false);
+        else if (delChk) usePreviewStore.getState().requestClose();
+        else usePreviewStore.setState({blockPopup: false});
     };
 
     return (
@@ -146,28 +154,32 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
     );
 };
 
-/** 관리 권한이 있을 때 미리보기 왼쪽 가장자리에 붙는 관리 패널. Kbd는 단축키 힌트 — 차단은 차단 키 두 번(프리셋 즉시 차단)과 달리 옵션 창을 연다 */
-const AdminPanel = () => {
+/**
+ * 관리 권한이 있을 때 미리보기 왼쪽 가장자리에 붙는 관리 패널. Kbd는 단축키 힌트 — 차단은 차단 키 두 번(프리셋 즉시 차단)과 달리 옵션 창을 연다.
+ * 미리보기 포털 안에 그린다 (Frame) — 나중에 뜬 창(차단·메모 등)이 위를 덮어, 한 번 클릭에 창 닫기와 관리 동작이 같이 일어나지 않게
+ */
+export const AdminPanel = () => {
     const notice = usePreviewStore((s) => s.notice);
     const recommend = usePreviewStore((s) => s.recommend);
     const requestManage = usePreviewStore((s) => s.requestManage);
     const keys = usePreviewStore((s) => s.shortcutKeys);
 
-    const actions: { label: string; hint?: string; icon: ReactNode; active?: boolean; danger?: boolean; run: () => void }[] = [
-        {label: notice ? "공지 해제" : "공지 등록", icon: <Megaphone size={14}/>, active: notice, run: () => requestManage("notice")},
-        {label: recommend ? "개념글 해제" : "개념글 등록", icon: <Star size={14}/>, active: recommend, run: () => requestManage("recommend")},
-        {label: "끌올", icon: <ArrowBigUpDash size={14}/>, run: () => requestManage("bump")},
-        {label: "차단", hint: keys?.block, icon: <Ban size={14}/>, danger: true, run: () => usePreviewStore.setState({blockPopup: true})},
-        {label: "삭제", hint: keys?.delete, icon: <Trash2 size={14}/>, danger: true, run: () => requestManage("delete")}
+    // id는 고정 key — 라벨을 key로 쓰면 공지·개념글을 토글할 때 버튼이 새로 그려져 포커스가 사라진다
+    const actions: { id: string; label: string; hint?: string; icon: ReactNode; active?: boolean; danger?: boolean; run: () => void }[] = [
+        {id: "notice", label: notice ? "공지 해제" : "공지 등록", icon: <Megaphone size={14}/>, active: notice, run: () => requestManage("notice")},
+        {id: "recommend", label: recommend ? "개념글 해제" : "개념글 등록", icon: <Star size={14}/>, active: recommend, run: () => requestManage("recommend")},
+        {id: "bump", label: "끌올", icon: <ArrowBigUpDash size={14}/>, run: () => requestManage("bump")},
+        {id: "block", label: "차단", hint: keys?.block, icon: <Ban size={14}/>, danger: true, run: () => usePreviewStore.setState({blockPopup: true})},
+        {id: "delete", label: "삭제", hint: keys?.delete, icon: <Trash2 size={14}/>, danger: true, run: () => requestManage("delete")}
     ];
 
     return (
         <Card size="1" className="refresher-admin-panel refresher-interactive">
             <Text as="div" size="1" color="gray" weight="medium" mb="2" ml="1">관리</Text>
             <Flex direction="column" gap="1">
-                {actions.map(({label, hint, icon, active, danger, run}) => (
+                {actions.map(({id, label, hint, icon, active, danger, run}) => (
                     <Button
-                        key={label}
+                        key={id}
                         size="2"
                         // soft 고정 — ghost와 섞으면 Radix 여백이 달라 흔들린다. 상태는 색으로 표시
                         variant="soft"
@@ -188,14 +200,11 @@ const AdminPanel = () => {
 };
 
 export const Popups = () => {
-    const visible = usePreviewStore((s) => s.visible);
-    const adminVisible = usePreviewStore((s) => s.adminVisible);
     const blockPopup = usePreviewStore((s) => s.blockPopup);
     const captcha = usePreviewStore((s) => s.captcha);
 
     return (
         <>
-            {visible && adminVisible && <AdminPanel/>}
             {blockPopup && <BlockPopup/>}
             {captcha && <CaptchaPopup key={captcha.url} captcha={captcha}/>}
         </>

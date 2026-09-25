@@ -375,13 +375,12 @@
     font-size: var(--font-size-2);
 }
 
-/* ===== 관리 패널 (v5처럼 왼쪽 가장자리) ===== */
+/* ===== 관리 패널 (v5처럼 왼쪽 가장자리) — 미리보기 포털 안이라 나중에 뜬 창 아래에 깔린다 ===== */
 
 .refresher-admin-panel {
     position: fixed;
     top: 20%;
     left: 0;
-    z-index: 1;
     width: 150px;
     animation: refresher-fade-in 0.15s cubic-bezier(0.19, 1, 0.22, 1);
 
