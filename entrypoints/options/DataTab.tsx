@@ -8,7 +8,7 @@ import {updateDatabase} from "@/core/database";
 import {migrateV5} from "@/core/migrate-v5";
 import {backupStorage, dbStorage} from "@/core/storage/items";
 
-import {formatTime, ImportDialog, Section} from "./Layout";
+import {formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
 
 const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
@@ -48,21 +48,17 @@ const parseImport = (input: string): Record<string, unknown> => {
 };
 
 export function DataTab() {
-    const [lastUpdate, setLastUpdate] = useState(0);
+    const {lastUpdate} = useStorageItem(dbStorage);
+    const backupError = useStorageItem(backupStorage.error);
+    const autoBackup = useStorageItem(backupStorage.auto);
     const [backupTimes, setBackupTimes] = useState<Awaited<ReturnType<typeof readCloudBackupTimes>>>({legacy: false});
     const [restoreOpen, setRestoreOpen] = useState(false);
-    const [backupError, setBackupError] = useState("");
-    const [autoBackup, setAutoBackup] = useState(false);
     const [loading, setLoading] = useState(false);
     const [notice, setNotice] = useState<string | null>(null);
     const [resetConfirm, setResetConfirm] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
 
     useEffect(() => {
-        void dbStorage.getValue().then((db) => setLastUpdate(db.lastUpdate));
-        void backupStorage.error.getValue().then(setBackupError);
-        void backupStorage.auto.getValue().then(setAutoBackup);
-
         // 백업 시각은 클라우드 메타에서 — 자동 백업(백그라운드)·다른 기기의 백업도 따라간다
         const loadTimes = (): void => void readCloudBackupTimes().then(setBackupTimes);
         const onChanged = (_: unknown, area: string): void => {
@@ -70,12 +66,7 @@ export function DataTab() {
         };
         loadTimes();
         browser.storage.onChanged.addListener(onChanged);
-        const unwatchError = backupStorage.error.watch((value) => setBackupError(value ?? ""));
-
-        return () => {
-            browser.storage.onChanged.removeListener(onChanged);
-            unwatchError();
-        };
+        return () => browser.storage.onChanged.removeListener(onChanged);
     }, []);
 
     const run = async (action: () => Promise<string>, failure: string): Promise<void> => {
@@ -92,7 +83,6 @@ export function DataTab() {
     const forceUpdate = () =>
         run(async () => {
             await updateDatabase();
-            setLastUpdate((await dbStorage.getValue()).lastUpdate);
             return "데이터베이스를 갱신했습니다.";
         }, "데이터베이스를 갱신하지 못했습니다.");
 
@@ -113,11 +103,9 @@ export function DataTab() {
         }, "복원하지 못했습니다.");
 
     const toggleAutoBackup = async (on: boolean): Promise<void> => {
-        setAutoBackup(on);
         try {
             await backupStorage.auto.setValue(on);
         } catch (e) {
-            setAutoBackup(!on);
             setNotice(`자동 백업 설정을 저장하지 못했습니다. ${errorMessage(e)}`);
             return;
         }
@@ -147,10 +135,7 @@ export function DataTab() {
         run(async () => {
             // 자동 백업이 켜져 있으면 1분 뒤 빈 설정이 클라우드 백업을 덮어쓴다 — 먼저 끈다
             const wasAuto = await backupStorage.auto.getValue();
-            if (wasAuto) {
-                await backupStorage.auto.setValue(false);
-                setAutoBackup(false);
-            }
+            if (wasAuto) await backupStorage.auto.setValue(false);
 
             await writeSettings({}, "replace");
             // 백업 대상이 아니라 writeSettings가 건드리지 않는 비회원 비밀번호도 지운다

@@ -1,8 +1,21 @@
 import {Badge, Box, Button, Card, Dialog, Flex, Heading, IconButton, Table, Tabs, Text, TextArea, TextField, Tooltip} from "@radix-ui/themes";
 import {Download, Plus, Search, Trash2, Upload} from "lucide-react";
-import {type ReactNode, useState} from "react";
+import {type ReactNode, useEffect, useState} from "react";
 
 import {ConfirmDialog, DialogActions, Notice} from "@/components/ConfirmDialog";
+import type {StorageItem} from "@/core/storage/items";
+
+/** 저장소 항목 하나 — 배경·다른 탭에서 바뀌어도 따라간다 (읽기 전엔 fallback) */
+export const useStorageItem = <T, >(item: StorageItem<T>): T => {
+    const [value, setValue] = useState(item.fallback);
+
+    useEffect(() => {
+        void item.getValue().then(setValue);
+        return item.watch(setValue);
+    }, [item]);
+
+    return value;
+};
 
 /** 저장 시각 표시 (0이면 기록 없음) */
 export const formatTime = (time: number): string => (time === 0 ? "기록 없음" : new Date(time).toLocaleString("ko-KR"));

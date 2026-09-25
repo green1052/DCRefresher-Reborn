@@ -9,7 +9,7 @@ import {compactIpData, type RawIpData} from "@/core/ipdb";
 import {dbStorage} from "@/core/storage/items";
 import type {Database, StoredDB} from "@/core/storage/types";
 
-import {byteSize, Empty, formatBytes, formatTime, Section} from "./Layout";
+import {byteSize, Empty, formatBytes, formatTime, Section, useStorageItem} from "./Layout";
 
 type Area = "local" | "sync";
 
@@ -33,7 +33,12 @@ const useStorageArea = (area: Area): Record<string, unknown> | null => {
     const [items, setItems] = useState<Record<string, unknown> | null>(null);
 
     useEffect(() => {
-        const load = (): void => void browser.storage[area].get(null).then(setItems);
+        // 영역을 바꾼 뒤 늦게 온 이전 영역의 값이 덮어쓰지 않게
+        let alive = true;
+        const load = (): void =>
+            void browser.storage[area].get(null).then((next) => {
+                if (alive) setItems(next);
+            });
         const onChanged = (_: unknown, changedArea: string): void => {
             if (changedArea === area) load();
         };
@@ -41,7 +46,10 @@ const useStorageArea = (area: Area): Record<string, unknown> | null => {
         setItems(null);
         load();
         browser.storage.onChanged.addListener(onChanged);
-        return () => browser.storage.onChanged.removeListener(onChanged);
+        return () => {
+            alive = false;
+            browser.storage.onChanged.removeListener(onChanged);
+        };
     }, [area]);
 
     return items;
@@ -128,27 +136,26 @@ const StorageSection = () => {
     );
 };
 
+/** DB는 문자열로 저장돼 있다 — 깨졌으면 없는 것으로 */
+const parseStored = (stored: StoredDB): Database => {
+    try {
+        return parseDB(stored);
+    } catch (e) {
+        console.error(e);
+        return {...stored, ip: null, ban: {}};
+    }
+};
+
 const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
-    const [db, setDb] = useState<Database | null>(null);
+    // 값이 바뀔 때만 다시 푼다 (React Compiler가 stored로 메모)
+    const db = parseStored(useStorageItem(dbStorage));
     const [ip, setIp] = useState("");
     const [, rerender] = useState(0);
     const fileInput = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        // 문자열로 저장돼 있다 — 렌더마다 풀지 않게 받을 때 한 번 푼다 (깨졌으면 없는 것으로)
-        const show = (stored: StoredDB): void => {
-            try {
-                setDb(parseDB(stored));
-            } catch (e) {
-                console.error(e);
-                setDb({...stored, ip: null, ban: {}});
-            }
-        };
-
-        void dbStorage.getValue().then(show);
-        // 조회 테스트는 콘텐츠 스크립트와 같은 경로(ipInfoOf)로 — 처음 불러오면 한 번 다시 그리고, 이후 변경은 아래 watch가 그린다
+        // 조회 테스트는 콘텐츠 스크립트와 같은 경로(ipInfoOf)로 — 처음 불러오면 한 번 다시 그리고, 이후 변경은 useStorageItem이 그린다
         void initDatabase().then(() => rerender((count) => count + 1));
-        return dbStorage.watch(show);
     }, []);
 
     const loadFile = async (file: File): Promise<void> => {
@@ -162,7 +169,7 @@ const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
     };
 
     const info = ip.trim() ? ipInfoOf(ip.trim()) : undefined;
-    const banCount = Object.values(db?.ban ?? {}).reduce((sum, uids) => sum + uids.length, 0);
+    const banCount = Object.values(db.ban ?? {}).reduce((sum, uids) => sum + uids.length, 0);
 
     return (
         <Section
@@ -178,8 +185,7 @@ const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
                     <Button variant="soft" color="gray" onClick={() => fileInput.current?.click()}>
                         <FileJson size={14}/> IP 파일 불러오기
                     </Button>
-                    <Button variant="soft" color="red"
-                            onClick={() => void dbStorage.setValue({version: "", lastUpdate: 0, ip: null, ban: {}})}>
+                    <Button variant="soft" color="red" onClick={() => void dbStorage.removeValue()}>
                         <Trash2 size={14}/> 비우기
                     </Button>
                 </>
@@ -188,21 +194,21 @@ const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
             <DataList.Root size="2" mb="4">
                 <DataList.Item>
                     <DataList.Label>버전</DataList.Label>
-                    <DataList.Value>{db?.version || "없음"}</DataList.Value>
+                    <DataList.Value>{db.version || "없음"}</DataList.Value>
                 </DataList.Item>
                 <DataList.Item>
                     <DataList.Label>마지막 갱신</DataList.Label>
-                    <DataList.Value>{formatTime(db?.lastUpdate ?? 0)}</DataList.Value>
+                    <DataList.Value>{formatTime(db.lastUpdate)}</DataList.Value>
                 </DataList.Item>
                 <DataList.Item>
                     <DataList.Label>IP</DataList.Label>
                     <DataList.Value>
-                        {!db?.ip ? "없음" : `조직 ${db.ip.orgs.length} · 국가 ${db.ip.countries.length} · 후보 ${db.ip.meta.length / 3} · 목록 ${db.ip.lists.length} · ${formatBytes(byteSize(db.ip))}`}
+                        {!db.ip ? "없음" : `조직 ${db.ip.orgs.length} · 국가 ${db.ip.countries.length} · 후보 ${db.ip.meta.length / 3} · 목록 ${db.ip.lists.length} · ${formatBytes(byteSize(db.ip))}`}
                     </DataList.Value>
                 </DataList.Item>
                 <DataList.Item>
                     <DataList.Label>밴</DataList.Label>
-                    <DataList.Value>{`사유 ${Object.keys(db?.ban ?? {}).length} · 유저 ${banCount}`}</DataList.Value>
+                    <DataList.Value>{`사유 ${Object.keys(db.ban ?? {}).length} · 유저 ${banCount}`}</DataList.Value>
                 </DataList.Item>
             </DataList.Root>
 
