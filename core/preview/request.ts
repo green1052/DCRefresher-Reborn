@@ -1,5 +1,5 @@
 import {http} from "@/core/http/client";
-import {galleryType, galleryTypeName, urls} from "@/core/http/urls";
+import {galleryPath, galleryTypeName, isMiniGallery, urls} from "@/core/http/urls";
 import {csrfToken} from "@/utils/cookie";
 
 import {parsePostInfo} from "./parser";
@@ -10,12 +10,12 @@ const HEADERS = {"X-Requested-With": "XMLHttpRequest"};
 const commonBody = async (link?: string): Promise<URLSearchParams> =>
     new URLSearchParams({ci_t: await csrfToken(), _GALLTYPE_: galleryTypeName(link ?? "")});
 
-const isMini = (link?: string): boolean => galleryType(link ?? "", "/") === "mini/";
+const isMini = (link?: string): boolean => isMiniGallery(link ?? "");
 
 const viewUrl = (link: string | undefined, gallery: string, id: string): string => {
-    const type = galleryType(link ?? "", "/");
+    const type = galleryPath(link ?? "");
 
-    return `${urls.gall.major}${type}board/view/?id=${gallery}&no=${id}`;
+    return `${urls.base}${type}board/view/?id=${gallery}&no=${id}`;
 };
 
 /** 게시글 HTML → PostInfo */
@@ -150,7 +150,7 @@ export const setRecommend = async (preData: GalleryPreData, recommend: boolean):
 
 /** 이미지 캡챠 URL */
 export const captchaImage = (preData: GalleryPreData, type: "comment" | "recommend"): string =>
-    `${urls.gall.major}kcaptcha/image_v3/?gall_id=${preData.gallery}&kcaptcha_type=${type}&time=${Date.now()}&_GALLTYPE_=${galleryTypeName(preData.link ?? "")}`;
+    `${urls.base}kcaptcha/image_v3/?gall_id=${preData.gallery}&kcaptcha_type=${type}&time=${Date.now()}&_GALLTYPE_=${galleryTypeName(preData.link ?? "")}`;
 
 /** 관리자 댓글 삭제 */
 export const adminDeleteComment = async (preData: GalleryPreData, commentId: string): Promise<void> => {

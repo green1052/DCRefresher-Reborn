@@ -1,6 +1,6 @@
 import {http} from "@/core/http/client";
 import {defineModule} from "@/core/module/define";
-import {galleryType, galleryTypeName, urls} from "@/core/http/urls";
+import {galleryTypeName, isMiniGallery, urls} from "@/core/http/urls";
 import {csrfToken} from "@/utils/cookie";
 
 export default defineModule({
@@ -112,7 +112,7 @@ export default defineModule({
 
         // ===== Ctrl 클릭 삭제 =====
         const deletePost = async (postId: string): Promise<void> => {
-            const isMini = galleryType(location.href, "/") === "mini/";
+            const isMini = isMiniGallery(location.href);
 
             try {
                 await http.post(isMini ? urls.manage.deleteMini : urls.manage.delete, {

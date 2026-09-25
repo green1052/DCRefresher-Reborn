@@ -13,7 +13,7 @@ interface MemosState {
     clearType: (type: MemoType) => Promise<void>;
 }
 
-export const isMemoEntry = (value: unknown): value is MemoEntry => {
+const isMemoEntry = (value: unknown): value is MemoEntry => {
     if (!value || typeof value !== "object") return false;
 
     const memo = value as Partial<MemoEntry>;

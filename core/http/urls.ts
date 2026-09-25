@@ -1,11 +1,5 @@
 export const urls = {
     base: "https://gall.dcinside.com/",
-    gall: {
-        major: "https://gall.dcinside.com/",
-        mini: "https://gall.dcinside.com/mini/",
-        minor: "https://gall.dcinside.com/mgallery/",
-        person: "https://gall.dcinside.com/person/"
-    },
     vote: "https://gall.dcinside.com/board/recommend/vote",
     manage: {
         bump: "https://gall.dcinside.com/ajax/minor_manager_board_ajax/update_bump",
@@ -36,92 +30,32 @@ export const urls = {
     }
 };
 
-export const types = {
-    MAJOR: "",
-    MINOR: "mgallery",
-    MINI: "mini",
-    PERSON: "person"
+/** URL의 갤러리 경로 접두사: 일반 "", 마이너 "mgallery/", 미니 "mini/", 인물 "person/" */
+export const galleryPath = (url: string): string => {
+    const type = /\.com\/(mgallery|mini|person)/.exec(url)?.[1];
+    return type ? `${type}/` : "";
 };
 
-export const commentGallTypes: Record<string, string> = {
-    "": "G",
-    mgallery: "M",
-    mini: "MI",
-    person: "PR"
-};
+export const isMiniGallery = (url: string): boolean => galleryPath(url) === "mini/";
 
-/**
- * 마이너 갤러리인지를 확인하여 boolean을 반환합니다.
- * @param url 확인할 URL
- */
-export const checkMinor = (url?: string): boolean => /\.com\/mgallery/.test(url || location.href);
+const GALLERY_TYPE_NAMES: Record<string, string> = {"": "G", "mgallery/": "M", "mini/": "MI", "person/": "PR"};
 
-/**
- * 미니 갤러리인지를 확인하여 boolean을 반환합니다.
- * @param url 확인할 URL
- */
-export const checkMini = (url?: string): boolean => /\.com\/mini/.test(url || location.href);
+/** 댓글/관리 요청의 _GALLTYPE_ 코드 (G, M, MI, PR) */
+export const galleryTypeName = (url: string): string => GALLERY_TYPE_NAMES[galleryPath(url)] ?? "G";
 
-/**
- * 인물 갤러리인지를 확인하여 boolean을 반환합니다.
- * @param url 확인할 URL
- */
-export const checkPerson = (url?: string): boolean => /\.com\/person/.test(url || location.href);
-
-/**
- * URL에서 갤러리 종류를 확인하여 반환합니다.
- *
- * @param url 갤러리 종류를 확인할 URL.
- * @param extra 마이너 갤러리와 미니 갤러리에 붙일 URL suffix.
- */
-export const galleryType = (url: string, extra?: string): string => {
-    if (checkMinor(url)) return types.MINOR + (extra ?? "");
-    else if (checkMini(url)) return types.MINI + (extra ?? "");
-    else if (checkPerson(url)) return types.PERSON + (extra ?? "");
-    else return types.MAJOR;
-};
-
-/**
- * URL에 /board/view가 포함되어 있을 경우 /board/lists로 바꿔줍니다.
- */
-export const view = (url: string): string => {
-    const type = {
-        [types.MINI]: urls.gall.mini,
-        [types.MINOR]: urls.gall.minor,
-        [types.MAJOR]: urls.gall.major,
-        [types.PERSON]: urls.gall.person
-    }[galleryType(url)];
-
+/** 게시글/목록 URL → 같은 갤러리·쿼리의 목록 URL (no 제거) */
+export const listUrl = (url: string): string => {
     const queries = new URL(url).searchParams;
     queries.delete("no");
-
-    return type + "board/lists?" + queries.toString();
+    return `${urls.base}${galleryPath(url)}board/lists?${queries}`;
 };
 
-export const mergeParamURL = (origin: string, getFrom: string): string => {
-    const params: Record<string, string> = {};
-
-    const originURL = new URL(origin);
-    for (const [key, value] of originURL.searchParams) {
-        params[key] = value;
-    }
-
-    const fromURL = new URL(getFrom);
-    for (const [key, value] of fromURL.searchParams) {
-        params[key] = value;
-    }
-
-    return "?" + new URLSearchParams(params).toString();
+/** origin의 쿼리에 from의 쿼리를 덮어쓴 "?..." 문자열 */
+export const mergeParamURL = (origin: string, from: string): string => {
+    const params = new URLSearchParams(new URL(origin).search);
+    for (const [key, value] of new URL(from).searchParams) params.set(key, value);
+    return `?${params}`;
 };
 
-/**
- * URL에서 갤러리 종류를 확인하여 댓글용 갤러리 타입 코드를 반환합니다. (G, M, MI, PR)
- */
-export const galleryTypeName = (url: string): string => commentGallTypes[galleryType(url)] ?? "";
-
-/**
- * 현재 URL의 query를 가져옵니다.
- *
- * @param name Query 이름
- */
+/** 현재 URL의 쿼리 값 */
 export const queryString = (name: string): string | null => new URLSearchParams(location.search).get(name);

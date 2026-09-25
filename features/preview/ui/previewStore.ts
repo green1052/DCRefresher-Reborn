@@ -1,32 +1,20 @@
 import {create} from "zustand";
 
-import type {GalleryPreData, PostInfo} from "@/core/preview/types";
 import type {ProcessedComment} from "@/core/preview/comments";
-
-export interface PreviewUser {
-    nick?: string;
-    id?: string;
-    ip?: string;
-    Type?: string;
-    image?: string;
-    memo?: { text: string; color: string };
-}
+import type {GalleryPreData, PostInfo} from "@/core/preview/types";
 
 export interface ErrorState {
-    title?: string;
     detail: string;
 }
 
 export type ManageKind = "notice" | "recommend" | "delete" | "bump";
 
-interface PreviewState {
-    /** 프레임 표시 여부 + 페이드 */
-    visible: boolean;
-    fading: boolean;
-    /** 현재 게시글 */
-    preData: GalleryPreData | null;
-    signalId: number;
+type Reply = { commentNo: string | null; replyNo: string | null };
 
+type MiniState = { preData: GalleryPreData; x: number; y: number; title: string; contents: string };
+
+/** 게시글을 새로 열 때마다 초기화되는 상태 */
+interface PostState {
     title: string;
     subtitle: string;
     contents: string | undefined;
@@ -34,8 +22,6 @@ interface PreviewState {
     loading: boolean;
 
     post: PostInfo | undefined;
-    user: PreviewUser | undefined;
-    date: Date | undefined;
     expire: Date | undefined;
     views: string | undefined;
 
@@ -44,10 +30,8 @@ interface PreviewState {
     downvotes: string | undefined;
 
     comments: ProcessedComment[] | undefined;
-    commentTotal: number | undefined;
     collapsed: Set<string>;
-    reply: { commentNo: string | null; replyNo: string | null };
-    showWrite: boolean;
+    reply: Reply;
     /** 댓글만 보기 (reply_num 클릭) */
     commentsOnly: boolean;
     /** 본문 이미지 차단 (blockImage) */
@@ -56,11 +40,20 @@ interface PreviewState {
     notice: boolean;
     recommend: boolean;
     adminVisible: boolean;
-
     blockPopup: boolean;
-    captcha: { url: string; resolve: (code: string) => void } | null;
+}
 
-    mini: { preData: GalleryPreData; x: number; y: number; title: string; contents: string } | null;
+interface PreviewState extends PostState {
+    /** 프레임 표시 여부 + 페이드 */
+    visible: boolean;
+    fading: boolean;
+    /** 현재 게시글 */
+    preData: GalleryPreData | null;
+    /** 열 때마다 증가 — 늦게 도착한 이전 글의 응답을 버리는 데 쓴다 */
+    signalId: number;
+
+    captcha: { url: string; resolve: (code: string) => void } | null;
+    mini: MiniState | null;
 
     /** controller 연결 (setup에서 주입) */
     openHook: ((preData: GalleryPreData, commentsOnly?: boolean) => void) | null;
@@ -69,15 +62,13 @@ interface PreviewState {
     manageHook: ((kind: ManageKind) => void) | null;
 
     open: (preData: GalleryPreData) => void;
-    setTitle: (title: string) => void;
     setPost: (post: PostInfo) => void;
     setError: (error: ErrorState) => void;
-    setComments: (comments: ProcessedComment[], totalCnt: number, subtitle: string) => void;
+    setComments: (comments: ProcessedComment[], subtitle: string) => void;
     setVotes: (counts: string, fixedCounts: string) => void;
     close: () => void;
     toggleCollapse: (no: string) => void;
-    setReply: (reply: { commentNo: string | null; replyNo: string | null }) => void;
-    setShowWrite: (show: boolean) => void;
+    setReply: (reply: Reply) => void;
     setCommentsOnly: (only: boolean) => void;
     setImageBlocked: (blocked: boolean) => void;
     setNotice: (notice: boolean) => void;
@@ -87,7 +78,7 @@ interface PreviewState {
     closeBlockPopup: () => void;
     openCaptcha: (url: string) => Promise<string>;
     closeCaptcha: () => void;
-    openMini: (data: { preData: GalleryPreData; x: number; y: number; title: string; contents: string }) => void;
+    openMini: (data: MiniState) => void;
     closeMini: () => void;
     moveMini: (clientX: number, clientY: number) => void;
     requestOpen: (preData: GalleryPreData, commentsOnly?: boolean) => void;
@@ -112,45 +103,40 @@ export const miniPosition = (clientX: number, clientY: number): { x: number; y: 
     y: Math.max(0, Math.min(clientY + 16, window.innerHeight - MINI_HEIGHT - 20))
 });
 
-let signalSeq = 0;
+const NO_REPLY: Reply = {commentNo: null, replyNo: null};
 
-export const usePreviewStore = create<PreviewState>((set, get) => ({
-    visible: false,
-    fading: false,
-    preData: null,
-    signalId: 0,
-
+const freshPost = (): PostState => ({
     title: "",
     subtitle: "",
     contents: undefined,
     error: undefined,
     loading: false,
-
     post: undefined,
-    user: undefined,
-    date: undefined,
     expire: undefined,
     views: undefined,
-
     upvotes: undefined,
     fixedUpvotes: undefined,
     downvotes: undefined,
-
     comments: undefined,
-    commentTotal: undefined,
     collapsed: new Set(),
-    reply: {commentNo: null, replyNo: null},
-    showWrite: false,
+    reply: NO_REPLY,
     commentsOnly: false,
     imageBlocked: false,
-
     notice: false,
     recommend: false,
     adminVisible: false,
+    blockPopup: false
+});
 
-    blockPopup: false,
+let signalSeq = 0;
+
+export const usePreviewStore = create<PreviewState>((set, get) => ({
+    ...freshPost(),
+    visible: false,
+    fading: false,
+    preData: null,
+    signalId: 0,
     captcha: null,
-
     mini: null,
 
     refreshHook: null,
@@ -158,55 +144,13 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     openHook: null,
     closeHook: null,
 
-    open: (preData) =>
-        set({
-            visible: true,
-            fading: false,
-            preData,
-            signalId: ++signalSeq,
-            title: "",
-            subtitle: "",
-            contents: undefined,
-            error: undefined,
-            loading: true,
-            post: undefined,
-            user: undefined,
-            date: undefined,
-            expire: undefined,
-            views: undefined,
-            upvotes: undefined,
-            fixedUpvotes: undefined,
-            downvotes: undefined,
-            comments: undefined,
-            commentTotal: undefined,
-            collapsed: new Set(),
-            reply: {commentNo: null, replyNo: null},
-            showWrite: false,
-            commentsOnly: false,
-            imageBlocked: false,
-            notice: false,
-            recommend: false,
-            adminVisible: false,
-            blockPopup: false,
-            mini: null
-        }),
+    open: (preData) => set({...freshPost(), visible: true, fading: false, loading: true, preData, signalId: ++signalSeq, mini: null}),
 
-    setTitle: (title) => set({title}),
     setPost: (post) =>
         set({
             loading: false,
             post,
             title: post.header ? `[${post.header}] ${post.title ?? ""}` : (post.title ?? ""),
-            user: post.user
-                ? {
-                    nick: post.user.nick,
-                    id: post.user.id,
-                    ip: post.user.ip,
-                    Type: post.user.Type,
-                    image: post.user.image
-                }
-                : undefined,
-            date: post.date ? new Date(post.date) : undefined,
             expire: post.expire ? new Date(post.expire) : undefined,
             views: post.views,
             contents: post.contents,
@@ -215,34 +159,23 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
             downvotes: post.disabledDownvote ? undefined : post.downvotes
         }),
     setError: (error) => set({error, loading: false}),
-    setComments: (comments, totalCnt, subtitle) => set({comments, commentTotal: totalCnt, subtitle}),
+    setComments: (comments, subtitle) => set({comments, subtitle}),
     setVotes: (counts, fixedCounts) => set({upvotes: counts, fixedUpvotes: fixedCounts || undefined}),
 
     close: () => {
-        const captcha = get().captcha;
-        captcha?.resolve("");
-        set({
-            visible: false,
-            fading: true,
-            comments: undefined,
-            blockPopup: false,
-            captcha: null,
-            showWrite: false,
-            reply: {commentNo: null, replyNo: null}
-        });
+        get().captcha?.resolve("");
+        set({visible: false, fading: true, comments: undefined, blockPopup: false, captcha: null, reply: NO_REPLY});
         window.setTimeout(() => set({fading: false}), 200);
     },
 
     toggleCollapse: (no) =>
         set((state) => {
             const next = new Set(state.collapsed);
-            if (next.has(no)) next.delete(no);
-            else next.add(no);
+            if (!next.delete(no)) next.add(no);
             return {collapsed: next};
         }),
 
-    setReply: (reply) => set({reply, showWrite: Boolean(reply.replyNo || reply.commentNo)}),
-    setShowWrite: (show) => set({showWrite: show, reply: show ? get().reply : {commentNo: null, replyNo: null}}),
+    setReply: (reply) => set({reply}),
     setCommentsOnly: (commentsOnly) => set({commentsOnly}),
     setImageBlocked: (imageBlocked) => set({imageBlocked}),
     setNotice: (notice) => set({notice}),

@@ -2,7 +2,7 @@ import type {PostInfo} from "./types";
 import {getType} from "@/utils/user";
 
 /** 본문 이미지의 data-original 복원 (DC지연로딩) */
-export const restoreImageSources = (dom: Document): void => {
+const restoreImageSources = (dom: Document): void => {
     for (const image of dom.querySelectorAll<HTMLImageElement>("img[data-original]")) {
         if (image.dataset.original) image.src = image.dataset.original;
     }

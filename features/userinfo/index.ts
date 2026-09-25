@@ -107,7 +107,7 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
     if (badges.children.length === 0) return;
 
     element.dataset.refresherUserInfo = "1";
-    insertWriterSpan(element, badges, "after-icon");
+    insertWriterSpan(element, badges);
 };
 
 const rebuildAll = (ctx: ModuleContext): void => {

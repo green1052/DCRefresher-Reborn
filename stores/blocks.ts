@@ -16,7 +16,7 @@ interface BlocksState {
     setDefault: (type: BlockType, mode: DetectMode) => Promise<void>;
 }
 
-export const isBlockEntry = (value: unknown): value is Omit<BlockEntry, "id"> & { id?: unknown } => {
+const isBlockEntry = (value: unknown): value is Omit<BlockEntry, "id"> & { id?: unknown } => {
     if (!value || typeof value !== "object") return false;
 
     const entry = value as Partial<BlockEntry>;

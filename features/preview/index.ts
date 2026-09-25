@@ -165,12 +165,12 @@ const controller = (ctx: ModuleContext) => {
 
     const applyComments = (preData: GalleryPreData, raw: DcinsideComment[]) => {
         const {list, threads, totalCnt} = processComments(raw, preData, ctx);
-        store.getState().setComments(list, totalCnt, `쓰레드 ${threads}개, 총 댓글 ${totalCnt}개`);
+        store.getState().setComments(list, `쓰레드 ${threads}개, 총 댓글 ${totalCnt}개`);
     };
 
     const loadComments = async (preData: GalleryPreData, postInfo: PostInfo, mySignal: number) => {
         if (postInfo.commentCount === 0) {
-            store.getState().setComments([], 0, "쓰레드 0개, 총 댓글 0개");
+            store.getState().setComments([], "쓰레드 0개, 총 댓글 0개");
             return;
         }
 

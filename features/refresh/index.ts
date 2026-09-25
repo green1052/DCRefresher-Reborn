@@ -1,5 +1,5 @@
 import {http} from "@/core/http/client";
-import {mergeParamURL, queryString, view} from "@/core/http/urls";
+import {listUrl, mergeParamURL, queryString} from "@/core/http/urls";
 import {defineModule} from "@/core/module/define";
 import {eventBus} from "@/core/eventbus/bus";
 import {useUiStore} from "@/stores/ui";
@@ -153,7 +153,7 @@ export default defineModule({
 
                 lastRefresh = Date.now();
 
-                const response = await http.get(view(originalLocation), {
+                const response = await http.get(listUrl(originalLocation), {
                     timeout: Number(ctx.settings.refreshRate) - 100
                 }).text();
                 const dom = new DOMParser().parseFromString(response, "text/html");

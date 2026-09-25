@@ -1,38 +1,22 @@
 import {LRUCache} from "lru-cache";
 import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "./types";
 
-export interface CacheEntry {
-    date: number;
+interface CacheEntry {
     post?: PostInfo;
     comment?: CommentListResponse;
     deleted?: Record<string, DcinsideComment>;
 }
 
-const TTL = 60_000;
-const MAX_SIZE = 50;
-
-const entries = new LRUCache<string, CacheEntry>({max: MAX_SIZE, ttl: 60_000});
+// 게시글·댓글 캐시: 1분, 최대 50개. 저장할 때마다 수명이 다시 1분으로 늘어난다
+const entries = new LRUCache<string, CacheEntry>({max: 50, ttl: 60_000});
 
 const key = (preData: GalleryPreData): string => `${preData.gallery}:${preData.id}`;
 
-export const getEntry = (preData: GalleryPreData): CacheEntry | undefined => {
-    const entry = entries.get(key(preData));
-    if (!entry) return;
-    if (Date.now() - entry.date > TTL) return;
-    return entry;
-};
+export const getEntry = (preData: GalleryPreData): CacheEntry | undefined => entries.get(key(preData));
 
-/** 본문/댓글 병합 저장 (TTL 연장) */
-export const setEntry = (preData: GalleryPreData, patch: Partial<CacheEntry>): CacheEntry => {
-    const current = entries.get(key(preData)) ?? {date: Date.now()};
-    const next: CacheEntry = {...current, ...patch, date: Date.now()};
-    entries.set(key(preData), next);
-    return next;
-};
-
-export const setDeleted = (preData: GalleryPreData, deleted: Record<string, DcinsideComment>): void => {
-    const current = entries.get(key(preData)) ?? {date: Date.now()};
-    entries.set(key(preData), {...current, deleted, date: Date.now()});
+/** 본문/댓글/삭제 기록 병합 저장 */
+export const setEntry = (preData: GalleryPreData, patch: CacheEntry): void => {
+    entries.set(key(preData), {...entries.get(key(preData)), ...patch});
 };
 
 /** 아카이브(삭제글 보존): 이전 캐시 목록 대비 사라진 댓글에 is_delete=1 부여 */
@@ -71,5 +55,3 @@ export const restoreArchive = (preData: GalleryPreData, list: DcinsideComment[])
 
     return output;
 };
-
-export const clearAll = (): void => entries.clear();

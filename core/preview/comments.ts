@@ -1,7 +1,7 @@
 import {isAnyBlocked} from "@/core/block";
 import type {ModuleContext} from "@/core/module/types";
 
-import {restoreArchive, setDeleted} from "./cache";
+import {restoreArchive, setEntry} from "./cache";
 import type {DcinsideComment, GalleryPreData} from "./types";
 
 export interface ProcessedComment extends DcinsideComment {
@@ -88,7 +88,7 @@ export const processComments = (
             if (comment.is_delete === "1") deleted[comment.no] = comment;
         }
 
-        setDeleted(preData, deleted);
+        setEntry(preData, {deleted});
     }
 
     const threads = list.filter((comment) => comment.depth === 0).length;
