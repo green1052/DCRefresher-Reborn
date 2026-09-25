@@ -1,5 +1,5 @@
-import {Box, Button, Flex, Grid, Heading, Separator, Text} from "@radix-ui/themes";
-import {Ban, Code, Database, Heart, Info, Keyboard, type LucideIcon, MessageCircle, NotebookPen, Settings, Users, Wrench} from "lucide-react";
+import {Box, Button, Flex, Heading, Separator, Text} from "@radix-ui/themes";
+import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings, Wrench} from "lucide-react";
 import {type MouseEvent, useEffect, useState} from "react";
 
 import {fontFamilyOf} from "@/features/fonts";
@@ -33,13 +33,6 @@ const TABS: TabDef[] = [
     {id: "data", label: "데이터", icon: Database, content: () => <DataTab/>},
     {id: "about", label: "정보", icon: Info, content: () => <AboutTab logo={LOGO_URL} version={VERSION}/>},
     {id: "dev", label: "개발자", icon: Wrench, dev: true, content: ({hideDev}) => <DevTab onHide={hideDev}/>}
-];
-
-const LINKS: [string, string, LucideIcon][] = [
-    ["GitHub", "https://github.com/green1052/DCRefresher-Reborn", Code],
-    ["갤러리", "https://gall.dcinside.com/mini/board/lists/?id=bjwg64", Users],
-    ["Discord", "https://discord.gg/SSW6Zuyjz6", MessageCircle],
-    ["후원", "https://www.buymeacoffee.com/green1052", Heart]
 ];
 
 const LOGO_URL = browser.runtime.getURL("/icons/128.png");
@@ -154,17 +147,7 @@ const Sidebar = ({tabs, tab, onSelect, onLogoClick, onVersionClick}: {
 
         <Box display={{initial: "none", md: "block"}} mt="auto">
             <Separator size="4" mb="3"/>
-            <Grid columns="2" gap="1">
-                {LINKS.map(([text, url, Icon]) => (
-                    <Button key={url} asChild size="2" variant="ghost" color="gray"
-                            style={{justifyContent: "flex-start", margin: 0}}>
-                        <a href={url} target="_blank" rel="noreferrer">
-                            <Icon size={14}/> {text}
-                        </a>
-                    </Button>
-                ))}
-            </Grid>
-            <Text as="p" size="1" color="gray" mt="2" style={{paddingInline: "var(--space-2)", userSelect: "none"}} onClick={onVersionClick}>
+            <Text as="p" size="1" color="gray" style={{paddingInline: "var(--space-2)", userSelect: "none"}} onClick={onVersionClick}>
                 v{VERSION}
             </Text>
         </Box>
