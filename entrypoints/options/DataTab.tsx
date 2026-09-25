@@ -127,8 +127,15 @@ export function DataTab() {
 
     const clearData = () =>
         run(async () => {
+            // 자동 백업이 켜져 있으면 1분 뒤 빈 설정이 클라우드 백업을 덮어쓴다 — 먼저 끈다
+            const wasAuto = await backupStorage.auto.getValue();
+            if (wasAuto) {
+                await backupStorage.auto.setValue(false);
+                setAutoBackup(false);
+            }
+
             await replaceSettings({});
-            return "데이터를 초기화했습니다. 새 탭에서 디시인사이드를 열어주세요.";
+            return `데이터를 초기화했습니다.${wasAuto ? " 클라우드 백업을 지키려고 자동 백업을 껐습니다." : ""} 새 탭에서 디시인사이드를 열어주세요.`;
         }, "초기화하지 못했습니다.");
 
     return (
