@@ -13,6 +13,33 @@ import {Comment, useTick, UserCard} from "./Comment";
 import {type ErrorState, usePreviewStore} from "./previewStore";
 import {WriteComment} from "./WriteComment";
 
+/**
+ * 디시 동영상(movie_view iframe)은 자기 크기를 `$('#movieIcon'+no, parent.document).height(...)`로 맞추는데,
+ * 미리보기는 shadow DOM 안이라 거기서 못 찾아 기본 300×150으로 잘린다 — 같은 출처라 안쪽 .v-container를 재서 대신 맞춘다
+ */
+const fitMovies = (root: HTMLElement): (() => void) => {
+    const observers: ResizeObserver[] = [];
+
+    for (const frame of root.querySelectorAll<HTMLIFrameElement>("iframe[src*='/board/movie/movie_view']")) {
+        const fit = (): void => {
+            const container = frame.contentDocument?.querySelector<HTMLElement>(".v-container");
+            if (!container) return;
+
+            const observer = new ResizeObserver(() => {
+                frame.style.width = `${container.offsetWidth}px`;
+                frame.style.height = `${container.offsetHeight + 20}px`;
+            });
+            observer.observe(container);
+            observers.push(observer);
+        };
+
+        if (frame.contentDocument?.readyState === "complete" && frame.contentDocument.URL !== "about:blank") fit();
+        else frame.addEventListener("load", fit, {once: true});
+    }
+
+    return () => observers.forEach((observer) => observer.disconnect());
+};
+
 const CountDown = () => {
     const expire = usePreviewStore((s) => s.expire);
     // 1시간 미만이면 초까지 보여 주므로 1초마다 (타이머는 하나뿐이라 부담 없다)
@@ -167,6 +194,9 @@ export const Frame = () => {
     const postKey = usePreviewStore((s) => (s.preData ? `${s.preData.gallery}/${s.preData.id}` : ""));
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
+    const contentsBox = useRef<HTMLDivElement>(null);
+
+    useEffect(() => (contentsBox.current ? fitMovies(contentsBox.current) : undefined), [contents]);
 
     useEffect(() => {
         if (!visible) return;
@@ -293,6 +323,7 @@ export const Frame = () => {
                         ) : (
                             <>
                                 <Box
+                                    ref={contentsBox}
                                     className={"refresher-html refresher-preview-contents" + (imageBlocked ? " refresher-preview-block-media" : "")}
                                     onClick={(event) => {
                                         if ((event.target as HTMLElement).closest(".btn_img_block")) {
