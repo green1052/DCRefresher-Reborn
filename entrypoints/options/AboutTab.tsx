@@ -1,4 +1,4 @@
-import {Avatar, Badge, Box, Button, Card, DataList, Flex, Grid, Heading, Link, Text} from "@radix-ui/themes";
+import {Badge, Box, Button, DataList, Flex, Grid, Heading, Link, Text} from "@radix-ui/themes";
 import {BookOpen, Bug, ClipboardCopy, Code, Heart, type LucideIcon, MessageCircle, Star, Tag, Users} from "lucide-react";
 import {useEffect, useState} from "react";
 
@@ -28,13 +28,6 @@ const LINKS: [string, string, LucideIcon][] = [
     ["Discord", "https://discord.gg/SSW6Zuyjz6", MessageCircle],
     ["리뷰 남기기", STORE, Star],
     ["후원", "https://www.buymeacoffee.com/green1052", Heart]
-];
-
-/** [GitHub 아이디, 역할] — 기여자는 v5까지의 커밋 기록 (봇 제외) */
-const PEOPLE: [string, string][] = [
-    ["green1052", "개발"],
-    ["So-chiru", "원작 DCRefresher"],
-    ...["ra0000", "lidarbtc", "jmmoon", "scarf", "andjsrk", "Xeph", "emptycan1010", "eentks82137-dot", "Ich-mag-dich"].map((name): [string, string] => [name, "기여"])
 ];
 
 /** storage.sync 전체 한도 */
@@ -173,24 +166,6 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
                         </DataList.Value>
                     </DataList.Item>
                 </DataList.Root>
-            </Section>
-
-            <Section title="만든 사람">
-                <Grid columns={{initial: "1", xs: "2", sm: "3"}} gap="2">
-                    {PEOPLE.map(([name, role]) => (
-                        <Card key={name} asChild>
-                            <a href={`https://github.com/${name}`} target="_blank" rel="noreferrer">
-                                <Flex align="center" gap="3">
-                                    <Avatar size="3" radius="full" src={`https://github.com/${name}.png?size=80`} fallback={name[0]!.toUpperCase()}/>
-                                    <Box minWidth="0">
-                                        <Text as="p" size="2" weight="bold" truncate>{name}</Text>
-                                        <Text as="p" size="1" color="gray">{role}</Text>
-                                    </Box>
-                                </Flex>
-                            </a>
-                        </Card>
-                    ))}
-                </Grid>
             </Section>
 
             <Notice message={notice} onClose={() => setNotice(null)}/>
