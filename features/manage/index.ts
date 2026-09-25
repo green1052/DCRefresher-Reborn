@@ -76,7 +76,8 @@ export default defineModule({
                 element.addEventListener("click", (event) => {
                     const source = event.target as HTMLInputElement;
 
-                    if (ctx.settings.checkAllTargetUser && event.shiftKey && (uid || ip || nick)) {                        const key = uid ? "uid" : ip ? "ip" : "nick";
+                    if (ctx.settings.checkAllTargetUser && event.shiftKey && (uid || ip || nick)) {
+                        const key = uid ? "uid" : ip ? "ip" : "nick";
                         const value: string = (uid ?? ip ?? nick) as string;
 
                         for (const other of document.querySelectorAll<HTMLElement>(`.ub-writer[data-${key}="${CSS.escape(value)}"]`)) {
@@ -88,17 +89,13 @@ export default defineModule({
                     }
 
                     if (ctx.settings.checkCommentViaCtrl && event.ctrlKey) {
-                        const commentItem = element.closest<HTMLElement>("li");
-                        if (!commentItem?.id.startsWith("reply_")) return;
+                        // 댓글은 li#comment_li_{no}, 대댓글은 그 다음 형제 li 안의 ul#reply_list_{no} > li#reply_li_{no} (comment.js)
+                        const commentNo = element.closest<HTMLElement>("li")?.id.match(/^comment_li_(\d+)$/)?.[1];
+                        if (!commentNo) return;
 
-                        // 댓글(reply_1)과 그 아래 대댓글(reply_1_2)
-                        let sibling = commentItem.nextElementSibling;
-                        while (sibling instanceof HTMLElement && /^reply_\d+_\d+/.test(sibling.id)) {
-                            sibling.querySelectorAll<HTMLInputElement>(".article_chkbox").forEach((box) => {
-                                box.checked = (source as HTMLInputElement).checked;
-                            });
-                            sibling = sibling.nextElementSibling;
-                        }
+                        document.getElementById(`reply_list_${commentNo}`)?.querySelectorAll<HTMLInputElement>(".article_chkbox").forEach((box) => {
+                            box.checked = source.checked;
+                        });
                     }
                 }, {signal: handlers.signal});
 
