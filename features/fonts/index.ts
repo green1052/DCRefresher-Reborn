@@ -12,16 +12,20 @@ const DC_FONT_TARGETS = ["body", "button", "input", ".gall_list", ".view_content
 /** CSS 일반 글꼴군 — 따옴표로 감싸면 키워드가 아니라 그 이름의 폰트로 해석된다 */
 const GENERIC_FAMILIES = new Set(["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "math", "emoji", "fangsong", "ui-serif", "ui-sans-serif", "ui-monospace", "ui-rounded"]);
 
-/** "A, B" → `"A", "B", sans-serif` — 이름마다 따옴표로 감싸 CSS로 새어나가지 않게 한다 (정확히 일치하는 일반 글꼴군 키워드만 그대로) */
-const toFontFamily = (value: string): string =>
-    [
-        ...value
-            .split(",")
-            .map((font) => font.trim())
-            .filter(Boolean)
-            .map((font) => (GENERIC_FAMILIES.has(font.toLowerCase()) ? font : `"${font.replace(/["\\]/g, "\\$&")}"`)),
-        "sans-serif"
-    ].join(", ");
+/**
+ * "A, B" → `"A", "B", sans-serif` — 이름마다 따옴표로 감싸 CSS로 새어나가지 않게 한다 (정확히 일치하는 일반 글꼴군 키워드만 그대로).
+ * 사용자가 이미 일반 글꼴군으로 끝냈으면 sans-serif를 또 붙이지 않는다
+ */
+const toFontFamily = (value: string): string => {
+    const fonts = value
+        .split(",")
+        .map((font) => font.trim())
+        .filter(Boolean)
+        .map((font) => (GENERIC_FAMILIES.has(font.toLowerCase()) ? font : `"${font.replace(/["\\]/g, "\\$&")}"`));
+
+    if (!GENERIC_FAMILIES.has(fonts.at(-1)?.toLowerCase() ?? "")) fonts.push("sans-serif");
+    return fonts.join(", ");
+};
 
 /** customFonts 설정값 → font-family (빈칸이면 기본 폰트). 옵션 페이지도 같은 값을 쓴다 */
 export const fontFamilyOf = (customFonts: string): string => toFontFamily(customFonts.trim() || DEFAULT_FONTS);
