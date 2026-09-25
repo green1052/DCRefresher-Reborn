@@ -490,6 +490,9 @@ const controller = (ctx: ModuleContext) => {
 
         if (element.dataset.refresherPreviewMode === "row" && ctx.settings.expandRecognizeRange !== true) return;
 
+        // 작성자 칸은 유저 버블(block 모듈) 몫 — 행 전체 인식이어도 미리보기를 열지 않는다
+        if (target.closest(".ub-writer")) return;
+
         const preData = buildPreData(element);
         if (!preData) return;
 
