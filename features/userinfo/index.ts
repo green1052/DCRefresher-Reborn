@@ -81,7 +81,8 @@ const makePermBanSpan = (reasons: string, color: string): HTMLElement =>
     buildBadgeSpan(`[${reasons}]`, color, reasons, "ip permBan refresherUserData");
 
 const process = (ctx: ModuleContext, element: HTMLElement): void => {
-    if (element.dataset.refresherUserInfo === "1") return;
+    // 완료 표시 없이 매번 다시 그린다 — 파싱 중인 작성자 칸(닉콘·IP 전)에 붙은 배지가 칸이 다 읽혀 다시 불릴 때 제자리를 찾는다
+    element.querySelector(".refresher-user-badges")?.remove();
 
     // 작성자마다 불리고 rebuildAll로 페이지 전체가 다시 도므로 호출 안에서 안 바뀌는 값은 한 번만 만든다
     const colors = colorsOf(ctx);
@@ -130,10 +131,7 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
     if (lowActivity && action === "tag") badges.append(buildBadgeSpan("[깡계]", colors.ratioAlarm, `글댓합 ${ctx.settings.alarmRatio}개 이하`));
     if (lowActivity && (action === "blur" || action === "hide")) (element.closest<HTMLElement>(".ub-content") ?? element).classList.add(LOW_ACTIVITY_CLASSES[action]);
 
-    if (badges.children.length === 0) return;
-
-    element.dataset.refresherUserInfo = "1";
-    insertWriterSpan(element, badges);
+    if (badges.children.length > 0) insertWriterSpan(element, badges);
 };
 
 /** 미리보기 작성자 표시도 같은 색·순서·표시 조건을 쓰게 공유 */
@@ -168,11 +166,7 @@ const publishRatios = (ctx: ModuleContext): void => {
 const rebuildAll = (ctx: ModuleContext): void => {
     clearLowActivity();
     // 배지가 없던 작성자도 포함 — 설정을 켜서 새로 생기는 배지가 있다 (필터 선택자와 같은 대상)
-    for (const element of document.querySelectorAll<HTMLElement>(".ub-writer:not([user_name])")) {
-        delete element.dataset.refresherUserInfo;
-        element.querySelector(".refresher-user-badges")?.remove();
-        process(ctx, element);
-    }
+    for (const element of document.querySelectorAll<HTMLElement>(".ub-writer:not([user_name])")) process(ctx, element);
 };
 
 export default defineModule({
@@ -335,10 +329,6 @@ export default defineModule({
     revoke() {
         useUiStore.setState({badgeColors: {}, badgeView: DEFAULT_BADGE_VIEW, ratios: null});
         clearLowActivity();
-
-        for (const element of document.querySelectorAll<HTMLElement>(".ub-writer[data-refresher-user-info]")) {
-            delete element.dataset.refresherUserInfo;
-        }
 
         for (const element of document.querySelectorAll<HTMLElement>(".refresher-user-badges")) {
             element.remove();
