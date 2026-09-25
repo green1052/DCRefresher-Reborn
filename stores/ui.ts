@@ -33,7 +33,7 @@ interface UiState {
     bubble: { x: number; y: number } | null;
     memo: MemoTargetState | null;
     /** IP 정보·갱차 색 (userinfo 설정) — 모듈이 꺼져 있으면 비어 있고, 갱차 조회를 끄면 permBan이 없다 */
-    badgeColors: Partial<Record<IpCategory | "permBan", string>>;
+    badgeColors: Partial<Record<IpCategory | "uid" | "permBan", string>>;
 
     showToast: (content: string, type?: ToastLevel, autoClose?: number, onClick?: () => void) => void;
     dismissToast: (id?: number) => void;

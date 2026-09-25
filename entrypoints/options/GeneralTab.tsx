@@ -1,9 +1,27 @@
-import {Box, Card, Flex, Heading, Separator, Switch, Text} from "@radix-ui/themes";
+import {Box, Card, Flex, Grid, Heading, Separator, Switch, Text} from "@radix-ui/themes";
 import {Fragment} from "react";
 
 import {SettingItem} from "@/components/SettingItem";
+import type {SettingGroup, SettingSchema} from "@/core/module/types";
 import features from "@/features";
 import {useModulesStore} from "@/stores/modules";
+
+interface SettingRow {
+    group?: SettingGroup;
+    entries: [string, SettingSchema][];
+}
+
+/** 같은 group 객체를 가진 연속된 설정을 한 줄로 묶는다 */
+const groupRows = (settings: [string, SettingSchema][]): SettingRow[] => {
+    const rows: SettingRow[] = [];
+    for (const entry of settings) {
+        const group = entry[1].group;
+        const last = rows.at(-1);
+        if (group && last?.group === group) last.entries.push(entry);
+        else rows.push({group, entries: [entry]});
+    }
+    return rows;
+};
 
 /** 모듈별 카드 — 헤더의 스위치로 on/off, 본문에 세부 설정 */
 export function GeneralTab() {
@@ -35,16 +53,34 @@ export function GeneralTab() {
 
                         {enabled && settings.length > 0 && (
                             <Box mt="4">
-                                {settings.map(([key, schema]) => (
-                                    <Fragment key={key}>
-                                        <Separator size="4"/>
+                                {groupRows(settings).map((row) => {
+                                    const item = ([key, schema]: [string, SettingSchema], compact?: boolean) => (
                                         <SettingItem
+                                            key={key}
                                             schema={schema}
+                                            compact={compact}
                                             value={values[feature.id]?.[key] ?? schema.default}
                                             onChange={(value) => void changeSetting(feature.id, key, value)}
                                         />
-                                    </Fragment>
-                                ))}
+                                    );
+
+                                    return (
+                                        <Fragment key={row.entries[0]![0]}>
+                                            <Separator size="4"/>
+                                            {row.group ? (
+                                                <Box py="3">
+                                                    <Text as="p" size="2" weight="medium">{row.group.name}</Text>
+                                                    <Text as="p" size="1" color="gray" mb="2">{row.group.desc}</Text>
+                                                    <Grid columns={{initial: "2", sm: "3"}} gapX="5">
+                                                        {row.entries.map((entry) => item(entry, true))}
+                                                    </Grid>
+                                                </Box>
+                                            ) : (
+                                                item(row.entries[0]!)
+                                            )}
+                                        </Fragment>
+                                    );
+                                })}
                             </Box>
                         )}
                     </Card>

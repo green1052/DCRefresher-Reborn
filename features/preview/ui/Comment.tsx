@@ -76,6 +76,7 @@ export const UserCard = ({user}: { user: UserCardData }) => {
     const ipColor = useUiStore((state) => (ipInfo ? state.badgeColors[ipInfo.category] : undefined));
     const banReasons = user.id ? banReasonsOf(user.id) : undefined;
     const banColor = useUiStore((state) => state.badgeColors.permBan);
+    const uidColor = useUiStore((state) => state.badgeColors.uid);
     const info = [user.id, user.ip].filter(Boolean).join(" / ");
 
     const openMenu = (event: MouseEvent): void => {
@@ -91,7 +92,7 @@ export const UserCard = ({user}: { user: UserCardData }) => {
         <Flex align="center" gap="1" minWidth="0" onContextMenu={openMenu} style={{cursor: "context-menu"}}>
             <Text size="2" weight="bold" truncate>{user.nick ?? user.id ?? user.ip}</Text>
             {user.image && <img src={user.image} alt="" height={12}/>}
-            {info && <Text size="1" color="gray" truncate>({info})</Text>}
+            {info && <Text size="1" color={uidColor ? undefined : "gray"} style={{color: uidColor}} truncate>({info})</Text>}
             {ipInfo && <Text size="1" color={ipColor ? undefined : "blue"} style={{color: ipColor}} title={ipInfo.title} truncate>[{ipInfo.label}]</Text>}
             {banReasons && banColor && <Text size="1" style={{color: banColor}} title={banReasons} truncate>[{banReasons}]</Text>}
         </Flex>

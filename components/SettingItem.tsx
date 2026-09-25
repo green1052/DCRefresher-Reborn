@@ -9,6 +9,8 @@ interface SettingItemProps {
     schema: SettingSchema;
     value: SettingValue;
     disabled?: boolean;
+    /** 묶음 안에서 — 설명은 툴팁으로, 이름·컨트롤만 한 줄에 */
+    compact?: boolean;
     onChange: (value: SettingValue) => void;
 }
 
@@ -33,7 +35,7 @@ const formatDefault = (schema: SettingSchema): string => {
 };
 
 /** 색 선택 — 드래그 중엔 미리보기만 바꾸고, 선택 창을 닫을 때(blur) 저장한다 */
-const ColorControl = ({value, disabled, onChange}: NarrowProps<"color">) => {
+const ColorControl = ({value, disabled, compact, onChange}: NarrowProps<"color">) => {
     const [draft, setDraft] = useState(String(value));
 
     useEffect(() => {
@@ -42,10 +44,11 @@ const ColorControl = ({value, disabled, onChange}: NarrowProps<"color">) => {
 
     return (
         <Flex align="center" gap="2">
-            <Text size="2" color="gray" style={{fontVariantNumeric: "tabular-nums"}}>{draft}</Text>
+            {!compact && <Text size="2" color="gray" style={{fontVariantNumeric: "tabular-nums"}}>{draft}</Text>}
             <input
                 type="color"
                 aria-label="색 선택"
+                title={draft}
                 value={draft}
                 disabled={disabled}
                 onChange={(event) => setDraft(event.target.value)}
@@ -204,28 +207,32 @@ const isChanged = (schema: SettingSchema, value: SettingValue): boolean => {
     return value !== schema.default;
 };
 
-export const SettingItem = ({schema, value, disabled, onChange}: SettingItemProps) => {
-    const changed = isChanged(schema, value);
+export const SettingItem = ({schema, value, disabled, compact, onChange}: SettingItemProps) => {
+    const title = (
+        <Flex align="center" gap="1">
+            <Text size="2" weight="medium" title={compact ? schema.desc : undefined}>
+                {schema.name}
+            </Text>
+            {isChanged(schema, value) && (
+                <Tooltip content={`기본값으로 (${formatDefault(schema)})`}>
+                    <IconButton size="1" variant="ghost" color="gray" aria-label="기본값으로"
+                                disabled={disabled} onClick={() => onChange(structuredClone(schema.default))}>
+                        <RotateCcw size={12}/>
+                    </IconButton>
+                </Tooltip>
+            )}
+        </Flex>
+    );
 
     return (
-        <Flex justify="between" align="center" gap="4" py="3" wrap={{initial: "wrap", sm: "nowrap"}}>
+        <Flex justify="between" align="center" gap={compact ? "2" : "4"} py={compact ? "1" : "3"} wrap={compact ? "nowrap" : {initial: "wrap", sm: "nowrap"}}>
             <Box flexGrow="1" minWidth="0">
-                <Flex align="center" gap="1">
-                    <Text size="2" weight="medium">
-                        {schema.name}
+                {title}
+                {!compact && (
+                    <Text as="p" size="1" color="gray">
+                        {schema.desc}
                     </Text>
-                    {changed && (
-                        <Tooltip content={`기본값으로 (${formatDefault(schema)})`}>
-                            <IconButton size="1" variant="ghost" color="gray" aria-label="기본값으로"
-                                        disabled={disabled} onClick={() => onChange(structuredClone(schema.default))}>
-                                <RotateCcw size={12}/>
-                            </IconButton>
-                        </Tooltip>
-                    )}
-                </Flex>
-                <Text as="p" size="1" color="gray">
-                    {schema.desc}
-                </Text>
+                )}
             </Box>
 
             <Box flexShrink="0">
@@ -247,7 +254,7 @@ export const SettingItem = ({schema, value, disabled, onChange}: SettingItemProp
                     </Select.Root>
                 )}
                 {schema.type === "text" && <TextControl {...{schema, value, disabled, onChange}} />}
-                {schema.type === "color" && <ColorControl {...{schema, value, disabled, onChange}} />}
+                {schema.type === "color" && <ColorControl {...{schema, value, disabled, compact, onChange}} />}
                 {schema.type === "range" && <RangeControl {...{schema, value, disabled, onChange}} />}
                 {schema.type === "order" && <OrderControl {...{schema, value, disabled, onChange}} />}
             </Box>

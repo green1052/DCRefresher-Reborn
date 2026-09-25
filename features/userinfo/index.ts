@@ -1,6 +1,6 @@
-import {banReasonsOf, type IpCategory, ipInfoOf} from "@/core/database";
+import {banReasonsOf, ipInfoOf} from "@/core/database";
 import {defineModule} from "@/core/module/define";
-import type {ModuleContext} from "@/core/module/types";
+import type {ModuleContext, SettingGroup} from "@/core/module/types";
 import {http} from "@/core/http/client";
 import {eventBus} from "@/core/eventbus/bus";
 import type {JsonValue} from "@/core/storage/types";
@@ -19,14 +19,23 @@ interface RatioInfo {
     date: number;
 }
 
-/** IP 정보 분류 → 색 설정 키 */
-const IP_COLOR_SETTING: Record<IpCategory, string> = {
-    korea: "ipColorKorea",
-    japan: "ipColorJapan",
-    china: "ipColorChina",
-    foreign: "ipColorForeign",
-    vpn: "ipColorVpn"
+/** 배지 색 — 키마다 `${키}Color` 설정 하나 (옵션 화면에선 한 칸에 묶임). IP는 분류(korea…vpn)가 키 */
+const BADGE_COLORS: Record<string, [name: string, color: string]> = {
+    uid: ["유저 ID / IP", "#999999"],
+    ratio: ["글댓비", "#999999"],
+    ratioAlarm: ["글댓비 경고", "#ff0000"],
+    permBan: ["갱차", "#e8645f"],
+    korea: ["IP 한국", "#6495ed"],
+    japan: ["IP 일본", "#e5484d"],
+    china: ["IP 중국", "#f76b15"],
+    foreign: ["IP 그 외 해외", "#12a594"],
+    vpn: ["IP VPN", "#8e4ec6"]
 };
+
+const BADGE_COLOR_GROUP: SettingGroup = {name: "배지 색", desc: "유저 정보 배지의 글자 색입니다. IP는 국가별로 칠하고, VPN이면 국가보다 우선합니다."};
+
+const colorsOf = (ctx: ModuleContext): Record<string, string> =>
+    Object.fromEntries(Object.keys(BADGE_COLORS).map((key) => [key, String(ctx.settings[`${key}Color`])]));
 
 const GALLOG_API = "https://gall.dcinside.com/api/gallog_user_layer/gallog_content_reple";
 
@@ -41,11 +50,10 @@ const buildBadgeSpan = (text: string, color?: string, title?: string, className 
     return span;
 };
 
-const makeRatioSpan = (info: RatioInfo, alarmRatio: number): HTMLElement => {
-    const span = buildBadgeSpan(`[${info.article}/${info.comment}]`, undefined, undefined, "ip ratio refresherUserData");
-    span.title = `${info.article}/${info.comment}`;
-    if (alarmRatio > 0 && info.article + info.comment <= alarmRatio) span.style.color = "red";
-    return span;
+const makeRatioSpan = (info: RatioInfo, alarmRatio: number, colors: Record<string, string>): HTMLElement => {
+    const text = `${info.article}/${info.comment}`;
+    const alarm = alarmRatio > 0 && info.article + info.comment <= alarmRatio;
+    return buildBadgeSpan(`[${text}]`, alarm ? colors.ratioAlarm : colors.ratio, text, "ip ratio refresherUserData");
 };
 
 const makePermBanSpan = (reasons: string, color: string): HTMLElement =>
@@ -80,13 +88,13 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
 
             const show = isFixed ? ctx.settings.showFixedNickUID === true : isHalfFixed ? ctx.settings.showHalfFixedNickUID === true : true;
 
-            if (show) badges.append(buildBadgeSpan(`(${uid})`, undefined, uid, "ip refresherUserData"));
+            if (show) badges.append(buildBadgeSpan(`(${uid})`, colorsOf(ctx).uid, uid, "ip refresherUserData"));
             return;
         }
 
         if (ip && ctx.settings.showIpInfo === true) {
             const info = ipInfoOf(ip);
-            if (info) badges.append(buildBadgeSpan(`[${info.label}]`, String(ctx.settings[IP_COLOR_SETTING[info.category]]), info.title));
+            if (info) badges.append(buildBadgeSpan(`[${info.label}]`, colorsOf(ctx)[info.category], info.title));
         }
     };
 
@@ -101,13 +109,13 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
         if (key === "RATIO" && uid && ctx.settings.checkRatio === true) {
             const cached = asRatios(ctx.data.ratio)[uid];
             if (cached && Date.now() - cached.date <= 3600_000) {
-                badges.append(makeRatioSpan(cached, Number(ctx.settings.alarmRatio)));
+                badges.append(makeRatioSpan(cached, Number(ctx.settings.alarmRatio), colorsOf(ctx)));
             }
         }
 
         if (key === "PERMBAN" && uid && ctx.settings.checkPermBan === true) {
             const reasons = banReasonsOf(uid);
-            if (reasons) badges.append(makePermBanSpan(reasons, String(ctx.settings.permBanColor)));
+            if (reasons) badges.append(makePermBanSpan(reasons, colorsOf(ctx).permBan!));
         }
     }
 
@@ -121,9 +129,9 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
 const publishBadgeColors = (ctx: ModuleContext): void =>
     useUiStore.setState({
         badgeColors: {
-            ...Object.fromEntries(Object.entries(IP_COLOR_SETTING).map(([category, key]) => [category, String(ctx.settings[key])])),
+            ...colorsOf(ctx),
             // 갱차 조회를 끄면 미리보기에서도 숨긴다
-            permBan: ctx.settings.checkPermBan === true ? String(ctx.settings.permBanColor) : undefined
+            permBan: ctx.settings.checkPermBan === true ? colorsOf(ctx).permBan : undefined
         }
     });
 
@@ -164,11 +172,6 @@ export default defineModule({
             desc: "IP의 통신사·조직과 국가를 표시합니다.",
             default: true
         },
-        ipColorKorea: {type: "color", name: "IP 색 - 한국", desc: "국내 IP 정보의 글자 색입니다.", default: "#6495ed"},
-        ipColorJapan: {type: "color", name: "IP 색 - 일본", desc: "일본 IP 정보의 글자 색입니다.", default: "#e5484d"},
-        ipColorChina: {type: "color", name: "IP 색 - 중국", desc: "중국 IP 정보의 글자 색입니다.", default: "#f76b15"},
-        ipColorForeign: {type: "color", name: "IP 색 - 그 외 해외", desc: "한국·일본·중국이 아닌 해외 IP 정보의 글자 색입니다.", default: "#12a594"},
-        ipColorVpn: {type: "color", name: "IP 색 - VPN", desc: "VPN·클라우드로 보이는 IP 정보의 글자 색입니다. (국가보다 우선)", default: "#8e4ec6"},
         checkRatio: {
             type: "check",
             name: "글댓비 표시",
@@ -191,7 +194,12 @@ export default defineModule({
             desc: "갱신 차단 여부를 조회합니다.",
             default: false
         },
-        permBanColor: {type: "color", name: "갱차 색", desc: "갱신 차단 표시의 글자 색입니다.", default: "#e8645f"},
+        ...Object.fromEntries(
+            Object.entries(BADGE_COLORS).map(([key, [name, color]]) => [
+                `${key}Color`,
+                {type: "color", group: BADGE_COLOR_GROUP, name, desc: `${name} 배지의 글자 색입니다.`, default: color} as const
+            ])
+        ),
         badgeOrder: {
             type: "order",
             name: "정보 배치 순서",

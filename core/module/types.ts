@@ -2,7 +2,13 @@ import type {ModuleEventData} from "@/core/eventbus/types";
 import type {JsonValue, SettingValue} from "@/core/storage/types";
 import type Emittery from "emittery";
 
-export type SettingSchema =
+/** 설정 묶음 — 같은 객체를 group으로 가진 연속된 설정을 옵션 화면에서 한 칸에 모아 보여준다 (값은 설정마다 따로) */
+export interface SettingGroup {
+    name: string;
+    desc: string;
+}
+
+export type SettingSchema = { group?: SettingGroup } & (
     | { type: "check"; name: string; desc: string; default: boolean }
     | { type: "text"; name: string; desc: string; default: string; placeholder?: string }
     | {
@@ -17,7 +23,8 @@ export type SettingSchema =
 }
     | { type: "option"; name: string; desc: string; default: string; items: Record<string, string> }
     | { type: "order"; name: string; desc: string; default: string[]; items: Record<string, string> }
-    | { type: "color"; name: string; desc: string; default: string };
+    | { type: "color"; name: string; desc: string; default: string }
+);
 
 export interface ModuleContext {
     /** 모듈 id */
