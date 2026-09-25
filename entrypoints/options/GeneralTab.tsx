@@ -1,10 +1,9 @@
-import {Box, Card, Flex, Heading, Separator, Switch, Text} from "@radix-ui/themes";
+import {Box, Callout, Card, Flex, Heading, Link, Separator, Spinner, Switch, Text} from "@radix-ui/themes";
+import {Info} from "lucide-react";
 import {Fragment} from "react";
 
 import {SettingItem} from "@/components/SettingItem";
 import {useModulesStore} from "@/stores/modules";
-
-import {Empty} from "./Layout";
 
 /** 모듈별 카드 — 헤더의 스위치로 on/off, 본문에 세부 설정 */
 export function GeneralTab() {
@@ -14,7 +13,25 @@ export function GeneralTab() {
     const toggle = useModulesStore((state) => state.toggle);
     const changeSetting = useModulesStore((state) => state.changeSetting);
 
-    if (unavailable) return <Empty>우선 디시인사이드 페이지를 열고 설정해주세요.</Empty>;
+    if (unavailable) {
+        return (
+            <Callout.Root>
+                <Callout.Icon><Info size={16}/></Callout.Icon>
+                <Callout.Text>
+                    모듈 설정은 열려 있는 디시인사이드 탭에서 불러옵니다.{" "}
+                    <Link href="https://gall.dcinside.com" target="_blank" rel="noreferrer">디시인사이드 열기</Link>
+                </Callout.Text>
+            </Callout.Root>
+        );
+    }
+
+    if (schemas.length === 0) {
+        return (
+            <Flex justify="center" py="9">
+                <Spinner size="3"/>
+            </Flex>
+        );
+    }
 
     return (
         <Flex direction="column" gap="4">
