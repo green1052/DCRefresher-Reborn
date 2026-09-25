@@ -14,7 +14,7 @@ const parseCommentId = (dom: Document): string | undefined =>
     dom.body.innerHTML.match(/\$\(document\)\.data\('comment_id',\s+'([^']+)'\);/)?.[1];
 
 const parseCommentNo = (dom: Document): string | undefined =>
-    dom.body.innerHTML.match(/\$\(document\)\.data\('cmt_no',\s+'([^']+)'\);/)?.[1];
+    dom.body.innerHTML.match(/\$\(document\)\.data\('comment_no',\s+'([^']+)'\);/)?.[1];
 
 const parseUser = (dom: Document): PostInfo["user"] => {
     const writer = dom.querySelector<HTMLElement>(".gallview_head > .gall_writer");

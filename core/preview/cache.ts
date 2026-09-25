@@ -4,7 +4,8 @@ import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} fro
 interface CacheEntry {
     post?: PostInfo;
     comment?: CommentListResponse;
-    deleted?: Record<string, DcinsideComment>;
+    /** 보존(삭제글 보존)용 — 지금까지 받은 댓글 전부. 서버 목록에서 빠지면 삭제된 것으로 되살린다 */
+    seen?: Record<string, DcinsideComment>;
 }
 
 // 게시글·댓글 캐시: 1분, 최대 50개. 저장할 때마다 수명이 다시 1분으로 늘어난다
@@ -19,22 +20,20 @@ export const setEntry = (preData: GalleryPreData, patch: CacheEntry): void => {
     entries.set(key(preData), {...entries.get(key(preData)), ...patch});
 };
 
-/** 아카이브(삭제글 보존): 이전 캐시 목록 대비 사라진 댓글에 is_delete=1 부여 */
+/**
+ * 아카이브(삭제글 보존): 지금까지 받은 댓글 중 이번 목록에 없는 것을 is_delete=1로 되살린다.
+ * 받은 댓글을 계속 모아 두므로 한 번 되살린 댓글은 캐시가 살아 있는 동안 계속 보인다.
+ */
 export const restoreArchive = (preData: GalleryPreData, list: DcinsideComment[]): DcinsideComment[] => {
-    const entry = entries.get(key(preData));
-    const previous = entry?.comment?.list;
-
-    if (!previous || previous.length === 0) return list;
-    if (list.length === 0) return previous.map((comment) => ({...comment, is_delete: "1" as const}));
+    const seen = entries.get(key(preData))?.seen ?? {};
+    const current = new Set(list.map((comment) => comment.no));
 
     const deleted: Record<string, DcinsideComment> = {};
-
-    for (const previousComment of previous) {
-        if (list.some((comment) => comment.no === previousComment.no)) continue;
-        if (entry?.deleted?.[previousComment.no]) continue;
-
-        deleted[previousComment.no] = {...previousComment, is_delete: "1"};
+    for (const comment of Object.values(seen)) {
+        if (!current.has(comment.no)) deleted[comment.no] = {...comment, is_delete: "1"};
     }
+
+    setEntry(preData, {seen: {...seen, ...Object.fromEntries(list.map((comment) => [comment.no, comment]))}});
 
     if (Object.keys(deleted).length === 0) return list;
 

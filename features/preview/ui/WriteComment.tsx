@@ -82,6 +82,7 @@ export const WriteComment = () => {
     const [showInputs, setShowInputs] = useState(false);
     const [sending, setSending] = useState(false);
     const textarea = useRef<HTMLTextAreaElement>(null);
+    const beforeTxtcon = useRef<string | null>(null);
 
     useEffect(() => {
         void nonmemberStorage.getValue().then((saved) => {
@@ -263,7 +264,17 @@ export const WriteComment = () => {
                                     // 디시콘과 같이 쓰지 않는다
                                     setDccons([]);
                                     setBigDccon(false);
-                                    if (!txtcon) applyTxtcon();
+
+                                    // 켤 때 잘리는 글을 기억했다가, 그대로 끄면 되돌린다
+                                    const element = textarea.current;
+                                    if (!txtcon) {
+                                        beforeTxtcon.current = element?.value ?? null;
+                                        applyTxtcon();
+                                    } else if (element && beforeTxtcon.current !== null && element.value === normalizeTxtcon(beforeTxtcon.current)) {
+                                        element.value = beforeTxtcon.current;
+                                    }
+                                    if (txtcon) beforeTxtcon.current = null;
+
                                     setTxtcon(!txtcon);
                                 }}
                             >

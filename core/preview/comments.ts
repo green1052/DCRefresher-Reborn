@@ -2,7 +2,7 @@ import {isAnyBlocked, isBlocked} from "@/core/block";
 import {sanitizeHtml} from "@/utils/sanitize";
 import type {ModuleContext} from "@/core/module/types";
 
-import {restoreArchive, setEntry} from "./cache";
+import {restoreArchive} from "./cache";
 import type {DcinsideComment, GalleryPreData} from "./types";
 
 export interface ProcessedComment extends DcinsideComment {
@@ -52,8 +52,7 @@ export const processComments = (
 
     // 차단: 내용 치환 + is_delete (행 제거 대신)
     for (const comment of list) {
-        if (comment.is_delete === "1") continue;
-
+        // 삭제 표시된 댓글도 검사한다 — 보존으로 되살린 댓글은 원문이라 건너뛰면 차단된 내용이 보인다
         const plain = comment.memo.includes("<") ? comment.memo.replace(/<[^>]+>/g, " ") : comment.memo;
         // 디시콘 2개짜리 댓글은 두 번째도 검사한다
         const dcconNos = Array.from(comment.memo.matchAll(GALLOG_DCCON), (match) => match[1] ?? "");
@@ -74,17 +73,6 @@ export const processComments = (
         comment.memo = "댓글 내용이 차단됐습니다.";
         comment.voice = undefined;
         comment.is_delete = "1";
-    }
-
-    // 아카이브 마킹 저장
-    if (ctx.settings.archiveArticle === true) {
-        const deleted: Record<string, DcinsideComment> = {};
-
-        for (const comment of list) {
-            if (comment.is_delete === "1") deleted[comment.no] = comment;
-        }
-
-        setEntry(preData, {deleted});
     }
 
     const threads = list.filter((comment) => comment.depth === 0).length;
