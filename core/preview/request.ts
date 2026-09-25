@@ -54,7 +54,6 @@ export interface VoteResult {
 
 /** 추천/비추천 */
 export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U" | "D", code?: string): Promise<VoteResult> => {
-    // 서버가 이 쿠키가 있는지 본다 — 없으면 'false||잘못된 접근입니다.' (recommend_box.js도 요청 전에 만든다). 중복 추천은 서버가 막는다
     await cookieStore.set({
         name: `${preData.gallery}${preData.id}_Firstcheck${mode === "U" ? "" : "_down"}`,
         value: "Y",
