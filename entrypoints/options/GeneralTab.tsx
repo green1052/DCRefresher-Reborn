@@ -2,26 +2,9 @@ import {Box, Card, Flex, Grid, Heading, Separator, Switch, Text} from "@radix-ui
 import {Fragment} from "react";
 
 import {SettingItem} from "@/components/SettingItem";
-import type {SettingGroup, SettingSchema} from "@/core/module/types";
+import type {SettingSchema} from "@/core/module/types";
 import features from "@/features";
 import {useModulesStore} from "@/stores/modules";
-
-interface SettingRow {
-    group?: SettingGroup;
-    entries: [string, SettingSchema][];
-}
-
-/** 같은 group 객체를 가진 연속된 설정을 한 줄로 묶는다 */
-const groupRows = (settings: [string, SettingSchema][]): SettingRow[] => {
-    const rows: SettingRow[] = [];
-    for (const entry of settings) {
-        const group = entry[1].group;
-        const last = rows.at(-1);
-        if (group && last?.group === group) last.entries.push(entry);
-        else rows.push({group, entries: [entry]});
-    }
-    return rows;
-};
 
 /** 모듈별 카드 — 헤더의 스위치로 on/off, 본문에 세부 설정 */
 export function GeneralTab() {
@@ -53,7 +36,9 @@ export function GeneralTab() {
 
                         {enabled && settings.length > 0 && (
                             <Box mt="4">
-                                {groupRows(settings).map((row) => {
+                                {/* 같은 group 객체를 가진 설정은 첫 설정 자리에 한 줄로 묶는다 */}
+                                {[...Map.groupBy(settings, ([key, schema]) => schema.group ?? key).values()].map((entries) => {
+                                    const group = entries[0]![1].group;
                                     const valueOf = (key: string, schema: SettingSchema) => values[feature.id]?.[key] ?? schema.default;
                                     const item = ([key, schema]: [string, SettingSchema], compact?: boolean) => (
                                         <SettingItem
@@ -69,19 +54,19 @@ export function GeneralTab() {
                                     );
 
                                     return (
-                                        <Fragment key={row.entries[0]![0]}>
+                                        <Fragment key={entries[0]![0]}>
                                             <Separator size="4"/>
-                                            {row.group ? (
+                                            {group ? (
                                                 <Box py="3">
-                                                    <Text as="p" size="2" weight="medium">{row.group.name}</Text>
-                                                    <Text as="p" size="1" color="gray" mb="2">{row.group.desc}</Text>
+                                                    <Text as="p" size="2" weight="medium">{group.name}</Text>
+                                                    <Text as="p" size="1" color="gray" mb="2">{group.desc}</Text>
                                                     {/* 글 입력칸·슬라이더는 칸 하나로는 좁다 — 섞여 있으면 묶음 전체를 한 줄씩 그려 조작 위치를 오른쪽 끝으로 맞춘다 */}
-                                                    <Grid columns={row.entries.some(([, s]) => s.type === "text" || s.type === "range") ? "1" : {initial: "2", sm: "3"}} gapX="5">
-                                                        {row.entries.map((entry) => item(entry, true))}
+                                                    <Grid columns={entries.some(([, s]) => s.type === "text" || s.type === "range") ? "1" : {initial: "2", sm: "3"}} gapX="5">
+                                                        {entries.map((entry) => item(entry, true))}
                                                     </Grid>
                                                 </Box>
                                             ) : (
-                                                item(row.entries[0]!)
+                                                item(entries[0]!)
                                             )}
                                         </Fragment>
                                     );

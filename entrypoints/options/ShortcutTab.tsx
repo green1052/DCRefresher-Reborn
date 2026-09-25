@@ -4,17 +4,11 @@ import {Fragment, useEffect, useState} from "react";
 
 import {Section} from "./Layout";
 
-interface ShortcutCommand {
-    name?: string;
-    description?: string;
-    shortcut?: string;
-}
-
 export function ShortcutTab() {
-    const [shortcuts, setShortcuts] = useState<ShortcutCommand[]>([]);
+    const [shortcuts, setShortcuts] = useState<Browser.commands.Command[]>([]);
 
     useEffect(() => {
-        const load = (): void => void browser.commands.getAll().then((commands) => setShortcuts(commands as ShortcutCommand[]));
+        const load = (): void => void browser.commands.getAll().then(setShortcuts);
         load();
         // 브라우저의 단축키 설정에서 바꾸고 돌아오면 다시 읽는다 — 바뀌었다는 이벤트가 없다
         window.addEventListener("focus", load);
