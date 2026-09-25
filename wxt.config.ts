@@ -19,7 +19,7 @@ export default defineConfig({
             "unlimitedStorage",
             "clipboardWrite"
         ],
-        host_permissions: ["https://*.dcinside.com/*", "https://dcrefresher.green1052.com/*"],
+        host_permissions: ["https://*.dcinside.com/*"],
         web_accessible_resources: [
             {
                 resources: ["assets/*.webp"],

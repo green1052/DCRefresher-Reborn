@@ -23,10 +23,11 @@ export const urls = {
         lists: "https://gall.dcinside.com/dccon/lists",
         detail: "https://gall.dcinside.com/dccon/package_detail"
     },
+    // data 브랜치 — .github/workflows/db.yml이 만든다 (CORS 허용이라 호스트 권한 불필요)
     database: {
-        version: "https://dcrefresher.green1052.com/data/version",
-        ip: "https://dcrefresher.green1052.com/data/ip.json",
-        ban: "https://dcrefresher.green1052.com/data/ban.json"
+        version: "https://raw.githubusercontent.com/green1052/DCRefresher-Reborn/data/version",
+        ip: "https://raw.githubusercontent.com/green1052/DCRefresher-Reborn/data/ip.json",
+        ban: "https://raw.githubusercontent.com/green1052/DCRefresher-Reborn/data/ban.json"
     }
 };
 

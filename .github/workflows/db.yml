@@ -26,6 +26,12 @@ jobs:
             -   name: Build
                 run: bun scripts/build-ipdb.ts
 
+            -   name: Keep ban.json
+                run: |
+                    if git fetch -q --depth=1 origin data; then
+                        git show FETCH_HEAD:ban.json > db/ban.json 2>/dev/null || rm -f db/ban.json
+                    fi
+
             -   name: Publish to data branch
                 working-directory: db
                 run: |
