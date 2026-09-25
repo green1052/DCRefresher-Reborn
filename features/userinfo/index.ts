@@ -21,8 +21,6 @@ const GALLOG_API = "https://gall.dcinside.com/api/gallog_user_layer/gallog_conte
 
 const asRatios = (value: JsonValue | undefined): Record<string, RatioInfo> => (value ?? {}) as unknown as Record<string, RatioInfo>;
 
-let currentCtx: ModuleContext | null = null;
-
 const buildBadgeSpan = (text: string, color?: string, title?: string, className = "refresherUserData"): HTMLElement => {
     const span = document.createElement("span");
     span.className = className;
@@ -176,7 +174,6 @@ export default defineModule({
     },
 
     setup(ctx) {
-        currentCtx = ctx;
 
         ctx.addFilter(
             ".ub-writer:not([user_name])",
@@ -227,13 +224,12 @@ export default defineModule({
         ctx.addCleanup(() => {
             unsubscribeMemos();
             offNewPostList();
-            if (currentCtx === ctx) currentCtx = null;
         });
     },
 
-    onChanged() {
+    onChanged(ctx) {
         // 설정(순서/표시여부) 변경시 즉시 재계산
-        if (currentCtx) rebuildAll(currentCtx);
+        rebuildAll(ctx);
     },
 
     revoke() {

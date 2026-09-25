@@ -57,5 +57,5 @@ export interface ModuleDefinition {
     revoke?(ctx: ModuleContext): void;
 
     /** 활성 중 설정이 변경됐을 때 실행 */
-    onChanged?(key: string, value: SettingValue): void;
+    onChanged?(ctx: ModuleContext, key: string, value: SettingValue): void;
 }

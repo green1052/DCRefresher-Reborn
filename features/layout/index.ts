@@ -26,7 +26,6 @@ const HIDE_OPTIONS: Record<string, { name: string; desc: string; selector: strin
 const COMPACT_KEYS = new Set(["activePixel", "forceCompact", "useCompactModeOnView"]);
 const PUSH_CLASS = "refresherPushToRight";
 
-let currentCtx: ModuleContext | null = null;
 let hideStyle: HTMLStyleElement | null = null;
 
 const applyCompact = (ctx: ModuleContext): void => {
@@ -99,7 +98,6 @@ export default defineModule({
     },
 
     setup(ctx) {
-        currentCtx = ctx;
         applyCompact(ctx);
         applyHide(ctx);
 
@@ -108,14 +106,12 @@ export default defineModule({
         ctx.addCleanup(() => window.removeEventListener("resize", onResize));
     },
 
-    onChanged(key) {
-        if (!currentCtx) return;
-        if (COMPACT_KEYS.has(key)) applyCompact(currentCtx);
-        else applyHide(currentCtx);
+    onChanged(ctx, key) {
+        if (COMPACT_KEYS.has(key)) applyCompact(ctx);
+        else applyHide(ctx);
     },
 
     revoke() {
-        currentCtx = null;
         hideStyle?.remove();
         hideStyle = null;
 

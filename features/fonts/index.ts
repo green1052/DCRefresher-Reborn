@@ -26,8 +26,6 @@ const removeStyle = (id: string): void => {
     document.head.querySelector(`#${id}`)?.remove();
 };
 
-let currentCtx: ModuleContext | null = null;
-
 const quoteFonts = (value: string): string =>
     value
         .split(",")
@@ -87,18 +85,16 @@ export default defineModule({
     },
 
     setup(ctx) {
-        currentCtx = ctx;
         document.documentElement.classList.add("refresherFont");
 
         applyAll(ctx);
     },
 
-    onChanged() {
-        if (currentCtx) applyAll(currentCtx);
+    onChanged(ctx) {
+        applyAll(ctx);
     },
 
     revoke() {
-        currentCtx = null;
         document.documentElement.classList.remove("refresherFont", "refresherChangeDCFont");
         removeStyle(FONT_STYLE_ID);
         removeStyle(FONT_SIZE_STYLE_ID);

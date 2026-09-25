@@ -66,7 +66,7 @@ const applySettings = (instance: ModuleInstance, stored: Record<string, unknown>
         if (areEqual(instance.settings[key], next)) continue;
 
         instance.settings[key] = next;
-        if (instance.running) instance.def.onChanged?.(key, next);
+        if (instance.running) instance.def.onChanged?.(instance.running.ctx, key, next);
     }
 };
 
