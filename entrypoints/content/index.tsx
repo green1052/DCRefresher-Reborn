@@ -9,10 +9,10 @@ import overlayCss from "@/assets/styles/overlay.scss?inline";
 import {ContentRoot} from "@/components/overlay/ContentRoot";
 import {overlay} from "@/components/overlay/shadow";
 import {initDatabase} from "@/core/database";
-import {eventBus} from "@/core/eventbus/bus";
-import {onMessage} from "@/core/messaging/protocol";
-import {loadAll, runShortcut, stopAll} from "@/core/module/registry";
+import {onMessage, type PageState} from "@/core/messaging/protocol";
+import {getModuleApi, loadAll, runShortcut, stopAll} from "@/core/module/registry";
 import features from "@/features";
+import type {StealthApi} from "@/features/stealth";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
 
@@ -28,12 +28,33 @@ export default defineContentScript({
     ],
     runAt: "document_start",
     async main(ctx) {
-        // ===== 메시징 (배경→탭) =====
-        onMessage("refresher:contextMenu", ({data: {action, srcUrl}}) => {
-            if (action === "searchSauceNao" && srcUrl) void eventBus.emit("imageSearch", srcUrl);
-        });
-
+        // ===== 메시징 (배경·팝업→탭) =====
         onMessage("refresher:executeShortcut", ({data: command}) => runShortcut(command));
+
+        // isPaused는 새로고침 모듈 버전에 따라 없을 수 있다 — 모르면 팝업에 토글을 띄우지 않는다
+        const refreshApi = () => getModuleApi("refresh") as { isPaused?: () => boolean; togglePause?: () => void } | undefined;
+        const stealthApi = () => getModuleApi("stealth") as StealthApi | undefined;
+
+        const pageState = (): PageState => {
+            const paused = refreshApi()?.isPaused?.();
+            const stealth = stealthApi();
+            // 제목 링크의 글자만 — 마이너·미니 표시 아이콘의 숨은 글자는 뺀다
+            const title = document.querySelector(".page_head h2 a");
+            const name = title ? [...title.childNodes].filter((node) => node.nodeType === Node.TEXT_NODE).map((node) => node.textContent).join("").trim() : "";
+
+            return {
+                refresh: paused === undefined ? null : {paused},
+                stealth: stealth ? {revealed: stealth.isRevealed()} : null,
+                galleryName: name || null
+            };
+        };
+
+        onMessage("refresher:pageState", pageState);
+        onMessage("refresher:pageAction", ({data: action}) => {
+            if (action === "toggleRefresh") refreshApi()?.togglePause?.();
+            else stealthApi()?.toggle();
+            return pageState();
+        });
 
         // 옵션 페이지는 저장소에 직접 쓰고, 모듈 레지스트리가 저장소를 감시해 반영한다 (메시징 없음)
 

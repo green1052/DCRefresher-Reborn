@@ -13,13 +13,29 @@ const EYE_OFF_SVG = svg(
     "<path d=\"M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49\"/><path d=\"M14.084 14.158a3 3 0 0 1-4.242-4.242\"/><path d=\"M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143\"/><path d=\"m2 2 20 20\"/>"
 );
 
+export interface StealthApi {
+    /** 이번 페이지에서 이미지를 잠시 보이게 했는지 */
+    isRevealed(): boolean;
+
+    toggle(): void;
+}
+
+// stlth 토글 상태는 CSS가 보는 documentElement에 둔다 — 버튼·단축키·팝업이 같이 쓴다
+const isRevealed = (): boolean => document.documentElement.classList.contains(TEMPORARY_STEALTH);
+
 /** 버튼 문구·아이콘은 누르면 할 동작 */
 const render = (button: HTMLElement): void => {
-    const shown = document.documentElement.classList.contains(TEMPORARY_STEALTH);
+    const shown = isRevealed();
     button.innerHTML = `<p>${shown ? "이미지 숨기기" : "이미지 보이기"}</p>${shown ? EYE_OFF_SVG : EYE_SVG}`;
 };
 
-// stlth 토글 상태는 CSS가 보는 documentElement에 둔다
+const toggle = (): void => {
+    document.documentElement.classList.toggle(TEMPORARY_STEALTH);
+
+    const button = document.querySelector<HTMLElement>(`${CONTROL_BUTTON} > #tempview`);
+    if (button) render(button);
+};
+
 const createButton = (): void => {
     if (document.querySelector(CONTROL_BUTTON)) return;
 
@@ -30,10 +46,7 @@ const createButton = (): void => {
     button.className = "button";
     button.id = "tempview";
     render(button);
-    button.addEventListener("click", () => {
-        document.documentElement.classList.toggle(TEMPORARY_STEALTH);
-        render(button);
-    });
+    button.addEventListener("click", toggle);
 
     frame.append(button);
     document.body.append(frame);
@@ -46,17 +59,12 @@ export default defineModule({
     defaultEnable: false,
 
     shortcuts: {
-        stealthPause: () => {
-            const button = document.querySelector<HTMLElement>(`${CONTROL_BUTTON} > #tempview`);
-            if (!button) return;
+        stealthPause: (_ctx, api) => {
+            const stealth = api as StealthApi | undefined;
+            if (!stealth) return;
 
-            button.click();
-
-            useUiStore
-                .getState()
-                .showToast(
-                    document.documentElement.classList.contains(TEMPORARY_STEALTH) ? "이미지를 보이게 했습니다." : "이미지를 숨겼습니다."
-                );
+            stealth.toggle();
+            useUiStore.getState().showToast(stealth.isRevealed() ? "이미지를 보이게 했습니다." : "이미지를 숨겼습니다.");
         }
     },
 
@@ -70,6 +78,9 @@ export default defineModule({
             document.addEventListener("DOMContentLoaded", createButton, {once: true});
             ctx.addCleanup(() => document.removeEventListener("DOMContentLoaded", createButton));
         }
+
+        const api: StealthApi = {isRevealed, toggle};
+        return api;
     },
 
     revoke() {

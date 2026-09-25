@@ -1,8 +1,10 @@
 import {isBackupTarget, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
 import {migrateV5Storage} from "@/core/migrate-v5";
-import {CONTEXT_MENUS, type ContextMenuAction, onMessage, sendMessage} from "@/core/messaging/protocol";
-import {backupStorage, dbStorage} from "@/core/storage/items";
+import {onMessage, sendMessage} from "@/core/messaging/protocol";
+import {normalizeSetting} from "@/core/module/settings";
+import {backupStorage, dbStorage, moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
+import imageSearch, {IMAGE_SEARCH_ENGINES, IMAGE_URL_PATTERNS, imageSearchUrl} from "@/features/imagesearch";
 
 const DATABASE_UPDATE_INTERVAL = 604_800_000; // 7일
 const DATABASE_RETRY_INTERVAL = 3_600_000; // 1시간
@@ -37,23 +39,48 @@ const executeGrecaptcha = async (siteKey: string, action: string): Promise<strin
     return grecaptcha.execute(siteKey, {action});
 };
 
+const IMAGE_MENU_PREFIX = "imagesearch:";
+
+/** 이미지 검색 메뉴 — 켠 엔진마다 하나 (둘 이상이면 브라우저가 확장 이름 아래로 묶는다). 모듈이 꺼져 있으면 없다 */
+const buildContextMenus = async (): Promise<void> => {
+    await browser.contextMenus.removeAll();
+
+    // 콘텐츠 레지스트리와 같은 기준 — 저장값이 없으면 defaultEnable
+    if (!((await modulesStorage.getValue())[imageSearch.id] ?? imageSearch.defaultEnable ?? true)) return;
+
+    const stored = await moduleSettingsStorage(imageSearch.id).getValue();
+    for (const [id, {name}] of Object.entries(IMAGE_SEARCH_ENGINES)) {
+        const schema = imageSearch.settings?.[id];
+        if (!schema || !normalizeSetting(schema, stored[id])) continue;
+
+        browser.contextMenus.create({id: IMAGE_MENU_PREFIX + id, title: `${name} 검색`, contexts: ["image"], targetUrlPatterns: IMAGE_URL_PATTERNS});
+    }
+};
+
 export default defineBackground(() => {
-    // ===== Context Menus (SauceNao) =====
-    const createContextMenus = async () => {
-        await browser.contextMenus.removeAll();
-        for (const {id, title, contexts} of CONTEXT_MENUS) {
-            browser.contextMenus.create({id, title, contexts, documentUrlPatterns: ["*://gall.dcinside.com/*"]});
-        }
-    };
+    // ===== Context Menus: 이미지 검색 =====
+    // 연달아 부르면 removeAll과 create가 엇갈려 id가 겹친다 — 앞의 것이 끝난 뒤 다시 만든다
+    let menus = Promise.resolve();
+    const createContextMenus = (): Promise<void> => (menus = menus.then(buildContextMenus).catch(console.error));
+
+    // 옵션 페이지·팝업은 저장소에 직접 쓴다 — 켜고 끄거나 엔진을 바꾸면 바로 다시 만든다
+    modulesStorage.watch((next, prev) => {
+        if (next[imageSearch.id] !== prev[imageSearch.id]) void createContextMenus();
+    });
+    moduleSettingsStorage(imageSearch.id).watch(() => void createContextMenus());
 
     browser.contextMenus.onClicked.addListener(async (info, tab) => {
-        if (!tab?.id) return;
-        if (CONTEXT_MENUS.some((menu) => menu.id === info.menuItemId)) {
-            await sendMessage("refresher:contextMenu", {action: info.menuItemId as ContextMenuAction, srcUrl: info.srcUrl}, {tabId: tab.id}).catch(() => {});
-        }
+        const id = String(info.menuItemId);
+        const url = id.startsWith(IMAGE_MENU_PREFIX) && info.srcUrl ? imageSearchUrl(id.slice(IMAGE_MENU_PREFIX.length), info.srcUrl) : null;
+        if (!url) return;
+
+        // 이미지가 있던 탭 바로 옆에, 그 탭을 opener로 연다
+        await browser.tabs.create(tab?.id !== undefined && tab.id >= 0 ? {url, index: tab.index + 1, openerTabId: tab.id, windowId: tab.windowId} : {url});
     });
 
     browser.runtime.onStartup.addListener(() => void createContextMenus());
+    // Firefox(MV2)는 메뉴를 남겨 두지 않는다 — 확장을 껐다 켜면 onStartup/onInstalled 없이 백그라운드만 다시 뜬다
+    if (import.meta.env.FIREFOX) void createContextMenus();
 
     // ===== Commands: 단축키 → 활성 탭에만 전송 =====
     // 단축키 기능은 '이번 페이지' 단위라 모든 탭에 보내면 탭마다 토글·토스트·목록 요청이 한꺼번에 일어난다

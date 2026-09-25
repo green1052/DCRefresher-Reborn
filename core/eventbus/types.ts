@@ -9,8 +9,6 @@ export interface ModuleEventData {
     newPostList: HTMLElement[];
     /** 목록 새로고침 요청 */
     refreshRequest: undefined;
-    /** 이미지 컨텍스트 메뉴(SauceNao) 요청 — 우클릭한 이미지 주소 */
-    imageSearch: string;
 }
 
 export type BlockRequestOptions = {

@@ -89,6 +89,9 @@ const register = async (def: ModuleDefinition, enable: boolean): Promise<void> =
     if (enable) await start(instance);
 };
 
+/** 실행 중인 모듈의 api (setup()의 리턴값). 꺼져 있거나 이 페이지에서 안 돌면 undefined */
+export const getModuleApi = (id: string): unknown => instances.get(id)?.running?.api;
+
 /** 단축키 실행 (배경의 commands → 탭). 실행 중인 모듈의 shortcuts만 */
 export const runShortcut = (command: string): void => {
     for (const {def, running} of instances.values()) {
