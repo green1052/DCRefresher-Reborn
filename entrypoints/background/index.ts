@@ -144,9 +144,11 @@ export default defineBackground(() => {
         });
     });
 
-    // 알람은 브라우저를 끄면 사라질 수 있다 (파이어폭스는 늘) — 1분 안에 끄면 백업이 빠지니 다음 시작 때 다시 건다
-    void Promise.all([backupStorage.pending.getValue(), browser.alarms.get(AUTO_BACKUP_ALARM)]).then(([pending, alarm]) => {
-        if (pending && !alarm) void browser.alarms.create(AUTO_BACKUP_ALARM, {delayInMinutes: 1});
+    // 알람은 브라우저를 끄면 사라질 수 있다 (파이어폭스는 늘) — 1분 안에 끄면 백업이 빠지니 다음 시작 때 다시 건다.
+    // 워커가 깰 때마다 보면 안 된다 — 크롬은 울린 알람을 지우고 워커를 깨우므로, 방금 울린 알람을 또 걸어 백업이 두 번 돈다
+    browser.runtime.onStartup.addListener(async () => {
+        const [pending, alarm] = await Promise.all([backupStorage.pending.getValue(), browser.alarms.get(AUTO_BACKUP_ALARM)]);
+        if (pending && !alarm) await browser.alarms.create(AUTO_BACKUP_ALARM, {delayInMinutes: 1});
     });
 
     browser.alarms.onAlarm.addListener((alarm) => {
