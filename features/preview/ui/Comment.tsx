@@ -14,6 +14,7 @@ import {banReasonsOf, ipInfoOf, passesIpFilter} from "@/core/database";
 import {isGalleryManager} from "@/utils/user";
 
 import {parseDate, usePreviewStore} from "./previewStore";
+import {nonmemberStorage} from "./WriteComment";
 
 const relative = (date: Date): string => {
     const diff = Date.now() - date.getTime();
@@ -211,8 +212,8 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
         ip: comment.ip || extractIp(comment.gallog_icon) || extractIp(comment.nickname as string | undefined),
         image: extractIcon(comment.gallog_icon)
     };
-    // 회원은 아이디로, 유동은 닉과 IP가 모두 같을 때만 — IP는 앞자리만 보여서 다른 사람일 수 있다
-    const isOp = Boolean(author) && (user.id ? user.id === author!.id : !author!.id && user.nick === author!.nick && user.ip === author!.ip);
+    // 회원 아이디가 같을 때만 — 유동은 닉과 IP 앞자리가 같아도 다른 사람일 수 있다
+    const isOp = Boolean(user.id) && user.id === author?.id;
 
     const isDeleted = comment.is_delete === "1";
     // 디시처럼 멤버만 댓글(allow_reply)이면 답글도 막고, 답글 막힌 댓글(reply_w)엔 버튼을 두지 않는다 — 음성 댓글은 디시도 답글 버튼을 따로 단다
@@ -235,7 +236,8 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
             } else {
                 let password = "";
                 if (needsPassword) {
-                    password = window.prompt("비밀번호를 입력하세요.") ?? "";
+                    // 여기서 쓴 댓글이면 저장해 둔 비밀번호다 — 먼저 채워 둔다
+                    password = window.prompt("비밀번호를 입력하세요.", (await nonmemberStorage.getValue()).pw) ?? "";
                     if (!password) return;
                 }
                 // 비밀번호가 틀려도 HTTP 200('false||메시지')이라 결과를 보여 주지 않으면 조용히 실패한다

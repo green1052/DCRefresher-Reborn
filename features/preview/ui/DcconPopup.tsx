@@ -61,9 +61,17 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                 page: String(targetPage)
             });
 
-            const response = await ajax.post(urls.dccon.lists, {body}).json<DcinsideDcconDetail>();
+            const text = await ajax.post(urls.dccon.lists, {body}).text();
             if (latest.current !== targetPage) return;
 
+            // 비로그인이면 JSON 대신 'not_login'이 온다 (dccon.js) — 받기 실패가 아니다
+            if (/^"?not_login"?$/.test(text.trim())) {
+                useUiStore.getState().showToast("디시콘은 로그인한 뒤에 쓸 수 있습니다.", "warning");
+                onClose();
+                return;
+            }
+
+            const response = JSON.parse(text) as DcinsideDcconDetail;
             if (response.target === "shop") {
                 useUiStore.getState().showToast("사용 가능한 디시콘이 없습니다.", "error");
                 onClose();
@@ -85,6 +93,10 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
 
     useEffect(() => {
         void getList(0);
+        // 닫으면 받는 중인 요청을 무효로 — 늦게 온 실패가 다시 연 창을 닫지 않게 (onClose는 새 창도 닫는다)
+        return () => {
+            latest.current = -1;
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
