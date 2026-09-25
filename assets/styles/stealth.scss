@@ -6,6 +6,10 @@
         --refresher-stealth-media: none;
     }
 
+    /* 미리보기 댓글 디시콘 — 페이지 댓글처럼 이미지 보이기 버튼과 상관없이 가린다 */
+    --refresher-stealth-dccon-visibility: hidden;
+    --refresher-stealth-dccon-label: "디시콘 표시";
+
     /* 본문 미디어·갤러리 대문 — 지연 로딩 이미지는 디시 JS가 style="display: inline"을 붙이므로 !important */
     &:not(.stlth) .writing_view_box :is(img, video, embed),
     &:not(.stlth) #zzbang_div {

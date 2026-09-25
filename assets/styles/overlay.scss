@@ -151,8 +151,8 @@
     line-height: 1.7;
 }
 
-/* 스텔스 모드(페이지의 html.refresherStealth)가 넘겨준 변수로 미리보기 미디어도 숨긴다 */
-.refresher-html :is(img, video, embed, iframe) {
+/* 스텔스 모드(페이지의 html.refresherStealth)가 넘겨준 변수로 미리보기 미디어도 숨긴다 — 댓글 디시콘은 아래에서 따로 가린다 */
+.refresher-html:not([data-dccon]) :is(img, video, embed, iframe) {
     display: var(--refresher-stealth-media, inline);
 }
 
@@ -173,6 +173,29 @@
         width: 100px;
         height: 100px;
         border-radius: 0;
+    }
+
+    /* 스텔스 모드: 가려 두고 마우스를 올리면 보인다 (변수는 stealth.scss가 페이지에서 넘긴다) */
+    &[data-dccon] {
+        position: relative;
+        width: fit-content;
+    }
+
+    &[data-dccon]:not(:hover) {
+        :is(img, video) {
+            visibility: var(--refresher-stealth-dccon-visibility, visible);
+        }
+
+        &::before {
+            content: var(--refresher-stealth-dccon-label, none);
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--gray-a6);
+            font-weight: bold;
+        }
     }
 }
 
