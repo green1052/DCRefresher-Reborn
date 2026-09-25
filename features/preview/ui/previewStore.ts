@@ -33,6 +33,8 @@ interface PostState {
     downvotes: string | undefined;
 
     comments: ProcessedComment[] | undefined;
+    /** 댓글·답글 쓰기 허용 — 멤버만 댓글인 갤러리면 댓글 응답이 막는다 */
+    allowReply: boolean;
     collapsed: Set<string>;
     reply: Reply;
     /** 댓글만 보기 (reply_num 클릭) */
@@ -74,7 +76,7 @@ interface PreviewState extends PostState {
     open: (preData: GalleryPreData) => void;
     setPost: (post: PostInfo) => void;
     setError: (error: ErrorState) => void;
-    setComments: (comments: ProcessedComment[], subtitle: string) => void;
+    setComments: (comments: ProcessedComment[], subtitle: string, allowReply: boolean) => void;
     setVotes: (counts: string, fixedCounts: string) => void;
     close: () => void;
     toggleCollapse: (no: string) => void;
@@ -133,6 +135,7 @@ const freshPost = (): PostState => ({
     fixedUpvotes: undefined,
     downvotes: undefined,
     comments: undefined,
+    allowReply: true,
     collapsed: new Set(),
     reply: NO_REPLY,
     commentsOnly: false,
@@ -180,7 +183,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
             downvotes: post.downvotes
         }),
     setError: (error) => set({error}),
-    setComments: (comments, subtitle) => set({comments, subtitle}),
+    setComments: (comments, subtitle, allowReply) => set({comments, subtitle, allowReply}),
     setVotes: (counts, fixedCounts) => set({upvotes: counts, fixedUpvotes: fixedCounts || undefined}),
 
     close: () => {

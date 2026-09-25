@@ -248,6 +248,7 @@ export const Frame = () => {
     const views = usePreviewStore((s) => s.views);
     const error = usePreviewStore((s) => s.error);
     const comments = usePreviewStore((s) => s.comments);
+    const allowReply = usePreviewStore((s) => s.allowReply);
     const commentsOnly = usePreviewStore((s) => s.commentsOnly);
     const imageBlocked = usePreviewStore((s) => s.imageBlocked);
     const frameWidth = usePreviewStore((s) => s.frameWidth);
@@ -443,7 +444,11 @@ export const Frame = () => {
                         </Box>
                     )}
 
-                    {post && <WriteComment/>}
+                    {post && (allowReply ? <WriteComment/> : (
+                        <Box px="6" pt="3" pb="5">
+                            <Text size="2" color="gray">멤버만 댓글을 쓸 수 있습니다.</Text>
+                        </Box>
+                    ))}
                     </div>
 
                     <Flex direction="column" gap="2" className="refresher-frame-jump">

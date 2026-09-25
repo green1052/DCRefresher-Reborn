@@ -218,13 +218,13 @@ const controller = (ctx: ModuleContext) => {
         pulling++;
 
         try {
-            const {list: raw} = skip ? {list: []} : await fetchComments(preData, post, abort!.signal);
+            const {list: raw, allowReply} = skip ? {list: [], allowReply: true} : await fetchComments(preData, post, abort!.signal);
             if (store.getState().signalId !== mySignal || seq < shownSeq) return;
             shownSeq = seq;
 
             const {list, threads, totalCnt, blocked, folded} = processComments(raw, preData, ctx);
             const extra = [blocked && `차단 ${blocked}개`, folded && `같은 댓글 ${folded}개 접음`].filter(Boolean).join(", ");
-            store.getState().setComments(list, `쓰레드 ${threads}개, 총 댓글 ${totalCnt}개${extra ? ` (${extra})` : ""}`);
+            store.getState().setComments(list, `쓰레드 ${threads}개, 총 댓글 ${totalCnt}개${extra ? ` (${extra})` : ""}`, allowReply);
         } finally {
             pulling--;
         }

@@ -211,6 +211,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
     const setReply = usePreviewStore((s) => s.setReply);
     const toggleCollapse = usePreviewStore((s) => s.toggleCollapse);
     const author = usePreviewStore((s) => s.post?.user);
+    const allowReply = usePreviewStore((s) => s.allowReply);
     const revealed = useUiStore((s) => s.blockView?.revealed === true);
 
     const user: User = {
@@ -223,6 +224,8 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
     const isOp = Boolean(author) && (user.id ? user.id === author!.id : !author!.id && user.nick === author!.nick && user.ip === author!.ip);
 
     const isDeleted = comment.is_delete === "1";
+    // 디시처럼 멤버만 댓글(allow_reply)이면 답글도 막고, 답글 막힌 댓글(reply_w)엔 버튼을 두지 않는다 — 음성 댓글은 디시도 답글 버튼을 따로 단다
+    const canReply = !isDeleted && allowReply && (depth > 0 || comment.voice !== undefined || comment.reply_w !== "N");
     const isAdmin = isGalleryManager();
     const canDelete =
         !isDeleted && (comment.del_btn === "Y" || comment.my_cmt === "Y" || isAdmin || (!comment.user_id && Boolean(comment.ip)));
@@ -286,7 +289,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
                 </Flex>
 
                 <Flex align="center" gap="3" flexShrink="0">
-                    {!isDeleted && (
+                    {canReply && (
                         <IconButton
                             size="1"
                             // ghost 고정 — soft로 바꾸면 Radix가 여백을 달리 줘서 댓글 줄이 흔들린다
