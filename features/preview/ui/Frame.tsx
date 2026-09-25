@@ -10,6 +10,7 @@ import type {ProcessedComment} from "@/core/preview/comments";
 import type {PostInfo} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 import {isTyping} from "@/utils/event";
+import {isGalleryManager} from "@/utils/user";
 
 import {adjacentPreData} from "../index";
 import {Comment, TimeStamp, useTick, UserCard} from "./Comment";
@@ -221,6 +222,8 @@ const CommentList = () => {
     const parents = comments.filter((comment) => comment.depth === 0);
     // 답글은 쓰레드 첫 댓글 번호(c_no)로 한 번에 묶는다 — 부모마다 전체를 훑으면 O(n²)
     const repliesOf = Map.groupBy(comments.filter((comment) => comment.depth === 1 && shown.has(comment)), (comment) => comment.c_no);
+    // 문서 전체를 훑는다 — 댓글마다 재지 않고 한 번. 모듈 전역에 두면 문서를 다 읽기 전에 잰 false가 굳는다
+    const isAdmin = isGalleryManager();
 
     return (
         <Box py="1">
@@ -231,7 +234,7 @@ const CommentList = () => {
                 if (!shown.has(parent)) {
                     return (
                         <Fragment key={parent.no}>
-                            {replies.map((child) => <Comment key={child.no} comment={child} depth={0} replyCount={0}/>)}
+                            {replies.map((child) => <Comment key={child.no} comment={child} depth={0} replyCount={0} isAdmin={isAdmin}/>)}
                         </Fragment>
                     );
                 }
@@ -240,9 +243,10 @@ const CommentList = () => {
 
                 return (
                     <Fragment key={parent.no}>
-                        <Comment comment={parent} depth={0} replyCount={replies.length} threadOpen={!isCollapsed && replies.length > 0}/>
-                        {!isCollapsed &&
-                            replies.map((child, index) => <Comment key={child.no} comment={child} depth={1} replyCount={0} lastReply={index === replies.length - 1}/>)}
+                        <Comment comment={parent} depth={0} replyCount={replies.length} threadOpen={!isCollapsed && replies.length > 0} isAdmin={isAdmin}/>
+                        {!isCollapsed && replies.map((child, index) => (
+                            <Comment key={child.no} comment={child} depth={1} replyCount={0} lastReply={index === replies.length - 1} isAdmin={isAdmin}/>
+                        ))}
                     </Fragment>
                 );
             })}

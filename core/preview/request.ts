@@ -323,8 +323,8 @@ export const TXTCON_COLORS = ["ffffff", "333333"];
 
 const TXTCON_MAX_LEN = 20;
 const TXTCON_MAX_LINES = 4;
-/** 한 줄 최대 글자 수 (보여 줄 때도 이 단위로 줄을 나눈다) */
-export const TXTCON_MAX_LINE_LEN = 5;
+/** 한 줄 최대 글자 수 */
+const TXTCON_MAX_LINE_LEN = 5;
 
 // 컬러 이모지로 그려지는 BMP 문자 — 글자 수에 1을 더 센다
 const TXTCON_BMP_EMOJI = /[\p{Emoji_Presentation}--[\u{10000}-\u{10FFFF}]]/gv;
@@ -341,9 +341,13 @@ const segmenter = new Intl.Segmenter();
 /** 글자콘의 '한 글자' 단위로 나눈다 */
 export const graphemes = (text: string): string[] => Array.from(segmenter.segment(text), ({segment}) => segment);
 
-/** 각 줄을 5글자씩 나눴을 때의 줄 수 */
-const txtconLines = (text: string): number =>
-    text.split("\n").reduce((sum, line) => sum + Math.max(1, Math.ceil(graphemes(line).length / TXTCON_MAX_LINE_LEN)), 0);
+/** 직접 줄바꿈은 두고 각 줄을 5글자씩 나눈다 — 입력 제한과 보여 줄 때(Comment.tsx)가 같이 쓴다 */
+export const wrapTxtcon = (text: string): string =>
+    text
+        .replace(/\r\n?/g, "\n")
+        .split("\n")
+        .map((line) => graphemes(line).map((char, i) => (i && i % TXTCON_MAX_LINE_LEN === 0 ? "\n" : "") + char).join(""))
+        .join("\n");
 
 /** 글자콘 입력값 정리 (txtcon.js 'wide' 문자 필터 + 20자·4줄·줄당 5자 제한) */
 export const normalizeTxtcon = (value: string): string => {
@@ -368,7 +372,7 @@ export const normalizeTxtcon = (value: string): string => {
     text = graphemes(text).slice(0, (TXTCON_MAX_LINE_LEN + 1) * TXTCON_MAX_LINES).join("");
 
     // 5글자씩 나눈 줄 수가 넘치면 뒤에서부터 제거
-    while (txtconLines(text) > TXTCON_MAX_LINES) text = Array.from(text).slice(0, -1).join("");
+    while (wrapTxtcon(text).split("\n").length > TXTCON_MAX_LINES) text = Array.from(text).slice(0, -1).join("");
 
     // 글자 수 제한 (코드포인트 단위로 앞에서 자른다 — 넘치는 글자만 건너뛰면 가운데가 빠지고 뒤의 ZWJ·결합 문자가 엉뚱한 글자에 붙는다)
     let count = 0;

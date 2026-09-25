@@ -5,13 +5,12 @@ import {Fragment, type MouseEvent, type ReactNode, useEffect, useLayoutEffect, u
 import {overlay} from "@/components/overlay/shadow";
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {User} from "@/core/preview/types";
-import {adminDeleteComment, graphemes, TXTCON_MAX_LINE_LEN, userDeleteComment} from "@/core/preview/request";
+import {adminDeleteComment, graphemes, userDeleteComment, wrapTxtcon} from "@/core/preview/request";
 import {notifyManage} from "@/utils/notify";
 import {useUserMemo} from "@/stores/memos";
 import {type BadgeKey, showsUid, useUiStore} from "@/stores/ui";
 import {useGallogActivity} from "@/utils/gallogActivity";
 import {banReasonsOf, ipInfoOf, passesIpFilter} from "@/core/database";
-import {isGalleryManager} from "@/utils/user";
 
 import {parseDate, usePreviewStore} from "./previewStore";
 import {nonmemberStorage} from "./WriteComment";
@@ -38,20 +37,12 @@ const relative = (date: Date): string => {
     return date.toLocaleString();
 };
 
-const extractIcon = (html: string | undefined): string | undefined =>
-    new DOMParser().parseFromString(html ?? "", "text/html").querySelector("a.writer_nikcon img")?.getAttribute("src") ?? undefined;
+// 닉콘(a.writer_nikcon img)의 src — 댓글마다 DOMParser를 돌리지 않게 정규식으로. 디시는 작은따옴표를 쓰지만 따옴표 없는 값도 받는다
+const extractIcon = (html: string | undefined): string | undefined => html?.match(/writer_nikcon[^>]*>\s*<img\b[^>]*?\ssrc=["']?([^"'\s>]+)/)?.[1];
 
 const extractIp = (html: string | undefined): string | undefined => html?.match(/class=["']?ip["']?[^>]*>\s*\(([^)]+)\)/)?.[1];
 
 /* ===== 글자콘 — 디시 txtcon_view.js를 옮김 (디시 스크립트는 shadow DOM에 닿지 않는다) ===== */
-
-/** 직접 줄바꿈은 두고 각 줄을 5글자씩 나눈다 */
-const wrapTxtcon = (text: string): string =>
-    text
-        .replace(/\r\n?/g, "\n")
-        .split("\n")
-        .map((line) => graphemes(line).map((char, i) => (i && i % TXTCON_MAX_LINE_LEN === 0 ? "\n" : "") + char).join(""))
-        .join("\n");
 
 /** 박스에 넘치지 않는 최대 글자 크기 (16~72px 이진 탐색). 줄 수는 16px 기준으로 고정, 폭이 넘치면 break-all */
 const fitTxtcon = (box: HTMLElement): void => {
@@ -196,9 +187,11 @@ interface CommentProps {
     threadOpen?: boolean;
     /** 쓰레드의 마지막 답글 — 트리 선이 여기서 끝난다 */
     lastReply?: boolean;
+    /** 갤러리 관리 권한 — 문서 전체를 훑으므로 목록에서 한 번만 잰다 */
+    isAdmin: boolean;
 }
 
-export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: CommentProps) => {
+export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAdmin}: CommentProps) => {
     // reply 객체째 구독하면 답글 버튼 하나에 모든 댓글이 다시 그려진다 — 내 댓글인지만 본다
     const replying = usePreviewStore((s) => s.reply.replyNo === comment.no);
     const collapsed = usePreviewStore((s) => s.collapsed.has(comment.no));
@@ -218,7 +211,6 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
     const isDeleted = comment.is_delete === "1";
     // 디시처럼 멤버만 댓글(allow_reply)이면 답글도 막고, 답글 막힌 댓글(reply_w)엔 버튼을 두지 않는다 — 음성 댓글은 디시도 답글 버튼을 따로 단다
     const canReply = !isDeleted && allowReply && (depth > 0 || comment.voice !== undefined || comment.reply_w !== "N");
-    const isAdmin = isGalleryManager();
     const canDelete =
         !isDeleted && (comment.del_btn === "Y" || comment.my_cmt === "Y" || isAdmin || (!comment.user_id && Boolean(comment.ip)));
 

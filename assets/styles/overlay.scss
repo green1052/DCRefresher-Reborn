@@ -224,6 +224,8 @@
         box-sizing: border-box;
         border-radius: 10px;
         background-color: #3b4890;
+        // 크기가 고정이라 가둔다 — 글자 크기를 잴 때(fitTxtcon)마다 스크롤 칸 전체가 다시 배치되지 않게
+        contain: strict;
     }
 
     // 글자 크기·자간·줄바꿈은 Comment.tsx(fitTxtcon)가 다시 잡는다 — 정화하며 지워진 style="font-size:16px"도 여기서
