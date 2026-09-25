@@ -61,7 +61,7 @@ const Votes = () => {
                     .getState()
                     .showToast(`${mode === "U" ? "추천" : "비추천"}되었습니다. (총 ${counts ?? "?"}표)`);
             } else {
-                useUiStore.getState().showToast("이미 처리했거나 처리에 실패했습니다.", "error");
+                useUiStore.getState().showToast(result.message ?? "처리하지 못했습니다.", "error");
             }
         } catch {
             useUiStore.getState().showToast("추천 처리 중 오류가 발생했습니다.", "error");
@@ -267,7 +267,7 @@ export const Frame = () => {
 
                         {post && (
                             <Flex justify="between" align="center" gap="3" mt="3" wrap="wrap">
-                                <UserCard user={post.user ?? {}}/>
+                                <UserCard user={post.user ?? {}} fetchRatio/>
                                 <Flex align="center" gap="3">
                                     <CountDown/>
                                     <Text size="2" color="gray">

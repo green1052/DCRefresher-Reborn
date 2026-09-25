@@ -48,13 +48,20 @@ export interface VoteResult {
     success: boolean;
     counts?: string;
     fixedCounts?: string;
+    /** 실패 이유 (디시가 준 문구) */
+    message?: string;
 }
 
-/** 추천/비추천. 3시간 쿠키(Firstcheck)로 중복 방지 */
+/** 추천/비추천 */
 export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U" | "D", code?: string): Promise<VoteResult> => {
-    const cookieName = `${preData.gallery}${preData.id}_Firstcheck${mode === "U" ? "" : "_down"}`;
-
-    if (await cookieStore.get(cookieName)) return {success: false};
+    // 서버가 이 쿠키가 있는지 본다 — 없으면 'false||잘못된 접근입니다.' (recommend_box.js도 요청 전에 만든다). 중복 추천은 서버가 막는다
+    await cookieStore.set({
+        name: `${preData.gallery}${preData.id}_Firstcheck${mode === "U" ? "" : "_down"}`,
+        value: "Y",
+        expires: Date.now() + 3 * 3600_000,
+        path: "/",
+        domain: "dcinside.com"
+    });
 
     const body = await commonBody(preData.link);
     body.set("id", preData.gallery);
@@ -66,15 +73,9 @@ export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U
     if (postInfo.randomParam) body.set(postInfo.randomParam.name, postInfo.randomParam.value);
 
     const response = await ajax.post(urls.vote, {body}).text();
-    const [result, counts, fixedCounts] = response.split("||");
+    const [result, counts, fixedCounts] = response.trim().split("||");
 
-    if (result === "true") {
-        await cookieStore.set({name: cookieName, value: "Y", expires: Date.now() + 3 * 3600_000, path: "/"});
-
-        return {success: true, counts, fixedCounts};
-    }
-
-    return {success: false};
+    return result === "true" ? {success: true, counts, fixedCounts} : {success: false, message: counts || undefined};
 };
 
 const manageUrl = (link: string | undefined, base: string, mini: string): string => (isMini(link) ? mini : base);
