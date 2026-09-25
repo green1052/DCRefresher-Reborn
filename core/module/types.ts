@@ -2,7 +2,7 @@ import type {ModuleEventData} from "@/core/eventbus/types";
 import type {SettingValue} from "@/core/storage/types";
 import type Emittery from "emittery";
 
-/** 설정 묶음 — 같은 객체를 group으로 가진 연속된 설정을 옵션 화면에서 한 칸에 모아 보여준다 (값은 설정마다 따로) */
+/** 설정 묶음 — 같은 객체를 group으로 가진 설정을 옵션 화면에서 첫 설정 자리의 한 칸에 모아 보여준다 (값은 설정마다 따로) */
 export interface SettingGroup {
     name: string;
     desc: string;
