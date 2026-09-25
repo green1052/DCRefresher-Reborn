@@ -97,12 +97,12 @@ const Votes = () => {
 
 const ErrorBlock = ({error}: { error: ErrorState }) => {
     const preData = usePreviewStore((s) => s.preData);
-    const {detail} = error;
+    const {detail, status} = error;
 
     let text: string;
-    if (/fetch/i.test(detail)) text = "서버 또는 브라우저 연결에 실패했습니다.";
-    else if (detail.startsWith("4")) text = "게시글이 삭제되었거나 존재하지 않습니다.";
-    else if (detail.startsWith("5")) text = "서버가 불안정합니다. 잠시 후 다시 시도해주세요.";
+    if (status && status >= 400 && status < 500) text = "게시글이 삭제되었거나 존재하지 않습니다.";
+    else if (status && status >= 500) text = "서버가 불안정합니다. 잠시 후 다시 시도해주세요.";
+    else if (/fetch|network|timed out/i.test(detail)) text = "서버 또는 브라우저 연결에 실패했습니다.";
     else text = "게시글 구조를 해석하는 데 실패했습니다.";
 
     return (

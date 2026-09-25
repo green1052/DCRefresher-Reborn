@@ -5,6 +5,8 @@ import type {GalleryPreData, PostInfo} from "@/core/preview/types";
 
 export interface ErrorState {
     detail: string;
+    /** HTTP 상태 코드 — 응답이 왔을 때만 */
+    status?: number;
 }
 
 export type ManageKind = "notice" | "recommend" | "delete" | "bump";

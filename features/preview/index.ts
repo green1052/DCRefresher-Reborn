@@ -1,3 +1,5 @@
+import {HTTPError} from "ky";
+
 import {eventBus} from "@/core/eventbus/bus";
 import {isAnyBlocked} from "@/core/block";
 import {defineModule} from "@/core/module/define";
@@ -127,7 +129,11 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
     };
 };
 
-const errorOf = (error: unknown): ErrorState => ({detail: error instanceof Error ? error.message : String(error)});
+// 상태 코드: ky가 던지는 HTTPError, 또는 fetchPost가 본문을 못 찾아 던지는 Error("404")
+const errorOf = (error: unknown): ErrorState => ({
+    detail: error instanceof Error ? error.message : String(error),
+    status: error instanceof HTTPError ? error.response.status : error instanceof Error && error.message === "404" ? 404 : undefined
+});
 
 const controller = (ctx: ModuleContext) => {
     const store = usePreviewStore;
