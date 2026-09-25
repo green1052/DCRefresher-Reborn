@@ -1,17 +1,15 @@
 import {defineModule} from "@/core/module/define";
-import {eventTarget} from "@/utils/event";
 
-let currentImage: string | null = null;
-
-const searchWith = (targetUrl: string): void => {
-    if (!currentImage?.includes("viewimage.php")) return;
+/** 디시 본문 이미지(viewimage.php)만 — 우클릭한 이미지 주소는 배경의 컨텍스트 메뉴가 넘겨 준다 */
+const searchSauceNao = (src: string): void => {
+    if (!src.includes("viewimage.php")) return;
 
     // 디시콘 이미지로 통일 (호스트/경로만 교체, 쿼리 유지)
-    const url = new URL(currentImage);
+    const url = new URL(src);
     url.host = "image.dcinside.com";
     url.pathname = "/dccon.php";
 
-    window.open(targetUrl.replace("[url]", encodeURIComponent(url.toString())));
+    window.open(`https://saucenao.com/search.php?url=${encodeURIComponent(url.toString())}`);
 };
 
 export default defineModule({
@@ -21,17 +19,7 @@ export default defineModule({
     defaultEnable: true,
 
     setup(ctx) {
-        const onContextMenu = (event: MouseEvent): void => {
-            const target = eventTarget(event);
-            if (target instanceof HTMLImageElement && target.src) {
-                currentImage = target.src;
-            }
-        };
-
-        window.addEventListener("contextmenu", onContextMenu);
-        ctx.addCleanup(() => window.removeEventListener("contextmenu", onContextMenu));
-
-        const offImageSearch = ctx.bus.on("imageSearch", () => searchWith("https://saucenao.com/search.php?url=[url]"));
+        const offImageSearch = ctx.bus.on("imageSearch", ({data: src}) => searchSauceNao(src));
         ctx.addCleanup(() => void offImageSearch());
     }
 });

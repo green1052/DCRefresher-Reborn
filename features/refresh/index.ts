@@ -7,8 +7,6 @@ import {useUiStore} from "@/stores/ui";
 const MINIMUM_REFRESH_INTERVAL = 2000;
 const PAGING_SELECTOR = ".left_content article:has(.gall_listwrap) .bottom_paging_box";
 
-let button: HTMLButtonElement | null = null;
-
 interface RefreshApi {
     refreshLists(): Promise<void>;
 
@@ -139,12 +137,16 @@ export default defineModule({
         let timer = 0;
         let originalLocation = location.href;
         let calledByPageTurn = false;
+        // 강제 로드가 진행 중인 요청에 막혔을 때 끝난 뒤 한 번 더 받기 위한 표시
+        let rerun = false;
         // 이 문서가 보여주는 글 — 뒤로 가기로 originalLocation이 미리보기 주소(다른 no)가 돼도 바뀌지 않는다
         const isPageView = location.href.includes("/board/view");
         const currentPostNo = queryString("no");
-        const paginationAbort = new AbortController();
 
         // 제어 버튼
+        let button: HTMLButtonElement | null = null;
+        const label = (): string => (paused ? "새로고침: 꺼짐" : "새로고침: 켜짐");
+
         ctx.addFilter(
             ".page_head > .gall_issuebox",
             (element) => {
@@ -153,14 +155,15 @@ export default defineModule({
                 button = document.createElement("button");
                 button.type = "button";
                 button.dataset.refresherRefresh = "true";
-                button.textContent = paused ? "새로고침: 꺼짐" : "새로고침: 켜짐";
+                button.textContent = label();
                 button.addEventListener("click", () => {
                     paused = !paused;
-                    button!.textContent = paused ? "새로고침: 꺼짐" : "새로고침: 켜짐";
+                    button!.textContent = label();
                 });
                 element.append(button);
             }
         );
+        ctx.addCleanup(() => button?.remove());
 
         // 방문 링크 색상 (Firefox 대응)
         if (ctx.settings.doNotColorVisited) {
@@ -172,12 +175,19 @@ export default defineModule({
             // 진행 중인 요청 등으로 이번 호출이 막혀도 다음 새로고침부터는 새 주소를 받도록 먼저 바꿔 둔다
             if (customURL) originalLocation = customURL;
 
-            if (loading || document.hidden) return false;
+            if (loading) {
+                // 관리 동작 뒤 요청 등은 진행 중인 응답이 바뀌기 전 목록일 수 있어 끝난 뒤 다시 받는다 (자동 tick은 겹쳐도 무시)
+                if (force) rerun = true;
+                return false;
+            }
+            if (document.hidden) return false;
             if (!force && (Date.now() - lastRefresh < MINIMUM_REFRESH_INTERVAL || paused)) return false;
 
-            // 관리자가 체크박스로 글을 고르는 중이면 목록을 갈아끼우지 않는다
-            if (document.querySelector<HTMLInputElement>(".article_chkbox:checked")) return false;
-            if (document.querySelector(".user_data.add")) return false;
+            // 관리자가 체크박스로 글을 고르는 중이면 목록을 갈아끼우지 않는다.
+            // 댓글 체크박스는 목록과 상관없고, 사용자가 직접 한 이동(페이지 전환/뒤로 가기)은 막으면 주소와 목록이 어긋난다
+            if (!customURL && (document.querySelector(".gall_list:not([id]) .article_chkbox:checked") || document.querySelector(".user_data.add"))) {
+                return false;
+            }
 
             loading = true;
             // 기다리는 동안 뒤로 가기/페이지 이동으로 originalLocation이 바뀔 수 있으니 요청한 주소를 고정
@@ -197,7 +207,10 @@ export default defineModule({
                 const oldList = document.querySelector<HTMLElement>(".gall_list:not([id]) tbody");
                 const newList = dom.querySelector<HTMLElement>(".gall_list:not([id]) tbody");
 
-                eventBus.emit("refresherGetPost", dom);
+                // 페이징 박스도 받아온 것으로 맞춘다. 같을 땐 건드리지 않아야 누르던 페이지 링크가 교체로 사라지지 않는다
+                const paging = dom.querySelector<HTMLElement>(PAGING_SELECTOR);
+                const currentPaging = document.querySelector<HTMLElement>(PAGING_SELECTOR);
+                if (paging && currentPaging && paging.innerHTML !== currentPaging.innerHTML) currentPaging.innerHTML = paging.innerHTML;
 
                 if (!oldList || !newList) return false;
 
@@ -233,13 +246,14 @@ export default defineModule({
                     if (!oldCacheSet.has(no)) newPostList.push(element);
                 }
 
+                // 받아온 HTML엔 검색어 강조가 없으니 페이지 전환뿐 아니라 받아온 목록마다 칠한다
+                if (queryString("s_keyword")) {
+                    const searchValue = document.querySelector<HTMLInputElement>("#sch_q")?.value ?? "";
+                    highlightSearchResults(newList, searchValue);
+                }
+
                 if (calledByPageTurn) {
                     calledByPageTurn = false;
-
-                    if (queryString("s_keyword")) {
-                        const searchValue = document.querySelector<HTMLInputElement>("#sch_q")?.value ?? "";
-                        highlightSearchResults(newList, searchValue);
-                    }
                 } else if (ctx.settings.fadeIn) {
                     newPostList.forEach((element, index) => {
                         element.classList.add("refresherNewPost");
@@ -259,7 +273,11 @@ export default defineModule({
                 return false;
             } finally {
                 loading = false;
-                if (target !== originalLocation) void load(undefined, true);
+                if (target !== originalLocation || rerun) {
+                    rerun = false;
+                    // 주소가 바뀐 건 사용자가 직접 이동한 것이라 그 주소를 넘겨 체크박스 가드를 건너뛰게 한다
+                    void load(target !== originalLocation ? originalLocation : undefined, true);
+                }
             }
         };
 
@@ -285,10 +303,6 @@ export default defineModule({
             armNext();
         };
 
-        const onPageShow = (event: PageTransitionEvent): void => {
-            if (!event.persisted) void load();
-        };
-
         // 뒤로/앞으로 가기 — 인페이지 전환으로 쌓인 주소의 목록으로 되돌린다
         const onPopState = (): void => {
             calledByPageTurn = true;
@@ -298,7 +312,6 @@ export default defineModule({
         };
 
         document.addEventListener("visibilitychange", onVisibilityChange);
-        window.addEventListener("pageshow", onPageShow);
         window.addEventListener("popstate", onPopState);
 
         const offRefreshRequest = eventBus.on("refreshRequest", async () => {
@@ -310,54 +323,37 @@ export default defineModule({
         ctx.addCleanup(() => {
             offRefreshRequest();
             document.removeEventListener("visibilitychange", onVisibilityChange);
-            window.removeEventListener("pageshow", onPageShow);
             window.removeEventListener("popstate", onPopState);
             window.clearTimeout(timer);
-            paginationAbort.abort();
         });
 
         // ===== 인페이지 페이지 전환 =====
-        if (ctx.settings.useBetterBrowse) {
-            ctx.addFilter(
-                `${PAGING_SELECTOR} a:not([data-refresher-paged])`,
-                (anchor) => {
-                    if (!(anchor instanceof HTMLAnchorElement)) return;
+        // 앵커마다 붙이면 표시 속성 때문에 페이징 박스 비교가 늘 어긋나 매번 갈아끼우게 된다 — 문서에 하나만 위임한다
+        const onPagingClick = (event: MouseEvent): void => {
+            // 수정키 클릭은 새 탭/창으로 열려는 것이라 가로채지 않는다
+            if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+            if (!ctx.settings.useBetterBrowse) return;
 
-                    anchor.dataset.refresherPaged = "true";
-                    if (anchor.getAttribute("href")?.startsWith("javascript:")) return;
+            const anchor = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>(`${PAGING_SELECTOR} a`) : null;
+            if (!anchor || anchor.getAttribute("href")?.startsWith("javascript:")) return;
 
-                    anchor.addEventListener(
-                        "click",
-                        (event) => {
-                            event.preventDefault();
+            event.preventDefault();
 
-                            const newUrl = isPageView ? mergeParamURL(location.href, anchor.href) : anchor.href;
+            const newUrl = isPageView ? mergeParamURL(location.href, anchor.href) : anchor.href;
 
-                            history.pushState(null, document.title, newUrl);
-                            calledByPageTurn = true;
+            history.pushState(null, document.title, newUrl);
+            calledByPageTurn = true;
 
-                            void (async () => {
-                                if (!(await load(location.href, true))) return;
+            void (async () => {
+                if (!(await load(location.href, true))) return;
 
-                                const scrollTarget = document.querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head");
-                                scrollTarget?.scrollIntoView({behavior: "smooth", block: "start"});
-                            })();
-                        },
-                        {signal: paginationAbort.signal}
-                    );
-                }
-            );
-        }
+                const scrollTarget = document.querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head");
+                scrollTarget?.scrollIntoView({behavior: "smooth", block: "start"});
+            })();
+        };
 
-        // ===== 페이징 박스 갱신 (refresherGetPost) =====
-        const offGetPost = eventBus.on("refresherGetPost", ({data: dom}) => {
-            const source = dom.querySelector<HTMLElement>(PAGING_SELECTOR);
-            const destination = document.querySelector<HTMLElement>(PAGING_SELECTOR);
-            if (source && destination && source.innerHTML !== destination.innerHTML) {
-                destination.innerHTML = source.innerHTML;
-            }
-        });
-        ctx.addCleanup(() => void offGetPost());
+        document.addEventListener("click", onPagingClick);
+        ctx.addCleanup(() => document.removeEventListener("click", onPagingClick));
 
         const api: RefreshApi = {
             refreshLists: async () => {
@@ -366,12 +362,13 @@ export default defineModule({
                     return;
                 }
 
-                await load();
+                // 명시적인 요청이라 일시정지(검색 중 기본값 포함)여도 받는다
+                await load(undefined, true);
             },
 
             togglePause: () => {
                 paused = !paused;
-                if (button) button.textContent = paused ? "새로고침: 꺼짐" : "새로고침: 켜짐";
+                if (button) button.textContent = label();
 
                 useUiStore.getState().showToast(paused ? "이번 페이지에서는 새로고침을 사용하지 않습니다." : "이번 페이지에서는 새로고침을 사용합니다.");
             }
@@ -381,15 +378,6 @@ export default defineModule({
     },
 
     revoke() {
-        if (button) {
-            button.remove();
-            button = null;
-        }
-
         document.documentElement.classList.remove("refresherDoNotColorVisited");
-
-        for (const anchor of document.querySelectorAll<HTMLAnchorElement>("a[data-refresher-paged]")) {
-            delete anchor.dataset.refresherPaged;
-        }
     }
 });

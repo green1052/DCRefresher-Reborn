@@ -9,14 +9,17 @@ const DC_FONT_TARGETS = ["body", "button", "input", ".gall_list", ".view_content
     .map((selector) => `:root ${selector}`)
     .join(", ");
 
-/** "A, B" → `"A", "B", sans-serif` — 이름마다 따옴표로 감싸 CSS로 새어나가지 않게 한다 */
+/** CSS 일반 글꼴군 — 따옴표로 감싸면 키워드가 아니라 그 이름의 폰트로 해석된다 */
+const GENERIC_FAMILIES = new Set(["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "math", "emoji", "fangsong", "ui-serif", "ui-sans-serif", "ui-monospace", "ui-rounded"]);
+
+/** "A, B" → `"A", "B", sans-serif` — 이름마다 따옴표로 감싸 CSS로 새어나가지 않게 한다 (정확히 일치하는 일반 글꼴군 키워드만 그대로) */
 const toFontFamily = (value: string): string =>
     [
         ...value
             .split(",")
             .map((font) => font.trim())
             .filter(Boolean)
-            .map((font) => `"${font.replace(/["\\]/g, "\\$&")}"`),
+            .map((font) => (GENERIC_FAMILIES.has(font.toLowerCase()) ? font : `"${font.replace(/["\\]/g, "\\$&")}"`)),
         "sans-serif"
     ].join(", ");
 

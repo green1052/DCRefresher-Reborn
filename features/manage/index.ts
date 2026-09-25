@@ -46,8 +46,10 @@ export default defineModule({
     },
 
     setup(ctx) {
-        // 행/체크박스 핸들러 일괄 해제용 (revoke에서 abort)
+        // 행/체크박스 핸들러 일괄 해제용 (모듈 해제 시 abort)
         const handlers = new AbortController();
+        // 핸들러를 붙인 요소. DOM 속성으로 표시하면 refresh가 체크박스 칸을 복제할 때 표시까지 따라가 새 행에 핸들러가 안 붙는다
+        const handled = new WeakSet<Element>();
 
         // ===== GIF 조작 =====
         ctx.addFilter(
@@ -66,8 +68,8 @@ export default defineModule({
         ctx.addFilter(
             ".article_chkbox",
             (element) => {
-                if (element.dataset.refresherManageHandler === "true") return;
-                element.dataset.refresherManageHandler = "true";
+                if (handled.has(element)) return;
+                handled.add(element);
 
                 const parent = element.closest<HTMLElement>(".ub-content, .cmt_nickbox, .search_comment");
                 const writer = parent?.querySelector<HTMLElement>(":scope > .ub-writer");
@@ -79,13 +81,13 @@ export default defineModule({
                     const source = event.target as HTMLInputElement;
 
                     if (ctx.settings.checkAllTargetUser && event.shiftKey && (uid || ip || nick)) {
-                        const key = uid ? "uid" : ip ? "ip" : "nick";
-                        const value: string = (uid ?? ip ?? nick) as string;
+                        // 유동은 data-uid=""라 ??로 값을 고르면 key는 ip인데 값이 ""가 돼 회원 글이 전부 잡힌다 — 같은 기준으로 고른다
+                        const [key, value] = uid ? ["uid", uid] : ip ? ["ip", ip] : ["nick", nick!];
 
                         for (const other of document.querySelectorAll<HTMLElement>(`.ub-writer[data-${key}="${CSS.escape(value)}"]`)) {
                             const otherParent = other.closest<HTMLElement>(".ub-content, .cmt_nickbox, .search_comment");
                             otherParent?.querySelectorAll<HTMLInputElement>(".article_chkbox").forEach((box) => {
-                                box.checked = (source as HTMLInputElement).checked;
+                                box.checked = source.checked;
                             });
                         }
                     }
@@ -102,15 +104,13 @@ export default defineModule({
                 }, {signal: handlers.signal});
 
                 element.addEventListener("mouseover", (event) => {
-                    if (ctx.settings.checkViaShift && event.shiftKey && !(element instanceof HTMLInputElement && element.checked)) {
-                        if (element instanceof HTMLInputElement) element.checked = true;
-                    }
+                    if (ctx.settings.checkViaShift && event.shiftKey && element instanceof HTMLInputElement) element.checked = true;
                 }, {signal: handlers.signal});
             }
         );
 
         // ===== Ctrl 클릭 삭제 =====
-        const deletePost = async (postId: string): Promise<void> => {
+        const deletePost = async (postId: string): Promise<boolean> => {
             const isMini = isMiniGallery(location.href);
 
             try {
@@ -120,17 +120,18 @@ export default defineModule({
                     "nos[]": postId,
                     _GALLTYPE_: galleryTypeName(location.href)
                 });
-                notifyManage(await postManage(isMini ? urls.manage.deleteMini : urls.manage.delete, body), "게시글을 삭제했습니다.");
+                return notifyManage(await postManage(isMini ? urls.manage.deleteMini : urls.manage.delete, body), "게시글을 삭제했습니다.");
             } catch {
                 useUiStore.getState().showToast("게시글 삭제 중 오류가 발생했습니다.", "error");
+                return false;
             }
         };
 
         ctx.addFilter(
             ".gall_list .ub-content",
             (element) => {
-                if (element.dataset.refresherManageClick === "true") return;
-                element.dataset.refresherManageClick = "true";
+                if (handled.has(element)) return;
+                handled.add(element);
 
                 element.addEventListener("click", (event) => {
                     if (!ctx.settings.deleteViaCtrl || !event.ctrlKey) return;
@@ -140,18 +141,14 @@ export default defineModule({
 
                     event.preventDefault();
                     event.stopPropagation();
-                    void deletePost(postId);
+                    void deletePost(postId).then((deleted) => {
+                        // 목록이 새로고침될 때까지(refresh가 꺼져 있으면 계속) 남겨 두면 다시 Ctrl+클릭해 지운 글에 요청이 또 간다
+                        if (deleted) element.remove();
+                    });
                 }, {signal: handlers.signal});
             }
         );
 
-        ctx.addCleanup(() => {
-            handlers.abort();
-
-            for (const element of document.querySelectorAll<HTMLElement>("[data-refresher-manage-handler], [data-refresher-manage-click]")) {
-                delete element.dataset.refresherManageHandler;
-                delete element.dataset.refresherManageClick;
-            }
-        });
+        ctx.addCleanup(() => handlers.abort());
     }
 });

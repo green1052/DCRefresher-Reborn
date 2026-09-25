@@ -7,12 +7,10 @@ export interface ModuleEventData {
     refresherRequestBlock: BlockRequestOptions;
     /** 목록에 새 게시글이 추가됐을 때 */
     newPostList: HTMLElement[];
-    /** 게시글 DOM 로드 */
-    refresherGetPost: Document;
     /** 목록 새로고침 요청 */
     refreshRequest: undefined;
-    /** 이미지 컨텍스트 메뉴(SauceNao) 요청 */
-    imageSearch: undefined;
+    /** 이미지 컨텍스트 메뉴(SauceNao) 요청 — 우클릭한 이미지 주소 */
+    imageSearch: string;
 }
 
 export type BlockRequestOptions = {

@@ -68,7 +68,9 @@
     .gall_exposure,
     .minor_ranking_box,
     .issue_contentbox,
-    .ad_bottom_list {
+    .ad_bottom_list,
+    // 왼쪽 날개 광고 — setup(document_start) 때는 아직 파싱 전이라 JS로 찾으면 놓친다
+    .stickyunit {
         display: none !important;
     }
 

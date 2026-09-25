@@ -31,14 +31,10 @@ let hideStyle: HTMLStyleElement | null = null;
 const applyCompact = (ctx: ModuleContext): void => {
     const compact = window.innerWidth <= Number(ctx.settings.activePixel) || ctx.settings.forceCompact === true;
     const isView = location.href.includes("/board/view");
-    // /board/view에서 게시글 보기 컴팩트 모드가 꺼져있으면 컴팩트 계산 자체를 생략
+    // /board/view에서는 '게시글 보기 컴팩트 모드'가 켜졌을 때만 적용
     const useCompact = compact && (!isView || ctx.settings.useCompactModeOnView === true);
 
     document.documentElement.classList.toggle("refresherCompact", useCompact);
-
-    for (const sticky of document.querySelectorAll<HTMLElement>(".stickyunit")) {
-        sticky.style.display = useCompact ? "none" : "";
-    }
 };
 
 const applyHide = (ctx: ModuleContext): void => {
@@ -115,8 +111,5 @@ export default defineModule({
         hideStyle = null;
 
         document.documentElement.classList.remove("refresherCompact", PUSH_CLASS);
-        for (const sticky of document.querySelectorAll<HTMLElement>(".stickyunit")) {
-            sticky.style.display = "";
-        }
     }
 });

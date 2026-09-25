@@ -10,8 +10,8 @@ export const CONTEXT_MENUS: {
 }[] = [{id: "searchSauceNao", title: "SauceNao 검색", contexts: ["image"]}];
 
 interface ProtocolMap {
-    /** 배경 → 탭: 컨텍스트 메뉴 클릭 */
-    "refresher:contextMenu"(data: ContextMenuAction): void;
+    /** 배경 → 탭: 컨텍스트 메뉴 클릭. srcUrl은 우클릭한 이미지 주소 */
+    "refresher:contextMenu"(data: { action: ContextMenuAction; srcUrl?: string }): void;
 
     /** 배경 → 탭: 단축키 실행 (commands) */
     "refresher:executeShortcut"(data: string): void;
