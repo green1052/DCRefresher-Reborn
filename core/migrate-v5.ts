@@ -7,6 +7,7 @@
  *   refresher:block:<유형>:mode              → refresher:block:defaults[<유형>]
  * 차단·메모 목록(refresher:block:<유형>, refresher:memo:<유형>)은 키와 모양이 같아 그대로 쓴다.
  * 옛 IP DB(refresher:database:*)·모듈 캐시(…:data)·백업 시각은 버린다 — 새로 받는다.
+ * 5.1.2 이전 버전이 남긴 키(isLeftoverKey)도 버린다 — v5도 읽지 않던 잔재가 백업·내보내기만 불린다.
  * 설정 키·값 형식은 v5와 같다(모듈별로 대조함). v6에 없는 키는 v6가 읽지 않으니 그대로 넘겨도 된다.
  */
 import {BLOCK_TYPES, DETECT_MODES} from "@/core/storage/items";
@@ -36,13 +37,22 @@ type Snapshot = Record<string, unknown>;
 
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 
+/** 5.1.2 이전 버전의 키 (옛 DB 수백 KB, 모듈 데이터, v4 모듈·설정 스냅숏) — 옮겨진 뒤에도 남아 클라우드 백업 한도를 넘긴다 */
+const isLeftoverKey = (key: string): boolean =>
+    key.startsWith("refresher.database.") ||
+    key.startsWith("refresher.module:") ||
+    key === "__REFRESHER_MODULES" ||
+    key === "__REFRESHER_SETTINGS" ||
+    key === "refresher:settings";
+
 /** v5 키가 하나라도 있는지 */
 const hasV5Data = (data: Snapshot): boolean =>
     Object.keys(data).some(
         (key) =>
             (V5_KEY.exec(key)?.[1] ?? "") in V5_MODULE_IDS ||
             /^refresher:block:[A-Z]+:mode$/.test(key) ||
-            key.startsWith("refresher:database:")
+            key.startsWith("refresher:database:") ||
+            isLeftoverKey(key)
     );
 
 /**
@@ -86,10 +96,19 @@ export const migrateV5 = (data: Snapshot): Snapshot => {
             continue;
         }
 
-        if (key.startsWith("refresher:database:") || key === "refresher:backup:lastUpdate") continue;
+        if (key.startsWith("refresher:database:") || key === "refresher:backup:lastUpdate" || isLeftoverKey(key)) continue;
 
         next[key] = value;
     }
+
+    // v5의 기본 모드는 모든 유형이 SAME이었다 — :mode 키가 없는 유형을 v6 기본값(제목·내용·댓글은 CONTAIN)으로 두면 'ㅋ' 같은 항목이 포함 검사로 바뀌어 마구 막는다
+    for (const type of BLOCK_TYPES) {
+        if (`refresher:block:${type}` in data) defaults[type] ??= "SAME";
+    }
+
+    // 예전 버전은 refresher:modules에 v4 모듈 스냅숏(객체)을 넣어 두었다 — on/off(boolean)만 남긴다
+    const modules = next["refresher:modules"];
+    if (isObject(modules)) next["refresher:modules"] = Object.fromEntries(Object.entries(modules).filter(([, value]) => typeof value === "boolean"));
 
     // 이미 있는 v6 값이 이긴다
     const merge = (key: string, fromV5: Record<string, unknown>): void => {
