@@ -100,7 +100,7 @@ export const WriteComment = () => {
     const mode = reply.replyNo ? "답글" : dccons.length > 0 ? "디시콘" : "댓글";
 
     return (
-        <Box px="6" pt="3" pb="5" style={{position: "sticky", bottom: 0, background: "var(--color-panel-solid)"}}>
+        <Box px="6" pt="3" pb="5">
             {!login && showInputs && (
                 <Flex gap="2" mb="2">
                     <TextField.Root
