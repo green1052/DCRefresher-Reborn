@@ -54,12 +54,16 @@ export function GeneralTab() {
                         {enabled && settings.length > 0 && (
                             <Box mt="4">
                                 {groupRows(settings).map((row) => {
+                                    const valueOf = (key: string, schema: SettingSchema) => values[feature.id]?.[key] ?? schema.default;
                                     const item = ([key, schema]: [string, SettingSchema], compact?: boolean) => (
                                         <SettingItem
                                             key={key}
                                             schema={schema}
                                             compact={compact}
-                                            value={values[feature.id]?.[key] ?? schema.default}
+                                            takenKeys={schema.type === "key"
+                                                ? settings.filter(([other, s]) => other !== key && s.type === "key").map(([other, s]) => String(valueOf(other, s)))
+                                                : undefined}
+                                            value={valueOf(key, schema)}
                                             onChange={(value) => void changeSetting(feature.id, key, value)}
                                         />
                                     );

@@ -10,6 +10,8 @@ interface SettingItemProps {
     value: SettingValue;
     /** 묶음 안에서 — 설명은 툴팁으로, 이름·컨트롤만 한 줄에 */
     compact?: boolean;
+    /** key 설정: 같은 모듈의 다른 key 설정이 쓰는 키 — 고를 수 없다 */
+    takenKeys?: string[];
     onChange: (value: SettingValue) => void;
 }
 
@@ -88,21 +90,32 @@ const TextControl = ({schema, value, onChange}: NarrowProps<"text">) => {
     );
 };
 
-/** 키 하나 — 누른 뒤 원하는 키를 치면 바뀐다 (영문·숫자만, 다른 키는 취소) */
-const KeyControl = ({value, onChange}: NarrowProps<"key">) => {
+/** 키 하나 — 누른 뒤 원하는 키를 치면 바뀐다 (영문·숫자만, 다른 키는 취소). 다른 단축키가 쓰는 키면 알려 주고 계속 기다린다 */
+const KeyControl = ({value, takenKeys = [], onChange}: NarrowProps<"key">) => {
     const [listening, setListening] = useState(false);
+    const [taken, setTaken] = useState("");
 
     return (
-        <Button size="2" variant="soft" color={listening ? undefined : "gray"} style={{minWidth: 72}}
+        <Button size="2" variant="soft" color={taken ? "red" : listening ? undefined : "gray"} style={{minWidth: 72}}
                 onClick={() => setListening(true)}
-                onBlur={() => setListening(false)}
+                onBlur={() => {
+                    setListening(false);
+                    setTaken("");
+                }}
                 onKeyDown={(event) => {
                     if (!listening) return;
                     event.preventDefault();
-                    if (/^[a-z0-9]$/i.test(event.key)) onChange(event.key.toLowerCase());
+
+                    const key = event.key.toLowerCase();
+                    if (/^[a-z0-9]$/.test(key) && key !== value && takenKeys.includes(key)) {
+                        setTaken(key);
+                        return;
+                    }
+                    if (/^[a-z0-9]$/.test(key)) onChange(key);
                     setListening(false);
+                    setTaken("");
                 }}>
-            {listening ? "키 입력…" : <Kbd>{String(value).toUpperCase()}</Kbd>}
+            {taken ? `${taken.toUpperCase()}: 이미 사용 중` : listening ? "키 입력…" : <Kbd>{String(value).toUpperCase()}</Kbd>}
         </Button>
     );
 };
@@ -231,7 +244,7 @@ const isChanged = (schema: SettingSchema, value: SettingValue): boolean => {
     return value !== schema.default;
 };
 
-export const SettingItem = ({schema, value, compact, onChange}: SettingItemProps) => {
+export const SettingItem = ({schema, value, compact, takenKeys, onChange}: SettingItemProps) => {
     const title = (
         <Flex align="center" gap="1">
             <Text size="2" weight="medium" title={compact ? schema.desc : undefined}>
@@ -281,7 +294,7 @@ export const SettingItem = ({schema, value, compact, onChange}: SettingItemProps
                 {schema.type === "color" && <ColorControl {...{schema, value, compact, onChange}} />}
                 {schema.type === "range" && <RangeControl {...{schema, value, onChange}} />}
                 {schema.type === "order" && <OrderControl {...{schema, value, onChange}} />}
-                {schema.type === "key" && <KeyControl {...{schema, value, onChange}} />}
+                {schema.type === "key" && <KeyControl {...{schema, value, takenKeys, onChange}} />}
             </Box>
         </Flex>
     );
