@@ -66,7 +66,6 @@ export function BlockTab() {
             <ListTabs
                 types={BLOCK_TYPES}
                 names={TYPE_NAMES}
-                counts={Object.fromEntries(BLOCK_TYPES.map((type) => [type, entries[type].length])) as Record<BlockType, number>}
                 label="차단 목록"
                 columns={["항목", "정보"]}
                 emptyText={(type) => `차단된 ${TYPE_NAMES[type]} 없음`}
@@ -85,21 +84,22 @@ export function BlockTab() {
                         />
                     </Flex>
                 )}
-                rows={(type) =>
-                    entries[type].map((entry) => (
-                        <ListRow
-                            key={entry.id}
-                            head={type === "DCCON" ? (
-                                <img src={dcconImage(entry)} alt={entry.extra ?? entry.content} style={{display: "block", height: 40}}/>
-                            ) : (
-                                <Text weight="medium">{entry.content}</Text>
-                            )}
-                            info={<Text size="2" color="gray">{entryInfo(entry)}</Text>}
-                            onEdit={() => setDialog({type, initial: entry})}
-                            onRemove={() => void removeEntry(type, entry.id)}
-                        />
-                    ))
-                }
+                items={(type) => entries[type]}
+                // 디시콘은 내용이 코드라 이름(extra)으로 찾는다
+                searchText={(entry) => [entry.content, entry.gallery, entry.extra]}
+                row={(type, entry) => (
+                    <ListRow
+                        key={entry.id}
+                        head={type === "DCCON" ? (
+                            <img src={dcconImage(entry)} alt={entry.extra ?? entry.content} style={{display: "block", height: 40}}/>
+                        ) : (
+                            <Text weight="medium">{entry.content}</Text>
+                        )}
+                        info={<Text size="2" color="gray">{entryInfo(entry)}</Text>}
+                        onEdit={() => setDialog({type, initial: entry})}
+                        onRemove={() => void removeEntry(type, entry.id)}
+                    />
+                )}
             />
 
             {dialog && (

@@ -171,7 +171,6 @@ export function MemoTab() {
             <ListTabs
                 types={MEMO_TYPES}
                 names={MEMO_TYPE_NAMES}
-                counts={Object.fromEntries(MEMO_TYPES.map((type) => [type, Object.keys(memos[type]).length])) as Record<MemoType, number>}
                 label="메모"
                 columns={["대상", "메모"]}
                 emptyText={(type) => `${MEMO_TYPE_NAMES[type]} 메모 없음`}
@@ -179,23 +178,24 @@ export function MemoTab() {
                 importData={importMemos}
                 onClear={clearType}
                 onAdd={(type) => setForm({type, user: "", text: "", color: randomColor(), gallery: ""})}
-                rows={(type) =>
-                    Object.entries(memos[type]).map(([user, entry]) => (
-                        <ListRow
-                            key={user}
-                            head={
-                                <Flex align="center" gap="2">
-                                    <Box width="10px" height="10px" flexShrink="0" style={{borderRadius: "50%", background: entry.color}}/>
-                                    <Text weight="medium">{user}</Text>
-                                    {entry.gallery && <Badge size="1" variant="soft" color="gray">{entry.gallery}</Badge>}
-                                </Flex>
-                            }
-                            info={<Text color="gray">{entry.text}</Text>}
-                            onEdit={() => setForm({type, user, text: entry.text, color: entry.color, gallery: entry.gallery ?? ""})}
-                            onRemove={() => void removeMemo(type, user)}
-                        />
-                    ))
-                }
+                // 객체 키 순서 = 추가 순서 (숫자로만 된 키는 JS가 앞으로 정렬해 예외)
+                items={(type) => Object.entries(memos[type])}
+                searchText={([user, entry]) => [user, entry.text, entry.gallery]}
+                row={(type, [user, entry]) => (
+                    <ListRow
+                        key={user}
+                        head={
+                            <Flex align="center" gap="2">
+                                <Box width="10px" height="10px" flexShrink="0" style={{borderRadius: "50%", background: entry.color}}/>
+                                <Text weight="medium">{user}</Text>
+                                {entry.gallery && <Badge size="1" variant="soft" color="gray">{entry.gallery}</Badge>}
+                            </Flex>
+                        }
+                        info={<Text color="gray">{entry.text}</Text>}
+                        onEdit={() => setForm({type, user, text: entry.text, color: entry.color, gallery: entry.gallery ?? ""})}
+                        onRemove={() => void removeMemo(type, user)}
+                    />
+                )}
             />
 
             {form && (

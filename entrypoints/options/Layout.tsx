@@ -1,5 +1,5 @@
-import {Badge, Box, Button, Card, Dialog, Flex, Heading, IconButton, Table, Tabs, Text, TextArea, Tooltip} from "@radix-ui/themes";
-import {Download, Plus, Trash2, Upload, X} from "lucide-react";
+import {Badge, Box, Button, Card, Dialog, Flex, Heading, IconButton, Table, Tabs, Text, TextArea, TextField, Tooltip} from "@radix-ui/themes";
+import {Download, Plus, Search, Trash2, Upload, X} from "lucide-react";
 import {type ReactNode, useState} from "react";
 
 import {ConfirmDialog, DialogActions, Notice} from "@/components/ConfirmDialog";
@@ -50,8 +50,9 @@ export const Empty = ({children}: { children: ReactNode }) => (
  * 내보낸 JSON을 붙여넣는 가져오기 다이얼로그 (차단/메모/데이터 공용).
  * 열 때만 마운트한다 — 닫으면 입력이 초기화되고, 실패해 열려 있으면 붙여넣은 텍스트가 남는다
  */
-export const ImportDialog = ({title, onClose, onSubmit}: {
+export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여넣어주세요.", onClose, onSubmit}: {
     title: string;
+    desc?: ReactNode;
     onClose: () => void;
     onSubmit: (text: string) => Promise<void>;
 }) => {
@@ -72,7 +73,7 @@ export const ImportDialog = ({title, onClose, onSubmit}: {
             <Dialog.Content maxWidth="520px">
                 <Dialog.Title>{title}</Dialog.Title>
                 <Dialog.Description size="2" mb="3">
-                    내보낸 JSON 데이터를 붙여넣어주세요.
+                    {desc}
                 </Dialog.Description>
 
                 <TextArea placeholder="JSON 데이터" value={text} rows={8} autoFocus
@@ -117,24 +118,27 @@ export const ListRow = ({head, info, onEdit, onRemove}: {
     </Table.Row>
 );
 
-/** 차단/메모 탭 공용 틀 — 종류별 탭, 클립보드 내보내기/가져오기, 전체 삭제/추가, 빈 목록 안내, 표 머리. 줄(ListRow)은 rows가 그린다 */
-export const ListTabs = <T extends string>({
-                                               types,
-                                               names,
-                                               counts,
-                                               label,
-                                               columns,
-                                               emptyText,
-                                               exportData,
-                                               importData,
-                                               onClear,
-                                               onAdd,
-                                               toolbar,
-                                               rows
-                                           }: {
+/**
+ * 차단/메모 탭 공용 틀 — 종류별 탭, 검색, 클립보드 내보내기/가져오기, 전체 삭제/추가, 빈 목록 안내, 표 머리.
+ * 줄(ListRow)은 row가 그린다
+ */
+export const ListTabs = <T extends string, I>({
+                                                  types,
+                                                  names,
+                                                  label,
+                                                  columns,
+                                                  emptyText,
+                                                  exportData,
+                                                  importData,
+                                                  onClear,
+                                                  onAdd,
+                                                  toolbar,
+                                                  items,
+                                                  searchText,
+                                                  row
+                                              }: {
     types: readonly T[];
     names: Record<T, string>;
-    counts: Record<T, number>;
     /** "차단 목록", "메모" — 알림·확인 문구에 쓴다 */
     label: string;
     columns: [string, string];
@@ -146,8 +150,19 @@ export const ListTabs = <T extends string>({
     onAdd: (type: T) => void;
     /** 탭 머리 왼쪽 (차단의 기본 차단 모드) */
     toolbar?: (type: T) => ReactNode;
-    rows: (type: T) => ReactNode;
+    /** 저장된 순서(오래된 것부터) 그대로 — 표시할 때 뒤집는다 */
+    items: (type: T) => readonly I[];
+    /** 검색 대상 글자 (내용/유저/메모/갤러리 등) */
+    searchText: (item: I) => (string | undefined)[];
+    row: (type: T, item: I) => ReactNode;
 }) => {
+    // 모든 탭이 같은 검색어를 쓴다 — 탭 배지에 탭마다 걸린 개수가 보여 다른 탭에 있는지도 알 수 있다
+    const [query, setQuery] = useState("");
+    const needle = query.trim().toLowerCase();
+    // 새 항목은 배열/객체 끝에 붙으므로 뒤집어 최신순으로 보여준다 (저장 순서는 그대로)
+    const shownOf = (type: T): I[] =>
+        items(type).filter((item) => !needle || searchText(item).some((text) => text?.toLowerCase().includes(needle))).reverse();
+
     const [clearConfirm, setClearConfirm] = useState<T | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
     const [importOpen, setImportOpen] = useState(false);
@@ -177,14 +192,19 @@ export const ListTabs = <T extends string>({
             <Tabs.Root defaultValue={types[0]}>
                 <Flex align="end" gap="3">
                     <Tabs.List style={{flex: 1, flexWrap: "wrap"}}>
-                        {types.map((type) => (
-                            <Tabs.Trigger key={type} value={type}>
-                                {names[type]}
-                                {counts[type] > 0 && (
-                                    <Badge ml="1" size="1" variant="soft" color="gray" radius="full">{counts[type]}</Badge>
-                                )}
-                            </Tabs.Trigger>
-                        ))}
+                        {types.map((type) => {
+                            const total = items(type).length;
+                            return (
+                                <Tabs.Trigger key={type} value={type}>
+                                    {names[type]}
+                                    {total > 0 && (
+                                        <Badge ml="1" size="1" variant="soft" color={needle ? "blue" : "gray"} radius="full">
+                                            {needle ? `${shownOf(type).length}/${total}` : total}
+                                        </Badge>
+                                    )}
+                                </Tabs.Trigger>
+                            );
+                        })}
                     </Tabs.List>
                     <Flex gap="3" pb="2">
                         <Tooltip content="클립보드로 내보내기">
@@ -200,36 +220,49 @@ export const ListTabs = <T extends string>({
                     </Flex>
                 </Flex>
 
-                {types.map((type) => (
-                    <Tabs.Content key={type} value={type}>
-                        <Flex justify="between" align="center" gap="3" wrap="wrap" py="4">
-                            {toolbar?.(type)}
-                            <Flex gap="2" ml="auto">
-                                <Button variant="soft" color="red" disabled={counts[type] === 0} onClick={() => setClearConfirm(type)}>
-                                    <Trash2 size={14}/> 전체 삭제
-                                </Button>
-                                <Button onClick={() => onAdd(type)}>
-                                    <Plus size={14}/> 추가
-                                </Button>
+                {types.map((type) => {
+                    const total = items(type).length;
+                    const shown = shownOf(type);
+                    return (
+                        <Tabs.Content key={type} value={type}>
+                            <Flex justify="between" align="center" gap="3" wrap="wrap" py="4">
+                                {toolbar?.(type)}
+                                <Flex gap="2" ml="auto" wrap="wrap">
+                                    <TextField.Root type="search" placeholder="검색" aria-label={`${label} 검색`} value={query}
+                                                    style={{width: 180}} onChange={(ev) => setQuery(ev.target.value)}>
+                                        <TextField.Slot>
+                                            <Search size={14}/>
+                                        </TextField.Slot>
+                                    </TextField.Root>
+                                    {/* 검색 중에도 걸러진 것만이 아니라 이 종류 전부를 지운다 — 확인 문구가 "모두"라고 알린다 */}
+                                    <Button variant="soft" color="red" disabled={total === 0} onClick={() => setClearConfirm(type)}>
+                                        <Trash2 size={14}/> 전체 삭제
+                                    </Button>
+                                    <Button onClick={() => onAdd(type)}>
+                                        <Plus size={14}/> 추가
+                                    </Button>
+                                </Flex>
                             </Flex>
-                        </Flex>
 
-                        {counts[type] === 0 ? (
-                            <Empty>{emptyText(type)}</Empty>
-                        ) : (
-                            <Table.Root variant="surface">
-                                <Table.Header>
-                                    <Table.Row>
-                                        <Table.ColumnHeaderCell>{columns[0]}</Table.ColumnHeaderCell>
-                                        <Table.ColumnHeaderCell>{columns[1]}</Table.ColumnHeaderCell>
-                                        <Table.ColumnHeaderCell width="48px"/>
-                                    </Table.Row>
-                                </Table.Header>
-                                <Table.Body>{rows(type)}</Table.Body>
-                            </Table.Root>
-                        )}
-                    </Tabs.Content>
-                ))}
+                            {total === 0 ? (
+                                <Empty>{emptyText(type)}</Empty>
+                            ) : shown.length === 0 ? (
+                                <Empty>"{query.trim()}" 검색 결과 없음</Empty>
+                            ) : (
+                                <Table.Root variant="surface">
+                                    <Table.Header>
+                                        <Table.Row>
+                                            <Table.ColumnHeaderCell>{columns[0]}</Table.ColumnHeaderCell>
+                                            <Table.ColumnHeaderCell>{columns[1]}</Table.ColumnHeaderCell>
+                                            <Table.ColumnHeaderCell width="48px"/>
+                                        </Table.Row>
+                                    </Table.Header>
+                                    <Table.Body>{shown.map((item) => row(type, item))}</Table.Body>
+                                </Table.Root>
+                            )}
+                        </Tabs.Content>
+                    );
+                })}
             </Tabs.Root>
 
             {clearConfirm && (

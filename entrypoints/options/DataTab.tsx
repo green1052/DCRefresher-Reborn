@@ -13,16 +13,18 @@ import {formatTime, ImportDialog, Section} from "./Layout";
 const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
 /**
- * 설정(백업 대상 키)만 갈아끼운다 — IP/밴 DB·백업 상태·모듈 캐시는 그대로 둔다.
+ * 설정(백업 대상 키)을 쓴다 — IP/밴 DB·백업 상태·모듈 캐시는 그대로 둔다.
+ * - replace (클라우드 복원·초기화): 백업은 완전한 스냅숏이라 거기 없는 설정 키는 지운다
+ * - merge (가져오기): 붙여넣은 JSON은 일부만 담을 수 있어 있는 키만 쓴다 — 설정만 든 JSON이 차단/메모 목록을 지우지 않게
  * 쓰다가 실패하면 이전 값으로 되돌린다.
  */
-const replaceSettings = async (data: Record<string, unknown>): Promise<void> => {
+const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "merge"): Promise<void> => {
     const previous = (await browser.storage.local.get(null)) as Record<string, unknown>;
     // 설정 키가 아닌 값(차단/메모 내보내기의 "NICK" 등)은 저장하지 않는다
     const next = Object.fromEntries(Object.entries(migrateV5(data)).filter(([key]) => key.startsWith("refresher:") && isBackupTarget(key)));
-    // 걸러서 다 빠지면 모든 설정이 지워진다 (예전 백업의 키가 migrateV5에서 전부 빠지는 등) — 비우는 건 초기화({})만
+    // 걸러서 다 빠지면 복원은 모든 설정을 지우고 가져오기는 아무것도 안 쓴다 (예전 백업의 키가 migrateV5에서 전부 빠지는 등) — 비우는 건 초기화({})만
     if (Object.keys(data).length > 0 && Object.keys(next).length === 0) throw new Error("쓸 수 있는 설정이 없습니다.");
-    const removed = Object.keys(previous).filter((key) => isBackupTarget(key) && !(key in next));
+    const removed = mode === "replace" ? Object.keys(previous).filter((key) => isBackupTarget(key) && !(key in next)) : [];
 
     try {
         await browser.storage.local.remove(removed);
@@ -38,7 +40,7 @@ const parseImport = (input: string): Record<string, unknown> => {
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
         throw new Error("가져오기 데이터는 JSON 객체여야 합니다.");
     }
-    // 가져오기는 모든 설정을 갈아끼우므로, 차단/메모 내보내기나 {}를 붙여넣어 전부 지워지지 않게 막는다
+    // 차단/메모 내보내기나 {}를 붙여넣으면 아무것도 안 쓰고 "가져왔습니다"가 뜬다 — 잘못 붙여넣은 걸 알린다
     if (!Object.keys(parsed).some((key) => key.startsWith("refresher:"))) {
         throw new Error("설정 데이터가 아닙니다.");
     }
@@ -106,7 +108,7 @@ export function DataTab() {
             const backup = await readCloudBackup(slot);
             if (!backup) return "클라우드에 백업이 없습니다.";
 
-            await replaceSettings(backup.data);
+            await writeSettings(backup.data, "replace");
             return `${backup.createdAt ? `${formatTime(backup.createdAt)} 백업을` : "데이터를"} 복원했습니다. 새 탭에서 디시인사이드를 열어주세요.`;
         }, "복원하지 못했습니다.");
 
@@ -136,7 +138,7 @@ export function DataTab() {
 
     const submitImport = (text: string) =>
         run(async () => {
-            await replaceSettings(parseImport(text));
+            await writeSettings(parseImport(text), "merge");
             setImportOpen(false);
             return "데이터를 가져왔습니다. 새 탭에서 디시인사이드를 열어주세요.";
         }, "가져오지 못했습니다.");
@@ -150,8 +152,8 @@ export function DataTab() {
                 setAutoBackup(false);
             }
 
-            await replaceSettings({});
-            // 백업 대상이 아니라 replaceSettings가 건드리지 않는 비회원 비밀번호도 지운다
+            await writeSettings({}, "replace");
+            // 백업 대상이 아니라 writeSettings가 건드리지 않는 비회원 비밀번호도 지운다
             await browser.storage.local.remove("refresher:nonmember");
             return `데이터를 초기화했습니다.${wasAuto ? " 클라우드 백업을 지키려고 자동 백업을 껐습니다." : ""} 새 탭에서 디시인사이드를 열어주세요.`;
         }, "초기화하지 못했습니다.");
@@ -192,7 +194,9 @@ export function DataTab() {
                 <Dialog.Root open={restoreOpen} onOpenChange={setRestoreOpen}>
                     <Dialog.Content maxWidth="420px">
                         <Dialog.Title>어느 백업으로 복원할까요?</Dialog.Title>
-                        <Dialog.Description size="2" mb="3">현재 설정을 고른 백업으로 교체합니다.</Dialog.Description>
+                        <Dialog.Description size="2" mb="3">
+                            현재 설정과 차단/메모 목록을 고른 백업으로 통째로 교체합니다. 백업에 없는 항목은 지워집니다.
+                        </Dialog.Description>
                         <Flex direction="column" gap="2">
                             {([
                                 ["manual", "수동 백업", backupTimes.manual ? formatTime(backupTimes.manual) : backupTimes.legacy ? "예전 방식 백업" : undefined],
@@ -216,7 +220,8 @@ export function DataTab() {
                 )}
             </Section>
 
-            <Section title="내보내기 / 가져오기" desc="IP/밴 데이터베이스와 캐시를 뺀 모든 설정을 JSON으로 옮깁니다.">
+            <Section title="내보내기 / 가져오기"
+                     desc="IP/밴 데이터베이스와 캐시를 뺀 모든 설정을 JSON으로 옮깁니다. 가져오기는 JSON에 있는 항목만 덮어쓰고 나머지는 그대로 둡니다.">
                 <Flex gap="2" wrap="wrap">
                     <Button variant="soft" disabled={loading} onClick={() => void exportData()}>
                         <Download size={14}/> 클립보드로 내보내기
@@ -255,7 +260,9 @@ export function DataTab() {
             )}
 
             {importOpen && (
-                <ImportDialog title="데이터 가져오기" onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
+                <ImportDialog title="데이터 가져오기"
+                              desc="내보낸 JSON 데이터를 붙여넣어주세요. JSON에 있는 항목만 덮어쓰고, 없는 항목(예: 설정만 든 JSON이면 차단/메모 목록)은 그대로 둡니다."
+                              onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
             )}
         </Box>
     );
