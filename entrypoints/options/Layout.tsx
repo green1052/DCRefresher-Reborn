@@ -1,5 +1,5 @@
 import {Badge, Box, Button, Card, Dialog, Flex, Heading, IconButton, Table, Tabs, Text, TextArea, TextField, Tooltip} from "@radix-ui/themes";
-import {Download, Plus, Search, Trash2, Upload, X} from "lucide-react";
+import {Download, Plus, Search, Trash2, Upload} from "lucide-react";
 import {type ReactNode, useState} from "react";
 
 import {ConfirmDialog, DialogActions, Notice} from "@/components/ConfirmDialog";
@@ -99,21 +99,24 @@ export const ListRow = ({head, info, onEdit, onRemove}: {
 }) => (
     <Table.Row align="center" style={{cursor: "pointer"}} tabIndex={0} onClick={onEdit}
                onKeyDown={(ev) => {
-                   // X 버튼의 Enter/Space는 버튼 몫 — 줄까지 올라와 편집이 같이 열리지 않게
+                   // 삭제 버튼의 Enter/Space는 버튼 몫 — 줄까지 올라와 편집이 같이 열리지 않게
                    if (ev.target !== ev.currentTarget || (ev.key !== "Enter" && ev.key !== " ")) return;
                    ev.preventDefault();
                    onEdit();
                }}>
         <Table.RowHeaderCell>{head}</Table.RowHeaderCell>
         <Table.Cell>{info}</Table.Cell>
-        <Table.Cell>
-            <IconButton variant="ghost" color="gray" size="1" aria-label="삭제"
-                        onClick={(ev) => {
-                            ev.stopPropagation();
-                            onRemove();
-                        }}>
-                <X size={12}/>
-            </IconButton>
+        <Table.Cell justify="end">
+            <Tooltip content="삭제">
+                {/* ghost는 음수 여백으로 칸 밖에 걸쳐 줄 가운데에서 어긋난다 — 여백을 없앤다 */}
+                <IconButton variant="ghost" color="red" size="1" aria-label="삭제" style={{margin: 0}}
+                            onClick={(ev) => {
+                                ev.stopPropagation();
+                                onRemove();
+                            }}>
+                    <Trash2 size={14}/>
+                </IconButton>
+            </Tooltip>
         </Table.Cell>
     </Table.Row>
 );
@@ -235,16 +238,21 @@ export const ListTabs = <T extends string, I>({
                                         </TextField.Slot>
                                     </TextField.Root>
                                     {/* 검색 중에도 걸러진 것만이 아니라 이 종류 전부를 지운다 — 확인 문구에 전체 개수를 적는다 */}
-                                    <Button variant="soft" color="red" disabled={total === 0} onClick={() => setClearConfirm(type)}>
-                                        <Trash2 size={14}/> 전체 삭제
-                                    </Button>
-                                    <Button onClick={() => {
-                                        // 검색어에 안 맞는 새 항목이 곧바로 숨어 추가가 안 된 것처럼 보이지 않게
-                                        setQuery("");
-                                        onAdd(type);
-                                    }}>
-                                        <Plus size={14}/> 추가
-                                    </Button>
+                                    <Tooltip content="전체 삭제">
+                                        <IconButton variant="soft" color="red" aria-label="전체 삭제" disabled={total === 0}
+                                                    onClick={() => setClearConfirm(type)}>
+                                            <Trash2 size={16}/>
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip content="추가">
+                                        <IconButton aria-label="추가" onClick={() => {
+                                            // 검색어에 안 맞는 새 항목이 곧바로 숨어 추가가 안 된 것처럼 보이지 않게
+                                            setQuery("");
+                                            onAdd(type);
+                                        }}>
+                                            <Plus size={16}/>
+                                        </IconButton>
+                                    </Tooltip>
                                 </Flex>
                             </Flex>
 
