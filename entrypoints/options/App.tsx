@@ -1,6 +1,6 @@
 import {Box, Button, Flex, Grid, Heading, Separator, Text} from "@radix-ui/themes";
 import {Ban, CircleHelp, Code, Database, Heart, Keyboard, type LucideIcon, MessageCircle, NotebookPen, Settings, Users, Wrench} from "lucide-react";
-import {useEffect, useRef, useState} from "react";
+import {type MouseEvent, useEffect, useState} from "react";
 
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
@@ -64,8 +64,6 @@ const useHashTab = (): [string, (id: string) => void] => {
 
 const DEV_MODE_KEY = "refresher:devMode";
 const DEV_MODE_CLICKS = 5;
-/** 연속 클릭으로 칠 간격 */
-const DEV_MODE_CLICK_GAP = 1000;
 
 const readDevMode = (): boolean => {
     try {
@@ -85,15 +83,11 @@ const writeDevMode = (on: boolean): void => {
 };
 
 /** 개발자 탭: 개발 빌드이거나, 로고를 5번 연속 누르면 열린다 (옵션 페이지 localStorage에 기억 — 설정 백업에 섞이지 않게) */
-const useDevMode = (): [boolean, () => void, () => void] => {
+const useDevMode = (): [boolean, (event: MouseEvent) => void, () => void] => {
     const [unlocked, setUnlocked] = useState(readDevMode);
-    const clicks = useRef({count: 0, last: 0});
-
-    const onLogoClick = (): void => {
-        const now = Date.now();
-        clicks.current.count = now - clicks.current.last < DEV_MODE_CLICK_GAP ? clicks.current.count + 1 : 1;
-        clicks.current.last = now;
-        if (clicks.current.count < DEV_MODE_CLICKS || unlocked) return;
+    // event.detail: 브라우저가 세는 연속 클릭 횟수 (간격이 벌어지면 1부터)
+    const onLogoClick = (event: MouseEvent): void => {
+        if (event.detail < DEV_MODE_CLICKS || unlocked) return;
 
         writeDevMode(true);
         setUnlocked(true);
@@ -113,7 +107,7 @@ const Sidebar = ({tabs, tab, onSelect, onLogoClick}: {
     tabs: TabDef[];
     tab: string;
     onSelect: (id: string) => void;
-    onLogoClick: () => void;
+    onLogoClick: (event: MouseEvent) => void;
 }) => (
     <Flex
         direction="column"

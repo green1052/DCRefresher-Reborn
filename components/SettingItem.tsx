@@ -1,5 +1,5 @@
 import {Box, Flex, IconButton, Select, Slider, Switch, Text, TextField, Tooltip} from "@radix-ui/themes";
-import {ChevronDown, ChevronUp, GripVertical, RotateCcw} from "lucide-react";
+import {ChevronDown, ChevronUp, GripVertical, Undo2} from "lucide-react";
 import {useEffect, useState} from "react";
 
 import type {SettingSchema} from "@/core/module/types";
@@ -214,10 +214,10 @@ export const SettingItem = ({schema, value, disabled, compact, onChange}: Settin
                 {schema.name}
             </Text>
             {isChanged(schema, value) && (
-                <Tooltip content={`기본값으로 (${formatDefault(schema)})`}>
-                    <IconButton size="1" variant="ghost" color="gray" aria-label="기본값으로"
+                <Tooltip content={`기본값으로 되돌리기 (${formatDefault(schema)})`}>
+                    <IconButton size="1" variant="ghost" color="gray" aria-label="기본값으로 되돌리기"
                                 disabled={disabled} onClick={() => onChange(structuredClone(schema.default))}>
-                        <RotateCcw size={12}/>
+                        <Undo2 size={14}/>
                     </IconButton>
                 </Tooltip>
             )}

@@ -195,9 +195,7 @@ const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
                 <DataList.Item>
                     <DataList.Label>IP</DataList.Label>
                     <DataList.Value>
-                        {db?.ip
-                            ? `조직 ${db.ip.orgs.length} · 국가 ${db.ip.countries.length} · 후보 ${db.ip.meta.length / 3} · 목록 ${db.ip.lists.length} · ${formatBytes(byteSize(db.ip))}`
-                            : "없음"}
+                        {!db?.ip ? "없음" : typeof db.ip.table === "string" ? `조직 ${db.ip.orgs.length} · 국가 ${db.ip.countries.length} · 후보 ${db.ip.meta.length / 3} · 목록 ${db.ip.lists.length} · ${formatBytes(byteSize(db.ip))}` : "예전 형식 (다음 갱신 때 바뀜)"}
                     </DataList.Value>
                 </DataList.Item>
                 <DataList.Item>
