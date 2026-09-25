@@ -416,3 +416,8 @@
         }
     }
 }
+
+/* 미리보기를 연 채로 띄운 다이얼로그(메모·디시콘·차단 등)는 배경을 다시 깔지 않는다 — 미리보기 배경과 겹쳐 두 겹으로 어두워진다 */
+#portal:has(.refresher-frame) .rt-BaseDialogOverlay::before {
+    background: none;
+}
