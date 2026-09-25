@@ -7,7 +7,7 @@ import {http} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import type {DcinsideDccon, DcinsideDcconDetail, DcinsideDcconDetailList} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
-import {getCookie} from "@/utils/cookie";
+import {csrfToken} from "@/utils/cookie";
 
 interface DcconPopupProps {
     onSelect: (dccons: DcinsideDccon[], bigDccon: boolean) => void;
@@ -44,7 +44,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
         setLoading(true);
         try {
             const body = new URLSearchParams({
-                ci_t: (await getCookie("ci_c")) ?? "",
+                ci_t: await csrfToken(),
                 target: "icon",
                 page: String(targetPage)
             });

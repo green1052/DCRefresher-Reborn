@@ -5,7 +5,7 @@ import {http} from "@/core/http/client";
 import {eventBus} from "@/core/eventbus/bus";
 import type {JsonValue} from "@/core/storage/types";
 import {findMemo, useMemosStore} from "@/stores/memos";
-import {getCookie} from "@/utils/cookie";
+import {csrfToken} from "@/utils/cookie";
 import {getType} from "@/utils/user";
 import {insertWriterSpan} from "@/utils/userDataInsert";
 
@@ -47,7 +47,7 @@ const makePermBanSpan = (reasons: string): HTMLElement => {
 const fetchRatio = async (uid: string): Promise<RatioInfo | undefined> => {
     const text = await http.post(GALLOG_API, {
         headers: {"X-Requested-With": "XMLHttpRequest"},
-        body: new URLSearchParams({ci_t: (await getCookie("ci_c")) ?? "", user_id: uid})
+        body: new URLSearchParams({ci_t: await csrfToken(), user_id: uid})
     }).text();
 
     const [article, comment] = text.split(",").map(Number);

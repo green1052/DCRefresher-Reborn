@@ -1,6 +1,6 @@
 import {http} from "@/core/http/client";
 import {galleryType, galleryTypeName, urls} from "@/core/http/urls";
-import {getCookie, setCookie} from "@/utils/cookie";
+import {csrfToken} from "@/utils/cookie";
 
 import {parsePostInfo} from "./parser";
 import type {CommentListResponse, DcinsideComment, DcinsideDccon, GalleryPreData, PostInfo} from "./types";
@@ -8,7 +8,7 @@ import type {CommentListResponse, DcinsideComment, DcinsideDccon, GalleryPreData
 const HEADERS = {"X-Requested-With": "XMLHttpRequest"};
 
 const commonBody = async (link?: string): Promise<URLSearchParams> =>
-    new URLSearchParams({ci_t: (await getCookie("ci_c")) ?? "", _GALLTYPE_: galleryTypeName(link ?? "")});
+    new URLSearchParams({ci_t: await csrfToken(), _GALLTYPE_: galleryTypeName(link ?? "")});
 
 const isMini = (link?: string): boolean => galleryType(link ?? "", "/") === "mini/";
 
@@ -56,7 +56,7 @@ export interface VoteResult {
 export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U" | "D", code?: string): Promise<VoteResult> => {
     const cookieName = `${preData.gallery}${preData.id}_Firstcheck${mode === "U" ? "" : "_down"}`;
 
-    if (await getCookie(cookieName)) return {success: false};
+    if (await cookieStore.get(cookieName)) return {success: false};
 
     const body = await commonBody(preData.link);
     body.set("id", preData.gallery);
@@ -71,7 +71,7 @@ export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U
     const [result, counts, fixedCounts] = response.split("||");
 
     if (result === "SUCCESS") {
-        await setCookie({name: cookieName, value: "Y", expires: Date.now() + 3 * 3600_000, path: "/"});
+        await cookieStore.set({name: cookieName, value: "Y", expires: Date.now() + 3 * 3600_000, path: "/"});
 
         return {success: true, counts, fixedCounts};
     }

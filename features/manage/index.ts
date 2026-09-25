@@ -1,7 +1,7 @@
 import {http} from "@/core/http/client";
 import {defineModule} from "@/core/module/define";
 import {galleryType, galleryTypeName, urls} from "@/core/http/urls";
-import {getCookie} from "@/utils/cookie";
+import {csrfToken} from "@/utils/cookie";
 
 export default defineModule({
     id: "manage",
@@ -118,7 +118,7 @@ export default defineModule({
                 await http.post(isMini ? urls.manage.deleteMini : urls.manage.delete, {
                     headers: {"X-Requested-With": "XMLHttpRequest"},
                     body: new URLSearchParams({
-                        ci_t: (await getCookie("ci_c")) ?? "",
+                        ci_t: await csrfToken(),
                         id: document.querySelector<HTMLInputElement>("#gallery_id")?.value ?? "",
                         "nos[]": postId,
                         _GALLTYPE_: galleryTypeName(location.href)

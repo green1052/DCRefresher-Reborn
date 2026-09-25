@@ -3,7 +3,7 @@ import {useBlocksStore} from "@/stores/blocks";
 import {http} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import type {BlockType, DetectMode} from "@/core/storage/types";
-import {getCookie} from "@/utils/cookie";
+import {csrfToken} from "@/utils/cookie";
 import {type SelectedUser, useUiStore} from "@/stores/ui";
 
 interface DcconDetailResponse {
@@ -34,7 +34,7 @@ const blockDccon = async (selected: SelectedUser, blockAllDccon?: boolean): Prom
 
     const response = await http.post(urls.dccon.detail, {
         headers: {"X-Requested-With": "XMLHttpRequest"},
-        body: new URLSearchParams({ci_t: (await getCookie("ci_c")) ?? "", code})
+        body: new URLSearchParams({ci_t: await csrfToken(), code})
     }).json<DcconDetailResponse>();
 
     const extra = `${response.info.title} [${response.info.package_idx}]`;
