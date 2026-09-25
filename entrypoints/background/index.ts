@@ -38,6 +38,21 @@ const executeGrecaptcha = async (siteKey: string, action: string): Promise<strin
     return grecaptcha.execute(siteKey, {action});
 };
 
+/**
+ * 탭의 페이지 컨텍스트에서 실행된다 (직렬화되므로 바깥 변수를 쓰지 않는다).
+ * 디시는 자체 차단(block-disable)과 이용자 메모 배지를 목록을 그릴 때 한 번만 건다 — 없는 페이지면 건너뛴다
+ */
+const rerunListScripts = (gallery: string): void => {
+    const scope = window as Window & {
+        chk_user_block?: (id: string) => void;
+        UserMemo?: { renderWriterMemoBadges?: (wrapper: null) => void };
+    };
+
+    if (typeof scope.chk_user_block === "function") scope.chk_user_block(gallery);
+    // null이면 디시가 처음 그릴 때 등록한 범위(목록·글 머리)를 다시 그린다
+    if (typeof scope.UserMemo?.renderWriterMemoBadges === "function") scope.UserMemo.renderWriterMemoBadges(null);
+};
+
 const IMAGE_MENU_PREFIX = "imagesearch:";
 
 /** 이미지 검색 메뉴 — 켠 엔진마다 하나 (둘 이상이면 브라우저가 확장 이름 아래로 묶는다). 모듈이 꺼져 있으면 없다 */
@@ -106,6 +121,18 @@ export default defineBackground(() => {
         } catch {
             return undefined;
         }
+    });
+
+    // ===== 목록 교체: 갈아끼운 행에 디시의 자체 차단·메모 표시를 그 탭의 페이지(MAIN world)에서 다시 건다 =====
+    onMessage("refresher:listReplaced", async ({data: gallery, sender}) => {
+        if (!sender.tab?.id) return;
+
+        await browser.scripting.executeScript({
+            target: {tabId: sender.tab.id, frameIds: [sender.frameId ?? 0]},
+            world: "MAIN",
+            func: rerunListScripts,
+            args: [gallery]
+        }).catch(() => {});
     });
 
     // ===== Database: 설치/주기 갱신 =====

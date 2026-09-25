@@ -3,6 +3,7 @@ import {isViewPage, listUrl, mergeParamURL, pagePostNo, queryString, rowPostNo} 
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext} from "@/core/module/types";
 import {eventBus} from "@/core/eventbus/bus";
+import {sendMessage} from "@/core/messaging/protocol";
 import {usePreviewStore} from "@/features/preview/ui/previewStore";
 import {useUiStore} from "@/stores/ui";
 
@@ -167,6 +168,7 @@ export default defineModule({
         const rawRows = new WeakMap<Element, string>();
         // 목록이 화면 가까이 있는지 — 글 보기 아래 목록처럼 멀리 있으면 갈아끼워도 볼 수 없어 쉰다
         let listNear = true;
+        const gallery = queryString("id") ?? "";
 
         // 제어 버튼
         let button: HTMLButtonElement | null = null;
@@ -341,6 +343,8 @@ export default defineModule({
                     oldList.replaceWith(newList);
                 }
                 lastListHtml = listHtml;
+                // 디시는 자체 차단·이용자 메모 배지를 로드 때 한 번만 건다 — 갈아끼운 행엔 페이지 스크립트로 다시 건다 (콘텐츠 스크립트에선 못 부른다)
+                void sendMessage("refresher:listReplaced", gallery).catch(() => {});
 
                 if (target === scrollAfter) {
                     scrollAfter = null;
