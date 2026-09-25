@@ -21,7 +21,7 @@ export const updateDatabase = async (): Promise<void> => {
 export type IpCategory = "korea" | "japan" | "china" | "foreign" | "vpn";
 
 export interface IpInfo {
-    /** "KT, 부산은행" / "일본 · SoftBank Corp." / "VPN · Tencent" — 조직은 3개까지 */
+    /** "KT, 부산은행" / "SoftBank Corp. (일본)" / "Tencent (VPN)" — 조직은 3개까지, 한국은 국가 생략 */
     label: string;
     /** 후보 전체 (툴팁용) */
     title: string;
@@ -59,6 +59,11 @@ const categoryOf = ({vpn, country}: IpCandidate): IpCategory => {
     return "foreign";
 };
 
+/** 괄호 표시 — VPN이 국가보다 우선, 한국은 없음 */
+const tagOf = ({vpn, country}: IpCandidate): string | undefined => (vpn ? "VPN" : country);
+
+const withTag = (name: string, tag?: string): string => (name && tag ? `${name} (${tag})` : name || tag || "");
+
 const MAX_ORGS = 3;
 
 /** IP 대역(a.b)의 조직·국가·VPN 정보. 데이터가 없으면 undefined */
@@ -69,13 +74,10 @@ export const ipInfoOf = (ip: string): IpInfo | undefined => {
 
     const orgs = [...new Set(candidates.map((candidate) => candidate.org).filter((org): org is string => Boolean(org)))];
     const shown = orgs.slice(0, MAX_ORGS).join(", ") + (orgs.length > MAX_ORGS ? ` 외 ${orgs.length - MAX_ORGS}` : "");
-    const prefix = first.vpn ? "VPN" : first.country;
 
     return {
-        label: [prefix, shown].filter(Boolean).join(" · "),
-        title: candidates
-            .map((candidate) => [candidate.org ?? "(조직 미상)", candidate.country ?? "한국", candidate.vpn && "VPN"].filter(Boolean).join(" · "))
-            .join("\n"),
+        label: withTag(shown, tagOf(first)),
+        title: candidates.map((candidate) => withTag(candidate.org ?? "(조직 미상)", tagOf(candidate))).join("\n"),
         category: categoryOf(first)
     };
 };
