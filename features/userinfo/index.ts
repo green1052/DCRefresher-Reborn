@@ -1,9 +1,8 @@
-import * as memoCore from "@/core/memo";
 import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
 import {http} from "@/core/http/client";
 import {eventBus} from "@/core/eventbus/bus";
-import {MEMO_TYPES, memoStorage} from "@/core/storage/items";
-import type {JsonValue, MemoEntry, MemoType} from "@/core/storage/types";
+import type {JsonValue} from "@/core/storage/types";
+import {findMemo, useMemosStore} from "@/stores/memos";
 import {format as formatIP, ISPData} from "@/utils/ip";
 import {getCookie} from "@/utils/cookie";
 import {getBan} from "@/utils/ban";
@@ -89,9 +88,7 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
         if (key === "UID") appendIdentity();
 
         if (key === "MEMO") {
-            const memo: MemoEntry | undefined =
-                (uid && memoCore.get("UID", uid)) || (ip && memoCore.get("IP", ip)) || (nick && memoCore.get("NICK", nick)) || undefined;
-
+            const memo = findMemo({uid, ip, nick});
             if (memo) badges.append(buildBadgeSpan(`[${memo.text}]`, memo.color || undefined, memo.text, "refresherUserData refresherMemoData"));
         }
 
@@ -189,7 +186,9 @@ const userinfoModule: ModuleDefinition = {
         );
 
         // 메모 변경시 표시 갱신
-        const watchers = MEMO_TYPES.map((type: MemoType) => memoStorage[type].watch(() => rebuildAll(ctx)));
+        const unsubscribeMemos = useMemosStore.subscribe((state, previous) => {
+            if (state.memos !== previous.memos) rebuildAll(ctx);
+        });
 
         // 새 글: 글댓비 조회 (1시간 캐시, 첫 10개)
         const offNewPostList = eventBus.on("newPostList", ({data: elements}) => {
@@ -228,7 +227,7 @@ const userinfoModule: ModuleDefinition = {
         });
 
         ctx.addCleanup(() => {
-            watchers.forEach((watch) => watch());
+            unsubscribeMemos();
             offNewPostList();
             if (currentCtx === ctx) currentCtx = null;
         });

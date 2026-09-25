@@ -4,10 +4,9 @@ import {useState} from "react";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
-import {isMemoEntry} from "@/core/memo";
-import {MEMO_TYPE_NAMES, MEMO_TYPES, memoStorage} from "@/core/storage/items";
-import type {MemoEntry, MemoType} from "@/core/storage/types";
-import {useMemosStore} from "@/stores/memos";
+import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
+import type {MemoType} from "@/core/storage/types";
+import {normalizeMemoMap, useMemosStore} from "@/stores/memos";
 
 import {Empty, ImportDialog} from "./Layout";
 
@@ -138,7 +137,7 @@ export function MemoTab() {
     const setMemo = useMemosStore((state) => state.setMemo);
     const removeMemo = useMemosStore((state) => state.removeMemo);
     const clearType = useMemosStore((state) => state.clearType);
-    const setMemosRaw = useMemosStore((state) => state.setMemosRaw);
+    const setMemos = useMemosStore((state) => state.setMemos);
 
     const [form, setForm] = useState<MemoFormState | null>(null);
     const [clearConfirm, setClearConfirm] = useState<MemoType | null>(null);
@@ -158,16 +157,7 @@ export function MemoTab() {
         try {
             const parsed = JSON.parse(text) as Record<string, unknown>;
             for (const type of MEMO_TYPES) {
-                const map = parsed[type];
-                if (!map || typeof map !== "object") continue;
-
-                const next: Record<string, MemoEntry> = {};
-                for (const [user, entry] of Object.entries(map as Record<string, unknown>)) {
-                    if (isMemoEntry(entry)) next[user] = entry;
-                }
-
-                setMemosRaw(type, next);
-                await memoStorage[type].setValue(next);
+                if (parsed[type]) await setMemos(type, normalizeMemoMap(parsed[type]));
             }
             setImportOpen(false);
             setNotice("메모를 가져왔습니다.");

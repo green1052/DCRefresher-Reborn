@@ -1,21 +1,13 @@
 import {create} from "zustand";
 
-import {isBlockEntry} from "@/core/block";
-import {BLOCK_TYPES, blockDefaultsStorage, blockStorage, DEFAULT_DETECT_MODE} from "@/core/storage/items";
+import {BLOCK_TYPES, blockDefaultsStorage, blockStorage, DEFAULT_DETECT_MODE, DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 
-export interface BlockInputFields {
-    content: string;
-    isRegex: boolean;
-    mode?: DetectMode;
-    gallery?: string;
-    extra?: string;
-}
+export type BlockInputFields = Omit<BlockEntry, "id">;
 
 interface BlocksState {
     entries: Record<BlockType, BlockEntry[]>;
     defaults: Record<BlockType, DetectMode>;
-    setEntriesRaw: (type: BlockType, entries: BlockEntry[]) => void;
     setEntries: (type: BlockType, entries: BlockEntry[]) => Promise<void>;
     addEntry: (type: BlockType, fields: BlockInputFields) => Promise<void>;
     updateEntry: (type: BlockType, id: string, fields: BlockInputFields) => Promise<void>;
@@ -24,54 +16,36 @@ interface BlocksState {
     setDefault: (type: BlockType, mode: DetectMode) => Promise<void>;
 }
 
-const emptyEntries = (): Record<BlockType, BlockEntry[]> => ({
-    NICK: [],
-    ID: [],
-    IP: [],
-    TITLE: [],
-    TEXT: [],
-    COMMENT: [],
-    DCCON: [],
-    TAB: []
-});
+export const isBlockEntry = (value: unknown): value is Omit<BlockEntry, "id"> & { id?: unknown } => {
+    if (!value || typeof value !== "object") return false;
+
+    const entry = value as Partial<BlockEntry>;
+    return (
+        typeof entry.content === "string" &&
+        typeof entry.isRegex === "boolean" &&
+        (entry.gallery === undefined || typeof entry.gallery === "string") &&
+        (entry.extra === undefined || typeof entry.extra === "string") &&
+        (entry.mode === undefined || DETECT_MODES.includes(entry.mode))
+    );
+};
+
+/** 저장소/가져오기 값 → 유효 항목만, id 없으면 부여 */
+export const normalizeBlockList = (value: unknown): BlockEntry[] =>
+    Array.isArray(value)
+        ? value.filter(isBlockEntry).map((entry) => ({...entry, id: typeof entry.id === "string" ? entry.id : crypto.randomUUID()}))
+        : [];
+
+const emptyEntries = (): Record<BlockType, BlockEntry[]> =>
+    Object.fromEntries(BLOCK_TYPES.map((type) => [type, []])) as unknown as Record<BlockType, BlockEntry[]>;
 
 /** 같은 content+gallery는 교체 */
 const dedupe = (list: BlockEntry[], content: string, gallery: string | undefined, keepId?: string): BlockEntry[] =>
     list.filter((entry) => entry.id === keepId || !(entry.content === content && (entry.gallery ?? "") === (gallery ?? "")));
 
-let initialized = false;
-
-/** 값 로드 + 변경 감시. 사용하는 컨텍스트에서 1회 */
-export const initBlocksStore = async (): Promise<void> => {
-    if (initialized) return;
-    initialized = true;
-
-    const store = useBlocksStore.getState();
-
-    await Promise.all(
-        BLOCK_TYPES.map(async (type) => {
-            store.setEntriesRaw(type, ((await blockStorage[type].getValue()) ?? []).filter(isBlockEntry));
-            blockStorage[type].watch((next) => {
-                if (next) useBlocksStore.getState().setEntriesRaw(type, next.filter(isBlockEntry));
-            });
-        })
-    );
-
-    const storedDefaults = await blockDefaultsStorage.getValue();
-    if (storedDefaults) useBlocksStore.setState({defaults: storedDefaults});
-
-    blockDefaultsStorage.watch((next) => {
-        if (next) useBlocksStore.setState({defaults: next});
-    });
-};
-
+/** 차단 목록/기본 모드의 단일 출처. 콘텐츠·옵션 모두 이 스토어를 쓰고 저장소와 양방향 동기화된다 */
 export const useBlocksStore = create<BlocksState>((set, get) => ({
     entries: emptyEntries(),
     defaults: {...DEFAULT_DETECT_MODE},
-
-    setEntriesRaw: (type, entries) => {
-        set((state) => ({entries: {...state.entries, [type]: entries}}));
-    },
 
     setEntries: async (type, entries) => {
         set((state) => ({entries: {...state.entries, [type]: entries}}));
@@ -80,18 +54,12 @@ export const useBlocksStore = create<BlocksState>((set, get) => ({
 
     addEntry: async (type, fields) => {
         const list = dedupe(get().entries[type], fields.content, fields.gallery);
-        const entry: BlockEntry = {id: crypto.randomUUID(), ...fields};
-
-        await get().setEntries(type, [...list, entry]);
+        await get().setEntries(type, [...list, {id: crypto.randomUUID(), ...fields}]);
     },
 
     updateEntry: async (type, id, fields) => {
         const list = dedupe(get().entries[type], fields.content, fields.gallery, id);
-        const index = list.findIndex((entry) => entry.id === id);
-        if (index === -1) return;
-
-        list[index] = {...list[index], ...fields, id};
-        await get().setEntries(type, [...list]);
+        await get().setEntries(type, list.map((entry) => (entry.id === id ? {...entry, ...fields, id} : entry)));
     },
 
     removeEntry: async (type, id) => {
@@ -107,3 +75,25 @@ export const useBlocksStore = create<BlocksState>((set, get) => ({
         await blockDefaultsStorage.setValue(get().defaults);
     }
 }));
+
+let initialized: Promise<void> | null = null;
+
+/** 저장소 값 로드 + 변경 감시 (다른 탭/옵션 페이지에서 바뀐 값 반영). 여러 번 불러도 1회 */
+export const initBlocksStore = (): Promise<void> =>
+    (initialized ??= (async () => {
+        const setList = (type: BlockType, value: unknown): void =>
+            useBlocksStore.setState((state) => ({entries: {...state.entries, [type]: normalizeBlockList(value)}}));
+
+        await Promise.all(
+            BLOCK_TYPES.map(async (type) => {
+                setList(type, await blockStorage[type].getValue());
+                blockStorage[type].watch((next) => setList(type, next));
+            })
+        );
+
+        const setDefaults = (next: Partial<Record<BlockType, DetectMode>> | null): void =>
+            useBlocksStore.setState({defaults: {...DEFAULT_DETECT_MODE, ...next}});
+
+        setDefaults(await blockDefaultsStorage.getValue());
+        blockDefaultsStorage.watch(setDefaults);
+    })());

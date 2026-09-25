@@ -1,4 +1,4 @@
-import {block} from "@/core/block";
+import {isAnyBlocked} from "@/core/block";
 import type {GalleryPreData} from "@/features/types";
 import type {ModuleContext} from "@/core/module/types";
 
@@ -54,7 +54,7 @@ export const processComments = (
         const plain = comment.memo.includes("<") ? comment.memo.replace(/<[^>]+>/g, " ") : comment.memo;
         const dcconNo = comment.memo.match(GALLOG_DCCON)?.[1];
 
-        const blocked = block.checkAll(
+        const blocked = isAnyBlocked(
             {
                 NICK: comment.name || null,
                 ID: comment.user_id || null,

@@ -1,4 +1,4 @@
-import {block} from "@/core/block";
+import {isAnyBlocked, isBlocked} from "@/core/block";
 import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
 import {queryString} from "@/core/http/urls";
 import {useUiStore} from "@/stores/ui";
@@ -45,7 +45,7 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): void => 
             const comment = commentContainer?.querySelector(".usertxt")?.textContent;
             const {nick, uid, ip} = element.dataset;
 
-            const blocked = block.checkAll(
+            const blocked = isAnyBlocked(
                 {
                     TITLE: title || null,
                     NICK: nick || null,
@@ -65,7 +65,7 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): void => 
             // 본문이 차단 대상이면 숨기지 않고 내용만 교체
             if (isViewPage() && !commentContainer) {
                 const writeDiv = document.querySelector<HTMLElement>(".write_div");
-                if (writeDiv && block.check("TEXT", writeDiv.textContent ?? "")) {
+                if (writeDiv && isBlocked("TEXT", writeDiv.textContent ?? "")) {
                     writeDiv.textContent = "게시글 내용이 차단됐습니다.";
                 }
             }
@@ -81,7 +81,7 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): void => 
             const src = img?.getAttribute("src") ?? img?.getAttribute("data-src");
             if (!src) return;
 
-            if (!block.check("DCCON", extractDcconCode(src), gallery)) return;
+            if (!isBlocked("DCCON", extractDcconCode(src), gallery)) return;
 
             const target = (element.closest<HTMLElement>(".ub-content")) ?? (element.closest<HTMLElement>(".comment_dccon"));
             if (target) hideWithReply(target);

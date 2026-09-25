@@ -1,5 +1,5 @@
 import {eventBus} from "@/core/eventbus/bus";
-import {block} from "@/core/block";
+import {isAnyBlocked} from "@/core/block";
 import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
 import type {GalleryPreData, IPostInfo} from "@/features/types";
 import {useUiStore} from "@/stores/ui";
@@ -155,7 +155,7 @@ const controller = (ctx: ModuleContext) => {
     const processContents = (preData: GalleryPreData, postInfo: IPostInfo): IPostInfo => {
         const raw = postInfo.contents ?? "";
 
-        if (block.checkAll({TEXT: raw.replace(/<[^>]+>/g, " ").trim()}, preData.gallery)) {
+        if (isAnyBlocked({TEXT: raw.replace(/<[^>]+>/g, " ").trim()}, preData.gallery)) {
             return {...postInfo, contents: "게시글 내용이 차단됐습니다."};
         }
 
@@ -412,7 +412,7 @@ const controller = (ctx: ModuleContext) => {
         }
 
         let contents = post.contents ?? "";
-        if (block.checkAll({TEXT: contents.replace(/<[^>]+>/g, " ").trim()}, preData.gallery)) {
+        if (isAnyBlocked({TEXT: contents.replace(/<[^>]+>/g, " ").trim()}, preData.gallery)) {
             contents = "게시글 내용이 차단됐습니다.";
         } else if (ctx.settings.tooltipMediaHide === true) {
             contents = contents.replace(/<(img|video|iframe|audio|embed|source)[^>]*>/g, "").replace(/<\/(video|iframe|audio|source)>/g, "");

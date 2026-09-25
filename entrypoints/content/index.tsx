@@ -9,11 +9,11 @@ import overlayCss from "@/assets/styles/overlay.scss?inline";
 import {ContentRoot} from "@/components/overlay/ContentRoot";
 import {overlay} from "@/components/overlay/shadow";
 import {eventBus} from "@/core/eventbus/bus";
-import * as blockCore from "@/core/block";
-import * as memoCore from "@/core/memo";
 import {onMessage} from "@/core/messaging/protocol";
 import {loadAll, modules} from "@/core/module/registry";
 import features from "@/features";
+import {initBlocksStore} from "@/stores/blocks";
+import {initMemosStore} from "@/stores/memos";
 
 export default defineContentScript({
     matches: ["https://*.dcinside.com/*"],
@@ -78,7 +78,7 @@ export default defineContentScript({
         }
 
         // ===== 모듈 부트스트랩 =====
-        await Promise.all([blockCore.init(), memoCore.init()]);
+        await Promise.all([initBlocksStore(), initMemosStore()]);
         await loadAll(features);
     }
 });

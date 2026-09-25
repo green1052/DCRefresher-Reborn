@@ -5,11 +5,9 @@ import {useState} from "react";
 import {BlockDialog} from "@/components/BlockDialog";
 import {ConfirmDialog} from "@/components/ConfirmDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
-import {isBlockEntry} from "@/core/block";
 import {BLOCK_TYPES, DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
-import type {BlockInputFields} from "@/stores/blocks";
-import {useBlocksStore} from "@/stores/blocks";
+import {type BlockInputFields, normalizeBlockList, useBlocksStore} from "@/stores/blocks";
 
 import {Empty, ImportDialog} from "./Layout";
 
@@ -49,7 +47,7 @@ export function BlockTab() {
             for (const type of BLOCK_TYPES) {
                 const list = parsed[type];
                 if (!Array.isArray(list)) continue;
-                await setEntries(type, list.filter(isBlockEntry));
+                await setEntries(type, normalizeBlockList(list));
             }
             setImportOpen(false);
             setNotice("차단 목록을 가져왔습니다.");

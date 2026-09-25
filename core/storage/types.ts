@@ -16,7 +16,6 @@ export interface BlockEntry {
 export interface MemoEntry {
     text: string;
     color: string;
-    gallery?: string;
 }
 
 export interface StoredDB {

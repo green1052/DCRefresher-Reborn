@@ -1,5 +1,5 @@
 import type {BlockRequestOptions} from "@/core/eventbus/types";
-import {block} from "@/core/block";
+import {useBlocksStore} from "@/stores/blocks";
 import {http} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import type {BlockType, DetectMode} from "@/core/storage/types";
@@ -23,7 +23,7 @@ const blockUser = async (selected: SelectedUser): Promise<void> => {
     if (!value) return;
 
     const type: BlockType = selected.uid ? "ID" : selected.ip ? "IP" : "NICK";
-    await block.add(type, {content: value, isRegex: false, extra: selected.nick ?? value});
+    await useBlocksStore.getState().addEntry(type, {content: value, isRegex: false, extra: selected.nick ?? value});
 
     useUiStore.getState().showToast(`차단 목록에 추가했습니다. (${type}: ${value})`);
 };
@@ -43,17 +43,17 @@ const blockDccon = async (selected: SelectedUser, blockAllDccon?: boolean): Prom
         if (!confirm("디시콘을 묶어서 차단하시겠습니까?")) {
             // 묶음 대신 각각 추가
             for (const detail of response.detail) {
-                await block.add("DCCON", {content: detail.path, isRegex: false, extra});
+                await useBlocksStore.getState().addEntry("DCCON", {content: detail.path, isRegex: false, extra});
             }
             return;
         }
 
         const paths = response.detail.map((detail) => detail.path).join("|");
-        await block.add("DCCON", {content: `^(${paths})$`, isRegex: true, extra: `[묶음] ${extra}`});
+        await useBlocksStore.getState().addEntry("DCCON", {content: `^(${paths})$`, isRegex: true, extra: `[묶음] ${extra}`});
         return;
     }
 
-    await block.add("DCCON", {content: code, isRegex: false, extra});
+    await useBlocksStore.getState().addEntry("DCCON", {content: code, isRegex: false, extra});
 };
 
 /** eventBus "refresherRequestBlock" 처리. 마지막 선택은 10초까지 유효 */

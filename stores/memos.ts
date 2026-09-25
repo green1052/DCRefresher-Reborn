@@ -3,60 +3,70 @@ import {create} from "zustand";
 import {MEMO_TYPES, memoStorage} from "@/core/storage/items";
 import type {MemoEntry, MemoType} from "@/core/storage/types";
 
+type MemoMap = Record<string, MemoEntry>;
+
 interface MemosState {
-    memos: Record<MemoType, Record<string, MemoEntry>>;
-    setMemosRaw: (type: MemoType, memos: Record<string, MemoEntry>) => void;
+    memos: Record<MemoType, MemoMap>;
+    setMemos: (type: MemoType, memos: MemoMap) => Promise<void>;
     setMemo: (type: MemoType, user: string, entry: MemoEntry) => Promise<void>;
     removeMemo: (type: MemoType, user: string) => Promise<void>;
     clearType: (type: MemoType) => Promise<void>;
 }
 
-const emptyMemos = (): Record<MemoType, Record<string, MemoEntry>> => ({
-    UID: {},
-    NICK: {},
-    IP: {}
-});
+export const isMemoEntry = (value: unknown): value is MemoEntry => {
+    if (!value || typeof value !== "object") return false;
 
-let initialized = false;
-
-/** 값 로드 + 변경 감시. 사용하는 컨텍스트에서 1회 */
-export const initMemosStore = async (): Promise<void> => {
-    if (initialized) return;
-    initialized = true;
-
-    await Promise.all(
-        MEMO_TYPES.map(async (type) => {
-            useMemosStore.getState().setMemosRaw(type, ((await memoStorage[type].getValue()) ?? {}) as Record<string, MemoEntry>);
-
-            memoStorage[type].watch((next) => {
-                if (next) useMemosStore.getState().setMemosRaw(type, next as Record<string, MemoEntry>);
-            });
-        })
-    );
+    const memo = value as Partial<MemoEntry>;
+    return typeof memo.text === "string" && typeof memo.color === "string";
 };
 
-export const useMemosStore = create<MemosState>((set, get) => ({
-    memos: emptyMemos(),
+/** 저장소/가져오기 값 → 유효 항목만 */
+export const normalizeMemoMap = (value: unknown): MemoMap =>
+    value && typeof value === "object" && !Array.isArray(value)
+        ? Object.fromEntries(Object.entries(value).filter(([, memo]) => isMemoEntry(memo)))
+        : {};
 
-    setMemosRaw: (type, memos) => {
+/** 메모의 단일 출처. 콘텐츠·옵션 모두 이 스토어를 쓰고 저장소와 양방향 동기화된다 */
+export const useMemosStore = create<MemosState>((set, get) => ({
+    memos: {UID: {}, NICK: {}, IP: {}},
+
+    setMemos: async (type, memos) => {
         set((state) => ({memos: {...state.memos, [type]: memos}}));
+        await memoStorage[type].setValue(memos);
     },
 
     setMemo: async (type, user, entry) => {
-        const next = {...get().memos[type], [user]: entry};
-        set((state) => ({memos: {...state.memos, [type]: next}}));
-        await memoStorage[type].setValue(next);
+        await get().setMemos(type, {...get().memos[type], [user]: entry});
     },
 
     removeMemo: async (type, user) => {
-        const next = {...get().memos[type]};
-        delete next[user];
-        set((state) => ({memos: {...state.memos, [type]: next}}));
-        await memoStorage[type].setValue(next);
+        const {[user]: _removed, ...rest} = get().memos[type];
+        await get().setMemos(type, rest);
     },
 
     clearType: async (type) => {
-        set((state) => ({memos: {...state.memos, [type]: {}}}));
-        await memoStorage[type].setValue({});
+        await get().setMemos(type, {});
     }
 }));
+
+/** 유저에 달린 메모 (아이디 > IP > 닉네임 순) */
+export const findMemo = (user: { uid?: string; ip?: string; nick?: string }): MemoEntry | undefined => {
+    const {memos} = useMemosStore.getState();
+    return (user.uid && memos.UID[user.uid]) || (user.ip && memos.IP[user.ip]) || (user.nick && memos.NICK[user.nick]) || undefined;
+};
+
+let initialized: Promise<void> | null = null;
+
+/** 저장소 값 로드 + 변경 감시 (다른 탭/옵션 페이지에서 바뀐 값 반영). 여러 번 불러도 1회 */
+export const initMemosStore = (): Promise<void> =>
+    (initialized ??= (async () => {
+        const setMap = (type: MemoType, value: unknown): void =>
+            useMemosStore.setState((state) => ({memos: {...state.memos, [type]: normalizeMemoMap(value)}}));
+
+        await Promise.all(
+            MEMO_TYPES.map(async (type) => {
+                setMap(type, await memoStorage[type].getValue());
+                memoStorage[type].watch((next) => setMap(type, next));
+            })
+        );
+    })());
