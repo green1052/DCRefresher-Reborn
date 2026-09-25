@@ -40,8 +40,10 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): void => 
     ctx.addFilter(
         ".ub-writer",
         (element) => {
-            const title = element.querySelector(".gall_tit > a:not([class])")?.textContent;
-            const tab = element.querySelector(".gall_subject")?.textContent;
+            // 제목/말머리는 작성자 칸이 아니라 같은 행(.ub-content)의 다른 칸에 있음
+            const row = element.closest<HTMLElement>(".ub-content");
+            const title = row?.querySelector(".gall_tit > a:not([class])")?.textContent?.trim();
+            const tab = row?.querySelector(".gall_subject")?.textContent?.trim();
             const commentContainer = isViewPage() ? element.closest(".reply_info, .cmt_info") : null;
             const comment = commentContainer?.querySelector(".usertxt")?.textContent;
             const {nick, uid, ip} = element.dataset;
@@ -59,14 +61,14 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): void => 
             );
 
             if (blocked) {
-                hideWithReply((element.closest<HTMLElement>(".ub-content")) ?? element);
+                hideWithReply(row ?? element);
                 return;
             }
 
             // 본문이 차단 대상이면 숨기지 않고 내용만 교체
             if (isViewPage() && !commentContainer) {
                 const writeDiv = document.querySelector<HTMLElement>(".write_div");
-                if (writeDiv && isBlocked("TEXT", writeDiv.textContent ?? "")) {
+                if (writeDiv && isBlocked("TEXT", writeDiv.textContent?.trim() ?? "", gallery)) {
                     writeDiv.textContent = "게시글 내용이 차단됐습니다.";
                 }
             }
