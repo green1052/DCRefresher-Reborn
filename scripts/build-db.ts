@@ -6,7 +6,7 @@ import {long2ip, Netmask} from "netmask";
 
 import {compactIpData, createIpLookup, type RawIpData} from "../core/ipdb";
 
-import {shortenOrg} from "./ipdb-names";
+import {shortenOrg} from "./shorten-org";
 
 const MMDB_URL = (edition: string): string => `https://github.com/green1052/maxmind-geoip2/raw/master/dist/${edition}/${edition}.mmdb`;
 const VPN_URL = "https://raw.githubusercontent.com/X4BNet/lists_vpn/refs/heads/main/ipv4.txt";

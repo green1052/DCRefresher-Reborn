@@ -22,7 +22,7 @@ jobs:
                 run: bun ci
 
             -   name: Build
-                run: bun scripts/build-ipdb.ts
+                run: bun scripts/build-db.ts
 
             -   name: Keep ban.json
                 run: |
