@@ -22,7 +22,7 @@ const dcconCode = (element: HTMLElement): string | undefined => {
 };
 
 /** 요소 글자 — 안에 든 <script> 글자는 뺀다 */
-const textOf = (element: Element | null | undefined): string =>
+const plainText = (element: Element | null | undefined): string =>
     element ? Array.from(element.childNodes, (node) => (node.nodeName === "SCRIPT" ? "" : node.textContent)).join("").trim() : "";
 
 const BLUR_GROUP: SettingGroup = {name: "블러 처리", desc: "차단된 내용을 지우지 않고 블러 처리합니다."};
@@ -90,9 +90,9 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): (() => v
     const checkWriter = (element: HTMLElement): void => {
         // 제목/말머리는 작성자 칸이 아니라 같은 행(.ub-content)의 다른 칸에 있음. 글 보기 머리(.gallview_head)도 ub-content다
         const row = element.closest<HTMLElement>(".ub-content");
-        const title = textOf(row?.querySelector(".gall_tit > a:not([class]), .title_subject"));
+        const title = plainText(row?.querySelector(".gall_tit > a:not([class]), .title_subject"));
         // 잘린 말머리는 툴팁(.subject_inner)에 전체가 있다. 글 보기 머리의 말머리는 [대괄호]로 감싸 있다
-        const tab = textOf(row?.querySelector(".gall_subject .subject_inner, .title_headtext") ?? row?.querySelector(".gall_subject")).replace(/^\[(.*)\]$/, "$1");
+        const tab = plainText(row?.querySelector(".gall_subject .subject_inner, .title_headtext") ?? row?.querySelector(".gall_subject")).replace(/^\[(.*)\]$/, "$1");
         const commentContainer = isViewPage ? element.closest(".reply_info, .cmt_info") : null;
         // 글자콘 댓글은 .usertxt 없이 .comment_dccon > .coment_dccon_txt > .txtcon_txt로 그려진다 — 글자도 댓글 차단어로 본다
         const comment = commentContainer?.querySelector(".usertxt, .txtcon_txt")?.textContent;
