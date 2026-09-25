@@ -112,11 +112,16 @@ const Sidebar = ({tab, onSelect}: { tab: string; onSelect: (id: string) => void 
                     <Button
                         key={id}
                         size="3"
-                        variant={tab === id ? "soft" : "ghost"}
+                        // soft/ghost는 Radix에서 패딩·높이가 달라 탭 전환시 흔들림 — ghost로 통일하고 배경만 바꾼다
+                        variant="ghost"
                         color={tab === id ? undefined : "gray"}
                         highContrast={tab !== id}
                         aria-current={tab === id ? "page" : undefined}
-                        style={{justifyContent: "flex-start", margin: 0}}
+                        style={{
+                            justifyContent: "flex-start",
+                            margin: 0,
+                            background: tab === id ? "var(--accent-a4)" : undefined
+                        }}
                         onClick={() => onSelect(id)}
                     >
                         <Icon size={16}/> {label}
