@@ -4,7 +4,8 @@ import {eventBus} from "@/core/eventbus/bus";
 import {isBlocked} from "@/core/block";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, ModuleDefinition, SettingGroup} from "@/core/module/types";
-import type {GalleryPreData, PostInfo} from "@/core/preview/types";
+import type {DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
+import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
 import {isTyping} from "@/utils/event";
 import {isGalleryManager} from "@/utils/user";
@@ -152,7 +153,11 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
     };
 };
 
-/** 목록에서 앞(-1)/뒤(1) 글 — 차단·운영자 숨김 행은 건너뛴다 (미리보기는 TEXT 차단만 검사해서 숨긴 글이 그대로 열린다) */
+/** 차단 모듈이 블러로 가린 행 — 보이긴 하지만('가린 내용 보기' 중이 아니면) 넘기기·미니로 내용을 열지 않는다 */
+const isBlurHidden = (element: Element): boolean =>
+    !document.documentElement.classList.contains("refresherBlockReveal") && element.closest(".refresherBlur") !== null;
+
+/** 목록에서 앞(-1)/뒤(1) 글 — 차단·운영자 숨김·블러 행은 건너뛴다 (미리보기는 TEXT 차단만 검사해서 숨긴 글이 그대로 열린다) */
 export const adjacentPreData = (from: GalleryPreData, dir: number): GalleryPreData | null => {
     const rows = Array.from(document.querySelectorAll<HTMLElement>(".gall_list .ub-content")).filter((row) =>
         row.checkVisibility() && row.querySelector("a:not(.reply_numbox)")
@@ -162,8 +167,11 @@ export const adjacentPreData = (from: GalleryPreData, dir: number): GalleryPreDa
         const pre = buildPreData(row);
         return pre?.id === from.id && pre?.gallery === from.gallery;
     });
+    if (index < 0) return null;
 
-    const next = index < 0 ? undefined : rows[index + dir];
+    // 블러 행은 찾은 뒤에 거른다 — 지금 글이 블러 행이어도 제자리를 찾게
+    const ahead = dir > 0 ? rows.slice(index + 1) : rows.slice(0, index).reverse();
+    const next = ahead.find((row) => !isBlurHidden(row));
     return next ? buildPreData(next) : null;
 };
 
@@ -201,15 +209,17 @@ const controller = (ctx: ModuleContext) => {
     const galName = (): string => document.querySelector(".page_head h2 a")?.firstChild?.textContent?.trim() || "디시인사이드";
 
     // 본문 차단도 차단 모듈을 따른다 — 꺼져 있으면 가리지 않는다. 원문은 남겨 '가린 내용 보기'로 다시 보인다 (Frame.tsx)
-    const processContents = async (preData: GalleryPreData, postInfo: PostInfo, stripMedia = false): Promise<PostInfo> => {
-        // 정화기는 처음 쓸 때 불러온다 — 모든 페이지에서 DOMPurify를 만들지 않게
-        const {sanitizeHtml} = await import("@/utils/sanitize");
+    const textBlockOf = (preData: GalleryPreData, postInfo: PostInfo): PostInfo["textBlocked"] => {
         const view = useUiStore.getState().blockView;
         // 페이지와 같은 글자로 본다 (block 모듈 checkText) — 본문 칸째 풀면 디시 스크립트·템플릿 글자가 섞이고 태그 자리가 공백이 돼 '<b>광</b>고'로 비켜 간다
         const writeDiv = postInfo.dom.querySelector(".write_div");
-        const textBlocked = view && writeDiv && isBlocked("TEXT", writeDiv.textContent?.trim() ?? "", preData.gallery) ? (view.blur ? "blur" : "hide") : undefined;
+        return view && writeDiv && isBlocked("TEXT", writeDiv.textContent?.trim() ?? "", preData.gallery) ? (view.blur ? "blur" : "hide") : undefined;
+    };
 
-        return {...postInfo, contents: sanitizeHtml(postInfo.contents ?? "", {stripMedia}), textBlocked};
+    const processContents = async (preData: GalleryPreData, postInfo: PostInfo, stripMedia = false): Promise<PostInfo> => {
+        // 정화기는 처음 쓸 때 불러온다 — 모든 페이지에서 DOMPurify를 만들지 않게
+        const {sanitizeHtml} = await import("@/utils/sanitize");
+        return {...postInfo, contents: sanitizeHtml(postInfo.contents ?? "", {stripMedia}), textBlocked: textBlockOf(preData, postInfo)};
     };
 
     const requestPost = (preData: GalleryPreData): Promise<PostInfo> => {
@@ -254,6 +264,8 @@ const controller = (ctx: ModuleContext) => {
     let shownSeq = 0;
     // 받는 중인 댓글 요청 수 — 자동 갱신이 느린 응답 위로 겹쳐 쌓이지 않게
     let pulling = 0;
+    // 마지막으로 그린 댓글(아카이브까지 마친 것) — 차단 목록·방식이 바뀌면 받지 않고 이것으로 다시 가린다
+    let shown: { signal: number; source: DcinsideComment[] } | null = null;
 
     /** 댓글을 받아 가공해 그린다. skip이면 받지 않고 빈 목록으로 (보존한 댓글은 되살아난다) */
     const pullComments = async (preData: GalleryPreData, post: PostInfo, mySignal: number, skip = false): Promise<void> => {
@@ -262,18 +274,39 @@ const controller = (ctx: ModuleContext) => {
 
         try {
             // 가공(정화·차단)도 처음 쓸 때 불러온다
-            const [{processComments}, {list: raw, allowReply}] = await Promise.all([
+            const [{prepareComments, processComments}, {list: raw, allowReply}] = await Promise.all([
                 import("@/core/preview/comments"),
                 skip ? {list: [], allowReply: true} : fetchComments(preData, post, abort!.signal)
             ]);
             if (store.getState().signalId !== mySignal || seq < shownSeq) return;
             shownSeq = seq;
 
-            store.setState({comments: processComments(raw, preData, ctx), allowReply});
+            const source = prepareComments(raw, preData, ctx);
+            shown = {signal: mySignal, source};
+            store.setState({comments: processComments(source, preData), allowReply});
         } finally {
             pulling--;
         }
     };
+
+    // 열린 창도 차단 목록·방식을 따른다 — 버블에서 차단하면 그 사람 댓글이 바로 가려지게
+    const reapplyBlocks = async (): Promise<void> => {
+        const {visible, preData, signalId} = store.getState();
+        if (!visible || !preData) return;
+
+        const {processComments} = await import("@/core/preview/comments");
+        store.setState((s) => (s.signalId !== signalId ? {} : {
+            post: s.post && {...s.post, textBlocked: textBlockOf(preData, s.post)},
+            comments: shown?.signal === signalId ? processComments(shown.source, preData) : s.comments
+        }));
+    };
+
+    ctx.addCleanup(useBlocksStore.subscribe((state, previous) => {
+        if (state.entries !== previous.entries || state.defaults !== previous.defaults) void reapplyBlocks();
+    }));
+    ctx.addCleanup(useUiStore.subscribe((state, previous) => {
+        if (state.blockView !== previous.blockView) void reapplyBlocks();
+    }));
 
     const refreshComments = async () => {
         const st = store.getState();
@@ -514,6 +547,7 @@ const controller = (ctx: ModuleContext) => {
         if (usePreviewStore.getState().visible) return;
 
         const element = ev.currentTarget as HTMLElement;
+        if (isBlurHidden(element)) return;
         const x = ev.clientX;
         const y = ev.clientY;
 

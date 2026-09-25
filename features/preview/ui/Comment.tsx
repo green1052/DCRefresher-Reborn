@@ -204,7 +204,6 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
     const toggleCollapse = usePreviewStore((s) => s.toggleCollapse);
     const author = usePreviewStore((s) => s.post?.user);
     const allowReply = usePreviewStore((s) => s.allowReply);
-    const revealed = useUiStore((s) => s.blockView?.revealed === true);
 
     const user: User = {
         nick: comment.name,
@@ -258,9 +257,6 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
     useLayoutEffect(() => {
         for (const box of body.current?.querySelectorAll<HTMLElement>(".coment_dccon_txt") ?? []) fitTxtcon(box);
     }, [html]);
-
-    // 숨김 차단·접힌 같은 댓글은 '가린 내용 보기' 동안만 흐리게 보인다 (블러 차단은 overlay.scss가 흐린다)
-    if (!revealed && (comment.blocked === "hide" || comment.duplicates === 0)) return null;
 
     return (
         <Box className="refresher-comment" data-depth={depth} data-deleted={isDeleted || undefined}

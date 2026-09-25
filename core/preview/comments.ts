@@ -37,20 +37,20 @@ const extractVoice = (memo: string): { memo: string; voice?: ProcessedComment["v
     return {memo: display, voice: {src, iframe}};
 };
 
-/** 댓글 정리→사용자→차단→아카이브 처리 */
-export const processComments = (
-    raw: DcinsideComment[],
-    preData: GalleryPreData,
-    ctx: ModuleContext
-): ProcessedComment[] => {
+/** 받은 목록 정리→아카이브 — 받을 때마다 한 번만 (아카이브는 받은 기록을 쌓고 수명을 늘린다) */
+export const prepareComments = (raw: DcinsideComment[], preData: GalleryPreData, ctx: ModuleContext): DcinsideComment[] => {
     // 댓글돌이(COMMENT_BOY) 제거 — 보존(restoreArchive)의 번호순 정렬보다 먼저 거른다.
     // 디시가 지운 댓글('2' 같은 다른 삭제 코드, del_yn)은 삭제('1')로 맞춘다 — 답글·삭제 버튼을 감추고 같은 댓글 접기에서 뺀다
     const filtered = raw
         .filter((comment) => String(comment.nicktype) !== "COMMENT_BOY")
         .map((comment) => ({...comment, is_delete: comment.is_delete !== "0" || comment.del_yn === "Y" ? "1" : "0"}));
 
+    return ctx.settings.archiveArticle === true ? restoreArchive(preData, filtered) : filtered;
+};
+
+/** 정제→차단→같은 댓글 — 차단 목록이 바뀌면 같은 목록(prepareComments 결과)으로 다시 부른다 */
+export const processComments = (source: DcinsideComment[], preData: GalleryPreData): ProcessedComment[] => {
     // 캐시된 원본을 보호하기 위해 복사본에서 가공
-    const source = ctx.settings.archiveArticle === true ? restoreArchive(preData, filtered) : filtered;
     const list: ProcessedComment[] = source.map((comment) => ({...comment}));
 
     // 음성 분리 후 정제 — 음성 URL은 정제(재직렬화)하면 &가 &amp;로 바뀌므로 먼저 떼어낸다
