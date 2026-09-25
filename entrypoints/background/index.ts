@@ -7,6 +7,31 @@ import {backupStorage, dbStorage} from "@/core/storage/items";
 const DATABASE_UPDATE_INTERVAL = 604_800_000; // 7일
 const AUTO_BACKUP_ALARM = "refresher:autoBackup";
 
+const GRECAPTCHA_SITE_KEY = "6Lc-Fr0UAAAAAOdqLYqPy53MxlRMIXpNXFvBliwI";
+
+/**
+ * 탭의 페이지 컨텍스트에서 실행된다 (직렬화되므로 바깥 변수를 쓰지 않는다).
+ * api.js는 이때 처음 불러온다 — 미리 넣으면 원문 comment.js의 typeof grecaptcha 검사가 바뀌어 v2 체크박스가 뜬다
+ */
+const executeGrecaptcha = async (siteKey: string, action: string): Promise<string> => {
+    type Grecaptcha = { ready: (callback: () => void) => void; execute: (key: string, options: { action: string }) => Promise<string> };
+    const scope = window as Window & { grecaptcha?: Grecaptcha };
+
+    if (!scope.grecaptcha) {
+        await new Promise<void>((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = `https://www.google.com/recaptcha/api.js?render=${siteKey}`;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error("api.js"));
+            document.head.append(script);
+        });
+    }
+
+    const grecaptcha = scope.grecaptcha!;
+    await new Promise<void>((resolve) => grecaptcha.ready(resolve));
+    return grecaptcha.execute(siteKey, {action});
+};
+
 export default defineBackground(() => {
     // ===== Context Menus (SauceNao) =====
     const createContextMenus = async () => {
@@ -32,6 +57,24 @@ export default defineBackground(() => {
         const id = tab?.id ?? (await browser.tabs.query({active: true, lastFocusedWindow: true}))[0]?.id;
         // 활성 탭이 디시가 아니면 받는 쪽이 없어 실패한다
         if (id) await sendMessage("refresher:executeShortcut", command, {tabId: id}).catch(() => {});
+    });
+
+    // ===== reCAPTCHA: 디시가 v3 토큰을 요구할 때만 그 탭의 페이지(MAIN world)에서 받아 온다 =====
+    // 토큰은 디시 도메인에서 실행해야 유효하다. 상주 스크립트 없이 필요할 때 한 번만 주입한다
+    onMessage("refresher:grecaptchaToken", async ({data: action, sender}) => {
+        if (!sender.tab?.id) return undefined;
+
+        try {
+            const [injection] = await browser.scripting.executeScript({
+                target: {tabId: sender.tab.id, frameIds: [sender.frameId ?? 0]},
+                world: "MAIN",
+                func: executeGrecaptcha,
+                args: [GRECAPTCHA_SITE_KEY, action]
+            });
+            return typeof injection?.result === "string" ? injection.result : undefined;
+        } catch {
+            return undefined;
+        }
     });
 
     // ===== Database: 설치/주기 갱신 =====

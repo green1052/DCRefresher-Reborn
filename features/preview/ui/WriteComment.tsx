@@ -14,7 +14,7 @@ import {
     TXTCON_COLORS
 } from "@/core/preview/request";
 import type {DcinsideDccon} from "@/core/preview/types";
-import {grecaptchaToken} from "../grecaptcha";
+import {sendMessage} from "@/core/messaging/protocol";
 import {useUiStore} from "@/stores/ui";
 import {loggedInUserId} from "@/utils/user";
 
@@ -140,7 +140,7 @@ export const WriteComment = () => {
             // 첫 전송은 토큰 없이, 'false||captcha||v3'일 때만 v3 토큰을 붙여 한 번 더 (디시 comment.js·dccon.js·txtcon.js와 같음)
             let response = await send();
             if (response.message === "captcha" && response.detail === "v3") {
-                const token = await grecaptchaToken(txtcon || useDccon ? "insert_icon" : "comment_submit");
+                const token = await sendMessage("refresher:grecaptchaToken", txtcon || useDccon ? "insert_icon" : "comment_submit").catch(() => undefined);
                 if (token) response = await send(token);
             }
 
