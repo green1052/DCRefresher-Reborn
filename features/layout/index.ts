@@ -1,4 +1,5 @@
-import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
+import {defineModule} from "@/core/module/define";
+import type {ModuleContext} from "@/core/module/types";
 
 let currentCtx: ModuleContext | null = null;
 
@@ -37,7 +38,7 @@ const applyToggle = (key: string, value: unknown): void => {
     document.documentElement.classList.toggle(target[1], value === true);
 };
 
-const layoutModule: ModuleDefinition = {
+export default defineModule({
     id: "layout",
     name: "레이아웃 수정",
     description: "디시 레이아웃을 변경할 수 있도록 도와줍니다.",
@@ -155,6 +156,4 @@ const layoutModule: ModuleDefinition = {
             sticky.style.display = "";
         }
     }
-};
-
-export default layoutModule;
+});

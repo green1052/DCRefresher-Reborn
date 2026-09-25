@@ -1,5 +1,6 @@
 import {eventBus} from "@/core/eventbus/bus";
 import {isAnyBlocked} from "@/core/block";
+import {defineModule} from "@/core/module/define";
 import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
 import type {GalleryPreData, IPostInfo} from "@/features/types";
 import {useUiStore} from "@/stores/ui";
@@ -594,7 +595,7 @@ const controller = (ctx: ModuleContext) => {
     });
 };
 
-const previewModule: ModuleDefinition = {
+export default defineModule({
     id: "preview",
     name: "미리보기",
     description: "글 목록에서 클릭 또는 우클릭으로 미리보기 창을 띄워줍니다.",
@@ -604,6 +605,4 @@ const previewModule: ModuleDefinition = {
     setup: (ctx) => {
         controller(ctx);
     }
-};
-
-export default previewModule;
+});

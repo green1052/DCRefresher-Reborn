@@ -1,6 +1,6 @@
 import {http} from "@/core/http/client";
 import {mergeParamURL, queryString, view} from "@/core/http/urls";
-import type {ModuleDefinition} from "@/core/module/types";
+import {defineModule} from "@/core/module/define";
 import {eventBus} from "@/core/eventbus/bus";
 import {useUiStore} from "@/stores/ui";
 
@@ -54,7 +54,7 @@ const highlightSearchResults = (newList: HTMLElement, searchValue: string): void
     }
 };
 
-const refreshModule: ModuleDefinition = {
+export default defineModule({
     id: "refresh",
     name: "글 목록 새로고침",
     description: "글 목록을 자동으로 새로고침합니다.",
@@ -357,6 +357,4 @@ const refreshModule: ModuleDefinition = {
             delete anchor.dataset.refresherPaged;
         }
     }
-};
-
-export default refreshModule;
+});

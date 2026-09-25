@@ -1,4 +1,5 @@
-import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
+import {defineModule} from "@/core/module/define";
+import type {ModuleContext} from "@/core/module/types";
 import {http} from "@/core/http/client";
 import {eventBus} from "@/core/eventbus/bus";
 import type {JsonValue} from "@/core/storage/types";
@@ -119,7 +120,7 @@ const rebuildAll = (ctx: ModuleContext): void => {
     }
 };
 
-const userinfoModule: ModuleDefinition = {
+export default defineModule({
     id: "userinfo",
     name: "유저 정보",
     description: "사용자의 IP, 아이디 정보, 메모를 표시합니다.",
@@ -246,6 +247,4 @@ const userinfoModule: ModuleDefinition = {
             element.remove();
         }
     }
-};
-
-export default userinfoModule;
+});

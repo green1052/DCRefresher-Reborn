@@ -43,14 +43,14 @@ export interface ModuleDefinition {
     description: string;
     /** 해당 모듈이 작동할 URL. 미지정시 항상 활성 범위 */
     urls?: RegExp[];
-    /** 최초 1회 활성 여부 (기본: true) */
+    /** 최초 활성 여부 (기본: true) */
     defaultEnable?: boolean;
-    /** 설정 스키마 (popup의 모듈 탭에서 렌더링됨) */
+    /** 설정 스키마 (옵션 페이지에서 렌더링됨) */
     settings?: Record<string, SettingSchema>;
     /** 단축키 (commands). registry가 활성 모듈에만 전달. api = setup()의 리턴값 */
     shortcuts?: Record<string, (ctx: ModuleContext, api: unknown) => void | Promise<void>>;
 
-    /** 활성화시 실행. 리턴값은 다른 모듈이 modules.use(id)로 접근하는 공개 API */
+    /** 활성화시 실행. 리턴값은 shortcuts에 api로 전달된다 */
     setup(ctx: ModuleContext): unknown | void;
 
     /** 비활성화시 실행 (DOM 정리 등). cleanup(disposer)은 이후 자동 해제 */
@@ -58,17 +58,4 @@ export interface ModuleDefinition {
 
     /** 활성 중 설정이 변경됐을 때 실행 */
     onChanged?(key: string, value: SettingValue): void;
-}
-
-/** popup이 렌더링할 모듈 스키마 (JSON-serializable) */
-export interface ModuleSchema {
-    id: string;
-    name: string;
-    description: string;
-    enable: boolean;
-    running: boolean;
-    defaultEnable: boolean;
-    settings?: Record<string, SettingSchema>;
-    /** 설정 현재값. settings 키와 1:1 (settings가 없으면 없음) */
-    values?: Record<string, SettingValue>;
 }

@@ -1,56 +1,74 @@
 import {create} from "zustand";
 
-import {sendMessage} from "@/core/messaging/protocol";
-import type {ModuleSchema} from "@/core/module/types";
+import {normalizeSetting} from "@/core/module/settings";
+import type {ModuleDefinition} from "@/core/module/types";
+import {moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
+import features from "@/features";
+
+type Values = Record<string, SettingValue>;
 
 interface ModulesState {
-    schemas: ModuleSchema[];
-    /** 콘텐츠 스크립트가 없는 탭(스키마 로드 실패) 여부 */
-    unavailable: boolean;
-    /** 현재 활성 디시인사이드 탭 (messaging 대상) */
-    tabId?: number;
-    setSchemas: (schemas: ModuleSchema[]) => void;
-    setUnavailable: (unavailable: boolean) => void;
-    toggle: (id: string, value: boolean, tabId?: number) => Promise<void>;
-    changeSetting: (id: string, key: string, value: SettingValue, tabId?: number) => Promise<void>;
+    /** 모듈 on/off (저장값 없으면 defaultEnable) */
+    enables: Record<string, boolean>;
+    /** 모듈별 설정값 (스키마로 정규화됨) */
+    values: Record<string, Values>;
+    toggle: (id: string, value: boolean) => Promise<void>;
+    changeSetting: (id: string, key: string, value: SettingValue) => Promise<void>;
 }
 
-export const useModulesStore = create<ModulesState>((set, get) => ({
-    schemas: [],
-    unavailable: false,
+const featureById = new Map(features.map((feature) => [feature.id, feature]));
 
-    setSchemas: (schemas) => set({schemas}),
-    setUnavailable: (unavailable) => set({unavailable}),
+const normalizeAll = (feature: ModuleDefinition, stored: Record<string, unknown> | null): Values =>
+    Object.fromEntries(Object.entries(feature.settings ?? {}).map(([key, schema]) => [key, normalizeSetting(schema, stored?.[key])]));
 
-    toggle: async (id, value, tabId) => {
-        set({schemas: get().schemas.map((schema) => (schema.id === id ? {...schema, enable: value} : schema))});
-        if (tabId) await sendMessage("refresher:toggleModule", {id, value}, {tabId}).catch(() => {});
+const resolveEnables = (stored: Record<string, boolean> | null): Record<string, boolean> =>
+    Object.fromEntries(features.map((feature) => [feature.id, stored?.[feature.id] ?? feature.defaultEnable ?? true]));
+
+/**
+ * 옵션 페이지용 모듈 상태. 저장소에 직접 읽고 쓰며, 열린 디시 탭의 레지스트리가 저장소를 감시해 반영한다.
+ * 그래서 디시 탭이 없어도 설정할 수 있다.
+ */
+export const useModulesStore = create<ModulesState>((set) => ({
+    enables: resolveEnables(null),
+    values: Object.fromEntries(features.map((feature) => [feature.id, normalizeAll(feature, null)])),
+
+    toggle: async (id, value) => {
+        set((state) => ({enables: {...state.enables, [id]: value}}));
+        await modulesStorage.setValue({...(await modulesStorage.getValue()), [id]: value});
     },
 
-    changeSetting: async (id, key, value, tabId) => {
-        // 낙관적 갱신 후, 콘텐츠가 정규화(range clamp 등)한 값으로 확정
-        set({
-            schemas: get().schemas.map((schema) =>
-                schema.id === id && schema.settings
-                    ? {...schema, values: {...schema.values, [key]: value}}
-                    : schema
-            )
-        });
+    changeSetting: async (id, key, value) => {
+        const schema = featureById.get(id)?.settings?.[key];
+        if (!schema) return;
 
-        if (!tabId) return;
+        const next = normalizeSetting(schema, value);
+        set((state) => ({values: {...state.values, [id]: {...state.values[id], [key]: next}}}));
 
-        try {
-            const applied = await sendMessage("refresher:setSetting", {id, key, value}, {tabId});
-            set({
-                schemas: get().schemas.map((schema) =>
-                    schema.id === id && schema.settings
-                        ? {...schema, values: {...schema.values, [key]: applied}}
-                        : schema
-                )
-            });
-        } catch {
-            // 콘텐츠 없음 — 낙관적 값 유지
-        }
+        const item = moduleSettingsStorage(id);
+        await item.setValue({...(await item.getValue()), [key]: next});
     }
 }));
+
+let initialized: Promise<void> | null = null;
+
+/** 저장소 값 로드 + 변경 감시. 여러 번 불러도 1회 */
+export const initModulesStore = (): Promise<void> =>
+    (initialized ??= (async () => {
+        const setEnables = (stored: Record<string, boolean> | null): void => useModulesStore.setState({enables: resolveEnables(stored)});
+        setEnables(await modulesStorage.getValue());
+        modulesStorage.watch(setEnables);
+
+        await Promise.all(
+            features
+                .filter((feature) => feature.settings)
+                .map(async (feature) => {
+                    const item = moduleSettingsStorage(feature.id);
+                    const setValues = (stored: Record<string, unknown> | null): void =>
+                        useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: normalizeAll(feature, stored)}}));
+
+                    setValues(await item.getValue());
+                    item.watch(setValues);
+                })
+        );
+    })());

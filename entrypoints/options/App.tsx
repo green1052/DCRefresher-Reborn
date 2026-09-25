@@ -3,10 +3,9 @@ import {Ban, CircleHelp, Code, Database, Heart, Keyboard, type LucideIcon, Messa
 import {useEffect, useState} from "react";
 
 import logoUrl from "@/assets/icon.png";
-import {sendMessage} from "@/core/messaging/protocol";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
-import {useModulesStore} from "@/stores/modules";
+import {initModulesStore} from "@/stores/modules";
 
 import {BlockTab} from "./BlockTab";
 import {DataTab} from "./DataTab";
@@ -48,42 +47,6 @@ const useHashTab = (): [string, (id: string) => void] => {
     }, []);
 
     return [tab, (id) => (location.hash = id)];
-};
-
-/** 열린 디시인사이드 탭에서 모듈 스키마를 받아온다 */
-const useModuleSchemas = (): void => {
-    const setSchemas = useModulesStore((state) => state.setSchemas);
-    const setUnavailable = useModulesStore((state) => state.setUnavailable);
-
-    useEffect(() => {
-        const detect = async (): Promise<void> => {
-            const tabs = await browser.tabs.query({url: "*://*.dcinside.com/*"});
-
-            for (const tab of tabs) {
-                if (!tab.id) continue;
-
-                try {
-                    const schemas = await sendMessage("refresher:getModuleSchema", undefined, {tabId: tab.id});
-                    useModulesStore.setState({tabId: tab.id, unavailable: false});
-                    setSchemas(schemas);
-                    return;
-                } catch {
-                    // 이 탭의 콘텐츠 스크립트 무응답 (확장 리로드 직후 등) — 다음 탭 시도
-                }
-            }
-
-            setUnavailable(true);
-        };
-
-        void detect();
-
-        const onUpdated = (tabId: number, changeInfo: { status?: string }, tab: { url?: string }): void => {
-            if (changeInfo.status === "complete" && tab.url?.includes("dcinside.com")) void detect();
-        };
-
-        browser.tabs.onUpdated.addListener(onUpdated);
-        return () => browser.tabs.onUpdated.removeListener(onUpdated);
-    }, [setSchemas, setUnavailable]);
 };
 
 const Sidebar = ({tab, onSelect}: { tab: string; onSelect: (id: string) => void }) => (
@@ -151,9 +114,9 @@ export function App() {
     useEffect(() => {
         void initBlocksStore();
         void initMemosStore();
+        void initModulesStore();
     }, []);
 
-    useModuleSchemas();
 
     return (
         <Flex direction={{initial: "column", md: "row"}} minHeight="100vh">

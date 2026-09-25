@@ -1,4 +1,4 @@
-import type {ModuleDefinition} from "@/core/module/types";
+import {defineModule} from "@/core/module/define";
 import {eventTarget} from "@/utils/event";
 
 let currentImage: string | null = null;
@@ -14,7 +14,7 @@ const searchWith = (targetUrl: string): void => {
     window.open(targetUrl.replace("[url]", encodeURIComponent(url.toString())));
 };
 
-const imagesearchModule: ModuleDefinition = {
+export default defineModule({
     id: "imagesearch",
     name: "이미지 검색",
     description: "이미지를 검색합니다.",
@@ -34,6 +34,4 @@ const imagesearchModule: ModuleDefinition = {
         const offImageSearch = ctx.bus.on("imageSearch", () => searchWith("https://saucenao.com/search.php?url=[url]"));
         ctx.addCleanup(() => void offImageSearch());
     }
-};
-
-export default imagesearchModule;
+});

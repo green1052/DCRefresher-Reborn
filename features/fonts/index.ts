@@ -1,4 +1,5 @@
-import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
+import {defineModule} from "@/core/module/define";
+import type {ModuleContext} from "@/core/module/types";
 
 const FONT_STYLE_ID = "refresherFontStyle";
 const FONT_SIZE_STYLE_ID = "refresherFontStyleSize";
@@ -54,7 +55,7 @@ const applyAll = (ctx: ModuleContext): void => {
     );
 };
 
-const fontsModule: ModuleDefinition = {
+export default defineModule({
     id: "fonts",
     name: "폰트 교체",
     description: "페이지에 전반적으로 표시되는 폰트를 교체합니다.",
@@ -102,6 +103,4 @@ const fontsModule: ModuleDefinition = {
         removeStyle(FONT_STYLE_ID);
         removeStyle(FONT_SIZE_STYLE_ID);
     }
-};
-
-export default fontsModule;
+});

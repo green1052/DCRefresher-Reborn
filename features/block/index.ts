@@ -1,5 +1,6 @@
 import {isAnyBlocked, isBlocked} from "@/core/block";
-import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
+import {defineModule} from "@/core/module/define";
+import type {ModuleContext} from "@/core/module/types";
 import {queryString} from "@/core/http/urls";
 import {useUiStore} from "@/stores/ui";
 import {eventTarget} from "@/utils/event";
@@ -141,7 +142,7 @@ const restoreHiddenElements = (): void => {
     }
 };
 
-const blockModule: ModuleDefinition = {
+export default defineModule({
     id: "block",
     name: "컨텐츠 차단",
     description: "유저, 컨텐츠 등의 보고 싶지 않은 컨텐츠들을 삭제합니다.",
@@ -173,6 +174,4 @@ const blockModule: ModuleDefinition = {
     revoke() {
         restoreHiddenElements();
     }
-};
-
-export default blockModule;
+});

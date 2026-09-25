@@ -1,4 +1,4 @@
-import type {ModuleDefinition} from "@/core/module/types";
+import {defineModule} from "@/core/module/define";
 import {eventBus} from "@/core/eventbus/bus";
 import {useUiStore} from "@/stores/ui";
 
@@ -32,7 +32,7 @@ const tempButtonCreate = (mount: HTMLElement): void => {
     mount.prepend(buttonFrame);
 };
 
-const stealthModule: ModuleDefinition = {
+export default defineModule({
     id: "stealth",
     name: "스텔스 모드",
     description: "페이지내에서 표시되는 이미지를 비활성화합니다.",
@@ -80,6 +80,4 @@ const stealthModule: ModuleDefinition = {
             element.remove();
         }
     }
-};
-
-export default stealthModule;
+});

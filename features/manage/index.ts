@@ -1,9 +1,9 @@
 import {http} from "@/core/http/client";
-import type {ModuleDefinition} from "@/core/module/types";
+import {defineModule} from "@/core/module/define";
 import {galleryType, galleryTypeName, urls} from "@/core/http/urls";
 import {getCookie} from "@/utils/cookie";
 
-const manageModule: ModuleDefinition = {
+export default defineModule({
     id: "manage",
     name: "관리",
     description: "무급 노예들을 위한 여러 편의 기능을 제공합니다.",
@@ -157,6 +157,4 @@ const manageModule: ModuleDefinition = {
             }
         });
     }
-};
-
-export default manageModule;
+});
