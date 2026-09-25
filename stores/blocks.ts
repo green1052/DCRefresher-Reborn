@@ -2,6 +2,7 @@ import {create} from "zustand";
 
 import {BLOCK_TYPES, blockDefaultsStorage, blockStorage, DEFAULT_DETECT_MODE, DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
+import {once} from "@/utils/once";
 
 export type BlockInputFields = Omit<BlockEntry, "id">;
 
@@ -76,37 +77,34 @@ export const useBlocksStore = create<BlocksState>((set, get) => ({
     }
 }));
 
-let initialized: Promise<void> | null = null;
+// 이 탭의 쓰기도 watch로 돌아온다 — 값이 같으면 state를 그대로 돌려줘 구독자를 다시 렌더시키지 않는다
+const setList = (type: BlockType, value: unknown): void =>
+    useBlocksStore.setState((state) => {
+        const next = normalizeBlockList(value);
+        return JSON.stringify(state.entries[type]) === JSON.stringify(next) ? state : {entries: {...state.entries, [type]: next}};
+    });
+
+const setDefaults = (next: Partial<Record<BlockType, DetectMode>>): void =>
+    useBlocksStore.setState({defaults: {...DEFAULT_DETECT_MODE, ...next}});
+
+const load = async (): Promise<void> => {
+    const [lists, defaults] = await Promise.all([
+        Promise.all(BLOCK_TYPES.map((type) => blockStorage[type].getValue())),
+        blockDefaultsStorage.getValue()
+    ]);
+    for (const [index, type] of BLOCK_TYPES.entries()) setList(type, lists[index]);
+    setDefaults(defaults);
+};
 
 /** 저장소 값 로드 + 변경 감시 (다른 탭/옵션 페이지에서 바뀐 값 반영). 여러 번 불러도 1회 */
-export const initBlocksStore = (): Promise<void> =>
-    (initialized ??= (async () => {
-        const unwatch: (() => void)[] = [];
+export const initBlocksStore = once(async () => {
+    // 다 읽은 뒤에 감시를 건다 — 읽기가 실패하면 아무것도 걸리지 않아, 다시 시도해도 두 번 걸리지 않는다
+    await load();
+    for (const type of BLOCK_TYPES) blockStorage[type].watch((next) => setList(type, next));
+    blockDefaultsStorage.watch(setDefaults);
 
-        try {
-            // 이 탭의 쓰기도 watch로 돌아온다 — 값이 같으면 state를 그대로 돌려줘 구독자를 다시 렌더시키지 않는다
-            const setList = (type: BlockType, value: unknown): void =>
-                useBlocksStore.setState((state) => {
-                    const next = normalizeBlockList(value);
-                    return JSON.stringify(state.entries[type]) === JSON.stringify(next) ? state : {entries: {...state.entries, [type]: next}};
-                });
-
-            await Promise.all(
-                BLOCK_TYPES.map(async (type) => {
-                    setList(type, await blockStorage[type].getValue());
-                    unwatch.push(blockStorage[type].watch((next) => setList(type, next)));
-                })
-            );
-
-            const setDefaults = (next: Partial<Record<BlockType, DetectMode>> | null): void =>
-                useBlocksStore.setState({defaults: {...DEFAULT_DETECT_MODE, ...next}});
-
-            setDefaults(await blockDefaultsStorage.getValue());
-            unwatch.push(blockDefaultsStorage.watch(setDefaults));
-        } catch (e) {
-            // 실패를 붙들고 있으면 다음 호출도 계속 실패한다 — 비워 두어 다시 시도하게 (먼저 건 감시는 풀어 두 번 걸리지 않게)
-            for (const off of unwatch) off();
-            initialized = null;
-            throw e;
-        }
-    })());
+    // bfcache에서 돌아온 탭은 그사이의 변경을 못 받았다 — 옛 목록으로 쓰면 다른 탭의 변경을 지우니 다시 읽는다
+    window.addEventListener("pageshow", (ev) => {
+        if (ev.persisted) void load().catch(console.error);
+    });
+});

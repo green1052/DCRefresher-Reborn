@@ -5,6 +5,7 @@ import type {ModuleDefinition} from "@/core/module/types";
 import {moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
 import features from "@/features";
+import {once} from "@/utils/once";
 
 type Values = Record<string, SettingValue>;
 
@@ -58,34 +59,20 @@ export const useModulesStore = create<ModulesState>((set) => ({
     }
 }));
 
-let initialized: Promise<void> | null = null;
-
 /** 저장소 값 로드 + 변경 감시. 여러 번 불러도 1회 */
-export const initModulesStore = (): Promise<void> =>
-    (initialized ??= (async () => {
-        const unwatch: (() => void)[] = [];
+export const initModulesStore = once(async () => {
+    const setEnables = (stored: Record<string, boolean>): void => useModulesStore.setState({enables: resolveEnables(stored)});
+    const setValues = (feature: ModuleDefinition, stored: Record<string, unknown> | undefined): void =>
+        useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: normalizeAll(feature, stored ?? null)}}));
 
-        try {
-            const setEnables = (stored: Record<string, boolean> | null): void => useModulesStore.setState({enables: resolveEnables(stored)});
-            setEnables(await modulesStorage.getValue());
-            unwatch.push(modulesStorage.watch(setEnables));
+    const settings = features.filter((feature) => feature.settings).map((feature) => ({feature, item: moduleSettingsStorage(feature.id)}));
+    const [enables, values] = await Promise.all([modulesStorage.getValue(), Promise.all(settings.map(({item}) => item.getValue()))]);
 
-            await Promise.all(
-                features
-                    .filter((feature) => feature.settings)
-                    .map(async (feature) => {
-                        const item = moduleSettingsStorage(feature.id);
-                        const setValues = (stored: Record<string, unknown> | null): void =>
-                            useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: normalizeAll(feature, stored)}}));
-
-                        setValues(await item.getValue());
-                        unwatch.push(item.watch(setValues));
-                    })
-            );
-        } catch (e) {
-            // 실패를 붙들고 있으면 다음 호출도 계속 실패한다 — 비워 두어 다시 시도하게 (먼저 건 감시는 풀어 두 번 걸리지 않게)
-            for (const off of unwatch) off();
-            initialized = null;
-            throw e;
-        }
-    })());
+    // 다 읽은 뒤에 감시를 건다 — 읽기가 실패하면 아무것도 걸리지 않아, 다시 시도해도 두 번 걸리지 않는다
+    setEnables(enables);
+    modulesStorage.watch(setEnables);
+    for (const [index, {feature, item}] of settings.entries()) {
+        setValues(feature, values[index]);
+        item.watch((next) => setValues(feature, next));
+    }
+});

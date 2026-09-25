@@ -3,6 +3,7 @@ import {urls} from "@/core/http/urls";
 import {compactIpData, createIpLookup, type IpCandidate, type RawIpData} from "@/core/ipdb";
 import {dbStorage} from "@/core/storage/items";
 import type {Database, StoredDB} from "@/core/storage/types";
+import {once} from "@/utils/once";
 
 /** IP/갱차 데이터베이스를 내려받아 저장 — 배경(설치·주기)과 옵션 페이지(지금 갱신)에서 호출 */
 export const updateDatabase = async (): Promise<void> => {
@@ -65,18 +66,11 @@ const indexBans = (): Map<string, string> => {
     return index;
 };
 
-let initialized: Promise<void> | null = null;
-
 /** 조회용 데이터 로드 + 변경 감시. 여러 번 불러도 1회 */
-export const initDatabase = (): Promise<void> =>
-    (initialized ??= (async () => {
-        load(await dbStorage.getValue());
-        dbStorage.watch(load);
-    })().catch((e) => {
-        // 실패를 붙들고 있으면 다음 호출도 계속 실패한다 — 비워 두어 다시 시도하게
-        initialized = null;
-        throw e;
-    }));
+export const initDatabase = once(async () => {
+    load(await dbStorage.getValue());
+    dbStorage.watch(load);
+});
 
 const categoryOf = ({vpn, country}: IpCandidate): IpCategory => {
     if (vpn) return "vpn";
