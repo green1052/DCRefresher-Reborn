@@ -36,6 +36,8 @@
         "@types/react-dom": "^19.3.0",
         "@wxt-dev/auto-icons": "^1.1.2",
         "@wxt-dev/module-react": "^1.2.2",
+        "mmdb-lib": "^3.0.3",
+        "netmask": "^2.1.1",
         "oxc-transform-react": "^0.151.0",
         "typescript": "^7.0.2",
         "web-ext": "^10.7.0",

@@ -1,10 +1,11 @@
 /// <reference types="bun" />
 /**
- * IP DB 생성: bun scripts/build-ipdb.ts <MaxMind CSV 폴더> <출력 폴더>
+ * IP DB 생성: bun scripts/build-ipdb.ts <출력 폴더>
  *
- * 입력
- * - MaxMind GeoLite2 CSV 3개 (GeoLite2-ASN-Blocks-IPv4.csv, GeoLite2-Country-Blocks-IPv4.csv, GeoLite2-Country-Locations-en.csv)
- * - VPN 대역 목록, KISA 국내 AS 목록 — 여기서 직접 받는다
+ * 입력 (모두 여기서 받는다)
+ * - MaxMind GeoLite2 ASN/Country MMDB — green1052/maxmind-geoip2
+ * - VPN 대역 목록 — X4BNet/lists_vpn
+ * - KISA 국내 AS 목록 — 한국인터넷정보센터 AS 번호 할당 현황
  *
  * 출력: ip.json (RawIpData), version
  *
@@ -15,10 +16,14 @@
  * - VPN 목록과 겹치는 부분은 따로 떼어 v: 1
  * - /16의 1% 미만인 후보는 버리고 최대 MAX_CANDIDATES개
  */
+import {type AsnResponse, type CountryResponse, Reader} from "mmdb-lib";
+import {long2ip, Netmask} from "netmask";
+
 import {compactIpData, createIpLookup, type RawIpData} from "../core/ipdb";
 
 import {shortenOrg} from "./ipdb-names";
 
+const MMDB_URL = (edition: string): string => `https://github.com/green1052/maxmind-geoip2/raw/master/dist/${edition}/${edition}.mmdb`;
 const VPN_URL = "https://raw.githubusercontent.com/X4BNet/lists_vpn/refs/heads/main/ipv4.txt";
 const KISA_URL = "https://xn--3e0bx5euxnjje69i70af08bea817g.xn--3e0b707e/jsp/business/management/asList.jsp";
 
@@ -28,69 +33,61 @@ const COUNTRY_NAME_OVERRIDES: Record<string, string> = {HK: "홍콩", MO: "마�
 const MAX_CANDIDATES = 8;
 const MIN_SHARE = 65536 / 100;
 
-const [csvDir, outDir] = Bun.argv.slice(2);
-if (!csvDir || !outDir) throw new Error("사용법: bun scripts/build-ipdb.ts <MaxMind CSV 폴더> <출력 폴더>");
+const [outDir] = Bun.argv.slice(2);
+if (!outDir) throw new Error("사용법: bun scripts/build-ipdb.ts <출력 폴더>");
 
 type Range<T> = { start: number; end: number; value: T };
 
-const ipToInt = (ip: string): number => ip.split(".").reduce((acc, octet) => acc * 256 + Number(octet), 0);
-
-const parseCidr = (cidr: string): { start: number; end: number } | undefined => {
-    const [ip, bits] = cidr.trim().split("/");
-    if (!ip || !bits || !/^\d+\.\d+\.\d+\.\d+$/.test(ip)) return undefined;
-    const size = 2 ** (32 - Number(bits));
-    const start = ipToInt(ip) - (ipToInt(ip) % size);
-    return {start, end: start + size - 1};
-};
-
-const csvRows = async (name: string): Promise<string[]> =>
-    (await Bun.file(`${csvDir}/${name}`).text()).split("\n").slice(1).filter(Boolean);
-
-const fetchText = async (url: string): Promise<string> => {
+const download = async (url: string): Promise<Response> => {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`${url}: ${response.status}`);
-    return response.text();
+    return response;
+};
+
+/** MMDB의 IPv4 전체를 주소 순으로 — 라이브러리에 순회가 없어 네트워크 끝으로 건너뛰며 조회한다 */
+const readMmdb = async <T, V>(edition: string, pick: (record: T) => V | undefined): Promise<Range<V>[]> => {
+    const reader = new Reader<T & object>(Buffer.from(await (await download(MMDB_URL(edition))).arrayBuffer()));
+    const ranges: Range<V>[] = [];
+
+    for (let start = 0; start <= 0xffffffff;) {
+        const [record, prefixLength] = reader.getWithPrefixLength(long2ip(start));
+        const end = start + 2 ** (32 - prefixLength) - 1;
+        const value = record ? pick(record) : undefined;
+        if (value !== undefined) ranges.push({start, end, value});
+        start = end + 1;
+    }
+
+    return ranges;
 };
 
 // ===== 입력 =====
 
 const regionName = new Intl.DisplayNames(["ko"], {type: "region"});
-/** geoname_id → ISO 코드 */
-const isoOf = new Map<string, string>();
-for (const row of await csvRows("GeoLite2-Country-Locations-en.csv")) {
-    const [id, , , , iso] = row.split(",");
-    if (id && iso) isoOf.set(id, iso);
-}
 
-const countries: Range<string>[] = [];
-for (const row of await csvRows("GeoLite2-Country-Blocks-IPv4.csv")) {
-    const [network, geoname, registered] = row.split(",");
-    const iso = isoOf.get(geoname || registered || "");
-    const range = parseCidr(network ?? "");
-    if (iso && range) countries.push({...range, value: iso});
-}
+const countries = await readMmdb<CountryResponse, string>(
+    "GeoLite2-Country",
+    (record) => record.country?.iso_code ?? record.registered_country?.iso_code
+);
 
-const asns: Range<{ asn: number; org: string }>[] = [];
-for (const row of await csvRows("GeoLite2-ASN-Blocks-IPv4.csv")) {
-    // 기관명에만 쉼표/따옴표가 들어간다
-    const [network, asn, ...org] = row.split(",");
-    const range = parseCidr(network ?? "");
-    if (range) asns.push({...range, value: {asn: Number(asn), org: org.join(",").trim().replace(/^"|"$/g, "").replace(/""/g, "\"")}});
-}
+const asns = await readMmdb<AsnResponse, { asn: number; org: string }>(
+    "GeoLite2-ASN",
+    (record) => ({asn: record.autonomous_system_number, org: record.autonomous_system_organization})
+);
 
 const vpns: Range<true>[] = [];
-for (const line of (await fetchText(VPN_URL)).split("\n")) {
-    const range = parseCidr(line);
-    if (range) vpns.push({...range, value: true});
+for (const line of (await (await download(VPN_URL)).text()).split("\n")) {
+    if (!line.trim()) continue;
+    const network = new Netmask(line.trim());
+    vpns.push({start: network.netLong, end: network.netLong + network.size - 1, value: true});
 }
 
 /** AS 번호 → KISA 한글 기관명 */
 const kisa = new Map<number, string>();
-for (const [, org, asn] of (await fetchText(KISA_URL)).matchAll(/<td[^>]*>([^<]+)<\/td>\s*<td[^>]*>AS(\d+)<\/td>/g)) {
+for (const [, org, asn] of (await (await download(KISA_URL)).text()).matchAll(/<td[^>]*>([^<]+)<\/td>\s*<td[^>]*>AS(\d+)<\/td>/g)) {
     kisa.set(Number(asn), shortenOrg(org!.trim()));
 }
 
-if (asns.length < 100_000 || countries.length < 100_000) throw new Error("MaxMind CSV가 너무 작습니다.");
+if (asns.length < 100_000 || countries.length < 100_000) throw new Error("MaxMind 데이터가 너무 작습니다.");
 if (vpns.length < 10_000) throw new Error(`VPN 목록이 너무 작습니다: ${vpns.length}`);
 if (kisa.size < 500) throw new Error(`KISA 목록을 읽지 못했습니다: ${kisa.size}`);
 
