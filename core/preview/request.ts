@@ -220,38 +220,16 @@ export const submitComment = async (
 
     const code = (() => {
         try {
+            // 디시 _d(): 알파벳을 섞은 base64 — 표준 알파벳으로 바꿔 푼다 (65번째 '='는 채움, 모르는 글자는 버린다)
             const rKey = "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K";
-            const rRegex = /[^A-Za-z0-9+/=]/g;
-
-            const decode = (r: string): string => {
-                let output = "";
-                let cursor = 0;
-
-                r = r.replace(rRegex, "");
-
-                while (cursor < r.length) {
-                    const t = rKey.indexOf(r.charAt(cursor++));
-                    const f = rKey.indexOf(r.charAt(cursor++));
-                    const d = rKey.indexOf(r.charAt(cursor++));
-                    const h = rKey.indexOf(r.charAt(cursor++));
-                    const a = (t << 2) | (f >> 4);
-                    const e = ((15 & f) << 4) | (d >> 2);
-                    const n = ((3 & d) << 6) | h;
-
-                    output += String.fromCharCode(a);
-                    if (d !== 64) output += String.fromCharCode(e);
-                    if (h !== 64) output += String.fromCharCode(n);
-                }
-
-                return output;
-            };
+            const b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
             const script = dom.querySelector<HTMLElement>("#reply-setting-tmpl + script");
             const dValue = script?.textContent?.match(/_d\('(.*)'\)/)?.[1];
-            if (!dValue) throw new Error("_d 값을 찾을 수 없습니다.");
+            if (!dValue) return null;
 
-            let decoded = decode(dValue);
-            if (!decoded) throw new Error("_r이 비정상적으로 디코딩되었습니다.");
+            let decoded = atob(dValue.replace(/./g, (c) => b64[rKey.indexOf(c)] ?? ""));
+            if (!decoded) return null;
 
             let fi = parseInt(decoded.slice(0, 1));
             fi = fi > 5 ? fi - 5 : fi + 4;
@@ -268,10 +246,12 @@ export const submitComment = async (
             }
 
             return service.replace(/(.{10})$/, computed);
-        } catch (e) {
-            return e instanceof Error ? `PreNotWorking: ${e.message}` : "PreNotWorking";
+        } catch {
+            return null;
         }
     })();
+    // 토큰 없이 보내면 서버는 모호한 오류만 준다 — 보내지 않고 알린다
+    if (!code) return {result: "false", message: "댓글 폼을 읽지 못했습니다. 원문에서 작성해 주세요."};
 
     const params = new URLSearchParams();
     params.set("t_vch2", "");
