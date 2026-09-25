@@ -98,10 +98,10 @@ const Sidebar = ({tab, onSelect}: { tab: string; onSelect: (id: string) => void 
         height={{md: "100vh"}}
         style={{borderRight: "1px solid var(--gray-a5)"}}
     >
-        <Box px="2">
-            <img src={logoUrl} alt="DCRefresher Reborn" title="DCRefresher Reborn" width={40} height={40}
-                 style={{display: "block", borderRadius: "var(--radius-3)"}}/>
-        </Box>
+        <Flex align="center" gap="3" px="2">
+            <img src={logoUrl} alt="" width={36} height={36} style={{borderRadius: "var(--radius-3)"}}/>
+            <Heading size="3">DCRefresher Reborn</Heading>
+        </Flex>
 
         <Flex asChild direction={{initial: "row", md: "column"}} gap="1" wrap={{initial: "wrap", md: "nowrap"}}>
             <nav>
