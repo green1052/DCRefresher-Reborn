@@ -13,19 +13,12 @@ import {useGallogActivity} from "@/utils/gallogActivity";
 import {banReasonsOf, ipInfoOf, passesIpFilter} from "@/core/database";
 import {isGalleryManager} from "@/utils/user";
 
-import {usePreviewStore} from "./previewStore";
-
-const parseDate = (value: string): Date => {
-    const missingYear = value.substring(0, 4).match(/\./);
-    const local = (missingYear ? `${new Date().getFullYear()}-` : "") + value.replace(/\./g, "-").replace(" ", "T");
-
-    // 디시 시각은 한국 시간 — 브라우저 시간대로 읽으면 해외에서 어긋난다
-    return new Date(`${local}+09:00`);
-};
+import {parseDate, usePreviewStore} from "./previewStore";
 
 const relative = (date: Date): string => {
     const diff = Date.now() - date.getTime();
-    if (Number.isNaN(diff) || diff < 0) return date.toLocaleString();
+    // PC 시계가 조금 느리면 방금 단 댓글이 미래 시각이 된다 — 1분까지는 방금 전으로
+    if (Number.isNaN(diff) || diff < -60_000) return date.toLocaleString();
     if (diff < 3000) return "방금 전";
 
     const units: [string, number][] = [

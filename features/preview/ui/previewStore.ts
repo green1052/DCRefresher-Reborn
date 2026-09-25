@@ -149,6 +149,17 @@ const freshPost = (): PostState => ({
 
 let signalSeq = 0;
 
+const KST = 9 * 3_600_000;
+
+/** 디시 시각("2026.09.26 02:29:40", 올해면 연도 없이 "09.26 02:29:40") — 한국 시간이라 브라우저 시간대로 읽으면 해외에서 어긋난다 */
+export const parseDate = (value: string): Date => {
+    const missingYear = value.substring(0, 4).includes(".");
+    // 빠진 연도도 한국 날짜로 — 시차 때문에 해가 바뀌는 무렵 한 해 어긋나지 않게
+    const year = missingYear ? `${new Date(Date.now() + KST).getUTCFullYear()}-` : "";
+
+    return new Date(`${year}${value.replace(/\./g, "-").replace(" ", "T")}+09:00`);
+};
+
 /** `[말머리] 제목` — 둘 다 평문이라 텍스트로 렌더링한다 */
 export const postTitle = (post: PostInfo): string => (post.header ? `[${post.header}] ${post.title ?? ""}` : (post.title ?? ""));
 
@@ -176,7 +187,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
         set({
             post,
             title: postTitle(post),
-            expire: post.expire ? new Date(post.expire) : undefined,
+            expire: post.expire ? parseDate(post.expire) : undefined,
             views: post.views,
             contents: post.contents,
             upvotes: post.upvotes,
