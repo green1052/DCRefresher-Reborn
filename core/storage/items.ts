@@ -89,5 +89,7 @@ export const backupStorage = {
     /** 설정이 바뀌면 잠시 뒤 자동으로 백업 */
     auto: item("refresher:backup:auto", false),
     /** 마지막 백업이 실패했으면 이유 (성공하면 빈 문자열) */
-    error: item("refresher:backup:error", "")
+    error: item("refresher:backup:error", ""),
+    /** 자동 백업 알람을 걸어 두고 아직 울리지 않았다 — 브라우저를 끄면 알람이 사라질 수 있어 다음 시작 때 다시 건다 */
+    pending: item("refresher:backup:pending", false)
 };

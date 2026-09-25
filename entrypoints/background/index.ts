@@ -7,9 +7,8 @@ import {backupStorage, dbStorage, moduleSettingsStorage, modulesStorage} from "@
 import imageSearch, {IMAGE_SEARCH_ENGINES, IMAGE_URL_PATTERNS, imageSearchUrl} from "@/features/imagesearch";
 
 const DATABASE_UPDATE_INTERVAL = 604_800_000; // 7일
-const DATABASE_RETRY_INTERVAL = 3_600_000; // 1시간
-/** 주기 갱신을 마지막으로 시도한 시각 (session — 브라우저를 다시 켜면 바로 시도) */
-const DATABASE_ATTEMPT_KEY = "refresher:dbAttempt";
+/** 7일이 지났는지 1시간마다 본다 — 받기에 실패해도 다음 알람이 다시 받는다 */
+const DATABASE_ALARM = "refresher:dbCheck";
 const AUTO_BACKUP_ALARM = "refresher:autoBackup";
 
 const GRECAPTCHA_SITE_KEY = "6Lc-Fr0UAAAAAOdqLYqPy53MxlRMIXpNXFvBliwI";
@@ -85,10 +84,8 @@ export default defineBackground(() => {
     // ===== Commands: 단축키 → 활성 탭에만 전송 =====
     // 단축키 기능은 '이번 페이지' 단위라 모든 탭에 보내면 탭마다 토글·토스트·목록 요청이 한꺼번에 일어난다
     browser.commands.onCommand.addListener(async (command, tab) => {
-        // 구버전 Firefox는 tab 인자를 넘기지 않는다
-        const id = tab?.id ?? (await browser.tabs.query({active: true, lastFocusedWindow: true}))[0]?.id;
         // 활성 탭이 디시가 아니면 받는 쪽이 없어 실패한다
-        if (id) await sendMessage("refresher:executeShortcut", command, {tabId: id}).catch(() => {});
+        if (tab?.id) await sendMessage("refresher:executeShortcut", command, {tabId: tab.id}).catch(() => {});
     });
 
     // ===== reCAPTCHA: 디시가 v3 토큰을 요구할 때만 그 탭의 페이지(MAIN world)에서 받아 온다 =====
@@ -112,7 +109,7 @@ export default defineBackground(() => {
     });
 
     // ===== Database: 설치/주기 갱신 =====
-    // 설치 직후엔 onInstalled와 아래 주기 검사(lastUpdate 0)가 동시에 부른다 — 진행 중인 갱신을 같이 기다려 두 번 받지 않는다
+    // 설치 직후엔 onInstalled와 첫 주기 검사(lastUpdate 0)가 겹칠 수 있다 — 진행 중인 갱신을 같이 기다려 두 번 받지 않는다
     let updating: Promise<void> | null = null;
     const update = (): Promise<void> => (updating ??= updateDatabase().catch(console.error).finally(() => (updating = null)));
 
@@ -127,32 +124,38 @@ export default defineBackground(() => {
         }
     });
 
+    // 알람은 없을 때만 만든다 — 워커가 깰 때마다 다시 만들면 주기가 처음부터 다시 세어져 울리지 않는다.
+    // 예전엔 시작할 때 한 번 봤는데, 파이어폭스(MV2)는 배경이 상주해 그 한 번이 세션 전부였다 (늦게 잡힌 네트워크·7일 넘게 켜 둔 브라우저)
     if (import.meta.env.PROD) {
-        void (async () => {
-            const {lastUpdate} = await dbStorage.getValue();
-            if (lastUpdate && Date.now() - lastUpdate <= DATABASE_UPDATE_INTERVAL) return;
-
-            // 서비스 워커가 깰 때마다 여기가 다시 돈다 — DB 서버가 죽어 있으면 lastUpdate가 그대로라 깰 때마다 받으러 가니 시도 간격을 둔다
-            const {[DATABASE_ATTEMPT_KEY]: lastAttempt} = await browser.storage.session.get(DATABASE_ATTEMPT_KEY);
-            if (typeof lastAttempt === "number" && Date.now() - lastAttempt < DATABASE_RETRY_INTERVAL) return;
-            await browser.storage.session.set({[DATABASE_ATTEMPT_KEY]: Date.now()});
-
-            await update();
-        })();
+        void browser.alarms.get(DATABASE_ALARM).then((alarm) => {
+            if (!alarm) void browser.alarms.create(DATABASE_ALARM, {delayInMinutes: 1, periodInMinutes: 60});
+        });
     }
 
     // ===== 자동 백업: 설정이 바뀌면 마지막 변경 1분 뒤에 백업 (알람을 다시 만들면 미뤄진다) =====
     // 서비스 워커는 잠들 수 있어 setTimeout 대신 alarms로 기다린다. 켤 때는 옵션 페이지가 바로 한 번 백업한다
-    browser.storage.onChanged.addListener((changes, area) => {
-        if (area !== "local" || !Object.keys(changes).some(isBackupTarget)) return;
+    browser.storage.local.onChanged.addListener((changes) => {
+        if (!Object.keys(changes).some(isBackupTarget)) return;
 
         void backupStorage.auto.getValue().then((auto) => {
-            if (auto) void browser.alarms.create(AUTO_BACKUP_ALARM, {delayInMinutes: 1});
+            if (!auto) return;
+            void browser.alarms.create(AUTO_BACKUP_ALARM, {delayInMinutes: 1});
+            void backupStorage.pending.setValue(true);
         });
     });
 
+    // 알람은 브라우저를 끄면 사라질 수 있다 (파이어폭스는 늘) — 1분 안에 끄면 백업이 빠지니 다음 시작 때 다시 건다
+    void Promise.all([backupStorage.pending.getValue(), browser.alarms.get(AUTO_BACKUP_ALARM)]).then(([pending, alarm]) => {
+        if (pending && !alarm) void browser.alarms.create(AUTO_BACKUP_ALARM, {delayInMinutes: 1});
+    });
+
     browser.alarms.onAlarm.addListener((alarm) => {
-        // 끈 직후 남아 있던 알람이 울릴 수 있다 (초기화 전 끄기 등) — 울린 시점에 다시 본다
-        if (alarm.name === AUTO_BACKUP_ALARM) void backupStorage.auto.getValue().then((auto) => (auto ? runBackup("auto") : undefined)).catch(() => {});
+        if (alarm.name === DATABASE_ALARM) {
+            void dbStorage.getValue().then(({lastUpdate}) => (Date.now() - lastUpdate > DATABASE_UPDATE_INTERVAL ? update() : undefined));
+        } else if (alarm.name === AUTO_BACKUP_ALARM) {
+            void backupStorage.pending.setValue(false);
+            // 끈 직후 남아 있던 알람이 울릴 수 있다 (초기화 전 끄기 등) — 울린 시점에 다시 본다
+            void backupStorage.auto.getValue().then((auto) => (auto ? runBackup("auto") : undefined)).catch(() => {});
+        }
     });
 });
