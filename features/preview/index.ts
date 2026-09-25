@@ -310,8 +310,8 @@ const controller = (ctx: ModuleContext) => {
         if (commentsOnly) after.setCommentsOnly(true);
         // 목록에 이미지 아이콘이 없는(텍스트) 글만 본문 이미지 숨김
         after.setImageBlocked(ctx.settings.blockImage === true && preData.type === "icon_txt");
-        after.setNotice(Boolean(preData.notice));
-        after.setRecommend(Boolean(preData.recommend));
+        after.setNotice(preData.notice);
+        after.setRecommend(preData.recommend);
         after.setAdminVisible(ctx.settings.toggleAdminPanel === true && isGalleryManager());
 
         // 미리보기가 이미 열려 있으면(다음 글 전환) 최초 히스토리 유지 — 아니면 close가 가짜 URL을 복원함
@@ -534,7 +534,7 @@ const controller = (ctx: ModuleContext) => {
 
         if (ctx.settings.reversePreviewKey === true) {
             ev.preventDefault();
-            location.href = resolved.preData.link ?? location.href;
+            location.href = resolved.preData.link;
             return;
         }
 

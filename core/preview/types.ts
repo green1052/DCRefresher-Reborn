@@ -2,9 +2,9 @@ export interface GalleryPreData {
     gallery: string;
     id: string;
     title?: string;
-    link?: string;
-    notice?: boolean;
-    recommend?: boolean;
+    link: string;
+    notice: boolean;
+    recommend: boolean;
     type: string;
 }
 
@@ -45,19 +45,13 @@ export interface DcinsideDccon {
     detail_idx: string;
     list_img: string;
     package_idx: string;
-    package_title: string;
-    sort: string;
     title: string;
 }
 
 export interface DcinsideDcconDetailList {
     detail: DcinsideDccon[];
-    detail_page: string;
-    end_date: string;
-    icon_cnt: string;
     main_img_url: string;
     package_idx: string;
-    sort: string;
     title: string;
 }
 

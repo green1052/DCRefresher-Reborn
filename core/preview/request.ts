@@ -5,13 +5,11 @@ import {csrfToken} from "@/utils/cookie";
 import {parsePostInfo} from "./parser";
 import type {CommentListResponse, DcinsideComment, DcinsideDccon, GalleryPreData, PostInfo} from "./types";
 
-const commonBody = async (link?: string): Promise<URLSearchParams> =>
-    new URLSearchParams({ci_t: await csrfToken(), _GALLTYPE_: galleryTypeName(link ?? "")});
+const commonBody = async (link: string): Promise<URLSearchParams> =>
+    new URLSearchParams({ci_t: await csrfToken(), _GALLTYPE_: galleryTypeName(link)});
 
-const isMini = (link?: string): boolean => isMiniGallery(link ?? "");
-
-const viewUrl = (link: string | undefined, gallery: string, id: string): string => {
-    const type = galleryPath(link ?? "");
+const viewUrl = (link: string, gallery: string, id: string): string => {
+    const type = galleryPath(link);
 
     return `${urls.base}${type}board/view/?id=${gallery}&no=${id}`;
 };
@@ -78,7 +76,7 @@ export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U
     return result === "true" ? {success: true, counts, fixedCounts} : {success: false, message: (counts === "nomember" ? fixedCounts : counts) || undefined};
 };
 
-const manageUrl = (link: string | undefined, base: string, mini: string): string => (isMini(link) ? mini : base);
+const manageUrl = (link: string, base: string, mini: string): string => (isMiniGallery(link) ? mini : base);
 
 /** 관리 요청 결과 — 디시 관리 API는 {"result": "success" | "fail", "msg": "…"}를 돌려준다 */
 export interface ManageResult {
@@ -168,7 +166,7 @@ export const setRecommend = async (preData: GalleryPreData, recommend: boolean):
 
 /** 이미지 캡챠 URL */
 export const captchaImage = (preData: GalleryPreData, type: "comment" | "recommend"): string =>
-    `${urls.base}kcaptcha/image_v3/?gall_id=${preData.gallery}&kcaptcha_type=${type}&time=${Date.now()}&_GALLTYPE_=${galleryTypeName(preData.link ?? "")}`;
+    `${urls.base}kcaptcha/image_v3/?gall_id=${preData.gallery}&kcaptcha_type=${type}&time=${Date.now()}&_GALLTYPE_=${galleryTypeName(preData.link)}`;
 
 /** 관리자 댓글 삭제 */
 export const adminDeleteComment = async (preData: GalleryPreData, commentId: string): Promise<ManageResult> => {
@@ -311,7 +309,7 @@ const TXTCON_MAX_LINES = 4;
 export const TXTCON_MAX_LINE_LEN = 5;
 
 // 컬러 이모지로 그려지는 BMP 문자 — 글자 수에 1을 더 센다
-const TXTCON_BMP_EMOJI = /[\u231A-\u231B\u23E9-\u23EC\u23F0\u23F3\u25FD-\u25FE\u2614-\u2615\u2648-\u2653\u267F\u2693\u26A1\u26AA-\u26AB\u26BD-\u26BE\u26C4-\u26C5\u26CE\u26D4\u26EA\u26F2-\u26F3\u26F5\u26FA\u26FD\u2705\u270A-\u270B\u2728\u274C\u274E\u2753-\u2755\u2757\u2795-\u2797\u27B0\u27BF\u2B1B-\u2B1C\u2B50\u2B55]/g;
+const TXTCON_BMP_EMOJI = /[\p{Emoji_Presentation}--[\u{10000}-\u{10FFFF}]]/gv;
 
 /** 글자 수: UTF-16 코드 유닛 + BMP 컬러 이모지 가산 (줄바꿈 제외) */
 const txtconLength = (text: string): number => {
@@ -334,10 +332,7 @@ export const normalizeTxtcon = (value: string): string => {
     let text = value
         .replace(/\r\n?/g, "\n")
         // 이모지 구간 밖 4바이트·아랍 표현형은 '+'
-        .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, (pair) => {
-            const cp = pair.codePointAt(0) ?? 0;
-            return cp >= 0x1F000 && cp <= 0x1FAFF ? pair : "+";
-        })
+        .replace(/[[\u{10000}-\u{10FFFF}]--[\u{1F000}-\u{1FAFF}]]/gv, "+")
         .replace(/[\uFB50-\uFDFF\uFE70-\uFEFE]/g, "+")
         // 공백류는 일반 공백, 안 보이는 채움 문자는 제거
         .replace(/[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g, " ")

@@ -161,7 +161,7 @@ export const WriteComment = () => {
                     "자동등록방지 확인이 필요합니다. 원문에서 작성해 주세요. (클릭하면 원문 열기)",
                     "warning",
                     8000,
-                    () => window.open(preData.link ?? location.href, "_blank")
+                    () => window.open(preData.link, "_blank")
                 );
             } else {
                 useUiStore.getState().showToast(failMessage(response) || "댓글 작성에 실패했습니다.", "error");
