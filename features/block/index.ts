@@ -69,8 +69,7 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): void => 
                     writeDiv.textContent = "게시글 내용이 차단됐습니다.";
                 }
             }
-        },
-        {neverExpire: true}
+        }
     );
 
     // 디시콘 차단
@@ -85,8 +84,7 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): void => 
 
             const target = (element.closest<HTMLElement>(".ub-content")) ?? (element.closest<HTMLElement>(".comment_dccon"));
             if (target) hideWithReply(target);
-        },
-        {neverExpire: true}
+        }
     );
 };
 

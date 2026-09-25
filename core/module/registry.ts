@@ -1,4 +1,4 @@
-import {filter, type FilterOptions} from "@/core/filtering";
+import {addFilter} from "@/core/filtering";
 import {eventBus} from "@/core/eventbus/bus";
 import {moduleDataStorage, moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
 import type {JsonValue, SettingValue} from "@/core/storage/types";
@@ -55,7 +55,6 @@ const start = async (instance: ModuleInstance): Promise<void> => {
     if (instance.running) return;
     if (instance.def.urls && !instance.def.urls.some((re) => re.test(location.href))) return;
 
-    const before = new Set(filter.ids());
     const disposers: (() => void)[] = [];
 
     const ctx: ModuleContext = {
@@ -63,8 +62,8 @@ const start = async (instance: ModuleInstance): Promise<void> => {
         settings: instance.settings,
         data: instance.data,
         bus: eventBus,
-        addFilter: (scope: string, callback: (element: HTMLElement) => void, options?: FilterOptions) => {
-            const disposer = filter.add(scope, callback, options);
+        addFilter: (scope, callback) => {
+            const disposer = addFilter(scope, callback);
             disposers.push(disposer);
             return disposer;
         },
@@ -84,13 +83,6 @@ const start = async (instance: ModuleInstance): Promise<void> => {
         stop(instance);
         throw error;
     }
-
-    // setup 중 새로 등록된 필터를 즉시 1회 실행
-    await Promise.all(
-        filter.ids()
-            .filter((id) => !before.has(id))
-            .map((id) => filter.runSpecific(id))
-    );
 };
 
 const stop = (instance: ModuleInstance): void => {

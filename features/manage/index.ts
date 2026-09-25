@@ -57,8 +57,7 @@ const manageModule: ModuleDefinition = {
 
                 element.removeAttribute("onmousedown");
                 element.setAttribute("controls", "");
-            },
-            {skipIfNotExists: true}
+            }
         );
 
         // ===== 체크박스 편의 =====
@@ -108,8 +107,7 @@ const manageModule: ModuleDefinition = {
                         if (element instanceof HTMLInputElement) element.checked = true;
                     }
                 }, {signal: handlers.signal});
-            },
-            {neverExpire: true}
+            }
         );
 
         // ===== Ctrl 클릭 삭제 =====
@@ -147,8 +145,7 @@ const manageModule: ModuleDefinition = {
                     event.stopPropagation();
                     void deletePost(postId);
                 }, {signal: handlers.signal});
-            },
-            {neverExpire: true}
+            }
         );
 
         ctx.addCleanup(() => {

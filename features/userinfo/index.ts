@@ -181,8 +181,7 @@ const userinfoModule: ModuleDefinition = {
 
         ctx.addFilter(
             ".ub-writer:not([user_name])",
-            (element) => process(ctx, element),
-            {neverExpire: true}
+            (element) => process(ctx, element)
         );
 
         // 메모 변경시 표시 갱신

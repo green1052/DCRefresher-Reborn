@@ -1,4 +1,3 @@
-import type {FilterOptions} from "@/core/filtering";
 import type {ModuleEventData} from "@/core/eventbus/types";
 import type {JsonValue, SettingValue} from "@/core/storage/types";
 import type Emittery from "emittery";
@@ -29,8 +28,8 @@ export interface ModuleContext {
     /** 모듈 간 이벤트 버스 */
     bus: Emittery<ModuleEventData>;
 
-    /** 요소 필터 등록. 해제 함수 반환 (disable시 자동 해제) */
-    addFilter(scope: string, callback: (element: HTMLElement) => void, options?: FilterOptions): () => void;
+    /** 요소 필터 등록 — 지금 있는 요소 + 이후 추가되는 요소마다 실행. 해제 함수 반환 (disable시 자동 해제) */
+    addFilter(scope: string, callback: (element: HTMLElement) => void): () => void;
 
     /** 해제 함수 등록 (이벤트 리스너, DOM 리스너 등). disable시 자동 해제 */
     addCleanup(dispose: () => void): void;

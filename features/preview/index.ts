@@ -560,14 +560,12 @@ const controller = (ctx: ModuleContext) => {
 
     ctx.addFilter(
         ".gall_list .ub-word",
-        (element) => bind(element, "word"),
-        {neverExpire: true}
+        (element) => bind(element, "word")
     );
 
     ctx.addFilter(
         ".gall_list .ub-content",
-        (element) => bind(element, "row"),
-        {neverExpire: true}
+        (element) => bind(element, "row")
     );
 
     window.addEventListener("keydown", onKey);

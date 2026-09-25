@@ -127,8 +127,7 @@ const refreshModule: ModuleDefinition = {
                     button!.textContent = paused ? "새로고침: 꺼짐" : "새로고침: 켜짐";
                 });
                 element.append(button);
-            },
-            {neverExpire: true}
+            }
         );
 
         // 방문 링크 색상 (Firefox 대응)
@@ -311,8 +310,7 @@ const refreshModule: ModuleDefinition = {
                         },
                         {signal: paginationAbort.signal}
                     );
-                },
-                {neverExpire: true}
+                }
             );
         }
 
