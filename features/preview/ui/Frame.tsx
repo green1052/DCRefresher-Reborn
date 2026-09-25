@@ -404,10 +404,17 @@ export const Frame = () => {
                                     className={"refresher-html refresher-preview-contents" + (imageBlocked ? " refresher-preview-block-media" : "")}
                                     data-blocked={hideText ? undefined : post?.textBlocked}
                                     onClick={(ev) => {
-                                        if ((ev.target as HTMLElement).closest(".btn_img_block")) {
-                                            ev.preventDefault();
-                                            usePreviewStore.getState().setImageBlocked(false);
+                                        const button = (ev.target as HTMLElement).closest(".btn_img_block");
+                                        if (!button) return;
+
+                                        ev.preventDefault();
+                                        usePreviewStore.getState().setImageBlocked(false);
+                                        // 관리자가 가린 이미지는 디시처럼 버튼 옆 것만 드러낸다 — 원본 주소도 이제 넣는다 (parser.ts)
+                                        for (const media of button.parentElement?.querySelectorAll<HTMLElement>(":scope > [data-block]") ?? []) {
+                                            if (media instanceof HTMLImageElement && media.dataset.original) media.src = media.dataset.original;
+                                            media.removeAttribute("data-block");
                                         }
+                                        button.remove();
                                     }}
                                     dangerouslySetInnerHTML={{__html: hideText ? BLOCKED_TEXT : contents ?? ""}}
                                 />

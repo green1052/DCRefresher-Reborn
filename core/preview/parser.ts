@@ -1,18 +1,21 @@
 import type {PostInfo} from "./types";
 
-/** 본문 이미지의 data-original 복원 (DC지연로딩) */
+/** 본문 이미지의 data-original 복원 (DC지연로딩). 관리자가 가린 이미지(data-block)는 '차단 이미지 보기'를 누를 때 넣는다 (Frame.tsx) */
 const restoreImageSources = (dom: Document): void => {
-    for (const image of dom.querySelectorAll<HTMLImageElement>("img[data-original]")) {
+    for (const image of dom.querySelectorAll<HTMLImageElement>("img[data-original]:not([data-block])")) {
         if (image.dataset.original) image.src = image.dataset.original;
     }
 };
 
-// 받은 HTML에서 바로 찾는다 — dom.body.innerHTML은 본문 전체를 다시 직렬화한다
-const parseCommentId = (html: string): string | undefined =>
-    html.match(/\$\(document\)\.data\('comment_id',\s+'([^']+)'\);/)?.[1];
+// 디시 스크립트에서만 찾는다 — 본문이 스크립트보다 앞이라 원본 HTML 전체에서 찾으면 본문에 적은 글자가 먼저 걸린다
+const parseCommentIds = (dom: Document): { commentId?: string; commentNo?: string } => {
+    const scripts = Array.from(dom.scripts, (script) => script.textContent).join("\n");
 
-const parseCommentNo = (html: string): string | undefined =>
-    html.match(/\$\(document\)\.data\('comment_no',\s+'([^']+)'\);/)?.[1];
+    return {
+        commentId: scripts.match(/\$\(document\)\.data\('comment_id',\s+'([^']+)'\);/)?.[1],
+        commentNo: scripts.match(/\$\(document\)\.data\('comment_no',\s+'([^']+)'\);/)?.[1]
+    };
+};
 
 const parseUser = (dom: Document): PostInfo["user"] => {
     const writer = dom.querySelector<HTMLElement>(".gallview_head > .gall_writer");
@@ -86,8 +89,7 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
         fixedUpvotes: strip(dom.querySelector<HTMLElement>(".sup_num > .smallnum")?.textContent),
         downvotes: strip(dom.querySelector<HTMLElement>(".btn_recommend_box .down_num")?.textContent),
         contents: dom.querySelector<HTMLElement>(".writing_view_box")?.innerHTML,
-        commentId: parseCommentId(html),
-        commentNo: parseCommentNo(html),
+        ...parseCommentIds(dom),
         // 0도 살린다 — '댓글 0개면 요청 생략'이 0으로 판단한다
         commentCount: commentCountText && /^\d+$/.test(commentCountText) ? Number(commentCountText) : undefined,
         requireCaptcha: Boolean(dom.querySelector(".recommend_kapcode")),

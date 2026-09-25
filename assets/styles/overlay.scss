@@ -172,6 +172,11 @@
     display: none;
 }
 
+// 관리자가 가린 이미지 — 디시는 인라인 style로 숨기는데 정화하며 지워진다. '차단 이미지 보기'를 누르면 속성을 떼어 보인다 (Frame.tsx)
+.refresher-html :is(img, video)[data-block] {
+    display: none;
+}
+
 .refresher-comment-html {
     font-size: var(--font-size-3);
     line-height: 1.6;
