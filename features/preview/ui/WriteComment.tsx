@@ -148,8 +148,8 @@ export const WriteComment = () => {
                 />
                 <Flex direction="column" gap="2">
                     {dccons.length > 0 ? (
-                        <Tooltip content="콘 취소" container={overlay.portal}>
-                            <IconButton variant="soft" color="gray" aria-label="콘 취소" onClick={() => {
+                        <Tooltip content="디시콘 취소" container={overlay.portal}>
+                            <IconButton variant="soft" color="gray" aria-label="디시콘 취소" onClick={() => {
                                 setDccons([]);
                                 setBigDccon(false);
                             }}>
