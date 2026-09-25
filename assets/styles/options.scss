@@ -11,6 +11,13 @@ body {
     margin: 0;
 }
 
+/* Select·Dialog를 열면 Radix 스크롤 잠금이 스크롤바를 숨기고 margin-right로 메워 페이지가 좌우로 흔들린다 —
+ * 스크롤바 자리는 위 gutter가 지키므로 잠금 스타일만 무른다 (휠 차단은 잠금 쪽 이벤트 처리가 그대로 한다) */
+html body[data-scroll-locked] {
+    overflow: visible !important;
+    margin-right: 0 !important;
+}
+
 /* Radix 기본값 덮기 (:root로 명시도를 올린다) — 폰트 교체 모듈이 켜져 있으면 App이 html에 --refresher-font를 지정한다 */
 :root .radix-themes {
     @include radix.overrides;
