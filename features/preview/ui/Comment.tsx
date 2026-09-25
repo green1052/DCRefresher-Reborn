@@ -201,7 +201,6 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
     // reply 객체째 구독하면 답글 버튼 하나에 모든 댓글이 다시 그려진다 — 내 댓글인지만 본다
     const replying = usePreviewStore((s) => s.reply.replyNo === comment.no);
     const collapsed = usePreviewStore((s) => s.collapsed.has(comment.no));
-    const setReply = usePreviewStore((s) => s.setReply);
     const toggleCollapse = usePreviewStore((s) => s.toggleCollapse);
     const author = usePreviewStore((s) => s.post?.user);
     const allowReply = usePreviewStore((s) => s.allowReply);
@@ -292,9 +291,9 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
                             aria-pressed={replying}
                             onClick={() =>
                                 // 같은 댓글을 다시 누르면 취소. 답글의 부모는 쓰레드 첫 댓글(c_no), 첫 댓글이면 자기 자신
-                                setReply(replying
-                                    ? {commentNo: null, replyNo: null}
-                                    : {commentNo: comment.c_no || comment.no, replyNo: comment.no})
+                                usePreviewStore.setState({
+                                    reply: replying ? {commentNo: null, replyNo: null} : {commentNo: comment.c_no || comment.no, replyNo: comment.no}
+                                })
                             }
                         >
                             {replying ? <Check size={14}/> : <ReplyIcon size={14}/>}

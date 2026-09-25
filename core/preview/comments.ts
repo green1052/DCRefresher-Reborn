@@ -42,7 +42,7 @@ export const processComments = (
     raw: DcinsideComment[],
     preData: GalleryPreData,
     ctx: ModuleContext
-): { list: ProcessedComment[]; threads: number; totalCnt: number; blocked: number; folded: number } => {
+): ProcessedComment[] => {
     // 댓글돌이(COMMENT_BOY) 제거 — 보존(restoreArchive)의 번호순 정렬보다 먼저 거른다.
     // 디시가 지운 댓글('2' 같은 다른 삭제 코드, del_yn)은 삭제('1')로 맞춘다 — 답글·삭제 버튼을 감추고 같은 댓글 접기에서 뺀다
     const filtered = raw
@@ -96,14 +96,6 @@ export const processComments = (
         for (const [comment, repeats] of groupDuplicates(candidates, (comment) => texts.get(comment) ?? "", view.duplicate)) comment.duplicates = repeats;
     }
 
-    const threads = list.filter((comment) => comment.depth === 0).length;
-
-    return {
-        list,
-        threads,
-        totalCnt: list.length,
-        blocked: list.filter((comment) => comment.blocked).length,
-        folded: list.filter((comment) => comment.duplicates === 0).length
-    };
+    return list;
 };
 

@@ -20,18 +20,8 @@ type MiniState = { x: number; y: number; title: string; contents: string; blockM
 
 /** 게시글을 새로 열 때마다 초기화되는 상태 */
 interface PostState {
-    title: string;
-    subtitle: string;
-    contents: string | undefined;
     error: ErrorState | undefined;
-
     post: PostInfo | undefined;
-    expire: Date | undefined;
-    views: string | undefined;
-
-    upvotes: string | undefined;
-    fixedUpvotes: string | undefined;
-    downvotes: string | undefined;
 
     comments: ProcessedComment[] | undefined;
     /** 댓글·답글 쓰기 허용 — 멤버만 댓글인 갤러리면 댓글 응답이 막는다 */
@@ -49,7 +39,15 @@ interface PostState {
     blockPopup: boolean;
 }
 
-interface PreviewState extends PostState {
+/** 컨트롤러 연결 — setup에서 setState로 넣고, 정리할 때 NO_HOOKS로 뺀다 */
+interface Hooks {
+    requestOpen: (preData: GalleryPreData, commentsOnly?: boolean, dir?: number) => void;
+    requestClose: () => void;
+    requestRefresh: () => void;
+    requestManage: (kind: ManageKind) => void;
+}
+
+interface PreviewState extends PostState, Hooks {
     /** 프레임 표시 여부 + 페이드 */
     visible: boolean;
     fading: boolean;
@@ -68,42 +66,12 @@ interface PreviewState extends PostState {
     captcha: { url: string; resolve: (code: string) => void } | null;
     mini: MiniState | null;
 
-    /** controller 연결 (setup에서 주입) */
-    openHook: ((preData: GalleryPreData, commentsOnly?: boolean, dir?: number) => void) | null;
-    closeHook: (() => void) | null;
-    refreshHook: (() => void) | null;
-    manageHook: ((kind: ManageKind) => void) | null;
-
-    open: (preData: GalleryPreData) => void;
-    setPost: (post: PostInfo) => void;
-    setError: (error: ErrorState) => void;
-    setComments: (comments: ProcessedComment[], subtitle: string, allowReply: boolean) => void;
-    setVotes: (counts: string, fixedCounts: string) => void;
+    /** 글 상태는 새로 비우고 patch만 얹어 한 번에 연다 */
+    open: (preData: GalleryPreData, patch?: Partial<PostState>) => void;
     close: () => void;
     toggleCollapse: (no: string) => void;
-    setReply: (reply: Reply) => void;
-    setCommentsOnly: (only: boolean) => void;
-    setImageBlocked: (blocked: boolean) => void;
-    setNotice: (notice: boolean) => void;
-    setRecommend: (recommend: boolean) => void;
-    setAdminVisible: (visible: boolean) => void;
-    openBlockPopup: () => void;
-    closeBlockPopup: () => void;
     openCaptcha: (url: string) => Promise<string>;
-    closeCaptcha: () => void;
-    openMini: (data: MiniState) => void;
-    closeMini: () => void;
     moveMini: (clientX: number, clientY: number) => void;
-    requestOpen: (preData: GalleryPreData, commentsOnly?: boolean, dir?: number) => void;
-    requestClose: () => void;
-    requestRefresh: () => void;
-    requestManage: (kind: ManageKind) => void;
-    setHooks: (hooks: {
-        open?: (preData: GalleryPreData, commentsOnly?: boolean, dir?: number) => void;
-        close?: () => void;
-        refresh?: () => void;
-        manage?: (kind: ManageKind) => void;
-    }) => void;
 }
 
 /** 본문 차단 안내 (창·미니) */
@@ -124,17 +92,16 @@ export const miniPosition = (clientX: number, clientY: number): { x: number; y: 
 
 const NO_REPLY: Reply = {commentNo: null, replyNo: null};
 
+export const NO_HOOKS: Hooks = {
+    requestOpen: () => undefined,
+    requestClose: () => undefined,
+    requestRefresh: () => undefined,
+    requestManage: () => undefined
+};
+
 const freshPost = (): PostState => ({
-    title: "",
-    subtitle: "",
-    contents: undefined,
     error: undefined,
     post: undefined,
-    expire: undefined,
-    views: undefined,
-    upvotes: undefined,
-    fixedUpvotes: undefined,
-    downvotes: undefined,
     comments: undefined,
     allowReply: true,
     collapsed: new Set(),
@@ -165,6 +132,7 @@ export const postTitle = (post: PostInfo): string => (post.header ? `[${post.hea
 
 export const usePreviewStore = create<PreviewState>((set, get) => ({
     ...freshPost(),
+    ...NO_HOOKS,
     visible: false,
     fading: false,
     preData: null,
@@ -176,27 +144,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     captcha: null,
     mini: null,
 
-    refreshHook: null,
-    manageHook: null,
-    openHook: null,
-    closeHook: null,
-
-    open: (preData) => set({...freshPost(), visible: true, fading: false, preData, signalId: ++signalSeq, mini: null}),
-
-    setPost: (post) =>
-        set({
-            post,
-            title: postTitle(post),
-            expire: post.expire ? parseDate(post.expire) : undefined,
-            views: post.views,
-            contents: post.contents,
-            upvotes: post.upvotes,
-            fixedUpvotes: post.fixedUpvotes,
-            downvotes: post.downvotes
-        }),
-    setError: (error) => set({error}),
-    setComments: (comments, subtitle, allowReply) => set({comments, subtitle, allowReply}),
-    setVotes: (counts, fixedCounts) => set({upvotes: counts, fixedUpvotes: fixedCounts || undefined}),
+    open: (preData, patch) => set({...freshPost(), ...patch, visible: true, fading: false, preData, signalId: ++signalSeq, mini: null}),
 
     close: () => {
         get().captcha?.resolve("");
@@ -212,23 +160,11 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
             return {collapsed: next};
         }),
 
-    setReply: (reply) => set({reply}),
-    setCommentsOnly: (commentsOnly) => set({commentsOnly}),
-    setImageBlocked: (imageBlocked) => set({imageBlocked}),
-    setNotice: (notice) => set({notice}),
-    setRecommend: (recommend) => set({recommend}),
-    setAdminVisible: (adminVisible) => set({adminVisible}),
-    openBlockPopup: () => set({blockPopup: true}),
-    closeBlockPopup: () => set({blockPopup: false}),
-
     openCaptcha: (url) =>
         new Promise((resolve) => {
             set({captcha: {url, resolve}});
         }),
-    closeCaptcha: () => set({captcha: null}),
 
-    openMini: (data) => set({mini: data}),
-    closeMini: () => set({mini: null}),
     moveMini: (clientX, clientY) =>
         set((state) =>
             state.mini
@@ -236,17 +172,5 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
                       mini: {...state.mini, ...miniPosition(clientX, clientY)}
                   }
                 : state
-        ),
-
-    requestOpen: (preData, commentsOnly, dir) => get().openHook?.(preData, commentsOnly, dir),
-    requestClose: () => get().closeHook?.(),
-    requestRefresh: () => get().refreshHook?.(),
-    requestManage: (kind) => get().manageHook?.(kind),
-    setHooks: ({open, close, refresh, manage}) =>
-        set({
-            openHook: open ?? null,
-            closeHook: close ?? null,
-            refreshHook: refresh ?? null,
-            manageHook: manage ?? null
-        })
+        )
 }));

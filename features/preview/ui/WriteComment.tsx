@@ -153,7 +153,7 @@ export const WriteComment = () => {
                 setDccons([]);
                 setBigDccon(false);
                 setTxtcon(false);
-                st.setReply({commentNo: null, replyNo: null});
+                usePreviewStore.setState({reply: {commentNo: null, replyNo: null}});
                 st.requestRefresh();
             } else if (response.message === "captcha") {
                 // v2 체크박스나 v3 재전송도 막히면 원문에서만 풀 수 있다

@@ -48,11 +48,11 @@ const BlockPopup = () => {
         } catch {
             useUiStore.getState().showToast("차단 처리 중 오류가 발생했습니다.", "error");
         }
-        usePreviewStore.getState().closeBlockPopup();
+        usePreviewStore.setState({blockPopup: false});
     };
 
     return (
-        <Dialog.Root open onOpenChange={(open) => !open && usePreviewStore.getState().closeBlockPopup()}>
+        <Dialog.Root open onOpenChange={(open) => !open && usePreviewStore.setState({blockPopup: false})}>
             <Dialog.Content container={overlay.portal} maxWidth="440px" onOpenAutoFocus={(ev) => ev.preventDefault()}>
                 <Dialog.Title>유저 차단</Dialog.Title>
 
@@ -113,7 +113,7 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
     const send = (): void => {
         if (!code.trim()) return;
         captcha.resolve(code.trim());
-        usePreviewStore.getState().closeCaptcha();
+        usePreviewStore.setState({captcha: null});
     };
 
     return (
@@ -122,7 +122,7 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
             onOpenChange={(open) => {
                 if (!open) {
                     captcha.resolve("");
-                    usePreviewStore.getState().closeCaptcha();
+                    usePreviewStore.setState({captcha: null});
                 }
             }}
         >
@@ -156,7 +156,7 @@ const AdminPanel = () => {
         {label: notice ? "공지 해제" : "공지 등록", icon: <Megaphone size={14}/>, active: notice, run: () => requestManage("notice")},
         {label: recommend ? "개념글 해제" : "개념글 등록", icon: <Star size={14}/>, active: recommend, run: () => requestManage("recommend")},
         {label: "끌올", icon: <ArrowBigUpDash size={14}/>, run: () => requestManage("bump")},
-        {label: "차단", hint: keys?.block, icon: <Ban size={14}/>, danger: true, run: () => usePreviewStore.getState().openBlockPopup()},
+        {label: "차단", hint: keys?.block, icon: <Ban size={14}/>, danger: true, run: () => usePreviewStore.setState({blockPopup: true})},
         {label: "삭제", hint: keys?.delete, icon: <Trash2 size={14}/>, danger: true, run: () => requestManage("delete")}
     ];
 

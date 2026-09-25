@@ -13,7 +13,7 @@ import {notifyManage} from "@/utils/notify";
 import {getEntry, setEntry} from "@/core/preview/cache";
 import {ADULT_ERROR} from "@/core/preview/parser";
 import {blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
-import {BLOCK_DAYS, BLOCKED_TEXT, type ErrorState, type ManageKind, miniPosition, postTitle, usePreviewStore} from "./ui/previewStore";
+import {BLOCK_DAYS, BLOCKED_TEXT, type ErrorState, type ManageKind, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
 
 const SHORTCUT_GROUP: SettingGroup = {name: "관리 단축키", desc: "관리 권한이 있을 때 미리보기에서 키를 두 번 누르면 게시글을 삭제하거나 작성자를 차단합니다."};
 const PRESET_GROUP: SettingGroup = {name: "차단 프리셋", desc: "차단 키로 차단할 때 쓰는 값입니다."};
@@ -269,9 +269,7 @@ const controller = (ctx: ModuleContext) => {
             if (store.getState().signalId !== mySignal || seq < shownSeq) return;
             shownSeq = seq;
 
-            const {list, threads, totalCnt, blocked, folded} = processComments(raw, preData, ctx);
-            const extra = [blocked && `차단 ${blocked}개`, folded && `같은 댓글 ${folded}개 접음`].filter(Boolean).join(", ");
-            store.getState().setComments(list, `쓰레드 ${threads}개, 총 댓글 ${totalCnt}개${extra ? ` (${extra})` : ""}`, allowReply);
+            store.setState({comments: processComments(raw, preData, ctx), allowReply});
         } finally {
             pulling--;
         }
@@ -296,12 +294,12 @@ const controller = (ctx: ModuleContext) => {
             ({post, fresh} = await getPost(preData));
             post = await processContents(preData, post);
         } catch (e) {
-            if (store.getState().signalId === mySignal) store.getState().setError(errorOf(e));
+            if (store.getState().signalId === mySignal) store.setState({error: errorOf(e)});
             return;
         }
 
         if (store.getState().signalId !== mySignal) return;
-        store.getState().setPost(post);
+        store.setState({post});
 
         try {
             // 방금 받은 본문이 댓글 0개면 받지 않는다 — 보존해 둔 댓글이 있으면 받아서 비교한다
@@ -351,7 +349,7 @@ const controller = (ctx: ModuleContext) => {
 
         if (st.visible && st.preData?.id === preData.id && st.preData?.gallery === preData.gallery) {
             if (!st.error) {
-                st.setCommentsOnly(commentsOnly);
+                store.setState({commentsOnly});
                 return;
             }
             // 오류 난 글을 다시 열면(다시 시도) 제자리에서 다시 받는다 — 닫았다 열면 히스토리가 두 칸 쌓인다
@@ -365,17 +363,16 @@ const controller = (ctx: ModuleContext) => {
         // 두 번 누르기 확인은 글마다 — 이전 글에서 한 번 누른 키로 다음 글이 바로 지워지지 않게
         lastKey = "";
 
-        store.getState().open(preData);
+        store.getState().open(preData, {
+            commentsOnly,
+            // 목록에 이미지 아이콘이 없는(텍스트) 글만 본문 이미지 숨김
+            imageBlocked: ctx.settings.blockImage === true && isTextPost(preData),
+            notice: preData.notice,
+            recommend: preData.recommend,
+            adminVisible: ctx.settings.toggleAdminPanel === true && isGalleryManager()
+        });
 
         const mySignal = store.getState().signalId;
-        const after = store.getState();
-
-        if (commentsOnly) after.setCommentsOnly(true);
-        // 목록에 이미지 아이콘이 없는(텍스트) 글만 본문 이미지 숨김
-        after.setImageBlocked(ctx.settings.blockImage === true && isTextPost(preData));
-        after.setNotice(preData.notice);
-        after.setRecommend(preData.recommend);
-        after.setAdminVisible(ctx.settings.toggleAdminPanel === true && isGalleryManager());
 
         // 미리보기가 이미 열려 있으면(다음 글 전환) 최초 히스토리 유지 — 아니면 close가 가짜 URL을 복원함
         if (!historySkip && !st.visible) savedHistory = {title: document.title, url: location.href, state: history.state};
@@ -410,11 +407,11 @@ const controller = (ctx: ModuleContext) => {
             // 공지·개념글 표시는 성공했을 때만 바꾼다
             if (kind === "notice") {
                 if (notifyManage(await setNotice(target, !st.notice), st.notice ? "공지를 해제했습니다." : "공지로 등록했습니다.") && stillOpen()) {
-                    store.getState().setNotice(!st.notice);
+                    store.setState({notice: !st.notice});
                 }
             } else if (kind === "recommend") {
                 if (notifyManage(await setRecommend(target, !st.recommend), st.recommend ? "개념글을 해제했습니다." : "개념글로 등록했습니다.") && stillOpen()) {
-                    store.getState().setRecommend(!st.recommend);
+                    store.setState({recommend: !st.recommend});
                 }
             } else if (kind === "delete") {
                 close();
@@ -500,13 +497,15 @@ const controller = (ctx: ModuleContext) => {
         // 가져오는 사이 행을 떠났거나 전체 미리보기가 열렸으면 띄우지 않는다
         if (miniTarget !== element || usePreviewStore.getState().visible) return;
 
-        usePreviewStore.getState().openMini({
-            ...miniPosition(x, y),
-            title: postTitle(post),
-            // 미니는 마우스를 올려 볼 수 없으니 블러도 안내로 가린다
-            contents: post.textBlocked && !useUiStore.getState().blockView?.revealed ? BLOCKED_TEXT : post.contents ?? "",
-            // 이미지 차단(blockImage)은 전체 미리보기와 같은 것을 가린다 — 안 그러면 거기서 숨긴 이미지가 호버로 보인다
-            blockMedia: ctx.settings.blockImage === true && isTextPost(preData)
+        usePreviewStore.setState({
+            mini: {
+                ...miniPosition(x, y),
+                title: postTitle(post),
+                // 미니는 마우스를 올려 볼 수 없으니 블러도 안내로 가린다
+                contents: post.textBlocked && !useUiStore.getState().blockView?.revealed ? BLOCKED_TEXT : post.contents ?? "",
+                // 이미지 차단(blockImage)은 전체 미리보기와 같은 것을 가린다 — 안 그러면 거기서 숨긴 이미지가 호버로 보인다
+                blockMedia: ctx.settings.blockImage === true && isTextPost(preData)
+            }
         });
     };
 
@@ -534,7 +533,7 @@ const controller = (ctx: ModuleContext) => {
         miniTimer = 0;
         // 받는 중인 본문은 끊지 않는다 — 열기가 같은 요청을 이어 쓴다. 다음 호버가 다른 글을 받으면 그때 끊긴다
         miniTarget = null;
-        usePreviewStore.getState().closeMini();
+        usePreviewStore.setState({mini: null});
     };
 
     // ── 행 이벤트 ────────────────────────────────────────────────
@@ -662,14 +661,14 @@ const controller = (ctx: ModuleContext) => {
         // 행 리스너(mouseleave)가 사라져 떠 있거나 가져오는 중인 미니를 닫을 길이 없으므로 여기서 닫는다
         onMiniLeave();
         close();
-        store.getState().setHooks({});
+        store.setState(NO_HOOKS);
     });
 
-    store.getState().setHooks({
-        open: (preData, commentsOnly, dir) => open(preData, commentsOnly, false, dir),
-        close: () => close(),
-        refresh: () => void refreshComments(),
-        manage: (kind) => void manage(kind)
+    store.setState({
+        requestOpen: (preData, commentsOnly, dir) => open(preData, commentsOnly, false, dir),
+        requestClose: () => close(),
+        requestRefresh: () => void refreshComments(),
+        requestManage: (kind) => void manage(kind)
     });
 };
 

@@ -5,12 +5,14 @@ import {type CSSProperties, Fragment, useEffect, useRef, type WheelEvent} from "
 
 import {overlay} from "@/components/overlay/shadow";
 import {captchaImage, vote} from "@/core/preview/request";
+import type {ProcessedComment} from "@/core/preview/comments";
+import type {PostInfo} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 import {isTyping} from "@/utils/event";
 
 import {adjacentPreData} from "../index";
 import {Comment, TimeStamp, useTick, UserCard} from "./Comment";
-import {BLOCKED_TEXT, type ErrorState, usePreviewStore} from "./previewStore";
+import {BLOCKED_TEXT, type ErrorState, parseDate, postTitle, usePreviewStore} from "./previewStore";
 import {WriteComment} from "./WriteComment";
 
 /**
@@ -78,19 +80,17 @@ const Remaining = ({expire}: { expire: Date }) => {
 
 // 만료 시각이 있는 글만 — 대부분 없어서 1초 타이머를 돌릴 까닭이 없다
 const CountDown = () => {
-    const expire = usePreviewStore((s) => s.expire);
-    return expire && !Number.isNaN(expire.getTime()) ? <Remaining expire={expire}/> : null;
+    const expire = usePreviewStore((s) => s.post?.expire);
+    const date = expire ? parseDate(expire) : undefined;
+    return date && !Number.isNaN(date.getTime()) ? <Remaining expire={date}/> : null;
 };
 
-const Votes = () => {
+const Votes = ({post}: { post: PostInfo }) => {
     const preData = usePreviewStore((s) => s.preData);
-    const post = usePreviewStore((s) => s.post);
-    const upvotes = usePreviewStore((s) => s.upvotes);
-    const fixedUpvotes = usePreviewStore((s) => s.fixedUpvotes);
-    const downvotes = usePreviewStore((s) => s.downvotes);
+    const {upvotes, fixedUpvotes, downvotes} = post;
 
     const onVote = async (mode: "U" | "D"): Promise<void> => {
-        if (!preData || !post) return;
+        if (!preData) return;
         const signal = usePreviewStore.getState().signalId;
         try {
             let code: string | undefined;
@@ -101,12 +101,11 @@ const Votes = () => {
 
             const result = await vote(preData, post, mode, code);
             if (result.success) {
-                // 응답 전에 다른 글로 넘어갔으면 숫자는 그 글 것이 아니다 — 알림만
-                if (usePreviewStore.getState().signalId === signal) {
-                    const counts = result.counts ?? (mode === "U" ? upvotes : downvotes);
-                    if (mode === "U") usePreviewStore.getState().setVotes(counts ?? "X", result.fixedCounts ?? "");
-                    else usePreviewStore.setState({downvotes: counts});
-                }
+                const counts = mode === "U"
+                    ? {upvotes: result.counts ?? upvotes ?? "X", fixedUpvotes: result.fixedCounts || undefined}
+                    : {downvotes: result.counts ?? downvotes};
+                // 응답 전에 다른 글로 넘어갔으면 숫자는 그 글 것이 아니다 — 알림만. 지금 post를 읽어야 동시에 온 추천·비추천이 서로 덮지 않는다
+                usePreviewStore.setState((s) => (s.signalId !== signal || !s.post ? {} : {post: {...s.post, ...counts}}));
                 useUiStore
                     .getState()
                     .showToast(`${mode === "U" ? "추천" : "비추천"}되었습니다.`);
@@ -190,6 +189,14 @@ const goToAdjacent = (dir: number): void => {
     if (next) st.requestOpen(next, false, dir);
 };
 
+/** 댓글 머리 — 차단·접은 수는 있을 때만 */
+const subtitleOf = (comments: ProcessedComment[]): string => {
+    const blocked = comments.filter((comment) => comment.blocked).length;
+    const folded = comments.filter((comment) => comment.duplicates === 0).length;
+    const extra = [blocked && `차단 ${blocked}개`, folded && `같은 댓글 ${folded}개 접음`].filter(Boolean).join(", ");
+    return `쓰레드 ${comments.filter((comment) => comment.depth === 0).length}개, 총 댓글 ${comments.length}개${extra ? ` (${extra})` : ""}`;
+};
+
 /** 이만큼 쉬었다 굴리면 새 휠 동작으로 본다 — 관성 스크롤은 이벤트가 이보다 촘촘하게 이어진다 */
 const WHEEL_GESTURE_GAP = 250;
 
@@ -224,10 +231,7 @@ export const Frame = () => {
     const fading = usePreviewStore((s) => s.fading);
     const adminVisible = usePreviewStore((s) => s.adminVisible);
     const post = usePreviewStore((s) => s.post);
-    const title = usePreviewStore((s) => s.title);
-    const subtitle = usePreviewStore((s) => s.subtitle);
-    const contents = usePreviewStore((s) => s.contents);
-    const views = usePreviewStore((s) => s.views);
+    const contents = post?.contents;
     const error = usePreviewStore((s) => s.error);
     const comments = usePreviewStore((s) => s.comments);
     const allowReply = usePreviewStore((s) => s.allowReply);
@@ -350,7 +354,7 @@ export const Frame = () => {
                     <div className="refresher-frame-scroll" ref={scroller} key={postKey} onWheel={onWheel}>
                     <Box px="6" pt="5" pb="3">
                         <Dialog.Title asChild>
-                            <Heading as="h2" size="6">{title}</Heading>
+                            <Heading as="h2" size="6">{post ? postTitle(post) : ""}</Heading>
                         </Dialog.Title>
 
                         {post && (
@@ -362,7 +366,7 @@ export const Frame = () => {
                                     <Text size="2" color="gray">
                                         <Flex as="span" align="center" gap="1">
                                             <Eye size={14}/>
-                                            {views}
+                                            {post.views}
                                         </Flex>
                                     </Text>
                                 </Flex>
@@ -375,7 +379,7 @@ export const Frame = () => {
                     <Box px="6" pt="5">
                         {commentsOnly ? (
                             <Button variant="soft" color="gray" style={{width: "100%"}} mb="5"
-                                    onClick={() => usePreviewStore.getState().setCommentsOnly(false)}>
+                                    onClick={() => usePreviewStore.setState({commentsOnly: false})}>
                                 댓글만 표시 중입니다. 눌러서 원문 보기
                             </Button>
                         ) : error ? (
@@ -391,7 +395,7 @@ export const Frame = () => {
                                         if (!button) return;
 
                                         ev.preventDefault();
-                                        usePreviewStore.getState().setImageBlocked(false);
+                                        usePreviewStore.setState({imageBlocked: false});
                                         // 관리자가 가린 이미지는 디시처럼 버튼 옆 것만 드러낸다 — 원본 주소도 이제 넣는다 (parser.ts)
                                         for (const media of button.parentElement?.querySelectorAll<HTMLElement>(":scope > [data-block]") ?? []) {
                                             if (media instanceof HTMLImageElement && media.dataset.original) media.src = media.dataset.original;
@@ -401,7 +405,7 @@ export const Frame = () => {
                                     }}
                                     dangerouslySetInnerHTML={{__html: hideText ? BLOCKED_TEXT : contents ?? ""}}
                                 />
-                                {post && <Votes/>}
+                                {post && <Votes post={post}/>}
                             </>
                         )}
 
@@ -416,7 +420,7 @@ export const Frame = () => {
                         <Box ref={commentsSection}>
                             <Separator size="4"/>
                             <Box px="6" pt="3">
-                                <Text size="2" color="gray">{subtitle}</Text>
+                                <Text size="2" color="gray">{subtitleOf(comments)}</Text>
                             </Box>
                             {comments.length === 0 ? (
                                 <Box py="6"><Text as="p" size="2" color="gray" align="center">댓글이 없습니다.</Text></Box>
