@@ -51,7 +51,7 @@ export const BlockDialog = ({open, type, typeNames, modeNames, initial, onClose,
 
     return (
         <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
-            <Dialog.Content style={{maxWidth: 480}}>
+            <Dialog.Content maxWidth="480px">
                 <Dialog.Title>
                     {typeNames[type]} 차단 {initial ? "수정" : "추가"}
                 </Dialog.Title>
@@ -75,8 +75,10 @@ export const BlockDialog = ({open, type, typeNames, modeNames, initial, onClose,
                         />
                     </label>
 
-                    <Text size="2">
-                        <Checkbox checked={isRegex} onCheckedChange={(value) => setIsRegex(value === true)}/> 정규식
+                    <Text as="label" size="2">
+                        <Flex gap="2" align="center">
+                            <Checkbox checked={isRegex} onCheckedChange={(value) => setIsRegex(value === true)}/> 정규식
+                        </Flex>
                     </Text>
 
                     <label>

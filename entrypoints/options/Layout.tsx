@@ -27,8 +27,8 @@ export const Section = ({title, desc, actions, children}: {
 );
 
 export const Empty = ({children}: { children: ReactNode }) => (
-    <Box py="6" style={{textAlign: "center"}}>
-        <Text size="2" color="gray">
+    <Box py="6">
+        <Text as="p" size="2" color="gray" align="center">
             {children}
         </Text>
     </Box>

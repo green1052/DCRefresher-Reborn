@@ -46,7 +46,7 @@ const MemoFormDialog = ({
 
     return (
         <Dialog.Root open onOpenChange={(next) => !next && onClose()}>
-            <Dialog.Content style={{maxWidth: 480}}>
+            <Dialog.Content maxWidth="480px">
                 <Dialog.Title>메모 {editing ? "수정" : "추가"}</Dialog.Title>
 
                 <Flex direction="column" gap="3" mt="3">
