@@ -1,140 +1,155 @@
+/* ===== 레이아웃 수정 (layout 모듈) ===== */
+
+/*
+ * 컴팩트 모드 (html.refresherCompact): 창이 좁을 때 디시의 1160px 고정폭 레이아웃을 창 폭에 맞춘다.
+ * 고정폭 상자는 auto로 풀고, 오른쪽 사이드바·큰 머리글·줄어들지 않는 광고는 숨긴다.
+ */
 .refresherCompact {
-    min-width: unset;
-
-    .visit_bookmark {
-        width: 95% !important;
+    // 페이지 전체 틀(#top.dcwrap)에 min-width 1515px가 걸려 있다
+    &,
+    body,
+    .dcwrap {
+        min-width: 0 !important;
     }
 
-    .wrap_inner {
-        width: unset;
+    .dcwrap {
+        width: auto !important;
     }
 
-    .list_wrap,
-    .view_wrap {
-        min-width: unset;
-        width: 100%;
-    }
-
-    .width1160 .dchead,
-    .width1160 .gnb,
-    .width1160 #container,
-    .width1160 .info_policy,
-    .width1160 .copyright {
-        width: unset;
-    }
-
+    // 머리글: 로고·검색창·파란 메뉴줄을 빼고 오른쪽 위 링크 한 줄만
     .dchead {
-        height: 100px;
+        width: auto !important;
+        height: auto !important;
+        padding: 8px 12px !important;
     }
 
-    .list_wrap .dc_logo,
-    .gnb_bar {
-        display: none;
-    }
-
-    .width1160 .top_search {
-        display: none;
+    .dc_logo,
+    .wrap_search,
+    .gnb_bar,
+    .dc_all {
+        display: none !important;
     }
 
     .area_links {
-        right: 13px;
+        position: static !important;
+        text-align: right !important;
     }
 
-    .dc_logo {
-        display: none;
+    // 본문 폭: 창에 맞추되 너무 넓어지지 않게
+    .wrap_inner {
+        width: auto !important;
+        max-width: 1000px !important;
+        margin: 0 auto !important;
+        padding: 0 12px !important;
     }
 
+    // 1160px 등으로 고정된 상자들
+    .visit_bookmark,
+    .newvisit_history,
+    .info_policy,
+    .copyright,
+    #container,
+    .issue_wrap,
+    .issuebox,
+    .page_head,
+    .list_array_option,
+    .view_content_wrap,
+    .gallview_contents,
+    .view_comment,
+    .cmt_list,
+    .cmt_write_box,
+    .view_bottom_btnbox,
+    .bottom_paging_box {
+        width: auto !important;
+    }
+
+    // 목록: 사이드바를 빼고 목록이 폭을 다 쓴다
+    .right_content,
     .gall_exposure,
     .minor_ranking_box,
-    .listwrap .issue_contentbox {
-        display: none;
+    .issue_contentbox,
+    .ad_bottom_list {
+        display: none !important;
     }
 
-    .right_content {
-        float: initial;
-        width: initial;
-
-        .user_info,
-        .user_option,
-        .rightbanner1,
-        #my_minor_pop,
-        article {
-            display: none;
-        }
-    }
-
-    .list_array_option,
-    .listwrap .issuebox {
-        width: 100% !important;
+    .left_content {
+        width: auto !important;
+        float: none !important;
     }
 
     .array_tab button {
-        width: 72px;
+        width: 72px !important;
     }
 
     .page_head h2 {
-        font-size: 23px;
+        font-size: 23px !important;
+    }
+
+    // 갤러리 제목 옆 링크(설정·새로고침…)가 좁으면 두 줄이 되는데 머리가 37px 고정이라 밑줄을 덮는다
+    .page_head {
+        height: auto !important;
     }
 
     .gall_issuebox {
-        padding-top: unset;
+        padding-top: 0 !important;
     }
 
-    .listwrap .minor_intro_box {
-        padding: 0 0 0 2px;
+    // 좁은 칸의 긴 값(글 번호 등)이 옆 칸으로 넘치지 않게
+    .gall_list :is(.gall_num, .gall_subject, .gall_date, .gall_count, .gall_recommend) {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
     }
 
-    main.listwrap {
-        display: flex;
+    // 글 보기: 본문·댓글 칸의 고정폭 float를 푼다. 폭을 줄일 수 없는 광고는 숨긴다
+    .writing_view_box,
+    .write_div,
+    .cmt_txtbox,
+    .cmt_txtbox .usertxt {
+        width: auto !important;
+        max-width: 100% !important;
+        float: none !important;
     }
 
-    .width1160 .wrap_inner {
-        margin-left: auto;
-        margin-right: auto;
-        max-width: 1000px;
-        width: 95%;
+    // 댓글 안 디시콘 상자(820px) 등도 칸을 넘지 않게
+    .cmt_txtbox > * {
+        max-width: 100% !important;
     }
 
-    .width1160 .dc_all {
-        display: none;
+    .write_div img {
+        max-width: 100% !important;
+        height: auto !important;
     }
 
-    .ad_bottom_list {
-        display: none;
+    ins.adsbygoogle {
+        display: none !important;
     }
 
-    .input_write_tit {
-        float: initial;
-    }
-}
-
-.refresherCompactView {
+    // 댓글 입력: 닉네임 칸 옆에서 입력칸이 남는 폭을 다 쓴다
     .cmt_write_box {
-        display: flex;
-    }
-
-    .width1160 .left_content {
-        width: unset !important;
-    }
-
-    .width1160 .wrap_inner {
-        margin-left: auto;
-        margin-right: auto;
-        max-width: 1200px;
-        width: 95%;
+        display: flex !important;
+        gap: 12px !important;
     }
 
     .cmt_txt_cont {
-        margin-left: 20px;
+        flex: 1 !important;
+        min-width: 0 !important;
+        width: auto !important;
+        float: none !important;
+    }
 
-        textarea {
-            // ponytail: 기존 10단 미디어쿼리(410~1220px 구간별 고정 폭)를 근사한 선형 식으로 축약.
-            // 구간별 오차 수 px 수준. 깨지는 해상도 발견 시 해당 구간만 미디어쿼리로 되살릴 것.
-            width: clamp(100px, calc(100vw - 264px), 956px) !important;
-        }
+    .cmt_txt_cont textarea {
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    // 글쓰기
+    .input_write_tit {
+        float: none !important;
     }
 }
 
+/* 본문 영역 전체로 확장 (html.refresherPushToRight — "잡다 링크 숨기기"와 함께 켜졌을 때) */
 .refresherPushToRight {
     .stickyunit {
         display: none !important;
@@ -154,4 +169,3 @@
         width: unset;
     }
 }
-

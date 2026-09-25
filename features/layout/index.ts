@@ -35,7 +35,6 @@ const applyCompact = (ctx: ModuleContext): void => {
     const useCompact = compact && (!isView || ctx.settings.useCompactModeOnView === true);
 
     document.documentElement.classList.toggle("refresherCompact", useCompact);
-    document.documentElement.classList.toggle("refresherCompactView", useCompact && isView);
 
     for (const sticky of document.querySelectorAll<HTMLElement>(".stickyunit")) {
         sticky.style.display = useCompact ? "none" : "";
@@ -115,7 +114,7 @@ export default defineModule({
         hideStyle?.remove();
         hideStyle = null;
 
-        document.documentElement.classList.remove("refresherCompact", "refresherCompactView", PUSH_CLASS);
+        document.documentElement.classList.remove("refresherCompact", PUSH_CLASS);
         for (const sticky of document.querySelectorAll<HTMLElement>(".stickyunit")) {
             sticky.style.display = "";
         }
