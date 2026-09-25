@@ -5,7 +5,20 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <meta content="true" name="wxt.open_in_tab">
     <title>DCRefresher Reborn</title>
-    <style>html { scrollbar-gutter: stable; } body { margin: 0; }</style>
+    <style>
+        html { scrollbar-gutter: stable; }
+        body { margin: 0; }
+        /* Radix 기본값은 버튼·스위치 등도 화살표 커서 — :root로 명시도를 올려 덮는다 */
+        :root .radix-themes {
+            --cursor-button: pointer;
+            --cursor-checkbox: pointer;
+            --cursor-menu-item: pointer;
+            --cursor-radio: pointer;
+            --cursor-switch: pointer;
+            --cursor-slider-thumb: grab;
+            --cursor-slider-thumb-active: grabbing;
+        }
+    </style>
 </head>
 <body>
 <div id="root"></div>
