@@ -1,5 +1,6 @@
 import {create} from "zustand";
 
+import type {IpCategory} from "@/core/database";
 import type {MemoType} from "@/core/storage/types";
 
 export type ToastLevel = "info" | "error" | "warning";
@@ -31,6 +32,8 @@ interface UiState {
     selected: SelectedUser | null;
     bubble: { x: number; y: number } | null;
     memo: MemoTargetState | null;
+    /** IP 정보 색 (userinfo 설정) — 모듈이 꺼져 있으면 비어 있다 */
+    ipColors: Partial<Record<IpCategory, string>>;
 
     showToast: (content: string, type?: ToastLevel, autoClose?: number, onClick?: () => void) => void;
     dismissToast: (id?: number) => void;
@@ -52,6 +55,7 @@ export const useUiStore = create<UiState>((set, get) => ({
     selected: null,
     bubble: null,
     memo: null,
+    ipColors: {},
 
     showToast: (content, type = "info", autoClose = 5000, onClick) => {
         set({toast: {id: ++toastSeq, content, type, autoClose, onClick}});

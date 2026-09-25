@@ -73,6 +73,7 @@ export interface UserCardData {
 /** 작성자 표시. 우클릭하면 유저 버블 */
 export const UserCard = ({user}: { user: UserCardData }) => {
     const ipInfo = user.ip ? ipInfoOf(user.ip) : undefined;
+    const ipColor = useUiStore((state) => (ipInfo ? state.ipColors[ipInfo.category] : undefined));
     const info = [user.id, user.ip].filter(Boolean).join(" / ");
 
     const openMenu = (event: MouseEvent): void => {
@@ -89,7 +90,7 @@ export const UserCard = ({user}: { user: UserCardData }) => {
             <Text size="2" weight="bold" truncate>{user.nick ?? user.id ?? user.ip}</Text>
             {user.image && <img src={user.image} alt="" height={12}/>}
             {info && <Text size="1" color="gray" truncate>({info})</Text>}
-            {ipInfo && <Text size="1" color="blue" title={ipInfo.title} truncate>[{ipInfo.label}]</Text>}
+            {ipInfo && <Text size="1" color={ipColor ? undefined : "blue"} style={{color: ipColor}} title={ipInfo.title} truncate>[{ipInfo.label}]</Text>}
         </Flex>
     );
 };

@@ -6,6 +6,7 @@ import {eventBus} from "@/core/eventbus/bus";
 import type {JsonValue} from "@/core/storage/types";
 import {dbStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";
+import {useUiStore} from "@/stores/ui";
 import {csrfToken} from "@/utils/cookie";
 import {getType} from "@/utils/user";
 import {insertWriterSpan} from "@/utils/userDataInsert";
@@ -116,7 +117,15 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
     insertWriterSpan(element, badges);
 };
 
+/** 미리보기 댓글도 같은 색을 쓰게 공유 */
+const publishIpColors = (ctx: ModuleContext): void =>
+    useUiStore.setState({
+        ipColors: Object.fromEntries(Object.entries(IP_COLOR_SETTING).map(([category, key]) => [category, String(ctx.settings[key])]))
+    });
+
 const rebuildAll = (ctx: ModuleContext): void => {
+    publishIpColors(ctx);
+
     // 배지가 없던 작성자도 포함 — 설정을 켜서 새로 생기는 배지가 있다 (필터 선택자와 같은 대상)
     for (const element of document.querySelectorAll<HTMLElement>(".ub-writer:not([user_name])")) {
         delete element.dataset.refresherUserInfo;
@@ -189,6 +198,7 @@ export default defineModule({
     },
 
     setup(ctx) {
+        publishIpColors(ctx);
 
         ctx.addFilter(
             ".ub-writer:not([user_name])",
@@ -252,6 +262,8 @@ export default defineModule({
     },
 
     revoke() {
+        useUiStore.setState({ipColors: {}});
+
         for (const element of document.querySelectorAll<HTMLElement>(".ub-writer[data-refresher-user-info]")) {
             delete element.dataset.refresherUserInfo;
         }
