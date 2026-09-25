@@ -272,9 +272,10 @@ const controller = (ctx: ModuleContext) => {
     };
 
     const restoreHistory = (fromHistory: boolean) => {
-        if (savedHistory && ctx.settings.colorPreviewLink === true) {
-            // 뒤로 가기로 닫았으면 주소는 이미 돌아갔다 — 제목만 (popstate는 제목을 되돌리지 않는다)
-            if (!fromHistory) history.pushState(savedHistory.state, savedHistory.title, savedHistory.url);
+        if (savedHistory) {
+            // 주소를 바꿨을 때만 되돌린다 — 설정으로 보면 연 채로 설정을 바꿀 때 어긋난다. 뒤로 가기로 닫았으면 주소는 이미 돌아갔다
+            if (!fromHistory && location.href !== savedHistory.url) history.pushState(savedHistory.state, savedHistory.title, savedHistory.url);
+            // popstate는 제목을 되돌리지 않는다
             document.title = savedHistory.title;
         }
 
@@ -299,8 +300,12 @@ const controller = (ctx: ModuleContext) => {
         const st = store.getState();
 
         if (st.visible && st.preData?.id === preData.id && st.preData?.gallery === preData.gallery) {
-            st.setCommentsOnly(commentsOnly);
-            return;
+            if (!st.error) {
+                st.setCommentsOnly(commentsOnly);
+                return;
+            }
+            // 오류 난 글을 다시 열면(다시 시도) 제자리에서 다시 받는다 — 닫았다 열면 히스토리가 두 칸 쌓인다
+            historySkip = true;
         }
 
         abort?.abort();

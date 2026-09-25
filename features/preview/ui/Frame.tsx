@@ -173,12 +173,8 @@ const ErrorBlock = ({error}: { error: ErrorState }) => {
                     size="1"
                     variant="soft"
                     color={adult ? "gray" : "red"}
-                    onClick={() => {
-                        const st = usePreviewStore.getState();
-                        if (!preData) return;
-                        st.requestClose();
-                        st.requestOpen(preData);
-                    }}
+                    // 같은 글을 다시 열면 컨트롤러가 제자리에서 다시 받는다
+                    onClick={() => preData && usePreviewStore.getState().requestOpen(preData)}
                 >
                     다시 시도
                 </Button>
