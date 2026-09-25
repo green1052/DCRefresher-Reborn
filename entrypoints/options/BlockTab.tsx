@@ -78,7 +78,6 @@ export function BlockTab() {
     return (
         <Box>
             <Section
-                title="차단"
                 actions={
                     <>
                         <IconButton size="2" variant="ghost" color="gray" title="내보내기"

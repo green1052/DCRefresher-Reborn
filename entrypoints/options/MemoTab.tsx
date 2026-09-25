@@ -181,7 +181,6 @@ export function MemoTab() {
     return (
         <Box>
             <Section
-                title="메모"
                 actions={
                     <>
                         <IconButton size="2" variant="ghost" color="gray" title="내보내기"

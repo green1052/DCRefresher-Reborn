@@ -17,7 +17,7 @@ export function ShortcutTab() {
     }, []);
 
     return (
-        <Section title="단축키">
+        <Section>
             {shortcuts
                 .filter((shortcut) => shortcut.description)
                 .map((shortcut) => (

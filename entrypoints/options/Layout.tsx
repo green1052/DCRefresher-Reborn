@@ -13,7 +13,7 @@ export const Section = ({title, desc, actions, children}: {
             <Flex justify="between" align="center" mb="2">
                 {title && <Heading size="4">{title}</Heading>}
                 {actions && (
-                    <Flex gap="2" align="center">
+                    <Flex gap="2" align="center" ml="auto">
                         {actions}
                     </Flex>
                 )}

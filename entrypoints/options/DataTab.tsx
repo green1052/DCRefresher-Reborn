@@ -143,7 +143,7 @@ export function DataTab() {
     };
 
     return (
-        <Section title="데이터">
+        <Section>
             <Row
                 left={
                     <Flex direction="column">

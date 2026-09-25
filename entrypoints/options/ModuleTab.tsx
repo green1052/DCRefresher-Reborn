@@ -16,7 +16,7 @@ export function ModuleTab() {
     if (schemas.length === 0) return <Empty>모듈이 없습니다.</Empty>;
 
     return (
-        <Section title="모듈">
+        <Section>
             {schemas.map((schema, index) => (
                 <Box key={schema.id} mb="4" mt={index > 0 ? "4" : undefined}>
                     <Flex justify="between" align="center" gap="3">
