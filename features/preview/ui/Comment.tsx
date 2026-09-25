@@ -209,8 +209,9 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
     const isOp = Boolean(user.id) && user.id === author?.id;
 
     const isDeleted = comment.is_delete === "1";
-    // 디시처럼 멤버만 댓글(allow_reply)이면 답글도 막고, 답글 막힌 댓글(reply_w)엔 버튼을 두지 않는다 — 음성 댓글은 디시도 답글 버튼을 따로 단다
-    const canReply = !isDeleted && allowReply && (depth > 0 || comment.voice !== undefined || comment.reply_w !== "N");
+    // 디시처럼 멤버만 댓글(allow_reply)이면 답글도 막고, 답글 막힌 댓글(reply_w)엔 버튼을 두지 않는다 — 음성 댓글은 디시도 답글 버튼을 따로 단다.
+    // 그린 깊이(depth)가 아니라 댓글의 깊이로 — 부모를 숨겨 들여쓰지 않은 답글도 답글이다
+    const canReply = !isDeleted && allowReply && (comment.depth > 0 || comment.voice !== undefined || comment.reply_w !== "N");
     const canDelete =
         !isDeleted && (comment.del_btn === "Y" || comment.my_cmt === "Y" || isAdmin || (!comment.user_id && Boolean(comment.ip)));
 
