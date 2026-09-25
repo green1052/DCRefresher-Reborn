@@ -26,6 +26,18 @@ export const showsUid = (view: BadgeView, icon?: string): boolean => {
     return type.startsWith("FIXED") ? view.fixedUid : type.startsWith("HALF_FIXED") ? view.halfFixedUid : true;
 };
 
+/** 차단 모듈의 표시 방식 — 미리보기도 페이지와 같게 가린다 */
+export interface BlockView {
+    blur: boolean;
+    /** 블러에 마우스를 올리면 보기 */
+    blurReveal: boolean;
+    replyRemove: boolean;
+    /** 이 페이지에서만 차단 내용 보기 (저장하지 않음) */
+    revealed: boolean;
+    /** 같은 댓글 접기 — 끄면 null */
+    duplicate: { count: number; minLength: number } | null;
+}
+
 export interface ToastData {
     id: number;
     content: string;
@@ -57,6 +69,8 @@ interface UiState {
     badgeView: BadgeView;
     /** 글댓비 캐시와 경고 기준 (userinfo) — 글댓비 표시를 끄거나 모듈이 꺼져 있으면 null */
     ratios: { cache: Record<string, { article: number; comment: number }>; alarm: number } | null;
+    /** 차단 모듈이 꺼져 있으면 null — 미리보기도 가리지 않는다 */
+    blockView: BlockView | null;
 
     showToast: (content: string, type?: ToastLevel, autoClose?: number, onClick?: () => void) => void;
     dismissToast: (id?: number) => void;
@@ -78,6 +92,7 @@ export const useUiStore = create<UiState>((set, get) => ({
     badgeColors: {},
     badgeView: DEFAULT_BADGE_VIEW,
     ratios: null,
+    blockView: null,
 
     showToast: (content, type = "info", autoClose = 5000, onClick) => {
         set({toast: {id: ++toastSeq, content, type, autoClose, onClick}});

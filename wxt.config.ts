@@ -46,6 +46,10 @@ export default defineConfig({
                     default: "Alt+P"
                 },
                 description: "스텔스 모드: 일시 비활성화"
+            },
+            // 크롬은 기본 키를 4개까지만 줄 수 있다 — 비워 두고 사용자가 지정한다
+            blockReveal: {
+                description: "컨텐츠 차단: 이 페이지에서 가린 내용 보기"
             }
         }
     })

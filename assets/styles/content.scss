@@ -1,7 +1,8 @@
 /* ===== 디시 페이지에 주입하는 스타일 (확장 UI는 shadow DOM의 overlay.scss) ===== */
 
-/* 차단 — 블러 처리 옵션 (block 모듈). 강도·마우스 오버 보기는 모듈이 <html>에 거는 변수/클래스 */
-.refresherBlur {
+/* 차단 — 블러 처리 옵션 (block 모듈)과 깡계 흐리게 (userinfo 모듈). 강도·마우스 오버 보기는 block 모듈이 <html>에 거는 변수/클래스 */
+.refresherBlur,
+.refresherLowActivityBlur {
     filter: blur(var(--refresher-blur, 5px));
     opacity: 0.5;
     transition: filter 0.15s, opacity 0.15s;
@@ -9,9 +10,43 @@
 
 // 흐림만 풀고 반투명은 남기면 가려진 글인지 알아보기 어렵다 — 둘 다 원래대로.
 // 키보드 포커스로도 볼 수 있게 하되 focus-visible만 — 클릭한 링크에 남는 포커스로 계속 보이면 안 된다
-.refresherBlurReveal .refresherBlur:is(:hover, :has(:focus-visible)) {
+.refresherBlurReveal .refresherBlur:is(:hover, :has(:focus-visible)),
+.refresherLowActivityBlur:is(:hover, :has(:focus-visible)) {
     filter: none;
     opacity: 1;
+}
+
+.refresherDuplicate,
+.refresherLowActivityHide {
+    display: none !important;
+}
+
+.refresherTextNotice {
+    padding: 20px 0;
+    color: #888;
+}
+
+.refresherDuplicateBadge {
+    margin-left: 6px;
+    font-size: 11px;
+    color: #888;
+}
+
+/* 이 페이지에서만 가린 내용 보기 (block 모듈) — 가린 것을 흐리게 다 보인다. 차단은 인라인 display:none이라 !important */
+.refresherBlockReveal {
+    :is(.refresherBlocked, .refresherDuplicate, .refresherLowActivityHide) {
+        display: revert !important;
+        opacity: 0.35;
+    }
+
+    :is(.refresherBlur, .refresherLowActivityBlur) {
+        filter: none;
+        opacity: 0.35;
+    }
+
+    .refresherTextNotice {
+        display: none;
+    }
 }
 
 /* 새 글 등장 효과 (refresh 모듈의 fadeIn) */

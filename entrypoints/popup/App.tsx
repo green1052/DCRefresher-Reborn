@@ -124,6 +124,10 @@ function PageSection({tabId, gallery, state: initial}: Page) {
             <Text size="2" color="gray">차단 {blockCount}개 · 메모 {memoCount}개</Text>
             {state?.refresh && <SwitchRow label="새로고침 일시정지" checked={state.refresh.paused} onChange={() => act("toggleRefresh")}/>}
             {state?.stealth && <SwitchRow label="이미지 잠시 보이기" checked={state.stealth.revealed} onChange={() => act("toggleStealth")}/>}
+            {state?.block && (
+                <SwitchRow label={`가린 내용 보기 (${state.block.hidden}개)`} checked={state.block.revealed}
+                           onChange={() => act("toggleBlockReveal")}/>
+            )}
         </Section>
     );
 }

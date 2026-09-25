@@ -12,6 +12,8 @@ import {initDatabase} from "@/core/database";
 import {onMessage, type PageState} from "@/core/messaging/protocol";
 import {getModuleApi, loadAll, runShortcut, stopAll} from "@/core/module/registry";
 import features from "@/features";
+import type {BlockApi} from "@/features/block";
+import type {RefreshApi} from "@/features/refresh";
 import type {StealthApi} from "@/features/stealth";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
@@ -31,28 +33,32 @@ export default defineContentScript({
         // ===== 메시징 (배경·팝업→탭) =====
         onMessage("refresher:executeShortcut", ({data: command}) => runShortcut(command));
 
-        // isPaused는 새로고침 모듈 버전에 따라 없을 수 있다 — 모르면 팝업에 토글을 띄우지 않는다
-        const refreshApi = () => getModuleApi("refresh") as { isPaused?: () => boolean; togglePause?: () => void } | undefined;
+        // 모듈이 꺼져 있거나 이 페이지에서 안 돌면 undefined — 팝업에 그 토글을 띄우지 않는다
+        const refreshApi = () => getModuleApi("refresh") as RefreshApi | undefined;
         const stealthApi = () => getModuleApi("stealth") as StealthApi | undefined;
+        const blockApi = () => getModuleApi("block") as BlockApi | undefined;
 
         const pageState = (): PageState => {
-            const paused = refreshApi()?.isPaused?.();
+            const refresh = refreshApi();
             const stealth = stealthApi();
+            const block = blockApi();
             // 제목 링크의 글자만 — 마이너·미니 표시 아이콘의 숨은 글자는 뺀다
             const title = document.querySelector(".page_head h2 a");
             const name = title ? [...title.childNodes].filter((node) => node.nodeType === Node.TEXT_NODE).map((node) => node.textContent).join("").trim() : "";
 
             return {
-                refresh: paused === undefined ? null : {paused},
+                refresh: refresh ? {paused: refresh.isPaused()} : null,
                 stealth: stealth ? {revealed: stealth.isRevealed()} : null,
+                block: block ? {revealed: block.isRevealed(), hidden: block.hiddenCount()} : null,
                 galleryName: name || null
             };
         };
 
         onMessage("refresher:pageState", pageState);
         onMessage("refresher:pageAction", ({data: action}) => {
-            if (action === "toggleRefresh") refreshApi()?.togglePause?.();
-            else stealthApi()?.toggle();
+            if (action === "toggleRefresh") refreshApi()?.togglePause();
+            else if (action === "toggleStealth") stealthApi()?.toggle();
+            else blockApi()?.toggleReveal();
             return pageState();
         });
 

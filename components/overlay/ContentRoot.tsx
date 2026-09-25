@@ -3,12 +3,16 @@ import {CircleAlert, Copy, Info, TriangleAlert, X} from "lucide-react";
 import {Popover as PopoverPrimitive} from "radix-ui";
 import {useEffect, useState} from "react";
 
+import {blockingEntries} from "@/core/block";
 import {eventBus} from "@/core/eventbus/bus";
 import type {ModuleEventData} from "@/core/eventbus/types";
 import {PreviewHost} from "@/features/preview/ui/PreviewHost";
 import {type ToastData, useUiStore} from "@/stores/ui";
 import {banReasonsOf, ipInfoOf} from "@/core/database";
 import {queryString} from "@/core/http/urls";
+import {TYPE_NAMES} from "@/core/storage/items";
+import type {BlockEntry, BlockType} from "@/core/storage/types";
+import {useBlocksStore} from "@/stores/blocks";
 import {useUserMemo} from "@/stores/memos";
 import {type ActivityState, useGallogActivity} from "@/utils/gallogActivity";
 
@@ -95,11 +99,48 @@ const identityValue = (selected: { uid?: string; ip?: string }): string | undefi
     return selected.ip;
 };
 
+/** 규칙 하나 해제 — 토스트를 누르면 되돌린다 */
+const unblock = async (type: BlockType, {id, ...fields}: BlockEntry): Promise<void> => {
+    await useBlocksStore.getState().removeEntry(type, id);
+    // 정규식은 한 규칙이 여러 대상을 막는다
+    const others = fields.isRegex ? " 같은 규칙에 걸린 다른 대상도 풀렸습니다." : "";
+    useUiStore.getState().showToast(`차단을 해제했습니다.${others} 누르면 되돌립니다.`, "info", 5000, () => {
+        useUiStore.getState().dismissToast();
+        void useBlocksStore.getState().addEntry(type, fields);
+    });
+};
+
+/** 이 대상을 막고 있는 차단 규칙 — 왜 가려졌는지 보고 그 자리에서 푼다 */
+const BlockRules = ({rules}: { rules: { type: BlockType; entry: BlockEntry }[] }) => (
+    <>
+        <Separator size="4" my="2"/>
+        <Text as="p" size="1" color="gray" mb="1">걸린 차단 규칙</Text>
+        <Flex direction="column" gap="1">
+            {rules.map(({type, entry}) => (
+                <Flex key={entry.id} align="center" justify="between" gap="2">
+                    <Text size="1" truncate title={entry.isRegex ? "정규식 — 풀면 이 규칙에 걸린 다른 대상도 함께 풀립니다." : undefined}>
+                        <Text color="gray">{TYPE_NAMES[type]}</Text> {type === "DCCON" ? entry.extra || entry.content : entry.content}
+                        {entry.isRegex && <Text color="gray"> (정규식)</Text>}
+                        {entry.gallery && <Text color="gray"> (이 갤러리만)</Text>}
+                    </Text>
+                    <Button size="1" variant="ghost" color="red" style={{flexShrink: 0}} onClick={() => void unblock(type, entry)}>해제</Button>
+                </Flex>
+            ))}
+        </Flex>
+    </>
+);
+
 const BubbleHost = () => {
     const bubble = useUiStore((s) => s.bubble);
     const selected = useUiStore((s) => s.selected);
     const activityState = useGallogActivity(bubble && selected && !selected.dccon ? selected.uid : undefined);
     const memo = useUserMemo(selected ?? {}, queryString("id"));
+    // 구독한 목록으로 찾아야 해제하면 바로 다시 계산된다
+    const entries = useBlocksStore((s) => s.entries);
+    const defaults = useBlocksStore((s) => s.defaults);
+    const rules = selected
+        ? blockingEntries(selected.dccon ? {DCCON: selected.dccon} : {NICK: selected.nick, ID: selected.uid, IP: selected.ip}, queryString("id") ?? undefined, {entries, defaults})
+        : [];
 
     // Popover는 스크롤을 따라가지 않으므로 스크롤시 닫는다
     useEffect(() => {
@@ -172,6 +213,7 @@ const BubbleHost = () => {
                         </Flex>
                     </>
                 )}
+                {rules.length > 0 && <BlockRules rules={rules}/>}
             </Popover.Content>
         </Popover.Root>
     );
