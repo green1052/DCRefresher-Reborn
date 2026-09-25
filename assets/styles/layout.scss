@@ -64,17 +64,8 @@
     }
 
     .list_array_option,
-    .listwrap .visit_list,
     .listwrap .issuebox {
         width: 100% !important;
-    }
-
-    .listwrap .visit_history {
-        width: 98.5%;
-    }
-
-    .listwrap .visit_list {
-        display: contents;
     }
 
     .array_tab button {
@@ -83,10 +74,6 @@
 
     .page_head h2 {
         font-size: 23px;
-    }
-
-    .left_content .visit_list li a {
-        width: 60px;
     }
 
     .gall_issuebox {
@@ -149,7 +136,7 @@
 }
 
 .refresherPushToRight {
-    .stickyunit, ._BTN_AD_ {
+    .stickyunit {
         display: none !important;
     }
 
@@ -159,13 +146,8 @@
         width: 1160px;
     }
 
-    .listwrap .minor_intro_box,
-    .listwrap .visit_list {
+    .listwrap .minor_intro_box {
         width: 1000px;
-    }
-
-    .listwrap .visit_history {
-        width: 1134px;
     }
 
     .list_wrap.width1160 .newvisit_history {

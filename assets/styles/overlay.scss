@@ -153,6 +153,11 @@
     line-height: 1.7;
 }
 
+/* 스텔스 모드(페이지의 html.refresherStealth)가 넘겨준 변수로 미리보기 미디어도 숨긴다 */
+.refresher-html :is(img, video, embed, iframe) {
+    display: var(--refresher-stealth-media, inline);
+}
+
 .refresher-preview-block-media {
     embed,
     img:not(.written_dccon),

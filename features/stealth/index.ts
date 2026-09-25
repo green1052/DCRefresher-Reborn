@@ -14,11 +14,10 @@ const tempButtonCreate = (mount: HTMLElement): void => {
 
     const buttonFrame = document.createElement("div");
     buttonFrame.classList.add(CONTROL_BUTTON.replace(".", ""));
-    buttonFrame.classList.add("blur");
     buttonFrame.innerHTML = `
   <div class="button" id="tempview">
     ${EYE_SVG}
-    <p id="temp_button_text">이미지 숨기기</p>
+    <p id="temp_button_text">이미지 보이기</p>
   </div>
 `;
     const button = buttonFrame.querySelector<HTMLElement>("#tempview");
@@ -26,7 +25,8 @@ const tempButtonCreate = (mount: HTMLElement): void => {
 
     button?.addEventListener("click", () => {
         const shown = document.documentElement.classList.toggle(TEMPORARY_STEALTH);
-        if (buttonText) buttonText.innerText = shown ? "이미지 보이기" : "이미지 숨기기";
+        // 버튼 문구는 누르면 할 동작
+        if (buttonText) buttonText.innerText = shown ? "이미지 숨기기" : "이미지 보이기";
     });
 
     mount.prepend(buttonFrame);
