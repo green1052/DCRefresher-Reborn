@@ -1,6 +1,7 @@
 import {Button, Checkbox, Dialog, Flex, Text, TextField} from "@radix-ui/themes";
 import {useState} from "react";
 
+import {DialogActions} from "@/components/ConfirmDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
 import {composeExtra} from "@/features/block/request";
 import {DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
@@ -98,14 +99,9 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                     )}
                 </Flex>
 
-                <Flex gap="3" justify="end" mt="4">
-                    <Dialog.Close>
-                        <Button variant="soft" color="gray">
-                            취소
-                        </Button>
-                    </Dialog.Close>
+                <DialogActions>
                     <Button onClick={submit}>{initial ? "수정" : "추가"}</Button>
-                </Flex>
+                </DialogActions>
             </Dialog.Content>
         </Dialog.Root>
     );

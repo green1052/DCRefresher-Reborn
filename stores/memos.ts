@@ -20,6 +20,9 @@ const isMemoEntry = (value: unknown): value is MemoEntry => {
     return typeof memo.text === "string" && typeof memo.color === "string" && (memo.gallery === undefined || typeof memo.gallery === "string");
 };
 
+/** 새 메모의 기본 색 */
+export const randomColor = (): string => `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0")}`;
+
 /** 저장소/가져오기 값 → 유효 항목만 */
 export const normalizeMemoMap = (value: unknown): MemoMap =>
     value && typeof value === "object" && !Array.isArray(value)

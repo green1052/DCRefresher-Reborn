@@ -1,7 +1,7 @@
 import {Badge, Box, Button, Callout, Flex, Heading, IconButton, Separator, Spinner, Text, Theme, Tooltip} from "@radix-ui/themes";
 import {ArrowUp, CircleAlert, Clock, ExternalLink, Eye, MessageSquare, ThumbsDown, ThumbsUp} from "lucide-react";
 import {Dialog} from "radix-ui";
-import {Fragment, useEffect, useRef, useState} from "react";
+import {Fragment, useEffect, useRef} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
 import {captchaImage, vote} from "@/core/preview/request";
@@ -9,21 +9,14 @@ import {useUiStore} from "@/stores/ui";
 import {isTyping} from "@/utils/event";
 
 import {buildPreData} from "../index";
-import {Comment, UserCard} from "./Comment";
+import {Comment, useTick, UserCard} from "./Comment";
 import {type ErrorState, usePreviewStore} from "./previewStore";
 import {WriteComment} from "./WriteComment";
 
 const CountDown = () => {
     const expire = usePreviewStore((s) => s.expire);
-    const [, force] = useState(0);
-
     // 1시간 미만이면 초까지 보여 주므로 1초마다 (타이머는 하나뿐이라 부담 없다)
-    useEffect(() => {
-        const timer = window.setInterval(() => {
-            if (!document.hidden) force((x) => x + 1);
-        }, 1000);
-        return () => window.clearInterval(timer);
-    }, []);
+    useTick(1000);
 
     if (!expire || Number.isNaN(expire.getTime())) return null;
 

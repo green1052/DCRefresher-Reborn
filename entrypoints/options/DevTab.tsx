@@ -2,13 +2,13 @@ import {Badge, Box, Button, Code, DataList, Flex, IconButton, SegmentedControl, 
 import {ChevronDown, ChevronRight, Copy, EyeOff, FileJson, RefreshCw, RotateCcw, Trash2} from "lucide-react";
 import {useEffect, useRef, useState} from "react";
 
-import {ConfirmDialog} from "@/components/ConfirmDialog";
+import {ConfirmDialog, Notice} from "@/components/ConfirmDialog";
 import {initDatabase, ipInfoOf} from "@/core/database";
 import {compactIpData, type RawIpData} from "@/core/ipdb";
 import {dbStorage} from "@/core/storage/items";
 import type {StoredDB} from "@/core/storage/types";
 
-import {Empty, Section} from "./Layout";
+import {Empty, formatTime, Section} from "./Layout";
 
 type Area = "local" | "sync";
 
@@ -31,8 +31,6 @@ const byteSize = (value: unknown): number => new Blob([JSON.stringify(value)]).s
 
 const formatBytes = (bytes: number): string =>
     bytes < 1024 ? `${bytes}B` : bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)}KB` : `${(bytes / 1024 / 1024).toFixed(2)}MB`;
-
-const formatTime = (time: number): string => (time === 0 ? "없음" : new Date(time).toLocaleString("ko-KR"));
 
 /** 저장소 내용 — 다른 탭/콘텐츠 스크립트에서 바뀌어도 따라간다 */
 const useStorageArea = (area: Area): Record<string, unknown> | null => {
@@ -257,10 +255,7 @@ export function DevTab({onHide}: { onHide: () => void }) {
             <DatabaseSection notify={setNotice}/>
             <ToolsSection notify={setNotice} onHide={onHide}/>
 
-            {notice && (
-                <ConfirmDialog title={notice} cancelLabel={null}
-                               onClose={() => setNotice(null)} onConfirm={() => setNotice(null)}/>
-            )}
+            <Notice message={notice} onClose={() => setNotice(null)}/>
         </Box>
     );
 }

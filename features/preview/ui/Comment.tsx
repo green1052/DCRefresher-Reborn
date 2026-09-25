@@ -5,7 +5,7 @@ import {type MouseEvent, useEffect, useLayoutEffect, useRef, useState} from "rea
 import {overlay} from "@/components/overlay/shadow";
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {User} from "@/core/preview/types";
-import {adminDeleteComment, userDeleteComment} from "@/core/preview/request";
+import {adminDeleteComment, graphemes, TXTCON_MAX_LINE_LEN, userDeleteComment} from "@/core/preview/request";
 import {notifyManage} from "@/utils/notify";
 import {useUiStore} from "@/stores/ui";
 import {banReasonsOf, ipInfoOf} from "@/core/database";
@@ -47,19 +47,12 @@ const extractIp = (html: string | undefined): string | undefined => html?.match(
 
 /* ===== 글자콘 — 디시 txtcon_view.js를 옮김 (디시 스크립트는 shadow DOM에 닿지 않는다) ===== */
 
-/** 한 줄 최대 글자 수 */
-const TXTCON_MAX_LINE_LEN = 5;
-
-// ponytail: 디시는 국기·스킨톤·ZWJ 등을 직접 묶지만 브라우저 grapheme 분할과 흔한 글자에선 같다 (분해형 한글 자모 등만 다름)
-const segmenter = new Intl.Segmenter();
-const clusters = (text: string): string[] => Array.from(segmenter.segment(text), ({segment}) => segment);
-
 /** 직접 줄바꿈은 두고 각 줄을 5글자씩 나눈다 */
 const wrapTxtcon = (text: string): string =>
     text
         .replace(/\r\n?/g, "\n")
         .split("\n")
-        .map((line) => clusters(line).map((char, i) => (i && i % TXTCON_MAX_LINE_LEN === 0 ? "\n" : "") + char).join(""))
+        .map((line) => graphemes(line).map((char, i) => (i && i % TXTCON_MAX_LINE_LEN === 0 ? "\n" : "") + char).join(""))
         .join("\n");
 
 /** 박스에 넘치지 않는 최대 글자 크기 (16~72px 이진 탐색). 줄 수는 16px 기준으로 고정, 폭이 넘치면 break-all */
@@ -109,7 +102,7 @@ const fitTxtcon = (box: HTMLElement): void => {
 
     // 남는 폭을 자간으로 채운다 (마지막 글자 뒤 자간만큼 치우치므로 transform으로 보정)
     // 글자 수는 디시처럼 이스케이프된 채로 센다 (&는 &amp; 5글자) — 디시와 같은 자간이 나오게
-    const longest = Math.max(...meas.innerHTML.split("\n").map((line) => clusters(line).length));
+    const longest = Math.max(...meas.innerHTML.split("\n").map((line) => graphemes(line).length));
     const slack = availW - meas.getBoundingClientRect().width;
     if (longest > 1 && slack > 1) {
         const spacing = slack / longest;
@@ -118,19 +111,23 @@ const fitTxtcon = (box: HTMLElement): void => {
     }
 };
 
-const TimeStamp = ({date}: { date: string }) => {
-    const parsed = parseDate(date);
-    const [absolute, setAbsolute] = useState(false);
+/** ms마다 다시 그린다 (탭이 숨겨져 있으면 건너뛴다) */
+export const useTick = (ms: number): void => {
     const [, force] = useState(0);
-    // 댓글마다 타이머가 도니, 초 단위로 바뀌는 1분 미만일 때만 5초마다, 그 밖에는 1분마다 다시 그린다
-    const recent = Date.now() - parsed.getTime() < 60_000;
 
     useEffect(() => {
         const timer = window.setInterval(() => {
             if (!document.hidden) force((x) => x + 1);
-        }, recent ? 5000 : 60_000);
+        }, ms);
         return () => window.clearInterval(timer);
-    }, [recent]);
+    }, [ms]);
+};
+
+const TimeStamp = ({date}: { date: string }) => {
+    const parsed = parseDate(date);
+    const [absolute, setAbsolute] = useState(false);
+    // 댓글마다 타이머가 도니, 초 단위로 바뀌는 1분 미만일 때만 5초마다, 그 밖에는 1분마다 다시 그린다
+    useTick(Date.now() - parsed.getTime() < 60_000 ? 5000 : 60_000);
 
     return (
         <Text size="1" color="gray" title={parsed.toLocaleString()} style={{cursor: "pointer", whiteSpace: "nowrap"}}

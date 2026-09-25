@@ -104,23 +104,20 @@ export const postManage = async (url: string, body: URLSearchParams): Promise<Ma
     return {success: !!result && result !== "false" && result !== "fail", message: message || undefined};
 };
 
-/** 끌올 */
-export const bump = async (preData: GalleryPreData): Promise<ManageResult> => {
+/** 글 하나를 대상으로 하는 관리 요청 — 끌올·삭제는 본문이 같고 주소만 다르다 */
+const managePost = async (preData: GalleryPreData, base: string, mini: string): Promise<ManageResult> => {
     const body = await commonBody(preData.link);
     body.set("id", preData.gallery);
     body.set("nos[]", preData.id);
 
-    return postManage(manageUrl(preData.link, urls.manage.bump, urls.manage.bumpMini), body);
+    return postManage(manageUrl(preData.link, base, mini), body);
 };
+
+/** 끌올 */
+export const bump = (preData: GalleryPreData): Promise<ManageResult> => managePost(preData, urls.manage.bump, urls.manage.bumpMini);
 
 /** 삭제 */
-export const deletePost = async (preData: GalleryPreData): Promise<ManageResult> => {
-    const body = await commonBody(preData.link);
-    body.set("id", preData.gallery);
-    body.set("nos[]", preData.id);
-
-    return postManage(manageUrl(preData.link, urls.manage.delete, urls.manage.deleteMini), body);
-};
+export const deletePost = (preData: GalleryPreData): Promise<ManageResult> => managePost(preData, urls.manage.delete, urls.manage.deleteMini);
 
 export interface BlockOptions {
     avoidHour: string;
@@ -326,7 +323,8 @@ export const TXTCON_COLORS = ["ffffff", "333333"];
 
 const TXTCON_MAX_LEN = 20;
 const TXTCON_MAX_LINES = 4;
-const TXTCON_MAX_LINE_LEN = 5;
+/** 한 줄 최대 글자 수 (보여 줄 때도 이 단위로 줄을 나눈다) */
+export const TXTCON_MAX_LINE_LEN = 5;
 
 // 컬러 이모지로 그려지는 BMP 문자 — 글자 수에 1을 더 센다
 const TXTCON_BMP_EMOJI = /[\u231A-\u231B\u23E9-\u23EC\u23F0\u23F3\u25FD-\u25FE\u2614-\u2615\u2648-\u2653\u267F\u2693\u26A1\u26AA-\u26AB\u26BD-\u26BE\u26C4-\u26C5\u26CE\u26D4\u26EA\u26F2-\u26F3\u26F5\u26FA\u26FD\u2705\u270A-\u270B\u2728\u274C\u274E\u2753-\u2755\u2757\u2795-\u2797\u27B0\u27BF\u2B1B-\u2B1C\u2B50\u2B55]/g;
@@ -338,12 +336,14 @@ const txtconLength = (text: string): number => {
     return plain.length + (plain.match(TXTCON_BMP_EMOJI)?.length ?? 0);
 };
 
-// ponytail: 디시 txtcon_clusters 대신 브라우저 grapheme 분할 — 흔한 글자에선 같다 (분해형 한글 자모 등만 다름)
+// ponytail: 디시 txtcon_clusters 대신 브라우저 grapheme 분할 — 흔한 글자(국기·스킨톤·ZWJ 포함)에선 같다 (분해형 한글 자모 등만 다름)
 const segmenter = new Intl.Segmenter();
+/** 글자콘의 '한 글자' 단위로 나눈다 */
+export const graphemes = (text: string): string[] => Array.from(segmenter.segment(text), ({segment}) => segment);
 
 /** 각 줄을 5글자씩 나눴을 때의 줄 수 */
 const txtconLines = (text: string): number =>
-    text.split("\n").reduce((sum, line) => sum + Math.max(1, Math.ceil(Array.from(segmenter.segment(line)).length / TXTCON_MAX_LINE_LEN)), 0);
+    text.split("\n").reduce((sum, line) => sum + Math.max(1, Math.ceil(graphemes(line).length / TXTCON_MAX_LINE_LEN)), 0);
 
 /** 글자콘 입력값 정리 (txtcon.js 'wide' 문자 필터 + 20자·4줄·줄당 5자 제한) */
 export const normalizeTxtcon = (value: string): string => {
@@ -368,7 +368,7 @@ export const normalizeTxtcon = (value: string): string => {
         .join("\n");
 
     // 4줄(줄바꿈 3개)×5글자면 23 grapheme을 넘을 수 없다 — 미리 줄여 두어야 한 글자씩 빼며 전체를 다시 나누는 아래 루프가 긴 붙여넣기에서 O(n²)가 되지 않는다
-    text = Array.from(segmenter.segment(text), (s) => s.segment).slice(0, (TXTCON_MAX_LINE_LEN + 1) * TXTCON_MAX_LINES).join("");
+    text = graphemes(text).slice(0, (TXTCON_MAX_LINE_LEN + 1) * TXTCON_MAX_LINES).join("");
 
     // 5글자씩 나눈 줄 수가 넘치면 뒤에서부터 제거
     while (txtconLines(text) > TXTCON_MAX_LINES) text = Array.from(text).slice(0, -1).join("");

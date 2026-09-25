@@ -2,16 +2,13 @@ import {CloudDownload, CloudUpload, Download, RefreshCw, Trash2, Upload} from "l
 import {Box, Button, Dialog, Flex, Switch, Text} from "@radix-ui/themes";
 import {useEffect, useState} from "react";
 
-import {ConfirmDialog} from "@/components/ConfirmDialog";
+import {ConfirmDialog, DialogActions, Notice} from "@/components/ConfirmDialog";
 import {type BackupSlot, collectLocalData, isBackupTarget, readCloudBackup, readCloudBackupTimes, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
 import {migrateV5} from "@/core/migrate-v5";
 import {backupStorage, dbStorage} from "@/core/storage/items";
 
-import {ImportDialog, Section} from "./Layout";
-
-const formatTime = (lastUpdate: number): string =>
-    lastUpdate === 0 ? "기록 없음" : new Date(lastUpdate).toLocaleString("ko-KR");
+import {formatTime, ImportDialog, Section} from "./Layout";
 
 const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
@@ -200,11 +197,7 @@ export function DataTab() {
                                 </Button>
                             ))}
                         </Flex>
-                        <Flex justify="end" mt="4">
-                            <Dialog.Close>
-                                <Button variant="soft" color="gray">취소</Button>
-                            </Dialog.Close>
-                        </Flex>
+                        <DialogActions/>
                     </Dialog.Content>
                 </Dialog.Root>
                 {autoBackup && (
@@ -238,10 +231,7 @@ export function DataTab() {
                          </Button>
                      }/>
 
-            {notice && (
-                <ConfirmDialog title={notice} cancelLabel={null}
-                               onClose={() => setNotice(null)} onConfirm={() => setNotice(null)}/>
-            )}
+            <Notice message={notice} onClose={() => setNotice(null)}/>
 
             {resetConfirm && (
                 <ConfirmDialog

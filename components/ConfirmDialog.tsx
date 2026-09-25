@@ -1,4 +1,17 @@
 import {Button, Dialog, Flex} from "@radix-ui/themes";
+import type {ReactNode} from "react";
+
+/** 다이얼로그 아래 버튼 줄 — 취소(닫기) 뒤에 children. cancelLabel이 null이면 취소 버튼 없음 */
+export const DialogActions = ({cancelLabel = "취소", children}: { cancelLabel?: string | null; children?: ReactNode }) => (
+    <Flex gap="3" justify="end" mt="4">
+        {cancelLabel !== null && (
+            <Dialog.Close>
+                <Button variant="soft" color="gray">{cancelLabel}</Button>
+            </Dialog.Close>
+        )}
+        {children}
+    </Flex>
+);
 
 interface ConfirmDialogProps {
     title: string;
@@ -17,7 +30,7 @@ interface ConfirmDialogProps {
 export const ConfirmDialog = ({
                                   title,
                                   confirmLabel = "확인",
-                                  cancelLabel = "취소",
+                                  cancelLabel,
                                   danger,
                                   onConfirm,
                                   onClose
@@ -26,18 +39,15 @@ export const ConfirmDialog = ({
         <Dialog.Content maxWidth="440px">
             <Dialog.Title>{title}</Dialog.Title>
 
-            <Flex gap="3" justify="end" mt="4">
-                {cancelLabel !== null && (
-                    <Dialog.Close>
-                        <Button variant="soft" color="gray">
-                            {cancelLabel}
-                        </Button>
-                    </Dialog.Close>
-                )}
+            <DialogActions cancelLabel={cancelLabel}>
                 <Button color={danger ? "red" : undefined} variant={danger ? "soft" : "solid"} onClick={onConfirm}>
                     {confirmLabel}
                 </Button>
-            </Flex>
+            </DialogActions>
         </Dialog.Content>
     </Dialog.Root>
 );
+
+/** 확인 버튼만 있는 알림. message가 없으면 그리지 않는다 */
+export const Notice = ({message, onClose}: { message: string | null; onClose: () => void }) =>
+    message ? <ConfirmDialog title={message} cancelLabel={null} onConfirm={onClose} onClose={onClose}/> : null;

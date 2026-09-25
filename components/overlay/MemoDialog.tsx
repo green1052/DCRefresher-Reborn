@@ -5,14 +5,12 @@ import {useState} from "react";
 import {queryString} from "@/core/http/urls";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import type {MemoType} from "@/core/storage/types";
-import {useMemosStore} from "@/stores/memos";
+import {randomColor, useMemosStore} from "@/stores/memos";
 import {type MemoTargetState, useUiStore} from "@/stores/ui";
 
 import {overlay} from "./shadow";
 
 const TYPE_LABELS: Record<MemoType, string> = {NICK: "닉네임", UID: "아이디", IP: "IP"};
-
-const randomColor = (): string => `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0")}`;
 
 const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const closeMemo = useUiStore((s) => s.closeMemo);

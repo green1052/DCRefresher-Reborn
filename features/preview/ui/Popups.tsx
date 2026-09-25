@@ -2,6 +2,7 @@ import {Button, Card, Checkbox, Dialog, Flex, Grid, Kbd, RadioGroup, Text, TextF
 import {ArrowBigUpDash, Ban, Megaphone, Star, Trash2} from "lucide-react";
 import {type ReactNode, useState} from "react";
 
+import {DialogActions} from "@/components/ConfirmDialog";
 import {overlay} from "@/components/overlay/shadow";
 import {eventBus} from "@/core/eventbus/bus";
 import {blockUser} from "@/core/preview/request";
@@ -95,12 +96,9 @@ const BlockPopup = () => {
                     </Text>
                 </Flex>
 
-                <Flex gap="3" justify="end" mt="5">
-                    <Dialog.Close>
-                        <Button variant="soft" color="gray">취소</Button>
-                    </Dialog.Close>
+                <DialogActions>
                     <Button color="red" onClick={() => void submit()}>차단</Button>
-                </Flex>
+                </DialogActions>
             </Dialog.Content>
         </Dialog.Root>
     );
@@ -136,12 +134,9 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
                     onKeyDown={(event) => event.key === "Enter" && send()}
                     onChange={(event) => setCode(event.target.value)}
                 />
-                <Flex gap="3" justify="end" mt="4">
-                    <Dialog.Close>
-                        <Button variant="soft" color="gray">취소</Button>
-                    </Dialog.Close>
+                <DialogActions>
                     <Button disabled={!code.trim()} onClick={send}>전송</Button>
-                </Flex>
+                </DialogActions>
             </Dialog.Content>
         </Dialog.Root>
     );

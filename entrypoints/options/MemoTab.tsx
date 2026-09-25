@@ -1,16 +1,13 @@
-import {Download, Plus, Trash2, Upload, X} from "lucide-react";
-import {Badge, Box, Button, Card, Dialog, Flex, IconButton, Table, Tabs, Text, TextField, Tooltip} from "@radix-ui/themes";
+import {Badge, Box, Button, Dialog, Flex, Text, TextField} from "@radix-ui/themes";
 import {useState} from "react";
 
-import {ConfirmDialog} from "@/components/ConfirmDialog";
+import {DialogActions} from "@/components/ConfirmDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import type {MemoType} from "@/core/storage/types";
-import {normalizeMemoMap, useMemosStore} from "@/stores/memos";
+import {normalizeMemoMap, randomColor, useMemosStore} from "@/stores/memos";
 
-import {Empty, ImportDialog} from "./Layout";
-
-const randomColor = (): string => `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0")}`;
+import {ListRow, ListTabs} from "./Layout";
 
 interface MemoFormState {
     type: MemoType;
@@ -134,14 +131,9 @@ const MemoFormDialog = ({
                     )}
                 </Flex>
 
-                <Flex gap="3" justify="end" mt="4">
-                    <Dialog.Close>
-                        <Button variant="soft" color="gray">
-                            취소
-                        </Button>
-                    </Dialog.Close>
+                <DialogActions>
                     <Button onClick={() => void submit()}>{editing ? "수정" : "추가"}</Button>
-                </Flex>
+                </DialogActions>
             </Dialog.Content>
         </Dialog.Root>
     );
@@ -155,138 +147,48 @@ export function MemoTab() {
     const setMemos = useMemosStore((state) => state.setMemos);
 
     const [form, setForm] = useState<MemoFormState | null>(null);
-    const [clearConfirm, setClearConfirm] = useState<MemoType | null>(null);
-    const [notice, setNotice] = useState<string | null>(null);
-    const [importOpen, setImportOpen] = useState(false);
 
-    const exportMemos = async (): Promise<void> => {
-        try {
-            await navigator.clipboard.writeText(JSON.stringify(memos));
-            setNotice("메모를 클립보드로 내보냈습니다.");
-        } catch {
-            setNotice("메모를 내보내는 데 실패했습니다.");
-        }
-    };
-
-    const submitImport = async (text: string): Promise<void> => {
-        try {
-            const parsed = JSON.parse(text) as Record<string, unknown>;
-            // 객체만 받는다 — 차단 내보내기의 NICK/IP(배열)는 normalizeMemoMap이 {}로 만들어 기존 메모를 지운다
-            const types = MEMO_TYPES.filter((type) => {
-                const map = parsed[type];
-                return typeof map === "object" && map !== null && !Array.isArray(map);
-            });
-            if (types.length === 0) throw new Error();
-            for (const type of types) await setMemos(type, normalizeMemoMap(parsed[type]));
-            setImportOpen(false);
-            setNotice("메모를 가져왔습니다.");
-        } catch {
-            setNotice("메모를 가져오는 데 실패했습니다.");
-        }
+    const importMemos = async (parsed: Record<string, unknown>): Promise<number> => {
+        // 객체만 받는다 — 차단 내보내기의 NICK/IP(배열)는 normalizeMemoMap이 {}로 만들어 기존 메모를 지운다
+        const types = MEMO_TYPES.filter((type) => {
+            const map = parsed[type];
+            return typeof map === "object" && map !== null && !Array.isArray(map);
+        });
+        for (const type of types) await setMemos(type, normalizeMemoMap(parsed[type]));
+        return types.length;
     };
 
     return (
-        <Card size="3">
-            <Tabs.Root defaultValue={MEMO_TYPES[0]}>
-                <Flex align="end" gap="3">
-                    <Tabs.List style={{flex: 1}}>
-                        {MEMO_TYPES.map((type) => {
-                            const count = Object.keys(memos[type]).length;
-
-                            return (
-                                <Tabs.Trigger key={type} value={type}>
-                                    {MEMO_TYPE_NAMES[type]}
-                                    {count > 0 && (
-                                        <Badge ml="1" size="1" variant="soft" color="gray" radius="full">{count}</Badge>
-                                    )}
-                                </Tabs.Trigger>
-                            );
-                        })}
-                    </Tabs.List>
-                    <Flex gap="3" pb="2">
-                        <Tooltip content="클립보드로 내보내기">
-                            <IconButton variant="ghost" color="gray" aria-label="내보내기"
-                                        onClick={() => void exportMemos()}>
-                                <Download size={16}/>
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip content="가져오기">
-                            <IconButton variant="ghost" color="gray" aria-label="가져오기"
-                                        onClick={() => setImportOpen(true)}>
-                                <Upload size={16}/>
-                            </IconButton>
-                        </Tooltip>
-                    </Flex>
-                </Flex>
-
-                {MEMO_TYPES.map((type) => {
-                    const list = Object.entries(memos[type]);
-
-                    return (
-                        <Tabs.Content key={type} value={type}>
-                            <Flex justify="end" gap="2" py="4">
-                                <Button variant="soft" color="red" disabled={list.length === 0}
-                                        onClick={() => setClearConfirm(type)}>
-                                    <Trash2 size={14}/> 전체 삭제
-                                </Button>
-                                <Button onClick={() => setForm({type, user: "", text: "", color: randomColor(), gallery: ""})}>
-                                    <Plus size={14}/> 추가
-                                </Button>
-                            </Flex>
-
-                            {list.length === 0 ? (
-                                <Empty>{MEMO_TYPE_NAMES[type]} 메모 없음</Empty>
-                            ) : (
-                                <Table.Root variant="surface">
-                                    <Table.Header>
-                                        <Table.Row>
-                                            <Table.ColumnHeaderCell>대상</Table.ColumnHeaderCell>
-                                            <Table.ColumnHeaderCell>메모</Table.ColumnHeaderCell>
-                                            <Table.ColumnHeaderCell width="48px"/>
-                                        </Table.Row>
-                                    </Table.Header>
-                                    <Table.Body>
-                                        {list.map(([user, entry]) => (
-                                            <Table.Row
-                                                key={user}
-                                                align="center"
-                                                style={{cursor: "pointer"}}
-                                                onClick={() => setForm({type, user, text: entry.text, color: entry.color, gallery: entry.gallery ?? ""})}
-                                            >
-                                                <Table.RowHeaderCell>
-                                                    <Flex align="center" gap="2">
-                                                        <Box width="10px" height="10px" flexShrink="0"
-                                                             style={{borderRadius: "50%", background: entry.color}}/>
-                                                        <Text weight="medium">{user}</Text>
-                                                        {entry.gallery && <Badge size="1" variant="soft" color="gray">{entry.gallery}</Badge>}
-                                                    </Flex>
-                                                </Table.RowHeaderCell>
-                                                <Table.Cell>
-                                                    <Text color="gray">{entry.text}</Text>
-                                                </Table.Cell>
-                                                <Table.Cell>
-                                                    <IconButton
-                                                        variant="ghost"
-                                                        color="gray"
-                                                        size="1"
-                                                        aria-label="삭제"
-                                                        onClick={(event) => {
-                                                            event.stopPropagation();
-                                                            void removeMemo(type, user);
-                                                        }}
-                                                    >
-                                                        <X size={12}/>
-                                                    </IconButton>
-                                                </Table.Cell>
-                                            </Table.Row>
-                                        ))}
-                                    </Table.Body>
-                                </Table.Root>
-                            )}
-                        </Tabs.Content>
-                    );
-                })}
-            </Tabs.Root>
+        <>
+            <ListTabs
+                types={MEMO_TYPES}
+                names={MEMO_TYPE_NAMES}
+                counts={Object.fromEntries(MEMO_TYPES.map((type) => [type, Object.keys(memos[type]).length])) as Record<MemoType, number>}
+                label="메모"
+                columns={["대상", "메모"]}
+                emptyText={(type) => `${MEMO_TYPE_NAMES[type]} 메모 없음`}
+                exportData={() => memos}
+                importData={importMemos}
+                onClear={clearType}
+                onAdd={(type) => setForm({type, user: "", text: "", color: randomColor(), gallery: ""})}
+                rows={(type) =>
+                    Object.entries(memos[type]).map(([user, entry]) => (
+                        <ListRow
+                            key={user}
+                            head={
+                                <Flex align="center" gap="2">
+                                    <Box width="10px" height="10px" flexShrink="0" style={{borderRadius: "50%", background: entry.color}}/>
+                                    <Text weight="medium">{user}</Text>
+                                    {entry.gallery && <Badge size="1" variant="soft" color="gray">{entry.gallery}</Badge>}
+                                </Flex>
+                            }
+                            info={<Text color="gray">{entry.text}</Text>}
+                            onEdit={() => setForm({type, user, text: entry.text, color: entry.color, gallery: entry.gallery ?? ""})}
+                            onRemove={() => void removeMemo(type, user)}
+                        />
+                    ))
+                }
+            />
 
             {form && (
                 <MemoFormDialog
@@ -295,28 +197,6 @@ export function MemoTab() {
                     onSubmit={(next) => setMemo(next.type, next.user, {text: next.text, color: next.color, gallery: next.gallery || undefined})}
                 />
             )}
-
-            {clearConfirm && (
-                <ConfirmDialog
-                    title={`${MEMO_TYPE_NAMES[clearConfirm]} 메모를 모두 삭제할까요?`}
-                    confirmLabel="삭제"
-                    danger
-                    onConfirm={() => {
-                        void clearType(clearConfirm);
-                        setClearConfirm(null);
-                    }}
-                    onClose={() => setClearConfirm(null)}
-                />
-            )}
-
-            {notice && (
-                <ConfirmDialog title={notice} cancelLabel={null}
-                               onClose={() => setNotice(null)} onConfirm={() => setNotice(null)}/>
-            )}
-
-            {importOpen && (
-                <ImportDialog title="메모 가져오기" onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
-            )}
-        </Card>
+        </>
     );
 }
