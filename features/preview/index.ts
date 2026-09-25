@@ -589,7 +589,8 @@ const controller = (ctx: ModuleContext) => {
         if (ev.shiftKey) return;
         const resolved = resolveTarget(ev);
         if (!resolved || (!resolved.commentsOnly && ctx.settings.reversePreviewKey === true)) return;
-        if (ctx.settings.disableCache === true || !getEntry(resolved.preData)?.post) void requestPost(resolved.preData);
+        // 캐시를 끄면 열기가 캐시를 안 본다 — 떼기 전에 다 받으면 열 때 한 번 더 받으므로 미리 받지 않는다
+        if (ctx.settings.disableCache !== true && !getEntry(resolved.preData)?.post) void requestPost(resolved.preData);
     };
 
     const onMouseUp = (ev: MouseEvent) => {
