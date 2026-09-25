@@ -1,8 +1,9 @@
-import {CloudDownload, CloudUpload, Download, RefreshCw, Trash2, Upload} from "lucide-react";
+import {CloudDownload, CloudUpload, Download, FileJson, RefreshCw, Trash2, Upload} from "lucide-react";
 import {Box, Button, Flex} from "@radix-ui/themes";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
+import {compactIpData, type RawIpData} from "@/core/ipdb";
 import {updateDatabase} from "@/core/database";
 import {backupStorage, dbStorage} from "@/core/storage/items";
 
@@ -51,6 +52,7 @@ export function DataTab() {
     const [notice, setNotice] = useState<string | null>(null);
     const [confirming, setConfirming] = useState<ConfirmState | null>(null);
     const [importOpen, setImportOpen] = useState(false);
+    const ipFileInput = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         void dbStorage.getValue().then((db) => setLastUpdate(db.lastUpdate));
@@ -62,6 +64,22 @@ export function DataTab() {
         try {
             await updateDatabase();
             setLastUpdate((await dbStorage.getValue()).lastUpdate);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 서버에 올리기 전 테스트용 — 서버와 같은 형식(meta + b)의 ip.json을 그대로 넣는다. 다음 주기 갱신 때 서버 데이터로 바뀐다
+    const loadIpFile = async (file: File): Promise<void> => {
+        setLoading(true);
+        try {
+            const ip = compactIpData(JSON.parse(await file.text()) as RawIpData);
+            const lastUpdate = Date.now();
+            await dbStorage.setValue({...(await dbStorage.getValue()), version: "local", lastUpdate, ip});
+            setLastUpdate(lastUpdate);
+            setNotice("IP 데이터를 파일에서 불러왔습니다.");
+        } catch (error) {
+            setNotice(`IP 데이터를 불러오는데 실패했습니다. ${error instanceof Error ? error.message : ""}`);
         } finally {
             setLoading(false);
         }
@@ -144,9 +162,20 @@ export function DataTab() {
         <Box>
             <Section title="IP/밴 데이터베이스" desc={`마지막 갱신: ${formatTime(lastUpdate)}`}
                      actions={
-                         <Button variant="soft" loading={loading} onClick={() => void forceUpdate()}>
-                             <RefreshCw size={14}/> 지금 갱신
-                         </Button>
+                         <Flex gap="2">
+                             <input ref={ipFileInput} type="file" accept=".json,application/json" hidden
+                                    onChange={(event) => {
+                                        const file = event.target.files?.[0];
+                                        event.target.value = "";
+                                        if (file) void loadIpFile(file);
+                                    }}/>
+                             <Button variant="soft" color="gray" disabled={loading} onClick={() => ipFileInput.current?.click()}>
+                                 <FileJson size={14}/> IP 파일 불러오기
+                             </Button>
+                             <Button variant="soft" loading={loading} onClick={() => void forceUpdate()}>
+                                 <RefreshCw size={14}/> 지금 갱신
+                             </Button>
+                         </Flex>
                      }/>
 
             <Section title="클라우드 백업" desc={`브라우저 동기화 저장소에 설정을 백업합니다. 마지막 백업: ${formatTime(backupAt)}`}>
