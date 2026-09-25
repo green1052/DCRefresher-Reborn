@@ -1,6 +1,6 @@
 import {Box, Button, Flex, Grid, Heading, Separator, Text} from "@radix-ui/themes";
-import {Ban, CircleHelp, Code, Database, Heart, Keyboard, type LucideIcon, MessageCircle, NotebookPen, Settings, Users} from "lucide-react";
-import {useEffect, useState} from "react";
+import {Ban, CircleHelp, Code, Database, Heart, Keyboard, type LucideIcon, MessageCircle, NotebookPen, Settings, Users, Wrench} from "lucide-react";
+import {useEffect, useRef, useState} from "react";
 
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
@@ -8,16 +8,27 @@ import {initModulesStore} from "@/stores/modules";
 
 import {BlockTab} from "./BlockTab";
 import {DataTab} from "./DataTab";
+import {DevTab} from "./DevTab";
 import {GeneralTab} from "./GeneralTab";
 import {MemoTab} from "./MemoTab";
 import {ShortcutTab} from "./ShortcutTab";
 
-const TABS: { id: string; label: string; icon: LucideIcon; content: () => React.ReactNode }[] = [
+interface TabDef {
+    id: string;
+    label: string;
+    icon: LucideIcon;
+    /** 개발자 모드에서만 보임 */
+    dev?: boolean;
+    content: (props: { hideDev: () => void }) => React.ReactNode;
+}
+
+const TABS: TabDef[] = [
     {id: "general", label: "설정", icon: Settings, content: () => <GeneralTab/>},
     {id: "block", label: "차단", icon: Ban, content: () => <BlockTab/>},
     {id: "memo", label: "메모", icon: NotebookPen, content: () => <MemoTab/>},
     {id: "shortcut", label: "단축키", icon: Keyboard, content: () => <ShortcutTab/>},
-    {id: "data", label: "데이터", icon: Database, content: () => <DataTab/>}
+    {id: "data", label: "데이터", icon: Database, content: () => <DataTab/>},
+    {id: "dev", label: "개발자", icon: Wrench, dev: true, content: ({hideDev}) => <DevTab onHide={hideDev}/>}
 ];
 
 const LINKS: [string, string, LucideIcon][] = [
@@ -51,7 +62,59 @@ const useHashTab = (): [string, (id: string) => void] => {
     return [tab, (id) => (location.hash = id)];
 };
 
-const Sidebar = ({tab, onSelect}: { tab: string; onSelect: (id: string) => void }) => (
+const DEV_MODE_KEY = "refresher:devMode";
+const DEV_MODE_CLICKS = 5;
+/** 연속 클릭으로 칠 간격 */
+const DEV_MODE_CLICK_GAP = 1000;
+
+const readDevMode = (): boolean => {
+    try {
+        return localStorage.getItem(DEV_MODE_KEY) === "1";
+    } catch {
+        return false;
+    }
+};
+
+const writeDevMode = (on: boolean): void => {
+    try {
+        if (on) localStorage.setItem(DEV_MODE_KEY, "1");
+        else localStorage.removeItem(DEV_MODE_KEY);
+    } catch {
+        // 저장이 막혀 있으면 이번 세션에만 유지
+    }
+};
+
+/** 개발자 탭: 개발 빌드이거나, 로고를 5번 연속 누르면 열린다 (옵션 페이지 localStorage에 기억 — 설정 백업에 섞이지 않게) */
+const useDevMode = (): [boolean, () => void, () => void] => {
+    const [unlocked, setUnlocked] = useState(readDevMode);
+    const clicks = useRef({count: 0, last: 0});
+
+    const onLogoClick = (): void => {
+        const now = Date.now();
+        clicks.current.count = now - clicks.current.last < DEV_MODE_CLICK_GAP ? clicks.current.count + 1 : 1;
+        clicks.current.last = now;
+        if (clicks.current.count < DEV_MODE_CLICKS || unlocked) return;
+
+        writeDevMode(true);
+        setUnlocked(true);
+        location.hash = "dev";
+    };
+
+    const hide = (): void => {
+        writeDevMode(false);
+        setUnlocked(false);
+        location.hash = "";
+    };
+
+    return [import.meta.env.DEV || unlocked, onLogoClick, hide];
+};
+
+const Sidebar = ({tabs, tab, onSelect, onLogoClick}: {
+    tabs: TabDef[];
+    tab: string;
+    onSelect: (id: string) => void;
+    onLogoClick: () => void;
+}) => (
     <Flex
         direction="column"
         gap="4"
@@ -64,13 +127,13 @@ const Sidebar = ({tab, onSelect}: { tab: string; onSelect: (id: string) => void 
         style={{borderRight: "1px solid var(--gray-a5)"}}
     >
         <Flex align="center" gap="3" px="2">
-            <img src={LOGO_URL} alt="" width={36} height={36} style={{borderRadius: "var(--radius-3)"}}/>
+            <img src={LOGO_URL} alt="" width={36} height={36} style={{borderRadius: "var(--radius-3)"}} onClick={onLogoClick}/>
             <Heading size="3">DCRefresher Reborn</Heading>
         </Flex>
 
         <Flex asChild direction={{initial: "row", md: "column"}} gap="1" wrap={{initial: "wrap", md: "nowrap"}}>
             <nav>
-                {TABS.map(({id, label, icon: Icon}) => (
+                {tabs.map(({id, label, icon: Icon}) => (
                     <Button
                         key={id}
                         size="3"
@@ -111,7 +174,9 @@ const Sidebar = ({tab, onSelect}: { tab: string; onSelect: (id: string) => void 
 
 export function App() {
     const [tab, setTab] = useHashTab();
-    const current = TABS.find((item) => item.id === tab)!;
+    const [devMode, onLogoClick, hideDev] = useDevMode();
+    const tabs = TABS.filter((item) => !item.dev || devMode);
+    const current = tabs.find((item) => item.id === tab) ?? tabs[0]!;
 
     useEffect(() => {
         void initBlocksStore();
@@ -119,15 +184,14 @@ export function App() {
         void initModulesStore();
     }, []);
 
-
     return (
         <Flex direction={{initial: "column", md: "row"}} minHeight="100vh">
-            <Sidebar tab={tab} onSelect={setTab}/>
+            <Sidebar tabs={tabs} tab={current.id} onSelect={setTab} onLogoClick={onLogoClick}/>
 
             <Box flexGrow="1" minWidth="0" px={{initial: "4", md: "6"}} py="6">
                 <Box maxWidth="880px" mx="auto">
                     <Heading size="7" mb="5">{current.label}</Heading>
-                    {current.content()}
+                    {current.content({hideDev})}
                 </Box>
             </Box>
         </Flex>
