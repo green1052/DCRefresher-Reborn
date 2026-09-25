@@ -20,6 +20,8 @@ const replaceSettings = async (data: Record<string, unknown>): Promise<void> => 
     const previous = (await browser.storage.local.get(null)) as Record<string, unknown>;
     // 설정 키가 아닌 값(차단/메모 내보내기의 "NICK" 등)은 저장하지 않는다
     const next = Object.fromEntries(Object.entries(migrateV5(data)).filter(([key]) => key.startsWith("refresher:") && isBackupTarget(key)));
+    // 걸러서 다 빠지면 모든 설정이 지워진다 (예전 백업의 키가 migrateV5에서 전부 빠지는 등) — 비우는 건 초기화({})만
+    if (Object.keys(data).length > 0 && Object.keys(next).length === 0) throw new Error("쓸 수 있는 설정이 없습니다.");
     const removed = Object.keys(previous).filter((key) => isBackupTarget(key) && !(key in next));
 
     try {
@@ -110,7 +112,13 @@ export function DataTab() {
 
     const toggleAutoBackup = async (on: boolean): Promise<void> => {
         setAutoBackup(on);
-        await backupStorage.auto.setValue(on);
+        try {
+            await backupStorage.auto.setValue(on);
+        } catch (e) {
+            setAutoBackup(!on);
+            setNotice(`자동 백업 설정을 저장하지 못했습니다. ${errorMessage(e)}`);
+            return;
+        }
         // 켜는 순간의 설정을 자동 백업 칸에 바로 올려 둔다 (이후엔 바뀔 때마다 백그라운드가)
         if (on) {
             await run(async () => {

@@ -37,6 +37,11 @@ const MemoFormDialog = ({
             setError("메모 대상을 입력해주세요.");
             return;
         }
+        // 추가로 기존 메모를 덮어쓰지 않게 — 고치려면 목록에서 눌러 수정
+        if (!editing && Object.hasOwn(useMemosStore.getState().memos[state.type], state.user.trim())) {
+            setError("이미 메모가 있습니다.");
+            return;
+        }
 
         // 수정 때는 기존 키 그대로 — 다듬으면 공백 있는 키가 새 항목으로 갈라진다
         await onSubmit(editing ? state : {...state, user: state.user.trim()});
@@ -45,7 +50,7 @@ const MemoFormDialog = ({
 
     return (
         <Dialog.Root open onOpenChange={(next) => !next && onClose()}>
-            <Dialog.Content maxWidth="480px">
+            <Dialog.Content maxWidth="480px" aria-describedby={undefined}>
                 <Dialog.Title>메모 {editing ? "수정" : "추가"}</Dialog.Title>
 
                 <Flex direction="column" gap="3" mt="3">
@@ -56,6 +61,7 @@ const MemoFormDialog = ({
                         <RefresherSelect
                             value={state.type}
                             disabled={editing}
+                            aria-label="종류"
                             onChange={(next) => setState((prev) => ({...prev, type: next as MemoType}))}
                             options={MEMO_TYPES.map((type) => [type, MEMO_TYPE_NAMES[type]] as [string, string])}
                         />
@@ -83,7 +89,7 @@ const MemoFormDialog = ({
                             placeholder="메모를 입력해주세요 (160자 제한)"
                             value={state.text}
                             onChange={(ev) => setState((prev) => ({...prev, text: ev.target.value}))}
-                            onKeyDown={(ev) => ev.key === "Enter" && void submit()}
+                            onKeyDown={(ev) => ev.key === "Enter" && !ev.nativeEvent.isComposing && void submit()}
                             autoFocus
                         />
                     </label>
@@ -106,6 +112,7 @@ const MemoFormDialog = ({
                         <Flex gap="2" align="center">
                             <input
                                 type="color"
+                                aria-label="메모 색상"
                                 value={state.color}
                                 onChange={(ev) => setState((prev) => ({...prev, color: ev.target.value}))}
                                 style={{
@@ -149,12 +156,13 @@ export function MemoTab() {
     const [form, setForm] = useState<MemoFormState | null>(null);
 
     const importMemos = async (parsed: Record<string, unknown>): Promise<number> => {
-        // 객체만 받는다 — 차단 내보내기의 NICK/IP(배열)는 normalizeMemoMap이 {}로 만들어 기존 메모를 지운다
+        // 객체만 받는다 — 차단 내보내기의 NICK/IP(배열)를 메모로 세면 다른 데이터인데도 성공으로 알린다
         const types = MEMO_TYPES.filter((type) => {
             const map = parsed[type];
             return typeof map === "object" && map !== null && !Array.isArray(map);
         });
-        for (const type of types) await setMemos(type, normalizeMemoMap(parsed[type]));
+        // 기존 메모에 합친다 — 같은 대상은 가져온 쪽으로
+        for (const type of types) await setMemos(type, {...memos[type], ...normalizeMemoMap(parsed[type])});
         return types.length;
     };
 

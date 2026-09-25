@@ -36,7 +36,7 @@ export const ConfirmDialog = ({
                                   onClose
                               }: ConfirmDialogProps) => (
     <Dialog.Root open onOpenChange={(next) => !next && onClose()}>
-        <Dialog.Content maxWidth="440px">
+        <Dialog.Content maxWidth="440px" aria-describedby={undefined}>
             <Dialog.Title>{title}</Dialog.Title>
 
             <DialogActions cancelLabel={cancelLabel}>

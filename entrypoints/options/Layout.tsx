@@ -89,14 +89,20 @@ export const ImportDialog = ({title, onClose, onSubmit}: {
 /** 받침이 있으면 "을", 없으면 "를" */
 const objectParticle = (word: string): string => ((word.charCodeAt(word.length - 1) - 0xac00) % 28 > 0 ? "을" : "를");
 
-/** 표 한 줄 — 누르면 편집, X는 삭제 */
+/** 표 한 줄 — 누르면(Enter/Space) 편집, X는 삭제 */
 export const ListRow = ({head, info, onEdit, onRemove}: {
     head: ReactNode;
     info: ReactNode;
     onEdit: () => void;
     onRemove: () => void;
 }) => (
-    <Table.Row align="center" style={{cursor: "pointer"}} onClick={onEdit}>
+    <Table.Row align="center" style={{cursor: "pointer"}} tabIndex={0} onClick={onEdit}
+               onKeyDown={(ev) => {
+                   // X 버튼의 Enter/Space는 버튼 몫 — 줄까지 올라와 편집이 같이 열리지 않게
+                   if (ev.target !== ev.currentTarget || (ev.key !== "Enter" && ev.key !== " ")) return;
+                   ev.preventDefault();
+                   onEdit();
+               }}>
         <Table.RowHeaderCell>{head}</Table.RowHeaderCell>
         <Table.Cell>{info}</Table.Cell>
         <Table.Cell>
@@ -232,7 +238,7 @@ export const ListTabs = <T extends string>({
                     confirmLabel="삭제"
                     danger
                     onConfirm={() => {
-                        void onClear(clearConfirm);
+                        onClear(clearConfirm).catch(() => setNotice(`${object} 삭제하는 데 실패했습니다.`));
                         setClearConfirm(null);
                     }}
                     onClose={() => setClearConfirm(null)}

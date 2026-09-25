@@ -14,7 +14,11 @@ export function ShortcutTab() {
     const [shortcuts, setShortcuts] = useState<ShortcutCommand[]>([]);
 
     useEffect(() => {
-        void browser.commands.getAll().then((commands) => setShortcuts(commands as ShortcutCommand[]));
+        const load = (): void => void browser.commands.getAll().then((commands) => setShortcuts(commands as ShortcutCommand[]));
+        load();
+        // 브라우저의 단축키 설정에서 바꾸고 돌아오면 다시 읽는다 — 바뀌었다는 이벤트가 없다
+        window.addEventListener("focus", load);
+        return () => window.removeEventListener("focus", load);
     }, []);
 
     return (

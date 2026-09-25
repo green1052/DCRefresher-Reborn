@@ -3,6 +3,7 @@ import {ChevronDown, ChevronRight, Copy, EyeOff, FileJson, RefreshCw, RotateCcw,
 import {useEffect, useRef, useState} from "react";
 
 import {ConfirmDialog, Notice} from "@/components/ConfirmDialog";
+import {isModuleDataKey} from "@/core/backup";
 import {initDatabase, ipInfoOf} from "@/core/database";
 import {compactIpData, type RawIpData} from "@/core/ipdb";
 import {dbStorage} from "@/core/storage/items";
@@ -135,7 +136,7 @@ const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
 
     useEffect(() => {
         void dbStorage.getValue().then(setDb);
-        // 조회 테스트는 콘텐츠 스크립트와 같은 경로(ipInfoOf)로 — 저장소가 바뀌면 다시 그린다
+        // 조회 테스트는 콘텐츠 스크립트와 같은 경로(ipInfoOf)로 — 처음 불러오면 한 번 다시 그리고, 이후 변경은 아래 watch가 그린다
         void initDatabase().then(() => rerender((count) => count + 1));
         return dbStorage.watch(setDb);
     }, []);
@@ -195,7 +196,7 @@ const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
                 </DataList.Item>
             </DataList.Root>
 
-            <TextField.Root placeholder="IP 조회 (예: 175.223)" value={ip} onChange={(ev) => setIp(ev.target.value)}/>
+            <TextField.Root aria-label="IP 조회" placeholder="IP 조회 (예: 175.223)" value={ip} onChange={(ev) => setIp(ev.target.value)}/>
             {ip.trim() && (
                 <Box mt="2">
                     {info ? (
@@ -217,7 +218,7 @@ const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
 
 const ToolsSection = ({notify, onHide}: { notify: (message: string) => void; onHide: () => void }) => {
     const clearModuleData = async (): Promise<void> => {
-        const keys = Object.keys(await browser.storage.local.get(null)).filter((key) => /^refresher:module:.+:data$/.test(key));
+        const keys = Object.keys(await browser.storage.local.get(null)).filter(isModuleDataKey);
         await browser.storage.local.remove(keys);
         notify(`모듈 데이터 ${keys.length}개를 지웠습니다.`);
     };

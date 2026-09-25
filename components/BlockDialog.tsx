@@ -13,7 +13,7 @@ interface BlockDialogProps {
     /** 편집시 기존 항목 */
     initial?: BlockEntry | null;
     onClose: () => void;
-    onSubmit: (fields: BlockInputFields) => void;
+    onSubmit: (fields: BlockInputFields) => Promise<void>;
 }
 
 /** 열 때만 마운트한다 — 입력 초기값은 마운트 시점의 initial */
@@ -24,21 +24,25 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
     const [mode, setMode] = useState<DetectMode | "">(initial?.mode ?? "");
     const [error, setError] = useState("");
 
-    const submit = (): void => {
+    const submit = async (): Promise<void> => {
         if (!content.trim()) {
             setError(`${TYPE_NAMES[type]} 값을 입력해주세요.`);
             return;
         }
 
-        onSubmit({
-            content: content.trim(),
-            isRegex,
-            mode: mode || undefined,
-            gallery: gallery.trim() || undefined,
-            // extra는 별명(우클릭 차단 닉네임, 디시콘 제목)만 유지한다 — 플래그는 표시할 때 필드에서 만든다.
-            // 예전 항목(v5, 이전 다이얼로그)은 플래그 문자열을 extra에 넣었으므로 그건 버린다
-            extra: initial?.extra && initial.extra !== composeExtra(initial, DETECT_MODE_NAMES) ? initial.extra : undefined
-        });
+        try {
+            await onSubmit({
+                content: content.trim(),
+                isRegex,
+                mode: mode || undefined,
+                gallery: gallery.trim() || undefined,
+                // extra는 별명(우클릭 차단 닉네임, 디시콘 제목)만 유지한다 — 플래그는 표시할 때 필드에서 만든다.
+                // 예전 항목(v5, 이전 다이얼로그)은 플래그 문자열을 extra에 넣었으므로 그건 버린다
+                extra: initial?.extra && initial.extra !== composeExtra(initial, DETECT_MODE_NAMES) ? initial.extra : undefined
+            });
+        } catch (e) {
+            setError(`저장하지 못했습니다. ${e instanceof Error ? e.message : String(e)}`);
+        }
     };
 
     return (
@@ -62,7 +66,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                             placeholder={`${TYPE_NAMES[type]} 값을 입력하세요`}
                             value={content}
                             onChange={(ev) => setContent(ev.target.value)}
-                            onKeyDown={(ev) => ev.key === "Enter" && submit()}
+                            onKeyDown={(ev) => ev.key === "Enter" && !ev.nativeEvent.isComposing && void submit()}
                             autoFocus
                         />
                     </label>
@@ -87,6 +91,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                         </Text>
                         <RefresherSelect
                             value={mode}
+                            aria-label="차단 모드"
                             onChange={(next) => setMode(next as DetectMode | "")}
                             options={[["", "기본값"], ...Object.entries(DETECT_MODE_NAMES)]}
                         />
@@ -100,7 +105,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                 </Flex>
 
                 <DialogActions>
-                    <Button onClick={submit}>{initial ? "수정" : "추가"}</Button>
+                    <Button onClick={() => void submit()}>{initial ? "수정" : "추가"}</Button>
                 </DialogActions>
             </Dialog.Content>
         </Dialog.Root>

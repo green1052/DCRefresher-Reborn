@@ -1,4 +1,4 @@
-import type {CSSProperties} from "react";
+import {type CSSProperties, useEffect} from "react";
 
 const DCCONS = [
     "62b5df2be09d3ca567b1c5bc12d46b394aa3b1058c6e4d0ca41648b658e82d75149b1fff213d9f5e9269dc69450e4fdf304f7766443dee800244029618a166bde80cfee0804e5dad9b407b71a884471bbaff5e01",
@@ -34,25 +34,35 @@ const DCCONS = [
 ];
 
 const COUNT = 60;
+/** 초 */
+const MAX_DELAY = 1.5;
+const DURATION = 2.4;
 
 /** 로고 연타 이스터에그 */
-export const DcconRain = ({seed, onEnd}: { seed: number; onEnd: () => void }) => (
-    <div className="refresher-dccon-rain" key={seed}>
-        {Array.from({length: COUNT}, (_, index) => (
-            <img
-                key={index}
-                src={`https://image.dcinside.com/dccon.php?no=${DCCONS[index % DCCONS.length]}`}
-                alt=""
-                onError={(ev) => ev.currentTarget.remove()}
-                onAnimationEnd={index === COUNT - 1 ? onEnd : undefined}
-                style={{
-                    left: `${Math.random() * 95}%`,
-                    width: `${60 + Math.random() * 50}px`,
-                    animationDelay: index === COUNT - 1 ? "1.6s" : `${Math.random() * 1.5}s`,
-                    animationDuration: "2.4s",
-                    "--spin": `${(Math.random() - 0.5) * 720}deg`
-                } as CSSProperties}
-            />
-        ))}
-    </div>
-);
+export const DcconRain = ({seed, onEnd}: { seed: number; onEnd: () => void }) => {
+    // 끝은 타이머로 — 마지막 이미지의 animationend에 걸면 그 이미지가 못 불러와 지워졌을 때 영영 안 끝난다
+    useEffect(() => {
+        const timer = setTimeout(onEnd, (MAX_DELAY + DURATION) * 1000);
+        return () => clearTimeout(timer);
+    }, [seed, onEnd]);
+
+    return (
+        <div className="refresher-dccon-rain" key={seed}>
+            {Array.from({length: COUNT}, (_, index) => (
+                <img
+                    key={index}
+                    src={`https://image.dcinside.com/dccon.php?no=${DCCONS[index % DCCONS.length]}`}
+                    alt=""
+                    onError={(ev) => ev.currentTarget.remove()}
+                    style={{
+                        left: `${Math.random() * 95}%`,
+                        width: `${60 + Math.random() * 50}px`,
+                        animationDelay: `${Math.random() * MAX_DELAY}s`,
+                        animationDuration: `${DURATION}s`,
+                        "--spin": `${(Math.random() - 0.5) * 720}deg`
+                    } as CSSProperties}
+                />
+            ))}
+        </div>
+    );
+};

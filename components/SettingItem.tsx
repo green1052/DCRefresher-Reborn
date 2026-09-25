@@ -40,7 +40,7 @@ const formatDefault = (schema: SettingSchema): string => {
 };
 
 /** 색 선택 — 드래그 중엔 미리보기만 바꾸고, 선택 창을 닫을 때(네이티브 change) 저장한다 */
-const ColorControl = ({value, compact, onChange}: NarrowProps<"color">) => {
+const ColorControl = ({schema, value, compact, onChange}: NarrowProps<"color">) => {
     const [draft, setDraft] = useState(String(value));
 
     useEffect(() => {
@@ -52,7 +52,7 @@ const ColorControl = ({value, compact, onChange}: NarrowProps<"color">) => {
             {!compact && <Text size="2" color="gray" style={{fontVariantNumeric: "tabular-nums"}}>{draft}</Text>}
             <input
                 type="color"
-                aria-label="색 선택"
+                aria-label={schema.name}
                 title={draft}
                 value={draft}
                 onChange={(ev) => setDraft(ev.target.value)}
@@ -79,6 +79,7 @@ const TextControl = ({schema, value, onChange}: NarrowProps<"text">) => {
     return (
         <TextField.Root
             size="2"
+            aria-label={schema.name}
             placeholder={schema.placeholder ?? String(schema.default)}
             value={draft}
             onChange={(ev) => setDraft(ev.target.value)}
@@ -91,12 +92,15 @@ const TextControl = ({schema, value, onChange}: NarrowProps<"text">) => {
 };
 
 /** 키 하나 — 누른 뒤 원하는 키를 치면 바뀐다 (영문·숫자만, 다른 키는 취소). 다른 단축키가 쓰는 키면 알려 주고 계속 기다린다 */
-const KeyControl = ({value, takenKeys = [], onChange}: NarrowProps<"key">) => {
+const KeyControl = ({schema, value, takenKeys = [], onChange}: NarrowProps<"key">) => {
     const [listening, setListening] = useState(false);
     const [taken, setTaken] = useState("");
+    // 화면 글자와 같은 내용을 읽어 준다 — 이름만 주면 '키 입력…'·'이미 사용 중'이 들리지 않는다
+    const shown = taken ? `${taken.toUpperCase()}: 이미 사용 중` : listening ? "키 입력…" : String(value).toUpperCase();
 
     return (
         <Button size="2" variant="soft" color={taken ? "red" : listening ? undefined : "gray"} style={{minWidth: 72}}
+                aria-label={`${schema.name}: ${shown}`}
                 onClick={() => setListening(true)}
                 onBlur={() => {
                     setListening(false);
@@ -106,7 +110,9 @@ const KeyControl = ({value, takenKeys = [], onChange}: NarrowProps<"key">) => {
                     if (!listening) return;
                     ev.preventDefault();
 
-                    const key = ev.key.toLowerCase();
+                    // 한글 입력 상태면 ev.key가 'ㅇ'·'Process'라 물리 키(code)로 본다 — 콘텐츠 쪽(preview)과 같은 기준
+                    const code = /^(?:Key([A-Z])|Digit(\d))$/.exec(ev.code);
+                    const key = code ? (code[1] ?? code[2])!.toLowerCase() : ev.key.toLowerCase();
                     if (/^[a-z0-9]$/.test(key) && key !== value && takenKeys.includes(key)) {
                         setTaken(key);
                         return;
@@ -115,7 +121,7 @@ const KeyControl = ({value, takenKeys = [], onChange}: NarrowProps<"key">) => {
                     setListening(false);
                     setTaken("");
                 }}>
-            {taken ? `${taken.toUpperCase()}: 이미 사용 중` : listening ? "키 입력…" : <Kbd>{String(value).toUpperCase()}</Kbd>}
+            {taken || listening ? shown : <Kbd>{shown}</Kbd>}
         </Button>
     );
 };
@@ -132,7 +138,8 @@ const RangeControl = ({schema, value, onChange}: NarrowProps<"range">) => {
 
     // rt-SliderRoot는 width:stretch(부모 100%) — 부모 폭을 고정해야 트랙이 그려짐
     return (
-        <Flex align="center" gap="3" style={{width: 240}}>
+        // Themes Slider는 aria-label을 role=slider인 thumb가 아니라 root에 넘긴다 — 묶음에 이름을 준다
+        <Flex align="center" gap="3" role="group" aria-label={schema.name} style={{width: 240}}>
             <Slider
                 size="2"
                 min={schema.min}
@@ -274,13 +281,13 @@ export const SettingItem = ({schema, value, compact, takenKeys, onChange}: Setti
 
             <Box flexShrink="0">
                 {schema.type === "check" && (
-                    <Switch size="2" checked={Boolean(value)}
+                    <Switch size="2" aria-label={schema.name} checked={Boolean(value)}
                             onCheckedChange={(checked) => onChange(checked)}/>
                 )}
                 {schema.type === "option" && (
                     <Select.Root size="2" value={String(value)}
                                  onValueChange={(selected) => onChange(selected)}>
-                        <Select.Trigger style={{minWidth: 120}}/>
+                        <Select.Trigger aria-label={schema.name} style={{minWidth: 120}}/>
                         <Select.Content>
                             {Object.entries(schema.items).map(([key, label]) => (
                                 <Select.Item key={key} value={key}>
