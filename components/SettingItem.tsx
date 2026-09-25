@@ -1,5 +1,5 @@
 import {Box, Flex, IconButton, Select, Slider, Switch, Text, TextField, Tooltip} from "@radix-ui/themes";
-import {RotateCcw} from "lucide-react";
+import {ChevronDown, ChevronUp, GripVertical, RotateCcw} from "lucide-react";
 import {useEffect, useState} from "react";
 
 import type {SettingSchema} from "@/core/module/types";
@@ -99,35 +99,35 @@ const OrderControl = ({schema, value, disabled, onChange}: NarrowProps<"order">)
         if (key in schema.items && !order.includes(key)) order.push(key);
     }
 
-    const drop = (to: number): void => {
-        if (dragging === null || dragging === to) {
-            setDragging(null);
-            setOver(null);
-            return;
-        }
-
+    const move = (from: number, to: number): void => {
         const next = [...order];
-        const [moved] = next.splice(dragging, 1);
+        const [moved] = next.splice(from, 1);
         next.splice(to, 0, moved!);
         onChange(next);
+    };
+
+    const drop = (to: number): void => {
+        if (dragging !== null && dragging !== to) move(dragging, to);
         setDragging(null);
         setOver(null);
     };
 
     return (
-        <Flex direction="column" gap="1" style={{minWidth: 180}}>
+        <Flex direction="column" gap="1" minWidth="200px">
             {order.map((key, index) => (
                 <Flex
                     key={key}
                     align="center"
                     gap="2"
                     py="1"
-                    px="2"
+                    pl="2"
+                    pr="1"
                     style={{
-                        borderRadius: 6,
+                        borderRadius: "var(--radius-2)",
+                        border: "1px solid var(--gray-a5)",
                         cursor: disabled ? "default" : "grab",
                         opacity: dragging === index ? 0.4 : 1,
-                        background: over === index && dragging !== null ? "var(--gray-a3)" : undefined
+                        background: over === index && dragging !== null ? "var(--accent-a3)" : "var(--color-surface)"
                     }}
                     draggable={!disabled}
                     onDragStart={(event) => {
@@ -151,9 +151,19 @@ const OrderControl = ({schema, value, disabled, onChange}: NarrowProps<"order">)
                         drop(index);
                     }}
                 >
+                    <GripVertical size={14} color="var(--gray-9)"/>
                     <Text size="2" style={{flex: 1}}>
                         {schema.items[key] ?? key}
                     </Text>
+                    <IconButton size="1" variant="ghost" color="gray" aria-label="위로"
+                                disabled={disabled || index === 0} onClick={() => move(index, index - 1)}>
+                        <ChevronUp size={14}/>
+                    </IconButton>
+                    <IconButton size="1" variant="ghost" color="gray" aria-label="아래로"
+                                disabled={disabled || index === order.length - 1}
+                                onClick={() => move(index, index + 1)}>
+                        <ChevronDown size={14}/>
+                    </IconButton>
                 </Flex>
             ))}
         </Flex>
