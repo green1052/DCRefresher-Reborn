@@ -1,5 +1,5 @@
 import {Box, Button, Flex, Heading, Link, Separator, Text} from "@radix-ui/themes";
-import {Ban, Database, Keyboard, type LucideIcon, NotebookPen, Puzzle, Settings} from "lucide-react";
+import {Ban, Database, Keyboard, type LucideIcon, NotebookPen, Settings} from "lucide-react";
 import {useEffect, useState} from "react";
 
 import logoUrl from "@/assets/icon.png";
@@ -12,14 +12,12 @@ import {BlockTab} from "./BlockTab";
 import {DataTab} from "./DataTab";
 import {GeneralTab} from "./GeneralTab";
 import {MemoTab} from "./MemoTab";
-import {ModuleTab} from "./ModuleTab";
 import {ShortcutTab} from "./ShortcutTab";
 
 const TABS: { id: string; label: string; icon: LucideIcon; content: () => React.ReactNode }[] = [
-    {id: "general", label: "일반", icon: Settings, content: () => <GeneralTab/>},
+    {id: "general", label: "설정", icon: Settings, content: () => <GeneralTab/>},
     {id: "block", label: "차단", icon: Ban, content: () => <BlockTab/>},
     {id: "memo", label: "메모", icon: NotebookPen, content: () => <MemoTab/>},
-    {id: "module", label: "모듈", icon: Puzzle, content: () => <ModuleTab/>},
     {id: "shortcut", label: "단축키", icon: Keyboard, content: () => <ShortcutTab/>},
     {id: "data", label: "데이터", icon: Database, content: () => <DataTab/>}
 ];

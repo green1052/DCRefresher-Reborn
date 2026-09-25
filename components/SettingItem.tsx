@@ -1,4 +1,5 @@
-import {Box, Flex, Select, Slider, Switch, Text, TextField} from "@radix-ui/themes";
+import {Box, Flex, IconButton, Select, Slider, Switch, Text, TextField, Tooltip} from "@radix-ui/themes";
+import {RotateCcw} from "lucide-react";
 import {useEffect, useState} from "react";
 
 import type {SettingSchema} from "@/core/module/types";
@@ -171,26 +172,27 @@ export const SettingItem = ({schema, value, disabled, onChange}: SettingItemProp
     const changed = isChanged(schema, value);
 
     return (
-        <Flex justify="between" align="center" gap="3" py="2">
-            <Box style={{flex: 1, minWidth: 0}}>
-                <Text as="div" size="2" weight={changed ? "bold" : "regular"}>
-                    {schema.name}
+        <Flex justify="between" align="center" gap="4" py="3" wrap={{initial: "wrap", sm: "nowrap"}}>
+            <Box flexGrow="1" minWidth="0">
+                <Flex align="center" gap="1">
+                    <Text size="2" weight="medium">
+                        {schema.name}
+                    </Text>
                     {changed && (
-                        <Text color="blue">
-                            {" "}
-                            •
-                        </Text>
+                        <Tooltip content={`기본값으로 (${formatDefault(schema)})`}>
+                            <IconButton size="1" variant="ghost" color="gray" aria-label="기본값으로"
+                                        disabled={disabled} onClick={() => onChange(structuredClone(schema.default))}>
+                                <RotateCcw size={12}/>
+                            </IconButton>
+                        </Tooltip>
                     )}
-                </Text>
-                <Text as="div" size="2" color="gray">
+                </Flex>
+                <Text as="p" size="1" color="gray">
                     {schema.desc}
-                </Text>
-                <Text as="div" size="2" color="gray">
-                    기본 값 : {formatDefault(schema)}
                 </Text>
             </Box>
 
-            <Box>
+            <Box flexShrink="0">
                 {schema.type === "check" && (
                     <Switch size="2" checked={Boolean(value)} disabled={disabled}
                             onCheckedChange={(checked) => onChange(checked)}/>
