@@ -1,4 +1,4 @@
-import "@radix-ui/themes/styles.css";
+import "@/assets/styles/radix.css";
 import "@/assets/styles/options.scss";
 import {Theme} from "@radix-ui/themes";
 import {StrictMode, useEffect, useState} from "react";

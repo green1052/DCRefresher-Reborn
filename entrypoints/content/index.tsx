@@ -2,7 +2,7 @@ import "@/assets/styles/content.scss";
 import "@/assets/styles/stealth.scss";
 import "@/assets/styles/layout.scss";
 
-import radixCss from "@radix-ui/themes/styles.css?inline";
+import radixCss from "@/assets/styles/radix.css?inline";
 import {createRoot} from "react-dom/client";
 
 import overlayCss from "@/assets/styles/overlay.scss?inline";
