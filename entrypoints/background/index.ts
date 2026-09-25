@@ -84,7 +84,8 @@ export default defineBackground(() => {
 
     browser.runtime.onInstalled.addListener(async () => {
         // v5에서 업데이트한 경우 설정을 v6 형식으로 옮긴다 (한시적)
-        await migrateV5Storage();
+        // 실패해도 DB 갱신·메뉴 생성은 이어서 한다
+        await migrateV5Storage().catch(console.error);
         await createContextMenus();
 
         if (import.meta.env.PROD || !(await dbStorage.getValue()).version) {
