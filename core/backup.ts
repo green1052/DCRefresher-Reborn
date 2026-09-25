@@ -43,9 +43,23 @@ export const isModuleDataKey = (key: string): boolean => /^refresher:module:.+:d
 export const isBackupTarget = (key: string): boolean =>
     key !== "refresher:db" && key !== "refresher:nonmember" && !key.startsWith("refresher:backup:") && !isModuleDataKey(key);
 
+/**
+ * 백업·내보내기 대상. 차단 목록의 id(UUID)는 뺀다 — 압축되지 않아 클라우드 백업을 두 배 넘게 불린다.
+ * 읽는 쪽(stores/blocks의 normalizeBlockList)이 없는 id를 새로 준다
+ */
 export const collectLocalData = async (): Promise<Record<string, unknown>> => {
     const data = (await browser.storage.local.get(null)) as Record<string, unknown>;
-    return Object.fromEntries(Object.entries(data).filter(([key]) => isBackupTarget(key)));
+    return Object.fromEntries(
+        Object.entries(data)
+            .filter(([key]) => isBackupTarget(key))
+            .map(([key, value]) => [
+                key,
+                // undefined인 id는 JSON에서 빠진다 (결과는 늘 JSON으로 쓰인다)
+                Array.isArray(value) && key.startsWith("refresher:block:")
+                    ? value.map((entry: unknown) => (entry && typeof entry === "object" ? {...entry, id: undefined} : entry))
+                    : value
+            ])
+    );
 };
 
 const gzip = async (text: string): Promise<Uint8Array> =>
@@ -95,7 +109,13 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
         // 예전 방식 백업이 자리를 차지해 한도를 넘었을 수 있다 — 그것만 치우고 한 번 더
         // 이 칸의 남는 조각은 성공한 뒤에 지운다 — 다시 실패하면 이전 메타가 그 조각을 가리킨다
         const legacy = stale.filter(isLegacyKey);
-        if (legacy.length === 0) throw e;
+        if (legacy.length === 0) {
+            // 자동 칸은 예전 방식 백업을 치우지 않는다 (수동 칸으로 복원되는 데이터다) — 그게 원인일 수 있으니 푸는 법을 알린다
+            if (Object.keys(all).some(isLegacyKey)) {
+                throw new Error(`${e instanceof Error ? e.message : String(e)} 예전 방식(v5) 백업이 클라우드 공간을 차지하고 있습니다. 수동 백업을 한 번 하면 정리됩니다.`, {cause: e});
+            }
+            throw e;
+        }
         await browser.storage.sync.remove(legacy);
         await browser.storage.sync.set(items);
     }
