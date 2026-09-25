@@ -8,7 +8,7 @@ import {compactIpData, type RawIpData} from "@/core/ipdb";
 import {dbStorage} from "@/core/storage/items";
 import type {StoredDB} from "@/core/storage/types";
 
-import {Empty, formatTime, Section} from "./Layout";
+import {byteSize, Empty, formatBytes, formatTime, Section} from "./Layout";
 
 type Area = "local" | "sync";
 
@@ -26,11 +26,6 @@ const preview = (value: unknown): string => {
     );
     return text.length > MAX_TEXT ? `${text.slice(0, MAX_TEXT)}\n… (${text.length}자 중 ${MAX_TEXT}자만 표시)` : text;
 };
-
-const byteSize = (value: unknown): number => new Blob([JSON.stringify(value)]).size;
-
-const formatBytes = (bytes: number): string =>
-    bytes < 1024 ? `${bytes}B` : bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)}KB` : `${(bytes / 1024 / 1024).toFixed(2)}MB`;
 
 /** 저장소 내용 — 다른 탭/콘텐츠 스크립트에서 바뀌어도 따라간다 */
 const useStorageArea = (area: Area): Record<string, unknown> | null => {
