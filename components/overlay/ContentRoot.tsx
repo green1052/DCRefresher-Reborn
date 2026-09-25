@@ -1,5 +1,6 @@
 import {Box, Button, Card, Flex, IconButton, Popover, Separator, Text, Theme} from "@radix-ui/themes";
 import {CircleAlert, Copy, Info, TriangleAlert, X} from "lucide-react";
+import {Popover as PopoverPrimitive} from "radix-ui";
 import {useEffect, useState} from "react";
 
 import {eventBus} from "@/core/eventbus/bus";
@@ -113,9 +114,10 @@ const BubbleHost = () => {
 
     return (
         <Popover.Root open onOpenChange={(open) => !open && close()}>
-            <Popover.Anchor>
+            {/* Themes Popover.Anchor는 children을 버리므로(3.3.0) 프리미티브 Anchor를 쓴다 */}
+            <PopoverPrimitive.Anchor asChild>
                 <span className="refresher-anchor" style={{left: bubble.x, top: bubble.y}}/>
-            </Popover.Anchor>
+            </PopoverPrimitive.Anchor>
             <Popover.Content container={overlay.portal} side="bottom" align="start" sideOffset={4} size="1"
                              minWidth="200px" maxWidth="320px" onOpenAutoFocus={(event) => event.preventDefault()}>
                 {selected.dccon ? (
