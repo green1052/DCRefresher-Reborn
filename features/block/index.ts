@@ -21,6 +21,10 @@ const dcconCode = (element: HTMLElement): string | undefined => {
     return src ? extractDcconCode(src) : undefined;
 };
 
+/** 요소 글자 — 안에 든 <script> 글자는 뺀다 */
+const textOf = (element: Element | null | undefined): string =>
+    element ? Array.from(element.childNodes, (node) => (node.nodeName === "SCRIPT" ? "" : node.textContent)).join("").trim() : "";
+
 const BLUR_GROUP: SettingGroup = {name: "블러 처리", desc: "차단된 내용을 지우지 않고 블러 처리합니다."};
 
 /** 블러 강도·마우스 오버 보기는 <html>의 변수/클래스로만 건다 — 행마다 JS를 붙이지 않고 새로 그려진 행에도 그대로 먹는다 (content.scss) */
@@ -68,15 +72,8 @@ export interface BlockApi {
 const setupFilters = (ctx: ModuleContext, gallery: string | undefined): (() => void) => {
     const useBlur = () => ctx.settings.blur === true;
 
-    const hide = (element: HTMLElement, blur: boolean): void => {
-        if (blur) {
-            element.classList.add("refresherBlur");
-            return;
-        }
-
-        element.classList.add("refresherBlocked");
-        element.style.display = "none";
-    };
+    // 숨김도 클래스로만 건다 (content.scss) — 풀 때 디시가 건 인라인 display를 지우지 않는다
+    const hide = (element: HTMLElement, blur: boolean): void => element.classList.add(blur ? "refresherBlur" : "refresherBlocked");
 
     const hideWithReply = (target: HTMLElement): void => {
         hide(target, useBlur());
@@ -91,10 +88,11 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): (() => v
 
     // 유저/제목/말머리/댓글 차단
     const checkWriter = (element: HTMLElement): void => {
-        // 제목/말머리는 작성자 칸이 아니라 같은 행(.ub-content)의 다른 칸에 있음
+        // 제목/말머리는 작성자 칸이 아니라 같은 행(.ub-content)의 다른 칸에 있음. 글 보기 머리(.gallview_head)도 ub-content다
         const row = element.closest<HTMLElement>(".ub-content");
-        const title = row?.querySelector(".gall_tit > a:not([class])")?.textContent?.trim();
-        const tab = row?.querySelector(".gall_subject")?.textContent?.trim();
+        const title = textOf(row?.querySelector(".gall_tit > a:not([class]), .title_subject"));
+        // 잘린 말머리는 툴팁(.subject_inner)에 전체가 있다. 글 보기 머리의 말머리는 [대괄호]로 감싸 있다
+        const tab = textOf(row?.querySelector(".gall_subject .subject_inner, .title_headtext") ?? row?.querySelector(".gall_subject")).replace(/^\[(.*)\]$/, "$1");
         const commentContainer = isViewPage ? element.closest(".reply_info, .cmt_info") : null;
         // 글자콘 댓글은 .usertxt 없이 .comment_dccon > .coment_dccon_txt > .txtcon_txt로 그려진다 — 글자도 댓글 차단어로 본다
         const comment = commentContainer?.querySelector(".usertxt, .txtcon_txt")?.textContent;
@@ -120,8 +118,10 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): (() => v
         const code = dcconCode(element);
         if (!code || !isBlocked("DCCON", code, gallery)) return;
 
-        const target = (element.closest<HTMLElement>(".ub-content")) ?? (element.closest<HTMLElement>(".comment_dccon"));
+        // 행이나 댓글 칸이 없는 본문 디시콘은 그 디시콘만 가린다
+        const target = element.closest<HTMLElement>(".ub-content") ?? element.closest<HTMLElement>(".comment_dccon");
         if (target) hideWithReply(target);
+        else hide(element, useBlur());
     };
 
     // 본문 차단: 블러면 흐리게, 아니면 숨기고 안내를 넣는다 — 원문은 그대로 둬 차단을 풀거나 '차단 내용 보기'로 다시 보인다.
@@ -178,8 +178,7 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): (() => v
         }
     }
 
-    // 필터는 DOM 삽입 때만 돌아서, 차단 목록이나 숨기는 방식(블러/대댓글)이 바뀌면 이미 그려진 요소를 직접 다시 판정한다.
-    // 본문 TEXT 치환은 되돌릴 수 없으니 본문 차단을 풀면 새로고침 전까지는 그대로다
+    // 필터는 DOM 삽입 때만 돌아서, 차단 목록이나 숨기는 방식(블러/대댓글)이 바뀌면 이미 그려진 요소를 직접 다시 판정한다
     const recheck = (): void => {
         restoreHiddenElements();
         for (const element of document.querySelectorAll<HTMLElement>(".ub-writer")) checkWriter(element);
@@ -239,18 +238,7 @@ const setupSelection = (ctx: ModuleContext): void => {
 };
 
 const restoreHiddenElements = (): void => {
-    for (const element of document.querySelectorAll<HTMLElement>(".refresherBlocked")) {
-        element.classList.remove("refresherBlocked");
-        element.style.display = "";
-    }
-
-    for (const element of document.querySelectorAll<HTMLElement>(".refresherBlur")) {
-        element.classList.remove("refresherBlur");
-    }
-
-    for (const element of document.querySelectorAll<HTMLElement>(".refresherDuplicate")) {
-        element.classList.remove("refresherDuplicate");
-    }
+    for (const element of document.querySelectorAll(HIDDEN_SELECTOR)) element.classList.remove("refresherBlocked", "refresherBlur", "refresherDuplicate");
 
     for (const element of document.querySelectorAll<HTMLElement>(".refresherTextNotice, .refresherDuplicateBadge")) {
         element.remove();

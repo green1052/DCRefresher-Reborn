@@ -16,6 +16,8 @@
     opacity: 1;
 }
 
+// 디시 JS가 나중에 인라인 display를 걸어도 가린 채로 둔다
+.refresherBlocked,
 .refresherDuplicate,
 .refresherLowActivityHide {
     display: none !important;
@@ -32,7 +34,7 @@
     color: #888;
 }
 
-/* 이 페이지에서만 가린 내용 보기 (block 모듈) — 가린 것을 흐리게 다 보인다. 차단은 인라인 display:none이라 !important */
+/* 이 페이지에서만 가린 내용 보기 (block 모듈) — 가린 것을 흐리게 다 보인다. 숨김 규칙도 !important라 명시도로 이긴다 */
 .refresherBlockReveal {
     :is(.refresherBlocked, .refresherDuplicate, .refresherLowActivityHide) {
         display: revert !important;
