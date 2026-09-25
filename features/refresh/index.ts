@@ -166,7 +166,7 @@ export default defineModule({
         let lastListHtml = "";
         // 받아온 행의 원래 HTML (체크박스 칸·강조·효과를 입히기 전) — 순서가 같으면 바뀐 행만 갈아끼운다
         const rawRows = new WeakMap<Element, string>();
-        // 목록이 화면 가까이 있는지 — 글 보기 아래 목록처럼 멀리 있으면 갈아끼워도 볼 수 없어 쉰다
+        // 목록 표가 화면 가까이 있는지 — 글 보기 아래 목록처럼 멀리 있으면 갈아끼워도 볼 수 없어 쉰다
         let listNear = true;
         const gallery = queryString("id") ?? "";
 
@@ -362,6 +362,8 @@ export default defineModule({
             } finally {
                 loading = false;
                 inflight = null;
+                // 넘긴 페이지의 로드가 실패했거나 목록이 그대로여서 건너뛰었으면 올리기를 버린다 — 남기면 한참 뒤 자동 새로고침이 목록 위로 끌어올린다
+                if (target === scrollAfter) scrollAfter = null;
                 if (target !== originalLocation || rerun) {
                     rerun = false;
                     // 주소가 바뀐 건 사용자가 직접 이동한 것이라 그 주소를 넘겨 체크박스 가드를 건너뛰게 한다
@@ -392,7 +394,8 @@ export default defineModule({
             listNear = entries.at(-1)?.isIntersecting ?? true;
             if (listNear && !wasNear) void load();
         }, {rootMargin: "800px"});
-        ctx.addFilter(".gall_listwrap", (element) => listObserver.observe(element));
+        // 갈아끼우는 목록의 표만 본다 — 검색 페이지엔 아래쪽 통합검색 목록(.gall_listwrap, #kakao_seach_list)도 있어 그쪽 항목이 마지막에 오면 멀다고 잘못 본다
+        ctx.addFilter(".gall_list:not([id])", (element) => listObserver.observe(element));
         ctx.addCleanup(() => listObserver.disconnect());
 
         const onVisibilityChange = (): void => {
