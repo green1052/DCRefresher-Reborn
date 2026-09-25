@@ -12,10 +12,17 @@ import {formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
 
 const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
+
+/** 값 여러 개를 객체 하나에 담는 키 — 모듈 on/off, 기본 차단 모드, 모듈별 설정 */
+const isMapKey = (key: string): boolean =>
+    key === "refresher:modules" || key === "refresher:block:defaults" || /^refresher:module:.+:settings$/.test(key);
+
 /**
  * 설정(백업 대상 키)을 쓴다 — IP/밴 DB·백업 상태·모듈 캐시는 그대로 둔다.
  * - replace (클라우드 복원·초기화): 백업은 완전한 스냅숏이라 거기 없는 설정 키는 지운다
- * - merge (가져오기): 붙여넣은 JSON은 일부만 담을 수 있어 있는 키만 쓴다 — 설정만 든 JSON이 차단/메모 목록을 지우지 않게
+ * - merge (가져오기): 붙여넣은 JSON은 일부만 담을 수 있어 있는 키만 쓴다 — 설정만 든 JSON이 차단/메모 목록을 지우지 않게.
+ *   설정 객체(isMapKey)도 기존 값에 얕게 합친다 — 설정 몇 개만 든 JSON이 나머지 설정을 기본값으로 돌리지 않게
  * 쓰다가 실패하면 이전 값으로 되돌린다.
  */
 const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "merge"): Promise<void> => {
@@ -24,6 +31,12 @@ const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "m
     const next = Object.fromEntries(Object.entries(migrateV5(data)).filter(([key]) => key.startsWith("refresher:") && isBackupTarget(key)));
     // 걸러서 다 빠지면 복원은 모든 설정을 지우고 가져오기는 아무것도 안 쓴다 (예전 백업의 키가 migrateV5에서 전부 빠지는 등) — 비우는 건 초기화({})만
     if (Object.keys(data).length > 0 && Object.keys(next).length === 0) throw new Error("쓸 수 있는 설정이 없습니다.");
+    if (mode === "merge") {
+        for (const [key, value] of Object.entries(next)) {
+            const old = previous[key];
+            if (isMapKey(key) && isRecord(old) && isRecord(value)) next[key] = {...old, ...value};
+        }
+    }
     const removed = mode === "replace" ? Object.keys(previous).filter((key) => isBackupTarget(key) && !(key in next)) : [];
 
     try {
@@ -56,6 +69,7 @@ export function DataTab() {
     const [loading, setLoading] = useState(false);
     const [notice, setNotice] = useState<string | null>(null);
     const [resetConfirm, setResetConfirm] = useState(false);
+    const [autoConfirm, setAutoConfirm] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
 
     useEffect(() => {
@@ -158,7 +172,9 @@ export function DataTab() {
                 actions={
                     <Text as="label" size="2">
                         <Flex gap="2" align="center">
-                            <Switch checked={autoBackup} disabled={loading} onCheckedChange={(on) => void toggleAutoBackup(on)}/>
+                            {/* 자동 칸은 기기끼리 같이 쓰고 켜는 즉시 이 기기 설정으로 덮는다 — 새 기기에서 켜 복원할 백업을 잃지 않게 먼저 묻는다 */}
+                            <Switch checked={autoBackup} disabled={loading}
+                                    onCheckedChange={(on) => (on && backupTimes.auto ? setAutoConfirm(true) : void toggleAutoBackup(on))}/>
                             자동 백업
                         </Flex>
                     </Text>
@@ -241,6 +257,19 @@ export function DataTab() {
                         void clearData();
                     }}
                     onClose={() => setResetConfirm(false)}
+                />
+            )}
+
+            {autoConfirm && (
+                <ConfirmDialog
+                    title={`자동 백업을 켜면 ${formatTime(backupTimes.auto ?? 0)} 자동 백업을 이 기기의 설정으로 덮어씁니다. 켤까요?`}
+                    confirmLabel="켜기"
+                    danger
+                    onConfirm={() => {
+                        setAutoConfirm(false);
+                        void toggleAutoBackup(true);
+                    }}
+                    onClose={() => setAutoConfirm(false)}
                 />
             )}
 
