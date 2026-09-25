@@ -50,12 +50,13 @@ const start = async (instance: ModuleInstance): Promise<void> => {
     }
 };
 
-const stop = (instance: ModuleInstance): void => {
+/** keepDom이면 revoke 없이 리스너·타이머만 푼다 */
+const stop = (instance: ModuleInstance, keepDom = false): void => {
     const running = instance.running;
     if (!running) return;
     instance.running = undefined;
 
-    instance.def.revoke?.(running.ctx);
+    if (!keepDom) instance.def.revoke?.(running.ctx);
     for (const dispose of running.disposers) dispose();
 };
 
@@ -97,11 +98,14 @@ export const runShortcut = (command: string): void => {
     }
 };
 
-/** 모든 모듈 중지 (콘텐츠 스크립트 컨텍스트가 무효화됐을 때) — 한 모듈이 실패해도 나머지는 멈춘다 */
+/**
+ * 모든 모듈 중지 (콘텐츠 스크립트 컨텍스트가 무효화됐을 때) — 한 모듈이 실패해도 나머지는 멈춘다.
+ * revoke는 부르지 않고 페이지를 지금 모습대로 둔다 — 확장을 업데이트하면 열린 탭마다 차단·스텔스·레이아웃이 풀려 새로고침 전까지 가린 것이 드러났다
+ */
 export const stopAll = (): void => {
     for (const instance of instances.values()) {
         try {
-            stop(instance);
+            stop(instance, true);
         } catch (e) {
             console.error(e);
         }
