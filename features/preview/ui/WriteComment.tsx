@@ -87,7 +87,10 @@ export const WriteComment = () => {
     useEffect(() => {
         void nonmemberStorage.getValue().then((saved) => {
             setNick(saved.nick || "ㅇㅇ");
-            setPassword(saved.pw || randomPassword());
+            // 없으면 한 번 만들어 저장 — 열 때마다 새로 만들면 비회원이 자기 댓글을 지울 수 없다
+            const pw = saved.pw || randomPassword();
+            setPassword(pw);
+            if (!saved.pw) void nonmemberStorage.setValue({...saved, pw});
         });
     }, []);
 

@@ -136,8 +136,10 @@ const controller = (ctx: ModuleContext) => {
     const ui = useUiStore.getState();
 
     let abort: AbortController | null = null;
-    let rowHandlers: AbortController = new AbortController();
+    const rowHandlers = new AbortController();
     let savedHistory: { title: string; url: string; state: unknown } | null = null;
+    // 이 문서에서 쌓은 히스토리인지 — 새로고침한 글 페이지에 남은 예전 상태로 미리보기를 다시 열지 않게
+    const historyDoc = performance.timeOrigin;
     let refreshTimer = 0;
     let pressStart = 0;
     let preventOpen = false;
@@ -230,14 +232,13 @@ const controller = (ctx: ModuleContext) => {
         }
     };
 
-    const restoreHistory = () => {
-        if (!savedHistory || ctx.settings.colorPreviewLink !== true) {
-            savedHistory = null;
-            return;
+    const restoreHistory = (fromHistory: boolean) => {
+        if (savedHistory && ctx.settings.colorPreviewLink === true) {
+            // 뒤로 가기로 닫았으면 주소는 이미 돌아갔다 — 제목만 (popstate는 제목을 되돌리지 않는다)
+            if (!fromHistory) history.pushState(savedHistory.state, savedHistory.title, savedHistory.url);
+            document.title = savedHistory.title;
         }
 
-        history.pushState(savedHistory.state, savedHistory.title, savedHistory.url);
-        document.title = savedHistory.title;
         savedHistory = null;
     };
 
@@ -250,11 +251,14 @@ const controller = (ctx: ModuleContext) => {
         if (miniTimer) window.clearTimeout(miniTimer);
         miniTimer = 0;
 
-        if (!fromHistory) restoreHistory();
+        restoreHistory(fromHistory);
         store.getState().close();
     };
 
     const open = (preData: GalleryPreData, commentsOnly = false, historySkip = false) => {
+        // 호버 대기·요청 중인 미니가 전체 미리보기 위에 뜨지 않게
+        onMiniLeave();
+
         const st = store.getState();
 
         if (st.visible && st.preData?.id === preData.id && st.preData?.gallery === preData.gallery) {
@@ -266,6 +270,8 @@ const controller = (ctx: ModuleContext) => {
         abort = new AbortController();
         if (refreshTimer) window.clearInterval(refreshTimer);
         refreshTimer = 0;
+        // 두 번 누르기 확인은 글마다 — 이전 글에서 한 번 누른 키로 다음 글이 바로 지워지지 않게
+        lastKey = "";
 
         store.getState().open(preData);
 
@@ -279,15 +285,14 @@ const controller = (ctx: ModuleContext) => {
         after.setRecommend(Boolean(preData.recommend));
         after.setAdminVisible(ctx.settings.toggleAdminPanel === true && isGalleryManager());
 
-        if (!historySkip) {
-            // 미리보기가 이미 열려 있으면(다음 글 전환) 최초 히스토리 유지 — 아니면 close가 가짜 URL을 복원함
-            if (!st.visible) savedHistory = {title: document.title, url: location.href, state: history.state};
-            if (ctx.settings.colorPreviewLink) {
-                const newTitle = `${preData.title ?? document.title} - ${galName()}`;
-                // 돌아갈 위치도 함께 — 뒤로 가기로 다시 연 미리보기는 savedHistory가 비어 있어 닫아도 글 주소에 남는다
-                history.pushState({refresher: 1, preData, back: savedHistory}, newTitle, preData.link);
-                document.title = newTitle;
-            }
+        // 미리보기가 이미 열려 있으면(다음 글 전환) 최초 히스토리 유지 — 아니면 close가 가짜 URL을 복원함
+        if (!historySkip && !st.visible) savedHistory = {title: document.title, url: location.href, state: history.state};
+        if (ctx.settings.colorPreviewLink) {
+            const newTitle = `${preData.title ?? document.title} - ${galName()}`;
+            // 돌아갈 위치도 함께 — 뒤로 가기로 다시 연 미리보기는 savedHistory가 비어 있어 닫아도 글 주소에 남는다
+            if (!historySkip) history.pushState({refresher: 1, doc: historyDoc, preData, back: savedHistory}, newTitle, preData.link);
+            // 히스토리로 다시 열 때도 — popstate는 제목을 되돌리지 않는다
+            document.title = newTitle;
         }
 
         if (ctx.settings.autoRefreshComment === true) {
@@ -306,15 +311,17 @@ const controller = (ctx: ModuleContext) => {
         if (!st.preData || !st.post) return;
 
         const target = st.preData;
+        // 응답 전에 다른 글로 넘어갔으면 표시는 그 글 것이 아니다 — 알림만
+        const stillOpen = (): boolean => store.getState().signalId === st.signalId;
 
         try {
             // 공지·개념글 표시는 성공했을 때만 바꾼다
             if (kind === "notice") {
-                if (notifyManage(await setNotice(target, !st.notice), st.notice ? "공지를 해제했습니다." : "공지로 등록했습니다.")) {
+                if (notifyManage(await setNotice(target, !st.notice), st.notice ? "공지를 해제했습니다." : "공지로 등록했습니다.") && stillOpen()) {
                     store.getState().setNotice(!st.notice);
                 }
             } else if (kind === "recommend") {
-                if (notifyManage(await setRecommend(target, !st.recommend), st.recommend ? "개념글을 해제했습니다." : "개념글로 등록했습니다.")) {
+                if (notifyManage(await setRecommend(target, !st.recommend), st.recommend ? "개념글을 해제했습니다." : "개념글로 등록했습니다.") && stillOpen()) {
                     store.getState().setRecommend(!st.recommend);
                 }
             } else if (kind === "delete") {
@@ -353,7 +360,8 @@ const controller = (ctx: ModuleContext) => {
         // Ctrl+D(북마크) 같은 조합키, 길게 눌러 생기는 반복 입력은 무시
         if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.repeat) return;
 
-        const key = ev.key.toLowerCase();
+        // 한글 입력 상태면 ev.key가 'ㅇ'·'Process'라 물리 키(code)로 본다 — 설정값은 영문 소문자·숫자
+        const key = (/^(?:Key|Digit)([A-Z\d])$/.exec(ev.code)?.[1] ?? ev.key).toLowerCase();
         const isDelete = key === ctx.settings.deleteKey;
         if (!isDelete && key !== ctx.settings.blockKey) return;
 
@@ -373,18 +381,15 @@ const controller = (ctx: ModuleContext) => {
     };
 
     const onPopState = (ev: PopStateEvent) => {
-        const st = store.getState();
-
-        if (st.visible) {
-            close(true);
+        // 우리가 쌓은 글이면 그 글을 연다 — 열려 있을 때도 (PageDown으로 넘긴 뒤 뒤로 가기는 이전 글로)
+        const state = ev.state as { refresher?: number; doc?: number; preData?: GalleryPreData; back?: typeof savedHistory } | null;
+        if (state?.refresher === 1 && state.doc === historyDoc && state.preData) {
+            savedHistory = state.back ?? null;
+            open(state.preData, false, true);
             return;
         }
 
-        const state = ev.state as { refresher?: number; preData?: GalleryPreData; back?: typeof savedHistory } | null;
-        if (state?.refresher === 1 && state.preData) {
-            savedHistory = state.back ?? null;
-            open(state.preData, false, true);
-        }
+        if (store.getState().visible) close(true);
     };
 
     // ── 미니 미리보기 ────────────────────────────────────────────
@@ -411,6 +416,9 @@ const controller = (ctx: ModuleContext) => {
         // 이미지 아이콘 없는 글의 이미지 차단(blockImage)도 적용 — 안 그러면 전체 미리보기에서 숨긴 이미지가 호버로 보인다
         const stripMedia = ctx.settings.tooltipMediaHide === true || (ctx.settings.blockImage === true && preData.type === "icon_txt");
         const {contents = ""} = processContents(preData, post, stripMedia);
+
+        // 가져오는 사이 전체 미리보기가 열렸으면 그 위에 띄우지 않는다
+        if (usePreviewStore.getState().visible) return;
 
         usePreviewStore.getState().openMini({
             ...miniPosition(x, y),

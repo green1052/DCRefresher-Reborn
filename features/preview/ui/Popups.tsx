@@ -28,9 +28,12 @@ const BlockPopup = () => {
     const [custom, setCustom] = useState("");
     const [delChk, setDelChk] = useState(false);
     const [userTypeChk, setUserTypeChk] = useState(false);
+    const [sending, setSending] = useState(false);
 
     const submit = async (): Promise<void> => {
-        if (!preData) return;
+        // 연타로 차단 요청이 두 번 가지 않게 — 끝나면 창이 닫히므로 되돌리지 않는다
+        if (!preData || sending) return;
+        setSending(true);
 
         try {
             const result = await blockUser(preData, {
@@ -97,7 +100,7 @@ const BlockPopup = () => {
                 </Flex>
 
                 <DialogActions>
-                    <Button color="red" onClick={() => void submit()}>차단</Button>
+                    <Button color="red" loading={sending} onClick={() => void submit()}>차단</Button>
                 </DialogActions>
             </Dialog.Content>
         </Dialog.Root>

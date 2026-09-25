@@ -18,10 +18,14 @@ import {WriteComment} from "./WriteComment";
  * 미리보기는 shadow DOM 안이라 거기서 못 찾아 기본 300×150으로 잘린다 — 안쪽 내용을 재서 대신 맞춘다 (다른 출처는 못 읽어 그대로)
  */
 const fitMovies = (root: HTMLElement): (() => void) => {
-    const observers: ResizeObserver[] = [];
+    const observers = new Map<HTMLIFrameElement, ResizeObserver>();
+    const listeners = new AbortController();
 
     for (const frame of root.querySelectorAll<HTMLIFrameElement>("iframe")) {
         const fit = (): void => {
+            // 프레임당 옵저버 하나 — 다시 로드되면 떠난 문서를 보던 옵저버는 끊는다 (분리된 요소가 0으로 재어져 프레임이 접힌다)
+            observers.get(frame)?.disconnect();
+
             const doc = frame.contentDocument;
             // movie_view는 .v-container, 그 밖엔 본문 첫 요소를 잰다
             const container = doc?.querySelector<HTMLElement>(".v-container") ?? doc?.body?.firstElementChild;
@@ -31,31 +35,31 @@ const fitMovies = (root: HTMLElement): (() => void) => {
             doc.documentElement.style.overflow = "hidden";
 
             const observer = new ResizeObserver(() => {
+                // 다시 로드되는 중(load 전)엔 떠난 문서의 요소가 0으로 재어져 프레임이 접힌다 — 무시한다
+                if (frame.contentDocument !== doc) return;
                 // 안쪽 body 여백(좌우 대칭)까지, 소수점은 올림 — 컨테이너 폭만 주면 잘린다
                 const {width, height} = container.getBoundingClientRect();
                 frame.style.width = `${Math.ceil(width + container.offsetLeft * 2)}px`;
                 frame.style.height = `${Math.ceil(height + container.offsetTop * 2)}px`;
             });
             observer.observe(container);
-            observers.push(observer);
+            observers.set(frame, observer);
         };
 
         if (frame.contentDocument?.readyState === "complete" && frame.contentDocument.URL !== "about:blank") fit();
         // 다시 로드되면(새로고침 등) 안쪽 문서가 바뀌므로 매번 맞춘다
-        frame.addEventListener("load", fit);
+        frame.addEventListener("load", fit, {signal: listeners.signal});
     }
 
     return () => {
-        for (const observer of observers) observer.disconnect();
+        listeners.abort();
+        for (const observer of observers.values()) observer.disconnect();
     };
 };
 
-const CountDown = () => {
-    const expire = usePreviewStore((s) => s.expire);
-    // 1시간 미만이면 초까지 보여 주므로 1초마다 (타이머는 하나뿐이라 부담 없다)
+const Remaining = ({expire}: { expire: Date }) => {
+    // 1시간 미만이면 초까지 보여 주므로 1초마다
     useTick(1000);
-
-    if (!expire || Number.isNaN(expire.getTime())) return null;
 
     const diff = expire.getTime() - Date.now();
     const h = Math.floor(diff / 3_600_000);
@@ -72,6 +76,12 @@ const CountDown = () => {
     );
 };
 
+// 만료 시각이 있는 글만 — 대부분 없어서 1초 타이머를 돌릴 까닭이 없다
+const CountDown = () => {
+    const expire = usePreviewStore((s) => s.expire);
+    return expire && !Number.isNaN(expire.getTime()) ? <Remaining expire={expire}/> : null;
+};
+
 const Votes = () => {
     const preData = usePreviewStore((s) => s.preData);
     const post = usePreviewStore((s) => s.post);
@@ -81,6 +91,7 @@ const Votes = () => {
 
     const onVote = async (mode: "U" | "D"): Promise<void> => {
         if (!preData || !post) return;
+        const signal = usePreviewStore.getState().signalId;
         try {
             let code: string | undefined;
             if (post.requireCaptcha) {
@@ -90,9 +101,12 @@ const Votes = () => {
 
             const result = await vote(preData, post, mode, code);
             if (result.success) {
-                const counts = result.counts ?? (mode === "U" ? upvotes : downvotes);
-                if (mode === "U") usePreviewStore.getState().setVotes(counts ?? "X", result.fixedCounts ?? "");
-                else usePreviewStore.setState({downvotes: counts});
+                // 응답 전에 다른 글로 넘어갔으면 숫자는 그 글 것이 아니다 — 알림만
+                if (usePreviewStore.getState().signalId === signal) {
+                    const counts = result.counts ?? (mode === "U" ? upvotes : downvotes);
+                    if (mode === "U") usePreviewStore.getState().setVotes(counts ?? "X", result.fixedCounts ?? "");
+                    else usePreviewStore.setState({downvotes: counts});
+                }
                 useUiStore
                     .getState()
                     .showToast(`${mode === "U" ? "추천" : "비추천"}되었습니다.`);
@@ -168,11 +182,13 @@ const CommentList = () => {
     const collapsed = usePreviewStore((s) => s.collapsed);
 
     const parents = comments.filter((comment) => comment.depth === 0);
+    // 답글은 쓰레드 첫 댓글 번호(c_no)로 한 번에 묶는다 — 부모마다 전체를 훑으면 O(n²)
+    const repliesOf = Map.groupBy(comments.filter((comment) => comment.depth === 1), (comment) => comment.c_no);
 
     return (
         <Box py="1">
             {parents.map((parent) => {
-                const replies = comments.filter((comment) => comment.depth === 1 && comment.c_no === parent.no);
+                const replies = repliesOf.get(parent.no) ?? [];
                 const isCollapsed = collapsed.has(parent.no);
 
                 return (
@@ -191,7 +207,6 @@ export const Frame = () => {
     const visible = usePreviewStore((s) => s.visible);
     const fading = usePreviewStore((s) => s.fading);
     const adminVisible = usePreviewStore((s) => s.adminVisible);
-    const loading = usePreviewStore((s) => s.loading);
     const post = usePreviewStore((s) => s.post);
     const title = usePreviewStore((s) => s.title);
     const subtitle = usePreviewStore((s) => s.subtitle);
@@ -206,7 +221,9 @@ export const Frame = () => {
     const commentsSection = useRef<HTMLDivElement>(null);
     const contentsBox = useRef<HTMLDivElement>(null);
 
-    useEffect(() => (contentsBox.current ? fitMovies(contentsBox.current) : undefined), [contents]);
+    // 본문 칸은 댓글만 보기·오류·닫힘일 때 빠졌다가 다시 붙고, 글마다 새로 마운트된다 — 그때도 다시 맞춘다
+    // (같은 글을 캐시로 다시 열면 나머지 값이 모두 같아 visible이 없으면 다시 돌지 않는다)
+    useEffect(() => (contentsBox.current ? fitMovies(contentsBox.current) : undefined), [visible, contents, commentsOnly, error, postKey]);
 
     useEffect(() => {
         if (!visible) return;
@@ -244,7 +261,8 @@ export const Frame = () => {
         };
 
         const onKey = (ev: KeyboardEvent): void => {
-            if (isTyping(ev)) return;
+            // Ctrl+PageUp/Down(탭 전환) 같은 조합키는 브라우저 몫
+            if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.shiftKey || isTyping(ev)) return;
 
             if (ev.code === "PageUp") {
                 ev.preventDefault();
@@ -261,7 +279,7 @@ export const Frame = () => {
 
     if (!visible && !fading) return null;
 
-    const busy = !error && (loading || !post);
+    const busy = !error && !post;
 
     return (
         // Themes Dialog는 항상 modal이라 프리미티브를 쓴다 (스크롤 잠금·PageUp/Down 이동을 직접 처리)

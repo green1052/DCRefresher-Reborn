@@ -21,7 +21,6 @@ interface PostState {
     subtitle: string;
     contents: string | undefined;
     error: ErrorState | undefined;
-    loading: boolean;
 
     post: PostInfo | undefined;
     expire: Date | undefined;
@@ -117,7 +116,6 @@ const freshPost = (): PostState => ({
     subtitle: "",
     contents: undefined,
     error: undefined,
-    loading: false,
     post: undefined,
     expire: undefined,
     views: undefined,
@@ -155,11 +153,10 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     openHook: null,
     closeHook: null,
 
-    open: (preData) => set({...freshPost(), visible: true, fading: false, loading: true, preData, signalId: ++signalSeq, mini: null}),
+    open: (preData) => set({...freshPost(), visible: true, fading: false, preData, signalId: ++signalSeq, mini: null}),
 
     setPost: (post) =>
         set({
-            loading: false,
             post,
             title: postTitle(post),
             expire: post.expire ? new Date(post.expire) : undefined,
@@ -169,7 +166,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
             fixedUpvotes: post.fixedUpvotes,
             downvotes: post.downvotes
         }),
-    setError: (error) => set({error, loading: false}),
+    setError: (error) => set({error}),
     setComments: (comments, subtitle) => set({comments, subtitle}),
     setVotes: (counts, fixedCounts) => set({upvotes: counts, fixedUpvotes: fixedCounts || undefined}),
 
