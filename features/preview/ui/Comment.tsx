@@ -161,15 +161,16 @@ export const Comment = ({comment, depth, replyCount}: CommentProps) => {
                     {!isDeleted && (
                         <IconButton
                             size="1"
-                            variant={replying ? "soft" : "ghost"}
+                            // ghost 고정 — soft로 바꾸면 Radix가 여백을 달리 줘서 댓글 줄이 흔들린다
+                            variant="ghost"
                             color={replying ? undefined : "gray"}
-                            aria-label="답글"
+                            aria-label={replying ? "답글 취소" : "답글"}
                             aria-pressed={replying}
                             onClick={() =>
-                                setReply({
-                                    commentNo: comment.c_no === reply.commentNo ? null : comment.c_no || "0",
-                                    replyNo: comment.no
-                                })
+                                // 같은 댓글을 다시 누르면 취소. 답글의 부모는 쓰레드 첫 댓글(c_no), 첫 댓글이면 자기 자신
+                                setReply(replying
+                                    ? {commentNo: null, replyNo: null}
+                                    : {commentNo: comment.c_no || comment.no, replyNo: comment.no})
                             }
                         >
                             {replying ? <Check size={14}/> : <ReplyIcon size={14}/>}
