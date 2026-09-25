@@ -26,7 +26,8 @@ const fitMovies = (root: HTMLElement): (() => void) => {
             if (!container) return;
 
             const observer = new ResizeObserver(() => {
-                frame.style.width = `${container.offsetWidth}px`;
+                // 안쪽 body 여백(좌우 대칭)까지 — 컨테이너 폭만 주면 가로 스크롤이 생긴다
+                frame.style.width = `${container.offsetWidth + container.offsetLeft * 2}px`;
                 frame.style.height = `${container.offsetHeight + 20}px`;
             });
             observer.observe(container);

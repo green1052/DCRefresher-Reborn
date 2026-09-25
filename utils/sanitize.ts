@@ -6,7 +6,7 @@ DOMPurify.addHook("afterSanitizeAttributes", (node) => {
 });
 
 // 인라인 style은 오버레이 레이아웃을 깨므로 제거, 디시 본문의 동영상 임베드(iframe)는 허용
-const BASE: Config = {FORBID_ATTR: ["style"], ADD_TAGS: ["iframe"], ADD_ATTR: ["allowfullscreen", "frameborder", "allow"]};
+const BASE: Config = {FORBID_ATTR: ["style"], ADD_TAGS: ["iframe"], ADD_ATTR: ["allowfullscreen", "frameborder", "allow", "scrolling"]};
 const NO_MEDIA: Config = {...BASE, FORBID_TAGS: ["img", "video", "iframe", "audio", "embed", "source", "picture"]};
 
 /**
