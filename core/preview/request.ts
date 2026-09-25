@@ -1,10 +1,9 @@
 import {http} from "@/core/http/client";
 import {galleryType, galleryTypeName, urls} from "@/core/http/urls";
-import type {DcinsideDccon, GalleryPreData, IPostInfo} from "@/features/types";
 import {getCookie, setCookie} from "@/utils/cookie";
 
 import {parsePostInfo} from "./parser";
-import type {CommentListResponse, DcinsideComment} from "./cache";
+import type {CommentListResponse, DcinsideComment, DcinsideDccon, GalleryPreData, PostInfo} from "./types";
 
 const HEADERS = {"X-Requested-With": "XMLHttpRequest"};
 
@@ -19,8 +18,8 @@ const viewUrl = (link: string | undefined, gallery: string, id: string): string 
     return `${urls.gall.major}${type}board/view/?id=${gallery}&no=${id}`;
 };
 
-/** 게시글 HTML → IPostInfo */
-export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): Promise<IPostInfo> => {
+/** 게시글 HTML → PostInfo */
+export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): Promise<PostInfo> => {
     const response = await http.get(viewUrl(preData.link, preData.gallery, preData.id), {signal}).text();
 
     const postInfo = parsePostInfo(response, preData.id);
@@ -30,7 +29,7 @@ export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): P
 };
 
 /** 댓글 목록 (1회 전체) */
-export const fetchComments = async (preData: GalleryPreData, postInfo: IPostInfo, signal: AbortSignal): Promise<CommentListResponse> => {
+export const fetchComments = async (preData: GalleryPreData, postInfo: PostInfo, signal: AbortSignal): Promise<CommentListResponse> => {
     const body = await commonBody(preData.link);
     body.set("id", preData.gallery);
     body.set("no", preData.id);
@@ -54,7 +53,7 @@ export interface VoteResult {
 }
 
 /** 추천/비추천. 3시간 쿠키(Firstcheck)로 중복 방지 */
-export const vote = async (preData: GalleryPreData, postInfo: IPostInfo, mode: "U" | "D", code?: string): Promise<VoteResult> => {
+export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U" | "D", code?: string): Promise<VoteResult> => {
     const cookieName = `${preData.gallery}${preData.id}_Firstcheck${mode === "U" ? "" : "_down"}`;
 
     if (await getCookie(cookieName)) return {success: false};

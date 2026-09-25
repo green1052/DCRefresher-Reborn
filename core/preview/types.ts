@@ -40,8 +40,6 @@ export interface PostInfo {
     dom?: Document;
 }
 
-/** 하위 호환 별칭 (parser/cache/request) */
-export type IPostInfo = PostInfo;
 
 export interface DcinsideDccon {
     detail_idx: string;
@@ -67,4 +65,32 @@ export interface DcinsideDcconDetail {
     list: DcinsideDcconDetailList[];
     max_page: number;
     target: string;
+}
+
+export interface DcinsideComment {
+    no: string;
+    c_no: string;
+    depth: number;
+    user_id: string;
+    name: string;
+    password?: string;
+    GallogIcon?: string;
+    gallog_icon?: string;
+    ip: string;
+    memo: string;
+    is_delete: "0" | "1";
+    del_btn?: "Y" | "N";
+    my_cmt?: "Y" | "N";
+    date_time: string;
+    reg_date?: string;
+    reply_num?: number;
+
+    [key: string]: unknown;
+}
+
+export interface CommentListResponse {
+    list: DcinsideComment[];
+    total_cnt: number;
+
+    [key: string]: unknown;
 }

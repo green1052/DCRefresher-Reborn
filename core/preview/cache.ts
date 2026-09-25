@@ -1,39 +1,11 @@
 import {LRUCache} from "lru-cache";
-import type {GalleryPreData, IPostInfo} from "@/features/types";
+import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "./types";
 
 export interface CacheEntry {
     date: number;
-    post?: IPostInfo;
+    post?: PostInfo;
     comment?: CommentListResponse;
     deleted?: Record<string, DcinsideComment>;
-}
-
-export interface DcinsideComment {
-    no: string;
-    c_no: string;
-    depth: number;
-    user_id: string;
-    name: string;
-    password?: string;
-    GallogIcon?: string;
-    gallog_icon?: string;
-    ip: string;
-    memo: string;
-    is_delete: "0" | "1";
-    del_btn?: "Y" | "N";
-    my_cmt?: "Y" | "N";
-    date_time: string;
-    reg_date?: string;
-    reply_num?: number;
-
-    [key: string]: unknown;
-}
-
-export interface CommentListResponse {
-    list: DcinsideComment[];
-    total_cnt: number;
-
-    [key: string]: unknown;
 }
 
 const TTL = 60_000;

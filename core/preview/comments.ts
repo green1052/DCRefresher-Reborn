@@ -1,8 +1,8 @@
 import {isAnyBlocked} from "@/core/block";
-import type {GalleryPreData} from "@/features/types";
 import type {ModuleContext} from "@/core/module/types";
 
-import {type DcinsideComment, restoreArchive, setDeleted} from "./cache";
+import {restoreArchive, setDeleted} from "./cache";
+import type {DcinsideComment, GalleryPreData} from "./types";
 
 export interface ProcessedComment extends DcinsideComment {
     /** 음성댓글 — vr_player */

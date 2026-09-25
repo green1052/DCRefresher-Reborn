@@ -1,6 +1,6 @@
 import {create} from "zustand";
 
-import type {GalleryPreData, IPostInfo} from "@/features/types";
+import type {GalleryPreData, PostInfo} from "@/core/preview/types";
 import type {ProcessedComment} from "@/core/preview/comments";
 
 export interface PreviewUser {
@@ -33,7 +33,7 @@ interface PreviewState {
     error: ErrorState | undefined;
     loading: boolean;
 
-    post: IPostInfo | undefined;
+    post: PostInfo | undefined;
     user: PreviewUser | undefined;
     date: Date | undefined;
     expire: Date | undefined;
@@ -70,7 +70,7 @@ interface PreviewState {
 
     open: (preData: GalleryPreData) => void;
     setTitle: (title: string) => void;
-    setPost: (post: IPostInfo) => void;
+    setPost: (post: PostInfo) => void;
     setError: (error: ErrorState) => void;
     setComments: (comments: ProcessedComment[], totalCnt: number, subtitle: string) => void;
     setVotes: (counts: string, fixedCounts: string) => void;

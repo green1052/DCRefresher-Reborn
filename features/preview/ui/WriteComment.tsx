@@ -5,7 +5,7 @@ import {storage} from "wxt/utils/storage";
 
 import {overlay} from "@/components/overlay/shadow";
 import {captchaImage, submitComment} from "@/core/preview/request";
-import type {DcinsideDccon} from "@/features/types";
+import type {DcinsideDccon} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 
 import {getGrecaptchaToken} from "../grecaptcha";

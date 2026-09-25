@@ -1,4 +1,4 @@
-import type {IPostInfo} from "@/features/types";
+import type {PostInfo} from "./types";
 import {getType} from "@/utils/user";
 
 /** 본문 이미지의 data-original 복원 (DC지연로딩) */
@@ -14,7 +14,7 @@ const parseCommentId = (dom: Document): string | undefined =>
 const parseCommentNo = (dom: Document): string | undefined =>
     dom.body.innerHTML.match(/\$\(document\)\.data\('cmt_no',\s+'([^']+)'\);/)?.[1];
 
-const parseUser = (dom: Document): IPostInfo["user"] => {
+const parseUser = (dom: Document): PostInfo["user"] => {
     const writer = dom.querySelector<HTMLElement>(".gallview_head > .gall_writer");
     if (!writer) return;
 
@@ -39,8 +39,8 @@ const strip = (value: string | undefined | null, ...prefixes: string[]): string 
     return result || undefined;
 };
 
-/** 본문 HTML → IPostInfo. 비정상 문서면 undefined */
-export const parsePostInfo = (html: string, id: string): IPostInfo | undefined => {
+/** 본문 HTML → PostInfo. 비정상 문서면 undefined */
+export const parsePostInfo = (html: string, id: string): PostInfo | undefined => {
     const dom = new DOMParser().parseFromString(html, "text/html");
 
     if (!dom.querySelector(".gallview_head, .writing_view_box, .title_subject")) return;

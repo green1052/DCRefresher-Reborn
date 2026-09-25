@@ -2,11 +2,11 @@ import {eventBus} from "@/core/eventbus/bus";
 import {isAnyBlocked} from "@/core/block";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
-import type {GalleryPreData, IPostInfo} from "@/features/types";
+import type {DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 import {isTyping} from "@/utils/event";
 
-import {type DcinsideComment, getEntry, setEntry} from "@/core/preview/cache";
+import {getEntry, setEntry} from "@/core/preview/cache";
 import {processComments} from "@/core/preview/comments";
 import {blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {type ErrorState, type ManageKind, miniPosition, usePreviewStore} from "./ui/previewStore";
@@ -153,7 +153,7 @@ const controller = (ctx: ModuleContext) => {
             .replace(/\sstyle\s*=\s*("[^"]*"|'[^']*')/g, "")
             .replaceAll("<video", "<video controls");
 
-    const processContents = (preData: GalleryPreData, postInfo: IPostInfo): IPostInfo => {
+    const processContents = (preData: GalleryPreData, postInfo: PostInfo): PostInfo => {
         const raw = postInfo.contents ?? "";
 
         if (isAnyBlocked({TEXT: raw.replace(/<[^>]+>/g, " ").trim()}, preData.gallery)) {
@@ -168,7 +168,7 @@ const controller = (ctx: ModuleContext) => {
         store.getState().setComments(list, totalCnt, `쓰레드 ${threads}개, 총 댓글 ${totalCnt}개`);
     };
 
-    const loadComments = async (preData: GalleryPreData, postInfo: IPostInfo, mySignal: number) => {
+    const loadComments = async (preData: GalleryPreData, postInfo: PostInfo, mySignal: number) => {
         if (postInfo.commentCount === 0) {
             store.getState().setComments([], 0, "쓰레드 0개, 총 댓글 0개");
             return;

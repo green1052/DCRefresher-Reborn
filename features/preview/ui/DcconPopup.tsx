@@ -5,7 +5,7 @@ import {useEffect, useRef, useState} from "react";
 import {overlay} from "@/components/overlay/shadow";
 import {http} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
-import type {DcinsideDccon, DcinsideDcconDetail, DcinsideDcconDetailList} from "@/features/types";
+import type {DcinsideDccon, DcinsideDcconDetail, DcinsideDcconDetailList} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 import {getCookie} from "@/utils/cookie";
 
