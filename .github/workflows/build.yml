@@ -4,6 +4,9 @@ on:
         tags:
             - "*.*.*"
 
+permissions:
+    contents: write
+
 jobs:
     release:
         runs-on: ubuntu-latest
@@ -11,8 +14,16 @@ jobs:
             -   name: Checkout
                 uses: actions/checkout@v7
 
+            # 릴리스를 만든 뒤에야 스토어 제출이 실패하므로 미리 막음
+            -   name: Check version
+                run: |
+                    VERSION=$(jq -r .version package.json)
+                    [ "$GITHUB_REF_NAME" = "$VERSION" ] || { echo "::error::태그($GITHUB_REF_NAME)와 package.json 버전($VERSION)이 다릅니다"; exit 1; }
+
             -   name: Setup Bun
                 uses: oven-sh/setup-bun@v2
+                with:
+                    bun-version-file: package.json
 
             -   name: Install Dependencies
                 run: bun ci

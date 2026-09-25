@@ -8,6 +8,10 @@ on:
 permissions:
     contents: write
 
+concurrency:
+    group: db
+    cancel-in-progress: false
+
 jobs:
     build:
         runs-on: ubuntu-latest
@@ -17,6 +21,8 @@ jobs:
 
             -   name: Setup Bun
                 uses: oven-sh/setup-bun@v2
+                with:
+                    bun-version-file: package.json
 
             -   name: Install Dependencies
                 run: bun ci
@@ -25,14 +31,17 @@ jobs:
                 run: bun scripts/build-db.ts
 
             -   name: Keep ban.json
+                id: keep
                 run: |
                     git fetch -q --depth=1 origin data
                     git show FETCH_HEAD:ban.json > db/ban.json
+                    echo "sha=$(git rev-parse FETCH_HEAD)" >> "$GITHUB_OUTPUT"
 
+            # Keep 이후 data가 바뀌었으면(ban.json 직접 푸시 등) 덮어쓰지 않고 실패
             -   name: Publish to data branch
                 working-directory: db
                 run: |
                     git init -q -b data
                     git add .
                     git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -qm "IP DB $(cat version)"
-                    git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data
+                    git push --force-with-lease=data:${{ steps.keep.outputs.sha }} "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data

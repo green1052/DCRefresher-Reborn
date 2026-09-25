@@ -44,7 +44,7 @@ body:
         id: version
         attributes:
             label: 리프레셔 버전
-            placeholder: "예: 5.1.7"
+            placeholder: "예: 6.0.0"
         validations:
             required: false
 

@@ -3,7 +3,7 @@
     <br>
     <br>
     <img src="https://img.shields.io/github/v/release/green1052/DCRefresher-Reborn">
-    <a href="https://chrome.google.com/webstore/detail/dcrefresher-reborn/pmfifcbendahnkeojgpfppklgioemgon" target="_blank">
+    <a href="https://chromewebstore.google.com/detail/pmfifcbendahnkeojgpfppklgioemgon" target="_blank">
         <img src="https://img.shields.io/chrome-web-store/rating/pmfifcbendahnkeojgpfppklgioemgon?logo=chromewebstore">
     </a>
     <a href="https://addons.mozilla.org/ko/firefox/addon/dcrefresher-reborn" target="_blank">
@@ -28,3 +28,15 @@
 - [버그 제보 / 문의](https://github.com/green1052/DCRefresher-Reborn/issues)
 - [디스코드 서버](https://discord.gg/SSW6Zuyjz6)
 - [리프레셔 미니 갤러리](https://gall.dcinside.com/mini/board/lists/?id=bjwg64)
+
+## 빌드
+
+[Bun](https://bun.sh) 1.4.0 (`package.json`의 `packageManager`)이 필요합니다.
+
+```sh
+bun install
+bun run zip          # Chrome
+bun run zip:firefox  # Firefox (소스 zip도 함께 생성)
+```
+
+결과물은 `.output` 폴더에 생성됩니다.

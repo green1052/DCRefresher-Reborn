@@ -10,11 +10,23 @@ export default defineConfig({
     dev: {
         reloadCommand: "Alt+Shift+R"
     },
-    manifest: {
+    manifest: ({browser}) => ({
         name: "DCRefresher Reborn",
         description: "디시인사이드 개선 확장 프로그램",
-        minimum_chrome_version: "140",
-        permissions: ["alarms", "contextMenus", "storage", "scripting", "unlimitedStorage", "clipboardWrite"],
+        ...(browser === "firefox"
+            ? {
+                browser_specific_settings: {
+                    gecko: {
+                        id: "dcrefresher-reborn@green1052",
+                        strict_min_version: "140.0",
+                        data_collection_permissions: {
+                            required: ["none"]
+                        }
+                    }
+                }
+            }
+            : {minimum_chrome_version: "140"}),
+        permissions: ["alarms", "contextMenus", "storage", "scripting", "unlimitedStorage"],
         host_permissions: ["https://*.dcinside.com/*"],
         commands: {
             refreshLists: {
@@ -35,15 +47,6 @@ export default defineConfig({
                 },
                 description: "스텔스 모드: 일시 비활성화"
             }
-        },
-        browser_specific_settings: {
-            gecko: {
-                id: "dcrefresher-reborn@green1052",
-                strict_min_version: "140.0",
-                data_collection_permissions: {
-                    required: ["none"]
-                }
-            }
         }
-    }
+    })
 });

@@ -4,6 +4,7 @@
     "private": true,
     "version": "6.0.0",
     "type": "module",
+    "packageManager": "bun@1.4.0",
     "scripts": {
         "dev": "wxt",
         "dev:firefox": "wxt -b firefox",
@@ -25,7 +26,6 @@
         "radix-ui": "^1.6.7",
         "react": "^19.3.0",
         "react-dom": "^19.3.0",
-        "sass": "^1.105.0",
         "zustand": "^5.0.15"
     },
     "devDependencies": {
@@ -37,6 +37,7 @@
         "mmdb-lib": "^3.0.3",
         "netmask": "^2.1.1",
         "oxc-transform-react": "^0.151.0",
+        "sass": "^1.105.0",
         "typescript": "^7.0.2",
         "web-ext": "^10.7.0",
         "wxt": "^0.21.4"
