@@ -502,7 +502,7 @@ const controller = (ctx: ModuleContext) => {
 
     // 제목 칸(word) 안에서 난 이벤트는 제목 칸 핸들러가 이미 처리함 — 행(row) 핸들러가 이어받아 중복 처리하지 않게
     const handledByWord = (element: HTMLElement, target: HTMLElement): boolean =>
-        element.dataset.refresherPreviewMode === "row" && target.closest("[data-refresher-preview-mode=\"word\"]") !== null;
+        element.classList.contains("ub-content") && target.closest(".ub-word") !== null;
 
     // 우클릭·좌클릭이 같은 기준으로 대상을 고르게 한 곳에서 판정
     const resolveTarget = (ev: MouseEvent): { preData: GalleryPreData; commentsOnly: boolean } | null => {
@@ -514,7 +514,7 @@ const controller = (ctx: ModuleContext) => {
         const commentsOnly = target.closest(".reply_numbox") !== null;
 
         if (!commentsOnly) {
-            if (element.dataset.refresherPreviewMode === "row" && ctx.settings.expandRecognizeRange !== true) return null;
+            if (element.classList.contains("ub-content") && ctx.settings.expandRecognizeRange !== true) return null;
 
             // 작성자 칸은 유저 버블(block 모듈) 몫 — 행 전체 인식이어도 미리보기를 열지 않는다
             if (target.closest(".ub-writer")) return null;
@@ -564,11 +564,8 @@ const controller = (ctx: ModuleContext) => {
         open(resolved.preData, resolved.commentsOnly);
     };
 
-    const bind = (element: HTMLElement, mode: "word" | "row") => {
-        if (element.dataset.refresherPreviewBound === "1") return;
-        element.dataset.refresherPreviewBound = "1";
-        element.dataset.refresherPreviewMode = mode;
-
+    // 같은 리스너는 두 번 붙지 않으니 필터가 다시 불러도 그대로 둔다
+    const bind = (element: HTMLElement, word: boolean) => {
         const options = {signal: rowHandlers.signal};
 
         element.addEventListener("mousedown", onMouseDown, options);
@@ -576,7 +573,7 @@ const controller = (ctx: ModuleContext) => {
         element.addEventListener("contextmenu", onContextMenu, options);
         element.addEventListener("click", onClick, options);
 
-        if (mode === "word") {
+        if (word) {
             element.addEventListener("mouseenter", onMiniEnter, options);
             element.addEventListener("mousemove", onMiniMove, options);
             element.addEventListener("mouseleave", onMiniLeave, options);
@@ -585,12 +582,12 @@ const controller = (ctx: ModuleContext) => {
 
     ctx.addFilter(
         ".gall_list .ub-word",
-        (element) => bind(element, "word")
+        (element) => bind(element, true)
     );
 
     ctx.addFilter(
         ".gall_list .ub-content",
-        (element) => bind(element, "row")
+        (element) => bind(element, false)
     );
 
     window.addEventListener("keydown", onKey);
@@ -600,12 +597,8 @@ const controller = (ctx: ModuleContext) => {
         window.removeEventListener("keydown", onKey);
         window.removeEventListener("popstate", onPopState);
 
-        // 바인딩된 행의 리스너 전부 해제 + 재바인딩 허용
+        // 바인딩된 행의 리스너 전부 해제
         rowHandlers.abort();
-        for (const element of document.querySelectorAll<HTMLElement>("[data-refresher-preview-bound]")) {
-            delete element.dataset.refresherPreviewBound;
-            delete element.dataset.refresherPreviewMode;
-        }
 
         // 행 리스너(mouseleave)가 사라져 떠 있거나 가져오는 중인 미니를 닫을 길이 없으므로 여기서 닫는다
         onMiniLeave();
