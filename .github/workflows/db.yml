@@ -25,10 +25,10 @@ jobs:
                 run: bun scripts/build-db.ts
 
             -   name: Keep ban.json
+                # 실패를 삼키면 ban.json 없이 force push돼 기록째 사라지고, 모든 사용자의 DB 갱신이 404로 멈춘다
                 run: |
-                    if git fetch -q --depth=1 origin data; then
-                        git show FETCH_HEAD:ban.json > db/ban.json 2>/dev/null || rm -f db/ban.json
-                    fi
+                    git fetch -q --depth=1 origin data
+                    git show FETCH_HEAD:ban.json > db/ban.json
 
             -   name: Publish to data branch
                 working-directory: db

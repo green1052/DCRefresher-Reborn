@@ -1,6 +1,5 @@
 const PRESETS: Record<string, string> = {
     // 통신·방송
-    케이티: "KT",
     에스케이텔레콤: "SKT",
     엘지유플러스: "LG U+",
     네이트커뮤니케이션즈: "네이트",
