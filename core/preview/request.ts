@@ -178,7 +178,20 @@ export const userDeleteComment = async (preData: GalleryPreData, commentId: stri
     await http.post(urls.comment_remove, {headers: HEADERS, body});
 };
 
-/** 댓글/디시콘 작성 */
+export interface SubmitResult {
+    result: string;
+    message?: string;
+    /** 'false||captcha||v3'의 v3, 'false||nomember||메시지'의 메시지 */
+    detail?: string;
+}
+
+const submitResult = (response: string): SubmitResult => {
+    const [result, message, detail] = response.trim().split("||");
+
+    return {result: result ?? "", message, detail};
+};
+
+/** 댓글/디시콘 작성. 첫 전송은 grecaptchaToken 없이 (디시 f_submit(null)) */
 export const submitComment = async (
     preData: GalleryPreData,
     user: { name: string; pw?: string },
@@ -188,8 +201,8 @@ export const submitComment = async (
     replyNo: string | null,
     bigDccon: boolean,
     captcha?: string,
-    grecaptcha?: string
-): Promise<{ result: string; message?: string }> => {
+    grecaptchaToken?: string
+): Promise<SubmitResult> => {
     const dom = postDom;
 
     const code = (() => {
@@ -269,7 +282,8 @@ export const submitComment = async (
     if (user.pw) params.set("password", user.pw);
     params.set("use_gall_nick", "N");
     if (captcha) params.set("code", captcha);
-    if (grecaptcha) params.set("g-recaptcha-response", grecaptcha);
+    params.set("g-recaptcha-response", "");
+    if (grecaptchaToken) params.set("g-recaptcha-token", grecaptchaToken);
 
     if (bigDccon) params.set("bigdccon", "1");
 
@@ -286,7 +300,117 @@ export const submitComment = async (
         headers: HEADERS,
         body: params
     }).text();
-    const [result, message] = response.split("||");
 
-    return {result: result ?? "", message};
+    return submitResult(response);
+};
+
+/* ===== 글자콘 — 디시 txtcon.js의 입력 규칙 (서버 txtcon_conf와 같다) ===== */
+
+export const TXTCON_BACKGROUNDS = ["3b4890", "b4b4e1", "f5e1f0", "d2f0e6", "ffffff", "333333"];
+export const TXTCON_COLORS = ["ffffff", "333333"];
+
+const TXTCON_MAX_LEN = 20;
+const TXTCON_MAX_LINES = 4;
+const TXTCON_MAX_LINE_LEN = 5;
+
+// 컬러 이모지로 그려지는 BMP 문자 — 글자 수에 1을 더 센다
+const TXTCON_BMP_EMOJI = /[\u231A-\u231B\u23E9-\u23EC\u23F0\u23F3\u25FD-\u25FE\u2614-\u2615\u2648-\u2653\u267F\u2693\u26A1\u26AA-\u26AB\u26BD-\u26BE\u26C4-\u26C5\u26CE\u26D4\u26EA\u26F2-\u26F3\u26F5\u26FA\u26FD\u2705\u270A-\u270B\u2728\u274C\u274E\u2753-\u2755\u2757\u2795-\u2797\u27B0\u27BF\u2B1B-\u2B1C\u2B50\u2B55]/g;
+
+/** 글자 수: UTF-16 코드 유닛 + BMP 컬러 이모지 가산 (줄바꿈 제외) */
+const txtconLength = (text: string): number => {
+    const plain = text.replaceAll("\n", "");
+
+    return plain.length + (plain.match(TXTCON_BMP_EMOJI)?.length ?? 0);
+};
+
+// ponytail: 디시 txtcon_clusters 대신 브라우저 grapheme 분할 — 흔한 글자에선 같다 (분해형 한글 자모 등만 다름)
+const segmenter = new Intl.Segmenter();
+
+/** 각 줄을 5글자씩 나눴을 때의 줄 수 */
+const txtconLines = (text: string): number =>
+    text.split("\n").reduce((sum, line) => sum + Math.max(1, Math.ceil(Array.from(segmenter.segment(line)).length / TXTCON_MAX_LINE_LEN)), 0);
+
+/** 글자콘 입력값 정리 (txtcon.js 'wide' 문자 필터 + 20자·4줄·줄당 5자 제한) */
+export const normalizeTxtcon = (value: string): string => {
+    let text = value
+        .replace(/\r\n?/g, "\n")
+        // 이모지 구간 밖 4바이트·아랍 표현형은 '+'
+        .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, (pair) => {
+            const cp = pair.codePointAt(0) ?? 0;
+            return cp >= 0x1F000 && cp <= 0x1FAFF ? pair : "+";
+        })
+        .replace(/[\uFB50-\uFDFF\uFE70-\uFEFE]/g, "+")
+        // 공백류는 일반 공백, 안 보이는 채움 문자는 제거
+        .replace(/[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g, " ")
+        .replace(/[\u2800\u115F\u1160\u3164\uFFA0\u034F\u17B4\u17B5]/g, "")
+        .replace(/[^\p{L}\p{N}\p{P}\p{S}\p{Zs}\p{M}\u{1F000}-\u{1FAFF}\u200D\uFE00-\uFE0F\n]/gu, "")
+        .replace(/[{}]/g, "")
+        // 결합 기호 연속은 2개까지
+        .replace(/\p{M}{3,}/gu, (marks) => Array.from(marks).slice(0, 2).join(""))
+        .replace(/\.{4,}/g, "...")
+        .split("\n")
+        .slice(0, TXTCON_MAX_LINES)
+        .join("\n");
+
+    // 5글자씩 나눈 줄 수가 넘치면 뒤에서부터 제거
+    while (txtconLines(text) > TXTCON_MAX_LINES) text = Array.from(text).slice(0, -1).join("");
+
+    // 글자 수 제한 (코드포인트 단위로 자른다)
+    let count = 0;
+    let output = "";
+    for (const char of text) {
+        const width = txtconLength(char);
+        if (count + width > TXTCON_MAX_LEN) continue;
+
+        output += char;
+        count += width;
+    }
+
+    return output;
+};
+
+/** 글자콘 작성 (txtcon.js txtcon_submit). 첫 전송은 grecaptchaToken 없이 */
+export const submitTxtcon = async (
+    preData: GalleryPreData,
+    postInfo: PostInfo,
+    user: { name: string; pw?: string },
+    text: string,
+    colors: { bg: string; txt: string },
+    commentNo: string | null,
+    replyNo: string | null,
+    captcha?: string,
+    grecaptchaToken?: string
+): Promise<SubmitResult> => {
+    const dom = postInfo.dom ?? document;
+
+    const body = await commonBody(preData.link);
+    body.set("id", postInfo.commentId ?? preData.gallery);
+    body.set("no", postInfo.commentNo ?? preData.id);
+    body.set("txtcon_text", text);
+    body.set("txtcon_bg", colors.bg);
+    body.set("txtcon_color", colors.txt);
+
+    if (commentNo) body.set("c_no", commentNo);
+    if (replyNo) body.set("reply_no", replyNo);
+
+    if (user.name) body.set("name", user.name);
+    if (user.pw) body.set("password", user.pw);
+    if (captcha) body.set("code", captcha);
+
+    for (const name of ["check_6", "check_7", "check_8"]) {
+        body.set(name, dom.querySelector<HTMLInputElement>(`#${name}`)?.value ?? "");
+    }
+
+    // 갤닉은 댓글(submitComment)처럼 쓰지 않는다
+    if (dom.querySelector("#use_gall_nick")) {
+        body.set("gall_nick_name", dom.querySelector<HTMLInputElement>("#gall_nick_name")?.value ?? "");
+        body.set("use_gall_nick", "N");
+    }
+
+    body.set("g-recaptcha-response", "");
+    if (grecaptchaToken) body.set("g-recaptcha-token", grecaptchaToken);
+
+    const response = await http.post(urls.txtcon_submit, {headers: HEADERS, body}).text();
+
+    return submitResult(response);
 };

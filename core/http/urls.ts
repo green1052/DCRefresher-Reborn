@@ -18,6 +18,7 @@ export const urls = {
     comments: "https://gall.dcinside.com/board/comment/",
     comments_submit: "https://gall.dcinside.com/board/forms/comment_submit",
     dccon_comments_submit: "https://gall.dcinside.com/dccon/insert_icon",
+    txtcon_submit: "https://gall.dcinside.com/txtcon/insert",
     comment_remove: "https://gall.dcinside.com/board/comment/comment_delete_submit",
     dccon: {
         lists: "https://gall.dcinside.com/dccon/lists",
