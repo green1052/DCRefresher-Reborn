@@ -2,7 +2,6 @@ import {Box, Button, Flex, Grid, Heading, Separator, Text} from "@radix-ui/theme
 import {Ban, CircleHelp, Code, Database, Heart, Keyboard, type LucideIcon, MessageCircle, NotebookPen, Settings, Users} from "lucide-react";
 import {useEffect, useState} from "react";
 
-import logoUrl from "@/assets/icon.png";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
 import {initModulesStore} from "@/stores/modules";
@@ -28,6 +27,9 @@ const LINKS: [string, string, LucideIcon][] = [
     ["도움말", "https://dcrefresher.green1052.com", CircleHelp],
     ["후원", "https://www.buymeacoffee.com/green1052", Heart]
 ];
+
+// 로고: 원본 assets/icon.png(186KB)를 번들하지 않고, auto-icons가 만든 128px 아이콘(9KB)을 쓴다
+const LOGO_URL = browser.runtime.getURL("/icons/128.png");
 
 const VERSION = browser.runtime.getManifest().version + (import.meta.env.DEV ? "-dev" : "");
 
@@ -62,7 +64,7 @@ const Sidebar = ({tab, onSelect}: { tab: string; onSelect: (id: string) => void 
         style={{borderRight: "1px solid var(--gray-a5)"}}
     >
         <Flex align="center" gap="3" px="2">
-            <img src={logoUrl} alt="" width={36} height={36} style={{borderRadius: "var(--radius-3)"}}/>
+            <img src={LOGO_URL} alt="" width={36} height={36} style={{borderRadius: "var(--radius-3)"}}/>
             <Heading size="3">DCRefresher Reborn</Heading>
         </Flex>
 
