@@ -54,7 +54,8 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): void => 
         const title = row?.querySelector(".gall_tit > a:not([class])")?.textContent?.trim();
         const tab = row?.querySelector(".gall_subject")?.textContent?.trim();
         const commentContainer = isViewPage() ? element.closest(".reply_info, .cmt_info") : null;
-        const comment = commentContainer?.querySelector(".usertxt")?.textContent;
+        // 글자콘 댓글은 .usertxt 없이 .comment_dccon > .coment_dccon_txt > .txtcon_txt로 그려진다 — 글자도 댓글 차단어로 본다
+        const comment = commentContainer?.querySelector(".usertxt, .txtcon_txt")?.textContent;
         const {nick, uid, ip} = element.dataset;
 
         const blocked = isAnyBlocked(
