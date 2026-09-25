@@ -1,4 +1,4 @@
-name: IP DB
+name: DB
 
 # maxmind-geoip2 갱신(화·금 05:00 UTC) 다음 날에 만든다.
 # 결과는 data 브랜치에 커밋 하나로 덮어쓴다 (매번 1MB씩 기록이 쌓이지 않게)
@@ -24,10 +24,10 @@ jobs:
                 run: bun ci
 
             -   name: Build
-                run: bun scripts/build-ipdb.ts out
+                run: bun scripts/build-ipdb.ts
 
             -   name: Publish to data branch
-                working-directory: out
+                working-directory: db
                 run: |
                     git init -q -b data
                     git add .

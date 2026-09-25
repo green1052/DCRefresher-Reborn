@@ -1,13 +1,14 @@
 /// <reference types="bun" />
+
 /**
- * IP DB 생성: bun scripts/build-ipdb.ts <출력 폴더>
+ * IP DB 생성: bun scripts/build-ipdb.ts → db/
  *
  * 입력 (모두 여기서 받는다)
  * - MaxMind GeoLite2 ASN/Country MMDB — green1052/maxmind-geoip2
  * - VPN 대역 목록 — X4BNet/lists_vpn
  * - KISA 국내 AS 목록 — 한국인터넷정보센터 AS 번호 할당 현황
  *
- * 출력: ip.json (RawIpData), version
+ * 출력: db/ip.json (RawIpData), db/version
  *
  * 디시는 IP를 a.b까지만 보여주므로 /16 단위로 모은다. 한 /16 안의 후보는 차지하는 주소 수가 많은 순(앞일수록 유력).
  * - 한국: KISA 한글 기관명을 축약(ipdb-names.ts, 없으면 MaxMind 영문명), 국가 생략
@@ -33,8 +34,7 @@ const COUNTRY_NAME_OVERRIDES: Record<string, string> = {HK: "홍콩", MO: "마�
 const MAX_CANDIDATES = 8;
 const MIN_SHARE = 65536 / 100;
 
-const [outDir] = Bun.argv.slice(2);
-if (!outDir) throw new Error("사용법: bun scripts/build-ipdb.ts <출력 폴더>");
+const OUT_DIR = "db";
 
 type Range<T> = { start: number; end: number; value: T };
 
@@ -176,8 +176,8 @@ expect("36.110", (first) => first.country === "중국", "중국");
 expect("3.34", (first) => first.vpn, "AWS VPN");
 if (lookup("0.0") || lookup("255.255")) throw new Error("예약 대역에 데이터가 있습니다.");
 
-await Bun.write(`${outDir}/ip.json`, JSON.stringify(data));
-await Bun.write(`${outDir}/version`, new Date().toISOString().slice(0, 10));
+await Bun.write(`${OUT_DIR}/ip.json`, JSON.stringify(data));
+await Bun.write(`${OUT_DIR}/version`, new Date().toISOString().slice(0, 10));
 
 const sizes = Object.values(data.b).map((list) => list.length);
 console.log(`prefixes=${sizes.length} meta=${data.meta.length} maxCandidates=${Math.max(...sizes)} kisa=${kisa.size} vpnRanges=${vpns.length} size=${JSON.stringify(data).length}`);
