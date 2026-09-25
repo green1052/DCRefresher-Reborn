@@ -1,6 +1,6 @@
 import {Box, Flex, IconButton, Text, Tooltip} from "@radix-ui/themes";
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
-import {type MouseEvent, useEffect, useState} from "react";
+import {type MouseEvent, useEffect, useLayoutEffect, useRef, useState} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
 import type {ProcessedComment} from "@/core/preview/comments";
@@ -42,6 +42,79 @@ const extractIcon = (html: string | undefined): string | undefined =>
     new DOMParser().parseFromString(html ?? "", "text/html").querySelector("a.writer_nikcon img")?.getAttribute("src") ?? undefined;
 
 const extractIp = (html: string | undefined): string | undefined => html?.match(/class=["']?ip["']?[^>]*>\s*\(([^)]+)\)/)?.[1];
+
+/* ===== 글자콘 — 디시 txtcon_view.js를 옮김 (디시 스크립트는 shadow DOM에 닿지 않는다) ===== */
+
+/** 한 줄 최대 글자 수 */
+const TXTCON_MAX_LINE_LEN = 5;
+
+// ponytail: 디시는 국기·스킨톤·ZWJ 등을 직접 묶지만 브라우저 grapheme 분할과 흔한 글자에선 같다 (분해형 한글 자모 등만 다름)
+const segmenter = new Intl.Segmenter();
+const clusters = (text: string): string[] => Array.from(segmenter.segment(text), ({segment}) => segment);
+
+/** 직접 줄바꿈은 두고 각 줄을 5글자씩 나눈다 */
+const wrapTxtcon = (text: string): string =>
+    text
+        .replace(/\r\n?/g, "\n")
+        .split("\n")
+        .map((line) => clusters(line).map((char, i) => (i && i % TXTCON_MAX_LINE_LEN === 0 ? "\n" : "") + char).join(""))
+        .join("\n");
+
+/** 박스에 넘치지 않는 최대 글자 크기 (16~72px 이진 탐색). 줄 수는 16px 기준으로 고정, 폭이 넘치면 break-all */
+const fitTxtcon = (box: HTMLElement): void => {
+    const txt = box.querySelector<HTMLElement>(".txtcon_txt");
+    if (!txt || !box.getClientRects().length) return;
+
+    Object.assign(txt.style, {wordBreak: "keep-all", overflowWrap: "normal", whiteSpace: "pre-line", letterSpacing: "", transform: ""});
+
+    // 크기를 재는 인라인 span — 다시 불려도 이미 나눈 줄은 그대로다
+    const meas = document.createElement("span");
+    meas.textContent = wrapTxtcon(Array.from(txt.childNodes, (node) => (node.nodeName === "BR" ? "\n" : node.textContent)).join(""));
+    txt.replaceChildren(meas);
+
+    const style = getComputedStyle(box);
+    const availW = box.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    const availH = box.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+    const tol = 0.5 / devicePixelRatio;
+
+    const fit = (floor: number, keepLines: boolean): void => {
+        txt.style.fontSize = `${floor}px`;
+        const baseLines = keepLines ? meas.getClientRects().length : Infinity;
+        let min = floor, max = 72, best = floor;
+        while (min <= max) {
+            const mid = Math.floor((min + max) / 2);
+            txt.style.fontSize = `${mid}px`;
+            const rect = meas.getBoundingClientRect();
+            if (rect.width <= availW + tol && rect.height <= availH + tol && meas.getClientRects().length <= baseLines) {
+                best = mid;
+                min = mid + 1;
+            } else {
+                max = mid - 1;
+            }
+        }
+        txt.style.fontSize = `${best}px`;
+    };
+
+    fit(16, true);
+    if (meas.getBoundingClientRect().width > availW + tol) {
+        txt.style.wordBreak = "break-all";
+        fit(16, true);
+    }
+
+    // 16px로도 크게 넘치면 더 줄여서 담는다 (줄 수 제한 없음)
+    const over = meas.getBoundingClientRect();
+    if (over.height - availH > 4 || over.width - availW > 4) fit(10, false);
+
+    // 남는 폭을 자간으로 채운다 (마지막 글자 뒤 자간만큼 치우치므로 transform으로 보정)
+    // 글자 수는 디시처럼 이스케이프된 채로 센다 (&는 &amp; 5글자) — 디시와 같은 자간이 나오게
+    const longest = Math.max(...meas.innerHTML.split("\n").map((line) => clusters(line).length));
+    const slack = availW - meas.getBoundingClientRect().width;
+    if (longest > 1 && slack > 1) {
+        const spacing = slack / longest;
+        txt.style.letterSpacing = `calc(-0.045em + ${spacing.toFixed(2)}px)`;
+        txt.style.transform = `translate(${(spacing / 2).toFixed(2)}px, -0.05em)`;
+    }
+};
 
 const TimeStamp = ({date}: { date: string }) => {
     const parsed = parseDate(date);
@@ -127,7 +200,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
 
         try {
             if (isAdmin) {
-                await adminDeleteComment(st.preData, st.post.commentId ?? "");
+                await adminDeleteComment(st.preData, comment.no);
             } else {
                 let password = "";
                 if (!comment.user_id) {
@@ -142,9 +215,16 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
         }
     };
 
-    const isDccon = /<(img|video) class=/.test(comment.memo);
+    // 디시콘(img/video)과 글자콘 — 답글이면 앞에 멘션이 붙어 오므로 맨 앞에 고정하지 않고 찾는다
+    const isDccon = /<(img|video) class=|<div class="coment_dccon_txt/.test(comment.memo);
     // 붙어 온 디시콘 태그는 comments.ts에서 이미 떼어 놓았다
     const html = isDccon ? comment.memo : comment.memo.replace(/\n/g, "<br/>");
+
+    // 글자콘 크기는 그려진 뒤에 잰다 — html이 바뀌면 React가 내용을 새로 넣으므로 다시 잰다
+    const body = useRef<HTMLDivElement>(null);
+    useLayoutEffect(() => {
+        body.current?.querySelectorAll<HTMLElement>(".coment_dccon_txt").forEach(fitTxtcon);
+    }, [html]);
 
     return (
         <Box className="refresher-comment" data-depth={depth} data-deleted={isDeleted || undefined}
@@ -203,7 +283,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
                     ) : (
                         <iframe src={comment.voice.src} width={280} height={54} style={{border: 0}} title="voice"/>
                     ))}
-                <Box className="refresher-html refresher-comment-html" data-dccon={isDccon || undefined}
+                <Box ref={body} className="refresher-html refresher-comment-html" data-dccon={isDccon || undefined}
                      dangerouslySetInnerHTML={{__html: html}}/>
             </Flex>
         </Box>

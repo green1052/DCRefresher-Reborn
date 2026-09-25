@@ -1,4 +1,4 @@
-import {isAnyBlocked} from "@/core/block";
+import {isAnyBlocked, isBlocked} from "@/core/block";
 import {sanitizeHtml} from "@/utils/sanitize";
 import type {ModuleContext} from "@/core/module/types";
 
@@ -10,7 +10,7 @@ export interface ProcessedComment extends DcinsideComment {
     voice?: { src: string };
 }
 
-const GALLOG_DCCON = /dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/;
+const GALLOG_DCCON = /dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g;
 
 /** 디시콘 2개짜리 댓글은 태그가 `…"img class="written_dccon`처럼 `><` 없이 붙어 온다 — 정화하면 두 번째가 속성으로 먹히므로 먼저 떼어 놓는다 */
 const splitDccons = (memo: string): string => memo.replace(/"\s*(img|video) class="written_dccon/g, "\"><$1 class=\"written_dccon");
@@ -55,18 +55,19 @@ export const processComments = (
         if (comment.is_delete === "1") continue;
 
         const plain = comment.memo.includes("<") ? comment.memo.replace(/<[^>]+>/g, " ") : comment.memo;
-        const dcconNo = comment.memo.match(GALLOG_DCCON)?.[1];
+        // 디시콘 2개짜리 댓글은 두 번째도 검사한다
+        const dcconNos = Array.from(comment.memo.matchAll(GALLOG_DCCON), (match) => match[1] ?? "");
 
-        const blocked = isAnyBlocked(
-            {
-                NICK: comment.name || null,
-                ID: comment.user_id || null,
-                IP: comment.ip || null,
-                DCCON: dcconNo || null,
-                COMMENT: plain || null
-            },
-            preData.gallery
-        );
+        const blocked =
+            isAnyBlocked(
+                {
+                    NICK: comment.name || null,
+                    ID: comment.user_id || null,
+                    IP: comment.ip || null,
+                    COMMENT: plain || null
+                },
+                preData.gallery
+            ) || dcconNos.some((no) => isBlocked("DCCON", no, preData.gallery));
 
         if (!blocked) continue;
 

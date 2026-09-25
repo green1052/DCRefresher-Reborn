@@ -183,7 +183,7 @@
     }
 
     &[data-dccon]:not(:hover) {
-        :is(img, video) {
+        :is(img, video, .coment_dccon_txt) {
             visibility: var(--refresher-stealth-dccon-visibility, visible);
         }
 
@@ -197,6 +197,74 @@
             border: 1px solid var(--gray-a6);
             font-weight: bold;
         }
+    }
+
+    /* 글자콘 — 디시 common.css를 옮김. 모르는 색 클래스면 디시 기본값(남색 바탕·흰 글자) */
+    .coment_dccon_txt {
+        display: flex;
+        justify-content: center;
+        overflow: hidden; // 디시는 txtcon_view.js가 붙인다
+        width: 100px;
+        height: 100px;
+        padding: 10px 11px;
+        box-sizing: border-box;
+        border-radius: 10px;
+        background-color: #3b4890;
+    }
+
+    // 글자 크기·자간·줄바꿈은 Comment.tsx(fitTxtcon)가 다시 잡는다 — 정화하며 지워진 style="font-size:16px"도 여기서
+    .txtcon_txt {
+        margin: 0;
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: bold;
+        letter-spacing: -0.045em;
+        line-height: calc(1em + 4px);
+        text-align: center;
+        align-content: center;
+        word-break: break-all;
+        transform: translateY(-0.05em);
+        box-sizing: border-box;
+    }
+
+    .cbg_3b4890 {
+        background-color: #3b4890;
+    }
+
+    .cbg_b4b4e1 {
+        background-color: #b4b4e1;
+    }
+
+    .cbg_f5e1f0 {
+        background-color: #f5e1f0;
+    }
+
+    .cbg_d2f0e6 {
+        background-color: #d2f0e6;
+    }
+
+    .cbg_ffffff {
+        background-color: #ffffff;
+    }
+
+    .cbg_333333 {
+        background-color: #333333;
+    }
+
+    .ctxt_ffffff {
+        color: #ffffff;
+    }
+
+    .ctxt_333333 {
+        color: #333333;
+    }
+
+    .cbg_ffffff .ctxt_ffffff {
+        text-shadow: 0 0 4px rgb(51 51 51 / 60%);
+    }
+
+    .cbg_333333 .ctxt_333333 {
+        text-shadow: 0 0 4px rgb(255 255 255 / 60%);
     }
 }
 

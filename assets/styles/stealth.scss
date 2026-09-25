@@ -25,13 +25,13 @@
         display: none !important;
     }
 
-    /* 댓글 디시콘: 가려 두고 마우스를 올리면 보인다 */
+    /* 댓글 디시콘·글자콘: 가려 두고 마우스를 올리면 보인다 */
     .comment_box .comment_dccon {
         position: relative;
         width: fit-content;
 
         &:not(:hover) {
-            :is(img, video) {
+            :is(img, video, .coment_dccon_txt) {
                 visibility: hidden;
             }
 
@@ -39,6 +39,10 @@
                 content: "디시콘 표시";
                 position: absolute;
                 inset: 0;
+                // 답글이면 디시의 .reply_info .comment_dccon::before(8px 화살표)가 크기·배경을 남긴다
+                width: auto;
+                height: auto;
+                background: none;
                 display: flex;
                 align-items: center;
                 justify-content: center;
