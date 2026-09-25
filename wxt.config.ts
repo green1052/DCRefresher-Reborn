@@ -12,7 +12,6 @@ export default defineConfig({
     },
     manifest: ({browser}) => ({
         name: "DCRefresher Reborn",
-        description: "디시인사이드 개선 확장 프로그램",
         ...(browser === "firefox"
             ? {
                 browser_specific_settings: {
