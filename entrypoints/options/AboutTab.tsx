@@ -1,9 +1,8 @@
-import {Badge, Box, Button, DataList, Flex, Grid, Heading, Link, Text} from "@radix-ui/themes";
+import {Avatar, Badge, Box, Button, Card, DataList, Flex, Grid, Heading, Link, Text} from "@radix-ui/themes";
 import {BookOpen, Bug, ClipboardCopy, Code, Heart, type LucideIcon, MessageCircle, Star, Tag, Users} from "lucide-react";
 import {useEffect, useState} from "react";
 
 import {Notice} from "@/components/ConfirmDialog";
-import {readCloudBackupTimes} from "@/core/backup";
 import {http} from "@/core/http/client";
 import {dbStorage} from "@/core/storage/items";
 import type {StoredDB} from "@/core/storage/types";
@@ -31,8 +30,12 @@ const LINKS: [string, string, LucideIcon][] = [
     ["후원", "https://www.buymeacoffee.com/green1052", Heart]
 ];
 
-/** 코드를 보탠 사람들 (v5까지의 커밋 기록, 봇 제외) */
-const CONTRIBUTORS = ["ra0000", "lidarbtc", "jmmoon", "scarf", "andjsrk", "Xeph", "emptycan1010", "eentks82137-dot", "Ich-mag-dich"];
+/** [GitHub 아이디, 역할] — 기여자는 v5까지의 커밋 기록 (봇 제외) */
+const PEOPLE: [string, string][] = [
+    ["green1052", "개발"],
+    ["So-chiru", "원작 DCRefresher"],
+    ...["ra0000", "lidarbtc", "jmmoon", "scarf", "andjsrk", "Xeph", "emptycan1010", "eentks82137-dot", "Ich-mag-dich"].map((name): [string, string] => [name, "기여"])
+];
 
 /** storage.sync 전체 한도 */
 const SYNC_QUOTA = 102_400;
@@ -57,19 +60,18 @@ const useRelease = (version: string): Release => {
 interface Usage {
     local: number;
     sync: number;
-    backups: Awaited<ReturnType<typeof readCloudBackupTimes>>;
+    /** 진단 정보용 */
     db: StoredDB | null;
 }
 
 // 로컬의 getBytesInUse는 Firefox 144부터라 JSON 크기로 잰다 (sync는 한도 계산과 같게 브라우저 값을 쓴다)
 const readUsage = async (): Promise<Usage> => {
-    const [local, sync, backups, db] = await Promise.all([
+    const [local, sync, db] = await Promise.all([
         browser.storage.local.get(null).then(byteSize),
         browser.storage.sync.getBytesInUse(null),
-        readCloudBackupTimes(),
         dbStorage.getValue()
     ]);
-    return {local, sync, backups, db};
+    return {local, sync, db};
 };
 
 export function AboutTab({logo, version}: { logo: string; version: string }) {
@@ -170,24 +172,25 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
                             {usage ? `${formatBytes(usage.sync)} / ${formatBytes(SYNC_QUOTA)} (${Math.round((usage.sync / SYNC_QUOTA) * 100)}%)` : "…"}
                         </DataList.Value>
                     </DataList.Item>
-                    <DataList.Item>
-                        <DataList.Label>마지막 백업</DataList.Label>
-                        <DataList.Value>
-                            {usage ? `수동 ${formatTime(usage.backups.manual ?? 0)} · 자동 ${formatTime(usage.backups.auto ?? 0)}` : "…"}
-                        </DataList.Value>
-                    </DataList.Item>
-                    <DataList.Item>
-                        <DataList.Label>IP/밴 데이터베이스</DataList.Label>
-                        <DataList.Value>{usage?.db ? `${usage.db.version} (갱신 ${formatTime(usage.db.lastUpdate)})` : "없음"}</DataList.Value>
-                    </DataList.Item>
                 </DataList.Root>
             </Section>
 
             <Section title="만든 사람">
-                <Text as="p" size="2">
-                    <Link href="https://github.com/green1052" target="_blank" weight="medium">green1052</Link>
-                </Text>
-                <Text as="p" size="2" color="gray" mt="2">함께 만든 사람: {CONTRIBUTORS.join(", ")}</Text>
+                <Grid columns={{initial: "1", xs: "2", sm: "3"}} gap="2">
+                    {PEOPLE.map(([name, role]) => (
+                        <Card key={name} asChild>
+                            <a href={`https://github.com/${name}`} target="_blank" rel="noreferrer">
+                                <Flex align="center" gap="3">
+                                    <Avatar size="3" radius="full" src={`https://github.com/${name}.png?size=80`} fallback={name[0]!.toUpperCase()}/>
+                                    <Box minWidth="0">
+                                        <Text as="p" size="2" weight="bold" truncate>{name}</Text>
+                                        <Text as="p" size="1" color="gray">{role}</Text>
+                                    </Box>
+                                </Flex>
+                            </a>
+                        </Card>
+                    ))}
+                </Grid>
             </Section>
 
             <Notice message={notice} onClose={() => setNotice(null)}/>
