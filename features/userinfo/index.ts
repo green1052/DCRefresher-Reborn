@@ -1,9 +1,10 @@
-import {banReasonsOf, ispOf} from "@/core/database";
+import {banReasonsOf, type IpCategory, ipInfoOf} from "@/core/database";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext} from "@/core/module/types";
 import {http} from "@/core/http/client";
 import {eventBus} from "@/core/eventbus/bus";
 import type {JsonValue} from "@/core/storage/types";
+import {dbStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";
 import {csrfToken} from "@/utils/cookie";
 import {getType} from "@/utils/user";
@@ -16,6 +17,15 @@ interface RatioInfo {
     comment: number;
     date: number;
 }
+
+/** IP 정보 분류 → 색 설정 키 */
+const IP_COLOR_SETTING: Record<IpCategory, string> = {
+    korea: "ipColorKorea",
+    japan: "ipColorJapan",
+    china: "ipColorChina",
+    foreign: "ipColorForeign",
+    vpn: "ipColorVpn"
+};
 
 const GALLOG_API = "https://gall.dcinside.com/api/gallog_user_layer/gallog_content_reple";
 
@@ -76,8 +86,8 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
         }
 
         if (ip && ctx.settings.showIpInfo === true) {
-            const isp = ispOf(ip);
-            if (isp) badges.append(buildBadgeSpan(`[${isp}]`, "#6495ed", isp));
+            const info = ipInfoOf(ip);
+            if (info) badges.append(buildBadgeSpan(`[${info.label}]`, String(ctx.settings[IP_COLOR_SETTING[info.category]]), info.title));
         }
     };
 
@@ -109,7 +119,8 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
 };
 
 const rebuildAll = (ctx: ModuleContext): void => {
-    for (const element of document.querySelectorAll<HTMLElement>(".ub-writer[data-refresher-user-info]")) {
+    // 배지가 없던 작성자도 포함 — 설정을 켜서 새로 생기는 배지가 있다 (필터 선택자와 같은 대상)
+    for (const element of document.querySelectorAll<HTMLElement>(".ub-writer:not([user_name])")) {
         delete element.dataset.refresherUserInfo;
         element.querySelector(".refresher-user-badges")?.remove();
         process(ctx, element);
@@ -139,9 +150,14 @@ export default defineModule({
         showIpInfo: {
             type: "check",
             name: "IP 정보 표시",
-            desc: "IP 정보를 표시합니다.",
+            desc: "IP의 통신사·조직과 국가를 표시합니다.",
             default: true
         },
+        ipColorKorea: {type: "color", name: "IP 색 - 한국", desc: "국내 IP 정보의 글자 색입니다.", default: "#6495ed"},
+        ipColorJapan: {type: "color", name: "IP 색 - 일본", desc: "일본 IP 정보의 글자 색입니다.", default: "#e5484d"},
+        ipColorChina: {type: "color", name: "IP 색 - 중국", desc: "중국 IP 정보의 글자 색입니다.", default: "#f76b15"},
+        ipColorForeign: {type: "color", name: "IP 색 - 그 외 해외", desc: "한국·일본·중국이 아닌 해외 IP 정보의 글자 색입니다.", default: "#12a594"},
+        ipColorVpn: {type: "color", name: "IP 색 - VPN", desc: "VPN·클라우드로 보이는 IP 정보의 글자 색입니다. (국가보다 우선)", default: "#8e4ec6"},
         checkRatio: {
             type: "check",
             name: "글댓비 표시",
@@ -185,6 +201,9 @@ export default defineModule({
             if (state.memos !== previous.memos) rebuildAll(ctx);
         });
 
+        // IP/갱차 DB가 갱신되면 다시 그린다 (core/database의 감시가 먼저 등록돼 새 데이터가 이미 로드된 뒤다)
+        const unwatchDatabase = dbStorage.watch(() => rebuildAll(ctx));
+
         // 새 글: 글댓비 조회 (1시간 캐시, 첫 10개)
         const offNewPostList = eventBus.on("newPostList", ({data: elements}) => {
             if (ctx.settings.checkRatio !== true) return;
@@ -223,6 +242,7 @@ export default defineModule({
 
         ctx.addCleanup(() => {
             unsubscribeMemos();
+            unwatchDatabase();
             offNewPostList();
         });
     },

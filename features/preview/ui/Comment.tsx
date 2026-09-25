@@ -6,7 +6,7 @@ import {overlay} from "@/components/overlay/shadow";
 import type {ProcessedComment} from "@/core/preview/comments";
 import {adminDeleteComment, userDeleteComment} from "@/core/preview/request";
 import {useUiStore} from "@/stores/ui";
-import {ispOf} from "@/core/database";
+import {ipInfoOf} from "@/core/database";
 import {isGalleryManager} from "@/utils/user";
 
 import {usePreviewStore} from "./previewStore";
@@ -72,7 +72,7 @@ export interface UserCardData {
 
 /** 작성자 표시. 우클릭하면 유저 버블 */
 export const UserCard = ({user}: { user: UserCardData }) => {
-    const isp = user.ip ? ispOf(user.ip) : undefined;
+    const ipInfo = user.ip ? ipInfoOf(user.ip) : undefined;
     const info = [user.id, user.ip].filter(Boolean).join(" / ");
 
     const openMenu = (event: MouseEvent): void => {
@@ -89,7 +89,7 @@ export const UserCard = ({user}: { user: UserCardData }) => {
             <Text size="2" weight="bold" truncate>{user.nick ?? user.id ?? user.ip}</Text>
             {user.image && <img src={user.image} alt="" height={12}/>}
             {info && <Text size="1" color="gray" truncate>({info})</Text>}
-            {isp && <Text size="1" color="blue" title={isp} truncate>[{isp}]</Text>}
+            {ipInfo && <Text size="1" color="blue" title={ipInfo.title} truncate>[{ipInfo.label}]</Text>}
         </Flex>
     );
 };

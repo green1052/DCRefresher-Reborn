@@ -16,7 +16,8 @@ export type SettingSchema =
     unit: string
 }
     | { type: "option"; name: string; desc: string; default: string; items: Record<string, string> }
-    | { type: "order"; name: string; desc: string; default: string[]; items: Record<string, string> };
+    | { type: "order"; name: string; desc: string; default: string[]; items: Record<string, string> }
+    | { type: "color"; name: string; desc: string; default: string };
 
 export interface ModuleContext {
     /** 모듈 id */

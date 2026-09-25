@@ -32,6 +32,30 @@ const formatDefault = (schema: SettingSchema): string => {
     }
 };
 
+/** 색 선택 — 드래그 중엔 미리보기만 바꾸고, 선택 창을 닫을 때(blur) 저장한다 */
+const ColorControl = ({value, disabled, onChange}: NarrowProps<"color">) => {
+    const [draft, setDraft] = useState(String(value));
+
+    useEffect(() => {
+        setDraft(String(value));
+    }, [value]);
+
+    return (
+        <Flex align="center" gap="2">
+            <Text size="2" color="gray" style={{fontVariantNumeric: "tabular-nums"}}>{draft}</Text>
+            <input
+                type="color"
+                aria-label="색 선택"
+                value={draft}
+                disabled={disabled}
+                onChange={(event) => setDraft(event.target.value)}
+                onBlur={() => draft !== value && onChange(draft)}
+                style={{width: 36, height: 28, padding: 0, border: 0, background: "none", cursor: "pointer"}}
+            />
+        </Flex>
+    );
+};
+
 const TextControl = ({schema, value, disabled, onChange}: NarrowProps<"text">) => {
     const [draft, setDraft] = useState(String(value));
 
@@ -223,6 +247,7 @@ export const SettingItem = ({schema, value, disabled, onChange}: SettingItemProp
                     </Select.Root>
                 )}
                 {schema.type === "text" && <TextControl {...{schema, value, disabled, onChange}} />}
+                {schema.type === "color" && <ColorControl {...{schema, value, disabled, onChange}} />}
                 {schema.type === "range" && <RangeControl {...{schema, value, disabled, onChange}} />}
                 {schema.type === "order" && <OrderControl {...{schema, value, disabled, onChange}} />}
             </Box>

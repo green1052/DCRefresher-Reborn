@@ -7,7 +7,7 @@ import {eventBus} from "@/core/eventbus/bus";
 import type {ModuleEventData} from "@/core/eventbus/types";
 import {PreviewHost} from "@/features/preview/ui/PreviewHost";
 import {type ToastData, useUiStore} from "@/stores/ui";
-import {ispOf} from "@/core/database";
+import {ipInfoOf} from "@/core/database";
 
 import {MemoDialog} from "./MemoDialog";
 import {overlay} from "./shadow";
@@ -110,7 +110,7 @@ const BubbleHost = () => {
     };
 
     const identity = identityValue(selected);
-    const isp = selected.ip ? ispOf(selected.ip) : undefined;
+    const ipLabel = selected.ip ? ipInfoOf(selected.ip)?.label : undefined;
 
     return (
         <Popover.Root open onOpenChange={(open) => !open && close()}>
@@ -133,7 +133,7 @@ const BubbleHost = () => {
                         <Flex direction="column" gap="2">
                             {selected.nick && <CopyRow label="닉네임" value={selected.nick} onCopy={copy}/>}
                             {identity && <CopyRow label="아이디/IP" value={identity} onCopy={copy}/>}
-                            {isp && <CopyRow label="ISP" value={isp} onCopy={copy}/>}
+                            {ipLabel && <CopyRow label="IP 정보" value={ipLabel} onCopy={copy}/>}
                         </Flex>
                         <Separator size="4" my="2"/>
                         <Flex gap="2" wrap="wrap">

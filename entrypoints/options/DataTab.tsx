@@ -91,7 +91,7 @@ export function DataTab() {
         try {
             const [data, db] = await Promise.all([browser.storage.sync.get(), dbStorage.getValue()]);
             const merged: Record<string, unknown> = {...data};
-            if (db.ip && Object.keys(db.ip).length > 0) merged["refresher:db"] = db;
+            if (db.ip) merged["refresher:db"] = db;
 
             await replaceLocalStorage(merged);
             setNotice("데이터를 복원했습니다. 새 탭에서 디시인사이드를 열어주세요.");

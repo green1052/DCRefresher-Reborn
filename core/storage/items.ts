@@ -68,7 +68,7 @@ export const moduleDataStorage = (id: string) =>
     storage.defineItem<Record<string, JsonValue>>(`local:refresher:module:${id}:data`, {defaultValue: {}});
 
 export const dbStorage = storage.defineItem<StoredDB>("local:refresher:db", {
-    defaultValue: {version: "", lastUpdate: 0, ip: {}, ban: {}}
+    defaultValue: {version: "", lastUpdate: 0, ip: null, ban: {}}
 });
 
 export const backupStorage = {

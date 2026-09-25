@@ -1,27 +1,40 @@
 import {http} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
+import {compactIpData, createIpLookup, type IpCandidate, type RawIpData} from "@/core/ipdb";
 import {dbStorage} from "@/core/storage/items";
 import type {StoredDB} from "@/core/storage/types";
 
-/** IP(ISP)/갱차 데이터베이스를 내려받아 저장 — 배경(설치·주기)과 옵션 페이지(지금 갱신)에서 호출 */
+/** IP/갱차 데이터베이스를 내려받아 저장 — 배경(설치·주기)과 옵션 페이지(지금 갱신)에서 호출 */
 export const updateDatabase = async (): Promise<void> => {
     const [version, ip, ban] = await Promise.all([
         http.get(urls.database.version).text(),
-        http.get(urls.database.ip).json<StoredDB["ip"]>(),
+        http.get(urls.database.ip).json<RawIpData>(),
         http.get(urls.database.ban).json<StoredDB["ban"]>()
     ]);
 
-    await dbStorage.setValue({version, lastUpdate: Date.now(), ip, ban});
+    await dbStorage.setValue({version, lastUpdate: Date.now(), ip: compactIpData(ip), ban});
 };
 
 // ===== 콘텐츠 스크립트용 조회 (저장소 → 메모리) =====
 
-let isps: StoredDB["ip"] = {};
+/** 배지 색 구분 — 유력 후보(첫 번째)의 국가/VPN 기준 */
+export type IpCategory = "korea" | "japan" | "china" | "foreign" | "vpn";
+
+export interface IpInfo {
+    /** "KT, 부산은행" / "일본 · SoftBank Corp." / "VPN · Tencent" — 조직은 3개까지 */
+    label: string;
+    /** 후보 전체 (툴팁용) */
+    title: string;
+    category: IpCategory;
+}
+
+let lookupIp: ((ip: string) => IpCandidate[] | undefined) | null = null;
 /** ban은 이유 → uid[] 형태라 uid → 이유[] 역색인을 만들어 둔다 */
 let bans = new Map<string, string[]>();
 
 const load = (db: StoredDB | null): void => {
-    isps = db?.ip ?? {};
+    // 예전 형식(ip가 대역→이름 객체)이면 다음 갱신 전까지 IP 정보 없이 둔다
+    lookupIp = typeof db?.ip?.table === "string" ? createIpLookup(db.ip) : null;
     bans = new Map();
 
     for (const [reason, uids] of Object.entries(db?.ban ?? {})) {
@@ -38,8 +51,34 @@ export const initDatabase = (): Promise<void> =>
         dbStorage.watch(load);
     })());
 
-/** IP의 통신사/ISP 이름 */
-export const ispOf = (ip: string): string | undefined => isps[ip];
+const categoryOf = ({vpn, country}: IpCandidate): IpCategory => {
+    if (vpn) return "vpn";
+    if (!country) return "korea";
+    if (country === "일본") return "japan";
+    if (country === "중국") return "china";
+    return "foreign";
+};
+
+const MAX_ORGS = 3;
+
+/** IP 대역(a.b)의 조직·국가·VPN 정보. 데이터가 없으면 undefined */
+export const ipInfoOf = (ip: string): IpInfo | undefined => {
+    const candidates = lookupIp?.(ip);
+    const first = candidates?.[0];
+    if (!candidates || !first) return undefined;
+
+    const orgs = [...new Set(candidates.map((candidate) => candidate.org).filter((org): org is string => Boolean(org)))];
+    const shown = orgs.slice(0, MAX_ORGS).join(", ") + (orgs.length > MAX_ORGS ? ` 외 ${orgs.length - MAX_ORGS}` : "");
+    const prefix = first.vpn ? "VPN" : first.country;
+
+    return {
+        label: [prefix, shown].filter(Boolean).join(" · "),
+        title: candidates
+            .map((candidate) => [candidate.org ?? "(조직 미상)", candidate.country ?? "한국", candidate.vpn && "VPN"].filter(Boolean).join(" · "))
+            .join("\n"),
+        category: categoryOf(first)
+    };
+};
 
 /** 갱신 차단(밴) 이유들. 없으면 undefined */
 export const banReasonsOf = (uid: string): string | undefined => bans.get(uid)?.join(", ");

@@ -10,6 +10,8 @@ export const normalizeSetting = (schema: SettingSchema, value: unknown): Setting
         case "text":
         case "option":
             return typeof value === "string" ? value : schema.default;
+        case "color":
+            return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value) ? value : schema.default;
         case "range":
             return typeof value === "number" && Number.isFinite(value)
                 ? Math.min(schema.max, Math.max(schema.min, value))
