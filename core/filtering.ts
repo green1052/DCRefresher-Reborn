@@ -6,8 +6,6 @@ interface Filter {
 const filters = new Set<Filter>();
 
 let observer: MutationObserver | null = null;
-let pending: MutationRecord[] = [];
-let flushScheduled = false;
 
 // 잘못된 selector가 들어와도 필터 전체가 죽지 않도록 감싼다
 const queryAll = (root: Element, scope: string): HTMLElement[] => {
@@ -39,14 +37,12 @@ const collect = (element: HTMLElement, scope: string, matches: Set<HTMLElement>)
     for (const match of queryAll(element, scope)) matches.add(match);
 };
 
-// mutation을 microtask 단위로 모아 한 번에 처리
+// 옵저버가 한 번에 넘기는 mutation 묶음을 한꺼번에 처리
 // userinfo가 작성자마다 넣는 배지 묶음은 건너뛴다 — closest로 부모 작성자가 다시 잡혀 행마다 모든 필터(차단 정규식 등)가 한 번 더 돈다
-const flush = (): void => {
-    flushScheduled = false;
-    const added = pending
+const flush = (mutations: MutationRecord[]): void => {
+    const added = mutations
         .flatMap((mutation) => Array.from(mutation.addedNodes))
         .filter((node): node is HTMLElement => node instanceof HTMLElement && !node.classList.contains("refresher-user-badges"));
-    pending = [];
     if (added.length === 0) return;
 
     for (const filter of filters) {
@@ -66,12 +62,7 @@ export const addFilter = (scope: string, callback: (element: HTMLElement) => voi
 
     for (const element of queryAll(document.documentElement, scope)) run(filter, element);
 
-    observer ??= new MutationObserver((mutations) => {
-        pending.push(...mutations);
-        if (flushScheduled) return;
-        flushScheduled = true;
-        queueMicrotask(flush);
-    });
+    observer ??= new MutationObserver(flush);
     observer.observe(document.documentElement, {childList: true, subtree: true});
 
     return () => {
@@ -79,6 +70,5 @@ export const addFilter = (scope: string, callback: (element: HTMLElement) => voi
         if (filters.size > 0 || !observer) return;
         observer.disconnect();
         observer = null;
-        pending = [];
     };
 };
