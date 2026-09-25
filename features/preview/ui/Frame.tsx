@@ -25,17 +25,22 @@ const fitMovies = (root: HTMLElement): (() => void) => {
             const container = frame.contentDocument?.querySelector<HTMLElement>(".v-container");
             if (!container) return;
 
+            // 글꼴·배율에 따라 1px만 넘쳐도 스크롤바가 생겨 화면을 더 먹는다 — 안쪽 스크롤은 끈다
+            frame.contentDocument!.documentElement.style.overflow = "hidden";
+
             const observer = new ResizeObserver(() => {
-                // 안쪽 body 여백(좌우 대칭)까지 — 컨테이너 폭만 주면 가로 스크롤이 생긴다
-                frame.style.width = `${container.offsetWidth + container.offsetLeft * 2}px`;
-                frame.style.height = `${container.offsetHeight + 20}px`;
+                // 안쪽 body 여백(좌우 대칭)까지, 소수점은 올림 — 컨테이너 폭만 주면 잘린다
+                const {width, height} = container.getBoundingClientRect();
+                frame.style.width = `${Math.ceil(width + container.offsetLeft * 2)}px`;
+                frame.style.height = `${Math.ceil(height) + 20}px`;
             });
             observer.observe(container);
             observers.push(observer);
         };
 
         if (frame.contentDocument?.readyState === "complete" && frame.contentDocument.URL !== "about:blank") fit();
-        else frame.addEventListener("load", fit, {once: true});
+        // 다시 로드되면(새로고침 등) 안쪽 문서가 바뀌므로 매번 맞춘다
+        frame.addEventListener("load", fit);
     }
 
     return () => observers.forEach((observer) => observer.disconnect());
