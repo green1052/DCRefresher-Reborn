@@ -18,10 +18,16 @@ const GENERIC_FAMILIES = new Set(["serif", "sans-serif", "monospace", "cursive",
  */
 const toFontFamily = (value: string): string => {
     const fonts = value
+        // 줄바꿈 등 제어문자는 CSS 문자열을 끝내 뒤를 규칙으로 읽힌다
+        .replace(/\p{Cc}/gu, "")
         .split(",")
         .map((font) => font.trim())
         .filter(Boolean)
-        .map((font) => (GENERIC_FAMILIES.has(font.toLowerCase()) ? font : `"${font.replace(/["\\]/g, "\\$&")}"`));
+        .map((font) => {
+            // 이미 따옴표로 감싼 이름은 한 겹 벗겨 다시 감싼다 (감싼 일반 글꼴군은 이름 그대로)
+            const quoted = /^(["'])(.*)\1$/.exec(font)?.[2];
+            return quoted === undefined && GENERIC_FAMILIES.has(font.toLowerCase()) ? font : `"${(quoted ?? font).replace(/["\\]/g, "\\$&")}"`;
+        });
 
     if (!GENERIC_FAMILIES.has(fonts.at(-1)?.toLowerCase() ?? "")) fonts.push("sans-serif");
     return fonts.join(", ");
