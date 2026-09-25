@@ -1,4 +1,4 @@
-import type {BlockEntry, BlockType, DetectMode, JsonValue, MemoEntry, MemoType, SettingValue, StoredDB} from "./types";
+import type {BlockEntry, BlockType, DetectMode, MemoEntry, MemoType, SettingValue, StoredDB} from "./types";
 
 
 export const BLOCK_TYPES: BlockType[] = ["NICK", "ID", "IP", "TITLE", "TEXT", "COMMENT", "DCCON", "TAB"];
@@ -42,18 +42,23 @@ export const DEFAULT_DETECT_MODE: Record<BlockType, DetectMode> = {
     TAB: "SAME"
 };
 
-/** storage.local 키 하나 — getValue/setValue/watch만 쓴다 */
+/** storage.local 키 하나 */
 export interface StorageItem<T> {
+    /** 저장값이 없을 때 쓰는 값 */
+    fallback: T;
     getValue(): Promise<T>;
     setValue(value: T): Promise<void>;
+    removeValue(): Promise<void>;
     /** 값이 바뀌면 (새 값, 이전 값) — 없으면 fallback. 해제 함수를 돌려준다 */
     watch(callback: (next: T, previous: T) => void): () => void;
 }
 
 /** WXT defineItem은 정의할 때마다 값을 한 번 몰래 읽어(init 확인) 페이지마다 저장소 읽기가 두 배가 된다 — 필요한 것만 직접 */
-const item = <T>(key: string, fallback: T): StorageItem<T> => ({
+export const item = <T>(key: string, fallback: T): StorageItem<T> => ({
+    fallback,
     getValue: async () => ((await browser.storage.local.get(key))[key] as T | undefined) ?? fallback,
     setValue: (value) => browser.storage.local.set({[key]: value}),
+    removeValue: () => browser.storage.local.remove(key),
     watch: (callback) => {
         const listener = (changes: Record<string, Browser.storage.StorageChange>): void => {
             const change = changes[key];
@@ -79,8 +84,6 @@ export const memoStorage = Object.fromEntries(
 export const modulesStorage = item<Record<string, boolean>>("refresher:modules", {});
 
 export const moduleSettingsStorage = (id: string) => item<Record<string, SettingValue>>(`refresher:module:${id}:settings`, {});
-
-export const moduleDataStorage = (id: string) => item<Record<string, JsonValue>>(`refresher:module:${id}:data`, {});
 
 export const dbStorage = item<StoredDB>("refresher:db", {version: "", lastUpdate: 0, ip: null, ban: {}});
 

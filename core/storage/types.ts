@@ -42,5 +42,3 @@ export interface StoredDB extends Omit<Database, "ip" | "ban"> {
 }
 
 export type SettingValue = boolean | number | string | string[];
-
-export type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };

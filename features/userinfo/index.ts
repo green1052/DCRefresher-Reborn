@@ -1,11 +1,11 @@
+
 import {banReasonsOf, ipInfoOf, type IpInfoFilter, passesIpFilter} from "@/core/database";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingGroup} from "@/core/module/types";
 import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
 import {queryString} from "@/core/http/urls";
 import {eventBus} from "@/core/eventbus/bus";
-import type {JsonValue} from "@/core/storage/types";
-import {dbStorage, moduleDataStorage, moduleSettingsStorage} from "@/core/storage/items";
+import {dbStorage, item, moduleSettingsStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";
 import {type BadgeView, DEFAULT_BADGE_VIEW, showsUid, useUiStore} from "@/stores/ui";
 import {insertWriterSpan} from "@/utils/userDataInsert";
@@ -45,10 +45,8 @@ const badgeViewOf = (ctx: ModuleContext): BadgeView => ({
     ipFilter: ctx.settings.ipInfoFilter as IpInfoFilter
 });
 
-const asRatios = (value: JsonValue | undefined): Record<string, RatioInfo> => (value ?? {}) as unknown as Record<string, RatioInfo>;
-
-/** 글댓비 캐시 ({ratio: {uid: RatioInfo}}) — 다른 탭의 쓰기·개발자 탭의 캐시 비우기를 watch로 받는다 */
-const ratioStorage = moduleDataStorage("userinfo");
+/** 글댓비 캐시 — 다른 탭의 쓰기·개발자 탭의 캐시 비우기를 watch로 받는다. 키는 백업 제외 규칙(refresher:module:*:data)을 따른다 */
+const ratioStorage = item<{ ratio?: Record<string, RatioInfo> }>("refresher:module:userinfo:data", {});
 let ratios: Record<string, RatioInfo> = {};
 
 /** 글댓비 캐시는 1시간만 쓴다 */
@@ -259,12 +257,12 @@ export default defineModule({
         let alive = true;
         ctx.addCleanup(() => (alive = false));
 
-        ratios = asRatios((await ratioStorage.getValue())?.ratio);
+        ratios = (await ratioStorage.getValue()).ratio ?? {};
         if (!alive) return;
         publishRatios(ctx);
         // 이 탭이 받아 쓴 값도, 다른 탭이 받은 값도 여기로 온다 — 배지와 깡계 표시를 다시 그린다
         const unwatchRatios = ratioStorage.watch((next) => {
-            ratios = asRatios(next?.ratio);
+            ratios = next?.ratio ?? {};
             publishRatios(ctx);
             rebuildAll(ctx);
         });
@@ -307,7 +305,7 @@ export default defineModule({
 
                 // 저장소의 최신 값에 병합 (다른 탭이 그사이 쓴 것 유지). 만료 항목은 여기서 버린다 — 안 그러면 uid마다 계속 쌓인다
                 const now = Date.now();
-                const stored = asRatios((await ratioStorage.getValue())?.ratio);
+                const stored = (await ratioStorage.getValue()).ratio ?? {};
                 if (!alive) return;
 
                 ratios = Object.fromEntries([
@@ -315,7 +313,7 @@ export default defineModule({
                     ...fresh.map(([uid, info]) => [uid, {...info, date: now}])
                 ]);
                 // 다시 그리기는 위 watch가 한다
-                await ratioStorage.setValue({ratio: ratios as unknown as JsonValue});
+                await ratioStorage.setValue({ratio: ratios});
             }).catch(console.error);
         });
 
