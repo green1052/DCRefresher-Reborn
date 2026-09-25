@@ -24,6 +24,8 @@ export type SettingSchema = { group?: SettingGroup } & (
     | { type: "option"; name: string; desc: string; default: string; items: Record<string, string> }
     | { type: "order"; name: string; desc: string; default: string[]; items: Record<string, string> }
     | { type: "color"; name: string; desc: string; default: string }
+    /** 키 하나 (소문자 영문·숫자) */
+    | { type: "key"; name: string; desc: string; default: string }
 );
 
 export interface ModuleContext {

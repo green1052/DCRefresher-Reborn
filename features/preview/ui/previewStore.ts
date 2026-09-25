@@ -53,6 +53,8 @@ interface PreviewState extends PostState {
     preData: GalleryPreData | null;
     /** 열 때마다 증가 — 늦게 도착한 이전 글의 응답을 버리는 데 쓴다 */
     signalId: number;
+    /** 관리 단축키 (관리 패널 힌트용) — 단축키를 끄면 null */
+    shortcutKeys: { delete: string; block: string } | null;
 
     captcha: { url: string; resolve: (code: string) => void } | null;
     mini: MiniState | null;
@@ -95,7 +97,7 @@ interface PreviewState extends PostState {
     }) => void;
 }
 
-/** 차단 기간 (시간 → 라벨) — 차단 팝업과 B키 프리셋 설정이 같이 쓴다 */
+/** 차단 기간 (시간 → 라벨) — 차단 팝업과 차단 프리셋 설정이 같이 쓴다 */
 export const BLOCK_DAYS: Record<string, string> = {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"};
 
 /** 미니 미리보기 크기 (Mini.tsx 렌더링과 화면 밖 방지 계산이 공유) */
@@ -144,6 +146,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     fading: false,
     preData: null,
     signalId: 0,
+    shortcutKeys: null,
     captcha: null,
     mini: null,
 

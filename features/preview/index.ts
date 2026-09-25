@@ -3,7 +3,7 @@ import {HTTPError} from "ky";
 import {eventBus} from "@/core/eventbus/bus";
 import {isAnyBlocked} from "@/core/block";
 import {defineModule} from "@/core/module/define";
-import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
+import type {ModuleContext, ModuleDefinition, SettingGroup} from "@/core/module/types";
 import type {DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 import {isTyping} from "@/utils/event";
@@ -15,6 +15,9 @@ import {getEntry, setEntry} from "@/core/preview/cache";
 import {processComments} from "@/core/preview/comments";
 import {blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {BLOCK_DAYS, type ErrorState, type ManageKind, miniPosition, postTitle, usePreviewStore} from "./ui/previewStore";
+
+const SHORTCUT_GROUP: SettingGroup = {name: "관리 단축키", desc: "관리 권한이 있을 때 미리보기에서 키를 두 번 누르면 게시글을 삭제하거나 작성자를 차단합니다."};
+const PRESET_GROUP: SettingGroup = {name: "차단 프리셋", desc: "차단 키로 차단할 때 쓰는 값입니다."};
 
 const settings: NonNullable<ModuleDefinition["settings"]> = {
     tooltipMode: {type: "check", name: "미니 미리보기 표시", desc: "게시글에 마우스를 올리면 미리보기를 표시합니다.", default: false},
@@ -53,27 +56,19 @@ const settings: NonNullable<ModuleDefinition["settings"]> = {
         unit: "ms"
     },
     toggleAdminPanel: {type: "check", name: "관리 패널 활성화", desc: "관리 권한이 있을 때 관리 패널을 표시합니다.", default: true},
-    useKeyPress: {type: "check", name: "단축키로 댓글 관리", desc: "D/B 키로 빠르게 삭제/차단합니다.", default: true},
-    blockPresetDay: {
-        type: "option",
-        name: "차단 프리셋 - 차단 기간",
-        desc: "B키 단축 차단의 기본 차단 기간입니다.",
-        default: "1",
-        items: BLOCK_DAYS
-    },
+    useKeyPress: {type: "check", group: SHORTCUT_GROUP, name: "사용", desc: "키로 게시글을 삭제·차단합니다.", default: true},
+    deleteKey: {type: "key", group: SHORTCUT_GROUP, name: "삭제 키", desc: "두 번 누르면 게시글을 삭제합니다.", default: "d"},
+    blockKey: {type: "key", group: SHORTCUT_GROUP, name: "차단 키", desc: "두 번 누르면 차단 프리셋으로 작성자를 차단합니다.", default: "b"},
+    blockPresetDay: {type: "option", group: PRESET_GROUP, name: "차단 기간", desc: "차단 기간입니다.", default: "1", items: BLOCK_DAYS},
+    blockPresetDelete: {type: "check", group: PRESET_GROUP, name: "글도 삭제", desc: "차단하면서 게시글도 삭제합니다.", default: false},
+    blockPresetUserType: {type: "check", group: PRESET_GROUP, name: "IP 동시 차단", desc: "식별 코드와 함께 IP도 차단합니다.", default: false},
     blockPresetReason: {
         type: "text",
-        name: "차단 프리셋 - 차단 사유",
-        desc: "B키 단축 차단의 기본 차단 사유입니다. (한글 20자 이내)",
+        group: PRESET_GROUP,
+        name: "차단 사유",
+        desc: "차단 사유입니다. (한글 20자 이내)",
         default: "",
-        placeholder: "차단 사유 직접 입력 (한글 20자 이내)"
-    },
-    blockPresetDelete: {type: "check", name: "차단 프리셋 - 선택한 글 삭제", desc: "B키 단축 차단 시 게시글도 함께 삭제합니다.", default: false},
-    blockPresetUserType: {
-        type: "check",
-        name: "차단 프리셋 - IP 동시 차단",
-        desc: "B키 단축 차단 시 식별 코드 차단과 함께 IP도 차단합니다.",
-        default: false
+        placeholder: "직접 입력 (한글 20자 이내)"
     },
     expandRecognizeRange: {type: "check", name: "게시글 인식 범위 확장", desc: "행 전체를 클릭해도 미리보기가 열리게 합니다.", default: false},
     disableCache: {type: "check", name: "캐시 비활성화", desc: "미리보기 캐시를 사용하지 않습니다.", default: false},
@@ -359,7 +354,8 @@ const controller = (ctx: ModuleContext) => {
         if (event.ctrlKey || event.altKey || event.metaKey || event.repeat) return;
 
         const key = event.key.toLowerCase();
-        if (key !== "d" && key !== "b") return;
+        const isDelete = key === ctx.settings.deleteKey;
+        if (!isDelete && key !== ctx.settings.blockKey) return;
 
         if (isTyping(event) || !isGalleryManager()) return;
 
@@ -368,11 +364,11 @@ const controller = (ctx: ModuleContext) => {
         if (lastKey === key && now - lastKeyTime < 1000) {
             lastKey = "";
             event.preventDefault();
-            void (key === "d" ? manage("delete") : store.getState().preData && blockPreset(store.getState().preData!));
+            void (isDelete ? manage("delete") : store.getState().preData && blockPreset(store.getState().preData!));
         } else {
             lastKey = key;
             lastKeyTime = now;
-            ui.showToast(key === "d" ? "한 번 더 D키를 누르면 게시글을 삭제합니다." : "한 번 더 B키를 누르면 게시글을 차단합니다.");
+            ui.showToast(`한 번 더 ${key.toUpperCase()}키를 누르면 게시글을 ${isDelete ? "삭제" : "차단"}합니다.`);
         }
     };
 
@@ -579,6 +575,14 @@ const controller = (ctx: ModuleContext) => {
     });
 };
 
+const publishShortcutKeys = (ctx: ModuleContext): void => {
+    usePreviewStore.setState({
+        shortcutKeys: ctx.settings.useKeyPress === true
+            ? {delete: String(ctx.settings.deleteKey).toUpperCase(), block: String(ctx.settings.blockKey).toUpperCase()}
+            : null
+    });
+};
+
 export default defineModule({
     id: "preview",
     name: "미리보기",
@@ -587,6 +591,8 @@ export default defineModule({
     urls: [/\/board\/(view|lists)/],
     settings,
     setup: (ctx) => {
+        publishShortcutKeys(ctx);
         controller(ctx);
-    }
+    },
+    onChanged: publishShortcutKeys
 });

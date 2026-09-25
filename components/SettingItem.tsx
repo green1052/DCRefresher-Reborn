@@ -1,4 +1,4 @@
-import {Box, Flex, IconButton, Select, Slider, Switch, Text, TextField, Tooltip} from "@radix-ui/themes";
+import {Box, Button, Flex, IconButton, Kbd, Select, Slider, Switch, Text, TextField, Tooltip} from "@radix-ui/themes";
 import {ChevronDown, ChevronUp, GripVertical, Undo2} from "lucide-react";
 import {useEffect, useState} from "react";
 
@@ -30,6 +30,8 @@ const formatDefault = (schema: SettingSchema): string => {
             return schema.items[schema.default] ?? schema.default;
         case "order":
             return schema.default.map((key) => schema.items[key] ?? key).join(", ");
+        case "key":
+            return schema.default.toUpperCase();
         default:
             return String(schema.default);
     }
@@ -83,6 +85,25 @@ const TextControl = ({schema, value, onChange}: NarrowProps<"text">) => {
             }}
             onKeyDown={(event) => event.key === "Enter" && (event.target as HTMLInputElement).blur()}
         />
+    );
+};
+
+/** 키 하나 — 누른 뒤 원하는 키를 치면 바뀐다 (영문·숫자만, 다른 키는 취소) */
+const KeyControl = ({value, onChange}: NarrowProps<"key">) => {
+    const [listening, setListening] = useState(false);
+
+    return (
+        <Button size="2" variant="soft" color={listening ? undefined : "gray"} style={{minWidth: 72}}
+                onClick={() => setListening(true)}
+                onBlur={() => setListening(false)}
+                onKeyDown={(event) => {
+                    if (!listening) return;
+                    event.preventDefault();
+                    if (/^[a-z0-9]$/i.test(event.key)) onChange(event.key.toLowerCase());
+                    setListening(false);
+                }}>
+            {listening ? "키 입력…" : <Kbd>{String(value).toUpperCase()}</Kbd>}
+        </Button>
     );
 };
 
@@ -260,6 +281,7 @@ export const SettingItem = ({schema, value, compact, onChange}: SettingItemProps
                 {schema.type === "color" && <ColorControl {...{schema, value, compact, onChange}} />}
                 {schema.type === "range" && <RangeControl {...{schema, value, onChange}} />}
                 {schema.type === "order" && <OrderControl {...{schema, value, onChange}} />}
+                {schema.type === "key" && <KeyControl {...{schema, value, onChange}} />}
             </Box>
         </Flex>
     );

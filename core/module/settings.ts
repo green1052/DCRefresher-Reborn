@@ -10,6 +10,8 @@ export const normalizeSetting = (schema: SettingSchema, value: unknown): Setting
         case "text":
         case "option":
             return typeof value === "string" ? value : schema.default;
+        case "key":
+            return typeof value === "string" && /^[a-z0-9]$/.test(value) ? value : schema.default;
         case "color":
             return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value) ? value : schema.default;
         case "range":

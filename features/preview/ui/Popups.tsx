@@ -142,18 +142,19 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
     );
 };
 
-/** 관리 권한이 있을 때 미리보기 왼쪽 가장자리에 붙는 관리 패널. Kbd는 단축키 힌트 — 차단은 B 두 번 누르기(프리셋 즉시 차단)와 달리 옵션 창을 연다 */
+/** 관리 권한이 있을 때 미리보기 왼쪽 가장자리에 붙는 관리 패널. Kbd는 단축키 힌트 — 차단은 차단 키 두 번(프리셋 즉시 차단)과 달리 옵션 창을 연다 */
 const AdminPanel = () => {
     const notice = usePreviewStore((s) => s.notice);
     const recommend = usePreviewStore((s) => s.recommend);
     const requestManage = usePreviewStore((s) => s.requestManage);
+    const keys = usePreviewStore((s) => s.shortcutKeys);
 
     const actions: { label: string; hint?: string; icon: ReactNode; active?: boolean; danger?: boolean; run: () => void }[] = [
         {label: notice ? "공지 해제" : "공지 등록", icon: <Megaphone size={14}/>, active: notice, run: () => requestManage("notice")},
         {label: recommend ? "개념글 해제" : "개념글 등록", icon: <Star size={14}/>, active: recommend, run: () => requestManage("recommend")},
         {label: "끌올", icon: <ArrowBigUpDash size={14}/>, run: () => requestManage("bump")},
-        {label: "차단", hint: "B", icon: <Ban size={14}/>, danger: true, run: () => usePreviewStore.getState().openBlockPopup()},
-        {label: "삭제", hint: "D", icon: <Trash2 size={14}/>, danger: true, run: () => requestManage("delete")}
+        {label: "차단", hint: keys?.block, icon: <Ban size={14}/>, danger: true, run: () => usePreviewStore.getState().openBlockPopup()},
+        {label: "삭제", hint: keys?.delete, icon: <Trash2 size={14}/>, danger: true, run: () => requestManage("delete")}
     ];
 
     return (
