@@ -61,10 +61,20 @@ const buildBadgeSpan = (text: string, color?: string, title?: string, className 
     return span;
 };
 
+/** 깡계 알림 기준(글댓합) 이하인지 — 0이면 끔 */
+const isLowActivity = (info: RatioInfo, alarmRatio: number): boolean => alarmRatio > 0 && info.article + info.comment <= alarmRatio;
+
 const makeRatioSpan = (info: RatioInfo, alarmRatio: number, colors: Record<string, string>): HTMLElement => {
     const text = `${info.article}/${info.comment}`;
-    const alarm = alarmRatio > 0 && info.article + info.comment <= alarmRatio;
-    return buildBadgeSpan(`[${text}]`, alarm ? colors.ratioAlarm : colors.ratio, text, "ip ratio refresherUserData");
+    return buildBadgeSpan(`[${text}]`, isLowActivity(info, alarmRatio) ? colors.ratioAlarm : colors.ratio, text, "ip ratio refresherUserData");
+};
+
+const LOW_ACTIVITY_ACTIONS = {none: "배지 색만", tag: "[깡계] 표시", blur: "흐리게", hide: "숨기기"};
+const LOW_ACTIVITY_CLASSES = {blur: "refresherLowActivityBlur", hide: "refresherLowActivityHide"} as const;
+
+const clearLowActivity = (): void => {
+    const classes = Object.values(LOW_ACTIVITY_CLASSES);
+    for (const element of document.querySelectorAll<HTMLElement>(classes.map((name) => `.${name}`).join(","))) element.classList.remove(...classes);
 };
 
 const makePermBanSpan = (reasons: string, color: string): HTMLElement =>
@@ -81,6 +91,7 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
     const {nick, uid, ip} = element.dataset;
     const badges = document.createElement("span");
     badges.className = "refresher-user-badges";
+    let lowActivity = false;
 
     const appendIdentity = (): void => {
         if (uid) {
@@ -104,6 +115,7 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
             const cached = ratios[uid];
             if (isFresh(cached)) {
                 badges.append(makeRatioSpan(cached, Number(ctx.settings.alarmRatio), colors));
+                lowActivity = isLowActivity(cached, Number(ctx.settings.alarmRatio));
             }
         }
 
@@ -112,6 +124,11 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
             if (reasons) badges.append(makePermBanSpan(reasons, colors.permBan!));
         }
     }
+
+    // 깡계: 글댓비를 받아 둔 유저만 — 목록 전체를 조회하면 갤로그 요청이 너무 많다
+    const action = ctx.settings.lowActivityAction;
+    if (lowActivity && action === "tag") badges.append(buildBadgeSpan("[깡계]", colors.ratioAlarm, `글댓합 ${ctx.settings.alarmRatio}개 이하`));
+    if (lowActivity && (action === "blur" || action === "hide")) (element.closest<HTMLElement>(".ub-content") ?? element).classList.add(LOW_ACTIVITY_CLASSES[action]);
 
     if (badges.children.length === 0) return;
 
@@ -149,6 +166,7 @@ const publishRatios = (ctx: ModuleContext): void => {
 };
 
 const rebuildAll = (ctx: ModuleContext): void => {
+    clearLowActivity();
     // 배지가 없던 작성자도 포함 — 설정을 켜서 새로 생기는 배지가 있다 (필터 선택자와 같은 대상)
     for (const element of document.querySelectorAll<HTMLElement>(".ub-writer:not([user_name])")) {
         delete element.dataset.refresherUserInfo;
@@ -200,6 +218,13 @@ export default defineModule({
             step: 10,
             unit: "개"
         },
+        lowActivityAction: {
+            type: "option",
+            name: "깡계 처리",
+            desc: "글댓합이 깡계 알림 이하인 유저의 글·댓글을 어떻게 보여 줄지 정합니다. 글댓비를 받아 둔 유저만 해당합니다.",
+            default: "tag",
+            items: LOW_ACTIVITY_ACTIONS
+        },
         checkPermBan: {
             type: "check",
             name: "갱차 조회",
@@ -233,9 +258,11 @@ export default defineModule({
         ratios = asRatios((await ratioStorage.getValue())?.ratio);
         if (!alive) return;
         publishRatios(ctx);
+        // 이 탭이 받아 쓴 값도, 다른 탭이 받은 값도 여기로 온다 — 배지와 깡계 표시를 다시 그린다
         const unwatchRatios = ratioStorage.watch((next) => {
             ratios = asRatios(next?.ratio);
             publishRatios(ctx);
+            rebuildAll(ctx);
         });
 
         ctx.addFilter(
@@ -283,11 +310,8 @@ export default defineModule({
                     ...Object.entries(stored).filter(([, info]) => isFresh(info)),
                     ...fresh.map(([uid, info]) => [uid, {...info, date: now}])
                 ]);
+                // 다시 그리기는 위 watch가 한다
                 await ratioStorage.setValue({ratio: ratios as unknown as JsonValue});
-                if (!alive) return;
-
-                publishRatios(ctx);
-                rebuildAll(ctx);
             }).catch(console.error);
         });
 
@@ -308,6 +332,7 @@ export default defineModule({
 
     revoke() {
         useUiStore.setState({badgeColors: {}, badgeView: DEFAULT_BADGE_VIEW, ratios: null});
+        clearLowActivity();
 
         for (const element of document.querySelectorAll<HTMLElement>(".ub-writer[data-refresher-user-info]")) {
             delete element.dataset.refresherUserInfo;
