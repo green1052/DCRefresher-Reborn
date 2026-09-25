@@ -126,7 +126,8 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
                 }
             }}
         >
-            <Dialog.Content container={overlay.portal} maxWidth="320px">
+            {/* 섀도 루트 안에선 FocusScope가 autoFocus를 덮는다 (MemoDialog와 같음) */}
+            <Dialog.Content container={overlay.portal} maxWidth="320px" onOpenAutoFocus={(ev) => ev.preventDefault()}>
                 <Dialog.Title>코드 입력</Dialog.Title>
                 <img src={captcha.url} alt="captcha" style={{display: "block", width: "100%", borderRadius: "var(--radius-3)"}}/>
                 <TextField.Root

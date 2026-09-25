@@ -49,7 +49,8 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     };
 
     return (
-        <Dialog.Content container={overlay.portal} maxWidth="400px">
+        // 섀도 루트 안에선 FocusScope가 포커스를 못 알아보고 첫 버튼으로 옮겨 autoFocus를 덮는다
+        <Dialog.Content container={overlay.portal} maxWidth="400px" onOpenAutoFocus={(ev) => ev.preventDefault()}>
             <Dialog.Title>메모</Dialog.Title>
             <Dialog.Description size="2" color="gray" mb="4">
                 {MEMO_TYPE_NAMES[type]}: <Text weight="bold" highContrast>{value}</Text>
