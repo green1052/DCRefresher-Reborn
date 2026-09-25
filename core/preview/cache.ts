@@ -1,14 +1,13 @@
 import {LRUCache} from "lru-cache";
-import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "./types";
+import type {DcinsideComment, GalleryPreData, PostInfo} from "./types";
 
 interface CacheEntry {
     post?: PostInfo;
-    comment?: CommentListResponse;
     /** 보존(삭제글 보존)용 — 지금까지 받은 댓글 전부. 서버 목록에서 빠지면 삭제된 것으로 되살린다 */
     seen?: Record<string, DcinsideComment>;
 }
 
-// 게시글·댓글 캐시: 1분, 최대 50개. 저장할 때마다 수명이 다시 1분으로 늘어난다
+// 게시글 캐시: 1분, 최대 50개. 저장할 때마다 수명이 다시 1분으로 늘어난다
 // ttlAutopurge — 없으면 만료된 항목(글 문서 전체)이 50개에 밀려날 때까지 메모리에 남는다
 const entries = new LRUCache<string, CacheEntry>({max: 50, ttl: 60_000, ttlAutopurge: true});
 
@@ -16,7 +15,7 @@ const key = (preData: GalleryPreData): string => `${preData.gallery}:${preData.i
 
 export const getEntry = (preData: GalleryPreData): CacheEntry | undefined => entries.get(key(preData));
 
-/** 본문/댓글/삭제 기록 병합 저장 */
+/** 본문/삭제 기록 병합 저장 */
 export const setEntry = (preData: GalleryPreData, patch: CacheEntry): void => {
     entries.set(key(preData), {...entries.get(key(preData)), ...patch});
 };

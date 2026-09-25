@@ -82,5 +82,6 @@ export interface DcinsideComment {
 
 export interface CommentListResponse {
     list: DcinsideComment[];
-    total_cnt: number;
+    /** 댓글·답글 쓰기 허용 (allow_reply) — 멤버만 댓글인 갤러리면 false */
+    allowReply: boolean;
 }

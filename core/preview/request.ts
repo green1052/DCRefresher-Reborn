@@ -24,7 +24,7 @@ export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): P
     return postInfo;
 };
 
-/** 댓글 목록 (1회 전체) */
+/** 댓글 목록 — 한 쪽에 100개씩이라 쪽을 이어 받는다 */
 export const fetchComments = async (preData: GalleryPreData, postInfo: PostInfo, signal: AbortSignal): Promise<CommentListResponse> => {
     const body = await commonBody(preData.link);
     body.set("id", preData.gallery);
@@ -32,14 +32,32 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: PostInfo,
     body.set("cmt_id", postInfo.commentId ?? preData.gallery);
     body.set("cmt_no", postInfo.commentNo ?? preData.id);
     body.set("e_s_n_o", postInfo.dom.querySelector<HTMLInputElement>("#e_s_n_o")?.value ?? "");
-    body.set("comment_page", "1");
 
-    const response = await ajax.post(urls.comments, {body, signal}).json<{
-        comments: DcinsideComment[] | null;
-        total_cnt: number | string
-    }>();
+    const byNo = new Map<string, DcinsideComment>();
+    let allowReply = true;
 
-    return {total_cnt: Number(response.total_cnt), list: response.comments ?? []};
+    // ponytail: 10쪽(1000개)까지 — 더 많은 글은 드물고 자동 갱신마다 전부 다시 받는다
+    for (let page = 1; page <= 10; page++) {
+        body.set("comment_page", String(page));
+
+        const response = await ajax.post(urls.comments, {body, signal}).json<{
+            comments: DcinsideComment[] | null;
+            total_cnt: number | string;
+            pagination: string | null;
+            allow_reply?: number | string | null;
+        }>();
+
+        // 디시 comment.js처럼 0일 때만 막는다 (멤버만 댓글)
+        allowReply = String(response.allow_reply) !== "0";
+
+        const before = byNo.size;
+        for (const comment of response.comments ?? []) byNo.set(comment.no, comment);
+
+        // 쪽 나눔이 없거나, 새 댓글이 없거나(빈 쪽·마지막 쪽 반복), 다 받았으면 멈춘다
+        if (!response.pagination || byNo.size === before || byNo.size >= Number(response.total_cnt)) break;
+    }
+
+    return {list: [...byNo.values()], allowReply};
 };
 
 interface VoteResult {

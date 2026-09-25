@@ -4,7 +4,7 @@ import {eventBus} from "@/core/eventbus/bus";
 import {isAnyBlocked} from "@/core/block";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, ModuleDefinition, SettingGroup} from "@/core/module/types";
-import type {DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
+import type {GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 import {isTyping} from "@/utils/event";
 import {isGalleryManager} from "@/utils/user";
@@ -188,34 +188,46 @@ const controller = (ctx: ModuleContext) => {
         return {...postInfo, contents: sanitizeHtml(raw, {stripMedia}), textBlocked};
     };
 
-    const applyComments = (preData: GalleryPreData, raw: DcinsideComment[]) => {
-        const {list, threads, totalCnt, blocked, folded} = processComments(raw, preData, ctx);
-        const extra = [blocked && `차단 ${blocked}개`, folded && `같은 댓글 ${folded}개 접음`].filter(Boolean).join(", ");
-        store.getState().setComments(list, `쓰레드 ${threads}개, 총 댓글 ${totalCnt}개${extra ? ` (${extra})` : ""}`);
+    /** 캐시에 있으면 캐시, 없으면 받는다. fresh: 방금 받은 본문 — 캐시 것은 1분까지 낡았을 수 있다 */
+    const getPost = async (preData: GalleryPreData, signal: AbortSignal): Promise<{ post: PostInfo; fresh: boolean }> => {
+        const cached = ctx.settings.disableCache !== true ? getEntry(preData)?.post : undefined;
+        if (cached) return {post: cached, fresh: false};
+
+        try {
+            const post = await fetchPost(preData, signal);
+            setEntry(preData, {post});
+            return {post, fresh: true};
+        } catch (e) {
+            // 삭제된 글 보존: 가져오지 못하면 캐시에 남은 이전 본문을 보여준다 (캐시 비활성화여도). 다시 저장해 수명을 늘린다
+            const archived = ctx.settings.archiveArticle === true ? getEntry(preData)?.post : undefined;
+            if (!archived) throw e;
+            setEntry(preData, {post: archived});
+            return {post: archived, fresh: false};
+        }
     };
 
-    const loadComments = async (preData: GalleryPreData, postInfo: PostInfo, mySignal: number) => {
-        // 댓글 0개면 요청 생략 — 단 캐시에 이전 댓글이 있으면 받아서 비교한다 (삭제 댓글 보존, 캐시된 본문의 댓글 수는 낡았을 수 있음)
-        if (postInfo.commentCount === 0 && !getEntry(preData)?.comment?.list.length) {
-            store.getState().setComments([], "쓰레드 0개, 총 댓글 0개");
-            return;
+    // 보낸 순번·그린 순번 — 먼저 보낸 요청의 응답이 늦게 와서 새 응답을 덮지 않게 (방금 쓴 댓글이 사라지거나 삭제로 보인다)
+    let commentSeq = 0;
+    let shownSeq = 0;
+    // 받는 중인 댓글 요청 수 — 자동 갱신이 느린 응답 위로 겹쳐 쌓이지 않게
+    let pulling = 0;
+
+    /** 댓글을 받아 가공해 그린다. skip이면 받지 않고 빈 목록으로 (보존한 댓글은 되살아난다) */
+    const pullComments = async (preData: GalleryPreData, post: PostInfo, mySignal: number, skip = false): Promise<void> => {
+        const seq = ++commentSeq;
+        pulling++;
+
+        try {
+            const {list: raw} = skip ? {list: []} : await fetchComments(preData, post, abort!.signal);
+            if (store.getState().signalId !== mySignal || seq < shownSeq) return;
+            shownSeq = seq;
+
+            const {list, threads, totalCnt, blocked, folded} = processComments(raw, preData, ctx);
+            const extra = [blocked && `차단 ${blocked}개`, folded && `같은 댓글 ${folded}개 접음`].filter(Boolean).join(", ");
+            store.getState().setComments(list, `쓰레드 ${threads}개, 총 댓글 ${totalCnt}개${extra ? ` (${extra})` : ""}`);
+        } finally {
+            pulling--;
         }
-
-        const useCache = ctx.settings.disableCache !== true;
-        const cached = useCache ? getEntry(preData)?.comment : undefined;
-
-        if (cached && String(cached.total_cnt) === String(postInfo.commentCount)) {
-            if (store.getState().signalId !== mySignal) return;
-            applyComments(preData, cached.list);
-            return;
-        }
-
-        const response = await fetchComments(preData, postInfo, abort!.signal);
-        if (store.getState().signalId !== mySignal) return;
-
-        // 보존(restoreArchive)은 캐시의 이전 목록과 비교하므로 가공 먼저, 저장은 나중에
-        applyComments(preData, response.list);
-        setEntry(preData, {comment: response});
     };
 
     const refreshComments = async () => {
@@ -223,41 +235,33 @@ const controller = (ctx: ModuleContext) => {
         if (!st.visible || !st.preData || !st.post || !abort) return;
 
         try {
-            const response = await fetchComments(st.preData, st.post, abort.signal);
-            if (store.getState().signalId !== st.signalId) return;
-            applyComments(st.preData, response.list);
-            setEntry(st.preData, {comment: response});
+            await pullComments(st.preData, st.post, st.signalId);
         } catch {
             // 자동 갱신 실패는 조용히 무시
         }
     };
 
     const load = async (preData: GalleryPreData, mySignal: number) => {
+        let post: PostInfo;
+        let fresh: boolean;
+
         try {
-            const useCache = ctx.settings.disableCache !== true;
-            let postInfo = useCache ? getEntry(preData)?.post : undefined;
-
-            if (!postInfo) {
-                try {
-                    postInfo = await fetchPost(preData, abort!.signal);
-                } catch (e) {
-                    // 삭제된 글 보존: 가져오지 못하면 캐시에 남은 이전 본문을 보여준다 (캐시 비활성화여도)
-                    postInfo = ctx.settings.archiveArticle === true ? getEntry(preData)?.post : undefined;
-                    if (!postInfo) throw e;
-                }
-
-                setEntry(preData, {post: postInfo});
-            }
-
-            if (store.getState().signalId !== mySignal) return;
-
-            const processed = processContents(preData, postInfo);
-            store.getState().setPost(processed);
-
-            await loadComments(preData, processed, mySignal);
+            ({post, fresh} = await getPost(preData, abort!.signal));
+            post = processContents(preData, post);
         } catch (e) {
-            if (store.getState().signalId !== mySignal) return;
-            store.getState().setError(errorOf(e));
+            if (store.getState().signalId === mySignal) store.getState().setError(errorOf(e));
+            return;
+        }
+
+        if (store.getState().signalId !== mySignal) return;
+        store.getState().setPost(post);
+
+        try {
+            // 방금 받은 본문이 댓글 0개면 받지 않는다 — 보존해 둔 댓글이 있으면 받아서 비교한다
+            await pullComments(preData, post, mySignal, fresh && post.commentCount === 0 && !Object.keys(getEntry(preData)?.seen ?? {}).length);
+        } catch {
+            // 댓글만 못 받았으면 본문은 그대로 두고 알린다
+            if (store.getState().signalId === mySignal) ui.showToast("댓글을 불러오지 못했습니다.", "error");
         }
     };
 
@@ -277,8 +281,6 @@ const controller = (ctx: ModuleContext) => {
 
         if (refreshTimer) window.clearInterval(refreshTimer);
         refreshTimer = 0;
-        if (miniTimer) window.clearTimeout(miniTimer);
-        miniTimer = 0;
 
         restoreHistory(fromHistory);
         store.getState().close();
@@ -327,7 +329,7 @@ const controller = (ctx: ModuleContext) => {
         if (ctx.settings.autoRefreshComment === true) {
             const interval = Number(ctx.settings.commentRefreshInterval) || 10000;
             refreshTimer = window.setInterval(() => {
-                if (document.hidden) return;
+                if (document.hidden || pulling) return;
                 void refreshComments();
             }, interval);
         }
@@ -426,20 +428,14 @@ const controller = (ctx: ModuleContext) => {
         const preData = buildPreData(element);
         if (!preData) return;
 
-        let post = ctx.settings.disableCache !== true ? getEntry(preData)?.post : undefined;
+        miniAbort?.abort();
+        miniAbort = new AbortController();
 
-        // 캐시에 없으면 서버에서 가져옴
-        if (!post) {
-            miniAbort?.abort();
-            miniAbort = new AbortController();
-            const signal = miniAbort.signal;
-
-            try {
-                post = await fetchPost(preData, signal);
-                setEntry(preData, {post});
-            } catch {
-                return;
-            }
+        let post: PostInfo;
+        try {
+            ({post} = await getPost(preData, miniAbort.signal));
+        } catch {
+            return;
         }
 
         // 이미지 아이콘 없는 글의 이미지 차단(blockImage)도 적용 — 안 그러면 전체 미리보기에서 숨긴 이미지가 호버로 보인다
