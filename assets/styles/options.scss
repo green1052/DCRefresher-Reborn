@@ -1,0 +1,21 @@
+/* ===== 옵션 페이지 ===== */
+
+/* 스크롤바가 생겼다 없어졌다 해도 폭이 변하지 않게 (탭 전환시 흔들림 방지) */
+html {
+    scrollbar-gutter: stable;
+}
+
+body {
+    margin: 0;
+}
+
+/* Radix 기본값은 버튼·스위치 등도 화살표 커서 — :root로 명시도를 올려 덮는다 */
+:root .radix-themes {
+    --cursor-button: pointer;
+    --cursor-checkbox: pointer;
+    --cursor-menu-item: pointer;
+    --cursor-radio: pointer;
+    --cursor-switch: pointer;
+    --cursor-slider-thumb: grab;
+    --cursor-slider-thumb-active: grabbing;
+}
