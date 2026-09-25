@@ -13,10 +13,12 @@ import {onMessage, type PageState} from "@/core/messaging/protocol";
 import {getModuleApi, loadAll, runShortcut, stopAll} from "@/core/module/registry";
 import features from "@/features";
 import type {BlockApi} from "@/features/block";
+import {usePreviewStore} from "@/features/preview/ui/previewStore";
 import type {RefreshApi} from "@/features/refresh";
 import type {StealthApi} from "@/features/stealth";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
+import {useUiStore} from "@/stores/ui";
 
 export default defineContentScript({
     matches: ["https://*.dcinside.com/*"],
@@ -26,7 +28,10 @@ export default defineContentScript({
         "https://m.dcinside.com/*",
         "https://mall.dcinside.com/*",
         "https://wiki.dcinside.com/*",
-        "https://gallog.dcinside.com/*"
+        "https://gallog.dcinside.com/*",
+        // 이미지 팝업(viewimagePop.php)은 gall 탭과 같은 렌더러라 번들 평가·저장소 읽기가 그대로 얹힌다. 로그인은 폰트만 빠진다
+        "https://image.dcinside.com/*",
+        "https://sign.dcinside.com/*"
     ],
     runAt: "document_start",
     async main(ctx) {
@@ -60,41 +65,62 @@ export default defineContentScript({
 
         // 옵션 페이지는 저장소에 직접 쓰고, 모듈 레지스트리가 저장소를 감시해 반영한다 (메시징 없음)
 
-        // ===== 오버레이 마운트 (shadow DOM — 디시 CSS와 Radix Themes CSS가 서로 섞이지 않게) =====
+        // ===== 오버레이 (shadow DOM — 디시 CSS와 Radix Themes CSS가 서로 섞이지 않게) =====
         // 페이지용 CSS(위 import)는 manifest로 주입하고, 오버레이 CSS만 css 옵션으로 shadow에 넣는다
-        const ui = createShadowRootUi(ctx, {
-            name: "refresher-root",
-            position: "inline",
-            anchor: "body",
-            // WXT 기본 리셋(:host{all:initial !important})은 pointer-events를 강제해 페이지 클릭을 막으므로 overlay.scss의 :host 리셋을 쓴다
-            inheritStyles: true,
-            // shadow 안에선 :root가 매칭되지 않으므로 Radix 토큰을 :host로 옮긴다
-            css: radixCss.replaceAll(":root", ":host") + overlayCss,
-            onMount(container) {
-                const app = document.createElement("div");
-                const portal = document.createElement("div");
-                portal.id = "portal";
-                container.append(app, portal);
+        const mountOverlay = async (): Promise<void> => {
+            if (ctx.isInvalid) return;
 
-                overlay.portal = portal;
+            const ui = await createShadowRootUi(ctx, {
+                name: "refresher-root",
+                position: "inline",
+                anchor: "body",
+                // WXT 기본 리셋(:host{all:initial !important})은 pointer-events를 강제해 페이지 클릭을 막으므로 overlay.scss의 :host 리셋을 쓴다
+                inheritStyles: true,
+                // shadow 안에선 :root가 매칭되지 않으므로 Radix 토큰을 :host로 옮긴다
+                css: radixCss.replaceAll(":root", ":host") + overlayCss,
+                onMount(container) {
+                    const app = document.createElement("div");
+                    const portal = document.createElement("div");
+                    portal.id = "portal";
+                    container.append(app, portal);
 
-                const root = createRoot(app);
-                root.render(<ContentRoot/>);
-                return root;
-            },
-            onRemove: (root) => root?.unmount()
-        });
+                    overlay.portal = portal;
 
-        const mountOverlay = (): void => void ui.then((instance) => instance.mount());
+                    const root = createRoot(app);
+                    root.render(<ContentRoot/>);
+                    return root;
+                },
+                onRemove: (root) => root?.unmount()
+            });
+            ui.mount();
+        };
 
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", mountOverlay, {once: true});
-        } else {
-            mountOverlay();
-        }
+        // 대부분의 페이지는 끝내 아무것도 띄우지 않는다 — CSS 처리·shadow 삽입·첫 렌더(수십 ms)를 처음 띄울 때로 미룬다.
+        // 오버레이에 새 UI(host)를 추가하면 그 표시 조건을 여기에도 넣는다 — 빠지면 그 UI는 끝내 뜨지 않는다.
+        // 매 페이지 setup이 바꾸는 값(badgeColors·ratios·blockView·selected·훅 등)은 넣지 않는다 — 넣으면 늘 붙는다
+        const needsOverlay = (): boolean => {
+            const {toast, bubble, memo} = useUiStore.getState();
+            const {visible, mini, captcha, blockPopup} = usePreviewStore.getState();
+            return Boolean(toast || bubble || memo || visible || mini || captcha || blockPopup);
+        };
+
+        const mountWhenNeeded = (): void => {
+            if (!needsOverlay()) return;
+            offUi();
+            offPreview();
+
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", () => void mountOverlay(), {once: true});
+            } else {
+                void mountOverlay();
+            }
+        };
+        const offUi = useUiStore.subscribe(mountWhenNeeded);
+        const offPreview = usePreviewStore.subscribe(mountWhenNeeded);
 
         // ===== 모듈 부트스트랩 =====
-        await Promise.all([initBlocksStore(), initMemosStore(), initDatabase()]);
+        // 차단·메모·IP DB는 글 목록·본문에서만 쓴다 — 다른 페이지(메인·검색 등)는 저장소를 읽지 않는다 (features의 urls와 같은 정규식이어야 한다)
+        if (/\/board\/(view|lists)/.test(location.href)) await Promise.all([initBlocksStore(), initMemosStore(), initDatabase()]);
         await loadAll(features);
 
         // 확장을 끄거나 업데이트하면 이 스크립트는 남아 새로고침 폴링·저장소 호출을 계속하다 실패한다 — 모듈을 멈춘다
