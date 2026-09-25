@@ -1,5 +1,5 @@
 import {http} from "@/core/http/client";
-import {listUrl, mergeParamURL, queryString} from "@/core/http/urls";
+import {isViewPage, listUrl, mergeParamURL, pagePostNo, queryString} from "@/core/http/urls";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext} from "@/core/module/types";
 import {eventBus} from "@/core/eventbus/bus";
@@ -154,9 +154,6 @@ export default defineModule({
         let rerun = false;
         // 연달아 실패한 목록 요청 수 — 자동 새로고침 주기를 이만큼 두 배씩 늘린다
         let failures = 0;
-        // 이 문서가 보여주는 글 — 뒤로 가기로 originalLocation이 미리보기 주소(다른 no)가 돼도 바뀌지 않는다
-        const isPageView = location.href.includes("/board/view");
-        const currentPostNo = queryString("no");
 
         // 제어 버튼
         let button: HTMLButtonElement | null = null;
@@ -265,7 +262,7 @@ export default defineModule({
                         }
                     }
 
-                    if (isPageView && no === currentPostNo) {
+                    if (isViewPage && no === pagePostNo) {
                         element.classList.add("crt");
                         const gallNum = element.querySelector<HTMLElement>(".gall_num");
                         if (gallNum) gallNum.innerHTML = "<span class=\"sp_img crt_icon\"> </span>";
@@ -375,7 +372,7 @@ export default defineModule({
 
             ev.preventDefault();
 
-            const newUrl = isPageView ? mergeParamURL(location.href, anchor.href) : anchor.href;
+            const newUrl = isViewPage ? mergeParamURL(location.href, anchor.href) : anchor.href;
 
             history.pushState(null, document.title, newUrl);
             calledByPageTurn = true;
@@ -383,7 +380,7 @@ export default defineModule({
             void (async () => {
                 if (!(await load(location.href, true))) return;
 
-                const scrollTarget = document.querySelector(isPageView ? ".view_bottom_btnbox" : ".page_head");
+                const scrollTarget = document.querySelector(isViewPage ? ".view_bottom_btnbox" : ".page_head");
                 scrollTarget?.scrollIntoView({behavior: "smooth", block: "start"});
             })();
         };

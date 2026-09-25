@@ -1,7 +1,7 @@
 import {groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingGroup} from "@/core/module/types";
-import {queryString} from "@/core/http/urls";
+import {isViewPage, queryString} from "@/core/http/urls";
 import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
 import {eventTarget} from "@/utils/event";
@@ -20,8 +20,6 @@ const dcconCode = (element: HTMLElement): string | undefined => {
     const src = media.getAttribute("src") || media.getAttribute("data-src");
     return src ? extractDcconCode(src) : undefined;
 };
-
-const isViewPage = (): boolean => location.href.includes("/board/view");
 
 const BLUR_GROUP: SettingGroup = {name: "블러 처리", desc: "차단된 내용을 지우지 않고 블러 처리합니다."};
 
@@ -97,7 +95,7 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): (() => v
         const row = element.closest<HTMLElement>(".ub-content");
         const title = row?.querySelector(".gall_tit > a:not([class])")?.textContent?.trim();
         const tab = row?.querySelector(".gall_subject")?.textContent?.trim();
-        const commentContainer = isViewPage() ? element.closest(".reply_info, .cmt_info") : null;
+        const commentContainer = isViewPage ? element.closest(".reply_info, .cmt_info") : null;
         // 글자콘 댓글은 .usertxt 없이 .comment_dccon > .coment_dccon_txt > .txtcon_txt로 그려진다 — 글자도 댓글 차단어로 본다
         const comment = commentContainer?.querySelector(".usertxt, .txtcon_txt")?.textContent;
         const {nick, uid, ip} = element.dataset;
@@ -169,9 +167,9 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): (() => v
 
     ctx.addFilter(".ub-writer", checkWriter);
     ctx.addFilter(".written_dccon", checkDccon);
-    if (isViewPage()) ctx.addFilter(".cmt_list", foldDuplicates);
+    if (isViewPage) ctx.addFilter(".cmt_list", foldDuplicates);
 
-    if (isViewPage()) {
+    if (isViewPage) {
         if (document.readyState === "loading") {
             document.addEventListener("DOMContentLoaded", checkText, {once: true});
             ctx.addCleanup(() => document.removeEventListener("DOMContentLoaded", checkText));
@@ -186,7 +184,7 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): (() => v
         restoreHiddenElements();
         for (const element of document.querySelectorAll<HTMLElement>(".ub-writer")) checkWriter(element);
         for (const element of document.querySelectorAll<HTMLElement>(".written_dccon")) checkDccon(element);
-        if (isViewPage()) {
+        if (isViewPage) {
             for (const element of document.querySelectorAll<HTMLElement>(".cmt_list")) foldDuplicates(element);
             if (document.readyState !== "loading") checkText();
         }

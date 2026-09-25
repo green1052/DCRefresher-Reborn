@@ -1,5 +1,6 @@
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingSchema} from "@/core/module/types";
+import {isViewPage} from "@/core/http/urls";
 
 /**
  * 체크하면 숨기는 영역. 설정 이름·설명과 숨길 선택자를 한 곳에 둔다 —
@@ -18,7 +19,8 @@ const HIDE_OPTIONS: Record<string, { name: string; desc: string; selector: strin
     removeDCNotice: {
         name: "디시 공지 숨기기",
         desc: "글 목록에서 운영자의 게시글을 숨깁니다.",
-        selector: "tr[class*=ub-content]:has(> td[user_name=운영자])"
+        // 설문·광고 행은 user_name 칸, 운영자 글은 식별 코드·IP가 빈 운영자 작성자 칸
+        selector: "tr[class*=ub-content]:has(> td[user_name=운영자]), tr.ub-content:has(> .ub-writer[data-nick=운영자][data-uid=\"\"][data-ip=\"\"])"
     },
     removeGamemeca: {name: "게임메카 숨기기", desc: "글 목록에서 게임메카 게시글을 숨깁니다.", selector: "tr[data-type=icon_fnews]"}
 };
@@ -30,21 +32,20 @@ let hideStyle: HTMLStyleElement | null = null;
 
 const applyCompact = (ctx: ModuleContext): void => {
     const compact = window.innerWidth <= Number(ctx.settings.activePixel) || ctx.settings.forceCompact === true;
-    const isView = location.href.includes("/board/view");
     // /board/view에서는 '게시글 보기 컴팩트 모드'가 켜졌을 때만 적용
-    const useCompact = compact && (!isView || ctx.settings.useCompactModeOnView === true);
+    const useCompact = compact && (!isViewPage || ctx.settings.useCompactModeOnView === true);
 
     document.documentElement.classList.toggle("refresherCompact", useCompact);
 };
 
 const applyHide = (ctx: ModuleContext): void => {
-    // 공지 모아보기(?exception_mode=notice)에서는 공지를 숨기지 않는다
+    // 공지 모아보기(?exception_mode=notice)에서는 공지를 숨기지 않는다 (디시 공지도)
     const noticePage = location.search.includes("exception_mode=notice");
 
     // 선택자마다 규칙을 따로 둔다 — 하나로 합치면 :has 등을 모르는 브라우저에서 규칙 전체가 무시된다
     hideStyle ??= document.documentElement.appendChild(document.createElement("style"));
     hideStyle.textContent = Object.entries(HIDE_OPTIONS)
-        .filter(([key]) => ctx.settings[key] === true && !(key === "removeNotice" && noticePage))
+        .filter(([key]) => ctx.settings[key] === true && !(noticePage && (key === "removeNotice" || key === "removeDCNotice")))
         .map(([, {selector}]) => `${selector} { display: none !important; }`)
         .join("\n");
 
@@ -65,7 +66,8 @@ export default defineModule({
             desc: "브라우저 가로가 이 값보다 작을 경우 컴팩트 모드를 활성화합니다.",
             default: 900,
             min: 100,
-            max: screen.width,
+            // 모니터마다 다른 screen.width로 두면 큰 모니터에서 저장한 값이 작은 모니터에서 잘린다
+            max: 3840,
             step: 1,
             unit: "px"
         },
