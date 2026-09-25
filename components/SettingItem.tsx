@@ -1,7 +1,9 @@
-import {Box, Button, Flex, IconButton, Kbd, Select, Slider, Switch, Text, TextField, Tooltip} from "@radix-ui/themes";
+import {Box, Button, Flex, IconButton, Kbd, Slider, Switch, Text, TextField, Tooltip} from "@radix-ui/themes";
 import {ChevronDown, ChevronUp, GripVertical, Undo2} from "lucide-react";
-import {useEffect, useState} from "react";
+import {useState} from "react";
 
+import {RefresherSelect} from "@/components/RefresherSelect";
+import {areEqual} from "@/core/module/settings";
 import type {SettingSchema} from "@/core/module/types";
 import type {SettingValue} from "@/core/storage/types";
 
@@ -39,13 +41,20 @@ const formatDefault = (schema: SettingSchema): string => {
     }
 };
 
+/** 저장 전 편집값 — 저장값이 바뀌면(되돌리기·다른 탭) 따라간다. 렌더 중에 비교해 옛 값이 한 번 그려지지 않게 */
+const useDraft = <T, >(value: T): [T, (next: T) => void] => {
+    const [draft, setDraft] = useState(value);
+    const [synced, setSynced] = useState(value);
+    if (synced !== value) {
+        setSynced(value);
+        setDraft(value);
+    }
+    return [draft, setDraft];
+};
+
 /** 색 선택 — 드래그 중엔 미리보기만 바꾸고, 선택 창을 닫을 때(네이티브 change) 저장한다 */
 const ColorControl = ({schema, value, compact, onChange}: NarrowProps<"color">) => {
-    const [draft, setDraft] = useState(String(value));
-
-    useEffect(() => {
-        setDraft(String(value));
-    }, [value]);
+    const [draft, setDraft] = useDraft(String(value));
 
     return (
         <Flex align="center" gap="2">
@@ -70,11 +79,7 @@ const ColorControl = ({schema, value, compact, onChange}: NarrowProps<"color">) 
 };
 
 const TextControl = ({schema, value, onChange}: NarrowProps<"text">) => {
-    const [draft, setDraft] = useState(String(value));
-
-    useEffect(() => {
-        setDraft(String(value));
-    }, [value]);
+    const [draft, setDraft] = useDraft(String(value));
 
     return (
         <TextField.Root
@@ -127,14 +132,8 @@ const KeyControl = ({schema, value, takenKeys = [], onChange}: NarrowProps<"key"
 };
 
 const RangeControl = ({schema, value, onChange}: NarrowProps<"range">) => {
-    // NaN 방어: value가 undefined/문자열이면 기본값으로 (NaN이면 thumb 위치 계산이 깨짐)
-    const initial = Number(value);
-    const [draft, setDraft] = useState(Number.isFinite(initial) ? initial : schema.default);
-
-    useEffect(() => {
-        const next = Number(value);
-        setDraft(Number.isFinite(next) ? next : schema.default);
-    }, [value, schema.default]);
+    // 화살표 키는 한 칸마다 commit한다 — key로 다시 마운트해 맞추면 그때마다 포커스를 잃는다
+    const [draft, setDraft] = useDraft(Number(value));
 
     // rt-SliderRoot는 width:stretch(부모 100%) — 부모 폭을 고정해야 트랙이 그려짐
     return (
@@ -167,11 +166,8 @@ const OrderControl = ({schema, value, onChange}: NarrowProps<"order">) => {
     const [dragging, setDragging] = useState<number | null>(null);
     const [over, setOver] = useState<number | null>(null);
 
-    // 정규화 보증에도 스키마 밖 항목은 방어
-    const order = [...(value as string[]).filter((key) => key in schema.items)];
-    for (const key of schema.default) {
-        if (key in schema.items && !order.includes(key)) order.push(key);
-    }
+    // 스토어가 스키마에 맞춰 둔 값 (normalizeSetting)
+    const order = value as string[];
 
     const move = (from: number, to: number): void => {
         const next = [...order];
@@ -243,21 +239,13 @@ const OrderControl = ({schema, value, onChange}: NarrowProps<"order">) => {
     );
 };
 
-/** 배열(order)은 요소 비교 — 원복했는데도 참조 차이로 changed로 오판하지 않게 */
-const isChanged = (schema: SettingSchema, value: SettingValue): boolean => {
-    if (Array.isArray(schema.default) && Array.isArray(value)) {
-        return schema.default.length !== value.length || schema.default.some((item, index) => item !== value[index]);
-    }
-    return value !== schema.default;
-};
-
 export const SettingItem = ({schema, value, compact, takenKeys, onChange}: SettingItemProps) => {
     const title = (
         <Flex align="center" gap="1">
             <Text size="2" weight="medium" title={compact ? schema.desc : undefined}>
                 {schema.name}
             </Text>
-            {isChanged(schema, value) && (
+            {!areEqual(value, schema.default) && (
                 <Tooltip content={`기본값으로 되돌리기 (${formatDefault(schema)})`}>
                     <IconButton size="1" variant="ghost" color="gray" aria-label="기본값으로 되돌리기"
                                 onClick={() => onChange(structuredClone(schema.default))}>
@@ -285,17 +273,7 @@ export const SettingItem = ({schema, value, compact, takenKeys, onChange}: Setti
                             onCheckedChange={(checked) => onChange(checked)}/>
                 )}
                 {schema.type === "option" && (
-                    <Select.Root size="2" value={String(value)}
-                                 onValueChange={(selected) => onChange(selected)}>
-                        <Select.Trigger aria-label={schema.name} style={{minWidth: 120}}/>
-                        <Select.Content>
-                            {Object.entries(schema.items).map(([key, label]) => (
-                                <Select.Item key={key} value={key}>
-                                    {label}
-                                </Select.Item>
-                            ))}
-                        </Select.Content>
-                    </Select.Root>
+                    <RefresherSelect value={String(value)} aria-label={schema.name} options={Object.entries(schema.items)} onChange={onChange}/>
                 )}
                 {schema.type === "text" && <TextControl {...{schema, value, onChange}} />}
                 {schema.type === "color" && <ColorControl {...{schema, value, compact, onChange}} />}
