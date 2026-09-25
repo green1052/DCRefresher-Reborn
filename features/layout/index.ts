@@ -1,18 +1,33 @@
 import {defineModule} from "@/core/module/define";
-import type {ModuleContext} from "@/core/module/types";
+import type {ModuleContext, SettingSchema} from "@/core/module/types";
+
+/**
+ * 체크하면 숨기는 영역. 설정 이름·설명과 숨길 선택자를 한 곳에 둔다 —
+ * 켜진 항목의 선택자로 <style>을 만들어 넣으므로 새 항목은 여기 한 줄만 추가하면 된다.
+ */
+const HIDE_OPTIONS: Record<string, { name: string; desc: string; selector: string }> = {
+    hideGalleryView: {name: "갤러리 뷰 숨기기", desc: "갤러리 정보, 최근 방문 갤러리 영역을 숨깁니다.", selector: ".issue_wrap, #visit_history"},
+    hideUselessView: {
+        name: "잡다 링크 숨기기",
+        desc: "이슈줌, 타갤 개념글, 뉴스, 힛갤등의 컨텐츠를 오른쪽 영역에서 숨깁니다.",
+        selector: "section.right_content article"
+    },
+    hideNft: {name: "NFT 숨기기", desc: "NFT 관련 내용을 숨깁니다.", selector: ".btn_nftbox, .nft_informationwrap"},
+    hideGalleryImage: {name: "갤러리 대문 숨기기", desc: "갤러리 대문을 숨깁니다.", selector: "#zzbang_div"},
+    removeNotice: {name: "갤러리 공지 숨기기", desc: "글 목록에서 공지사항을 숨깁니다.", selector: "tr:has(em[class*=icon_notice])"},
+    removeDCNotice: {
+        name: "디시 공지 숨기기",
+        desc: "글 목록에서 운영자의 게시글을 숨깁니다.",
+        selector: "tr[class*=ub-content]:has(> td[user_name=운영자])"
+    },
+    removeGamemeca: {name: "게임메카 숨기기", desc: "글 목록에서 게임메카 게시글을 숨깁니다.", selector: "tr[data-type=icon_fnews]"}
+};
+
+const COMPACT_KEYS = new Set(["activePixel", "forceCompact", "useCompactModeOnView"]);
+const PUSH_CLASS = "refresherPushToRight";
 
 let currentCtx: ModuleContext | null = null;
-
-const TOGGLE_SETTINGS = [
-    ["hideGalleryView", "refresherHideGalleryView"],
-    ["hideUselessView", "refresherHideUselessView"],
-    ["hideNft", "refresherHideNtf"],
-    ["hideGalleryImage", "refresherHideGalleryImage"],
-    ["pushToRight", "refresherPushToRight"],
-    ["removeNotice", "refresherHideNotice"],
-    ["removeDCNotice", "refresherHideDCNotice"],
-    ["removeGamemeca", "refresherHideGamemeca"]
-] as const;
+let hideStyle: HTMLStyleElement | null = null;
 
 const applyCompact = (ctx: ModuleContext): void => {
     const compact = window.innerWidth <= Number(ctx.settings.activePixel) || ctx.settings.forceCompact === true;
@@ -28,14 +43,19 @@ const applyCompact = (ctx: ModuleContext): void => {
     }
 };
 
-const applyToggle = (key: string, value: unknown): void => {
-    // 게시글 보기 화면에서는 갤러리 공지 토글을 스킵 (?exception_mode=notice)
-    if (key === "removeNotice" && location.search.includes("exception_mode=notice")) return;
+const applyHide = (ctx: ModuleContext): void => {
+    // 공지 모아보기(?exception_mode=notice)에서는 공지를 숨기지 않는다
+    const noticePage = location.search.includes("exception_mode=notice");
 
-    const target = TOGGLE_SETTINGS.find(([settingKey]) => settingKey === key);
-    if (!target) return;
+    // 선택자마다 규칙을 따로 둔다 — 하나로 합치면 :has 등을 모르는 브라우저에서 규칙 전체가 무시된다
+    hideStyle ??= document.documentElement.appendChild(document.createElement("style"));
+    hideStyle.textContent = Object.entries(HIDE_OPTIONS)
+        .filter(([key]) => ctx.settings[key] === true && !(key === "removeNotice" && noticePage))
+        .map(([, {selector}]) => `${selector} { display: none !important; }`)
+        .join("\n");
 
-    document.documentElement.classList.toggle(target[1], value === true);
+    // 본문 확장은 잡다 링크가 숨겨졌을 때만 (layout.scss의 폭 조정)
+    document.documentElement.classList.toggle(PUSH_CLASS, ctx.settings.pushToRight === true && ctx.settings.hideUselessView === true);
 };
 
 export default defineModule({
@@ -67,91 +87,39 @@ export default defineModule({
             desc: "게시글 보기에서도 컴팩트 모드를 사용하도록 설정합니다.",
             default: true
         },
-        hideGalleryView: {
-            type: "check",
-            name: "갤러리 뷰 숨기기",
-            desc: "갤러리 정보, 최근 방문 갤러리 영역을 숨깁니다.",
-            default: false
-        },
-        hideUselessView: {
-            type: "check",
-            name: "잡다 링크 숨기기",
-            desc: "이슈줌, 타갤 개념글, 뉴스, 힛갤등의 컨텐츠를 오른쪽 영역에서 숨깁니다.",
-            default: false
-        },
-        hideNft: {
-            type: "check",
-            name: "NFT 숨기기",
-            desc: "NFT 관련 내용을 숨깁니다.",
-            default: false
-        },
-        hideGalleryImage: {
-            type: "check",
-            name: "갤러리 대문 숨기기",
-            desc: "갤러리 대문을 숨깁니다.",
-            default: false
-        },
+        ...Object.fromEntries(
+            Object.entries(HIDE_OPTIONS).map(([key, {name, desc}]): [string, SettingSchema] => [key, {type: "check", name, desc, default: false}])
+        ),
         pushToRight: {
             type: "check",
             name: "본문 영역 전체로 확장",
             desc: "\"잡다 링크 숨기기\" 옵션이 켜진 경우 본문 영역을 확장합니다.",
-            default: false
-        },
-        removeNotice: {
-            type: "check",
-            name: "갤러리 공지 숨기기",
-            desc: "글 목록에서 공지사항을 숨깁니다.",
-            default: false
-        },
-        removeDCNotice: {
-            type: "check",
-            name: "디시 공지 숨기기",
-            desc: "글 목록에서 운영자의 게시글을 숨깁니다.",
-            default: false
-        },
-        removeGamemeca: {
-            type: "check",
-            name: "게임메카 숨기기",
-            desc: "글 목록에서 게임메카 게시글을 숨깁니다.",
             default: false
         }
     },
 
     setup(ctx) {
         currentCtx = ctx;
-
-        // 8개 토글 + 컴팩트 3종 초기 적용
-        for (const [key] of TOGGLE_SETTINGS) {
-            applyToggle(key, ctx.settings[key]);
-        }
         applyCompact(ctx);
+        applyHide(ctx);
 
         const onResize = (): void => applyCompact(ctx);
         window.addEventListener("resize", onResize);
         ctx.addCleanup(() => window.removeEventListener("resize", onResize));
     },
 
-    onChanged(key, value) {
+    onChanged(key) {
         if (!currentCtx) return;
-
-        // 컴팩트 3종은 재계산, 나머지는 클래스 토글
-        if (key === "activePixel" || key === "forceCompact" || key === "useCompactModeOnView") {
-            applyCompact(currentCtx);
-            return;
-        }
-
-        applyToggle(key, value);
+        if (COMPACT_KEYS.has(key)) applyCompact(currentCtx);
+        else applyHide(currentCtx);
     },
 
     revoke() {
         currentCtx = null;
+        hideStyle?.remove();
+        hideStyle = null;
 
-        document.documentElement.classList.remove(
-            "refresherCompact",
-            "refresherCompactView",
-            ...TOGGLE_SETTINGS.map(([, className]) => className)
-        );
-
+        document.documentElement.classList.remove("refresherCompact", "refresherCompactView", PUSH_CLASS);
         for (const sticky of document.querySelectorAll<HTMLElement>(".stickyunit")) {
             sticky.style.display = "";
         }

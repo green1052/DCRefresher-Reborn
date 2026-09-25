@@ -148,18 +148,7 @@
     }
 }
 
-.refresherHideGalleryView {
-    .issue_wrap,
-    #visit_history {
-        display: none;
-    }
-}
-
-.refresherHideUselessView section.right_content article {
-    display: none;
-}
-
-.refresherHideUselessView.refresherPushToRight {
+.refresherPushToRight {
     .stickyunit, ._BTN_AD_ {
         display: none !important;
     }
@@ -184,33 +173,3 @@
     }
 }
 
-.refresherHideNtf {
-    .btn_nftbox,
-    .nft_informationwrap {
-        display: none;
-    }
-}
-
-.refresherHideGalleryImage {
-    #zzbang_div {
-        display: none;
-    }
-}
-
-.refresherHideNotice {
-    tr:has(em[class*=icon_notice]) {
-        display: none;
-    }
-}
-
-.refresherHideDCNotice {
-    tr[class*=ub-content]:has(> td[user_name=운영자]) {
-        display: none;
-    }
-}
-
-.refresherHideGamemeca {
-    tr[data-type=icon_fnews] {
-        display: none;
-    }
-}
