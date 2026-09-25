@@ -11,6 +11,8 @@ interface BlocksState {
     defaults: Record<BlockType, DetectMode>;
     setEntries: (type: BlockType, entries: BlockEntry[]) => Promise<void>;
     addEntry: (type: BlockType, fields: BlockInputFields) => Promise<void>;
+    /** 여러 항목을 한 번의 쓰기로 */
+    addEntries: (type: BlockType, list: BlockInputFields[]) => Promise<void>;
     updateEntry: (type: BlockType, id: string, fields: BlockInputFields) => Promise<void>;
     removeEntry: (type: BlockType, id: string) => Promise<void>;
     clearType: (type: BlockType) => Promise<void>;
@@ -30,18 +32,23 @@ const isBlockEntry = (value: unknown): value is Omit<BlockEntry, "id"> & { id?: 
     );
 };
 
-/** 저장소/가져오기 값 → 유효 항목만, id 없으면 부여 */
-export const normalizeBlockList = (value: unknown): BlockEntry[] =>
-    Array.isArray(value)
-        ? value.filter(isBlockEntry).map((entry) => ({...entry, id: typeof entry.id === "string" ? entry.id : crypto.randomUUID()}))
-        : [];
+/** 저장소/가져오기 값 → 유효 항목만. id가 없거나 겹치면 새로 준다 — 겹친 id는 삭제·수정이 겹친 항목 모두를 건드린다 */
+export const normalizeBlockList = (value: unknown): BlockEntry[] => {
+    if (!Array.isArray(value)) return [];
+
+    const ids = new Set<string>();
+    return value.filter(isBlockEntry).map((entry) => {
+        const id = typeof entry.id === "string" && !ids.has(entry.id) ? entry.id : crypto.randomUUID();
+        ids.add(id);
+        return {...entry, id};
+    });
+};
 
 const emptyEntries = (): Record<BlockType, BlockEntry[]> =>
     Object.fromEntries(BLOCK_TYPES.map((type) => [type, []])) as unknown as Record<BlockType, BlockEntry[]>;
 
-/** 같은 content+gallery는 교체 */
-const dedupe = (list: BlockEntry[], content: string, gallery: string | undefined, keepId?: string): BlockEntry[] =>
-    list.filter((entry) => entry.id === keepId || !(entry.content === content && (entry.gallery ?? "") === (gallery ?? "")));
+/** 같은 content+gallery는 한 항목이다 */
+const blockKey = ({content, gallery}: BlockInputFields): string => JSON.stringify([content, gallery ?? ""]);
 
 /** 차단 목록/기본 모드의 단일 출처. 콘텐츠·옵션 모두 이 스토어를 쓰고 저장소와 양방향 동기화된다 */
 export const useBlocksStore = create<BlocksState>((set, get) => ({
@@ -53,14 +60,24 @@ export const useBlocksStore = create<BlocksState>((set, get) => ({
         await blockStorage[type].setValue(entries);
     },
 
-    addEntry: async (type, fields) => {
-        const list = dedupe(get().entries[type], fields.content, fields.gallery);
-        await get().setEntries(type, [...list, {id: crypto.randomUUID(), ...fields}]);
+    addEntry: (type, fields) => get().addEntries(type, [fields]),
+
+    addEntries: async (type, list) => {
+        // 같은 content+gallery는 새로 들어온 쪽으로 바꿔 뒤로 보낸다. id는 늘 새로 준다 — 가져온 id가 기존 항목과 겹치지 않게
+        const added = new Map(list.map((fields) => [blockKey(fields), {...fields, id: crypto.randomUUID()}]));
+        await get().setEntries(type, [...get().entries[type].filter((entry) => !added.has(blockKey(entry))), ...added.values()]);
     },
 
     updateEntry: async (type, id, fields) => {
-        const list = dedupe(get().entries[type], fields.content, fields.gallery, id);
-        await get().setEntries(type, list.map((entry) => (entry.id === id ? {...entry, ...fields, id} : entry)));
+        const list = get().entries[type];
+        // 다른 탭에서 지워졌거나 가져오기로 id가 바뀐 항목 — 그냥 두면 같은 content 항목만 지워지고 수정은 사라진다
+        if (!list.some((entry) => entry.id === id)) return get().addEntries(type, [fields]);
+
+        const key = blockKey(fields);
+        await get().setEntries(
+            type,
+            list.filter((entry) => entry.id === id || blockKey(entry) !== key).map((entry) => (entry.id === id ? {...entry, ...fields, id} : entry))
+        );
     },
 
     removeEntry: async (type, id) => {

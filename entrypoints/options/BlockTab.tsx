@@ -30,25 +30,15 @@ export function BlockTab() {
     const removeEntry = useBlocksStore((state) => state.removeEntry);
     const clearType = useBlocksStore((state) => state.clearType);
     const setDefault = useBlocksStore((state) => state.setDefault);
-    const setEntries = useBlocksStore((state) => state.setEntries);
+    const addEntries = useBlocksStore((state) => state.addEntries);
 
     const [dialog, setDialog] = useState<{ type: BlockType; initial: BlockEntry | null } | null>(null);
 
     const importBlocks = async (parsed: Record<string, unknown>): Promise<number> => {
         // 차단 목록이 하나도 없으면 다른 데이터(메모/설정 내보내기)를 붙여넣은 것
         const types = BLOCK_TYPES.filter((type) => Array.isArray(parsed[type]));
-        for (const type of types) {
-            // 기존 목록에 덧붙인다 — addEntry처럼 같은 content+gallery는 가져온 쪽으로 바꿔 뒤로 보낸다.
-            // id는 새로 준다: 내보낸 뒤 고친 항목(id 유지)과 겹치면 삭제·편집이 둘 다 건드린다
-            const merged = new Map<string, BlockEntry>();
-            const imported = normalizeBlockList(parsed[type]).map((entry) => ({...entry, id: crypto.randomUUID()}));
-            for (const entry of [...entries[type], ...imported]) {
-                const key = JSON.stringify([entry.content, entry.gallery ?? ""]);
-                merged.delete(key);
-                merged.set(key, entry);
-            }
-            await setEntries(type, [...merged.values()]);
-        }
+        // 기존 목록에 덧붙인다 — 같은 content+gallery는 가져온 쪽으로 바꿔 뒤로 보내고, id는 새로 준다
+        for (const type of types) await addEntries(type, normalizeBlockList(parsed[type]));
         return types.length;
     };
 

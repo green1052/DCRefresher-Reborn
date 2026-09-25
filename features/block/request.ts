@@ -45,14 +45,8 @@ const blockDccon = async (selected: SelectedUser, blockAllDccon?: boolean): Prom
         const paths = response.detail.map((detail) => detail.path).join("|");
         await useBlocksStore.getState().addEntry("DCCON", {content: `^(${paths})$`, isRegex: true, extra: `[묶음] ${extra}`});
     } else {
-        // 묶음 대신 각각 추가 — addEntry를 디시콘 수만큼 부르면 저장소 쓰기와 모든 탭의 watch도 그만큼 돈다.
-        // 걸러내는 기준은 stores/blocks의 dedupe와 같다 (갤러리 없는 같은 content는 교체)
-        const paths = new Set(response.detail.map((detail) => detail.path));
-        const {entries, setEntries} = useBlocksStore.getState();
-        await setEntries("DCCON", [
-            ...entries.DCCON.filter((entry) => entry.gallery || !paths.has(entry.content)),
-            ...[...paths].map((content) => ({id: crypto.randomUUID(), content, isRegex: false, extra}))
-        ]);
+        // 묶음 대신 각각 추가 — 한 번에 넣어야 저장소 쓰기와 모든 탭의 watch가 디시콘 수만큼 돌지 않는다
+        await useBlocksStore.getState().addEntries("DCCON", response.detail.map(({path}) => ({content: path, isRegex: false, extra})));
     }
 
     useUiStore.getState().showToast(`디시콘을 차단했습니다. (${extra})`);
