@@ -59,6 +59,8 @@ interface PreviewState extends PostState {
     /** 창 너비(px)·바깥 배경 흐림 (설정) */
     frameWidth: number;
     backgroundBlur: boolean;
+    /** 스크롤 끝에서 한 번 더 굴리면 이전/다음 글 (설정) */
+    scrollToSkip: boolean;
 
     captcha: { url: string; resolve: (code: string) => void } | null;
     mini: MiniState | null;
@@ -100,6 +102,9 @@ interface PreviewState extends PostState {
         manage?: (kind: ManageKind) => void;
     }) => void;
 }
+
+/** 본문 차단 안내 (창·미니) */
+export const BLOCKED_TEXT = "게시글 내용이 차단됐습니다.";
 
 /** 차단 기간 (시간 → 라벨) — 차단 팝업과 차단 프리셋 설정이 같이 쓴다 */
 export const BLOCK_DAYS: Record<string, string> = {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"};
@@ -152,6 +157,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     shortcutKeys: null,
     frameWidth: 1000,
     backgroundBlur: false,
+    scrollToSkip: true,
     captcha: null,
     mini: null,
 

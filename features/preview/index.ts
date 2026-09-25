@@ -15,7 +15,7 @@ import {getEntry, setEntry} from "@/core/preview/cache";
 import {ADULT_ERROR} from "@/core/preview/parser";
 import {processComments} from "@/core/preview/comments";
 import {blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
-import {BLOCK_DAYS, type ErrorState, type ManageKind, miniPosition, postTitle, usePreviewStore} from "./ui/previewStore";
+import {BLOCK_DAYS, BLOCKED_TEXT, type ErrorState, type ManageKind, miniPosition, postTitle, usePreviewStore} from "./ui/previewStore";
 
 const SHORTCUT_GROUP: SettingGroup = {name: "관리 단축키", desc: "관리 권한이 있을 때 미리보기에서 키를 두 번 누르면 게시글을 삭제하거나 작성자를 차단합니다."};
 const PRESET_GROUP: SettingGroup = {name: "차단 프리셋", desc: "차단 키로 차단할 때 쓰는 값입니다."};
@@ -40,6 +40,13 @@ const settings: NonNullable<ModuleDefinition["settings"]> = {
         name: "바깥 배경 흐리게",
         desc: "미리보기 창 바깥 배경을 흐리게 처리합니다. (성능이 떨어질 수 있음)",
         default: false
+    },
+    // v5와 같은 키
+    scrollToSkip: {
+        type: "check",
+        name: "스크롤하여 게시글 이동",
+        desc: "미리보기 맨 아래나 맨 위에서 한 번 더 스크롤하면 다음·이전 게시글로 넘어갑니다.",
+        default: true
     },
     tooltipMode: {type: "check", name: "미니 미리보기 표시", desc: "게시글에 마우스를 올리면 미리보기를 표시합니다.", default: false},
     tooltipMediaHide: {type: "check", name: "미니 미리보기 미디어 숨기기", desc: "미니 미리보기에서 이미지와 동영상을 숨깁니다.", default: false},
@@ -172,19 +179,19 @@ const controller = (ctx: ModuleContext) => {
 
     const galName = (): string => document.querySelector("h1")?.textContent?.trim() || "디시인사이드";
 
+    // 본문 차단도 차단 모듈을 따른다 — 꺼져 있으면 가리지 않는다. 원문은 남겨 '가린 내용 보기'로 다시 보인다 (Frame.tsx)
     const processContents = (preData: GalleryPreData, postInfo: PostInfo, stripMedia = false): PostInfo => {
         const raw = postInfo.contents ?? "";
+        const view = useUiStore.getState().blockView;
+        const textBlocked = view && isAnyBlocked({TEXT: htmlToText(raw).trim()}, preData.gallery) ? (view.blur ? "blur" : "hide") : undefined;
 
-        if (isAnyBlocked({TEXT: htmlToText(raw).trim()}, preData.gallery)) {
-            return {...postInfo, contents: "게시글 내용이 차단됐습니다."};
-        }
-
-        return {...postInfo, contents: sanitizeHtml(raw, {stripMedia})};
+        return {...postInfo, contents: sanitizeHtml(raw, {stripMedia}), textBlocked};
     };
 
     const applyComments = (preData: GalleryPreData, raw: DcinsideComment[]) => {
-        const {list, threads, totalCnt} = processComments(raw, preData, ctx);
-        store.getState().setComments(list, `쓰레드 ${threads}개, 총 댓글 ${totalCnt}개`);
+        const {list, threads, totalCnt, blocked, folded} = processComments(raw, preData, ctx);
+        const extra = [blocked && `차단 ${blocked}개`, folded && `같은 댓글 ${folded}개 접음`].filter(Boolean).join(", ");
+        store.getState().setComments(list, `쓰레드 ${threads}개, 총 댓글 ${totalCnt}개${extra ? ` (${extra})` : ""}`);
     };
 
     const loadComments = async (preData: GalleryPreData, postInfo: PostInfo, mySignal: number) => {
@@ -437,7 +444,7 @@ const controller = (ctx: ModuleContext) => {
 
         // 이미지 아이콘 없는 글의 이미지 차단(blockImage)도 적용 — 안 그러면 전체 미리보기에서 숨긴 이미지가 호버로 보인다
         const stripMedia = ctx.settings.tooltipMediaHide === true || (ctx.settings.blockImage === true && preData.type === "icon_txt");
-        const {contents = ""} = processContents(preData, post, stripMedia);
+        const {contents = "", textBlocked} = processContents(preData, post, stripMedia);
 
         // 가져오는 사이 전체 미리보기가 열렸으면 그 위에 띄우지 않는다
         if (usePreviewStore.getState().visible) return;
@@ -445,7 +452,8 @@ const controller = (ctx: ModuleContext) => {
         usePreviewStore.getState().openMini({
             ...miniPosition(x, y),
             title: postTitle(post),
-            contents
+            // 미니는 마우스를 올려 볼 수 없으니 블러도 안내로 가린다
+            contents: textBlocked && !useUiStore.getState().blockView?.revealed ? BLOCKED_TEXT : contents
         });
     };
 
@@ -612,7 +620,8 @@ const publishSettings = (ctx: ModuleContext): void => {
             ? {delete: String(ctx.settings.deleteKey).toUpperCase(), block: String(ctx.settings.blockKey).toUpperCase()}
             : null,
         frameWidth: Number(ctx.settings.previewWidth),
-        backgroundBlur: ctx.settings.toggleBackgroundBlur === true
+        backgroundBlur: ctx.settings.toggleBackgroundBlur === true,
+        scrollToSkip: ctx.settings.scrollToSkip === true
     });
 };
 

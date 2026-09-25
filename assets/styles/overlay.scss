@@ -332,6 +332,26 @@
     }
 }
 
+/* 차단 — 페이지와 같은 차단 모듈 설정 (Frame의 data-*). 블러 강도 변수는 <html>에서 shadow 안으로 이어받는다 */
+.refresher-frame {
+    [data-blocked="blur"] {
+        filter: blur(var(--refresher-blur, 5px));
+        opacity: 0.5;
+        transition: filter 0.15s, opacity 0.15s;
+    }
+
+    &[data-blur-reveal] [data-blocked="blur"]:is(:hover, :has(:focus-visible)) {
+        filter: none;
+        opacity: 1;
+    }
+
+    // 이 페이지에서만 가린 내용 보기 — 숨겼던 것도 흐리게 보인다
+    &[data-block-revealed] :is([data-blocked], [data-duplicate]) {
+        filter: none;
+        opacity: 0.35;
+    }
+}
+
 /* ===== 미니 미리보기 ===== */
 
 .refresher-mini-preview {

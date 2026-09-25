@@ -1,4 +1,4 @@
-import {Box, Flex, IconButton, Text, Tooltip} from "@radix-ui/themes";
+import {Badge, Box, Flex, IconButton, Text, Tooltip} from "@radix-ui/themes";
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
 import {Fragment, type MouseEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState} from "react";
 
@@ -143,8 +143,8 @@ export const TimeStamp = ({date, size = "1"}: { date: string; size?: "1" | "2" }
 };
 
 /** 작성자 표시. 우클릭하면 유저 버블 */
-/** fetchRatio: 글댓비 캐시에 없으면 갤로그에서 받는다 (글쓴이만 — 댓글마다 받으면 요청이 너무 많다) */
-export const UserCard = ({user, fetchRatio}: { user: User; fetchRatio?: boolean }) => {
+/** fetchRatio: 글댓비 캐시에 없으면 갤로그에서 받는다 (글쓴이만 — 댓글마다 받으면 요청이 너무 많다). op: 글쓴이가 단 댓글 */
+export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: boolean; op?: boolean }) => {
     // 배지 순서·표시 조건은 userinfo 설정을 따른다 (페이지와 같게) — 회원은 UID, 유동만 IP 정보
     const view = useUiStore((state) => state.badgeView);
     const ipInfo = !user.id && user.ip ? ipInfoOf(user.ip) : undefined;
@@ -186,6 +186,7 @@ export const UserCard = ({user, fetchRatio}: { user: User; fetchRatio?: boolean 
         <Flex align="center" gap="1" minWidth="0" onContextMenu={openMenu} style={{cursor: "context-menu"}}>
             <Text size="2" weight="bold" truncate>{user.nick ?? user.id ?? user.ip}</Text>
             {user.image && <img src={user.image} alt="" height={12}/>}
+            {op && <Badge size="1" variant="soft">글쓴이</Badge>}
             {/* 유동 IP는 디시가 닉 옆에 직접 보여 주는 값 — 배지 순서와 상관없이 여기 */}
             {user.ip && <Text size="1" color={identityColor} style={{color: uidColor}} truncate>({user.ip})</Text>}
             {view.order.map((key) => <Fragment key={key}>{badges[key]}</Fragment>)}
@@ -209,6 +210,17 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
     const collapsed = usePreviewStore((s) => s.collapsed.has(comment.no));
     const setReply = usePreviewStore((s) => s.setReply);
     const toggleCollapse = usePreviewStore((s) => s.toggleCollapse);
+    const author = usePreviewStore((s) => s.post?.user);
+    const revealed = useUiStore((s) => s.blockView?.revealed === true);
+
+    const user: User = {
+        nick: comment.name,
+        id: comment.user_id,
+        ip: comment.ip || extractIp(comment.gallog_icon) || extractIp(comment.nickname as string | undefined),
+        image: extractIcon(comment.gallog_icon)
+    };
+    // 회원은 아이디로, 유동은 닉과 IP가 모두 같을 때만 — IP는 앞자리만 보여서 다른 사람일 수 있다
+    const isOp = Boolean(author) && (user.id ? user.id === author!.id : !author!.id && user.nick === author!.nick && user.ip === author!.ip);
 
     const isDeleted = comment.is_delete === "1";
     const isAdmin = isGalleryManager();
@@ -252,17 +264,17 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
         for (const box of body.current?.querySelectorAll<HTMLElement>(".coment_dccon_txt") ?? []) fitTxtcon(box);
     }, [html]);
 
+    // 숨김 차단·접힌 같은 댓글은 '가린 내용 보기' 동안만 흐리게 보인다 (블러 차단은 overlay.scss가 흐린다)
+    if (!revealed && (comment.blocked === "hide" || comment.duplicates === 0)) return null;
+
     return (
         <Box className="refresher-comment" data-depth={depth} data-deleted={isDeleted || undefined}
+             data-blocked={comment.blocked} data-duplicate={comment.duplicates === 0 || undefined}
              data-thread-open={threadOpen || undefined} data-last-reply={lastReply || undefined} px="6" py="2">
             <Flex justify="between" align="center" gap="2">
                 <Flex align="center" gap="1" minWidth="0">
-                    <UserCard user={{
-                        nick: comment.name,
-                        id: comment.user_id,
-                        ip: comment.ip || extractIp(comment.gallog_icon) || extractIp(comment.nickname as string | undefined),
-                        image: extractIcon(comment.gallog_icon)
-                    }}/>
+                    <UserCard user={user} op={isOp}/>
+                    {comment.duplicates ? <Text size="1" color="gray" style={{whiteSpace: "nowrap"}}>같은 댓글 ×{comment.duplicates}</Text> : null}
                     {depth === 0 && replyCount > 1 && (
                         <Tooltip content={collapsed ? "답글 펼치기" : "답글 접기"} container={overlay.portal}>
                             <IconButton size="1" variant="ghost" color="gray" aria-label="답글 접기"

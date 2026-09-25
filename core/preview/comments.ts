@@ -1,6 +1,7 @@
-import {isAnyBlocked, isBlocked} from "@/core/block";
+import {groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
 import {htmlToText, sanitizeHtml} from "@/utils/sanitize";
 import type {ModuleContext} from "@/core/module/types";
+import {useUiStore} from "@/stores/ui";
 
 import {restoreArchive} from "./cache";
 import type {DcinsideComment, GalleryPreData} from "./types";
@@ -8,6 +9,10 @@ import type {DcinsideComment, GalleryPreData} from "./types";
 export interface ProcessedComment extends DcinsideComment {
     /** 음성댓글 — vr_player. iframe이면 경로가 아니라 플레이어 페이지라 <audio>로 못 튼다 */
     voice?: { src: string; iframe: boolean };
+    /** 차단 모듈에 걸림 — 모듈 설정대로 흐리게(blur) 또는 숨긴다(hide) */
+    blocked?: "blur" | "hide";
+    /** 같은 댓글 — 첫 댓글은 반복 수, 나머지는 0 (접힘) */
+    duplicates?: number;
 }
 
 const GALLOG_DCCON = /dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g;
@@ -37,7 +42,7 @@ export const processComments = (
     raw: DcinsideComment[],
     preData: GalleryPreData,
     ctx: ModuleContext
-): { list: ProcessedComment[]; threads: number; totalCnt: number } => {
+): { list: ProcessedComment[]; threads: number; totalCnt: number; blocked: number; folded: number } => {
     // 댓글돌이(COMMENT_BOY) 제거 — 보존(restoreArchive)의 번호순 정렬보다 먼저 거른다
     const filtered = raw.filter((comment) => String(comment.nicktype) !== "COMMENT_BOY");
 
@@ -52,10 +57,13 @@ export const processComments = (
         comment.memo = cleanMemo(voice?.memo ?? String(comment.memo ?? ""));
     }
 
-    // 차단: 내용 치환 + is_delete (행 제거 대신)
-    for (const comment of list) {
+    // 차단은 차단 모듈 설정을 따른다 — 모듈이 꺼져 있으면 가리지 않는다. 가리는 방법은 그릴 때 정한다 (Comment.tsx)
+    const view = useUiStore.getState().blockView;
+    const texts = new Map(list.map((comment) => [comment, htmlToText(comment.memo)]));
+
+    for (const comment of view ? list : []) {
         // 삭제 표시된 댓글도 검사한다 — 보존으로 되살린 댓글은 원문이라 건너뛰면 차단된 내용이 보인다
-        const plain = htmlToText(comment.memo);
+        const plain = texts.get(comment);
         // 디시콘 2개짜리 댓글은 두 번째도 검사한다
         const dcconNos = Array.from(comment.memo.matchAll(GALLOG_DCCON), (match) => match[1] ?? "");
 
@@ -70,15 +78,28 @@ export const processComments = (
                 preData.gallery
             ) || dcconNos.some((no) => isBlocked("DCCON", no, preData.gallery));
 
-        if (!blocked) continue;
+        if (blocked) comment.blocked = view!.blur ? "blur" : "hide";
+    }
 
-        comment.memo = "댓글 내용이 차단됐습니다.";
-        comment.voice = undefined;
-        comment.is_delete = "1";
+    if (view?.replyRemove) {
+        // 답글의 c_no는 쓰레드 첫 댓글 번호
+        const blockedThreads = new Set(list.filter((comment) => comment.depth === 0 && comment.blocked).map((comment) => comment.no));
+        for (const comment of list) if (comment.depth === 1 && blockedThreads.has(comment.c_no)) comment.blocked ??= view.blur ? "blur" : "hide";
+    }
+
+    if (view?.duplicate) {
+        const candidates = list.filter((comment) => !comment.blocked && comment.is_delete !== "1");
+        for (const [comment, repeats] of groupDuplicates(candidates, (comment) => texts.get(comment) ?? "", view.duplicate)) comment.duplicates = repeats;
     }
 
     const threads = list.filter((comment) => comment.depth === 0).length;
 
-    return {list, threads, totalCnt: list.length};
+    return {
+        list,
+        threads,
+        totalCnt: list.length,
+        blocked: list.filter((comment) => comment.blocked).length,
+        folded: list.filter((comment) => comment.duplicates === 0).length
+    };
 };
 

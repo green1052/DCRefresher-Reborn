@@ -27,6 +27,8 @@ export interface PostInfo {
     fixedUpvotes?: string;
     downvotes?: string;
     contents?: string;
+    /** 본문이 차단 대상 — 차단 모듈 설정대로 흐리게(blur) 또는 안내로 가린다(hide) */
+    textBlocked?: "blur" | "hide";
     commentId?: string;
     commentNo?: string;
     commentCount?: number;

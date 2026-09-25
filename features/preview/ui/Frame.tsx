@@ -1,7 +1,7 @@
 import {Badge, Box, Button, Callout, Flex, Heading, IconButton, Separator, Spinner, Text, Theme, Tooltip} from "@radix-ui/themes";
 import {ArrowUp, CircleAlert, Clock, ExternalLink, Eye, MessageSquare, ThumbsDown, ThumbsUp} from "lucide-react";
 import {Dialog} from "radix-ui";
-import {type CSSProperties, Fragment, useEffect, useRef} from "react";
+import {type CSSProperties, Fragment, useEffect, useRef, type WheelEvent} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
 import {captchaImage, vote} from "@/core/preview/request";
@@ -10,7 +10,7 @@ import {isTyping} from "@/utils/event";
 
 import {buildPreData} from "../index";
 import {Comment, TimeStamp, useTick, UserCard} from "./Comment";
-import {type ErrorState, usePreviewStore} from "./previewStore";
+import {BLOCKED_TEXT, type ErrorState, usePreviewStore} from "./previewStore";
 import {WriteComment} from "./WriteComment";
 
 /**
@@ -187,6 +187,30 @@ const ErrorBlock = ({error}: { error: ErrorState }) => {
     );
 };
 
+/** 목록에서 앞(-1)/뒤(1) 글로 — PageUp/Down과 스크롤 끝에서 한 번 더 굴리기가 같이 쓴다 */
+const goToAdjacent = (dir: number): void => {
+    const st = usePreviewStore.getState();
+    if (!st.preData) return;
+
+    // 차단·운영자 숨김 행은 건너뛴다 — 미리보기는 TEXT 차단만 검사해서 숨긴 글이 그대로 열린다
+    const rows = Array.from(document.querySelectorAll<HTMLElement>(".gall_list .ub-content")).filter((row) =>
+        row.checkVisibility() && row.querySelector("a:not(.reply_numbox)")
+    );
+
+    const index = rows.findIndex((row) => {
+        const pre = buildPreData(row);
+        return pre?.id === st.preData?.id && pre?.gallery === st.preData?.gallery;
+    });
+    if (index < 0) return;
+
+    const next = rows[index + dir];
+    const nextPre = next ? buildPreData(next) : null;
+    if (nextPre) st.requestOpen(nextPre);
+};
+
+/** 이만큼 쉬었다 굴리면 새 휠 동작으로 본다 — 관성 스크롤은 이벤트가 이보다 촘촘하게 이어진다 */
+const WHEEL_GESTURE_GAP = 250;
+
 const CommentList = () => {
     const comments = usePreviewStore((s) => s.comments)!;
     const collapsed = usePreviewStore((s) => s.collapsed);
@@ -228,6 +252,8 @@ export const Frame = () => {
     const imageBlocked = usePreviewStore((s) => s.imageBlocked);
     const frameWidth = usePreviewStore((s) => s.frameWidth);
     const backgroundBlur = usePreviewStore((s) => s.backgroundBlur);
+    const scrollToSkip = usePreviewStore((s) => s.scrollToSkip);
+    const blockView = useUiStore((s) => s.blockView);
     const postKey = usePreviewStore((s) => (s.preData ? `${s.preData.gallery}/${s.preData.id}` : ""));
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
@@ -252,26 +278,6 @@ export const Frame = () => {
     useEffect(() => {
         if (!visible) return;
 
-        const goToAdjacent = (dir: number): void => {
-            const st = usePreviewStore.getState();
-            if (!st.preData) return;
-
-            // 차단·운영자 숨김 행은 건너뛴다 — 미리보기는 TEXT 차단만 검사해서 숨긴 글이 그대로 열린다
-            const rows = Array.from(document.querySelectorAll<HTMLElement>(".gall_list .ub-content")).filter((row) =>
-                row.checkVisibility() && row.querySelector("a:not(.reply_numbox)")
-            );
-
-            const index = rows.findIndex((row) => {
-                const pre = buildPreData(row);
-                return pre?.id === st.preData?.id && pre?.gallery === st.preData?.gallery;
-            });
-            if (index < 0) return;
-
-            const next = rows[index + dir];
-            const nextPre = next ? buildPreData(next) : null;
-            if (nextPre) st.requestOpen(nextPre);
-        };
-
         const onKey = (ev: KeyboardEvent): void => {
             // Ctrl+PageUp/Down(탭 전환) 같은 조합키는 브라우저 몫
             if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.shiftKey || isTyping(ev)) return;
@@ -289,9 +295,34 @@ export const Frame = () => {
         return () => window.removeEventListener("keydown", onKey);
     }, [visible]);
 
+    // 스크롤 끝에서 한 번 더 굴리면 이전/다음 글. 끝에 닿은 그 동작으로는 넘기지 않는다 — 트랙패드 관성에 글이 연달아 넘어간다
+    const wheel = useRef({last: 0, armed: 0});
+    const onWheel = (ev: WheelEvent<HTMLDivElement>): void => {
+        if (!scrollToSkip || ev.deltaY === 0 || ev.ctrlKey || ev.shiftKey) return;
+
+        const box = ev.currentTarget;
+        const dir = ev.deltaY > 0 ? 1 : -1;
+        const atEdge = dir > 0 ? box.scrollTop + box.clientHeight >= box.scrollHeight - 2 : box.scrollTop <= 0;
+        const state = wheel.current;
+        const newGesture = ev.timeStamp - state.last > WHEEL_GESTURE_GAP;
+        state.last = ev.timeStamp;
+
+        if (!atEdge) {
+            state.armed = 0;
+        } else if (newGesture && state.armed === dir) {
+            state.armed = 0;
+            goToAdjacent(dir);
+        } else {
+            // 끝에 닿은 방향을 기억해 두고 다음 동작을 기다린다
+            state.armed = dir;
+        }
+    };
+
     if (!visible && !fading) return null;
 
     const busy = !error && !post;
+    // 본문 차단: 숨김이면 '가린 내용 보기' 동안만 원문을 흐리게 보인다 (overlay.scss의 data-blocked)
+    const hideText = post?.textBlocked === "hide" && !blockView?.revealed;
 
     return (
         // Themes Dialog는 항상 modal이라 프리미티브를 쓴다 (스크롤 잠금·PageUp/Down 이동을 직접 처리)
@@ -321,6 +352,8 @@ export const Frame = () => {
                     className="refresher-frame"
                     data-fading={fading || undefined}
                     data-admin={adminVisible || undefined}
+                    data-blur-reveal={blockView?.blurReveal || undefined}
+                    data-block-revealed={blockView?.revealed || undefined}
                     // 너비는 overlay.scss가 화면 폭·관리 패널에 맞춰 줄인다
                     style={{"--refresher-frame-width": `${frameWidth}px`} as CSSProperties}
                     aria-busy={busy}
@@ -331,7 +364,7 @@ export const Frame = () => {
                     {/* 스크롤은 안쪽에서 — 바깥이 스크롤되면 스크롤바가 오른쪽 둥근 모서리를 덮는다 */}
                     {/* 글마다 새로 마운트 — 캐시 hit이면 한 번에 렌더돼 스크롤 위치와 쓰던 댓글이 다음 글로 넘어간다.
                         signalId는 닫을 때도 올라 페이드아웃 중에 맨 위로 튀므로 글 주소로 건다 */}
-                    <div className="refresher-frame-scroll" ref={scroller} key={postKey}>
+                    <div className="refresher-frame-scroll" ref={scroller} key={postKey} onWheel={onWheel}>
                     <Box px="6" pt="5" pb="3">
                         <Dialog.Title asChild>
                             <Heading as="h2" size="6">{title}</Heading>
@@ -369,13 +402,14 @@ export const Frame = () => {
                                 <Box
                                     ref={contentsBox}
                                     className={"refresher-html refresher-preview-contents" + (imageBlocked ? " refresher-preview-block-media" : "")}
+                                    data-blocked={hideText ? undefined : post?.textBlocked}
                                     onClick={(ev) => {
                                         if ((ev.target as HTMLElement).closest(".btn_img_block")) {
                                             ev.preventDefault();
                                             usePreviewStore.getState().setImageBlocked(false);
                                         }
                                     }}
-                                    dangerouslySetInnerHTML={{__html: contents ?? ""}}
+                                    dangerouslySetInnerHTML={{__html: hideText ? BLOCKED_TEXT : contents ?? ""}}
                                 />
                                 {post && <Votes/>}
                             </>
