@@ -19,7 +19,6 @@ export interface SelectedUser {
     ip?: string;
     /** 우클릭한 디시콘 코드 (dccon.php?no= 값) */
     dccon?: string;
-    at: number;
 }
 
 export interface MemoTargetState {
@@ -37,16 +36,13 @@ interface UiState {
 
     showToast: (content: string, type?: ToastLevel, autoClose?: number, onClick?: () => void) => void;
     dismissToast: (id?: number) => void;
-    setSelected: (user: Omit<SelectedUser, "at">) => void;
+    setSelected: (user: SelectedUser) => void;
     openBubble: (x: number, y: number) => void;
     closeBubble: () => void;
-    /** 마지막 선택(10초) 대상으로 메모 다이얼로그. 만료시 토스트 */
+    /** 마지막으로 우클릭한 대상으로 메모 다이얼로그. 선택이 없으면 토스트 */
     openMemoForSelected: () => void;
-    openMemo: (targets: Partial<Record<MemoType, string>>, initialType: MemoType) => void;
     closeMemo: () => void;
 }
-
-const SELECTION_TIMEOUT = 10_000;
 
 let toastSeq = 0;
 
@@ -66,16 +62,14 @@ export const useUiStore = create<UiState>((set, get) => ({
         if (!id || !current || current.id === id) set({toast: null});
     },
 
-    setSelected: (user) => {
-        set({selected: {...user, at: Date.now()}});
-    },
+    setSelected: (selected) => set({selected}),
 
     openBubble: (x, y) => set({bubble: {x, y}}),
     closeBubble: () => set({bubble: null}),
 
     openMemoForSelected: () => {
         const {selected, showToast} = get();
-        if (!selected || Date.now() - selected.at > SELECTION_TIMEOUT) {
+        if (!selected) {
             showToast("메모할 대상을 다시 오른쪽 클릭해주세요.");
             return;
         }
@@ -86,10 +80,6 @@ export const useUiStore = create<UiState>((set, get) => ({
         if (selected.ip) targets.IP = selected.ip;
 
         set({bubble: null, memo: {targets, initialType: selected.uid ? "UID" : selected.ip ? "IP" : "NICK"}});
-    },
-
-    openMemo: (targets, initialType) => {
-        set({bubble: null, memo: {targets, initialType}});
     },
 
     closeMemo: () => set({memo: null})

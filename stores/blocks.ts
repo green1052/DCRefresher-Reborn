@@ -81,8 +81,12 @@ let initialized: Promise<void> | null = null;
 /** 저장소 값 로드 + 변경 감시 (다른 탭/옵션 페이지에서 바뀐 값 반영). 여러 번 불러도 1회 */
 export const initBlocksStore = (): Promise<void> =>
     (initialized ??= (async () => {
+        // 이 탭의 쓰기도 watch로 돌아온다 — 값이 같으면 state를 그대로 돌려줘 구독자를 다시 렌더시키지 않는다
         const setList = (type: BlockType, value: unknown): void =>
-            useBlocksStore.setState((state) => ({entries: {...state.entries, [type]: normalizeBlockList(value)}}));
+            useBlocksStore.setState((state) => {
+                const next = normalizeBlockList(value);
+                return JSON.stringify(state.entries[type]) === JSON.stringify(next) ? state : {entries: {...state.entries, [type]: next}};
+            });
 
         await Promise.all(
             BLOCK_TYPES.map(async (type) => {

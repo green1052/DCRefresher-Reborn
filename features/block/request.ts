@@ -19,11 +19,12 @@ interface DcconDetailResponse {
 
 /** 유저 차단: uid > ip > nick 우선순위 */
 const blockUser = async (selected: SelectedUser): Promise<void> => {
-    const value = selected.uid ?? selected.ip ?? selected.nick;
+    // 유동은 작성자 칸에 data-uid=""가 붙어 오므로 ??로는 ip로 넘어가지 않는다
+    const value = selected.uid || selected.ip || selected.nick;
     if (!value) return;
 
     const type: BlockType = selected.uid ? "ID" : selected.ip ? "IP" : "NICK";
-    await useBlocksStore.getState().addEntry(type, {content: value, isRegex: false, extra: selected.nick ?? value});
+    await useBlocksStore.getState().addEntry(type, {content: value, isRegex: false, extra: selected.nick || value});
 
     useUiStore.getState().showToast(`차단 목록에 추가했습니다. (${type}: ${value})`);
 };
@@ -38,26 +39,28 @@ const blockDccon = async (selected: SelectedUser, blockAllDccon?: boolean): Prom
 
     const extra = `${response.info.title} [${response.info.package_idx}]`;
 
-    if (blockAllDccon) {
-        if (!confirm("디시콘을 묶어서 차단하시겠습니까?")) {
-            // 묶음 대신 각각 추가
-            for (const detail of response.detail) {
-                await useBlocksStore.getState().addEntry("DCCON", {content: detail.path, isRegex: false, extra});
-            }
-            return;
-        }
-
+    if (!blockAllDccon) {
+        await useBlocksStore.getState().addEntry("DCCON", {content: code, isRegex: false, extra});
+    } else if (confirm("디시콘을 묶어서 차단하시겠습니까?")) {
         const paths = response.detail.map((detail) => detail.path).join("|");
         await useBlocksStore.getState().addEntry("DCCON", {content: `^(${paths})$`, isRegex: true, extra: `[묶음] ${extra}`});
-        return;
+    } else {
+        // 묶음 대신 각각 추가 — addEntry를 디시콘 수만큼 부르면 저장소 쓰기와 모든 탭의 watch도 그만큼 돈다.
+        // 걸러내는 기준은 stores/blocks의 dedupe와 같다 (갤러리 없는 같은 content는 교체)
+        const paths = new Set(response.detail.map((detail) => detail.path));
+        const {entries, setEntries} = useBlocksStore.getState();
+        await setEntries("DCCON", [
+            ...entries.DCCON.filter((entry) => entry.gallery || !paths.has(entry.content)),
+            ...[...paths].map((content) => ({id: crypto.randomUUID(), content, isRegex: false, extra}))
+        ]);
     }
 
-    await useBlocksStore.getState().addEntry("DCCON", {content: code, isRegex: false, extra});
+    useUiStore.getState().showToast(`디시콘을 차단했습니다. (${extra})`);
 };
 
-/** eventBus "refresherRequestBlock" 처리. 마지막 선택은 10초까지 유효 */
+/** eventBus "refresherRequestBlock" 처리 */
 export const handleBlockRequest = async (options: BlockRequestOptions, selected: SelectedUser | null): Promise<void> => {
-    if (!selected || Date.now() - selected.at > 10_000) {
+    if (!selected) {
         useUiStore.getState().showToast("차단할 대상을 다시 오른쪽 클릭해주세요.");
         return;
     }

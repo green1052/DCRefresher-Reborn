@@ -1,42 +1,31 @@
 import {Button, Checkbox, Dialog, Flex, Text, TextField} from "@radix-ui/themes";
-import {useEffect, useState} from "react";
+import {useState} from "react";
 
 import {RefresherSelect} from "@/components/RefresherSelect";
 import {composeExtra} from "@/features/block/request";
+import {DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import type {BlockInputFields} from "@/stores/blocks";
 
 interface BlockDialogProps {
-    open: boolean;
     type: BlockType;
-    typeNames: Record<BlockType, string>;
-    modeNames: Record<DetectMode, string>;
     /** 편집시 기존 항목 */
     initial?: BlockEntry | null;
     onClose: () => void;
     onSubmit: (fields: BlockInputFields) => void;
 }
 
-export const BlockDialog = ({open, type, typeNames, modeNames, initial, onClose, onSubmit}: BlockDialogProps) => {
-    const [content, setContent] = useState("");
-    const [isRegex, setIsRegex] = useState(false);
-    const [gallery, setGallery] = useState("");
-    const [mode, setMode] = useState<DetectMode | "">("");
+/** 열 때만 마운트한다 — 입력 초기값은 마운트 시점의 initial */
+export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps) => {
+    const [content, setContent] = useState(initial?.content ?? "");
+    const [isRegex, setIsRegex] = useState(initial?.isRegex ?? false);
+    const [gallery, setGallery] = useState(initial?.gallery ?? "");
+    const [mode, setMode] = useState<DetectMode | "">(initial?.mode ?? "");
     const [error, setError] = useState("");
-
-    useEffect(() => {
-        if (!open) return;
-
-        setContent(initial?.content ?? "");
-        setIsRegex(initial?.isRegex ?? false);
-        setGallery(initial?.gallery ?? "");
-        setMode(initial?.mode ?? "");
-        setError("");
-    }, [open, initial]);
 
     const submit = (): void => {
         if (!content.trim()) {
-            setError(`${typeNames[type]} 값을 입력해주세요.`);
+            setError(`${TYPE_NAMES[type]} 값을 입력해주세요.`);
             return;
         }
 
@@ -45,18 +34,20 @@ export const BlockDialog = ({open, type, typeNames, modeNames, initial, onClose,
             isRegex,
             mode: mode || undefined,
             gallery: gallery.trim() || undefined,
-            extra: composeExtra({isRegex, gallery: gallery.trim() || undefined, mode: mode || undefined}, modeNames)
+            // extra는 별명(우클릭 차단 닉네임, 디시콘 제목)만 유지한다 — 플래그는 표시할 때 필드에서 만든다.
+            // 예전 항목(v5, 이전 다이얼로그)은 플래그 문자열을 extra에 넣었으므로 그건 버린다
+            extra: initial?.extra && initial.extra !== composeExtra(initial, DETECT_MODE_NAMES) ? initial.extra : undefined
         });
     };
 
     return (
-        <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
+        <Dialog.Root open onOpenChange={(next) => !next && onClose()}>
             <Dialog.Content maxWidth="480px">
                 <Dialog.Title>
-                    {typeNames[type]} 차단 {initial ? "수정" : "추가"}
+                    {TYPE_NAMES[type]} 차단 {initial ? "수정" : "추가"}
                 </Dialog.Title>
                 <Dialog.Description size="2" mb="4">
-                    {initial ? `${typeNames[type]} 항목을 수정합니다.` : `${typeNames[type]} 차단 항목을 추가합니다.`}
+                    {initial ? `${TYPE_NAMES[type]} 항목을 수정합니다.` : `${TYPE_NAMES[type]} 차단 항목을 추가합니다.`}
                 </Dialog.Description>
 
                 <Flex direction="column" gap="3">
@@ -67,7 +58,7 @@ export const BlockDialog = ({open, type, typeNames, modeNames, initial, onClose,
                             </Text>
                         </Flex>
                         <TextField.Root
-                            placeholder={`${typeNames[type]} 값을 입력하세요`}
+                            placeholder={`${TYPE_NAMES[type]} 값을 입력하세요`}
                             value={content}
                             onChange={(event) => setContent(event.target.value)}
                             onKeyDown={(event) => event.key === "Enter" && submit()}
@@ -96,7 +87,7 @@ export const BlockDialog = ({open, type, typeNames, modeNames, initial, onClose,
                         <RefresherSelect
                             value={mode}
                             onChange={(next) => setMode(next as DetectMode | "")}
-                            options={[["", "기본값"], ...Object.entries(modeNames)]}
+                            options={[["", "기본값"], ...Object.entries(DETECT_MODE_NAMES)]}
                         />
                     </Flex>
 

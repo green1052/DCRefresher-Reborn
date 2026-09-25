@@ -23,17 +23,17 @@ const matches = (entry: BlockEntry, mode: DetectMode, content: string): boolean 
     if (entry.isRegex) {
         const regex = compile(entry.content);
         if (!regex) return false;
-        const matched = content.match(regex);
 
         switch (mode) {
+            // 첫 매치 == 전체로 보면 `닉1|닉1a`처럼 앞 대안이 짧게 매치할 때 완전 일치를 놓친다 — 전체를 앵커로 감싸 본다
             case "SAME":
-                return matched?.[0] === content;
+                return compile(`^(?:${entry.content})$`)?.test(content) === true;
             case "CONTAIN":
-                return matched !== null;
+                return regex.test(content);
             case "NOT_SAME":
-                return matched?.[0] !== content;
+                return compile(`^(?:${entry.content})$`)?.test(content) === false;
             case "NOT_CONTAIN":
-                return matched === null;
+                return !regex.test(content);
         }
     }
 

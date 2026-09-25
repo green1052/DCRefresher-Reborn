@@ -26,7 +26,7 @@ const run = (filter: Filter, element: HTMLElement): void => {
     }
 };
 
-// 추가된 요소 자신 → 자손 → 조상(추가된 자식 때문에 조건을 새로 만족한 부모) 순으로 수집
+// 추가된 요소 자신 → 조상(추가된 자식 때문에 조건을 새로 만족한 부모) → 자손 순으로 수집
 const collect = (element: HTMLElement, scope: string, matches: Set<HTMLElement>): void => {
     try {
         if (element.matches(scope)) matches.add(element);

@@ -7,14 +7,21 @@ import {ConfirmDialog} from "@/components/ConfirmDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
 import {BLOCK_TYPES, DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
+import {composeExtra} from "@/features/block/request";
 import {type BlockInputFields, normalizeBlockList, useBlocksStore} from "@/stores/blocks";
 
 import {Empty, ImportDialog} from "./Layout";
 
-/** 디시콘 이미지 (묶음 정규식이면 첫 코드) */
+/** 디시콘 이미지 (묶음 정규식이면 첫 코드 — 디시콘이 하나뿐인 묶음은 "^(code)$") */
 const dcconImage = (entry: BlockEntry): string => {
-    const code = entry.isRegex ? (entry.content.match(/^\^\((\w+)\|/)?.[1] ?? entry.content) : entry.content;
+    const code = entry.isRegex ? (entry.content.match(/^\^\((\w+)[|)]/)?.[1] ?? entry.content) : entry.content;
     return `https://image.dcinside.com/dccon.php?no=${code}`;
+};
+
+/** 정보 칸 — 플래그는 필드에서 만들고, 예전 항목처럼 extra가 플래그 문자열이면 두 번 쓰지 않는다 */
+const entryInfo = (entry: BlockEntry): string => {
+    const flags = composeExtra(entry, DETECT_MODE_NAMES);
+    return [flags, entry.extra !== flags ? entry.extra : null].filter(Boolean).join(" · ") || "—";
 };
 
 export function BlockTab() {
@@ -44,11 +51,10 @@ export function BlockTab() {
     const submitImport = async (text: string): Promise<void> => {
         try {
             const parsed = JSON.parse(text) as Record<string, unknown>;
-            for (const type of BLOCK_TYPES) {
-                const list = parsed[type];
-                if (!Array.isArray(list)) continue;
-                await setEntries(type, normalizeBlockList(list));
-            }
+            const types = BLOCK_TYPES.filter((type) => Array.isArray(parsed[type]));
+            // 차단 목록이 하나도 없으면 다른 데이터(메모/설정 내보내기)를 붙여넣은 것
+            if (types.length === 0) throw new Error();
+            for (const type of types) await setEntries(type, normalizeBlockList(parsed[type]));
             setImportOpen(false);
             setNotice("차단 목록을 가져왔습니다.");
         } catch {
@@ -59,14 +65,8 @@ export function BlockTab() {
     const handleSubmit = async (fields: BlockInputFields): Promise<void> => {
         if (!dialog) return;
 
-        // 디시콘은 생성시 부여된 별명("제목 [패키지번호]")을 유지
-        const next = dialog.type === "DCCON" && dialog.initial?.extra ? {
-            ...fields,
-            extra: dialog.initial.extra
-        } : fields;
-
-        if (dialog.initial) await updateEntry(dialog.type, dialog.initial.id, next);
-        else await addEntry(dialog.type, next);
+        if (dialog.initial) await updateEntry(dialog.type, dialog.initial.id, fields);
+        else await addEntry(dialog.type, fields);
 
         setDialog(null);
     };
@@ -157,7 +157,7 @@ export function BlockTab() {
                                                 </Table.RowHeaderCell>
                                                 <Table.Cell>
                                                     <Text size="2" color="gray">
-                                                        {[entry.gallery ? `갤러리: ${entry.gallery}` : null, entry.extra].filter(Boolean).join(" · ") || "—"}
+                                                        {entryInfo(entry)}
                                                     </Text>
                                                 </Table.Cell>
                                                 <Table.Cell>
@@ -186,33 +186,34 @@ export function BlockTab() {
 
             {dialog && (
                 <BlockDialog
-                    open
                     type={dialog.type}
-                    typeNames={TYPE_NAMES}
-                    modeNames={DETECT_MODE_NAMES}
                     initial={dialog.initial}
                     onClose={() => setDialog(null)}
                     onSubmit={handleSubmit}
                 />
             )}
 
-            <ConfirmDialog
-                open={clearConfirm !== null}
-                title={`${clearConfirm ? TYPE_NAMES[clearConfirm] : ""} 차단 목록을 모두 삭제할까요?`}
-                confirmLabel="삭제"
-                danger
-                onConfirm={() => {
-                    if (clearConfirm) void clearType(clearConfirm);
-                    setClearConfirm(null);
-                }}
-                onClose={() => setClearConfirm(null)}
-            />
+            {clearConfirm && (
+                <ConfirmDialog
+                    title={`${TYPE_NAMES[clearConfirm]} 차단 목록을 모두 삭제할까요?`}
+                    confirmLabel="삭제"
+                    danger
+                    onConfirm={() => {
+                        void clearType(clearConfirm);
+                        setClearConfirm(null);
+                    }}
+                    onClose={() => setClearConfirm(null)}
+                />
+            )}
 
-            <ConfirmDialog open={notice !== null} title={notice ?? ""} cancelLabel={null}
-                           onClose={() => setNotice(null)} onConfirm={() => setNotice(null)}/>
+            {notice && (
+                <ConfirmDialog title={notice} cancelLabel={null}
+                               onClose={() => setNotice(null)} onConfirm={() => setNotice(null)}/>
+            )}
 
-            <ImportDialog open={importOpen} title="차단 목록 가져오기"
-                          onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
+            {importOpen && (
+                <ImportDialog title="차단 목록 가져오기" onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
+            )}
         </Card>
     );
 }

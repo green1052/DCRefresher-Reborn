@@ -1,9 +1,7 @@
 import {Button, Dialog, Flex} from "@radix-ui/themes";
 
 interface ConfirmDialogProps {
-    open: boolean;
     title: string;
-    description?: string;
     confirmLabel?: string;
     /** null이면 취소 버튼 없음 (알림 전용) */
     cancelLabel?: string | null;
@@ -12,23 +10,21 @@ interface ConfirmDialogProps {
     onClose: () => void;
 }
 
-/** Themes Dialog 기반 confirm()/alert() 대체. 외부 클릭/Esc로 닫힘 */
+/**
+ * Themes Dialog 기반 confirm()/alert() 대체. 외부 클릭/Esc로 닫힘.
+ * 열 때만 마운트한다 — 닫힘 애니메이션 동안 비워진 제목("null" 등)이 비치지 않게
+ */
 export const ConfirmDialog = ({
-                                  open,
                                   title,
-                                  description,
                                   confirmLabel = "확인",
                                   cancelLabel = "취소",
                                   danger,
                                   onConfirm,
                                   onClose
                               }: ConfirmDialogProps) => (
-    <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
+    <Dialog.Root open onOpenChange={(next) => !next && onClose()}>
         <Dialog.Content maxWidth="440px">
             <Dialog.Title>{title}</Dialog.Title>
-            {description && (
-                <Dialog.Description size="2">{description}</Dialog.Description>
-            )}
 
             <Flex gap="3" justify="end" mt="4">
                 {cancelLabel !== null && (
