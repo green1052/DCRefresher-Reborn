@@ -25,7 +25,8 @@ jobs:
                     bun-version-file: package.json
 
             -   name: Install Dependencies
-                run: bun ci
+                # build-db는 .wxt가 필요 없다 — postinstall(wxt prepare)을 건너뛴다
+                run: bun ci --ignore-scripts
 
             -   name: Build
                 run: bun scripts/build-db.ts

@@ -24,7 +24,8 @@ type Range<T> = { start: number; end: number; value: T };
 
 /** MMDB의 IPv4 전체를 주소 순으로 — 라이브러리에 순회가 없어 네트워크 끝으로 건너뛰며 조회한다 */
 const readMmdb = async <T, V>(edition: string, pick: (record: T) => V | undefined): Promise<Range<V>[]> => {
-    const reader = new Reader<T & object>(Buffer.from(await ky.get(MMDB_URL(edition)).arrayBuffer()));
+    // 디코더 캐시 — 수많은 네트워크가 같은 레코드(국가·ASN)를 가리켜 같은 디코드를 되풀이한다. 순회가 몇 배 빨라지고 출력은 같다
+    const reader = new Reader<T & object>(Buffer.from(await ky.get(MMDB_URL(edition)).arrayBuffer()), {cache: new Map()});
     const ranges: Range<V>[] = [];
 
     for (let start = 0; start <= 0xffffffff;) {
