@@ -1,5 +1,4 @@
 import {defineModule} from "@/core/module/define";
-import {eventBus} from "@/core/eventbus/bus";
 import {useUiStore} from "@/stores/ui";
 
 const CONTROL_BUTTON = ".stealth_control_button";
@@ -71,12 +70,6 @@ export default defineModule({
             document.addEventListener("DOMContentLoaded", createButton, {once: true});
             ctx.addCleanup(() => document.removeEventListener("DOMContentLoaded", createButton));
         }
-
-        // DC는 목록을 갈아끼우므로 버튼이 사라졌으면 다시 만든다
-        const offNewPostList = eventBus.on("newPostList", () => {
-            if (document.body) createButton();
-        });
-        ctx.addCleanup(() => void offNewPostList());
     },
 
     revoke() {

@@ -133,6 +133,8 @@ export default defineModule({
 
                 element.addEventListener("click", (ev) => {
                     if (!ctx.settings.deleteViaCtrl || !ev.ctrlKey) return;
+                    // 체크박스 칸과 댓글 수(미리보기가 댓글만 열린다)는 삭제로 가로채지 않는다 — 제목 Ctrl+클릭은 v5처럼 삭제
+                    if (ev.target instanceof Element && ev.target.closest("td:has(.article_chkbox), .reply_numbox")) return;
 
                     const postId = element.dataset.no;
                     if (!postId) return;

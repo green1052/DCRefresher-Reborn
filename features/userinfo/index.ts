@@ -218,7 +218,12 @@ export default defineModule({
     async setup(ctx) {
         publishBadgeColors(ctx);
 
+        // 조회 중에 모듈이 꺼지면 revoke가 지운 배지·글댓비를 다시 그리지 않게 한다 (setup을 기다리는 동안 꺼져도 마찬가지)
+        let alive = true;
+        ctx.addCleanup(() => (alive = false));
+
         ratios = asRatios((await ratioStorage.getValue())?.ratio);
+        if (!alive) return;
         publishRatios(ctx);
         const unwatchRatios = ratioStorage.watch((next) => {
             ratios = asRatios(next?.ratio);
@@ -264,15 +269,18 @@ export default defineModule({
                 // 저장소의 최신 값에 병합 (다른 탭이 그사이 쓴 것 유지). 만료 항목은 여기서 버린다 — 안 그러면 uid마다 계속 쌓인다
                 const now = Date.now();
                 const stored = asRatios((await ratioStorage.getValue())?.ratio);
+                if (!alive) return;
+
                 ratios = Object.fromEntries([
                     ...Object.entries(stored).filter(([, info]) => isFresh(info)),
                     ...fresh.map(([uid, info]) => [uid, {...info, date: now}])
                 ]);
                 await ratioStorage.setValue({ratio: ratios as unknown as JsonValue});
+                if (!alive) return;
 
                 publishRatios(ctx);
                 rebuildAll(ctx);
-            });
+            }).catch(console.error);
         });
 
         ctx.addCleanup(() => {

@@ -1,6 +1,7 @@
 import {http} from "@/core/http/client";
 import {listUrl, mergeParamURL, queryString} from "@/core/http/urls";
 import {defineModule} from "@/core/module/define";
+import type {ModuleContext} from "@/core/module/types";
 import {eventBus} from "@/core/eventbus/bus";
 import {useUiStore} from "@/stores/ui";
 
@@ -40,6 +41,11 @@ const checkboxCellFactory = (oldRows: HTMLTableRowElement[]): ((no: string | und
         }
         return cell;
     };
+};
+
+/** 방문 링크 색상 (Firefox 대응) */
+const applyDoNotColorVisited = (ctx: ModuleContext): void => {
+    document.documentElement.classList.toggle("refresherDoNotColorVisited", ctx.settings.doNotColorVisited === true);
 };
 
 /** 검색어 강조 (TreeWalker, 텍스트 노드만) */
@@ -165,10 +171,7 @@ export default defineModule({
         );
         ctx.addCleanup(() => button?.remove());
 
-        // 방문 링크 색상 (Firefox 대응)
-        if (ctx.settings.doNotColorVisited) {
-            document.documentElement.classList.add("refresherDoNotColorVisited");
-        }
+        applyDoNotColorVisited(ctx);
 
         // ===== load =====
         const load = async (customURL?: string, force?: boolean): Promise<boolean> => {
@@ -375,6 +378,10 @@ export default defineModule({
         };
 
         return api;
+    },
+
+    onChanged(ctx, key) {
+        if (key === "doNotColorVisited") applyDoNotColorVisited(ctx);
     },
 
     revoke() {

@@ -23,7 +23,7 @@ const dcconCode = (element: HTMLElement): string | undefined => {
 
 const isViewPage = (): boolean => location.href.includes("/board/view");
 
-const setupFilters = (ctx: ModuleContext, gallery: string | undefined): void => {
+const setupFilters = (ctx: ModuleContext, gallery: string | undefined): (() => void) => {
     const useBlur = () => ctx.settings.blur === true;
 
     const hide = (element: HTMLElement, blur: boolean): void => {
@@ -104,16 +104,21 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): void => 
         }
     }
 
-    // 필터는 DOM 삽입 때만 돌아서, 차단 목록이 바뀌면 이미 그려진 요소를 직접 다시 판정한다.
+    // 필터는 DOM 삽입 때만 돌아서, 차단 목록이나 숨기는 방식(블러/대댓글)이 바뀌면 이미 그려진 요소를 직접 다시 판정한다.
     // 본문 TEXT 치환은 되돌릴 수 없으니 본문 차단을 풀면 새로고침 전까지는 그대로다
-    ctx.addCleanup(useBlocksStore.subscribe((state, previous) => {
-        if (state.entries === previous.entries && state.defaults === previous.defaults) return;
-
+    const recheck = (): void => {
         restoreHiddenElements();
         for (const element of document.querySelectorAll<HTMLElement>(".ub-writer")) checkWriter(element);
         for (const element of document.querySelectorAll<HTMLElement>(".written_dccon")) checkDccon(element);
         if (isViewPage() && document.readyState !== "loading") checkText();
+    };
+
+    ctx.addCleanup(useBlocksStore.subscribe((state, previous) => {
+        if (state.entries === previous.entries && state.defaults === previous.defaults) return;
+        recheck();
     }));
+
+    return recheck;
 };
 
 const setupSelection = (ctx: ModuleContext): void => {
@@ -164,6 +169,9 @@ const restoreHiddenElements = (): void => {
     }
 };
 
+/** 설정(블러/대댓글)이 바뀌면 onChanged가 setup의 판정 함수로 다시 그린다 */
+let recheck: (() => void) | undefined;
+
 export default defineModule({
     id: "block",
     name: "컨텐츠 차단",
@@ -189,8 +197,13 @@ export default defineModule({
     setup(ctx) {
         const gallery = queryString("id") ?? undefined;
 
-        setupFilters(ctx, gallery);
+        recheck = setupFilters(ctx, gallery);
+        ctx.addCleanup(() => (recheck = undefined));
         setupSelection(ctx);
+    },
+
+    onChanged() {
+        recheck?.();
     },
 
     revoke() {

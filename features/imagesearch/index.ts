@@ -9,7 +9,8 @@ const searchSauceNao = (src: string): void => {
     url.host = "image.dcinside.com";
     url.pathname = "/dccon.php";
 
-    window.open(`https://saucenao.com/search.php?url=${encodeURIComponent(url.toString())}`);
+    // 외부 사이트가 opener로 디시 탭을 다른 주소로 바꾸지 못하게 끊는다
+    window.open(`https://saucenao.com/search.php?url=${encodeURIComponent(url.toString())}`, "_blank", "noopener");
 };
 
 export default defineModule({

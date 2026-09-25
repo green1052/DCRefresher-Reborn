@@ -5,6 +5,9 @@ import {CONTEXT_MENUS, type ContextMenuAction, onMessage, sendMessage} from "@/c
 import {backupStorage, dbStorage} from "@/core/storage/items";
 
 const DATABASE_UPDATE_INTERVAL = 604_800_000; // 7일
+const DATABASE_RETRY_INTERVAL = 3_600_000; // 1시간
+/** 주기 갱신을 마지막으로 시도한 시각 (session — 브라우저를 다시 켜면 바로 시도) */
+const DATABASE_ATTEMPT_KEY = "refresher:dbAttempt";
 const AUTO_BACKUP_ALARM = "refresher:autoBackup";
 
 const GRECAPTCHA_SITE_KEY = "6Lc-Fr0UAAAAAOdqLYqPy53MxlRMIXpNXFvBliwI";
@@ -100,9 +103,14 @@ export default defineBackground(() => {
     if (import.meta.env.PROD) {
         void (async () => {
             const {lastUpdate} = await dbStorage.getValue();
-            if (!lastUpdate || Date.now() - lastUpdate > DATABASE_UPDATE_INTERVAL) {
-                await update();
-            }
+            if (lastUpdate && Date.now() - lastUpdate <= DATABASE_UPDATE_INTERVAL) return;
+
+            // 서비스 워커가 깰 때마다 여기가 다시 돈다 — DB 서버가 죽어 있으면 lastUpdate가 그대로라 깰 때마다 받으러 가니 시도 간격을 둔다
+            const {[DATABASE_ATTEMPT_KEY]: lastAttempt} = await browser.storage.session.get(DATABASE_ATTEMPT_KEY);
+            if (typeof lastAttempt === "number" && Date.now() - lastAttempt < DATABASE_RETRY_INTERVAL) return;
+            await browser.storage.session.set({[DATABASE_ATTEMPT_KEY]: Date.now()});
+
+            await update();
         })();
     }
 

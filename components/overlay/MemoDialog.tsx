@@ -73,7 +73,8 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                     placeholder="메모를 입력해주세요 (160자 제한)"
                     value={text}
                     onChange={(ev) => setForm({...form, text: ev.target.value})}
-                    onKeyDown={(ev) => ev.key === "Enter" && void submit()}
+                    // 한글 조합 중 Enter는 keydown이 조합 확정용까지 두 번 와서 두 번 저장된다
+                    onKeyDown={(ev) => ev.key === "Enter" && !ev.nativeEvent.isComposing && void submit()}
                     autoFocus
                 >
                     <TextField.Slot>
