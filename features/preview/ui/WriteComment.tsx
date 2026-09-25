@@ -7,6 +7,7 @@ import {overlay} from "@/components/overlay/shadow";
 import {captchaImage, submitComment} from "@/core/preview/request";
 import type {DcinsideDccon} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
+import {loggedInUserId} from "@/utils/user";
 
 import {getGrecaptchaToken} from "../grecaptcha";
 import {DcconPopup} from "./DcconPopup";
@@ -23,6 +24,7 @@ const nonmemberStorage = storage.defineItem<{ nick: string; pw: string }>("local
 export const WriteComment = () => {
     const reply = usePreviewStore((s) => s.reply);
     const [login] = useState(() => Boolean(document.querySelector("#login_box .user_info .nickname > em")));
+    const [accountId] = useState(loggedInUserId);
     const [nick, setNick] = useState("ㅇㅇ");
     const [password, setPassword] = useState("");
     const [dccons, setDccons] = useState<DcinsideDccon[]>([]);
@@ -168,7 +170,7 @@ export const WriteComment = () => {
             </Flex>
 
             <Text as="p" size="1" color="gray" mt="2">
-                {login ? "회원 계정" : (
+                {login ? (accountId ?? "회원 계정") : (
                     <Link size="1" href="#" onClick={(event) => {
                         event.preventDefault();
                         setShowInputs((v) => !v);
