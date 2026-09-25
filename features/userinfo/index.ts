@@ -118,13 +118,17 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
 };
 
 /** 미리보기 댓글도 같은 색을 쓰게 공유 */
-const publishIpColors = (ctx: ModuleContext): void =>
+const publishBadgeColors = (ctx: ModuleContext): void =>
     useUiStore.setState({
-        ipColors: Object.fromEntries(Object.entries(IP_COLOR_SETTING).map(([category, key]) => [category, String(ctx.settings[key])]))
+        badgeColors: {
+            ...Object.fromEntries(Object.entries(IP_COLOR_SETTING).map(([category, key]) => [category, String(ctx.settings[key])])),
+            // 갱차 조회를 끄면 미리보기에서도 숨긴다
+            permBan: ctx.settings.checkPermBan === true ? String(ctx.settings.permBanColor) : undefined
+        }
     });
 
 const rebuildAll = (ctx: ModuleContext): void => {
-    publishIpColors(ctx);
+    publishBadgeColors(ctx);
 
     // 배지가 없던 작성자도 포함 — 설정을 켜서 새로 생기는 배지가 있다 (필터 선택자와 같은 대상)
     for (const element of document.querySelectorAll<HTMLElement>(".ub-writer:not([user_name])")) {
@@ -198,7 +202,7 @@ export default defineModule({
     },
 
     setup(ctx) {
-        publishIpColors(ctx);
+        publishBadgeColors(ctx);
 
         ctx.addFilter(
             ".ub-writer:not([user_name])",
@@ -262,7 +266,7 @@ export default defineModule({
     },
 
     revoke() {
-        useUiStore.setState({ipColors: {}});
+        useUiStore.setState({badgeColors: {}});
 
         for (const element of document.querySelectorAll<HTMLElement>(".ub-writer[data-refresher-user-info]")) {
             delete element.dataset.refresherUserInfo;

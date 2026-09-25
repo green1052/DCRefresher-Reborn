@@ -32,8 +32,8 @@ interface UiState {
     selected: SelectedUser | null;
     bubble: { x: number; y: number } | null;
     memo: MemoTargetState | null;
-    /** IP 정보 색 (userinfo 설정) — 모듈이 꺼져 있으면 비어 있다 */
-    ipColors: Partial<Record<IpCategory, string>>;
+    /** IP 정보·갱차 색 (userinfo 설정) — 모듈이 꺼져 있으면 비어 있고, 갱차 조회를 끄면 permBan이 없다 */
+    badgeColors: Partial<Record<IpCategory | "permBan", string>>;
 
     showToast: (content: string, type?: ToastLevel, autoClose?: number, onClick?: () => void) => void;
     dismissToast: (id?: number) => void;
@@ -55,7 +55,7 @@ export const useUiStore = create<UiState>((set, get) => ({
     selected: null,
     bubble: null,
     memo: null,
-    ipColors: {},
+    badgeColors: {},
 
     showToast: (content, type = "info", autoClose = 5000, onClick) => {
         set({toast: {id: ++toastSeq, content, type, autoClose, onClick}});

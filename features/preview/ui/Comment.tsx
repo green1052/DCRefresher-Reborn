@@ -6,7 +6,7 @@ import {overlay} from "@/components/overlay/shadow";
 import type {ProcessedComment} from "@/core/preview/comments";
 import {adminDeleteComment, userDeleteComment} from "@/core/preview/request";
 import {useUiStore} from "@/stores/ui";
-import {ipInfoOf} from "@/core/database";
+import {banReasonsOf, ipInfoOf} from "@/core/database";
 import {isGalleryManager} from "@/utils/user";
 
 import {usePreviewStore} from "./previewStore";
@@ -73,7 +73,9 @@ export interface UserCardData {
 /** 작성자 표시. 우클릭하면 유저 버블 */
 export const UserCard = ({user}: { user: UserCardData }) => {
     const ipInfo = user.ip ? ipInfoOf(user.ip) : undefined;
-    const ipColor = useUiStore((state) => (ipInfo ? state.ipColors[ipInfo.category] : undefined));
+    const ipColor = useUiStore((state) => (ipInfo ? state.badgeColors[ipInfo.category] : undefined));
+    const banReasons = user.id ? banReasonsOf(user.id) : undefined;
+    const banColor = useUiStore((state) => state.badgeColors.permBan);
     const info = [user.id, user.ip].filter(Boolean).join(" / ");
 
     const openMenu = (event: MouseEvent): void => {
@@ -91,6 +93,7 @@ export const UserCard = ({user}: { user: UserCardData }) => {
             {user.image && <img src={user.image} alt="" height={12}/>}
             {info && <Text size="1" color="gray" truncate>({info})</Text>}
             {ipInfo && <Text size="1" color={ipColor ? undefined : "blue"} style={{color: ipColor}} title={ipInfo.title} truncate>[{ipInfo.label}]</Text>}
+            {banReasons && banColor && <Text size="1" style={{color: banColor}} title={banReasons} truncate>[{banReasons}]</Text>}
         </Flex>
     );
 };
