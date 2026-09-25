@@ -66,3 +66,12 @@ export const queryString = (name: string): string | null => new URLSearchParams(
 export const isViewPage = location.pathname.includes("/board/view");
 /** 글 보기 페이지가 보여 주는 글 번호 */
 export const pagePostNo = isViewPage ? queryString("no") : null;
+
+/** 목록 행의 글 번호. 글 보기 아래 목록의 행엔 data-no가 없어 같은 갤러리로 가는 제목 링크의 no를 쓴다 */
+export const rowPostNo = (row: HTMLElement): string | undefined => {
+    if (row.dataset.no) return row.dataset.no;
+
+    const href = row.querySelector(".gall_tit > a")?.getAttribute("href");
+    const params = href ? URL.parse(href, location.href)?.searchParams : undefined;
+    return (params?.get("id") === queryString("id") && params?.get("no")) || undefined;
+};

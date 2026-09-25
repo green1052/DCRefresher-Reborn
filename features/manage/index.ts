@@ -1,5 +1,5 @@
 import {defineModule} from "@/core/module/define";
-import {galleryTypeName, isMiniGallery, urls} from "@/core/http/urls";
+import {galleryTypeName, isMiniGallery, rowPostNo, urls} from "@/core/http/urls";
 import {postManage} from "@/core/preview/request";
 import {useUiStore} from "@/stores/ui";
 import {csrfToken} from "@/utils/cookie";
@@ -126,6 +126,9 @@ export default defineModule({
             }
         };
 
+        // 삭제 요청을 보낸 글 — 응답 전에 다시 눌러도 요청을 또 보내지 않는다
+        const deleting = new Set<string>();
+
         ctx.addFilter(
             ".gall_list .ub-content",
             (element) => {
@@ -138,15 +141,19 @@ export default defineModule({
                     // 체크박스 칸과 댓글 수(미리보기가 댓글만 열린다)는 삭제로 가로채지 않는다 — 제목 Ctrl+클릭은 v5처럼 삭제
                     if (ev.target instanceof Element && ev.target.closest("td:has(.article_chkbox), .reply_numbox")) return;
 
-                    const postId = element.dataset.no;
+                    const postId = rowPostNo(element);
                     if (!postId) return;
 
+                    // 요청 중에 다시 누른 것도 새 탭으로 열리지 않게 막은 뒤 거른다
                     ev.preventDefault();
                     ev.stopPropagation();
+                    if (deleting.has(postId)) return;
+                    deleting.add(postId);
+
                     void deletePost(postId).then((deleted) => {
                         // 목록이 새로고침될 때까지(refresh가 꺼져 있으면 계속) 남겨 두면 다시 Ctrl+클릭해 지운 글에 요청이 또 간다
                         if (deleted) element.remove();
-                    });
+                    }).finally(() => deleting.delete(postId));
                 }, {signal: handlers.signal});
             }
         );

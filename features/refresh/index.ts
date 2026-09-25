@@ -1,5 +1,5 @@
 import {http} from "@/core/http/client";
-import {isViewPage, listUrl, mergeParamURL, pagePostNo, queryString} from "@/core/http/urls";
+import {isViewPage, listUrl, mergeParamURL, pagePostNo, queryString, rowPostNo} from "@/core/http/urls";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext} from "@/core/module/types";
 import {eventBus} from "@/core/eventbus/bus";
@@ -49,6 +49,9 @@ const checkboxCellFactory = (oldRows: HTMLTableRowElement[]): ((no: string | und
         return cell;
     };
 };
+
+/** 새 글 판정용 행 키. 번호 없는 행(설문·AD, 다른 갤러리 공지)은 번호 칸 글자로 구분한다 */
+const rowKey = (row: HTMLElement): string => rowPostNo(row) ?? row.querySelector(".gall_num")?.textContent ?? "";
 
 /** 방문 링크 색상 (Firefox 대응) */
 const applyDoNotColorVisited = (ctx: ModuleContext): void => {
@@ -243,7 +246,7 @@ export default defineModule({
                 const searchType = new URL(target).searchParams.get("s_type");
 
                 const oldRows = Array.from(oldList.querySelectorAll<HTMLTableRowElement>(":scope > tr"));
-                const oldCacheSet = new Set(oldRows.map((row) => row.dataset.no ?? (row.querySelector(".gall_num")?.textContent ?? "")));
+                const oldCacheSet = new Set(oldRows.map(rowKey));
 
                 const newRows = Array.from(newList.querySelectorAll<HTMLTableRowElement>(":scope > tr"));
                 const newPostList: HTMLTableRowElement[] = [];
@@ -253,7 +256,7 @@ export default defineModule({
                 const checkboxCell = hasCheckboxColumn ? checkboxCellFactory(oldRows) : null;
 
                 for (const element of newRows) {
-                    const no = element.dataset.no ?? (element.querySelector<HTMLElement>(".gall_num")?.textContent ?? "");
+                    const no = rowKey(element);
 
                     if (checkboxCell && !element.querySelector(".article_chkbox")) {
                         // 댓글 검색 결과에선 댓글 행에만 체크박스가 있다
