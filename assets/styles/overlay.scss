@@ -13,6 +13,11 @@
     --default-font-family: var(--refresher-font, -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif);
 }
 
+/* Radix 루트 Theme(z-index: 0)이 쌓임 맥락을 만들어, 그 안의 토스트가 z-index와 상관없이 포털(미리보기) 아래로 깔린다 */
+:host [data-is-root-theme="true"] {
+    z-index: auto;
+}
+
 /* 호스트는 클릭을 통과시키고, 실제 UI만 받는다 */
 #portal > *,
 .refresher-interactive {
@@ -192,15 +197,17 @@
     font-size: var(--font-size-2);
 }
 
-/* ===== 관리 패널 ===== */
+/* ===== 관리 패널 (v5처럼 왼쪽 가장자리) ===== */
 
-.refresher-manage-panel {
+.refresher-admin-panel {
     position: fixed;
-    z-index: 1;
     top: 20%;
     left: 0;
+    z-index: 1;
+    width: 150px;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
+    animation: refresher-fade-in 0.15s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 /* ===== 디시콘 ===== */

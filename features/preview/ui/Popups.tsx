@@ -1,5 +1,6 @@
-import {Button, Card, Checkbox, Dialog, Flex, Grid, RadioGroup, Text, TextField} from "@radix-ui/themes";
-import {useState} from "react";
+import {Button, Card, Checkbox, Dialog, Flex, Grid, Kbd, RadioGroup, Text, TextField} from "@radix-ui/themes";
+import {ArrowBigUpDash, Ban, Megaphone, Star, Trash2} from "lucide-react";
+import {type ReactNode, useState} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
 import {eventBus} from "@/core/eventbus/bus";
@@ -26,34 +27,6 @@ const BLOCK_REASONS: [string, string][] = [
     ["6", "명예훼손"],
     ["0", "직접 입력"]
 ];
-
-const AdminPanel = () => {
-    const notice = usePreviewStore((s) => s.notice);
-    const recommend = usePreviewStore((s) => s.recommend);
-    const requestManage = usePreviewStore((s) => s.requestManage);
-
-    return (
-        <Card size="1" className="refresher-manage-panel refresher-interactive">
-            <Flex direction="column" gap="1" width="110px">
-                <Button size="1" variant="soft" color="gray" onClick={() => requestManage("notice")}>
-                    {notice ? "공지 해제" : "공지 등록"}
-                </Button>
-                <Button size="1" variant="soft" color="gray" onClick={() => requestManage("recommend")}>
-                    {recommend ? "개념글 해제" : "개념글 등록"}
-                </Button>
-                <Button size="1" variant="soft" color="gray" onClick={() => requestManage("bump")}>
-                    끌올
-                </Button>
-                <Button size="1" variant="soft" color="red" onClick={() => usePreviewStore.getState().openBlockPopup()}>
-                    차단 (B)
-                </Button>
-                <Button size="1" variant="soft" color="red" onClick={() => requestManage("delete")}>
-                    삭제 (D)
-                </Button>
-            </Flex>
-        </Card>
-    );
-};
 
 const BlockPopup = () => {
     const preData = usePreviewStore((s) => s.preData);
@@ -183,14 +156,55 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
     );
 };
 
+/** 관리 권한이 있을 때 미리보기 왼쪽 가장자리에 붙는 관리 패널 (D/B 두 번 누르기 단축키와 같은 동작) */
+const AdminPanel = () => {
+    const notice = usePreviewStore((s) => s.notice);
+    const recommend = usePreviewStore((s) => s.recommend);
+    const requestManage = usePreviewStore((s) => s.requestManage);
+
+    const actions: { label: string; hint?: string; icon: ReactNode; active?: boolean; danger?: boolean; run: () => void }[] = [
+        {label: notice ? "공지 해제" : "공지 등록", icon: <Megaphone size={14}/>, active: notice, run: () => requestManage("notice")},
+        {label: recommend ? "개념글 해제" : "개념글 등록", icon: <Star size={14}/>, active: recommend, run: () => requestManage("recommend")},
+        {label: "끌올", icon: <ArrowBigUpDash size={14}/>, run: () => requestManage("bump")},
+        {label: "차단", hint: "B", icon: <Ban size={14}/>, danger: true, run: () => usePreviewStore.getState().openBlockPopup()},
+        {label: "삭제", hint: "D", icon: <Trash2 size={14}/>, danger: true, run: () => requestManage("delete")}
+    ];
+
+    return (
+        <Card size="1" className="refresher-admin-panel refresher-interactive">
+            <Text as="div" size="1" color="gray" weight="medium" mb="2" ml="1">관리</Text>
+            <Flex direction="column" gap="1">
+                {actions.map(({label, hint, icon, active, danger, run}) => (
+                    <Button
+                        key={label}
+                        size="2"
+                        // soft 고정 — ghost와 섞으면 Radix 여백이 달라 흔들린다. 상태는 색으로 표시
+                        variant="soft"
+                        color={danger ? "red" : active ? undefined : "gray"}
+                        highContrast={active}
+                        aria-pressed={active}
+                        style={{justifyContent: "flex-start"}}
+                        onClick={run}
+                    >
+                        {icon}
+                        <Text style={{flex: 1, textAlign: "left"}}>{label}</Text>
+                        {hint && <Kbd size="1">{hint}</Kbd>}
+                    </Button>
+                ))}
+            </Flex>
+        </Card>
+    );
+};
+
 export const Popups = () => {
+    const visible = usePreviewStore((s) => s.visible);
     const adminVisible = usePreviewStore((s) => s.adminVisible);
     const blockPopup = usePreviewStore((s) => s.blockPopup);
     const captcha = usePreviewStore((s) => s.captcha);
 
     return (
         <>
-            {adminVisible && <AdminPanel/>}
+            {visible && adminVisible && <AdminPanel/>}
             {blockPopup && <BlockPopup/>}
             {captcha && <CaptchaPopup key={captcha.url} captcha={captcha}/>}
         </>
