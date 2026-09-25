@@ -76,7 +76,8 @@ export interface DcinsideComment {
     gallog_icon?: string;
     ip: string;
     memo: string;
-    is_delete: "0" | "1";
+    /** "0" 살아 있음, 그 밖은 삭제 — 가공하면 "0"/"1"만 남는다 (comments.ts) */
+    is_delete: string;
     del_btn?: "Y" | "N";
     my_cmt?: "Y" | "N";
     date_time: string;
