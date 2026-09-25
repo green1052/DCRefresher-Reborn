@@ -29,6 +29,8 @@ const BADGE_COLORS: Record<string, [name: string, color: string]> = {
     vpn: ["IP VPN", "#8e4ec6"]
 };
 
+const LOW_ACTIVITY_GROUP: SettingGroup = {name: "깡계", desc: "글댓합이 기준 이하인 유저를 깡계로 봅니다. 글댓비 표시가 켜져 있고 글댓비를 받아 둔 유저만 해당합니다."};
+
 const BADGE_COLOR_GROUP: SettingGroup = {name: "배지 색", desc: "유저 정보 배지의 글자 색입니다. IP는 국가별로 칠하고, VPN이면 국가보다 우선합니다."};
 
 const colorsOf = (ctx: ModuleContext): Record<string, string> =>
@@ -210,8 +212,9 @@ export default defineModule({
         },
         alarmRatio: {
             type: "range",
-            name: "깡계 알림",
-            desc: "글댓합이 설정한 값 이하일 때 강조 표시합니다. (0이면 비활성화)",
+            group: LOW_ACTIVITY_GROUP,
+            name: "기준",
+            desc: "글댓합이 이 값 이하면 깡계로 봅니다. (0이면 끔)",
             default: 0,
             min: 0,
             max: 5000,
@@ -220,8 +223,9 @@ export default defineModule({
         },
         lowActivityAction: {
             type: "option",
-            name: "깡계 처리",
-            desc: "글댓합이 깡계 알림 이하인 유저의 글·댓글을 어떻게 보여 줄지 정합니다. 글댓비를 받아 둔 유저만 해당합니다.",
+            group: LOW_ACTIVITY_GROUP,
+            name: "처리",
+            desc: "깡계 유저의 글·댓글을 어떻게 보여 줄지 정합니다.",
             default: "tag",
             items: LOW_ACTIVITY_ACTIONS
         },
