@@ -8,7 +8,7 @@ import {isTyping} from "@/utils/event";
 import {type DcinsideComment, getEntry, setEntry} from "@/core/preview/cache";
 import {processComments} from "@/core/preview/comments";
 import {blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
-import {type ErrorState, type ManageKind, usePreviewStore} from "./ui/previewStore";
+import {type ErrorState, type ManageKind, miniPosition, usePreviewStore} from "./ui/previewStore";
 
 const settings: NonNullable<ModuleDefinition["settings"]> = {
     tooltipMode: {type: "check", name: "미니 미리보기 표시", desc: "게시글에 마우스를 올리면 미리보기를 표시합니다.", default: false},
@@ -427,8 +427,7 @@ const controller = (ctx: ModuleContext) => {
         usePreviewStore.getState().closeMini();
         usePreviewStore.getState().openMini({
             preData,
-            x: Math.max(0, Math.min(x + 16, window.innerWidth - 340)),
-            y: Math.max(0, Math.min(y + 16, window.innerHeight - 220)),
+            ...miniPosition(x, y),
             title: post.header ? `[${post.header}] ${post.title ?? ""}` : (post.title ?? ""),
             contents
         });

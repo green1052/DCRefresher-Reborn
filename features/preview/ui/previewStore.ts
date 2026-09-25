@@ -102,6 +102,16 @@ interface PreviewState {
     }) => void;
 }
 
+/** 미니 미리보기 크기 (Mini.tsx 렌더링과 화면 밖 방지 계산이 공유) */
+export const MINI_WIDTH = 560;
+export const MINI_HEIGHT = 420;
+
+/** 커서 우하단에 띄우되 화면 밖으로 나가지 않게 */
+export const miniPosition = (clientX: number, clientY: number): { x: number; y: number } => ({
+    x: Math.max(0, Math.min(clientX + 16, window.innerWidth - MINI_WIDTH - 20)),
+    y: Math.max(0, Math.min(clientY + 16, window.innerHeight - MINI_HEIGHT - 20))
+});
+
 let signalSeq = 0;
 
 export const usePreviewStore = create<PreviewState>((set, get) => ({
@@ -253,11 +263,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
         set((state) =>
             state.mini
                 ? {
-                      mini: {
-                          ...state.mini,
-                          x: Math.max(0, Math.min(clientX + 16, window.innerWidth - 340)),
-                          y: Math.max(0, Math.min(clientY + 16, window.innerHeight - 220))
-                      }
+                      mini: {...state.mini, ...miniPosition(clientX, clientY)}
                   }
                 : state
         ),

@@ -164,14 +164,15 @@
 /* ===== 미니 미리보기 ===== */
 
 .refresher-mini-preview {
+    display: flex;
+    flex-direction: column;
     position: fixed;
-    width: 320px;
-    max-height: 200px;
     overflow: hidden;
 }
 
 .refresher-mini-contents {
-    max-height: 110px;
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
     font-size: var(--font-size-2);
 }
