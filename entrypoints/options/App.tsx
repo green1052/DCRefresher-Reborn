@@ -157,11 +157,9 @@ const Sidebar = ({tabs, tab, onSelect, onLogoClick, onVersionClick}: {
 export function App() {
     const [tab, setTab] = useHashTab();
     const [devMode, onVersionClick, hideDev] = useDevMode();
-    // 로고 5번 연속 클릭 — 디시콘 비 (이스터에그)
+    // 로고 클릭 — 디시콘 비 (이스터에그)
     const [rain, setRain] = useState(0);
-    const onLogoClick = (ev: MouseEvent): void => {
-        if (ev.detail === DEV_MODE_CLICKS) setRain(Date.now());
-    };
+    const onLogoClick = (): void => setRain(Date.now());
     const tabs = TABS.filter((item) => !item.dev || devMode);
     const current = tabs.find((item) => item.id === tab) ?? tabs[0]!;
 
