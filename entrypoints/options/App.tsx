@@ -1,5 +1,5 @@
 import {Box, Button, Flex, Grid, Heading, Separator, Text} from "@radix-ui/themes";
-import {Ban, CircleHelp, Code, Database, Heart, Keyboard, type LucideIcon, MessageCircle, NotebookPen, Settings, Users, Wrench} from "lucide-react";
+import {Ban, Code, Database, Heart, Keyboard, type LucideIcon, MessageCircle, NotebookPen, Settings, Users, Wrench} from "lucide-react";
 import {type MouseEvent, useEffect, useState} from "react";
 
 import {fontFamilyOf} from "@/features/fonts";
@@ -9,6 +9,7 @@ import {initModulesStore, useModulesStore} from "@/stores/modules";
 
 import {BlockTab} from "./BlockTab";
 import {DataTab} from "./DataTab";
+import {DcconRain} from "./DcconRain";
 import {DevTab} from "./DevTab";
 import {GeneralTab} from "./GeneralTab";
 import {MemoTab} from "./MemoTab";
@@ -36,11 +37,9 @@ const LINKS: [string, string, LucideIcon][] = [
     ["GitHub", "https://github.com/green1052/DCRefresher-Reborn", Code],
     ["갤러리", "https://gall.dcinside.com/mini/board/lists/?id=bjwg64", Users],
     ["Discord", "https://discord.gg/SSW6Zuyjz6", MessageCircle],
-    ["도움말", "https://dcrefresher.green1052.com", CircleHelp],
     ["후원", "https://www.buymeacoffee.com/green1052", Heart]
 ];
 
-// 로고: 원본 assets/icon.png(186KB)를 번들하지 않고, auto-icons가 만든 128px 아이콘(9KB)을 쓴다
 const LOGO_URL = browser.runtime.getURL("/icons/128.png");
 
 const VERSION = browser.runtime.getManifest().version + (import.meta.env.DEV ? "-dev" : "");
@@ -83,12 +82,12 @@ const writeDevMode = (on: boolean): void => {
     }
 };
 
-/** 개발자 탭: 개발 빌드이거나, 로고를 5번 연속 누르면 열린다 (옵션 페이지 localStorage에 기억 — 설정 백업에 섞이지 않게) */
-const useDevMode = (): [boolean, (event: MouseEvent) => void, () => void] => {
+/** 개발자 탭: 개발 빌드이거나, 버전을 5번 연속 누르면 열린다 (옵션 페이지 localStorage에 기억 — 설정 백업에 섞이지 않게) */
+const useDevMode = (): [boolean, (ev: MouseEvent) => void, () => void] => {
     const [unlocked, setUnlocked] = useState(readDevMode);
-    // event.detail: 브라우저가 세는 연속 클릭 횟수 (간격이 벌어지면 1부터)
-    const onLogoClick = (event: MouseEvent): void => {
-        if (event.detail < DEV_MODE_CLICKS || unlocked) return;
+    // ev.detail: 브라우저가 세는 연속 클릭 횟수 (간격이 벌어지면 1부터)
+    const onVersionClick = (ev: MouseEvent): void => {
+        if (ev.detail < DEV_MODE_CLICKS || unlocked) return;
 
         writeDevMode(true);
         setUnlocked(true);
@@ -101,14 +100,15 @@ const useDevMode = (): [boolean, (event: MouseEvent) => void, () => void] => {
         location.hash = "";
     };
 
-    return [import.meta.env.DEV || unlocked, onLogoClick, hide];
+    return [import.meta.env.DEV || unlocked, onVersionClick, hide];
 };
 
-const Sidebar = ({tabs, tab, onSelect, onLogoClick}: {
+const Sidebar = ({tabs, tab, onSelect, onLogoClick, onVersionClick}: {
     tabs: TabDef[];
     tab: string;
     onSelect: (id: string) => void;
-    onLogoClick: (event: MouseEvent) => void;
+    onLogoClick: (ev: MouseEvent) => void;
+    onVersionClick: (ev: MouseEvent) => void;
 }) => (
     <Flex
         direction="column"
@@ -162,14 +162,21 @@ const Sidebar = ({tabs, tab, onSelect, onLogoClick}: {
                     </Button>
                 ))}
             </Grid>
-            <Text as="p" size="1" color="gray" mt="2" style={{paddingInline: "var(--space-2)"}}>v{VERSION}</Text>
+            <Text as="p" size="1" color="gray" mt="2" style={{paddingInline: "var(--space-2)", userSelect: "none"}} onClick={onVersionClick}>
+                v{VERSION}
+            </Text>
         </Box>
     </Flex>
 );
 
 export function App() {
     const [tab, setTab] = useHashTab();
-    const [devMode, onLogoClick, hideDev] = useDevMode();
+    const [devMode, onVersionClick, hideDev] = useDevMode();
+    // 로고 5번 연속 클릭 — 디시콘 비 (이스터에그)
+    const [rain, setRain] = useState(0);
+    const onLogoClick = (ev: MouseEvent): void => {
+        if (ev.detail === DEV_MODE_CLICKS) setRain(Date.now());
+    };
     const tabs = TABS.filter((item) => !item.dev || devMode);
     const current = tabs.find((item) => item.id === tab) ?? tabs[0]!;
 
@@ -190,7 +197,8 @@ export function App() {
 
     return (
         <Flex direction={{initial: "column", md: "row"}} minHeight="100vh">
-            <Sidebar tabs={tabs} tab={current.id} onSelect={setTab} onLogoClick={onLogoClick}/>
+            <Sidebar tabs={tabs} tab={current.id} onSelect={setTab} onLogoClick={onLogoClick} onVersionClick={onVersionClick}/>
+            {rain > 0 && <DcconRain seed={rain} onEnd={() => setRain(0)}/>}
 
             <Box flexGrow="1" minWidth="0" px={{initial: "4", md: "6"}} py="6">
                 <Box maxWidth="880px" mx="auto">
