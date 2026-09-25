@@ -1,9 +1,5 @@
-import {Badge, Box, Button, Flex, Grid, Heading, Link, Separator, Text} from "@radix-ui/themes";
+import {Badge, Box, Button, Flex, Grid, Heading, Text} from "@radix-ui/themes";
 import {BookOpen, Bug, Code, Heart, type LucideIcon, MessageCircle, Star, Tag, Users} from "lucide-react";
-import {Fragment} from "react";
-
-import {dependencies} from "@/package.json";
-
 import {Section} from "./Layout";
 
 const REPO = "https://github.com/green1052/DCRefresher-Reborn";
@@ -49,19 +45,6 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
                         </Button>
                     ))}
                 </Grid>
-            </Section>
-
-            <Section title="라이선스" desc={<>GPL-3.0 — 소스는 <Link href={REPO} target="_blank">GitHub</Link>에서 볼 수 있습니다.</>}>
-                <Text as="p" size="2" weight="medium" mb="2">사용한 오픈소스</Text>
-                {Object.entries(dependencies).map(([name, range]) => (
-                    <Fragment key={name}>
-                        <Separator size="4"/>
-                        <Flex justify="between" py="2">
-                            <Link href={`https://www.npmjs.com/package/${name}`} target="_blank" size="2">{name}</Link>
-                            <Text size="2" color="gray">{range.replace(/^\^/, "")}</Text>
-                        </Flex>
-                    </Fragment>
-                ))}
             </Section>
         </Box>
     );
