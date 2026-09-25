@@ -32,7 +32,9 @@ interface UiState {
     bubble: { x: number; y: number } | null;
     memo: MemoTargetState | null;
     /** IP 정보·갱차 색 (userinfo 설정) — 모듈이 꺼져 있으면 비어 있고, 갱차 조회를 끄면 permBan이 없다 */
-    badgeColors: Partial<Record<IpCategory | "uid" | "permBan", string>>;
+    badgeColors: Partial<Record<IpCategory | "uid" | "permBan" | "ratio" | "ratioAlarm", string>>;
+    /** 글댓비 캐시와 경고 기준 (userinfo) — 글댓비 표시를 끄거나 모듈이 꺼져 있으면 null */
+    ratios: { cache: Record<string, { article: number; comment: number }>; alarm: number } | null;
 
     showToast: (content: string, type?: ToastLevel, autoClose?: number, onClick?: () => void) => void;
     dismissToast: (id?: number) => void;
@@ -52,6 +54,7 @@ export const useUiStore = create<UiState>((set, get) => ({
     bubble: null,
     memo: null,
     badgeColors: {},
+    ratios: null,
 
     showToast: (content, type = "info", autoClose = 5000, onClick) => {
         set({toast: {id: ++toastSeq, content, type, autoClose, onClick}});

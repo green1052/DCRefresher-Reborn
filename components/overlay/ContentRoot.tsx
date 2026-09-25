@@ -8,7 +8,9 @@ import type {ModuleEventData} from "@/core/eventbus/types";
 import {PreviewHost} from "@/features/preview/ui/PreviewHost";
 import {type ToastData, useUiStore} from "@/stores/ui";
 import {banReasonsOf, ipInfoOf} from "@/core/database";
-import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
+import {queryString} from "@/core/http/urls";
+import {useUserMemo} from "@/stores/memos";
+import {type ActivityState, useGallogActivity} from "@/utils/gallogActivity";
 
 import {MemoDialog} from "./MemoDialog";
 import {overlay} from "./shadow";
@@ -80,43 +82,11 @@ const CopyRow = ({label, value, onCopy}: { label: string; value: string; onCopy:
     </Button>
 );
 
-/** 글/댓글 수 — 버블을 열 때 갤로그에서 받는다 (세션 동안 캐시) */
-const activityCache = new Map<string, Promise<GallogActivity | undefined>>();
-
-const useGallogActivity = (uid: string | undefined): GallogActivity | undefined | "loading" | "error" => {
-    const [state, setState] = useState<GallogActivity | undefined | "loading" | "error">(uid ? "loading" : undefined);
-
-    useEffect(() => {
-        // BubbleHost는 계속 마운트돼 있다 — 비우지 않으면 유동 유저 버블에 이전 고정닉의 글/댓글 수가 남는다
-        if (!uid) {
-            setState(undefined);
-            return;
-        }
-        let alive = true;
-        setState("loading");
-
-        if (!activityCache.has(uid)) activityCache.set(uid, fetchGallogActivity(uid).catch(() => undefined));
-        void activityCache.get(uid)!.then((activity) => {
-            if (!alive) return;
-            if (!activity) activityCache.delete(uid);
-            setState(activity ?? "error");
-        });
-
-        return () => {
-            alive = false;
-        };
-    }, [uid]);
-
-    return state;
-};
-
-const formatActivity = (activity: ReturnType<typeof useGallogActivity>): string | undefined => {
+const formatActivity = (activity: ActivityState): string | undefined => {
     if (activity === "loading") return "불러오는 중…";
     if (activity === "error") return "불러오지 못함";
     if (!activity) return undefined;
-    // 글댓비: 글 1개당 댓글 수
-    const ratio = activity.article > 0 ? ` (1:${(activity.comment / activity.article).toFixed(1)})` : "";
-    return `${activity.article.toLocaleString()} / ${activity.comment.toLocaleString()}${ratio}`;
+    return `${activity.article.toLocaleString()} / ${activity.comment.toLocaleString()}`;
 };
 
 /** 아이디와 IP는 한 줄에 병합: "uid (IP)" */
@@ -129,6 +99,7 @@ const BubbleHost = () => {
     const bubble = useUiStore((s) => s.bubble);
     const selected = useUiStore((s) => s.selected);
     const activityState = useGallogActivity(bubble && selected && !selected.dccon ? selected.uid : undefined);
+    const memo = useUserMemo(selected ?? {}, queryString("id"));
 
     // Popover는 스크롤을 따라가지 않으므로 스크롤시 닫는다
     useEffect(() => {
@@ -179,6 +150,7 @@ const BubbleHost = () => {
                             {ipLabel && <CopyRow label="IP 정보" value={ipLabel} onCopy={copy}/>}
                             {activity && <CopyRow label="글/댓글" value={activity} onCopy={copy}/>}
                             {bans && <CopyRow label="차단된 갤러리" value={bans} onCopy={copy}/>}
+                            {memo && <CopyRow label="메모" value={memo.text} onCopy={copy}/>}
                         </Flex>
                         <Separator size="4" my="2"/>
                         <Flex gap="2" wrap="wrap">

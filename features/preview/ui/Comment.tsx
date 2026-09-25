@@ -7,7 +7,9 @@ import type {ProcessedComment} from "@/core/preview/comments";
 import type {User} from "@/core/preview/types";
 import {adminDeleteComment, graphemes, TXTCON_MAX_LINE_LEN, userDeleteComment} from "@/core/preview/request";
 import {notifyManage} from "@/utils/notify";
+import {useUserMemo} from "@/stores/memos";
 import {useUiStore} from "@/stores/ui";
+import {useGallogActivity} from "@/utils/gallogActivity";
 import {banReasonsOf, ipInfoOf} from "@/core/database";
 import {isGalleryManager} from "@/utils/user";
 
@@ -138,13 +140,21 @@ const TimeStamp = ({date}: { date: string }) => {
 };
 
 /** 작성자 표시. 우클릭하면 유저 버블 */
-export const UserCard = ({user}: { user: User }) => {
+/** fetchRatio: 글댓비 캐시에 없으면 갤로그에서 받는다 (글쓴이만 — 댓글마다 받으면 요청이 너무 많다) */
+export const UserCard = ({user, fetchRatio}: { user: User; fetchRatio?: boolean }) => {
     const ipInfo = user.ip ? ipInfoOf(user.ip) : undefined;
     const ipColor = useUiStore((state) => (ipInfo ? state.badgeColors[ipInfo.category] : undefined));
     const banReasons = user.id ? banReasonsOf(user.id) : undefined;
     const banColor = useUiStore((state) => state.badgeColors.permBan);
     const uidColor = useUiStore((state) => state.badgeColors.uid);
     const info = [user.id, user.ip].filter(Boolean).join(" / ");
+    const gallery = usePreviewStore((s) => s.preData?.gallery);
+    const memo = useUserMemo({uid: user.id, ip: user.ip, nick: user.nick}, gallery);
+    const ratios = useUiStore((state) => state.ratios);
+    const cached = user.id ? ratios?.cache[user.id] : undefined;
+    const fetched = useGallogActivity(fetchRatio && ratios && !cached ? user.id : undefined);
+    const ratio = cached ?? (typeof fetched === "object" ? fetched : undefined);
+    const ratioColor = useUiStore((state) => (ratio && ratios && ratios.alarm > 0 && ratio.article + ratio.comment <= ratios.alarm ? state.badgeColors.ratioAlarm : state.badgeColors.ratio));
 
     const openMenu = (event: MouseEvent): void => {
         event.preventDefault();
@@ -160,7 +170,9 @@ export const UserCard = ({user}: { user: User }) => {
             {user.image && <img src={user.image} alt="" height={12}/>}
             {info && <Text size="1" color={uidColor ? undefined : "gray"} style={{color: uidColor}} truncate>({info})</Text>}
             {ipInfo && <Text size="1" color={ipColor ? undefined : "blue"} style={{color: ipColor}} title={ipInfo.title} truncate>[{ipInfo.label}]</Text>}
+            {ratio && <Text size="1" style={{color: ratioColor}} title="글/댓글" truncate>[{ratio.article}/{ratio.comment}]</Text>}
             {banReasons && banColor && <Text size="1" style={{color: banColor}} title={banReasons} truncate>[{banReasons}]</Text>}
+            {memo && <Text size="1" style={{color: memo.color || undefined}} title={memo.text} truncate>[{memo.text}]</Text>}
         </Flex>
     );
 };

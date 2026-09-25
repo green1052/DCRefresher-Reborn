@@ -134,6 +134,15 @@ const publishBadgeColors = (ctx: ModuleContext): void => {
     });
 };
 
+/** 미리보기도 같은 글댓비를 쓰게 공유 */
+const publishRatios = (ctx: ModuleContext): void => {
+    useUiStore.setState({
+        ratios: ctx.settings.checkRatio === true
+            ? {cache: Object.fromEntries(Object.entries(ratios).filter(([, info]) => isFresh(info))), alarm: Number(ctx.settings.alarmRatio)}
+            : null
+    });
+};
+
 const rebuildAll = (ctx: ModuleContext): void => {
     // 배지가 없던 작성자도 포함 — 설정을 켜서 새로 생기는 배지가 있다 (필터 선택자와 같은 대상)
     for (const element of document.querySelectorAll<HTMLElement>(".ub-writer:not([user_name])")) {
@@ -210,8 +219,10 @@ export default defineModule({
         publishBadgeColors(ctx);
 
         ratios = asRatios((await ratioStorage.getValue())?.ratio);
+        publishRatios(ctx);
         const unwatchRatios = ratioStorage.watch((next) => {
             ratios = asRatios(next?.ratio);
+            publishRatios(ctx);
         });
 
         ctx.addFilter(
@@ -259,6 +270,7 @@ export default defineModule({
                 ]);
                 await ratioStorage.setValue({ratio: ratios as unknown as JsonValue});
 
+                publishRatios(ctx);
                 rebuildAll(ctx);
             });
         });
@@ -274,11 +286,12 @@ export default defineModule({
     onChanged(ctx) {
         // 설정(순서/표시여부) 변경시 즉시 재계산. 배지 색은 설정에만 달렸으니 여기서만 다시 알린다
         publishBadgeColors(ctx);
+        publishRatios(ctx);
         rebuildAll(ctx);
     },
 
     revoke() {
-        useUiStore.setState({badgeColors: {}});
+        useUiStore.setState({badgeColors: {}, ratios: null});
 
         for (const element of document.querySelectorAll<HTMLElement>(".ub-writer[data-refresher-user-info]")) {
             delete element.dataset.refresherUserInfo;

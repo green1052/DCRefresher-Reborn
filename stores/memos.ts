@@ -52,9 +52,9 @@ export const useMemosStore = create<MemosState>((set, get) => ({
     }
 }));
 
-/** 유저에 달린 메모 (아이디 > IP > 닉네임 순). 다른 갤러리 전용 메모는 건너뛴다 */
-export const findMemo = (user: { uid?: string; ip?: string; nick?: string }, gallery?: string | null): MemoEntry | undefined => {
-    const {memos} = useMemosStore.getState();
+type MemoUser = { uid?: string; ip?: string; nick?: string };
+
+const lookupMemo = (memos: Record<MemoType, MemoMap>, user: MemoUser, gallery?: string | null): MemoEntry | undefined => {
     const visible = (entry: MemoEntry | undefined): MemoEntry | undefined => (entry && (!entry.gallery || entry.gallery === gallery) ? entry : undefined);
 
     return (
@@ -63,6 +63,14 @@ export const findMemo = (user: { uid?: string; ip?: string; nick?: string }, gal
         (user.nick ? visible(memos.NICK[user.nick]) : undefined)
     );
 };
+
+/** 유저에 달린 메모 (아이디 > IP > 닉네임 순). 다른 갤러리 전용 메모는 건너뛴다 */
+export const findMemo = (user: MemoUser, gallery?: string | null): MemoEntry | undefined =>
+    lookupMemo(useMemosStore.getState().memos, user, gallery);
+
+/** findMemo의 React용 — 구독한 memos로 찾아야 React Compiler가 메모가 바뀔 때 다시 계산한다 */
+export const useUserMemo = (user: MemoUser, gallery?: string | null): MemoEntry | undefined =>
+    lookupMemo(useMemosStore((state) => state.memos), user, gallery);
 
 let initialized: Promise<void> | null = null;
 
