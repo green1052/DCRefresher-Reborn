@@ -149,7 +149,7 @@ export function MemoTab() {
             await navigator.clipboard.writeText(JSON.stringify(memos));
             setNotice("메모를 클립보드로 내보냈습니다.");
         } catch {
-            setNotice("메모를 내보내는데 실패했습니다.");
+            setNotice("메모를 내보내는 데 실패했습니다.");
         }
     };
 
@@ -162,7 +162,7 @@ export function MemoTab() {
             setImportOpen(false);
             setNotice("메모를 가져왔습니다.");
         } catch {
-            setNotice("메모를 가져오는데 실패했습니다.");
+            setNotice("메모를 가져오는 데 실패했습니다.");
         }
     };
 

@@ -47,7 +47,7 @@ const BlockPopup = () => {
                 delChk: delChk ? "1" : "0",
                 userTypeChk: userTypeChk ? "1" : "0"
             });
-            useUiStore.getState().showToast("차단이 처리되었습니다.");
+            useUiStore.getState().showToast("차단했습니다.");
             if (delChk) usePreviewStore.getState().requestClose();
             eventBus.emit("refreshRequest");
         } catch {

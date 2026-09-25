@@ -110,12 +110,12 @@ export default defineModule({
         useBetterBrowse: {
             type: "check",
             name: "인페이지 페이지 전환",
-            desc: "페이지 이동시 새로고침을 끄지 않고 이동합니다.",
+            desc: "페이지 이동 시 새로고침을 끄지 않고 이동합니다.",
             default: true
         },
         noRefreshOnSearch: {
             type: "check",
-            name: "검색 중 페이지 새로고침 안함",
+            name: "검색 중 페이지 새로고침 안 함",
             desc: "검색 중에는 자동 새로고침을 하지 않습니다.",
             default: true
         },

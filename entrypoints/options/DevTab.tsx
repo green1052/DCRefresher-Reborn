@@ -155,7 +155,7 @@ const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
             await dbStorage.setValue({...(await dbStorage.getValue()), version: "local", lastUpdate: Date.now(), ip: next});
             notify("IP 데이터를 파일에서 불러왔습니다. 다음 자동 갱신 때 서버 데이터로 바뀝니다.");
         } catch (error) {
-            notify(`IP 데이터를 불러오는데 실패했습니다. ${error instanceof Error ? error.message : ""}`);
+            notify(`IP 데이터를 불러오는 데 실패했습니다. ${error instanceof Error ? error.message : ""}`);
         }
     };
 

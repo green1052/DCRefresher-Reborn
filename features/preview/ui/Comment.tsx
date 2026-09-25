@@ -131,7 +131,7 @@ const TimeStamp = ({date}: { date: string }) => {
     return (
         <Text size="1" color="gray" title={parsed.toLocaleString()} style={{cursor: "pointer", whiteSpace: "nowrap"}}
               onClick={() => setAbsolute((x) => !x)}>
-            {Number.isNaN(parsed.getTime()) ? "이미 삭제 됨" : absolute ? parsed.toLocaleString() : relative(parsed)}
+            {Number.isNaN(parsed.getTime()) ? "이미 삭제됨" : absolute ? parsed.toLocaleString() : relative(parsed)}
         </Text>
     );
 };

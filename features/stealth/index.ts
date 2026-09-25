@@ -43,7 +43,7 @@ const createButton = (): void => {
 export default defineModule({
     id: "stealth",
     name: "스텔스 모드",
-    description: "페이지내에서 표시되는 이미지를 비활성화합니다.",
+    description: "페이지 내에서 표시되는 이미지를 비활성화합니다.",
     defaultEnable: false,
 
     shortcuts: {

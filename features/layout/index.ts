@@ -9,7 +9,7 @@ const HIDE_OPTIONS: Record<string, { name: string; desc: string; selector: strin
     hideGalleryView: {name: "갤러리 뷰 숨기기", desc: "갤러리 정보, 최근 방문 갤러리 영역을 숨깁니다.", selector: ".issue_wrap, #visit_history"},
     hideUselessView: {
         name: "잡다 링크 숨기기",
-        desc: "이슈줌, 타갤 개념글, 뉴스, 힛갤등의 컨텐츠를 오른쪽 영역에서 숨깁니다.",
+        desc: "이슈줌, 타갤 개념글, 뉴스, 힛갤 등의 컨텐츠를 오른쪽 영역에서 숨깁니다.",
         selector: "section.right_content article"
     },
     hideNft: {name: "NFT 숨기기", desc: "NFT 관련 내용을 숨깁니다.", selector: ".btn_nftbox, .nft_informationwrap"},
@@ -59,14 +59,14 @@ const applyHide = (ctx: ModuleContext): void => {
 export default defineModule({
     id: "layout",
     name: "레이아웃 수정",
-    description: "디시 레이아웃을 변경할 수 있도록 도와줍니다.",
+    description: "디시 레이아웃을 변경합니다.",
     defaultEnable: true,
 
     settings: {
         activePixel: {
             type: "range",
             name: "컴팩트 모드 활성화 조건",
-            desc: "브라우저 가로가 이 값 보다 작을 경우 컴팩트 모드를 활성화합니다.",
+            desc: "브라우저 가로가 이 값보다 작을 경우 컴팩트 모드를 활성화합니다.",
             default: 900,
             min: 100,
             max: screen.width,
@@ -76,13 +76,13 @@ export default defineModule({
         forceCompact: {
             type: "check",
             name: "컴팩트 모드 강제 사용",
-            desc: "항상 컴팩트 모드를 사용하도록 설정합니다.",
+            desc: "항상 컴팩트 모드를 사용합니다.",
             default: false
         },
         useCompactModeOnView: {
             type: "check",
             name: "게시글 보기 컴팩트 모드",
-            desc: "게시글 보기에서도 컴팩트 모드를 사용하도록 설정합니다.",
+            desc: "게시글 보기에서도 컴팩트 모드를 사용합니다.",
             default: true
         },
         ...Object.fromEntries(

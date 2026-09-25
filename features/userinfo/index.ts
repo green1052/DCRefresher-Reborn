@@ -165,7 +165,7 @@ export default defineModule({
         checkRatio: {
             type: "check",
             name: "글댓비 표시",
-            desc: "글댓비를 표시합니다. (1시간 마다 갱신, 새 글 작성시에만 조회)",
+            desc: "글댓비를 표시합니다. (1시간마다 갱신, 새 글 작성 시에만 조회)",
             default: false
         },
         alarmRatio: {

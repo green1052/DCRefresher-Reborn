@@ -37,7 +37,7 @@ export function BlockTab() {
             await navigator.clipboard.writeText(JSON.stringify(entries));
             setNotice("차단 목록을 클립보드로 내보냈습니다.");
         } catch {
-            setNotice("차단 목록을 내보내는데 실패했습니다.");
+            setNotice("차단 목록을 내보내는 데 실패했습니다.");
         }
     };
 
@@ -52,7 +52,7 @@ export function BlockTab() {
             setImportOpen(false);
             setNotice("차단 목록을 가져왔습니다.");
         } catch {
-            setNotice("차단 목록을 가져오는데 실패했습니다.");
+            setNotice("차단 목록을 가져오는 데 실패했습니다.");
         }
     };
 

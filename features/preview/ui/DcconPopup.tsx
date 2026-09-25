@@ -61,7 +61,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
             setMaxPage(response.max_page);
             if (response.list[0]) openPackage(response.list[0]);
         } catch {
-            useUiStore.getState().showToast("디시콘을 불러오는데 실패했습니다.", "error");
+            useUiStore.getState().showToast("디시콘을 불러오는 데 실패했습니다.", "error");
             onClose();
             return;
         } finally {

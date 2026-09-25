@@ -78,7 +78,7 @@ const settings: NonNullable<ModuleDefinition["settings"]> = {
     blockImage: {
         type: "check",
         name: "이미지 아이콘 없는 게시글 이미지 차단",
-        desc: "이미지가 없는 게시글에 이미지가 있을 경우 차단합니다.",
+        desc: "이미지 아이콘이 없는 게시글에 이미지가 있으면 차단합니다.",
         default: false
     }
 };
@@ -347,7 +347,7 @@ const controller = (ctx: ModuleContext) => {
                 userTypeChk: ctx.settings.blockPresetUserType ? "1" : "0"
             });
 
-            ui.showToast("차단이 처리되었습니다.");
+            ui.showToast("차단했습니다.");
             if (ctx.settings.blockPresetDelete) close();
         } catch {
             ui.showToast("차단 처리 중 오류가 발생했습니다.", "error");
@@ -375,7 +375,7 @@ const controller = (ctx: ModuleContext) => {
         } else {
             lastKey = key;
             lastKeyTime = now;
-            ui.showToast(key === "d" ? "한번 더 D키를 누르면 게시글을 삭제합니다." : "한번 더 B키를 누르면 게시글을 차단합니다.");
+            ui.showToast(key === "d" ? "한 번 더 D키를 누르면 게시글을 삭제합니다." : "한 번 더 B키를 누르면 게시글을 차단합니다.");
         }
     };
 
