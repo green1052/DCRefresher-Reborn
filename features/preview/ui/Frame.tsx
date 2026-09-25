@@ -239,7 +239,13 @@ export const Frame = () => {
                 <div
                     className="refresher-frame-outer"
                     data-fading={fading || undefined}
-                    onPointerDown={() => usePreviewStore.getState().requestClose()}
+                    // pointerdown에서 닫으면 배경이 곧바로 사라져 이어지는 click/contextmenu가 아래 게시글에 떨어진다
+                    // (우클릭으로 닫으면 다른 글 미리보기가 열림) — 배경이 받는 click/contextmenu에서 닫는다
+                    onClick={() => usePreviewStore.getState().requestClose()}
+                    onContextMenu={(event) => {
+                        event.preventDefault();
+                        usePreviewStore.getState().requestClose();
+                    }}
                 />
                 <Dialog.Content
                     className="refresher-frame"
