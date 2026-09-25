@@ -1,7 +1,7 @@
 import {HTTPError} from "ky";
 
 import {eventBus} from "@/core/eventbus/bus";
-import {isAnyBlocked} from "@/core/block";
+import {isBlocked} from "@/core/block";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, ModuleDefinition, SettingGroup} from "@/core/module/types";
 import type {GalleryPreData, PostInfo} from "@/core/preview/types";
@@ -9,7 +9,7 @@ import {useUiStore} from "@/stores/ui";
 import {isTyping} from "@/utils/event";
 import {isGalleryManager} from "@/utils/user";
 import {notifyManage} from "@/utils/notify";
-import {htmlToText, sanitizeHtml} from "@/utils/sanitize";
+import {sanitizeHtml} from "@/utils/sanitize";
 
 import {getEntry, setEntry} from "@/core/preview/cache";
 import {ADULT_ERROR} from "@/core/preview/parser";
@@ -64,7 +64,7 @@ const settings: NonNullable<ModuleDefinition["settings"]> = {
     longPressDelay: {
         type: "range",
         name: "길게 누르기 판정 시간",
-        desc: "마우스 오른쪽 버튼을 해당 시간 이상 눌렀다 뗄 때 기본 우클릭 메뉴가 나오게 합니다.",
+        desc: "마우스 오른쪽 버튼을 해당 시간 이상 눌렀다 뗄 때 기본 우클릭 메뉴가 나오게 합니다. (Windows 전용 — Shift+우클릭은 어디서나 기본 메뉴)",
         default: 300,
         min: 200,
         max: 2000,
@@ -139,7 +139,8 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
         const classes = icon.getAttribute("class") ?? "";
         type = classes.split(" ").at(-1) ?? "icon_txt";
         notice = classes.includes("icon_notice");
-        recommend = classes.includes("icon_recomimg");
+        // 이미지·텍스트·동영상 개념글 (icon_recomimg, icon_recomtxt, icon_recomovie)
+        recommend = classes.includes("icon_recom");
     }
 
     return {
@@ -152,6 +153,9 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
         type
     };
 };
+
+/** 목록에 이미지 아이콘이 없는 글 (텍스트 개념글 포함) — blockImage가 본문 이미지를 가린다 */
+const isTextPost = (preData: GalleryPreData): boolean => preData.type === "icon_txt" || preData.type === "icon_recomtxt";
 
 // 상태 코드: ky가 던지는 HTTPError, 또는 fetchPost가 본문을 못 찾아 던지는 Error("404") — 성인 인증 안내면 parsePostInfo가 Error(ADULT_ERROR)
 const errorOf = (error: unknown): ErrorState => ({
@@ -177,15 +181,17 @@ const controller = (ctx: ModuleContext) => {
     let miniTimer = 0;
     let miniAbort: AbortController | null = null;
 
-    const galName = (): string => document.querySelector("h1")?.textContent?.trim() || "디시인사이드";
+    // 갤러리 이름은 제목 링크의 첫 글자 칸 — h1(로고)엔 인라인 스크립트가, 링크엔 마이너·미니 표시가 섞인다
+    const galName = (): string => document.querySelector(".page_head h2 a")?.firstChild?.textContent?.trim() || "디시인사이드";
 
     // 본문 차단도 차단 모듈을 따른다 — 꺼져 있으면 가리지 않는다. 원문은 남겨 '가린 내용 보기'로 다시 보인다 (Frame.tsx)
     const processContents = (preData: GalleryPreData, postInfo: PostInfo, stripMedia = false): PostInfo => {
-        const raw = postInfo.contents ?? "";
         const view = useUiStore.getState().blockView;
-        const textBlocked = view && isAnyBlocked({TEXT: htmlToText(raw).trim()}, preData.gallery) ? (view.blur ? "blur" : "hide") : undefined;
+        // 페이지와 같은 글자로 본다 (block 모듈 checkText) — 본문 칸째 풀면 디시 스크립트·템플릿 글자가 섞이고 태그 자리가 공백이 돼 '<b>광</b>고'로 비켜 간다
+        const writeDiv = postInfo.dom.querySelector(".write_div");
+        const textBlocked = view && writeDiv && isBlocked("TEXT", writeDiv.textContent?.trim() ?? "", preData.gallery) ? (view.blur ? "blur" : "hide") : undefined;
 
-        return {...postInfo, contents: sanitizeHtml(raw, {stripMedia}), textBlocked};
+        return {...postInfo, contents: sanitizeHtml(postInfo.contents ?? "", {stripMedia}), textBlocked};
     };
 
     /** 캐시에 있으면 캐시, 없으면 받는다. fresh: 방금 받은 본문 — 캐시 것은 1분까지 낡았을 수 있다 */
@@ -311,7 +317,7 @@ const controller = (ctx: ModuleContext) => {
 
         if (commentsOnly) after.setCommentsOnly(true);
         // 목록에 이미지 아이콘이 없는(텍스트) 글만 본문 이미지 숨김
-        after.setImageBlocked(ctx.settings.blockImage === true && preData.type === "icon_txt");
+        after.setImageBlocked(ctx.settings.blockImage === true && isTextPost(preData));
         after.setNotice(preData.notice);
         after.setRecommend(preData.recommend);
         after.setAdminVisible(ctx.settings.toggleAdminPanel === true && isGalleryManager());
@@ -438,9 +444,7 @@ const controller = (ctx: ModuleContext) => {
             return;
         }
 
-        // 이미지 아이콘 없는 글의 이미지 차단(blockImage)도 적용 — 안 그러면 전체 미리보기에서 숨긴 이미지가 호버로 보인다
-        const stripMedia = ctx.settings.tooltipMediaHide === true || (ctx.settings.blockImage === true && preData.type === "icon_txt");
-        const {contents = "", textBlocked} = processContents(preData, post, stripMedia);
+        const {contents = "", textBlocked} = processContents(preData, post, ctx.settings.tooltipMediaHide === true);
 
         // 가져오는 사이 전체 미리보기가 열렸으면 그 위에 띄우지 않는다
         if (usePreviewStore.getState().visible) return;
@@ -449,7 +453,9 @@ const controller = (ctx: ModuleContext) => {
             ...miniPosition(x, y),
             title: postTitle(post),
             // 미니는 마우스를 올려 볼 수 없으니 블러도 안내로 가린다
-            contents: textBlocked && !useUiStore.getState().blockView?.revealed ? BLOCKED_TEXT : contents
+            contents: textBlocked && !useUiStore.getState().blockView?.revealed ? BLOCKED_TEXT : contents,
+            // 이미지 차단(blockImage)은 전체 미리보기와 같은 것을 가린다 — 안 그러면 거기서 숨긴 이미지가 호버로 보인다
+            blockMedia: ctx.settings.blockImage === true && isTextPost(preData)
         });
     };
 
@@ -519,6 +525,9 @@ const controller = (ctx: ModuleContext) => {
     };
 
     const onContextMenu = (ev: MouseEvent) => {
+        // Shift+우클릭은 브라우저 메뉴 — 맥·리눅스는 누르는 순간 메뉴가 떠서 길게 누르기로는 열 수 없다
+        if (ev.shiftKey) return;
+
         const resolved = resolveTarget(ev);
         if (!resolved) return;
 
@@ -545,6 +554,9 @@ const controller = (ctx: ModuleContext) => {
     };
 
     const onClick = (ev: MouseEvent) => {
+        // 수정키 클릭은 새 탭·창으로 열거나 Ctrl+클릭 삭제(manage) — 가로채지 않는다
+        if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
+
         const resolved = resolveTarget(ev);
         if (!resolved || (!resolved.commentsOnly && ctx.settings.reversePreviewKey !== true)) return;
 

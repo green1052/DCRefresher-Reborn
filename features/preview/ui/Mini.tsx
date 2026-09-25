@@ -15,7 +15,8 @@ export const Mini = () => {
             <Heading as="h3" size="3" mb="2" truncate style={{flexShrink: 0}}>
                 {mini.title}
             </Heading>
-            <Box className="refresher-html refresher-mini-contents" dangerouslySetInnerHTML={{__html: mini.contents}}/>
+            <Box className={"refresher-html refresher-mini-contents" + (mini.blockMedia ? " refresher-preview-block-media" : "")}
+                 dangerouslySetInnerHTML={{__html: mini.contents}}/>
         </Card>
     );
 };
