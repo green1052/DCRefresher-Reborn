@@ -164,7 +164,8 @@ const controller = (ctx: ModuleContext) => {
     };
 
     const loadComments = async (preData: GalleryPreData, postInfo: PostInfo, mySignal: number) => {
-        if (postInfo.commentCount === 0) {
+        // 댓글 0개면 요청 생략 — 단 캐시에 이전 댓글이 있으면 받아서 비교한다 (삭제 댓글 보존, 캐시된 본문의 댓글 수는 낡았을 수 있음)
+        if (postInfo.commentCount === 0 && !getEntry(preData)?.comment?.list.length) {
             store.getState().setComments([], "쓰레드 0개, 총 댓글 0개");
             return;
         }
@@ -181,8 +182,9 @@ const controller = (ctx: ModuleContext) => {
         const response = await fetchComments(preData, postInfo, abort!.signal);
         if (store.getState().signalId !== mySignal) return;
 
-        setEntry(preData, {comment: response});
+        // 보존(restoreArchive)은 캐시의 이전 목록과 비교하므로 가공 먼저, 저장은 나중에
         applyComments(preData, response.list);
+        setEntry(preData, {comment: response});
     };
 
     const refreshComments = async () => {
@@ -192,8 +194,8 @@ const controller = (ctx: ModuleContext) => {
         try {
             const response = await fetchComments(st.preData, st.post, abort.signal);
             if (store.getState().signalId !== st.signalId) return;
-            setEntry(st.preData, {comment: response});
             applyComments(st.preData, response.list);
+            setEntry(st.preData, {comment: response});
         } catch {
             // 자동 갱신 실패는 조용히 무시
         }
@@ -205,7 +207,14 @@ const controller = (ctx: ModuleContext) => {
             let postInfo = useCache ? getEntry(preData)?.post : undefined;
 
             if (!postInfo) {
-                postInfo = await fetchPost(preData, abort!.signal);
+                try {
+                    postInfo = await fetchPost(preData, abort!.signal);
+                } catch (error) {
+                    // 삭제된 글 보존: 가져오지 못하면 캐시에 남은 이전 본문을 보여준다 (캐시 비활성화여도)
+                    postInfo = ctx.settings.archiveArticle === true ? getEntry(preData)?.post : undefined;
+                    if (!postInfo) throw error;
+                }
+
                 setEntry(preData, {post: postInfo});
             }
 
@@ -349,11 +358,13 @@ const controller = (ctx: ModuleContext) => {
 
     const onKey = (event: KeyboardEvent) => {
         if (ctx.settings.useKeyPress !== true || !store.getState().visible) return;
+        // Ctrl+D(북마크) 같은 조합키, 길게 눌러 생기는 반복 입력은 무시
+        if (event.ctrlKey || event.altKey || event.metaKey || event.repeat) return;
 
         const key = event.key.toLowerCase();
         if (key !== "d" && key !== "b") return;
 
-        if (isTyping(event)) return;
+        if (isTyping(event) || !isGalleryManager()) return;
 
         const now = Date.now();
 
@@ -467,9 +478,14 @@ const controller = (ctx: ModuleContext) => {
         pressStart = 0;
     };
 
+    // 제목 칸(word) 안에서 난 이벤트는 제목 칸 핸들러가 이미 처리함 — 행(row) 핸들러가 이어받아 중복 처리하지 않게
+    const handledByWord = (element: HTMLElement, target: HTMLElement): boolean =>
+        element.dataset.refresherPreviewMode === "row" && target.closest("[data-refresher-preview-mode=\"word\"]") !== null;
+
     const onContextMenu = (event: MouseEvent) => {
         const element = event.currentTarget as HTMLElement;
         const target = event.target as HTMLElement;
+        if (handledByWord(element, target)) return;
 
         // 댓글 수 링크 → 댓글만 보기 (행 모드 가드보다 먼저)
         if (target.closest(".reply_numbox")) {
@@ -508,6 +524,7 @@ const controller = (ctx: ModuleContext) => {
     const onClick = (event: MouseEvent) => {
         const element = event.currentTarget as HTMLElement;
         const target = event.target as HTMLElement;
+        if (handledByWord(element, target)) return;
 
         // 댓글 수 링크 → 댓글만 보기 (행 모드 가드보다 먼저)
         if (target.closest(".reply_numbox")) {
