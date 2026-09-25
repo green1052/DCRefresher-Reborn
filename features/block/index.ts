@@ -2,6 +2,7 @@ import {block} from "@/core/block";
 import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
 import {queryString} from "@/core/http/urls";
 import {useUiStore} from "@/stores/ui";
+import {eventTarget} from "@/utils/event";
 
 import {handleBlockRequest} from "./request";
 
@@ -91,7 +92,7 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): void => 
 
 const setupSelection = (ctx: ModuleContext): void => {
     const onContextMenu = (event: MouseEvent): void => {
-        const target = event.target;
+        const target = eventTarget(event);
         if (!(target instanceof Element)) return;
 
         const dcconElement = target.closest<HTMLElement>(".written_dccon");

@@ -1,4 +1,5 @@
 import type {ModuleDefinition} from "@/core/module/types";
+import {eventTarget} from "@/utils/event";
 
 let currentImage: string | null = null;
 
@@ -21,8 +22,9 @@ const imagesearchModule: ModuleDefinition = {
 
     setup(ctx) {
         const onContextMenu = (event: MouseEvent): void => {
-            if (event.target instanceof HTMLImageElement && event.target.src) {
-                currentImage = event.target.src;
+            const target = eventTarget(event);
+            if (target instanceof HTMLImageElement && target.src) {
+                currentImage = target.src;
             }
         };
 

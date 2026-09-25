@@ -3,6 +3,7 @@ import {block} from "@/core/block";
 import type {ModuleContext, ModuleDefinition} from "@/core/module/types";
 import type {GalleryPreData, IPostInfo} from "@/features/types";
 import {useUiStore} from "@/stores/ui";
+import {isTyping} from "@/utils/event";
 
 import {type DcinsideComment, getEntry, setEntry} from "@/core/preview/cache";
 import {processComments} from "@/core/preview/comments";
@@ -356,8 +357,7 @@ const controller = (ctx: ModuleContext) => {
         const key = event.key.toLowerCase();
         if (key !== "d" && key !== "b") return;
 
-        const target = event.target;
-        if (target instanceof HTMLElement && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+        if (isTyping(event)) return;
 
         const now = Date.now();
 
