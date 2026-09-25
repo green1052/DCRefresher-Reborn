@@ -71,9 +71,8 @@ export const dbStorage = storage.defineItem<StoredDB>("local:refresher:db", {
     defaultValue: {version: "", lastUpdate: 0, ip: null, ban: {}}
 });
 
-/** 클라우드 백업 상태 — refresher:backup:* 키는 백업 대상에서 빠진다 (core/backup.ts) */
+/** 클라우드 백업 상태 — refresher:backup:* 키는 백업 대상에서 빠진다 (core/backup.ts). 백업 시각은 클라우드의 메타에서 읽는다 */
 export const backupStorage = {
-    lastUpdate: storage.defineItem<number>("local:refresher:backup:lastUpdate", {defaultValue: 0}),
     /** 설정이 바뀌면 잠시 뒤 자동으로 백업 */
     auto: storage.defineItem<boolean>("local:refresher:backup:auto", {defaultValue: false}),
     /** 마지막 백업이 실패했으면 이유 (성공하면 빈 문자열) */

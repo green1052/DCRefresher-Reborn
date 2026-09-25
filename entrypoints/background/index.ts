@@ -64,6 +64,6 @@ export default defineBackground(() => {
     });
 
     browser.alarms.onAlarm.addListener((alarm) => {
-        if (alarm.name === AUTO_BACKUP_ALARM) void runBackup().catch(() => {});
+        if (alarm.name === AUTO_BACKUP_ALARM) void runBackup("auto").catch(() => {});
     });
 });

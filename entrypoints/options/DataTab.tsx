@@ -1,9 +1,9 @@
 import {CloudDownload, CloudUpload, Download, RefreshCw, Trash2, Upload} from "lucide-react";
-import {Box, Button, Flex, Switch, Text} from "@radix-ui/themes";
+import {Box, Button, Dialog, Flex, Switch, Text} from "@radix-ui/themes";
 import {useEffect, useState} from "react";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
-import {collectLocalData, isBackupTarget, readCloudBackup, runBackup} from "@/core/backup";
+import {type BackupSlot, collectLocalData, isBackupTarget, readCloudBackup, readCloudBackupTimes, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
 import {backupStorage, dbStorage} from "@/core/storage/items";
 
@@ -47,7 +47,8 @@ interface ConfirmState {
 
 export function DataTab() {
     const [lastUpdate, setLastUpdate] = useState(0);
-    const [backupAt, setBackupAt] = useState(0);
+    const [backupTimes, setBackupTimes] = useState<Awaited<ReturnType<typeof readCloudBackupTimes>>>({legacy: false});
+    const [restoreOpen, setRestoreOpen] = useState(false);
     const [backupError, setBackupError] = useState("");
     const [autoBackup, setAutoBackup] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -57,16 +58,22 @@ export function DataTab() {
 
     useEffect(() => {
         void dbStorage.getValue().then((db) => setLastUpdate(db.lastUpdate));
-        void backupStorage.lastUpdate.getValue().then(setBackupAt);
         void backupStorage.error.getValue().then(setBackupError);
         void backupStorage.auto.getValue().then(setAutoBackup);
 
-        // 자동 백업은 백그라운드에서 돈다 — 결과를 따라간다
-        const unwatch = [
-            backupStorage.lastUpdate.watch((value) => setBackupAt(value ?? 0)),
-            backupStorage.error.watch((value) => setBackupError(value ?? ""))
-        ];
-        return () => unwatch.forEach((stop) => stop());
+        // 백업 시각은 클라우드 메타에서 — 자동 백업(백그라운드)·다른 기기의 백업도 따라간다
+        const loadTimes = (): void => void readCloudBackupTimes().then(setBackupTimes);
+        const onChanged = (_: unknown, area: string): void => {
+            if (area === "sync") loadTimes();
+        };
+        loadTimes();
+        browser.storage.onChanged.addListener(onChanged);
+        const unwatchError = backupStorage.error.watch((value) => setBackupError(value ?? ""));
+
+        return () => {
+            browser.storage.onChanged.removeListener(onChanged);
+            unwatchError();
+        };
     }, []);
 
     const run = async (action: () => Promise<string>, failure: string): Promise<void> => {
@@ -92,13 +99,14 @@ export function DataTab() {
 
     const backupCloud = () =>
         run(async () => {
-            await runBackup();
+            await runBackup("manual");
             return "데이터를 클라우드에 백업했습니다.";
         }, "클라우드에 백업하지 못했습니다.");
 
-    const recoverCloud = () =>
+    const recoverCloud = (slot: BackupSlot) =>
         run(async () => {
-            const backup = await readCloudBackup();
+            setRestoreOpen(false);
+            const backup = await readCloudBackup(slot);
             if (!backup) return "클라우드에 백업이 없습니다.";
 
             await replaceSettings(backup.data);
@@ -108,8 +116,13 @@ export function DataTab() {
     const toggleAutoBackup = async (on: boolean): Promise<void> => {
         setAutoBackup(on);
         await backupStorage.auto.setValue(on);
-        // 켜는 순간의 설정을 바로 올려 둔다 (이후엔 바뀔 때마다 백그라운드가)
-        if (on) await backupCloud();
+        // 켜는 순간의 설정을 자동 백업 칸에 바로 올려 둔다 (이후엔 바뀔 때마다 백그라운드가)
+        if (on) {
+            await run(async () => {
+                await runBackup("auto");
+                return "자동 백업을 켰습니다. 지금 설정을 자동 백업으로 올렸습니다.";
+            }, "자동 백업을 켰지만 첫 백업에 실패했습니다.");
+        }
     };
 
     const exportData = () =>
@@ -149,7 +162,7 @@ export function DataTab() {
 
             <Section
                 title="클라우드 백업"
-                desc={`브라우저 동기화 저장소(최대 100KB)에 설정을 압축해 백업합니다. 마지막 백업: ${formatTime(backupAt)}`}
+                desc="브라우저 동기화 저장소(최대 100KB)에 설정을 압축해 백업합니다. 수동 백업과 자동 백업은 따로 저장됩니다."
                 actions={
                     <Text as="label" size="2">
                         <Flex gap="2" align="center">
@@ -159,18 +172,41 @@ export function DataTab() {
                     </Text>
                 }
             >
+                <Text as="p" size="2" color="gray" mb="3">
+                    수동 백업: {formatTime(backupTimes.manual ?? 0)} · 자동 백업: {formatTime(backupTimes.auto ?? 0)}
+                </Text>
                 <Flex gap="2" wrap="wrap">
                     <Button variant="soft" disabled={loading} onClick={() => void backupCloud()}>
                         <CloudUpload size={14}/> 백업
                     </Button>
-                    <Button
-                        variant="soft"
-                        disabled={loading}
-                        onClick={() => setConfirming({title: "클라우드 백업으로 현재 설정을 교체할까요?", action: recoverCloud})}
-                    >
+                    <Button variant="soft" disabled={loading} onClick={() => setRestoreOpen(true)}>
                         <CloudDownload size={14}/> 복원
                     </Button>
                 </Flex>
+
+                <Dialog.Root open={restoreOpen} onOpenChange={setRestoreOpen}>
+                    <Dialog.Content maxWidth="420px">
+                        <Dialog.Title>어느 백업으로 복원할까요?</Dialog.Title>
+                        <Dialog.Description size="2" mb="3">현재 설정을 고른 백업으로 교체합니다.</Dialog.Description>
+                        <Flex direction="column" gap="2">
+                            {([
+                                ["manual", "수동 백업", backupTimes.manual ? formatTime(backupTimes.manual) : backupTimes.legacy ? "예전 방식 백업" : undefined],
+                                ["auto", "자동 백업", backupTimes.auto ? formatTime(backupTimes.auto) : undefined]
+                            ] as const).map(([slot, label, time]) => (
+                                <Button key={slot} variant="soft" size="3" disabled={!time} onClick={() => void recoverCloud(slot)}
+                                        style={{justifyContent: "space-between"}}>
+                                    {label}
+                                    <Text size="2" color="gray">{time ?? "없음"}</Text>
+                                </Button>
+                            ))}
+                        </Flex>
+                        <Flex justify="end" mt="4">
+                            <Dialog.Close>
+                                <Button variant="soft" color="gray">취소</Button>
+                            </Dialog.Close>
+                        </Flex>
+                    </Dialog.Content>
+                </Dialog.Root>
                 {autoBackup && (
                     <Text as="p" size="1" color="gray" mt="2">설정이 바뀌면 1분 뒤에 자동으로 백업합니다.</Text>
                 )}
