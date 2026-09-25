@@ -14,25 +14,27 @@ import {type ErrorState, usePreviewStore} from "./previewStore";
 import {WriteComment} from "./WriteComment";
 
 /**
- * 디시 동영상(movie_view iframe)은 자기 크기를 `$('#movieIcon'+no, parent.document).height(...)`로 맞추는데,
- * 미리보기는 shadow DOM 안이라 거기서 못 찾아 기본 300×150으로 잘린다 — 같은 출처라 안쪽 .v-container를 재서 대신 맞춘다
+ * 디시 동영상(movie_view 등 같은 출처 iframe)은 자기 크기를 `$('#movieIcon'+no, parent.document).height(...)`로 맞추는데,
+ * 미리보기는 shadow DOM 안이라 거기서 못 찾아 기본 300×150으로 잘린다 — 안쪽 내용을 재서 대신 맞춘다 (다른 출처는 못 읽어 그대로)
  */
 const fitMovies = (root: HTMLElement): (() => void) => {
     const observers: ResizeObserver[] = [];
 
-    for (const frame of root.querySelectorAll<HTMLIFrameElement>("iframe[src*='/board/movie/movie_view']")) {
+    for (const frame of root.querySelectorAll<HTMLIFrameElement>("iframe")) {
         const fit = (): void => {
-            const container = frame.contentDocument?.querySelector<HTMLElement>(".v-container");
-            if (!container) return;
+            const doc = frame.contentDocument;
+            // movie_view는 .v-container, 그 밖엔 본문 첫 요소를 잰다
+            const container = doc?.querySelector<HTMLElement>(".v-container") ?? doc?.body?.firstElementChild;
+            if (!doc || !(container instanceof doc.defaultView!.HTMLElement)) return;
 
             // 글꼴·배율에 따라 1px만 넘쳐도 스크롤바가 생겨 화면을 더 먹는다 — 안쪽 스크롤은 끈다
-            frame.contentDocument!.documentElement.style.overflow = "hidden";
+            doc.documentElement.style.overflow = "hidden";
 
             const observer = new ResizeObserver(() => {
                 // 안쪽 body 여백(좌우 대칭)까지, 소수점은 올림 — 컨테이너 폭만 주면 잘린다
                 const {width, height} = container.getBoundingClientRect();
                 frame.style.width = `${Math.ceil(width + container.offsetLeft * 2)}px`;
-                frame.style.height = `${Math.ceil(height) + 20}px`;
+                frame.style.height = `${Math.ceil(height + container.offsetTop * 2)}px`;
             });
             observer.observe(container);
             observers.push(observer);
