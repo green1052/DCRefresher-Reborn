@@ -1,3 +1,5 @@
+import DOMPurify from "dompurify";
+
 import {defineModule} from "@/core/module/define";
 
 const SUBMIT = "button.write";
@@ -48,9 +50,10 @@ export default defineModule({
 
             // 등록이 실패해 다시 눌러도 두 번 넣지 않는다
             editor.dataset.refresherWrite = "1";
+            // 가져온 설정 파일의 HTML일 수 있어 스크립트·이벤트 속성은 걸러 넣는다 (style 속성은 기본 설정이 남긴다)
             const {header, footer} = ctx.settings;
-            if (header) editor.insertAdjacentHTML("afterbegin", String(header));
-            if (footer) editor.insertAdjacentHTML("beforeend", String(footer));
+            if (header) editor.insertAdjacentHTML("afterbegin", DOMPurify.sanitize(String(header)));
+            if (footer) editor.insertAdjacentHTML("beforeend", DOMPurify.sanitize(String(footer)));
         };
 
         const onInput = (): void => {
