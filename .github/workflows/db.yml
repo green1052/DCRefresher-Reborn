@@ -10,6 +10,8 @@ permissions:
 
 jobs:
     build:
+        # 예약 실행은 master에서만 (수동 실행은 어느 브랜치든)
+        if: github.event_name != 'schedule' || github.ref == 'refs/heads/master'
         runs-on: ubuntu-latest
         steps:
             -   name: Checkout
