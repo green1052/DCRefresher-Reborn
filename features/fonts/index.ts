@@ -20,8 +20,11 @@ const toFontFamily = (value: string): string =>
         "sans-serif"
     ].join(", ");
 
+/** customFonts 설정값 → font-family (빈칸이면 기본 폰트). 옵션 페이지도 같은 값을 쓴다 */
+export const fontFamilyOf = (customFonts: string): string => toFontFamily(customFonts.trim() || DEFAULT_FONTS);
+
 const buildCss = (ctx: ModuleContext): string => {
-    const fonts = toFontFamily(String(ctx.settings.customFonts).trim() || DEFAULT_FONTS);
+    const fonts = fontFamilyOf(String(ctx.settings.customFonts));
     const size = Number(ctx.settings.bodyFontSize);
 
     // 확장 UI(shadow DOM)엔 선택자가 닿지 않으므로 상속되는 커스텀 속성으로 넘긴다 (overlay.scss에서 사용)

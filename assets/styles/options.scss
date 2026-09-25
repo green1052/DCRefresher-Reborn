@@ -9,8 +9,11 @@ body {
     margin: 0;
 }
 
-/* Radix 기본값은 버튼·스위치 등도 화살표 커서 — :root로 명시도를 올려 덮는다 */
+/* Radix 기본값 덮기 (:root로 명시도를 올린다)
+ * - 폰트: 폰트 교체 모듈이 켜져 있으면 App이 html에 --refresher-font를 지정한다 (콘텐츠 스크립트와 같은 값)
+ * - 커서: 버튼·스위치 등도 화살표 커서라 손가락으로 */
 :root .radix-themes {
+    --default-font-family: var(--refresher-font, -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif);
     --cursor-button: pointer;
     --cursor-checkbox: pointer;
     --cursor-menu-item: pointer;

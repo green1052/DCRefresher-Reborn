@@ -4,7 +4,8 @@
     all: initial;
     position: fixed;
     inset: 0;
-    z-index: 2147483600;
+    // 디시 페이지의 최댓값(이미지 확대창 #imgModal 9999)보다 위
+    z-index: 100000;
     pointer-events: none;
 }
 

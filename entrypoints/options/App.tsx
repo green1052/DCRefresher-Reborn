@@ -2,9 +2,10 @@ import {Box, Button, Flex, Grid, Heading, Separator, Text} from "@radix-ui/theme
 import {Ban, CircleHelp, Code, Database, Heart, Keyboard, type LucideIcon, MessageCircle, NotebookPen, Settings, Users, Wrench} from "lucide-react";
 import {type MouseEvent, useEffect, useState} from "react";
 
+import {fontFamilyOf} from "@/features/fonts";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
-import {initModulesStore} from "@/stores/modules";
+import {initModulesStore, useModulesStore} from "@/stores/modules";
 
 import {BlockTab} from "./BlockTab";
 import {DataTab} from "./DataTab";
@@ -177,6 +178,15 @@ export function App() {
         void initMemosStore();
         void initModulesStore();
     }, []);
+
+    // 폰트 교체 모듈 설정을 옵션 페이지에도 (options.scss가 --refresher-font를 쓴다)
+    const fontsEnabled = useModulesStore((state) => state.enables.fonts);
+    const customFonts = useModulesStore((state) => state.values.fonts?.customFonts);
+    useEffect(() => {
+        const root = document.documentElement.style;
+        if (fontsEnabled) root.setProperty("--refresher-font", fontFamilyOf(String(customFonts ?? "")));
+        else root.removeProperty("--refresher-font");
+    }, [fontsEnabled, customFonts]);
 
     return (
         <Flex direction={{initial: "column", md: "row"}} minHeight="100vh">
