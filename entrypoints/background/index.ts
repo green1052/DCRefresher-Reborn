@@ -8,6 +8,8 @@ const DATABASE_UPDATE_INTERVAL = 604_800_000; // 7일
 const AUTO_BACKUP_ALARM = "refresher:autoBackup";
 
 const GRECAPTCHA_SITE_KEY = "6Lc-Fr0UAAAAAOdqLYqPy53MxlRMIXpNXFvBliwI";
+/** api.js가 막혀 있으면(광고 차단 등) 끝나지 않으니 기다리지 않는다 */
+const GRECAPTCHA_TIMEOUT = 15_000;
 
 /**
  * 탭의 페이지 컨텍스트에서 실행된다 (직렬화되므로 바깥 변수를 쓰지 않는다).
@@ -65,13 +67,15 @@ export default defineBackground(() => {
         if (!sender.tab?.id) return undefined;
 
         try {
-            const [injection] = await browser.scripting.executeScript({
+            const injection = browser.scripting.executeScript({
                 target: {tabId: sender.tab.id, frameIds: [sender.frameId ?? 0]},
                 world: "MAIN",
                 func: executeGrecaptcha,
                 args: [GRECAPTCHA_SITE_KEY, action]
             });
-            return typeof injection?.result === "string" ? injection.result : undefined;
+            const timeout = new Promise<undefined>((resolve) => setTimeout(resolve, GRECAPTCHA_TIMEOUT));
+            const [result] = (await Promise.race([injection, timeout])) ?? [];
+            return typeof result?.result === "string" ? result.result : undefined;
         } catch {
             return undefined;
         }
