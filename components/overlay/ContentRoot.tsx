@@ -7,7 +7,8 @@ import {eventBus} from "@/core/eventbus/bus";
 import type {ModuleEventData} from "@/core/eventbus/types";
 import {PreviewHost} from "@/features/preview/ui/PreviewHost";
 import {type ToastData, useUiStore} from "@/stores/ui";
-import {ipInfoOf} from "@/core/database";
+import {banReasonsOf, ipInfoOf} from "@/core/database";
+import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
 
 import {MemoDialog} from "./MemoDialog";
 import {overlay} from "./shadow";
@@ -79,6 +80,41 @@ const CopyRow = ({label, value, onCopy}: { label: string; value: string; onCopy:
     </Button>
 );
 
+/** 글/댓글 수 — 버블을 열 때 갤로그에서 받는다 (세션 동안 캐시) */
+const activityCache = new Map<string, Promise<GallogActivity | undefined>>();
+
+const useGallogActivity = (uid: string | undefined): GallogActivity | undefined | "loading" | "error" => {
+    const [state, setState] = useState<GallogActivity | undefined | "loading" | "error">(uid ? "loading" : undefined);
+
+    useEffect(() => {
+        if (!uid) return;
+        let alive = true;
+        setState("loading");
+
+        if (!activityCache.has(uid)) activityCache.set(uid, fetchGallogActivity(uid).catch(() => undefined));
+        void activityCache.get(uid)!.then((activity) => {
+            if (!alive) return;
+            if (!activity) activityCache.delete(uid);
+            setState(activity ?? "error");
+        });
+
+        return () => {
+            alive = false;
+        };
+    }, [uid]);
+
+    return state;
+};
+
+const formatActivity = (activity: ReturnType<typeof useGallogActivity>): string | undefined => {
+    if (activity === "loading") return "불러오는 중…";
+    if (activity === "error") return "불러오지 못함";
+    if (!activity) return undefined;
+    // 글댓비: 글 1개당 댓글 수
+    const ratio = activity.article > 0 ? ` (1:${(activity.comment / activity.article).toFixed(1)})` : "";
+    return `${activity.article.toLocaleString()} / ${activity.comment.toLocaleString()}${ratio}`;
+};
+
 /** 아이디와 IP는 한 줄에 병합: "uid (IP)" */
 const identityValue = (selected: { uid?: string; ip?: string }): string | undefined => {
     if (selected.uid) return selected.ip ? `${selected.uid} (${selected.ip})` : selected.uid;
@@ -88,6 +124,7 @@ const identityValue = (selected: { uid?: string; ip?: string }): string | undefi
 const BubbleHost = () => {
     const bubble = useUiStore((s) => s.bubble);
     const selected = useUiStore((s) => s.selected);
+    const activityState = useGallogActivity(bubble && selected && !selected.dccon ? selected.uid : undefined);
 
     // Popover는 스크롤을 따라가지 않으므로 스크롤시 닫는다
     useEffect(() => {
@@ -111,6 +148,8 @@ const BubbleHost = () => {
 
     const identity = identityValue(selected);
     const ipLabel = selected.ip ? ipInfoOf(selected.ip)?.label : undefined;
+    const bans = selected.uid ? banReasonsOf(selected.uid) : undefined;
+    const activity = formatActivity(activityState);
 
     return (
         <Popover.Root open onOpenChange={(open) => !open && close()}>
@@ -134,6 +173,8 @@ const BubbleHost = () => {
                             {selected.nick && <CopyRow label="닉네임" value={selected.nick} onCopy={copy}/>}
                             {identity && <CopyRow label="아이디/IP" value={identity} onCopy={copy}/>}
                             {ipLabel && <CopyRow label="IP 정보" value={ipLabel} onCopy={copy}/>}
+                            {activity && <CopyRow label="글/댓글" value={activity} onCopy={copy}/>}
+                            {bans && <CopyRow label="차단된 갤러리" value={bans} onCopy={copy}/>}
                         </Flex>
                         <Separator size="4" my="2"/>
                         <Flex gap="2" wrap="wrap">

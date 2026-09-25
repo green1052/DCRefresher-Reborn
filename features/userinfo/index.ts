@@ -1,13 +1,12 @@
 import {banReasonsOf, ipInfoOf} from "@/core/database";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingGroup} from "@/core/module/types";
-import {http} from "@/core/http/client";
+import {fetchGallogActivity} from "@/core/gallog";
 import {eventBus} from "@/core/eventbus/bus";
 import type {JsonValue} from "@/core/storage/types";
 import {dbStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";
 import {useUiStore} from "@/stores/ui";
-import {csrfToken} from "@/utils/cookie";
 import {getType} from "@/utils/user";
 import {insertWriterSpan} from "@/utils/userDataInsert";
 
@@ -37,8 +36,6 @@ const BADGE_COLOR_GROUP: SettingGroup = {name: "배지 색", desc: "유저 정�
 const colorsOf = (ctx: ModuleContext): Record<string, string> =>
     Object.fromEntries(Object.keys(BADGE_COLORS).map((key) => [key, String(ctx.settings[`${key}Color`])]));
 
-const GALLOG_API = "https://gall.dcinside.com/api/gallog_user_layer/gallog_content_reple";
-
 const asRatios = (value: JsonValue | undefined): Record<string, RatioInfo> => (value ?? {}) as unknown as Record<string, RatioInfo>;
 
 const buildBadgeSpan = (text: string, color?: string, title?: string, className = "refresherUserData"): HTMLElement => {
@@ -60,15 +57,8 @@ const makePermBanSpan = (reasons: string, color: string): HTMLElement =>
     buildBadgeSpan(`[${reasons}]`, color, reasons, "ip permBan refresherUserData");
 
 const fetchRatio = async (uid: string): Promise<RatioInfo | undefined> => {
-    const text = await http.post(GALLOG_API, {
-        headers: {"X-Requested-With": "XMLHttpRequest"},
-        body: new URLSearchParams({ci_t: await csrfToken(), user_id: uid})
-    }).text();
-
-    const [article, comment] = text.split(",").map(Number);
-    if (article === undefined || comment === undefined || Number.isNaN(article) || Number.isNaN(comment)) return undefined;
-
-    return {article, comment, date: Date.now()};
+    const activity = await fetchGallogActivity(uid);
+    return activity && {...activity, date: Date.now()};
 };
 
 const process = (ctx: ModuleContext, element: HTMLElement): void => {
