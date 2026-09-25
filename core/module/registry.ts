@@ -3,7 +3,7 @@ import {addFilter} from "@/core/filtering";
 import {moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
 
-import {areEqual, normalizeSetting} from "./settings";
+import {areEqual, isModuleEnabled, normalizeSetting} from "./settings";
 import type {ModuleContext, ModuleDefinition} from "./types";
 
 interface ModuleInstance {
@@ -14,9 +14,6 @@ interface ModuleInstance {
 }
 
 const instances = new Map<string, ModuleInstance>();
-
-const isEnabled = (def: ModuleDefinition, enables: Record<string, boolean> | null): boolean =>
-    enables?.[def.id] ?? def.defaultEnable ?? true;
 
 const start = async (instance: ModuleInstance): Promise<void> => {
     if (instance.running) return;
@@ -115,14 +112,14 @@ export const stopAll = (): void => {
 export const loadAll = async (defs: ModuleDefinition[]): Promise<void> => {
     const enables = await modulesStorage.getValue();
 
-    const results = await Promise.allSettled(defs.map((def) => register(def, isEnabled(def, enables))));
+    const results = await Promise.allSettled(defs.map((def) => register(def, isModuleEnabled(def, enables))));
     for (const [index, result] of results.entries()) {
         if (result.status === "rejected") console.error(`Failed to load module: ${defs[index]?.id}`, result.reason);
     }
 
     modulesStorage.watch((next) => {
         for (const instance of instances.values()) {
-            if (isEnabled(instance.def, next)) void start(instance).catch((e) => console.error(e));
+            if (isModuleEnabled(instance.def, next)) void start(instance).catch((e) => console.error(e));
             else stop(instance);
         }
     });

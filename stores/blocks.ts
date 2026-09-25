@@ -101,8 +101,14 @@ const setList = (type: BlockType, value: unknown): void =>
         return JSON.stringify(state.entries[type]) === JSON.stringify(next) ? state : {entries: {...state.entries, [type]: next}};
     });
 
+// 가져오기·복원 값은 그대로 들어온다 — 모르는 유형·모드(소문자 등)는 버리고 그 유형은 기본 모드로
 const setDefaults = (next: Partial<Record<BlockType, DetectMode>>): void =>
-    useBlocksStore.setState({defaults: {...DEFAULT_DETECT_MODE, ...next}});
+    useBlocksStore.setState({
+        defaults: {
+            ...DEFAULT_DETECT_MODE,
+            ...Object.fromEntries(Object.entries(next).filter(([type, mode]) => BLOCK_TYPES.includes(type as BlockType) && DETECT_MODES.includes(mode as DetectMode)))
+        }
+    });
 
 const load = async (): Promise<void> => {
     const [lists, defaults] = await Promise.all([

@@ -2,7 +2,7 @@ import {isBackupTarget, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
 import {migrateV5Storage} from "@/core/migrate-v5";
 import {onMessage, sendMessage} from "@/core/messaging/protocol";
-import {normalizeSetting} from "@/core/module/settings";
+import {isModuleEnabled, normalizeSetting} from "@/core/module/settings";
 import {backupStorage, dbStorage, moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
 import imageSearch, {IMAGE_SEARCH_ENGINES, IMAGE_URL_PATTERNS, imageSearchUrl} from "@/features/imagesearch";
 
@@ -45,8 +45,8 @@ const IMAGE_MENU_PREFIX = "imagesearch:";
 const buildContextMenus = async (): Promise<void> => {
     await browser.contextMenus.removeAll();
 
-    // 콘텐츠 레지스트리와 같은 기준 — 저장값이 없으면 defaultEnable
-    if (!((await modulesStorage.getValue())[imageSearch.id] ?? imageSearch.defaultEnable ?? true)) return;
+    // 콘텐츠 레지스트리와 같은 기준
+    if (!isModuleEnabled(imageSearch, await modulesStorage.getValue())) return;
 
     const stored = await moduleSettingsStorage(imageSearch.id).getValue();
     for (const [id, {name}] of Object.entries(IMAGE_SEARCH_ENGINES)) {
