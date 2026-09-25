@@ -1,4 +1,3 @@
-import type {BlockRequestOptions} from "@/core/eventbus/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {ajax} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
@@ -52,7 +51,12 @@ const blockDccon = async (selected: SelectedUser, blockAllDccon?: boolean): Prom
     useUiStore.getState().showToast(`디시콘을 차단했습니다. (${extra})`);
 };
 
-/** eventBus "refresherRequestBlock" 처리 */
+export type BlockRequestOptions = {
+    target: "user" | "dccon";
+    blockAllDccon?: boolean;
+};
+
+/** 유저 버블의 차단 요청 처리 — 차단 모듈이 꺼져 있어도 목록에는 넣는다 */
 export const handleBlockRequest = async (options: BlockRequestOptions, selected: SelectedUser | null): Promise<void> => {
     if (!selected) {
         useUiStore.getState().showToast("차단할 대상을 다시 오른쪽 클릭해주세요.");

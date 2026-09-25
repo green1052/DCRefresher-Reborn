@@ -6,8 +6,6 @@ import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
 import {eventTarget} from "@/utils/event";
 
-import {handleBlockRequest} from "./request";
-
 /** 디시콘 이미지 URL에서 디시콘 코드(no 파라미터) 추출 */
 const extractDcconCode = (src: string): string => src.replace(/^.*no=/, "").replace(/&.*$/, "");
 
@@ -230,11 +228,6 @@ const setupSelection = (ctx: ModuleContext): void => {
 
     document.addEventListener("contextmenu", onContextMenu, true);
     ctx.addCleanup(() => document.removeEventListener("contextmenu", onContextMenu, true));
-
-    const offRequestBlock = ctx.bus.on("refresherRequestBlock", ({data: options}) => {
-        void handleBlockRequest(options, useUiStore.getState().selected);
-    });
-    ctx.addCleanup(() => void offRequestBlock());
 };
 
 const restoreHiddenElements = (): void => {
