@@ -9,7 +9,8 @@ interface CacheEntry {
 }
 
 // 게시글·댓글 캐시: 1분, 최대 50개. 저장할 때마다 수명이 다시 1분으로 늘어난다
-const entries = new LRUCache<string, CacheEntry>({max: 50, ttl: 60_000});
+// ttlAutopurge — 없으면 만료된 항목(글 문서 전체)이 50개에 밀려날 때까지 메모리에 남는다
+const entries = new LRUCache<string, CacheEntry>({max: 50, ttl: 60_000, ttlAutopurge: true});
 
 const key = (preData: GalleryPreData): string => `${preData.gallery}:${preData.id}`;
 
@@ -28,29 +29,27 @@ export const restoreArchive = (preData: GalleryPreData, list: DcinsideComment[])
     const seen = entries.get(key(preData))?.seen ?? {};
     const current = new Set(list.map((comment) => comment.no));
 
-    const deleted: Record<string, DcinsideComment> = {};
+    const deleted: DcinsideComment[] = [];
     for (const comment of Object.values(seen)) {
-        if (!current.has(comment.no)) deleted[comment.no] = {...comment, is_delete: "1"};
+        if (!current.has(comment.no)) deleted.push({...comment, is_delete: "1"});
     }
 
-    setEntry(preData, {seen: {...seen, ...Object.fromEntries(list.map((comment) => [comment.no, comment]))}});
+    const nextSeen = {...seen};
+    const output = list.map((comment): DcinsideComment => {
+        const before = seen[comment.no];
 
-    if (Object.keys(deleted).length === 0) return list;
+        // 답글 달린 부모처럼 서버가 삭제 표시(내용 대체)로 남긴 댓글 — 덮어쓰면 원문이 사라지므로 원문을 지키고 그것을 보여 준다.
+        // 디시가 '1' 말고 다른 삭제 코드를 쓸 수도 있어 v5처럼 '0'이 아닌지로 본다
+        if (comment.is_delete !== "0" && before?.is_delete === "0") return {...before, is_delete: "1"};
 
-    const output: DcinsideComment[] = [];
+        nextSeen[comment.no] = comment;
+        return comment;
+    });
 
-    for (const comment of list) {
-        output.push(comment);
+    setEntry(preData, {seen: nextSeen});
 
-        // depth1은 부모 바로 뒤에 삽입
-        const parents = Object.values(deleted).filter((deletedComment) => deletedComment.c_no === comment.no);
-        for (const parent of parents) output.push(parent);
-    }
+    if (deleted.length === 0) return output;
 
-    // 부모가 모두 사라진 고아는 그대로 뒤에 추가
-    for (const deletedComment of Object.values(deleted)) {
-        if (!output.some((comment) => comment.no === deletedComment.no)) output.push(deletedComment);
-    }
-
-    return output;
+    // CommentList가 답글을 c_no로 다시 묶으므로 등록순만 맞추면 된다 — 요청에 정렬 파라미터가 없어 서버 목록도 등록순이다
+    return [...output, ...deleted].sort((a, b) => Number(a.no) - Number(b.no));
 };

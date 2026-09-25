@@ -17,10 +17,11 @@ const CountDown = () => {
     const expire = usePreviewStore((s) => s.expire);
     const [, force] = useState(0);
 
+    // 1시간 미만이면 초까지 보여 주므로 1초마다 (타이머는 하나뿐이라 부담 없다)
     useEffect(() => {
         const timer = window.setInterval(() => {
             if (!document.hidden) force((x) => x + 1);
-        }, 30000);
+        }, 1000);
         return () => window.clearInterval(timer);
     }, []);
 
@@ -59,10 +60,13 @@ const Votes = () => {
 
             const result = await vote(preData, post, mode, code);
             if (result.success) {
-                usePreviewStore.getState().setVotes(result.counts ?? upvotes ?? "X", result.fixedCounts ?? "");
+                // 응답의 수는 누른 쪽 표수다. 비추천의 세 번째 값은 고정 추천 수가 아니라 플래그라 추천 쪽은 건드리지 않는다 (recommend_box.js와 같음)
+                const counts = result.counts ?? (mode === "U" ? upvotes : downvotes);
+                if (mode === "U") usePreviewStore.getState().setVotes(counts ?? "X", result.fixedCounts ?? "");
+                else usePreviewStore.setState({downvotes: counts});
                 useUiStore
                     .getState()
-                    .showToast(`${mode === "U" ? "추천" : "비추천"}되었습니다. (총 ${result.counts ?? upvotes ?? "?"}표)`);
+                    .showToast(`${mode === "U" ? "추천" : "비추천"}되었습니다. (총 ${counts ?? "?"}표)`);
             } else {
                 useUiStore.getState().showToast("이미 처리했거나 처리에 실패했습니다.", "error");
             }
@@ -168,6 +172,7 @@ export const Frame = () => {
     const comments = usePreviewStore((s) => s.comments);
     const commentsOnly = usePreviewStore((s) => s.commentsOnly);
     const imageBlocked = usePreviewStore((s) => s.imageBlocked);
+    const postKey = usePreviewStore((s) => (s.preData ? `${s.preData.gallery}/${s.preData.id}` : ""));
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
 
@@ -190,8 +195,9 @@ export const Frame = () => {
             const st = usePreviewStore.getState();
             if (!st.preData) return;
 
+            // 차단·운영자 숨김 행은 건너뛴다 — 미리보기는 TEXT 차단만 검사해서 숨긴 글이 그대로 열린다
             const rows = Array.from(document.querySelectorAll<HTMLElement>(".gall_list .ub-content")).filter((row) =>
-                row.querySelector("a:not(.reply_numbox)")
+                row.checkVisibility() && row.querySelector("a:not(.reply_numbox)")
             );
 
             const index = rows.findIndex((row) => {
@@ -258,10 +264,12 @@ export const Frame = () => {
                     onInteractOutside={(event) => event.preventDefault()}
                 >
                     {/* 스크롤은 안쪽에서 — 바깥이 스크롤되면 스크롤바가 오른쪽 둥근 모서리를 덮는다 */}
-                    <div className="refresher-frame-scroll" ref={scroller}>
+                    {/* 글마다 새로 마운트 — 캐시 hit이면 한 번에 렌더돼 스크롤 위치와 쓰던 댓글이 다음 글로 넘어간다.
+                        signalId는 닫을 때도 올라 페이드아웃 중에 맨 위로 튀므로 글 주소로 건다 */}
+                    <div className="refresher-frame-scroll" ref={scroller} key={postKey}>
                     <Box px="6" pt="5" pb="3">
                         <Dialog.Title asChild>
-                            <Heading as="h2" size="6" dangerouslySetInnerHTML={{__html: title}}/>
+                            <Heading as="h2" size="6">{title}</Heading>
                         </Dialog.Title>
 
                         {post && (
@@ -314,7 +322,7 @@ export const Frame = () => {
                     </Box>
 
                     {comments !== undefined && (
-                        <Box ref={commentsSection} style={{scrollMarginTop: 0}}>
+                        <Box ref={commentsSection}>
                             <Separator size="4"/>
                             <Box px="6" pt="3">
                                 <Text size="2" color="gray">{subtitle}</Text>

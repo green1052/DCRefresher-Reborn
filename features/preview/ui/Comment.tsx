@@ -4,6 +4,7 @@ import {type MouseEvent, useEffect, useLayoutEffect, useRef, useState} from "rea
 
 import {overlay} from "@/components/overlay/shadow";
 import type {ProcessedComment} from "@/core/preview/comments";
+import type {User} from "@/core/preview/types";
 import {adminDeleteComment, userDeleteComment} from "@/core/preview/request";
 import {notifyManage} from "@/utils/notify";
 import {useUiStore} from "@/stores/ui";
@@ -121,13 +122,15 @@ const TimeStamp = ({date}: { date: string }) => {
     const parsed = parseDate(date);
     const [absolute, setAbsolute] = useState(false);
     const [, force] = useState(0);
+    // 댓글마다 타이머가 도니, 초 단위로 바뀌는 1분 미만일 때만 5초마다, 그 밖에는 1분마다 다시 그린다
+    const recent = Date.now() - parsed.getTime() < 60_000;
 
     useEffect(() => {
         const timer = window.setInterval(() => {
             if (!document.hidden) force((x) => x + 1);
-        }, 5000);
+        }, recent ? 5000 : 60_000);
         return () => window.clearInterval(timer);
-    }, []);
+    }, [recent]);
 
     return (
         <Text size="1" color="gray" title={parsed.toLocaleString()} style={{cursor: "pointer", whiteSpace: "nowrap"}}
@@ -137,15 +140,8 @@ const TimeStamp = ({date}: { date: string }) => {
     );
 };
 
-export interface UserCardData {
-    nick?: string;
-    id?: string;
-    ip?: string;
-    image?: string;
-}
-
 /** 작성자 표시. 우클릭하면 유저 버블 */
-export const UserCard = ({user}: { user: UserCardData }) => {
+export const UserCard = ({user}: { user: User }) => {
     const ipInfo = user.ip ? ipInfoOf(user.ip) : undefined;
     const ipColor = useUiStore((state) => (ipInfo ? state.badgeColors[ipInfo.category] : undefined));
     const banReasons = user.id ? banReasonsOf(user.id) : undefined;
@@ -158,7 +154,6 @@ export const UserCard = ({user}: { user: UserCardData }) => {
 
         const ui = useUiStore.getState();
         ui.setSelected({nick: user.nick, uid: user.id, ip: user.ip});
-        ui.closeBubble();
         ui.openBubble(event.clientX, event.clientY);
     };
 
@@ -184,7 +179,8 @@ interface CommentProps {
 }
 
 export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: CommentProps) => {
-    const reply = usePreviewStore((s) => s.reply);
+    // reply 객체째 구독하면 답글 버튼 하나에 모든 댓글이 다시 그려진다 — 내 댓글인지만 본다
+    const replying = usePreviewStore((s) => s.reply.replyNo === comment.no);
     const collapsed = usePreviewStore((s) => s.collapsed.has(comment.no));
     const setReply = usePreviewStore((s) => s.setReply);
     const toggleCollapse = usePreviewStore((s) => s.toggleCollapse);
@@ -193,22 +189,26 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
     const isAdmin = isGalleryManager();
     const canDelete =
         !isDeleted && (comment.del_btn === "Y" || comment.my_cmt === "Y" || isAdmin || (!comment.user_id && Boolean(comment.ip)));
-    const replying = reply.replyNo === comment.no;
 
     const onDelete = async (): Promise<void> => {
         const st = usePreviewStore.getState();
         if (!st.preData || !st.post) return;
+
+        // 비밀번호 없이 지워지는 삭제(관리자·회원 본인)는 X 한 번에 되돌릴 수 없으니 확인한다 (디시 comment.js와 같음). 비밀번호 삭제는 prompt가 확인 역할
+        const needsPassword = !isAdmin && !comment.user_id;
+        if (!needsPassword && !window.confirm("댓글을 삭제하시겠습니까?")) return;
 
         try {
             if (isAdmin) {
                 if (!notifyManage(await adminDeleteComment(st.preData, comment.no), "댓글을 삭제했습니다.")) return;
             } else {
                 let password = "";
-                if (!comment.user_id) {
+                if (needsPassword) {
                     password = window.prompt("비밀번호를 입력하세요.") ?? "";
                     if (!password) return;
                 }
-                await userDeleteComment(st.preData, comment.no, password);
+                // 비밀번호가 틀려도 HTTP 200('false||메시지')이라 결과를 보여 주지 않으면 조용히 실패한다
+                if (!notifyManage(await userDeleteComment(st.preData, comment.no, password), "댓글을 삭제했습니다.")) return;
             }
             st.requestRefresh();
         } catch {
@@ -279,10 +279,10 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
 
             <Flex direction="column" gap="1" mt="1">
                 {comment.voice &&
-                    (comment.voice.src.startsWith("https://vr.dcinside.com") ? (
-                        <audio controls src={comment.voice.src}/>
-                    ) : (
+                    (comment.voice.iframe ? (
                         <iframe src={comment.voice.src} width={280} height={54} style={{border: 0}} title="voice"/>
+                    ) : (
+                        <audio controls src={comment.voice.src}/>
                     ))}
                 <Box ref={body} className="refresher-html refresher-comment-html" data-dccon={isDccon || undefined}
                      dangerouslySetInnerHTML={{__html: html}}/>

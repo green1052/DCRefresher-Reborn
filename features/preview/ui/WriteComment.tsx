@@ -127,8 +127,8 @@ export const WriteComment = () => {
                     ? submitTxtcon(preData, post, user, text, txtconColors, st.reply.commentNo, st.reply.replyNo, code, token)
                     : submitComment(
                         preData,
+                        post,
                         user,
-                        post.dom ?? document,
                         useDccon ? dccons : text,
                         st.reply.commentNo,
                         st.reply.replyNo,
@@ -177,6 +177,16 @@ export const WriteComment = () => {
 
         const next = normalizeTxtcon(element.value);
         if (next !== element.value) element.value = next;
+    };
+
+    /** 글자콘을 끈다. 켤 때 잘린 글을 손대지 않았으면 원문으로 되돌린다 — 토글과 디시콘 선택 둘 다 여기로 */
+    const exitTxtcon = (): void => {
+        const element = textarea.current;
+        if (element && beforeTxtcon.current !== null && element.value === normalizeTxtcon(beforeTxtcon.current)) {
+            element.value = beforeTxtcon.current;
+        }
+        beforeTxtcon.current = null;
+        setTxtcon(false);
     };
 
     const mode = reply.replyNo ? "답글" : txtcon ? "글자콘" : dccons.length > 0 ? "디시콘" : "댓글";
@@ -265,17 +275,15 @@ export const WriteComment = () => {
                                     setDccons([]);
                                     setBigDccon(false);
 
-                                    // 켤 때 잘리는 글을 기억했다가, 그대로 끄면 되돌린다
-                                    const element = textarea.current;
-                                    if (!txtcon) {
-                                        beforeTxtcon.current = element?.value ?? null;
-                                        applyTxtcon();
-                                    } else if (element && beforeTxtcon.current !== null && element.value === normalizeTxtcon(beforeTxtcon.current)) {
-                                        element.value = beforeTxtcon.current;
+                                    if (txtcon) {
+                                        exitTxtcon();
+                                        return;
                                     }
-                                    if (txtcon) beforeTxtcon.current = null;
 
-                                    setTxtcon(!txtcon);
+                                    // 켤 때 잘리는 글을 기억했다가, 그대로 끄면 되돌린다
+                                    beforeTxtcon.current = textarea.current?.value ?? null;
+                                    applyTxtcon();
+                                    setTxtcon(true);
                                 }}
                             >
                                 <Type size={16}/>
@@ -320,7 +328,7 @@ export const WriteComment = () => {
                     onSelect={(selected, big) => {
                         setDccons(selected);
                         setBigDccon(big);
-                        setTxtcon(false);
+                        if (txtcon) exitTxtcon();
                         setDcconOpen(false);
                     }}
                     onClose={() => setDcconOpen(false)}

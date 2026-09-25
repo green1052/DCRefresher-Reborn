@@ -8,16 +8,7 @@ import {blockUser} from "@/core/preview/request";
 import {notifyManage} from "@/utils/notify";
 import {useUiStore} from "@/stores/ui";
 
-import {usePreviewStore} from "./previewStore";
-
-const BLOCK_DAYS: [string, string][] = [
-    ["1", "1시간"],
-    ["6", "6시간"],
-    ["24", "1일"],
-    ["168", "7일"],
-    ["336", "14일"],
-    ["744", "31일"]
-];
+import {BLOCK_DAYS, usePreviewStore} from "./previewStore";
 
 const BLOCK_REASONS: [string, string][] = [
     ["1", "음란성"],
@@ -64,7 +55,7 @@ const BlockPopup = () => {
                 <Text as="div" size="2" weight="bold" mb="2">기간</Text>
                 <RadioGroup.Root value={day} onValueChange={setDay} size="2">
                     <Grid columns="3" gap="2">
-                        {BLOCK_DAYS.map(([value, label]) => (
+                        {Object.entries(BLOCK_DAYS).map(([value, label]) => (
                             <RadioGroup.Item key={value} value={value}>{label}</RadioGroup.Item>
                         ))}
                     </Grid>
@@ -156,7 +147,7 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
     );
 };
 
-/** 관리 권한이 있을 때 미리보기 왼쪽 가장자리에 붙는 관리 패널 (D/B 두 번 누르기 단축키와 같은 동작) */
+/** 관리 권한이 있을 때 미리보기 왼쪽 가장자리에 붙는 관리 패널. Kbd는 단축키 힌트 — 차단은 B 두 번 누르기(프리셋 즉시 차단)와 달리 옵션 창을 연다 */
 const AdminPanel = () => {
     const notice = usePreviewStore((s) => s.notice);
     const recommend = usePreviewStore((s) => s.recommend);

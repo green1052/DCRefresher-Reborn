@@ -35,6 +35,8 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
     const [loading, setLoading] = useState(true);
 
     const packagesRef = useRef<HTMLDivElement>(null);
+    /** 마지막으로 요청한 페이지 — 빠르게 넘기면 늦게 온 이전 페이지 응답이 그리드를 덮고 로딩을 끈다 */
+    const latest = useRef(0);
 
     const openPackage = (pack: DcinsideDcconDetailList): void => {
         setActivePackage(pack.package_idx);
@@ -42,6 +44,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
     };
 
     const getList = async (targetPage: number): Promise<void> => {
+        latest.current = targetPage;
         const cached = cachedList(targetPage);
         if (cached) {
             setMaxPage(cached.maxPage);
@@ -59,6 +62,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
             });
 
             const response = await ajax.post(urls.dccon.lists, {body}).json<DcinsideDcconDetail>();
+            if (latest.current !== targetPage) return;
 
             if (response.target === "shop") {
                 useUiStore.getState().showToast("사용 가능한 디시콘이 없습니다.", "error");
@@ -70,11 +74,12 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
             setMaxPage(response.max_page);
             if (response.list[0]) openPackage(response.list[0]);
         } catch {
+            if (latest.current !== targetPage) return;
             useUiStore.getState().showToast("디시콘을 불러오는 데 실패했습니다.", "error");
             onClose();
             return;
         } finally {
-            setLoading(false);
+            if (latest.current === targetPage) setLoading(false);
         }
     };
 
@@ -108,7 +113,8 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
         setSelected(next);
     };
 
-    const visible = cachedList(page)?.list ?? [];
+    // TTL은 다시 받을지 정할 때만 — 창을 연 채 10분이 지나도 목록이 비지 않게 (만료된 항목도 지우지 않고 남아 있다)
+    const visible = listCache.get(page)?.list ?? [];
 
     return (
         <Dialog.Root open onOpenChange={(open) => !open && onClose()}>

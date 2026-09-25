@@ -12,15 +12,12 @@ export interface User {
     id?: string;
     nick?: string;
     ip?: string;
-    Type?: string;
     image?: string;
 }
 
 export interface PostInfo {
-    id: string;
     header?: string;
     title?: string;
-    date?: string;
     expire?: string;
     user?: User;
     views?: string;
@@ -31,13 +28,12 @@ export interface PostInfo {
     commentId?: string;
     commentNo?: string;
     commentCount?: number;
-    isAdult?: boolean;
     requireCaptcha?: boolean;
     requireCommentCaptcha?: boolean;
-    disabledDownvote?: boolean;
     v_cur_t?: string;
     randomParam?: { name: string; value: string };
-    dom?: Document;
+    /** 댓글·추천 요청의 토큰을 읽을 그 글의 문서 — 지금 페이지 document로 대신하면 다른 글의 값을 보낸다 */
+    dom: Document;
 }
 
 
@@ -73,8 +69,6 @@ export interface DcinsideComment {
     depth: number;
     user_id: string;
     name: string;
-    password?: string;
-    GallogIcon?: string;
     gallog_icon?: string;
     ip: string;
     memo: string;
@@ -83,7 +77,6 @@ export interface DcinsideComment {
     my_cmt?: "Y" | "N";
     date_time: string;
     reg_date?: string;
-    reply_num?: number;
 
     [key: string]: unknown;
 }
@@ -91,6 +84,4 @@ export interface DcinsideComment {
 export interface CommentListResponse {
     list: DcinsideComment[];
     total_cnt: number;
-
-    [key: string]: unknown;
 }

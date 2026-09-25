@@ -9,12 +9,12 @@ import {useUiStore} from "@/stores/ui";
 import {isTyping} from "@/utils/event";
 import {isGalleryManager} from "@/utils/user";
 import {notifyManage} from "@/utils/notify";
-import {sanitizeHtml} from "@/utils/sanitize";
+import {htmlToText, sanitizeHtml} from "@/utils/sanitize";
 
 import {getEntry, setEntry} from "@/core/preview/cache";
 import {processComments} from "@/core/preview/comments";
 import {blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
-import {type ErrorState, type ManageKind, miniPosition, usePreviewStore} from "./ui/previewStore";
+import {BLOCK_DAYS, type ErrorState, type ManageKind, miniPosition, postTitle, usePreviewStore} from "./ui/previewStore";
 
 const settings: NonNullable<ModuleDefinition["settings"]> = {
     tooltipMode: {type: "check", name: "미니 미리보기 표시", desc: "게시글에 마우스를 올리면 미리보기를 표시합니다.", default: false},
@@ -59,7 +59,7 @@ const settings: NonNullable<ModuleDefinition["settings"]> = {
         name: "차단 프리셋 - 차단 기간",
         desc: "B키 단축 차단의 기본 차단 기간입니다.",
         default: "1",
-        items: {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"}
+        items: BLOCK_DAYS
     },
     blockPresetReason: {
         type: "text",
@@ -150,19 +150,17 @@ const controller = (ctx: ModuleContext) => {
     let lastKeyTime = 0;
     let miniTimer = 0;
     let miniAbort: AbortController | null = null;
-    let lastMiniAt = 0;
-    let lastMiniId = "";
 
     const galName = (): string => document.querySelector("h1")?.textContent?.trim() || "디시인사이드";
 
-    const processContents = (preData: GalleryPreData, postInfo: PostInfo): PostInfo => {
+    const processContents = (preData: GalleryPreData, postInfo: PostInfo, stripMedia = false): PostInfo => {
         const raw = postInfo.contents ?? "";
 
-        if (isAnyBlocked({TEXT: raw.replace(/<[^>]+>/g, " ").trim()}, preData.gallery)) {
+        if (isAnyBlocked({TEXT: htmlToText(raw).trim()}, preData.gallery)) {
             return {...postInfo, contents: "게시글 내용이 차단됐습니다."};
         }
 
-        return {...postInfo, contents: sanitizeHtml(raw)};
+        return {...postInfo, contents: sanitizeHtml(raw, {stripMedia})};
     };
 
     const applyComments = (preData: GalleryPreData, raw: DcinsideComment[]) => {
@@ -291,7 +289,8 @@ const controller = (ctx: ModuleContext) => {
             if (!st.visible) savedHistory = {title: document.title, url: location.href, state: history.state};
             if (ctx.settings.colorPreviewLink) {
                 const newTitle = `${preData.title ?? document.title} - ${galName()}`;
-                history.pushState({refresher: 1, preData}, newTitle, preData.link);
+                // 돌아갈 위치도 함께 — 뒤로 가기로 다시 연 미리보기는 savedHistory가 비어 있어 닫아도 글 주소에 남는다
+                history.pushState({refresher: 1, preData, back: savedHistory}, newTitle, preData.link);
                 document.title = newTitle;
             }
         }
@@ -385,22 +384,19 @@ const controller = (ctx: ModuleContext) => {
             return;
         }
 
-        const state = event.state as { refresher?: number; preData?: GalleryPreData } | null;
+        const state = event.state as { refresher?: number; preData?: GalleryPreData; back?: typeof savedHistory } | null;
         if (state?.refresher === 1 && state.preData) {
+            savedHistory = state.back ?? null;
             open(state.preData, false, true);
         }
     };
 
     // ── 미니 미리보기 ────────────────────────────────────────────
     const showMini = async (element: HTMLElement, x: number, y: number) => {
-        if (!element) return;
-
         const preData = buildPreData(element);
         if (!preData) return;
 
-        if (preData.id === lastMiniId && Date.now() - lastMiniAt < 150) return;
-
-        let post = getEntry(preData)?.post;
+        let post = ctx.settings.disableCache !== true ? getEntry(preData)?.post : undefined;
 
         // 캐시에 없으면 서버에서 가져옴
         if (!post) {
@@ -416,21 +412,13 @@ const controller = (ctx: ModuleContext) => {
             }
         }
 
-        let contents = post.contents ?? "";
-        if (isAnyBlocked({TEXT: contents.replace(/<[^>]+>/g, " ").trim()}, preData.gallery)) {
-            contents = "게시글 내용이 차단됐습니다.";
-        } else {
-            contents = sanitizeHtml(contents, {stripMedia: ctx.settings.tooltipMediaHide === true});
-        }
+        // 이미지 아이콘 없는 글의 이미지 차단(blockImage)도 적용 — 안 그러면 전체 미리보기에서 숨긴 이미지가 호버로 보인다
+        const stripMedia = ctx.settings.tooltipMediaHide === true || (ctx.settings.blockImage === true && preData.type === "icon_txt");
+        const {contents = ""} = processContents(preData, post, stripMedia);
 
-        lastMiniAt = Date.now();
-        lastMiniId = preData.id;
-
-        usePreviewStore.getState().closeMini();
         usePreviewStore.getState().openMini({
-            preData,
             ...miniPosition(x, y),
-            title: post.header ? `[${post.header}] ${post.title ?? ""}` : (post.title ?? ""),
+            title: postTitle(post),
             contents
         });
     };
@@ -480,32 +468,39 @@ const controller = (ctx: ModuleContext) => {
     const handledByWord = (element: HTMLElement, target: HTMLElement): boolean =>
         element.dataset.refresherPreviewMode === "row" && target.closest("[data-refresher-preview-mode=\"word\"]") !== null;
 
-    const onContextMenu = (event: MouseEvent) => {
+    // 우클릭·좌클릭이 같은 기준으로 대상을 고르게 한 곳에서 판정
+    const resolveTarget = (event: MouseEvent): { preData: GalleryPreData; commentsOnly: boolean } | null => {
         const element = event.currentTarget as HTMLElement;
         const target = event.target as HTMLElement;
-        if (handledByWord(element, target)) return;
+        if (handledByWord(element, target)) return null;
 
         // 댓글 수 링크 → 댓글만 보기 (행 모드 가드보다 먼저)
-        if (target.closest(".reply_numbox")) {
-            const preData = buildPreData(element);
-            if (preData) {
-                event.preventDefault();
-                open(preData, true);
-            }
+        const commentsOnly = target.closest(".reply_numbox") !== null;
+
+        if (!commentsOnly) {
+            if (element.dataset.refresherPreviewMode === "row" && ctx.settings.expandRecognizeRange !== true) return null;
+
+            // 작성자 칸은 유저 버블(block 모듈) 몫 — 행 전체 인식이어도 미리보기를 열지 않는다
+            if (target.closest(".ub-writer")) return null;
+        }
+
+        const preData = buildPreData(element);
+        return preData ? {preData, commentsOnly} : null;
+    };
+
+    const onContextMenu = (event: MouseEvent) => {
+        const resolved = resolveTarget(event);
+        if (!resolved) return;
+
+        if (resolved.commentsOnly) {
+            event.preventDefault();
+            open(resolved.preData, true);
             return;
         }
 
-        if (element.dataset.refresherPreviewMode === "row" && ctx.settings.expandRecognizeRange !== true) return;
-
-        // 작성자 칸은 유저 버블(block 모듈) 몫 — 행 전체 인식이어도 미리보기를 열지 않는다
-        if (target.closest(".ub-writer")) return;
-
-        const preData = buildPreData(element);
-        if (!preData) return;
-
         if (ctx.settings.reversePreviewKey === true) {
             event.preventDefault();
-            location.href = preData.link ?? location.href;
+            location.href = resolved.preData.link ?? location.href;
             return;
         }
 
@@ -516,35 +511,15 @@ const controller = (ctx: ModuleContext) => {
         }
 
         event.preventDefault();
-        open(preData);
+        open(resolved.preData);
     };
 
     const onClick = (event: MouseEvent) => {
-        const element = event.currentTarget as HTMLElement;
-        const target = event.target as HTMLElement;
-        if (handledByWord(element, target)) return;
+        const resolved = resolveTarget(event);
+        if (!resolved || (!resolved.commentsOnly && ctx.settings.reversePreviewKey !== true)) return;
 
-        // 댓글 수 링크 → 댓글만 보기 (행 모드 가드보다 먼저)
-        if (target.closest(".reply_numbox")) {
-            const preData = buildPreData(element);
-            if (preData) {
-                event.preventDefault();
-                open(preData, true);
-            }
-            return;
-        }
-
-        if (element.dataset.refresherPreviewMode === "row" && ctx.settings.expandRecognizeRange !== true) return;
-
-        if (target.closest(".ub-writer")) return;
-
-        const preData = buildPreData(element);
-        if (!preData) return;
-
-        if (ctx.settings.reversePreviewKey === true) {
-            event.preventDefault();
-            open(preData);
-        }
+        event.preventDefault();
+        open(resolved.preData, resolved.commentsOnly);
     };
 
     const bind = (element: HTMLElement, mode: "word" | "row") => {
@@ -590,6 +565,8 @@ const controller = (ctx: ModuleContext) => {
             delete element.dataset.refresherPreviewMode;
         }
 
+        // 행 리스너(mouseleave)가 사라져 떠 있거나 가져오는 중인 미니를 닫을 길이 없으므로 여기서 닫는다
+        onMiniLeave();
         close();
         store.getState().setHooks({});
     });

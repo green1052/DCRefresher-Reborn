@@ -5,7 +5,7 @@ import type {GalleryPreData, PostInfo} from "@/core/preview/types";
 
 export interface ErrorState {
     detail: string;
-    /** HTTP 상태 코드 — 응답이 왔을 때만 */
+    /** 상태 코드 — HTTP 오류, 또는 본문이 없어 삭제된 글로 본 경우 404 */
     status?: number;
 }
 
@@ -13,7 +13,7 @@ export type ManageKind = "notice" | "recommend" | "delete" | "bump";
 
 type Reply = { commentNo: string | null; replyNo: string | null };
 
-type MiniState = { preData: GalleryPreData; x: number; y: number; title: string; contents: string };
+type MiniState = { x: number; y: number; title: string; contents: string };
 
 /** 게시글을 새로 열 때마다 초기화되는 상태 */
 interface PostState {
@@ -95,6 +95,9 @@ interface PreviewState extends PostState {
     }) => void;
 }
 
+/** 차단 기간 (시간 → 라벨) — 차단 팝업과 B키 프리셋 설정이 같이 쓴다 */
+export const BLOCK_DAYS: Record<string, string> = {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"};
+
 /** 미니 미리보기 크기 (Mini.tsx 렌더링과 화면 밖 방지 계산이 공유) */
 export const MINI_WIDTH = 560;
 export const MINI_HEIGHT = 420;
@@ -132,6 +135,9 @@ const freshPost = (): PostState => ({
 
 let signalSeq = 0;
 
+/** `[말머리] 제목` — 둘 다 평문이라 텍스트로 렌더링한다 */
+export const postTitle = (post: PostInfo): string => (post.header ? `[${post.header}] ${post.title ?? ""}` : (post.title ?? ""));
+
 export const usePreviewStore = create<PreviewState>((set, get) => ({
     ...freshPost(),
     visible: false,
@@ -152,13 +158,13 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
         set({
             loading: false,
             post,
-            title: post.header ? `[${post.header}] ${post.title ?? ""}` : (post.title ?? ""),
+            title: postTitle(post),
             expire: post.expire ? new Date(post.expire) : undefined,
             views: post.views,
             contents: post.contents,
             upvotes: post.upvotes,
             fixedUpvotes: post.fixedUpvotes,
-            downvotes: post.disabledDownvote ? undefined : post.downvotes
+            downvotes: post.downvotes
         }),
     setError: (error) => set({error, loading: false}),
     setComments: (comments, subtitle) => set({comments, subtitle}),
@@ -166,7 +172,8 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
 
     close: () => {
         get().captcha?.resolve("");
-        set({visible: false, fading: true, comments: undefined, blockPopup: false, captcha: null, reply: NO_REPLY});
+        // signal도 올려, 닫은 뒤 도착한 응답(abort로 난 오류 포함)이 페이드아웃 중인 창에 그려지지 않게
+        set({visible: false, fading: true, comments: undefined, blockPopup: false, captcha: null, reply: NO_REPLY, signalId: ++signalSeq});
         window.setTimeout(() => set({fading: false}), 200);
     },
 

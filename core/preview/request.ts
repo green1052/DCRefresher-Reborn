@@ -20,7 +20,7 @@ const viewUrl = (link: string | undefined, gallery: string, id: string): string 
 export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): Promise<PostInfo> => {
     const response = await http.get(viewUrl(preData.link, preData.gallery, preData.id), {signal}).text();
 
-    const postInfo = parsePostInfo(response, preData.id);
+    const postInfo = parsePostInfo(response);
     if (!postInfo) throw new Error("404");
 
     return postInfo;
@@ -33,7 +33,7 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: PostInfo,
     body.set("no", preData.id);
     body.set("cmt_id", postInfo.commentId ?? preData.gallery);
     body.set("cmt_no", postInfo.commentNo ?? preData.id);
-    body.set("e_s_n_o", postInfo.dom?.querySelector<HTMLInputElement>("#e_s_n_o")?.value ?? "");
+    body.set("e_s_n_o", postInfo.dom.querySelector<HTMLInputElement>("#e_s_n_o")?.value ?? "");
     body.set("comment_page", "1");
 
     const response = await ajax.post(urls.comments, {body, signal}).json<{
@@ -60,7 +60,7 @@ export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U
     body.set("id", preData.gallery);
     body.set("no", preData.id);
     body.set("mode", mode);
-    body.set("code_recommend", code ?? postInfo.dom?.querySelector<HTMLInputElement>("input[name=code_recommend]")?.value ?? "");
+    body.set("code_recommend", code ?? postInfo.dom.querySelector<HTMLInputElement>("input[name=code_recommend]")?.value ?? "");
     body.set("link_id", preData.gallery);
     if (postInfo.v_cur_t) body.set("v_cur_t", postInfo.v_cur_t);
     if (postInfo.randomParam) body.set(postInfo.randomParam.name, postInfo.randomParam.value);
@@ -68,7 +68,7 @@ export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U
     const response = await ajax.post(urls.vote, {body}).text();
     const [result, counts, fixedCounts] = response.split("||");
 
-    if (result === "SUCCESS") {
+    if (result === "true") {
         await cookieStore.set({name: cookieName, value: "Y", expires: Date.now() + 3 * 3600_000, path: "/"});
 
         return {success: true, counts, fixedCounts};
@@ -90,13 +90,18 @@ export const postManage = async (url: string, body: URLSearchParams): Promise<Ma
     const text = (await ajax.post(url, {body}).text()).trim();
 
     try {
-        const {result, msg} = JSON.parse(text) as { result?: unknown; msg?: unknown };
-        return {success: result !== "fail" && result !== false && result !== "false", message: typeof msg === "string" && msg ? msg : undefined};
+        const parsed: unknown = JSON.parse(text);
+        if (parsed && typeof parsed === "object") {
+            const {result, msg} = parsed as { result?: unknown; msg?: unknown };
+            return {success: result !== "fail" && result !== false && result !== "false", message: typeof msg === "string" && msg ? msg : undefined};
+        }
     } catch {
-        // JSON이 아니면 "false||메시지" 같은 텍스트
-        const [result, message] = text.split("||");
-        return {success: result !== "false" && result !== "fail", message: message || undefined};
+        // 아래 텍스트 분기로
     }
+
+    // JSON 객체가 아니면 "false||메시지" 같은 텍스트 — 맨 'false'는 JSON 원시값으로 읽혀 구조 분해하면 성공이 되므로 여기서 본다. 빈 응답은 실패
+    const [result, message] = text.split("||");
+    return {success: !!result && result !== "false" && result !== "fail", message: message || undefined};
 };
 
 /** 끌올 */
@@ -175,7 +180,7 @@ export const adminDeleteComment = async (preData: GalleryPreData, commentId: str
 };
 
 /** 유저 댓글 삭제 */
-export const userDeleteComment = async (preData: GalleryPreData, commentId: string, password: string): Promise<void> => {
+export const userDeleteComment = async (preData: GalleryPreData, commentId: string, password: string): Promise<ManageResult> => {
     const body = await commonBody(preData.link);
     body.set("id", preData.gallery);
     body.set("no", preData.id);
@@ -184,7 +189,9 @@ export const userDeleteComment = async (preData: GalleryPreData, commentId: stri
     if (password) body.set("re_password", password);
     body.set("g-recaptcha-response", "");
 
-    await ajax.post(urls.comment_remove, {body});
+    // 'true'만 성공 (v5와 같음) — postManage는 'false'·'fail'이 아닌 텍스트를 모두 성공으로 본다
+    const {result, message} = submitResult(await ajax.post(urls.comment_remove, {body}).text());
+    return {success: result === "true", message};
 };
 
 export interface SubmitResult {
@@ -203,8 +210,8 @@ const submitResult = (response: string): SubmitResult => {
 /** 댓글/디시콘 작성. 첫 전송은 grecaptchaToken 없이 (디시 f_submit(null)) */
 export const submitComment = async (
     preData: GalleryPreData,
+    postInfo: PostInfo,
     user: { name: string; pw?: string },
-    postDom: Document,
     memo: string | DcinsideDccon[],
     commentNo: string | null,
     replyNo: string | null,
@@ -212,7 +219,7 @@ export const submitComment = async (
     captcha?: string,
     grecaptchaToken?: string
 ): Promise<SubmitResult> => {
-    const dom = postDom;
+    const {dom} = postInfo;
 
     const code = (() => {
         try {
@@ -360,15 +367,18 @@ export const normalizeTxtcon = (value: string): string => {
         .slice(0, TXTCON_MAX_LINES)
         .join("\n");
 
+    // 4줄(줄바꿈 3개)×5글자면 23 grapheme을 넘을 수 없다 — 미리 줄여 두어야 한 글자씩 빼며 전체를 다시 나누는 아래 루프가 긴 붙여넣기에서 O(n²)가 되지 않는다
+    text = Array.from(segmenter.segment(text), (s) => s.segment).slice(0, (TXTCON_MAX_LINE_LEN + 1) * TXTCON_MAX_LINES).join("");
+
     // 5글자씩 나눈 줄 수가 넘치면 뒤에서부터 제거
     while (txtconLines(text) > TXTCON_MAX_LINES) text = Array.from(text).slice(0, -1).join("");
 
-    // 글자 수 제한 (코드포인트 단위로 자른다)
+    // 글자 수 제한 (코드포인트 단위로 앞에서 자른다 — 넘치는 글자만 건너뛰면 가운데가 빠지고 뒤의 ZWJ·결합 문자가 엉뚱한 글자에 붙는다)
     let count = 0;
     let output = "";
     for (const char of text) {
         const width = txtconLength(char);
-        if (count + width > TXTCON_MAX_LEN) continue;
+        if (count + width > TXTCON_MAX_LEN) break;
 
         output += char;
         count += width;
@@ -389,7 +399,7 @@ export const submitTxtcon = async (
     captcha?: string,
     grecaptchaToken?: string
 ): Promise<SubmitResult> => {
-    const dom = postInfo.dom ?? document;
+    const {dom} = postInfo;
 
     const body = await commonBody(preData.link);
     body.set("id", postInfo.commentId ?? preData.gallery);
