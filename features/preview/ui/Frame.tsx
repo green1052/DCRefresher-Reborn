@@ -1,4 +1,4 @@
-import {Badge, Box, Button, Callout, Flex, Heading, IconButton, Separator, Spinner, Text, Tooltip} from "@radix-ui/themes";
+import {Badge, Box, Button, Callout, Flex, Heading, IconButton, Separator, Spinner, Text, Theme, Tooltip} from "@radix-ui/themes";
 import {CircleAlert, Clock, ExternalLink, Eye, ThumbsDown, ThumbsUp} from "lucide-react";
 import {Dialog} from "radix-ui";
 import {Fragment, useEffect, useState} from "react";
@@ -232,6 +232,8 @@ export const Frame = () => {
             }}
         >
             <Dialog.Portal container={overlay.portal}>
+                {/* 프리미티브 포털은 Theme 밖(#portal)에 그려져 토큰이 없다 — Themes 컴포넌트처럼 Theme로 다시 감싼다 */}
+                <Theme>
                 <div
                     className="refresher-frame-outer"
                     data-fading={fading || undefined}
@@ -315,6 +317,7 @@ export const Frame = () => {
 
                     {post && <WriteComment/>}
                 </Dialog.Content>
+                </Theme>
             </Dialog.Portal>
         </Dialog.Root>
     );
