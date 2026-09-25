@@ -139,6 +139,9 @@ export default defineModule({
         let timer = 0;
         let originalLocation = location.href;
         let calledByPageTurn = false;
+        // 이 문서가 보여주는 글 — 뒤로 가기로 originalLocation이 미리보기 주소(다른 no)가 돼도 바뀌지 않는다
+        const isPageView = location.href.includes("/board/view");
+        const currentPostNo = queryString("no");
         const paginationAbort = new AbortController();
 
         // 제어 버튼
@@ -166,6 +169,9 @@ export default defineModule({
 
         // ===== load =====
         const load = async (customURL?: string, force?: boolean): Promise<boolean> => {
+            // 진행 중인 요청 등으로 이번 호출이 막혀도 다음 새로고침부터는 새 주소를 받도록 먼저 바꿔 둔다
+            if (customURL) originalLocation = customURL;
+
             if (loading || document.hidden) return false;
             if (!force && (Date.now() - lastRefresh < MINIMUM_REFRESH_INTERVAL || paused)) return false;
 
@@ -174,15 +180,18 @@ export default defineModule({
             if (document.querySelector(".user_data.add")) return false;
 
             loading = true;
+            // 기다리는 동안 뒤로 가기/페이지 이동으로 originalLocation이 바뀔 수 있으니 요청한 주소를 고정
+            const target = originalLocation;
 
             try {
-                if (customURL) originalLocation = customURL;
-
                 lastRefresh = Date.now();
 
-                const response = await http.get(listUrl(originalLocation), {
+                const response = await http.get(listUrl(target), {
                     timeout: Number(ctx.settings.refreshRate) - 100
                 }).text();
+                // 그 사이 주소가 바뀌었으면 지난 주소의 목록이라 버린다 — finally에서 새 주소로 다시 받는다
+                if (target !== originalLocation) return false;
+
                 const dom = new DOMParser().parseFromString(response, "text/html");
 
                 const oldList = document.querySelector<HTMLElement>(".gall_list:not([id]) tbody");
@@ -192,11 +201,7 @@ export default defineModule({
 
                 if (!oldList || !newList) return false;
 
-                // 현재 페이지 정보 (전환 지원을 위해 매 요청마다 계산)
-                const currentUrl = new URL(originalLocation);
-                const currentPostNo = currentUrl.searchParams.get("no");
-                const isPageView = originalLocation.includes("/board/view");
-                const searchType = currentUrl.searchParams.get("s_type");
+                const searchType = new URL(target).searchParams.get("s_type");
 
                 const oldRows = Array.from(oldList.querySelectorAll<HTMLTableRowElement>(":scope > tr"));
                 const oldCacheSet = new Set(oldRows.map((row) => row.dataset.no ?? (row.querySelector(".gall_num")?.textContent ?? "")));
@@ -254,6 +259,7 @@ export default defineModule({
                 return false;
             } finally {
                 loading = false;
+                if (target !== originalLocation) void load(undefined, true);
             }
         };
 
@@ -283,10 +289,11 @@ export default defineModule({
             if (!event.persisted) void load();
         };
 
+        // 뒤로/앞으로 가기 — 인페이지 전환으로 쌓인 주소의 목록으로 되돌린다
         const onPopState = (): void => {
             calledByPageTurn = true;
             window.clearTimeout(timer);
-            void load(undefined, true);
+            void load(location.href, true);
             armNext();
         };
 
@@ -324,7 +331,6 @@ export default defineModule({
                         (event) => {
                             event.preventDefault();
 
-                            const isPageView = location.href.includes("/board/view");
                             const newUrl = isPageView ? mergeParamURL(location.href, anchor.href) : anchor.href;
 
                             history.pushState(null, document.title, newUrl);
