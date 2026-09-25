@@ -159,6 +159,8 @@ export const UserCard = ({user, fetchRatio}: { user: User; fetchRatio?: boolean 
     const ratioColor = useUiStore((state) => (ratio && ratios && ratios.alarm > 0 && ratio.article + ratio.comment <= ratios.alarm ? state.badgeColors.ratioAlarm : state.badgeColors.ratio));
 
     const openMenu = (ev: MouseEvent): void => {
+        // 목록과 같이 Shift+우클릭은 브라우저 기본 메뉴
+        if (ev.shiftKey) return;
         ev.preventDefault();
 
         const ui = useUiStore.getState();

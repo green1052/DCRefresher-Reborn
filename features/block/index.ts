@@ -1,6 +1,6 @@
 import {isAnyBlocked, isBlocked} from "@/core/block";
 import {defineModule} from "@/core/module/define";
-import type {ModuleContext} from "@/core/module/types";
+import type {ModuleContext, SettingGroup} from "@/core/module/types";
 import {queryString} from "@/core/http/urls";
 import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
@@ -22,6 +22,15 @@ const dcconCode = (element: HTMLElement): string | undefined => {
 };
 
 const isViewPage = (): boolean => location.href.includes("/board/view");
+
+const BLUR_GROUP: SettingGroup = {name: "블러 처리", desc: "차단된 내용을 지우지 않고 블러 처리합니다."};
+
+/** 블러 강도·마우스 오버 보기는 <html>의 변수/클래스로만 건다 — 행마다 JS를 붙이지 않고 새로 그려진 행에도 그대로 먹는다 (content.scss) */
+const applyBlurStyle = (ctx: ModuleContext): void => {
+    const root = document.documentElement;
+    root.style.setProperty("--refresher-blur", `${Number(ctx.settings.blurStrength)}px`);
+    root.classList.toggle("refresherBlurReveal", ctx.settings.blurReveal === true);
+};
 
 const setupFilters = (ctx: ModuleContext, gallery: string | undefined): (() => void) => {
     const useBlur = () => ctx.settings.blur === true;
@@ -123,6 +132,9 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): (() => v
 
 const setupSelection = (ctx: ModuleContext): void => {
     const onContextMenu = (ev: MouseEvent): void => {
+        // Shift+우클릭은 유저 버블 대신 브라우저 기본 메뉴를 연다 (링크 복사·요소 검사 등이 막히지 않게)
+        if (ev.shiftKey) return;
+
         const target = eventTarget(ev);
         if (!(target instanceof Element)) return;
 
@@ -188,25 +200,49 @@ export default defineModule({
         },
         blur: {
             type: "check",
-            name: "블러 처리",
+            group: BLUR_GROUP,
+            name: "사용",
             desc: "차단된 내용을 블러 처리합니다.",
             default: false
+        },
+        blurReveal: {
+            type: "check",
+            group: BLUR_GROUP,
+            name: "마우스를 올리면 보기",
+            desc: "블러 처리된 내용에 마우스를 올린 동안 원래대로 보여 줍니다.",
+            default: true
+        },
+        blurStrength: {
+            type: "range",
+            group: BLUR_GROUP,
+            name: "강도",
+            desc: "차단된 내용에 거는 블러의 세기입니다.",
+            default: 5,
+            min: 1,
+            max: 20,
+            step: 1,
+            unit: "px"
         }
     },
 
     setup(ctx) {
         const gallery = queryString("id") ?? undefined;
 
+        applyBlurStyle(ctx);
         recheck = setupFilters(ctx, gallery);
         ctx.addCleanup(() => (recheck = undefined));
         setupSelection(ctx);
     },
 
-    onChanged() {
-        recheck?.();
+    onChanged(ctx, key) {
+        // 보기 방식만 바뀌면 다시 판정할 필요 없다
+        if (key === "blurReveal" || key === "blurStrength") applyBlurStyle(ctx);
+        else recheck?.();
     },
 
     revoke() {
         restoreHiddenElements();
+        document.documentElement.style.removeProperty("--refresher-blur");
+        document.documentElement.classList.remove("refresherBlurReveal");
     }
 });

@@ -6,12 +6,19 @@ import {eventBus} from "@/core/eventbus/bus";
 import {useUiStore} from "@/stores/ui";
 
 const MINIMUM_REFRESH_INTERVAL = 2000;
+/** 목록 요청이 연달아 실패할 때 자동 새로고침 주기를 늘리는 상한 */
+const MAXIMUM_BACKOFF_INTERVAL = 60_000;
+const LIST_SELECTOR = ".gall_list:not([id]) tbody";
 const PAGING_SELECTOR = ".left_content article:has(.gall_listwrap) .bottom_paging_box";
 
-interface RefreshApi {
+/** setup()이 돌려주는 객체 — 단축키와 팝업이 쓴다 */
+export interface RefreshApi {
     refreshLists(): Promise<void>;
 
     togglePause(): void;
+
+    /** 지금 이 페이지에서 새로고침이 멈춰 있는지 */
+    isPaused(): boolean;
 }
 
 /**
@@ -145,6 +152,8 @@ export default defineModule({
         let calledByPageTurn = false;
         // 강제 로드가 진행 중인 요청에 막혔을 때 끝난 뒤 한 번 더 받기 위한 표시
         let rerun = false;
+        // 연달아 실패한 목록 요청 수 — 자동 새로고침 주기를 이만큼 두 배씩 늘린다
+        let failures = 0;
         // 이 문서가 보여주는 글 — 뒤로 가기로 originalLocation이 미리보기 주소(다른 no)가 돼도 바뀌지 않는다
         const isPageView = location.href.includes("/board/view");
         const currentPostNo = queryString("no");
@@ -186,6 +195,18 @@ export default defineModule({
             if (document.hidden) return false;
             if (!force && (Date.now() - lastRefresh < MINIMUM_REFRESH_INTERVAL || paused)) return false;
 
+            // 자동 새로고침만 거르는 조건 — 사용자가 직접 한 새로고침·이동은 그대로 받는다
+            if (!force) {
+                // 새 글은 1페이지에만 들어온다. 뒤 페이지는 갈아끼울 때마다 행이 밀려 읽던 글이 다음 페이지로 사라질 뿐이다
+                const page = new URL(originalLocation).searchParams.get("page");
+                if (page && page !== "1") return false;
+
+                // 목록은 통째로 갈아끼워져 커서·키보드 포커스 아래 행이 바뀐다 — 그 위에 있는 동안은 건너뛴다.
+                // 포커스는 :focus-visible만 본다: 글 제목을 마우스로 누르면 링크에 포커스가 남아 목록을 떠나도 계속 멈춘다
+                const list = document.querySelector(LIST_SELECTOR);
+                if (list && (list.matches(":hover") || list.querySelector(":focus-visible"))) return false;
+            }
+
             // 관리자가 체크박스로 글을 고르는 중이면 목록을 갈아끼우지 않는다.
             // 댓글 체크박스는 목록과 상관없고, 사용자가 직접 한 이동(페이지 전환/뒤로 가기)은 막으면 주소와 목록이 어긋난다
             if (!customURL && (document.querySelector(".gall_list:not([id]) .article_chkbox:checked") || document.querySelector(".user_data.add"))) {
@@ -207,15 +228,20 @@ export default defineModule({
 
                 const dom = new DOMParser().parseFromString(response, "text/html");
 
-                const oldList = document.querySelector<HTMLElement>(".gall_list:not([id]) tbody");
-                const newList = dom.querySelector<HTMLElement>(".gall_list:not([id]) tbody");
+                const oldList = document.querySelector<HTMLElement>(LIST_SELECTOR);
+                const newList = dom.querySelector<HTMLElement>(LIST_SELECTOR);
 
                 // 페이징 박스도 받아온 것으로 맞춘다. 같을 땐 건드리지 않아야 누르던 페이지 링크가 교체로 사라지지 않는다
                 const paging = dom.querySelector<HTMLElement>(PAGING_SELECTOR);
                 const currentPaging = document.querySelector<HTMLElement>(PAGING_SELECTOR);
                 if (paging && currentPaging && paging.innerHTML !== currentPaging.innerHTML) currentPaging.innerHTML = paging.innerHTML;
 
-                if (!oldList || !newList) return false;
+                // 목록 없는 응답(오류·차단 안내 페이지)도 실패로 쳐서 주기를 늘린다
+                if (!oldList || !newList) {
+                    failures++;
+                    return false;
+                }
+                failures = 0;
 
                 const searchType = new URL(target).searchParams.get("s_type");
 
@@ -273,6 +299,7 @@ export default defineModule({
                 return true;
             } catch (e) {
                 console.error("Refresh failed:", e);
+                failures++;
                 return false;
             } finally {
                 loading = false;
@@ -285,12 +312,17 @@ export default defineModule({
         };
 
         // ===== 스케줄링: 즉시 1회 → 주기+지터 재귀 =====
+        // 모듈을 끈 뒤 응답이 오면 armNext가 타이머를 다시 거는 것을 막는다
+        let stopped = false;
         const armNext = (): void => {
             window.clearTimeout(timer);
-            timer = window.setTimeout(() => {
-                void load();
-                armNext();
-            }, Number(ctx.settings.refreshRate) + 500 + Math.random() * 1500);
+            // 숨은 탭에선 쉰다 — 다시 보이면 onVisibilityChange가 이어 간다 (응답을 기다리던 중 숨겨져도 여기서 멈춘다)
+            if (stopped || document.hidden) return;
+
+            // 실패가 이어지면 주기를 두 배씩 늘린다 (최대 60초). 성공하면 load가 failures를 0으로 되돌린다
+            const interval = Math.min(Number(ctx.settings.refreshRate) * 2 ** failures, MAXIMUM_BACKOFF_INTERVAL);
+            // 응답을 받은 뒤 다음 주기를 잡아야 방금 실패가 바로 반영된다
+            timer = window.setTimeout(() => void load().finally(armNext), interval + 500 + Math.random() * 1500);
         };
 
         void load();
@@ -327,6 +359,7 @@ export default defineModule({
             offRefreshRequest();
             document.removeEventListener("visibilitychange", onVisibilityChange);
             window.removeEventListener("popstate", onPopState);
+            stopped = true;
             window.clearTimeout(timer);
         });
 
@@ -374,7 +407,9 @@ export default defineModule({
                 if (button) button.textContent = label();
 
                 useUiStore.getState().showToast(paused ? "이번 페이지에서는 새로고침을 사용하지 않습니다." : "이번 페이지에서는 새로고침을 사용합니다.");
-            }
+            },
+
+            isPaused: () => paused
         };
 
         return api;

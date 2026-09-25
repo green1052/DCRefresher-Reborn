@@ -77,8 +77,8 @@ export function GeneralTab() {
                                                     <Text as="p" size="1" color="gray" mb="2">{row.group.desc}</Text>
                                                     <Grid columns={{initial: "2", sm: "3"}} gapX="5">
                                                         {row.entries.map((entry) => (
-                                                            // 글 입력칸은 칸 하나로는 좁다 — 한 줄을 다 쓴다
-                                                            <Box key={entry[0]} gridColumn={entry[1].type === "text" ? "1 / -1" : undefined}>
+                                                            // 글 입력칸·슬라이더는 칸 하나로는 좁다 — 한 줄을 다 쓴다
+                                                            <Box key={entry[0]} gridColumn={entry[1].type === "text" || entry[1].type === "range" ? "1 / -1" : undefined}>
                                                                 {item(entry, true)}
                                                             </Box>
                                                         ))}

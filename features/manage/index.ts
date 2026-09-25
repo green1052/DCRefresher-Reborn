@@ -4,6 +4,7 @@ import {postManage} from "@/core/preview/request";
 import {useUiStore} from "@/stores/ui";
 import {csrfToken} from "@/utils/cookie";
 import {notifyManage} from "@/utils/notify";
+import {isGalleryManager} from "@/utils/user";
 
 export default defineModule({
     id: "manage",
@@ -132,7 +133,8 @@ export default defineModule({
                 handled.add(element);
 
                 element.addEventListener("click", (ev) => {
-                    if (!ctx.settings.deleteViaCtrl || !ev.ctrlKey) return;
+                    // 관리하지 않는 갤러리에선 Ctrl+클릭(새 탭 열기)을 그대로 둔다 — 권한도 없는 삭제 요청을 보내지 않는다
+                    if (!ctx.settings.deleteViaCtrl || !ev.ctrlKey || !isGalleryManager()) return;
                     // 체크박스 칸과 댓글 수(미리보기가 댓글만 열린다)는 삭제로 가로채지 않는다 — 제목 Ctrl+클릭은 v5처럼 삭제
                     if (ev.target instanceof Element && ev.target.closest("td:has(.article_chkbox), .reply_numbox")) return;
 
