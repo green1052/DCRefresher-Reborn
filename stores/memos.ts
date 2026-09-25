@@ -77,17 +77,26 @@ let initialized: Promise<void> | null = null;
 /** 저장소 값 로드 + 변경 감시 (다른 탭/옵션 페이지에서 바뀐 값 반영). 여러 번 불러도 1회 */
 export const initMemosStore = (): Promise<void> =>
     (initialized ??= (async () => {
-        // 이 탭의 쓰기도 watch로 돌아온다 — 값이 같으면 state를 그대로 돌려줘 구독자(배지 전체 다시 그리기)를 깨우지 않는다
-        const setMap = (type: MemoType, value: unknown): void =>
-            useMemosStore.setState((state) => {
-                const next = normalizeMemoMap(value);
-                return JSON.stringify(state.memos[type]) === JSON.stringify(next) ? state : {memos: {...state.memos, [type]: next}};
-            });
+        const unwatch: (() => void)[] = [];
 
-        await Promise.all(
-            MEMO_TYPES.map(async (type) => {
-                setMap(type, await memoStorage[type].getValue());
-                memoStorage[type].watch((next) => setMap(type, next));
-            })
-        );
+        try {
+            // 이 탭의 쓰기도 watch로 돌아온다 — 값이 같으면 state를 그대로 돌려줘 구독자(배지 전체 다시 그리기)를 깨우지 않는다
+            const setMap = (type: MemoType, value: unknown): void =>
+                useMemosStore.setState((state) => {
+                    const next = normalizeMemoMap(value);
+                    return JSON.stringify(state.memos[type]) === JSON.stringify(next) ? state : {memos: {...state.memos, [type]: next}};
+                });
+
+            await Promise.all(
+                MEMO_TYPES.map(async (type) => {
+                    setMap(type, await memoStorage[type].getValue());
+                    unwatch.push(memoStorage[type].watch((next) => setMap(type, next)));
+                })
+            );
+        } catch (e) {
+            // 실패를 붙들고 있으면 다음 호출도 계속 실패한다 — 비워 두어 다시 시도하게 (먼저 건 감시는 풀어 두 번 걸리지 않게)
+            for (const off of unwatch) off();
+            initialized = null;
+            throw e;
+        }
     })());

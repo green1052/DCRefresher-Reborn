@@ -44,7 +44,7 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: PostInfo,
     return {total_cnt: Number(response.total_cnt), list: response.comments ?? []};
 };
 
-export interface VoteResult {
+interface VoteResult {
     success: boolean;
     counts?: string;
     fixedCounts?: string;
@@ -99,9 +99,9 @@ export const postManage = async (url: string, body: URLSearchParams): Promise<Ma
         // 아래 텍스트 분기로
     }
 
-    // JSON 객체가 아니면 "false||메시지" 같은 텍스트 — 맨 'false'는 JSON 원시값으로 읽혀 구조 분해하면 성공이 되므로 여기서 본다. 빈 응답은 실패
+    // JSON 객체가 아니면 "false||메시지" 같은 텍스트 — 맨 'false'는 JSON 원시값으로 읽혀 구조 분해하면 성공이 되므로 여기서 본다. 빈 응답·'null'은 실패
     const [result, message] = text.split("||");
-    return {success: !!result && result !== "false" && result !== "fail", message: message || undefined};
+    return {success: !!result && result !== "false" && result !== "fail" && result !== "null", message: message || undefined};
 };
 
 /** 글 하나를 대상으로 하는 관리 요청 — 끌올·삭제는 본문이 같고 주소만 다르다 */
@@ -119,7 +119,7 @@ export const bump = (preData: GalleryPreData): Promise<ManageResult> => managePo
 /** 삭제 */
 export const deletePost = (preData: GalleryPreData): Promise<ManageResult> => managePost(preData, urls.manage.delete, urls.manage.deleteMini);
 
-export interface BlockOptions {
+interface BlockOptions {
     avoidHour: string;
     avoidReason: string;
     avoidReasonTxt: string;

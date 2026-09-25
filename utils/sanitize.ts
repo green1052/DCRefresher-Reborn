@@ -21,7 +21,8 @@ export const sanitizeHtml = (html: string, options: { stripMedia?: boolean } = {
  * 태그만 떼면 &amp; 같은 엔티티가 남아 'R&B', '<3' 같은 차단어가 안 걸린다.
  */
 export const htmlToText = (html: string): string => {
-    const text = html.includes("<") ? html.replace(/<[^>]+>/g, " ") : html;
+    // 직렬화는 속성값의 '>'를 이스케이프하지 않는다 — 값("…", 직렬화는 늘 큰따옴표)과 주석은 통째로 건너뛰어야 속성 글자가 새지 않는다
+    const text = html.includes("<") ? html.replace(/<!--[\s\S]*?-->|<(?:[^>"]|"[^"]*")*>/g, " ") : html;
     if (!text.includes("&")) return text;
 
     // 직렬화는 텍스트의 &, <, >, U+00A0만 이스케이프한다. &amp;는 마지막에 풀어야 '&amp;lt;'가 '<'로 두 번 풀리지 않는다

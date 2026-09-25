@@ -30,6 +30,9 @@ interface BackupMeta {
     createdAt: number;
 }
 
+/** 모듈 캐시 키 (refresher:module:<id>:data) */
+export const isModuleDataKey = (key: string): boolean => /^refresher:module:.+:data$/.test(key);
+
 /**
  * 백업·내보내기에서 빼는 로컬 키
  * - refresher:db: IP/밴 DB — 크고, 다시 받으면 된다
@@ -38,7 +41,7 @@ interface BackupMeta {
  * - refresher:nonmember: 비회원 비밀번호(평문) — 내보내기 JSON을 남에게 건네거나 sync에 올리면 새어 나간다
  */
 export const isBackupTarget = (key: string): boolean =>
-    key !== "refresher:db" && key !== "refresher:nonmember" && !key.startsWith("refresher:backup:") && !/^refresher:module:.+:data$/.test(key);
+    key !== "refresher:db" && key !== "refresher:nonmember" && !key.startsWith("refresher:backup:") && !isModuleDataKey(key);
 
 export const collectLocalData = async (): Promise<Record<string, unknown>> => {
     const data = (await browser.storage.local.get(null)) as Record<string, unknown>;
@@ -89,11 +92,12 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     try {
         await browser.storage.sync.set(items);
     } catch (e) {
-        // 예전 방식 백업이 자리를 차지해 한도를 넘었을 수 있다 — 치우고 한 번 더
-        if (stale.length === 0) throw e;
-        await browser.storage.sync.remove(stale);
+        // 예전 방식 백업이 자리를 차지해 한도를 넘었을 수 있다 — 그것만 치우고 한 번 더
+        // 이 칸의 남는 조각은 성공한 뒤에 지운다 — 다시 실패하면 이전 메타가 그 조각을 가리킨다
+        const legacy = stale.filter(isLegacyKey);
+        if (legacy.length === 0) throw e;
+        await browser.storage.sync.remove(legacy);
         await browser.storage.sync.set(items);
-        return;
     }
 
     if (stale.length > 0) await browser.storage.sync.remove(stale);
@@ -110,7 +114,7 @@ export const readCloudBackupTimes = async (): Promise<{ manual?: number; auto?: 
     return {manual: time("manual"), auto: time("auto"), legacy: Object.keys(all).some((key) => isLegacyKey(key) && isBackupTarget(key))};
 };
 
-export interface CloudBackup {
+interface CloudBackup {
     data: Record<string, unknown>;
     /** 예전 방식 백업이면 없음 */
     createdAt?: number;

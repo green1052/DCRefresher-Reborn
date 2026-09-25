@@ -40,9 +40,12 @@ const collect = (element: HTMLElement, scope: string, matches: Set<HTMLElement>)
 };
 
 // mutation을 microtask 단위로 모아 한 번에 처리
+// userinfo가 작성자마다 넣는 배지 묶음은 건너뛴다 — closest로 부모 작성자가 다시 잡혀 행마다 모든 필터(차단 정규식 등)가 한 번 더 돈다
 const flush = (): void => {
     flushScheduled = false;
-    const added = pending.flatMap((mutation) => Array.from(mutation.addedNodes)).filter((node): node is HTMLElement => node instanceof HTMLElement);
+    const added = pending
+        .flatMap((mutation) => Array.from(mutation.addedNodes))
+        .filter((node): node is HTMLElement => node instanceof HTMLElement && !node.classList.contains("refresher-user-badges"));
     pending = [];
     if (added.length === 0) return;
 

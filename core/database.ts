@@ -20,7 +20,7 @@ export const updateDatabase = async (): Promise<void> => {
 /** 배지 색 구분 — 유력 후보(첫 번째)의 국가/VPN 기준 */
 export type IpCategory = "korea" | "japan" | "china" | "foreign" | "vpn";
 
-export interface IpInfo {
+interface IpInfo {
     /** "KT, 부산은행" / "SoftBank Corp. (일본)" / "Tencent (VPN)" — 조직은 3개까지, 한국은 국가 생략 */
     label: string;
     /** 후보 전체 (툴팁용) */
@@ -51,7 +51,11 @@ export const initDatabase = (): Promise<void> =>
     (initialized ??= (async () => {
         load(await dbStorage.getValue());
         dbStorage.watch(load);
-    })());
+    })().catch((e) => {
+        // 실패를 붙들고 있으면 다음 호출도 계속 실패한다 — 비워 두어 다시 시도하게
+        initialized = null;
+        throw e;
+    }));
 
 const categoryOf = ({vpn, country}: IpCandidate): IpCategory => {
     if (vpn) return "vpn";

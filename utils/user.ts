@@ -1,4 +1,4 @@
-export type UserType =
+type UserType =
     | "UNFIXED"
     | "HALF_FIXED"
     | "FIXED"

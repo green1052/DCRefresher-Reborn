@@ -1,39 +1,42 @@
-import {LRUCache} from "lru-cache";
-
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {useBlocksStore} from "@/stores/blocks";
 
-// 정규식 컴파일 캐시 (차단 목록이 바뀌어도 같은 패턴은 재사용)
-const regexCache = new LRUCache<string, RegExp | false>({max: 500});
+interface Compiled {
+    regex: RegExp;
+    /** 첫 매치 == 전체로 보면 `닉1|닉1a`처럼 앞 대안이 짧게 매치할 때 완전 일치를 놓친다 — 전체를 앵커로 감싼 것 */
+    anchored: RegExp;
+}
 
-const compile = (pattern: string): RegExp | null => {
-    let regex = regexCache.get(pattern);
-    if (regex === undefined) {
+// 항목별 컴파일 캐시 — 스토어는 항목이 바뀌면 객체를 새로 만드므로 객체를 키로 쓰면 목록 크기와 상관없이 한 번만 컴파일한다 (잘못된 패턴은 null)
+const regexCache = new WeakMap<BlockEntry, Compiled | null>();
+
+const compile = (entry: BlockEntry): Compiled | null => {
+    let compiled = regexCache.get(entry);
+    if (compiled === undefined) {
         try {
-            regex = new RegExp(pattern);
+            compiled = {regex: new RegExp(entry.content), anchored: new RegExp(`^(?:${entry.content})$`)};
         } catch {
-            regex = false;
+            compiled = null;
         }
-        regexCache.set(pattern, regex);
+        regexCache.set(entry, compiled);
     }
-    return regex || null;
+    return compiled;
 };
 
 const matches = (entry: BlockEntry, mode: DetectMode, content: string): boolean => {
     if (entry.isRegex) {
-        const regex = compile(entry.content);
-        if (!regex) return false;
+        const compiled = compile(entry);
+        if (!compiled) return false;
 
         switch (mode) {
-            // 첫 매치 == 전체로 보면 `닉1|닉1a`처럼 앞 대안이 짧게 매치할 때 완전 일치를 놓친다 — 전체를 앵커로 감싸 본다
             case "SAME":
-                return compile(`^(?:${entry.content})$`)?.test(content) === true;
+                return compiled.anchored.test(content);
             case "CONTAIN":
-                return regex.test(content);
+                return compiled.regex.test(content);
             case "NOT_SAME":
-                return compile(`^(?:${entry.content})$`)?.test(content) === false;
+                return !compiled.anchored.test(content);
             case "NOT_CONTAIN":
-                return !regex.test(content);
+                return !compiled.regex.test(content);
         }
     }
 

@@ -81,23 +81,32 @@ let initialized: Promise<void> | null = null;
 /** 저장소 값 로드 + 변경 감시 (다른 탭/옵션 페이지에서 바뀐 값 반영). 여러 번 불러도 1회 */
 export const initBlocksStore = (): Promise<void> =>
     (initialized ??= (async () => {
-        // 이 탭의 쓰기도 watch로 돌아온다 — 값이 같으면 state를 그대로 돌려줘 구독자를 다시 렌더시키지 않는다
-        const setList = (type: BlockType, value: unknown): void =>
-            useBlocksStore.setState((state) => {
-                const next = normalizeBlockList(value);
-                return JSON.stringify(state.entries[type]) === JSON.stringify(next) ? state : {entries: {...state.entries, [type]: next}};
-            });
+        const unwatch: (() => void)[] = [];
 
-        await Promise.all(
-            BLOCK_TYPES.map(async (type) => {
-                setList(type, await blockStorage[type].getValue());
-                blockStorage[type].watch((next) => setList(type, next));
-            })
-        );
+        try {
+            // 이 탭의 쓰기도 watch로 돌아온다 — 값이 같으면 state를 그대로 돌려줘 구독자를 다시 렌더시키지 않는다
+            const setList = (type: BlockType, value: unknown): void =>
+                useBlocksStore.setState((state) => {
+                    const next = normalizeBlockList(value);
+                    return JSON.stringify(state.entries[type]) === JSON.stringify(next) ? state : {entries: {...state.entries, [type]: next}};
+                });
 
-        const setDefaults = (next: Partial<Record<BlockType, DetectMode>> | null): void =>
-            useBlocksStore.setState({defaults: {...DEFAULT_DETECT_MODE, ...next}});
+            await Promise.all(
+                BLOCK_TYPES.map(async (type) => {
+                    setList(type, await blockStorage[type].getValue());
+                    unwatch.push(blockStorage[type].watch((next) => setList(type, next)));
+                })
+            );
 
-        setDefaults(await blockDefaultsStorage.getValue());
-        blockDefaultsStorage.watch(setDefaults);
+            const setDefaults = (next: Partial<Record<BlockType, DetectMode>> | null): void =>
+                useBlocksStore.setState({defaults: {...DEFAULT_DETECT_MODE, ...next}});
+
+            setDefaults(await blockDefaultsStorage.getValue());
+            unwatch.push(blockDefaultsStorage.watch(setDefaults));
+        } catch (e) {
+            // 실패를 붙들고 있으면 다음 호출도 계속 실패한다 — 비워 두어 다시 시도하게 (먼저 건 감시는 풀어 두 번 걸리지 않게)
+            for (const off of unwatch) off();
+            initialized = null;
+            throw e;
+        }
     })());

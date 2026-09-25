@@ -3,7 +3,7 @@ import {create} from "zustand";
 import type {IpCategory} from "@/core/database";
 import type {MemoType} from "@/core/storage/types";
 
-export type ToastLevel = "info" | "error" | "warning";
+type ToastLevel = "info" | "error" | "warning";
 
 export interface ToastData {
     id: number;

@@ -23,26 +23,32 @@ const start = async (instance: ModuleInstance): Promise<void> => {
     if (instance.def.urls && !instance.def.urls.some((re) => re.test(location.href))) return;
 
     const disposers: (() => void)[] = [];
+    // setup의 await 중에 중지(·재시작)되면 이 실행은 끝났다 — stop이 이미 해제 목록을 돌았으니 그 뒤 등록분은 바로 해제한다
+    const isCurrent = (): boolean => instance.running?.disposers === disposers;
     const ctx: ModuleContext = {
         settings: instance.settings,
         bus: eventBus,
         addFilter: (scope, callback) => {
+            if (!isCurrent()) return () => {};
             const dispose = addFilter(scope, callback);
             disposers.push(dispose);
             return dispose;
         },
         addCleanup: (dispose) => {
-            disposers.push(dispose);
+            if (isCurrent()) disposers.push(dispose);
+            else dispose();
         }
     };
 
-    instance.running = {ctx, disposers};
+    const running: NonNullable<ModuleInstance["running"]> = {ctx, disposers};
+    instance.running = running;
 
     try {
-        instance.running.api = (await instance.def.setup(ctx)) ?? undefined;
+        const api = (await instance.def.setup(ctx)) ?? undefined;
+        if (isCurrent()) running.api = api;
     } catch (e) {
-        // 실패한 모듈은 반쪽 상태로 두지 않는다
-        stop(instance);
+        // 실패한 모듈은 반쪽 상태로 두지 않는다 (그사이 새로 시작된 실행은 건드리지 않는다)
+        if (isCurrent()) stop(instance);
         throw e;
     }
 };
@@ -113,7 +119,7 @@ export const loadAll = async (defs: ModuleDefinition[]): Promise<void> => {
 
     modulesStorage.watch((next) => {
         for (const instance of instances.values()) {
-            if (isEnabled(instance.def, next)) void start(instance).catch((error) => console.error(error));
+            if (isEnabled(instance.def, next)) void start(instance).catch((e) => console.error(e));
             else stop(instance);
         }
     });
