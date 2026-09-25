@@ -73,19 +73,25 @@
     background: var(--color-overlay);
     animation: refresher-fade-in 0.15s cubic-bezier(0.19, 1, 0.22, 1);
 
+    // 바깥 배경 흐리게 (toggleBackgroundBlur)
+    &[data-blur] {
+        backdrop-filter: blur(5px);
+    }
+
     &[data-fading] {
         pointer-events: none;
         animation: refresher-fade-out 0.15s forwards;
     }
 }
 
+/* 너비는 설정(previewWidth)이 --refresher-frame-width로 넘긴다 — 화면이 좁으면 96vw까지 */
 .refresher-frame {
     position: fixed;
     top: 50%;
     left: 50%;
     display: flex;
     flex-direction: column;
-    width: min(1000px, 96vw);
+    width: min(var(--refresher-frame-width, 1000px), 96vw);
     max-height: 88vh;
     overflow: hidden;
     border-radius: var(--radius-5);
@@ -97,7 +103,7 @@
 
     // 왼쪽 관리 창(.refresher-admin-panel, 150px)과 겹치지 않게 양옆에 그 폭만큼 비운다 (너무 좁은 창에선 480px은 유지)
     &[data-admin] {
-        width: min(1000px, 96vw, max(480px, calc(100vw - 2 * (150px + var(--space-3)))));
+        width: min(var(--refresher-frame-width, 1000px), 96vw, max(480px, calc(100vw - 2 * (150px + var(--space-3)))));
     }
 
     &[data-fading] {

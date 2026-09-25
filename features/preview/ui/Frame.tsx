@@ -1,7 +1,7 @@
 import {Badge, Box, Button, Callout, Flex, Heading, IconButton, Separator, Spinner, Text, Theme, Tooltip} from "@radix-ui/themes";
 import {ArrowUp, CircleAlert, Clock, ExternalLink, Eye, MessageSquare, ThumbsDown, ThumbsUp} from "lucide-react";
 import {Dialog} from "radix-ui";
-import {Fragment, useEffect, useRef} from "react";
+import {type CSSProperties, Fragment, useEffect, useRef} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
 import {captchaImage, vote} from "@/core/preview/request";
@@ -9,7 +9,7 @@ import {useUiStore} from "@/stores/ui";
 import {isTyping} from "@/utils/event";
 
 import {buildPreData} from "../index";
-import {Comment, useTick, UserCard} from "./Comment";
+import {Comment, TimeStamp, useTick, UserCard} from "./Comment";
 import {type ErrorState, usePreviewStore} from "./previewStore";
 import {WriteComment} from "./WriteComment";
 
@@ -144,25 +144,35 @@ const Votes = () => {
 
 const ErrorBlock = ({error}: { error: ErrorState }) => {
     const preData = usePreviewStore((s) => s.preData);
-    const {detail, status} = error;
+    const {detail, status, adult} = error;
 
     let text: string;
-    if (status && status >= 400 && status < 500) text = "게시글이 삭제되었거나 존재하지 않습니다.";
+    if (adult) text = "성인 인증이 필요한 글입니다. 원문에서 확인해 주세요.";
+    else if (status && status >= 400 && status < 500) text = "게시글이 삭제되었거나 존재하지 않습니다.";
     else if (status && status >= 500) text = "서버가 불안정합니다. 잠시 후 다시 시도해주세요.";
     else if (/fetch|network|timed out/i.test(detail)) text = "서버 또는 브라우저 연결에 실패했습니다.";
     else text = "게시글 구조를 해석하는 데 실패했습니다.";
 
     return (
-        <Callout.Root color="red" my="4">
+        <Callout.Root color={adult ? "orange" : "red"} my="4">
             <Callout.Icon><CircleAlert size={16}/></Callout.Icon>
             <Callout.Text>
-                {text} <Text size="1" color="gray">({detail})</Text>
+                {text} {!adult && <Text size="1" color="gray">({detail})</Text>}
             </Callout.Text>
-            <Box>
+            <Flex gap="2">
+                {/* 인증은 원문(디시 페이지)에서만 된다 — 인증한 뒤 다시 시도하면 미리보기로 볼 수 있다 */}
+                {adult && (
+                    <Button size="1" variant="soft" color="orange" asChild>
+                        <a href={preData?.link ?? location.href} target="_blank" rel="noreferrer">
+                            <ExternalLink size={14}/>
+                            원문 열기
+                        </a>
+                    </Button>
+                )}
                 <Button
                     size="1"
                     variant="soft"
-                    color="red"
+                    color={adult ? "gray" : "red"}
                     onClick={() => {
                         const st = usePreviewStore.getState();
                         if (!preData) return;
@@ -172,7 +182,7 @@ const ErrorBlock = ({error}: { error: ErrorState }) => {
                 >
                     다시 시도
                 </Button>
-            </Box>
+            </Flex>
         </Callout.Root>
     );
 };
@@ -216,6 +226,8 @@ export const Frame = () => {
     const comments = usePreviewStore((s) => s.comments);
     const commentsOnly = usePreviewStore((s) => s.commentsOnly);
     const imageBlocked = usePreviewStore((s) => s.imageBlocked);
+    const frameWidth = usePreviewStore((s) => s.frameWidth);
+    const backgroundBlur = usePreviewStore((s) => s.backgroundBlur);
     const postKey = usePreviewStore((s) => (s.preData ? `${s.preData.gallery}/${s.preData.id}` : ""));
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
@@ -296,6 +308,7 @@ export const Frame = () => {
                 <div
                     className="refresher-frame-outer"
                     data-fading={fading || undefined}
+                    data-blur={backgroundBlur || undefined}
                     // pointerdown에서 닫으면 배경이 곧바로 사라져 이어지는 click/contextmenu가 아래 게시글에 떨어진다
                     // (우클릭으로 닫으면 다른 글 미리보기가 열림) — 배경이 받는 click/contextmenu에서 닫는다
                     onClick={() => usePreviewStore.getState().requestClose()}
@@ -308,6 +321,8 @@ export const Frame = () => {
                     className="refresher-frame"
                     data-fading={fading || undefined}
                     data-admin={adminVisible || undefined}
+                    // 너비는 overlay.scss가 화면 폭·관리 패널에 맞춰 줄인다
+                    style={{"--refresher-frame-width": `${frameWidth}px`} as CSSProperties}
                     aria-busy={busy}
                     onOpenAutoFocus={(ev) => ev.preventDefault()}
                     // 바깥 클릭 닫기는 배경(frame-outer)이 담당. 위에 뜬 팝업/버블 클릭으로 닫히지 않게 막는다
@@ -327,6 +342,7 @@ export const Frame = () => {
                                 <UserCard user={post.user ?? {}} fetchRatio/>
                                 <Flex align="center" gap="3">
                                     <CountDown/>
+                                    {post.date && <TimeStamp date={post.date} size="2"/>}
                                     <Text size="2" color="gray">
                                         <Flex as="span" align="center" gap="1">
                                             <Eye size={14}/>

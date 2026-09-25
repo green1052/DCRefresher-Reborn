@@ -1,9 +1,30 @@
 import {create} from "zustand";
 
-import type {IpCategory} from "@/core/database";
+import type {IpCategory, IpInfoFilter} from "@/core/database";
 import type {MemoType} from "@/core/storage/types";
+import {getType} from "@/utils/user";
 
 type ToastLevel = "info" | "error" | "warning";
+
+export type BadgeKey = "UID" | "MEMO" | "RATIO" | "PERMBAN";
+
+/** 배지 순서·표시 조건 (userinfo) — 미리보기 작성자 표시가 페이지와 같게 그린다 */
+export interface BadgeView {
+    order: BadgeKey[];
+    /** 고정닉/반고정닉 UID 표시 */
+    fixedUid: boolean;
+    halfFixedUid: boolean;
+    ipFilter: IpInfoFilter;
+}
+
+/** userinfo가 꺼져 있을 때 — 기본 순서, IP 정보(userinfo가 붙이는 배지)는 없음 */
+export const DEFAULT_BADGE_VIEW: BadgeView = {order: ["UID", "MEMO", "RATIO", "PERMBAN"], fixedUid: true, halfFixedUid: true, ipFilter: "none"};
+
+/** 닉콘(고정닉·반고정닉)에 따라 UID를 보일지 — 닉콘이 없으면 보인다 */
+export const showsUid = (view: BadgeView, icon?: string): boolean => {
+    const type = icon ? getType(icon) : "NONE";
+    return type.startsWith("FIXED") ? view.fixedUid : type.startsWith("HALF_FIXED") ? view.halfFixedUid : true;
+};
 
 export interface ToastData {
     id: number;
@@ -33,6 +54,7 @@ interface UiState {
     memo: MemoTargetState | null;
     /** IP 정보·갱차 색 (userinfo 설정) — 모듈이 꺼져 있으면 비어 있고, 갱차 조회를 끄면 permBan이 없다 */
     badgeColors: Partial<Record<IpCategory | "uid" | "permBan" | "ratio" | "ratioAlarm", string>>;
+    badgeView: BadgeView;
     /** 글댓비 캐시와 경고 기준 (userinfo) — 글댓비 표시를 끄거나 모듈이 꺼져 있으면 null */
     ratios: { cache: Record<string, { article: number; comment: number }>; alarm: number } | null;
 
@@ -54,6 +76,7 @@ export const useUiStore = create<UiState>((set, get) => ({
     bubble: null,
     memo: null,
     badgeColors: {},
+    badgeView: DEFAULT_BADGE_VIEW,
     ratios: null,
 
     showToast: (content, type = "info", autoClose = 5000, onClick) => {

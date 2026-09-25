@@ -88,5 +88,11 @@ export const ipInfoOf = (ip: string): IpInfo | undefined => {
     };
 };
 
+/** IP 정보를 어떤 IP까지 보여 줄지 (userinfo ipInfoFilter) — 페이지와 미리보기가 같은 기준을 쓴다 */
+export type IpInfoFilter = "all" | "foreign" | "vpn" | "none";
+
+export const passesIpFilter = ({category}: IpInfo, filter: IpInfoFilter): boolean =>
+    filter === "all" || (filter === "foreign" && category !== "korea") || (filter === "vpn" && category === "vpn");
+
 /** 갱신 차단(밴) 이유들. 없으면 undefined */
 export const banReasonsOf = (uid: string): string | undefined => bans.get(uid)?.join(", ");

@@ -7,6 +7,8 @@ export interface ErrorState {
     detail: string;
     /** 상태 코드 — HTTP 오류, 또는 본문이 없어 삭제된 글로 본 경우 404 */
     status?: number;
+    /** 성인 인증이 필요한 글 (비로그인·미인증이면 본문 대신 인증 안내가 온다) */
+    adult?: boolean;
 }
 
 export type ManageKind = "notice" | "recommend" | "delete" | "bump";
@@ -54,6 +56,9 @@ interface PreviewState extends PostState {
     signalId: number;
     /** 관리 단축키 (관리 패널 힌트용) — 단축키를 끄면 null */
     shortcutKeys: { delete: string; block: string } | null;
+    /** 창 너비(px)·바깥 배경 흐림 (설정) */
+    frameWidth: number;
+    backgroundBlur: boolean;
 
     captcha: { url: string; resolve: (code: string) => void } | null;
     mini: MiniState | null;
@@ -145,6 +150,8 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     preData: null,
     signalId: 0,
     shortcutKeys: null,
+    frameWidth: 1000,
+    backgroundBlur: false,
     captcha: null,
     mini: null,
 

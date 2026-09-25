@@ -19,6 +19,8 @@ export interface PostInfo {
     header?: string;
     title?: string;
     expire?: string;
+    /** 작성 시각 "2026-09-26 02:29:40" */
+    date?: string;
     user?: User;
     views?: string;
     upvotes?: string;

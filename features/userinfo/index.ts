@@ -1,17 +1,14 @@
-import {banReasonsOf, ipInfoOf} from "@/core/database";
+import {banReasonsOf, ipInfoOf, type IpInfoFilter, passesIpFilter} from "@/core/database";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingGroup} from "@/core/module/types";
 import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
 import {queryString} from "@/core/http/urls";
 import {eventBus} from "@/core/eventbus/bus";
 import type {JsonValue} from "@/core/storage/types";
-import {dbStorage, moduleDataStorage} from "@/core/storage/items";
+import {dbStorage, moduleDataStorage, moduleSettingsStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";
-import {useUiStore} from "@/stores/ui";
-import {getType} from "@/utils/user";
+import {type BadgeView, DEFAULT_BADGE_VIEW, showsUid, useUiStore} from "@/stores/ui";
 import {insertWriterSpan} from "@/utils/userDataInsert";
-
-type BadgeKey = "UID" | "MEMO" | "RATIO" | "PERMBAN";
 
 interface RatioInfo {
     article: number;
@@ -36,6 +33,15 @@ const BADGE_COLOR_GROUP: SettingGroup = {name: "배지 색", desc: "유저 정�
 
 const colorsOf = (ctx: ModuleContext): Record<string, string> =>
     Object.fromEntries(Object.keys(BADGE_COLORS).map((key) => [key, String(ctx.settings[`${key}Color`])]));
+
+const IP_INFO_FILTERS: Record<IpInfoFilter, string> = {all: "전체", foreign: "해외·VPN만", vpn: "VPN만", none: "표시 안 함"};
+
+const badgeViewOf = (ctx: ModuleContext): BadgeView => ({
+    order: ctx.settings.badgeOrder as BadgeView["order"],
+    fixedUid: ctx.settings.showFixedNickUID === true,
+    halfFixedUid: ctx.settings.showHalfFixedNickUID === true,
+    ipFilter: ctx.settings.ipInfoFilter as IpInfoFilter
+});
 
 const asRatios = (value: JsonValue | undefined): Record<string, RatioInfo> => (value ?? {}) as unknown as Record<string, RatioInfo>;
 
@@ -69,6 +75,7 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
 
     // 작성자마다 불리고 rebuildAll로 페이지 전체가 다시 도므로 호출 안에서 안 바뀌는 값은 한 번만 만든다
     const colors = colorsOf(ctx);
+    const view = badgeViewOf(ctx);
     const gallery = queryString("id");
 
     const {nick, uid, ip} = element.dataset;
@@ -77,25 +84,15 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
 
     const appendIdentity = (): void => {
         if (uid) {
-            const image = element.querySelector<HTMLImageElement>("img")?.src;
-
-            const type = image ? getType(image) : "NONE";
-            const isFixed = type.startsWith("FIXED");
-            const isHalfFixed = type.startsWith("HALF_FIXED");
-
-            const show = isFixed ? ctx.settings.showFixedNickUID === true : isHalfFixed ? ctx.settings.showHalfFixedNickUID === true : true;
-
-            if (show) badges.append(buildBadgeSpan(`(${uid})`, colors.uid, uid, "ip refresherUserData"));
+            if (showsUid(view, element.querySelector<HTMLImageElement>("img")?.src)) badges.append(buildBadgeSpan(`(${uid})`, colors.uid, uid, "ip refresherUserData"));
             return;
         }
 
-        if (ip && ctx.settings.showIpInfo === true) {
-            const info = ipInfoOf(ip);
-            if (info) badges.append(buildBadgeSpan(`[${info.label}]`, colors[info.category], info.title));
-        }
+        const info = ip ? ipInfoOf(ip) : undefined;
+        if (info && passesIpFilter(info, view.ipFilter)) badges.append(buildBadgeSpan(`[${info.label}]`, colors[info.category], info.title));
     };
 
-    for (const key of ctx.settings.badgeOrder as BadgeKey[]) {
+    for (const key of view.order) {
         if (key === "UID") appendIdentity();
 
         if (key === "MEMO") {
@@ -122,16 +119,24 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
     insertWriterSpan(element, badges);
 };
 
-/** 미리보기 댓글도 같은 색을 쓰게 공유 */
-const publishBadgeColors = (ctx: ModuleContext): void => {
+/** 미리보기 작성자 표시도 같은 색·순서·표시 조건을 쓰게 공유 */
+const publishBadges = (ctx: ModuleContext): void => {
     const colors = colorsOf(ctx);
     useUiStore.setState({
         badgeColors: {
             ...colors,
             // 갱차 조회를 끄면 미리보기에서도 숨긴다
             permBan: ctx.settings.checkPermBan === true ? colors.permBan : undefined
-        }
+        },
+        badgeView: badgeViewOf(ctx)
     });
+};
+
+/** 예전 'IP 정보 표시' 체크(showIpInfo)를 끈 사용자는 '표시 안 함'으로 옮긴다 — 새 설정을 한 번이라도 저장했으면 건드리지 않는다 */
+const migrateShowIpInfo = async (): Promise<void> => {
+    const item = moduleSettingsStorage("userinfo");
+    const stored = await item.getValue();
+    if (stored.showIpInfo === false && stored.ipInfoFilter === undefined) await item.setValue({...stored, ipInfoFilter: "none"});
 };
 
 /** 미리보기도 같은 글댓비를 쓰게 공유 */
@@ -172,11 +177,12 @@ export default defineModule({
             desc: "반고정닉 유저의 UID를 표시합니다.",
             default: true
         },
-        showIpInfo: {
-            type: "check",
+        ipInfoFilter: {
+            type: "option",
             name: "IP 정보 표시",
-            desc: "IP의 통신사·조직과 국가를 표시합니다.",
-            default: true
+            desc: "IP의 통신사·조직과 국가를 표시할 대상입니다. VPN은 국가와 상관없이 해외·VPN에 들어갑니다.",
+            default: "all",
+            items: IP_INFO_FILTERS
         },
         checkRatio: {
             type: "check",
@@ -216,7 +222,9 @@ export default defineModule({
     },
 
     async setup(ctx) {
-        publishBadgeColors(ctx);
+        // 옮긴 값은 설정 감시 → onChanged가 반영해 다시 그린다
+        await migrateShowIpInfo().catch(console.error);
+        publishBadges(ctx);
 
         // 조회 중에 모듈이 꺼지면 revoke가 지운 배지·글댓비를 다시 그리지 않게 한다 (setup을 기다리는 동안 꺼져도 마찬가지)
         let alive = true;
@@ -293,13 +301,13 @@ export default defineModule({
 
     onChanged(ctx) {
         // 설정(순서/표시여부) 변경시 즉시 재계산. 배지 색은 설정에만 달렸으니 여기서만 다시 알린다
-        publishBadgeColors(ctx);
+        publishBadges(ctx);
         publishRatios(ctx);
         rebuildAll(ctx);
     },
 
     revoke() {
-        useUiStore.setState({badgeColors: {}, ratios: null});
+        useUiStore.setState({badgeColors: {}, badgeView: DEFAULT_BADGE_VIEW, ratios: null});
 
         for (const element of document.querySelectorAll<HTMLElement>(".ub-writer[data-refresher-user-info]")) {
             delete element.dataset.refresherUserInfo;

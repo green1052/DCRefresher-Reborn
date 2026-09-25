@@ -40,11 +40,24 @@ const strip = (value: string | undefined | null, ...prefixes: string[]): string 
     return result || undefined;
 };
 
-/** 본문 HTML → PostInfo. 비정상 문서면 undefined */
+/** 성인 인증이 필요한 글일 때 parsePostInfo가 던지는 Error의 message */
+export const ADULT_ERROR = "adult";
+
+/**
+ * 성인 인증 안내 — 미인증이면 본문 대신 /error/adult/로 보내는 스크립트가 오고, 리다이렉트를 따라가면 인증 페이지(.adult_certify)가 온다.
+ * 본문이 없을 때만 본다 (본문 글자에 주소가 섞여도 오인하지 않게)
+ */
+const isAdultPage = (html: string, dom: Document): boolean => html.includes("/error/adult") || dom.querySelector(".adult_certify") !== null;
+
+/** 본문 HTML → PostInfo. 비정상 문서면 undefined, 성인 인증이 필요하면 Error(ADULT_ERROR) */
 export const parsePostInfo = (html: string): PostInfo | undefined => {
     const dom = new DOMParser().parseFromString(html, "text/html");
 
-    if (!dom.querySelector(".gallview_head, .writing_view_box, .title_subject")) return;
+    if (!dom.querySelector(".gallview_head, .writing_view_box, .title_subject")) {
+        // undefined면 fetchPost가 삭제된 글(404)로 보므로 따로 던진다
+        if (isAdultPage(html, dom)) throw new Error(ADULT_ERROR);
+        return;
+    }
 
     restoreImageSources(dom);
     // 본문 위 짤방(갤러리 기본 이미지)·광고 자리 — 글 내용이 아니다
@@ -56,6 +69,8 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
 
     const header = strip(dom.querySelector<HTMLElement>(".title_headtext")?.textContent?.replace(/^\[|\]$/g, ""));
     const commentCountText = strip(dom.querySelector<HTMLElement>(".gall_comment")?.textContent?.trim().split(" ")[1]);
+    // 글 머리의 작성 시각 — title("2026-09-26 02:29:40")이 없으면 글자("2026.09.26 02:29:40")
+    const date = dom.querySelector<HTMLElement>(".gallview_head .gall_date");
 
     return {
         header,
@@ -64,6 +79,7 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
             dom.querySelector<HTMLElement>(".view_content_wrap div.fl > span.mini_autodeltime > div.pop_tipbox > div")?.textContent,
             " 자동 삭제"
         ),
+        date: strip(date?.title || date?.textContent),
         user: parseUser(dom),
         views: strip(dom.querySelector<HTMLElement>(".fr > .gall_count")?.textContent, "조회"),
         upvotes: strip(dom.querySelector<HTMLElement>(".fr > .gall_reply_num")?.textContent, "추천"),

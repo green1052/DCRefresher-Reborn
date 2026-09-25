@@ -12,14 +12,35 @@ import {notifyManage} from "@/utils/notify";
 import {htmlToText, sanitizeHtml} from "@/utils/sanitize";
 
 import {getEntry, setEntry} from "@/core/preview/cache";
+import {ADULT_ERROR} from "@/core/preview/parser";
 import {processComments} from "@/core/preview/comments";
 import {blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {BLOCK_DAYS, type ErrorState, type ManageKind, miniPosition, postTitle, usePreviewStore} from "./ui/previewStore";
 
 const SHORTCUT_GROUP: SettingGroup = {name: "관리 단축키", desc: "관리 권한이 있을 때 미리보기에서 키를 두 번 누르면 게시글을 삭제하거나 작성자를 차단합니다."};
 const PRESET_GROUP: SettingGroup = {name: "차단 프리셋", desc: "차단 키로 차단할 때 쓰는 값입니다."};
+const FRAME_GROUP: SettingGroup = {name: "미리보기 창", desc: "미리보기 창의 너비와 바깥 배경입니다."};
 
 const settings: NonNullable<ModuleDefinition["settings"]> = {
+    previewWidth: {
+        type: "range",
+        group: FRAME_GROUP,
+        name: "창 너비",
+        desc: "미리보기 창의 너비입니다. 브라우저 창이 좁으면 그에 맞춰 줄어듭니다.",
+        default: 1000,
+        min: 700,
+        max: 1600,
+        step: 50,
+        unit: "px"
+    },
+    // v5와 같은 키 — 마이그레이션한 값을 그대로 쓴다
+    toggleBackgroundBlur: {
+        type: "check",
+        group: FRAME_GROUP,
+        name: "바깥 배경 흐리게",
+        desc: "미리보기 창 바깥 배경을 흐리게 처리합니다. (성능 하락 영향 있음)",
+        default: false
+    },
     tooltipMode: {type: "check", name: "미니 미리보기 표시", desc: "게시글에 마우스를 올리면 미리보기를 표시합니다.", default: false},
     tooltipMediaHide: {type: "check", name: "미니 미리보기 미디어 숨기기", desc: "미니 미리보기에서 이미지와 동영상을 숨깁니다.", default: false},
     tooltipDelay: {
@@ -125,10 +146,11 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
     };
 };
 
-// 상태 코드: ky가 던지는 HTTPError, 또는 fetchPost가 본문을 못 찾아 던지는 Error("404")
+// 상태 코드: ky가 던지는 HTTPError, 또는 fetchPost가 본문을 못 찾아 던지는 Error("404") — 성인 인증 안내면 parsePostInfo가 Error(ADULT_ERROR)
 const errorOf = (error: unknown): ErrorState => ({
     detail: error instanceof Error ? error.message : String(error),
-    status: error instanceof HTTPError ? error.response.status : error instanceof Error && error.message === "404" ? 404 : undefined
+    status: error instanceof HTTPError ? error.response.status : error instanceof Error && error.message === "404" ? 404 : undefined,
+    adult: error instanceof Error && error.message === ADULT_ERROR
 });
 
 const controller = (ctx: ModuleContext) => {
@@ -583,11 +605,14 @@ const controller = (ctx: ModuleContext) => {
     });
 };
 
-const publishShortcutKeys = (ctx: ModuleContext): void => {
+/** 창(Frame)이 그릴 때 읽는 설정 — 바뀌면 열린 창에도 바로 반영된다 */
+const publishSettings = (ctx: ModuleContext): void => {
     usePreviewStore.setState({
         shortcutKeys: ctx.settings.useKeyPress === true
             ? {delete: String(ctx.settings.deleteKey).toUpperCase(), block: String(ctx.settings.blockKey).toUpperCase()}
-            : null
+            : null,
+        frameWidth: Number(ctx.settings.previewWidth),
+        backgroundBlur: ctx.settings.toggleBackgroundBlur === true
     });
 };
 
@@ -599,8 +624,8 @@ export default defineModule({
     urls: [/\/board\/(view|lists)/],
     settings,
     setup: (ctx) => {
-        publishShortcutKeys(ctx);
+        publishSettings(ctx);
         controller(ctx);
     },
-    onChanged: publishShortcutKeys
+    onChanged: publishSettings
 });

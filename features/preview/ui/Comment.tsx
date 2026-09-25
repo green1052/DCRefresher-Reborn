@@ -1,6 +1,6 @@
 import {Box, Flex, IconButton, Text, Tooltip} from "@radix-ui/themes";
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
-import {type MouseEvent, useEffect, useLayoutEffect, useRef, useState} from "react";
+import {Fragment, type MouseEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
 import type {ProcessedComment} from "@/core/preview/comments";
@@ -8,9 +8,9 @@ import type {User} from "@/core/preview/types";
 import {adminDeleteComment, graphemes, TXTCON_MAX_LINE_LEN, userDeleteComment} from "@/core/preview/request";
 import {notifyManage} from "@/utils/notify";
 import {useUserMemo} from "@/stores/memos";
-import {useUiStore} from "@/stores/ui";
+import {type BadgeKey, showsUid, useUiStore} from "@/stores/ui";
 import {useGallogActivity} from "@/utils/gallogActivity";
-import {banReasonsOf, ipInfoOf} from "@/core/database";
+import {banReasonsOf, ipInfoOf, passesIpFilter} from "@/core/database";
 import {isGalleryManager} from "@/utils/user";
 
 import {usePreviewStore} from "./previewStore";
@@ -125,14 +125,15 @@ export const useTick = (ms: number): void => {
     }, [ms]);
 };
 
-const TimeStamp = ({date}: { date: string }) => {
+/** 상대 시각 (누르면 절대 시각) — 댓글과 글 머리(작성 시각)가 같이 쓴다 */
+export const TimeStamp = ({date, size = "1"}: { date: string; size?: "1" | "2" }) => {
     const parsed = parseDate(date);
     const [absolute, setAbsolute] = useState(false);
     // 댓글마다 타이머가 도니, 초 단위로 바뀌는 1분 미만일 때만 5초마다, 그 밖에는 1분마다 다시 그린다
     useTick(Date.now() - parsed.getTime() < 60_000 ? 5000 : 60_000);
 
     return (
-        <Text size="1" color="gray" title={parsed.toLocaleString()} style={{cursor: "pointer", whiteSpace: "nowrap"}}
+        <Text size={size} color="gray" title={parsed.toLocaleString()} style={{cursor: "pointer", whiteSpace: "nowrap"}}
               onClick={() => setAbsolute((x) => !x)}>
             {Number.isNaN(parsed.getTime()) ? "이미 삭제됨" : absolute ? parsed.toLocaleString() : relative(parsed)}
         </Text>
@@ -142,12 +143,13 @@ const TimeStamp = ({date}: { date: string }) => {
 /** 작성자 표시. 우클릭하면 유저 버블 */
 /** fetchRatio: 글댓비 캐시에 없으면 갤로그에서 받는다 (글쓴이만 — 댓글마다 받으면 요청이 너무 많다) */
 export const UserCard = ({user, fetchRatio}: { user: User; fetchRatio?: boolean }) => {
-    const ipInfo = user.ip ? ipInfoOf(user.ip) : undefined;
+    // 배지 순서·표시 조건은 userinfo 설정을 따른다 (페이지와 같게) — 회원은 UID, 유동만 IP 정보
+    const view = useUiStore((state) => state.badgeView);
+    const ipInfo = !user.id && user.ip ? ipInfoOf(user.ip) : undefined;
     const ipColor = useUiStore((state) => (ipInfo ? state.badgeColors[ipInfo.category] : undefined));
     const banReasons = user.id ? banReasonsOf(user.id) : undefined;
     const banColor = useUiStore((state) => state.badgeColors.permBan);
     const uidColor = useUiStore((state) => state.badgeColors.uid);
-    const info = [user.id, user.ip].filter(Boolean).join(" / ");
     const gallery = usePreviewStore((s) => s.preData?.gallery);
     const memo = useUserMemo({uid: user.id, ip: user.ip, nick: user.nick}, gallery);
     const ratios = useUiStore((state) => state.ratios);
@@ -164,15 +166,25 @@ export const UserCard = ({user, fetchRatio}: { user: User; fetchRatio?: boolean 
         ui.openBubble(ev.clientX, ev.clientY);
     };
 
+    const identityColor = uidColor ? undefined : "gray";
+
+    const badges: Record<BadgeKey, ReactNode> = {
+        UID: user.id
+            ? showsUid(view, user.image) && <Text size="1" color={identityColor} style={{color: uidColor}} truncate>({user.id})</Text>
+            : ipInfo && passesIpFilter(ipInfo, view.ipFilter) &&
+            <Text size="1" color={ipColor ? undefined : "blue"} style={{color: ipColor}} title={ipInfo.title} truncate>[{ipInfo.label}]</Text>,
+        MEMO: memo && <Text size="1" style={{color: memo.color || undefined}} title={memo.text} truncate>[{memo.text}]</Text>,
+        RATIO: ratio && <Text size="1" style={{color: ratioColor}} title="글/댓글" truncate>[{ratio.article}/{ratio.comment}]</Text>,
+        PERMBAN: banReasons && banColor && <Text size="1" style={{color: banColor}} title={banReasons} truncate>[{banReasons}]</Text>
+    };
+
     return (
         <Flex align="center" gap="1" minWidth="0" onContextMenu={openMenu} style={{cursor: "context-menu"}}>
             <Text size="2" weight="bold" truncate>{user.nick ?? user.id ?? user.ip}</Text>
             {user.image && <img src={user.image} alt="" height={12}/>}
-            {info && <Text size="1" color={uidColor ? undefined : "gray"} style={{color: uidColor}} truncate>({info})</Text>}
-            {ipInfo && <Text size="1" color={ipColor ? undefined : "blue"} style={{color: ipColor}} title={ipInfo.title} truncate>[{ipInfo.label}]</Text>}
-            {ratio && <Text size="1" style={{color: ratioColor}} title="글/댓글" truncate>[{ratio.article}/{ratio.comment}]</Text>}
-            {banReasons && banColor && <Text size="1" style={{color: banColor}} title={banReasons} truncate>[{banReasons}]</Text>}
-            {memo && <Text size="1" style={{color: memo.color || undefined}} title={memo.text} truncate>[{memo.text}]</Text>}
+            {/* 유동 IP는 디시가 닉 옆에 직접 보여 주는 값 — 배지 순서와 상관없이 여기 */}
+            {user.ip && <Text size="1" color={identityColor} style={{color: uidColor}} truncate>({user.ip})</Text>}
+            {view.order.map((key) => <Fragment key={key}>{badges[key]}</Fragment>)}
         </Flex>
     );
 };
