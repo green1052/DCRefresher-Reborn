@@ -25,9 +25,9 @@ const replaceSettings = async (data: Record<string, unknown>): Promise<void> => 
     try {
         await browser.storage.local.remove(removed);
         await browser.storage.local.set(next);
-    } catch (error) {
+    } catch (e) {
         await browser.storage.local.set(previous);
-        throw error;
+        throw e;
     }
 };
 
@@ -78,8 +78,8 @@ export function DataTab() {
         setLoading(true);
         try {
             setNotice(await action());
-        } catch (error) {
-            setNotice(`${failure} ${errorMessage(error)}`);
+        } catch (e) {
+            setNotice(`${failure} ${errorMessage(e)}`);
         } finally {
             setLoading(false);
         }

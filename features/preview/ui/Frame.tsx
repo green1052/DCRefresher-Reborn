@@ -45,7 +45,9 @@ const fitMovies = (root: HTMLElement): (() => void) => {
         frame.addEventListener("load", fit);
     }
 
-    return () => observers.forEach((observer) => observer.disconnect());
+    return () => {
+        for (const observer of observers) observer.disconnect();
+    };
 };
 
 const CountDown = () => {
@@ -241,14 +243,14 @@ export const Frame = () => {
             if (nextPre) st.requestOpen(nextPre);
         };
 
-        const onKey = (event: KeyboardEvent): void => {
-            if (isTyping(event)) return;
+        const onKey = (ev: KeyboardEvent): void => {
+            if (isTyping(ev)) return;
 
-            if (event.code === "PageUp") {
-                event.preventDefault();
+            if (ev.code === "PageUp") {
+                ev.preventDefault();
                 goToAdjacent(-1);
-            } else if (event.code === "PageDown") {
-                event.preventDefault();
+            } else if (ev.code === "PageDown") {
+                ev.preventDefault();
                 goToAdjacent(1);
             }
         };
@@ -279,8 +281,8 @@ export const Frame = () => {
                     // pointerdown에서 닫으면 배경이 곧바로 사라져 이어지는 click/contextmenu가 아래 게시글에 떨어진다
                     // (우클릭으로 닫으면 다른 글 미리보기가 열림) — 배경이 받는 click/contextmenu에서 닫는다
                     onClick={() => usePreviewStore.getState().requestClose()}
-                    onContextMenu={(event) => {
-                        event.preventDefault();
+                    onContextMenu={(ev) => {
+                        ev.preventDefault();
                         usePreviewStore.getState().requestClose();
                     }}
                 />
@@ -289,9 +291,9 @@ export const Frame = () => {
                     data-fading={fading || undefined}
                     data-admin={adminVisible || undefined}
                     aria-busy={busy}
-                    onOpenAutoFocus={(event) => event.preventDefault()}
+                    onOpenAutoFocus={(ev) => ev.preventDefault()}
                     // 바깥 클릭 닫기는 배경(frame-outer)이 담당. 위에 뜬 팝업/버블 클릭으로 닫히지 않게 막는다
-                    onInteractOutside={(event) => event.preventDefault()}
+                    onInteractOutside={(ev) => ev.preventDefault()}
                 >
                     {/* 스크롤은 안쪽에서 — 바깥이 스크롤되면 스크롤바가 오른쪽 둥근 모서리를 덮는다 */}
                     {/* 글마다 새로 마운트 — 캐시 hit이면 한 번에 렌더돼 스크롤 위치와 쓰던 댓글이 다음 글로 넘어간다.
@@ -333,9 +335,9 @@ export const Frame = () => {
                                 <Box
                                     ref={contentsBox}
                                     className={"refresher-html refresher-preview-contents" + (imageBlocked ? " refresher-preview-block-media" : "")}
-                                    onClick={(event) => {
-                                        if ((event.target as HTMLElement).closest(".btn_img_block")) {
-                                            event.preventDefault();
+                                    onClick={(ev) => {
+                                        if ((ev.target as HTMLElement).closest(".btn_img_block")) {
+                                            ev.preventDefault();
                                             usePreviewStore.getState().setImageBlocked(false);
                                         }
                                     }}

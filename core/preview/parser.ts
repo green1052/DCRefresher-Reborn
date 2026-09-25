@@ -48,11 +48,11 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
 
     restoreImageSources(dom);
     // 본문 위 짤방(갤러리 기본 이미지)·광고 자리 — 글 내용이 아니다
-    dom.querySelectorAll(".writing_view_box #zzbang_div, .writing_view_box #ad_nv_slot").forEach((element) => element.remove());
+    for (const element of dom.querySelectorAll(".writing_view_box #zzbang_div, .writing_view_box #ad_nv_slot")) element.remove();
 
     // 제목 안 <script>의 글자가 textContent에 섞이므로 먼저 지운다 (75471b72) — 말머리와 같은 평문으로 맞춰 화면에서 텍스트로 넣는다
     const subject = dom.querySelector<HTMLElement>(".title_subject");
-    subject?.querySelectorAll("script").forEach((script) => script.remove());
+    for (const script of subject?.querySelectorAll("script") ?? []) script.remove();
 
     const header = strip(dom.querySelector<HTMLElement>(".title_headtext")?.textContent?.replace(/^\[|\]$/g, ""));
     const commentCountText = strip(dom.querySelector<HTMLElement>(".gall_comment")?.textContent?.trim().split(" ")[1]);

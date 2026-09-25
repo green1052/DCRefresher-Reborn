@@ -14,7 +14,7 @@ const useSystemAppearance = (): "light" | "dark" => {
 
     useEffect(() => {
         const query = window.matchMedia("(prefers-color-scheme: dark)");
-        const onChange = (event: MediaQueryListEvent): void => setAppearance(event.matches ? "dark" : "light");
+        const onChange = (ev: MediaQueryListEvent): void => setAppearance(ev.matches ? "dark" : "light");
         query.addEventListener("change", onChange);
         return () => query.removeEventListener("change", onChange);
     }, []);

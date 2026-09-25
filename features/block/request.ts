@@ -68,8 +68,8 @@ export const handleBlockRequest = async (options: BlockRequestOptions, selected:
     try {
         if (options.target === "dccon") await blockDccon(selected, options.blockAllDccon);
         else await blockUser(selected);
-    } catch (error) {
-        console.error("Block request failed:", error);
+    } catch (e) {
+        console.error("Block request failed:", e);
         useUiStore.getState().showToast("차단 처리 중 오류가 발생했습니다.", "error");
     }
 };

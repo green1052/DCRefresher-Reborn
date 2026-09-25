@@ -70,7 +70,7 @@ const MemoFormDialog = ({
                             value={state.user}
                             disabled={editing}
                             // 입력 중엔 다듬지 않는다 — 닉네임 가운데 공백을 칠 수 있게 (저장할 때 trim)
-                            onChange={(event) => setState((prev) => ({...prev, user: event.target.value}))}
+                            onChange={(ev) => setState((prev) => ({...prev, user: ev.target.value}))}
                         />
                     </label>
 
@@ -82,8 +82,8 @@ const MemoFormDialog = ({
                             maxLength={160}
                             placeholder="메모를 입력해주세요 (160자 제한)"
                             value={state.text}
-                            onChange={(event) => setState((prev) => ({...prev, text: event.target.value}))}
-                            onKeyDown={(event) => event.key === "Enter" && void submit()}
+                            onChange={(ev) => setState((prev) => ({...prev, text: ev.target.value}))}
+                            onKeyDown={(ev) => ev.key === "Enter" && void submit()}
                             autoFocus
                         />
                     </label>
@@ -95,7 +95,7 @@ const MemoFormDialog = ({
                         <TextField.Root
                             placeholder="갤러리 ID (비우면 모든 갤러리)"
                             value={state.gallery}
-                            onChange={(event) => setState((prev) => ({...prev, gallery: event.target.value.trim()}))}
+                            onChange={(ev) => setState((prev) => ({...prev, gallery: ev.target.value.trim()}))}
                         />
                     </label>
 
@@ -107,7 +107,7 @@ const MemoFormDialog = ({
                             <input
                                 type="color"
                                 value={state.color}
-                                onChange={(event) => setState((prev) => ({...prev, color: event.target.value}))}
+                                onChange={(ev) => setState((prev) => ({...prev, color: ev.target.value}))}
                                 style={{
                                     width: 36,
                                     height: 28,

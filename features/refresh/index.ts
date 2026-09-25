@@ -255,10 +255,10 @@ export default defineModule({
                 if (calledByPageTurn) {
                     calledByPageTurn = false;
                 } else if (ctx.settings.fadeIn) {
-                    newPostList.forEach((element, index) => {
+                    for (const [index, element] of newPostList.entries()) {
                         element.classList.add("refresherNewPost");
                         element.style.animationDelay = `${(newPostList.length - index) * 50}ms`;
-                    });
+                    }
                 }
 
                 // 미리보기 모듈의 삭제글 보존(archiveArticle)은 캐시에 이미 반영됨
@@ -268,8 +268,8 @@ export default defineModule({
                 if (newPostList.length > 0) eventBus.emit("newPostList", newPostList);
 
                 return true;
-            } catch (error) {
-                console.error("Refresh failed:", error);
+            } catch (e) {
+                console.error("Refresh failed:", e);
                 return false;
             } finally {
                 loading = false;
@@ -329,15 +329,15 @@ export default defineModule({
 
         // ===== 인페이지 페이지 전환 =====
         // 앵커마다 붙이면 표시 속성 때문에 페이징 박스 비교가 늘 어긋나 매번 갈아끼우게 된다 — 문서에 하나만 위임한다
-        const onPagingClick = (event: MouseEvent): void => {
+        const onPagingClick = (ev: MouseEvent): void => {
             // 수정키 클릭은 새 탭/창으로 열려는 것이라 가로채지 않는다
-            if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+            if (ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
             if (!ctx.settings.useBetterBrowse) return;
 
-            const anchor = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>(`${PAGING_SELECTOR} a`) : null;
+            const anchor = ev.target instanceof Element ? ev.target.closest<HTMLAnchorElement>(`${PAGING_SELECTOR} a`) : null;
             if (!anchor || anchor.getAttribute("href")?.startsWith("javascript:")) return;
 
-            event.preventDefault();
+            ev.preventDefault();
 
             const newUrl = isPageView ? mergeParamURL(location.href, anchor.href) : anchor.href;
 

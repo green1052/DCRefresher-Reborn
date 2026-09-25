@@ -209,10 +209,10 @@ const controller = (ctx: ModuleContext) => {
             if (!postInfo) {
                 try {
                     postInfo = await fetchPost(preData, abort!.signal);
-                } catch (error) {
+                } catch (e) {
                     // 삭제된 글 보존: 가져오지 못하면 캐시에 남은 이전 본문을 보여준다 (캐시 비활성화여도)
                     postInfo = ctx.settings.archiveArticle === true ? getEntry(preData)?.post : undefined;
-                    if (!postInfo) throw error;
+                    if (!postInfo) throw e;
                 }
 
                 setEntry(preData, {post: postInfo});
@@ -224,9 +224,9 @@ const controller = (ctx: ModuleContext) => {
             store.getState().setPost(processed);
 
             await loadComments(preData, processed, mySignal);
-        } catch (error) {
+        } catch (e) {
             if (store.getState().signalId !== mySignal) return;
-            store.getState().setError(errorOf(error));
+            store.getState().setError(errorOf(e));
         }
     };
 
@@ -348,22 +348,22 @@ const controller = (ctx: ModuleContext) => {
         eventBus.emit("refreshRequest");
     };
 
-    const onKey = (event: KeyboardEvent) => {
+    const onKey = (ev: KeyboardEvent) => {
         if (ctx.settings.useKeyPress !== true || !store.getState().visible) return;
         // Ctrl+D(북마크) 같은 조합키, 길게 눌러 생기는 반복 입력은 무시
-        if (event.ctrlKey || event.altKey || event.metaKey || event.repeat) return;
+        if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.repeat) return;
 
-        const key = event.key.toLowerCase();
+        const key = ev.key.toLowerCase();
         const isDelete = key === ctx.settings.deleteKey;
         if (!isDelete && key !== ctx.settings.blockKey) return;
 
-        if (isTyping(event) || !isGalleryManager()) return;
+        if (isTyping(ev) || !isGalleryManager()) return;
 
         const now = Date.now();
 
         if (lastKey === key && now - lastKeyTime < 1000) {
             lastKey = "";
-            event.preventDefault();
+            ev.preventDefault();
             void (isDelete ? manage("delete") : store.getState().preData && blockPreset(store.getState().preData!));
         } else {
             lastKey = key;
@@ -372,7 +372,7 @@ const controller = (ctx: ModuleContext) => {
         }
     };
 
-    const onPopState = (event: PopStateEvent) => {
+    const onPopState = (ev: PopStateEvent) => {
         const st = store.getState();
 
         if (st.visible) {
@@ -380,7 +380,7 @@ const controller = (ctx: ModuleContext) => {
             return;
         }
 
-        const state = event.state as { refresher?: number; preData?: GalleryPreData; back?: typeof savedHistory } | null;
+        const state = ev.state as { refresher?: number; preData?: GalleryPreData; back?: typeof savedHistory } | null;
         if (state?.refresher === 1 && state.preData) {
             savedHistory = state.back ?? null;
             open(state.preData, false, true);
@@ -419,21 +419,21 @@ const controller = (ctx: ModuleContext) => {
         });
     };
 
-    const onMiniEnter = (event: MouseEvent) => {
+    const onMiniEnter = (ev: MouseEvent) => {
         if (ctx.settings.tooltipMode !== true) return;
         if (usePreviewStore.getState().visible) return;
 
-        const element = event.currentTarget as HTMLElement;
-        const x = event.clientX;
-        const y = event.clientY;
+        const element = ev.currentTarget as HTMLElement;
+        const x = ev.clientX;
+        const y = ev.clientY;
 
         if (miniTimer) window.clearTimeout(miniTimer);
         const delay = Number(ctx.settings.tooltipDelay) || 0;
         miniTimer = window.setTimeout(() => void showMini(element, x, y), delay);
     };
 
-    const onMiniMove = (event: MouseEvent) => {
-        usePreviewStore.getState().moveMini(event.clientX, event.clientY);
+    const onMiniMove = (ev: MouseEvent) => {
+        usePreviewStore.getState().moveMini(ev.clientX, ev.clientY);
     };
 
     const onMiniLeave = () => {
@@ -446,14 +446,14 @@ const controller = (ctx: ModuleContext) => {
 
     // ── 행 이벤트 ────────────────────────────────────────────────
     // mousedown 기록 → mouseup에서 길게 누름 판정 → contextmenu에서 소비
-    const onMouseDown = (event: MouseEvent) => {
-        if (event.button !== 2) return;
+    const onMouseDown = (ev: MouseEvent) => {
+        if (ev.button !== 2) return;
         pressStart = Date.now();
         preventOpen = false;
     };
 
-    const onMouseUp = (event: MouseEvent) => {
-        if (event.button !== 2 || pressStart === 0) return;
+    const onMouseUp = (ev: MouseEvent) => {
+        if (ev.button !== 2 || pressStart === 0) return;
 
         const delay = Number(ctx.settings.longPressDelay) || 300;
         if (Date.now() - delay > pressStart) preventOpen = true;
@@ -465,9 +465,9 @@ const controller = (ctx: ModuleContext) => {
         element.dataset.refresherPreviewMode === "row" && target.closest("[data-refresher-preview-mode=\"word\"]") !== null;
 
     // 우클릭·좌클릭이 같은 기준으로 대상을 고르게 한 곳에서 판정
-    const resolveTarget = (event: MouseEvent): { preData: GalleryPreData; commentsOnly: boolean } | null => {
-        const element = event.currentTarget as HTMLElement;
-        const target = event.target as HTMLElement;
+    const resolveTarget = (ev: MouseEvent): { preData: GalleryPreData; commentsOnly: boolean } | null => {
+        const element = ev.currentTarget as HTMLElement;
+        const target = ev.target as HTMLElement;
         if (handledByWord(element, target)) return null;
 
         // 댓글 수 링크 → 댓글만 보기 (행 모드 가드보다 먼저)
@@ -484,18 +484,18 @@ const controller = (ctx: ModuleContext) => {
         return preData ? {preData, commentsOnly} : null;
     };
 
-    const onContextMenu = (event: MouseEvent) => {
-        const resolved = resolveTarget(event);
+    const onContextMenu = (ev: MouseEvent) => {
+        const resolved = resolveTarget(ev);
         if (!resolved) return;
 
         if (resolved.commentsOnly) {
-            event.preventDefault();
+            ev.preventDefault();
             open(resolved.preData, true);
             return;
         }
 
         if (ctx.settings.reversePreviewKey === true) {
-            event.preventDefault();
+            ev.preventDefault();
             location.href = resolved.preData.link ?? location.href;
             return;
         }
@@ -506,15 +506,15 @@ const controller = (ctx: ModuleContext) => {
             return;
         }
 
-        event.preventDefault();
+        ev.preventDefault();
         open(resolved.preData);
     };
 
-    const onClick = (event: MouseEvent) => {
-        const resolved = resolveTarget(event);
+    const onClick = (ev: MouseEvent) => {
+        const resolved = resolveTarget(ev);
         if (!resolved || (!resolved.commentsOnly && ctx.settings.reversePreviewKey !== true)) return;
 
-        event.preventDefault();
+        ev.preventDefault();
         open(resolved.preData, resolved.commentsOnly);
     };
 

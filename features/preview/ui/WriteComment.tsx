@@ -201,9 +201,9 @@ export const WriteComment = () => {
                         placeholder="닉네임"
                         maxLength={20}
                         style={{flex: 1}}
-                        onChange={(event) => {
-                            setNick(event.target.value);
-                            saveNonmember({nick: event.target.value});
+                        onChange={(ev) => {
+                            setNick(ev.target.value);
+                            saveNonmember({nick: ev.target.value});
                         }}
                     />
                     <TextField.Root
@@ -212,9 +212,9 @@ export const WriteComment = () => {
                         value={password}
                         placeholder="비밀번호"
                         style={{flex: 1}}
-                        onChange={(event) => {
-                            setPassword(event.target.value);
-                            saveNonmember({pw: event.target.value});
+                        onChange={(ev) => {
+                            setPassword(ev.target.value);
+                            saveNonmember({pw: ev.target.value});
                         }}
                     />
                 </Flex>
@@ -233,15 +233,15 @@ export const WriteComment = () => {
                                 : "댓글 입력... (Shift+Enter 줄바꿈)"
                     }
                     style={{flex: 1}}
-                    onChange={(event) => {
-                        if (txtcon && !(event.nativeEvent as InputEvent).isComposing) applyTxtcon();
+                    onChange={(ev) => {
+                        if (txtcon && !(ev.nativeEvent as InputEvent).isComposing) applyTxtcon();
                     }}
                     onCompositionEnd={() => {
                         if (txtcon) applyTxtcon();
                     }}
-                    onKeyDown={(event) => {
-                        if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-                            event.preventDefault();
+                    onKeyDown={(ev) => {
+                        if (ev.key === "Enter" && !ev.shiftKey && !ev.nativeEvent.isComposing) {
+                            ev.preventDefault();
                             void submit();
                         }
                     }}
@@ -313,8 +313,8 @@ export const WriteComment = () => {
 
             <Text as="p" size="1" color="gray" mt="2">
                 {login ? (accountId ?? "회원 계정") : (
-                    <Link size="1" href="#" onClick={(event) => {
-                        event.preventDefault();
+                    <Link size="1" href="#" onClick={(ev) => {
+                        ev.preventDefault();
                         setShowInputs((v) => !v);
                     }}>
                         {nick}

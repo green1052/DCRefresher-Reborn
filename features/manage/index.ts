@@ -77,34 +77,32 @@ export default defineModule({
                 const ip = writer?.dataset.ip;
                 const nick = writer?.dataset.nick;
 
-                element.addEventListener("click", (event) => {
-                    const source = event.target as HTMLInputElement;
+                element.addEventListener("click", (ev) => {
+                    const source = ev.target as HTMLInputElement;
 
-                    if (ctx.settings.checkAllTargetUser && event.shiftKey && (uid || ip || nick)) {
+                    if (ctx.settings.checkAllTargetUser && ev.shiftKey && (uid || ip || nick)) {
                         // 유동은 data-uid=""라 ??로 값을 고르면 key는 ip인데 값이 ""가 돼 회원 글이 전부 잡힌다 — 같은 기준으로 고른다
                         const [key, value] = uid ? ["uid", uid] : ip ? ["ip", ip] : ["nick", nick!];
 
                         for (const other of document.querySelectorAll<HTMLElement>(`.ub-writer[data-${key}="${CSS.escape(value)}"]`)) {
                             const otherParent = other.closest<HTMLElement>(".ub-content, .cmt_nickbox, .search_comment");
-                            otherParent?.querySelectorAll<HTMLInputElement>(".article_chkbox").forEach((box) => {
-                                box.checked = source.checked;
-                            });
+                            for (const box of otherParent?.querySelectorAll<HTMLInputElement>(".article_chkbox") ?? []) box.checked = source.checked;
                         }
                     }
 
-                    if (ctx.settings.checkCommentViaCtrl && event.ctrlKey) {
+                    if (ctx.settings.checkCommentViaCtrl && ev.ctrlKey) {
                         // 댓글은 li#comment_li_{no}, 대댓글은 그 다음 형제 li 안의 ul#reply_list_{no} > li#reply_li_{no} (comment.js)
                         const commentNo = element.closest<HTMLElement>("li")?.id.match(/^comment_li_(\d+)$/)?.[1];
                         if (!commentNo) return;
 
-                        document.getElementById(`reply_list_${commentNo}`)?.querySelectorAll<HTMLInputElement>(".article_chkbox").forEach((box) => {
+                        for (const box of document.getElementById(`reply_list_${commentNo}`)?.querySelectorAll<HTMLInputElement>(".article_chkbox") ?? []) {
                             box.checked = source.checked;
-                        });
+                        }
                     }
                 }, {signal: handlers.signal});
 
-                element.addEventListener("mouseover", (event) => {
-                    if (ctx.settings.checkViaShift && event.shiftKey && element instanceof HTMLInputElement) element.checked = true;
+                element.addEventListener("mouseover", (ev) => {
+                    if (ctx.settings.checkViaShift && ev.shiftKey && element instanceof HTMLInputElement) element.checked = true;
                 }, {signal: handlers.signal});
             }
         );
@@ -133,14 +131,14 @@ export default defineModule({
                 if (handled.has(element)) return;
                 handled.add(element);
 
-                element.addEventListener("click", (event) => {
-                    if (!ctx.settings.deleteViaCtrl || !event.ctrlKey) return;
+                element.addEventListener("click", (ev) => {
+                    if (!ctx.settings.deleteViaCtrl || !ev.ctrlKey) return;
 
                     const postId = element.dataset.no;
                     if (!postId) return;
 
-                    event.preventDefault();
-                    event.stopPropagation();
+                    ev.preventDefault();
+                    ev.stopPropagation();
                     void deletePost(postId).then((deleted) => {
                         // 목록이 새로고침될 때까지(refresh가 꺼져 있으면 계속) 남겨 두면 다시 Ctrl+클릭해 지운 글에 요청이 또 간다
                         if (deleted) element.remove();

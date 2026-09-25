@@ -61,8 +61,8 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                         <TextField.Root
                             placeholder={`${TYPE_NAMES[type]} 값을 입력하세요`}
                             value={content}
-                            onChange={(event) => setContent(event.target.value)}
-                            onKeyDown={(event) => event.key === "Enter" && submit()}
+                            onChange={(ev) => setContent(ev.target.value)}
+                            onKeyDown={(ev) => ev.key === "Enter" && submit()}
                             autoFocus
                         />
                     </label>
@@ -78,7 +78,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                             특정 갤러리 차단 (선택)
                         </Text>
                         <TextField.Root placeholder="갤러리 ID" value={gallery}
-                                        onChange={(event) => setGallery(event.target.value)}/>
+                                        onChange={(ev) => setGallery(ev.target.value)}/>
                     </label>
 
                     <Flex justify="between" align="center">

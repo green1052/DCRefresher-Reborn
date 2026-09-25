@@ -50,7 +50,7 @@ const BlockPopup = () => {
 
     return (
         <Dialog.Root open onOpenChange={(open) => !open && usePreviewStore.getState().closeBlockPopup()}>
-            <Dialog.Content container={overlay.portal} maxWidth="440px" onOpenAutoFocus={(event) => event.preventDefault()}>
+            <Dialog.Content container={overlay.portal} maxWidth="440px" onOpenAutoFocus={(ev) => ev.preventDefault()}>
                 <Dialog.Title>유저 차단</Dialog.Title>
 
                 <Text as="div" size="2" weight="bold" mb="2">기간</Text>
@@ -77,7 +77,7 @@ const BlockPopup = () => {
                         placeholder="차단 사유 직접 입력 (한글 20자 이내)"
                         maxLength={20}
                         autoFocus
-                        onChange={(event) => setCustom(event.target.value)}
+                        onChange={(ev) => setCustom(ev.target.value)}
                     />
                 )}
 
@@ -131,8 +131,8 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
                     autoFocus
                     value={code}
                     placeholder="코드"
-                    onKeyDown={(event) => event.key === "Enter" && send()}
-                    onChange={(event) => setCode(event.target.value)}
+                    onKeyDown={(ev) => ev.key === "Enter" && send()}
+                    onChange={(ev) => setCode(ev.target.value)}
                 />
                 <DialogActions>
                     <Button disabled={!code.trim()} onClick={send}>전송</Button>

@@ -21,8 +21,8 @@ const queryAll = (root: Element, scope: string): HTMLElement[] => {
 const run = (filter: Filter, element: HTMLElement): void => {
     try {
         filter.callback(element);
-    } catch (error) {
-        console.error(`Filter "${filter.scope}" failed:`, error);
+    } catch (e) {
+        console.error(`Filter "${filter.scope}" failed:`, e);
     }
 };
 

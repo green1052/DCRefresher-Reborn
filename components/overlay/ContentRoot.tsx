@@ -53,8 +53,8 @@ const ToastItem = ({toast}: { toast: ToastData }) => {
                     variant="ghost"
                     color="gray"
                     aria-label="닫기"
-                    onClick={(event) => {
-                        event.stopPropagation();
+                    onClick={(ev) => {
+                        ev.stopPropagation();
                         useUiStore.getState().dismissToast(toast.id);
                     }}
                 >
@@ -133,7 +133,7 @@ const BubbleHost = () => {
                 <span className="refresher-anchor" style={{left: bubble.x, top: bubble.y}}/>
             </PopoverPrimitive.Anchor>
             <Popover.Content container={overlay.portal} side="bottom" align="start" sideOffset={4} size="1"
-                             minWidth="200px" maxWidth="320px" onOpenAutoFocus={(event) => event.preventDefault()}>
+                             minWidth="200px" maxWidth="320px" onOpenAutoFocus={(ev) => ev.preventDefault()}>
                 {selected.dccon ? (
                     <Flex gap="2">
                         <Button size="1" onClick={() => requestBlock({target: "dccon"})}>디시콘 차단</Button>

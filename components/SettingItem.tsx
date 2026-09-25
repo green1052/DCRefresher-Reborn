@@ -55,7 +55,7 @@ const ColorControl = ({value, compact, onChange}: NarrowProps<"color">) => {
                 aria-label="색 선택"
                 title={draft}
                 value={draft}
-                onChange={(event) => setDraft(event.target.value)}
+                onChange={(ev) => setDraft(ev.target.value)}
                 // React onChange는 input 이벤트라 드래그마다 불린다 — 창을 닫을 때만 오는 change는 직접 듣는다
                 ref={(element) => {
                     if (!element) return;
@@ -81,11 +81,11 @@ const TextControl = ({schema, value, onChange}: NarrowProps<"text">) => {
             size="2"
             placeholder={schema.placeholder ?? String(schema.default)}
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(ev) => setDraft(ev.target.value)}
             onBlur={() => {
                 if (draft !== value) onChange(draft);
             }}
-            onKeyDown={(event) => event.key === "Enter" && (event.target as HTMLInputElement).blur()}
+            onKeyDown={(ev) => ev.key === "Enter" && (ev.target as HTMLInputElement).blur()}
         />
     );
 };
@@ -102,11 +102,11 @@ const KeyControl = ({value, takenKeys = [], onChange}: NarrowProps<"key">) => {
                     setListening(false);
                     setTaken("");
                 }}
-                onKeyDown={(event) => {
+                onKeyDown={(ev) => {
                     if (!listening) return;
-                    event.preventDefault();
+                    ev.preventDefault();
 
-                    const key = event.key.toLowerCase();
+                    const key = ev.key.toLowerCase();
                     if (/^[a-z0-9]$/.test(key) && key !== value && takenKeys.includes(key)) {
                         setTaken(key);
                         return;
@@ -197,23 +197,23 @@ const OrderControl = ({schema, value, onChange}: NarrowProps<"order">) => {
                         background: over === index && dragging !== null ? "var(--accent-a3)" : "var(--color-surface)"
                     }}
                     draggable
-                    onDragStart={(event) => {
+                    onDragStart={(ev) => {
                         // Firefox는 dataTransfer에 데이터가 없으면 드래그 시작을 안 함
-                        event.dataTransfer.setData("text/plain", String(index));
-                        event.dataTransfer.effectAllowed = "move";
+                        ev.dataTransfer.setData("text/plain", String(index));
+                        ev.dataTransfer.effectAllowed = "move";
                         setDragging(index);
                     }}
                     onDragEnd={() => {
                         setDragging(null);
                         setOver(null);
                     }}
-                    onDragOver={(event) => {
-                        event.preventDefault();
+                    onDragOver={(ev) => {
+                        ev.preventDefault();
                         setOver(index);
                     }}
                     onDragLeave={() => setOver(null)}
-                    onDrop={(event) => {
-                        event.preventDefault();
+                    onDrop={(ev) => {
+                        ev.preventDefault();
                         drop(index);
                     }}
                 >

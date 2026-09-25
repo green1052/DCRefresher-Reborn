@@ -72,8 +72,8 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                     maxLength={160}
                     placeholder="메모를 입력해주세요 (160자 제한)"
                     value={text}
-                    onChange={(event) => setForm({...form, text: event.target.value})}
-                    onKeyDown={(event) => event.key === "Enter" && void submit()}
+                    onChange={(ev) => setForm({...form, text: ev.target.value})}
+                    onKeyDown={(ev) => ev.key === "Enter" && void submit()}
                     autoFocus
                 >
                     <TextField.Slot>
@@ -81,7 +81,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                             type="color"
                             aria-label="색상"
                             value={color}
-                            onChange={(event) => setForm({...form, color: event.target.value})}
+                            onChange={(ev) => setForm({...form, color: ev.target.value})}
                             style={{width: 20, height: 20, padding: 0, border: 0, background: "none", cursor: "pointer"}}
                         />
                     </TextField.Slot>

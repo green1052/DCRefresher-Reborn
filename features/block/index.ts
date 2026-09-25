@@ -110,15 +110,15 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): void => 
         if (state.entries === previous.entries && state.defaults === previous.defaults) return;
 
         restoreHiddenElements();
-        document.querySelectorAll<HTMLElement>(".ub-writer").forEach(checkWriter);
-        document.querySelectorAll<HTMLElement>(".written_dccon").forEach(checkDccon);
+        for (const element of document.querySelectorAll<HTMLElement>(".ub-writer")) checkWriter(element);
+        for (const element of document.querySelectorAll<HTMLElement>(".written_dccon")) checkDccon(element);
         if (isViewPage() && document.readyState !== "loading") checkText();
     }));
 };
 
 const setupSelection = (ctx: ModuleContext): void => {
-    const onContextMenu = (event: MouseEvent): void => {
-        const target = eventTarget(event);
+    const onContextMenu = (ev: MouseEvent): void => {
+        const target = eventTarget(ev);
         if (!(target instanceof Element)) return;
 
         const dcconElement = target.closest<HTMLElement>(".written_dccon");
@@ -140,8 +140,8 @@ const setupSelection = (ctx: ModuleContext): void => {
         }
 
         // 유저 버블: 네이티브 우클릭 메뉴 대체
-        event.preventDefault();
-        ui.openBubble(event.clientX, event.clientY);
+        ev.preventDefault();
+        ui.openBubble(ev.clientX, ev.clientY);
     };
 
     document.addEventListener("contextmenu", onContextMenu, true);

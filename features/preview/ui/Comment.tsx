@@ -156,12 +156,12 @@ export const UserCard = ({user, fetchRatio}: { user: User; fetchRatio?: boolean 
     const ratio = cached ?? (typeof fetched === "object" ? fetched : undefined);
     const ratioColor = useUiStore((state) => (ratio && ratios && ratios.alarm > 0 && ratio.article + ratio.comment <= ratios.alarm ? state.badgeColors.ratioAlarm : state.badgeColors.ratio));
 
-    const openMenu = (event: MouseEvent): void => {
-        event.preventDefault();
+    const openMenu = (ev: MouseEvent): void => {
+        ev.preventDefault();
 
         const ui = useUiStore.getState();
         ui.setSelected({nick: user.nick, uid: user.id, ip: user.ip});
-        ui.openBubble(event.clientX, event.clientY);
+        ui.openBubble(ev.clientX, ev.clientY);
     };
 
     return (
@@ -233,7 +233,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
     // 글자콘 크기는 그려진 뒤에 잰다 — html이 바뀌면 React가 내용을 새로 넣으므로 다시 잰다
     const body = useRef<HTMLDivElement>(null);
     useLayoutEffect(() => {
-        body.current?.querySelectorAll<HTMLElement>(".coment_dccon_txt").forEach(fitTxtcon);
+        for (const box of body.current?.querySelectorAll<HTMLElement>(".coment_dccon_txt") ?? []) fitTxtcon(box);
     }, [html]);
 
     return (

@@ -118,7 +118,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
 
     return (
         <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
-            <Dialog.Content container={overlay.portal} maxWidth="560px" onOpenAutoFocus={(event) => event.preventDefault()}>
+            <Dialog.Content container={overlay.portal} maxWidth="560px" onOpenAutoFocus={(ev) => ev.preventDefault()}>
                 <Flex justify="between" align="center" mb="3">
                     <Dialog.Title mb="0">디시콘</Dialog.Title>
                     <Flex gap="4">
@@ -155,9 +155,9 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                                 key={pack.package_idx}
                                 data-active={activePackage === pack.package_idx || undefined}
                                 title={pack.title}
-                                onClick={(event) => {
+                                onClick={(ev) => {
                                     openPackage(pack);
-                                    event.currentTarget.scrollIntoView({behavior: "smooth", block: "nearest", inline: "center"});
+                                    ev.currentTarget.scrollIntoView({behavior: "smooth", block: "nearest", inline: "center"});
                                 }}
                             >
                                 <img src={pack.main_img_url} alt={pack.title}/>

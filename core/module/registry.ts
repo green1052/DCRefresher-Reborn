@@ -40,10 +40,10 @@ const start = async (instance: ModuleInstance): Promise<void> => {
 
     try {
         instance.running.api = (await instance.def.setup(ctx)) ?? undefined;
-    } catch (error) {
+    } catch (e) {
         // 실패한 모듈은 반쪽 상태로 두지 않는다
         stop(instance);
-        throw error;
+        throw e;
     }
 };
 
@@ -96,8 +96,8 @@ export const stopAll = (): void => {
     for (const instance of instances.values()) {
         try {
             stop(instance);
-        } catch (error) {
-            console.error(error);
+        } catch (e) {
+            console.error(e);
         }
     }
 };
@@ -107,9 +107,9 @@ export const loadAll = async (defs: ModuleDefinition[]): Promise<void> => {
     const enables = await modulesStorage.getValue();
 
     const results = await Promise.allSettled(defs.map((def) => register(def, isEnabled(def, enables))));
-    results.forEach((result, index) => {
+    for (const [index, result] of results.entries()) {
         if (result.status === "rejected") console.error(`Failed to load module: ${defs[index]?.id}`, result.reason);
-    });
+    }
 
     modulesStorage.watch((next) => {
         for (const instance of instances.values()) {

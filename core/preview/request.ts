@@ -268,8 +268,8 @@ export const submitComment = async (
             }
 
             return service.replace(/(.{10})$/, computed);
-        } catch (error) {
-            return error instanceof Error ? `PreNotWorking: ${error.message}` : "PreNotWorking";
+        } catch (e) {
+            return e instanceof Error ? `PreNotWorking: ${e.message}` : "PreNotWorking";
         }
     })();
 

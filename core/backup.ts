@@ -88,9 +88,9 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
 
     try {
         await browser.storage.sync.set(items);
-    } catch (error) {
+    } catch (e) {
         // 예전 방식 백업이 자리를 차지해 한도를 넘었을 수 있다 — 치우고 한 번 더
-        if (stale.length === 0) throw error;
+        if (stale.length === 0) throw e;
         await browser.storage.sync.remove(stale);
         await browser.storage.sync.set(items);
         return;
@@ -145,8 +145,8 @@ export const runBackup = async (slot: BackupSlot): Promise<void> => {
     try {
         await backupToCloud(slot);
         await backupStorage.error.setValue("");
-    } catch (error) {
-        await backupStorage.error.setValue(error instanceof Error ? error.message : String(error));
-        throw error;
+    } catch (e) {
+        await backupStorage.error.setValue(e instanceof Error ? e.message : String(e));
+        throw e;
     }
 };

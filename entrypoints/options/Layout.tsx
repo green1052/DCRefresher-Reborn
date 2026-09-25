@@ -70,7 +70,7 @@ export const ImportDialog = ({title, onClose, onSubmit}: {
                 </Dialog.Description>
 
                 <TextArea placeholder="JSON 데이터" value={text} rows={8} autoFocus
-                          onChange={(event) => setText(event.target.value)}/>
+                          onChange={(ev) => setText(ev.target.value)}/>
 
                 <DialogActions>
                     <Button loading={busy} disabled={!text.trim()} onClick={() => void submit()}>가져오기</Button>
@@ -95,8 +95,8 @@ export const ListRow = ({head, info, onEdit, onRemove}: {
         <Table.Cell>{info}</Table.Cell>
         <Table.Cell>
             <IconButton variant="ghost" color="gray" size="1" aria-label="삭제"
-                        onClick={(event) => {
-                            event.stopPropagation();
+                        onClick={(ev) => {
+                            ev.stopPropagation();
                             onRemove();
                         }}>
                 <X size={12}/>
