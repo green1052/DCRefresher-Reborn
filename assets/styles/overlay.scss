@@ -140,6 +140,12 @@
         color: var(--accent-11);
     }
 
+    // 답글 멘션은 디시처럼 따로 한 줄 — 인라인이면 디시콘·글자콘 아래 끝에 붙는다
+    .mention.deco {
+        display: block;
+        margin-bottom: 3px;
+    }
+
     table {
         max-width: 100%;
     }
