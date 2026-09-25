@@ -1,10 +1,35 @@
-import {useEffect} from "react";
+import {Box, Button, Card, Flex, IconButton, Popover, Separator, Text, Theme} from "@radix-ui/themes";
+import {CircleAlert, Copy, Info, TriangleAlert, X} from "lucide-react";
+import {useEffect, useState} from "react";
+
+import {eventBus} from "@/core/eventbus/bus";
+import type {ModuleEventData} from "@/core/eventbus/types";
+import {PreviewHost} from "@/features/preview/ui/PreviewHost";
+import {type ToastData, useUiStore} from "@/stores/ui";
+import {ISPData} from "@/utils/ip";
 
 import {MemoDialog} from "./MemoDialog";
-import {PreviewHost} from "@/features/preview/ui/PreviewHost";
-import {eventBus} from "@/core/eventbus/bus";
-import {ISPData} from "@/utils/ip";
-import {type ToastData, useUiStore} from "@/stores/ui";
+import {overlay} from "./shadow";
+
+/** 디시 다크모드(#css-darkmode 스타일시트)를 따라간다 */
+const useDcAppearance = (): "light" | "dark" => {
+    const detect = (): "light" | "dark" => (document.getElementById("css-darkmode") ? "dark" : "light");
+    const [appearance, setAppearance] = useState(detect);
+
+    useEffect(() => {
+        const observer = new MutationObserver(() => setAppearance(detect()));
+        observer.observe(document.head, {childList: true});
+        return () => observer.disconnect();
+    }, []);
+
+    return appearance;
+};
+
+const TOAST_ICONS = {
+    info: <Info size={16} color="var(--accent-11)"/>,
+    warning: <TriangleAlert size={16} color="var(--amber-11)"/>,
+    error: <CircleAlert size={16} color="var(--red-11)"/>
+};
 
 const ToastItem = ({toast}: { toast: ToastData }) => {
     useEffect(() => {
@@ -14,19 +39,25 @@ const ToastItem = ({toast}: { toast: ToastData }) => {
     }, [toast]);
 
     return (
-        <div className={`refresher-toast refresher-toast-${toast.type}`} onClick={toast.onClick}>
-            <span className="refresher-toast-content">{toast.content}</span>
-            <button
-                type="button"
-                className="refresher-toast-close"
-                onClick={(event) => {
-                    event.stopPropagation();
-                    useUiStore.getState().dismissToast(toast.id);
-                }}
-            >
-                ×
-            </button>
-        </div>
+        <Card size="2" role="status" className="refresher-toast refresher-interactive"
+              style={toast.onClick ? {cursor: "pointer"} : undefined} onClick={toast.onClick}>
+            <Flex align="center" gap="3">
+                {TOAST_ICONS[toast.type]}
+                <Text size="2" style={{flex: 1}}>{toast.content}</Text>
+                <IconButton
+                    size="1"
+                    variant="ghost"
+                    color="gray"
+                    aria-label="닫기"
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        useUiStore.getState().dismissToast(toast.id);
+                    }}
+                >
+                    <X size={14}/>
+                </IconButton>
+            </Flex>
+        </Card>
     );
 };
 
@@ -36,7 +67,16 @@ const ToastHost = () => {
     return <ToastItem key={toast.id} toast={toast}/>;
 };
 
-const COPY_FIELDS = [["nick", "닉네임"]] as const;
+/** 클릭하면 복사되는 값 한 줄 */
+const CopyRow = ({label, value, onCopy}: { label: string; value: string; onCopy: (value: string) => void }) => (
+    <Button variant="ghost" color="gray" size="1" title="클릭하면 복사됩니다." onClick={() => onCopy(value)}
+            style={{justifyContent: "space-between", margin: 0}}>
+        <Text truncate>
+            <Text color="gray">{label}</Text> <Text weight="bold" highContrast>{value}</Text>
+        </Text>
+        <Copy size={12}/>
+    </Button>
+);
 
 /** 아이디와 IP는 한 줄에 병합: "uid (IP)" */
 const identityValue = (selected: { uid?: string; ip?: string }): string | undefined => {
@@ -48,28 +88,12 @@ const BubbleHost = () => {
     const bubble = useUiStore((s) => s.bubble);
     const selected = useUiStore((s) => s.selected);
 
+    // Popover는 스크롤을 따라가지 않으므로 스크롤시 닫는다
     useEffect(() => {
         if (!bubble) return;
-
-        const onKey = (event: KeyboardEvent): void => {
-            if (event.key === "Escape") useUiStore.getState().closeBubble();
-        };
         const onScroll = (): void => useUiStore.getState().closeBubble();
-        const onMouseDown = (event: MouseEvent): void => {
-            if (!(event.target instanceof Element) || !event.target.closest(".refresher-bubble")) {
-                useUiStore.getState().closeBubble();
-            }
-        };
-
-        document.addEventListener("keydown", onKey);
         window.addEventListener("scroll", onScroll, true);
-        document.addEventListener("mousedown", onMouseDown);
-
-        return () => {
-            document.removeEventListener("keydown", onKey);
-            window.removeEventListener("scroll", onScroll, true);
-            document.removeEventListener("mousedown", onMouseDown);
-        };
+        return () => window.removeEventListener("scroll", onScroll, true);
     }, [bubble]);
 
     if (!bubble || !selected) return null;
@@ -79,113 +103,58 @@ const BubbleHost = () => {
         close();
         void navigator.clipboard.writeText(value).then(() => useUiStore.getState().showToast("복사했습니다."));
     };
+    const requestBlock = (payload: ModuleEventData["refresherRequestBlock"]): void => {
+        eventBus.emit("refresherRequestBlock", payload);
+        close();
+    };
 
-    if (selected.dccon) {
-        return (
-            <div className="refresher-bubble" style={{left: bubble.x + 8, top: bubble.y + 8}}>
-                <div className="refresher-bubble-actions">
-                    <button
-                        type="button"
-                        className="refresher-button refresher-primary"
-                        onClick={() => {
-                            eventBus.emit("refresherRequestBlock", {target: "dccon"});
-                            close();
-                        }}
-                    >
-                        디시콘 차단
-                    </button>
-                    <button
-                        type="button"
-                        className="refresher-button"
-                        onClick={() => {
-                            eventBus.emit("refresherRequestBlock", {target: "dccon", blockAllDccon: true});
-                            close();
-                        }}
-                    >
-                        디시콘 전체 차단
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
+    const identity = identityValue(selected);
     const isp = selected.ip ? ISPData(selected.ip).name : undefined;
 
     return (
-        <div className="refresher-bubble" style={{left: bubble.x + 8, top: bubble.y + 8}}>
-            {COPY_FIELDS.map(([key, label]) =>
-                selected[key] ? (
-                    <div
-                        key={key}
-                        className="refresher-bubble-value"
-                        style={{cursor: "pointer"}}
-                        title="클릭하면 복사됩니다."
-                        onClick={() => copy(selected[key]!)}
-                    >
-                        <span>
-                            {label}: <strong>{selected[key]}</strong>
-                        </span>
-                    </div>
-                ) : null
-            )}
-            {(() => {
-                const identity = identityValue(selected);
-                if (!identity) return null;
-                return (
-                    <div
-                        className="refresher-bubble-value"
-                        style={{cursor: "pointer"}}
-                        title="클릭하면 복사됩니다."
-                        onClick={() => copy(identity)}
-                    >
-                        <span>
-                            아이디/IP: <strong>{identity}</strong>
-                        </span>
-                    </div>
-                );
-            })()}
-            {isp && (
-                <div
-                    className="refresher-bubble-value"
-                    style={{cursor: "pointer"}}
-                    title="클릭하면 복사됩니다."
-                    onClick={() => copy(isp)}
-                >
-                    <span>
-                        ISP: <strong>{isp}</strong>
-                    </span>
-                </div>
-            )}
-
-            <div className="refresher-bubble-actions">
-                <button
-                    type="button"
-                    className="refresher-button refresher-primary"
-                    onClick={() => {
-                        eventBus.emit("refresherRequestBlock", {target: "user"});
-                        close();
-                    }}
-                >
-                    유저 차단
-                </button>
-                <button type="button" className="refresher-button"
-                        onClick={() => useUiStore.getState().openMemoForSelected()}>
-                    메모
-                </button>
-                {selected.uid && (
-                    <button
-                        type="button"
-                        className="refresher-button"
-                        onClick={() => {
-                            window.open(`https://gallog.dcinside.com/${selected.uid}`, "_blank");
-                            close();
-                        }}
-                    >
-                        갤로그
-                    </button>
+        <Popover.Root open onOpenChange={(open) => !open && close()}>
+            <Popover.Anchor>
+                <span className="refresher-anchor" style={{left: bubble.x, top: bubble.y}}/>
+            </Popover.Anchor>
+            <Popover.Content container={overlay.portal} side="bottom" align="start" sideOffset={4} size="1"
+                             minWidth="200px" maxWidth="320px" onOpenAutoFocus={(event) => event.preventDefault()}>
+                {selected.dccon ? (
+                    <Flex gap="2">
+                        <Button size="1" onClick={() => requestBlock({target: "dccon"})}>디시콘 차단</Button>
+                        <Button size="1" variant="soft" color="gray"
+                                onClick={() => requestBlock({target: "dccon", blockAllDccon: true})}>
+                            디시콘 전체 차단
+                        </Button>
+                    </Flex>
+                ) : (
+                    <>
+                        <Flex direction="column" gap="2">
+                            {selected.nick && <CopyRow label="닉네임" value={selected.nick} onCopy={copy}/>}
+                            {identity && <CopyRow label="아이디/IP" value={identity} onCopy={copy}/>}
+                            {isp && <CopyRow label="ISP" value={isp} onCopy={copy}/>}
+                        </Flex>
+                        <Separator size="4" my="2"/>
+                        <Flex gap="2" wrap="wrap">
+                            <Button size="1" color="red" variant="soft" onClick={() => requestBlock({target: "user"})}>
+                                유저 차단
+                            </Button>
+                            <Button size="1" variant="soft" color="gray"
+                                    onClick={() => useUiStore.getState().openMemoForSelected()}>
+                                메모
+                            </Button>
+                            {selected.uid && (
+                                <Button size="1" variant="soft" color="gray" asChild>
+                                    <a href={`https://gallog.dcinside.com/${selected.uid}`} target="_blank"
+                                       rel="noreferrer" onClick={close}>
+                                        갤로그
+                                    </a>
+                                </Button>
+                            )}
+                        </Flex>
+                    </>
                 )}
-            </div>
-        </div>
+            </Popover.Content>
+        </Popover.Root>
     );
 };
 
@@ -195,11 +164,18 @@ const MemoHost = () => {
     return <MemoDialog key={JSON.stringify(memo)}/>;
 };
 
-export const ContentRoot = () => (
-    <>
-        <ToastHost/>
-        <BubbleHost/>
-        <MemoHost/>
-        <PreviewHost/>
-    </>
-);
+export const ContentRoot = () => {
+    const appearance = useDcAppearance();
+
+    return (
+        <Theme appearance={appearance} accentColor="blue" radius="medium" panelBackground="solid"
+               hasBackground={false}>
+            <Box>
+                <ToastHost/>
+                <BubbleHost/>
+                <MemoHost/>
+                <PreviewHost/>
+            </Box>
+        </Theme>
+    );
+};

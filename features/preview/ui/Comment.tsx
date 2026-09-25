@@ -1,10 +1,12 @@
-import {type MouseEvent, useEffect, useState} from "react";
+import {Box, Flex, IconButton, Text, Tooltip} from "@radix-ui/themes";
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
+import {type MouseEvent, useEffect, useState} from "react";
 
-import {adminDeleteComment, userDeleteComment} from "@/core/preview/request";
-import {ISPData} from "@/utils/ip";
+import {overlay} from "@/components/overlay/shadow";
 import type {ProcessedComment} from "@/core/preview/comments";
+import {adminDeleteComment, userDeleteComment} from "@/core/preview/request";
 import {useUiStore} from "@/stores/ui";
+import {ISPData} from "@/utils/ip";
 
 import {usePreviewStore} from "./previewStore";
 
@@ -53,13 +55,10 @@ const TimeStamp = ({date}: { date: string }) => {
     }, []);
 
     return (
-        <span
-            className="refresher-timestamp"
-            onClick={() => setAbsolute((x) => !x)}
-            title={parsed.toLocaleString()}
-        >
+        <Text size="1" color="gray" title={parsed.toLocaleString()} style={{cursor: "pointer", whiteSpace: "nowrap"}}
+              onClick={() => setAbsolute((x) => !x)}>
             {Number.isNaN(parsed.getTime()) ? "이미 삭제 됨" : absolute ? parsed.toLocaleString() : relative(parsed)}
-        </span>
+        </Text>
     );
 };
 
@@ -70,8 +69,10 @@ export interface UserCardData {
     image?: string;
 }
 
+/** 작성자 표시. 우클릭하면 유저 버블 */
 export const UserCard = ({user}: { user: UserCardData }) => {
     const isp = user.ip ? ISPData(user.ip).name : undefined;
+    const info = [user.id, user.ip].filter(Boolean).join(" / ");
 
     const openMenu = (event: MouseEvent): void => {
         event.preventDefault();
@@ -83,24 +84,12 @@ export const UserCard = ({user}: { user: UserCardData }) => {
     };
 
     return (
-        <div className="refresher-user" onContextMenu={openMenu}>
-            <div className="refresher-user-content">
-                <span className="refresher-user-nick">{user.nick ?? user.id ?? user.ip}</span>
-                {user.image && (
-                    <span className="refresher-user-icon">
-                        <img src={user.image} alt=""/>
-                    </span>
-                )}
-                {[user.id, user.ip].filter(Boolean).length > 0 && (
-                    <span className="refresher-user-info">({[user.id, user.ip].filter(Boolean).join(" / ")})</span>
-                )}
-                {isp && (
-                    <span className="refresherUserData" style={{color: "#6495ed"}} title={isp}>
-                        [{isp}]
-                    </span>
-                )}
-            </div>
-        </div>
+        <Flex align="center" gap="1" minWidth="0" onContextMenu={openMenu} style={{cursor: "context-menu"}}>
+            <Text size="2" weight="bold" truncate>{user.nick ?? user.id ?? user.ip}</Text>
+            {user.image && <img src={user.image} alt="" height={12}/>}
+            {info && <Text size="1" color="gray" truncate>({info})</Text>}
+            {isp && <Text size="1" color="blue" title={isp} truncate>[{isp}]</Text>}
+        </Flex>
     );
 };
 
@@ -113,14 +102,14 @@ interface CommentProps {
 export const Comment = ({comment, depth, replyCount}: CommentProps) => {
     const reply = usePreviewStore((s) => s.reply);
     const collapsed = usePreviewStore((s) => s.collapsed.has(comment.no));
+    const setReply = usePreviewStore((s) => s.setReply);
+    const toggleCollapse = usePreviewStore((s) => s.toggleCollapse);
 
     const isDeleted = comment.is_delete === "1";
     const isAdmin = Boolean(document.querySelector(".useradmin_btnbox button"));
     const canDelete =
         !isDeleted && (comment.del_btn === "Y" || comment.my_cmt === "Y" || isAdmin || (!comment.user_id && Boolean(comment.ip)));
-
-    const setReply = usePreviewStore((s) => s.setReply);
-    const toggleCollapse = usePreviewStore((s) => s.toggleCollapse);
+    const replying = reply.replyNo === comment.no;
 
     const onDelete = async (): Promise<void> => {
         const st = usePreviewStore.getState();
@@ -149,34 +138,33 @@ export const Comment = ({comment, depth, replyCount}: CommentProps) => {
         : comment.memo.replace(/\n/g, "<br/>");
 
     return (
-        <div
-            className="refresher-comment"
-            data-depth={depth}
-            data-collapsed={collapsed ? "true" : undefined}
-            data-deleted={isDeleted ? "true" : undefined}
-        >
-            <div className="refresher-comment-meta">
-                <UserCard user={{
-                    nick: comment.name,
-                    id: comment.user_id,
-                    ip: comment.ip || extractIp(comment.gallog_icon) || extractIp(comment.nickname as string | undefined),
-                    image: extractIcon(comment.gallog_icon)
-                }}/>
-                {depth === 0 && replyCount > 1 && (
-                    <button
-                        type="button"
-                        className="refresher-comment-controls"
-                        title="답글 접기"
-                        onClick={() => toggleCollapse(comment.no)}
-                    >
-                        <ChevronDown size={16} style={{transform: collapsed ? "rotate(-90deg)" : undefined}}/>
-                    </button>
-                )}
-                <div className="refresher-comment-controls-container">
+        <Box className="refresher-comment" data-depth={depth} data-deleted={isDeleted || undefined} px="6" py="2">
+            <Flex justify="between" align="center" gap="2">
+                <Flex align="center" gap="1" minWidth="0">
+                    <UserCard user={{
+                        nick: comment.name,
+                        id: comment.user_id,
+                        ip: comment.ip || extractIp(comment.gallog_icon) || extractIp(comment.nickname as string | undefined),
+                        image: extractIcon(comment.gallog_icon)
+                    }}/>
+                    {depth === 0 && replyCount > 1 && (
+                        <Tooltip content={collapsed ? "답글 펼치기" : "답글 접기"} container={overlay.portal}>
+                            <IconButton size="1" variant="ghost" color="gray" aria-label="답글 접기"
+                                        onClick={() => toggleCollapse(comment.no)}>
+                                <ChevronDown size={14} style={{transform: collapsed ? "rotate(-90deg)" : undefined}}/>
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                </Flex>
+
+                <Flex align="center" gap="3" flexShrink="0">
                     {!isDeleted && (
-                        <button
-                            type="button"
-                            className="refresher-comment-controls"
+                        <IconButton
+                            size="1"
+                            variant={replying ? "soft" : "ghost"}
+                            color={replying ? undefined : "gray"}
+                            aria-label="답글"
+                            aria-pressed={replying}
                             onClick={() =>
                                 setReply({
                                     commentNo: comment.c_no === reply.commentNo ? null : comment.c_no || "0",
@@ -184,28 +172,29 @@ export const Comment = ({comment, depth, replyCount}: CommentProps) => {
                                 })
                             }
                         >
-                            {reply.replyNo === comment.no ? <Check size={15}/> : <ReplyIcon size={15}/>}
-                        </button>
+                            {replying ? <Check size={14}/> : <ReplyIcon size={14}/>}
+                        </IconButton>
                     )}
                     {canDelete && (
-                        <button type="button" className="refresher-comment-controls" title="댓글 삭제"
-                                onClick={() => void onDelete()}>
-                            <X size={15}/>
-                        </button>
+                        <IconButton size="1" variant="ghost" color="gray" aria-label="댓글 삭제"
+                                    onClick={() => void onDelete()}>
+                            <X size={14}/>
+                        </IconButton>
                     )}
                     <TimeStamp date={String(comment.reg_date ?? comment.date_time ?? "")}/>
-                </div>
-            </div>
-            <div className="refresher-comment-content-inner">
+                </Flex>
+            </Flex>
+
+            <Flex direction="column" gap="1" mt="1">
                 {comment.voice &&
                     (comment.voice.src.startsWith("https://vr.dcinside.com") ? (
                         <audio controls src={comment.voice.src}/>
                     ) : (
                         <iframe src={comment.voice.src} width={280} height={54} style={{border: 0}} title="voice"/>
                     ))}
-                <div className={"refresher-comment-content" + (isDccon ? " dccon" : "")}
+                <Box className="refresher-html refresher-comment-html" data-dccon={isDccon || undefined}
                      dangerouslySetInnerHTML={{__html: html}}/>
-            </div>
-        </div>
+            </Flex>
+        </Box>
     );
 };

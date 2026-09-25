@@ -1,19 +1,21 @@
-import {useEffect, useRef, useState} from "react";
+import {Box, Flex, IconButton, Link, Text, TextArea, TextField, Tooltip} from "@radix-ui/themes";
 import {Send, Smile, X} from "lucide-react";
+import {useEffect, useRef, useState} from "react";
 import {storage} from "wxt/utils/storage";
 
+import {overlay} from "@/components/overlay/shadow";
 import {captchaImage, submitComment} from "@/core/preview/request";
-import {getGrecaptchaToken} from "../grecaptcha";
 import type {DcinsideDccon} from "@/features/types";
 import {useUiStore} from "@/stores/ui";
 
+import {getGrecaptchaToken} from "../grecaptcha";
 import {DcconPopup} from "./DcconPopup";
 import {usePreviewStore} from "./previewStore";
 
 const randomPassword = (): string => Math.random().toString(36).slice(2, 10);
 
 // 비회원 자격은 확장 isolated storage에만 보관 (페이지 world 접근 차단)
-const nonmemberStorage = storage.defineItem<{nick: string; pw: string}>("local:refresher:nonmember", {
+const nonmemberStorage = storage.defineItem<{ nick: string; pw: string }>("local:refresher:nonmember", {
     defaultValue: {nick: "", pw: ""}
 });
 
@@ -27,7 +29,7 @@ export const WriteComment = () => {
     const [bigDccon, setBigDccon] = useState(false);
     const [dcconOpen, setDcconOpen] = useState(false);
     const [showInputs, setShowInputs] = useState(false);
-    const [hovered, setHovered] = useState(false);
+    const [sending, setSending] = useState(false);
     const textarea = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
@@ -37,8 +39,11 @@ export const WriteComment = () => {
         });
     }, []);
 
-    const saveNonmember = (next: {nick?: string; pw?: string}): void => {
-        void nonmemberStorage.getValue().then((prev) => void nonmemberStorage.setValue({nick: next.nick ?? prev.nick, pw: next.pw ?? prev.pw}));
+    const saveNonmember = (next: { nick?: string; pw?: string }): void => {
+        void nonmemberStorage.getValue().then((prev) => void nonmemberStorage.setValue({
+            nick: next.nick ?? prev.nick,
+            pw: next.pw ?? prev.pw
+        }));
     };
 
     const submit = async (): Promise<void> => {
@@ -46,7 +51,7 @@ export const WriteComment = () => {
         const text = textarea.current?.value.trim() ?? "";
         const useDccon = dccons.length > 0;
 
-        if (!st.preData || !st.post) return;
+        if (!st.preData || !st.post || sending) return;
         if (!useDccon && !text) return;
 
         if (!login && (!nick || !password)) {
@@ -54,6 +59,7 @@ export const WriteComment = () => {
             return;
         }
 
+        setSending(true);
         try {
             let code: string | undefined;
             if (st.post.requireCommentCaptcha) {
@@ -86,84 +92,93 @@ export const WriteComment = () => {
             }
         } catch {
             useUiStore.getState().showToast("댓글 작성 중 오류가 발생했습니다.", "error");
+        } finally {
+            setSending(false);
         }
     };
 
+    const mode = reply.replyNo ? "답글" : dccons.length > 0 ? "디시콘" : "댓글";
+
     return (
-        <div className="refresher-write-comment">
+        <Box px="6" pt="3" pb="5" style={{position: "sticky", bottom: 0, background: "var(--color-panel-solid)"}}>
             {!login && showInputs && (
-                <div className="refresher-write-comment-inputs">
-                    <input
+                <Flex gap="2" mb="2">
+                    <TextField.Root
+                        size="2"
                         value={nick}
                         placeholder="닉네임"
                         maxLength={20}
+                        style={{flex: 1}}
                         onChange={(event) => {
                             setNick(event.target.value);
                             saveNonmember({nick: event.target.value});
                         }}
                     />
-                    <input
+                    <TextField.Root
+                        size="2"
                         type="password"
                         value={password}
                         placeholder="비밀번호"
+                        style={{flex: 1}}
                         onChange={(event) => {
                             setPassword(event.target.value);
                             saveNonmember({pw: event.target.value});
                         }}
                     />
-                </div>
+                </Flex>
             )}
-            <div className="refresher-write-comment-row">
-                <textarea
-                    id="comment_main"
+
+            <Flex gap="2" align="end">
+                <TextArea
                     ref={textarea}
+                    size="2"
+                    rows={2}
+                    resize="vertical"
                     disabled={dccons.length > 0}
-                    placeholder={dccons.length > 0 ? "디시콘이 선택됐습니다." : "댓글 입력..."}
+                    placeholder={dccons.length > 0 ? "디시콘이 선택됐습니다." : "댓글 입력... (Shift+Enter 줄바꿈)"}
+                    style={{flex: 1}}
                     onKeyDown={(event) => {
-                        if (event.key === "Enter" && !event.shiftKey) {
+                        if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
                             event.preventDefault();
                             void submit();
                         }
                     }}
                 />
-                {dccons.length > 0 && (
-                    <button
-                        type="button"
-                        title="콘 취소"
-                        onClick={() => {
-                            setDccons([]);
-                            setBigDccon(false);
-                        }}
-                    >
-                        <X size={18}/>
-                    </button>
+                <Flex direction="column" gap="2">
+                    {dccons.length > 0 ? (
+                        <Tooltip content="콘 취소" container={overlay.portal}>
+                            <IconButton variant="soft" color="gray" aria-label="콘 취소" onClick={() => {
+                                setDccons([]);
+                                setBigDccon(false);
+                            }}>
+                                <X size={16}/>
+                            </IconButton>
+                        </Tooltip>
+                    ) : (
+                        <Tooltip content="디시콘" container={overlay.portal}>
+                            <IconButton variant="soft" color="gray" aria-label="디시콘" onClick={() => setDcconOpen(true)}>
+                                <Smile size={16}/>
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                    <IconButton aria-label="작성" loading={sending} onClick={() => void submit()}>
+                        <Send size={16}/>
+                    </IconButton>
+                </Flex>
+            </Flex>
+
+            <Text as="p" size="1" color="gray" mt="2">
+                {login ? "회원 계정" : (
+                    <Link size="1" href="#" onClick={(event) => {
+                        event.preventDefault();
+                        setShowInputs((v) => !v);
+                    }}>
+                        {nick}
+                    </Link>
                 )}
-                <button type="button" title="디시콘" onClick={() => setDcconOpen(true)}>
-                    <Smile size={18}/>
-                </button>
-                <button type="button" className="primary" title="작성" onClick={() => void submit()}>
-                    <Send size={18}/>
-                </button>
-            </div>
-            <div className="refresher-write-comment-controls">
-                <span
-                    className="refresher-write-comment-whoami"
-                    style={login ? undefined : {cursor: "pointer"}}
-                    onMouseEnter={() => {
-                        if (!login) setHovered(true);
-                    }}
-                    onMouseLeave={() => {
-                        if (!login) setHovered(false);
-                    }}
-                    onClick={() => {
-                        if (!login) setShowInputs((v) => !v);
-                    }}
-                >
-                    {!login && hovered
-                        ? "클릭하면 작성자 정보를 수정합니다."
-                        : `${login ? "회원 계정" : nick}(으)로 ${reply.replyNo ? "답글" : dccons.length > 0 ? "디시콘" : "댓글"} 작성 중`}
-                </span>
-            </div>
+                (으)로 {mode} 작성 중
+            </Text>
+
             {dcconOpen && (
                 <DcconPopup
                     onSelect={(selected, big) => {
@@ -174,6 +189,6 @@ export const WriteComment = () => {
                     onClose={() => setDcconOpen(false)}
                 />
             )}
-        </div>
+        </Box>
     );
 };

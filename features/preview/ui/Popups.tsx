@@ -1,7 +1,7 @@
+import {Button, Card, Checkbox, Dialog, Flex, Grid, RadioGroup, Text, TextField} from "@radix-ui/themes";
 import {useState} from "react";
-import {X} from "lucide-react";
-import {Dialog} from "radix-ui";
 
+import {overlay} from "@/components/overlay/shadow";
 import {eventBus} from "@/core/eventbus/bus";
 import {blockUser} from "@/core/preview/request";
 import {useUiStore} from "@/stores/ui";
@@ -33,25 +33,25 @@ const AdminPanel = () => {
     const requestManage = usePreviewStore((s) => s.requestManage);
 
     return (
-        <div id="refresher-management-panel">
-            <div className="refresher-management-panel">
-                <button type="button" onClick={() => requestManage("notice")}>
-                    {notice ? "공지 등록 해제" : "공지로 등록"}
-                </button>
-                <button type="button" onClick={() => requestManage("recommend")}>
+        <Card size="1" className="refresher-manage-panel refresher-interactive">
+            <Flex direction="column" gap="1" width="110px">
+                <Button size="1" variant="soft" color="gray" onClick={() => requestManage("notice")}>
+                    {notice ? "공지 해제" : "공지 등록"}
+                </Button>
+                <Button size="1" variant="soft" color="gray" onClick={() => requestManage("recommend")}>
                     {recommend ? "개념글 해제" : "개념글 등록"}
-                </button>
-                <button type="button" onClick={() => usePreviewStore.getState().openBlockPopup()}>
-                    차단 (B)
-                </button>
-                <button type="button" onClick={() => requestManage("delete")}>
-                    삭제 (D)
-                </button>
-                <button type="button" onClick={() => requestManage("bump")}>
+                </Button>
+                <Button size="1" variant="soft" color="gray" onClick={() => requestManage("bump")}>
                     끌올
-                </button>
-            </div>
-        </div>
+                </Button>
+                <Button size="1" variant="soft" color="red" onClick={() => usePreviewStore.getState().openBlockPopup()}>
+                    차단 (B)
+                </Button>
+                <Button size="1" variant="soft" color="red" onClick={() => requestManage("delete")}>
+                    삭제 (D)
+                </Button>
+            </Flex>
+        </Card>
     );
 };
 
@@ -84,82 +84,66 @@ const BlockPopup = () => {
     };
 
     return (
-        <Dialog.Root
-            open
-            onOpenChange={(open) => {
-                if (!open) usePreviewStore.getState().closeBlockPopup();
-            }}
-        >
-            <Dialog.Portal>
-                <Dialog.Overlay className="refresher-overlay" style={{background: "transparent"}}/>
-                <Dialog.Content className="refresher-block-popup" onOpenAutoFocus={(event) => event.preventDefault()}>
-                    <Dialog.Close asChild>
-                        <button type="button" className="refresher-popup-close">
-                            <X size={14}/>
-                        </button>
-                    </Dialog.Close>
+        <Dialog.Root open onOpenChange={(open) => !open && usePreviewStore.getState().closeBlockPopup()}>
+            <Dialog.Content container={overlay.portal} maxWidth="440px" onOpenAutoFocus={(event) => event.preventDefault()}>
+                <Dialog.Title>유저 차단</Dialog.Title>
 
-                    <Dialog.Title asChild>
-                        <h3>유저 차단</h3>
-                    </Dialog.Title>
-
-                    <div className="refresher-block-popup-section">
-                        <h4>기간</h4>
+                <Text as="div" size="2" weight="bold" mb="2">기간</Text>
+                <RadioGroup.Root value={day} onValueChange={setDay} size="2">
+                    <Grid columns="3" gap="2">
                         {BLOCK_DAYS.map(([value, label]) => (
-                            <label key={value}>
-                                <input type="radio" name="block-day" value={value} checked={day === value}
-                                       onChange={() => setDay(value)}/>
-                                {label}
-                            </label>
+                            <RadioGroup.Item key={value} value={value}>{label}</RadioGroup.Item>
                         ))}
-                    </div>
+                    </Grid>
+                </RadioGroup.Root>
 
-                    <div className="refresher-block-popup-section">
-                        <h4>사유</h4>
+                <Text as="div" size="2" weight="bold" mt="4" mb="2">사유</Text>
+                <RadioGroup.Root value={reason} onValueChange={setReason} size="2">
+                    <Grid columns="3" gap="2">
                         {BLOCK_REASONS.map(([value, label]) => (
-                            <label key={value}>
-                                <input type="radio" name="block-reason" value={value} checked={reason === value}
-                                       onChange={() => setReason(value)}/>
-                                {label}
-                            </label>
+                            <RadioGroup.Item key={value} value={value}>{label}</RadioGroup.Item>
                         ))}
-                        {reason === "0" && (
-                            <input
-                                value={custom}
-                                placeholder="차단 사유 직접 입력 (한글 20자 이내)"
-                                maxLength={20}
-                                onChange={(event) => setCustom(event.target.value)}
-                            />
-                        )}
-                    </div>
+                    </Grid>
+                </RadioGroup.Root>
+                {reason === "0" && (
+                    <TextField.Root
+                        mt="2"
+                        value={custom}
+                        placeholder="차단 사유 직접 입력 (한글 20자 이내)"
+                        maxLength={20}
+                        autoFocus
+                        onChange={(event) => setCustom(event.target.value)}
+                    />
+                )}
 
-                    <div className="refresher-block-popup-section">
-                        <label>
-                            <input type="checkbox" checked={delChk}
-                                   onChange={(event) => setDelChk(event.target.checked)}/>
+                <Flex direction="column" gap="2" mt="4">
+                    <Text as="label" size="2">
+                        <Flex gap="2" align="center">
+                            <Checkbox checked={delChk} onCheckedChange={(value) => setDelChk(value === true)}/>
                             선택한 글 삭제
-                        </label>
-                        <label>
-                            <input type="checkbox" checked={userTypeChk}
-                                   onChange={(event) => setUserTypeChk(event.target.checked)}/>
+                        </Flex>
+                    </Text>
+                    <Text as="label" size="2">
+                        <Flex gap="2" align="center">
+                            <Checkbox checked={userTypeChk} onCheckedChange={(value) => setUserTypeChk(value === true)}/>
                             식별 코드 차단 시 IP 동시 차단
-                        </label>
-                    </div>
+                        </Flex>
+                    </Text>
+                </Flex>
 
-                    <button type="button" className="go-block" onClick={() => void submit()}>
-                        차단
-                    </button>
-                </Dialog.Content>
-            </Dialog.Portal>
+                <Flex gap="3" justify="end" mt="5">
+                    <Dialog.Close>
+                        <Button variant="soft" color="gray">취소</Button>
+                    </Dialog.Close>
+                    <Button color="red" onClick={() => void submit()}>차단</Button>
+                </Flex>
+            </Dialog.Content>
         </Dialog.Root>
     );
 };
 
-const CaptchaPopup = () => {
-    const captcha = usePreviewStore((s) => s.captcha);
+const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: string) => void } }) => {
     const [code, setCode] = useState("");
-
-    if (!captcha) return null;
 
     const send = (): void => {
         if (!code.trim()) return;
@@ -177,33 +161,24 @@ const CaptchaPopup = () => {
                 }
             }}
         >
-            <Dialog.Portal>
-                <Dialog.Overlay className="refresher-overlay" style={{background: "transparent"}}/>
-                <Dialog.Content className="refresher-captcha-popup">
-                    <Dialog.Close asChild>
-                        <button type="button" className="refresher-popup-close">
-                            <X size={14}/>
-                        </button>
+            <Dialog.Content container={overlay.portal} maxWidth="320px">
+                <Dialog.Title>코드 입력</Dialog.Title>
+                <img src={captcha.url} alt="captcha" style={{display: "block", width: "100%", borderRadius: "var(--radius-3)"}}/>
+                <TextField.Root
+                    mt="3"
+                    autoFocus
+                    value={code}
+                    placeholder="코드"
+                    onKeyDown={(event) => event.key === "Enter" && send()}
+                    onChange={(event) => setCode(event.target.value)}
+                />
+                <Flex gap="3" justify="end" mt="4">
+                    <Dialog.Close>
+                        <Button variant="soft" color="gray">취소</Button>
                     </Dialog.Close>
-
-                    <Dialog.Title asChild>
-                        <h3>코드 입력</h3>
-                    </Dialog.Title>
-                    <img src={captcha.url} alt="captcha"/>
-                    <input
-                        autoFocus
-                        value={code}
-                        placeholder="코드"
-                        onKeyDown={(event) => {
-                            if (event.key === "Enter") send();
-                        }}
-                        onChange={(event) => setCode(event.target.value)}
-                    />
-                    <button type="button" onClick={send}>
-                        전송
-                    </button>
-                </Dialog.Content>
-            </Dialog.Portal>
+                    <Button disabled={!code.trim()} onClick={send}>전송</Button>
+                </Flex>
+            </Dialog.Content>
         </Dialog.Root>
     );
 };
@@ -217,7 +192,7 @@ export const Popups = () => {
         <>
             {adminVisible && <AdminPanel/>}
             {blockPopup && <BlockPopup/>}
-            {captcha && <CaptchaPopup key={captcha.url}/>}
+            {captcha && <CaptchaPopup key={captcha.url} captcha={captcha}/>}
         </>
     );
 };

@@ -1,37 +1,4 @@
-@use "ui" as *;
-@use "components/comment";
-@use "components/frame" as *;
-@use "components/popup" as popup;
-@use "components/dccon";
-
-/* ===== DCinside 콘텐츠 주입 스타일 ===== */
-
-:root {
-    --refresher-bg: #fff;
-    --refresher-fg: #1c1c1c;
-    --refresher-muted: #71717a;
-    --refresher-border: #e4e4e7;
-    --refresher-accent: #3b82f6;
-    --refresher-radius: 8px;
-}
-
-html:has(#css-darkmode) {
-    :root {
-        --refresher-bg: #18181b;
-        --refresher-fg: #fafafa;
-        --refresher-muted: #a1a1aa;
-        --refresher-border: #3f3f46;
-    }
-}
-
-#refresher-root {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 2147483600;
-    font: 13px/1.5 -apple-system, "Segoe UI", "맑은 고딕", sans-serif;
-    color: #1c1c1c;
-}
+/* ===== DCinside 페이지 주입 스타일 (오버레이 UI는 shadow DOM의 overlay.scss) ===== */
 
 /* ===== 차단 마커 ===== */
 
@@ -71,149 +38,11 @@ html:has(#css-darkmode) {
     }
 }
 
-/* ===== 삭제된 글 (미리보기) ===== */
-
-.refresher-deleted {
-    background-color: #e8645f1a !important;
-}
 
 /* ===== 방문 링크 색상 비활성화 (Firefox 대응) ===== */
 
 .refresherDoNotColorVisited .gall_list a:visited {
     color: inherit !important;
-}
-
-/* ===== 토스트 ===== */
-
-.refresher-toast {
-    position: fixed;
-    right: 16px;
-    bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    max-width: 320px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    background: #333333f2;
-    color: #fff;
-    font-size: 15px;
-    pointer-events: auto;
-    box-shadow: 0 6px 20px rgb(0 0 0 / 30%);
-    z-index: 2147483600;
-    animation: refresherToastIn 0.2s cubic-bezier(0.19, 1, 0.22, 1);
-}
-
-.refresher-toast-error {
-    background: #ff6464f2;
-}
-
-.refresher-toast-warning {
-    background: #f7af15f2;
-    color: #1c1c1c;
-}
-
-.refresher-toast-close {
-    flex: none;
-    padding: 0 2px;
-    background: none;
-    border: none;
-    color: inherit;
-    font-size: 14px;
-    line-height: 1;
-    cursor: pointer;
-    opacity: 0.8;
-
-    &:hover {
-        opacity: 1;
-    }
-}
-
-@keyframes refresherToastIn {
-    0% {
-        transform: translateY(8px);
-        opacity: 0;
-    }
-
-    100% {
-        transform: translateY(0px);
-        opacity: 1;
-    }
-}
-
-/* ===== 유저 버블 ===== */
-
-.refresher-bubble {
-    position: fixed;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 180px;
-    padding: 10px;
-    border: 1px solid #e4e4e7;
-    border-radius: 8px;
-    background: #fff;
-    box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
-    pointer-events: auto;
-    z-index: 2147483600;
-    animation: refresherToastIn 0.15s cubic-bezier(0.19, 1, 0.22, 1);
-}
-
-.refresher-bubble-value {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    font-size: 12px;
-
-    strong {
-        font-weight: 600;
-    }
-}
-
-.refresher-bubble-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 2px;
-
-    .refresher-button {
-        padding: 4px 8px;
-        font-size: 11px;
-    }
-}
-
-/* ===== 세그먼트 (메모 타입) ===== */
-
-.refresher-segment {
-    display: flex;
-    gap: 2px;
-    margin-bottom: 10px;
-    padding: 2px;
-    border: 1px solid #e4e4e7;
-    border-radius: 6px;
-}
-
-.refresher-segment-item {
-    flex: 1;
-    padding: 4px 0;
-    background: none;
-    border: none;
-    border-radius: 4px;
-    color: #71717a;
-    font: inherit;
-    font-size: 11px;
-    cursor: pointer;
-
-    &:disabled {
-        opacity: 0.4;
-        cursor: default;
-    }
-
-    &[data-active] {
-        background: #3b82f6;
-        color: #fff;
-    }
 }
 
 /* ===== 본문 링크 / 유저 데이터 / 작성자 셀 ===== */
@@ -267,24 +96,6 @@ tr.gall_writer {
     vertical-align: middle;
 }
 
-/* ===== 다크 모드 (표시 요소) ===== */
-
-html:has(#css-darkmode) {
-    #refresher-root,
-    .refresher-bubble {
-        color: #fafafa;
-    }
-
-    .refresher-bubble {
-        background: #18181b;
-        border-color: #3f3f46;
-    }
-
-    .refresher-segment {
-        border-color: #3f3f46;
-    }
-
-    .refresher-segment-item {
-        color: #a1a1aa;
-    }
+.cmt_nickbox {
+    display: flex;
 }

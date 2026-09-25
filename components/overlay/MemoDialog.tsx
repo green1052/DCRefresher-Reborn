@@ -1,4 +1,5 @@
-import {Dialog} from "radix-ui";
+import {Button, Dialog, Flex, SegmentedControl, Text, TextField} from "@radix-ui/themes";
+import {Shuffle} from "lucide-react";
 import {useEffect, useState} from "react";
 
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
@@ -6,15 +7,13 @@ import type {MemoType} from "@/core/storage/types";
 import {useMemosStore} from "@/stores/memos";
 import {type MemoTargetState, useUiStore} from "@/stores/ui";
 
+import {overlay} from "./shadow";
+
 const TYPE_LABELS: Record<MemoType, string> = {NICK: "닉네임", UID: "아이디", IP: "IP"};
 
 const randomColor = (): string => `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0")}`;
 
-interface MemoDialogProps {
-    state: MemoTargetState;
-}
-
-const MemoDialogInner = ({state}: MemoDialogProps) => {
+const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const closeMemo = useUiStore((s) => s.closeMemo);
     const showToast = useUiStore((s) => s.showToast);
     const memos = useMemosStore((s) => s.memos);
@@ -34,15 +33,10 @@ const MemoDialogInner = ({state}: MemoDialogProps) => {
     }, [type]);
 
     const value = state.targets[type] ?? "";
-
-    const switchType = (next: MemoType): void => {
-        if (next === type || !state.targets[next]) return;
-        setType(next);
-    };
+    const existing = Boolean(memos[type][value]);
 
     const submit = async (): Promise<void> => {
         if (!text) {
-            const existing = memos[type][value];
             if (existing) await removeMemo(type, value);
             else showToast(`해당하는 ${MEMO_TYPE_NAMES[type]}을(를) 가진 사용자 메모가 없습니다.`, "error");
         } else {
@@ -53,75 +47,65 @@ const MemoDialogInner = ({state}: MemoDialogProps) => {
         closeMemo();
     };
 
-    const existing = Boolean(memos[type][value]);
-
     return (
-        <Dialog.Portal>
-            <Dialog.Overlay className="refresher-overlay"/>
-            <Dialog.Content className="refresher-dialog">
-                <Dialog.Title className="refresher-dialog-title">메모 추가</Dialog.Title>
-                <Dialog.Description className="refresher-dialog-desc">
-                    {MEMO_TYPE_NAMES[type]}: {value}
-                </Dialog.Description>
+        <Dialog.Content container={overlay.portal} maxWidth="400px">
+            <Dialog.Title>메모</Dialog.Title>
+            <Dialog.Description size="2" color="gray" mb="4">
+                {MEMO_TYPE_NAMES[type]}: <Text weight="bold" highContrast>{value}</Text>
+            </Dialog.Description>
 
-                <div className="refresher-segment">
-                    {MEMO_TYPES.map((memoType) => (
-                        <button
-                            key={memoType}
-                            type="button"
-                            className="refresher-segment-item"
-                            data-active={type === memoType || undefined}
-                            disabled={!state.targets[memoType]}
-                            onClick={() => switchType(memoType)}
-                        >
+            <Flex direction="column" gap="3">
+                <SegmentedControl.Root value={type} onValueChange={(next) => {
+                    if (state.targets[next as MemoType]) setType(next as MemoType);
+                }}>
+                    {MEMO_TYPES.filter((memoType) => state.targets[memoType]).map((memoType) => (
+                        <SegmentedControl.Item key={memoType} value={memoType}>
                             {TYPE_LABELS[memoType]}
-                        </button>
+                        </SegmentedControl.Item>
                     ))}
-                </div>
+                </SegmentedControl.Root>
 
-                <input
-                    className="refresher-input"
+                <TextField.Root
                     maxLength={160}
                     placeholder="메모를 입력해주세요 (160자 제한)"
                     value={text}
                     onChange={(event) => setText(event.target.value)}
                     onKeyDown={(event) => event.key === "Enter" && void submit()}
                     autoFocus
-                />
+                >
+                    <TextField.Slot>
+                        <input
+                            type="color"
+                            aria-label="색상"
+                            value={color}
+                            onChange={(event) => setColor(event.target.value)}
+                            style={{width: 20, height: 20, padding: 0, border: 0, background: "none", cursor: "pointer"}}
+                        />
+                    </TextField.Slot>
+                    <TextField.Slot side="right">
+                        <Button size="1" variant="ghost" color="gray" aria-label="랜덤 색상"
+                                onClick={() => setColor(randomColor())}>
+                            <Shuffle size={12}/>
+                        </Button>
+                    </TextField.Slot>
+                </TextField.Root>
+            </Flex>
 
-                <div className="refresher-color-row">
-                    <input type="color" className="refresher-color" value={color}
-                           onChange={(event) => setColor(event.target.value)}/>
-                    <button type="button" className="refresher-button" onClick={() => setColor(randomColor())}>
-                        랜덤
-                    </button>
-                </div>
-
-                <div className="refresher-dialog-actions">
-                    {existing && (
-                        <button
-                            type="button"
-                            className="refresher-button refresher-danger"
-                            onClick={() => {
-                                void removeMemo(type, value);
-                                closeMemo();
-                            }}
-                        >
-                            삭제
-                        </button>
-                    )}
-                    <button type="button" className="refresher-button refresher-primary" onClick={() => void submit()}>
-                        추가
-                    </button>
-                </div>
-
-                <Dialog.Close asChild>
-                    <button type="button" className="refresher-dialog-close" aria-label="닫기">
-                        ×
-                    </button>
+            <Flex gap="3" justify="end" mt="4">
+                {existing && (
+                    <Button variant="soft" color="red" onClick={() => {
+                        void removeMemo(type, value);
+                        closeMemo();
+                    }}>
+                        삭제
+                    </Button>
+                )}
+                <Dialog.Close>
+                    <Button variant="soft" color="gray">취소</Button>
                 </Dialog.Close>
-            </Dialog.Content>
-        </Dialog.Portal>
+                <Button onClick={() => void submit()}>저장</Button>
+            </Flex>
+        </Dialog.Content>
     );
 };
 

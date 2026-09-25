@@ -1,0 +1,246 @@
+/* ===== 오버레이 (shadow root 전용) — 컴포넌트 스타일은 Radix Themes, 여기엔 배치와 디시 HTML만 ===== */
+
+:host {
+    all: initial;
+    position: fixed;
+    inset: 0;
+    z-index: 2147483600;
+    pointer-events: none;
+}
+
+/* fonts 모듈이 html에 --refresher-font / --refresher-preview-font-size를 지정 (커스텀 속성은 shadow 경계를 넘어 상속됨) */
+:host .radix-themes {
+    --default-font-family: var(--refresher-font, -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif);
+}
+
+/* 호스트는 클릭을 통과시키고, 실제 UI만 받는다 */
+#portal > *,
+.refresher-interactive {
+    pointer-events: auto;
+}
+
+@keyframes refresher-fade-in {
+    from {
+        opacity: 0;
+    }
+}
+
+@keyframes refresher-fade-out {
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes refresher-rise {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+}
+
+/* ===== 토스트 ===== */
+
+.refresher-toast {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 1;
+    max-width: 360px;
+    animation: refresher-rise 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+/* ===== 우클릭 버블 앵커 ===== */
+
+.refresher-anchor {
+    position: fixed;
+    width: 0;
+    height: 0;
+}
+
+/* ===== 미리보기 프레임 ===== */
+
+.refresher-frame-outer {
+    position: fixed;
+    inset: 0;
+    background: var(--color-overlay);
+    animation: refresher-fade-in 0.15s cubic-bezier(0.19, 1, 0.22, 1);
+
+    &[data-fading] {
+        pointer-events: none;
+        animation: refresher-fade-out 0.15s forwards;
+    }
+}
+
+.refresher-frame {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    display: flex;
+    flex-direction: column;
+    width: min(1000px, 96vw);
+    max-height: 88vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: var(--radius-5);
+    background: var(--color-panel-solid);
+    box-shadow: var(--shadow-6);
+    color: var(--gray-12);
+    font-family: var(--default-font-family);
+    transform: translate(-50%, -50%);
+    animation: refresher-fade-in 0.15s cubic-bezier(0.19, 1, 0.22, 1);
+    outline: none;
+
+    &[data-fading] {
+        pointer-events: none;
+        animation: refresher-fade-out 0.15s forwards;
+    }
+}
+
+/* ===== 디시 본문/댓글 HTML (페이지 CSS가 안 닿으므로 최소한만) ===== */
+
+.refresher-html {
+    word-break: break-word;
+
+    img,
+    video,
+    iframe,
+    embed {
+        max-width: 100%;
+        height: auto;
+        border-radius: var(--radius-3);
+    }
+
+    a {
+        color: var(--accent-11);
+    }
+
+    table {
+        max-width: 100%;
+    }
+}
+
+.refresher-preview-contents {
+    font-size: var(--refresher-preview-font-size, 15px);
+    line-height: 1.7;
+}
+
+.refresher-preview-block-media {
+    embed,
+    img:not(.written_dccon),
+    video {
+        display: none;
+    }
+}
+
+.refresher-comment-html {
+    font-size: var(--font-size-3);
+    line-height: 1.6;
+
+    &[data-dccon] img,
+    &[data-dccon] video {
+        width: 100px;
+        height: 100px;
+        border-radius: 0;
+    }
+}
+
+/* ===== 댓글 ===== */
+
+.refresher-comment {
+    &:hover {
+        background: var(--gray-a2);
+    }
+
+    &[data-depth="1"] {
+        margin-left: var(--space-6);
+        border-left: 2px solid var(--gray-a5);
+    }
+
+    &[data-deleted] .refresher-comment-html {
+        color: var(--gray-a9);
+    }
+}
+
+/* ===== 미니 미리보기 ===== */
+
+.refresher-mini-preview {
+    position: fixed;
+    width: 320px;
+    max-height: 200px;
+    overflow: hidden;
+}
+
+.refresher-mini-contents {
+    max-height: 110px;
+    overflow: hidden;
+    font-size: var(--font-size-2);
+}
+
+/* ===== 관리 패널 ===== */
+
+.refresher-manage-panel {
+    position: fixed;
+    z-index: 1;
+    top: 20%;
+    left: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+/* ===== 디시콘 ===== */
+
+.refresher-dccon-packages {
+    display: flex;
+    gap: var(--space-1);
+    overflow-x: auto;
+    padding-bottom: var(--space-2);
+
+    button {
+        flex: none;
+        width: 48px;
+        height: 48px;
+        padding: 2px;
+        border: 2px solid transparent;
+        border-radius: var(--radius-3);
+        background: none;
+        cursor: pointer;
+
+        &[data-active] {
+            border-color: var(--accent-9);
+        }
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    }
+}
+
+.refresher-dccon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: var(--space-1);
+    height: 320px;
+    overflow-y: auto;
+    align-content: start;
+
+    button {
+        aspect-ratio: 1;
+        padding: 2px;
+        border: none;
+        border-radius: var(--radius-3);
+        background: none;
+        cursor: pointer;
+
+        &:hover {
+            background: var(--gray-a3);
+        }
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    }
+}

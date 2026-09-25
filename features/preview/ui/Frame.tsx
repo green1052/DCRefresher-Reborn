@@ -1,9 +1,12 @@
-import {Fragment, useEffect, useState} from "react";
-import {ExternalLink, Eye, ThumbsDown, ThumbsUp} from "lucide-react";
+import {Badge, Box, Button, Callout, Flex, Heading, IconButton, Separator, Spinner, Text, Tooltip} from "@radix-ui/themes";
+import {CircleAlert, Clock, ExternalLink, Eye, ThumbsDown, ThumbsUp} from "lucide-react";
 import {Dialog} from "radix-ui";
+import {Fragment, useEffect, useState} from "react";
 
+import {overlay} from "@/components/overlay/shadow";
 import {captchaImage, vote} from "@/core/preview/request";
 import {useUiStore} from "@/stores/ui";
+import {isTyping} from "@/utils/event";
 
 import {buildPreData} from "../index";
 import {Comment, UserCard} from "./Comment";
@@ -24,16 +27,17 @@ const CountDown = () => {
     if (!expire || Number.isNaN(expire.getTime())) return null;
 
     const diff = expire.getTime() - Date.now();
-    if (diff <= 0) return <span className="refresher-countdown">만료됨</span>;
-
     const h = Math.floor(diff / 3_600_000);
     const m = Math.floor((diff % 3_600_000) / 60000);
     const s = Math.floor((diff % 60000) / 1000);
 
     return (
-        <span className="refresher-countdown" title="자동 삭제까지 남은 시간">
-            {h > 0 ? `${h}시간 ${m}분` : `${m}분 ${s}초`}
-        </span>
+        <Tooltip content="자동 삭제까지 남은 시간" container={overlay.portal}>
+            <Badge color="orange" variant="soft">
+                <Clock size={12}/>
+                {diff <= 0 ? "만료됨" : h > 0 ? `${h}시간 ${m}분` : `${m}분 ${s}초`}
+            </Badge>
+        </Tooltip>
     );
 };
 
@@ -68,23 +72,26 @@ const Votes = () => {
     };
 
     return (
-        <div className="refresher-votes">
-            <button type="button" className="up" title="추천" onClick={() => void onVote("U")}>
+        <Flex justify="center" align="center" gap="3" py="5">
+            <Button size="3" variant="soft" aria-label="추천" onClick={() => void onVote("U")}>
                 <ThumbsUp size={18}/>
                 {upvotes || "X"}
-                {fixedUpvotes ? ` (${fixedUpvotes})` : ""}
-            </button>
+                {fixedUpvotes && <Text size="2" color="gray">({fixedUpvotes})</Text>}
+            </Button>
             {downvotes !== undefined && (
-                <button type="button" className="down" title="비추천" onClick={() => void onVote("D")}>
+                <Button size="3" variant="soft" color="gray" aria-label="비추천" onClick={() => void onVote("D")}>
                     <ThumbsDown size={18}/>
                     {downvotes}
-                </button>
+                </Button>
             )}
-            <button type="button" title="새 탭으로 열기"
-                    onClick={() => window.open(preData?.link ?? location.href, "_blank")}>
-                <ExternalLink size={18}/>
-            </button>
-        </div>
+            <Tooltip content="새 탭으로 열기" container={overlay.portal}>
+                <IconButton size="3" variant="ghost" color="gray" asChild>
+                    <a href={preData?.link ?? location.href} target="_blank" rel="noreferrer">
+                        <ExternalLink size={18}/>
+                    </a>
+                </IconButton>
+            </Tooltip>
+        </Flex>
     );
 };
 
@@ -99,21 +106,27 @@ const ErrorBlock = ({error}: { error: ErrorState }) => {
     else text = "게시글 구조를 해석하는데 실패했습니다.";
 
     return (
-        <div className="refresher-error">
-            <div className="refresher-error-text">{text}</div>
-            <div className="refresher-mute">{detail}</div>
-            <button
-                type="button"
-                onClick={() => {
-                    const st = usePreviewStore.getState();
-                    if (!preData) return;
-                    st.requestClose();
-                    st.requestOpen(preData);
-                }}
-            >
-                다시 시도
-            </button>
-        </div>
+        <Callout.Root color="red" my="4">
+            <Callout.Icon><CircleAlert size={16}/></Callout.Icon>
+            <Callout.Text>
+                {text} <Text size="1" color="gray">({detail})</Text>
+            </Callout.Text>
+            <Box>
+                <Button
+                    size="1"
+                    variant="soft"
+                    color="red"
+                    onClick={() => {
+                        const st = usePreviewStore.getState();
+                        if (!preData) return;
+                        st.requestClose();
+                        st.requestOpen(preData);
+                    }}
+                >
+                    다시 시도
+                </Button>
+            </Box>
+        </Callout.Root>
     );
 };
 
@@ -124,7 +137,7 @@ const CommentList = () => {
     const parents = comments.filter((comment) => comment.depth === 0);
 
     return (
-        <div className="refresher-preview-comments">
+        <Box py="1">
             {parents.map((parent) => {
                 const replies = comments.filter((comment) => comment.depth === 1 && comment.c_no === parent.no);
                 const isCollapsed = collapsed.has(parent.no);
@@ -137,7 +150,7 @@ const CommentList = () => {
                     </Fragment>
                 );
             })}
-        </div>
+        </Box>
     );
 };
 
@@ -190,9 +203,7 @@ export const Frame = () => {
         };
 
         const onKey = (event: KeyboardEvent): void => {
-            const target = event.target;
-            if (target instanceof HTMLElement && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable))
-                return;
+            if (isTyping(event)) return;
 
             if (event.code === "PageUp") {
                 event.preventDefault();
@@ -209,13 +220,10 @@ export const Frame = () => {
 
     if (!visible && !fading) return null;
 
-    const dataLoad = error ? "false" : loading || !post ? "true" : "false";
-
-    // 디시콘/차단/캡챠 팝업이 열려 있으면 프레임 클릭으로 미리보기를 닫지 않는다
-    const popupOpen = (): boolean =>
-        Boolean(document.querySelector(".refresher-dccon-popup, .refresher-block-popup, .refresher-captcha-popup"));
+    const busy = !error && (loading || !post);
 
     return (
+        // Themes Dialog는 항상 modal이라 프리미티브를 쓴다 (스크롤 잠금·PageUp/Down 이동을 직접 처리)
         <Dialog.Root
             open
             modal={false}
@@ -223,62 +231,55 @@ export const Frame = () => {
                 if (!open) usePreviewStore.getState().requestClose();
             }}
         >
-            <Dialog.Portal>
+            <Dialog.Portal container={overlay.portal}>
                 <div
-                    className={"refresher-frame-outer" + (fading ? " fading" : "")}
-                    onPointerDown={() => {
-                        if (popupOpen()) return;
-                        usePreviewStore.getState().requestClose();
-                    }}
+                    className="refresher-frame-outer"
+                    data-fading={fading || undefined}
+                    onPointerDown={() => usePreviewStore.getState().requestClose()}
                 />
                 <Dialog.Content
-                    className={"refresher-frame preview" + (fading ? " fading" : "")}
-                    data-load={dataLoad}
+                    className="refresher-frame"
+                    data-fading={fading || undefined}
+                    aria-busy={busy}
                     onOpenAutoFocus={(event) => event.preventDefault()}
-                    onPointerDownOutside={(event) => {
-                        const target = event.detail.originalEvent.target as Element | null;
-                        if (popupOpen() || !target?.closest(".refresher-frame-outer")) event.preventDefault();
-                    }}
-                    onInteractOutside={(event) => {
-                        const target = event.detail.originalEvent.target as Element | null;
-                        if (popupOpen() || !target?.closest(".refresher-frame-outer")) event.preventDefault();
-                    }}
+                    // 바깥 클릭 닫기는 배경(frame-outer)이 담당. 위에 뜬 팝업/버블 클릭으로 닫히지 않게 막는다
+                    onInteractOutside={(event) => event.preventDefault()}
                 >
-                    <div className="refresher-preview-title-zone">
-                        <div className="refresher-preview-title-text">
-                            <Dialog.Title asChild>
-                                <h3 className="refresher-preview-title" dangerouslySetInnerHTML={{__html: title}}/>
-                            </Dialog.Title>
-                        </div>
-                    </div>
+                    <Box px="6" pt="5" pb="3">
+                        <Dialog.Title asChild>
+                            <Heading as="h2" size="6" dangerouslySetInnerHTML={{__html: title}}/>
+                        </Dialog.Title>
 
-                    {post && (
-                        <div className="refresher-preview-meta">
-                            <UserCard user={post.user ?? {}}/>
-                            <div className="float-right">
-                                <div className="date-views">
+                        {post && (
+                            <Flex justify="between" align="center" gap="3" mt="3" wrap="wrap">
+                                <UserCard user={post.user ?? {}}/>
+                                <Flex align="center" gap="3">
                                     <CountDown/>
-                                    <div className="refresher-views">
-                                        <Eye size={13}/>
-                                        {views}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                                    <Text size="2" color="gray">
+                                        <Flex as="span" align="center" gap="1">
+                                            <Eye size={14}/>
+                                            {views}
+                                        </Flex>
+                                    </Text>
+                                </Flex>
+                            </Flex>
+                        )}
+                    </Box>
 
-                    <div className="refresher-preview-contents">
+                    <Separator size="4"/>
+
+                    <Box px="6" pt="5">
                         {commentsOnly ? (
-                            <h3 className="refresher-preview-comments-only"
-                                onClick={() => usePreviewStore.getState().setCommentsOnly(false)}>
-                                댓글만 표시 중입니다. 여기를 눌러 원문을 볼 수 있습니다.
-                            </h3>
+                            <Button variant="soft" color="gray" style={{width: "100%"}} mb="5"
+                                    onClick={() => usePreviewStore.getState().setCommentsOnly(false)}>
+                                댓글만 표시 중입니다. 눌러서 원문 보기
+                            </Button>
                         ) : error ? (
                             <ErrorBlock error={error}/>
                         ) : (
                             <>
-                                <div
-                                    className={"refresher-preview-contents-actual" + (imageBlocked ? " refresher-preview-block-media" : "")}
+                                <Box
+                                    className={"refresher-html refresher-preview-contents" + (imageBlocked ? " refresher-preview-block-media" : "")}
                                     onClick={(event) => {
                                         if ((event.target as HTMLElement).closest(".btn_img_block")) {
                                             event.preventDefault();
@@ -287,18 +288,25 @@ export const Frame = () => {
                                     }}
                                     dangerouslySetInnerHTML={{__html: contents ?? ""}}
                                 />
-                                <Votes/>
+                                {post && <Votes/>}
                             </>
                         )}
-                    </div>
+
+                        {busy && (
+                            <Flex justify="center" py="6">
+                                <Spinner size="3"/>
+                            </Flex>
+                        )}
+                    </Box>
 
                     {comments !== undefined && (
                         <>
-                            <div className="refresher-preview-comments-header">{subtitle}</div>
+                            <Separator size="4"/>
+                            <Box px="6" pt="3">
+                                <Text size="2" color="gray">{subtitle}</Text>
+                            </Box>
                             {comments.length === 0 ? (
-                                <div className="refresher-nocomment-wrap">
-                                    <div className="refresher-nocomment">댓글이 없습니다.</div>
-                                </div>
+                                <Box py="6"><Text as="p" size="2" color="gray" align="center">댓글이 없습니다.</Text></Box>
                             ) : (
                                 <CommentList/>
                             )}
@@ -306,8 +314,6 @@ export const Frame = () => {
                     )}
 
                     {post && <WriteComment/>}
-
-                    <div className="refresher-loader"/>
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>

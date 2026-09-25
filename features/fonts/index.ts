@@ -8,8 +8,6 @@ const DEFAULT_FONTS = "Noto Sans CJK KR, NanumGothic";
 // DC 본체 셀렉터 + 확장 UI. changeDCFont가 켜져야 DC측 규칙이 적용된다.
 const DC_FONT_TARGETS =
     ".refresherChangeDCFont .btn_cmt_close, .refresherChangeDCFont .btn_cmt_open, .refresherChangeDCFont .gall_list, .refresherChangeDCFont .view_comment div, .refresherChangeDCFont .view_content_wrap, .refresherChangeDCFont body, .refresherChangeDCFont button, .refresherChangeDCFont input";
-const EXTENSION_FONT_TARGETS =
-    ".refresherFont .refresher-block-popup, .refresherFont .refresher-captcha-popup, .refresherFont .refresher-frame, .refresherFont .refresher-popup, .refresherFont .refresher-dialog, .refresherFont .refresher-bubble, .refresherFont .refresher-toast";
 
 const placeStyle = (id: string, css: string): void => {
     let style = document.head.querySelector<HTMLStyleElement>(`#${id}`);
@@ -40,15 +38,19 @@ const quoteFonts = (value: string): string =>
 const applyAll = (ctx: ModuleContext): void => {
     const raw = String(ctx.settings.customFonts ?? "").trim() || DEFAULT_FONTS;
     const enabled = ctx.settings.changeDCFont === true;
-    const targets = enabled ? `${DC_FONT_TARGETS}, ${EXTENSION_FONT_TARGETS}` : EXTENSION_FONT_TARGETS;
+    const fonts = `${quoteFonts(raw)}, sans-serif`;
     const size = Number(ctx.settings.bodyFontSize);
 
     document.documentElement.classList.toggle("refresherChangeDCFont", enabled);
-    placeStyle(FONT_STYLE_ID, `${targets} { font-family: ${quoteFonts(raw)}, sans-serif; }`);
+    // 확장 UI는 shadow DOM이라 셀렉터가 안 닿는다 — 상속되는 커스텀 속성으로 넘긴다 (overlay.scss에서 사용)
+    placeStyle(
+        FONT_STYLE_ID,
+        `.refresherFont { --refresher-font: ${fonts}; }` + (enabled ? `\n${DC_FONT_TARGETS} { font-family: ${fonts}; }` : "")
+    );
     placeStyle(
         FONT_SIZE_STYLE_ID,
         `.refresherChangeDCFont .write_div { font-size: ${size}px; }
-        .refresherFont .refresher-preview-contents-actual { font-size: ${size + 2}px; }`
+        .refresherFont { --refresher-preview-font-size: ${size + 2}px; }`
     );
 };
 
