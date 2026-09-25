@@ -27,7 +27,7 @@ const settings: NonNullable<ModuleDefinition["settings"]> = {
     longPressDelay: {
         type: "range",
         name: "길게 누르기 판정 시간",
-        desc: "마우스 오른쪽 버튼을 해당 밀리초 이상 눌러 뗄 때 기본 우클릭 메뉴가 나오게 합니다.",
+        desc: "마우스 오른쪽 버튼을 해당 시간 이상 눌렀다 뗄 때 기본 우클릭 메뉴가 나오게 합니다.",
         default: 300,
         min: 200,
         max: 2000,

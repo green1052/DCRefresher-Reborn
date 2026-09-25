@@ -16,12 +16,15 @@ type NarrowProps<T extends SettingSchema["type"]> = Omit<SettingItemProps, "sche
     schema: Extract<SettingSchema, { type: T }>
 };
 
+/** 범위 값 표시 — 저장은 ms 그대로, 보여줄 때만 초 단위로 (5000ms → 5초) */
+const formatRange = (value: number, unit: string): string => (unit === "ms" ? `${value / 1000}초` : `${value}${unit}`);
+
 const formatDefault = (schema: SettingSchema): string => {
     switch (schema.type) {
         case "check":
             return schema.default ? "사용" : "미사용";
         case "range":
-            return `${schema.default}${schema.unit}`;
+            return formatRange(schema.default, schema.unit);
         case "order":
             return schema.default.map((key) => schema.items[key] ?? key).join(", ");
         default:
@@ -82,8 +85,7 @@ const RangeControl = ({schema, value, disabled, onChange}: NarrowProps<"range">)
                 }}
             />
             <Text size="2" weight="bold" style={{minWidth: 56, textAlign: "right", fontVariantNumeric: "tabular-nums"}}>
-                {draft}
-                {schema.unit}
+                {formatRange(draft, schema.unit)}
             </Text>
         </Flex>
     );
