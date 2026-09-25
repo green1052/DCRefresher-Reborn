@@ -2,18 +2,25 @@ import {http} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import {compactIpData, createIpLookup, type IpCandidate, type RawIpData} from "@/core/ipdb";
 import {dbStorage} from "@/core/storage/items";
-import type {StoredDB} from "@/core/storage/types";
+import type {Database, StoredDB} from "@/core/storage/types";
 
 /** IP/갱차 데이터베이스를 내려받아 저장 — 배경(설치·주기)과 옵션 페이지(지금 갱신)에서 호출 */
 export const updateDatabase = async (): Promise<void> => {
     const [version, ip, ban] = await Promise.all([
         http.get(urls.database.version).text(),
         http.get(urls.database.ip).json<RawIpData>(),
-        http.get(urls.database.ban).json<StoredDB["ban"]>()
+        http.get(urls.database.ban).json<Database["ban"]>()
     ]);
 
-    await dbStorage.setValue({version, lastUpdate: Date.now(), ip: compactIpData(ip), ban});
+    await dbStorage.setValue({version, lastUpdate: Date.now(), ip: JSON.stringify(compactIpData(ip)), ban: JSON.stringify(ban)});
 };
+
+/** 저장값의 ip·ban을 푼다 (예전 개발판의 객체 형식도). 깨졌으면 던진다 */
+export const parseDB = (db: StoredDB): Database => ({
+    ...db,
+    ip: typeof db.ip === "string" ? (JSON.parse(db.ip) as Database["ip"]) : db.ip,
+    ban: typeof db.ban === "string" ? (JSON.parse(db.ban) as Database["ban"]) : db.ban
+});
 
 // ===== 콘텐츠 스크립트용 조회 (저장소 → 메모리) =====
 
@@ -29,19 +36,33 @@ interface IpInfo {
 }
 
 let lookupIp: ((ip: string) => IpCandidate[] | undefined) | null = null;
-/** ban은 이유 → uid[] 형태라 uid → 이유[] 역색인을 만들어 둔다 */
-let bans = new Map<string, string[]>();
+let banSource: Database["ban"] = {};
+/** uid → 이유들. ban은 이유 → uid[] 형태라 뒤집어 둔다 — 기본 설정에선 버블 말고 안 쓰니 처음 물을 때 만든다 */
+let bans: Map<string, string> | null = null;
 
-const load = (db: StoredDB | null): void => {
-    // 예전 형식(ip가 대역→이름 객체)이면 다음 갱신 전까지 IP 정보 없이 둔다
-    lookupIp = typeof db?.ip?.table === "string" ? createIpLookup(db.ip) : null;
-    bans = new Map();
+const load = (db: StoredDB): void => {
+    lookupIp = null;
+    banSource = {};
+    bans = null;
 
-    for (const [reason, uids] of Object.entries(db?.ban ?? {})) {
-        // ban.json은 손으로 올리는 파일 — 값 하나가 배열이 아니어도 여기서 던지면 initDatabase가 실패해 모든 모듈이 죽는다
-        if (!Array.isArray(uids)) continue;
-        for (const uid of uids) bans.set(uid, [...(bans.get(uid) ?? []), reason]);
+    // 깨진 값에 여기서 던지면 initDatabase가 실패해 모든 모듈이 죽는다 — IP·밴 정보 없이 둔다
+    try {
+        const {ip, ban} = parseDB(db);
+        banSource = ban ?? {};
+        lookupIp = ip ? createIpLookup(ip) : null;
+    } catch (e) {
+        console.error("IP/밴 DB를 읽지 못했습니다.", e);
     }
+};
+
+const indexBans = (): Map<string, string> => {
+    const index = new Map<string, string>();
+    for (const [reason, uids] of Object.entries(banSource)) {
+        // ban.json은 손으로 올리는 파일 — 배열이 아닌 값은 건너뛴다
+        if (!Array.isArray(uids)) continue;
+        for (const uid of uids) index.set(uid, index.has(uid) ? `${index.get(uid)}, ${reason}` : reason);
+    }
+    return index;
 };
 
 let initialized: Promise<void> | null = null;
@@ -95,4 +116,4 @@ export const passesIpFilter = ({category}: IpInfo, filter: IpInfoFilter): boolea
     filter === "all" || (filter === "foreign" && category !== "korea") || (filter === "vpn" && category === "vpn");
 
 /** 갱신 차단(밴) 이유들. 없으면 undefined */
-export const banReasonsOf = (uid: string): string | undefined => bans.get(uid)?.join(", ");
+export const banReasonsOf = (uid: string): string | undefined => (bans ??= indexBans()).get(uid);

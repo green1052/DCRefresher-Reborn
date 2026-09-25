@@ -4,10 +4,10 @@ import {useEffect, useRef, useState} from "react";
 
 import {ConfirmDialog, Notice} from "@/components/ConfirmDialog";
 import {isModuleDataKey} from "@/core/backup";
-import {initDatabase, ipInfoOf} from "@/core/database";
+import {initDatabase, ipInfoOf, parseDB} from "@/core/database";
 import {compactIpData, type RawIpData} from "@/core/ipdb";
 import {dbStorage} from "@/core/storage/items";
-import type {StoredDB} from "@/core/storage/types";
+import type {Database, StoredDB} from "@/core/storage/types";
 
 import {byteSize, Empty, formatBytes, formatTime, Section} from "./Layout";
 
@@ -129,22 +129,32 @@ const StorageSection = () => {
 };
 
 const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
-    const [db, setDb] = useState<StoredDB | null>(null);
+    const [db, setDb] = useState<Database | null>(null);
     const [ip, setIp] = useState("");
     const [, rerender] = useState(0);
     const fileInput = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        void dbStorage.getValue().then(setDb);
+        // 문자열로 저장돼 있다 — 렌더마다 풀지 않게 받을 때 한 번 푼다 (깨졌으면 없는 것으로)
+        const show = (stored: StoredDB): void => {
+            try {
+                setDb(parseDB(stored));
+            } catch (e) {
+                console.error(e);
+                setDb({...stored, ip: null, ban: {}});
+            }
+        };
+
+        void dbStorage.getValue().then(show);
         // 조회 테스트는 콘텐츠 스크립트와 같은 경로(ipInfoOf)로 — 처음 불러오면 한 번 다시 그리고, 이후 변경은 아래 watch가 그린다
         void initDatabase().then(() => rerender((count) => count + 1));
-        return dbStorage.watch(setDb);
+        return dbStorage.watch(show);
     }, []);
 
     const loadFile = async (file: File): Promise<void> => {
         try {
             const next = compactIpData(JSON.parse(await file.text()) as RawIpData);
-            await dbStorage.setValue({...(await dbStorage.getValue()), version: "local", lastUpdate: Date.now(), ip: next});
+            await dbStorage.setValue({...(await dbStorage.getValue()), version: "local", lastUpdate: Date.now(), ip: JSON.stringify(next)});
             notify("IP 데이터를 파일에서 불러왔습니다. 다음 자동 갱신 때 서버 데이터로 바뀝니다.");
         } catch (e) {
             notify(`IP 데이터를 불러오는 데 실패했습니다. ${e instanceof Error ? e.message : ""}`);
@@ -187,7 +197,7 @@ const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
                 <DataList.Item>
                     <DataList.Label>IP</DataList.Label>
                     <DataList.Value>
-                        {!db?.ip ? "없음" : typeof db.ip.table === "string" ? `조직 ${db.ip.orgs.length} · 국가 ${db.ip.countries.length} · 후보 ${db.ip.meta.length / 3} · 목록 ${db.ip.lists.length} · ${formatBytes(byteSize(db.ip))}` : "예전 형식 (다음 갱신 때 바뀜)"}
+                        {!db?.ip ? "없음" : `조직 ${db.ip.orgs.length} · 국가 ${db.ip.countries.length} · 후보 ${db.ip.meta.length / 3} · 목록 ${db.ip.lists.length} · ${formatBytes(byteSize(db.ip))}`}
                     </DataList.Value>
                 </DataList.Item>
                 <DataList.Item>
