@@ -118,17 +118,18 @@ const StorageSection = () => {
                 <StorageEntry key={name} name={name} value={value} onDelete={() => setDeleting(name)}/>
             ))}
 
-            <ConfirmDialog
-                open={deleting !== null}
-                title={`${AREA_NAMES[area]} 저장소에서 "${deleting}"을 삭제할까요?`}
-                confirmLabel="삭제"
-                danger
-                onConfirm={() => {
-                    if (deleting) void browser.storage[area].remove(deleting);
-                    setDeleting(null);
-                }}
-                onClose={() => setDeleting(null)}
-            />
+            {deleting !== null && (
+                <ConfirmDialog
+                    title={`${AREA_NAMES[area]} 저장소에서 "${deleting}"을 삭제할까요?`}
+                    confirmLabel="삭제"
+                    danger
+                    onConfirm={() => {
+                        void browser.storage[area].remove(deleting);
+                        setDeleting(null);
+                    }}
+                    onClose={() => setDeleting(null)}
+                />
+            )}
         </Section>
     );
 };
@@ -143,10 +144,7 @@ const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
         void dbStorage.getValue().then(setDb);
         // 조회 테스트는 콘텐츠 스크립트와 같은 경로(ipInfoOf)로 — 저장소가 바뀌면 다시 그린다
         void initDatabase().then(() => rerender((count) => count + 1));
-        return dbStorage.watch((next) => {
-            setDb(next);
-            rerender((count) => count + 1);
-        });
+        return dbStorage.watch(setDb);
     }, []);
 
     const loadFile = async (file: File): Promise<void> => {
@@ -259,8 +257,10 @@ export function DevTab({onHide}: { onHide: () => void }) {
             <DatabaseSection notify={setNotice}/>
             <ToolsSection notify={setNotice} onHide={onHide}/>
 
-            <ConfirmDialog open={notice !== null} title={notice ?? ""} cancelLabel={null}
-                           onClose={() => setNotice(null)} onConfirm={() => setNotice(null)}/>
+            {notice && (
+                <ConfirmDialog title={notice} cancelLabel={null}
+                               onClose={() => setNotice(null)} onConfirm={() => setNotice(null)}/>
+            )}
         </Box>
     );
 }

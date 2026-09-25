@@ -41,7 +41,8 @@ const MemoFormDialog = ({
             return;
         }
 
-        await onSubmit(state);
+        // 수정 때는 기존 키 그대로 — 다듬으면 공백 있는 키가 새 항목으로 갈라진다
+        await onSubmit(editing ? state : {...state, user: state.user.trim()});
         onClose();
     };
 
@@ -71,7 +72,8 @@ const MemoFormDialog = ({
                             placeholder="유저, 닉네임 또는 IP"
                             value={state.user}
                             disabled={editing}
-                            onChange={(event) => setState((prev) => ({...prev, user: event.target.value.trim()}))}
+                            // 입력 중엔 다듬지 않는다 — 닉네임 가운데 공백을 칠 수 있게 (저장할 때 trim)
+                            onChange={(event) => setState((prev) => ({...prev, user: event.target.value}))}
                         />
                     </label>
 
@@ -169,9 +171,13 @@ export function MemoTab() {
     const submitImport = async (text: string): Promise<void> => {
         try {
             const parsed = JSON.parse(text) as Record<string, unknown>;
-            for (const type of MEMO_TYPES) {
-                if (parsed[type]) await setMemos(type, normalizeMemoMap(parsed[type]));
-            }
+            // 객체만 받는다 — 차단 내보내기의 NICK/IP(배열)는 normalizeMemoMap이 {}로 만들어 기존 메모를 지운다
+            const types = MEMO_TYPES.filter((type) => {
+                const map = parsed[type];
+                return typeof map === "object" && map !== null && !Array.isArray(map);
+            });
+            if (types.length === 0) throw new Error();
+            for (const type of types) await setMemos(type, normalizeMemoMap(parsed[type]));
             setImportOpen(false);
             setNotice("메모를 가져왔습니다.");
         } catch {
@@ -290,23 +296,27 @@ export function MemoTab() {
                 />
             )}
 
-            <ConfirmDialog
-                open={clearConfirm !== null}
-                title={`${clearConfirm ? MEMO_TYPE_NAMES[clearConfirm] : ""} 메모를 모두 삭제할까요?`}
-                confirmLabel="삭제"
-                danger
-                onConfirm={() => {
-                    if (clearConfirm) void clearType(clearConfirm);
-                    setClearConfirm(null);
-                }}
-                onClose={() => setClearConfirm(null)}
-            />
+            {clearConfirm && (
+                <ConfirmDialog
+                    title={`${MEMO_TYPE_NAMES[clearConfirm]} 메모를 모두 삭제할까요?`}
+                    confirmLabel="삭제"
+                    danger
+                    onConfirm={() => {
+                        void clearType(clearConfirm);
+                        setClearConfirm(null);
+                    }}
+                    onClose={() => setClearConfirm(null)}
+                />
+            )}
 
-            <ConfirmDialog open={notice !== null} title={notice ?? ""} cancelLabel={null}
-                           onClose={() => setNotice(null)} onConfirm={() => setNotice(null)}/>
+            {notice && (
+                <ConfirmDialog title={notice} cancelLabel={null}
+                               onClose={() => setNotice(null)} onConfirm={() => setNotice(null)}/>
+            )}
 
-            <ImportDialog open={importOpen} title="메모 가져오기"
-                          onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
+            {importOpen && (
+                <ImportDialog title="메모 가져오기" onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
+            )}
         </Card>
     );
 }

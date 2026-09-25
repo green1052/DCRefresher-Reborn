@@ -44,21 +44,19 @@ export default defineBackground(() => {
     browser.contextMenus.onClicked.addListener(async (info, tab) => {
         if (!tab?.id) return;
         if (CONTEXT_MENUS.some((menu) => menu.id === info.menuItemId)) {
-            await sendMessage("refresher:contextMenu", info.menuItemId as ContextMenuAction, {tabId: tab.id}).catch(() => {});
+            await sendMessage("refresher:contextMenu", {action: info.menuItemId as ContextMenuAction, srcUrl: info.srcUrl}, {tabId: tab.id}).catch(() => {});
         }
     });
 
     browser.runtime.onStartup.addListener(() => void createContextMenus());
 
-    // ===== Commands: 단축키 → 디시인사이드 탭 전체에 전송 =====
-    browser.commands.onCommand.addListener(async (command) => {
-        const tabs = await browser.tabs.query({url: ["https://*.dcinside.com/*"]});
-
-        await Promise.all(
-            tabs
-                .filter((tab) => tab.id)
-                .map((tab) => sendMessage("refresher:executeShortcut", command, {tabId: tab.id!}).catch(() => {}))
-        );
+    // ===== Commands: 단축키 → 활성 탭에만 전송 =====
+    // 단축키 기능은 '이번 페이지' 단위라 모든 탭에 보내면 탭마다 토글·토스트·목록 요청이 한꺼번에 일어난다
+    browser.commands.onCommand.addListener(async (command, tab) => {
+        // 구버전 Firefox는 tab 인자를 넘기지 않는다
+        const id = tab?.id ?? (await browser.tabs.query({active: true, lastFocusedWindow: true}))[0]?.id;
+        // 활성 탭이 디시가 아니면 받는 쪽이 없어 실패한다
+        if (id) await sendMessage("refresher:executeShortcut", command, {tabId: id}).catch(() => {});
     });
 
     // ===== reCAPTCHA: 디시가 v3 토큰을 요구할 때만 그 탭의 페이지(MAIN world)에서 받아 온다 =====
@@ -80,13 +78,17 @@ export default defineBackground(() => {
     });
 
     // ===== Database: 설치/주기 갱신 =====
+    // 설치 직후엔 onInstalled와 아래 주기 검사(lastUpdate 0)가 동시에 부른다 — 진행 중인 갱신을 같이 기다려 두 번 받지 않는다
+    let updating: Promise<void> | null = null;
+    const update = (): Promise<void> => (updating ??= updateDatabase().catch(console.error).finally(() => (updating = null)));
+
     browser.runtime.onInstalled.addListener(async () => {
         // v5에서 업데이트한 경우 설정을 v6 형식으로 옮긴다 (한시적)
         await migrateV5Storage();
         await createContextMenus();
 
         if (import.meta.env.PROD || !(await dbStorage.getValue()).version) {
-            await updateDatabase();
+            await update();
         }
     });
 
@@ -94,7 +96,7 @@ export default defineBackground(() => {
         void (async () => {
             const {lastUpdate} = await dbStorage.getValue();
             if (!lastUpdate || Date.now() - lastUpdate > DATABASE_UPDATE_INTERVAL) {
-                await updateDatabase();
+                await update();
             }
         })();
     }
@@ -110,6 +112,7 @@ export default defineBackground(() => {
     });
 
     browser.alarms.onAlarm.addListener((alarm) => {
-        if (alarm.name === AUTO_BACKUP_ALARM) void runBackup("auto").catch(() => {});
+        // 끈 직후 남아 있던 알람이 울릴 수 있다 (초기화 전 끄기 등) — 울린 시점에 다시 본다
+        if (alarm.name === AUTO_BACKUP_ALARM) void backupStorage.auto.getValue().then((auto) => (auto ? runBackup("auto") : undefined)).catch(() => {});
     });
 });

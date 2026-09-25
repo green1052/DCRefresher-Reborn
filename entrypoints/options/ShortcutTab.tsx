@@ -24,7 +24,10 @@ export function ShortcutTab() {
                 <Button
                     variant="soft"
                     onClick={() =>
-                        void browser.tabs.create({url: import.meta.env.FIREFOX ? "about:addons" : "chrome://extensions/shortcuts"})
+                        // Firefox는 tabs.create로 about:addons를 열 수 없다 — 전용 API(137+, 타입엔 아직 없음)를 쓴다
+                        void (import.meta.env.FIREFOX
+                            ? (browser.commands as unknown as { openShortcutSettings: () => Promise<void> }).openShortcutSettings()
+                            : browser.tabs.create({url: "chrome://extensions/shortcuts"}))
                     }
                 >
                     <ExternalLink size={14}/> 단축키 설정

@@ -87,7 +87,11 @@ const useGallogActivity = (uid: string | undefined): GallogActivity | undefined 
     const [state, setState] = useState<GallogActivity | undefined | "loading" | "error">(uid ? "loading" : undefined);
 
     useEffect(() => {
-        if (!uid) return;
+        // BubbleHost는 계속 마운트돼 있다 — 비우지 않으면 유동 유저 버블에 이전 고정닉의 글/댓글 수가 남는다
+        if (!uid) {
+            setState(undefined);
+            return;
+        }
         let alive = true;
         setState("loading");
 
@@ -201,12 +205,6 @@ const BubbleHost = () => {
     );
 };
 
-const MemoHost = () => {
-    const memo = useUiStore((s) => s.memo);
-    if (!memo) return null;
-    return <MemoDialog key={JSON.stringify(memo)}/>;
-};
-
 export const ContentRoot = () => {
     const appearance = useDcAppearance();
 
@@ -216,7 +214,7 @@ export const ContentRoot = () => {
             <Box>
                 <ToastHost/>
                 <BubbleHost/>
-                <MemoHost/>
+                <MemoDialog/>
                 <PreviewHost/>
             </Box>
         </Theme>

@@ -9,6 +9,7 @@
  * 옛 IP DB(refresher:database:*)·모듈 캐시(…:data)·백업 시각은 버린다 — 새로 받는다.
  * 설정 키·값 형식은 v5와 같다(모듈별로 대조함). v6에 없는 키는 v6가 읽지 않으니 그대로 넘겨도 된다.
  */
+import {BLOCK_TYPES, DETECT_MODES} from "@/core/storage/items";
 import type {BlockType, DetectMode} from "@/core/storage/types";
 
 const V5_MODULE_IDS: Record<string, string | null> = {
@@ -30,9 +31,6 @@ const MOVED_TO_USERINFO = ["checkRatio", "alarmRatio", "checkPermBan"];
 /** 위 중 v5에서 관리 모듈이 켜져 있어야만 동작하던 켜기/끄기 설정 */
 const NEEDS_MANAGE_ENABLED = ["checkRatio", "checkPermBan"];
 
-const BLOCK_TYPES: BlockType[] = ["NICK", "ID", "IP", "TITLE", "TEXT", "COMMENT", "DCCON", "TAB"];
-const DETECT_MODES: DetectMode[] = ["SAME", "CONTAIN", "NOT_SAME", "NOT_CONTAIN"];
-
 const V5_KEY = /^refresher:module:(.+):(enable|data|setting:(.+))$/;
 
 type Snapshot = Record<string, unknown>;
@@ -40,10 +38,10 @@ type Snapshot = Record<string, unknown>;
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 
 /** v5 키가 하나라도 있는지 */
-export const hasV5Data = (data: Snapshot): boolean =>
+const hasV5Data = (data: Snapshot): boolean =>
     Object.keys(data).some(
         (key) =>
-            (V5_KEY.test(key) && V5_KEY.exec(key)![1]! in V5_MODULE_IDS) ||
+            (V5_KEY.exec(key)?.[1] ?? "") in V5_MODULE_IDS ||
             /^refresher:block:[A-Z]+:mode$/.test(key) ||
             key.startsWith("refresher:database:")
     );

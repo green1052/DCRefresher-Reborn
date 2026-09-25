@@ -34,9 +34,11 @@ export const Empty = ({children}: { children: ReactNode }) => (
     </Box>
 );
 
-/** 내보낸 JSON을 붙여넣는 가져오기 다이얼로그 (차단/메모/데이터 공용) */
-export const ImportDialog = ({open, title, onClose, onSubmit}: {
-    open: boolean;
+/**
+ * 내보낸 JSON을 붙여넣는 가져오기 다이얼로그 (차단/메모/데이터 공용).
+ * 열 때만 마운트한다 — 닫으면 입력이 초기화되고, 실패해 열려 있으면 붙여넣은 텍스트가 남는다
+ */
+export const ImportDialog = ({title, onClose, onSubmit}: {
     title: string;
     onClose: () => void;
     onSubmit: (text: string) => Promise<void>;
@@ -48,14 +50,13 @@ export const ImportDialog = ({open, title, onClose, onSubmit}: {
         setBusy(true);
         try {
             await onSubmit(text);
-            setText("");
         } finally {
             setBusy(false);
         }
     };
 
     return (
-        <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
+        <Dialog.Root open onOpenChange={(next) => !next && onClose()}>
             <Dialog.Content maxWidth="520px">
                 <Dialog.Title>{title}</Dialog.Title>
                 <Dialog.Description size="2" mb="3">

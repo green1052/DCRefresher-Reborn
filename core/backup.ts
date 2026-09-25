@@ -35,9 +35,10 @@ interface BackupMeta {
  * - refresher:db: IP/밴 DB — 크고, 다시 받으면 된다
  * - refresher:backup:*: 백업 상태 자체
  * - refresher:module:*:data: 모듈 캐시(글댓비 등) — 계속 불어난다
+ * - refresher:nonmember: 비회원 비밀번호(평문) — 내보내기 JSON을 남에게 건네거나 sync에 올리면 새어 나간다
  */
 export const isBackupTarget = (key: string): boolean =>
-    key !== "refresher:db" && !key.startsWith("refresher:backup:") && !/^refresher:module:.+:data$/.test(key);
+    key !== "refresher:db" && key !== "refresher:nonmember" && !key.startsWith("refresher:backup:") && !/^refresher:module:.+:data$/.test(key);
 
 export const collectLocalData = async (): Promise<Record<string, unknown>> => {
     const data = (await browser.storage.local.get(null)) as Record<string, unknown>;
@@ -60,7 +61,7 @@ const isMeta = (value: unknown): value is BackupMeta =>
 const isLegacyKey = (key: string): boolean => !SLOTS.some((slot) => isSlotKey(slot, key));
 
 /** 설정을 클라우드의 한 칸에 백업 */
-export const backupToCloud = async (slot: BackupSlot): Promise<BackupMeta> => {
+const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     const bytes = await gzip(JSON.stringify(await collectLocalData()));
     const encoded = bytes.toBase64();
 
@@ -81,8 +82,9 @@ export const backupToCloud = async (slot: BackupSlot): Promise<BackupMeta> => {
         [SLOT_KEYS[slot]]: meta
     };
 
-    // 이번에 쓰지 않는 키 — 이 칸에서 전보다 줄어든 조각, 예전 방식 설정. 다른 칸은 건드리지 않는다
-    const stale = Object.keys(all).filter((key) => !(key in items) && (isSlotKey(slot, key) || isLegacyKey(key)));
+    // 이번에 쓰지 않는 키 — 이 칸에서 전보다 줄어든 조각. 다른 칸은 건드리지 않는다
+    // 예전 방식 설정은 수동 칸으로 복원되므로 수동 칸을 쓸 때만 치운다
+    const stale = Object.keys(all).filter((key) => !(key in items) && (isSlotKey(slot, key) || (slot === "manual" && isLegacyKey(key))));
 
     try {
         await browser.storage.sync.set(items);
@@ -91,11 +93,10 @@ export const backupToCloud = async (slot: BackupSlot): Promise<BackupMeta> => {
         if (stale.length === 0) throw error;
         await browser.storage.sync.remove(stale);
         await browser.storage.sync.set(items);
-        return meta;
+        return;
     }
 
     if (stale.length > 0) await browser.storage.sync.remove(stale);
-    return meta;
 };
 
 /** 칸마다 마지막 백업 시각 (없으면 undefined). 예전 방식 백업이 남아 있으면 legacy: true */

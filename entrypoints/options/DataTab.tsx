@@ -21,7 +21,8 @@ const errorMessage = (error: unknown): string => (error instanceof Error ? error
  */
 const replaceSettings = async (data: Record<string, unknown>): Promise<void> => {
     const previous = (await browser.storage.local.get(null)) as Record<string, unknown>;
-    const next = Object.fromEntries(Object.entries(migrateV5(data)).filter(([key]) => isBackupTarget(key)));
+    // 설정 키가 아닌 값(차단/메모 내보내기의 "NICK" 등)은 저장하지 않는다
+    const next = Object.fromEntries(Object.entries(migrateV5(data)).filter(([key]) => key.startsWith("refresher:") && isBackupTarget(key)));
     const removed = Object.keys(previous).filter((key) => isBackupTarget(key) && !(key in next));
 
     try {
@@ -38,13 +39,12 @@ const parseImport = (input: string): Record<string, unknown> => {
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
         throw new Error("가져오기 데이터는 JSON 객체여야 합니다.");
     }
+    // 가져오기는 모든 설정을 갈아끼우므로, 차단/메모 내보내기나 {}를 붙여넣어 전부 지워지지 않게 막는다
+    if (!Object.keys(parsed).some((key) => key.startsWith("refresher:"))) {
+        throw new Error("설정 데이터가 아닙니다.");
+    }
     return parsed as Record<string, unknown>;
 };
-
-interface ConfirmState {
-    title: string;
-    action: () => Promise<void>;
-}
 
 export function DataTab() {
     const [lastUpdate, setLastUpdate] = useState(0);
@@ -54,7 +54,7 @@ export function DataTab() {
     const [autoBackup, setAutoBackup] = useState(false);
     const [loading, setLoading] = useState(false);
     const [notice, setNotice] = useState<string | null>(null);
-    const [confirming, setConfirming] = useState<ConfirmState | null>(null);
+    const [resetConfirm, setResetConfirm] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
 
     useEffect(() => {
@@ -88,15 +88,12 @@ export function DataTab() {
         }
     };
 
-    const forceUpdate = async (): Promise<void> => {
-        setLoading(true);
-        try {
+    const forceUpdate = () =>
+        run(async () => {
             await updateDatabase();
             setLastUpdate((await dbStorage.getValue()).lastUpdate);
-        } finally {
-            setLoading(false);
-        }
-    };
+            return "데이터베이스를 갱신했습니다.";
+        }, "데이터베이스를 갱신하지 못했습니다.");
 
     const backupCloud = () =>
         run(async () => {
@@ -149,6 +146,8 @@ export function DataTab() {
             }
 
             await replaceSettings({});
+            // 백업 대상이 아니라 replaceSettings가 건드리지 않는 비회원 비밀번호도 지운다
+            await browser.storage.local.remove("refresher:nonmember");
             return `데이터를 초기화했습니다.${wasAuto ? " 클라우드 백업을 지키려고 자동 백업을 껐습니다." : ""} 새 탭에서 디시인사이드를 열어주세요.`;
         }, "초기화하지 못했습니다.");
 
@@ -156,7 +155,7 @@ export function DataTab() {
         <Box>
             <Section title="IP/밴 데이터베이스" desc={`마지막 갱신: ${formatTime(lastUpdate)}`}
                      actions={
-                         <Button variant="soft" loading={loading} onClick={() => void forceUpdate()}>
+                         <Button variant="soft" disabled={loading} onClick={() => void forceUpdate()}>
                              <RefreshCw size={14}/> 지금 갱신
                          </Button>
                      }/>
@@ -233,30 +232,33 @@ export function DataTab() {
                              variant="soft"
                              color="red"
                              disabled={loading}
-                             onClick={() => setConfirming({title: "모든 설정과 사용자 데이터를 초기화할까요?", action: clearData})}
+                             onClick={() => setResetConfirm(true)}
                          >
                              <Trash2 size={14}/> 데이터 초기화
                          </Button>
                      }/>
 
-            <ConfirmDialog open={notice !== null} title={notice ?? ""} cancelLabel={null}
-                           onClose={() => setNotice(null)} onConfirm={() => setNotice(null)}/>
+            {notice && (
+                <ConfirmDialog title={notice} cancelLabel={null}
+                               onClose={() => setNotice(null)} onConfirm={() => setNotice(null)}/>
+            )}
 
-            <ConfirmDialog
-                open={confirming !== null}
-                title={confirming?.title ?? ""}
-                confirmLabel="확인"
-                danger
-                onConfirm={() => {
-                    const target = confirming;
-                    setConfirming(null);
-                    if (target) void target.action();
-                }}
-                onClose={() => setConfirming(null)}
-            />
+            {resetConfirm && (
+                <ConfirmDialog
+                    title="모든 설정과 사용자 데이터를 초기화할까요?"
+                    confirmLabel="확인"
+                    danger
+                    onConfirm={() => {
+                        setResetConfirm(false);
+                        void clearData();
+                    }}
+                    onClose={() => setResetConfirm(false)}
+                />
+            )}
 
-            <ImportDialog open={importOpen} title="데이터 가져오기"
-                          onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
+            {importOpen && (
+                <ImportDialog title="데이터 가져오기" onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
+            )}
         </Box>
     );
 }

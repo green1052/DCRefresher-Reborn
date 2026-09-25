@@ -1,5 +1,7 @@
 /* ===== 오버레이 (shadow root 전용) — 컴포넌트 스타일은 Radix Themes, 여기엔 배치와 디시 HTML만 ===== */
 
+@use "radix";
+
 :host {
     all: initial;
     position: fixed;
@@ -11,16 +13,7 @@
 
 /* fonts 모듈이 html에 --refresher-font / --refresher-preview-font-size를 지정 (커스텀 속성은 shadow 경계를 넘어 상속됨) */
 :host .radix-themes {
-    --default-font-family: var(--refresher-font, -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif);
-
-    // Radix 기본값은 버튼·스위치 등도 화살표 커서 — 누를 수 있는 건 손가락으로
-    --cursor-button: pointer;
-    --cursor-checkbox: pointer;
-    --cursor-menu-item: pointer;
-    --cursor-radio: pointer;
-    --cursor-switch: pointer;
-    --cursor-slider-thumb: grab;
-    --cursor-slider-thumb-active: grabbing;
+    @include radix.overrides;
 }
 
 /* Radix 루트 Theme(z-index: 0)이 쌓임 맥락을 만들어, 그 안의 토스트가 z-index와 상관없이 포털(미리보기) 아래로 깔린다 */
@@ -162,12 +155,9 @@
     display: var(--refresher-stealth-media, inline);
 }
 
-.refresher-preview-block-media {
-    embed,
-    img:not(.written_dccon),
-    video {
-        display: none;
-    }
+// 위 스텔스 규칙(0,2,1)과 명시도를 맞춰야 뒤에 선언된 이쪽이 이긴다 — :is는 가장 높은 인자(img:not(...))를 따른다
+.refresher-preview-block-media :is(embed, img:not(.written_dccon), video) {
+    display: none;
 }
 
 .refresher-comment-html {
@@ -354,9 +344,15 @@
     left: 0;
     z-index: 1;
     width: 150px;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
     animation: refresher-fade-in 0.15s cubic-bezier(0.19, 1, 0.22, 1);
+
+    // Radix Card의 배경·테두리는 ::before/::after에 따로 radius가 걸려 있어 같이 덮어야 왼쪽이 평평해진다
+    &,
+    &::before,
+    &::after {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
 }
 
 /* ===== 디시콘 ===== */

@@ -11,7 +11,7 @@ import {overlay} from "@/components/overlay/shadow";
 import {initDatabase} from "@/core/database";
 import {eventBus} from "@/core/eventbus/bus";
 import {onMessage} from "@/core/messaging/protocol";
-import {loadAll, runShortcut} from "@/core/module/registry";
+import {loadAll, runShortcut, stopAll} from "@/core/module/registry";
 import features from "@/features";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
@@ -29,8 +29,8 @@ export default defineContentScript({
     runAt: "document_start",
     async main(ctx) {
         // ===== 메시징 (배경→탭) =====
-        onMessage("refresher:contextMenu", ({data: action}) => {
-            if (action === "searchSauceNao") eventBus.emit("imageSearch");
+        onMessage("refresher:contextMenu", ({data: {action, srcUrl}}) => {
+            if (action === "searchSauceNao" && srcUrl) void eventBus.emit("imageSearch", srcUrl);
         });
 
         onMessage("refresher:executeShortcut", ({data: command}) => runShortcut(command));
@@ -47,13 +47,12 @@ export default defineContentScript({
             inheritStyles: true,
             // shadow 안에선 :root가 매칭되지 않으므로 Radix 토큰을 :host로 옮긴다
             css: radixCss.replaceAll(":root", ":host") + overlayCss,
-            onMount(container, shadow) {
+            onMount(container) {
                 const app = document.createElement("div");
                 const portal = document.createElement("div");
                 portal.id = "portal";
                 container.append(app, portal);
 
-                overlay.root = shadow;
                 overlay.portal = portal;
 
                 const root = createRoot(app);
@@ -74,5 +73,10 @@ export default defineContentScript({
         // ===== 모듈 부트스트랩 =====
         await Promise.all([initBlocksStore(), initMemosStore(), initDatabase()]);
         await loadAll(features);
+
+        // 확장을 끄거나 업데이트하면 이 스크립트는 남아 새로고침 폴링·저장소 호출을 계속하다 실패한다 — 모듈을 멈춘다
+        ctx.onInvalidated(stopAll);
+        // ponytail: WXT는 ctx.isValid를 읽을 때만 무효화를 알아채므로 빈 interval로 5초마다 검사시킨다. 업데이트 뒤 열린 탭은 새로고침 전까지 기능이 멈춘다
+        ctx.setInterval(() => {}, 5_000);
     }
 });
