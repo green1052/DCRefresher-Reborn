@@ -1,3 +1,4 @@
+/// <reference types="bun" />
 /**
  * IP DB 생성: bun scripts/build-ipdb.ts <MaxMind CSV 폴더> <출력 폴더>
  *
@@ -14,9 +15,6 @@
  * - VPN 목록과 겹치는 부분은 따로 떼어 v: 1
  * - /16의 1% 미만인 후보는 버리고 최대 MAX_CANDIDATES개
  */
-import {mkdir, readFile, writeFile} from "node:fs/promises";
-import {join} from "node:path";
-
 import {compactIpData, createIpLookup, type RawIpData} from "../core/ipdb";
 
 import {shortenOrg} from "./ipdb-names";
@@ -30,7 +28,7 @@ const COUNTRY_NAME_OVERRIDES: Record<string, string> = {HK: "홍콩", MO: "마�
 const MAX_CANDIDATES = 8;
 const MIN_SHARE = 65536 / 100;
 
-const [csvDir, outDir] = process.argv.slice(2);
+const [csvDir, outDir] = Bun.argv.slice(2);
 if (!csvDir || !outDir) throw new Error("사용법: bun scripts/build-ipdb.ts <MaxMind CSV 폴더> <출력 폴더>");
 
 type Range<T> = { start: number; end: number; value: T };
@@ -46,7 +44,7 @@ const parseCidr = (cidr: string): { start: number; end: number } | undefined => 
 };
 
 const csvRows = async (name: string): Promise<string[]> =>
-    (await readFile(join(csvDir, name), "utf8")).split("\n").slice(1).filter(Boolean);
+    (await Bun.file(`${csvDir}/${name}`).text()).split("\n").slice(1).filter(Boolean);
 
 const fetchText = async (url: string): Promise<string> => {
     const response = await fetch(url);
@@ -181,9 +179,8 @@ expect("36.110", (first) => first.country === "중국", "중국");
 expect("3.34", (first) => first.vpn, "AWS VPN");
 if (lookup("0.0") || lookup("255.255")) throw new Error("예약 대역에 데이터가 있습니다.");
 
-await mkdir(outDir, {recursive: true});
-await writeFile(join(outDir, "ip.json"), JSON.stringify(data));
-await writeFile(join(outDir, "version"), new Date().toISOString().slice(0, 10));
+await Bun.write(`${outDir}/ip.json`, JSON.stringify(data));
+await Bun.write(`${outDir}/version`, new Date().toISOString().slice(0, 10));
 
 const sizes = Object.values(data.b).map((list) => list.length);
 console.log(`prefixes=${sizes.length} meta=${data.meta.length} maxCandidates=${Math.max(...sizes)} kisa=${kisa.size} vpnRanges=${vpns.length} size=${JSON.stringify(data).length}`);
