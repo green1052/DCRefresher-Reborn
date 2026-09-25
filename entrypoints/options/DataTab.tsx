@@ -1,12 +1,12 @@
-import {RefreshCw} from "lucide-react";
-import {Button, Dialog, Flex, Text, TextArea} from "@radix-ui/themes";
+import {CloudDownload, CloudUpload, Download, RefreshCw, Trash2, Upload} from "lucide-react";
+import {Box, Button, Flex} from "@radix-ui/themes";
 import {useEffect, useState} from "react";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
 import {DatabaseService} from "@/core/services/database";
 import {backupStorage, dbStorage} from "@/core/storage/items";
 
-import {Row, Section} from "./Layout";
+import {ImportDialog, Section} from "./Layout";
 
 const formatTime = (lastUpdate: number): string =>
     lastUpdate === 0 ? "기록 없음" : new Date(lastUpdate).toLocaleString("ko-KR");
@@ -51,7 +51,6 @@ export function DataTab() {
     const [notice, setNotice] = useState<string | null>(null);
     const [confirming, setConfirming] = useState<ConfirmState | null>(null);
     const [importOpen, setImportOpen] = useState(false);
-    const [importText, setImportText] = useState("");
 
     useEffect(() => {
         void DatabaseService.lastUpdate().then(setLastUpdate);
@@ -116,12 +115,11 @@ export function DataTab() {
         }
     };
 
-    const submitImport = async (): Promise<void> => {
+    const submitImport = async (text: string): Promise<void> => {
         setLoading(true);
         try {
-            await replaceLocalStorage(parseImport(importText));
+            await replaceLocalStorage(parseImport(text));
             setImportOpen(false);
-            setImportText("");
             setNotice("데이터를 가져왔습니다. 새 탭에서 디시인사이드를 열어주세요.");
         } catch {
             setNotice("데이터를 가져오는데 실패했습니다.");
@@ -143,65 +141,51 @@ export function DataTab() {
     };
 
     return (
-        <Section>
-            <Row
-                left={
-                    <Flex direction="column">
-                        <Text size="2" weight="bold">
-                            IP/밴 데이터베이스
-                        </Text>
-                        <Text size="2" color="gray">
-                            마지막 갱신: {formatTime(lastUpdate)}
-                        </Text>
-                    </Flex>
-                }
-                right={
-                    <Button size="2" variant="soft" disabled={loading} onClick={() => void forceUpdate()}>
-                        <RefreshCw size={12}/> 지금 갱신
-                    </Button>
-                }
-            />
+        <Box>
+            <Section title="IP/밴 데이터베이스" desc={`마지막 갱신: ${formatTime(lastUpdate)}`}
+                     actions={
+                         <Button variant="soft" loading={loading} onClick={() => void forceUpdate()}>
+                             <RefreshCw size={14}/> 지금 갱신
+                         </Button>
+                     }/>
 
-            <Row
-                left={
-                    <Flex direction="column">
-                        <Text size="2" weight="bold">
-                            데이터 관리
-                        </Text>
-                        <Text size="2" color="gray">
-                            마지막 백업: {formatTime(backupAt)}
-                        </Text>
-                    </Flex>
-                }
-            />
-            <Flex gap="2" wrap="wrap" pt="2">
-                <Button size="2" variant="soft" disabled={loading} onClick={() => void backupCloud()}>
-                    클라우드 백업
-                </Button>
-                <Button
-                    size="2"
-                    variant="soft"
-                    disabled={loading}
-                    onClick={() => setConfirming({title: "클라우드 백업으로 현재 설정을 교체할까요?", action: recoverCloud})}
-                >
-                    클라우드 복원
-                </Button>
-                <Button size="2" variant="soft" disabled={loading} onClick={() => void exportData()}>
-                    데이터 내보내기
-                </Button>
-                <Button size="2" variant="soft" disabled={loading} onClick={() => setImportOpen(true)}>
-                    데이터 가져오기
-                </Button>
-                <Button
-                    size="2"
-                    variant="soft"
-                    color="red"
-                    disabled={loading}
-                    onClick={() => setConfirming({title: "모든 설정과 사용자 데이터를 초기화할까요?", action: clearData})}
-                >
-                    데이터 초기화
-                </Button>
-            </Flex>
+            <Section title="클라우드 백업" desc={`브라우저 동기화 저장소에 설정을 백업합니다. 마지막 백업: ${formatTime(backupAt)}`}>
+                <Flex gap="2" wrap="wrap">
+                    <Button variant="soft" disabled={loading} onClick={() => void backupCloud()}>
+                        <CloudUpload size={14}/> 백업
+                    </Button>
+                    <Button
+                        variant="soft"
+                        disabled={loading}
+                        onClick={() => setConfirming({title: "클라우드 백업으로 현재 설정을 교체할까요?", action: recoverCloud})}
+                    >
+                        <CloudDownload size={14}/> 복원
+                    </Button>
+                </Flex>
+            </Section>
+
+            <Section title="내보내기 / 가져오기" desc="IP/밴 데이터베이스를 제외한 모든 설정을 JSON으로 옮깁니다.">
+                <Flex gap="2" wrap="wrap">
+                    <Button variant="soft" disabled={loading} onClick={() => void exportData()}>
+                        <Download size={14}/> 클립보드로 내보내기
+                    </Button>
+                    <Button variant="soft" disabled={loading} onClick={() => setImportOpen(true)}>
+                        <Upload size={14}/> 가져오기
+                    </Button>
+                </Flex>
+            </Section>
+
+            <Section title="초기화" desc="모든 설정과 차단/메모 데이터를 삭제합니다. 되돌릴 수 없습니다."
+                     actions={
+                         <Button
+                             variant="soft"
+                             color="red"
+                             disabled={loading}
+                             onClick={() => setConfirming({title: "모든 설정과 사용자 데이터를 초기화할까요?", action: clearData})}
+                         >
+                             <Trash2 size={14}/> 데이터 초기화
+                         </Button>
+                     }/>
 
             <ConfirmDialog open={notice !== null} title={notice ?? ""} cancelLabel={null}
                            onClose={() => setNotice(null)} onConfirm={() => setNotice(null)}/>
@@ -219,33 +203,8 @@ export function DataTab() {
                 onClose={() => setConfirming(null)}
             />
 
-            <Dialog.Root open={importOpen} onOpenChange={(next) => !next && setImportOpen(false)}>
-                <Dialog.Content style={{maxWidth: 520}}>
-                    <Dialog.Title>데이터 가져오기</Dialog.Title>
-                    <Dialog.Description size="2" mb="3">
-                        내보낸 JSON 데이터를 붙여넣어주세요.
-                    </Dialog.Description>
-
-                    <TextArea
-                        placeholder="JSON 데이터"
-                        value={importText}
-                        onChange={(event) => setImportText(event.target.value)}
-                        style={{minHeight: 160}}
-                        autoFocus
-                    />
-
-                    <Flex gap="3" justify="end" mt="4">
-                        <Dialog.Close>
-                            <Button variant="soft" color="gray">
-                                취소
-                            </Button>
-                        </Dialog.Close>
-                        <Button disabled={loading} onClick={() => void submitImport()}>
-                            가져오기
-                        </Button>
-                    </Flex>
-                </Dialog.Content>
-            </Dialog.Root>
-        </Section>
+            <ImportDialog open={importOpen} title="데이터 가져오기"
+                          onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
+        </Box>
     );
 }

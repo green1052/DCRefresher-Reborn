@@ -1,5 +1,5 @@
-import {Badge, Box, Button, Dialog, Flex, IconButton, Table, Text, TextArea} from "@radix-ui/themes";
-import {Download, Plus, Upload, X} from "lucide-react";
+import {Badge, Button, Card, Flex, IconButton, Table, Tabs, Text, Tooltip} from "@radix-ui/themes";
+import {Download, Plus, Trash2, Upload, X} from "lucide-react";
 import {useState} from "react";
 
 import {BlockDialog} from "@/components/BlockDialog";
@@ -11,7 +11,7 @@ import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import type {BlockInputFields} from "@/stores/blocks";
 import {useBlocksStore} from "@/stores/blocks";
 
-import {Empty, Row, Section} from "./Layout";
+import {Empty, ImportDialog} from "./Layout";
 
 /** 디시콘 이미지 (묶음 정규식이면 첫 코드) */
 const dcconImage = (entry: BlockEntry): string => {
@@ -33,7 +33,6 @@ export function BlockTab() {
     const [clearConfirm, setClearConfirm] = useState<BlockType | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
     const [importOpen, setImportOpen] = useState(false);
-    const [importText, setImportText] = useState("");
 
     const exportBlocks = async (): Promise<void> => {
         try {
@@ -44,16 +43,15 @@ export function BlockTab() {
         }
     };
 
-    const submitImport = async (): Promise<void> => {
+    const submitImport = async (text: string): Promise<void> => {
         try {
-            const parsed = JSON.parse(importText) as Record<string, unknown>;
+            const parsed = JSON.parse(text) as Record<string, unknown>;
             for (const type of BLOCK_TYPES) {
                 const list = parsed[type];
                 if (!Array.isArray(list)) continue;
                 await setEntries(type, list.filter(isBlockEntry));
             }
             setImportOpen(false);
-            setImportText("");
             setNotice("차단 목록을 가져왔습니다.");
         } catch {
             setNotice("차단 목록을 가져오는데 실패했습니다.");
@@ -76,68 +74,59 @@ export function BlockTab() {
     };
 
     return (
-        <Box>
-            <Section
-                actions={
-                    <>
-                        <IconButton size="2" variant="ghost" color="gray" title="내보내기"
-                                    onClick={() => void exportBlocks()}>
-                            <Download size={16}/>
-                        </IconButton>
-                        <IconButton size="2" variant="ghost" color="gray" title="가져오기"
-                                    onClick={() => setImportOpen(true)}>
-                            <Upload size={16}/>
-                        </IconButton>
-                    </>
-                }
-            >
-                <Box mb="4">
-                    <Text as="div" size="2" weight="bold" mb="2">
-                        차단 모드
-                    </Text>
-                    {BLOCK_TYPES.map((type) => (
-                        <Row
-                            key={`mode-${type}`}
-                            left={
-                                <Text size="2" color="gray">
-                                    {TYPE_NAMES[type]}
-                                </Text>
-                            }
-                            right={
-                                <RefresherSelect
-                                    value={defaults[type]}
-                                    onChange={(next) => void setDefault(type, next as DetectMode)}
-                                    options={Object.entries(DETECT_MODE_NAMES)}
-                                />
-                            }
-                        />
-                    ))}
-                </Box>
+        <Card size="3">
+            <Tabs.Root defaultValue={BLOCK_TYPES[0]}>
+                <Flex align="end" gap="3">
+                    <Tabs.List style={{flex: 1, flexWrap: "wrap"}}>
+                        {BLOCK_TYPES.map((type) => (
+                            <Tabs.Trigger key={type} value={type}>
+                                {TYPE_NAMES[type]}
+                                {entries[type].length > 0 && (
+                                    <Badge ml="1" size="1" variant="soft" color="gray" radius="full">
+                                        {entries[type].length}
+                                    </Badge>
+                                )}
+                            </Tabs.Trigger>
+                        ))}
+                    </Tabs.List>
+                    <Flex gap="3" pb="2">
+                        <Tooltip content="클립보드로 내보내기">
+                            <IconButton variant="ghost" color="gray" aria-label="내보내기"
+                                        onClick={() => void exportBlocks()}>
+                                <Download size={16}/>
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip content="가져오기">
+                            <IconButton variant="ghost" color="gray" aria-label="가져오기"
+                                        onClick={() => setImportOpen(true)}>
+                                <Upload size={16}/>
+                            </IconButton>
+                        </Tooltip>
+                    </Flex>
+                </Flex>
 
                 {BLOCK_TYPES.map((type) => {
                     const list = entries[type];
 
                     return (
-                        <Box key={type} mb="4">
-                            <Flex justify="between" align="center" mb="2">
-                                <Text size="2" weight="bold">
-                                    {TYPE_NAMES[type]} <Badge color="gray" variant="soft">{list.length}개</Badge>
-                                </Text>
+                        <Tabs.Content key={type} value={type}>
+                            <Flex justify="between" align="center" gap="3" wrap="wrap" py="4">
+                                <Flex align="center" gap="2">
+                                    <Text size="2" color="gray">기본 차단 모드</Text>
+                                    <RefresherSelect
+                                        value={defaults[type]}
+                                        onChange={(next) => void setDefault(type, next as DetectMode)}
+                                        options={Object.entries(DETECT_MODE_NAMES)}
+                                    />
+                                </Flex>
                                 <Flex gap="2">
-                                    <IconButton variant="ghost" color="gray" size="1" title="추가"
-                                                onClick={() => setDialog({type, initial: null})}>
-                                        <Plus size={14}/>
-                                    </IconButton>
-                                    <IconButton
-                                        variant="ghost"
-                                        color="gray"
-                                        size="1"
-                                        title="전체 삭제"
-                                        disabled={list.length === 0}
-                                        onClick={() => setClearConfirm(type)}
-                                    >
-                                        <X size={12}/>
-                                    </IconButton>
+                                    <Button variant="soft" color="red" disabled={list.length === 0}
+                                            onClick={() => setClearConfirm(type)}>
+                                        <Trash2 size={14}/> 전체 삭제
+                                    </Button>
+                                    <Button onClick={() => setDialog({type, initial: null})}>
+                                        <Plus size={14}/> 추가
+                                    </Button>
                                 </Flex>
                             </Flex>
 
@@ -149,13 +138,14 @@ export function BlockTab() {
                                         <Table.Row>
                                             <Table.ColumnHeaderCell>항목</Table.ColumnHeaderCell>
                                             <Table.ColumnHeaderCell>정보</Table.ColumnHeaderCell>
-                                            <Table.ColumnHeaderCell/>
+                                            <Table.ColumnHeaderCell width="48px"/>
                                         </Table.Row>
                                     </Table.Header>
                                     <Table.Body>
                                         {list.map((entry) => (
                                             <Table.Row
                                                 key={entry.id}
+                                                align="center"
                                                 style={{cursor: "pointer"}}
                                                 onClick={() => setDialog({type, initial: entry})}
                                             >
@@ -172,12 +162,12 @@ export function BlockTab() {
                                                         {[entry.gallery ? `갤러리: ${entry.gallery}` : null, entry.extra].filter(Boolean).join(" · ") || "—"}
                                                     </Text>
                                                 </Table.Cell>
-                                                <Table.Cell width="48px">
+                                                <Table.Cell>
                                                     <IconButton
                                                         variant="ghost"
                                                         color="gray"
                                                         size="1"
-                                                        title="삭제"
+                                                        aria-label="삭제"
                                                         onClick={(event) => {
                                                             event.stopPropagation();
                                                             void removeEntry(type, entry.id);
@@ -191,10 +181,10 @@ export function BlockTab() {
                                     </Table.Body>
                                 </Table.Root>
                             )}
-                        </Box>
+                        </Tabs.Content>
                     );
                 })}
-            </Section>
+            </Tabs.Root>
 
             {dialog && (
                 <BlockDialog
@@ -223,27 +213,8 @@ export function BlockTab() {
             <ConfirmDialog open={notice !== null} title={notice ?? ""} cancelLabel={null}
                            onClose={() => setNotice(null)} onConfirm={() => setNotice(null)}/>
 
-            <Dialog.Root open={importOpen} onOpenChange={(next) => !next && setImportOpen(false)}>
-                <Dialog.Content style={{maxWidth: 520}}>
-                    <Dialog.Title>차단 목록 가져오기</Dialog.Title>
-                    <Dialog.Description size="2" mb="3">
-                        내보낸 JSON 데이터를 붙여넣어주세요.
-                    </Dialog.Description>
-
-                    <TextArea placeholder="JSON 데이터" value={importText}
-                              onChange={(event) => setImportText(event.target.value)} style={{minHeight: 160}}
-                              autoFocus/>
-
-                    <Flex gap="3" justify="end" mt="4">
-                        <Dialog.Close>
-                            <Button variant="soft" color="gray">
-                                취소
-                            </Button>
-                        </Dialog.Close>
-                        <Button onClick={() => void submitImport()}>가져오기</Button>
-                    </Flex>
-                </Dialog.Content>
-            </Dialog.Root>
-        </Box>
+            <ImportDialog open={importOpen} title="차단 목록 가져오기"
+                          onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
+        </Card>
     );
 }

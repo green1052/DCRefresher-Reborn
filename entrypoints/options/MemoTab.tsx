@@ -1,5 +1,5 @@
-import {Download, Plus, Upload, X} from "lucide-react";
-import {Badge, Box, Button, Dialog, Flex, IconButton, Table, Text, TextArea, TextField} from "@radix-ui/themes";
+import {Download, Plus, Trash2, Upload, X} from "lucide-react";
+import {Badge, Box, Button, Card, Dialog, Flex, IconButton, Table, Tabs, Text, TextField, Tooltip} from "@radix-ui/themes";
 import {useState} from "react";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
@@ -9,7 +9,7 @@ import {MEMO_TYPE_NAMES, MEMO_TYPES, memoStorage} from "@/core/storage/items";
 import type {MemoEntry, MemoType} from "@/core/storage/types";
 import {useMemosStore} from "@/stores/memos";
 
-import {Empty, Section} from "./Layout";
+import {Empty, ImportDialog} from "./Layout";
 
 const randomColor = (): string => `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0")}`;
 
@@ -144,7 +144,6 @@ export function MemoTab() {
     const [clearConfirm, setClearConfirm] = useState<MemoType | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
     const [importOpen, setImportOpen] = useState(false);
-    const [importText, setImportText] = useState("");
 
     const exportMemos = async (): Promise<void> => {
         try {
@@ -155,9 +154,9 @@ export function MemoTab() {
         }
     };
 
-    const submitImport = async (): Promise<void> => {
+    const submitImport = async (text: string): Promise<void> => {
         try {
-            const parsed = JSON.parse(importText) as Record<string, unknown>;
+            const parsed = JSON.parse(text) as Record<string, unknown>;
             for (const type of MEMO_TYPES) {
                 const map = parsed[type];
                 if (!map || typeof map !== "object") continue;
@@ -171,7 +170,6 @@ export function MemoTab() {
                 await memoStorage[type].setValue(next);
             }
             setImportOpen(false);
-            setImportText("");
             setNotice("메모를 가져왔습니다.");
         } catch {
             setNotice("메모를 가져오는데 실패했습니다.");
@@ -179,55 +177,55 @@ export function MemoTab() {
     };
 
     return (
-        <Box>
-            <Section
-                actions={
-                    <>
-                        <IconButton size="2" variant="ghost" color="gray" title="내보내기"
-                                    onClick={() => void exportMemos()}>
-                            <Download size={16}/>
-                        </IconButton>
-                        <IconButton size="2" variant="ghost" color="gray" title="가져오기"
-                                    onClick={() => setImportOpen(true)}>
-                            <Upload size={16}/>
-                        </IconButton>
-                    </>
-                }
-            >
-                {MEMO_TYPES.map((type, index) => {
-                    const map = memos[type];
+        <Card size="3">
+            <Tabs.Root defaultValue={MEMO_TYPES[0]}>
+                <Flex align="end" gap="3">
+                    <Tabs.List style={{flex: 1}}>
+                        {MEMO_TYPES.map((type) => {
+                            const count = Object.keys(memos[type]).length;
+
+                            return (
+                                <Tabs.Trigger key={type} value={type}>
+                                    {MEMO_TYPE_NAMES[type]}
+                                    {count > 0 && (
+                                        <Badge ml="1" size="1" variant="soft" color="gray" radius="full">{count}</Badge>
+                                    )}
+                                </Tabs.Trigger>
+                            );
+                        })}
+                    </Tabs.List>
+                    <Flex gap="3" pb="2">
+                        <Tooltip content="클립보드로 내보내기">
+                            <IconButton variant="ghost" color="gray" aria-label="내보내기"
+                                        onClick={() => void exportMemos()}>
+                                <Download size={16}/>
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip content="가져오기">
+                            <IconButton variant="ghost" color="gray" aria-label="가져오기"
+                                        onClick={() => setImportOpen(true)}>
+                                <Upload size={16}/>
+                            </IconButton>
+                        </Tooltip>
+                    </Flex>
+                </Flex>
+
+                {MEMO_TYPES.map((type) => {
+                    const list = Object.entries(memos[type]);
 
                     return (
-                        <Box key={type} mb="4" mt={index > 0 ? "4" : undefined}>
-                            <Flex justify="between" align="center" mb="2">
-                                <Text size="2" weight="bold">
-                                    {MEMO_TYPE_NAMES[type]} <Badge color="gray"
-                                                                   variant="soft">{Object.keys(map).length}개</Badge>
-                                </Text>
-                                <Flex gap="2">
-                                    <IconButton
-                                        variant="ghost"
-                                        color="gray"
-                                        size="1"
-                                        title="추가"
-                                        onClick={() => setForm({type, user: "", text: "", color: randomColor()})}
-                                    >
-                                        <Plus size={14}/>
-                                    </IconButton>
-                                    <IconButton
-                                        variant="ghost"
-                                        color="gray"
-                                        size="1"
-                                        title="전체 삭제"
-                                        disabled={Object.keys(map).length === 0}
-                                        onClick={() => setClearConfirm(type)}
-                                    >
-                                        <X size={12}/>
-                                    </IconButton>
-                                </Flex>
+                        <Tabs.Content key={type} value={type}>
+                            <Flex justify="end" gap="2" py="4">
+                                <Button variant="soft" color="red" disabled={list.length === 0}
+                                        onClick={() => setClearConfirm(type)}>
+                                    <Trash2 size={14}/> 전체 삭제
+                                </Button>
+                                <Button onClick={() => setForm({type, user: "", text: "", color: randomColor()})}>
+                                    <Plus size={14}/> 추가
+                                </Button>
                             </Flex>
 
-                            {Object.keys(map).length === 0 ? (
+                            {list.length === 0 ? (
                                 <Empty>{MEMO_TYPE_NAMES[type]} 메모 없음</Empty>
                             ) : (
                                 <Table.Root variant="surface">
@@ -235,42 +233,33 @@ export function MemoTab() {
                                         <Table.Row>
                                             <Table.ColumnHeaderCell>대상</Table.ColumnHeaderCell>
                                             <Table.ColumnHeaderCell>메모</Table.ColumnHeaderCell>
-                                            <Table.ColumnHeaderCell/>
+                                            <Table.ColumnHeaderCell width="48px"/>
                                         </Table.Row>
                                     </Table.Header>
                                     <Table.Body>
-                                        {Object.entries(map).map(([user, entry]) => (
+                                        {list.map(([user, entry]) => (
                                             <Table.Row
                                                 key={user}
+                                                align="center"
                                                 style={{cursor: "pointer"}}
-                                                onClick={() => setForm({
-                                                    type,
-                                                    user,
-                                                    text: entry.text,
-                                                    color: entry.color
-                                                })}
+                                                onClick={() => setForm({type, user, text: entry.text, color: entry.color})}
                                             >
                                                 <Table.RowHeaderCell>
                                                     <Flex align="center" gap="2">
-                                                        <span style={{
-                                                            width: 10,
-                                                            height: 10,
-                                                            borderRadius: "50%",
-                                                            background: entry.color,
-                                                            flex: "none"
-                                                        }}/>
+                                                        <Box width="10px" height="10px" flexShrink="0"
+                                                             style={{borderRadius: "50%", background: entry.color}}/>
                                                         <Text weight="medium">{user}</Text>
                                                     </Flex>
                                                 </Table.RowHeaderCell>
                                                 <Table.Cell>
                                                     <Text color="gray">{entry.text}</Text>
                                                 </Table.Cell>
-                                                <Table.Cell width="48px">
+                                                <Table.Cell>
                                                     <IconButton
                                                         variant="ghost"
                                                         color="gray"
                                                         size="1"
-                                                        title="삭제"
+                                                        aria-label="삭제"
                                                         onClick={(event) => {
                                                             event.stopPropagation();
                                                             void removeMemo(type, user);
@@ -284,10 +273,10 @@ export function MemoTab() {
                                     </Table.Body>
                                 </Table.Root>
                             )}
-                        </Box>
+                        </Tabs.Content>
                     );
                 })}
-            </Section>
+            </Tabs.Root>
 
             {form && (
                 <MemoFormDialog
@@ -312,29 +301,8 @@ export function MemoTab() {
             <ConfirmDialog open={notice !== null} title={notice ?? ""} cancelLabel={null}
                            onClose={() => setNotice(null)} onConfirm={() => setNotice(null)}/>
 
-            <Dialog.Root open={importOpen} onOpenChange={(next) => !next && setImportOpen(false)}>
-                <Dialog.Content style={{maxWidth: 520}}>
-                    <Dialog.Title>메모 가져오기</Dialog.Title>
-                    <Dialog.Description size="2" mb="3">
-                        내보낸 JSON 데이터를 붙여넣어주세요.
-                    </Dialog.Description>
-
-                    <TextArea placeholder="JSON 데이터" value={importText}
-                              onChange={(event) => setImportText(event.target.value)} style={{minHeight: 160}}
-                              autoFocus/>
-
-                    <Flex gap="3" justify="end" mt="4">
-                        <Dialog.Close>
-                            <Button variant="soft" color="gray">
-                                취소
-                            </Button>
-                        </Dialog.Close>
-                        <Button onClick={() => void submitImport()}>가져오기</Button>
-                    </Flex>
-                </Dialog.Content>
-            </Dialog.Root>
-        </Box>
+            <ImportDialog open={importOpen} title="메모 가져오기"
+                          onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
+        </Card>
     );
 }
-
-export type {MemoEntry};
