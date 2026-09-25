@@ -1,22 +1,6 @@
 /// <reference types="bun" />
 
-/**
- * IP DB 생성: bun scripts/build-ipdb.ts → db/
- *
- * 입력 (모두 여기서 받는다)
- * - MaxMind GeoLite2 ASN/Country MMDB — green1052/maxmind-geoip2
- * - VPN 대역 목록 — X4BNet/lists_vpn
- * - KISA 국내 AS 목록 — 한국인터넷정보센터 AS 번호 할당 현황
- *
- * 출력: db/ip.json (RawIpData), db/version
- *
- * 디시는 IP를 a.b까지만 보여주므로 /16 단위로 모은다. 한 /16 안의 후보는 차지하는 주소 수가 많은 순(앞일수록 유력).
- * - 한국: KISA 한글 기관명을 축약(ipdb-names.ts, 없으면 MaxMind 영문명), 국가 생략
- * - 일본·중국: 영문 기관명 + 국가
- * - 그 외: 국가만 (VPN이면 기관명도)
- * - VPN 목록과 겹치는 부분은 따로 떼어 v: 1
- * - /16의 1% 미만인 후보는 버리고 최대 MAX_CANDIDATES개
- */
+import ky from "ky";
 import {type AsnResponse, type CountryResponse, Reader} from "mmdb-lib";
 import {long2ip, Netmask} from "netmask";
 
@@ -38,15 +22,9 @@ const OUT_DIR = "db";
 
 type Range<T> = { start: number; end: number; value: T };
 
-const download = async (url: string): Promise<Response> => {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`${url}: ${response.status}`);
-    return response;
-};
-
 /** MMDB의 IPv4 전체를 주소 순으로 — 라이브러리에 순회가 없어 네트워크 끝으로 건너뛰며 조회한다 */
 const readMmdb = async <T, V>(edition: string, pick: (record: T) => V | undefined): Promise<Range<V>[]> => {
-    const reader = new Reader<T & object>(Buffer.from(await (await download(MMDB_URL(edition))).arrayBuffer()));
+    const reader = new Reader<T & object>(Buffer.from(await ky.get(MMDB_URL(edition)).arrayBuffer()));
     const ranges: Range<V>[] = [];
 
     for (let start = 0; start <= 0xffffffff;) {
@@ -75,7 +53,7 @@ const asns = await readMmdb<AsnResponse, { asn: number; org: string }>(
 );
 
 const vpns: Range<true>[] = [];
-for (const line of (await (await download(VPN_URL)).text()).split("\n")) {
+for (const line of (await ky.get(VPN_URL).text()).split("\n")) {
     if (!line.trim()) continue;
     const network = new Netmask(line.trim());
     vpns.push({start: network.netLong, end: network.netLong + network.size - 1, value: true});
@@ -83,7 +61,7 @@ for (const line of (await (await download(VPN_URL)).text()).split("\n")) {
 
 /** AS 번호 → KISA 한글 기관명 */
 const kisa = new Map<number, string>();
-for (const [, org, asn] of (await (await download(KISA_URL)).text()).matchAll(/<td[^>]*>([^<]+)<\/td>\s*<td[^>]*>AS(\d+)<\/td>/g)) {
+for (const [, org, asn] of (await ky.get(KISA_URL).text()).matchAll(/<td[^>]*>([^<]+)<\/td>\s*<td[^>]*>AS(\d+)<\/td>/g)) {
     kisa.set(Number(asn), shortenOrg(org!.trim()));
 }
 
@@ -95,7 +73,10 @@ if (kisa.size < 500) throw new Error(`KISA 목록을 읽지 못했습니다: ${k
 
 type Meta = RawIpData["meta"][number];
 
-const metaOf = (asn: { asn: number; org: string } | undefined, iso: string | undefined, vpn: boolean): Meta | undefined => {
+const metaOf = (asn: {
+    asn: number;
+    org: string
+} | undefined, iso: string | undefined, vpn: boolean): Meta | undefined => {
     const v = vpn ? 1 : undefined;
     if (iso === "KR") return {o: kisa.get(asn?.asn ?? 0) ?? asn?.org, v};
     // 국가를 모르면 한국으로 보이므로 VPN일 때만 기관명으로 남긴다
