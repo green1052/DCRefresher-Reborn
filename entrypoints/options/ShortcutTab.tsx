@@ -1,5 +1,6 @@
-import {Button, Flex, Text} from "@radix-ui/themes";
-import {useEffect, useState} from "react";
+import {Button, Flex, Kbd, Separator, Text} from "@radix-ui/themes";
+import {ExternalLink} from "lucide-react";
+import {Fragment, useEffect, useState} from "react";
 
 import {Section} from "./Layout";
 
@@ -17,28 +18,31 @@ export function ShortcutTab() {
     }, []);
 
     return (
-        <Section>
-            {shortcuts
-                .filter((shortcut) => shortcut.description)
-                .map((shortcut) => (
-                    <Flex key={shortcut.name} justify="between" align="center" py="2">
-                        <Text size="2">{shortcut.description}</Text>
-                        <Text size="2" color="gray">
-                            {shortcut.shortcut || "없음"}
-                        </Text>
-                    </Flex>
-                ))}
-
-            <Flex justify="center" pt="4">
+        <Section
+            desc="단축키는 브라우저의 확장 프로그램 단축키 설정에서 변경할 수 있습니다."
+            actions={
                 <Button
                     variant="soft"
                     onClick={() =>
                         void browser.tabs.create({url: import.meta.env.FIREFOX ? "about:addons" : "chrome://extensions/shortcuts"})
                     }
                 >
-                    단축키 설정
+                    <ExternalLink size={14}/> 단축키 설정
                 </Button>
-            </Flex>
+            }
+        >
+            {shortcuts
+                .filter((shortcut) => shortcut.description)
+                .map((shortcut) => (
+                    <Fragment key={shortcut.name}>
+                        <Separator size="4"/>
+                        <Flex justify="between" align="center" gap="3" py="3">
+                            <Text size="2">{shortcut.description}</Text>
+                            {shortcut.shortcut ? <Kbd>{shortcut.shortcut}</Kbd> :
+                                <Text size="2" color="gray">없음</Text>}
+                        </Flex>
+                    </Fragment>
+                ))}
         </Section>
     );
 }
