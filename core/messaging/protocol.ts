@@ -6,8 +6,6 @@ export interface PageState {
     stealth: { revealed: boolean } | null;
     /** 이 페이지에서만 차단 내용 보기와 가린 요소 수 */
     block: { revealed: boolean; hidden: number } | null;
-    /** 페이지 제목의 갤러리 이름 (못 찾으면 null) */
-    galleryName: string | null;
 }
 
 export type PageAction = "toggleRefresh" | "toggleStealth" | "toggleBlockReveal";

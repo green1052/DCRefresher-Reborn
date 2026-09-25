@@ -42,15 +42,11 @@ export default defineContentScript({
             const refresh = refreshApi();
             const stealth = stealthApi();
             const block = blockApi();
-            // 제목 링크의 글자만 — 마이너·미니 표시 아이콘의 숨은 글자는 뺀다
-            const title = document.querySelector(".page_head h2 a");
-            const name = title ? [...title.childNodes].filter((node) => node.nodeType === Node.TEXT_NODE).map((node) => node.textContent).join("").trim() : "";
 
             return {
                 refresh: refresh ? {paused: refresh.isPaused()} : null,
                 stealth: stealth ? {revealed: stealth.isRevealed()} : null,
-                block: block ? {revealed: block.isRevealed(), hidden: block.hiddenCount()} : null,
-                galleryName: name || null
+                block: block ? {revealed: block.isRevealed(), hidden: block.hiddenCount()} : null
             };
         };
 
