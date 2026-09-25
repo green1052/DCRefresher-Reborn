@@ -6,7 +6,7 @@ import {createRoot} from "react-dom/client";
 
 import {App} from "./App";
 
-/** prefers-color-scheme 실시간 감지 — 확장 페이지엔 color-scheme이 없어 inherit는 동작 안 함 */
+/** Radix Themes는 OS 다크모드를 따라가지 않는다(inherit은 부모 .dark 클래스만 봄) — 직접 감지해 넘긴다 */
 const useSystemAppearance = (): "light" | "dark" => {
     const [appearance, setAppearance] = useState<"light" | "dark">(
         () => (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
