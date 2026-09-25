@@ -1,56 +1,45 @@
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext} from "@/core/module/types";
 
-const FONT_STYLE_ID = "refresherFontStyle";
-const FONT_SIZE_STYLE_ID = "refresherFontStyleSize";
-
 const DEFAULT_FONTS = "Noto Sans CJK KR, NanumGothic";
 
-// DC 본체 셀렉터 + 확장 UI. changeDCFont가 켜져야 DC측 규칙이 적용된다.
-const DC_FONT_TARGETS =
-    ".refresherChangeDCFont .btn_cmt_close, .refresherChangeDCFont .btn_cmt_open, .refresherChangeDCFont .gall_list, .refresherChangeDCFont .view_comment div, .refresherChangeDCFont .view_content_wrap, .refresherChangeDCFont body, .refresherChangeDCFont button, .refresherChangeDCFont input";
+// "디시인사이드 폰트 교체"가 켜졌을 때 폰트를 바꿀 디시 요소.
+// :root 접두사는 디시 규칙보다 우선하도록 명시도를 한 단계 올리는 용도
+const DC_FONT_TARGETS = ["body", "button", "input", ".gall_list", ".view_content_wrap", ".view_comment div", ".btn_cmt_open", ".btn_cmt_close"]
+    .map((selector) => `:root ${selector}`)
+    .join(", ");
 
-const placeStyle = (id: string, css: string): void => {
-    let style = document.head.querySelector<HTMLStyleElement>(`#${id}`);
+/** "A, B" → `"A", "B", sans-serif` — 이름마다 따옴표로 감싸 CSS로 새어나가지 않게 한다 */
+const toFontFamily = (value: string): string =>
+    [
+        ...value
+            .split(",")
+            .map((font) => font.trim())
+            .filter(Boolean)
+            .map((font) => `"${font.replace(/["\\]/g, "\\$&")}"`),
+        "sans-serif"
+    ].join(", ");
 
-    if (!style) {
-        style = document.createElement("style");
-        style.id = id;
-        document.head.append(style);
-    }
-
-    style.textContent = css;
-};
-
-const removeStyle = (id: string): void => {
-    document.head.querySelector(`#${id}`)?.remove();
-};
-
-const quoteFonts = (value: string): string =>
-    value
-        .split(",")
-        .map((font) => `"${font.trim().replace(/"/g, "\\\"")}"`)
-        .filter(Boolean)
-        .join(", ");
-
-// 모든 규칙이 상호 의존(커스텀폰트는 changeDCFont 켜짐 여부)하므로 변경시 전부 재적용
-const applyAll = (ctx: ModuleContext): void => {
-    const raw = String(ctx.settings.customFonts ?? "").trim() || DEFAULT_FONTS;
-    const enabled = ctx.settings.changeDCFont === true;
-    const fonts = `${quoteFonts(raw)}, sans-serif`;
+const buildCss = (ctx: ModuleContext): string => {
+    const fonts = toFontFamily(String(ctx.settings.customFonts).trim() || DEFAULT_FONTS);
     const size = Number(ctx.settings.bodyFontSize);
 
-    document.documentElement.classList.toggle("refresherChangeDCFont", enabled);
-    // 확장 UI는 shadow DOM이라 셀렉터가 안 닿는다 — 상속되는 커스텀 속성으로 넘긴다 (overlay.scss에서 사용)
-    placeStyle(
-        FONT_STYLE_ID,
-        `.refresherFont { --refresher-font: ${fonts}; }` + (enabled ? `\n${DC_FONT_TARGETS} { font-family: ${fonts}; }` : "")
-    );
-    placeStyle(
-        FONT_SIZE_STYLE_ID,
-        `.refresherChangeDCFont .write_div { font-size: ${size}px; }
-        .refresherFont { --refresher-preview-font-size: ${size + 2}px; }`
-    );
+    // 확장 UI(shadow DOM)엔 선택자가 닿지 않으므로 상속되는 커스텀 속성으로 넘긴다 (overlay.scss에서 사용)
+    const css = [`:root { --refresher-font: ${fonts}; --refresher-preview-font-size: ${size + 2}px; }`];
+
+    if (ctx.settings.changeDCFont === true) {
+        css.push(`${DC_FONT_TARGETS} { font-family: ${fonts}; }`, `:root .write_div { font-size: ${size}px; }`);
+    }
+
+    return css.join("\n");
+};
+
+let style: HTMLStyleElement | null = null;
+
+// 콘텐츠 스크립트는 document_start에 돌아 head가 없을 수 있으므로 <html>에 붙인다
+const apply = (ctx: ModuleContext): void => {
+    style ??= document.documentElement.appendChild(document.createElement("style"));
+    style.textContent = buildCss(ctx);
 };
 
 export default defineModule({
@@ -63,40 +52,32 @@ export default defineModule({
         customFonts: {
             type: "text",
             name: "font-family 이름",
-            desc: "페이지 폰트를 입력된 폰트로 교체합니다. (빈칸으로 둘 시 확장 프로그램 기본 폰트로 설정)",
+            desc: "쉼표로 구분한 폰트 이름입니다. 앞의 폰트가 없으면 다음 폰트를 씁니다. (빈칸이면 기본 폰트)",
             default: DEFAULT_FONTS
         },
         changeDCFont: {
             type: "check",
             name: "디시인사이드 폰트 교체",
-            desc: "미리보기 창 같은 DCRefresher Reborn의 폰트 뿐만 아니라 디시인사이드의 폰트까지 교체합니다.",
+            desc: "미리보기 창 같은 DCRefresher Reborn의 폰트뿐만 아니라 디시인사이드의 폰트와 본문 크기까지 바꿉니다.",
             default: true
         },
         bodyFontSize: {
             type: "range",
-            name: "본문 폰트 크기 지정",
-            desc: "본문의 기본 폰트 크기를 조정합니다. (미리보기 창은 + 2pt)",
+            name: "본문 폰트 크기",
+            desc: "게시글 본문의 폰트 크기입니다. 미리보기 창은 +2px로 표시됩니다.",
             default: 13,
             min: 5,
             max: 30,
             step: 1,
-            unit: "pt"
+            unit: "px"
         }
     },
 
-    setup(ctx) {
-        document.documentElement.classList.add("refresherFont");
-
-        applyAll(ctx);
-    },
-
-    onChanged(ctx) {
-        applyAll(ctx);
-    },
+    setup: apply,
+    onChanged: apply,
 
     revoke() {
-        document.documentElement.classList.remove("refresherFont", "refresherChangeDCFont");
-        removeStyle(FONT_STYLE_ID);
-        removeStyle(FONT_SIZE_STYLE_ID);
+        style?.remove();
+        style = null;
     }
 });
