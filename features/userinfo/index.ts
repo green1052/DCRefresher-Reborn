@@ -47,10 +47,8 @@ const makeRatioSpan = (info: RatioInfo, alarmRatio: number): HTMLElement => {
     return span;
 };
 
-const makePermBanSpan = (reasons: string): HTMLElement => {
-    const span = buildBadgeSpan(`[${reasons}]`, "#e8645f", reasons, "ip permBan refresherUserData");
-    return span;
-};
+const makePermBanSpan = (reasons: string, color: string): HTMLElement =>
+    buildBadgeSpan(`[${reasons}]`, color, reasons, "ip permBan refresherUserData");
 
 const fetchRatio = async (uid: string): Promise<RatioInfo | undefined> => {
     const text = await http.post(GALLOG_API, {
@@ -108,7 +106,7 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
 
         if (key === "PERMBAN" && uid && ctx.settings.checkPermBan === true) {
             const reasons = banReasonsOf(uid);
-            if (reasons) badges.append(makePermBanSpan(reasons));
+            if (reasons) badges.append(makePermBanSpan(reasons, String(ctx.settings.permBanColor)));
         }
     }
 
@@ -180,6 +178,7 @@ export default defineModule({
             desc: "갱신 차단 여부를 조회합니다.",
             default: false
         },
+        permBanColor: {type: "color", name: "갱차 색", desc: "갱신 차단 표시의 글자 색입니다.", default: "#e8645f"},
         badgeOrder: {
             type: "order",
             name: "정보 배치 순서",
