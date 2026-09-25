@@ -35,7 +35,7 @@ const DCCONS = [
 
 const COUNT = 60;
 
-/** 로고 연타 이스터에그 — 디시콘 비. seed가 바뀔 때마다 새로 떨어진다 (애니메이션이 끝나면 부모가 치운다) */
+/** 로고 연타 이스터에그 */
 export const DcconRain = ({seed, onEnd}: { seed: number; onEnd: () => void }) => (
     <div className="refresher-dccon-rain" key={seed}>
         {Array.from({length: COUNT}, (_, index) => (
