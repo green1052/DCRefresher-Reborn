@@ -49,20 +49,21 @@
     }
 }
 
-/* 이미지 숨기기/보이기 버튼 — 왼쪽 아래에 살짝 걸쳐 있다가 마우스를 올리면 나온다 */
+/* 이미지 숨기기/보이기 버튼 — 왼쪽 아래에 눈 아이콘만 걸쳐 있다가 마우스를 올리면 글자까지 나온다 */
 .stealth_control_button {
     position: fixed;
     // 디시 왼쪽 아래 고정 배너(개념글 알림)에 가리지 않도록 그 위에 둔다
     bottom: 96px;
     left: 0;
     z-index: 2147483000;
-    padding: 6px;
-    border: 1px solid rgb(0 0 0 / 10%);
+    padding: 4px;
+    border: 1px solid rgb(0 0 0 / 12%);
     border-left: 0;
     border-radius: 0 12px 12px 0;
-    background: rgb(255 255 255 / 92%);
-    box-shadow: 0 4px 16px rgb(0 0 0 / 12%);
-    transform: translateX(calc(-100% + 14px));
+    background: #fff;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 16%);
+    // 아이콘(오른쪽 끝)만 보이게
+    transform: translateX(calc(-100% + 36px));
     transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
     user-select: none;
 
@@ -72,11 +73,9 @@
 
     .button {
         display: flex;
-        flex-direction: column;
         align-items: center;
-        gap: 4px;
-        width: 64px;
-        padding: 8px 4px;
+        gap: 6px;
+        padding: 6px 6px 6px 10px;
         border-radius: 8px;
         color: #1c1c1c;
         cursor: pointer;
@@ -87,8 +86,13 @@
 
         p {
             margin: 0;
-            font-size: 11px;
-            text-align: center;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        svg {
+            flex-shrink: 0;
+            color: #3b4890;
         }
     }
 }
@@ -100,14 +104,18 @@ html:has(#css-darkmode) {
     }
 
     .stealth_control_button {
-        border-color: rgb(255 255 255 / 12%);
-        background: rgb(30 30 30 / 92%);
+        border-color: rgb(255 255 255 / 14%);
+        background: #2a2a2a;
 
         .button {
             color: #eee;
 
             &:hover {
                 background: rgb(255 255 255 / 8%);
+            }
+
+            svg {
+                color: #8fa3ff;
             }
         }
     }

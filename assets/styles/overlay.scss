@@ -215,7 +215,8 @@
     &[data-depth="1"]:not([data-last-reply])::after {
         content: "";
         position: absolute;
-        border: 0 solid var(--gray-a6);
+        // 불투명 색: ㄴ과 이어지는 세로선이 겹치는 구간이 반투명이면 두 번 칠해져 진해진다
+        border: 0 solid var(--gray-6);
         pointer-events: none;
     }
 
