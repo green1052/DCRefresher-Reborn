@@ -5,6 +5,7 @@ import {type ReactNode, useState} from "react";
 import {overlay} from "@/components/overlay/shadow";
 import {eventBus} from "@/core/eventbus/bus";
 import {blockUser} from "@/core/preview/request";
+import {notifyManage} from "@/utils/notify";
 import {useUiStore} from "@/stores/ui";
 
 import {usePreviewStore} from "./previewStore";
@@ -40,15 +41,14 @@ const BlockPopup = () => {
         if (!preData) return;
 
         try {
-            await blockUser(preData, {
+            const result = await blockUser(preData, {
                 avoidHour: day,
                 avoidReason: reason,
                 avoidReasonTxt: reason === "0" ? custom : "",
                 delChk: delChk ? "1" : "0",
                 userTypeChk: userTypeChk ? "1" : "0"
             });
-            useUiStore.getState().showToast("차단했습니다.");
-            if (delChk) usePreviewStore.getState().requestClose();
+            if (notifyManage(result, "차단했습니다.") && delChk) usePreviewStore.getState().requestClose();
             eventBus.emit("refreshRequest");
         } catch {
             useUiStore.getState().showToast("차단 처리 중 오류가 발생했습니다.", "error");

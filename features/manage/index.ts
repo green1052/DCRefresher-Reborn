@@ -1,7 +1,9 @@
-import {http} from "@/core/http/client";
 import {defineModule} from "@/core/module/define";
 import {galleryTypeName, isMiniGallery, urls} from "@/core/http/urls";
+import {postManage} from "@/core/preview/request";
+import {useUiStore} from "@/stores/ui";
 import {csrfToken} from "@/utils/cookie";
+import {notifyManage} from "@/utils/notify";
 
 export default defineModule({
     id: "manage",
@@ -112,17 +114,15 @@ export default defineModule({
             const isMini = isMiniGallery(location.href);
 
             try {
-                await http.post(isMini ? urls.manage.deleteMini : urls.manage.delete, {
-                    headers: {"X-Requested-With": "XMLHttpRequest"},
-                    body: new URLSearchParams({
-                        ci_t: await csrfToken(),
-                        id: document.querySelector<HTMLInputElement>("#gallery_id")?.value ?? "",
-                        "nos[]": postId,
-                        _GALLTYPE_: galleryTypeName(location.href)
-                    })
+                const body = new URLSearchParams({
+                    ci_t: await csrfToken(),
+                    id: document.querySelector<HTMLInputElement>("#gallery_id")?.value ?? "",
+                    "nos[]": postId,
+                    _GALLTYPE_: galleryTypeName(location.href)
                 });
-            } catch (error) {
-                console.error("Failed to delete post:", error);
+                notifyManage(await postManage(isMini ? urls.manage.deleteMini : urls.manage.delete, body), "게시글을 삭제했습니다.");
+            } catch {
+                useUiStore.getState().showToast("게시글 삭제 중 오류가 발생했습니다.", "error");
             }
         };
 

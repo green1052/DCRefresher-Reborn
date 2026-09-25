@@ -81,22 +81,42 @@ export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U
 
 const manageUrl = (link: string | undefined, base: string, mini: string): string => (isMini(link) ? mini : base);
 
+/** 관리 요청 결과 — 디시 관리 API는 {"result": "success" | "fail", "msg": "…"}를 돌려준다 */
+export interface ManageResult {
+    success: boolean;
+    /** 디시가 준 안내 문구 (없을 수 있음) */
+    message?: string;
+}
+
+export const postManage = async (url: string, body: URLSearchParams): Promise<ManageResult> => {
+    const text = (await http.post(url, {headers: HEADERS, body}).text()).trim();
+
+    try {
+        const {result, msg} = JSON.parse(text) as { result?: unknown; msg?: unknown };
+        return {success: result !== "fail" && result !== false && result !== "false", message: typeof msg === "string" && msg ? msg : undefined};
+    } catch {
+        // JSON이 아니면 "false||메시지" 같은 텍스트
+        const [result, message] = text.split("||");
+        return {success: result !== "false" && result !== "fail", message: message || undefined};
+    }
+};
+
 /** 끌올 */
-export const bump = async (preData: GalleryPreData): Promise<void> => {
+export const bump = async (preData: GalleryPreData): Promise<ManageResult> => {
     const body = await commonBody(preData.link);
     body.set("id", preData.gallery);
     body.set("nos[]", preData.id);
 
-    await http.post(manageUrl(preData.link, urls.manage.bump, urls.manage.bumpMini), {headers: HEADERS, body});
+    return postManage(manageUrl(preData.link, urls.manage.bump, urls.manage.bumpMini), body);
 };
 
 /** 삭제 */
-export const deletePost = async (preData: GalleryPreData): Promise<void> => {
+export const deletePost = async (preData: GalleryPreData): Promise<ManageResult> => {
     const body = await commonBody(preData.link);
     body.set("id", preData.gallery);
     body.set("nos[]", preData.id);
 
-    await http.post(manageUrl(preData.link, urls.manage.delete, urls.manage.deleteMini), {headers: HEADERS, body});
+    return postManage(manageUrl(preData.link, urls.manage.delete, urls.manage.deleteMini), body);
 };
 
 export interface BlockOptions {
@@ -108,7 +128,7 @@ export interface BlockOptions {
 }
 
 /** 유저 차단 (관리 팝업/프리셋) */
-export const blockUser = async (preData: GalleryPreData, options: BlockOptions): Promise<void> => {
+export const blockUser = async (preData: GalleryPreData, options: BlockOptions): Promise<ManageResult> => {
     const body = await commonBody(preData.link);
     body.set("id", preData.gallery);
     body.set("nos[]", preData.id);
@@ -119,33 +139,27 @@ export const blockUser = async (preData: GalleryPreData, options: BlockOptions):
     body.set("del_chk", options.delChk);
     body.set("avoid_type_chk", options.userTypeChk);
 
-    await http.post(manageUrl(preData.link, urls.manage.block, urls.manage.blockMini), {headers: HEADERS, body});
+    return postManage(manageUrl(preData.link, urls.manage.block, urls.manage.blockMini), body);
 };
 
 /** 공지 등록/해제 */
-export const setNotice = async (preData: GalleryPreData, notice: boolean): Promise<void> => {
+export const setNotice = async (preData: GalleryPreData, notice: boolean): Promise<ManageResult> => {
     const body = await commonBody(preData.link);
     body.set("mode", notice ? "SET" : "REL");
     body.set("id", preData.gallery);
     body.set("no", preData.id);
 
-    await http.post(manageUrl(preData.link, urls.manage.setNotice, urls.manage.setNoticeMini), {
-        headers: HEADERS,
-        body
-    });
+    return postManage(manageUrl(preData.link, urls.manage.setNotice, urls.manage.setNoticeMini), body);
 };
 
 /** 개념글 등록/해제 */
-export const setRecommend = async (preData: GalleryPreData, recommend: boolean): Promise<void> => {
+export const setRecommend = async (preData: GalleryPreData, recommend: boolean): Promise<ManageResult> => {
     const body = await commonBody(preData.link);
     body.set("mode", recommend ? "SET" : "REL");
     body.set("id", preData.gallery);
     body.set("nos[]", preData.id);
 
-    await http.post(manageUrl(preData.link, urls.manage.setRecommend, urls.manage.setRecommendMini), {
-        headers: HEADERS,
-        body
-    });
+    return postManage(manageUrl(preData.link, urls.manage.setRecommend, urls.manage.setRecommendMini), body);
 };
 
 /** 이미지 캡챠 URL */
@@ -153,16 +167,13 @@ export const captchaImage = (preData: GalleryPreData, type: "comment" | "recomme
     `${urls.base}kcaptcha/image_v3/?gall_id=${preData.gallery}&kcaptcha_type=${type}&time=${Date.now()}&_GALLTYPE_=${galleryTypeName(preData.link ?? "")}`;
 
 /** 관리자 댓글 삭제 */
-export const adminDeleteComment = async (preData: GalleryPreData, commentId: string): Promise<void> => {
+export const adminDeleteComment = async (preData: GalleryPreData, commentId: string): Promise<ManageResult> => {
     const body = await commonBody(preData.link);
     body.set("id", preData.gallery);
     body.set("pno", preData.id);
     body.set("cmt_nos[]", commentId);
 
-    await http.post(manageUrl(preData.link, urls.manage.deleteComment, urls.manage.deleteCommentMini), {
-        headers: HEADERS,
-        body
-    });
+    return postManage(manageUrl(preData.link, urls.manage.deleteComment, urls.manage.deleteCommentMini), body);
 };
 
 /** 유저 댓글 삭제 */

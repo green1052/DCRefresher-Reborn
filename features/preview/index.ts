@@ -8,6 +8,7 @@ import type {DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/typ
 import {useUiStore} from "@/stores/ui";
 import {isTyping} from "@/utils/event";
 import {isGalleryManager} from "@/utils/user";
+import {notifyManage} from "@/utils/notify";
 import {sanitizeHtml} from "@/utils/sanitize";
 
 import {getEntry, setEntry} from "@/core/preview/cache";
@@ -306,15 +307,6 @@ const controller = (ctx: ModuleContext) => {
         void load(preData, mySignal);
     };
 
-    const handleManageResponse = (response: unknown) => {
-        if (!response || typeof response !== "object") return;
-
-        const {msg, result} = response as { msg?: string; result?: string };
-        if (typeof msg !== "string" || !msg) return;
-
-        ui.showToast(msg, result === "success" ? "info" : "error");
-    };
-
     const manage = async (kind: ManageKind) => {
         const st = store.getState();
         if (!st.preData || !st.post) return;
@@ -322,19 +314,20 @@ const controller = (ctx: ModuleContext) => {
         const target = st.preData;
 
         try {
+            // 공지·개념글 표시는 성공했을 때만 바꾼다
             if (kind === "notice") {
-                const response = await setNotice(target, !st.notice);
-                store.getState().setNotice(!st.notice);
-                handleManageResponse(response);
+                if (notifyManage(await setNotice(target, !st.notice), st.notice ? "공지를 해제했습니다." : "공지로 등록했습니다.")) {
+                    store.getState().setNotice(!st.notice);
+                }
             } else if (kind === "recommend") {
-                const response = await setRecommend(target, !st.recommend);
-                store.getState().setRecommend(!st.recommend);
-                handleManageResponse(response);
+                if (notifyManage(await setRecommend(target, !st.recommend), st.recommend ? "개념글을 해제했습니다." : "개념글로 등록했습니다.")) {
+                    store.getState().setRecommend(!st.recommend);
+                }
             } else if (kind === "delete") {
                 close();
-                await deletePost(target);
+                notifyManage(await deletePost(target), "게시글을 삭제했습니다.");
             } else if (kind === "bump") {
-                handleManageResponse(await bump(target));
+                notifyManage(await bump(target), "게시글을 끌올했습니다.");
             }
         } catch {
             ui.showToast("관리 기능 처리 중 오류가 발생했습니다.", "error");
@@ -345,7 +338,7 @@ const controller = (ctx: ModuleContext) => {
 
     const blockPreset = async (target: GalleryPreData) => {
         try {
-            await blockUser(target, {
+            const result = await blockUser(target, {
                 avoidHour: String(ctx.settings.blockPresetDay ?? "1"),
                 avoidReason: "0",
                 avoidReasonTxt: String(ctx.settings.blockPresetReason ?? ""),
@@ -353,8 +346,7 @@ const controller = (ctx: ModuleContext) => {
                 userTypeChk: ctx.settings.blockPresetUserType ? "1" : "0"
             });
 
-            ui.showToast("차단했습니다.");
-            if (ctx.settings.blockPresetDelete) close();
+            if (notifyManage(result, "차단했습니다.") && ctx.settings.blockPresetDelete) close();
         } catch {
             ui.showToast("차단 처리 중 오류가 발생했습니다.", "error");
         }

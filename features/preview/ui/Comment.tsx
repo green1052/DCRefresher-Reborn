@@ -5,6 +5,7 @@ import {type MouseEvent, useEffect, useLayoutEffect, useRef, useState} from "rea
 import {overlay} from "@/components/overlay/shadow";
 import type {ProcessedComment} from "@/core/preview/comments";
 import {adminDeleteComment, userDeleteComment} from "@/core/preview/request";
+import {notifyManage} from "@/utils/notify";
 import {useUiStore} from "@/stores/ui";
 import {banReasonsOf, ipInfoOf} from "@/core/database";
 import {isGalleryManager} from "@/utils/user";
@@ -200,7 +201,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply}: Com
 
         try {
             if (isAdmin) {
-                await adminDeleteComment(st.preData, comment.no);
+                if (!notifyManage(await adminDeleteComment(st.preData, comment.no), "댓글을 삭제했습니다.")) return;
             } else {
                 let password = "";
                 if (!comment.user_id) {
