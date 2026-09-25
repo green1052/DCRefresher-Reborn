@@ -23,33 +23,20 @@ const compile = (entry: BlockEntry): Compiled | null => {
     return compiled;
 };
 
+// NOT_*는 SAME/CONTAIN을 뒤집은 것. 잘못된 정규식은 NOT_*로도 걸지 않는다
 const matches = (entry: BlockEntry, mode: DetectMode, content: string): boolean => {
+    const whole = mode.endsWith("SAME");
+    let hit: boolean;
+
     if (entry.isRegex) {
         const compiled = compile(entry);
         if (!compiled) return false;
-
-        switch (mode) {
-            case "SAME":
-                return compiled.anchored.test(content);
-            case "CONTAIN":
-                return compiled.regex.test(content);
-            case "NOT_SAME":
-                return !compiled.anchored.test(content);
-            case "NOT_CONTAIN":
-                return !compiled.regex.test(content);
-        }
+        hit = (whole ? compiled.anchored : compiled.regex).test(content);
+    } else {
+        hit = whole ? entry.content === content : content.includes(entry.content);
     }
 
-    switch (mode) {
-        case "SAME":
-            return entry.content === content;
-        case "CONTAIN":
-            return content.includes(entry.content);
-        case "NOT_SAME":
-            return entry.content !== content;
-        case "NOT_CONTAIN":
-            return !content.includes(entry.content);
-    }
+    return mode.startsWith("NOT_") ? !hit : hit;
 };
 
 type BlockLists = Pick<ReturnType<typeof useBlocksStore.getState>, "entries" | "defaults">;
