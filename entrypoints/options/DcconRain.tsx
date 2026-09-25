@@ -39,15 +39,15 @@ const MAX_DELAY = 1.5;
 const DURATION = 2.4;
 
 /** 로고 연타 이스터에그 */
-export const DcconRain = ({seed, onEnd}: { seed: number; onEnd: () => void }) => {
+export const DcconRain = ({onEnd}: { onEnd: () => void }) => {
     // 끝은 타이머로 — 마지막 이미지의 animationend에 걸면 그 이미지가 못 불러와 지워졌을 때 영영 안 끝난다
     useEffect(() => {
         const timer = setTimeout(onEnd, (MAX_DELAY + DURATION) * 1000);
         return () => clearTimeout(timer);
-    }, [seed, onEnd]);
+    }, [onEnd]);
 
     return (
-        <div className="refresher-dccon-rain" key={seed}>
+        <div className="refresher-dccon-rain">
             {Array.from({length: COUNT}, (_, index) => (
                 <img
                     key={index}

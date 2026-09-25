@@ -181,7 +181,8 @@ export function App() {
     return (
         <Flex direction={{initial: "column", md: "row"}} minHeight="100vh">
             <Sidebar tabs={tabs} tab={current.id} onSelect={setTab} onLogoClick={onLogoClick} onVersionClick={onVersionClick}/>
-            {rain > 0 && <DcconRain seed={rain} onEnd={() => setRain(0)}/>}
+            {/* 누를 때마다 새로 마운트 — React Compiler가 Math.random으로 그린 결과를 기억해 같은 모양이 반복되지 않게 */}
+            {rain > 0 && <DcconRain key={rain} onEnd={() => setRain(0)}/>}
 
             <Box flexGrow="1" minWidth="0" px={{initial: "4", md: "6"}} py="6">
                 <Box maxWidth="880px" mx="auto">

@@ -81,7 +81,8 @@ export function BlockTab() {
                     <ListRow
                         key={entry.id}
                         head={type === "DCCON" ? (
-                            <img src={dcconImage(entry)} alt={entry.extra ?? entry.content} style={{display: "block", height: 40}}/>
+                            <img src={dcconImage(entry)} alt={entry.extra ?? entry.content} loading="lazy" decoding="async"
+                                 style={{display: "block", height: 40}}/>
                         ) : (
                             <Text weight="medium">{entry.content}</Text>
                         )}
