@@ -1,6 +1,6 @@
 import {storage} from "wxt/utils/storage";
 
-import {banReasonsOf, ipInfoOf, type IpInfoFilter, passesIpFilter} from "@/core/database";
+import {banReasonsOf, initDatabase, ipInfoOf, type IpInfoFilter, passesIpFilter} from "@/core/database";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingGroup} from "@/core/module/types";
 import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
@@ -251,7 +251,10 @@ export default defineModule({
         // 조회 중에 모듈이 꺼지면 revoke가 지운 배지·글댓비를 다시 그리지 않게 한다 (setup을 기다리는 동안 꺼져도 마찬가지)
         const {signal} = ctx;
 
-        ratios = (await ratioStorage.getValue()).ratio ?? {};
+        // IP/밴 DB는 여기서 처음 읽는다 — 모듈 설정 읽기 뒤로 (콘텐츠 스크립트의 마지막 호출은 이 모듈이 꺼졌을 때용).
+        // 읽기가 끝난 뒤 필터·DB 감시를 건다 — 첫 배지부터 IP 정보가 붙고, DB 감시는 core/database의 것 뒤라 새 데이터로 다시 그린다
+        const [stored] = await Promise.all([ratioStorage.getValue(), initDatabase()]);
+        ratios = stored.ratio ?? {};
         if (signal.aborted) return;
         publishRatios(ctx);
         // 이 탭이 받아 쓴 값도, 다른 탭이 받은 값도 여기로 온다 — 배지와 깡계 표시를 다시 그린다
@@ -271,7 +274,7 @@ export default defineModule({
             if (state.memos !== previous.memos) rebuildAll(ctx);
         });
 
-        // IP/갱차 DB가 갱신되면 다시 그린다 (core/database의 감시가 먼저 등록돼 새 데이터가 이미 로드된 뒤다)
+        // IP/갱차 DB가 갱신되면 다시 그린다 (위에서 기다린 initDatabase가 감시를 먼저 걸어 새 데이터가 이미 로드된 뒤다)
         const unwatchDatabase = dbStorage.watch(() => rebuildAll(ctx));
 
         // 새 글: 글댓비 조회 (1시간 캐시, 첫 10개)

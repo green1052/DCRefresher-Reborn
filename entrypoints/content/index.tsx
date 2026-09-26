@@ -131,8 +131,12 @@ export default defineContentScript({
 
         // ===== 모듈 부트스트랩 =====
         // 차단·메모·IP DB는 글 목록·본문에서만 쓴다 — 다른 페이지(메인·검색 등)는 저장소를 읽지 않는다 (features의 urls와 같은 정규식이어야 한다)
-        if (/\/board\/(view|lists)/.test(location.href)) await Promise.all([initBlocksStore(), initMemosStore(), initDatabase()]);
+        const board = /\/board\/(view|lists)/.test(location.href);
+        if (board) await Promise.all([initBlocksStore(), initMemosStore()]);
         await loadAll(features);
+        // 저장소는 요청 순서대로 읽는다 — 가장 큰 IP/밴 DB는 모듈 설정 뒤에 읽는다 (userinfo는 setup에서 기다린다).
+        // userinfo가 꺼져 있어도 버블·미리보기 라벨이 나오게 여기서도 부른다
+        if (board) void initDatabase().catch(console.error);
 
         // 확장을 끄거나 업데이트하면 이 스크립트는 남아 새로고침 폴링·저장소 호출을 계속하다 실패한다 — 모듈을 멈춘다
         ctx.onInvalidated(stopAll);
