@@ -1,4 +1,4 @@
-/** 글 목록·본문 — 차단·메모·IP DB를 쓰는 페이지 */
+/** 글 목록·본문 */
 export const BOARD_PAGE = /\/board\/(view|lists)/;
 /** 글 본문 */
 export const VIEW_PAGE = /\/board\/view/;
