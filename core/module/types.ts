@@ -57,7 +57,7 @@ export interface ModuleDefinition {
     /** 활성화시 실행. 리턴값은 shortcuts에 api로 전달된다 */
     setup(ctx: ModuleContext): unknown | void;
 
-    /** 비활성화시 실행 (DOM 정리 등). cleanup(disposer)은 이후 자동 해제 */
+    /** 비활성화시 실행 (DOM 정리 등). 리스너(signal)·cleanup은 이미 풀린 뒤다 */
     revoke?(): void;
 
     /** 활성 중 설정이 변경됐을 때 실행 (새 값은 ctx.settings[key]) */
