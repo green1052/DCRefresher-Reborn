@@ -3,7 +3,7 @@ import type {SettingValue} from "@/core/storage/types";
 import type {ModuleDefinition, SettingSchema} from "./types";
 
 /** 모듈 on/off — 저장값이 boolean이 아니면(가져온 "false" 문자열 등) defaultEnable. 콘텐츠·배경·옵션이 같은 기준을 쓴다 */
-export const isModuleEnabled = (def: ModuleDefinition, enables: Record<string, unknown>): boolean => {
+export const isModuleEnabled = (def: Pick<ModuleDefinition, "id" | "defaultEnable">, enables: Record<string, unknown>): boolean => {
     const value = enables[def.id];
     return typeof value === "boolean" ? value : def.defaultEnable ?? true;
 };

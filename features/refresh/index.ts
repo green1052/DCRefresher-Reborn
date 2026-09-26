@@ -1,3 +1,5 @@
+import {Pause, RefreshCw} from "lucide-react";
+
 import {http} from "@/core/http/client";
 import {isViewPage, listUrl, mergeParamURL, pagePostNo, queryString, rowPostNo} from "@/core/http/urls";
 import {defineModule} from "@/core/module/define";
@@ -103,6 +105,7 @@ export default defineModule({
     id: "refresh",
     name: "글 목록 새로고침",
     description: "글 목록을 자동으로 새로고침합니다.",
+    icon: RefreshCw,
     urls: [/\/board\/(view|lists)/],
 
     settings: {
@@ -146,6 +149,15 @@ export default defineModule({
         refreshLists: (_ctx, api) => void (api as RefreshApi | undefined)?.refreshLists(),
         refreshPause: (_ctx, api) => (api as RefreshApi | undefined)?.togglePause()
     },
+
+    pageToggles: [{
+        id: "pause",
+        label: "새로고침 일시정지",
+        desc: "이 탭의 자동 새로고침을 멈춥니다",
+        icon: Pause,
+        isOn: (api) => (api as RefreshApi).isPaused(),
+        toggle: (api) => (api as RefreshApi).togglePause()
+    }],
 
     setup(ctx) {
         let paused = Boolean(queryString("s_keyword") && ctx.settings.noRefreshOnSearch);

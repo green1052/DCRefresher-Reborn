@@ -1,4 +1,5 @@
 import {storage} from "wxt/utils/storage";
+import {UserRound} from "lucide-react";
 
 import {banReasonsOf, initDatabase, ipInfoOf, type IpInfoFilter, passesIpFilter, subscribeDatabase} from "@/core/database";
 import {defineModule} from "@/core/module/define";
@@ -174,6 +175,7 @@ export default defineModule({
     id: "userinfo",
     name: "유저 정보",
     description: "사용자의 IP, 아이디 정보, 메모를 표시합니다.",
+    icon: UserRound,
     urls: [/\/board\/(view|lists)/],
 
     settings: {

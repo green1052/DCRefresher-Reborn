@@ -4,7 +4,7 @@ import {migrateV5Storage} from "@/core/migrate-v5";
 import {onMessage, sendMessage} from "@/core/messaging/protocol";
 import {isModuleEnabled, normalizeSetting} from "@/core/module/settings";
 import {backupStorage, dbStorage, moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
-import imageSearch, {IMAGE_SEARCH_ENGINES, IMAGE_URL_PATTERNS, imageSearchUrl} from "@/features/imagesearch";
+import {IMAGE_SEARCH_ENGINES, IMAGE_SEARCH_ID, IMAGE_SEARCH_SETTINGS, IMAGE_URL_PATTERNS, imageSearchUrl} from "@/features/imagesearch/engines";
 
 const DATABASE_UPDATE_INTERVAL = 604_800_000; // 7일
 /** 7일이 지났는지 하루마다 본다 — 서버 DB는 주 2번 바뀌고, 볼 때마다 DB 전체(수백 KB)를 읽으니 자주 볼 이유가 없다. 받기에 실패하면 다음 날 다시 받는다 */
@@ -63,11 +63,11 @@ const buildContextMenus = async (): Promise<void> => {
     await browser.contextMenus.removeAll();
 
     // 콘텐츠 레지스트리와 같은 기준
-    if (!isModuleEnabled(imageSearch, await modulesStorage.getValue())) return;
+    if (!isModuleEnabled({id: IMAGE_SEARCH_ID}, await modulesStorage.getValue())) return;
 
-    const stored = await moduleSettingsStorage(imageSearch.id).getValue();
+    const stored = await moduleSettingsStorage(IMAGE_SEARCH_ID).getValue();
     for (const [id, {name}] of Object.entries(IMAGE_SEARCH_ENGINES)) {
-        const schema = imageSearch.settings?.[id];
+        const schema = IMAGE_SEARCH_SETTINGS[id];
         if (!schema || !normalizeSetting(schema, stored[id])) continue;
 
         browser.contextMenus.create({id: IMAGE_MENU_PREFIX + id, title: `${name} 검색`, contexts: ["image"], targetUrlPatterns: IMAGE_URL_PATTERNS});
@@ -82,9 +82,9 @@ export default defineBackground(() => {
 
     // 옵션 페이지·팝업은 저장소에 직접 쓴다 — 켜고 끄거나 엔진을 바꾸면 바로 다시 만든다
     modulesStorage.watch((next, prev) => {
-        if (next[imageSearch.id] !== prev[imageSearch.id]) void createContextMenus();
+        if (next[IMAGE_SEARCH_ID] !== prev[IMAGE_SEARCH_ID]) void createContextMenus();
     });
-    moduleSettingsStorage(imageSearch.id).watch(() => void createContextMenus());
+    moduleSettingsStorage(IMAGE_SEARCH_ID).watch(() => void createContextMenus());
 
     browser.contextMenus.onClicked.addListener(async (info, tab) => {
         const id = String(info.menuItemId);

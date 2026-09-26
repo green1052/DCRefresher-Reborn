@@ -1,3 +1,5 @@
+import {EyeOff, Image} from "lucide-react";
+
 import {defineModule} from "@/core/module/define";
 import {useUiStore} from "@/stores/ui";
 
@@ -57,6 +59,7 @@ export default defineModule({
     id: "stealth",
     name: "스텔스 모드",
     description: "페이지 내에서 표시되는 이미지를 비활성화합니다.",
+    icon: EyeOff,
     defaultEnable: false,
 
     shortcuts: {
@@ -68,6 +71,15 @@ export default defineModule({
             useUiStore.getState().showToast(stealth.isRevealed() ? "이미지를 보이게 했습니다." : "이미지를 숨겼습니다.");
         }
     },
+
+    pageToggles: [{
+        id: "reveal",
+        label: "이미지 잠시 보이기",
+        desc: "스텔스로 숨긴 이미지를 보입니다",
+        icon: Image,
+        isOn: (api) => (api as StealthApi).isRevealed(),
+        toggle: (api) => (api as StealthApi).toggle()
+    }],
 
     setup(ctx) {
         document.documentElement.classList.add("refresherStealth");

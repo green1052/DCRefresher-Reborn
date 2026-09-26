@@ -9,13 +9,10 @@ import overlayCss from "@/assets/styles/overlay.scss?inline";
 import {ContentRoot} from "@/components/overlay/ContentRoot";
 import {overlay} from "@/components/overlay/shadow";
 import {initDatabase} from "@/core/database";
-import {onMessage, type PageState} from "@/core/messaging/protocol";
+import {onMessage, type PageToggleState} from "@/core/messaging/protocol";
 import {getModuleApi, loadAll, runShortcut, stopAll} from "@/core/module/registry";
 import features from "@/features";
-import type {BlockApi} from "@/features/block";
 import {usePreviewStore} from "@/features/preview/ui/previewStore";
-import type {RefreshApi} from "@/features/refresh";
-import type {StealthApi} from "@/features/stealth";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
 import {useUiStore} from "@/stores/ui";
@@ -49,28 +46,25 @@ export default defineContentScript({
         // ===== 메시징 (배경·팝업→탭) =====
         onMessage("refresher:executeShortcut", ({data: command}) => runShortcut(command));
 
-        // 모듈이 꺼져 있거나 이 페이지에서 안 돌면 undefined — 팝업에 그 토글을 띄우지 않는다
-        const refreshApi = () => getModuleApi("refresh") as RefreshApi | undefined;
-        const stealthApi = () => getModuleApi("stealth") as StealthApi | undefined;
-        const blockApi = () => getModuleApi("block") as BlockApi | undefined;
-
-        const pageState = (): PageState => {
-            const refresh = refreshApi();
-            const stealth = stealthApi();
-            const block = blockApi();
-
-            return {
-                refresh: refresh ? {paused: refresh.isPaused()} : null,
-                stealth: stealth ? {revealed: stealth.isRevealed()} : null,
-                block: block ? {revealed: block.isRevealed(), hidden: block.hiddenCount()} : null
-            };
-        };
+        // 모듈이 꺼져 있거나 이 페이지에서 안 돌면 api가 없다 — 그 모듈의 토글은 팝업에 띄우지 않는다
+        const pageState = (): PageToggleState[] =>
+            features.flatMap((feature) => {
+                const api = getModuleApi(feature.id);
+                return api === undefined
+                    ? []
+                    : (feature.pageToggles ?? []).map((toggle) => ({
+                        module: feature.id,
+                        id: toggle.id,
+                        label: toggle.label,
+                        desc: typeof toggle.desc === "function" ? toggle.desc(api) : toggle.desc,
+                        on: toggle.isOn(api)
+                    }));
+            });
 
         onMessage("refresher:pageState", pageState);
-        onMessage("refresher:pageAction", ({data: action}) => {
-            if (action === "toggleRefresh") refreshApi()?.togglePause();
-            else if (action === "toggleStealth") stealthApi()?.toggle();
-            else blockApi()?.toggleReveal();
+        onMessage("refresher:pageAction", ({data: {module, id}}) => {
+            const api = getModuleApi(module);
+            if (api !== undefined) features.find((feature) => feature.id === module)?.pageToggles?.find((toggle) => toggle.id === id)?.toggle(api);
             return pageState();
         });
 

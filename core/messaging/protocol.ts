@@ -1,14 +1,15 @@
 import {defineExtensionMessaging} from "@webext-core/messaging";
 
-/** 팝업이 보여 주는 이 페이지의 상태. 모듈이 꺼져 있거나 이 페이지에서 안 돌면 null */
-export interface PageState {
-    refresh: { paused: boolean } | null;
-    stealth: { revealed: boolean } | null;
-    /** 이 페이지에서만 차단 내용 보기와 가린 요소 수 */
-    block: { revealed: boolean; hidden: number } | null;
+/** 팝업 '현재 페이지'의 토글 하나 — 모듈의 pageToggles에서 이 페이지에서 도는 것만. 아이콘은 팝업이 모듈 정의에서 찾는다 */
+export interface PageToggleState {
+    module: string;
+    id: string;
+    label: string;
+    desc: string;
+    on: boolean;
 }
 
-export type PageAction = "toggleRefresh" | "toggleStealth" | "toggleBlockReveal";
+export type PageAction = Pick<PageToggleState, "module" | "id">;
 
 interface ProtocolMap {
     /** 배경 → 탭: 단축키 실행 (commands) */
@@ -21,10 +22,10 @@ interface ProtocolMap {
     "refresher:listReplaced"(gallery: string): void;
 
     /** 팝업 → 탭: 이 페이지의 상태 */
-    "refresher:pageState"(): PageState;
+    "refresher:pageState"(): PageToggleState[];
 
     /** 팝업 → 탭: 이 페이지에서만 토글. 바뀐 상태를 돌려준다 */
-    "refresher:pageAction"(action: PageAction): PageState;
+    "refresher:pageAction"(action: PageAction): PageToggleState[];
 }
 
 export const {sendMessage, onMessage} = defineExtensionMessaging<ProtocolMap>();

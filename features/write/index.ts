@@ -1,3 +1,5 @@
+import {PenLine} from "lucide-react";
+
 import {defineModule} from "@/core/module/define";
 
 const SUBMIT = "button.write";
@@ -8,6 +10,7 @@ export default defineModule({
     id: "write",
     name: "글쓰기",
     description: "글쓰기 페이지를 변경합니다.",
+    icon: PenLine,
     urls: [/\/board\/(write|modify)/],
     defaultEnable: false,
 

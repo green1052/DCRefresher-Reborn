@@ -74,6 +74,10 @@ body {
         background: var(--accent-a3);
         color: var(--gray-12);
 
+        svg {
+            color: var(--accent-11);
+        }
+
         .module-dot {
             background: var(--accent-9);
         }

@@ -1,3 +1,5 @@
+import {Ban, Eye} from "lucide-react";
+
 import {groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingGroup} from "@/core/module/types";
@@ -243,6 +245,7 @@ export default defineModule({
     id: "block",
     name: "컨텐츠 차단",
     description: "유저, 컨텐츠 등의 보고 싶지 않은 컨텐츠들을 삭제합니다.",
+    icon: Ban,
     urls: [/\/board\/(view|lists)/],
 
     settings: {
@@ -311,6 +314,15 @@ export default defineModule({
     shortcuts: {
         blockReveal: (_ctx, api) => (api as BlockApi | undefined)?.toggleReveal()
     },
+
+    pageToggles: [{
+        id: "reveal",
+        label: "가린 내용 보기",
+        desc: (api) => `가린 ${(api as BlockApi).hiddenCount()}개를 흐리게 보입니다`,
+        icon: Eye,
+        isOn: (api) => (api as BlockApi).isRevealed(),
+        toggle: (api) => (api as BlockApi).toggleReveal()
+    }],
 
     setup(ctx) {
         const gallery = queryString("id") ?? undefined;

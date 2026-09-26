@@ -1,8 +1,8 @@
 import {Badge, Box, Card, Flex, Grid, IconButton, Switch, Text} from "@radix-ui/themes";
-import {Ban, Eye, Image, type LucideIcon, NotebookPen, Pause, Settings} from "lucide-react";
+import {Ban, type LucideIcon, NotebookPen, Puzzle, Settings} from "lucide-react";
 import {type ReactNode, useEffect, useState} from "react";
 
-import {type PageAction, type PageState, sendMessage} from "@/core/messaging/protocol";
+import {type PageAction, type PageToggleState, sendMessage} from "@/core/messaging/protocol";
 import features from "@/features";
 import {fontFamilyOf} from "@/features/fonts";
 import {initBlocksStore, useBlocksStore} from "@/stores/blocks";
@@ -16,7 +16,7 @@ interface Page {
     tabId: number;
     gallery: string;
     /** 처음 물었을 때의 탭 상태 — 콘텐츠 스크립트가 없으면 null */
-    state: PageState | null;
+    state: PageToggleState[] | null;
 }
 
 /** 활성 탭이 디시 갤러리 페이지면 탭과 갤러리 id — 탭 주소는 host_permissions가 있는 디시 탭에서만 보인다 */
@@ -36,6 +36,10 @@ const openOptions = async (): Promise<void> => {
     await browser.runtime.openOptionsPage();
     window.close();
 };
+
+/** 토글 아이콘은 메시지로 못 보내니 팝업이 모듈 정의에서 찾는다 */
+const toggleIcon = ({module, id}: PageAction): LucideIcon =>
+    features.find((feature) => feature.id === module)?.pageToggles?.find((toggle) => toggle.id === id)?.icon ?? Puzzle;
 
 const SectionTitle = ({children, aside}: { children: ReactNode; aside?: ReactNode }) => (
     <Flex justify="between" align="center" px="1" mb="2">
@@ -103,21 +107,13 @@ function PageSection({tabId, gallery, state: initial}: Page) {
                 현재 페이지
             </SectionTitle>
 
-            {state && (state.refresh || state.stealth || state.block) && (
+            {state && state.length > 0 && (
                 <Card size="1">
                     <Flex direction="column" gap="1">
-                        {state.refresh && (
-                            <ToggleRow icon={Pause} label="새로고침 일시정지" desc="이 탭의 자동 새로고침을 멈춥니다"
-                                       checked={state.refresh.paused} onChange={() => act("toggleRefresh")}/>
-                        )}
-                        {state.stealth && (
-                            <ToggleRow icon={Image} label="이미지 잠시 보이기" desc="스텔스로 숨긴 이미지를 보입니다"
-                                       checked={state.stealth.revealed} onChange={() => act("toggleStealth")}/>
-                        )}
-                        {state.block && (
-                            <ToggleRow icon={Eye} label="가린 내용 보기" desc={`가린 ${state.block.hidden}개를 흐리게 보입니다`}
-                                       checked={state.block.revealed} onChange={() => act("toggleBlockReveal")}/>
-                        )}
+                        {state.map((toggle) => (
+                            <ToggleRow key={`${toggle.module}:${toggle.id}`} icon={toggleIcon(toggle)} label={toggle.label} desc={toggle.desc}
+                                       checked={toggle.on} onChange={() => act({module: toggle.module, id: toggle.id})}/>
+                        ))}
                     </Flex>
                 </Card>
             )}
@@ -136,10 +132,12 @@ function ModulesSection() {
             <Grid columns="2" gap="2">
                 {features.map((feature) => {
                     const enabled = enables[feature.id] ?? true;
+                    const Icon = feature.icon ?? Puzzle;
 
                     return (
                         <button key={feature.id} type="button" className="module-tile" aria-pressed={enabled}
                                 title={feature.description} onClick={() => void toggle(feature.id, !enabled)}>
+                            <Icon size={15}/>
                             <span className="module-name">{feature.name}</span>
                             <span className="module-dot"/>
                         </button>

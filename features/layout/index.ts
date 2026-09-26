@@ -1,3 +1,5 @@
+import {LayoutPanelTop} from "lucide-react";
+
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingSchema} from "@/core/module/types";
 import {isViewPage} from "@/core/http/urls";
@@ -60,6 +62,7 @@ export default defineModule({
     id: "layout",
     name: "레이아웃 수정",
     description: "디시 레이아웃을 변경합니다.",
+    icon: LayoutPanelTop,
 
     settings: {
         activePixel: {
