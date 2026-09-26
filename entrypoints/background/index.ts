@@ -149,7 +149,7 @@ export default defineBackground(() => {
         await migrateV5Storage().catch(console.error);
         await createContextMenus();
 
-        if (import.meta.env.PROD || !(await dbStorage.getValue()).version) {
+        if (import.meta.env.PROD || !(await dbStorage.meta.getValue()).version) {
             await update();
         }
     });
@@ -184,7 +184,7 @@ export default defineBackground(() => {
 
     browser.alarms.onAlarm.addListener((alarm) => {
         if (alarm.name === DATABASE_ALARM) {
-            void dbStorage.getValue().then(({lastUpdate}) => (Date.now() - lastUpdate > DATABASE_UPDATE_INTERVAL ? update() : undefined));
+            void dbStorage.meta.getValue().then(({lastUpdate}) => (Date.now() - lastUpdate > DATABASE_UPDATE_INTERVAL ? update() : undefined));
         } else if (alarm.name === AUTO_BACKUP_ALARM) {
             void backupStorage.pending.setValue(false);
             // 끈 직후 남아 있던 알람이 울릴 수 있다 (초기화 전 끄기 등) — 울린 시점에 다시 본다

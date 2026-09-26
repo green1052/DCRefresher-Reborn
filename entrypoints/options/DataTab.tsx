@@ -66,7 +66,7 @@ const parseImport = (input: string): Record<string, unknown> => {
 };
 
 export function DataTab() {
-    const {lastUpdate} = useStorageItem(dbStorage);
+    const {lastUpdate} = useStorageItem(dbStorage.meta);
     const backupError = useStorageItem(backupStorage.error);
     const autoBackup = useStorageItem(backupStorage.auto);
     const [backupTimes, setBackupTimes] = useState<Awaited<ReturnType<typeof readCloudBackupTimes>>>({legacy: false});

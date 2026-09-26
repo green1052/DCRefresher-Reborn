@@ -90,7 +90,7 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
     const enabledNames = features.filter((feature) => enables[feature.id] ?? true).map((feature) => feature.name);
 
     const copyDiagnostics = async (): Promise<void> => {
-        const db = await dbStorage.getValue().catch(() => null);
+        const db = await dbStorage.meta.getValue().catch(() => null);
         const lines = [
             `DCRefresher Reborn v${version} (${import.meta.env.BROWSER})`,
             `브라우저: ${navigator.userAgent}`,

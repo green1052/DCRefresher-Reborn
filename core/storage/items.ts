@@ -1,6 +1,6 @@
 import {storage, type WxtStorageItem} from "wxt/utils/storage";
 
-import type {BlockEntry, BlockType, DetectMode, MemoEntry, MemoType, SettingValue, StoredDB} from "./types";
+import type {BlockEntry, BlockType, DatabaseMeta, DetectMode, MemoEntry, MemoType, SettingValue} from "./types";
 
 
 export const BLOCK_TYPES: BlockType[] = ["NICK", "ID", "IP", "TITLE", "TEXT", "COMMENT", "DCCON", "TAB"];
@@ -61,9 +61,27 @@ export const modulesStorage = storage.defineItem<Record<string, boolean>>("local
 export const moduleSettingsStorage = (id: string) =>
     storage.defineItem<Record<string, SettingValue>>(`local:refresher:module:${id}:settings`, {fallback: {}});
 
-export const dbStorage = storage.defineItem<StoredDB>("local:refresher:db", {
-    fallback: {version: "", lastUpdate: 0, ip: null, ban: {}}
-});
+/**
+ * IP/밴 DB — 따로 읽게 세 키로 나눈다: 갱신 확인은 meta만, 페이지는 ip만, 밴은 쓸 때만 (수백 KB).
+ * ip·ban은 JSON 문자열이다 — 값 약 10만 개짜리 객체 그래프는 읽을 때마다 메인 스레드를 10ms 넘게 막는다. 없으면 ""
+ */
+export const dbStorage = {
+    meta: storage.defineItem<DatabaseMeta>("local:refresher:db:meta", {fallback: {version: "", lastUpdate: 0}}),
+    /** core/ipdb의 CompactIpData */
+    ip: storage.defineItem<string>("local:refresher:db:ip", {fallback: ""}),
+    /** BanList */
+    ban: storage.defineItem<string>("local:refresher:db:ban", {fallback: ""})
+};
+
+/** 세 키를 한 번에 쓴다 — 받는 쪽이 새 meta와 옛 ip를 섞어 보지 않게. 6.0.0 개발판의 한 키짜리 DB는 이때 지운다 */
+export const writeDatabase = async (meta: DatabaseMeta, ip: string, ban: string): Promise<void> => {
+    await storage.setItems([
+        {item: dbStorage.meta, value: meta},
+        {item: dbStorage.ip, value: ip},
+        {item: dbStorage.ban, value: ban}
+    ]);
+    await storage.removeItem("local:refresher:db");
+};
 
 /** 클라우드 백업 상태 — refresher:backup:* 키는 백업 대상에서 빠진다 (core/backup.ts). 백업 시각은 클라우드의 메타에서 읽는다 */
 export const backupStorage = {

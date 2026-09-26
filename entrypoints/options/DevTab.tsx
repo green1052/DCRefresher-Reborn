@@ -1,13 +1,13 @@
 import {Badge, Box, Button, Code, DataList, Flex, IconButton, SegmentedControl, Text, TextField, Tooltip} from "@radix-ui/themes";
 import {ChevronDown, ChevronRight, Copy, EyeOff, FileJson, RefreshCw, RotateCcw, Trash2} from "lucide-react";
 import {useEffect, useRef, useState, useSyncExternalStore} from "react";
+import {storage} from "wxt/utils/storage";
 
 import {ConfirmDialog, Notice} from "@/components/ConfirmDialog";
 import {isModuleDataKey} from "@/core/backup";
-import {databaseVersion, initDatabase, ipInfoOf, parseDB, subscribeDatabase} from "@/core/database";
+import {databaseVersion, initDatabase, ipInfoOf, parseBans, parseIp, subscribeDatabase} from "@/core/database";
 import {compactIpData, type RawIpData} from "@/core/ipdb";
-import {dbStorage} from "@/core/storage/items";
-import type {Database, StoredDB} from "@/core/storage/types";
+import {dbStorage, writeDatabase} from "@/core/storage/items";
 
 import {byteSize, Empty, formatBytes, formatTime, Section, useStorageItem} from "./Layout";
 
@@ -136,30 +136,32 @@ const StorageSection = () => {
     );
 };
 
-/** DB는 문자열로 저장돼 있다 — 깨졌으면 없는 것으로 */
-const parseStored = (stored: StoredDB): Database => {
+/** 문자열로 저장돼 있다 — 깨졌으면 없는 것으로 */
+const parseOr = <T, >(parse: (stored: string) => T, stored: string, broken: T): T => {
     try {
-        return parseDB(stored);
+        return parse(stored);
     } catch (e) {
         console.error(e);
-        return {...stored, ip: null, ban: {}};
+        return broken;
     }
 };
 
 const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
-    // 값이 바뀔 때만 다시 푼다 (React Compiler가 stored로 메모)
-    const db = parseStored(useStorageItem(dbStorage));
+    // 값이 바뀔 때만 다시 푼다 (React Compiler가 저장값으로 메모)
+    const meta = useStorageItem(dbStorage.meta);
+    const ipData = parseOr(parseIp, useStorageItem(dbStorage.ip), null);
+    const banList = parseOr(parseBans, useStorageItem(dbStorage.ban), {});
     const [ip, setIp] = useState("");
     const fileInput = useRef<HTMLInputElement>(null);
     // 조회 테스트는 콘텐츠 스크립트와 같은 경로(ipInfoOf)로 — DB를 읽을 때마다 올라가는 번호를 식에 넣어야 컴파일러가 다시 조회한다
     const dbVersion = useSyncExternalStore(subscribeDatabase, databaseVersion);
 
-    useEffect(() => void initDatabase(), []);
+    useEffect(() => void initDatabase().catch(console.error), []);
 
     const loadFile = async (file: File): Promise<void> => {
         try {
             const next = compactIpData(JSON.parse(await file.text()) as RawIpData);
-            await dbStorage.setValue({...(await dbStorage.getValue()), version: "local", lastUpdate: Date.now(), ip: JSON.stringify(next)});
+            await writeDatabase({version: "local", lastUpdate: Date.now()}, JSON.stringify(next), await dbStorage.ban.getValue());
             notify("IP 데이터를 파일에서 불러왔습니다. 다음 자동 갱신 때 서버 데이터로 바뀝니다.");
         } catch (e) {
             notify(`IP 데이터를 불러오는 데 실패했습니다. ${e instanceof Error ? e.message : ""}`);
@@ -167,7 +169,7 @@ const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
     };
 
     const info = dbVersion > 0 && ip.trim() ? ipInfoOf(ip.trim()) : undefined;
-    const banCount = Object.values(db.ban ?? {}).reduce((sum, uids) => sum + uids.length, 0);
+    const banCount = Object.values(banList).reduce((sum, uids) => sum + uids.length, 0);
 
     return (
         <Section
@@ -183,7 +185,7 @@ const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
                     <Button variant="soft" color="gray" onClick={() => fileInput.current?.click()}>
                         <FileJson size={14}/> IP 파일 불러오기
                     </Button>
-                    <Button variant="soft" color="red" onClick={() => void dbStorage.removeValue()}>
+                    <Button variant="soft" color="red" onClick={() => void storage.removeItems([dbStorage.meta, dbStorage.ip, dbStorage.ban])}>
                         <Trash2 size={14}/> 비우기
                     </Button>
                 </>
@@ -192,21 +194,21 @@ const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
             <DataList.Root size="2" mb="4">
                 <DataList.Item>
                     <DataList.Label>버전</DataList.Label>
-                    <DataList.Value>{db.version || "없음"}</DataList.Value>
+                    <DataList.Value>{meta.version || "없음"}</DataList.Value>
                 </DataList.Item>
                 <DataList.Item>
                     <DataList.Label>마지막 갱신</DataList.Label>
-                    <DataList.Value>{formatTime(db.lastUpdate)}</DataList.Value>
+                    <DataList.Value>{formatTime(meta.lastUpdate)}</DataList.Value>
                 </DataList.Item>
                 <DataList.Item>
                     <DataList.Label>IP</DataList.Label>
                     <DataList.Value>
-                        {!db.ip ? "없음" : `조직 ${db.ip.orgs.length} · 국가 ${db.ip.countries.length} · 후보 ${db.ip.meta.length / 3} · 목록 ${db.ip.lists.length} · ${formatBytes(byteSize(db.ip))}`}
+                        {!ipData ? "없음" : `조직 ${ipData.orgs.length} · 국가 ${ipData.countries.length} · 후보 ${ipData.meta.length / 3} · 목록 ${ipData.lists.length} · ${formatBytes(byteSize(ipData))}`}
                     </DataList.Value>
                 </DataList.Item>
                 <DataList.Item>
                     <DataList.Label>밴</DataList.Label>
-                    <DataList.Value>{`사유 ${Object.keys(db.ban ?? {}).length} · 유저 ${banCount}`}</DataList.Value>
+                    <DataList.Value>{`사유 ${Object.keys(banList).length} · 유저 ${banCount}`}</DataList.Value>
                 </DataList.Item>
             </DataList.Root>
 

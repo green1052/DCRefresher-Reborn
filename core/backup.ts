@@ -35,13 +35,13 @@ export const isModuleDataKey = (key: string): boolean => /^refresher:module:.+:d
 
 /**
  * 백업·내보내기에서 빼는 로컬 키
- * - refresher:db: IP/밴 DB — 크고, 다시 받으면 된다
+ * - refresher:db:*: IP/밴 DB — 크고, 다시 받으면 된다 (refresher:db는 6.0.0 개발판의 한 키짜리)
  * - refresher:backup:*: 백업 상태 자체
  * - refresher:module:*:data: 모듈 캐시(글댓비 등) — 계속 불어난다
  * - refresher:nonmember: 비회원 비밀번호(평문) — 내보내기 JSON을 남에게 건네거나 sync에 올리면 새어 나간다
  */
 export const isBackupTarget = (key: string): boolean =>
-    key !== "refresher:db" && key !== "refresher:nonmember" && !key.startsWith("refresher:backup:") && !isModuleDataKey(key);
+    key !== "refresher:db" && !key.startsWith("refresher:db:") && key !== "refresher:nonmember" && !key.startsWith("refresher:backup:") && !isModuleDataKey(key);
 
 /**
  * 백업·내보내기 대상. 차단 목록의 id(UUID)는 뺀다 — 압축되지 않아 클라우드 백업을 두 배 넘게 불린다.

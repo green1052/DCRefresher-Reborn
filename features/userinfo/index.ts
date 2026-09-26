@@ -1,12 +1,12 @@
 import {storage} from "wxt/utils/storage";
 
-import {banReasonsOf, initDatabase, ipInfoOf, type IpInfoFilter, passesIpFilter} from "@/core/database";
+import {banReasonsOf, initDatabase, ipInfoOf, type IpInfoFilter, passesIpFilter, subscribeDatabase} from "@/core/database";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingGroup} from "@/core/module/types";
 import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
 import {queryString} from "@/core/http/urls";
 import {eventBus} from "@/core/eventbus/bus";
-import {dbStorage, moduleSettingsStorage} from "@/core/storage/items";
+import {moduleSettingsStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";
 import {type BadgeView, DEFAULT_BADGE_VIEW, showsUid, useUiStore} from "@/stores/ui";
 import {insertWriterSpan} from "@/utils/userDataInsert";
@@ -273,8 +273,8 @@ export default defineModule({
             if (state.memos !== previous.memos) rebuildAll(ctx);
         });
 
-        // IP/갱차 DB가 갱신되면 다시 그린다 (위에서 기다린 initDatabase가 감시를 먼저 걸어 새 데이터가 이미 로드된 뒤다)
-        const unwatchDatabase = dbStorage.watch(() => rebuildAll(ctx));
+        // IP DB가 갱신되거나 갱차 목록을 처음 다 읽으면 다시 그린다 (갱차는 처음 물을 때 읽기 시작한다)
+        const unwatchDatabase = subscribeDatabase(() => rebuildAll(ctx));
 
         // 새 글: 글댓비 조회 (1시간 캐시, 첫 10개)
         eventBus.on("newPostList", ({data: elements}) => {
