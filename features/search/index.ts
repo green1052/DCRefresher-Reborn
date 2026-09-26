@@ -24,6 +24,7 @@ export default defineModule({
     description: "검색 결과가 한 페이지에 못 미치면 다음 검색 결과를 이어 붙입니다.",
     icon: Search,
     urls: [LIST_PAGE],
+    defaultEnable: false,
 
     settings: {
         maxSearches: {
