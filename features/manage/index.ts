@@ -1,7 +1,8 @@
 import {ShieldCheck} from "lucide-react";
 
 import {defineModule} from "@/core/module/define";
-import {BOARD_PAGE, rowPostNo} from "@/core/http/urls";
+import {rowPostNo} from "@/core/http/urls";
+import {BOARD_PAGE} from "@/core/pages";
 import {deletePost} from "@/core/preview/request";
 import {useUiStore} from "@/stores/ui";
 import {notifyManage} from "@/utils/notify";

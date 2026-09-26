@@ -1,6 +1,7 @@
 import {PenLine} from "lucide-react";
 
 import {defineModule} from "@/core/module/define";
+import {WRITE_PAGE} from "@/core/pages";
 
 const SUBMIT = "button.write";
 const EDITOR = ".note-editable";
@@ -11,7 +12,7 @@ export default defineModule({
     name: "글쓰기",
     description: "글쓰기 페이지를 변경합니다.",
     icon: PenLine,
-    urls: [/\/board\/(write|modify)/],
+    urls: [WRITE_PAGE],
     defaultEnable: false,
 
     settings: {

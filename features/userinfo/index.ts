@@ -5,7 +5,8 @@ import {banReasonsOf, initDatabase, ipInfoOf, type IpInfoFilter, passesIpFilter,
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingGroup} from "@/core/module/types";
 import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
-import {BOARD_PAGE, queryString} from "@/core/http/urls";
+import {queryString} from "@/core/http/urls";
+import {BOARD_PAGE} from "@/core/pages";
 import {eventBus} from "@/core/eventbus/bus";
 import {moduleSettingsStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";

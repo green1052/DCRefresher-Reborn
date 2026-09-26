@@ -1,7 +1,8 @@
 import {Pause, RefreshCw} from "lucide-react";
 
 import {http} from "@/core/http/client";
-import {BOARD_PAGE, isViewPage, listUrl, mergeParamURL, pagePostNo, queryString, rowPostNo} from "@/core/http/urls";
+import {isViewPage, listUrl, mergeParamURL, pagePostNo, queryString, rowPostNo} from "@/core/http/urls";
+import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext} from "@/core/module/types";
 import {eventBus} from "@/core/eventbus/bus";

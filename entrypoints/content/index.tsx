@@ -9,7 +9,7 @@ import overlayCss from "@/assets/styles/overlay.scss?inline";
 import {ContentRoot} from "@/components/overlay/ContentRoot";
 import {overlay} from "@/components/overlay/shadow";
 import {initDatabase} from "@/core/database";
-import {BOARD_PAGE} from "@/core/http/urls";
+import {BOARD_PAGE} from "@/core/pages";
 import {onMessage, type PageToggleState} from "@/core/messaging/protocol";
 import {getModuleApi, loadAll, runShortcut, stopAll} from "@/core/module/registry";
 import features from "@/features";

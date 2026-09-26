@@ -3,7 +3,7 @@ import {SquareMousePointer} from "lucide-react";
 
 import {eventBus} from "@/core/eventbus/bus";
 import {isBlocked} from "@/core/block";
-import {BOARD_PAGE} from "@/core/http/urls";
+import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, ModuleDefinition, SettingGroup} from "@/core/module/types";
 import type {DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
