@@ -1,7 +1,7 @@
 import {useBlocksStore} from "@/stores/blocks";
 import {ajax} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
-import type {BlockType, DetectMode} from "@/core/storage/types";
+import type {BlockType} from "@/core/storage/types";
 import {csrfToken} from "@/utils/cookie";
 import {type SelectedUser, useUiStore} from "@/stores/ui";
 
@@ -71,17 +71,3 @@ export const handleBlockRequest = async (options: BlockRequestOptions, selected:
         useUiStore.getState().showToast("차단 처리 중 오류가 발생했습니다.", "error");
     }
 };
-
-/** 차단 다이얼로그/컨텍스트에서 만들 extra ([정규식] [갤러리: X] [모드명] 순) */
-export const composeExtra = (fields: {
-    isRegex: boolean;
-    gallery?: string;
-    mode?: DetectMode
-}, modeNames: Record<DetectMode, string>): string =>
-    [
-        fields.isRegex ? "[정규식]" : "",
-        fields.gallery ? `[갤러리: ${fields.gallery}]` : "",
-        fields.mode ? `[${modeNames[fields.mode]}]` : ""
-    ]
-        .filter(Boolean)
-        .join(" ");

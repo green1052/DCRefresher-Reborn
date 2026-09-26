@@ -5,8 +5,7 @@ import {BlockDialog} from "@/components/BlockDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
 import {BLOCK_TYPES, DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
-import {composeExtra} from "@/features/block/request";
-import {type BlockInputFields, normalizeBlockList, useBlocksStore} from "@/stores/blocks";
+import {type BlockInputFields, composeExtra, normalizeBlockList, useBlocksStore} from "@/stores/blocks";
 
 import {ListRow, ListTabs} from "./Layout";
 
@@ -16,11 +15,8 @@ const dcconImage = (entry: BlockEntry): string => {
     return `https://image.dcinside.com/dccon.php?no=${code}`;
 };
 
-/** 정보 칸 — 플래그는 필드에서 만들고, 예전 항목처럼 extra가 플래그 문자열이면 두 번 쓰지 않는다 */
-const entryInfo = (entry: BlockEntry): string => {
-    const flags = composeExtra(entry, DETECT_MODE_NAMES);
-    return [flags, entry.extra !== flags ? entry.extra : null].filter(Boolean).join(" · ") || "—";
-};
+/** 정보 칸 — 필드로 만든 플래그 · 별명 (예전 플래그 문자열 extra는 스토어가 읽을 때 버렸다) */
+const entryInfo = (entry: BlockEntry): string => [composeExtra(entry), entry.extra].filter(Boolean).join(" · ") || "—";
 
 export function BlockTab() {
     const entries = useBlocksStore((state) => state.entries);

@@ -3,7 +3,6 @@ import {useState} from "react";
 
 import {DialogActions} from "@/components/ConfirmDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
-import {composeExtra} from "@/features/block/request";
 import {DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import type {BlockInputFields} from "@/stores/blocks";
@@ -45,9 +44,8 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                 isRegex,
                 mode: mode || undefined,
                 gallery: gallery.trim() || undefined,
-                // extra는 별명(우클릭 차단 닉네임, 디시콘 제목)만 유지한다 — 플래그는 표시할 때 필드에서 만든다.
-                // 예전 항목(v5, 이전 다이얼로그)은 플래그 문자열을 extra에 넣었으므로 그건 버린다
-                extra: initial?.extra && initial.extra !== composeExtra(initial, DETECT_MODE_NAMES) ? initial.extra : undefined
+                // extra는 별명(우클릭 차단 닉네임, 디시콘 제목)만 유지한다 — 예전 플래그 문자열은 스토어가 읽을 때 버렸다
+                extra: initial?.extra
             });
         } catch (e) {
             setError(`저장하지 못했습니다. ${e instanceof Error ? e.message : String(e)}`);

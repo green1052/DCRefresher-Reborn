@@ -1,6 +1,6 @@
 import {create} from "zustand";
 
-import {BLOCK_TYPES, blockDefaultsStorage, blockStorage, DEFAULT_DETECT_MODE, DETECT_MODES} from "@/core/storage/items";
+import {BLOCK_TYPES, blockDefaultsStorage, blockStorage, DEFAULT_DETECT_MODE, DETECT_MODE_NAMES, DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {once} from "@/utils/once";
 
@@ -32,6 +32,16 @@ const isBlockEntry = (value: unknown): value is Omit<BlockEntry, "id"> & { id?: 
     );
 };
 
+/** 항목의 플래그 표시 ([정규식] [갤러리: X] [모드명] 순). extra(별명)와 따로 필드에서 만든다 */
+export const composeExtra = (fields: { isRegex: boolean; gallery?: string; mode?: DetectMode }): string =>
+    [
+        fields.isRegex ? "[정규식]" : "",
+        fields.gallery ? `[갤러리: ${fields.gallery}]` : "",
+        fields.mode ? `[${DETECT_MODE_NAMES[fields.mode]}]` : ""
+    ]
+        .filter(Boolean)
+        .join(" ");
+
 /** 저장소/가져오기 값 → 유효 항목만. id가 없거나 겹치면 새로 준다 — 겹친 id는 삭제·수정이 겹친 항목 모두를 건드린다 */
 export const normalizeBlockList = (value: unknown): BlockEntry[] => {
     if (!Array.isArray(value)) return [];
@@ -40,7 +50,9 @@ export const normalizeBlockList = (value: unknown): BlockEntry[] => {
     return value.filter(isBlockEntry).map((entry) => {
         const id = typeof entry.id === "string" && !ids.has(entry.id) ? entry.id : crypto.randomUUID();
         ids.add(id);
-        return {...entry, id};
+        // 예전 항목(v5, 이전 다이얼로그)은 플래그 문자열을 extra에 넣었다 — 표시할 때 필드에서 만드니 버린다.
+        // 키 자리는 그대로 둔다 — 저장한 값과 JSON이 달라지면 이 탭의 쓰기가 watch로 돌아올 때마다 구독자가 다시 돈다
+        return entry.extra && entry.extra === composeExtra(entry) ? {...entry, id, extra: undefined} : {...entry, id};
     });
 };
 
