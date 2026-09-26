@@ -143,7 +143,8 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     const gallery = usePreviewStore((s) => s.preData?.gallery);
     const memo = useUserMemo({uid: user.id, ip: user.ip, nick: user.nick}, gallery);
     const ratios = useUiStore((state) => state.ratios);
-    const cached = user.id ? ratios?.cache[user.id] : undefined;
+    // 아이디가 constructor 같은 프로토타입 키여도 캐시로 잡히지 않게 자기 속성만
+    const cached = user.id && ratios && Object.hasOwn(ratios.cache, user.id) ? ratios.cache[user.id] : undefined;
     const fetched = useGallogActivity(fetchRatio && ratios && !cached ? user.id : undefined);
     const ratio = cached ?? (typeof fetched === "object" ? fetched : undefined);
     const ratioColor = useUiStore((state) => (ratio && ratios && ratios.alarm > 0 && ratio.article + ratio.comment <= ratios.alarm ? state.badgeColors.ratioAlarm : state.badgeColors.ratio));

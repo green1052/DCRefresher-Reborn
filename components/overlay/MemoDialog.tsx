@@ -22,10 +22,13 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     // 지금 보고 있는 갤러리 — 여기서만 보이는 메모로 저장할 수 있다
     const gallery = queryString("id");
 
+    // 닉네임이 toString·constructor·__proto__여도 프로토타입 값을 메모로 읽지 않게 자기 속성만 본다
+    const memoOf = (memoType: MemoType, user: string) => (Object.hasOwn(memos[memoType], user) ? memos[memoType][user] : undefined);
+
     // 열릴 때/타입 전환시 기존 메모로 프리필.
     // 범위(scope)는 체크 여부가 아니라 저장된 갤러리 그대로 — 다른 갤러리 전용 메모가 여기서 저장돼도 범위가 바뀌지 않게
     const prefill = (memoType: MemoType): { text: string; color: string; scope?: string } => {
-        const memo = memos[memoType][state.targets[memoType] ?? ""];
+        const memo = memoOf(memoType, state.targets[memoType] ?? "");
         return {text: memo?.text ?? "", color: memo?.color ?? randomColor(), scope: memo?.gallery};
     };
 
@@ -34,7 +37,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const {text, color, scope} = form;
 
     const value = state.targets[type] ?? "";
-    const existing = Boolean(memos[type][value]);
+    const existing = Boolean(memoOf(type, value));
 
     const submit = async (): Promise<void> => {
         // 공백만 있는 메모는 빈 메모로 — 저장하면 빈 "[ ]" 배지가 붙는다

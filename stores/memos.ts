@@ -56,13 +56,13 @@ export const useMemosStore = create<MemosState>((set, get) => ({
 type MemoUser = { uid?: string; ip?: string; nick?: string };
 
 const lookupMemo = (memos: Record<MemoType, MemoMap>, user: MemoUser, gallery?: string | null): MemoEntry | undefined => {
-    const visible = (entry: MemoEntry | undefined): MemoEntry | undefined => (entry && (!entry.gallery || entry.gallery === gallery) ? entry : undefined);
+    // 닉네임이 toString·constructor·__proto__여도 프로토타입 값을 메모로 읽지 않게 자기 속성만 본다
+    const find = (map: MemoMap, key?: string): MemoEntry | undefined => {
+        const entry = key && Object.hasOwn(map, key) ? map[key] : undefined;
+        return entry && (!entry.gallery || entry.gallery === gallery) ? entry : undefined;
+    };
 
-    return (
-        (user.uid ? visible(memos.UID[user.uid]) : undefined) ??
-        (user.ip ? visible(memos.IP[user.ip]) : undefined) ??
-        (user.nick ? visible(memos.NICK[user.nick]) : undefined)
-    );
+    return find(memos.UID, user.uid) ?? find(memos.IP, user.ip) ?? find(memos.NICK, user.nick);
 };
 
 /** 유저에 달린 메모 (아이디 > IP > 닉네임 순). 다른 갤러리 전용 메모는 건너뛴다 */
