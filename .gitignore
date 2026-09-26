@@ -1,6 +1,7 @@
+.idea
 .output
 .wxt
-web-ext.config.ts
-.idea
 node_modules
 .env
+web-ext.config.ts
+db

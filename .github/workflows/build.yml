@@ -4,6 +4,9 @@ on:
         tags:
             - "*.*.*"
 
+permissions:
+    contents: write
+
 jobs:
     release:
         runs-on: ubuntu-latest
@@ -13,12 +16,14 @@ jobs:
 
             -   name: Setup Bun
                 uses: oven-sh/setup-bun@v2
+                with:
+                    bun-version-file: package.json
 
             -   name: Install Dependencies
                 run: bun ci
 
             -   name: Build
-                run: bun zip
+                run: bun zip && bun zip:firefox
 
             -   name: Release
                 uses: softprops/action-gh-release@v3

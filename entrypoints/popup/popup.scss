@@ -1,0 +1,104 @@
+/* ===== 팝업 ===== */
+
+@use "../../assets/styles/radix";
+
+html {
+    // Theme 배경(gray-1)과 맞춘다 — 가장자리에 다른 색이 비치지 않게
+    background: #fff;
+
+    @media (prefers-color-scheme: dark) {
+        background: #111113;
+    }
+}
+
+body {
+    width: 360px;
+    margin: 0;
+}
+
+/* Radix 기본값 덮기 (options.scss와 같게) */
+:root .radix-themes {
+    @include radix.overrides;
+}
+
+.popup-header {
+    border-bottom: 1px solid var(--gray-a4);
+}
+
+/* 토글 줄 앞 아이콘 — 켜지면 강조색 */
+.popup-icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-2);
+    background: var(--gray-a3);
+    color: var(--gray-11);
+    transition: background 0.12s, color 0.12s;
+
+    &[data-on] {
+        background: var(--accent-a4);
+        color: var(--accent-11);
+    }
+}
+
+/* 모듈 타일 — 누르면 켜고 끈다 */
+.module-tile {
+    all: unset;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--gray-a5);
+    border-radius: var(--radius-3);
+    color: var(--gray-10);
+    font-size: var(--font-size-2);
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+
+    &:hover {
+        background: var(--gray-a2);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--focus-8);
+        outline-offset: 1px;
+    }
+
+    &[aria-pressed="true"] {
+        border-color: var(--accent-a6);
+        background: var(--accent-a3);
+        color: var(--gray-12);
+
+        svg {
+            color: var(--accent-11);
+        }
+
+        .module-dot {
+            background: var(--accent-9);
+        }
+
+        &:hover {
+            background: var(--accent-a4);
+        }
+    }
+}
+
+.module-name {
+    flex-grow: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.module-dot {
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gray-a6);
+}

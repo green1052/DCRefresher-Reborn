@@ -1,0 +1,133 @@
+/* ===== 스텔스 모드 (stealth 모듈) — html.refresherStealth, 버튼으로 잠시 보이기: html.stlth ===== */
+
+.refresherStealth {
+    /* 미리보기(shadow DOM)엔 선택자가 닿지 않으므로 상속되는 변수로 알린다 (overlay.scss) */
+    &:not(.stlth) {
+        --refresher-stealth-media: none;
+    }
+
+    /* 미리보기 댓글 디시콘 — 페이지 댓글처럼 이미지 보이기 버튼과 상관없이 가린다 */
+    --refresher-stealth-dccon-visibility: hidden;
+    --refresher-stealth-dccon-label: "디시콘 표시";
+
+    /* 본문 미디어·갤러리 대문·목록 썸네일(실시간 베스트) — 지연 로딩 이미지는 디시 JS가 style="display: inline"을 붙이므로 !important */
+    &:not(.stlth) .writing_view_box :is(img, video, embed),
+    &:not(.stlth) #zzbang_div,
+    &:not(.stlth) .gall_list .thumimg {
+        display: none !important;
+    }
+
+    /* 본문 동영상·유튜브 — display:none이면 파이어폭스에서 높이가 20px로 접힌다 */
+    &:not(.stlth) .writing_view_box iframe {
+        visibility: hidden;
+    }
+
+    /* 오른쪽 영역 썸네일 */
+    .bgcover {
+        visibility: hidden;
+    }
+
+    .rcontimg_box .img_box {
+        display: none !important;
+    }
+
+    /* 댓글 디시콘·글자콘: 가려 두고 마우스를 올리면 보인다 */
+    .comment_box .comment_dccon {
+        position: relative;
+        width: fit-content;
+
+        &:not(:hover) {
+            :is(img, video, .coment_dccon_txt) {
+                visibility: hidden;
+            }
+
+            &::before {
+                content: "디시콘 표시";
+                position: absolute;
+                inset: 0;
+                // 답글이면 디시의 .reply_info .comment_dccon::before(8px 화살표)가 크기·배경을 남긴다
+                width: auto;
+                height: auto;
+                background: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid rgb(0 0 0 / 15%);
+                font-weight: bold;
+            }
+        }
+    }
+}
+
+/* 이미지 숨기기/보이기 버튼 — 왼쪽 아래에 눈 아이콘만 걸쳐 있다가 마우스를 올리면 글자까지 나온다 */
+.stealth_control_button {
+    position: fixed;
+    // 디시 왼쪽 아래 고정 배너(개념글 알림)에 가리지 않도록 그 위에 둔다
+    bottom: 96px;
+    left: 0;
+    // 미리보기(overlay.scss, 100000)보다 위 — 미리보기를 연 채로 이미지를 보이게 할 수 있다 (배경 클릭이 아니라 닫히지 않음)
+    z-index: 100001;
+    padding: 4px;
+    border: 1px solid rgb(0 0 0 / 12%);
+    border-left: 0;
+    border-radius: 0 12px 12px 0;
+    background: #fff;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 16%);
+    // 아이콘(오른쪽 끝)만 보이게
+    transform: translateX(calc(-100% + 36px));
+    transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+    user-select: none;
+
+    &:hover {
+        transform: none;
+    }
+
+    .button {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 6px 6px 10px;
+        border-radius: 8px;
+        color: #1c1c1c;
+        cursor: pointer;
+
+        &:hover {
+            background: rgb(0 0 0 / 6%);
+        }
+
+        p {
+            margin: 0;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        svg {
+            flex-shrink: 0;
+            color: #3b4890;
+        }
+    }
+}
+
+/* 디시 야간 모드 */
+html:has(#css-darkmode) {
+    &.refresherStealth .comment_box .comment_dccon:not(:hover)::before {
+        border-color: rgb(255 255 255 / 20%);
+    }
+
+    .stealth_control_button {
+        border-color: rgb(255 255 255 / 14%);
+        background: #2a2a2a;
+
+        .button {
+            color: #eee;
+
+            &:hover {
+                background: rgb(255 255 255 / 8%);
+            }
+
+            svg {
+                color: #8fa3ff;
+            }
+        }
+    }
+}

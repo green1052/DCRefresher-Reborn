@@ -1,0 +1,70 @@
+name: 기능 요청
+description: 리프레셔 새로운 기능을 제안하세요
+title: "[ENHANCEMENT] "
+labels: enhancement
+assignees: green1052
+body:
+    -   type: textarea
+        id: reason
+        attributes:
+            label: 기능 요청 이유
+            description: 이 기능이 필요한 이유나 해결하고자 하는 문제를 설명해주세요.
+            placeholder: "예: 댓글 목록에서도 디시콘 미리보기가 보고 싶습니다."
+        validations:
+            required: true
+
+    -   type: textarea
+        id: proposal
+        attributes:
+            label: 제안하는 기능
+            description: 구체적으로 어떤 기능을 원하는지 자세히 설명해주세요.
+        validations:
+            required: true
+
+    -   type: textarea
+        id: behavior
+        attributes:
+            label: 예상되는 동작 방식
+            description: 이 기능이 어떻게 작동해야 하는지 단계별로 설명해주세요.
+            placeholder: |
+                1. ...
+                2. ...
+        validations:
+            required: false
+
+    -   type: textarea
+        id: uiux
+        attributes:
+            label: UI/UX 제안
+            description: 사용자 인터페이스나 경험에 관한 아이디어가 있다면 설명해주세요. (스크린샷·참고 이미지 첨부 가능)
+        validations:
+            required: false
+
+    -   type: input
+        id: version
+        attributes:
+            label: 리프레셔 버전
+            placeholder: "예: 6.0.0"
+        validations:
+            required: false
+
+    -   type: dropdown
+        id: browser
+        attributes:
+            label: 브라우저
+            options:
+                - Chrome
+                - Edge
+                - Whale
+                - Firefox
+                - 기타
+        validations:
+            required: false
+
+    -   type: textarea
+        id: additional
+        attributes:
+            label: 추가 정보
+            description: 기능과 관련된 추가 정보나 참고 자료가 있다면 작성해주세요.
+        validations:
+            required: false

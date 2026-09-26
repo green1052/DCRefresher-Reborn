@@ -1,0 +1,85 @@
+import type {LucideIcon} from "lucide-react";
+
+import type {SettingValue} from "@/core/storage/types";
+
+/** 설정 묶음 — 같은 객체를 group으로 가진 설정을 옵션 화면에서 첫 설정 자리의 한 칸에 모아 보여준다 (값은 설정마다 따로) */
+export interface SettingGroup {
+    name: string;
+    desc: string;
+}
+
+export type SettingSchema = { group?: SettingGroup } & (
+    | { type: "check"; name: string; desc: string; default: boolean }
+    | { type: "text"; name: string; desc: string; default: string; placeholder?: string }
+    | {
+    type: "range";
+    name: string;
+    desc: string;
+    default: number;
+    min: number;
+    max: number;
+    step: number;
+    unit: string
+}
+    | { type: "option"; name: string; desc: string; default: string; items: Record<string, string> }
+    | { type: "order"; name: string; desc: string; default: string[]; items: Record<string, string> }
+    | { type: "color"; name: string; desc: string; default: string }
+    /** 키 하나 (소문자 영문·숫자) */
+    | { type: "key"; name: string; desc: string; default: string }
+);
+
+export interface ModuleContext {
+    /** 현재 모듈의 설정값 (live, 읽기 전용) */
+    settings: Readonly<Record<string, SettingValue>>;
+    /** 이 실행의 수명 — 모듈이 멈추면 abort. DOM 리스너·eventBus.on에 {signal}로 넘긴다 */
+    signal: AbortSignal;
+
+    /** 요소 필터 등록 — 지금 있는 요소 + 이후 추가되는 요소마다 실행. 해제 함수 반환 (disable시 자동 해제) */
+    addFilter(scope: string, callback: (element: HTMLElement) => void): () => void;
+
+    /** signal을 못 받는 것(storage watch, zustand subscribe, 타이머 등)의 해제 함수. disable시 자동 해제 */
+    addCleanup(dispose: () => void): void;
+}
+
+/**
+ * 팝업의 '현재 페이지'에 나오는 이 페이지 한정 토글. api는 setup()의 리턴값 — 모듈이 이 페이지에서 돌 때만 보인다.
+ * desc는 함수면 열 때마다 계산한다 (가린 개수 등)
+ */
+export interface PageToggle {
+    id: string;
+    label: string;
+    desc: string | ((api: unknown) => string);
+    icon: LucideIcon;
+    isOn(api: unknown): boolean;
+    toggle(api: unknown): void;
+}
+
+export interface ModuleDefinition {
+    /** 아스키 id (storage 키, 저장 값과 연결) */
+    id: string;
+    /** 표시명 (한글) */
+    name: string;
+    description: string;
+    /** 팝업 모듈 타일 아이콘 — 배경 스크립트가 import하는 파일에 두면 React가 배경 번들에 딸려 간다 (imagesearch 참고) */
+    icon?: LucideIcon;
+    /** 해당 모듈이 작동할 URL. 미지정시 항상 활성 범위 */
+    urls?: RegExp[];
+    /** 최초 활성 여부 (기본: true) */
+    defaultEnable?: boolean;
+    /** 설정 스키마 (옵션 페이지에서 렌더링됨) */
+    settings?: Record<string, SettingSchema>;
+    /** 단축키 (commands). registry가 활성 모듈에만 전달. api = setup()의 리턴값 */
+    shortcuts?: Record<string, (ctx: ModuleContext, api: unknown) => void | Promise<void>>;
+
+    /** 팝업 '현재 페이지' 토글 */
+    pageToggles?: PageToggle[];
+
+    /** 활성화시 실행. 리턴값은 shortcuts·pageToggles에 api로 전달된다 */
+    setup(ctx: ModuleContext): unknown | void;
+
+    /** 비활성화시 실행 (DOM 정리 등). 리스너(signal)·cleanup은 이미 풀린 뒤다 */
+    revoke?(): void;
+
+    /** 활성 중 설정이 변경됐을 때 실행 (새 값은 ctx.settings[key]) */
+    onChanged?(ctx: ModuleContext, key: string): void;
+}

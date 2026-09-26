@@ -1,0 +1,459 @@
+/* ===== 오버레이 (shadow root 전용) — 컴포넌트 스타일은 Radix Themes, 여기엔 배치와 디시 HTML만 ===== */
+
+@use "radix";
+
+:host {
+    all: initial;
+    position: fixed;
+    inset: 0;
+    // 디시 페이지의 최댓값(이미지 확대창 #imgModal 9999)보다 위
+    z-index: 100000;
+    pointer-events: none;
+}
+
+/* fonts 모듈이 html에 --refresher-font / --refresher-preview-font-size를 지정 (커스텀 속성은 shadow 경계를 넘어 상속됨) */
+:host .radix-themes {
+    @include radix.overrides;
+}
+
+/* Radix 루트 Theme(z-index: 0)이 쌓임 맥락을 만들어, 그 안의 토스트가 z-index와 상관없이 포털(미리보기) 아래로 깔린다 */
+:host [data-is-root-theme="true"] {
+    z-index: auto;
+}
+
+/* 호스트는 클릭을 통과시키고, 실제 UI만 받는다 */
+#portal > *,
+.refresher-interactive {
+    pointer-events: auto;
+}
+
+@keyframes refresher-fade-in {
+    from {
+        opacity: 0;
+    }
+}
+
+@keyframes refresher-fade-out {
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes refresher-rise {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+}
+
+/* ===== 토스트 ===== */
+
+.refresher-toast {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 1;
+    max-width: 360px;
+    animation: refresher-rise 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+/* ===== 우클릭 버블 앵커 ===== */
+
+.refresher-anchor {
+    position: fixed;
+    width: 0;
+    height: 0;
+}
+
+/* ===== 미리보기 프레임 ===== */
+
+.refresher-frame-outer {
+    position: fixed;
+    inset: 0;
+    background: var(--color-overlay);
+    animation: refresher-fade-in 0.15s cubic-bezier(0.19, 1, 0.22, 1);
+
+    // 바깥 배경 흐리게 (toggleBackgroundBlur)
+    &[data-blur] {
+        backdrop-filter: blur(5px);
+    }
+
+    &[data-fading] {
+        pointer-events: none;
+        animation: refresher-fade-out 0.15s forwards;
+    }
+}
+
+/* 너비는 설정(previewWidth)이 --refresher-frame-width로 넘긴다 — 화면이 좁으면 96vw까지 */
+.refresher-frame {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    display: flex;
+    flex-direction: column;
+    width: min(var(--refresher-frame-width, 1000px), 96vw);
+    max-height: 88vh;
+    overflow: hidden;
+    border-radius: var(--radius-5);
+    background: var(--color-panel-solid);
+    box-shadow: var(--shadow-6);
+    transform: translate(-50%, -50%);
+    animation: refresher-fade-in 0.15s cubic-bezier(0.19, 1, 0.22, 1);
+    outline: none;
+
+    // 왼쪽 관리 창(.refresher-admin-panel, 150px)과 겹치지 않게 양옆에 그 폭만큼 비운다 (너무 좁은 창에선 480px은 유지)
+    &[data-admin] {
+        width: min(var(--refresher-frame-width, 1000px), 96vw, max(480px, calc(100vw - 2 * (150px + var(--space-3)))));
+    }
+
+    &[data-fading] {
+        pointer-events: none;
+        animation: refresher-fade-out 0.15s forwards;
+    }
+}
+
+.refresher-frame-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--gray-a8) transparent;
+    // 키보드 스크롤용 포커스(tabIndex -1) — 테두리는 그리지 않는다
+    outline: none;
+}
+
+/* 맨 위로 / 댓글로 */
+.refresher-frame-jump {
+    position: absolute;
+    right: var(--space-4);
+    bottom: var(--space-4);
+}
+
+/* ===== 디시 본문/댓글 HTML (페이지 CSS가 안 닿으므로 최소한만) ===== */
+
+.refresher-html {
+    word-break: break-word;
+
+    img,
+    video,
+    iframe,
+    embed {
+        max-width: 100%;
+        height: auto;
+        border-radius: var(--radius-3);
+    }
+
+    a {
+        color: var(--accent-11);
+    }
+
+    // 답글 멘션은 디시처럼 따로 한 줄 — 인라인이면 디시콘·글자콘 아래 끝에 붙는다
+    .mention.deco {
+        display: block;
+        margin-bottom: 3px;
+    }
+
+    table {
+        max-width: 100%;
+    }
+}
+
+.refresher-preview-contents {
+    font-size: var(--refresher-preview-font-size, 15px);
+    line-height: 1.7;
+}
+
+/* 스텔스 모드(페이지의 html.refresherStealth)가 넘겨준 변수로 미리보기 미디어도 숨긴다 — 댓글 디시콘은 아래에서 따로 가린다 */
+.refresher-html:not([data-dccon]) :is(img, video, embed, iframe) {
+    display: var(--refresher-stealth-media, inline);
+}
+
+// 위 스텔스 규칙(0,2,1)과 명시도를 맞춰야 뒤에 선언된 이쪽이 이긴다 — :is는 가장 높은 인자(img:not(...))를 따른다
+.refresher-preview-block-media :is(embed, img:not(.written_dccon), video) {
+    display: none;
+}
+
+// 관리자가 가린 이미지 — 디시는 인라인 style로 숨기는데 정화하며 지워진다. '차단 이미지 보기'를 누르면 속성을 떼어 보인다 (Frame.tsx)
+.refresher-html :is(img, video)[data-block] {
+    display: none;
+}
+
+.refresher-comment-html {
+    font-size: var(--font-size-3);
+    line-height: 1.6;
+
+    &[data-dccon] img,
+    &[data-dccon] video {
+        width: 100px;
+        height: 100px;
+        border-radius: 0;
+    }
+
+    /* 스텔스 모드: 가려 두고 마우스를 올리면 보인다 (변수는 stealth.scss가 페이지에서 넘긴다) */
+    &[data-dccon] {
+        position: relative;
+        width: fit-content;
+    }
+
+    &[data-dccon]:not(:hover) {
+        :is(img, video, .coment_dccon_txt) {
+            visibility: var(--refresher-stealth-dccon-visibility, visible);
+        }
+
+        &::before {
+            content: var(--refresher-stealth-dccon-label, none);
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--gray-a6);
+            font-weight: bold;
+        }
+    }
+
+    /* 글자콘 — 디시 common.css를 옮김. 모르는 색 클래스면 디시 기본값(남색 바탕·흰 글자) */
+    .coment_dccon_txt {
+        display: flex;
+        justify-content: center;
+        overflow: hidden; // 디시는 txtcon_view.js가 붙인다
+        width: 100px;
+        height: 100px;
+        padding: 10px 11px;
+        box-sizing: border-box;
+        border-radius: 10px;
+        background-color: #3b4890;
+        // 크기가 고정이라 가둔다 — 글자 크기를 잴 때(fitTxtcon)마다 스크롤 칸 전체가 다시 배치되지 않게
+        contain: strict;
+    }
+
+    // 글자 크기·자간·줄바꿈은 Comment.tsx(fitTxtcon)가 다시 잡는다 — 정화하며 지워진 style="font-size:16px"도 여기서
+    .txtcon_txt {
+        margin: 0;
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: bold;
+        letter-spacing: -0.045em;
+        line-height: calc(1em + 4px);
+        text-align: center;
+        align-content: center;
+        word-break: break-all;
+        transform: translateY(-0.05em);
+        box-sizing: border-box;
+    }
+
+    .cbg_3b4890 {
+        background-color: #3b4890;
+    }
+
+    .cbg_b4b4e1 {
+        background-color: #b4b4e1;
+    }
+
+    .cbg_f5e1f0 {
+        background-color: #f5e1f0;
+    }
+
+    .cbg_d2f0e6 {
+        background-color: #d2f0e6;
+    }
+
+    .cbg_ffffff {
+        background-color: #ffffff;
+    }
+
+    .cbg_333333 {
+        background-color: #333333;
+    }
+
+    .ctxt_ffffff {
+        color: #ffffff;
+    }
+
+    .ctxt_333333 {
+        color: #333333;
+    }
+
+    .cbg_ffffff .ctxt_ffffff {
+        text-shadow: 0 0 4px rgb(51 51 51 / 60%);
+    }
+
+    .cbg_333333 .ctxt_333333 {
+        text-shadow: 0 0 4px rgb(255 255 255 / 60%);
+    }
+}
+
+/* ===== 댓글 ===== */
+
+.refresher-comment {
+    &:hover {
+        background: var(--gray-a2);
+    }
+
+    // 유튜브식 답글 트리: 부모 이름 아래에서 내려온 선이 답글마다 ㄴ자로 꺾여 들어간다
+    // (x좌표: 부모 본문 시작 --space-6 + 12px = 답글 안에서 12px)
+    position: relative;
+
+    &[data-thread-open]::after,
+    &[data-depth="1"]::before,
+    &[data-depth="1"]:not([data-last-reply])::after {
+        content: "";
+        position: absolute;
+        // 불투명 색: ㄴ과 이어지는 세로선이 겹치는 구간이 반투명이면 두 번 칠해져 진해진다
+        border: 0 solid var(--gray-6);
+        pointer-events: none;
+    }
+
+    // 부모: 본문 아래 여백만큼 세로선 (본문이 여러 줄이어도 글자를 가로지르지 않게) → 첫 답글의 ㄴ으로 이어진다
+    &[data-thread-open]::after {
+        bottom: 0;
+        height: var(--space-2);
+        left: calc(var(--space-6) + 12px);
+        border-left-width: 2px;
+    }
+
+    &[data-depth="1"] {
+        margin-left: var(--space-6);
+
+        // ㄴ: 위에서 내려와 이름 높이에서 오른쪽으로 꺾인다
+        &::before {
+            top: 0;
+            left: 12px;
+            width: 14px;
+            height: calc(var(--space-2) + 10px);
+            border-left-width: 2px;
+            border-bottom-width: 2px;
+            border-bottom-left-radius: 10px;
+        }
+
+        // 마지막 답글이 아니면 다음 답글까지 세로선을 잇는다
+        &:not([data-last-reply])::after {
+            top: 0;
+            bottom: 0;
+            left: 12px;
+            border-left-width: 2px;
+        }
+    }
+
+    &[data-deleted] .refresher-comment-html {
+        color: var(--gray-a9);
+    }
+}
+
+/* 차단 — 페이지와 같은 차단 모듈 설정 (Frame의 data-*). 블러 강도 변수는 <html>에서 shadow 안으로 이어받는다 */
+.refresher-frame {
+    [data-blocked="blur"] {
+        filter: blur(var(--refresher-blur, 5px));
+        opacity: 0.5;
+        transition: filter 0.15s, opacity 0.15s;
+    }
+
+    &[data-blur-reveal] [data-blocked="blur"]:is(:hover, :has(:focus-visible)) {
+        filter: none;
+        opacity: 1;
+    }
+
+    // 이 페이지에서만 가린 내용 보기 — 숨겼던 것도 흐리게 보인다
+    &[data-block-revealed] :is([data-blocked], [data-duplicate]) {
+        filter: none;
+        opacity: 0.35;
+    }
+}
+
+/* ===== 미니 미리보기 ===== */
+
+.refresher-mini-preview {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    overflow: hidden;
+}
+
+.refresher-mini-contents {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    font-size: var(--font-size-2);
+}
+
+/* ===== 관리 패널 (v5처럼 왼쪽 가장자리) — 미리보기 포털 안이라 나중에 뜬 창 아래에 깔린다 ===== */
+
+.refresher-admin-panel {
+    position: fixed;
+    top: 20%;
+    left: 0;
+    width: 150px;
+    animation: refresher-fade-in 0.15s cubic-bezier(0.19, 1, 0.22, 1);
+
+    // Radix Card의 배경·테두리는 ::before/::after에 따로 radius가 걸려 있어 같이 덮어야 왼쪽이 평평해진다
+    &,
+    &::before,
+    &::after {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+}
+
+/* ===== 디시콘 ===== */
+
+.refresher-dccon-packages {
+    display: flex;
+    gap: var(--space-1);
+    overflow-x: auto;
+    padding-bottom: var(--space-2);
+
+    button {
+        flex: none;
+        width: 48px;
+        height: 48px;
+        padding: 2px;
+        border: 2px solid transparent;
+        border-radius: var(--radius-3);
+        background: none;
+        cursor: pointer;
+
+        &[data-active] {
+            border-color: var(--accent-9);
+        }
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    }
+}
+
+.refresher-dccon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: var(--space-1);
+    height: 320px;
+    overflow-y: auto;
+    align-content: start;
+
+    button {
+        aspect-ratio: 1;
+        padding: 2px;
+        border: none;
+        border-radius: var(--radius-3);
+        background: none;
+        cursor: pointer;
+
+        &:hover {
+            background: var(--gray-a3);
+        }
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    }
+}
+
+/* 미리보기를 연 채로 띄운 다이얼로그(메모·디시콘·차단 등)는 배경을 다시 깔지 않는다 — 미리보기 배경과 겹쳐 두 겹으로 어두워진다 */
+#portal:has(.refresher-frame) .rt-BaseDialogOverlay::before {
+    background: none;
+}
