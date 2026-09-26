@@ -37,7 +37,8 @@ const toggle = (): void => {
 };
 
 const createButton = (): void => {
-    if (document.querySelector(CONTROL_BUTTON)) return;
+    // 죽은 인스턴스(파이어폭스 재주입)가 남긴 버튼은 리스너가 없어 갈아끼운다
+    for (const element of document.querySelectorAll(CONTROL_BUTTON)) element.remove();
 
     const frame = document.createElement("div");
     frame.className = CONTROL_BUTTON.slice(1);

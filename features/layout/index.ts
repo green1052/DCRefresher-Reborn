@@ -27,6 +27,7 @@ const HIDE_OPTIONS: Record<string, { name: string; desc: string; selector: strin
 
 const COMPACT_KEYS = new Set(["activePixel", "forceCompact", "useCompactModeOnView"]);
 const PUSH_CLASS = "refresherPushToRight";
+const HIDE_STYLE_ID = "refresher-layout-hide";
 
 let hideStyle: HTMLStyleElement | null = null;
 
@@ -42,8 +43,10 @@ const applyHide = (ctx: ModuleContext): void => {
     // 공지 모아보기(?exception_mode=notice)에서는 공지를 숨기지 않는다 (디시 공지도)
     const noticePage = location.search.includes("exception_mode=notice");
 
-    // 선택자마다 규칙을 따로 둔다 — 하나로 합치면 :has 등을 모르는 브라우저에서 규칙 전체가 무시된다
-    hideStyle ??= document.documentElement.appendChild(document.createElement("style"));
+    // 선택자마다 규칙을 따로 둔다 — 하나로 합치면 :has 등을 모르는 브라우저에서 규칙 전체가 무시된다.
+    // 죽은 인스턴스(파이어폭스 재주입)가 남긴 것은 id로 찾아 이어 쓴다 — 새로 붙이면 옛 규칙이 끌 수 없게 남는다
+    hideStyle ??= document.querySelector<HTMLStyleElement>(`style#${HIDE_STYLE_ID}`)
+        ?? document.documentElement.appendChild(Object.assign(document.createElement("style"), {id: HIDE_STYLE_ID}));
     hideStyle.textContent = Object.entries(HIDE_OPTIONS)
         .filter(([key]) => ctx.settings[key] === true && !(noticePage && (key === "removeNotice" || key === "removeDCNotice")))
         .map(([, {selector}]) => `${selector} { display: none !important; }`)

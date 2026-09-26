@@ -35,6 +35,17 @@ export default defineContentScript({
     ],
     runAt: "document_start",
     async main(ctx) {
+        // 파이어폭스는 업데이트·다시 켤 때 이전 스크립트를 정리 없이 없애고 새로 주입한다 — 죽은 인스턴스가 띄운 오버레이와 잠금을 걷는다
+        const stale = document.querySelector("refresher-root");
+        if (stale) {
+            stale.remove();
+            const {documentElement: html, body} = document;
+            // 미리보기 창은 <html> 스크롤을, Radix 다이얼로그는 <body> 스크롤·바깥 클릭을 잠근다
+            if (html.style.overflow === "hidden") html.style.overflow = "";
+            if (body.style.pointerEvents === "none") body.style.pointerEvents = "";
+            body.removeAttribute("data-scroll-locked");
+        }
+
         // ===== 메시징 (배경·팝업→탭) =====
         onMessage("refresher:executeShortcut", ({data: command}) => runShortcut(command));
 

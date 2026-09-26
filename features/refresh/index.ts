@@ -177,7 +177,10 @@ export default defineModule({
         ctx.addFilter(
             ".page_head > .gall_issuebox",
             (element) => {
-                if (element.querySelector("button[data-refresher-refresh]")) return;
+                // 버튼을 넣으면 필터가 이 칸에 다시 불린다 — 이 실행의 버튼이면 둔다.
+                // 죽은 인스턴스(파이어폭스 재주입)가 남긴 버튼은 눌러도 반응이 없어 갈아끼운다
+                if (button && element.contains(button)) return;
+                element.querySelector("button[data-refresher-refresh]")?.remove();
 
                 button = document.createElement("button");
                 button.type = "button";
