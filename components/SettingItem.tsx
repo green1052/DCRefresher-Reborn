@@ -6,6 +6,7 @@ import {RefresherSelect} from "@/components/RefresherSelect";
 import {areEqual} from "@/core/module/settings";
 import type {SettingSchema} from "@/core/module/types";
 import type {SettingValue} from "@/core/storage/types";
+import {pressedKey} from "@/utils/event";
 
 interface SettingItemProps {
     schema: SettingSchema;
@@ -115,9 +116,7 @@ const KeyControl = ({schema, value, takenKeys = [], onChange}: NarrowProps<"key"
                     if (!listening) return;
                     ev.preventDefault();
 
-                    // 한글 입력 상태면 ev.key가 'ㅇ'·'Process'라 물리 키(code)로 본다 — 콘텐츠 쪽(preview)과 같은 기준
-                    const code = /^(?:Key([A-Z])|Digit(\d))$/.exec(ev.code);
-                    const key = code ? (code[1] ?? code[2])!.toLowerCase() : ev.key.toLowerCase();
+                    const key = pressedKey(ev);
                     if (/^[a-z0-9]$/.test(key) && key !== value && takenKeys.includes(key)) {
                         setTaken(key);
                         return;

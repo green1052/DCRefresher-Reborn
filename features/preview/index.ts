@@ -7,7 +7,7 @@ import type {ModuleContext, ModuleDefinition, SettingGroup} from "@/core/module/
 import type {DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
-import {isTyping} from "@/utils/event";
+import {isTyping, pressedKey} from "@/utils/event";
 import {isGalleryManager} from "@/utils/user";
 import {notifyManage} from "@/utils/notify";
 
@@ -495,8 +495,8 @@ const controller = (ctx: ModuleContext) => {
         // Ctrl+D(북마크) 같은 조합키, 길게 눌러 생기는 반복 입력은 무시
         if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.repeat) return;
 
-        // 한글 입력 상태면 ev.key가 'ㅇ'·'Process'라 물리 키(code)로 본다 — 설정값은 영문 소문자·숫자
-        const key = (/^(?:Key|Digit)([A-Z\d])$/.exec(ev.code)?.[1] ?? ev.key).toLowerCase();
+        // 설정값은 옵션 화면이 같은 함수로 받은 영문 소문자·숫자
+        const key = pressedKey(ev);
         const isDelete = key === ctx.settings.deleteKey;
         if (!isDelete && key !== ctx.settings.blockKey) return;
 
