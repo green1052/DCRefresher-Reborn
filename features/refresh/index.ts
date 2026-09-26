@@ -13,8 +13,8 @@ import {useUiStore} from "@/stores/ui";
 const MINIMUM_REFRESH_INTERVAL = 2000;
 /** 목록 요청이 연달아 실패할 때 자동 새로고침 주기를 늘리는 상한 */
 const MAXIMUM_BACKOFF_INTERVAL = 60_000;
-const LIST_SELECTOR = ".gall_list:not([id]) tbody";
-const PAGING_SELECTOR = ".left_content article:has(.gall_listwrap) .bottom_paging_box";
+export const LIST_SELECTOR = ".gall_list:not([id]) tbody";
+export const PAGING_SELECTOR = ".left_content article:has(.gall_listwrap) .bottom_paging_box";
 
 /** setup()이 돌려주는 객체 — 단축키와 팝업이 쓴다 */
 export interface RefreshApi {
@@ -31,7 +31,7 @@ export interface RefreshApi {
  * 그런 행이 없으면 디시의 행 템플릿(갤러리 종류별 *_td-tmpl), 그것도 없으면 빈 칸을 쓴다.
  * 번호 없는 행(설문/AD)은 빈 칸 — 열 정렬만 맞춘다.
  */
-const checkboxCellFactory = (oldRows: HTMLTableRowElement[]): ((no: string | undefined) => HTMLTableCellElement) => {
+export const checkboxCellFactory = (oldRows: HTMLTableRowElement[]): ((no: string | undefined) => HTMLTableCellElement) => {
     const sampleRow = oldRows.find((row) => row.dataset.no && row.querySelector(":scope > td .article_chkbox"));
     let sample = sampleRow?.querySelector<HTMLTableCellElement>(":scope > td:has(.article_chkbox)") ?? null;
 
@@ -64,7 +64,7 @@ const applyDoNotColorVisited = (ctx: ModuleContext): void => {
 };
 
 /** 검색어 강조 (TreeWalker, 텍스트 노드만) */
-const highlightSearchResults = (newList: HTMLElement, searchValue: string): void => {
+export const highlightSearchResults = (newList: HTMLElement, searchValue: string): void => {
     if (!searchValue) return;
 
     for (const gallTit of newList.querySelectorAll<HTMLElement>(".gall_tit")) {

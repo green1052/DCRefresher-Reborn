@@ -64,6 +64,14 @@
     }
 }
 
+/* 다음 검색 진행 표시 (search 모듈) */
+.refresherSearchStatus {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 12px;
+    color: #888;
+}
+
 /* 방문 링크 색 끄기 (refresh 모듈의 doNotColorVisited) */
 .refresherDoNotColorVisited .gall_list a:visited {
     color: inherit !important;
