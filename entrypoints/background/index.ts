@@ -7,8 +7,9 @@ import {backupStorage, dbStorage, moduleSettingsStorage, modulesStorage} from "@
 import imageSearch, {IMAGE_SEARCH_ENGINES, IMAGE_URL_PATTERNS, imageSearchUrl} from "@/features/imagesearch";
 
 const DATABASE_UPDATE_INTERVAL = 604_800_000; // 7일
-/** 7일이 지났는지 1시간마다 본다 — 받기에 실패해도 다음 알람이 다시 받는다 */
+/** 7일이 지났는지 하루마다 본다 — 서버 DB는 주 2번 바뀌고, 볼 때마다 DB 전체(수백 KB)를 읽으니 자주 볼 이유가 없다. 받기에 실패하면 다음 날 다시 받는다 */
 const DATABASE_ALARM = "refresher:dbCheck";
+const DATABASE_ALARM_PERIOD = 24 * 60;
 const AUTO_BACKUP_ALARM = "refresher:autoBackup";
 
 const GRECAPTCHA_SITE_KEY = "6Lc-Fr0UAAAAAOdqLYqPy53MxlRMIXpNXFvBliwI";
@@ -153,11 +154,12 @@ export default defineBackground(() => {
         }
     });
 
-    // 알람은 없을 때만 만든다 — 워커가 깰 때마다 다시 만들면 주기가 처음부터 다시 세어져 울리지 않는다.
+    // 알람은 없거나 주기가 다를 때만 만든다 — 워커가 깰 때마다 다시 만들면 주기가 처음부터 다시 세어져 울리지 않는다.
     // 예전엔 시작할 때 한 번 봤는데, 파이어폭스(MV2)는 배경이 상주해 그 한 번이 세션 전부였다 (늦게 잡힌 네트워크·7일 넘게 켜 둔 브라우저)
     if (import.meta.env.PROD) {
         void browser.alarms.get(DATABASE_ALARM).then((alarm) => {
-            if (!alarm) void browser.alarms.create(DATABASE_ALARM, {delayInMinutes: 1, periodInMinutes: 60});
+            // 예전 빌드가 1시간 주기로 만든 알람도 바꾼다
+            if (alarm?.periodInMinutes !== DATABASE_ALARM_PERIOD) void browser.alarms.create(DATABASE_ALARM, {delayInMinutes: 1, periodInMinutes: DATABASE_ALARM_PERIOD});
         });
     }
 
