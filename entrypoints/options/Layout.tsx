@@ -1,12 +1,12 @@
 import {Badge, Box, Button, Card, Dialog, Flex, Heading, IconButton, Table, Tabs, Text, TextArea, TextField, Tooltip} from "@radix-ui/themes";
 import {Download, Plus, Search, Trash2, Upload} from "lucide-react";
 import {type ReactNode, useEffect, useState} from "react";
+import type {WxtStorageItem} from "wxt/utils/storage";
 
 import {ConfirmDialog, DialogActions, Notice} from "@/components/ConfirmDialog";
-import type {StorageItem} from "@/core/storage/items";
 
 /** 저장소 항목 하나 — 배경·다른 탭에서 바뀌어도 따라간다 (읽기 전엔 fallback) */
-export const useStorageItem = <T, >(item: StorageItem<T>): T => {
+export const useStorageItem = <T, >(item: WxtStorageItem<T, {}>): T => {
     const [value, setValue] = useState(item.fallback);
 
     useEffect(() => {

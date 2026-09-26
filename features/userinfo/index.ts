@@ -1,3 +1,4 @@
+import {storage} from "wxt/utils/storage";
 
 import {banReasonsOf, ipInfoOf, type IpInfoFilter, passesIpFilter} from "@/core/database";
 import {defineModule} from "@/core/module/define";
@@ -5,7 +6,7 @@ import type {ModuleContext, SettingGroup} from "@/core/module/types";
 import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
 import {queryString} from "@/core/http/urls";
 import {eventBus} from "@/core/eventbus/bus";
-import {dbStorage, item, moduleSettingsStorage} from "@/core/storage/items";
+import {dbStorage, moduleSettingsStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";
 import {type BadgeView, DEFAULT_BADGE_VIEW, showsUid, useUiStore} from "@/stores/ui";
 import {insertWriterSpan} from "@/utils/userDataInsert";
@@ -46,7 +47,7 @@ const badgeViewOf = (ctx: ModuleContext): BadgeView => ({
 });
 
 /** 글댓비 캐시 — 다른 탭의 쓰기·개발자 탭의 캐시 비우기를 watch로 받는다. 키는 백업 제외 규칙(refresher:module:*:data)을 따른다 */
-const ratioStorage = item<{ ratio?: Record<string, RatioInfo> }>("refresher:module:userinfo:data", {});
+const ratioStorage = storage.defineItem<{ ratio?: Record<string, RatioInfo> }>("local:refresher:module:userinfo:data", {fallback: {}});
 let ratios: Record<string, RatioInfo> = {};
 
 /** 글댓비 캐시는 1시간만 쓴다 */
