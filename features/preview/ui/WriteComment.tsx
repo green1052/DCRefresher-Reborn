@@ -1,7 +1,6 @@
 import {Box, Flex, IconButton, Link, Text, TextArea, TextField, Tooltip} from "@radix-ui/themes";
 import {Send, Smile, Type, X} from "lucide-react";
 import {useEffect, useRef, useState} from "react";
-import {storage} from "wxt/utils/storage";
 
 import {overlay} from "@/components/overlay/shadow";
 import {
@@ -15,6 +14,7 @@ import {
 } from "@/core/preview/request";
 import type {DcinsideDccon} from "@/core/preview/types";
 import {sendMessage} from "@/core/messaging/protocol";
+import {item} from "@/core/storage/items";
 import {useUiStore} from "@/stores/ui";
 import {loggedInUserId} from "@/utils/user";
 
@@ -63,9 +63,7 @@ const Swatch = ({color, selected, label, onClick}: {
 );
 
 // 비회원 자격은 확장 isolated storage에만 보관 (페이지 world 접근 차단) — 댓글 삭제(Comment.tsx)도 이 비밀번호를 먼저 내민다
-export const nonmemberStorage = storage.defineItem<{ nick: string; pw: string }>("local:refresher:nonmember", {
-    defaultValue: {nick: "", pw: ""}
-});
+export const nonmemberStorage = item<{ nick: string; pw: string }>("refresher:nonmember", {nick: "", pw: ""});
 
 /** 쓰던 댓글 (글 주소 → 글) — 창을 닫거나 다른 글로 넘어갔다 와도 남는다. 페이지를 떠나면 사라진다 */
 const drafts = new Map<string, string>();

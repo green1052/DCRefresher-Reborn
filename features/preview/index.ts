@@ -222,6 +222,9 @@ const controller = (ctx: ModuleContext) => {
         return {...postInfo, contents: sanitizeHtml(postInfo.contents ?? "", {stripMedia}), textBlocked: textBlockOf(preData, postInfo)};
     };
 
+    // 받은 시각 — 우클릭을 누르는 동안 미리 받은 본문은 캐시에서 나와도 방금 받은 것으로 친다 (길게 누르기 판정 상한 2초)
+    const fetchedAt = new WeakMap<PostInfo, number>();
+
     const requestPost = (preData: GalleryPreData): Promise<PostInfo> => {
         const key = `${preData.gallery}/${preData.id}`;
         if (pending?.key === key) return pending.post;
@@ -229,6 +232,7 @@ const controller = (ctx: ModuleContext) => {
         pending?.ctrl.abort();
         const ctrl = new AbortController();
         const post = fetchPost(preData, ctrl.signal).then((result) => {
+            fetchedAt.set(result, Date.now());
             setEntry(preData, {post: result});
             return result;
         });
@@ -246,11 +250,13 @@ const controller = (ctx: ModuleContext) => {
     /** 캐시에 있으면 캐시, 없으면 받는다. fresh: 방금 받은 본문 — 캐시 것은 1분까지 낡았을 수 있다 */
     const getPost = async (preData: GalleryPreData): Promise<{ post: PostInfo; fresh: boolean }> => {
         const cached = ctx.settings.disableCache !== true ? getEntry(preData)?.post : undefined;
-        if (cached) return {post: cached, fresh: false};
+        if (cached) return {post: cached, fresh: Date.now() - (fetchedAt.get(cached) ?? 0) < 2000};
 
         try {
             return {post: await requestPost(preData), fresh: true};
         } catch (e) {
+            // 다른 글로 넘어가 끊은 요청은 실패가 아니다 (파이어폭스는 다른 realm의 DOMException이라 이름으로 본다)
+            if ((e as Error | undefined)?.name === "AbortError") throw e;
             // 삭제된 글 보존: 가져오지 못하면 캐시에 남은 이전 본문을 보여준다 (캐시 비활성화여도). 다시 저장해 수명을 늘린다
             const archived = ctx.settings.archiveArticle === true ? getEntry(preData)?.post : undefined;
             if (!archived) throw e;

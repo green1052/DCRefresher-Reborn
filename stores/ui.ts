@@ -22,8 +22,8 @@ export const DEFAULT_BADGE_VIEW: BadgeView = {order: ["UID", "MEMO", "RATIO", "P
 
 /** 닉콘(고정닉·반고정닉)에 따라 UID를 보일지 — 닉콘이 없으면 보인다 */
 export const showsUid = (view: BadgeView, icon?: string): boolean => {
-    const type = icon ? getType(icon) : "NONE";
-    return type.startsWith("FIXED") ? view.fixedUid : type.startsWith("HALF_FIXED") ? view.halfFixedUid : true;
+    const type = icon ? getType(icon) : "UNFIXED";
+    return type === "FIXED" ? view.fixedUid : type === "HALF_FIXED" ? view.halfFixedUid : true;
 };
 
 /** 차단 모듈의 표시 방식 — 미리보기도 페이지와 같게 가린다 */

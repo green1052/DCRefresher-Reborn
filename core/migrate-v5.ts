@@ -45,15 +45,12 @@ const isLeftoverKey = (key: string): boolean =>
     key === "__REFRESHER_SETTINGS" ||
     key === "refresher:settings";
 
-/** v5 키가 하나라도 있는지 */
-const hasV5Data = (data: Snapshot): boolean =>
-    Object.keys(data).some(
-        (key) =>
-            (V5_KEY.exec(key)?.[1] ?? "") in V5_MODULE_IDS ||
-            /^refresher:block:[A-Z]+:mode$/.test(key) ||
-            key.startsWith("refresher:database:") ||
-            isLeftoverKey(key)
-    );
+/** v5가 쓴 키 (잔재 키 제외) */
+const isV5Key = (key: string): boolean =>
+    (V5_KEY.exec(key)?.[1] ?? "") in V5_MODULE_IDS || /^refresher:block:[A-Z]+:mode$/.test(key) || key.startsWith("refresher:database:");
+
+/** 옮기거나 버릴 키가 하나라도 있는지 */
+const hasV5Data = (data: Snapshot): boolean => Object.keys(data).some((key) => isV5Key(key) || isLeftoverKey(key));
 
 /**
  * 저장소 스냅숏 → v6 스냅숏. v5 키는 빠지고, 옮긴 값은 이미 있는 v6 값을 덮어쓰지 않는다.
@@ -102,7 +99,9 @@ export const migrateV5 = (data: Snapshot): Snapshot => {
     }
 
     // v5의 기본 모드는 모든 유형이 SAME이었다 — :mode 키가 없는 유형을 v6 기본값(제목·내용·댓글은 CONTAIN)으로 두면 'ㅋ' 같은 항목이 포함 검사로 바뀌어 마구 막는다
-    for (const type of BLOCK_TYPES) {
+    // 잔재 키만 있는 v6 데이터(개발 빌드)는 v5가 아니다 — 차단 목록 키는 v5와 v6가 같아 v5 키가 있을 때만 판정한다
+    const fromV5 = Object.keys(data).some(isV5Key);
+    for (const type of fromV5 ? BLOCK_TYPES : []) {
         if (`refresher:block:${type}` in data) defaults[type] ??= "SAME";
     }
 

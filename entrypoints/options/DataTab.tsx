@@ -7,6 +7,7 @@ import {type BackupSlot, collectLocalData, isBackupTarget, readCloudBackup, read
 import {updateDatabase} from "@/core/database";
 import {migrateV5} from "@/core/migrate-v5";
 import {backupStorage, dbStorage} from "@/core/storage/items";
+import {normalizeBlockList} from "@/stores/blocks";
 
 import {formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
 
@@ -31,6 +32,10 @@ const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "m
     const next = Object.fromEntries(Object.entries(migrateV5(data)).filter(([key]) => key.startsWith("refresher:") && isBackupTarget(key)));
     // 걸러서 다 빠지면 복원은 모든 설정을 지우고 가져오기는 아무것도 안 쓴다 (예전 백업의 키가 migrateV5에서 전부 빠지는 등) — 비우는 건 초기화({})만
     if (Object.keys(data).length > 0 && Object.keys(next).length === 0) throw new Error("쓸 수 있는 설정이 없습니다.");
+    // 백업은 차단 항목 id를 빼고 올린다 (용량) — 저장할 때 다시 붙인다
+    for (const [key, value] of Object.entries(next)) {
+        if (/^refresher:block:[A-Z]+$/.test(key)) next[key] = normalizeBlockList(value);
+    }
     if (mode === "merge") {
         for (const [key, value] of Object.entries(next)) {
             const old = previous[key];

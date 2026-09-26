@@ -134,8 +134,9 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     const view = useUiStore((state) => state.badgeView);
     const ipInfo = !user.id && user.ip ? ipInfoOf(user.ip) : undefined;
     const ipColor = useUiStore((state) => (ipInfo ? state.badgeColors[ipInfo.category] : undefined));
-    const banReasons = user.id ? banReasonsOf(user.id) : undefined;
     const banColor = useUiStore((state) => state.badgeColors.permBan);
+    // 갱차 조회를 켰을 때만 — 밴 색인(수 MB)은 처음 조회할 때 만든다
+    const banReasons = user.id && banColor ? banReasonsOf(user.id) : undefined;
     const uidColor = useUiStore((state) => state.badgeColors.uid);
     const gallery = usePreviewStore((s) => s.preData?.gallery);
     const memo = useUserMemo({uid: user.id, ip: user.ip, nick: user.nick}, gallery);

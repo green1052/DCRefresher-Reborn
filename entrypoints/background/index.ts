@@ -48,7 +48,9 @@ const rerunListScripts = (gallery: string): void => {
         UserMemo?: { renderWriterMemoBadges?: (wrapper: null) => void };
     };
 
-    if (typeof scope.chk_user_block === "function") scope.chk_user_block(gallery);
+    // 디시가 이 페이지를 열 때 넘긴 값 그대로 — 미니 갤러리는 목록('id')과 글 페이지('mi$id')가 달라 id로 짐작하면 다른 설정을 읽는다
+    const loaded = [...document.scripts].map((script) => /chk_user_block\('([^']*)'\)/.exec(script.textContent ?? "")?.[1]).find((id) => id !== undefined);
+    if (typeof scope.chk_user_block === "function") scope.chk_user_block(loaded ?? gallery);
     // null이면 디시가 처음 그릴 때 등록한 범위(목록·글 머리)를 다시 그린다
     if (typeof scope.UserMemo?.renderWriterMemoBadges === "function") scope.UserMemo.renderWriterMemoBadges(null);
 };
