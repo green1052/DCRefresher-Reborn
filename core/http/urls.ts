@@ -54,7 +54,10 @@ export const mergeParamURL = (origin: string, from: string): string => {
 /** 현재 URL의 쿼리 값 */
 export const queryString = (name: string): string | null => new URLSearchParams(location.search).get(name);
 
-// 로드 시점에 정한다 — 미리보기가 pushState로 주소를 다른 글로 바꿔도 이 문서가 보여 주는 페이지는 그대로다
+/** 글 목록·본문 페이지 — 차단·메모·IP DB를 쓰는 모듈의 urls */
+export const BOARD_PAGE = /\/board\/(view|lists)/;
+
+// 로드 시점에 정한다 —미리보기가 pushState로 주소를 다른 글로 바꿔도 이 문서가 보여 주는 페이지는 그대로다
 export const isViewPage = location.pathname.includes("/board/view");
 /** 글 보기 페이지가 보여 주는 글 번호 */
 export const pagePostNo = isViewPage ? queryString("no") : null;

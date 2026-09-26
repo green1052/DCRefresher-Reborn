@@ -1,7 +1,7 @@
 import {ShieldCheck} from "lucide-react";
 
 import {defineModule} from "@/core/module/define";
-import {rowPostNo} from "@/core/http/urls";
+import {BOARD_PAGE, rowPostNo} from "@/core/http/urls";
 import {deletePost} from "@/core/preview/request";
 import {useUiStore} from "@/stores/ui";
 import {notifyManage} from "@/utils/notify";
@@ -12,7 +12,7 @@ export default defineModule({
     name: "관리",
     description: "무급 노예들을 위한 여러 편의 기능을 제공합니다.",
     icon: ShieldCheck,
-    urls: [/\/board\/(view|lists)/],
+    urls: [BOARD_PAGE],
     defaultEnable: false,
 
     settings: {

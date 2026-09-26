@@ -1,7 +1,7 @@
 import {Pause, RefreshCw} from "lucide-react";
 
 import {http} from "@/core/http/client";
-import {isViewPage, listUrl, mergeParamURL, pagePostNo, queryString, rowPostNo} from "@/core/http/urls";
+import {BOARD_PAGE, isViewPage, listUrl, mergeParamURL, pagePostNo, queryString, rowPostNo} from "@/core/http/urls";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext} from "@/core/module/types";
 import {eventBus} from "@/core/eventbus/bus";
@@ -106,7 +106,7 @@ export default defineModule({
     name: "글 목록 새로고침",
     description: "글 목록을 자동으로 새로고침합니다.",
     icon: RefreshCw,
-    urls: [/\/board\/(view|lists)/],
+    urls: [BOARD_PAGE],
 
     settings: {
         refreshRate: {

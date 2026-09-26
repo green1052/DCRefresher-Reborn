@@ -5,7 +5,7 @@ import {banReasonsOf, initDatabase, ipInfoOf, type IpInfoFilter, passesIpFilter,
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingGroup} from "@/core/module/types";
 import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
-import {queryString} from "@/core/http/urls";
+import {BOARD_PAGE, queryString} from "@/core/http/urls";
 import {eventBus} from "@/core/eventbus/bus";
 import {moduleSettingsStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";
@@ -176,7 +176,7 @@ export default defineModule({
     name: "유저 정보",
     description: "사용자의 IP, 아이디 정보, 메모를 표시합니다.",
     icon: UserRound,
-    urls: [/\/board\/(view|lists)/],
+    urls: [BOARD_PAGE],
 
     settings: {
         showFixedNickUID: {

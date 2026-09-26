@@ -9,6 +9,7 @@ import overlayCss from "@/assets/styles/overlay.scss?inline";
 import {ContentRoot} from "@/components/overlay/ContentRoot";
 import {overlay} from "@/components/overlay/shadow";
 import {initDatabase} from "@/core/database";
+import {BOARD_PAGE} from "@/core/http/urls";
 import {onMessage, type PageToggleState} from "@/core/messaging/protocol";
 import {getModuleApi, loadAll, runShortcut, stopAll} from "@/core/module/registry";
 import features from "@/features";
@@ -124,8 +125,8 @@ export default defineContentScript({
         const offPreview = usePreviewStore.subscribe(mountWhenNeeded);
 
         // ===== 모듈 부트스트랩 =====
-        // 차단·메모·IP DB는 글 목록·본문에서만 쓴다 — 다른 페이지(메인·검색 등)는 저장소를 읽지 않는다 (features의 urls와 같은 정규식이어야 한다)
-        const board = /\/board\/(view|lists)/.test(location.href);
+        // 차단·메모·IP DB는 글 목록·본문에서만 쓴다 — 다른 페이지(메인·검색 등)는 저장소를 읽지 않는다 (features의 urls와 같은 BOARD_PAGE)
+        const board = BOARD_PAGE.test(location.href);
         if (board) await Promise.all([initBlocksStore(), initMemosStore()]);
         await loadAll(features);
         // 저장소는 요청 순서대로 읽는다 — 가장 큰 IP/밴 DB는 모듈 설정 뒤에 읽는다 (userinfo는 setup에서 기다린다).

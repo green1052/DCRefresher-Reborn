@@ -3,6 +3,7 @@ import {SquareMousePointer} from "lucide-react";
 
 import {eventBus} from "@/core/eventbus/bus";
 import {isBlocked} from "@/core/block";
+import {BOARD_PAGE} from "@/core/http/urls";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, ModuleDefinition, SettingGroup} from "@/core/module/types";
 import type {DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
@@ -732,7 +733,7 @@ export default defineModule({
     name: "미리보기",
     description: "글 목록에서 클릭 또는 우클릭으로 미리보기 창을 띄워줍니다.",
     icon: SquareMousePointer,
-    urls: [/\/board\/(view|lists)/],
+    urls: [BOARD_PAGE],
     settings,
     setup: (ctx) => {
         publishSettings(ctx);

@@ -3,7 +3,7 @@ import {Ban, Eye} from "lucide-react";
 import {groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingGroup} from "@/core/module/types";
-import {isViewPage, queryString} from "@/core/http/urls";
+import {BOARD_PAGE, isViewPage, queryString} from "@/core/http/urls";
 import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
 import {eventTarget} from "@/utils/event";
@@ -246,7 +246,7 @@ export default defineModule({
     name: "컨텐츠 차단",
     description: "유저, 컨텐츠 등의 보고 싶지 않은 컨텐츠들을 삭제합니다.",
     icon: Ban,
-    urls: [/\/board\/(view|lists)/],
+    urls: [BOARD_PAGE],
 
     settings: {
         replyRemove: {
