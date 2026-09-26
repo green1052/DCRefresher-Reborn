@@ -58,8 +58,8 @@ export interface ModuleDefinition {
     setup(ctx: ModuleContext): unknown | void;
 
     /** 비활성화시 실행 (DOM 정리 등). cleanup(disposer)은 이후 자동 해제 */
-    revoke?(ctx: ModuleContext): void;
+    revoke?(): void;
 
-    /** 활성 중 설정이 변경됐을 때 실행 */
-    onChanged?(ctx: ModuleContext, key: string, value: SettingValue): void;
+    /** 활성 중 설정이 변경됐을 때 실행 (새 값은 ctx.settings[key]) */
+    onChanged?(ctx: ModuleContext, key: string): void;
 }

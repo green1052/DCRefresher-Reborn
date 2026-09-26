@@ -730,7 +730,6 @@ export default defineModule({
     id: "preview",
     name: "미리보기",
     description: "글 목록에서 클릭 또는 우클릭으로 미리보기 창을 띄워줍니다.",
-    defaultEnable: true,
     urls: [/\/board\/(view|lists)/],
     settings,
     setup: (ctx) => {

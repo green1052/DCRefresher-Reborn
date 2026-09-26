@@ -2,7 +2,7 @@ import {addFilter} from "@/core/filtering";
 import {moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
 
-import {areEqual, isModuleEnabled, normalizeSetting} from "./settings";
+import {areEqual, isModuleEnabled, normalizeSettings} from "./settings";
 import type {ModuleContext, ModuleDefinition} from "./types";
 
 interface ModuleInstance {
@@ -57,17 +57,16 @@ const stop = (instance: ModuleInstance, keepDom = false): void => {
     instance.running = undefined;
 
     running.controller.abort();
-    if (!keepDom) instance.def.revoke?.(running.ctx);
+    if (!keepDom) instance.def.revoke?.();
 };
 
 /** 저장된 설정을 반영. 바뀐 값만 onChanged로 알린다 */
 const applySettings = (instance: ModuleInstance, stored: Record<string, unknown> | null): void => {
-    for (const [key, schema] of Object.entries(instance.def.settings ?? {})) {
-        const next = normalizeSetting(schema, stored?.[key]);
+    for (const [key, next] of Object.entries(normalizeSettings(instance.def, stored))) {
         if (areEqual(instance.settings[key], next)) continue;
 
         instance.settings[key] = next;
-        if (instance.running) instance.def.onChanged?.(instance.running.ctx, key, next);
+        if (instance.running) instance.def.onChanged?.(instance.running.ctx, key);
     }
 };
 

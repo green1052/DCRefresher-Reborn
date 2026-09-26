@@ -104,7 +104,6 @@ export default defineModule({
     name: "글 목록 새로고침",
     description: "글 목록을 자동으로 새로고침합니다.",
     urls: [/\/board\/(view|lists)/],
-    defaultEnable: true,
 
     settings: {
         refreshRate: {

@@ -40,7 +40,11 @@ export const normalizeSetting = (schema: SettingSchema, value: unknown): Setting
     }
 };
 
-export const areEqual = (a: SettingValue | undefined, b: SettingValue): boolean => {
+/** 모듈의 저장값 전체를 스키마대로 — 옵션 스토어와 콘텐츠 레지스트리가 같은 값을 보게 둘 다 이것을 쓴다 */
+export const normalizeSettings = (def: ModuleDefinition, stored: Record<string, unknown> | null | undefined): Record<string, SettingValue> =>
+    Object.fromEntries(Object.entries(def.settings ?? {}).map(([key, schema]) => [key, normalizeSetting(schema, stored?.[key])]));
+
+export const areEqual =(a: SettingValue | undefined, b: SettingValue): boolean => {
     if (a === b) return true;
     if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((v, i) => v === b[i]);
     return false;

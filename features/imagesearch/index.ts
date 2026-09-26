@@ -34,7 +34,6 @@ export default defineModule({
     id: "imagesearch",
     name: "이미지 검색",
     description: "디시 이미지를 우클릭해 검색 엔진에서 찾습니다.",
-    defaultEnable: true,
 
     settings: Object.fromEntries(
         Object.entries(IMAGE_SEARCH_ENGINES).map(([id, {name}]): [string, SettingSchema] => [

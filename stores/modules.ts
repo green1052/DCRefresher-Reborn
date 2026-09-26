@@ -1,6 +1,6 @@
 import {create} from "zustand";
 
-import {isModuleEnabled, normalizeSetting} from "@/core/module/settings";
+import {isModuleEnabled, normalizeSetting, normalizeSettings} from "@/core/module/settings";
 import type {ModuleDefinition} from "@/core/module/types";
 import {moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
@@ -20,9 +20,6 @@ interface ModulesState {
 
 const featureById = new Map(features.map((feature) => [feature.id, feature]));
 
-const normalizeAll = (feature: ModuleDefinition, stored: Record<string, unknown> | null): Values =>
-    Object.fromEntries(Object.entries(feature.settings ?? {}).map(([key, schema]) => [key, normalizeSetting(schema, stored?.[key])]));
-
 const resolveEnables = (stored: Record<string, boolean>): Record<string, boolean> =>
     Object.fromEntries(features.map((feature) => [feature.id, isModuleEnabled(feature, stored)]));
 
@@ -40,7 +37,7 @@ const enqueue = (write: () => Promise<void>): Promise<void> => {
  */
 export const useModulesStore = create<ModulesState>((set) => ({
     enables: resolveEnables({}),
-    values: Object.fromEntries(features.map((feature) => [feature.id, normalizeAll(feature, null)])),
+    values: Object.fromEntries(features.map((feature) => [feature.id, normalizeSettings(feature, null)])),
 
     toggle: async (id, value) => {
         set((state) => ({enables: {...state.enables, [id]: value}}));
@@ -63,7 +60,7 @@ export const useModulesStore = create<ModulesState>((set) => ({
 export const initModulesStore = once(async () => {
     const setEnables = (stored: Record<string, boolean>): void => useModulesStore.setState({enables: resolveEnables(stored)});
     const setValues = (feature: ModuleDefinition, stored: Record<string, unknown> | undefined): void =>
-        useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: normalizeAll(feature, stored ?? null)}}));
+        useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: normalizeSettings(feature, stored)}}));
 
     const settings = features.filter((feature) => feature.settings).map((feature) => ({feature, item: moduleSettingsStorage(feature.id)}));
     const [enables, values] = await Promise.all([modulesStorage.getValue(), Promise.all(settings.map(({item}) => item.getValue()))]);

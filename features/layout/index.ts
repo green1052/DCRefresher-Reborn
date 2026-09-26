@@ -60,7 +60,6 @@ export default defineModule({
     id: "layout",
     name: "레이아웃 수정",
     description: "디시 레이아웃을 변경합니다.",
-    defaultEnable: true,
 
     settings: {
         activePixel: {

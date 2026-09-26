@@ -175,7 +175,6 @@ export default defineModule({
     name: "유저 정보",
     description: "사용자의 IP, 아이디 정보, 메모를 표시합니다.",
     urls: [/\/board\/(view|lists)/],
-    defaultEnable: true,
 
     settings: {
         showFixedNickUID: {

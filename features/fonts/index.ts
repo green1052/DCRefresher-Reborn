@@ -66,7 +66,6 @@ export default defineModule({
     id: "fonts",
     name: "폰트 교체",
     description: "페이지에 전반적으로 표시되는 폰트를 교체합니다.",
-    defaultEnable: true,
 
     settings: {
         customFonts: {

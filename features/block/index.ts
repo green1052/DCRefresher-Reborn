@@ -244,7 +244,6 @@ export default defineModule({
     name: "컨텐츠 차단",
     description: "유저, 컨텐츠 등의 보고 싶지 않은 컨텐츠들을 삭제합니다.",
     urls: [/\/board\/(view|lists)/],
-    defaultEnable: true,
 
     settings: {
         replyRemove: {
