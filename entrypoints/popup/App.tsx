@@ -1,23 +1,5 @@
 import {Badge, Box, Card, Flex, Grid, IconButton, Switch, Text} from "@radix-ui/themes";
-import {
-    Ban,
-    Eye,
-    EyeOff,
-    Image,
-    LayoutPanelTop,
-    type LucideIcon,
-    NotebookPen,
-    Pause,
-    PenLine,
-    Puzzle,
-    RefreshCw,
-    ScanSearch,
-    Settings,
-    ShieldCheck,
-    SquareMousePointer,
-    Type,
-    UserRound
-} from "lucide-react";
+import {Ban, Eye, Image, type LucideIcon, NotebookPen, Pause, Settings} from "lucide-react";
 import {type ReactNode, useEffect, useState} from "react";
 
 import {type PageAction, type PageState, sendMessage} from "@/core/messaging/protocol";
@@ -29,20 +11,6 @@ import {initModulesStore, useModulesStore} from "@/stores/modules";
 
 const LOGO_URL = browser.runtime.getURL("/icons/48.png");
 const VERSION = browser.runtime.getManifest().version;
-
-/** 모듈 타일 아이콘 (없으면 퍼즐) */
-const MODULE_ICONS: Record<string, LucideIcon> = {
-    block: Ban,
-    fonts: Type,
-    imagesearch: ScanSearch,
-    layout: LayoutPanelTop,
-    manage: ShieldCheck,
-    preview: SquareMousePointer,
-    refresh: RefreshCw,
-    stealth: EyeOff,
-    userinfo: UserRound,
-    write: PenLine
-};
 
 interface Page {
     tabId: number;
@@ -167,13 +135,11 @@ function ModulesSection() {
             <SectionTitle aside={<Text size="1" color="gray">{on}/{features.length} 켜짐</Text>}>모듈</SectionTitle>
             <Grid columns="2" gap="2">
                 {features.map((feature) => {
-                    const Icon = MODULE_ICONS[feature.id] ?? Puzzle;
                     const enabled = enables[feature.id] ?? true;
 
                     return (
                         <button key={feature.id} type="button" className="module-tile" aria-pressed={enabled}
                                 title={feature.description} onClick={() => void toggle(feature.id, !enabled)}>
-                            <Icon size={15}/>
                             <span className="module-name">{feature.name}</span>
                             <span className="module-dot"/>
                         </button>
