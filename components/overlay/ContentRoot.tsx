@@ -1,13 +1,13 @@
 import {Box, Button, Card, Flex, IconButton, Popover, Separator, Text, Theme} from "@radix-ui/themes";
 import {CircleAlert, Copy, Info, TriangleAlert, X} from "lucide-react";
 import {Popover as PopoverPrimitive} from "radix-ui";
-import {useEffect, useState} from "react";
+import {useEffect, useState, useSyncExternalStore} from "react";
 
 import {blockingEntries} from "@/core/block";
 import {type BlockRequestOptions, handleBlockRequest} from "@/features/block/request";
 import {PreviewHost} from "@/features/preview/ui/PreviewHost";
 import {type ToastData, useUiStore} from "@/stores/ui";
-import {banReasonsOf, ipInfoOf} from "@/core/database";
+import {banReasonsOf, databaseVersion, ipInfoOf, subscribeDatabase} from "@/core/database";
 import {queryString} from "@/core/http/urls";
 import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType} from "@/core/storage/types";
@@ -140,6 +140,8 @@ const BubbleHost = () => {
     const rules = selected
         ? blockingEntries(selected.dccon ? {DCCON: selected.dccon} : {NICK: selected.nick, ID: selected.uid, IP: selected.ip}, queryString("id") ?? undefined, {entries, defaults})
         : [];
+    // IP/밴 조회는 이 번호를 식에 넣는다 — 빠지면 컴파일러가 인자만 보고 메모해 DB를 읽은 뒤에도 옛 값이 남는다
+    const dbVersion = useSyncExternalStore(subscribeDatabase, databaseVersion);
 
     // Popover는 스크롤을 따라가지 않으므로 스크롤시 닫는다 — scroll은 섀도 루트 밖으로 나가지 않아 미리보기 스크롤은 루트에서 잡는다
     useEffect(() => {
@@ -168,8 +170,8 @@ const BubbleHost = () => {
     };
 
     const identity = identityValue(selected);
-    const ipLabel = selected.ip ? ipInfoOf(selected.ip)?.label : undefined;
-    const bans = selected.uid ? banReasonsOf(selected.uid) : undefined;
+    const ipLabel = dbVersion > 0 && selected.ip ? ipInfoOf(selected.ip)?.label : undefined;
+    const bans = dbVersion > 0 && selected.uid ? banReasonsOf(selected.uid) : undefined;
     const activity = formatActivity(activityState);
 
     return (

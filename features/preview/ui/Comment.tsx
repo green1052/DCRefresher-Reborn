@@ -1,6 +1,6 @@
 import {Badge, Box, Flex, IconButton, Text, Tooltip} from "@radix-ui/themes";
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
-import {Fragment, type MouseEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState} from "react";
+import {Fragment, type MouseEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
 import type {ProcessedComment} from "@/core/preview/comments";
@@ -10,7 +10,7 @@ import {notifyManage} from "@/utils/notify";
 import {useUserMemo} from "@/stores/memos";
 import {type BadgeKey, showsUid, useUiStore} from "@/stores/ui";
 import {useGallogActivity} from "@/utils/gallogActivity";
-import {banReasonsOf, ipInfoOf, passesIpFilter} from "@/core/database";
+import {banReasonsOf, databaseVersion, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
 
 import {parseDate, usePreviewStore} from "./previewStore";
 import {nonmemberStorage} from "./WriteComment";
@@ -132,11 +132,13 @@ export const TimeStamp = ({date, size = "1"}: { date: string; size?: "1" | "2" }
 export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: boolean; op?: boolean }) => {
     // 배지 순서·표시 조건은 userinfo 설정을 따른다 (페이지와 같게) — 회원은 UID, 유동만 IP 정보
     const view = useUiStore((state) => state.badgeView);
-    const ipInfo = !user.id && user.ip ? ipInfoOf(user.ip) : undefined;
+    // IP/밴 조회는 이 번호를 식에 넣는다 — 빠지면 컴파일러가 인자만 보고 메모해 DB를 읽은 뒤에도 옛 값이 남는다
+    const dbVersion = useSyncExternalStore(subscribeDatabase, databaseVersion);
+    const ipInfo = dbVersion > 0 && !user.id && user.ip ? ipInfoOf(user.ip) : undefined;
     const ipColor = useUiStore((state) => (ipInfo ? state.badgeColors[ipInfo.category] : undefined));
     const banColor = useUiStore((state) => state.badgeColors.permBan);
     // 갱차 조회를 켰을 때만 — 밴 색인(수 MB)은 처음 조회할 때 만든다
-    const banReasons = user.id && banColor ? banReasonsOf(user.id) : undefined;
+    const banReasons = dbVersion > 0 && user.id && banColor ? banReasonsOf(user.id) : undefined;
     const uidColor = useUiStore((state) => state.badgeColors.uid);
     const gallery = usePreviewStore((s) => s.preData?.gallery);
     const memo = useUserMemo({uid: user.id, ip: user.ip, nick: user.nick}, gallery);

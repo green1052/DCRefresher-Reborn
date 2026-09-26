@@ -1,10 +1,10 @@
 import {Badge, Box, Button, Code, DataList, Flex, IconButton, SegmentedControl, Text, TextField, Tooltip} from "@radix-ui/themes";
 import {ChevronDown, ChevronRight, Copy, EyeOff, FileJson, RefreshCw, RotateCcw, Trash2} from "lucide-react";
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useRef, useState, useSyncExternalStore} from "react";
 
 import {ConfirmDialog, Notice} from "@/components/ConfirmDialog";
 import {isModuleDataKey} from "@/core/backup";
-import {initDatabase, ipInfoOf, parseDB} from "@/core/database";
+import {databaseVersion, initDatabase, ipInfoOf, parseDB, subscribeDatabase} from "@/core/database";
 import {compactIpData, type RawIpData} from "@/core/ipdb";
 import {dbStorage} from "@/core/storage/items";
 import type {Database, StoredDB} from "@/core/storage/types";
@@ -150,13 +150,11 @@ const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
     // 값이 바뀔 때만 다시 푼다 (React Compiler가 stored로 메모)
     const db = parseStored(useStorageItem(dbStorage));
     const [ip, setIp] = useState("");
-    const [, rerender] = useState(0);
     const fileInput = useRef<HTMLInputElement>(null);
+    // 조회 테스트는 콘텐츠 스크립트와 같은 경로(ipInfoOf)로 — DB를 읽을 때마다 올라가는 번호를 식에 넣어야 컴파일러가 다시 조회한다
+    const dbVersion = useSyncExternalStore(subscribeDatabase, databaseVersion);
 
-    useEffect(() => {
-        // 조회 테스트는 콘텐츠 스크립트와 같은 경로(ipInfoOf)로 — 처음 불러오면 한 번 다시 그리고, 이후 변경은 useStorageItem이 그린다
-        void initDatabase().then(() => rerender((count) => count + 1));
-    }, []);
+    useEffect(() => void initDatabase(), []);
 
     const loadFile = async (file: File): Promise<void> => {
         try {
@@ -168,7 +166,7 @@ const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
         }
     };
 
-    const info = ip.trim() ? ipInfoOf(ip.trim()) : undefined;
+    const info = dbVersion > 0 && ip.trim() ? ipInfoOf(ip.trim()) : undefined;
     const banCount = Object.values(db.ban ?? {}).reduce((sum, uids) => sum + uids.length, 0);
 
     return (

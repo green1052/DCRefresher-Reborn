@@ -41,6 +41,18 @@ let banSource: Database["ban"] = {};
 /** uid → 이유들. ban은 이유 → uid[] 형태라 뒤집어 둔다 — 기본 설정에선 버블 말고 안 쓰니 처음 물을 때 만든다 */
 let bans: Map<string, string> | null = null;
 
+// 읽을 때마다 올리는 번호 (0이면 아직 안 읽음) — 렌더 중에 조회하는 곳이 useSyncExternalStore로 구독한다.
+// React Compiler는 조회를 인자로만 메모하므로 이 번호를 식에 넣어야 DB가 바뀐 뒤 다시 계산한다 (React는 배경 번들에 딸려 가 여기서 부르지 않는다)
+let version = 0;
+const listeners = new Set<() => void>();
+
+export const databaseVersion = (): number => version;
+
+export const subscribeDatabase = (listener: () => void): (() => void) => {
+    listeners.add(listener);
+    return () => void listeners.delete(listener);
+};
+
 const load = (db: StoredDB): void => {
     lookupIp = null;
     banSource = {};
@@ -54,6 +66,9 @@ const load = (db: StoredDB): void => {
     } catch (e) {
         console.error("IP/밴 DB를 읽지 못했습니다.", e);
     }
+
+    version++;
+    for (const listener of listeners) listener();
 };
 
 const indexBans = (): Map<string, string> => {
