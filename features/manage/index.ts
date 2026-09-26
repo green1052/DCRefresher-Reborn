@@ -1,8 +1,7 @@
 import {defineModule} from "@/core/module/define";
-import {galleryTypeName, isMiniGallery, rowPostNo, urls} from "@/core/http/urls";
-import {postManage} from "@/core/preview/request";
+import {rowPostNo} from "@/core/http/urls";
+import {deletePost} from "@/core/preview/request";
 import {useUiStore} from "@/stores/ui";
-import {csrfToken} from "@/utils/cookie";
 import {notifyManage} from "@/utils/notify";
 import {isGalleryManager} from "@/utils/user";
 
@@ -107,17 +106,10 @@ export default defineModule({
         );
 
         // ===== Ctrl 클릭 삭제 =====
-        const deletePost = async (postId: string): Promise<boolean> => {
-            const isMini = isMiniGallery(location.href);
-
+        const deleteByCtrl = async (postId: string): Promise<boolean> => {
             try {
-                const body = new URLSearchParams({
-                    ci_t: await csrfToken(),
-                    id: document.querySelector<HTMLInputElement>("#gallery_id")?.value ?? "",
-                    "nos[]": postId,
-                    _GALLTYPE_: galleryTypeName(location.href)
-                });
-                return notifyManage(await postManage(isMini ? urls.manage.deleteMini : urls.manage.delete, body), "게시글을 삭제했습니다.");
+                const gallery = document.querySelector<HTMLInputElement>("#gallery_id")?.value ?? "";
+                return notifyManage(await deletePost({gallery, id: postId, link: location.href}), "게시글을 삭제했습니다.");
             } catch {
                 useUiStore.getState().showToast("게시글 삭제 중 오류가 발생했습니다.", "error");
                 return false;
@@ -148,7 +140,7 @@ export default defineModule({
                     if (deleting.has(postId)) return;
                     deleting.add(postId);
 
-                    void deletePost(postId).then((deleted) => {
+                    void deleteByCtrl(postId).then((deleted) => {
                         // 목록이 새로고침될 때까지(refresh가 꺼져 있으면 계속) 남겨 두면 다시 Ctrl+클릭해 지운 글에 요청이 또 간다
                         if (deleted) element.remove();
                     }).finally(() => deleting.delete(postId));

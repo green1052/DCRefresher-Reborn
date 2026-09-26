@@ -94,8 +94,6 @@ export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U
     return result === "true" ? {success: true, counts, fixedCounts} : {success: false, message: (counts === "nomember" ? fixedCounts : counts) || undefined};
 };
 
-const manageUrl = (link: string, base: string, mini: string): string => (isMiniGallery(link) ? mini : base);
-
 /** 관리 요청 결과 — 디시 관리 API는 {"result": "success" | "fail", "msg": "…"}를 돌려준다 */
 export interface ManageResult {
     success: boolean;
@@ -106,7 +104,12 @@ export interface ManageResult {
 // 성공이라고 밝힌 응답만 성공 — 세션이 끊겨 온 HTML이나 "정상적인 접근이 아닙니다." 같은 모르는 응답에 '삭제했습니다'를 띄우지 않게
 const isSuccess = (result: unknown): boolean => result === "success" || result === "true" || result === true;
 
-export const postManage = async (url: string, body: URLSearchParams): Promise<ManageResult> => {
+/** 관리 요청 — 미니 갤러리만 mini_, 나머지(일반·마이너·인물)는 minor_ 관리 API. 필드는 공통 필드(ci_t, _GALLTYPE_) 뒤에 준 순서로 */
+const manage = async (target: Pick<GalleryPreData, "link">, action: string, fields: Record<string, string>): Promise<ManageResult> => {
+    const body = await commonBody(target.link);
+    for (const [key, value] of Object.entries(fields)) body.set(key, value);
+
+    const url = `${urls.base}ajax/${isMiniGallery(target.link) ? "mini" : "minor"}_manager_board_ajax/${action}`;
     const text = (await ajax.post(url, {body}).text()).trim();
 
     try {
@@ -124,20 +127,12 @@ export const postManage = async (url: string, body: URLSearchParams): Promise<Ma
     return {success: isSuccess(result), message: message || undefined};
 };
 
-/** 글 하나를 대상으로 하는 관리 요청 — 끌올·삭제는 본문이 같고 주소만 다르다 */
-const managePost = async (preData: GalleryPreData, base: string, mini: string): Promise<ManageResult> => {
-    const body = await commonBody(preData.link);
-    body.set("id", preData.gallery);
-    body.set("nos[]", preData.id);
-
-    return postManage(manageUrl(preData.link, base, mini), body);
-};
-
 /** 끌올 */
-export const bump = (preData: GalleryPreData): Promise<ManageResult> => managePost(preData, urls.manage.bump, urls.manage.bumpMini);
+export const bump = (preData: GalleryPreData): Promise<ManageResult> => manage(preData, "update_bump", {id: preData.gallery, "nos[]": preData.id});
 
-/** 삭제 */
-export const deletePost = (preData: GalleryPreData): Promise<ManageResult> => managePost(preData, urls.manage.delete, urls.manage.deleteMini);
+/** 삭제 — manage 모듈의 Ctrl+클릭은 목록 행에서 갤러리·글 번호·주소만 넘긴다 */
+export const deletePost = (target: Pick<GalleryPreData, "gallery" | "id" | "link">): Promise<ManageResult> =>
+    manage(target, "delete_list", {id: target.gallery, "nos[]": target.id});
 
 interface BlockOptions {
     avoidHour: string;
@@ -148,53 +143,32 @@ interface BlockOptions {
 }
 
 /** 유저 차단 (관리 팝업/프리셋) */
-export const blockUser = async (preData: GalleryPreData, options: BlockOptions): Promise<ManageResult> => {
-    const body = await commonBody(preData.link);
-    body.set("id", preData.gallery);
-    body.set("nos[]", preData.id);
-    body.set("parent", "");
-    body.set("avoid_hour", options.avoidHour);
-    body.set("avoid_reason", options.avoidReason);
-    body.set("avoid_reason_txt", options.avoidReasonTxt);
-    body.set("del_chk", options.delChk);
-    body.set("avoid_type_chk", options.userTypeChk);
-
-    return postManage(manageUrl(preData.link, urls.manage.block, urls.manage.blockMini), body);
-};
+export const blockUser = (preData: GalleryPreData, options: BlockOptions): Promise<ManageResult> => manage(preData, "update_avoid_list", {
+    id: preData.gallery,
+    "nos[]": preData.id,
+    parent: "",
+    avoid_hour: options.avoidHour,
+    avoid_reason: options.avoidReason,
+    avoid_reason_txt: options.avoidReasonTxt,
+    del_chk: options.delChk,
+    avoid_type_chk: options.userTypeChk
+});
 
 /** 공지 등록/해제 */
-export const setNotice = async (preData: GalleryPreData, notice: boolean): Promise<ManageResult> => {
-    const body = await commonBody(preData.link);
-    body.set("mode", notice ? "SET" : "REL");
-    body.set("id", preData.gallery);
-    body.set("no", preData.id);
-
-    return postManage(manageUrl(preData.link, urls.manage.setNotice, urls.manage.setNoticeMini), body);
-};
+export const setNotice = (preData: GalleryPreData, notice: boolean): Promise<ManageResult> =>
+    manage(preData, "set_notice", {mode: notice ? "SET" : "REL", id: preData.gallery, no: preData.id});
 
 /** 개념글 등록/해제 */
-export const setRecommend = async (preData: GalleryPreData, recommend: boolean): Promise<ManageResult> => {
-    const body = await commonBody(preData.link);
-    body.set("mode", recommend ? "SET" : "REL");
-    body.set("id", preData.gallery);
-    body.set("nos[]", preData.id);
-
-    return postManage(manageUrl(preData.link, urls.manage.setRecommend, urls.manage.setRecommendMini), body);
-};
+export const setRecommend = (preData: GalleryPreData, recommend: boolean): Promise<ManageResult> =>
+    manage(preData, "set_recommend", {mode: recommend ? "SET" : "REL", id: preData.gallery, "nos[]": preData.id});
 
 /** 이미지 캡챠 URL */
 export const captchaImage = (preData: GalleryPreData, type: "comment" | "recommend"): string =>
     `${urls.base}kcaptcha/image_v3/?gall_id=${preData.gallery}&kcaptcha_type=${type}&time=${Date.now()}&_GALLTYPE_=${galleryTypeName(preData.link)}`;
 
 /** 관리자 댓글 삭제 */
-export const adminDeleteComment = async (preData: GalleryPreData, commentId: string): Promise<ManageResult> => {
-    const body = await commonBody(preData.link);
-    body.set("id", preData.gallery);
-    body.set("pno", preData.id);
-    body.set("cmt_nos[]", commentId);
-
-    return postManage(manageUrl(preData.link, urls.manage.deleteComment, urls.manage.deleteCommentMini), body);
-};
+export const adminDeleteComment = (preData: GalleryPreData, commentId: string): Promise<ManageResult> =>
+    manage(preData, "delete_comment", {id: preData.gallery, pno: preData.id, "cmt_nos[]": commentId});
 
 /** 유저 댓글 삭제 */
 export const userDeleteComment = async (preData: GalleryPreData, commentId: string, password: string): Promise<ManageResult> => {

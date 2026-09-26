@@ -1,20 +1,6 @@
 export const urls = {
     base: "https://gall.dcinside.com/",
     vote: "https://gall.dcinside.com/board/recommend/vote",
-    manage: {
-        bump: "https://gall.dcinside.com/ajax/minor_manager_board_ajax/update_bump",
-        bumpMini: "https://gall.dcinside.com/ajax/mini_manager_board_ajax/update_bump",
-        delete: "https://gall.dcinside.com/ajax/minor_manager_board_ajax/delete_list",
-        deleteMini: "https://gall.dcinside.com/ajax/mini_manager_board_ajax/delete_list",
-        deleteComment: "https://gall.dcinside.com/ajax/minor_manager_board_ajax/delete_comment",
-        deleteCommentMini: "https://gall.dcinside.com/ajax/mini_manager_board_ajax/delete_comment",
-        setNotice: "https://gall.dcinside.com/ajax/minor_manager_board_ajax/set_notice",
-        setNoticeMini: "https://gall.dcinside.com/ajax/mini_manager_board_ajax/set_notice",
-        block: "https://gall.dcinside.com/ajax/minor_manager_board_ajax/update_avoid_list",
-        blockMini: "https://gall.dcinside.com/ajax/mini_manager_board_ajax/update_avoid_list",
-        setRecommend: "https://gall.dcinside.com/ajax/minor_manager_board_ajax/set_recommend",
-        setRecommendMini: "https://gall.dcinside.com/ajax/mini_manager_board_ajax/set_recommend"
-    },
     comments: "https://gall.dcinside.com/board/comment/",
     comments_submit: "https://gall.dcinside.com/board/forms/comment_submit",
     dccon_comments_submit: "https://gall.dcinside.com/dccon/insert_icon",
