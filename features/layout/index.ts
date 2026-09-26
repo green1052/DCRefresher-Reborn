@@ -98,9 +98,7 @@ export default defineModule({
         applyCompact(ctx);
         applyHide(ctx);
 
-        const onResize = (): void => applyCompact(ctx);
-        window.addEventListener("resize", onResize);
-        ctx.addCleanup(() => window.removeEventListener("resize", onResize));
+        window.addEventListener("resize", () => applyCompact(ctx), {signal: ctx.signal});
     },
 
     onChanged(ctx, key) {

@@ -169,8 +169,7 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): (() => v
 
     if (isViewPage) {
         if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", checkText, {once: true});
-            ctx.addCleanup(() => document.removeEventListener("DOMContentLoaded", checkText));
+            document.addEventListener("DOMContentLoaded", checkText, {once: true, signal: ctx.signal});
         } else {
             checkText();
         }
@@ -226,8 +225,7 @@ const setupSelection = (ctx: ModuleContext): void => {
         ui.openBubble(ev.clientX, ev.clientY);
     };
 
-    document.addEventListener("contextmenu", onContextMenu, true);
-    ctx.addCleanup(() => document.removeEventListener("contextmenu", onContextMenu, true));
+    document.addEventListener("contextmenu", onContextMenu, {capture: true, signal: ctx.signal});
 };
 
 const restoreHiddenElements = (): void => {

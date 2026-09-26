@@ -373,12 +373,11 @@ export default defineModule({
         };
 
         // ===== 스케줄링: 주기+지터 재귀 (첫 요청도 한 주기 뒤 — 파싱 중인 목록을 곧바로 다시 받지 않는다) =====
-        // 모듈을 끈 뒤 응답이 오면 armNext가 타이머를 다시 거는 것을 막는다
-        let stopped = false;
         const armNext = (): void => {
             window.clearTimeout(timer);
-            // 숨은 탭에선 쉰다 — 다시 보이면 onVisibilityChange가 이어 간다 (응답을 기다리던 중 숨겨져도 여기서 멈춘다)
-            if (stopped || document.hidden) return;
+            // 숨은 탭에선 쉰다 — 다시 보이면 onVisibilityChange가 이어 간다 (응답을 기다리던 중 숨겨져도 여기서 멈춘다).
+            // 모듈을 끈 뒤 응답이 와도 타이머를 다시 걸지 않는다
+            if (ctx.signal.aborted || document.hidden) return;
 
             // 실패가 이어지면 주기를 두 배씩 늘린다 (최대 60초). 성공하면 load가 failures를 0으로 되돌린다
             const interval = Math.min(Number(ctx.settings.refreshRate) * 2 ** failures, MAXIMUM_BACKOFF_INTERVAL);
@@ -418,22 +417,17 @@ export default defineModule({
             armNext();
         };
 
-        document.addEventListener("visibilitychange", onVisibilityChange);
-        window.addEventListener("popstate", onPopState);
+        const {signal} = ctx;
+        document.addEventListener("visibilitychange", onVisibilityChange, {signal});
+        window.addEventListener("popstate", onPopState, {signal});
 
-        const offRefreshRequest = eventBus.on("refreshRequest", async () => {
+        eventBus.on("refreshRequest", async () => {
             window.clearTimeout(timer);
             await load(undefined, true);
             armNext();
-        });
+        }, {signal});
 
-        ctx.addCleanup(() => {
-            offRefreshRequest();
-            document.removeEventListener("visibilitychange", onVisibilityChange);
-            window.removeEventListener("popstate", onPopState);
-            stopped = true;
-            window.clearTimeout(timer);
-        });
+        ctx.addCleanup(() => window.clearTimeout(timer));
 
         // ===== 인페이지 페이지 전환 =====
         // 앵커마다 붙이면 표시 속성 때문에 페이징 박스 비교가 늘 어긋나 매번 갈아끼우게 된다 — 문서에 하나만 위임한다
@@ -455,8 +449,7 @@ export default defineModule({
             void load(newUrl, true);
         };
 
-        document.addEventListener("click", onPagingClick);
-        ctx.addCleanup(() => document.removeEventListener("click", onPagingClick));
+        document.addEventListener("click", onPagingClick, {signal});
 
         const api: RefreshApi = {
             refreshLists: async () => {

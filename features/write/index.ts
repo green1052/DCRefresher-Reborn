@@ -69,13 +69,9 @@ export default defineModule({
             if (written) ev.preventDefault();
         };
 
-        document.addEventListener("click", onClick, true);
-        document.addEventListener("input", onInput, true);
-        window.addEventListener("beforeunload", onBeforeUnload);
-        ctx.addCleanup(() => {
-            document.removeEventListener("click", onClick, true);
-            document.removeEventListener("input", onInput, true);
-            window.removeEventListener("beforeunload", onBeforeUnload);
-        });
+        const {signal} = ctx;
+        document.addEventListener("click", onClick, {capture: true, signal});
+        document.addEventListener("input", onInput, {capture: true, signal});
+        window.addEventListener("beforeunload", onBeforeUnload, {signal});
     }
 });

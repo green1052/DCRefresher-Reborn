@@ -47,8 +47,6 @@ export default defineModule({
     },
 
     setup(ctx) {
-        // 행/체크박스 핸들러 일괄 해제용 (모듈 해제 시 abort)
-        const handlers = new AbortController();
         // 핸들러를 붙인 요소. DOM 속성으로 표시하면 refresh가 체크박스 칸을 복제할 때 표시까지 따라가 새 행에 핸들러가 안 붙는다
         const handled = new WeakSet<Element>();
 
@@ -100,11 +98,11 @@ export default defineModule({
                             box.checked = source.checked;
                         }
                     }
-                }, {signal: handlers.signal});
+                }, {signal: ctx.signal});
 
                 element.addEventListener("mouseover", (ev) => {
                     if (ctx.settings.checkViaShift && ev.shiftKey && element instanceof HTMLInputElement) element.checked = true;
-                }, {signal: handlers.signal});
+                }, {signal: ctx.signal});
             }
         );
 
@@ -154,10 +152,8 @@ export default defineModule({
                         // 목록이 새로고침될 때까지(refresh가 꺼져 있으면 계속) 남겨 두면 다시 Ctrl+클릭해 지운 글에 요청이 또 간다
                         if (deleted) element.remove();
                     }).finally(() => deleting.delete(postId));
-                }, {signal: handlers.signal});
+                }, {signal: ctx.signal});
             }
         );
-
-        ctx.addCleanup(() => handlers.abort());
     }
 });

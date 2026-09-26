@@ -75,8 +75,7 @@ export default defineModule({
         if (document.body) {
             createButton();
         } else {
-            document.addEventListener("DOMContentLoaded", createButton, {once: true});
-            ctx.addCleanup(() => document.removeEventListener("DOMContentLoaded", createButton));
+            document.addEventListener("DOMContentLoaded", createButton, {once: true, signal: ctx.signal});
         }
 
         const api: StealthApi = {isRevealed, toggle};

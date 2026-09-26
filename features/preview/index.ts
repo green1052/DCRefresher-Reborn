@@ -190,7 +190,6 @@ const controller = (ctx: ModuleContext) => {
     const ui = useUiStore.getState();
 
     let abort: AbortController | null = null;
-    const rowHandlers = new AbortController();
     let savedHistory: { title: string; url: string; state: unknown } | null = null;
     // 이 문서에서 쌓은 히스토리인지 — 새로고침한 글 페이지에 남은 예전 상태로 미리보기를 다시 열지 않게
     const historyDoc = performance.timeOrigin;
@@ -673,7 +672,7 @@ const controller = (ctx: ModuleContext) => {
 
     // 같은 리스너는 두 번 붙지 않으니 필터가 다시 불러도 그대로 둔다
     const bind = (element: HTMLElement, word: boolean) => {
-        const options = {signal: rowHandlers.signal};
+        const options = {signal: ctx.signal};
 
         element.addEventListener("mousedown", onMouseDown, options);
         element.addEventListener("mouseup", onMouseUp, options);
@@ -697,16 +696,10 @@ const controller = (ctx: ModuleContext) => {
         (element) => bind(element, false)
     );
 
-    window.addEventListener("keydown", onKey);
-    window.addEventListener("popstate", onPopState);
+    window.addEventListener("keydown", onKey, {signal: ctx.signal});
+    window.addEventListener("popstate", onPopState, {signal: ctx.signal});
 
     ctx.addCleanup(() => {
-        window.removeEventListener("keydown", onKey);
-        window.removeEventListener("popstate", onPopState);
-
-        // 바인딩된 행의 리스너 전부 해제
-        rowHandlers.abort();
-
         // 행 리스너(mouseleave)가 사라져 떠 있거나 가져오는 중인 미니를 닫을 길이 없으므로 여기서 닫는다
         onMiniLeave();
         close();

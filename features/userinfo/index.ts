@@ -249,11 +249,10 @@ export default defineModule({
         await migrateShowIpInfo().catch(console.error);
 
         // 조회 중에 모듈이 꺼지면 revoke가 지운 배지·글댓비를 다시 그리지 않게 한다 (setup을 기다리는 동안 꺼져도 마찬가지)
-        let alive = true;
-        ctx.addCleanup(() => (alive = false));
+        const {signal} = ctx;
 
         ratios = (await ratioStorage.getValue()).ratio ?? {};
-        if (!alive) return;
+        if (signal.aborted) return;
         publishRatios(ctx);
         // 이 탭이 받아 쓴 값도, 다른 탭이 받은 값도 여기로 온다 — 배지와 깡계 표시를 다시 그린다
         const unwatchRatios = ratioStorage.watch((next) => {
@@ -276,7 +275,7 @@ export default defineModule({
         const unwatchDatabase = dbStorage.watch(() => rebuildAll(ctx));
 
         // 새 글: 글댓비 조회 (1시간 캐시, 첫 10개)
-        const offNewPostList = eventBus.on("newPostList", ({data: elements}) => {
+        eventBus.on("newPostList", ({data: elements}) => {
             if (ctx.settings.checkRatio !== true) return;
 
             const stale: string[] = [];
@@ -301,7 +300,7 @@ export default defineModule({
                 // 저장소의 최신 값에 병합 (다른 탭이 그사이 쓴 것 유지). 만료 항목은 여기서 버린다 — 안 그러면 uid마다 계속 쌓인다
                 const now = Date.now();
                 const stored = (await ratioStorage.getValue()).ratio ?? {};
-                if (!alive) return;
+                if (signal.aborted) return;
 
                 ratios = Object.fromEntries([
                     ...Object.entries(stored).filter(([, info]) => isFresh(info)),
@@ -310,13 +309,12 @@ export default defineModule({
                 // 다시 그리기는 위 watch가 한다
                 await ratioStorage.setValue({ratio: ratios});
             }).catch(console.error);
-        });
+        }, {signal});
 
         ctx.addCleanup(() => {
             unwatchRatios();
             unsubscribeMemos();
             unwatchDatabase();
-            offNewPostList();
         });
     },
 

@@ -1,6 +1,4 @@
-import type {ModuleEventData} from "@/core/eventbus/types";
 import type {SettingValue} from "@/core/storage/types";
-import type Emittery from "emittery";
 
 /** 설정 묶음 — 같은 객체를 group으로 가진 설정을 옵션 화면에서 첫 설정 자리의 한 칸에 모아 보여준다 (값은 설정마다 따로) */
 export interface SettingGroup {
@@ -31,13 +29,13 @@ export type SettingSchema = { group?: SettingGroup } & (
 export interface ModuleContext {
     /** 현재 모듈의 설정값 (live, 읽기 전용) */
     settings: Readonly<Record<string, SettingValue>>;
-    /** 모듈 간 이벤트 버스 */
-    bus: Emittery<ModuleEventData>;
+    /** 이 실행의 수명 — 모듈이 멈추면 abort. DOM 리스너·eventBus.on에 {signal}로 넘긴다 */
+    signal: AbortSignal;
 
     /** 요소 필터 등록 — 지금 있는 요소 + 이후 추가되는 요소마다 실행. 해제 함수 반환 (disable시 자동 해제) */
     addFilter(scope: string, callback: (element: HTMLElement) => void): () => void;
 
-    /** 해제 함수 등록 (이벤트 리스너, DOM 리스너 등). disable시 자동 해제 */
+    /** signal을 못 받는 것(storage watch, zustand subscribe, 타이머 등)의 해제 함수. disable시 자동 해제 */
     addCleanup(dispose: () => void): void;
 }
 
