@@ -52,6 +52,9 @@ const badgeViewOf = (ctx: ModuleContext): BadgeView => ({
 const ratioStorage = storage.defineItem<{ ratio?: Record<string, RatioInfo> }>("local:refresher:module:userinfo:data", {fallback: {}});
 let ratios: Record<string, RatioInfo> = {};
 
+/** 글댓비 저장 상한 — 최근에 받은 사람부터 이만큼만 남긴다 */
+const MAX_RATIOS = 500;
+
 /** 글댓비 캐시는 1시간만 쓴다 */
 const isFresh = (info?: RatioInfo): info is RatioInfo => info !== undefined && Date.now() - info.date <= 3600_000;
 
@@ -303,15 +306,17 @@ export default defineModule({
                 const fresh = results.filter((entry): entry is [string, GallogActivity] => Boolean(entry[1]));
                 if (fresh.length === 0) return;
 
-                // 저장소의 최신 값에 병합 (다른 탭이 그사이 쓴 것 유지). 만료 항목은 여기서 버린다 — 안 그러면 uid마다 계속 쌓인다
+                // 저장소의 최신 값에 병합 (다른 탭이 그사이 쓴 것 유지). 만료 항목은 여기서 버린다 — 안 그러면 uid마다 계속 쌓인다.
+                // 1시간 안에도 너무 많이 쌓이지 않게 최근에 받은 MAX_RATIOS명만 남긴다
                 const now = Date.now();
                 const stored = (await ratioStorage.getValue()).ratio ?? {};
                 if (signal.aborted) return;
 
-                ratios = Object.fromEntries([
-                    ...Object.entries(stored).filter(([, info]) => isFresh(info)),
-                    ...fresh.map(([uid, info]) => [uid, {...info, date: now}])
-                ]);
+                const merged: [string, RatioInfo][] = [
+                    ...Object.entries(stored).filter(([uid, info]) => isFresh(info) && !fresh.some(([freshUid]) => freshUid === uid)),
+                    ...fresh.map(([uid, info]): [string, RatioInfo] => [uid, {...info, date: now}])
+                ];
+                ratios = Object.fromEntries(merged.sort(([, a], [, b]) => b.date - a.date).slice(0, MAX_RATIOS));
                 // 다시 그리기는 위 watch가 한다
                 await ratioStorage.setValue({ratio: ratios});
             }).catch(console.error);
