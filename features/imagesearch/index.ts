@@ -11,6 +11,6 @@ export default defineModule({
     icon: ScanSearch,
     settings: IMAGE_SEARCH_SETTINGS,
 
-    // 메뉴는 배경이 이 모듈의 on/off·설정을 보고 만들고, 누르면 새 탭으로 연다 — 페이지에서 할 일은 없다
+    // 메뉴는 배경 쪽(background.ts)이 이 모듈의 on/off·설정을 보고 만들고, 누르면 새 탭으로 연다 — 페이지에서 할 일은 없다
     setup() {}
 });

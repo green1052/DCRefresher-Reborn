@@ -1,4 +1,4 @@
-/** 이미지 검색에서 배경 스크립트도 쓰는 부분 — 모듈 파일(index.ts)은 아이콘(React)을 불러와 배경이 import하면 React가 딸려 간다 */
+/** 이미지 검색의 설정·엔진 — 모듈 파일(index.ts)과 배경 쪽(background.ts)이 같이 쓴다. React를 불러오지 않는다 (배경 번들) */
 import type {SettingGroup, SettingSchema} from "@/core/module/types";
 
 export const IMAGE_SEARCH_ID = "imagesearch";

@@ -2,9 +2,12 @@ import {isBackupTarget, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
 import {migrateV5Storage} from "@/core/migrate-v5";
 import {onMessage, sendMessage} from "@/core/messaging/protocol";
-import {isModuleEnabled, normalizeSetting} from "@/core/module/settings";
-import {backupStorage, dbStorage, moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
-import {IMAGE_SEARCH_ENGINES, IMAGE_SEARCH_ID, IMAGE_SEARCH_SETTINGS, IMAGE_URL_PATTERNS, imageSearchUrl} from "@/features/imagesearch/engines";
+import {type BackgroundModule, startBackgroundModules} from "@/core/module/background";
+import {backupStorage, dbStorage} from "@/core/storage/items";
+
+/** 모듈의 배경 쪽 (features/<id>/background.ts) — 모듈마다 필요한 것만 둔다 */
+const backgroundModules = Object.values(import.meta.glob<{ default: BackgroundModule }>("../../features/*/background.ts", {eager: true}))
+    .map((module) => module.default);
 
 const DATABASE_UPDATE_INTERVAL = 604_800_000; // 7일
 /** 7일이 지났는지 하루마다 본다 — 서버 DB는 주 2번 바뀌고, 볼 때마다 DB 전체(수백 KB)를 읽으니 자주 볼 이유가 없다. 받기에 실패하면 다음 날 다시 받는다 */
@@ -56,48 +59,13 @@ const rerunListScripts = (gallery: string): void => {
     if (typeof scope.UserMemo?.renderWriterMemoBadges === "function") scope.UserMemo.renderWriterMemoBadges(null);
 };
 
-const IMAGE_MENU_PREFIX = "imagesearch:";
-
-/** 이미지 검색 메뉴 — 켠 엔진마다 하나 (둘 이상이면 브라우저가 확장 이름 아래로 묶는다). 모듈이 꺼져 있으면 없다 */
-const buildContextMenus = async (): Promise<void> => {
-    await browser.contextMenus.removeAll();
-
-    // 콘텐츠 레지스트리와 같은 기준
-    if (!isModuleEnabled({id: IMAGE_SEARCH_ID}, await modulesStorage.getValue())) return;
-
-    const stored = await moduleSettingsStorage(IMAGE_SEARCH_ID).getValue();
-    for (const [id, {name}] of Object.entries(IMAGE_SEARCH_ENGINES)) {
-        const schema = IMAGE_SEARCH_SETTINGS[id];
-        if (!schema || !normalizeSetting(schema, stored[id])) continue;
-
-        browser.contextMenus.create({id: IMAGE_MENU_PREFIX + id, title: `${name} 검색`, contexts: ["image"], targetUrlPatterns: IMAGE_URL_PATTERNS});
-    }
-};
-
 export default defineBackground(() => {
-    // ===== Context Menus: 이미지 검색 =====
-    // 연달아 부르면 removeAll과 create가 엇갈려 id가 겹친다 — 앞의 것이 끝난 뒤 다시 만든다
-    let menus = Promise.resolve();
-    const createContextMenus = (): Promise<void> => (menus = menus.then(buildContextMenus).catch(console.error));
-
-    // 옵션 페이지·팝업은 저장소에 직접 쓴다 — 켜고 끄거나 엔진을 바꾸면 바로 다시 만든다
-    modulesStorage.watch((next, prev) => {
-        if (next[IMAGE_SEARCH_ID] !== prev[IMAGE_SEARCH_ID]) void createContextMenus();
-    });
-    moduleSettingsStorage(IMAGE_SEARCH_ID).watch(() => void createContextMenus());
-
-    browser.contextMenus.onClicked.addListener(async (info, tab) => {
-        const id = String(info.menuItemId);
-        const url = id.startsWith(IMAGE_MENU_PREFIX) && info.srcUrl ? imageSearchUrl(id.slice(IMAGE_MENU_PREFIX.length), info.srcUrl) : null;
-        if (!url) return;
-
-        // 이미지가 있던 탭 바로 옆에, 그 탭을 opener로 연다
-        await browser.tabs.create(tab?.id !== undefined && tab.id >= 0 ? {url, index: tab.index + 1, openerTabId: tab.id, windowId: tab.windowId} : {url});
-    });
-
-    browser.runtime.onStartup.addListener(() => void createContextMenus());
+    // ===== 모듈의 배경 쪽 (이미지 검색 메뉴 등) =====
+    // 리스너는 여기서 곧바로 걸린다. 크롬은 메뉴 같은 상태를 남겨 두므로 설치·브라우저 시작·설정 변경 때만 다시 맞춘다
+    const applyBackgroundModules = startBackgroundModules(backgroundModules);
+    browser.runtime.onStartup.addListener(() => void applyBackgroundModules());
     // Firefox(MV2)는 메뉴를 남겨 두지 않는다 — 확장을 껐다 켜면 onStartup/onInstalled 없이 백그라운드만 다시 뜬다
-    if (import.meta.env.FIREFOX) void createContextMenus();
+    if (import.meta.env.FIREFOX) void applyBackgroundModules();
 
     // ===== Commands: 단축키 → 활성 탭에만 전송 =====
     // 단축키 기능은 '이번 페이지' 단위라 모든 탭에 보내면 탭마다 토글·토스트·목록 요청이 한꺼번에 일어난다
@@ -145,9 +113,9 @@ export default defineBackground(() => {
 
     browser.runtime.onInstalled.addListener(async () => {
         // v5에서 업데이트한 경우 설정을 v6 형식으로 옮긴다 (한시적)
-        // 실패해도 DB 갱신·메뉴 생성은 이어서 한다
+        // 실패해도 DB 갱신·모듈 맞추기는 이어서 한다 (옮긴 설정으로 맞춘다)
         await migrateV5Storage().catch(console.error);
-        await createContextMenus();
+        await applyBackgroundModules();
 
         if (import.meta.env.PROD || !(await dbStorage.meta.getValue()).version) {
             await update();
