@@ -3,7 +3,6 @@ import {BookOpen, Bug, ClipboardCopy, Code, Heart, type LucideIcon, MessageCircl
 import {HTTPError} from "ky";
 import {useEffect, useState} from "react";
 
-import {Notice} from "@/components/ConfirmDialog";
 import {http} from "@/core/http/client";
 import {dbStorage} from "@/core/storage/items";
 import features from "@/features";
@@ -12,7 +11,7 @@ import {useMemosStore} from "@/stores/memos";
 import {useModulesStore} from "@/stores/modules";
 
 import {byteSize, formatBytes, formatTime, Section} from "./Layout";
-import {useOptionsStore} from "./optionsStore";
+import {notify, useOptionsStore} from "./optionsStore";
 
 const REPO = "https://github.com/green1052/DCRefresher-Reborn";
 
@@ -80,7 +79,6 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
     const blocks = useBlocksStore((state) => state.entries);
     const memos = useMemosStore((state) => state.memos);
     const [usage, setUsage] = useState<Usage | null | "error">(null);
-    const [notice, setNotice] = useState<string | null>(null);
 
     useEffect(() => {
         readUsage().then(setUsage, () => setUsage("error"));
@@ -101,9 +99,9 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
         ];
         try {
             await navigator.clipboard.writeText(lines.join("\n"));
-            setNotice("진단 정보를 복사했습니다. 버그 제보에 붙여 넣어 주세요.");
+            notify("진단 정보를 복사했습니다. 버그 제보에 붙여 넣어 주세요.");
         } catch {
-            setNotice("복사하지 못했습니다.");
+            notify("복사하지 못했습니다.");
         }
     };
 
@@ -177,8 +175,6 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
                     </DataList.Item>
                 </DataList.Root>
             </Section>
-
-            <Notice message={notice} onClose={() => setNotice(null)}/>
         </Box>
     );
 }

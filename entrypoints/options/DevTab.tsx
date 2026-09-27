@@ -3,14 +3,14 @@ import {ChevronDown, ChevronRight, Copy, EyeOff, FileJson, RefreshCw, RotateCcw,
 import {useEffect, useRef, useState, useSyncExternalStore} from "react";
 import {storage} from "wxt/utils/storage";
 
-import {ConfirmDialog, Notice} from "@/components/ConfirmDialog";
+import {ConfirmDialog} from "@/components/ConfirmDialog";
 import {isModuleDataKey} from "@/core/backup";
 import {databaseVersion, initDatabase, ipInfoOf, parseBans, parseIp, subscribeDatabase} from "@/core/database";
 import {compactIpData, type RawIpData} from "@/core/ipdb";
 import {dbStorage, writeDatabase} from "@/core/storage/items";
 
 import {byteSize, Empty, formatBytes, formatTime, Section, useStorageItem} from "./Layout";
-import {useOptionsStore} from "./optionsStore";
+import {notify, useOptionsStore} from "./optionsStore";
 
 type Area = "local" | "sync";
 
@@ -147,7 +147,7 @@ const parseOr = <T, >(parse: (stored: string) => T, stored: string, broken: T): 
     }
 };
 
-const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
+const DatabaseSection = () => {
     // 값이 바뀔 때만 다시 푼다 (React Compiler가 저장값으로 메모)
     const meta = useStorageItem(dbStorage.meta);
     const ipData = parseOr(parseIp, useStorageItem(dbStorage.ip), null);
@@ -233,7 +233,7 @@ const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
     );
 };
 
-const ToolsSection = ({notify}: { notify: (message: string) => void }) => {
+const ToolsSection = () => {
     const clearModuleData = async (): Promise<void> => {
         const keys = Object.keys(await browser.storage.local.get(null)).filter(isModuleDataKey);
         await browser.storage.local.remove(keys);
@@ -260,15 +260,11 @@ const ToolsSection = ({notify}: { notify: (message: string) => void }) => {
 };
 
 export function DevTab() {
-    const [notice, setNotice] = useState<string | null>(null);
-
     return (
         <Box>
             <StorageSection/>
-            <DatabaseSection notify={setNotice}/>
-            <ToolsSection notify={setNotice}/>
-
-            <Notice message={notice} onClose={() => setNotice(null)}/>
+            <DatabaseSection/>
+            <ToolsSection/>
         </Box>
     );
 }

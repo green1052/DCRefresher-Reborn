@@ -3,7 +3,9 @@ import {Download, Plus, Search, Trash2, Upload} from "lucide-react";
 import {type ReactNode, useEffect, useState} from "react";
 import type {WxtStorageItem} from "wxt/utils/storage";
 
-import {ConfirmDialog, DialogActions, Notice} from "@/components/ConfirmDialog";
+import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
+
+import {notify} from "./optionsStore";
 
 /** 저장소 항목 하나 — 배경·다른 탭에서 바뀌어도 따라간다 (읽기 전엔 fallback) */
 export const useStorageItem = <T, >(item: WxtStorageItem<T, {}>): T => {
@@ -180,16 +182,15 @@ export const ListTabs = <T extends string, I>({
         items(type).filter((item) => !needle || searchText(item).some((text) => text?.toLowerCase().includes(needle))).reverse();
 
     const [clearConfirm, setClearConfirm] = useState<T | null>(null);
-    const [notice, setNotice] = useState<string | null>(null);
     const [importOpen, setImportOpen] = useState(false);
     const object = label + objectParticle(label);
 
     const exportList = async (): Promise<void> => {
         try {
             await navigator.clipboard.writeText(JSON.stringify(exportData()));
-            setNotice(`${object} 클립보드로 내보냈습니다.`);
+            notify(`${object} 클립보드로 내보냈습니다.`);
         } catch {
-            setNotice(`${object} 내보내는 데 실패했습니다.`);
+            notify(`${object} 내보내는 데 실패했습니다.`);
         }
     };
 
@@ -197,9 +198,9 @@ export const ListTabs = <T extends string, I>({
         try {
             if ((await importData(JSON.parse(text) as Record<string, unknown>)) === 0) throw new Error();
             setImportOpen(false);
-            setNotice(`${object} 가져왔습니다.`);
+            notify(`${object} 가져왔습니다.`);
         } catch {
-            setNotice(`${object} 가져오는 데 실패했습니다.`);
+            notify(`${object} 가져오는 데 실패했습니다.`);
         }
     };
 
@@ -296,14 +297,12 @@ export const ListTabs = <T extends string, I>({
                     confirmLabel="삭제"
                     danger
                     onConfirm={() => {
-                        onClear(clearConfirm).catch(() => setNotice(`${object} 삭제하는 데 실패했습니다.`));
+                        onClear(clearConfirm).catch(() => notify(`${object} 삭제하는 데 실패했습니다.`));
                         setClearConfirm(null);
                     }}
                     onClose={() => setClearConfirm(null)}
                 />
             )}
-
-            <Notice message={notice} onClose={() => setNotice(null)}/>
 
             {importOpen && <ImportDialog title={`${label} 가져오기`} onClose={() => setImportOpen(false)} onSubmit={submitImport}/>}
         </Card>

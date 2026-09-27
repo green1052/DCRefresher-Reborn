@@ -2,6 +2,7 @@ import {Box, Button, Flex, Heading, Separator, Text} from "@radix-ui/themes";
 import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings, Wrench} from "lucide-react";
 import {useEffect, useState} from "react";
 
+import {Notice} from "@/components/ConfirmDialog";
 import {fontFamilyOf} from "@/features/fonts";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
@@ -118,6 +119,7 @@ export function App() {
     const devMode = useOptionsStore((state) => state.devMode);
     // 로고 클릭 — 디시콘 비 (이스터에그)
     const rain = useOptionsStore((state) => state.rain);
+    const notice = useOptionsStore((state) => state.notice);
     const tabs = TABS.filter((item) => !item.dev || devMode);
     const current = tabs.find((item) => item.id === tab) ?? tabs[0]!;
 
@@ -141,6 +143,7 @@ export function App() {
             <Sidebar tabs={tabs} tab={current.id} onSelect={setTab}/>
             {/* 누를 때마다 새로 마운트 — React Compiler가 Math.random으로 그린 결과를 기억해 같은 모양이 반복되지 않게 */}
             {rain > 0 && <DcconRain key={rain}/>}
+            <Notice message={notice} onClose={() => useOptionsStore.setState({notice: null})}/>
 
             <Box flexGrow="1" minWidth="0" px={{initial: "4", md: "6"}} py="6">
                 <Box maxWidth="880px" mx="auto">
