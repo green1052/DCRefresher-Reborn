@@ -5,7 +5,7 @@ import {eventBus} from "@/core/eventbus/bus";
 import {isBlocked} from "@/core/block";
 import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
-import type {ModuleContext, ModuleDefinition, SettingGroup} from "@/core/module/types";
+import type {ModuleContext, SettingGroup, SettingsSchema} from "@/core/module/types";
 import type {DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
@@ -22,7 +22,7 @@ const SHORTCUT_GROUP: SettingGroup = {name: "관리 단축키", desc: "관리 �
 const PRESET_GROUP: SettingGroup = {name: "차단 프리셋", desc: "차단 키로 차단할 때 쓰는 값입니다."};
 const FRAME_GROUP: SettingGroup = {name: "미리보기 창", desc: "미리보기 창의 너비와 바깥 배경입니다."};
 
-const settings: NonNullable<ModuleDefinition["settings"]> = {
+const settings = {
     previewWidth: {
         type: "range",
         group: FRAME_GROUP,
@@ -108,7 +108,9 @@ const settings: NonNullable<ModuleDefinition["settings"]> = {
         desc: "이미지 아이콘이 없는 게시글에 이미지가 있으면 차단합니다.",
         default: false
     }
-};
+} satisfies SettingsSchema;
+
+type Ctx = ModuleContext<typeof settings>;
 
 export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
     const anchor = element.tagName === "A" ? (element as HTMLAnchorElement) : element.querySelector<HTMLAnchorElement>("a:not(.reply_numbox)");
@@ -187,7 +189,7 @@ const errorOf = (error: unknown): ErrorState => ({
     adult: error instanceof Error && error.message === ADULT_ERROR
 });
 
-const controller = (ctx: ModuleContext) => {
+const controller = (ctx: Ctx) => {
     const store = usePreviewStore;
     const ui = useUiStore.getState();
 
@@ -249,7 +251,7 @@ const controller = (ctx: ModuleContext) => {
 
     /** 캐시에 있으면 캐시, 없으면 받는다. fresh: 방금 받은 본문 — 캐시 것은 1분까지 낡았을 수 있다 */
     const getPost = async (preData: GalleryPreData): Promise<{ post: PostInfo; fresh: boolean }> => {
-        const cached = ctx.settings.disableCache !== true ? getEntry(preData)?.post : undefined;
+        const cached = !ctx.settings.disableCache ? getEntry(preData)?.post : undefined;
         if (cached) return {post: cached, fresh: Date.now() - (fetchedAt.get(cached) ?? 0) < 2000};
 
         try {
@@ -258,7 +260,7 @@ const controller = (ctx: ModuleContext) => {
             // 다른 글로 넘어가 끊은 요청은 실패가 아니다 (파이어폭스는 다른 realm의 DOMException이라 이름으로 본다)
             if ((e as Error | undefined)?.name === "AbortError") throw e;
             // 삭제된 글 보존: 가져오지 못하면 캐시에 남은 이전 본문을 보여준다 (캐시 비활성화여도). 다시 저장해 수명을 늘린다
-            const archived = ctx.settings.archiveArticle === true ? getEntry(preData)?.post : undefined;
+            const archived = ctx.settings.archiveArticle ? getEntry(preData)?.post : undefined;
             if (!archived) throw e;
             setEntry(preData, {post: archived});
             return {post: archived, fresh: false};
@@ -287,7 +289,7 @@ const controller = (ctx: ModuleContext) => {
             if (store.getState().signalId !== mySignal || seq < shownSeq) return;
             shownSeq = seq;
 
-            const source = prepareComments(raw, preData, ctx);
+            const source = prepareComments(raw, preData, ctx.settings.archiveArticle);
             shown = {signal: mySignal, source};
             store.setState({comments: processComments(source, preData), allowReply});
         } finally {
@@ -367,7 +369,7 @@ const controller = (ctx: ModuleContext) => {
         }
 
         // PageUp/Down으로 넘겼으면 그쪽 다음 글 본문도 미리 받는다 — 댓글은 열 때 받는다
-        if (dir && ctx.settings.disableCache !== true && store.getState().signalId === mySignal) {
+        if (dir && !ctx.settings.disableCache && store.getState().signalId === mySignal) {
             const next = adjacentPreData(preData, dir);
             if (next && !getEntry(next)?.post) void requestPost(next);
         }
@@ -423,10 +425,10 @@ const controller = (ctx: ModuleContext) => {
         store.getState().open(preData, {
             commentsOnly,
             // 목록에 이미지 아이콘이 없는(텍스트) 글만 본문 이미지 숨김
-            imageBlocked: ctx.settings.blockImage === true && isTextPost(preData),
+            imageBlocked: ctx.settings.blockImage && isTextPost(preData),
             notice: preData.notice,
             recommend: preData.recommend,
-            adminVisible: ctx.settings.toggleAdminPanel === true && isGalleryManager()
+            adminVisible: ctx.settings.toggleAdminPanel && isGalleryManager()
         });
 
         const mySignal = store.getState().signalId;
@@ -441,8 +443,8 @@ const controller = (ctx: ModuleContext) => {
             document.title = newTitle;
         }
 
-        if (ctx.settings.autoRefreshComment === true) {
-            const interval = Number(ctx.settings.commentRefreshInterval) || 10000;
+        if (ctx.settings.autoRefreshComment) {
+            const interval = ctx.settings.commentRefreshInterval || 10000;
             refreshTimer = window.setInterval(() => {
                 if (document.hidden || pulling) return;
                 void refreshComments();
@@ -493,9 +495,9 @@ const controller = (ctx: ModuleContext) => {
         const signal = store.getState().signalId;
         try {
             const result = await blockUser(target, {
-                avoidHour: String(ctx.settings.blockPresetDay ?? "1"),
+                avoidHour: ctx.settings.blockPresetDay,
                 avoidReason: "0",
-                avoidReasonTxt: String(ctx.settings.blockPresetReason ?? ""),
+                avoidReasonTxt: ctx.settings.blockPresetReason,
                 delChk: ctx.settings.blockPresetDelete ? "1" : "0",
                 userTypeChk: ctx.settings.blockPresetUserType ? "1" : "0"
             });
@@ -510,7 +512,7 @@ const controller = (ctx: ModuleContext) => {
     };
 
     const onKey = (ev: KeyboardEvent) => {
-        if (ctx.settings.useKeyPress !== true || !store.getState().visible) return;
+        if (!ctx.settings.useKeyPress || !store.getState().visible) return;
         // Ctrl+D(북마크) 같은 조합키, 길게 눌러 생기는 반복 입력은 무시
         if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.repeat) return;
 
@@ -554,7 +556,7 @@ const controller = (ctx: ModuleContext) => {
         let post: PostInfo;
         try {
             ({post} = await getPost(preData));
-            post = await processContents(preData, post, ctx.settings.tooltipMediaHide === true);
+            post = await processContents(preData, post, ctx.settings.tooltipMediaHide);
         } catch {
             return;
         }
@@ -569,13 +571,13 @@ const controller = (ctx: ModuleContext) => {
                 // 미니는 마우스를 올려 볼 수 없으니 블러도 안내로 가린다
                 contents: post.textBlocked && !useUiStore.getState().blockView?.revealed ? BLOCKED_TEXT : post.contents ?? "",
                 // 이미지 차단(blockImage)은 전체 미리보기와 같은 것을 가린다 — 안 그러면 거기서 숨긴 이미지가 호버로 보인다
-                blockMedia: ctx.settings.blockImage === true && isTextPost(preData)
+                blockMedia: ctx.settings.blockImage && isTextPost(preData)
             }
         });
     };
 
     const onMiniEnter = (ev: MouseEvent) => {
-        if (ctx.settings.tooltipMode !== true) return;
+        if (!ctx.settings.tooltipMode) return;
         if (usePreviewStore.getState().visible) return;
 
         const element = ev.currentTarget as HTMLElement;
@@ -586,7 +588,7 @@ const controller = (ctx: ModuleContext) => {
         miniTarget = element;
         if (miniTimer) window.clearTimeout(miniTimer);
         // 적어도 100ms는 머물러야 — 목록을 가로지를 때 행마다 GET이 나가지 않게 (이미 저장된 0이 있어 기본값이 아니라 여기서)
-        const delay = Math.max(Number(ctx.settings.tooltipDelay) || 0, 100);
+        const delay = Math.max(ctx.settings.tooltipDelay || 0, 100);
         miniTimer = window.setTimeout(() => void showMini(element, x, y), delay);
     };
 
@@ -613,15 +615,15 @@ const controller = (ctx: ModuleContext) => {
         // 윈도우는 우클릭(contextmenu)이 버튼을 뗄 때 온다 — 누르고 있는 동안 본문을 미리 받는다. Shift는 브라우저 메뉴, 키 반전이면 이동
         if (ev.shiftKey) return;
         const resolved = resolveTarget(ev);
-        if (!resolved || (!resolved.commentsOnly && ctx.settings.reversePreviewKey === true)) return;
+        if (!resolved || (!resolved.commentsOnly && ctx.settings.reversePreviewKey)) return;
         // 캐시를 끄면 열기가 캐시를 안 본다 — 떼기 전에 다 받으면 열 때 한 번 더 받으므로 미리 받지 않는다
-        if (ctx.settings.disableCache !== true && !getEntry(resolved.preData)?.post) void requestPost(resolved.preData);
+        if (!ctx.settings.disableCache && !getEntry(resolved.preData)?.post) void requestPost(resolved.preData);
     };
 
     const onMouseUp = (ev: MouseEvent) => {
         if (ev.button !== 2 || pressStart === 0) return;
 
-        const delay = Number(ctx.settings.longPressDelay) || 300;
+        const delay = ctx.settings.longPressDelay || 300;
         if (Date.now() - delay > pressStart) preventOpen = true;
         pressStart = 0;
     };
@@ -640,7 +642,7 @@ const controller = (ctx: ModuleContext) => {
         const commentsOnly = target.closest(".reply_numbox") !== null;
 
         if (!commentsOnly) {
-            if (element.classList.contains("ub-content") && ctx.settings.expandRecognizeRange !== true) return null;
+            if (element.classList.contains("ub-content") && !ctx.settings.expandRecognizeRange) return null;
 
             // 작성자 칸은 유저 버블(block 모듈) 몫 — 행 전체 인식이어도 미리보기를 열지 않는다
             if (target.closest(".ub-writer")) return null;
@@ -663,7 +665,7 @@ const controller = (ctx: ModuleContext) => {
             return;
         }
 
-        if (ctx.settings.reversePreviewKey === true) {
+        if (ctx.settings.reversePreviewKey) {
             ev.preventDefault();
             location.href = resolved.preData.link;
             return;
@@ -684,7 +686,7 @@ const controller = (ctx: ModuleContext) => {
         if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
 
         const resolved = resolveTarget(ev);
-        if (!resolved || (!resolved.commentsOnly && ctx.settings.reversePreviewKey !== true)) return;
+        if (!resolved || (!resolved.commentsOnly && !ctx.settings.reversePreviewKey)) return;
 
         ev.preventDefault();
         open(resolved.preData, resolved.commentsOnly);
@@ -736,14 +738,14 @@ const controller = (ctx: ModuleContext) => {
 };
 
 /** 창(Frame)이 그릴 때 읽는 설정 — 바뀌면 열린 창에도 바로 반영된다 */
-const publishSettings = (ctx: ModuleContext): void => {
+const publishSettings = (ctx: Ctx): void => {
     usePreviewStore.setState({
-        shortcutKeys: ctx.settings.useKeyPress === true
-            ? {delete: String(ctx.settings.deleteKey).toUpperCase(), block: String(ctx.settings.blockKey).toUpperCase()}
+        shortcutKeys: ctx.settings.useKeyPress
+            ? {delete: ctx.settings.deleteKey.toUpperCase(), block: ctx.settings.blockKey.toUpperCase()}
             : null,
-        frameWidth: Number(ctx.settings.previewWidth),
-        backgroundBlur: ctx.settings.toggleBackgroundBlur === true,
-        scrollToSkip: ctx.settings.scrollToSkip === true
+        frameWidth: ctx.settings.previewWidth,
+        backgroundBlur: ctx.settings.toggleBackgroundBlur,
+        scrollToSkip: ctx.settings.scrollToSkip
     });
 };
 
@@ -769,7 +771,7 @@ export default defineModule({
     setup: (ctx): PreviewApi => {
         publishSettings(ctx);
         controller(ctx);
-        return {archiveArticle: () => ctx.settings.archiveArticle === true};
+        return {archiveArticle: () => ctx.settings.archiveArticle};
     },
     onChanged: publishSettings
 });

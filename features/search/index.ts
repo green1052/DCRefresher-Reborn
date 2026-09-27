@@ -73,7 +73,7 @@ export default defineModule({
                 ? checkboxCellFactory(Array.from(list.querySelectorAll<HTMLTableRowElement>(":scope > tr")))
                 : null;
 
-            const max = Number(ctx.settings.maxSearches);
+            const max = ctx.settings.maxSearches;
             const status = document.createElement("p");
             status.className = "refresherSearchStatus";
             paging.after(status);

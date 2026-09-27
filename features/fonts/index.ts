@@ -38,7 +38,7 @@ const toFontFamily = (value: string): string => {
 /** customFonts 설정값 → font-family (빈칸이면 기본 폰트) */
 const fontFamilyOf = (customFonts: string): string => toFontFamily(customFonts.trim() || DEFAULT_FONTS);
 
-const SETTINGS = {
+const settings = {
     customFonts: {
         type: "text",
         name: "font-family 이름",
@@ -63,7 +63,7 @@ const SETTINGS = {
     }
 } satisfies SettingsSchema;
 
-type Ctx = ModuleContext<typeof SETTINGS>;
+type Ctx = ModuleContext<typeof settings>;
 
 const buildCss = (ctx: Ctx): string => {
     const fonts = fontFamilyOf(ctx.settings.customFonts);
@@ -97,7 +97,7 @@ export default defineModule({
     description: "페이지에 전반적으로 표시되는 폰트를 교체합니다.",
     icon: Type,
 
-    settings: SETTINGS,
+    settings,
 
     setup: apply,
     onChanged: apply,

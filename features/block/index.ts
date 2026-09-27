@@ -2,7 +2,7 @@ import {Ban, Eye} from "lucide-react";
 
 import {groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
 import {defineModule} from "@/core/module/define";
-import type {ModuleContext, SettingGroup} from "@/core/module/types";
+import type {ModuleContext, SettingGroup, SettingsSchema} from "@/core/module/types";
 import {isViewPage, queryString} from "@/core/http/urls";
 import {BOARD_PAGE} from "@/core/pages";
 import {useBlocksStore} from "@/stores/blocks";
@@ -29,16 +29,16 @@ const plainText = (element: Element | null | undefined): string =>
 const BLUR_GROUP: SettingGroup = {name: "블러 처리", desc: "차단된 내용을 지우지 않고 블러 처리합니다."};
 
 /** 블러 강도·마우스 오버 보기는 <html>의 변수/클래스로만 건다 — 행마다 JS를 붙이지 않고 새로 그려진 행에도 그대로 먹는다 (content.scss) */
-const applyBlurStyle = (ctx: ModuleContext): void => {
+const applyBlurStyle = (ctx: Ctx): void => {
     const root = document.documentElement;
-    root.style.setProperty("--refresher-blur", `${Number(ctx.settings.blurStrength)}px`);
-    root.classList.toggle("refresherBlurReveal", ctx.settings.blurReveal === true);
+    root.style.setProperty("--refresher-blur", `${ctx.settings.blurStrength}px`);
+    root.classList.toggle("refresherBlurReveal", ctx.settings.blurReveal);
 };
 
 const DUPLICATE_GROUP: SettingGroup = {name: "같은 댓글 접기", desc: "같은 내용의 댓글이 여러 번 달리면 첫 댓글만 남기고 접습니다. 미리보기에도 적용됩니다."};
 
-const duplicateOf = (ctx: ModuleContext): { count: number; minLength: number } | null =>
-    ctx.settings.foldDuplicate === true ? {count: Number(ctx.settings.duplicateCount), minLength: Number(ctx.settings.duplicateMinLength)} : null;
+const duplicateOf = (ctx: Ctx): { count: number; minLength: number } | null =>
+    ctx.settings.foldDuplicate ? {count: ctx.settings.duplicateCount, minLength: ctx.settings.duplicateMinLength} : null;
 
 /** 이 페이지에서만 차단 내용 보기 — 저장하지 않는다 (새로고침하면 다시 가린다). 보이는 방식은 <html>의 클래스 (content.scss) */
 let revealed = false;
@@ -48,12 +48,12 @@ const REVEAL_CLASS = "refresherBlockReveal";
 const HIDDEN_SELECTOR = ".refresherBlocked, .refresherBlur, .refresherDuplicate";
 
 /** 미리보기도 페이지와 같은 방식으로 가리게 알린다 */
-const publishView = (ctx: ModuleContext): void => {
+const publishView = (ctx: Ctx): void => {
     useUiStore.setState({
         blockView: {
-            blur: ctx.settings.blur === true,
-            blurReveal: ctx.settings.blurReveal === true,
-            replyRemove: ctx.settings.replyRemove === true,
+            blur: ctx.settings.blur,
+            blurReveal: ctx.settings.blurReveal,
+            replyRemove: ctx.settings.replyRemove,
             revealed,
             duplicate: duplicateOf(ctx)
         }
@@ -70,8 +70,8 @@ export interface BlockApi {
     toggleReveal(): void;
 }
 
-const setupFilters = (ctx: ModuleContext, gallery: string | undefined): (() => void) => {
-    const useBlur = () => ctx.settings.blur === true;
+const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
+    const useBlur = () => ctx.settings.blur;
 
     // 숨김도 클래스로만 건다 (content.scss) — 풀 때 디시가 건 인라인 display를 지우지 않는다
     const hide = (element: HTMLElement, blur: boolean): void => element.classList.add(blur ? "refresherBlur" : "refresherBlocked");
@@ -197,7 +197,7 @@ const setupFilters = (ctx: ModuleContext, gallery: string | undefined): (() => v
     return recheck;
 };
 
-const setupSelection = (ctx: ModuleContext): void => {
+const setupSelection = (ctx: Ctx): void => {
     const onContextMenu = (ev: MouseEvent): void => {
         // Shift+우클릭은 유저 버블 대신 브라우저 기본 메뉴를 연다 (링크 복사·요소 검사 등이 막히지 않게)
         if (ev.shiftKey) return;
@@ -242,6 +242,71 @@ const restoreHiddenElements = (): void => {
 /** 설정(블러/대댓글)이 바뀌면 onChanged가 setup의 판정 함수로 다시 그린다 */
 let recheck: (() => void) | undefined;
 
+const settings = {
+    replyRemove: {
+        type: "check",
+        name: "대댓글 삭제",
+        desc: "차단된 댓글의 대댓글을 함께 삭제합니다.",
+        default: false
+    },
+    blur: {
+        type: "check",
+        group: BLUR_GROUP,
+        name: "사용",
+        desc: "차단된 내용을 블러 처리합니다.",
+        default: false
+    },
+    blurReveal: {
+        type: "check",
+        group: BLUR_GROUP,
+        name: "마우스를 올리면 보기",
+        desc: "블러 처리된 내용에 마우스를 올린 동안 원래대로 보여 줍니다.",
+        default: true
+    },
+    blurStrength: {
+        type: "range",
+        group: BLUR_GROUP,
+        name: "강도",
+        desc: "차단된 내용에 거는 블러의 세기입니다.",
+        default: 5,
+        min: 1,
+        max: 20,
+        step: 1,
+        unit: "px"
+    },
+    foldDuplicate: {
+        type: "check",
+        group: DUPLICATE_GROUP,
+        name: "사용",
+        desc: "같은 댓글을 한 줄로 접습니다.",
+        default: false
+    },
+    duplicateCount: {
+        type: "range",
+        group: DUPLICATE_GROUP,
+        name: "반복 횟수",
+        desc: "이만큼 반복되면 접습니다.",
+        default: 3,
+        min: 2,
+        max: 10,
+        step: 1,
+        unit: "번"
+    },
+    duplicateMinLength: {
+        type: "range",
+        group: DUPLICATE_GROUP,
+        name: "최소 글자 수",
+        desc: "이보다 짧은 댓글(ㅋㅋ 등)은 반복돼도 접지 않습니다.",
+        default: 5,
+        min: 1,
+        max: 50,
+        step: 1,
+        unit: "자"
+    }
+} satisfies SettingsSchema;
+
+type Ctx = ModuleContext<typeof settings>;
+
 export default defineModule({
     id: "block",
     name: "컨텐츠 차단",
@@ -249,68 +314,7 @@ export default defineModule({
     icon: Ban,
     urls: [BOARD_PAGE],
 
-    settings: {
-        replyRemove: {
-            type: "check",
-            name: "대댓글 삭제",
-            desc: "차단된 댓글의 대댓글을 함께 삭제합니다.",
-            default: false
-        },
-        blur: {
-            type: "check",
-            group: BLUR_GROUP,
-            name: "사용",
-            desc: "차단된 내용을 블러 처리합니다.",
-            default: false
-        },
-        blurReveal: {
-            type: "check",
-            group: BLUR_GROUP,
-            name: "마우스를 올리면 보기",
-            desc: "블러 처리된 내용에 마우스를 올린 동안 원래대로 보여 줍니다.",
-            default: true
-        },
-        blurStrength: {
-            type: "range",
-            group: BLUR_GROUP,
-            name: "강도",
-            desc: "차단된 내용에 거는 블러의 세기입니다.",
-            default: 5,
-            min: 1,
-            max: 20,
-            step: 1,
-            unit: "px"
-        },
-        foldDuplicate: {
-            type: "check",
-            group: DUPLICATE_GROUP,
-            name: "사용",
-            desc: "같은 댓글을 한 줄로 접습니다.",
-            default: false
-        },
-        duplicateCount: {
-            type: "range",
-            group: DUPLICATE_GROUP,
-            name: "반복 횟수",
-            desc: "이만큼 반복되면 접습니다.",
-            default: 3,
-            min: 2,
-            max: 10,
-            step: 1,
-            unit: "번"
-        },
-        duplicateMinLength: {
-            type: "range",
-            group: DUPLICATE_GROUP,
-            name: "최소 글자 수",
-            desc: "이보다 짧은 댓글(ㅋㅋ 등)은 반복돼도 접지 않습니다.",
-            default: 5,
-            min: 1,
-            max: 50,
-            step: 1,
-            unit: "자"
-        }
-    },
+    settings,
 
     setup(ctx) {
         const gallery = queryString("id") ?? undefined;

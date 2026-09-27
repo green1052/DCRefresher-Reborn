@@ -3,7 +3,7 @@ import {UserRound} from "lucide-react";
 
 import {banReasonsOf, initDatabase, ipInfoOf, type IpInfoFilter, passesIpFilter, subscribeDatabase} from "@/core/database";
 import {defineModule} from "@/core/module/define";
-import type {ModuleContext, SettingGroup} from "@/core/module/types";
+import type {ModuleContext, SettingGroup, SettingSchema, SettingsSchema} from "@/core/module/types";
 import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
 import {queryString} from "@/core/http/urls";
 import {BOARD_PAGE} from "@/core/pages";
@@ -20,7 +20,7 @@ interface RatioInfo {
 }
 
 /** 배지 색 — 키마다 `${키}Color` 설정 하나 (옵션 화면에선 한 칸에 묶임). IP는 분류(korea…vpn)가 키 */
-const BADGE_COLORS: Record<string, [name: string, color: string]> = {
+const BADGE_COLORS = {
     uid: ["유저 ID / IP", "#999999"],
     ratio: ["글댓비", "#999999"],
     ratioAlarm: ["글댓비 경고", "#ff0000"],
@@ -30,22 +30,24 @@ const BADGE_COLORS: Record<string, [name: string, color: string]> = {
     china: ["IP 중국", "#f76b15"],
     foreign: ["IP 그 외 해외", "#12a594"],
     vpn: ["IP VPN", "#8e4ec6"]
-};
+} satisfies Record<string, [name: string, color: string]>;
+
+type BadgeColor = keyof typeof BADGE_COLORS;
 
 const LOW_ACTIVITY_GROUP: SettingGroup = {name: "깡계", desc: "글댓합이 기준 이하인 유저를 깡계로 봅니다. 글댓비 표시가 켜져 있고 글댓비를 받아 둔 유저만 해당합니다."};
 
 const BADGE_COLOR_GROUP: SettingGroup = {name: "배지 색", desc: "유저 정보 배지의 글자 색입니다. IP는 국가별로 칠하고, VPN이면 국가보다 우선합니다."};
 
-const colorsOf = (ctx: ModuleContext): Record<string, string> =>
-    Object.fromEntries(Object.keys(BADGE_COLORS).map((key) => [key, String(ctx.settings[`${key}Color`])]));
+const colorsOf = (ctx: Ctx): Record<string, string> =>
+    Object.fromEntries((Object.keys(BADGE_COLORS) as BadgeColor[]).map((key) => [key, ctx.settings[`${key}Color`]]));
 
 const IP_INFO_FILTERS: Record<IpInfoFilter, string> = {all: "전체", foreign: "해외·VPN만", vpn: "VPN만", none: "표시 안 함"};
 
-const badgeViewOf = (ctx: ModuleContext): BadgeView => ({
-    order: ctx.settings.badgeOrder as BadgeView["order"],
-    fixedUid: ctx.settings.showFixedNickUID === true,
-    halfFixedUid: ctx.settings.showHalfFixedNickUID === true,
-    ipFilter: ctx.settings.ipInfoFilter as IpInfoFilter
+const badgeViewOf = (ctx: Ctx): BadgeView => ({
+    order: ctx.settings.badgeOrder,
+    fixedUid: ctx.settings.showFixedNickUID,
+    halfFixedUid: ctx.settings.showHalfFixedNickUID,
+    ipFilter: ctx.settings.ipInfoFilter
 });
 
 /** 글댓비 캐시 — 다른 탭의 쓰기·개발자 탭의 캐시 비우기를 watch로 받는다. 키는 백업 제외 규칙(refresher:module:*:data)을 따른다 */
@@ -86,7 +88,7 @@ const clearLowActivity = (): void => {
 const makePermBanSpan = (reasons: string, color: string): HTMLElement =>
     buildBadgeSpan(`[${reasons}]`, color, reasons, "ip permBan refresherUserData");
 
-const process = (ctx: ModuleContext, element: HTMLElement): void => {
+const process = (ctx: Ctx, element: HTMLElement): void => {
     // 완료 표시 없이 매번 다시 그린다 — 파싱 중인 작성자 칸(닉콘·IP 전)에 붙은 배지가 칸이 다 읽혀 다시 불릴 때 제자리를 찾는다
     element.querySelector(".refresher-user-badges")?.remove();
 
@@ -118,15 +120,15 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
             if (memo) badges.append(buildBadgeSpan(`[${memo.text}]`, memo.color || undefined, memo.text, "refresherUserData refresherMemoData"));
         }
 
-        if (key === "RATIO" && uid && ctx.settings.checkRatio === true) {
+        if (key === "RATIO" && uid && ctx.settings.checkRatio) {
             const cached = ratios[uid];
             if (isFresh(cached)) {
-                badges.append(makeRatioSpan(cached, Number(ctx.settings.alarmRatio), colors));
-                lowActivity = isLowActivity(cached, Number(ctx.settings.alarmRatio));
+                badges.append(makeRatioSpan(cached, ctx.settings.alarmRatio, colors));
+                lowActivity = isLowActivity(cached, ctx.settings.alarmRatio);
             }
         }
 
-        if (key === "PERMBAN" && uid && ctx.settings.checkPermBan === true) {
+        if (key === "PERMBAN" && uid && ctx.settings.checkPermBan) {
             const reasons = banReasonsOf(uid);
             if (reasons) badges.append(makePermBanSpan(reasons, colors.permBan!));
         }
@@ -141,13 +143,13 @@ const process = (ctx: ModuleContext, element: HTMLElement): void => {
 };
 
 /** 미리보기 작성자 표시도 같은 색·순서·표시 조건을 쓰게 공유 */
-const publishBadges = (ctx: ModuleContext): void => {
+const publishBadges = (ctx: Ctx): void => {
     const colors = colorsOf(ctx);
     useUiStore.setState({
         badgeColors: {
             ...colors,
             // 갱차 조회를 끄면 미리보기에서도 숨긴다
-            permBan: ctx.settings.checkPermBan === true ? colors.permBan : undefined
+            permBan: ctx.settings.checkPermBan ? colors.permBan : undefined
         },
         badgeView: badgeViewOf(ctx)
     });
@@ -161,19 +163,88 @@ const migrateShowIpInfo = async (): Promise<void> => {
 };
 
 /** 미리보기도 같은 글댓비를 쓰게 공유 */
-const publishRatios = (ctx: ModuleContext): void => {
+const publishRatios = (ctx: Ctx): void => {
     useUiStore.setState({
-        ratios: ctx.settings.checkRatio === true
-            ? {cache: Object.fromEntries(Object.entries(ratios).filter(([, info]) => isFresh(info))), alarm: Number(ctx.settings.alarmRatio)}
+        ratios: ctx.settings.checkRatio
+            ? {cache: Object.fromEntries(Object.entries(ratios).filter(([, info]) => isFresh(info))), alarm: ctx.settings.alarmRatio}
             : null
     });
 };
 
-const rebuildAll = (ctx: ModuleContext): void => {
+const rebuildAll = (ctx: Ctx): void => {
     clearLowActivity();
     // 배지가 없던 작성자도 포함 — 설정을 켜서 새로 생기는 배지가 있다 (필터 선택자와 같은 대상)
     for (const element of document.querySelectorAll<HTMLElement>(".ub-writer:not([user_name])")) process(ctx, element);
 };
+
+const settings = {
+    showFixedNickUID: {
+        type: "check",
+        name: "고정닉 UID 표시",
+        desc: "고정닉 유저의 UID를 표시합니다.",
+        default: true
+    },
+    showHalfFixedNickUID: {
+        type: "check",
+        name: "반고정닉 UID 표시",
+        desc: "반고정닉 유저의 UID를 표시합니다.",
+        default: true
+    },
+    ipInfoFilter: {
+        type: "option",
+        name: "IP 정보 표시",
+        desc: "IP의 통신사·조직과 국가를 표시할 대상입니다. VPN은 국가와 상관없이 해외·VPN에 들어갑니다. " +
+            "표시되는 정보는 공개 IP 데이터로 추정한 값이라 실제와 다를 수 있습니다.",
+        default: "all",
+        items: IP_INFO_FILTERS
+    },
+    checkRatio: {
+        type: "check",
+        name: "글댓비 표시",
+        desc: "글댓비를 표시합니다. (1시간마다 갱신, 새 글 작성 시에만 조회)",
+        default: false
+    },
+    alarmRatio: {
+        type: "range",
+        group: LOW_ACTIVITY_GROUP,
+        name: "기준",
+        desc: "글댓합이 이 값 이하면 깡계로 봅니다. (0이면 끔)",
+        default: 0,
+        min: 0,
+        max: 5000,
+        step: 10,
+        unit: "개"
+    },
+    lowActivityAction: {
+        type: "option",
+        group: LOW_ACTIVITY_GROUP,
+        name: "처리",
+        desc: "깡계 유저의 글·댓글을 어떻게 보여 줄지 정합니다.",
+        default: "tag",
+        items: LOW_ACTIVITY_ACTIONS
+    },
+    checkPermBan: {
+        type: "check",
+        name: "갱차 조회",
+        desc: "갱신 차단 여부를 조회합니다.",
+        default: false
+    },
+    ...(Object.fromEntries(
+        Object.entries(BADGE_COLORS).map(([key, [name, color]]) => [
+            `${key}Color`,
+            {type: "color", group: BADGE_COLOR_GROUP, name, desc: `${name} 배지의 글자 색입니다.`, default: color}
+        ])
+    ) as Record<`${BadgeColor}Color`, Extract<SettingSchema, { type: "color" }>>),
+    badgeOrder: {
+        type: "order",
+        name: "정보 배치 순서",
+        desc: "유저 정보 배지의 표시 순서를 정합니다.",
+        items: {UID: "유저 ID / IP", MEMO: "메모", RATIO: "글댓비", PERMBAN: "갱차"},
+        default: ["UID", "MEMO", "RATIO", "PERMBAN"]
+    }
+} satisfies SettingsSchema;
+
+type Ctx = ModuleContext<typeof settings>;
 
 export default defineModule({
     id: "userinfo",
@@ -182,72 +253,7 @@ export default defineModule({
     icon: UserRound,
     urls: [BOARD_PAGE],
 
-    settings: {
-        showFixedNickUID: {
-            type: "check",
-            name: "고정닉 UID 표시",
-            desc: "고정닉 유저의 UID를 표시합니다.",
-            default: true
-        },
-        showHalfFixedNickUID: {
-            type: "check",
-            name: "반고정닉 UID 표시",
-            desc: "반고정닉 유저의 UID를 표시합니다.",
-            default: true
-        },
-        ipInfoFilter: {
-            type: "option",
-            name: "IP 정보 표시",
-            desc: "IP의 통신사·조직과 국가를 표시할 대상입니다. VPN은 국가와 상관없이 해외·VPN에 들어갑니다. " +
-                "표시되는 정보는 공개 IP 데이터로 추정한 값이라 실제와 다를 수 있습니다.",
-            default: "all",
-            items: IP_INFO_FILTERS
-        },
-        checkRatio: {
-            type: "check",
-            name: "글댓비 표시",
-            desc: "글댓비를 표시합니다. (1시간마다 갱신, 새 글 작성 시에만 조회)",
-            default: false
-        },
-        alarmRatio: {
-            type: "range",
-            group: LOW_ACTIVITY_GROUP,
-            name: "기준",
-            desc: "글댓합이 이 값 이하면 깡계로 봅니다. (0이면 끔)",
-            default: 0,
-            min: 0,
-            max: 5000,
-            step: 10,
-            unit: "개"
-        },
-        lowActivityAction: {
-            type: "option",
-            group: LOW_ACTIVITY_GROUP,
-            name: "처리",
-            desc: "깡계 유저의 글·댓글을 어떻게 보여 줄지 정합니다.",
-            default: "tag",
-            items: LOW_ACTIVITY_ACTIONS
-        },
-        checkPermBan: {
-            type: "check",
-            name: "갱차 조회",
-            desc: "갱신 차단 여부를 조회합니다.",
-            default: false
-        },
-        ...Object.fromEntries(
-            Object.entries(BADGE_COLORS).map(([key, [name, color]]) => [
-                `${key}Color`,
-                {type: "color", group: BADGE_COLOR_GROUP, name, desc: `${name} 배지의 글자 색입니다.`, default: color} as const
-            ])
-        ),
-        badgeOrder: {
-            type: "order",
-            name: "정보 배치 순서",
-            desc: "유저 정보 배지의 표시 순서를 정합니다.",
-            items: {UID: "유저 ID / IP", MEMO: "메모", RATIO: "글댓비", PERMBAN: "갱차"},
-            default: ["UID", "MEMO", "RATIO", "PERMBAN"]
-        }
-    },
+    settings,
 
     async setup(ctx) {
         // 먼저 그린다 — 옮기는 동안 모듈이 꺼지면 revoke가 지운 뒤에 다시 그리게 된다. 옮긴 값은 설정 감시 → onChanged가 반영한다
@@ -285,7 +291,7 @@ export default defineModule({
 
         // 새 글: 글댓비 조회 (1시간 캐시, 첫 10개)
         eventBus.on("newPostList", ({data: elements}) => {
-            if (ctx.settings.checkRatio !== true) return;
+            if (!ctx.settings.checkRatio) return;
 
             const stale: string[] = [];
 

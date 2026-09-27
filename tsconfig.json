@@ -1,6 +1,8 @@
 {
     "extends": "./.wxt/tsconfig.json",
     "compilerOptions": {
-        "jsx": "react-jsx"
+        "jsx": "react-jsx",
+        "noUnusedLocals": true,
+        "noUnusedParameters": true
     }
 }

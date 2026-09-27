@@ -6,7 +6,7 @@ import {checkboxCellFactory, highlightSearchResults, LIST_SELECTOR, PAGING_SELEC
 import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi} from "@/core/module/registry";
-import type {ModuleContext} from "@/core/module/types";
+import type {ModuleContext, SettingsSchema} from "@/core/module/types";
 import {eventBus} from "@/core/eventbus/bus";
 import {sendMessage} from "@/core/messaging/protocol";
 import {useUiStore} from "@/stores/ui";
@@ -49,9 +49,54 @@ const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, n
 };
 
 /** 방문 링크 색상 (Firefox 대응) */
-const applyDoNotColorVisited = (ctx: ModuleContext): void => {
-    document.documentElement.classList.toggle("refresherDoNotColorVisited", ctx.settings.doNotColorVisited === true);
+const applyDoNotColorVisited = (ctx: Ctx): void => {
+    document.documentElement.classList.toggle("refresherDoNotColorVisited", ctx.settings.doNotColorVisited);
 };
+
+const settings = {
+    refreshRate: {
+        type: "range",
+        name: "새로고침 주기",
+        desc: "글 목록을 새로고침하는 주기입니다.",
+        default: 5000,
+        min: 3000,
+        max: 20000,
+        step: 100,
+        unit: "ms"
+    },
+    fadeIn: {
+        type: "check",
+        name: "새 게시글 효과",
+        desc: "새로 추가된 게시글에 효과를 넣습니다.",
+        default: true
+    },
+    useBetterBrowse: {
+        type: "check",
+        name: "인페이지 페이지 전환",
+        desc: "페이지 이동 시 새로고침을 끄지 않고 이동합니다.",
+        default: true
+    },
+    noRefreshOnSearch: {
+        type: "check",
+        name: "검색 중 페이지 새로고침 안 함",
+        desc: "검색 중에는 자동 새로고침을 하지 않습니다.",
+        default: true
+    },
+    pauseOnHover: {
+        type: "check",
+        name: "목록 위에서 새로고침 안 함",
+        desc: "마우스를 글 목록 위에 올려 두는 동안에는 자동 새로고침을 하지 않습니다. 누르려던 글이 밀리지 않습니다.",
+        default: false
+    },
+    doNotColorVisited: {
+        type: "check",
+        name: "방문 링크 색상 지정 비활성화",
+        desc: "방문한 링크의 색상을 기본 색상으로 지정합니다.",
+        default: false
+    }
+} satisfies SettingsSchema;
+
+type Ctx = ModuleContext<typeof settings>;
 
 export default defineModule({
     id: "refresh",
@@ -60,48 +105,7 @@ export default defineModule({
     icon: RefreshCw,
     urls: [BOARD_PAGE],
 
-    settings: {
-        refreshRate: {
-            type: "range",
-            name: "새로고침 주기",
-            desc: "글 목록을 새로고침하는 주기입니다.",
-            default: 5000,
-            min: 3000,
-            max: 20000,
-            step: 100,
-            unit: "ms"
-        },
-        fadeIn: {
-            type: "check",
-            name: "새 게시글 효과",
-            desc: "새로 추가된 게시글에 효과를 넣습니다.",
-            default: true
-        },
-        useBetterBrowse: {
-            type: "check",
-            name: "인페이지 페이지 전환",
-            desc: "페이지 이동 시 새로고침을 끄지 않고 이동합니다.",
-            default: true
-        },
-        noRefreshOnSearch: {
-            type: "check",
-            name: "검색 중 페이지 새로고침 안 함",
-            desc: "검색 중에는 자동 새로고침을 하지 않습니다.",
-            default: true
-        },
-        pauseOnHover: {
-            type: "check",
-            name: "목록 위에서 새로고침 안 함",
-            desc: "마우스를 글 목록 위에 올려 두는 동안에는 자동 새로고침을 하지 않습니다. 누르려던 글이 밀리지 않습니다.",
-            default: false
-        },
-        doNotColorVisited: {
-            type: "check",
-            name: "방문 링크 색상 지정 비활성화",
-            desc: "방문한 링크의 색상을 기본 색상으로 지정합니다.",
-            default: false
-        }
-    },
+    settings,
 
     setup(ctx) {
         let paused = Boolean(queryString("s_keyword") && ctx.settings.noRefreshOnSearch);
@@ -175,7 +179,7 @@ export default defineModule({
 
                 // 목록은 통째로 갈아끼워져 커서·키보드 포커스 아래 행이 바뀐다 — 설정을 켜면 그 위에 있는 동안은 건너뛴다.
                 // 포커스는 :focus-visible만 본다: 글 제목을 마우스로 누르면 링크에 포커스가 남아 목록을 떠나도 계속 멈춘다
-                const list = ctx.settings.pauseOnHover === true ? document.querySelector(LIST_SELECTOR) : null;
+                const list = ctx.settings.pauseOnHover ? document.querySelector(LIST_SELECTOR) : null;
                 if (list && (list.matches(":hover") || list.querySelector(":focus-visible"))) return false;
             }
 
@@ -205,7 +209,7 @@ export default defineModule({
                 // 사용자가 한 이동은 느린 검색 결과도 기다린다 (timeout: undefined는 기본값을 덮으니 빼야 한다)
                 const response = await http.get(listUrl(target), {
                     signal: controller.signal,
-                    ...(force ? {} : {timeout: Number(ctx.settings.refreshRate) - 100, retry: 0})
+                    ...(force ? {} : {timeout: ctx.settings.refreshRate - 100, retry: 0})
                 }).text();
                 // 그 사이 주소가 바뀌었으면 지난 주소의 목록이라 버린다 — finally에서 새 주소로 다시 받는다
                 if (target !== originalLocation) return false;
@@ -336,7 +340,7 @@ export default defineModule({
             if (ctx.signal.aborted || document.hidden) return;
 
             // 실패가 이어지면 주기를 두 배씩 늘린다 (최대 60초). 성공하면 load가 failures를 0으로 되돌린다
-            const interval = Math.min(Number(ctx.settings.refreshRate) * 2 ** failures, MAXIMUM_BACKOFF_INTERVAL);
+            const interval = Math.min(ctx.settings.refreshRate * 2 ** failures, MAXIMUM_BACKOFF_INTERVAL);
             // 응답을 받은 뒤 다음 주기를 잡아야 방금 실패가 바로 반영된다
             timer = window.setTimeout(() => void load().finally(armNext), interval + 500 + Math.random() * 1500);
         };
