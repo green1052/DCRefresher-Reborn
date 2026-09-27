@@ -350,6 +350,11 @@
 /* ===== 댓글 ===== */
 
 .refresher-comment {
+    // 화면 밖 댓글은 레이아웃·스타일 계산을 건너뛴다 — 댓글 수백 개인 글을 열 때 레이아웃이 크게 준다.
+    // 트리 선(::before/::after)은 모두 칸 안에 그리므로 잘리지 않는다
+    content-visibility: auto;
+    contain-intrinsic-size: auto 72px;
+
     &:hover {
         background: var(--gray-a2);
     }

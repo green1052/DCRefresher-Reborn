@@ -1,8 +1,7 @@
-import {Box, Flex, IconButton, Text, Tooltip} from "@radix-ui/themes";
+import {Box, Flex, IconButton, Text} from "@radix-ui/themes";
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
 import {Fragment, type MouseEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from "react";
 
-import {overlay} from "@/components/overlay/shadow";
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {User} from "@/core/preview/types";
 import {adminDeleteComment, graphemes, userDeleteComment, wrapTxtcon} from "@/core/preview/request";
@@ -15,10 +14,14 @@ import {banReasonsOf, databaseVersion, ipInfoOf, passesIpFilter, subscribeDataba
 import {parseDate, usePreviewStore} from "./previewStore";
 import {nonmemberStorage} from "./WriteComment";
 
+/** 절대 시각 — toLocaleString()은 부를 때마다 포매터를 새로 만든다 (댓글 수백 개가 다시 그려질 때마다) */
+const ABSOLUTE = new Intl.DateTimeFormat(undefined, {year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric"});
+const absoluteOf = (date: Date): string => (Number.isNaN(date.getTime()) ? "" : ABSOLUTE.format(date));
+
 const relative = (date: Date): string => {
     const diff = Date.now() - date.getTime();
     // PC 시계가 조금 느리면 방금 단 댓글이 미래 시각이 된다 — 1분까지는 방금 전으로
-    if (Number.isNaN(diff) || diff < -60_000) return date.toLocaleString();
+    if (Number.isNaN(diff) || diff < -60_000) return absoluteOf(date);
     if (diff < 3000) return "방금 전";
 
     const units: [string, number][] = [
@@ -34,7 +37,28 @@ const relative = (date: Date): string => {
         if (diff >= ms) return `${Math.floor(diff / ms)}${label} 전`;
     }
 
-    return date.toLocaleString();
+    return absoluteOf(date);
+};
+
+/**
+ * 시각 표시가 같이 쓰는 시계 — 댓글마다 타이머를 두면 댓글 수백 개가 저마다 다시 그려진다.
+ * 보는 곳이 있을 때만 5초마다 알리고(탭이 숨겨져 있으면 건너뛴다), 받는 쪽은 글자가 바뀐 것만 다시 그린다 (useSyncExternalStore)
+ */
+const clockListeners = new Set<() => void>();
+let clockTimer = 0;
+const subscribeClock = (listener: () => void): (() => void) => {
+    clockListeners.add(listener);
+    clockTimer ||= window.setInterval(() => {
+        if (document.hidden) return;
+        for (const notify of clockListeners) notify();
+    }, 5000);
+
+    return () => {
+        clockListeners.delete(listener);
+        if (clockListeners.size > 0) return;
+        window.clearInterval(clockTimer);
+        clockTimer = 0;
+    };
 };
 
 // 닉콘(a.writer_nikcon img)의 src — 댓글마다 DOMParser를 돌리지 않게 정규식으로. 디시는 작은따옴표를 쓰지만 따옴표 없는 값도 받는다
@@ -116,13 +140,13 @@ export const useTick = (ms: number): void => {
 export const TimeStamp = ({date, size = "1"}: { date: string; size?: "1" | "2" }) => {
     const parsed = parseDate(date);
     const [absolute, setAbsolute] = useState(false);
-    // 댓글마다 타이머가 도니, 초 단위로 바뀌는 1분 미만일 때만 5초마다, 그 밖에는 1분마다 다시 그린다
-    useTick(Date.now() - parsed.getTime() < 60_000 ? 5000 : 60_000);
+    const since = useSyncExternalStore(subscribeClock, () => relative(parsed));
+    const full = absoluteOf(parsed);
 
     return (
-        <Text size={size} color="gray" title={parsed.toLocaleString()} style={{cursor: "pointer", whiteSpace: "nowrap"}}
+        <Text size={size} color="gray" title={full} style={{cursor: "pointer", whiteSpace: "nowrap"}}
               onClick={() => setAbsolute((x) => !x)}>
-            {Number.isNaN(parsed.getTime()) ? "이미 삭제됨" : absolute ? parsed.toLocaleString() : relative(parsed)}
+            {Number.isNaN(parsed.getTime()) ? "이미 삭제됨" : absolute ? full : since}
         </Text>
     );
 };
@@ -264,13 +288,12 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                 <Flex align="center" gap="1" minWidth="0">
                     <UserCard user={user} op={isOp}/>
                     {comment.duplicates ? <Text size="1" color="gray" style={{whiteSpace: "nowrap"}}>같은 댓글 ×{comment.duplicates}</Text> : null}
+                    {/* 툴팁은 브라우저 기본(title) — 쓰레드마다 Radix 툴팁을 달면 댓글이 많은 글을 열 때 느려진다 */}
                     {depth === 0 && replyCount > 1 && (
-                        <Tooltip content={collapsed ? "답글 펼치기" : "답글 접기"} container={overlay.portal}>
-                            <IconButton size="1" variant="ghost" color="gray" aria-label="답글 접기"
-                                        onClick={() => toggleCollapse(comment.no)}>
-                                <ChevronDown size={14} style={{transform: collapsed ? "rotate(-90deg)" : undefined}}/>
-                            </IconButton>
-                        </Tooltip>
+                        <IconButton size="1" variant="ghost" color="gray" aria-label={collapsed ? "답글 펼치기" : "답글 접기"}
+                                    title={collapsed ? "답글 펼치기" : "답글 접기"} onClick={() => toggleCollapse(comment.no)}>
+                            <ChevronDown size={14} style={{transform: collapsed ? "rotate(-90deg)" : undefined}}/>
+                        </IconButton>
                     )}
                 </Flex>
 
