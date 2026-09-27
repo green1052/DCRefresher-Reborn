@@ -70,6 +70,19 @@ export const moduleSettingsStorage = (id: string): WxtStorageItem<Record<string,
     return item;
 };
 
+/** 모듈 캐시(글댓비 등) — 백업·내보내기에서 빠진다 (isModuleDataKey). 쓰는 모듈이 한 번만 만든다 */
+export const moduleDataStorage = <T>(id: string, fallback: T): WxtStorageItem<T, {}> =>
+    storage.defineItem<T>(`local:refresher:module:${id}:data`, {fallback});
+
+/** moduleDataStorage의 키인지 (local: 없이) */
+export const isModuleDataKey = (key: string): boolean => /^refresher:module:.+:data$/.test(key);
+
+/**
+ * 비회원 댓글 닉네임·비밀번호 — 확장 저장소에만 둔다 (페이지 스크립트가 못 읽게). 비밀번호가 평문이라 백업·내보내기에서 빠진다.
+ * 댓글 쓰기가 저장하고, 댓글 삭제가 먼저 내민다
+ */
+export const nonmemberStorage = storage.defineItem<{ nick: string; pw: string }>("local:refresher:nonmember", {fallback: {nick: "", pw: ""}});
+
 /**
  * IP/밴 DB — 따로 읽게 세 키로 나눈다: 갱신 확인은 meta만, 페이지는 ip만, 밴은 쓸 때만 (수백 KB).
  * ip·ban은 JSON 문자열이다 — 값 약 10만 개짜리 객체 그래프는 읽을 때마다 메인 스레드를 10ms 넘게 막는다. 없으면 ""

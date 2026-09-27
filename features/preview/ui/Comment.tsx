@@ -13,7 +13,7 @@ import {useGallogActivity} from "@/utils/gallogActivity";
 import {banReasonsOf, databaseVersion, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
 
 import {parseDate, usePreviewStore} from "./previewStore";
-import {nonmemberStorage} from "./WriteComment";
+import {nonmemberStorage} from "@/core/storage/items";
 
 /** 절대 시각 — toLocaleString()은 부를 때마다 포매터를 새로 만든다 (댓글 수백 개가 다시 그려질 때마다) */
 const ABSOLUTE = new Intl.DateTimeFormat(undefined, {year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric"});

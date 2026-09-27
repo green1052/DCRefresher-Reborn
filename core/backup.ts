@@ -5,7 +5,7 @@
  * 설정을 통째로 gzip → base64로 묶어 8KB 이하 조각(<칸>:0, <칸>:1, …)으로 나누고,
  * 조각 수와 해시를 담은 <칸> 키와 함께 set 한 번으로 쓴다 — 실패해도 이전 백업이 그대로 남는다.
  */
-import {backupStorage} from "@/core/storage/items";
+import {backupStorage, isModuleDataKey} from "@/core/storage/items";
 
 export type BackupSlot = "manual" | "auto";
 
@@ -29,9 +29,6 @@ interface BackupMeta {
     size: number;
     createdAt: number;
 }
-
-/** 모듈 캐시 키 (refresher:module:<id>:data) */
-export const isModuleDataKey = (key: string): boolean => /^refresher:module:.+:data$/.test(key);
 
 /**
  * 백업·내보내기에서 빼는 로컬 키

@@ -4,7 +4,7 @@ import {useEffect, useRef, useState, useSyncExternalStore} from "react";
 import {storage} from "wxt/utils/storage";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
-import {isModuleDataKey} from "@/core/backup";
+import {isModuleDataKey} from "@/core/storage/items";
 import {databaseVersion, initDatabase, ipInfoOf, parseBans, parseIp, subscribeDatabase} from "@/core/database";
 import {compactIpData, type RawIpData} from "@/core/ipdb";
 import {DB_KEYS, dbStorage, writeDatabase} from "@/core/storage/items";

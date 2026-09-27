@@ -1,7 +1,6 @@
 import {Box, Flex, IconButton, Link, Text, TextArea, TextField, Tooltip} from "@radix-ui/themes";
 import {Send, Smile, Type, X} from "lucide-react";
 import {useEffect, useRef, useState} from "react";
-import {storage} from "wxt/utils/storage";
 
 import {overlay} from "@/components/overlay/shadow";
 import {
@@ -14,6 +13,7 @@ import {
     TXTCON_COLORS
 } from "@/core/preview/request";
 import type {DcinsideDccon} from "@/core/preview/types";
+import {nonmemberStorage} from "@/core/storage/items";
 import {sendMessage} from "@/core/messaging/protocol";
 import {useUiStore} from "@/stores/ui";
 import {loggedInUserId} from "@/utils/user";
@@ -61,9 +61,6 @@ const Swatch = ({color, selected, label, onClick}: {
         }}
     />
 );
-
-// 비회원 자격은 확장 isolated storage에만 보관 (페이지 world 접근 차단) — 댓글 삭제(Comment.tsx)도 이 비밀번호를 먼저 내민다
-export const nonmemberStorage = storage.defineItem<{ nick: string; pw: string }>("local:refresher:nonmember", {fallback: {nick: "", pw: ""}});
 
 /** 쓰던 댓글 한 칸 — 창을 닫았다 같은 글을 다시 열면 남고, 다른 글을 열면 버린다 */
 let draft = {key: "", text: ""};

@@ -1,4 +1,3 @@
-import {storage} from "wxt/utils/storage";
 import {UserRound} from "lucide-react";
 
 import {banReasonsOf, initDatabase, ipInfoOf, type IpInfoFilter, passesIpFilter, subscribeDatabase} from "@/core/database";
@@ -8,7 +7,7 @@ import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
 import {queryString} from "@/core/http/urls";
 import {BOARD_PAGE} from "@/core/pages";
 import {eventBus} from "@/core/eventbus/bus";
-import {moduleSettingsStorage} from "@/core/storage/items";
+import {moduleDataStorage, moduleSettingsStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";
 import {type BadgeView, DEFAULT_BADGE_VIEW, showsUid, useUiStore} from "@/stores/ui";
 import {insertWriterSpan} from "@/utils/userDataInsert";
@@ -51,7 +50,7 @@ const badgeViewOf = (ctx: Ctx): BadgeView => ({
 });
 
 /** 글댓비 캐시 — 다른 탭의 쓰기·개발자 탭의 캐시 비우기를 watch로 받는다. 키는 백업 제외 규칙(refresher:module:*:data)을 따른다 */
-const ratioStorage = storage.defineItem<{ ratio?: Record<string, RatioInfo> }>("local:refresher:module:userinfo:data", {fallback: {}});
+const ratioStorage = moduleDataStorage<{ ratio?: Record<string, RatioInfo> }>("userinfo", {});
 let ratios: Record<string, RatioInfo> = {};
 
 /** 글댓비 저장 상한 — 최근에 받은 사람부터 이만큼만 남긴다 */
