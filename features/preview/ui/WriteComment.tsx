@@ -65,9 +65,19 @@ const Swatch = ({color, selected, label, onClick}: {
 // 비회원 자격은 확장 isolated storage에만 보관 (페이지 world 접근 차단) — 댓글 삭제(Comment.tsx)도 이 비밀번호를 먼저 내민다
 export const nonmemberStorage = storage.defineItem<{ nick: string; pw: string }>("local:refresher:nonmember", {fallback: {nick: "", pw: ""}});
 
+/** 쓰던 댓글 한 칸 — 창을 닫았다 같은 글을 다시 열면 남고, 다른 글을 열면 버린다 */
+let draft = {key: "", text: ""};
+
 /** 댓글 작성 폼 */
 export const WriteComment = () => {
     const reply = usePreviewStore((s) => s.reply);
+    // 폼은 글마다 새로 그려진다 (Frame의 key) — 그때 이 글의 쓰던 댓글이면 되살린다
+    const [initialText] = useState(() => {
+        const preData = usePreviewStore.getState().preData;
+        const key = preData ? `${preData.gallery}/${preData.id}` : "";
+        if (draft.key !== key) draft = {key, text: ""};
+        return draft.text;
+    });
     const [login] = useState(() => Boolean(document.querySelector("#login_box .user_info .nickname > em")));
     const [accountId] = useState(loggedInUserId);
     const [nick, setNick] = useState("ㅇㅇ");
@@ -152,6 +162,7 @@ export const WriteComment = () => {
             if (txtcon || useDccon ? response.result === "ok" : response.result !== "false") {
                 // 보내는 사이 더 쓴 글은 남긴다
                 if (textarea.current?.value === raw) textarea.current.value = "";
+                if (draft.text === raw) draft.text = "";
                 setDccons([]);
                 setBigDccon(false);
                 setTxtcon(false);
@@ -235,6 +246,7 @@ export const WriteComment = () => {
                     size="2"
                     rows={2}
                     resize="vertical"
+                    defaultValue={initialText}
                     disabled={dccons.length > 0}
                     placeholder={
                         dccons.length > 0 ? "디시콘이 선택됐습니다."
@@ -244,9 +256,11 @@ export const WriteComment = () => {
                     style={{flex: 1}}
                     onChange={(ev) => {
                         if (txtcon && !(ev.nativeEvent as InputEvent).isComposing) applyTxtcon();
+                        draft.text = ev.target.value;
                     }}
-                    onCompositionEnd={() => {
+                    onCompositionEnd={(ev) => {
                         if (txtcon) applyTxtcon();
+                        draft.text = ev.currentTarget.value;
                     }}
                     onKeyDown={(ev) => {
                         if (ev.key === "Enter" && !ev.shiftKey && !ev.nativeEvent.isComposing) {
