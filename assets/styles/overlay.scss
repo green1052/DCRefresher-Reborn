@@ -1,5 +1,6 @@
 /* ===== 오버레이 (shadow root 전용) — 컴포넌트 스타일은 Radix Themes, 여기엔 배치와 디시 HTML만 ===== */
 
+@use "mixins";
 @use "radix";
 
 :host {
@@ -307,25 +308,7 @@
 
     /* 스텔스 모드: 가려 두고 마우스를 올리면 보인다 (변수는 stealth.scss가 페이지에서 넘긴다) */
     &[data-dccon] {
-        position: relative;
-        width: fit-content;
-    }
-
-    &[data-dccon]:not(:hover) {
-        :is(img, video, .coment_dccon_txt) {
-            visibility: var(--refresher-stealth-dccon-visibility, visible);
-        }
-
-        &::before {
-            content: var(--refresher-stealth-dccon-label, none);
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--gray-a6);
-            font-weight: bold;
-        }
+        @include mixins.dccon-cover(var(--gray-a6));
     }
 
     /* 글자콘 — 디시 common.css를 옮김. 모르는 색 클래스면 디시 기본값(남색 바탕·흰 글자) */
@@ -358,36 +341,17 @@
         box-sizing: border-box;
     }
 
-    .cbg_3b4890 {
-        background-color: #3b4890;
+    // 색 목록은 request.ts의 TXTCON_BACKGROUNDS·TXTCON_COLORS와 같다
+    @each $color in ("3b4890", "b4b4e1", "f5e1f0", "d2f0e6", "ffffff", "333333") {
+        .cbg_#{$color} {
+            background-color: #{"#" + $color};
+        }
     }
 
-    .cbg_b4b4e1 {
-        background-color: #b4b4e1;
-    }
-
-    .cbg_f5e1f0 {
-        background-color: #f5e1f0;
-    }
-
-    .cbg_d2f0e6 {
-        background-color: #d2f0e6;
-    }
-
-    .cbg_ffffff {
-        background-color: #ffffff;
-    }
-
-    .cbg_333333 {
-        background-color: #333333;
-    }
-
-    .ctxt_ffffff {
-        color: #ffffff;
-    }
-
-    .ctxt_333333 {
-        color: #333333;
+    @each $color in ("ffffff", "333333") {
+        .ctxt_#{$color} {
+            color: #{"#" + $color};
+        }
     }
 
     .cbg_ffffff .ctxt_ffffff {
@@ -401,43 +365,9 @@
 
 /* ===== 댓글 ===== */
 
-/* 답글 접기·펼치기 (Frame.tsx). 높이는 Radix Collapsible이 재서 변수로 준다 */
+/* 답글 접기·펼치기 (Frame.tsx) */
 .refresher-replies {
-    overflow: clip;
-
-    &[data-state="open"] {
-        animation: refresher-replies-open 200ms ease-out;
-    }
-
-    &[data-state="closed"] {
-        animation: refresher-replies-close 200ms ease-out;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        animation: none !important;
-    }
-}
-
-@keyframes refresher-replies-open {
-    from {
-        height: 0;
-        opacity: 0;
-    }
-
-    to {
-        height: var(--radix-collapsible-content-height);
-    }
-}
-
-@keyframes refresher-replies-close {
-    from {
-        height: var(--radix-collapsible-content-height);
-    }
-
-    to {
-        height: 0;
-        opacity: 0;
-    }
+    @include mixins.collapsible;
 }
 
 .refresher-comment {
@@ -503,14 +433,11 @@
 /* 차단 — 페이지와 같은 차단 모듈 설정 (Frame의 data-*). 블러 강도 변수는 <html>에서 shadow 안으로 이어받는다 */
 .refresher-frame {
     [data-blocked="blur"] {
-        filter: blur(var(--refresher-blur, 5px));
-        opacity: 0.5;
-        transition: filter 0.15s, opacity 0.15s;
+        @include mixins.blurred;
     }
 
-    &[data-blur-reveal] [data-blocked="blur"]:is(:hover, :has(:focus-visible)) {
-        filter: none;
-        opacity: 1;
+    &[data-blur-reveal] [data-blocked="blur"] {
+        @include mixins.blur-reveal;
     }
 
     // 이 페이지에서만 가린 내용 보기 — 숨겼던 것도 흐리게 보인다

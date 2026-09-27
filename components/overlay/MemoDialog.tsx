@@ -62,73 +62,77 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                 {MEMO_TYPE_NAMES[type]}: <Text weight="bold" highContrast>{value}</Text>
             </Dialog.Description>
 
-            <Flex direction="column" gap="3">
-                <SegmentedControl.Root value={type} onValueChange={(next) => {
-                    if (!arrayIncludes(MEMO_TYPES, next) || !state.targets[next]) return;
-                    setType(next);
-                    setForm(prefill(next));
-                }}>
-                    {MEMO_TYPES.filter((memoType) => state.targets[memoType]).map((memoType) => (
-                        <SegmentedControl.Item key={memoType} value={memoType}>
-                            {MEMO_TYPE_NAMES[memoType]}
-                        </SegmentedControl.Item>
-                    ))}
-                </SegmentedControl.Root>
-
-                <TextField.Root
-                    maxLength={160}
-                    placeholder="메모를 입력해 주세요 (160자 제한)"
-                    value={text}
-                    onChange={(ev) => setForm({...form, text: ev.target.value})}
-                    // 한글 조합 중 Enter는 조합 확정용 keydown까지 두 번 오므로 isComposing인 것은 건너뛴다
-                    onKeyDown={(ev) => ev.key === "Enter" && !ev.nativeEvent.isComposing && void submit()}
-                    autoFocus
-                >
-                    <TextField.Slot>
-                        <input
-                            type="color"
-                            aria-label="색상"
-                            value={color}
-                            onChange={(ev) => setForm({...form, color: ev.target.value})}
-                            style={{width: 20, height: 20, padding: 0, border: 0, background: "none", cursor: "pointer"}}
-                        />
-                    </TextField.Slot>
-                    <TextField.Slot side="right">
-                        <Button size="1" variant="ghost" color="gray" aria-label="랜덤 색상"
-                                onClick={() => setForm({...form, color: randomColor()})}>
-                            <Shuffle size={12}/>
-                        </Button>
-                    </TextField.Slot>
-                </TextField.Root>
-
-                {gallery && (
-                    <Text as="label" size="2">
-                        <Flex gap="2" align="center">
-                            <Checkbox checked={scope === gallery}
-                                      onCheckedChange={(checked) => setForm({...form, scope: checked === true ? gallery : undefined})}/>
-                            이 갤러리에서만 ({gallery})
-                        </Flex>
-                    </Text>
-                )}
-                {scope && scope !== gallery && (
-                    <Text size="2" color="gray">지금은 {scope} 갤러리 전용 메모입니다.</Text>
-                )}
-            </Flex>
-
-            <Flex gap="3" justify="end" mt="4">
-                {existing && (
-                    <Button variant="soft" color="red" onClick={() => {
-                        void removeMemo(type, value);
-                        closeMemo();
+            {/* Enter로 저장한다. 폼 제출이라 한글 조합을 끝내는 Enter로는 브라우저가 제출하지 않는다 */}
+            <form onSubmit={(ev) => {
+                ev.preventDefault();
+                void submit();
+            }}>
+                <Flex direction="column" gap="3">
+                    <SegmentedControl.Root value={type} onValueChange={(next) => {
+                        if (!arrayIncludes(MEMO_TYPES, next) || !state.targets[next]) return;
+                        setType(next);
+                        setForm(prefill(next));
                     }}>
-                        삭제
-                    </Button>
-                )}
-                <Dialog.Close>
-                    <Button variant="soft" color="gray">취소</Button>
-                </Dialog.Close>
-                <Button onClick={() => void submit()}>저장</Button>
-            </Flex>
+                        {MEMO_TYPES.filter((memoType) => state.targets[memoType]).map((memoType) => (
+                            <SegmentedControl.Item key={memoType} value={memoType}>
+                                {MEMO_TYPE_NAMES[memoType]}
+                            </SegmentedControl.Item>
+                        ))}
+                    </SegmentedControl.Root>
+
+                    <TextField.Root
+                        maxLength={160}
+                        placeholder="메모를 입력해 주세요 (160자 제한)"
+                        value={text}
+                        onChange={(ev) => setForm({...form, text: ev.target.value})}
+                        autoFocus
+                    >
+                        <TextField.Slot>
+                            <input
+                                type="color"
+                                aria-label="색상"
+                                value={color}
+                                onChange={(ev) => setForm({...form, color: ev.target.value})}
+                                style={{width: 20, height: 20, padding: 0, border: 0, background: "none", cursor: "pointer"}}
+                            />
+                        </TextField.Slot>
+                        <TextField.Slot side="right">
+                            <Button type="button" size="1" variant="ghost" color="gray" aria-label="랜덤 색상"
+                                    onClick={() => setForm({...form, color: randomColor()})}>
+                                <Shuffle size={12}/>
+                            </Button>
+                        </TextField.Slot>
+                    </TextField.Root>
+
+                    {gallery && (
+                        <Text as="label" size="2">
+                            <Flex gap="2" align="center">
+                                <Checkbox checked={scope === gallery}
+                                          onCheckedChange={(checked) => setForm({...form, scope: checked === true ? gallery : undefined})}/>
+                                이 갤러리에서만 ({gallery})
+                            </Flex>
+                        </Text>
+                    )}
+                    {scope && scope !== gallery && (
+                        <Text size="2" color="gray">지금은 {scope} 갤러리 전용 메모입니다.</Text>
+                    )}
+                </Flex>
+
+                <Flex gap="3" justify="end" mt="4">
+                    {existing && (
+                        <Button type="button" variant="soft" color="red" onClick={() => {
+                            void removeMemo(type, value);
+                            closeMemo();
+                        }}>
+                            삭제
+                        </Button>
+                    )}
+                    <Dialog.Close>
+                        <Button variant="soft" color="gray">취소</Button>
+                    </Dialog.Close>
+                    <Button type="submit">저장</Button>
+                </Flex>
+            </form>
         </Dialog.Content>
     );
 };

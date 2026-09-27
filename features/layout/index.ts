@@ -4,6 +4,7 @@ import {objectKeys} from "ts-extras";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingSchema, SettingsSchema} from "@/core/module/types";
 import {isViewPage} from "@/core/http/urls";
+import {writeStyle} from "@/utils/dom";
 
 /** 체크하면 숨기는 영역. 설정과 <style> 규칙을 모두 여기서 만드므로 새 항목은 한 줄만 추가하면 된다 */
 const HIDE_OPTIONS = {
@@ -30,7 +31,6 @@ const COMPACT_KEYS = new Set(["activePixel", "forceCompact", "useCompactModeOnVi
 const PUSH_CLASS = "refresherPushToRight";
 const HIDE_STYLE_ID = "refresher-layout-hide";
 
-let hideStyle: HTMLStyleElement | null = null;
 let widthQuery: MediaQueryList | null = null;
 let widthWatch: AbortController | null = null;
 
@@ -55,13 +55,10 @@ const applyHide = (ctx: Ctx): void => {
     const noticePage = location.search.includes("exception_mode=notice");
 
     // 선택자마다 규칙을 따로 둔다. 하나로 합치면 :has 등을 모르는 브라우저가 규칙 전체를 버린다.
-    // 죽은 인스턴스(파이어폭스 재주입)가 남긴 style은 id로 찾아 이어 쓴다. 새로 붙이면 옛 규칙이 끌 수 없게 남는다
-    hideStyle ??= document.querySelector<HTMLStyleElement>(`style#${HIDE_STYLE_ID}`)
-        ?? document.documentElement.appendChild(Object.assign(document.createElement("style"), {id: HIDE_STYLE_ID}));
-    hideStyle.textContent = HIDE_KEYS
+    writeStyle(HIDE_STYLE_ID, HIDE_KEYS
         .filter((key) => ctx.settings[key] && !(noticePage && (key === "removeNotice" || key === "removeDCNotice")))
         .map((key) => `${HIDE_OPTIONS[key].selector} { display: none !important; }`)
-        .join("\n");
+        .join("\n"));
 
     // 본문 확장은 잡다 링크가 숨겨졌을 때만 (layout.scss의 폭 조정)
     document.documentElement.classList.toggle(PUSH_CLASS, ctx.settings.pushToRight && ctx.settings.hideUselessView);
@@ -123,8 +120,7 @@ export default defineModule({
     },
 
     revoke() {
-        hideStyle?.remove();
-        hideStyle = null;
+        document.querySelector(`style#${HIDE_STYLE_ID}`)?.remove();
         widthWatch?.abort();
         widthQuery = null;
 

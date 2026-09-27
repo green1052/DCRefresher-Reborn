@@ -2,23 +2,11 @@
 
 @use "../../assets/styles/radix";
 
-html {
-    // Theme 배경(gray-1)과 맞춘다 — 가장자리에 다른 색이 비치지 않게
-    background: #fff;
-
-    @media (prefers-color-scheme: dark) {
-        background: #111113;
-    }
-}
+@include radix.extension-page;
 
 body {
     width: 360px;
     margin: 0;
-}
-
-/* Radix 기본값 덮기 (options.scss와 같게) */
-:root .radix-themes {
-    @include radix.overrides;
 }
 
 .popup-header {

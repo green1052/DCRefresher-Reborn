@@ -1,5 +1,7 @@
 /* ===== 스텔스 모드 (stealth 모듈) — html.refresherStealth, 버튼으로 잠시 보이기: html.stlth ===== */
 
+@use "mixins";
+
 .refresherStealth {
     /* 미리보기(shadow DOM)엔 선택자가 닿지 않으므로 상속되는 변수로 알린다 (overlay.scss) */
     &:not(.stlth) {
@@ -31,30 +33,13 @@
         display: none !important;
     }
 
-    /* 댓글 디시콘·글자콘: 가려 두고 마우스를 올리면 보인다 */
+    /* 댓글 디시콘·글자콘: 가려 두고 마우스를 올리면 보인다 (미리보기 댓글과 같은 규칙) */
     .comment_box .comment_dccon {
-        position: relative;
-        width: fit-content;
-
-        &:not(:hover) {
-            :is(img, video, .coment_dccon_txt) {
-                visibility: hidden;
-            }
-
-            &::before {
-                content: "디시콘 표시";
-                position: absolute;
-                inset: 0;
-                // 답글이면 디시의 .reply_info .comment_dccon::before(8px 화살표)가 크기·배경을 남긴다
-                width: auto;
-                height: auto;
-                background: none;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border: 1px solid rgb(0 0 0 / 15%);
-                font-weight: bold;
-            }
+        @include mixins.dccon-cover(rgb(0 0 0 / 15%)) {
+            // 답글이면 디시의 .reply_info .comment_dccon::before(8px 화살표)가 크기·배경을 남긴다
+            width: auto;
+            height: auto;
+            background: none;
         }
     }
 }

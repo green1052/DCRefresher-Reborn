@@ -7,7 +7,8 @@
  */
 import {objectKeys} from "ts-extras";
 
-import {backupStorage, isModuleDataKey} from "@/core/storage/items";
+import {backupStorage, isBlockListKey, isModuleDataKey} from "@/core/storage/items";
+import {messageOf} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
 export type BackupSlot = "manual" | "auto";
@@ -54,7 +55,7 @@ export const collectLocalData = async (): Promise<Record<string, unknown>> => {
             .map(([key, value]) => [
                 key,
                 // undefined인 id는 JSON에서 빠진다 (결과는 늘 JSON으로 쓰인다)
-                Array.isArray(value) && key.startsWith("refresher:block:")
+                Array.isArray(value) && isBlockListKey(key)
                     ? value.map((entry: unknown) => (entry && typeof entry === "object" ? {...entry, id: undefined} : entry))
                     : value
             ])
@@ -110,7 +111,7 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
         if (legacy.length === 0) {
             // 자동 칸은 v5 방식 백업을 치우지 않는다 (수동 칸으로 복원되는 데이터다). 그것이 원인일 수 있으니 해결 방법을 알린다
             if (Object.keys(all).some(isLegacyKey)) {
-                throw new Error(`${e instanceof Error ? e.message : String(e)} 예전 방식(v5) 백업이 클라우드 공간을 차지하고 있습니다. 수동 백업을 한 번 하면 정리됩니다.`, {cause: e});
+                throw new Error(`${messageOf(e)} 예전 방식(v5) 백업이 클라우드 공간을 차지하고 있습니다. 수동 백업을 한 번 하면 정리됩니다.`, {cause: e});
             }
             throw e;
         }
@@ -187,7 +188,7 @@ export const runBackup = async (slot: BackupSlot): Promise<void> => {
         await backupToCloud(slot);
         await backupStorage.error.setValue("");
     } catch (e) {
-        await backupStorage.error.setValue(e instanceof Error ? e.message : String(e));
+        await backupStorage.error.setValue(messageOf(e));
         throw e;
     }
 };

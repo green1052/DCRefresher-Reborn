@@ -36,20 +36,14 @@ const BlockPopup = () => {
         setSending(true);
         const signal = usePreviewStore.getState().signalId;
 
-        let done = false;
-        try {
-            const result = await blockUser(preData, {
-                avoidHour: day,
-                avoidReason: reason,
-                avoidReasonTxt: reason === "0" ? custom : "",
-                delChk: delChk ? "1" : "0",
-                userTypeChk: userTypeChk ? "1" : "0"
-            });
-            done = notifyManage(result, "차단했습니다.");
-            eventBus.emit("refreshRequest");
-        } catch {
-            useUiStore.getState().showToast("차단 처리 중 오류가 발생했습니다.", "error");
-        }
+        const done = await notifyManage(blockUser(preData, {
+            avoidHour: day,
+            avoidReason: reason,
+            avoidReasonTxt: reason === "0" ? custom : "",
+            delChk,
+            userTypeChk
+        }), "차단했습니다.", "차단 처리 중 오류가 발생했습니다.");
+        eventBus.emit("refreshRequest");
 
         // 그새 다른 글로 넘어갔으면 차단 창과 미리보기는 그 글 것이라 알림만 띄우고 건드리지 않는다.
         if (usePreviewStore.getState().signalId !== signal) return;
@@ -138,18 +132,22 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
             <Dialog.Content container={overlay.portal} maxWidth="320px" onOpenAutoFocus={(ev) => ev.preventDefault()}>
                 <Dialog.Title>자동입력 방지 코드</Dialog.Title>
                 <img src={captcha.url} alt="자동입력 방지 코드" style={{display: "block", width: "100%", borderRadius: "var(--radius-3)"}}/>
-                <TextField.Root
-                    mt="3"
-                    autoFocus
-                    value={code}
-                    placeholder="자동입력 방지 코드"
-                    // 한글 조합 중 Enter는 조합을 끝내는 키라 보내지 않는다
-                    onKeyDown={(ev) => ev.key === "Enter" && !ev.nativeEvent.isComposing && send()}
-                    onChange={(ev) => setCode(ev.target.value)}
-                />
-                <DialogActions>
-                    <Button disabled={!code.trim()} onClick={send}>전송</Button>
-                </DialogActions>
+                {/* Enter로 보낸다. 폼 제출이라 한글 조합을 끝내는 Enter로는 브라우저가 보내지 않는다 */}
+                <form onSubmit={(ev) => {
+                    ev.preventDefault();
+                    send();
+                }}>
+                    <TextField.Root
+                        mt="3"
+                        autoFocus
+                        value={code}
+                        placeholder="자동입력 방지 코드"
+                        onChange={(ev) => setCode(ev.target.value)}
+                    />
+                    <DialogActions>
+                        <Button type="submit" disabled={!code.trim()}>전송</Button>
+                    </DialogActions>
+                </form>
             </Dialog.Content>
         </Dialog.Root>
     );

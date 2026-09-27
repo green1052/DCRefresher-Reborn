@@ -74,6 +74,9 @@ export const isBlocked = (type: BlockType, content: string, gallery?: string): b
 export const isAnyBlocked = (values: BlockValues, gallery?: string): boolean =>
     objectEntries(values).some(([type, value]) => value && isBlocked(type, value, gallery));
 
+/** 본문 차단 안내 문구. 페이지(block 모듈)와 미리보기(창·미니)가 같이 쓴다 */
+export const BLOCKED_TEXT = "게시글 내용이 차단되었습니다.";
+
 /**
  * 같은 댓글 묶기 (도배 접기). 공백만 다른 글도 같게 보고, minLength보다 짧은 글(ㅋㅋ 등)과 count번 미만 반복은 건너뛴다.
  * 묶인 항목만 돌려준다. 값은 첫 항목이 반복 수, 나머지는 0이다.

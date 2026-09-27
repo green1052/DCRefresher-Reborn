@@ -18,7 +18,7 @@ const MINIMUM_REFRESH_INTERVAL = 2000;
 const MAXIMUM_BACKOFF_INTERVAL = 60_000;
 
 /** setup()이 돌려주는 객체. 단축키와 팝업이 쓴다 */
-export interface RefreshApi {
+interface RefreshApi {
     refreshLists(): Promise<void>;
 
     togglePause(): void;

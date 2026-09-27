@@ -2,6 +2,7 @@ import {Type} from "lucide-react";
 
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingsSchema} from "@/core/module/types";
+import {writeStyle} from "@/utils/dom";
 
 const DEFAULT_FONTS = "Noto Sans CJK KR, NanumGothic";
 
@@ -79,17 +80,9 @@ const buildCss = (ctx: Ctx): string => {
     return css.join("\n");
 };
 
-let style: HTMLStyleElement | null = null;
-
 const STYLE_ID = "refresher-fonts";
 
-// 콘텐츠 스크립트는 document_start에 돌아 head가 없을 수 있으므로 <html>에 붙인다.
-// 죽은 인스턴스(파이어폭스 재주입)가 남긴 style은 id로 찾아 이어 쓴다. 새로 붙이면 옛 규칙이 끌 수 없게 남는다
-const apply = (ctx: Ctx): void => {
-    style ??= document.querySelector<HTMLStyleElement>(`style#${STYLE_ID}`)
-        ?? document.documentElement.appendChild(Object.assign(document.createElement("style"), {id: STYLE_ID}));
-    style.textContent = buildCss(ctx);
-};
+const apply = (ctx: Ctx): void => writeStyle(STYLE_ID, buildCss(ctx));
 
 export default defineModule({
     id: "fonts",
@@ -106,7 +99,6 @@ export default defineModule({
     extensionPageVars: (settings) => ({"--refresher-font": fontFamilyOf(settings.customFonts)}),
 
     revoke() {
-        style?.remove();
-        style = null;
+        document.querySelector(`style#${STYLE_ID}`)?.remove();
     }
 });

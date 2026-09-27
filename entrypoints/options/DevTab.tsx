@@ -10,6 +10,7 @@ import {isModuleDataKey} from "@/core/storage/items";
 import {databaseVersion, initDatabase, ipInfoOf, parseBans, subscribeDatabase} from "@/core/database";
 import {IP_FORMAT, parseIpData} from "@/core/ipdb";
 import {DB_KEYS, dbStorage, writeDatabase} from "@/core/storage/items";
+import {messageOf} from "@/utils/error";
 
 import {byteSize, Empty, formatBytes, formatTime, Section, useStorageItem} from "./Layout";
 import {notify, useOptionsStore} from "./optionsStore";
@@ -188,7 +189,7 @@ const DatabaseSection = () => {
             await writeDatabase({version: "local", lastUpdate: Date.now(), format: IP_FORMAT}, text, await dbBan.getValue());
             notify("IP 데이터를 파일에서 불러왔습니다. 다음 자동 갱신 때 서버 데이터로 바뀝니다.");
         } catch (e) {
-            notify(`IP 데이터를 불러오지 못했습니다. ${e instanceof Error ? e.message : ""}`);
+            notify(`IP 데이터를 불러오지 못했습니다. ${messageOf(e)}`);
         }
     };
 

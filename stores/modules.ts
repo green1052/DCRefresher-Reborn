@@ -5,7 +5,7 @@ import {create} from "zustand";
 import {isModuleEnabled, normalizeSetting, normalizeSettings} from "@/core/module/settings";
 import type {AnyModule} from "@/core/module/types";
 import {withIpInfoFilter} from "@/core/migrate-settings";
-import {moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
+import {moduleSettingsKey, moduleSettingsStorage, modulesStorage, settingsKeyModule} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
 import features from "@/features";
 import {once} from "@/utils/once";
@@ -72,8 +72,6 @@ export const useExtensionPageVars = (): void => {
     }, [enables, values]);
 };
 
-const SETTINGS_KEY = /^refresher:module:(.+):settings$/;
-
 /**
  * 없어진 모듈·설정의 값을 저장소에서 지운다. 남겨 두면 백업·내보내기에 계속 실려 다닌다.
  * 지울 게 있을 때만 쓰고, 설정 쓰기와 같은 enqueue 줄에 세워 옵션에서 바꾼 값을 덮지 않는다
@@ -87,13 +85,13 @@ const pruneStaleSettings = async (): Promise<void> => {
         // get(null)은 수백 KB짜리 IP DB까지 읽으니 키 이름만 읽는다. getKeys가 없는 브라우저는 켜짐 목록에 남은 모듈만 지운다
         const keys = typeof browser.storage.local.getKeys === "function" ? await browser.storage.local.getKeys() : [];
         for (const key of keys) {
-            const id = SETTINGS_KEY.exec(key)?.[1];
+            const id = settingsKeyModule(key);
             if (id !== undefined && !ids.has(id)) staleIds.add(id);
         }
 
         if (staleIds.size > 0) {
             await modulesStorage.setValue(Object.fromEntries(Object.entries(enables).filter(([id]) => !staleIds.has(id))));
-            await storage.removeItems([...staleIds].map((id) => `local:refresher:module:${id}:settings` as const));
+            await storage.removeItems([...staleIds].map(moduleSettingsKey));
         }
 
         for (const feature of features) {

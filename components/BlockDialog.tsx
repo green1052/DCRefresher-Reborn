@@ -6,6 +6,7 @@ import {RefresherSelect} from "@/components/RefresherSelect";
 import {DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import type {BlockInputFields} from "@/stores/blocks";
+import {messageOf} from "@/utils/error";
 
 interface BlockDialogProps {
     type: BlockType;
@@ -33,7 +34,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
             try {
                 new RegExp(content.trim());
             } catch (e) {
-                setError(`정규식이 올바르지 않습니다. ${e instanceof Error ? e.message : String(e)}`);
+                setError(`정규식이 올바르지 않습니다. ${messageOf(e)}`);
                 return;
             }
         }
@@ -48,7 +49,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                 extra: initial?.extra
             });
         } catch (e) {
-            setError(`저장하지 못했습니다. ${e instanceof Error ? e.message : String(e)}`);
+            setError(`저장하지 못했습니다. ${messageOf(e)}`);
         }
     };
 
@@ -62,58 +63,63 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                     {initial ? `${TYPE_NAMES[type]} 항목을 수정합니다.` : `${TYPE_NAMES[type]} 차단 항목을 추가합니다.`}
                 </Dialog.Description>
 
-                <Flex direction="column" gap="3">
-                    <label>
-                        <Flex justify="between" mb="1">
-                            <Text size="2" color="gray">
-                                값
+                {/* Enter로 저장한다. 폼 제출이라 한글 조합을 끝내는 Enter로는 브라우저가 제출하지 않는다 */}
+                <form onSubmit={(ev) => {
+                    ev.preventDefault();
+                    void submit();
+                }}>
+                    <Flex direction="column" gap="3">
+                        <label>
+                            <Flex justify="between" mb="1">
+                                <Text size="2" color="gray">
+                                    값
+                                </Text>
+                            </Flex>
+                            <TextField.Root
+                                placeholder={`${TYPE_NAMES[type]} 값을 입력해 주세요`}
+                                value={content}
+                                onChange={(ev) => setContent(ev.target.value)}
+                                autoFocus
+                            />
+                        </label>
+
+                        <Text as="label" size="2">
+                            <Flex gap="2" align="center">
+                                <Checkbox checked={isRegex} onCheckedChange={(value) => setIsRegex(value === true)}/> 정규식
+                            </Flex>
+                        </Text>
+
+                        <label>
+                            <Text as="div" size="2" color="gray" mb="1">
+                                특정 갤러리 차단 (선택)
                             </Text>
+                            <TextField.Root placeholder="갤러리 ID" value={gallery}
+                                            onChange={(ev) => setGallery(ev.target.value)}/>
+                        </label>
+
+                        <Flex justify="between" align="center">
+                            <Text size="2" color="gray">
+                                차단 모드
+                            </Text>
+                            <RefresherSelect
+                                value={mode}
+                                aria-label="차단 모드"
+                                onChange={setMode}
+                                options={{"": "기본값", ...DETECT_MODE_NAMES}}
+                            />
                         </Flex>
-                        <TextField.Root
-                            placeholder={`${TYPE_NAMES[type]} 값을 입력해 주세요`}
-                            value={content}
-                            onChange={(ev) => setContent(ev.target.value)}
-                            onKeyDown={(ev) => ev.key === "Enter" && !ev.nativeEvent.isComposing && void submit()}
-                            autoFocus
-                        />
-                    </label>
 
-                    <Text as="label" size="2">
-                        <Flex gap="2" align="center">
-                            <Checkbox checked={isRegex} onCheckedChange={(value) => setIsRegex(value === true)}/> 정규식
-                        </Flex>
-                    </Text>
-
-                    <label>
-                        <Text as="div" size="2" color="gray" mb="1">
-                            특정 갤러리 차단 (선택)
-                        </Text>
-                        <TextField.Root placeholder="갤러리 ID" value={gallery}
-                                        onChange={(ev) => setGallery(ev.target.value)}/>
-                    </label>
-
-                    <Flex justify="between" align="center">
-                        <Text size="2" color="gray">
-                            차단 모드
-                        </Text>
-                        <RefresherSelect
-                            value={mode}
-                            aria-label="차단 모드"
-                            onChange={setMode}
-                            options={{"": "기본값", ...DETECT_MODE_NAMES}}
-                        />
+                        {error && (
+                            <Text size="2" color="red">
+                                {error}
+                            </Text>
+                        )}
                     </Flex>
 
-                    {error && (
-                        <Text size="2" color="red">
-                            {error}
-                        </Text>
-                    )}
-                </Flex>
-
-                <DialogActions>
-                    <Button onClick={() => void submit()}>{initial ? "수정" : "추가"}</Button>
-                </DialogActions>
+                    <DialogActions>
+                        <Button type="submit">{initial ? "수정" : "추가"}</Button>
+                    </DialogActions>
+                </form>
             </Dialog.Content>
         </Dialog.Root>
     );

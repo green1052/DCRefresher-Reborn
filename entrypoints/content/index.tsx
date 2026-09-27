@@ -18,6 +18,7 @@ import {needsPreviewOverlay, usePreviewStore} from "@/features/preview/ui/previe
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
 import {useUiStore} from "@/stores/ui";
+import {whenDomReady} from "@/utils/dom";
 
 export default defineContentScript({
     matches: ["https://*.dcinside.com/*"],
@@ -101,12 +102,7 @@ export default defineContentScript({
             if (!needsOverlay()) return;
             offUi();
             offPreview();
-
-            if (document.readyState === "loading") {
-                document.addEventListener("DOMContentLoaded", () => void mountOverlay(), {once: true});
-            } else {
-                void mountOverlay();
-            }
+            whenDomReady(() => void mountOverlay());
         };
         const offUi = useUiStore.subscribe(mountWhenNeeded);
         const offPreview = usePreviewStore.subscribe(mountWhenNeeded);
@@ -127,8 +123,7 @@ export default defineContentScript({
             const content = Array.from(document.body?.children ?? []).filter((element) => element.tagName !== "REFRESHER-ROOT");
             if (content.length === 0 && !document.body?.textContent?.trim()) warnBlocked();
         };
-        if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", warnIfBlocked, {once: true});
-        else warnIfBlocked();
+        whenDomReady(warnIfBlocked);
 
         const board = BOARD_PAGE.test(location.href);
         if (board) await Promise.all([initBlocksStore(), initMemosStore()]);

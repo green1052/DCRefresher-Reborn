@@ -2,11 +2,14 @@ import {ShieldCheck} from "lucide-react";
 
 import {defineModule} from "@/core/module/define";
 import {rowPostNo} from "@/core/http/urls";
+import {ROW_SELECTOR} from "@/core/list";
 import {BOARD_PAGE} from "@/core/pages";
 import {deletePost} from "@/core/preview/request";
-import {useUiStore} from "@/stores/ui";
 import {notifyManage} from "@/utils/notify";
 import {isGalleryManager} from "@/utils/user";
+
+/** 체크박스와 작성자 칸이 같이 든 칸. 목록 행에 더해 댓글은 작성자 칸(.cmt_nickbox)이다 */
+const CHECKBOX_ROW = `${ROW_SELECTOR}, .cmt_nickbox`;
 
 export default defineModule({
     id: "manage",
@@ -73,7 +76,7 @@ export default defineModule({
                 if (handled.has(element)) return;
                 handled.add(element);
 
-                const parent = element.closest<HTMLElement>(".ub-content, .cmt_nickbox, .search_comment");
+                const parent = element.closest<HTMLElement>(CHECKBOX_ROW);
                 const writer = parent?.querySelector<HTMLElement>(":scope > .ub-writer");
                 const uid = writer?.dataset.uid;
                 const ip = writer?.dataset.ip;
@@ -88,7 +91,7 @@ export default defineModule({
                         const [key, value] = uid ? ["uid", uid] : ip ? ["ip", ip] : ["nick", nick!];
 
                         for (const other of document.querySelectorAll<HTMLElement>(`.ub-writer[data-${key}="${CSS.escape(value)}"]`)) {
-                            const otherParent = other.closest<HTMLElement>(".ub-content, .cmt_nickbox, .search_comment");
+                            const otherParent = other.closest<HTMLElement>(CHECKBOX_ROW);
                             for (const box of otherParent?.querySelectorAll<HTMLInputElement>(".article_chkbox") ?? []) box.checked = source.checked;
                         }
                     }
@@ -115,14 +118,9 @@ export default defineModule({
         );
 
         // ===== Ctrl 클릭 삭제 =====
-        const deleteByCtrl = async (postId: string): Promise<boolean> => {
-            try {
-                const gallery = document.querySelector<HTMLInputElement>("#gallery_id")?.value ?? "";
-                return notifyManage(await deletePost({gallery, id: postId, link: location.href}), "게시글을 삭제했습니다.");
-            } catch {
-                useUiStore.getState().showToast("게시글 삭제 중 오류가 발생했습니다.", "error");
-                return false;
-            }
+        const deleteByCtrl = (postId: string): Promise<boolean> => {
+            const gallery = document.querySelector<HTMLInputElement>("#gallery_id")?.value ?? "";
+            return notifyManage(deletePost({gallery, id: postId, link: location.href}), "게시글을 삭제했습니다.", "게시글 삭제 중 오류가 발생했습니다.");
         };
 
         // 삭제 요청을 보낸 글. 응답 전에 다시 눌러도 요청을 또 보내지 않는다

@@ -5,7 +5,7 @@ import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockType} from "@/core/storage/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {type SelectedUser, useUiStore} from "@/stores/ui";
-import {csrfToken} from "@/utils/cookie";
+import {csrfBody} from "@/utils/cookie";
 
 interface DcconDetailResponse {
     info: {
@@ -34,7 +34,7 @@ const blockDccon = async (selected: SelectedUser, blockAllDccon?: boolean): Prom
     if (!code) return;
 
     const response = await ajax.post(urls.dccon.detail, {
-        body: new URLSearchParams({ci_t: await csrfToken(), code})
+        body: await csrfBody({code})
     }).json<DcconDetailResponse>();
 
     const extra = `${response.info.title} [${response.info.package_idx}]`;

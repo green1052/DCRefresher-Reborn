@@ -6,7 +6,7 @@ import {ajax} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import type {DcinsideDccon, DcinsideDcconDetail, DcinsideDcconDetailList} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
-import {csrfToken} from "@/utils/cookie";
+import {csrfBody} from "@/utils/cookie";
 
 /** 디시콘 패키지 목록 캐시. 창을 닫았다 열어도 다시 받지 않고, 새로 산 디시콘이 보이도록 10분 뒤 다시 받는다 */
 let listCache: { list: DcinsideDcconDetailList[]; at: number } | null = null;
@@ -18,7 +18,7 @@ type ListResult = DcinsideDcconDetailList[] | "not_login" | "shop";
 
 /** 한 쪽. 비로그인이면 JSON 대신 'not_login'이 온다 (디시 dccon.js) */
 const fetchPage = async (page: number): Promise<DcinsideDcconDetail | "not_login"> => {
-    const body = new URLSearchParams({ci_t: await csrfToken(), target: "icon", page: String(page)});
+    const body = await csrfBody({target: "icon", page: String(page)});
     const text = await ajax.post(urls.dccon.lists, {body}).text();
     if (/^"?not_login"?$/.test(text.trim())) return "not_login";
 

@@ -1,15 +1,21 @@
-// 디시 글 목록 DOM 도우미. 목록을 갈아끼우거나 이어 붙이는 refresh·search 모듈이 같이 쓴다.
+// 디시 글 목록 DOM 도우미. 목록을 갈아끼우거나 이어 붙이는 refresh·search 모듈과 행을 찾는 모듈이 같이 쓴다.
 
 /** 갈아끼울 글 목록 tbody. 검색 페이지 아래쪽 통합검색 목록(#kakao_seach_list)은 id가 있어 :not([id])로 빠진다 */
 export const LIST_SELECTOR = ".gall_list:not([id]) tbody";
 export const PAGING_SELECTOR = ".left_content article:has(.gall_listwrap) .bottom_paging_box";
 
 /**
+ * 작성자 칸(.ub-writer)이 든 행. 글 목록 행·글 보기 머리·댓글은 .ub-content이고,
+ * 댓글 검색 결과의 댓글 행은 ub-content가 아니라 .search_comment다
+ */
+export const ROW_SELECTOR = ".ub-content, .search_comment";
+
+/**
  * 관리자 목록 행의 체크박스 칸을 만드는 함수를 돌려준다.
  * 실제 마크업과 같도록 기존 행의 칸을 복제해 글 번호만 바꾼다. 그런 행이 없으면 디시의 행 템플릿(갤러리 종류별 *_td-tmpl)을,
  * 그것도 없으면 빈 칸을 쓴다. 번호 없는 행(설문/AD)은 열만 맞추는 빈 칸이다.
  */
-export const checkboxCellFactory = (oldRows: HTMLTableRowElement[]): ((no: string | undefined) => HTMLTableCellElement) => {
+const checkboxCellFactory = (oldRows: HTMLTableRowElement[]): ((no: string | undefined) => HTMLTableCellElement) => {
     const sampleRow = oldRows.find((row) => row.dataset.no && row.querySelector(":scope > td .article_chkbox"));
     let sample = sampleRow?.querySelector<HTMLTableCellElement>(":scope > td:has(.article_chkbox)") ?? null;
 
@@ -31,6 +37,21 @@ export const checkboxCellFactory = (oldRows: HTMLTableRowElement[]): ((no: strin
             if (!sampleRow || input.value === sampleRow.dataset.no) input.value = no;
         }
         return cell;
+    };
+};
+
+/**
+ * 받아온 행에 체크박스 칸을 채우는 함수를 돌려준다. list는 행을 넣을 지금 목록이다.
+ * 관리자 목록은 머리에 체크박스 열이 있는데 받아온 행엔 그 칸이 없다 (디시 JS가 나중에 붙인다). 채우지 않으면 열이 한 칸씩 밀린다.
+ * 댓글 검색 결과(commentSearch)에선 댓글 행에만 체크박스가 있다
+ */
+export const checkboxFiller = (list: HTMLElement, commentSearch: boolean): ((row: HTMLTableRowElement) => void) => {
+    if (!list.closest("table")?.querySelector("thead .chkbox_th")) return () => {};
+
+    const cellOf = checkboxCellFactory(Array.from(list.querySelectorAll<HTMLTableRowElement>(":scope > tr")));
+    return (row) => {
+        if (row.querySelector(".article_chkbox") || (commentSearch && !row.classList.contains("search_comment"))) return;
+        row.prepend(cellOf(row.dataset.no));
     };
 };
 

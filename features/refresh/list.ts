@@ -1,5 +1,5 @@
 import {isViewPage, pagePostNo, rowPostNo} from "@/core/http/urls";
-import {checkboxCellFactory, highlightSearchResults, PAGING_SELECTOR} from "@/core/list";
+import {checkboxFiller, highlightSearchResults, PAGING_SELECTOR} from "@/core/list";
 
 // 받아온 목록을 지금 목록 자리에 넣는 일. 요청·주기와 상관없이 DOM만 다룬다
 
@@ -43,7 +43,7 @@ export const syncPaging = (dom: Document): void => {
     if (paging && currentPaging && paging.innerHTML !== currentPaging.innerHTML) currentPaging.innerHTML = paging.innerHTML;
 };
 
-export interface ReplaceOptions {
+interface ReplaceOptions {
     /** 주소를 바꾼 로드(페이지 넘김·뒤로 가기)다. 다른 목록이라 새 글 효과·삭제된 글 보존을 하지 않는다 */
     navigated: boolean;
     /** 검색 결과 목록이면 검색어 (강조할 값) */
@@ -68,20 +68,12 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
     // 남은 글이 하나도 없으면(한꺼번에 많이 올라온 경우) 모두 새 글로 본다
     const lastKept = newKeys.findLastIndex((key) => oldCacheSet.has(key));
 
-    // 관리자 목록은 머리에 체크박스 열이 있는데 받아온 행엔 그 칸이 없다 (디시 JS가 나중에 붙인다). 채우지 않으면 열이 한 칸씩 밀린다
-    const hasCheckboxColumn = Boolean(oldList.closest("table")?.querySelector("thead .chkbox_th"));
-    const checkboxCell = hasCheckboxColumn ? checkboxCellFactory(oldRows) : null;
+    const fillCheckbox = checkboxFiller(oldList, searchType === "search_comment");
 
     for (const [index, element] of newRows.entries()) {
         const no = newKeys[index]!;
         rawRows.set(element, element.outerHTML);
-
-        if (checkboxCell && !element.querySelector(".article_chkbox")) {
-            // 댓글 검색 결과에선 댓글 행에만 체크박스가 있다
-            if (searchType !== "search_comment" || element.classList.contains("search_comment")) {
-                element.prepend(checkboxCell(element.dataset.no));
-            }
-        }
+        fillCheckbox(element);
 
         if (isViewPage && no === pagePostNo) {
             element.classList.add("crt");

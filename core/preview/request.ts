@@ -1,14 +1,14 @@
 import {ajax, formBody, http} from "@/core/http/client";
 import {galleryPath, galleryTypeName, isMiniGallery, urls} from "@/core/http/urls";
-import {csrfToken} from "@/utils/cookie";
+import {csrfBody} from "@/utils/cookie";
 import {isRecord} from "@/utils/record";
 
 import {parsePostInfo} from "./parser";
 import type {CommentListResponse, DcinsideComment, DcinsideDccon, GalleryPreData, PostInfo} from "./types";
 
 /** 디시 요청 본문. 모든 요청에 붙는 CSRF 토큰·갤러리 종류 뒤에 fields를 붙인다 (formBody 규칙) */
-const dcBody = async (link: string, fields: Parameters<typeof formBody>[0]): Promise<URLSearchParams> =>
-    formBody({ci_t: await csrfToken(), _GALLTYPE_: galleryTypeName(link), ...fields});
+const dcBody = (link: string, fields: Parameters<typeof formBody>[0]): Promise<URLSearchParams> =>
+    csrfBody({_GALLTYPE_: galleryTypeName(link), ...fields});
 
 export const viewUrl = (link: string, gallery: string, id: string): string => {
     const type = galleryPath(link);
@@ -63,6 +63,23 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: PostInfo,
     return {list: [...byNo.values()], allowReply: String(first.allow_reply) !== "0"};
 };
 
+/** 'result||message||detail' 텍스트 응답. 댓글 작성·삭제, 추천, JSON이 아닌 관리 응답이 이 모양이다 */
+export interface SubmitResult {
+    result: string;
+    message?: string;
+    /** 'false||captcha||v3'의 v3, 'false||nomember||메시지'의 메시지 */
+    detail?: string;
+}
+
+const submitResult = (response: string): SubmitResult => {
+    const [result, message, detail] = response.trim().split("||");
+
+    return {result: result ?? "", message, detail};
+};
+
+/** 디시가 준 안내 문구. 'false||nomember||메시지'면 문구는 세 번째 칸이다 */
+export const resultMessage = ({message, detail}: SubmitResult): string | undefined => (message === "nomember" ? detail : message) || undefined;
+
 interface VoteResult {
     success: boolean;
     counts?: string;
@@ -91,11 +108,11 @@ export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U
         ...(postInfo.randomParam && {[postInfo.randomParam.name]: postInfo.randomParam.value})
     });
 
-    const response = await ajax.post(urls.vote, {body}).text();
-    const [result, counts, fixedCounts] = response.trim().split("||");
-
-    // 'false||nomember||메시지'면 문구는 세 번째 칸
-    return result === "true" ? {success: true, counts, fixedCounts} : {success: false, message: (counts === "nomember" ? fixedCounts : counts) || undefined};
+    // 성공이면 'true||추천 수||고정닉 추천 수'
+    const response = submitResult(await ajax.post(urls.vote, {body}).text());
+    return response.result === "true"
+        ? {success: true, counts: response.message, fixedCounts: response.detail}
+        : {success: false, message: resultMessage(response)};
 };
 
 /** 관리 요청 결과. 디시 관리 API는 {"result": "success" | "fail", "msg": "…"}를 돌려준다 */
@@ -129,8 +146,8 @@ const manage = async (target: Pick<GalleryPreData, "link">, action: string, fiel
     }
 
     // JSON 객체가 아니면 "false||메시지" 같은 텍스트다. 맨 'true'·'false'도 JSON.parse가 원시값으로 읽어 여기로 온다
-    const [result, message] = text.split("||");
-    return {success: isSuccess(result), message: message || undefined};
+    const response = submitResult(text);
+    return {success: isSuccess(response.result), message: resultMessage(response)};
 };
 
 /** 끌올 */
@@ -144,8 +161,10 @@ interface BlockOptions {
     avoidHour: string;
     avoidReason: string;
     avoidReasonTxt: string;
-    delChk: "0" | "1";
-    userTypeChk: "0" | "1";
+    /** 선택한 글도 삭제 */
+    delChk: boolean;
+    /** 식별 코드 차단 시 IP 동시 차단 */
+    userTypeChk: boolean;
 }
 
 /** 유저 차단 (관리 팝업/프리셋) */
@@ -156,8 +175,8 @@ export const blockUser = (preData: GalleryPreData, options: BlockOptions): Promi
     avoid_hour: options.avoidHour,
     avoid_reason: options.avoidReason,
     avoid_reason_txt: options.avoidReasonTxt,
-    del_chk: options.delChk,
-    avoid_type_chk: options.userTypeChk
+    del_chk: options.delChk ? "1" : "0",
+    avoid_type_chk: options.userTypeChk ? "1" : "0"
 });
 
 /** 공지 등록/해제 */
@@ -188,21 +207,8 @@ export const userDeleteComment = async (preData: GalleryPreData, commentId: stri
     });
 
     // 'true'만 성공으로 본다 (v5와 같음). 관리 요청과 달리 응답이 JSON이 아니다
-    const {result, message} = submitResult(await ajax.post(urls.comment_remove, {body}).text());
-    return {success: result === "true", message};
-};
-
-export interface SubmitResult {
-    result: string;
-    message?: string;
-    /** 'false||captcha||v3'의 v3, 'false||nomember||메시지'의 메시지 */
-    detail?: string;
-}
-
-const submitResult = (response: string): SubmitResult => {
-    const [result, message, detail] = response.trim().split("||");
-
-    return {result: result ?? "", message, detail};
+    const response = submitResult(await ajax.post(urls.comment_remove, {body}).text());
+    return {success: response.result === "true", message: resultMessage(response)};
 };
 
 /** 댓글/디시콘 작성. 디시 f_submit(null)처럼 첫 전송은 grecaptchaToken 없이 보낸다 */

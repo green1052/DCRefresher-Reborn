@@ -6,6 +6,7 @@ import {overlay} from "@/components/overlay/shadow";
 import {
     captchaImage,
     normalizeTxtcon,
+    resultMessage,
     submitComment,
     type SubmitResult,
     submitTxtcon,
@@ -41,7 +42,7 @@ const isCommentPosted = ({result}: SubmitResult): boolean =>
 const failMessage = (response: SubmitResult): string | undefined => {
     if (response.result !== "false") return FAIL_MESSAGES[response.result];
 
-    return response.message === "nomember" ? response.detail : response.message;
+    return resultMessage(response);
 };
 
 /** 글자콘 색 스와치 */

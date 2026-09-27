@@ -6,11 +6,12 @@ import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingGroup, SettingSchema, SettingsSchema} from "@/core/module/types";
 import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
 import {queryString} from "@/core/http/urls";
+import {ROW_SELECTOR} from "@/core/list";
 import {BOARD_PAGE} from "@/core/pages";
 import {eventBus} from "@/core/eventbus/bus";
 import {moduleDataStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";
-import {type BadgeColorKey, type BadgeView, DEFAULT_BADGE_VIEW, showsUid, useUiStore} from "@/stores/ui";
+import {type BadgeColorKey, type BadgeView, DEFAULT_BADGE_VIEW, isLowActivity, showsUid, useUiStore} from "@/stores/ui";
 import {insertWriterSpan} from "@/utils/userDataInsert";
 
 interface RatioInfo {
@@ -71,12 +72,9 @@ const buildBadgeSpan = (text: string, color?: string, title?: string, className 
     return span;
 };
 
-/** 깡계 기준(글댓합) 이하인지. 기준이 0이면 끈 것이다 */
-const isLowActivity = (info: RatioInfo, alarmRatio: number): boolean => alarmRatio > 0 && info.article + info.comment <= alarmRatio;
-
 const makeRatioSpan = (info: RatioInfo, alarmRatio: number, colors: BadgeColors): HTMLElement => {
     const text = `${info.article}/${info.comment}`;
-    return buildBadgeSpan(`[${text}]`, isLowActivity(info, alarmRatio) ? colors.ratioAlarm : colors.ratio, text, "ip ratio refresherUserData");
+    return buildBadgeSpan(`[${text}]`, isLowActivity(info, alarmRatio) ? colors.ratioAlarm : colors.ratio, text, "ip refresherUserData");
 };
 
 const LOW_ACTIVITY_ACTIONS = {none: "배지 색만", tag: "[깡계] 표시", blur: "흐리게", hide: "숨기기"};
@@ -88,7 +86,7 @@ const clearLowActivity = (): void => {
 };
 
 const makePermBanSpan = (reasons: string, color: string | undefined): HTMLElement =>
-    buildBadgeSpan(`[${reasons}]`, color, reasons, "ip permBan refresherUserData");
+    buildBadgeSpan(`[${reasons}]`, color, reasons, "ip refresherUserData");
 
 const process = (ctx: Ctx, element: HTMLElement): void => {
     // 완료 표시 없이 매번 다시 그린다. 파싱 중인 작성자 칸(닉콘·IP 전)에서 먼저 불려도, 칸이 다 읽혀 다시 불릴 때 배지가 제자리를 찾는다
@@ -118,7 +116,7 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
 
         if (key === "MEMO") {
             const memo = findMemo({uid, ip, nick}, gallery);
-            if (memo) badges.append(buildBadgeSpan(`[${memo.text}]`, memo.color || undefined, memo.text, "refresherUserData refresherMemoData"));
+            if (memo) badges.append(buildBadgeSpan(`[${memo.text}]`, memo.color || undefined, memo.text));
         }
 
         if (key === "RATIO" && uid && ctx.settings.checkRatio) {
@@ -140,7 +138,7 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
     if (lowActivity && action === "tag") badges.append(buildBadgeSpan("[깡계]", colors.ratioAlarm, `글댓합 ${ctx.settings.alarmRatio}개 이하`));
     // 글 보기 머리는 가리지 않는다. 머리만 가리면 본문은 그대로 보인다 (배지 색으로만 알린다)
     if (lowActivity && (action === "blur" || action === "hide") && !element.closest(".gallview_head")) {
-        (element.closest<HTMLElement>(".ub-content, .search_comment") ?? element).classList.add(LOW_ACTIVITY_CLASSES[action]);
+        (element.closest<HTMLElement>(ROW_SELECTOR) ?? element).classList.add(LOW_ACTIVITY_CLASSES[action]);
     }
 
     if (badges.children.length > 0) insertWriterSpan(element, badges);
@@ -179,7 +177,7 @@ const rebuildUsers = (ctx: Ctx, uids: string[]): void => {
     const classes = Object.values(LOW_ACTIVITY_CLASSES);
     for (const uid of uids) {
         for (const element of document.querySelectorAll<HTMLElement>(`.ub-writer[data-uid="${CSS.escape(uid)}"]:not([user_name])`)) {
-            (element.closest<HTMLElement>(".ub-content, .search_comment") ?? element).classList.remove(...classes);
+            (element.closest<HTMLElement>(ROW_SELECTOR) ?? element).classList.remove(...classes);
             process(ctx, element);
         }
     }

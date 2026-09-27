@@ -5,11 +5,10 @@ import {useShallow} from "zustand/react/shallow";
 
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {User} from "@/core/preview/types";
-import {BlockedError} from "@/core/http/client";
 import {adminDeleteComment, graphemes, userDeleteComment, wrapTxtcon} from "@/core/preview/request";
 import {notifyManage} from "@/utils/notify";
 import {useUserMemo} from "@/stores/memos";
-import {type BadgeKey, showsUid, useUiStore} from "@/stores/ui";
+import {type BadgeKey, isLowActivity, showsUid, useUiStore} from "@/stores/ui";
 import {useGallogActivity} from "@/utils/gallogActivity";
 import {banReasonsOf, databaseVersion, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
 
@@ -179,7 +178,7 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     const cached = useUiStore(useShallow((state) => (user.id && state.ratios && Object.hasOwn(state.ratios.cache, user.id) ? state.ratios.cache[user.id] : undefined)));
     const fetched = useGallogActivity(fetchRatio && showsRatio && !cached ? user.id : undefined);
     const ratio = cached ?? (typeof fetched === "object" ? fetched : undefined);
-    const ratioColor = useUiStore((state) => (ratio && alarm > 0 && ratio.article + ratio.comment <= alarm ? state.badgeColors.ratioAlarm : state.badgeColors.ratio));
+    const ratioColor = useUiStore((state) => (ratio && isLowActivity(ratio, alarm) ? state.badgeColors.ratioAlarm : state.badgeColors.ratio));
 
     const openMenu = (ev: MouseEvent): void => {
         // 목록과 같이 Shift+우클릭은 브라우저 기본 메뉴로 남긴다.
@@ -198,7 +197,7 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
             ? showsUid(view, user.image) && <Text size="1" color={identityColor} style={{color: uidColor}} truncate>({user.id})</Text>
             : ipInfo && passesIpFilter(ipInfo, view.ipFilter) &&
             <Text size="1" color={ipColor ? undefined : "blue"} style={{color: ipColor}} title={ipInfo.title} truncate>[{ipInfo.label}]</Text>,
-        MEMO: memo && <Text size="1" style={{color: memo.color || undefined}} title={memo.text} data-memo truncate>[{memo.text}]</Text>,
+        MEMO: memo && <Text size="1" style={{color: memo.color || undefined}} title={memo.text} truncate>[{memo.text}]</Text>,
         RATIO: ratio && <Text size="1" style={{color: ratioColor}} title="글/댓글" truncate>[{ratio.article}/{ratio.comment}]</Text>,
         PERMBAN: banReasons && banColor && <Text size="1" style={{color: banColor}} title={banReasons} truncate>[{banReasons}]</Text>
     };
@@ -261,24 +260,16 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
         const needsPassword = !isAdmin && !comment.user_id;
         if (!needsPassword && !window.confirm("댓글을 삭제할까요?")) return;
 
-        try {
-            if (isAdmin) {
-                if (!notifyManage(await adminDeleteComment(st.preData, comment.no), "댓글을 삭제했습니다.")) return;
-            } else {
-                let password = "";
-                if (needsPassword) {
-                    // 미리보기에서 쓴 댓글은 저장해 둔 비밀번호를 썼으므로 기본값으로 채운다.
-                    password = window.prompt("댓글 비밀번호를 입력해 주세요.", savedNonmember().pw) ?? "";
-                    if (!password) return;
-                }
-                // 비밀번호가 틀려도 HTTP 200('false||메시지')이 오므로 결과를 확인해 알려야 한다.
-                if (!notifyManage(await userDeleteComment(st.preData, comment.no, password), "댓글을 삭제했습니다.")) return;
-            }
-            void st.requestRefresh();
-        } catch (e) {
-            // 임시 차단은 HTTP 클라이언트가 이미 알렸다. 덮어쓰지 않는다
-            if (!(e instanceof BlockedError)) useUiStore.getState().showToast("댓글 삭제 중 오류가 발생했습니다.", "error");
+        let password = "";
+        if (needsPassword) {
+            // 미리보기에서 쓴 댓글은 저장해 둔 비밀번호를 썼으므로 기본값으로 채운다.
+            password = window.prompt("댓글 비밀번호를 입력해 주세요.", savedNonmember().pw) ?? "";
+            if (!password) return;
         }
+
+        // 비밀번호가 틀려도 HTTP 200('false||메시지')이 오므로 결과를 확인해 알려야 한다.
+        const request = isAdmin ? adminDeleteComment(st.preData, comment.no) : userDeleteComment(st.preData, comment.no, password);
+        if (await notifyManage(request, "댓글을 삭제했습니다.", "댓글 삭제 중 오류가 발생했습니다.")) void st.requestRefresh();
     };
 
     // 디시콘(img/video)과 글자콘. 답글이면 앞에 멘션이 붙어 오므로 ^로 고정하지 않고 찾는다.

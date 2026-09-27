@@ -4,6 +4,7 @@ import {Dialog} from "radix-ui";
 import {type CSSProperties, useEffect, useRef, useState, type WheelEvent} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
+import {BLOCKED_TEXT} from "@/core/block";
 import type {ProcessedComment} from "@/core/preview/comments";
 import {useUiStore} from "@/stores/ui";
 import {isTyping} from "@/utils/event";
@@ -15,7 +16,7 @@ import {CountDown} from "./CountDown";
 import {ErrorBlock} from "./ErrorBlock";
 import {fitMovies} from "./fitMovies";
 import {AdminPanel} from "./Popups";
-import {BLOCKED_TEXT, postTitle, usePreviewStore} from "./previewStore";
+import {postTitle, usePreviewStore} from "./previewStore";
 import {Votes} from "./Votes";
 import {WriteComment} from "./WriteComment";
 

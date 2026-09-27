@@ -3,11 +3,12 @@ import {Search} from "lucide-react";
 
 import {BlockedError, http} from "@/core/http/client";
 import {queryString} from "@/core/http/urls";
-import {checkboxCellFactory, highlightSearchResults, LIST_SELECTOR, PAGING_SELECTOR} from "@/core/list";
+import {checkboxFiller, highlightSearchResults, LIST_SELECTOR, PAGING_SELECTOR} from "@/core/list";
 import {sendMessage} from "@/core/messaging/protocol";
 import {defineModule} from "@/core/module/define";
 import {LIST_PAGE} from "@/core/pages";
 import {useUiStore} from "@/stores/ui";
+import {whenDomReady} from "@/utils/dom";
 
 /**
  * 검색 결과 행: 글(data-no)과 그 아래 댓글 검색 행(data-cmt). 설문·AD 행은 뺀다.
@@ -71,11 +72,7 @@ export default defineModule({
             if (count >= target) return;
 
             const keyword = document.querySelector<HTMLInputElement>("#sch_q")?.value ?? "";
-            const commentSearch = queryString("s_type") === "search_comment";
-            // 관리자 목록은 체크박스 열이 있는데 받아온 행엔 없다 (새로고침 모듈과 같은 처리)
-            const checkboxCell = list.closest("table")?.querySelector("thead .chkbox_th")
-                ? checkboxCellFactory(Array.from(list.querySelectorAll<HTMLTableRowElement>(":scope > tr")))
-                : null;
+            const fillCheckbox = checkboxFiller(list, queryString("s_type") === "search_comment");
 
             const max = ctx.settings.maxSearches;
             const status = document.createElement("p");
@@ -102,10 +99,7 @@ export default defineModule({
 
                     highlightSearchResults(newList, keyword);
                     for (const row of newList.querySelectorAll<HTMLTableRowElement>(RESULT_ROW)) {
-                        // 댓글 검색 결과에선 댓글 행에만 체크박스가 있다
-                        if (checkboxCell && !row.querySelector(".article_chkbox") && (!commentSearch || row.classList.contains("search_comment"))) {
-                            row.prepend(checkboxCell(row.dataset.no));
-                        }
+                        fillCheckbox(row);
                         list.append(row);
                         if (row.dataset.no) count++;
                         added++;
@@ -132,11 +126,7 @@ export default defineModule({
             const list = document.querySelector<HTMLElement>(LIST_SELECTOR);
             if (list) void fill(list);
         };
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", fillCurrent, {once: true, signal: ctx.signal});
-        } else {
-            fillCurrent();
-        }
+        whenDomReady(fillCurrent, ctx.signal);
         ctx.addFilter(LIST_SELECTOR, (list) => {
             if (document.readyState !== "loading") void fill(list);
         });

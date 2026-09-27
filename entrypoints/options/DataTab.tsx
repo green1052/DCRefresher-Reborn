@@ -8,18 +8,17 @@ import {type BackupSlot, CLOUD_QUOTA, type CloudBackupStatus, collectLocalData, 
 import {updateDatabase} from "@/core/database";
 import {withIpInfoFilter} from "@/core/migrate-settings";
 import {migrateV5} from "@/core/migrate-v5";
-import {backupStorage, dbStorage} from "@/core/storage/items";
+import {backupStorage, dbStorage, isBlockListKey, settingsKeyModule} from "@/core/storage/items";
 import {blockKey, normalizeBlockList} from "@/stores/blocks";
+import {messageOf} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
 import {formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
 import {notify} from "./optionsStore";
 
-const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error));
-
 /** 값 여러 개를 객체 하나에 담는 키(모듈 on/off, 기본 차단 모드, 모듈별 설정) */
 const isMapKey = (key: string): boolean =>
-    key === "refresher:modules" || key === "refresher:block:defaults" || /^refresher:module:.+:settings$/.test(key);
+    key === "refresher:modules" || key === "refresher:block:defaults" || settingsKeyModule(key) !== undefined;
 
 /**
  * 설정(백업 대상 키)을 저장소에 쓴다. IP/밴 DB·백업 상태·모듈 캐시는 건드리지 않는다.
@@ -40,7 +39,7 @@ const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "m
     if (isRecord(userinfo)) next["refresher:module:userinfo:settings"] = withIpInfoFilter(userinfo);
     // 백업은 용량 때문에 차단 항목 id를 빼고 올리므로 저장할 때 다시 붙인다
     for (const [key, value] of Object.entries(next)) {
-        if (/^refresher:block:[A-Z]+$/.test(key)) next[key] = normalizeBlockList(value);
+        if (isBlockListKey(key)) next[key] = normalizeBlockList(value);
     }
     if (mode === "merge") {
         for (const [key, value] of Object.entries(next)) {
@@ -70,7 +69,7 @@ const mergeBackup = (current: Record<string, unknown>, backup: Record<string, un
     Object.fromEntries(Object.entries(migrateV5(backup)).map(([key, value]) => {
         const local = current[key];
         if (local === undefined) return [key, value];
-        if (/^refresher:block:[A-Z]+$/.test(key)) {
+        if (isBlockListKey(key)) {
             const kept = normalizeBlockList(local);
             const seen = new Set(kept.map(blockKey));
             return [key, [...kept, ...normalizeBlockList(value).filter((entry) => !seen.has(blockKey(entry)))]];
@@ -125,7 +124,7 @@ export function DataTab() {
         try {
             notify(await action());
         } catch (e) {
-            notify(`${failure} ${errorMessage(e)}`);
+            notify(`${failure} ${messageOf(e)}`);
         } finally {
             setLoading(false);
         }
@@ -159,7 +158,7 @@ export function DataTab() {
         try {
             await backupStorage.auto.setValue(on);
         } catch (e) {
-            notify(`자동 백업 설정을 저장하지 못했습니다. ${errorMessage(e)}`);
+            notify(`자동 백업 설정을 저장하지 못했습니다. ${messageOf(e)}`);
             return;
         }
         // 켜는 순간의 설정을 자동 백업 칸에 바로 올린다. 이후에는 설정이 바뀔 때마다 백그라운드가 올린다

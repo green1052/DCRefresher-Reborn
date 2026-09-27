@@ -2,13 +2,14 @@ import {HTTPError} from "ky";
 import {SquareMousePointer} from "lucide-react";
 
 import {eventBus} from "@/core/eventbus/bus";
-import {isBlocked} from "@/core/block";
+import {BLOCKED_TEXT, isBlocked} from "@/core/block";
 import {BlockedError, isAbortError} from "@/core/http/client";
 import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
 import type {DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
+import {messageOf} from "@/utils/error";
 import {isTyping, pressedKey} from "@/utils/event";
 import {isGalleryManager} from "@/utils/user";
 import {notifyManage} from "@/utils/notify";
@@ -19,14 +20,10 @@ import {ADULT_ERROR} from "@/core/preview/parser";
 import {blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {adjacentPreData, buildPreData, isBlurHidden, isTextPost} from "./rows";
 import {type Ctx, settings} from "./settings";
-import {BLOCKED_TEXT, type ErrorState, type ManageKind, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
+import {type ErrorState, type ManageKind, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
 
 // status는 ky의 HTTPError에서 읽는다 (삭제된 글은 404).
 // 성인 인증 안내 페이지면 parsePostInfo가 Error(ADULT_ERROR)를 던진다.
-// 파이어폭스 content.fetch의 오류는 페이지 영역의 DOMException이라 instanceof Error가 거짓이다. 메시지는 모양으로 꺼낸다
-const messageOf = (error: unknown): string =>
-    typeof error === "object" && error !== null && "message" in error && typeof error.message === "string" ? error.message : String(error);
-
 const errorOf = (error: unknown): ErrorState => ({
     detail: messageOf(error),
     // 임시 차단(빈 페이지)은 200으로 오므로 요청 제한(429)으로 본다
@@ -364,24 +361,23 @@ const controller = (ctx: Ctx) => {
             if (isRecord(state) && isRecord(state.preData) && state.preData.id === target.id) history.replaceState({...state, preData}, "");
         };
 
+        const failure = "관리 기능 처리 중 오류가 발생했습니다.";
         try {
             // 공지·개념글 표시는 성공했을 때만 바꾼다.
             if (kind === "notice") {
-                if (notifyManage(await setNotice(target, !st.notice), st.notice ? "공지를 해제했습니다." : "공지로 등록했습니다.") && stillOpen()) {
+                if (await notifyManage(setNotice(target, !st.notice), st.notice ? "공지를 해제했습니다." : "공지로 등록했습니다.", failure) && stillOpen()) {
                     toggled("notice", !st.notice);
                 }
             } else if (kind === "recommend") {
-                if (notifyManage(await setRecommend(target, !st.recommend), st.recommend ? "개념글을 해제했습니다." : "개념글로 등록했습니다.") && stillOpen()) {
+                if (await notifyManage(setRecommend(target, !st.recommend), st.recommend ? "개념글을 해제했습니다." : "개념글로 등록했습니다.", failure) && stillOpen()) {
                     toggled("recommend", !st.recommend);
                 }
             } else if (kind === "delete") {
                 close();
-                notifyManage(await deletePost(target), "게시글을 삭제했습니다.");
+                await notifyManage(deletePost(target), "게시글을 삭제했습니다.", failure);
             } else if (kind === "bump") {
-                notifyManage(await bump(target), "게시글을 끌올했습니다.");
+                await notifyManage(bump(target), "게시글을 끌올했습니다.", failure);
             }
-        } catch {
-            ui.showToast("관리 기능 처리 중 오류가 발생했습니다.", "error");
         } finally {
             managing = false;
         }
@@ -391,20 +387,16 @@ const controller = (ctx: Ctx) => {
 
     const blockPreset = async (target: GalleryPreData) => {
         const signal = store.getState().signalId;
-        try {
-            const result = await blockUser(target, {
-                avoidHour: ctx.settings.blockPresetDay,
-                avoidReason: "0",
-                avoidReasonTxt: ctx.settings.blockPresetReason,
-                delChk: ctx.settings.blockPresetDelete ? "1" : "0",
-                userTypeChk: ctx.settings.blockPresetUserType ? "1" : "0"
-            });
+        const blocked = await notifyManage(blockUser(target, {
+            avoidHour: ctx.settings.blockPresetDay,
+            avoidReason: "0",
+            avoidReasonTxt: ctx.settings.blockPresetReason,
+            delChk: ctx.settings.blockPresetDelete,
+            userTypeChk: ctx.settings.blockPresetUserType
+        }), "차단했습니다.", "차단 처리 중 오류가 발생했습니다.");
 
-            // 그새 다른 글로 넘어갔으면 창을 닫지 않는다.
-            if (notifyManage(result, "차단했습니다.") && ctx.settings.blockPresetDelete && store.getState().signalId === signal) close();
-        } catch {
-            ui.showToast("차단 처리 중 오류가 발생했습니다.", "error");
-        }
+        // 그새 다른 글로 넘어갔으면 창을 닫지 않는다.
+        if (blocked && ctx.settings.blockPresetDelete && store.getState().signalId === signal) close();
 
         eventBus.emit("refreshRequest");
     };

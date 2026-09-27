@@ -1,12 +1,14 @@
 import {Ban, Eye} from "lucide-react";
 
-import {groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
+import {BLOCKED_TEXT, groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingGroup, SettingsSchema} from "@/core/module/types";
 import {isViewPage, queryString} from "@/core/http/urls";
+import {ROW_SELECTOR} from "@/core/list";
 import {BOARD_PAGE} from "@/core/pages";
 import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
+import {whenDomReady} from "@/utils/dom";
 import {eventTarget} from "@/utils/event";
 
 /** 디시콘 이미지 URL에서 디시콘 코드(no 파라미터) 추출 */
@@ -63,7 +65,7 @@ const publishView = (ctx: Ctx): void => {
 };
 
 /** setup()이 돌려주는 객체. 단축키와 팝업이 쓴다 */
-export interface BlockApi {
+interface BlockApi {
     isRevealed(): boolean;
 
     /** 이 페이지에서 가린 요소 수 */
@@ -91,9 +93,8 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
 
     // 유저/제목/말머리/댓글 차단
     const checkWriter = (element: HTMLElement): void => {
-        // 제목·말머리는 작성자 칸이 아니라 같은 행(.ub-content)의 다른 칸에 있다. 글 보기 머리(.gallview_head)도 ub-content다.
-        // 댓글 검색 결과의 댓글 행은 ub-content가 아니라 .search_comment다
-        const row = element.closest<HTMLElement>(".ub-content, .search_comment");
+        // 제목·말머리는 작성자 칸이 아니라 같은 행의 다른 칸에 있다. 글 보기 머리(.gallview_head)도 ub-content다
+        const row = element.closest<HTMLElement>(ROW_SELECTOR);
         const title = plainText(row?.querySelector(".gall_tit > a:not([class]), .title_subject"));
         // 잘린 말머리는 툴팁(.subject_inner)에 전체가 있다. 글 보기 머리의 말머리는 [대괄호]로 감싸 있다
         const tab = plainText(row?.querySelector(".gall_subject .subject_inner, .title_headtext") ?? row?.querySelector(".gall_subject")).replace(/^\[(.*)\]$/, "$1");
@@ -144,7 +145,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
 
         const notice = document.createElement("div");
         notice.className = "refresherTextNotice";
-        notice.textContent = "게시글 내용이 차단되었습니다.";
+        notice.textContent = BLOCKED_TEXT;
         writeDiv.before(notice);
     };
 
@@ -177,13 +178,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
     ctx.addFilter(".written_dccon", checkDccon);
     if (isViewPage) ctx.addFilter(".cmt_list", foldDuplicates);
 
-    if (isViewPage) {
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", checkText, {once: true, signal: ctx.signal});
-        } else {
-            checkText();
-        }
-    }
+    if (isViewPage) whenDomReady(checkText, ctx.signal);
 
     // 필터는 DOM 삽입 때만 돈다. 차단 목록이나 숨기는 방식(블러/대댓글)이 바뀌면 이미 그려진 요소를 직접 다시 판정한다
     const recheck = (): void => {

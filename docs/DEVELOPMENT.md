@@ -167,12 +167,13 @@ getModuleApi("preview")?.archiveArticle()
 - Firefox 콘텐츠 스크립트에서는 두 클라이언트 모두 `content.fetch`로 보냅니다. 페이지가 보낸 요청처럼 나가야 디시 ajax가 받아 줍니다.
 - 시간 제한(15초)은 동시 요청 수 제한의 차례를 받은 뒤부터 잽니다. 더 짧게 끊을 요청(자동 새로고침)은 호출할 때 `timeout`을 줍니다.
 - 재시도는 지터를 주고, `Retry-After`는 최대 10초까지만 기다립니다. 시간 초과는 재시도하지 않습니다.
-- 폼 본문은 `formBody({...})`로 만듭니다. 값이 `null`·`undefined`·`false`인 필드는 빠지고, 빈 문자열은 들어갑니다. 끊은 요청인지는 `isAbortError(e)`로 봅니다.
+- 폼 본문은 `formBody({...})`로 만듭니다. 값이 `null`·`undefined`·`false`인 필드는 빠지고, 빈 문자열은 들어갑니다. CSRF 토큰(`ci_t`)이 붙는 디시 요청은 `csrfBody({...})`(`utils/cookie.ts`)를 씁니다. 끊은 요청인지는 `isAbortError(e)`로 봅니다.
 
 ## 오버레이와 CSS
 
 - 콘텐츠 스크립트는 `refresher-root` shadow DOM 안에 React 루트(`components/overlay/ContentRoot.tsx`)를 띄웁니다. 디시 CSS와 Radix CSS가 서로 섞이지 않게 하기 위해서입니다. 포털은 `overlay.portal`입니다.
 - 디시 페이지 자체를 바꾸는 CSS는 `assets/styles/content.scss`, `layout.scss`, `stealth.scss`이고 manifest로 주입됩니다.
+- 페이지·오버레이·옵션은 서로 다른 문서라 같은 규칙(차단 흐림, 스텔스 디시콘 가림, 접기 애니메이션)을 `assets/styles/_mixins.scss`의 mixin으로 맞춥니다. 옵션·팝업의 바탕과 Radix 기본값 덮기는 `_radix.scss`에 있습니다.
 - 오버레이용 Radix CSS(`radix-themes.css?inline`)는 `wxt.config.ts`의 PostCSS 플러그인이 줄입니다. 반응형 미디어 블록과 오버레이가 쓰지 않는 컴포넌트 규칙을 빼고 `:root`를 `:host`로 바꿉니다. 오버레이에서 새 Radix 컴포넌트를 쓰면 `UNUSED_OVERLAY_COMPONENT`에서 빼야 스타일이 들어갑니다.
 - `radix-themes.css`는 색 파일을 `base.css`보다 먼저 불러옵니다. 순서가 바뀌면 gray가 slate가 아닌 순수 회색이 됩니다.
 

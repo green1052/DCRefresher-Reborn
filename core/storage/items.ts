@@ -60,15 +60,21 @@ export const modulesStorage = storage.defineItem<Record<string, boolean>>("local
 
 const settingsItems = new Map<string, WxtStorageItem<Record<string, SettingValue>, {}>>();
 
+/** 모듈 설정 키. 없어진 모듈의 설정은 항목을 만들지 않고 이 키로 지운다 */
+export const moduleSettingsKey = (id: string): `local:refresher:module:${string}:settings` => `local:refresher:module:${id}:settings`;
+
 /** 모듈 설정 항목. 모듈마다 하나를 만들어 재사용한다 (defineItem은 만들 때마다 저장소를 한 번 읽는다) */
 export const moduleSettingsStorage = (id: string): WxtStorageItem<Record<string, SettingValue>, {}> => {
     let item = settingsItems.get(id);
     if (!item) {
-        item = storage.defineItem<Record<string, SettingValue>>(`local:refresher:module:${id}:settings`, {fallback: {}});
+        item = storage.defineItem<Record<string, SettingValue>>(moduleSettingsKey(id), {fallback: {}});
         settingsItems.set(id, item);
     }
     return item;
 };
+
+/** 모듈 설정 키면 그 모듈 id, 아니면 undefined (local: 없이) */
+export const settingsKeyModule = (key: string): string | undefined => /^refresher:module:(.+):settings$/.exec(key)?.[1];
 
 /** 모듈 캐시(글댓비 등). isModuleDataKey로 백업·내보내기에서 빠진다. 쓰는 모듈이 한 번만 만든다 */
 export const moduleDataStorage = <T>(id: string, fallback: T): WxtStorageItem<T, {}> =>
@@ -76,6 +82,9 @@ export const moduleDataStorage = <T>(id: string, fallback: T): WxtStorageItem<T,
 
 /** moduleDataStorage의 키인지 (local: 없이) */
 export const isModuleDataKey = (key: string): boolean => /^refresher:module:.+:data$/.test(key);
+
+/** blockStorage의 차단 목록 키인지 (local: 없이). 기본 차단 모드(refresher:block:defaults)는 아니다 */
+export const isBlockListKey = (key: string): boolean => /^refresher:block:[A-Z]+$/.test(key);
 
 
 /**

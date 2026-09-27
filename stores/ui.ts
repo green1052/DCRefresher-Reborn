@@ -27,7 +27,7 @@ export const showsUid = (view: BadgeView, icon?: string): boolean => {
 };
 
 /** 차단 모듈의 표시 방식. 미리보기도 이것으로 페이지와 같게 가린다 */
-export interface BlockView {
+interface BlockView {
     blur: boolean;
     /** 블러에 마우스를 올리면 보기 */
     blurReveal: boolean;
@@ -58,6 +58,9 @@ export interface MemoTargetState {
     targets: Partial<Record<MemoType, string>>;
     initialType: MemoType;
 }
+
+/** 깡계인지: 글댓합이 기준(alarm) 이하다. 기준이 0이면 끈 것이다. 페이지(userinfo)와 미리보기가 같은 판정을 쓴다 */
+export const isLowActivity = (ratio: { article: number; comment: number }, alarm: number): boolean => alarm > 0 && ratio.article + ratio.comment <= alarm;
 
 /** 배지 색 키. userinfo의 BADGE_COLORS가 키마다 색 설정을 하나씩 둔다. IP 배지는 분류가 키다 */
 export type BadgeColorKey = IpCategory | "uid" | "permBan" | "ratio" | "ratioAlarm";
