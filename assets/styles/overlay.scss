@@ -193,11 +193,6 @@
     }
 }
 
-/* 누르면 원본 보기가 열리는 본문 이미지 (Frame.tsx) */
-.refresher-preview-contents img[data-pop] {
-    cursor: pointer;
-}
-
 /* ===== 디시 본문/댓글 HTML (페이지 CSS가 안 닿으므로 최소한만) ===== */
 
 .refresher-html {

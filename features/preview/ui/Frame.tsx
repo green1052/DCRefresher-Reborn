@@ -515,14 +515,6 @@ export const Frame = () => {
                                     className={"refresher-html refresher-preview-contents" + (imageBlocked ? " refresher-preview-block-media" : "")}
                                     data-blocked={hideText ? undefined : post?.textBlocked}
                                     onClick={(ev) => {
-                                        // 이미지를 누르면 디시처럼 원본 보기 창을 새 탭으로 (주소는 parser.ts가 옮겨 둔 imgPop 주소 — 디시 주소만)
-                                        const image = (ev.target as HTMLElement).closest<HTMLImageElement>("img[data-pop]");
-                                        if (image && !image.closest("a")) {
-                                            const url = URL.parse(image.dataset.pop ?? "");
-                                            if (url?.protocol === "https:" && url.hostname.endsWith(".dcinside.com")) window.open(url.href, "_blank", "noopener");
-                                            return;
-                                        }
-
                                         const button = (ev.target as HTMLElement).closest(".btn_img_block");
                                         if (!button) return;
 
