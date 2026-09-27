@@ -65,17 +65,9 @@ const Swatch = ({color, selected, label, onClick}: {
 // 비회원 자격은 확장 isolated storage에만 보관 (페이지 world 접근 차단) — 댓글 삭제(Comment.tsx)도 이 비밀번호를 먼저 내민다
 export const nonmemberStorage = storage.defineItem<{ nick: string; pw: string }>("local:refresher:nonmember", {fallback: {nick: "", pw: ""}});
 
-/** 쓰던 댓글 (글 주소 → 글) — 창을 닫거나 다른 글로 넘어갔다 와도 남는다. 페이지를 떠나면 사라진다 */
-const drafts = new Map<string, string>();
-
 /** 댓글 작성 폼 */
 export const WriteComment = () => {
     const reply = usePreviewStore((s) => s.reply);
-    // 이 폼이 쓰는 글 — 다른 글로 넘어가면 폼째 새로 그려진다 (Frame의 key)
-    const [draftKey] = useState(() => {
-        const preData = usePreviewStore.getState().preData;
-        return preData ? `${preData.gallery}/${preData.id}` : "";
-    });
     const [login] = useState(() => Boolean(document.querySelector("#login_box .user_info .nickname > em")));
     const [accountId] = useState(loggedInUserId);
     const [nick, setNick] = useState("ㅇㅇ");
@@ -160,7 +152,6 @@ export const WriteComment = () => {
             if (txtcon || useDccon ? response.result === "ok" : response.result !== "false") {
                 // 보내는 사이 더 쓴 글은 남긴다
                 if (textarea.current?.value === raw) textarea.current.value = "";
-                if (drafts.get(draftKey) === raw) drafts.delete(draftKey);
                 setDccons([]);
                 setBigDccon(false);
                 setTxtcon(false);
@@ -185,12 +176,6 @@ export const WriteComment = () => {
         } finally {
             setSending(false);
         }
-    };
-
-    const saveDraft = (): void => {
-        const value = textarea.current?.value;
-        if (value) drafts.set(draftKey, value);
-        else drafts.delete(draftKey);
     };
 
     /** 글자콘 입력 제한 적용. 값이 바뀔 때만 다시 쓰고, 한글 조합 중엔 조합이 끝난 뒤 부른다 (txtcon.js와 같음) */
@@ -250,7 +235,6 @@ export const WriteComment = () => {
                     size="2"
                     rows={2}
                     resize="vertical"
-                    defaultValue={drafts.get(draftKey)}
                     disabled={dccons.length > 0}
                     placeholder={
                         dccons.length > 0 ? "디시콘이 선택됐습니다."
@@ -260,11 +244,9 @@ export const WriteComment = () => {
                     style={{flex: 1}}
                     onChange={(ev) => {
                         if (txtcon && !(ev.nativeEvent as InputEvent).isComposing) applyTxtcon();
-                        saveDraft();
                     }}
                     onCompositionEnd={() => {
                         if (txtcon) applyTxtcon();
-                        saveDraft();
                     }}
                     onKeyDown={(ev) => {
                         if (ev.key === "Enter" && !ev.shiftKey && !ev.nativeEvent.isComposing) {
