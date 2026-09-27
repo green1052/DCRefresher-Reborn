@@ -41,7 +41,7 @@ export const prepareComments = (raw: DcinsideComment[], preData: GalleryPreData,
     // 댓글돌이(COMMENT_BOY) 제거 — 보존(restoreArchive)의 번호순 정렬보다 먼저 거른다.
     // 디시가 지운 댓글('2' 같은 다른 삭제 코드, del_yn)은 삭제('1')로 맞춘다 — 답글·삭제 버튼을 감추고 같은 댓글 접기에서 뺀다
     const filtered = raw
-        .filter((comment) => String(comment.nicktype) !== "COMMENT_BOY")
+        .filter((comment) => comment.nicktype !== "COMMENT_BOY")
         .map((comment) => ({...comment, is_delete: comment.is_delete !== "0" || comment.del_yn === "Y" ? "1" : "0"}));
 
     return archive ? restoreArchive(preData, filtered) : filtered;

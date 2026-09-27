@@ -88,16 +88,22 @@ export interface DcinsideComment {
     user_id: string;
     name: string;
     gallog_icon?: string;
+    /** 닉네임 칸 HTML — 유동은 여기에 IP가 들어 있기도 하다 */
+    nickname?: string;
+    /** "COMMENT_BOY"면 댓글돌이 */
+    nicktype?: string;
     ip: string;
     memo: string;
     /** "0" 살아 있음, 그 밖은 삭제 — 가공하면 "0"/"1"만 남는다 (comments.ts) */
     is_delete: string;
+    /** "Y"면 디시가 지운 댓글 */
+    del_yn?: "Y" | "N";
     del_btn?: "Y" | "N";
+    /** "N"이면 답글을 막은 댓글 */
+    reply_w?: "Y" | "N";
     my_cmt?: "Y" | "N";
     date_time: string;
     reg_date?: string;
-
-    [key: string]: unknown;
 }
 
 export interface CommentListResponse {

@@ -233,7 +233,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
     const user: User = {
         nick: comment.name,
         id: comment.user_id,
-        ip: comment.ip || extractIp(comment.gallog_icon) || extractIp(comment.nickname as string | undefined),
+        ip: comment.ip || extractIp(comment.gallog_icon) || extractIp(comment.nickname),
         image: extractIcon(comment.gallog_icon)
     };
     // 회원 아이디가 같을 때만 — 유동은 닉과 IP 앞자리가 같아도 다른 사람일 수 있다
