@@ -67,8 +67,12 @@ export const adjacentPreData = (from: GalleryPreData, dir: number): GalleryPreDa
 
     // 블러 행은 현재 위치를 찾은 뒤에 거른다. 지금 글이 블러 행이어도 제자리를 찾아야 한다.
     const ahead = dir > 0 ? rows.slice(index + 1) : rows.slice(0, index).reverse();
-    const next = ahead.find((row) => !isBlurHidden(row));
-    return next ? buildPreData(next) : null;
+    // 설문·AD·외부 뉴스처럼 글로 열 수 없는 행은 건너뛴다
+    for (const row of ahead) {
+        const pre = isBlurHidden(row) ? null : buildPreData(row);
+        if (pre) return pre;
+    }
+    return null;
 };
 
 /** 목록에 이미지 아이콘이 없는 글인지 (텍스트 개념글 포함). blockImage 설정이 이런 글의 본문 이미지를 가린다 */

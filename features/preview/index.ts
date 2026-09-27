@@ -130,7 +130,8 @@ const controller = (ctx: Ctx) => {
             // 댓글 가공(정화·차단)도 처음 쓸 때 불러온다.
             const [{prepareComments, processComments}, {list: raw, allowReply}] = await Promise.all([
                 import("@/core/preview/comments"),
-                skip ? {list: [], allowReply: true} : fetchComments(preData, post, abort!.signal)
+                // 건너뛸 때는 지금 알고 있는 댓글 허용(멤버만 댓글)을 그대로 둔다
+                skip ? {list: [], allowReply: store.getState().allowReply} : fetchComments(preData, post, abort!.signal)
             ]);
             if (store.getState().signalId !== mySignal || seq < shownSeq) return;
             shownSeq = seq;
@@ -138,12 +139,21 @@ const controller = (ctx: Ctx) => {
             const source = prepareComments(raw, preData, ctx.settings.archiveArticle);
             shown = {signal: mySignal, source};
             store.setState({comments: processComments(source, preData), allowReply});
+            dropStaleReply();
         } finally {
             pulling--;
         }
     };
 
     // 열린 창에도 차단 목록·방식 변경을 바로 반영한다. 버블에서 차단하면 그 사람 댓글이 곧바로 가려진다.
+    // 답글 대상 댓글이 목록에서 빠졌거나 삭제됐으면 답글 쓰기를 푼다. 두면 취소 버튼도 없이 없는 댓글에 답글을 단다
+    const dropStaleReply = (): void => {
+        const {reply, comments} = store.getState();
+        if (reply.replyNo && !comments?.some((comment) => comment.no === reply.replyNo && comment.is_delete !== "1")) {
+            store.setState({reply: {commentNo: null, replyNo: null}});
+        }
+    };
+
     const reapplyBlocks = async (): Promise<void> => {
         const {visible, preData, signalId} = store.getState();
         if (!visible || !preData) return;
@@ -153,6 +163,7 @@ const controller = (ctx: Ctx) => {
             post: s.post && {...s.post, textBlocked: textBlockOf(preData, s.post)},
             comments: shown?.signal === signalId ? processComments(shown.source, preData) : s.comments
         }));
+        dropStaleReply();
     };
 
     ctx.addCleanup(useBlocksStore.subscribe((state, previous) => {

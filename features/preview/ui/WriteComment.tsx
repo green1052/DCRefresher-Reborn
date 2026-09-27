@@ -143,9 +143,11 @@ export const WriteComment = () => {
 
             // 성공 응답: 댓글은 새 댓글 번호, 디시콘·글자콘은 'ok'.
             if (txtcon || useDccon ? response.result === "ok" : response.result !== "false") {
-                // 보내는 사이 더 쓴 글은 남긴다.
-                if (textarea.current?.value === raw) textarea.current.value = "";
-                if (draft.text === raw) draft.text = "";
+                // 보내는 사이 더 쓴 글은 남긴다. 디시콘만 보냈으면 입력칸의 글은 보내지 않았으니 둔다
+                if (!useDccon) {
+                    if (textarea.current?.value === raw) textarea.current.value = "";
+                    if (draft.text === raw) draft.text = "";
+                }
                 setDccons([]);
                 setBigDccon(false);
                 setTxtcon(false);
@@ -184,6 +186,7 @@ export const WriteComment = () => {
 
         const next = normalizeTxtcon(element.value);
         if (next !== element.value) element.value = next;
+        draft.text = element.value;
     };
 
     /** 글자콘을 끈다. 켤 때 잘린 글을 그대로 두었으면 원문으로 되돌린다. 토글 버튼과 디시콘 선택이 같이 쓴다 */
@@ -191,6 +194,7 @@ export const WriteComment = () => {
         const element = textarea.current;
         if (element && beforeTxtcon.current !== null && element.value === normalizeTxtcon(beforeTxtcon.current)) {
             element.value = beforeTxtcon.current;
+            draft.text = element.value;
         }
         beforeTxtcon.current = null;
         setTxtcon(false);

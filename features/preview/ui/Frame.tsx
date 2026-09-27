@@ -306,7 +306,7 @@ export const Frame = () => {
                                         usePreviewStore.setState({imageBlocked: false});
                                         // 관리자가 가린 이미지는 디시처럼 누른 버튼 옆 것만 드러낸다.
                                         // parser.ts는 가린 이미지의 원본 주소(data-original)를 넣지 않으므로 여기서 넣는다.
-                                        for (const media of button.parentElement?.querySelectorAll<HTMLElement>(":scope > [data-block]") ?? []) {
+                                        for (const media of button.parentElement?.querySelectorAll<HTMLElement>(":scope > [data-block], :scope > .refresher-imgnum > [data-block]") ?? []) {
                                             if (media instanceof HTMLImageElement && media.dataset.original) media.src = media.dataset.original;
                                             media.removeAttribute("data-block");
                                         }

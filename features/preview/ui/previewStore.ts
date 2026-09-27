@@ -156,6 +156,8 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     },
 
     close: () => {
+        // 열려 있지 않으면 할 일이 없다. 모듈을 끌 때도 부르는데, 페이드를 걸면 지난 글이 잠깐 비친다
+        if (!get().visible) return;
         get().captcha?.resolve("");
         // signalId도 올린다. 닫은 뒤 도착한 응답(abort로 난 오류 포함)이 페이드아웃 중인 창에 그려지면 안 된다.
         set({visible: false, fading: true, comments: undefined, blockPopup: false, captcha: null, reply: NO_REPLY, signalId: ++signalSeq});

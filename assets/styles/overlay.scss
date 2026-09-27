@@ -199,8 +199,13 @@
     iframe,
     embed {
         max-width: 100%;
-        height: auto;
         border-radius: var(--radius-3);
+    }
+
+    // iframe·embed는 원래 크기가 없어 height: auto면 150px로 줄어든다. height 속성(유튜브 315 등)을 그대로 쓴다
+    img,
+    video {
+        height: auto;
     }
 
     a {

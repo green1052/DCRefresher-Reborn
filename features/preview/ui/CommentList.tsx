@@ -38,7 +38,8 @@ export const CommentList = () => {
                     );
                 }
 
-                const isCollapsed = collapsed.has(parent.no);
+                // 펼치기 버튼은 답글이 둘 이상일 때만 있다. 접은 뒤 답글이 하나로 줄면(삭제·차단) 펼칠 수 없게 갇히므로 펼쳐 둔다
+                const isCollapsed = replies.length > 1 && collapsed.has(parent.no);
 
                 return (
                     <Fragment key={parent.no}>

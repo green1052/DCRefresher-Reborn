@@ -227,6 +227,8 @@ export const AdminPanel = () => {
                         highContrast={action.active}
                         aria-pressed={action.active}
                         style={{justifyContent: "flex-start"}}
+                        // 눌러도 포커스를 가져가지 않는다. 첫 클릭 뒤 스페이스로 스크롤하면 포커스된 버튼이 눌려 두 번째 확인이 된다
+                        onMouseDown={(ev) => ev.preventDefault()}
                         onClick={() => press(action)}
                     >
                         {action.icon}
