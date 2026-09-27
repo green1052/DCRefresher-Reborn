@@ -1,7 +1,7 @@
 import {Type} from "lucide-react";
 
 import {defineModule} from "@/core/module/define";
-import type {ModuleContext} from "@/core/module/types";
+import type {ModuleContext, SettingsSchema} from "@/core/module/types";
 
 const DEFAULT_FONTS = "Noto Sans CJK KR, NanumGothic";
 
@@ -35,17 +35,44 @@ const toFontFamily = (value: string): string => {
     return fonts.join(", ");
 };
 
-/** customFonts 설정값 → font-family (빈칸이면 기본 폰트). 옵션 페이지도 같은 값을 쓴다 */
-export const fontFamilyOf = (customFonts: string): string => toFontFamily(customFonts.trim() || DEFAULT_FONTS);
+/** customFonts 설정값 → font-family (빈칸이면 기본 폰트) */
+const fontFamilyOf = (customFonts: string): string => toFontFamily(customFonts.trim() || DEFAULT_FONTS);
 
-const buildCss = (ctx: ModuleContext): string => {
-    const fonts = fontFamilyOf(String(ctx.settings.customFonts));
-    const size = Number(ctx.settings.bodyFontSize);
+const SETTINGS = {
+    customFonts: {
+        type: "text",
+        name: "font-family 이름",
+        desc: "쉼표로 구분한 폰트 이름입니다. 앞의 폰트가 없으면 다음 폰트를 씁니다. (빈칸이면 기본 폰트)",
+        default: DEFAULT_FONTS
+    },
+    changeDCFont: {
+        type: "check",
+        name: "디시인사이드 폰트 교체",
+        desc: "미리보기 창 같은 DCRefresher Reborn의 폰트뿐만 아니라 디시인사이드의 폰트와 본문 크기까지 바꿉니다.",
+        default: true
+    },
+    bodyFontSize: {
+        type: "range",
+        name: "본문 폰트 크기",
+        desc: "게시글 본문의 폰트 크기입니다. 미리보기 창은 +2px로 표시됩니다.",
+        default: 13,
+        min: 5,
+        max: 30,
+        step: 1,
+        unit: "px"
+    }
+} satisfies SettingsSchema;
+
+type Ctx = ModuleContext<typeof SETTINGS>;
+
+const buildCss = (ctx: Ctx): string => {
+    const fonts = fontFamilyOf(ctx.settings.customFonts);
+    const size = ctx.settings.bodyFontSize;
 
     // 확장 UI(shadow DOM)엔 선택자가 닿지 않으므로 상속되는 커스텀 속성으로 넘긴다 (overlay.scss에서 사용)
     const css = [`:root { --refresher-font: ${fonts}; --refresher-preview-font-size: ${size + 2}px; }`];
 
-    if (ctx.settings.changeDCFont === true) {
+    if (ctx.settings.changeDCFont) {
         css.push(`${DC_FONT_TARGETS} { font-family: ${fonts}; }`, `:root .write_div { font-size: ${size}px; }`);
     }
 
@@ -58,7 +85,7 @@ const STYLE_ID = "refresher-fonts";
 
 // 콘텐츠 스크립트는 document_start에 돌아 head가 없을 수 있으므로 <html>에 붙인다.
 // 죽은 인스턴스(파이어폭스 재주입)가 남긴 것은 id로 찾아 이어 쓴다 — 새로 붙이면 옛 규칙이 끌 수 없게 남는다
-const apply = (ctx: ModuleContext): void => {
+const apply = (ctx: Ctx): void => {
     style ??= document.querySelector<HTMLStyleElement>(`style#${STYLE_ID}`)
         ?? document.documentElement.appendChild(Object.assign(document.createElement("style"), {id: STYLE_ID}));
     style.textContent = buildCss(ctx);
@@ -70,33 +97,13 @@ export default defineModule({
     description: "페이지에 전반적으로 표시되는 폰트를 교체합니다.",
     icon: Type,
 
-    settings: {
-        customFonts: {
-            type: "text",
-            name: "font-family 이름",
-            desc: "쉼표로 구분한 폰트 이름입니다. 앞의 폰트가 없으면 다음 폰트를 씁니다. (빈칸이면 기본 폰트)",
-            default: DEFAULT_FONTS
-        },
-        changeDCFont: {
-            type: "check",
-            name: "디시인사이드 폰트 교체",
-            desc: "미리보기 창 같은 DCRefresher Reborn의 폰트뿐만 아니라 디시인사이드의 폰트와 본문 크기까지 바꿉니다.",
-            default: true
-        },
-        bodyFontSize: {
-            type: "range",
-            name: "본문 폰트 크기",
-            desc: "게시글 본문의 폰트 크기입니다. 미리보기 창은 +2px로 표시됩니다.",
-            default: 13,
-            min: 5,
-            max: 30,
-            step: 1,
-            unit: "px"
-        }
-    },
+    settings: SETTINGS,
 
     setup: apply,
     onChanged: apply,
+
+    // 옵션·팝업도 같은 폰트로 (options.scss·popup의 Radix가 --refresher-font를 쓴다)
+    extensionPageVars: (settings) => ({"--refresher-font": fontFamilyOf(settings.customFonts)}),
 
     revoke() {
         style?.remove();

@@ -88,6 +88,9 @@ export interface ModuleDefinition<S extends SettingsSchema = SettingsSchema, Api
     /** 팝업 '현재 페이지' 토글 */
     pageToggles?: PageToggle<Api>[];
 
+    /** 확장 페이지(옵션·팝업)의 <html>에 넣을 CSS 변수 — 모듈이 켜져 있을 때만 (폰트 교체 등). 디시 페이지는 setup이 따로 칠한다 */
+    extensionPageVars?(settings: SettingValues<S>): Record<`--${string}`, string>;
+
     /** 비활성화시 실행 (DOM 정리 등). 리스너(signal)·cleanup은 이미 풀린 뒤다 */
     revoke?(): void;
 

@@ -1,3 +1,4 @@
+import {useEffect} from "react";
 import {storage} from "wxt/utils/storage";
 import {create} from "zustand";
 
@@ -56,6 +57,23 @@ export const useModulesStore = create<ModulesState>((set) => ({
         await enqueue(async () => item.setValue({...(await item.getValue()), [key]: next}));
     }
 }));
+
+/** 켜진 모듈의 extensionPageVars를 이 페이지(옵션·팝업)의 <html>에 넣는다 — 끄거나 설정을 바꾸면 따라간다 */
+export const useExtensionPageVars = (): void => {
+    const enables = useModulesStore((state) => state.enables);
+    const values = useModulesStore((state) => state.values);
+
+    useEffect(() => {
+        const root = document.documentElement.style;
+        const vars = features.flatMap((feature) =>
+            enables[feature.id] && feature.extensionPageVars ? Object.entries(feature.extensionPageVars(values[feature.id] ?? {})) : []);
+        for (const [name, value] of vars) root.setProperty(name, value);
+
+        return () => {
+            for (const [name] of vars) root.removeProperty(name);
+        };
+    }, [enables, values]);
+};
 
 const SETTINGS_KEY = /^refresher:module:(.+):settings$/;
 

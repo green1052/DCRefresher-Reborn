@@ -4,10 +4,9 @@ import {type ReactNode, useEffect, useState} from "react";
 
 import {type PageAction, type PageToggleState, sendMessage} from "@/core/messaging/protocol";
 import features from "@/features";
-import {fontFamilyOf} from "@/features/fonts";
 import {initBlocksStore, useBlocksStore} from "@/stores/blocks";
 import {initMemosStore, useMemosStore} from "@/stores/memos";
-import {initModulesStore, useModulesStore} from "@/stores/modules";
+import {initModulesStore, useExtensionPageVars, useModulesStore} from "@/stores/modules";
 
 const LOGO_URL = browser.runtime.getURL("/icons/48.png");
 const VERSION = browser.runtime.getManifest().version;
@@ -162,14 +161,8 @@ export function App() {
         ]).then(([page]) => setLoaded({page}));
     }, []);
 
-    // 폰트 교체 모듈 설정을 팝업에도 (옵션 페이지와 같게)
-    const fontsEnabled = useModulesStore((state) => state.enables.fonts);
-    const customFonts = useModulesStore((state) => state.values.fonts?.customFonts);
-    useEffect(() => {
-        const root = document.documentElement.style;
-        if (fontsEnabled) root.setProperty("--refresher-font", fontFamilyOf(String(customFonts ?? "")));
-        else root.removeProperty("--refresher-font");
-    }, [fontsEnabled, customFonts]);
+    // 모듈이 선언한 확장 페이지 CSS 변수 (폰트 교체 등)
+    useExtensionPageVars();
 
     if (!loaded) return null;
 

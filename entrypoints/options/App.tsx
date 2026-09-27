@@ -3,10 +3,9 @@ import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings, W
 import {lazy, Suspense, useEffect, useState} from "react";
 
 import {Notice} from "@/components/ConfirmDialog";
-import {fontFamilyOf} from "@/features/fonts";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
-import {initModulesStore, useModulesStore} from "@/stores/modules";
+import {initModulesStore, useExtensionPageVars} from "@/stores/modules";
 
 import {AboutTab} from "./AboutTab";
 import {BlockTab} from "./BlockTab";
@@ -131,14 +130,8 @@ export function App() {
         void initModulesStore();
     }, []);
 
-    // 폰트 교체 모듈 설정을 옵션 페이지에도 (options.scss가 --refresher-font를 쓴다)
-    const fontsEnabled = useModulesStore((state) => state.enables.fonts);
-    const customFonts = useModulesStore((state) => state.values.fonts?.customFonts);
-    useEffect(() => {
-        const root = document.documentElement.style;
-        if (fontsEnabled) root.setProperty("--refresher-font", fontFamilyOf(String(customFonts ?? "")));
-        else root.removeProperty("--refresher-font");
-    }, [fontsEnabled, customFonts]);
+    // 모듈이 선언한 확장 페이지 CSS 변수 (폰트 교체 등)
+    useExtensionPageVars();
 
     return (
         <Flex direction={{initial: "column", md: "row"}} minHeight="100vh">
