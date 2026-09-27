@@ -77,7 +77,8 @@ export interface DcinsideDcconDetailList {
 
 export interface DcinsideDcconDetail {
     list: DcinsideDcconDetailList[];
-    max_page: number;
+    /** 마지막 쪽 번호 (0부터). 문자열로 오기도 한다 */
+    max_page: number | string;
     target: string;
 }
 
