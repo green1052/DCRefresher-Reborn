@@ -1,7 +1,7 @@
 import {Badge, Box, Button, DataList, Flex, Grid, Heading, Link, Text} from "@radix-ui/themes";
 import {BookOpen, Bug, ClipboardCopy, Code, Heart, type LucideIcon, MessageCircle, Star, Tag, Users} from "lucide-react";
 import {HTTPError} from "ky";
-import {type MouseEvent, useEffect, useState} from "react";
+import {useEffect, useState} from "react";
 
 import {Notice} from "@/components/ConfirmDialog";
 import {http} from "@/core/http/client";
@@ -12,6 +12,7 @@ import {useMemosStore} from "@/stores/memos";
 import {useModulesStore} from "@/stores/modules";
 
 import {byteSize, formatBytes, formatTime, Section} from "./Layout";
+import {useOptionsStore} from "./optionsStore";
 
 const REPO = "https://github.com/green1052/DCRefresher-Reborn";
 
@@ -73,7 +74,7 @@ const readUsage = async (): Promise<Usage> => {
     return {local, sync};
 };
 
-export function AboutTab({logo, version, onVersionClick}: { logo: string; version: string; onVersionClick: (ev: MouseEvent) => void }) {
+export function AboutTab({logo, version}: { logo: string; version: string }) {
     const release = useRelease(version);
     const enables = useModulesStore((state) => state.enables);
     const blocks = useBlocksStore((state) => state.entries);
@@ -114,8 +115,8 @@ export function AboutTab({logo, version, onVersionClick}: { logo: string; versio
                     <Box flexGrow="1">
                         <Flex align="center" gap="2">
                             <Heading size="5">DCRefresher Reborn</Heading>
-                            {/* 연달아 5번 누르면 개발자 탭이 열린다 (App.tsx) */}
-                            <Badge variant="soft" style={{userSelect: "none"}} onClick={onVersionClick}>v{version}</Badge>
+                            {/* 연달아 5번 누르면 개발자 탭이 열린다 */}
+                            <Badge variant="soft" style={{userSelect: "none"}} onClick={(ev) => useOptionsStore.getState().unlockDev(ev)}>v{version}</Badge>
                         </Flex>
                         <Text as="p" size="2" color="gray">디시인사이드 개선 확장 프로그램</Text>
                     </Box>

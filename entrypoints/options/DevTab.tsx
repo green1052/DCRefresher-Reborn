@@ -10,6 +10,7 @@ import {compactIpData, type RawIpData} from "@/core/ipdb";
 import {dbStorage, writeDatabase} from "@/core/storage/items";
 
 import {byteSize, Empty, formatBytes, formatTime, Section, useStorageItem} from "./Layout";
+import {useOptionsStore} from "./optionsStore";
 
 type Area = "local" | "sync";
 
@@ -232,7 +233,7 @@ const DatabaseSection = ({notify}: { notify: (message: string) => void }) => {
     );
 };
 
-const ToolsSection = ({notify, onHide}: { notify: (message: string) => void; onHide: () => void }) => {
+const ToolsSection = ({notify}: { notify: (message: string) => void }) => {
     const clearModuleData = async (): Promise<void> => {
         const keys = Object.keys(await browser.storage.local.get(null)).filter(isModuleDataKey);
         await browser.storage.local.remove(keys);
@@ -249,7 +250,7 @@ const ToolsSection = ({notify, onHide}: { notify: (message: string) => void; onH
                     <RotateCcw size={14}/> 모듈 캐시 지우기 (글댓비 등)
                 </Button>
                 {!import.meta.env.DEV && (
-                    <Button variant="soft" color="gray" onClick={onHide}>
+                    <Button variant="soft" color="gray" onClick={() => useOptionsStore.getState().hideDev()}>
                         <EyeOff size={14}/> 개발자 탭 숨기기
                     </Button>
                 )}
@@ -258,14 +259,14 @@ const ToolsSection = ({notify, onHide}: { notify: (message: string) => void; onH
     );
 };
 
-export function DevTab({onHide}: { onHide: () => void }) {
+export function DevTab() {
     const [notice, setNotice] = useState<string | null>(null);
 
     return (
         <Box>
             <StorageSection/>
             <DatabaseSection notify={setNotice}/>
-            <ToolsSection notify={setNotice} onHide={onHide}/>
+            <ToolsSection notify={setNotice}/>
 
             <Notice message={notice} onClose={() => setNotice(null)}/>
         </Box>

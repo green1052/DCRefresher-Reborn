@@ -1,5 +1,7 @@
 import {type CSSProperties, useEffect} from "react";
 
+import {useOptionsStore} from "./optionsStore";
+
 const DCCONS = [
     "62b5df2be09d3ca567b1c5bc12d46b394aa3b1058c6e4d0ca41648b658e82d75149b1fff213d9f5e9269dc69450e4fdf304f7766443dee800244029618a166bde80cfee0804e5dad9b407b71a884471bbaff5e01",
     "62b5df2be09d3ca567b1c5bc12d46b394aa3b1058c6e4d0ca41648b658e82d75149b1fff213d9f5e9269dc69450e4fdf304f7766443dee800244029618a166bde80cfee0804e5dad9b407b71a88447198027b895",
@@ -39,12 +41,12 @@ const MAX_DELAY = 1.5;
 const DURATION = 2.4;
 
 /** 로고 연타 이스터에그 */
-export const DcconRain = ({onEnd}: { onEnd: () => void }) => {
+export const DcconRain = () => {
     // 끝은 타이머로 — 마지막 이미지의 animationend에 걸면 그 이미지가 못 불러와 지워졌을 때 영영 안 끝난다
     useEffect(() => {
-        const timer = setTimeout(onEnd, (MAX_DELAY + DURATION) * 1000);
+        const timer = setTimeout(() => useOptionsStore.getState().endRain(), (MAX_DELAY + DURATION) * 1000);
         return () => clearTimeout(timer);
-    }, [onEnd]);
+    }, []);
 
     return (
         <div className="refresher-dccon-rain">
