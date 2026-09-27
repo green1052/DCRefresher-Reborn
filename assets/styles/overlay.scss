@@ -184,10 +184,10 @@
 .refresher-user[data-op] {
     padding: 1px 6px;
     border-radius: var(--radius-2);
-    background: var(--blue-9);
-    color: var(--blue-contrast);
+    background: var(--blue-a4);
+    color: var(--blue-11);
 
-    // 배지 글자(아이디·IP·글댓비 — 배지 색 설정이 인라인으로 칠한다)도 흰 글씨로. 사람마다 고른 메모 색만 그대로
+    // 배지 글자(아이디·IP·글댓비 — 배지 색 설정이 인라인으로 칠한다)도 칸 글자색으로. 사람마다 고른 메모 색만 그대로
     .rt-Text:not([data-memo]) {
         color: inherit !important;
     }
