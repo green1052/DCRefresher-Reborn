@@ -1,9 +1,12 @@
 name: Check
 
+# develop 푸시는 검사하지 않는다. 릴리즈 워크플로가 올리기 전에 타입 검사를 한다
 on:
-    push:
-        branches: [develop]
     pull_request:
+        paths-ignore:
+            - "**.md"
+            - "docs/**"
+    workflow_dispatch:
 
 concurrency:
     group: check-${{ github.ref }}
