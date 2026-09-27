@@ -28,5 +28,13 @@ export const http: KyInstance = ky.create({
     retry: {jitter: true, maxRetryAfter: 10_000}
 });
 
+/**
+ * 폼 본문(application/x-www-form-urlencoded). 값이 null·undefined·false인 필드는 넣지 않는다.
+ * URLSearchParams는 undefined를 "undefined"라는 글자로 넣는다. ky도 이런 처리는 URL 쿼리(searchParams)에만 한다.
+ * 빈 문자열은 넣는다 (디시가 빈 값으로 받는 필드가 있다)
+ */
+export const formBody = (fields: Record<string, string | null | undefined | false>): URLSearchParams =>
+    new URLSearchParams(Object.entries(fields).filter((entry): entry is [string, string] => typeof entry[1] === "string"));
+
 /** 디시 ajax 요청용 */
 export const ajax: KyInstance = http.extend({headers: {"X-Requested-With": "XMLHttpRequest"}});

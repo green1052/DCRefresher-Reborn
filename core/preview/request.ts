@@ -1,12 +1,13 @@
-import {ajax, http} from "@/core/http/client";
+import {ajax, formBody, http} from "@/core/http/client";
 import {galleryPath, galleryTypeName, isMiniGallery, urls} from "@/core/http/urls";
 import {csrfToken} from "@/utils/cookie";
 
 import {parsePostInfo} from "./parser";
 import type {CommentListResponse, DcinsideComment, DcinsideDccon, GalleryPreData, PostInfo} from "./types";
 
-const commonBody = async (link: string): Promise<URLSearchParams> =>
-    new URLSearchParams({ci_t: await csrfToken(), _GALLTYPE_: galleryTypeName(link)});
+/** 디시 요청 본문. 모든 요청에 붙는 CSRF 토큰·갤러리 종류 뒤에 fields를 붙인다 (formBody 규칙) */
+const dcBody = async (link: string, fields: Parameters<typeof formBody>[0]): Promise<URLSearchParams> =>
+    formBody({ci_t: await csrfToken(), _GALLTYPE_: galleryTypeName(link), ...fields});
 
 export const viewUrl = (link: string, gallery: string, id: string): string => {
     const type = galleryPath(link);
@@ -26,12 +27,13 @@ export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): P
 
 /** 댓글 목록. 한 쪽에 100개씩이라 여러 쪽을 받아 합친다 */
 export const fetchComments = async (preData: GalleryPreData, postInfo: PostInfo, signal: AbortSignal): Promise<CommentListResponse> => {
-    const body = await commonBody(preData.link);
-    body.set("id", preData.gallery);
-    body.set("no", preData.id);
-    body.set("cmt_id", postInfo.commentId ?? preData.gallery);
-    body.set("cmt_no", postInfo.commentNo ?? preData.id);
-    body.set("e_s_n_o", postInfo.esno ?? "");
+    const body = await dcBody(preData.link, {
+        id: preData.gallery,
+        no: preData.id,
+        cmt_id: postInfo.commentId ?? preData.gallery,
+        cmt_no: postInfo.commentNo ?? preData.id,
+        e_s_n_o: postInfo.esno ?? ""
+    });
 
     const fetchPage = (page: number) => {
         const pageBody = new URLSearchParams(body);
@@ -78,14 +80,15 @@ export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U
         domain: "dcinside.com"
     });
 
-    const body = await commonBody(preData.link);
-    body.set("id", preData.gallery);
-    body.set("no", preData.id);
-    body.set("mode", mode);
-    body.set("code_recommend", code ?? postInfo.recommendCode ?? "");
-    body.set("link_id", preData.gallery);
-    if (postInfo.v_cur_t) body.set("v_cur_t", postInfo.v_cur_t);
-    if (postInfo.randomParam) body.set(postInfo.randomParam.name, postInfo.randomParam.value);
+    const body = await dcBody(preData.link, {
+        id: preData.gallery,
+        no: preData.id,
+        mode,
+        code_recommend: code ?? postInfo.recommendCode ?? "",
+        link_id: preData.gallery,
+        v_cur_t: postInfo.v_cur_t || undefined,
+        ...(postInfo.randomParam && {[postInfo.randomParam.name]: postInfo.randomParam.value})
+    });
 
     const response = await ajax.post(urls.vote, {body}).text();
     const [result, counts, fixedCounts] = response.trim().split("||");
@@ -109,8 +112,7 @@ const isSuccess = (result: unknown): boolean => result === "success" || result =
  * 필드는 공통 필드(ci_t, _GALLTYPE_) 뒤에 준 순서대로 붙는다.
  */
 const manage = async (target: Pick<GalleryPreData, "link">, action: string, fields: Record<string, string>): Promise<ManageResult> => {
-    const body = await commonBody(target.link);
-    for (const [key, value] of Object.entries(fields)) body.set(key, value);
+    const body = await dcBody(target.link, fields);
 
     const url = `${urls.base}ajax/${isMiniGallery(target.link) ? "mini" : "minor"}_manager_board_ajax/${action}`;
     const text = (await ajax.post(url, {body}).text()).trim();
@@ -175,13 +177,14 @@ export const adminDeleteComment = (preData: GalleryPreData, commentId: string): 
 
 /** 유저 댓글 삭제 */
 export const userDeleteComment = async (preData: GalleryPreData, commentId: string, password: string): Promise<ManageResult> => {
-    const body = await commonBody(preData.link);
-    body.set("id", preData.gallery);
-    body.set("no", preData.id);
-    body.set("re_no", commentId);
-    body.set("mode", "del");
-    if (password) body.set("re_password", password);
-    body.set("g-recaptcha-response", "");
+    const body = await dcBody(preData.link, {
+        id: preData.gallery,
+        no: preData.id,
+        re_no: commentId,
+        mode: "del",
+        re_password: password || undefined,
+        "g-recaptcha-response": ""
+    });
 
     // 'true'만 성공으로 본다 (v5와 같음). 관리 요청과 달리 응답이 JSON이 아니다
     const {result, message} = submitResult(await ajax.post(urls.comment_remove, {body}).text());
@@ -248,40 +251,34 @@ export const submitComment = async (
     // service_code를 못 만든 채 보내면 서버가 모호한 오류만 주므로 보내지 않고 알린다
     if (!code) return {result: "false", message: "댓글 폼을 읽지 못했습니다. 원문에서 작성해 주세요."};
 
-    const params = new URLSearchParams();
-    params.set("t_vch2", "");
-    params.set("t_vch2_chk", "");
-
-    for (const [name, value] of form.fields) {
-        if (!["service_code", "gallery_no", "clickbutton"].includes(name)) params.set(name, value);
-    }
-
-    params.set("service_code", code);
-    params.set("c_gall_id", preData.gallery);
-    params.set("c_gall_no", preData.id);
-    params.set("id", preData.gallery);
-    params.set("no", preData.id);
-
-    if (commentNo) params.set("c_no", commentNo);
-    if (replyNo) params.set("reply_no", replyNo);
-
-    params.set("name", user.name);
-    if (user.pw) params.set("password", user.pw);
-    params.set("use_gall_nick", "N");
-    if (captcha) params.set("code", captcha);
-    params.set("g-recaptcha-response", "");
-    if (grecaptchaToken) params.set("g-recaptcha-token", grecaptchaToken);
-
-    if (bigDccon) params.set("bigdccon", "1");
-
-    if (typeof memo === "string") {
-        params.set("memo", memo);
-    } else {
-        params.set("input_type", "comment");
-        if (memo.length > 1) params.set("double_con_chk", "1");
-        params.set("package_idx", memo.map((dccon) => dccon.package_idx).join(","));
-        params.set("detail_idx", memo.map((dccon) => dccon.detail_idx).join(","));
-    }
+    // 폼의 필드 중 같은 이름은 아래 값으로 바뀐다 (자리는 폼 순서 그대로)
+    const params = formBody({
+        t_vch2: "",
+        t_vch2_chk: "",
+        ...Object.fromEntries(form.fields.filter(([name]) => !["service_code", "gallery_no", "clickbutton"].includes(name))),
+        service_code: code,
+        c_gall_id: preData.gallery,
+        c_gall_no: preData.id,
+        id: preData.gallery,
+        no: preData.id,
+        c_no: commentNo || undefined,
+        reply_no: replyNo || undefined,
+        name: user.name,
+        password: user.pw || undefined,
+        use_gall_nick: "N",
+        code: captcha || undefined,
+        "g-recaptcha-response": "",
+        "g-recaptcha-token": grecaptchaToken || undefined,
+        bigdccon: bigDccon && "1",
+        ...(typeof memo === "string"
+            ? {memo}
+            : {
+                input_type: "comment",
+                double_con_chk: memo.length > 1 && "1",
+                package_idx: memo.map((dccon) => dccon.package_idx).join(","),
+                detail_idx: memo.map((dccon) => dccon.detail_idx).join(",")
+            })
+    });
 
     const response = await ajax.post(typeof memo === "string" ? urls.comments_submit : urls.dccon_comments_submit, {
         body: params
@@ -378,30 +375,23 @@ export const submitTxtcon = async (
 ): Promise<SubmitResult> => {
     const form = postInfo.commentForm;
 
-    const body = await commonBody(preData.link);
-    body.set("id", postInfo.commentId ?? preData.gallery);
-    body.set("no", postInfo.commentNo ?? preData.id);
-    body.set("txtcon_text", text);
-    body.set("txtcon_bg", colors.bg);
-    body.set("txtcon_color", colors.txt);
-
-    if (commentNo) body.set("c_no", commentNo);
-    if (replyNo) body.set("reply_no", replyNo);
-
-    if (user.name) body.set("name", user.name);
-    if (user.pw) body.set("password", user.pw);
-    if (captcha) body.set("code", captcha);
-
-    for (const [name, value] of Object.entries(form.checks)) body.set(name, value);
-
-    // 갤닉은 댓글(submitComment)처럼 쓰지 않는다
-    if (form.gallNickName !== undefined) {
-        body.set("gall_nick_name", form.gallNickName);
-        body.set("use_gall_nick", "N");
-    }
-
-    body.set("g-recaptcha-response", "");
-    if (grecaptchaToken) body.set("g-recaptcha-token", grecaptchaToken);
+    const body = await dcBody(preData.link, {
+        id: postInfo.commentId ?? preData.gallery,
+        no: postInfo.commentNo ?? preData.id,
+        txtcon_text: text,
+        txtcon_bg: colors.bg,
+        txtcon_color: colors.txt,
+        c_no: commentNo || undefined,
+        reply_no: replyNo || undefined,
+        name: user.name || undefined,
+        password: user.pw || undefined,
+        code: captcha || undefined,
+        ...form.checks,
+        // 갤닉은 댓글(submitComment)처럼 쓰지 않는다
+        ...(form.gallNickName !== undefined && {gall_nick_name: form.gallNickName, use_gall_nick: "N"}),
+        "g-recaptcha-response": "",
+        "g-recaptcha-token": grecaptchaToken || undefined
+    });
 
     const response = await ajax.post(urls.txtcon_submit, {body}).text();
 
