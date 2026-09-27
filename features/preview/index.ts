@@ -743,7 +743,8 @@ const publishSettings = (ctx: ModuleContext): void => {
             : null,
         frameWidth: Number(ctx.settings.previewWidth),
         backgroundBlur: ctx.settings.toggleBackgroundBlur === true,
-        scrollToSkip: ctx.settings.scrollToSkip === true
+        scrollToSkip: ctx.settings.scrollToSkip === true,
+        archiveArticle: ctx.settings.archiveArticle === true
     });
 };
 

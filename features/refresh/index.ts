@@ -7,6 +7,7 @@ import {defineModule} from "@/core/module/define";
 import type {ModuleContext} from "@/core/module/types";
 import {eventBus} from "@/core/eventbus/bus";
 import {sendMessage} from "@/core/messaging/protocol";
+import {usePreviewStore} from "@/features/preview/ui/previewStore";
 import {useUiStore} from "@/stores/ui";
 
 const MINIMUM_REFRESH_INTERVAL = 2000;
@@ -56,6 +57,26 @@ export const checkboxCellFactory = (oldRows: HTMLTableRowElement[]): ((no: strin
 
 /** 새 글 판정용 행 키. 번호 없는 행(설문·AD, 다른 갤러리 공지)은 번호 칸 글자로 구분한다 */
 const rowKey = (row: HTMLElement): string => rowPostNo(row) ?? row.querySelector(".gall_num")?.textContent ?? "";
+
+/**
+ * 새 목록에서 빠진 글 행을 제자리에 남기고 붉게 칠한다 (v5의 삭제된 글 보존). 한 번 남긴 행은 다음 새로고침에도 남는다.
+ * 위에 새 글이 n개 들어오면 맨 아래 n개는 다음 페이지로 밀려난 것이라 남기지 않고, 행 수는 원래대로 맞춘다
+ */
+const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, newList: HTMLElement, newPostCount: number): void => {
+    // 끼워 넣어도 자리가 밀리지 않게 끼우기 전 행으로 잰다
+    const newRows = Array.from(newList.children);
+
+    for (const [index, row] of oldRows.entries()) {
+        const no = rowPostNo(row);
+        // 번호 없는 행(설문·AD)은 늘 새로 받는다
+        if (!no || newKeys.has(no) || index >= oldRows.length - newPostCount) continue;
+
+        row.classList.add("refresherDeleted");
+        newList.insertBefore(row, newRows[index + newPostCount] ?? null);
+    }
+
+    while (newList.children.length > oldRows.length) newList.lastElementChild?.remove();
+};
 
 /** 방문 링크 색상 (Firefox 대응) */
 const applyDoNotColorVisited = (ctx: ModuleContext): void => {
@@ -344,7 +365,10 @@ export default defineModule({
                     }
                 }
 
-                // 미리보기 모듈의 삭제글 보존(archiveArticle)은 캐시에 이미 반영됨
+                // 삭제된 글 보존(미리보기 설정) — 같은 목록을 다시 받을 때만. 페이지를 넘기거나 검색 결과면 빠진 글이 지워진 것이 아니다
+                if (!customURL && !queryString("s_keyword") && usePreviewStore.getState().archiveArticle) {
+                    keepDeletedRows(oldRows, new Set(newKeys), newList, newPostList.length);
+                }
 
                 // 행 순서가 같으면 바뀐 행(조회수 등)만 갈아끼운다 — 그대로인 행은 hover·리스너가 남는다.
                 // 검색 결과는 강조와 글·댓글 행 짝이 얽혀 통째로 바꾼다

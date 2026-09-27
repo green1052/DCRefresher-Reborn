@@ -65,6 +65,8 @@ interface PreviewState extends PostState, Hooks {
     backgroundBlur: boolean;
     /** 스크롤 끝에서 한 번 더 굴리면 이전/다음 글 (설정) */
     scrollToSkip: boolean;
+    /** 삭제된 글과 댓글 보존 (설정) — 새로고침 모듈도 목록에서 지워진 글을 남길 때 본다 */
+    archiveArticle: boolean;
 
     captcha: { url: string; resolve: (code: string) => void } | null;
     mini: MiniState | null;
@@ -145,6 +147,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     frameWidth: 1200,
     backgroundBlur: false,
     scrollToSkip: true,
+    archiveArticle: false,
     captcha: null,
     mini: null,
 
