@@ -79,6 +79,9 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                 return;
             }
 
+            // 다른 모양(실패 응답 등)이면 목록을 그리다 오버레이 전체가 깨지므로 실패로 넘긴다
+            if (!Array.isArray(response.list)) throw new Error("디시콘 목록이 아닙니다.");
+
             listCache.set(targetPage, {list: response.list, maxPage: response.max_page});
             setMaxPage(response.max_page);
             setPackages(response.list);

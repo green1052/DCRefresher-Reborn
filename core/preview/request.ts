@@ -16,12 +16,12 @@ export const viewUrl = (link: string, gallery: string, id: string): string => {
     return `${urls.base}${type}board/view/?id=${gallery}&no=${id}`;
 };
 
-/** 게시글을 받아 PostInfo로 푼다. 글이 없으면 Error("404") */
+/** 게시글을 받아 PostInfo로 푼다. 삭제된 글은 디시가 404를 준다. 200인데 글이 없으면(차단·점검 안내 등) Error */
 export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): Promise<PostInfo> => {
     const response = await http.get(viewUrl(preData.link, preData.gallery, preData.id), {signal}).text();
 
     const postInfo = parsePostInfo(response);
-    if (!postInfo) throw new Error("404");
+    if (!postInfo) throw new Error("게시글 페이지가 아닙니다.");
 
     return postInfo;
 };

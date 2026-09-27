@@ -12,10 +12,11 @@ export const ErrorBlock = ({error}: { error: ErrorState }) => {
 
     let text: string;
     if (adult) text = "성인 인증이 필요한 글입니다. 원문에서 확인해 주세요.";
-    else if (status && status >= 400 && status < 500) text = "게시글이 삭제되었거나 존재하지 않습니다.";
-    else if (status && status >= 500) text = "서버가 불안정합니다. 잠시 후 다시 시도해주세요.";
-    else if (/fetch|network|timed out/i.test(detail)) text = "서버 또는 브라우저 연결에 실패했습니다.";
-    else text = "게시글 구조를 해석하는 데 실패했습니다.";
+    else if (deleted) text = "게시글이 삭제되었거나 존재하지 않습니다.";
+    else if (status === 403 || status === 429) text = "요청이 많아 디시인사이드가 잠시 막았습니다. 잠시 후 다시 시도해 주세요.";
+    else if (status && status >= 500) text = "디시인사이드 서버가 불안정합니다. 잠시 후 다시 시도해 주세요.";
+    else if (/fetch|network|timed out/i.test(detail)) text = "디시인사이드에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.";
+    else text = "게시글을 읽지 못했습니다. 다시 시도하거나 원문에서 확인해 주세요.";
 
     return (
         <Callout.Root color={adult ? "orange" : "red"} my="4">

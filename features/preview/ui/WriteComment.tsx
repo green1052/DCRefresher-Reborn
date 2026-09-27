@@ -31,6 +31,13 @@ const FAIL_MESSAGES: Record<string, string> = {
     form_error: "이름과 비밀번호를 정확하게 입력해주세요."
 };
 
+/**
+ * 댓글이 올라갔는지. 디시 comment.js처럼 'false'가 아니면 성공(새 댓글 번호)으로 보되, 확실한 실패는 거른다:
+ * 실패 코드, 빈 응답, HTML 페이지(로그인이 풀렸거나 오류 페이지). 성공으로 잘못 보면 입력한 글을 지워 버린다
+ */
+const isCommentPosted = ({result}: SubmitResult): boolean =>
+    result !== "false" && result !== "" && !result.trimStart().startsWith("<") && !Object.hasOwn(FAIL_MESSAGES, result);
+
 const failMessage = (response: SubmitResult): string | undefined => {
     if (response.result !== "false") return FAIL_MESSAGES[response.result];
 
@@ -143,7 +150,7 @@ export const WriteComment = () => {
             }
 
             // 성공 응답: 댓글은 새 댓글 번호, 디시콘·글자콘은 'ok'.
-            if (txtcon || useDccon ? response.result === "ok" : response.result !== "false") {
+            if (txtcon || useDccon ? response.result === "ok" : isCommentPosted(response)) {
                 // 보내는 사이 더 쓴 글은 남긴다. 디시콘만 보냈으면 입력칸의 글은 보내지 않았으니 둔다
                 if (!useDccon) {
                     if (textarea.current?.value === raw) textarea.current.value = "";

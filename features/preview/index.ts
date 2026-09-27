@@ -21,7 +21,7 @@ import {adjacentPreData, buildPreData, isBlurHidden, isTextPost} from "./rows";
 import {type Ctx, settings} from "./settings";
 import {BLOCKED_TEXT, type ErrorState, type ManageKind, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
 
-// status는 ky의 HTTPError에서 읽고, fetchPost가 본문을 못 찾아 던진 Error("404")는 404로 본다.
+// status는 ky의 HTTPError에서 읽는다 (삭제된 글은 404).
 // 성인 인증 안내 페이지면 parsePostInfo가 Error(ADULT_ERROR)를 던진다.
 // 파이어폭스 content.fetch의 오류는 페이지 영역의 DOMException이라 instanceof Error가 거짓이다. 메시지는 모양으로 꺼낸다
 const messageOf = (error: unknown): string =>
@@ -29,7 +29,7 @@ const messageOf = (error: unknown): string =>
 
 const errorOf = (error: unknown): ErrorState => ({
     detail: messageOf(error),
-    status: error instanceof HTTPError ? error.response.status : error instanceof Error && error.message === "404" ? 404 : undefined,
+    status: error instanceof HTTPError ? error.response.status : undefined,
     adult: error instanceof Error && error.message === ADULT_ERROR
 });
 

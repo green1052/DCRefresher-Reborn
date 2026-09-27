@@ -121,7 +121,11 @@ export default defineContentScript({
         if (board) void initDatabase().catch(console.error);
 
         // 확장을 끄거나 업데이트해도 이 스크립트는 남아 새로고침 폴링·저장소 호출을 하다 실패하므로 모듈을 멈춘다
-        ctx.onInvalidated(stopAll);
+        ctx.onInvalidated(() => {
+            stopAll();
+            // 기능이 조용히 멈추면 이유를 알 수 없으므로 알린다. 오버레이가 이미 떠 있을 때만 띄울 수 있다
+            useUiStore.getState().showToast("확장 프로그램이 업데이트되어 이 페이지에서는 멈췄습니다. 새로고침해 주세요.", "warning", 0);
+        });
         // ponytail: WXT는 ctx.isValid를 읽을 때만 무효화를 알아채므로 빈 interval로 5초마다 검사하게 한다.
         // 업데이트 전에 열린 탭은 새로고침할 때까지 기능이 멈춘다.
         ctx.setInterval(() => {}, 5_000);
