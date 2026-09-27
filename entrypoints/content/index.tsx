@@ -14,7 +14,7 @@ import {BLOCKED_PAGE_MESSAGE, BOARD_PAGE} from "@/core/pages";
 import {onMessage} from "@/core/messaging/protocol";
 import {loadAll, pageToggleStates, runPageToggle, runShortcut, stopAll} from "@/core/module/registry";
 import features from "@/features";
-import {usePreviewStore} from "@/features/preview/ui/previewStore";
+import {needsPreviewOverlay, usePreviewStore} from "@/features/preview/ui/previewStore";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
 import {useUiStore} from "@/stores/ui";
@@ -90,12 +90,11 @@ export default defineContentScript({
         };
 
         // 대부분의 페이지는 오버레이를 끝내 띄우지 않으므로 CSS 처리·shadow 삽입·첫 렌더(수십 ms)를 처음 필요할 때로 미룬다.
-        // 오버레이에 새 UI를 추가하면 그 표시 조건을 여기에도 넣어야 한다. 빠지면 그 UI는 뜨지 않는다.
+        // 오버레이에 새 UI를 추가하면 그 표시 조건을 여기(미리보기 UI는 previewStore의 needsPreviewOverlay)에도 넣어야 한다. 빠지면 그 UI는 뜨지 않는다.
         // 매 페이지 setup이 채우는 값(badgeColors·ratios·blockView·selected·훅 등)은 넣지 않는다. 넣으면 항상 마운트된다.
         const needsOverlay = (): boolean => {
             const {toast, bubble, memo} = useUiStore.getState();
-            const {visible, mini, captcha, blockPopup} = usePreviewStore.getState();
-            return Boolean(toast || bubble || memo || visible || mini || captcha || blockPopup);
+            return Boolean(toast || bubble || memo) || needsPreviewOverlay(usePreviewStore.getState());
         };
 
         const mountWhenNeeded = (): void => {
@@ -141,8 +140,16 @@ export default defineContentScript({
         // 확장을 끄거나 업데이트해도 이 스크립트는 남아 새로고침 폴링·저장소 호출을 하다 실패하므로 모듈을 멈춘다
         ctx.onInvalidated(() => {
             stopAll();
-            // 기능이 조용히 멈추면 이유를 알 수 없으므로 알린다. 오버레이가 이미 떠 있을 때만 띄울 수 있다
-            useUiStore.getState().showToast("확장 프로그램이 업데이트되어 이 페이지에서는 멈췄습니다. 새로고침해 주세요.", "warning", 0);
+            // 새 스크립트가 주입되어 무효화된 경우(확장은 살아 있음)는 새 스크립트가 이어서 돌므로 알리지 않는다
+            if (browser.runtime?.id) return;
+            // 기능이 조용히 멈추면 이유를 알 수 없으므로 알린다. WXT가 무효화 때 오버레이를 걷어 내므로 토스트 대신 DOM에 직접 띄운다.
+            // manifest CSS도 확장과 함께 빠질 수 있어 인라인 스타일을 쓴다. 누르면 닫힌다
+            const note = document.createElement("div");
+            note.setAttribute("role", "status");
+            note.textContent = "확장 프로그램이 업데이트되어 이 페이지에서는 멈췄습니다. 새로고침해 주세요.";
+            note.style.cssText = "position:fixed;right:16px;bottom:16px;z-index:2147483647;padding:10px 14px;border-radius:8px;background:#333;color:#fff;font-size:13px;cursor:pointer";
+            note.addEventListener("click", () => note.remove());
+            document.body?.append(note);
         });
         // ponytail: WXT는 ctx.isValid를 읽을 때만 무효화를 알아채므로 빈 interval로 5초마다 검사하게 한다.
         // 업데이트 전에 열린 탭은 새로고침할 때까지 기능이 멈춘다.

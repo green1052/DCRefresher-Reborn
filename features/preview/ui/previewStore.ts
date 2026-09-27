@@ -5,7 +5,7 @@ import type {GalleryPreData, PostInfo} from "@/core/preview/types";
 
 export interface ErrorState {
     detail: string;
-    /** HTTP 상태 코드. 본문을 찾지 못해 삭제된 글로 본 경우도 404 */
+    /** HTTP 상태 코드 (HTTPError일 때). 임시 차단(BlockedError)은 429 */
     status?: number;
     /** 성인 인증이 필요한 글 (비로그인·미인증이면 본문 대신 인증 안내가 온다) */
     adult?: boolean;
@@ -74,6 +74,10 @@ interface PreviewState extends PostState, Hooks {
     openCaptcha: (url: string) => Promise<string>;
     moveMini: (clientX: number, clientY: number) => void;
 }
+
+/** 미리보기 UI 중 하나라도 떠 있어 오버레이가 필요한지 (콘텐츠 스크립트가 오버레이를 처음 띄울 때 본다). 새 UI를 추가하면 여기에 넣는다 */
+export const needsPreviewOverlay = (state: PreviewState): boolean =>
+    state.visible || state.mini !== null || state.captcha !== null || state.blockPopup;
 
 /** 본문 차단 안내 문구 (창·미니) */
 export const BLOCKED_TEXT = "게시글 내용이 차단되었습니다.";

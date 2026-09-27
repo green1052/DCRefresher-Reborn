@@ -6,6 +6,7 @@ import {RefresherSelect} from "@/components/RefresherSelect";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import type {MemoType} from "@/core/storage/types";
 import {normalizeMemoMap, randomColor, useMemosStore} from "@/stores/memos";
+import {isRecord} from "@/utils/record";
 
 import {ListRow, ListTabs} from "./Layout";
 
@@ -162,10 +163,7 @@ export function MemoTab() {
 
     const importMemos = async (parsed: Record<string, unknown>): Promise<number> => {
         // 객체만 받는다. 차단 내보내기의 NICK/IP(배열)까지 메모로 세면 다른 데이터인데도 성공으로 알린다
-        const types = MEMO_TYPES.filter((type) => {
-            const map = parsed[type];
-            return typeof map === "object" && map !== null && !Array.isArray(map);
-        });
+        const types = MEMO_TYPES.filter((type) => isRecord(parsed[type]));
         // 기존 메모에 합치고, 같은 대상은 가져온 메모로 덮는다
         for (const type of types) await setMemos(type, {...memos[type], ...normalizeMemoMap(parsed[type])});
         return types.length;

@@ -106,6 +106,8 @@ function PageSection({tabId, gallery, state: initial}: Page) {
                 현재 페이지
             </SectionTitle>
 
+            {/* 확장을 업데이트하기 전에 열린 탭 등 콘텐츠 스크립트가 없으면 토글을 받을 수 없다 */}
+            {state === null && <Text as="p" size="1" color="gray" align="center">페이지를 새로고침하면 이 페이지 설정이 나옵니다.</Text>}
             {state && state.length > 0 && (
                 <Card size="1">
                     <Flex direction="column" gap="1">

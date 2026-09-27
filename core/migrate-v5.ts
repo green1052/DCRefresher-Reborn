@@ -12,8 +12,9 @@
  */
 import {arrayIncludes} from "ts-extras";
 
-import {BLOCK_TYPES, DETECT_MODES, moduleSettingsStorage} from "@/core/storage/items";
+import {BLOCK_TYPES, DETECT_MODES} from "@/core/storage/items";
 import type {BlockType, DetectMode} from "@/core/storage/types";
+import {isRecord} from "@/utils/record";
 
 const V5_MODULE_IDS: Record<string, string> = {
     "컨텐츠 차단": "block",
@@ -36,8 +37,6 @@ const NEEDS_MANAGE_ENABLED = ["checkRatio", "checkPermBan"];
 const V5_KEY = /^refresher:module:(.+):(enable|data|setting:(.+))$/;
 
 type Snapshot = Record<string, unknown>;
-
-const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 
 /** 5.1.2 이전 버전의 키 (옛 DB 수백 KB, 모듈 데이터, v4 모듈·설정 스냅숏). 옮겨진 뒤에도 지워지지 않아 클라우드 백업 한도를 넘긴다 */
 const isLeftoverKey = (key: string): boolean =>
@@ -129,12 +128,12 @@ export const migrateV5 = (data: Snapshot): Snapshot => {
 
     // 옛 버전은 refresher:modules에 v4 모듈 스냅숏(객체)을 넣어 두었다. on/off(boolean) 값만 남긴다
     const modules = next["refresher:modules"];
-    if (isObject(modules)) next["refresher:modules"] = Object.fromEntries(Object.entries(modules).filter(([, value]) => typeof value === "boolean"));
+    if (isRecord(modules)) next["refresher:modules"] = Object.fromEntries(Object.entries(modules).filter(([, value]) => typeof value === "boolean"));
 
     // 이미 있는 v6 값이 이긴다
     const merge = (key: string, fromV5: Record<string, unknown>): void => {
         if (Object.keys(fromV5).length === 0) return;
-        next[key] = {...fromV5, ...(isObject(next[key]) ? next[key] : {})};
+        next[key] = {...fromV5, ...(isRecord(next[key]) ? next[key] : {})};
     };
 
     merge("refresher:modules", enables);
@@ -156,18 +155,3 @@ export const migrateV5Storage = async (): Promise<void> => {
     await browser.storage.local.set(changed);
     await browser.storage.local.remove(removed);
 };
-
-/**
- * 6.0.x의 'IP 정보 표시' 체크(showIpInfo)를 끈 사용자는 ipInfoFilter '표시 안 함'으로 옮긴다. 새 설정이 저장돼 있으면 건드리지 않는다.
- * 업데이트 때 배경이 부른다. 옵션·팝업은 스키마에 없는 설정을 지우므로(pruneStaleSettings) 그보다 먼저 해야 한다
- */
-export const migrateShowIpInfo = async (): Promise<void> => {
-    const item = moduleSettingsStorage("userinfo");
-    const stored = await item.getValue();
-    const next = withIpInfoFilter(stored);
-    if (next !== stored) await item.setValue(next);
-};
-
-/** userinfo 설정 하나에 위 변환을 한다. 바꿀 것이 없으면 같은 객체를 돌려준다. 복원·가져오기(DataTab)도 쓴다 */
-export const withIpInfoFilter = <T extends Record<string, unknown>>(settings: T): T =>
-    settings.showIpInfo === false && settings.ipInfoFilter === undefined ? {...settings, ipInfoFilter: "none"} : settings;

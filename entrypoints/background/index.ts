@@ -2,7 +2,9 @@ import {storage} from "wxt/utils/storage";
 
 import {isBackupTarget, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
-import {migrateShowIpInfo, migrateV5Storage} from "@/core/migrate-v5";
+import {IP_FORMAT} from "@/core/ipdb";
+import {migrateShowIpInfo} from "@/core/migrate-settings";
+import {migrateV5Storage} from "@/core/migrate-v5";
 import {onMessage, sendMessage} from "@/core/messaging/protocol";
 import {type BackgroundModule, startBackgroundModules} from "@/core/module/background";
 import {backupStorage, dbStorage} from "@/core/storage/items";
@@ -14,7 +16,7 @@ const backgroundModules = Object.values(import.meta.glob<{ default: BackgroundMo
 const DATABASE_UPDATE_INTERVAL = 604_800_000; // 7일
 /**
  * 7일이 지났는지 하루마다 확인한다. 서버 DB는 주 2번 바뀌고 확인할 때마다 DB 전체(수백 KB)를 읽으므로 더 자주 볼 이유가 없다.
- * 받기에 실패하면 다음 날 다시 받는다.
+ * 받기에 실패하면 다음 날 다시 받는다. 저장 형식이 옛것이면(확장 업데이트 때 받기 실패) 7일을 기다리지 않고 다시 받는다.
  */
 const DATABASE_ALARM = "refresher:dbCheck";
 const DATABASE_ALARM_PERIOD = 24 * 60;
@@ -152,16 +154,19 @@ export default defineBackground(() => {
         });
     });
 
-    // 알람은 브라우저를 끄면 사라질 수 있다(파이어폭스는 항상). 변경 후 1분 안에 끄면 백업이 빠지므로 다음 시작 때 다시 건다.
+    // 알람은 브라우저를 끄거나(파이어폭스는 항상) 확장을 업데이트하면 사라질 수 있다. 변경 후 1분 안에 그러면 백업이 빠지므로 다음 시작·업데이트 때 다시 건다.
     // 워커가 깰 때마다 하면 안 된다. 크롬은 울린 알람을 지운 뒤 워커를 깨우므로 방금 울린 알람을 또 걸어 백업이 두 번 돈다.
-    browser.runtime.onStartup.addListener(async () => {
+    const rearmAutoBackup = async (): Promise<void> => {
         const [pending, alarm] = await Promise.all([backupStorage.pending.getValue(), browser.alarms.get(AUTO_BACKUP_ALARM)]);
         if (pending && !alarm) await browser.alarms.create(AUTO_BACKUP_ALARM, {delayInMinutes: 1});
-    });
+    };
+    browser.runtime.onStartup.addListener(rearmAutoBackup);
+    browser.runtime.onInstalled.addListener(() => void rearmAutoBackup().catch(console.error));
 
     browser.alarms.onAlarm.addListener((alarm) => {
         if (alarm.name === DATABASE_ALARM) {
-            void dbStorage.meta.getValue().then(({lastUpdate}) => (Date.now() - lastUpdate > DATABASE_UPDATE_INTERVAL ? update() : undefined));
+            void dbStorage.meta.getValue().then(({lastUpdate, format}) =>
+                (format !== IP_FORMAT || Date.now() - lastUpdate > DATABASE_UPDATE_INTERVAL ? update() : undefined));
         } else if (alarm.name === AUTO_BACKUP_ALARM) {
             // 울린 뒤 설정이 또 바뀌어 새 알람이 걸렸으면 대기 표시를 둔다. 지우면 그 알람이 브라우저를 끌 때 사라져도 다시 걸지 않는다
             void browser.alarms.get(AUTO_BACKUP_ALARM).then((next) => (next ? undefined : backupStorage.pending.setValue(false)));

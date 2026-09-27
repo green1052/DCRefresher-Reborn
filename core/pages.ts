@@ -9,7 +9,7 @@ export const LIST_PAGE = /\/board\/lists/;
 
 /**
  * 디시가 요청이 너무 많을 때 주는 임시 차단 페이지인지. 본문(<body>)이 빈 문서가 온다.
- * 받은 HTML을 보는 쪽(새로고침·미리보기)과 지금 페이지를 보는 쪽(콘텐츠 스크립트)이 같이 쓴다
+ * 받은 응답을 보는 HTTP 클라이언트(detectBlocked)가 쓴다. 지금 페이지는 콘텐츠 스크립트가 DOM으로 따로 본다 (refresher-root 제외)
  */
 export const isBlockedPage = (html: string): boolean => (/<body[^>]*>([\s\S]*)<\/body>/i.exec(html)?.[1] ?? html).trim() === "";
 

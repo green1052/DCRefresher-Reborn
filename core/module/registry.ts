@@ -151,6 +151,16 @@ export const loadAll = async (defs: AnyModule[]): Promise<void> => {
         }
     };
     modulesStorage.watch(sync);
+    // bfcache에서 돌아온 탭은 그사이의 on/off·설정 변경을 받지 못했다. 다시 시작하는 모듈이 새 값을 보도록 설정을 먼저 맞춘다
+    window.addEventListener("pageshow", (ev) => {
+        if (!ev.persisted) return;
+        void (async () => {
+            for (const instance of instances.values()) {
+                if (instance.def.settings) applySettings(instance, await moduleSettingsStorage(instance.def.id).getValue());
+            }
+            sync(await modulesStorage.getValue());
+        })().catch(console.error);
+    });
     // 불러오는 동안(setup이 IP DB를 읽는 동안 등) 팝업에서 켜고 끈 것은 감시 전이라 놓친다. 한 번 맞춘다 (바뀐 게 없으면 아무 일도 없다)
     sync(await modulesStorage.getValue());
 };

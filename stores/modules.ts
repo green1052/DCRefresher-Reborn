@@ -4,7 +4,7 @@ import {create} from "zustand";
 
 import {isModuleEnabled, normalizeSetting, normalizeSettings} from "@/core/module/settings";
 import type {AnyModule} from "@/core/module/types";
-import {withIpInfoFilter} from "@/core/migrate-v5";
+import {withIpInfoFilter} from "@/core/migrate-settings";
 import {moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
 import features from "@/features";
