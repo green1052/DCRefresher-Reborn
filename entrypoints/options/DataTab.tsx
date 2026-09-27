@@ -6,7 +6,7 @@ import {arrayIncludes, objectKeys} from "ts-extras";
 import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
 import {type BackupSlot, CLOUD_QUOTA, type CloudBackupStatus, collectLocalData, isBackupTarget, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
-import {migrateV5} from "@/core/migrate-v5";
+import {migrateV5, withIpInfoFilter} from "@/core/migrate-v5";
 import {backupStorage, dbStorage} from "@/core/storage/items";
 import {blockKey, normalizeBlockList} from "@/stores/blocks";
 import {isRecord} from "@/utils/record";
@@ -34,6 +34,9 @@ const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "m
     // 걸러서 다 빠지면(옛 백업 키가 migrateV5에서 전부 빠지는 경우 등) 복원은 모든 설정을 지우고 가져오기는 아무것도 쓰지 않는다.
     // 설정을 비우는 것은 초기화({})만 허용한다.
     if (Object.keys(data).length > 0 && Object.keys(next).length === 0) throw new Error("쓸 수 있는 설정이 없습니다.");
+    // 6.0.x 백업의 'IP 정보 표시' 끔(showIpInfo)을 새 설정으로 옮긴다. 옮기지 않으면 옵션을 열 때 없는 설정으로 지워진다
+    const userinfo = next["refresher:module:userinfo:settings"];
+    if (isRecord(userinfo)) next["refresher:module:userinfo:settings"] = withIpInfoFilter(userinfo);
     // 백업은 용량 때문에 차단 항목 id를 빼고 올리므로 저장할 때 다시 붙인다
     for (const [key, value] of Object.entries(next)) {
         if (/^refresher:block:[A-Z]+$/.test(key)) next[key] = normalizeBlockList(value);

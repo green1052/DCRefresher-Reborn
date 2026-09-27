@@ -12,7 +12,7 @@
  */
 import {arrayIncludes} from "ts-extras";
 
-import {BLOCK_TYPES, DETECT_MODES} from "@/core/storage/items";
+import {BLOCK_TYPES, DETECT_MODES, moduleSettingsStorage} from "@/core/storage/items";
 import type {BlockType, DetectMode} from "@/core/storage/types";
 
 const V5_MODULE_IDS: Record<string, string> = {
@@ -54,6 +54,16 @@ const isV5Key = (key: string): boolean =>
 /** 옮기거나 버릴 키가 하나라도 있는지 */
 const hasV5Data = (data: Snapshot): boolean => Object.keys(data).some((key) => isV5Key(key) || isLeftoverKey(key));
 
+/** JSON 문자열이면 풀고, 아니면(이미 값이거나 깨졌으면) 그대로 둔다 */
+const parseStored = (value: unknown): unknown => {
+    if (typeof value !== "string") return value;
+    try {
+        return JSON.parse(value);
+    } catch {
+        return value;
+    }
+};
+
 /**
  * 저장소 스냅숏 → v6 스냅숏. v5 키는 빠지고, 옮긴 값은 이미 있는 v6 값을 덮어쓰지 않는다.
  * v5 키가 없으면 그대로 돌려준다.
@@ -91,7 +101,16 @@ export const migrateV5 = (data: Snapshot): Snapshot => {
         const mode = /^refresher:block:([A-Z]+):mode$/.exec(key);
         if (mode) {
             const type = mode[1];
-            if (arrayIncludes(BLOCK_TYPES, type) && arrayIncludes(DETECT_MODES, value)) defaults[type] = value;
+            // v5 초기 버전은 값을 JSON 문자열("\"SAME\"")로 저장하기도 했다
+            const modeValue = parseStored(value);
+            if (arrayIncludes(BLOCK_TYPES, type) && arrayIncludes(DETECT_MODES, modeValue)) defaults[type] = modeValue;
+            continue;
+        }
+
+        // v5 초기 버전은 차단·메모 목록도 JSON 문자열로 저장하기도 했다 (v5.0.2가 읽을 때 풀었다).
+        // 풀지 않으면 v6가 빈 목록으로 읽고, 다음에 목록을 저장할 때 지워진다
+        if (/^refresher:(block|memo):[A-Z]+$/.test(key)) {
+            next[key] = parseStored(value);
             continue;
         }
 
@@ -137,3 +156,18 @@ export const migrateV5Storage = async (): Promise<void> => {
     await browser.storage.local.set(changed);
     await browser.storage.local.remove(removed);
 };
+
+/**
+ * 6.0.x의 'IP 정보 표시' 체크(showIpInfo)를 끈 사용자는 ipInfoFilter '표시 안 함'으로 옮긴다. 새 설정이 저장돼 있으면 건드리지 않는다.
+ * 업데이트 때 배경이 부른다. 옵션·팝업은 스키마에 없는 설정을 지우므로(pruneStaleSettings) 그보다 먼저 해야 한다
+ */
+export const migrateShowIpInfo = async (): Promise<void> => {
+    const item = moduleSettingsStorage("userinfo");
+    const stored = await item.getValue();
+    const next = withIpInfoFilter(stored);
+    if (next !== stored) await item.setValue(next);
+};
+
+/** userinfo 설정 하나에 위 변환을 한다. 바꿀 것이 없으면 같은 객체를 돌려준다. 복원·가져오기(DataTab)도 쓴다 */
+export const withIpInfoFilter = <T extends Record<string, unknown>>(settings: T): T =>
+    settings.showIpInfo === false && settings.ipInfoFilter === undefined ? {...settings, ipInfoFilter: "none"} : settings;

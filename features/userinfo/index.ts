@@ -8,7 +8,7 @@ import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
 import {queryString} from "@/core/http/urls";
 import {BOARD_PAGE} from "@/core/pages";
 import {eventBus} from "@/core/eventbus/bus";
-import {moduleDataStorage, moduleSettingsStorage} from "@/core/storage/items";
+import {moduleDataStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";
 import {type BadgeView, DEFAULT_BADGE_VIEW, showsUid, useUiStore} from "@/stores/ui";
 import {insertWriterSpan} from "@/utils/userDataInsert";
@@ -154,13 +154,6 @@ const publishBadges = (ctx: Ctx): void => {
     });
 };
 
-/** 예전 'IP 정보 표시' 체크(showIpInfo)를 끈 사용자는 '표시 안 함'으로 옮긴다. 새 설정(ipInfoFilter)이 저장돼 있으면 건드리지 않는다 */
-const migrateShowIpInfo = async (): Promise<void> => {
-    const item = moduleSettingsStorage("userinfo");
-    const stored = await item.getValue();
-    if (stored.showIpInfo === false && stored.ipInfoFilter === undefined) await item.setValue({...stored, ipInfoFilter: "none"});
-};
-
 /** 미리보기도 같은 글댓비를 쓰도록 ui 스토어에 올린다 */
 const publishRatios = (ctx: Ctx): void => {
     useUiStore.setState({
@@ -255,10 +248,8 @@ export default defineModule({
     settings,
 
     async setup(ctx) {
-        // await 전에 알린다. 뒤에 두면 옮기는 동안 모듈이 꺼졌을 때 revoke가 지운 값을 다시 쓴다.
-        // 옮긴 값은 설정 감시 → onChanged가 반영한다
+        // await 전에 알린다. 뒤에 두면 기다리는 동안 모듈이 꺼졌을 때 revoke가 지운 값을 다시 쓴다
         publishBadges(ctx);
-        await migrateShowIpInfo().catch(console.error);
 
         // await 뒤마다 확인해, 그사이 모듈이 꺼졌으면 revoke가 지운 배지·글댓비를 다시 그리지 않는다
         const {signal} = ctx;
