@@ -214,8 +214,8 @@ getModuleApi("preview")?.archiveArticle()
 
 1. develop에서 `package.json`의 `version`을 올리고 `chore(release): X.Y.Z`로 커밋합니다.
 2. release 브랜치에 develop을 머지 커밋으로 합칩니다.
-3. `X.Y.Z` 태그를 만들어 push합니다. `.github/workflows/release.yml`이 태그와 `package.json` 버전이 같은지 확인하고, 타입 검사 후 zip을 만들어 GitHub 릴리즈에 올리고 Chrome 웹 스토어·Firefox Add-ons에 제출합니다.
+3. `X.Y.Z` 태그를 만들어 push합니다. `.github/workflows/release.yml`이 태그와 `package.json` 버전이 같은지 확인하고, DB 워크플로를 먼저 돌린 뒤 타입 검사를 하고 zip을 만들어 GitHub 릴리즈에 올리고 Chrome 웹 스토어·Firefox Add-ons에 제출합니다.
 
-IP·밴 DB는 `.github/workflows/db.yml`이 매주 수·토요일에 `scripts/build-db.ts`로 만들어 `data` 브랜치에 올립니다. `ip.json`은 확장이 저장하는 형식(`core/ipdb.ts`의 `CompactIpData`) 그대로이고 버전을 담고 있습니다. `ban.json`은 손으로 관리하며 워크플로가 검사·정리합니다. 확장은 설치된 뒤 알람으로 새 버전을 확인해 받습니다 (`core/database.ts`).
+IP·밴 DB는 `.github/workflows/db.yml`이 매주 수·토요일과 릴리즈 때 `scripts/build-db.ts`로 만들어 `data` 브랜치에 올립니다. `ip.json`은 확장이 저장하는 형식(`core/ipdb.ts`의 `CompactIpData`) 그대로이고 버전을 담고 있습니다. `ban.json`은 손으로 관리하며 워크플로가 검사·정리합니다. 확장은 설치된 뒤 알람으로 새 버전을 확인해 받습니다 (`core/database.ts`).
 
-IP DB 형식(`IP_FORMAT`)을 바꾸면 옛 확장은 새 `ip.json`을 읽지 못하고, 새 확장은 옛 `ip.json`을 받지 않습니다. 형식을 바꾼 릴리즈 전에는 DB 워크플로를 한 번 돌려 `data` 브랜치를 새 형식으로 만들어 두세요.
+IP DB 형식(`IP_FORMAT`)을 바꾸면 옛 확장은 새 `ip.json`을 읽지 못하고, 새 확장은 옛 `ip.json`을 받지 않습니다. 릴리즈가 DB 워크플로를 먼저 돌리므로 새 확장이 올라갈 때 `data` 브랜치는 이미 새 형식입니다. 확장은 업데이트될 때 DB를 다시 받습니다.

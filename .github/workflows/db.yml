@@ -4,6 +4,8 @@ on:
     schedule:
         - cron: "0 6 * * 3,6"
     workflow_dispatch:
+    # 릴리즈가 부른다 (release.yml)
+    workflow_call:
 
 permissions:
     contents: write
