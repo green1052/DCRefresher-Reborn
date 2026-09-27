@@ -1,15 +1,17 @@
 import {Pause, RefreshCw} from "lucide-react";
 
 import {http} from "@/core/http/client";
-import {isViewPage, listUrl, mergeParamURL, pagePostNo, queryString, rowPostNo} from "@/core/http/urls";
-import {checkboxCellFactory, highlightSearchResults, LIST_SELECTOR, PAGING_SELECTOR} from "@/core/list";
+import {isViewPage, listUrl, mergeParamURL, queryString} from "@/core/http/urls";
+import {LIST_SELECTOR, PAGING_SELECTOR} from "@/core/list";
 import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi} from "@/core/module/registry";
-import type {ModuleContext, SettingsSchema} from "@/core/module/types";
 import {eventBus} from "@/core/eventbus/bus";
 import {sendMessage} from "@/core/messaging/protocol";
 import {useUiStore} from "@/stores/ui";
+
+import {replaceList, syncPaging} from "./list";
+import {type Ctx, settings} from "./settings";
 
 const MINIMUM_REFRESH_INTERVAL = 2000;
 /** 목록 요청이 연달아 실패할 때 자동 새로고침 주기를 늘리는 상한 */
@@ -25,84 +27,10 @@ export interface RefreshApi {
     isPaused(): boolean;
 }
 
-/** 새 글 판정용 행 키. 번호 없는 행(설문·AD, 다른 갤러리 공지)은 번호 칸 글자로 구분한다 */
-const rowKey = (row: HTMLElement): string => rowPostNo(row) ?? row.querySelector(".gall_num")?.textContent ?? "";
-
-/**
- * 새 목록에서 빠진 글 행을 제자리에 남기고 붉게 칠한다 (v5의 삭제된 글 보존). 한 번 남긴 행은 다음 새로고침에도 남는다.
- * 위에 새 글이 n개 들어오면 맨 아래 n개는 다음 페이지로 밀려난 것이라 남기지 않는다. 행 수는 원래대로 맞춘다
- */
-const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, newList: HTMLElement, newPostCount: number): void => {
-    const newRows = new Map(Array.from(newList.children, (row) => [rowKey(row as HTMLElement), row]));
-
-    // 옛 목록에서 바로 위에 있던 행 뒤에 끼운다. 자리를 인덱스로 세면 공지·앞서 남긴 행 때문에 새로고침마다 아래로 밀린다
-    let previous: Element | undefined;
-    for (const [index, row] of oldRows.entries()) {
-        const no = rowPostNo(row);
-        // 번호 없는 행(설문·AD)은 늘 새로 받는다
-        if (!no || newKeys.has(no) || index >= oldRows.length - newPostCount) {
-            previous = newRows.get(rowKey(row)) ?? previous;
-            continue;
-        }
-
-        row.classList.add("refresherDeleted");
-        if (previous) previous.after(row);
-        else newList.prepend(row);
-        previous = row;
-    }
-
-    while (newList.children.length > oldRows.length) newList.lastElementChild?.remove();
-};
-
 /** 방문 링크 색상 (Firefox 대응) */
 const applyDoNotColorVisited = (ctx: Ctx): void => {
     document.documentElement.classList.toggle("refresherDoNotColorVisited", ctx.settings.doNotColorVisited);
 };
-
-const settings = {
-    refreshRate: {
-        type: "range",
-        name: "새로고침 주기",
-        desc: "글 목록을 새로고침하는 주기입니다.",
-        default: 5000,
-        min: 3000,
-        max: 20000,
-        step: 100,
-        unit: "ms"
-    },
-    fadeIn: {
-        type: "check",
-        name: "새 게시글 효과",
-        desc: "새로 추가된 게시글에 효과를 넣습니다.",
-        default: true
-    },
-    useBetterBrowse: {
-        type: "check",
-        name: "인페이지 페이지 전환",
-        desc: "페이지 이동 시 새로고침을 끄지 않고 이동합니다.",
-        default: true
-    },
-    noRefreshOnSearch: {
-        type: "check",
-        name: "검색 중 페이지 새로고침 안 함",
-        desc: "검색 중에는 자동 새로고침을 하지 않습니다.",
-        default: true
-    },
-    pauseOnHover: {
-        type: "check",
-        name: "목록 위에서 새로고침 안 함",
-        desc: "마우스를 글 목록 위에 올려 두는 동안에는 자동 새로고침을 하지 않습니다. 누르려던 글이 밀리지 않습니다.",
-        default: false
-    },
-    doNotColorVisited: {
-        type: "check",
-        name: "방문 링크 색상 지정 비활성화",
-        desc: "방문한 링크의 색상을 기본 색상으로 지정합니다.",
-        default: false
-    }
-} satisfies SettingsSchema;
-
-type Ctx = ModuleContext<typeof settings>;
 
 export default defineModule({
     id: "refresh",
@@ -129,8 +57,6 @@ export default defineModule({
         let inflight: AbortController | null = null;
         // 지난번 갈아끼운 목록의 tbody HTML. 받은 것이 같으면 파싱·교체를 건너뛴다
         let lastListHtml = "";
-        // 받아온 행의 원래 HTML (체크박스 칸·강조·효과를 입히기 전). 행 순서가 같을 때 바뀐 행을 가려내는 데 쓴다
-        const rawRows = new WeakMap<Element, string>();
         const gallery = queryString("id") ?? "";
 
         // 제어 버튼
@@ -234,82 +160,20 @@ export default defineModule({
                 const oldList = document.querySelector<HTMLElement>(LIST_SELECTOR);
                 const newList = dom.querySelector<HTMLElement>(LIST_SELECTOR);
 
-                // 페이징 박스도 받아온 것으로 맞춘다. 같을 땐 건드리지 않아야 누르던 페이지 링크가 교체로 사라지지 않는다
-                const paging = dom.querySelector<HTMLElement>(PAGING_SELECTOR);
-                const currentPaging = document.querySelector<HTMLElement>(PAGING_SELECTOR);
-                if (paging && currentPaging && paging.innerHTML !== currentPaging.innerHTML) currentPaging.innerHTML = paging.innerHTML;
+                syncPaging(dom);
 
                 // 목록 없는 응답(오류·차단 안내 페이지)도 실패로 쳐서 주기를 늘린다
                 if (!oldList || !newList) return fail();
                 failures = 0;
 
-                const searchType = new URL(target).searchParams.get("s_type");
-
-                const oldRows = Array.from(oldList.querySelectorAll<HTMLTableRowElement>(":scope > tr"));
-                const oldKeys = oldRows.map(rowKey);
-                const oldCacheSet = new Set(oldKeys);
-
-                const newRows = Array.from(newList.querySelectorAll<HTMLTableRowElement>(":scope > tr"));
-                const newKeys = newRows.map(rowKey);
-                const newPostList: HTMLTableRowElement[] = [];
-
-                // 관리자 목록은 머리에 체크박스 열이 있는데 받아온 행엔 그 칸이 없다 (디시 JS가 나중에 붙인다). 채우지 않으면 열이 한 칸씩 밀린다
-                const hasCheckboxColumn = Boolean(oldList.closest("table")?.querySelector("thead .chkbox_th"));
-                const checkboxCell = hasCheckboxColumn ? checkboxCellFactory(oldRows) : null;
-
-                for (const [index, element] of newRows.entries()) {
-                    const no = newKeys[index]!;
-                    rawRows.set(element, element.outerHTML);
-
-                    if (checkboxCell && !element.querySelector(".article_chkbox")) {
-                        // 댓글 검색 결과에선 댓글 행에만 체크박스가 있다
-                        if (searchType !== "search_comment" || element.classList.contains("search_comment")) {
-                            element.prepend(checkboxCell(element.dataset.no));
-                        }
-                    }
-
-                    if (isViewPage && no === pagePostNo) {
-                        element.classList.add("crt");
-                        const gallNum = element.querySelector<HTMLElement>(".gall_num");
-                        if (gallNum) gallNum.innerHTML = "<span class=\"sp_img crt_icon\"> </span>";
-                        continue;
-                    }
-
-                    if (!oldCacheSet.has(no)) newPostList.push(element);
-                }
-
-                // 받아온 HTML엔 검색어 강조가 없으니 페이지 전환뿐 아니라 받아온 목록마다 칠한다
-                if (queryString("s_keyword")) {
-                    const searchValue = document.querySelector<HTMLInputElement>("#sch_q")?.value ?? "";
-                    highlightSearchResults(newList, searchValue);
-                }
-
-                // 주소를 바꾼 로드(페이지 넘김·뒤로 가기)는 다른 목록이라 새 글 효과를 넣지 않는다
-                if (!customURL && ctx.settings.fadeIn) {
-                    for (const [index, element] of newPostList.entries()) {
-                        element.classList.add("refresherNewPost");
-                        // 새 행이 많아도 마지막 행이 한참 뒤에 나타나지 않게 지연에 상한을 둔다
-                        element.style.animationDelay = `${Math.min(newPostList.length - index, 10) * 50}ms`;
-                    }
-                }
-
-                // 삭제된 글 보존은 미리보기의 archiveArticle 설정을 따른다 (미리보기를 끄면 같이 꺼진다).
-                // 같은 목록을 다시 받을 때만 한다. 페이지를 넘겼거나 검색 결과면 빠진 글이 지워진 것이 아니다
-                if (!customURL && !queryString("s_keyword") && getModuleApi("preview")?.archiveArticle() === true) {
-                    keepDeletedRows(oldRows, new Set(newKeys), newList, newPostList.length);
-                }
-
-                // 행 순서가 같으면 바뀐 행(조회수 등)만 갈아끼운다. 그대로인 행은 hover·리스너가 유지된다.
-                // 검색 결과는 강조와 글·댓글 행 짝이 얽혀 있어 통째로 바꾼다
-                const sameOrder = !customURL && !queryString("s_keyword") && oldKeys.length === newKeys.length && oldKeys.every((key, index) => key === newKeys[index]);
-                if (sameOrder) {
-                    for (const [index, row] of oldRows.entries()) {
-                        const next = newRows[index]!;
-                        if (rawRows.get(row) !== rawRows.get(next)) row.replaceWith(next);
-                    }
-                } else {
-                    oldList.replaceWith(newList);
-                }
+                const newPostList = replaceList(oldList, newList, {
+                    navigated: Boolean(customURL),
+                    search: queryString("s_keyword") ? document.querySelector<HTMLInputElement>("#sch_q")?.value ?? "" : undefined,
+                    searchType: new URL(target).searchParams.get("s_type"),
+                    fadeIn: ctx.settings.fadeIn,
+                    // 삭제된 글 보존은 미리보기의 archiveArticle 설정을 따른다 (미리보기를 끄면 같이 꺼진다)
+                    keepDeleted: getModuleApi("preview")?.archiveArticle() === true
+                });
                 lastListHtml = listHtml;
                 // 디시는 자체 차단·메모 표시를 로드 때 한 번만 건다. 갈아끼운 행엔 배경이 페이지(MAIN world)에서 다시 건다 (콘텐츠 스크립트에선 못 부른다)
                 void sendMessage("refresher:listReplaced", gallery).catch(() => {});
