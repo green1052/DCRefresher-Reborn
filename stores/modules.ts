@@ -1,7 +1,8 @@
+import {storage} from "wxt/utils/storage";
 import {create} from "zustand";
 
 import {isModuleEnabled, normalizeSetting, normalizeSettings} from "@/core/module/settings";
-import type {ModuleDefinition} from "@/core/module/types";
+import type {AnyModule} from "@/core/module/types";
 import {moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
 import features from "@/features";
@@ -56,10 +57,44 @@ export const useModulesStore = create<ModulesState>((set) => ({
     }
 }));
 
-/** 저장소 값 로드 + 변경 감시. 여러 번 불러도 1회 */
+const SETTINGS_KEY = /^refresher:module:(.+):settings$/;
+
+/**
+ * 없어진 모듈·설정을 저장소에서 지운다 — 모듈을 없애거나 설정을 빼도 옛 값이 백업·내보내기에 계속 실려 다닌다.
+ * 지울 게 있을 때만 쓰고, 설정 쓰기와 같은 줄에 세워 옵션에서 바꾼 값을 덮지 않는다
+ */
+const pruneStaleSettings = async (): Promise<void> => {
+    const ids = new Set(features.map((feature) => feature.id));
+
+    await enqueue(async () => {
+        const enables = await modulesStorage.getValue();
+        const staleIds = new Set(Object.keys(enables).filter((id) => !ids.has(id)));
+        // 키 이름만 읽는다 — get(null)은 수백 KB짜리 IP DB까지 읽는다 (getKeys가 없는 브라우저는 켜짐 목록에 남은 모듈만)
+        const keys = typeof browser.storage.local.getKeys === "function" ? await browser.storage.local.getKeys() : [];
+        for (const key of keys) {
+            const id = SETTINGS_KEY.exec(key)?.[1];
+            if (id !== undefined && !ids.has(id)) staleIds.add(id);
+        }
+
+        if (staleIds.size > 0) {
+            await modulesStorage.setValue(Object.fromEntries(Object.entries(enables).filter(([id]) => !staleIds.has(id))));
+            await storage.removeItems([...staleIds].map((id) => `local:refresher:module:${id}:settings` as const));
+        }
+
+        for (const feature of features) {
+            if (!feature.settings) continue;
+            const item = moduleSettingsStorage(feature.id);
+            const stored = await item.getValue();
+            const kept = Object.entries(stored).filter(([key]) => Object.hasOwn(feature.settings!, key));
+            if (kept.length !== Object.keys(stored).length) await item.setValue(Object.fromEntries(kept));
+        }
+    });
+};
+
+/** 저장소 값 로드 + 변경 감시 (옵션·팝업). 여러 번 불러도 1회 */
 export const initModulesStore = once(async () => {
     const setEnables = (stored: Record<string, boolean>): void => useModulesStore.setState({enables: resolveEnables(stored)});
-    const setValues = (feature: ModuleDefinition, stored: Record<string, unknown> | undefined): void =>
+    const setValues = (feature: AnyModule, stored: Record<string, unknown> | undefined): void =>
         useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: normalizeSettings(feature, stored)}}));
 
     const settings = features.filter((feature) => feature.settings).map((feature) => ({feature, item: moduleSettingsStorage(feature.id)}));
@@ -72,4 +107,7 @@ export const initModulesStore = once(async () => {
         setValues(feature, values[index]);
         item.watch((next) => setValues(feature, next));
     }
+
+    // 화면을 그리는 데는 필요 없다 — 기다리지 않는다
+    pruneStaleSettings().catch(console.error);
 });
