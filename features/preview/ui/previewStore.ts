@@ -86,8 +86,8 @@ export const BLOCKED_TEXT = "게시글 내용이 차단됐습니다.";
 export const BLOCK_DAYS: Record<string, string> = {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"};
 
 /** 미니 미리보기 크기 (Mini.tsx 렌더링과 화면 밖 방지 계산이 공유) */
-export const MINI_WIDTH = 560;
-export const MINI_HEIGHT = 420;
+export const MINI_WIDTH = 720;
+export const MINI_HEIGHT = 560;
 
 /** 커서 우하단에 띄우되 화면 밖으로 나가지 않게 */
 export const miniPosition = (clientX: number, clientY: number): { x: number; y: number } => ({
