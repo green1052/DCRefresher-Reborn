@@ -25,7 +25,6 @@ const HIDE_OPTIONS = {
     removeGamemeca: {name: "게임메카 숨기기", desc: "글 목록에서 게임메카 게시글을 숨깁니다.", selector: "tr[data-type=icon_fnews]"}
 } satisfies Record<string, { name: string; desc: string; selector: string }>;
 
-type HideKey = keyof typeof HIDE_OPTIONS;
 const HIDE_KEYS = objectKeys(HIDE_OPTIONS);
 
 const COMPACT_KEYS = new Set(["activePixel", "forceCompact", "useCompactModeOnView"]);
@@ -94,7 +93,7 @@ const settings = {
         default: true
     },
     ...(Object.fromEntries(HIDE_KEYS.map((key) => [key, {type: "check", name: HIDE_OPTIONS[key].name, desc: HIDE_OPTIONS[key].desc, default: false}])) as
-        Record<HideKey, Extract<SettingSchema, { type: "check" }>>),
+        Record<(typeof HIDE_KEYS)[number], Extract<SettingSchema, { type: "check" }>>),
     pushToRight: {
         type: "check",
         name: "본문 영역 전체로 확장",

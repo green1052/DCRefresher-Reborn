@@ -1,6 +1,7 @@
 import {CloudDownload, CloudUpload, Download, RefreshCw, Trash2, Upload} from "lucide-react";
 import {Box, Button, Dialog, Flex, SegmentedControl, Switch, Text} from "@radix-ui/themes";
 import {useEffect, useState} from "react";
+import {arrayIncludes, objectKeys} from "ts-extras";
 
 import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
 import {type BackupSlot, CLOUD_QUOTA, type CloudBackupStatus, collectLocalData, isBackupTarget, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
@@ -8,13 +9,12 @@ import {updateDatabase} from "@/core/database";
 import {migrateV5} from "@/core/migrate-v5";
 import {backupStorage, dbStorage} from "@/core/storage/items";
 import {blockKey, normalizeBlockList} from "@/stores/blocks";
+import {isRecord} from "@/utils/record";
 
 import {formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
 import {notify} from "./optionsStore";
 
 const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error));
-
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 
 /** 값 여러 개를 객체 하나에 담는 키(모듈 on/off, 기본 차단 모드, 모듈별 설정) */
 const isMapKey = (key: string): boolean =>
@@ -81,15 +81,13 @@ const RESTORE_DESCRIPTIONS: Record<RestoreMode, string> = {
 const kilobytes = (bytes: number): string => `${Math.ceil(bytes / 1024)}KB`;
 
 const parseImport = (input: string): Record<string, unknown> => {
-    const parsed = JSON.parse(input) as unknown;
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-        throw new Error("가져오기 데이터는 JSON 객체여야 합니다.");
-    }
+    const parsed: unknown = JSON.parse(input);
+    if (!isRecord(parsed)) throw new Error("가져오기 데이터는 JSON 객체여야 합니다.");
     // 차단/메모 내보내기나 {}를 붙여넣으면 아무것도 쓰지 않고 "가져왔습니다"만 뜨므로 잘못 붙여넣었다고 알린다
     if (!Object.keys(parsed).some((key) => key.startsWith("refresher:"))) {
         throw new Error("설정 데이터가 아닙니다.");
     }
-    return parsed as Record<string, unknown>;
+    return parsed;
 };
 
 export function DataTab() {
@@ -232,7 +230,7 @@ export function DataTab() {
                 <Dialog.Root open={restoreOpen} onOpenChange={setRestoreOpen}>
                     <Dialog.Content maxWidth="420px">
                         <Dialog.Title>어느 백업으로 복원할까요?</Dialog.Title>
-                        <SegmentedControl.Root value={restoreMode} onValueChange={(value) => setRestoreMode(value as RestoreMode)} mb="3">
+                        <SegmentedControl.Root value={restoreMode} onValueChange={(value) => arrayIncludes(objectKeys(RESTORE_DESCRIPTIONS), value) && setRestoreMode(value)} mb="3">
                             <SegmentedControl.Item value="replace">덮어쓰기</SegmentedControl.Item>
                             <SegmentedControl.Item value="merge">합치기</SegmentedControl.Item>
                         </SegmentedControl.Root>

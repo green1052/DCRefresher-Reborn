@@ -239,7 +239,7 @@ export const WriteComment = () => {
                     }
                     style={{flex: 1}}
                     onChange={(ev) => {
-                        if (txtcon && !(ev.nativeEvent as InputEvent).isComposing) applyTxtcon();
+                        if (txtcon && !(ev.nativeEvent instanceof InputEvent && ev.nativeEvent.isComposing)) applyTxtcon();
                         draft.text = ev.target.value;
                     }}
                     onCompositionEnd={(ev) => {

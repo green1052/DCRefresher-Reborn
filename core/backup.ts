@@ -8,6 +8,7 @@
 import {objectKeys} from "ts-extras";
 
 import {backupStorage, isModuleDataKey} from "@/core/storage/items";
+import {isRecord} from "@/utils/record";
 
 export type BackupSlot = "manual" | "auto";
 
@@ -69,8 +70,7 @@ const gunzip = (bytes: Uint8Array): Promise<string> =>
 const sha256 = async (bytes: Uint8Array): Promise<string> =>
     [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes as BufferSource))].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 
-const isMeta = (value: unknown): value is BackupMeta =>
-    typeof value === "object" && value !== null && (value as BackupMeta).format === 1 && Number.isInteger((value as BackupMeta).chunks);
+const isMeta = (value: unknown): value is BackupMeta => isRecord(value) && value.format === 1 && Number.isInteger(value.chunks);
 
 /** v5 방식 백업의 키. v5는 로컬 설정을 그대로 sync에 넣었으므로 어느 칸에도 속하지 않는 키로 가려낸다 */
 const isLegacyKey = (key: string): boolean => !SLOTS.some((slot) => isSlotKey(slot, key));

@@ -4,6 +4,7 @@ import {arrayIncludes} from "ts-extras";
 import {BLOCK_TYPES, blockDefaultsStorage, blockStorage, DEFAULT_DETECT_MODE, DETECT_MODE_NAMES, DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {once} from "@/utils/once";
+import {isRecord} from "@/utils/record";
 
 export type BlockInputFields = Omit<BlockEntry, "id">;
 
@@ -20,18 +21,13 @@ interface BlocksState {
     setDefault: (type: BlockType, mode: DetectMode) => Promise<void>;
 }
 
-const isBlockEntry = (value: unknown): value is Omit<BlockEntry, "id"> & { id?: unknown } => {
-    if (!value || typeof value !== "object") return false;
-
-    const entry = value as Partial<BlockEntry>;
-    return (
-        typeof entry.content === "string" &&
-        typeof entry.isRegex === "boolean" &&
-        (entry.gallery === undefined || typeof entry.gallery === "string") &&
-        (entry.extra === undefined || typeof entry.extra === "string") &&
-        (entry.mode === undefined || DETECT_MODES.includes(entry.mode))
-    );
-};
+const isBlockEntry = (value: unknown): value is Omit<BlockEntry, "id"> & { id?: unknown } =>
+    isRecord(value) &&
+    typeof value.content === "string" &&
+    typeof value.isRegex === "boolean" &&
+    (value.gallery === undefined || typeof value.gallery === "string") &&
+    (value.extra === undefined || typeof value.extra === "string") &&
+    (value.mode === undefined || arrayIncludes(DETECT_MODES, value.mode));
 
 /** 항목의 플래그 표시 ([정규식] [갤러리: X] [모드명] 순). extra(별명)와 따로 필드에서 만든다 */
 export const composeExtra = (fields: { isRegex: boolean; gallery?: string; mode?: DetectMode }): string =>
@@ -57,8 +53,7 @@ export const normalizeBlockList = (value: unknown): BlockEntry[] => {
     });
 };
 
-const emptyEntries = (): Record<BlockType, BlockEntry[]> =>
-    Object.fromEntries(BLOCK_TYPES.map((type) => [type, []])) as unknown as Record<BlockType, BlockEntry[]>;
+const emptyEntries = (): Record<BlockType, BlockEntry[]> => Object.fromEntries(BLOCK_TYPES.map((type) => [type, []])) as unknown as Record<BlockType, BlockEntry[]>;
 
 /** 같은 content+gallery는 한 항목이다 */
 export const blockKey = ({content, gallery}: BlockInputFields): string => JSON.stringify([content, gallery ?? ""]);

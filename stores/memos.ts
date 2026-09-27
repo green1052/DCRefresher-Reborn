@@ -3,6 +3,7 @@ import {create} from "zustand";
 import {MEMO_TYPES, memoStorage} from "@/core/storage/items";
 import type {MemoEntry, MemoType} from "@/core/storage/types";
 import {once} from "@/utils/once";
+import {isRecord} from "@/utils/record";
 
 type MemoMap = Record<string, MemoEntry>;
 
@@ -14,20 +15,16 @@ interface MemosState {
     clearType: (type: MemoType) => Promise<void>;
 }
 
-const isMemoEntry = (value: unknown): value is MemoEntry => {
-    if (!value || typeof value !== "object") return false;
-
-    const memo = value as Partial<MemoEntry>;
-    return typeof memo.text === "string" && typeof memo.color === "string" && (memo.gallery === undefined || typeof memo.gallery === "string");
-};
+const isMemoEntry = (value: unknown): value is MemoEntry =>
+    isRecord(value) && typeof value.text === "string" && typeof value.color === "string" && (value.gallery === undefined || typeof value.gallery === "string");
 
 /** 새 메모의 기본 색 */
 export const randomColor = (): string => `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0")}`;
 
 /** 저장소·가져오기 값에서 유효한 항목만 남긴다 */
 export const normalizeMemoMap = (value: unknown): MemoMap =>
-    value && typeof value === "object" && !Array.isArray(value)
-        ? Object.fromEntries(Object.entries(value).filter(([, memo]) => isMemoEntry(memo)))
+    isRecord(value)
+        ? Object.fromEntries(Object.entries(value).filter((entry): entry is [string, MemoEntry] => isMemoEntry(entry[1])))
         : {};
 
 /** 메모의 단일 출처. 콘텐츠·옵션 모두 이 스토어를 쓰고 저장소와 양방향 동기화된다 */

@@ -1,6 +1,7 @@
 import {ajax, formBody, http} from "@/core/http/client";
 import {galleryPath, galleryTypeName, isMiniGallery, urls} from "@/core/http/urls";
 import {csrfToken} from "@/utils/cookie";
+import {isRecord} from "@/utils/record";
 
 import {parsePostInfo} from "./parser";
 import type {CommentListResponse, DcinsideComment, DcinsideDccon, GalleryPreData, PostInfo} from "./types";
@@ -119,8 +120,8 @@ const manage = async (target: Pick<GalleryPreData, "link">, action: string, fiel
 
     try {
         const parsed: unknown = JSON.parse(text);
-        if (parsed && typeof parsed === "object") {
-            const {result, msg} = parsed as { result?: unknown; msg?: unknown };
+        if (isRecord(parsed)) {
+            const {result, msg} = parsed;
             return {success: isSuccess(result), message: typeof msg === "string" && msg ? msg : undefined};
         }
     } catch {

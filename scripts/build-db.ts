@@ -155,8 +155,8 @@ const normalizeBans = (data: unknown): BanList => {
     if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("ban.json은 갤러리 → 아이디 목록 객체여야 합니다.");
 
     return Object.fromEntries(Object.entries(data).sort(([a], [b]) => (a < b ? -1 : 1)).map(([gallery, uids]) => {
-        if (!Array.isArray(uids) || uids.some((uid) => typeof uid !== "string")) throw new Error(`ban.json의 "${gallery}"가 문자열 목록이 아닙니다.`);
-        return [gallery, [...new Set((uids as string[]).map((uid) => uid.trim()).filter(Boolean))].sort()];
+        if (!Array.isArray(uids) || !uids.every((uid): uid is string => typeof uid === "string")) throw new Error(`ban.json의 "${gallery}"가 문자열 목록이 아닙니다.`);
+        return [gallery, [...new Set(uids.map((uid) => uid.trim()).filter(Boolean))].sort()];
     }));
 };
 

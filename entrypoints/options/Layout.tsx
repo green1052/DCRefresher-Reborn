@@ -4,6 +4,7 @@ import {type ReactNode, useDeferredValue, useEffect, useState} from "react";
 import type {WxtStorageItem} from "wxt/utils/storage";
 
 import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
+import {isRecord} from "@/utils/record";
 
 import {notify} from "./optionsStore";
 
@@ -199,7 +200,8 @@ export const ListTabs = <T extends string, I>({
 
     const submitImport = async (text: string): Promise<void> => {
         try {
-            if ((await importData(JSON.parse(text) as Record<string, unknown>)) === 0) throw new Error();
+            const data: unknown = JSON.parse(text);
+            if (!isRecord(data) || (await importData(data)) === 0) throw new Error();
             setImportOpen(false);
             notify(`${object} 가져왔습니다.`);
         } catch {

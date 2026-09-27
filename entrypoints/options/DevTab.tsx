@@ -3,7 +3,7 @@ import {ChevronRight, Copy, EyeOff, FileJson, RefreshCw, RotateCcw, Trash2} from
 import {Collapsible} from "radix-ui";
 import {useEffect, useRef, useState, useSyncExternalStore} from "react";
 import {storage} from "wxt/utils/storage";
-import {objectKeys} from "ts-extras";
+import {arrayIncludes, objectKeys} from "ts-extras";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
 import {isModuleDataKey} from "@/core/storage/items";
@@ -119,7 +119,7 @@ const StorageSection = () => {
             title="저장된 설정"
             desc={items ? `${entries.length}개 키 · ${formatBytes(total)}` : "불러오는 중…"}
             actions={
-                <SegmentedControl.Root value={area} onValueChange={(value) => setArea(value as Area)}>
+                <SegmentedControl.Root value={area} onValueChange={(value) => arrayIncludes(objectKeys(AREA_NAMES), value) && setArea(value)}>
                     {objectKeys(AREA_NAMES).map((key) => (
                         <SegmentedControl.Item key={key} value={key}>{AREA_NAMES[key]}</SegmentedControl.Item>
                     ))}

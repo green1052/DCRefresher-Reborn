@@ -3,6 +3,7 @@ import {SquareMousePointer} from "lucide-react";
 
 import {eventBus} from "@/core/eventbus/bus";
 import {isBlocked} from "@/core/block";
+import {isAbortError} from "@/core/http/client";
 import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
 import type {DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
@@ -102,7 +103,7 @@ const controller = (ctx: Ctx) => {
         } catch (e) {
             // 다른 글로 넘어가 끊은 요청은 보존본으로 대신하지 않는다.
             // 파이어폭스에선 다른 realm의 DOMException이라 instanceof가 안 맞아 이름으로 본다.
-            if ((e as Error | undefined)?.name === "AbortError") throw e;
+            if (isAbortError(e)) throw e;
             // 삭제된 글 보존: 받지 못하면 캐시 비활성화여도 캐시에 남은 이전 본문을 보여 준다. 다시 저장해 수명을 늘린다.
             const archived = ctx.settings.archiveArticle ? getEntry(preData)?.post : undefined;
             if (!archived) throw e;
@@ -169,7 +170,7 @@ const controller = (ctx: Ctx) => {
         try {
             await pullComments(st.preData, st.post, st.signalId);
         } catch (e) {
-            if (report && (e as Error | undefined)?.name !== "AbortError") ui.showToast("댓글을 불러오지 못했습니다.", "error");
+            if (report && !isAbortError(e)) ui.showToast("댓글을 불러오지 못했습니다.", "error");
         }
     };
 
@@ -188,7 +189,7 @@ const controller = (ctx: Ctx) => {
             await pullComments(preData, post, signalId);
         } catch (e) {
             // 실패해도(삭제된 글 등) 보고 있던 본문은 그대로 둔다.
-            if ((e as Error | undefined)?.name === "AbortError" || store.getState().signalId !== signalId) return;
+            if (isAbortError(e) || store.getState().signalId !== signalId) return;
             ui.showToast("게시글을 다시 불러오지 못했습니다.", "error");
         }
     };

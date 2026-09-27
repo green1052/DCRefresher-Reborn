@@ -169,9 +169,9 @@ export const Frame = () => {
         if (!scrollToSkip || ev.deltaY === 0 || ev.ctrlKey || ev.shiftKey) return;
 
         const box = ev.currentTarget;
-        const target = ev.target as Element;
+        const target = ev.target;
         // 포털로 뜬 창(디시콘 등)의 휠도 React 트리를 타고 여기로 오므로, 스크롤 칸 DOM 안에서 난 것만 본다.
-        if (!box.contains(target)) return;
+        if (!(target instanceof Element) || !box.contains(target)) return;
 
         const dir = ev.deltaY > 0 ? 1 : -1;
         // 안쪽 스크롤 칸(댓글 입력칸 등)이 아직 굴러가면 그쪽 스크롤이라 끝으로 치지 않는다.

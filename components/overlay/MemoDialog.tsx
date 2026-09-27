@@ -1,6 +1,7 @@
 import {Button, Checkbox, Dialog, Flex, SegmentedControl, Text, TextField} from "@radix-ui/themes";
 import {Shuffle} from "lucide-react";
 import {useState} from "react";
+import {arrayIncludes} from "ts-extras";
 
 import {queryString} from "@/core/http/urls";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
@@ -63,9 +64,9 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
 
             <Flex direction="column" gap="3">
                 <SegmentedControl.Root value={type} onValueChange={(next) => {
-                    if (!state.targets[next as MemoType]) return;
-                    setType(next as MemoType);
-                    setForm(prefill(next as MemoType));
+                    if (!arrayIncludes(MEMO_TYPES, next) || !state.targets[next]) return;
+                    setType(next);
+                    setForm(prefill(next));
                 }}>
                     {MEMO_TYPES.filter((memoType) => state.targets[memoType]).map((memoType) => (
                         <SegmentedControl.Item key={memoType} value={memoType}>
