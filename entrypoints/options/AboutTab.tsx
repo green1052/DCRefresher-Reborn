@@ -1,7 +1,7 @@
 import {Badge, Box, Button, DataList, Flex, Grid, Heading, Link, Text} from "@radix-ui/themes";
 import {BookOpen, Bug, ClipboardCopy, Code, Heart, type LucideIcon, MessageCircle, Star, Tag, Users} from "lucide-react";
 import {HTTPError} from "ky";
-import {useEffect, useState} from "react";
+import {type MouseEvent, useEffect, useState} from "react";
 
 import {Notice} from "@/components/ConfirmDialog";
 import {http} from "@/core/http/client";
@@ -73,7 +73,7 @@ const readUsage = async (): Promise<Usage> => {
     return {local, sync};
 };
 
-export function AboutTab({logo, version, onVersionClick}: { logo: string; version: string; onVersionClick: () => void }) {
+export function AboutTab({logo, version, onVersionClick}: { logo: string; version: string; onVersionClick: (ev: MouseEvent) => void }) {
     const release = useRelease(version);
     const enables = useModulesStore((state) => state.enables);
     const blocks = useBlocksStore((state) => state.entries);
