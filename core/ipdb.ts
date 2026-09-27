@@ -1,16 +1,8 @@
 /**
  * IP 대역(a.b) → 후보(조직명·국가·VPN) 데이터.
- *
- * 원본 형식(RawIpData): meta[] + b{"a.b": meta 번호[]}. DB 워크플로(scripts/build-db.ts)가 계산하는 중간 형식이다.
- * 저장 형식(CompactIpData): 표를 구간으로 줄인 것과 조직/국가 표. 워크플로가 data 브랜치 ip.json으로 올리고, 확장은 받은 그대로 저장한다.
+ * 저장 형식(CompactIpData)은 DB 워크플로(scripts/build-db.ts)가 encodeIpData로 만들어 data 브랜치 ip.json으로 올리고,
+ * 확장은 받은 문자열을 그대로 저장해 createIpLookup으로 읽는다. 쓰는 쪽과 읽는 쪽을 한 파일에 둔다.
  */
-
-export interface RawIpData {
-    /** o: 조직명, c: 국가(없으면 한국), v: VPN이면 1 */
-    meta: { o?: string; c?: string; v?: number }[];
-    /** "a.b" → 가능성 있는 meta 번호들 (앞일수록 유력) */
-    b: Record<string, number[]>;
-}
 
 /** 저장 형식 버전. 바꾸면 확장이 같은 DB 버전이어도 다시 받는다 (core/database.ts) */
 export const IP_FORMAT = 2;
@@ -45,9 +37,23 @@ const prefixIndex = (ip: string): number | undefined => {
     return a !== undefined && b !== undefined && a >= 0 && a < 256 && b >= 0 && b < 256 ? a * 256 + b : undefined;
 };
 
-/** 원본 형식 → 저장 형식 (DB 워크플로) */
-export const compactIpData = (raw: RawIpData): CompactIpData => {
-    if (!Array.isArray(raw?.meta) || !raw.b || typeof raw.b !== "object") throw new Error("IP 데이터 형식이 올바르지 않습니다.");
+const candidateKey = ({org, country, vpn}: IpCandidate): string => `${org ?? ""}\u0000${country ?? ""}\u0000${vpn ? 1 : 0}`;
+
+/**
+ * 대역(a*256+b) → 후보들(유력한 순) → 저장 형식. 대역 순으로 넘기면 결과가 늘 같다.
+ * 자주 나오는 후보가 앞 번호를 받게 해 meta·lists의 JSON을 줄인다.
+ */
+export const encodeIpData = (prefixes: ReadonlyMap<number, readonly IpCandidate[]>): CompactIpData => {
+    const frequency = new Map<string, { candidate: IpCandidate; count: number }>();
+    for (const candidates of prefixes.values()) {
+        for (const candidate of candidates) {
+            const entry = frequency.get(candidateKey(candidate));
+            if (entry) entry.count++;
+            else frequency.set(candidateKey(candidate), {candidate, count: 1});
+        }
+    }
+    const ordered = [...frequency.values()].sort((a, b) => b.count - a.count).map(({candidate}) => candidate);
+    const metaIndex = new Map(ordered.map((candidate, index) => [candidateKey(candidate), index]));
 
     const orgs: string[] = [];
     const countries: string[] = [];
@@ -55,26 +61,25 @@ export const compactIpData = (raw: RawIpData): CompactIpData => {
         const found = table.indexOf(value);
         return found >= 0 ? found : table.push(value) - 1;
     };
-
-    const meta = raw.meta.flatMap((entry) => [indexIn(orgs, entry.o ?? ""), indexIn(countries, entry.c ?? ""), entry.v ? 1 : 0]);
+    const meta = ordered.flatMap((candidate) => [indexIn(orgs, candidate.org ?? ""), indexIn(countries, candidate.country ?? ""), candidate.vpn ? 1 : 0]);
 
     const lists: number[][] = [];
     const listIds = new Map<string, number>();
     const table = new Uint16Array(65536);
 
-    for (const [prefix, candidates] of Object.entries(raw.b)) {
-        const slot = prefixIndex(prefix);
-        if (slot === undefined || candidates.length === 0) continue;
+    for (const [slot, candidates] of prefixes) {
+        const indexes = candidates.map((candidate) => metaIndex.get(candidateKey(candidate))!);
+        if (indexes.length === 0) continue;
 
-        let value = candidates[0]!;
-        if (candidates.length > 1) {
-            const key = candidates.join(",");
+        let value = indexes[0]!;
+        if (indexes.length > 1) {
+            const key = indexes.join(",");
             let id = listIds.get(key);
             if (id === undefined) {
-                id = lists.push(candidates) - 1;
+                id = lists.push(indexes) - 1;
                 listIds.set(key, id);
             }
-            value = raw.meta.length + id;
+            value = ordered.length + id;
         }
 
         if (value + 1 > 0xffff) throw new Error("IP 데이터가 Uint16 표 범위를 넘습니다.");
