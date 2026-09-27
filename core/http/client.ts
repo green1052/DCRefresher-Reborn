@@ -18,7 +18,12 @@ const windowFetch: Fetch = globalThis.fetch.bind(globalThis);
 /** 파이어폭스 콘텐츠 스크립트에만 있는 페이지 쪽 창 — content.fetch는 페이지의 fetch다 */
 const pageWindow = (globalThis as { content?: { fetch: Fetch } }).content;
 
-export const http: KyInstance = ky.create({timeout: 15_000, fetch: limited(windowFetch)});
+export const http: KyInstance = ky.create({
+    timeout: 15_000,
+    fetch: limited(windowFetch),
+    // 재시도 시점을 흩어 한꺼번에 다시 몰리지 않게 하고, 서버가 Retry-After로 몇 분을 불러도 10초까지만 기다린다 (그동안 화면이 멈춘 것처럼 보인다)
+    retry: {jitter: true, maxRetryAfter: 10_000}
+});
 
 /**
  * 디시 ajax — 페이지의 fetch가 있으면(파이어폭스 콘텐츠 스크립트) 그것으로, 없으면 기본 fetch로 보낸다.
