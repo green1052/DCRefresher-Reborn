@@ -1,4 +1,4 @@
-import type {PostInfo} from "./types";
+import type {CommentForm, PostInfo} from "./types";
 
 /** 본문 이미지의 data-original 복원 (DC지연로딩). 관리자가 가린 이미지(data-block)는 '차단 이미지 보기'를 누를 때 넣는다 (Frame.tsx) */
 const restoreImageSources = (dom: Document): void => {
@@ -52,6 +52,16 @@ export const ADULT_ERROR = "adult";
  */
 const isAdultPage = (html: string, dom: Document): boolean => html.includes("/error/adult") || dom.querySelector(".adult_certify") !== null;
 
+const TXTCON_CHECKS = ["check_6", "check_7", "check_8"];
+
+const parseCommentForm = (dom: Document): CommentForm => ({
+    fields: Array.from(dom.querySelectorAll<HTMLInputElement>("#focus_cmt > input"), (input): [string, string] => [input.name || input.id || "", input.value]),
+    serviceCode: dom.querySelector<HTMLInputElement>("input[name=service_code]")?.value ?? "",
+    dValue: dom.querySelector("#reply-setting-tmpl + script")?.textContent?.match(/_d\('(.*)'\)/)?.[1],
+    checks: Object.fromEntries(TXTCON_CHECKS.map((name) => [name, dom.querySelector<HTMLInputElement>(`#${name}`)?.value ?? ""])),
+    gallNickName: dom.querySelector("#use_gall_nick") ? dom.querySelector<HTMLInputElement>("#gall_nick_name")?.value ?? "" : undefined
+});
+
 /** 본문 HTML → PostInfo. 비정상 문서면 undefined, 성인 인증이 필요하면 Error(ADULT_ERROR) */
 export const parsePostInfo = (html: string): PostInfo | undefined => {
     const dom = new DOMParser().parseFromString(html, "text/html");
@@ -75,7 +85,7 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
     // 글 머리의 작성 시각 — title("2026-09-26 02:29:40")이 없으면 글자("2026.09.26 02:29:40")
     const date = dom.querySelector<HTMLElement>(".gallview_head .gall_date");
 
-    return {
+    const info: PostInfo = {
         header,
         title: strip(subject?.textContent),
         expire: strip(
@@ -99,6 +109,14 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
             const input = dom.querySelector<HTMLInputElement>("#adult_article + input");
             return input?.name ? {name: input.name, value: input.value} : undefined;
         })(),
-        dom
+        // 문서째 들고 있지 않는다 — 캐시가 글마다 수천 노드짜리 문서를 붙잡고, <video>가 든 문서는 크롬에서 해제되지도 않는다
+        esno: dom.querySelector<HTMLInputElement>("#e_s_n_o")?.value,
+        recommendCode: dom.querySelector<HTMLInputElement>("input[name=code_recommend]")?.value,
+        writeText: dom.querySelector(".write_div")?.textContent?.trim(),
+        commentForm: parseCommentForm(dom)
     };
+
+    // <video>·<audio>가 든 문서는 크롬에서 해제되지 않는다 (재생 관련 보류 작업이 문서를 붙잡는다) — 값을 다 꺼냈으니 떼어 낸다
+    for (const media of dom.querySelectorAll("video, audio")) media.remove();
+    return info;
 };

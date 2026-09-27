@@ -36,10 +36,30 @@ export interface PostInfo {
     requireCommentCaptcha?: boolean;
     v_cur_t?: string;
     randomParam?: { name: string; value: string };
-    /** 댓글·추천 요청의 토큰을 읽을 그 글의 문서 — 지금 페이지 document로 대신하면 다른 글의 값을 보낸다 */
-    dom: Document;
+    /** 그 글의 댓글 요청 토큰 (#e_s_n_o) — 지금 페이지 것을 쓰면 다른 글의 값을 보낸다 */
+    esno?: string;
+    /** 그 글의 추천 토큰 (input[name=code_recommend]) */
+    recommendCode?: string;
+    /** 본문 글자 (.write_div) — 본문 차단 검사를 페이지와 같은 글자로 한다 (정화한 contents가 아니라) */
+    writeText?: string;
+    /** 댓글·글자콘 쓰기에 보내는 그 글의 폼 값 */
+    commentForm: CommentForm;
 }
 
+
+/** 글 페이지의 댓글 폼에서 꺼내 둔 값 — 쓸 때 다시 읽으려고 문서째 들고 있지 않는다 */
+export interface CommentForm {
+    /** 댓글 폼(#focus_cmt)의 input들 — [이름(없으면 id), 값], 페이지 순서대로 */
+    fields: [string, string][];
+    /** service_code 원래 값 — 보낼 때 dValue로 끝 10자를 바꾼다 */
+    serviceCode: string;
+    /** 댓글 설정 스크립트(#reply-setting-tmpl 다음)의 _d('…') 인자 */
+    dValue?: string;
+    /** 글자콘 쓰기가 보내는 check_6~8 */
+    checks: Record<string, string>;
+    /** 갤닉 입력칸(#use_gall_nick)이 있으면 그 이름 — 없으면 undefined */
+    gallNickName?: string;
+}
 
 export interface DcinsideDccon {
     detail_idx: string;

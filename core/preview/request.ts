@@ -31,7 +31,7 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: PostInfo,
     body.set("no", preData.id);
     body.set("cmt_id", postInfo.commentId ?? preData.gallery);
     body.set("cmt_no", postInfo.commentNo ?? preData.id);
-    body.set("e_s_n_o", postInfo.dom.querySelector<HTMLInputElement>("#e_s_n_o")?.value ?? "");
+    body.set("e_s_n_o", postInfo.esno ?? "");
 
     const byNo = new Map<string, DcinsideComment>();
     let allowReply = true;
@@ -82,7 +82,7 @@ export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U
     body.set("id", preData.gallery);
     body.set("no", preData.id);
     body.set("mode", mode);
-    body.set("code_recommend", code ?? postInfo.dom.querySelector<HTMLInputElement>("input[name=code_recommend]")?.value ?? "");
+    body.set("code_recommend", code ?? postInfo.recommendCode ?? "");
     body.set("link_id", preData.gallery);
     if (postInfo.v_cur_t) body.set("v_cur_t", postInfo.v_cur_t);
     if (postInfo.randomParam) body.set(postInfo.randomParam.name, postInfo.randomParam.value);
@@ -210,7 +210,7 @@ export const submitComment = async (
     captcha?: string,
     grecaptchaToken?: string
 ): Promise<SubmitResult> => {
-    const {dom} = postInfo;
+    const form = postInfo.commentForm;
 
     const code = (() => {
         try {
@@ -218,8 +218,7 @@ export const submitComment = async (
             const rKey = "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K";
             const b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
-            const script = dom.querySelector<HTMLElement>("#reply-setting-tmpl + script");
-            const dValue = script?.textContent?.match(/_d\('(.*)'\)/)?.[1];
+            const dValue = form.dValue;
             if (!dValue) return null;
 
             let decoded = atob(dValue.replace(/./g, (c) => b64[rKey.indexOf(c)] ?? ""));
@@ -229,8 +228,7 @@ export const submitComment = async (
             fi = fi > 5 ? fi - 5 : fi + 4;
             decoded = decoded.replace(/^./, fi.toString());
 
-            const serviceInput = dom.querySelector<HTMLInputElement>("input[name=service_code]");
-            const service = serviceInput?.value ?? "";
+            const service = form.serviceCode;
 
             const rs = decoded.split(",");
             let computed = "";
@@ -251,9 +249,8 @@ export const submitComment = async (
     params.set("t_vch2", "");
     params.set("t_vch2_chk", "");
 
-    for (const element of dom.querySelectorAll<HTMLInputElement>("#focus_cmt > input")) {
-        const name = element.name || element.id || "";
-        if (!["service_code", "gallery_no", "clickbutton"].includes(name)) params.set(name, element.value);
+    for (const [name, value] of form.fields) {
+        if (!["service_code", "gallery_no", "clickbutton"].includes(name)) params.set(name, value);
     }
 
     params.set("service_code", code);
@@ -374,7 +371,7 @@ export const submitTxtcon = async (
     captcha?: string,
     grecaptchaToken?: string
 ): Promise<SubmitResult> => {
-    const {dom} = postInfo;
+    const form = postInfo.commentForm;
 
     const body = await commonBody(preData.link);
     body.set("id", postInfo.commentId ?? preData.gallery);
@@ -390,13 +387,11 @@ export const submitTxtcon = async (
     if (user.pw) body.set("password", user.pw);
     if (captcha) body.set("code", captcha);
 
-    for (const name of ["check_6", "check_7", "check_8"]) {
-        body.set(name, dom.querySelector<HTMLInputElement>(`#${name}`)?.value ?? "");
-    }
+    for (const [name, value] of Object.entries(form.checks)) body.set(name, value);
 
     // 갤닉은 댓글(submitComment)처럼 쓰지 않는다
-    if (dom.querySelector("#use_gall_nick")) {
-        body.set("gall_nick_name", dom.querySelector<HTMLInputElement>("#gall_nick_name")?.value ?? "");
+    if (form.gallNickName !== undefined) {
+        body.set("gall_nick_name", form.gallNickName);
         body.set("use_gall_nick", "N");
     }
 

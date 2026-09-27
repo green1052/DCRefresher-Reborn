@@ -213,8 +213,7 @@ const controller = (ctx: ModuleContext) => {
     const textBlockOf = (preData: GalleryPreData, postInfo: PostInfo): PostInfo["textBlocked"] => {
         const view = useUiStore.getState().blockView;
         // 페이지와 같은 글자로 본다 (block 모듈 checkText) — 본문 칸째 풀면 디시 스크립트·템플릿 글자가 섞이고 태그 자리가 공백이 돼 '<b>광</b>고'로 비켜 간다
-        const writeDiv = postInfo.dom.querySelector(".write_div");
-        return view && writeDiv && isBlocked("TEXT", writeDiv.textContent?.trim() ?? "", preData.gallery) ? (view.blur ? "blur" : "hide") : undefined;
+        return view && postInfo.writeText !== undefined && isBlocked("TEXT", postInfo.writeText, preData.gallery) ? (view.blur ? "blur" : "hide") : undefined;
     };
 
     const processContents = async (preData: GalleryPreData, postInfo: PostInfo, stripMedia = false): Promise<PostInfo> => {
