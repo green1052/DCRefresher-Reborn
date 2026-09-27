@@ -31,7 +31,8 @@ export const updateDatabase = async (force = false): Promise<void> => {
     if (!data) throw new Error("IP 데이터 형식이 올바르지 않습니다.");
     createIpLookup(data);
 
-    await writeDatabase({version, lastUpdate: Date.now(), format: IP_FORMAT}, ip, JSON.stringify(ban));
+    // version 파일과 ip.json은 CDN에 따로 캐시된다. 새 version에 옛 ip.json이 오면, 받은 데이터의 버전을 저장해 다음 확인 때 다시 받게 한다
+    await writeDatabase({version: data.version ?? version, lastUpdate: Date.now(), format: IP_FORMAT}, ip, JSON.stringify(ban));
 };
 
 /** 저장된 ban 문자열을 푼다 (없으면 빈 목록). 깨졌으면 던진다 */

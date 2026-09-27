@@ -9,6 +9,8 @@ export const IP_FORMAT = 2;
 
 export interface CompactIpData {
     v: typeof IP_FORMAT;
+    /** 만든 날짜 (data 브랜치 version 파일과 같다). 두 파일은 CDN에 따로 캐시되므로 저장할 버전은 이것을 쓴다 */
+    version?: string;
     /**
      * 65536칸 표(칸 번호 a*256+b)를 값이 같은 구간으로 줄인 것. base64(Uint16Array[구간 시작 × n, 값 × n]).
      * 이웃 대역은 대개 같은 기관이라 구간이 칸 수의 절반도 안 된다. 값 0은 정보 없음,

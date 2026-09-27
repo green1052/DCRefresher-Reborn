@@ -177,9 +177,10 @@ if (kisa.size < 500) throw new Error(`KISA 목록을 읽지 못했습니다: ${k
 const candidates = buildCandidates(asns, countries, vpns, kisa);
 if (candidates.size < 40_000) throw new Error(`대역이 너무 적습니다: ${candidates.size}`);
 
-const ip = JSON.stringify(encodeIpData(candidates));
+const version = new Date().toISOString().slice(0, 10);
+const ip = JSON.stringify({...encodeIpData(candidates), version});
 await Bun.write(`${OUT_DIR}/ip.json`, ip);
-await Bun.write(`${OUT_DIR}/version`, new Date().toISOString().slice(0, 10));
+await Bun.write(`${OUT_DIR}/version`, version);
 
 const banFile = Bun.file(`${OUT_DIR}/ban.json`);
 const bans = (await banFile.exists()) ? normalizeBans(await banFile.json()) : undefined;
