@@ -262,6 +262,8 @@ export const Frame = () => {
                     // 설정 너비가 기준이고, overlay.scss가 화면 폭·관리 패널에 맞춰 줄인다.
                     style={{"--refresher-frame-width": `${frameWidth}px`} as CSSProperties}
                     aria-busy={busy}
+                    // 비모달이지만 연 동안 뒤 페이지를 inert로 막으므로 보조 기술에는 모달로 알린다
+                    aria-modal
                     onOpenAutoFocus={(ev) => ev.preventDefault()}
                     // 바깥 클릭 닫기는 배경(frame-outer)이 맡는다. 위에 뜬 팝업·버블을 눌러도 닫히지 않게 막는다.
                     onInteractOutside={(ev) => ev.preventDefault()}

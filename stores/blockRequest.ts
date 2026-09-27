@@ -1,5 +1,5 @@
 // 유저 버블의 "차단" 처리. 차단 모듈이 꺼져 있어도 차단 목록(stores/blocks)에는 넣으므로 모듈이 아닌 stores에 둔다
-import {ajax} from "@/core/http/client";
+import {ajax, BlockedError} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockType} from "@/core/storage/types";
@@ -73,6 +73,8 @@ export const handleBlockRequest = async (options: BlockRequestOptions, selected:
         else await blockUser(selected);
     } catch (e) {
         console.error("Block request failed:", e);
-        useUiStore.getState().showToast(options.target === "dccon" ? "디시콘 정보를 불러오지 못했습니다." : "차단 목록에 저장하지 못했습니다.", "error");
+        // 임시 차단은 HTTP 클라이언트가 이미 알렸다. 디시콘은 정보 받기와 저장 중 어느 쪽이 실패했어도 같은 문구다
+        if (e instanceof BlockedError) return;
+        useUiStore.getState().showToast(options.target === "dccon" ? "디시콘을 차단하지 못했습니다." : "차단 목록에 저장하지 못했습니다.", "error");
     }
 };
