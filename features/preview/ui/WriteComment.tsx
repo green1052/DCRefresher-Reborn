@@ -21,7 +21,8 @@ import {saveNonmember, savedNonmember} from "../nonmember";
 import {DcconPopup} from "./DcconPopup";
 import {usePreviewStore} from "./previewStore";
 
-const randomPassword = (): string => Math.random().toString(36).slice(2, 10);
+/** 비회원 댓글 비밀번호 (영문 소문자·숫자 8자) */
+const randomPassword = (): string => Array.from(crypto.getRandomValues(new Uint8Array(8)), (byte) => (byte % 36).toString(36)).join("");
 
 // 'false||메시지' 형식이 아닌 실패 응답 코드 (디시 dccon.js·txtcon.js에서 옮김)
 const FAIL_MESSAGES: Record<string, string> = {

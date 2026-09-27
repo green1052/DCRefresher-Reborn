@@ -108,6 +108,13 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
     const subject = dom.querySelector<HTMLElement>(".title_subject");
     for (const script of subject?.querySelectorAll("script") ?? []) script.remove();
 
+    // 본문을 먼저 꺼내고 문서에서 뗀다. 아래 값(댓글 폼·추천 코드 등)은 문서 전체에서 찾으므로,
+    // 본문이 남아 있으면 본문에 넣은 같은 이름의 입력칸·스크립트가 먼저 걸린다
+    const body = dom.querySelector<HTMLElement>(".writing_view_box");
+    const contents = body?.innerHTML;
+    const writeText = dom.querySelector(".write_div")?.textContent?.trim();
+    body?.remove();
+
     const header = strip(dom.querySelector<HTMLElement>(".title_headtext")?.textContent?.replace(/^\[|\]$/g, ""));
     const commentCountText = strip(dom.querySelector<HTMLElement>(".gall_comment")?.textContent?.trim().split(" ")[1]);
     // 작성 시각. title("2026-09-26 02:29:40")이 없으면 표시 글자("2026.09.26 02:29:40")를 쓴다
@@ -126,7 +133,7 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
         upvotes: strip(dom.querySelector<HTMLElement>(".fr > .gall_reply_num")?.textContent, "추천"),
         fixedUpvotes: strip(dom.querySelector<HTMLElement>(".sup_num > .smallnum")?.textContent),
         downvotes: strip(dom.querySelector<HTMLElement>(".btn_recommend_box .down_num")?.textContent),
-        contents: dom.querySelector<HTMLElement>(".writing_view_box")?.innerHTML,
+        contents,
         ...parseCommentIds(dom),
         // 0도 숫자로 남긴다. 댓글 요청을 건너뛸지 commentCount === 0으로 판단한다
         commentCount: commentCountText && /^\d+$/.test(commentCountText) ? Number(commentCountText) : undefined,
@@ -140,7 +147,7 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
         // 댓글·추천에 쓸 값도 여기서 꺼내 둔다. 문서를 들고 있으면 캐시가 글마다 수천 노드짜리 문서를 붙잡는다
         esno: dom.querySelector<HTMLInputElement>("#e_s_n_o")?.value,
         recommendCode: dom.querySelector<HTMLInputElement>("input[name=code_recommend]")?.value,
-        writeText: dom.querySelector(".write_div")?.textContent?.trim(),
+        writeText,
         commentForm: parseCommentForm(dom)
     };
 

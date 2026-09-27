@@ -22,9 +22,18 @@ const embedYoutube = (html: string): string =>
     html.includes("<embed") ? html.replace(YOUTUBE_EMBED, "<iframe src=\"$1\" width=\"560\" height=\"315\" allowfullscreen></iframe>") : html;
 
 // 인라인 style은 오버레이 레이아웃을 깨므로 지우고, 본문의 동영상 임베드(iframe)는 허용한다.
+// <style>은 shadow 루트 전체(창·댓글·가린 내용)에 걸리고, 폼 요소는 본문에 필요 없는데 가짜 입력칸을 만들 수 있어 뺀다.
 // IN_PLACE: sanitizeHtml이 <template> 안의 요소를 그 자리에서 정화한다.
-const BASE: Config = {FORBID_ATTR: ["style"], ADD_TAGS: ["iframe"], ADD_ATTR: ["allowfullscreen", "frameborder", "allow", "scrolling"], IN_PLACE: true};
-const NO_MEDIA: Config = {...BASE, FORBID_TAGS: ["img", "video", "iframe", "audio", "embed", "source", "picture"]};
+const FORBIDDEN = ["style", "form", "input", "textarea", "select"];
+const BASE: Config = {
+    FORBID_ATTR: ["style"],
+    FORBID_TAGS: FORBIDDEN,
+    ADD_TAGS: ["iframe"],
+    ADD_ATTR: ["allowfullscreen", "frameborder", "allow", "scrolling"],
+    IN_PLACE: true
+};
+// SVG <image>도 원격 이미지를 불러온다
+const NO_MEDIA: Config = {...BASE, FORBID_TAGS: [...FORBIDDEN, "img", "video", "iframe", "audio", "embed", "source", "picture", "image"]};
 
 // 설정을 고정한 인스턴스를 쓴다. sanitize(html, cfg)는 호출마다 허용 목록을 다시 만든다.
 // 인스턴스는 처음 쓸 때 만든다(정화할 일이 없는 페이지에서는 만들지 않게).

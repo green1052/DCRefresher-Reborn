@@ -4,6 +4,8 @@
  * 확장은 받은 문자열을 그대로 저장해 createIpLookup으로 읽는다. 쓰는 쪽과 읽는 쪽을 한 파일에 둔다.
  */
 
+import {isRecord} from "@/utils/record";
+
 /** 저장 형식 버전. 바꾸면 확장이 같은 DB 버전이어도 다시 받는다 (core/database.ts) */
 export const IP_FORMAT = 2;
 
@@ -103,9 +105,17 @@ export const encodeIpData = (prefixes: ReadonlyMap<number, readonly IpCandidate[
 /** 저장된(받은) 문자열 → 저장 형식. 비었거나 옛 형식이면 null (옛 형식은 다음 갱신이 새로 받는다). JSON이 깨졌으면 던진다 */
 export const parseIpData = (text: string): CompactIpData | null => {
     if (!text) return null;
-    const data = JSON.parse(text) as Partial<CompactIpData> | null;
-    return data?.v === IP_FORMAT ? (data as CompactIpData) : null;
+    const data: unknown = JSON.parse(text);
+    // 모양까지 본다. 받은 파일은 그대로 저장되고 페이지마다 읽히므로, 필드 하나만 틀려도 배지·미리보기가 깨진다
+    const valid = isRecord(data) && data.v === IP_FORMAT && typeof data.runs === "string" &&
+        (data.version === undefined || typeof data.version === "string") &&
+        isStrings(data.orgs) && isStrings(data.countries) && isNumbers(data.meta) &&
+        Array.isArray(data.lists) && data.lists.every(isNumbers);
+    return valid ? (data as unknown as CompactIpData) : null;
 };
+
+const isStrings = (value: unknown): value is string[] => Array.isArray(value) && value.every((item) => typeof item === "string");
+const isNumbers = (value: unknown): value is number[] => Array.isArray(value) && value.every((item) => typeof item === "number");
 
 /** 저장 형식 → 조회 함수. 구간을 65536칸 표로 한 번 펼쳐 조회는 배열 한 칸으로 한다 */
 export const createIpLookup = (data: CompactIpData): ((ip: string) => IpCandidate[] | undefined) => {
