@@ -51,3 +51,46 @@ html body[data-scroll-locked] {
         transform: translateY(110vh) rotate(var(--spin));
     }
 }
+
+/* 모듈을 켜고 끌 때 설정 칸을 펼치고 접는다 (GeneralTab). 높이는 Radix Collapsible이 재서 변수로 준다 */
+.refresher-module-settings {
+    // hidden이면 가장자리 스위치·입력칸의 포커스 테두리가 잘린다
+    overflow: clip;
+    overflow-clip-margin: 6px;
+
+    &[data-state="open"] {
+        animation: refresher-settings-open 200ms ease-out;
+    }
+
+    &[data-state="closed"] {
+        animation: refresher-settings-close 200ms ease-out;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        animation: none !important;
+    }
+}
+
+@keyframes refresher-settings-open {
+    from {
+        height: 0;
+        opacity: 0;
+    }
+
+    to {
+        height: var(--radix-collapsible-content-height);
+        opacity: 1;
+    }
+}
+
+@keyframes refresher-settings-close {
+    from {
+        height: var(--radix-collapsible-content-height);
+        opacity: 1;
+    }
+
+    to {
+        height: 0;
+        opacity: 0;
+    }
+}
