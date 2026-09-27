@@ -1,11 +1,11 @@
 import {Badge, Box, Button, Callout, Flex, Heading, IconButton, Separator, Spinner, Text, Theme, Tooltip} from "@radix-ui/themes";
-import {ArrowUp, CircleAlert, Clock, ExternalLink, Eye, MessageSquare, ThumbsDown, ThumbsUp} from "lucide-react";
+import {ArrowUp, CircleAlert, Clock, ExternalLink, Eye, Link2, MessageSquare, RotateCw, ThumbsDown, ThumbsUp} from "lucide-react";
 import {Dialog} from "radix-ui";
 import {type CSSProperties, Fragment, useEffect, useRef, useState, type WheelEvent} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
 import {getEntry, setEntry} from "@/core/preview/cache";
-import {captchaImage, vote} from "@/core/preview/request";
+import {captchaImage, viewUrl, vote} from "@/core/preview/request";
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {PostInfo} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
@@ -128,6 +128,15 @@ const Votes = ({post}: { post: PostInfo }) => {
         }
     };
 
+    // 목록 쿼리(검색어·페이지) 없는 글 주소
+    const onShare = (): void => {
+        if (!preData) return;
+        navigator.clipboard.writeText(viewUrl(preData.link, preData.gallery, preData.id)).then(
+            () => useUiStore.getState().showToast("링크를 복사했습니다."),
+            () => useUiStore.getState().showToast("링크를 복사하지 못했습니다.", "error")
+        );
+    };
+
     return (
         <Flex justify="center" align="center" gap="3" py="5">
             <Button size="3" variant="soft" aria-label="추천" loading={voting === "U"} disabled={voting === "D"} onClick={() => void onVote("U")}>
@@ -142,6 +151,11 @@ const Votes = ({post}: { post: PostInfo }) => {
                     {downvotes}
                 </Button>
             )}
+            <Tooltip content="링크 복사" container={overlay.portal}>
+                <IconButton size="3" variant="ghost" color="gray" aria-label="링크 복사" onClick={onShare}>
+                    <Link2 size={18}/>
+                </IconButton>
+            </Tooltip>
             <Tooltip content="새 탭으로 열기" container={overlay.portal}>
                 <IconButton size="3" variant="ghost" color="gray" asChild>
                     <a href={preData?.link ?? location.href} target="_blank" rel="noreferrer">
@@ -209,8 +223,35 @@ const subtitleOf = (comments: ProcessedComment[]): string => {
     return `쓰레드 ${comments.filter((comment) => comment.depth === 0).length}개, 총 댓글 ${comments.length}개${extra ? ` (${extra})` : ""}`;
 };
 
+/** 누르면 돌다가 끝나면 멈춘다 — 받는 동안 다시 누를 수 없다 */
+const RefreshButton = ({label, run}: { label: string; run: () => Promise<void> }) => {
+    const [busy, setBusy] = useState(false);
+
+    return (
+        <Tooltip content={label} container={overlay.portal}>
+            <IconButton size="1" variant="ghost" color="gray" aria-label={label} loading={busy}
+                        onClick={() => {
+                            setBusy(true);
+                            void run().finally(() => setBusy(false));
+                        }}>
+                <RotateCw size={14}/>
+            </IconButton>
+        </Tooltip>
+    );
+};
+
 /** 이만큼 쉬었다 굴리면 새 휠 동작으로 본다 — 관성 스크롤은 이벤트가 이보다 촘촘하게 이어진다 */
 const WHEEL_GESTURE_GAP = 250;
+
+/** 스크롤 칸이 그 방향(1 아래, -1 위)으로 더 굴러가는지 */
+const canScroll = (el: Element, dir: number): boolean => (dir > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 2 : el.scrollTop > 0);
+
+/** 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내 (v5와 같은 모양) */
+const SkipHint = ({dir}: { dir: number }) => (
+    <div className="refresher-skip-hint" data-side={dir < 0 ? "top" : "bottom"}>
+        <p>한번 더 스크롤 하면 {dir < 0 ? "이전" : "다음"} 게시글을 봅니다.</p>
+    </div>
+);
 
 const CommentList = () => {
     const comments = usePreviewStore((s) => s.comments)!;
@@ -317,8 +358,31 @@ export const Frame = () => {
         return () => window.removeEventListener("keydown", onKey);
     }, [visible]);
 
-    // 스크롤 끝에서 한 번 더 굴리면 이전/다음 글. 끝에 닿은 그 동작으로는 넘기지 않는다 — 트랙패드 관성에 글이 연달아 넘어간다
-    const wheel = useRef({last: 0, armed: 0});
+    // 스크롤 끝에서 한 번 더 굴리면 이전/다음 글. 끝에 닿은 그 동작으로는 넘기지 않는다 — 트랙패드 관성에 글이 연달아 넘어간다.
+    // 끝에 닿으면 v5처럼 안내를 띄운다 — 그 글에서만 (넘기거나 닫았다 열면 사라진다)
+    const wheel = useRef({last: 0, armed: 0, key: ""});
+    const [hint, setHint] = useState({dir: 0, key: ""});
+    const hintDir = visible && !fading && hint.key === postKey ? hint.dir : 0;
+
+    const skipOnWheel = (dir: number, timeStamp: number, atEdge: boolean): void => {
+        const state = wheel.current;
+        // 앞 글에서 끝에 닿아 둔 것은 버린다
+        if (state.key !== postKey) {
+            state.key = postKey;
+            state.armed = 0;
+        }
+        const newGesture = timeStamp - state.last > WHEEL_GESTURE_GAP;
+        state.last = timeStamp;
+
+        let armed = 0;
+        if (atEdge && newGesture && state.armed === dir) goToAdjacent(dir);
+        // 끝에 닿은 방향을 기억해 두고 다음 동작을 기다린다
+        else if (atEdge) armed = dir;
+
+        if (armed !== state.armed) setHint({dir: armed, key: postKey});
+        state.armed = armed;
+    };
+
     const onWheel = (ev: WheelEvent<HTMLDivElement>): void => {
         if (!scrollToSkip || ev.deltaY === 0 || ev.ctrlKey || ev.shiftKey) return;
 
@@ -328,29 +392,39 @@ export const Frame = () => {
         if (!box.contains(target)) return;
 
         const dir = ev.deltaY > 0 ? 1 : -1;
-        const canScroll = (el: Element): boolean => (dir > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 2 : el.scrollTop > 0);
         // 안쪽 스크롤 칸(댓글 입력칸 등)이 아직 굴러가면 그쪽 스크롤이다
         let inner = false;
         for (let el: Element | null = target; el && el !== box; el = el.parentElement) {
-            if (el.scrollHeight > el.clientHeight && /auto|scroll/.test(getComputedStyle(el).overflowY) && canScroll(el)) {
+            if (el.scrollHeight > el.clientHeight && /auto|scroll/.test(getComputedStyle(el).overflowY) && canScroll(el, dir)) {
                 inner = true;
                 break;
             }
         }
-        const atEdge = !inner && !canScroll(box);
-        const state = wheel.current;
-        const newGesture = ev.timeStamp - state.last > WHEEL_GESTURE_GAP;
-        state.last = ev.timeStamp;
+        skipOnWheel(dir, ev.timeStamp, !inner && !canScroll(box, dir));
+    };
 
-        if (!atEdge) {
-            state.armed = 0;
-        } else if (newGesture && state.armed === dir) {
-            state.armed = 0;
-            goToAdjacent(dir);
+    // 창 양옆(배경)에서 굴려도 창이 스크롤된다 — 스크롤 칸이 창 안에만 있어 배경엔 굴릴 것이 없다.
+    // 마우스 휠 한 칸(100px 안팎)은 브라우저처럼 부드럽게 — 잇달아 굴려도 남은 거리를 잃지 않게 목표 위치에 이어 쌓는다. 트랙패드의 잘게 나뉜 값은 바로 옮긴다
+    const aim = useRef<{ top: number; key: string } | null>(null);
+    const onBackdropWheel = (ev: WheelEvent<HTMLDivElement>): void => {
+        const box = scroller.current;
+        if (!box || ev.deltaY === 0 || ev.ctrlKey || ev.shiftKey) return;
+
+        const dir = ev.deltaY > 0 ? 1 : -1;
+        const atEdge = !canScroll(box, dir);
+        const delta = ev.deltaY * (ev.deltaMode === 1 ? 40 : ev.deltaMode === 2 ? box.clientHeight : 1);
+
+        if (Math.abs(delta) >= 50) {
+            const from = aim.current?.key === postKey ? aim.current.top : box.scrollTop;
+            const top = Math.min(Math.max(from + delta, 0), box.scrollHeight - box.clientHeight);
+            aim.current = {top, key: postKey};
+            box.scrollTo({top, behavior: "smooth"});
         } else {
-            // 끝에 닿은 방향을 기억해 두고 다음 동작을 기다린다
-            state.armed = dir;
+            aim.current = null;
+            box.scrollTop += delta;
         }
+
+        if (scrollToSkip) skipOnWheel(dir, ev.timeStamp, atEdge);
     };
 
     if (!visible && !fading) return null;
@@ -376,6 +450,7 @@ export const Frame = () => {
                     // pointerdown에서 닫으면 배경이 곧바로 사라져 이어지는 click/contextmenu가 아래 게시글에 떨어진다
                     // (우클릭으로 닫으면 다른 글 미리보기가 열림) — 배경이 받는 click/contextmenu에서 닫는다
                     onClick={() => usePreviewStore.getState().requestClose()}
+                    onWheel={onBackdropWheel}
                     onContextMenu={(ev) => {
                         ev.preventDefault();
                         usePreviewStore.getState().requestClose();
@@ -397,7 +472,8 @@ export const Frame = () => {
                     {/* 스크롤은 안쪽에서 — 바깥이 스크롤되면 스크롤바가 오른쪽 둥근 모서리를 덮는다 */}
                     {/* 글마다 새로 마운트 — 캐시 hit이면 한 번에 렌더돼 스크롤 위치와 쓰던 댓글이 다음 글로 넘어간다.
                         signalId는 닫을 때도 올라 페이드아웃 중에 맨 위로 튀므로 글 주소로 건다 */}
-                    <div className="refresher-frame-scroll" ref={scroller} key={postKey} tabIndex={-1} onWheel={onWheel}>
+                    <div className="refresher-frame-scroll" ref={scroller} key={postKey} tabIndex={-1} onWheel={onWheel}
+                         onScrollEnd={() => (aim.current = null)}>
                     <Box px="6" pt="5" pb="3">
                         <Dialog.Title asChild>
                             <Heading as="h2" size="6">{post ? postTitle(post) : ""}</Heading>
@@ -415,6 +491,7 @@ export const Frame = () => {
                                             {post.views}
                                         </Flex>
                                     </Text>
+                                    <RefreshButton label="새로고침" run={() => usePreviewStore.getState().requestReload()}/>
                                 </Flex>
                             </Flex>
                         )}
@@ -466,9 +543,10 @@ export const Frame = () => {
                     {comments !== undefined && (
                         <Box ref={commentsSection}>
                             <Separator size="4"/>
-                            <Box px="6" pt="3">
+                            <Flex px="6" pt="3" justify="between" align="center" gap="3">
                                 <Text size="2" color="gray">{subtitleOf(comments)}</Text>
-                            </Box>
+                                <RefreshButton label="댓글 새로고침" run={() => usePreviewStore.getState().requestRefresh(true)}/>
+                            </Flex>
                             {comments.length === 0 ? (
                                 <Box py="6"><Text as="p" size="2" color="gray" align="center">댓글이 없습니다.</Text></Box>
                             ) : (
@@ -501,6 +579,7 @@ export const Frame = () => {
                         )}
                     </Flex>
                 </Dialog.Content>
+                {hintDir !== 0 && <SkipHint dir={hintDir}/>}
                 {/* 창 옆에 fixed — Content 안에 두면 transform 때문에 창 기준으로 붙는다 */}
                 {visible && adminVisible && <AdminPanel/>}
                 </Theme>

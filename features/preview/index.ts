@@ -28,7 +28,7 @@ const settings: NonNullable<ModuleDefinition["settings"]> = {
         group: FRAME_GROUP,
         name: "창 너비",
         desc: "미리보기 창의 너비입니다. 브라우저 창이 좁으면 그에 맞춰 줄어듭니다.",
-        default: 1000,
+        default: 1200,
         min: 700,
         max: 1600,
         step: 50,
@@ -315,14 +315,32 @@ const controller = (ctx: ModuleContext) => {
         if (state.blockView !== previous.blockView) void reapplyBlocks();
     }));
 
-    const refreshComments = async () => {
+    /** report: 사용자가 누른 새로고침 — 실패를 알린다 (자동 갱신 실패는 조용히 넘긴다) */
+    const refreshComments = async (report = false) => {
         const st = store.getState();
         if (!st.visible || !st.preData || !st.post || !abort) return;
 
         try {
             await pullComments(st.preData, st.post, st.signalId);
-        } catch {
-            // 자동 갱신 실패는 조용히 무시
+        } catch (e) {
+            if (report && (e as Error | undefined)?.name !== "AbortError") ui.showToast("댓글을 불러오지 못했습니다.", "error");
+        }
+    };
+
+    /** 창 머리의 새로고침 — 본문을 캐시 없이 다시 받고 댓글도 다시 받는다. 스크롤·쓰던 댓글은 그대로 (같은 글이라 다시 마운트되지 않는다) */
+    const reloadPost = async () => {
+        const {visible, preData, signalId} = store.getState();
+        if (!visible || !preData || !abort) return;
+
+        try {
+            const post = await processContents(preData, await requestPost(preData));
+            if (store.getState().signalId !== signalId) return;
+            store.setState({post, error: undefined});
+            await pullComments(preData, post, signalId);
+        } catch (e) {
+            // 삭제된 글이면 보고 있던 본문을 그대로 둔다
+            if ((e as Error | undefined)?.name === "AbortError" || store.getState().signalId !== signalId) return;
+            ui.showToast("게시글을 다시 불러오지 못했습니다.", "error");
         }
     };
 
@@ -711,7 +729,8 @@ const controller = (ctx: ModuleContext) => {
     store.setState({
         requestOpen: (preData, commentsOnly, dir) => open(preData, commentsOnly, false, dir),
         requestClose: () => close(),
-        requestRefresh: () => void refreshComments(),
+        requestRefresh: (report) => refreshComments(report),
+        requestReload: () => reloadPost(),
         requestManage: (kind) => void manage(kind)
     });
 };
@@ -724,7 +743,8 @@ const publishSettings = (ctx: ModuleContext): void => {
             : null,
         frameWidth: Number(ctx.settings.previewWidth),
         backgroundBlur: ctx.settings.toggleBackgroundBlur === true,
-        scrollToSkip: ctx.settings.scrollToSkip === true
+        scrollToSkip: ctx.settings.scrollToSkip === true,
+        archiveArticle: ctx.settings.archiveArticle === true
     });
 };
 

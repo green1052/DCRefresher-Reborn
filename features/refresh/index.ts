@@ -58,6 +58,26 @@ export const checkboxCellFactory = (oldRows: HTMLTableRowElement[]): ((no: strin
 /** 새 글 판정용 행 키. 번호 없는 행(설문·AD, 다른 갤러리 공지)은 번호 칸 글자로 구분한다 */
 const rowKey = (row: HTMLElement): string => rowPostNo(row) ?? row.querySelector(".gall_num")?.textContent ?? "";
 
+/**
+ * 새 목록에서 빠진 글 행을 제자리에 남기고 붉게 칠한다 (v5의 삭제된 글 보존). 한 번 남긴 행은 다음 새로고침에도 남는다.
+ * 위에 새 글이 n개 들어오면 맨 아래 n개는 다음 페이지로 밀려난 것이라 남기지 않고, 행 수는 원래대로 맞춘다
+ */
+const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, newList: HTMLElement, newPostCount: number): void => {
+    // 끼워 넣어도 자리가 밀리지 않게 끼우기 전 행으로 잰다
+    const newRows = Array.from(newList.children);
+
+    for (const [index, row] of oldRows.entries()) {
+        const no = rowPostNo(row);
+        // 번호 없는 행(설문·AD)은 늘 새로 받는다
+        if (!no || newKeys.has(no) || index >= oldRows.length - newPostCount) continue;
+
+        row.classList.add("refresherDeleted");
+        newList.insertBefore(row, newRows[index + newPostCount] ?? null);
+    }
+
+    while (newList.children.length > oldRows.length) newList.lastElementChild?.remove();
+};
+
 /** 방문 링크 색상 (Firefox 대응) */
 const applyDoNotColorVisited = (ctx: ModuleContext): void => {
     document.documentElement.classList.toggle("refresherDoNotColorVisited", ctx.settings.doNotColorVisited === true);
@@ -138,6 +158,12 @@ export default defineModule({
             desc: "검색 중에는 자동 새로고침을 하지 않습니다.",
             default: true
         },
+        pauseOnHover: {
+            type: "check",
+            name: "목록 위에서 새로고침 안 함",
+            desc: "마우스를 글 목록 위에 올려 두는 동안에는 자동 새로고침을 하지 않습니다. 누르려던 글이 밀리지 않습니다.",
+            default: false
+        },
         doNotColorVisited: {
             type: "check",
             name: "방문 링크 색상 지정 비활성화",
@@ -178,8 +204,6 @@ export default defineModule({
         let lastListHtml = "";
         // 받아온 행의 원래 HTML (체크박스 칸·강조·효과를 입히기 전) — 순서가 같으면 바뀐 행만 갈아끼운다
         const rawRows = new WeakMap<Element, string>();
-        // 목록 표가 화면 가까이 있는지 — 글 보기 아래 목록처럼 멀리 있으면 갈아끼워도 볼 수 없어 쉰다
-        let listNear = true;
         const gallery = queryString("id") ?? "";
 
         // 제어 버튼
@@ -232,12 +256,9 @@ export default defineModule({
                 const page = new URL(originalLocation).searchParams.get("page");
                 if (page && page !== "1") return false;
 
-                // 미리보기 뒤에서 갈아끼우면 행이 밀려 이전/다음 글이 바뀐다
-                if (!listNear || usePreviewStore.getState().visible) return false;
-
-                // 목록은 통째로 갈아끼워져 커서·키보드 포커스 아래 행이 바뀐다 — 그 위에 있는 동안은 건너뛴다.
+                // 목록은 통째로 갈아끼워져 커서·키보드 포커스 아래 행이 바뀐다 — 설정을 켜면 그 위에 있는 동안은 건너뛴다.
                 // 포커스는 :focus-visible만 본다: 글 제목을 마우스로 누르면 링크에 포커스가 남아 목록을 떠나도 계속 멈춘다
-                const list = document.querySelector(LIST_SELECTOR);
+                const list = ctx.settings.pauseOnHover === true ? document.querySelector(LIST_SELECTOR) : null;
                 if (list && (list.matches(":hover") || list.querySelector(":focus-visible"))) return false;
             }
 
@@ -344,7 +365,10 @@ export default defineModule({
                     }
                 }
 
-                // 미리보기 모듈의 삭제글 보존(archiveArticle)은 캐시에 이미 반영됨
+                // 삭제된 글 보존(미리보기 설정) — 같은 목록을 다시 받을 때만. 페이지를 넘기거나 검색 결과면 빠진 글이 지워진 것이 아니다
+                if (!customURL && !queryString("s_keyword") && usePreviewStore.getState().archiveArticle) {
+                    keepDeletedRows(oldRows, new Set(newKeys), newList, newPostList.length);
+                }
 
                 // 행 순서가 같으면 바뀐 행(조회수 등)만 갈아끼운다 — 그대로인 행은 hover·리스너가 남는다.
                 // 검색 결과는 강조와 글·댓글 행 짝이 얽혀 통째로 바꾼다
@@ -401,16 +425,6 @@ export default defineModule({
         };
 
         armNext();
-
-        // 목록이 화면 가까이 돌아오면 쉬는 동안 밀린 목록을 바로 받는다
-        const listObserver = new IntersectionObserver((entries) => {
-            const wasNear = listNear;
-            listNear = entries.at(-1)?.isIntersecting ?? true;
-            if (listNear && !wasNear) void load();
-        }, {rootMargin: "800px"});
-        // 갈아끼우는 목록의 표만 본다 — 검색 페이지엔 아래쪽 통합검색 목록(.gall_listwrap, #kakao_seach_list)도 있어 그쪽 항목이 마지막에 오면 멀다고 잘못 본다
-        ctx.addFilter(".gall_list:not([id])", (element) => listObserver.observe(element));
-        ctx.addCleanup(() => listObserver.disconnect());
 
         const onVisibilityChange = (): void => {
             if (document.hidden) {

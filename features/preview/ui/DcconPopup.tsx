@@ -1,5 +1,6 @@
 import {Button, Dialog, Flex, IconButton, Skeleton, Switch, Text} from "@radix-ui/themes";
 import {ChevronLeft, ChevronRight} from "lucide-react";
+import {LRUCache} from "lru-cache";
 import {useEffect, useRef, useState} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
@@ -9,14 +10,11 @@ import type {DcinsideDccon, DcinsideDcconDetail, DcinsideDcconDetailList} from "
 import {useUiStore} from "@/stores/ui";
 import {csrfToken} from "@/utils/cookie";
 
-/** 디시콘 목록 캐시 — 창을 닫았다 열어도 다시 받지 않는다. 페이지를 새로 열면 비고, 새로 산 디시콘이 보이도록 10분 뒤 만료 */
-const LIST_TTL = 10 * 60_000;
-const listCache = new Map<number, { list: DcinsideDcconDetailList[]; maxPage: number; at: number }>();
-
-const cachedList = (page: number) => {
-    const entry = listCache.get(page);
-    return entry && Date.now() - entry.at < LIST_TTL ? entry : undefined;
-};
+/**
+ * 디시콘 목록 캐시 (쪽 → 목록) — 창을 닫았다 열어도 다시 받지 않는다. 페이지를 새로 열면 비고, 새로 산 디시콘이 보이도록 10분 뒤 만료.
+ * 쪽 수만큼만 쌓여 개수 제한은 두지 않는다. 보이는 목록은 창이 따로 들고 있어 창을 연 채 만료돼도 비지 않는다
+ */
+const listCache = new LRUCache<number, { list: DcinsideDcconDetailList[]; maxPage: number }>({ttl: 10 * 60_000, ttlAutopurge: true});
 
 interface DcconPopupProps {
     onSelect: (dccons: DcinsideDccon[], bigDccon: boolean) => void;
@@ -26,7 +24,8 @@ interface DcconPopupProps {
 /** 디시콘 선택 팝업 */
 export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
     const [page, setPage] = useState(0);
-    const [maxPage, setMaxPage] = useState(() => cachedList(0)?.maxPage ?? 1);
+    const [maxPage, setMaxPage] = useState(() => listCache.get(0)?.maxPage ?? 1);
+    const [packages, setPackages] = useState(() => listCache.get(0)?.list ?? []);
     const [activePackage, setActivePackage] = useState<string | null>(null);
     const [current, setCurrent] = useState<DcinsideDccon[]>([]);
     const [doubleDccon, setDoubleDccon] = useState(false);
@@ -45,14 +44,16 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
 
     const getList = async (targetPage: number): Promise<void> => {
         latest.current = targetPage;
-        const cached = cachedList(targetPage);
+        const cached = listCache.get(targetPage);
         if (cached) {
             setMaxPage(cached.maxPage);
+            setPackages(cached.list);
             if (cached.list[0]) openPackage(cached.list[0]);
             setLoading(false);
             return;
         }
 
+        setPackages([]);
         setLoading(true);
         try {
             const body = new URLSearchParams({
@@ -78,8 +79,9 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                 return;
             }
 
-            listCache.set(targetPage, {list: response.list, maxPage: response.max_page, at: Date.now()});
+            listCache.set(targetPage, {list: response.list, maxPage: response.max_page});
             setMaxPage(response.max_page);
+            setPackages(response.list);
             if (response.list[0]) openPackage(response.list[0]);
         } catch {
             if (latest.current !== targetPage) return;
@@ -125,9 +127,6 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
         setSelected(next);
     };
 
-    // TTL은 다시 받을지 정할 때만 — 창을 연 채 10분이 지나도 목록이 비지 않게 (만료된 항목도 지우지 않고 남아 있다)
-    const visible = listCache.get(page)?.list ?? [];
-
     return (
         <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
             <Dialog.Content container={overlay.portal} maxWidth="560px" onOpenAutoFocus={(ev) => ev.preventDefault()}>
@@ -159,9 +158,9 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                 )}
 
                 <div className="refresher-dccon-packages" ref={packagesRef}>
-                    {loading && visible.length === 0
+                    {loading && packages.length === 0
                         ? Array.from({length: 8}, (_, index) => <Skeleton key={index} width="48px" height="48px"/>)
-                        : visible.map((pack) => (
+                        : packages.map((pack) => (
                             <button
                                 type="button"
                                 key={pack.package_idx}

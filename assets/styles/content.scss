@@ -64,6 +64,11 @@
     }
 }
 
+/* 삭제된 글 보존 (refresh 모듈, 미리보기의 archiveArticle 설정) — 목록에서 지워진 글 행 */
+.refresherDeleted {
+    background-color: rgba(232, 100, 95, 0.25) !important;
+}
+
 /* 다음 검색 진행 표시 (search 모듈) */
 .refresherSearchStatus {
     margin-top: 8px;

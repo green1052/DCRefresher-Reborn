@@ -43,7 +43,10 @@ interface PostState {
 interface Hooks {
     requestOpen: (preData: GalleryPreData, commentsOnly?: boolean, dir?: number) => void;
     requestClose: () => void;
-    requestRefresh: () => void;
+    /** 댓글만 다시 받는다. report: 실패를 알린다 */
+    requestRefresh: (report?: boolean) => Promise<void>;
+    /** 본문을 캐시 없이 다시 받고 댓글도 다시 받는다 */
+    requestReload: () => Promise<void>;
     requestManage: (kind: ManageKind) => void;
 }
 
@@ -62,6 +65,8 @@ interface PreviewState extends PostState, Hooks {
     backgroundBlur: boolean;
     /** 스크롤 끝에서 한 번 더 굴리면 이전/다음 글 (설정) */
     scrollToSkip: boolean;
+    /** 삭제된 글과 댓글 보존 (설정) — 새로고침 모듈도 목록에서 지워진 글을 남길 때 본다 */
+    archiveArticle: boolean;
 
     captcha: { url: string; resolve: (code: string) => void } | null;
     mini: MiniState | null;
@@ -81,8 +86,8 @@ export const BLOCKED_TEXT = "게시글 내용이 차단됐습니다.";
 export const BLOCK_DAYS: Record<string, string> = {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"};
 
 /** 미니 미리보기 크기 (Mini.tsx 렌더링과 화면 밖 방지 계산이 공유) */
-export const MINI_WIDTH = 560;
-export const MINI_HEIGHT = 420;
+export const MINI_WIDTH = 720;
+export const MINI_HEIGHT = 560;
 
 /** 커서 우하단에 띄우되 화면 밖으로 나가지 않게 */
 export const miniPosition = (clientX: number, clientY: number): { x: number; y: number } => ({
@@ -95,7 +100,8 @@ const NO_REPLY: Reply = {commentNo: null, replyNo: null};
 export const NO_HOOKS: Hooks = {
     requestOpen: () => undefined,
     requestClose: () => undefined,
-    requestRefresh: () => undefined,
+    requestRefresh: async () => undefined,
+    requestReload: async () => undefined,
     requestManage: () => undefined
 };
 
@@ -138,9 +144,10 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     preData: null,
     signalId: 0,
     shortcutKeys: null,
-    frameWidth: 1000,
+    frameWidth: 1200,
     backgroundBlur: false,
     scrollToSkip: true,
+    archiveArticle: false,
     captcha: null,
     mini: null,
 

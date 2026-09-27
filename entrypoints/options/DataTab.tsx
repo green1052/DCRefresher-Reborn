@@ -2,7 +2,7 @@ import {CloudDownload, CloudUpload, Download, RefreshCw, Trash2, Upload} from "l
 import {Box, Button, Dialog, Flex, Switch, Text} from "@radix-ui/themes";
 import {useEffect, useState} from "react";
 
-import {ConfirmDialog, DialogActions, Notice} from "@/components/ConfirmDialog";
+import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
 import {type BackupSlot, collectLocalData, isBackupTarget, readCloudBackup, readCloudBackupTimes, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
 import {migrateV5} from "@/core/migrate-v5";
@@ -10,6 +10,7 @@ import {backupStorage, dbStorage} from "@/core/storage/items";
 import {normalizeBlockList} from "@/stores/blocks";
 
 import {formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
+import {notify} from "./optionsStore";
 
 const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
@@ -72,7 +73,6 @@ export function DataTab() {
     const [backupTimes, setBackupTimes] = useState<Awaited<ReturnType<typeof readCloudBackupTimes>>>({legacy: false});
     const [restoreOpen, setRestoreOpen] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [notice, setNotice] = useState<string | null>(null);
     const [resetConfirm, setResetConfirm] = useState(false);
     const [autoConfirm, setAutoConfirm] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
@@ -91,9 +91,9 @@ export function DataTab() {
     const run = async (action: () => Promise<string>, failure: string): Promise<void> => {
         setLoading(true);
         try {
-            setNotice(await action());
+            notify(await action());
         } catch (e) {
-            setNotice(`${failure} ${errorMessage(e)}`);
+            notify(`${failure} ${errorMessage(e)}`);
         } finally {
             setLoading(false);
         }
@@ -125,7 +125,7 @@ export function DataTab() {
         try {
             await backupStorage.auto.setValue(on);
         } catch (e) {
-            setNotice(`자동 백업 설정을 저장하지 못했습니다. ${errorMessage(e)}`);
+            notify(`자동 백업 설정을 저장하지 못했습니다. ${errorMessage(e)}`);
             return;
         }
         // 켜는 순간의 설정을 자동 백업 칸에 바로 올려 둔다 (이후엔 바뀔 때마다 백그라운드가)
@@ -249,8 +249,6 @@ export function DataTab() {
                              <Trash2 size={14}/> 데이터 초기화
                          </Button>
                      }/>
-
-            <Notice message={notice} onClose={() => setNotice(null)}/>
 
             {resetConfirm && (
                 <ConfirmDialog

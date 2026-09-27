@@ -65,16 +65,18 @@ const Swatch = ({color, selected, label, onClick}: {
 // 비회원 자격은 확장 isolated storage에만 보관 (페이지 world 접근 차단) — 댓글 삭제(Comment.tsx)도 이 비밀번호를 먼저 내민다
 export const nonmemberStorage = storage.defineItem<{ nick: string; pw: string }>("local:refresher:nonmember", {fallback: {nick: "", pw: ""}});
 
-/** 쓰던 댓글 (글 주소 → 글) — 창을 닫거나 다른 글로 넘어갔다 와도 남는다. 페이지를 떠나면 사라진다 */
-const drafts = new Map<string, string>();
+/** 쓰던 댓글 한 칸 — 창을 닫았다 같은 글을 다시 열면 남고, 다른 글을 열면 버린다 */
+let draft = {key: "", text: ""};
 
 /** 댓글 작성 폼 */
 export const WriteComment = () => {
     const reply = usePreviewStore((s) => s.reply);
-    // 이 폼이 쓰는 글 — 다른 글로 넘어가면 폼째 새로 그려진다 (Frame의 key)
-    const [draftKey] = useState(() => {
+    // 폼은 글마다 새로 그려진다 (Frame의 key) — 그때 이 글의 쓰던 댓글이면 되살린다
+    const [initialText] = useState(() => {
         const preData = usePreviewStore.getState().preData;
-        return preData ? `${preData.gallery}/${preData.id}` : "";
+        const key = preData ? `${preData.gallery}/${preData.id}` : "";
+        if (draft.key !== key) draft = {key, text: ""};
+        return draft.text;
     });
     const [login] = useState(() => Boolean(document.querySelector("#login_box .user_info .nickname > em")));
     const [accountId] = useState(loggedInUserId);
@@ -160,14 +162,14 @@ export const WriteComment = () => {
             if (txtcon || useDccon ? response.result === "ok" : response.result !== "false") {
                 // 보내는 사이 더 쓴 글은 남긴다
                 if (textarea.current?.value === raw) textarea.current.value = "";
-                if (drafts.get(draftKey) === raw) drafts.delete(draftKey);
+                if (draft.text === raw) draft.text = "";
                 setDccons([]);
                 setBigDccon(false);
                 setTxtcon(false);
                 // 그새 다른 글로 넘어갔으면 답글 대상과 댓글 목록은 그 글 것이다
                 if (usePreviewStore.getState().signalId === signal) {
                     usePreviewStore.setState({reply: {commentNo: null, replyNo: null}});
-                    st.requestRefresh();
+                    void st.requestRefresh();
                 }
             } else if (response.message === "captcha") {
                 // v2 체크박스나 v3 재전송도 막히면 원문에서만 풀 수 있다
@@ -185,12 +187,6 @@ export const WriteComment = () => {
         } finally {
             setSending(false);
         }
-    };
-
-    const saveDraft = (): void => {
-        const value = textarea.current?.value;
-        if (value) drafts.set(draftKey, value);
-        else drafts.delete(draftKey);
     };
 
     /** 글자콘 입력 제한 적용. 값이 바뀔 때만 다시 쓰고, 한글 조합 중엔 조합이 끝난 뒤 부른다 (txtcon.js와 같음) */
@@ -250,7 +246,7 @@ export const WriteComment = () => {
                     size="2"
                     rows={2}
                     resize="vertical"
-                    defaultValue={drafts.get(draftKey)}
+                    defaultValue={initialText}
                     disabled={dccons.length > 0}
                     placeholder={
                         dccons.length > 0 ? "디시콘이 선택됐습니다."
@@ -260,11 +256,11 @@ export const WriteComment = () => {
                     style={{flex: 1}}
                     onChange={(ev) => {
                         if (txtcon && !(ev.nativeEvent as InputEvent).isComposing) applyTxtcon();
-                        saveDraft();
+                        draft.text = ev.target.value;
                     }}
-                    onCompositionEnd={() => {
+                    onCompositionEnd={(ev) => {
                         if (txtcon) applyTxtcon();
-                        saveDraft();
+                        draft.text = ev.currentTarget.value;
                     }}
                     onKeyDown={(ev) => {
                         if (ev.key === "Enter" && !ev.shiftKey && !ev.nativeEvent.isComposing) {

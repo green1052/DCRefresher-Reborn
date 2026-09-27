@@ -16,7 +16,7 @@
         width: auto !important;
     }
 
-    // 머리글: 로고·검색창·파란 메뉴줄을 빼고 오른쪽 위 링크 한 줄만
+    // 머리글: 로고·파란 메뉴줄을 빼고 오른쪽 위 링크 한 줄과 통합검색 창만
     .dchead {
         width: auto !important;
         height: auto !important;
@@ -24,7 +24,6 @@
     }
 
     .dc_logo,
-    .wrap_search,
     .gnb_bar,
     .dc_all {
         display: none !important;
@@ -33,6 +32,14 @@
     .area_links {
         position: static !important;
         text-align: right !important;
+    }
+
+    .wrap_search {
+        position: relative !important;
+        inset: auto !important;
+        width: auto !important;
+        max-width: 500px !important;
+        margin: 8px auto 0 !important;
     }
 
     // 본문 폭: 창에 맞추되 너무 넓어지지 않게
@@ -69,6 +76,8 @@
     .minor_ranking_box,
     .issue_contentbox,
     .ad_bottom_list,
+    // 목록 양옆 날개 광고 — 목록 상자 가운데에서 780px씩 떨어져 있어 좁은 창에선 밖으로 나간다
+    [class*="ad_left_wing"],
     // 왼쪽 날개 광고 — setup(document_start) 때는 아직 파싱 전이라 JS로 찾으면 놓친다
     .stickyunit {
         display: none !important;
@@ -123,8 +132,16 @@
         height: auto !important;
     }
 
-    ins.adsbygoogle {
+    ins.adsbygoogle,
+    // 목록 위 840px 배너와 그 닫기 버튼 (창 폭에 맞춰 줄지 않는다)
+    #ad-layer,
+    #ad-layer-closer {
         display: none !important;
+    }
+
+    .banner_box img {
+        max-width: 100% !important;
+        height: auto !important;
     }
 
     // 댓글 입력: 닉네임 칸 옆에서 입력칸이 남는 폭을 다 쓴다
@@ -153,7 +170,9 @@
 
 /* 본문 영역 전체로 확장 (html.refresherPushToRight — "잡다 링크 숨기기"와 함께 켜졌을 때) */
 .refresherPushToRight {
-    .stickyunit {
+    // 목록 상자를 넓히면 그 가운데 기준으로 붙은 날개 광고가 창 밖으로 밀려 가로 스크롤이 생긴다
+    .stickyunit,
+    [class*="ad_left_wing"] {
         display: none !important;
     }
 
