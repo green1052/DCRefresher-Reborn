@@ -10,6 +10,8 @@
  * 5.1.2 이전 버전이 남긴 키(isLeftoverKey)도 버린다 — v5도 읽지 않던 잔재가 백업·내보내기만 불린다.
  * 설정 키·값 형식은 v5와 같다(모듈별로 대조함). v6에 없는 키는 v6가 읽지 않으니 그대로 넘겨도 된다.
  */
+import {arrayIncludes} from "ts-extras";
+
 import {BLOCK_TYPES, DETECT_MODES} from "@/core/storage/items";
 import type {BlockType, DetectMode} from "@/core/storage/types";
 
@@ -88,8 +90,8 @@ export const migrateV5 = (data: Snapshot): Snapshot => {
 
         const mode = /^refresher:block:([A-Z]+):mode$/.exec(key);
         if (mode) {
-            const type = mode[1] as BlockType;
-            if (BLOCK_TYPES.includes(type) && DETECT_MODES.includes(value as DetectMode)) defaults[type] = value as DetectMode;
+            const type = mode[1];
+            if (arrayIncludes(BLOCK_TYPES, type) && arrayIncludes(DETECT_MODES, value)) defaults[type] = value;
             continue;
         }
 

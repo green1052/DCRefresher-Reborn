@@ -99,8 +99,8 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                         <RefresherSelect
                             value={mode}
                             aria-label="차단 모드"
-                            onChange={(next) => setMode(next as DetectMode | "")}
-                            options={[["", "기본값"], ...Object.entries(DETECT_MODE_NAMES)]}
+                            onChange={setMode}
+                            options={{"": "기본값", ...DETECT_MODE_NAMES}}
                         />
                     </Flex>
 

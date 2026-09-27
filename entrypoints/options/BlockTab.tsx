@@ -4,7 +4,7 @@ import {useState} from "react";
 import {BlockDialog} from "@/components/BlockDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
 import {BLOCK_TYPES, DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
-import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
+import type {BlockEntry, BlockType} from "@/core/storage/types";
 import {type BlockInputFields, composeExtra, normalizeBlockList, useBlocksStore} from "@/stores/blocks";
 
 import {ListRow, ListTabs} from "./Layout";
@@ -65,8 +65,8 @@ export function BlockTab() {
                         <RefresherSelect
                             value={defaults[type]}
                             aria-label="기본 차단 모드"
-                            onChange={(next) => void setDefault(type, next as DetectMode)}
-                            options={Object.entries(DETECT_MODE_NAMES)}
+                            onChange={(next) => void setDefault(type, next)}
+                            options={DETECT_MODE_NAMES}
                         />
                     </Flex>
                 )}

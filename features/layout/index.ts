@@ -1,4 +1,5 @@
 import {LayoutPanelTop} from "lucide-react";
+import {objectKeys} from "ts-extras";
 
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingSchema, SettingsSchema} from "@/core/module/types";
@@ -28,7 +29,7 @@ const HIDE_OPTIONS = {
 } satisfies Record<string, { name: string; desc: string; selector: string }>;
 
 type HideKey = keyof typeof HIDE_OPTIONS;
-const HIDE_KEYS = Object.keys(HIDE_OPTIONS) as HideKey[];
+const HIDE_KEYS = objectKeys(HIDE_OPTIONS);
 
 const COMPACT_KEYS = new Set(["activePixel", "forceCompact", "useCompactModeOnView"]);
 const PUSH_CLASS = "refresherPushToRight";

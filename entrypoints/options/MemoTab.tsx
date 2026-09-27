@@ -67,8 +67,8 @@ const MemoFormDialog = ({
                             value={state.type}
                             disabled={editing}
                             aria-label="종류"
-                            onChange={(next) => setState((prev) => ({...prev, type: next as MemoType}))}
-                            options={MEMO_TYPES.map((type) => [type, MEMO_TYPE_NAMES[type]] as [string, string])}
+                            onChange={(type) => setState((prev) => ({...prev, type}))}
+                            options={MEMO_TYPE_NAMES}
                         />
                     </Flex>
 

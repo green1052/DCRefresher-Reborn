@@ -272,7 +272,7 @@ export const SettingItem = ({schema, value, compact, takenKeys, onChange}: Setti
                             onCheckedChange={(checked) => onChange(checked)}/>
                 )}
                 {schema.type === "option" && (
-                    <RefresherSelect value={String(value)} aria-label={schema.name} options={Object.entries(schema.items)} onChange={onChange}/>
+                    <RefresherSelect value={String(value)} aria-label={schema.name} options={schema.items} onChange={onChange}/>
                 )}
                 {schema.type === "text" && <TextControl {...{schema, value, onChange}} />}
                 {schema.type === "color" && <ColorControl {...{schema, value, compact, onChange}} />}

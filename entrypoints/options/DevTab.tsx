@@ -2,6 +2,7 @@ import {Badge, Box, Button, Code, DataList, Flex, IconButton, SegmentedControl, 
 import {ChevronDown, ChevronRight, Copy, EyeOff, FileJson, RefreshCw, RotateCcw, Trash2} from "lucide-react";
 import {useEffect, useRef, useState, useSyncExternalStore} from "react";
 import {storage} from "wxt/utils/storage";
+import {objectKeys} from "ts-extras";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
 import {isModuleDataKey} from "@/core/storage/items";
@@ -114,7 +115,7 @@ const StorageSection = () => {
             desc={items ? `${entries.length}개 키 · ${formatBytes(total)}` : "불러오는 중…"}
             actions={
                 <SegmentedControl.Root value={area} onValueChange={(value) => setArea(value as Area)}>
-                    {(Object.keys(AREA_NAMES) as Area[]).map((key) => (
+                    {objectKeys(AREA_NAMES).map((key) => (
                         <SegmentedControl.Item key={key} value={key}>{AREA_NAMES[key]}</SegmentedControl.Item>
                     ))}
                 </SegmentedControl.Root>

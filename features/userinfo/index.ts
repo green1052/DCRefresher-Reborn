@@ -1,4 +1,5 @@
 import {UserRound} from "lucide-react";
+import {objectKeys} from "ts-extras";
 
 import {banReasonsOf, initDatabase, ipInfoOf, type IpInfoFilter, passesIpFilter, subscribeDatabase} from "@/core/database";
 import {defineModule} from "@/core/module/define";
@@ -38,7 +39,7 @@ const LOW_ACTIVITY_GROUP: SettingGroup = {name: "깡계", desc: "글댓합이 �
 const BADGE_COLOR_GROUP: SettingGroup = {name: "배지 색", desc: "유저 정보 배지의 글자 색입니다. IP는 국가별로 칠하고, VPN이면 국가보다 우선합니다."};
 
 const colorsOf = (ctx: Ctx): Record<string, string> =>
-    Object.fromEntries((Object.keys(BADGE_COLORS) as BadgeColor[]).map((key) => [key, ctx.settings[`${key}Color`]]));
+    Object.fromEntries(objectKeys(BADGE_COLORS).map((key) => [key, ctx.settings[`${key}Color`]]));
 
 const IP_INFO_FILTERS: Record<IpInfoFilter, string> = {all: "전체", foreign: "해외·VPN만", vpn: "VPN만", none: "표시 안 함"};
 

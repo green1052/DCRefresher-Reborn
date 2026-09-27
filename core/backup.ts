@@ -5,6 +5,8 @@
  * 설정을 통째로 gzip → base64로 묶어 8KB 이하 조각(<칸>:0, <칸>:1, …)으로 나누고,
  * 조각 수와 해시를 담은 <칸> 키와 함께 set 한 번으로 쓴다 — 실패해도 이전 백업이 그대로 남는다.
  */
+import {objectKeys} from "ts-extras";
+
 import {backupStorage, isModuleDataKey} from "@/core/storage/items";
 
 export type BackupSlot = "manual" | "auto";
@@ -13,7 +15,7 @@ export type BackupSlot = "manual" | "auto";
 const SLOT_KEYS: Record<BackupSlot, string> = {manual: "backup", auto: "autoBackup"};
 const chunkKey = (slot: BackupSlot, index: number): string => `${SLOT_KEYS[slot]}:${index}`;
 const isSlotKey = (slot: BackupSlot, key: string): boolean => key === SLOT_KEYS[slot] || key.startsWith(`${SLOT_KEYS[slot]}:`);
-const SLOTS = Object.keys(SLOT_KEYS) as BackupSlot[];
+const SLOTS = objectKeys(SLOT_KEYS);
 
 /** 조각 하나의 글자 수 — 항목 한도 8192바이트에서 키와 따옴표 몫을 뺐다 */
 const CHUNK_CHARS = 8000;

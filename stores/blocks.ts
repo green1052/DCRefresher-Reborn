@@ -1,4 +1,5 @@
 import {create} from "zustand";
+import {arrayIncludes} from "ts-extras";
 
 import {BLOCK_TYPES, blockDefaultsStorage, blockStorage, DEFAULT_DETECT_MODE, DETECT_MODE_NAMES, DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
@@ -118,7 +119,7 @@ const setDefaults = (next: Partial<Record<BlockType, DetectMode>>): void =>
     useBlocksStore.setState({
         defaults: {
             ...DEFAULT_DETECT_MODE,
-            ...Object.fromEntries(Object.entries(next).filter(([type, mode]) => BLOCK_TYPES.includes(type as BlockType) && DETECT_MODES.includes(mode as DetectMode)))
+            ...Object.fromEntries(Object.entries(next).filter(([type, mode]) => arrayIncludes(BLOCK_TYPES, type) && arrayIncludes(DETECT_MODES, mode)))
         }
     });
 

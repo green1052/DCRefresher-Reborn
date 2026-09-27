@@ -1,3 +1,5 @@
+import {objectEntries} from "ts-extras";
+
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {useBlocksStore} from "@/stores/blocks";
 
@@ -55,7 +57,7 @@ export const isBlocked = (type: BlockType, content: string, gallery?: string): b
 
 /** 값 중 하나라도 차단 대상인지 */
 export const isAnyBlocked = (values: BlockValues, gallery?: string): boolean =>
-    Object.entries(values).some(([type, value]) => value && isBlocked(type as BlockType, value, gallery));
+    objectEntries(values).some(([type, value]) => value && isBlocked(type, value, gallery));
 
 /**
  * 같은 댓글 묶기 (도배 접기). 공백만 다른 글도 같게 보고, minLength보다 짧은 글(ㅋㅋ 등)과 count번 미만 반복은 건너뛴다.
@@ -77,6 +79,6 @@ export const groupDuplicates = <T>(items: T[], textOf: (item: T) => string, {cou
  * 목록이 바뀔 때 다시 계산된다 (getState로 읽으면 React Compiler가 이전 결과를 그대로 쓴다)
  */
 export const blockingEntries = (values: BlockValues, gallery?: string, lists: BlockLists = useBlocksStore.getState()): { type: BlockType; entry: BlockEntry }[] =>
-    Object.entries(values).flatMap(([type, value]) =>
-        value ? lists.entries[type as BlockType].filter((entry) => applies(lists, type as BlockType, entry, value, gallery)).map((entry) => ({type: type as BlockType, entry})) : []
+    objectEntries(values).flatMap(([type, value]) =>
+        value ? lists.entries[type].filter((entry) => applies(lists, type, entry, value, gallery)).map((entry) => ({type, entry})) : []
     );
