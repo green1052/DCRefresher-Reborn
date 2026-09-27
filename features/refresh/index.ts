@@ -137,6 +137,12 @@ export default defineModule({
             desc: "검색 중에는 자동 새로고침을 하지 않습니다.",
             default: true
         },
+        pauseOnHover: {
+            type: "check",
+            name: "목록 위에서 새로고침 안 함",
+            desc: "마우스를 글 목록 위에 올려 두는 동안에는 자동 새로고침을 하지 않습니다. 누르려던 글이 밀리지 않습니다.",
+            default: false
+        },
         doNotColorVisited: {
             type: "check",
             name: "방문 링크 색상 지정 비활성화",
@@ -229,9 +235,9 @@ export default defineModule({
                 const page = new URL(originalLocation).searchParams.get("page");
                 if (page && page !== "1") return false;
 
-                // 목록은 통째로 갈아끼워져 커서·키보드 포커스 아래 행이 바뀐다 — 그 위에 있는 동안은 건너뛴다.
+                // 목록은 통째로 갈아끼워져 커서·키보드 포커스 아래 행이 바뀐다 — 설정을 켜면 그 위에 있는 동안은 건너뛴다.
                 // 포커스는 :focus-visible만 본다: 글 제목을 마우스로 누르면 링크에 포커스가 남아 목록을 떠나도 계속 멈춘다
-                const list = document.querySelector(LIST_SELECTOR);
+                const list = ctx.settings.pauseOnHover === true ? document.querySelector(LIST_SELECTOR) : null;
                 if (list && (list.matches(":hover") || list.querySelector(":focus-visible"))) return false;
             }
 
