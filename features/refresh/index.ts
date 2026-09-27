@@ -7,7 +7,6 @@ import {defineModule} from "@/core/module/define";
 import type {ModuleContext} from "@/core/module/types";
 import {eventBus} from "@/core/eventbus/bus";
 import {sendMessage} from "@/core/messaging/protocol";
-import {usePreviewStore} from "@/features/preview/ui/previewStore";
 import {useUiStore} from "@/stores/ui";
 
 const MINIMUM_REFRESH_INTERVAL = 2000;
@@ -178,8 +177,6 @@ export default defineModule({
         let lastListHtml = "";
         // 받아온 행의 원래 HTML (체크박스 칸·강조·효과를 입히기 전) — 순서가 같으면 바뀐 행만 갈아끼운다
         const rawRows = new WeakMap<Element, string>();
-        // 목록 표가 화면 가까이 있는지 — 글 보기 아래 목록처럼 멀리 있으면 갈아끼워도 볼 수 없어 쉰다
-        let listNear = true;
         const gallery = queryString("id") ?? "";
 
         // 제어 버튼
@@ -231,9 +228,6 @@ export default defineModule({
                 // 새 글은 1페이지에만 들어온다. 뒤 페이지는 갈아끼울 때마다 행이 밀려 읽던 글이 다음 페이지로 사라질 뿐이다
                 const page = new URL(originalLocation).searchParams.get("page");
                 if (page && page !== "1") return false;
-
-                // 미리보기 뒤에서 갈아끼우면 행이 밀려 이전/다음 글이 바뀐다
-                if (!listNear || usePreviewStore.getState().visible) return false;
 
                 // 목록은 통째로 갈아끼워져 커서·키보드 포커스 아래 행이 바뀐다 — 그 위에 있는 동안은 건너뛴다.
                 // 포커스는 :focus-visible만 본다: 글 제목을 마우스로 누르면 링크에 포커스가 남아 목록을 떠나도 계속 멈춘다
@@ -401,16 +395,6 @@ export default defineModule({
         };
 
         armNext();
-
-        // 목록이 화면 가까이 돌아오면 쉬는 동안 밀린 목록을 바로 받는다
-        const listObserver = new IntersectionObserver((entries) => {
-            const wasNear = listNear;
-            listNear = entries.at(-1)?.isIntersecting ?? true;
-            if (listNear && !wasNear) void load();
-        }, {rootMargin: "800px"});
-        // 갈아끼우는 목록의 표만 본다 — 검색 페이지엔 아래쪽 통합검색 목록(.gall_listwrap, #kakao_seach_list)도 있어 그쪽 항목이 마지막에 오면 멀다고 잘못 본다
-        ctx.addFilter(".gall_list:not([id])", (element) => listObserver.observe(element));
-        ctx.addCleanup(() => listObserver.disconnect());
 
         const onVisibilityChange = (): void => {
             if (document.hidden) {
