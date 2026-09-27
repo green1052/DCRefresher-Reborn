@@ -31,8 +31,6 @@ bun run zip:firefox    # Firefox zip + 소스 zip
 
 `tsconfig.json`은 `noUnusedLocals`, `noUnusedParameters`를 켜 둡니다. 커밋 전에 `bun run compile`과 `bun run build`가 통과해야 합니다.
 
-워크플로의 Bun 설치·의존성 설치는 `.github/actions/setup`(composite action)에 모아 두었습니다.
-
 ## 디렉터리
 
 ```

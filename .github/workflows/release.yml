@@ -27,7 +27,12 @@ jobs:
                         exit 1
                     fi
 
-            -   uses: ./.github/actions/setup
+            -   uses: oven-sh/setup-bun@v2
+                with:
+                    bun-version-file: package.json
+
+            -   name: Install Dependencies
+                run: bun ci
 
             -   name: Type check
                 run: bun run compile

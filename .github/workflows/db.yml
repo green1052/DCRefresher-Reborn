@@ -18,10 +18,13 @@ jobs:
         steps:
             -   uses: actions/checkout@v7
 
-            # build-db는 .wxt가 필요 없다
-            -   uses: ./.github/actions/setup
+            -   uses: oven-sh/setup-bun@v2
                 with:
-                    ignore-scripts: "true"
+                    bun-version-file: package.json
+
+            -   name: Install Dependencies
+                # build-db는 .wxt가 필요 없어 postinstall(wxt prepare)을 건너뛴다
+                run: bun ci --ignore-scripts
 
             # ban.json은 손으로 관리해 data 브랜치에 직접 올린다. 가져다 두면 Build가 검사하고 정리한다
             -   name: Keep ban.json
