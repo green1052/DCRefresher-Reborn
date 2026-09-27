@@ -11,8 +11,6 @@ import {type MemoTargetState, useUiStore} from "@/stores/ui";
 
 import {overlay} from "./shadow";
 
-const TYPE_LABELS: Record<MemoType, string> = {NICK: "닉네임", UID: "아이디", IP: "IP"};
-
 const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const closeMemo = useUiStore((s) => s.closeMemo);
     const showToast = useUiStore((s) => s.showToast);
@@ -44,8 +42,10 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
         // 공백만 있는 메모는 빈 메모로 본다. 그대로 저장하면 빈 "[ ]" 배지가 붙는다
         const trimmed = text.trim();
         if (!trimmed) {
-            if (existing) await removeMemo(type, value);
-            else showToast("메모 내용이 없어 저장하지 않았습니다.", "error");
+            if (existing) {
+                await removeMemo(type, value);
+                showToast("메모를 삭제했습니다.");
+            } else showToast("메모 내용이 없어 저장하지 않았습니다.", "error");
         } else {
             await setMemo(type, value, {text: trimmed, color, gallery: scope});
             showToast("메모를 저장했습니다.");
@@ -70,7 +70,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                 }}>
                     {MEMO_TYPES.filter((memoType) => state.targets[memoType]).map((memoType) => (
                         <SegmentedControl.Item key={memoType} value={memoType}>
-                            {TYPE_LABELS[memoType]}
+                            {MEMO_TYPE_NAMES[memoType]}
                         </SegmentedControl.Item>
                     ))}
                 </SegmentedControl.Root>
