@@ -157,7 +157,7 @@ getModuleApi("preview")?.archiveArticle()
 - 예외: IP·밴 DB(`DB_KEYS`)는 수백 KB라 `defineItem`으로 만들지 않습니다. `defineItem`은 만드는 순간 값을 읽기 때문에, 파일을 import한 모든 페이지가 쓰지 않는 DB를 읽게 됩니다. 이 키는 쓰는 곳에서 `storage.getItem`·`storage.watch`로 다룹니다.
 - 모듈 캐시(계속 불어나는 데이터)는 `moduleDataStorage(id, fallback)`로 만듭니다. 이 키는 백업·내보내기에서 빠집니다. 개수 상한을 두세요 (글댓비 캐시는 500명).
 - 백업 대상 판정은 `core/backup.ts`의 `isBackupTarget`입니다. 새 키가 백업되면 안 되는 성격(비밀번호, 다시 받을 수 있는 큰 데이터)이면 여기에 추가합니다.
-- v5 사용자의 데이터는 업데이트 때 `core/migrate-v5.ts`가 옮깁니다. v5와 같은 키를 쓰는 설정은 주석으로 표시해 두었으니 이름을 바꾸지 마세요.
+- v5 사용자의 데이터는 업데이트 때 `core/migrate-v5.ts`가 옮깁니다. v5와 같은 키를 쓰는 설정은 주석으로 표시해 두었으니 이름을 바꾸지 마세요. v6 안에서 바뀐 설정(6.0.x의 `showIpInfo` 등)은 `core/migrate-settings.ts`가 옮깁니다.
 
 ## HTTP
 
