@@ -95,6 +95,9 @@ export default defineModule({
                 inflight?.abort();
             }
 
+            // 모듈을 끈 뒤 남은 타이머·재시도가 부른 것
+            if (ctx.signal.aborted) return false;
+
             if (loading) {
                 // 강제 로드(관리 동작 뒤 등)는 진행 중인 응답이 바뀌기 전 목록일 수 있어 끝난 뒤 다시 받는다. 자동 새로고침은 겹치면 버린다
                 if (force) rerun = true;
@@ -196,7 +199,7 @@ export default defineModule({
                 inflight = null;
                 // 넘긴 페이지의 로드가 실패했거나 건너뛰었으면 스크롤 예약을 버린다. 남기면 한참 뒤 자동 새로고침이 목록 위로 끌어올린다
                 if (target === scrollAfter) scrollAfter = null;
-                if (target !== originalLocation || rerun) {
+                if (!ctx.signal.aborted && (target !== originalLocation || rerun)) {
                     rerun = false;
                     // 주소가 바뀐 것은 사용자의 이동이라 그 주소를 넘겨 체크박스 가드를 건너뛴다
                     void load(target !== originalLocation ? originalLocation : undefined, true);
@@ -251,6 +254,8 @@ export default defineModule({
         }, {signal});
 
         ctx.addCleanup(() => window.clearTimeout(timer));
+        // 모듈을 끄면 받는 중인 목록도 버린다. 응답이 와서 목록을 갈아끼우지 않게 한다
+        ctx.addCleanup(() => inflight?.abort());
 
         // ===== 인페이지 페이지 전환 =====
         // 문서에 리스너 하나만 위임한다. 앵커마다 붙이며 표시 속성을 남기면 페이징 박스 비교가 늘 어긋나 매번 갈아끼운다

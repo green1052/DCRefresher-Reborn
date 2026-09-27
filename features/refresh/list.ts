@@ -16,20 +16,21 @@ const rawRows = new WeakMap<Element, string>();
 const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, newList: HTMLElement, newPostCount: number): void => {
     const newRows = new Map(Array.from(newList.children, (row) => [rowKey(row as HTMLElement), row]));
 
-    // 옛 목록에서 바로 위에 있던 행 뒤에 끼운다. 자리를 인덱스로 세면 공지·앞서 남긴 행 때문에 새로고침마다 아래로 밀린다
-    let previous: Element | undefined;
-    for (const [index, row] of oldRows.entries()) {
+    // 옛 목록에서 바로 아래에 있던 행 앞에 끼운다. 새 글이 위에 들어오면 같이 내려가다 다음 페이지로 밀려난다.
+    // 위 행 뒤에 끼우면 공지 바로 아래 글이 새 글보다 위에 붙박이고, 인덱스로 세면 새로고침마다 조금씩 밀린다
+    let next: Element | null = null;
+    for (let index = oldRows.length - 1; index >= 0; index--) {
+        const row = oldRows[index]!;
         const no = rowPostNo(row);
         // 번호 없는 행(설문·AD)은 늘 새로 받는다
         if (!no || newKeys.has(no) || index >= oldRows.length - newPostCount) {
-            previous = newRows.get(rowKey(row)) ?? previous;
+            next = newRows.get(rowKey(row)) ?? next;
             continue;
         }
 
         row.classList.add("refresherDeleted");
-        if (previous) previous.after(row);
-        else newList.prepend(row);
-        previous = row;
+        newList.insertBefore(row, next);
+        next = row;
     }
 
     while (newList.children.length > oldRows.length) newList.lastElementChild?.remove();
@@ -63,6 +64,9 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
     const newRows = Array.from(newList.querySelectorAll<HTMLTableRowElement>(":scope > tr"));
     const newKeys = newRows.map(rowKey);
     const newPostList: HTMLTableRowElement[] = [];
+    // 남아 있던 글 가운데 마지막 것보다 아래에 나타난 행은 위 글이 지워져 다음 페이지에서 올라온 것이라 새 글이 아니다.
+    // 남은 글이 하나도 없으면(한꺼번에 많이 올라온 경우) 모두 새 글로 본다
+    const lastKept = newKeys.findLastIndex((key) => oldCacheSet.has(key));
 
     // 관리자 목록은 머리에 체크박스 열이 있는데 받아온 행엔 그 칸이 없다 (디시 JS가 나중에 붙인다). 채우지 않으면 열이 한 칸씩 밀린다
     const hasCheckboxColumn = Boolean(oldList.closest("table")?.querySelector("thead .chkbox_th"));
@@ -86,7 +90,7 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
             continue;
         }
 
-        if (!oldCacheSet.has(no)) newPostList.push(element);
+        if (!oldCacheSet.has(no) && (lastKept === -1 || index < lastKept)) newPostList.push(element);
     }
 
     // 받아온 HTML엔 검색어 강조가 없으니 페이지 전환뿐 아니라 받아온 목록마다 칠한다
