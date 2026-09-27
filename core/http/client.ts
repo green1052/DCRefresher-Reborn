@@ -10,8 +10,21 @@ export const setRequestConcurrency = (concurrency: number): void => {
     limit.concurrency = concurrency;
 };
 
-/** fetch 단위로 limit을 건다. ky의 재시도도 이 fetch를 다시 부르므로 재시도 요청도 동시 요청 수에 들어간다 */
-const limited = (fetcher: Fetch): Fetch => (input, init) => limit(() => fetcher(input, init));
+/** 요청 한 번의 시간 제한 (ms) */
+const REQUEST_TIMEOUT = 15_000;
+
+/**
+ * fetch 단위로 limit을 건다. ky의 재시도도 이 fetch를 다시 부르므로 재시도 요청도 동시 요청 수에 들어간다.
+ * 시간 제한은 자리를 잡은 뒤부터 잰다. ky의 timeout은 fetch를 부르는 순간부터 재서, 요청이 몰리면 차례를 기다리던 요청이
+ * 보내지도 못하고 시간 초과로 실패한다. 요청을 끊는 신호(ky·호출한 쪽)는 Request에 들어 있어 함께 건다
+ */
+const limited = (fetcher: Fetch): Fetch => (input, init) =>
+    limit(() => {
+        const signals = [AbortSignal.timeout(REQUEST_TIMEOUT)];
+        if (input instanceof Request) signals.push(input.signal);
+        if (init?.signal) signals.push(init.signal);
+        return fetcher(input, {...init, signal: AbortSignal.any(signals)});
+    });
 
 /**
  * 파이어폭스 콘텐츠 스크립트에만 있는 전역 content. content.fetch는 페이지 컨텍스트의 fetch라 페이지가 보낸 요청처럼 나간다.
@@ -21,7 +34,8 @@ const pageWindow = (globalThis as { content?: { fetch: Fetch } }).content;
 const baseFetch: Fetch = pageWindow ? pageWindow.fetch.bind(pageWindow) : globalThis.fetch.bind(globalThis);
 
 export const http: KyInstance = ky.create({
-    timeout: 15_000,
+    // 기본 시간 제한은 limited가 잰다. 더 짧게 끊을 요청(자동 새로고침)은 호출할 때 timeout을 준다
+    timeout: false,
     fetch: limited(baseFetch),
     // jitter: 재시도가 한꺼번에 몰리지 않게 시점을 흩는다.
     // maxRetryAfter: Retry-After가 몇 분이어도 10초까지만 기다린다. 더 기다리면 화면이 멈춘 것처럼 보인다.
