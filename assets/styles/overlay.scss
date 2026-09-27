@@ -180,6 +180,19 @@
     }
 }
 
+/* 글쓴이가 단 댓글 — v5처럼 작성자 칸을 파랗게 칠한다 (Comment.tsx UserCard) */
+.refresher-user[data-op] {
+    padding: 1px 6px;
+    border-radius: var(--radius-2);
+    background: var(--blue-9);
+    color: var(--blue-contrast);
+
+    // 배지 글자(아이디·IP·글댓비 — 배지 색 설정이 인라인으로 칠한다)도 흰 글씨로. 사람마다 고른 메모 색만 그대로
+    .rt-Text:not([data-memo]) {
+        color: inherit !important;
+    }
+}
+
 /* 누르면 원본 보기가 열리는 본문 이미지 (Frame.tsx) */
 .refresher-preview-contents img[data-pop] {
     cursor: pointer;

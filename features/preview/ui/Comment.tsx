@@ -1,4 +1,4 @@
-import {Badge, Box, Flex, IconButton, Text, Tooltip} from "@radix-ui/themes";
+import {Box, Flex, IconButton, Text, Tooltip} from "@radix-ui/themes";
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
 import {Fragment, type MouseEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from "react";
 
@@ -128,7 +128,7 @@ export const TimeStamp = ({date, size = "1"}: { date: string; size?: "1" | "2" }
 };
 
 /** 작성자 표시. 우클릭하면 유저 버블 */
-/** fetchRatio: 글댓비 캐시에 없으면 갤로그에서 받는다 (글쓴이만 — 댓글마다 받으면 요청이 너무 많다). op: 글쓴이가 단 댓글 */
+/** fetchRatio: 글댓비 캐시에 없으면 갤로그에서 받는다 (글쓴이만 — 댓글마다 받으면 요청이 너무 많다). op: 글쓴이가 단 댓글 — v5처럼 작성자 칸을 칠한다 (overlay.scss) */
 export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: boolean; op?: boolean }) => {
     // 배지 순서·표시 조건은 userinfo 설정을 따른다 (페이지와 같게) — 회원은 UID, 유동만 IP 정보
     const view = useUiStore((state) => state.badgeView);
@@ -166,16 +166,15 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
             ? showsUid(view, user.image) && <Text size="1" color={identityColor} style={{color: uidColor}} truncate>({user.id})</Text>
             : ipInfo && passesIpFilter(ipInfo, view.ipFilter) &&
             <Text size="1" color={ipColor ? undefined : "blue"} style={{color: ipColor}} title={ipInfo.title} truncate>[{ipInfo.label}]</Text>,
-        MEMO: memo && <Text size="1" style={{color: memo.color || undefined}} title={memo.text} truncate>[{memo.text}]</Text>,
+        MEMO: memo && <Text size="1" style={{color: memo.color || undefined}} title={memo.text} data-memo truncate>[{memo.text}]</Text>,
         RATIO: ratio && <Text size="1" style={{color: ratioColor}} title="글/댓글" truncate>[{ratio.article}/{ratio.comment}]</Text>,
         PERMBAN: banReasons && banColor && <Text size="1" style={{color: banColor}} title={banReasons} truncate>[{banReasons}]</Text>
     };
 
     return (
-        <Flex align="center" gap="1" minWidth="0" onContextMenu={openMenu} style={{cursor: "context-menu"}}>
+        <Flex align="center" gap="1" minWidth="0" className="refresher-user" data-op={op || undefined} onContextMenu={openMenu} style={{cursor: "context-menu"}}>
             <Text size="2" weight="bold" truncate>{user.nick ?? user.id ?? user.ip}</Text>
             {user.image && <img src={user.image} alt="" height={12}/>}
-            {op && <Badge size="1" variant="soft">글쓴이</Badge>}
             {/* 유동 IP는 디시가 닉 옆에 직접 보여 주는 값 — 배지 순서와 상관없이 여기 */}
             {user.ip && <Text size="1" color={identityColor} style={{color: uidColor}} truncate>({user.ip})</Text>}
             {view.order.map((key) => <Fragment key={key}>{badges[key]}</Fragment>)}
