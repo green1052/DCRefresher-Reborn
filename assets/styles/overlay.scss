@@ -92,6 +92,8 @@
     display: flex;
     flex-direction: column;
     width: min(var(--refresher-frame-width, 1200px), 90vw);
+    // 짧은 글에서도 납작해 보이지 않게 최소 높이를 둔다 (작은 창에선 화면을 넘지 않게)
+    min-height: min(600px, 90vh);
     max-height: 90vh;
     overflow: hidden;
     border-radius: var(--radius-5);
@@ -115,6 +117,17 @@
 .refresher-frame-scroll {
     flex: 1;
     min-height: 0;
+    // 최소 높이로 남는 공간은 본문(.refresher-frame-body)이 채운다. 비워 두면 댓글 입력칸 아래에 빈 칸이 생긴다
+    display: flex;
+    flex-direction: column;
+
+    > * {
+        flex-shrink: 0;
+    }
+
+    > .refresher-frame-body {
+        flex-grow: 1;
+    }
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
@@ -187,6 +200,11 @@
     background: var(--blue-a4);
     // 닉네임만 칩 색으로. 배지(아이디·IP·글댓비·갱차·메모)는 설정한 색 그대로 둔다
     color: var(--blue-11);
+}
+
+/* 누르면 원본 보기가 열리는 본문 이미지 (Frame.tsx) */
+.refresher-preview-contents img[data-pop] {
+    cursor: pointer;
 }
 
 /* ===== 디시 본문/댓글 HTML (페이지 CSS가 안 닿으므로 최소한만) ===== */

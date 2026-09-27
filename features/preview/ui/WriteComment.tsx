@@ -1,6 +1,6 @@
 import {Box, Flex, IconButton, Link, Text, TextArea, TextField, Tooltip} from "@radix-ui/themes";
 import {Send, Smile, Type, X} from "lucide-react";
-import {useRef, useState} from "react";
+import {useLayoutEffect, useRef, useState} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
 import {
@@ -96,6 +96,25 @@ export const WriteComment = () => {
     const [txtcon, setTxtcon] = useState(false);
     const [txtconColors, setTxtconColors] = useState({bg: "3b4890", txt: "ffffff"});
     const [showInputs, setShowInputs] = useState(false);
+    const box = useRef<HTMLDivElement>(null);
+    // 닉네임·비밀번호 칸을 열고 닫기 전 이 영역의 아래 끝 (화면 좌표)
+    const bottomBefore = useRef<number | null>(null);
+
+    const toggleInputs = (): void => {
+        bottomBefore.current = box.current?.getBoundingClientRect().bottom ?? null;
+        setShowInputs((v) => !v);
+    };
+
+    // 입력칸 위에 닉네임·비밀번호 칸이 생기면 입력칸과 아래 줄이 밀려 창 밖으로 나간다.
+    // 늘어난 만큼 스크롤해 아래 끝을 제자리에 두고, 새 칸은 위로 펼친다
+    useLayoutEffect(() => {
+        const before = bottomBefore.current;
+        bottomBefore.current = null;
+        const element = box.current;
+        const scroller = element?.closest(".refresher-frame-scroll");
+        if (before === null || !element || !scroller) return;
+        scroller.scrollTop += element.getBoundingClientRect().bottom - before;
+    }, [showInputs]);
     const [sending, setSending] = useState(false);
     const textarea = useRef<HTMLTextAreaElement>(null);
     const beforeTxtcon = useRef<string | null>(null);
@@ -211,7 +230,7 @@ export const WriteComment = () => {
     const mode = reply.replyNo ? "답글" : txtcon ? "글자콘" : dccons.length > 0 ? "디시콘" : "댓글";
 
     return (
-        <Box pl="6" pr="9" pt="3" pb="5">
+        <Box ref={box} pl="6" pr="9" pt="3" pb="5">
             {!login && showInputs && (
                 <Flex gap="2" mb="2">
                     <TextField.Root
@@ -334,7 +353,7 @@ export const WriteComment = () => {
                 {login ? (accountId ?? "회원 계정") : (
                     <Link size="1" href="#" onClick={(ev) => {
                         ev.preventDefault();
-                        setShowInputs((v) => !v);
+                        toggleInputs();
                     }}>
                         {nick}
                     </Link>

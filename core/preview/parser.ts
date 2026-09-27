@@ -8,6 +8,12 @@ const restoreImageSources = (dom: Document): void => {
     for (const image of dom.querySelectorAll<HTMLImageElement>("img[data-original]:not([data-block])")) {
         if (image.dataset.original) image.src = image.dataset.original;
     }
+
+    // 누르면 여는 디시 원본 보기 주소(onclick의 imgPop)는 정화에서 onclick째 빠지므로 data-pop으로 옮겨 둔다 (Frame.tsx)
+    for (const image of dom.querySelectorAll<HTMLImageElement>("img[onclick*='imgPop']")) {
+        const url = image.getAttribute("onclick")?.match(/imgPop\('([^']+)'/)?.[1];
+        if (url) image.dataset.pop = url;
+    }
 };
 
 /** 디시가 순서 번호를 다는 본문 미디어 (첨부 이미지·동영상) */

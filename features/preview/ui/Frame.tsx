@@ -283,7 +283,7 @@ export const Frame = () => {
 
                     <Separator size="4"/>
 
-                    <Box px="6" pt="5">
+                    <Box px="6" pt="5" className="refresher-frame-body">
                         {/* 오류를 먼저 본다. 댓글만 보기여도 본문을 못 받았으면 알린다 */}
                         {error ? (
                             <ErrorBlock error={error}/>
@@ -299,6 +299,14 @@ export const Frame = () => {
                                     className={"refresher-html refresher-preview-contents" + (imageBlocked ? " refresher-preview-block-media" : "")}
                                     data-blocked={hideText ? undefined : post?.textBlocked}
                                     onClick={(ev) => {
+                                        // 이미지를 누르면 디시처럼 원본 보기를 새 탭으로 연다. 주소는 parser.ts가 옮겨 둔 imgPop 주소이고 디시 주소만 연다
+                                        const image = (ev.target as HTMLElement).closest<HTMLImageElement>("img[data-pop]");
+                                        if (image && !image.closest("a")) {
+                                            const url = URL.parse(image.dataset.pop ?? "");
+                                            if (url?.protocol === "https:" && url.hostname.endsWith(".dcinside.com")) window.open(url.href, "_blank", "noopener");
+                                            return;
+                                        }
+
                                         const button = (ev.target as HTMLElement).closest(".btn_img_block");
                                         if (!button) return;
 
