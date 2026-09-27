@@ -37,21 +37,19 @@ export default defineConfig({
     dev: {
         reloadCommand: "Alt+Shift+R"
     },
-    manifest: ({browser}) => ({
+    manifest: {
         name: "DCRefresher Reborn",
-        ...(browser === "firefox"
-            ? {
-                browser_specific_settings: {
-                    gecko: {
-                        id: "dcrefresher-reborn@green1052",
-                        strict_min_version: "140.0",
-                        data_collection_permissions: {
-                            required: ["none"]
-                        }
-                    }
+        // 서로 모르는 키는 각 브라우저가 무시한다 (개발자 모드에서 경고만 뜬다)
+        minimum_chrome_version: "140",
+        browser_specific_settings: {
+            gecko: {
+                id: "dcrefresher-reborn@green1052",
+                strict_min_version: "140.0",
+                data_collection_permissions: {
+                    required: ["none"]
                 }
             }
-            : {minimum_chrome_version: "140"}),
+        },
         permissions: ["alarms", "contextMenus", "storage", "scripting", "unlimitedStorage"],
         host_permissions: ["https://*.dcinside.com/*"],
         commands: {
@@ -78,5 +76,5 @@ export default defineConfig({
                 description: "컨텐츠 차단: 이 페이지에서 가린 내용 보기"
             }
         }
-    })
+    }
 });
