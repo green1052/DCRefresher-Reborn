@@ -195,7 +195,8 @@ export default defineModule({
         ipInfoFilter: {
             type: "option",
             name: "IP 정보 표시",
-            desc: "IP의 통신사·조직과 국가를 표시할 대상입니다. VPN은 국가와 상관없이 해외·VPN에 들어갑니다.",
+            desc: "IP의 통신사·조직과 국가를 표시할 대상입니다. VPN은 국가와 상관없이 해외·VPN에 들어갑니다. " +
+                "IP 앞 두 자리로 공개 데이터베이스에서 추정한 값이라 틀리거나 오래됐을 수 있습니다 — 참고용으로만 보세요.",
             default: "all",
             items: IP_INFO_FILTERS
         },
