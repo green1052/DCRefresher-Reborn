@@ -163,7 +163,8 @@ export default defineBackground(() => {
         if (alarm.name === DATABASE_ALARM) {
             void dbStorage.meta.getValue().then(({lastUpdate}) => (Date.now() - lastUpdate > DATABASE_UPDATE_INTERVAL ? update() : undefined));
         } else if (alarm.name === AUTO_BACKUP_ALARM) {
-            void backupStorage.pending.setValue(false);
+            // 울린 뒤 설정이 또 바뀌어 새 알람이 걸렸으면 대기 표시를 둔다. 지우면 그 알람이 브라우저를 끌 때 사라져도 다시 걸지 않는다
+            void browser.alarms.get(AUTO_BACKUP_ALARM).then((next) => (next ? undefined : backupStorage.pending.setValue(false)));
             // 자동 백업을 끈 직후(초기화 전 끄기 등) 남은 알람이 울릴 수 있으므로 울린 시점에 설정을 다시 확인한다
             void backupStorage.auto.getValue().then((auto) => (auto ? runBackup("auto") : undefined)).catch(() => {});
         }

@@ -53,7 +53,10 @@ const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "m
         await browser.storage.local.remove(removed);
         await browser.storage.local.set(next);
     } catch (e) {
-        await browser.storage.local.set(previous);
+        // 건드린 키만 되돌린다. 저장소 전체를 다시 쓰면 그사이 다른 탭이 한 쓰기(차단 추가, DB 갱신)를 지운다
+        const touched = [...removed, ...Object.keys(next)];
+        await browser.storage.local.remove(touched.filter((key) => !(key in previous)));
+        await browser.storage.local.set(Object.fromEntries(touched.filter((key) => key in previous).map((key) => [key, previous[key]])));
         throw e;
     }
 };

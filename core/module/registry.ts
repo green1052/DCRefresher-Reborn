@@ -144,10 +144,13 @@ export const loadAll = async (defs: AnyModule[]): Promise<void> => {
         if (result.status === "rejected") console.error(`Failed to load module: ${defs[index]?.id}`, result.reason);
     }
 
-    modulesStorage.watch((next) => {
+    const sync = (next: Record<string, boolean>): void => {
         for (const instance of instances.values()) {
             if (isModuleEnabled(instance.def, next)) void start(instance).catch((e) => console.error(e));
             else stop(instance);
         }
-    });
+    };
+    modulesStorage.watch(sync);
+    // 불러오는 동안(setup이 IP DB를 읽는 동안 등) 팝업에서 켜고 끈 것은 감시 전이라 놓친다. 한 번 맞춘다 (바뀐 게 없으면 아무 일도 없다)
+    sync(await modulesStorage.getValue());
 };

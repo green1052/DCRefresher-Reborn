@@ -4,6 +4,7 @@ import {create} from "zustand";
 
 import {isModuleEnabled, normalizeSetting, normalizeSettings} from "@/core/module/settings";
 import type {AnyModule} from "@/core/module/types";
+import {withIpInfoFilter} from "@/core/migrate-v5";
 import {moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
 import features from "@/features";
@@ -25,13 +26,9 @@ const featureById = new Map(features.map((feature) => [feature.id, feature]));
 const resolveEnables = (stored: Record<string, boolean>): Record<string, boolean> =>
     Object.fromEntries(features.map((feature) => [feature.id, isModuleEnabled(feature, stored)]));
 
-// 쓰기가 읽고-고쳐-쓰기라 연달아 바꾸면 둘 다 옛 값을 읽어 앞의 쓰기를 덮는다. 한 줄로 세운다
-let writes: Promise<void> = Promise.resolve();
-const enqueue = (write: () => Promise<void>): Promise<void> => {
-    const next = writes.then(write);
-    writes = next.catch(() => {});
-    return next;
-};
+// 쓰기가 읽고-고쳐-쓰기라 동시에 바꾸면 둘 다 옛 값을 읽어 앞의 쓰기를 덮는다. 한 줄로 세운다.
+// 옵션·팝업 창은 확장 출처를 같이 쓰므로 Web Locks로 창 여러 개에 걸쳐 세운다 (설정 정리가 다른 창의 변경을 덮지 않게)
+const enqueue = (write: () => Promise<void>): Promise<void> => navigator.locks.request("refresher:module-settings", write);
 
 /**
  * 옵션 페이지용 모듈 상태. 저장소에 직접 읽고 쓰며, 열린 디시 탭의 레지스트리가 저장소를 감시해 반영한다.
@@ -102,9 +99,11 @@ const pruneStaleSettings = async (): Promise<void> => {
         for (const feature of features) {
             if (!feature.settings) continue;
             const item = moduleSettingsStorage(feature.id);
-            const stored = await item.getValue();
+            const original = await item.getValue();
+            // 업데이트 직후 배경이 옮기기 전에 여기서 먼저 지우면 옛 'IP 정보 끔'이 사라지므로 정리 전에 옮긴다
+            const stored = feature.id === "userinfo" ? withIpInfoFilter(original) : original;
             const kept = Object.entries(stored).filter(([key]) => Object.hasOwn(feature.settings!, key));
-            if (kept.length !== Object.keys(stored).length) await item.setValue(Object.fromEntries(kept));
+            if (stored !== original || kept.length !== Object.keys(stored).length) await item.setValue(Object.fromEntries(kept));
         }
     });
 };
