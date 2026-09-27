@@ -10,6 +10,29 @@ const restoreImageSources = (dom: Document): void => {
     }
 };
 
+/** 디시가 순서 번호를 다는 본문 미디어 (첨부 이미지·동영상) */
+const NUMBERED_SOURCE = /dcimg\d\.dcinside\.(com|co\.kr)\/viewimage\.php/;
+
+/**
+ * 첨부 이미지·동영상에 디시처럼 순서 번호를 단다 (3개 이상일 때만). 번호는 감싼 span의 data-num을 CSS가 띄운다 (overlay.scss).
+ * 디시 글 페이지의 번호 끄기(img_numbering 쿠키가 1이 아님)를 따른다
+ */
+const numberImages = (dom: Document): void => {
+    if ((/(?:^|; )img_numbering=([^;]*)/.exec(document.cookie)?.[1] || "1") !== "1") return;
+
+    const media = Array.from(dom.querySelectorAll<HTMLElement>(".writing_view_box :is(img, video):not(.og-img)"))
+        .filter((element) => NUMBERED_SOURCE.test(element.getAttribute("src") || element.dataset.original || element.dataset.src || ""));
+    if (media.length < 3) return;
+
+    for (const [index, element] of media.entries()) {
+        const wrap = dom.createElement("span");
+        wrap.className = "refresher-imgnum";
+        wrap.dataset.num = String(index + 1);
+        element.replaceWith(wrap);
+        wrap.append(element);
+    }
+};
+
 // 디시 스크립트 안에서만 찾는다. 본문이 스크립트보다 앞에 있어 HTML 전체에서 찾으면 본문에 적힌 같은 글자가 먼저 걸린다
 const parseCommentIds = (dom: Document): { commentId?: string; commentNo?: string } => {
     const scripts = Array.from(dom.scripts, (script) => script.textContent).join("\n");
@@ -79,6 +102,7 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
     restoreImageSources(dom);
     // 본문 위 짤방(갤러리 기본 이미지)·광고 자리는 글 내용이 아니다
     for (const element of dom.querySelectorAll(".writing_view_box #zzbang_div, .writing_view_box #ad_nv_slot")) element.remove();
+    numberImages(dom);
 
     // 제목 안 <script>의 글자가 textContent에 섞이므로 먼저 지운다. 제목은 말머리처럼 평문으로 꺼내 화면에 텍스트로 넣는다
     const subject = dom.querySelector<HTMLElement>(".title_subject");

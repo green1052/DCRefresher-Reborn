@@ -242,6 +242,38 @@
     display: none;
 }
 
+// 첨부 이미지 순서 번호 (parser.ts의 numberImages). 가려진 미디어(관리자 가림·이미지 차단·스텔스)에는 띄우지 않는다
+.refresher-imgnum {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    vertical-align: top;
+
+    &::before {
+        content: attr(data-num);
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        z-index: 1;
+        display: var(--refresher-stealth-media, block);
+        min-width: 22px;
+        padding: 1px 6px;
+        border-radius: 4px;
+        background: rgb(0 0 0 / 60%);
+        color: #fff;
+        font-size: 12px;
+        font-weight: bold;
+        line-height: 18px;
+        text-align: center;
+        pointer-events: none;
+    }
+
+    &:not(:has(> :is(img, video):not([data-block])))::before,
+    .refresher-preview-block-media &::before {
+        display: none;
+    }
+}
+
 .refresher-comment-html {
     font-size: var(--font-size-3);
     line-height: 1.6;
