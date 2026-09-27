@@ -4,6 +4,7 @@ import {type ReactNode, useRef, useState} from "react";
 
 import {DialogActions} from "@/components/ConfirmDialog";
 import {overlay} from "@/components/overlay/shadow";
+import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {eventBus} from "@/core/eventbus/bus";
 import {blockUser} from "@/core/preview/request";
 import {notifyManage} from "@/utils/notify";
@@ -29,6 +30,7 @@ const BlockPopup = () => {
     const [delChk, setDelChk] = useState(false);
     const [userTypeChk, setUserTypeChk] = useState(false);
     const [sending, setSending] = useState(false);
+    const focus = useOpenerFocus();
 
     const submit = async (): Promise<void> => {
         // 연타로 차단 요청이 두 번 가지 않게 한다.
@@ -55,11 +57,12 @@ const BlockPopup = () => {
 
     return (
         <Dialog.Root open onOpenChange={(open) => !open && usePreviewStore.setState({blockPopup: false})}>
-            <Dialog.Content container={overlay.portal} maxWidth="440px" onOpenAutoFocus={(ev) => ev.preventDefault()}>
+            <Dialog.Content container={overlay.portal} maxWidth="440px" onOpenAutoFocus={focus.onOpenAutoFocus}
+                            onCloseAutoFocus={focus.onCloseAutoFocus}>
                 <Dialog.Title>유저 차단</Dialog.Title>
 
                 <Text as="div" size="2" weight="bold" mb="2">기간</Text>
-                <RadioGroup.Root value={day} onValueChange={setDay} size="2">
+                <RadioGroup.Root value={day} onValueChange={setDay} size="2" aria-label="기간">
                     <Grid columns="3" gap="2">
                         {Object.entries(BLOCK_DAYS).map(([value, label]) => (
                             <RadioGroup.Item key={value} value={value}>{label}</RadioGroup.Item>
@@ -68,7 +71,7 @@ const BlockPopup = () => {
                 </RadioGroup.Root>
 
                 <Text as="div" size="2" weight="bold" mt="4" mb="2">사유</Text>
-                <RadioGroup.Root value={reason} onValueChange={setReason} size="2">
+                <RadioGroup.Root value={reason} onValueChange={setReason} size="2" aria-label="사유">
                     <Grid columns="3" gap="2">
                         {BLOCK_REASONS.map(([value, label]) => (
                             <RadioGroup.Item key={value} value={value}>{label}</RadioGroup.Item>
@@ -79,6 +82,7 @@ const BlockPopup = () => {
                     <TextField.Root
                         mt="2"
                         value={custom}
+                        aria-label="차단 사유"
                         placeholder="차단 사유 직접 입력 (한글 20자 이내)"
                         maxLength={20}
                         autoFocus
@@ -111,6 +115,7 @@ const BlockPopup = () => {
 
 const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: string) => void } }) => {
     const [code, setCode] = useState("");
+    const {onCloseAutoFocus} = useOpenerFocus();
 
     const send = (): void => {
         if (!code.trim()) return;
@@ -129,7 +134,8 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
             }}
         >
             {/* 섀도 루트 안에선 Dialog의 FocusScope가 입력칸의 autoFocus를 덮으므로 자동 포커스를 막는다 (MemoDialog와 같음) */}
-            <Dialog.Content container={overlay.portal} maxWidth="320px" onOpenAutoFocus={(ev) => ev.preventDefault()}>
+            <Dialog.Content container={overlay.portal} maxWidth="320px" onOpenAutoFocus={(ev) => ev.preventDefault()}
+                            onCloseAutoFocus={onCloseAutoFocus}>
                 <Dialog.Title>자동입력 방지 코드</Dialog.Title>
                 <img src={captcha.url} alt="자동입력 방지 코드" style={{display: "block", width: "100%", borderRadius: "var(--radius-3)"}}/>
                 {/* Enter로 보낸다. 폼 제출이라 한글 조합을 끝내는 Enter로는 브라우저가 보내지 않는다 */}
@@ -141,6 +147,7 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
                         mt="3"
                         autoFocus
                         value={code}
+                        aria-label="자동입력 방지 코드"
                         placeholder="자동입력 방지 코드"
                         onChange={(ev) => setCode(ev.target.value)}
                     />

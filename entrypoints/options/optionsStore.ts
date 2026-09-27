@@ -57,7 +57,10 @@ export const useOptionsStore = create<OptionsState>()((set, get) => ({
         location.hash = "";
     },
 
-    startRain: () => set({rain: Date.now()}),
+    // 동작 줄이기(prefers-reduced-motion)를 켰으면 비를 내리지 않는다
+    startRain: () => {
+        if (!matchMedia("(prefers-reduced-motion: reduce)").matches) set({rain: Date.now()});
+    },
     endRain: () => set({rain: 0})
 }));
 

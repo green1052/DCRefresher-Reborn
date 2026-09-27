@@ -42,8 +42,11 @@ export default defineContentScript({
         if (stale) {
             stale.remove();
             const {documentElement: html, body} = document;
-            // 미리보기 창은 <html> 스크롤을, Radix 다이얼로그는 <body> 스크롤·바깥 클릭을 잠근다
-            if (html.style.overflow === "hidden") html.style.overflow = "";
+            // 미리보기 창은 <html> 스크롤과 뒤 페이지(inert)를, Radix 다이얼로그는 <body> 스크롤·바깥 클릭을 잠근다
+            if (html.style.overflow === "hidden") {
+                html.style.overflow = "";
+                for (const element of body.querySelectorAll<HTMLElement>(":scope > [inert]")) element.inert = false;
+            }
             if (body.style.pointerEvents === "none") body.style.pointerEvents = "";
             body.removeAttribute("data-scroll-locked");
         }

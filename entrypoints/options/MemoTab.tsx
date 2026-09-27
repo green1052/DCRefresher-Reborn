@@ -3,6 +3,7 @@ import {useState} from "react";
 
 import {DialogActions} from "@/components/ConfirmDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
+import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import type {MemoType} from "@/core/storage/types";
 import {normalizeMemoMap, randomColor, useMemosStore} from "@/stores/memos";
@@ -32,6 +33,7 @@ const MemoFormDialog = ({
 }) => {
     const [state, setState] = useState<MemoFormState>(initial);
     const [error, setError] = useState("");
+    const {onCloseAutoFocus} = useOpenerFocus();
 
     const editing = Boolean(initial.user);
 
@@ -63,7 +65,7 @@ const MemoFormDialog = ({
 
     return (
         <Dialog.Root open onOpenChange={(next) => !next && onClose()}>
-            <Dialog.Content maxWidth="480px" aria-describedby={undefined}>
+            <Dialog.Content maxWidth="480px" aria-describedby={undefined} onCloseAutoFocus={onCloseAutoFocus}>
                 <Dialog.Title>메모 {editing ? "수정" : "추가"}</Dialog.Title>
 
                 {/* Enter로 저장한다. 폼 제출이라 한글 조합을 끝내는 Enter로는 브라우저가 제출하지 않는다 */}
@@ -149,7 +151,7 @@ const MemoFormDialog = ({
                         </Flex>
 
                         {error && (
-                            <Text size="2" color="red">
+                            <Text size="2" color="red" role="alert">
                                 {error}
                             </Text>
                         )}
@@ -200,8 +202,9 @@ export function MemoTab() {
                     <ListRow
                         key={user}
                         head={
-                            <Flex align="center" gap="2">
-                                <Box width="10px" height="10px" flexShrink="0" style={{borderRadius: "50%", background: entry.color}}/>
+                            // 편집 버튼 안에 들어가므로 div 대신 span으로 그린다
+                            <Flex as="span" align="center" gap="2">
+                                <Box as="span" width="10px" height="10px" flexShrink="0" style={{borderRadius: "50%", background: entry.color}}/>
                                 <Text weight="medium">{user}</Text>
                                 {entry.gallery && <Badge size="1" variant="soft" color="gray">{entry.gallery}</Badge>}
                             </Flex>

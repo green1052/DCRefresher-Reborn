@@ -1,9 +1,10 @@
-import {Badge, Box, Button, Card, Dialog, Flex, Heading, IconButton, Table, Tabs, Text, TextArea, TextField, Tooltip} from "@radix-ui/themes";
+import {Badge, Box, Button, Card, Dialog, Flex, Heading, IconButton, Reset, Table, Tabs, Text, TextArea, TextField, Tooltip} from "@radix-ui/themes";
 import {Download, Plus, Search, Trash2, Upload} from "lucide-react";
 import {type ReactNode, useDeferredValue, useEffect, useState} from "react";
 import type {WxtStorageItem} from "wxt/utils/storage";
 
 import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
+import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {friendlyMessage, SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
@@ -75,6 +76,7 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
 }) => {
     const [text, setText] = useState("");
     const [busy, setBusy] = useState(false);
+    const {onCloseAutoFocus} = useOpenerFocus();
 
     const submit = async (): Promise<void> => {
         setBusy(true);
@@ -87,13 +89,13 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
 
     return (
         <Dialog.Root open onOpenChange={(next) => !next && onClose()}>
-            <Dialog.Content maxWidth="520px">
+            <Dialog.Content maxWidth="520px" onCloseAutoFocus={onCloseAutoFocus}>
                 <Dialog.Title>{title}</Dialog.Title>
                 <Dialog.Description size="2" mb="3">
                     {desc}
                 </Dialog.Description>
 
-                <TextArea placeholder="JSON 데이터" value={text} rows={8} autoFocus
+                <TextArea placeholder="JSON 데이터" aria-label="JSON 데이터" value={text} rows={8} autoFocus
                           onChange={(ev) => setText(ev.target.value)}/>
 
                 <DialogActions>
@@ -107,21 +109,21 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
 /** 받침이 있으면 "을", 없으면 "를" */
 const objectParticle = (word: string): string => ((word.charCodeAt(word.length - 1) - 0xac00) % 28 > 0 ? "을" : "를");
 
-/** 표 한 줄. 줄을 누르거나 Enter/Space로 편집하고, 휴지통 버튼으로 삭제한다 */
+/** 표 한 줄. 줄을 누르면 편집하고, 휴지통 버튼으로 삭제한다 */
 export const ListRow = ({head, info, onEdit, onRemove}: {
     head: ReactNode;
     info: ReactNode;
     onEdit: () => void;
     onRemove: () => void;
 }) => (
-    <Table.Row align="center" style={{cursor: "pointer"}} tabIndex={0} onClick={onEdit}
-               onKeyDown={(ev) => {
-                   // 삭제 버튼에서 누른 Enter/Space는 버튼 몫이다. 줄까지 올라와 편집이 같이 열리지 않게 한다
-                   if (ev.target !== ev.currentTarget || (ev.key !== "Enter" && ev.key !== " ")) return;
-                   ev.preventDefault();
-                   onEdit();
-               }}>
-        <Table.RowHeaderCell>{head}</Table.RowHeaderCell>
+    <Table.Row align="center" style={{cursor: "pointer"}} onClick={onEdit}>
+        <Table.RowHeaderCell>
+            {/* 줄(tr)은 버튼이 될 수 없어 키보드·스크린 리더에는 첫 칸을 편집 버튼으로 알린다.
+                따로 onClick을 달지 않는다. 누르면(Enter/Space 포함) click이 줄로 올라가 편집이 열린다 */}
+            <Reset>
+                <button type="button" title="수정" className="refresher-row-edit">{head}</button>
+            </Reset>
+        </Table.RowHeaderCell>
         <Table.Cell>{info}</Table.Cell>
         <Table.Cell justify="end">
             {/* ghost는 음수 여백으로 칸 밖에 걸쳐 줄 가운데에서 어긋나므로 여백을 없앤다.

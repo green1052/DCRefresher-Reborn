@@ -4,6 +4,7 @@ import {Dialog} from "radix-ui";
 import {type CSSProperties, useEffect, useRef, useState, type WheelEvent} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
+import {focusedElement} from "@/components/useOpenerFocus";
 import {BLOCKED_TEXT} from "@/core/block";
 import type {ProcessedComment} from "@/core/preview/comments";
 import {useUiStore} from "@/stores/ui";
@@ -16,7 +17,7 @@ import {CountDown} from "./CountDown";
 import {ErrorBlock} from "./ErrorBlock";
 import {fitMovies} from "./fitMovies";
 import {AdminPanel} from "./Popups";
-import {postTitle, usePreviewStore} from "./previewStore";
+import {postTitle, smoothScroll, usePreviewStore} from "./previewStore";
 import {Votes} from "./Votes";
 import {WriteComment} from "./WriteComment";
 
@@ -96,22 +97,33 @@ export const Frame = () => {
     // 같은 글을 캐시로 다시 열면 visible 말고는 값이 모두 같다. hideText가 풀리면 동영상이 새로 들어온다.
     useEffect(() => (contentsBox.current ? fitMovies(contentsBox.current) : undefined), [visible, contents, commentsOnly, error, postKey, hideText]);
 
+    // 창은 비모달이라(아래 Dialog.Root) Radix가 포커스를 가두지 않는다. 연 동안 뒤 페이지를 inert로 막아 Tab·스크린 리더가 가려진 목록으로 나가지 않게 한다.
+    // 오버레이(refresher-root)는 남긴다. 버블·토스트·관리 패널이 거기 있다.
+    // 키보드로 열었으면(연 요소에 포커스 링이 보이면) 닫을 때 그 요소(목록의 제목 링크 등)로 포커스를 돌려준다. 글을 넘길 때는 visible이 그대로라 처음 연 요소가 남는다.
+    // 마우스로 연 창까지 돌려주면 Esc로 닫을 때 제목 링크에 포커스 링이 생겨 새로고침 모듈이 자동 갱신을 멈춘다.
+    // 연 요소는 스크롤 칸에 포커스를 주는 아래 효과보다 먼저 읽어야 해서 이 효과를 앞에 둔다.
+    useEffect(() => {
+        if (!visible) return;
+
+        const focused = focusedElement();
+        const opener = focused?.matches(":focus-visible") ? focused : null;
+        const html = document.documentElement;
+        const previous = html.style.overflow;
+        html.style.overflow = "hidden";
+        const blocked = document.body.querySelectorAll<HTMLElement>(":scope > :not(refresher-root, [inert])");
+        for (const element of blocked) element.inert = true;
+
+        return () => {
+            html.style.overflow = previous;
+            for (const element of blocked) element.inert = false;
+            opener?.focus({preventScroll: true});
+        };
+    }, [visible]);
+
     // 열거나 글을 바꾸면 스크롤 칸에 포커스를 줘 방향키·스페이스로 바로 스크롤되게 한다.
     useEffect(() => {
         if (visible) scroller.current?.focus({preventScroll: true});
     }, [visible, postKey]);
-
-    useEffect(() => {
-        if (!visible) return;
-
-        const html = document.documentElement;
-        const previous = html.style.overflow;
-        html.style.overflow = "hidden";
-
-        return () => {
-            html.style.overflow = previous;
-        };
-    }, [visible]);
 
     useEffect(() => {
         if (!visible) return;
@@ -203,7 +215,7 @@ export const Frame = () => {
             const from = aim.current?.key === postKey ? aim.current.top : box.scrollTop;
             const top = Math.min(Math.max(from + delta, 0), box.scrollHeight - box.clientHeight);
             aim.current = {top, key: postKey};
-            box.scrollTo({top, behavior: "smooth"});
+            box.scrollTo({top, behavior: smoothScroll()});
         } else {
             aim.current = null;
             box.scrollTop += delta;
@@ -367,14 +379,14 @@ export const Frame = () => {
                     <Flex direction="column" gap="2" className="refresher-frame-jump">
                         <Tooltip content="맨 위로" side="left" container={overlay.portal}>
                             <IconButton variant="soft" color="gray" radius="full" aria-label="맨 위로"
-                                        onClick={() => scroller.current?.scrollTo({top: 0, behavior: "smooth"})}>
+                                        onClick={() => scroller.current?.scrollTo({top: 0, behavior: smoothScroll()})}>
                                 <ArrowUp size={16}/>
                             </IconButton>
                         </Tooltip>
                         {comments !== undefined && (
                             <Tooltip content="댓글로" side="left" container={overlay.portal}>
                                 <IconButton variant="soft" color="gray" radius="full" aria-label="댓글로"
-                                            onClick={() => commentsSection.current?.scrollIntoView({behavior: "smooth", block: "start"})}>
+                                            onClick={() => commentsSection.current?.scrollIntoView({behavior: smoothScroll(), block: "start"})}>
                                     <MessageSquare size={16}/>
                                 </IconButton>
                             </Tooltip>

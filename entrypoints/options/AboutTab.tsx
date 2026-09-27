@@ -81,7 +81,7 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
                     <img src={logo} alt="" width={64} height={64} style={{borderRadius: "var(--radius-4)"}}/>
                     <Box flexGrow="1">
                         <Flex align="center" gap="2">
-                            <Heading size="5">DCRefresher Reborn</Heading>
+                            <Heading as="h2" size="5">DCRefresher Reborn</Heading>
                             {/* 연달아 5번 누르면 개발자 탭이 열린다 */}
                             <Badge variant="soft" style={{userSelect: "none"}} onClick={(ev) => useOptionsStore.getState().unlockDev(ev)}>v{version}</Badge>
                         </Flex>

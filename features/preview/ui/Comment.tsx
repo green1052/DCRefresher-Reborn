@@ -138,7 +138,7 @@ export const useTick = (ms: number): void => {
     }, [ms]);
 };
 
-/** 상대 시각. 누르면 절대 시각으로 바뀐다. 댓글과 글 머리의 작성 시각이 같이 쓴다 */
+/** 상대 시각. 누르면 절대 시각으로 바뀐다. 댓글과 글 머리의 작성 시각이 같이 쓴다. 키보드로도 누르게 버튼이다 */
 export const TimeStamp = ({date, size = "1"}: { date: string; size?: "1" | "2" }) => {
     const parsed = parseDate(date);
     const [absolute, setAbsolute] = useState(false);
@@ -146,15 +146,16 @@ export const TimeStamp = ({date, size = "1"}: { date: string; size?: "1" | "2" }
     const full = absoluteOf(parsed);
 
     return (
-        <Text size={size} color="gray" title={full} style={{cursor: "pointer", whiteSpace: "nowrap"}}
-              onClick={() => setAbsolute((x) => !x)}>
-            {Number.isNaN(parsed.getTime()) ? "이미 삭제됨" : absolute ? full : since}
+        <Text asChild size={size} color="gray" title={full} style={{whiteSpace: "nowrap"}}>
+            <button type="button" className="refresher-text-button" onClick={() => setAbsolute((x) => !x)}>
+                {Number.isNaN(parsed.getTime()) ? "이미 삭제됨" : absolute ? full : since}
+            </button>
         </Text>
     );
 };
 
 /**
- * 작성자 표시. 우클릭하면 유저 버블을 연다.
+ * 작성자 표시. 우클릭하거나 닉네임을 누르면(키보드 포함) 유저 버블을 연다.
  * fetchRatio: 글댓비가 캐시에 없으면 갤로그에서 받는다. 댓글마다 받으면 요청이 너무 많아 글쓴이에게만 켠다.
  * op: 글쓴이가 단 댓글. v5처럼 작성자 칸을 칠한다 (overlay.scss).
  */
@@ -180,14 +181,17 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     const ratio = cached ?? (typeof fetched === "object" ? fetched : undefined);
     const ratioColor = useUiStore((state) => (ratio && isLowActivity(ratio, alarm) ? state.badgeColors.ratioAlarm : state.badgeColors.ratio));
 
+    const openBubble = (x: number, y: number): void => {
+        const ui = useUiStore.getState();
+        ui.setSelected({nick: user.nick, uid: user.id, ip: user.ip});
+        ui.openBubble(x, y);
+    };
+
     const openMenu = (ev: MouseEvent): void => {
         // 목록과 같이 Shift+우클릭은 브라우저 기본 메뉴로 남긴다.
         if (ev.shiftKey) return;
         ev.preventDefault();
-
-        const ui = useUiStore.getState();
-        ui.setSelected({nick: user.nick, uid: user.id, ip: user.ip});
-        ui.openBubble(ev.clientX, ev.clientY);
+        openBubble(ev.clientX, ev.clientY);
     };
 
     const identityColor = uidColor ? undefined : "gray";
@@ -204,7 +208,16 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
 
     return (
         <Flex align="center" gap="1" minWidth="0" className="refresher-user" data-op={op || undefined} onContextMenu={openMenu} style={{cursor: "context-menu"}}>
-            <Text size="2" weight="bold" truncate>{user.nick ?? user.id ?? user.ip}</Text>
+            {/* 버블은 닉네임 바로 아래에 띄운다. 키보드로 열면 버블 안으로 포커스가 옮겨 간다 (ContentRoot의 useOpenerFocus) */}
+            <Text asChild size="2" weight="bold" truncate>
+                <button type="button" className="refresher-text-button" aria-haspopup="dialog"
+                        onClick={(ev) => {
+                            const rect = ev.currentTarget.getBoundingClientRect();
+                            openBubble(rect.left, rect.bottom);
+                        }}>
+                    {user.nick ?? user.id ?? user.ip}
+                </button>
+            </Text>
             {user.image && <img src={user.image} alt="" height={12}/>}
             {/* 유동 IP는 디시가 닉 옆에 바로 보여 주는 값이라 배지 순서와 상관없이 여기 둔다 */}
             {user.ip && <Text size="1" color={identityColor} style={{color: uidColor}} truncate>({user.ip})</Text>}
@@ -295,7 +308,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                     {depth === 0 && replyCount > 1 && (
                         <IconButton size="1" variant="ghost" color="gray" aria-label={collapsed ? "답글 펼치기" : "답글 접기"}
                                     title={collapsed ? "답글 펼치기" : "답글 접기"} onClick={() => toggleCollapse(comment.no)}>
-                            <ChevronDown size={14} style={{transform: collapsed ? "rotate(-90deg)" : undefined, transition: "transform 0.15s"}}/>
+                            <ChevronDown size={14} className="refresher-chevron" style={{transform: collapsed ? "rotate(-90deg)" : undefined}}/>
                         </IconButton>
                     )}
                 </Flex>

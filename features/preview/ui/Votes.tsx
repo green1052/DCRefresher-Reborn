@@ -58,15 +58,17 @@ export const Votes = ({post}: { post: PostInfo }) => {
         );
     };
 
+    // 숫자까지 읽히게 라벨에 넣는다. aria-label은 버튼 안의 글을 대신한다
     return (
         <Flex justify="center" align="center" gap="3" py="5">
-            <Button size="3" variant="soft" aria-label="추천" loading={voting === "U"} disabled={voting === "D"} onClick={() => void onVote("U")}>
+            <Button size="3" variant="soft" aria-label={`추천 ${upvotes || "X"}${fixedUpvotes ? ` (고정닉 ${fixedUpvotes})` : ""}`}
+                    loading={voting === "U"} disabled={voting === "D"} onClick={() => void onVote("U")}>
                 <ChevronUp size={18}/>
                 {upvotes || "X"}
                 {fixedUpvotes && <Text size="2" color="gray">({fixedUpvotes})</Text>}
             </Button>
             {downvotes !== undefined && (
-                <Button size="3" variant="soft" color="gray" aria-label="비추천" loading={voting === "D"} disabled={voting === "U"}
+                <Button size="3" variant="soft" color="gray" aria-label={`비추천 ${downvotes}`} loading={voting === "D"} disabled={voting === "U"}
                         onClick={() => void onVote("D")}>
                     <ChevronDown size={18}/>
                     {downvotes}
@@ -79,7 +81,7 @@ export const Votes = ({post}: { post: PostInfo }) => {
             </Tooltip>
             <Tooltip content="새 탭으로 열기" container={overlay.portal}>
                 <IconButton size="3" variant="ghost" color="gray" asChild>
-                    <a href={preData?.link ?? location.href} target="_blank" rel="noreferrer">
+                    <a href={preData?.link ?? location.href} target="_blank" rel="noreferrer" aria-label="새 탭으로 열기">
                         <ExternalLink size={18}/>
                     </a>
                 </IconButton>

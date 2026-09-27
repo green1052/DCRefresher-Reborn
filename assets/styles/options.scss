@@ -44,6 +44,30 @@ html body[data-scroll-locked] {
     }
 }
 
+/* 차단·메모 목록 줄의 편집 버튼(ListRow). 칸을 채워 버튼이 없던 때와 같게 놓고, Reset이 없앤 포커스 테두리만 되살린다 */
+.refresher-row-edit {
+    display: block;
+
+    &:focus-visible {
+        border-radius: var(--radius-1);
+        outline: 2px solid var(--focus-8);
+        outline-offset: 2px;
+    }
+}
+
+/* 개발자 탭 저장값의 펼치기 화살표. 펼치면(Collapsible.Trigger의 data-state) 아래로 돈다 */
+.refresher-chevron {
+    transition: transform 0.15s;
+
+    [data-state="open"] > & {
+        transform: rotate(90deg);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        transition: none;
+    }
+}
+
 /* 모듈 설정 칸, 개발자 탭 저장값을 펼치고 접는다 */
 .refresher-collapsible {
     // collapsible의 overflow: clip에 여백을 둔다. 없으면 가장자리 스위치·입력칸의 포커스 테두리가 잘린다

@@ -3,6 +3,7 @@ import {useState} from "react";
 
 import {DialogActions} from "@/components/ConfirmDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
+import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import type {BlockInputFields} from "@/stores/blocks";
@@ -23,6 +24,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
     const [gallery, setGallery] = useState(initial?.gallery ?? "");
     const [mode, setMode] = useState<DetectMode | "">(initial?.mode ?? "");
     const [error, setError] = useState("");
+    const {onCloseAutoFocus} = useOpenerFocus();
 
     const submit = async (): Promise<void> => {
         if (!content.trim()) {
@@ -55,7 +57,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
 
     return (
         <Dialog.Root open onOpenChange={(next) => !next && onClose()}>
-            <Dialog.Content maxWidth="480px">
+            <Dialog.Content maxWidth="480px" onCloseAutoFocus={onCloseAutoFocus}>
                 <Dialog.Title>
                     {TYPE_NAMES[type]} 차단 {initial ? "수정" : "추가"}
                 </Dialog.Title>
@@ -110,7 +112,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                         </Flex>
 
                         {error && (
-                            <Text size="2" color="red">
+                            <Text size="2" color="red" role="alert">
                                 {error}
                             </Text>
                         )}

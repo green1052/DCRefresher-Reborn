@@ -65,8 +65,8 @@ const Swatch = ({color, selected, label, onClick}: {
             cursor: "pointer",
             background: `#${color}`,
             border: "1px solid var(--gray-a7)",
-            outline: selected ? "2px solid var(--accent-9)" : "none",
-            outlineOffset: 1
+            // 고른 색은 한 칸 띄운 링으로 보인다. outline은 비워 두어야 키보드 포커스 링이 보인다
+            boxShadow: selected ? "0 0 0 1px var(--color-panel-solid), 0 0 0 3px var(--accent-9)" : undefined
         }}
     />
 );
@@ -204,10 +204,10 @@ export const WriteComment = () => {
             } else if (response.message === "captcha") {
                 // v2 체크박스를 요구하거나 v3 재전송도 막히면 원문 페이지에서만 풀 수 있다.
                 useUiStore.getState().showToast(
-                    "자동입력 방지 확인이 필요합니다. 원문에서 작성해 주세요. (클릭하면 원문 열기)",
+                    "자동입력 방지 확인이 필요합니다. 원문에서 작성해 주세요.",
                     "warning",
                     8000,
-                    () => window.open(preData.link, "_blank")
+                    {label: "원문 열기", run: () => window.open(preData.link, "_blank")}
                 );
             } else {
                 useUiStore.getState().showToast(failMessage(response) || "댓글을 작성하지 못했습니다.", "error");
@@ -260,6 +260,7 @@ export const WriteComment = () => {
                     <TextField.Root
                         size="2"
                         value={nick}
+                        aria-label="닉네임"
                         placeholder="닉네임"
                         maxLength={20}
                         style={{flex: 1}}
@@ -269,6 +270,7 @@ export const WriteComment = () => {
                         size="2"
                         type="password"
                         value={passwordEdited ? password : ""}
+                        aria-label="비밀번호"
                         placeholder={passwordEdited ? "비밀번호" : pwSaved ? "비밀번호 (저장됨)" : "비밀번호 (자동 생성)"}
                         style={{flex: 1}}
                         onChange={(ev) => {
@@ -287,6 +289,7 @@ export const WriteComment = () => {
                     resize="vertical"
                     defaultValue={initialText}
                     disabled={dccons.length > 0}
+                    aria-label={`${mode} 입력`}
                     placeholder={
                         dccons.length > 0 ? "디시콘이 선택되었습니다."
                             : txtcon ? "글자콘 입력... (최대 20자, 4줄, 줄당 5자로 나뉨)"
@@ -375,7 +378,7 @@ export const WriteComment = () => {
 
             <Text as="p" size="1" color="gray" mt="2">
                 {login ? (accountId ?? "회원 계정") : (
-                    <Link size="1" href="#" onClick={(ev) => {
+                    <Link size="1" href="#" aria-expanded={showInputs} onClick={(ev) => {
                         ev.preventDefault();
                         toggleInputs();
                     }}>

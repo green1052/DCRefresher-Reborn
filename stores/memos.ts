@@ -18,8 +18,19 @@ interface MemosState {
 const isMemoEntry = (value: unknown): value is MemoEntry =>
     isRecord(value) && typeof value.text === "string" && typeof value.color === "string" && (value.gallery === undefined || typeof value.gallery === "string");
 
-/** 새 메모의 기본 색 */
-export const randomColor = (): string => `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0")}`;
+/**
+ * 새 메모의 기본 색. 색상만 무작위로 고르고 채도(60%)·명도(50%)는 고정한다. 아무 RGB나 고르면 흰색·검은색에 가까운 색이 나와 한쪽 테마에서 안 보인다.
+ * 색 입력칸(input[type=color])이 #rrggbb만 받으므로 HSL을 RGB로 바꾼다
+ */
+export const randomColor = (): string => {
+    const hue = Math.random() * 360;
+    const channel = (n: number): string => {
+        const k = (n + hue / 30) % 12;
+        const value = 0.5 - 0.3 * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+        return Math.round(value * 255).toString(16).padStart(2, "0");
+    };
+    return `#${channel(0)}${channel(8)}${channel(4)}`;
+};
 
 /** 저장소·가져오기 값에서 유효한 항목만 남긴다 */
 export const normalizeMemoMap = (value: unknown): MemoMap =>

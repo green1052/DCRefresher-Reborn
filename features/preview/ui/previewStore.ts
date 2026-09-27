@@ -136,6 +136,9 @@ export const parseDate = (value: string): Date => {
     return new Date(`${year}${value.replace(/\./g, "-").replace(" ", "T")}+09:00`);
 };
 
+/** 창 안의 부드러운 스크롤(맨 위로·댓글로 등). 동작 줄이기(prefers-reduced-motion)를 켰으면 바로 옮긴다 */
+export const smoothScroll = (): ScrollBehavior => (matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
+
 /** `[말머리] 제목`. 둘 다 평문이므로 HTML이 아니라 텍스트로 렌더링한다 */
 export const postTitle = (post: PostInfo): string => (post.header ? `[${post.header}] ${post.title ?? ""}` : (post.title ?? ""));
 

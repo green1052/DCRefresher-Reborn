@@ -79,7 +79,8 @@ const Sidebar = ({tabs, tab, onSelect}: {
         <Flex align="center" gap="3" px="2">
             <img src={LOGO_URL} alt="" width={36} height={36} style={{borderRadius: "var(--radius-3)"}}
                  onClick={() => useOptionsStore.getState().startRain()}/>
-            <Heading size="3">DCRefresher Reborn</Heading>
+            {/* h1은 본문의 탭 제목 하나만 둔다. 모양만 제목으로 그린다 */}
+            <Heading asChild size="3"><p>DCRefresher Reborn</p></Heading>
         </Flex>
 
         <Flex asChild direction={{initial: "row", md: "column"}} gap="1" wrap={{initial: "wrap", md: "nowrap"}}>

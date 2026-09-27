@@ -2,11 +2,14 @@ import {Button, Dialog, Flex, Skeleton, Switch, Text} from "@radix-ui/themes";
 import {useEffect, useState} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
+import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {ajax} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import type {DcinsideDccon, DcinsideDcconDetail, DcinsideDcconDetailList} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 import {csrfBody} from "@/utils/cookie";
+
+import {smoothScroll} from "./previewStore";
 
 /** 디시콘 패키지 목록 캐시. 창을 닫았다 열어도 다시 받지 않고, 새로 산 디시콘이 보이도록 10분 뒤 다시 받는다 */
 let listCache: { list: DcinsideDcconDetailList[]; at: number } | null = null;
@@ -57,6 +60,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
     const [bigDccon, setBigDccon] = useState(false);
     const [selected, setSelected] = useState<DcinsideDccon[]>([]);
     const [loading, setLoading] = useState(!cached);
+    const focus = useOpenerFocus();
 
     const openPackage = (pack: DcinsideDcconDetailList): void => {
         setActivePackage(pack.package_idx);
@@ -114,7 +118,8 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
 
     return (
         <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
-            <Dialog.Content container={overlay.portal} maxWidth="560px" onOpenAutoFocus={(ev) => ev.preventDefault()}>
+            <Dialog.Content container={overlay.portal} maxWidth="560px" onOpenAutoFocus={focus.onOpenAutoFocus}
+                            onCloseAutoFocus={focus.onCloseAutoFocus}>
                 <Flex justify="between" align="center" mb="3">
                     <Dialog.Title mb="0">디시콘</Dialog.Title>
                     <Flex gap="4">
@@ -153,7 +158,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                                 title={pack.title}
                                 onClick={(ev) => {
                                     openPackage(pack);
-                                    ev.currentTarget.scrollIntoView({behavior: "smooth", block: "nearest", inline: "center"});
+                                    ev.currentTarget.scrollIntoView({behavior: smoothScroll(), block: "nearest", inline: "center"});
                                 }}
                             >
                                 <img src={pack.main_img_url} alt={pack.title}/>

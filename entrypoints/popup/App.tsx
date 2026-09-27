@@ -147,7 +147,7 @@ function ModulesSection() {
                     );
                 })}
             </Grid>
-            {failed && <Text as="p" size="1" color="red" align="center" mt="2">저장하지 못했습니다. 팝업을 닫았다가 다시 열어 주세요.</Text>}
+            {failed && <Text as="p" size="1" color="red" align="center" mt="2" role="alert">저장하지 못했습니다. 팝업을 닫았다가 다시 열어 주세요.</Text>}
         </Box>
     );
 }

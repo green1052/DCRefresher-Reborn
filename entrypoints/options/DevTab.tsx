@@ -82,7 +82,7 @@ const StorageEntry = ({name, value, onDelete}: { name: string; value: unknown; o
                 <Flex align="center" gap="2">
                     <Collapsible.Trigger asChild>
                         <IconButton size="1" variant="ghost" color="gray" aria-label={open ? "접기" : "펼치기"}>
-                            <ChevronRight size={14} style={{transform: open ? "rotate(90deg)" : undefined, transition: "transform 0.15s"}}/>
+                            <ChevronRight size={14} className="refresher-chevron"/>
                         </IconButton>
                     </Collapsible.Trigger>
                     <Code size="2" variant="ghost" style={{flex: 1, minWidth: 0, overflowWrap: "anywhere"}}>{name}</Code>

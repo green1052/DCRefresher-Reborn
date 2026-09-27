@@ -43,7 +43,8 @@ export interface ToastData {
     content: string;
     type: ToastLevel;
     autoClose: number;
-    onClick?: () => void;
+    /** 토스트에 붙는 버튼 (되돌리기 등). 누르면 토스트를 닫고 run을 부른다 */
+    action?: { label: string; run: () => void };
 }
 
 export interface SelectedUser {
@@ -78,7 +79,7 @@ interface UiState {
     /** 차단 모듈이 꺼져 있으면 null이고, 미리보기도 가리지 않는다 */
     blockView: BlockView | null;
 
-    showToast: (content: string, type?: ToastLevel, autoClose?: number, onClick?: () => void) => void;
+    showToast: (content: string, type?: ToastLevel, autoClose?: number, action?: ToastData["action"]) => void;
     dismissToast: (id?: number) => void;
     setSelected: (user: SelectedUser) => void;
     openBubble: (x: number, y: number) => void;
@@ -100,8 +101,8 @@ export const useUiStore = create<UiState>((set, get) => ({
     ratios: null,
     blockView: null,
 
-    showToast: (content, type = "info", autoClose = 5000, onClick) => {
-        set({toast: {id: ++toastSeq, content, type, autoClose, onClick}});
+    showToast: (content, type = "info", autoClose = 5000, action) => {
+        set({toast: {id: ++toastSeq, content, type, autoClose, action}});
     },
 
     dismissToast: (id) => {

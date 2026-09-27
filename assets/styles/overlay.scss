@@ -56,6 +56,10 @@
     z-index: 1;
     max-width: 360px;
     animation: refresher-rise 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
+    }
 }
 
 /* ===== 우클릭 버블 앵커 ===== */
@@ -159,6 +163,11 @@
     pointer-events: none;
     animation: refresher-skip-hint-bottom 450ms cubic-bezier(0.19, 1, 0.22, 1);
 
+    // 위쪽 안내는 animation-name만 바꾸므로 길이를 0으로 두면 둘 다 멈춘다
+    @media (prefers-reduced-motion: reduce) {
+        animation-duration: 0s;
+    }
+
     p {
         position: relative;
         top: 20%;
@@ -191,6 +200,32 @@
     from {
         opacity: 0;
         transform: translateY(-40%);
+    }
+}
+
+/* 글자처럼 보이는 버튼 (Comment.tsx의 작성자 닉네임·작성 시각). :where로 명시도를 0으로 두어 Radix Text의 크기·굵기·색이 이긴다 */
+:where(.refresher-text-button) {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    cursor: pointer;
+}
+
+.refresher-text-button:focus-visible {
+    outline: 2px solid var(--focus-8);
+    outline-offset: 2px;
+    border-radius: var(--radius-1);
+}
+
+/* 답글 접기 버튼의 화살표 (Comment.tsx) */
+.refresher-chevron {
+    transition: transform 0.15s;
+
+    @media (prefers-reduced-motion: reduce) {
+        transition: none;
     }
 }
 
@@ -425,8 +460,9 @@
         }
     }
 
+    // 읽을 수 있게 본문용 회색(11)을 쓴다. 9는 대비가 3:1쯤이다
     &[data-deleted] .refresher-comment-html {
-        color: var(--gray-a9);
+        color: var(--gray-11);
     }
 }
 

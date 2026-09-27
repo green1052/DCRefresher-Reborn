@@ -1,6 +1,8 @@
 import {Button, Dialog, Flex} from "@radix-ui/themes";
 import type {ReactNode} from "react";
 
+import {useOpenerFocus} from "@/components/useOpenerFocus";
+
 /** 다이얼로그 하단 버튼 줄. 취소(닫기) 버튼 뒤에 children을 둔다. cancelLabel이 null이면 취소 버튼을 뺀다 */
 export const DialogActions = ({cancelLabel = "취소", children}: { cancelLabel?: string | null; children?: ReactNode }) => (
     <Flex gap="3" justify="end" mt="4">
@@ -34,19 +36,23 @@ export const ConfirmDialog = ({
                                   danger,
                                   onConfirm,
                                   onClose
-                              }: ConfirmDialogProps) => (
-    <Dialog.Root open onOpenChange={(next) => !next && onClose()}>
-        <Dialog.Content maxWidth="440px" aria-describedby={undefined}>
-            <Dialog.Title>{title}</Dialog.Title>
+                              }: ConfirmDialogProps) => {
+    const {onCloseAutoFocus} = useOpenerFocus();
 
-            <DialogActions cancelLabel={cancelLabel}>
-                <Button color={danger ? "red" : undefined} variant={danger ? "soft" : "solid"} onClick={onConfirm}>
-                    {confirmLabel}
-                </Button>
-            </DialogActions>
-        </Dialog.Content>
-    </Dialog.Root>
-);
+    return (
+        <Dialog.Root open onOpenChange={(next) => !next && onClose()}>
+            <Dialog.Content maxWidth="440px" aria-describedby={undefined} onCloseAutoFocus={onCloseAutoFocus}>
+                <Dialog.Title>{title}</Dialog.Title>
+
+                <DialogActions cancelLabel={cancelLabel}>
+                    <Button color={danger ? "red" : undefined} variant={danger ? "soft" : "solid"} onClick={onConfirm}>
+                        {confirmLabel}
+                    </Button>
+                </DialogActions>
+            </Dialog.Content>
+        </Dialog.Root>
+    );
+};
 
 /** 확인 버튼만 있는 알림. message가 없으면 그리지 않는다 */
 export const Notice = ({message, onClose}: { message: string | null; onClose: () => void }) =>

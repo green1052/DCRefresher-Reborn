@@ -226,16 +226,19 @@ export function DataTab() {
                     클라우드 사용량: {kilobytes(cloud.used)} / {kilobytes(CLOUD_QUOTA)}
                     {(cloud.manual || cloud.auto) && ` (수동 ${kilobytes(cloud.manual?.size ?? 0)} · 자동 ${kilobytes(cloud.auto?.size ?? 0)})`}
                 </Text>
-                <Flex gap="2" wrap="wrap">
-                    <Button variant="soft" disabled={loading} onClick={() => void backupCloud()}>
-                        <CloudUpload size={14}/> 백업
-                    </Button>
-                    <Button variant="soft" disabled={loading} onClick={() => setRestoreOpen(true)}>
-                        <CloudDownload size={14}/> 복원
-                    </Button>
-                </Flex>
-
+                {/* 복원 버튼을 Dialog.Trigger로 둬야 닫을 때 Radix가 그 버튼으로 포커스를 돌려준다 */}
                 <Dialog.Root open={restoreOpen} onOpenChange={setRestoreOpen}>
+                    <Flex gap="2" wrap="wrap">
+                        <Button variant="soft" disabled={loading} onClick={() => void backupCloud()}>
+                            <CloudUpload size={14}/> 백업
+                        </Button>
+                        <Dialog.Trigger>
+                            <Button variant="soft" disabled={loading}>
+                                <CloudDownload size={14}/> 복원
+                            </Button>
+                        </Dialog.Trigger>
+                    </Flex>
+
                     <Dialog.Content maxWidth="420px">
                         <Dialog.Title>어느 백업으로 복원할까요?</Dialog.Title>
                         <SegmentedControl.Root value={restoreMode} onValueChange={(value) => arrayIncludes(objectKeys(RESTORE_DESCRIPTIONS), value) && setRestoreMode(value)} mb="3">

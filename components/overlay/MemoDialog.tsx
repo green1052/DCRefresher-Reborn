@@ -3,6 +3,7 @@ import {Shuffle} from "lucide-react";
 import {useState} from "react";
 import {arrayIncludes} from "ts-extras";
 
+import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {queryString} from "@/core/http/urls";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import type {MemoType} from "@/core/storage/types";
@@ -18,6 +19,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const memos = useMemosStore((s) => s.memos);
     const setMemo = useMemosStore((s) => s.setMemo);
     const removeMemo = useMemosStore((s) => s.removeMemo);
+    const {onCloseAutoFocus} = useOpenerFocus();
 
     // 지금 보고 있는 갤러리. 이 갤러리에서만 보이는 메모로 저장할 때 쓴다
     const gallery = queryString("id");
@@ -61,7 +63,8 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
 
     return (
         // shadow root 안에서는 FocusScope가 autoFocus된 입력칸을 알아보지 못하고 첫 버튼으로 포커스를 옮기므로 막는다
-        <Dialog.Content container={overlay.portal} maxWidth="400px" onOpenAutoFocus={(ev) => ev.preventDefault()}>
+        <Dialog.Content container={overlay.portal} maxWidth="400px" onOpenAutoFocus={(ev) => ev.preventDefault()}
+                        onCloseAutoFocus={onCloseAutoFocus}>
             <Dialog.Title>메모</Dialog.Title>
             <Dialog.Description size="2" color="gray" mb="4">
                 {MEMO_TYPE_NAMES[type]}: <Text weight="bold" highContrast>{value}</Text>
@@ -87,6 +90,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
 
                     <TextField.Root
                         maxLength={160}
+                        aria-label="메모"
                         placeholder="메모를 입력해 주세요 (160자 제한)"
                         value={text}
                         onChange={(ev) => setForm({...form, text: ev.target.value})}
