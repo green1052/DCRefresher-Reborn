@@ -1,218 +1,23 @@
-import {Badge, Box, Button, Callout, Flex, Heading, IconButton, Separator, Spinner, Text, Theme, Tooltip} from "@radix-ui/themes";
-import {ArrowUp, ChevronDown, ChevronUp, CircleAlert, Clock, ExternalLink, Eye, Link2, MessageSquare, RotateCw} from "lucide-react";
-import {Collapsible, Dialog} from "radix-ui";
-import {type CSSProperties, Fragment, useEffect, useRef, useState, type WheelEvent} from "react";
+import {Box, Button, Flex, Heading, IconButton, Separator, Spinner, Text, Theme, Tooltip} from "@radix-ui/themes";
+import {ArrowUp, Eye, MessageSquare, RotateCw} from "lucide-react";
+import {Dialog} from "radix-ui";
+import {type CSSProperties, useEffect, useRef, useState, type WheelEvent} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
-import {getEntry, setEntry} from "@/core/preview/cache";
-import {captchaImage, viewUrl, vote} from "@/core/preview/request";
 import type {ProcessedComment} from "@/core/preview/comments";
-import type {PostInfo} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 import {isTyping} from "@/utils/event";
-import {isGalleryManager} from "@/utils/user";
 
 import {adjacentPreData} from "../rows";
-import {Comment, TimeStamp, useTick, UserCard} from "./Comment";
+import {TimeStamp, UserCard} from "./Comment";
+import {CommentList} from "./CommentList";
+import {CountDown} from "./CountDown";
+import {ErrorBlock} from "./ErrorBlock";
+import {fitMovies} from "./fitMovies";
 import {AdminPanel} from "./Popups";
-import {BLOCKED_TEXT, type ErrorState, parseDate, postTitle, usePreviewStore} from "./previewStore";
+import {BLOCKED_TEXT, postTitle, usePreviewStore} from "./previewStore";
+import {Votes} from "./Votes";
 import {WriteComment} from "./WriteComment";
-
-/**
- * 디시 동영상 iframe(movie_view 등 같은 출처)은 `$('#movieIcon'+no, parent.document).height(...)`로 자기 크기를 맞춘다.
- * 미리보기는 shadow DOM 안이라 그 선택자에 걸리지 않아 기본 300×150으로 잘리므로, 안쪽 내용을 재서 대신 맞춘다.
- * 다른 출처 iframe은 안을 읽을 수 없어 그대로 둔다.
- */
-const fitMovies = (root: HTMLElement): (() => void) => {
-    const observers = new Map<HTMLIFrameElement, ResizeObserver>();
-    const listeners = new AbortController();
-
-    for (const frame of root.querySelectorAll<HTMLIFrameElement>("iframe")) {
-        const fit = (): void => {
-            // 프레임당 옵저버는 하나다. 다시 로드되면 떠난 문서를 보던 옵저버를 끊는다.
-            observers.get(frame)?.disconnect();
-
-            const doc = frame.contentDocument;
-            // movie_view는 .v-container, 그 밖엔 body의 첫 요소를 잰다.
-            const container = doc?.querySelector<HTMLElement>(".v-container") ?? doc?.body?.firstElementChild;
-            if (!doc || !(container instanceof doc.defaultView!.HTMLElement)) return;
-
-            // 글꼴·배율에 따라 1px만 넘쳐도 안쪽에 스크롤바가 생겨 내용을 가리므로 끈다.
-            doc.documentElement.style.overflow = "hidden";
-
-            const observer = new ResizeObserver(() => {
-                // 다시 로드되는 중(load 전)엔 떠난 문서의 요소가 0으로 재어져 프레임이 접히므로 무시한다.
-                if (frame.contentDocument !== doc) return;
-                // 컨테이너 크기만 주면 잘린다. 안쪽 body 여백(양쪽 대칭)을 더하고 소수점은 올린다.
-                const {width, height} = container.getBoundingClientRect();
-                frame.style.width = `${Math.ceil(width + container.offsetLeft * 2)}px`;
-                frame.style.height = `${Math.ceil(height + container.offsetTop * 2)}px`;
-            });
-            observer.observe(container);
-            observers.set(frame, observer);
-        };
-
-        if (frame.contentDocument?.readyState === "complete" && frame.contentDocument.URL !== "about:blank") fit();
-        // 다시 로드되면(새로고침 등) 안쪽 문서가 바뀌므로 load마다 다시 맞춘다.
-        frame.addEventListener("load", fit, {signal: listeners.signal});
-    }
-
-    return () => {
-        listeners.abort();
-        for (const observer of observers.values()) observer.disconnect();
-    };
-};
-
-const Remaining = ({expire}: { expire: Date }) => {
-    // 1시간 미만이면 초까지 보여 주므로 1초마다 다시 그린다.
-    useTick(1000);
-
-    const diff = expire.getTime() - Date.now();
-    const h = Math.floor(diff / 3_600_000);
-    const m = Math.floor((diff % 3_600_000) / 60000);
-    const s = Math.floor((diff % 60000) / 1000);
-
-    return (
-        <Tooltip content="자동 삭제까지 남은 시간" container={overlay.portal}>
-            <Badge color="orange" variant="soft">
-                <Clock size={12}/>
-                {diff <= 0 ? "만료됨" : h > 0 ? `${h}시간 ${m}분` : `${m}분 ${s}초`}
-            </Badge>
-        </Tooltip>
-    );
-};
-
-// 만료 시각이 있는 글에서만 Remaining을 그린다. 대부분의 글엔 없으니 1초 타이머를 돌리지 않는다.
-const CountDown = () => {
-    const expire = usePreviewStore((s) => s.post?.expire);
-    const date = expire ? parseDate(expire) : undefined;
-    return date && !Number.isNaN(date.getTime()) ? <Remaining expire={date}/> : null;
-};
-
-const Votes = ({post}: { post: PostInfo }) => {
-    const preData = usePreviewStore((s) => s.preData);
-    const {upvotes, fixedUpvotes, downvotes} = post;
-    // 보내는 중인 쪽. 연타로 추천 POST가 두 번 가지 않게 막는다.
-    const [voting, setVoting] = useState<"U" | "D" | null>(null);
-
-    const onVote = async (mode: "U" | "D"): Promise<void> => {
-        if (!preData || voting) return;
-        const signal = usePreviewStore.getState().signalId;
-        setVoting(mode);
-        try {
-            let code: string | undefined;
-            if (post.requireCaptcha) {
-                code = await usePreviewStore.getState().openCaptcha(captchaImage(preData, "recommend"));
-                if (!code) return;
-            }
-
-            const result = await vote(preData, post, mode, code);
-            if (result.success) {
-                const counts = mode === "U"
-                    ? {upvotes: result.counts ?? upvotes ?? "X", fixedUpvotes: result.fixedCounts || undefined}
-                    : {downvotes: result.counts ?? downvotes};
-                // 응답 전에 다른 글로 넘어갔으면 숫자는 고치지 않고 알림만 띄운다.
-                // 함수형 setState로 지금 post를 읽어야 동시에 끝난 추천·비추천이 서로 덮지 않는다.
-                usePreviewStore.setState((s) => (s.signalId !== signal || !s.post ? {} : {post: {...s.post, ...counts}}));
-                // 1분 안에 다시 열면 캐시 본문을 쓰므로 거기 숫자도 고친다.
-                const cached = getEntry(preData)?.post;
-                if (cached) setEntry(preData, {post: {...cached, ...counts}});
-                useUiStore
-                    .getState()
-                    .showToast(`${mode === "U" ? "추천" : "비추천"}되었습니다.`);
-            } else {
-                useUiStore.getState().showToast(result.message ?? "처리하지 못했습니다.", "error");
-            }
-        } catch {
-            useUiStore.getState().showToast("추천 처리 중 오류가 발생했습니다.", "error");
-        } finally {
-            setVoting(null);
-        }
-    };
-
-    // 목록 쿼리(검색어·페이지)를 뺀 글 주소를 복사한다.
-    const onShare = (): void => {
-        if (!preData) return;
-        navigator.clipboard.writeText(viewUrl(preData.link, preData.gallery, preData.id)).then(
-            () => useUiStore.getState().showToast("링크를 복사했습니다."),
-            () => useUiStore.getState().showToast("링크를 복사하지 못했습니다.", "error")
-        );
-    };
-
-    return (
-        <Flex justify="center" align="center" gap="3" py="5">
-            <Button size="3" variant="soft" aria-label="추천" loading={voting === "U"} disabled={voting === "D"} onClick={() => void onVote("U")}>
-                <ChevronUp size={18}/>
-                {upvotes || "X"}
-                {fixedUpvotes && <Text size="2" color="gray">({fixedUpvotes})</Text>}
-            </Button>
-            {downvotes !== undefined && (
-                <Button size="3" variant="soft" color="gray" aria-label="비추천" loading={voting === "D"} disabled={voting === "U"}
-                        onClick={() => void onVote("D")}>
-                    <ChevronDown size={18}/>
-                    {downvotes}
-                </Button>
-            )}
-            <Tooltip content="링크 복사" container={overlay.portal}>
-                <IconButton size="3" variant="ghost" color="gray" aria-label="링크 복사" onClick={onShare}>
-                    <Link2 size={18}/>
-                </IconButton>
-            </Tooltip>
-            <Tooltip content="새 탭으로 열기" container={overlay.portal}>
-                <IconButton size="3" variant="ghost" color="gray" asChild>
-                    <a href={preData?.link ?? location.href} target="_blank" rel="noreferrer">
-                        <ExternalLink size={18}/>
-                    </a>
-                </IconButton>
-            </Tooltip>
-        </Flex>
-    );
-};
-
-const ErrorBlock = ({error}: { error: ErrorState }) => {
-    const preData = usePreviewStore((s) => s.preData);
-    const {detail, status, adult} = error;
-    // 삭제된 글은 다시 받아도 같다. 원문 오류(요청 주소 등)도 도움이 안 되므로 안내만 둔다
-    const deleted = status === 404;
-
-    let text: string;
-    if (adult) text = "성인 인증이 필요한 글입니다. 원문에서 확인해 주세요.";
-    else if (status && status >= 400 && status < 500) text = "게시글이 삭제되었거나 존재하지 않습니다.";
-    else if (status && status >= 500) text = "서버가 불안정합니다. 잠시 후 다시 시도해주세요.";
-    else if (/fetch|network|timed out/i.test(detail)) text = "서버 또는 브라우저 연결에 실패했습니다.";
-    else text = "게시글 구조를 해석하는 데 실패했습니다.";
-
-    return (
-        <Callout.Root color={adult ? "orange" : "red"} my="4">
-            <Callout.Icon><CircleAlert size={16}/></Callout.Icon>
-            <Callout.Text>
-                {text} {!adult && !deleted && <Text size="1" color="gray">({detail})</Text>}
-            </Callout.Text>
-            <Flex gap="2">
-                {/* 성인 인증은 원문 페이지에서만 된다. 인증한 뒤 다시 시도하면 미리보기로 볼 수 있다 */}
-                {adult && (
-                    <Button size="1" variant="soft" color="orange" asChild>
-                        <a href={preData?.link ?? location.href} target="_blank" rel="noreferrer">
-                            <ExternalLink size={14}/>
-                            원문 열기
-                        </a>
-                    </Button>
-                )}
-                {!deleted && (
-                    <Button
-                        size="1"
-                        variant="soft"
-                        color={adult ? "gray" : "red"}
-                        // 같은 글을 다시 열면 컨트롤러가 제자리에서 다시 받는다
-                        onClick={() => preData && usePreviewStore.getState().requestOpen(preData, usePreviewStore.getState().commentsOnly)}
-                    >
-                        다시 시도
-                    </Button>
-                )}
-            </Flex>
-        </Callout.Root>
-    );
-};
 
 /**
  * 목록에서 앞(-1)/뒤(1) 글로 넘어간다. PageUp/Down과 스크롤 끝 넘기기가 같이 쓴다.
@@ -261,57 +66,6 @@ const SkipHint = ({dir}: { dir: number }) => (
         <p>한번 더 스크롤 하면 {dir < 0 ? "다음" : "이전"} 게시글을 봅니다.</p>
     </div>
 );
-
-const CommentList = () => {
-    const comments = usePreviewStore((s) => s.comments)!;
-    const collapsed = usePreviewStore((s) => s.collapsed);
-    const revealed = useUiStore((s) => s.blockView?.revealed === true);
-
-    // 숨김 차단과 접힌 같은 댓글은 '가린 내용 보기' 동안만 (흐리게) 그린다. 블러 차단은 그려 두고 overlay.scss가 흐린다.
-    // 트리 선과 답글 수도 그리는 댓글만 센다.
-    const shown = new Set(revealed ? comments : comments.filter((comment) => comment.blocked !== "hide" && comment.duplicates !== 0));
-    const parents = comments.filter((comment) => comment.depth === 0);
-    // 답글을 쓰레드 첫 댓글 번호(c_no)로 한 번에 묶는다. 부모마다 전체를 훑으면 O(n²)이다.
-    const repliesOf = Map.groupBy(comments.filter((comment) => comment.depth === 1 && shown.has(comment)), (comment) => comment.c_no);
-    // 문서를 querySelector로 훑으므로 댓글마다가 아니라 여기서 한 번 잰다.
-    // 모듈 전역에 두면 페이지를 다 읽기 전에 잰 false가 굳는다.
-    const isAdmin = isGalleryManager();
-
-    return (
-        <Box py="1">
-            {parents.map((parent) => {
-                const replies = repliesOf.get(parent.no) ?? [];
-
-                // 부모를 숨겼으면 답글을 들여쓰지 않고 그 자리에 그린다. 이어 줄 트리 선이 없다.
-                if (!shown.has(parent)) {
-                    return (
-                        <Fragment key={parent.no}>
-                            {replies.map((child) => <Comment key={child.no} comment={child} depth={0} replyCount={0} isAdmin={isAdmin}/>)}
-                        </Fragment>
-                    );
-                }
-
-                const isCollapsed = collapsed.has(parent.no);
-
-                return (
-                    <Fragment key={parent.no}>
-                        <Comment comment={parent} depth={0} replyCount={replies.length} threadOpen={!isCollapsed && replies.length > 0} isAdmin={isAdmin}/>
-                        {/* 접고 펼 때 높이를 움직인다 (overlay.scss). 처음 그릴 때는 Radix가 애니메이션을 건너뛴다 */}
-                        {replies.length > 0 && (
-                            <Collapsible.Root open={!isCollapsed}>
-                                <Collapsible.Content className="refresher-replies">
-                                    {replies.map((child, index) => (
-                                        <Comment key={child.no} comment={child} depth={1} replyCount={0} lastReply={index === replies.length - 1} isAdmin={isAdmin}/>
-                                    ))}
-                                </Collapsible.Content>
-                            </Collapsible.Root>
-                        )}
-                    </Fragment>
-                );
-            })}
-        </Box>
-    );
-};
 
 export const Frame = () => {
     const visible = usePreviewStore((s) => s.visible);

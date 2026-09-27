@@ -5,7 +5,6 @@ import {eventBus} from "@/core/eventbus/bus";
 import {isBlocked} from "@/core/block";
 import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
-import type {ModuleContext, SettingGroup, SettingsSchema} from "@/core/module/types";
 import type {DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
@@ -17,101 +16,8 @@ import {getEntry, setEntry} from "@/core/preview/cache";
 import {ADULT_ERROR} from "@/core/preview/parser";
 import {blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {adjacentPreData, buildPreData, isBlurHidden, isTextPost} from "./rows";
-import {BLOCK_DAYS, BLOCKED_TEXT, type ErrorState, type ManageKind, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
-
-const SHORTCUT_GROUP: SettingGroup = {name: "관리 단축키", desc: "관리 권한이 있을 때 미리보기에서 키를 두 번 누르면 게시글을 삭제하거나 작성자를 차단합니다."};
-const PRESET_GROUP: SettingGroup = {name: "차단 프리셋", desc: "차단 키로 차단할 때 쓰는 값입니다."};
-const FRAME_GROUP: SettingGroup = {name: "미리보기 창", desc: "미리보기 창의 너비와 바깥 배경입니다."};
-
-const settings = {
-    previewWidth: {
-        type: "range",
-        group: FRAME_GROUP,
-        name: "창 너비",
-        desc: "미리보기 창의 너비입니다. 브라우저 창이 좁으면 그에 맞춰 줄어듭니다.",
-        default: 1200,
-        min: 700,
-        max: 1600,
-        step: 50,
-        unit: "px"
-    },
-    // v5와 같은 키라 마이그레이션한 값을 그대로 쓴다
-    toggleBackgroundBlur: {
-        type: "check",
-        group: FRAME_GROUP,
-        name: "바깥 배경 흐리게",
-        desc: "미리보기 창 바깥 배경을 흐리게 처리합니다. (성능이 떨어질 수 있음)",
-        default: false
-    },
-    // v5와 같은 키
-    scrollToSkip: {
-        type: "check",
-        name: "스크롤하여 게시글 이동",
-        desc: "미리보기 맨 아래에서 한 번 더 스크롤하면 이전(번호가 작은) 게시글로, 맨 위에서는 다음(번호가 큰) 게시글로 넘어갑니다.",
-        default: true
-    },
-    tooltipMode: {type: "check", name: "미니 미리보기 표시", desc: "게시글에 마우스를 올리면 미리보기를 표시합니다.", default: false},
-    tooltipMediaHide: {type: "check", name: "미니 미리보기 미디어 숨기기", desc: "미니 미리보기에서 이미지와 동영상을 숨깁니다.", default: false},
-    tooltipDelay: {
-        type: "range",
-        name: "미니 미리보기 딜레이",
-        desc: "미니 미리보기가 표시되기까지의 지연 시간입니다.",
-        default: 0,
-        min: 0,
-        max: 1000,
-        step: 50,
-        unit: "ms"
-    },
-    reversePreviewKey: {type: "check", name: "미리보기 키 반전", desc: "좌클릭으로 미리보기, 우클릭으로 게시글 이동을 사용합니다.", default: false},
-    longPressDelay: {
-        type: "range",
-        name: "길게 누르기 판정 시간",
-        desc: "마우스 오른쪽 버튼을 해당 시간 이상 눌렀다 뗄 때 기본 우클릭 메뉴가 나오게 합니다. (Windows 전용 — Shift+우클릭은 어디서나 기본 메뉴)",
-        default: 300,
-        min: 200,
-        max: 2000,
-        step: 50,
-        unit: "ms"
-    },
-    colorPreviewLink: {type: "check", name: "게시글 URL 변경", desc: "미리보기로 본 게시글의 주소와 제목을 변경합니다.", default: true},
-    autoRefreshComment: {type: "check", name: "댓글 자동 새로고침", desc: "일정 주기로 댓글을 자동으로 새로고침합니다.", default: false},
-    commentRefreshInterval: {
-        type: "range",
-        name: "댓글 자동 새로고침 주기",
-        desc: "댓글 자동 새로고침 주기입니다.",
-        default: 10000,
-        min: 3000,
-        max: 20000,
-        step: 100,
-        unit: "ms"
-    },
-    toggleAdminPanel: {type: "check", name: "관리 패널 활성화", desc: "관리 권한이 있을 때 관리 패널을 표시합니다.", default: true},
-    useKeyPress: {type: "check", group: SHORTCUT_GROUP, name: "사용", desc: "키로 게시글을 삭제·차단합니다.", default: true},
-    deleteKey: {type: "key", group: SHORTCUT_GROUP, name: "삭제 키", desc: "두 번 누르면 게시글을 삭제합니다.", default: "d"},
-    blockKey: {type: "key", group: SHORTCUT_GROUP, name: "차단 키", desc: "두 번 누르면 차단 프리셋으로 작성자를 차단합니다.", default: "b"},
-    blockPresetDay: {type: "option", group: PRESET_GROUP, name: "차단 기간", desc: "차단 기간입니다.", default: "1", items: BLOCK_DAYS},
-    blockPresetDelete: {type: "check", group: PRESET_GROUP, name: "글도 삭제", desc: "차단하면서 게시글도 삭제합니다.", default: false},
-    blockPresetUserType: {type: "check", group: PRESET_GROUP, name: "IP 동시 차단", desc: "식별 코드와 함께 IP도 차단합니다.", default: false},
-    blockPresetReason: {
-        type: "text",
-        group: PRESET_GROUP,
-        name: "차단 사유",
-        desc: "차단 사유입니다. (한글 20자 이내)",
-        default: "",
-        placeholder: "직접 입력 (한글 20자 이내)"
-    },
-    expandRecognizeRange: {type: "check", name: "게시글 인식 범위 확장", desc: "행 전체를 클릭해도 미리보기가 열리게 합니다.", default: false},
-    disableCache: {type: "check", name: "캐시 비활성화", desc: "미리보기 캐시를 사용하지 않습니다.", default: false},
-    archiveArticle: {type: "check", name: "삭제된 글과 댓글 보존", desc: "캐시된 게시글이 삭제되어도 이전 내용을 보여줍니다.", default: false},
-    blockImage: {
-        type: "check",
-        name: "이미지 아이콘 없는 게시글 이미지 차단",
-        desc: "이미지 아이콘이 없는 게시글에 이미지가 있으면 차단합니다.",
-        default: false
-    }
-} satisfies SettingsSchema;
-
-type Ctx = ModuleContext<typeof settings>;
+import {type Ctx, settings} from "./settings";
+import {BLOCKED_TEXT, type ErrorState, type ManageKind, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
 
 // status는 ky의 HTTPError에서 읽고, fetchPost가 본문을 못 찾아 던진 Error("404")는 404로 본다.
 // 성인 인증 안내 페이지면 parsePostInfo가 Error(ADULT_ERROR)를 던진다.
