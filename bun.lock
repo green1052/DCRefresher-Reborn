@@ -15,7 +15,6 @@
         "radix-ui": "^1.6.7",
         "react": "^19.3.0",
         "react-dom": "^19.3.0",
-        "sass": "^1.105.0",
         "zustand": "^5.0.15",
       },
       "devDependencies": {
@@ -27,11 +26,15 @@
         "mmdb-lib": "^3.0.3",
         "netmask": "^2.1.1",
         "oxc-transform-react": "^0.151.0",
+        "sass": "^1.105.0",
         "typescript": "^7.0.2",
         "web-ext": "^10.7.0",
         "wxt": "^0.21.4",
       },
     },
+  },
+  "patchedDependencies": {
+    "@wxt-dev/storage@1.2.9": "patches/@wxt-dev%2Fstorage@1.2.9.patch",
   },
   "packages": {
     "@1natsu/wait-element": ["@1natsu/wait-element@4.2.0", "", { "dependencies": { "defu": "^6.1.4", "many-keys-map": "^3.0.0" } }, "sha512-Om0Q+WE9mNrpY4AwMTvkFiYHv8VM7TML3PvOqXy+w6kAjLjKhGYHYX+305+a6J8RVpds9s7IF2Z5aOPYwULFNw=="],

@@ -58,8 +58,17 @@ export const memoStorage = Object.fromEntries(
 
 export const modulesStorage = storage.defineItem<Record<string, boolean>>("local:refresher:modules", {fallback: {}});
 
-export const moduleSettingsStorage = (id: string) =>
-    storage.defineItem<Record<string, SettingValue>>(`local:refresher:module:${id}:settings`, {fallback: {}});
+const settingsItems = new Map<string, WxtStorageItem<Record<string, SettingValue>, {}>>();
+
+/** 모듈 설정 — 모듈마다 항목 하나를 만들어 두고 같이 쓴다 (부를 때마다 만들면 watch 리스너가 쌓인다) */
+export const moduleSettingsStorage = (id: string): WxtStorageItem<Record<string, SettingValue>, {}> => {
+    let item = settingsItems.get(id);
+    if (!item) {
+        item = storage.defineItem<Record<string, SettingValue>>(`local:refresher:module:${id}:settings`, {fallback: {}});
+        settingsItems.set(id, item);
+    }
+    return item;
+};
 
 /**
  * IP/밴 DB — 따로 읽게 세 키로 나눈다: 갱신 확인은 meta만, 페이지는 ip만, 밴은 쓸 때만 (수백 KB).

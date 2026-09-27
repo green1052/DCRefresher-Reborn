@@ -1,0 +1,13 @@
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 2f6a10c2210ffd117fdbd1753064708a91301025..f67ad8b3364d532156bdd5bd2a688167ea1ebda4 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -324,7 +324,7 @@ function createStorage() {
+ 				if (value == null && targetVersion > 1) await setMeta(driver, driverKey, { v: targetVersion });
+ 				return newValue;
+ 			});
+-			migrationsDone.then(getOrInitValue);
++			if (opts?.init != null) migrationsDone.then(getOrInitValue);
+ 			return {
+ 				key,
+ 				get defaultValue() {
