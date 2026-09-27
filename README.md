@@ -39,4 +39,4 @@ bun run zip          # Chrome
 bun run zip:firefox  # Firefox (소스 zip도 함께 생성)
 ```
 
-결과물은 `.output` 폴더에 생성됩니다.
+결과물은 `.output` 폴더에 생성됩니다. 구조와 기능 추가 방법은 [개발 문서](docs/DEVELOPMENT.md)를 참고하세요.
