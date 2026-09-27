@@ -1,6 +1,6 @@
 import {Button, Card, Checkbox, Dialog, Flex, Grid, Kbd, RadioGroup, Text, TextField} from "@radix-ui/themes";
 import {ArrowBigUpDash, Ban, Megaphone, Star, Trash2} from "lucide-react";
-import {type ReactNode, useState} from "react";
+import {type ReactNode, useRef, useState} from "react";
 
 import {DialogActions} from "@/components/ConfirmDialog";
 import {overlay} from "@/components/overlay/shadow";
@@ -9,7 +9,7 @@ import {blockUser} from "@/core/preview/request";
 import {notifyManage} from "@/utils/notify";
 import {useUiStore} from "@/stores/ui";
 
-import {BLOCK_DAYS, usePreviewStore} from "./previewStore";
+import {BLOCK_DAYS, type ManageKind, usePreviewStore} from "./previewStore";
 
 const BLOCK_REASONS: [string, string][] = [
     ["1", "음란성"],
@@ -154,8 +154,24 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
     );
 };
 
+/** 관리 버튼 두 번 누르기 — 이 안에 같은 버튼을 다시 눌러야 실행한다 */
+const CONFIRM_WINDOW = 3000;
+
+interface AdminAction {
+    id: ManageKind | "block";
+    label: string;
+    hint?: string;
+    icon: ReactNode;
+    active?: boolean;
+    danger?: boolean;
+    /** 한 번에 실행 — 차단은 옵션 창을 열 뿐이라 그 창이 확인이다 */
+    instant?: boolean;
+    run: () => void;
+}
+
 /**
  * 관리 권한이 있을 때 미리보기 왼쪽 가장자리에 붙는 관리 패널. Kbd는 단축키 힌트 — 차단은 차단 키 두 번(프리셋 즉시 차단)과 달리 옵션 창을 연다.
+ * 공지·개념글·끌올·삭제는 두 번 눌러야 실행한다 (첫 번째는 토스트로 알린다). 다른 버튼을 누르거나, 늦거나, 다른 글로 넘어가면 처음부터.
  * 미리보기 포털 안에 그린다 (Frame) — 나중에 뜬 창(차단·메모 등)이 위를 덮어, 한 번 클릭에 창 닫기와 관리 동작이 같이 일어나지 않게
  */
 export const AdminPanel = () => {
@@ -163,35 +179,56 @@ export const AdminPanel = () => {
     const recommend = usePreviewStore((s) => s.recommend);
     const requestManage = usePreviewStore((s) => s.requestManage);
     const keys = usePreviewStore((s) => s.shortcutKeys);
+    // 첫 번째로 누른 버튼 — 다시 그릴 필요가 없어 ref에 둔다
+    const armed = useRef<{ id: AdminAction["id"]; signal: number; at: number } | null>(null);
 
     // id는 고정 key — 라벨을 key로 쓰면 공지·개념글을 토글할 때 버튼이 새로 그려져 포커스가 사라진다
-    const actions: { id: string; label: string; hint?: string; icon: ReactNode; active?: boolean; danger?: boolean; run: () => void }[] = [
+    const actions: AdminAction[] = [
         {id: "notice", label: notice ? "공지 해제" : "공지 등록", icon: <Megaphone size={14}/>, active: notice, run: () => requestManage("notice")},
         {id: "recommend", label: recommend ? "개념글 해제" : "개념글 등록", icon: <Star size={14}/>, active: recommend, run: () => requestManage("recommend")},
         {id: "bump", label: "끌올", icon: <ArrowBigUpDash size={14}/>, run: () => requestManage("bump")},
-        {id: "block", label: "차단", hint: keys?.block, icon: <Ban size={14}/>, danger: true, run: () => usePreviewStore.setState({blockPopup: true})},
+        {id: "block", label: "차단", hint: keys?.block, icon: <Ban size={14}/>, danger: true, instant: true, run: () => usePreviewStore.setState({blockPopup: true})},
         {id: "delete", label: "삭제", hint: keys?.delete, icon: <Trash2 size={14}/>, danger: true, run: () => requestManage("delete")}
     ];
+
+    const press = ({id, label, instant, run}: AdminAction): void => {
+        if (instant) {
+            run();
+            return;
+        }
+
+        const now = Date.now();
+        const signal = usePreviewStore.getState().signalId;
+        const prev = armed.current;
+        if (prev?.id === id && prev.signal === signal && now - prev.at < CONFIRM_WINDOW) {
+            armed.current = null;
+            run();
+            return;
+        }
+
+        armed.current = {id, signal, at: now};
+        useUiStore.getState().showToast(`한 번 더 누르면 ${label}합니다.`);
+    };
 
     return (
         <Card size="1" className="refresher-admin-panel refresher-interactive">
             <Text as="div" size="1" color="gray" weight="medium" mb="2" ml="1">관리</Text>
             <Flex direction="column" gap="1">
-                {actions.map(({id, label, hint, icon, active, danger, run}) => (
+                {actions.map((action) => (
                     <Button
-                        key={id}
+                        key={action.id}
                         size="2"
                         // soft 고정 — ghost와 섞으면 Radix 여백이 달라 흔들린다. 상태는 색으로 표시
                         variant="soft"
-                        color={danger ? "red" : active ? undefined : "gray"}
-                        highContrast={active}
-                        aria-pressed={active}
+                        color={action.danger ? "red" : action.active ? undefined : "gray"}
+                        highContrast={action.active}
+                        aria-pressed={action.active}
                         style={{justifyContent: "flex-start"}}
-                        onClick={run}
+                        onClick={() => press(action)}
                     >
-                        {icon}
-                        <Text style={{flex: 1, textAlign: "left"}}>{label}</Text>
-                        {hint && <Kbd size="1">{hint}</Kbd>}
+                        {action.icon}
+                        <Text style={{flex: 1, textAlign: "left"}}>{action.label}</Text>
+                        {action.hint && <Kbd size="1">{action.hint}</Kbd>}
                     </Button>
                 ))}
             </Flex>
