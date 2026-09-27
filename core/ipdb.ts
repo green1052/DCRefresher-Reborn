@@ -1,8 +1,8 @@
 /**
  * IP 대역(a.b) → 후보(조직명·국가·VPN) 데이터.
  *
- * 서버 형식(RawIpData): meta[] + b{"a.b": meta 번호[]}  — 사람이 읽을 수 있는 JSON
- * 저장 형식(CompactIpData): 65536칸 Uint16 표(base64) + 조직/국가 표 — 페이지마다 문자열 하나만 읽고 배열 한 칸으로 조회한다
+ * 서버 형식(RawIpData): meta[] + b{"a.b": meta 번호[]}. 사람이 읽을 수 있는 JSON이다.
+ * 저장 형식(CompactIpData): 65536칸 Uint16 표(base64)와 조직/국가 표. 페이지는 문자열 하나를 디코드해 배열 한 칸으로 조회한다.
  */
 
 export interface RawIpData {
@@ -13,7 +13,10 @@ export interface RawIpData {
 }
 
 export interface CompactIpData {
-    /** base64(Uint16Array[65536]) — 칸 번호 a*256+b, 값 0=정보 없음, 그 외 (값-1)이 meta 번호 또는 meta 개수+목록 번호 */
+    /**
+     * base64(Uint16Array[65536]). 칸 번호는 a*256+b, 값 0은 정보 없음.
+     * 그 밖에는 값-1이 meta 개수보다 작으면 meta 번호, 아니면 meta 개수 + lists 번호다.
+     */
     table: string;
     orgs: string[];
     countries: string[];
@@ -37,7 +40,7 @@ const prefixIndex = (ip: string): number | undefined => {
 
 /** 서버 형식 → 저장 형식 */
 export const compactIpData = (raw: RawIpData): CompactIpData => {
-    // 서버에서 온 값 — 예전 형식(대역→이름 객체)이나 깨진 응답이면 여기서 끊는다
+    // 서버 응답이 옛 형식(대역→이름 객체)이거나 깨졌으면 여기서 멈춘다
     if (!Array.isArray(raw?.meta) || !raw.b || typeof raw.b !== "object") throw new Error("IP 데이터 형식이 올바르지 않습니다.");
 
     const orgs: string[] = [];
@@ -78,7 +81,7 @@ export const compactIpData = (raw: RawIpData): CompactIpData => {
 /** 저장 형식 → 조회 함수 (표는 한 번만 디코드) */
 export const createIpLookup = (data: CompactIpData): ((ip: string) => IpCandidate[] | undefined) => {
     const table = new Uint16Array(Uint8Array.fromBase64(data.table).buffer);
-    // 조회에 쓰는 것만 붙잡는다 — data째 잡으면 디코드한 base64 표 문자열(수백 KB)이 탭마다 남는다
+    // 조회에 쓰는 필드만 클로저에 남긴다. data를 통째로 잡으면 이미 디코드한 base64 문자열(수백 KB)이 탭마다 남는다
     const {orgs, countries, meta, lists} = data;
     const metaCount = meta.length / 3;
 

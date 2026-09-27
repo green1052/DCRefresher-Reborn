@@ -8,11 +8,13 @@ import {defineModule} from "@/core/module/define";
 import {LIST_PAGE} from "@/core/pages";
 import {useUiStore} from "@/stores/ui";
 
-/** 검색 결과 행 — 글(data-no)과 그 아래 댓글 검색 행(data-cmt). 설문·AD 행은 뺀다.
- * 검색 구간은 글(댓글) 번호로 나뉘어 겹치지 않는다 — 댓글 검색은 댓글마다 글 행이 되풀이되는 게 정상이라 중복을 거르지 않는다 */
+/**
+ * 검색 결과 행: 글(data-no)과 그 아래 댓글 검색 행(data-cmt). 설문·AD 행은 뺀다.
+ * 검색 구간은 번호로 나뉘어 겹치지 않으므로 중복을 거르지 않는다. 댓글 검색에선 댓글마다 글 행이 되풀이되는 게 정상이다
+ */
 const RESULT_ROW = ":scope > tr:is([data-no], [data-cmt])";
 
-/** 이 검색 구간(search_pos)의 마지막 페이지인지 — 현재 페이지 뒤에 페이지 링크가 없다 */
+/** 이 검색 구간(search_pos)의 마지막 페이지인지. 현재 페이지(em) 뒤에 페이지 링크가 없으면 마지막이다 */
 const isLastPage = (paging: Element): boolean => {
     const next = paging.querySelector("em")?.nextElementSibling;
     return !next || next.classList.contains("search_next");
@@ -43,9 +45,9 @@ export default defineModule({
         if (!queryString("s_keyword")) return;
 
         const gallery = queryString("id") ?? "";
-        // 새로고침 모듈이 목록을 갈아끼우면 다시 이어 붙인다 — 이미 받은 검색은 다시 보내지 않는다
+        // 새로고침 모듈이 목록을 갈아끼우면 다시 이어 붙인다. 이미 받은 검색 페이지는 다시 요청하지 않는다
         const pages = new Map<string, string>();
-        // 행을 붙이면 필터가 같은 tbody에 다시 불린다
+        // 행을 붙이면 같은 tbody로 필터가 다시 불리므로 한 번만 채운다
         const filled = new WeakSet<HTMLElement>();
         let running: AbortController | null = null;
 
@@ -58,7 +60,7 @@ export default defineModule({
             running = controller;
             const signal = AbortSignal.any([ctx.signal, controller.signal]);
 
-            // 구간 중간 페이지에서 이어 붙이면 그 뒤 페이지를 건너뛴다
+            // 구간의 마지막 페이지에서만 잇는다. 중간 페이지에서 이으면 그 뒤 페이지를 건너뛴다
             const paging = document.querySelector<HTMLElement>(PAGING_SELECTOR);
             if (!paging || !isLastPage(paging)) return;
 
@@ -107,7 +109,7 @@ export default defineModule({
                         added++;
                     }
 
-                    // 페이징은 마지막으로 받은 구간 것 — 다음 검색·페이지 링크가 거기서 이어진다
+                    // 페이징은 마지막으로 받은 구간 것으로 바꾼다. 다음 검색·페이지 링크가 거기서 이어진다
                     paging.innerHTML = newPaging.innerHTML;
                     if (!isLastPage(paging)) break;
                 }
@@ -117,7 +119,7 @@ export default defineModule({
                 useUiStore.getState().showToast("다음 검색 결과를 불러오지 못했습니다.", "error");
             } finally {
                 status.remove();
-                // 디시 자체 차단·이용자 메모 배지를 붙인 행에도 건다
+                // 디시의 자체 차단·메모 표시는 로드 때만 걸리므로 붙인 행에 다시 건다
                 if (added > 0) void sendMessage("refresher:listReplaced", gallery).catch(() => {});
             }
         };

@@ -5,10 +5,7 @@ import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingSchema, SettingsSchema} from "@/core/module/types";
 import {isViewPage} from "@/core/http/urls";
 
-/**
- * 체크하면 숨기는 영역. 설정 이름·설명과 숨길 선택자를 한 곳에 둔다 —
- * 켜진 항목의 선택자로 <style>을 만들어 넣으므로 새 항목은 여기 한 줄만 추가하면 된다.
- */
+/** 체크하면 숨기는 영역. 설정과 <style> 규칙을 모두 여기서 만드므로 새 항목은 한 줄만 추가하면 된다 */
 const HIDE_OPTIONS = {
     hideGalleryView: {name: "갤러리 뷰 숨기기", desc: "갤러리 정보, 최근 방문 갤러리 영역을 숨깁니다.", selector: ".issue_wrap, #visit_history"},
     hideUselessView: {
@@ -41,7 +38,6 @@ let widthWatch: AbortController | null = null;
 
 const applyCompact = (ctx: Ctx): void => {
     const compact = widthQuery?.matches === true || ctx.settings.forceCompact;
-    // /board/view에서는 '게시글 보기 컴팩트 모드'가 켜졌을 때만 적용
     const useCompact = compact && (!isViewPage || ctx.settings.useCompactModeOnView);
 
     document.documentElement.classList.toggle("refresherCompact", useCompact);
@@ -60,8 +56,8 @@ const applyHide = (ctx: Ctx): void => {
     // 공지 모아보기(?exception_mode=notice)에서는 공지를 숨기지 않는다 (디시 공지도)
     const noticePage = location.search.includes("exception_mode=notice");
 
-    // 선택자마다 규칙을 따로 둔다 — 하나로 합치면 :has 등을 모르는 브라우저에서 규칙 전체가 무시된다.
-    // 죽은 인스턴스(파이어폭스 재주입)가 남긴 것은 id로 찾아 이어 쓴다 — 새로 붙이면 옛 규칙이 끌 수 없게 남는다
+    // 선택자마다 규칙을 따로 둔다. 하나로 합치면 :has 등을 모르는 브라우저가 규칙 전체를 버린다.
+    // 죽은 인스턴스(파이어폭스 재주입)가 남긴 style은 id로 찾아 이어 쓴다. 새로 붙이면 옛 규칙이 끌 수 없게 남는다
     hideStyle ??= document.querySelector<HTMLStyleElement>(`style#${HIDE_STYLE_ID}`)
         ?? document.documentElement.appendChild(Object.assign(document.createElement("style"), {id: HIDE_STYLE_ID}));
     hideStyle.textContent = HIDE_KEYS

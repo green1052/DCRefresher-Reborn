@@ -2,16 +2,19 @@ import type {SettingValue} from "@/core/storage/types";
 
 import type {ModuleDefinition, SettingSchema} from "./types";
 
-/** 모듈 on/off — 저장값이 boolean이 아니면(가져온 "false" 문자열 등) defaultEnable. 콘텐츠·배경·옵션이 같은 기준을 쓴다 */
+/** 모듈 on/off. 저장값이 boolean이 아니면(가져온 설정의 "false" 문자열 등) defaultEnable을 따른다. 콘텐츠·배경·옵션이 모두 이 함수로 판단한다 */
 export const isModuleEnabled = (def: Pick<ModuleDefinition, "id" | "defaultEnable">, enables: Record<string, unknown>): boolean => {
     const value = enables[def.id];
     return typeof value === "boolean" ? value : def.defaultEnable ?? true;
 };
 
-/** 스키마의 기본값 — 배열(order)은 복사본이라 고쳐도 스키마가 바뀌지 않는다 */
+/** 스키마의 기본값. order는 복사해 돌려주므로 받은 쪽이 고쳐도 스키마는 그대로다 */
 export const defaultValue = (schema: SettingSchema): SettingValue => (schema.type === "order" ? [...schema.default] : schema.default);
 
-/** 저장값을 스키마에 맞춘다 — 타입이 틀리면 기본값, range는 범위로 자르고, order는 스키마에 없는·겹친 항목 제거/새 항목 추가 */
+/**
+ * 저장값을 스키마에 맞춘다. 타입이 틀리면 기본값을 쓰고, range는 min~max로 자른다.
+ * order는 스키마에 없거나 겹친 항목을 빼고, 새로 생긴 항목을 덧붙인다.
+ */
 export const normalizeSetting = (schema: SettingSchema, value: unknown): SettingValue => {
     switch (schema.type) {
         case "check":
@@ -30,7 +33,7 @@ export const normalizeSetting = (schema: SettingSchema, value: unknown): Setting
                 : schema.default;
         case "order": {
             const itemKeys = new Set(Object.keys(schema.items));
-            // 가져온 값에 같은 항목이 두 번 있으면 배지가 두 번 그려진다 — Set으로 첫 자리만 남긴다
+            // 가져온 값에 같은 항목이 두 번 있으면 배지가 두 번 그려지므로 첫 자리만 남긴다
             const stored = [...new Set((Array.isArray(value) ? value : schema.default).filter(
                 (key): key is string => typeof key === "string" && itemKeys.has(key)
             ))];
@@ -43,7 +46,7 @@ export const normalizeSetting = (schema: SettingSchema, value: unknown): Setting
     }
 };
 
-/** 모듈의 저장값 전체를 스키마대로 — 옵션 스토어와 콘텐츠 레지스트리가 같은 값을 보게 둘 다 이것을 쓴다 */
+/** 모듈 설정 전체를 스키마에 맞춘다. 옵션 스토어·콘텐츠 레지스트리·배경이 같은 값을 보도록 모두 이 함수를 쓴다 */
 export const normalizeSettings = (def: Pick<ModuleDefinition, "settings">, stored: Record<string, unknown> | null | undefined): Record<string, SettingValue> =>
     Object.fromEntries(Object.entries(def.settings ?? {}).map(([key, schema]) => [key, normalizeSetting(schema, stored?.[key])]));
 

@@ -92,13 +92,13 @@ const formatActivity = (activity: ActivityState): string | undefined => {
     return `${activity.article.toLocaleString()} / ${activity.comment.toLocaleString()}`;
 };
 
-/** 아이디와 IP는 한 줄에 병합: "uid (IP)" */
+/** 아이디와 IP를 한 줄 "uid (IP)"로 합친다 */
 const identityValue = (selected: { uid?: string; ip?: string }): string | undefined => {
     if (selected.uid) return selected.ip ? `${selected.uid} (${selected.ip})` : selected.uid;
     return selected.ip;
 };
 
-/** 규칙 하나 해제 — 토스트를 누르면 되돌린다 */
+/** 차단 규칙 하나를 해제한다. 토스트를 누르면 되돌린다 */
 const unblock = async (type: BlockType, {id, ...fields}: BlockEntry): Promise<void> => {
     await useBlocksStore.getState().removeEntry(type, id);
     // 정규식은 한 규칙이 여러 대상을 막는다
@@ -109,7 +109,7 @@ const unblock = async (type: BlockType, {id, ...fields}: BlockEntry): Promise<vo
     });
 };
 
-/** 이 대상을 막고 있는 차단 규칙 — 왜 가려졌는지 보고 그 자리에서 푼다 */
+/** 이 대상을 막고 있는 차단 규칙 목록. 왜 가려졌는지 보여 주고 그 자리에서 풀 수 있게 한다 */
 const BlockRules = ({rules}: { rules: { type: BlockType; entry: BlockEntry }[] }) => (
     <>
         <Separator size="4" my="2"/>
@@ -134,16 +134,17 @@ const BubbleHost = () => {
     const selected = useUiStore((s) => s.selected);
     const activityState = useGallogActivity(bubble && selected && !selected.dccon ? selected.uid : undefined);
     const memo = useUserMemo(selected ?? {}, queryString("id"));
-    // 구독한 목록으로 찾아야 해제하면 바로 다시 계산된다
+    // 구독한 목록으로 찾아야 해제했을 때 바로 다시 계산된다
     const entries = useBlocksStore((s) => s.entries);
     const defaults = useBlocksStore((s) => s.defaults);
     const rules = selected
         ? blockingEntries(selected.dccon ? {DCCON: selected.dccon} : {NICK: selected.nick, ID: selected.uid, IP: selected.ip}, queryString("id") ?? undefined, {entries, defaults})
         : [];
-    // IP/밴 조회는 이 번호를 식에 넣는다 — 빠지면 컴파일러가 인자만 보고 메모해 DB를 읽은 뒤에도 옛 값이 남는다
+    // IP/밴 조회 식에 이 번호를 넣는다. 빠지면 React Compiler가 인자만 보고 메모해 DB를 읽은 뒤에도 옛 값이 남는다
     const dbVersion = useSyncExternalStore(subscribeDatabase, databaseVersion);
 
-    // Popover는 스크롤을 따라가지 않으므로 스크롤시 닫는다 — scroll은 섀도 루트 밖으로 나가지 않아 미리보기 스크롤은 루트에서 잡는다
+    // Popover는 스크롤을 따라가지 않으므로 스크롤하면 닫는다.
+    // scroll 이벤트는 shadow root 밖으로 나가지 않으므로 미리보기 안의 스크롤은 루트에서 잡는다.
     useEffect(() => {
         if (!bubble) return;
         const onScroll = (): void => useUiStore.getState().closeBubble();
@@ -163,7 +164,7 @@ const BubbleHost = () => {
         close();
         void navigator.clipboard.writeText(value).then(() => useUiStore.getState().showToast("복사했습니다."));
     };
-    // 이벤트로 보내면 차단 모듈이 꺼져 있을 때 아무도 받지 않아 조용히 무시된다 — 직접 부른다
+    // 이벤트로 보내면 차단 모듈이 꺼져 있을 때 받는 쪽이 없어 조용히 무시되므로 직접 부른다
     const requestBlock = (options: BlockRequestOptions): void => {
         void handleBlockRequest(options, selected);
         close();

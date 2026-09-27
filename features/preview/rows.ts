@@ -1,6 +1,6 @@
 import type {GalleryPreData} from "@/core/preview/types";
 
-/** 목록 행 → 미리보기 대상 (갤러리·글 번호·목록 아이콘) */
+/** 목록 행(또는 제목 링크)에서 미리보기 대상을 읽는다. 링크가 없거나 글 주소가 아니면 null */
 export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
     const anchor = element.tagName === "A" ? (element as HTMLAnchorElement) : element.querySelector<HTMLAnchorElement>("a:not(.reply_numbox)");
     if (!anchor) return null;
@@ -21,7 +21,7 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
 
     const row = (element.closest(".ub-content") as HTMLElement | null) ?? element;
 
-    // 목록 아이콘 클래스에서 게시글 타입 추출 (이미지 아이콘 없는 글 판별)
+    // 목록 아이콘의 마지막 클래스가 글 종류다 (isTextPost가 이미지 없는 글을 가를 때 쓴다).
     const icon = row.querySelector<HTMLElement>(".icon_img");
     let type = "icon_txt";
     let notice = false;
@@ -46,11 +46,14 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
     };
 };
 
-/** 차단 모듈이 블러로 가린 행 — 보이긴 하지만('가린 내용 보기' 중이 아니면) 넘기기·미니로 내용을 열지 않는다 */
+/** 차단 모듈이 블러로 가린 행인지. 화면에는 남아 있지만 '가린 내용 보기' 중이 아니면 넘기기·미니로 열지 않는다 */
 export const isBlurHidden = (element: Element): boolean =>
     !document.documentElement.classList.contains("refresherBlockReveal") && element.closest(".refresherBlur") !== null;
 
-/** 목록에서 앞(-1)/뒤(1) 글 — 차단·운영자 숨김·블러 행은 건너뛴다 (미리보기는 TEXT 차단만 검사해서 숨긴 글이 그대로 열린다) */
+/**
+ * 목록에서 앞(-1)/뒤(1) 글. 차단·운영자 숨김으로 안 보이는 행과 블러 행은 건너뛴다.
+ * 미리보기는 본문(TEXT) 차단만 검사하므로 여기서 거르지 않으면 목록에서 숨긴 글이 그대로 열린다.
+ */
 export const adjacentPreData = (from: GalleryPreData, dir: number): GalleryPreData | null => {
     const rows = Array.from(document.querySelectorAll<HTMLElement>(".gall_list .ub-content")).filter((row) =>
         row.checkVisibility() && row.querySelector("a:not(.reply_numbox)")
@@ -62,11 +65,11 @@ export const adjacentPreData = (from: GalleryPreData, dir: number): GalleryPreDa
     });
     if (index < 0) return null;
 
-    // 블러 행은 찾은 뒤에 거른다 — 지금 글이 블러 행이어도 제자리를 찾게
+    // 블러 행은 현재 위치를 찾은 뒤에 거른다. 지금 글이 블러 행이어도 제자리를 찾아야 한다.
     const ahead = dir > 0 ? rows.slice(index + 1) : rows.slice(0, index).reverse();
     const next = ahead.find((row) => !isBlurHidden(row));
     return next ? buildPreData(next) : null;
 };
 
-/** 목록에 이미지 아이콘이 없는 글 (텍스트 개념글 포함) — blockImage가 본문 이미지를 가린다 */
+/** 목록에 이미지 아이콘이 없는 글인지 (텍스트 개념글 포함). blockImage 설정이 이런 글의 본문 이미지를 가린다 */
 export const isTextPost = (preData: GalleryPreData): boolean => preData.type === "icon_txt" || preData.type === "icon_recomtxt";

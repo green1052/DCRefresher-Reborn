@@ -1,13 +1,16 @@
 import type {CommentForm, PostInfo} from "./types";
 
-/** 본문 이미지의 data-original 복원 (DC지연로딩). 관리자가 가린 이미지(data-block)는 '차단 이미지 보기'를 누를 때 넣는다 (Frame.tsx) */
+/**
+ * 지연 로딩 이미지의 data-original을 src로 옮긴다.
+ * 관리자가 가린 이미지(data-block)는 가림 버튼(.btn_img_block)을 누를 때 넣는다 (Frame.tsx).
+ */
 const restoreImageSources = (dom: Document): void => {
     for (const image of dom.querySelectorAll<HTMLImageElement>("img[data-original]:not([data-block])")) {
         if (image.dataset.original) image.src = image.dataset.original;
     }
 };
 
-// 디시 스크립트에서만 찾는다 — 본문이 스크립트보다 앞이라 원본 HTML 전체에서 찾으면 본문에 적은 글자가 먼저 걸린다
+// 디시 스크립트 안에서만 찾는다. 본문이 스크립트보다 앞에 있어 HTML 전체에서 찾으면 본문에 적힌 같은 글자가 먼저 걸린다
 const parseCommentIds = (dom: Document): { commentId?: string; commentNo?: string } => {
     const scripts = Array.from(dom.scripts, (script) => script.textContent).join("\n");
 
@@ -35,7 +38,7 @@ const parseUser = (dom: Document): PostInfo["user"] => {
 const strip = (value: string | undefined | null, ...prefixes: string[]): string | undefined => {
     if (!value) return;
 
-    // 접두어를 뗀 뒤 trim — 먼저 trim하면 '조회 1234'가 ' 1234'로 남는다
+    // 접두어를 뗀 뒤에 trim한다. 먼저 trim하면 '조회 1234'가 ' 1234'로 남는다
     let result = value;
     for (const prefix of prefixes) result = result.replace(prefix, "");
     result = result.trim();
@@ -47,8 +50,9 @@ const strip = (value: string | undefined | null, ...prefixes: string[]): string 
 export const ADULT_ERROR = "adult";
 
 /**
- * 성인 인증 안내 — 미인증이면 본문 대신 /error/adult/로 보내는 스크립트가 오고, 리다이렉트를 따라가면 인증 페이지(.adult_certify)가 온다.
- * 본문이 없을 때만 본다 (본문 글자에 주소가 섞여도 오인하지 않게)
+ * 성인 인증 안내 페이지인지. 미인증이면 본문 대신 /error/adult/로 보내는 스크립트가 오고,
+ * 리다이렉트를 따라가면 인증 페이지(.adult_certify)가 온다.
+ * 본문이 없을 때만 부른다. 본문에 그 주소가 적혀 있어도 오인하지 않게.
  */
 const isAdultPage = (html: string, dom: Document): boolean => html.includes("/error/adult") || dom.querySelector(".adult_certify") !== null;
 
@@ -67,22 +71,22 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
     const dom = new DOMParser().parseFromString(html, "text/html");
 
     if (!dom.querySelector(".gallview_head, .writing_view_box, .title_subject")) {
-        // undefined면 fetchPost가 삭제된 글(404)로 보므로 따로 던진다
+        // undefined를 돌려주면 fetchPost가 삭제된 글(404)로 처리하므로 성인 인증은 따로 던진다
         if (isAdultPage(html, dom)) throw new Error(ADULT_ERROR);
         return;
     }
 
     restoreImageSources(dom);
-    // 본문 위 짤방(갤러리 기본 이미지)·광고 자리 — 글 내용이 아니다
+    // 본문 위 짤방(갤러리 기본 이미지)·광고 자리는 글 내용이 아니다
     for (const element of dom.querySelectorAll(".writing_view_box #zzbang_div, .writing_view_box #ad_nv_slot")) element.remove();
 
-    // 제목 안 <script>의 글자가 textContent에 섞이므로 먼저 지운다 (75471b72) — 말머리와 같은 평문으로 맞춰 화면에서 텍스트로 넣는다
+    // 제목 안 <script>의 글자가 textContent에 섞이므로 먼저 지운다. 제목은 말머리처럼 평문으로 꺼내 화면에 텍스트로 넣는다
     const subject = dom.querySelector<HTMLElement>(".title_subject");
     for (const script of subject?.querySelectorAll("script") ?? []) script.remove();
 
     const header = strip(dom.querySelector<HTMLElement>(".title_headtext")?.textContent?.replace(/^\[|\]$/g, ""));
     const commentCountText = strip(dom.querySelector<HTMLElement>(".gall_comment")?.textContent?.trim().split(" ")[1]);
-    // 글 머리의 작성 시각 — title("2026-09-26 02:29:40")이 없으면 글자("2026.09.26 02:29:40")
+    // 작성 시각. title("2026-09-26 02:29:40")이 없으면 표시 글자("2026.09.26 02:29:40")를 쓴다
     const date = dom.querySelector<HTMLElement>(".gallview_head .gall_date");
 
     const info: PostInfo = {
@@ -100,7 +104,7 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
         downvotes: strip(dom.querySelector<HTMLElement>(".btn_recommend_box .down_num")?.textContent),
         contents: dom.querySelector<HTMLElement>(".writing_view_box")?.innerHTML,
         ...parseCommentIds(dom),
-        // 0도 살린다 — '댓글 0개면 요청 생략'이 0으로 판단한다
+        // 0도 숫자로 남긴다. 댓글 요청을 건너뛸지 commentCount === 0으로 판단한다
         commentCount: commentCountText && /^\d+$/.test(commentCountText) ? Number(commentCountText) : undefined,
         requireCaptcha: Boolean(dom.querySelector(".recommend_kapcode")),
         requireCommentCaptcha: Boolean(dom.querySelector<HTMLInputElement>(".cmt_write_box input[name=comment_code]")),
@@ -109,14 +113,14 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
             const input = dom.querySelector<HTMLInputElement>("#adult_article + input");
             return input?.name ? {name: input.name, value: input.value} : undefined;
         })(),
-        // 문서째 들고 있지 않는다 — 캐시가 글마다 수천 노드짜리 문서를 붙잡고, <video>가 든 문서는 크롬에서 해제되지도 않는다
+        // 댓글·추천에 쓸 값도 여기서 꺼내 둔다. 문서를 들고 있으면 캐시가 글마다 수천 노드짜리 문서를 붙잡는다
         esno: dom.querySelector<HTMLInputElement>("#e_s_n_o")?.value,
         recommendCode: dom.querySelector<HTMLInputElement>("input[name=code_recommend]")?.value,
         writeText: dom.querySelector(".write_div")?.textContent?.trim(),
         commentForm: parseCommentForm(dom)
     };
 
-    // <video>·<audio>가 든 문서는 크롬에서 해제되지 않는다 (재생 관련 보류 작업이 문서를 붙잡는다) — 값을 다 꺼냈으니 떼어 낸다
+    // <video>·<audio>가 든 문서는 크롬에서 해제되지 않는다 (재생 관련 보류 작업이 문서를 붙잡는다). 값을 다 꺼냈으니 떼어 낸다
     for (const media of dom.querySelectorAll("video, audio")) media.remove();
     return info;
 };

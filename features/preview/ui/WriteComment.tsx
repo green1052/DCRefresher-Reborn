@@ -23,7 +23,7 @@ import {usePreviewStore} from "./previewStore";
 
 const randomPassword = (): string => Math.random().toString(36).slice(2, 10);
 
-// 'false||메시지' 외 실패 응답 (dccon.js·txtcon.js)
+// 'false||메시지' 형식이 아닌 실패 응답 코드 (디시 dccon.js·txtcon.js에서 옮김)
 const FAIL_MESSAGES: Record<string, string> = {
     code_fail: "자동입력 방지코드가 일치하지 않습니다.",
     fail1: "이름과 비밀번호를 정확하게 입력해주세요.",
@@ -62,13 +62,12 @@ const Swatch = ({color, selected, label, onClick}: {
     />
 );
 
-/** 쓰던 댓글 한 칸 — 창을 닫았다 같은 글을 다시 열면 남고, 다른 글을 열면 버린다 */
+/** 쓰던 댓글 하나를 모듈 전역에 둔다. 창을 닫았다 같은 글을 다시 열면 되살리고, 다른 글을 열면 버린다 */
 let draft = {key: "", text: ""};
 
-/** 댓글 작성 폼 */
 export const WriteComment = () => {
     const reply = usePreviewStore((s) => s.reply);
-    // 폼은 글마다 새로 그려진다 (Frame의 key) — 그때 이 글의 쓰던 댓글이면 되살린다
+    // 폼은 글마다 새로 마운트된다 (Frame의 key). 마운트할 때 이 글에서 쓰던 댓글이 있으면 되살린다.
     const [initialText] = useState(() => {
         const preData = usePreviewStore.getState().preData;
         const key = preData ? `${preData.gallery}/${preData.id}` : "";
@@ -79,7 +78,8 @@ export const WriteComment = () => {
     const [accountId] = useState(loggedInUserId);
     const [nick, setNick] = useState("ㅇㅇ");
     const [password, setPassword] = useState("");
-    // 저장된 비밀번호는 입력칸에 넣지 않는다 — 오버레이 섀도 루트가 open이라 페이지 스크립트가 값을 읽을 수 있다. 직접 고칠 때만 보인다
+    // 저장된 비밀번호는 입력칸에 넣지 않는다. 오버레이 섀도 루트가 open이라 페이지 스크립트가 값을 읽을 수 있다.
+    // 사용자가 직접 고친 뒤에만 입력칸에 값이 보인다.
     const [passwordEdited, setPasswordEdited] = useState(false);
     const [dccons, setDccons] = useState<DcinsideDccon[]>([]);
     const [bigDccon, setBigDccon] = useState(false);
@@ -94,7 +94,7 @@ export const WriteComment = () => {
     useEffect(() => {
         void nonmemberStorage.getValue().then((saved) => {
             setNick(saved.nick || "ㅇㅇ");
-            // 없으면 한 번 만들어 저장 — 열 때마다 새로 만들면 비회원이 자기 댓글을 지울 수 없다
+            // 없으면 한 번 만들어 저장한다. 열 때마다 새로 만들면 비회원이 자기 댓글을 지울 수 없다.
             const pw = saved.pw || randomPassword();
             setPassword(pw);
             if (!saved.pw) void nonmemberStorage.setValue({...saved, pw});
@@ -148,28 +148,29 @@ export const WriteComment = () => {
                         token
                     );
 
-            // 첫 전송은 토큰 없이, 'false||captcha||v3'일 때만 v3 토큰을 붙여 한 번 더 (디시 comment.js·dccon.js·txtcon.js와 같음)
+            // 처음엔 토큰 없이 보내고, 'false||captcha||v3'가 오면 reCAPTCHA v3 토큰을 붙여 한 번 더 보낸다
+            // (디시 comment.js·dccon.js·txtcon.js와 같음).
             let response = await send();
             if (response.message === "captcha" && response.detail === "v3") {
                 const token = await sendMessage("refresher:grecaptchaToken", txtcon || useDccon ? "insert_icon" : "comment_submit").catch(() => undefined);
                 if (token) response = await send(token);
             }
 
-            // 댓글은 새 댓글 번호, 디시콘·글자콘은 'ok'
+            // 성공 응답: 댓글은 새 댓글 번호, 디시콘·글자콘은 'ok'.
             if (txtcon || useDccon ? response.result === "ok" : response.result !== "false") {
-                // 보내는 사이 더 쓴 글은 남긴다
+                // 보내는 사이 더 쓴 글은 남긴다.
                 if (textarea.current?.value === raw) textarea.current.value = "";
                 if (draft.text === raw) draft.text = "";
                 setDccons([]);
                 setBigDccon(false);
                 setTxtcon(false);
-                // 그새 다른 글로 넘어갔으면 답글 대상과 댓글 목록은 그 글 것이다
+                // 그새 다른 글로 넘어갔으면 답글 대상과 댓글 목록은 그 글 것이라 건드리지 않는다.
                 if (usePreviewStore.getState().signalId === signal) {
                     usePreviewStore.setState({reply: {commentNo: null, replyNo: null}});
                     void st.requestRefresh();
                 }
             } else if (response.message === "captcha") {
-                // v2 체크박스나 v3 재전송도 막히면 원문에서만 풀 수 있다
+                // v2 체크박스를 요구하거나 v3 재전송도 막히면 원문 페이지에서만 풀 수 있다.
                 useUiStore.getState().showToast(
                     "자동등록방지 확인이 필요합니다. 원문에서 작성해 주세요. (클릭하면 원문 열기)",
                     "warning",
@@ -186,7 +187,10 @@ export const WriteComment = () => {
         }
     };
 
-    /** 글자콘 입력 제한 적용. 값이 바뀔 때만 다시 쓰고, 한글 조합 중엔 조합이 끝난 뒤 부른다 (txtcon.js와 같음) */
+    /**
+     * 글자콘 입력 제한을 적용한다. 값이 바뀔 때만 다시 써서 커서가 튀지 않게 한다.
+     * 한글 조합 중엔 부르지 않고 조합이 끝난 뒤 부른다 (디시 txtcon.js와 같음).
+     */
     const applyTxtcon = (): void => {
         const element = textarea.current;
         if (!element) return;
@@ -195,7 +199,7 @@ export const WriteComment = () => {
         if (next !== element.value) element.value = next;
     };
 
-    /** 글자콘을 끈다. 켤 때 잘린 글을 손대지 않았으면 원문으로 되돌린다 — 토글과 디시콘 선택 둘 다 여기로 */
+    /** 글자콘을 끈다. 켤 때 잘린 글을 그대로 두었으면 원문으로 되돌린다. 토글 버튼과 디시콘 선택이 같이 쓴다 */
     const exitTxtcon = (): void => {
         const element = textarea.current;
         if (element && beforeTxtcon.current !== null && element.value === normalizeTxtcon(beforeTxtcon.current)) {
@@ -291,7 +295,7 @@ export const WriteComment = () => {
                                 aria-label="글자콘"
                                 aria-pressed={txtcon}
                                 onClick={() => {
-                                    // 디시콘과 같이 쓰지 않는다
+                                    // 글자콘과 디시콘은 같이 쓸 수 없다.
                                     setDccons([]);
                                     setBigDccon(false);
 
@@ -300,7 +304,7 @@ export const WriteComment = () => {
                                         return;
                                     }
 
-                                    // 켤 때 잘리는 글을 기억했다가, 그대로 끄면 되돌린다
+                                    // 켜면서 잘리는 원문을 기억해 두었다가, 손대지 않고 끄면 되돌린다.
                                     beforeTxtcon.current = textarea.current?.value ?? null;
                                     applyTxtcon();
                                     setTxtcon(true);

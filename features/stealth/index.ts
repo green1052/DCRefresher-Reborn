@@ -22,10 +22,10 @@ export interface StealthApi {
     toggle(): void;
 }
 
-// stlth 토글 상태는 CSS가 보는 documentElement에 둔다 — 버튼·단축키·팝업이 같이 쓴다
+// 토글 상태는 CSS가 보는 <html>의 stlth 클래스 하나뿐이다. 버튼·단축키·팝업이 같이 읽는다
 const isRevealed = (): boolean => document.documentElement.classList.contains(TEMPORARY_STEALTH);
 
-/** 버튼 문구·아이콘은 누르면 할 동작 */
+/** 버튼 문구·아이콘은 현재 상태가 아니라 누르면 할 동작을 보인다 */
 const render = (button: HTMLElement): void => {
     const shown = isRevealed();
     button.innerHTML = `<p>${shown ? "이미지 숨기기" : "이미지 보이기"}</p>${shown ? EYE_OFF_SVG : EYE_SVG}`;

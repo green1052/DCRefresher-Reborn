@@ -1,4 +1,4 @@
-// 유저 버블의 "차단" — 차단 모듈이 꺼져 있어도 차단 목록(stores/blocks)에는 넣으므로 모듈이 아니라 차단 데이터 쪽에 둔다
+// 유저 버블의 "차단" 처리. 차단 모듈이 꺼져 있어도 차단 목록(stores/blocks)에는 넣으므로 모듈이 아닌 stores에 둔다
 import {ajax} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import type {BlockType} from "@/core/storage/types";
@@ -16,7 +16,7 @@ interface DcconDetailResponse {
     }[];
 }
 
-/** 유저 차단: uid > ip > nick 우선순위 */
+/** 유저 차단. uid > ip > nick 순으로 있는 값 하나를 쓴다 */
 const blockUser = async (selected: SelectedUser): Promise<void> => {
     // 유동은 작성자 칸에 data-uid=""가 붙어 오므로 ??로는 ip로 넘어가지 않는다
     const value = selected.uid || selected.ip || selected.nick;
@@ -44,7 +44,7 @@ const blockDccon = async (selected: SelectedUser, blockAllDccon?: boolean): Prom
         const paths = response.detail.map((detail) => detail.path).join("|");
         await useBlocksStore.getState().addEntry("DCCON", {content: `^(${paths})$`, isRegex: true, extra: `[묶음] ${extra}`});
     } else {
-        // 묶음 대신 각각 추가 — 한 번에 넣어야 저장소 쓰기와 모든 탭의 watch가 디시콘 수만큼 돌지 않는다
+        // 묶지 않고 하나씩 넣되 addEntries로 한 번에 쓴다. 따로 넣으면 저장소 쓰기와 모든 탭의 watch가 디시콘 수만큼 돈다
         await useBlocksStore.getState().addEntries("DCCON", response.detail.map(({path}) => ({content: path, isRegex: false, extra})));
     }
 
@@ -56,7 +56,7 @@ export type BlockRequestOptions = {
     blockAllDccon?: boolean;
 };
 
-/** 유저 버블의 차단 요청 처리 — 차단 모듈이 꺼져 있어도 목록에는 넣는다 */
+/** 유저 버블의 차단 요청을 처리한다. 차단 모듈이 꺼져 있어도 목록에는 넣는다 */
 export const handleBlockRequest = async (options: BlockRequestOptions, selected: SelectedUser | null): Promise<void> => {
     if (!selected) {
         useUiStore.getState().showToast("차단할 대상을 다시 오른쪽 클릭해주세요.");

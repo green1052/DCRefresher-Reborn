@@ -9,13 +9,13 @@ import {type BlockInputFields, composeExtra, normalizeBlockList, useBlocksStore}
 
 import {ListRow, ListTabs} from "./Layout";
 
-/** 디시콘 이미지 (묶음 정규식이면 첫 코드 — 디시콘이 하나뿐인 묶음은 "^(code)$") */
+/** 디시콘 이미지 주소. 묶음 정규식("^(a|b…)$", 하나뿐이면 "^(code)$")이면 첫 코드의 이미지를 쓴다 */
 const dcconImage = (entry: BlockEntry): string => {
     const code = entry.isRegex ? (entry.content.match(/^\^\((\w+)[|)]/)?.[1] ?? entry.content) : entry.content;
     return `https://image.dcinside.com/dccon.php?no=${code}`;
 };
 
-/** 정보 칸 — 필드로 만든 플래그 · 별명 (예전 플래그 문자열 extra는 스토어가 읽을 때 버렸다) */
+/** 정보 칸 텍스트. 필드로 만든 플래그와 별명(extra)을 이어 붙인다 */
 const entryInfo = (entry: BlockEntry): string => [composeExtra(entry), entry.extra].filter(Boolean).join(" · ") || "—";
 
 export function BlockTab() {
@@ -31,9 +31,9 @@ export function BlockTab() {
     const [dialog, setDialog] = useState<{ type: BlockType; initial: BlockEntry | null } | null>(null);
 
     const importBlocks = async (parsed: Record<string, unknown>): Promise<number> => {
-        // 차단 목록이 하나도 없으면 다른 데이터(메모/설정 내보내기)를 붙여넣은 것
+        // 차단 목록이 하나도 없으면(0 반환) 메모/설정 등 다른 데이터를 붙여넣은 것이다
         const types = BLOCK_TYPES.filter((type) => Array.isArray(parsed[type]));
-        // 기존 목록에 덧붙인다 — 같은 content+gallery는 가져온 쪽으로 바꿔 뒤로 보내고, id는 새로 준다
+        // 기존 목록에 덧붙인다. 같은 content+gallery는 가져온 항목으로 바꿔 뒤로 보내고, id는 새로 준다
         for (const type of types) await addEntries(type, normalizeBlockList(parsed[type]));
         return types.length;
     };
@@ -71,7 +71,7 @@ export function BlockTab() {
                     </Flex>
                 )}
                 items={(type) => entries[type]}
-                // 디시콘은 내용이 코드라 이름(extra)으로 찾는다
+                // 디시콘은 content가 코드라 이름(extra)으로도 찾을 수 있게 넣는다
                 searchText={(entry) => [entry.content, entry.gallery, entry.extra]}
                 row={(type, entry) => (
                     <ListRow

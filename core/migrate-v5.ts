@@ -1,13 +1,13 @@
 /**
- * v5 → v6 저장소 마이그레이션 (한시적 — v5 사용자가 충분히 넘어오면 이 파일과 호출부를 지운다).
+ * v5 → v6 저장소 마이그레이션. 한시적이다: v5 사용자가 충분히 넘어오면 이 파일과 호출부를 지운다.
  *
  * v5는 모듈 이름(한글)으로 키를 나눠 저장했다:
  *   refresher:module:<이름>:enable            → refresher:modules[<id>]
  *   refresher:module:<이름>:setting:<키>      → refresher:module:<id>:settings[<키>]
  *   refresher:block:<유형>:mode              → refresher:block:defaults[<유형>]
  * 차단·메모 목록(refresher:block:<유형>, refresher:memo:<유형>)은 키와 모양이 같아 그대로 쓴다.
- * 옛 IP DB(refresher:database:*)·모듈 캐시(…:data)·백업 시각은 버린다 — 새로 받는다.
- * 5.1.2 이전 버전이 남긴 키(isLeftoverKey)도 버린다 — v5도 읽지 않던 잔재가 백업·내보내기만 불린다.
+ * 옛 IP DB(refresher:database:*)·모듈 캐시(…:data)·백업 시각은 버린다. 다시 받거나 새로 쌓인다.
+ * 5.1.2 이전 버전이 남긴 키(isLeftoverKey)도 버린다. v5도 읽지 않던 잔재라 백업·내보내기만 불린다.
  * 설정 키·값 형식은 v5와 같다(모듈별로 대조함). v6에 없는 키는 v6가 읽지 않으니 그대로 넘겨도 된다.
  */
 import {arrayIncludes} from "ts-extras";
@@ -39,7 +39,7 @@ type Snapshot = Record<string, unknown>;
 
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 
-/** 5.1.2 이전 버전의 키 (옛 DB 수백 KB, 모듈 데이터, v4 모듈·설정 스냅숏) — 옮겨진 뒤에도 남아 클라우드 백업 한도를 넘긴다 */
+/** 5.1.2 이전 버전의 키 (옛 DB 수백 KB, 모듈 데이터, v4 모듈·설정 스냅숏). 옮겨진 뒤에도 지워지지 않아 클라우드 백업 한도를 넘긴다 */
 const isLeftoverKey = (key: string): boolean =>
     key.startsWith("refresher.database.") ||
     key.startsWith("refresher.module:") ||
@@ -100,14 +100,15 @@ export const migrateV5 = (data: Snapshot): Snapshot => {
         next[key] = value;
     }
 
-    // v5의 기본 모드는 모든 유형이 SAME이었다 — :mode 키가 없는 유형을 v6 기본값(제목·내용·댓글은 CONTAIN)으로 두면 'ㅋ' 같은 항목이 포함 검사로 바뀌어 마구 막는다
-    // 잔재 키만 있는 v6 데이터(개발 빌드)는 v5가 아니다 — 차단 목록 키는 v5와 v6가 같아 v5 키가 있을 때만 판정한다
+    // v5는 모든 유형의 기본 모드가 SAME이었다. :mode 키가 없는 유형에 v6 기본값(제목·내용·댓글은 CONTAIN)을 쓰면
+    // 'ㅋ' 같은 항목이 포함 검사가 되어 마구 막으므로, 차단 목록이 있는 유형은 SAME으로 고정한다.
+    // 차단 목록 키는 v5·v6가 같으니 v5 키가 있을 때만 v5 데이터로 본다 (잔재 키만 있는 개발 빌드의 v6 데이터는 제외).
     const fromV5 = Object.keys(data).some(isV5Key);
     for (const type of fromV5 ? BLOCK_TYPES : []) {
         if (`refresher:block:${type}` in data) defaults[type] ??= "SAME";
     }
 
-    // 예전 버전은 refresher:modules에 v4 모듈 스냅숏(객체)을 넣어 두었다 — on/off(boolean)만 남긴다
+    // 옛 버전은 refresher:modules에 v4 모듈 스냅숏(객체)을 넣어 두었다. on/off(boolean) 값만 남긴다
     const modules = next["refresher:modules"];
     if (isObject(modules)) next["refresher:modules"] = Object.fromEntries(Object.entries(modules).filter(([, value]) => typeof value === "boolean"));
 

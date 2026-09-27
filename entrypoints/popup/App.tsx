@@ -14,11 +14,11 @@ const VERSION = browser.runtime.getManifest().version;
 interface Page {
     tabId: number;
     gallery: string;
-    /** 처음 물었을 때의 탭 상태 — 콘텐츠 스크립트가 없으면 null */
+    /** 처음 물었을 때의 탭 상태. 콘텐츠 스크립트가 없으면 null */
     state: PageToggleState[] | null;
 }
 
-/** 활성 탭이 디시 갤러리 페이지면 탭과 갤러리 id — 탭 주소는 host_permissions가 있는 디시 탭에서만 보인다 */
+/** 활성 탭이 디시 갤러리 페이지면 탭과 갤러리 id를 돌려준다. tabs 권한이 없어 탭 주소는 host_permissions가 있는 디시 탭에서만 보인다 */
 const findPage = async (): Promise<Page | null> => {
     const [tab] = await browser.tabs.query({active: true, currentWindow: true});
     const url = tab?.url ? URL.parse(tab.url) : null;
@@ -30,13 +30,13 @@ const findPage = async (): Promise<Page | null> => {
     return {tabId: tab.id, gallery, state};
 };
 
-// 이미 열린 옵션 탭이 있으면 그 탭으로 간다
+// openOptionsPage는 이미 열린 옵션 탭이 있으면 그 탭으로 간다
 const openOptions = async (): Promise<void> => {
     await browser.runtime.openOptionsPage();
     window.close();
 };
 
-/** 토글 아이콘은 메시지로 못 보내니 팝업이 모듈 정의에서 찾는다 */
+/** 토글 아이콘(컴포넌트)은 메시지로 보낼 수 없어 팝업이 모듈 정의에서 찾는다 */
 const toggleIcon = ({module, id}: PageAction): LucideIcon =>
     features.find((feature) => feature.id === module)?.pageToggles?.find((toggle) => toggle.id === id)?.icon ?? Puzzle;
 
@@ -150,7 +150,7 @@ function ModulesSection() {
 export function App() {
     const [loaded, setLoaded] = useState<{ page: Page | null } | null>(null);
 
-    // 한 번에 그려야 팝업 크기가 여러 번 바뀌지 않는다 — 모두 로컬 읽기라 금방 끝난다.
+    // 한 번에 그려야 팝업 크기가 여러 번 바뀌지 않는다. 모두 로컬 읽기라 금방 끝난다.
     // 하나가 실패해도 빈 팝업으로 남지 않게 기본값으로 그린다
     useEffect(() => {
         void Promise.all([

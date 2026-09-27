@@ -1,4 +1,4 @@
-/** 이미지 검색의 설정·엔진 — 모듈 파일(index.ts)과 배경 쪽(background.ts)이 같이 쓴다. React를 불러오지 않는다 (배경 번들) */
+/** index.ts와 background.ts가 같이 쓰는 엔진·설정. 배경 번들에 들어가므로 React를 불러오지 않는다 */
 import type {SettingGroup, SettingSchema} from "@/core/module/types";
 
 export const IMAGE_SEARCH_ID = "imagesearch";
@@ -14,7 +14,7 @@ export const IMAGE_SEARCH_ENGINES: Record<string, { name: string; url: string }>
     tracemoe: {name: "trace.moe", url: "https://trace.moe/?url="}
 };
 
-/** 메뉴를 띄울 이미지 — 아래 변환이 받는 디시 본문 이미지(viewimage.php)만 (dcimg*.dcinside.co.kr, image.dcinside.com 등) */
+/** 메뉴를 띄울 이미지. imageSearchUrl이 변환할 수 있는 디시 본문 이미지(viewimage.php)만 (dcimg*.dcinside.co.kr, image.dcinside.com 등) */
 export const IMAGE_URL_PATTERNS = ["*://*.dcinside.co.kr/viewimage.php*", "*://*.dcinside.com/viewimage.php*"];
 
 /** 우클릭한 이미지를 engine으로 검색할 주소. 디시 본문 이미지가 아니면 null */
@@ -32,7 +32,7 @@ export const imageSearchUrl = (engine: string, src: string): string | null => {
 
 const ENGINE_GROUP: SettingGroup = {name: "검색 엔진", desc: "이미지 우클릭 메뉴에 넣을 검색 엔진입니다. 둘 이상이면 확장 이름 아래로 묶입니다."};
 
-/** 엔진마다 켜기/끄기 — 메뉴는 배경이 이 설정을 보고 만든다 */
+/** 엔진마다 켜기/끄기. background.ts가 이 값으로 메뉴를 만든다 */
 export const IMAGE_SEARCH_SETTINGS: Record<string, SettingSchema> = Object.fromEntries(
     Object.entries(IMAGE_SEARCH_ENGINES).map(([id, {name}]): [string, SettingSchema] => [
         id,

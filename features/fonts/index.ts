@@ -6,7 +6,7 @@ import type {ModuleContext, SettingsSchema} from "@/core/module/types";
 const DEFAULT_FONTS = "Noto Sans CJK KR, NanumGothic";
 
 // "디시인사이드 폰트 교체"가 켜졌을 때 폰트를 바꿀 디시 요소.
-// :root 접두사는 디시 규칙보다 우선하도록 명시도를 한 단계 올리는 용도
+// :root 접두사는 명시도를 올려 디시 규칙을 이기려는 것이다
 const DC_FONT_TARGETS = ["body", "button", "input", ".gall_list", ".view_content_wrap", ".view_comment div", ".btn_cmt_open", ".btn_cmt_close"]
     .map((selector) => `:root ${selector}`)
     .join(", ");
@@ -15,12 +15,12 @@ const DC_FONT_TARGETS = ["body", "button", "input", ".gall_list", ".view_content
 const GENERIC_FAMILIES = new Set(["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "math", "emoji", "fangsong", "ui-serif", "ui-sans-serif", "ui-monospace", "ui-rounded"]);
 
 /**
- * "A, B" → `"A", "B", sans-serif` — 이름마다 따옴표로 감싸 CSS로 새어나가지 않게 한다 (정확히 일치하는 일반 글꼴군 키워드만 그대로).
- * 사용자가 이미 일반 글꼴군으로 끝냈으면 sans-serif를 또 붙이지 않는다
+ * "A, B" → `"A", "B", sans-serif`. 이름마다 따옴표로 감싸 입력이 CSS 규칙으로 새어 나가지 않게 한다.
+ * 정확히 일치하는 일반 글꼴군 키워드만 그대로 두고, 이미 일반 글꼴군으로 끝나면 sans-serif를 붙이지 않는다
  */
 const toFontFamily = (value: string): string => {
     const fonts = value
-        // 줄바꿈 등 제어문자는 CSS 문자열을 끝내 뒤를 규칙으로 읽힌다
+        // 제어문자(줄바꿈 등)는 CSS 문자열을 끝내 뒷부분이 규칙으로 읽힌다
         .replace(/\p{Cc}/gu, "")
         .split(",")
         .map((font) => font.trim())
@@ -84,7 +84,7 @@ let style: HTMLStyleElement | null = null;
 const STYLE_ID = "refresher-fonts";
 
 // 콘텐츠 스크립트는 document_start에 돌아 head가 없을 수 있으므로 <html>에 붙인다.
-// 죽은 인스턴스(파이어폭스 재주입)가 남긴 것은 id로 찾아 이어 쓴다 — 새로 붙이면 옛 규칙이 끌 수 없게 남는다
+// 죽은 인스턴스(파이어폭스 재주입)가 남긴 style은 id로 찾아 이어 쓴다. 새로 붙이면 옛 규칙이 끌 수 없게 남는다
 const apply = (ctx: Ctx): void => {
     style ??= document.querySelector<HTMLStyleElement>(`style#${STYLE_ID}`)
         ?? document.documentElement.appendChild(Object.assign(document.createElement("style"), {id: STYLE_ID}));
@@ -102,7 +102,7 @@ export default defineModule({
     setup: apply,
     onChanged: apply,
 
-    // 옵션·팝업도 같은 폰트로 (options.scss·popup의 Radix가 --refresher-font를 쓴다)
+    // 옵션·팝업도 같은 폰트로 (_radix.scss·options.scss가 --refresher-font를 쓴다)
     extensionPageVars: (settings) => ({"--refresher-font": fontFamilyOf(settings.customFonts)}),
 
     revoke() {

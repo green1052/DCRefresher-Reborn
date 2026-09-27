@@ -7,7 +7,7 @@ import type {SettingSchema} from "@/core/module/types";
 import features from "@/features";
 import {useModulesStore} from "@/stores/modules";
 
-/** 모듈별 카드 — 헤더의 스위치로 on/off, 본문에 세부 설정 */
+/** 모듈별 카드. 헤더의 스위치로 켜고 끄며, 본문에 세부 설정을 둔다 */
 export function GeneralTab() {
     const enables = useModulesStore((state) => state.enables);
     const values = useModulesStore((state) => state.values);
@@ -61,7 +61,7 @@ export function GeneralTab() {
                                                 <Box py="3">
                                                     <Text as="p" size="2" weight="medium">{group.name}</Text>
                                                     <Text as="p" size="1" color="gray" mb="2">{group.desc}</Text>
-                                                    {/* 글 입력칸·슬라이더는 칸 하나로는 좁다 — 섞여 있으면 묶음 전체를 한 줄씩 그려 조작 위치를 오른쪽 끝으로 맞춘다 */}
+                                                    {/* 글 입력칸·슬라이더는 칸 하나에 넣기엔 좁다. 섞여 있으면 묶음 전체를 한 줄에 하나씩 그려 조작부를 오른쪽 끝에 맞춘다 */}
                                                     <Grid columns={entries.some(([, s]) => s.type === "text" || s.type === "range") ? "1" : {initial: "2", sm: "3"}} gapX="5">
                                                         {entries.map((entry) => item(entry, true))}
                                                     </Grid>

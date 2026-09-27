@@ -37,18 +37,18 @@ const MemoFormDialog = ({
             setError("메모 대상을 입력해주세요.");
             return;
         }
-        // 빈 메모도 저장되면 "[]" 배지만 붙는다
+        // 빈 메모를 저장하면 빈 "[]" 배지만 붙는다
         if (!state.text.trim()) {
             setError("메모를 입력해주세요.");
             return;
         }
-        // 추가로 기존 메모를 덮어쓰지 않게 — 고치려면 목록에서 눌러 수정
+        // 추가로 기존 메모를 덮어쓰지 않게 한다. 고치려면 목록에서 수정한다
         if (!editing && Object.hasOwn(useMemosStore.getState().memos[state.type], state.user.trim())) {
             setError("이미 메모가 있습니다.");
             return;
         }
 
-        // 수정 때는 기존 키 그대로 — 다듬으면 공백 있는 키가 새 항목으로 갈라진다
+        // 수정할 때는 기존 키를 그대로 쓴다. 앞뒤 공백이 있는 기존 키를 trim하면 새 항목으로 갈라진다
         await onSubmit(editing ? state : {...state, user: state.user.trim()});
         onClose();
     };
@@ -80,7 +80,7 @@ const MemoFormDialog = ({
                             placeholder="유저, 닉네임 또는 IP"
                             value={state.user}
                             disabled={editing}
-                            // 입력 중엔 다듬지 않는다 — 닉네임 가운데 공백을 칠 수 있게 (저장할 때 trim)
+                            // 입력 중에 trim하면 닉네임 가운데 공백을 칠 수 없으므로 저장할 때 trim한다
                             onChange={(ev) => setState((prev) => ({...prev, user: ev.target.value}))}
                         />
                     </label>
@@ -161,12 +161,12 @@ export function MemoTab() {
     const [form, setForm] = useState<MemoFormState | null>(null);
 
     const importMemos = async (parsed: Record<string, unknown>): Promise<number> => {
-        // 객체만 받는다 — 차단 내보내기의 NICK/IP(배열)를 메모로 세면 다른 데이터인데도 성공으로 알린다
+        // 객체만 받는다. 차단 내보내기의 NICK/IP(배열)까지 메모로 세면 다른 데이터인데도 성공으로 알린다
         const types = MEMO_TYPES.filter((type) => {
             const map = parsed[type];
             return typeof map === "object" && map !== null && !Array.isArray(map);
         });
-        // 기존 메모에 합친다 — 같은 대상은 가져온 쪽으로
+        // 기존 메모에 합치고, 같은 대상은 가져온 메모로 덮는다
         for (const type of types) await setMemos(type, {...memos[type], ...normalizeMemoMap(parsed[type])});
         return types.length;
     };
@@ -183,7 +183,7 @@ export function MemoTab() {
                 importData={importMemos}
                 onClear={clearType}
                 onAdd={(type) => setForm({type, user: "", text: "", color: randomColor(), gallery: ""})}
-                // 객체 키 순서 = 추가 순서 (숫자로만 된 키는 JS가 앞으로 정렬해 예외)
+                // 객체 키 순서가 곧 추가 순서다. 숫자로만 된 키는 JS가 앞으로 정렬하는 예외가 있다
                 items={(type) => Object.entries(memos[type])}
                 searchText={([user, entry]) => [user, entry.text, entry.gallery]}
                 row={(type, [user, entry]) => (

@@ -31,7 +31,7 @@ const BlockPopup = () => {
     const [sending, setSending] = useState(false);
 
     const submit = async (): Promise<void> => {
-        // 연타로 차단 요청이 두 번 가지 않게
+        // 연타로 차단 요청이 두 번 가지 않게 한다.
         if (!preData || sending) return;
         setSending(true);
         const signal = usePreviewStore.getState().signalId;
@@ -51,9 +51,9 @@ const BlockPopup = () => {
             useUiStore.getState().showToast("차단 처리 중 오류가 발생했습니다.", "error");
         }
 
-        // 그새 다른 글로 넘어갔으면 창도 미리보기도 그 글 것이다 — 알림만
+        // 그새 다른 글로 넘어갔으면 차단 창과 미리보기는 그 글 것이라 알림만 띄우고 건드리지 않는다.
         if (usePreviewStore.getState().signalId !== signal) return;
-        // 실패하면 입력을 그대로 두고 다시 보낼 수 있게
+        // 실패하면 입력을 그대로 두어 다시 보낼 수 있게 한다.
         if (!done) setSending(false);
         else if (delChk) usePreviewStore.getState().requestClose();
         else usePreviewStore.setState({blockPopup: false});
@@ -134,7 +134,7 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
                 }
             }}
         >
-            {/* 섀도 루트 안에선 FocusScope가 autoFocus를 덮는다 (MemoDialog와 같음) */}
+            {/* 섀도 루트 안에선 Dialog의 FocusScope가 입력칸의 autoFocus를 덮으므로 자동 포커스를 막는다 (MemoDialog와 같음) */}
             <Dialog.Content container={overlay.portal} maxWidth="320px" onOpenAutoFocus={(ev) => ev.preventDefault()}>
                 <Dialog.Title>코드 입력</Dialog.Title>
                 <img src={captcha.url} alt="captcha" style={{display: "block", width: "100%", borderRadius: "var(--radius-3)"}}/>
@@ -154,7 +154,7 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
     );
 };
 
-/** 관리 버튼 두 번 누르기 — 이 안에 같은 버튼을 다시 눌러야 실행한다 */
+/** 관리 버튼 두 번 누르기 확인 시간(ms). 이 안에 같은 버튼을 다시 눌러야 실행한다 */
 const CONFIRM_WINDOW = 3000;
 
 interface AdminAction {
@@ -164,25 +164,28 @@ interface AdminAction {
     icon: ReactNode;
     active?: boolean;
     danger?: boolean;
-    /** 한 번에 실행 — 차단은 옵션 창을 열 뿐이라 그 창이 확인이다 */
+    /** 두 번 누르기 없이 바로 실행한다. 차단은 옵션 창을 열 뿐이라 그 창이 확인을 겸한다 */
     instant?: boolean;
     run: () => void;
 }
 
 /**
- * 관리 권한이 있을 때 미리보기 왼쪽 가장자리에 붙는 관리 패널. Kbd는 단축키 힌트 — 차단은 차단 키 두 번(프리셋 즉시 차단)과 달리 옵션 창을 연다.
- * 공지·개념글·끌올·삭제는 두 번 눌러야 실행한다 (첫 번째는 토스트로 알린다). 다른 버튼을 누르거나, 늦거나, 다른 글로 넘어가면 처음부터.
- * 미리보기 포털 안에 그린다 (Frame) — 나중에 뜬 창(차단·메모 등)이 위를 덮어, 한 번 클릭에 창 닫기와 관리 동작이 같이 일어나지 않게
+ * 관리 권한이 있을 때 미리보기를 연 동안 화면 왼쪽 가장자리에 붙는 관리 패널.
+ * Kbd는 단축키 힌트다. 차단 버튼은 차단 키 두 번(프리셋으로 즉시 차단)과 달리 옵션 창을 연다.
+ * 공지·개념글·끌올·삭제는 두 번 눌러야 실행하고, 첫 번째는 토스트로 알린다.
+ * 다른 버튼을 누르거나, 늦거나, 다른 글로 넘어가면 처음부터 다시 센다.
+ * Frame이 미리보기 포털 안에 그린다. 나중에 뜬 창(차단·메모 등)이 패널 위를 덮어야
+ * 한 번 클릭에 창 닫기와 관리 동작이 같이 일어나지 않는다.
  */
 export const AdminPanel = () => {
     const notice = usePreviewStore((s) => s.notice);
     const recommend = usePreviewStore((s) => s.recommend);
     const requestManage = usePreviewStore((s) => s.requestManage);
     const keys = usePreviewStore((s) => s.shortcutKeys);
-    // 첫 번째로 누른 버튼 — 다시 그릴 필요가 없어 ref에 둔다
+    // 첫 번째로 누른 버튼. 바뀌어도 다시 그릴 필요가 없어 ref에 둔다.
     const armed = useRef<{ id: AdminAction["id"]; signal: number; at: number } | null>(null);
 
-    // id는 고정 key — 라벨을 key로 쓰면 공지·개념글을 토글할 때 버튼이 새로 그려져 포커스가 사라진다
+    // key는 고정된 id로 준다. 라벨을 key로 쓰면 공지·개념글을 토글할 때 버튼이 새로 마운트돼 포커스가 사라진다.
     const actions: AdminAction[] = [
         {id: "notice", label: notice ? "공지 해제" : "공지 등록", icon: <Megaphone size={14}/>, active: notice, run: () => requestManage("notice")},
         {id: "recommend", label: recommend ? "개념글 해제" : "개념글 등록", icon: <Star size={14}/>, active: recommend, run: () => requestManage("recommend")},
@@ -218,7 +221,7 @@ export const AdminPanel = () => {
                     <Button
                         key={action.id}
                         size="2"
-                        // soft 고정 — ghost와 섞으면 Radix 여백이 달라 흔들린다. 상태는 색으로 표시
+                        // variant는 soft로 고정한다. ghost와 섞으면 Radix 여백이 달라 버튼이 흔들리므로 상태는 색으로 보인다.
                         variant="soft"
                         color={action.danger ? "red" : action.active ? undefined : "gray"}
                         highContrast={action.active}

@@ -14,7 +14,7 @@ export const viewUrl = (link: string, gallery: string, id: string): string => {
     return `${urls.base}${type}board/view/?id=${gallery}&no=${id}`;
 };
 
-/** 게시글 HTML → PostInfo */
+/** 게시글을 받아 PostInfo로 푼다. 글이 없으면 Error("404") */
 export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): Promise<PostInfo> => {
     const response = await http.get(viewUrl(preData.link, preData.gallery, preData.id), {signal}).text();
 
@@ -24,7 +24,7 @@ export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): P
     return postInfo;
 };
 
-/** 댓글 목록 — 한 쪽에 100개씩이라 쪽을 이어 받는다 */
+/** 댓글 목록. 한 쪽에 100개씩이라 여러 쪽을 받아 합친다 */
 export const fetchComments = async (preData: GalleryPreData, postInfo: PostInfo, signal: AbortSignal): Promise<CommentListResponse> => {
     const body = await commonBody(preData.link);
     body.set("id", preData.gallery);
@@ -44,13 +44,13 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: PostInfo,
         }>();
     };
 
-    // 1쪽의 쪽 나눔(viewComments(n, …))에서 마지막 쪽을 읽고, 나머지 쪽은 한꺼번에 받는다 — 동시에 나가는 수는 요청 제한 모듈이 지킨다.
-    // ponytail: 10쪽(1000개)까지 — 더 많은 글은 드물고 자동 갱신마다 전부 다시 받는다
+    // 1쪽의 쪽 나눔(viewComments(n, …))에서 마지막 쪽 번호를 읽고 나머지 쪽은 한꺼번에 받는다. 동시 요청 수는 요청 제한 모듈이 조절한다.
+    // ponytail: 10쪽(1000개)까지만 받는다. 더 많은 글은 드물고, 자동 갱신 때마다 전부 다시 받기 때문이다.
     const first = await fetchPage(1);
     const lastPage = Math.min(10, Math.max(1, ...Array.from(first.pagination?.matchAll(/viewComments\((\d+)/g) ?? [], (match) => Number(match[1]))));
     const rest = await Promise.all(Array.from({length: lastPage - 1}, (_, index) => fetchPage(index + 2)));
 
-    // 쪽 순서대로 합친다 — 쪽이 겹쳐 오면 같은 번호는 하나로
+    // 쪽 순서대로 합친다. 쪽 사이에 같은 댓글이 겹쳐 올 수 있어 번호로 하나만 남긴다
     const byNo = new Map<string, DcinsideComment>();
     for (const response of [first, ...rest]) {
         for (const comment of response.comments ?? []) byNo.set(comment.no, comment);
@@ -94,17 +94,20 @@ export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U
     return result === "true" ? {success: true, counts, fixedCounts} : {success: false, message: (counts === "nomember" ? fixedCounts : counts) || undefined};
 };
 
-/** 관리 요청 결과 — 디시 관리 API는 {"result": "success" | "fail", "msg": "…"}를 돌려준다 */
+/** 관리 요청 결과. 디시 관리 API는 {"result": "success" | "fail", "msg": "…"}를 돌려준다 */
 export interface ManageResult {
     success: boolean;
     /** 디시가 준 안내 문구 (없을 수 있음) */
     message?: string;
 }
 
-// 성공이라고 밝힌 응답만 성공 — 세션이 끊겨 온 HTML이나 "정상적인 접근이 아닙니다." 같은 모르는 응답에 '삭제했습니다'를 띄우지 않게
+// 성공이라고 밝힌 응답만 성공으로 본다. 세션이 끊겨 온 HTML이나 "정상적인 접근이 아닙니다." 같은 응답에 성공 알림을 띄우지 않게
 const isSuccess = (result: unknown): boolean => result === "success" || result === "true" || result === true;
 
-/** 관리 요청 — 미니 갤러리만 mini_, 나머지(일반·마이너·인물)는 minor_ 관리 API. 필드는 공통 필드(ci_t, _GALLTYPE_) 뒤에 준 순서로 */
+/**
+ * 관리 요청. 미니 갤러리는 mini_, 나머지(일반·마이너·인물)는 minor_ 관리 API를 쓴다.
+ * 필드는 공통 필드(ci_t, _GALLTYPE_) 뒤에 준 순서대로 붙는다.
+ */
 const manage = async (target: Pick<GalleryPreData, "link">, action: string, fields: Record<string, string>): Promise<ManageResult> => {
     const body = await commonBody(target.link);
     for (const [key, value] of Object.entries(fields)) body.set(key, value);
@@ -122,7 +125,7 @@ const manage = async (target: Pick<GalleryPreData, "link">, action: string, fiel
         // 아래 텍스트 분기로
     }
 
-    // JSON 객체가 아니면 "false||메시지" 같은 텍스트 — 맨 'true'·'false'는 JSON 원시값으로 읽히므로 여기서 본다
+    // JSON 객체가 아니면 "false||메시지" 같은 텍스트다. 맨 'true'·'false'도 JSON.parse가 원시값으로 읽어 여기로 온다
     const [result, message] = text.split("||");
     return {success: isSuccess(result), message: message || undefined};
 };
@@ -130,7 +133,7 @@ const manage = async (target: Pick<GalleryPreData, "link">, action: string, fiel
 /** 끌올 */
 export const bump = (preData: GalleryPreData): Promise<ManageResult> => manage(preData, "update_bump", {id: preData.gallery, "nos[]": preData.id});
 
-/** 삭제 — manage 모듈의 Ctrl+클릭은 목록 행에서 갤러리·글 번호·주소만 넘긴다 */
+/** 게시글 삭제. manage 모듈의 Ctrl+클릭은 목록 행에서 얻은 갤러리·글 번호·주소만 있어 GalleryPreData 전체를 받지 않는다 */
 export const deletePost = (target: Pick<GalleryPreData, "gallery" | "id" | "link">): Promise<ManageResult> =>
     manage(target, "delete_list", {id: target.gallery, "nos[]": target.id});
 
@@ -180,7 +183,7 @@ export const userDeleteComment = async (preData: GalleryPreData, commentId: stri
     if (password) body.set("re_password", password);
     body.set("g-recaptcha-response", "");
 
-    // 'true'만 성공 (v5와 같음) — 관리 요청과 달리 JSON이 아니다
+    // 'true'만 성공으로 본다 (v5와 같음). 관리 요청과 달리 응답이 JSON이 아니다
     const {result, message} = submitResult(await ajax.post(urls.comment_remove, {body}).text());
     return {success: result === "true", message};
 };
@@ -198,7 +201,7 @@ const submitResult = (response: string): SubmitResult => {
     return {result: result ?? "", message, detail};
 };
 
-/** 댓글/디시콘 작성. 첫 전송은 grecaptchaToken 없이 (디시 f_submit(null)) */
+/** 댓글/디시콘 작성. 디시 f_submit(null)처럼 첫 전송은 grecaptchaToken 없이 보낸다 */
 export const submitComment = async (
     preData: GalleryPreData,
     postInfo: PostInfo,
@@ -214,7 +217,7 @@ export const submitComment = async (
 
     const code = (() => {
         try {
-            // 디시 _d(): 알파벳을 섞은 base64 — 표준 알파벳으로 바꿔 푼다 (65번째 '='는 채움, 모르는 글자는 버린다)
+            // 디시 _d()를 옮긴 것. 알파벳을 섞은 base64를 표준 알파벳으로 바꿔 푼다 (65번째 '='는 채움, 모르는 글자는 버린다)
             const rKey = "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K";
             const b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
@@ -242,7 +245,7 @@ export const submitComment = async (
             return null;
         }
     })();
-    // 토큰 없이 보내면 서버는 모호한 오류만 준다 — 보내지 않고 알린다
+    // service_code를 못 만든 채 보내면 서버가 모호한 오류만 주므로 보내지 않고 알린다
     if (!code) return {result: "false", message: "댓글 폼을 읽지 못했습니다. 원문에서 작성해 주세요."};
 
     const params = new URLSearchParams();
@@ -287,7 +290,7 @@ export const submitComment = async (
     return submitResult(response);
 };
 
-/* ===== 글자콘 — 디시 txtcon.js의 입력 규칙 (서버 txtcon_conf와 같다) ===== */
+/* ===== 글자콘: 디시 txtcon.js의 입력 규칙 (서버 txtcon_conf와 같다) ===== */
 
 export const TXTCON_BACKGROUNDS = ["3b4890", "b4b4e1", "f5e1f0", "d2f0e6", "ffffff", "333333"];
 export const TXTCON_COLORS = ["ffffff", "333333"];
@@ -297,7 +300,7 @@ const TXTCON_MAX_LINES = 4;
 /** 한 줄 최대 글자 수 */
 const TXTCON_MAX_LINE_LEN = 5;
 
-// 컬러 이모지로 그려지는 BMP 문자 — 글자 수에 1을 더 센다
+// 컬러 이모지로 그려지는 BMP 문자. 글자 수에 1을 더 센다
 const TXTCON_BMP_EMOJI = /[\p{Emoji_Presentation}--[\u{10000}-\u{10FFFF}]]/gv;
 
 /** 글자 수: UTF-16 코드 유닛 + BMP 컬러 이모지 가산 (줄바꿈 제외) */
@@ -307,12 +310,12 @@ const txtconLength = (text: string): number => {
     return plain.length + (plain.match(TXTCON_BMP_EMOJI)?.length ?? 0);
 };
 
-// ponytail: 디시 txtcon_clusters 대신 브라우저 grapheme 분할 — 흔한 글자(국기·스킨톤·ZWJ 포함)에선 같다 (분해형 한글 자모 등만 다름)
+// ponytail: 디시 txtcon_clusters 대신 브라우저 grapheme 분할을 쓴다. 국기·스킨톤·ZWJ 같은 흔한 글자는 결과가 같고, 분해형 한글 자모 등만 다르다
 let segmenter: Intl.Segmenter | undefined;
-/** 글자콘의 '한 글자' 단위로 나눈다 — 분할기는 처음 쓸 때 만든다 (모든 디시 페이지에서 만들지 않게) */
+/** 글자콘의 '한 글자'(grapheme) 단위로 나눈다. 모든 디시 페이지에서 만들지 않도록 분할기는 처음 쓸 때 만든다 */
 export const graphemes = (text: string): string[] => Array.from((segmenter ??= new Intl.Segmenter()).segment(text), ({segment}) => segment);
 
-/** 직접 줄바꿈은 두고 각 줄을 5글자씩 나눈다 — 입력 제한과 보여 줄 때(Comment.tsx)가 같이 쓴다 */
+/** 직접 넣은 줄바꿈은 두고 각 줄을 5글자씩 나눈다. 입력 제한과 표시(Comment.tsx)가 같이 쓴다 */
 export const wrapTxtcon = (text: string): string =>
     text
         .replace(/\r\n?/g, "\n")
@@ -324,7 +327,7 @@ export const wrapTxtcon = (text: string): string =>
 export const normalizeTxtcon = (value: string): string => {
     let text = value
         .replace(/\r\n?/g, "\n")
-        // 이모지 구간 밖 4바이트·아랍 표현형은 '+'
+        // 이모지 구간 밖의 4바이트 문자와 아랍 표현형은 '+'로 바꾼다
         .replace(/[[\u{10000}-\u{10FFFF}]--[\u{1F000}-\u{1FAFF}]]/gv, "+")
         .replace(/[\uFB50-\uFDFF\uFE70-\uFEFE]/g, "+")
         // 공백류는 일반 공백, 안 보이는 채움 문자는 제거
@@ -339,13 +342,15 @@ export const normalizeTxtcon = (value: string): string => {
         .slice(0, TXTCON_MAX_LINES)
         .join("\n");
 
-    // 4줄(줄바꿈 3개)×5글자면 23 grapheme을 넘을 수 없다 — 미리 줄여 두어야 한 글자씩 빼며 전체를 다시 나누는 아래 루프가 긴 붙여넣기에서 O(n²)가 되지 않는다
+    // 결과는 4줄×5글자와 줄바꿈 3개, 즉 23 grapheme을 넘을 수 없으니 미리 자른다.
+    // 그래야 한 글자씩 빼며 전체를 다시 나누는 아래 루프가 긴 붙여넣기에서 O(n²)가 되지 않는다.
     text = graphemes(text).slice(0, (TXTCON_MAX_LINE_LEN + 1) * TXTCON_MAX_LINES).join("");
 
-    // 5글자씩 나눈 줄 수가 넘치면 뒤에서부터 제거
+    // 5글자씩 나눈 줄 수가 넘치면 뒤에서부터 뺀다
     while (wrapTxtcon(text).split("\n").length > TXTCON_MAX_LINES) text = Array.from(text).slice(0, -1).join("");
 
-    // 글자 수 제한 (코드포인트 단위로 앞에서 자른다 — 넘치는 글자만 건너뛰면 가운데가 빠지고 뒤의 ZWJ·결합 문자가 엉뚱한 글자에 붙는다)
+    // 20자 제한. 코드포인트 단위로 앞에서부터 채우다가 넘치면 멈춘다.
+    // 넘치는 글자만 건너뛰고 계속하면 가운데가 빠지고, 뒤의 ZWJ·결합 문자가 엉뚱한 글자에 붙는다.
     let count = 0;
     let output = "";
     for (const char of text) {
@@ -359,7 +364,7 @@ export const normalizeTxtcon = (value: string): string => {
     return output;
 };
 
-/** 글자콘 작성 (txtcon.js txtcon_submit). 첫 전송은 grecaptchaToken 없이 */
+/** 글자콘 작성 (txtcon.js txtcon_submit). 첫 전송은 grecaptchaToken 없이 보낸다 */
 export const submitTxtcon = async (
     preData: GalleryPreData,
     postInfo: PostInfo,

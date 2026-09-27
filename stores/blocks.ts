@@ -43,7 +43,7 @@ export const composeExtra = (fields: { isRegex: boolean; gallery?: string; mode?
         .filter(Boolean)
         .join(" ");
 
-/** 저장소/가져오기 값 → 유효 항목만. id가 없거나 겹치면 새로 준다 — 겹친 id는 삭제·수정이 겹친 항목 모두를 건드린다 */
+/** 저장소·가져오기 값에서 유효한 항목만 남긴다. id가 없거나 겹치면 새로 준다 (겹친 id는 삭제·수정이 그 항목 모두에 걸린다) */
 export const normalizeBlockList = (value: unknown): BlockEntry[] => {
     if (!Array.isArray(value)) return [];
 
@@ -51,8 +51,8 @@ export const normalizeBlockList = (value: unknown): BlockEntry[] => {
     return value.filter(isBlockEntry).map((entry) => {
         const id = typeof entry.id === "string" && !ids.has(entry.id) ? entry.id : crypto.randomUUID();
         ids.add(id);
-        // 예전 항목(v5, 이전 다이얼로그)은 플래그 문자열을 extra에 넣었다 — 표시할 때 필드에서 만드니 버린다.
-        // 키 자리는 그대로 둔다 — 저장한 값과 JSON이 달라지면 이 탭의 쓰기가 watch로 돌아올 때마다 구독자가 다시 돈다
+        // 예전 항목(v5, 이전 다이얼로그)은 플래그 문자열을 extra에 넣었다. 표시할 때 필드에서 만드니 버린다.
+        // 키를 지우지 않고 undefined로 덮어 키 순서를 지킨다. 저장한 값과 JSON이 달라지면 이 탭의 쓰기가 watch로 돌아올 때마다 구독자가 다시 돈다
         return entry.extra && entry.extra === composeExtra(entry) ? {...entry, id, extra: undefined} : {...entry, id};
     });
 };
@@ -76,14 +76,14 @@ export const useBlocksStore = create<BlocksState>((set, get) => ({
     addEntry: (type, fields) => get().addEntries(type, [fields]),
 
     addEntries: async (type, list) => {
-        // 같은 content+gallery는 새로 들어온 쪽으로 바꿔 뒤로 보낸다. id는 늘 새로 준다 — 가져온 id가 기존 항목과 겹치지 않게
+        // 같은 content+gallery는 새로 들어온 쪽으로 바꿔 맨 뒤로 보낸다. id는 가져온 id가 기존 항목과 겹치지 않게 늘 새로 준다
         const added = new Map(list.map((fields) => [blockKey(fields), {...fields, id: crypto.randomUUID()}]));
         await get().setEntries(type, [...get().entries[type].filter((entry) => !added.has(blockKey(entry))), ...added.values()]);
     },
 
     updateEntry: async (type, id, fields) => {
         const list = get().entries[type];
-        // 다른 탭에서 지워졌거나 가져오기로 id가 바뀐 항목 — 그냥 두면 같은 content 항목만 지워지고 수정은 사라진다
+        // 다른 탭에서 지웠거나 가져오기로 id가 바뀐 항목이면 새로 넣는다. 아래 수정으로 넘기면 같은 content 항목만 지워지고 수정은 사라진다
         if (!list.some((entry) => entry.id === id)) return get().addEntries(type, [fields]);
 
         const key = blockKey(fields);
@@ -107,14 +107,14 @@ export const useBlocksStore = create<BlocksState>((set, get) => ({
     }
 }));
 
-// 이 탭의 쓰기도 watch로 돌아온다 — 값이 같으면 state를 그대로 돌려줘 구독자를 다시 렌더시키지 않는다
+// 이 탭의 쓰기도 watch로 돌아온다. 값이 같으면 state를 그대로 돌려줘 구독자를 다시 렌더시키지 않는다
 const setList = (type: BlockType, value: unknown): void =>
     useBlocksStore.setState((state) => {
         const next = normalizeBlockList(value);
         return JSON.stringify(state.entries[type]) === JSON.stringify(next) ? state : {entries: {...state.entries, [type]: next}};
     });
 
-// 가져오기·복원 값은 그대로 들어온다 — 모르는 유형·모드(소문자 등)는 버리고 그 유형은 기본 모드로
+// 가져오기·복원 값은 검증 없이 들어온다. 모르는 유형·모드(소문자 등)는 버리고 그 유형은 기본 모드로 둔다
 const setDefaults = (next: Partial<Record<BlockType, DetectMode>>): void =>
     useBlocksStore.setState({
         defaults: {
@@ -132,14 +132,14 @@ const load = async (): Promise<void> => {
     setDefaults(defaults);
 };
 
-/** 저장소 값 로드 + 변경 감시 (다른 탭/옵션 페이지에서 바뀐 값 반영). 여러 번 불러도 1회 */
+/** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다 */
 export const initBlocksStore = once(async () => {
-    // 다 읽은 뒤에 감시를 건다 — 읽기가 실패하면 아무것도 걸리지 않아, 다시 시도해도 두 번 걸리지 않는다
+    // 다 읽은 뒤에 감시를 건다. 읽기가 실패하면 once가 다음 호출에 다시 시도하는데, 그때 감시가 두 번 걸리지 않는다
     await load();
     for (const type of BLOCK_TYPES) blockStorage[type].watch((next) => setList(type, next));
     blockDefaultsStorage.watch(setDefaults);
 
-    // bfcache에서 돌아온 탭은 그사이의 변경을 못 받았다 — 옛 목록으로 쓰면 다른 탭의 변경을 지우니 다시 읽는다
+    // bfcache에서 돌아온 탭은 그사이의 변경을 받지 못했다. 옛 목록으로 쓰면 다른 탭의 변경을 덮으므로 다시 읽는다
     window.addEventListener("pageshow", (ev) => {
         if (ev.persisted) void load().catch(console.error);
     });

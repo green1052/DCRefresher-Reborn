@@ -1,13 +1,13 @@
-// 디시 글 목록 DOM — 목록을 갈아끼우거나 이어 붙이는 모듈(refresh, search)이 같이 쓴다
+// 디시 글 목록 DOM 도우미. 목록을 갈아끼우거나 이어 붙이는 refresh·search 모듈이 같이 쓴다.
 
-/** 갈아끼우는 글 목록 tbody — 검색 페이지 아래쪽 통합검색 목록(#kakao_seach_list)은 뺀다 */
+/** 갈아끼울 글 목록 tbody. 검색 페이지 아래쪽 통합검색 목록(#kakao_seach_list)은 id가 있어 :not([id])로 빠진다 */
 export const LIST_SELECTOR = ".gall_list:not([id]) tbody";
 export const PAGING_SELECTOR = ".left_content article:has(.gall_listwrap) .bottom_paging_box";
 
 /**
- * 관리자 목록 행의 체크박스 칸을 만드는 함수. 실제 마크업을 따르기 위해 기존 행의 칸을 복제해 글 번호만 바꾸고,
- * 그런 행이 없으면 디시의 행 템플릿(갤러리 종류별 *_td-tmpl), 그것도 없으면 빈 칸을 쓴다.
- * 번호 없는 행(설문/AD)은 빈 칸 — 열 정렬만 맞춘다.
+ * 관리자 목록 행의 체크박스 칸을 만드는 함수를 돌려준다.
+ * 실제 마크업과 같도록 기존 행의 칸을 복제해 글 번호만 바꾼다. 그런 행이 없으면 디시의 행 템플릿(갤러리 종류별 *_td-tmpl)을,
+ * 그것도 없으면 빈 칸을 쓴다. 번호 없는 행(설문/AD)은 열만 맞추는 빈 칸이다.
  */
 export const checkboxCellFactory = (oldRows: HTMLTableRowElement[]): ((no: string | undefined) => HTMLTableCellElement) => {
     const sampleRow = oldRows.find((row) => row.dataset.no && row.querySelector(":scope > td .article_chkbox"));
@@ -33,7 +33,7 @@ export const checkboxCellFactory = (oldRows: HTMLTableRowElement[]): ((no: strin
     };
 };
 
-/** 검색어 강조 (TreeWalker, 텍스트 노드만) */
+/** 제목 링크 안의 검색어를 span.mark로 감싼다. 텍스트 노드만 바꿔 링크 안의 다른 요소는 건드리지 않는다 */
 export const highlightSearchResults = (newList: HTMLElement, searchValue: string): void => {
     if (!searchValue) return;
 

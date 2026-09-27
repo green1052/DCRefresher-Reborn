@@ -24,7 +24,7 @@ const isMemoEntry = (value: unknown): value is MemoEntry => {
 /** 새 메모의 기본 색 */
 export const randomColor = (): string => `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0")}`;
 
-/** 저장소/가져오기 값 → 유효 항목만 */
+/** 저장소·가져오기 값에서 유효한 항목만 남긴다 */
 export const normalizeMemoMap = (value: unknown): MemoMap =>
     value && typeof value === "object" && !Array.isArray(value)
         ? Object.fromEntries(Object.entries(value).filter(([, memo]) => isMemoEntry(memo)))
@@ -69,11 +69,11 @@ const lookupMemo = (memos: Record<MemoType, MemoMap>, user: MemoUser, gallery?: 
 export const findMemo = (user: MemoUser, gallery?: string | null): MemoEntry | undefined =>
     lookupMemo(useMemosStore.getState().memos, user, gallery);
 
-/** findMemo의 React용 — 구독한 memos로 찾아야 React Compiler가 메모가 바뀔 때 다시 계산한다 */
+/** React용 findMemo. 구독한 memos로 찾아야 React Compiler가 메모가 바뀔 때 다시 계산한다 */
 export const useUserMemo = (user: MemoUser, gallery?: string | null): MemoEntry | undefined =>
     lookupMemo(useMemosStore((state) => state.memos), user, gallery);
 
-// 이 탭의 쓰기도 watch로 돌아온다 — 값이 같으면 state를 그대로 돌려줘 구독자(배지 전체 다시 그리기)를 깨우지 않는다
+// 이 탭의 쓰기도 watch로 돌아온다. 값이 같으면 state를 그대로 돌려줘 구독자(배지 전체 다시 그리기)를 깨우지 않는다
 const setMap = (type: MemoType, value: unknown): void =>
     useMemosStore.setState((state) => {
         const next = normalizeMemoMap(value);
@@ -85,13 +85,13 @@ const load = async (): Promise<void> => {
     for (const [index, type] of MEMO_TYPES.entries()) setMap(type, maps[index]);
 };
 
-/** 저장소 값 로드 + 변경 감시 (다른 탭/옵션 페이지에서 바뀐 값 반영). 여러 번 불러도 1회 */
+/** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다 */
 export const initMemosStore = once(async () => {
-    // 다 읽은 뒤에 감시를 건다 — 읽기가 실패하면 아무것도 걸리지 않아, 다시 시도해도 두 번 걸리지 않는다
+    // 다 읽은 뒤에 감시를 건다. 읽기가 실패하면 once가 다음 호출에 다시 시도하는데, 그때 감시가 두 번 걸리지 않는다
     await load();
     for (const type of MEMO_TYPES) memoStorage[type].watch((next) => setMap(type, next));
 
-    // bfcache에서 돌아온 탭은 그사이의 변경을 못 받았다 — 옛 메모로 쓰면 다른 탭의 변경을 지우니 다시 읽는다
+    // bfcache에서 돌아온 탭은 그사이의 변경을 받지 못했다. 옛 메모로 쓰면 다른 탭의 변경을 덮으므로 다시 읽는다
     window.addEventListener("pageshow", (ev) => {
         if (ev.persisted) void load().catch(console.error);
     });

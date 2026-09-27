@@ -16,24 +16,25 @@ const errorMessage = (error: unknown): string => (error instanceof Error ? error
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 
-/** 값 여러 개를 객체 하나에 담는 키 — 모듈 on/off, 기본 차단 모드, 모듈별 설정 */
+/** 값 여러 개를 객체 하나에 담는 키(모듈 on/off, 기본 차단 모드, 모듈별 설정) */
 const isMapKey = (key: string): boolean =>
     key === "refresher:modules" || key === "refresher:block:defaults" || /^refresher:module:.+:settings$/.test(key);
 
 /**
- * 설정(백업 대상 키)을 쓴다 — IP/밴 DB·백업 상태·모듈 캐시는 그대로 둔다.
- * - replace (클라우드 복원·초기화): 백업은 완전한 스냅숏이라 거기 없는 설정 키는 지운다
- * - merge (가져오기): 붙여넣은 JSON은 일부만 담을 수 있어 있는 키만 쓴다 — 설정만 든 JSON이 차단/메모 목록을 지우지 않게.
- *   설정 객체(isMapKey)도 기존 값에 얕게 합친다 — 설정 몇 개만 든 JSON이 나머지 설정을 기본값으로 돌리지 않게
+ * 설정(백업 대상 키)을 저장소에 쓴다. IP/밴 DB·백업 상태·모듈 캐시는 건드리지 않는다.
+ * - replace(클라우드 복원·초기화): 백업은 완전한 스냅숏이므로 거기 없는 설정 키는 지운다.
+ * - merge(가져오기): 붙여넣은 JSON은 일부만 담을 수 있으므로 든 키만 쓴다. 설정만 든 JSON이 차단/메모 목록을 지우지 않게 한다.
+ *   설정 객체(isMapKey)도 기존 값에 얕게 합쳐, 설정 몇 개만 든 JSON이 나머지 설정을 기본값으로 돌리지 않게 한다.
  * 쓰다가 실패하면 이전 값으로 되돌린다.
  */
 const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "merge"): Promise<void> => {
     const previous = (await browser.storage.local.get(null)) as Record<string, unknown>;
     // 설정 키가 아닌 값(차단/메모 내보내기의 "NICK" 등)은 저장하지 않는다
     const next = Object.fromEntries(Object.entries(migrateV5(data)).filter(([key]) => key.startsWith("refresher:") && isBackupTarget(key)));
-    // 걸러서 다 빠지면 복원은 모든 설정을 지우고 가져오기는 아무것도 안 쓴다 (예전 백업의 키가 migrateV5에서 전부 빠지는 등) — 비우는 건 초기화({})만
+    // 걸러서 다 빠지면(옛 백업 키가 migrateV5에서 전부 빠지는 경우 등) 복원은 모든 설정을 지우고 가져오기는 아무것도 쓰지 않는다.
+    // 설정을 비우는 것은 초기화({})만 허용한다.
     if (Object.keys(data).length > 0 && Object.keys(next).length === 0) throw new Error("쓸 수 있는 설정이 없습니다.");
-    // 백업은 차단 항목 id를 빼고 올린다 (용량) — 저장할 때 다시 붙인다
+    // 백업은 용량 때문에 차단 항목 id를 빼고 올리므로 저장할 때 다시 붙인다
     for (const [key, value] of Object.entries(next)) {
         if (/^refresher:block:[A-Z]+$/.test(key)) next[key] = normalizeBlockList(value);
     }
@@ -59,7 +60,7 @@ const parseImport = (input: string): Record<string, unknown> => {
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
         throw new Error("가져오기 데이터는 JSON 객체여야 합니다.");
     }
-    // 차단/메모 내보내기나 {}를 붙여넣으면 아무것도 안 쓰고 "가져왔습니다"가 뜬다 — 잘못 붙여넣은 걸 알린다
+    // 차단/메모 내보내기나 {}를 붙여넣으면 아무것도 쓰지 않고 "가져왔습니다"만 뜨므로 잘못 붙여넣었다고 알린다
     if (!Object.keys(parsed).some((key) => key.startsWith("refresher:"))) {
         throw new Error("설정 데이터가 아닙니다.");
     }
@@ -78,7 +79,7 @@ export function DataTab() {
     const [importOpen, setImportOpen] = useState(false);
 
     useEffect(() => {
-        // 백업 시각은 클라우드 메타에서 — 자동 백업(백그라운드)·다른 기기의 백업도 따라간다
+        // 백업 시각은 클라우드 메타에서 읽어 자동 백업(백그라운드)과 다른 기기의 백업도 반영한다
         const loadTimes = (): void => void readCloudBackupTimes().then(setBackupTimes);
         const onChanged = (_: unknown, area: string): void => {
             if (area === "sync") loadTimes();
@@ -128,7 +129,7 @@ export function DataTab() {
             notify(`자동 백업 설정을 저장하지 못했습니다. ${errorMessage(e)}`);
             return;
         }
-        // 켜는 순간의 설정을 자동 백업 칸에 바로 올려 둔다 (이후엔 바뀔 때마다 백그라운드가)
+        // 켜는 순간의 설정을 자동 백업 칸에 바로 올린다. 이후에는 설정이 바뀔 때마다 백그라운드가 올린다
         if (on) {
             await run(async () => {
                 await runBackup("auto");
@@ -152,7 +153,7 @@ export function DataTab() {
 
     const clearData = () =>
         run(async () => {
-            // 자동 백업이 켜져 있으면 1분 뒤 빈 설정이 클라우드 백업을 덮어쓴다 — 먼저 끈다
+            // 자동 백업이 켜져 있으면 1분 뒤 빈 설정이 클라우드 백업을 덮어쓰므로 먼저 끈다
             const wasAuto = await backupStorage.auto.getValue();
             if (wasAuto) await backupStorage.auto.setValue(false);
 
@@ -177,7 +178,7 @@ export function DataTab() {
                 actions={
                     <Text as="label" size="2">
                         <Flex gap="2" align="center">
-                            {/* 자동 칸은 기기끼리 같이 쓰고 켜는 즉시 이 기기 설정으로 덮는다 — 새 기기에서 켜 복원할 백업을 잃지 않게 먼저 묻는다 */}
+                            {/* 자동 칸은 기기끼리 같이 쓰고 켜는 즉시 이 기기 설정으로 덮인다. 새 기기에서 켰다가 복원할 백업을 잃지 않게 먼저 묻는다 */}
                             <Switch checked={autoBackup} disabled={loading}
                                     onCheckedChange={(on) => (on && backupTimes.auto ? setAutoConfirm(true) : void toggleAutoBackup(on))}/>
                             자동 백업

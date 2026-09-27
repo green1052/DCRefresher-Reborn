@@ -1,9 +1,9 @@
 /**
- * 클라우드(storage.sync) 백업 — 수동 백업과 자동 백업을 따로 둔다.
+ * 클라우드(storage.sync) 백업. 수동 백업과 자동 백업을 따로 둔다.
  *
  * storage.sync 한도: 항목당 8KB(키 + JSON 값), 전체 100KB, 쓰기 분당 120회.
  * 설정을 통째로 gzip → base64로 묶어 8KB 이하 조각(<칸>:0, <칸>:1, …)으로 나누고,
- * 조각 수와 해시를 담은 <칸> 키와 함께 set 한 번으로 쓴다 — 실패해도 이전 백업이 그대로 남는다.
+ * 조각 수와 해시를 담은 <칸> 키와 함께 set 한 번으로 쓴다. 쓰기가 실패하면 이전 백업이 그대로 남는다.
  */
 import {objectKeys} from "ts-extras";
 
@@ -11,13 +11,13 @@ import {backupStorage, isModuleDataKey} from "@/core/storage/items";
 
 export type BackupSlot = "manual" | "auto";
 
-/** 칸마다 sync 키 이름 — 메타는 이 이름, 조각은 `이름:번호` */
+/** 칸마다 sync 키 이름. 메타는 이 이름, 조각은 `이름:번호`에 둔다 */
 const SLOT_KEYS: Record<BackupSlot, string> = {manual: "backup", auto: "autoBackup"};
 const chunkKey = (slot: BackupSlot, index: number): string => `${SLOT_KEYS[slot]}:${index}`;
 const isSlotKey = (slot: BackupSlot, key: string): boolean => key === SLOT_KEYS[slot] || key.startsWith(`${SLOT_KEYS[slot]}:`);
 const SLOTS = objectKeys(SLOT_KEYS);
 
-/** 조각 하나의 글자 수 — 항목 한도 8192바이트에서 키와 따옴표 몫을 뺐다 */
+/** 조각 하나의 글자 수. 항목 한도 8192바이트에서 키와 따옴표 몫을 뺐다 */
 const CHUNK_CHARS = 8000;
 /** 전체 한도 102400바이트에서 메타·키 몫을 뺐다 (두 칸 합계) */
 const TOTAL_CHARS = 100_000;
@@ -34,17 +34,17 @@ interface BackupMeta {
 
 /**
  * 백업·내보내기에서 빼는 로컬 키
- * - refresher:db:*: IP/밴 DB — 크고, 다시 받으면 된다 (refresher:db는 6.0.0 개발판의 한 키짜리)
+ * - refresher:db:*: IP/밴 DB. 크고 다시 받으면 된다 (refresher:db는 6.0.0 개발판의 한 키짜리)
  * - refresher:backup:*: 백업 상태 자체
- * - refresher:module:*:data: 모듈 캐시(글댓비 등) — 계속 불어난다
- * - refresher:nonmember: 비회원 비밀번호(평문) — 내보내기 JSON을 남에게 건네거나 sync에 올리면 새어 나간다
+ * - refresher:module:*:data: 모듈 캐시(글댓비 등). 계속 불어난다
+ * - refresher:nonmember: 비회원 비밀번호(평문). 내보내기 JSON을 남에게 건네거나 sync에 올리면 새어 나간다
  */
 export const isBackupTarget = (key: string): boolean =>
     key !== "refresher:db" && !key.startsWith("refresher:db:") && key !== "refresher:nonmember" && !key.startsWith("refresher:backup:") && !isModuleDataKey(key);
 
 /**
- * 백업·내보내기 대상. 차단 목록의 id(UUID)는 뺀다 — 압축되지 않아 클라우드 백업을 두 배 넘게 불린다.
- * 읽는 쪽(stores/blocks의 normalizeBlockList)이 없는 id를 새로 준다
+ * 백업·내보내기 대상. 차단 목록의 id(UUID)는 압축이 안 돼 클라우드 백업을 두 배 넘게 불리므로 뺀다.
+ * 읽는 쪽(stores/blocks의 normalizeBlockList)이 없는 id를 새로 준다.
  */
 export const collectLocalData = async (): Promise<Record<string, unknown>> => {
     const data = (await browser.storage.local.get(null)) as Record<string, unknown>;
@@ -73,7 +73,7 @@ const sha256 = async (bytes: Uint8Array): Promise<string> =>
 const isMeta = (value: unknown): value is BackupMeta =>
     typeof value === "object" && value !== null && (value as BackupMeta).format === 1 && Number.isInteger((value as BackupMeta).chunks);
 
-/** 예전(v5) 방식으로 통째로 넣어 둔 설정 키 — 어느 칸에도 속하지 않는 키 */
+/** v5 방식 백업의 키. v5는 로컬 설정을 그대로 sync에 넣었으므로 어느 칸에도 속하지 않는 키로 가려낸다 */
 const isLegacyKey = (key: string): boolean => !SLOTS.some((slot) => isSlotKey(slot, key));
 
 /** 설정을 클라우드의 한 칸에 백업 */
@@ -98,18 +98,18 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
         [SLOT_KEYS[slot]]: meta
     };
 
-    // 이번에 쓰지 않는 키 — 이 칸에서 전보다 줄어든 조각. 다른 칸은 건드리지 않는다
-    // 예전 방식 설정은 수동 칸으로 복원되므로 수동 칸을 쓸 때만 치운다
+    // 지울 키: 이 칸에서 이번에 쓰지 않는 조각(전보다 줄어든 몫). 다른 칸은 건드리지 않는다.
+    // v5 방식 백업은 수동 칸으로 복원되므로 수동 칸을 쓸 때만 치운다.
     const stale = Object.keys(all).filter((key) => !(key in items) && (isSlotKey(slot, key) || (slot === "manual" && isLegacyKey(key))));
 
     try {
         await browser.storage.sync.set(items);
     } catch (e) {
-        // 예전 방식 백업이 자리를 차지해 한도를 넘었을 수 있다 — 그것만 치우고 한 번 더
-        // 이 칸의 남는 조각은 성공한 뒤에 지운다 — 다시 실패하면 이전 메타가 그 조각을 가리킨다
+        // v5 방식 백업이 공간을 차지해 한도를 넘었을 수 있으니 그것만 치우고 한 번 더 쓴다.
+        // 이 칸의 남는 조각은 성공한 뒤에 지운다. 다시 실패하면 이전 메타가 여전히 그 조각을 가리키기 때문이다.
         const legacy = stale.filter(isLegacyKey);
         if (legacy.length === 0) {
-            // 자동 칸은 예전 방식 백업을 치우지 않는다 (수동 칸으로 복원되는 데이터다) — 그게 원인일 수 있으니 푸는 법을 알린다
+            // 자동 칸은 v5 방식 백업을 치우지 않는다 (수동 칸으로 복원되는 데이터다). 그것이 원인일 수 있으니 해결 방법을 알린다
             if (Object.keys(all).some(isLegacyKey)) {
                 throw new Error(`${e instanceof Error ? e.message : String(e)} 예전 방식(v5) 백업이 클라우드 공간을 차지하고 있습니다. 수동 백업을 한 번 하면 정리됩니다.`, {cause: e});
             }
@@ -122,7 +122,7 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     if (stale.length > 0) await browser.storage.sync.remove(stale);
 };
 
-/** 칸마다 마지막 백업 시각 (없으면 undefined). 예전 방식 백업이 남아 있으면 legacy: true */
+/** 칸마다 마지막 백업 시각 (없으면 undefined). v5 방식 백업이 남아 있으면 legacy: true */
 export const readCloudBackupTimes = async (): Promise<{ manual?: number; auto?: number; legacy: boolean }> => {
     const all = (await browser.storage.sync.get(null)) as Record<string, unknown>;
     const time = (slot: BackupSlot): number | undefined => {
@@ -135,11 +135,11 @@ export const readCloudBackupTimes = async (): Promise<{ manual?: number; auto?: 
 
 interface CloudBackup {
     data: Record<string, unknown>;
-    /** 예전 방식 백업이면 없음 */
+    /** v5 방식 백업이면 없음 */
     createdAt?: number;
 }
 
-/** 한 칸의 백업 읽기. 없으면 null — 수동 칸은 예전 방식 백업도 읽는다 */
+/** 한 칸의 백업을 읽는다. 없으면 null. 수동 칸은 v5 방식 백업도 읽는다 */
 export const readCloudBackup = async (slot: BackupSlot): Promise<CloudBackup | null> => {
     const all = (await browser.storage.sync.get(null)) as Record<string, unknown>;
     const meta = all[SLOT_KEYS[slot]];
@@ -158,7 +158,7 @@ export const readCloudBackup = async (slot: BackupSlot): Promise<CloudBackup | n
 
     if (slot !== "manual") return null;
 
-    // 예전 방식: 로컬 설정을 그대로 sync에 넣었다 (메타보다 먼저 동기화된 조각은 빼고)
+    // v5 방식: 로컬 설정이 그대로 들어 있다. 메타보다 먼저 동기화된 새 방식 조각은 isLegacyKey가 걸러 낸다
     const legacy = Object.fromEntries(Object.entries(all).filter(([key]) => isLegacyKey(key) && isBackupTarget(key)));
     return Object.keys(legacy).length > 0 ? {data: legacy} : null;
 };

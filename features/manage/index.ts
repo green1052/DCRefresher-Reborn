@@ -50,7 +50,7 @@ export default defineModule({
     },
 
     setup(ctx) {
-        // 핸들러를 붙인 요소. DOM 속성으로 표시하면 refresh가 체크박스 칸을 복제할 때 표시까지 따라가 새 행에 핸들러가 안 붙는다
+        // 핸들러를 붙인 요소. DOM 속성으로 표시하면 refresh가 체크박스 칸을 복제할 때 표시도 복제돼 새 행에 핸들러가 붙지 않는다
         const handled = new WeakSet<Element>();
 
         // ===== GIF 조작 =====
@@ -83,7 +83,8 @@ export default defineModule({
                     const source = ev.target as HTMLInputElement;
 
                     if (ctx.settings.checkAllTargetUser && ev.shiftKey && (uid || ip || nick)) {
-                        // 유동은 data-uid=""라 ??로 값을 고르면 key는 ip인데 값이 ""가 돼 회원 글이 전부 잡힌다 — 같은 기준으로 고른다
+                        // 유동은 data-uid=""다. key와 값을 같은 기준으로 골라야 한다.
+                        // 값만 ??로 고르면 [data-ip=""]가 되어 회원 글이 전부 잡힌다
                         const [key, value] = uid ? ["uid", uid] : ip ? ["ip", ip] : ["nick", nick!];
 
                         for (const other of document.querySelectorAll<HTMLElement>(`.ub-writer[data-${key}="${CSS.escape(value)}"]`)) {
@@ -120,7 +121,7 @@ export default defineModule({
             }
         };
 
-        // 삭제 요청을 보낸 글 — 응답 전에 다시 눌러도 요청을 또 보내지 않는다
+        // 삭제 요청을 보낸 글. 응답 전에 다시 눌러도 요청을 또 보내지 않는다
         const deleting = new Set<string>();
 
         ctx.addFilter(
@@ -130,9 +131,9 @@ export default defineModule({
                 handled.add(element);
 
                 element.addEventListener("click", (ev) => {
-                    // 관리하지 않는 갤러리에선 Ctrl+클릭(새 탭 열기)을 그대로 둔다 — 권한도 없는 삭제 요청을 보내지 않는다
+                    // 관리하지 않는 갤러리에선 Ctrl+클릭(새 탭 열기)을 그대로 둔다. 권한 없는 삭제 요청을 보내지 않는다
                     if (!ctx.settings.deleteViaCtrl || !ev.ctrlKey || !isGalleryManager()) return;
-                    // 체크박스 칸과 댓글 수(미리보기가 댓글만 열린다)는 삭제로 가로채지 않는다 — 제목 Ctrl+클릭은 v5처럼 삭제
+                    // 체크박스 칸과 댓글 수(미리보기가 댓글만 연다)는 가로채지 않는다. 제목 Ctrl+클릭은 v5처럼 삭제한다
                     if (ev.target instanceof Element && ev.target.closest("td:has(.article_chkbox), .reply_numbox")) return;
 
                     const postId = rowPostNo(element);
@@ -145,7 +146,7 @@ export default defineModule({
                     deleting.add(postId);
 
                     void deleteByCtrl(postId).then((deleted) => {
-                        // 목록이 새로고침될 때까지(refresh가 꺼져 있으면 계속) 남겨 두면 다시 Ctrl+클릭해 지운 글에 요청이 또 간다
+                        // 행을 남겨 두면 목록이 새로고침될 때까지(refresh가 꺼져 있으면 계속) 지운 글에 요청을 또 보낼 수 있다
                         if (deleted) element.remove();
                     }).finally(() => deleting.delete(postId));
                 }, {signal: ctx.signal});

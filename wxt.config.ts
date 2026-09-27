@@ -1,6 +1,9 @@
 import {defineConfig} from "wxt";
 
-/** 오버레이가 쓰지 않는 Radix 컴포넌트 (클래스 접두어). 오버레이에서 새 컴포넌트를 쓰면 여기서 뺀다 — Select가 쓰는 ScrollArea 등 Base*는 남긴다 */
+/**
+ * 오버레이가 쓰지 않는 Radix 컴포넌트(클래스 접두어). 오버레이에서 새 컴포넌트를 쓰게 되면 여기서 뺀다.
+ * Select가 쓰는 ScrollArea 등 다른 컴포넌트가 의존하는 Base*는 남긴다.
+ */
 const UNUSED_OVERLAY_COMPONENT = new RegExp(
     "\\.rt-(DataList|Table|Tabs|TabNav|BaseTabList|Avatar|Progress|Code|Inset|CheckboxCards|CheckboxGroup|RadioCards|HoverCard|ContextMenu|DropdownMenu|BaseMenu|AlertDialog|ThemePanel|Container|Section)"
 );
@@ -20,12 +23,14 @@ export default defineConfig({
             postcss: {
                 plugins: [
                     /**
-                     * 오버레이(콘텐츠 스크립트 shadow)에 넣는 Radix CSS(radix-themes.css?inline)만 더 줄인다 — 옵션·팝업은 그대로. Radix를 올리면 다시 확인한다.
-                     * - min-width 미디어 블록: 반응형 prop용인데 오버레이는 쓰지 않는다 (CSS의 절반). 오버레이에 {initial, md} 같은 prop을 쓰면 initial로 고정된다
-                     * - U+200D content: DataList 정렬용 한 글자 때문에 CSS 문자열 전체가 2바이트로 저장된다 (오버레이는 DataList를 안 쓴다)
-                     * - 오버레이가 쓰지 않는 컴포넌트의 규칙
-                     * - :root → :host (shadow 안에선 :root가 매칭되지 않는다)
-                     * 쓰는 색만 가져오는 것은 radix-themes.css의 @import가 한다 (Radix가 색마다 나눠 둔 파일)
+                     * 오버레이 shadow에 넣는 Radix CSS(radix-themes.css?inline)만 더 줄인다. 옵션·팝업용은 그대로 둔다.
+                     * Radix를 올리면 아래 가정이 여전히 맞는지 다시 확인한다.
+                     * - min-width 미디어 블록 제거: 반응형 prop용으로 CSS의 절반을 차지한다.
+                     *   오버레이에서 {initial, md} 같은 prop을 쓰면 initial 값으로 고정된다.
+                     * - U+200D content 제거: DataList 정렬용 한 글자 때문에 CSS 문자열 전체가 2바이트 문자열로 저장된다.
+                     * - 오버레이가 쓰지 않는 컴포넌트의 규칙 제거
+                     * - :root → :host (shadow 안에서는 :root가 매칭되지 않는다)
+                     * 쓰는 색만 가져오는 일은 radix-themes.css의 @import가 맡는다.
                      */
                     {
                         postcssPlugin: "slim-overlay-radix",
@@ -39,7 +44,7 @@ export default defineConfig({
                                 if (decl.value.includes("\u200d")) decl.remove();
                             });
 
-                            // 여러 선택자 중 안 쓰는 컴포넌트 것만 떼고, 남는 게 없으면 규칙째 뺀다
+                            // 선택자 목록에서 안 쓰는 컴포넌트 것만 떼고, 남는 게 없으면 규칙째 지운다
                             root.walkRules((rule) => {
                                 const selectors = rule.selectors.filter((selector) => !UNUSED_OVERLAY_COMPONENT.test(selector));
                                 if (selectors.length === 0) rule.remove();
@@ -49,7 +54,7 @@ export default defineConfig({
                                 if (rule.nodes?.length === 0) rule.remove();
                             });
 
-                            // shadow 안에선 :root가 매칭되지 않으므로 Radix 토큰을 :host로 옮긴다 (예전엔 콘텐츠 스크립트가 실행 때마다 문자열째 바꿨다)
+                            // shadow 안에서는 :root가 매칭되지 않으므로 Radix 토큰을 빌드 때 :host로 옮긴다
                             root.walkRules((rule) => {
                                 if (rule.selector.includes(":root")) rule.selectors = rule.selectors.map((selector) => selector.replaceAll(":root", ":host"));
                             });

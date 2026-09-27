@@ -36,7 +36,8 @@ interface Usage {
     sync: number;
 }
 
-// 로컬의 getBytesInUse는 Firefox 144부터라 JSON 크기로 잰다 (sync는 한도 계산과 같게 브라우저 값을 쓴다)
+// storage.local.getBytesInUse는 Firefox 144부터 지원하므로 local은 JSON 크기로 잰다.
+// sync는 브라우저가 한도를 계산하는 값과 맞추려고 getBytesInUse를 쓴다.
 const readUsage = async (): Promise<Usage> => {
     const [local, sync] = await Promise.all([browser.storage.local.get(null).then(byteSize), browser.storage.sync.getBytesInUse(null)]);
     return {local, sync};

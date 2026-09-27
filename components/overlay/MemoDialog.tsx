@@ -19,14 +19,14 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const setMemo = useMemosStore((s) => s.setMemo);
     const removeMemo = useMemosStore((s) => s.removeMemo);
 
-    // 지금 보고 있는 갤러리 — 여기서만 보이는 메모로 저장할 수 있다
+    // 지금 보고 있는 갤러리. 이 갤러리에서만 보이는 메모로 저장할 때 쓴다
     const gallery = queryString("id");
 
     // 닉네임이 toString·constructor·__proto__여도 프로토타입 값을 메모로 읽지 않게 자기 속성만 본다
     const memoOf = (memoType: MemoType, user: string) => (Object.hasOwn(memos[memoType], user) ? memos[memoType][user] : undefined);
 
-    // 열릴 때/타입 전환시 기존 메모로 프리필.
-    // 범위(scope)는 체크 여부가 아니라 저장된 갤러리 그대로 — 다른 갤러리 전용 메모가 여기서 저장돼도 범위가 바뀌지 않게
+    // 열릴 때와 타입을 바꿀 때 기존 메모로 채운다.
+    // 범위(scope)는 저장된 갤러리를 그대로 가져온다. 다른 갤러리 전용 메모를 여기서 저장해도 범위가 바뀌지 않게 하려는 것이다.
     const prefill = (memoType: MemoType): { text: string; color: string; scope?: string } => {
         const memo = memoOf(memoType, state.targets[memoType] ?? "");
         return {text: memo?.text ?? "", color: memo?.color ?? randomColor(), scope: memo?.gallery};
@@ -40,7 +40,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const existing = Boolean(memoOf(type, value));
 
     const submit = async (): Promise<void> => {
-        // 공백만 있는 메모는 빈 메모로 — 저장하면 빈 "[ ]" 배지가 붙는다
+        // 공백만 있는 메모는 빈 메모로 본다. 그대로 저장하면 빈 "[ ]" 배지가 붙는다
         const trimmed = text.trim();
         if (!trimmed) {
             if (existing) await removeMemo(type, value);
@@ -54,7 +54,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     };
 
     return (
-        // 섀도 루트 안에선 FocusScope가 포커스를 못 알아보고 첫 버튼으로 옮겨 autoFocus를 덮는다
+        // shadow root 안에서는 FocusScope가 autoFocus된 입력칸을 알아보지 못하고 첫 버튼으로 포커스를 옮기므로 막는다
         <Dialog.Content container={overlay.portal} maxWidth="400px" onOpenAutoFocus={(ev) => ev.preventDefault()}>
             <Dialog.Title>메모</Dialog.Title>
             <Dialog.Description size="2" color="gray" mb="4">
@@ -79,7 +79,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                     placeholder="메모를 입력해주세요 (160자 제한)"
                     value={text}
                     onChange={(ev) => setForm({...form, text: ev.target.value})}
-                    // 한글 조합 중 Enter는 keydown이 조합 확정용까지 두 번 와서 두 번 저장된다
+                    // 한글 조합 중 Enter는 조합 확정용 keydown까지 두 번 오므로 isComposing인 것은 건너뛴다
                     onKeyDown={(ev) => ev.key === "Enter" && !ev.nativeEvent.isComposing && void submit()}
                     autoFocus
                 >

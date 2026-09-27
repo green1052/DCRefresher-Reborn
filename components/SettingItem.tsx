@@ -11,9 +11,9 @@ import {pressedKey} from "@/utils/event";
 interface SettingItemProps {
     schema: SettingSchema;
     value: SettingValue;
-    /** 묶음 안에서 — 설명은 툴팁으로, 이름·컨트롤만 한 줄에 */
+    /** 묶음 안에서 쓸 때. 설명은 이름의 title로 돌리고 이름·컨트롤만 한 줄에 둔다 */
     compact?: boolean;
-    /** key 설정: 같은 모듈의 다른 key 설정이 쓰는 키 — 고를 수 없다 */
+    /** key 설정 전용. 같은 모듈의 다른 key 설정이 쓰는 키라 고를 수 없다 */
     takenKeys?: string[];
     onChange: (value: SettingValue) => void;
 }
@@ -22,7 +22,7 @@ type NarrowProps<T extends SettingSchema["type"]> = Omit<SettingItemProps, "sche
     schema: Extract<SettingSchema, { type: T }>
 };
 
-/** 범위 값 표시 — 저장은 ms 그대로, 보여줄 때만 초 단위로 (5000ms → 5초) */
+/** 범위 값 표시. 저장은 ms 그대로 하고, 보여 줄 때만 초로 바꾼다(5000ms → 5초) */
 const formatRange = (value: number, unit: string): string => (unit === "ms" ? `${value / 1000}초` : `${value}${unit}`);
 
 const formatDefault = (schema: SettingSchema): string => {
@@ -42,7 +42,10 @@ const formatDefault = (schema: SettingSchema): string => {
     }
 };
 
-/** 저장 전 편집값 — 저장값이 바뀌면(되돌리기·다른 탭) 따라간다. 렌더 중에 비교해 옛 값이 한 번 그려지지 않게 */
+/**
+ * 저장 전 편집값. 저장값이 바뀌면(되돌리기·다른 탭) 따라간다.
+ * effect가 아니라 렌더 중에 비교해야 옛 값이 한 번 그려지지 않는다.
+ */
 const useDraft = <T, >(value: T): [T, (next: T) => void] => {
     const [draft, setDraft] = useState(value);
     const [synced, setSynced] = useState(value);
@@ -53,7 +56,7 @@ const useDraft = <T, >(value: T): [T, (next: T) => void] => {
     return [draft, setDraft];
 };
 
-/** 색 선택 — 드래그 중엔 미리보기만 바꾸고, 선택 창을 닫을 때(네이티브 change) 저장한다 */
+/** 색 선택. 드래그 중에는 미리보기만 바꾸고, 선택 창을 닫을 때(네이티브 change) 저장한다 */
 const ColorControl = ({schema, value, compact, onChange}: NarrowProps<"color">) => {
     const [draft, setDraft] = useDraft(String(value));
 
@@ -66,7 +69,7 @@ const ColorControl = ({schema, value, compact, onChange}: NarrowProps<"color">) 
                 title={draft}
                 value={draft}
                 onChange={(ev) => setDraft(ev.target.value)}
-                // React onChange는 input 이벤트라 드래그마다 불린다 — 창을 닫을 때만 오는 change는 직접 듣는다
+                // React onChange는 input 이벤트라 드래그마다 불린다. 창을 닫을 때만 오는 네이티브 change는 직접 듣는다
                 ref={(element) => {
                     if (!element) return;
                     const commit = (): void => onChange(element.value);
@@ -97,11 +100,14 @@ const TextControl = ({schema, value, onChange}: NarrowProps<"text">) => {
     );
 };
 
-/** 키 하나 — 누른 뒤 원하는 키를 치면 바뀐다 (영문·숫자만, 다른 키는 취소). 다른 단축키가 쓰는 키면 알려 주고 계속 기다린다 */
+/**
+ * 단축키 하나. 버튼을 누른 뒤 원하는 키를 치면 바뀐다(영문·숫자만, 다른 키는 취소).
+ * 다른 단축키가 쓰는 키면 알려 주고 계속 기다린다.
+ */
 const KeyControl = ({schema, value, takenKeys = [], onChange}: NarrowProps<"key">) => {
     const [listening, setListening] = useState(false);
     const [taken, setTaken] = useState("");
-    // 화면 글자와 같은 내용을 읽어 준다 — 이름만 주면 '키 입력…'·'이미 사용 중'이 들리지 않는다
+    // 스크린 리더에 화면 글자와 같은 내용을 준다. 이름만 주면 '키 입력…'·'이미 사용 중'이 들리지 않는다
     const shown = taken ? `${taken.toUpperCase()}: 이미 사용 중` : listening ? "키 입력…" : String(value).toUpperCase();
 
     return (
@@ -131,12 +137,12 @@ const KeyControl = ({schema, value, takenKeys = [], onChange}: NarrowProps<"key"
 };
 
 const RangeControl = ({schema, value, onChange}: NarrowProps<"range">) => {
-    // 화살표 키는 한 칸마다 commit한다 — key로 다시 마운트해 맞추면 그때마다 포커스를 잃는다
+    // 화살표 키는 한 칸마다 commit하므로 저장값은 useDraft로 따라간다. key로 다시 마운트해 맞추면 그때마다 포커스를 잃는다
     const [draft, setDraft] = useDraft(Number(value));
 
-    // rt-SliderRoot는 width:stretch(부모 100%) — 부모 폭을 고정해야 트랙이 그려짐
+    // rt-SliderRoot는 width:stretch(부모의 100%)라 부모 폭을 고정해야 트랙이 그려진다
     return (
-        // Themes Slider는 aria-label을 role=slider인 thumb가 아니라 root에 넘긴다 — 묶음에 이름을 준다
+        // Themes Slider는 aria-label을 role=slider인 thumb가 아니라 root에 넘기므로 묶음에 이름을 준다
         <Flex align="center" gap="3" role="group" aria-label={schema.name} style={{width: 240}}>
             <Slider
                 size="2"
@@ -165,7 +171,7 @@ const OrderControl = ({schema, value, onChange}: NarrowProps<"order">) => {
     const [dragging, setDragging] = useState<number | null>(null);
     const [over, setOver] = useState<number | null>(null);
 
-    // 스토어가 스키마에 맞춰 둔 값 (normalizeSetting)
+    // 스토어가 normalizeSetting으로 스키마에 맞춰 둔 값이라 string[]이다
     const order = value as string[];
 
     const move = (from: number, to: number): void => {
@@ -200,7 +206,7 @@ const OrderControl = ({schema, value, onChange}: NarrowProps<"order">) => {
                     }}
                     draggable
                     onDragStart={(ev) => {
-                        // Firefox는 dataTransfer에 데이터가 없으면 드래그 시작을 안 함
+                        // Firefox는 dataTransfer에 데이터가 없으면 드래그를 시작하지 않는다
                         ev.dataTransfer.setData("text/plain", String(index));
                         ev.dataTransfer.effectAllowed = "move";
                         setDragging(index);

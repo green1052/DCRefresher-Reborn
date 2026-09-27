@@ -1,7 +1,7 @@
 import {Button, Dialog, Flex} from "@radix-ui/themes";
 import type {ReactNode} from "react";
 
-/** 다이얼로그 아래 버튼 줄 — 취소(닫기) 뒤에 children. cancelLabel이 null이면 취소 버튼 없음 */
+/** 다이얼로그 하단 버튼 줄. 취소(닫기) 버튼 뒤에 children을 둔다. cancelLabel이 null이면 취소 버튼을 뺀다 */
 export const DialogActions = ({cancelLabel = "취소", children}: { cancelLabel?: string | null; children?: ReactNode }) => (
     <Flex gap="3" justify="end" mt="4">
         {cancelLabel !== null && (
@@ -24,8 +24,8 @@ interface ConfirmDialogProps {
 }
 
 /**
- * Themes Dialog 기반 confirm()/alert() 대체. 외부 클릭/Esc로 닫힘.
- * 열 때만 마운트한다 — 닫힘 애니메이션 동안 비워진 제목("null" 등)이 비치지 않게
+ * Themes Dialog로 만든 confirm()/alert() 대체. 바깥 클릭이나 Esc로 닫힌다.
+ * 열 때만 마운트해야 닫힘 애니메이션 동안 비워진 제목("null" 등)이 비치지 않는다.
  */
 export const ConfirmDialog = ({
                                   title,

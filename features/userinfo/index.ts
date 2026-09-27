@@ -19,7 +19,7 @@ interface RatioInfo {
     date: number;
 }
 
-/** 배지 색 — 키마다 `${키}Color` 설정 하나 (옵션 화면에선 한 칸에 묶임). IP는 분류(korea…vpn)가 키 */
+/** 배지 색 기본값. 키마다 `${key}Color` 설정이 하나씩 생기고 옵션 화면에선 한 그룹으로 묶인다. IP 배지는 분류(korea…vpn)가 키다 */
 const BADGE_COLORS = {
     uid: ["유저 ID / IP", "#999999"],
     ratio: ["글댓비", "#999999"],
@@ -50,11 +50,11 @@ const badgeViewOf = (ctx: Ctx): BadgeView => ({
     ipFilter: ctx.settings.ipInfoFilter
 });
 
-/** 글댓비 캐시 — 다른 탭의 쓰기·개발자 탭의 캐시 비우기를 watch로 받는다. 키는 백업 제외 규칙(refresher:module:*:data)을 따른다 */
+/** 글댓비 캐시. 다른 탭의 쓰기와 개발자 탭의 캐시 비우기도 watch로 받는다. moduleDataStorage 키라 백업·내보내기에서 빠진다 */
 const ratioStorage = moduleDataStorage<{ ratio?: Record<string, RatioInfo> }>("userinfo", {});
 let ratios: Record<string, RatioInfo> = {};
 
-/** 글댓비 저장 상한 — 최근에 받은 사람부터 이만큼만 남긴다 */
+/** 글댓비 저장 상한. 최근에 받은 사람부터 이만큼만 남긴다 */
 const MAX_RATIOS = 500;
 
 /** 글댓비 캐시는 1시간만 쓴다 */
@@ -69,7 +69,7 @@ const buildBadgeSpan = (text: string, color?: string, title?: string, className 
     return span;
 };
 
-/** 깡계 알림 기준(글댓합) 이하인지 — 0이면 끔 */
+/** 깡계 기준(글댓합) 이하인지. 기준이 0이면 끈 것이다 */
 const isLowActivity = (info: RatioInfo, alarmRatio: number): boolean => alarmRatio > 0 && info.article + info.comment <= alarmRatio;
 
 const makeRatioSpan = (info: RatioInfo, alarmRatio: number, colors: Record<string, string>): HTMLElement => {
@@ -89,10 +89,9 @@ const makePermBanSpan = (reasons: string, color: string): HTMLElement =>
     buildBadgeSpan(`[${reasons}]`, color, reasons, "ip permBan refresherUserData");
 
 const process = (ctx: Ctx, element: HTMLElement): void => {
-    // 완료 표시 없이 매번 다시 그린다 — 파싱 중인 작성자 칸(닉콘·IP 전)에 붙은 배지가 칸이 다 읽혀 다시 불릴 때 제자리를 찾는다
+    // 완료 표시 없이 매번 다시 그린다. 파싱 중인 작성자 칸(닉콘·IP 전)에서 먼저 불려도, 칸이 다 읽혀 다시 불릴 때 배지가 제자리를 찾는다
     element.querySelector(".refresher-user-badges")?.remove();
 
-    // 작성자마다 불리고 rebuildAll로 페이지 전체가 다시 도므로 호출 안에서 안 바뀌는 값은 한 번만 만든다
     const colors = colorsOf(ctx);
     const view = badgeViewOf(ctx);
     const gallery = queryString("id");
@@ -134,7 +133,7 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
         }
     }
 
-    // 깡계: 글댓비를 받아 둔 유저만 — 목록 전체를 조회하면 갤로그 요청이 너무 많다
+    // 깡계는 글댓비를 받아 둔 유저만 판정한다. 목록 전체를 조회하면 갤로그 요청이 너무 많다
     const action = ctx.settings.lowActivityAction;
     if (lowActivity && action === "tag") badges.append(buildBadgeSpan("[깡계]", colors.ratioAlarm, `글댓합 ${ctx.settings.alarmRatio}개 이하`));
     if (lowActivity && (action === "blur" || action === "hide")) (element.closest<HTMLElement>(".ub-content") ?? element).classList.add(LOW_ACTIVITY_CLASSES[action]);
@@ -142,7 +141,7 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
     if (badges.children.length > 0) insertWriterSpan(element, badges);
 };
 
-/** 미리보기 작성자 표시도 같은 색·순서·표시 조건을 쓰게 공유 */
+/** 미리보기 작성자 표시가 같은 색·순서·표시 조건을 쓰도록 ui 스토어에 올린다 */
 const publishBadges = (ctx: Ctx): void => {
     const colors = colorsOf(ctx);
     useUiStore.setState({
@@ -155,14 +154,14 @@ const publishBadges = (ctx: Ctx): void => {
     });
 };
 
-/** 예전 'IP 정보 표시' 체크(showIpInfo)를 끈 사용자는 '표시 안 함'으로 옮긴다 — 새 설정을 한 번이라도 저장했으면 건드리지 않는다 */
+/** 예전 'IP 정보 표시' 체크(showIpInfo)를 끈 사용자는 '표시 안 함'으로 옮긴다. 새 설정(ipInfoFilter)이 저장돼 있으면 건드리지 않는다 */
 const migrateShowIpInfo = async (): Promise<void> => {
     const item = moduleSettingsStorage("userinfo");
     const stored = await item.getValue();
     if (stored.showIpInfo === false && stored.ipInfoFilter === undefined) await item.setValue({...stored, ipInfoFilter: "none"});
 };
 
-/** 미리보기도 같은 글댓비를 쓰게 공유 */
+/** 미리보기도 같은 글댓비를 쓰도록 ui 스토어에 올린다 */
 const publishRatios = (ctx: Ctx): void => {
     useUiStore.setState({
         ratios: ctx.settings.checkRatio
@@ -173,7 +172,7 @@ const publishRatios = (ctx: Ctx): void => {
 
 const rebuildAll = (ctx: Ctx): void => {
     clearLowActivity();
-    // 배지가 없던 작성자도 포함 — 설정을 켜서 새로 생기는 배지가 있다 (필터 선택자와 같은 대상)
+    // 배지가 없던 작성자도 돈다. 설정을 켜서 새로 생기는 배지가 있다 (필터 선택자와 같은 대상)
     for (const element of document.querySelectorAll<HTMLElement>(".ub-writer:not([user_name])")) process(ctx, element);
 };
 
@@ -256,20 +255,21 @@ export default defineModule({
     settings,
 
     async setup(ctx) {
-        // 먼저 그린다 — 옮기는 동안 모듈이 꺼지면 revoke가 지운 뒤에 다시 그리게 된다. 옮긴 값은 설정 감시 → onChanged가 반영한다
+        // await 전에 알린다. 뒤에 두면 옮기는 동안 모듈이 꺼졌을 때 revoke가 지운 값을 다시 쓴다.
+        // 옮긴 값은 설정 감시 → onChanged가 반영한다
         publishBadges(ctx);
         await migrateShowIpInfo().catch(console.error);
 
-        // 조회 중에 모듈이 꺼지면 revoke가 지운 배지·글댓비를 다시 그리지 않게 한다 (setup을 기다리는 동안 꺼져도 마찬가지)
+        // await 뒤마다 확인해, 그사이 모듈이 꺼졌으면 revoke가 지운 배지·글댓비를 다시 그리지 않는다
         const {signal} = ctx;
 
-        // IP/밴 DB는 여기서 처음 읽는다 — 모듈 설정 읽기 뒤로 (콘텐츠 스크립트의 마지막 호출은 이 모듈이 꺼졌을 때용).
-        // 읽기가 끝난 뒤 필터·DB 감시를 건다 — 첫 배지부터 IP 정보가 붙고, DB 감시는 core/database의 것 뒤라 새 데이터로 다시 그린다
+        // IP/밴 DB는 모듈 설정을 읽은 뒤 여기서 처음 읽는다 (콘텐츠 스크립트도 부르지만 이 모듈이 꺼졌을 때를 위한 것이다).
+        // 읽기가 끝난 뒤 필터를 걸어야 첫 배지부터 IP 정보가 붙는다
         const [stored] = await Promise.all([ratioStorage.getValue(), initDatabase()]);
         ratios = stored.ratio ?? {};
         if (signal.aborted) return;
         publishRatios(ctx);
-        // 이 탭이 받아 쓴 값도, 다른 탭이 받은 값도 여기로 온다 — 배지와 깡계 표시를 다시 그린다
+        // 이 탭과 다른 탭이 받아 쓴 글댓비가 모두 여기로 온다. 배지와 깡계 표시를 다시 그린다
         const unwatchRatios = ratioStorage.watch((next) => {
             ratios = next?.ratio ?? {};
             publishRatios(ctx);
@@ -281,15 +281,14 @@ export default defineModule({
             (element) => process(ctx, element)
         );
 
-        // 메모 변경시 표시 갱신
         const unsubscribeMemos = useMemosStore.subscribe((state, previous) => {
             if (state.memos !== previous.memos) rebuildAll(ctx);
         });
 
-        // IP DB가 갱신되거나 갱차 목록을 처음 다 읽으면 다시 그린다 (갱차는 처음 물을 때 읽기 시작한다)
+        // IP DB가 갱신되거나 갱차 목록을 다 읽으면 다시 그린다. 갱차 목록은 banReasonsOf를 처음 부를 때 읽기 시작한다
         const unwatchDatabase = subscribeDatabase(() => rebuildAll(ctx));
 
-        // 새 글: 글댓비 조회 (1시간 캐시, 첫 10개)
+        // 새 글 작성자의 글댓비를 조회한다 (1시간 캐시, 앞 10개만)
         eventBus.on("newPostList", ({data: elements}) => {
             if (!ctx.settings.checkRatio) return;
 
@@ -307,13 +306,13 @@ export default defineModule({
 
             if (stale.length === 0) return;
 
-            // 실패는 uid마다 흡수 — 한 명이 실패했다고 받아 온 나머지까지 버리지 않는다 (실패는 배지만 못 보여줄 뿐)
+            // 실패는 uid마다 흡수한다. 한 명이 실패해도 받아 온 나머지는 저장한다 (실패한 사람은 배지만 빠진다)
             void Promise.all(stale.map(async (uid) => [uid, await fetchGallogActivity(uid).catch(() => undefined)] as const)).then(async (results) => {
                 const fresh = results.filter((entry): entry is [string, GallogActivity] => Boolean(entry[1]));
                 if (fresh.length === 0) return;
 
-                // 저장소의 최신 값에 병합 (다른 탭이 그사이 쓴 것 유지). 만료 항목은 여기서 버린다 — 안 그러면 uid마다 계속 쌓인다.
-                // 1시간 안에도 너무 많이 쌓이지 않게 최근에 받은 MAX_RATIOS명만 남긴다
+                // 그사이 다른 탭이 쓴 값을 잃지 않게 저장소의 최신 값에 병합한다.
+                // 만료 항목은 여기서 버리고(안 그러면 계속 쌓인다), 최근에 받은 MAX_RATIOS명만 남긴다
                 const now = Date.now();
                 const stored = (await ratioStorage.getValue()).ratio ?? {};
                 if (signal.aborted) return;
@@ -323,7 +322,7 @@ export default defineModule({
                     ...fresh.map(([uid, info]): [string, RatioInfo] => [uid, {...info, date: now}])
                 ];
                 ratios = Object.fromEntries(merged.sort(([, a], [, b]) => b.date - a.date).slice(0, MAX_RATIOS));
-                // 다시 그리기는 위 watch가 한다
+                // 다시 그리기는 위의 ratioStorage.watch가 한다
                 await ratioStorage.setValue({ratio: ratios});
             }).catch(console.error);
         }, {signal});
@@ -336,7 +335,6 @@ export default defineModule({
     },
 
     onChanged(ctx) {
-        // 설정(순서/표시여부) 변경시 즉시 재계산. 배지 색은 설정에만 달렸으니 여기서만 다시 알린다
         publishBadges(ctx);
         publishRatios(ctx);
         rebuildAll(ctx);

@@ -16,7 +16,7 @@ export default defineModule({
     defaultEnable: false,
 
     settings: {
-        // 모듈의 유일한 기능 — 모듈을 켜면 바로 동작하게 기본으로 켠다
+        // 모듈의 유일한 기능이라 모듈을 켜면 바로 동작하게 기본값을 켠다
         preventExit: {
             type: "check",
             name: "나가기 방지",
@@ -26,7 +26,7 @@ export default defineModule({
     },
 
     setup(ctx) {
-        // 등록을 눌렀으면 이어지는 페이지 이동은 막지 않는다 — 등록이 실패해 다시 고치기 시작하면 다시 막는다
+        // 등록을 누른 뒤의 페이지 이동은 막지 않는다. 등록이 실패해 다시 입력하면 다시 막는다
         let submitting = false;
 
         const onClick = (ev: MouseEvent): void => {

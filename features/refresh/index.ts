@@ -15,7 +15,7 @@ const MINIMUM_REFRESH_INTERVAL = 2000;
 /** 목록 요청이 연달아 실패할 때 자동 새로고침 주기를 늘리는 상한 */
 const MAXIMUM_BACKOFF_INTERVAL = 60_000;
 
-/** setup()이 돌려주는 객체 — 단축키와 팝업이 쓴다 */
+/** setup()이 돌려주는 객체. 단축키와 팝업이 쓴다 */
 export interface RefreshApi {
     refreshLists(): Promise<void>;
 
@@ -30,10 +30,10 @@ const rowKey = (row: HTMLElement): string => rowPostNo(row) ?? row.querySelector
 
 /**
  * 새 목록에서 빠진 글 행을 제자리에 남기고 붉게 칠한다 (v5의 삭제된 글 보존). 한 번 남긴 행은 다음 새로고침에도 남는다.
- * 위에 새 글이 n개 들어오면 맨 아래 n개는 다음 페이지로 밀려난 것이라 남기지 않고, 행 수는 원래대로 맞춘다
+ * 위에 새 글이 n개 들어오면 맨 아래 n개는 다음 페이지로 밀려난 것이라 남기지 않는다. 행 수는 원래대로 맞춘다
  */
 const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, newList: HTMLElement, newPostCount: number): void => {
-    // 끼워 넣어도 자리가 밀리지 않게 끼우기 전 행으로 잰다
+    // 끼우기 전의 행으로 자리를 잡아야 앞서 끼운 행 때문에 자리가 밀리지 않는다
     const newRows = Array.from(newList.children);
 
     for (const [index, row] of oldRows.entries()) {
@@ -113,17 +113,17 @@ export default defineModule({
         let loading = false;
         let timer = 0;
         let originalLocation = location.href;
-        // 강제 로드가 진행 중인 요청에 막혔을 때 끝난 뒤 한 번 더 받기 위한 표시
+        // 강제 로드가 진행 중인 요청에 막혔으면 그 요청이 끝난 뒤 한 번 더 받는다
         let rerun = false;
-        // 연달아 실패한 목록 요청 수 — 자동 새로고침 주기를 이만큼 두 배씩 늘린다
+        // 연달아 실패한 목록 요청 수. 실패할 때마다 자동 새로고침 주기가 두 배가 된다
         let failures = 0;
-        // 페이지를 넘긴 주소 — 그 목록으로 갈아끼운 직후 목록 위로 올린다 (진행 중인 요청에 막혀 나중에 받아도)
+        // 페이지를 넘긴 주소. 그 목록으로 갈아끼운 직후 목록 위로 스크롤한다 (진행 중인 요청에 막혀 나중에 받아도)
         let scrollAfter: string | null = null;
-        // 진행 중인 목록 요청 — 주소가 바뀌면 끊는다
+        // 진행 중인 목록 요청. 주소가 바뀌면 끊는다
         let inflight: AbortController | null = null;
-        // 지난번 갈아끼운 목록의 tbody HTML — 받은 것이 같으면 파싱·교체를 건너뛴다
+        // 지난번 갈아끼운 목록의 tbody HTML. 받은 것이 같으면 파싱·교체를 건너뛴다
         let lastListHtml = "";
-        // 받아온 행의 원래 HTML (체크박스 칸·강조·효과를 입히기 전) — 순서가 같으면 바뀐 행만 갈아끼운다
+        // 받아온 행의 원래 HTML (체크박스 칸·강조·효과를 입히기 전). 행 순서가 같을 때 바뀐 행을 가려내는 데 쓴다
         const rawRows = new WeakMap<Element, string>();
         const gallery = queryString("id") ?? "";
 
@@ -134,7 +134,7 @@ export default defineModule({
         ctx.addFilter(
             ".page_head > .gall_issuebox",
             (element) => {
-                // 버튼을 넣으면 필터가 이 칸에 다시 불린다 — 이 실행의 버튼이면 둔다.
+                // 버튼을 넣으면 이 칸에 필터가 다시 불린다. 이 실행의 버튼이면 그대로 둔다.
                 // 죽은 인스턴스(파이어폭스 재주입)가 남긴 버튼은 눌러도 반응이 없어 갈아끼운다
                 if (button && element.contains(button)) return;
                 element.querySelector("button[data-refresher-refresh]")?.remove();
@@ -156,48 +156,48 @@ export default defineModule({
 
         // ===== load =====
         const load = async (customURL?: string, force?: boolean): Promise<boolean> => {
-            // 진행 중인 요청 등으로 이번 호출이 막혀도 다음 새로고침부터는 새 주소를 받도록 먼저 바꿔 둔다.
-            // 진행 중인 응답은 지난 주소의 목록이라 어차피 버리니 끊는다 — finally가 새 주소로 다시 받는다
+            // 이번 호출이 막혀도 다음 새로고침부터 새 주소를 받도록 먼저 바꿔 둔다.
+            // 진행 중인 응답은 지난 주소의 목록이라 어차피 버리니 끊는다. finally가 새 주소로 다시 받는다
             if (customURL && customURL !== originalLocation) {
                 originalLocation = customURL;
                 inflight?.abort();
             }
 
             if (loading) {
-                // 관리 동작 뒤 요청 등은 진행 중인 응답이 바뀌기 전 목록일 수 있어 끝난 뒤 다시 받는다 (자동 tick은 겹쳐도 무시)
+                // 강제 로드(관리 동작 뒤 등)는 진행 중인 응답이 바뀌기 전 목록일 수 있어 끝난 뒤 다시 받는다. 자동 새로고침은 겹치면 버린다
                 if (force) rerun = true;
                 return false;
             }
             if (document.hidden) return false;
             if (!force && (Date.now() - lastRefresh < MINIMUM_REFRESH_INTERVAL || paused)) return false;
 
-            // 자동 새로고침만 거르는 조건 — 사용자가 직접 한 새로고침·이동은 그대로 받는다
+            // 자동 새로고침만 거르는 조건. 사용자가 직접 한 새로고침·이동은 그대로 받는다
             if (!force) {
-                // 새 글은 1페이지에만 들어온다. 뒤 페이지는 갈아끼울 때마다 행이 밀려 읽던 글이 다음 페이지로 사라질 뿐이다
+                // 새 글은 1페이지에만 들어온다. 뒤 페이지는 갈아끼워 봐야 행이 밀려 읽던 글이 다음 페이지로 사라질 뿐이다
                 const page = new URL(originalLocation).searchParams.get("page");
                 if (page && page !== "1") return false;
 
-                // 목록은 통째로 갈아끼워져 커서·키보드 포커스 아래 행이 바뀐다 — 설정을 켜면 그 위에 있는 동안은 건너뛴다.
-                // 포커스는 :focus-visible만 본다: 글 제목을 마우스로 누르면 링크에 포커스가 남아 목록을 떠나도 계속 멈춘다
+                // 목록을 갈아끼우면 커서·키보드 포커스 아래 행이 바뀐다. 설정을 켜면 그 위에 있는 동안 건너뛴다.
+                // 포커스는 :focus-visible만 본다. 글 제목을 마우스로 누르면 링크에 포커스가 남아, :focus로 보면 목록을 떠나도 계속 멈춘다
                 const list = ctx.settings.pauseOnHover ? document.querySelector(LIST_SELECTOR) : null;
                 if (list && (list.matches(":hover") || list.querySelector(":focus-visible"))) return false;
             }
 
             // 관리자가 체크박스로 글을 고르는 중이면 목록을 갈아끼우지 않는다.
-            // 댓글 체크박스는 목록과 상관없고, 사용자가 직접 한 이동(페이지 전환/뒤로 가기)은 막으면 주소와 목록이 어긋난다
+            // 댓글 체크박스는 목록과 상관없다. 사용자가 직접 한 이동(페이지 전환/뒤로 가기)은 막으면 주소와 목록이 어긋나므로 거르지 않는다
             if (!customURL && (document.querySelector(".gall_list:not([id]) .article_chkbox:checked") || document.querySelector(".user_data.add"))) {
                 return false;
             }
 
             loading = true;
-            // 기다리는 동안 뒤로 가기/페이지 이동으로 originalLocation이 바뀔 수 있으니 요청한 주소를 고정
+            // 기다리는 동안 뒤로 가기·페이지 이동으로 originalLocation이 바뀔 수 있어 요청한 주소를 고정한다
             const target = originalLocation;
             const controller = new AbortController();
             inflight = controller;
 
             const fail = (): false => {
                 failures++;
-                // 사용자가 한 이동·새로고침은 실패하면 주소만 바뀌고 목록은 그대로라 알린다
+                // 사용자가 한 이동·새로고침이 실패하면 주소만 바뀌고 목록은 그대로라 알린다
                 if (force) useUiStore.getState().showToast("글 목록을 불러오지 못했습니다.", "error");
                 return false;
             };
@@ -205,13 +205,14 @@ export default defineModule({
             try {
                 lastRefresh = Date.now();
 
-                // 자동 새로고침만 주기보다 짧게 끊고 재시도하지 않는다 — 실패는 armNext가 주기를 늘려 받는다 (ky 재시도는 Retry-After를 끝없이 기다려 페이지 넘김까지 막는다).
-                // 사용자가 한 이동은 느린 검색 결과도 기다린다 (timeout: undefined는 기본값을 덮으니 빼야 한다)
+                // 자동 새로고침은 주기보다 짧게 끊고 재시도하지 않는다. 실패하면 armNext가 주기를 늘린다.
+                // ky 재시도는 Retry-After를 끝없이 기다려 페이지 넘김까지 막는다.
+                // 사용자가 한 이동은 느린 검색 결과도 기다린다. timeout: undefined는 기본값을 덮으므로 키 자체를 뺀다
                 const response = await http.get(listUrl(target), {
                     signal: controller.signal,
                     ...(force ? {} : {timeout: ctx.settings.refreshRate - 100, retry: 0})
                 }).text();
-                // 그 사이 주소가 바뀌었으면 지난 주소의 목록이라 버린다 — finally에서 새 주소로 다시 받는다
+                // 그사이 주소가 바뀌었으면 지난 주소의 목록이라 버린다. finally에서 새 주소로 다시 받는다
                 if (target !== originalLocation) return false;
 
                 // 목록이 그대로면 파싱·교체를 건너뛴다. 응답 전체는 요청마다 바뀌는 값(s_key)이 있어 tbody만 비교한다
@@ -246,7 +247,7 @@ export default defineModule({
                 const newKeys = newRows.map(rowKey);
                 const newPostList: HTMLTableRowElement[] = [];
 
-                // 관리자 목록은 머리에 체크박스 열이 있는데, 받아온 행엔 그 칸이 없다(디시 JS가 나중에 붙임) — 없으면 열이 한 칸씩 밀린다
+                // 관리자 목록은 머리에 체크박스 열이 있는데 받아온 행엔 그 칸이 없다 (디시 JS가 나중에 붙인다). 채우지 않으면 열이 한 칸씩 밀린다
                 const hasCheckboxColumn = Boolean(oldList.closest("table")?.querySelector("thead .chkbox_th"));
                 const checkboxCell = hasCheckboxColumn ? checkboxCellFactory(oldRows) : null;
 
@@ -286,13 +287,14 @@ export default defineModule({
                     }
                 }
 
-                // 삭제된 글 보존(미리보기 설정 — 미리보기를 끄면 따라 꺼진다) — 같은 목록을 다시 받을 때만. 페이지를 넘기거나 검색 결과면 빠진 글이 지워진 것이 아니다
+                // 삭제된 글 보존은 미리보기의 archiveArticle 설정을 따른다 (미리보기를 끄면 같이 꺼진다).
+                // 같은 목록을 다시 받을 때만 한다. 페이지를 넘겼거나 검색 결과면 빠진 글이 지워진 것이 아니다
                 if (!customURL && !queryString("s_keyword") && getModuleApi("preview")?.archiveArticle() === true) {
                     keepDeletedRows(oldRows, new Set(newKeys), newList, newPostList.length);
                 }
 
-                // 행 순서가 같으면 바뀐 행(조회수 등)만 갈아끼운다 — 그대로인 행은 hover·리스너가 남는다.
-                // 검색 결과는 강조와 글·댓글 행 짝이 얽혀 통째로 바꾼다
+                // 행 순서가 같으면 바뀐 행(조회수 등)만 갈아끼운다. 그대로인 행은 hover·리스너가 유지된다.
+                // 검색 결과는 강조와 글·댓글 행 짝이 얽혀 있어 통째로 바꾼다
                 const sameOrder = !customURL && !queryString("s_keyword") && oldKeys.length === newKeys.length && oldKeys.every((key, index) => key === newKeys[index]);
                 if (sameOrder) {
                     for (const [index, row] of oldRows.entries()) {
@@ -303,7 +305,7 @@ export default defineModule({
                     oldList.replaceWith(newList);
                 }
                 lastListHtml = listHtml;
-                // 디시는 자체 차단·이용자 메모 배지를 로드 때 한 번만 건다 — 갈아끼운 행엔 페이지 스크립트로 다시 건다 (콘텐츠 스크립트에선 못 부른다)
+                // 디시는 자체 차단·메모 표시를 로드 때 한 번만 건다. 갈아끼운 행엔 배경이 페이지(MAIN world)에서 다시 건다 (콘텐츠 스크립트에선 못 부른다)
                 void sendMessage("refresher:listReplaced", gallery).catch(() => {});
 
                 if (target === scrollAfter) {
@@ -315,31 +317,32 @@ export default defineModule({
 
                 return true;
             } catch (e) {
-                // 주소가 바뀌어 끊은 요청은 실패가 아니다 (파이어폭스에선 오류 종류로 가리기 어려워 신호로 본다)
+                // 주소가 바뀌어 끊은 요청은 실패가 아니다. 파이어폭스에선 오류 종류로 가리기 어려워 신호로 본다
                 if (controller.signal.aborted) return false;
                 console.error("Refresh failed:", e);
                 return fail();
             } finally {
                 loading = false;
                 inflight = null;
-                // 넘긴 페이지의 로드가 실패했거나 목록이 그대로여서 건너뛰었으면 올리기를 버린다 — 남기면 한참 뒤 자동 새로고침이 목록 위로 끌어올린다
+                // 넘긴 페이지의 로드가 실패했거나 건너뛰었으면 스크롤 예약을 버린다. 남기면 한참 뒤 자동 새로고침이 목록 위로 끌어올린다
                 if (target === scrollAfter) scrollAfter = null;
                 if (target !== originalLocation || rerun) {
                     rerun = false;
-                    // 주소가 바뀐 건 사용자가 직접 이동한 것이라 그 주소를 넘겨 체크박스 가드를 건너뛰게 한다
+                    // 주소가 바뀐 것은 사용자의 이동이라 그 주소를 넘겨 체크박스 가드를 건너뛴다
                     void load(target !== originalLocation ? originalLocation : undefined, true);
                 }
             }
         };
 
-        // ===== 스케줄링: 주기+지터 재귀 (첫 요청도 한 주기 뒤 — 파싱 중인 목록을 곧바로 다시 받지 않는다) =====
+        // ===== 스케줄링: 주기+지터 재귀 =====
+        // 첫 요청도 한 주기 뒤에 보낸다. 파싱 중인 목록을 곧바로 다시 받지 않는다
         const armNext = (): void => {
             window.clearTimeout(timer);
-            // 숨은 탭에선 쉰다 — 다시 보이면 onVisibilityChange가 이어 간다 (응답을 기다리던 중 숨겨져도 여기서 멈춘다).
+            // 숨은 탭에선 쉬고, 다시 보이면 onVisibilityChange가 잇는다 (응답을 기다리던 중 숨겨져도 여기서 멈춘다).
             // 모듈을 끈 뒤 응답이 와도 타이머를 다시 걸지 않는다
             if (ctx.signal.aborted || document.hidden) return;
 
-            // 실패가 이어지면 주기를 두 배씩 늘린다 (최대 60초). 성공하면 load가 failures를 0으로 되돌린다
+            // 실패가 이어지면 주기를 두 배씩 늘린다 (최대 MAXIMUM_BACKOFF_INTERVAL). 성공하면 load가 failures를 0으로 되돌린다
             const interval = Math.min(ctx.settings.refreshRate * 2 ** failures, MAXIMUM_BACKOFF_INTERVAL);
             // 응답을 받은 뒤 다음 주기를 잡아야 방금 실패가 바로 반영된다
             timer = window.setTimeout(() => void load().finally(armNext), interval + 500 + Math.random() * 1500);
@@ -357,8 +360,8 @@ export default defineModule({
             armNext();
         };
 
-        // 뒤로/앞으로 가기 — 인페이지 전환으로 쌓인 주소의 목록으로 되돌린다.
-        // 미리보기가 쌓은 글 주소를 오가는 것은 같은 목록이다 — 다시 받으면 고르던 체크가 풀리고 일시정지를 무시한다
+        // 뒤로/앞으로 가기: 인페이지 전환으로 쌓인 주소의 목록으로 되돌린다.
+        // 미리보기가 쌓은 글 주소 사이의 이동은 같은 목록이라 받지 않는다. 다시 받으면 고르던 체크가 풀리고 일시정지를 무시한다
         const onPopState = (): void => {
             if (listUrl(location.href) === listUrl(originalLocation)) return;
 
@@ -380,7 +383,7 @@ export default defineModule({
         ctx.addCleanup(() => window.clearTimeout(timer));
 
         // ===== 인페이지 페이지 전환 =====
-        // 앵커마다 붙이면 표시 속성 때문에 페이징 박스 비교가 늘 어긋나 매번 갈아끼우게 된다 — 문서에 하나만 위임한다
+        // 문서에 리스너 하나만 위임한다. 앵커마다 붙이며 표시 속성을 남기면 페이징 박스 비교가 늘 어긋나 매번 갈아끼운다
         const onPagingClick = (ev: MouseEvent): void => {
             // 수정키 클릭은 새 탭/창으로 열려는 것이라 가로채지 않는다
             if (ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
