@@ -135,6 +135,9 @@ export const parseDate = (value: string): Date => {
 /** `[말머리] 제목`. 둘 다 평문이므로 HTML이 아니라 텍스트로 렌더링한다 */
 export const postTitle = (post: PostInfo): string => (post.header ? `[${post.header}] ${post.title ?? ""}` : (post.title ?? ""));
 
+/** 닫힐 때 페이드아웃을 끝내는 타이머 */
+let fadeTimer = 0;
+
 export const usePreviewStore = create<PreviewState>((set, get) => ({
     ...freshPost(),
     ...NO_HOOKS,
@@ -161,7 +164,9 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
         get().captcha?.resolve("");
         // signalId도 올린다. 닫은 뒤 도착한 응답(abort로 난 오류 포함)이 페이드아웃 중인 창에 그려지면 안 된다.
         set({visible: false, fading: true, comments: undefined, blockPopup: false, captcha: null, reply: NO_REPLY, signalId: ++signalSeq});
-        window.setTimeout(() => set({fading: false}), 200);
+        // 앞서 닫을 때 건 타이머는 지운다. 남겨 두면 닫았다 곧바로 다시 열고 닫을 때 이번 페이드를 일찍 끊는다
+        window.clearTimeout(fadeTimer);
+        fadeTimer = window.setTimeout(() => set({fading: false}), 200);
     },
 
     toggleCollapse: (no) =>
