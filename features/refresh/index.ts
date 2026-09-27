@@ -2,6 +2,7 @@ import {Pause, RefreshCw} from "lucide-react";
 
 import {http} from "@/core/http/client";
 import {isViewPage, listUrl, mergeParamURL, pagePostNo, queryString, rowPostNo} from "@/core/http/urls";
+import {checkboxCellFactory, highlightSearchResults, LIST_SELECTOR, PAGING_SELECTOR} from "@/core/list";
 import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext} from "@/core/module/types";
@@ -13,8 +14,6 @@ import {useUiStore} from "@/stores/ui";
 const MINIMUM_REFRESH_INTERVAL = 2000;
 /** 목록 요청이 연달아 실패할 때 자동 새로고침 주기를 늘리는 상한 */
 const MAXIMUM_BACKOFF_INTERVAL = 60_000;
-export const LIST_SELECTOR = ".gall_list:not([id]) tbody";
-export const PAGING_SELECTOR = ".left_content article:has(.gall_listwrap) .bottom_paging_box";
 
 /** setup()이 돌려주는 객체 — 단축키와 팝업이 쓴다 */
 export interface RefreshApi {
@@ -25,35 +24,6 @@ export interface RefreshApi {
     /** 지금 이 페이지에서 새로고침이 멈춰 있는지 */
     isPaused(): boolean;
 }
-
-/**
- * 관리자 목록 행의 체크박스 칸을 만드는 함수. 실제 마크업을 따르기 위해 기존 행의 칸을 복제해 글 번호만 바꾸고,
- * 그런 행이 없으면 디시의 행 템플릿(갤러리 종류별 *_td-tmpl), 그것도 없으면 빈 칸을 쓴다.
- * 번호 없는 행(설문/AD)은 빈 칸 — 열 정렬만 맞춘다.
- */
-export const checkboxCellFactory = (oldRows: HTMLTableRowElement[]): ((no: string | undefined) => HTMLTableCellElement) => {
-    const sampleRow = oldRows.find((row) => row.dataset.no && row.querySelector(":scope > td .article_chkbox"));
-    let sample = sampleRow?.querySelector<HTMLTableCellElement>(":scope > td:has(.article_chkbox)") ?? null;
-
-    if (!sample) {
-        const template = document.createElement("template");
-        template.innerHTML = document.querySelector("script[type=\"text/x-jquery-tmpl\"][id$=\"_td-tmpl\"]")?.innerHTML.trim() ?? "";
-        const cell = template.content.firstElementChild;
-        sample = cell instanceof HTMLTableCellElement ? cell : null;
-    }
-
-    return (no) => {
-        if (!no || !sample) return document.createElement("td");
-
-        const cell = sample.cloneNode(true) as HTMLTableCellElement;
-        const input = cell.querySelector<HTMLInputElement>("input");
-        if (input) {
-            input.checked = false;
-            if (sampleRow?.dataset.no && input.value === sampleRow.dataset.no) input.value = no;
-        }
-        return cell;
-    };
-};
 
 /** 새 글 판정용 행 키. 번호 없는 행(설문·AD, 다른 갤러리 공지)은 번호 칸 글자로 구분한다 */
 const rowKey = (row: HTMLElement): string => rowPostNo(row) ?? row.querySelector(".gall_num")?.textContent ?? "";
@@ -81,45 +51,6 @@ const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, n
 /** 방문 링크 색상 (Firefox 대응) */
 const applyDoNotColorVisited = (ctx: ModuleContext): void => {
     document.documentElement.classList.toggle("refresherDoNotColorVisited", ctx.settings.doNotColorVisited === true);
-};
-
-/** 검색어 강조 (TreeWalker, 텍스트 노드만) */
-export const highlightSearchResults = (newList: HTMLElement, searchValue: string): void => {
-    if (!searchValue) return;
-
-    for (const gallTit of newList.querySelectorAll<HTMLElement>(".gall_tit")) {
-        const anchor = gallTit.querySelector<HTMLElement>("a:first-child");
-        if (!anchor) continue;
-
-        const className = anchor.querySelector(".spoiler") ? "mark spoiler" : "mark";
-
-        const walker = anchor.ownerDocument.createTreeWalker(anchor, NodeFilter.SHOW_TEXT);
-        const textNodes: Text[] = [];
-        while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
-
-        for (const node of textNodes) {
-            const text = node.data;
-            if (!text.includes(searchValue)) continue;
-
-            const fragment = anchor.ownerDocument.createDocumentFragment();
-            let index = 0;
-            let found: number;
-
-            while ((found = text.indexOf(searchValue, index)) !== -1) {
-                fragment.append(text.slice(index, found));
-
-                const span = anchor.ownerDocument.createElement("span");
-                span.className = className;
-                span.textContent = searchValue;
-                fragment.append(span);
-
-                index = found + searchValue.length;
-            }
-
-            fragment.append(text.slice(index));
-            node.replaceWith(fragment);
-        }
-    }
 };
 
 export default defineModule({

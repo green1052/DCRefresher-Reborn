@@ -2,10 +2,10 @@ import {Search} from "lucide-react";
 
 import {http} from "@/core/http/client";
 import {queryString} from "@/core/http/urls";
+import {checkboxCellFactory, highlightSearchResults, LIST_SELECTOR, PAGING_SELECTOR} from "@/core/list";
 import {sendMessage} from "@/core/messaging/protocol";
 import {defineModule} from "@/core/module/define";
 import {LIST_PAGE} from "@/core/pages";
-import {checkboxCellFactory, highlightSearchResults, LIST_SELECTOR, PAGING_SELECTOR} from "@/features/refresh";
 import {useUiStore} from "@/stores/ui";
 
 /** 검색 결과 행 — 글(data-no)과 그 아래 댓글 검색 행(data-cmt). 설문·AD 행은 뺀다.
