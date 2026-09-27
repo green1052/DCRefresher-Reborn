@@ -240,11 +240,20 @@ const controller = (ctx: Ctx) => {
         }
     };
 
+    /** 지금 기록이 이 문서의 미리보기가 쌓은 것이면, 미리보기를 열기 전 기록에서 몇 칸 위인지 (아니면 0) */
+    const historyDepth = (): number => {
+        const state: unknown = history.state;
+        return isRecord(state) && state.refresher === 1 && state.doc === historyDoc && typeof state.depth === "number" ? state.depth : 0;
+    };
+
     const restoreHistory = (fromHistory: boolean) => {
         if (savedHistory) {
-            // 주소가 실제로 바뀌었을 때만 되돌린다. colorPreviewLink로 판단하면 창을 연 채 설정을 바꿀 때 어긋난다.
             // 뒤로 가기로 닫았으면 주소는 이미 돌아가 있다.
-            if (!fromHistory && location.href !== savedHistory.url) history.pushState(savedHistory.state, savedHistory.title, savedHistory.url);
+            // 미리보기가 쌓은 만큼 뒤로 간다. 새로 쌓으면 열고 닫을 때마다 두 칸씩 늘어 갤러리 전의 기록이 밀려난다.
+            // 쌓은 기록이 아닌데 주소가 바뀌어 있으면(창을 연 채 설정을 바꾼 경우 등) 원래 주소를 쌓는다
+            const depth = historyDepth();
+            if (!fromHistory && depth > 0) history.go(-depth);
+            else if (!fromHistory && location.href !== savedHistory.url) history.pushState(savedHistory.state, savedHistory.title, savedHistory.url);
             // popstate는 제목을 되돌리지 않는다.
             document.title = savedHistory.title;
         }
@@ -304,7 +313,8 @@ const controller = (ctx: Ctx) => {
         if (ctx.settings.colorPreviewLink) {
             const newTitle = `${preData.title ?? document.title} - ${galName()}`;
             // 돌아갈 위치(back)도 같이 넣는다. 없으면 뒤로 가기로 다시 연 미리보기는 닫아도 글 주소에 남는다.
-            if (!historySkip) history.pushState({refresher: 1, doc: historyDoc, preData, back: savedHistory}, newTitle, preData.link);
+            // depth: 미리보기를 열기 전 기록에서 몇 칸 위인지. 닫을 때 그만큼 뒤로 간다
+            if (!historySkip) history.pushState({refresher: 1, doc: historyDoc, preData, back: savedHistory, depth: (st.visible ? historyDepth() : 0) + 1}, newTitle, preData.link);
             // 히스토리로 다시 열 때도 바꾼다. popstate는 제목을 되돌리지 않는다.
             document.title = newTitle;
         }
