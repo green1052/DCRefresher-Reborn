@@ -164,8 +164,10 @@ getModuleApi("preview")?.archiveArticle()
 `core/http/client.ts`의 `http`(일반 요청)와 `ajax`(`X-Requested-With` 헤더를 붙인 디시 ajax 요청)를 씁니다.
 
 - 두 클라이언트 모두 p-limit으로 동시 요청 수를 제한합니다. 제한 값은 "요청 제한" 모듈 설정이고, 모듈이 꺼져 있거나 옵션·배경 페이지면 제한하지 않습니다.
-- `ajax`는 Firefox 콘텐츠 스크립트에서 `content.fetch`가 있으면 그것을 씁니다. 페이지가 보낸 요청처럼 나가야 디시 ajax가 받아 줍니다.
-- 재시도는 지터를 주고, `Retry-After`는 최대 10초까지만 기다립니다.
+- Firefox 콘텐츠 스크립트에서는 두 클라이언트 모두 `content.fetch`로 보냅니다. 페이지가 보낸 요청처럼 나가야 디시 ajax가 받아 줍니다.
+- 시간 제한(15초)은 동시 요청 수 제한의 차례를 받은 뒤부터 잽니다. 더 짧게 끊을 요청(자동 새로고침)은 호출할 때 `timeout`을 줍니다.
+- 재시도는 지터를 주고, `Retry-After`는 최대 10초까지만 기다립니다. 시간 초과는 재시도하지 않습니다.
+- 폼 본문은 `formBody({...})`로 만듭니다. 값이 `null`·`undefined`·`false`인 필드는 빠지고, 빈 문자열은 들어갑니다. 끊은 요청인지는 `isAbortError(e)`로 봅니다.
 
 ## 오버레이와 CSS
 
@@ -183,7 +185,12 @@ getModuleApi("preview")?.archiveArticle()
 | `index.ts` | 모듈 정의, 목록 클릭·우클릭·미니 미리보기 처리, 글·댓글 요청 흐름 |
 | `rows.ts` | 목록 행 → 미리보기 대상(`GalleryPreData`), 앞·뒤 글 찾기 |
 | `ui/previewStore.ts` | 미리보기 창 상태 (zustand) |
-| `ui/Frame.tsx`, `Comment.tsx`, `WriteComment.tsx`, `Popups.tsx`, `Mini.tsx` | 창, 댓글, 댓글 쓰기, 관리 팝업, 미니 미리보기 |
+| `settings.ts` | 설정 스키마 |
+| `ui/Frame.tsx` | 창 (머리, 본문, 댓글 칸, 휠로 넘기기) |
+| `ui/Votes.tsx`, `ErrorBlock.tsx`, `CountDown.tsx`, `fitMovies.ts` | 추천 버튼, 오류 안내, 자동 삭제 카운트다운, 디시 동영상 iframe 크기 맞추기 |
+| `ui/CommentList.tsx`, `Comment.tsx`, `WriteComment.tsx` | 댓글 목록(답글 접기), 댓글 하나, 댓글 쓰기 |
+| `ui/Popups.tsx`, `Mini.tsx`, `DcconPopup.tsx` | 관리 패널·차단 팝업, 미니 미리보기, 디시콘 고르기 |
+| `nonmember.ts` | 비회원 닉네임·비밀번호 (디시 localStorage를 같이 씀) |
 | `core/preview/request.ts` | 글·댓글 요청, 댓글 쓰기, 관리 요청 |
 | `core/preview/parser.ts` | 글 HTML 파싱 (DOMParser) |
 | `core/preview/comments.ts` | 댓글 정리, 차단·같은 댓글 접기, 삭제된 댓글 보존 |
@@ -209,4 +216,6 @@ getModuleApi("preview")?.archiveArticle()
 2. release 브랜치에 develop을 머지 커밋으로 합칩니다.
 3. `X.Y.Z` 태그를 만들어 push합니다. `.github/workflows/release.yml`이 태그와 `package.json` 버전이 같은지 확인하고, 타입 검사 후 zip을 만들어 GitHub 릴리즈에 올리고 Chrome 웹 스토어·Firefox Add-ons에 제출합니다.
 
-IP·밴 DB는 `.github/workflows/db.yml`이 매주 수·토요일에 `scripts/build-db.ts`로 만들어 `data` 브랜치에 올립니다. 확장은 설치된 뒤 알람으로 새 버전을 확인해 받습니다 (`core/database.ts`).
+IP·밴 DB는 `.github/workflows/db.yml`이 매주 수·토요일에 `scripts/build-db.ts`로 만들어 `data` 브랜치에 올립니다. `ip.json`은 확장이 저장하는 형식(`core/ipdb.ts`의 `CompactIpData`) 그대로이고 버전을 담고 있습니다. `ban.json`은 손으로 관리하며 워크플로가 검사·정리합니다. 확장은 설치된 뒤 알람으로 새 버전을 확인해 받습니다 (`core/database.ts`).
+
+IP DB 형식(`IP_FORMAT`)을 바꾸면 옛 확장은 새 `ip.json`을 읽지 못하고, 새 확장은 옛 `ip.json`을 받지 않습니다. 형식을 바꾼 릴리즈 전에는 DB 워크플로를 한 번 돌려 `data` 브랜치를 새 형식으로 만들어 두세요.
