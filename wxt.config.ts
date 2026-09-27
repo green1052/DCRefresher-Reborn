@@ -13,6 +13,9 @@ export default defineConfig({
         }
     },
     vite: () => ({
+        build: {
+            cssTarget: ["chrome140", "firefox140"]
+        },
         css: {
             postcss: {
                 plugins: [
