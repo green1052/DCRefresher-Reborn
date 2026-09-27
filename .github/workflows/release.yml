@@ -1,4 +1,5 @@
 name: Release
+
 on:
     push:
         tags:
@@ -7,23 +8,32 @@ on:
 permissions:
     contents: write
 
+concurrency:
+    group: release
+    cancel-in-progress: false
+
 jobs:
     release:
         runs-on: ubuntu-latest
         steps:
-            -   name: Checkout
-                uses: actions/checkout@v7
+            -   uses: actions/checkout@v7
 
-            -   name: Setup Bun
-                uses: oven-sh/setup-bun@v2
-                with:
-                    bun-version-file: package.json
+            # 태그와 package.json 버전이 다르면 스토어에 엉뚱한 버전이 올라간다
+            -   name: Check version
+                run: |
+                    version=$(jq -r .version package.json)
+                    if [ "$version" != "$GITHUB_REF_NAME" ]; then
+                        echo "::error::태그 $GITHUB_REF_NAME 와 package.json 버전 $version 이 다릅니다."
+                        exit 1
+                    fi
 
-            -   name: Install Dependencies
-                run: bun ci
+            -   uses: ./.github/actions/setup
+
+            -   name: Type check
+                run: bun run compile
 
             -   name: Build
-                run: bun zip && bun zip:firefox
+                run: bun run zip && bun run zip:firefox
 
             -   name: Release
                 uses: softprops/action-gh-release@v3
@@ -34,10 +44,11 @@ jobs:
                     generate_release_notes: true
 
             -   name: Submit to stores
-                run: |
-                    bun wxt submit \
-                    --chrome-zip .output/*-chrome.zip \
-                    --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip
+                run: >-
+                    bun wxt submit
+                    --chrome-zip .output/*-chrome.zip
+                    --firefox-zip .output/*-firefox.zip
+                    --firefox-sources-zip .output/*-sources.zip
                 env:
                     CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
                     CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}

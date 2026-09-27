@@ -1,0 +1,24 @@
+name: Check
+
+on:
+    push:
+        branches: [develop]
+    pull_request:
+
+concurrency:
+    group: check-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    check:
+        runs-on: ubuntu-latest
+        steps:
+            -   uses: actions/checkout@v7
+
+            -   uses: ./.github/actions/setup
+
+            -   name: Type check
+                run: bun run compile
+
+            -   name: Build
+                run: bun run build && bun run build:firefox

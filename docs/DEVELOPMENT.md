@@ -29,7 +29,9 @@ bun run zip            # 배포용 zip
 bun run zip:firefox    # Firefox zip + 소스 zip
 ```
 
-`tsconfig.json`은 `noUnusedLocals`, `noUnusedParameters`를 켜 둡니다. 커밋 전에 `bun run compile`과 `bun run build`가 통과해야 합니다.
+`tsconfig.json`은 `noUnusedLocals`, `noUnusedParameters`를 켜 둡니다. 커밋 전에 `bun run compile`과 `bun run build`가 통과해야 합니다. develop 푸시와 PR마다 `.github/workflows/check.yml`이 타입 검사와 Chrome·Firefox 빌드를 돌립니다.
+
+워크플로의 Bun 설치·의존성 설치는 `.github/actions/setup`(composite action)에 모아 두었습니다.
 
 ## 디렉터리
 
@@ -207,6 +209,6 @@ getModuleApi("preview")?.archiveArticle()
 
 1. develop에서 `package.json`의 `version`을 올리고 `chore(release): X.Y.Z`로 커밋합니다.
 2. release 브랜치에 develop을 머지 커밋으로 합칩니다.
-3. `X.Y.Z` 태그를 만들어 push합니다. `.github/workflows/build.yml`이 zip을 만들어 GitHub 릴리즈에 올리고 Chrome 웹 스토어·Firefox Add-ons에 제출합니다.
+3. `X.Y.Z` 태그를 만들어 push합니다. `.github/workflows/release.yml`이 태그와 `package.json` 버전이 같은지 확인하고, 타입 검사 후 zip을 만들어 GitHub 릴리즈에 올리고 Chrome 웹 스토어·Firefox Add-ons에 제출합니다.
 
 IP·밴 DB는 `.github/workflows/db.yml`이 매주 수·토요일에 `scripts/build-db.ts`로 만들어 `data` 브랜치에 올립니다. 확장은 설치된 뒤 알람으로 새 버전을 확인해 받습니다 (`core/database.ts`).

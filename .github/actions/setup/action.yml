@@ -1,0 +1,17 @@
+name: Setup
+description: package.json의 packageManager 버전으로 Bun을 깔고 lockfile대로 의존성을 설치한다
+
+inputs:
+    ignore-scripts:
+        description: postinstall(wxt prepare)을 건너뛴다. .wxt가 필요 없는 작업(DB 빌드)용
+        default: "false"
+
+runs:
+    using: composite
+    steps:
+        -   uses: oven-sh/setup-bun@v2
+            with:
+                bun-version-file: package.json
+
+        -   shell: bash
+            run: bun ci ${{ inputs.ignore-scripts == 'true' && '--ignore-scripts' || '' }}
