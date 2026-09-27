@@ -24,6 +24,7 @@ export default defineConfig({
                      * - min-width 미디어 블록: 반응형 prop용인데 오버레이는 쓰지 않는다 (CSS의 절반). 오버레이에 {initial, md} 같은 prop을 쓰면 initial로 고정된다
                      * - U+200D content: DataList 정렬용 한 글자 때문에 CSS 문자열 전체가 2바이트로 저장된다 (오버레이는 DataList를 안 쓴다)
                      * - 오버레이가 쓰지 않는 컴포넌트의 규칙
+                     * - :root → :host (shadow 안에선 :root가 매칭되지 않는다)
                      * 쓰는 색만 가져오는 것은 radix-themes.css의 @import가 한다 (Radix가 색마다 나눠 둔 파일)
                      */
                     {
@@ -46,6 +47,11 @@ export default defineConfig({
                             });
                             root.walkAtRules((rule) => {
                                 if (rule.nodes?.length === 0) rule.remove();
+                            });
+
+                            // shadow 안에선 :root가 매칭되지 않으므로 Radix 토큰을 :host로 옮긴다 (예전엔 콘텐츠 스크립트가 실행 때마다 문자열째 바꿨다)
+                            root.walkRules((rule) => {
+                                if (rule.selector.includes(":root")) rule.selectors = rule.selectors.map((selector) => selector.replaceAll(":root", ":host"));
                             });
                         }
                     }

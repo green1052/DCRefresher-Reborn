@@ -66,8 +66,8 @@ export default defineContentScript({
                 anchor: "body",
                 // WXT 기본 리셋(:host{all:initial !important})은 pointer-events를 강제해 페이지 클릭을 막으므로 overlay.scss의 :host 리셋을 쓴다
                 inheritStyles: true,
-                // shadow 안에선 :root가 매칭되지 않으므로 Radix 토큰을 :host로 옮긴다
-                css: radixCss.replaceAll(":root", ":host") + overlayCss,
+                // Radix 토큰의 :root는 빌드 때 :host로 바꿔 둔다 (wxt.config.ts의 slim-overlay-radix)
+                css: radixCss + overlayCss,
                 onMount(container) {
                     const app = document.createElement("div");
                     const portal = document.createElement("div");
