@@ -86,7 +86,7 @@ const parseCommentForm = (dom: Document): CommentForm => ({
     serviceCode: dom.querySelector<HTMLInputElement>("input[name=service_code]")?.value ?? "",
     dValue: dom.querySelector("#reply-setting-tmpl + script")?.textContent?.match(/_d\('(.*)'\)/)?.[1],
     checks: Object.fromEntries(TXTCON_CHECKS.map((name) => [name, dom.querySelector<HTMLInputElement>(`#${name}`)?.value ?? ""])),
-    gallNickName: dom.querySelector("#use_gall_nick") ? dom.querySelector<HTMLInputElement>("#gall_nick_name")?.value ?? "" : undefined
+    gallNickName: dom.querySelector("#use_gall_nick") ? dom.querySelector<HTMLInputElement>("#focus_cmt input[name=gall_nick_name]")?.value ?? "" : undefined
 });
 
 /** 본문 HTML → PostInfo. 비정상 문서면 undefined, 성인 인증이 필요하면 Error(ADULT_ERROR) */

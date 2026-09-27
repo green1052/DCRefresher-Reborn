@@ -136,7 +136,7 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
     // 깡계는 글댓비를 받아 둔 유저만 판정한다. 목록 전체를 조회하면 갤로그 요청이 너무 많다
     const action = ctx.settings.lowActivityAction;
     if (lowActivity && action === "tag") badges.append(buildBadgeSpan("[깡계]", colors.ratioAlarm, `글댓합 ${ctx.settings.alarmRatio}개 이하`));
-    if (lowActivity && (action === "blur" || action === "hide")) (element.closest<HTMLElement>(".ub-content") ?? element).classList.add(LOW_ACTIVITY_CLASSES[action]);
+    if (lowActivity && (action === "blur" || action === "hide")) (element.closest<HTMLElement>(".ub-content, .search_comment") ?? element).classList.add(LOW_ACTIVITY_CLASSES[action]);
 
     if (badges.children.length > 0) insertWriterSpan(element, badges);
 };
@@ -174,7 +174,7 @@ const rebuildUsers = (ctx: Ctx, uids: string[]): void => {
     const classes = Object.values(LOW_ACTIVITY_CLASSES);
     for (const uid of uids) {
         for (const element of document.querySelectorAll<HTMLElement>(`.ub-writer[data-uid="${CSS.escape(uid)}"]:not([user_name])`)) {
-            (element.closest<HTMLElement>(".ub-content") ?? element).classList.remove(...classes);
+            (element.closest<HTMLElement>(".ub-content, .search_comment") ?? element).classList.remove(...classes);
             process(ctx, element);
         }
     }

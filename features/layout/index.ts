@@ -13,7 +13,6 @@ const HIDE_OPTIONS = {
         desc: "이슈줌, 타갤 개념글, 뉴스, 힛갤 등의 컨텐츠를 오른쪽 영역에서 숨깁니다.",
         selector: "section.right_content article"
     },
-    hideNft: {name: "NFT 숨기기", desc: "NFT 관련 내용을 숨깁니다.", selector: ".btn_nftbox, .nft_informationwrap"},
     hideGalleryImage: {name: "갤러리 대문 숨기기", desc: "갤러리 대문을 숨깁니다.", selector: "#zzbang_div"},
     removeNotice: {name: "갤러리 공지 숨기기", desc: "글 목록에서 공지사항을 숨깁니다.", selector: "tr:has(em[class*=icon_notice])"},
     removeDCNotice: {
