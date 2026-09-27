@@ -12,7 +12,7 @@ import {useUiStore} from "@/stores/ui";
 import {isTyping} from "@/utils/event";
 import {isGalleryManager} from "@/utils/user";
 
-import {adjacentPreData} from "../index";
+import {adjacentPreData} from "../rows";
 import {Comment, TimeStamp, useTick, UserCard} from "./Comment";
 import {AdminPanel} from "./Popups";
 import {BLOCKED_TEXT, type ErrorState, parseDate, postTitle, usePreviewStore} from "./previewStore";
