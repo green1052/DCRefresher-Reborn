@@ -1,5 +1,6 @@
 import {ajax, formBody, http} from "@/core/http/client";
 import {galleryPath, galleryTypeName, isMiniGallery, urls} from "@/core/http/urls";
+import {isBlockedPage} from "@/core/pages";
 import {csrfToken} from "@/utils/cookie";
 import {isRecord} from "@/utils/record";
 
@@ -16,12 +17,15 @@ export const viewUrl = (link: string, gallery: string, id: string): string => {
     return `${urls.base}${type}board/view/?id=${gallery}&no=${id}`;
 };
 
+/** 임시 차단 페이지를 받았을 때 fetchPost가 던지는 오류 메시지 */
+export const BLOCKED_PAGE_ERROR = "blocked";
+
 /** 게시글을 받아 PostInfo로 푼다. 삭제된 글은 디시가 404를 준다. 200인데 글이 없으면(차단·점검 안내 등) Error */
 export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): Promise<PostInfo> => {
     const response = await http.get(viewUrl(preData.link, preData.gallery, preData.id), {signal}).text();
 
     const postInfo = parsePostInfo(response);
-    if (!postInfo) throw new Error("게시글 페이지가 아닙니다.");
+    if (!postInfo) throw new Error(isBlockedPage(response) ? BLOCKED_PAGE_ERROR : "게시글 페이지가 아닙니다.");
 
     return postInfo;
 };

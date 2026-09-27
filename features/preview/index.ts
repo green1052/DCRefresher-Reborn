@@ -16,7 +16,7 @@ import {isRecord} from "@/utils/record";
 
 import {getEntry, setEntry} from "@/core/preview/cache";
 import {ADULT_ERROR} from "@/core/preview/parser";
-import {blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
+import {BLOCKED_PAGE_ERROR, blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {adjacentPreData, buildPreData, isBlurHidden, isTextPost} from "./rows";
 import {type Ctx, settings} from "./settings";
 import {BLOCKED_TEXT, type ErrorState, type ManageKind, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
@@ -29,7 +29,8 @@ const messageOf = (error: unknown): string =>
 
 const errorOf = (error: unknown): ErrorState => ({
     detail: messageOf(error),
-    status: error instanceof HTTPError ? error.response.status : undefined,
+    // 임시 차단 페이지는 200으로 오므로 요청 제한(429)으로 본다
+    status: error instanceof HTTPError ? error.response.status : error instanceof Error && error.message === BLOCKED_PAGE_ERROR ? 429 : undefined,
     adult: error instanceof Error && error.message === ADULT_ERROR
 });
 
