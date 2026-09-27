@@ -1,6 +1,6 @@
 import {Badge, Box, Button, Callout, Flex, Heading, IconButton, Separator, Spinner, Text, Theme, Tooltip} from "@radix-ui/themes";
-import {ArrowUp, CircleAlert, Clock, ExternalLink, Eye, Link2, MessageSquare, RotateCw, ThumbsDown, ThumbsUp} from "lucide-react";
-import {Dialog} from "radix-ui";
+import {ArrowUp, ChevronDown, ChevronUp, CircleAlert, Clock, ExternalLink, Eye, Link2, MessageSquare, RotateCw} from "lucide-react";
+import {Collapsible, Dialog} from "radix-ui";
 import {type CSSProperties, Fragment, useEffect, useRef, useState, type WheelEvent} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
@@ -142,14 +142,14 @@ const Votes = ({post}: { post: PostInfo }) => {
     return (
         <Flex justify="center" align="center" gap="3" py="5">
             <Button size="3" variant="soft" aria-label="추천" loading={voting === "U"} disabled={voting === "D"} onClick={() => void onVote("U")}>
-                <ThumbsUp size={18}/>
+                <ChevronUp size={18}/>
                 {upvotes || "X"}
                 {fixedUpvotes && <Text size="2" color="gray">({fixedUpvotes})</Text>}
             </Button>
             {downvotes !== undefined && (
                 <Button size="3" variant="soft" color="gray" aria-label="비추천" loading={voting === "D"} disabled={voting === "U"}
                         onClick={() => void onVote("D")}>
-                    <ThumbsDown size={18}/>
+                    <ChevronDown size={18}/>
                     {downvotes}
                 </Button>
             )}
@@ -292,9 +292,16 @@ const CommentList = () => {
                 return (
                     <Fragment key={parent.no}>
                         <Comment comment={parent} depth={0} replyCount={replies.length} threadOpen={!isCollapsed && replies.length > 0} isAdmin={isAdmin}/>
-                        {!isCollapsed && replies.map((child, index) => (
-                            <Comment key={child.no} comment={child} depth={1} replyCount={0} lastReply={index === replies.length - 1} isAdmin={isAdmin}/>
-                        ))}
+                        {/* 접고 펼 때 높이를 움직인다 (overlay.scss). 처음 그릴 때는 Radix가 애니메이션을 건너뛴다 */}
+                        {replies.length > 0 && (
+                            <Collapsible.Root open={!isCollapsed}>
+                                <Collapsible.Content className="refresher-replies">
+                                    {replies.map((child, index) => (
+                                        <Comment key={child.no} comment={child} depth={1} replyCount={0} lastReply={index === replies.length - 1} isAdmin={isAdmin}/>
+                                    ))}
+                                </Collapsible.Content>
+                            </Collapsible.Root>
+                        )}
                     </Fragment>
                 );
             })}
@@ -367,7 +374,7 @@ export const Frame = () => {
 
     // 스크롤 끝에서 새로 한 번 더 굴리면 이전/다음 글로 넘어간다. 끝에 닿은 그 동작으로 넘기면 트랙패드 관성에 글이 연달아 넘어간다.
     // 끝에 닿으면 v5처럼 안내를 띄우고, 넘기거나 닫았다 열면 지운다 (hint.key가 지금 글일 때만 보인다).
-    const wheel = useRef({last: 0, armed: 0, key: ""});
+    const wheel = useRef({last: 0, armed: 0, key: "", settling: false});
     const [hint, setHint] = useState({dir: 0, key: ""});
     const hintDir = visible && !fading && hint.key === postKey ? hint.dir : 0;
 
@@ -381,8 +388,17 @@ export const Frame = () => {
         const newGesture = timeStamp - state.last > WHEEL_GESTURE_GAP;
         state.last = timeStamp;
 
+        // 넘기게 한 동작(관성 포함)이 새 글에서 이어지면 무시한다. 새 글은 맨 위에서 열려, 위로 넘기면 곧바로 끝에 닿은 것으로 잡힌다.
+        if (state.settling) {
+            if (!newGesture) return;
+            state.settling = false;
+        }
+
         let armed = 0;
-        if (atEdge && newGesture && state.armed === dir) goToAdjacent(dir);
+        if (atEdge && newGesture && state.armed === dir) {
+            state.settling = true;
+            goToAdjacent(dir);
+        }
         // 끝에 닿은 방향을 기억해 두고 다음 동작을 기다린다.
         else if (atEdge) armed = dir;
 

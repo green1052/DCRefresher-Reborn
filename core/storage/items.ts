@@ -77,11 +77,6 @@ export const moduleDataStorage = <T>(id: string, fallback: T): WxtStorageItem<T,
 /** moduleDataStorage의 키인지 (local: 없이) */
 export const isModuleDataKey = (key: string): boolean => /^refresher:module:.+:data$/.test(key);
 
-/**
- * 비회원 댓글 닉네임·비밀번호. 페이지 스크립트가 읽지 못하게 확장 저장소에만 둔다.
- * 비밀번호가 평문이라 백업·내보내기에서 뺀다. 댓글 쓰기가 저장하고, 댓글 삭제가 비밀번호 입력창에 미리 채운다.
- */
-export const nonmemberStorage = storage.defineItem<{ nick: string; pw: string }>("local:refresher:nonmember", {fallback: {nick: "", pw: ""}});
 
 /**
  * IP/밴 DB는 필요한 것만 읽도록 세 키로 나눈다: 갱신 확인은 meta, 페이지는 ip, 밴은 쓸 때만 ban (각각 수백 KB).

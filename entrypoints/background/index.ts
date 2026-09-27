@@ -1,3 +1,5 @@
+import {storage} from "wxt/utils/storage";
+
 import {isBackupTarget, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
 import {migrateV5Storage} from "@/core/migrate-v5";
@@ -119,6 +121,8 @@ export default defineBackground(() => {
         // v5에서 업데이트한 경우만 설정을 v6 형식으로 옮긴다(한시적). 저장소 전체를 읽으므로 다른 경우는 건너뛴다.
         // 모듈 맞추기는 옮긴 설정을 보도록 그 뒤에 하고, 옮기기가 실패해도 DB 갱신까지 이어서 한다.
         if (reason === "update" && previousVersion?.startsWith("5.")) await migrateV5Storage().catch(console.error);
+        // 비회원 닉네임·비밀번호는 이제 디시 localStorage에 둔다. 예전 버전이 확장 저장소에 남긴 평문 비밀번호를 지운다
+        if (reason === "update") await storage.removeItem("local:refresher:nonmember").catch(console.error);
         await applyBackgroundModules();
 
         if (import.meta.env.PROD || !(await dbStorage.meta.getValue()).version) {

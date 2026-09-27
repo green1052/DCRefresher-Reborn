@@ -1,6 +1,6 @@
 import {Box, Flex, IconButton, Link, Text, TextArea, TextField, Tooltip} from "@radix-ui/themes";
 import {Send, Smile, Type, X} from "lucide-react";
-import {useEffect, useRef, useState} from "react";
+import {useRef, useState} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
 import {
@@ -13,11 +13,11 @@ import {
     TXTCON_COLORS
 } from "@/core/preview/request";
 import type {DcinsideDccon} from "@/core/preview/types";
-import {nonmemberStorage} from "@/core/storage/items";
 import {sendMessage} from "@/core/messaging/protocol";
 import {useUiStore} from "@/stores/ui";
 import {loggedInUserId} from "@/utils/user";
 
+import {saveNonmember, savedNonmember} from "../nonmember";
 import {DcconPopup} from "./DcconPopup";
 import {usePreviewStore} from "./previewStore";
 
@@ -76,8 +76,9 @@ export const WriteComment = () => {
     });
     const [login] = useState(() => Boolean(document.querySelector("#login_box .user_info .nickname > em")));
     const [accountId] = useState(loggedInUserId);
-    const [nick, setNick] = useState("ㅇㅇ");
-    const [password, setPassword] = useState("");
+    const [nick, setNick] = useState(() => savedNonmember().nick || "ㅇㅇ");
+    // 기억한 비밀번호가 없으면 하나 만든다. 쓸 때 저장되므로 이후 같은 비밀번호로 자기 댓글을 지울 수 있다
+    const [password, setPassword] = useState(() => savedNonmember().pw || randomPassword());
     // 저장된 비밀번호는 입력칸에 넣지 않는다. 오버레이 섀도 루트가 open이라 페이지 스크립트가 값을 읽을 수 있다.
     // 사용자가 직접 고친 뒤에만 입력칸에 값이 보인다.
     const [passwordEdited, setPasswordEdited] = useState(false);
@@ -91,22 +92,6 @@ export const WriteComment = () => {
     const textarea = useRef<HTMLTextAreaElement>(null);
     const beforeTxtcon = useRef<string | null>(null);
 
-    useEffect(() => {
-        void nonmemberStorage.getValue().then((saved) => {
-            setNick(saved.nick || "ㅇㅇ");
-            // 없으면 한 번 만들어 저장한다. 열 때마다 새로 만들면 비회원이 자기 댓글을 지울 수 없다.
-            const pw = saved.pw || randomPassword();
-            setPassword(pw);
-            if (!saved.pw) void nonmemberStorage.setValue({...saved, pw});
-        });
-    }, []);
-
-    const saveNonmember = (next: { nick?: string; pw?: string }): void => {
-        void nonmemberStorage.getValue().then((prev) => void nonmemberStorage.setValue({
-            nick: next.nick ?? prev.nick,
-            pw: next.pw ?? prev.pw
-        }));
-    };
 
     const submit = async (): Promise<void> => {
         const st = usePreviewStore.getState();
@@ -165,6 +150,8 @@ export const WriteComment = () => {
                 setBigDccon(false);
                 setTxtcon(false);
                 // 그새 다른 글로 넘어갔으면 답글 대상과 댓글 목록은 그 글 것이라 건드리지 않는다.
+                // 디시처럼 쓴 닉네임·비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다.
+                if (!login) saveNonmember(nick, password);
                 if (usePreviewStore.getState().signalId === signal) {
                     usePreviewStore.setState({reply: {commentNo: null, replyNo: null}});
                     void st.requestRefresh();
@@ -221,10 +208,7 @@ export const WriteComment = () => {
                         placeholder="닉네임"
                         maxLength={20}
                         style={{flex: 1}}
-                        onChange={(ev) => {
-                            setNick(ev.target.value);
-                            saveNonmember({nick: ev.target.value});
-                        }}
+                        onChange={(ev) => setNick(ev.target.value)}
                     />
                     <TextField.Root
                         size="2"
@@ -235,7 +219,6 @@ export const WriteComment = () => {
                         onChange={(ev) => {
                             setPasswordEdited(true);
                             setPassword(ev.target.value);
-                            saveNonmember({pw: ev.target.value});
                         }}
                     />
                 </Flex>

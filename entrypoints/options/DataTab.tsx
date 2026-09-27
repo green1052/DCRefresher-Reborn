@@ -158,8 +158,6 @@ export function DataTab() {
             if (wasAuto) await backupStorage.auto.setValue(false);
 
             await writeSettings({}, "replace");
-            // 백업 대상이 아니라 writeSettings가 건드리지 않는 비회원 비밀번호도 지운다
-            await browser.storage.local.remove("refresher:nonmember");
             return `데이터를 초기화했습니다.${wasAuto ? " 클라우드 백업을 지키려고 자동 백업을 껐습니다." : ""} 새 탭에서 디시인사이드를 열어주세요.`;
         }, "초기화하지 못했습니다.");
 

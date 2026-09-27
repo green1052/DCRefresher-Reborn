@@ -530,10 +530,10 @@ const controller = (ctx: Ctx) => {
 
         miniTarget = element;
         if (miniTimer) window.clearTimeout(miniTimer);
-        // 최소 100ms는 머물러야 띄운다. 목록을 가로지를 때 행마다 GET이 나가지 않게 한다.
-        // 이미 0으로 저장된 설정이 있어 기본값·최솟값이 아니라 여기서 막는다.
-        const delay = Math.max(ctx.settings.tooltipDelay || 0, 100);
-        miniTimer = window.setTimeout(() => void showMini(element, x, y), delay);
+        miniTimer = 0;
+        // 0이면 바로 띄운다. 목록을 가로지르면 행마다 요청이 나가지만, 다른 행으로 옮기면 앞 요청은 끊긴다.
+        if (ctx.settings.tooltipDelay <= 0) void showMini(element, x, y);
+        else miniTimer = window.setTimeout(() => void showMini(element, x, y), ctx.settings.tooltipDelay);
     };
 
     const onMiniMove = (ev: MouseEvent) => {

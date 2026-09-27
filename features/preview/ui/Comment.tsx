@@ -12,8 +12,8 @@ import {type BadgeKey, showsUid, useUiStore} from "@/stores/ui";
 import {useGallogActivity} from "@/utils/gallogActivity";
 import {banReasonsOf, databaseVersion, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
 
+import {savedNonmember} from "../nonmember";
 import {parseDate, usePreviewStore} from "./previewStore";
-import {nonmemberStorage} from "@/core/storage/items";
 
 /** 절대 시각 포매터. toLocaleString()은 부를 때마다 포매터를 새로 만들어, 댓글 수백 개를 다시 그릴 때 느리다 */
 const ABSOLUTE = new Intl.DateTimeFormat(undefined, {year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric"});
@@ -267,7 +267,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                 let password = "";
                 if (needsPassword) {
                     // 미리보기에서 쓴 댓글은 저장해 둔 비밀번호를 썼으므로 기본값으로 채운다.
-                    password = window.prompt("비밀번호를 입력하세요.", (await nonmemberStorage.getValue()).pw) ?? "";
+                    password = window.prompt("비밀번호를 입력하세요.", savedNonmember().pw) ?? "";
                     if (!password) return;
                 }
                 // 비밀번호가 틀려도 HTTP 200('false||메시지')이 오므로 결과를 확인해 알려야 한다.
@@ -302,7 +302,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                     {depth === 0 && replyCount > 1 && (
                         <IconButton size="1" variant="ghost" color="gray" aria-label={collapsed ? "답글 펼치기" : "답글 접기"}
                                     title={collapsed ? "답글 펼치기" : "답글 접기"} onClick={() => toggleCollapse(comment.no)}>
-                            <ChevronDown size={14} style={{transform: collapsed ? "rotate(-90deg)" : undefined}}/>
+                            <ChevronDown size={14} style={{transform: collapsed ? "rotate(-90deg)" : undefined, transition: "transform 0.15s"}}/>
                         </IconButton>
                     )}
                 </Flex>

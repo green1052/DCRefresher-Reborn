@@ -185,12 +185,8 @@
     padding: 1px 6px;
     border-radius: var(--radius-2);
     background: var(--blue-a4);
+    // 닉네임만 칩 색으로. 배지(아이디·IP·글댓비·갱차·메모)는 설정한 색 그대로 둔다
     color: var(--blue-11);
-
-    // 배지 글자(아이디·IP·글댓비 — 배지 색 설정이 인라인으로 칠한다)도 칸 글자색으로. 사람마다 고른 메모 색만 그대로
-    .rt-Text:not([data-memo]) {
-        color: inherit !important;
-    }
 }
 
 /* ===== 디시 본문/댓글 HTML (페이지 CSS가 안 닿으므로 최소한만) ===== */
@@ -380,6 +376,45 @@
 }
 
 /* ===== 댓글 ===== */
+
+/* 답글 접기·펼치기 (Frame.tsx). 높이는 Radix Collapsible이 재서 변수로 준다 */
+.refresher-replies {
+    overflow: clip;
+
+    &[data-state="open"] {
+        animation: refresher-replies-open 200ms ease-out;
+    }
+
+    &[data-state="closed"] {
+        animation: refresher-replies-close 200ms ease-out;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        animation: none !important;
+    }
+}
+
+@keyframes refresher-replies-open {
+    from {
+        height: 0;
+        opacity: 0;
+    }
+
+    to {
+        height: var(--radix-collapsible-content-height);
+    }
+}
+
+@keyframes refresher-replies-close {
+    from {
+        height: var(--radix-collapsible-content-height);
+    }
+
+    to {
+        height: 0;
+        opacity: 0;
+    }
+}
 
 .refresher-comment {
     // 화면 밖 댓글은 레이아웃·스타일 계산을 건너뛴다 — 댓글 수백 개인 글을 열 때 레이아웃이 크게 준다.
