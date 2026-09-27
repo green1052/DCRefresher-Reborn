@@ -8,6 +8,7 @@ import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import type {MemoType} from "@/core/storage/types";
 import {randomColor, useMemosStore} from "@/stores/memos";
 import {type MemoTargetState, useUiStore} from "@/stores/ui";
+import {SAVE_FAILED} from "@/utils/error";
 
 import {overlay} from "./shadow";
 
@@ -41,14 +42,18 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const submit = async (): Promise<void> => {
         // 공백만 있는 메모는 빈 메모로 본다. 그대로 저장하면 빈 "[ ]" 배지가 붙는다
         const trimmed = text.trim();
-        if (!trimmed) {
-            if (existing) {
-                await removeMemo(type, value);
-                showToast("메모를 삭제했습니다.");
-            } else showToast("메모 내용이 없어 저장하지 않았습니다.", "error");
-        } else {
-            await setMemo(type, value, {text: trimmed, color, gallery: scope});
-            showToast("메모를 저장했습니다.");
+        try {
+            if (!trimmed) {
+                if (existing) {
+                    await removeMemo(type, value);
+                    showToast("메모를 삭제했습니다.");
+                } else showToast("메모 내용이 없어 저장하지 않았습니다.", "error");
+            } else {
+                await setMemo(type, value, {text: trimmed, color, gallery: scope});
+                showToast("메모를 저장했습니다.");
+            }
+        } catch {
+            showToast(SAVE_FAILED, "error");
         }
 
         closeMemo();
@@ -121,7 +126,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                 <Flex gap="3" justify="end" mt="4">
                     {existing && (
                         <Button type="button" variant="soft" color="red" onClick={() => {
-                            void removeMemo(type, value);
+                            removeMemo(type, value).catch(() => showToast(SAVE_FAILED, "error"));
                             closeMemo();
                         }}>
                             삭제

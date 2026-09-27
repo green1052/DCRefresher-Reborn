@@ -96,8 +96,11 @@ const controller = (ctx: Ctx) => {
         return post;
     };
 
-    /** 캐시에 있으면 캐시, 없으면 받는다. fresh는 방금 받은 본문인지다 (캐시 것은 1분까지 낡았을 수 있다) */
-    const getPost = async (preData: GalleryPreData): Promise<{ post: PostInfo; fresh: boolean }> => {
+    /**
+     * 캐시에 있으면 캐시, 없으면 받는다. fresh는 방금 받은 본문인지다 (캐시 것은 1분까지 낡았을 수 있다).
+     * archived는 받지 못해 보존해 둔 본문을 대신 준 것이다
+     */
+    const getPost = async (preData: GalleryPreData): Promise<{ post: PostInfo; fresh: boolean; archived?: true }> => {
         const cached = !ctx.settings.disableCache ? getEntry(preData)?.post : undefined;
         if (cached) return {post: cached, fresh: Date.now() - (fetchedAt.get(cached) ?? 0) < 2000};
 
@@ -110,8 +113,9 @@ const controller = (ctx: Ctx) => {
             // 삭제된 글 보존: 받지 못하면 캐시 비활성화여도 캐시에 남은 이전 본문을 보여 준다. 다시 저장해 수명을 늘린다.
             const archived = ctx.settings.archiveArticle ? getEntry(preData)?.post : undefined;
             if (!archived) throw e;
+            console.error("Preview fetch failed, showing the archived post:", e);
             setEntry(preData, {post: archived});
-            return {post: archived, fresh: false};
+            return {post: archived, fresh: false, archived: true};
         }
     };
 
@@ -210,7 +214,7 @@ const controller = (ctx: Ctx) => {
         try {
             const post = await processContents(preData, await requestPost(preData));
             if (store.getState().signalId !== signalId) return;
-            store.setState({post, error: undefined});
+            store.setState({post, error: undefined, archived: false});
             await pullComments(preData, post, signalId);
         } catch (e) {
             // 실패해도(삭제된 글 등) 보고 있던 본문은 그대로 둔다.
@@ -222,17 +226,21 @@ const controller = (ctx: Ctx) => {
     const load = async (preData: GalleryPreData, mySignal: number, dir: number) => {
         let post: PostInfo;
         let fresh: boolean;
+        let archived: boolean;
 
         try {
-            ({post, fresh} = await getPost(preData));
+            ({post, fresh, archived = false} = await getPost(preData));
             post = await processContents(preData, post);
         } catch (e) {
-            if (store.getState().signalId === mySignal) store.setState({error: errorOf(e)});
+            if (store.getState().signalId !== mySignal) return;
+            // 화면에는 ErrorBlock의 안내만 보이므로 원문은 콘솔에 남긴다
+            console.error("Preview load failed:", e);
+            store.setState({error: errorOf(e)});
             return;
         }
 
         if (store.getState().signalId !== mySignal) return;
-        store.setState({post});
+        store.setState({post, archived});
 
         try {
             // 방금 받은 본문이 댓글 0개면 받지 않는다. 보존해 둔 댓글이 있으면 삭제 여부를 비교해야 하므로 받는다.
@@ -361,7 +369,7 @@ const controller = (ctx: Ctx) => {
             if (isRecord(state) && isRecord(state.preData) && state.preData.id === target.id) history.replaceState({...state, preData}, "");
         };
 
-        const failure = "관리 기능 처리 중 오류가 발생했습니다.";
+        const failure = "처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
         try {
             // 공지·개념글 표시는 성공했을 때만 바꾼다.
             if (kind === "notice") {

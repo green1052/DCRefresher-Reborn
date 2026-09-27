@@ -1,5 +1,5 @@
-import {Box, Button, Flex, Heading, IconButton, Separator, Spinner, Text, Theme, Tooltip} from "@radix-ui/themes";
-import {ArrowUp, Eye, MessageSquare, RotateCw} from "lucide-react";
+import {Box, Button, Callout, Flex, Heading, IconButton, Separator, Spinner, Text, Theme, Tooltip} from "@radix-ui/themes";
+import {Archive, ArrowUp, Eye, MessageSquare, RotateCw} from "lucide-react";
 import {Dialog} from "radix-ui";
 import {type CSSProperties, useEffect, useRef, useState, type WheelEvent} from "react";
 
@@ -75,6 +75,7 @@ export const Frame = () => {
     const post = usePreviewStore((s) => s.post);
     const contents = post?.contents;
     const error = usePreviewStore((s) => s.error);
+    const archived = usePreviewStore((s) => s.archived);
     const comments = usePreviewStore((s) => s.comments);
     const allowReply = usePreviewStore((s) => s.allowReply);
     const commentsOnly = usePreviewStore((s) => s.commentsOnly);
@@ -285,6 +286,13 @@ export const Frame = () => {
                     <Separator size="4"/>
 
                     <Box px="6" pt="5" className="refresher-frame-body">
+                        {/* 보존본은 삭제되었거나 바뀐 글일 수 있으니 지금 글이 아니라고 알린다 */}
+                        {archived && (
+                            <Callout.Root color="orange" size="1" mb="4">
+                                <Callout.Icon><Archive size={14}/></Callout.Icon>
+                                <Callout.Text>불러오지 못해 저장해 둔 내용을 보여 줍니다.</Callout.Text>
+                            </Callout.Root>
+                        )}
                         {/* 오류를 먼저 본다. 댓글만 보기여도 본문을 못 받았으면 알린다 */}
                         {error ? (
                             <ErrorBlock error={error}/>

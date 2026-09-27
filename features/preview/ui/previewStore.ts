@@ -22,6 +22,8 @@ type MiniState = { x: number; y: number; title: string; contents: string; blockM
 interface PostState {
     error: ErrorState | undefined;
     post: PostInfo | undefined;
+    /** 받지 못해 보존해 둔 본문을 보이는 중 ('삭제된 글과 댓글 보존') */
+    archived: boolean;
 
     comments: ProcessedComment[] | undefined;
     /** 댓글·답글 쓰기 허용. 멤버만 댓글을 쓸 수 있는 갤러리면 댓글 응답의 allow_reply가 0이다 */
@@ -105,6 +107,7 @@ export const NO_HOOKS: Hooks = {
 const freshPost = (): PostState => ({
     error: undefined,
     post: undefined,
+    archived: false,
     comments: undefined,
     allowReply: true,
     collapsed: new Set(),

@@ -6,7 +6,7 @@ import {RefresherSelect} from "@/components/RefresherSelect";
 import {DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import type {BlockInputFields} from "@/stores/blocks";
-import {messageOf} from "@/utils/error";
+import {messageOf, SAVE_FAILED} from "@/utils/error";
 
 interface BlockDialogProps {
     type: BlockType;
@@ -48,8 +48,8 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                 // extra는 별명(우클릭 차단 닉네임, 디시콘 제목)이라 입력칸 없이 그대로 유지한다
                 extra: initial?.extra
             });
-        } catch (e) {
-            setError(`저장하지 못했습니다. ${messageOf(e)}`);
+        } catch {
+            setError(SAVE_FAILED);
         }
     };
 

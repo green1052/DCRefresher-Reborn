@@ -10,7 +10,8 @@ export const notifyManage = async (request: Promise<ManageResult>, done: string,
     const {showToast} = useUiStore.getState();
     try {
         const result = await request;
-        showToast(result.message ?? (result.success ? done : "처리하지 못했습니다."), result.success ? "info" : "error");
+        // 디시가 문구 없이 실패를 주는 것은 대개 로그인이 풀렸거나 권한이 없을 때다 (세션이 끊기면 HTML이 온다)
+        showToast(result.message ?? (result.success ? done : "처리하지 못했습니다. 로그인과 권한을 확인한 뒤 다시 시도해 주세요."), result.success ? "info" : "error");
         return result.success;
     } catch (e) {
         if (!(e instanceof BlockedError)) showToast(failure, "error");

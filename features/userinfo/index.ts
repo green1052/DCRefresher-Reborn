@@ -1,3 +1,4 @@
+import {LRUCache} from "lru-cache";
 import {UserRound} from "lucide-react";
 import {objectFromEntries, objectKeys} from "ts-extras";
 
@@ -62,6 +63,9 @@ const MAX_RATIOS = 500;
 
 /** 글댓비 캐시는 1시간만 쓴다 */
 const isFresh = (info?: RatioInfo): info is RatioInfo => info !== undefined && Date.now() - info.date <= 3600_000;
+
+/** 글댓비를 받지 못한 유저 (임시 차단 포함). 디시가 막거나 실패하는 동안 새 목록마다 다시 묻지 않게 5분 동안 건너뛴다 */
+const failedRatios = new LRUCache<string, true>({max: 500, ttl: 5 * 60_000});
 
 const buildBadgeSpan = (text: string, color?: string, title?: string, className = "refresherUserData"): HTMLElement => {
     const span = document.createElement("span");
@@ -309,7 +313,7 @@ export default defineModule({
                 const uid = writer?.dataset.uid;
                 if (!uid) continue;
 
-                if (!isFresh(ratios[uid]) && !stale.includes(uid)) {
+                if (!isFresh(ratios[uid]) && !failedRatios.has(uid) && !stale.includes(uid)) {
                     stale.push(uid);
                 }
             }
@@ -318,6 +322,9 @@ export default defineModule({
 
             // 실패는 uid마다 흡수한다. 한 명이 실패해도 받아 온 나머지는 저장한다 (실패한 사람은 배지만 빠진다)
             void Promise.all(stale.map(async (uid) => [uid, await fetchGallogActivity(uid).catch(() => undefined)] as const)).then(async (results) => {
+                for (const [uid, info] of results) {
+                    if (!info) failedRatios.set(uid, true);
+                }
                 const fresh = results.filter((entry): entry is [string, GallogActivity] => Boolean(entry[1]));
                 if (fresh.length === 0) return;
 

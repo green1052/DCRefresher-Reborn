@@ -1,4 +1,4 @@
-import {Button, Callout, Flex, Text} from "@radix-ui/themes";
+import {Button, Callout, Flex} from "@radix-ui/themes";
 import {CircleAlert, ExternalLink} from "lucide-react";
 
 import {type ErrorState, usePreviewStore} from "./previewStore";
@@ -7,7 +7,7 @@ import {type ErrorState, usePreviewStore} from "./previewStore";
 export const ErrorBlock = ({error}: { error: ErrorState }) => {
     const preData = usePreviewStore((s) => s.preData);
     const {detail, status, adult} = error;
-    // 삭제된 글은 다시 받아도 같다. 원문 오류(요청 주소 등)도 도움이 안 되므로 안내만 둔다
+    // 삭제된 글은 다시 받아도 같다. 원문 오류(요청 주소 등)는 콘솔에만 남기고 안내만 둔다
     const deleted = status === 404;
     const limited = status === 403 || status === 429;
 
@@ -22,9 +22,7 @@ export const ErrorBlock = ({error}: { error: ErrorState }) => {
     return (
         <Callout.Root color={adult ? "orange" : "red"} my="4">
             <Callout.Icon><CircleAlert size={16}/></Callout.Icon>
-            <Callout.Text>
-                {text} {!adult && !deleted && !limited && <Text size="1" color="gray">({detail})</Text>}
-            </Callout.Text>
+            <Callout.Text>{text}</Callout.Text>
             <Flex gap="2">
                 {/* 성인 인증은 원문 페이지에서만 된다. 인증한 뒤 다시 시도하면 미리보기로 볼 수 있다 */}
                 {adult && (

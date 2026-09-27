@@ -33,7 +33,14 @@ export const useMemosStore = create<MemosState>((set, get) => ({
 
     setMemos: async (type, memos) => {
         set((state) => ({memos: {...state.memos, [type]: memos}}));
-        await memoStorage[type].setValue(memos);
+        try {
+            await memoStorage[type].setValue(memos);
+        } catch (e) {
+            // 저장되지 않은 메모가 보이지 않게 저장소 값으로 되돌린다. 알림은 부른 쪽에 맡긴다
+            console.error("메모를 저장하지 못했습니다.", e);
+            await load().catch(console.error);
+            throw e;
+        }
     },
 
     setMemo: async (type, user, entry) => {

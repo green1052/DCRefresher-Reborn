@@ -1,18 +1,20 @@
-import {Box, Button, Card, Flex, IconButton, Popover, Separator, Text, Theme} from "@radix-ui/themes";
+import {Box, Button, Card, Dialog, Flex, IconButton, Popover, Separator, Text, Theme} from "@radix-ui/themes";
 import {CircleAlert, Copy, Info, TriangleAlert, X} from "lucide-react";
 import {Popover as PopoverPrimitive} from "radix-ui";
 import {useEffect, useState, useSyncExternalStore} from "react";
 
+import {DialogActions} from "@/components/ConfirmDialog";
 import {blockingEntries} from "@/core/block";
 import {type BlockRequestOptions, handleBlockRequest} from "@/stores/blockRequest";
 import {PreviewHost} from "@/features/preview/ui/PreviewHost";
-import {type ToastData, useUiStore} from "@/stores/ui";
+import {type SelectedUser, type ToastData, useUiStore} from "@/stores/ui";
 import {banReasonsOf, databaseVersion, ipInfoOf, subscribeDatabase} from "@/core/database";
 import {queryString} from "@/core/http/urls";
 import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType} from "@/core/storage/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {useUserMemo} from "@/stores/memos";
+import {SAVE_FAILED} from "@/utils/error";
 import {type ActivityState, useGallogActivity} from "@/utils/gallogActivity";
 
 import {MemoDialog} from "./MemoDialog";
@@ -100,12 +102,19 @@ const identityValue = (selected: { uid?: string; ip?: string }): string | undefi
 
 /** 차단 규칙 하나를 해제한다. 토스트를 누르면 되돌린다 */
 const unblock = async (type: BlockType, {id, ...fields}: BlockEntry): Promise<void> => {
-    await useBlocksStore.getState().removeEntry(type, id);
+    const {showToast, dismissToast} = useUiStore.getState();
+    const saveFailed = (): void => showToast(SAVE_FAILED, "error");
+    try {
+        await useBlocksStore.getState().removeEntry(type, id);
+    } catch {
+        saveFailed();
+        return;
+    }
     // 정규식은 한 규칙이 여러 대상을 막는다
     const others = fields.isRegex ? " 같은 규칙에 걸린 다른 대상도 풀렸습니다." : "";
-    useUiStore.getState().showToast(`차단을 해제했습니다.${others} 이 알림을 누르면 되돌립니다.`, "info", 5000, () => {
-        useUiStore.getState().dismissToast();
-        void useBlocksStore.getState().addEntry(type, fields);
+    showToast(`차단을 해제했습니다.${others} 이 알림을 누르면 되돌립니다.`, "info", 5000, () => {
+        dismissToast();
+        useBlocksStore.getState().addEntry(type, fields).catch(saveFailed);
     });
 };
 
@@ -129,7 +138,30 @@ const BlockRules = ({rules}: { rules: { type: BlockType; entry: BlockEntry }[] }
     </>
 );
 
-const BubbleHost = () => {
+/** 디시콘 패키지 전체를 어떻게 차단할지 고른다. 취소하면 아무것도 차단하지 않는다 */
+const DcconPackageDialog = ({target, onClose}: { target: SelectedUser; onClose: () => void }) => {
+    const choose = (dcconPackage: "bundle" | "each"): void => {
+        onClose();
+        void handleBlockRequest({target: "dccon", dcconPackage}, target);
+    };
+
+    return (
+        <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
+            <Dialog.Content container={overlay.portal} maxWidth="400px">
+                <Dialog.Title>디시콘 패키지를 어떻게 차단할까요?</Dialog.Title>
+                <Dialog.Description size="2" color="gray">
+                    묶어서 차단하면 차단 목록에 한 항목으로 들어갑니다. 하나씩 차단하면 디시콘마다 항목이 생겨 따로 풀 수 있습니다.
+                </Dialog.Description>
+                <DialogActions>
+                    <Button variant="soft" onClick={() => choose("each")}>하나씩 차단</Button>
+                    <Button onClick={() => choose("bundle")}>묶어서 차단</Button>
+                </DialogActions>
+            </Dialog.Content>
+        </Dialog.Root>
+    );
+};
+
+const BubbleHost = ({onBlockPackage}: { onBlockPackage: (target: SelectedUser) => void }) => {
     const bubble = useUiStore((s) => s.bubble);
     const selected = useUiStore((s) => s.selected);
     const activityState = useGallogActivity(bubble && selected && !selected.dccon ? selected.uid : undefined);
@@ -162,7 +194,10 @@ const BubbleHost = () => {
     const close = (): void => useUiStore.getState().closeBubble();
     const copy = (value: string): void => {
         close();
-        void navigator.clipboard.writeText(value).then(() => useUiStore.getState().showToast("복사했습니다."));
+        navigator.clipboard.writeText(value).then(
+            () => useUiStore.getState().showToast("복사했습니다."),
+            () => useUiStore.getState().showToast("복사하지 못했습니다.", "error")
+        );
     };
     // 이벤트로 보내면 차단 모듈이 꺼져 있을 때 받는 쪽이 없어 조용히 무시되므로 직접 부른다
     const requestBlock = (options: BlockRequestOptions): void => {
@@ -187,7 +222,10 @@ const BubbleHost = () => {
                     <Flex gap="2">
                         <Button size="1" onClick={() => requestBlock({target: "dccon"})}>디시콘 차단</Button>
                         <Button size="1" variant="soft" color="gray"
-                                onClick={() => requestBlock({target: "dccon", blockAllDccon: true})}>
+                                onClick={() => {
+                                    close();
+                                    onBlockPackage(selected);
+                                }}>
                             디시콘 전체 차단
                         </Button>
                     </Flex>
@@ -229,13 +267,16 @@ const BubbleHost = () => {
 
 export const ContentRoot = () => {
     const appearance = useDcAppearance();
+    // 버블은 누르면 닫히므로 패키지 차단 다이얼로그의 대상은 여기에 둔다
+    const [packageTarget, setPackageTarget] = useState<SelectedUser | null>(null);
 
     return (
         <Theme appearance={appearance} accentColor="blue" radius="medium" panelBackground="solid"
                hasBackground={false}>
             <Box>
                 <ToastHost/>
-                <BubbleHost/>
+                <BubbleHost onBlockPackage={setPackageTarget}/>
+                {packageTarget && <DcconPackageDialog target={packageTarget} onClose={() => setPackageTarget(null)}/>}
                 <MemoDialog/>
                 <PreviewHost/>
             </Box>

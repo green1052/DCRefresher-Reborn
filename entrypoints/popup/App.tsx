@@ -3,6 +3,7 @@ import {Ban, type LucideIcon, NotebookPen, Puzzle, Settings} from "lucide-react"
 import {type ReactNode, useEffect, useState} from "react";
 
 import {type PageAction, type PageToggleState, sendMessage} from "@/core/messaging/protocol";
+import {backupStorage} from "@/core/storage/items";
 import features from "@/features";
 import {initBlocksStore, useBlocksStore} from "@/stores/blocks";
 import {initMemosStore, useMemosStore} from "@/stores/memos";
@@ -125,6 +126,7 @@ function PageSection({tabId, gallery, state: initial}: Page) {
 function ModulesSection() {
     const enables = useModulesStore((state) => state.enables);
     const toggle = useModulesStore((state) => state.toggle);
+    const [failed, setFailed] = useState(false);
     const on = features.filter((feature) => enables[feature.id] ?? true).length;
 
     return (
@@ -137,7 +139,7 @@ function ModulesSection() {
 
                     return (
                         <button key={feature.id} type="button" className="module-tile" aria-pressed={enabled}
-                                title={feature.description} onClick={() => void toggle(feature.id, !enabled)}>
+                                title={feature.description} onClick={() => void toggle(feature.id, !enabled).then(() => setFailed(false), () => setFailed(true))}>
                             <Icon size={15}/>
                             <span className="module-name">{feature.name}</span>
                             <span className="module-dot"/>
@@ -145,22 +147,25 @@ function ModulesSection() {
                     );
                 })}
             </Grid>
+            {failed && <Text as="p" size="1" color="red" align="center" mt="2">저장하지 못했습니다. 팝업을 닫았다가 다시 열어 주세요.</Text>}
         </Box>
     );
 }
 
 export function App() {
-    const [loaded, setLoaded] = useState<{ page: Page | null } | null>(null);
+    const [loaded, setLoaded] = useState<{ page: Page | null; backupError: string } | null>(null);
 
     // 한 번에 그려야 팝업 크기가 여러 번 바뀌지 않는다. 모두 로컬 읽기라 금방 끝난다.
     // 하나가 실패해도 빈 팝업으로 남지 않게 기본값으로 그린다
     useEffect(() => {
         void Promise.all([
             findPage().catch(() => null),
+            // 자동 백업은 배경에서 돌아 실패해도 데이터 탭을 열기 전에는 모른다. 팝업에서 한 줄로 알린다
+            backupStorage.error.getValue().catch(() => ""),
             initBlocksStore().catch(console.error),
             initMemosStore().catch(console.error),
             initModulesStore().catch(console.error)
-        ]).then(([page]) => setLoaded({page}));
+        ]).then(([page, backupError]) => setLoaded({page, backupError}));
     }, []);
 
     // 모듈이 선언한 확장 페이지 CSS 변수 (폰트 교체 등)
@@ -182,6 +187,9 @@ export function App() {
             </Flex>
 
             <Flex direction="column" gap="4" p="3">
+                {loaded.backupError && (
+                    <Text size="1" color="red" align="center">클라우드에 백업하지 못했습니다. 설정의 데이터 탭에서 확인해 주세요.</Text>
+                )}
                 {loaded.page ? (
                     <PageSection {...loaded.page}/>
                 ) : (

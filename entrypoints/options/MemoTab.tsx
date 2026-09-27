@@ -6,9 +6,11 @@ import {RefresherSelect} from "@/components/RefresherSelect";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import type {MemoType} from "@/core/storage/types";
 import {normalizeMemoMap, randomColor, useMemosStore} from "@/stores/memos";
+import {SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
 import {ListRow, ListTabs} from "./Layout";
+import {notify} from "./optionsStore";
 
 interface MemoFormState {
     type: MemoType;
@@ -50,7 +52,12 @@ const MemoFormDialog = ({
         }
 
         // 수정할 때는 기존 키를 그대로 쓴다. 앞뒤 공백이 있는 기존 키를 trim하면 새 항목으로 갈라진다
-        await onSubmit(editing ? state : {...state, user: state.user.trim()});
+        try {
+            await onSubmit(editing ? state : {...state, user: state.user.trim()});
+        } catch {
+            setError(SAVE_FAILED);
+            return;
+        }
         onClose();
     };
 
@@ -201,7 +208,7 @@ export function MemoTab() {
                         }
                         info={<Text color="gray">{entry.text}</Text>}
                         onEdit={() => setForm({type, user, text: entry.text, color: entry.color, gallery: entry.gallery ?? ""})}
-                        onRemove={() => void removeMemo(type, user)}
+                        onRemove={() => void removeMemo(type, user).catch(() => notify(SAVE_FAILED))}
                     />
                 )}
             />

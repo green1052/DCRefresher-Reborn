@@ -10,7 +10,7 @@ import {withIpInfoFilter} from "@/core/migrate-settings";
 import {migrateV5} from "@/core/migrate-v5";
 import {backupStorage, dbStorage, isBlockListKey, settingsKeyModule} from "@/core/storage/items";
 import {blockKey, normalizeBlockList} from "@/stores/blocks";
-import {messageOf} from "@/utils/error";
+import {friendlyMessage} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
 import {formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
@@ -110,7 +110,7 @@ export function DataTab() {
 
     useEffect(() => {
         // 클라우드 메타에서 읽어 자동 백업(백그라운드)과 다른 기기의 백업도 반영한다
-        const loadStatus = (): void => void readCloudBackupStatus().then(setCloud);
+        const loadStatus = (): void => void readCloudBackupStatus().then(setCloud, console.error);
         const onChanged = (_: unknown, area: string): void => {
             if (area === "sync") loadStatus();
         };
@@ -124,7 +124,8 @@ export function DataTab() {
         try {
             notify(await action());
         } catch (e) {
-            notify(`${failure} ${messageOf(e)}`);
+            console.error(e);
+            notify(`${failure} ${friendlyMessage(e)}`);
         } finally {
             setLoading(false);
         }
@@ -158,7 +159,8 @@ export function DataTab() {
         try {
             await backupStorage.auto.setValue(on);
         } catch (e) {
-            notify(`자동 백업 설정을 저장하지 못했습니다. ${messageOf(e)}`);
+            console.error(e);
+            notify(`자동 백업 설정을 저장하지 못했습니다. ${friendlyMessage(e)}`);
             return;
         }
         // 켜는 순간의 설정을 자동 백업 칸에 바로 올린다. 이후에는 설정이 바뀔 때마다 백그라운드가 올린다

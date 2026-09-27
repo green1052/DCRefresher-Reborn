@@ -40,7 +40,7 @@ export const useModulesStore = create<ModulesState>((set) => ({
 
     toggle: async (id, value) => {
         set((state) => ({enables: {...state.enables, [id]: value}}));
-        await enqueue(async () => modulesStorage.setValue({...(await modulesStorage.getValue()), [id]: value}));
+        await persist(async () => modulesStorage.setValue({...(await modulesStorage.getValue()), [id]: value}));
     },
 
     changeSetting: async (id, key, value) => {
@@ -51,7 +51,7 @@ export const useModulesStore = create<ModulesState>((set) => ({
         set((state) => ({values: {...state.values, [id]: {...state.values[id], [key]: next}}}));
 
         const item = moduleSettingsStorage(id);
-        await enqueue(async () => item.setValue({...(await item.getValue()), [key]: next}));
+        await persist(async () => item.setValue({...(await item.getValue()), [key]: next}));
     }
 }));
 
@@ -106,22 +106,38 @@ const pruneStaleSettings = async (): Promise<void> => {
     });
 };
 
+const setEnables = (stored: Record<string, boolean>): void => useModulesStore.setState({enables: resolveEnables(stored)});
+const setValues = (feature: AnyModule, stored: Record<string, unknown> | undefined): void =>
+    useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: normalizeSettings(feature, stored)}}));
+
+/** 설정이 있는 모듈과 그 저장소 항목 */
+const settingItems = () => features.filter((feature) => feature.settings).map((feature) => ({feature, item: moduleSettingsStorage(feature.id)}));
+
+const load = async (): Promise<void> => {
+    const settings = settingItems();
+    const [enables, values] = await Promise.all([modulesStorage.getValue(), Promise.all(settings.map(({item}) => item.getValue()))]);
+    setEnables(enables);
+    for (const [index, {feature}] of settings.entries()) setValues(feature, values[index]);
+};
+
+/** 화면에 먼저 반영한 값을 저장한다. 저장이 실패하면 저장소 값으로 되돌려 저장된 것처럼 보이지 않게 하고, 알림은 부른 쪽에 맡긴다 */
+const persist = async (write: () => Promise<void>): Promise<void> => {
+    try {
+        await enqueue(write);
+    } catch (e) {
+        console.error("모듈 설정을 저장하지 못했습니다.", e);
+        await load().catch(console.error);
+        throw e;
+    }
+};
+
 /** 옵션·팝업에서 저장소 값을 읽고 변경을 감시한다. 여러 번 불러도 한 번만 한다 */
 export const initModulesStore = once(async () => {
-    const setEnables = (stored: Record<string, boolean>): void => useModulesStore.setState({enables: resolveEnables(stored)});
-    const setValues = (feature: AnyModule, stored: Record<string, unknown> | undefined): void =>
-        useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: normalizeSettings(feature, stored)}}));
-
-    const settings = features.filter((feature) => feature.settings).map((feature) => ({feature, item: moduleSettingsStorage(feature.id)}));
-    const [enables, values] = await Promise.all([modulesStorage.getValue(), Promise.all(settings.map(({item}) => item.getValue()))]);
+    await load();
 
     // 다 읽은 뒤에 감시를 건다. 읽기가 실패하면 once가 다음 호출에 다시 시도하는데, 그때 감시가 두 번 걸리지 않는다
-    setEnables(enables);
     modulesStorage.watch(setEnables);
-    for (const [index, {feature, item}] of settings.entries()) {
-        setValues(feature, values[index]);
-        item.watch((next) => setValues(feature, next));
-    }
+    for (const {feature, item} of settingItems()) item.watch((next) => setValues(feature, next));
 
     // 화면을 그리는 데는 필요 없으니 기다리지 않는다
     pruneStaleSettings().catch(console.error);

@@ -6,8 +6,10 @@ import {RefresherSelect} from "@/components/RefresherSelect";
 import {BLOCK_TYPES, DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType} from "@/core/storage/types";
 import {type BlockInputFields, composeExtra, normalizeBlockList, useBlocksStore} from "@/stores/blocks";
+import {SAVE_FAILED} from "@/utils/error";
 
 import {ListRow, ListTabs} from "./Layout";
+import {notify} from "./optionsStore";
 
 /** 디시콘 이미지 주소. 묶음 정규식("^(a|b…)$", 하나뿐이면 "^(code)$")이면 첫 코드의 이미지를 쓴다 */
 const dcconImage = (entry: BlockEntry): string => {
@@ -65,7 +67,7 @@ export function BlockTab() {
                         <RefresherSelect
                             value={defaults[type]}
                             aria-label="기본 차단 모드"
-                            onChange={(next) => void setDefault(type, next)}
+                            onChange={(next) => void setDefault(type, next).catch(() => notify(SAVE_FAILED))}
                             options={DETECT_MODE_NAMES}
                         />
                     </Flex>
@@ -84,7 +86,7 @@ export function BlockTab() {
                         )}
                         info={<Text size="2" color="gray">{entryInfo(entry)}</Text>}
                         onEdit={() => setDialog({type, initial: entry})}
-                        onRemove={() => void removeEntry(type, entry.id)}
+                        onRemove={() => void removeEntry(type, entry.id).catch(() => notify(SAVE_FAILED))}
                     />
                 )}
             />

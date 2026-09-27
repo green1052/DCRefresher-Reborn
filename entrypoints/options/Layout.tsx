@@ -4,6 +4,7 @@ import {type ReactNode, useDeferredValue, useEffect, useState} from "react";
 import type {WxtStorageItem} from "wxt/utils/storage";
 
 import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
+import {friendlyMessage, SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
 import {notify} from "./optionsStore";
@@ -13,7 +14,7 @@ export const useStorageItem = <T, >(item: WxtStorageItem<T, {}>): T => {
     const [value, setValue] = useState(item.fallback);
 
     useEffect(() => {
-        void item.getValue().then(setValue);
+        item.getValue().then(setValue, console.error);
         return item.watch(setValue);
     }, [item]);
 
@@ -199,13 +200,27 @@ export const ListTabs = <T extends string, I>({
     };
 
     const submitImport = async (text: string): Promise<void> => {
+        let data: unknown;
         try {
-            const data: unknown = JSON.parse(text);
-            if (!isRecord(data) || (await importData(data)) === 0) throw new Error();
-            setImportOpen(false);
-            notify(`${object} 가져왔습니다.`);
+            data = JSON.parse(text);
+        } catch (e) {
+            notify(`${object} 가져오지 못했습니다. ${friendlyMessage(e)}`);
+            return;
+        }
+
+        try {
+            if (isRecord(data) && (await importData(data)) > 0) {
+                setImportOpen(false);
+                notify(`${object} 가져왔습니다.`);
+            } else {
+                // 데이터 탭의 전체 내보내기는 저장소 키(refresher:…)로 되어 있다
+                notify(isRecord(data) && Object.keys(data).some((key) => key.startsWith("refresher:"))
+                    ? "전체 데이터는 데이터 탭에서 가져와 주세요."
+                    : `${label} 데이터가 아닙니다. 이 탭에서 내보낸 JSON을 붙여 넣어 주세요.`);
+            }
         } catch {
-            notify(`${object} 가져오지 못했습니다.`);
+            // 종류마다 따로 쓰므로 앞 종류는 이미 들어갔을 수 있다. 실패한 종류는 스토어가 되돌린다
+            notify(SAVE_FAILED);
         }
     };
 

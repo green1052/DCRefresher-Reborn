@@ -7,6 +7,9 @@ import {defaultValue} from "@/core/module/settings";
 import type {SettingSchema} from "@/core/module/types";
 import features from "@/features";
 import {useModulesStore} from "@/stores/modules";
+import {SAVE_FAILED} from "@/utils/error";
+
+import {notify} from "./optionsStore";
 
 /** 모듈별 카드. 헤더의 스위치로 켜고 끄며, 본문에 세부 설정을 둔다 */
 export function GeneralTab() {
@@ -32,7 +35,7 @@ export function GeneralTab() {
                                 size="3"
                                 checked={enabled}
                                 aria-label={`${feature.name} 사용`}
-                                onCheckedChange={(value) => void toggle(feature.id, value)}
+                                onCheckedChange={(value) => void toggle(feature.id, value).catch(() => notify(SAVE_FAILED))}
                             />
                         </Flex>
 
@@ -54,7 +57,7 @@ export function GeneralTab() {
                                                         ? settings.filter(([other, s]) => other !== key && s.type === "key").map(([other, s]) => String(valueOf(other, s)))
                                                         : undefined}
                                                     value={valueOf(key, schema)}
-                                                    onChange={(value) => void changeSetting(feature.id, key, value)}
+                                                    onChange={(value) => void changeSetting(feature.id, key, value).catch(() => notify(SAVE_FAILED))}
                                                 />
                                             );
         

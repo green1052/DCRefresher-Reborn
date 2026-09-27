@@ -8,7 +8,7 @@
 import {objectKeys} from "ts-extras";
 
 import {backupStorage, isBlockListKey, isModuleDataKey} from "@/core/storage/items";
-import {messageOf} from "@/utils/error";
+import {friendlyMessage} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
 export type BackupSlot = "manual" | "auto";
@@ -111,7 +111,7 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
         if (legacy.length === 0) {
             // 자동 칸은 v5 방식 백업을 치우지 않는다 (수동 칸으로 복원되는 데이터다). 그것이 원인일 수 있으니 해결 방법을 알린다
             if (Object.keys(all).some(isLegacyKey)) {
-                throw new Error(`${messageOf(e)} 예전 방식(v5) 백업이 클라우드 공간을 차지하고 있습니다. 수동 백업을 한 번 하면 정리됩니다.`, {cause: e});
+                throw new Error(`${friendlyMessage(e)} 예전 방식(v5) 백업이 클라우드 공간을 차지하고 있습니다. 수동 백업을 한 번 하면 정리됩니다.`, {cause: e});
             }
             throw e;
         }
@@ -182,13 +182,14 @@ export const readCloudBackup = async (slot: BackupSlot): Promise<CloudBackup | n
     return Object.keys(legacy).length > 0 ? {data: legacy} : null;
 };
 
-/** 백업하고 실패 이유를 남긴다 (성공하면 지운다) */
+/** 백업하고 실패 이유를 남긴다 (성공하면 지운다). 남긴 이유는 데이터 탭에 그대로 보이므로 원문은 콘솔에만 둔다 */
 export const runBackup = async (slot: BackupSlot): Promise<void> => {
     try {
         await backupToCloud(slot);
         await backupStorage.error.setValue("");
     } catch (e) {
-        await backupStorage.error.setValue(messageOf(e));
+        console.error("백업하지 못했습니다.", e);
+        await backupStorage.error.setValue(friendlyMessage(e));
         throw e;
     }
 };

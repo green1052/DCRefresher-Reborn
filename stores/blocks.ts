@@ -65,7 +65,7 @@ export const useBlocksStore = create<BlocksState>((set, get) => ({
 
     setEntries: async (type, entries) => {
         set((state) => ({entries: {...state.entries, [type]: entries}}));
-        await blockStorage[type].setValue(entries);
+        await persist(blockStorage[type].setValue(entries));
     },
 
     addEntry: (type, fields) => get().addEntries(type, [fields]),
@@ -98,7 +98,7 @@ export const useBlocksStore = create<BlocksState>((set, get) => ({
 
     setDefault: async (type, mode) => {
         set((state) => ({defaults: {...state.defaults, [type]: mode}}));
-        await blockDefaultsStorage.setValue(get().defaults);
+        await persist(blockDefaultsStorage.setValue(get().defaults));
     }
 }));
 
@@ -125,6 +125,17 @@ const load = async (): Promise<void> => {
     ]);
     for (const [index, type] of BLOCK_TYPES.entries()) setList(type, lists[index]);
     setDefaults(defaults);
+};
+
+/** 화면에 먼저 반영한 값을 저장한다. 저장이 실패하면 저장소 값으로 되돌려 저장된 것처럼 보이지 않게 하고, 알림은 부른 쪽에 맡긴다 */
+const persist = async (write: Promise<void>): Promise<void> => {
+    try {
+        await write;
+    } catch (e) {
+        console.error("차단 목록을 저장하지 못했습니다.", e);
+        await load().catch(console.error);
+        throw e;
+    }
 };
 
 /** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다 */
