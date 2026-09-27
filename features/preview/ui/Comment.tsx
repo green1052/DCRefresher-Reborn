@@ -1,6 +1,7 @@
 import {Box, Flex, IconButton, Text} from "@radix-ui/themes";
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
 import {Fragment, type MouseEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from "react";
+import {useShallow} from "zustand/react/shallow";
 
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {User} from "@/core/preview/types";
@@ -166,12 +167,14 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     const uidColor = useUiStore((state) => state.badgeColors.uid);
     const gallery = usePreviewStore((s) => s.preData?.gallery);
     const memo = useUserMemo({uid: user.id, ip: user.ip, nick: user.nick}, gallery);
-    const ratios = useUiStore((state) => state.ratios);
+    // 글댓비는 이 사람 것만 구독한다 — 캐시 전체를 구독하면 누구 것이든 저장될 때마다 모든 댓글의 작성자가 다시 그려진다.
     // 아이디가 constructor 같은 프로토타입 키여도 캐시로 잡히지 않게 자기 속성만
-    const cached = user.id && ratios && Object.hasOwn(ratios.cache, user.id) ? ratios.cache[user.id] : undefined;
-    const fetched = useGallogActivity(fetchRatio && ratios && !cached ? user.id : undefined);
+    const showsRatio = useUiStore((state) => state.ratios !== null);
+    const alarm = useUiStore((state) => state.ratios?.alarm ?? 0);
+    const cached = useUiStore(useShallow((state) => (user.id && state.ratios && Object.hasOwn(state.ratios.cache, user.id) ? state.ratios.cache[user.id] : undefined)));
+    const fetched = useGallogActivity(fetchRatio && showsRatio && !cached ? user.id : undefined);
     const ratio = cached ?? (typeof fetched === "object" ? fetched : undefined);
-    const ratioColor = useUiStore((state) => (ratio && ratios && ratios.alarm > 0 && ratio.article + ratio.comment <= ratios.alarm ? state.badgeColors.ratioAlarm : state.badgeColors.ratio));
+    const ratioColor = useUiStore((state) => (ratio && alarm > 0 && ratio.article + ratio.comment <= alarm ? state.badgeColors.ratioAlarm : state.badgeColors.ratio));
 
     const openMenu = (ev: MouseEvent): void => {
         // 목록과 같이 Shift+우클릭은 브라우저 기본 메뉴
@@ -223,7 +226,8 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
     const replying = usePreviewStore((s) => s.reply.replyNo === comment.no);
     const collapsed = usePreviewStore((s) => s.collapsed.has(comment.no));
     const toggleCollapse = usePreviewStore((s) => s.toggleCollapse);
-    const author = usePreviewStore((s) => s.post?.user);
+    // 글 작성자 아이디만 — 글 객체째 구독하면 추천·새로고침마다 모든 댓글이 다시 그려진다
+    const authorId = usePreviewStore((s) => s.post?.user?.id);
     const allowReply = usePreviewStore((s) => s.allowReply);
 
     const user: User = {
@@ -233,7 +237,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
         image: extractIcon(comment.gallog_icon)
     };
     // 회원 아이디가 같을 때만 — 유동은 닉과 IP 앞자리가 같아도 다른 사람일 수 있다
-    const isOp = Boolean(user.id) && user.id === author?.id;
+    const isOp = Boolean(user.id) && user.id === authorId;
 
     const isDeleted = comment.is_delete === "1";
     // 디시처럼 멤버만 댓글(allow_reply)이면 답글도 막고, 답글 막힌 댓글(reply_w)엔 버튼을 두지 않는다 — 음성 댓글은 디시도 답글 버튼을 따로 단다.
