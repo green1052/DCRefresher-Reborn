@@ -40,9 +40,12 @@ export default defineModule({
         const onBeforeUnload = (ev: BeforeUnloadEvent): void => {
             if (!ctx.settings.preventExit || submitting) return;
 
+            // 글자 없이 이미지·동영상만 올린 본문도 작성 중인 글이다
+            const editor = document.querySelector<HTMLElement>(EDITOR);
             const written =
                 document.querySelector<HTMLInputElement>(SUBJECT)?.value.trim() ||
-                document.querySelector<HTMLElement>(EDITOR)?.textContent?.trim();
+                editor?.textContent?.trim() ||
+                editor?.querySelector("img, video, iframe, embed");
             if (written) ev.preventDefault();
         };
 

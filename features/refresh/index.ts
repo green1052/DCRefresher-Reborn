@@ -186,7 +186,8 @@ export default defineModule({
                     document.querySelector(isViewPage ? ".view_bottom_btnbox" : ".page_head")?.scrollIntoView({behavior: "smooth", block: "start"});
                 }
 
-                if (newPostList.length > 0) eventBus.emit("newPostList", newPostList);
+                // 페이지를 넘긴 목록은 옛 목록과 겹치는 행이 없으면 전부 새 글로 잡히므로 알리지 않는다 (글댓비 조회가 몰린다)
+                if (!customURL && newPostList.length > 0) eventBus.emit("newPostList", newPostList);
 
                 return true;
             } catch (e) {
@@ -234,7 +235,8 @@ export default defineModule({
                 return;
             }
 
-            void load();
+            // 실패로 주기가 늘어난 동안은 바로 받지 않는다. 탭을 오갈 때마다 요청하면 늘린 주기가 소용없다
+            if (failures === 0) void load();
             armNext();
         };
 

@@ -4,7 +4,7 @@ export const settings = {
     refreshRate: {
         type: "range",
         name: "새로고침 주기",
-        desc: "글 목록을 새로고침하는 주기입니다.",
+        desc: "글 목록을 새로고침하는 주기입니다. 새 글이 올라오는 1페이지에서만 자동으로 새로고침합니다.",
         default: 5000,
         min: 3000,
         max: 20000,

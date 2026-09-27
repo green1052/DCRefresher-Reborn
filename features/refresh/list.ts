@@ -22,8 +22,8 @@ const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, n
     for (let index = oldRows.length - 1; index >= 0; index--) {
         const row = oldRows[index]!;
         const no = rowPostNo(row);
-        // 번호 없는 행(설문·AD)은 늘 새로 받는다
-        if (!no || newKeys.has(no) || index >= oldRows.length - newPostCount) {
+        // 번호 없는 행(설문·AD)과 공지는 늘 새로 받는다. 공지에서 내린 글은 지워진 것이 아니다
+        if (!no || row.querySelector("em[class*=icon_notice]") || newKeys.has(no) || index >= oldRows.length - newPostCount) {
             next = newRows.get(rowKey(row)) ?? next;
             continue;
         }

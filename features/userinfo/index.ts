@@ -1,5 +1,5 @@
 import {UserRound} from "lucide-react";
-import {objectKeys} from "ts-extras";
+import {objectFromEntries, objectKeys} from "ts-extras";
 
 import {banReasonsOf, initDatabase, ipInfoOf, type IpInfoFilter, passesIpFilter, subscribeDatabase} from "@/core/database";
 import {defineModule} from "@/core/module/define";
@@ -10,7 +10,7 @@ import {BOARD_PAGE} from "@/core/pages";
 import {eventBus} from "@/core/eventbus/bus";
 import {moduleDataStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";
-import {type BadgeView, DEFAULT_BADGE_VIEW, showsUid, useUiStore} from "@/stores/ui";
+import {type BadgeColorKey, type BadgeView, DEFAULT_BADGE_VIEW, showsUid, useUiStore} from "@/stores/ui";
 import {insertWriterSpan} from "@/utils/userDataInsert";
 
 interface RatioInfo {
@@ -30,16 +30,18 @@ const BADGE_COLORS = {
     china: ["IP 중국", "#f76b15"],
     foreign: ["IP 그 외 해외", "#12a594"],
     vpn: ["IP VPN", "#8e4ec6"]
-} satisfies Record<string, [name: string, color: string]>;
+} satisfies Record<BadgeColorKey, [name: string, color: string]>;
 
 type BadgeColor = keyof typeof BADGE_COLORS;
 
-const LOW_ACTIVITY_GROUP: SettingGroup = {name: "깡계", desc: "글댓합이 기준 이하인 유저를 깡계로 봅니다. 글댓비 표시가 켜져 있고 글댓비를 받아 둔 유저만 해당합니다."};
+const LOW_ACTIVITY_GROUP: SettingGroup = {name: "깡계", desc: "글댓합이 기준 이하인 유저를 깡계로 봅니다. 글댓비 표시가 켜져 있고 글댓비를 받아 둔 유저만 해당합니다. 기준이 0이면 꺼집니다."};
 
 const BADGE_COLOR_GROUP: SettingGroup = {name: "배지 색", desc: "유저 정보 배지의 글자 색입니다. IP는 국가별로 칠하고, VPN이면 국가보다 우선합니다."};
 
-const colorsOf = (ctx: Ctx): Record<string, string> =>
-    Object.fromEntries(objectKeys(BADGE_COLORS).map((key) => [key, ctx.settings[`${key}Color`]]));
+type BadgeColors = Partial<Record<BadgeColor, string>>;
+
+const colorsOf = (ctx: Ctx): BadgeColors =>
+    objectFromEntries(objectKeys(BADGE_COLORS).map((key) => [key, ctx.settings[`${key}Color`]] as const));
 
 const IP_INFO_FILTERS: Record<IpInfoFilter, string> = {all: "전체", foreign: "해외·VPN만", vpn: "VPN만", none: "표시 안 함"};
 
@@ -72,7 +74,7 @@ const buildBadgeSpan = (text: string, color?: string, title?: string, className 
 /** 깡계 기준(글댓합) 이하인지. 기준이 0이면 끈 것이다 */
 const isLowActivity = (info: RatioInfo, alarmRatio: number): boolean => alarmRatio > 0 && info.article + info.comment <= alarmRatio;
 
-const makeRatioSpan = (info: RatioInfo, alarmRatio: number, colors: Record<string, string>): HTMLElement => {
+const makeRatioSpan = (info: RatioInfo, alarmRatio: number, colors: BadgeColors): HTMLElement => {
     const text = `${info.article}/${info.comment}`;
     return buildBadgeSpan(`[${text}]`, isLowActivity(info, alarmRatio) ? colors.ratioAlarm : colors.ratio, text, "ip ratio refresherUserData");
 };
@@ -85,7 +87,7 @@ const clearLowActivity = (): void => {
     for (const element of document.querySelectorAll<HTMLElement>(classes.map((name) => `.${name}`).join(","))) element.classList.remove(...classes);
 };
 
-const makePermBanSpan = (reasons: string, color: string): HTMLElement =>
+const makePermBanSpan = (reasons: string, color: string | undefined): HTMLElement =>
     buildBadgeSpan(`[${reasons}]`, color, reasons, "ip permBan refresherUserData");
 
 const process = (ctx: Ctx, element: HTMLElement): void => {
@@ -129,14 +131,17 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
 
         if (key === "PERMBAN" && uid && ctx.settings.checkPermBan) {
             const reasons = banReasonsOf(uid);
-            if (reasons) badges.append(makePermBanSpan(reasons, colors.permBan!));
+            if (reasons) badges.append(makePermBanSpan(reasons, colors.permBan));
         }
     }
 
     // 깡계는 글댓비를 받아 둔 유저만 판정한다. 목록 전체를 조회하면 갤로그 요청이 너무 많다
     const action = ctx.settings.lowActivityAction;
     if (lowActivity && action === "tag") badges.append(buildBadgeSpan("[깡계]", colors.ratioAlarm, `글댓합 ${ctx.settings.alarmRatio}개 이하`));
-    if (lowActivity && (action === "blur" || action === "hide")) (element.closest<HTMLElement>(".ub-content, .search_comment") ?? element).classList.add(LOW_ACTIVITY_CLASSES[action]);
+    // 글 보기 머리는 가리지 않는다. 머리만 가리면 본문은 그대로 보인다 (배지 색으로만 알린다)
+    if (lowActivity && (action === "blur" || action === "hide") && !element.closest(".gallview_head")) {
+        (element.closest<HTMLElement>(".ub-content, .search_comment") ?? element).classList.add(LOW_ACTIVITY_CLASSES[action]);
+    }
 
     if (badges.children.length > 0) insertWriterSpan(element, badges);
 };

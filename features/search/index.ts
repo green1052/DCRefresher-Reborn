@@ -1,6 +1,7 @@
+import {LRUCache} from "lru-cache";
 import {Search} from "lucide-react";
 
-import {http} from "@/core/http/client";
+import {BlockedError, http} from "@/core/http/client";
 import {queryString} from "@/core/http/urls";
 import {checkboxCellFactory, highlightSearchResults, LIST_SELECTOR, PAGING_SELECTOR} from "@/core/list";
 import {sendMessage} from "@/core/messaging/protocol";
@@ -45,8 +46,9 @@ export default defineModule({
         if (!queryString("s_keyword")) return;
 
         const gallery = queryString("id") ?? "";
-        // 새로고침 모듈이 목록을 갈아끼우면 다시 이어 붙인다. 이미 받은 검색 페이지는 다시 요청하지 않는다
-        const pages = new Map<string, string>();
+        // 새로고침 모듈이 목록을 갈아끼우면 다시 이어 붙인다. 이미 받은 검색 페이지는 다시 요청하지 않는다.
+        // 페이지 HTML이 통째로 들어 있어 최대 다음 검색 횟수(30)만큼만 남긴다. 검색 페이지를 넘길 때마다 쌓이지 않게 한다
+        const pages = new LRUCache<string, string>({max: 30});
         // 행을 붙이면 같은 tbody로 필터가 다시 불리므로 한 번만 채운다
         const filled = new WeakSet<HTMLElement>();
         let running: AbortController | null = null;
@@ -114,7 +116,8 @@ export default defineModule({
                     if (!isLastPage(paging)) break;
                 }
             } catch (e) {
-                if (signal.aborted) return;
+                // 임시 차단은 HTTP 클라이언트가 이미 알렸다. 오류 토스트로 그 안내를 덮지 않는다
+                if (signal.aborted || e instanceof BlockedError) return;
                 console.error("Search continuation failed:", e);
                 useUiStore.getState().showToast("다음 검색 결과를 불러오지 못했습니다.", "error");
             } finally {

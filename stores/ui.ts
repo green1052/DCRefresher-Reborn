@@ -59,13 +59,16 @@ export interface MemoTargetState {
     initialType: MemoType;
 }
 
+/** 배지 색 키. userinfo의 BADGE_COLORS가 키마다 색 설정을 하나씩 둔다. IP 배지는 분류가 키다 */
+export type BadgeColorKey = IpCategory | "uid" | "permBan" | "ratio" | "ratioAlarm";
+
 interface UiState {
     toast: ToastData | null;
     selected: SelectedUser | null;
     bubble: { x: number; y: number } | null;
     memo: MemoTargetState | null;
     /** 배지 색 (userinfo 설정). 모듈이 꺼져 있으면 비어 있고, 갱차 조회를 끄면 permBan이 없다 */
-    badgeColors: Partial<Record<IpCategory | "uid" | "permBan" | "ratio" | "ratioAlarm", string>>;
+    badgeColors: Partial<Record<BadgeColorKey, string>>;
     badgeView: BadgeView;
     /** 글댓비 캐시와 깡계 기준 (userinfo). 글댓비 표시를 끄거나 모듈이 꺼져 있으면 null */
     ratios: { cache: Record<string, { article: number; comment: number }>; alarm: number } | null;

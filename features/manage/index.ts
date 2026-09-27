@@ -104,9 +104,13 @@ export default defineModule({
                     }
                 }, {signal: ctx.signal});
 
-                element.addEventListener("mouseover", (ev) => {
-                    if (ctx.settings.checkViaShift && ev.shiftKey && element instanceof HTMLInputElement) element.checked = true;
-                }, {signal: ctx.signal});
+                // 왼쪽 버튼을 누른 채 지나간 칸만 체크한다. 그냥 지나가도 체크하면 Shift+클릭이 방금 체크된 칸을 도로 푼다.
+                // 드래그를 시작한 칸은 누르기 전에 들어왔으므로 떠날 때(mouseout) 체크한다
+                const checkOnDrag = (ev: MouseEvent): void => {
+                    if (ctx.settings.checkViaShift && ev.shiftKey && ev.buttons === 1 && element instanceof HTMLInputElement) element.checked = true;
+                };
+                element.addEventListener("mouseover", checkOnDrag, {signal: ctx.signal});
+                element.addEventListener("mouseout", checkOnDrag, {signal: ctx.signal});
             }
         );
 
