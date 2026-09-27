@@ -1,7 +1,9 @@
 import {http} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import {type CompactIpData, compactIpData, createIpLookup, type IpCandidate, type RawIpData} from "@/core/ipdb";
-import {dbStorage, writeDatabase} from "@/core/storage/items";
+import {storage} from "wxt/utils/storage";
+
+import {DB_KEYS, dbStorage, writeDatabase} from "@/core/storage/items";
 import type {BanList} from "@/core/storage/types";
 import {once} from "@/utils/once";
 
@@ -104,11 +106,11 @@ const indexBans = (list: BanList): Map<string, string> => {
 
 /** 조회용 데이터 로드 + 변경 감시. 여러 번 불러도 1회 */
 export const initDatabase = once(async () => {
-    loadIp(await dbStorage.ip.getValue());
-    dbStorage.ip.watch(loadIp);
+    loadIp(await storage.getItem<string>(DB_KEYS.ip, {fallback: ""}));
+    storage.watch<string>(DB_KEYS.ip, (next) => loadIp(next ?? ""));
     // 밴은 한 번이라도 읽었을 때만 새 값을 따라간다
-    dbStorage.ban.watch((next) => {
-        if (bansRequested) loadBans(next);
+    storage.watch<string>(DB_KEYS.ban, (next) => {
+        if (bansRequested) loadBans(next ?? "");
     });
 });
 
@@ -153,7 +155,7 @@ export const passesIpFilter = ({category}: IpInfo, filter: IpInfoFilter): boolea
 export const banReasonsOf = (uid: string): string | undefined => {
     if (!bansRequested) {
         bansRequested = true;
-        void dbStorage.ban.getValue().then(loadBans, console.error);
+        void storage.getItem<string>(DB_KEYS.ban, {fallback: ""}).then(loadBans, console.error);
     }
     return bans?.get(uid);
 };

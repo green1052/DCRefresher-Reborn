@@ -75,19 +75,25 @@ export const moduleSettingsStorage = (id: string): WxtStorageItem<Record<string,
  * ip·ban은 JSON 문자열이다 — 값 약 10만 개짜리 객체 그래프는 읽을 때마다 메인 스레드를 10ms 넘게 막는다. 없으면 ""
  */
 export const dbStorage = {
-    meta: storage.defineItem<DatabaseMeta>("local:refresher:db:meta", {fallback: {version: "", lastUpdate: 0}}),
-    /** core/ipdb의 CompactIpData */
-    ip: storage.defineItem<string>("local:refresher:db:ip", {fallback: ""}),
-    /** BanList */
-    ban: storage.defineItem<string>("local:refresher:db:ban", {fallback: ""})
+    meta: storage.defineItem<DatabaseMeta>("local:refresher:db:meta", {fallback: {version: "", lastUpdate: 0}})
 };
+
+/**
+ * ip·ban 키 — 여기서 defineItem으로 만들어 두지 않는다. defineItem은 만드는 순간 값을 한 번 읽어서,
+ * 이 파일을 불러오는 모든 페이지·서비스 워커가 쓰지도 않는 수백 KB를 읽게 된다. 쓰는 곳에서 storage.getItem·watch로 다룬다.
+ * ip는 core/ipdb의 CompactIpData, ban은 BanList를 JSON으로 담는다
+ */
+export const DB_KEYS = {
+    ip: "local:refresher:db:ip",
+    ban: "local:refresher:db:ban"
+} as const;
 
 /** 세 키를 한 번에 쓴다 — 받는 쪽이 새 meta와 옛 ip를 섞어 보지 않게. 6.0.0 개발판의 한 키짜리 DB는 이때 지운다 */
 export const writeDatabase = async (meta: DatabaseMeta, ip: string, ban: string): Promise<void> => {
     await storage.setItems([
         {item: dbStorage.meta, value: meta},
-        {item: dbStorage.ip, value: ip},
-        {item: dbStorage.ban, value: ban}
+        {key: DB_KEYS.ip, value: ip},
+        {key: DB_KEYS.ban, value: ban}
     ]);
     await storage.removeItem("local:refresher:db");
 };

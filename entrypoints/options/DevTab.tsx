@@ -7,10 +7,14 @@ import {ConfirmDialog} from "@/components/ConfirmDialog";
 import {isModuleDataKey} from "@/core/backup";
 import {databaseVersion, initDatabase, ipInfoOf, parseBans, parseIp, subscribeDatabase} from "@/core/database";
 import {compactIpData, type RawIpData} from "@/core/ipdb";
-import {dbStorage, writeDatabase} from "@/core/storage/items";
+import {DB_KEYS, dbStorage, writeDatabase} from "@/core/storage/items";
 
 import {byteSize, Empty, formatBytes, formatTime, Section, useStorageItem} from "./Layout";
 import {notify, useOptionsStore} from "./optionsStore";
+
+/** 개발자 탭에서만 보는 ip·ban 원문 — 이 탭은 열 때 불러오므로(App.tsx의 lazy) 다른 페이지는 이 수백 KB를 읽지 않는다 */
+const dbIp = storage.defineItem<string>(DB_KEYS.ip, {fallback: ""});
+const dbBan = storage.defineItem<string>(DB_KEYS.ban, {fallback: ""});
 
 type Area = "local" | "sync";
 
@@ -150,8 +154,8 @@ const parseOr = <T, >(parse: (stored: string) => T, stored: string, broken: T): 
 const DatabaseSection = () => {
     // 값이 바뀔 때만 다시 푼다 (React Compiler가 저장값으로 메모)
     const meta = useStorageItem(dbStorage.meta);
-    const ipData = parseOr(parseIp, useStorageItem(dbStorage.ip), null);
-    const banList = parseOr(parseBans, useStorageItem(dbStorage.ban), {});
+    const ipData = parseOr(parseIp, useStorageItem(dbIp), null);
+    const banList = parseOr(parseBans, useStorageItem(dbBan), {});
     const [ip, setIp] = useState("");
     const fileInput = useRef<HTMLInputElement>(null);
     // 조회 테스트는 콘텐츠 스크립트와 같은 경로(ipInfoOf)로 — DB를 읽을 때마다 올라가는 번호를 식에 넣어야 컴파일러가 다시 조회한다
@@ -162,7 +166,7 @@ const DatabaseSection = () => {
     const loadFile = async (file: File): Promise<void> => {
         try {
             const next = compactIpData(JSON.parse(await file.text()) as RawIpData);
-            await writeDatabase({version: "local", lastUpdate: Date.now()}, JSON.stringify(next), await dbStorage.ban.getValue());
+            await writeDatabase({version: "local", lastUpdate: Date.now()}, JSON.stringify(next), await dbBan.getValue());
             notify("IP 데이터를 파일에서 불러왔습니다. 다음 자동 갱신 때 서버 데이터로 바뀝니다.");
         } catch (e) {
             notify(`IP 데이터를 불러오는 데 실패했습니다. ${e instanceof Error ? e.message : ""}`);
@@ -186,7 +190,7 @@ const DatabaseSection = () => {
                     <Button variant="soft" color="gray" onClick={() => fileInput.current?.click()}>
                         <FileJson size={14}/> IP 파일 불러오기
                     </Button>
-                    <Button variant="soft" color="red" onClick={() => void storage.removeItems([dbStorage.meta, dbStorage.ip, dbStorage.ban])}>
+                    <Button variant="soft" color="red" onClick={() => void storage.removeItems([dbStorage.meta, dbIp, dbBan])}>
                         <Trash2 size={14}/> 비우기
                     </Button>
                 </>

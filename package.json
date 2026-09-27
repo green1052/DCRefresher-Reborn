@@ -40,8 +40,5 @@
         "typescript": "^7.0.2",
         "web-ext": "^10.7.0",
         "wxt": "^0.21.4"
-    },
-    "patchedDependencies": {
-        "@wxt-dev/storage@1.2.9": "patches/@wxt-dev%2Fstorage@1.2.9.patch"
     }
 }

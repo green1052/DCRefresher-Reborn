@@ -1,6 +1,6 @@
 import {Box, Button, Flex, Heading, Separator, Text} from "@radix-ui/themes";
 import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings, Wrench} from "lucide-react";
-import {useEffect, useState} from "react";
+import {lazy, Suspense, useEffect, useState} from "react";
 
 import {Notice} from "@/components/ConfirmDialog";
 import {fontFamilyOf} from "@/features/fonts";
@@ -11,12 +11,14 @@ import {initModulesStore, useModulesStore} from "@/stores/modules";
 import {AboutTab} from "./AboutTab";
 import {BlockTab} from "./BlockTab";
 import {DataTab} from "./DataTab";
-import {DcconRain} from "./DcconRain";
-import {DevTab} from "./DevTab";
 import {GeneralTab} from "./GeneralTab";
 import {MemoTab} from "./MemoTab";
 import {useOptionsStore} from "./optionsStore";
 import {ShortcutTab} from "./ShortcutTab";
+
+// 개발자 탭과 디시콘 비는 드물게 연다 — 옵션 페이지를 열 때 같이 받지 않는다 (개발자 탭은 IP/밴 DB 원문도 읽는다)
+const DevTab = lazy(() => import("./DevTab").then(({DevTab}) => ({default: DevTab})));
+const DcconRain = lazy(() => import("./DcconRain").then(({DcconRain}) => ({default: DcconRain})));
 
 interface TabDef {
     id: string;
@@ -142,13 +144,13 @@ export function App() {
         <Flex direction={{initial: "column", md: "row"}} minHeight="100vh">
             <Sidebar tabs={tabs} tab={current.id} onSelect={setTab}/>
             {/* 누를 때마다 새로 마운트 — React Compiler가 Math.random으로 그린 결과를 기억해 같은 모양이 반복되지 않게 */}
-            {rain > 0 && <DcconRain key={rain}/>}
+            {rain > 0 && <Suspense><DcconRain key={rain}/></Suspense>}
             <Notice message={notice} onClose={() => useOptionsStore.setState({notice: null})}/>
 
             <Box flexGrow="1" minWidth="0" px={{initial: "4", md: "6"}} py="6">
                 <Box maxWidth="880px" mx="auto">
                     <Heading size="7" mb="5">{current.label}</Heading>
-                    {current.content()}
+                    <Suspense>{current.content()}</Suspense>
                 </Box>
             </Box>
         </Flex>
