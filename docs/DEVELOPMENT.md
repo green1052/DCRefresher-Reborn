@@ -29,7 +29,7 @@ bun run zip            # 배포용 zip
 bun run zip:firefox    # Firefox zip + 소스 zip
 ```
 
-`tsconfig.json`은 `noUnusedLocals`, `noUnusedParameters`를 켜 둡니다. 커밋 전에 `bun run compile`과 `bun run build`가 통과해야 합니다. PR(문서만 바뀐 것 제외)과 수동 실행 때 `.github/workflows/check.yml`이 타입 검사와 Chrome·Firefox 빌드를 돌립니다.
+`tsconfig.json`은 `noUnusedLocals`, `noUnusedParameters`를 켜 둡니다. 커밋 전에 `bun run compile`과 `bun run build`가 통과해야 합니다.
 
 워크플로의 Bun 설치·의존성 설치는 `.github/actions/setup`(composite action)에 모아 두었습니다.
 
