@@ -1,9 +1,10 @@
-import {useBlocksStore} from "@/stores/blocks";
+// 유저 버블의 "차단" — 차단 모듈이 꺼져 있어도 차단 목록(stores/blocks)에는 넣으므로 모듈이 아니라 차단 데이터 쪽에 둔다
 import {ajax} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import type {BlockType} from "@/core/storage/types";
-import {csrfToken} from "@/utils/cookie";
+import {useBlocksStore} from "@/stores/blocks";
 import {type SelectedUser, useUiStore} from "@/stores/ui";
+import {csrfToken} from "@/utils/cookie";
 
 interface DcconDetailResponse {
     info: {
@@ -14,7 +15,6 @@ interface DcconDetailResponse {
         path: string;
     }[];
 }
-
 
 /** 유저 차단: uid > ip > nick 우선순위 */
 const blockUser = async (selected: SelectedUser): Promise<void> => {

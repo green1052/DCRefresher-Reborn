@@ -4,7 +4,7 @@ import {Popover as PopoverPrimitive} from "radix-ui";
 import {useEffect, useState, useSyncExternalStore} from "react";
 
 import {blockingEntries} from "@/core/block";
-import {type BlockRequestOptions, handleBlockRequest} from "@/features/block/request";
+import {type BlockRequestOptions, handleBlockRequest} from "@/stores/blockRequest";
 import {PreviewHost} from "@/features/preview/ui/PreviewHost";
 import {type ToastData, useUiStore} from "@/stores/ui";
 import {banReasonsOf, databaseVersion, ipInfoOf, subscribeDatabase} from "@/core/database";
