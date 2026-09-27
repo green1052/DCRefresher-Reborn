@@ -8,7 +8,7 @@ import type {CommentListResponse, DcinsideComment, DcinsideDccon, GalleryPreData
 const commonBody = async (link: string): Promise<URLSearchParams> =>
     new URLSearchParams({ci_t: await csrfToken(), _GALLTYPE_: galleryTypeName(link)});
 
-const viewUrl = (link: string, gallery: string, id: string): string => {
+export const viewUrl = (link: string, gallery: string, id: string): string => {
     const type = galleryPath(link);
 
     return `${urls.base}${type}board/view/?id=${gallery}&no=${id}`;

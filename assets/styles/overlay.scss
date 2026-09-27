@@ -130,6 +130,61 @@
     bottom: var(--space-4);
 }
 
+/* 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내 (v5와 같은 모양) — 창 위에 겹치되 누르거나 굴리는 것은 막지 않는다 */
+.refresher-skip-hint {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40%;
+    color: white;
+    background: linear-gradient(to top, rgba(12, 23, 53, 0.7), rgba(32, 42, 72, 0.3), rgba(0, 0, 0, 0));
+    pointer-events: none;
+    animation: refresher-skip-hint-bottom 450ms cubic-bezier(0.19, 1, 0.22, 1);
+
+    p {
+        position: relative;
+        top: 20%;
+        margin: 0;
+        font-size: 24px;
+        font-weight: bold;
+        letter-spacing: -1.66px;
+    }
+
+    &[data-side="top"] {
+        top: 0;
+        bottom: auto;
+        background: linear-gradient(to bottom, rgba(12, 23, 53, 0.7), rgba(32, 42, 72, 0.3), rgba(0, 0, 0, 0));
+        animation-name: refresher-skip-hint-top;
+
+        p {
+            top: -20%;
+        }
+    }
+}
+
+@keyframes refresher-skip-hint-bottom {
+    from {
+        opacity: 0;
+        transform: translateY(40%);
+    }
+}
+
+@keyframes refresher-skip-hint-top {
+    from {
+        opacity: 0;
+        transform: translateY(-40%);
+    }
+}
+
+/* 누르면 원본 보기가 열리는 본문 이미지 (Frame.tsx) */
+.refresher-preview-contents img[data-pop] {
+    cursor: pointer;
+}
+
 /* ===== 디시 본문/댓글 HTML (페이지 CSS가 안 닿으므로 최소한만) ===== */
 
 .refresher-html {

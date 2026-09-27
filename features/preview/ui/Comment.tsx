@@ -240,7 +240,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                 // 비밀번호가 틀려도 HTTP 200('false||메시지')이라 결과를 보여 주지 않으면 조용히 실패한다
                 if (!notifyManage(await userDeleteComment(st.preData, comment.no, password), "댓글을 삭제했습니다.")) return;
             }
-            st.requestRefresh();
+            void st.requestRefresh();
         } catch {
             useUiStore.getState().showToast("댓글 삭제 중 오류가 발생했습니다.", "error");
         }

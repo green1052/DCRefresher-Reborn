@@ -167,7 +167,7 @@ export const WriteComment = () => {
                 // 그새 다른 글로 넘어갔으면 답글 대상과 댓글 목록은 그 글 것이다
                 if (usePreviewStore.getState().signalId === signal) {
                     usePreviewStore.setState({reply: {commentNo: null, replyNo: null}});
-                    st.requestRefresh();
+                    void st.requestRefresh();
                 }
             } else if (response.message === "captcha") {
                 // v2 체크박스나 v3 재전송도 막히면 원문에서만 풀 수 있다

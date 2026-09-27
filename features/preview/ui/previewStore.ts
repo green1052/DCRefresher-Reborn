@@ -43,7 +43,10 @@ interface PostState {
 interface Hooks {
     requestOpen: (preData: GalleryPreData, commentsOnly?: boolean, dir?: number) => void;
     requestClose: () => void;
-    requestRefresh: () => void;
+    /** 댓글만 다시 받는다. report: 실패를 알린다 */
+    requestRefresh: (report?: boolean) => Promise<void>;
+    /** 본문을 캐시 없이 다시 받고 댓글도 다시 받는다 */
+    requestReload: () => Promise<void>;
     requestManage: (kind: ManageKind) => void;
 }
 
@@ -95,7 +98,8 @@ const NO_REPLY: Reply = {commentNo: null, replyNo: null};
 export const NO_HOOKS: Hooks = {
     requestOpen: () => undefined,
     requestClose: () => undefined,
-    requestRefresh: () => undefined,
+    requestRefresh: async () => undefined,
+    requestReload: async () => undefined,
     requestManage: () => undefined
 };
 

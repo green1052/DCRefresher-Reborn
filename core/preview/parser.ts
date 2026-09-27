@@ -1,9 +1,17 @@
 import type {PostInfo} from "./types";
 
-/** 본문 이미지의 data-original 복원 (DC지연로딩). 관리자가 가린 이미지(data-block)는 '차단 이미지 보기'를 누를 때 넣는다 (Frame.tsx) */
+/**
+ * 본문 이미지의 data-original 복원 (DC지연로딩). 관리자가 가린 이미지(data-block)는 '차단 이미지 보기'를 누를 때 넣는다 (Frame.tsx).
+ * 누르면 여는 디시 원본 보기 주소(onclick의 imgPop)는 정화에서 빠지므로 data-pop에 옮겨 둔다 (Frame.tsx)
+ */
 const restoreImageSources = (dom: Document): void => {
     for (const image of dom.querySelectorAll<HTMLImageElement>("img[data-original]:not([data-block])")) {
         if (image.dataset.original) image.src = image.dataset.original;
+    }
+
+    for (const image of dom.querySelectorAll<HTMLImageElement>("img[onclick*='imgPop']")) {
+        const url = image.getAttribute("onclick")?.match(/imgPop\('([^']+)'/)?.[1];
+        if (url) image.dataset.pop = url;
     }
 };
 
