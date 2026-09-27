@@ -125,6 +125,16 @@ const controller = (ctx: Ctx) => {
     let pulling = 0;
     // 마지막으로 그린 댓글 원본 (보존 처리까지 마친 것). 차단 목록·방식이 바뀌면 다시 받지 않고 이것으로 다시 가린다.
     let shown: { signal: number; source: DcinsideComment[] } | null = null;
+    /** shown을 만든 받은 목록(JSON). 같은 목록을 다시 받으면 다시 그리지 않는다 */
+    let shownRaw = "";
+
+    // 답글 대상 댓글이 목록에서 빠졌거나 삭제됐으면 답글 쓰기를 푼다. 두면 취소 버튼도 없이 없는 댓글에 답글을 단다
+    const dropStaleReply = (): void => {
+        const {reply, comments} = store.getState();
+        if (reply.replyNo && !comments?.some((comment) => comment.no === reply.replyNo && comment.is_delete !== "1")) {
+            store.setState({reply: {commentNo: null, replyNo: null}});
+        }
+    };
 
     /** 댓글을 받아 가공해 그린다. skip이면 받지 않고 빈 목록으로 처리한다 (보존해 둔 댓글은 삭제된 것으로 나온다) */
     const pullComments = async (preData: GalleryPreData, post: PostInfo, mySignal: number, skip = false): Promise<void> => {
@@ -141,7 +151,15 @@ const controller = (ctx: Ctx) => {
             if (store.getState().signalId !== mySignal || seq < shownSeq) return;
             shownSeq = seq;
 
+            // 보존(archive) 기록은 받을 때마다 갱신해야 하므로 정리는 늘 한다
             const source = prepareComments(raw, preData, ctx.settings.archiveArticle);
+            // 자동 새로고침으로 같은 목록을 다시 받았으면 정화·다시 그리기를 건너뛴다. 댓글이 수백 개면 정화만 수십 ms다
+            const rawKey = JSON.stringify(raw);
+            if (!skip && shown?.signal === mySignal && rawKey === shownRaw) {
+                if (store.getState().allowReply !== allowReply) store.setState({allowReply});
+                return;
+            }
+            shownRaw = rawKey;
             shown = {signal: mySignal, source};
             store.setState({comments: processComments(source, preData), allowReply});
             dropStaleReply();
@@ -151,14 +169,6 @@ const controller = (ctx: Ctx) => {
     };
 
     // 열린 창에도 차단 목록·방식 변경을 바로 반영한다. 버블에서 차단하면 그 사람 댓글이 곧바로 가려진다.
-    // 답글 대상 댓글이 목록에서 빠졌거나 삭제됐으면 답글 쓰기를 푼다. 두면 취소 버튼도 없이 없는 댓글에 답글을 단다
-    const dropStaleReply = (): void => {
-        const {reply, comments} = store.getState();
-        if (reply.replyNo && !comments?.some((comment) => comment.no === reply.replyNo && comment.is_delete !== "1")) {
-            store.setState({reply: {commentNo: null, replyNo: null}});
-        }
-    };
-
     const reapplyBlocks = async (): Promise<void> => {
         const {visible, preData, signalId} = store.getState();
         if (!visible || !preData) return;
