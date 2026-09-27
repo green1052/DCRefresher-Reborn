@@ -140,7 +140,8 @@ export function App() {
             <Notice message={notice} onClose={() => useOptionsStore.setState({notice: null})}/>
 
             <Box flexGrow="1" minWidth="0" px={{initial: "4", md: "6"}} py="6">
-                <Box maxWidth="880px" mx="auto">
+                {/* 탭마다 새로 마운트해 들어오는 애니메이션을 다시 건다 (options.scss) */}
+                <Box key={current.id} className="refresher-tab-enter" maxWidth="880px" mx="auto">
                     <Heading size="7" mb="5">{current.label}</Heading>
                     <Suspense>{current.content()}</Suspense>
                 </Box>

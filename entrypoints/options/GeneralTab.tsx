@@ -39,7 +39,7 @@ export function GeneralTab() {
                         {settings.length > 0 && (
                             <Collapsible.Root open={enabled}>
                                 {/* 켜고 끌 때 펼치고 접는다 (options.scss). 닫히는 애니메이션이 끝난 뒤 빠진다 */}
-                                <Collapsible.Content className="refresher-module-settings">
+                                <Collapsible.Content className="refresher-collapsible">
                                     <Box pt="4">
                                         {/* 같은 group 객체를 가진 설정은 첫 설정 자리에 한 줄로 묶는다 */}
                                         {[...Map.groupBy(settings, ([key, schema]) => schema.group ?? key).values()].map((entries) => {

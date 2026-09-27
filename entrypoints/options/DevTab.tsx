@@ -1,5 +1,6 @@
 import {Badge, Box, Button, Code, DataList, Flex, IconButton, SegmentedControl, Text, TextField, Tooltip} from "@radix-ui/themes";
-import {ChevronDown, ChevronRight, Copy, EyeOff, FileJson, RefreshCw, RotateCcw, Trash2} from "lucide-react";
+import {ChevronRight, Copy, EyeOff, FileJson, RefreshCw, RotateCcw, Trash2} from "lucide-react";
+import {Collapsible} from "radix-ui";
 import {useEffect, useRef, useState, useSyncExternalStore} from "react";
 import {storage} from "wxt/utils/storage";
 import {objectKeys} from "ts-extras";
@@ -65,40 +66,44 @@ const StorageEntry = ({name, value, onDelete}: { name: string; value: unknown; o
     const [open, setOpen] = useState(false);
 
     return (
-        <Box py="2" style={{borderTop: "1px solid var(--gray-a4)"}}>
-            <Flex align="center" gap="2">
-                <IconButton size="1" variant="ghost" color="gray" aria-label={open ? "접기" : "펼치기"} onClick={() => setOpen(!open)}>
-                    {open ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}
-                </IconButton>
-                <Code size="2" variant="ghost" style={{flex: 1, minWidth: 0, overflowWrap: "anywhere"}}>{name}</Code>
-                <Text size="1" color="gray" style={{fontVariantNumeric: "tabular-nums"}}>{formatBytes(byteSize(value))}</Text>
-                <Tooltip content="JSON 복사">
-                    <IconButton size="1" variant="ghost" color="gray" aria-label="JSON 복사"
-                                onClick={() => void navigator.clipboard.writeText(JSON.stringify(value, null, 2))}>
-                        <Copy size={14}/>
-                    </IconButton>
-                </Tooltip>
-                <Tooltip content="삭제">
-                    <IconButton size="1" variant="ghost" color="red" aria-label="삭제" onClick={onDelete}>
-                        <Trash2 size={14}/>
-                    </IconButton>
-                </Tooltip>
-            </Flex>
-            {open && (
-                <Box asChild mt="2" p="3" style={{
-                    maxHeight: 360,
-                    overflow: "auto",
-                    margin: 0,
-                    borderRadius: "var(--radius-2)",
-                    background: "var(--gray-a3)",
-                    fontFamily: "var(--code-font-family)",
-                    fontSize: "var(--font-size-1)",
-                    whiteSpace: "pre"
-                }}>
-                    <pre>{preview(value)}</pre>
-                </Box>
-            )}
-        </Box>
+        <Collapsible.Root open={open} onOpenChange={setOpen} asChild>
+            <Box py="2" style={{borderTop: "1px solid var(--gray-a4)"}}>
+                <Flex align="center" gap="2">
+                    <Collapsible.Trigger asChild>
+                        <IconButton size="1" variant="ghost" color="gray" aria-label={open ? "접기" : "펼치기"}>
+                            <ChevronRight size={14} style={{transform: open ? "rotate(90deg)" : undefined, transition: "transform 0.15s"}}/>
+                        </IconButton>
+                    </Collapsible.Trigger>
+                    <Code size="2" variant="ghost" style={{flex: 1, minWidth: 0, overflowWrap: "anywhere"}}>{name}</Code>
+                    <Text size="1" color="gray" style={{fontVariantNumeric: "tabular-nums"}}>{formatBytes(byteSize(value))}</Text>
+                    <Tooltip content="JSON 복사">
+                        <IconButton size="1" variant="ghost" color="gray" aria-label="JSON 복사"
+                                    onClick={() => void navigator.clipboard.writeText(JSON.stringify(value, null, 2))}>
+                            <Copy size={14}/>
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip content="삭제">
+                        <IconButton size="1" variant="ghost" color="red" aria-label="삭제" onClick={onDelete}>
+                            <Trash2 size={14}/>
+                        </IconButton>
+                    </Tooltip>
+                </Flex>
+                <Collapsible.Content className="refresher-collapsible">
+                    <Box asChild mt="2" p="3" style={{
+                        maxHeight: 360,
+                        overflow: "auto",
+                        margin: 0,
+                        borderRadius: "var(--radius-2)",
+                        background: "var(--gray-a3)",
+                        fontFamily: "var(--code-font-family)",
+                        fontSize: "var(--font-size-1)",
+                        whiteSpace: "pre"
+                    }}>
+                        <pre>{preview(value)}</pre>
+                    </Box>
+                </Collapsible.Content>
+            </Box>
+        </Collapsible.Root>
     );
 };
 

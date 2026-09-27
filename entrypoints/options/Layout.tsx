@@ -244,7 +244,7 @@ export const ListTabs = <T extends string, I>({
                     const total = items(type).length;
                     const list = shown.get(type)!;
                     return (
-                        <Tabs.Content key={type} value={type}>
+                        <Tabs.Content key={type} value={type} className="refresher-tab-enter">
                             <Flex justify="between" align="center" gap="3" wrap="wrap" py="4">
                                 {toolbar?.(type)}
                                 <Flex gap="2" ml="auto" wrap="wrap">
