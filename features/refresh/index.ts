@@ -33,16 +33,22 @@ const rowKey = (row: HTMLElement): string => rowPostNo(row) ?? row.querySelector
  * 위에 새 글이 n개 들어오면 맨 아래 n개는 다음 페이지로 밀려난 것이라 남기지 않는다. 행 수는 원래대로 맞춘다
  */
 const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, newList: HTMLElement, newPostCount: number): void => {
-    // 끼우기 전의 행으로 자리를 잡아야 앞서 끼운 행 때문에 자리가 밀리지 않는다
-    const newRows = Array.from(newList.children);
+    const newRows = new Map(Array.from(newList.children, (row) => [rowKey(row as HTMLElement), row]));
 
+    // 옛 목록에서 바로 위에 있던 행 뒤에 끼운다. 자리를 인덱스로 세면 공지·앞서 남긴 행 때문에 새로고침마다 아래로 밀린다
+    let previous: Element | undefined;
     for (const [index, row] of oldRows.entries()) {
         const no = rowPostNo(row);
         // 번호 없는 행(설문·AD)은 늘 새로 받는다
-        if (!no || newKeys.has(no) || index >= oldRows.length - newPostCount) continue;
+        if (!no || newKeys.has(no) || index >= oldRows.length - newPostCount) {
+            previous = newRows.get(rowKey(row)) ?? previous;
+            continue;
+        }
 
         row.classList.add("refresherDeleted");
-        newList.insertBefore(row, newRows[index + newPostCount] ?? null);
+        if (previous) previous.after(row);
+        else newList.prepend(row);
+        previous = row;
     }
 
     while (newList.children.length > oldRows.length) newList.lastElementChild?.remove();

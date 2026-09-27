@@ -172,6 +172,8 @@ const Votes = ({post}: { post: PostInfo }) => {
 const ErrorBlock = ({error}: { error: ErrorState }) => {
     const preData = usePreviewStore((s) => s.preData);
     const {detail, status, adult} = error;
+    // 삭제된 글은 다시 받아도 같다. 원문 오류(요청 주소 등)도 도움이 안 되므로 안내만 둔다
+    const deleted = status === 404;
 
     let text: string;
     if (adult) text = "성인 인증이 필요한 글입니다. 원문에서 확인해 주세요.";
@@ -184,7 +186,7 @@ const ErrorBlock = ({error}: { error: ErrorState }) => {
         <Callout.Root color={adult ? "orange" : "red"} my="4">
             <Callout.Icon><CircleAlert size={16}/></Callout.Icon>
             <Callout.Text>
-                {text} {!adult && <Text size="1" color="gray">({detail})</Text>}
+                {text} {!adult && !deleted && <Text size="1" color="gray">({detail})</Text>}
             </Callout.Text>
             <Flex gap="2">
                 {/* 성인 인증은 원문 페이지에서만 된다. 인증한 뒤 다시 시도하면 미리보기로 볼 수 있다 */}
@@ -196,15 +198,17 @@ const ErrorBlock = ({error}: { error: ErrorState }) => {
                         </a>
                     </Button>
                 )}
-                <Button
-                    size="1"
-                    variant="soft"
-                    color={adult ? "gray" : "red"}
-                    // 같은 글을 다시 열면 컨트롤러가 제자리에서 다시 받는다
-                    onClick={() => preData && usePreviewStore.getState().requestOpen(preData, usePreviewStore.getState().commentsOnly)}
-                >
-                    다시 시도
-                </Button>
+                {!deleted && (
+                    <Button
+                        size="1"
+                        variant="soft"
+                        color={adult ? "gray" : "red"}
+                        // 같은 글을 다시 열면 컨트롤러가 제자리에서 다시 받는다
+                        onClick={() => preData && usePreviewStore.getState().requestOpen(preData, usePreviewStore.getState().commentsOnly)}
+                    >
+                        다시 시도
+                    </Button>
+                )}
             </Flex>
         </Callout.Root>
     );
@@ -251,10 +255,10 @@ const WHEEL_GESTURE_GAP = 250;
 /** 스크롤 칸이 그 방향(1 아래, -1 위)으로 더 굴러가는지. 아래쪽은 배율에 따른 소수점 오차로 2px 여유를 둔다 */
 const canScroll = (el: Element, dir: number): boolean => (dir > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 2 : el.scrollTop > 0);
 
-/** 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내 (v5와 같은 모양과 문구) */
+/** 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내 (v5와 같은 모양). 목록은 번호가 큰 글이 위라 위로 넘기면 다음 글이다 */
 const SkipHint = ({dir}: { dir: number }) => (
     <div className="refresher-skip-hint" data-side={dir < 0 ? "top" : "bottom"}>
-        <p>한번 더 스크롤 하면 {dir < 0 ? "이전" : "다음"} 게시글을 봅니다.</p>
+        <p>한번 더 스크롤 하면 {dir < 0 ? "다음" : "이전"} 게시글을 봅니다.</p>
     </div>
 );
 
@@ -325,6 +329,7 @@ export const Frame = () => {
     const scrollToSkip = usePreviewStore((s) => s.scrollToSkip);
     const blockView = useUiStore((s) => s.blockView);
     const postKey = usePreviewStore((s) => (s.preData ? `${s.preData.gallery}/${s.preData.id}` : ""));
+    const listTitle = usePreviewStore((s) => s.preData?.title);
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
     const contentsBox = useRef<HTMLDivElement>(null);
@@ -500,7 +505,8 @@ export const Frame = () => {
                          onScrollEnd={() => (aim.current = null)}>
                     <Box px="6" pt="5" pb="3">
                         <Dialog.Title asChild>
-                            <Heading as="h2" size="6">{post ? postTitle(post) : ""}</Heading>
+                            {/* 본문을 못 받았으면(삭제된 글 등) 목록의 제목이라도 보인다 */}
+                            <Heading as="h2" size="6">{post ? postTitle(post) : listTitle ?? ""}</Heading>
                         </Dialog.Title>
 
                         {post && (

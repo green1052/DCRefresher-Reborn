@@ -47,7 +47,7 @@ const settings = {
     scrollToSkip: {
         type: "check",
         name: "스크롤하여 게시글 이동",
-        desc: "미리보기 맨 아래나 맨 위에서 한 번 더 스크롤하면 다음·이전 게시글로 넘어갑니다.",
+        desc: "미리보기 맨 아래에서 한 번 더 스크롤하면 이전(번호가 작은) 게시글로, 맨 위에서는 다음(번호가 큰) 게시글로 넘어갑니다.",
         default: true
     },
     tooltipMode: {type: "check", name: "미니 미리보기 표시", desc: "게시글에 마우스를 올리면 미리보기를 표시합니다.", default: false},
