@@ -23,8 +23,12 @@ import {BLOCKED_TEXT, type ErrorState, type ManageKind, miniPosition, NO_HOOKS, 
 
 // status는 ky의 HTTPError에서 읽고, fetchPost가 본문을 못 찾아 던진 Error("404")는 404로 본다.
 // 성인 인증 안내 페이지면 parsePostInfo가 Error(ADULT_ERROR)를 던진다.
+// 파이어폭스 content.fetch의 오류는 페이지 영역의 DOMException이라 instanceof Error가 거짓이다. 메시지는 모양으로 꺼낸다
+const messageOf = (error: unknown): string =>
+    typeof error === "object" && error !== null && "message" in error && typeof error.message === "string" ? error.message : String(error);
+
 const errorOf = (error: unknown): ErrorState => ({
-    detail: error instanceof Error ? error.message : String(error),
+    detail: messageOf(error),
     status: error instanceof HTTPError ? error.response.status : error instanceof Error && error.message === "404" ? 404 : undefined,
     adult: error instanceof Error && error.message === ADULT_ERROR
 });

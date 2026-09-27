@@ -143,7 +143,8 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
                     autoFocus
                     value={code}
                     placeholder="코드"
-                    onKeyDown={(ev) => ev.key === "Enter" && send()}
+                    // 한글 조합 중 Enter는 조합을 끝내는 키라 보내지 않는다
+                    onKeyDown={(ev) => ev.key === "Enter" && !ev.nativeEvent.isComposing && send()}
                     onChange={(ev) => setCode(ev.target.value)}
                 />
                 <DialogActions>
