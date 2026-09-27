@@ -61,7 +61,7 @@ const emptyEntries = (): Record<BlockType, BlockEntry[]> =>
     Object.fromEntries(BLOCK_TYPES.map((type) => [type, []])) as unknown as Record<BlockType, BlockEntry[]>;
 
 /** 같은 content+gallery는 한 항목이다 */
-const blockKey = ({content, gallery}: BlockInputFields): string => JSON.stringify([content, gallery ?? ""]);
+export const blockKey = ({content, gallery}: BlockInputFields): string => JSON.stringify([content, gallery ?? ""]);
 
 /** 차단 목록/기본 모드의 단일 출처. 콘텐츠·옵션 모두 이 스토어를 쓰고 저장소와 양방향 동기화된다 */
 export const useBlocksStore = create<BlocksState>((set, get) => ({

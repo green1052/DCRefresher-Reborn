@@ -1,13 +1,13 @@
 import {CloudDownload, CloudUpload, Download, RefreshCw, Trash2, Upload} from "lucide-react";
-import {Box, Button, Dialog, Flex, Switch, Text} from "@radix-ui/themes";
+import {Box, Button, Dialog, Flex, SegmentedControl, Switch, Text} from "@radix-ui/themes";
 import {useEffect, useState} from "react";
 
 import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
-import {type BackupSlot, collectLocalData, isBackupTarget, readCloudBackup, readCloudBackupTimes, runBackup} from "@/core/backup";
+import {type BackupSlot, CLOUD_QUOTA, type CloudBackupStatus, collectLocalData, isBackupTarget, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
 import {migrateV5} from "@/core/migrate-v5";
 import {backupStorage, dbStorage} from "@/core/storage/items";
-import {normalizeBlockList} from "@/stores/blocks";
+import {blockKey, normalizeBlockList} from "@/stores/blocks";
 
 import {formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
 import {notify} from "./optionsStore";
@@ -55,6 +55,31 @@ const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "m
     }
 };
 
+/**
+ * 백업을 지금 데이터에 합친다. 겹치면 지금 것이 이긴다.
+ * 차단 목록은 백업에만 있는 항목(내용+갤러리)을 뒤에 붙이고, 메모·설정 객체는 백업에만 있는 키를 더한다. 그 밖의 값은 지금 없을 때만 백업 값을 쓴다
+ */
+const mergeBackup = (current: Record<string, unknown>, backup: Record<string, unknown>): Record<string, unknown> =>
+    Object.fromEntries(Object.entries(migrateV5(backup)).map(([key, value]) => {
+        const local = current[key];
+        if (local === undefined) return [key, value];
+        if (/^refresher:block:[A-Z]+$/.test(key)) {
+            const kept = normalizeBlockList(local);
+            const seen = new Set(kept.map(blockKey));
+            return [key, [...kept, ...normalizeBlockList(value).filter((entry) => !seen.has(blockKey(entry)))]];
+        }
+        return [key, isRecord(local) && isRecord(value) ? {...value, ...local} : local];
+    }));
+
+type RestoreMode = "replace" | "merge";
+
+const RESTORE_DESCRIPTIONS: Record<RestoreMode, string> = {
+    replace: "현재 설정과 차단/메모 목록을 고른 백업으로 통째로 교체합니다. 백업에 없는 항목은 지워집니다.",
+    merge: "현재 설정과 목록은 그대로 두고, 백업에만 있는 차단·메모와 설정을 더합니다. 겹치면 현재 것을 남깁니다."
+};
+
+const kilobytes = (bytes: number): string => `${Math.ceil(bytes / 1024)}KB`;
+
 const parseImport = (input: string): Record<string, unknown> => {
     const parsed = JSON.parse(input) as unknown;
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -71,20 +96,21 @@ export function DataTab() {
     const {lastUpdate} = useStorageItem(dbStorage.meta);
     const backupError = useStorageItem(backupStorage.error);
     const autoBackup = useStorageItem(backupStorage.auto);
-    const [backupTimes, setBackupTimes] = useState<Awaited<ReturnType<typeof readCloudBackupTimes>>>({legacy: false});
+    const [cloud, setCloud] = useState<CloudBackupStatus>({legacy: false, used: 0});
     const [restoreOpen, setRestoreOpen] = useState(false);
+    const [restoreMode, setRestoreMode] = useState<RestoreMode>("replace");
     const [loading, setLoading] = useState(false);
     const [resetConfirm, setResetConfirm] = useState(false);
     const [autoConfirm, setAutoConfirm] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
 
     useEffect(() => {
-        // 백업 시각은 클라우드 메타에서 읽어 자동 백업(백그라운드)과 다른 기기의 백업도 반영한다
-        const loadTimes = (): void => void readCloudBackupTimes().then(setBackupTimes);
+        // 클라우드 메타에서 읽어 자동 백업(백그라운드)과 다른 기기의 백업도 반영한다
+        const loadStatus = (): void => void readCloudBackupStatus().then(setCloud);
         const onChanged = (_: unknown, area: string): void => {
-            if (area === "sync") loadTimes();
+            if (area === "sync") loadStatus();
         };
-        loadTimes();
+        loadStatus();
         browser.storage.onChanged.addListener(onChanged);
         return () => browser.storage.onChanged.removeListener(onChanged);
     }, []);
@@ -112,14 +138,16 @@ export function DataTab() {
             return "데이터를 클라우드에 백업했습니다.";
         }, "클라우드에 백업하지 못했습니다.");
 
-    const recoverCloud = (slot: BackupSlot) =>
+    const recoverCloud = (slot: BackupSlot, mode: RestoreMode) =>
         run(async () => {
             setRestoreOpen(false);
             const backup = await readCloudBackup(slot);
             if (!backup) return "클라우드에 백업이 없습니다.";
 
-            await writeSettings(backup.data, "replace");
-            return `${backup.createdAt ? `${formatTime(backup.createdAt)} 백업을` : "데이터를"} 복원했습니다. 새 탭에서 디시인사이드를 열어주세요.`;
+            const data = mode === "merge" ? mergeBackup(await browser.storage.local.get(null), backup.data) : backup.data;
+            await writeSettings(data, mode);
+            const what = backup.createdAt ? `${formatTime(backup.createdAt)} 백업을` : "데이터를";
+            return `${what} ${mode === "merge" ? "합쳤습니다" : "복원했습니다"}. 새 탭에서 디시인사이드를 열어주세요.`;
         }, "복원하지 못했습니다.");
 
     const toggleAutoBackup = async (on: boolean): Promise<void> => {
@@ -178,14 +206,19 @@ export function DataTab() {
                         <Flex gap="2" align="center">
                             {/* 자동 칸은 기기끼리 같이 쓰고 켜는 즉시 이 기기 설정으로 덮인다. 새 기기에서 켰다가 복원할 백업을 잃지 않게 먼저 묻는다 */}
                             <Switch checked={autoBackup} disabled={loading}
-                                    onCheckedChange={(on) => (on && backupTimes.auto ? setAutoConfirm(true) : void toggleAutoBackup(on))}/>
+                                    onCheckedChange={(on) => (on && cloud.auto ? setAutoConfirm(true) : void toggleAutoBackup(on))}/>
                             자동 백업
                         </Flex>
                     </Text>
                 }
             >
-                <Text as="p" size="2" color="gray" mb="3">
-                    수동 백업: {formatTime(backupTimes.manual ?? 0)} · 자동 백업: {formatTime(backupTimes.auto ?? 0)}
+                <Text as="p" size="2" color="gray">
+                    수동 백업: {formatTime(cloud.manual?.createdAt ?? 0)} · 자동 백업: {formatTime(cloud.auto?.createdAt ?? 0)}
+                </Text>
+                {/* 한도를 넘으면 백업이 실패하므로 가까워진 것을 미리 보인다. 수동·자동 두 칸이 한도를 나눠 쓴다 */}
+                <Text as="p" size="2" color={cloud.used > CLOUD_QUOTA * 0.8 ? "orange" : "gray"} mb="3">
+                    클라우드 사용량: {kilobytes(cloud.used)} / {kilobytes(CLOUD_QUOTA)}
+                    {(cloud.manual || cloud.auto) && ` (수동 ${kilobytes(cloud.manual?.size ?? 0)} · 자동 ${kilobytes(cloud.auto?.size ?? 0)})`}
                 </Text>
                 <Flex gap="2" wrap="wrap">
                     <Button variant="soft" disabled={loading} onClick={() => void backupCloud()}>
@@ -199,15 +232,17 @@ export function DataTab() {
                 <Dialog.Root open={restoreOpen} onOpenChange={setRestoreOpen}>
                     <Dialog.Content maxWidth="420px">
                         <Dialog.Title>어느 백업으로 복원할까요?</Dialog.Title>
-                        <Dialog.Description size="2" mb="3">
-                            현재 설정과 차단/메모 목록을 고른 백업으로 통째로 교체합니다. 백업에 없는 항목은 지워집니다.
-                        </Dialog.Description>
+                        <SegmentedControl.Root value={restoreMode} onValueChange={(value) => setRestoreMode(value as RestoreMode)} mb="3">
+                            <SegmentedControl.Item value="replace">덮어쓰기</SegmentedControl.Item>
+                            <SegmentedControl.Item value="merge">합치기</SegmentedControl.Item>
+                        </SegmentedControl.Root>
+                        <Dialog.Description size="2" mb="3">{RESTORE_DESCRIPTIONS[restoreMode]}</Dialog.Description>
                         <Flex direction="column" gap="2">
                             {([
-                                ["manual", "수동 백업", backupTimes.manual ? formatTime(backupTimes.manual) : backupTimes.legacy ? "예전 방식 백업" : undefined],
-                                ["auto", "자동 백업", backupTimes.auto ? formatTime(backupTimes.auto) : undefined]
+                                ["manual", "수동 백업", cloud.manual ? formatTime(cloud.manual.createdAt) : cloud.legacy ? "예전 방식 백업" : undefined],
+                                ["auto", "자동 백업", cloud.auto ? formatTime(cloud.auto.createdAt) : undefined]
                             ] as const).map(([slot, label, time]) => (
-                                <Button key={slot} variant="soft" size="3" disabled={!time} onClick={() => void recoverCloud(slot)}
+                                <Button key={slot} variant="soft" size="3" disabled={!time} onClick={() => void recoverCloud(slot, restoreMode)}
                                         style={{justifyContent: "space-between"}}>
                                     {label}
                                     <Text size="2" color="gray">{time ?? "없음"}</Text>
@@ -264,7 +299,7 @@ export function DataTab() {
 
             {autoConfirm && (
                 <ConfirmDialog
-                    title={`자동 백업을 켜면 ${formatTime(backupTimes.auto ?? 0)} 자동 백업을 이 기기의 설정으로 덮어씁니다. 켤까요?`}
+                    title={`자동 백업을 켜면 ${formatTime(cloud.auto?.createdAt ?? 0)} 자동 백업을 이 기기의 설정으로 덮어씁니다. 켤까요?`}
                     confirmLabel="켜기"
                     danger
                     onConfirm={() => {

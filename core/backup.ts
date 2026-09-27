@@ -121,15 +121,34 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     if (stale.length > 0) await browser.storage.sync.remove(stale);
 };
 
-/** 칸마다 마지막 백업 시각 (없으면 undefined). v5 방식 백업이 남아 있으면 legacy: true */
-export const readCloudBackupTimes = async (): Promise<{ manual?: number; auto?: number; legacy: boolean }> => {
-    const all = (await browser.storage.sync.get(null)) as Record<string, unknown>;
-    const time = (slot: BackupSlot): number | undefined => {
-        const meta = all[SLOT_KEYS[slot]];
-        return isMeta(meta) ? meta.createdAt : undefined;
-    };
+/** storage.sync 전체 한도 (바이트) */
+export const CLOUD_QUOTA = 102_400;
 
-    return {manual: time("manual"), auto: time("auto"), legacy: Object.keys(all).some((key) => isLegacyKey(key) && isBackupTarget(key))};
+export interface CloudBackupStatus {
+    /** 칸마다 마지막 백업 시각과 크기(바이트). 백업이 없으면 없다 */
+    manual?: { createdAt: number; size: number };
+    auto?: { createdAt: number; size: number };
+    /** v5 방식 백업이 남아 있다 */
+    legacy: boolean;
+    /** sync 전체 사용량 (바이트). 브라우저처럼 키와 JSON 값의 길이를 센다 */
+    used: number;
+}
+
+/** 클라우드 백업 상태. 다른 기기가 올린 백업도 메타로 알 수 있다 */
+export const readCloudBackupStatus = async (): Promise<CloudBackupStatus> => {
+    const all = (await browser.storage.sync.get(null)) as Record<string, unknown>;
+    const slotStatus = (slot: BackupSlot): CloudBackupStatus["manual"] => {
+        const meta = all[SLOT_KEYS[slot]];
+        return isMeta(meta) ? {createdAt: meta.createdAt, size: meta.size} : undefined;
+    };
+    const encoder = new TextEncoder();
+
+    return {
+        manual: slotStatus("manual"),
+        auto: slotStatus("auto"),
+        legacy: Object.keys(all).some((key) => isLegacyKey(key) && isBackupTarget(key)),
+        used: Object.entries(all).reduce((sum, [key, value]) => sum + encoder.encode(key + JSON.stringify(value)).length, 0)
+    };
 };
 
 interface CloudBackup {
