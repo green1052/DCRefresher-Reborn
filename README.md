@@ -31,7 +31,7 @@
 
 ## 빌드
 
-[Bun](https://bun.sh) 1.4.0 (`package.json`의 `packageManager`)이 필요합니다.
+[Bun](https://bun.sh) 1.4 이상이 필요합니다.
 
 ```sh
 bun install
