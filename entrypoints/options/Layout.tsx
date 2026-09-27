@@ -1,6 +1,6 @@
 import {Badge, Box, Button, Card, Dialog, Flex, Heading, IconButton, Table, Tabs, Text, TextArea, TextField, Tooltip} from "@radix-ui/themes";
 import {Download, Plus, Search, Trash2, Upload} from "lucide-react";
-import {type ReactNode, useEffect, useState} from "react";
+import {type ReactNode, useDeferredValue, useEffect, useState} from "react";
 import type {WxtStorageItem} from "wxt/utils/storage";
 
 import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
@@ -122,16 +122,15 @@ export const ListRow = ({head, info, onEdit, onRemove}: {
         <Table.RowHeaderCell>{head}</Table.RowHeaderCell>
         <Table.Cell>{info}</Table.Cell>
         <Table.Cell justify="end">
-            <Tooltip content="삭제">
-                {/* ghost는 음수 여백으로 칸 밖에 걸쳐 줄 가운데에서 어긋난다 — 여백을 없앤다 */}
-                <IconButton variant="ghost" color="red" size="1" aria-label="삭제" style={{margin: 0}}
-                            onClick={(ev) => {
-                                ev.stopPropagation();
-                                onRemove();
-                            }}>
-                    <Trash2 size={14}/>
-                </IconButton>
-            </Tooltip>
+            {/* ghost는 음수 여백으로 칸 밖에 걸쳐 줄 가운데에서 어긋난다 — 여백을 없앤다.
+                툴팁은 브라우저 기본(title) — 줄마다 Radix 툴팁을 달면 수천 줄 목록이 열 때·검색할 때마다 느려진다 */}
+            <IconButton variant="ghost" color="red" size="1" aria-label="삭제" title="삭제" style={{margin: 0}}
+                        onClick={(ev) => {
+                            ev.stopPropagation();
+                            onRemove();
+                        }}>
+                <Trash2 size={14}/>
+            </IconButton>
         </Table.Cell>
     </Table.Row>
 );
@@ -176,10 +175,13 @@ export const ListTabs = <T extends string, I>({
 }) => {
     // 모든 탭이 같은 검색어를 쓴다 — 탭 배지에 탭마다 걸린 개수가 보여 다른 탭에 있는지도 알 수 있다
     const [query, setQuery] = useState("");
-    const needle = query.trim().toLowerCase();
-    // 새 항목은 배열/객체 끝에 붙으므로 뒤집어 최신순으로 보여준다 (저장 순서는 그대로)
-    const shownOf = (type: T): I[] =>
-        items(type).filter((item) => !needle || searchText(item).some((text) => text?.toLowerCase().includes(needle))).reverse();
+    // 입력칸은 바로, 목록은 뒤따라 — 수천 줄을 거르고 그리는 동안 글자 입력이 막히지 않게
+    const needle = useDeferredValue(query).trim().toLowerCase();
+    // 새 항목은 배열/객체 끝에 붙으므로 뒤집어 최신순으로 보여준다 (저장 순서는 그대로). 종류마다 한 번 거른다 (탭 배지와 표가 같이 쓴다)
+    const shown = new Map(types.map((type) => [
+        type,
+        items(type).filter((item) => !needle || searchText(item).some((text) => text?.toLowerCase().includes(needle))).reverse()
+    ]));
 
     const [clearConfirm, setClearConfirm] = useState<T | null>(null);
     const [importOpen, setImportOpen] = useState(false);
@@ -216,7 +218,7 @@ export const ListTabs = <T extends string, I>({
                                     {names[type]}
                                     {total > 0 && (
                                         <Badge ml="1" size="1" variant="soft" color={needle ? "blue" : "gray"} radius="full">
-                                            {needle ? `${shownOf(type).length}/${total}` : total}
+                                            {needle ? `${shown.get(type)!.length}/${total}` : total}
                                         </Badge>
                                     )}
                                 </Tabs.Trigger>
@@ -239,7 +241,7 @@ export const ListTabs = <T extends string, I>({
 
                 {types.map((type) => {
                     const total = items(type).length;
-                    const shown = shownOf(type);
+                    const list = shown.get(type)!;
                     return (
                         <Tabs.Content key={type} value={type}>
                             <Flex justify="between" align="center" gap="3" wrap="wrap" py="4">
@@ -272,7 +274,7 @@ export const ListTabs = <T extends string, I>({
 
                             {total === 0 ? (
                                 <Empty>{emptyText(type)}</Empty>
-                            ) : shown.length === 0 ? (
+                            ) : list.length === 0 ? (
                                 <Empty>"{query.trim()}" 검색 결과 없음</Empty>
                             ) : (
                                 <Table.Root variant="surface">
@@ -283,7 +285,7 @@ export const ListTabs = <T extends string, I>({
                                             <Table.ColumnHeaderCell width="48px"/>
                                         </Table.Row>
                                     </Table.Header>
-                                    <Table.Body>{shown.map((item) => row(type, item))}</Table.Body>
+                                    <Table.Body>{list.map((item) => row(type, item))}</Table.Body>
                                 </Table.Root>
                             )}
                         </Tabs.Content>
