@@ -28,35 +28,47 @@ const compile = (entry: BlockEntry): Compiled | null => {
     return compiled;
 };
 
-// NOT_*는 SAME/CONTAIN을 뒤집은 것. 잘못된 정규식은 NOT_*로도 걸지 않는다
+/** 일치·포함 검사. NOT_*도 뒤집지 않고 SAME/CONTAIN으로 본다. 잘못된 정규식은 맞지 않는다 */
 const matches = (entry: BlockEntry, mode: DetectMode, content: string): boolean => {
     const whole = mode.endsWith("SAME");
-    let hit: boolean;
+    if (!entry.isRegex) return whole ? entry.content === content : content.includes(entry.content);
 
-    if (entry.isRegex) {
-        const compiled = compile(entry);
-        if (!compiled) return false;
-        hit = (whole ? compiled.anchored : compiled.regex).test(content);
-    } else {
-        hit = whole ? entry.content === content : content.includes(entry.content);
-    }
-
-    return mode.startsWith("NOT_") ? !hit : hit;
+    const compiled = compile(entry);
+    return compiled !== null && (whole ? compiled.anchored : compiled.regex).test(content);
 };
 
 type BlockLists = Pick<ReturnType<typeof useBlocksStore.getState>, "entries" | "defaults">;
 type BlockValues = Partial<Record<BlockType, string | null | undefined>>;
 
-const applies = (lists: BlockLists, type: BlockType, entry: BlockEntry, content: string, gallery?: string): boolean =>
-    (!entry.gallery || entry.gallery === gallery) && matches(entry, entry.mode ?? lists.defaults[type], content);
+/**
+ * 내용에 걸린 항목들 (갤러리 한정 항목은 그 갤러리에서만). SAME/CONTAIN은 맞는 항목마다 막는다.
+ * NOT_*(불일치·불포함)는 한 유형의 항목을 묶어 허용 목록으로 본다: 어느 것에도 맞지 않으면 그 항목들 전부로 막는다.
+ * 항목마다 뒤집으면 둘만 돼도 서로를 막아(A는 B와 다르다) 모두 막힌다. 잘못된 정규식은 NOT_*로도 걸지 않는다
+ */
+const blockingIn = (lists: BlockLists, type: BlockType, content: string, gallery?: string): BlockEntry[] => {
+    const hits: BlockEntry[] = [];
+    const allowList: BlockEntry[] = [];
+    let allowed = false;
+
+    for (const entry of lists.entries[type]) {
+        if (entry.gallery && entry.gallery !== gallery) continue;
+
+        const mode = entry.mode ?? lists.defaults[type];
+        const hit = matches(entry, mode, content);
+        if (!mode.startsWith("NOT_")) {
+            if (hit) hits.push(entry);
+        } else if (!entry.isRegex || compile(entry)) {
+            allowList.push(entry);
+            allowed ||= hit;
+        }
+    }
+
+    return allowed ? hits : [...hits, ...allowList];
+};
 
 /** 해당 내용이 차단 대상인지 (갤러리 한정 항목은 그 갤러리에서만) */
-export const isBlocked = (type: BlockType, content: string, gallery?: string): boolean => {
-    if (!content) return false;
-
-    const lists = useBlocksStore.getState();
-    return lists.entries[type].some((entry) => applies(lists, type, entry, content, gallery));
-};
+export const isBlocked = (type: BlockType, content: string, gallery?: string): boolean =>
+    content !== "" && blockingIn(useBlocksStore.getState(), type, content, gallery).length > 0;
 
 /** 값 중 하나라도 차단 대상인지 */
 export const isAnyBlocked = (values: BlockValues, gallery?: string): boolean =>
@@ -84,5 +96,5 @@ export const groupDuplicates = <T>(items: T[], textOf: (item: T) => string, {cou
  */
 export const blockingEntries = (values: BlockValues, gallery?: string, lists: BlockLists = useBlocksStore.getState()): { type: BlockType; entry: BlockEntry }[] =>
     objectEntries(values).flatMap(([type, value]) =>
-        value ? lists.entries[type].filter((entry) => applies(lists, type, entry, value, gallery)).map((entry) => ({type, entry})) : []
+        value ? blockingIn(lists, type, value, gallery).map((entry) => ({type, entry})) : []
     );

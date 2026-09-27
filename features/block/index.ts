@@ -46,6 +46,8 @@ const REVEAL_CLASS = "refresherBlockReveal";
 
 /** 이 모듈이 가린 요소 */
 const HIDDEN_SELECTOR = ".refresherBlocked, .refresherBlur, .refresherDuplicate";
+/** '가린 내용 보기'가 보이는 요소. userinfo의 깡계 흐림·숨김도 같이 보인다 (content.scss) */
+const REVEALED_SELECTOR = `${HIDDEN_SELECTOR}, .refresherLowActivityHide, .refresherLowActivityBlur`;
 
 /** 미리보기도 페이지와 같은 방식으로 가리게 알린다 */
 const publishView = (ctx: Ctx): void => {
@@ -132,7 +134,10 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
     // .write_div 필터에서 보면 파싱 중인 본문 일부로 판정해 NOT_*·SAME 항목이 오탐한다
     const checkText = (): void => {
         const writeDiv = document.querySelector<HTMLElement>(".write_div");
-        if (!writeDiv || !isBlocked("TEXT", writeDiv.textContent?.trim() ?? "", gallery)) return;
+        if (!writeDiv) return;
+        // 글 보기 머리(작성자·제목·말머리)가 차단됐으면 본문도 가린다. 머리 필터는 본문이 그려지기 전에 돌아 여기서 본다
+        const headBlocked = document.querySelector(".gallview_head:is(.refresherBlocked, .refresherBlur)") !== null;
+        if (!headBlocked && !isBlocked("TEXT", writeDiv.textContent?.trim() ?? "", gallery)) return;
 
         hide(writeDiv, useBlur());
         if (useBlur()) return;
@@ -329,7 +334,7 @@ export default defineModule({
 
         const api: BlockApi = {
             isRevealed: () => revealed,
-            hiddenCount: () => document.querySelectorAll(HIDDEN_SELECTOR).length,
+            hiddenCount: () => document.querySelectorAll(REVEALED_SELECTOR).length,
             toggleReveal: () => {
                 revealed = !revealed;
                 document.documentElement.classList.toggle(REVEAL_CLASS, revealed);
