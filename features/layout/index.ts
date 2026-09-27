@@ -10,7 +10,7 @@ const HIDE_OPTIONS = {
     hideGalleryView: {name: "갤러리 뷰 숨기기", desc: "갤러리 정보, 최근 방문 갤러리 영역을 숨깁니다.", selector: ".issue_wrap, #visit_history"},
     hideUselessView: {
         name: "잡다 링크 숨기기",
-        desc: "이슈줌, 타갤 개념글, 뉴스, 힛갤 등의 컨텐츠를 오른쪽 영역에서 숨깁니다.",
+        desc: "이슈줌, 타갤 개념글, 뉴스, 힛갤 등의 콘텐츠를 오른쪽 영역에서 숨깁니다.",
         selector: "section.right_content article"
     },
     hideGalleryImage: {name: "갤러리 대문 숨기기", desc: "갤러리 대문을 숨깁니다.", selector: "#zzbang_div"},

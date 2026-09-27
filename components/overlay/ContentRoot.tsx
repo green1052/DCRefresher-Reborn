@@ -103,7 +103,7 @@ const unblock = async (type: BlockType, {id, ...fields}: BlockEntry): Promise<vo
     await useBlocksStore.getState().removeEntry(type, id);
     // 정규식은 한 규칙이 여러 대상을 막는다
     const others = fields.isRegex ? " 같은 규칙에 걸린 다른 대상도 풀렸습니다." : "";
-    useUiStore.getState().showToast(`차단을 해제했습니다.${others} 누르면 되돌립니다.`, "info", 5000, () => {
+    useUiStore.getState().showToast(`차단을 해제했습니다.${others} 이 알림을 누르면 되돌립니다.`, "info", 5000, () => {
         useUiStore.getState().dismissToast();
         void useBlocksStore.getState().addEntry(type, fields);
     });
@@ -198,7 +198,7 @@ const BubbleHost = () => {
                             {identity && <CopyRow label="아이디/IP" value={identity} onCopy={copy}/>}
                             {ipLabel && <CopyRow label="IP 정보" value={ipLabel} onCopy={copy}/>}
                             {activity && <CopyRow label="글/댓글" value={activity} onCopy={copy}/>}
-                            {bans && <CopyRow label="차단된 갤러리" value={bans} onCopy={copy}/>}
+                            {bans && <CopyRow label="갱차 갤러리" value={bans} onCopy={copy}/>}
                             {memo && <CopyRow label="메모" value={memo.text} onCopy={copy}/>}
                         </Flex>
                         <Separator size="4" my="2"/>

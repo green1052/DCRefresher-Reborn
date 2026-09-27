@@ -31,7 +31,7 @@ export default defineModule({
     settings: {
         maxSearches: {
             type: "range",
-            name: "최대 다음 검색",
+            name: "최대 다음 검색 횟수",
             desc: "한 번에 이어서 검색할 최대 횟수입니다. 디시는 한 번에 글 1만 개씩 검색합니다.",
             default: 10,
             min: 1,

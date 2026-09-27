@@ -429,7 +429,7 @@ const controller = (ctx: Ctx) => {
         } else {
             lastKey = key;
             lastKeyTime = now;
-            ui.showToast(`한 번 더 ${key.toUpperCase()}키를 누르면 게시글을 ${isDelete ? "삭제" : "차단"}합니다.`);
+            ui.showToast(`한 번 더 ${key.toUpperCase()} 키를 누르면 게시글을 ${isDelete ? "삭제" : "차단"}합니다.`);
         }
     };
 
@@ -663,7 +663,7 @@ declare module "@/core/module/types" {
 export default defineModule({
     id: "preview",
     name: "미리보기",
-    description: "글 목록에서 클릭 또는 우클릭으로 미리보기 창을 띄워줍니다.",
+    description: "글 목록에서 클릭 또는 우클릭으로 미리보기 창을 띄워 줍니다.",
     icon: SquareMousePointer,
     urls: [BOARD_PAGE],
     settings,

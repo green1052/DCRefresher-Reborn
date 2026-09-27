@@ -1,6 +1,6 @@
 /* ===== 디시 페이지에 주입하는 스타일 (확장 UI는 shadow DOM의 overlay.scss) ===== */
 
-/* 차단 — 블러 처리 옵션 (block 모듈)과 깡계 흐리게 (userinfo 모듈). 강도·마우스 오버 보기는 block 모듈이 <html>에 거는 변수/클래스 */
+/* 차단 — 흐리게 처리 옵션 (block 모듈)과 깡계 흐리게 (userinfo 모듈). 강도·마우스 오버 보기는 block 모듈이 <html>에 거는 변수/클래스 */
 .refresherBlur,
 .refresherLowActivityBlur {
     filter: blur(var(--refresher-blur, 5px));

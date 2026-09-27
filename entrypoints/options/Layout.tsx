@@ -66,7 +66,7 @@ export const Empty = ({children}: { children: ReactNode }) => (
  * 내보낸 JSON을 붙여넣는 가져오기 다이얼로그(차단/메모/데이터 공용).
  * 열 때만 마운트하므로 닫으면 입력이 초기화되고, 가져오기에 실패해 열려 있으면 붙여넣은 텍스트가 남는다.
  */
-export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여넣어주세요.", onClose, onSubmit}: {
+export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 넣어 주세요.", onClose, onSubmit}: {
     title: string;
     desc?: ReactNode;
     onClose: () => void;
@@ -194,7 +194,7 @@ export const ListTabs = <T extends string, I>({
             await navigator.clipboard.writeText(JSON.stringify(exportData()));
             notify(`${object} 클립보드로 내보냈습니다.`);
         } catch {
-            notify(`${object} 내보내는 데 실패했습니다.`);
+            notify(`${object} 내보내지 못했습니다.`);
         }
     };
 
@@ -205,7 +205,7 @@ export const ListTabs = <T extends string, I>({
             setImportOpen(false);
             notify(`${object} 가져왔습니다.`);
         } catch {
-            notify(`${object} 가져오는 데 실패했습니다.`);
+            notify(`${object} 가져오지 못했습니다.`);
         }
     };
 
@@ -302,7 +302,7 @@ export const ListTabs = <T extends string, I>({
                     confirmLabel="삭제"
                     danger
                     onConfirm={() => {
-                        onClear(clearConfirm).catch(() => notify(`${object} 삭제하는 데 실패했습니다.`));
+                        onClear(clearConfirm).catch(() => notify(`${object} 삭제하지 못했습니다.`));
                         setClearConfirm(null);
                     }}
                     onClose={() => setClearConfirm(null)}

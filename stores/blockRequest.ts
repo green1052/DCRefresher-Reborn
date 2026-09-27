@@ -1,6 +1,7 @@
 // 유저 버블의 "차단" 처리. 차단 모듈이 꺼져 있어도 차단 목록(stores/blocks)에는 넣으므로 모듈이 아닌 stores에 둔다
 import {ajax} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
+import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockType} from "@/core/storage/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {type SelectedUser, useUiStore} from "@/stores/ui";
@@ -25,7 +26,7 @@ const blockUser = async (selected: SelectedUser): Promise<void> => {
     const type: BlockType = selected.uid ? "ID" : selected.ip ? "IP" : "NICK";
     await useBlocksStore.getState().addEntry(type, {content: value, isRegex: false, extra: selected.nick || value});
 
-    useUiStore.getState().showToast(`차단 목록에 추가했습니다. (${type}: ${value})`);
+    useUiStore.getState().showToast(`차단 목록에 추가했습니다. (${TYPE_NAMES[type]}: ${value})`);
 };
 
 const blockDccon = async (selected: SelectedUser, blockAllDccon?: boolean): Promise<void> => {
@@ -40,7 +41,7 @@ const blockDccon = async (selected: SelectedUser, blockAllDccon?: boolean): Prom
 
     if (!blockAllDccon) {
         await useBlocksStore.getState().addEntry("DCCON", {content: code, isRegex: false, extra});
-    } else if (confirm("디시콘을 묶어서 차단하시겠습니까?")) {
+    } else if (confirm("디시콘을 묶어서 차단할까요?")) {
         const paths = response.detail.map((detail) => detail.path).join("|");
         await useBlocksStore.getState().addEntry("DCCON", {content: `^(${paths})$`, isRegex: true, extra: `[묶음] ${extra}`});
     } else {
@@ -59,7 +60,7 @@ export type BlockRequestOptions = {
 /** 유저 버블의 차단 요청을 처리한다. 차단 모듈이 꺼져 있어도 목록에는 넣는다 */
 export const handleBlockRequest = async (options: BlockRequestOptions, selected: SelectedUser | null): Promise<void> => {
     if (!selected) {
-        useUiStore.getState().showToast("차단할 대상을 다시 오른쪽 클릭해주세요.");
+        useUiStore.getState().showToast("차단할 대상을 다시 우클릭해 주세요.");
         return;
     }
 
@@ -68,6 +69,6 @@ export const handleBlockRequest = async (options: BlockRequestOptions, selected:
         else await blockUser(selected);
     } catch (e) {
         console.error("Block request failed:", e);
-        useUiStore.getState().showToast("차단 처리 중 오류가 발생했습니다.", "error");
+        useUiStore.getState().showToast(options.target === "dccon" ? "디시콘 정보를 불러오지 못했습니다." : "차단 목록에 저장하지 못했습니다.", "error");
     }
 };

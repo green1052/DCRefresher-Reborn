@@ -169,7 +169,7 @@ export const readCloudBackup = async (slot: BackupSlot): Promise<CloudBackup | n
         }
 
         const bytes = Uint8Array.fromBase64(chunks.join(""));
-        if ((await sha256(bytes)) !== meta.hash) throw new Error("백업 데이터가 손상됐습니다.");
+        if ((await sha256(bytes)) !== meta.hash) throw new Error("백업 데이터가 손상되었습니다.");
 
         return {data: JSON.parse(await gunzip(bytes)) as Record<string, unknown>, createdAt: meta.createdAt};
     }

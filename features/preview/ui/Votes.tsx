@@ -41,12 +41,12 @@ export const Votes = ({post}: { post: PostInfo }) => {
                 if (cached) setEntry(preData, {post: {...cached, ...counts}});
                 useUiStore
                     .getState()
-                    .showToast(`${mode === "U" ? "추천" : "비추천"}되었습니다.`);
+                    .showToast(`${mode === "U" ? "추천" : "비추천"}했습니다.`);
             } else {
                 useUiStore.getState().showToast(result.message ?? "처리하지 못했습니다.", "error");
             }
         } catch {
-            useUiStore.getState().showToast("추천 처리 중 오류가 발생했습니다.", "error");
+            useUiStore.getState().showToast(`${mode === "U" ? "추천" : "비추천"}하지 못했습니다. 잠시 후 다시 시도해 주세요.`, "error");
         } finally {
             setVoting(null);
         }

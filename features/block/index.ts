@@ -26,7 +26,7 @@ const dcconCode = (element: HTMLElement): string | undefined => {
 const plainText = (element: Element | null | undefined): string =>
     element ? Array.from(element.childNodes, (node) => (node.nodeName === "SCRIPT" ? "" : node.textContent)).join("").trim() : "";
 
-const BLUR_GROUP: SettingGroup = {name: "블러 처리", desc: "차단된 내용을 지우지 않고 블러 처리합니다."};
+const BLUR_GROUP: SettingGroup = {name: "흐리게 처리", desc: "차단된 내용을 숨기지 않고 흐리게 처리합니다."};
 
 /** 블러 강도·마우스 오버 보기는 <html>의 변수·클래스로만 건다 (content.scss). 행마다 JS를 붙이지 않아도 새로 그려진 행에 그대로 먹는다 */
 const applyBlurStyle = (ctx: Ctx): void => {
@@ -139,7 +139,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
 
         const notice = document.createElement("div");
         notice.className = "refresherTextNotice";
-        notice.textContent = "게시글 내용이 차단됐습니다.";
+        notice.textContent = "게시글 내용이 차단되었습니다.";
         writeDiv.before(notice);
     };
 
@@ -247,29 +247,29 @@ let recheck: (() => void) | undefined;
 const settings = {
     replyRemove: {
         type: "check",
-        name: "대댓글 삭제",
-        desc: "차단된 댓글의 대댓글을 함께 삭제합니다.",
+        name: "대댓글도 가리기",
+        desc: "차단된 댓글의 대댓글도 함께 가립니다.",
         default: false
     },
     blur: {
         type: "check",
         group: BLUR_GROUP,
         name: "사용",
-        desc: "차단된 내용을 블러 처리합니다.",
+        desc: "차단된 내용을 흐리게 처리합니다.",
         default: false
     },
     blurReveal: {
         type: "check",
         group: BLUR_GROUP,
         name: "마우스를 올리면 보기",
-        desc: "블러 처리된 내용에 마우스를 올린 동안 원래대로 보여 줍니다.",
+        desc: "흐리게 처리된 내용에 마우스를 올린 동안 원래대로 보여 줍니다.",
         default: true
     },
     blurStrength: {
         type: "range",
         group: BLUR_GROUP,
         name: "강도",
-        desc: "차단된 내용에 거는 블러의 세기입니다.",
+        desc: "차단된 내용을 흐리게 하는 정도입니다.",
         default: 5,
         min: 1,
         max: 20,
@@ -311,8 +311,8 @@ type Ctx = ModuleContext<typeof settings>;
 
 export default defineModule({
     id: "block",
-    name: "컨텐츠 차단",
-    description: "유저, 컨텐츠 등의 보고 싶지 않은 컨텐츠들을 삭제합니다.",
+    name: "콘텐츠 차단",
+    description: "보고 싶지 않은 유저·글·댓글을 숨기거나 흐리게 합니다.",
     icon: Ban,
     urls: [BOARD_PAGE],
 

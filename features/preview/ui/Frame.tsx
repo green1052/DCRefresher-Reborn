@@ -34,7 +34,7 @@ const subtitleOf = (comments: ProcessedComment[]): string => {
     const blocked = comments.filter((comment) => comment.blocked).length;
     const folded = comments.filter((comment) => comment.duplicates === 0).length;
     const extra = [blocked && `차단 ${blocked}개`, folded && `같은 댓글 ${folded}개 접음`].filter(Boolean).join(", ");
-    return `쓰레드 ${comments.filter((comment) => comment.depth === 0).length}개, 총 댓글 ${comments.length}개${extra ? ` (${extra})` : ""}`;
+    return `스레드 ${comments.filter((comment) => comment.depth === 0).length}개, 총 댓글 ${comments.length}개${extra ? ` (${extra})` : ""}`;
 };
 
 /** run이 끝날 때까지 로딩으로 돌며, 그동안은 다시 누를 수 없다 */
@@ -63,7 +63,7 @@ const canScroll = (el: Element, dir: number): boolean => (dir > 0 ? el.scrollTop
 /** 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내 (v5와 같은 모양). 목록은 번호가 큰 글이 위라 위로 넘기면 다음 글이다 */
 const SkipHint = ({dir}: { dir: number }) => (
     <div className="refresher-skip-hint" data-side={dir < 0 ? "top" : "bottom"}>
-        <p>한번 더 스크롤 하면 {dir < 0 ? "다음" : "이전"} 게시글을 봅니다.</p>
+        <p>한 번 더 스크롤하면 {dir < 0 ? "다음" : "이전"} 게시글로 넘어갑니다.</p>
     </div>
 );
 
@@ -290,7 +290,7 @@ export const Frame = () => {
                         ) : commentsOnly ? (
                             <Button variant="soft" color="gray" style={{width: "100%"}} mb="5"
                                     onClick={() => usePreviewStore.setState({commentsOnly: false})}>
-                                댓글만 표시 중입니다. 눌러서 원문 보기
+                                댓글만 표시 중입니다. 눌러서 본문 보기
                             </Button>
                         ) : (
                             <>

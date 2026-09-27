@@ -45,10 +45,10 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
         const trimmed = text.trim();
         if (!trimmed) {
             if (existing) await removeMemo(type, value);
-            else showToast(`해당하는 ${MEMO_TYPE_NAMES[type]}을(를) 가진 사용자 메모가 없습니다.`, "error");
+            else showToast("메모 내용이 없어 저장하지 않았습니다.", "error");
         } else {
             await setMemo(type, value, {text: trimmed, color, gallery: scope});
-            showToast(`${MEMO_TYPE_NAMES[type]} ${value}에 메모를 추가했습니다.`);
+            showToast("메모를 저장했습니다.");
         }
 
         closeMemo();
@@ -77,7 +77,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
 
                 <TextField.Root
                     maxLength={160}
-                    placeholder="메모를 입력해주세요 (160자 제한)"
+                    placeholder="메모를 입력해 주세요 (160자 제한)"
                     value={text}
                     onChange={(ev) => setForm({...form, text: ev.target.value})}
                     // 한글 조합 중 Enter는 조합 확정용 keydown까지 두 번 오므로 isComposing인 것은 건너뛴다

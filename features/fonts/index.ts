@@ -41,7 +41,7 @@ const fontFamilyOf = (customFonts: string): string => toFontFamily(customFonts.t
 const settings = {
     customFonts: {
         type: "text",
-        name: "font-family 이름",
+        name: "폰트 이름",
         desc: "쉼표로 구분한 폰트 이름입니다. 앞의 폰트가 없으면 다음 폰트를 씁니다. (빈칸이면 기본 폰트)",
         default: DEFAULT_FONTS
     },

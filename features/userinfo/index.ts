@@ -21,7 +21,7 @@ interface RatioInfo {
 
 /** 배지 색 기본값. 키마다 `${key}Color` 설정이 하나씩 생기고 옵션 화면에선 한 그룹으로 묶인다. IP 배지는 분류(korea…vpn)가 키다 */
 const BADGE_COLORS = {
-    uid: ["유저 ID / IP", "#999999"],
+    uid: ["아이디/IP", "#999999"],
     ratio: ["글댓비", "#999999"],
     ratioAlarm: ["글댓비 경고", "#ff0000"],
     permBan: ["갱차", "#e8645f"],
@@ -183,14 +183,14 @@ const rebuildUsers = (ctx: Ctx, uids: string[]): void => {
 const settings = {
     showFixedNickUID: {
         type: "check",
-        name: "고정닉 UID 표시",
-        desc: "고정닉 유저의 UID를 표시합니다.",
+        name: "고정닉 아이디 표시",
+        desc: "고정닉 유저의 아이디를 표시합니다.",
         default: true
     },
     showHalfFixedNickUID: {
         type: "check",
-        name: "반고정닉 UID 표시",
-        desc: "반고정닉 유저의 UID를 표시합니다.",
+        name: "반고정닉 아이디 표시",
+        desc: "반고정닉 유저의 아이디를 표시합니다.",
         default: true
     },
     ipInfoFilter: {
@@ -204,7 +204,7 @@ const settings = {
     checkRatio: {
         type: "check",
         name: "글댓비 표시",
-        desc: "글댓비를 표시합니다. (1시간마다 갱신, 새 글 작성 시에만 조회)",
+        desc: "작성자의 글/댓글 수를 표시합니다. 자동 새로고침으로 새로 올라온 글과 미리보기로 연 글의 작성자만 조회하고, 새 글 작성자의 값은 1시간 동안 저장합니다.",
         default: false
     },
     alarmRatio: {
@@ -229,7 +229,7 @@ const settings = {
     checkPermBan: {
         type: "check",
         name: "갱차 조회",
-        desc: "갱신 차단 여부를 조회합니다.",
+        desc: "갱차(갱신 차단)된 갤러리를 배지로 표시합니다. (IP/밴 데이터베이스 기준)",
         default: false
     },
     ...(Object.fromEntries(
@@ -242,7 +242,7 @@ const settings = {
         type: "order",
         name: "정보 배치 순서",
         desc: "유저 정보 배지의 표시 순서를 정합니다.",
-        items: {UID: "유저 ID / IP", MEMO: "메모", RATIO: "글댓비", PERMBAN: "갱차"},
+        items: {UID: "아이디/IP", MEMO: "메모", RATIO: "글댓비", PERMBAN: "갱차"},
         default: ["UID", "MEMO", "RATIO", "PERMBAN"]
     }
 } satisfies SettingsSchema;
@@ -252,7 +252,7 @@ type Ctx = ModuleContext<typeof settings>;
 export default defineModule({
     id: "userinfo",
     name: "유저 정보",
-    description: "사용자의 IP, 아이디 정보, 메모를 표시합니다.",
+    description: "유저의 IP, 아이디 정보, 메모를 표시합니다.",
     icon: UserRound,
     urls: [BOARD_PAGE],
 

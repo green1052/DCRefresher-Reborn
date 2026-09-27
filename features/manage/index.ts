@@ -20,25 +20,25 @@ export default defineModule({
         checkAllTargetUser: {
             type: "check",
             name: "선택한 유저 전부 체크",
-            desc: "Shift키를 누른 상태로 체크박스를 눌러 대상 유저 전부를 체크합니다. (아이디, IP, 이름 순서)",
+            desc: "Shift 키를 누른 상태로 체크박스를 눌러 대상 유저 전부를 체크합니다. (아이디, IP, 닉네임 순서)",
             default: false
         },
         checkViaShift: {
             type: "check",
             name: "Shift 다중 체크",
-            desc: "Shift키를 누른 상태로 드래그해 여러 항목을 체크합니다.",
+            desc: "Shift 키를 누른 상태로 드래그해 여러 항목을 체크합니다.",
             default: false
         },
         checkCommentViaCtrl: {
             type: "check",
             name: "Ctrl 대댓글 체크",
-            desc: "Ctrl키를 누른 상태로 댓글을 클릭하면 대댓글도 체크합니다.",
+            desc: "Ctrl 키를 누른 상태로 댓글을 클릭하면 대댓글도 체크합니다.",
             default: false
         },
         deleteViaCtrl: {
             type: "check",
             name: "Ctrl로 삭제",
-            desc: "Ctrl키를 누른 상태로 게시글을 클릭해 삭제합니다.",
+            desc: "Ctrl 키를 누른 상태로 게시글을 클릭해 삭제합니다.",
             default: false
         },
         enableGifControl: {

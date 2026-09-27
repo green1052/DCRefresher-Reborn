@@ -25,7 +25,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
 
     const submit = async (): Promise<void> => {
         if (!content.trim()) {
-            setError(`${TYPE_NAMES[type]} 값을 입력해주세요.`);
+            setError(`${TYPE_NAMES[type]} 값을 입력해 주세요.`);
             return;
         }
         // 틀린 정규식은 차단 검사에서 조용히 건너뛰어 아무것도 걸리지 않으므로 저장 전에 알린다
@@ -70,7 +70,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                             </Text>
                         </Flex>
                         <TextField.Root
-                            placeholder={`${TYPE_NAMES[type]} 값을 입력하세요`}
+                            placeholder={`${TYPE_NAMES[type]} 값을 입력해 주세요`}
                             value={content}
                             onChange={(ev) => setContent(ev.target.value)}
                             onKeyDown={(ev) => ev.key === "Enter" && !ev.nativeEvent.isComposing && void submit()}

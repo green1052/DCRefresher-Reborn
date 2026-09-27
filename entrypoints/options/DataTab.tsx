@@ -151,7 +151,7 @@ export function DataTab() {
             const data = mode === "merge" ? mergeBackup(await browser.storage.local.get(null), backup.data) : backup.data;
             await writeSettings(data, mode);
             const what = backup.createdAt ? `${formatTime(backup.createdAt)} 백업을` : "데이터를";
-            return `${what} ${mode === "merge" ? "합쳤습니다" : "복원했습니다"}. 새 탭에서 디시인사이드를 열어주세요.`;
+            return `${what} ${mode === "merge" ? "합쳤습니다" : "복원했습니다"}. 새 탭에서 디시인사이드를 열어 주세요.`;
         }, "복원하지 못했습니다.");
 
     const toggleAutoBackup = async (on: boolean): Promise<void> => {
@@ -166,7 +166,7 @@ export function DataTab() {
             await run(async () => {
                 await runBackup("auto");
                 return "자동 백업을 켰습니다. 지금 설정을 자동 백업으로 올렸습니다.";
-            }, "자동 백업을 켰지만 첫 백업에 실패했습니다.");
+            }, "자동 백업을 켰지만 첫 백업을 올리지 못했습니다.");
         }
     };
 
@@ -180,7 +180,7 @@ export function DataTab() {
         run(async () => {
             await writeSettings(parseImport(text), "merge");
             setImportOpen(false);
-            return "데이터를 가져왔습니다. 새 탭에서 디시인사이드를 열어주세요.";
+            return "데이터를 가져왔습니다. 새 탭에서 디시인사이드를 열어 주세요.";
         }, "가져오지 못했습니다.");
 
     const clearData = () =>
@@ -190,7 +190,7 @@ export function DataTab() {
             if (wasAuto) await backupStorage.auto.setValue(false);
 
             await writeSettings({}, "replace");
-            return `데이터를 초기화했습니다.${wasAuto ? " 클라우드 백업을 지키려고 자동 백업을 껐습니다." : ""} 새 탭에서 디시인사이드를 열어주세요.`;
+            return `데이터를 초기화했습니다.${wasAuto ? " 클라우드 백업을 지키려고 자동 백업을 껐습니다." : ""} 새 탭에서 디시인사이드를 열어 주세요.`;
         }, "초기화하지 못했습니다.");
 
     return (
@@ -290,8 +290,8 @@ export function DataTab() {
 
             {resetConfirm && (
                 <ConfirmDialog
-                    title="모든 설정과 사용자 데이터를 초기화할까요?"
-                    confirmLabel="확인"
+                    title="모든 설정과 차단/메모 데이터를 초기화할까요?"
+                    confirmLabel="초기화"
                     danger
                     onConfirm={() => {
                         setResetConfirm(false);
@@ -316,7 +316,7 @@ export function DataTab() {
 
             {importOpen && (
                 <ImportDialog title="데이터 가져오기"
-                              desc="내보낸 JSON 데이터를 붙여넣어주세요. JSON에 든 설정과 목록만 바꾸고 나머지는 그대로 둡니다. 들어 있는 차단/메모 목록은 합치지 않고 통째로 바꿉니다. 합치려면 차단/메모 탭의 가져오기를 쓰세요."
+                              desc="내보낸 JSON 데이터를 붙여 넣어 주세요. JSON에 든 설정과 목록만 바꾸고 나머지는 그대로 둡니다. 들어 있는 차단/메모 목록은 합치지 않고 통째로 바꿉니다. 합치려면 차단/메모 탭의 가져오기를 써 주세요."
                               onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
             )}
         </Box>

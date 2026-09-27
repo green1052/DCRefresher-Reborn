@@ -258,7 +258,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
         // 비밀번호 없이 지워지는 삭제(관리자·회원 본인)는 X 한 번에 되돌릴 수 없으니 확인한다 (디시 comment.js와 같음).
         // 비밀번호 삭제는 prompt가 확인을 겸한다.
         const needsPassword = !isAdmin && !comment.user_id;
-        if (!needsPassword && !window.confirm("댓글을 삭제하시겠습니까?")) return;
+        if (!needsPassword && !window.confirm("댓글을 삭제할까요?")) return;
 
         try {
             if (isAdmin) {
@@ -267,7 +267,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                 let password = "";
                 if (needsPassword) {
                     // 미리보기에서 쓴 댓글은 저장해 둔 비밀번호를 썼으므로 기본값으로 채운다.
-                    password = window.prompt("비밀번호를 입력하세요.", savedNonmember().pw) ?? "";
+                    password = window.prompt("댓글 비밀번호를 입력해 주세요.", savedNonmember().pw) ?? "";
                     if (!password) return;
                 }
                 // 비밀번호가 틀려도 HTTP 200('false||메시지')이 오므로 결과를 확인해 알려야 한다.

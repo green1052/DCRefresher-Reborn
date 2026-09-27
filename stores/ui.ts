@@ -11,7 +11,7 @@ export type BadgeKey = "UID" | "MEMO" | "RATIO" | "PERMBAN";
 /** userinfo의 배지 순서·표시 조건. 미리보기 작성자 표시가 이것으로 페이지와 같게 그린다 */
 export interface BadgeView {
     order: BadgeKey[];
-    /** 고정닉/반고정닉 UID 표시 */
+    /** 고정닉/반고정닉 아이디 표시 */
     fixedUid: boolean;
     halfFixedUid: boolean;
     ipFilter: IpInfoFilter;
@@ -111,7 +111,7 @@ export const useUiStore = create<UiState>((set, get) => ({
     openMemoForSelected: () => {
         const {selected, showToast} = get();
         if (!selected) {
-            showToast("메모할 대상을 다시 오른쪽 클릭해주세요.");
+            showToast("메모할 대상을 다시 우클릭해 주세요.");
             return;
         }
 

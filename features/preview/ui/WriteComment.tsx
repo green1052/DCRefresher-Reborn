@@ -26,9 +26,9 @@ const randomPassword = (): string => Array.from(crypto.getRandomValues(new Uint8
 
 // 'false||메시지' 형식이 아닌 실패 응답 코드 (디시 dccon.js·txtcon.js에서 옮김)
 const FAIL_MESSAGES: Record<string, string> = {
-    code_fail: "자동입력 방지코드가 일치하지 않습니다.",
-    fail1: "이름과 비밀번호를 정확하게 입력해주세요.",
-    form_error: "이름과 비밀번호를 정확하게 입력해주세요."
+    code_fail: "자동입력 방지 코드가 일치하지 않습니다.",
+    fail1: "닉네임과 비밀번호를 정확하게 입력해 주세요.",
+    form_error: "닉네임과 비밀번호를 정확하게 입력해 주세요."
 };
 
 /**
@@ -130,7 +130,7 @@ export const WriteComment = () => {
         if (!useDccon && !text) return;
 
         if (!login && (!nick || !password)) {
-            useUiStore.getState().showToast("아이디 혹은 비밀번호를 입력하지 않았습니다.", "error");
+            useUiStore.getState().showToast("닉네임과 비밀번호를 입력해 주세요.", "error");
             return;
         }
 
@@ -188,13 +188,13 @@ export const WriteComment = () => {
             } else if (response.message === "captcha") {
                 // v2 체크박스를 요구하거나 v3 재전송도 막히면 원문 페이지에서만 풀 수 있다.
                 useUiStore.getState().showToast(
-                    "자동등록방지 확인이 필요합니다. 원문에서 작성해 주세요. (클릭하면 원문 열기)",
+                    "자동입력 방지 확인이 필요합니다. 원문에서 작성해 주세요. (클릭하면 원문 열기)",
                     "warning",
                     8000,
                     () => window.open(preData.link, "_blank")
                 );
             } else {
-                useUiStore.getState().showToast(failMessage(response) || "댓글 작성에 실패했습니다.", "error");
+                useUiStore.getState().showToast(failMessage(response) || "댓글을 작성하지 못했습니다.", "error");
             }
         } catch {
             useUiStore.getState().showToast("댓글 작성 중 오류가 발생했습니다.", "error");
@@ -264,7 +264,7 @@ export const WriteComment = () => {
                     defaultValue={initialText}
                     disabled={dccons.length > 0}
                     placeholder={
-                        dccons.length > 0 ? "디시콘이 선택됐습니다."
+                        dccons.length > 0 ? "디시콘이 선택되었습니다."
                             : txtcon ? "글자콘 입력... (최대 20자, 4줄, 줄당 5자로 나뉨)"
                                 : "댓글 입력... (Shift+Enter 줄바꿈)"
                     }

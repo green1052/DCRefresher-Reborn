@@ -61,7 +61,7 @@ export default defineModule({
 
         // 제어 버튼
         let button: HTMLButtonElement | null = null;
-        const label = (): string => (paused ? "새로고침: 꺼짐" : "새로고침: 켜짐");
+        const label = (): string => (paused ? "자동 새로고침: 꺼짐" : "자동 새로고침: 켜짐");
 
         ctx.addFilter(
             ".page_head > .gall_issuebox",
@@ -262,7 +262,7 @@ export default defineModule({
         // 모듈을 끄면 받는 중인 목록도 버린다. 응답이 와서 목록을 갈아끼우지 않게 한다
         ctx.addCleanup(() => inflight?.abort());
 
-        // ===== 인페이지 페이지 전환 =====
+        // ===== 페이지 이동 시 목록만 교체 =====
         // 문서에 리스너 하나만 위임한다. 앵커마다 붙이며 표시 속성을 남기면 페이징 박스 비교가 늘 어긋나 매번 갈아끼운다
         const onPagingClick = (ev: MouseEvent): void => {
             // 수정키 클릭은 새 탭/창으로 열려는 것이라 가로채지 않는다
@@ -287,7 +287,7 @@ export default defineModule({
         const api: RefreshApi = {
             refreshLists: async () => {
                 if (Date.now() - lastRefresh < MINIMUM_REFRESH_INTERVAL) {
-                    useUiStore.getState().showToast("너무 자주 새로고칠 수 없습니다.");
+                    useUiStore.getState().showToast("잠시 후 다시 새로고침해 주세요.");
                     return;
                 }
 
@@ -299,7 +299,7 @@ export default defineModule({
                 paused = !paused;
                 if (button) button.textContent = label();
 
-                useUiStore.getState().showToast(paused ? "이번 페이지에서는 새로고침을 사용하지 않습니다." : "이번 페이지에서는 새로고침을 사용합니다.");
+                useUiStore.getState().showToast(paused ? "이 페이지의 자동 새로고침을 멈췄습니다." : "이 페이지의 자동 새로고침을 다시 켰습니다.");
             },
 
             isPaused: () => paused
@@ -315,8 +315,8 @@ export default defineModule({
 
     pageToggles: [{
         id: "pause",
-        label: "새로고침 일시정지",
-        desc: "이 탭의 자동 새로고침을 멈춥니다",
+        label: "자동 새로고침 일시정지",
+        desc: "이 페이지의 자동 새로고침을 멈춥니다",
         icon: Pause,
         isOn: (api) => api.isPaused(),
         toggle: (api) => api.togglePause()

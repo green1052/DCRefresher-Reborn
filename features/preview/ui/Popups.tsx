@@ -136,13 +136,13 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
         >
             {/* 섀도 루트 안에선 Dialog의 FocusScope가 입력칸의 autoFocus를 덮으므로 자동 포커스를 막는다 (MemoDialog와 같음) */}
             <Dialog.Content container={overlay.portal} maxWidth="320px" onOpenAutoFocus={(ev) => ev.preventDefault()}>
-                <Dialog.Title>코드 입력</Dialog.Title>
-                <img src={captcha.url} alt="captcha" style={{display: "block", width: "100%", borderRadius: "var(--radius-3)"}}/>
+                <Dialog.Title>자동입력 방지 코드</Dialog.Title>
+                <img src={captcha.url} alt="자동입력 방지 코드" style={{display: "block", width: "100%", borderRadius: "var(--radius-3)"}}/>
                 <TextField.Root
                     mt="3"
                     autoFocus
                     value={code}
-                    placeholder="코드"
+                    placeholder="자동입력 방지 코드"
                     // 한글 조합 중 Enter는 조합을 끝내는 키라 보내지 않는다
                     onKeyDown={(ev) => ev.key === "Enter" && !ev.nativeEvent.isComposing && send()}
                     onChange={(ev) => setCode(ev.target.value)}
@@ -161,6 +161,7 @@ const CONFIRM_WINDOW = 3000;
 interface AdminAction {
     id: ManageKind | "block";
     label: string;
+    confirm?: string;
     hint?: string;
     icon: ReactNode;
     active?: boolean;
@@ -188,14 +189,14 @@ export const AdminPanel = () => {
 
     // key는 고정된 id로 준다. 라벨을 key로 쓰면 공지·개념글을 토글할 때 버튼이 새로 마운트돼 포커스가 사라진다.
     const actions: AdminAction[] = [
-        {id: "notice", label: notice ? "공지 해제" : "공지 등록", icon: <Megaphone size={14}/>, active: notice, run: () => requestManage("notice")},
-        {id: "recommend", label: recommend ? "개념글 해제" : "개념글 등록", icon: <Star size={14}/>, active: recommend, run: () => requestManage("recommend")},
-        {id: "bump", label: "끌올", icon: <ArrowBigUpDash size={14}/>, run: () => requestManage("bump")},
+        {id: "notice", label: notice ? "공지 해제" : "공지 등록", confirm: notice ? "공지를 해제" : "공지로 등록", icon: <Megaphone size={14}/>, active: notice, run: () => requestManage("notice")},
+        {id: "recommend", label: recommend ? "개념글 해제" : "개념글 등록", confirm: recommend ? "개념글을 해제" : "개념글로 등록", icon: <Star size={14}/>, active: recommend, run: () => requestManage("recommend")},
+        {id: "bump", label: "끌올", confirm: "게시글을 끌올", icon: <ArrowBigUpDash size={14}/>, run: () => requestManage("bump")},
         {id: "block", label: "차단", hint: keys?.block, icon: <Ban size={14}/>, danger: true, instant: true, run: () => usePreviewStore.setState({blockPopup: true})},
-        {id: "delete", label: "삭제", hint: keys?.delete, icon: <Trash2 size={14}/>, danger: true, run: () => requestManage("delete")}
+        {id: "delete", label: "삭제", confirm: "게시글을 삭제", hint: keys?.delete, icon: <Trash2 size={14}/>, danger: true, run: () => requestManage("delete")}
     ];
 
-    const press = ({id, label, instant, run}: AdminAction): void => {
+    const press = ({id, label, confirm, instant, run}: AdminAction): void => {
         if (instant) {
             run();
             return;
@@ -211,7 +212,7 @@ export const AdminPanel = () => {
         }
 
         armed.current = {id, signal, at: now};
-        useUiStore.getState().showToast(`한 번 더 누르면 ${label}합니다.`);
+        useUiStore.getState().showToast(`한 번 더 누르면 ${confirm ?? label}합니다.`);
     };
 
     return (

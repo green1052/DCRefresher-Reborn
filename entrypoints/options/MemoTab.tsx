@@ -34,12 +34,12 @@ const MemoFormDialog = ({
 
     const submit = async (): Promise<void> => {
         if (!state.user.trim()) {
-            setError("메모 대상을 입력해주세요.");
+            setError("메모 대상을 입력해 주세요.");
             return;
         }
         // 빈 메모를 저장하면 빈 "[]" 배지만 붙는다
         if (!state.text.trim()) {
-            setError("메모를 입력해주세요.");
+            setError("메모를 입력해 주세요.");
             return;
         }
         // 추가로 기존 메모를 덮어쓰지 않게 한다. 고치려면 목록에서 수정한다
@@ -77,7 +77,7 @@ const MemoFormDialog = ({
                             대상
                         </Text>
                         <TextField.Root
-                            placeholder="유저, 닉네임 또는 IP"
+                            placeholder="아이디, 닉네임 또는 IP"
                             value={state.user}
                             disabled={editing}
                             // 입력 중에 trim하면 닉네임 가운데 공백을 칠 수 없으므로 저장할 때 trim한다
@@ -91,7 +91,7 @@ const MemoFormDialog = ({
                         </Text>
                         <TextField.Root
                             maxLength={160}
-                            placeholder="메모를 입력해주세요 (160자 제한)"
+                            placeholder="메모를 입력해 주세요 (160자 제한)"
                             value={state.text}
                             onChange={(ev) => setState((prev) => ({...prev, text: ev.target.value}))}
                             onKeyDown={(ev) => ev.key === "Enter" && !ev.nativeEvent.isComposing && void submit()}

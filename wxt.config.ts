@@ -92,16 +92,16 @@ export default defineConfig({
                 suggested_key: {
                     default: "Alt+S"
                 },
-                description: "글 목록 새로고침: 일시 비활성화"
+                description: "글 목록 새로고침: 자동 새로고침 일시정지"
             },
             stealthPause: {
                 suggested_key: {
                     default: "Alt+P"
                 },
-                description: "스텔스 모드: 일시 비활성화"
+                description: "스텔스 모드: 이미지 잠시 보이기"
             },
             blockReveal: {
-                description: "컨텐츠 차단: 이 페이지에서 가린 내용 보기"
+                description: "콘텐츠 차단: 이 페이지에서 가린 내용 보기"
             }
         }
     }

@@ -28,7 +28,7 @@ export const DETECT_MODE_NAMES: Record<DetectMode, string> = {
 };
 
 export const MEMO_TYPE_NAMES: Record<MemoType, string> = {
-    UID: "유저 ID",
+    UID: "아이디",
     NICK: "닉네임",
     IP: "IP"
 };

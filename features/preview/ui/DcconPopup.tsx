@@ -87,7 +87,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
             setLoading(false);
         }, () => {
             if (!alive) return;
-            useUiStore.getState().showToast("디시콘을 불러오는 데 실패했습니다.", "error");
+            useUiStore.getState().showToast("디시콘을 불러오지 못했습니다.", "error");
             onClose();
         });
 
