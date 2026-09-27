@@ -169,6 +169,17 @@ const rebuildAll = (ctx: Ctx): void => {
     for (const element of document.querySelectorAll<HTMLElement>(".ub-writer:not([user_name])")) process(ctx, element);
 };
 
+/** 몇몇 유저의 작성자 칸만 다시 그린다. 깡계 흐림·숨김은 process가 더하기만 하므로 먼저 뗀다 */
+const rebuildUsers = (ctx: Ctx, uids: string[]): void => {
+    const classes = Object.values(LOW_ACTIVITY_CLASSES);
+    for (const uid of uids) {
+        for (const element of document.querySelectorAll<HTMLElement>(`.ub-writer[data-uid="${CSS.escape(uid)}"]:not([user_name])`)) {
+            (element.closest<HTMLElement>(".ub-content") ?? element).classList.remove(...classes);
+            process(ctx, element);
+        }
+    }
+};
+
 const settings = {
     showFixedNickUID: {
         type: "check",
@@ -260,11 +271,16 @@ export default defineModule({
         ratios = stored.ratio ?? {};
         if (signal.aborted) return;
         publishRatios(ctx);
-        // 이 탭과 다른 탭이 받아 쓴 글댓비가 모두 여기로 온다. 배지와 깡계 표시를 다시 그린다
-        const unwatchRatios = ratioStorage.watch((next) => {
+        // 이 탭과 다른 탭이 받아 쓴 글댓비가 모두 여기로 온다. 열린 디시 탭마다 오므로, 값이 바뀐 유저의 칸만 다시 그린다
+        const unwatchRatios = ratioStorage.watch((next, previous) => {
+            const before = previous?.ratio ?? {};
             ratios = next?.ratio ?? {};
+            const changed = [...new Set([...Object.keys(before), ...Object.keys(ratios)])]
+                .filter((uid) => JSON.stringify(before[uid]) !== JSON.stringify(ratios[uid]));
+            if (changed.length === 0) return;
+
             publishRatios(ctx);
-            rebuildAll(ctx);
+            rebuildUsers(ctx, changed);
         });
 
         ctx.addFilter(
