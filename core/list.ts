@@ -27,7 +27,8 @@ export const checkboxCellFactory = (oldRows: HTMLTableRowElement[]): ((no: strin
         const input = cell.querySelector<HTMLInputElement>("input");
         if (input) {
             input.checked = false;
-            if (sampleRow?.dataset.no && input.value === sampleRow.dataset.no) input.value = no;
+            // 행을 복제했으면 그 행의 번호일 때만 바꾼다. 템플릿은 값이 자리표시자일 수 있으니 늘 이 글의 번호를 넣는다
+            if (!sampleRow || input.value === sampleRow.dataset.no) input.value = no;
         }
         return cell;
     };

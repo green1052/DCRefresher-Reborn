@@ -12,6 +12,7 @@ import {useUiStore} from "@/stores/ui";
 import {isTyping, pressedKey} from "@/utils/event";
 import {isGalleryManager} from "@/utils/user";
 import {notifyManage} from "@/utils/notify";
+import {isRecord} from "@/utils/record";
 
 import {getEntry, setEntry} from "@/core/preview/cache";
 import {ADULT_ERROR} from "@/core/preview/parser";
@@ -327,15 +328,24 @@ const controller = (ctx: Ctx) => {
         const stillOpen = (): boolean => store.getState().signalId === st.signalId;
         managing = true;
 
+        // 바뀐 공지·개념글 상태를 글 정보와 지금 기록에도 넣는다. 다른 글로 넘어갔다 뒤로 가기로 돌아오면
+        // 기록에 남은 옛 상태로 버튼이 반대로 보여, 두 번 누르면 반대 요청이 나간다
+        const toggled = (field: "notice" | "recommend", value: boolean): void => {
+            const preData = {...target, [field]: value};
+            store.setState(field === "notice" ? {notice: value, preData} : {recommend: value, preData});
+            const state: unknown = history.state;
+            if (isRecord(state) && isRecord(state.preData) && state.preData.id === target.id) history.replaceState({...state, preData}, "");
+        };
+
         try {
             // 공지·개념글 표시는 성공했을 때만 바꾼다.
             if (kind === "notice") {
                 if (notifyManage(await setNotice(target, !st.notice), st.notice ? "공지를 해제했습니다." : "공지로 등록했습니다.") && stillOpen()) {
-                    store.setState({notice: !st.notice});
+                    toggled("notice", !st.notice);
                 }
             } else if (kind === "recommend") {
                 if (notifyManage(await setRecommend(target, !st.recommend), st.recommend ? "개념글을 해제했습니다." : "개념글로 등록했습니다.") && stillOpen()) {
-                    store.setState({recommend: !st.recommend});
+                    toggled("recommend", !st.recommend);
                 }
             } else if (kind === "delete") {
                 close();
