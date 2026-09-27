@@ -95,5 +95,11 @@ export interface ModuleDefinition<S extends SettingsSchema = SettingsSchema, Api
     onChanged?(ctx: ModuleContext<S>, key: keyof S & string): void;
 }
 
+/**
+ * 다른 모듈이 getModuleApi(id)로 쓰는 api의 타입 (모듈 id → setup()의 리턴값).
+ * 비어 있고, api를 내주는 모듈이 자기 파일에서 채운다: declare module "@/core/module/types" { interface ModuleApis { preview: PreviewApi } }
+ */
+export interface ModuleApis {}
+
 /** 레지스트리·옵션·팝업이 모듈을 모아 다룰 때의 타입 — 모듈마다의 설정·api 타입은 defineModule에서 지운다 */
 export type AnyModule = ModuleDefinition<SettingsSchema, unknown>;

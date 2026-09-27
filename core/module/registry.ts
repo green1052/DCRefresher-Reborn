@@ -4,7 +4,7 @@ import {moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
 
 import {areEqual, isModuleEnabled, normalizeSettings} from "./settings";
-import type {AnyModule, ModuleContext} from "./types";
+import type {AnyModule, ModuleApis, ModuleContext} from "./types";
 
 interface ModuleInstance {
     def: AnyModule;
@@ -88,6 +88,15 @@ const register = async (def: AnyModule, enable: boolean): Promise<void> => {
     }
 
     if (enable) await start(instance);
+};
+
+/**
+ * 다른 모듈의 api — 그 모듈이 이 페이지에서 돌고 setup이 끝났을 때만 (꺼져 있으면 undefined).
+ * api 타입은 그 모듈이 ModuleApis에 적은 것이다 — 레지스트리는 모듈마다의 타입을 몰라 여기서만 맞춘다
+ */
+export const getModuleApi = <K extends keyof ModuleApis>(id: K): ModuleApis[K] | undefined => {
+    const running = instances.get(id)?.running;
+    return running?.ready ? (running.api as ModuleApis[K]) : undefined;
 };
 
 /** 이 페이지에서 setup이 끝난 모듈 — 꺼져 있거나 이 페이지에서 안 돌거나 아직 시작 중이면 없다 */

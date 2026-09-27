@@ -5,10 +5,10 @@ import {isViewPage, listUrl, mergeParamURL, pagePostNo, queryString, rowPostNo} 
 import {checkboxCellFactory, highlightSearchResults, LIST_SELECTOR, PAGING_SELECTOR} from "@/core/list";
 import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
+import {getModuleApi} from "@/core/module/registry";
 import type {ModuleContext} from "@/core/module/types";
 import {eventBus} from "@/core/eventbus/bus";
 import {sendMessage} from "@/core/messaging/protocol";
-import {usePreviewStore} from "@/features/preview/ui/previewStore";
 import {useUiStore} from "@/stores/ui";
 
 const MINIMUM_REFRESH_INTERVAL = 2000;
@@ -282,8 +282,8 @@ export default defineModule({
                     }
                 }
 
-                // 삭제된 글 보존(미리보기 설정) — 같은 목록을 다시 받을 때만. 페이지를 넘기거나 검색 결과면 빠진 글이 지워진 것이 아니다
-                if (!customURL && !queryString("s_keyword") && usePreviewStore.getState().archiveArticle) {
+                // 삭제된 글 보존(미리보기 설정 — 미리보기를 끄면 따라 꺼진다) — 같은 목록을 다시 받을 때만. 페이지를 넘기거나 검색 결과면 빠진 글이 지워진 것이 아니다
+                if (!customURL && !queryString("s_keyword") && getModuleApi("preview")?.archiveArticle() === true) {
                     keepDeletedRows(oldRows, new Set(newKeys), newList, newPostList.length);
                 }
 

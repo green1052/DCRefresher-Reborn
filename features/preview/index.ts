@@ -743,10 +743,21 @@ const publishSettings = (ctx: ModuleContext): void => {
             : null,
         frameWidth: Number(ctx.settings.previewWidth),
         backgroundBlur: ctx.settings.toggleBackgroundBlur === true,
-        scrollToSkip: ctx.settings.scrollToSkip === true,
-        archiveArticle: ctx.settings.archiveArticle === true
+        scrollToSkip: ctx.settings.scrollToSkip === true
     });
 };
+
+/** 다른 모듈이 쓰는 미리보기 api (getModuleApi("preview")) */
+export interface PreviewApi {
+    /** 삭제된 글과 댓글 보존 — 새로고침 모듈도 목록에서 지워진 글을 남길 때 따른다 */
+    archiveArticle(): boolean;
+}
+
+declare module "@/core/module/types" {
+    interface ModuleApis {
+        preview: PreviewApi;
+    }
+}
 
 export default defineModule({
     id: "preview",
@@ -755,9 +766,10 @@ export default defineModule({
     icon: SquareMousePointer,
     urls: [BOARD_PAGE],
     settings,
-    setup: (ctx) => {
+    setup: (ctx): PreviewApi => {
         publishSettings(ctx);
         controller(ctx);
+        return {archiveArticle: () => ctx.settings.archiveArticle === true};
     },
     onChanged: publishSettings
 });
