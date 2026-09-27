@@ -9,6 +9,7 @@ import overlayCss from "@/assets/styles/overlay.scss?inline";
 import {ContentRoot} from "@/components/overlay/ContentRoot";
 import {overlay} from "@/components/overlay/shadow";
 import {initDatabase} from "@/core/database";
+import {setBlockedHandler} from "@/core/http/client";
 import {BLOCKED_PAGE_MESSAGE, BOARD_PAGE} from "@/core/pages";
 import {onMessage} from "@/core/messaging/protocol";
 import {loadAll, pageToggleStates, runPageToggle, runShortcut, stopAll} from "@/core/module/registry";
@@ -113,10 +114,19 @@ export default defineContentScript({
 
         // ===== 모듈 부트스트랩 =====
         // 차단·메모·IP DB는 글 목록·본문(features의 urls와 같은 BOARD_PAGE)에서만 쓴다. 메인·검색 등에서는 저장소를 읽지 않는다.
-        // 임시 차단을 먹으면 디시 페이지가 빈 문서로 온다. 확장이 고장 난 것처럼 보이므로 이유를 알린다
+        // 임시 차단을 먹으면 디시는 모든 요청에 빈 페이지를 준다(상태 코드는 200). 확장이 고장 난 것처럼 보이므로 이유를 알린다.
+        // 막혀 있는 동안 요청마다 오므로 1분에 한 번만 띄운다
+        let blockedWarnedAt = 0;
+        const warnBlocked = (): void => {
+            if (Date.now() - blockedWarnedAt < 60_000) return;
+            blockedWarnedAt = Date.now();
+            useUiStore.getState().showToast(BLOCKED_PAGE_MESSAGE, "warning", 0);
+        };
+        setBlockedHandler(warnBlocked);
+        // 지금 페이지 자체가 빈 페이지인 경우
         const warnIfBlocked = (): void => {
             const content = Array.from(document.body?.children ?? []).filter((element) => element.tagName !== "REFRESHER-ROOT");
-            if (content.length === 0 && !document.body?.textContent?.trim()) useUiStore.getState().showToast(BLOCKED_PAGE_MESSAGE, "warning", 0);
+            if (content.length === 0 && !document.body?.textContent?.trim()) warnBlocked();
         };
         if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", warnIfBlocked, {once: true});
         else warnIfBlocked();

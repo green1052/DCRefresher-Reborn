@@ -3,7 +3,7 @@ import {SquareMousePointer} from "lucide-react";
 
 import {eventBus} from "@/core/eventbus/bus";
 import {isBlocked} from "@/core/block";
-import {isAbortError} from "@/core/http/client";
+import {BlockedError, isAbortError} from "@/core/http/client";
 import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
 import type {DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
@@ -16,7 +16,7 @@ import {isRecord} from "@/utils/record";
 
 import {getEntry, setEntry} from "@/core/preview/cache";
 import {ADULT_ERROR} from "@/core/preview/parser";
-import {BLOCKED_PAGE_ERROR, blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
+import {blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {adjacentPreData, buildPreData, isBlurHidden, isTextPost} from "./rows";
 import {type Ctx, settings} from "./settings";
 import {BLOCKED_TEXT, type ErrorState, type ManageKind, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
@@ -29,8 +29,8 @@ const messageOf = (error: unknown): string =>
 
 const errorOf = (error: unknown): ErrorState => ({
     detail: messageOf(error),
-    // 임시 차단 페이지는 200으로 오므로 요청 제한(429)으로 본다
-    status: error instanceof HTTPError ? error.response.status : error instanceof Error && error.message === BLOCKED_PAGE_ERROR ? 429 : undefined,
+    // 임시 차단(빈 페이지)은 200으로 오므로 요청 제한(429)으로 본다
+    status: error instanceof HTTPError ? error.response.status : error instanceof BlockedError ? 429 : undefined,
     adult: error instanceof Error && error.message === ADULT_ERROR
 });
 
@@ -197,7 +197,8 @@ const controller = (ctx: Ctx) => {
         try {
             await pullComments(st.preData, st.post, st.signalId);
         } catch (e) {
-            if (report && !isAbortError(e)) ui.showToast("댓글을 불러오지 못했습니다.", "error");
+            // 임시 차단은 HTTP 클라이언트가 이미 알렸다. 덮어쓰지 않는다
+            if (report && !isAbortError(e) && !(e instanceof BlockedError)) ui.showToast("댓글을 불러오지 못했습니다.", "error");
         }
     };
 
@@ -239,9 +240,9 @@ const controller = (ctx: Ctx) => {
         try {
             // 방금 받은 본문이 댓글 0개면 받지 않는다. 보존해 둔 댓글이 있으면 삭제 여부를 비교해야 하므로 받는다.
             await pullComments(preData, post, mySignal, fresh && post.commentCount === 0 && !Object.keys(getEntry(preData)?.seen ?? {}).length);
-        } catch {
-            // 댓글만 못 받았으면 본문은 그대로 두고 알린다.
-            if (store.getState().signalId === mySignal) ui.showToast("댓글을 불러오지 못했습니다.", "error");
+        } catch (e) {
+            // 댓글만 못 받았으면 본문은 그대로 두고 알린다. 임시 차단은 HTTP 클라이언트가 이미 알렸다
+            if (store.getState().signalId === mySignal && !(e instanceof BlockedError)) ui.showToast("댓글을 불러오지 못했습니다.", "error");
         }
 
         // PageUp/Down으로 넘겼으면 같은 방향 다음 글의 본문을 미리 받는다. 댓글은 열 때 받는다.

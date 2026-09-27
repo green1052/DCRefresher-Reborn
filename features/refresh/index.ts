@@ -1,9 +1,9 @@
 import {Pause, RefreshCw} from "lucide-react";
 
-import {http} from "@/core/http/client";
+import {BlockedError, http} from "@/core/http/client";
 import {isViewPage, listUrl, mergeParamURL, queryString} from "@/core/http/urls";
 import {LIST_SELECTOR, PAGING_SELECTOR} from "@/core/list";
-import {BLOCKED_PAGE_MESSAGE, BOARD_PAGE, isBlockedPage} from "@/core/pages";
+import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi} from "@/core/module/registry";
 import {eventBus} from "@/core/eventbus/bus";
@@ -51,8 +51,6 @@ export default defineModule({
         let rerun = false;
         // 연달아 실패한 목록 요청 수. 실패할 때마다 자동 새로고침 주기가 두 배가 된다
         let failures = 0;
-        // 임시 차단을 알렸는지. 목록을 다시 받으면 푼다
-        let blockedNotified = false;
         // 페이지를 넘긴 주소. 그 목록으로 갈아끼운 직후 목록 위로 스크롤한다 (진행 중인 요청에 막혀 나중에 받아도)
         let scrollAfter: string | null = null;
         // 진행 중인 목록 요청. 주소가 바뀌면 끊는다
@@ -152,15 +150,6 @@ export default defineModule({
                 // 그사이 주소가 바뀌었으면 지난 주소의 목록이라 버린다. finally에서 새 주소로 다시 받는다
                 if (target !== originalLocation) return false;
 
-                // 임시 차단 페이지면 한 번 알리고 주기를 늘린다. 다시 받을 때까지 알림을 되풀이하지 않는다
-                if (isBlockedPage(response)) {
-                    failures++;
-                    if (!blockedNotified) useUiStore.getState().showToast(BLOCKED_PAGE_MESSAGE, "warning", 0);
-                    blockedNotified = true;
-                    return false;
-                }
-                blockedNotified = false;
-
                 // 목록이 그대로면 파싱·교체를 건너뛴다. 응답 전체는 요청마다 바뀌는 값(s_key)이 있어 tbody만 비교한다
                 const start = response.indexOf("<tbody");
                 const listHtml = start === -1 ? "" : response.slice(start, response.indexOf("</tbody>", start));
@@ -203,6 +192,11 @@ export default defineModule({
             } catch (e) {
                 // 주소가 바뀌어 끊은 요청은 실패가 아니다. 파이어폭스에선 오류 종류로 가리기 어려워 신호로 본다
                 if (controller.signal.aborted) return false;
+                // 임시 차단은 HTTP 클라이언트가 이미 알렸다. 주기만 늘린다
+                if (e instanceof BlockedError) {
+                    failures++;
+                    return false;
+                }
                 console.error("Refresh failed:", e);
                 return fail();
             } finally {

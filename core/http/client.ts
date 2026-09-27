@@ -1,5 +1,7 @@
-import ky, {type KyInstance} from "ky";
+import ky, {type AfterResponseHook, type KyInstance} from "ky";
 import pLimit from "p-limit";
+
+import {isBlockedPage} from "@/core/pages";
 
 type Fetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -33,13 +35,40 @@ const limited = (fetcher: Fetch): Fetch => (input, init) =>
 const pageWindow = (globalThis as { content?: { fetch: Fetch } }).content;
 const baseFetch: Fetch = pageWindow ? pageWindow.fetch.bind(pageWindow) : globalThis.fetch.bind(globalThis);
 
+/** 디시 임시 차단을 받았을 때 던지는 오류. 요청이 너무 많으면 디시는 상태 코드 없이 모든 요청에 빈 페이지를 준다 */
+export class BlockedError extends Error {
+    override name = "BlockedError";
+}
+
+let onBlocked: (() => void) | undefined;
+
+/** 임시 차단을 받을 때마다 부를 함수 (콘텐츠 스크립트가 알림을 건다) */
+export const setBlockedHandler = (handler: () => void): void => {
+    onBlocked = handler;
+};
+
+/**
+ * 빈 응답이면 임시 차단으로 본다. 글·목록·검색 페이지(GET)와 댓글 목록(JSON)만 본다.
+ * 다른 ajax(삭제·추천 등)는 성공 응답이 비어 있을 수 있어 보지 않는다
+ */
+const detectBlocked: AfterResponseHook = async ({request, response}) => {
+    const url = new URL(request.url);
+    if (!response.ok || !url.hostname.endsWith("dcinside.com")) return;
+    if (request.method !== "GET" && !url.pathname.startsWith("/board/comment/")) return;
+    if (!isBlockedPage(await response.clone().text())) return;
+
+    onBlocked?.();
+    throw new BlockedError("디시인사이드 임시 차단");
+};
+
 export const http: KyInstance = ky.create({
     // 기본 시간 제한은 limited가 잰다. 더 짧게 끊을 요청(자동 새로고침)은 호출할 때 timeout을 준다
     timeout: false,
     fetch: limited(baseFetch),
     // jitter: 재시도가 한꺼번에 몰리지 않게 시점을 흩는다.
     // maxRetryAfter: Retry-After가 몇 분이어도 10초까지만 기다린다. 더 기다리면 화면이 멈춘 것처럼 보인다.
-    retry: {jitter: true, maxRetryAfter: 10_000}
+    retry: {jitter: true, maxRetryAfter: 10_000},
+    hooks: {afterResponse: [detectBlocked]}
 });
 
 /**
