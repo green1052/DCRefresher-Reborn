@@ -33,31 +33,31 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: PostInfo,
     body.set("cmt_no", postInfo.commentNo ?? preData.id);
     body.set("e_s_n_o", postInfo.esno ?? "");
 
-    const byNo = new Map<string, DcinsideComment>();
-    let allowReply = true;
-
-    // ponytail: 10쪽(1000개)까지 — 더 많은 글은 드물고 자동 갱신마다 전부 다시 받는다
-    for (let page = 1; page <= 10; page++) {
-        body.set("comment_page", String(page));
-
-        const response = await ajax.post(urls.comments, {body, signal}).json<{
+    const fetchPage = (page: number) => {
+        const pageBody = new URLSearchParams(body);
+        pageBody.set("comment_page", String(page));
+        return ajax.post(urls.comments, {body: pageBody, signal}).json<{
             comments: DcinsideComment[] | null;
             total_cnt: number | string;
             pagination: string | null;
             allow_reply?: number | string | null;
         }>();
+    };
 
-        // 디시 comment.js처럼 0일 때만 막는다 (멤버만 댓글)
-        allowReply = String(response.allow_reply) !== "0";
+    // 1쪽의 쪽 나눔(viewComments(n, …))에서 마지막 쪽을 읽고, 나머지 쪽은 한꺼번에 받는다 — 동시에 나가는 수는 요청 제한 모듈이 지킨다.
+    // ponytail: 10쪽(1000개)까지 — 더 많은 글은 드물고 자동 갱신마다 전부 다시 받는다
+    const first = await fetchPage(1);
+    const lastPage = Math.min(10, Math.max(1, ...Array.from(first.pagination?.matchAll(/viewComments\((\d+)/g) ?? [], (match) => Number(match[1]))));
+    const rest = await Promise.all(Array.from({length: lastPage - 1}, (_, index) => fetchPage(index + 2)));
 
-        const before = byNo.size;
+    // 쪽 순서대로 합친다 — 쪽이 겹쳐 오면 같은 번호는 하나로
+    const byNo = new Map<string, DcinsideComment>();
+    for (const response of [first, ...rest]) {
         for (const comment of response.comments ?? []) byNo.set(comment.no, comment);
-
-        // 쪽 나눔이 없거나, 새 댓글이 없거나(빈 쪽·마지막 쪽 반복), 다 받았으면 멈춘다
-        if (!response.pagination || byNo.size === before || byNo.size >= Number(response.total_cnt)) break;
     }
 
-    return {list: [...byNo.values()], allowReply};
+    // 디시 comment.js처럼 0일 때만 막는다 (멤버만 댓글)
+    return {list: [...byNo.values()], allowReply: String(first.allow_reply) !== "0"};
 };
 
 interface VoteResult {
