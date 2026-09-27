@@ -599,7 +599,8 @@ const controller = (ctx: ModuleContext) => {
         miniTimer = 0;
         // 받는 중인 본문은 끊지 않는다 — 열기가 같은 요청을 이어 쓴다. 다음 호버가 다른 글을 받으면 그때 끊긴다
         miniTarget = null;
-        usePreviewStore.setState({mini: null});
+        // 떠 있을 때만 — 제목 칸을 지날 때마다 새 상태를 알리면 스토어를 보는 창·댓글이 모두 다시 확인한다
+        if (usePreviewStore.getState().mini) usePreviewStore.setState({mini: null});
     };
 
     // ── 행 이벤트 ────────────────────────────────────────────────

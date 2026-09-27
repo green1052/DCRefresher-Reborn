@@ -32,13 +32,24 @@ const PUSH_CLASS = "refresherPushToRight";
 const HIDE_STYLE_ID = "refresher-layout-hide";
 
 let hideStyle: HTMLStyleElement | null = null;
+let widthQuery: MediaQueryList | null = null;
+let widthWatch: AbortController | null = null;
 
 const applyCompact = (ctx: ModuleContext): void => {
-    const compact = window.innerWidth <= Number(ctx.settings.activePixel) || ctx.settings.forceCompact === true;
+    const compact = widthQuery?.matches === true || ctx.settings.forceCompact === true;
     // /board/view에서는 '게시글 보기 컴팩트 모드'가 켜졌을 때만 적용
     const useCompact = compact && (!isViewPage || ctx.settings.useCompactModeOnView === true);
 
     document.documentElement.classList.toggle("refresherCompact", useCompact);
+};
+
+/** 창 폭이 기준(activePixel)을 넘나들 때만 다시 맞춘다 — resize는 창 크기를 바꾸는 동안 수십 번 온다 */
+const watchWidth = (ctx: ModuleContext): void => {
+    widthWatch?.abort();
+    widthWatch = new AbortController();
+    widthQuery = window.matchMedia(`(max-width: ${Number(ctx.settings.activePixel)}px)`);
+    widthQuery.addEventListener("change", () => applyCompact(ctx), {signal: AbortSignal.any([ctx.signal, widthWatch.signal])});
+    applyCompact(ctx);
 };
 
 const applyHide = (ctx: ModuleContext): void => {
@@ -100,20 +111,21 @@ export default defineModule({
     },
 
     setup(ctx) {
-        applyCompact(ctx);
+        watchWidth(ctx);
         applyHide(ctx);
-
-        window.addEventListener("resize", () => applyCompact(ctx), {signal: ctx.signal});
     },
 
     onChanged(ctx, key) {
-        if (COMPACT_KEYS.has(key)) applyCompact(ctx);
+        if (key === "activePixel") watchWidth(ctx);
+        else if (COMPACT_KEYS.has(key)) applyCompact(ctx);
         else applyHide(ctx);
     },
 
     revoke() {
         hideStyle?.remove();
         hideStyle = null;
+        widthWatch?.abort();
+        widthQuery = null;
 
         document.documentElement.classList.remove("refresherCompact", PUSH_CLASS);
     }

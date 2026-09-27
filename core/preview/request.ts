@@ -308,9 +308,9 @@ const txtconLength = (text: string): number => {
 };
 
 // ponytail: 디시 txtcon_clusters 대신 브라우저 grapheme 분할 — 흔한 글자(국기·스킨톤·ZWJ 포함)에선 같다 (분해형 한글 자모 등만 다름)
-const segmenter = new Intl.Segmenter();
-/** 글자콘의 '한 글자' 단위로 나눈다 */
-export const graphemes = (text: string): string[] => Array.from(segmenter.segment(text), ({segment}) => segment);
+let segmenter: Intl.Segmenter | undefined;
+/** 글자콘의 '한 글자' 단위로 나눈다 — 분할기는 처음 쓸 때 만든다 (모든 디시 페이지에서 만들지 않게) */
+export const graphemes = (text: string): string[] => Array.from((segmenter ??= new Intl.Segmenter()).segment(text), ({segment}) => segment);
 
 /** 직접 줄바꿈은 두고 각 줄을 5글자씩 나눈다 — 입력 제한과 보여 줄 때(Comment.tsx)가 같이 쓴다 */
 export const wrapTxtcon = (text: string): string =>
