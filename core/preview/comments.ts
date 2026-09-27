@@ -1,3 +1,5 @@
+import {LRUCache} from "lru-cache";
+
 import {groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
 import {htmlToText, sanitizeHtml} from "@/utils/sanitize";
 import {useUiStore} from "@/stores/ui";
@@ -22,8 +24,13 @@ const GALLOG_DCCON = /dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g;
  */
 const splitDccons = (memo: string): string => memo.replace(/"\s*(img|video) class="written_dccon/g, "\"><$1 class=\"written_dccon");
 
-const cleanMemo = (memo: string): string =>
-    sanitizeHtml(splitDccons(memo).replace(/data-dcconoverstatus="?\w+"?/g, "data-dcconoverstatus=\"true\""));
+// 정화 결과는 입력에만 달려 있어 기억해 둔다. 자동 새로고침·차단 변경·가린 내용 보기마다 댓글 수백 개를 다시 정화하지 않는다
+const cleaned = new LRUCache<string, string>({
+    max: 2000,
+    memoMethod: (memo) => sanitizeHtml(splitDccons(memo).replace(/data-dcconoverstatus="?\w+"?/g, "data-dcconoverstatus=\"true\""))
+});
+
+const cleanMemo = (memo: string): string => cleaned.memo(memo);
 
 const extractVoice = (memo: string): { memo: string; voice?: ProcessedComment["voice"] } | undefined => {
     if (!memo.includes("@^dc^@")) return;

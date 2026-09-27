@@ -7,12 +7,16 @@ const isDccon = (node: Element): boolean =>
 // 동영상에는 재생 컨트롤을 붙인다. 디시 본문은 컨트롤 없이 페이지 스크립트로 재생하기 때문이다.
 // 디시콘은 디시처럼 컨트롤 없이 자동 반복 재생한다.
 // 이미지·iframe은 lazy로 두어 스텔스·이미지 차단으로 숨긴 것은 받지 않게 한다.
+// 링크(# 앵커 제외)는 새 탭으로 연다. DOMPurify가 target을 지우므로 두면 갤러리 탭이 링크로 넘어가 목록과 미리보기를 잃는다.
 const onAttributes = (node: Element): void => {
     if (node.nodeName === "VIDEO") {
         if (!isDccon(node)) node.setAttribute("controls", "");
         else for (const attribute of ["autoplay", "loop", "muted", "playsinline"]) node.setAttribute(attribute, "");
     } else if (node.nodeName === "IMG" || node.nodeName === "IFRAME") {
         node.setAttribute("loading", "lazy");
+    } else if (node.nodeName === "A" && !(node.getAttribute("href") ?? "#").startsWith("#")) {
+        node.setAttribute("target", "_blank");
+        node.setAttribute("rel", "noopener noreferrer");
     }
 };
 
@@ -23,10 +27,11 @@ const embedYoutube = (html: string): string =>
 
 // 인라인 style은 오버레이 레이아웃을 깨므로 지우고, 본문의 동영상 임베드(iframe)는 허용한다.
 // <style>은 shadow 루트 전체(창·댓글·가린 내용)에 걸리고, 폼 요소는 본문에 필요 없는데 가짜 입력칸을 만들 수 있어 뺀다.
+// SVG <feImage>와 background 속성은 원격 이미지를 불러오는데 미디어 숨기기(태그·CSS)에 걸리지 않는다. 본문에 쓸 일도 없어 뺀다.
 // IN_PLACE: sanitizeHtml이 <template> 안의 요소를 그 자리에서 정화한다.
-const FORBIDDEN = ["style", "form", "input", "textarea", "select"];
+const FORBIDDEN = ["style", "form", "input", "textarea", "select", "feimage"];
 const BASE: Config = {
-    FORBID_ATTR: ["style"],
+    FORBID_ATTR: ["style", "background"],
     FORBID_TAGS: FORBIDDEN,
     ADD_TAGS: ["iframe"],
     ADD_ATTR: ["allowfullscreen", "frameborder", "allow", "scrolling"],

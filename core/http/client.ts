@@ -48,8 +48,8 @@ export const setBlockedHandler = (handler: () => void): void => {
 };
 
 /**
- * 빈 응답이면 임시 차단으로 본다. 글·목록·검색 페이지(GET)와 댓글 목록(JSON)만 본다.
- * 다른 ajax(삭제·추천 등)는 성공 응답이 비어 있을 수 있어 보지 않는다
+ * 빈 응답이면 임시 차단으로 본다. 글·목록·검색 페이지(GET)와 /board/comment/ 아래 요청(댓글 목록 JSON, 댓글 삭제)만 본다.
+ * 댓글 삭제 응답은 'true'나 'false||…'라 비어 있지 않다. 다른 ajax(글 삭제·추천 등)는 성공 응답이 비어 있을 수 있어 보지 않는다
  */
 const detectBlocked: AfterResponseHook = async ({request, response}) => {
     const url = new URL(request.url);

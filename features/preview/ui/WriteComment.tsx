@@ -72,21 +72,25 @@ const Swatch = ({color, selected, label, onClick}: {
 
 /** 쓰던 댓글 하나를 모듈 전역에 둔다. 창을 닫았다 같은 글을 다시 열면 되살리고, 다른 글을 열면 버린다 */
 let draft = {key: "", text: ""};
+/** 댓글을 보내는 중인 글. 보내는 사이 폼이 다시 마운트돼도(다른 글에 갔다 돌아옴) 같은 댓글을 또 보내지 않게 모듈 전역에 둔다 */
+const sendingKeys = new Set<string>();
 
 export const WriteComment = () => {
     const reply = usePreviewStore((s) => s.reply);
     // 폼은 글마다 새로 마운트된다 (Frame의 key). 마운트할 때 이 글에서 쓰던 댓글이 있으면 되살린다.
+    // 보내는 중인 댓글은 되살리지 않는다. 올라간 댓글이 입력칸에 남아 한 번 더 보내게 된다.
     const [initialText] = useState(() => {
         const preData = usePreviewStore.getState().preData;
         const key = preData ? `${preData.gallery}/${preData.id}` : "";
         if (draft.key !== key) draft = {key, text: ""};
-        return draft.text;
+        return sendingKeys.has(key) ? "" : draft.text;
     });
     const [login] = useState(() => Boolean(document.querySelector("#login_box .user_info .nickname > em")));
     const [accountId] = useState(loggedInUserId);
     const [nick, setNick] = useState(() => savedNonmember().nick || "ㅇㅇ");
     // 기억한 비밀번호가 없으면 하나 만든다. 쓸 때 저장되므로 이후 같은 비밀번호로 자기 댓글을 지울 수 있다
     const [password, setPassword] = useState(() => savedNonmember().pw || randomPassword());
+    const [pwSaved] = useState(() => Boolean(savedNonmember().pw));
     // 저장된 비밀번호는 입력칸에 넣지 않는다. 오버레이 섀도 루트가 open이라 페이지 스크립트가 값을 읽을 수 있다.
     // 사용자가 직접 고친 뒤에만 입력칸에 값이 보인다.
     const [passwordEdited, setPasswordEdited] = useState(false);
@@ -129,12 +133,25 @@ export const WriteComment = () => {
         if (!st.preData || !st.post || sending) return;
         if (!useDccon && !text) return;
 
+        const key = `${st.preData.gallery}/${st.preData.id}`;
+        if (sendingKeys.has(key)) {
+            useUiStore.getState().showToast("앞서 보낸 댓글을 처리하는 중입니다. 잠시 후 다시 시도해 주세요.", "warning");
+            return;
+        }
+
         if (!login && (!nick || !password)) {
             useUiStore.getState().showToast("닉네임과 비밀번호를 입력해 주세요.", "error");
             return;
         }
 
+        // 댓글 목록은 이 글이 열려 있으면 새로 받는다. 보내는 사이 다른 글에 갔다 돌아왔으면 새 창의 목록은 댓글이 올라가기 전에 받은 것이다
+        const refreshIfOpen = (): void => {
+            const current = usePreviewStore.getState();
+            if (current.preData && `${current.preData.gallery}/${current.preData.id}` === key) void current.requestRefresh();
+        };
+
         setSending(true);
+        sendingKeys.add(key);
         const signal = st.signalId;
         try {
             let code: string | undefined;
@@ -178,13 +195,11 @@ export const WriteComment = () => {
                 setDccons([]);
                 setBigDccon(false);
                 setTxtcon(false);
-                // 그새 다른 글로 넘어갔으면 답글 대상과 댓글 목록은 그 글 것이라 건드리지 않는다.
+                // 그새 다른 글로 넘어갔으면 답글 대상은 그 글 것이라 건드리지 않는다.
                 // 디시처럼 쓴 닉네임·비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다.
                 if (!login) saveNonmember(nick, password);
-                if (usePreviewStore.getState().signalId === signal) {
-                    usePreviewStore.setState({reply: {commentNo: null, replyNo: null}});
-                    void st.requestRefresh();
-                }
+                if (usePreviewStore.getState().signalId === signal) usePreviewStore.setState({reply: {commentNo: null, replyNo: null}});
+                refreshIfOpen();
             } else if (response.message === "captcha") {
                 // v2 체크박스를 요구하거나 v3 재전송도 막히면 원문 페이지에서만 풀 수 있다.
                 useUiStore.getState().showToast(
@@ -196,9 +211,17 @@ export const WriteComment = () => {
             } else {
                 useUiStore.getState().showToast(failMessage(response) || "댓글을 작성하지 못했습니다.", "error");
             }
-        } catch {
-            useUiStore.getState().showToast("댓글 작성 중 오류가 발생했습니다.", "error");
+        } catch (e) {
+            // 시간 초과 등으로 끊겨도 서버는 댓글을 올렸을 수 있다. 목록을 새로 받아 올라간 댓글이 보이게 해 다시 보내지 않게 한다. 입력한 글은 둔다.
+            // 파이어폭스 content.fetch의 오류는 다른 영역 객체라 이름으로 본다 (isAbortError와 같음)
+            refreshIfOpen();
+            const timeout = typeof e === "object" && e !== null && "name" in e && e.name === "TimeoutError";
+            useUiStore.getState().showToast(
+                timeout ? "응답이 없어 작성 여부를 확인하지 못했습니다. 댓글 목록을 확인해 주세요." : "댓글 작성 중 오류가 발생했습니다.",
+                "error"
+            );
         } finally {
+            sendingKeys.delete(key);
             setSending(false);
         }
     };
@@ -245,7 +268,7 @@ export const WriteComment = () => {
                         size="2"
                         type="password"
                         value={passwordEdited ? password : ""}
-                        placeholder={!passwordEdited && password ? "비밀번호 (저장됨)" : "비밀번호"}
+                        placeholder={passwordEdited ? "비밀번호" : pwSaved ? "비밀번호 (저장됨)" : "비밀번호 (자동 생성)"}
                         style={{flex: 1}}
                         onChange={(ev) => {
                             setPasswordEdited(true);

@@ -246,9 +246,10 @@ const controller = (ctx: Ctx) => {
         }
 
         // PageUp/Down으로 넘겼으면 같은 방향 다음 글의 본문을 미리 받는다. 댓글은 열 때 받는다.
+        // 받는 중인 요청(새로고침 버튼·미니 등)이 있으면 미리 받지 않는다. 받으면 그 요청을 끊는다.
         if (dir && !ctx.settings.disableCache && store.getState().signalId === mySignal) {
             const next = adjacentPreData(preData, dir);
-            if (next && !getEntry(next)?.post) void requestPost(next);
+            if (next && !pending && !getEntry(next)?.post) void requestPost(next);
         }
     };
 
@@ -429,7 +430,7 @@ const controller = (ctx: Ctx) => {
         } else {
             lastKey = key;
             lastKeyTime = now;
-            ui.showToast(`한 번 더 ${key.toUpperCase()} 키를 누르면 게시글을 ${isDelete ? "삭제" : "차단"}합니다.`);
+            ui.showToast(`한 번 더 ${key.toUpperCase()} 키를 누르면 ${isDelete ? "게시글을 삭제" : "작성자를 차단"}합니다.`);
         }
     };
 

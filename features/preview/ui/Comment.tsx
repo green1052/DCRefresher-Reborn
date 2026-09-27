@@ -5,6 +5,7 @@ import {useShallow} from "zustand/react/shallow";
 
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {User} from "@/core/preview/types";
+import {BlockedError} from "@/core/http/client";
 import {adminDeleteComment, graphemes, userDeleteComment, wrapTxtcon} from "@/core/preview/request";
 import {notifyManage} from "@/utils/notify";
 import {useUserMemo} from "@/stores/memos";
@@ -274,8 +275,9 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                 if (!notifyManage(await userDeleteComment(st.preData, comment.no, password), "댓글을 삭제했습니다.")) return;
             }
             void st.requestRefresh();
-        } catch {
-            useUiStore.getState().showToast("댓글 삭제 중 오류가 발생했습니다.", "error");
+        } catch (e) {
+            // 임시 차단은 HTTP 클라이언트가 이미 알렸다. 덮어쓰지 않는다
+            if (!(e instanceof BlockedError)) useUiStore.getState().showToast("댓글 삭제 중 오류가 발생했습니다.", "error");
         }
     };
 

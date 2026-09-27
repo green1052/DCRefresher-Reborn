@@ -87,7 +87,12 @@ export const settings = {
     },
     expandRecognizeRange: {type: "check", name: "게시글 인식 범위 확장", desc: "행 전체를 클릭해도 미리보기가 열리게 합니다.", default: false},
     disableCache: {type: "check", name: "캐시 비활성화", desc: "미리보기 캐시를 사용하지 않습니다.", default: false},
-    archiveArticle: {type: "check", name: "삭제된 글과 댓글 보존", desc: "캐시된 게시글이 삭제되어도 이전 내용을 보여 줍니다.", default: false},
+    archiveArticle: {
+        type: "check",
+        name: "삭제된 글과 댓글 보존",
+        desc: "미리보기로 본 지 1분이 안 된 글과 댓글이 삭제되어도 이전 내용을 보여 줍니다. 새로고침한 글 목록에서 사라진 글도 붉게 표시해 남깁니다.",
+        default: false
+    },
     blockImage: {
         type: "check",
         name: "이미지 아이콘 없는 게시글 이미지 숨기기",

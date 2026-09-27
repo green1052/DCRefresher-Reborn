@@ -100,7 +100,7 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
     const dom = new DOMParser().parseFromString(html, "text/html");
 
     if (!dom.querySelector(".gallview_head, .writing_view_box, .title_subject")) {
-        // undefined를 돌려주면 fetchPost가 삭제된 글(404)로 처리하므로 성인 인증은 따로 던진다
+        // undefined면 fetchPost가 일반 오류(다시 시도 가능)로 던지므로 성인 인증은 따로 던진다
         if (isAdultPage(html, dom)) throw new Error(ADULT_ERROR);
         return;
     }

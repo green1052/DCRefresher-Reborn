@@ -247,12 +247,13 @@
 }
 
 /* 스텔스 모드(페이지의 html.refresherStealth)가 넘겨준 변수로 미리보기 미디어도 숨긴다 — 댓글 디시콘은 아래에서 따로 가린다 */
-.refresher-html:not([data-dccon]) :is(img, video, embed, iframe) {
+.refresher-html:not([data-dccon]) :is(img, video, embed, iframe, image) {
     display: var(--refresher-stealth-media, inline);
 }
 
-// 위 스텔스 규칙(0,2,1)과 명시도를 맞춰야 뒤에 선언된 이쪽이 이긴다 — :is는 가장 높은 인자(img:not(...))를 따른다
-.refresher-preview-block-media :is(embed, img:not(.written_dccon), video) {
+// 위 스텔스 규칙(0,2,1)과 명시도를 맞춰야 뒤에 선언된 이쪽이 이긴다 — :is는 가장 높은 인자(img:not(...))를 따른다.
+// 유튜브 <embed>는 정화하며 iframe으로 바뀐다 (sanitize.ts)
+.refresher-preview-block-media :is(iframe, image, img:not(.written_dccon), video) {
     display: none;
 }
 
