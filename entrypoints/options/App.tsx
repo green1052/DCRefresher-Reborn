@@ -1,6 +1,6 @@
 import {Box, Button, Flex, Heading, Separator, Text} from "@radix-ui/themes";
 import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings, Wrench} from "lucide-react";
-import {type MouseEvent, useEffect, useState} from "react";
+import {type MouseEvent, useEffect, useRef, useState} from "react";
 
 import {fontFamilyOf} from "@/features/fonts";
 import {initBlocksStore} from "@/stores/blocks";
@@ -22,7 +22,7 @@ interface TabDef {
     icon: LucideIcon;
     /** 개발자 모드에서만 보임 */
     dev?: boolean;
-    content: (props: { hideDev: () => void }) => React.ReactNode;
+    content: (props: { hideDev: () => void; onVersionClick: () => void }) => React.ReactNode;
 }
 
 const TABS: TabDef[] = [
@@ -31,7 +31,7 @@ const TABS: TabDef[] = [
     {id: "memo", label: "메모", icon: NotebookPen, content: () => <MemoTab/>},
     {id: "shortcut", label: "단축키", icon: Keyboard, content: () => <ShortcutTab/>},
     {id: "data", label: "데이터", icon: Database, content: () => <DataTab/>},
-    {id: "about", label: "정보", icon: Info, content: () => <AboutTab logo={LOGO_URL} version={VERSION}/>},
+    {id: "about", label: "정보", icon: Info, content: ({onVersionClick}) => <AboutTab logo={LOGO_URL} version={VERSION} onVersionClick={onVersionClick}/>},
     {id: "dev", label: "개발자", icon: Wrench, dev: true, content: ({hideDev}) => <DevTab onHide={hideDev}/>}
 ];
 
@@ -59,6 +59,8 @@ const useHashTab = (): [string, (id: string) => void] => {
 
 const DEV_MODE_KEY = "refresher:devMode";
 const DEV_MODE_CLICKS = 5;
+/** 이보다 오래 쉬었다 누르면 처음부터 센다 */
+const DEV_MODE_GAP = 1000;
 
 const readDevMode = (): boolean => {
     try {
@@ -77,12 +79,21 @@ const writeDevMode = (on: boolean): void => {
     }
 };
 
-/** 개발자 탭: 개발 빌드이거나, 버전을 5번 연속 누르면 열린다 (옵션 페이지 localStorage에 기억 — 설정 백업에 섞이지 않게) */
-const useDevMode = (): [boolean, (ev: MouseEvent) => void, () => void] => {
+/**
+ * 개발자 탭: 개발 빌드이거나, 정보 탭의 버전을 5번 연달아 누르면 열린다 (옵션 페이지 localStorage에 기억 — 설정 백업에 섞이지 않게).
+ * 브라우저가 세는 연속 클릭(ev.detail)은 더블클릭 간격(0.5초 안팎)만 이어 세서 조금만 천천히 눌러도 5에 닿지 않는다 — 직접 센다
+ */
+const useDevMode = (): [boolean, () => void, () => void] => {
     const [unlocked, setUnlocked] = useState(readDevMode);
-    // ev.detail: 브라우저가 세는 연속 클릭 횟수 (간격이 벌어지면 1부터)
-    const onVersionClick = (ev: MouseEvent): void => {
-        if (ev.detail < DEV_MODE_CLICKS || unlocked) return;
+    const clicks = useRef({count: 0, last: 0});
+    const onVersionClick = (): void => {
+        if (unlocked) return;
+
+        const now = Date.now();
+        const state = clicks.current;
+        state.count = now - state.last > DEV_MODE_GAP ? 1 : state.count + 1;
+        state.last = now;
+        if (state.count < DEV_MODE_CLICKS) return;
 
         writeDevMode(true);
         setUnlocked(true);
@@ -98,12 +109,11 @@ const useDevMode = (): [boolean, (ev: MouseEvent) => void, () => void] => {
     return [import.meta.env.DEV || unlocked, onVersionClick, hide];
 };
 
-const Sidebar = ({tabs, tab, onSelect, onLogoClick, onVersionClick}: {
+const Sidebar = ({tabs, tab, onSelect, onLogoClick}: {
     tabs: TabDef[];
     tab: string;
     onSelect: (id: string) => void;
     onLogoClick: (ev: MouseEvent) => void;
-    onVersionClick: (ev: MouseEvent) => void;
 }) => (
     <Flex
         direction="column"
@@ -147,7 +157,7 @@ const Sidebar = ({tabs, tab, onSelect, onLogoClick, onVersionClick}: {
 
         <Box display={{initial: "none", md: "block"}} mt="auto">
             <Separator size="4" mb="3"/>
-            <Text as="p" size="1" color="gray" style={{paddingInline: "var(--space-2)", userSelect: "none"}} onClick={onVersionClick}>
+            <Text as="p" size="1" color="gray" style={{paddingInline: "var(--space-2)"}}>
                 v{VERSION}
             </Text>
         </Box>
@@ -180,14 +190,14 @@ export function App() {
 
     return (
         <Flex direction={{initial: "column", md: "row"}} minHeight="100vh">
-            <Sidebar tabs={tabs} tab={current.id} onSelect={setTab} onLogoClick={onLogoClick} onVersionClick={onVersionClick}/>
+            <Sidebar tabs={tabs} tab={current.id} onSelect={setTab} onLogoClick={onLogoClick}/>
             {/* 누를 때마다 새로 마운트 — React Compiler가 Math.random으로 그린 결과를 기억해 같은 모양이 반복되지 않게 */}
             {rain > 0 && <DcconRain key={rain} onEnd={() => setRain(0)}/>}
 
             <Box flexGrow="1" minWidth="0" px={{initial: "4", md: "6"}} py="6">
                 <Box maxWidth="880px" mx="auto">
                     <Heading size="7" mb="5">{current.label}</Heading>
-                    {current.content({hideDev})}
+                    {current.content({hideDev, onVersionClick})}
                 </Box>
             </Box>
         </Flex>

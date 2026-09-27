@@ -73,7 +73,7 @@ const readUsage = async (): Promise<Usage> => {
     return {local, sync};
 };
 
-export function AboutTab({logo, version}: { logo: string; version: string }) {
+export function AboutTab({logo, version, onVersionClick}: { logo: string; version: string; onVersionClick: () => void }) {
     const release = useRelease(version);
     const enables = useModulesStore((state) => state.enables);
     const blocks = useBlocksStore((state) => state.entries);
@@ -114,7 +114,8 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
                     <Box flexGrow="1">
                         <Flex align="center" gap="2">
                             <Heading size="5">DCRefresher Reborn</Heading>
-                            <Badge variant="soft">v{version}</Badge>
+                            {/* 연달아 5번 누르면 개발자 탭이 열린다 (App.tsx) */}
+                            <Badge variant="soft" style={{userSelect: "none"}} onClick={onVersionClick}>v{version}</Badge>
                         </Flex>
                         <Text as="p" size="2" color="gray">디시인사이드 개선 확장 프로그램</Text>
                     </Box>
