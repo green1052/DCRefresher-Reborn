@@ -91,8 +91,8 @@
     left: 50%;
     display: flex;
     flex-direction: column;
-    width: min(var(--refresher-frame-width, 1000px), 96vw);
-    max-height: 88vh;
+    width: min(var(--refresher-frame-width, 1200px), 96vw);
+    max-height: 94vh;
     overflow: hidden;
     border-radius: var(--radius-5);
     background: var(--color-panel-solid);
@@ -103,7 +103,7 @@
 
     // 왼쪽 관리 창(.refresher-admin-panel, 150px)과 겹치지 않게 양옆에 그 폭만큼 비운다 (너무 좁은 창에선 480px은 유지)
     &[data-admin] {
-        width: min(var(--refresher-frame-width, 1000px), 96vw, max(480px, calc(100vw - 2 * (150px + var(--space-3)))));
+        width: min(var(--refresher-frame-width, 1200px), 96vw, max(480px, calc(100vw - 2 * (150px + var(--space-3)))));
     }
 
     &[data-fading] {

@@ -142,7 +142,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     preData: null,
     signalId: 0,
     shortcutKeys: null,
-    frameWidth: 1000,
+    frameWidth: 1200,
     backgroundBlur: false,
     scrollToSkip: true,
     captcha: null,

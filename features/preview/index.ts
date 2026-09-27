@@ -28,7 +28,7 @@ const settings: NonNullable<ModuleDefinition["settings"]> = {
         group: FRAME_GROUP,
         name: "창 너비",
         desc: "미리보기 창의 너비입니다. 브라우저 창이 좁으면 그에 맞춰 줄어듭니다.",
-        default: 1000,
+        default: 1200,
         min: 700,
         max: 1600,
         step: 50,
