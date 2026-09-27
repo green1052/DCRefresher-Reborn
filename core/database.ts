@@ -1,6 +1,6 @@
 import {http} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
-import {type CompactIpData, compactIpData, createIpLookup, type IpCandidate, type RawIpData} from "@/core/ipdb";
+import {createIpLookup, type IpCandidate, IP_FORMAT, parseIpData} from "@/core/ipdb";
 import {storage} from "wxt/utils/storage";
 
 import {DB_KEYS, dbStorage, writeDatabase} from "@/core/storage/items";
@@ -15,21 +15,24 @@ import {once} from "@/utils/once";
 export const updateDatabase = async (force = false): Promise<void> => {
     const version = (await http.get(urls.database.version).text()).trim();
     const meta = await dbStorage.meta.getValue();
-    if (!force && version && version === meta.version.trim()) {
+    // 저장 형식이 바뀌었으면(확장 업데이트) 같은 버전이어도 새 형식으로 다시 받는다
+    if (!force && version && version === meta.version.trim() && meta.format === IP_FORMAT) {
         await dbStorage.meta.setValue({...meta, lastUpdate: Date.now()});
         return;
     }
 
     const [ip, ban] = await Promise.all([
-        http.get(urls.database.ip).json<RawIpData>(),
+        http.get(urls.database.ip).text(),
         http.get(urls.database.ban).json<BanList>()
     ]);
 
-    await writeDatabase({version, lastUpdate: Date.now()}, JSON.stringify(compactIpData(ip)), JSON.stringify(ban));
-};
+    // 서버가 저장 형식 그대로 주므로 받은 문자열을 저장한다. 깨졌거나 형식이 다르면 저장하지 않는다
+    const data = parseIpData(ip);
+    if (!data) throw new Error("IP 데이터 형식이 올바르지 않습니다.");
+    createIpLookup(data);
 
-/** 저장된 ip 문자열을 푼다 (없으면 null). 깨졌으면 던진다 */
-export const parseIp = (stored: string): CompactIpData | null => (stored ? (JSON.parse(stored) as CompactIpData) : null);
+    await writeDatabase({version, lastUpdate: Date.now(), format: IP_FORMAT}, ip, JSON.stringify(ban));
+};
 
 /** 저장된 ban 문자열을 푼다 (없으면 빈 목록). 깨졌으면 던진다 */
 export const parseBans = (stored: string): BanList => (stored ? (JSON.parse(stored) as BanList) : {});
@@ -77,7 +80,7 @@ const bump = (): void => {
 const loadIp = (stored: string): void => {
     lookupIp = null;
     try {
-        const ip = parseIp(stored);
+        const ip = parseIpData(stored);
         lookupIp = ip ? createIpLookup(ip) : null;
     } catch (e) {
         console.error("IP DB를 읽지 못했습니다.", e);

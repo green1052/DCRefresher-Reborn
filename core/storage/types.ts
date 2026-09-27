@@ -25,6 +25,8 @@ export interface MemoEntry {
 export interface DatabaseMeta {
     version: string;
     lastUpdate: number;
+    /** 저장된 IP 데이터의 형식 (core/ipdb의 IP_FORMAT). 없으면 옛 형식 */
+    format?: number;
 }
 
 /** 밴 목록: 이유 → uid[] */

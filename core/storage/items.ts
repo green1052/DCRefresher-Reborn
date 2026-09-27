@@ -88,7 +88,7 @@ export const dbStorage = {
 /**
  * ip·ban 키. defineItem은 만드는 순간 값을 한 번 읽으므로, 여기서 만들면 이 파일을 불러오는 모든 페이지·서비스 워커가
  * 쓰지도 않는 수백 KB를 읽는다. 쓰는 곳(core/database)에서 storage.getItem·watch로 다룬다.
- * 값은 CompactIpData(core/ipdb)·BanList의 JSON 문자열이고, 없으면 ""다.
+ * 값은 CompactIpData(core/ipdb)·BanList의 JSON 문자열이고, 없으면 ""다. ip는 서버(ip.json)가 준 문자열 그대로다.
  * 객체로 두면 값 약 10만 개짜리 객체 그래프를 읽을 때마다 메인 스레드가 10ms 넘게 막힌다.
  */
 export const DB_KEYS = {

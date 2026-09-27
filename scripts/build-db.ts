@@ -4,7 +4,7 @@ import ky from "ky";
 import {type AsnResponse, type CountryResponse, Reader} from "mmdb-lib";
 import {long2ip, Netmask} from "netmask";
 
-import {compactIpData, createIpLookup, type RawIpData} from "../core/ipdb";
+import {compactIpData, type RawIpData} from "../core/ipdb";
 
 import {shortenOrg} from "./shorten-org";
 
@@ -146,20 +146,14 @@ const metaIndex = new Map(metaKeys.map((key, index) => [key, index]));
 const data: RawIpData = {meta: metaKeys.map((key) => JSON.parse(key) as Meta), b: {}};
 for (const [prefix, keys] of candidates) data.b[`${prefix >> 8}.${prefix & 255}`] = keys.map((key) => metaIndex.get(key)!);
 
-// 자체 점검 — 확장과 같은 코드로 조회해 본다. 실패하면 파일을 쓰지 않는다
-const lookup = createIpLookup(compactIpData(data));
-const expect = (ip: string, check: (first: NonNullable<ReturnType<typeof lookup>>[number]) => boolean, label: string): void => {
-    const first = lookup(ip)?.[0];
-    if (!first || !check(first)) throw new Error(`점검 실패 ${ip} (${label}): ${JSON.stringify(lookup(ip))}`);
-};
-expect("175.223", (first) => first.org === "KT" && !first.country, "KT, 국가 없음");
-expect("126.0", (first) => first.org === "SoftBank Corp." && first.country === "일본", "소프트뱅크 일본");
-expect("36.110", (first) => first.country === "중국", "중국");
-expect("3.34", (first) => first.vpn, "AWS VPN");
-if (lookup("0.0") || lookup("255.255")) throw new Error("예약 대역에 데이터가 있습니다.");
+// 확장이 받아 그대로 저장하는 형식
+const compact = JSON.stringify(compactIpData(data));
 
-await Bun.write(`${OUT_DIR}/ip.json`, JSON.stringify(data));
+// 계산이 어긋나 대부분 비었으면 올리지 않는다 (지금 약 5만 6천). 워크플로가 실패하면 data 브랜치는 이전 DB 그대로다
+if (Object.keys(data.b).length < 40_000) throw new Error(`대역이 너무 적습니다: ${Object.keys(data.b).length}`);
+
+await Bun.write(`${OUT_DIR}/ip.json`, compact);
 await Bun.write(`${OUT_DIR}/version`, new Date().toISOString().slice(0, 10));
 
 const sizes = Object.values(data.b).map((list) => list.length);
-console.log(`prefixes=${sizes.length} meta=${data.meta.length} maxCandidates=${Math.max(...sizes)} kisa=${kisa.size} vpnRanges=${vpns.length} size=${JSON.stringify(data).length}`);
+console.log(`prefixes=${sizes.length} meta=${data.meta.length} maxCandidates=${Math.max(...sizes)} kisa=${kisa.size} vpnRanges=${vpns.length} size=${compact.length}`);

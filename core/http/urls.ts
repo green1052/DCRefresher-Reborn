@@ -15,6 +15,7 @@ export const urls = {
     // data 브랜치는 .github/workflows/db.yml이 만든다. raw.githubusercontent.com은 CORS를 허용해 호스트 권한이 필요 없다
     database: {
         version: "https://raw.githubusercontent.com/green1052/DCRefresher-Reborn/data/version",
+        // 저장 형식 그대로다 (core/ipdb의 CompactIpData)
         ip: "https://raw.githubusercontent.com/green1052/DCRefresher-Reborn/data/ip.json",
         ban: "https://raw.githubusercontent.com/green1052/DCRefresher-Reborn/data/ban.json"
     }
