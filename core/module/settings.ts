@@ -8,6 +8,9 @@ export const isModuleEnabled = (def: Pick<ModuleDefinition, "id" | "defaultEnabl
     return typeof value === "boolean" ? value : def.defaultEnable ?? true;
 };
 
+/** 스키마의 기본값 — 배열(order)은 복사본이라 고쳐도 스키마가 바뀌지 않는다 */
+export const defaultValue = (schema: SettingSchema): SettingValue => (schema.type === "order" ? [...schema.default] : schema.default);
+
 /** 저장값을 스키마에 맞춘다 — 타입이 틀리면 기본값, range는 범위로 자르고, order는 스키마에 없는·겹친 항목 제거/새 항목 추가 */
 export const normalizeSetting = (schema: SettingSchema, value: unknown): SettingValue => {
     switch (schema.type) {

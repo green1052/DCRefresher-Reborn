@@ -312,19 +312,6 @@ export default defineModule({
         }
     },
 
-    shortcuts: {
-        blockReveal: (_ctx, api) => (api as BlockApi | undefined)?.toggleReveal()
-    },
-
-    pageToggles: [{
-        id: "reveal",
-        label: "가린 내용 보기",
-        desc: (api) => `가린 ${(api as BlockApi).hiddenCount()}개를 흐리게 보입니다`,
-        icon: Eye,
-        isOn: (api) => (api as BlockApi).isRevealed(),
-        toggle: (api) => (api as BlockApi).toggleReveal()
-    }],
-
     setup(ctx) {
         const gallery = queryString("id") ?? undefined;
 
@@ -347,6 +334,19 @@ export default defineModule({
         };
         return api;
     },
+
+    shortcuts: {
+        blockReveal: (_ctx, api) => api.toggleReveal()
+    },
+
+    pageToggles: [{
+        id: "reveal",
+        label: "가린 내용 보기",
+        desc: (api) => `가린 ${api.hiddenCount()}개를 흐리게 보입니다`,
+        icon: Eye,
+        isOn: (api) => api.isRevealed(),
+        toggle: (api) => api.toggleReveal()
+    }],
 
     onChanged(ctx, key) {
         publishView(ctx);

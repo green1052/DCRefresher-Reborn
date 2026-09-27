@@ -1,15 +1,16 @@
 import {addFilter} from "@/core/filtering";
+import type {PageAction, PageToggleState} from "@/core/messaging/protocol";
 import {moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
 
 import {areEqual, isModuleEnabled, normalizeSettings} from "./settings";
-import type {ModuleContext, ModuleDefinition} from "./types";
+import type {AnyModule, ModuleContext} from "./types";
 
 interface ModuleInstance {
-    def: ModuleDefinition;
+    def: AnyModule;
     settings: Record<string, SettingValue>;
-    /** 실행 중일 때만 존재 */
-    running?: { ctx: ModuleContext; controller: AbortController; api?: unknown };
+    /** 실행 중일 때만 존재. ready: setup이 끝나 api가 있다 — 단축키·팝업 토글은 그때부터 받는다 */
+    running?: { ctx: ModuleContext; controller: AbortController; ready: boolean; api?: unknown };
 }
 
 const instances = new Map<string, ModuleInstance>();
@@ -37,12 +38,15 @@ const start = async (instance: ModuleInstance): Promise<void> => {
         addCleanup
     };
 
-    const running: NonNullable<ModuleInstance["running"]> = {ctx, controller};
+    const running: NonNullable<ModuleInstance["running"]> = {ctx, controller, ready: false};
     instance.running = running;
 
     try {
-        const api = (await instance.def.setup(ctx)) ?? undefined;
-        if (!signal.aborted) running.api = api;
+        const api = await instance.def.setup(ctx);
+        if (!signal.aborted) {
+            running.api = api;
+            running.ready = true;
+        }
     } catch (e) {
         // 실패한 모듈은 반쪽 상태로 두지 않는다 (그사이 새로 시작된 실행은 건드리지 않는다)
         if (!signal.aborted) stop(instance);
@@ -70,7 +74,7 @@ const applySettings = (instance: ModuleInstance, stored: Record<string, unknown>
     }
 };
 
-const register = async (def: ModuleDefinition, enable: boolean): Promise<void> => {
+const register = async (def: AnyModule, enable: boolean): Promise<void> => {
     if (instances.has(def.id)) throw new Error(`${def.id} is already registered.`);
 
     const instance: ModuleInstance = {def, settings: {}};
@@ -86,15 +90,31 @@ const register = async (def: ModuleDefinition, enable: boolean): Promise<void> =
     if (enable) await start(instance);
 };
 
-/** 실행 중인 모듈의 api (setup()의 리턴값). 꺼져 있거나 이 페이지에서 안 돌면 undefined */
-export const getModuleApi = (id: string): unknown => instances.get(id)?.running?.api;
+/** 이 페이지에서 setup이 끝난 모듈 — 꺼져 있거나 이 페이지에서 안 돌거나 아직 시작 중이면 없다 */
+const readyModules = () => [...instances.values()].flatMap(({def, running}) => (running?.ready ? [{def, running}] : []));
 
-/** 단축키 실행 (배경의 commands → 탭). 실행 중인 모듈의 shortcuts만 */
+/** 단축키 실행 (배경의 commands → 탭). 이 페이지에서 도는 모듈의 shortcuts만 */
 export const runShortcut = (command: string): void => {
-    for (const {def, running} of instances.values()) {
+    for (const {def, running} of readyModules()) {
         const shortcut = def.shortcuts?.[command];
-        if (shortcut && running) void shortcut(running.ctx, running.api);
+        if (shortcut) void shortcut(running.ctx, running.api);
     }
+};
+
+/** 팝업 '현재 페이지'의 토글 상태 — 이 페이지에서 도는 모듈의 것만 (꺼진 모듈의 토글은 띄우지 않는다) */
+export const pageToggleStates = (): PageToggleState[] =>
+    readyModules().flatMap(({def, running}) => (def.pageToggles ?? []).map((toggle) => ({
+        module: def.id,
+        id: toggle.id,
+        label: toggle.label,
+        desc: typeof toggle.desc === "function" ? toggle.desc(running.api) : toggle.desc,
+        on: toggle.isOn(running.api)
+    })));
+
+/** 팝업에서 누른 토글을 실행한다 */
+export const runPageToggle = ({module, id}: PageAction): void => {
+    const found = readyModules().find(({def}) => def.id === module);
+    found?.def.pageToggles?.find((toggle) => toggle.id === id)?.toggle(found.running.api);
 };
 
 /**
@@ -106,7 +126,7 @@ export const stopAll = (): void => {
 };
 
 /** 모듈을 일괄 등록하고, 옵션 페이지의 on/off(저장소)를 감시해 시작/중지한다 */
-export const loadAll = async (defs: ModuleDefinition[]): Promise<void> => {
+export const loadAll = async (defs: AnyModule[]): Promise<void> => {
     const enables = await modulesStorage.getValue();
 
     const results = await Promise.allSettled(defs.map((def) => register(def, isModuleEnabled(def, enables))));

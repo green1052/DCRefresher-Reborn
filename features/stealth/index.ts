@@ -62,25 +62,6 @@ export default defineModule({
     icon: EyeOff,
     defaultEnable: false,
 
-    shortcuts: {
-        stealthPause: (_ctx, api) => {
-            const stealth = api as StealthApi | undefined;
-            if (!stealth) return;
-
-            stealth.toggle();
-            useUiStore.getState().showToast(stealth.isRevealed() ? "이미지를 보이게 했습니다." : "이미지를 숨겼습니다.");
-        }
-    },
-
-    pageToggles: [{
-        id: "reveal",
-        label: "이미지 잠시 보이기",
-        desc: "스텔스로 숨긴 이미지를 보입니다",
-        icon: Image,
-        isOn: (api) => (api as StealthApi).isRevealed(),
-        toggle: (api) => (api as StealthApi).toggle()
-    }],
-
     setup(ctx) {
         document.documentElement.classList.add("refresherStealth");
 
@@ -94,6 +75,22 @@ export default defineModule({
         const api: StealthApi = {isRevealed, toggle};
         return api;
     },
+
+    shortcuts: {
+        stealthPause: (_ctx, api) => {
+            api.toggle();
+            useUiStore.getState().showToast(api.isRevealed() ? "이미지를 보이게 했습니다." : "이미지를 숨겼습니다.");
+        }
+    },
+
+    pageToggles: [{
+        id: "reveal",
+        label: "이미지 잠시 보이기",
+        desc: "스텔스로 숨긴 이미지를 보입니다",
+        icon: Image,
+        isOn: (api) => api.isRevealed(),
+        toggle: (api) => api.toggle()
+    }],
 
     revoke() {
         document.documentElement.classList.remove("refresherStealth", TEMPORARY_STEALTH);

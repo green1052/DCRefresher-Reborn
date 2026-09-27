@@ -8,29 +8,35 @@ export interface SettingGroup {
     desc: string;
 }
 
-export type SettingSchema = { group?: SettingGroup } & (
-    | { type: "check"; name: string; desc: string; default: boolean }
-    | { type: "text"; name: string; desc: string; default: string; placeholder?: string }
-    | {
-    type: "range";
-    name: string;
-    desc: string;
-    default: number;
-    min: number;
-    max: number;
-    step: number;
-    unit: string
-}
-    | { type: "option"; name: string; desc: string; default: string; items: Record<string, string> }
-    | { type: "order"; name: string; desc: string; default: string[]; items: Record<string, string> }
-    | { type: "color"; name: string; desc: string; default: string }
+export type SettingSchema = { name: string; desc: string; group?: SettingGroup } & (
+    | { type: "check"; default: boolean }
+    | { type: "text"; default: string; placeholder?: string }
+    | { type: "range"; default: number; min: number; max: number; step: number; unit: string }
+    | { type: "option"; default: string; items: Record<string, string> }
+    /** default는 readonly — defineModule이 설정을 그대로(const) 추론해도 들어가게 */
+    | { type: "order"; default: readonly string[]; items: Record<string, string> }
+    | { type: "color"; default: string }
     /** 키 하나 (소문자 영문·숫자) */
-    | { type: "key"; name: string; desc: string; default: string }
+    | { type: "key"; default: string }
 );
 
-export interface ModuleContext {
+/** 모듈의 설정 스키마 (설정 키 → 스키마) */
+export type SettingsSchema = Record<string, SettingSchema>;
+
+/** 스키마 하나의 값 타입 — option·order는 고를 수 있는 항목 키로 좁힌다 */
+type SettingValueOf<T extends SettingSchema> =
+    T extends { type: "check" } ? boolean
+        : T extends { type: "range" } ? number
+            : T extends { type: "option"; items: infer I } ? keyof I & string
+                : T extends { type: "order"; items: infer I } ? (keyof I & string)[]
+                    : string;
+
+/** 스키마에서 나오는 설정값 (ctx.settings) — 스키마를 그대로 적은 모듈은 키마다 정확한 타입이 된다 */
+export type SettingValues<S extends SettingsSchema> = { readonly [K in keyof S]: SettingValueOf<S[K]> };
+
+export interface ModuleContext<S extends SettingsSchema = SettingsSchema> {
     /** 현재 모듈의 설정값 (live, 읽기 전용) */
-    settings: Readonly<Record<string, SettingValue>>;
+    settings: SettingValues<S>;
     /** 이 실행의 수명 — 모듈이 멈추면 abort. DOM 리스너·eventBus.on에 {signal}로 넘긴다 */
     signal: AbortSignal;
 
@@ -45,16 +51,20 @@ export interface ModuleContext {
  * 팝업의 '현재 페이지'에 나오는 이 페이지 한정 토글. api는 setup()의 리턴값 — 모듈이 이 페이지에서 돌 때만 보인다.
  * desc는 함수면 열 때마다 계산한다 (가린 개수 등)
  */
-export interface PageToggle {
+export interface PageToggle<Api = unknown> {
     id: string;
     label: string;
-    desc: string | ((api: unknown) => string);
+    desc: string | ((api: Api) => string);
     icon: LucideIcon;
-    isOn(api: unknown): boolean;
-    toggle(api: unknown): void;
+    isOn(api: Api): boolean;
+    toggle(api: Api): void;
 }
 
-export interface ModuleDefinition {
+/**
+ * 기능 모듈. S는 설정 스키마, Api는 setup()이 돌려주는 값 — 단축키·팝업 토글이 받는다.
+ * 객체를 적을 때 setup을 shortcuts·pageToggles보다 앞에 둔다 (Api를 setup에서 추론한다)
+ */
+export interface ModuleDefinition<S extends SettingsSchema = SettingsSchema, Api = unknown> {
     /** 아스키 id (storage 키, 저장 값과 연결) */
     id: string;
     /** 표시명 (한글) */
@@ -67,19 +77,23 @@ export interface ModuleDefinition {
     /** 최초 활성 여부 (기본: true) */
     defaultEnable?: boolean;
     /** 설정 스키마 (옵션 페이지에서 렌더링됨) */
-    settings?: Record<string, SettingSchema>;
-    /** 단축키 (commands). registry가 활성 모듈에만 전달. api = setup()의 리턴값 */
-    shortcuts?: Record<string, (ctx: ModuleContext, api: unknown) => void | Promise<void>>;
-
-    /** 팝업 '현재 페이지' 토글 */
-    pageToggles?: PageToggle[];
+    settings?: S;
 
     /** 활성화시 실행. 리턴값은 shortcuts·pageToggles에 api로 전달된다 */
-    setup(ctx: ModuleContext): unknown | void;
+    setup(ctx: ModuleContext<S>): Api | Promise<Api>;
+
+    /** 단축키 (commands — 키는 wxt.config.ts의 manifest commands 이름). registry가 setup이 끝난 모듈에만 전달한다 */
+    shortcuts?: Record<string, (ctx: ModuleContext<S>, api: Api) => void | Promise<void>>;
+
+    /** 팝업 '현재 페이지' 토글 */
+    pageToggles?: PageToggle<Api>[];
 
     /** 비활성화시 실행 (DOM 정리 등). 리스너(signal)·cleanup은 이미 풀린 뒤다 */
     revoke?(): void;
 
     /** 활성 중 설정이 변경됐을 때 실행 (새 값은 ctx.settings[key]) */
-    onChanged?(ctx: ModuleContext, key: string): void;
+    onChanged?(ctx: ModuleContext<S>, key: keyof S & string): void;
 }
+
+/** 레지스트리·옵션·팝업이 모듈을 모아 다룰 때의 타입 — 모듈마다의 설정·api 타입은 defineModule에서 지운다 */
+export type AnyModule = ModuleDefinition<SettingsSchema, unknown>;

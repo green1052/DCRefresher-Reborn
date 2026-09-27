@@ -10,8 +10,8 @@ import {ContentRoot} from "@/components/overlay/ContentRoot";
 import {overlay} from "@/components/overlay/shadow";
 import {initDatabase} from "@/core/database";
 import {BOARD_PAGE} from "@/core/pages";
-import {onMessage, type PageToggleState} from "@/core/messaging/protocol";
-import {getModuleApi, loadAll, runShortcut, stopAll} from "@/core/module/registry";
+import {onMessage} from "@/core/messaging/protocol";
+import {loadAll, pageToggleStates, runPageToggle, runShortcut, stopAll} from "@/core/module/registry";
 import features from "@/features";
 import {usePreviewStore} from "@/features/preview/ui/previewStore";
 import {initBlocksStore} from "@/stores/blocks";
@@ -47,26 +47,10 @@ export default defineContentScript({
         // ===== 메시징 (배경·팝업→탭) =====
         onMessage("refresher:executeShortcut", ({data: command}) => runShortcut(command));
 
-        // 모듈이 꺼져 있거나 이 페이지에서 안 돌면 api가 없다 — 그 모듈의 토글은 팝업에 띄우지 않는다
-        const pageState = (): PageToggleState[] =>
-            features.flatMap((feature) => {
-                const api = getModuleApi(feature.id);
-                return api === undefined
-                    ? []
-                    : (feature.pageToggles ?? []).map((toggle) => ({
-                        module: feature.id,
-                        id: toggle.id,
-                        label: toggle.label,
-                        desc: typeof toggle.desc === "function" ? toggle.desc(api) : toggle.desc,
-                        on: toggle.isOn(api)
-                    }));
-            });
-
-        onMessage("refresher:pageState", pageState);
-        onMessage("refresher:pageAction", ({data: {module, id}}) => {
-            const api = getModuleApi(module);
-            if (api !== undefined) features.find((feature) => feature.id === module)?.pageToggles?.find((toggle) => toggle.id === id)?.toggle(api);
-            return pageState();
+        onMessage("refresher:pageState", pageToggleStates);
+        onMessage("refresher:pageAction", ({data: action}) => {
+            runPageToggle(action);
+            return pageToggleStates();
         });
 
         // 옵션 페이지는 저장소에 직접 쓰고, 모듈 레지스트리가 저장소를 감시해 반영한다 (메시징 없음)

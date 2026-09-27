@@ -103,20 +103,6 @@ export default defineModule({
         }
     },
 
-    shortcuts: {
-        refreshLists: (_ctx, api) => void (api as RefreshApi | undefined)?.refreshLists(),
-        refreshPause: (_ctx, api) => (api as RefreshApi | undefined)?.togglePause()
-    },
-
-    pageToggles: [{
-        id: "pause",
-        label: "새로고침 일시정지",
-        desc: "이 탭의 자동 새로고침을 멈춥니다",
-        icon: Pause,
-        isOn: (api) => (api as RefreshApi).isPaused(),
-        toggle: (api) => (api as RefreshApi).togglePause()
-    }],
-
     setup(ctx) {
         let paused = Boolean(queryString("s_keyword") && ctx.settings.noRefreshOnSearch);
         let lastRefresh = 0;
@@ -434,6 +420,20 @@ export default defineModule({
 
         return api;
     },
+
+    shortcuts: {
+        refreshLists: (_ctx, api) => void api.refreshLists(),
+        refreshPause: (_ctx, api) => api.togglePause()
+    },
+
+    pageToggles: [{
+        id: "pause",
+        label: "새로고침 일시정지",
+        desc: "이 탭의 자동 새로고침을 멈춥니다",
+        icon: Pause,
+        isOn: (api) => api.isPaused(),
+        toggle: (api) => api.togglePause()
+    }],
 
     onChanged(ctx, key) {
         if (key === "doNotColorVisited") applyDoNotColorVisited(ctx);

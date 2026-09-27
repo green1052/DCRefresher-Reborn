@@ -3,7 +3,7 @@ import {ChevronDown, ChevronUp, GripVertical, Undo2} from "lucide-react";
 import {useState} from "react";
 
 import {RefresherSelect} from "@/components/RefresherSelect";
-import {areEqual} from "@/core/module/settings";
+import {areEqual, defaultValue} from "@/core/module/settings";
 import type {SettingSchema} from "@/core/module/types";
 import type {SettingValue} from "@/core/storage/types";
 import {pressedKey} from "@/utils/event";
@@ -244,10 +244,10 @@ export const SettingItem = ({schema, value, compact, takenKeys, onChange}: Setti
             <Text size="2" weight="medium" title={compact ? schema.desc : undefined}>
                 {schema.name}
             </Text>
-            {!areEqual(value, schema.default) && (
+            {!areEqual(value, defaultValue(schema)) && (
                 <Tooltip content={`기본값으로 되돌리기 (${formatDefault(schema)})`}>
                     <IconButton size="1" variant="ghost" color="gray" aria-label="기본값으로 되돌리기"
-                                onClick={() => onChange(structuredClone(schema.default))}>
+                                onClick={() => onChange(defaultValue(schema))}>
                         <Undo2 size={14}/>
                     </IconButton>
                 </Tooltip>

@@ -2,6 +2,7 @@ import {Box, Card, Flex, Grid, Heading, Separator, Switch, Text} from "@radix-ui
 import {Fragment} from "react";
 
 import {SettingItem} from "@/components/SettingItem";
+import {defaultValue} from "@/core/module/settings";
 import type {SettingSchema} from "@/core/module/types";
 import features from "@/features";
 import {useModulesStore} from "@/stores/modules";
@@ -39,7 +40,7 @@ export function GeneralTab() {
                                 {/* 같은 group 객체를 가진 설정은 첫 설정 자리에 한 줄로 묶는다 */}
                                 {[...Map.groupBy(settings, ([key, schema]) => schema.group ?? key).values()].map((entries) => {
                                     const group = entries[0]![1].group;
-                                    const valueOf = (key: string, schema: SettingSchema) => values[feature.id]?.[key] ?? schema.default;
+                                    const valueOf = (key: string, schema: SettingSchema) => values[feature.id]?.[key] ?? defaultValue(schema);
                                     const item = ([key, schema]: [string, SettingSchema], compact?: boolean) => (
                                         <SettingItem
                                             key={key}
