@@ -78,12 +78,14 @@ export const compactIpData = (raw: RawIpData): CompactIpData => {
 /** 저장 형식 → 조회 함수 (표는 한 번만 디코드) */
 export const createIpLookup = (data: CompactIpData): ((ip: string) => IpCandidate[] | undefined) => {
     const table = new Uint16Array(Uint8Array.fromBase64(data.table).buffer);
-    const metaCount = data.meta.length / 3;
+    // 조회에 쓰는 것만 붙잡는다 — data째 잡으면 디코드한 base64 표 문자열(수백 KB)이 탭마다 남는다
+    const {orgs, countries, meta, lists} = data;
+    const metaCount = meta.length / 3;
 
     const candidate = (index: number): IpCandidate => ({
-        org: data.orgs[data.meta[index * 3]!] || undefined,
-        country: data.countries[data.meta[index * 3 + 1]!] || undefined,
-        vpn: data.meta[index * 3 + 2] === 1
+        org: orgs[meta[index * 3]!] || undefined,
+        country: countries[meta[index * 3 + 1]!] || undefined,
+        vpn: meta[index * 3 + 2] === 1
     });
 
     return (ip) => {
@@ -91,7 +93,7 @@ export const createIpLookup = (data: CompactIpData): ((ip: string) => IpCandidat
         const value = slot === undefined ? 0 : table[slot]!;
         if (!value) return undefined;
 
-        const indexes = value - 1 < metaCount ? [value - 1] : data.lists[value - 1 - metaCount] ?? [];
+        const indexes = value - 1 < metaCount ? [value - 1] : lists[value - 1 - metaCount] ?? [];
         return indexes.map(candidate);
     };
 };

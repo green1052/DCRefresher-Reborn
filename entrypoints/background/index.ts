@@ -111,10 +111,10 @@ export default defineBackground(() => {
     let updating: Promise<void> | null = null;
     const update = (): Promise<void> => (updating ??= updateDatabase().catch(console.error).finally(() => (updating = null)));
 
-    browser.runtime.onInstalled.addListener(async () => {
-        // v5에서 업데이트한 경우 설정을 v6 형식으로 옮긴다 (한시적)
+    browser.runtime.onInstalled.addListener(async ({reason, previousVersion}) => {
+        // v5에서 업데이트한 경우만 설정을 v6 형식으로 옮긴다 (한시적) — 저장소 전체를 읽으니 다른 설치·업데이트에서는 건너뛴다.
         // 실패해도 DB 갱신·모듈 맞추기는 이어서 한다 (옮긴 설정으로 맞춘다)
-        await migrateV5Storage().catch(console.error);
+        if (reason === "update" && previousVersion?.startsWith("5.")) await migrateV5Storage().catch(console.error);
         await applyBackgroundModules();
 
         if (import.meta.env.PROD || !(await dbStorage.meta.getValue()).version) {

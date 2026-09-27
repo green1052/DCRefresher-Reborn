@@ -5,10 +5,20 @@ import {dbStorage, writeDatabase} from "@/core/storage/items";
 import type {BanList} from "@/core/storage/types";
 import {once} from "@/utils/once";
 
-/** IP/갱차 데이터베이스를 내려받아 저장 — 배경(설치·주기)과 옵션 페이지(지금 갱신)에서 호출 */
-export const updateDatabase = async (): Promise<void> => {
-    const [version, ip, ban] = await Promise.all([
-        http.get(urls.database.version).text(),
+/**
+ * IP/갱차 데이터베이스를 내려받아 저장 — 배경(설치·주기)과 옵션 페이지(지금 갱신)에서 호출.
+ * 서버 버전이 저장된 것과 같으면 본문(1MB 넘게)은 받지 않고 확인한 시각만 남긴다 — 다시 쓰면 열린 탭마다 IP DB를 다시 푼다.
+ * force: 사용자가 누른 "지금 갱신" — 같은 버전이어도 다시 받는다
+ */
+export const updateDatabase = async (force = false): Promise<void> => {
+    const version = (await http.get(urls.database.version).text()).trim();
+    const meta = await dbStorage.meta.getValue();
+    if (!force && version && version === meta.version.trim()) {
+        await dbStorage.meta.setValue({...meta, lastUpdate: Date.now()});
+        return;
+    }
+
+    const [ip, ban] = await Promise.all([
         http.get(urls.database.ip).json<RawIpData>(),
         http.get(urls.database.ban).json<BanList>()
     ]);

@@ -101,7 +101,7 @@ export function DataTab() {
 
     const forceUpdate = () =>
         run(async () => {
-            await updateDatabase();
+            await updateDatabase(true);
             return "데이터베이스를 갱신했습니다.";
         }, "데이터베이스를 갱신하지 못했습니다.");
 
