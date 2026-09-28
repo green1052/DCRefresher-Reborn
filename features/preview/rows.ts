@@ -43,7 +43,8 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
         link: url.href,
         notice,
         recommend,
-        type
+        type,
+        hasComments: row.querySelector(".reply_num") !== null
     };
 };
 

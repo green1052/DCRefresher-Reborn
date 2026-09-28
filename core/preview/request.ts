@@ -27,7 +27,7 @@ export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): P
 };
 
 /** 댓글 목록. 한 쪽에 100개씩이라 여러 쪽을 받아 합친다 */
-export const fetchComments = async (preData: GalleryPreData, postInfo: PostInfo, signal: AbortSignal): Promise<CommentListResponse> => {
+export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<PostInfo, "commentId" | "commentNo" | "esno">, signal: AbortSignal): Promise<CommentListResponse> => {
     const body = await dcBody(preData.link, {
         id: preData.gallery,
         no: preData.id,

@@ -98,8 +98,9 @@ export const Frame = () => {
     // 본문 칸은 댓글만 보기·오류·닫힘일 때 빠졌다가 다시 붙고, 글마다 새로 마운트되므로 그때마다 동영상 크기를 다시 맞춘다.
     // 같은 글을 캐시로 다시 열면 visible 말고는 값이 모두 같다. hideText가 풀리면 동영상이 새로 들어온다.
     useEffect(() => (contentsBox.current ? fitMovies(contentsBox.current) : undefined), [visible, contents, commentsOnly, error, postKey, hideText]);
-    // 깨진 움짤·디시콘 mp4는 디시처럼 gif로 바꾼다. 본문 칸이 새로 그려지는 때가 위와 같다
-    useEffect(() => (contentsBox.current ? watchGifVideos(contentsBox.current) : undefined), [visible, contents, commentsOnly, error, postKey, hideText]);
+    // 깨진 움짤·디시콘 mp4는 디시처럼 gif로 바꾼다. 본문 칸이 새로 그려지는 때가 위와 같다.
+    // 닫을 때는 페이드가 끝나 본문이 빠진 뒤에도 정리가 돌아야 떨어진 영상의 받기를 끊는다 (fading)
+    useEffect(() => (contentsBox.current ? watchGifVideos(contentsBox.current) : undefined), [visible, fading, contents, commentsOnly, error, postKey, hideText]);
 
     // 창은 비모달이라(아래 Dialog.Root) Radix가 포커스를 가두지 않는다. 연 동안 뒤 페이지를 inert로 막아 Tab·스크린 리더가 가려진 목록으로 나가지 않게 한다.
     // 오버레이(refresher-root)는 남긴다. 버블·토스트·관리 패널이 거기 있다. body에 직접 붙인 확장 UI(스텔스 버튼 등)도 data-refresher-ui로 남긴다.

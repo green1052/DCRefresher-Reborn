@@ -6,7 +6,7 @@ import {BLOCKED_TEXT, isBlocked} from "@/core/block";
 import {BlockedError, isAbortError} from "@/core/http/client";
 import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
-import type {DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
+import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
 import {messageOf} from "@/utils/error";
@@ -141,8 +141,11 @@ const controller = (ctx: Ctx) => {
         }
     };
 
-    /** 댓글을 받아 가공해 그린다. skip이면 받지 않고 빈 목록으로 처리한다 (보존해 둔 댓글은 삭제된 것으로 나온다) */
-    const pullComments = async (preData: GalleryPreData, post: PostInfo, mySignal: number, skip = false): Promise<void> => {
+    /**
+     * 댓글을 받아 가공해 그린다. skip이면 받지 않고 빈 목록으로 처리한다 (보존해 둔 댓글은 삭제된 것으로 나온다).
+     * given이 있으면 받지 않고 그 목록을 그린다 (미리 받은 목록, 캐시의 지난 목록)
+     */
+    const pullComments = async (preData: GalleryPreData, post: PostInfo, mySignal: number, skip = false, given?: CommentListResponse): Promise<void> => {
         const seq = ++commentSeq;
         pulling++;
 
@@ -151,10 +154,11 @@ const controller = (ctx: Ctx) => {
             const [{prepareComments, processComments}, {list: raw, allowReply}] = await Promise.all([
                 import("@/core/preview/comments"),
                 // 건너뛸 때는 지금 알고 있는 댓글 허용(멤버만 댓글)을 그대로 둔다
-                skip ? {list: [], allowReply: store.getState().allowReply} : fetchComments(preData, post, abort!.signal)
+                skip ? {list: [], allowReply: store.getState().allowReply} : given ?? fetchComments(preData, post, abort!.signal)
             ]);
             if (store.getState().signalId !== mySignal || seq < shownSeq) return;
             shownSeq = seq;
+            if (!skip) setEntry(preData, {comments: {list: raw, allowReply}});
 
             // 보존(archive) 기록은 받을 때마다 갱신해야 하므로 정리는 늘 한다
             const source = prepareComments(raw, preData, ctx.settings.archiveArticle);
@@ -231,6 +235,13 @@ const controller = (ctx: Ctx) => {
         let fresh: boolean;
         let archived: boolean;
 
+        // 받아야 하는 글이 목록에 댓글이 보이면 댓글도 본문과 함께 요청한다. 토큰(e_s_n_o)은 갤러리마다 같아 이 페이지의 값을 쓰고,
+        // 본문을 읽은 뒤 그 글의 값과 맞을 때만 쓴다. PageUp/Down으로 넘길 때는 하지 않는다 (연타하면 지나가는 글마다 요청이 나간다)
+        const esno = document.querySelector<HTMLInputElement>("#e_s_n_o")?.value;
+        const early = !dir && preData.hasComments && esno && (ctx.settings.disableCache || !cachedPost(preData))
+            ? fetchComments(preData, {esno}, abort!.signal).catch(() => undefined)
+            : undefined;
+
         try {
             ({post, fresh, archived = false} = await getPost(preData));
             post = await processContents(preData, post);
@@ -246,8 +257,14 @@ const controller = (ctx: Ctx) => {
         store.setState({post, archived});
 
         try {
+            // 캐시로 연 글은 받는 동안 지난번 댓글을 먼저 보인다. 새로 받은 목록이 같으면 다시 그리지 않는다 (shownRaw)
+            const last = fresh ? undefined : getEntry(preData)?.comments;
+            if (last) await pullComments(preData, post, mySignal, false, last);
+            // 미리 받은 댓글은 같은 요청이었을 때만 쓴다. 비어 있으면 다시 받는다
+            const matches = post.esno === esno && (post.commentId ?? preData.gallery) === preData.gallery && (post.commentNo ?? preData.id) === preData.id;
+            const given = matches ? await early : undefined;
             // 방금 받은 본문이 댓글 0개면 받지 않는다. 보존해 둔 댓글이 있으면 삭제 여부를 비교해야 하므로 받는다.
-            await pullComments(preData, post, mySignal, fresh && post.commentCount === 0 && !Object.keys(getEntry(preData)?.seen ?? {}).length);
+            await pullComments(preData, post, mySignal, fresh && post.commentCount === 0 && !Object.keys(getEntry(preData)?.seen ?? {}).length, given?.list.length ? given : undefined);
         } catch (e) {
             // 댓글만 못 받았으면 본문은 그대로 두고 알린다. 임시 차단은 HTTP 클라이언트가 이미 알렸다
             if (store.getState().signalId === mySignal && !(e instanceof BlockedError)) ui.showToast("댓글을 불러오지 못했습니다.", "error");

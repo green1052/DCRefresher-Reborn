@@ -1,5 +1,5 @@
 import {LRUCache} from "lru-cache";
-import type {DcinsideComment, GalleryPreData, PostInfo} from "./types";
+import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "./types";
 
 interface CacheEntry {
     post?: PostInfo;
@@ -7,6 +7,8 @@ interface CacheEntry {
     fetchedAt?: number;
     /** 삭제 댓글 보존용. 지금까지 받은 댓글 전부이며, 서버 목록에서 빠진 댓글은 삭제된 것으로 되살린다 */
     seen?: Record<string, DcinsideComment>;
+    /** 마지막으로 그린 댓글 목록. 캐시로 다시 열면 새로 받는 동안 이것을 먼저 보인다 */
+    comments?: CommentListResponse;
 }
 
 // 게시글 캐시: 수명 1분, 최대 50개. 저장할 때마다 수명이 다시 1분으로 늘어난다.
