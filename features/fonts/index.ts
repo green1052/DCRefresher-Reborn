@@ -55,7 +55,7 @@ const settings = {
     bodyFontSize: {
         type: "range",
         name: "본문 폰트 크기",
-        desc: "게시글 본문의 폰트 크기입니다. 미리보기 창은 +2px로 표시됩니다.",
+        desc: "게시글 본문의 폰트 크기입니다. 미리보기 창은 본문과 댓글 모두 +2px로 표시됩니다.",
         default: 13,
         min: 5,
         max: 30,
