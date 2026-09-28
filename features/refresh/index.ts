@@ -118,9 +118,10 @@ export default defineModule({
                 if (list && (list.matches(":hover") || list.querySelector(":focus-visible"))) return false;
             }
 
-            // 관리자가 체크박스로 글을 고르는 중이면 목록을 갈아끼우지 않는다.
-            // 댓글 체크박스는 목록과 상관없다. 사용자가 직접 한 이동(페이지 전환/뒤로 가기)은 막으면 주소와 목록이 어긋나므로 거르지 않는다
-            if (!customURL && (document.querySelector(".gall_list:not([id]) .article_chkbox:checked") || document.querySelector(".user_data.add"))) {
+            // 관리자가 체크박스로 글을 고르는 중이거나 목록 행에 디시 유저 메뉴(작성자 좌클릭)가 열려 있으면 목록을 갈아끼우지 않는다.
+            // 댓글의 체크박스·유저 메뉴는 목록과 상관없다. 문서 전체에서 찾으면 댓글 작성자 메뉴를 연 채로 두는 동안 새로고침이 멈춘다.
+            // 사용자가 직접 한 이동(페이지 전환/뒤로 가기)은 막으면 주소와 목록이 어긋나므로 거르지 않는다
+            if (!customURL && document.querySelector(".gall_list:not([id]) :is(.article_chkbox:checked, .user_data.add)")) {
                 return false;
             }
 
@@ -140,12 +141,13 @@ export default defineModule({
             try {
                 lastRefresh = Date.now();
 
-                // 자동 새로고침은 주기보다 짧게 끊고 재시도하지 않는다. 실패하면 armNext가 주기를 늘린다.
-                // ky 재시도는 Retry-After를 끝없이 기다려 페이지 넘김까지 막는다.
-                // 사용자가 한 이동은 느린 검색 결과도 기다린다. timeout: undefined는 기본값을 덮으므로 키 자체를 뺀다
+                // 자동 새로고침은 재시도하지 않는다. 실패하면 armNext가 주기를 늘린다. ky 재시도는 Retry-After를 끝없이 기다려 페이지 넘김까지 막는다.
+                // 시간 제한은 기본값(15초, 차례를 받은 뒤부터)을 쓴다. 다음 주기는 응답을 받은 뒤 잡으므로 요청이 겹치지 않는다.
+                // 주기보다 짧게 끊으면 큰 갤러리 목록(2~3초 걸린다)이 조금만 늦어도 실패로 쳐져 주기가 최대 1분까지 늘어나 멈춘 것처럼 보인다.
+                // retry: undefined는 기본값을 덮으므로 키 자체를 뺀다
                 const response = await http.get(listUrl(target), {
                     signal: controller.signal,
-                    ...(force ? {} : {timeout: ctx.settings.refreshRate - 100, retry: 0})
+                    ...(force ? {} : {retry: 0})
                 }).text();
                 // 그사이 주소가 바뀌었으면 지난 주소의 목록이라 버린다. finally에서 새 주소로 다시 받는다
                 if (target !== originalLocation) return false;

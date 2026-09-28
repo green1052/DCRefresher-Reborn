@@ -7,7 +7,7 @@ import {isViewPage, queryString} from "@/core/http/urls";
 import {ROW_SELECTOR} from "@/core/list";
 import {BOARD_PAGE} from "@/core/pages";
 import {useBlocksStore} from "@/stores/blocks";
-import {useUiStore} from "@/stores/ui";
+import {openWriterBubble, useUiStore} from "@/stores/ui";
 import {whenDomReady} from "@/utils/dom";
 import {eventTarget} from "@/utils/event";
 
@@ -201,31 +201,24 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
 
 const setupSelection = (ctx: Ctx): void => {
     const onContextMenu = (ev: MouseEvent): void => {
-        // Shift+우클릭은 유저 버블 대신 브라우저 기본 메뉴를 연다 (링크 복사·요소 검사 등이 막히지 않게)
-        if (ev.shiftKey) return;
+        // Shift+우클릭은 유저 버블 대신 브라우저 기본 메뉴를 연다 (링크 복사·요소 검사 등이 막히지 않게).
+        // 작성자 칸을 유저 정보 모듈이 먼저 받아 버블을 열었으면 defaultPrevented다
+        if (ev.shiftKey || ev.defaultPrevented) return;
 
         const target = eventTarget(ev);
-        if (!(target instanceof Element)) return;
-
-        const dcconElement = target.closest<HTMLElement>(".written_dccon");
-        const hitElement = dcconElement ?? target.closest<HTMLElement>(".ub-writer");
-        if (!hitElement) return;
-
-        const ui = useUiStore.getState();
-
-        if (dcconElement) {
-            const code = dcconCode(dcconElement);
-            if (!code) return;
-
-            ui.setSelected({dccon: code});
-        } else {
-            const {nick, uid, ip} = hitElement.dataset;
-            if (!nick && !uid && !ip) return;
-
-            ui.setSelected({nick, uid, ip});
+        const dcconElement = target instanceof Element ? target.closest<HTMLElement>(".written_dccon") : null;
+        // 작성자 칸 버블은 유저 정보 모듈과 같이 쓴다
+        if (!dcconElement) {
+            openWriterBubble(ev);
+            return;
         }
 
-        // 브라우저 우클릭 메뉴 대신 유저 버블을 연다
+        const code = dcconCode(dcconElement);
+        if (!code) return;
+
+        const ui = useUiStore.getState();
+        ui.setSelected({dccon: code});
+        // 브라우저 우클릭 메뉴 대신 디시콘 차단 버블을 연다
         ev.preventDefault();
         ui.openBubble(ev.clientX, ev.clientY);
     };

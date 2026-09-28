@@ -12,7 +12,7 @@ import {BOARD_PAGE} from "@/core/pages";
 import {eventBus} from "@/core/eventbus/bus";
 import {moduleDataStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";
-import {type BadgeColorKey, type BadgeView, DEFAULT_BADGE_VIEW, isLowActivity, showsUid, useUiStore} from "@/stores/ui";
+import {type BadgeColorKey, type BadgeView, DEFAULT_BADGE_VIEW, isLowActivity, openWriterBubble, showsUid, useUiStore} from "@/stores/ui";
 import {insertWriterSpan} from "@/utils/userDataInsert";
 
 interface RatioInfo {
@@ -61,7 +61,10 @@ let ratios: Record<string, RatioInfo> = {};
 /** 글댓비 저장 상한. 최근에 받은 사람부터 이만큼만 남긴다 */
 const MAX_RATIOS = 500;
 
-/** 글댓비 캐시는 1시간만 쓴다 */
+/**
+ * 1시간 안에 받은 값인지. 지난 값은 그 유저의 새 글이 올라오면 다시 조회한다.
+ * 목록 배지는 지난 값도 그대로 보인다 (v5와 같다). 1시간 뒤 지우면 새 글이 드문 갤러리에선 배지가 거의 남지 않는다
+ */
 const isFresh = (info?: RatioInfo): info is RatioInfo => info !== undefined && Date.now() - info.date <= 3600_000;
 
 /** 글댓비를 받지 못한 유저 (임시 차단 포함). 디시가 막거나 실패하는 동안 새 목록마다 다시 묻지 않게 5분 동안 건너뛴다 */
@@ -125,7 +128,7 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
 
         if (key === "RATIO" && uid && ctx.settings.checkRatio) {
             const cached = ratios[uid];
-            if (isFresh(cached)) {
+            if (cached) {
                 badges.append(makeRatioSpan(cached, ctx.settings.alarmRatio, colors));
                 lowActivity = isLowActivity(cached, ctx.settings.alarmRatio);
             }
@@ -161,7 +164,7 @@ const publishBadges = (ctx: Ctx): void => {
     });
 };
 
-/** 미리보기도 같은 글댓비를 쓰도록 ui 스토어에 올린다 */
+/** 미리보기도 같은 글댓비를 쓰도록 ui 스토어에 올린다. 지난 값은 빼서 미리보기·버블이 새로 조회하게 한다 */
 const publishRatios = (ctx: Ctx): void => {
     useUiStore.setState({
         ratios: ctx.settings.checkRatio
@@ -211,7 +214,8 @@ const settings = {
     checkRatio: {
         type: "check",
         name: "글댓비 표시",
-        desc: "작성자의 글/댓글 수를 표시합니다. 자동 새로고침으로 새로 올라온 글과 미리보기로 연 글의 작성자만 조회하고, 새 글 작성자의 값은 1시간 동안 저장합니다.",
+        desc: "작성자의 글/댓글 수를 표시합니다. 자동 새로고침으로 새로 올라온 글과 미리보기로 연 글의 작성자만 조회합니다. " +
+            "새 글 작성자의 값은 저장해 두고 목록에 계속 표시하며, 1시간이 지난 값은 그 유저의 새 글이 올라오면 다시 조회합니다.",
         default: false
     },
     alarmRatio: {
@@ -272,6 +276,9 @@ export default defineModule({
         // await 뒤마다 확인해, 그사이 모듈이 꺼졌으면 revoke가 지운 배지·글댓비를 다시 그리지 않는다
         const {signal} = ctx;
 
+        // 작성자 우클릭으로 유저 버블(메모·차단·갤로그)을 연다. 메모는 이 모듈의 기능이라 차단 모듈이 꺼져 있어도 열려야 한다
+        document.addEventListener("contextmenu", openWriterBubble, {capture: true, signal});
+
         // IP/밴 DB는 모듈 설정을 읽은 뒤 여기서 처음 읽는다 (콘텐츠 스크립트도 부르지만 이 모듈이 꺼졌을 때를 위한 것이다).
         // 읽기가 끝난 뒤 필터를 걸어야 첫 배지부터 IP 정보가 붙는다
         const [stored] = await Promise.all([ratioStorage.getValue(), initDatabase()]);
@@ -328,14 +335,13 @@ export default defineModule({
                 const fresh = results.filter((entry): entry is [string, GallogActivity] => Boolean(entry[1]));
                 if (fresh.length === 0) return;
 
-                // 그사이 다른 탭이 쓴 값을 잃지 않게 저장소의 최신 값에 병합한다.
-                // 만료 항목은 여기서 버리고(안 그러면 계속 쌓인다), 최근에 받은 MAX_RATIOS명만 남긴다
+                // 그사이 다른 탭이 쓴 값을 잃지 않게 저장소의 최신 값에 병합한다. 최근에 받은 MAX_RATIOS명만 남긴다
                 const now = Date.now();
                 const stored = (await ratioStorage.getValue()).ratio ?? {};
                 if (signal.aborted) return;
 
                 const merged: [string, RatioInfo][] = [
-                    ...Object.entries(stored).filter(([uid, info]) => isFresh(info) && !fresh.some(([freshUid]) => freshUid === uid)),
+                    ...Object.entries(stored).filter(([uid]) => !fresh.some(([freshUid]) => freshUid === uid)),
                     ...fresh.map(([uid, info]): [string, RatioInfo] => [uid, {...info, date: now}])
                 ];
                 ratios = Object.fromEntries(merged.sort(([, a], [, b]) => b.date - a.date).slice(0, MAX_RATIOS));

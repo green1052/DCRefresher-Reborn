@@ -62,7 +62,7 @@ const detectBlocked: AfterResponseHook = async ({request, response}) => {
 };
 
 export const http: KyInstance = ky.create({
-    // 기본 시간 제한은 limited가 잰다. 더 짧게 끊을 요청(자동 새로고침)은 호출할 때 timeout을 준다
+    // 시간 제한은 limited가 잰다 (차례를 받은 뒤부터)
     timeout: false,
     fetch: limited(baseFetch),
     // jitter: 재시도가 한꺼번에 몰리지 않게 시점을 흩는다.

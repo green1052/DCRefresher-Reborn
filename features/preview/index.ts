@@ -544,7 +544,7 @@ const controller = (ctx: Ctx) => {
         if (!commentsOnly) {
             if (element.classList.contains("ub-content") && !ctx.settings.expandRecognizeRange) return null;
 
-            // 작성자 칸 클릭은 유저 버블(block 모듈) 몫이라 행 전체 인식이어도 열지 않는다.
+            // 작성자 칸 클릭은 유저 버블(차단·유저 정보 모듈) 몫이라 행 전체 인식이어도 열지 않는다.
             if (target.closest(".ub-writer")) return null;
         }
 

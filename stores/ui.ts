@@ -2,6 +2,7 @@ import {create} from "zustand";
 
 import type {IpCategory, IpInfoFilter} from "@/core/database";
 import type {MemoType} from "@/core/storage/types";
+import {eventTarget} from "@/utils/event";
 import {getType} from "@/utils/user";
 
 type ToastLevel = "info" | "error" | "warning";
@@ -132,3 +133,24 @@ export const useUiStore = create<UiState>((set, get) => ({
 
     closeMemo: () => set({memo: null})
 }));
+
+/**
+ * 페이지의 작성자 칸(.ub-writer)을 우클릭하면 브라우저 메뉴 대신 유저 버블(차단·메모·갤로그)을 연다. document의 capture 리스너로 건다.
+ * 차단과 유저 정보 모듈이 각자 건다. 메모는 차단 모듈을 꺼도 쓸 수 있어야 한다 (v5도 유저 정보 모듈이 메모 메뉴를 맡았다).
+ * 둘 다 켜져 있으면 먼저 받은 쪽이 열고, 나머지는 defaultPrevented를 보고 건너뛴다. Shift+우클릭은 브라우저 메뉴로 남긴다
+ */
+export const openWriterBubble = (ev: MouseEvent): void => {
+    if (ev.defaultPrevented || ev.shiftKey) return;
+
+    const target = eventTarget(ev);
+    const writer = target instanceof Element ? target.closest<HTMLElement>(".ub-writer") : null;
+    if (!writer) return;
+
+    const {nick, uid, ip} = writer.dataset;
+    if (!nick && !uid && !ip) return;
+
+    ev.preventDefault();
+    const ui = useUiStore.getState();
+    ui.setSelected({nick, uid, ip});
+    ui.openBubble(ev.clientX, ev.clientY);
+};
