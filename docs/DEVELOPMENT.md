@@ -217,7 +217,7 @@ getModuleApi("preview")?.archiveArticle()
 
 1. develop에서 `package.json`의 `version`을 올리고 `chore(release): X.Y.Z`로 커밋합니다.
 2. release 브랜치에 develop을 머지 커밋으로 합칩니다.
-3. release 브랜치를 push한 뒤 `X.Y.Z` 태그를 만들어 push합니다. `.github/workflows/release.yml`이 태그와 `package.json` 버전이 같은지 확인하고, 타입 검사를 하고 zip을 만들어 GitHub 릴리즈에 올립니다. 그다음 Chrome 웹 스토어와 Firefox Add-ons에 함께 제출하고, DB 워크플로가 이 태그의 코드로 DB를 새로 만듭니다. 한 스토어가 실패해도 다른 스토어는 끝까지 제출되고, 제출 단계는 실패해도 넘어가므로(`continue-on-error`) DB는 막히지 않습니다. 실패한 스토어는 그 단계의 로그에서 확인하고, GitHub 릴리즈의 zip으로 그 스토어만 제출합니다(예: `bunx wxt submit --chrome-zip <zip>`, `.env.submit` 필요).
+3. release 브랜치를 push한 뒤 `X.Y.Z` 태그를 만들어 push합니다. `.github/workflows/release.yml`이 태그와 `package.json` 버전이 같은지 확인하고, 타입 검사를 하고 zip을 만들어 GitHub 릴리즈에 올립니다. 그다음 Chrome 웹 스토어와 Firefox Add-ons에 함께 제출하고, DB 워크플로가 이 태그의 코드로 DB를 새로 만듭니다. 한 스토어가 실패해도 다른 스토어는 끝까지 제출되고, 제출 단계는 실패해도 넘어가므로(`continue-on-error`) DB는 막히지 않습니다. 실패한 스토어는 그 단계의 로그에서 확인하고, GitHub 릴리즈의 zip으로 그 스토어만 제출합니다(예: `bunx wxt submit --chrome-zip <zip>`, `.env.submit` 필요). Firefox는 소스 zip도 함께 내야 하므로 태그를 체크아웃해 `bun run zip:firefox`로 다시 만든 뒤 `bunx wxt submit --firefox-zip <zip> --firefox-sources-zip <sources zip>`으로 제출합니다.
 
 Chrome 웹 스토어는 API v2(서비스 계정)로 제출합니다. 인증은 한 번만 만들어 두면 됩니다.
 
