@@ -334,8 +334,14 @@ const controller = (ctx: Ctx) => {
         if (ctx.settings.colorPreviewLink) {
             const newTitle = `${preData.title ?? document.title} - ${galName()}`;
             // 돌아갈 위치(back)도 같이 넣는다. 없으면 뒤로 가기로 다시 연 미리보기는 닫아도 글 주소에 남는다.
-            // depth: 미리보기를 열기 전 기록에서 몇 칸 위인지. 닫을 때 그만큼 뒤로 간다
-            if (!historySkip) history.pushState({refresher: 1, doc: historyDoc, preData, back: savedHistory, depth: (st.visible ? historyDepth() : 0) + 1}, newTitle, preData.link);
+            // depth: 미리보기를 열기 전 기록에서 몇 칸 위인지. 닫을 때 그만큼 뒤로 간다.
+            // 브라우저는 기록을 50개까지만 두고 오래된 것부터 지운다. 목록 항목까지 지워지면 닫아도 목록으로 못 돌아가므로 40칸부터는 쌓지 않고 바꾼다
+            if (!historySkip) {
+                const depth = (st.visible ? historyDepth() : 0) + 1;
+                const state = {refresher: 1, doc: historyDoc, preData, back: savedHistory, depth: Math.min(depth, 40)};
+                if (depth > 40) history.replaceState(state, newTitle, preData.link);
+                else history.pushState(state, newTitle, preData.link);
+            }
             // 히스토리로 다시 열 때도 바꾼다. popstate는 제목을 되돌리지 않는다.
             document.title = newTitle;
         }

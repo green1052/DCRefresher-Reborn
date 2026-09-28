@@ -16,7 +16,7 @@ export const ErrorBlock = ({error}: { error: ErrorState }) => {
     else if (deleted) text = "게시글이 삭제되었거나 존재하지 않습니다.";
     else if (limited) text = "요청이 많아 디시인사이드가 잠시 접속을 막았습니다. 잠시 기다린 뒤 다시 시도해 주세요.";
     else if (status && status >= 500) text = "디시인사이드 서버가 불안정합니다. 잠시 후 다시 시도해 주세요.";
-    else if (/fetch|network|timed out/i.test(detail)) text = "디시인사이드에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.";
+    else if (/fetch|network|timed out|시간 초과/i.test(detail)) text = "디시인사이드에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.";
     else text = "게시글을 읽지 못했습니다. 다시 시도하거나 원문에서 확인해 주세요.";
 
     return (
