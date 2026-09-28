@@ -64,17 +64,13 @@ jobs:
                     --chrome-zip .output/*-chrome.zip
                     --firefox-zip .output/*-firefox.zip
                     --firefox-sources-zip .output/*-sources.zip
-                # Chrome 웹 스토어 API v1.1은 2026-10-15에 멈춘다. v2 시크릿(CHROME_PUBLISHER_ID 등)이 있으면 v2로 제출한다 (docs/DEVELOPMENT.md 릴리즈).
-                # 쓰지 않는 쪽 값은 비어 있어도 제출 도구가 버린다
+                # Chrome 웹 스토어는 API v2(서비스 계정)로 제출한다 (docs/DEVELOPMENT.md 릴리즈)
                 env:
-                    CHROME_API_VERSION: ${{ secrets.CHROME_PUBLISHER_ID && 'v2' || 'v1.1' }}
+                    CHROME_API_VERSION: v2
                     CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
                     CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
                     CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL: ${{ secrets.CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL }}
                     CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
-                    CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
-                    CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
-                    CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
                     FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
                     FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
                     FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
