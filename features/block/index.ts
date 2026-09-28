@@ -11,17 +11,14 @@ import {openWriterBubble, useUiStore} from "@/stores/ui";
 import {whenDomReady} from "@/utils/dom";
 import {eventTarget} from "@/utils/event";
 
-/** 디시콘 이미지 URL에서 디시콘 코드(no 파라미터) 추출 */
-const extractDcconCode = (src: string): string => src.replace(/^.*no=/, "").replace(/&.*$/, "");
-
 /**
- * 디시콘 요소의 코드. 필터와 우클릭 선택이 같은 기준을 써야 선택해서 넣은 항목이 실제로 가려진다.
+ * 디시콘 요소의 코드 (이미지 URL의 no 파라미터). 필터와 우클릭 선택이 같은 기준을 써야 선택해서 넣은 항목이 실제로 가려진다.
  * src 없이 data-src나 <source>만 가진 video 디시콘이 있고, 빈 src 속성도 건너뛰어야 해서 ||를 쓴다
  */
 const dcconCode = (element: HTMLElement): string | undefined => {
     const media = (element as HTMLImageElement).src ? element : (element.querySelector("img, video, source") ?? element);
     const src = media.getAttribute("src") || media.getAttribute("data-src");
-    return src ? extractDcconCode(src) : undefined;
+    return src ? URL.parse(src, location.href)?.searchParams.get("no") || undefined : undefined;
 };
 
 /** 요소 글자 — 안에 든 <script> 글자는 뺀다 */

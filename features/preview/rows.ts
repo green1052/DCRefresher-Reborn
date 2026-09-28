@@ -1,9 +1,9 @@
 import type {GalleryPreData} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 
-/** 목록 행(또는 제목 링크)에서 미리보기 대상을 읽는다. 링크가 없거나 글 주소가 아니면 null */
+/** 목록 행(또는 제목 칸)에서 미리보기 대상을 읽는다. 링크가 없거나 글 주소가 아니면 null */
 export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
-    const anchor = element.tagName === "A" ? (element as HTMLAnchorElement) : element.querySelector<HTMLAnchorElement>("a:not(.reply_numbox)");
+    const anchor = element.querySelector<HTMLAnchorElement>("a:not(.reply_numbox)");
     if (!anchor) return null;
 
     const href = anchor.getAttribute("href");
@@ -20,7 +20,7 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
         id = path[2];
     }
 
-    const row = (element.closest(".ub-content") as HTMLElement | null) ?? element;
+    const row = element.closest<HTMLElement>(".ub-content") ?? element;
 
     // 목록 아이콘의 마지막 클래스가 글 종류다 (isTextPost가 이미지 없는 글을 가를 때 쓴다).
     const icon = row.querySelector<HTMLElement>(".icon_img");

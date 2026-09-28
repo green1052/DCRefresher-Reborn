@@ -12,7 +12,7 @@ import {BOARD_PAGE} from "@/core/pages";
 import {eventBus} from "@/core/eventbus/bus";
 import {moduleDataStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";
-import {type BadgeColorKey, type BadgeView, DEFAULT_BADGE_VIEW, isLowActivity, openWriterBubble, showsUid, useUiStore} from "@/stores/ui";
+import {type BadgeColorKey, type BadgeView, DEFAULT_BADGE_VIEW, isFresh, isLowActivity, openWriterBubble, showsUid, useUiStore} from "@/stores/ui";
 import {insertWriterSpan} from "@/utils/userDataInsert";
 
 interface RatioInfo {
@@ -54,18 +54,10 @@ const badgeViewOf = (ctx: Ctx): BadgeView => ({
     ipFilter: ctx.settings.ipInfoFilter
 });
 
-/** 글댓비 캐시. 다른 탭의 쓰기와 개발자 탭의 캐시 비우기도 watch로 받는다. moduleDataStorage 키라 백업·내보내기에서 빠진다 */
-const ratioStorage = moduleDataStorage<{ ratio?: Record<string, RatioInfo> }>("userinfo", {});
 let ratios: Record<string, RatioInfo> = {};
 
 /** 글댓비 저장 상한. 최근에 받은 사람부터 이만큼만 남긴다 */
 const MAX_RATIOS = 500;
-
-/**
- * 1시간 안에 받은 값인지. 지난 값은 그 유저의 새 글이 올라오면 다시 조회한다.
- * 목록 배지는 지난 값도 그대로 보인다 (v5와 같다). 1시간 뒤 지우면 새 글이 드문 갤러리에선 배지가 거의 남지 않는다
- */
-const isFresh = (info?: RatioInfo): info is RatioInfo => info !== undefined && Date.now() - info.date <= 3600_000;
 
 /** 글댓비를 받지 못한 유저 (임시 차단 포함). 디시가 막거나 실패하는 동안 새 목록마다 다시 묻지 않게 5분 동안 건너뛴다 */
 const failedRatios = new LRUCache<string, true>({max: 500, ttl: 5 * 60_000});
@@ -164,13 +156,9 @@ const publishBadges = (ctx: Ctx): void => {
     });
 };
 
-/** 미리보기도 같은 글댓비를 쓰도록 ui 스토어에 올린다. 지난 값은 빼서 미리보기·버블이 새로 조회하게 한다 */
+/** 미리보기도 같은 글댓비를 쓰도록 ui 스토어에 올린다. 지난 값은 미리보기·버블이 읽을 때 isFresh로 걸러 새로 조회한다 */
 const publishRatios = (ctx: Ctx): void => {
-    useUiStore.setState({
-        ratios: ctx.settings.checkRatio
-            ? {cache: Object.fromEntries(Object.entries(ratios).filter(([, info]) => isFresh(info))), alarm: ctx.settings.alarmRatio}
-            : null
-    });
+    useUiStore.setState({ratios: ctx.settings.checkRatio ? {cache: ratios, alarm: ctx.settings.alarmRatio} : null});
 };
 
 const rebuildAll = (ctx: Ctx): void => {
@@ -275,6 +263,10 @@ export default defineModule({
 
         // await 뒤마다 확인해, 그사이 모듈이 꺼졌으면 revoke가 지운 배지·글댓비를 다시 그리지 않는다
         const {signal} = ctx;
+
+        // 글댓비 캐시. 다른 탭의 쓰기와 개발자 탭의 캐시 비우기도 watch로 받는다. moduleDataStorage 키라 백업·내보내기에서 빠진다.
+        // setup에서 만든다: defineItem은 만드는 순간 값을 읽으므로, 모듈 scope에 두면 features를 불러오는 모든 페이지·팝업·옵션이 이 캐시를 읽는다
+        const ratioStorage = moduleDataStorage<{ ratio?: Record<string, RatioInfo> }>("userinfo", {});
 
         // 작성자 우클릭으로 유저 버블(메모·차단·갤로그)을 연다. 메모는 이 모듈의 기능이라 차단 모듈이 꺼져 있어도 열려야 한다
         document.addEventListener("contextmenu", openWriterBubble, {capture: true, signal});

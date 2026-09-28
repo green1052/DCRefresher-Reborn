@@ -69,10 +69,6 @@ const controller = (ctx: Ctx) => {
         return {...postInfo, contents: sanitizeHtml(postInfo.contents ?? "", {stripMedia}), textBlocked: textBlockOf(preData, postInfo)};
     };
 
-    // 본문을 받은 시각. 우클릭을 누르는 동안 미리 받은 본문은 캐시에서 꺼내도 방금 받은 것으로 친다.
-    // 기준 2초는 길게 누르기 판정 시간의 상한이다.
-    const fetchedAt = new WeakMap<PostInfo, number>();
-
     const requestPost = (preData: GalleryPreData): Promise<PostInfo> => {
         const key = `${preData.gallery}/${preData.id}`;
         if (pending?.key === key) return pending.post;
@@ -80,8 +76,7 @@ const controller = (ctx: Ctx) => {
         pending?.ctrl.abort();
         const ctrl = new AbortController();
         const post = fetchPost(preData, ctrl.signal).then((result) => {
-            fetchedAt.set(result, Date.now());
-            setEntry(preData, {post: result});
+            setEntry(preData, {post: result, fetchedAt: Date.now()});
             return result;
         });
         const slot = {key, ctrl, post};
@@ -101,8 +96,11 @@ const controller = (ctx: Ctx) => {
      * archived는 받지 못해 보존해 둔 본문을 대신 준 것이다
      */
     const getPost = async (preData: GalleryPreData): Promise<{ post: PostInfo; fresh: boolean; archived?: true }> => {
-        const cached = !ctx.settings.disableCache ? getEntry(preData)?.post : undefined;
-        if (cached) return {post: cached, fresh: Date.now() - (fetchedAt.get(cached) ?? 0) < 2000};
+        const entry = !ctx.settings.disableCache ? getEntry(preData) : undefined;
+        const age = Date.now() - (entry?.fetchedAt ?? 0);
+        // 댓글 보존이 항목을 다시 저장해 수명을 늘리므로, 받은 지 1분 안의 본문만 캐시로 쓴다.
+        // 우클릭을 누르는 동안 미리 받은 본문은 캐시에서 꺼내도 방금 받은 것으로 친다. 기준 2초는 길게 누르기 판정 시간의 상한이다.
+        if (entry?.post && age < 60_000) return {post: entry.post, fresh: age < 2000};
 
         try {
             return {post: await requestPost(preData), fresh: true};
@@ -340,7 +338,8 @@ const controller = (ctx: Ctx) => {
         if (ctx.settings.autoRefreshComment) {
             const interval = ctx.settings.commentRefreshInterval || 10000;
             refreshTimer = window.setInterval(() => {
-                if (document.hidden || pulling) return;
+                // 열린 사이 설정을 끄면 다음 차례부터 멈춘다
+                if (!ctx.settings.autoRefreshComment || document.hidden || pulling) return;
                 void refreshComments();
             }, interval);
         }

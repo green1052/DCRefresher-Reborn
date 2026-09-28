@@ -64,6 +64,12 @@ export interface MemoTargetState {
 /** 깡계인지: 글댓합이 기준(alarm) 이하다. 기준이 0이면 끈 것이다. 페이지(userinfo)와 미리보기가 같은 판정을 쓴다 */
 export const isLowActivity = (ratio: { article: number; comment: number }, alarm: number): boolean => alarm > 0 && ratio.article + ratio.comment <= alarm;
 
+/**
+ * 글댓비가 1시간 안에 받은 값인지. 지난 값은 미리보기·버블이 새로 조회하고, userinfo는 그 유저의 새 글이 올라오면 다시 조회한다.
+ * 목록 배지는 지난 값도 그대로 보인다 (v5와 같다). 1시간 뒤 지우면 새 글이 드문 갤러리에선 배지가 거의 남지 않는다
+ */
+export const isFresh = <T extends { date: number }>(info?: T): info is T => info !== undefined && Date.now() - info.date <= 3600_000;
+
 /** 배지 색 키. userinfo의 BADGE_COLORS가 키마다 색 설정을 하나씩 둔다. IP 배지는 분류가 키다 */
 export type BadgeColorKey = IpCategory | "uid" | "permBan" | "ratio" | "ratioAlarm";
 
@@ -75,8 +81,8 @@ interface UiState {
     /** 배지 색 (userinfo 설정). 모듈이 꺼져 있으면 비어 있고, 갱차 조회를 끄면 permBan이 없다 */
     badgeColors: Partial<Record<BadgeColorKey, string>>;
     badgeView: BadgeView;
-    /** 글댓비 캐시와 깡계 기준 (userinfo). 글댓비 표시를 끄거나 모듈이 꺼져 있으면 null */
-    ratios: { cache: Record<string, { article: number; comment: number }>; alarm: number } | null;
+    /** 글댓비 캐시와 깡계 기준 (userinfo). 글댓비 표시를 끄거나 모듈이 꺼져 있으면 null. 지난 값도 있으니 isFresh로 가려 읽는다 */
+    ratios: { cache: Record<string, { article: number; comment: number; date: number }>; alarm: number } | null;
     /** 차단 모듈이 꺼져 있으면 null이고, 미리보기도 가리지 않는다 */
     blockView: BlockView | null;
 

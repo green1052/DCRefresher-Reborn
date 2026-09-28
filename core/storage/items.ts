@@ -76,7 +76,7 @@ export const moduleSettingsStorage = (id: string): WxtStorageItem<Record<string,
 /** 모듈 설정 키면 그 모듈 id, 아니면 undefined (local: 없이) */
 export const settingsKeyModule = (key: string): string | undefined => /^refresher:module:(.+):settings$/.exec(key)?.[1];
 
-/** 모듈 캐시(글댓비 등). isModuleDataKey로 백업·내보내기에서 빠진다. 쓰는 모듈이 한 번만 만든다 */
+/** 모듈 캐시(글댓비 등). isModuleDataKey로 백업·내보내기에서 빠진다. 만드는 순간 값을 읽으므로 쓰는 모듈의 setup에서 만든다 */
 export const moduleDataStorage = <T>(id: string, fallback: T): WxtStorageItem<T, {}> =>
     storage.defineItem<T>(`local:refresher:module:${id}:data`, {fallback});
 

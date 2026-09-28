@@ -28,6 +28,8 @@ export default defineModule({
     setup(ctx) {
         // 등록을 누른 뒤의 페이지 이동은 막지 않는다. 등록이 실패해 다시 입력하면 다시 막는다
         let submitting = false;
+        // 수정 페이지는 원래 글이 채워져 있으므로 고친 뒤에만 막는다
+        let edited = !location.pathname.includes("/board/modify");
 
         const onClick = (ev: MouseEvent): void => {
             if (ev.target instanceof Element && ev.target.closest(SUBMIT)) submitting = true;
@@ -35,10 +37,11 @@ export default defineModule({
 
         const onInput = (): void => {
             submitting = false;
+            edited = true;
         };
 
         const onBeforeUnload = (ev: BeforeUnloadEvent): void => {
-            if (!ctx.settings.preventExit || submitting) return;
+            if (!ctx.settings.preventExit || submitting || !edited) return;
 
             // 글자 없이 이미지·동영상만 올린 본문도 작성 중인 글이다
             const editor = document.querySelector<HTMLElement>(EDITOR);

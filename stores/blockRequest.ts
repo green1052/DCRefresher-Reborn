@@ -20,6 +20,12 @@ interface DcconDetailResponse {
 /** 패키지 전체 차단 방식. bundle: 정규식 한 항목으로 묶는다, each: 디시콘마다 한 항목 (따로 풀 수 있다) */
 type DcconPackageMode = "bundle" | "each";
 
+/**
+ * 버블의 차단은 그 값을 막는 것이다. 유형의 기본 모드가 NOT_*(허용 목록)면 모드 없이 넣은 항목이 허용 목록에 들어가므로 일치로 넣는다.
+ * 포함(CONTAIN) 기본값은 사용자가 고른 것이라 그대로 따른다
+ */
+const blockMode = (type: BlockType) => (useBlocksStore.getState().defaults[type].startsWith("NOT_") ? "SAME" : undefined);
+
 /** 유저 차단. uid > ip > nick 순으로 있는 값 하나를 쓴다 */
 const blockUser = async (selected: SelectedUser): Promise<void> => {
     // 유동은 작성자 칸에 data-uid=""가 붙어 오므로 ??로는 ip로 넘어가지 않는다
@@ -27,7 +33,7 @@ const blockUser = async (selected: SelectedUser): Promise<void> => {
     if (!value) return;
 
     const type: BlockType = selected.uid ? "ID" : selected.ip ? "IP" : "NICK";
-    await useBlocksStore.getState().addEntry(type, {content: value, isRegex: false, extra: selected.nick || value});
+    await useBlocksStore.getState().addEntry(type, {content: value, isRegex: false, extra: selected.nick || value, mode: blockMode(type)});
 
     useUiStore.getState().showToast(`차단 목록에 추가했습니다. (${TYPE_NAMES[type]}: ${value})`);
 };
@@ -41,15 +47,16 @@ const blockDccon = async (selected: SelectedUser, dcconPackage?: DcconPackageMod
     }).json<DcconDetailResponse>();
 
     const extra = `${response.info.title} [${response.info.package_idx}]`;
+    const mode = blockMode("DCCON");
 
     if (!dcconPackage) {
-        await useBlocksStore.getState().addEntry("DCCON", {content: code, isRegex: false, extra});
+        await useBlocksStore.getState().addEntry("DCCON", {content: code, isRegex: false, extra, mode});
     } else if (dcconPackage === "bundle") {
         const paths = response.detail.map((detail) => detail.path).join("|");
-        await useBlocksStore.getState().addEntry("DCCON", {content: `^(${paths})$`, isRegex: true, extra: `[묶음] ${extra}`});
+        await useBlocksStore.getState().addEntry("DCCON", {content: `^(${paths})$`, isRegex: true, extra: `[묶음] ${extra}`, mode});
     } else {
         // 묶지 않고 하나씩 넣되 addEntries로 한 번에 쓴다. 따로 넣으면 저장소 쓰기와 모든 탭의 watch가 디시콘 수만큼 돈다
-        await useBlocksStore.getState().addEntries("DCCON", response.detail.map(({path}) => ({content: path, isRegex: false, extra})));
+        await useBlocksStore.getState().addEntries("DCCON", response.detail.map(({path}) => ({content: path, isRegex: false, extra, mode})));
     }
 
     useUiStore.getState().showToast(`디시콘을 차단했습니다. (${extra})`);

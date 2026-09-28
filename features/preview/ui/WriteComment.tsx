@@ -1,4 +1,5 @@
 import {Box, Flex, IconButton, Link, Text, TextArea, TextField, Tooltip} from "@radix-ui/themes";
+import {isTimeoutError} from "ky";
 import {Send, Smile, Type, X} from "lucide-react";
 import {useLayoutEffect, useRef, useState} from "react";
 
@@ -214,9 +215,8 @@ export const WriteComment = () => {
             }
         } catch (e) {
             // 시간 초과 등으로 끊겨도 서버는 댓글을 올렸을 수 있다. 목록을 새로 받아 올라간 댓글이 보이게 해 다시 보내지 않게 한다. 입력한 글은 둔다.
-            // 파이어폭스 content.fetch의 오류는 다른 영역 객체라 이름으로 본다 (isAbortError와 같음)
             refreshIfOpen();
-            const timeout = typeof e === "object" && e !== null && "name" in e && e.name === "TimeoutError";
+            const timeout = isTimeoutError(e);
             useUiStore.getState().showToast(
                 timeout ? "응답이 없어 작성 여부를 확인하지 못했습니다. 댓글 목록을 확인해 주세요." : "댓글 작성 중 오류가 발생했습니다.",
                 "error"

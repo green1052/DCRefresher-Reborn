@@ -3,6 +3,8 @@ import type {DcinsideComment, GalleryPreData, PostInfo} from "./types";
 
 interface CacheEntry {
     post?: PostInfo;
+    /** post를 받은 시각(ms). 댓글 보존이 항목을 다시 저장하면 수명이 늘어나므로 본문이 얼마나 낡았는지는 이것으로 본다 */
+    fetchedAt?: number;
     /** 삭제 댓글 보존용. 지금까지 받은 댓글 전부이며, 서버 목록에서 빠진 댓글은 삭제된 것으로 되살린다 */
     seen?: Record<string, DcinsideComment>;
 }

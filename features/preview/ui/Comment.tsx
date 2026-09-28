@@ -8,7 +8,7 @@ import type {User} from "@/core/preview/types";
 import {adminDeleteComment, graphemes, userDeleteComment, wrapTxtcon} from "@/core/preview/request";
 import {notifyManage} from "@/utils/notify";
 import {useUserMemo} from "@/stores/memos";
-import {type BadgeKey, isLowActivity, showsUid, useUiStore} from "@/stores/ui";
+import {type BadgeKey, isFresh, isLowActivity, showsUid, useUiStore} from "@/stores/ui";
 import {useGallogActivity} from "@/utils/gallogActivity";
 import {banReasonsOf, databaseVersion, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
 
@@ -174,10 +174,13 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     const gallery = usePreviewStore((s) => s.preData?.gallery);
     const memo = useUserMemo({uid: user.id, ip: user.ip, nick: user.nick}, gallery);
     // 글댓비는 이 사람 것만 구독한다. 캐시 전체를 구독하면 누구 것이든 저장될 때마다 모든 댓글의 작성자가 다시 그려진다.
-    // hasOwn은 아이디가 constructor 같은 프로토타입 키일 때 캐시로 잘못 잡히지 않게 한다.
+    // hasOwn은 아이디가 constructor 같은 프로토타입 키일 때 캐시로 잘못 잡히지 않게 한다. 1시간이 지난 값은 없는 것으로 보고 새로 받는다.
     const showsRatio = useUiStore((state) => state.ratios !== null);
     const alarm = useUiStore((state) => state.ratios?.alarm ?? 0);
-    const cached = useUiStore(useShallow((state) => (user.id && state.ratios && Object.hasOwn(state.ratios.cache, user.id) ? state.ratios.cache[user.id] : undefined)));
+    const cached = useUiStore(useShallow((state) => {
+        const info = user.id && state.ratios && Object.hasOwn(state.ratios.cache, user.id) ? state.ratios.cache[user.id] : undefined;
+        return isFresh(info) ? info : undefined;
+    }));
     const fetched = useGallogActivity(fetchRatio && showsRatio && !cached ? user.id : undefined);
     const ratio = cached ?? (typeof fetched === "object" ? fetched : undefined);
     const ratioColor = useUiStore((state) => (ratio && isLowActivity(ratio, alarm) ? state.badgeColors.ratioAlarm : state.badgeColors.ratio));
