@@ -1,4 +1,5 @@
 import {addFilter} from "@/core/filtering";
+import {documentUrl} from "@/core/http/urls";
 import type {PageAction, PageToggleState} from "@/core/messaging/protocol";
 import {moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
@@ -15,12 +16,8 @@ interface ModuleInstance {
 
 const instances = new Map<string, ModuleInstance>();
 
-/** 이 문서의 주소. 로드 시점에 정한다: 미리보기가 pushState로 글 주소로 바꿔도 이 문서는 그대로다 */
-const pageUrl = location.href;
-
 const start = async (instance: ModuleInstance): Promise<void> => {
     if (instance.running) return;
-    if (instance.def.urls && !instance.def.urls.some((re) => re.test(pageUrl))) return;
 
     // 이 실행의 수명. setup이 await하는 사이 중지되면 이미 abort된 상태라, 그 뒤에 등록하는 필터·cleanup은 바로 해제한다
     const controller = new AbortController();
@@ -140,6 +137,8 @@ export const stopAll = (): void => {
 
 /** 모듈을 일괄 등록하고, 옵션 페이지의 on/off(저장소)를 감시해 시작/중지한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다 */
 export const loadAll = async (defs: AnyModule[], signal: AbortSignal): Promise<void> => {
+    // 이 문서의 주소(documentUrl)는 바뀌지 않으므로 urls가 이 페이지를 빼는 모듈은 끝내 돌지 않는다. 설정을 읽거나 감시하지 않게 등록하지 않는다
+    defs = defs.filter((def) => !def.urls || def.urls.some((re) => re.test(documentUrl.href)));
     const enables = await modulesStorage.getValue();
 
     const results = await Promise.allSettled(defs.map((def) => register(def, isModuleEnabled(def, enables))));

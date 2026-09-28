@@ -62,7 +62,7 @@ export default defineModule({
     name: "요청 제한",          // 옵션·팝업에 보이는 이름
     description: "…",
     icon: Gauge,               // lucide 아이콘
-    // urls: [BOARD_PAGE],     // 이 주소에서만 실행 (core/pages.ts). 없으면 모든 디시 페이지
+    // urls: [BOARD_PAGE],     // 이 주소에서만 실행 (core/pages.ts). 없으면 모든 디시 페이지, []면 어디서도 실행하지 않음
     // defaultEnable: false,   // 처음 설치했을 때 꺼 둘 모듈
 
     settings: {
@@ -149,7 +149,7 @@ getModuleApi("preview")?.archiveArticle()
 - `listen()`: 배경이 뜰 때마다 동기로 실행됩니다. 서비스 워커를 깨울 이벤트 리스너는 여기서 겁니다.
 - `apply({enabled, settings})`: 모듈을 켜고 끄거나 설정이 바뀔 때, 설치·브라우저 시작 때 실행됩니다. 호출은 모듈마다 순서대로 한 번에 하나씩입니다.
 
-배경 번들에는 React가 들어가면 안 됩니다. `background.ts`는 `index.ts`(아이콘·React import)를 불러오지 않고, 같이 쓰는 값은 React 없는 파일로 뺍니다. `features/imagesearch`가 예입니다.
+배경 번들에는 React가 들어가면 안 됩니다. `background.ts`는 `index.ts`(아이콘·React import)를 불러오지 않고, 같이 쓰는 값은 React 없는 파일로 뺍니다. `features/imagesearch`가 예입니다. 페이지에서 할 일이 없는 모듈은 `index.ts`에 `urls: []`를 두어 디시 페이지에서 설정을 읽거나 감시하지 않게 합니다.
 
 ## 저장소
 
@@ -176,7 +176,7 @@ getModuleApi("preview")?.archiveArticle()
 - 페이지·오버레이·옵션은 서로 다른 문서라 같은 규칙(차단 흐림, 스텔스 디시콘 가림, 접기 애니메이션)을 `assets/styles/_mixins.scss`의 mixin으로 맞춥니다. 옵션·팝업의 바탕과 Radix 기본값 덮기는 `_radix.scss`에 있습니다.
 - 콘텐츠 스크립트는 `cssInjectionMode: "ui"`라서 불러오는 CSS(`overlay-radix.css`, `overlay.scss`)가 오버레이를 처음 띄울 때 shadow에만 들어갑니다(WXT가 `:root`를 `:host`로 바꿈). 디시 페이지에 입히는 CSS(content·stealth·layout)는 `entrypoints/page.content.scss`로 따로 빌드되고, `wxt.config.ts`의 `manifest.content_scripts`가 콘텐츠 스크립트와 같은 주소(`core/pages.ts`의 `CONTENT_MATCHES`)에 넣습니다. 페이지용 CSS를 콘텐츠 스크립트에서 import하면 페이지가 아니라 오버레이에 들어갑니다.
 - 오버레이용 Radix CSS(`overlay-radix.css`)는 `wxt.config.ts`의 PostCSS 플러그인이 줄입니다. 반응형 미디어 블록, 오버레이가 쓰지 않는 컴포넌트 규칙, 쓰지 않는 `@font-face`를 뺍니다. 오버레이에서 새 Radix 컴포넌트를 쓰면 `UNUSED_OVERLAY_COMPONENT`에서 빼야 스타일이 들어갑니다.
-- 다크모드는 Radix 문서 방식대로 `Theme`에 `appearance`를 넘기지 않고 조상의 `light`/`dark` 클래스로 바꿉니다(`utils/appearance.ts`). 옵션·팝업은 시스템 설정을, 오버레이는 디시 다크모드를 오버레이 최상위 요소(shadow 안의 컨테이너)에 옮깁니다.
+- 다크모드는 Radix 문서 방식대로 `Theme`에 `appearance`를 넘기지 않고 조상의 `light`/`dark` 클래스로 바꿉니다(`utils/appearance.ts`). 옵션·팝업은 시스템 설정을, 오버레이는 디시 다크모드를 오버레이 최상위 요소(shadow 안의 컨테이너)에 옮깁니다. 스크롤바·폼 컨트롤도 따라가도록 같은 요소에 `color-scheme`을 같이 정합니다.
 - `radix-themes.css`는 색 파일을 `base.css`보다 먼저 불러옵니다. 순서가 바뀌면 gray가 slate가 아닌 순수 회색이 됩니다.
 
 ## 미리보기
@@ -221,7 +221,7 @@ getModuleApi("preview")?.archiveArticle()
 
 Chrome 웹 스토어는 API v2(서비스 계정)로 제출합니다. 인증은 한 번만 만들어 두면 됩니다.
 
-1. `bunx wxt submit init`에서 Chrome Web Store와 `v2`를 고르고, 안내대로 서비스 계정을 만들어 게시자 ID·`client_email`·`private_key`를 넣습니다. 값은 `.env.submit`에 저장됩니다(커밋하지 않습니다).
+1. `bunx wxt submit init`에서 Chrome Web Store와 `v2`를 고르고, 안내대로 서비스 계정을 만들어 게시자 ID·`client_email`·`private_key`를 넣습니다. 값은 `.env.submit`에 저장됩니다. 다시 실행하면 이전 값은 `.env.submit.backup-*`로 남습니다(둘 다 커밋하지 않습니다).
 2. 저장소 시크릿 `CHROME_PUBLISHER_ID`, `CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL`, `CHROME_SERVICE_ACCOUNT_PRIVATE_KEY`를 `.env.submit`의 값으로 추가합니다. 비공개 키는 `\n`이 아니라 실제 줄바꿈이 든 여러 줄(`-----BEGIN PRIVATE KEY-----`부터)로 넣습니다.
 
 IP·밴 DB는 `.github/workflows/db.yml`이 매주 수·토요일과 릴리즈 때 `scripts/build-db.ts`로 만들어 `data` 브랜치에 올립니다. 예약·수동 실행은 release 브랜치(배포된 코드)로, 릴리즈 때는 그 태그로 만듭니다. develop으로 만들지 않는 것은 형식을 바꾼 코드가 릴리즈 전에 올라가지 않게 하려는 것입니다. `ip.json`은 확장이 저장하는 형식(`core/ipdb.ts`의 `CompactIpData`) 그대로이고 버전을 담고 있습니다. `ban.json`은 손으로 관리하며 워크플로가 검사·정리합니다. 확장은 설치된 뒤 알람으로 새 버전을 확인해 받습니다 (`core/database.ts`).

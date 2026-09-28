@@ -1,6 +1,6 @@
 import {CloudDownload, CloudUpload, Download, RefreshCw, Trash2, Upload} from "lucide-react";
 import {Box, Button, Dialog, Flex, SegmentedControl, Switch, Text} from "@radix-ui/themes";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {arrayIncludes, objectKeys} from "ts-extras";
 
 import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
@@ -33,9 +33,6 @@ const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "m
     const previous = await browser.storage.local.get(null);
     // 설정 키가 아닌 값(차단/메모 내보내기의 "NICK" 등)은 저장하지 않는다
     const next = Object.fromEntries(Object.entries(migrateV5(data)).filter(([key]) => key.startsWith("refresher:") && isBackupTarget(key)));
-    // 걸러서 다 빠지면(옛 백업 키가 migrateV5에서 전부 빠지는 경우 등) 복원은 모든 설정을 지우고 가져오기는 아무것도 쓰지 않는다.
-    // 설정을 비우는 것은 초기화({})만 허용한다.
-    if (Object.keys(data).length > 0 && Object.keys(next).length === 0) throw new Error("쓸 수 있는 설정이 없습니다.");
     // 6.0.x 백업의 'IP 정보 표시' 끔(showIpInfo)을 새 설정으로 옮긴다. 옮기지 않으면 옵션을 열 때 없는 설정으로 지워진다
     const userinfo = next["refresher:module:userinfo:settings"];
     if (isRecord(userinfo)) next["refresher:module:userinfo:settings"] = withIpInfoFilter(userinfo);
@@ -44,11 +41,25 @@ const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "m
         if (isBlockListKey(key)) next[key] = normalizeBlockList(value);
     }
     if (mode === "merge") {
+        // 기본 차단 모드는 mergeBackup처럼 이 기기 것을 남기고, 가져온 목록의 모드 없는 항목에 JSON의 기본 모드를 적어 둔다.
+        // JSON에 기본 모드가 없으면 그 기기는 기본값을 썼다. 이 기기 기본 모드를 따르게 두면 가져온 'ㅋ'이 일치 검사가 되는 등 검사 방식이 바뀐다
+        const localDefaults = normalizeDefaults(previous[DEFAULTS_KEY]);
+        const importDefaults = normalizeDefaults(next[DEFAULTS_KEY]);
+        delete next[DEFAULTS_KEY];
+        for (const type of BLOCK_TYPES) {
+            const key = `refresher:block:${type}`;
+            const pinned = importDefaults[type];
+            if (!(key in next) || pinned === localDefaults[type]) continue;
+            next[key] = normalizeBlockList(next[key]).map((entry) => (entry.mode ? entry : {...entry, mode: pinned}));
+        }
         for (const [key, value] of Object.entries(next)) {
             const old = previous[key];
             if (isMapKey(key) && isRecord(old) && isRecord(value)) next[key] = {...old, ...value};
         }
     }
+    // 걸러서 다 빠지면(옛 백업 키가 migrateV5에서 전부 빠지거나 가져온 JSON에 기본 차단 모드만 든 경우 등) 복원은 모든 설정을 지우고
+    // 가져오기는 아무것도 쓰지 않는다. 설정을 비우는 것은 초기화({})만 허용한다.
+    if (Object.keys(data).length > 0 && Object.keys(next).length === 0) throw new Error("쓸 수 있는 설정이 없습니다.");
     const removed = mode === "replace" ? Object.keys(previous).filter((key) => isBackupTarget(key) && !(key in next)) : [];
 
     try {
@@ -73,9 +84,8 @@ const mergeBackup = (current: Record<string, unknown>, backup: Record<string, un
     // 백업에서 온 항목에 그 모드를 적어 둔다. 어느 한쪽 기본 모드만 남으면 다른 쪽 항목의 검사 방식이 바뀐다('ㅋ'이 포함 검사가 되는 등)
     const localDefaults = normalizeDefaults(current[DEFAULTS_KEY]);
     const backupDefaults = normalizeDefaults(migrated[DEFAULTS_KEY]);
-    return Object.fromEntries(Object.entries(migrated).map(([key, value]) => {
+    const merged = Object.fromEntries(Object.entries(migrated).map(([key, value]) => {
         const local = current[key];
-        if (key === DEFAULTS_KEY) return [key, localDefaults];
         if (isBlockListKey(key)) {
             const type = key.slice("refresher:block:".length);
             const pinned = arrayIncludes(BLOCK_TYPES, type) && backupDefaults[type] !== localDefaults[type] ? backupDefaults[type] : undefined;
@@ -87,6 +97,8 @@ const mergeBackup = (current: Record<string, unknown>, backup: Record<string, un
         if (local === undefined) return [key, value];
         return [key, isRecord(local) && isRecord(value) ? {...value, ...local} : local];
     }));
+    // 기본 모드는 백업에 없어도 이 기기 것을 넘긴다. 없으면 writeSettings가 기본값을 쓴 기기의 JSON으로 보고 이 기기 항목에까지 모드를 적는다
+    return {...merged, [DEFAULTS_KEY]: localDefaults};
 };
 
 type RestoreMode = "replace" | "merge";
@@ -119,6 +131,7 @@ export function DataTab() {
     const [resetConfirm, setResetConfirm] = useState(false);
     const [autoConfirm, setAutoConfirm] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
+    const restoreRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         // 클라우드 메타에서 읽어 자동 백업(백그라운드)과 다른 기기의 백업도 반영한다
@@ -246,13 +259,18 @@ export function DataTab() {
                             <CloudUpload size={14}/> 백업
                         </Button>
                         <Dialog.Trigger>
-                            <Button variant="soft" disabled={loading}>
+                            <Button ref={restoreRef} variant="soft" disabled={loading}>
                                 <CloudDownload size={14}/> 복원
                             </Button>
                         </Dialog.Trigger>
                     </Flex>
 
-                    <Dialog.Content maxWidth="420px">
+                    <Dialog.Content maxWidth="420px" onCloseAutoFocus={(ev) => {
+                        // 복원 중에는 복원 버튼이 막혀 Radix가 포커스를 돌려주지 못하므로 포커스를 받는 가장 가까운 조상(탭 패널)으로 돌린다 (useOpenerFocus와 같다)
+                        if (!restoreRef.current?.disabled) return;
+                        ev.preventDefault();
+                        restoreRef.current.parentElement?.closest<HTMLElement>("[tabindex]")?.focus({preventScroll: true});
+                    }}>
                         <Dialog.Title>어느 백업으로 복원할까요?</Dialog.Title>
                         <SegmentedControl.Root value={restoreMode} onValueChange={(value) => arrayIncludes(objectKeys(RESTORE_DESCRIPTIONS), value) && setRestoreMode(value)} mb="3">
                             <SegmentedControl.Item value="replace">덮어쓰기</SegmentedControl.Item>
@@ -334,7 +352,7 @@ export function DataTab() {
 
             {importOpen && (
                 <ImportDialog title="데이터 가져오기"
-                              desc="내보낸 JSON 데이터를 붙여 넣어 주세요. JSON에 든 설정과 목록만 바꾸고 나머지는 그대로 둡니다. 들어 있는 차단/메모 목록은 합치지 않고 통째로 바꿉니다. 합치려면 차단/메모 탭의 가져오기를 써 주세요."
+                              desc="내보낸 JSON 데이터를 붙여 넣어 주세요. JSON에 든 설정과 목록만 바꾸고 나머지는 그대로 둡니다. 들어 있는 차단/메모 목록은 합치지 않고 통째로 바꿉니다. 기본 차단 모드는 이 기기 것을 남깁니다. 합치려면 차단/메모 탭의 가져오기를 써 주세요."
                               onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
             )}
         </Box>

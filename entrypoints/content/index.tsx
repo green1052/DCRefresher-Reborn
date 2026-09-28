@@ -2,13 +2,11 @@
 import "@/assets/styles/overlay-radix.css";
 import "@/assets/styles/overlay.scss";
 
-import {createRoot} from "react-dom/client";
-
-import {ContentRoot} from "@/components/overlay/ContentRoot";
 import {overlay} from "@/components/overlay/shadow";
 import {initDatabase} from "@/core/database";
 import {setBlockedHandler} from "@/core/http/client";
-import {BLOCKED_PAGE_MESSAGE, BOARD_PAGE, CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "@/core/pages";
+import {documentUrl} from "@/core/http/urls";
+import {BLOCKED_PAGE_MESSAGE, BOARD_PAGE, CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES, WRITE_PAGE} from "@/core/pages";
 import {onMessage} from "@/core/messaging/protocol";
 import {loadAll, pageToggleStates, runPageToggle, runShortcut, stopAll} from "@/core/module/registry";
 import features from "@/features";
@@ -62,7 +60,10 @@ export default defineContentScript({
             // manifest CSS도 확장과 함께 빠질 수 있어 인라인 스타일을 쓴다. 누르면 닫힌다
             const note = document.createElement("div");
             note.setAttribute("role", "status");
-            note.textContent = "확장 프로그램이 업데이트되어 이 페이지에서는 멈췄습니다. 새로고침해 주세요.";
+            // 업데이트·다시 불러오기·끄기·삭제 모두 여기로 온다. 글쓰기 페이지에서 바로 새로고침하면 작성 중인 글을 잃는다
+            note.textContent = `확장 프로그램이 업데이트되었거나 꺼져서 이 페이지에서는 멈췄습니다. ${
+                WRITE_PAGE.test(documentUrl.href) ? "작성 중인 글은 등록한 뒤 새로고침해 주세요." : "새로고침해 주세요."
+            }`;
             note.style.cssText = "position:fixed;right:16px;bottom:16px;z-index:2147483647;padding:10px 14px;border-radius:8px;background:#333;color:#fff;font-size:13px;cursor:pointer";
             note.addEventListener("click", () => note.remove());
             document.body?.append(note);
@@ -77,6 +78,12 @@ export default defineContentScript({
         let stopAppearance: (() => void) | undefined;
         const mountOverlay = async (): Promise<void> => {
             if (ctx.isInvalid) return;
+
+            // react-dom·Radix·오버레이 UI는 오버레이를 처음 띄울 때 초기화한다. 번들 안에 있어 네트워크 요청은 없다
+            const [{createRoot}, {ContentRoot}] = await Promise.all([
+                import("react-dom/client"),
+                import("@/components/overlay/ContentRoot")
+            ]);
 
             const ui = await createShadowRootUi(ctx, {
                 name: "refresher-root",
@@ -145,7 +152,7 @@ export default defineContentScript({
         };
         whenDomReady(warnIfBlocked);
 
-        const board = BOARD_PAGE.test(location.href);
+        const board = BOARD_PAGE.test(documentUrl.href);
         if (board) await Promise.all([initBlocksStore(ctx.signal), initMemosStore(ctx.signal)]);
         await loadAll(features, ctx.signal);
         // 저장소는 요청 순서대로 읽히므로 가장 큰 IP/밴 DB는 모듈 설정 뒤에 요청한다(userinfo는 setup에서 기다린다).

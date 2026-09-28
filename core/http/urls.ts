@@ -58,10 +58,15 @@ export const mergeParamURL = (origin: string, from: string): string => {
 /** 현재 URL의 쿼리 값 */
 export const queryString = (name: string): string | null => new URLSearchParams(location.search).get(name);
 
-/** 글 보기 페이지인지. 로드 시점에 한 번만 정한다: 미리보기가 pushState로 주소를 바꿔도 이 문서가 보여 주는 페이지는 그대로다 */
-export const isViewPage = VIEW_PAGE.test(location.pathname);
+/**
+ * 이 문서를 불러온 주소. 미리보기·페이지 넘김이 pushState로 주소를 바꿔도 이 문서가 보여 주는 페이지는 그대로다.
+ * 지금 주소가 아니라 내비게이션 항목에서 읽는다. 파이어폭스는 확장을 업데이트하면 미리보기가 바꿔 둔 글 주소에서 스크립트를 다시 주입한다
+ */
+export const documentUrl = new URL(performance.getEntriesByType("navigation")[0]?.name ?? location.href);
+/** 글 보기 페이지인지 */
+export const isViewPage = VIEW_PAGE.test(documentUrl.pathname);
 /** 글 보기 페이지가 보여 주는 글 번호 */
-export const pagePostNo = isViewPage ? queryString("no") : null;
+export const pagePostNo = isViewPage ? documentUrl.searchParams.get("no") : null;
 
 /** 목록 행의 글 번호. 글 보기 아래 목록의 행에는 data-no가 없어 같은 갤러리로 가는 제목 링크의 no를 쓴다 */
 export const rowPostNo = (row: HTMLElement): string | undefined => {
