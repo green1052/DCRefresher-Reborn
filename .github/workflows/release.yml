@@ -16,7 +16,10 @@ jobs:
     release:
         runs-on: ubuntu-latest
         steps:
+            # 태그가 release 브랜치에 있는지 보려면 이력이 다 있어야 한다 (얕은 클론은 merge-base가 조상을 못 찾는다)
             -   uses: actions/checkout@v7
+                with:
+                    fetch-depth: 0
 
             # 태그와 package.json 버전이 다르면 스토어에 엉뚱한 버전이 올라간다
             -   name: Check version
@@ -24,6 +27,15 @@ jobs:
                     version=$(jq -r .version package.json)
                     if [ "$version" != "$GITHUB_REF_NAME" ]; then
                         echo "::error::태그 $GITHUB_REF_NAME 와 package.json 버전 $version 이 다릅니다."
+                        exit 1
+                    fi
+
+            # 예약 DB 빌드(db.yml)는 release 브랜치 코드로 돈다. 태그가 release에 없으면 다음 예약 실행이 옛 형식 DB로 이 릴리즈의 DB를 덮는다
+            -   name: Check release branch
+                run: |
+                    git fetch -q origin release
+                    if ! git merge-base --is-ancestor "$GITHUB_SHA" FETCH_HEAD; then
+                        echo "::error::태그 커밋이 release 브랜치에 없습니다. release 브랜치에 머지해 push한 뒤 태그를 push해 주세요."
                         exit 1
                     fi
 
@@ -52,8 +64,14 @@ jobs:
                     --chrome-zip .output/*-chrome.zip
                     --firefox-zip .output/*-firefox.zip
                     --firefox-sources-zip .output/*-sources.zip
+                # Chrome 웹 스토어 API v1.1은 2026-10-15에 멈춘다. v2 시크릿(CHROME_PUBLISHER_ID 등)이 있으면 v2로 제출한다 (docs/DEVELOPMENT.md 릴리즈).
+                # 쓰지 않는 쪽 값은 비어 있어도 제출 도구가 버린다
                 env:
+                    CHROME_API_VERSION: ${{ secrets.CHROME_PUBLISHER_ID && 'v2' || 'v1.1' }}
                     CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+                    CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
+                    CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL: ${{ secrets.CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL }}
+                    CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
                     CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
                     CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
                     CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}

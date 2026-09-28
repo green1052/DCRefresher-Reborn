@@ -215,7 +215,14 @@ getModuleApi("preview")?.archiveArticle()
 
 1. develop에서 `package.json`의 `version`을 올리고 `chore(release): X.Y.Z`로 커밋합니다.
 2. release 브랜치에 develop을 머지 커밋으로 합칩니다.
-3. `X.Y.Z` 태그를 만들어 push합니다. `.github/workflows/release.yml`이 태그와 `package.json` 버전이 같은지 확인하고, 타입 검사를 하고 zip을 만들어 GitHub 릴리즈에 올리고 Chrome 웹 스토어·Firefox Add-ons에 제출합니다. 그다음 DB 워크플로가 이 태그의 코드로 DB를 새로 만듭니다.
+3. release 브랜치를 push한 뒤 `X.Y.Z` 태그를 만들어 push합니다. `.github/workflows/release.yml`이 태그와 `package.json` 버전이 같은지, 태그 커밋이 release 브랜치에 있는지 확인하고, 타입 검사를 하고 zip을 만들어 GitHub 릴리즈에 올리고 Chrome 웹 스토어·Firefox Add-ons에 제출합니다. 그다음 DB 워크플로가 이 태그의 코드로 DB를 새로 만듭니다.
+
+Chrome 웹 스토어 API v1.1은 2026년 10월 15일에 멈춥니다. v2 인증은 한 번만 만들어 두면 됩니다.
+
+1. `bunx wxt submit init`에서 Chrome Web Store와 `v2`를 고르고, 안내대로 서비스 계정을 만들어 게시자 ID·`client_email`·`private_key`를 넣습니다. 값은 `.env.submit`에 저장됩니다(커밋하지 않습니다).
+2. 저장소 시크릿 `CHROME_PUBLISHER_ID`, `CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL`, `CHROME_SERVICE_ACCOUNT_PRIVATE_KEY`를 `.env.submit`의 값으로 추가합니다. 비공개 키는 `\n`이 아니라 실제 줄바꿈이 든 여러 줄(`-----BEGIN PRIVATE KEY-----`부터)로 넣습니다.
+
+`CHROME_PUBLISHER_ID` 시크릿이 있으면 v2로, 없으면 v1.1 시크릿(`CHROME_CLIENT_ID`·`CHROME_CLIENT_SECRET`·`CHROME_REFRESH_TOKEN`)으로 제출합니다. v2로 제출되는 것을 확인한 뒤에는 v1.1 시크릿을 지워도 됩니다.
 
 IP·밴 DB는 `.github/workflows/db.yml`이 매주 수·토요일과 릴리즈 때 `scripts/build-db.ts`로 만들어 `data` 브랜치에 올립니다. 예약·수동 실행은 release 브랜치(배포된 코드)로, 릴리즈 때는 그 태그로 만듭니다. develop으로 만들지 않는 것은 형식을 바꾼 코드가 릴리즈 전에 올라가지 않게 하려는 것입니다. `ip.json`은 확장이 저장하는 형식(`core/ipdb.ts`의 `CompactIpData`) 그대로이고 버전을 담고 있습니다. `ban.json`은 손으로 관리하며 워크플로가 검사·정리합니다. 확장은 설치된 뒤 알람으로 새 버전을 확인해 받습니다 (`core/database.ts`).
 
