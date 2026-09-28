@@ -223,6 +223,7 @@ Chrome 웹 스토어는 API v2(서비스 계정)로 제출합니다. 인증은 �
 
 1. `bunx wxt submit init`에서 Chrome Web Store와 `v2`를 고르고, 안내대로 서비스 계정을 만들어 게시자 ID·`client_email`·`private_key`를 넣습니다. 값은 `.env.submit`에 저장됩니다. 다시 실행하면 이전 값은 `.env.submit.backup-*`로 남습니다(둘 다 커밋하지 않습니다).
 2. 저장소 시크릿 `CHROME_PUBLISHER_ID`, `CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL`, `CHROME_SERVICE_ACCOUNT_PRIVATE_KEY`를 `.env.submit`의 값으로 추가합니다. 비공개 키는 `\n`이 아니라 실제 줄바꿈이 든 여러 줄(`-----BEGIN PRIVATE KEY-----`부터)로 넣습니다.
+3. Chrome 웹 스토어 개발자 대시보드의 **게시자 → 설정**에서 서비스 계정 이메일(`client_email`)을 서비스 계정으로 추가합니다. 빠지면 제출이 `PERMISSION_DENIED`로 실패합니다. 게시자마다 서비스 계정은 하나만 등록할 수 있습니다.
 
 IP·밴 DB는 `.github/workflows/db.yml`이 매주 수·토요일과 릴리즈 때 `scripts/build-db.ts`로 만들어 `data` 브랜치에 올립니다. 예약·수동 실행은 release 브랜치(배포된 코드)로, 릴리즈 때는 그 태그로 만듭니다. develop으로 만들지 않는 것은 형식을 바꾼 코드가 릴리즈 전에 올라가지 않게 하려는 것입니다. `ip.json`은 확장이 저장하는 형식(`core/ipdb.ts`의 `CompactIpData`) 그대로이고 버전을 담고 있습니다. `ban.json`은 손으로 관리하며 워크플로가 검사·정리합니다. 확장은 설치된 뒤 알람으로 새 버전을 확인해 받습니다 (`core/database.ts`).
 
