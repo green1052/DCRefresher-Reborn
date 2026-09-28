@@ -25,7 +25,7 @@ interface RatioInfo {
 const BADGE_COLORS = {
     uid: ["아이디/IP", "#999999"],
     ratio: ["글댓비", "#999999"],
-    ratioAlarm: ["글댓비 경고", "#ff0000"],
+    ratioAlarm: ["깡계", "#ff0000"],
     permBan: ["갱차", "#e8645f"],
     korea: ["IP 한국", "#6495ed"],
     japan: ["IP 일본", "#e5484d"],
@@ -119,7 +119,7 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
         }
 
         if (key === "RATIO" && uid && ctx.settings.checkRatio) {
-            const cached = ratios[uid];
+            const cached = Object.hasOwn(ratios, uid) ? ratios[uid] : undefined;
             if (cached) {
                 badges.append(makeRatioSpan(cached, ctx.settings.alarmRatio, colors));
                 lowActivity = isLowActivity(cached, ctx.settings.alarmRatio);

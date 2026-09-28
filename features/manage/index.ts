@@ -60,7 +60,7 @@ export default defineModule({
         checkCommentViaCtrl: {
             type: "check",
             name: "Ctrl 대댓글 체크",
-            desc: "Ctrl 키를 누른 상태로 댓글을 클릭하면 대댓글도 체크합니다.",
+            desc: "Ctrl 키를 누른 상태로 댓글의 체크박스를 누르면 그 댓글의 대댓글도 함께 체크합니다.",
             default: false
         },
         deleteViaCtrl: {
@@ -137,7 +137,7 @@ export default defineModule({
         // ===== Ctrl 클릭 삭제 =====
         const deleteByCtrl = (postId: string): Promise<boolean> => {
             const gallery = document.querySelector<HTMLInputElement>("#gallery_id")?.value ?? "";
-            return notifyManage(deletePost({gallery, id: postId, link: location.href}), "게시글을 삭제했습니다.", "게시글 삭제 중 오류가 발생했습니다.");
+            return notifyManage(deletePost({gallery, id: postId, link: location.href}), "게시글을 삭제했습니다.", "게시글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
         };
 
         // 삭제 요청을 보낸 글. 응답 전에 다시 눌러도 요청을 또 보내지 않는다

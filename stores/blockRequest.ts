@@ -35,7 +35,9 @@ const blockUser = async (selected: SelectedUser): Promise<void> => {
     const type: BlockType = selected.uid ? "ID" : selected.ip ? "IP" : "NICK";
     await useBlocksStore.getState().addEntry(type, {content: value, isRegex: false, extra: selected.nick || value, mode: blockMode(type)});
 
-    useUiStore.getState().showToast(`차단 목록에 추가했습니다. (${TYPE_NAMES[type]}: ${value})`);
+    // 유저 정보 모듈만 켜져 있어도 버블이 열린다. 목록에는 넣었지만 가리지는 않는다는 것을 알린다
+    const off = useUiStore.getState().blockView === null ? " 콘텐츠 차단 모듈이 꺼져 있어 지금은 가리지 않습니다." : "";
+    useUiStore.getState().showToast(`차단 목록에 추가했습니다. (${TYPE_NAMES[type]}: ${value})${off}`);
 };
 
 const blockDccon = async (selected: SelectedUser, dcconPackage?: DcconPackageMode): Promise<void> => {

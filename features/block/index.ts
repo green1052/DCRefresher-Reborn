@@ -39,9 +39,12 @@ const DUPLICATE_GROUP: SettingGroup = {name: "같은 댓글 접기", desc: "같�
 const duplicateOf = (ctx: Ctx): { count: number; minLength: number } | null =>
     ctx.settings.foldDuplicate ? {count: ctx.settings.duplicateCount, minLength: ctx.settings.duplicateMinLength} : null;
 
-/** 이 페이지에서만 차단 내용 보기. 저장하지 않아 새로고침하면 다시 가린다. 보이는 방식은 <html>의 클래스로 정한다 (content.scss) */
-let revealed = false;
+/**
+ * 이 페이지에서만 차단 내용 보기. 저장하지 않아 새로고침하면 다시 가린다. 보이는 방식은 <html>의 클래스로 정한다 (content.scss).
+ * 상태도 그 클래스 하나뿐이다. 확장이 업데이트되어 다시 주입된 인스턴스도 같은 상태를 읽는다
+ */
 const REVEAL_CLASS = "refresherBlockReveal";
+const isRevealed = (): boolean => document.documentElement.classList.contains(REVEAL_CLASS);
 
 /** 이 모듈이 가린 요소 */
 const HIDDEN_SELECTOR = ".refresherBlocked, .refresherBlur, .refresherDuplicate";
@@ -55,7 +58,7 @@ const publishView = (ctx: Ctx): void => {
             blur: ctx.settings.blur,
             blurReveal: ctx.settings.blurReveal,
             replyRemove: ctx.settings.replyRemove,
-            revealed,
+            revealed: isRevealed(),
             duplicate: duplicateOf(ctx)
         }
     });
@@ -137,6 +140,8 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         const headBlocked = document.querySelector(".gallview_head:is(.refresherBlocked, .refresherBlur)") !== null;
         if (!headBlocked && !isBlocked("TEXT", writeDiv.textContent?.trim() ?? "", gallery)) return;
 
+        // 확장이 업데이트되어 다시 주입되면 앞 인스턴스가 넣은 안내가 남아 있다. 안내가 둘 쌓이지 않게 먼저 뗀다
+        for (const element of document.querySelectorAll(".refresherTextNotice")) element.remove();
         hide(writeDiv, useBlur());
         if (useBlur()) return;
 
@@ -318,14 +323,13 @@ export default defineModule({
         setupSelection(ctx);
 
         const api: BlockApi = {
-            isRevealed: () => revealed,
+            isRevealed,
             hiddenCount: () => document.querySelectorAll(REVEALED_SELECTOR).length,
             toggleReveal: () => {
-                revealed = !revealed;
-                document.documentElement.classList.toggle(REVEAL_CLASS, revealed);
+                document.documentElement.classList.toggle(REVEAL_CLASS);
                 publishView(ctx);
 
-                useUiStore.getState().showToast(revealed ? `이 페이지에서 가린 내용을 보입니다. (${api.hiddenCount()}개)` : "가린 내용을 다시 숨겼습니다.");
+                useUiStore.getState().showToast(isRevealed() ? `이 페이지에서 가린 내용을 보입니다. (${api.hiddenCount()}개)` : "가린 내용을 다시 숨겼습니다.");
             }
         };
         return api;
@@ -353,7 +357,6 @@ export default defineModule({
 
     revoke() {
         restoreHiddenElements();
-        revealed = false;
         useUiStore.setState({blockView: null});
         document.documentElement.style.removeProperty("--refresher-blur");
         document.documentElement.classList.remove("refresherBlurReveal", REVEAL_CLASS);
