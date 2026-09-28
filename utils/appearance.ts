@@ -13,3 +13,12 @@ export const followSystemAppearance = (root: Element = document.documentElement)
     setAppearance(root, query.matches);
     query.addEventListener("change", (ev) => setAppearance(root, ev.matches));
 };
+
+/** 디시 다크모드(#css-darkmode 스타일시트)를 따라간다 (오버레이). 감시를 멈추는 함수를 돌려준다 */
+export const followDcAppearance = (root: Element): (() => void) => {
+    const apply = (): void => setAppearance(root, document.getElementById("css-darkmode") !== null);
+    apply();
+    const observer = new MutationObserver(apply);
+    observer.observe(document.head ?? document.documentElement, {childList: true});
+    return () => observer.disconnect();
+};

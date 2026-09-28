@@ -174,7 +174,9 @@ getModuleApi("preview")?.archiveArticle()
 - 콘텐츠 스크립트는 `refresher-root` shadow DOM 안에 React 루트(`components/overlay/ContentRoot.tsx`)를 띄웁니다. 디시 CSS와 Radix CSS가 서로 섞이지 않게 하기 위해서입니다. 포털은 `overlay.portal`입니다.
 - 디시 페이지 자체를 바꾸는 CSS는 `assets/styles/content.scss`, `layout.scss`, `stealth.scss`이고 manifest로 주입됩니다.
 - 페이지·오버레이·옵션은 서로 다른 문서라 같은 규칙(차단 흐림, 스텔스 디시콘 가림, 접기 애니메이션)을 `assets/styles/_mixins.scss`의 mixin으로 맞춥니다. 옵션·팝업의 바탕과 Radix 기본값 덮기는 `_radix.scss`에 있습니다.
-- 오버레이용 Radix CSS(`radix-themes.css?inline`)는 `wxt.config.ts`의 PostCSS 플러그인이 줄입니다. 반응형 미디어 블록과 오버레이가 쓰지 않는 컴포넌트 규칙을 빼고 `:root`를 `:host`로 바꿉니다. 오버레이에서 새 Radix 컴포넌트를 쓰면 `UNUSED_OVERLAY_COMPONENT`에서 빼야 스타일이 들어갑니다.
+- 콘텐츠 스크립트는 `cssInjectionMode: "ui"`라서 불러오는 CSS(`overlay-radix.css`, `overlay.scss`)가 오버레이를 처음 띄울 때 shadow에만 들어갑니다(WXT가 `:root`를 `:host`로 바꿈). 디시 페이지에 입히는 CSS(content·stealth·layout)는 `entrypoints/page.content.scss`로 따로 빌드되고, `wxt.config.ts`의 `manifest.content_scripts`가 콘텐츠 스크립트와 같은 주소(`core/pages.ts`의 `CONTENT_MATCHES`)에 넣습니다. 페이지용 CSS를 콘텐츠 스크립트에서 import하면 페이지가 아니라 오버레이에 들어갑니다.
+- 오버레이용 Radix CSS(`overlay-radix.css`)는 `wxt.config.ts`의 PostCSS 플러그인이 줄입니다. 반응형 미디어 블록, 오버레이가 쓰지 않는 컴포넌트 규칙, 쓰지 않는 `@font-face`를 뺍니다. 오버레이에서 새 Radix 컴포넌트를 쓰면 `UNUSED_OVERLAY_COMPONENT`에서 빼야 스타일이 들어갑니다.
+- 다크모드는 Radix 문서 방식대로 `Theme`에 `appearance`를 넘기지 않고 조상의 `light`/`dark` 클래스로 바꿉니다(`utils/appearance.ts`). 옵션·팝업은 시스템 설정을, 오버레이는 디시 다크모드를 오버레이 최상위 요소(shadow 안의 컨테이너)에 옮깁니다.
 - `radix-themes.css`는 색 파일을 `base.css`보다 먼저 불러옵니다. 순서가 바뀌면 gray가 slate가 아닌 순수 회색이 됩니다.
 
 ## 미리보기

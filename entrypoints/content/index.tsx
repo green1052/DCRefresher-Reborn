@@ -1,16 +1,14 @@
-import "@/assets/styles/content.scss";
-import "@/assets/styles/stealth.scss";
-import "@/assets/styles/layout.scss";
+// 이 스크립트가 불러오는 CSS는 오버레이 shadow에만 들어간다 (cssInjectionMode: "ui"). 페이지 CSS는 entrypoints/page.content.scss
+import "@/assets/styles/overlay-radix.css";
+import "@/assets/styles/overlay.scss";
 
-import radixCss from "@/assets/styles/radix-themes.css?inline";
 import {createRoot} from "react-dom/client";
 
-import overlayCss from "@/assets/styles/overlay.scss?inline";
 import {ContentRoot} from "@/components/overlay/ContentRoot";
 import {overlay} from "@/components/overlay/shadow";
 import {initDatabase} from "@/core/database";
 import {setBlockedHandler} from "@/core/http/client";
-import {BLOCKED_PAGE_MESSAGE, BOARD_PAGE} from "@/core/pages";
+import {BLOCKED_PAGE_MESSAGE, BOARD_PAGE, CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "@/core/pages";
 import {onMessage} from "@/core/messaging/protocol";
 import {loadAll, pageToggleStates, runPageToggle, runShortcut, stopAll} from "@/core/module/registry";
 import features from "@/features";
@@ -18,23 +16,17 @@ import {needsPreviewOverlay, usePreviewStore} from "@/features/preview/ui/previe
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
 import {useUiStore} from "@/stores/ui";
+import {followDcAppearance} from "@/utils/appearance";
 import {whenDomReady} from "@/utils/dom";
 
 export default defineContentScript({
-    matches: ["https://*.dcinside.com/*"],
-    excludeMatches: [
-        "https://event.dcinside.com/*",
-        "https://h5.dcinside.com/*",
-        "https://m.dcinside.com/*",
-        "https://mall.dcinside.com/*",
-        "https://wiki.dcinside.com/*",
-        "https://gallog.dcinside.com/*",
-        // 이미지 팝업(viewimagePop.php)은 원래 gall 탭과 같은 렌더러에서 돌아 번들 평가·저장소 읽기 비용이 그 탭에 그대로 더해진다.
-        // 로그인 페이지(sign)는 제외해도 폰트만 빠진다.
-        "https://image.dcinside.com/*",
-        "https://sign.dcinside.com/*"
-    ],
+    matches: CONTENT_MATCHES,
+    excludeMatches: CONTENT_EXCLUDE_MATCHES,
     runAt: "document_start",
+    // CSS는 manifest가 아니라 오버레이를 처음 띄울 때 shadow에 넣는다. 오버레이를 띄우지 않는 페이지는 오버레이 CSS를 읽지 않는다
+    cssInjectionMode: "ui",
+    // 새 인스턴스가 떴다는 알림을 페이지 창에 postMessage로 뿌리지 않는다 (이전 인스턴스 정리는 WXT가 CustomEvent로 한다)
+    noScriptStartedPostMessage: true,
     async main(ctx) {
         // 파이어폭스는 확장을 업데이트하거나 다시 켤 때 이전 스크립트를 정리 없이 없애고 새로 주입한다.
         // 죽은 인스턴스가 남긴 오버레이와 스크롤·클릭 잠금을 걷어 낸다.
@@ -63,7 +55,7 @@ export default defineContentScript({
         // 옵션 페이지는 저장소에 직접 쓰고, 모듈 레지스트리가 저장소를 감시해 반영한다 (메시징 없음)
 
         // ===== 오버레이 (디시 CSS와 Radix Themes CSS가 섞이지 않게 shadow DOM에 둔다) =====
-        // 페이지용 CSS(위 import)는 manifest로 주입하고, 오버레이 CSS만 css 옵션으로 shadow에 넣는다
+        let stopAppearance: (() => void) | undefined;
         const mountOverlay = async (): Promise<void> => {
             if (ctx.isInvalid) return;
 
@@ -74,9 +66,10 @@ export default defineContentScript({
                 // WXT 기본 리셋(:host{all:initial !important})은 pointer-events까지 되돌려 페이지 클릭을 막는다.
                 // 그래서 끄고 overlay.scss의 :host 리셋을 쓴다.
                 inheritStyles: true,
-                // Radix 토큰의 :root는 빌드 때 :host로 바뀌어 있다 (wxt.config.ts의 slim-overlay-radix)
-                css: radixCss + overlayCss,
+                // 위에서 불러온 CSS는 WXT가 content-scripts/content.css로 묶어 두었다가 여기서 shadow에 넣는다 (:root → :host 포함)
                 onMount(container) {
+                    // 디시 다크모드를 따라간다. Radix는 조상의 light/dark 클래스로 색을 바꾸므로 오버레이 최상위 요소(app·portal의 부모)에 붙인다
+                    stopAppearance = followDcAppearance(container);
                     const app = document.createElement("div");
                     const portal = document.createElement("div");
                     portal.id = "portal";
@@ -88,7 +81,10 @@ export default defineContentScript({
                     root.render(<ContentRoot/>);
                     return root;
                 },
-                onRemove: (root) => root?.unmount()
+                onRemove: (root) => {
+                    stopAppearance?.();
+                    root?.unmount();
+                }
             });
             ui.mount();
         };

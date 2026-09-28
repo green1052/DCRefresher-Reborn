@@ -21,20 +21,6 @@ import {type ActivityState, useGallogActivity} from "@/utils/gallogActivity";
 import {MemoDialog} from "./MemoDialog";
 import {overlay} from "./shadow";
 
-/** 디시 다크모드(#css-darkmode 스타일시트)를 따라간다 */
-const useDcAppearance = (): "light" | "dark" => {
-    const detect = (): "light" | "dark" => (document.getElementById("css-darkmode") ? "dark" : "light");
-    const [appearance, setAppearance] = useState(detect);
-
-    useEffect(() => {
-        const observer = new MutationObserver(() => setAppearance(detect()));
-        observer.observe(document.head, {childList: true});
-        return () => observer.disconnect();
-    }, []);
-
-    return appearance;
-};
-
 const TOAST_ICONS = {
     info: <Info size={16} color="var(--accent-11)"/>,
     warning: <TriangleAlert size={16} color="var(--amber-11)"/>,
@@ -290,12 +276,12 @@ const BubbleHost = ({onBlockPackage}: { onBlockPackage: (target: SelectedUser) =
 };
 
 export const ContentRoot = () => {
-    const appearance = useDcAppearance();
     // 버블은 누르면 닫히므로 패키지 차단 다이얼로그의 대상은 여기에 둔다
     const [packageTarget, setPackageTarget] = useState<SelectedUser | null>(null);
 
     return (
-        <Theme appearance={appearance} accentColor="blue" radius="medium" panelBackground="solid"
+        // 다크모드는 오버레이 최상위 요소의 light/dark 클래스가 정한다 (콘텐츠 스크립트의 followDcAppearance)
+        <Theme accentColor="blue" radius="medium" panelBackground="solid"
                hasBackground={false}>
             <Box>
                 <ToastHost/>
