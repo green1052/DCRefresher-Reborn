@@ -218,7 +218,7 @@ export const WriteComment = () => {
             refreshIfOpen();
             const timeout = isTimeoutError(e);
             useUiStore.getState().showToast(
-                timeout ? "응답이 없어 작성 여부를 확인하지 못했습니다. 댓글 목록을 확인해 주세요." : "댓글 작성 중 오류가 발생했습니다.",
+                timeout ? "응답이 없어 작성 여부를 확인하지 못했습니다. 댓글 목록을 확인해 주세요." : "댓글을 작성하지 못했습니다. 잠시 후 다시 시도해 주세요.",
                 "error"
             );
         } finally {

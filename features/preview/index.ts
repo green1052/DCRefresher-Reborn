@@ -91,16 +91,21 @@ const controller = (ctx: Ctx) => {
         return post;
     };
 
+    /** 받은 지 1분 안의 캐시 본문과 그 나이(ms). 댓글 보존·추천이 항목을 다시 저장해 수명을 늘리므로 받은 시각으로 본다 */
+    const cachedPost = (preData: GalleryPreData): { post: PostInfo; age: number } | undefined => {
+        const entry = getEntry(preData);
+        const age = Date.now() - (entry?.fetchedAt ?? 0);
+        return entry?.post && age < 60_000 ? {post: entry.post, age} : undefined;
+    };
+
     /**
      * 캐시에 있으면 캐시, 없으면 받는다. fresh는 방금 받은 본문인지다 (캐시 것은 1분까지 낡았을 수 있다).
      * archived는 받지 못해 보존해 둔 본문을 대신 준 것이다
      */
     const getPost = async (preData: GalleryPreData): Promise<{ post: PostInfo; fresh: boolean; archived?: true }> => {
-        const entry = !ctx.settings.disableCache ? getEntry(preData) : undefined;
-        const age = Date.now() - (entry?.fetchedAt ?? 0);
-        // 댓글 보존이 항목을 다시 저장해 수명을 늘리므로, 받은 지 1분 안의 본문만 캐시로 쓴다.
+        const cached = !ctx.settings.disableCache ? cachedPost(preData) : undefined;
         // 우클릭을 누르는 동안 미리 받은 본문은 캐시에서 꺼내도 방금 받은 것으로 친다. 기준 2초는 길게 누르기 판정 시간의 상한이다.
-        if (entry?.post && age < 60_000) return {post: entry.post, fresh: age < 2000};
+        if (cached) return {post: cached.post, fresh: cached.age < 2000};
 
         try {
             return {post: await requestPost(preData), fresh: true};
@@ -252,7 +257,7 @@ const controller = (ctx: Ctx) => {
         // 받는 중인 요청(새로고침 버튼·미니 등)이 있으면 미리 받지 않는다. 받으면 그 요청을 끊는다.
         if (dir && !ctx.settings.disableCache && store.getState().signalId === mySignal) {
             const next = adjacentPreData(preData, dir);
-            if (next && !pending && !getEntry(next)?.post) void requestPost(next);
+            if (next && !pending && !cachedPost(next)) void requestPost(next);
         }
     };
 
@@ -335,14 +340,11 @@ const controller = (ctx: Ctx) => {
             document.title = newTitle;
         }
 
-        if (ctx.settings.autoRefreshComment) {
-            const interval = ctx.settings.commentRefreshInterval || 10000;
-            refreshTimer = window.setInterval(() => {
-                // 열린 사이 설정을 끄면 다음 차례부터 멈춘다
-                if (!ctx.settings.autoRefreshComment || document.hidden || pulling) return;
-                void refreshComments();
-            }, interval);
-        }
+        // 설정이 꺼져 있어도 타이머는 둔다. 열린 사이 설정을 켜고 끄면 다음 차례부터 따른다
+        refreshTimer = window.setInterval(() => {
+            if (!ctx.settings.autoRefreshComment || document.hidden || pulling) return;
+            void refreshComments();
+        }, ctx.settings.commentRefreshInterval || 10000);
 
         void load(preData, mySignal, dir);
     };
@@ -400,7 +402,7 @@ const controller = (ctx: Ctx) => {
             avoidReasonTxt: ctx.settings.blockPresetReason,
             delChk: ctx.settings.blockPresetDelete,
             userTypeChk: ctx.settings.blockPresetUserType
-        }), "차단했습니다.", "차단 처리 중 오류가 발생했습니다.");
+        }), "차단했습니다.", "차단하지 못했습니다. 잠시 후 다시 시도해 주세요.");
 
         // 그새 다른 글로 넘어갔으면 창을 닫지 않는다.
         if (blocked && ctx.settings.blockPresetDelete && store.getState().signalId === signal) close();
@@ -517,7 +519,7 @@ const controller = (ctx: Ctx) => {
         const resolved = resolveTarget(ev);
         if (!resolved || (!resolved.commentsOnly && ctx.settings.reversePreviewKey)) return;
         // 캐시를 끄면 열 때 캐시를 보지 않는다. 떼기 전에 다 받으면 한 번 더 받게 되므로 미리 받지 않는다.
-        if (!ctx.settings.disableCache && !getEntry(resolved.preData)?.post) void requestPost(resolved.preData);
+        if (!ctx.settings.disableCache && !cachedPost(resolved.preData)) void requestPost(resolved.preData);
     };
 
     const onMouseUp = (ev: MouseEvent) => {
@@ -559,6 +561,12 @@ const controller = (ctx: Ctx) => {
         const resolved = resolveTarget(ev);
         if (!resolved) return;
 
+        // 길게 눌렀으면 댓글 수·키 반전이어도 기본 우클릭 메뉴다.
+        if (preventOpen) {
+            preventOpen = false;
+            return;
+        }
+
         if (resolved.commentsOnly) {
             ev.preventDefault();
             open(resolved.preData, true);
@@ -571,12 +579,7 @@ const controller = (ctx: Ctx) => {
             return;
         }
 
-        // 길게 눌렀으면 기본 우클릭 메뉴, 짧게 눌렀으면 미리보기다.
-        if (preventOpen) {
-            preventOpen = false;
-            return;
-        }
-
+        // 짧게 눌렀으면 미리보기다.
         ev.preventDefault();
         open(resolved.preData);
     };

@@ -44,7 +44,7 @@ const BlockPopup = () => {
             avoidReasonTxt: reason === "0" ? custom : "",
             delChk,
             userTypeChk
-        }), "차단했습니다.", "차단 처리 중 오류가 발생했습니다.");
+        }), "차단했습니다.", "차단하지 못했습니다. 잠시 후 다시 시도해 주세요.");
         eventBus.emit("refreshRequest");
 
         // 그새 다른 글로 넘어갔으면 차단 창과 미리보기는 그 글 것이라 알림만 띄우고 건드리지 않는다.

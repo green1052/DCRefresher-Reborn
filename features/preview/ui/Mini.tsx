@@ -1,5 +1,6 @@
 import {Box, Card, Heading} from "@radix-ui/themes";
 import {useEffect, useRef} from "react";
+import {watchGifVideos} from "./gifVideos";
 import {MINI_HEIGHT, MINI_WIDTH, usePreviewStore} from "./previewStore";
 
 /**
@@ -30,6 +31,9 @@ export const Mini = () => {
         window.addEventListener("wheel", onWheel, {passive: false});
         return () => window.removeEventListener("wheel", onWheel);
     }, [wheel]);
+
+    // 깨진 움짤·디시콘 mp4는 전체 미리보기처럼 gif로 바꾼다 (Frame.tsx). 내용이 바뀔 때마다 새로 그려진다
+    useEffect(() => (contents.current ? watchGifVideos(contents.current) : undefined), [mini?.contents]);
 
     if (!mini) return null;
 

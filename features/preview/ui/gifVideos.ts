@@ -16,6 +16,10 @@ const toGif = (video: HTMLVideoElement, gif: string): void => {
         if (value !== null) image.setAttribute(name, value);
     }
     video.replaceWith(image);
+    // 떼어 내기만 하면 mp4를 계속 받는다. 소스를 비우고 load()로 받기를 끊고 플레이어를 놓는다
+    video.removeAttribute("src");
+    video.replaceChildren();
+    video.load();
 };
 
 /**

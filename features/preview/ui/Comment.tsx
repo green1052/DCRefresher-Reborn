@@ -174,15 +174,14 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     const gallery = usePreviewStore((s) => s.preData?.gallery);
     const memo = useUserMemo({uid: user.id, ip: user.ip, nick: user.nick}, gallery);
     // 글댓비는 이 사람 것만 구독한다. 캐시 전체를 구독하면 누구 것이든 저장될 때마다 모든 댓글의 작성자가 다시 그려진다.
-    // hasOwn은 아이디가 constructor 같은 프로토타입 키일 때 캐시로 잘못 잡히지 않게 한다. 1시간이 지난 값은 없는 것으로 보고 새로 받는다.
+    // hasOwn은 아이디가 constructor 같은 프로토타입 키일 때 캐시로 잘못 잡히지 않게 한다.
+    // 1시간이 지난 값도 페이지처럼 보이고, 글쓴이(fetchRatio)만 새로 받아 받는 대로 바꾼다.
     const showsRatio = useUiStore((state) => state.ratios !== null);
     const alarm = useUiStore((state) => state.ratios?.alarm ?? 0);
-    const cached = useUiStore(useShallow((state) => {
-        const info = user.id && state.ratios && Object.hasOwn(state.ratios.cache, user.id) ? state.ratios.cache[user.id] : undefined;
-        return isFresh(info) ? info : undefined;
-    }));
-    const fetched = useGallogActivity(fetchRatio && showsRatio && !cached ? user.id : undefined);
-    const ratio = cached ?? (typeof fetched === "object" ? fetched : undefined);
+    const cached = useUiStore(useShallow((state) =>
+        user.id && state.ratios && Object.hasOwn(state.ratios.cache, user.id) ? state.ratios.cache[user.id] : undefined));
+    const fetched = useGallogActivity(fetchRatio && showsRatio && !isFresh(cached) ? user.id : undefined);
+    const ratio = (typeof fetched === "object" ? fetched : undefined) ?? cached;
     const ratioColor = useUiStore((state) => (ratio && isLowActivity(ratio, alarm) ? state.badgeColors.ratioAlarm : state.badgeColors.ratio));
 
     const openBubble = (x: number, y: number): void => {
@@ -286,7 +285,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
 
         // 비밀번호가 틀려도 HTTP 200('false||메시지')이 오므로 결과를 확인해 알려야 한다.
         const request = isAdmin ? adminDeleteComment(st.preData, comment.no) : userDeleteComment(st.preData, comment.no, password);
-        if (await notifyManage(request, "댓글을 삭제했습니다.", "댓글 삭제 중 오류가 발생했습니다.")) void st.requestRefresh();
+        if (await notifyManage(request, "댓글을 삭제했습니다.", "댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.")) void st.requestRefresh();
     };
 
     // 디시콘(img/video)과 글자콘. 답글이면 앞에 멘션이 붙어 오므로 ^로 고정하지 않고 찾는다.

@@ -102,7 +102,7 @@ export const Frame = () => {
     useEffect(() => (contentsBox.current ? watchGifVideos(contentsBox.current) : undefined), [visible, contents, commentsOnly, error, postKey, hideText]);
 
     // 창은 비모달이라(아래 Dialog.Root) Radix가 포커스를 가두지 않는다. 연 동안 뒤 페이지를 inert로 막아 Tab·스크린 리더가 가려진 목록으로 나가지 않게 한다.
-    // 오버레이(refresher-root)는 남긴다. 버블·토스트·관리 패널이 거기 있다.
+    // 오버레이(refresher-root)는 남긴다. 버블·토스트·관리 패널이 거기 있다. body에 직접 붙인 확장 UI(스텔스 버튼 등)도 data-refresher-ui로 남긴다.
     // 키보드로 열었으면(연 요소에 포커스 링이 보이면) 닫을 때 그 요소(목록의 제목 링크 등)로 포커스를 돌려준다. 글을 넘길 때는 visible이 그대로라 처음 연 요소가 남는다.
     // 마우스로 연 창까지 돌려주면 Esc로 닫을 때 제목 링크에 포커스 링이 생겨 새로고침 모듈이 자동 갱신을 멈춘다.
     // 연 요소는 스크롤 칸에 포커스를 주는 아래 효과보다 먼저 읽어야 해서 이 효과를 앞에 둔다.
@@ -114,7 +114,7 @@ export const Frame = () => {
         const html = document.documentElement;
         const previous = html.style.overflow;
         html.style.overflow = "hidden";
-        const blocked = document.body.querySelectorAll<HTMLElement>(":scope > :not(refresher-root, [inert])");
+        const blocked = document.body.querySelectorAll<HTMLElement>(":scope > :not(refresher-root, [data-refresher-ui], [inert])");
         for (const element of blocked) element.inert = true;
 
         return () => {
@@ -388,10 +388,11 @@ export const Frame = () => {
                         </Flex>
                     </div>
                 </div>
+                {/* 화면 왼쪽에 fixed로 붙인다. 스크롤 칸에 transform이 없어 화면 기준 그대로이고,
+                    aria-modal 창 안에 두어야 스크린 리더가 창 밖 내용으로 보고 건너뛰지 않는다 */}
+                {visible && adminVisible && <AdminPanel/>}
                 </Dialog.Content>
                 {hintDir !== 0 && <SkipHint dir={hintDir}/>}
-                {/* 화면 왼쪽에 fixed로 붙인다 */}
-                {visible && adminVisible && <AdminPanel/>}
                 </Theme>
             </Dialog.Portal>
         </Dialog.Root>
