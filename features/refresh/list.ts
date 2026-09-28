@@ -36,6 +36,21 @@ const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, n
     while (newList.children.length > oldRows.length) newList.lastElementChild?.remove();
 };
 
+/**
+ * 새 목록이 옛 목록의 한 자리(at)에 행 count개가 끼어들고 그만큼 아래가 잘린 모양이면 그 자리와 개수, 아니면 null.
+ * 순서가 같으면 count는 0이다. 자리로 짝지으므로 키가 겹치는 행(번호 없는 설문·AD)도 된다
+ */
+const insertionOf = (oldKeys: string[], newKeys: string[]): { at: number; count: number } | null => {
+    let at = 0;
+    while (at < oldKeys.length && at < newKeys.length && oldKeys[at] === newKeys[at]) at++;
+    const count = at === oldKeys.length || at === newKeys.length ? Math.max(newKeys.length - oldKeys.length, 0) : newKeys.indexOf(oldKeys[at]!, at + 1) - at;
+    if (count < 0) return null;
+    for (let index = at + count; index < newKeys.length; index++) {
+        if (newKeys[index] !== oldKeys[index - count]) return null;
+    }
+    return {at, count};
+};
+
 /** 페이징 박스를 받아온 것으로 맞춘다. 같을 땐 건드리지 않아야 누르던 페이지 링크가 교체로 사라지지 않는다 */
 export const syncPaging = (dom: Document): void => {
     const paging = dom.querySelector<HTMLElement>(PAGING_SELECTOR);
@@ -102,13 +117,19 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
         keepDeletedRows(oldRows, new Set(newKeys), newList, newPostList.length);
     }
 
-    // 행 순서가 같으면 바뀐 행(조회수 등)만 갈아끼운다. 그대로인 행은 hover·리스너가 유지된다.
-    // 검색 결과는 강조와 글·댓글 행 짝이 얽혀 있어 통째로 바꾼다
-    const sameOrder = !navigated && search === undefined && oldKeys.length === newKeys.length && oldKeys.every((key, index) => key === newKeys[index]);
-    if (sameOrder) {
-        for (const [index, row] of oldRows.entries()) {
-            const next = newRows[index]!;
-            if (rawRows.get(row) !== rawRows.get(next)) row.replaceWith(next);
+    // 행 순서가 같거나, 한 자리(공지 아래)에 새 글이 끼어들고 그만큼 아래가 밀려난 것뿐이면 제자리에서 고친다.
+    // 새 행만 끼우고 밀려난 행만 빼며, 나머지는 바뀐 행(조회수 등)만 갈아끼운다. 그대로인 행은 hover·리스너가 유지되고 필터·스타일·배치를 다시 하지 않는다.
+    // 검색 결과는 강조와 글·댓글 행 짝이 얽혀 있어 통째로 바꾼다. 삭제된 글 보존은 옛 행을 새 목록으로 옮겨 넣으므로 순서가 같을 때만 제자리에서 고친다
+    const shift = !navigated && search === undefined ? insertionOf(oldKeys, newKeys) : null;
+    if (shift && (!keepDeleted || (shift.count === 0 && oldKeys.length === newKeys.length))) {
+        const {at, count} = shift;
+        for (const row of oldRows.slice(newRows.length - count)) row.remove();
+        const anchor = at < newRows.length - count ? oldRows[at]! : null;
+        for (const row of newRows.slice(at, at + count)) oldList.insertBefore(row, anchor);
+        for (const [index, row] of newRows.entries()) {
+            if (index >= at && index < at + count) continue;
+            const old = oldRows[index < at ? index : index - count]!;
+            if (rawRows.get(old) !== rawRows.get(row)) old.replaceWith(row);
         }
     } else {
         oldList.replaceWith(newList);

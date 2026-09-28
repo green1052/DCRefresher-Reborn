@@ -665,6 +665,9 @@ const publishSettings = (ctx: Ctx): void => {
 export interface PreviewApi {
     /** '삭제된 글과 댓글 보존' 설정. 새로고침 모듈도 목록에서 지워진 글을 남길지 이것으로 정한다 */
     archiveArticle(): boolean;
+
+    /** 미리보기 창이 열려 있는지. 새로고침 모듈은 열려 있는 동안 자동 새로고침을 쉰다 */
+    isOpen(): boolean;
 }
 
 declare module "@/core/module/types" {
@@ -683,7 +686,7 @@ export default defineModule({
     setup: (ctx): PreviewApi => {
         publishSettings(ctx);
         controller(ctx);
-        return {archiveArticle: () => ctx.settings.archiveArticle};
+        return {archiveArticle: () => ctx.settings.archiveArticle, isOpen: () => usePreviewStore.getState().visible};
     },
     onChanged: publishSettings
 });

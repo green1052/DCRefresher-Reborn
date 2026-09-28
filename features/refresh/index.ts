@@ -113,6 +113,9 @@ export default defineModule({
                 const page = new URL(originalLocation).searchParams.get("page");
                 if (page && page !== "1") return false;
 
+                // 미리보기가 목록을 덮고 있으면 쉰다. 닫은 뒤 다음 주기에 받는다 (닫자마자 받으면 다음 글을 누르려던 행이 밀린다)
+                if (getModuleApi("preview")?.isOpen()) return false;
+
                 // 목록을 갈아끼우면 커서·키보드 포커스 아래 행이 바뀐다. 설정을 켜면 그 위에 있는 동안 건너뛴다.
                 // 포커스는 :focus-visible만 본다. 글 제목을 마우스로 누르면 링크에 포커스가 남아, :focus로 보면 목록을 떠나도 계속 멈춘다
                 const list = ctx.settings.pauseOnHover ? document.querySelector(LIST_SELECTOR) : null;
@@ -153,15 +156,18 @@ export default defineModule({
                 // 그사이 주소가 바뀌었으면 지난 주소의 목록이라 버린다. finally에서 새 주소로 다시 받는다
                 if (target !== originalLocation) return false;
 
-                // 목록이 그대로면 파싱·교체를 건너뛴다. 응답 전체는 요청마다 바뀌는 값(s_key)이 있어 tbody만 비교한다
-                const start = response.indexOf("<tbody");
+                // 목록이 그대로면 파싱·교체를 건너뛴다. 응답 전체는 요청마다 바뀌는 값(s_key)이 있어 목록 표의 tbody만 비교한다
+                const table = response.indexOf("<table class=\"gall_list");
+                const start = response.indexOf("<tbody", table);
                 const listHtml = start === -1 ? "" : response.slice(start, response.indexOf("</tbody>", start));
                 if (!customURL && listHtml && listHtml === lastListHtml) {
                     failures = 0;
                     return true;
                 }
 
-                const dom = new DOMParser().parseFromString(response, "text/html");
+                // 자동 새로고침은 목록 표만 파싱한다 (문서 전체의 1/3). 페이징 박스는 사용자가 한 로드(강제·이동)에서만 맞춘다.
+                // 검색 결과는 검색 이어 보기가 페이징을 보고 다시 이어 붙이므로 문서 전체를 파싱해 페이징도 맞춘다
+                const dom = new DOMParser().parseFromString(!force && !queryString("s_keyword") && table !== -1 && listHtml ? `<table class="gall_list">${listHtml}` : response, "text/html");
 
                 const oldList = document.querySelector<HTMLElement>(LIST_SELECTOR);
                 const newList = dom.querySelector<HTMLElement>(LIST_SELECTOR);
