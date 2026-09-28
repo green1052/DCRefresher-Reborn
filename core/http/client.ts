@@ -5,12 +5,19 @@ import {isBlockedPage} from "@/core/pages";
 
 type Fetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
+/**
+ * 파이어폭스 콘텐츠 스크립트에만 있는 전역 content. content.fetch는 페이지 컨텍스트의 fetch라 페이지가 보낸 요청처럼 나간다.
+ * 콘텐츠 스크립트 자체의 fetch는 확장 샌드박스에서 나가 Origin/Referer가 빠진다 (#67). 크롬 콘텐츠 스크립트와 배경·옵션 페이지는 기본 fetch다
+ */
+const pageWindow = (globalThis as { content?: { fetch: Fetch } }).content;
+const baseFetch: Fetch = pageWindow ? pageWindow.fetch.bind(pageWindow) : globalThis.fetch.bind(globalThis);
+
 /** 동시 요청 수. 요청 제한 모듈(features/requests)이 설정값으로 바꾸고, 모듈이 꺼져 있거나 배경·옵션 페이지면 무제한이다 */
 const limit = pLimit(Number.POSITIVE_INFINITY);
 
+/** 정수나 Infinity여야 한다 (p-limit이 던진다). 설정값은 normalizeSetting이 step 단위로 맞춘다 */
 export const setRequestConcurrency = (concurrency: number): void => {
-    // p-limit은 정수나 Infinity가 아니면 던진다. 가져온 설정은 normalizeSetting이 범위만 맞춰 소수일 수 있다
-    limit.concurrency = Math.round(concurrency);
+    limit.concurrency = concurrency;
 };
 
 /** 요청 한 번의 시간 제한 (ms) */
@@ -21,7 +28,7 @@ const REQUEST_TIMEOUT = 15_000;
  * 시간 제한은 자리를 잡은 뒤부터 잰다. ky의 timeout은 fetch를 부르는 순간부터 재서, 요청이 몰리면 차례를 기다리던 요청이
  * 보내지도 못하고 시간 초과로 실패한다. 요청을 끊는 신호(ky·호출한 쪽)는 Request에 들어 있어 함께 건다
  */
-const limited = (fetcher: Fetch): Fetch => (input, init) =>
+const limitedFetch: Fetch = (input, init) =>
     limit(() => {
         // AbortSignal.timeout은 파이어폭스 콘텐츠 스크립트에서 "Could not find window"로 던진다 (전역이 창이 아니라 샌드박스다)
         const timeout = new AbortController();
@@ -29,15 +36,8 @@ const limited = (fetcher: Fetch): Fetch => (input, init) =>
         const signals = [timeout.signal];
         if (input instanceof Request) signals.push(input.signal);
         if (init?.signal) signals.push(init.signal);
-        return fetcher(input, {...init, signal: AbortSignal.any(signals)});
+        return baseFetch(input, {...init, signal: AbortSignal.any(signals)});
     });
-
-/**
- * 파이어폭스 콘텐츠 스크립트에만 있는 전역 content. content.fetch는 페이지 컨텍스트의 fetch라 페이지가 보낸 요청처럼 나간다.
- * 콘텐츠 스크립트 자체의 fetch는 확장 샌드박스에서 나가 Origin/Referer가 빠진다 (#67). 크롬 콘텐츠 스크립트와 배경·옵션 페이지는 기본 fetch다
- */
-const pageWindow = (globalThis as { content?: { fetch: Fetch } }).content;
-const baseFetch: Fetch = pageWindow ? pageWindow.fetch.bind(pageWindow) : globalThis.fetch.bind(globalThis);
 
 /** 디시 임시 차단을 받았을 때 던지는 오류. 요청이 너무 많으면 디시는 상태 코드 없이 모든 요청에 빈 페이지를 준다 */
 export class BlockedError extends Error {
@@ -68,7 +68,7 @@ const detectBlocked: AfterResponseHook = async ({request, response}) => {
 export const http: KyInstance = ky.create({
     // 시간 제한은 limited가 잰다 (차례를 받은 뒤부터)
     timeout: false,
-    fetch: limited(baseFetch),
+    fetch: limitedFetch,
     // jitter: 재시도가 한꺼번에 몰리지 않게 시점을 흩는다.
     // maxRetryAfter: Retry-After가 몇 분이어도 10초까지만 기다린다. 더 기다리면 화면이 멈춘 것처럼 보인다.
     retry: {jitter: true, maxRetryAfter: 10_000},
