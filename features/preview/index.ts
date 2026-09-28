@@ -143,9 +143,12 @@ const controller = (ctx: Ctx) => {
 
     /**
      * 댓글을 받아 가공해 그린다. skip이면 받지 않고 빈 목록으로 처리한다 (보존해 둔 댓글은 삭제된 것으로 나온다).
-     * given이 있으면 받지 않고 그 목록을 그린다 (미리 받은 목록, 캐시의 지난 목록)
+     * given이 있으면 그 목록을 그린다 (미리 받은 목록, 캐시의 지난 목록). 미리 받는 중이면 여기서 기다려야 순번·pulling이 지금 잡혀,
+     * 그사이 새로고침한 새 목록을 늦게 온 옛 목록이 덮지 않는다. 미리 받기가 비었거나 실패하면 다시 받는다
      */
-    const pullComments = async (preData: GalleryPreData, post: PostInfo, mySignal: number, skip = false, given?: CommentListResponse): Promise<void> => {
+    const pullComments = async (preData: GalleryPreData, post: PostInfo, mySignal: number, skip = false, given?: CommentListResponse | Promise<CommentListResponse | undefined>): Promise<void> => {
+        // 부른 때의 요청을 쓴다. 미리 받기를 기다리는 사이 다른 글로 넘어가면 이미 끊겨 앞 글의 댓글을 다시 받지 않는다
+        const signal = abort?.signal ?? AbortSignal.abort();
         const seq = ++commentSeq;
         pulling++;
 
@@ -154,7 +157,7 @@ const controller = (ctx: Ctx) => {
             const [{prepareComments, processComments}, {list: raw, allowReply}] = await Promise.all([
                 import("@/core/preview/comments"),
                 // 건너뛸 때는 지금 알고 있는 댓글 허용(멤버만 댓글)을 그대로 둔다
-                skip ? {list: [], allowReply: store.getState().allowReply} : given ?? fetchComments(preData, post, abort!.signal)
+                skip ? {list: [], allowReply: store.getState().allowReply} : Promise.resolve(given).then((list) => list ?? fetchComments(preData, post, signal))
             ]);
             if (store.getState().signalId !== mySignal || seq < shownSeq) return;
             shownSeq = seq;
@@ -262,9 +265,9 @@ const controller = (ctx: Ctx) => {
             if (last) await pullComments(preData, post, mySignal, false, last);
             // 미리 받은 댓글은 같은 요청이었을 때만 쓴다. 비어 있으면 다시 받는다
             const matches = post.esno === esno && (post.commentId ?? preData.gallery) === preData.gallery && (post.commentNo ?? preData.id) === preData.id;
-            const given = matches ? await early : undefined;
+            const given = matches && early ? early.then((list) => (list?.list.length ? list : undefined)) : undefined;
             // 방금 받은 본문이 댓글 0개면 받지 않는다. 보존해 둔 댓글이 있으면 삭제 여부를 비교해야 하므로 받는다.
-            await pullComments(preData, post, mySignal, fresh && post.commentCount === 0 && !Object.keys(getEntry(preData)?.seen ?? {}).length, given?.list.length ? given : undefined);
+            await pullComments(preData, post, mySignal, fresh && post.commentCount === 0 && !Object.keys(getEntry(preData)?.seen ?? {}).length, given);
         } catch (e) {
             // 댓글만 못 받았으면 본문은 그대로 두고 알린다. 임시 차단은 HTTP 클라이언트가 이미 알렸다
             if (store.getState().signalId === mySignal && !(e instanceof BlockedError)) ui.showToast("댓글을 불러오지 못했습니다.", "error");
