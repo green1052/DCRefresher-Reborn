@@ -526,6 +526,9 @@ const controller = (ctx: Ctx) => {
         if (!resolved || (!resolved.commentsOnly && ctx.settings.reversePreviewKey)) return;
         // 캐시를 끄면 열 때 캐시를 보지 않는다. 떼기 전에 다 받으면 한 번 더 받게 되므로 미리 받지 않는다.
         if (!ctx.settings.disableCache && !cachedPost(resolved.preData)) void requestPost(resolved.preData);
+        // 오버레이도 처음 쓸 때 띄우므로(수십 ms) 떼기를 기다리는 동안 미리 띄운다.
+        // 다음 task에서 한다. 여기서 띄우면 오버레이 모듈 초기화가 마이크로태스크로 먼저 돌아 본문 요청이 그만큼 늦게 나간다
+        if (!usePreviewStore.getState().warm) window.setTimeout(() => usePreviewStore.setState({warm: true}));
     };
 
     const onMouseUp = (ev: MouseEvent) => {

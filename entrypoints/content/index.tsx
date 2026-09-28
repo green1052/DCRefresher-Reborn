@@ -153,8 +153,7 @@ export default defineContentScript({
         whenDomReady(warnIfBlocked);
 
         const board = BOARD_PAGE.test(documentUrl.href);
-        if (board) await Promise.all([initBlocksStore(ctx.signal), initMemosStore(ctx.signal)]);
-        await loadAll(features, ctx.signal);
+        await loadAll(features, ctx.signal, board ? Promise.all([initBlocksStore(ctx.signal), initMemosStore(ctx.signal)]) : undefined);
         // 저장소는 요청 순서대로 읽히므로 가장 큰 IP/밴 DB는 모듈 설정 뒤에 요청한다(userinfo는 setup에서 기다린다).
         // userinfo가 꺼져 있어도 버블·미리보기 라벨이 나오도록 여기서도 부른다.
         if (board) void initDatabase().catch(console.error);
