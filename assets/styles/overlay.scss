@@ -262,6 +262,12 @@
         height: auto;
     }
 
+    // 유튜브는 16:9로 맞춘다. 높이 속성(315)만 쓰면 너비가 100%이거나 창이 좁을 때 납작하거나 길쭉해진다
+    iframe[src*="youtube"] {
+        aspect-ratio: 16 / 9;
+        height: auto;
+    }
+
     a {
         color: var(--accent-11);
     }
@@ -275,11 +281,27 @@
     table {
         max-width: 100%;
     }
+
+    // 디시는 본문 줄마다 <p>다. 브라우저 기본 문단 여백(1em)이 남으면 줄마다 빈 줄이 낀 것처럼 보인다 (미니 미리보기도 같다)
+    p {
+        margin: 0;
+    }
 }
 
 .refresher-preview-contents {
     font-size: var(--refresher-preview-font-size, 15px);
-    line-height: 1.7;
+    // 디시 본문(.writing_view_box)과 같다
+    line-height: 1.5;
+
+    // 본문 디시콘은 디시 common.css처럼 높이만 맞춘다 (보통 100px, 대왕콘 150px)
+    .written_dccon {
+        height: 100px;
+        vertical-align: top;
+
+        &.bigdccon {
+            height: 150px;
+        }
+    }
 }
 
 /* 스텔스 모드(페이지의 html.refresherStealth)가 넘겨준 변수로 미리보기 미디어도 숨긴다 — 댓글 디시콘은 아래에서 따로 가린다 */
@@ -288,8 +310,8 @@
 }
 
 // 위 스텔스 규칙(0,2,1)과 명시도를 맞춰야 뒤에 선언된 이쪽이 이긴다 — :is는 가장 높은 인자(img:not(...))를 따른다.
-// 유튜브 <embed>는 정화하며 iframe으로 바뀐다 (sanitize.ts)
-.refresher-preview-block-media :is(iframe, image, img:not(.written_dccon), video) {
+// 유튜브 <embed>는 정화하며 iframe으로 바뀐다 (sanitize.ts). 디시콘은 mp4든 gif든(gifVideos.ts가 바꾼 것) 이미지로 치지 않는다
+.refresher-preview-block-media :is(iframe, image, img:not(.written_dccon), video:not(.written_dccon)) {
     display: none;
 }
 
@@ -339,6 +361,12 @@
         width: 100px;
         height: 100px;
         border-radius: 0;
+
+        // 대왕콘 (디시 common.css와 같은 크기)
+        &.bigdccon {
+            width: 150px;
+            height: 150px;
+        }
     }
 
     /* 스텔스 모드: 가려 두고 마우스를 올리면 보인다 (변수는 stealth.scss가 페이지에서 넘긴다) */

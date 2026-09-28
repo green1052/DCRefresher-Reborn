@@ -13,6 +13,7 @@ import {useGallogActivity} from "@/utils/gallogActivity";
 import {banReasonsOf, databaseVersion, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
 
 import {savedNonmember} from "../nonmember";
+import {watchGifVideos} from "./gifVideos";
 import {parseDate, usePreviewStore} from "./previewStore";
 
 /** 절대 시각 포매터. toLocaleString()은 부를 때마다 포매터를 새로 만들어, 댓글 수백 개를 다시 그릴 때 느리다 */
@@ -295,6 +296,8 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
     useLayoutEffect(() => {
         for (const box of body.current?.querySelectorAll<HTMLElement>(".coment_dccon_txt") ?? []) fitTxtcon(box);
     }, [html]);
+    // 깨진 디시콘 mp4는 디시처럼 gif로 바꾼다
+    useEffect(() => (body.current ? watchGifVideos(body.current) : undefined), [html]);
 
     return (
         <Box className="refresher-comment" data-depth={depth} data-deleted={isDeleted || undefined}

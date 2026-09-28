@@ -188,7 +188,7 @@ getModuleApi("preview")?.archiveArticle()
 | `ui/previewStore.ts` | 미리보기 창 상태 (zustand) |
 | `settings.ts` | 설정 스키마 |
 | `ui/Frame.tsx` | 창 (머리, 본문, 댓글 칸, 휠로 넘기기) |
-| `ui/Votes.tsx`, `ErrorBlock.tsx`, `CountDown.tsx`, `fitMovies.ts` | 추천 버튼, 오류 안내, 자동 삭제 카운트다운, 디시 동영상 iframe 크기 맞추기 |
+| `ui/Votes.tsx`, `ErrorBlock.tsx`, `CountDown.tsx`, `fitMovies.ts`, `gifVideos.ts` | 추천 버튼, 오류 안내, 자동 삭제 카운트다운, 디시 동영상 iframe 크기 맞추기, 깨진 디시콘·움짤 mp4를 gif로 바꾸기 |
 | `ui/CommentList.tsx`, `Comment.tsx`, `WriteComment.tsx` | 댓글 목록(답글 접기), 댓글 하나, 댓글 쓰기 |
 | `ui/Popups.tsx`, `Mini.tsx`, `DcconPopup.tsx` | 관리 패널·차단 팝업, 미니 미리보기, 디시콘 고르기 |
 | `nonmember.ts` | 비회원 닉네임·비밀번호 (디시 localStorage를 같이 씀) |

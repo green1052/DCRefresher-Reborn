@@ -1,16 +1,19 @@
 import DOMPurify, {type Config, type DOMPurify as Purifier} from "dompurify";
 
-/** 움직이는 디시콘도 <video>로 온다. written_dccon 클래스나 dccon.php 주소로 일반 동영상과 구분한다 */
-const isDccon = (node: Element): boolean =>
-    node.classList.contains("written_dccon") || /dccon\.php/.test(`${node.getAttribute("src")} ${node.getAttribute("data-src")}`);
+/**
+ * 움직이는 디시콘과 본문 움짤(gif를 mp4로 바꾼 것)도 <video>로 온다. 디시는 둘 다 data-src에 대신 보일 gif 주소를 달아 둔다.
+ * 그것이나 디시콘 표시(written_dccon 클래스, dccon.php 주소)로 일반 동영상과 구분한다
+ */
+const isGifVideo = (node: Element): boolean =>
+    node.hasAttribute("data-src") || node.classList.contains("written_dccon") || /dccon\.php/.test(node.getAttribute("src") ?? "");
 
 // 동영상에는 재생 컨트롤을 붙인다. 디시 본문은 컨트롤 없이 페이지 스크립트로 재생하기 때문이다.
-// 디시콘은 디시처럼 컨트롤 없이 자동 반복 재생한다.
+// 디시콘·움짤은 디시처럼 컨트롤 없이 자동 반복 재생한다.
 // 이미지·iframe은 lazy로 두어 스텔스·이미지 차단으로 숨긴 것은 받지 않게 한다.
 // 링크(# 앵커 제외)는 새 탭으로 연다. DOMPurify가 target을 지우므로 두면 갤러리 탭이 링크로 넘어가 목록과 미리보기를 잃는다.
 const onAttributes = (node: Element): void => {
     if (node.nodeName === "VIDEO") {
-        if (!isDccon(node)) node.setAttribute("controls", "");
+        if (!isGifVideo(node)) node.setAttribute("controls", "");
         else for (const attribute of ["autoplay", "loop", "muted", "playsinline"]) node.setAttribute(attribute, "");
     } else if (node.nodeName === "IMG" || node.nodeName === "IFRAME") {
         node.setAttribute("loading", "lazy");
