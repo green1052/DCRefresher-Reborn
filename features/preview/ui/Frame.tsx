@@ -1,7 +1,7 @@
 import {Box, Button, Callout, Flex, Heading, IconButton, Separator, Spinner, Text, Theme, Tooltip} from "@radix-ui/themes";
 import {Archive, ArrowUp, Eye, MessageSquare, RotateCw} from "lucide-react";
 import {Dialog} from "radix-ui";
-import {type CSSProperties, useEffect, useRef, useState, type WheelEvent} from "react";
+import {type CSSProperties, Fragment, useEffect, useLayoutEffect, useRef, useState, type WheelEvent} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
 import {focusedElement} from "@/components/useOpenerFocus";
@@ -128,6 +128,15 @@ export const Frame = () => {
         if (visible) scroller.current?.focus({preventScroll: true});
     }, [visible, postKey]);
 
+    // 글을 바꾸면 맨 위에서 보인다. 캐시 hit이면 새 글이 한 번에 그려져 앞 글의 스크롤 위치가 남는다.
+    // 닫을 때도 오르는 signalId가 아니라 글 주소로 건다. 페이드아웃 중에 맨 위로 튀면 안 된다
+    useLayoutEffect(() => {
+        if (scroller.current) scroller.current.scrollTop = 0;
+    }, [postKey]);
+
+    // 창 안에서 글자를 끌어 고르다 바깥에서 놓거나 그 반대여도 click은 둘을 감싼 스크롤 칸에 떨어진다. 바깥에서 누르고 뗀 것만 닫는다
+    const pressedOutside = useRef(false);
+
     useEffect(() => {
         if (!visible) return;
 
@@ -202,31 +211,6 @@ export const Frame = () => {
         skipOnWheel(dir, ev.timeStamp, !inner && !canScroll(box, dir));
     };
 
-    // 배경(창 양옆)에서 굴려도 창을 스크롤한다. 페이지 스크롤은 잠겨 있어 배경엔 굴릴 것이 없다.
-    // 마우스 휠 한 칸(100px 안팎)은 브라우저처럼 부드럽게 옮기되, 잇달아 굴려도 남은 거리를 잃지 않게 목표 위치(aim)에 이어 더한다.
-    // 트랙패드의 잘게 나뉜 값은 바로 옮긴다.
-    const aim = useRef<{ top: number; key: string } | null>(null);
-    const onBackdropWheel = (ev: WheelEvent<HTMLDivElement>): void => {
-        const box = scroller.current;
-        if (!box || ev.deltaY === 0 || ev.ctrlKey || ev.shiftKey) return;
-
-        const dir = ev.deltaY > 0 ? 1 : -1;
-        const atEdge = !canScroll(box, dir);
-        const delta = ev.deltaY * (ev.deltaMode === 1 ? 40 : ev.deltaMode === 2 ? box.clientHeight : 1);
-
-        if (Math.abs(delta) >= 50) {
-            const from = aim.current?.key === postKey ? aim.current.top : box.scrollTop;
-            const top = Math.min(Math.max(from + delta, 0), box.scrollHeight - box.clientHeight);
-            aim.current = {top, key: postKey};
-            box.scrollTo({top, behavior: smoothScroll()});
-        } else {
-            aim.current = null;
-            box.scrollTop += delta;
-        }
-
-        if (scrollToSkip) skipOnWheel(dir, ev.timeStamp, atEdge);
-    };
-
     if (!visible && !fading) return null;
 
     const busy = !error && !post;
@@ -243,39 +227,42 @@ export const Frame = () => {
             <Dialog.Portal container={overlay.portal}>
                 {/* 프리미티브 포털은 Theme 밖(#portal)에 그려져 테마 토큰이 없으므로 Theme로 다시 감싼다 */}
                 <Theme>
-                <div
-                    className="refresher-frame-outer"
+                <div className="refresher-frame-outer" data-fading={fading || undefined} data-blur={backgroundBlur || undefined}/>
+                {/* v5처럼 화면 전체가 스크롤 칸이고 창은 그 안에서 내용만큼 길어진다. 창 안이든 양옆이든 같은 브라우저 기본 스크롤이다 */}
+                <Dialog.Content
+                    className="refresher-frame-scroll"
+                    ref={scroller}
                     data-fading={fading || undefined}
-                    data-blur={backgroundBlur || undefined}
-                    // pointerdown에서 닫으면 배경이 곧바로 사라져 이어지는 click/contextmenu가 아래 목록에 떨어진다
-                    // (우클릭으로 닫으면 다른 글 미리보기가 열린다). 그래서 배경이 받은 click/contextmenu에서 닫는다.
-                    onClick={() => usePreviewStore.getState().requestClose()}
-                    onWheel={onBackdropWheel}
+                    aria-busy={busy}
+                    // 비모달이지만 연 동안 뒤 페이지를 inert로 막으므로 보조 기술에는 모달로 알린다
+                    aria-modal
+                    onOpenAutoFocus={(ev) => ev.preventDefault()}
+                    // 바깥 클릭 닫기는 아래 click이 맡는다. 위에 뜬 팝업·버블을 눌러도 닫히지 않게 막는다.
+                    onInteractOutside={(ev) => ev.preventDefault()}
+                    onWheel={onWheel}
+                    // 창 바깥을 누르면 닫는다. pointerdown에서 닫으면 칸이 곧바로 사라져 이어지는 click/contextmenu가 아래 목록에 떨어진다
+                    // (우클릭으로 닫으면 다른 글 미리보기가 열린다). 그래서 click/contextmenu에서 닫는다.
+                    onPointerDown={(ev) => (pressedOutside.current = ev.target === ev.currentTarget)}
+                    onPointerUp={(ev) => (pressedOutside.current &&= ev.target === ev.currentTarget)}
+                    onClick={(ev) => {
+                        if (pressedOutside.current && ev.target === ev.currentTarget) usePreviewStore.getState().requestClose();
+                    }}
                     onContextMenu={(ev) => {
+                        if (ev.target !== ev.currentTarget) return;
                         ev.preventDefault();
                         usePreviewStore.getState().requestClose();
                     }}
-                />
-                <Dialog.Content
+                >
+                <div
                     className="refresher-frame"
-                    data-fading={fading || undefined}
                     data-admin={adminVisible || undefined}
                     data-blur-reveal={blockView?.blurReveal || undefined}
                     data-block-revealed={blockView?.revealed || undefined}
                     // 설정 너비가 기준이고, overlay.scss가 화면 폭·관리 패널에 맞춰 줄인다.
                     style={{"--refresher-frame-width": `${frameWidth}px`} as CSSProperties}
-                    aria-busy={busy}
-                    // 비모달이지만 연 동안 뒤 페이지를 inert로 막으므로 보조 기술에는 모달로 알린다
-                    aria-modal
-                    onOpenAutoFocus={(ev) => ev.preventDefault()}
-                    // 바깥 클릭 닫기는 배경(frame-outer)이 맡는다. 위에 뜬 팝업·버블을 눌러도 닫히지 않게 막는다.
-                    onInteractOutside={(ev) => ev.preventDefault()}
                 >
-                    {/* 스크롤은 안쪽 칸에서 한다. 바깥이 스크롤되면 스크롤바가 오른쪽 둥근 모서리를 덮는다 */}
-                    {/* 글마다 새로 마운트한다. 안 그러면 캐시 hit일 때 한 번에 렌더돼 스크롤 위치와 쓰던 댓글이 다음 글로 넘어간다.
-                        signalId는 닫을 때도 올라 페이드아웃 중에 맨 위로 튀므로 key는 글 주소로 건다 */}
-                    <div className="refresher-frame-scroll" ref={scroller} key={postKey} tabIndex={-1} onWheel={onWheel}
-                         onScrollEnd={() => (aim.current = null)}>
+                    {/* 글마다 새로 마운트한다. 안 그러면 캐시 hit일 때 한 번에 렌더돼 쓰던 댓글이 다음 글로 넘어간다 */}
+                    <Fragment key={postKey}>
                     <Box px="6" pt="5" pb="3">
                         <Dialog.Title asChild>
                             {/* 본문을 못 받았으면(삭제된 글 등) 목록의 제목이라도 보인다 */}
@@ -379,27 +366,30 @@ export const Frame = () => {
                             <Text size="2" color="gray">멤버만 댓글을 쓸 수 있습니다.</Text>
                         </Box>
                     ))}
-                    </div>
+                    </Fragment>
 
-                    <Flex direction="column" gap="2" className="refresher-frame-jump">
-                        <Tooltip content="맨 위로" side="left" container={overlay.portal}>
-                            <IconButton variant="soft" color="gray" radius="full" aria-label="맨 위로"
-                                        onClick={() => scroller.current?.scrollTo({top: 0, behavior: smoothScroll()})}>
-                                <ArrowUp size={16}/>
-                            </IconButton>
-                        </Tooltip>
-                        {comments !== undefined && (
-                            <Tooltip content="댓글로" side="left" container={overlay.portal}>
-                                <IconButton variant="soft" color="gray" radius="full" aria-label="댓글로"
-                                            onClick={() => commentsSection.current?.scrollIntoView({behavior: smoothScroll(), block: "start"})}>
-                                    <MessageSquare size={16}/>
+                    <div className="refresher-frame-jump">
+                        <Flex direction="column" gap="2">
+                            <Tooltip content="맨 위로" side="left" container={overlay.portal}>
+                                <IconButton variant="soft" color="gray" radius="full" aria-label="맨 위로"
+                                            onClick={() => scroller.current?.scrollTo({top: 0, behavior: smoothScroll()})}>
+                                    <ArrowUp size={16}/>
                                 </IconButton>
                             </Tooltip>
-                        )}
-                    </Flex>
+                            {comments !== undefined && (
+                                <Tooltip content="댓글로" side="left" container={overlay.portal}>
+                                    <IconButton variant="soft" color="gray" radius="full" aria-label="댓글로"
+                                                onClick={() => commentsSection.current?.scrollIntoView({behavior: smoothScroll(), block: "start"})}>
+                                        <MessageSquare size={16}/>
+                                    </IconButton>
+                                </Tooltip>
+                            )}
+                        </Flex>
+                    </div>
+                </div>
                 </Dialog.Content>
                 {hintDir !== 0 && <SkipHint dir={hintDir}/>}
-                {/* 화면 왼쪽에 fixed로 붙인다. Content 안에 두면 transform 때문에 창 기준으로 배치된다 */}
+                {/* 화면 왼쪽에 fixed로 붙인다 */}
                 {visible && adminVisible && <AdminPanel/>}
                 </Theme>
             </Dialog.Portal>

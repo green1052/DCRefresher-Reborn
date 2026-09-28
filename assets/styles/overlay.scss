@@ -89,29 +89,22 @@
     }
 }
 
-/* 너비는 설정(previewWidth)이 --refresher-frame-width로 넘긴다. 작은 창에서도 둘레에 배경이 보이게 화면의 90%까지만 */
-.refresher-frame {
+/* 화면 전체를 덮는 스크롤 칸 (v5의 .refresher-group). 창이 이 안에서 내용만큼 길어져, 창 안이든 양옆이든 같은 브라우저 기본 스크롤이다 */
+.refresher-frame-scroll {
     position: fixed;
-    top: 50%;
-    left: 50%;
+    inset: 0;
     display: flex;
-    flex-direction: column;
-    width: min(var(--refresher-frame-width, 1200px), 90vw);
-    // 짧은 글에서도 납작해 보이지 않게 최소 높이를 둔다 (작은 창에선 화면을 넘지 않게)
-    min-height: min(600px, 90vh);
-    max-height: 90vh;
-    overflow: hidden;
-    border-radius: var(--radius-5);
-    background: var(--color-panel-solid);
-    box-shadow: var(--shadow-6);
-    transform: translate(-50%, -50%);
-    animation: refresher-fade-in 0.15s cubic-bezier(0.19, 1, 0.22, 1);
+    // 짧은 글은 창이 가운데 오고(margin: auto), 긴 글은 위아래에 이만큼 띄운다
+    padding: 5vh 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--gray-a8) transparent;
+    // 스크롤바 폭을 양쪽에 비워 둔다. 안 그러면 긴 글에서만 창이 왼쪽으로 밀려 짧은 글과 오갈 때 옆으로 흔들린다
+    scrollbar-gutter: stable both-edges;
+    // 키보드 스크롤용 포커스(tabIndex -1) — 테두리는 그리지 않는다
     outline: none;
-
-    // 왼쪽 관리 창(.refresher-admin-panel, 150px)과 겹치지 않게 양옆에 그 폭만큼 비운다 (너무 좁은 창에선 480px은 유지)
-    &[data-admin] {
-        width: min(var(--refresher-frame-width, 1200px), 90vw, max(480px, calc(100vw - 2 * (150px + var(--space-3)))));
-    }
+    animation: refresher-fade-in 0.15s cubic-bezier(0.19, 1, 0.22, 1);
 
     &[data-fading] {
         pointer-events: none;
@@ -119,33 +112,42 @@
     }
 }
 
-.refresher-frame-scroll {
-    flex: 1;
-    min-height: 0;
-    // 최소 높이로 남는 공간은 본문(.refresher-frame-body)이 채운다. 비워 두면 댓글 입력칸 아래에 빈 칸이 생긴다
+/* 너비는 설정(previewWidth)이 --refresher-frame-width로 넘긴다. 작은 창에서도 둘레에 배경이 보이게 화면의 90%까지만 */
+.refresher-frame {
     display: flex;
     flex-direction: column;
+    width: min(var(--refresher-frame-width, 1200px), 90vw);
+    // 짧은 글에서도 납작해 보이지 않게 최소 높이를 둔다 (작은 창에선 화면을 넘지 않게)
+    min-height: min(600px, 90vh);
+    margin: auto;
+    // 둥근 모서리 밖으로 댓글 배경이 나가지 않게 자른다. hidden이면 스크롤 칸이 되어 맨 위로 버튼(sticky)이 화면에 붙지 않는다
+    overflow: clip;
+    border-radius: var(--radius-5);
+    background: var(--color-panel-solid);
+    box-shadow: var(--shadow-6);
 
-    > * {
-        flex-shrink: 0;
-    }
-
+    // 최소 높이로 남는 공간은 본문이 채운다. 비워 두면 댓글 입력칸 아래에 빈 칸이 생긴다
     > .refresher-frame-body {
         flex-grow: 1;
     }
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-    scrollbar-color: var(--gray-a8) transparent;
-    // 키보드 스크롤용 포커스(tabIndex -1) — 테두리는 그리지 않는다
-    outline: none;
+
+    // 왼쪽 관리 창(.refresher-admin-panel, 150px)과 겹치지 않게 양옆에 그 폭만큼 비운다 (너무 좁은 창에선 480px은 유지)
+    &[data-admin] {
+        width: min(var(--refresher-frame-width, 1200px), 90vw, max(480px, calc(100vw - 2 * (150px + var(--space-3)))));
+    }
 }
 
-/* 맨 위로 / 댓글로 */
+/* 맨 위로 / 댓글로 — 창 오른쪽 아래. 높이 0인 칸을 화면 아래 끝에 sticky로 붙여 긴 글을 읽는 동안에도 보이게 한다 */
 .refresher-frame-jump {
-    position: absolute;
-    right: var(--space-4);
-    bottom: var(--space-4);
+    position: sticky;
+    bottom: 0;
+    height: 0;
+
+    > * {
+        position: absolute;
+        right: var(--space-4);
+        bottom: var(--space-4);
+    }
 }
 
 /* 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내 (v5와 같은 모양) — 창 위에 겹치되 누르거나 굴리는 것은 막지 않는다 */
@@ -520,10 +522,14 @@
     overflow: hidden;
 }
 
+// 카드가 포인터를 통과시켜 직접 굴릴 수는 없다. 제목 위에서 굴리면 Mini.tsx가 스크롤하고, 스크롤바는 더 있다는 표시다
 .refresher-mini-contents {
     flex: 1;
     min-height: 0;
-    overflow: hidden;
+    // 넓은 내용은 전처럼 옆을 자른다 (overflow-y만 auto면 가로 스크롤바가 생긴다)
+    overflow: hidden auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--gray-a8) transparent;
     font-size: var(--font-size-2);
 }
 
