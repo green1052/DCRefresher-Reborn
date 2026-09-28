@@ -64,23 +64,22 @@ jobs:
                         .output/*-chrome.zip
                     generate_release_notes: true
 
-            # 스토어마다 따로 제출하고, 실패해도 다음 단계로 넘어간다. 한 스토어가 실패해도 다른 스토어 제출과 DB가 막히지 않는다.
-            # 실패한 스토어는 GitHub 릴리즈의 zip으로 따로 제출한다 (docs/DEVELOPMENT.md 릴리즈)
+            # 두 스토어를 함께 제출한다. 제출 도구는 한 스토어가 실패해도 다른 스토어를 끝까지 제출하고 실패로 끝나는데,
+            # 실패해도 넘어가게 해 DB는 막히지 않는다. 실패한 스토어는 로그에서 확인하고 GitHub 릴리즈의 zip으로 따로 제출한다 (docs/DEVELOPMENT.md 릴리즈).
             # Chrome 웹 스토어는 API v2(서비스 계정)로 제출한다
-            -   name: Submit to Chrome Web Store
+            -   name: Submit to stores
                 continue-on-error: true
-                run: bun wxt submit --chrome-zip .output/*-chrome.zip
+                run: >-
+                    bun wxt submit
+                    --chrome-zip .output/*-chrome.zip
+                    --firefox-zip .output/*-firefox.zip
+                    --firefox-sources-zip .output/*-sources.zip
                 env:
                     CHROME_API_VERSION: v2
                     CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
                     CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
                     CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL: ${{ secrets.CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL }}
                     CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
-
-            -   name: Submit to Firefox Add-ons
-                continue-on-error: true
-                run: bun wxt submit --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip
-                env:
                     FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
                     FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
                     FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
