@@ -1,8 +1,11 @@
+import {useEffect} from "react";
+import {storage} from "wxt/utils/storage";
 import {create} from "zustand";
 
 import {isModuleEnabled, normalizeSetting, normalizeSettings} from "@/core/module/settings";
-import type {ModuleDefinition} from "@/core/module/types";
-import {moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
+import type {AnyModule} from "@/core/module/types";
+import {withIpInfoFilter} from "@/core/migrate-settings";
+import {moduleSettingsKey, moduleSettingsStorage, modulesStorage, settingsKeyModule} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
 import features from "@/features";
 import {once} from "@/utils/once";
@@ -23,13 +26,9 @@ const featureById = new Map(features.map((feature) => [feature.id, feature]));
 const resolveEnables = (stored: Record<string, boolean>): Record<string, boolean> =>
     Object.fromEntries(features.map((feature) => [feature.id, isModuleEnabled(feature, stored)]));
 
-// 쓰기는 읽고-고쳐-쓰기라 연달아 바꾸면 둘 다 옛 값을 읽어 앞의 쓰기를 덮는다 — 한 줄로 세운다
-let writes: Promise<void> = Promise.resolve();
-const enqueue = (write: () => Promise<void>): Promise<void> => {
-    const next = writes.then(write);
-    writes = next.catch(() => {});
-    return next;
-};
+// 쓰기가 읽고-고쳐-쓰기라 동시에 바꾸면 둘 다 옛 값을 읽어 앞의 쓰기를 덮는다. 한 줄로 세운다.
+// 옵션·팝업 창은 확장 출처를 같이 쓰므로 Web Locks로 창 여러 개에 걸쳐 세운다 (설정 정리가 다른 창의 변경을 덮지 않게)
+const enqueue = (write: () => Promise<void>): Promise<void> => navigator.locks.request("refresher:module-settings", write);
 
 /**
  * 옵션 페이지용 모듈 상태. 저장소에 직접 읽고 쓰며, 열린 디시 탭의 레지스트리가 저장소를 감시해 반영한다.
@@ -41,7 +40,7 @@ export const useModulesStore = create<ModulesState>((set) => ({
 
     toggle: async (id, value) => {
         set((state) => ({enables: {...state.enables, [id]: value}}));
-        await enqueue(async () => modulesStorage.setValue({...(await modulesStorage.getValue()), [id]: value}));
+        await persist(async () => modulesStorage.setValue({...(await modulesStorage.getValue()), [id]: value}));
     },
 
     changeSetting: async (id, key, value) => {
@@ -52,24 +51,94 @@ export const useModulesStore = create<ModulesState>((set) => ({
         set((state) => ({values: {...state.values, [id]: {...state.values[id], [key]: next}}}));
 
         const item = moduleSettingsStorage(id);
-        await enqueue(async () => item.setValue({...(await item.getValue()), [key]: next}));
+        await persist(async () => item.setValue({...(await item.getValue()), [key]: next}));
     }
 }));
 
-/** 저장소 값 로드 + 변경 감시. 여러 번 불러도 1회 */
-export const initModulesStore = once(async () => {
-    const setEnables = (stored: Record<string, boolean>): void => useModulesStore.setState({enables: resolveEnables(stored)});
-    const setValues = (feature: ModuleDefinition, stored: Record<string, unknown> | undefined): void =>
-        useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: normalizeSettings(feature, stored)}}));
+/** 켜진 모듈의 extensionPageVars를 이 페이지(옵션·팝업)의 <html>에 넣는다. 모듈을 끄거나 설정을 바꾸면 따라간다 */
+export const useExtensionPageVars = (): void => {
+    const enables = useModulesStore((state) => state.enables);
+    const values = useModulesStore((state) => state.values);
 
-    const settings = features.filter((feature) => feature.settings).map((feature) => ({feature, item: moduleSettingsStorage(feature.id)}));
+    useEffect(() => {
+        const root = document.documentElement.style;
+        const vars = features.flatMap((feature) =>
+            enables[feature.id] && feature.extensionPageVars ? Object.entries(feature.extensionPageVars(values[feature.id] ?? {})) : []);
+        for (const [name, value] of vars) root.setProperty(name, value);
+
+        return () => {
+            for (const [name] of vars) root.removeProperty(name);
+        };
+    }, [enables, values]);
+};
+
+/**
+ * 없어진 모듈·설정의 값을 저장소에서 지운다. 남겨 두면 백업·내보내기에 계속 실려 다닌다.
+ * 지울 게 있을 때만 쓰고, 설정 쓰기와 같은 enqueue 줄에 세워 옵션에서 바꾼 값을 덮지 않는다
+ */
+const pruneStaleSettings = async (): Promise<void> => {
+    const ids = new Set(features.map((feature) => feature.id));
+
+    await enqueue(async () => {
+        const enables = await modulesStorage.getValue();
+        const staleIds = new Set(Object.keys(enables).filter((id) => !ids.has(id)));
+        // get(null)은 수백 KB짜리 IP DB까지 읽으니 키 이름만 읽는다. getKeys가 없는 브라우저는 켜짐 목록에 남은 모듈만 지운다
+        const keys = typeof browser.storage.local.getKeys === "function" ? await browser.storage.local.getKeys() : [];
+        for (const key of keys) {
+            const id = settingsKeyModule(key);
+            if (id !== undefined && !ids.has(id)) staleIds.add(id);
+        }
+
+        if (staleIds.size > 0) {
+            await modulesStorage.setValue(Object.fromEntries(Object.entries(enables).filter(([id]) => !staleIds.has(id))));
+            await storage.removeItems([...staleIds].map(moduleSettingsKey));
+        }
+
+        for (const feature of features) {
+            if (!feature.settings) continue;
+            const item = moduleSettingsStorage(feature.id);
+            const original = await item.getValue();
+            // 업데이트 직후 배경이 옮기기 전에 여기서 먼저 지우면 옛 'IP 정보 끔'이 사라지므로 정리 전에 옮긴다
+            const stored = feature.id === "userinfo" ? withIpInfoFilter(original) : original;
+            const kept = Object.entries(stored).filter(([key]) => Object.hasOwn(feature.settings!, key));
+            if (stored !== original || kept.length !== Object.keys(stored).length) await item.setValue(Object.fromEntries(kept));
+        }
+    });
+};
+
+const setEnables = (stored: Record<string, boolean>): void => useModulesStore.setState({enables: resolveEnables(stored)});
+const setValues = (feature: AnyModule, stored: Record<string, unknown> | undefined): void =>
+    useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: normalizeSettings(feature, stored)}}));
+
+/** 설정이 있는 모듈과 그 저장소 항목 */
+const settingItems = () => features.filter((feature) => feature.settings).map((feature) => ({feature, item: moduleSettingsStorage(feature.id)}));
+
+const load = async (): Promise<void> => {
+    const settings = settingItems();
     const [enables, values] = await Promise.all([modulesStorage.getValue(), Promise.all(settings.map(({item}) => item.getValue()))]);
-
-    // 다 읽은 뒤에 감시를 건다 — 읽기가 실패하면 아무것도 걸리지 않아, 다시 시도해도 두 번 걸리지 않는다
     setEnables(enables);
-    modulesStorage.watch(setEnables);
-    for (const [index, {feature, item}] of settings.entries()) {
-        setValues(feature, values[index]);
-        item.watch((next) => setValues(feature, next));
+    for (const [index, {feature}] of settings.entries()) setValues(feature, values[index]);
+};
+
+/** 화면에 먼저 반영한 값을 저장한다. 저장이 실패하면 저장소 값으로 되돌려 저장된 것처럼 보이지 않게 하고, 알림은 부른 쪽에 맡긴다 */
+const persist = async (write: () => Promise<void>): Promise<void> => {
+    try {
+        await enqueue(write);
+    } catch (e) {
+        console.error("모듈 설정을 저장하지 못했습니다.", e);
+        await load().catch(console.error);
+        throw e;
     }
+};
+
+/** 옵션·팝업에서 저장소 값을 읽고 변경을 감시한다. 여러 번 불러도 한 번만 한다 */
+export const initModulesStore = once(async () => {
+    await load();
+
+    // 다 읽은 뒤에 감시를 건다. 읽기가 실패하면 once가 다음 호출에 다시 시도하는데, 그때 감시가 두 번 걸리지 않는다
+    modulesStorage.watch(setEnables);
+    for (const {feature, item} of settingItems()) item.watch((next) => setValues(feature, next));
+
+    // 화면을 그리는 데는 필요 없으니 기다리지 않는다
+    pruneStaleSettings().catch(console.error);
 });

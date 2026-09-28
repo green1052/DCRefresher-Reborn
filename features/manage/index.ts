@@ -2,11 +2,39 @@ import {ShieldCheck} from "lucide-react";
 
 import {defineModule} from "@/core/module/define";
 import {rowPostNo} from "@/core/http/urls";
+import {ROW_SELECTOR} from "@/core/list";
 import {BOARD_PAGE} from "@/core/pages";
 import {deletePost} from "@/core/preview/request";
-import {useUiStore} from "@/stores/ui";
 import {notifyManage} from "@/utils/notify";
 import {isGalleryManager} from "@/utils/user";
+
+/** 체크박스와 작성자 칸이 같이 든 칸. 목록 행에 더해 댓글은 작성자 칸(.cmt_nickbox)이다 */
+const CHECKBOX_ROW = `${ROW_SELECTOR}, .cmt_nickbox`;
+
+const GIF_VIDEO = ".gallview_contents video";
+
+/** GIF 조작을 건 영상의 원래 onmousedown(없으면 null). 설정·모듈을 끌 때 되돌린다 */
+const gifOriginals = new WeakMap<HTMLVideoElement, string | null>();
+
+const enableGifControl = (element: Element): void => {
+    if (!(element instanceof HTMLVideoElement) || gifOriginals.has(element)) return;
+    if (element.dataset.src?.includes("dcinside.com/dccon.php")) return;
+
+    gifOriginals.set(element, element.getAttribute("onmousedown"));
+    element.removeAttribute("onmousedown");
+    element.setAttribute("controls", "");
+};
+
+const disableGifControl = (): void => {
+    for (const video of document.querySelectorAll<HTMLVideoElement>(GIF_VIDEO)) {
+        const original = gifOriginals.get(video);
+        if (original === undefined) continue;
+
+        gifOriginals.delete(video);
+        video.removeAttribute("controls");
+        if (original !== null) video.setAttribute("onmousedown", original);
+    }
+};
 
 export default defineModule({
     id: "manage",
@@ -20,25 +48,25 @@ export default defineModule({
         checkAllTargetUser: {
             type: "check",
             name: "선택한 유저 전부 체크",
-            desc: "Shift키를 누른 상태로 체크박스를 눌러 대상 유저 전부를 체크합니다. (아이디, IP, 이름 순서)",
+            desc: "Shift 키를 누른 상태로 체크박스를 눌러 대상 유저 전부를 체크합니다. (아이디, IP, 닉네임 순서)",
             default: false
         },
         checkViaShift: {
             type: "check",
             name: "Shift 다중 체크",
-            desc: "Shift키를 누른 상태로 드래그해 여러 항목을 체크합니다.",
+            desc: "Shift 키를 누른 상태로 드래그해 여러 항목을 체크합니다.",
             default: false
         },
         checkCommentViaCtrl: {
             type: "check",
             name: "Ctrl 대댓글 체크",
-            desc: "Ctrl키를 누른 상태로 댓글을 클릭하면 대댓글도 체크합니다.",
+            desc: "Ctrl 키를 누른 상태로 댓글의 체크박스를 누르면 그 댓글의 대댓글도 함께 체크합니다.",
             default: false
         },
         deleteViaCtrl: {
             type: "check",
             name: "Ctrl로 삭제",
-            desc: "Ctrl키를 누른 상태로 게시글을 클릭해 삭제합니다.",
+            desc: "Ctrl 키를 누른 상태로 게시글을 클릭해 삭제합니다.",
             default: false
         },
         enableGifControl: {
@@ -50,21 +78,13 @@ export default defineModule({
     },
 
     setup(ctx) {
-        // 핸들러를 붙인 요소. DOM 속성으로 표시하면 refresh가 체크박스 칸을 복제할 때 표시까지 따라가 새 행에 핸들러가 안 붙는다
+        // 핸들러를 붙인 요소. DOM 속성으로 표시하면 refresh가 체크박스 칸을 복제할 때 표시도 복제돼 새 행에 핸들러가 붙지 않는다
         const handled = new WeakSet<Element>();
 
         // ===== GIF 조작 =====
-        ctx.addFilter(
-            ".gallview_contents video",
-            (element) => {
-                if (!ctx.settings.enableGifControl) return;
-                if (!(element instanceof HTMLVideoElement)) return;
-                if (element.dataset.src?.includes("dcinside.com/dccon.php")) return;
-
-                element.removeAttribute("onmousedown");
-                element.setAttribute("controls", "");
-            }
-        );
+        ctx.addFilter(GIF_VIDEO, (element) => {
+            if (ctx.settings.enableGifControl) enableGifControl(element);
+        });
 
         // ===== 체크박스 편의 =====
         ctx.addFilter(
@@ -73,7 +93,7 @@ export default defineModule({
                 if (handled.has(element)) return;
                 handled.add(element);
 
-                const parent = element.closest<HTMLElement>(".ub-content, .cmt_nickbox, .search_comment");
+                const parent = element.closest<HTMLElement>(CHECKBOX_ROW);
                 const writer = parent?.querySelector<HTMLElement>(":scope > .ub-writer");
                 const uid = writer?.dataset.uid;
                 const ip = writer?.dataset.ip;
@@ -83,11 +103,12 @@ export default defineModule({
                     const source = ev.target as HTMLInputElement;
 
                     if (ctx.settings.checkAllTargetUser && ev.shiftKey && (uid || ip || nick)) {
-                        // 유동은 data-uid=""라 ??로 값을 고르면 key는 ip인데 값이 ""가 돼 회원 글이 전부 잡힌다 — 같은 기준으로 고른다
+                        // 유동은 data-uid=""다. key와 값을 같은 기준으로 골라야 한다.
+                        // 값만 ??로 고르면 [data-ip=""]가 되어 회원 글이 전부 잡힌다
                         const [key, value] = uid ? ["uid", uid] : ip ? ["ip", ip] : ["nick", nick!];
 
                         for (const other of document.querySelectorAll<HTMLElement>(`.ub-writer[data-${key}="${CSS.escape(value)}"]`)) {
-                            const otherParent = other.closest<HTMLElement>(".ub-content, .cmt_nickbox, .search_comment");
+                            const otherParent = other.closest<HTMLElement>(CHECKBOX_ROW);
                             for (const box of otherParent?.querySelectorAll<HTMLInputElement>(".article_chkbox") ?? []) box.checked = source.checked;
                         }
                     }
@@ -103,24 +124,23 @@ export default defineModule({
                     }
                 }, {signal: ctx.signal});
 
-                element.addEventListener("mouseover", (ev) => {
-                    if (ctx.settings.checkViaShift && ev.shiftKey && element instanceof HTMLInputElement) element.checked = true;
-                }, {signal: ctx.signal});
+                // 왼쪽 버튼을 누른 채 지나간 칸만 체크한다. 그냥 지나가도 체크하면 Shift+클릭이 방금 체크된 칸을 도로 푼다.
+                // 드래그를 시작한 칸은 누르기 전에 들어왔으므로 떠날 때(mouseout) 체크한다
+                const checkOnDrag = (ev: MouseEvent): void => {
+                    if (ctx.settings.checkViaShift && ev.shiftKey && ev.buttons === 1 && element instanceof HTMLInputElement) element.checked = true;
+                };
+                element.addEventListener("mouseover", checkOnDrag, {signal: ctx.signal});
+                element.addEventListener("mouseout", checkOnDrag, {signal: ctx.signal});
             }
         );
 
         // ===== Ctrl 클릭 삭제 =====
-        const deleteByCtrl = async (postId: string): Promise<boolean> => {
-            try {
-                const gallery = document.querySelector<HTMLInputElement>("#gallery_id")?.value ?? "";
-                return notifyManage(await deletePost({gallery, id: postId, link: location.href}), "게시글을 삭제했습니다.");
-            } catch {
-                useUiStore.getState().showToast("게시글 삭제 중 오류가 발생했습니다.", "error");
-                return false;
-            }
+        const deleteByCtrl = (postId: string): Promise<boolean> => {
+            const gallery = document.querySelector<HTMLInputElement>("#gallery_id")?.value ?? "";
+            return notifyManage(deletePost({gallery, id: postId, link: location.href}), "게시글을 삭제했습니다.", "게시글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
         };
 
-        // 삭제 요청을 보낸 글 — 응답 전에 다시 눌러도 요청을 또 보내지 않는다
+        // 삭제 요청을 보낸 글. 응답 전에 다시 눌러도 요청을 또 보내지 않는다
         const deleting = new Set<string>();
 
         ctx.addFilter(
@@ -130,9 +150,9 @@ export default defineModule({
                 handled.add(element);
 
                 element.addEventListener("click", (ev) => {
-                    // 관리하지 않는 갤러리에선 Ctrl+클릭(새 탭 열기)을 그대로 둔다 — 권한도 없는 삭제 요청을 보내지 않는다
+                    // 관리하지 않는 갤러리에선 Ctrl+클릭(새 탭 열기)을 그대로 둔다. 권한 없는 삭제 요청을 보내지 않는다
                     if (!ctx.settings.deleteViaCtrl || !ev.ctrlKey || !isGalleryManager()) return;
-                    // 체크박스 칸과 댓글 수(미리보기가 댓글만 열린다)는 삭제로 가로채지 않는다 — 제목 Ctrl+클릭은 v5처럼 삭제
+                    // 체크박스 칸과 댓글 수(미리보기가 댓글만 연다)는 가로채지 않는다. 제목 Ctrl+클릭은 v5처럼 삭제한다
                     if (ev.target instanceof Element && ev.target.closest("td:has(.article_chkbox), .reply_numbox")) return;
 
                     const postId = rowPostNo(element);
@@ -145,11 +165,25 @@ export default defineModule({
                     deleting.add(postId);
 
                     void deleteByCtrl(postId).then((deleted) => {
-                        // 목록이 새로고침될 때까지(refresh가 꺼져 있으면 계속) 남겨 두면 다시 Ctrl+클릭해 지운 글에 요청이 또 간다
+                        // 행을 남겨 두면 목록이 새로고침될 때까지(refresh가 꺼져 있으면 계속) 지운 글에 요청을 또 보낼 수 있다
                         if (deleted) element.remove();
                     }).finally(() => deleting.delete(postId));
                 }, {signal: ctx.signal});
             }
         );
+    },
+
+    // 필터는 등록할 때와 요소가 새로 붙을 때만 돌므로, 이미 열린 글의 영상은 설정이 바뀔 때 여기서 바꾸고 되돌린다
+    onChanged(ctx, key) {
+        if (key !== "enableGifControl") return;
+        if (ctx.settings.enableGifControl) {
+            for (const video of document.querySelectorAll(GIF_VIDEO)) enableGifControl(video);
+        } else {
+            disableGifControl();
+        }
+    },
+
+    revoke() {
+        disableGifControl();
     }
 });

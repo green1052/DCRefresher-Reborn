@@ -21,11 +21,14 @@ const writeDevMode = (on: boolean): void => {
 };
 
 interface OptionsState {
-    /** 개발자 탭: 개발 빌드이거나, 정보 탭의 버전을 5번 연달아 누르면 열린다 (옵션 페이지 localStorage에 기억 — 설정 백업에 섞이지 않게) */
+    /**
+     * 개발자 탭 표시 여부. 개발 빌드이거나 정보 탭의 버전을 5번 연달아 누르면 켜진다.
+     * 설정 백업에 섞이지 않게 옵션 페이지 localStorage에 기억한다.
+     */
     devMode: boolean;
-    /** 디시콘 비 (로고 이스터에그) — 누를 때마다 새 값이라 비를 새로 마운트한다 (0이면 없음) */
+    /** 디시콘 비(로고 이스터에그). 누를 때마다 새 값(Date.now())이 들어가 비를 다시 마운트한다. 0이면 없다 */
     rain: number;
-    /** 확인 버튼만 있는 알림 — App이 하나만 그린다 (null이면 닫힘) */
+    /** 확인 버튼만 있는 알림. App이 하나만 그린다. null이면 닫혀 있다 */
     notice: string | null;
     /** ev.detail: 브라우저가 세는 연속 클릭 횟수 (간격이 벌어지면 1부터) */
     unlockDev: (ev: { detail: number }) => void;
@@ -34,7 +37,7 @@ interface OptionsState {
     endRain: () => void;
 }
 
-/** 옵션 페이지 화면 상태 — 사이드바·탭들이 props로 넘기지 않고 같이 쓴다 */
+/** 옵션 페이지 화면 상태. 사이드바와 탭들이 props를 거치지 않고 같이 쓴다 */
 export const useOptionsStore = create<OptionsState>()((set, get) => ({
     devMode: import.meta.env.DEV || readDevMode(),
     rain: 0,
@@ -54,9 +57,12 @@ export const useOptionsStore = create<OptionsState>()((set, get) => ({
         location.hash = "";
     },
 
-    startRain: () => set({rain: Date.now()}),
+    // 동작 줄이기(prefers-reduced-motion)를 켰으면 비를 내리지 않는다
+    startRain: () => {
+        if (!matchMedia("(prefers-reduced-motion: reduce)").matches) set({rain: Date.now()});
+    },
     endRain: () => set({rain: 0})
 }));
 
-/** 옵션 페이지 알림을 띄운다 (탭마다 알림 상태를 따로 두지 않는다) */
+/** 옵션 페이지 알림을 띄운다. 탭마다 알림 상태를 따로 두지 않고 이것을 쓴다 */
 export const notify = (message: string): void => useOptionsStore.setState({notice: message});

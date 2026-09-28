@@ -1,3 +1,9 @@
+/**
+ * KISA 기관명을 IP 배지에 맞게 줄인다 (build-db.ts). 순서는 법인 표기 빼기 → 통째로 바꿀 이름(PRESETS) →
+ * 영문 약자를 한글로 적은 앞부분(PREFIXES) → 지역·학교·보험 이름 규칙(RULES)이다. 위키 "IP·갱차 DB"에 예가 있다.
+ */
+
+/** 널리 쓰는 이름이 따로 있는 기관 (법인 표기를 뺀 이름 → 표시 이름) */
 const PRESETS: Record<string, string> = {
     // 통신·방송
     에스케이텔레콤: "SKT",
@@ -118,6 +124,7 @@ const PRESETS: Record<string, string> = {
     인스파이어인티그레이티리조트: "인스파이어 리조트"
 };
 
+/** 앞부분의 한글 약자 → 영문. 앞에서 먼저 걸린 것을 쓰므로 긴 것을 먼저 둔다 (케이티에이치씨엔이 케이티보다 앞) */
 const PREFIXES: [string, string][] = [
     ["케이티에이치씨엔", "KT HCN"],
     ["엔에이치엔", "NHN"],
@@ -147,6 +154,7 @@ const PREFIXES: [string, string][] = [
     ["케이지", "KG"]
 ];
 
+/** 차례로 모두 적용한다 */
 const RULES: [RegExp, string][] = [
     [/전북특별자치도/g, "전북"],
     [/강원특별자치도/g, "강원"],

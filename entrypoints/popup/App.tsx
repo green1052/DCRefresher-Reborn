@@ -3,11 +3,11 @@ import {Ban, type LucideIcon, NotebookPen, Puzzle, Settings} from "lucide-react"
 import {type ReactNode, useEffect, useState} from "react";
 
 import {type PageAction, type PageToggleState, sendMessage} from "@/core/messaging/protocol";
+import {backupStorage} from "@/core/storage/items";
 import features from "@/features";
-import {fontFamilyOf} from "@/features/fonts";
 import {initBlocksStore, useBlocksStore} from "@/stores/blocks";
 import {initMemosStore, useMemosStore} from "@/stores/memos";
-import {initModulesStore, useModulesStore} from "@/stores/modules";
+import {initModulesStore, useExtensionPageVars, useModulesStore} from "@/stores/modules";
 
 const LOGO_URL = browser.runtime.getURL("/icons/48.png");
 const VERSION = browser.runtime.getManifest().version;
@@ -15,11 +15,11 @@ const VERSION = browser.runtime.getManifest().version;
 interface Page {
     tabId: number;
     gallery: string;
-    /** 처음 물었을 때의 탭 상태 — 콘텐츠 스크립트가 없으면 null */
+    /** 처음 물었을 때의 탭 상태. 콘텐츠 스크립트가 없으면 null */
     state: PageToggleState[] | null;
 }
 
-/** 활성 탭이 디시 갤러리 페이지면 탭과 갤러리 id — 탭 주소는 host_permissions가 있는 디시 탭에서만 보인다 */
+/** 활성 탭이 디시 갤러리 페이지면 탭과 갤러리 id를 돌려준다. tabs 권한이 없어 탭 주소는 host_permissions가 있는 디시 탭에서만 보인다 */
 const findPage = async (): Promise<Page | null> => {
     const [tab] = await browser.tabs.query({active: true, currentWindow: true});
     const url = tab?.url ? URL.parse(tab.url) : null;
@@ -31,13 +31,13 @@ const findPage = async (): Promise<Page | null> => {
     return {tabId: tab.id, gallery, state};
 };
 
-// 이미 열린 옵션 탭이 있으면 그 탭으로 간다
+// openOptionsPage는 이미 열린 옵션 탭이 있으면 그 탭으로 간다
 const openOptions = async (): Promise<void> => {
     await browser.runtime.openOptionsPage();
     window.close();
 };
 
-/** 토글 아이콘은 메시지로 못 보내니 팝업이 모듈 정의에서 찾는다 */
+/** 토글 아이콘(컴포넌트)은 메시지로 보낼 수 없어 팝업이 모듈 정의에서 찾는다 */
 const toggleIcon = ({module, id}: PageAction): LucideIcon =>
     features.find((feature) => feature.id === module)?.pageToggles?.find((toggle) => toggle.id === id)?.icon ?? Puzzle;
 
@@ -107,6 +107,8 @@ function PageSection({tabId, gallery, state: initial}: Page) {
                 현재 페이지
             </SectionTitle>
 
+            {/* 확장을 업데이트하기 전에 열린 탭 등 콘텐츠 스크립트가 없으면 토글을 받을 수 없다 */}
+            {state === null && <Text as="p" size="1" color="gray" align="center">페이지를 새로고침하면 이 페이지 설정이 나옵니다.</Text>}
             {state && state.length > 0 && (
                 <Card size="1">
                     <Flex direction="column" gap="1">
@@ -124,6 +126,7 @@ function PageSection({tabId, gallery, state: initial}: Page) {
 function ModulesSection() {
     const enables = useModulesStore((state) => state.enables);
     const toggle = useModulesStore((state) => state.toggle);
+    const [failed, setFailed] = useState(false);
     const on = features.filter((feature) => enables[feature.id] ?? true).length;
 
     return (
@@ -136,7 +139,7 @@ function ModulesSection() {
 
                     return (
                         <button key={feature.id} type="button" className="module-tile" aria-pressed={enabled}
-                                title={feature.description} onClick={() => void toggle(feature.id, !enabled)}>
+                                title={feature.description} onClick={() => void toggle(feature.id, !enabled).then(() => setFailed(false), () => setFailed(true))}>
                             <Icon size={15}/>
                             <span className="module-name">{feature.name}</span>
                             <span className="module-dot"/>
@@ -144,32 +147,30 @@ function ModulesSection() {
                     );
                 })}
             </Grid>
+            {failed && <Text as="p" size="1" color="red" align="center" mt="2" role="alert">저장하지 못했습니다. 팝업을 닫았다가 다시 열어 주세요.</Text>}
         </Box>
     );
 }
 
 export function App() {
-    const [loaded, setLoaded] = useState<{ page: Page | null } | null>(null);
+    const [loaded, setLoaded] = useState<{ page: Page | null; backupError: string } | null>(null);
 
-    // 한 번에 그려야 팝업 크기가 여러 번 바뀌지 않는다 — 모두 로컬 읽기라 금방 끝난다.
+    // 한 번에 그려야 팝업 크기가 여러 번 바뀌지 않는다. 모두 로컬 읽기라 금방 끝난다.
     // 하나가 실패해도 빈 팝업으로 남지 않게 기본값으로 그린다
     useEffect(() => {
         void Promise.all([
             findPage().catch(() => null),
+            // 자동 백업은 배경에서 돌아 실패해도 데이터 탭을 열기 전에는 모른다. 켜져 있을 때만 팝업에서 한 줄로 알린다.
+            // 오류는 백업이 성공해야 지워지므로, 한도 초과로 자동 백업을 끈 뒤에도 알리면 경고가 사라지지 않는다 (지난 실패는 데이터 탭에 남는다)
+            Promise.all([backupStorage.auto.getValue(), backupStorage.error.getValue()]).then(([auto, error]) => (auto ? error : "")).catch(() => ""),
             initBlocksStore().catch(console.error),
             initMemosStore().catch(console.error),
             initModulesStore().catch(console.error)
-        ]).then(([page]) => setLoaded({page}));
+        ]).then(([page, backupError]) => setLoaded({page, backupError}));
     }, []);
 
-    // 폰트 교체 모듈 설정을 팝업에도 (옵션 페이지와 같게)
-    const fontsEnabled = useModulesStore((state) => state.enables.fonts);
-    const customFonts = useModulesStore((state) => state.values.fonts?.customFonts);
-    useEffect(() => {
-        const root = document.documentElement.style;
-        if (fontsEnabled) root.setProperty("--refresher-font", fontFamilyOf(String(customFonts ?? "")));
-        else root.removeProperty("--refresher-font");
-    }, [fontsEnabled, customFonts]);
+    // 모듈이 선언한 확장 페이지 CSS 변수 (폰트 교체 등)
+    useExtensionPageVars();
 
     if (!loaded) return null;
 
@@ -187,6 +188,9 @@ export function App() {
             </Flex>
 
             <Flex direction="column" gap="4" p="3">
+                {loaded.backupError && (
+                    <Text size="1" color="red" align="center">클라우드에 백업하지 못했습니다. 설정의 데이터 탭에서 확인해 주세요.</Text>
+                )}
                 {loaded.page ? (
                     <PageSection {...loaded.page}/>
                 ) : (

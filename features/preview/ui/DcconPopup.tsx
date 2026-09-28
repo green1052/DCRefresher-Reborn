@@ -1,116 +1,104 @@
-import {Button, Dialog, Flex, IconButton, Skeleton, Switch, Text} from "@radix-ui/themes";
-import {ChevronLeft, ChevronRight} from "lucide-react";
-import {LRUCache} from "lru-cache";
-import {useEffect, useRef, useState} from "react";
+import {Button, Dialog, Flex, Skeleton, Switch, Text} from "@radix-ui/themes";
+import {useEffect, useState} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
+import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {ajax} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import type {DcinsideDccon, DcinsideDcconDetail, DcinsideDcconDetailList} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
-import {csrfToken} from "@/utils/cookie";
+import {csrfBody} from "@/utils/cookie";
+import {smoothScroll} from "@/utils/dom";
+
+/** 디시콘 패키지 목록 캐시. 창을 닫았다 열어도 다시 받지 않고, 새로 산 디시콘이 보이도록 10분 뒤 다시 받는다 */
+let listCache: { list: DcinsideDcconDetailList[]; at: number } | null = null;
+const LIST_TTL = 10 * 60_000;
+// ponytail: 쪽이 이보다 많으면 뒤쪽은 받지 않는다. 한 쪽에 패키지 여러 개라 보통 몇 쪽이다
+const MAX_PAGES = 20;
+
+type ListResult = DcinsideDcconDetailList[] | "not_login" | "shop";
+
+/** 한 쪽. 비로그인이면 JSON 대신 'not_login'이 온다 (디시 dccon.js) */
+const fetchPage = async (page: number): Promise<DcinsideDcconDetail | "not_login"> => {
+    const body = await csrfBody({target: "icon", page: String(page)});
+    const text = await ajax.post(urls.dccon.lists, {body}).text();
+    if (/^"?not_login"?$/.test(text.trim())) return "not_login";
+
+    const response = JSON.parse(text) as DcinsideDcconDetail;
+    // 다른 모양(실패 응답 등)이면 목록을 그리다 오버레이 전체가 깨지므로 실패로 넘긴다
+    if (response.target !== "shop" && !Array.isArray(response.list)) throw new Error("디시콘 목록이 아닙니다.");
+    return response;
+};
 
 /**
- * 디시콘 목록 캐시 (쪽 → 목록) — 창을 닫았다 열어도 다시 받지 않는다. 페이지를 새로 열면 비고, 새로 산 디시콘이 보이도록 10분 뒤 만료.
- * 쪽 수만큼만 쌓여 개수 제한은 두지 않는다. 보이는 목록은 창이 따로 들고 있어 창을 연 채 만료돼도 비지 않는다
+ * 모든 쪽의 패키지를 이어 붙인다. 디시는 쪽마다 따로 주고(0부터 max_page까지) 창 안에서 넘기게 하지만,
+ * 한 줄로 이어 두면 넘기지 않고 가로로 훑어 고를 수 있다. 첫 쪽 뒤의 쪽은 한꺼번에 받는다 (동시 요청 수는 요청 제한을 따른다)
  */
-const listCache = new LRUCache<number, { list: DcinsideDcconDetailList[]; maxPage: number }>({ttl: 10 * 60_000, ttlAutopurge: true});
+const fetchAllPackages = async (): Promise<ListResult> => {
+    const first = await fetchPage(0);
+    if (first === "not_login") return first;
+    if (first.target === "shop") return "shop";
+
+    // max_page가 문자열로 오기도 한다 (디시 dccon.js도 ==로 비교한다)
+    const last = Math.min(Number(first.max_page) || 0, MAX_PAGES - 1);
+    const rest = await Promise.all(Array.from({length: last}, (_, index) => fetchPage(index + 1)));
+    return [first, ...rest].flatMap((page) => (page !== "not_login" && Array.isArray(page.list) ? page.list : []));
+};
 
 interface DcconPopupProps {
     onSelect: (dccons: DcinsideDccon[], bigDccon: boolean) => void;
     onClose: () => void;
 }
 
-/** 디시콘 선택 팝업 */
 export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
-    const [page, setPage] = useState(0);
-    const [maxPage, setMaxPage] = useState(() => listCache.get(0)?.maxPage ?? 1);
-    const [packages, setPackages] = useState(() => listCache.get(0)?.list ?? []);
-    const [activePackage, setActivePackage] = useState<string | null>(null);
-    const [current, setCurrent] = useState<DcinsideDccon[]>([]);
+    const cached = listCache && Date.now() - listCache.at < LIST_TTL ? listCache.list : null;
+    const [packages, setPackages] = useState(() => cached ?? []);
+    const [activePackage, setActivePackage] = useState<string | null>(() => cached?.[0]?.package_idx ?? null);
+    const [current, setCurrent] = useState<DcinsideDccon[]>(() => cached?.[0]?.detail ?? []);
     const [doubleDccon, setDoubleDccon] = useState(false);
     const [bigDccon, setBigDccon] = useState(false);
     const [selected, setSelected] = useState<DcinsideDccon[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    const packagesRef = useRef<HTMLDivElement>(null);
-    /** 마지막으로 요청한 페이지 — 빠르게 넘기면 늦게 온 이전 페이지 응답이 그리드를 덮고 로딩을 끈다 */
-    const latest = useRef(0);
+    const [loading, setLoading] = useState(!cached);
+    const focus = useOpenerFocus();
 
     const openPackage = (pack: DcinsideDcconDetailList): void => {
         setActivePackage(pack.package_idx);
         setCurrent(pack.detail);
     };
 
-    const getList = async (targetPage: number): Promise<void> => {
-        latest.current = targetPage;
-        const cached = listCache.get(targetPage);
-        if (cached) {
-            setMaxPage(cached.maxPage);
-            setPackages(cached.list);
-            if (cached.list[0]) openPackage(cached.list[0]);
-            setLoading(false);
-            return;
-        }
+    useEffect(() => {
+        if (!loading) return;
+        // 닫은 뒤 늦게 온 결과는 버린다. onClose는 새로 연 창도 닫으므로 늦게 온 실패가 다시 연 창을 닫으면 안 된다
+        let alive = true;
 
-        setPackages([]);
-        setLoading(true);
-        try {
-            const body = new URLSearchParams({
-                ci_t: await csrfToken(),
-                target: "icon",
-                page: String(targetPage)
-            });
-
-            const text = await ajax.post(urls.dccon.lists, {body}).text();
-            if (latest.current !== targetPage) return;
-
-            // 비로그인이면 JSON 대신 'not_login'이 온다 (dccon.js) — 받기 실패가 아니다
-            if (/^"?not_login"?$/.test(text.trim())) {
+        void fetchAllPackages().then((result) => {
+            if (!alive) return;
+            if (result === "not_login") {
                 useUiStore.getState().showToast("디시콘은 로그인한 뒤에 쓸 수 있습니다.", "warning");
                 onClose();
                 return;
             }
-
-            const response = JSON.parse(text) as DcinsideDcconDetail;
-            if (response.target === "shop") {
+            if (result === "shop") {
                 useUiStore.getState().showToast("사용 가능한 디시콘이 없습니다.", "error");
                 onClose();
                 return;
             }
 
-            listCache.set(targetPage, {list: response.list, maxPage: response.max_page});
-            setMaxPage(response.max_page);
-            setPackages(response.list);
-            if (response.list[0]) openPackage(response.list[0]);
-        } catch {
-            if (latest.current !== targetPage) return;
-            useUiStore.getState().showToast("디시콘을 불러오는 데 실패했습니다.", "error");
+            listCache = {list: result, at: Date.now()};
+            setPackages(result);
+            if (result[0]) openPackage(result[0]);
+            setLoading(false);
+        }, () => {
+            if (!alive) return;
+            useUiStore.getState().showToast("디시콘을 불러오지 못했습니다.", "error");
             onClose();
-            return;
-        } finally {
-            if (latest.current === targetPage) setLoading(false);
-        }
-    };
+        });
 
-    useEffect(() => {
-        void getList(0);
-        // 닫으면 받는 중인 요청을 무효로 — 늦게 온 실패가 다시 연 창을 닫지 않게 (onClose는 새 창도 닫는다)
         return () => {
-            latest.current = -1;
+            alive = false;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
-    useEffect(() => {
-        if (packagesRef.current) packagesRef.current.scrollLeft = 0;
-    }, [page]);
-
-    const movePage = (delta: number): void => {
-        const next = page === 0 && delta < 0 ? maxPage : page === maxPage && delta > 0 ? 0 : page + delta;
-        setPage(next);
-        void getList(next);
-    };
 
     const clickDccon = (dccon: DcinsideDccon): void => {
         if (!doubleDccon) {
@@ -129,7 +117,8 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
 
     return (
         <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
-            <Dialog.Content container={overlay.portal} maxWidth="560px" onOpenAutoFocus={(ev) => ev.preventDefault()}>
+            <Dialog.Content container={overlay.portal} maxWidth="560px" onOpenAutoFocus={focus.onOpenAutoFocus}
+                            onCloseAutoFocus={focus.onCloseAutoFocus}>
                 <Flex justify="between" align="center" mb="3">
                     <Dialog.Title mb="0">디시콘</Dialog.Title>
                     <Flex gap="4">
@@ -157,7 +146,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                     </Flex>
                 )}
 
-                <div className="refresher-dccon-packages" ref={packagesRef}>
+                <div className="refresher-dccon-packages">
                     {loading && packages.length === 0
                         ? Array.from({length: 8}, (_, index) => <Skeleton key={index} width="48px" height="48px"/>)
                         : packages.map((pack) => (
@@ -168,7 +157,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                                 title={pack.title}
                                 onClick={(ev) => {
                                     openPackage(pack);
-                                    ev.currentTarget.scrollIntoView({behavior: "smooth", block: "nearest", inline: "center"});
+                                    ev.currentTarget.scrollIntoView({behavior: smoothScroll(), block: "nearest", inline: "center"});
                                 }}
                             >
                                 <img src={pack.main_img_url} alt={pack.title}/>
@@ -186,15 +175,6 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                         ))}
                 </div>
 
-                <Flex justify="center" align="center" gap="3" mt="3">
-                    <IconButton variant="ghost" color="gray" aria-label="이전 패키지 목록" onClick={() => movePage(-1)}>
-                        <ChevronLeft size={16}/>
-                    </IconButton>
-                    <Text size="2" color="gray">{page + 1} / {maxPage + 1}</Text>
-                    <IconButton variant="ghost" color="gray" aria-label="다음 패키지 목록" onClick={() => movePage(1)}>
-                        <ChevronRight size={16}/>
-                    </IconButton>
-                </Flex>
             </Dialog.Content>
         </Dialog.Root>
     );

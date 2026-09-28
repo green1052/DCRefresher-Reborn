@@ -1,12 +1,17 @@
 import {Box, Card, Flex, Grid, Heading, Separator, Switch, Text} from "@radix-ui/themes";
+import {Collapsible} from "radix-ui";
 import {Fragment} from "react";
 
 import {SettingItem} from "@/components/SettingItem";
+import {defaultValue} from "@/core/module/settings";
 import type {SettingSchema} from "@/core/module/types";
 import features from "@/features";
 import {useModulesStore} from "@/stores/modules";
+import {SAVE_FAILED} from "@/utils/error";
 
-/** 모듈별 카드 — 헤더의 스위치로 on/off, 본문에 세부 설정 */
+import {notify} from "./optionsStore";
+
+/** 모듈별 카드. 헤더의 스위치로 켜고 끄며, 본문에 세부 설정을 둔다 */
 export function GeneralTab() {
     const enables = useModulesStore((state) => state.enables);
     const values = useModulesStore((state) => state.values);
@@ -30,48 +35,53 @@ export function GeneralTab() {
                                 size="3"
                                 checked={enabled}
                                 aria-label={`${feature.name} 사용`}
-                                onCheckedChange={(value) => void toggle(feature.id, value)}
+                                onCheckedChange={(value) => void toggle(feature.id, value).catch(() => notify(SAVE_FAILED))}
                             />
                         </Flex>
 
-                        {enabled && settings.length > 0 && (
-                            <Box mt="4">
-                                {/* 같은 group 객체를 가진 설정은 첫 설정 자리에 한 줄로 묶는다 */}
-                                {[...Map.groupBy(settings, ([key, schema]) => schema.group ?? key).values()].map((entries) => {
-                                    const group = entries[0]![1].group;
-                                    const valueOf = (key: string, schema: SettingSchema) => values[feature.id]?.[key] ?? schema.default;
-                                    const item = ([key, schema]: [string, SettingSchema], compact?: boolean) => (
-                                        <SettingItem
-                                            key={key}
-                                            schema={schema}
-                                            compact={compact}
-                                            takenKeys={schema.type === "key"
-                                                ? settings.filter(([other, s]) => other !== key && s.type === "key").map(([other, s]) => String(valueOf(other, s)))
-                                                : undefined}
-                                            value={valueOf(key, schema)}
-                                            onChange={(value) => void changeSetting(feature.id, key, value)}
-                                        />
-                                    );
-
-                                    return (
-                                        <Fragment key={entries[0]![0]}>
-                                            <Separator size="4"/>
-                                            {group ? (
-                                                <Box py="3">
-                                                    <Text as="p" size="2" weight="medium">{group.name}</Text>
-                                                    <Text as="p" size="1" color="gray" mb="2">{group.desc}</Text>
-                                                    {/* 글 입력칸·슬라이더는 칸 하나로는 좁다 — 섞여 있으면 묶음 전체를 한 줄씩 그려 조작 위치를 오른쪽 끝으로 맞춘다 */}
-                                                    <Grid columns={entries.some(([, s]) => s.type === "text" || s.type === "range") ? "1" : {initial: "2", sm: "3"}} gapX="5">
-                                                        {entries.map((entry) => item(entry, true))}
-                                                    </Grid>
-                                                </Box>
-                                            ) : (
-                                                item(entries[0]!)
-                                            )}
-                                        </Fragment>
-                                    );
-                                })}
-                            </Box>
+                        {settings.length > 0 && (
+                            <Collapsible.Root open={enabled}>
+                                {/* 켜고 끌 때 펼치고 접는다 (options.scss). 닫히는 애니메이션이 끝난 뒤 빠진다 */}
+                                <Collapsible.Content className="refresher-collapsible">
+                                    <Box pt="4">
+                                        {/* 같은 group 객체를 가진 설정은 첫 설정 자리에 한 줄로 묶는다 */}
+                                        {[...Map.groupBy(settings, ([key, schema]) => schema.group ?? key).values()].map((entries) => {
+                                            const group = entries[0]![1].group;
+                                            const valueOf = (key: string, schema: SettingSchema) => values[feature.id]?.[key] ?? defaultValue(schema);
+                                            const item = ([key, schema]: [string, SettingSchema], compact?: boolean) => (
+                                                <SettingItem
+                                                    key={key}
+                                                    schema={schema}
+                                                    compact={compact}
+                                                    takenKeys={schema.type === "key"
+                                                        ? settings.filter(([other, s]) => other !== key && s.type === "key").map(([other, s]) => String(valueOf(other, s)))
+                                                        : undefined}
+                                                    value={valueOf(key, schema)}
+                                                    onChange={(value) => void changeSetting(feature.id, key, value).catch(() => notify(SAVE_FAILED))}
+                                                />
+                                            );
+        
+                                            return (
+                                                <Fragment key={entries[0]![0]}>
+                                                    <Separator size="4"/>
+                                                    {group ? (
+                                                        <Box py="3">
+                                                            <Text as="p" size="2" weight="medium">{group.name}</Text>
+                                                            <Text as="p" size="1" color="gray" mb="2">{group.desc}</Text>
+                                                            {/* 글 입력칸·슬라이더는 칸 하나에 넣기엔 좁다. 섞여 있으면 묶음 전체를 한 줄에 하나씩 그려 조작부를 오른쪽 끝에 맞춘다 */}
+                                                            <Grid columns={entries.some(([, s]) => s.type === "text" || s.type === "range") ? "1" : {initial: "2", sm: "3"}} gapX="5">
+                                                                {entries.map((entry) => item(entry, true))}
+                                                            </Grid>
+                                                        </Box>
+                                                    ) : (
+                                                        item(entries[0]!)
+                                                    )}
+                                                </Fragment>
+                                            );
+                                        })}
+                                    </Box>
+                                </Collapsible.Content>
+                            </Collapsible.Root>
                         )}
                     </Card>
                 );

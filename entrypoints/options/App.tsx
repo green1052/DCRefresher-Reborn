@@ -1,22 +1,23 @@
 import {Box, Button, Flex, Heading, Separator, Text} from "@radix-ui/themes";
 import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings, Wrench} from "lucide-react";
-import {useEffect, useState} from "react";
+import {lazy, Suspense, useEffect, useState} from "react";
 
 import {Notice} from "@/components/ConfirmDialog";
-import {fontFamilyOf} from "@/features/fonts";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
-import {initModulesStore, useModulesStore} from "@/stores/modules";
+import {initModulesStore, useExtensionPageVars} from "@/stores/modules";
 
 import {AboutTab} from "./AboutTab";
 import {BlockTab} from "./BlockTab";
 import {DataTab} from "./DataTab";
-import {DcconRain} from "./DcconRain";
-import {DevTab} from "./DevTab";
 import {GeneralTab} from "./GeneralTab";
 import {MemoTab} from "./MemoTab";
 import {useOptionsStore} from "./optionsStore";
 import {ShortcutTab} from "./ShortcutTab";
+
+// 개발자 탭과 디시콘 비는 드물게 열리므로 옵션 페이지를 열 때 같이 받지 않는다(개발자 탭은 IP/밴 DB 원문도 읽는다)
+const DevTab = lazy(() => import("./DevTab").then(({DevTab}) => ({default: DevTab})));
+const DcconRain = lazy(() => import("./DcconRain").then(({DcconRain}) => ({default: DcconRain})));
 
 interface TabDef {
     id: string;
@@ -41,7 +42,7 @@ const LOGO_URL = browser.runtime.getURL("/icons/128.png");
 
 const VERSION = browser.runtime.getManifest().version + (import.meta.env.DEV ? "-dev" : "");
 
-/** 현재 탭은 location.hash에 둔다 — 새로고침/링크 공유시 유지 */
+/** 현재 탭은 location.hash에 둬서 새로고침하거나 링크를 공유해도 유지되게 한다 */
 const readHash = (): string => {
     const id = location.hash.slice(1);
     return TABS.some((tab) => tab.id === id) ? id : TABS[0]!.id;
@@ -78,7 +79,8 @@ const Sidebar = ({tabs, tab, onSelect}: {
         <Flex align="center" gap="3" px="2">
             <img src={LOGO_URL} alt="" width={36} height={36} style={{borderRadius: "var(--radius-3)"}}
                  onClick={() => useOptionsStore.getState().startRain()}/>
-            <Heading size="3">DCRefresher Reborn</Heading>
+            {/* h1은 본문의 탭 제목 하나만 둔다. 모양만 제목으로 그린다 */}
+            <Heading asChild size="3"><p>DCRefresher Reborn</p></Heading>
         </Flex>
 
         <Flex asChild direction={{initial: "row", md: "column"}} gap="1" wrap={{initial: "wrap", md: "nowrap"}}>
@@ -87,7 +89,7 @@ const Sidebar = ({tabs, tab, onSelect}: {
                     <Button
                         key={id}
                         size="3"
-                        // soft/ghost는 Radix에서 패딩·높이가 달라 탭 전환시 흔들림 — ghost로 통일하고 배경만 바꾼다
+                        // Radix의 soft와 ghost는 패딩·높이가 달라 탭을 바꿀 때 흔들린다. ghost로 통일하고 배경만 바꾼다
                         variant="ghost"
                         color={tab === id ? undefined : "gray"}
                         highContrast={tab !== id}
@@ -117,7 +119,6 @@ const Sidebar = ({tabs, tab, onSelect}: {
 export function App() {
     const [tab, setTab] = useHashTab();
     const devMode = useOptionsStore((state) => state.devMode);
-    // 로고 클릭 — 디시콘 비 (이스터에그)
     const rain = useOptionsStore((state) => state.rain);
     const notice = useOptionsStore((state) => state.notice);
     const tabs = TABS.filter((item) => !item.dev || devMode);
@@ -129,26 +130,22 @@ export function App() {
         void initModulesStore();
     }, []);
 
-    // 폰트 교체 모듈 설정을 옵션 페이지에도 (options.scss가 --refresher-font를 쓴다)
-    const fontsEnabled = useModulesStore((state) => state.enables.fonts);
-    const customFonts = useModulesStore((state) => state.values.fonts?.customFonts);
-    useEffect(() => {
-        const root = document.documentElement.style;
-        if (fontsEnabled) root.setProperty("--refresher-font", fontFamilyOf(String(customFonts ?? "")));
-        else root.removeProperty("--refresher-font");
-    }, [fontsEnabled, customFonts]);
+    // 모듈이 선언한 확장 페이지 CSS 변수 (폰트 교체 등)
+    useExtensionPageVars();
 
     return (
         <Flex direction={{initial: "column", md: "row"}} minHeight="100vh">
             <Sidebar tabs={tabs} tab={current.id} onSelect={setTab}/>
-            {/* 누를 때마다 새로 마운트 — React Compiler가 Math.random으로 그린 결과를 기억해 같은 모양이 반복되지 않게 */}
-            {rain > 0 && <DcconRain key={rain}/>}
+            {/* 누를 때마다 새로 마운트한다. React Compiler가 Math.random으로 그린 결과를 기억해 같은 모양이 반복되기 때문이다 */}
+            {rain > 0 && <Suspense><DcconRain key={rain}/></Suspense>}
             <Notice message={notice} onClose={() => useOptionsStore.setState({notice: null})}/>
 
             <Box flexGrow="1" minWidth="0" px={{initial: "4", md: "6"}} py="6">
-                <Box maxWidth="880px" mx="auto">
+                {/* 탭마다 새로 마운트해 들어오는 애니메이션을 다시 건다 (options.scss).
+                    연 버튼이 막혀(데이터 초기화 중) 돌아갈 곳이 없으면 다이얼로그가 포커스를 이 탭으로 돌려준다 (useOpenerFocus) */}
+                <Box key={current.id} className="refresher-tab-enter" maxWidth="880px" mx="auto" tabIndex={-1} style={{outline: "none"}}>
                     <Heading size="7" mb="5">{current.label}</Heading>
-                    {current.content()}
+                    <Suspense>{current.content()}</Suspense>
                 </Box>
             </Box>
         </Flex>

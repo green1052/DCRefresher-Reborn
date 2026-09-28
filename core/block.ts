@@ -1,13 +1,18 @@
+import {objectEntries} from "ts-extras";
+
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {useBlocksStore} from "@/stores/blocks";
 
 interface Compiled {
     regex: RegExp;
-    /** 첫 매치 == 전체로 보면 `닉1|닉1a`처럼 앞 대안이 짧게 매치할 때 완전 일치를 놓친다 — 전체를 앵커로 감싼 것 */
+    /**
+     * 완전 일치 검사용 ^(?:패턴)$. 첫 매치가 전체와 같은지로 보면 `닉1|닉1a`에서 앞 대안이 짧게 먼저 매치해
+     * `닉1a`의 완전 일치를 놓친다.
+     */
     anchored: RegExp;
 }
 
-// 항목별 컴파일 캐시 — 스토어는 항목이 바뀌면 객체를 새로 만드므로 객체를 키로 쓰면 목록 크기와 상관없이 한 번만 컴파일한다 (잘못된 패턴은 null)
+// 항목 객체 → 컴파일 결과 (잘못된 패턴은 null). 스토어는 항목이 바뀌면 새 객체를 만들므로 따로 무효화할 필요가 없다.
 const regexCache = new WeakMap<BlockEntry, Compiled | null>();
 
 const compile = (entry: BlockEntry): Compiled | null => {
@@ -23,43 +28,58 @@ const compile = (entry: BlockEntry): Compiled | null => {
     return compiled;
 };
 
-// NOT_*는 SAME/CONTAIN을 뒤집은 것. 잘못된 정규식은 NOT_*로도 걸지 않는다
+/** 일치·포함 검사. NOT_*도 뒤집지 않고 SAME/CONTAIN으로 본다. 잘못된 정규식은 맞지 않는다 */
 const matches = (entry: BlockEntry, mode: DetectMode, content: string): boolean => {
     const whole = mode.endsWith("SAME");
-    let hit: boolean;
+    if (!entry.isRegex) return whole ? entry.content === content : content.includes(entry.content);
 
-    if (entry.isRegex) {
-        const compiled = compile(entry);
-        if (!compiled) return false;
-        hit = (whole ? compiled.anchored : compiled.regex).test(content);
-    } else {
-        hit = whole ? entry.content === content : content.includes(entry.content);
-    }
-
-    return mode.startsWith("NOT_") ? !hit : hit;
+    const compiled = compile(entry);
+    return compiled !== null && (whole ? compiled.anchored : compiled.regex).test(content);
 };
 
 type BlockLists = Pick<ReturnType<typeof useBlocksStore.getState>, "entries" | "defaults">;
 type BlockValues = Partial<Record<BlockType, string | null | undefined>>;
 
-const applies = (lists: BlockLists, type: BlockType, entry: BlockEntry, content: string, gallery?: string): boolean =>
-    (!entry.gallery || entry.gallery === gallery) && matches(entry, entry.mode ?? lists.defaults[type], content);
+/**
+ * 내용에 걸린 항목들 (갤러리 한정 항목은 그 갤러리에서만). SAME/CONTAIN은 맞는 항목마다 막는다.
+ * NOT_*(불일치·불포함)는 한 유형의 항목을 묶어 허용 목록으로 본다: 어느 것에도 맞지 않으면 그 항목들 전부로 막는다.
+ * 항목마다 뒤집으면 둘만 돼도 서로를 막아(A는 B와 다르다) 모두 막힌다. 잘못된 정규식은 NOT_*로도 걸지 않는다
+ */
+const blockingIn = (lists: BlockLists, type: BlockType, content: string, gallery?: string): BlockEntry[] => {
+    const hits: BlockEntry[] = [];
+    const allowList: BlockEntry[] = [];
+    let allowed = false;
+
+    for (const entry of lists.entries[type]) {
+        if (entry.gallery && entry.gallery !== gallery) continue;
+
+        const mode = entry.mode ?? lists.defaults[type];
+        const hit = matches(entry, mode, content);
+        if (!mode.startsWith("NOT_")) {
+            if (hit) hits.push(entry);
+        } else if (!entry.isRegex || compile(entry)) {
+            allowList.push(entry);
+            allowed ||= hit;
+        }
+    }
+
+    return allowed ? hits : [...hits, ...allowList];
+};
 
 /** 해당 내용이 차단 대상인지 (갤러리 한정 항목은 그 갤러리에서만) */
-export const isBlocked = (type: BlockType, content: string, gallery?: string): boolean => {
-    if (!content) return false;
-
-    const lists = useBlocksStore.getState();
-    return lists.entries[type].some((entry) => applies(lists, type, entry, content, gallery));
-};
+export const isBlocked = (type: BlockType, content: string, gallery?: string): boolean =>
+    content !== "" && blockingIn(useBlocksStore.getState(), type, content, gallery).length > 0;
 
 /** 값 중 하나라도 차단 대상인지 */
 export const isAnyBlocked = (values: BlockValues, gallery?: string): boolean =>
-    Object.entries(values).some(([type, value]) => value && isBlocked(type as BlockType, value, gallery));
+    objectEntries(values).some(([type, value]) => value && isBlocked(type, value, gallery));
+
+/** 본문 차단 안내 문구. 페이지(block 모듈)와 미리보기(창·미니)가 같이 쓴다 */
+export const BLOCKED_TEXT = "게시글 내용이 차단되었습니다.";
 
 /**
  * 같은 댓글 묶기 (도배 접기). 공백만 다른 글도 같게 보고, minLength보다 짧은 글(ㅋㅋ 등)과 count번 미만 반복은 건너뛴다.
- * 묶인 것만 담아 돌려준다 — 첫 댓글은 반복 수, 나머지는 0
+ * 묶인 항목만 돌려준다. 값은 첫 항목이 반복 수, 나머지는 0이다.
  */
 export const groupDuplicates = <T>(items: T[], textOf: (item: T) => string, {count, minLength}: { count: number; minLength: number }): Map<T, number> => {
     const result = new Map<T, number>();
@@ -73,10 +93,11 @@ export const groupDuplicates = <T>(items: T[], textOf: (item: T) => string, {cou
 };
 
 /**
- * 값을 차단한 항목들 (유저 버블의 "걸린 차단 규칙"). React에서는 구독한 목록을 lists로 넘겨야
- * 목록이 바뀔 때 다시 계산된다 (getState로 읽으면 React Compiler가 이전 결과를 그대로 쓴다)
+ * 값에 걸린 차단 항목들 (유저 버블의 "걸린 차단 규칙").
+ * React에서는 구독한 목록을 lists로 넘긴다. 기본값(getState)에 맡기면 React Compiler가 인자만 보고 이전 결과를 재사용해
+ * 차단 목록이 바뀌어도 다시 계산하지 않는다.
  */
 export const blockingEntries = (values: BlockValues, gallery?: string, lists: BlockLists = useBlocksStore.getState()): { type: BlockType; entry: BlockEntry }[] =>
-    Object.entries(values).flatMap(([type, value]) =>
-        value ? lists.entries[type as BlockType].filter((entry) => applies(lists, type as BlockType, entry, value, gallery)).map((entry) => ({type: type as BlockType, entry})) : []
+    objectEntries(values).flatMap(([type, value]) =>
+        value ? blockingIn(lists, type, value, gallery).map((entry) => ({type, entry})) : []
     );

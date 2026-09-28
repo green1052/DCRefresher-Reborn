@@ -1,27 +1,38 @@
 import {Select} from "@radix-ui/themes";
 
-interface RefresherSelectProps {
-    value: string;
-    options: [string, string][];
+interface RefresherSelectProps<T extends string> {
+    value: T;
+    /** 값 → 표시 이름. 넣은 순서대로 보인다 */
+    options: Record<T, string>;
     disabled?: boolean;
-    /** 스크린 리더용 이름 — 옆에 둔 글자는 label로 이어지지 않는다 */
+    /** 스크린 리더용 이름. 옆에 둔 글자는 label로 연결되지 않으므로 따로 넘긴다 */
     "aria-label"?: string;
-    onChange: (value: string) => void;
+    /** 설명 글의 id (설정 설명) */
+    "aria-describedby"?: string;
+    onChange: (value: T) => void;
 }
 
-/** 값이 빈 문자열인 항목(기본값)을 위한 sentinel */
+/** 빈 문자열 값(기본값) 항목을 대신하는 sentinel. Radix Select는 빈 값을 받지 않는다 */
 const NONE = "__none__";
 
-export const RefresherSelect = ({value, options, disabled, "aria-label": ariaLabel, onChange}: RefresherSelectProps) => (
+export const RefresherSelect = <T extends string>({
+                                                      value,
+                                                      options,
+                                                      disabled,
+                                                      "aria-label": ariaLabel,
+                                                      "aria-describedby": ariaDescribedBy,
+                                                      onChange
+                                                  }: RefresherSelectProps<T>) => (
     <Select.Root
         size="2"
         value={value || NONE}
         disabled={disabled}
-        onValueChange={(next) => onChange(next === NONE ? "" : next)}
+        // 선택지는 options의 키뿐이라 T로 단언해도 된다
+        onValueChange={(next) => onChange((next === NONE ? "" : next) as T)}
     >
-        <Select.Trigger aria-label={ariaLabel} style={{minWidth: 140}}/>
+        <Select.Trigger aria-label={ariaLabel} aria-describedby={ariaDescribedBy} style={{minWidth: 140}}/>
         <Select.Content>
-            {options.map(([key, label]) => (
+            {Object.entries<string>(options).map(([key, label]) => (
                 <Select.Item key={key} value={key || NONE}>
                     {label}
                 </Select.Item>

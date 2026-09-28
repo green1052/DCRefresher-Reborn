@@ -1,24 +1,34 @@
+import {storage} from "wxt/utils/storage";
+
 import {isBackupTarget, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
+import {IP_FORMAT} from "@/core/ipdb";
+import {migrateShowIpInfo} from "@/core/migrate-settings";
 import {migrateV5Storage} from "@/core/migrate-v5";
 import {onMessage, sendMessage} from "@/core/messaging/protocol";
-import {isModuleEnabled, normalizeSetting} from "@/core/module/settings";
-import {backupStorage, dbStorage, moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
-import {IMAGE_SEARCH_ENGINES, IMAGE_SEARCH_ID, IMAGE_SEARCH_SETTINGS, IMAGE_URL_PATTERNS, imageSearchUrl} from "@/features/imagesearch/engines";
+import {type BackgroundModule, startBackgroundModules} from "@/core/module/background";
+import {backupStorage, dbStorage} from "@/core/storage/items";
+
+/** 모듈별 배경 코드(features/<id>/background.ts). 필요한 모듈만 이 파일을 둔다 */
+const backgroundModules = Object.values(import.meta.glob<{ default: BackgroundModule }>("../../features/*/background.ts", {eager: true}))
+    .map((module) => module.default);
 
 const DATABASE_UPDATE_INTERVAL = 604_800_000; // 7일
-/** 7일이 지났는지 하루마다 본다 — 서버 DB는 주 2번 바뀌고, 볼 때마다 DB 전체(수백 KB)를 읽으니 자주 볼 이유가 없다. 받기에 실패하면 다음 날 다시 받는다 */
+/**
+ * 7일이 지났는지 하루마다 확인한다. 서버 DB는 주 2번 바뀌고 확인할 때마다 DB 전체(수백 KB)를 읽으므로 더 자주 볼 이유가 없다.
+ * 받기에 실패하면 다음 날 다시 받는다. 저장 형식이 옛것이면(확장 업데이트 때 받기 실패) 7일을 기다리지 않고 다시 받는다.
+ */
 const DATABASE_ALARM = "refresher:dbCheck";
 const DATABASE_ALARM_PERIOD = 24 * 60;
 const AUTO_BACKUP_ALARM = "refresher:autoBackup";
 
 const GRECAPTCHA_SITE_KEY = "6Lc-Fr0UAAAAAOdqLYqPy53MxlRMIXpNXFvBliwI";
-/** api.js가 막혀 있으면(광고 차단 등) 끝나지 않으니 기다리지 않는다 */
+/** api.js가 막히면(광고 차단 등) 끝나지 않으므로 이 시간까지만 기다린다 */
 const GRECAPTCHA_TIMEOUT = 15_000;
 
 /**
- * 탭의 페이지 컨텍스트에서 실행된다 (직렬화되므로 바깥 변수를 쓰지 않는다).
- * api.js는 이때 처음 불러온다 — 미리 넣으면 원문 comment.js의 typeof grecaptcha 검사가 바뀌어 v2 체크박스가 뜬다
+ * 탭의 페이지 컨텍스트에서 실행된다(직렬화되므로 바깥 변수를 쓰지 않는다).
+ * api.js는 이때 처음 불러온다. 미리 넣으면 원래 comment.js의 typeof grecaptcha 검사 결과가 바뀌어 v2 체크박스가 뜬다.
  */
 const executeGrecaptcha = async (siteKey: string, action: string): Promise<string> => {
     type Grecaptcha = { ready: (callback: () => void) => void; execute: (key: string, options: { action: string }) => Promise<string> };
@@ -40,8 +50,9 @@ const executeGrecaptcha = async (siteKey: string, action: string): Promise<strin
 };
 
 /**
- * 탭의 페이지 컨텍스트에서 실행된다 (직렬화되므로 바깥 변수를 쓰지 않는다).
- * 디시는 자체 차단(block-disable)과 이용자 메모 배지를 목록을 그릴 때 한 번만 건다 — 없는 페이지면 건너뛴다
+ * 탭의 페이지 컨텍스트에서 실행된다(직렬화되므로 바깥 변수를 쓰지 않는다).
+ * 디시는 자체 차단(block-disable)과 이용자 메모 배지를 목록을 처음 그릴 때만 적용하므로 교체한 행에 다시 건다.
+ * 해당 함수가 없는 페이지면 건너뛴다.
  */
 const rerunListScripts = (gallery: string): void => {
     const scope = window as Window & {
@@ -49,55 +60,20 @@ const rerunListScripts = (gallery: string): void => {
         UserMemo?: { renderWriterMemoBadges?: (wrapper: null) => void };
     };
 
-    // 디시가 이 페이지를 열 때 넘긴 값 그대로 — 미니 갤러리는 목록('id')과 글 페이지('mi$id')가 달라 id로 짐작하면 다른 설정을 읽는다
+    // 디시가 페이지를 열 때 넘긴 값을 그대로 쓴다. 미니 갤러리는 목록('id')과 글 페이지('mi$id')의 값이 달라 id로 짐작하면 다른 설정을 읽는다
     const loaded = [...document.scripts].map((script) => /chk_user_block\('([^']*)'\)/.exec(script.textContent ?? "")?.[1]).find((id) => id !== undefined);
     if (typeof scope.chk_user_block === "function") scope.chk_user_block(loaded ?? gallery);
     // null이면 디시가 처음 그릴 때 등록한 범위(목록·글 머리)를 다시 그린다
     if (typeof scope.UserMemo?.renderWriterMemoBadges === "function") scope.UserMemo.renderWriterMemoBadges(null);
 };
 
-const IMAGE_MENU_PREFIX = "imagesearch:";
-
-/** 이미지 검색 메뉴 — 켠 엔진마다 하나 (둘 이상이면 브라우저가 확장 이름 아래로 묶는다). 모듈이 꺼져 있으면 없다 */
-const buildContextMenus = async (): Promise<void> => {
-    await browser.contextMenus.removeAll();
-
-    // 콘텐츠 레지스트리와 같은 기준
-    if (!isModuleEnabled({id: IMAGE_SEARCH_ID}, await modulesStorage.getValue())) return;
-
-    const stored = await moduleSettingsStorage(IMAGE_SEARCH_ID).getValue();
-    for (const [id, {name}] of Object.entries(IMAGE_SEARCH_ENGINES)) {
-        const schema = IMAGE_SEARCH_SETTINGS[id];
-        if (!schema || !normalizeSetting(schema, stored[id])) continue;
-
-        browser.contextMenus.create({id: IMAGE_MENU_PREFIX + id, title: `${name} 검색`, contexts: ["image"], targetUrlPatterns: IMAGE_URL_PATTERNS});
-    }
-};
-
 export default defineBackground(() => {
-    // ===== Context Menus: 이미지 검색 =====
-    // 연달아 부르면 removeAll과 create가 엇갈려 id가 겹친다 — 앞의 것이 끝난 뒤 다시 만든다
-    let menus = Promise.resolve();
-    const createContextMenus = (): Promise<void> => (menus = menus.then(buildContextMenus).catch(console.error));
-
-    // 옵션 페이지·팝업은 저장소에 직접 쓴다 — 켜고 끄거나 엔진을 바꾸면 바로 다시 만든다
-    modulesStorage.watch((next, prev) => {
-        if (next[IMAGE_SEARCH_ID] !== prev[IMAGE_SEARCH_ID]) void createContextMenus();
-    });
-    moduleSettingsStorage(IMAGE_SEARCH_ID).watch(() => void createContextMenus());
-
-    browser.contextMenus.onClicked.addListener(async (info, tab) => {
-        const id = String(info.menuItemId);
-        const url = id.startsWith(IMAGE_MENU_PREFIX) && info.srcUrl ? imageSearchUrl(id.slice(IMAGE_MENU_PREFIX.length), info.srcUrl) : null;
-        if (!url) return;
-
-        // 이미지가 있던 탭 바로 옆에, 그 탭을 opener로 연다
-        await browser.tabs.create(tab?.id !== undefined && tab.id >= 0 ? {url, index: tab.index + 1, openerTabId: tab.id, windowId: tab.windowId} : {url});
-    });
-
-    browser.runtime.onStartup.addListener(() => void createContextMenus());
-    // Firefox(MV2)는 메뉴를 남겨 두지 않는다 — 확장을 껐다 켜면 onStartup/onInstalled 없이 백그라운드만 다시 뜬다
-    if (import.meta.env.FIREFOX) void createContextMenus();
+    // ===== 모듈의 배경 쪽 (이미지 검색 메뉴 등) =====
+    // 리스너는 여기서 바로 건다. 크롬은 메뉴 같은 상태를 유지하므로 설치·브라우저 시작·설정 변경 때만 다시 맞춘다
+    const applyBackgroundModules = startBackgroundModules(backgroundModules);
+    browser.runtime.onStartup.addListener(() => void applyBackgroundModules());
+    // Firefox(MV2)는 메뉴를 유지하지 않고, 확장을 껐다 켜면 onStartup/onInstalled 없이 배경만 다시 뜨므로 뜰 때마다 맞춘다
+    if (import.meta.env.FIREFOX) void applyBackgroundModules();
 
     // ===== Commands: 단축키 → 활성 탭에만 전송 =====
     // 단축키 기능은 '이번 페이지' 단위라 모든 탭에 보내면 탭마다 토글·토스트·목록 요청이 한꺼번에 일어난다
@@ -139,32 +115,35 @@ export default defineBackground(() => {
     });
 
     // ===== Database: 설치/주기 갱신 =====
-    // 설치 직후엔 onInstalled와 첫 주기 검사(lastUpdate 0)가 겹칠 수 있다 — 진행 중인 갱신을 같이 기다려 두 번 받지 않는다
+    // 설치 직후에는 onInstalled와 첫 주기 검사(lastUpdate 0)가 겹칠 수 있다. 진행 중인 갱신을 같이 기다려 두 번 받지 않는다
     let updating: Promise<void> | null = null;
     const update = (): Promise<void> => (updating ??= updateDatabase().catch(console.error).finally(() => (updating = null)));
 
-    browser.runtime.onInstalled.addListener(async () => {
-        // v5에서 업데이트한 경우 설정을 v6 형식으로 옮긴다 (한시적)
-        // 실패해도 DB 갱신·메뉴 생성은 이어서 한다
-        await migrateV5Storage().catch(console.error);
-        await createContextMenus();
+    browser.runtime.onInstalled.addListener(async ({reason, previousVersion}) => {
+        // v5에서 업데이트한 경우만 설정을 v6 형식으로 옮긴다(한시적). 저장소 전체를 읽으므로 다른 경우는 건너뛴다.
+        // 모듈 맞추기는 옮긴 설정을 보도록 그 뒤에 하고, 옮기기가 실패해도 DB 갱신까지 이어서 한다.
+        if (reason === "update" && previousVersion?.startsWith("5.")) await migrateV5Storage().catch(console.error);
+        if (reason === "update") await migrateShowIpInfo().catch(console.error);
+        // 비회원 닉네임·비밀번호는 이제 디시 localStorage에 둔다. 예전 버전이 확장 저장소에 남긴 평문 비밀번호를 지운다
+        if (reason === "update") await storage.removeItem("local:refresher:nonmember").catch(console.error);
+        await applyBackgroundModules();
 
         if (import.meta.env.PROD || !(await dbStorage.meta.getValue()).version) {
             await update();
         }
     });
 
-    // 알람은 없거나 주기가 다를 때만 만든다 — 워커가 깰 때마다 다시 만들면 주기가 처음부터 다시 세어져 울리지 않는다.
-    // 예전엔 시작할 때 한 번 봤는데, 파이어폭스(MV2)는 배경이 상주해 그 한 번이 세션 전부였다 (늦게 잡힌 네트워크·7일 넘게 켜 둔 브라우저)
+    // 시작할 때 한 번만 확인하면 배경이 상주하는 파이어폭스(MV2)는 세션 내내 다시 보지 않으므로 알람으로 확인한다.
+    // 알람은 없거나 주기가 다를 때만 만든다. 워커가 깰 때마다 다시 만들면 주기가 처음부터 다시 세어져 울리지 않는다.
     if (import.meta.env.PROD) {
         void browser.alarms.get(DATABASE_ALARM).then((alarm) => {
-            // 예전 빌드가 1시간 주기로 만든 알람도 바꾼다
+            // 이전 빌드가 1시간 주기로 만든 알람도 여기서 바뀐다
             if (alarm?.periodInMinutes !== DATABASE_ALARM_PERIOD) void browser.alarms.create(DATABASE_ALARM, {delayInMinutes: 1, periodInMinutes: DATABASE_ALARM_PERIOD});
         });
     }
 
-    // ===== 자동 백업: 설정이 바뀌면 마지막 변경 1분 뒤에 백업 (알람을 다시 만들면 미뤄진다) =====
-    // 서비스 워커는 잠들 수 있어 setTimeout 대신 alarms로 기다린다. 켤 때는 옵션 페이지가 바로 한 번 백업한다
+    // ===== 자동 백업: 설정이 바뀌면 마지막 변경 1분 뒤에 백업한다 (알람을 다시 만들면 미뤄진다) =====
+    // 서비스 워커는 잠들 수 있어 setTimeout 대신 alarms로 기다린다. 자동 백업을 켤 때는 옵션 페이지가 바로 한 번 백업한다
     browser.storage.local.onChanged.addListener((changes) => {
         if (!Object.keys(changes).some(isBackupTarget)) return;
 
@@ -175,19 +154,23 @@ export default defineBackground(() => {
         });
     });
 
-    // 알람은 브라우저를 끄면 사라질 수 있다 (파이어폭스는 늘) — 1분 안에 끄면 백업이 빠지니 다음 시작 때 다시 건다.
-    // 워커가 깰 때마다 보면 안 된다 — 크롬은 울린 알람을 지우고 워커를 깨우므로, 방금 울린 알람을 또 걸어 백업이 두 번 돈다
-    browser.runtime.onStartup.addListener(async () => {
+    // 알람은 브라우저를 끄거나(파이어폭스는 항상) 확장을 업데이트하면 사라질 수 있다. 변경 후 1분 안에 그러면 백업이 빠지므로 다음 시작·업데이트 때 다시 건다.
+    // 워커가 깰 때마다 하면 안 된다. 크롬은 울린 알람을 지운 뒤 워커를 깨우므로 방금 울린 알람을 또 걸어 백업이 두 번 돈다.
+    const rearmAutoBackup = async (): Promise<void> => {
         const [pending, alarm] = await Promise.all([backupStorage.pending.getValue(), browser.alarms.get(AUTO_BACKUP_ALARM)]);
         if (pending && !alarm) await browser.alarms.create(AUTO_BACKUP_ALARM, {delayInMinutes: 1});
-    });
+    };
+    browser.runtime.onStartup.addListener(rearmAutoBackup);
+    browser.runtime.onInstalled.addListener(() => void rearmAutoBackup().catch(console.error));
 
     browser.alarms.onAlarm.addListener((alarm) => {
         if (alarm.name === DATABASE_ALARM) {
-            void dbStorage.meta.getValue().then(({lastUpdate}) => (Date.now() - lastUpdate > DATABASE_UPDATE_INTERVAL ? update() : undefined));
+            void dbStorage.meta.getValue().then(({lastUpdate, format}) =>
+                (format !== IP_FORMAT || Date.now() - lastUpdate > DATABASE_UPDATE_INTERVAL ? update() : undefined));
         } else if (alarm.name === AUTO_BACKUP_ALARM) {
-            void backupStorage.pending.setValue(false);
-            // 끈 직후 남아 있던 알람이 울릴 수 있다 (초기화 전 끄기 등) — 울린 시점에 다시 본다
+            // 울린 뒤 설정이 또 바뀌어 새 알람이 걸렸으면 대기 표시를 둔다. 지우면 그 알람이 브라우저를 끌 때 사라져도 다시 걸지 않는다
+            void browser.alarms.get(AUTO_BACKUP_ALARM).then((next) => (next ? undefined : backupStorage.pending.setValue(false)));
+            // 자동 백업을 끈 직후(초기화 전 끄기 등) 남은 알람이 울릴 수 있으므로 울린 시점에 설정을 다시 확인한다
             void backupStorage.auto.getValue().then((auto) => (auto ? runBackup("auto") : undefined)).catch(() => {});
         }
     });

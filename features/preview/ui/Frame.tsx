@@ -1,229 +1,47 @@
-import {Badge, Box, Button, Callout, Flex, Heading, IconButton, Separator, Spinner, Text, Theme, Tooltip} from "@radix-ui/themes";
-import {ArrowUp, CircleAlert, Clock, ExternalLink, Eye, Link2, MessageSquare, RotateCw, ThumbsDown, ThumbsUp} from "lucide-react";
+import {Box, Button, Callout, Flex, Heading, IconButton, Separator, Spinner, Text, Theme, Tooltip} from "@radix-ui/themes";
+import {Archive, ArrowUp, Eye, MessageSquare, RotateCw} from "lucide-react";
 import {Dialog} from "radix-ui";
-import {type CSSProperties, Fragment, useEffect, useRef, useState, type WheelEvent} from "react";
+import {type CSSProperties, Fragment, useEffect, useLayoutEffect, useRef, useState, type WheelEvent} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
-import {getEntry, setEntry} from "@/core/preview/cache";
-import {captchaImage, viewUrl, vote} from "@/core/preview/request";
+import {focusedElement} from "@/components/useOpenerFocus";
+import {BLOCKED_TEXT} from "@/core/block";
 import type {ProcessedComment} from "@/core/preview/comments";
-import type {PostInfo} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
+import {smoothScroll} from "@/utils/dom";
 import {isTyping} from "@/utils/event";
-import {isGalleryManager} from "@/utils/user";
 
-import {adjacentPreData} from "../index";
-import {Comment, TimeStamp, useTick, UserCard} from "./Comment";
+import {adjacentPreData} from "../rows";
+import {TimeStamp, UserCard} from "./Comment";
+import {CommentList} from "./CommentList";
+import {CountDown} from "./CountDown";
+import {ErrorBlock} from "./ErrorBlock";
+import {fitMovies} from "./fitMovies";
+import {watchGifVideos} from "./gifVideos";
 import {AdminPanel} from "./Popups";
-import {BLOCKED_TEXT, type ErrorState, parseDate, postTitle, usePreviewStore} from "./previewStore";
+import {postTitle, usePreviewStore} from "./previewStore";
+import {Votes} from "./Votes";
 import {WriteComment} from "./WriteComment";
 
 /**
- * 디시 동영상(movie_view 등 같은 출처 iframe)은 자기 크기를 `$('#movieIcon'+no, parent.document).height(...)`로 맞추는데,
- * 미리보기는 shadow DOM 안이라 거기서 못 찾아 기본 300×150으로 잘린다 — 안쪽 내용을 재서 대신 맞춘다 (다른 출처는 못 읽어 그대로)
+ * 목록에서 앞(-1)/뒤(1) 글로 넘어간다. PageUp/Down과 스크롤 끝 넘기기가 같이 쓴다.
+ * 방향을 넘겨 컨트롤러가 그 방향 다음 글을 미리 받게 한다.
  */
-const fitMovies = (root: HTMLElement): (() => void) => {
-    const observers = new Map<HTMLIFrameElement, ResizeObserver>();
-    const listeners = new AbortController();
-
-    for (const frame of root.querySelectorAll<HTMLIFrameElement>("iframe")) {
-        const fit = (): void => {
-            // 프레임당 옵저버 하나 — 다시 로드되면 떠난 문서를 보던 옵저버는 끊는다 (분리된 요소가 0으로 재어져 프레임이 접힌다)
-            observers.get(frame)?.disconnect();
-
-            const doc = frame.contentDocument;
-            // movie_view는 .v-container, 그 밖엔 본문 첫 요소를 잰다
-            const container = doc?.querySelector<HTMLElement>(".v-container") ?? doc?.body?.firstElementChild;
-            if (!doc || !(container instanceof doc.defaultView!.HTMLElement)) return;
-
-            // 글꼴·배율에 따라 1px만 넘쳐도 스크롤바가 생겨 화면을 더 먹는다 — 안쪽 스크롤은 끈다
-            doc.documentElement.style.overflow = "hidden";
-
-            const observer = new ResizeObserver(() => {
-                // 다시 로드되는 중(load 전)엔 떠난 문서의 요소가 0으로 재어져 프레임이 접힌다 — 무시한다
-                if (frame.contentDocument !== doc) return;
-                // 안쪽 body 여백(좌우 대칭)까지, 소수점은 올림 — 컨테이너 폭만 주면 잘린다
-                const {width, height} = container.getBoundingClientRect();
-                frame.style.width = `${Math.ceil(width + container.offsetLeft * 2)}px`;
-                frame.style.height = `${Math.ceil(height + container.offsetTop * 2)}px`;
-            });
-            observer.observe(container);
-            observers.set(frame, observer);
-        };
-
-        if (frame.contentDocument?.readyState === "complete" && frame.contentDocument.URL !== "about:blank") fit();
-        // 다시 로드되면(새로고침 등) 안쪽 문서가 바뀌므로 매번 맞춘다
-        frame.addEventListener("load", fit, {signal: listeners.signal});
-    }
-
-    return () => {
-        listeners.abort();
-        for (const observer of observers.values()) observer.disconnect();
-    };
-};
-
-const Remaining = ({expire}: { expire: Date }) => {
-    // 1시간 미만이면 초까지 보여 주므로 1초마다
-    useTick(1000);
-
-    const diff = expire.getTime() - Date.now();
-    const h = Math.floor(diff / 3_600_000);
-    const m = Math.floor((diff % 3_600_000) / 60000);
-    const s = Math.floor((diff % 60000) / 1000);
-
-    return (
-        <Tooltip content="자동 삭제까지 남은 시간" container={overlay.portal}>
-            <Badge color="orange" variant="soft">
-                <Clock size={12}/>
-                {diff <= 0 ? "만료됨" : h > 0 ? `${h}시간 ${m}분` : `${m}분 ${s}초`}
-            </Badge>
-        </Tooltip>
-    );
-};
-
-// 만료 시각이 있는 글만 — 대부분 없어서 1초 타이머를 돌릴 까닭이 없다
-const CountDown = () => {
-    const expire = usePreviewStore((s) => s.post?.expire);
-    const date = expire ? parseDate(expire) : undefined;
-    return date && !Number.isNaN(date.getTime()) ? <Remaining expire={date}/> : null;
-};
-
-const Votes = ({post}: { post: PostInfo }) => {
-    const preData = usePreviewStore((s) => s.preData);
-    const {upvotes, fixedUpvotes, downvotes} = post;
-    // 보내는 중인 쪽 — 연타로 추천 POST가 두 번 가지 않게
-    const [voting, setVoting] = useState<"U" | "D" | null>(null);
-
-    const onVote = async (mode: "U" | "D"): Promise<void> => {
-        if (!preData || voting) return;
-        const signal = usePreviewStore.getState().signalId;
-        setVoting(mode);
-        try {
-            let code: string | undefined;
-            if (post.requireCaptcha) {
-                code = await usePreviewStore.getState().openCaptcha(captchaImage(preData, "recommend"));
-                if (!code) return;
-            }
-
-            const result = await vote(preData, post, mode, code);
-            if (result.success) {
-                const counts = mode === "U"
-                    ? {upvotes: result.counts ?? upvotes ?? "X", fixedUpvotes: result.fixedCounts || undefined}
-                    : {downvotes: result.counts ?? downvotes};
-                // 응답 전에 다른 글로 넘어갔으면 숫자는 그 글 것이 아니다 — 알림만. 지금 post를 읽어야 동시에 온 추천·비추천이 서로 덮지 않는다
-                usePreviewStore.setState((s) => (s.signalId !== signal || !s.post ? {} : {post: {...s.post, ...counts}}));
-                // 1분 안에 다시 열면 캐시 본문을 쓴다 — 거기 숫자도 고친다
-                const cached = getEntry(preData)?.post;
-                if (cached) setEntry(preData, {post: {...cached, ...counts}});
-                useUiStore
-                    .getState()
-                    .showToast(`${mode === "U" ? "추천" : "비추천"}되었습니다.`);
-            } else {
-                useUiStore.getState().showToast(result.message ?? "처리하지 못했습니다.", "error");
-            }
-        } catch {
-            useUiStore.getState().showToast("추천 처리 중 오류가 발생했습니다.", "error");
-        } finally {
-            setVoting(null);
-        }
-    };
-
-    // 목록 쿼리(검색어·페이지) 없는 글 주소
-    const onShare = (): void => {
-        if (!preData) return;
-        navigator.clipboard.writeText(viewUrl(preData.link, preData.gallery, preData.id)).then(
-            () => useUiStore.getState().showToast("링크를 복사했습니다."),
-            () => useUiStore.getState().showToast("링크를 복사하지 못했습니다.", "error")
-        );
-    };
-
-    return (
-        <Flex justify="center" align="center" gap="3" py="5">
-            <Button size="3" variant="soft" aria-label="추천" loading={voting === "U"} disabled={voting === "D"} onClick={() => void onVote("U")}>
-                <ThumbsUp size={18}/>
-                {upvotes || "X"}
-                {fixedUpvotes && <Text size="2" color="gray">({fixedUpvotes})</Text>}
-            </Button>
-            {downvotes !== undefined && (
-                <Button size="3" variant="soft" color="gray" aria-label="비추천" loading={voting === "D"} disabled={voting === "U"}
-                        onClick={() => void onVote("D")}>
-                    <ThumbsDown size={18}/>
-                    {downvotes}
-                </Button>
-            )}
-            <Tooltip content="링크 복사" container={overlay.portal}>
-                <IconButton size="3" variant="ghost" color="gray" aria-label="링크 복사" onClick={onShare}>
-                    <Link2 size={18}/>
-                </IconButton>
-            </Tooltip>
-            <Tooltip content="새 탭으로 열기" container={overlay.portal}>
-                <IconButton size="3" variant="ghost" color="gray" asChild>
-                    <a href={preData?.link ?? location.href} target="_blank" rel="noreferrer">
-                        <ExternalLink size={18}/>
-                    </a>
-                </IconButton>
-            </Tooltip>
-        </Flex>
-    );
-};
-
-const ErrorBlock = ({error}: { error: ErrorState }) => {
-    const preData = usePreviewStore((s) => s.preData);
-    const {detail, status, adult} = error;
-
-    let text: string;
-    if (adult) text = "성인 인증이 필요한 글입니다. 원문에서 확인해 주세요.";
-    else if (status && status >= 400 && status < 500) text = "게시글이 삭제되었거나 존재하지 않습니다.";
-    else if (status && status >= 500) text = "서버가 불안정합니다. 잠시 후 다시 시도해주세요.";
-    else if (/fetch|network|timed out/i.test(detail)) text = "서버 또는 브라우저 연결에 실패했습니다.";
-    else text = "게시글 구조를 해석하는 데 실패했습니다.";
-
-    return (
-        <Callout.Root color={adult ? "orange" : "red"} my="4">
-            <Callout.Icon><CircleAlert size={16}/></Callout.Icon>
-            <Callout.Text>
-                {text} {!adult && <Text size="1" color="gray">({detail})</Text>}
-            </Callout.Text>
-            <Flex gap="2">
-                {/* 인증은 원문(디시 페이지)에서만 된다 — 인증한 뒤 다시 시도하면 미리보기로 볼 수 있다 */}
-                {adult && (
-                    <Button size="1" variant="soft" color="orange" asChild>
-                        <a href={preData?.link ?? location.href} target="_blank" rel="noreferrer">
-                            <ExternalLink size={14}/>
-                            원문 열기
-                        </a>
-                    </Button>
-                )}
-                <Button
-                    size="1"
-                    variant="soft"
-                    color={adult ? "gray" : "red"}
-                    // 같은 글을 다시 열면 컨트롤러가 제자리에서 다시 받는다
-                    onClick={() => preData && usePreviewStore.getState().requestOpen(preData, usePreviewStore.getState().commentsOnly)}
-                >
-                    다시 시도
-                </Button>
-            </Flex>
-        </Callout.Root>
-    );
-};
-
-/** 목록에서 앞(-1)/뒤(1) 글로 — PageUp/Down과 스크롤 끝에서 한 번 더 굴리기가 같이 쓴다. 방향을 넘겨 그쪽 다음 글을 미리 받게 한다 */
 const goToAdjacent = (dir: number): void => {
     const st = usePreviewStore.getState();
     const next = st.preData && adjacentPreData(st.preData, dir);
     if (next) st.requestOpen(next, false, dir);
 };
 
-/** 댓글 머리 — 차단·접은 수는 있을 때만 */
+/** 댓글 머리의 개수 요약. 차단·접은 수는 0이 아닐 때만 붙인다 */
 const subtitleOf = (comments: ProcessedComment[]): string => {
     const blocked = comments.filter((comment) => comment.blocked).length;
     const folded = comments.filter((comment) => comment.duplicates === 0).length;
     const extra = [blocked && `차단 ${blocked}개`, folded && `같은 댓글 ${folded}개 접음`].filter(Boolean).join(", ");
-    return `쓰레드 ${comments.filter((comment) => comment.depth === 0).length}개, 총 댓글 ${comments.length}개${extra ? ` (${extra})` : ""}`;
+    return `스레드 ${comments.filter((comment) => comment.depth === 0).length}개, 총 댓글 ${comments.length}개${extra ? ` (${extra})` : ""}`;
 };
 
-/** 누르면 돌다가 끝나면 멈춘다 — 받는 동안 다시 누를 수 없다 */
+/** run이 끝날 때까지 로딩으로 돌며, 그동안은 다시 누를 수 없다 */
 const RefreshButton = ({label, run}: { label: string; run: () => Promise<void> }) => {
     const [busy, setBusy] = useState(false);
 
@@ -240,60 +58,18 @@ const RefreshButton = ({label, run}: { label: string; run: () => Promise<void> }
     );
 };
 
-/** 이만큼 쉬었다 굴리면 새 휠 동작으로 본다 — 관성 스크롤은 이벤트가 이보다 촘촘하게 이어진다 */
+/** 휠 이벤트 사이가 이보다 벌어지면 새 동작으로 본다(ms). 관성 스크롤은 이보다 촘촘하게 이어진다 */
 const WHEEL_GESTURE_GAP = 250;
 
-/** 스크롤 칸이 그 방향(1 아래, -1 위)으로 더 굴러가는지 */
+/** 스크롤 칸이 그 방향(1 아래, -1 위)으로 더 굴러가는지. 아래쪽은 배율에 따른 소수점 오차로 2px 여유를 둔다 */
 const canScroll = (el: Element, dir: number): boolean => (dir > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 2 : el.scrollTop > 0);
 
-/** 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내 (v5와 같은 모양) */
+/** 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내 (v5와 같은 모양). 목록은 번호가 큰 글이 위라 위로 넘기면 다음 글이다 */
 const SkipHint = ({dir}: { dir: number }) => (
     <div className="refresher-skip-hint" data-side={dir < 0 ? "top" : "bottom"}>
-        <p>한번 더 스크롤 하면 {dir < 0 ? "이전" : "다음"} 게시글을 봅니다.</p>
+        <p>한 번 더 스크롤하면 {dir < 0 ? "다음" : "이전"} 게시글로 넘어갑니다.</p>
     </div>
 );
-
-const CommentList = () => {
-    const comments = usePreviewStore((s) => s.comments)!;
-    const collapsed = usePreviewStore((s) => s.collapsed);
-    const revealed = useUiStore((s) => s.blockView?.revealed === true);
-
-    // 숨김 차단·접힌 같은 댓글은 '가린 내용 보기' 동안만 흐리게 보인다 (블러 차단은 overlay.scss가 흐린다) — 트리 선과 답글 수도 보이는 것만 센다
-    const shown = new Set(revealed ? comments : comments.filter((comment) => comment.blocked !== "hide" && comment.duplicates !== 0));
-    const parents = comments.filter((comment) => comment.depth === 0);
-    // 답글은 쓰레드 첫 댓글 번호(c_no)로 한 번에 묶는다 — 부모마다 전체를 훑으면 O(n²)
-    const repliesOf = Map.groupBy(comments.filter((comment) => comment.depth === 1 && shown.has(comment)), (comment) => comment.c_no);
-    // 문서 전체를 훑는다 — 댓글마다 재지 않고 한 번. 모듈 전역에 두면 문서를 다 읽기 전에 잰 false가 굳는다
-    const isAdmin = isGalleryManager();
-
-    return (
-        <Box py="1">
-            {parents.map((parent) => {
-                const replies = repliesOf.get(parent.no) ?? [];
-
-                // 부모를 숨겼으면 답글은 들여쓰지 않고 그 자리에 — 이어 줄 선이 없다
-                if (!shown.has(parent)) {
-                    return (
-                        <Fragment key={parent.no}>
-                            {replies.map((child) => <Comment key={child.no} comment={child} depth={0} replyCount={0} isAdmin={isAdmin}/>)}
-                        </Fragment>
-                    );
-                }
-
-                const isCollapsed = collapsed.has(parent.no);
-
-                return (
-                    <Fragment key={parent.no}>
-                        <Comment comment={parent} depth={0} replyCount={replies.length} threadOpen={!isCollapsed && replies.length > 0} isAdmin={isAdmin}/>
-                        {!isCollapsed && replies.map((child, index) => (
-                            <Comment key={child.no} comment={child} depth={1} replyCount={0} lastReply={index === replies.length - 1} isAdmin={isAdmin}/>
-                        ))}
-                    </Fragment>
-                );
-            })}
-        </Box>
-    );
-};
 
 export const Frame = () => {
     const visible = usePreviewStore((s) => s.visible);
@@ -302,6 +78,7 @@ export const Frame = () => {
     const post = usePreviewStore((s) => s.post);
     const contents = post?.contents;
     const error = usePreviewStore((s) => s.error);
+    const archived = usePreviewStore((s) => s.archived);
     const comments = usePreviewStore((s) => s.comments);
     const allowReply = usePreviewStore((s) => s.allowReply);
     const commentsOnly = usePreviewStore((s) => s.commentsOnly);
@@ -311,38 +88,61 @@ export const Frame = () => {
     const scrollToSkip = usePreviewStore((s) => s.scrollToSkip);
     const blockView = useUiStore((s) => s.blockView);
     const postKey = usePreviewStore((s) => (s.preData ? `${s.preData.gallery}/${s.preData.id}` : ""));
+    const listTitle = usePreviewStore((s) => s.preData?.title);
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
     const contentsBox = useRef<HTMLDivElement>(null);
-    // 본문 차단: 숨김이면 '가린 내용 보기' 동안만 원문을 흐리게 보인다 (overlay.scss의 data-blocked)
+    // 숨김 차단된 본문은 안내 문구로 바꾸고, '가린 내용 보기' 동안만 원문을 흐리게 보인다 (overlay.scss의 data-blocked).
     const hideText = post?.textBlocked === "hide" && !blockView?.revealed;
 
-    // 본문 칸은 댓글만 보기·오류·닫힘일 때 빠졌다가 다시 붙고, 글마다 새로 마운트된다 — 그때도 다시 맞춘다
-    // (같은 글을 캐시로 다시 열면 나머지 값이 모두 같아 visible이 없으면 다시 돌지 않는다). 가린 본문을 드러내면 동영상이 새로 들어온다
+    // 본문 칸은 댓글만 보기·오류·닫힘일 때 빠졌다가 다시 붙고, 글마다 새로 마운트되므로 그때마다 동영상 크기를 다시 맞춘다.
+    // 같은 글을 캐시로 다시 열면 visible 말고는 값이 모두 같다. hideText가 풀리면 동영상이 새로 들어온다.
     useEffect(() => (contentsBox.current ? fitMovies(contentsBox.current) : undefined), [visible, contents, commentsOnly, error, postKey, hideText]);
+    // 깨진 움짤·디시콘 mp4는 디시처럼 gif로 바꾼다. 본문 칸이 새로 그려지는 때가 위와 같다
+    useEffect(() => (contentsBox.current ? watchGifVideos(contentsBox.current) : undefined), [visible, contents, commentsOnly, error, postKey, hideText]);
 
-    // 열거나 글을 바꾸면 스크롤 칸에 포커스 — 방향키·스페이스로 바로 스크롤된다
+    // 창은 비모달이라(아래 Dialog.Root) Radix가 포커스를 가두지 않는다. 연 동안 뒤 페이지를 inert로 막아 Tab·스크린 리더가 가려진 목록으로 나가지 않게 한다.
+    // 오버레이(refresher-root)는 남긴다. 버블·토스트·관리 패널이 거기 있다. body에 직접 붙인 확장 UI(스텔스 버튼 등)도 data-refresher-ui로 남긴다.
+    // 키보드로 열었으면(연 요소에 포커스 링이 보이면) 닫을 때 그 요소(목록의 제목 링크 등)로 포커스를 돌려준다. 글을 넘길 때는 visible이 그대로라 처음 연 요소가 남는다.
+    // 마우스로 연 창까지 돌려주면 Esc로 닫을 때 제목 링크에 포커스 링이 생겨 새로고침 모듈이 자동 갱신을 멈춘다.
+    // 연 요소는 스크롤 칸에 포커스를 주는 아래 효과보다 먼저 읽어야 해서 이 효과를 앞에 둔다.
+    useEffect(() => {
+        if (!visible) return;
+
+        const focused = focusedElement();
+        const opener = focused?.matches(":focus-visible") ? focused : null;
+        const html = document.documentElement;
+        const previous = html.style.overflow;
+        html.style.overflow = "hidden";
+        const blocked = document.body.querySelectorAll<HTMLElement>(":scope > :not(refresher-root, [data-refresher-ui], [inert])");
+        for (const element of blocked) element.inert = true;
+
+        return () => {
+            html.style.overflow = previous;
+            for (const element of blocked) element.inert = false;
+            opener?.focus({preventScroll: true});
+        };
+    }, [visible]);
+
+    // 열거나 글을 바꾸면 스크롤 칸에 포커스를 줘 방향키·스페이스로 바로 스크롤되게 한다.
     useEffect(() => {
         if (visible) scroller.current?.focus({preventScroll: true});
     }, [visible, postKey]);
 
-    useEffect(() => {
-        if (!visible) return;
+    // 글을 바꾸면 맨 위에서 보인다. 캐시 hit이면 새 글이 한 번에 그려져 앞 글의 스크롤 위치가 남는다.
+    // 닫을 때도 오르는 signalId가 아니라 글 주소로 건다. 페이드아웃 중에 맨 위로 튀면 안 된다
+    useLayoutEffect(() => {
+        if (scroller.current) scroller.current.scrollTop = 0;
+    }, [postKey]);
 
-        const html = document.documentElement;
-        const previous = html.style.overflow;
-        html.style.overflow = "hidden";
-
-        return () => {
-            html.style.overflow = previous;
-        };
-    }, [visible]);
+    // 창 안에서 글자를 끌어 고르다 바깥에서 놓거나 그 반대여도 click은 둘을 감싼 스크롤 칸에 떨어진다. 바깥에서 누르고 뗀 것만 닫는다
+    const pressedOutside = useRef(false);
 
     useEffect(() => {
         if (!visible) return;
 
         const onKey = (ev: KeyboardEvent): void => {
-            // Ctrl+PageUp/Down(탭 전환) 같은 조합키는 브라우저 몫
+            // Ctrl+PageUp/Down(탭 전환) 같은 조합키는 브라우저에 맡긴다.
             if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.shiftKey || isTyping(ev)) return;
 
             if (ev.code === "PageUp") {
@@ -358,15 +158,15 @@ export const Frame = () => {
         return () => window.removeEventListener("keydown", onKey);
     }, [visible]);
 
-    // 스크롤 끝에서 한 번 더 굴리면 이전/다음 글. 끝에 닿은 그 동작으로는 넘기지 않는다 — 트랙패드 관성에 글이 연달아 넘어간다.
-    // 끝에 닿으면 v5처럼 안내를 띄운다 — 그 글에서만 (넘기거나 닫았다 열면 사라진다)
-    const wheel = useRef({last: 0, armed: 0, key: ""});
+    // 스크롤 끝에서 새로 한 번 더 굴리면 이전/다음 글로 넘어간다. 끝에 닿은 그 동작으로 넘기면 트랙패드 관성에 글이 연달아 넘어간다.
+    // 끝에 닿으면 v5처럼 안내를 띄우고, 넘기거나 닫았다 열면 지운다 (hint.key가 지금 글일 때만 보인다).
+    const wheel = useRef({last: 0, armed: 0, key: "", settling: false});
     const [hint, setHint] = useState({dir: 0, key: ""});
     const hintDir = visible && !fading && hint.key === postKey ? hint.dir : 0;
 
     const skipOnWheel = (dir: number, timeStamp: number, atEdge: boolean): void => {
         const state = wheel.current;
-        // 앞 글에서 끝에 닿아 둔 것은 버린다
+        // 앞 글에서 끝에 닿아 둔 상태는 버린다.
         if (state.key !== postKey) {
             state.key = postKey;
             state.armed = 0;
@@ -374,9 +174,18 @@ export const Frame = () => {
         const newGesture = timeStamp - state.last > WHEEL_GESTURE_GAP;
         state.last = timeStamp;
 
+        // 넘기게 한 동작(관성 포함)이 새 글에서 이어지면 무시한다. 새 글은 맨 위에서 열려, 위로 넘기면 곧바로 끝에 닿은 것으로 잡힌다.
+        if (state.settling) {
+            if (!newGesture) return;
+            state.settling = false;
+        }
+
         let armed = 0;
-        if (atEdge && newGesture && state.armed === dir) goToAdjacent(dir);
-        // 끝에 닿은 방향을 기억해 두고 다음 동작을 기다린다
+        if (atEdge && newGesture && state.armed === dir) {
+            state.settling = true;
+            goToAdjacent(dir);
+        }
+        // 끝에 닿은 방향을 기억해 두고 다음 동작을 기다린다.
         else if (atEdge) armed = dir;
 
         if (armed !== state.armed) setHint({dir: armed, key: postKey});
@@ -387,12 +196,12 @@ export const Frame = () => {
         if (!scrollToSkip || ev.deltaY === 0 || ev.ctrlKey || ev.shiftKey) return;
 
         const box = ev.currentTarget;
-        const target = ev.target as Element;
-        // 포털로 뜬 창(디시콘 등)의 휠도 React 트리를 타고 여기로 온다 — 스크롤 칸 안에서 난 것만 본다
-        if (!box.contains(target)) return;
+        const target = ev.target;
+        // 포털로 뜬 창(디시콘 등)의 휠도 React 트리를 타고 여기로 오므로, 스크롤 칸 DOM 안에서 난 것만 본다.
+        if (!(target instanceof Element) || !box.contains(target)) return;
 
         const dir = ev.deltaY > 0 ? 1 : -1;
-        // 안쪽 스크롤 칸(댓글 입력칸 등)이 아직 굴러가면 그쪽 스크롤이다
+        // 안쪽 스크롤 칸(댓글 입력칸 등)이 아직 굴러가면 그쪽 스크롤이라 끝으로 치지 않는다.
         let inner = false;
         for (let el: Element | null = target; el && el !== box; el = el.parentElement) {
             if (el.scrollHeight > el.clientHeight && /auto|scroll/.test(getComputedStyle(el).overflowY) && canScroll(el, dir)) {
@@ -403,36 +212,12 @@ export const Frame = () => {
         skipOnWheel(dir, ev.timeStamp, !inner && !canScroll(box, dir));
     };
 
-    // 창 양옆(배경)에서 굴려도 창이 스크롤된다 — 스크롤 칸이 창 안에만 있어 배경엔 굴릴 것이 없다.
-    // 마우스 휠 한 칸(100px 안팎)은 브라우저처럼 부드럽게 — 잇달아 굴려도 남은 거리를 잃지 않게 목표 위치에 이어 쌓는다. 트랙패드의 잘게 나뉜 값은 바로 옮긴다
-    const aim = useRef<{ top: number; key: string } | null>(null);
-    const onBackdropWheel = (ev: WheelEvent<HTMLDivElement>): void => {
-        const box = scroller.current;
-        if (!box || ev.deltaY === 0 || ev.ctrlKey || ev.shiftKey) return;
-
-        const dir = ev.deltaY > 0 ? 1 : -1;
-        const atEdge = !canScroll(box, dir);
-        const delta = ev.deltaY * (ev.deltaMode === 1 ? 40 : ev.deltaMode === 2 ? box.clientHeight : 1);
-
-        if (Math.abs(delta) >= 50) {
-            const from = aim.current?.key === postKey ? aim.current.top : box.scrollTop;
-            const top = Math.min(Math.max(from + delta, 0), box.scrollHeight - box.clientHeight);
-            aim.current = {top, key: postKey};
-            box.scrollTo({top, behavior: "smooth"});
-        } else {
-            aim.current = null;
-            box.scrollTop += delta;
-        }
-
-        if (scrollToSkip) skipOnWheel(dir, ev.timeStamp, atEdge);
-    };
-
     if (!visible && !fading) return null;
 
     const busy = !error && !post;
 
     return (
-        // Themes Dialog는 항상 modal이라 프리미티브를 쓴다 (스크롤 잠금·PageUp/Down 이동을 직접 처리)
+        // Themes Dialog는 항상 modal이라 프리미티브를 쓴다. 스크롤 잠금과 PageUp/Down 이동은 직접 처리한다.
         <Dialog.Root
             open
             modal={false}
@@ -441,42 +226,48 @@ export const Frame = () => {
             }}
         >
             <Dialog.Portal container={overlay.portal}>
-                {/* 프리미티브 포털은 Theme 밖(#portal)에 그려져 토큰이 없다 — Themes 컴포넌트처럼 Theme로 다시 감싼다 */}
+                {/* 프리미티브 포털은 Theme 밖(#portal)에 그려져 테마 토큰이 없으므로 Theme로 다시 감싼다 */}
                 <Theme>
-                <div
-                    className="refresher-frame-outer"
+                <div className="refresher-frame-outer" data-fading={fading || undefined} data-blur={backgroundBlur || undefined}/>
+                {/* v5처럼 화면 전체가 스크롤 칸이고 창은 그 안에서 내용만큼 길어진다. 창 안이든 양옆이든 같은 브라우저 기본 스크롤이다 */}
+                <Dialog.Content
+                    className="refresher-frame-scroll"
+                    ref={scroller}
                     data-fading={fading || undefined}
-                    data-blur={backgroundBlur || undefined}
-                    // pointerdown에서 닫으면 배경이 곧바로 사라져 이어지는 click/contextmenu가 아래 게시글에 떨어진다
-                    // (우클릭으로 닫으면 다른 글 미리보기가 열림) — 배경이 받는 click/contextmenu에서 닫는다
-                    onClick={() => usePreviewStore.getState().requestClose()}
-                    onWheel={onBackdropWheel}
+                    aria-busy={busy}
+                    // 비모달이지만 연 동안 뒤 페이지를 inert로 막으므로 보조 기술에는 모달로 알린다
+                    aria-modal
+                    onOpenAutoFocus={(ev) => ev.preventDefault()}
+                    // 바깥 클릭 닫기는 아래 click이 맡는다. 위에 뜬 팝업·버블을 눌러도 닫히지 않게 막는다.
+                    onInteractOutside={(ev) => ev.preventDefault()}
+                    onWheel={onWheel}
+                    // 창 바깥을 누르면 닫는다. pointerdown에서 닫으면 칸이 곧바로 사라져 이어지는 click/contextmenu가 아래 목록에 떨어진다
+                    // (우클릭으로 닫으면 다른 글 미리보기가 열린다). 그래서 click/contextmenu에서 닫는다.
+                    onPointerDown={(ev) => (pressedOutside.current = ev.target === ev.currentTarget)}
+                    onPointerUp={(ev) => (pressedOutside.current &&= ev.target === ev.currentTarget)}
+                    onClick={(ev) => {
+                        if (pressedOutside.current && ev.target === ev.currentTarget) usePreviewStore.getState().requestClose();
+                    }}
                     onContextMenu={(ev) => {
+                        if (ev.target !== ev.currentTarget) return;
                         ev.preventDefault();
                         usePreviewStore.getState().requestClose();
                     }}
-                />
-                <Dialog.Content
+                >
+                <div
                     className="refresher-frame"
-                    data-fading={fading || undefined}
                     data-admin={adminVisible || undefined}
                     data-blur-reveal={blockView?.blurReveal || undefined}
                     data-block-revealed={blockView?.revealed || undefined}
-                    // 너비는 overlay.scss가 화면 폭·관리 패널에 맞춰 줄인다
+                    // 설정 너비가 기준이고, overlay.scss가 화면 폭·관리 패널에 맞춰 줄인다.
                     style={{"--refresher-frame-width": `${frameWidth}px`} as CSSProperties}
-                    aria-busy={busy}
-                    onOpenAutoFocus={(ev) => ev.preventDefault()}
-                    // 바깥 클릭 닫기는 배경(frame-outer)이 담당. 위에 뜬 팝업/버블 클릭으로 닫히지 않게 막는다
-                    onInteractOutside={(ev) => ev.preventDefault()}
                 >
-                    {/* 스크롤은 안쪽에서 — 바깥이 스크롤되면 스크롤바가 오른쪽 둥근 모서리를 덮는다 */}
-                    {/* 글마다 새로 마운트 — 캐시 hit이면 한 번에 렌더돼 스크롤 위치와 쓰던 댓글이 다음 글로 넘어간다.
-                        signalId는 닫을 때도 올라 페이드아웃 중에 맨 위로 튀므로 글 주소로 건다 */}
-                    <div className="refresher-frame-scroll" ref={scroller} key={postKey} tabIndex={-1} onWheel={onWheel}
-                         onScrollEnd={() => (aim.current = null)}>
+                    {/* 글마다 새로 마운트한다. 안 그러면 캐시 hit일 때 한 번에 렌더돼 쓰던 댓글이 다음 글로 넘어간다 */}
+                    <Fragment key={postKey}>
                     <Box px="6" pt="5" pb="3">
                         <Dialog.Title asChild>
-                            <Heading as="h2" size="6">{post ? postTitle(post) : ""}</Heading>
+                            {/* 본문을 못 받았으면(삭제된 글 등) 목록의 제목이라도 보인다 */}
+                            <Heading as="h2" size="6">{post ? postTitle(post) : listTitle ?? ""}</Heading>
                         </Dialog.Title>
 
                         {post && (
@@ -499,14 +290,21 @@ export const Frame = () => {
 
                     <Separator size="4"/>
 
-                    <Box px="6" pt="5">
-                        {/* 오류가 먼저 — 댓글만 보기에서도 본문을 못 받았으면 알린다 */}
+                    <Box px="6" pt="5" className="refresher-frame-body">
+                        {/* 보존본은 삭제되었거나 바뀐 글일 수 있으니 지금 글이 아니라고 알린다 */}
+                        {archived && (
+                            <Callout.Root color="orange" size="1" mb="4">
+                                <Callout.Icon><Archive size={14}/></Callout.Icon>
+                                <Callout.Text>불러오지 못해 저장해 둔 내용을 보여 줍니다.</Callout.Text>
+                            </Callout.Root>
+                        )}
+                        {/* 오류를 먼저 본다. 댓글만 보기여도 본문을 못 받았으면 알린다 */}
                         {error ? (
                             <ErrorBlock error={error}/>
                         ) : commentsOnly ? (
                             <Button variant="soft" color="gray" style={{width: "100%"}} mb="5"
                                     onClick={() => usePreviewStore.setState({commentsOnly: false})}>
-                                댓글만 표시 중입니다. 눌러서 원문 보기
+                                댓글만 표시 중입니다. 눌러서 본문 보기
                             </Button>
                         ) : (
                             <>
@@ -515,13 +313,22 @@ export const Frame = () => {
                                     className={"refresher-html refresher-preview-contents" + (imageBlocked ? " refresher-preview-block-media" : "")}
                                     data-blocked={hideText ? undefined : post?.textBlocked}
                                     onClick={(ev) => {
+                                        // 이미지를 누르면 디시처럼 원본 보기를 새 탭으로 연다. 주소는 parser.ts가 옮겨 둔 imgPop 주소이고 디시 주소만 연다
+                                        const image = (ev.target as HTMLElement).closest<HTMLImageElement>("img[data-pop]");
+                                        if (image && !image.closest("a")) {
+                                            const url = URL.parse(image.dataset.pop ?? "");
+                                            if (url?.protocol === "https:" && url.hostname.endsWith(".dcinside.com")) window.open(url.href, "_blank", "noopener");
+                                            return;
+                                        }
+
                                         const button = (ev.target as HTMLElement).closest(".btn_img_block");
                                         if (!button) return;
 
                                         ev.preventDefault();
                                         usePreviewStore.setState({imageBlocked: false});
-                                        // 관리자가 가린 이미지는 디시처럼 버튼 옆 것만 드러낸다 — 원본 주소도 이제 넣는다 (parser.ts)
-                                        for (const media of button.parentElement?.querySelectorAll<HTMLElement>(":scope > [data-block]") ?? []) {
+                                        // 관리자가 가린 이미지는 디시처럼 누른 버튼 옆 것만 드러낸다.
+                                        // parser.ts는 가린 이미지의 원본 주소(data-original)를 넣지 않으므로 여기서 넣는다.
+                                        for (const media of button.parentElement?.querySelectorAll<HTMLElement>(":scope > [data-block], :scope > .refresher-imgnum > [data-block]") ?? []) {
                                             if (media instanceof HTMLImageElement && media.dataset.original) media.src = media.dataset.original;
                                             media.removeAttribute("data-block");
                                         }
@@ -560,28 +367,32 @@ export const Frame = () => {
                             <Text size="2" color="gray">멤버만 댓글을 쓸 수 있습니다.</Text>
                         </Box>
                     ))}
-                    </div>
+                    </Fragment>
 
-                    <Flex direction="column" gap="2" className="refresher-frame-jump">
-                        <Tooltip content="맨 위로" side="left" container={overlay.portal}>
-                            <IconButton variant="soft" color="gray" radius="full" aria-label="맨 위로"
-                                        onClick={() => scroller.current?.scrollTo({top: 0, behavior: "smooth"})}>
-                                <ArrowUp size={16}/>
-                            </IconButton>
-                        </Tooltip>
-                        {comments !== undefined && (
-                            <Tooltip content="댓글로" side="left" container={overlay.portal}>
-                                <IconButton variant="soft" color="gray" radius="full" aria-label="댓글로"
-                                            onClick={() => commentsSection.current?.scrollIntoView({behavior: "smooth", block: "start"})}>
-                                    <MessageSquare size={16}/>
+                    <div className="refresher-frame-jump">
+                        <Flex direction="column" gap="2">
+                            <Tooltip content="맨 위로" side="left" container={overlay.portal}>
+                                <IconButton variant="soft" color="gray" radius="full" aria-label="맨 위로"
+                                            onClick={() => scroller.current?.scrollTo({top: 0, behavior: smoothScroll()})}>
+                                    <ArrowUp size={16}/>
                                 </IconButton>
                             </Tooltip>
-                        )}
-                    </Flex>
+                            {comments !== undefined && (
+                                <Tooltip content="댓글로" side="left" container={overlay.portal}>
+                                    <IconButton variant="soft" color="gray" radius="full" aria-label="댓글로"
+                                                onClick={() => commentsSection.current?.scrollIntoView({behavior: smoothScroll(), block: "start"})}>
+                                        <MessageSquare size={16}/>
+                                    </IconButton>
+                                </Tooltip>
+                            )}
+                        </Flex>
+                    </div>
+                </div>
+                {/* 화면 왼쪽에 fixed로 붙인다. 스크롤 칸에 transform이 없어 화면 기준 그대로이고,
+                    aria-modal 창 안에 두어야 스크린 리더가 창 밖 내용으로 보고 건너뛰지 않는다 */}
+                {visible && adminVisible && <AdminPanel/>}
                 </Dialog.Content>
                 {hintDir !== 0 && <SkipHint dir={hintDir}/>}
-                {/* 창 옆에 fixed — Content 안에 두면 transform 때문에 창 기준으로 붙는다 */}
-                {visible && adminVisible && <AdminPanel/>}
                 </Theme>
             </Dialog.Portal>
         </Dialog.Root>

@@ -1,5 +1,6 @@
 /* ===== 오버레이 (shadow root 전용) — 컴포넌트 스타일은 Radix Themes, 여기엔 배치와 디시 HTML만 ===== */
 
+@use "mixins";
 @use "radix";
 
 :host {
@@ -55,6 +56,10 @@
     z-index: 1;
     max-width: 360px;
     animation: refresher-rise 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
+    }
 }
 
 /* ===== 우클릭 버블 앵커 ===== */
@@ -84,27 +89,22 @@
     }
 }
 
-/* 너비는 설정(previewWidth)이 --refresher-frame-width로 넘긴다 — 화면이 좁으면 96vw까지 */
-.refresher-frame {
+/* 화면 전체를 덮는 스크롤 칸 (v5의 .refresher-group). 창이 이 안에서 내용만큼 길어져, 창 안이든 양옆이든 같은 브라우저 기본 스크롤이다 */
+.refresher-frame-scroll {
     position: fixed;
-    top: 50%;
-    left: 50%;
+    inset: 0;
     display: flex;
-    flex-direction: column;
-    width: min(var(--refresher-frame-width, 1200px), 96vw);
-    max-height: 94vh;
-    overflow: hidden;
-    border-radius: var(--radius-5);
-    background: var(--color-panel-solid);
-    box-shadow: var(--shadow-6);
-    transform: translate(-50%, -50%);
-    animation: refresher-fade-in 0.15s cubic-bezier(0.19, 1, 0.22, 1);
+    // 짧은 글은 창이 가운데 오고(margin: auto), 긴 글은 위아래에 이만큼 띄운다
+    padding: 5vh 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--gray-a8) transparent;
+    // 스크롤바 폭을 양쪽에 비워 둔다. 안 그러면 긴 글에서만 창이 왼쪽으로 밀려 짧은 글과 오갈 때 옆으로 흔들린다
+    scrollbar-gutter: stable both-edges;
+    // 키보드 스크롤용 포커스(tabIndex -1) — 테두리는 그리지 않는다
     outline: none;
-
-    // 왼쪽 관리 창(.refresher-admin-panel, 150px)과 겹치지 않게 양옆에 그 폭만큼 비운다 (너무 좁은 창에선 480px은 유지)
-    &[data-admin] {
-        width: min(var(--refresher-frame-width, 1200px), 96vw, max(480px, calc(100vw - 2 * (150px + var(--space-3)))));
-    }
+    animation: refresher-fade-in 0.15s cubic-bezier(0.19, 1, 0.22, 1);
 
     &[data-fading] {
         pointer-events: none;
@@ -112,22 +112,42 @@
     }
 }
 
-.refresher-frame-scroll {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-    scrollbar-color: var(--gray-a8) transparent;
-    // 키보드 스크롤용 포커스(tabIndex -1) — 테두리는 그리지 않는다
-    outline: none;
+/* 너비는 설정(previewWidth)이 --refresher-frame-width로 넘긴다. 작은 창에서도 둘레에 배경이 보이게 화면의 90%까지만 */
+.refresher-frame {
+    display: flex;
+    flex-direction: column;
+    width: min(var(--refresher-frame-width, 1200px), 90vw);
+    // 짧은 글에서도 납작해 보이지 않게 최소 높이를 둔다 (작은 창에선 화면을 넘지 않게)
+    min-height: min(600px, 90vh);
+    margin: auto;
+    // 둥근 모서리 밖으로 댓글 배경이 나가지 않게 자른다. hidden이면 스크롤 칸이 되어 맨 위로 버튼(sticky)이 화면에 붙지 않는다
+    overflow: clip;
+    border-radius: var(--radius-5);
+    background: var(--color-panel-solid);
+    box-shadow: var(--shadow-6);
+
+    // 최소 높이로 남는 공간은 본문이 채운다. 비워 두면 댓글 입력칸 아래에 빈 칸이 생긴다
+    > .refresher-frame-body {
+        flex-grow: 1;
+    }
+
+    // 왼쪽 관리 창(.refresher-admin-panel, 150px)과 겹치지 않게 양옆에 그 폭만큼 비운다 (너무 좁은 창에선 480px은 유지)
+    &[data-admin] {
+        width: min(var(--refresher-frame-width, 1200px), 90vw, max(480px, calc(100vw - 2 * (150px + var(--space-3)))));
+    }
 }
 
-/* 맨 위로 / 댓글로 */
+/* 맨 위로 / 댓글로 — 창 오른쪽 아래. 높이 0인 칸을 화면 아래 끝에 sticky로 붙여 긴 글을 읽는 동안에도 보이게 한다 */
 .refresher-frame-jump {
-    position: absolute;
-    right: var(--space-4);
-    bottom: var(--space-4);
+    position: sticky;
+    bottom: 0;
+    height: 0;
+
+    > * {
+        position: absolute;
+        right: var(--space-4);
+        bottom: var(--space-4);
+    }
 }
 
 /* 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내 (v5와 같은 모양) — 창 위에 겹치되 누르거나 굴리는 것은 막지 않는다 */
@@ -144,6 +164,11 @@
     background: linear-gradient(to top, rgba(12, 23, 53, 0.7), rgba(32, 42, 72, 0.3), rgba(0, 0, 0, 0));
     pointer-events: none;
     animation: refresher-skip-hint-bottom 450ms cubic-bezier(0.19, 1, 0.22, 1);
+
+    // 위쪽 안내는 animation-name만 바꾸므로 길이를 0으로 두면 둘 다 멈춘다
+    @media (prefers-reduced-motion: reduce) {
+        animation-duration: 0s;
+    }
 
     p {
         position: relative;
@@ -180,17 +205,44 @@
     }
 }
 
+/* 글자처럼 보이는 버튼 (Comment.tsx의 작성자 닉네임·작성 시각). :where로 명시도를 0으로 두어 Radix Text의 크기·굵기·색이 이긴다 */
+:where(.refresher-text-button) {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    cursor: pointer;
+}
+
+.refresher-text-button:focus-visible {
+    outline: 2px solid var(--focus-8);
+    outline-offset: 2px;
+    border-radius: var(--radius-1);
+}
+
+/* 답글 접기 버튼의 화살표 (Comment.tsx) */
+.refresher-chevron {
+    transition: transform 0.15s;
+
+    @media (prefers-reduced-motion: reduce) {
+        transition: none;
+    }
+}
+
 /* 글쓴이가 단 댓글 — v5처럼 작성자 칸을 파랗게 칠한다 (Comment.tsx UserCard) */
 .refresher-user[data-op] {
     padding: 1px 6px;
     border-radius: var(--radius-2);
     background: var(--blue-a4);
+    // 닉네임만 칩 색으로. 배지(아이디·IP·글댓비·갱차·메모)는 설정한 색 그대로 둔다
     color: var(--blue-11);
+}
 
-    // 배지 글자(아이디·IP·글댓비 — 배지 색 설정이 인라인으로 칠한다)도 칸 글자색으로. 사람마다 고른 메모 색만 그대로
-    .rt-Text:not([data-memo]) {
-        color: inherit !important;
-    }
+/* 누르면 원본 보기가 열리는 본문 이미지 (Frame.tsx) */
+.refresher-preview-contents img[data-pop] {
+    cursor: pointer;
 }
 
 /* ===== 디시 본문/댓글 HTML (페이지 CSS가 안 닿으므로 최소한만) ===== */
@@ -203,8 +255,19 @@
     iframe,
     embed {
         max-width: 100%;
-        height: auto;
         border-radius: var(--radius-3);
+    }
+
+    // iframe·embed는 원래 크기가 없어 height: auto면 150px로 줄어든다. height 속성(유튜브 315 등)을 그대로 쓴다
+    img,
+    video {
+        height: auto;
+    }
+
+    // 유튜브는 16:9로 맞춘다. 높이 속성(315)만 쓰면 너비가 100%이거나 창이 좁을 때 납작하거나 길쭉해진다
+    iframe[src*="youtube"] {
+        aspect-ratio: 16 / 9;
+        height: auto;
     }
 
     a {
@@ -220,26 +283,75 @@
     table {
         max-width: 100%;
     }
+
+    // 디시는 본문 줄마다 <p>다. 브라우저 기본 문단 여백(1em)이 남으면 줄마다 빈 줄이 낀 것처럼 보인다 (미니 미리보기도 같다)
+    p {
+        margin: 0;
+    }
 }
 
 .refresher-preview-contents {
     font-size: var(--refresher-preview-font-size, 15px);
-    line-height: 1.7;
+    // 디시 본문(.writing_view_box)과 같다
+    line-height: 1.5;
+
+    // 본문 디시콘은 디시 common.css처럼 높이만 맞춘다 (보통 100px, 대왕콘 150px)
+    .written_dccon {
+        height: 100px;
+        vertical-align: top;
+
+        &.bigdccon {
+            height: 150px;
+        }
+    }
 }
 
 /* 스텔스 모드(페이지의 html.refresherStealth)가 넘겨준 변수로 미리보기 미디어도 숨긴다 — 댓글 디시콘은 아래에서 따로 가린다 */
-.refresher-html:not([data-dccon]) :is(img, video, embed, iframe) {
+.refresher-html:not([data-dccon]) :is(img, video, embed, iframe, image) {
     display: var(--refresher-stealth-media, inline);
 }
 
-// 위 스텔스 규칙(0,2,1)과 명시도를 맞춰야 뒤에 선언된 이쪽이 이긴다 — :is는 가장 높은 인자(img:not(...))를 따른다
-.refresher-preview-block-media :is(embed, img:not(.written_dccon), video) {
+// 위 스텔스 규칙(0,2,1)과 명시도를 맞춰야 뒤에 선언된 이쪽이 이긴다 — :is는 가장 높은 인자(img:not(...))를 따른다.
+// 유튜브 <embed>는 정화하며 iframe으로 바뀐다 (sanitize.ts). 디시콘은 mp4든 gif든(gifVideos.ts가 바꾼 것) 이미지로 치지 않는다
+.refresher-preview-block-media :is(iframe, image, img:not(.written_dccon), video:not(.written_dccon)) {
     display: none;
 }
 
 // 관리자가 가린 이미지 — 디시는 인라인 style로 숨기는데 정화하며 지워진다. '차단 이미지 보기'를 누르면 속성을 떼어 보인다 (Frame.tsx)
 .refresher-html :is(img, video)[data-block] {
     display: none;
+}
+
+// 첨부 이미지 순서 번호 (parser.ts의 numberImages). 오른쪽 위에 띄운다. 가려진 미디어(관리자 가림·이미지 차단·스텔스)에는 띄우지 않는다
+.refresher-imgnum {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    vertical-align: top;
+
+    &::before {
+        content: attr(data-num);
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        z-index: 1;
+        display: var(--refresher-stealth-media, block);
+        min-width: 22px;
+        padding: 1px 6px;
+        border-radius: 4px;
+        background: rgb(0 0 0 / 60%);
+        color: #fff;
+        font-size: 12px;
+        font-weight: bold;
+        line-height: 18px;
+        text-align: center;
+        pointer-events: none;
+    }
+
+    &:not(:has(> :is(img, video):not([data-block])))::before,
+    .refresher-preview-block-media &::before {
+        display: none;
+    }
 }
 
 .refresher-comment-html {
@@ -251,29 +363,17 @@
         width: 100px;
         height: 100px;
         border-radius: 0;
+
+        // 대왕콘 (디시 common.css와 같은 크기)
+        &.bigdccon {
+            width: 150px;
+            height: 150px;
+        }
     }
 
     /* 스텔스 모드: 가려 두고 마우스를 올리면 보인다 (변수는 stealth.scss가 페이지에서 넘긴다) */
     &[data-dccon] {
-        position: relative;
-        width: fit-content;
-    }
-
-    &[data-dccon]:not(:hover) {
-        :is(img, video, .coment_dccon_txt) {
-            visibility: var(--refresher-stealth-dccon-visibility, visible);
-        }
-
-        &::before {
-            content: var(--refresher-stealth-dccon-label, none);
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--gray-a6);
-            font-weight: bold;
-        }
+        @include mixins.dccon-cover(var(--gray-a6));
     }
 
     /* 글자콘 — 디시 common.css를 옮김. 모르는 색 클래스면 디시 기본값(남색 바탕·흰 글자) */
@@ -306,36 +406,17 @@
         box-sizing: border-box;
     }
 
-    .cbg_3b4890 {
-        background-color: #3b4890;
+    // 색 목록은 request.ts의 TXTCON_BACKGROUNDS·TXTCON_COLORS와 같다
+    @each $color in ("3b4890", "b4b4e1", "f5e1f0", "d2f0e6", "ffffff", "333333") {
+        .cbg_#{$color} {
+            background-color: #{"#" + $color};
+        }
     }
 
-    .cbg_b4b4e1 {
-        background-color: #b4b4e1;
-    }
-
-    .cbg_f5e1f0 {
-        background-color: #f5e1f0;
-    }
-
-    .cbg_d2f0e6 {
-        background-color: #d2f0e6;
-    }
-
-    .cbg_ffffff {
-        background-color: #ffffff;
-    }
-
-    .cbg_333333 {
-        background-color: #333333;
-    }
-
-    .ctxt_ffffff {
-        color: #ffffff;
-    }
-
-    .ctxt_333333 {
-        color: #333333;
+    @each $color in ("ffffff", "333333") {
+        .ctxt_#{$color} {
+            color: #{"#" + $color};
+        }
     }
 
     .cbg_ffffff .ctxt_ffffff {
@@ -349,7 +430,17 @@
 
 /* ===== 댓글 ===== */
 
+/* 답글 접기·펼치기 (Frame.tsx) */
+.refresher-replies {
+    @include mixins.collapsible;
+}
+
 .refresher-comment {
+    // 화면 밖 댓글은 레이아웃·스타일 계산을 건너뛴다 — 댓글 수백 개인 글을 열 때 레이아웃이 크게 준다.
+    // 트리 선(::before/::after)은 모두 칸 안에 그리므로 잘리지 않는다
+    content-visibility: auto;
+    contain-intrinsic-size: auto 72px;
+
     &:hover {
         background: var(--gray-a2);
     }
@@ -399,22 +490,20 @@
         }
     }
 
+    // 읽을 수 있게 본문용 회색(11)을 쓴다. 9는 대비가 3:1쯤이다
     &[data-deleted] .refresher-comment-html {
-        color: var(--gray-a9);
+        color: var(--gray-11);
     }
 }
 
 /* 차단 — 페이지와 같은 차단 모듈 설정 (Frame의 data-*). 블러 강도 변수는 <html>에서 shadow 안으로 이어받는다 */
 .refresher-frame {
     [data-blocked="blur"] {
-        filter: blur(var(--refresher-blur, 5px));
-        opacity: 0.5;
-        transition: filter 0.15s, opacity 0.15s;
+        @include mixins.blurred;
     }
 
-    &[data-blur-reveal] [data-blocked="blur"]:is(:hover, :has(:focus-visible)) {
-        filter: none;
-        opacity: 1;
+    &[data-blur-reveal] [data-blocked="blur"] {
+        @include mixins.blur-reveal;
     }
 
     // 이 페이지에서만 가린 내용 보기 — 숨겼던 것도 흐리게 보인다
@@ -433,10 +522,14 @@
     overflow: hidden;
 }
 
+// 카드가 포인터를 통과시켜 직접 굴릴 수는 없다. 제목 위에서 굴리면 Mini.tsx가 스크롤하고, 스크롤바는 더 있다는 표시다
 .refresher-mini-contents {
     flex: 1;
     min-height: 0;
-    overflow: hidden;
+    // 넓은 내용은 전처럼 옆을 자른다 (overflow-y만 auto면 가로 스크롤바가 생긴다)
+    overflow: hidden auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--gray-a8) transparent;
     font-size: var(--font-size-2);
 }
 

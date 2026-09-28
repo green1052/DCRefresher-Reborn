@@ -1,12 +1,14 @@
-import {ajax, http} from "@/core/http/client";
+import {ajax, formBody, http} from "@/core/http/client";
 import {galleryPath, galleryTypeName, isMiniGallery, urls} from "@/core/http/urls";
-import {csrfToken} from "@/utils/cookie";
+import {csrfBody} from "@/utils/cookie";
+import {isRecord} from "@/utils/record";
 
 import {parsePostInfo} from "./parser";
 import type {CommentListResponse, DcinsideComment, DcinsideDccon, GalleryPreData, PostInfo} from "./types";
 
-const commonBody = async (link: string): Promise<URLSearchParams> =>
-    new URLSearchParams({ci_t: await csrfToken(), _GALLTYPE_: galleryTypeName(link)});
+/** 디시 요청 본문. 모든 요청에 붙는 CSRF 토큰·갤러리 종류 뒤에 fields를 붙인다 (formBody 규칙) */
+const dcBody = (link: string, fields: Parameters<typeof formBody>[0]): Promise<URLSearchParams> =>
+    csrfBody({_GALLTYPE_: galleryTypeName(link), ...fields});
 
 export const viewUrl = (link: string, gallery: string, id: string): string => {
     const type = galleryPath(link);
@@ -14,51 +16,69 @@ export const viewUrl = (link: string, gallery: string, id: string): string => {
     return `${urls.base}${type}board/view/?id=${gallery}&no=${id}`;
 };
 
-/** 게시글 HTML → PostInfo */
+/** 게시글을 받아 PostInfo로 푼다. 삭제된 글은 디시가 404를 주고, 임시 차단은 HTTP 클라이언트가 BlockedError로 던진다. 그 밖에 글이 없는 페이지면 Error */
 export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): Promise<PostInfo> => {
     const response = await http.get(viewUrl(preData.link, preData.gallery, preData.id), {signal}).text();
 
     const postInfo = parsePostInfo(response);
-    if (!postInfo) throw new Error("404");
+    if (!postInfo) throw new Error("게시글 페이지가 아닙니다.");
 
     return postInfo;
 };
 
-/** 댓글 목록 — 한 쪽에 100개씩이라 쪽을 이어 받는다 */
+/** 댓글 목록. 한 쪽에 100개씩이라 여러 쪽을 받아 합친다 */
 export const fetchComments = async (preData: GalleryPreData, postInfo: PostInfo, signal: AbortSignal): Promise<CommentListResponse> => {
-    const body = await commonBody(preData.link);
-    body.set("id", preData.gallery);
-    body.set("no", preData.id);
-    body.set("cmt_id", postInfo.commentId ?? preData.gallery);
-    body.set("cmt_no", postInfo.commentNo ?? preData.id);
-    body.set("e_s_n_o", postInfo.dom.querySelector<HTMLInputElement>("#e_s_n_o")?.value ?? "");
+    const body = await dcBody(preData.link, {
+        id: preData.gallery,
+        no: preData.id,
+        cmt_id: postInfo.commentId ?? preData.gallery,
+        cmt_no: postInfo.commentNo ?? preData.id,
+        e_s_n_o: postInfo.esno ?? ""
+    });
 
-    const byNo = new Map<string, DcinsideComment>();
-    let allowReply = true;
-
-    // ponytail: 10쪽(1000개)까지 — 더 많은 글은 드물고 자동 갱신마다 전부 다시 받는다
-    for (let page = 1; page <= 10; page++) {
-        body.set("comment_page", String(page));
-
-        const response = await ajax.post(urls.comments, {body, signal}).json<{
+    const fetchPage = (page: number) => {
+        const pageBody = new URLSearchParams(body);
+        pageBody.set("comment_page", String(page));
+        return ajax.post(urls.comments, {body: pageBody, signal}).json<{
             comments: DcinsideComment[] | null;
             total_cnt: number | string;
             pagination: string | null;
             allow_reply?: number | string | null;
         }>();
+    };
 
-        // 디시 comment.js처럼 0일 때만 막는다 (멤버만 댓글)
-        allowReply = String(response.allow_reply) !== "0";
+    // 1쪽의 쪽 나눔(viewComments(n, …))에서 마지막 쪽 번호를 읽고 나머지 쪽은 한꺼번에 받는다. 동시 요청 수는 요청 제한 모듈이 조절한다.
+    // ponytail: 10쪽(1000개)까지만 받는다. 더 많은 글은 드물고, 자동 갱신 때마다 전부 다시 받기 때문이다.
+    const first = await fetchPage(1);
+    const lastPage = Math.min(10, Math.max(1, ...Array.from(first.pagination?.matchAll(/viewComments\((\d+)/g) ?? [], (match) => Number(match[1]))));
+    const rest = await Promise.all(Array.from({length: lastPage - 1}, (_, index) => fetchPage(index + 2)));
 
-        const before = byNo.size;
+    // 쪽 순서대로 합친다. 쪽 사이에 같은 댓글이 겹쳐 올 수 있어 번호로 하나만 남긴다
+    const byNo = new Map<string, DcinsideComment>();
+    for (const response of [first, ...rest]) {
         for (const comment of response.comments ?? []) byNo.set(comment.no, comment);
-
-        // 쪽 나눔이 없거나, 새 댓글이 없거나(빈 쪽·마지막 쪽 반복), 다 받았으면 멈춘다
-        if (!response.pagination || byNo.size === before || byNo.size >= Number(response.total_cnt)) break;
     }
 
-    return {list: [...byNo.values()], allowReply};
+    // 디시 comment.js처럼 0일 때만 막는다 (멤버만 댓글)
+    return {list: [...byNo.values()], allowReply: String(first.allow_reply) !== "0"};
 };
+
+/** 'result||message||detail' 텍스트 응답. 댓글 작성·삭제, 추천, JSON이 아닌 관리 응답이 이 모양이다 */
+export interface SubmitResult {
+    result: string;
+    message?: string;
+    /** 'false||captcha||v3'의 v3, 'false||nomember||메시지'의 메시지 */
+    detail?: string;
+}
+
+const submitResult = (response: string): SubmitResult => {
+    const [result, message, detail] = response.trim().split("||");
+
+    return {result: result ?? "", message, detail};
+};
+
+/** 디시가 준 안내 문구. 'false||nomember||메시지'면 문구는 세 번째 칸이다 */
+export const resultMessage = ({message, detail}: SubmitResult): string | undefined => (message === "nomember" ? detail : message) || undefined;
 
 interface VoteResult {
     success: boolean;
@@ -78,59 +98,62 @@ export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U
         domain: "dcinside.com"
     });
 
-    const body = await commonBody(preData.link);
-    body.set("id", preData.gallery);
-    body.set("no", preData.id);
-    body.set("mode", mode);
-    body.set("code_recommend", code ?? postInfo.dom.querySelector<HTMLInputElement>("input[name=code_recommend]")?.value ?? "");
-    body.set("link_id", preData.gallery);
-    if (postInfo.v_cur_t) body.set("v_cur_t", postInfo.v_cur_t);
-    if (postInfo.randomParam) body.set(postInfo.randomParam.name, postInfo.randomParam.value);
+    const body = await dcBody(preData.link, {
+        id: preData.gallery,
+        no: preData.id,
+        mode,
+        code_recommend: code ?? postInfo.recommendCode ?? "",
+        link_id: preData.gallery,
+        v_cur_t: postInfo.v_cur_t || undefined,
+        ...(postInfo.randomParam && {[postInfo.randomParam.name]: postInfo.randomParam.value})
+    });
 
-    const response = await ajax.post(urls.vote, {body}).text();
-    const [result, counts, fixedCounts] = response.trim().split("||");
-
-    // 'false||nomember||메시지'면 문구는 세 번째 칸
-    return result === "true" ? {success: true, counts, fixedCounts} : {success: false, message: (counts === "nomember" ? fixedCounts : counts) || undefined};
+    // 성공이면 'true||추천 수||고정닉 추천 수'
+    const response = submitResult(await ajax.post(urls.vote, {body}).text());
+    return response.result === "true"
+        ? {success: true, counts: response.message, fixedCounts: response.detail}
+        : {success: false, message: resultMessage(response)};
 };
 
-/** 관리 요청 결과 — 디시 관리 API는 {"result": "success" | "fail", "msg": "…"}를 돌려준다 */
+/** 관리 요청 결과. 디시 관리 API는 {"result": "success" | "fail", "msg": "…"}를 돌려준다 */
 export interface ManageResult {
     success: boolean;
     /** 디시가 준 안내 문구 (없을 수 있음) */
     message?: string;
 }
 
-// 성공이라고 밝힌 응답만 성공 — 세션이 끊겨 온 HTML이나 "정상적인 접근이 아닙니다." 같은 모르는 응답에 '삭제했습니다'를 띄우지 않게
+// 성공이라고 밝힌 응답만 성공으로 본다. 세션이 끊겨 온 HTML이나 "정상적인 접근이 아닙니다." 같은 응답에 성공 알림을 띄우지 않게
 const isSuccess = (result: unknown): boolean => result === "success" || result === "true" || result === true;
 
-/** 관리 요청 — 미니 갤러리만 mini_, 나머지(일반·마이너·인물)는 minor_ 관리 API. 필드는 공통 필드(ci_t, _GALLTYPE_) 뒤에 준 순서로 */
+/**
+ * 관리 요청. 미니 갤러리는 mini_, 나머지(일반·마이너·인물)는 minor_ 관리 API를 쓴다.
+ * 필드는 공통 필드(ci_t, _GALLTYPE_) 뒤에 준 순서대로 붙는다.
+ */
 const manage = async (target: Pick<GalleryPreData, "link">, action: string, fields: Record<string, string>): Promise<ManageResult> => {
-    const body = await commonBody(target.link);
-    for (const [key, value] of Object.entries(fields)) body.set(key, value);
+    const body = await dcBody(target.link, fields);
 
     const url = `${urls.base}ajax/${isMiniGallery(target.link) ? "mini" : "minor"}_manager_board_ajax/${action}`;
     const text = (await ajax.post(url, {body}).text()).trim();
 
     try {
         const parsed: unknown = JSON.parse(text);
-        if (parsed && typeof parsed === "object") {
-            const {result, msg} = parsed as { result?: unknown; msg?: unknown };
+        if (isRecord(parsed)) {
+            const {result, msg} = parsed;
             return {success: isSuccess(result), message: typeof msg === "string" && msg ? msg : undefined};
         }
     } catch {
         // 아래 텍스트 분기로
     }
 
-    // JSON 객체가 아니면 "false||메시지" 같은 텍스트 — 맨 'true'·'false'는 JSON 원시값으로 읽히므로 여기서 본다
-    const [result, message] = text.split("||");
-    return {success: isSuccess(result), message: message || undefined};
+    // JSON 객체가 아니면 "false||메시지" 같은 텍스트다. 맨 'true'·'false'도 JSON.parse가 원시값으로 읽어 여기로 온다
+    const response = submitResult(text);
+    return {success: isSuccess(response.result), message: resultMessage(response)};
 };
 
 /** 끌올 */
 export const bump = (preData: GalleryPreData): Promise<ManageResult> => manage(preData, "update_bump", {id: preData.gallery, "nos[]": preData.id});
 
-/** 삭제 — manage 모듈의 Ctrl+클릭은 목록 행에서 갤러리·글 번호·주소만 넘긴다 */
+/** 게시글 삭제. manage 모듈의 Ctrl+클릭은 목록 행에서 얻은 갤러리·글 번호·주소만 있어 GalleryPreData 전체를 받지 않는다 */
 export const deletePost = (target: Pick<GalleryPreData, "gallery" | "id" | "link">): Promise<ManageResult> =>
     manage(target, "delete_list", {id: target.gallery, "nos[]": target.id});
 
@@ -138,8 +161,10 @@ interface BlockOptions {
     avoidHour: string;
     avoidReason: string;
     avoidReasonTxt: string;
-    delChk: "0" | "1";
-    userTypeChk: "0" | "1";
+    /** 선택한 글도 삭제 */
+    delChk: boolean;
+    /** 식별 코드 차단 시 IP 동시 차단 */
+    userTypeChk: boolean;
 }
 
 /** 유저 차단 (관리 팝업/프리셋) */
@@ -150,8 +175,8 @@ export const blockUser = (preData: GalleryPreData, options: BlockOptions): Promi
     avoid_hour: options.avoidHour,
     avoid_reason: options.avoidReason,
     avoid_reason_txt: options.avoidReasonTxt,
-    del_chk: options.delChk,
-    avoid_type_chk: options.userTypeChk
+    del_chk: options.delChk ? "1" : "0",
+    avoid_type_chk: options.userTypeChk ? "1" : "0"
 });
 
 /** 공지 등록/해제 */
@@ -172,33 +197,21 @@ export const adminDeleteComment = (preData: GalleryPreData, commentId: string): 
 
 /** 유저 댓글 삭제 */
 export const userDeleteComment = async (preData: GalleryPreData, commentId: string, password: string): Promise<ManageResult> => {
-    const body = await commonBody(preData.link);
-    body.set("id", preData.gallery);
-    body.set("no", preData.id);
-    body.set("re_no", commentId);
-    body.set("mode", "del");
-    if (password) body.set("re_password", password);
-    body.set("g-recaptcha-response", "");
+    const body = await dcBody(preData.link, {
+        id: preData.gallery,
+        no: preData.id,
+        re_no: commentId,
+        mode: "del",
+        re_password: password || undefined,
+        "g-recaptcha-response": ""
+    });
 
-    // 'true'만 성공 (v5와 같음) — 관리 요청과 달리 JSON이 아니다
-    const {result, message} = submitResult(await ajax.post(urls.comment_remove, {body}).text());
-    return {success: result === "true", message};
+    // 'true'만 성공으로 본다 (v5와 같음). 관리 요청과 달리 응답이 JSON이 아니다
+    const response = submitResult(await ajax.post(urls.comment_remove, {body}).text());
+    return {success: response.result === "true", message: resultMessage(response)};
 };
 
-export interface SubmitResult {
-    result: string;
-    message?: string;
-    /** 'false||captcha||v3'의 v3, 'false||nomember||메시지'의 메시지 */
-    detail?: string;
-}
-
-const submitResult = (response: string): SubmitResult => {
-    const [result, message, detail] = response.trim().split("||");
-
-    return {result: result ?? "", message, detail};
-};
-
-/** 댓글/디시콘 작성. 첫 전송은 grecaptchaToken 없이 (디시 f_submit(null)) */
+/** 댓글/디시콘 작성. 디시 f_submit(null)처럼 첫 전송은 grecaptchaToken 없이 보낸다 */
 export const submitComment = async (
     preData: GalleryPreData,
     postInfo: PostInfo,
@@ -210,16 +223,15 @@ export const submitComment = async (
     captcha?: string,
     grecaptchaToken?: string
 ): Promise<SubmitResult> => {
-    const {dom} = postInfo;
+    const form = postInfo.commentForm;
 
     const code = (() => {
         try {
-            // 디시 _d(): 알파벳을 섞은 base64 — 표준 알파벳으로 바꿔 푼다 (65번째 '='는 채움, 모르는 글자는 버린다)
+            // 디시 _d()를 옮긴 것. 알파벳을 섞은 base64를 표준 알파벳으로 바꿔 푼다 (65번째 '='는 채움, 모르는 글자는 버린다)
             const rKey = "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K";
             const b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
-            const script = dom.querySelector<HTMLElement>("#reply-setting-tmpl + script");
-            const dValue = script?.textContent?.match(/_d\('(.*)'\)/)?.[1];
+            const dValue = form.dValue;
             if (!dValue) return null;
 
             let decoded = atob(dValue.replace(/./g, (c) => b64[rKey.indexOf(c)] ?? ""));
@@ -229,8 +241,7 @@ export const submitComment = async (
             fi = fi > 5 ? fi - 5 : fi + 4;
             decoded = decoded.replace(/^./, fi.toString());
 
-            const serviceInput = dom.querySelector<HTMLInputElement>("input[name=service_code]");
-            const service = serviceInput?.value ?? "";
+            const service = form.serviceCode;
 
             const rs = decoded.split(",");
             let computed = "";
@@ -244,44 +255,37 @@ export const submitComment = async (
             return null;
         }
     })();
-    // 토큰 없이 보내면 서버는 모호한 오류만 준다 — 보내지 않고 알린다
+    // service_code를 못 만든 채 보내면 서버가 모호한 오류만 주므로 보내지 않고 알린다
     if (!code) return {result: "false", message: "댓글 폼을 읽지 못했습니다. 원문에서 작성해 주세요."};
 
-    const params = new URLSearchParams();
-    params.set("t_vch2", "");
-    params.set("t_vch2_chk", "");
-
-    for (const element of dom.querySelectorAll<HTMLInputElement>("#focus_cmt > input")) {
-        const name = element.name || element.id || "";
-        if (!["service_code", "gallery_no", "clickbutton"].includes(name)) params.set(name, element.value);
-    }
-
-    params.set("service_code", code);
-    params.set("c_gall_id", preData.gallery);
-    params.set("c_gall_no", preData.id);
-    params.set("id", preData.gallery);
-    params.set("no", preData.id);
-
-    if (commentNo) params.set("c_no", commentNo);
-    if (replyNo) params.set("reply_no", replyNo);
-
-    params.set("name", user.name);
-    if (user.pw) params.set("password", user.pw);
-    params.set("use_gall_nick", "N");
-    if (captcha) params.set("code", captcha);
-    params.set("g-recaptcha-response", "");
-    if (grecaptchaToken) params.set("g-recaptcha-token", grecaptchaToken);
-
-    if (bigDccon) params.set("bigdccon", "1");
-
-    if (typeof memo === "string") {
-        params.set("memo", memo);
-    } else {
-        params.set("input_type", "comment");
-        if (memo.length > 1) params.set("double_con_chk", "1");
-        params.set("package_idx", memo.map((dccon) => dccon.package_idx).join(","));
-        params.set("detail_idx", memo.map((dccon) => dccon.detail_idx).join(","));
-    }
+    // 폼의 필드 중 같은 이름은 아래 값으로 바뀐다 (자리는 폼 순서 그대로)
+    const params = formBody({
+        t_vch2: "",
+        t_vch2_chk: "",
+        ...Object.fromEntries(form.fields.filter(([name]) => !["service_code", "gallery_no", "clickbutton"].includes(name))),
+        service_code: code,
+        c_gall_id: preData.gallery,
+        c_gall_no: preData.id,
+        id: preData.gallery,
+        no: preData.id,
+        c_no: commentNo || undefined,
+        reply_no: replyNo || undefined,
+        name: user.name,
+        password: user.pw || undefined,
+        use_gall_nick: "N",
+        code: captcha || undefined,
+        "g-recaptcha-response": "",
+        "g-recaptcha-token": grecaptchaToken || undefined,
+        bigdccon: bigDccon && "1",
+        ...(typeof memo === "string"
+            ? {memo}
+            : {
+                input_type: "comment",
+                double_con_chk: memo.length > 1 && "1",
+                package_idx: memo.map((dccon) => dccon.package_idx).join(","),
+                detail_idx: memo.map((dccon) => dccon.detail_idx).join(",")
+            })
+    });
 
     const response = await ajax.post(typeof memo === "string" ? urls.comments_submit : urls.dccon_comments_submit, {
         body: params
@@ -290,7 +294,7 @@ export const submitComment = async (
     return submitResult(response);
 };
 
-/* ===== 글자콘 — 디시 txtcon.js의 입력 규칙 (서버 txtcon_conf와 같다) ===== */
+/* ===== 글자콘: 디시 txtcon.js의 입력 규칙 (서버 txtcon_conf와 같다) ===== */
 
 export const TXTCON_BACKGROUNDS = ["3b4890", "b4b4e1", "f5e1f0", "d2f0e6", "ffffff", "333333"];
 export const TXTCON_COLORS = ["ffffff", "333333"];
@@ -300,7 +304,7 @@ const TXTCON_MAX_LINES = 4;
 /** 한 줄 최대 글자 수 */
 const TXTCON_MAX_LINE_LEN = 5;
 
-// 컬러 이모지로 그려지는 BMP 문자 — 글자 수에 1을 더 센다
+// 컬러 이모지로 그려지는 BMP 문자. 글자 수에 1을 더 센다
 const TXTCON_BMP_EMOJI = /[\p{Emoji_Presentation}--[\u{10000}-\u{10FFFF}]]/gv;
 
 /** 글자 수: UTF-16 코드 유닛 + BMP 컬러 이모지 가산 (줄바꿈 제외) */
@@ -310,12 +314,12 @@ const txtconLength = (text: string): number => {
     return plain.length + (plain.match(TXTCON_BMP_EMOJI)?.length ?? 0);
 };
 
-// ponytail: 디시 txtcon_clusters 대신 브라우저 grapheme 분할 — 흔한 글자(국기·스킨톤·ZWJ 포함)에선 같다 (분해형 한글 자모 등만 다름)
-const segmenter = new Intl.Segmenter();
-/** 글자콘의 '한 글자' 단위로 나눈다 */
-export const graphemes = (text: string): string[] => Array.from(segmenter.segment(text), ({segment}) => segment);
+// ponytail: 디시 txtcon_clusters 대신 브라우저 grapheme 분할을 쓴다. 국기·스킨톤·ZWJ 같은 흔한 글자는 결과가 같고, 분해형 한글 자모 등만 다르다
+let segmenter: Intl.Segmenter | undefined;
+/** 글자콘의 '한 글자'(grapheme) 단위로 나눈다. 모든 디시 페이지에서 만들지 않도록 분할기는 처음 쓸 때 만든다 */
+export const graphemes = (text: string): string[] => Array.from((segmenter ??= new Intl.Segmenter()).segment(text), ({segment}) => segment);
 
-/** 직접 줄바꿈은 두고 각 줄을 5글자씩 나눈다 — 입력 제한과 보여 줄 때(Comment.tsx)가 같이 쓴다 */
+/** 직접 넣은 줄바꿈은 두고 각 줄을 5글자씩 나눈다. 입력 제한과 표시(Comment.tsx)가 같이 쓴다 */
 export const wrapTxtcon = (text: string): string =>
     text
         .replace(/\r\n?/g, "\n")
@@ -327,7 +331,7 @@ export const wrapTxtcon = (text: string): string =>
 export const normalizeTxtcon = (value: string): string => {
     let text = value
         .replace(/\r\n?/g, "\n")
-        // 이모지 구간 밖 4바이트·아랍 표현형은 '+'
+        // 이모지 구간 밖의 4바이트 문자와 아랍 표현형은 '+'로 바꾼다
         .replace(/[[\u{10000}-\u{10FFFF}]--[\u{1F000}-\u{1FAFF}]]/gv, "+")
         .replace(/[\uFB50-\uFDFF\uFE70-\uFEFE]/g, "+")
         // 공백류는 일반 공백, 안 보이는 채움 문자는 제거
@@ -342,13 +346,15 @@ export const normalizeTxtcon = (value: string): string => {
         .slice(0, TXTCON_MAX_LINES)
         .join("\n");
 
-    // 4줄(줄바꿈 3개)×5글자면 23 grapheme을 넘을 수 없다 — 미리 줄여 두어야 한 글자씩 빼며 전체를 다시 나누는 아래 루프가 긴 붙여넣기에서 O(n²)가 되지 않는다
+    // 결과는 4줄×5글자와 줄바꿈 3개, 즉 23 grapheme을 넘을 수 없으니 미리 자른다.
+    // 그래야 한 글자씩 빼며 전체를 다시 나누는 아래 루프가 긴 붙여넣기에서 O(n²)가 되지 않는다.
     text = graphemes(text).slice(0, (TXTCON_MAX_LINE_LEN + 1) * TXTCON_MAX_LINES).join("");
 
-    // 5글자씩 나눈 줄 수가 넘치면 뒤에서부터 제거
+    // 5글자씩 나눈 줄 수가 넘치면 뒤에서부터 뺀다
     while (wrapTxtcon(text).split("\n").length > TXTCON_MAX_LINES) text = Array.from(text).slice(0, -1).join("");
 
-    // 글자 수 제한 (코드포인트 단위로 앞에서 자른다 — 넘치는 글자만 건너뛰면 가운데가 빠지고 뒤의 ZWJ·결합 문자가 엉뚱한 글자에 붙는다)
+    // 20자 제한. 코드포인트 단위로 앞에서부터 채우다가 넘치면 멈춘다.
+    // 넘치는 글자만 건너뛰고 계속하면 가운데가 빠지고, 뒤의 ZWJ·결합 문자가 엉뚱한 글자에 붙는다.
     let count = 0;
     let output = "";
     for (const char of text) {
@@ -362,7 +368,7 @@ export const normalizeTxtcon = (value: string): string => {
     return output;
 };
 
-/** 글자콘 작성 (txtcon.js txtcon_submit). 첫 전송은 grecaptchaToken 없이 */
+/** 글자콘 작성 (txtcon.js txtcon_submit). 첫 전송은 grecaptchaToken 없이 보낸다 */
 export const submitTxtcon = async (
     preData: GalleryPreData,
     postInfo: PostInfo,
@@ -374,34 +380,25 @@ export const submitTxtcon = async (
     captcha?: string,
     grecaptchaToken?: string
 ): Promise<SubmitResult> => {
-    const {dom} = postInfo;
+    const form = postInfo.commentForm;
 
-    const body = await commonBody(preData.link);
-    body.set("id", postInfo.commentId ?? preData.gallery);
-    body.set("no", postInfo.commentNo ?? preData.id);
-    body.set("txtcon_text", text);
-    body.set("txtcon_bg", colors.bg);
-    body.set("txtcon_color", colors.txt);
-
-    if (commentNo) body.set("c_no", commentNo);
-    if (replyNo) body.set("reply_no", replyNo);
-
-    if (user.name) body.set("name", user.name);
-    if (user.pw) body.set("password", user.pw);
-    if (captcha) body.set("code", captcha);
-
-    for (const name of ["check_6", "check_7", "check_8"]) {
-        body.set(name, dom.querySelector<HTMLInputElement>(`#${name}`)?.value ?? "");
-    }
-
-    // 갤닉은 댓글(submitComment)처럼 쓰지 않는다
-    if (dom.querySelector("#use_gall_nick")) {
-        body.set("gall_nick_name", dom.querySelector<HTMLInputElement>("#gall_nick_name")?.value ?? "");
-        body.set("use_gall_nick", "N");
-    }
-
-    body.set("g-recaptcha-response", "");
-    if (grecaptchaToken) body.set("g-recaptcha-token", grecaptchaToken);
+    const body = await dcBody(preData.link, {
+        id: postInfo.commentId ?? preData.gallery,
+        no: postInfo.commentNo ?? preData.id,
+        txtcon_text: text,
+        txtcon_bg: colors.bg,
+        txtcon_color: colors.txt,
+        c_no: commentNo || undefined,
+        reply_no: replyNo || undefined,
+        name: user.name || undefined,
+        password: user.pw || undefined,
+        code: captcha || undefined,
+        ...form.checks,
+        // 갤닉은 댓글(submitComment)처럼 쓰지 않는다
+        ...(form.gallNickName !== undefined && {gall_nick_name: form.gallNickName, use_gall_nick: "N"}),
+        "g-recaptcha-response": "",
+        "g-recaptcha-token": grecaptchaToken || undefined
+    });
 
     const response = await ajax.post(urls.txtcon_submit, {body}).text();
 

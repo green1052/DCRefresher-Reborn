@@ -21,10 +21,12 @@ export interface MemoEntry {
     gallery?: string;
 }
 
-/** IP/밴 DB의 버전과 받은 시각 — 갱신할 때가 됐는지는 이것만 읽어 본다 */
+/** IP/밴 DB의 버전과 마지막으로 서버를 확인한 시각. 갱신할 때가 됐는지는 큰 ip·ban 대신 이것만 읽어 판단한다 */
 export interface DatabaseMeta {
     version: string;
     lastUpdate: number;
+    /** 저장된 IP 데이터의 형식 (core/ipdb의 IP_FORMAT). 없으면 옛 형식 */
+    format?: number;
 }
 
 /** 밴 목록: 이유 → uid[] */

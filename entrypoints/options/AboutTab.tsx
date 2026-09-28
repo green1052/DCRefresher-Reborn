@@ -2,6 +2,7 @@ import {Badge, Box, Button, DataList, Flex, Grid, Heading, Text} from "@radix-ui
 import {BookOpen, Bug, ClipboardCopy, Code, Heart, type LucideIcon, MessageCircle, Star, Tag, Users} from "lucide-react";
 import {useEffect, useState} from "react";
 
+import {CLOUD_QUOTA} from "@/core/backup";
 import {dbStorage} from "@/core/storage/items";
 import features from "@/features";
 import {useBlocksStore} from "@/stores/blocks";
@@ -28,15 +29,13 @@ const LINKS: [string, string, LucideIcon][] = [
     ["후원", "https://www.buymeacoffee.com/green1052", Heart]
 ];
 
-/** storage.sync 전체 한도 */
-const SYNC_QUOTA = 102_400;
-
 interface Usage {
     local: number;
     sync: number;
 }
 
-// 로컬의 getBytesInUse는 Firefox 144부터라 JSON 크기로 잰다 (sync는 한도 계산과 같게 브라우저 값을 쓴다)
+// storage.local.getBytesInUse는 Firefox 144부터 지원하므로 local은 JSON 크기로 잰다.
+// sync는 브라우저가 한도를 계산하는 값과 맞추려고 getBytesInUse를 쓴다.
 const readUsage = async (): Promise<Usage> => {
     const [local, sync] = await Promise.all([browser.storage.local.get(null).then(byteSize), browser.storage.sync.getBytesInUse(null)]);
     return {local, sync};
@@ -80,7 +79,7 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
                     <img src={logo} alt="" width={64} height={64} style={{borderRadius: "var(--radius-4)"}}/>
                     <Box flexGrow="1">
                         <Flex align="center" gap="2">
-                            <Heading size="5">DCRefresher Reborn</Heading>
+                            <Heading as="h2" size="5">DCRefresher Reborn</Heading>
                             {/* 연달아 5번 누르면 개발자 탭이 열린다 */}
                             <Badge variant="soft" style={{userSelect: "none"}} onClick={(ev) => useOptionsStore.getState().unlockDev(ev)}>v{version}</Badge>
                         </Flex>
@@ -117,7 +116,7 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
                     <DataList.Item>
                         <DataList.Label>클라우드 저장소</DataList.Label>
                         <DataList.Value>
-                            {usage === "error" ? "알 수 없음" : usage ? `${formatBytes(usage.sync)} / ${formatBytes(SYNC_QUOTA)} (${Math.round((usage.sync / SYNC_QUOTA) * 100)}%)` : "…"}
+                            {usage === "error" ? "알 수 없음" : usage ? `${formatBytes(usage.sync)} / ${formatBytes(CLOUD_QUOTA)} (${Math.round((usage.sync / CLOUD_QUOTA) * 100)}%)` : "…"}
                         </DataList.Value>
                     </DataList.Item>
                 </DataList.Root>

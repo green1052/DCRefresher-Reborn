@@ -1,18 +1,22 @@
+import {LRUCache} from "lru-cache";
 import {Search} from "lucide-react";
 
-import {http} from "@/core/http/client";
+import {BlockedError, http} from "@/core/http/client";
 import {queryString} from "@/core/http/urls";
+import {checkboxFiller, highlightSearchResults, LIST_SELECTOR, PAGING_SELECTOR} from "@/core/list";
 import {sendMessage} from "@/core/messaging/protocol";
 import {defineModule} from "@/core/module/define";
 import {LIST_PAGE} from "@/core/pages";
-import {checkboxCellFactory, highlightSearchResults, LIST_SELECTOR, PAGING_SELECTOR} from "@/features/refresh";
 import {useUiStore} from "@/stores/ui";
+import {whenDomReady} from "@/utils/dom";
 
-/** 검색 결과 행 — 글(data-no)과 그 아래 댓글 검색 행(data-cmt). 설문·AD 행은 뺀다.
- * 검색 구간은 글(댓글) 번호로 나뉘어 겹치지 않는다 — 댓글 검색은 댓글마다 글 행이 되풀이되는 게 정상이라 중복을 거르지 않는다 */
+/**
+ * 검색 결과 행: 글(data-no)과 그 아래 댓글 검색 행(data-cmt). 설문·AD 행은 뺀다.
+ * 검색 구간은 번호로 나뉘어 겹치지 않으므로 중복을 거르지 않는다. 댓글 검색에선 댓글마다 글 행이 되풀이되는 게 정상이다
+ */
 const RESULT_ROW = ":scope > tr:is([data-no], [data-cmt])";
 
-/** 이 검색 구간(search_pos)의 마지막 페이지인지 — 현재 페이지 뒤에 페이지 링크가 없다 */
+/** 이 검색 구간(search_pos)의 마지막 페이지인지. 현재 페이지(em) 뒤에 페이지 링크가 없으면 마지막이다 */
 const isLastPage = (paging: Element): boolean => {
     const next = paging.querySelector("em")?.nextElementSibling;
     return !next || next.classList.contains("search_next");
@@ -29,7 +33,7 @@ export default defineModule({
     settings: {
         maxSearches: {
             type: "range",
-            name: "최대 다음 검색",
+            name: "최대 다음 검색 횟수",
             desc: "한 번에 이어서 검색할 최대 횟수입니다. 디시는 한 번에 글 1만 개씩 검색합니다.",
             default: 10,
             min: 1,
@@ -43,9 +47,10 @@ export default defineModule({
         if (!queryString("s_keyword")) return;
 
         const gallery = queryString("id") ?? "";
-        // 새로고침 모듈이 목록을 갈아끼우면 다시 이어 붙인다 — 이미 받은 검색은 다시 보내지 않는다
-        const pages = new Map<string, string>();
-        // 행을 붙이면 필터가 같은 tbody에 다시 불린다
+        // 새로고침 모듈이 목록을 갈아끼우면 다시 이어 붙인다. 이미 받은 검색 페이지는 다시 요청하지 않는다.
+        // 페이지 HTML이 통째로 들어 있어 최대 다음 검색 횟수(30)만큼만 남긴다. 검색 페이지를 넘길 때마다 쌓이지 않게 한다
+        const pages = new LRUCache<string, string>({max: 30});
+        // 행을 붙이면 같은 tbody로 필터가 다시 불리므로 한 번만 채운다
         const filled = new WeakSet<HTMLElement>();
         let running: AbortController | null = null;
 
@@ -58,7 +63,7 @@ export default defineModule({
             running = controller;
             const signal = AbortSignal.any([ctx.signal, controller.signal]);
 
-            // 구간 중간 페이지에서 이어 붙이면 그 뒤 페이지를 건너뛴다
+            // 구간의 마지막 페이지에서만 잇는다. 중간 페이지에서 이으면 그 뒤 페이지를 건너뛴다
             const paging = document.querySelector<HTMLElement>(PAGING_SELECTOR);
             if (!paging || !isLastPage(paging)) return;
 
@@ -67,13 +72,9 @@ export default defineModule({
             if (count >= target) return;
 
             const keyword = document.querySelector<HTMLInputElement>("#sch_q")?.value ?? "";
-            const commentSearch = queryString("s_type") === "search_comment";
-            // 관리자 목록은 체크박스 열이 있는데 받아온 행엔 없다 (새로고침 모듈과 같은 처리)
-            const checkboxCell = list.closest("table")?.querySelector("thead .chkbox_th")
-                ? checkboxCellFactory(Array.from(list.querySelectorAll<HTMLTableRowElement>(":scope > tr")))
-                : null;
+            const fillCheckbox = checkboxFiller(list, queryString("s_type") === "search_comment");
 
-            const max = Number(ctx.settings.maxSearches);
+            const max = ctx.settings.maxSearches;
             const status = document.createElement("p");
             status.className = "refresherSearchStatus";
             paging.after(status);
@@ -94,30 +95,32 @@ export default defineModule({
                     const dom = new DOMParser().parseFromString(html, "text/html");
                     const newList = dom.querySelector<HTMLElement>(LIST_SELECTOR);
                     const newPaging = dom.querySelector<HTMLElement>(PAGING_SELECTOR);
-                    if (!newList || !newPaging) throw new Error("검색 결과 페이지에 목록이 없습니다.");
+                    if (!newList || !newPaging) {
+                        // 알림 페이지 같은 것을 캐시에 두면 다시 채울 때마다 같은 오류가 난다. 다음에 다시 받게 지운다
+                        pages.delete(next.href);
+                        throw new Error("검색 결과 페이지에 목록이 없습니다.");
+                    }
 
                     highlightSearchResults(newList, keyword);
                     for (const row of newList.querySelectorAll<HTMLTableRowElement>(RESULT_ROW)) {
-                        // 댓글 검색 결과에선 댓글 행에만 체크박스가 있다
-                        if (checkboxCell && !row.querySelector(".article_chkbox") && (!commentSearch || row.classList.contains("search_comment"))) {
-                            row.prepend(checkboxCell(row.dataset.no));
-                        }
+                        fillCheckbox(row);
                         list.append(row);
                         if (row.dataset.no) count++;
                         added++;
                     }
 
-                    // 페이징은 마지막으로 받은 구간 것 — 다음 검색·페이지 링크가 거기서 이어진다
+                    // 페이징은 마지막으로 받은 구간 것으로 바꾼다. 다음 검색·페이지 링크가 거기서 이어진다
                     paging.innerHTML = newPaging.innerHTML;
                     if (!isLastPage(paging)) break;
                 }
             } catch (e) {
-                if (signal.aborted) return;
+                // 임시 차단은 HTTP 클라이언트가 이미 알렸다. 오류 토스트로 그 안내를 덮지 않는다
+                if (signal.aborted || e instanceof BlockedError) return;
                 console.error("Search continuation failed:", e);
                 useUiStore.getState().showToast("다음 검색 결과를 불러오지 못했습니다.", "error");
             } finally {
                 status.remove();
-                // 디시 자체 차단·이용자 메모 배지를 붙인 행에도 건다
+                // 디시의 자체 차단·메모 표시는 로드 때만 걸리므로 붙인 행에 다시 건다
                 if (added > 0) void sendMessage("refresher:listReplaced", gallery).catch(() => {});
             }
         };
@@ -127,11 +130,7 @@ export default defineModule({
             const list = document.querySelector<HTMLElement>(LIST_SELECTOR);
             if (list) void fill(list);
         };
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", fillCurrent, {once: true, signal: ctx.signal});
-        } else {
-            fillCurrent();
-        }
+        whenDomReady(fillCurrent, ctx.signal);
         ctx.addFilter(LIST_SELECTOR, (list) => {
             if (document.readyState !== "loading") void fill(list);
         });
