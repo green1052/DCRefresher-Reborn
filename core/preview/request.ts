@@ -53,14 +53,14 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
     const lastPage = Math.min(10, Math.max(1, ...Array.from(first.pagination?.matchAll(/viewComments\((\d+)/g) ?? [], (match) => Number(match[1]))));
     const rest = await Promise.all(Array.from({length: lastPage - 1}, (_, index) => fetchPage(index + 2)));
 
-    // 쪽 순서대로 합친다. 쪽 사이에 같은 댓글이 겹쳐 올 수 있어 번호로 하나만 남긴다
+    // 1쪽이 가장 최근 댓글이고 뒤쪽일수록 오래된 댓글이다. 쪽 사이에 같은 댓글이 겹쳐 올 수 있어 번호로 하나만 남기고 번호(등록)순으로 맞춘다
     const byNo = new Map<string, DcinsideComment>();
     for (const response of [first, ...rest]) {
         for (const comment of response.comments ?? []) byNo.set(comment.no, comment);
     }
 
     // 디시 comment.js처럼 0일 때만 막는다 (멤버만 댓글)
-    return {list: [...byNo.values()], allowReply: String(first.allow_reply) !== "0"};
+    return {list: [...byNo.values()].sort((a, b) => Number(a.no) - Number(b.no)), allowReply: String(first.allow_reply) !== "0"};
 };
 
 /** 'result||message||detail' 텍스트 응답. 댓글 작성·삭제, 추천, JSON이 아닌 관리 응답이 이 모양이다 */
