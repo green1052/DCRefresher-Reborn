@@ -2,8 +2,9 @@ name: Release
 
 on:
     push:
+        # 버전 태그(6.0.2 등)에만 돈다
         tags:
-            - "*.*.*"
+            - "[0-9]+.[0-9]+.[0-9]+"
 
 # 작업마다 필요한 권한만 준다. 쓰기는 GitHub 릴리즈(release)와 data 브랜치 푸시(db)만 한다
 permissions:
@@ -24,12 +25,7 @@ jobs:
 
             # 태그와 package.json 버전이 다르면 스토어에 엉뚱한 버전이 올라간다
             -   name: Check version
-                run: |
-                    version=$(jq -r .version package.json)
-                    if [ "$version" != "$GITHUB_REF_NAME" ]; then
-                        echo "::error::태그 $GITHUB_REF_NAME 와 package.json 버전 $version 이 다릅니다."
-                        exit 1
-                    fi
+                run: jq -e --arg tag "$GITHUB_REF_NAME" '.version == $tag' package.json > /dev/null || { echo "::error::태그 $GITHUB_REF_NAME 와 package.json 버전이 다릅니다."; exit 1; }
 
             -   uses: oven-sh/setup-bun@v2
 
