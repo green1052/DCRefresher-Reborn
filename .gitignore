@@ -2,7 +2,6 @@
 .output
 .wxt
 node_modules
-.env
+.env.submit
 web-ext.config.ts
 db
-.env.submit
