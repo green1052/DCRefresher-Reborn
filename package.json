@@ -33,6 +33,7 @@
         "@types/bun": "^1.4.2",
         "@types/react": "^19.3.0",
         "@types/react-dom": "^19.3.0",
+        "@types/webextension-polyfill": "^0.12.6",
         "@wxt-dev/auto-icons": "^1.1.2",
         "@wxt-dev/browser": "^0.3.0",
         "@wxt-dev/module-react": "^1.2.2",
