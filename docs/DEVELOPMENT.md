@@ -217,7 +217,7 @@ getModuleApi("preview")?.archiveArticle()
 
 1. develop에서 `package.json`의 `version`을 올리고 `chore(release): X.Y.Z`로 커밋합니다.
 2. release 브랜치에 develop을 머지 커밋으로 합칩니다.
-3. release 브랜치를 push한 뒤 `X.Y.Z` 태그를 만들어 push합니다. `.github/workflows/release.yml`이 태그와 `package.json` 버전이 같은지, 태그 커밋이 release 브랜치에 있는지 확인하고, 타입 검사를 하고 zip을 만들어 GitHub 릴리즈에 올리고 Chrome 웹 스토어·Firefox Add-ons에 제출합니다. 그다음 DB 워크플로가 이 태그의 코드로 DB를 새로 만듭니다.
+3. release 브랜치를 push한 뒤 `X.Y.Z` 태그를 만들어 push합니다. `.github/workflows/release.yml`이 태그와 `package.json` 버전이 같은지, 태그 커밋이 release 브랜치에 있는지 확인하고, 타입 검사를 하고 zip을 만들어 GitHub 릴리즈에 올립니다. 그다음 Chrome 웹 스토어 제출, Firefox Add-ons 제출, DB 워크플로(이 태그의 코드로 DB를 새로 만듦)가 각각 따로 돕니다. 한 스토어 제출이 실패하면 Actions에서 그 작업만 다시 실행하면 됩니다(다른 스토어에 같은 버전을 다시 올리지 않습니다).
 
 Chrome 웹 스토어는 API v2(서비스 계정)로 제출합니다. 인증은 한 번만 만들어 두면 됩니다.
 

@@ -58,25 +58,64 @@ jobs:
                         .output/*-chrome.zip
                     generate_release_notes: true
 
-            -   name: Submit to stores
-                run: >-
-                    bun wxt submit
-                    --chrome-zip .output/*-chrome.zip
-                    --firefox-zip .output/*-firefox.zip
-                    --firefox-sources-zip .output/*-sources.zip
-                # Chrome 웹 스토어는 API v2(서비스 계정)로 제출한다 (docs/DEVELOPMENT.md 릴리즈)
+            # 스토어 제출은 스토어마다 따로 한다. 한 스토어만 실패해도 다른 스토어·DB가 막히지 않고, 실패한 쪽만 다시 실행할 수 있다
+            # (한 번에 제출하면 다시 실행할 때 이미 올라간 스토어에 같은 버전을 또 올리다 실패한다)
+            -   uses: actions/upload-artifact@v7
+                with:
+                    name: zips
+                    path: .output/*.zip
+
+    submit-chrome:
+        needs: release
+        runs-on: ubuntu-latest
+        steps:
+            -   uses: actions/checkout@v7
+
+            -   uses: oven-sh/setup-bun@v2
+
+            -   name: Install Dependencies
+                run: bun ci
+
+            -   uses: actions/download-artifact@v8
+                with:
+                    name: zips
+                    path: .output
+
+            # Chrome 웹 스토어는 API v2(서비스 계정)로 제출한다 (docs/DEVELOPMENT.md 릴리즈)
+            -   name: Submit to Chrome Web Store
+                run: bun wxt submit --chrome-zip .output/*-chrome.zip
                 env:
                     CHROME_API_VERSION: v2
                     CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
                     CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
                     CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL: ${{ secrets.CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL }}
                     CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
+
+    submit-firefox:
+        needs: release
+        runs-on: ubuntu-latest
+        steps:
+            -   uses: actions/checkout@v7
+
+            -   uses: oven-sh/setup-bun@v2
+
+            -   name: Install Dependencies
+                run: bun ci
+
+            -   uses: actions/download-artifact@v8
+                with:
+                    name: zips
+                    path: .output
+
+            -   name: Submit to Firefox Add-ons
+                run: bun wxt submit --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip
+                env:
                     FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
                     FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
                     FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
 
     # 릴리즈마다 이 태그의 코드로 DB를 새로 만든다. IP 형식을 바꾼 버전도 스토어 심사를 마치기 전에 새 형식이 올라가 있다
-    # (확장은 업데이트 때 DB를 다시 받는다). 검사·빌드·제출이 실패한 릴리즈는 DB를 바꾸지 않도록 릴리즈 뒤에 돈다
+    # (확장은 업데이트 때 DB를 다시 받는다). 검사·빌드가 실패한 릴리즈는 DB를 바꾸지 않도록 릴리즈 뒤에 돈다. 스토어 제출 결과와는 상관없다
     db:
         needs: release
         uses: ./.github/workflows/db.yml
