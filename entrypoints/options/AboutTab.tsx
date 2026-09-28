@@ -2,6 +2,7 @@ import {Badge, Box, Button, DataList, Flex, Grid, Heading, Text} from "@radix-ui
 import {BookOpen, Bug, ClipboardCopy, Code, Heart, type LucideIcon, MessageCircle, Star, Tag, Users} from "lucide-react";
 import {useEffect, useState} from "react";
 
+import {CLOUD_QUOTA} from "@/core/backup";
 import {dbStorage} from "@/core/storage/items";
 import features from "@/features";
 import {useBlocksStore} from "@/stores/blocks";
@@ -27,9 +28,6 @@ const LINKS: [string, string, LucideIcon][] = [
     ["리뷰 남기기", STORE, Star],
     ["후원", "https://www.buymeacoffee.com/green1052", Heart]
 ];
-
-/** storage.sync 전체 한도 */
-const SYNC_QUOTA = 102_400;
 
 interface Usage {
     local: number;
@@ -118,7 +116,7 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
                     <DataList.Item>
                         <DataList.Label>클라우드 저장소</DataList.Label>
                         <DataList.Value>
-                            {usage === "error" ? "알 수 없음" : usage ? `${formatBytes(usage.sync)} / ${formatBytes(SYNC_QUOTA)} (${Math.round((usage.sync / SYNC_QUOTA) * 100)}%)` : "…"}
+                            {usage === "error" ? "알 수 없음" : usage ? `${formatBytes(usage.sync)} / ${formatBytes(CLOUD_QUOTA)} (${Math.round((usage.sync / CLOUD_QUOTA) * 100)}%)` : "…"}
                         </DataList.Value>
                     </DataList.Item>
                 </DataList.Root>

@@ -48,8 +48,7 @@ const useStorageArea = (area: Area): Record<string, unknown> | null => {
                 if (alive) setItems(next);
             });
         // 바뀐 키만 반영한다. 다시 읽으면 글댓비를 저장할 때마다 1MB가 넘는 IP·밴 DB까지 읽는다
-        const onChanged = (changes: Record<string, { newValue?: unknown }>, changedArea: string): void => {
-            if (changedArea !== area) return;
+        const onChanged = (changes: Record<string, { newValue?: unknown }>): void => {
             setItems((previous) => {
                 if (!previous) return previous;
                 const next = {...previous};
@@ -63,10 +62,10 @@ const useStorageArea = (area: Area): Record<string, unknown> | null => {
 
         setItems(null);
         load();
-        browser.storage.onChanged.addListener(onChanged);
+        browser.storage[area].onChanged.addListener(onChanged);
         return () => {
             alive = false;
-            browser.storage.onChanged.removeListener(onChanged);
+            browser.storage[area].onChanged.removeListener(onChanged);
         };
     }, [area]);
 

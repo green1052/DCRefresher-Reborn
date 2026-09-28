@@ -177,7 +177,8 @@ if (kisa.size < 500) throw new Error(`KISA 목록을 읽지 못했습니다: ${k
 const candidates = buildCandidates(asns, countries, vpns, kisa);
 if (candidates.size < 40_000) throw new Error(`대역이 너무 적습니다: ${candidates.size}`);
 
-const version = new Date().toISOString().slice(0, 10);
+// 분까지 넣는다. 날짜만 쓰면 같은 날 다시 만든 DB(ban.json 수정 등)를 확장이 같은 버전으로 보고 받지 않는다
+const version = new Date().toISOString().slice(0, 16);
 const ip = JSON.stringify({...encodeIpData(candidates), version});
 await Bun.write(`${OUT_DIR}/ip.json`, ip);
 await Bun.write(`${OUT_DIR}/version`, version);

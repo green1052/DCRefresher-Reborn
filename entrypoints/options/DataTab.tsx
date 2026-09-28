@@ -30,7 +30,7 @@ const isMapKey = (key: string): boolean =>
  * 쓰다가 실패하면 이전 값으로 되돌린다.
  */
 const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "merge"): Promise<void> => {
-    const previous = (await browser.storage.local.get(null)) as Record<string, unknown>;
+    const previous = await browser.storage.local.get(null);
     // 설정 키가 아닌 값(차단/메모 내보내기의 "NICK" 등)은 저장하지 않는다
     const next = Object.fromEntries(Object.entries(migrateV5(data)).filter(([key]) => key.startsWith("refresher:") && isBackupTarget(key)));
     // 걸러서 다 빠지면(옛 백업 키가 migrateV5에서 전부 빠지는 경우 등) 복원은 모든 설정을 지우고 가져오기는 아무것도 쓰지 않는다.
@@ -123,12 +123,9 @@ export function DataTab() {
     useEffect(() => {
         // 클라우드 메타에서 읽어 자동 백업(백그라운드)과 다른 기기의 백업도 반영한다
         const loadStatus = (): void => void readCloudBackupStatus().then(setCloud, console.error);
-        const onChanged = (_: unknown, area: string): void => {
-            if (area === "sync") loadStatus();
-        };
         loadStatus();
-        browser.storage.onChanged.addListener(onChanged);
-        return () => browser.storage.onChanged.removeListener(onChanged);
+        browser.storage.sync.onChanged.addListener(loadStatus);
+        return () => browser.storage.sync.onChanged.removeListener(loadStatus);
     }, []);
 
     const run = async (action: () => Promise<string>, failure: string): Promise<void> => {

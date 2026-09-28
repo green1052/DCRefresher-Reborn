@@ -48,7 +48,7 @@ export const isBackupTarget = (key: string): boolean =>
  * 읽는 쪽(stores/blocks의 normalizeBlockList)이 없는 id를 새로 준다.
  */
 export const collectLocalData = async (): Promise<Record<string, unknown>> => {
-    const data = (await browser.storage.local.get(null)) as Record<string, unknown>;
+    const data = await browser.storage.local.get(null);
     return Object.fromEntries(
         Object.entries(data)
             .filter(([key]) => isBackupTarget(key))
@@ -62,14 +62,14 @@ export const collectLocalData = async (): Promise<Record<string, unknown>> => {
     );
 };
 
-const gzip = async (text: string): Promise<Uint8Array> =>
-    new Uint8Array(await new Response(new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer());
+const gzip = (text: string): Promise<Uint8Array<ArrayBuffer>> =>
+    new Response(new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"))).bytes();
 
-const gunzip = (bytes: Uint8Array): Promise<string> =>
-    new Response(new Blob([bytes as BlobPart]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+const gunzip = (bytes: Uint8Array<ArrayBuffer>): Promise<string> =>
+    new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
 
-const sha256 = async (bytes: Uint8Array): Promise<string> =>
-    [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes as BufferSource))].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+const sha256 = async (bytes: Uint8Array<ArrayBuffer>): Promise<string> =>
+    new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)).toHex();
 
 const isMeta = (value: unknown): value is BackupMeta => isRecord(value) && value.format === 1 && Number.isInteger(value.chunks);
 
@@ -81,7 +81,7 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     const bytes = await gzip(JSON.stringify(await collectLocalData()));
     const encoded = bytes.toBase64();
 
-    const all = (await browser.storage.sync.get(null)) as Record<string, unknown>;
+    const all = await browser.storage.sync.get(null);
     const other = all[SLOT_KEYS[slot === "manual" ? "auto" : "manual"]];
     const otherSize = isMeta(other) ? other.size : 0;
     if (encoded.length + otherSize > TOTAL_CHARS) {
@@ -131,24 +131,23 @@ export interface CloudBackupStatus {
     auto?: { createdAt: number; size: number };
     /** v5 방식 백업이 남아 있다 */
     legacy: boolean;
-    /** sync 전체 사용량 (바이트). 브라우저처럼 키와 JSON 값의 길이를 센다 */
+    /** sync 전체 사용량 (바이트). 브라우저가 한도에 쓰는 getBytesInUse 값 */
     used: number;
 }
 
 /** 클라우드 백업 상태. 다른 기기가 올린 백업도 메타로 알 수 있다 */
 export const readCloudBackupStatus = async (): Promise<CloudBackupStatus> => {
-    const all = (await browser.storage.sync.get(null)) as Record<string, unknown>;
+    const [all, used] = await Promise.all([browser.storage.sync.get(null), browser.storage.sync.getBytesInUse(null)]);
     const slotStatus = (slot: BackupSlot): CloudBackupStatus["manual"] => {
         const meta = all[SLOT_KEYS[slot]];
         return isMeta(meta) ? {createdAt: meta.createdAt, size: meta.size} : undefined;
     };
-    const encoder = new TextEncoder();
 
     return {
         manual: slotStatus("manual"),
         auto: slotStatus("auto"),
         legacy: Object.keys(all).some((key) => isLegacyKey(key) && isBackupTarget(key)),
-        used: Object.entries(all).reduce((sum, [key, value]) => sum + encoder.encode(key + JSON.stringify(value)).length, 0)
+        used
     };
 };
 
@@ -160,7 +159,7 @@ interface CloudBackup {
 
 /** 한 칸의 백업을 읽는다. 없으면 null. 수동 칸은 v5 방식 백업도 읽는다 */
 export const readCloudBackup = async (slot: BackupSlot): Promise<CloudBackup | null> => {
-    const all = (await browser.storage.sync.get(null)) as Record<string, unknown>;
+    const all = await browser.storage.sync.get(null);
     const meta = all[SLOT_KEYS[slot]];
 
     if (isMeta(meta)) {

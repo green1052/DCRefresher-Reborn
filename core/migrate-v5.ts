@@ -145,7 +145,7 @@ export const migrateV5 = (data: Snapshot): Snapshot => {
 
 /** 로컬 저장소에 적용 (설치·업데이트 때). 바뀐 게 없으면 아무것도 하지 않는다 */
 export const migrateV5Storage = async (): Promise<void> => {
-    const current = (await browser.storage.local.get(null)) as Snapshot;
+    const current = await browser.storage.local.get(null);
     if (!hasV5Data(current)) return;
 
     const next = migrateV5(current);
