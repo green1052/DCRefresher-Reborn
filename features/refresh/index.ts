@@ -186,7 +186,8 @@ export default defineModule({
                     // 삭제된 글 보존은 미리보기의 archiveArticle 설정을 따른다 (미리보기를 끄면 같이 꺼진다)
                     keepDeleted: getModuleApi("preview")?.archiveArticle() === true
                 });
-                lastListHtml = listHtml;
+                // 복사해 둔다. slice한 문자열은 응답 전체(수백 KB)를 붙잡아 다음 교체까지 남는다
+                lastListHtml = structuredClone(listHtml);
                 // 디시는 자체 차단·메모 표시를 로드 때 한 번만 건다. 갈아끼운 행엔 배경이 페이지(MAIN world)에서 다시 건다 (콘텐츠 스크립트에선 못 부른다)
                 void sendMessage("refresher:listReplaced", gallery).catch(() => {});
 

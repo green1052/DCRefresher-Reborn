@@ -39,15 +39,19 @@ const numberImages = (dom: Document): void => {
     }
 };
 
-// 디시 스크립트 안에서만 찾는다. 본문이 스크립트보다 앞에 있어 HTML 전체에서 찾으면 본문에 적힌 같은 글자가 먼저 걸린다
-const parseCommentIds = (dom: Document): { commentId?: string; commentNo?: string } => {
-    const scripts = Array.from(dom.scripts, (script) => script.textContent).join("\n");
-
-    return {
-        commentId: scripts.match(/\$\(document\)\.data\('comment_id',\s+'([^']+)'\);/)?.[1],
-        commentNo: scripts.match(/\$\(document\)\.data\('comment_no',\s+'([^']+)'\);/)?.[1]
-    };
+// 디시 스크립트 안에서만 찾는다. 본문이 스크립트보다 앞에 있어 HTML 전체에서 찾으면 본문에 적힌 같은 글자가 먼저 걸린다.
+// 스크립트마다 찾는다. 모두 이어 붙인 문자열(약 100KB)에서 꺼낸 값은 그 문자열을 통째로 붙잡아 캐시된 글마다 남는다
+const findInScripts = (dom: Document, pattern: RegExp): string | undefined => {
+    for (const script of dom.scripts) {
+        const found = pattern.exec(script.textContent)?.[1];
+        if (found !== undefined) return found;
+    }
 };
+
+const parseCommentIds = (dom: Document): { commentId?: string; commentNo?: string } => ({
+    commentId: findInScripts(dom, /\$\(document\)\.data\('comment_id',\s+'([^']+)'\);/),
+    commentNo: findInScripts(dom, /\$\(document\)\.data\('comment_no',\s+'([^']+)'\);/)
+});
 
 const parseUser = (dom: Document): PostInfo["user"] => {
     const writer = dom.querySelector<HTMLElement>(".gallview_head > .gall_writer");
