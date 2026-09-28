@@ -1,6 +1,7 @@
 import {Button, Flex, Kbd, Separator, Text} from "@radix-ui/themes";
 import {ExternalLink} from "lucide-react";
 import {Fragment, useEffect, useState} from "react";
+import polyfill from "webextension-polyfill";
 
 import {Section} from "./Layout";
 
@@ -22,9 +23,10 @@ export function ShortcutTab() {
                 <Button
                     variant="soft"
                     onClick={() =>
-                        // Firefox는 tabs.create로 about:addons를 열 수 없어 전용 API(137+, 타입은 browser-types.d.ts)를 쓴다
+                        // Firefox는 tabs.create로 about:addons를 열 수 없어 전용 API(137+)를 쓴다.
+                        // wxt/browser의 타입은 크롬 기준이라 이 API가 없으므로 파이어폭스 타입이 있는 webextension-polyfill로 부른다
                         void (import.meta.env.FIREFOX
-                            ? browser.commands.openShortcutSettings()
+                            ? polyfill.commands.openShortcutSettings()
                             : browser.tabs.create({url: "chrome://extensions/shortcuts"}))
                     }
                 >
