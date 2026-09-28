@@ -6,7 +6,7 @@ import {BLOCKED_TEXT, isBlocked} from "@/core/block";
 import {BlockedError, isAbortError} from "@/core/http/client";
 import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
-import type {DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
+import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
 import {messageOf} from "@/utils/error";
@@ -16,19 +16,20 @@ import {notifyManage} from "@/utils/notify";
 import {isRecord} from "@/utils/record";
 
 import {getEntry, setEntry} from "@/core/preview/cache";
-import {ADULT_ERROR} from "@/core/preview/parser";
+import {ADULT_ERROR, SECRET_ERROR} from "@/core/preview/parser";
 import {blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {adjacentPreData, buildPreData, isBlurHidden, isTextPost} from "./rows";
 import {type Ctx, settings} from "./settings";
 import {type ErrorState, type ManageKind, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
 
 // status는 ky의 HTTPError에서 읽는다 (삭제된 글은 404).
-// 성인 인증 안내 페이지면 parsePostInfo가 Error(ADULT_ERROR)를 던진다.
+// 성인 인증 안내 페이지면 parsePostInfo가 Error(ADULT_ERROR)를, 미니 갤러리 비밀글이면 Error(SECRET_ERROR)를 던진다.
 const errorOf = (error: unknown): ErrorState => ({
     detail: messageOf(error),
     // 임시 차단(빈 페이지)은 200으로 오므로 요청 제한(429)으로 본다
     status: error instanceof HTTPError ? error.response.status : error instanceof BlockedError ? 429 : undefined,
-    adult: error instanceof Error && error.message === ADULT_ERROR
+    adult: error instanceof Error && error.message === ADULT_ERROR,
+    secret: error instanceof Error && error.message === SECRET_ERROR
 });
 
 const controller = (ctx: Ctx) => {
@@ -141,8 +142,14 @@ const controller = (ctx: Ctx) => {
         }
     };
 
-    /** 댓글을 받아 가공해 그린다. skip이면 받지 않고 빈 목록으로 처리한다 (보존해 둔 댓글은 삭제된 것으로 나온다) */
-    const pullComments = async (preData: GalleryPreData, post: PostInfo, mySignal: number, skip = false): Promise<void> => {
+    /**
+     * 댓글을 받아 가공해 그린다. skip이면 받지 않고 빈 목록으로 처리한다 (보존해 둔 댓글은 삭제된 것으로 나온다).
+     * given이 있으면 그 목록을 그린다 (미리 받은 목록, 캐시의 지난 목록). 미리 받는 중이면 여기서 기다려야 순번·pulling이 지금 잡혀,
+     * 그사이 새로고침한 새 목록을 늦게 온 옛 목록이 덮지 않는다. 미리 받기가 비었거나 실패하면 다시 받는다
+     */
+    const pullComments = async (preData: GalleryPreData, post: PostInfo, mySignal: number, skip = false, given?: CommentListResponse | Promise<CommentListResponse | undefined>): Promise<void> => {
+        // 부른 때의 요청을 쓴다. 미리 받기를 기다리는 사이 다른 글로 넘어가면 이미 끊겨 앞 글의 댓글을 다시 받지 않는다
+        const signal = abort?.signal ?? AbortSignal.abort();
         const seq = ++commentSeq;
         pulling++;
 
@@ -151,10 +158,11 @@ const controller = (ctx: Ctx) => {
             const [{prepareComments, processComments}, {list: raw, allowReply}] = await Promise.all([
                 import("@/core/preview/comments"),
                 // 건너뛸 때는 지금 알고 있는 댓글 허용(멤버만 댓글)을 그대로 둔다
-                skip ? {list: [], allowReply: store.getState().allowReply} : fetchComments(preData, post, abort!.signal)
+                skip ? {list: [], allowReply: store.getState().allowReply} : Promise.resolve(given).then((list) => list ?? fetchComments(preData, post, signal))
             ]);
             if (store.getState().signalId !== mySignal || seq < shownSeq) return;
             shownSeq = seq;
+            if (!skip) setEntry(preData, {comments: {list: raw, allowReply}});
 
             // 보존(archive) 기록은 받을 때마다 갱신해야 하므로 정리는 늘 한다
             const source = prepareComments(raw, preData, ctx.settings.archiveArticle);
@@ -231,6 +239,13 @@ const controller = (ctx: Ctx) => {
         let fresh: boolean;
         let archived: boolean;
 
+        // 받아야 하는 글이 목록에 댓글이 보이면 댓글도 본문과 함께 요청한다. 토큰(e_s_n_o)은 갤러리마다 같아 이 페이지의 값을 쓰고,
+        // 본문을 읽은 뒤 그 글의 값과 맞을 때만 쓴다. PageUp/Down으로 넘길 때는 하지 않는다 (연타하면 지나가는 글마다 요청이 나간다)
+        const esno = document.querySelector<HTMLInputElement>("#e_s_n_o")?.value;
+        const early = !dir && preData.hasComments && esno && (ctx.settings.disableCache || !cachedPost(preData))
+            ? fetchComments(preData, {esno}, abort!.signal).catch(() => undefined)
+            : undefined;
+
         try {
             ({post, fresh, archived = false} = await getPost(preData));
             post = await processContents(preData, post);
@@ -246,8 +261,14 @@ const controller = (ctx: Ctx) => {
         store.setState({post, archived});
 
         try {
+            // 캐시로 연 글은 받는 동안 지난번 댓글을 먼저 보인다. 새로 받은 목록이 같으면 다시 그리지 않는다 (shownRaw)
+            const last = fresh ? undefined : getEntry(preData)?.comments;
+            if (last) await pullComments(preData, post, mySignal, false, last);
+            // 미리 받은 댓글은 같은 요청이었을 때만 쓴다. 비어 있으면 다시 받는다
+            const matches = post.esno === esno && (post.commentId ?? preData.gallery) === preData.gallery && (post.commentNo ?? preData.id) === preData.id;
+            const given = matches && early ? early.then((list) => (list?.list.length ? list : undefined)) : undefined;
             // 방금 받은 본문이 댓글 0개면 받지 않는다. 보존해 둔 댓글이 있으면 삭제 여부를 비교해야 하므로 받는다.
-            await pullComments(preData, post, mySignal, fresh && post.commentCount === 0 && !Object.keys(getEntry(preData)?.seen ?? {}).length);
+            await pullComments(preData, post, mySignal, fresh && post.commentCount === 0 && !Object.keys(getEntry(preData)?.seen ?? {}).length, given);
         } catch (e) {
             // 댓글만 못 받았으면 본문은 그대로 두고 알린다. 임시 차단은 HTTP 클라이언트가 이미 알렸다
             if (store.getState().signalId === mySignal && !(e instanceof BlockedError)) ui.showToast("댓글을 불러오지 못했습니다.", "error");
@@ -334,8 +355,14 @@ const controller = (ctx: Ctx) => {
         if (ctx.settings.colorPreviewLink) {
             const newTitle = `${preData.title ?? document.title} - ${galName()}`;
             // 돌아갈 위치(back)도 같이 넣는다. 없으면 뒤로 가기로 다시 연 미리보기는 닫아도 글 주소에 남는다.
-            // depth: 미리보기를 열기 전 기록에서 몇 칸 위인지. 닫을 때 그만큼 뒤로 간다
-            if (!historySkip) history.pushState({refresher: 1, doc: historyDoc, preData, back: savedHistory, depth: (st.visible ? historyDepth() : 0) + 1}, newTitle, preData.link);
+            // depth: 미리보기를 열기 전 기록에서 몇 칸 위인지. 닫을 때 그만큼 뒤로 간다.
+            // 브라우저는 기록을 50개까지만 두고 오래된 것부터 지운다. 목록 항목까지 지워지면 닫아도 목록으로 못 돌아가므로 40칸부터는 쌓지 않고 바꾼다
+            if (!historySkip) {
+                const depth = (st.visible ? historyDepth() : 0) + 1;
+                const state = {refresher: 1, doc: historyDoc, preData, back: savedHistory, depth: Math.min(depth, 40)};
+                if (depth > 40) history.replaceState(state, newTitle, preData.link);
+                else history.pushState(state, newTitle, preData.link);
+            }
             // 히스토리로 다시 열 때도 바꾼다. popstate는 제목을 되돌리지 않는다.
             document.title = newTitle;
         }
@@ -520,6 +547,9 @@ const controller = (ctx: Ctx) => {
         if (!resolved || (!resolved.commentsOnly && ctx.settings.reversePreviewKey)) return;
         // 캐시를 끄면 열 때 캐시를 보지 않는다. 떼기 전에 다 받으면 한 번 더 받게 되므로 미리 받지 않는다.
         if (!ctx.settings.disableCache && !cachedPost(resolved.preData)) void requestPost(resolved.preData);
+        // 오버레이도 처음 쓸 때 띄우므로(수십 ms) 떼기를 기다리는 동안 미리 띄운다.
+        // 다음 task에서 한다. 여기서 띄우면 오버레이 모듈 초기화가 마이크로태스크로 먼저 돌아 본문 요청이 그만큼 늦게 나간다
+        if (!usePreviewStore.getState().warm) window.setTimeout(() => usePreviewStore.setState({warm: true}));
     };
 
     const onMouseUp = (ev: MouseEvent) => {
@@ -656,6 +686,9 @@ const publishSettings = (ctx: Ctx): void => {
 export interface PreviewApi {
     /** '삭제된 글과 댓글 보존' 설정. 새로고침 모듈도 목록에서 지워진 글을 남길지 이것으로 정한다 */
     archiveArticle(): boolean;
+
+    /** 미리보기 창이 열려 있는지. 새로고침 모듈은 열려 있는 동안 자동 새로고침을 쉰다 */
+    isOpen(): boolean;
 }
 
 declare module "@/core/module/types" {
@@ -674,7 +707,7 @@ export default defineModule({
     setup: (ctx): PreviewApi => {
         publishSettings(ctx);
         controller(ctx);
-        return {archiveArticle: () => ctx.settings.archiveArticle};
+        return {archiveArticle: () => ctx.settings.archiveArticle, isOpen: () => usePreviewStore.getState().visible};
     },
     onChanged: publishSettings
 });

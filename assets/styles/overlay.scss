@@ -355,7 +355,8 @@
 }
 
 .refresher-comment-html {
-    font-size: var(--font-size-3);
+    // 본문과 같은 크기 (fonts 모듈의 본문 폰트 크기)
+    font-size: var(--refresher-preview-font-size, 15px);
     line-height: 1.6;
 
     &[data-dccon] img,
@@ -569,7 +570,7 @@
         background: none;
         cursor: pointer;
 
-        &[data-active] {
+        &[aria-pressed="true"] {
             border-color: var(--accent-9);
         }
 

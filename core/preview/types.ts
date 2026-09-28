@@ -6,6 +6,8 @@ export interface GalleryPreData {
     notice: boolean;
     recommend: boolean;
     type: string;
+    /** 목록에 댓글 수가 보였는지. 댓글을 본문과 함께 요청할지 정한다 */
+    hasComments: boolean;
 }
 
 export interface User {
@@ -36,7 +38,7 @@ export interface PostInfo {
     requireCommentCaptcha?: boolean;
     v_cur_t?: string;
     randomParam?: { name: string; value: string };
-    /** 그 글의 댓글 요청 토큰 (#e_s_n_o). 현재 페이지의 값은 다른 글의 것이라 쓰면 안 된다 */
+    /** 그 글의 댓글 요청 토큰 (#e_s_n_o). 갤러리마다 같아 목록의 값으로 미리 요청하지만, 쓰기 전에 이 값과 맞춰 본다 (preview의 load) */
     esno?: string;
     /** 그 글의 추천 토큰 (input[name=code_recommend]) */
     recommendCode?: string;

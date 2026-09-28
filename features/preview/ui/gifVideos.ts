@@ -1,6 +1,13 @@
 /** 그려진 프레임이 없으면 gif로 바꾸기까지 기다리는 시간 (디시 common.js의 DCCON_VIDEO_TIMEOUT) */
 const TIMEOUT = 3000;
 
+/** 떼어 내기만 하면 mp4를 계속 받는다. 소스를 비우고 load()로 받기를 끊고 플레이어를 놓는다 */
+const stopLoading = (video: HTMLVideoElement): void => {
+    video.removeAttribute("src");
+    video.replaceChildren();
+    video.load();
+};
+
 /**
  * 디시 common.js의 dccon_video_to_gif처럼 클래스·alt·title을 옮긴 gif로 바꾼다. 관리자 가림(data-block)도 옮겨야 가린 채로 남는다.
  * 디시가 함께 옮기는 conalt는 정화에서 빠져 없다
@@ -16,10 +23,7 @@ const toGif = (video: HTMLVideoElement, gif: string): void => {
         if (value !== null) image.setAttribute(name, value);
     }
     video.replaceWith(image);
-    // 떼어 내기만 하면 mp4를 계속 받는다. 소스를 비우고 load()로 받기를 끊고 플레이어를 놓는다
-    video.removeAttribute("src");
-    video.replaceChildren();
-    video.load();
+    stopLoading(video);
 };
 
 /**
@@ -27,10 +31,12 @@ const toGif = (video: HTMLVideoElement, gif: string): void => {
  * 디시는 <source onerror>로도 바꾸는데 그 속성은 정화에서 빠진다. 깨진 mp4는 오류 없이 한 프레임도 그리지 못하기도 해서
  * 3초 안에 그려진 프레임이 없어도 바꾼다.
  * gif는 같은 그림이라 멀쩡한 영상(숨겨 두어 그리지 않은 것 등)을 바꿔도 보이는 것은 같다.
+ * 정리할 때는 창을 닫았거나 다른 글로 넘어가 문서에서 빠진 영상의 받기를 끊는다.
  */
 export const watchGifVideos = (root: HTMLElement): (() => void) => {
     const listeners = new AbortController();
     const timers: number[] = [];
+    const videos = Array.from(root.querySelectorAll("video"));
 
     for (const video of root.querySelectorAll<HTMLVideoElement>("video[data-src]")) {
         const gif = video.dataset.src ?? "";
@@ -49,5 +55,6 @@ export const watchGifVideos = (root: HTMLElement): (() => void) => {
     return () => {
         listeners.abort();
         for (const timer of timers) window.clearTimeout(timer);
+        for (const video of videos) if (!video.isConnected) stopLoading(video);
     };
 };

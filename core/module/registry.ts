@@ -74,7 +74,7 @@ const applySettings = (instance: ModuleInstance, stored: Record<string, unknown>
     }
 };
 
-const register = async (def: AnyModule, enable: boolean): Promise<void> => {
+const register = async (def: AnyModule, enables: Promise<Record<string, boolean>>): Promise<void> => {
     if (instances.has(def.id)) throw new Error(`${def.id} is already registered.`);
 
     const instance: ModuleInstance = {def, settings: {}};
@@ -87,7 +87,7 @@ const register = async (def: AnyModule, enable: boolean): Promise<void> => {
         settingsItem.watch((next) => applySettings(instance, next));
     }
 
-    if (enable) await start(instance);
+    if (isModuleEnabled(def, await enables)) await start(instance);
 };
 
 /**
@@ -135,16 +135,22 @@ export const stopAll = (): void => {
     for (const instance of instances.values()) stop(instance, true);
 };
 
-/** 모듈을 일괄 등록하고, 옵션 페이지의 on/off(저장소)를 감시해 시작/중지한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다 */
-export const loadAll = async (defs: AnyModule[], signal: AbortSignal): Promise<void> => {
+/**
+ * 모듈을 일괄 등록하고, 옵션 페이지의 on/off(저장소)를 감시해 시작/중지한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다.
+ * setup은 ready(차단·메모 스토어 초기화)가 끝난 뒤에 돈다
+ */
+export const loadAll = async (defs: AnyModule[], signal: AbortSignal, ready?: Promise<void[]>): Promise<void> => {
     // 이 문서의 주소(documentUrl)는 바뀌지 않으므로 urls가 이 페이지를 빼는 모듈은 끝내 돌지 않는다. 설정을 읽거나 감시하지 않게 등록하지 않는다
     defs = defs.filter((def) => !def.urls || def.urls.some((re) => re.test(documentUrl.href)));
-    const enables = await modulesStorage.getValue();
+    // on/off·모듈 설정을 ready와 한꺼번에 요청한다. 차례로 기다리면 저장소 왕복이 쌓여 모듈이 본문을 한참 읽은 뒤에야 뜬다
+    const enables = Promise.all([modulesStorage.getValue(), ready]).then(([value]) => value);
 
-    const results = await Promise.allSettled(defs.map((def) => register(def, isModuleEnabled(def, enables))));
+    const results = await Promise.allSettled(defs.map((def) => register(def, enables)));
     for (const [index, result] of results.entries()) {
         if (result.status === "rejected") console.error(`Failed to load module: ${defs[index]?.id}`, result.reason);
     }
+    // 차단·메모를 못 읽었으면 여기서 멈춘다. 아래 sync가 차단 목록 없이 모듈을 켜지 않게 한다
+    await enables;
 
     const sync = (next: Record<string, boolean>): void => {
         for (const instance of instances.values()) {

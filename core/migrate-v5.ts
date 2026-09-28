@@ -8,7 +8,7 @@
  * 차단·메모 목록(refresher:block:<유형>, refresher:memo:<유형>)은 키와 모양이 같아 그대로 쓴다.
  * 옛 IP DB(refresher:database:*)·모듈 캐시(…:data)·백업 시각은 버린다. 다시 받거나 새로 쌓인다.
  * 5.1.2 이전 버전이 남긴 키(isLeftoverKey)도 버린다. v5도 읽지 않던 잔재라 백업·내보내기만 불린다.
- * 설정 키·값 형식은 v5와 같다(모듈별로 대조함). v6에 없는 키는 v6가 읽지 않으니 그대로 넘겨도 된다.
+ * 설정 키·값 형식은 v5와 같다(모듈별로 대조함). RENAMED에 적은 키만 이름을 바꿔 옮긴다. v6에 없는 키는 v6가 읽지 않으니 그대로 넘겨도 된다.
  */
 import {arrayIncludes} from "ts-extras";
 
@@ -33,6 +33,9 @@ const V5_MODULE_IDS: Record<string, string> = {
 const MOVED_TO_USERINFO = ["checkRatio", "alarmRatio", "checkPermBan"];
 /** 위 중 v5에서 관리 모듈이 켜져 있어야만 동작하던 켜기/끄기 설정 */
 const NEEDS_MANAGE_ENABLED = ["checkRatio", "checkPermBan"];
+
+/** v5 설정 중 v6에서 이름이 바뀐 것 (모듈 id → v5 키 → v6 키) */
+const RENAMED: Record<string, Record<string, string>> = {preview: {tooltipInteraction: "tooltipWheel"}};
 
 const V5_KEY = /^refresher:module:(.+):(enable|data|setting:(.+))$/;
 
@@ -92,7 +95,7 @@ export const migrateV5 = (data: Snapshot): Snapshot => {
             if (id === "manage" && MOVED_TO_USERINFO.includes(setting)) {
                 (settings.userinfo ??= {})[setting] = NEEDS_MANAGE_ENABLED.includes(setting) ? value === true && manageEnabled : value;
             } else {
-                (settings[id] ??= {})[setting] = value;
+                (settings[id] ??= {})[RENAMED[id]?.[setting] ?? setting] = value;
             }
             continue;
         }

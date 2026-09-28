@@ -153,7 +153,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                             <button
                                 type="button"
                                 key={pack.package_idx}
-                                data-active={activePackage === pack.package_idx || undefined}
+                                aria-pressed={activePackage === pack.package_idx}
                                 title={pack.title}
                                 onClick={(ev) => {
                                     openPackage(pack);

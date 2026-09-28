@@ -12,7 +12,8 @@ export const isModuleEnabled = (def: Pick<ModuleDefinition, "id" | "defaultEnabl
 export const defaultValue = (schema: SettingSchema): SettingValue => (schema.type === "order" ? [...schema.default] : schema.default);
 
 /**
- * 저장값을 스키마에 맞춘다. 타입이 틀리면 기본값을 쓰고, range는 min~max로 자른다.
+ * 저장값을 스키마에 맞춘다. 타입이 틀리면 기본값을 쓰고, range는 슬라이더처럼 step 단위로 맞춰 min~max로 자른다
+ * (가져온 설정의 소수 등. 동시 요청 수는 정수가 아니면 p-limit이 던진다).
  * order는 스키마에 없거나 겹친 항목을 빼고, 새로 생긴 항목을 덧붙인다.
  */
 export const normalizeSetting = (schema: SettingSchema, value: unknown): SettingValue => {
@@ -29,7 +30,7 @@ export const normalizeSetting = (schema: SettingSchema, value: unknown): Setting
             return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value) ? value : schema.default;
         case "range":
             return typeof value === "number" && Number.isFinite(value)
-                ? Math.min(schema.max, Math.max(schema.min, value))
+                ? Math.min(schema.max, Math.max(schema.min, schema.min + Math.round((value - schema.min) / schema.step) * schema.step))
                 : schema.default;
         case "order": {
             const itemKeys = new Set(Object.keys(schema.items));

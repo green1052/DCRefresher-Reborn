@@ -8,7 +8,7 @@ const DEFAULT_FONTS = "Noto Sans CJK KR, NanumGothic";
 
 // "디시인사이드 폰트 교체"가 켜졌을 때 폰트를 바꿀 디시 요소.
 // :root 접두사는 명시도를 올려 디시 규칙을 이기려는 것이다
-const DC_FONT_TARGETS = ["body", "button", "input", ".gall_list", ".view_content_wrap", ".view_comment div", ".btn_cmt_open", ".btn_cmt_close"]
+const DC_FONT_TARGETS = ["body", "button", "input", "textarea", "select", ".gall_list", ".view_content_wrap", ".view_comment div", ".btn_cmt_open", ".btn_cmt_close"]
     .map((selector) => `:root ${selector}`)
     .join(", ");
 
@@ -55,7 +55,7 @@ const settings = {
     bodyFontSize: {
         type: "range",
         name: "본문 폰트 크기",
-        desc: "게시글 본문의 폰트 크기입니다. 미리보기 창은 +2px로 표시됩니다.",
+        desc: "게시글 본문의 폰트 크기입니다. 미리보기 창은 본문과 댓글 모두 +2px로 표시됩니다.",
         default: 13,
         min: 5,
         max: 30,

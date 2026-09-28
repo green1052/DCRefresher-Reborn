@@ -2,6 +2,9 @@
 const FIXED_ICONS = new Set([
     "fix_managernik.gif",
     "fix_sub_managernik.gif",
+    "nftcon_fix_manager.png",
+    "w_app_gonick_manager_16.png",
+    "bestcon_fix_manager.png",
     "fix_nik.gif",
     "nftcon_fix.png",
     "dc20th_wgallcon4.png",

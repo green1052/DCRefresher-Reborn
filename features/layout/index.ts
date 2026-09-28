@@ -22,7 +22,12 @@ const HIDE_OPTIONS = {
         // 설문·광고 행은 user_name 칸, 운영자 글은 식별 코드·IP가 빈 운영자 작성자 칸
         selector: "tr[class*=ub-content]:has(> td[user_name=운영자]), tr.ub-content:has(> .ub-writer[data-nick=운영자][data-uid=\"\"][data-ip=\"\"])"
     },
-    removeGamemeca: {name: "게임메카 숨기기", desc: "글 목록에서 게임메카 게시글을 숨깁니다.", selector: "tr[data-type=icon_fnews]"}
+    removeGamemeca: {
+        name: "게임메카 숨기기",
+        desc: "글 목록에서 게임메카 게시글을 숨깁니다.",
+        // 예전 뉴스 행과, 지금처럼 일반 글 행으로 그려지는 게임메카 작성자 행
+        selector: "tr[data-type=icon_fnews], tr.ub-content:has(> .ub-writer[data-uid=\"gamemeca\"])"
+    }
 } satisfies Record<string, { name: string; desc: string; selector: string }>;
 
 const HIDE_KEYS = objectKeys(HIDE_OPTIONS);

@@ -86,7 +86,7 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     const otherSize = isMeta(other) ? other.size : 0;
     if (encoded.length + otherSize > TOTAL_CHARS) {
         const kb = (chars: number): number => Math.ceil(chars / 1024);
-        throw new Error(`백업이 클라우드 한도를 넘습니다. (이번 ${kb(encoded.length)}KB + 다른 백업 ${kb(otherSize)}KB / 100KB)`);
+        throw new Error(`백업이 클라우드 한도를 넘습니다. (이번 ${kb(encoded.length)}KB + 다른 백업 ${kb(otherSize)}KB / ${Math.floor(TOTAL_CHARS / 1024)}KB)`);
     }
 
     const chunks: string[] = [];

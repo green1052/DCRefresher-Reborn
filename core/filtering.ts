@@ -45,20 +45,32 @@ const rebuildUnion = (): void => {
 // userinfo가 작성자마다 넣는 배지 묶음은 건너뛴다. closest로 작성자 요소가 다시 잡혀 행마다 모든 필터(차단 정규식 등)가 한 번 더 돌기 때문이다.
 const flush = (mutations: MutationRecord[]): void => {
     const added = new Set<HTMLElement>();
+    // 부모(target)가 이번 묶음에 추가된 요소 안이면 그 요소를 훑을 때 잡히므로 노드를 꺼내 보지 않는다.
+    // 문서를 읽는 동안에는 노드마다 래퍼를 만드는 비용이 flush의 대부분이다. 판정은 부모마다 한 번만 한다
+    const covered = new Map<Node, boolean>();
+    const isCovered = (node: Node): boolean => {
+        let result = covered.get(node);
+        if (result === undefined) {
+            const parent = node.parentElement;
+            result = (node instanceof HTMLElement && added.has(node)) || (parent !== null && isCovered(parent));
+            covered.set(node, result);
+        }
+        return result;
+    };
     for (const mutation of mutations) {
+        if (isCovered(mutation.target)) continue;
         for (const node of mutation.addedNodes) {
-            // 같은 묶음 안에서 다시 빠진 노드는 볼 것이 없다
-            if (node instanceof HTMLElement && node.isConnected && !node.classList.contains("refresher-user-badges")) added.add(node);
+            if (node instanceof HTMLElement) added.add(node);
         }
     }
     if (added.size === 0) return;
 
-    // 함께 추가된 조상 안에 든 노드는 그 조상을 훑을 때 잡힌다
+    // 함께 추가된 조상 안에 든 노드는 그 조상을 훑을 때 잡힌다. 같은 묶음 안에서 다시 빠진 노드는 볼 것이 없다
     const roots = [...added].filter((node) => {
         for (let parent = node.parentElement; parent; parent = parent.parentElement) {
             if (added.has(parent)) return false;
         }
-        return true;
+        return node.isConnected && !node.classList.contains("refresher-user-badges");
     });
     // 조상 검사는 부모마다 한 번만 한다. 파서는 같은 부모 아래에 행을 줄줄이 넣는다
     const parents = new Set<HTMLElement>();

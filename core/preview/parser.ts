@@ -39,15 +39,19 @@ const numberImages = (dom: Document): void => {
     }
 };
 
-// 디시 스크립트 안에서만 찾는다. 본문이 스크립트보다 앞에 있어 HTML 전체에서 찾으면 본문에 적힌 같은 글자가 먼저 걸린다
-const parseCommentIds = (dom: Document): { commentId?: string; commentNo?: string } => {
-    const scripts = Array.from(dom.scripts, (script) => script.textContent).join("\n");
-
-    return {
-        commentId: scripts.match(/\$\(document\)\.data\('comment_id',\s+'([^']+)'\);/)?.[1],
-        commentNo: scripts.match(/\$\(document\)\.data\('comment_no',\s+'([^']+)'\);/)?.[1]
-    };
+// 디시 스크립트 안에서만 찾는다. 본문이 스크립트보다 앞에 있어 HTML 전체에서 찾으면 본문에 적힌 같은 글자가 먼저 걸린다.
+// 스크립트마다 찾는다. 모두 이어 붙인 문자열(약 100KB)에서 꺼낸 값은 그 문자열을 통째로 붙잡아 캐시된 글마다 남는다
+const findInScripts = (dom: Document, pattern: RegExp): string | undefined => {
+    for (const script of dom.scripts) {
+        const found = pattern.exec(script.textContent)?.[1];
+        if (found !== undefined) return found;
+    }
 };
+
+const parseCommentIds = (dom: Document): { commentId?: string; commentNo?: string } => ({
+    commentId: findInScripts(dom, /\$\(document\)\.data\('comment_id',\s+'([^']+)'\);/),
+    commentNo: findInScripts(dom, /\$\(document\)\.data\('comment_no',\s+'([^']+)'\);/)
+});
 
 const parseUser = (dom: Document): PostInfo["user"] => {
     const writer = dom.querySelector<HTMLElement>(".gallview_head > .gall_writer");
@@ -77,6 +81,8 @@ const strip = (value: string | undefined | null, ...prefixes: string[]): string 
 
 /** 성인 인증이 필요한 글일 때 parsePostInfo가 던지는 Error의 message */
 export const ADULT_ERROR = "adult";
+/** 미니 갤러리 비밀글. 본문 대신 비밀번호 폼이 온다 */
+export const SECRET_ERROR = "secret";
 
 /**
  * 성인 인증 안내 페이지인지. 미인증이면 본문 대신 /error/adult/로 보내는 스크립트가 오고,
@@ -95,7 +101,7 @@ const parseCommentForm = (dom: Document): CommentForm => ({
     gallNickName: dom.querySelector("#use_gall_nick") ? dom.querySelector<HTMLInputElement>("#focus_cmt input[name=gall_nick_name]")?.value ?? "" : undefined
 });
 
-/** 본문 HTML → PostInfo. 비정상 문서면 undefined, 성인 인증이 필요하면 Error(ADULT_ERROR) */
+/** 본문 HTML → PostInfo. 비정상 문서면 undefined, 성인 인증이 필요하면 Error(ADULT_ERROR), 비밀글이면 Error(SECRET_ERROR) */
 export const parsePostInfo = (html: string): PostInfo | undefined => {
     const dom = new DOMParser().parseFromString(html, "text/html");
 
@@ -104,6 +110,8 @@ export const parsePostInfo = (html: string): PostInfo | undefined => {
         if (isAdultPage(html, dom)) throw new Error(ADULT_ERROR);
         return;
     }
+    // 비밀번호 확인은 원문에서만 된다. 정화하면 입력칸이 빠져 누를 수 없는 확인 버튼만 남는다
+    if (dom.querySelector(".writing_view_box .mini_pwcheck")) throw new Error(SECRET_ERROR);
 
     restoreImageSources(dom);
     // 본문 위 짤방(갤러리 기본 이미지)·광고 자리는 글 내용이 아니다

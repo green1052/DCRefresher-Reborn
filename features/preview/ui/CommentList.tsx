@@ -17,7 +17,9 @@ export const CommentList = () => {
     // 숨김 차단과 접힌 같은 댓글은 '가린 내용 보기' 동안만 (흐리게) 그린다. 블러 차단은 그려 두고 overlay.scss가 흐린다.
     // 트리 선과 답글 수도 그리는 댓글만 센다.
     const shown = new Set(revealed ? comments : comments.filter((comment) => comment.blocked !== "hide" && comment.duplicates !== 0));
-    const parents = comments.filter((comment) => comment.depth === 0);
+    // 10쪽 제한으로 부모를 받지 못한 답글은 쓰레드 첫 댓글처럼 그린다. 빠뜨리면 머리의 총 댓글 수와 어긋난다
+    const topNos = new Set(comments.filter((comment) => comment.depth === 0).map((comment) => comment.no));
+    const parents = comments.filter((comment) => comment.depth === 0 || !topNos.has(comment.c_no));
     // 답글을 쓰레드 첫 댓글 번호(c_no)로 한 번에 묶는다. 부모마다 전체를 훑으면 O(n²)이다.
     const repliesOf = Map.groupBy(comments.filter((comment) => comment.depth === 1 && shown.has(comment)), (comment) => comment.c_no);
     // 문서를 querySelector로 훑으므로 댓글마다가 아니라 여기서 한 번 잰다.

@@ -61,7 +61,7 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
             `DCRefresher Reborn v${version} (${import.meta.env.BROWSER})`,
             `브라우저: ${navigator.userAgent}`,
             `켜진 모듈: ${enabledNames.join(", ") || "없음"}`,
-            `IP DB: ${db?.version ?? "없음"} (갱신 ${formatTime(db?.lastUpdate ?? 0)})`,
+            `IP DB: ${db?.version || "없음"} (갱신 ${formatTime(db?.lastUpdate ?? 0)})`,
             `차단 ${blockCount}개 · 메모 ${memoCount}개`
         ];
         try {

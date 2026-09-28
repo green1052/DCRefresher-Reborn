@@ -10,6 +10,7 @@ import {eventBus} from "@/core/eventbus/bus";
 import {sendMessage} from "@/core/messaging/protocol";
 import {useUiStore} from "@/stores/ui";
 import {smoothScroll} from "@/utils/dom";
+import {isRecord} from "@/utils/record";
 
 import {replaceList, syncPaging} from "./list";
 import {type Ctx, settings} from "./settings";
@@ -52,6 +53,8 @@ export default defineModule({
         let rerun = false;
         // 연달아 실패한 목록 요청 수. 실패할 때마다 자동 새로고침 주기가 두 배가 된다
         let failures = 0;
+        // 미리보기가 열려 있어 자동 새로고침을 쉬었는지. 닫은 뒤 첫 주기도 쉰다
+        let previewPaused = false;
         // 페이지를 넘긴 주소. 그 목록으로 갈아끼운 직후 목록 위로 스크롤한다 (진행 중인 요청에 막혀 나중에 받아도)
         let scrollAfter: string | null = null;
         // 진행 중인 목록 요청. 주소가 바뀌면 끊는다
@@ -69,7 +72,11 @@ export default defineModule({
             (element) => {
                 // 버튼을 넣으면 이 칸에 필터가 다시 불린다. 이 실행의 버튼이면 그대로 둔다.
                 // 죽은 인스턴스(파이어폭스 재주입)가 남긴 버튼은 눌러도 반응이 없어 갈아끼운다
-                if (button && element.contains(button)) return;
+                if (button && element.contains(button)) {
+                    // 칸을 다 읽기 전에 넣었으면 파서가 뒤 버튼들을 그 뒤에 붙인다. 다시 불릴 때 끝으로 옮긴다
+                    if (element.lastElementChild !== button) element.append(button);
+                    return;
+                }
                 element.querySelector("button[data-refresher-refresh]")?.remove();
 
                 button = document.createElement("button");
@@ -113,6 +120,17 @@ export default defineModule({
                 const page = new URL(originalLocation).searchParams.get("page");
                 if (page && page !== "1") return false;
 
+                // 미리보기가 목록을 덮고 있으면 쉬고, 닫은 뒤 첫 주기도 쉰다.
+                // 연 동안 쌓인 새 글이 닫자마자 들어오면 다음 글을 누르려던 행이 밀린다
+                if (getModuleApi("preview")?.isOpen()) {
+                    previewPaused = true;
+                    return false;
+                }
+                if (previewPaused) {
+                    previewPaused = false;
+                    return false;
+                }
+
                 // 목록을 갈아끼우면 커서·키보드 포커스 아래 행이 바뀐다. 설정을 켜면 그 위에 있는 동안 건너뛴다.
                 // 포커스는 :focus-visible만 본다. 글 제목을 마우스로 누르면 링크에 포커스가 남아, :focus로 보면 목록을 떠나도 계속 멈춘다
                 const list = ctx.settings.pauseOnHover ? document.querySelector(LIST_SELECTOR) : null;
@@ -153,15 +171,20 @@ export default defineModule({
                 // 그사이 주소가 바뀌었으면 지난 주소의 목록이라 버린다. finally에서 새 주소로 다시 받는다
                 if (target !== originalLocation) return false;
 
-                // 목록이 그대로면 파싱·교체를 건너뛴다. 응답 전체는 요청마다 바뀌는 값(s_key)이 있어 tbody만 비교한다
-                const start = response.indexOf("<tbody");
+                // 목록이 그대로면 파싱·교체를 건너뛴다. 응답 전체는 요청마다 바뀌는 값(s_key)이 있어 목록 표의 tbody만 비교한다
+                const table = response.indexOf("<table class=\"gall_list");
+                const start = response.indexOf("<tbody", table);
                 const listHtml = start === -1 ? "" : response.slice(start, response.indexOf("</tbody>", start));
                 if (!customURL && listHtml && listHtml === lastListHtml) {
                     failures = 0;
                     return true;
                 }
 
-                const dom = new DOMParser().parseFromString(response, "text/html");
+                // 자동 새로고침은 목록 표만 파싱한다 (문서 전체의 1/3). 페이징 박스는 사용자가 한 로드(강제·이동)에서만 맞춘다.
+                // 검색 결과는 검색 이어 보기가 페이징을 보고 다시 이어 붙이므로 문서 전체를 파싱해 페이징도 맞춘다.
+                // 지난 요청이 실패했으면(사용자의 페이지 이동이 실패해 페이징이 옛 페이지일 수 있다) 문서 전체를 파싱해 페이징도 맞춘다
+                const partial = !force && failures === 0 && !queryString("s_keyword") && table !== -1 && listHtml;
+                const dom = new DOMParser().parseFromString(partial ? `<table class="gall_list">${listHtml}` : response, "text/html");
 
                 const oldList = document.querySelector<HTMLElement>(LIST_SELECTOR);
                 const newList = dom.querySelector<HTMLElement>(LIST_SELECTOR);
@@ -180,7 +203,8 @@ export default defineModule({
                     // 삭제된 글 보존은 미리보기의 archiveArticle 설정을 따른다 (미리보기를 끄면 같이 꺼진다)
                     keepDeleted: getModuleApi("preview")?.archiveArticle() === true
                 });
-                lastListHtml = listHtml;
+                // 복사해 둔다. slice한 문자열은 응답 전체(수백 KB)를 붙잡아 다음 교체까지 남는다
+                lastListHtml = structuredClone(listHtml);
                 // 디시는 자체 차단·메모 표시를 로드 때 한 번만 건다. 갈아끼운 행엔 배경이 페이지(MAIN world)에서 다시 건다 (콘텐츠 스크립트에선 못 부른다)
                 void sendMessage("refresher:listReplaced", gallery).catch(() => {});
 
@@ -246,6 +270,9 @@ export default defineModule({
         // 뒤로/앞으로 가기: 인페이지 전환으로 쌓인 주소의 목록으로 되돌린다.
         // 미리보기가 쌓은 글 주소 사이의 이동은 같은 목록이라 받지 않는다. 다시 받으면 고르던 체크가 풀리고 일시정지를 무시한다
         const onPopState = (): void => {
+            // 미리보기가 쌓은 글 기록 사이의 이동은 같은 목록이다. 행 링크는 목록 주소의 기본값 쿼리(sort_type=N, 빈 search_pos 등)를 빼서 listUrl로는 가릴 수 없다
+            const state: unknown = history.state;
+            if (isRecord(state) && state.refresher === 1) return;
             if (listUrl(location.href) === listUrl(originalLocation)) return;
 
             window.clearTimeout(timer);

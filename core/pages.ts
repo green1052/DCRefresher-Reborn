@@ -26,6 +26,12 @@ export const LIST_PAGE = /\/board\/lists/;
  * 디시가 요청이 너무 많을 때 주는 임시 차단 페이지인지. 본문(<body>)이 빈 문서가 온다.
  * 받은 응답을 보는 HTTP 클라이언트(detectBlocked)가 쓴다. 지금 페이지는 콘텐츠 스크립트가 DOM으로 따로 본다 (refresher-root 제외)
  */
-export const isBlockedPage = (html: string): boolean => (/<body[^>]*>([\s\S]*)<\/body>/i.exec(html)?.[1] ?? html).trim() === "";
+export const isBlockedPage = (html: string): boolean => {
+    // 정규식을 쓰지 않는다. 엔진은 마지막 정규식의 입력(응답 전체, 수백 KB)을 다음 정규식이 돌 때까지 붙잡는다
+    const body = html.indexOf("<body");
+    const open = body === -1 ? -1 : html.indexOf(">", body);
+    const close = html.lastIndexOf("</body>");
+    return (open !== -1 && open < close ? html.slice(open + 1, close) : html).trim() === "";
+};
 
 export const BLOCKED_PAGE_MESSAGE = "요청이 많아 디시인사이드가 잠시 접속을 막았습니다. 잠시 기다린 뒤 새로고침해 주세요.";

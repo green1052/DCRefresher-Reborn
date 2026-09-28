@@ -9,6 +9,8 @@ export interface ErrorState {
     status?: number;
     /** 성인 인증이 필요한 글 (비로그인·미인증이면 본문 대신 인증 안내가 온다) */
     adult?: boolean;
+    /** 미니 갤러리 비밀글 (비밀번호는 원문에서만 넣을 수 있다) */
+    secret?: boolean;
 }
 
 export type ManageKind = "notice" | "recommend" | "delete" | "bump";
@@ -54,6 +56,8 @@ interface Hooks {
 
 interface PreviewState extends PostState, Hooks {
     visible: boolean;
+    /** 우클릭을 누른 순간 오버레이를 미리 띄운다 (윈도우는 떼야 contextmenu가 온다) */
+    warm: boolean;
     /** 닫힌 뒤 페이드아웃 중 (200ms) */
     fading: boolean;
     preData: GalleryPreData | null;
@@ -79,7 +83,7 @@ interface PreviewState extends PostState, Hooks {
 
 /** 미리보기 UI 중 하나라도 떠 있어 오버레이가 필요한지 (콘텐츠 스크립트가 오버레이를 처음 띄울 때 본다). 새 UI를 추가하면 여기에 넣는다 */
 export const needsPreviewOverlay = (state: PreviewState): boolean =>
-    state.visible || state.mini !== null || state.captcha !== null || state.blockPopup;
+    state.visible || state.warm || state.mini !== null || state.captcha !== null || state.blockPopup;
 
 /** 차단 기간 (시간 → 라벨). 차단 팝업과 차단 프리셋 설정이 같이 쓴다 */
 export const BLOCK_DAYS: Record<string, string> = {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"};
@@ -146,6 +150,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     ...freshPost(),
     ...NO_HOOKS,
     visible: false,
+    warm: false,
     fading: false,
     preData: null,
     signalId: 0,

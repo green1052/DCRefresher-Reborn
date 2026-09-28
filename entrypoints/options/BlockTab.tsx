@@ -5,7 +5,7 @@ import {BlockDialog} from "@/components/BlockDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
 import {BLOCK_TYPES, DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType} from "@/core/storage/types";
-import {type BlockInputFields, composeExtra, normalizeBlockList, useBlocksStore} from "@/stores/blocks";
+import {type BlockInputFields, composeExtra, normalizeBlockList, normalizeDefaults, useBlocksStore} from "@/stores/blocks";
 import {SAVE_FAILED} from "@/utils/error";
 
 import {ListRow, ListTabs} from "./Layout";
@@ -35,8 +35,15 @@ export function BlockTab() {
     const importBlocks = async (parsed: Record<string, unknown>): Promise<number> => {
         // 차단 목록이 하나도 없으면(0 반환) 메모/설정 등 다른 데이터를 붙여넣은 것이다
         const types = BLOCK_TYPES.filter((type) => Array.isArray(parsed[type]));
+        // 모드가 '기본값'인 항목은 내보낸 기기의 기본 모드로 검사됐다. 이 기기와 다르면 그 모드를 적어 검사 방식을 지킨다 (데이터 탭 가져오기와 같다).
+        // 기본 모드가 없는 JSON은 그 기기가 기본값을 쓴 것으로 본다
+        const source = normalizeDefaults(parsed.defaults);
         // 기존 목록에 덧붙인다. 같은 content+gallery는 가져온 항목으로 바꿔 뒤로 보내고, id는 새로 준다
-        for (const type of types) await addEntries(type, normalizeBlockList(parsed[type]));
+        for (const type of types) {
+            const list = normalizeBlockList(parsed[type]);
+            const pinned = source[type] === defaults[type] ? undefined : source[type];
+            await addEntries(type, pinned ? list.map((entry) => (entry.mode ? entry : {...entry, mode: pinned})) : list);
+        }
         return types.length;
     };
 
@@ -57,7 +64,7 @@ export function BlockTab() {
                 label="차단 목록"
                 columns={["항목", "정보"]}
                 emptyText={(type) => `차단된 ${TYPE_NAMES[type]} 없음`}
-                exportData={() => entries}
+                exportData={() => ({...entries, defaults})}
                 importData={importBlocks}
                 onClear={clearType}
                 onAdd={(type) => setDialog({type, initial: null})}

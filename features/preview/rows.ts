@@ -43,7 +43,8 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
         link: url.href,
         notice,
         recommend,
-        type
+        type,
+        hasComments: row.querySelector(".reply_num") !== null
     };
 };
 
@@ -56,9 +57,17 @@ export const isBlurHidden = (element: Element): boolean =>
  * 미리보기는 본문(TEXT) 차단만 검사하므로 여기서 거르지 않으면 목록에서 숨긴 글이 그대로 열린다.
  */
 export const adjacentPreData = (from: GalleryPreData, dir: number): GalleryPreData | null => {
-    const rows = Array.from(document.querySelectorAll<HTMLElement>(".gall_list .ub-content")).filter((row) =>
-        row.checkVisibility() && row.querySelector("a:not(.reply_numbox)")
-    );
+    // 댓글 검색은 맞은 댓글마다 같은 글 행을 되풀이한다. 글마다 첫 행만 남겨야 넘기기가 같은 글에 멈추거나 되돌아가지 않는다
+    const seen = new Set<string>();
+    const rows = Array.from(document.querySelectorAll<HTMLElement>(".gall_list .ub-content")).filter((row) => {
+        if (!row.checkVisibility() || !row.querySelector("a:not(.reply_numbox)")) return false;
+        const pre = buildPreData(row);
+        if (!pre) return true;
+        const key = `${pre.gallery}/${pre.id}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
 
     const index = rows.findIndex((row) => {
         const pre = buildPreData(row);
