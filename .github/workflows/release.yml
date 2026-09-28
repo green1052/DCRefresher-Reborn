@@ -5,8 +5,9 @@ on:
         tags:
             - "*.*.*"
 
+# 작업마다 필요한 권한만 준다. 쓰기는 GitHub 릴리즈(release)와 data 브랜치 푸시(db)만 한다
 permissions:
-    contents: write
+    contents: read
 
 concurrency:
     group: release
@@ -15,11 +16,16 @@ concurrency:
 jobs:
     release:
         runs-on: ubuntu-latest
+        timeout-minutes: 15
+        permissions:
+            contents: write
         steps:
-            # 태그가 release 브랜치에 있는지 보려면 이력이 다 있어야 한다 (얕은 클론은 merge-base가 조상을 못 찾는다)
+            # 태그가 release 브랜치에 있는지 보려면 이력이 다 있어야 한다 (얕은 클론은 merge-base가 조상을 못 찾는다).
+            # 옛 커밋의 파일 내용은 필요 없어 받지 않는다
             -   uses: actions/checkout@v7
                 with:
                     fetch-depth: 0
+                    filter: blob:none
 
             # 태그와 package.json 버전이 다르면 스토어에 엉뚱한 버전이 올라간다
             -   name: Check version
@@ -60,21 +66,27 @@ jobs:
 
             # 스토어 제출은 스토어마다 따로 한다. 한 스토어만 실패해도 다른 스토어·DB가 막히지 않고, 실패한 쪽만 다시 실행할 수 있다
             # (한 번에 제출하면 다시 실행할 때 이미 올라간 스토어에 같은 버전을 또 올리다 실패한다)
+            # 제출 작업에만 넘긴다. zip은 GitHub 릴리즈에도 있고 이미 압축돼 있어 다시 압축하지 않고 하루만 둔다
             -   uses: actions/upload-artifact@v7
                 with:
                     name: zips
                     path: .output/*.zip
+                    if-no-files-found: error
+                    compression-level: 0
+                    retention-days: 1
 
     submit-chrome:
         needs: release
         runs-on: ubuntu-latest
+        timeout-minutes: 10
         steps:
             -   uses: actions/checkout@v7
 
             -   uses: oven-sh/setup-bun@v2
 
+            # 제출(wxt submit)에는 .wxt가 필요 없어 postinstall(wxt prepare)을 건너뛴다
             -   name: Install Dependencies
-                run: bun ci
+                run: bun ci --ignore-scripts
 
             -   uses: actions/download-artifact@v8
                 with:
@@ -94,13 +106,15 @@ jobs:
     submit-firefox:
         needs: release
         runs-on: ubuntu-latest
+        timeout-minutes: 10
         steps:
             -   uses: actions/checkout@v7
 
             -   uses: oven-sh/setup-bun@v2
 
+            # 제출(wxt submit)에는 .wxt가 필요 없어 postinstall(wxt prepare)을 건너뛴다
             -   name: Install Dependencies
-                run: bun ci
+                run: bun ci --ignore-scripts
 
             -   uses: actions/download-artifact@v8
                 with:
@@ -118,4 +132,6 @@ jobs:
     # (확장은 업데이트 때 DB를 다시 받는다). 검사·빌드가 실패한 릴리즈는 DB를 바꾸지 않도록 릴리즈 뒤에 돈다. 스토어 제출 결과와는 상관없다
     db:
         needs: release
+        permissions:
+            contents: write
         uses: ./.github/workflows/db.yml

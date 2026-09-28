@@ -17,6 +17,7 @@ concurrency:
 jobs:
     db:
         runs-on: ubuntu-latest
+        timeout-minutes: 15
         steps:
             # 배포된 확장이 읽는 형식으로 만든다. 릴리즈(태그)가 부르면 그 태그, 예약·수동 실행은 release 브랜치다.
             # develop으로 만들면 IP 형식을 바꾼 코드가 릴리즈 전에 올라가 배포된 확장이 DB를 읽지 못한다
