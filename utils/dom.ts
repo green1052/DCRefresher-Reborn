@@ -4,6 +4,9 @@ export const whenDomReady = (run: () => void, signal?: AbortSignal): void => {
     else run();
 };
 
+/** 부드러운 스크롤(맨 위로·댓글로·페이지 넘김 등). 동작 줄이기(prefers-reduced-motion)를 켰으면 바로 옮긴다 */
+export const smoothScroll = (): ScrollBehavior => (matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
+
 /**
  * id인 <style>에 css를 쓴다. 없으면 만든다. 콘텐츠 스크립트는 document_start에 돌아 head가 없을 수 있으므로 <html>에 붙인다.
  * 죽은 인스턴스(파이어폭스 재주입)가 남긴 style도 id로 찾아 이어 쓴다. 새로 붙이면 옛 규칙이 끌 수 없게 남는다

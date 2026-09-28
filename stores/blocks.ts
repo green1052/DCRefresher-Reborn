@@ -1,5 +1,6 @@
 import {create} from "zustand";
 import {arrayIncludes} from "ts-extras";
+import {storage} from "wxt/utils/storage";
 
 import {BLOCK_TYPES, blockDefaultsStorage, blockStorage, DEFAULT_DETECT_MODE, DETECT_MODE_NAMES, DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
@@ -123,12 +124,10 @@ export const normalizeDefaults = (value: unknown): Record<BlockType, DetectMode>
 const setDefaults = (next: Partial<Record<BlockType, DetectMode>>): void => useBlocksStore.setState({defaults: normalizeDefaults(next)});
 
 const load = async (): Promise<void> => {
-    const [lists, defaults] = await Promise.all([
-        Promise.all(BLOCK_TYPES.map((type) => blockStorage[type].getValue())),
-        blockDefaultsStorage.getValue()
-    ]);
-    for (const [index, type] of BLOCK_TYPES.entries()) setList(type, lists[index]);
-    setDefaults(defaults);
+    // 한 번의 storage.local.get으로 읽는다 (getItems가 항목별 fallback도 채운다)
+    const [defaults, ...lists] = await storage.getItems([blockDefaultsStorage, ...BLOCK_TYPES.map((type) => blockStorage[type])]);
+    for (const [index, type] of BLOCK_TYPES.entries()) setList(type, lists[index]?.value);
+    setDefaults(defaults?.value);
 };
 
 /** 화면에 먼저 반영한 값을 저장한다. 저장이 실패하면 저장소 값으로 되돌려 저장된 것처럼 보이지 않게 하고, 알림은 부른 쪽에 맡긴다 */
@@ -143,14 +142,15 @@ const persist = async (write: Promise<void>): Promise<void> => {
 };
 
 /** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다 */
-export const initBlocksStore = once(async () => {
+export const initBlocksStore = once(async (signal?: AbortSignal) => {
     // 다 읽은 뒤에 감시를 건다. 읽기가 실패하면 once가 다음 호출에 다시 시도하는데, 그때 감시가 두 번 걸리지 않는다
     await load();
     for (const type of BLOCK_TYPES) blockStorage[type].watch((next) => setList(type, next));
     blockDefaultsStorage.watch(setDefaults);
 
-    // bfcache에서 돌아온 탭은 그사이의 변경을 받지 못했다. 옛 목록으로 쓰면 다른 탭의 변경을 덮으므로 다시 읽는다
+    // bfcache에서 돌아온 탭은 그사이의 변경을 받지 못했다. 옛 목록으로 쓰면 다른 탭의 변경을 덮으므로 다시 읽는다.
+    // signal은 콘텐츠 스크립트 컨텍스트의 것이다. 무효화된 뒤에는 저장소를 부를 수 없으므로 리스너를 뗀다
     window.addEventListener("pageshow", (ev) => {
         if (ev.persisted) void load().catch(console.error);
-    });
+    }, {signal});
 });

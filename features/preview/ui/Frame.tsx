@@ -8,6 +8,7 @@ import {focusedElement} from "@/components/useOpenerFocus";
 import {BLOCKED_TEXT} from "@/core/block";
 import type {ProcessedComment} from "@/core/preview/comments";
 import {useUiStore} from "@/stores/ui";
+import {smoothScroll} from "@/utils/dom";
 import {isTyping} from "@/utils/event";
 
 import {adjacentPreData} from "../rows";
@@ -18,7 +19,7 @@ import {ErrorBlock} from "./ErrorBlock";
 import {fitMovies} from "./fitMovies";
 import {watchGifVideos} from "./gifVideos";
 import {AdminPanel} from "./Popups";
-import {postTitle, smoothScroll, usePreviewStore} from "./previewStore";
+import {postTitle, usePreviewStore} from "./previewStore";
 import {Votes} from "./Votes";
 import {WriteComment} from "./WriteComment";
 

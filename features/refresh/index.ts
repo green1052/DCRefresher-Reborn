@@ -9,6 +9,7 @@ import {getModuleApi} from "@/core/module/registry";
 import {eventBus} from "@/core/eventbus/bus";
 import {sendMessage} from "@/core/messaging/protocol";
 import {useUiStore} from "@/stores/ui";
+import {smoothScroll} from "@/utils/dom";
 
 import {replaceList, syncPaging} from "./list";
 import {type Ctx, settings} from "./settings";
@@ -185,7 +186,7 @@ export default defineModule({
 
                 if (target === scrollAfter) {
                     scrollAfter = null;
-                    document.querySelector(isViewPage ? ".view_bottom_btnbox" : ".page_head")?.scrollIntoView({behavior: "smooth", block: "start"});
+                    document.querySelector(isViewPage ? ".view_bottom_btnbox" : ".page_head")?.scrollIntoView({behavior: smoothScroll(), block: "start"});
                 }
 
                 // 페이지를 넘긴 목록은 옛 목록과 겹치는 행이 없으면 전부 새 글로 잡히므로 알리지 않는다 (글댓비 조회가 몰린다)

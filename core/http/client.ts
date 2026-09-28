@@ -9,7 +9,8 @@ type Fetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
 const limit = pLimit(Number.POSITIVE_INFINITY);
 
 export const setRequestConcurrency = (concurrency: number): void => {
-    limit.concurrency = concurrency;
+    // p-limit은 정수나 Infinity가 아니면 던진다. 가져온 설정은 normalizeSetting이 범위만 맞춰 소수일 수 있다
+    limit.concurrency = Math.round(concurrency);
 };
 
 /** 요청 한 번의 시간 제한 (ms) */

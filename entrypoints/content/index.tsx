@@ -52,6 +52,25 @@ export default defineContentScript({
             return pageToggleStates();
         });
 
+        // 확장을 끄거나 업데이트해도 이 스크립트는 남아 새로고침 폴링·저장소 호출을 하다 실패하므로 모듈을 멈춘다.
+        // 부트스트랩의 await보다 먼저 건다. 읽는 사이 무효화되면 저장소 호출이 실패하거나 끝나지 않아 뒤에 건 처리는 걸리지 않는다
+        ctx.onInvalidated(() => {
+            stopAll();
+            // 새 스크립트가 주입되어 무효화된 경우(확장은 살아 있음)는 새 스크립트가 이어서 돌므로 알리지 않는다
+            if (browser.runtime?.id) return;
+            // 기능이 조용히 멈추면 이유를 알 수 없으므로 알린다. WXT가 무효화 때 오버레이를 걷어 내므로 토스트 대신 DOM에 직접 띄운다.
+            // manifest CSS도 확장과 함께 빠질 수 있어 인라인 스타일을 쓴다. 누르면 닫힌다
+            const note = document.createElement("div");
+            note.setAttribute("role", "status");
+            note.textContent = "확장 프로그램이 업데이트되어 이 페이지에서는 멈췄습니다. 새로고침해 주세요.";
+            note.style.cssText = "position:fixed;right:16px;bottom:16px;z-index:2147483647;padding:10px 14px;border-radius:8px;background:#333;color:#fff;font-size:13px;cursor:pointer";
+            note.addEventListener("click", () => note.remove());
+            document.body?.append(note);
+        });
+        // ponytail: WXT는 ctx.isValid를 읽을 때만 무효화를 알아채므로 빈 interval로 5초마다 검사하게 한다.
+        // 업데이트 전에 열린 탭은 새로고침할 때까지 기능이 멈춘다.
+        ctx.setInterval(() => {}, 5_000);
+
         // 옵션 페이지는 저장소에 직접 쓰고, 모듈 레지스트리가 저장소를 감시해 반영한다 (메시징 없음)
 
         // ===== 오버레이 (디시 CSS와 Radix Themes CSS가 섞이지 않게 shadow DOM에 둔다) =====
@@ -86,6 +105,8 @@ export default defineContentScript({
                     root?.unmount();
                 }
             });
+            // 무효화가 CSS를 받는 동안 일어났다면 WXT의 onInvalidated(remove)는 이미 끝난 signal에 걸려 불리지 않는다
+            if (ctx.isInvalid) return;
             ui.mount();
         };
 
@@ -125,28 +146,10 @@ export default defineContentScript({
         whenDomReady(warnIfBlocked);
 
         const board = BOARD_PAGE.test(location.href);
-        if (board) await Promise.all([initBlocksStore(), initMemosStore()]);
-        await loadAll(features);
+        if (board) await Promise.all([initBlocksStore(ctx.signal), initMemosStore(ctx.signal)]);
+        await loadAll(features, ctx.signal);
         // 저장소는 요청 순서대로 읽히므로 가장 큰 IP/밴 DB는 모듈 설정 뒤에 요청한다(userinfo는 setup에서 기다린다).
         // userinfo가 꺼져 있어도 버블·미리보기 라벨이 나오도록 여기서도 부른다.
         if (board) void initDatabase().catch(console.error);
-
-        // 확장을 끄거나 업데이트해도 이 스크립트는 남아 새로고침 폴링·저장소 호출을 하다 실패하므로 모듈을 멈춘다
-        ctx.onInvalidated(() => {
-            stopAll();
-            // 새 스크립트가 주입되어 무효화된 경우(확장은 살아 있음)는 새 스크립트가 이어서 돌므로 알리지 않는다
-            if (browser.runtime?.id) return;
-            // 기능이 조용히 멈추면 이유를 알 수 없으므로 알린다. WXT가 무효화 때 오버레이를 걷어 내므로 토스트 대신 DOM에 직접 띄운다.
-            // manifest CSS도 확장과 함께 빠질 수 있어 인라인 스타일을 쓴다. 누르면 닫힌다
-            const note = document.createElement("div");
-            note.setAttribute("role", "status");
-            note.textContent = "확장 프로그램이 업데이트되어 이 페이지에서는 멈췄습니다. 새로고침해 주세요.";
-            note.style.cssText = "position:fixed;right:16px;bottom:16px;z-index:2147483647;padding:10px 14px;border-radius:8px;background:#333;color:#fff;font-size:13px;cursor:pointer";
-            note.addEventListener("click", () => note.remove());
-            document.body?.append(note);
-        });
-        // ponytail: WXT는 ctx.isValid를 읽을 때만 무효화를 알아채므로 빈 interval로 5초마다 검사하게 한다.
-        // 업데이트 전에 열린 탭은 새로고침할 때까지 기능이 멈춘다.
-        ctx.setInterval(() => {}, 5_000);
     }
 });

@@ -1,3 +1,4 @@
+import {storage} from "wxt/utils/storage";
 import {create} from "zustand";
 
 import {MEMO_TYPES, memoStorage} from "@/core/storage/items";
@@ -96,18 +97,20 @@ const setMap = (type: MemoType, value: unknown): void =>
     });
 
 const load = async (): Promise<void> => {
-    const maps = await Promise.all(MEMO_TYPES.map((type) => memoStorage[type].getValue()));
-    for (const [index, type] of MEMO_TYPES.entries()) setMap(type, maps[index]);
+    // 한 번의 storage.local.get으로 읽는다 (getItems가 항목별 fallback도 채운다)
+    const maps = await storage.getItems(MEMO_TYPES.map((type) => memoStorage[type]));
+    for (const [index, type] of MEMO_TYPES.entries()) setMap(type, maps[index]?.value);
 };
 
 /** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다 */
-export const initMemosStore = once(async () => {
+export const initMemosStore = once(async (signal?: AbortSignal) => {
     // 다 읽은 뒤에 감시를 건다. 읽기가 실패하면 once가 다음 호출에 다시 시도하는데, 그때 감시가 두 번 걸리지 않는다
     await load();
     for (const type of MEMO_TYPES) memoStorage[type].watch((next) => setMap(type, next));
 
-    // bfcache에서 돌아온 탭은 그사이의 변경을 받지 못했다. 옛 메모로 쓰면 다른 탭의 변경을 덮으므로 다시 읽는다
+    // bfcache에서 돌아온 탭은 그사이의 변경을 받지 못했다. 옛 메모로 쓰면 다른 탭의 변경을 덮으므로 다시 읽는다.
+    // signal은 콘텐츠 스크립트 컨텍스트의 것이다. 무효화된 뒤에는 저장소를 부를 수 없으므로 리스너를 뗀다
     window.addEventListener("pageshow", (ev) => {
         if (ev.persisted) void load().catch(console.error);
-    });
+    }, {signal});
 });

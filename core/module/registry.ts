@@ -15,9 +15,12 @@ interface ModuleInstance {
 
 const instances = new Map<string, ModuleInstance>();
 
+/** 이 문서의 주소. 로드 시점에 정한다: 미리보기가 pushState로 글 주소로 바꿔도 이 문서는 그대로다 */
+const pageUrl = location.href;
+
 const start = async (instance: ModuleInstance): Promise<void> => {
     if (instance.running) return;
-    if (instance.def.urls && !instance.def.urls.some((re) => re.test(location.href))) return;
+    if (instance.def.urls && !instance.def.urls.some((re) => re.test(pageUrl))) return;
 
     // 이 실행의 수명. setup이 await하는 사이 중지되면 이미 abort된 상태라, 그 뒤에 등록하는 필터·cleanup은 바로 해제한다
     const controller = new AbortController();
@@ -135,8 +138,8 @@ export const stopAll = (): void => {
     for (const instance of instances.values()) stop(instance, true);
 };
 
-/** 모듈을 일괄 등록하고, 옵션 페이지의 on/off(저장소)를 감시해 시작/중지한다 */
-export const loadAll = async (defs: AnyModule[]): Promise<void> => {
+/** 모듈을 일괄 등록하고, 옵션 페이지의 on/off(저장소)를 감시해 시작/중지한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다 */
+export const loadAll = async (defs: AnyModule[], signal: AbortSignal): Promise<void> => {
     const enables = await modulesStorage.getValue();
 
     const results = await Promise.allSettled(defs.map((def) => register(def, isModuleEnabled(def, enables))));
@@ -151,16 +154,21 @@ export const loadAll = async (defs: AnyModule[]): Promise<void> => {
         }
     };
     modulesStorage.watch(sync);
-    // bfcache에서 돌아온 탭은 그사이의 on/off·설정 변경을 받지 못했다. 다시 시작하는 모듈이 새 값을 보도록 설정을 먼저 맞춘다
+    // bfcache에서 돌아온 탭은 그사이의 on/off·설정 변경을 받지 못했다. 다시 시작하는 모듈이 새 값을 보도록 설정을 먼저 맞춘다.
+    // 무효화된 뒤에는 저장소를 부를 수 없으므로 signal로 리스너를 뗀다
     window.addEventListener("pageshow", (ev) => {
         if (!ev.persisted) return;
         void (async () => {
-            for (const instance of instances.values()) {
-                if (instance.def.settings) applySettings(instance, await moduleSettingsStorage(instance.def.id).getValue());
-            }
-            sync(await modulesStorage.getValue());
+            // 모두 한꺼번에 읽는다. sync는 설정을 다 맞춘 뒤에 부른다
+            const [enables] = await Promise.all([
+                modulesStorage.getValue(),
+                ...[...instances.values()].map(async (instance) => {
+                    if (instance.def.settings) applySettings(instance, await moduleSettingsStorage(instance.def.id).getValue());
+                })
+            ]);
+            sync(enables);
         })().catch(console.error);
-    });
+    }, {signal});
     // 불러오는 동안(setup이 IP DB를 읽는 동안 등) 팝업에서 켜고 끈 것은 감시 전이라 놓친다. 한 번 맞춘다 (바뀐 게 없으면 아무 일도 없다)
     sync(await modulesStorage.getValue());
 };
