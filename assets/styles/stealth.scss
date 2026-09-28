@@ -63,7 +63,8 @@
     transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
     user-select: none;
 
-    &:hover {
+    // 키보드로 버튼에 오면 마우스를 올린 것처럼 글자까지 꺼낸다
+    &:is(:hover, :has(:focus-visible)) {
         transform: none;
     }
 
@@ -72,16 +73,25 @@
         align-items: center;
         gap: 6px;
         padding: 6px 6px 6px 10px;
+        // <button> 기본 모양과 디시 스타일을 지운다
+        border: 0;
         border-radius: 8px;
+        background: none;
         color: #1c1c1c;
+        font: inherit;
+        text-align: inherit;
         cursor: pointer;
 
         &:hover {
             background: rgb(0 0 0 / 6%);
         }
 
-        p {
-            margin: 0;
+        &:focus-visible {
+            outline: 2px solid #3b4890;
+            outline-offset: 2px;
+        }
+
+        span {
             font-size: 12px;
             white-space: nowrap;
         }
@@ -108,6 +118,10 @@ html:has(#css-darkmode) {
 
             &:hover {
                 background: rgb(255 255 255 / 8%);
+            }
+
+            &:focus-visible {
+                outline-color: #8fa3ff;
             }
 
             svg {

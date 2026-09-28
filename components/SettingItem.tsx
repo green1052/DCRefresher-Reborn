@@ -266,7 +266,8 @@ export const SettingItem = ({schema, value, compact, takenKeys, onChange}: Setti
             <Text size="2" weight="medium" title={compact ? schema.desc : undefined}>
                 {schema.name}
             </Text>
-            {!areEqual(value, defaultValue(schema)) && (
+            {/* 다른 단축키가 기본값 키를 쓰고 있으면 되돌리지 못하게 한다. 되돌리면 두 단축키가 같은 키가 된다 */}
+            {!areEqual(value, defaultValue(schema)) && !(schema.type === "key" && takenKeys?.includes(schema.default)) && (
                 <Tooltip content={`기본값으로 되돌리기 (${formatDefault(schema)})`}>
                     <IconButton size="1" variant="ghost" color="gray" aria-label="기본값으로 되돌리기"
                                 onClick={() => onChange(defaultValue(schema))}>

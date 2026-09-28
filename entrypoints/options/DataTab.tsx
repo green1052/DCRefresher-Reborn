@@ -8,17 +8,19 @@ import {type BackupSlot, CLOUD_QUOTA, type CloudBackupStatus, collectLocalData, 
 import {updateDatabase} from "@/core/database";
 import {withIpInfoFilter} from "@/core/migrate-settings";
 import {migrateV5} from "@/core/migrate-v5";
-import {backupStorage, dbStorage, isBlockListKey, settingsKeyModule} from "@/core/storage/items";
-import {blockKey, normalizeBlockList} from "@/stores/blocks";
+import {BLOCK_TYPES, backupStorage, dbStorage, isBlockListKey, settingsKeyModule} from "@/core/storage/items";
+import {blockKey, normalizeBlockList, normalizeDefaults} from "@/stores/blocks";
 import {friendlyMessage} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
 import {formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
 import {notify} from "./optionsStore";
 
+const DEFAULTS_KEY = "refresher:block:defaults";
+
 /** 값 여러 개를 객체 하나에 담는 키(모듈 on/off, 기본 차단 모드, 모듈별 설정) */
 const isMapKey = (key: string): boolean =>
-    key === "refresher:modules" || key === "refresher:block:defaults" || settingsKeyModule(key) !== undefined;
+    key === "refresher:modules" || key === DEFAULTS_KEY || settingsKeyModule(key) !== undefined;
 
 /**
  * 설정(백업 대상 키)을 저장소에 쓴다. IP/밴 DB·백업 상태·모듈 캐시는 건드리지 않는다.
@@ -65,17 +67,27 @@ const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "m
  * 백업을 지금 데이터에 합친다. 겹치면 지금 것이 이긴다.
  * 차단 목록은 백업에만 있는 항목(내용+갤러리)을 뒤에 붙이고, 메모·설정 객체는 백업에만 있는 키를 더한다. 그 밖의 값은 지금 없을 때만 백업 값을 쓴다
  */
-const mergeBackup = (current: Record<string, unknown>, backup: Record<string, unknown>): Record<string, unknown> =>
-    Object.fromEntries(Object.entries(migrateV5(backup)).map(([key, value]) => {
+const mergeBackup = (current: Record<string, unknown>, backup: Record<string, unknown>): Record<string, unknown> => {
+    const migrated = migrateV5(backup);
+    // 모드 없는 차단 항목은 유형의 기본 모드를 따른다. 기본 모드는 이 기기 것을 남기고, 백업의 기본 모드가 다른 유형은
+    // 백업에서 온 항목에 그 모드를 적어 둔다. 어느 한쪽 기본 모드만 남으면 다른 쪽 항목의 검사 방식이 바뀐다('ㅋ'이 포함 검사가 되는 등)
+    const localDefaults = normalizeDefaults(current[DEFAULTS_KEY]);
+    const backupDefaults = normalizeDefaults(migrated[DEFAULTS_KEY]);
+    return Object.fromEntries(Object.entries(migrated).map(([key, value]) => {
         const local = current[key];
-        if (local === undefined) return [key, value];
+        if (key === DEFAULTS_KEY) return [key, localDefaults];
         if (isBlockListKey(key)) {
+            const type = key.slice("refresher:block:".length);
+            const pinned = arrayIncludes(BLOCK_TYPES, type) && backupDefaults[type] !== localDefaults[type] ? backupDefaults[type] : undefined;
             const kept = normalizeBlockList(local);
             const seen = new Set(kept.map(blockKey));
-            return [key, [...kept, ...normalizeBlockList(value).filter((entry) => !seen.has(blockKey(entry)))]];
+            const added = normalizeBlockList(value).filter((entry) => !seen.has(blockKey(entry)));
+            return [key, [...kept, ...added.map((entry) => (entry.mode || !pinned ? entry : {...entry, mode: pinned}))]];
         }
+        if (local === undefined) return [key, value];
         return [key, isRecord(local) && isRecord(value) ? {...value, ...local} : local];
     }));
+};
 
 type RestoreMode = "replace" | "merge";
 
@@ -178,12 +190,16 @@ export function DataTab() {
             return "데이터를 클립보드로 내보냈습니다.";
         }, "클립보드로 내보내지 못했습니다.");
 
-    const submitImport = (text: string) =>
-        run(async () => {
+    // run()을 거치지 않는다. loading이 가져오기 버튼을 막으면 다이얼로그를 닫을 때 포커스가 그 버튼으로 돌아가지 못한다
+    const submitImport = async (text: string): Promise<string | undefined> => {
+        try {
             await writeSettings(parseImport(text), "merge");
-            setImportOpen(false);
             return "데이터를 가져왔습니다. 새 탭에서 디시인사이드를 열어 주세요.";
-        }, "가져오지 못했습니다.");
+        } catch (e) {
+            console.error(e);
+            notify(`가져오지 못했습니다. ${friendlyMessage(e)}`);
+        }
+    };
 
     const clearData = () =>
         run(async () => {

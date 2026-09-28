@@ -160,8 +160,9 @@ export function App() {
     useEffect(() => {
         void Promise.all([
             findPage().catch(() => null),
-            // 자동 백업은 배경에서 돌아 실패해도 데이터 탭을 열기 전에는 모른다. 팝업에서 한 줄로 알린다
-            backupStorage.error.getValue().catch(() => ""),
+            // 자동 백업은 배경에서 돌아 실패해도 데이터 탭을 열기 전에는 모른다. 켜져 있을 때만 팝업에서 한 줄로 알린다.
+            // 오류는 백업이 성공해야 지워지므로, 한도 초과로 자동 백업을 끈 뒤에도 알리면 경고가 사라지지 않는다 (지난 실패는 데이터 탭에 남는다)
+            Promise.all([backupStorage.auto.getValue(), backupStorage.error.getValue()]).then(([auto, error]) => (auto ? error : "")).catch(() => ""),
             initBlocksStore().catch(console.error),
             initMemosStore().catch(console.error),
             initModulesStore().catch(console.error)

@@ -11,6 +11,31 @@ import {isGalleryManager} from "@/utils/user";
 /** 체크박스와 작성자 칸이 같이 든 칸. 목록 행에 더해 댓글은 작성자 칸(.cmt_nickbox)이다 */
 const CHECKBOX_ROW = `${ROW_SELECTOR}, .cmt_nickbox`;
 
+const GIF_VIDEO = ".gallview_contents video";
+
+/** GIF 조작을 건 영상의 원래 onmousedown(없으면 null). 설정·모듈을 끌 때 되돌린다 */
+const gifOriginals = new WeakMap<HTMLVideoElement, string | null>();
+
+const enableGifControl = (element: Element): void => {
+    if (!(element instanceof HTMLVideoElement) || gifOriginals.has(element)) return;
+    if (element.dataset.src?.includes("dcinside.com/dccon.php")) return;
+
+    gifOriginals.set(element, element.getAttribute("onmousedown"));
+    element.removeAttribute("onmousedown");
+    element.setAttribute("controls", "");
+};
+
+const disableGifControl = (): void => {
+    for (const video of document.querySelectorAll<HTMLVideoElement>(GIF_VIDEO)) {
+        const original = gifOriginals.get(video);
+        if (original === undefined) continue;
+
+        gifOriginals.delete(video);
+        video.removeAttribute("controls");
+        if (original !== null) video.setAttribute("onmousedown", original);
+    }
+};
+
 export default defineModule({
     id: "manage",
     name: "관리",
@@ -57,17 +82,9 @@ export default defineModule({
         const handled = new WeakSet<Element>();
 
         // ===== GIF 조작 =====
-        ctx.addFilter(
-            ".gallview_contents video",
-            (element) => {
-                if (!ctx.settings.enableGifControl) return;
-                if (!(element instanceof HTMLVideoElement)) return;
-                if (element.dataset.src?.includes("dcinside.com/dccon.php")) return;
-
-                element.removeAttribute("onmousedown");
-                element.setAttribute("controls", "");
-            }
-        );
+        ctx.addFilter(GIF_VIDEO, (element) => {
+            if (ctx.settings.enableGifControl) enableGifControl(element);
+        });
 
         // ===== 체크박스 편의 =====
         ctx.addFilter(
@@ -154,5 +171,19 @@ export default defineModule({
                 }, {signal: ctx.signal});
             }
         );
+    },
+
+    // 필터는 등록할 때와 요소가 새로 붙을 때만 돌므로, 이미 열린 글의 영상은 설정이 바뀔 때 여기서 바꾸고 되돌린다
+    onChanged(ctx, key) {
+        if (key !== "enableGifControl") return;
+        if (ctx.settings.enableGifControl) {
+            for (const video of document.querySelectorAll(GIF_VIDEO)) enableGifControl(video);
+        } else {
+            disableGifControl();
+        }
+    },
+
+    revoke() {
+        disableGifControl();
     }
 });

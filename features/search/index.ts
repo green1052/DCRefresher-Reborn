@@ -95,7 +95,11 @@ export default defineModule({
                     const dom = new DOMParser().parseFromString(html, "text/html");
                     const newList = dom.querySelector<HTMLElement>(LIST_SELECTOR);
                     const newPaging = dom.querySelector<HTMLElement>(PAGING_SELECTOR);
-                    if (!newList || !newPaging) throw new Error("검색 결과 페이지에 목록이 없습니다.");
+                    if (!newList || !newPaging) {
+                        // 알림 페이지 같은 것을 캐시에 두면 다시 채울 때마다 같은 오류가 난다. 다음에 다시 받게 지운다
+                        pages.delete(next.href);
+                        throw new Error("검색 결과 페이지에 목록이 없습니다.");
+                    }
 
                     highlightSearchResults(newList, keyword);
                     for (const row of newList.querySelectorAll<HTMLTableRowElement>(RESULT_ROW)) {

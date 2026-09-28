@@ -7,7 +7,7 @@ const CONTROL_BUTTON = ".stealth_control_button";
 const TEMPORARY_STEALTH = "stlth";
 
 const svg = (paths: string): string =>
-    `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+    `<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
 
 // lucide eye / eye-off
 const EYE_SVG = svg("<path d=\"M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>");
@@ -28,7 +28,7 @@ const isRevealed = (): boolean => document.documentElement.classList.contains(TE
 /** 버튼 문구·아이콘은 현재 상태가 아니라 누르면 할 동작을 보인다 */
 const render = (button: HTMLElement): void => {
     const shown = isRevealed();
-    button.innerHTML = `<p>${shown ? "이미지 숨기기" : "이미지 보이기"}</p>${shown ? EYE_OFF_SVG : EYE_SVG}`;
+    button.innerHTML = `<span>${shown ? "이미지 숨기기" : "이미지 보이기"}</span>${shown ? EYE_OFF_SVG : EYE_SVG}`;
 };
 
 const toggle = (): void => {
@@ -45,7 +45,9 @@ const createButton = (): void => {
     const frame = document.createElement("div");
     frame.className = CONTROL_BUTTON.slice(1);
 
-    const button = document.createElement("div");
+    // 키보드로도 누를 수 있게 button으로 만든다. 이름은 안의 문구(누르면 할 동작)다
+    const button = document.createElement("button");
+    button.type = "button";
     button.className = "button";
     button.id = "tempview";
     render(button);

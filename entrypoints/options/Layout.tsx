@@ -1,6 +1,6 @@
 import {Badge, Box, Button, Card, Dialog, Flex, Heading, IconButton, Reset, Table, Tabs, Text, TextArea, TextField, Tooltip} from "@radix-ui/themes";
 import {Download, Plus, Search, Trash2, Upload} from "lucide-react";
-import {type ReactNode, useDeferredValue, useEffect, useState} from "react";
+import {type ReactNode, useDeferredValue, useEffect, useRef, useState} from "react";
 import type {WxtStorageItem} from "wxt/utils/storage";
 
 import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
@@ -72,24 +72,31 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
     title: string;
     desc?: ReactNode;
     onClose: () => void;
-    onSubmit: (text: string) => Promise<void>;
+    /** 가져왔으면 알림 문구를 돌려준다. 실패는 직접 알리고 undefined를 돌려줘 다이얼로그를 열어 둔다 */
+    onSubmit: (text: string) => Promise<string | undefined>;
 }) => {
     const [text, setText] = useState("");
     const [busy, setBusy] = useState(false);
-    const {onCloseAutoFocus} = useOpenerFocus();
+    const done = useRef<string>(undefined);
+    const focus = useOpenerFocus();
 
     const submit = async (): Promise<void> => {
         setBusy(true);
         try {
-            await onSubmit(text);
+            done.current = await onSubmit(text);
         } finally {
             setBusy(false);
         }
+        if (done.current) onClose();
     };
 
     return (
         <Dialog.Root open onOpenChange={(next) => !next && onClose()}>
-            <Dialog.Content maxWidth="520px" onCloseAutoFocus={onCloseAutoFocus}>
+            {/* 가져왔다는 알림은 포커스를 가져오기 버튼에 돌려준 뒤에 띄운다. 먼저 띄우면 알림이 사라질 다이얼로그 버튼을 연 요소로 기억해 닫을 때 포커스가 body로 떨어진다 */}
+            <Dialog.Content maxWidth="520px" onCloseAutoFocus={(ev) => {
+                focus.onCloseAutoFocus(ev);
+                if (done.current) notify(done.current);
+            }}>
                 <Dialog.Title>{title}</Dialog.Title>
                 <Dialog.Description size="2" mb="3">
                     {desc}
@@ -201,7 +208,7 @@ export const ListTabs = <T extends string, I>({
         }
     };
 
-    const submitImport = async (text: string): Promise<void> => {
+    const submitImport = async (text: string): Promise<string | undefined> => {
         let data: unknown;
         try {
             data = JSON.parse(text);
@@ -211,15 +218,11 @@ export const ListTabs = <T extends string, I>({
         }
 
         try {
-            if (isRecord(data) && (await importData(data)) > 0) {
-                setImportOpen(false);
-                notify(`${object} 가져왔습니다.`);
-            } else {
-                // 데이터 탭의 전체 내보내기는 저장소 키(refresher:…)로 되어 있다
-                notify(isRecord(data) && Object.keys(data).some((key) => key.startsWith("refresher:"))
-                    ? "전체 데이터는 데이터 탭에서 가져와 주세요."
-                    : `${label} 데이터가 아닙니다. 이 탭에서 내보낸 JSON을 붙여 넣어 주세요.`);
-            }
+            if (isRecord(data) && (await importData(data)) > 0) return `${object} 가져왔습니다.`;
+            // 데이터 탭의 전체 내보내기는 저장소 키(refresher:…)로 되어 있다
+            notify(isRecord(data) && Object.keys(data).some((key) => key.startsWith("refresher:"))
+                ? "전체 데이터는 데이터 탭에서 가져와 주세요."
+                : `${label} 데이터가 아닙니다. 이 탭에서 내보낸 JSON을 붙여 넣어 주세요.`);
         } catch {
             // 종류마다 따로 쓰므로 앞 종류는 이미 들어갔을 수 있다. 실패한 종류는 스토어가 되돌린다
             notify(SAVE_FAILED);

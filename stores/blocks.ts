@@ -109,14 +109,18 @@ const setList = (type: BlockType, value: unknown): void =>
         return JSON.stringify(state.entries[type]) === JSON.stringify(next) ? state : {entries: {...state.entries, [type]: next}};
     });
 
-// 가져오기·복원 값은 검증 없이 들어온다. 모르는 유형·모드(소문자 등)는 버리고 그 유형은 기본 모드로 둔다
-const setDefaults = (next: Partial<Record<BlockType, DetectMode>>): void =>
-    useBlocksStore.setState({
-        defaults: {
-            ...DEFAULT_DETECT_MODE,
-            ...Object.fromEntries(Object.entries(next).filter(([type, mode]) => arrayIncludes(BLOCK_TYPES, type) && arrayIncludes(DETECT_MODES, mode)))
-        }
-    });
+/** 저장소·백업의 기본 차단 모드. 가져오기·복원 값은 검증 없이 들어오므로 모르는 모드(소문자 등)는 버리고 그 유형은 기본 모드로 둔다 */
+export const normalizeDefaults = (value: unknown): Record<BlockType, DetectMode> => {
+    const defaults = {...DEFAULT_DETECT_MODE};
+    if (!isRecord(value)) return defaults;
+    for (const type of BLOCK_TYPES) {
+        const mode = value[type];
+        if (arrayIncludes(DETECT_MODES, mode)) defaults[type] = mode;
+    }
+    return defaults;
+};
+
+const setDefaults = (next: Partial<Record<BlockType, DetectMode>>): void => useBlocksStore.setState({defaults: normalizeDefaults(next)});
 
 const load = async (): Promise<void> => {
     const [lists, defaults] = await Promise.all([
