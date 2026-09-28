@@ -9,6 +9,8 @@ export interface ErrorState {
     status?: number;
     /** 성인 인증이 필요한 글 (비로그인·미인증이면 본문 대신 인증 안내가 온다) */
     adult?: boolean;
+    /** 미니 갤러리 비밀글 (비밀번호는 원문에서만 넣을 수 있다) */
+    secret?: boolean;
 }
 
 export type ManageKind = "notice" | "recommend" | "delete" | "bump";

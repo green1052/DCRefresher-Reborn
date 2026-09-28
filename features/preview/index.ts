@@ -16,19 +16,20 @@ import {notifyManage} from "@/utils/notify";
 import {isRecord} from "@/utils/record";
 
 import {getEntry, setEntry} from "@/core/preview/cache";
-import {ADULT_ERROR} from "@/core/preview/parser";
+import {ADULT_ERROR, SECRET_ERROR} from "@/core/preview/parser";
 import {blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {adjacentPreData, buildPreData, isBlurHidden, isTextPost} from "./rows";
 import {type Ctx, settings} from "./settings";
 import {type ErrorState, type ManageKind, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
 
 // status는 ky의 HTTPError에서 읽는다 (삭제된 글은 404).
-// 성인 인증 안내 페이지면 parsePostInfo가 Error(ADULT_ERROR)를 던진다.
+// 성인 인증 안내 페이지면 parsePostInfo가 Error(ADULT_ERROR)를, 미니 갤러리 비밀글이면 Error(SECRET_ERROR)를 던진다.
 const errorOf = (error: unknown): ErrorState => ({
     detail: messageOf(error),
     // 임시 차단(빈 페이지)은 200으로 오므로 요청 제한(429)으로 본다
     status: error instanceof HTTPError ? error.response.status : error instanceof BlockedError ? 429 : undefined,
-    adult: error instanceof Error && error.message === ADULT_ERROR
+    adult: error instanceof Error && error.message === ADULT_ERROR,
+    secret: error instanceof Error && error.message === SECRET_ERROR
 });
 
 const controller = (ctx: Ctx) => {
