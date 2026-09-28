@@ -469,7 +469,8 @@ const controller = (ctx: Ctx) => {
                 // 미니에는 마우스를 올려 블러를 걷을 수 없으니 블러 차단도 안내 문구로 가린다.
                 contents: post.textBlocked && !useUiStore.getState().blockView?.revealed ? BLOCKED_TEXT : post.contents ?? "",
                 // 전체 미리보기와 같은 조건으로 이미지를 가린다. 다르면 거기서 숨긴 이미지가 호버로 보인다.
-                blockMedia: ctx.settings.blockImage && isTextPost(preData)
+                blockMedia: ctx.settings.blockImage && isTextPost(preData),
+                wheel: ctx.settings.tooltipWheel
             }
         });
     };

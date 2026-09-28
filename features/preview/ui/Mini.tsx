@@ -9,13 +9,13 @@ import {MINI_HEIGHT, MINI_WIDTH, usePreviewStore} from "./previewStore";
  */
 export const Mini = () => {
     const mini = usePreviewStore((s) => s.mini);
-    const shown = mini !== null;
+    const wheel = mini?.wheel ?? false;
     const contents = useRef<HTMLDivElement>(null);
 
-    // 포인터를 통과시키니 휠도 카드에 닿지 않는다. 떠 있는 동안(커서가 제목 위일 때) 굴리면 v5처럼 내용을 스크롤하고,
+    // 포인터를 통과시키니 휠도 카드에 닿지 않는다. 설정(tooltipWheel)을 켰으면 떠 있는 동안(커서가 제목 위일 때) 굴리면 v5처럼 내용을 스크롤하고,
     // 더 굴러갈 데가 없으면(끝이거나 짧은 글) 막지 않아 페이지가 스크롤된다.
     useEffect(() => {
-        if (!shown) return;
+        if (!wheel) return;
 
         const onWheel = (ev: WheelEvent): void => {
             const box = contents.current;
@@ -29,7 +29,7 @@ export const Mini = () => {
 
         window.addEventListener("wheel", onWheel, {passive: false});
         return () => window.removeEventListener("wheel", onWheel);
-    }, [shown]);
+    }, [wheel]);
 
     if (!mini) return null;
 

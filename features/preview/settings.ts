@@ -47,6 +47,13 @@ export const settings = {
         step: 50,
         unit: "ms"
     },
+    // v5의 '툴팁 미리보기 상호작용'처럼 켜야 한다. 늘 켜 두면 목록을 휠로 내리다 제목 위에 미니가 뜰 때마다 페이지 대신 미니가 스크롤된다
+    tooltipWheel: {
+        type: "check",
+        name: "미니 미리보기 휠 스크롤",
+        desc: "미니 미리보기가 떠 있는 동안 마우스 휠로 내용을 스크롤합니다. 끝까지 내리면 페이지가 스크롤됩니다.",
+        default: false
+    },
     reversePreviewKey: {type: "check", name: "미리보기 키 반전", desc: "좌클릭으로 미리보기, 우클릭으로 게시글 이동을 사용합니다.", default: false},
     longPressDelay: {
         type: "range",
