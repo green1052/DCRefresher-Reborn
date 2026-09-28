@@ -142,6 +142,10 @@ export function DataTab() {
     }, []);
 
     const run = async (action: () => Promise<string>, failure: string): Promise<void> => {
+        // 누른 버튼이 막히면 브라우저가 포커스를 body로 떨어뜨려 알림을 닫은 뒤 돌아갈 곳이 없다.
+        // 포커스를 받는 가장 가까운 조상(탭 패널)으로 옮겨 둔다 (useOpenerFocus와 같다)
+        const opener = document.activeElement;
+        if (opener instanceof HTMLElement && opener !== document.body) opener.parentElement?.closest<HTMLElement>("[tabindex]")?.focus({preventScroll: true});
         setLoading(true);
         try {
             notify(await action());
