@@ -570,7 +570,7 @@
         background: none;
         cursor: pointer;
 
-        &[data-active] {
+        &[aria-pressed="true"] {
             border-color: var(--accent-9);
         }
 

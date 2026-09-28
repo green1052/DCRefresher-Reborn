@@ -65,7 +65,7 @@ export function GeneralTab() {
                                                 <Fragment key={entries[0]![0]}>
                                                     <Separator size="4"/>
                                                     {group ? (
-                                                        <Box py="3">
+                                                        <Box py="3" role="group" aria-label={group.name}>
                                                             <Text as="p" size="2" weight="medium">{group.name}</Text>
                                                             <Text as="p" size="1" color="gray" mb="2">{group.desc}</Text>
                                                             {/* 글 입력칸·슬라이더는 칸 하나에 넣기엔 좁다. 섞여 있으면 묶음 전체를 한 줄에 하나씩 그려 조작부를 오른쪽 끝에 맞춘다 */}

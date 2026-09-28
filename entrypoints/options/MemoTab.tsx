@@ -220,7 +220,7 @@ export function MemoTab() {
                 <MemoFormDialog
                     initial={form}
                     onClose={() => setForm(null)}
-                    onSubmit={(next) => setMemo(next.type, next.user, {text: next.text, color: next.color, gallery: next.gallery || undefined})}
+                    onSubmit={(next) => setMemo(next.type, next.user, {text: next.text.trim(), color: next.color, gallery: next.gallery || undefined})}
                 />
             )}
         </>
