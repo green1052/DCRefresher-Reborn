@@ -21,7 +21,7 @@ export const friendlyMessage = (error: unknown): string => {
         if (status === 403 || status === 429) return "요청이 많아 잠시 막혔습니다. 잠시 후 다시 시도해 주세요.";
         return status >= 500 ? "서버가 불안정합니다. 잠시 후 다시 시도해 주세요." : `요청이 거절되었습니다. (HTTP ${status})`;
     }
-    // AbortSignal.timeout의 DOMException도 이름이 TimeoutError다
+    // 요청 시간 제한(core/http/client)의 DOMException도 이름이 TimeoutError다
     if (isTimeoutError(error)) return "응답이 없습니다. 잠시 후 다시 시도해 주세요.";
     if (isNetworkError(error) || /failed to fetch|networkerror/i.test(message)) return "서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.";
     if (error instanceof SyntaxError) return "JSON 형식이 올바르지 않습니다.";

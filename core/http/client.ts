@@ -23,7 +23,10 @@ const REQUEST_TIMEOUT = 15_000;
  */
 const limited = (fetcher: Fetch): Fetch => (input, init) =>
     limit(() => {
-        const signals = [AbortSignal.timeout(REQUEST_TIMEOUT)];
+        // AbortSignal.timeout은 파이어폭스 콘텐츠 스크립트에서 "Could not find window"로 던진다 (전역이 창이 아니라 샌드박스다)
+        const timeout = new AbortController();
+        setTimeout(() => timeout.abort(new DOMException("요청 시간 초과", "TimeoutError")), REQUEST_TIMEOUT);
+        const signals = [timeout.signal];
         if (input instanceof Request) signals.push(input.signal);
         if (init?.signal) signals.push(init.signal);
         return fetcher(input, {...init, signal: AbortSignal.any(signals)});
