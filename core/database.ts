@@ -1,6 +1,7 @@
 import {urls} from "@/core/http/urls";
 import {createIpLookup, type IpCandidate, IP_FORMAT, parseIpData} from "@/core/ipdb";
 import {storage} from "wxt/utils/storage";
+import {createStore} from "zustand/vanilla";
 
 import {DB_KEYS, dbStorage, writeDatabase} from "@/core/storage/items";
 import type {BanList} from "@/core/storage/types";
@@ -69,21 +70,13 @@ let bansRequested = false;
 
 // DB를 읽을 때마다 올리는 번호 (0이면 아직 안 읽음). 렌더 중에 조회하는 곳은 useSyncExternalStore로 이것을 구독한다.
 // React Compiler는 인자만 보고 메모하므로 이 번호를 식에 넣어야 DB가 바뀐 뒤 다시 계산한다.
-// 이 파일은 배경도 불러오므로 React 훅은 여기 두지 않고 쓰는 쪽에 둔다 (React가 배경 번들에 딸려 가지 않게).
-let version = 0;
-const listeners = new Set<() => void>();
+// 이 파일은 배경도 불러오므로 React 훅은 쓰는 쪽에 두고, 번호는 React가 없는 zustand/vanilla 스토어에 둔다 (React가 배경 번들에 딸려 가지 않게).
+const versionStore = createStore(() => 0);
 
-export const databaseVersion = (): number => version;
+export const databaseVersion = versionStore.getState;
+export const subscribeDatabase = versionStore.subscribe;
 
-export const subscribeDatabase = (listener: () => void): (() => void) => {
-    listeners.add(listener);
-    return () => void listeners.delete(listener);
-};
-
-const bump = (): void => {
-    version++;
-    for (const listener of listeners) listener();
-};
+const bump = (): void => versionStore.setState((version) => version + 1);
 
 // 깨진 값이어도 던지지 않고 IP 정보 없이 둔다. 던지면 initDatabase가 실패해 그것을 기다리는 userinfo 모듈의 setup까지 실패한다
 const loadIp = (stored: string): void => {

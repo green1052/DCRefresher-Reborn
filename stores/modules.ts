@@ -8,6 +8,7 @@ import {migrateModuleSettings} from "@/core/migrate-settings";
 import {moduleSettingsKey, moduleSettingsStorage, modulesStorage, settingsKeyModule} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
 import features from "@/features";
+import {saveOrReload} from "@/utils/error";
 import {once} from "@/utils/once";
 
 type Values = Record<string, SettingValue>;
@@ -120,16 +121,7 @@ const load = async (): Promise<void> => {
     for (const [index, {feature}] of settings.entries()) setValues(feature, values[index]);
 };
 
-/** 화면에 먼저 반영한 값을 저장한다. 저장이 실패하면 저장소 값으로 되돌려 저장된 것처럼 보이지 않게 하고, 알림은 부른 쪽에 맡긴다 */
-const persist = async (write: () => Promise<void>): Promise<void> => {
-    try {
-        await enqueue(write);
-    } catch (e) {
-        console.error("모듈 설정을 저장하지 못했습니다.", e);
-        await load().catch(console.error);
-        throw e;
-    }
-};
+const persist = (write: () => Promise<void>): Promise<void> => saveOrReload(enqueue(write), load, "모듈 설정을 저장하지 못했습니다.");
 
 /** 옵션·팝업에서 저장소 값을 읽고 변경을 감시한다. 여러 번 불러도 한 번만 한다 */
 export const initModulesStore = once(async () => {

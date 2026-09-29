@@ -30,8 +30,6 @@ const cleaned = new LRUCache<string, string>({
     memoMethod: (memo) => sanitizeHtml(splitDccons(memo).replace(/data-dcconoverstatus="?\w+"?/g, "data-dcconoverstatus=\"true\""))
 });
 
-const cleanMemo = (memo: string): string => cleaned.memo(memo);
-
 const extractVoice = (memo: string): { memo: string; voice?: ProcessedComment["voice"] } | undefined => {
     if (!memo.includes("@^dc^@")) return;
 
@@ -72,7 +70,7 @@ export const processComments = (source: DcinsideComment[], preData: GalleryPreDa
     for (const comment of list) {
         const voice = extractVoice(String(comment.memo ?? ""));
         if (voice) comment.voice = voice.voice;
-        comment.memo = cleanMemo(voice?.memo ?? String(comment.memo ?? ""));
+        comment.memo = cleaned.memo(voice?.memo ?? String(comment.memo ?? ""));
     }
 
     // 차단 모듈이 꺼져 있으면 blockView가 없고 아무것도 가리지 않는다

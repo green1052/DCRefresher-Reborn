@@ -10,11 +10,7 @@ import type {CommentListResponse, DcinsideComment, DcinsideDccon, GalleryPreData
 const dcBody = (link: string, fields: Parameters<typeof formBody>[0]): Promise<URLSearchParams> =>
     csrfBody({_GALLTYPE_: galleryTypeName(link), ...fields});
 
-export const viewUrl = (link: string, gallery: string, id: string): string => {
-    const type = galleryPath(link);
-
-    return `${urls.base}${type}board/view/?id=${gallery}&no=${id}`;
-};
+export const viewUrl = (link: string, gallery: string, id: string): string => `${urls.base}${galleryPath(link)}board/view/?id=${gallery}&no=${id}`;
 
 /** 게시글을 받아 PostInfo로 푼다. 삭제된 글은 디시가 404를 주고, 임시 차단은 HTTP 클라이언트가 BlockedError로 던진다. 그 밖에 글이 없는 페이지면 Error */
 export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): Promise<PostInfo> => {
@@ -232,26 +228,20 @@ export const submitComment = async (
             const rKey = "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K";
             const b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
-            const dValue = form.dValue;
-            if (!dValue) return null;
+            if (!form.dValue) return null;
 
-            let decoded = atob(dValue.replace(/./g, (c) => b64[rKey.indexOf(c)] ?? ""));
+            const decoded = atob(form.dValue.replace(/./g, (c) => b64[rKey.indexOf(c)] ?? ""));
             if (!decoded) return null;
 
-            let fi = parseInt(decoded.slice(0, 1));
-            fi = fi > 5 ? fi - 5 : fi + 4;
-            decoded = decoded.replace(/^./, fi.toString());
+            // 첫 자리 숫자를 5 당기거나 4 밀고, 쉼표로 나눈 수들을 글자로 바꿔 service_code 끝 10자리를 갈아 끼운다
+            const fi = parseInt(decoded.slice(0, 1));
+            const computed = decoded
+                .replace(/^./, String(fi > 5 ? fi - 5 : fi + 4))
+                .split(",")
+                .map((value, index) => String.fromCharCode((2 * (Number(value) - index - 1)) / (13 - index - 1)))
+                .join("");
 
-            const service = form.serviceCode;
-
-            const rs = decoded.split(",");
-            let computed = "";
-
-            for (let index = 0; index < rs.length; index++) {
-                computed += String.fromCharCode((2 * (Number(rs[index]) - index - 1)) / (13 - index - 1));
-            }
-
-            return service.replace(/(.{10})$/, computed);
+            return form.serviceCode.replace(/(.{10})$/, computed);
         } catch {
             return null;
         }
@@ -288,11 +278,7 @@ export const submitComment = async (
             })
     });
 
-    const response = await ajax.post(typeof memo === "string" ? urls.comments_submit : urls.dccon_comments_submit, {
-        body: params
-    }).text();
-
-    return submitResult(response);
+    return submitResult(await ajax.post(typeof memo === "string" ? urls.comments_submit : urls.dccon_comments_submit, {body: params}).text());
 };
 
 /* ===== 글자콘: 디시 txtcon.js의 입력 규칙 (서버 txtcon_conf와 같다) ===== */
@@ -401,7 +387,5 @@ export const submitTxtcon = async (
         "g-recaptcha-token": grecaptchaToken || undefined
     });
 
-    const response = await ajax.post(urls.txtcon_submit, {body}).text();
-
-    return submitResult(response);
+    return submitResult(await ajax.post(urls.txtcon_submit, {body}).text());
 };

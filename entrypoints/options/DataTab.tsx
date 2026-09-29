@@ -163,17 +163,9 @@ export function DataTab() {
         setLoading(false);
     };
 
-    const forceUpdate = () =>
-        run(async () => {
-            await updateDatabase(true);
-            return "데이터베이스를 갱신했습니다.";
-        }, "데이터베이스를 갱신하지 못했습니다.");
+    const forceUpdate = () => run(() => updateDatabase(true).then(() => "데이터베이스를 갱신했습니다."), "데이터베이스를 갱신하지 못했습니다.");
 
-    const backupCloud = () =>
-        run(async () => {
-            await runBackup("manual");
-            return "데이터를 클라우드에 백업했습니다.";
-        }, "클라우드에 백업하지 못했습니다.");
+    const backupCloud = () => run(() => runBackup("manual").then(() => "데이터를 클라우드에 백업했습니다."), "클라우드에 백업하지 못했습니다.");
 
     const recoverCloud = (slot: BackupSlot, mode: RestoreMode) =>
         run(async () => {
@@ -197,18 +189,15 @@ export function DataTab() {
         }
         // 켜는 순간의 설정을 자동 백업 칸에 바로 올린다. 이후에는 설정이 바뀔 때마다 백그라운드가 올린다
         if (on) {
-            await run(async () => {
-                await runBackup("auto");
-                return "자동 백업을 켰습니다. 지금 설정을 자동 백업으로 올렸습니다.";
-            }, "자동 백업을 켰지만 첫 백업을 올리지 못했습니다.");
+            await run(() => runBackup("auto").then(() => "자동 백업을 켰습니다. 지금 설정을 자동 백업으로 올렸습니다."), "자동 백업을 켰지만 첫 백업을 올리지 못했습니다.");
         }
     };
 
     const exportData = () =>
-        run(async () => {
-            await navigator.clipboard.writeText(JSON.stringify(await collectLocalData()));
-            return "데이터를 클립보드로 내보냈습니다.";
-        }, "클립보드로 내보내지 못했습니다.");
+        run(
+            () => collectLocalData().then((data) => navigator.clipboard.writeText(JSON.stringify(data))).then(() => "데이터를 클립보드로 내보냈습니다."),
+            "클립보드로 내보내지 못했습니다."
+        );
 
     // run()을 거치지 않는다. loading이 가져오기 버튼을 막으면 다이얼로그를 닫을 때 포커스가 그 버튼으로 돌아가지 못한다
     const submitImport = async (text: string): Promise<string | undefined> => {

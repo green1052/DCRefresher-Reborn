@@ -4,6 +4,8 @@ import {storage} from "wxt/utils/storage";
 
 import {BLOCK_TYPES, blockDefaultsStorage, blockStorage, DEFAULT_DETECT_MODE, DETECT_MODE_NAMES, DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
+import {onBfcacheRestore} from "@/utils/dom";
+import {saveOrReload} from "@/utils/error";
 import {once} from "@/utils/once";
 import {isRecord} from "@/utils/record";
 
@@ -18,7 +20,6 @@ interface BlocksState {
     addEntries: (type: BlockType, list: BlockInputFields[]) => Promise<void>;
     updateEntry: (type: BlockType, id: string, fields: BlockInputFields) => Promise<void>;
     removeEntry: (type: BlockType, id: string) => Promise<void>;
-    clearType: (type: BlockType) => Promise<void>;
     setDefault: (type: BlockType, mode: DetectMode) => Promise<void>;
 }
 
@@ -66,7 +67,7 @@ export const useBlocksStore = create<BlocksState>((set, get) => ({
 
     setEntries: async (type, entries) => {
         set((state) => ({entries: {...state.entries, [type]: entries}}));
-        await persist(blockStorage[type].setValue(entries));
+        await saveOrReload(blockStorage[type].setValue(entries), load, "차단 목록을 저장하지 못했습니다.");
     },
 
     addEntry: (type, fields) => get().addEntries(type, [fields]),
@@ -93,13 +94,9 @@ export const useBlocksStore = create<BlocksState>((set, get) => ({
         await get().setEntries(type, get().entries[type].filter((entry) => entry.id !== id));
     },
 
-    clearType: async (type) => {
-        await get().setEntries(type, []);
-    },
-
     setDefault: async (type, mode) => {
         set((state) => ({defaults: {...state.defaults, [type]: mode}}));
-        await persist(blockDefaultsStorage.setValue(get().defaults));
+        await saveOrReload(blockDefaultsStorage.setValue(get().defaults), load, "차단 목록을 저장하지 못했습니다.");
     }
 }));
 
@@ -130,17 +127,6 @@ const load = async (): Promise<void> => {
     setDefaults(defaults?.value);
 };
 
-/** 화면에 먼저 반영한 값을 저장한다. 저장이 실패하면 저장소 값으로 되돌려 저장된 것처럼 보이지 않게 하고, 알림은 부른 쪽에 맡긴다 */
-const persist = async (write: Promise<void>): Promise<void> => {
-    try {
-        await write;
-    } catch (e) {
-        console.error("차단 목록을 저장하지 못했습니다.", e);
-        await load().catch(console.error);
-        throw e;
-    }
-};
-
 /** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다 */
 export const initBlocksStore = once(async (signal?: AbortSignal) => {
     // 다 읽은 뒤에 감시를 건다. 읽기가 실패하면 once가 다음 호출에 다시 시도하는데, 그때 감시가 두 번 걸리지 않는다
@@ -148,9 +134,6 @@ export const initBlocksStore = once(async (signal?: AbortSignal) => {
     for (const type of BLOCK_TYPES) blockStorage[type].watch((next) => setList(type, next));
     blockDefaultsStorage.watch(setDefaults);
 
-    // bfcache에서 돌아온 탭은 그사이의 변경을 받지 못했다. 옛 목록으로 쓰면 다른 탭의 변경을 덮으므로 다시 읽는다.
-    // signal은 콘텐츠 스크립트 컨텍스트의 것이다. 무효화된 뒤에는 저장소를 부를 수 없으므로 리스너를 뗀다
-    window.addEventListener("pageshow", (ev) => {
-        if (ev.persisted) void load().catch(console.error);
-    }, {signal});
+    // 옛 목록으로 쓰면 다른 탭의 변경을 덮으므로 bfcache에서 돌아오면 다시 읽는다. signal은 콘텐츠 스크립트 컨텍스트의 것이다
+    onBfcacheRestore(load, signal);
 });

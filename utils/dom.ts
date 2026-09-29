@@ -4,6 +4,13 @@ export const whenDomReady = (run: () => void, signal?: AbortSignal): void => {
     else run();
 };
 
+/** bfcache에서 돌아온 탭은 그사이의 저장소 변경을 받지 못했다. 돌아올 때 run으로 다시 읽는다. 컨텍스트가 무효화되면 저장소를 부를 수 없으므로 signal로 리스너를 뗀다 */
+export const onBfcacheRestore = (run: () => Promise<void>, signal?: AbortSignal): void => {
+    window.addEventListener("pageshow", (ev) => {
+        if (ev.persisted) void run().catch(console.error);
+    }, {signal});
+};
+
 /** 부드러운 스크롤(맨 위로·댓글로·페이지 넘김 등). 동작 줄이기(prefers-reduced-motion)를 켰으면 바로 옮긴다 */
 export const smoothScroll = (): ScrollBehavior => (matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
 
