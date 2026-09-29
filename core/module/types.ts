@@ -104,7 +104,7 @@ export interface ModuleDefinition<S extends SettingsSchema = SettingsSchema, Api
 
 /**
  * getModuleApi(id)가 돌려주는 api 타입 (모듈 id → setup()의 리턴값).
- * 손으로 채우지 않는다. wxt.config.ts의 prepare:types 훅이 features/*\/index.ts를 모아 .wxt/types/modules.d.ts에서 채운다
+ * 손으로 채우지 않는다. modules/module-types.ts(WXT 모듈)가 features/*\/index.ts를 모아 .wxt/types/modules.d.ts에서 채운다
  */
 export interface ModuleApis {}
 

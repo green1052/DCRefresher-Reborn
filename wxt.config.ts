@@ -1,6 +1,3 @@
-import {existsSync, readdirSync} from "node:fs";
-import {resolve} from "node:path";
-
 import {defineConfig} from "wxt";
 
 import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "./core/pages";
@@ -15,19 +12,6 @@ const UNUSED_OVERLAY_COMPONENT = new RegExp(
 
 export default defineConfig({
     modules: ["@wxt-dev/module-react", "@wxt-dev/auto-icons"],
-    hooks: {
-        // getModuleApi(id)의 id 자동완성과 api 타입. features/<폴더>/index.ts를 모아 ModuleApis를 채운다 (새 모듈도 폴더만 만들면 된다)
-        "prepare:types": (wxt, entries) => {
-            const dir = resolve(wxt.config.root, "features");
-            const folders = readdirSync(dir, {withFileTypes: true}).filter((entry) => entry.isDirectory() && existsSync(resolve(dir, entry.name, "index.ts"))).map((entry) => entry.name);
-            const modules = folders.map((folder) => `typeof import("@/features/${folder}/index").default`).join(" | ");
-            entries.push({
-                path: "types/modules.d.ts",
-                text: `// wxt.config.ts의 prepare:types 훅이 만든다. 고치지 않는다\nimport type {ModuleApiMap} from "@/core/module/types";\n\ndeclare module "@/core/module/types" {\n    interface ModuleApis extends ModuleApiMap<${modules}> {}\n}\n`,
-                tsReference: true
-            });
-        }
-    },
     react: {
         vite: {
             compiler: true
