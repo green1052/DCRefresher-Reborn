@@ -25,8 +25,8 @@
 글을 열지 않고 목록에서 미리 보고, 목록을 자동으로 새로고침하고, 보고 싶지 않은 유저와 글을 가립니다. 작성자 옆에는 IP 정보(통신사·국가·VPN)와 메모를 보여 줍니다.
 
 <p align="center">
-    <img src="docs/images/preview.png" width="49%" alt="글 목록에서 우클릭으로 연 미리보기 창">
-    <img src="docs/images/mini-preview.png" width="49%" alt="제목에 마우스를 올리면 뜨는 미니 미리보기">
+    <img src="docs/images/preview.webp" width="49%" alt="글 목록에서 우클릭으로 연 미리보기 창">
+    <img src="docs/images/mini-preview.webp" width="49%" alt="제목에 마우스를 올리면 뜨는 미니 미리보기">
 </p>
 
 ## 설치
