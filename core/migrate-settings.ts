@@ -11,12 +11,8 @@ type Settings = Record<string, unknown>;
 const withIpInfoFilter = <T extends Settings>(settings: T): T =>
     settings.showIpInfo === false && settings.ipInfoFilter === undefined ? {...settings, ipInfoFilter: "none"} : settings;
 
-/** 6.0.0~6.0.2가 v5에서 옮기며 이름을 바꾸지 않은 tooltipInteraction을 tooltipWheel로 옮긴다. 새 설정이 저장돼 있으면 건드리지 않는다 */
-const withTooltipWheel = <T extends Settings>(settings: T): T =>
-    typeof settings.tooltipInteraction === "boolean" && settings.tooltipWheel === undefined ? {...settings, tooltipWheel: settings.tooltipInteraction} : settings;
-
 /** 모듈 id → 그 모듈 설정의 변환 */
-const TRANSFORMS: Record<string, <T extends Settings>(settings: T) => T> = {userinfo: withIpInfoFilter, preview: withTooltipWheel};
+const TRANSFORMS: Record<string, <T extends Settings>(settings: T) => T> = {userinfo: withIpInfoFilter};
 
 export const MIGRATED_MODULES = Object.keys(TRANSFORMS);
 

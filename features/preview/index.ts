@@ -20,7 +20,7 @@ import {ADULT_ERROR, SECRET_ERROR} from "@/core/preview/parser";
 import {blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {adjacentPreData, buildPreData, isBlurHidden, isTextPost} from "./rows";
 import {type Ctx, settings} from "./settings";
-import {type ErrorState, type ManageKind, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
+import {closeMiniSoon, type ErrorState, hoverMini, keepMini, type ManageKind, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
 
 // status는 ky의 HTTPError에서 읽는다 (삭제된 글은 404).
 // 성인 인증 안내 페이지면 parsePostInfo가 Error(ADULT_ERROR)를, 미니 갤러리 비밀글이면 Error(SECRET_ERROR)를 던진다.
@@ -491,15 +491,18 @@ const controller = (ctx: Ctx) => {
         // 받는 사이 행을 떠났거나 전체 미리보기가 열렸으면 띄우지 않는다.
         if (miniTarget !== element || usePreviewStore.getState().visible) return;
 
+        hoverMini();
         usePreviewStore.setState({
             mini: {
-                ...miniPosition(x, y),
+                // 조작할 수 있는 미니는 v5처럼 커서 바로 오른쪽에 붙인다(x+10, y-50). 오른쪽으로만 옮기면 다른 행을 지나지 않고 카드에 닿는다
+                ...(ctx.settings.tooltipInteraction ? miniPosition(x - 6, y - 66) : miniPosition(x, y)),
                 title: postTitle(post),
                 // 미니에는 마우스를 올려 블러를 걷을 수 없으니 블러 차단도 안내 문구로 가린다.
                 contents: post.textBlocked && !useUiStore.getState().blockView?.revealed ? BLOCKED_TEXT : post.contents ?? "",
                 // 전체 미리보기와 같은 조건으로 이미지를 가린다. 다르면 거기서 숨긴 이미지가 호버로 보인다.
                 blockMedia: ctx.settings.blockImage && isTextPost(preData),
                 wheel: ctx.settings.tooltipWheel,
+                interactive: ctx.settings.tooltipInteraction,
                 gallery: preData.gallery
             }
         });
@@ -511,6 +514,8 @@ const controller = (ctx: Ctx) => {
 
         const element = ev.currentTarget as HTMLElement;
         if (isBlurHidden(element)) return;
+        // 조작할 수 있는 미니에서 제목으로 돌아왔으면 닫지 않는다
+        keepMini();
         const x = ev.clientX;
         const y = ev.clientY;
 
@@ -523,16 +528,25 @@ const controller = (ctx: Ctx) => {
     };
 
     const onMiniMove = (ev: MouseEvent) => {
-        usePreviewStore.getState().moveMini(ev.clientX, ev.clientY);
+        // 조작할 수 있는 미니는 커서를 따라가면 카드로 옮겨 갈 수 없다
+        if (!usePreviewStore.getState().mini?.interactive) usePreviewStore.getState().moveMini(ev.clientX, ev.clientY);
     };
 
-    const onMiniLeave = () => {
+    /** soon: 조작할 수 있는 미니면 커서가 카드로 옮겨 갈 틈을 두고 닫는다 (제목에서 나갈 때) */
+    const onMiniLeave = (soon = false) => {
         if (miniTimer) window.clearTimeout(miniTimer);
         miniTimer = 0;
         // 받는 중인 본문은 끊지 않는다. 클릭해 열면 같은 요청을 이어 쓰고, 다른 글을 받을 때 끊긴다.
         miniTarget = null;
+        const {mini} = usePreviewStore.getState();
+        if (soon && mini?.interactive) {
+            closeMiniSoon();
+            return;
+        }
+        keepMini();
+        hoverMini();
         // 떠 있을 때만 비운다. 제목 칸을 지날 때마다 setState하면 스토어를 구독하는 창·댓글이 모두 다시 확인한다.
-        if (usePreviewStore.getState().mini) usePreviewStore.setState({mini: null});
+        if (mini) usePreviewStore.setState({mini: null});
     };
 
     // ── 행 이벤트 ────────────────────────────────────────────────
@@ -639,7 +653,7 @@ const controller = (ctx: Ctx) => {
         if (word) {
             element.addEventListener("mouseenter", onMiniEnter, options);
             element.addEventListener("mousemove", onMiniMove, options);
-            element.addEventListener("mouseleave", onMiniLeave, options);
+            element.addEventListener("mouseleave", () => onMiniLeave(true), options);
         }
     };
 
