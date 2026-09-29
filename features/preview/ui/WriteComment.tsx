@@ -30,7 +30,13 @@ const randomPassword = (): string => Array.from(crypto.getRandomValues(new Uint8
 const FAIL_MESSAGES: Record<string, string> = {
     code_fail: "자동입력 방지 코드가 일치하지 않습니다.",
     fail1: "닉네임과 비밀번호를 정확하게 입력해 주세요.",
-    form_error: "닉네임과 비밀번호를 정확하게 입력해 주세요."
+    form_error: "닉네임과 비밀번호를 정확하게 입력해 주세요.",
+    // 디시콘 댓글 (디시 dccon.js와 같은 문구)
+    not_buy: "구매내역이 존재하지 않는 디시콘입니다.",
+    expired: "사용기간이 만료된 디시콘입니다.",
+    unuseable: "해당 디시콘은 현재 사용 불가능합니다.",
+    not_exists: "잘못된 파일 경로 입니다.",
+    fail: "디시콘 입력에 실패하였습니다."
 };
 
 /**

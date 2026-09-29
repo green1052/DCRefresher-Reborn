@@ -18,7 +18,7 @@ export type ManageKind = "notice" | "recommend" | "delete" | "bump";
 type Reply = { commentNo: string | null; replyNo: string | null };
 
 /** blockMedia: blockImage로 이미지를 가릴지. 전체 미리보기와 같은 클래스로 가린다. wheel: 휠로 내용을 스크롤할지 (tooltipWheel) */
-type MiniState = { x: number; y: number; title: string; contents: string; blockMedia: boolean; wheel: boolean };
+type MiniState = { x: number; y: number; title: string; contents: string; blockMedia: boolean; wheel: boolean; gallery: string };
 
 /** 게시글을 새로 열 때마다 초기화되는 상태 */
 interface PostState {

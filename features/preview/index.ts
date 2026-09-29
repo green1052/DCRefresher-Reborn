@@ -155,17 +155,17 @@ const controller = (ctx: Ctx) => {
 
         try {
             // 댓글 가공(정화·차단)도 처음 쓸 때 불러온다.
-            const [{prepareComments, processComments}, {list: raw, allowReply}] = await Promise.all([
+            const [{prepareComments, processComments}, {list: raw, allowReply, truncated}] = await Promise.all([
                 import("@/core/preview/comments"),
                 // 건너뛸 때는 지금 알고 있는 댓글 허용(멤버만 댓글)을 그대로 둔다
-                skip ? {list: [], allowReply: store.getState().allowReply} : Promise.resolve(given).then((list) => list ?? fetchComments(preData, post, signal))
+                skip ? {list: [], allowReply: store.getState().allowReply, truncated: false} : Promise.resolve(given).then((list) => list ?? fetchComments(preData, post, signal))
             ]);
             if (store.getState().signalId !== mySignal || seq < shownSeq) return;
             shownSeq = seq;
-            if (!skip) setEntry(preData, {comments: {list: raw, allowReply}});
+            if (!skip) setEntry(preData, {comments: {list: raw, allowReply, truncated}});
 
             // 보존(archive) 기록은 받을 때마다 갱신해야 하므로 정리는 늘 한다
-            const source = prepareComments(raw, preData, ctx.settings.archiveArticle);
+            const source = prepareComments(raw, preData, ctx.settings.archiveArticle, truncated);
             // 자동 새로고침으로 같은 목록을 다시 받았으면 정화·다시 그리기를 건너뛴다. 댓글이 수백 개면 정화만 수십 ms다
             const rawKey = JSON.stringify(raw);
             if (!skip && shown?.signal === mySignal && rawKey === shownRaw) {
@@ -228,8 +228,8 @@ const controller = (ctx: Ctx) => {
             store.setState({post, error: undefined, archived: false});
             await pullComments(preData, post, signalId);
         } catch (e) {
-            // 실패해도(삭제된 글 등) 보고 있던 본문은 그대로 둔다.
-            if (isAbortError(e) || store.getState().signalId !== signalId) return;
+            // 실패해도(삭제된 글 등) 보고 있던 본문은 그대로 둔다. 임시 차단은 HTTP 클라이언트가 이미 알렸다
+            if (isAbortError(e) || e instanceof BlockedError || store.getState().signalId !== signalId) return;
             ui.showToast("게시글을 다시 불러오지 못했습니다.", "error");
         }
     };
@@ -381,7 +381,8 @@ const controller = (ctx: Ctx) => {
 
     const manage = async (kind: ManageKind) => {
         const st = store.getState();
-        if (!st.preData || !st.post || managing) return;
+        // 목록에서 가져온 글 정보만 쓴다. 본문을 받는 중이거나 오류가 난 창에서도 관리할 수 있다
+        if (!st.preData || managing) return;
 
         const target = st.preData;
         // 응답 전에 다른 글로 넘어갔으면 공지·개념글 표시는 바꾸지 않고 알림만 띄운다.
@@ -498,7 +499,8 @@ const controller = (ctx: Ctx) => {
                 contents: post.textBlocked && !useUiStore.getState().blockView?.revealed ? BLOCKED_TEXT : post.contents ?? "",
                 // 전체 미리보기와 같은 조건으로 이미지를 가린다. 다르면 거기서 숨긴 이미지가 호버로 보인다.
                 blockMedia: ctx.settings.blockImage && isTextPost(preData),
-                wheel: ctx.settings.tooltipWheel
+                wheel: ctx.settings.tooltipWheel,
+                gallery: preData.gallery
             }
         });
     };

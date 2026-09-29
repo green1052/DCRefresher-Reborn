@@ -325,7 +325,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                             // 선택 중에도 ghost를 유지한다. soft로 바꾸면 Radix 여백이 달라져 댓글 줄이 흔들린다.
                             variant="ghost"
                             color={replying ? undefined : "gray"}
-                            aria-label={replying ? "답글 취소" : "답글"}
+                            aria-label="답글"
                             aria-pressed={replying}
                             onClick={() =>
                                 // 같은 댓글을 다시 누르면 취소한다. 답글의 부모는 쓰레드 첫 댓글(c_no)이고, 첫 댓글이면 자기 자신이다.

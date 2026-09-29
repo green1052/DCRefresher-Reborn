@@ -1,6 +1,6 @@
 import {Ban, Eye} from "lucide-react";
 
-import {BLOCKED_TEXT, groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
+import {BLOCKED_TEXT, dcconCode, groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingGroup, SettingsSchema} from "@/core/module/types";
 import {isViewPage, queryString} from "@/core/http/urls";
@@ -10,16 +10,6 @@ import {useBlocksStore} from "@/stores/blocks";
 import {openWriterBubble, useUiStore} from "@/stores/ui";
 import {whenDomReady} from "@/utils/dom";
 import {eventTarget} from "@/utils/event";
-
-/**
- * 디시콘 요소의 코드 (이미지 URL의 no 파라미터). 필터와 우클릭 선택이 같은 기준을 써야 선택해서 넣은 항목이 실제로 가려진다.
- * src 없이 data-src나 <source>만 가진 video 디시콘이 있고, 빈 src 속성도 건너뛰어야 해서 ||를 쓴다
- */
-const dcconCode = (element: HTMLElement): string | undefined => {
-    const media = (element as HTMLImageElement).src ? element : (element.querySelector("img, video, source") ?? element);
-    const src = media.getAttribute("src") || media.getAttribute("data-src");
-    return src ? URL.parse(src, location.href)?.searchParams.get("no") || undefined : undefined;
-};
 
 /** 요소 글자 — 안에 든 <script> 글자는 뺀다 */
 const plainText = (element: Element | null | undefined): string =>

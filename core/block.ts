@@ -66,6 +66,16 @@ const blockingIn = (lists: BlockLists, type: BlockType, content: string, gallery
     return allowed ? hits : [...hits, ...allowList];
 };
 
+/**
+ * 디시콘 요소의 코드 (이미지 URL의 no 파라미터). 페이지 차단 필터, 우클릭 선택, 미리보기가 같은 기준을 써야 선택해서 넣은 항목이 실제로 가려진다.
+ * src 없이 data-src나 <source>만 가진 video 디시콘이 있고, 빈 src 속성도 건너뛰어야 해서 ||를 쓴다
+ */
+export const dcconCode = (element: HTMLElement): string | undefined => {
+    const media = (element as HTMLImageElement).src ? element : (element.querySelector("img, video, source") ?? element);
+    const src = media.getAttribute("src") || media.getAttribute("data-src");
+    return src ? URL.parse(src, location.href)?.searchParams.get("no") || undefined : undefined;
+};
+
 /** 해당 내용이 차단 대상인지 (갤러리 한정 항목은 그 갤러리에서만) */
 export const isBlocked = (type: BlockType, content: string, gallery?: string): boolean =>
     content !== "" && blockingIn(useBlocksStore.getState(), type, content, gallery).length > 0;

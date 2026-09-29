@@ -507,6 +507,11 @@
         @include mixins.blur-reveal;
     }
 
+    // 본문에 든 차단 디시콘 (Frame의 markBlockedDccons). 가린 내용 보기 동안은 아래 규칙으로 흐리게 보인다
+    &:not([data-block-revealed]) .refresher-preview-contents .written_dccon[data-blocked="hide"] {
+        display: none;
+    }
+
     // 이 페이지에서만 가린 내용 보기 — 숨겼던 것도 흐리게 보인다
     &[data-block-revealed] :is([data-blocked], [data-duplicate]) {
         filter: none;
@@ -515,6 +520,11 @@
 }
 
 /* ===== 미니 미리보기 ===== */
+
+// 본문에 든 차단 디시콘 (Mini의 markBlockedDccons)
+.refresher-mini-contents .written_dccon[data-blocked] {
+    display: none;
+}
 
 .refresher-mini-preview {
     display: flex;

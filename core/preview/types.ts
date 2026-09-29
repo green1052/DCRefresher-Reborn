@@ -113,4 +113,6 @@ export interface CommentListResponse {
     list: DcinsideComment[];
     /** 댓글·답글 쓰기 허용 (allow_reply). 멤버만 댓글을 쓰는 갤러리면 false */
     allowReply: boolean;
+    /** 10쪽(1000개)을 넘어 오래된 댓글을 받지 못했는지 */
+    truncated?: boolean;
 }

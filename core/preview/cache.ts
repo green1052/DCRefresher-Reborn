@@ -27,14 +27,18 @@ export const setEntry = (preData: GalleryPreData, patch: CacheEntry): void => {
 /**
  * 삭제 댓글 보존: 지금까지 받은 댓글 중 이번 목록에 없는 것을 is_delete "1"로 되살린다.
  * 받은 댓글을 계속 모아 두므로 한 번 되살린 댓글은 캐시가 살아 있는 동안 계속 보인다.
+ * truncated: 10쪽(1000개)까지만 받았다. 새 댓글이 달리면 가장 오래된 댓글이 받는 범위 밖으로 밀리므로, 받은 것 중 가장 오래된 스레드와
+ * 그보다 오래된 댓글은 목록에 없어도 삭제로 치지 않는다 (쪽은 스레드 중간에서도 잘린다)
  */
-export const restoreArchive = (preData: GalleryPreData, list: DcinsideComment[]): DcinsideComment[] => {
+export const restoreArchive = (preData: GalleryPreData, list: DcinsideComment[], truncated = false): DcinsideComment[] => {
     const seen = entries.get(key(preData))?.seen ?? {};
     const current = new Set(list.map((comment) => comment.no));
+    const thread = (comment: DcinsideComment): number => Number(comment.c_no) || Number(comment.no);
+    const cutoff = truncated ? Math.min(...list.map(thread)) : 0;
 
     const deleted: DcinsideComment[] = [];
     for (const comment of Object.values(seen)) {
-        if (!current.has(comment.no)) deleted.push({...comment, is_delete: "1"});
+        if (!current.has(comment.no) && thread(comment) > cutoff) deleted.push({...comment, is_delete: "1"});
     }
 
     const nextSeen = {...seen};

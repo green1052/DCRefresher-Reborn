@@ -10,6 +10,8 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
     if (!href) return null;
 
     const url = new URL(href, location.origin);
+    // 운영자 '이슈' 행은 http:// 링크다. 출처가 다르면 pushState가 SecurityError를 던지므로 페이지 프로토콜로 맞춘다
+    if (url.host === location.host) url.protocol = location.protocol;
     let gallery = url.searchParams.get("id") ?? undefined;
     let id = url.searchParams.get("no") ?? undefined;
 

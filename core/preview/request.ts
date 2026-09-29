@@ -50,7 +50,8 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
     // 1쪽의 쪽 나눔(viewComments(n, …))에서 마지막 쪽 번호를 읽고 나머지 쪽은 한꺼번에 받는다. 동시 요청 수는 요청 제한 모듈이 조절한다.
     // ponytail: 10쪽(1000개)까지만 받는다. 더 많은 글은 드물고, 자동 갱신 때마다 전부 다시 받기 때문이다.
     const first = await fetchPage(1);
-    const lastPage = Math.min(10, Math.max(1, ...Array.from(first.pagination?.matchAll(/viewComments\((\d+)/g) ?? [], (match) => Number(match[1]))));
+    const pages = Math.max(1, ...Array.from(first.pagination?.matchAll(/viewComments\((\d+)/g) ?? [], (match) => Number(match[1])));
+    const lastPage = Math.min(10, pages);
     const rest = await Promise.all(Array.from({length: lastPage - 1}, (_, index) => fetchPage(index + 2)));
 
     // 1쪽이 가장 최근 댓글이고 뒤쪽일수록 오래된 댓글이다. 쪽 사이에 같은 댓글이 겹쳐 올 수 있어 번호로 하나만 남기고 번호(등록)순으로 맞춘다
@@ -60,7 +61,7 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
     }
 
     // 디시 comment.js처럼 0일 때만 막는다 (멤버만 댓글)
-    return {list: [...byNo.values()].sort((a, b) => Number(a.no) - Number(b.no)), allowReply: String(first.allow_reply) !== "0"};
+    return {list: [...byNo.values()].sort((a, b) => Number(a.no) - Number(b.no)), allowReply: String(first.allow_reply) !== "0", truncated: pages > 10};
 };
 
 /** 'result||message||detail' 텍스트 응답. 댓글 작성·삭제, 추천, JSON이 아닌 관리 응답이 이 모양이다 */
