@@ -3,11 +3,12 @@ import {storage} from "wxt/utils/storage";
 import {isBackupTarget, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
 import {IP_FORMAT} from "@/core/ipdb";
-import {migrateShowIpInfo} from "@/core/migrate-settings";
+import {migrateSettingsStorage} from "@/core/migrate-settings";
 import {migrateV5Storage} from "@/core/migrate-v5";
 import {onMessage, sendMessage} from "@/core/messaging/protocol";
 import {type BackgroundModule, startBackgroundModules} from "@/core/module/background";
 import {backupStorage, dbStorage} from "@/core/storage/items";
+import {hookUploads, UPLOAD_OPTIONS_KEY} from "@/features/write/images";
 
 /** 모듈별 배경 코드(features/<id>/background.ts). 필요한 모듈만 이 파일을 둔다 */
 const backgroundModules = Object.values(import.meta.glob<{ default: BackgroundModule }>("../../features/*/background.ts", {eager: true}))
@@ -67,6 +68,10 @@ const rerunListScripts = (gallery: string): void => {
     if (typeof scope.UserMemo?.renderWriterMemoBadges === "function") scope.UserMemo.renderWriterMemoBadges(null);
 };
 
+/** 메시지를 보낸 탭·프레임의 페이지(MAIN world)에서 func를 실행한다 */
+const runInPage = <Args extends unknown[], Result>(tabId: number, frameId: number | undefined, func: (...args: Args) => Result, args: Args) =>
+    browser.scripting.executeScript({target: {tabId, frameIds: [frameId ?? 0]}, world: "MAIN", func, args});
+
 export default defineBackground(() => {
     // ===== 모듈의 배경 쪽 (이미지 검색 메뉴 등) =====
     // 리스너는 여기서 바로 건다. 크롬은 메뉴 같은 상태를 유지하므로 설치·브라우저 시작·설정 변경 때만 다시 맞춘다
@@ -88,12 +93,7 @@ export default defineBackground(() => {
         if (!sender.tab?.id) return undefined;
 
         try {
-            const injection = browser.scripting.executeScript({
-                target: {tabId: sender.tab.id, frameIds: [sender.frameId ?? 0]},
-                world: "MAIN",
-                func: executeGrecaptcha,
-                args: [GRECAPTCHA_SITE_KEY, action]
-            });
+            const injection = runInPage(sender.tab.id, sender.frameId, executeGrecaptcha, [GRECAPTCHA_SITE_KEY, action]);
             const timeout = new Promise<undefined>((resolve) => setTimeout(resolve, GRECAPTCHA_TIMEOUT));
             const [result] = (await Promise.race([injection, timeout])) ?? [];
             return typeof result?.result === "string" ? result.result : undefined;
@@ -106,12 +106,14 @@ export default defineBackground(() => {
     onMessage("refresher:listReplaced", async ({data: gallery, sender}) => {
         if (!sender.tab?.id) return;
 
-        await browser.scripting.executeScript({
-            target: {tabId: sender.tab.id, frameIds: [sender.frameId ?? 0]},
-            world: "MAIN",
-            func: rerunListScripts,
-            args: [gallery]
-        }).catch(() => {});
+        await runInPage(sender.tab.id, sender.frameId, rerunListScripts, [gallery]).catch(() => {});
+    });
+
+    // ===== 글쓰기: 올리는 이미지를 바꾸는 리스너를 그 탭의 페이지(MAIN world)에 넣는다 =====
+    onMessage("refresher:hookUploads", async ({sender}) => {
+        if (!sender.tab?.id) return;
+
+        await runInPage(sender.tab.id, sender.frameId, hookUploads, [UPLOAD_OPTIONS_KEY]).catch(console.error);
     });
 
     // ===== Database: 설치/주기 갱신 =====
@@ -123,10 +125,12 @@ export default defineBackground(() => {
         // v5에서 업데이트한 경우만 설정을 v6 형식으로 옮긴다(한시적). 저장소 전체를 읽으므로 다른 경우는 건너뛴다.
         // 6.0.2 파이어폭스는 배경이 불러오자마자 멈춰, v5에서 곧바로 6.0.2로 온 사용자는 옮기기를 건너뛰었다 (v5 키가 없으면 바로 끝난다).
         // 모듈 맞추기는 옮긴 설정을 보도록 그 뒤에 하고, 옮기기가 실패해도 DB 갱신까지 이어서 한다.
-        if (reason === "update" && (previousVersion?.startsWith("5.") || previousVersion === "6.0.2")) await migrateV5Storage().catch(console.error);
-        if (reason === "update") await migrateShowIpInfo().catch(console.error);
-        // 비회원 닉네임·비밀번호는 이제 디시 localStorage에 둔다. 예전 버전이 확장 저장소에 남긴 평문 비밀번호를 지운다
-        if (reason === "update") await storage.removeItem("local:refresher:nonmember").catch(console.error);
+        if (reason === "update") {
+            if (previousVersion?.startsWith("5.") || previousVersion === "6.0.2") await migrateV5Storage().catch(console.error);
+            await migrateSettingsStorage().catch(console.error);
+            // 비회원 닉네임·비밀번호는 이제 디시 localStorage에 둔다. 예전 버전이 확장 저장소에 남긴 평문 비밀번호를 지운다
+            await storage.removeItem("local:refresher:nonmember").catch(console.error);
+        }
         await applyBackgroundModules();
 
         if (import.meta.env.PROD || !(await dbStorage.meta.getValue()).version) {
@@ -163,6 +167,9 @@ export default defineBackground(() => {
     };
     browser.runtime.onStartup.addListener(rearmAutoBackup);
     browser.runtime.onInstalled.addListener(() => void rearmAutoBackup().catch(console.error));
+    // 파이어폭스는 확장을 껐다 켜면 onStartup/onInstalled 없이 배경만 다시 뜨고 알람은 지워진다.
+    // 배경 페이지가 상주해 방금 울린 알람을 또 걸 일이 없으므로 뜰 때마다 다시 건다
+    if (import.meta.env.FIREFOX) void rearmAutoBackup().catch(console.error);
 
     browser.alarms.onAlarm.addListener((alarm) => {
         if (alarm.name === DATABASE_ALARM) {

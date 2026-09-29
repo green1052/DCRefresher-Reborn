@@ -3,6 +3,8 @@ import {create} from "zustand";
 
 import {MEMO_TYPES, memoStorage} from "@/core/storage/items";
 import type {MemoEntry, MemoType} from "@/core/storage/types";
+import {onBfcacheRestore} from "@/utils/dom";
+import {saveOrReload} from "@/utils/error";
 import {once} from "@/utils/once";
 import {isRecord} from "@/utils/record";
 
@@ -13,7 +15,6 @@ interface MemosState {
     setMemos: (type: MemoType, memos: MemoMap) => Promise<void>;
     setMemo: (type: MemoType, user: string, entry: MemoEntry) => Promise<void>;
     removeMemo: (type: MemoType, user: string) => Promise<void>;
-    clearType: (type: MemoType) => Promise<void>;
 }
 
 const isMemoEntry = (value: unknown): value is MemoEntry =>
@@ -45,14 +46,7 @@ export const useMemosStore = create<MemosState>((set, get) => ({
 
     setMemos: async (type, memos) => {
         set((state) => ({memos: {...state.memos, [type]: memos}}));
-        try {
-            await memoStorage[type].setValue(memos);
-        } catch (e) {
-            // 저장되지 않은 메모가 보이지 않게 저장소 값으로 되돌린다. 알림은 부른 쪽에 맡긴다
-            console.error("메모를 저장하지 못했습니다.", e);
-            await load().catch(console.error);
-            throw e;
-        }
+        await saveOrReload(memoStorage[type].setValue(memos), load, "메모를 저장하지 못했습니다.");
     },
 
     setMemo: async (type, user, entry) => {
@@ -62,10 +56,6 @@ export const useMemosStore = create<MemosState>((set, get) => ({
     removeMemo: async (type, user) => {
         const {[user]: _removed, ...rest} = get().memos[type];
         await get().setMemos(type, rest);
-    },
-
-    clearType: async (type) => {
-        await get().setMemos(type, {});
     }
 }));
 
@@ -108,9 +98,6 @@ export const initMemosStore = once(async (signal?: AbortSignal) => {
     await load();
     for (const type of MEMO_TYPES) memoStorage[type].watch((next) => setMap(type, next));
 
-    // bfcache에서 돌아온 탭은 그사이의 변경을 받지 못했다. 옛 메모로 쓰면 다른 탭의 변경을 덮으므로 다시 읽는다.
-    // signal은 콘텐츠 스크립트 컨텍스트의 것이다. 무효화된 뒤에는 저장소를 부를 수 없으므로 리스너를 뗀다
-    window.addEventListener("pageshow", (ev) => {
-        if (ev.persisted) void load().catch(console.error);
-    }, {signal});
+    // 옛 메모로 쓰면 다른 탭의 변경을 덮으므로 bfcache에서 돌아오면 다시 읽는다. signal은 콘텐츠 스크립트 컨텍스트의 것이다
+    onBfcacheRestore(load, signal);
 });

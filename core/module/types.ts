@@ -38,7 +38,7 @@ type SettingValues<S extends SettingsSchema> = { readonly [K in keyof S]: Settin
 export interface ModuleContext<S extends SettingsSchema = SettingsSchema> {
     /** 현재 설정값 (읽기 전용). 레지스트리가 같은 객체를 갱신하므로 늘 최신이다 */
     settings: SettingValues<S>;
-    /** 이 실행의 수명. 모듈이 멈추면 abort된다. DOM 리스너·eventBus.on에 {signal}로 넘기면 따로 풀지 않아도 된다 */
+    /** 이 실행의 수명. 모듈이 멈추면 abort된다. DOM 리스너에 {signal}로 넘기면 따로 풀지 않아도 된다 */
     signal: AbortSignal;
 
     /** scope에 맞는 요소(지금 있는 것과 이후 추가되는 것)마다 callback을 부른다. 해제 함수를 돌려주며, 모듈이 멈추면 자동으로 풀린다 */
@@ -104,10 +104,17 @@ export interface ModuleDefinition<S extends SettingsSchema = SettingsSchema, Api
 
 /**
  * getModuleApi(id)가 돌려주는 api 타입 (모듈 id → setup()의 리턴값).
- * 여기는 비워 두고, api를 내주는 모듈이 자기 파일에서 선언 병합으로 채운다:
- * declare module "@/core/module/types" { interface ModuleApis { preview: PreviewApi } }
+ * 손으로 채우지 않는다. modules/module-types.ts(WXT 모듈)가 features/*\/index.ts를 모아 .wxt/types/modules.d.ts에서 채운다
  */
 export interface ModuleApis {}
+
+/** defineModule이 돌려주는 모듈. 레지스트리에는 AnyModule로 넘기고, id와 setup의 리턴값은 타입에만 남긴다 (ModuleApis 생성용) */
+export type DefinedModule<Id extends string, Api> = AnyModule & { readonly id: Id; readonly apiType?: Api };
+
+/** 모듈 id·api를 모아 ModuleApis 모양으로 만든다. api가 없는(void) 모듈은 뺀다 */
+export type ModuleApiMap<M> = {
+    [K in M as K extends DefinedModule<string, infer Api> ? ([Api] extends [void] ? never : K["id"]) : never]: K extends DefinedModule<string, infer Api> ? Api : never;
+};
 
 /** 레지스트리·옵션·팝업이 모듈을 모아 다룰 때의 타입. 모듈별 설정·api 타입은 defineModule에서 지운다 */
 export type AnyModule = ModuleDefinition<SettingsSchema, unknown>;

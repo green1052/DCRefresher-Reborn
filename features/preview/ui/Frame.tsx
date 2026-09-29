@@ -7,6 +7,7 @@ import {overlay} from "@/components/overlay/shadow";
 import {focusedElement} from "@/components/useOpenerFocus";
 import {BLOCKED_TEXT} from "@/core/block";
 import type {ProcessedComment} from "@/core/preview/comments";
+import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
 import {smoothScroll} from "@/utils/dom";
 import {isTyping} from "@/utils/event";
@@ -18,6 +19,7 @@ import {CountDown} from "./CountDown";
 import {ErrorBlock} from "./ErrorBlock";
 import {fitMovies} from "./fitMovies";
 import {watchGifVideos} from "./gifVideos";
+import {markBlockedDccons} from "./blockedDccons";
 import {AdminPanel} from "./Popups";
 import {postTitle, usePreviewStore} from "./previewStore";
 import {Votes} from "./Votes";
@@ -38,7 +40,9 @@ const subtitleOf = (comments: ProcessedComment[]): string => {
     const blocked = comments.filter((comment) => comment.blocked).length;
     const folded = comments.filter((comment) => comment.duplicates === 0).length;
     const extra = [blocked && `차단 ${blocked}개`, folded && `같은 댓글 ${folded}개 접음`].filter(Boolean).join(", ");
-    return `스레드 ${comments.filter((comment) => comment.depth === 0).length}개, 총 댓글 ${comments.length}개${extra ? ` (${extra})` : ""}`;
+    // 부모를 받지 못한 답글은 CommentList가 쓰레드 첫 댓글처럼 그리므로 같이 센다
+    const topNos = new Set(comments.filter((comment) => comment.depth === 0).map((comment) => comment.no));
+    return `스레드 ${comments.filter((comment) => comment.depth === 0 || !topNos.has(comment.c_no)).length}개, 총 댓글 ${comments.length}개${extra ? ` (${extra})` : ""}`;
 };
 
 /** run이 끝날 때까지 로딩으로 돌며, 그동안은 다시 누를 수 없다 */
@@ -87,6 +91,9 @@ export const Frame = () => {
     const backgroundBlur = usePreviewStore((s) => s.backgroundBlur);
     const scrollToSkip = usePreviewStore((s) => s.scrollToSkip);
     const blockView = useUiStore((s) => s.blockView);
+    const blockEntries = useBlocksStore((s) => s.entries);
+    const blockDefaults = useBlocksStore((s) => s.defaults);
+    const gallery = usePreviewStore((s) => s.preData?.gallery);
     const postKey = usePreviewStore((s) => (s.preData ? `${s.preData.gallery}/${s.preData.id}` : ""));
     const listTitle = usePreviewStore((s) => s.preData?.title);
     const scroller = useRef<HTMLDivElement>(null);
@@ -98,6 +105,10 @@ export const Frame = () => {
     // 본문 칸은 댓글만 보기·오류·닫힘일 때 빠졌다가 다시 붙고, 글마다 새로 마운트되므로 그때마다 동영상 크기를 다시 맞춘다.
     // 같은 글을 캐시로 다시 열면 visible 말고는 값이 모두 같다. hideText가 풀리면 동영상이 새로 들어온다.
     useEffect(() => (contentsBox.current ? fitMovies(contentsBox.current) : undefined), [visible, contents, commentsOnly, error, postKey, hideText]);
+    // 본문에 든 차단 디시콘은 페이지 글 보기처럼 그 디시콘만 가린다. 차단 목록이나 설정이 바뀌면 다시 본다
+    useEffect(() => {
+        if (contentsBox.current) markBlockedDccons(contentsBox.current, gallery, blockView ? (blockView.blur ? "blur" : "hide") : undefined);
+    }, [visible, contents, commentsOnly, error, postKey, hideText, blockView, blockEntries, blockDefaults, gallery]);
     // 깨진 움짤·디시콘 mp4는 디시처럼 gif로 바꾼다. 본문 칸이 새로 그려지는 때가 위와 같다.
     // 닫을 때는 페이드가 끝나 본문이 빠진 뒤에도 정리가 돌아야 떨어진 영상의 받기를 끊는다 (fading)
     useEffect(() => (contentsBox.current ? watchGifVideos(contentsBox.current) : undefined), [visible, fading, contents, commentsOnly, error, postKey, hideText]);
@@ -145,6 +156,8 @@ export const Frame = () => {
         const onKey = (ev: KeyboardEvent): void => {
             // Ctrl+PageUp/Down(탭 전환) 같은 조합키는 브라우저에 맡긴다.
             if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.shiftKey || isTyping(ev)) return;
+            // 누른 버튼이 로딩으로 막히거나 사라져 포커스가 body로 빠졌으면 스크롤 칸으로 되돌린다 (Tab은 브라우저의 이어가기 위치에 맡긴다)
+            if (ev.key !== "Tab" && focusedElement() === document.body) scroller.current?.focus({preventScroll: true});
 
             if (ev.code === "PageUp") {
                 ev.preventDefault();
@@ -245,7 +258,8 @@ export const Frame = () => {
                     // 창 바깥을 누르면 닫는다. pointerdown에서 닫으면 칸이 곧바로 사라져 이어지는 click/contextmenu가 아래 목록에 떨어진다
                     // (우클릭으로 닫으면 다른 글 미리보기가 열린다). 그래서 click/contextmenu에서 닫는다.
                     onPointerDown={(ev) => (pressedOutside.current = ev.target === ev.currentTarget)}
-                    onPointerUp={(ev) => (pressedOutside.current &&= ev.target === ev.currentTarget)}
+                    // &&=는 React Compiler가 지원하지 않아 창 전체가 컴파일되지 않는다
+                    onPointerUp={(ev) => (pressedOutside.current = pressedOutside.current && ev.target === ev.currentTarget)}
                     onClick={(ev) => {
                         if (pressedOutside.current && ev.target === ev.currentTarget) usePreviewStore.getState().requestClose();
                     }}

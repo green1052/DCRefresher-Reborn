@@ -3,6 +3,7 @@ import {documentUrl} from "@/core/http/urls";
 import type {PageAction, PageToggleState} from "@/core/messaging/protocol";
 import {moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
+import {onBfcacheRestore} from "@/utils/dom";
 
 import {areEqual, isModuleEnabled, normalizeSettings} from "./settings";
 import type {AnyModule, ModuleApis, ModuleContext} from "./types";
@@ -159,21 +160,17 @@ export const loadAll = async (defs: AnyModule[], signal: AbortSignal, ready?: Pr
         }
     };
     modulesStorage.watch(sync);
-    // bfcache에서 돌아온 탭은 그사이의 on/off·설정 변경을 받지 못했다. 다시 시작하는 모듈이 새 값을 보도록 설정을 먼저 맞춘다.
-    // 무효화된 뒤에는 저장소를 부를 수 없으므로 signal로 리스너를 뗀다
-    window.addEventListener("pageshow", (ev) => {
-        if (!ev.persisted) return;
-        void (async () => {
-            // 모두 한꺼번에 읽는다. sync는 설정을 다 맞춘 뒤에 부른다
-            const [enables] = await Promise.all([
-                modulesStorage.getValue(),
-                ...[...instances.values()].map(async (instance) => {
-                    if (instance.def.settings) applySettings(instance, await moduleSettingsStorage(instance.def.id).getValue());
-                })
-            ]);
-            sync(enables);
-        })().catch(console.error);
-    }, {signal});
+    // bfcache에서 돌아온 탭은 그사이의 on/off·설정 변경을 받지 못했다. 다시 시작하는 모듈이 새 값을 보도록 설정을 먼저 맞춘다
+    onBfcacheRestore(async () => {
+        // 모두 한꺼번에 읽는다. sync는 설정을 다 맞춘 뒤에 부른다
+        const [enables] = await Promise.all([
+            modulesStorage.getValue(),
+            ...[...instances.values()].map(async (instance) => {
+                if (instance.def.settings) applySettings(instance, await moduleSettingsStorage(instance.def.id).getValue());
+            })
+        ]);
+        sync(enables);
+    }, signal);
     // 불러오는 동안(setup이 IP DB를 읽는 동안 등) 팝업에서 켜고 끈 것은 감시 전이라 놓친다. 한 번 맞춘다 (바뀐 게 없으면 아무 일도 없다)
     sync(await modulesStorage.getValue());
 };

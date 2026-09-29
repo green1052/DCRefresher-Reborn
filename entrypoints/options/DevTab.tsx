@@ -6,10 +6,9 @@ import {storage} from "wxt/utils/storage";
 import {arrayIncludes, objectKeys} from "ts-extras";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
-import {isModuleDataKey} from "@/core/storage/items";
 import {databaseVersion, initDatabase, ipInfoOf, parseBans, subscribeDatabase} from "@/core/database";
 import {IP_FORMAT, parseIpData} from "@/core/ipdb";
-import {DB_KEYS, dbStorage, writeDatabase} from "@/core/storage/items";
+import {DB_KEYS, dbStorage, isModuleDataKey, writeDatabase} from "@/core/storage/items";
 import {messageOf} from "@/utils/error";
 
 import {byteSize, Empty, formatBytes, formatTime, Section, useStorageItem} from "./Layout";

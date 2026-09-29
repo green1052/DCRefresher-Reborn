@@ -1,4 +1,5 @@
-import {Badge, Box, Button, Dialog, Flex, Text, TextField} from "@radix-ui/themes";
+import {Badge, Box, Button, Code, Dialog, Flex, Text, TextField} from "@radix-ui/themes";
+import {ClipboardCopy, Smartphone} from "lucide-react";
 import {useState} from "react";
 
 import {DialogActions} from "@/components/ConfirmDialog";
@@ -10,7 +11,8 @@ import {normalizeMemoMap, randomColor, useMemosStore} from "@/stores/memos";
 import {SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
-import {ListRow, ListTabs} from "./Layout";
+import {formatAppMemos, parseAppMemos} from "./appMemo";
+import {ImportDialog, ListRow, ListTabs} from "./Layout";
 import {notify} from "./optionsStore";
 
 interface MemoFormState {
@@ -95,6 +97,8 @@ const MemoFormDialog = ({
                                 placeholder="아이디, 닉네임 또는 IP"
                                 value={state.user}
                                 disabled={editing}
+                                // 추가할 때는 비어 있는 대상부터, 고칠 때는(대상이 막혀 있다) 메모부터 입력한다
+                                autoFocus={!editing}
                                 // 입력 중에 trim하면 닉네임 가운데 공백을 칠 수 없으므로 저장할 때 trim한다
                                 onChange={(ev) => setState((prev) => ({...prev, user: ev.target.value}))}
                             />
@@ -109,7 +113,7 @@ const MemoFormDialog = ({
                                 placeholder="메모를 입력해 주세요 (160자 제한)"
                                 value={state.text}
                                 onChange={(ev) => setState((prev) => ({...prev, text: ev.target.value}))}
-                                autoFocus
+                                autoFocus={editing}
                             />
                         </label>
 
@@ -170,10 +174,45 @@ export function MemoTab() {
     const memos = useMemosStore((state) => state.memos);
     const setMemo = useMemosStore((state) => state.setMemo);
     const removeMemo = useMemosStore((state) => state.removeMemo);
-    const clearType = useMemosStore((state) => state.clearType);
     const setMemos = useMemosStore((state) => state.setMemos);
 
     const [form, setForm] = useState<MemoFormState | null>(null);
+    const [appImport, setAppImport] = useState(false);
+
+    /** 공앱 메모를 합친다. 이미 있는 대상은 글만 바꾸고 색·갤러리는 그대로 둔다 */
+    const importAppMemos = async (text: string): Promise<string | undefined> => {
+        const {memos: parsed, skipped} = parseAppMemos(text);
+        const count = Object.keys(parsed.UID).length + Object.keys(parsed.IP).length;
+        if (count === 0) {
+            notify("공앱 메모가 없습니다. 한 줄에 하나씩 아이디-메모 형식으로 붙여 넣어 주세요.");
+            return;
+        }
+        try {
+            for (const type of ["UID", "IP"] as const) {
+                const merged = {...memos[type]};
+                for (const [target, memo] of Object.entries(parsed[type])) merged[target] = {...((Object.hasOwn(merged, target) ? merged[target] : undefined) ?? {color: randomColor()}), text: memo};
+                await setMemos(type, merged);
+            }
+        } catch {
+            notify(SAVE_FAILED);
+            return;
+        }
+        return `공앱 메모 ${count}개를 가져왔습니다.${skipped ? ` (형식이 맞지 않는 ${skipped}줄은 건너뛰었습니다.)` : ""}`;
+    };
+
+    const copyAppMemos = async (): Promise<void> => {
+        const {text, count, skipped} = formatAppMemos(memos);
+        if (count === 0) {
+            notify("공앱으로 옮길 아이디·IP 메모가 없습니다.");
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(text);
+            notify(`공앱 형식으로 메모 ${count}개를 복사했습니다.${skipped ? ` 닉네임 메모 ${skipped}개는 공앱에 없는 종류라 뺐습니다.` : ""}`);
+        } catch {
+            notify("복사하지 못했습니다.");
+        }
+    };
 
     const importMemos = async (parsed: Record<string, unknown>): Promise<number> => {
         // 객체만 받는다. 차단 내보내기의 NICK/IP(배열)까지 메모로 세면 다른 데이터인데도 성공으로 알린다
@@ -193,8 +232,19 @@ export function MemoTab() {
                 emptyText={(type) => `${MEMO_TYPE_NAMES[type]} 메모 없음`}
                 exportData={() => memos}
                 importData={importMemos}
-                onClear={clearType}
+                onClear={(type) => setMemos(type, {})}
                 onAdd={(type) => setForm({type, user: "", text: "", color: randomColor(), gallery: ""})}
+                // 공앱(디시인사이드 모바일 앱) 메모는 한 줄에 하나씩 "아이디-메모" 글이다
+                toolbar={() => (
+                    <Flex gap="2" wrap="wrap">
+                        <Button size="2" variant="soft" color="gray" onClick={() => setAppImport(true)}>
+                            <Smartphone size={14}/> 공앱 메모 가져오기
+                        </Button>
+                        <Button size="2" variant="soft" color="gray" onClick={() => void copyAppMemos()}>
+                            <ClipboardCopy size={14}/> 공앱 형식으로 복사
+                        </Button>
+                    </Flex>
+                )}
                 // 객체 키 순서가 곧 추가 순서다. 숫자로만 된 키는 JS가 앞으로 정렬하는 예외가 있다
                 items={(type) => Object.entries(memos[type])}
                 searchText={([user, entry]) => [user, entry.text, entry.gallery]}
@@ -215,6 +265,16 @@ export function MemoTab() {
                     />
                 )}
             />
+
+            {appImport && (
+                <ImportDialog
+                    title="공앱 메모 가져오기"
+                    desc={<>공앱에서 복사한 메모를 붙여 넣어 주세요. 한 줄에 하나씩 <Code>아이디-메모</Code> 형식이고, 아이디 자리가 IP(예: <Code>123.45</Code>)면 IP 메모로 넣습니다.</>}
+                    placeholder="아이디-메모"
+                    onClose={() => setAppImport(false)}
+                    onSubmit={importAppMemos}
+                />
+            )}
 
             {form && (
                 <MemoFormDialog

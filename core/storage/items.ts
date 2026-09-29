@@ -1,15 +1,11 @@
+import {objectKeys} from "ts-extras";
 import {storage, type WxtStorageItem} from "wxt/utils/storage";
 
 import type {BlockEntry, BlockType, DatabaseMeta, DetectMode, MemoEntry, MemoType, SettingValue} from "./types";
 
 
-export const BLOCK_TYPES: BlockType[] = ["NICK", "ID", "IP", "TITLE", "TEXT", "COMMENT", "DCCON", "TAB"];
-
-export const MEMO_TYPES: MemoType[] = ["UID", "NICK", "IP"];
-
-export const DETECT_MODES: DetectMode[] = ["SAME", "CONTAIN", "NOT_SAME", "NOT_CONTAIN"];
-
-export const TYPE_NAMES: Record<BlockType, string> = {
+// 유형·모드 목록과 타입(types.ts)은 이름표의 키 순서를 따른다
+export const TYPE_NAMES = {
     NICK: "닉네임",
     ID: "아이디",
     IP: "IP",
@@ -20,18 +16,22 @@ export const TYPE_NAMES: Record<BlockType, string> = {
     TAB: "말머리"
 };
 
-export const DETECT_MODE_NAMES: Record<DetectMode, string> = {
+export const DETECT_MODE_NAMES = {
     SAME: "일치",
     CONTAIN: "포함",
     NOT_SAME: "불일치",
     NOT_CONTAIN: "불포함"
 };
 
-export const MEMO_TYPE_NAMES: Record<MemoType, string> = {
+export const MEMO_TYPE_NAMES = {
     UID: "아이디",
     NICK: "닉네임",
     IP: "IP"
 };
+
+export const BLOCK_TYPES = objectKeys(TYPE_NAMES);
+export const DETECT_MODES = objectKeys(DETECT_MODE_NAMES);
+export const MEMO_TYPES = objectKeys(MEMO_TYPE_NAMES);
 
 export const DEFAULT_DETECT_MODE: Record<BlockType, DetectMode> = {
     NICK: "SAME",

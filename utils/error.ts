@@ -10,6 +10,17 @@ export const messageOf = (error: unknown): string =>
 /** 스토어가 저장소 쓰기에 실패해 되돌렸을 때의 안내. 확장을 업데이트한 뒤 남은 옛 탭에서 주로 난다 */
 export const SAVE_FAILED = "저장하지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.";
 
+/** 스토어가 화면에 먼저 반영한 값을 저장한다. 저장이 실패하면 reload로 저장소 값으로 되돌려 저장된 것처럼 보이지 않게 하고, 알림은 부른 쪽에 맡긴다 */
+export const saveOrReload = async (write: Promise<void>, reload: () => Promise<void>, label: string): Promise<void> => {
+    try {
+        await write;
+    } catch (e) {
+        console.error(label, e);
+        await reload().catch(console.error);
+        throw e;
+    }
+};
+
 /**
  * 화면에 보일 오류 문구. 브라우저·ky의 원문(영어, 요청 주소 포함)은 console.error에 남기고 사용자에게는 이것을 보인다.
  * 우리가 던진 오류는 이미 한국어 안내라 그대로 쓴다

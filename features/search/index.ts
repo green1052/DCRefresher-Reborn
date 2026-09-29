@@ -75,8 +75,7 @@ export default defineModule({
             const fillCheckbox = checkboxFiller(list, queryString("s_type") === "search_comment");
 
             const max = ctx.settings.maxSearches;
-            const status = document.createElement("p");
-            status.className = "refresherSearchStatus";
+            const status = Object.assign(document.createElement("p"), {className: "refresherSearchStatus"});
             paging.after(status);
             let added = 0;
 

@@ -1,6 +1,7 @@
 import {create} from "zustand";
 
 import type {ProcessedComment} from "@/core/preview/comments";
+import type {BlockOptions} from "@/core/preview/request";
 import type {GalleryPreData, PostInfo} from "@/core/preview/types";
 
 export interface ErrorState {
@@ -15,10 +16,14 @@ export interface ErrorState {
 
 export type ManageKind = "notice" | "recommend" | "delete" | "bump";
 
+/** 공지·개념글 [등록, 해제] 동작. 관리 패널의 확인 문구와 결과 알림이 같이 쓴다 */
+export const MANAGE_LABELS = {notice: ["공지로 등록", "공지를 해제"], recommend: ["개념글로 등록", "개념글을 해제"]} as const;
+
 type Reply = { commentNo: string | null; replyNo: string | null };
 
 /** blockMedia: blockImage로 이미지를 가릴지. 전체 미리보기와 같은 클래스로 가린다. wheel: 휠로 내용을 스크롤할지 (tooltipWheel) */
-type MiniState = { x: number; y: number; title: string; contents: string; blockMedia: boolean; wheel: boolean };
+/** interactive: 마우스로 카드를 조작할 수 있다 (tooltipInteraction). 커서를 따라다니지 않는다 */
+type MiniState = { x: number; y: number; title: string; contents: string; blockMedia: boolean; wheel: boolean; interactive: boolean; gallery: string };
 
 /** 게시글을 새로 열 때마다 초기화되는 상태 */
 interface PostState {
@@ -52,6 +57,8 @@ interface Hooks {
     /** 본문을 캐시 없이 다시 받고 댓글도 다시 받는다 */
     requestReload: () => Promise<void>;
     requestManage: (kind: ManageKind) => void;
+    /** 차단하고 성공 여부를 돌려준다. 글도 지웠으면 창을 닫는다 */
+    requestBlock: (preData: GalleryPreData, options: BlockOptions) => Promise<boolean>;
 }
 
 interface PreviewState extends PostState, Hooks {
@@ -81,6 +88,29 @@ interface PreviewState extends PostState, Hooks {
     moveMini: (clientX: number, clientY: number) => void;
 }
 
+let miniCloseTimer = 0;
+// 커서가 조작할 수 있는 카드 위에 있다. 카드의 pointerenter가 제목의 mouseleave보다 먼저 오기도 해서 따로 기억한다
+let miniHovered = false;
+
+/** 조작할 수 있는 미니를 조금 뒤에 닫는다. 커서가 제목에서 카드로(카드에서 제목으로) 옮겨 가는 사이 닫히지 않게 v5처럼 150ms 기다린다 */
+export const closeMiniSoon = (): void => {
+    window.clearTimeout(miniCloseTimer);
+    if (!miniHovered) miniCloseTimer = window.setTimeout(() => usePreviewStore.setState({mini: null}), 150);
+};
+
+/** closeMiniSoon을 취소한다 (커서가 제목으로 돌아왔다) */
+export const keepMini = (): void => {
+    window.clearTimeout(miniCloseTimer);
+    miniCloseTimer = 0;
+};
+
+/** 카드에 커서가 들어오거나 나갔다. hovered가 없으면 새 미니를 띄우거나 바로 닫을 때 기억을 지운다 */
+export const hoverMini = (hovered?: boolean): void => {
+    miniHovered = hovered === true;
+    if (hovered === true) keepMini();
+    else if (hovered === false) closeMiniSoon();
+};
+
 /** 미리보기 UI 중 하나라도 떠 있어 오버레이가 필요한지 (콘텐츠 스크립트가 오버레이를 처음 띄울 때 본다). 새 UI를 추가하면 여기에 넣는다 */
 export const needsPreviewOverlay = (state: PreviewState): boolean =>
     state.visible || state.warm || state.mini !== null || state.captcha !== null || state.blockPopup;
@@ -105,7 +135,8 @@ export const NO_HOOKS: Hooks = {
     requestClose: () => undefined,
     requestRefresh: async () => undefined,
     requestReload: async () => undefined,
-    requestManage: () => undefined
+    requestManage: () => undefined,
+    requestBlock: async () => false
 };
 
 const freshPost = (): PostState => ({
@@ -185,17 +216,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
             return {collapsed: next};
         }),
 
-    openCaptcha: (url) =>
-        new Promise((resolve) => {
-            set({captcha: {url, resolve}});
-        }),
+    openCaptcha: (url) => new Promise((resolve) => set({captcha: {url, resolve}})),
 
-    moveMini: (clientX, clientY) =>
-        set((state) =>
-            state.mini
-                ? {
-                      mini: {...state.mini, ...miniPosition(clientX, clientY)}
-                  }
-                : state
-        )
+    moveMini: (clientX, clientY) => set((state) => (state.mini ? {mini: {...state.mini, ...miniPosition(clientX, clientY)}} : state))
 }));

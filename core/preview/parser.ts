@@ -58,14 +58,7 @@ const parseUser = (dom: Document): PostInfo["user"] => {
     if (!writer) return;
 
     const {nick, uid, ip} = writer.dataset;
-    const icon = writer.querySelector<HTMLImageElement>("img")?.src;
-
-    return {
-        nick: nick || undefined,
-        id: uid || undefined,
-        ip: ip || undefined,
-        image: icon
-    };
+    return {nick: nick || undefined, id: uid || undefined, ip: ip || undefined, image: writer.querySelector("img")?.src};
 };
 
 const strip = (value: string | undefined | null, ...prefixes: string[]): string | undefined => {

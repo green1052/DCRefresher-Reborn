@@ -1,16 +1,20 @@
 import {Box} from "@radix-ui/themes";
 import {Collapsible} from "radix-ui";
-import {Fragment} from "react";
+import {Fragment, useDeferredValue} from "react";
 
+import type {ProcessedComment} from "@/core/preview/comments";
 import {useUiStore} from "@/stores/ui";
 import {isGalleryManager} from "@/utils/user";
 
 import {Comment} from "./Comment";
 import {usePreviewStore} from "./previewStore";
 
+const NO_COMMENTS: ProcessedComment[] = [];
+
 /** 쓰레드별 댓글과 접을 수 있는 답글 */
 export const CommentList = () => {
-    const comments = usePreviewStore((s) => s.comments)!;
+    // 댓글 수백 개는 그리는 데 수백 ms가 걸려 한 번에 그리면 그동안 스크롤·키 입력이 멈춘다. 뒤로 미뤄 나눠 그린다 (처음엔 빈 목록)
+    const comments = useDeferredValue(usePreviewStore((s) => s.comments)!, NO_COMMENTS);
     const collapsed = usePreviewStore((s) => s.collapsed);
     const revealed = useUiStore((s) => s.blockView?.revealed === true);
 

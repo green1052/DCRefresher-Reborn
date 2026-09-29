@@ -1,11 +1,11 @@
 import {HTTPError} from "ky";
 import {SquareMousePointer} from "lucide-react";
 
-import {eventBus} from "@/core/eventbus/bus";
 import {BLOCKED_TEXT, isBlocked} from "@/core/block";
 import {BlockedError, isAbortError} from "@/core/http/client";
 import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
+import {getModuleApi} from "@/core/module/registry";
 import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
@@ -17,10 +17,10 @@ import {isRecord} from "@/utils/record";
 
 import {getEntry, setEntry} from "@/core/preview/cache";
 import {ADULT_ERROR, SECRET_ERROR} from "@/core/preview/parser";
-import {blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
+import {blockUser, type BlockOptions, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {adjacentPreData, buildPreData, isBlurHidden, isTextPost} from "./rows";
 import {type Ctx, settings} from "./settings";
-import {type ErrorState, type ManageKind, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
+import {closeMiniSoon, type ErrorState, hoverMini, keepMini, MANAGE_LABELS, type ManageKind, MINI_WIDTH, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
 
 // status는 ky의 HTTPError에서 읽는다 (삭제된 글은 404).
 // 성인 인증 안내 페이지면 parsePostInfo가 Error(ADULT_ERROR)를, 미니 갤러리 비밀글이면 Error(SECRET_ERROR)를 던진다.
@@ -155,17 +155,17 @@ const controller = (ctx: Ctx) => {
 
         try {
             // 댓글 가공(정화·차단)도 처음 쓸 때 불러온다.
-            const [{prepareComments, processComments}, {list: raw, allowReply}] = await Promise.all([
+            const [{prepareComments, processComments}, {list: raw, allowReply, truncated}] = await Promise.all([
                 import("@/core/preview/comments"),
                 // 건너뛸 때는 지금 알고 있는 댓글 허용(멤버만 댓글)을 그대로 둔다
-                skip ? {list: [], allowReply: store.getState().allowReply} : Promise.resolve(given).then((list) => list ?? fetchComments(preData, post, signal))
+                skip ? {list: [], allowReply: store.getState().allowReply, truncated: false} : Promise.resolve(given).then((list) => list ?? fetchComments(preData, post, signal))
             ]);
             if (store.getState().signalId !== mySignal || seq < shownSeq) return;
             shownSeq = seq;
-            if (!skip) setEntry(preData, {comments: {list: raw, allowReply}});
+            if (!skip) setEntry(preData, {comments: {list: raw, allowReply, truncated}});
 
             // 보존(archive) 기록은 받을 때마다 갱신해야 하므로 정리는 늘 한다
-            const source = prepareComments(raw, preData, ctx.settings.archiveArticle);
+            const source = prepareComments(raw, preData, ctx.settings.archiveArticle, truncated);
             // 자동 새로고침으로 같은 목록을 다시 받았으면 정화·다시 그리기를 건너뛴다. 댓글이 수백 개면 정화만 수십 ms다
             const rawKey = JSON.stringify(raw);
             if (!skip && shown?.signal === mySignal && rawKey === shownRaw) {
@@ -228,8 +228,8 @@ const controller = (ctx: Ctx) => {
             store.setState({post, error: undefined, archived: false});
             await pullComments(preData, post, signalId);
         } catch (e) {
-            // 실패해도(삭제된 글 등) 보고 있던 본문은 그대로 둔다.
-            if (isAbortError(e) || store.getState().signalId !== signalId) return;
+            // 실패해도(삭제된 글 등) 보고 있던 본문은 그대로 둔다. 임시 차단은 HTTP 클라이언트가 이미 알렸다
+            if (isAbortError(e) || e instanceof BlockedError || store.getState().signalId !== signalId) return;
             ui.showToast("게시글을 다시 불러오지 못했습니다.", "error");
         }
     };
@@ -309,8 +309,7 @@ const controller = (ctx: Ctx) => {
         pending?.ctrl.abort();
         pending = null;
 
-        if (refreshTimer) window.clearInterval(refreshTimer);
-        refreshTimer = 0;
+        window.clearInterval(refreshTimer);
 
         restoreHistory(fromHistory);
         store.getState().close();
@@ -334,8 +333,7 @@ const controller = (ctx: Ctx) => {
 
         abort?.abort();
         abort = new AbortController();
-        if (refreshTimer) window.clearInterval(refreshTimer);
-        refreshTimer = 0;
+        window.clearInterval(refreshTimer);
         // 두 번 누르기는 글마다 새로 센다. 이전 글에서 한 번 누른 키로 다음 글이 바로 지워지면 안 된다.
         lastKey = "";
 
@@ -381,7 +379,8 @@ const controller = (ctx: Ctx) => {
 
     const manage = async (kind: ManageKind) => {
         const st = store.getState();
-        if (!st.preData || !st.post || managing) return;
+        // 목록에서 가져온 글 정보만 쓴다. 본문을 받는 중이거나 오류가 난 창에서도 관리할 수 있다
+        if (!st.preData || managing) return;
 
         const target = st.preData;
         // 응답 전에 다른 글로 넘어갔으면 공지·개념글 표시는 바꾸지 않고 알림만 띄운다.
@@ -400,14 +399,10 @@ const controller = (ctx: Ctx) => {
         const failure = "처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
         try {
             // 공지·개념글 표시는 성공했을 때만 바꾼다.
-            if (kind === "notice") {
-                if (await notifyManage(setNotice(target, !st.notice), st.notice ? "공지를 해제했습니다." : "공지로 등록했습니다.", failure) && stillOpen()) {
-                    toggled("notice", !st.notice);
-                }
-            } else if (kind === "recommend") {
-                if (await notifyManage(setRecommend(target, !st.recommend), st.recommend ? "개념글을 해제했습니다." : "개념글로 등록했습니다.", failure) && stillOpen()) {
-                    toggled("recommend", !st.recommend);
-                }
+            if (kind === "notice" || kind === "recommend") {
+                const on = st[kind];
+                const request = kind === "notice" ? setNotice(target, !on) : setRecommend(target, !on);
+                if (await notifyManage(request, `${MANAGE_LABELS[kind][on ? 1 : 0]}했습니다.`, failure) && stillOpen()) toggled(kind, !on);
             } else if (kind === "delete") {
                 close();
                 await notifyManage(deletePost(target), "게시글을 삭제했습니다.", failure);
@@ -418,23 +413,17 @@ const controller = (ctx: Ctx) => {
             managing = false;
         }
 
-        eventBus.emit("refreshRequest");
+        void getModuleApi("refresh")?.reload();
     };
 
-    const blockPreset = async (target: GalleryPreData) => {
+    /** 차단 키(프리셋)와 차단 창이 같이 쓴다. 글도 지웠으면 창을 닫는다 */
+    const block = async (target: GalleryPreData, options: BlockOptions): Promise<boolean> => {
         const signal = store.getState().signalId;
-        const blocked = await notifyManage(blockUser(target, {
-            avoidHour: ctx.settings.blockPresetDay,
-            avoidReason: "0",
-            avoidReasonTxt: ctx.settings.blockPresetReason,
-            delChk: ctx.settings.blockPresetDelete,
-            userTypeChk: ctx.settings.blockPresetUserType
-        }), "차단했습니다.", "차단하지 못했습니다. 잠시 후 다시 시도해 주세요.");
-
+        const blocked = await notifyManage(blockUser(target, options), "차단했습니다.", "차단하지 못했습니다. 잠시 후 다시 시도해 주세요.");
         // 그새 다른 글로 넘어갔으면 창을 닫지 않는다.
-        if (blocked && ctx.settings.blockPresetDelete && store.getState().signalId === signal) close();
-
-        eventBus.emit("refreshRequest");
+        if (blocked && options.delChk && store.getState().signalId === signal) close();
+        void getModuleApi("refresh")?.reload();
+        return blocked;
     };
 
     const onKey = (ev: KeyboardEvent) => {
@@ -454,7 +443,12 @@ const controller = (ctx: Ctx) => {
         if (lastKey === key && now - lastKeyTime < 1000) {
             lastKey = "";
             ev.preventDefault();
-            void (isDelete ? manage("delete") : store.getState().preData && blockPreset(store.getState().preData!));
+            const {preData} = store.getState();
+            if (isDelete) void manage("delete");
+            else if (preData) {
+                const {blockPresetDay, blockPresetReason, blockPresetDelete, blockPresetUserType} = ctx.settings;
+                void block(preData, {avoidHour: blockPresetDay, avoidReason: "0", avoidReasonTxt: blockPresetReason, delChk: blockPresetDelete, userTypeChk: blockPresetUserType});
+            }
         } else {
             lastKey = key;
             lastKeyTime = now;
@@ -479,26 +473,28 @@ const controller = (ctx: Ctx) => {
         const preData = buildPreData(element);
         if (!preData) return;
 
-        let post: PostInfo;
-        try {
-            ({post} = await getPost(preData));
-            post = await processContents(preData, post, ctx.settings.tooltipMediaHide);
-        } catch {
-            return;
-        }
+        const post = await getPost(preData).then(({post}) => processContents(preData, post, ctx.settings.tooltipMediaHide)).catch(() => undefined);
 
-        // 받는 사이 행을 떠났거나 전체 미리보기가 열렸으면 띄우지 않는다.
-        if (miniTarget !== element || usePreviewStore.getState().visible) return;
+        // 받지 못했거나, 받는 사이 행을 떠났거나 전체 미리보기가 열렸으면 띄우지 않는다.
+        if (!post || miniTarget !== element || usePreviewStore.getState().visible) return;
 
+        // 조작할 수 있는 미니는 v5처럼 커서 바로 오른쪽에 붙인다(x+10, y-50). 오른쪽으로만 옮기면 다른 행을 지나지 않고 카드에 닿는다.
+        // 오른쪽에 자리가 없어 커서 위로 밀려 오면 제목을 덮어 누를 수 없으니 커서 왼쪽에 붙인다
+        const position = ctx.settings.tooltipInteraction ? miniPosition(x - 6, y - 66) : miniPosition(x, y);
+        if (ctx.settings.tooltipInteraction && position.x <= x) position.x = Math.max(0, x - MINI_WIDTH - 10);
+
+        hoverMini();
         usePreviewStore.setState({
             mini: {
-                ...miniPosition(x, y),
+                ...position,
                 title: postTitle(post),
                 // 미니에는 마우스를 올려 블러를 걷을 수 없으니 블러 차단도 안내 문구로 가린다.
                 contents: post.textBlocked && !useUiStore.getState().blockView?.revealed ? BLOCKED_TEXT : post.contents ?? "",
                 // 전체 미리보기와 같은 조건으로 이미지를 가린다. 다르면 거기서 숨긴 이미지가 호버로 보인다.
                 blockMedia: ctx.settings.blockImage && isTextPost(preData),
-                wheel: ctx.settings.tooltipWheel
+                wheel: ctx.settings.tooltipWheel,
+                interactive: ctx.settings.tooltipInteraction,
+                gallery: preData.gallery
             }
         });
     };
@@ -509,28 +505,37 @@ const controller = (ctx: Ctx) => {
 
         const element = ev.currentTarget as HTMLElement;
         if (isBlurHidden(element)) return;
+        // 조작할 수 있는 미니에서 제목으로 돌아왔으면 닫지 않는다
+        keepMini();
         const x = ev.clientX;
         const y = ev.clientY;
 
         miniTarget = element;
-        if (miniTimer) window.clearTimeout(miniTimer);
-        miniTimer = 0;
+        window.clearTimeout(miniTimer);
         // 0이면 바로 띄운다. 목록을 가로지르면 행마다 요청이 나가지만, 다른 행으로 옮기면 앞 요청은 끊긴다.
         if (ctx.settings.tooltipDelay <= 0) void showMini(element, x, y);
         else miniTimer = window.setTimeout(() => void showMini(element, x, y), ctx.settings.tooltipDelay);
     };
 
     const onMiniMove = (ev: MouseEvent) => {
-        usePreviewStore.getState().moveMini(ev.clientX, ev.clientY);
+        // 조작할 수 있는 미니는 커서를 따라가면 카드로 옮겨 갈 수 없다
+        if (!usePreviewStore.getState().mini?.interactive) usePreviewStore.getState().moveMini(ev.clientX, ev.clientY);
     };
 
-    const onMiniLeave = () => {
-        if (miniTimer) window.clearTimeout(miniTimer);
-        miniTimer = 0;
+    /** soon: 조작할 수 있는 미니면 커서가 카드로 옮겨 갈 틈을 두고 닫는다 (제목에서 나갈 때) */
+    const onMiniLeave = (soon = false) => {
+        window.clearTimeout(miniTimer);
         // 받는 중인 본문은 끊지 않는다. 클릭해 열면 같은 요청을 이어 쓰고, 다른 글을 받을 때 끊긴다.
         miniTarget = null;
+        const {mini} = usePreviewStore.getState();
+        if (soon && mini?.interactive) {
+            closeMiniSoon();
+            return;
+        }
+        keepMini();
+        hoverMini();
         // 떠 있을 때만 비운다. 제목 칸을 지날 때마다 setState하면 스토어를 구독하는 창·댓글이 모두 다시 확인한다.
-        if (usePreviewStore.getState().mini) usePreviewStore.setState({mini: null});
+        if (mini) usePreviewStore.setState({mini: null});
     };
 
     // ── 행 이벤트 ────────────────────────────────────────────────
@@ -597,21 +602,10 @@ const controller = (ctx: Ctx) => {
             return;
         }
 
-        if (resolved.commentsOnly) {
-            ev.preventDefault();
-            open(resolved.preData, true);
-            return;
-        }
-
-        if (ctx.settings.reversePreviewKey) {
-            ev.preventDefault();
-            location.href = resolved.preData.link;
-            return;
-        }
-
-        // 짧게 눌렀으면 미리보기다.
+        // 짧게 눌렀으면 미리보기다. 키 반전이면 댓글 수가 아닌 곳은 글로 이동한다
         ev.preventDefault();
-        open(resolved.preData);
+        if (!resolved.commentsOnly && ctx.settings.reversePreviewKey) location.href = resolved.preData.link;
+        else open(resolved.preData, resolved.commentsOnly);
     };
 
     const onClick = (ev: MouseEvent) => {
@@ -625,7 +619,9 @@ const controller = (ctx: Ctx) => {
         open(resolved.preData, resolved.commentsOnly);
     };
 
-    // 같은 함수는 addEventListener로 두 번 붙지 않아, 필터가 같은 요소로 다시 불러도 괜찮다.
+    const onMiniLeaveSoon = () => onMiniLeave(true);
+
+    // 같은 함수는 addEventListener로 두 번 붙지 않아, 필터가 같은 요소로 다시 불러도 괜찮다. 그래서 핸들러는 모두 여기 밖에서 한 번 만든다.
     const bind = (element: HTMLElement, word: boolean) => {
         const options = {signal: ctx.signal};
 
@@ -637,7 +633,7 @@ const controller = (ctx: Ctx) => {
         if (word) {
             element.addEventListener("mouseenter", onMiniEnter, options);
             element.addEventListener("mousemove", onMiniMove, options);
-            element.addEventListener("mouseleave", onMiniLeave, options);
+            element.addEventListener("mouseleave", onMiniLeaveSoon, options);
         }
     };
 
@@ -666,7 +662,8 @@ const controller = (ctx: Ctx) => {
         requestClose: () => close(),
         requestRefresh: (report) => refreshComments(report),
         requestReload: () => reloadPost(),
-        requestManage: (kind) => void manage(kind)
+        requestManage: (kind) => void manage(kind),
+        requestBlock: block
     });
 };
 
@@ -689,12 +686,6 @@ export interface PreviewApi {
 
     /** 미리보기 창이 열려 있는지. 새로고침 모듈은 열려 있는 동안 자동 새로고침을 쉰다 */
     isOpen(): boolean;
-}
-
-declare module "@/core/module/types" {
-    interface ModuleApis {
-        preview: PreviewApi;
-    }
 }
 
 export default defineModule({

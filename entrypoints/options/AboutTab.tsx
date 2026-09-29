@@ -81,7 +81,7 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
                         <Flex align="center" gap="2">
                             <Heading as="h2" size="5">DCRefresher Reborn</Heading>
                             {/* 연달아 5번 누르면 개발자 탭이 열린다 */}
-                            <Badge variant="soft" style={{userSelect: "none"}} onClick={(ev) => useOptionsStore.getState().unlockDev(ev)}>v{version}</Badge>
+                            <Badge variant="soft" style={{userSelect: "none"}} onClick={() => useOptionsStore.getState().unlockDev()}>v{version}</Badge>
                         </Flex>
                         <Text as="p" size="2" color="gray">디시인사이드 개선 확장 프로그램</Text>
                     </Box>

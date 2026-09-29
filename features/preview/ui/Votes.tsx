@@ -5,7 +5,7 @@ import {useState} from "react";
 import {overlay} from "@/components/overlay/shadow";
 import {getEntry, setEntry} from "@/core/preview/cache";
 import {captchaImage, viewUrl, vote} from "@/core/preview/request";
-import type {PostInfo} from "@/core/preview/types";
+import type {GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 import {notifyManage} from "@/utils/notify";
 
@@ -18,35 +18,36 @@ export const Votes = ({post}: { post: PostInfo }) => {
     // 보내는 중인 쪽. 연타로 추천 POST가 두 번 가지 않게 막는다.
     const [voting, setVoting] = useState<"U" | "D" | null>(null);
 
-    const onVote = async (mode: "U" | "D"): Promise<void> => {
-        if (!preData || voting) return;
+    const castVote = async (target: GalleryPreData, mode: "U" | "D"): Promise<void> => {
         const signal = usePreviewStore.getState().signalId;
         const label = mode === "U" ? "추천" : "비추천";
-        setVoting(mode);
-        try {
-            let code: string | undefined;
-            if (post.requireCaptcha) {
-                code = await usePreviewStore.getState().openCaptcha(captchaImage(preData, "recommend"));
-                if (!code) return;
-            }
-
-            const request = vote(preData, post, mode, code);
-            if (!(await notifyManage(request, `${label}했습니다.`, `${label}하지 못했습니다. 잠시 후 다시 시도해 주세요.`))) return;
-
-            // notifyManage가 기다린 요청이라 결과만 꺼낸다
-            const result = await request;
-            const counts = mode === "U"
-                ? {upvotes: result.counts ?? upvotes ?? "X", fixedUpvotes: result.fixedCounts || undefined}
-                : {downvotes: result.counts ?? downvotes};
-            // 응답 전에 다른 글로 넘어갔으면 숫자는 고치지 않고 알림만 띄운다.
-            // 함수형 setState로 지금 post를 읽어야 동시에 끝난 추천·비추천이 서로 덮지 않는다.
-            usePreviewStore.setState((s) => (s.signalId !== signal || !s.post ? {} : {post: {...s.post, ...counts}}));
-            // 1분 안에 다시 열면 캐시 본문을 쓰므로 거기 숫자도 고친다.
-            const cached = getEntry(preData)?.post;
-            if (cached) setEntry(preData, {post: {...cached, ...counts}});
-        } finally {
-            setVoting(null);
+        let code: string | undefined;
+        if (post.requireCaptcha) {
+            code = await usePreviewStore.getState().openCaptcha(captchaImage(target, "recommend"));
+            if (!code) return;
         }
+
+        const request = vote(target, post, mode, code);
+        if (!(await notifyManage(request, `${label}했습니다.`, `${label}하지 못했습니다. 잠시 후 다시 시도해 주세요.`))) return;
+
+        // notifyManage가 기다린 요청이라 결과만 꺼낸다
+        const result = await request;
+        const counts = mode === "U"
+            ? {upvotes: result.counts ?? upvotes ?? "X", fixedUpvotes: result.fixedCounts || undefined}
+            : {downvotes: result.counts ?? downvotes};
+        // 응답 전에 다른 글로 넘어갔으면 숫자는 고치지 않고 알림만 띄운다.
+        // 함수형 setState로 지금 post를 읽어야 동시에 끝난 추천·비추천이 서로 덮지 않는다.
+        usePreviewStore.setState((s) => (s.signalId !== signal || !s.post ? {} : {post: {...s.post, ...counts}}));
+        // 1분 안에 다시 열면 캐시 본문을 쓰므로 거기 숫자도 고친다.
+        const cached = getEntry(target)?.post;
+        if (cached) setEntry(target, {post: {...cached, ...counts}});
+    };
+
+    // try/finally는 React Compiler가 컴파일하지 못해 .finally로 푼다
+    const onVote = (mode: "U" | "D"): void => {
+        if (!preData || voting) return;
+        setVoting(mode);
+        void castVote(preData, mode).finally(() => setVoting(null));
     };
 
     // 목록 쿼리(검색어·페이지)를 뺀 글 주소를 복사한다.
@@ -62,14 +63,14 @@ export const Votes = ({post}: { post: PostInfo }) => {
     return (
         <Flex justify="center" align="center" gap="3" py="5">
             <Button size="3" variant="soft" aria-label={`추천 ${upvotes || "X"}${fixedUpvotes ? ` (고정닉 ${fixedUpvotes})` : ""}`}
-                    loading={voting === "U"} disabled={voting === "D"} onClick={() => void onVote("U")}>
+                    loading={voting === "U"} disabled={voting === "D"} onClick={() => onVote("U")}>
                 <ChevronUp size={18}/>
                 {upvotes || "X"}
                 {fixedUpvotes && <Text size="2" color="gray">({fixedUpvotes})</Text>}
             </Button>
             {downvotes !== undefined && (
                 <Button size="3" variant="soft" color="gray" aria-label={`비추천 ${downvotes}`} loading={voting === "D"} disabled={voting === "U"}
-                        onClick={() => void onVote("D")}>
+                        onClick={() => onVote("D")}>
                     <ChevronDown size={18}/>
                     {downvotes}
                 </Button>

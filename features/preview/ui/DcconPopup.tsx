@@ -73,13 +73,9 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
 
         void fetchAllPackages().then((result) => {
             if (!alive) return;
-            if (result === "not_login") {
-                useUiStore.getState().showToast("디시콘은 로그인한 뒤에 쓸 수 있습니다.", "warning");
-                onClose();
-                return;
-            }
-            if (result === "shop") {
-                useUiStore.getState().showToast("사용 가능한 디시콘이 없습니다.", "error");
+            if (typeof result === "string") {
+                const notLogin = result === "not_login";
+                useUiStore.getState().showToast(notLogin ? "디시콘은 로그인한 뒤에 쓸 수 있습니다." : "사용 가능한 디시콘이 없습니다.", notLogin ? "warning" : "error");
                 onClose();
                 return;
             }
@@ -97,22 +93,12 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
         return () => {
             alive = false;
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const clickDccon = (dccon: DcinsideDccon): void => {
-        if (!doubleDccon) {
-            onSelect([dccon], bigDccon);
-            return;
-        }
-
-        const next = [...selected, dccon];
-        if (next.length === 2) {
-            onSelect(next, bigDccon);
-            return;
-        }
-
-        setSelected(next);
+        const next = doubleDccon ? [...selected, dccon] : [dccon];
+        if (!doubleDccon || next.length === 2) onSelect(next, bigDccon);
+        else setSelected(next);
     };
 
     return (

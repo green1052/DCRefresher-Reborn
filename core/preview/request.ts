@@ -10,11 +10,7 @@ import type {CommentListResponse, DcinsideComment, DcinsideDccon, GalleryPreData
 const dcBody = (link: string, fields: Parameters<typeof formBody>[0]): Promise<URLSearchParams> =>
     csrfBody({_GALLTYPE_: galleryTypeName(link), ...fields});
 
-export const viewUrl = (link: string, gallery: string, id: string): string => {
-    const type = galleryPath(link);
-
-    return `${urls.base}${type}board/view/?id=${gallery}&no=${id}`;
-};
+export const viewUrl = (link: string, gallery: string, id: string): string => `${urls.base}${galleryPath(link)}board/view/?id=${gallery}&no=${id}`;
 
 /** 게시글을 받아 PostInfo로 푼다. 삭제된 글은 디시가 404를 주고, 임시 차단은 HTTP 클라이언트가 BlockedError로 던진다. 그 밖에 글이 없는 페이지면 Error */
 export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): Promise<PostInfo> => {
@@ -50,7 +46,8 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
     // 1쪽의 쪽 나눔(viewComments(n, …))에서 마지막 쪽 번호를 읽고 나머지 쪽은 한꺼번에 받는다. 동시 요청 수는 요청 제한 모듈이 조절한다.
     // ponytail: 10쪽(1000개)까지만 받는다. 더 많은 글은 드물고, 자동 갱신 때마다 전부 다시 받기 때문이다.
     const first = await fetchPage(1);
-    const lastPage = Math.min(10, Math.max(1, ...Array.from(first.pagination?.matchAll(/viewComments\((\d+)/g) ?? [], (match) => Number(match[1]))));
+    const pages = Math.max(1, ...Array.from(first.pagination?.matchAll(/viewComments\((\d+)/g) ?? [], (match) => Number(match[1])));
+    const lastPage = Math.min(10, pages);
     const rest = await Promise.all(Array.from({length: lastPage - 1}, (_, index) => fetchPage(index + 2)));
 
     // 1쪽이 가장 최근 댓글이고 뒤쪽일수록 오래된 댓글이다. 쪽 사이에 같은 댓글이 겹쳐 올 수 있어 번호로 하나만 남기고 번호(등록)순으로 맞춘다
@@ -60,7 +57,7 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
     }
 
     // 디시 comment.js처럼 0일 때만 막는다 (멤버만 댓글)
-    return {list: [...byNo.values()].sort((a, b) => Number(a.no) - Number(b.no)), allowReply: String(first.allow_reply) !== "0"};
+    return {list: [...byNo.values()].sort((a, b) => Number(a.no) - Number(b.no)), allowReply: String(first.allow_reply) !== "0", truncated: pages > 10};
 };
 
 /** 'result||message||detail' 텍스트 응답. 댓글 작성·삭제, 추천, JSON이 아닌 관리 응답이 이 모양이다 */
@@ -157,7 +154,7 @@ export const bump = (preData: GalleryPreData): Promise<ManageResult> => manage(p
 export const deletePost = (target: Pick<GalleryPreData, "gallery" | "id" | "link">): Promise<ManageResult> =>
     manage(target, "delete_list", {id: target.gallery, "nos[]": target.id});
 
-interface BlockOptions {
+export interface BlockOptions {
     avoidHour: string;
     avoidReason: string;
     avoidReasonTxt: string;
@@ -231,26 +228,20 @@ export const submitComment = async (
             const rKey = "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K";
             const b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
-            const dValue = form.dValue;
-            if (!dValue) return null;
+            if (!form.dValue) return null;
 
-            let decoded = atob(dValue.replace(/./g, (c) => b64[rKey.indexOf(c)] ?? ""));
+            const decoded = atob(form.dValue.replace(/./g, (c) => b64[rKey.indexOf(c)] ?? ""));
             if (!decoded) return null;
 
-            let fi = parseInt(decoded.slice(0, 1));
-            fi = fi > 5 ? fi - 5 : fi + 4;
-            decoded = decoded.replace(/^./, fi.toString());
+            // 첫 자리 숫자를 5 당기거나 4 밀고, 쉼표로 나눈 수들을 글자로 바꿔 service_code 끝 10자리를 갈아 끼운다
+            const fi = parseInt(decoded.slice(0, 1));
+            const computed = decoded
+                .replace(/^./, String(fi > 5 ? fi - 5 : fi + 4))
+                .split(",")
+                .map((value, index) => String.fromCharCode((2 * (Number(value) - index - 1)) / (13 - index - 1)))
+                .join("");
 
-            const service = form.serviceCode;
-
-            const rs = decoded.split(",");
-            let computed = "";
-
-            for (let index = 0; index < rs.length; index++) {
-                computed += String.fromCharCode((2 * (Number(rs[index]) - index - 1)) / (13 - index - 1));
-            }
-
-            return service.replace(/(.{10})$/, computed);
+            return form.serviceCode.replace(/(.{10})$/, computed);
         } catch {
             return null;
         }
@@ -287,11 +278,7 @@ export const submitComment = async (
             })
     });
 
-    const response = await ajax.post(typeof memo === "string" ? urls.comments_submit : urls.dccon_comments_submit, {
-        body: params
-    }).text();
-
-    return submitResult(response);
+    return submitResult(await ajax.post(typeof memo === "string" ? urls.comments_submit : urls.dccon_comments_submit, {body: params}).text());
 };
 
 /* ===== 글자콘: 디시 txtcon.js의 입력 규칙 (서버 txtcon_conf와 같다) ===== */
@@ -400,7 +387,5 @@ export const submitTxtcon = async (
         "g-recaptcha-token": grecaptchaToken || undefined
     });
 
-    const response = await ajax.post(urls.txtcon_submit, {body}).text();
-
-    return submitResult(response);
+    return submitResult(await ajax.post(urls.txtcon_submit, {body}).text());
 };

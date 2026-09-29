@@ -10,6 +10,8 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
     if (!href) return null;
 
     const url = new URL(href, location.origin);
+    // 운영자 '이슈' 행은 http:// 링크다. 출처가 다르면 pushState가 SecurityError를 던지므로 페이지 프로토콜로 맞춘다
+    if (url.host === location.host) url.protocol = location.protocol;
     let gallery = url.searchParams.get("id") ?? undefined;
     let id = url.searchParams.get("no") ?? undefined;
 
@@ -22,28 +24,18 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
 
     const row = element.closest<HTMLElement>(".ub-content") ?? element;
 
-    // 목록 아이콘의 마지막 클래스가 글 종류다 (isTextPost가 이미지 없는 글을 가를 때 쓴다).
-    const icon = row.querySelector<HTMLElement>(".icon_img");
-    let type = "icon_txt";
-    let notice = false;
-    let recommend = false;
-
-    if (icon) {
-        const classes = icon.getAttribute("class") ?? "";
-        type = classes.split(" ").at(-1) ?? "icon_txt";
-        notice = classes.includes("icon_notice");
-        // 이미지·텍스트·동영상 개념글 (icon_recomimg, icon_recomtxt, icon_recomovie)
-        recommend = classes.includes("icon_recom");
-    }
+    // 목록 아이콘의 마지막 클래스가 글 종류다 (isTextPost가 이미지 없는 글을 가를 때 쓴다). 아이콘이 없으면 텍스트 글로 본다
+    const classes = row.querySelector(".icon_img")?.getAttribute("class");
 
     return {
         gallery: gallery ?? "",
         id: id ?? "",
         title: anchor.textContent?.trim() || undefined,
         link: url.href,
-        notice,
-        recommend,
-        type,
+        notice: classes?.includes("icon_notice") ?? false,
+        // 이미지·텍스트·동영상 개념글 (icon_recomimg, icon_recomtxt, icon_recomovie)
+        recommend: classes?.includes("icon_recom") ?? false,
+        type: classes?.split(" ").at(-1) ?? "icon_txt",
         hasComments: row.querySelector(".reply_num") !== null
     };
 };
@@ -58,31 +50,24 @@ export const isBlurHidden = (element: Element): boolean =>
  */
 export const adjacentPreData = (from: GalleryPreData, dir: number): GalleryPreData | null => {
     // 댓글 검색은 맞은 댓글마다 같은 글 행을 되풀이한다. 글마다 첫 행만 남겨야 넘기기가 같은 글에 멈추거나 되돌아가지 않는다
+    // 행마다 한 번만 읽는다. 설문·AD·외부 뉴스처럼 글로 열 수 없는 행은 pre가 null이다
     const seen = new Set<string>();
-    const rows = Array.from(document.querySelectorAll<HTMLElement>(".gall_list .ub-content")).filter((row) => {
-        if (!row.checkVisibility() || !row.querySelector("a:not(.reply_numbox)")) return false;
+    const rows: { row: HTMLElement; pre: GalleryPreData | null }[] = [];
+    for (const row of document.querySelectorAll<HTMLElement>(".gall_list .ub-content")) {
+        if (!row.checkVisibility() || !row.querySelector("a:not(.reply_numbox)")) continue;
         const pre = buildPreData(row);
-        if (!pre) return true;
-        const key = `${pre.gallery}/${pre.id}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-    });
+        const key = pre && `${pre.gallery}/${pre.id}`;
+        if (key && seen.has(key)) continue;
+        if (key) seen.add(key);
+        rows.push({row, pre});
+    }
 
-    const index = rows.findIndex((row) => {
-        const pre = buildPreData(row);
-        return pre?.id === from.id && pre?.gallery === from.gallery;
-    });
+    const index = rows.findIndex(({pre}) => pre?.id === from.id && pre?.gallery === from.gallery);
     if (index < 0) return null;
 
     // 블러 행은 현재 위치를 찾은 뒤에 거른다. 지금 글이 블러 행이어도 제자리를 찾아야 한다.
     const ahead = dir > 0 ? rows.slice(index + 1) : rows.slice(0, index).reverse();
-    // 설문·AD·외부 뉴스처럼 글로 열 수 없는 행은 건너뛴다
-    for (const row of ahead) {
-        const pre = isBlurHidden(row) ? null : buildPreData(row);
-        if (pre) return pre;
-    }
-    return null;
+    return ahead.find(({row, pre}) => pre && !isBlurHidden(row))?.pre ?? null;
 };
 
 /** 목록에 이미지 아이콘이 없는 글인지 (텍스트 개념글 포함). blockImage 설정이 이런 글의 본문 이미지를 가린다 */

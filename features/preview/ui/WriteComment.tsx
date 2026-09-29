@@ -30,7 +30,13 @@ const randomPassword = (): string => Array.from(crypto.getRandomValues(new Uint8
 const FAIL_MESSAGES: Record<string, string> = {
     code_fail: "자동입력 방지 코드가 일치하지 않습니다.",
     fail1: "닉네임과 비밀번호를 정확하게 입력해 주세요.",
-    form_error: "닉네임과 비밀번호를 정확하게 입력해 주세요."
+    form_error: "닉네임과 비밀번호를 정확하게 입력해 주세요.",
+    // 디시콘 댓글 (디시 dccon.js와 같은 문구)
+    not_buy: "구매내역이 존재하지 않는 디시콘입니다.",
+    expired: "사용기간이 만료된 디시콘입니다.",
+    unuseable: "해당 디시콘은 현재 사용 불가능합니다.",
+    not_exists: "잘못된 파일 경로 입니다.",
+    fail: "디시콘 입력에 실패하였습니다."
 };
 
 /**
@@ -39,12 +45,6 @@ const FAIL_MESSAGES: Record<string, string> = {
  */
 const isCommentPosted = ({result}: SubmitResult): boolean =>
     result !== "false" && result !== "" && !result.trimStart().startsWith("<") && !Object.hasOwn(FAIL_MESSAGES, result);
-
-const failMessage = (response: SubmitResult): string | undefined => {
-    if (response.result !== "false") return FAIL_MESSAGES[response.result];
-
-    return resultMessage(response);
-};
 
 /** 글자콘 색 스와치 */
 const Swatch = ({color, selected, label, onClick}: {
@@ -72,6 +72,8 @@ const Swatch = ({color, selected, label, onClick}: {
     />
 );
 
+const NO_DCCON: { list: DcinsideDccon[]; big: boolean } = {list: [], big: false};
+
 /** 쓰던 댓글 하나를 모듈 전역에 둔다. 창을 닫았다 같은 글을 다시 열면 되살리고, 다른 글을 열면 버린다 */
 let draft = {key: "", text: ""};
 /** 댓글을 보내는 중인 글. 보내는 사이 폼이 다시 마운트돼도(다른 글에 갔다 돌아옴) 같은 댓글을 또 보내지 않게 모듈 전역에 둔다 */
@@ -96,8 +98,8 @@ export const WriteComment = () => {
     // 저장된 비밀번호는 입력칸에 넣지 않는다. 오버레이 섀도 루트가 open이라 페이지 스크립트가 값을 읽을 수 있다.
     // 사용자가 직접 고친 뒤에만 입력칸에 값이 보인다.
     const [passwordEdited, setPasswordEdited] = useState(false);
-    const [dccons, setDccons] = useState<DcinsideDccon[]>([]);
-    const [bigDccon, setBigDccon] = useState(false);
+    // 고른 디시콘(더블콘이면 둘)과 대왕콘 여부. 같이 고르고 같이 비운다
+    const [{list: dccons, big: bigDccon}, setDccon] = useState(NO_DCCON);
     const [dcconOpen, setDcconOpen] = useState(false);
     const [txtcon, setTxtcon] = useState(false);
     const [txtconColors, setTxtconColors] = useState({bg: "3b4890", txt: "ffffff"});
@@ -194,8 +196,7 @@ export const WriteComment = () => {
                     if (textarea.current?.value === raw) textarea.current.value = "";
                     if (draft.text === raw) draft.text = "";
                 }
-                setDccons([]);
-                setBigDccon(false);
+                setDccon(NO_DCCON);
                 setTxtcon(false);
                 // 그새 다른 글로 넘어갔으면 답글 대상은 그 글 것이라 건드리지 않는다.
                 // 디시처럼 쓴 닉네임·비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다.
@@ -211,7 +212,7 @@ export const WriteComment = () => {
                     {label: "원문 열기", run: () => window.open(preData.link, "_blank")}
                 );
             } else {
-                useUiStore.getState().showToast(failMessage(response) || "댓글을 작성하지 못했습니다.", "error");
+                useUiStore.getState().showToast((response.result === "false" ? resultMessage(response) : FAIL_MESSAGES[response.result]) || "댓글을 작성하지 못했습니다.", "error");
             }
         } catch (e) {
             // 시간 초과 등으로 끊겨도 서버는 댓글을 올렸을 수 있다. 목록을 새로 받아 올라간 댓글이 보이게 해 다시 보내지 않게 한다. 입력한 글은 둔다.
@@ -313,22 +314,16 @@ export const WriteComment = () => {
                 />
                 <Flex direction="column" gap="2">
                     <Flex gap="2">
-                        {dccons.length > 0 ? (
-                            <Tooltip content="디시콘 취소" container={overlay.portal}>
-                                <IconButton variant="soft" color="gray" aria-label="디시콘 취소" onClick={() => {
-                                    setDccons([]);
-                                    setBigDccon(false);
-                                }}>
-                                    <X size={16}/>
-                                </IconButton>
-                            </Tooltip>
-                        ) : (
-                            <Tooltip content="디시콘" container={overlay.portal}>
-                                <IconButton variant="soft" color="gray" aria-label="디시콘" onClick={() => setDcconOpen(true)}>
-                                    <Smile size={16}/>
-                                </IconButton>
-                            </Tooltip>
-                        )}
+                        <Tooltip content={dccons.length > 0 ? "디시콘 취소" : "디시콘"} container={overlay.portal}>
+                            <IconButton
+                                variant="soft"
+                                color="gray"
+                                aria-label={dccons.length > 0 ? "디시콘 취소" : "디시콘"}
+                                onClick={() => (dccons.length > 0 ? setDccon(NO_DCCON) : setDcconOpen(true))}
+                            >
+                                {dccons.length > 0 ? <X size={16}/> : <Smile size={16}/>}
+                            </IconButton>
+                        </Tooltip>
                         <Tooltip content={txtcon ? "글자콘 취소" : "글자콘"} container={overlay.portal}>
                             <IconButton
                                 variant="soft"
@@ -337,8 +332,7 @@ export const WriteComment = () => {
                                 aria-pressed={txtcon}
                                 onClick={() => {
                                     // 글자콘과 디시콘은 같이 쓸 수 없다.
-                                    setDccons([]);
-                                    setBigDccon(false);
+                                    setDccon(NO_DCCON);
 
                                     if (txtcon) {
                                         exitTxtcon();
@@ -390,9 +384,8 @@ export const WriteComment = () => {
 
             {dcconOpen && (
                 <DcconPopup
-                    onSelect={(selected, big) => {
-                        setDccons(selected);
-                        setBigDccon(big);
+                    onSelect={(list, big) => {
+                        setDccon({list, big});
                         if (txtcon) exitTxtcon();
                         setDcconOpen(false);
                     }}

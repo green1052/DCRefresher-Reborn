@@ -63,6 +63,10 @@
     transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
     user-select: none;
 
+    @media (prefers-reduced-motion: reduce) {
+        transition: none;
+    }
+
     // 키보드로 버튼에 오면 마우스를 올린 것처럼 글자까지 꺼낸다
     &:is(:hover, :has(:focus-visible)) {
         transform: none;

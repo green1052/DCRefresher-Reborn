@@ -70,26 +70,11 @@ export const highlightSearchResults = (newList: HTMLElement, searchValue: string
         while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
 
         for (const node of textNodes) {
-            const text = node.data;
-            if (!text.includes(searchValue)) continue;
+            const [first = "", ...rest] = node.data.split(searchValue);
+            if (rest.length === 0) continue;
 
-            const fragment = anchor.ownerDocument.createDocumentFragment();
-            let index = 0;
-            let found: number;
-
-            while ((found = text.indexOf(searchValue, index)) !== -1) {
-                fragment.append(text.slice(index, found));
-
-                const span = anchor.ownerDocument.createElement("span");
-                span.className = className;
-                span.textContent = searchValue;
-                fragment.append(span);
-
-                index = found + searchValue.length;
-            }
-
-            fragment.append(text.slice(index));
-            node.replaceWith(fragment);
+            const mark = (): HTMLSpanElement => Object.assign(anchor.ownerDocument.createElement("span"), {className, textContent: searchValue});
+            node.replaceWith(first, ...rest.flatMap((text) => [mark(), text]));
         }
     }
 };

@@ -9,7 +9,6 @@ import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
 import {queryString} from "@/core/http/urls";
 import {ROW_SELECTOR} from "@/core/list";
 import {BOARD_PAGE} from "@/core/pages";
-import {eventBus} from "@/core/eventbus/bus";
 import {moduleDataStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";
 import {type BadgeColorKey, type BadgeView, DEFAULT_BADGE_VIEW, isFresh, isLowActivity, openWriterBubble, showsUid, useUiStore} from "@/stores/ui";
@@ -63,29 +62,19 @@ const MAX_RATIOS = 500;
 const failedRatios = new LRUCache<string, true>({max: 500, ttl: 5 * 60_000});
 
 const buildBadgeSpan = (text: string, color?: string, title?: string, className = "refresherUserData"): HTMLElement => {
-    const span = document.createElement("span");
-    span.className = className;
-    span.textContent = text;
+    const span = Object.assign(document.createElement("span"), {className, textContent: text});
     if (color) span.style.color = color;
     if (title) span.title = title;
     return span;
 };
 
-const makeRatioSpan = (info: RatioInfo, alarmRatio: number, colors: BadgeColors): HTMLElement => {
-    const text = `${info.article}/${info.comment}`;
-    return buildBadgeSpan(`[${text}]`, isLowActivity(info, alarmRatio) ? colors.ratioAlarm : colors.ratio, text, "ip refresherUserData");
-};
-
 const LOW_ACTIVITY_ACTIONS = {none: "배지 색만", tag: "[깡계] 표시", blur: "흐리게", hide: "숨기기"};
 const LOW_ACTIVITY_CLASSES = {blur: "refresherLowActivityBlur", hide: "refresherLowActivityHide"} as const;
+const LOW_ACTIVITY_CLASS_LIST = Object.values(LOW_ACTIVITY_CLASSES);
 
 const clearLowActivity = (): void => {
-    const classes = Object.values(LOW_ACTIVITY_CLASSES);
-    for (const element of document.querySelectorAll<HTMLElement>(classes.map((name) => `.${name}`).join(","))) element.classList.remove(...classes);
+    for (const element of document.querySelectorAll(LOW_ACTIVITY_CLASS_LIST.map((name) => `.${name}`).join(","))) element.classList.remove(...LOW_ACTIVITY_CLASS_LIST);
 };
-
-const makePermBanSpan = (reasons: string, color: string | undefined): HTMLElement =>
-    buildBadgeSpan(`[${reasons}]`, color, reasons, "ip refresherUserData");
 
 const process = (ctx: Ctx, element: HTMLElement): void => {
     // 완료 표시 없이 매번 다시 그린다. 파싱 중인 작성자 칸(닉콘·IP 전)에서 먼저 불려도, 칸이 다 읽혀 다시 불릴 때 배지가 제자리를 찾는다
@@ -96,8 +85,7 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
     const gallery = queryString("id");
 
     const {nick, uid, ip} = element.dataset;
-    const badges = document.createElement("span");
-    badges.className = "refresher-user-badges";
+    const badges = Object.assign(document.createElement("span"), {className: "refresher-user-badges"});
     let lowActivity = false;
 
     const appendIdentity = (): void => {
@@ -121,14 +109,15 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
         if (key === "RATIO" && uid && ctx.settings.checkRatio) {
             const cached = Object.hasOwn(ratios, uid) ? ratios[uid] : undefined;
             if (cached) {
-                badges.append(makeRatioSpan(cached, ctx.settings.alarmRatio, colors));
+                const text = `${cached.article}/${cached.comment}`;
                 lowActivity = isLowActivity(cached, ctx.settings.alarmRatio);
+                badges.append(buildBadgeSpan(`[${text}]`, lowActivity ? colors.ratioAlarm : colors.ratio, text, "ip refresherUserData"));
             }
         }
 
         if (key === "PERMBAN" && uid && ctx.settings.checkPermBan) {
             const reasons = banReasonsOf(uid);
-            if (reasons) badges.append(makePermBanSpan(reasons, colors.permBan));
+            if (reasons) badges.append(buildBadgeSpan(`[${reasons}]`, colors.permBan, reasons, "ip refresherUserData"));
         }
     }
 
@@ -169,10 +158,9 @@ const rebuildAll = (ctx: Ctx): void => {
 
 /** 몇몇 유저의 작성자 칸만 다시 그린다. 깡계 흐림·숨김은 process가 더하기만 하므로 먼저 뗀다 */
 const rebuildUsers = (ctx: Ctx, uids: string[]): void => {
-    const classes = Object.values(LOW_ACTIVITY_CLASSES);
     for (const uid of uids) {
         for (const element of document.querySelectorAll<HTMLElement>(`.ub-writer[data-uid="${CSS.escape(uid)}"]:not([user_name])`)) {
-            (element.closest<HTMLElement>(ROW_SELECTOR) ?? element).classList.remove(...classes);
+            (element.closest<HTMLElement>(ROW_SELECTOR) ?? element).classList.remove(...LOW_ACTIVITY_CLASS_LIST);
             process(ctx, element);
         }
     }
@@ -301,22 +289,12 @@ export default defineModule({
         // IP DB가 갱신되거나 갱차 목록을 다 읽으면 다시 그린다. 갱차 목록은 banReasonsOf를 처음 부를 때 읽기 시작한다
         const unwatchDatabase = subscribeDatabase(() => rebuildAll(ctx));
 
-        // 새 글 작성자의 글댓비를 조회한다 (1시간 캐시, 앞 10개만)
-        eventBus.on("newPostList", ({data: elements}) => {
+        // 새 글 작성자의 글댓비를 조회한다 (1시간 캐시, 앞 10개만). 새로고침 모듈이 목록에 새 글을 넣을 때 부른다
+        const checkNewPosts = (elements: HTMLElement[]): void => {
             if (!ctx.settings.checkRatio) return;
 
-            const stale: string[] = [];
-
-            for (const post of elements.slice(0, 10)) {
-                const writer = post.querySelector<HTMLElement>(".ub-writer");
-                const uid = writer?.dataset.uid;
-                if (!uid) continue;
-
-                if (!isFresh(ratios[uid]) && !failedRatios.has(uid) && !stale.includes(uid)) {
-                    stale.push(uid);
-                }
-            }
-
+            const stale = [...new Set(elements.slice(0, 10).flatMap((post) => post.querySelector<HTMLElement>(".ub-writer")?.dataset.uid || []))]
+                .filter((uid) => !isFresh(ratios[uid]) && !failedRatios.has(uid));
             if (stale.length === 0) return;
 
             // 실패는 uid마다 흡수한다. 한 명이 실패해도 받아 온 나머지는 저장한다 (실패한 사람은 배지만 빠진다)
@@ -332,21 +310,21 @@ export default defineModule({
                 const stored = (await ratioStorage.getValue()).ratio ?? {};
                 if (signal.aborted) return;
 
-                const merged: [string, RatioInfo][] = [
-                    ...Object.entries(stored).filter(([uid]) => !fresh.some(([freshUid]) => freshUid === uid)),
-                    ...fresh.map(([uid, info]): [string, RatioInfo] => [uid, {...info, date: now}])
-                ];
-                ratios = Object.fromEntries(merged.sort(([, a], [, b]) => b.date - a.date).slice(0, MAX_RATIOS));
+                const merged: Record<string, RatioInfo> = {...stored, ...Object.fromEntries(fresh.map(([uid, info]) => [uid, {...info, date: now}]))};
+                ratios = Object.fromEntries(Object.entries(merged).sort(([, a], [, b]) => b.date - a.date).slice(0, MAX_RATIOS));
                 // 다시 그리기는 위의 ratioStorage.watch가 한다
                 await ratioStorage.setValue({ratio: ratios});
             }).catch(console.error);
-        }, {signal});
+        };
 
         ctx.addCleanup(() => {
-            unwatchRatios();
             unsubscribeMemos();
             unwatchDatabase();
+            // 확장이 무효화된 뒤에는 storage.onChanged.removeListener가 던지고, 리스너도 이미 죽었다
+            if (browser.runtime?.id) unwatchRatios();
         });
+
+        return {checkNewPosts};
     },
 
     onChanged(ctx) {
@@ -359,8 +337,6 @@ export default defineModule({
         useUiStore.setState({badgeColors: {}, badgeView: DEFAULT_BADGE_VIEW, ratios: null});
         clearLowActivity();
 
-        for (const element of document.querySelectorAll<HTMLElement>(".refresher-user-badges")) {
-            element.remove();
-        }
+        for (const element of document.querySelectorAll(".refresher-user-badges")) element.remove();
     }
 });

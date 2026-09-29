@@ -92,10 +92,7 @@ const formatActivity = (activity: ActivityState): string | undefined => {
 };
 
 /** 아이디와 IP를 한 줄 "uid (IP)"로 합친다 */
-const identityValue = (selected: { uid?: string; ip?: string }): string | undefined => {
-    if (selected.uid) return selected.ip ? `${selected.uid} (${selected.ip})` : selected.uid;
-    return selected.ip;
-};
+const identityValue = ({uid, ip}: { uid?: string; ip?: string }): string | undefined => (uid && ip ? `${uid} (${ip})` : uid || ip);
 
 /** 차단 규칙 하나를 해제한다. 토스트의 되돌리기 버튼으로 되돌린다 */
 const unblock = async (type: BlockType, {id, ...fields}: BlockEntry): Promise<void> => {
@@ -181,13 +178,11 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
     // scroll 이벤트는 shadow root 밖으로 나가지 않으므로 미리보기 안의 스크롤은 루트에서 잡는다.
     useEffect(() => {
         const onScroll = (): void => useUiStore.getState().closeBubble();
-        const root = overlay.portal?.getRootNode();
-        window.addEventListener("scroll", onScroll, true);
-        root?.addEventListener("scroll", onScroll, true);
-        return () => {
-            window.removeEventListener("scroll", onScroll, true);
-            root?.removeEventListener("scroll", onScroll, true);
-        };
+        const controller = new AbortController();
+        const options = {capture: true, signal: controller.signal};
+        window.addEventListener("scroll", onScroll, options);
+        overlay.portal?.getRootNode().addEventListener("scroll", onScroll, options);
+        return () => controller.abort();
     }, []);
 
     const close = (): void => useUiStore.getState().closeBubble();

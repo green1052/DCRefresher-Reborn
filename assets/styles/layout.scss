@@ -116,10 +116,43 @@
     .writing_view_box,
     .write_div,
     .cmt_txtbox,
-    .cmt_txtbox .usertxt {
+    .cmt_txtbox .usertxt,
+    // 삭제된 댓글 (752px 고정)
+    .del_reply {
         width: auto !important;
         max-width: 100% !important;
         float: none !important;
+    }
+
+    // 댓글 한 줄(닉네임 | 본문 | 작성 시간). 본문 칸의 float를 풀면 본문이 줄 전체를 차지해 작성 시간이 다음 줄로 밀리므로 (#265)
+    // 줄을 flex로 바꿔 본문이 남는 폭만 쓰게 한다
+    :is(.cmt_info, .reply_info):has(> .fr) {
+        display: flex !important;
+        align-items: flex-start;
+        clear: both;
+    }
+
+    :is(.cmt_info, .reply_info) {
+        > .addbox {
+            display: flex !important;
+            flex: 1 1 auto;
+            align-items: flex-start;
+            min-width: 0;
+        }
+
+        .cmt_nickbox {
+            flex: none;
+        }
+
+        .cmt_txtbox {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        > .fr {
+            flex: none;
+            margin-left: auto;
+        }
     }
 
     // 댓글 안 디시콘 상자(820px) 등도 칸을 넘지 않게
@@ -164,9 +197,10 @@
         box-sizing: border-box !important;
     }
 
-    // 글쓰기
+    // 글쓰기: float된 닉네임·비밀번호 칸 아래로 내린다. 아니면 제목 안내 문구가 닉네임 칸을 덮는다
     .input_write_tit {
         float: none !important;
+        clear: both !important;
     }
 }
 

@@ -72,16 +72,12 @@
 
 /* ===== 미리보기 프레임 ===== */
 
-.refresher-frame-outer {
+/* 바깥 배경과 스크롤 칸은 같이 나타나고 같이 사라진다 */
+.refresher-frame-outer,
+.refresher-frame-scroll {
     position: fixed;
     inset: 0;
-    background: var(--color-overlay);
     animation: refresher-fade-in 0.15s cubic-bezier(0.19, 1, 0.22, 1);
-
-    // 바깥 배경 흐리게 (toggleBackgroundBlur)
-    &[data-blur] {
-        backdrop-filter: blur(5px);
-    }
 
     &[data-fading] {
         pointer-events: none;
@@ -89,10 +85,17 @@
     }
 }
 
+.refresher-frame-outer {
+    background: var(--color-overlay);
+
+    // 바깥 배경 흐리게 (toggleBackgroundBlur)
+    &[data-blur] {
+        backdrop-filter: blur(5px);
+    }
+}
+
 /* 화면 전체를 덮는 스크롤 칸 (v5의 .refresher-group). 창이 이 안에서 내용만큼 길어져, 창 안이든 양옆이든 같은 브라우저 기본 스크롤이다 */
 .refresher-frame-scroll {
-    position: fixed;
-    inset: 0;
     display: flex;
     // 짧은 글은 창이 가운데 오고(margin: auto), 긴 글은 위아래에 이만큼 띄운다
     padding: 5vh 0;
@@ -104,12 +107,6 @@
     scrollbar-gutter: stable both-edges;
     // 키보드 스크롤용 포커스(tabIndex -1) — 테두리는 그리지 않는다
     outline: none;
-    animation: refresher-fade-in 0.15s cubic-bezier(0.19, 1, 0.22, 1);
-
-    &[data-fading] {
-        pointer-events: none;
-        animation: refresher-fade-out 0.15s forwards;
-    }
 }
 
 /* 너비는 설정(previewWidth)이 --refresher-frame-width로 넘긴다. 작은 창에서도 둘레에 배경이 보이게 화면의 90%까지만 */
@@ -439,8 +436,10 @@
 .refresher-comment {
     // 화면 밖 댓글은 레이아웃·스타일 계산을 건너뛴다 — 댓글 수백 개인 글을 열 때 레이아웃이 크게 준다.
     // 트리 선(::before/::after)은 모두 칸 안에 그리므로 잘리지 않는다
+    // 아직 그리지 않은 댓글의 높이는 대부분인 한 줄 댓글(여백 포함 64px)로 어림한다. 크게 잡으면 답글을 펼칠 때 Radix가 그리기 전의 어림값으로 높이를 재
+    // 펼치는 동안 실제보다 아래로 늘었다가 줄고, 그리지 않은 댓글이 많은 글은 스크롤 길이도 부풀었다가 줄어든다
     content-visibility: auto;
-    contain-intrinsic-size: auto 72px;
+    contain-intrinsic-size: auto 48px;
 
     &:hover {
         background: var(--gray-a2);
@@ -507,6 +506,11 @@
         @include mixins.blur-reveal;
     }
 
+    // 본문에 든 차단 디시콘 (Frame의 markBlockedDccons). 가린 내용 보기 동안은 아래 규칙으로 흐리게 보인다
+    &:not([data-block-revealed]) .refresher-preview-contents .written_dccon[data-blocked="hide"] {
+        display: none;
+    }
+
     // 이 페이지에서만 가린 내용 보기 — 숨겼던 것도 흐리게 보인다
     &[data-block-revealed] :is([data-blocked], [data-duplicate]) {
         filter: none;
@@ -515,6 +519,11 @@
 }
 
 /* ===== 미니 미리보기 ===== */
+
+// 본문에 든 차단 디시콘 (Mini의 markBlockedDccons)
+.refresher-mini-contents .written_dccon[data-blocked] {
+    display: none;
+}
 
 .refresher-mini-preview {
     display: flex;
@@ -554,6 +563,20 @@
 
 /* ===== 디시콘 ===== */
 
+:is(.refresher-dccon-packages, .refresher-dccon-grid) button {
+    padding: 2px;
+    border: none;
+    border-radius: var(--radius-3);
+    background: none;
+    cursor: pointer;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+}
+
 .refresher-dccon-packages {
     display: flex;
     gap: var(--space-1);
@@ -564,20 +587,10 @@
         flex: none;
         width: 48px;
         height: 48px;
-        padding: 2px;
         border: 2px solid transparent;
-        border-radius: var(--radius-3);
-        background: none;
-        cursor: pointer;
 
         &[aria-pressed="true"] {
             border-color: var(--accent-9);
-        }
-
-        img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
         }
     }
 }
@@ -592,20 +605,9 @@
 
     button {
         aspect-ratio: 1;
-        padding: 2px;
-        border: none;
-        border-radius: var(--radius-3);
-        background: none;
-        cursor: pointer;
 
         &:hover {
             background: var(--gray-a3);
-        }
-
-        img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
         }
     }
 }

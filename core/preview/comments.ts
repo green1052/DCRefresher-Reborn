@@ -30,8 +30,6 @@ const cleaned = new LRUCache<string, string>({
     memoMethod: (memo) => sanitizeHtml(splitDccons(memo).replace(/data-dcconoverstatus="?\w+"?/g, "data-dcconoverstatus=\"true\""))
 });
 
-const cleanMemo = (memo: string): string => cleaned.memo(memo);
-
 const extractVoice = (memo: string): { memo: string; voice?: ProcessedComment["voice"] } | undefined => {
     if (!memo.includes("@^dc^@")) return;
 
@@ -51,14 +49,14 @@ const extractVoice = (memo: string): { memo: string; voice?: ProcessedComment["v
  * 받은 댓글 목록을 정리하고 삭제 댓글 보존(restoreArchive)을 적용한다.
  * 보존은 받은 기록을 쌓고 캐시 수명을 늘리므로 받을 때마다 한 번만 부른다.
  */
-export const prepareComments = (raw: DcinsideComment[], preData: GalleryPreData, archive: boolean): DcinsideComment[] => {
+export const prepareComments = (raw: DcinsideComment[], preData: GalleryPreData, archive: boolean, truncated = false): DcinsideComment[] => {
     // 댓글돌이(COMMENT_BOY)는 보존 기록에 들어가지 않게 restoreArchive보다 먼저 뺀다.
     // 다른 삭제 코드('2' 등)나 del_yn "Y"로 온 댓글은 is_delete "1"로 맞춘다. 답글·삭제 버튼 숨김과 같은 댓글 접기 제외가 "1"로 판단한다.
     const filtered = raw
         .filter((comment) => comment.nicktype !== "COMMENT_BOY")
         .map((comment) => ({...comment, is_delete: comment.is_delete !== "0" || comment.del_yn === "Y" ? "1" : "0"}));
 
-    return archive ? restoreArchive(preData, filtered) : filtered;
+    return archive ? restoreArchive(preData, filtered, truncated) : filtered;
 };
 
 /**
@@ -72,7 +70,7 @@ export const processComments = (source: DcinsideComment[], preData: GalleryPreDa
     for (const comment of list) {
         const voice = extractVoice(String(comment.memo ?? ""));
         if (voice) comment.voice = voice.voice;
-        comment.memo = cleanMemo(voice?.memo ?? String(comment.memo ?? ""));
+        comment.memo = cleaned.memo(voice?.memo ?? String(comment.memo ?? ""));
     }
 
     // 차단 모듈이 꺼져 있으면 blockView가 없고 아무것도 가리지 않는다

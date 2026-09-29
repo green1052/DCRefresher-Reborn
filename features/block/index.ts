@@ -1,6 +1,6 @@
 import {Ban, Eye} from "lucide-react";
 
-import {BLOCKED_TEXT, groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
+import {BLOCKED_TEXT, dcconCode, groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingGroup, SettingsSchema} from "@/core/module/types";
 import {isViewPage, queryString} from "@/core/http/urls";
@@ -10,16 +10,6 @@ import {useBlocksStore} from "@/stores/blocks";
 import {openWriterBubble, useUiStore} from "@/stores/ui";
 import {whenDomReady} from "@/utils/dom";
 import {eventTarget} from "@/utils/event";
-
-/**
- * 디시콘 요소의 코드 (이미지 URL의 no 파라미터). 필터와 우클릭 선택이 같은 기준을 써야 선택해서 넣은 항목이 실제로 가려진다.
- * src 없이 data-src나 <source>만 가진 video 디시콘이 있고, 빈 src 속성도 건너뛰어야 해서 ||를 쓴다
- */
-const dcconCode = (element: HTMLElement): string | undefined => {
-    const media = (element as HTMLImageElement).src ? element : (element.querySelector("img, video, source") ?? element);
-    const src = media.getAttribute("src") || media.getAttribute("data-src");
-    return src ? URL.parse(src, location.href)?.searchParams.get("no") || undefined : undefined;
-};
 
 /** 요소 글자 — 안에 든 <script> 글자는 뺀다 */
 const plainText = (element: Element | null | undefined): string =>
@@ -75,19 +65,17 @@ interface BlockApi {
 }
 
 const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
-    const useBlur = () => ctx.settings.blur;
-
     // 숨김도 클래스로만 건다 (content.scss). 풀 때 디시가 건 인라인 display를 건드리지 않는다
-    const hide = (element: HTMLElement, blur: boolean): void => element.classList.add(blur ? "refresherBlur" : "refresherBlocked");
+    const hide = (element: HTMLElement): void => element.classList.add(ctx.settings.blur ? "refresherBlur" : "refresherBlocked");
 
     const hideWithReply = (target: HTMLElement): void => {
-        hide(target, useBlur());
+        hide(target);
 
         if (!ctx.settings.replyRemove) return;
 
         const next = target.nextElementSibling;
         if (next instanceof HTMLElement && !next.classList.contains("ub-content") && next.querySelector(":scope > .reply")) {
-            hide(next, useBlur());
+            hide(next);
         }
     };
 
@@ -127,7 +115,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         // 행이나 댓글 칸이 없는 본문 디시콘은 그 디시콘만 가린다
         const target = element.closest<HTMLElement>(".ub-content") ?? element.closest<HTMLElement>(".comment_dccon");
         if (target) hideWithReply(target);
-        else hide(element, useBlur());
+        else hide(element);
     };
 
     // 본문 차단: 블러면 흐리게, 아니면 숨기고 안내를 넣는다. 원문은 남겨 두어 차단을 풀거나 '차단 내용 보기'로 다시 보인다.
@@ -142,13 +130,10 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
 
         // 확장이 업데이트되어 다시 주입되면 앞 인스턴스가 넣은 안내가 남아 있다. 안내가 둘 쌓이지 않게 먼저 뗀다
         for (const element of document.querySelectorAll(".refresherTextNotice")) element.remove();
-        hide(writeDiv, useBlur());
-        if (useBlur()) return;
+        hide(writeDiv);
+        if (ctx.settings.blur) return;
 
-        const notice = document.createElement("div");
-        notice.className = "refresherTextNotice";
-        notice.textContent = BLOCKED_TEXT;
-        writeDiv.before(notice);
+        writeDiv.before(Object.assign(document.createElement("div"), {className: "refresherTextNotice", textContent: BLOCKED_TEXT}));
     };
 
     // 같은 댓글 접기. 댓글 목록은 댓글 페이지를 넘기거나 새로 고칠 때마다 통째로 다시 그려져 필터로 다시 불린다
@@ -169,10 +154,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
             if (existing?.textContent === text) continue;
             existing?.remove();
 
-            const badge = document.createElement("span");
-            badge.className = "refresherDuplicateBadge";
-            badge.textContent = text;
-            item.querySelector(".usertxt")?.after(badge);
+            item.querySelector(".usertxt")?.after(Object.assign(document.createElement("span"), {className: "refresherDuplicateBadge", textContent: text}));
         }
     };
 
@@ -231,9 +213,7 @@ const setupSelection = (ctx: Ctx): void => {
 const restoreHiddenElements = (): void => {
     for (const element of document.querySelectorAll(HIDDEN_SELECTOR)) element.classList.remove("refresherBlocked", "refresherBlur", "refresherDuplicate");
 
-    for (const element of document.querySelectorAll<HTMLElement>(".refresherTextNotice, .refresherDuplicateBadge")) {
-        element.remove();
-    }
+    for (const element of document.querySelectorAll(".refresherTextNotice, .refresherDuplicateBadge")) element.remove();
 };
 
 /** setup이 만든 다시 판정 함수. 설정(블러/대댓글 등)이 바뀌면 onChanged가 부른다 */

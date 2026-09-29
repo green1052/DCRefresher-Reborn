@@ -5,12 +5,9 @@ import {type ReactNode, useRef, useState} from "react";
 import {DialogActions} from "@/components/ConfirmDialog";
 import {overlay} from "@/components/overlay/shadow";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
-import {eventBus} from "@/core/eventbus/bus";
-import {blockUser} from "@/core/preview/request";
-import {notifyManage} from "@/utils/notify";
 import {useUiStore} from "@/stores/ui";
 
-import {BLOCK_DAYS, type ManageKind, usePreviewStore} from "./previewStore";
+import {BLOCK_DAYS, MANAGE_LABELS, type ManageKind, usePreviewStore} from "./previewStore";
 
 const BLOCK_REASONS: [string, string][] = [
     ["1", "음란성"],
@@ -21,6 +18,14 @@ const BLOCK_REASONS: [string, string][] = [
     ["6", "명예훼손"],
     ["0", "직접 입력"]
 ];
+
+const RadioGrid = ({label, items, value, onChange}: { label: string; items: [string, string][]; value: string; onChange: (value: string) => void }) => (
+    <RadioGroup.Root value={value} onValueChange={onChange} size="2" aria-label={label}>
+        <Grid columns="3" gap="2">
+            {items.map(([item, text]) => <RadioGroup.Item key={item} value={item}>{text}</RadioGroup.Item>)}
+        </Grid>
+    </RadioGroup.Root>
+);
 
 const BlockPopup = () => {
     const preData = usePreviewStore((s) => s.preData);
@@ -38,20 +43,12 @@ const BlockPopup = () => {
         setSending(true);
         const signal = usePreviewStore.getState().signalId;
 
-        const done = await notifyManage(blockUser(preData, {
-            avoidHour: day,
-            avoidReason: reason,
-            avoidReasonTxt: reason === "0" ? custom : "",
-            delChk,
-            userTypeChk
-        }), "차단했습니다.", "차단하지 못했습니다. 잠시 후 다시 시도해 주세요.");
-        eventBus.emit("refreshRequest");
+        const done = await usePreviewStore.getState().requestBlock(preData, {avoidHour: day, avoidReason: reason, avoidReasonTxt: reason === "0" ? custom : "", delChk, userTypeChk});
 
-        // 그새 다른 글로 넘어갔으면 차단 창과 미리보기는 그 글 것이라 알림만 띄우고 건드리지 않는다.
+        // 그새 다른 글로 넘어갔으면 차단 창과 미리보기는 그 글 것이라 알림만 띄우고 건드리지 않는다. 글도 지웠으면 창은 이미 닫혔다.
         if (usePreviewStore.getState().signalId !== signal) return;
         // 실패하면 입력을 그대로 두어 다시 보낼 수 있게 한다.
         if (!done) setSending(false);
-        else if (delChk) usePreviewStore.getState().requestClose();
         else usePreviewStore.setState({blockPopup: false});
     };
 
@@ -62,22 +59,10 @@ const BlockPopup = () => {
                 <Dialog.Title>유저 차단</Dialog.Title>
 
                 <Text as="div" size="2" weight="bold" mb="2">기간</Text>
-                <RadioGroup.Root value={day} onValueChange={setDay} size="2" aria-label="기간">
-                    <Grid columns="3" gap="2">
-                        {Object.entries(BLOCK_DAYS).map(([value, label]) => (
-                            <RadioGroup.Item key={value} value={value}>{label}</RadioGroup.Item>
-                        ))}
-                    </Grid>
-                </RadioGroup.Root>
+                <RadioGrid label="기간" items={Object.entries(BLOCK_DAYS)} value={day} onChange={setDay}/>
 
                 <Text as="div" size="2" weight="bold" mt="4" mb="2">사유</Text>
-                <RadioGroup.Root value={reason} onValueChange={setReason} size="2" aria-label="사유">
-                    <Grid columns="3" gap="2">
-                        {BLOCK_REASONS.map(([value, label]) => (
-                            <RadioGroup.Item key={value} value={value}>{label}</RadioGroup.Item>
-                        ))}
-                    </Grid>
-                </RadioGroup.Root>
+                <RadioGrid label="사유" items={BLOCK_REASONS} value={reason} onChange={setReason}/>
                 {reason === "0" && (
                     <TextField.Root
                         mt="2"
@@ -194,8 +179,8 @@ export const AdminPanel = () => {
 
     // key는 고정된 id로 준다. 라벨을 key로 쓰면 공지·개념글을 토글할 때 버튼이 새로 마운트돼 포커스가 사라진다.
     const actions: AdminAction[] = [
-        {id: "notice", label: notice ? "공지 해제" : "공지 등록", confirm: notice ? "공지를 해제" : "공지로 등록", icon: <Megaphone size={14}/>, active: notice, run: () => requestManage("notice")},
-        {id: "recommend", label: recommend ? "개념글 해제" : "개념글 등록", confirm: recommend ? "개념글을 해제" : "개념글로 등록", icon: <Star size={14}/>, active: recommend, run: () => requestManage("recommend")},
+        {id: "notice", label: notice ? "공지 해제" : "공지 등록", confirm: MANAGE_LABELS.notice[notice ? 1 : 0], icon: <Megaphone size={14}/>, active: notice, run: () => requestManage("notice")},
+        {id: "recommend", label: recommend ? "개념글 해제" : "개념글 등록", confirm: MANAGE_LABELS.recommend[recommend ? 1 : 0], icon: <Star size={14}/>, active: recommend, run: () => requestManage("recommend")},
         {id: "bump", label: "끌올", confirm: "게시글을 끌올", icon: <ArrowBigUpDash size={14}/>, run: () => requestManage("bump")},
         {id: "block", label: "차단", hint: keys?.block, icon: <Ban size={14}/>, danger: true, instant: true, run: () => usePreviewStore.setState({blockPopup: true})},
         {id: "delete", label: "삭제", confirm: "게시글을 삭제", hint: keys?.delete, icon: <Trash2 size={14}/>, danger: true, run: () => requestManage("delete")}
@@ -232,7 +217,6 @@ export const AdminPanel = () => {
                         variant="soft"
                         color={action.danger ? "red" : action.active ? undefined : "gray"}
                         highContrast={action.active}
-                        aria-pressed={action.active}
                         style={{justifyContent: "flex-start"}}
                         // 눌러도 포커스를 가져가지 않는다. 첫 클릭 뒤 스페이스로 스크롤하면 포커스된 버튼이 눌려 두 번째 확인이 된다
                         onMouseDown={(ev) => ev.preventDefault()}
