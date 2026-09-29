@@ -1,7 +1,7 @@
 <div align="center">
     <img src="./assets/icon.png" width="160" alt="DCRefresher Reborn 아이콘">
     <h1>DCRefresher Reborn</h1>
-    <p>디시인사이드를 더 편하게 쓰도록 돕는 브라우저 확장 프로그램</p>
+    <p>디시인사이드 개선 확장 프로그램</p>
     <p>
         <a href="https://github.com/green1052/DCRefresher-Reborn/releases/latest"><img src="https://img.shields.io/github/v/release/green1052/DCRefresher-Reborn" alt="최신 버전"></a>
         <a href="https://chromewebstore.google.com/detail/pmfifcbendahnkeojgpfppklgioemgon"><img src="https://img.shields.io/chrome-web-store/users/pmfifcbendahnkeojgpfppklgioemgon?logo=googlechrome&amp;logoColor=white&amp;label=Chrome" alt="Chrome 웹 스토어 사용자 수"></a>
