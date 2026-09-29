@@ -2,6 +2,12 @@ import {create} from "zustand";
 
 const DEV_MODE_KEY = "refresher:devMode";
 const DEV_MODE_CLICKS = 5;
+/** 이 간격(ms) 안에 이어서 눌러야 연속으로 센다 */
+const DEV_MODE_GAP = 600;
+
+// 연속 클릭은 직접 센다. ev.detail은 파이어폭스에서 5까지 올라가지 않아 개발자 탭이 열리지 않았다
+let devClicks = 0;
+let lastDevClick = 0;
 
 const readDevMode = (): boolean => {
     try {
@@ -30,8 +36,7 @@ interface OptionsState {
     rain: number;
     /** 확인 버튼만 있는 알림. App이 하나만 그린다. null이면 닫혀 있다 */
     notice: string | null;
-    /** ev.detail: 브라우저가 세는 연속 클릭 횟수 (간격이 벌어지면 1부터) */
-    unlockDev: (ev: { detail: number }) => void;
+    unlockDev: () => void;
     hideDev: () => void;
     startRain: () => void;
     endRain: () => void;
@@ -43,8 +48,11 @@ export const useOptionsStore = create<OptionsState>()((set, get) => ({
     rain: 0,
     notice: null,
 
-    unlockDev: (ev) => {
-        if (ev.detail < DEV_MODE_CLICKS || get().devMode) return;
+    unlockDev: () => {
+        const now = performance.now();
+        devClicks = now - lastDevClick < DEV_MODE_GAP ? devClicks + 1 : 1;
+        lastDevClick = now;
+        if (devClicks < DEV_MODE_CLICKS || get().devMode) return;
 
         writeDevMode(true);
         set({devMode: true});
