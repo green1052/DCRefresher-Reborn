@@ -104,10 +104,17 @@ export interface ModuleDefinition<S extends SettingsSchema = SettingsSchema, Api
 
 /**
  * getModuleApi(id)가 돌려주는 api 타입 (모듈 id → setup()의 리턴값).
- * 여기는 비워 두고, api를 내주는 모듈이 자기 파일에서 선언 병합으로 채운다:
- * declare module "@/core/module/types" { interface ModuleApis { preview: PreviewApi } }
+ * 손으로 채우지 않는다. wxt.config.ts의 prepare:types 훅이 features/*\/index.ts를 모아 .wxt/types/modules.d.ts에서 채운다
  */
 export interface ModuleApis {}
+
+/** defineModule이 돌려주는 모듈. 레지스트리에는 AnyModule로 넘기고, id와 setup의 리턴값은 타입에만 남긴다 (ModuleApis 생성용) */
+export type DefinedModule<Id extends string, Api> = AnyModule & { readonly id: Id; readonly apiType?: Api };
+
+/** 모듈 id·api를 모아 ModuleApis 모양으로 만든다. api가 없는(void) 모듈은 뺀다 */
+export type ModuleApiMap<M> = {
+    [K in M as K extends DefinedModule<string, infer Api> ? ([Api] extends [void] ? never : K["id"]) : never]: K extends DefinedModule<string, infer Api> ? Api : never;
+};
 
 /** 레지스트리·옵션·팝업이 모듈을 모아 다룰 때의 타입. 모듈별 설정·api 타입은 defineModule에서 지운다 */
 export type AnyModule = ModuleDefinition<SettingsSchema, unknown>;

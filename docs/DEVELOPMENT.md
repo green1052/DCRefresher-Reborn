@@ -287,17 +287,13 @@ export default defineModule({ …, settings, setup: apply });
 
 ### 모듈 간 api
 
-다른 모듈의 api는 `core/module/registry.ts`의 `getModuleApi(id)`로 받습니다. 그 모듈이 이 페이지에서 켜져 있고 setup이 끝났을 때만 값이 있습니다. api를 내주는 모듈은 자기 파일에서 타입을 등록합니다.
+다른 모듈의 api는 `core/module/registry.ts`의 `getModuleApi(id)`로 받습니다. 그 모듈이 이 페이지에서 켜져 있고 setup이 끝났을 때만 값이 있습니다.
+
+id와 api 타입은 따로 등록하지 않습니다. `defineModule`이 id 문자열과 `setup`의 리턴 타입을 타입에 남기고, `wxt.config.ts`의 `prepare:types` 훅이 `features/*/index.ts`를 모아 `.wxt/types/modules.d.ts`에서 `ModuleApis`를 채웁니다(`bun install`·`dev`·`build`가 `wxt prepare`로 만듭니다). 그래서 `getModuleApi("`까지 치면 api를 내주는 모듈 id가 자동완성되고, 없는 id나 api가 없는 모듈을 넣으면 타입 오류가 납니다. 새 모듈을 만든 직후 자동완성에 안 나오면 `bunx wxt prepare`를 한 번 돌립니다.
 
 ```ts
-// features/preview/index.ts
-export interface PreviewApi {
-    archiveArticle(): boolean;
-    isOpen(): boolean;
-}
-declare module "@/core/module/types" {
-    interface ModuleApis { preview: PreviewApi }
-}
+// features/preview/index.ts — setup이 돌려주는 객체가 곧 api 타입이다
+setup: (ctx): PreviewApi => ({archiveArticle: () => ctx.settings.archiveArticle, isOpen: () => usePreviewStore.getState().visible})
 
 // features/refresh/index.ts
 getModuleApi("preview")?.isOpen()

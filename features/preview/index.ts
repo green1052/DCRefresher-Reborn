@@ -707,12 +707,6 @@ export interface PreviewApi {
     isOpen(): boolean;
 }
 
-declare module "@/core/module/types" {
-    interface ModuleApis {
-        preview: PreviewApi;
-    }
-}
-
 export default defineModule({
     id: "preview",
     name: "미리보기",
