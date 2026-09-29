@@ -7,6 +7,7 @@ import {BLOCK_TYPES, DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType} from "@/core/storage/types";
 import {type BlockInputFields, composeExtra, normalizeBlockList, normalizeDefaults, useBlocksStore} from "@/stores/blocks";
 import {SAVE_FAILED} from "@/utils/error";
+import {isRecord} from "@/utils/record";
 
 import {ListRow, ListTabs} from "./Layout";
 import {notify} from "./optionsStore";
@@ -36,8 +37,8 @@ export function BlockTab() {
         // 차단 목록이 하나도 없으면(0 반환) 메모/설정 등 다른 데이터를 붙여넣은 것이다
         const types = BLOCK_TYPES.filter((type) => Array.isArray(parsed[type]));
         // 모드가 '기본값'인 항목은 내보낸 기기의 기본 모드로 검사됐다. 이 기기와 다르면 그 모드를 적어 검사 방식을 지킨다 (데이터 탭 가져오기와 같다).
-        // 기본 모드가 없는 JSON은 그 기기가 기본값을 쓴 것으로 본다
-        const source = normalizeDefaults(parsed.defaults);
+        // 기본 모드가 없는 옛 내보내기(v5, 6.0.0~6.0.2)는 내보낸 기기의 기본을 알 수 없으므로 고정하지 않고 이 기기 기본을 따른다
+        const source = isRecord(parsed.defaults) ? normalizeDefaults(parsed.defaults) : defaults;
         // 기존 목록에 덧붙인다. 같은 content+gallery는 가져온 항목으로 바꿔 뒤로 보내고, id는 새로 준다
         for (const type of types) {
             const list = normalizeBlockList(parsed[type]);

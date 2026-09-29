@@ -95,6 +95,8 @@ const MemoFormDialog = ({
                                 placeholder="아이디, 닉네임 또는 IP"
                                 value={state.user}
                                 disabled={editing}
+                                // 추가할 때는 비어 있는 대상부터, 고칠 때는(대상이 막혀 있다) 메모부터 입력한다
+                                autoFocus={!editing}
                                 // 입력 중에 trim하면 닉네임 가운데 공백을 칠 수 없으므로 저장할 때 trim한다
                                 onChange={(ev) => setState((prev) => ({...prev, user: ev.target.value}))}
                             />
@@ -109,7 +111,7 @@ const MemoFormDialog = ({
                                 placeholder="메모를 입력해 주세요 (160자 제한)"
                                 value={state.text}
                                 onChange={(ev) => setState((prev) => ({...prev, text: ev.target.value}))}
-                                autoFocus
+                                autoFocus={editing}
                             />
                         </label>
 
