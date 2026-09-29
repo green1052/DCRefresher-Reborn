@@ -562,7 +562,7 @@ flowchart TD
 
 - 예약·수동 실행은 release 브랜치(배포된 코드)로, 릴리즈 때는 그 태그로 만듭니다. develop으로 만들지 않는 것은 형식을 바꾼 코드가 릴리즈 전에 올라가지 않게 하려는 것입니다.
 - `ip.json`은 확장이 저장하는 형식(`core/ipdb.ts`의 `CompactIpData`) 그대로이고 버전(UTC, 분까지)을 담고 있습니다. `ban.json`은 `data` 브랜치에서 손으로 관리하며, 워크플로가 가져와 검사·정리합니다.
-- Cloudflare Pages가 `data` 브랜치를 `dcrefresher.green1052.com`으로 배포합니다(빌드 명령 없음, 출력 `/`). push할 때마다 자동으로 다시 배포되고, CORS와 캐시 헤더는 DB 빌드가 함께 만드는 `_headers` 파일로 줍니다. 6.0.3 이하는 `raw.githubusercontent.com`에서 받으므로 GitHub `data` 브랜치 게시는 계속 유지합니다.
+- Cloudflare Pages가 `data` 브랜치를 `dcrefresher.green1052.com`으로 배포합니다(빌드 명령 없음, 출력 `/`). push할 때마다 자동으로 다시 배포되고, CORS와 캐시 헤더는 DB 빌드가 함께 만드는 `_headers` 파일로 줍니다. 6.0.3 이하는 `raw.githubusercontent.com`에서 받으므로 GitHub `data` 브랜치 게시는 계속 유지합니다. 6.0.3 이하는 `ip.json`의 `v: 2`로 형식을 확인하므로, 지금 확장은 이 값을 읽지 않지만 DB 빌드(`scripts/build-db.ts`)는 계속 넣습니다.
 - `data` 브랜치는 커밋 하나로 유지합니다. 빌드가 도는 사이 `data`가 바뀌었으면(ban.json 수정 등) 덮어쓰지 않고 실패합니다.
 - 확장은 설치·업데이트 때 받고, 이후에는 하루 한 번 울리는 알람에서 마지막 확인이 7일을 넘었거나 저장 형식이 다를 때 확인합니다(`entrypoints/background/index.ts`). 확인할 때는 `data` 브랜치의 `version` 파일을 먼저 받아 저장된 버전과 비교하고, 다를 때만 `ip.json`·`ban.json`을 받습니다(`core/database.ts`의 `updateDatabase`). 옵션 데이터 탭의 '지금 갱신'은 같은 버전이어도 다시 받습니다. 받은 파일이 깨졌거나 형식이 다르면 저장하지 않고 갖고 있던 DB를 씁니다.
 
