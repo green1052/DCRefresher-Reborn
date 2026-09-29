@@ -272,7 +272,8 @@ export default defineModule({
         const onPopState = (): void => {
             // 미리보기가 쌓은 글 기록 사이의 이동은 같은 목록이다. 행 링크는 목록 주소의 기본값 쿼리(sort_type=N, 빈 search_pos 등)를 빼서 listUrl로는 가릴 수 없다
             const state: unknown = history.state;
-            if (isRecord(state) && state.refresher === 1) return;
+            // 새로고침 전 문서가 쌓은 항목(doc이 다르다)은 미리보기가 아니라 실제 이동이다
+            if (isRecord(state) && state.refresher === 1 && state.doc === performance.timeOrigin) return;
             if (listUrl(location.href) === listUrl(originalLocation)) return;
 
             window.clearTimeout(timer);
