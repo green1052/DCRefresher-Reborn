@@ -1,4 +1,4 @@
-import "@/assets/styles/radix-themes.css";
+import "@/assets/styles/overlay-radix.css";
 import "./popup.scss";
 import {Theme} from "@radix-ui/themes";
 import {StrictMode} from "react";

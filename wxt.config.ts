@@ -3,7 +3,7 @@ import {defineConfig} from "wxt";
 import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "./core/pages";
 
 /**
- * 오버레이가 쓰지 않는 Radix 컴포넌트(클래스 접두어). 오버레이에서 새 컴포넌트를 쓰게 되면 여기서 뺀다.
+ * 오버레이·팝업이 쓰지 않는 Radix 컴포넌트(클래스 접두어). 둘 중 한 곳에서 새 컴포넌트를 쓰게 되면 여기서 뺀다.
  * Select가 쓰는 ScrollArea 등 다른 컴포넌트가 의존하는 Base*는 남긴다.
  */
 const UNUSED_OVERLAY_COMPONENT = new RegExp(
@@ -25,7 +25,8 @@ export default defineConfig({
             postcss: {
                 plugins: [
                     /**
-                     * 오버레이 shadow에 넣는 Radix CSS(overlay-radix.css)만 더 줄인다. 옵션·팝업용(radix-themes.css)은 그대로 둔다.
+                     * 오버레이 shadow와 팝업에 넣는 Radix CSS(overlay-radix.css)만 더 줄인다. 옵션용(radix-themes.css)은 그대로 둔다.
+                     * 팝업은 폭이 360px라 min-width 블록이 어차피 맞지 않는다. 팝업도 UNUSED_OVERLAY_COMPONENT의 컴포넌트를 쓰면 스타일이 빠진다.
                      * Radix를 올리면 아래 가정이 여전히 맞는지 다시 확인한다.
                      * - min-width 미디어 블록 제거: 반응형 prop용으로 CSS의 절반을 차지한다.
                      *   오버레이에서 {initial, md} 같은 prop을 쓰면 initial 값으로 고정된다.

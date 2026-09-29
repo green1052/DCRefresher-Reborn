@@ -1,6 +1,6 @@
 import {Box, Button, Flex, Heading, Separator, Text} from "@radix-ui/themes";
 import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings, Wrench} from "lucide-react";
-import {lazy, Suspense, useEffect, useState} from "react";
+import {lazy, Suspense, useEffect, useSyncExternalStore} from "react";
 
 import {Notice} from "@/components/ConfirmDialog";
 import {initBlocksStore} from "@/stores/blocks";
@@ -48,16 +48,9 @@ const readHash = (): string => {
     return TABS.some((tab) => tab.id === id) ? id : TABS[0]!.id;
 };
 
-const useHashTab = (): [string, (id: string) => void] => {
-    const [tab, setTab] = useState(readHash);
-
-    useEffect(() => {
-        const onHashChange = (): void => setTab(readHash());
-        window.addEventListener("hashchange", onHashChange);
-        return () => window.removeEventListener("hashchange", onHashChange);
-    }, []);
-
-    return [tab, (id) => (location.hash = id)];
+const subscribeHash = (onChange: () => void): (() => void) => {
+    window.addEventListener("hashchange", onChange);
+    return () => window.removeEventListener("hashchange", onChange);
 };
 
 const Sidebar = ({tabs, tab, onSelect}: {
@@ -117,7 +110,7 @@ const Sidebar = ({tabs, tab, onSelect}: {
 );
 
 export function App() {
-    const [tab, setTab] = useHashTab();
+    const tab = useSyncExternalStore(subscribeHash, readHash);
     const devMode = useOptionsStore((state) => state.devMode);
     const rain = useOptionsStore((state) => state.rain);
     const notice = useOptionsStore((state) => state.notice);
@@ -135,7 +128,7 @@ export function App() {
 
     return (
         <Flex direction={{initial: "column", md: "row"}} minHeight="100vh">
-            <Sidebar tabs={tabs} tab={current.id} onSelect={setTab}/>
+            <Sidebar tabs={tabs} tab={current.id} onSelect={(id) => (location.hash = id)}/>
             {/* 누를 때마다 새로 마운트한다. React Compiler가 Math.random으로 그린 결과를 기억해 같은 모양이 반복되기 때문이다 */}
             {rain > 0 && <Suspense><DcconRain key={rain}/></Suspense>}
             <Notice message={notice} onClose={() => useOptionsStore.setState({notice: null})}/>

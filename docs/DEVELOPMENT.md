@@ -351,8 +351,8 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 - 새 오버레이 UI(토스트·팝업 등)를 만들면 오버레이가 필요한지 판단하는 곳(`entrypoints/content/index.tsx`의 `needsOverlay`, 미리보기 UI는 `features/preview/ui/previewStore.ts`의 `needsPreviewOverlay`)에 넣어야 처음 띄울 때 오버레이가 생깁니다.
 - 디시 페이지 자체를 바꾸는 CSS는 `assets/styles/content.scss`, `layout.scss`, `stealth.scss`입니다.
 - 페이지·오버레이·옵션은 서로 다른 문서라 같은 규칙(차단 흐림, 스텔스 디시콘 가림, 접기 애니메이션)을 `assets/styles/_mixins.scss`의 mixin으로 맞춥니다. 옵션·팝업의 바탕과 Radix 기본값 덮기는 `_radix.scss`에 있습니다.
-- 콘텐츠 스크립트는 `cssInjectionMode: "ui"`라서 불러오는 CSS(`overlay-radix.css`, `overlay.scss`)가 오버레이를 처음 띄울 때 shadow에만 들어갑니다(WXT가 `:root`를 `:host`로 바꿈). 디시 페이지에 입히는 CSS(content·stealth·layout)는 `entrypoints/page.content.scss`로 따로 빌드되고, `wxt.config.ts`의 `manifest.content_scripts`가 콘텐츠 스크립트와 같은 주소(`CONTENT_MATCHES`)에 넣습니다. 페이지용 CSS를 콘텐츠 스크립트에서 import하면 페이지가 아니라 오버레이에 들어갑니다.
-- 오버레이용 Radix CSS(`overlay-radix.css`)는 `wxt.config.ts`의 PostCSS 플러그인이 줄입니다. 반응형 미디어 블록, 오버레이가 쓰지 않는 컴포넌트 규칙, 쓰지 않는 `@font-face`를 뺍니다. 오버레이에서 새 Radix 컴포넌트를 쓰면 `UNUSED_OVERLAY_COMPONENT`에서 빼야 스타일이 들어갑니다. 반응형 prop(`{initial, md}` 등)은 오버레이에서 쓰지 않습니다.
+- 콘텐츠 스크립트는 `cssInjectionMode: "ui"`라서 불러오는 CSS(`overlay-radix.css`, `overlay.scss`)가 오버레이를 처음 띄울 때 shadow에만 들어갑니다(WXT가 `:root`를 `:host`로 바꿈). 디시 페이지에 입히는 CSS(content·stealth·layout)는 `entrypoints/page.content.scss`로 따로 빌드되고, `wxt.config.ts`의 `manifest.content_scripts`가 콘텐츠 스크립트와 같은 주소(`core/pages.ts`의 `CONTENT_MATCHES`)에 넣습니다. 페이지용 CSS를 콘텐츠 스크립트에서 import하면 페이지가 아니라 오버레이에 들어갑니다.
+- 오버레이·팝업용 Radix CSS(`overlay-radix.css`)는 `wxt.config.ts`의 PostCSS 플러그인이 줄입니다. 반응형 미디어 블록, 오버레이가 쓰지 않는 컴포넌트 규칙, 쓰지 않는 `@font-face`를 뺍니다. 오버레이나 팝업에서 새 Radix 컴포넌트를 쓰면 `UNUSED_OVERLAY_COMPONENT`에서 빼야 스타일이 들어갑니다. 반응형 prop(`{initial, md}` 등)은 오버레이·팝업에서 쓰지 않습니다.
 - 다크모드는 Radix 문서 방식대로 `Theme`에 `appearance`를 넘기지 않고 조상의 `light`/`dark` 클래스로 바꿉니다(`utils/appearance.ts`). 옵션·팝업은 시스템 설정을, 오버레이는 디시 다크모드를 오버레이 최상위 요소(shadow 안의 컨테이너)에 옮깁니다. 스크롤바·폼 컨트롤도 따라가도록 같은 요소에 `color-scheme`을 같이 정합니다.
 - `radix-themes.css`는 색 파일을 `base.css`보다 먼저 불러옵니다. 순서가 바뀌면 gray가 slate가 아닌 순수 회색이 됩니다.
 - 설정값을 오버레이 CSS에 넘길 때는 `<html>`에 CSS 변수를 둡니다. 커스텀 속성은 shadow 경계를 넘어 상속됩니다(폰트 교체의 `--refresher-preview-font-size`가 예).

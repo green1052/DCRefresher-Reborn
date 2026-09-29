@@ -97,7 +97,6 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
         return () => {
             alive = false;
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const clickDccon = (dccon: DcinsideDccon): void => {

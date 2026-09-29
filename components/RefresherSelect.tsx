@@ -15,14 +15,7 @@ interface RefresherSelectProps<T extends string> {
 /** 빈 문자열 값(기본값) 항목을 대신하는 sentinel. Radix Select는 빈 값을 받지 않는다 */
 const NONE = "__none__";
 
-export const RefresherSelect = <T extends string>({
-                                                      value,
-                                                      options,
-                                                      disabled,
-                                                      "aria-label": ariaLabel,
-                                                      "aria-describedby": ariaDescribedBy,
-                                                      onChange
-                                                  }: RefresherSelectProps<T>) => (
+export const RefresherSelect = <T extends string>({value, options, disabled, onChange, ...aria}: RefresherSelectProps<T>) => (
     <Select.Root
         size="2"
         value={value || NONE}
@@ -30,7 +23,7 @@ export const RefresherSelect = <T extends string>({
         // 선택지는 options의 키뿐이라 T로 단언해도 된다
         onValueChange={(next) => onChange((next === NONE ? "" : next) as T)}
     >
-        <Select.Trigger aria-label={ariaLabel} aria-describedby={ariaDescribedBy} style={{minWidth: 140}}/>
+        <Select.Trigger {...aria} style={{minWidth: 140}}/>
         <Select.Content>
             {Object.entries<string>(options).map(([key, label]) => (
                 <Select.Item key={key} value={key || NONE}>

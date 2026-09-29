@@ -84,11 +84,7 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
 
     const submit = async (): Promise<void> => {
         setBusy(true);
-        try {
-            done.current = await onSubmit(text);
-        } finally {
-            setBusy(false);
-        }
+        done.current = await onSubmit(text).finally(() => setBusy(false));
         if (done.current) onClose();
     };
 
