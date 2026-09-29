@@ -6,11 +6,10 @@
 
 import {isRecord} from "@/utils/record";
 
-/** 저장 형식 버전. 바꾸면 확장이 같은 DB 버전이어도 다시 받는다 (core/database.ts) */
+/** 저장 형식 버전. DB 메타(meta.format)에 적어 두고, 확장 업데이트로 바뀌면 같은 DB 버전이어도 다시 받는다 (core/database.ts). 파일에는 넣지 않는다 (모양으로 검사한다) */
 export const IP_FORMAT = 2;
 
 export interface CompactIpData {
-    v: typeof IP_FORMAT;
     /** 만든 시각 (UTC, 분까지. data 브랜치 version 파일과 같다). 두 파일은 CDN에 따로 캐시되므로 저장할 버전은 이것을 쓴다 */
     version?: string;
     /**
@@ -99,7 +98,7 @@ export const encodeIpData = (prefixes: ReadonlyMap<number, readonly IpCandidate[
         }
     }
 
-    return {v: IP_FORMAT, runs: new Uint8Array(Uint16Array.from([...starts, ...values]).buffer).toBase64(), orgs, countries, meta, lists};
+    return {runs: new Uint8Array(Uint16Array.from([...starts, ...values]).buffer).toBase64(), orgs, countries, meta, lists};
 };
 
 /** 저장된(받은) 문자열 → 저장 형식. 비었거나 옛 형식이면 null (옛 형식은 다음 갱신이 새로 받는다). JSON이 깨졌으면 던진다 */
@@ -107,7 +106,7 @@ export const parseIpData = (text: string): CompactIpData | null => {
     if (!text) return null;
     const data: unknown = JSON.parse(text);
     // 모양까지 본다. 받은 파일은 그대로 저장되고 페이지마다 읽히므로, 필드 하나만 틀려도 배지·미리보기가 깨진다
-    const valid = isRecord(data) && data.v === IP_FORMAT && typeof data.runs === "string" &&
+    const valid = isRecord(data) && typeof data.runs === "string" &&
         (data.version === undefined || typeof data.version === "string") &&
         isStrings(data.orgs) && isStrings(data.countries) && isNumbers(data.meta) &&
         Array.isArray(data.lists) && data.lists.every(isNumbers);
