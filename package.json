@@ -36,7 +36,7 @@
         "@wxt-dev/module-react": "^1.2.2",
         "mmdb-lib": "^3.0.3",
         "netmask": "^2.1.1",
-        "oxc-transform-react": "^0.151.0",
+        "oxc-transform-react": "^0.152.0",
         "sass": "^1.105.0",
         "typescript": "^7.0.2",
         "vite": "^8.3.1",
