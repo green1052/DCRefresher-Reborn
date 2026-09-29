@@ -52,6 +52,10 @@
 .refresherNewPost {
     // 줄마다 animation-delay가 걸린다 — backwards가 없으면 delay 동안 원래 모습으로 보였다가 사라진 뒤 다시 나타난다
     animation: refresher-new-post 0.36s cubic-bezier(0.19, 1, 0.22, 1) backwards;
+
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
+    }
 }
 
 @keyframes refresher-new-post {
