@@ -68,9 +68,11 @@ export const Empty = ({children}: { children: ReactNode }) => (
  * 내보낸 JSON을 붙여넣는 가져오기 다이얼로그(차단/메모/데이터 공용).
  * 열 때만 마운트하므로 닫으면 입력이 초기화되고, 가져오기에 실패해 열려 있으면 붙여넣은 텍스트가 남는다.
  */
-export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 넣어 주세요.", onClose, onSubmit}: {
+export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 넣어 주세요.", placeholder = "JSON 데이터", onClose, onSubmit}: {
     title: string;
     desc?: ReactNode;
+    /** 입력칸 안내이자 이름 */
+    placeholder?: string;
     onClose: () => void;
     /** 가져왔으면 알림 문구를 돌려준다. 실패는 직접 알리고 undefined를 돌려줘 다이얼로그를 열어 둔다 */
     onSubmit: (text: string) => Promise<string | undefined>;
@@ -102,7 +104,7 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
                     {desc}
                 </Dialog.Description>
 
-                <TextArea placeholder="JSON 데이터" aria-label="JSON 데이터" value={text} rows={8} autoFocus
+                <TextArea placeholder={placeholder} aria-label={placeholder} value={text} rows={8} autoFocus
                           onChange={(ev) => setText(ev.target.value)}/>
 
                 <DialogActions>
