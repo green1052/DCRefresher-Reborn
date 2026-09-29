@@ -193,7 +193,8 @@ if (candidates.size < 40_000) throw new Error(`대역이 너무 적습니다: ${
 
 // 분까지 넣는다. 날짜만 쓰면 같은 날 다시 만든 DB(ban.json 수정 등)를 확장이 같은 버전으로 보고 받지 않는다
 const version = new Date().toISOString().slice(0, 16);
-const ip = JSON.stringify({...encodeIpData(candidates), version});
+// v: 2는 data 브랜치를 raw.githubusercontent로 받는 6.0.3 이하가 형식을 확인하는 값이다(core/ipdb.ts의 옛 IP_FORMAT). 빠지면 그 버전은 DB를 받지 못한다
+const ip = JSON.stringify({...encodeIpData(candidates), v: 2, version});
 await Bun.write(`${OUT_DIR}/ip.json`, ip);
 await Bun.write(`${OUT_DIR}/version`, version);
 await Bun.write(`${OUT_DIR}/_headers`, PAGES_HEADERS);
