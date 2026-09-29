@@ -31,8 +31,15 @@ export const hookUploads = (key: string): void => {
         }
     };
 
-    // 움짤은 캔버스가 첫 장면만 그리므로 WebP로 바꾸지 않고 이름만 바꾼다
-    const keepFormat = (file: File): boolean => file.type === "image/gif" || file.type === "image/webp";
+    // 움짤은 캔버스가 첫 장면만 그리므로 WebP로 바꾸지 않고 이름만 바꾼다. AVIF는 WebP보다 작고 움직일 수도 있어 그대로 둔다
+    const keepFormat = (file: File): boolean => ["image/gif", "image/webp", "image/avif"].includes(file.type);
+    // 움직이는 PNG(APNG)는 acTL 청크가 첫 IDAT보다 앞에 있다. 앞부분만 읽는다 (바이트를 글자로 읽어도 ASCII 청크 이름은 그대로다)
+    const isApng = async (file: File): Promise<boolean> => {
+        if (file.type !== "image/png") return false;
+        const head = await file.slice(0, 65_536).text();
+        const actl = head.indexOf("acTL");
+        return actl >= 0 && !head.slice(0, actl).includes("IDAT");
+    };
     // 이미 바꾼(또는 바꿀 것 없는) 파일. 바꾼 뒤 다시 보낸 이벤트를 또 가로채지 않게 한다
     const done = new WeakSet<File>();
     const needsWork = (file: File, options: Options): boolean =>
@@ -55,7 +62,7 @@ export const hookUploads = (key: string): void => {
     const convert = async (file: File, options: Options): Promise<File> => {
         if (!needsWork(file, options)) return file;
 
-        if (options.webp && !keepFormat(file)) {
+        if (options.webp && !keepFormat(file) && !(await isApng(file))) {
             try {
                 const webp = await toWebp(file, options.quality);
                 // 이미 잘 압축된 JPEG는 WebP가 더 클 수 있다. 그때는 원본을 올린다

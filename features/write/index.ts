@@ -55,7 +55,7 @@ export default defineModule({
         webpConvert: {
             type: "check",
             name: "이미지 WebP 변환",
-            desc: "올리는 이미지를 WebP로 바꿔 용량을 줄입니다. GIF·WebP와 WebP로 바꾸면 더 커지는 이미지는 그대로 올립니다.",
+            desc: "올리는 이미지를 WebP로 바꿔 용량을 줄입니다. 움직이는 이미지(GIF·APNG)와 WebP·AVIF, WebP로 바꾸면 더 커지는 이미지는 그대로 올립니다.",
             default: false
         },
         webpQuality: {
