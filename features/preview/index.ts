@@ -20,7 +20,7 @@ import {ADULT_ERROR, SECRET_ERROR} from "@/core/preview/parser";
 import {blockUser, type BlockOptions, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {adjacentPreData, buildPreData, isBlurHidden, isTextPost} from "./rows";
 import {type Ctx, settings} from "./settings";
-import {closeMiniSoon, type ErrorState, hoverMini, keepMini, MANAGE_LABELS, type ManageKind, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
+import {closeMiniSoon, type ErrorState, hoverMini, keepMini, MANAGE_LABELS, type ManageKind, MINI_WIDTH, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
 
 // status는 ky의 HTTPError에서 읽는다 (삭제된 글은 404).
 // 성인 인증 안내 페이지면 parsePostInfo가 Error(ADULT_ERROR)를, 미니 갤러리 비밀글이면 Error(SECRET_ERROR)를 던진다.
@@ -309,8 +309,7 @@ const controller = (ctx: Ctx) => {
         pending?.ctrl.abort();
         pending = null;
 
-        if (refreshTimer) window.clearInterval(refreshTimer);
-        refreshTimer = 0;
+        window.clearInterval(refreshTimer);
 
         restoreHistory(fromHistory);
         store.getState().close();
@@ -334,8 +333,7 @@ const controller = (ctx: Ctx) => {
 
         abort?.abort();
         abort = new AbortController();
-        if (refreshTimer) window.clearInterval(refreshTimer);
-        refreshTimer = 0;
+        window.clearInterval(refreshTimer);
         // 두 번 누르기는 글마다 새로 센다. 이전 글에서 한 번 누른 키로 다음 글이 바로 지워지면 안 된다.
         lastKey = "";
 
@@ -475,22 +473,20 @@ const controller = (ctx: Ctx) => {
         const preData = buildPreData(element);
         if (!preData) return;
 
-        let post: PostInfo;
-        try {
-            ({post} = await getPost(preData));
-            post = await processContents(preData, post, ctx.settings.tooltipMediaHide);
-        } catch {
-            return;
-        }
+        const post = await getPost(preData).then(({post}) => processContents(preData, post, ctx.settings.tooltipMediaHide)).catch(() => undefined);
 
-        // 받는 사이 행을 떠났거나 전체 미리보기가 열렸으면 띄우지 않는다.
-        if (miniTarget !== element || usePreviewStore.getState().visible) return;
+        // 받지 못했거나, 받는 사이 행을 떠났거나 전체 미리보기가 열렸으면 띄우지 않는다.
+        if (!post || miniTarget !== element || usePreviewStore.getState().visible) return;
+
+        // 조작할 수 있는 미니는 v5처럼 커서 바로 오른쪽에 붙인다(x+10, y-50). 오른쪽으로만 옮기면 다른 행을 지나지 않고 카드에 닿는다.
+        // 오른쪽에 자리가 없어 커서 위로 밀려 오면 제목을 덮어 누를 수 없으니 커서 왼쪽에 붙인다
+        const position = ctx.settings.tooltipInteraction ? miniPosition(x - 6, y - 66) : miniPosition(x, y);
+        if (ctx.settings.tooltipInteraction && position.x <= x) position.x = Math.max(0, x - MINI_WIDTH - 10);
 
         hoverMini();
         usePreviewStore.setState({
             mini: {
-                // 조작할 수 있는 미니는 v5처럼 커서 바로 오른쪽에 붙인다(x+10, y-50). 오른쪽으로만 옮기면 다른 행을 지나지 않고 카드에 닿는다
-                ...(ctx.settings.tooltipInteraction ? miniPosition(x - 6, y - 66) : miniPosition(x, y)),
+                ...position,
                 title: postTitle(post),
                 // 미니에는 마우스를 올려 블러를 걷을 수 없으니 블러 차단도 안내 문구로 가린다.
                 contents: post.textBlocked && !useUiStore.getState().blockView?.revealed ? BLOCKED_TEXT : post.contents ?? "",
@@ -515,8 +511,7 @@ const controller = (ctx: Ctx) => {
         const y = ev.clientY;
 
         miniTarget = element;
-        if (miniTimer) window.clearTimeout(miniTimer);
-        miniTimer = 0;
+        window.clearTimeout(miniTimer);
         // 0이면 바로 띄운다. 목록을 가로지르면 행마다 요청이 나가지만, 다른 행으로 옮기면 앞 요청은 끊긴다.
         if (ctx.settings.tooltipDelay <= 0) void showMini(element, x, y);
         else miniTimer = window.setTimeout(() => void showMini(element, x, y), ctx.settings.tooltipDelay);
@@ -529,8 +524,7 @@ const controller = (ctx: Ctx) => {
 
     /** soon: 조작할 수 있는 미니면 커서가 카드로 옮겨 갈 틈을 두고 닫는다 (제목에서 나갈 때) */
     const onMiniLeave = (soon = false) => {
-        if (miniTimer) window.clearTimeout(miniTimer);
-        miniTimer = 0;
+        window.clearTimeout(miniTimer);
         // 받는 중인 본문은 끊지 않는다. 클릭해 열면 같은 요청을 이어 쓰고, 다른 글을 받을 때 끊긴다.
         miniTarget = null;
         const {mini} = usePreviewStore.getState();
@@ -608,21 +602,10 @@ const controller = (ctx: Ctx) => {
             return;
         }
 
-        if (resolved.commentsOnly) {
-            ev.preventDefault();
-            open(resolved.preData, true);
-            return;
-        }
-
-        if (ctx.settings.reversePreviewKey) {
-            ev.preventDefault();
-            location.href = resolved.preData.link;
-            return;
-        }
-
-        // 짧게 눌렀으면 미리보기다.
+        // 짧게 눌렀으면 미리보기다. 키 반전이면 댓글 수가 아닌 곳은 글로 이동한다
         ev.preventDefault();
-        open(resolved.preData);
+        if (!resolved.commentsOnly && ctx.settings.reversePreviewKey) location.href = resolved.preData.link;
+        else open(resolved.preData, resolved.commentsOnly);
     };
 
     const onClick = (ev: MouseEvent) => {
@@ -636,7 +619,9 @@ const controller = (ctx: Ctx) => {
         open(resolved.preData, resolved.commentsOnly);
     };
 
-    // 같은 함수는 addEventListener로 두 번 붙지 않아, 필터가 같은 요소로 다시 불러도 괜찮다.
+    const onMiniLeaveSoon = () => onMiniLeave(true);
+
+    // 같은 함수는 addEventListener로 두 번 붙지 않아, 필터가 같은 요소로 다시 불러도 괜찮다. 그래서 핸들러는 모두 여기 밖에서 한 번 만든다.
     const bind = (element: HTMLElement, word: boolean) => {
         const options = {signal: ctx.signal};
 
@@ -648,7 +633,7 @@ const controller = (ctx: Ctx) => {
         if (word) {
             element.addEventListener("mouseenter", onMiniEnter, options);
             element.addEventListener("mousemove", onMiniMove, options);
-            element.addEventListener("mouseleave", () => onMiniLeave(true), options);
+            element.addEventListener("mouseleave", onMiniLeaveSoon, options);
         }
     };
 
