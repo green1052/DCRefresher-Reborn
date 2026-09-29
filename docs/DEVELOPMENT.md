@@ -84,6 +84,69 @@ scripts/            IP DB 빌드 스크립트 (GitHub Actions의 DB 워크플로
 
 `features/index.ts`가 `import.meta.glob("./*/index.ts")`로 모듈을 모읍니다. 새 폴더를 만들면 목록에 따로 등록할 필요가 없습니다.
 
+확장의 진입점, 공용 코드, 저장소, 외부 서버가 어떻게 이어지는지 한눈에 본 그림입니다. 실선은 호출·읽기·쓰기이고 점선은 `core/messaging/protocol.ts`의 메시지입니다.
+
+```mermaid
+flowchart LR
+    subgraph EXT["외부"]
+        DC["dcinside.com<br>페이지·ajax"]
+        GH["raw.githubusercontent.com<br>data 브랜치"]
+    end
+
+    subgraph ENTRY["entrypoints"]
+        CS["콘텐츠 스크립트<br>content/index.tsx"]
+        PCSS["page.content.scss"]
+        BG["배경 스크립트<br>background/index.ts"]
+        OPT["옵션 페이지"]
+        POP["팝업"]
+    end
+
+    subgraph CORE["core · features · stores"]
+        REG["모듈 레지스트리<br>core/module"]
+        FEAT["기능 모듈<br>features/*/index.ts"]
+        BGM["배경 모듈<br>features/*/background.ts"]
+        OV["오버레이 shadow root<br>components/overlay"]
+        PREV["미리보기 요청·파싱<br>core/preview"]
+        HTTP["HTTP 클라이언트<br>core/http"]
+        DB["IP·밴 DB<br>core/database.ts"]
+        ST["zustand 스토어<br>stores/"]
+    end
+
+    subgraph STORE["저장소"]
+        LOCAL["storage.local<br>core/storage/items"]
+        SYNC["storage.sync<br>클라우드 백업"]
+    end
+
+    PCSS -->|"manifest로 주입"| DC
+    CS -->|"loadAll · setup"| REG
+    REG --> FEAT
+    REG -->|"on/off·설정 읽기·감시"| LOCAL
+    CS -->|"처음 필요할 때 띄움"| OV
+    FEAT -->|"토스트 · 미리보기 UI"| OV
+    FEAT --> PREV
+    PREV --> HTTP
+    FEAT --> HTTP
+    HTTP -->|"http · ajax"| DC
+    HTTP -->|"DB 받기"| GH
+    CS -->|"initDatabase"| DB
+    BG -->|"알람 · 설치 때 갱신"| DB
+    OPT -->|"지금 갱신"| DB
+    DB -->|"updateDatabase"| HTTP
+    DB -->|"읽기 · 쓰기"| LOCAL
+    FEAT --> ST
+    OPT --> ST
+    POP --> ST
+    ST --> LOCAL
+    OPT -->|"백업 · 복원"| SYNC
+    BG -->|"자동 백업"| SYNC
+    BG -->|"listen · apply"| BGM
+    BGM -->|"설정 감시"| LOCAL
+    BG -->|"MAIN world 주입<br>reCAPTCHA · 목록 스크립트"| DC
+    BG -.->|"executeShortcut"| CS
+    FEAT -.->|"grecaptchaToken · listReplaced"| BG
+    POP -.->|"pageState · pageAction"| CS
+```
+
 ## 실행 흐름
 
 ### 콘텐츠 스크립트
@@ -95,6 +158,28 @@ scripts/            IP DB 빌드 스크립트 (GitHub Actions의 DB 워크플로
 3. 오버레이는 바로 띄우지 않습니다. 토스트, 유저 버블, 미리보기처럼 화면에 그릴 것이 처음 생길 때 React와 오버레이 CSS를 불러와 띄웁니다. 글 제목에서 오른쪽 버튼을 누르는 순간에도 미리 띄워 첫 미리보기 창을 빨리 보이게 합니다.
 4. 글 목록·본문 페이지(`BOARD_PAGE`)면 차단·메모 스토어를 읽기 시작하고, 동시에 모듈 on/off와 설정을 읽습니다(`core/module/registry.ts`의 `loadAll`). 모듈의 `setup`은 차단·메모를 다 읽은 뒤에 돕니다. 차례로 기다리면 저장소 왕복이 쌓여 모듈이 목록을 한참 읽은 뒤에야 뜹니다.
 5. 글 목록·본문 페이지에서는 모듈을 다 불러온 뒤 가장 큰 IP DB를 읽습니다(`core/database.ts`의 `initDatabase`, userinfo가 켜져 있으면 그 setup이 먼저 부릅니다). 저장소는 요청 순서대로 읽히기 때문입니다. 밴 DB는 처음 조회할 때 읽습니다.
+
+콘텐츠 스크립트가 뜰 때 도는 순서입니다. 점선은 조건이 생길 때만 도는 길이고, 글 목록·본문 페이지에서는 차단·메모 스토어와 모듈 on/off·설정을 동시에 읽은 뒤에 모듈 `setup`이 돕니다.
+
+```mermaid
+flowchart TD
+    S["document_start<br>main 실행"] --> F{"refresher-root가 남아 있나<br>Firefox 재주입"}
+    F -->|예| C["옛 오버레이 제거<br>스크롤·클릭 잠금·aria-hidden 해제<br>미리보기 history 되돌리기"]
+    F -->|아니오| M
+    C --> M["메시지 핸들러 등록<br>executeShortcut·pageState·pageAction"]
+    M --> I["ctx.onInvalidated 등록<br>stopAll, 확장이 없어졌으면 안내<br>5초마다 무효화 검사"]
+    I --> O["오버레이 지연 마운트 구독<br>useUiStore·usePreviewStore"]
+    O -.->|"토스트·버블·메모<br>미리보기·우클릭 warm"| MO["DOM 준비 뒤 mountOverlay<br>React·CSS 불러와<br>shadow DOM에 마운트"]
+    O --> K["임시 차단 경고 준비<br>setBlockedHandler·빈 페이지 검사"]
+    K --> B{"BOARD_PAGE인가"}
+    B -->|예| ST["initBlocksStore·initMemosStore<br>loadAll과 동시에 읽기"]
+    B -->|항상| LA["loadAll<br>이 페이지 모듈만 거르기<br>on/off·모듈 설정 읽기"]
+    ST -->|ready| SU
+    LA --> SU["켜진 모듈 setup<br>BOARD_PAGE면 차단·메모를 다 읽은 뒤"]
+    SU --> W["modulesStorage 감시·bfcache 복귀 처리<br>on/off 한 번 더 맞춤"]
+    W --> D{"BOARD_PAGE인가"}
+    D -->|예| DB["initDatabase<br>IP DB 읽기"]
+```
 
 모듈은 이 문서를 불러온 주소(`core/http/urls.ts`의 `documentUrl`)로 판단합니다. 미리보기가 주소창을 글 주소로 바꿔도 페이지가 보여 주는 것은 그대로이기 때문입니다.
 
@@ -131,6 +216,29 @@ export default defineModule({
 - **revoke()**: 모듈을 끄면 실행됩니다. 페이지에 넣은 DOM·클래스·스타일을 되돌립니다.
 - **onChanged(ctx, key)**: 켜져 있는 동안 설정이 바뀌면 바뀐 키마다 실행됩니다. `ctx.settings`는 늘 최신 값이므로, 설정을 쓸 때마다 읽는 모듈은 onChanged가 없어도 됩니다.
 - 객체를 쓸 때 `setup`을 `shortcuts`, `pageToggles`보다 앞에 둡니다. TypeScript가 api 타입을 `setup`의 반환값에서 추론하기 때문입니다.
+
+모듈 하나가 등록되고 켜지고 꺼지기까지의 흐름입니다. 단축키와 팝업 토글은 setup이 끝나 api가 준비된 모듈에만 전달되고, 끄면 signal을 먼저 abort한 뒤 revoke를 부릅니다.
+
+```mermaid
+flowchart TD
+    A["loadAll(defs)"] --> B{"urls가 이 페이지와 맞나"}
+    B -->|"아니오"| X["등록 안 함<br>설정도 읽지 않음"]
+    B -->|"예"| C["register<br>설정이 있으면 읽고 watch"]
+    C --> D{"켜져 있나<br>차단·메모 로드 뒤 판단<br>저장값 없으면 defaultEnable"}
+    D -->|"아니오"| OFF["꺼진 채 대기"]
+    D -->|"예"| S["start<br>AbortController·ctx 생성"]
+    S --> SU["await setup(ctx)"]
+    SU -->|"끝남·그사이 안 꺼짐"| R["ready<br>반환값을 api로 저장"]
+    SU -->|"실패"| STOP
+    R --> USE["단축키·pageToggles·getModuleApi<br>ready인 모듈만 받음"]
+    C -.->|"설정 값 바뀜"| OC["실행 중이면<br>바뀐 키마다 onChanged(ctx, key)"]
+    W["on/off 저장소 watch<br>+ 로드 끝에 1회<br>+ bfcache 복귀 시 설정 먼저 반영"] --> SY["sync<br>모듈마다 켜짐 여부 재확인"]
+    SY -->|"켜짐"| S
+    SY -->|"꺼짐"| STOP["stop<br>signal abort → 필터·addCleanup 해제"]
+    STOP --> RV["revoke()<br>DOM·클래스·스타일 되돌림"]
+    RV --> OFF
+    INV["컨텍스트 무효화<br>stopAll"] --> AB["abort만<br>revoke 없이 페이지 그대로"]
+```
 
 ### 컨텍스트 (ctx)
 
@@ -284,6 +392,53 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 3. 댓글은 한 쪽에 100개씩 최대 10쪽을 받아 번호(등록)순으로 합칩니다. 디시 API는 1쪽에 가장 최근 댓글을 줍니다. 부모를 받지 못한 답글은 쓰레드 첫 댓글처럼 그립니다.
 4. 댓글을 그리는 곳(`pullComments`)은 순번으로 늦게 온 옛 목록이 새 목록을 덮지 않게 합니다. 댓글을 받는 새 경로를 만들 때는 이 함수 안에서 기다리게 합니다.
 
+목록에서 글을 우클릭해 미리보기를 여는 순서입니다. 버튼을 누르는 동안 본문을 미리 받고, 연 뒤에는 댓글 요청을 본문 요청과 함께 보냅니다.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as 사용자
+    participant M as 미리보기 모듈
+    participant C as 캐시
+    participant S as 디시 서버
+    participant W as 미리보기 창
+    U->>M: 제목 우클릭 누름 (mousedown)
+    opt 캐시에 없는 글
+        M->>S: 본문 GET 미리 보내기 (requestPost)
+    end
+    M->>W: 오버레이 미리 띄우기 (warm)
+    U->>M: 버튼 뗌 (contextmenu) → open()
+    M->>W: 창 열기 (본문 받는 중)
+    opt colorPreviewLink 켜짐
+        M->>M: history.pushState 글 주소
+    end
+    par 댓글 미리 받기 (댓글 보이고 캐시에 없는 글)
+        M->>S: 댓글 POST (목록 페이지의 e_s_n_o)
+    and 본문 (load → getPost)
+        M->>C: 캐시 확인 (받은 지 1분 안)
+        alt 캐시에 없음
+            M->>S: 본문 GET (미리 보낸 요청이면 그것을 기다림)
+            S-->>M: 글 HTML → 파싱, 캐시에 저장
+        end
+    end
+    M->>W: DOMPurify 정화 후 본문 그리기
+    Note over M: pullComments
+    opt 캐시로 연 글 (받은 지 2초 넘음)
+        M->>W: 지난 댓글 목록 먼저 그리기
+    end
+    alt 방금 받은 본문의 댓글 0개, 보존 기록 없음
+        M->>M: 요청 없이 빈 목록
+    else 미리 받은 목록의 토큰·글 번호가 맞고 비어 있지 않음
+        S-->>M: 미리 받은 댓글 목록
+    else
+        M->>S: fetchComments 100개씩 최대 10쪽, 번호순 합침
+    end
+    opt 삭제된 글과 댓글 보존 켜짐
+        M->>C: 삭제 댓글 보존 (restoreArchive)
+    end
+    M->>W: 댓글 그리기
+```
+
 '주소창에 게시글 주소 표시'(`colorPreviewLink`, 기본 켜짐)가 켜져 있으면 미리보기가 글 주소를 기록에 쌓고, 닫을 때 쌓은 만큼 뒤로 갑니다. 브라우저 기록이 50개까지라 40칸이 넘으면 새로 쌓지 않고 바꿉니다.
 
 본문 HTML은 `utils/sanitize.ts`에서 DOMPurify로 정화합니다. 재사용하는 `<template>`에서 `IN_PLACE`로 정화하는데, `<video>`가 든 DOMParser 문서는 Chrome에서 해제되지 않기 때문입니다. 파서도 같은 이유로 문서의 video·audio를 지우고 문서를 들고 있지 않습니다. 창을 닫거나 다음 글로 넘어가 문서에서 빠진 영상은 받기를 끊습니다(`gifVideos.ts`).
@@ -298,6 +453,40 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 - 자동 새로고침을 건너뛰는 경우: 탭이 보이지 않을 때, 직전 새로고침 후 2초 안, 이전 요청을 받는 중일 때, 2페이지 이후, 미리보기가 열려 있을 때와 닫은 뒤 첫 주기, 목록 위에 마우스·포커스가 있을 때(설정), 사용자가 멈췄을 때(검색 결과는 설정에 따라 멈춘 채 시작). 관리 체크박스를 체크했거나 목록 행의 디시 유저 메뉴가 열려 있으면, 주소를 바꾸지 않는 로드는 단축키·관리 뒤 새로고침까지 건너뜁니다.
 - 목록 요청이 실패하면(임시 차단과 목록 없는 응답 포함) 주기를 두 배씩 늘리고(최대 60초), 한 번 성공하면 원래 주기로 돌아갑니다. 실제 간격에는 0.5~2초가 무작위로 더해집니다.
 - 미리보기가 쌓은 기록 사이를 뒤로·앞으로 가는 것은 같은 목록이라 다시 받지 않습니다.
+
+목록을 한 번 받을 때의 흐름입니다. 자동 타이머와 사용자가 한 로드(force)는 거르는 조건이 다르고, 실패하면 다음 주기가 두 배씩 늘어납니다.
+
+```mermaid
+flowchart TD
+    A["자동 타이머 주기<br>탭이 다시 보임, failures 0일 때"] --> C
+    B["사용자 로드<br>단축키·페이지 이동·뒤로 가기·관리 뒤"] -->|"force"| C
+    C{"로딩 중이거나<br>탭이 숨었나?"} -->|"예, 로딩 중 강제 로드면 rerun 표시"| SKIP
+    C -->|"아니오"| D
+    D{"자동 로드만 거름<br>2초 안·멈춤·2페이지 이후<br>미리보기 열림·닫은 뒤 첫 주기<br>목록 hover·focus 설정"} -->|"걸림"| SKIP
+    D -->|"통과"| E
+    E{"주소 안 바꾼 로드에서<br>관리 체크박스·유저 메뉴?"} -->|"예"| SKIP
+    E -->|"아니오"| F["GET 목록<br>자동은 retry 0"]
+    F -->|"요청 실패·임시 차단"| FAIL
+    F -->|"주소 바뀜·요청 끊김: 버림"| Z
+    F --> G{"tbody가 지난번과 같나?<br>주소 안 바꾼 로드만"}
+    G -->|"예, failures 0"| SAME["교체 없이 끝"]
+    G -->|"아니오"| K["파싱<br>자동·failures 0·검색 아님이면 tbody만<br>아니면 문서 전체, 페이징 박스도 맞춤"]
+    K --> L{"지금 목록과 받은 목록이<br>둘 다 있나?"}
+    L -->|"아니오"| FAIL
+    L -->|"예, failures 0"| M{"insertionOf 제자리 가능?<br>이동·검색 아님<br>삭제 보존이면 순서·개수 같을 때"}
+    M -->|"예"| N["바뀐 행만 고침"]
+    M -->|"아니오"| O["목록 통째로 교체<br>삭제 보존이면 빠진 글 붉게 남김"]
+    N --> P
+    O --> P["listReplaced 메시지<br>페이지 넘김이면 목록 위로 스크롤<br>newPostList 이벤트는 주소 안 바꾼 로드만"]
+    FAIL["failures + 1<br>사용자 로드 실패면 오류 토스트<br>임시 차단은 HTTP 클라이언트가 알림"]
+    P --> Z
+    SAME --> Z
+    FAIL --> Z
+    Z["finally<br>주소가 바뀌었거나 rerun이면<br>강제로 다시 로드"] -.->|"다시 로드"| C
+    Z --> Q
+    SKIP["건너뜀"] --> Q
+    Q["armNext<br>자동·뒤로 가기·관리 뒤 로드에서만<br>refreshRate × 2^failures, 최대 60초<br>+ 0.5~2초 무작위, 숨은 탭이면 안 걸음"] -.->|"다음 주기"| A
+```
 
 ## 코드 규칙
 
@@ -342,6 +531,38 @@ Chrome 웹 스토어는 API v2(서비스 계정)로 제출합니다. 인증은 �
 Firefox는 `FIREFOX_EXTENSION_ID`(`wxt.config.ts`의 gecko ID `dcrefresher-reborn@green1052`)와 `FIREFOX_JWT_ISSUER`, `FIREFOX_JWT_SECRET`(AMO API 키) 시크릿을 씁니다.
 
 ## IP·밴 DB
+
+릴리즈 태그부터 확장이 IP·밴 DB를 저장하기까지의 흐름입니다. DB 워크플로는 릴리즈가 부를 때 말고도 수·토요일 예약과 수동 실행으로도 돌고, 확장은 `data` 브랜치의 파일을 raw.githubusercontent.com에서 받습니다.
+
+```mermaid
+flowchart TD
+    A["develop: 버전 커밋<br>chore(release): X.Y.Z"] --> B["release 브랜치에 머지"]
+    B --> C["X.Y.Z 태그 push"]
+
+    subgraph REL["release.yml"]
+        R1["태그·package.json 버전 확인<br>타입 검사"] --> R2["zip 빌드<br>GitHub 릴리즈"]
+        R2 --> R3["Chrome·Firefox 스토어 제출<br>continue-on-error"]
+    end
+    C --> R1
+
+    subgraph DBW["db.yml"]
+        D0["체크아웃<br>태그 또는 release 브랜치"] --> D1["data 브랜치의 ban.json 가져오기"]
+        D1 --> D2["build-db.ts<br>MaxMind·VPN 목록·KISA"]
+        D2 --> D3["data 브랜치에<br>force-with-lease push"]
+    end
+    R3 -->|"db 작업, workflow_call"| D0
+    CRON["수·토 예약 / 수동 실행"] --> D0
+
+    subgraph EXT["확장 배경 스크립트"]
+        E1["설치·업데이트<br>onInstalled"] --> U["updateDatabase"]
+        E2["하루 한 번 알람"] --> E3{"7일 지남 또는<br>저장 형식 다름?"}
+        E3 -->|"예"| U
+        U --> V{"version 파일이 같고<br>형식도 같음?"}
+        V -->|"예"| T["확인 시각만 갱신"]
+        V -->|"아니오"| G["ip.json·ban.json 받아<br>검사 후 저장소에 저장"]
+    end
+    D3 -.->|"raw.githubusercontent.com"| U
+```
 
 `.github/workflows/db.yml`이 매주 수·토요일과 릴리즈 때 `scripts/build-db.ts`로 만들어 `data` 브랜치에 올립니다. 수동으로도 돌릴 수 있습니다(Actions → DB → Run workflow).
 
