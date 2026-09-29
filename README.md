@@ -76,7 +76,7 @@
 | [요청 제한](https://github.com/green1052/DCRefresher-Reborn/wiki/requests) | 디시인사이드로 한꺼번에 보내는 요청 수를 제한해 차단을 막습니다 |
 | [스텔스 모드](https://github.com/green1052/DCRefresher-Reborn/wiki/stealth) | 페이지의 이미지와 동영상을 가립니다 (기본 꺼짐) |
 | [검색 이어 보기](https://github.com/green1052/DCRefresher-Reborn/wiki/search) | 검색 결과가 한 페이지에 못 미치면 다음 결과를 이어 붙입니다 (기본 꺼짐) |
-| [글쓰기](https://github.com/green1052/DCRefresher-Reborn/wiki/write) | 작성 중인 글이 있을 때 실수로 페이지를 나가지 않게 확인합니다 (기본 꺼짐) |
+| [글쓰기](https://github.com/green1052/DCRefresher-Reborn/wiki/write) | 작성 중인 글을 두고 실수로 나가지 않게 확인하고, 올리는 이미지를 WebP로 바꾸거나 파일 이름을 숨깁니다 (기본 꺼짐) |
 | [관리](https://github.com/green1052/DCRefresher-Reborn/wiki/manage) | 갤러리 관리자를 위한 편의 기능입니다 (기본 꺼짐) |
 
 그 밖에 [메모](https://github.com/green1052/DCRefresher-Reborn/wiki/memo), [단축키](https://github.com/green1052/DCRefresher-Reborn/wiki/shortcuts), [데이터 관리](https://github.com/green1052/DCRefresher-Reborn/wiki/data)(클라우드 백업·내보내기·가져오기·초기화)가 있습니다.

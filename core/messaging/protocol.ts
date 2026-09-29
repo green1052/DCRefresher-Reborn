@@ -27,6 +27,9 @@ interface ProtocolMap {
      */
     "refresher:listReplaced"(gallery: string): void;
 
+    /** 탭 → 배경: 글쓰기 모듈이 그 탭의 MAIN world에 이미지 변환(features/write/images.ts의 hookUploads)을 넣는다. 페이지마다 한 번 */
+    "refresher:hookUploads"(): void;
+
     /** 팝업 → 탭: 이 페이지의 상태 */
     "refresher:pageState"(): PageToggleState[];
 

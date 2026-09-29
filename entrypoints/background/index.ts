@@ -8,6 +8,7 @@ import {migrateV5Storage} from "@/core/migrate-v5";
 import {onMessage, sendMessage} from "@/core/messaging/protocol";
 import {type BackgroundModule, startBackgroundModules} from "@/core/module/background";
 import {backupStorage, dbStorage} from "@/core/storage/items";
+import {hookUploads, UPLOAD_OPTIONS_KEY} from "@/features/write/images";
 
 /** 모듈별 배경 코드(features/<id>/background.ts). 필요한 모듈만 이 파일을 둔다 */
 const backgroundModules = Object.values(import.meta.glob<{ default: BackgroundModule }>("../../features/*/background.ts", {eager: true}))
@@ -112,6 +113,18 @@ export default defineBackground(() => {
             func: rerunListScripts,
             args: [gallery]
         }).catch(() => {});
+    });
+
+    // ===== 글쓰기: 올리는 이미지를 바꾸는 리스너를 그 탭의 페이지(MAIN world)에 넣는다 =====
+    onMessage("refresher:hookUploads", async ({sender}) => {
+        if (!sender.tab?.id) return;
+
+        await browser.scripting.executeScript({
+            target: {tabId: sender.tab.id, frameIds: [sender.frameId ?? 0]},
+            world: "MAIN",
+            func: hookUploads,
+            args: [UPLOAD_OPTIONS_KEY]
+        }).catch(console.error);
     });
 
     // ===== Database: 설치/주기 갱신 =====
