@@ -12,12 +12,13 @@ export const urls = {
         lists: "https://gall.dcinside.com/dccon/lists",
         detail: "https://gall.dcinside.com/dccon/package_detail"
     },
-    // data 브랜치는 .github/workflows/db.yml이 만든다. raw.githubusercontent.com은 CORS를 허용해 호스트 권한이 필요 없다
+    // data 브랜치는 .github/workflows/db.yml이 만들고, Cloudflare Pages가 그대로 배포한다. CORS를 열어 두어 호스트 권한이 필요 없다.
+    // 6.0.3 이하는 raw.githubusercontent.com에서 받으므로 data 브랜치 게시는 계속 유지한다
     database: {
-        version: "https://raw.githubusercontent.com/green1052/DCRefresher-Reborn/data/version",
+        version: "https://dcrefresher.green1052.com/version",
         // 저장 형식 그대로다 (core/ipdb의 CompactIpData)
-        ip: "https://raw.githubusercontent.com/green1052/DCRefresher-Reborn/data/ip.json",
-        ban: "https://raw.githubusercontent.com/green1052/DCRefresher-Reborn/data/ban.json"
+        ip: "https://dcrefresher.green1052.com/ip.json",
+        ban: "https://dcrefresher.green1052.com/ban.json"
     }
 };
 

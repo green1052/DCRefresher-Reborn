@@ -99,7 +99,7 @@
 
 - **연결하는 곳**
   - 디시인사이드: 글·목록·댓글과 디시콘 목록, (글댓비를 켜면) 작성자의 갤로그 글·댓글 수를 불러오고, 사용자가 누른 댓글 쓰기·추천·관리 요청을 보냅니다.
-  - GitHub(`raw.githubusercontent.com`): IP/밴 데이터베이스 파일을 받기만 합니다.
+  - `dcrefresher.green1052.com`: IP/밴 데이터베이스 파일을 받기만 합니다. 이 저장소의 `data` 브랜치를 Cloudflare Pages로 그대로 배포한 곳입니다.
   - 이미지 검색 엔진: 이미지 우클릭 메뉴를 누를 때만, 그 이미지 주소로 검색 탭을 엽니다.
   - Google reCAPTCHA: 디시가 요구할 때만 디시와 같은 방식으로 씁니다.
   - 글에 들어 있는 외부 이미지·동영상(유튜브 등): 미리보기로 글을 열면 원문을 볼 때처럼 그 주소에서 불러옵니다.
@@ -119,7 +119,6 @@
 
 ## 바로가기
 
-- [홈페이지](https://dcrefresher.green1052.com)
 - [위키](https://github.com/green1052/DCRefresher-Reborn/wiki)
 - [버그 제보 / 기능 제안](https://github.com/green1052/DCRefresher-Reborn/issues)
 - [디스코드 서버](https://discord.gg/SSW6Zuyjz6)

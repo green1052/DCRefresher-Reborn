@@ -90,7 +90,7 @@ scripts/            IP DB 빌드 스크립트 (GitHub Actions의 DB 워크플로
 flowchart LR
     subgraph EXT["외부"]
         DC["dcinside.com<br>페이지·ajax"]
-        GH["raw.githubusercontent.com<br>data 브랜치"]
+        GH["dcrefresher.green1052.com<br>data 브랜치 (Cloudflare Pages)"]
     end
 
     subgraph ENTRY["entrypoints"]
@@ -528,7 +528,7 @@ Firefox는 `FIREFOX_EXTENSION_ID`(`wxt.config.ts`의 gecko ID `dcrefresher-rebor
 
 ## IP·밴 DB
 
-릴리즈 태그부터 확장이 IP·밴 DB를 저장하기까지의 흐름입니다. DB 워크플로는 릴리즈가 부를 때 말고도 수·토요일 예약과 수동 실행으로도 돌고, 확장은 `data` 브랜치의 파일을 raw.githubusercontent.com에서 받습니다.
+릴리즈 태그부터 확장이 IP·밴 DB를 저장하기까지의 흐름입니다. DB 워크플로는 릴리즈가 부를 때 말고도 수·토요일 예약과 수동 실행으로도 돌고, 확장은 `data` 브랜치를 Cloudflare Pages로 배포한 `dcrefresher.green1052.com`에서 파일을 받습니다.
 
 ```mermaid
 flowchart TD
@@ -557,13 +557,14 @@ flowchart TD
         V -->|"예"| T["확인 시각만 갱신"]
         V -->|"아니오"| G["ip.json·ban.json 받아<br>검사 후 저장소에 저장"]
     end
-    D3 -.->|"raw.githubusercontent.com"| U
+    D3 -.->|"Cloudflare Pages<br>dcrefresher.green1052.com"| U
 ```
 
 `.github/workflows/db.yml`이 매주 수·토요일과 릴리즈 때 `scripts/build-db.ts`로 만들어 `data` 브랜치에 올립니다. 수동으로도 돌릴 수 있습니다(Actions → DB → Run workflow).
 
 - 예약·수동 실행은 release 브랜치(배포된 코드)로, 릴리즈 때는 그 태그로 만듭니다. develop으로 만들지 않는 것은 형식을 바꾼 코드가 릴리즈 전에 올라가지 않게 하려는 것입니다.
 - `ip.json`은 확장이 저장하는 형식(`core/ipdb.ts`의 `CompactIpData`) 그대로이고 버전(UTC, 분까지)을 담고 있습니다. `ban.json`은 `data` 브랜치에서 손으로 관리하며, 워크플로가 가져와 검사·정리합니다.
+- Cloudflare Pages가 `data` 브랜치를 `dcrefresher.green1052.com`으로 배포합니다(빌드 명령 없음, 출력 `/`). push할 때마다 자동으로 다시 배포되고, CORS와 캐시 헤더는 DB 빌드가 함께 만드는 `_headers` 파일로 줍니다. 6.0.3 이하는 `raw.githubusercontent.com`에서 받으므로 GitHub `data` 브랜치 게시는 계속 유지합니다.
 - `data` 브랜치는 커밋 하나로 유지합니다. 빌드가 도는 사이 `data`가 바뀌었으면(ban.json 수정 등) 덮어쓰지 않고 실패합니다.
 - 확장은 설치·업데이트 때 받고, 이후에는 하루 한 번 울리는 알람에서 마지막 확인이 7일을 넘었거나 저장 형식이 다를 때 확인합니다(`entrypoints/background/index.ts`). 확인할 때는 `data` 브랜치의 `version` 파일을 먼저 받아 저장된 버전과 비교하고, 다를 때만 `ip.json`·`ban.json`을 받습니다(`core/database.ts`의 `updateDatabase`). 옵션 데이터 탭의 '지금 갱신'은 같은 버전이어도 다시 받습니다. 받은 파일이 깨졌거나 형식이 다르면 저장하지 않고 갖고 있던 DB를 씁니다.
 
