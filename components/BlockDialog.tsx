@@ -72,11 +72,9 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                 }}>
                     <Flex direction="column" gap="3">
                         <label>
-                            <Flex justify="between" mb="1">
-                                <Text size="2" color="gray">
-                                    값
-                                </Text>
-                            </Flex>
+                            <Text as="div" size="2" color="gray" mb="1">
+                                값
+                            </Text>
                             <TextField.Root
                                 placeholder={`${TYPE_NAMES[type]} 값을 입력해 주세요`}
                                 value={content}

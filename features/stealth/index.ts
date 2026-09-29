@@ -42,16 +42,12 @@ const createButton = (): void => {
     // 죽은 인스턴스(파이어폭스 재주입)가 남긴 버튼은 리스너가 없어 갈아끼운다
     for (const element of document.querySelectorAll(CONTROL_BUTTON)) element.remove();
 
-    const frame = document.createElement("div");
-    frame.className = CONTROL_BUTTON.slice(1);
+    const frame = Object.assign(document.createElement("div"), {className: CONTROL_BUTTON.slice(1)});
     // 미리보기가 뒤 페이지를 inert로 막을 때 이 버튼은 남긴다 (preview/ui/Frame.tsx)
     frame.dataset.refresherUi = "";
 
     // 키보드로도 누를 수 있게 button으로 만든다. 이름은 안의 문구(누르면 할 동작)다
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "button";
-    button.id = "tempview";
+    const button = Object.assign(document.createElement("button"), {type: "button", className: "button", id: "tempview"});
     render(button);
     button.addEventListener("click", toggle);
 
@@ -99,8 +95,6 @@ export default defineModule({
     revoke() {
         document.documentElement.classList.remove("refresherStealth", TEMPORARY_STEALTH);
 
-        for (const element of document.querySelectorAll<HTMLElement>(CONTROL_BUTTON)) {
-            element.remove();
-        }
+        for (const element of document.querySelectorAll(CONTROL_BUTTON)) element.remove();
     }
 });

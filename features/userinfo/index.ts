@@ -62,9 +62,7 @@ const MAX_RATIOS = 500;
 const failedRatios = new LRUCache<string, true>({max: 500, ttl: 5 * 60_000});
 
 const buildBadgeSpan = (text: string, color?: string, title?: string, className = "refresherUserData"): HTMLElement => {
-    const span = document.createElement("span");
-    span.className = className;
-    span.textContent = text;
+    const span = Object.assign(document.createElement("span"), {className, textContent: text});
     if (color) span.style.color = color;
     if (title) span.title = title;
     return span;
@@ -87,8 +85,7 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
     const gallery = queryString("id");
 
     const {nick, uid, ip} = element.dataset;
-    const badges = document.createElement("span");
-    badges.className = "refresher-user-badges";
+    const badges = Object.assign(document.createElement("span"), {className: "refresher-user-badges"});
     let lowActivity = false;
 
     const appendIdentity = (): void => {
@@ -296,18 +293,8 @@ export default defineModule({
         const checkNewPosts = (elements: HTMLElement[]): void => {
             if (!ctx.settings.checkRatio) return;
 
-            const stale: string[] = [];
-
-            for (const post of elements.slice(0, 10)) {
-                const writer = post.querySelector<HTMLElement>(".ub-writer");
-                const uid = writer?.dataset.uid;
-                if (!uid) continue;
-
-                if (!isFresh(ratios[uid]) && !failedRatios.has(uid) && !stale.includes(uid)) {
-                    stale.push(uid);
-                }
-            }
-
+            const stale = [...new Set(elements.slice(0, 10).flatMap((post) => post.querySelector<HTMLElement>(".ub-writer")?.dataset.uid || []))]
+                .filter((uid) => !isFresh(ratios[uid]) && !failedRatios.has(uid));
             if (stale.length === 0) return;
 
             // 실패는 uid마다 흡수한다. 한 명이 실패해도 받아 온 나머지는 저장한다 (실패한 사람은 배지만 빠진다)
@@ -323,11 +310,8 @@ export default defineModule({
                 const stored = (await ratioStorage.getValue()).ratio ?? {};
                 if (signal.aborted) return;
 
-                const merged: [string, RatioInfo][] = [
-                    ...Object.entries(stored).filter(([uid]) => !fresh.some(([freshUid]) => freshUid === uid)),
-                    ...fresh.map(([uid, info]): [string, RatioInfo] => [uid, {...info, date: now}])
-                ];
-                ratios = Object.fromEntries(merged.sort(([, a], [, b]) => b.date - a.date).slice(0, MAX_RATIOS));
+                const merged: Record<string, RatioInfo> = {...stored, ...Object.fromEntries(fresh.map(([uid, info]) => [uid, {...info, date: now}]))};
+                ratios = Object.fromEntries(Object.entries(merged).sort(([, a], [, b]) => b.date - a.date).slice(0, MAX_RATIOS));
                 // 다시 그리기는 위의 ratioStorage.watch가 한다
                 await ratioStorage.setValue({ratio: ratios});
             }).catch(console.error);
@@ -353,8 +337,6 @@ export default defineModule({
         useUiStore.setState({badgeColors: {}, badgeView: DEFAULT_BADGE_VIEW, ratios: null});
         clearLowActivity();
 
-        for (const element of document.querySelectorAll<HTMLElement>(".refresher-user-badges")) {
-            element.remove();
-        }
+        for (const element of document.querySelectorAll(".refresher-user-badges")) element.remove();
     }
 });

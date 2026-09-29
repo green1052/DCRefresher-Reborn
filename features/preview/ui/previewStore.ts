@@ -216,17 +216,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
             return {collapsed: next};
         }),
 
-    openCaptcha: (url) =>
-        new Promise((resolve) => {
-            set({captcha: {url, resolve}});
-        }),
+    openCaptcha: (url) => new Promise((resolve) => set({captcha: {url, resolve}})),
 
-    moveMini: (clientX, clientY) =>
-        set((state) =>
-            state.mini
-                ? {
-                      mini: {...state.mini, ...miniPosition(clientX, clientY)}
-                  }
-                : state
-        )
+    moveMini: (clientX, clientY) => set((state) => (state.mini ? {mini: {...state.mini, ...miniPosition(clientX, clientY)}} : state))
 }));

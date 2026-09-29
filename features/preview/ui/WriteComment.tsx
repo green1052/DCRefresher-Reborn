@@ -46,12 +46,6 @@ const FAIL_MESSAGES: Record<string, string> = {
 const isCommentPosted = ({result}: SubmitResult): boolean =>
     result !== "false" && result !== "" && !result.trimStart().startsWith("<") && !Object.hasOwn(FAIL_MESSAGES, result);
 
-const failMessage = (response: SubmitResult): string | undefined => {
-    if (response.result !== "false") return FAIL_MESSAGES[response.result];
-
-    return resultMessage(response);
-};
-
 /** 글자콘 색 스와치 */
 const Swatch = ({color, selected, label, onClick}: {
     color: string;
@@ -218,7 +212,7 @@ export const WriteComment = () => {
                     {label: "원문 열기", run: () => window.open(preData.link, "_blank")}
                 );
             } else {
-                useUiStore.getState().showToast(failMessage(response) || "댓글을 작성하지 못했습니다.", "error");
+                useUiStore.getState().showToast((response.result === "false" ? resultMessage(response) : FAIL_MESSAGES[response.result]) || "댓글을 작성하지 못했습니다.", "error");
             }
         } catch (e) {
             // 시간 초과 등으로 끊겨도 서버는 댓글을 올렸을 수 있다. 목록을 새로 받아 올라간 댓글이 보이게 해 다시 보내지 않게 한다. 입력한 글은 둔다.
@@ -320,19 +314,16 @@ export const WriteComment = () => {
                 />
                 <Flex direction="column" gap="2">
                     <Flex gap="2">
-                        {dccons.length > 0 ? (
-                            <Tooltip content="디시콘 취소" container={overlay.portal}>
-                                <IconButton variant="soft" color="gray" aria-label="디시콘 취소" onClick={() => setDccon(NO_DCCON)}>
-                                    <X size={16}/>
-                                </IconButton>
-                            </Tooltip>
-                        ) : (
-                            <Tooltip content="디시콘" container={overlay.portal}>
-                                <IconButton variant="soft" color="gray" aria-label="디시콘" onClick={() => setDcconOpen(true)}>
-                                    <Smile size={16}/>
-                                </IconButton>
-                            </Tooltip>
-                        )}
+                        <Tooltip content={dccons.length > 0 ? "디시콘 취소" : "디시콘"} container={overlay.portal}>
+                            <IconButton
+                                variant="soft"
+                                color="gray"
+                                aria-label={dccons.length > 0 ? "디시콘 취소" : "디시콘"}
+                                onClick={() => (dccons.length > 0 ? setDccon(NO_DCCON) : setDcconOpen(true))}
+                            >
+                                {dccons.length > 0 ? <X size={16}/> : <Smile size={16}/>}
+                            </IconButton>
+                        </Tooltip>
                         <Tooltip content={txtcon ? "글자콘 취소" : "글자콘"} container={overlay.portal}>
                             <IconButton
                                 variant="soft"

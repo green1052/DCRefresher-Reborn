@@ -24,28 +24,18 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
 
     const row = element.closest<HTMLElement>(".ub-content") ?? element;
 
-    // 목록 아이콘의 마지막 클래스가 글 종류다 (isTextPost가 이미지 없는 글을 가를 때 쓴다).
-    const icon = row.querySelector<HTMLElement>(".icon_img");
-    let type = "icon_txt";
-    let notice = false;
-    let recommend = false;
-
-    if (icon) {
-        const classes = icon.getAttribute("class") ?? "";
-        type = classes.split(" ").at(-1) ?? "icon_txt";
-        notice = classes.includes("icon_notice");
-        // 이미지·텍스트·동영상 개념글 (icon_recomimg, icon_recomtxt, icon_recomovie)
-        recommend = classes.includes("icon_recom");
-    }
+    // 목록 아이콘의 마지막 클래스가 글 종류다 (isTextPost가 이미지 없는 글을 가를 때 쓴다). 아이콘이 없으면 텍스트 글로 본다
+    const classes = row.querySelector(".icon_img")?.getAttribute("class");
 
     return {
         gallery: gallery ?? "",
         id: id ?? "",
         title: anchor.textContent?.trim() || undefined,
         link: url.href,
-        notice,
-        recommend,
-        type,
+        notice: classes?.includes("icon_notice") ?? false,
+        // 이미지·텍스트·동영상 개념글 (icon_recomimg, icon_recomtxt, icon_recomovie)
+        recommend: classes?.includes("icon_recom") ?? false,
+        type: classes?.split(" ").at(-1) ?? "icon_txt",
         hasComments: row.querySelector(".reply_num") !== null
     };
 };

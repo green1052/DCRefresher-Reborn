@@ -81,10 +81,8 @@ export default defineModule({
                 }
                 element.querySelector("button[data-refresher-refresh]")?.remove();
 
-                button = document.createElement("button");
-                button.type = "button";
+                button = Object.assign(document.createElement("button"), {type: "button", textContent: label()});
                 button.dataset.refresherRefresh = "true";
-                button.textContent = label();
                 button.addEventListener("click", () => {
                     paused = !paused;
                     button!.textContent = label();

@@ -94,10 +94,7 @@ export default defineModule({
                 handled.add(element);
 
                 const parent = element.closest<HTMLElement>(CHECKBOX_ROW);
-                const writer = parent?.querySelector<HTMLElement>(":scope > .ub-writer");
-                const uid = writer?.dataset.uid;
-                const ip = writer?.dataset.ip;
-                const nick = writer?.dataset.nick;
+                const {uid, ip, nick} = parent?.querySelector<HTMLElement>(":scope > .ub-writer")?.dataset ?? {};
 
                 element.addEventListener("click", (ev) => {
                     const source = ev.target as HTMLInputElement;
@@ -135,11 +132,6 @@ export default defineModule({
         );
 
         // ===== Ctrl 클릭 삭제 =====
-        const deleteByCtrl = (postId: string): Promise<boolean> => {
-            const gallery = document.querySelector<HTMLInputElement>("#gallery_id")?.value ?? "";
-            return notifyManage(deletePost({gallery, id: postId, link: location.href}), "게시글을 삭제했습니다.", "게시글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
-        };
-
         // 삭제 요청을 보낸 글. 응답 전에 다시 눌러도 요청을 또 보내지 않는다
         const deleting = new Set<string>();
 
@@ -164,7 +156,12 @@ export default defineModule({
                     if (deleting.has(postId)) return;
                     deleting.add(postId);
 
-                    void deleteByCtrl(postId).then((deleted) => {
+                    const gallery = document.querySelector<HTMLInputElement>("#gallery_id")?.value ?? "";
+                    void notifyManage(
+                        deletePost({gallery, id: postId, link: location.href}),
+                        "게시글을 삭제했습니다.",
+                        "게시글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요."
+                    ).then((deleted) => {
                         // 행을 남겨 두면 목록이 새로고침될 때까지(refresh가 꺼져 있으면 계속) 지운 글에 요청을 또 보낼 수 있다
                         if (deleted) element.remove();
                     }).finally(() => deleting.delete(postId));
