@@ -17,10 +17,10 @@ import {isRecord} from "@/utils/record";
 
 import {getEntry, setEntry} from "@/core/preview/cache";
 import {ADULT_ERROR, SECRET_ERROR} from "@/core/preview/parser";
-import {blockUser, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
+import {blockUser, type BlockOptions, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {adjacentPreData, buildPreData, isBlurHidden, isTextPost} from "./rows";
 import {type Ctx, settings} from "./settings";
-import {closeMiniSoon, type ErrorState, hoverMini, keepMini, type ManageKind, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
+import {closeMiniSoon, type ErrorState, hoverMini, keepMini, MANAGE_LABELS, type ManageKind, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
 
 // status는 ky의 HTTPError에서 읽는다 (삭제된 글은 404).
 // 성인 인증 안내 페이지면 parsePostInfo가 Error(ADULT_ERROR)를, 미니 갤러리 비밀글이면 Error(SECRET_ERROR)를 던진다.
@@ -401,14 +401,10 @@ const controller = (ctx: Ctx) => {
         const failure = "처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
         try {
             // 공지·개념글 표시는 성공했을 때만 바꾼다.
-            if (kind === "notice") {
-                if (await notifyManage(setNotice(target, !st.notice), st.notice ? "공지를 해제했습니다." : "공지로 등록했습니다.", failure) && stillOpen()) {
-                    toggled("notice", !st.notice);
-                }
-            } else if (kind === "recommend") {
-                if (await notifyManage(setRecommend(target, !st.recommend), st.recommend ? "개념글을 해제했습니다." : "개념글로 등록했습니다.", failure) && stillOpen()) {
-                    toggled("recommend", !st.recommend);
-                }
+            if (kind === "notice" || kind === "recommend") {
+                const on = st[kind];
+                const request = kind === "notice" ? setNotice(target, !on) : setRecommend(target, !on);
+                if (await notifyManage(request, `${MANAGE_LABELS[kind][on ? 1 : 0]}했습니다.`, failure) && stillOpen()) toggled(kind, !on);
             } else if (kind === "delete") {
                 close();
                 await notifyManage(deletePost(target), "게시글을 삭제했습니다.", failure);
@@ -422,20 +418,14 @@ const controller = (ctx: Ctx) => {
         void getModuleApi("refresh")?.reload();
     };
 
-    const blockPreset = async (target: GalleryPreData) => {
+    /** 차단 키(프리셋)와 차단 창이 같이 쓴다. 글도 지웠으면 창을 닫는다 */
+    const block = async (target: GalleryPreData, options: BlockOptions): Promise<boolean> => {
         const signal = store.getState().signalId;
-        const blocked = await notifyManage(blockUser(target, {
-            avoidHour: ctx.settings.blockPresetDay,
-            avoidReason: "0",
-            avoidReasonTxt: ctx.settings.blockPresetReason,
-            delChk: ctx.settings.blockPresetDelete,
-            userTypeChk: ctx.settings.blockPresetUserType
-        }), "차단했습니다.", "차단하지 못했습니다. 잠시 후 다시 시도해 주세요.");
-
+        const blocked = await notifyManage(blockUser(target, options), "차단했습니다.", "차단하지 못했습니다. 잠시 후 다시 시도해 주세요.");
         // 그새 다른 글로 넘어갔으면 창을 닫지 않는다.
-        if (blocked && ctx.settings.blockPresetDelete && store.getState().signalId === signal) close();
-
+        if (blocked && options.delChk && store.getState().signalId === signal) close();
         void getModuleApi("refresh")?.reload();
+        return blocked;
     };
 
     const onKey = (ev: KeyboardEvent) => {
@@ -455,7 +445,12 @@ const controller = (ctx: Ctx) => {
         if (lastKey === key && now - lastKeyTime < 1000) {
             lastKey = "";
             ev.preventDefault();
-            void (isDelete ? manage("delete") : store.getState().preData && blockPreset(store.getState().preData!));
+            const {preData} = store.getState();
+            if (isDelete) void manage("delete");
+            else if (preData) {
+                const {blockPresetDay, blockPresetReason, blockPresetDelete, blockPresetUserType} = ctx.settings;
+                void block(preData, {avoidHour: blockPresetDay, avoidReason: "0", avoidReasonTxt: blockPresetReason, delChk: blockPresetDelete, userTypeChk: blockPresetUserType});
+            }
         } else {
             lastKey = key;
             lastKeyTime = now;
@@ -682,7 +677,8 @@ const controller = (ctx: Ctx) => {
         requestClose: () => close(),
         requestRefresh: (report) => refreshComments(report),
         requestReload: () => reloadPost(),
-        requestManage: (kind) => void manage(kind)
+        requestManage: (kind) => void manage(kind),
+        requestBlock: block
     });
 };
 

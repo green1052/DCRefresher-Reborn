@@ -1,6 +1,7 @@
 import {create} from "zustand";
 
 import type {ProcessedComment} from "@/core/preview/comments";
+import type {BlockOptions} from "@/core/preview/request";
 import type {GalleryPreData, PostInfo} from "@/core/preview/types";
 
 export interface ErrorState {
@@ -14,6 +15,9 @@ export interface ErrorState {
 }
 
 export type ManageKind = "notice" | "recommend" | "delete" | "bump";
+
+/** 공지·개념글 [등록, 해제] 동작. 관리 패널의 확인 문구와 결과 알림이 같이 쓴다 */
+export const MANAGE_LABELS = {notice: ["공지로 등록", "공지를 해제"], recommend: ["개념글로 등록", "개념글을 해제"]} as const;
 
 type Reply = { commentNo: string | null; replyNo: string | null };
 
@@ -53,6 +57,8 @@ interface Hooks {
     /** 본문을 캐시 없이 다시 받고 댓글도 다시 받는다 */
     requestReload: () => Promise<void>;
     requestManage: (kind: ManageKind) => void;
+    /** 차단하고 성공 여부를 돌려준다. 글도 지웠으면 창을 닫는다 */
+    requestBlock: (preData: GalleryPreData, options: BlockOptions) => Promise<boolean>;
 }
 
 interface PreviewState extends PostState, Hooks {
@@ -129,7 +135,8 @@ export const NO_HOOKS: Hooks = {
     requestClose: () => undefined,
     requestRefresh: async () => undefined,
     requestReload: async () => undefined,
-    requestManage: () => undefined
+    requestManage: () => undefined,
+    requestBlock: async () => false
 };
 
 const freshPost = (): PostState => ({

@@ -70,21 +70,13 @@ const buildBadgeSpan = (text: string, color?: string, title?: string, className 
     return span;
 };
 
-const makeRatioSpan = (info: RatioInfo, alarmRatio: number, colors: BadgeColors): HTMLElement => {
-    const text = `${info.article}/${info.comment}`;
-    return buildBadgeSpan(`[${text}]`, isLowActivity(info, alarmRatio) ? colors.ratioAlarm : colors.ratio, text, "ip refresherUserData");
-};
-
 const LOW_ACTIVITY_ACTIONS = {none: "배지 색만", tag: "[깡계] 표시", blur: "흐리게", hide: "숨기기"};
 const LOW_ACTIVITY_CLASSES = {blur: "refresherLowActivityBlur", hide: "refresherLowActivityHide"} as const;
+const LOW_ACTIVITY_CLASS_LIST = Object.values(LOW_ACTIVITY_CLASSES);
 
 const clearLowActivity = (): void => {
-    const classes = Object.values(LOW_ACTIVITY_CLASSES);
-    for (const element of document.querySelectorAll<HTMLElement>(classes.map((name) => `.${name}`).join(","))) element.classList.remove(...classes);
+    for (const element of document.querySelectorAll(LOW_ACTIVITY_CLASS_LIST.map((name) => `.${name}`).join(","))) element.classList.remove(...LOW_ACTIVITY_CLASS_LIST);
 };
-
-const makePermBanSpan = (reasons: string, color: string | undefined): HTMLElement =>
-    buildBadgeSpan(`[${reasons}]`, color, reasons, "ip refresherUserData");
 
 const process = (ctx: Ctx, element: HTMLElement): void => {
     // 완료 표시 없이 매번 다시 그린다. 파싱 중인 작성자 칸(닉콘·IP 전)에서 먼저 불려도, 칸이 다 읽혀 다시 불릴 때 배지가 제자리를 찾는다
@@ -120,14 +112,15 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
         if (key === "RATIO" && uid && ctx.settings.checkRatio) {
             const cached = Object.hasOwn(ratios, uid) ? ratios[uid] : undefined;
             if (cached) {
-                badges.append(makeRatioSpan(cached, ctx.settings.alarmRatio, colors));
+                const text = `${cached.article}/${cached.comment}`;
                 lowActivity = isLowActivity(cached, ctx.settings.alarmRatio);
+                badges.append(buildBadgeSpan(`[${text}]`, lowActivity ? colors.ratioAlarm : colors.ratio, text, "ip refresherUserData"));
             }
         }
 
         if (key === "PERMBAN" && uid && ctx.settings.checkPermBan) {
             const reasons = banReasonsOf(uid);
-            if (reasons) badges.append(makePermBanSpan(reasons, colors.permBan));
+            if (reasons) badges.append(buildBadgeSpan(`[${reasons}]`, colors.permBan, reasons, "ip refresherUserData"));
         }
     }
 
@@ -168,10 +161,9 @@ const rebuildAll = (ctx: Ctx): void => {
 
 /** 몇몇 유저의 작성자 칸만 다시 그린다. 깡계 흐림·숨김은 process가 더하기만 하므로 먼저 뗀다 */
 const rebuildUsers = (ctx: Ctx, uids: string[]): void => {
-    const classes = Object.values(LOW_ACTIVITY_CLASSES);
     for (const uid of uids) {
         for (const element of document.querySelectorAll<HTMLElement>(`.ub-writer[data-uid="${CSS.escape(uid)}"]:not([user_name])`)) {
-            (element.closest<HTMLElement>(ROW_SELECTOR) ?? element).classList.remove(...classes);
+            (element.closest<HTMLElement>(ROW_SELECTOR) ?? element).classList.remove(...LOW_ACTIVITY_CLASS_LIST);
             process(ctx, element);
         }
     }

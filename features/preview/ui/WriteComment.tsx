@@ -78,6 +78,8 @@ const Swatch = ({color, selected, label, onClick}: {
     />
 );
 
+const NO_DCCON: { list: DcinsideDccon[]; big: boolean } = {list: [], big: false};
+
 /** 쓰던 댓글 하나를 모듈 전역에 둔다. 창을 닫았다 같은 글을 다시 열면 되살리고, 다른 글을 열면 버린다 */
 let draft = {key: "", text: ""};
 /** 댓글을 보내는 중인 글. 보내는 사이 폼이 다시 마운트돼도(다른 글에 갔다 돌아옴) 같은 댓글을 또 보내지 않게 모듈 전역에 둔다 */
@@ -102,8 +104,8 @@ export const WriteComment = () => {
     // 저장된 비밀번호는 입력칸에 넣지 않는다. 오버레이 섀도 루트가 open이라 페이지 스크립트가 값을 읽을 수 있다.
     // 사용자가 직접 고친 뒤에만 입력칸에 값이 보인다.
     const [passwordEdited, setPasswordEdited] = useState(false);
-    const [dccons, setDccons] = useState<DcinsideDccon[]>([]);
-    const [bigDccon, setBigDccon] = useState(false);
+    // 고른 디시콘(더블콘이면 둘)과 대왕콘 여부. 같이 고르고 같이 비운다
+    const [{list: dccons, big: bigDccon}, setDccon] = useState(NO_DCCON);
     const [dcconOpen, setDcconOpen] = useState(false);
     const [txtcon, setTxtcon] = useState(false);
     const [txtconColors, setTxtconColors] = useState({bg: "3b4890", txt: "ffffff"});
@@ -200,8 +202,7 @@ export const WriteComment = () => {
                     if (textarea.current?.value === raw) textarea.current.value = "";
                     if (draft.text === raw) draft.text = "";
                 }
-                setDccons([]);
-                setBigDccon(false);
+                setDccon(NO_DCCON);
                 setTxtcon(false);
                 // 그새 다른 글로 넘어갔으면 답글 대상은 그 글 것이라 건드리지 않는다.
                 // 디시처럼 쓴 닉네임·비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다.
@@ -321,10 +322,7 @@ export const WriteComment = () => {
                     <Flex gap="2">
                         {dccons.length > 0 ? (
                             <Tooltip content="디시콘 취소" container={overlay.portal}>
-                                <IconButton variant="soft" color="gray" aria-label="디시콘 취소" onClick={() => {
-                                    setDccons([]);
-                                    setBigDccon(false);
-                                }}>
+                                <IconButton variant="soft" color="gray" aria-label="디시콘 취소" onClick={() => setDccon(NO_DCCON)}>
                                     <X size={16}/>
                                 </IconButton>
                             </Tooltip>
@@ -343,8 +341,7 @@ export const WriteComment = () => {
                                 aria-pressed={txtcon}
                                 onClick={() => {
                                     // 글자콘과 디시콘은 같이 쓸 수 없다.
-                                    setDccons([]);
-                                    setBigDccon(false);
+                                    setDccon(NO_DCCON);
 
                                     if (txtcon) {
                                         exitTxtcon();
@@ -396,9 +393,8 @@ export const WriteComment = () => {
 
             {dcconOpen && (
                 <DcconPopup
-                    onSelect={(selected, big) => {
-                        setDccons(selected);
-                        setBigDccon(big);
+                    onSelect={(list, big) => {
+                        setDccon({list, big});
                         if (txtcon) exitTxtcon();
                         setDcconOpen(false);
                     }}

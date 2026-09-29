@@ -158,7 +158,7 @@ export const bump = (preData: GalleryPreData): Promise<ManageResult> => manage(p
 export const deletePost = (target: Pick<GalleryPreData, "gallery" | "id" | "link">): Promise<ManageResult> =>
     manage(target, "delete_list", {id: target.gallery, "nos[]": target.id});
 
-interface BlockOptions {
+export interface BlockOptions {
     avoidHour: string;
     avoidReason: string;
     avoidReasonTxt: string;

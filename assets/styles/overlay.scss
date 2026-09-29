@@ -72,16 +72,12 @@
 
 /* ===== 미리보기 프레임 ===== */
 
-.refresher-frame-outer {
+/* 바깥 배경과 스크롤 칸은 같이 나타나고 같이 사라진다 */
+.refresher-frame-outer,
+.refresher-frame-scroll {
     position: fixed;
     inset: 0;
-    background: var(--color-overlay);
     animation: refresher-fade-in 0.15s cubic-bezier(0.19, 1, 0.22, 1);
-
-    // 바깥 배경 흐리게 (toggleBackgroundBlur)
-    &[data-blur] {
-        backdrop-filter: blur(5px);
-    }
 
     &[data-fading] {
         pointer-events: none;
@@ -89,10 +85,17 @@
     }
 }
 
+.refresher-frame-outer {
+    background: var(--color-overlay);
+
+    // 바깥 배경 흐리게 (toggleBackgroundBlur)
+    &[data-blur] {
+        backdrop-filter: blur(5px);
+    }
+}
+
 /* 화면 전체를 덮는 스크롤 칸 (v5의 .refresher-group). 창이 이 안에서 내용만큼 길어져, 창 안이든 양옆이든 같은 브라우저 기본 스크롤이다 */
 .refresher-frame-scroll {
-    position: fixed;
-    inset: 0;
     display: flex;
     // 짧은 글은 창이 가운데 오고(margin: auto), 긴 글은 위아래에 이만큼 띄운다
     padding: 5vh 0;
@@ -104,12 +107,6 @@
     scrollbar-gutter: stable both-edges;
     // 키보드 스크롤용 포커스(tabIndex -1) — 테두리는 그리지 않는다
     outline: none;
-    animation: refresher-fade-in 0.15s cubic-bezier(0.19, 1, 0.22, 1);
-
-    &[data-fading] {
-        pointer-events: none;
-        animation: refresher-fade-out 0.15s forwards;
-    }
 }
 
 /* 너비는 설정(previewWidth)이 --refresher-frame-width로 넘긴다. 작은 창에서도 둘레에 배경이 보이게 화면의 90%까지만 */
@@ -564,6 +561,20 @@
 
 /* ===== 디시콘 ===== */
 
+:is(.refresher-dccon-packages, .refresher-dccon-grid) button {
+    padding: 2px;
+    border: none;
+    border-radius: var(--radius-3);
+    background: none;
+    cursor: pointer;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+}
+
 .refresher-dccon-packages {
     display: flex;
     gap: var(--space-1);
@@ -574,20 +585,10 @@
         flex: none;
         width: 48px;
         height: 48px;
-        padding: 2px;
         border: 2px solid transparent;
-        border-radius: var(--radius-3);
-        background: none;
-        cursor: pointer;
 
         &[aria-pressed="true"] {
             border-color: var(--accent-9);
-        }
-
-        img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
         }
     }
 }
@@ -602,20 +603,9 @@
 
     button {
         aspect-ratio: 1;
-        padding: 2px;
-        border: none;
-        border-radius: var(--radius-3);
-        background: none;
-        cursor: pointer;
 
         &:hover {
             background: var(--gray-a3);
-        }
-
-        img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
         }
     }
 }
