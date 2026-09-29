@@ -29,7 +29,6 @@ DCRefresher Reborn v6의 구조, 기능을 더하는 방법, 테스트와 릴리
 | HTTP | ky + p-limit |
 | 캐시 | lru-cache (메모리 캐시) |
 | HTML 정화 | DOMPurify (`utils/sanitize.ts`) |
-| 모듈 간 이벤트 | emittery |
 | 메시징 | @webext-core/messaging |
 | 타입 도우미 | ts-extras (`objectKeys`, `objectEntries`, `arrayIncludes`) |
 | 패키지 관리·실행 | Bun 1.4 이상 |
@@ -127,11 +126,10 @@ flowchart LR
     PREV --> HTTP
     FEAT --> HTTP
     HTTP -->|"http · ajax"| DC
-    HTTP -->|"DB 받기"| GH
     CS -->|"initDatabase"| DB
     BG -->|"알람 · 설치 때 갱신"| DB
     OPT -->|"지금 갱신"| DB
-    DB -->|"updateDatabase"| HTTP
+    DB -->|"updateDatabase (fetch)"| GH
     DB -->|"읽기 · 쓰기"| LOCAL
     FEAT --> ST
     OPT --> ST
@@ -245,7 +243,7 @@ flowchart TD
 | 멤버 | 용도 |
 |------|------|
 | `settings` | 현재 설정값. 스키마에서 타입이 나온다 (check → boolean, range → number, option → 항목 키, order → 항목 키 배열) |
-| `signal` | 이 실행의 AbortSignal. 모듈이 꺼지면 abort된다. `addEventListener`, `eventBus.on`에 `{signal}`로 넘긴다 |
+| `signal` | 이 실행의 AbortSignal. 모듈이 꺼지면 abort된다. `addEventListener`에 `{signal}`로 넘긴다 |
 | `addFilter(selector, fn)` | 지금 있는 요소와 이후 추가되는 요소마다 `fn`을 실행한다 (core/filtering.ts의 MutationObserver 하나를 같이 쓴다) |
 | `addCleanup(fn)` | signal을 받지 못하는 것(storage watch, zustand subscribe, 타이머)의 해제 함수를 등록한다 |
 
@@ -299,7 +297,7 @@ setup: (ctx): PreviewApi => ({archiveArticle: () => ctx.settings.archiveArticle,
 getModuleApi("preview")?.isOpen()
 ```
 
-알림처럼 받는 쪽이 없어도 되는 신호는 `core/eventbus/bus.ts`의 `eventBus`(emittery)를 씁니다. 이벤트 이름과 데이터 타입은 `core/eventbus/types.ts`에 추가합니다.
+알림처럼 받는 쪽이 없어도 되는 신호도 이렇게 부릅니다. 받는 모듈이 꺼져 있으면 `?.`에서 끝납니다 (새로고침 → `getModuleApi("userinfo")?.checkNewPosts(rows)`, 미리보기 → `getModuleApi("refresh")?.reload()`).
 
 ### 확장 페이지 CSS 변수
 
@@ -473,7 +471,7 @@ flowchart TD
     M -->|"예"| N["바뀐 행만 고침"]
     M -->|"아니오"| O["목록 통째로 교체<br>삭제 보존이면 빠진 글 붉게 남김"]
     N --> P
-    O --> P["listReplaced 메시지<br>페이지 넘김이면 목록 위로 스크롤<br>newPostList 이벤트는 주소 안 바꾼 로드만"]
+    O --> P["listReplaced 메시지<br>페이지 넘김이면 목록 위로 스크롤<br>새 글 글댓비 조회(checkNewPosts)는 주소 안 바꾼 로드만"]
     FAIL["failures + 1<br>사용자 로드 실패면 오류 토스트<br>임시 차단은 HTTP 클라이언트가 알림"]
     P --> Z
     SAME --> Z

@@ -38,7 +38,7 @@ type SettingValues<S extends SettingsSchema> = { readonly [K in keyof S]: Settin
 export interface ModuleContext<S extends SettingsSchema = SettingsSchema> {
     /** 현재 설정값 (읽기 전용). 레지스트리가 같은 객체를 갱신하므로 늘 최신이다 */
     settings: SettingValues<S>;
-    /** 이 실행의 수명. 모듈이 멈추면 abort된다. DOM 리스너·eventBus.on에 {signal}로 넘기면 따로 풀지 않아도 된다 */
+    /** 이 실행의 수명. 모듈이 멈추면 abort된다. DOM 리스너에 {signal}로 넘기면 따로 풀지 않아도 된다 */
     signal: AbortSignal;
 
     /** scope에 맞는 요소(지금 있는 것과 이후 추가되는 것)마다 callback을 부른다. 해제 함수를 돌려주며, 모듈이 멈추면 자동으로 풀린다 */

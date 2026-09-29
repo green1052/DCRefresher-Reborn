@@ -6,7 +6,6 @@ import {LIST_SELECTOR, PAGING_SELECTOR} from "@/core/list";
 import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi} from "@/core/module/registry";
-import {eventBus} from "@/core/eventbus/bus";
 import {sendMessage} from "@/core/messaging/protocol";
 import {useUiStore} from "@/stores/ui";
 import {smoothScroll} from "@/utils/dom";
@@ -19,7 +18,7 @@ const MINIMUM_REFRESH_INTERVAL = 2000;
 /** 목록 요청이 연달아 실패할 때 자동 새로고침 주기를 늘리는 상한 */
 const MAXIMUM_BACKOFF_INTERVAL = 60_000;
 
-/** setup()이 돌려주는 객체. 단축키와 팝업이 쓴다 */
+/** setup()이 돌려주는 객체. 단축키·팝업·미리보기가 쓴다 */
 interface RefreshApi {
     refreshLists(): Promise<void>;
 
@@ -27,6 +26,9 @@ interface RefreshApi {
 
     /** 지금 이 페이지에서 새로고침이 멈춰 있는지 */
     isPaused(): boolean;
+
+    /** 목록을 곧바로 다시 받고 다음 주기를 새로 잡는다. 미리보기의 관리 동작(삭제·차단 등) 뒤에 부른다 */
+    reload(): Promise<void>;
 }
 
 /** 방문 링크 색상 (Firefox 대응) */
@@ -214,7 +216,7 @@ export default defineModule({
                 }
 
                 // 페이지를 넘긴 목록은 옛 목록과 겹치는 행이 없으면 전부 새 글로 잡히므로 알리지 않는다 (글댓비 조회가 몰린다)
-                if (!customURL && newPostList.length > 0) eventBus.emit("newPostList", newPostList);
+                if (!customURL && newPostList.length > 0) getModuleApi("userinfo")?.checkNewPosts(newPostList);
 
                 return true;
             } catch (e) {
@@ -285,12 +287,6 @@ export default defineModule({
         document.addEventListener("visibilitychange", onVisibilityChange, {signal});
         window.addEventListener("popstate", onPopState, {signal});
 
-        eventBus.on("refreshRequest", async () => {
-            window.clearTimeout(timer);
-            await load(undefined, true);
-            armNext();
-        }, {signal});
-
         ctx.addCleanup(() => window.clearTimeout(timer));
         // 모듈을 끄면 받는 중인 목록도 버린다. 응답이 와서 목록을 갈아끼우지 않게 한다
         ctx.addCleanup(() => inflight?.abort());
@@ -335,7 +331,13 @@ export default defineModule({
                 useUiStore.getState().showToast(paused ? "이 페이지의 자동 새로고침을 멈췄습니다." : "이 페이지의 자동 새로고침을 다시 켰습니다.");
             },
 
-            isPaused: () => paused
+            isPaused: () => paused,
+
+            reload: async () => {
+                window.clearTimeout(timer);
+                await load(undefined, true);
+                armNext();
+            }
         };
 
         return api;

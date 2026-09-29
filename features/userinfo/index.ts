@@ -9,7 +9,6 @@ import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
 import {queryString} from "@/core/http/urls";
 import {ROW_SELECTOR} from "@/core/list";
 import {BOARD_PAGE} from "@/core/pages";
-import {eventBus} from "@/core/eventbus/bus";
 import {moduleDataStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";
 import {type BadgeColorKey, type BadgeView, DEFAULT_BADGE_VIEW, isFresh, isLowActivity, openWriterBubble, showsUid, useUiStore} from "@/stores/ui";
@@ -301,8 +300,8 @@ export default defineModule({
         // IP DB가 갱신되거나 갱차 목록을 다 읽으면 다시 그린다. 갱차 목록은 banReasonsOf를 처음 부를 때 읽기 시작한다
         const unwatchDatabase = subscribeDatabase(() => rebuildAll(ctx));
 
-        // 새 글 작성자의 글댓비를 조회한다 (1시간 캐시, 앞 10개만)
-        eventBus.on("newPostList", ({data: elements}) => {
+        // 새 글 작성자의 글댓비를 조회한다 (1시간 캐시, 앞 10개만). 새로고침 모듈이 목록에 새 글을 넣을 때 부른다
+        const checkNewPosts = (elements: HTMLElement[]): void => {
             if (!ctx.settings.checkRatio) return;
 
             const stale: string[] = [];
@@ -340,7 +339,7 @@ export default defineModule({
                 // 다시 그리기는 위의 ratioStorage.watch가 한다
                 await ratioStorage.setValue({ratio: ratios});
             }).catch(console.error);
-        }, {signal});
+        };
 
         ctx.addCleanup(() => {
             unsubscribeMemos();
@@ -348,6 +347,8 @@ export default defineModule({
             // 확장이 무효화된 뒤에는 storage.onChanged.removeListener가 던지고, 리스너도 이미 죽었다
             if (browser.runtime?.id) unwatchRatios();
         });
+
+        return {checkNewPosts};
     },
 
     onChanged(ctx) {

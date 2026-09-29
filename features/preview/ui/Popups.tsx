@@ -5,7 +5,7 @@ import {type ReactNode, useRef, useState} from "react";
 import {DialogActions} from "@/components/ConfirmDialog";
 import {overlay} from "@/components/overlay/shadow";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
-import {eventBus} from "@/core/eventbus/bus";
+import {getModuleApi} from "@/core/module/registry";
 import {blockUser} from "@/core/preview/request";
 import {notifyManage} from "@/utils/notify";
 import {useUiStore} from "@/stores/ui";
@@ -45,7 +45,7 @@ const BlockPopup = () => {
             delChk,
             userTypeChk
         }), "차단했습니다.", "차단하지 못했습니다. 잠시 후 다시 시도해 주세요.");
-        eventBus.emit("refreshRequest");
+        void getModuleApi("refresh")?.reload();
 
         // 그새 다른 글로 넘어갔으면 차단 창과 미리보기는 그 글 것이라 알림만 띄우고 건드리지 않는다.
         if (usePreviewStore.getState().signalId !== signal) return;

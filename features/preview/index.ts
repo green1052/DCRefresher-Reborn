@@ -1,11 +1,11 @@
 import {HTTPError} from "ky";
 import {SquareMousePointer} from "lucide-react";
 
-import {eventBus} from "@/core/eventbus/bus";
 import {BLOCKED_TEXT, isBlocked} from "@/core/block";
 import {BlockedError, isAbortError} from "@/core/http/client";
 import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
+import {getModuleApi} from "@/core/module/registry";
 import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
@@ -419,7 +419,7 @@ const controller = (ctx: Ctx) => {
             managing = false;
         }
 
-        eventBus.emit("refreshRequest");
+        void getModuleApi("refresh")?.reload();
     };
 
     const blockPreset = async (target: GalleryPreData) => {
@@ -435,7 +435,7 @@ const controller = (ctx: Ctx) => {
         // 그새 다른 글로 넘어갔으면 창을 닫지 않는다.
         if (blocked && ctx.settings.blockPresetDelete && store.getState().signalId === signal) close();
 
-        eventBus.emit("refreshRequest");
+        void getModuleApi("refresh")?.reload();
     };
 
     const onKey = (ev: KeyboardEvent) => {
