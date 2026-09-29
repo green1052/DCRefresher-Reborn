@@ -3,7 +3,7 @@
  * Theme에 appearance를 넘기지 않고 이 클래스만 바꾼다.
  * Radix의 color-scheme 규칙은 .radix-themes 자신에 클래스가 있을 때만 걸리므로 스크롤바·폼 컨트롤이 어둡도록 여기서 직접 정한다
  */
-export const setAppearance = (root: HTMLElement, dark: boolean): void => {
+const setAppearance = (root: HTMLElement, dark: boolean): void => {
     root.classList.toggle("dark", dark);
     root.classList.toggle("light", !dark);
     root.style.colorScheme = dark ? "dark" : "light";

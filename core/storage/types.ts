@@ -1,9 +1,10 @@
+import type {DETECT_MODE_NAMES, MEMO_TYPE_NAMES, TYPE_NAMES} from "./items";
 
-export type BlockType = "NICK" | "ID" | "IP" | "TITLE" | "TEXT" | "COMMENT" | "DCCON" | "TAB";
+export type BlockType = keyof typeof TYPE_NAMES;
 
-export type DetectMode = "SAME" | "CONTAIN" | "NOT_SAME" | "NOT_CONTAIN";
+export type DetectMode = keyof typeof DETECT_MODE_NAMES;
 
-export type MemoType = "UID" | "NICK" | "IP";
+export type MemoType = keyof typeof MEMO_TYPE_NAMES;
 
 export interface BlockEntry {
     id: string;

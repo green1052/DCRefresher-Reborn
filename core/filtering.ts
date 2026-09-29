@@ -7,15 +7,6 @@ const filters = new Set<Filter>();
 
 let observer: MutationObserver | null = null;
 
-// 잘못된 selector가 들어와도 필터 전체가 죽지 않도록 감싼다
-const queryAll = (root: Element, scope: string): HTMLElement[] => {
-    try {
-        return Array.from(root.querySelectorAll<HTMLElement>(scope));
-    } catch {
-        return [];
-    }
-};
-
 const run = (filter: Filter, element: HTMLElement): void => {
     try {
         filter.callback(element);
@@ -24,20 +15,10 @@ const run = (filter: Filter, element: HTMLElement): void => {
     }
 };
 
-const isValidSelector = (scope: string): boolean => {
-    try {
-        document.createDocumentFragment().querySelector(scope);
-        return true;
-    } catch {
-        return false;
-    }
-};
-
-// 모든 필터 선택자를 합친 선택자 (잘못된 선택자는 뺀다). 어느 필터에도 맞지 않는 덩어리를 필터별로 훑기 전에 걸러 낸다.
+// 모든 필터 선택자를 합친 선택자. 어느 필터에도 맞지 않는 덩어리를 필터별로 훑기 전에 걸러 낸다.
 let union: string | null = null;
 const rebuildUnion = (): void => {
-    const scopes = [...filters].map((filter) => filter.scope).filter(isValidSelector);
-    union = scopes.length > 0 ? scopes.join(", ") : null;
+    union = filters.size > 0 ? [...filters].map((filter) => filter.scope).join(", ") : null;
 };
 
 // 옵저버가 넘기는 mutation 묶음을 한 번에 처리한다. 추가된 요소 자신·자손과, 자식이 붙어 조건을 새로 만족했을 수 있는 조상을 본다.
@@ -79,18 +60,13 @@ const flush = (mutations: MutationRecord[]): void => {
 
     for (const filter of filters) {
         const matches = new Set<HTMLElement>();
-        try {
-            for (const root of candidates) {
-                if (root.matches(filter.scope)) matches.add(root);
-                for (const match of root.querySelectorAll<HTMLElement>(filter.scope)) matches.add(match);
-            }
-            for (const parent of parents) {
-                const match = parent.closest<HTMLElement>(filter.scope);
-                if (match) matches.add(match);
-            }
-        } catch {
-            // 잘못된 선택자는 이 필터만 건너뛴다
-            continue;
+        for (const root of candidates) {
+            if (root.matches(filter.scope)) matches.add(root);
+            for (const match of root.querySelectorAll<HTMLElement>(filter.scope)) matches.add(match);
+        }
+        for (const parent of parents) {
+            const match = parent.closest<HTMLElement>(filter.scope);
+            if (match) matches.add(match);
         }
         for (const element of matches) run(filter, element);
     }
@@ -99,13 +75,15 @@ const flush = (mutations: MutationRecord[]): void => {
 /**
  * scope에 맞는 요소마다 callback을 부른다. 지금 있는 요소는 바로, 이후 추가되는 요소는 추가될 때 부른다.
  * 같은 요소에 여러 번 불릴 수 있으므로 callback은 멱등이어야 한다. 해제 함수를 반환한다.
+ * scope는 모듈의 고정 선택자다. 틀린 선택자는 여기서 던져(모듈 setup 실패) 등록되지 않는다
  */
 export const addFilter = (scope: string, callback: (element: HTMLElement) => void): (() => void) => {
+    const existing = document.querySelectorAll<HTMLElement>(scope);
     const filter: Filter = {scope, callback};
     filters.add(filter);
     rebuildUnion();
 
-    for (const element of queryAll(document.documentElement, scope)) run(filter, element);
+    for (const element of existing) run(filter, element);
 
     observer ??= new MutationObserver(flush);
     observer.observe(document.documentElement, {childList: true, subtree: true});
