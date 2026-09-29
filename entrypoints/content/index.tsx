@@ -16,6 +16,7 @@ import {initMemosStore} from "@/stores/memos";
 import {useUiStore} from "@/stores/ui";
 import {followDcAppearance} from "@/utils/appearance";
 import {whenDomReady} from "@/utils/dom";
+import {isRecord} from "@/utils/record";
 
 export default defineContentScript({
     matches: CONTENT_MATCHES,
@@ -39,6 +40,20 @@ export default defineContentScript({
             }
             if (body.style.pointerEvents === "none") body.style.pointerEvents = "";
             body.removeAttribute("data-scroll-locked");
+            // Radix 모달은 나머지 페이지에 aria-hidden(표시 속성 data-aria-hidden)을 달고 body 앞뒤에 포커스 가드를 넣는다.
+            // 가드는 Radix가 모듈 변수로 추적해 새 인스턴스가 지우지 않는다
+            for (const element of document.querySelectorAll("[data-aria-hidden]")) {
+                element.removeAttribute("aria-hidden");
+                element.removeAttribute("data-aria-hidden");
+            }
+            for (const guard of document.querySelectorAll("[data-radix-focus-guard]")) guard.remove();
+            // 죽은 인스턴스가 연 미리보기의 기록 항목(글 주소·제목)을 목록 항목으로 되돌린다. 두면 새 미리보기를 닫을 때 그 항목으로 돌아가 옛 글이 다시 열린다.
+            // doc이 다르면 미리보기를 연 채 새로고침한 실제 글 페이지라 건드리지 않는다
+            const state: unknown = history.state;
+            if (isRecord(state) && state.refresher === 1 && state.doc === performance.timeOrigin && isRecord(state.back) && typeof state.back.url === "string") {
+                history.replaceState(state.back.state ?? null, "", state.back.url);
+                if (typeof state.back.title === "string") document.title = state.back.title;
+            }
         }
 
         // ===== 메시징 (배경·팝업→탭) =====

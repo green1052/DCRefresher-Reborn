@@ -343,9 +343,10 @@ export default defineModule({
         }, {signal});
 
         ctx.addCleanup(() => {
-            unwatchRatios();
             unsubscribeMemos();
             unwatchDatabase();
+            // 확장이 무효화된 뒤에는 storage.onChanged.removeListener가 던지고, 리스너도 이미 죽었다
+            if (browser.runtime?.id) unwatchRatios();
         });
     },
 
