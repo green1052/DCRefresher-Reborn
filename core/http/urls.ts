@@ -56,6 +56,10 @@ export const mergeParamURL = (origin: string, from: string): string => {
     return `?${params}`;
 };
 
+/** 디시 통합검색의 최신순 글 검색 주소. 검색창처럼 검색어의 UTF-8 바이트를 ".XX"로 쓴다 (%2F가 든 주소는 404다) */
+export const postSearchUrl = (query: string): string =>
+    `https://search.dcinside.com/post/sort/latest/q/${Array.from(new TextEncoder().encode(query), (byte) => `.${byte.toString(16).padStart(2, "0").toUpperCase()}`).join("")}`;
+
 /** 현재 URL의 쿼리 값 */
 export const queryString = (name: string): string | null => new URLSearchParams(location.search).get(name);
 

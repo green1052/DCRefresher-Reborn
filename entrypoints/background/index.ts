@@ -2,6 +2,8 @@ import {storage} from "wxt/utils/storage";
 
 import {isBackupTarget, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
+import {http} from "@/core/http/client";
+import {postSearchUrl} from "@/core/http/urls";
 import {IP_FORMAT} from "@/core/ipdb";
 import {migrateSettingsStorage} from "@/core/migrate-settings";
 import {migrateV5Storage} from "@/core/migrate-v5";
@@ -115,6 +117,9 @@ export default defineBackground(() => {
 
         await runInPage(sender.tab.id, sender.frameId, hookUploads, [UPLOAD_OPTIONS_KEY]).catch(console.error);
     });
+
+    // ===== 관리: 같은 제목 글 찾기의 통합검색 =====
+    onMessage("refresher:searchPosts", ({data: query}) => http.get(postSearchUrl(query)).text());
 
     // ===== Database: 설치/주기 갱신 =====
     // 설치 직후에는 onInstalled와 첫 주기 검사(lastUpdate 0)가 겹칠 수 있다. 진행 중인 갱신을 같이 기다려 두 번 받지 않는다

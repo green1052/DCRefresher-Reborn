@@ -5,8 +5,11 @@ import {rowPostNo} from "@/core/http/urls";
 import {ROW_SELECTOR} from "@/core/list";
 import {BOARD_PAGE} from "@/core/pages";
 import {deletePost} from "@/core/preview/request";
+import {whenDomReady} from "@/utils/dom";
 import {notifyManage} from "@/utils/notify";
 import {isGalleryManager} from "@/utils/user";
+
+import {removeViewTools, renderViewTools} from "./view";
 
 /** 체크박스와 작성자 칸이 같이 든 칸. 목록 행에 더해 댓글은 작성자 칸(.cmt_nickbox)이다 */
 const CHECKBOX_ROW = `${ROW_SELECTOR}, .cmt_nickbox`;
@@ -74,6 +77,18 @@ export default defineModule({
             name: "GIF 조작 기능 활성화",
             desc: "GIF를 제어할 수 있는 기능을 활성화합니다.",
             default: false
+        },
+        imageOrigin: {
+            type: "check",
+            name: "이미지 출처 표시",
+            desc: "다른 갤러리에서 올린 본문 이미지나, 다른 갤러리에서 받은 첨부 파일이 있으면 글 제목 위에 알립니다.",
+            default: false
+        },
+        titleSearch: {
+            type: "check",
+            name: "같은 제목 찾기",
+            desc: "게시글 보기에 버튼을 두어, 제목이 같은 글을 디시 통합검색에서 찾습니다.",
+            default: false
         }
     },
 
@@ -85,6 +100,10 @@ export default defineModule({
         ctx.addFilter(GIF_VIDEO, (element) => {
             if (ctx.settings.enableGifControl) enableGifControl(element);
         });
+
+        // ===== 글 보기: 이미지 출처·같은 제목 찾기 =====
+        // 본문·첨부 목록까지 읽은 뒤에 한 번 그린다. 필터로 걸면 머리를 읽는 순간 불려 본문이 아직 없다
+        whenDomReady(() => renderViewTools(ctx.settings), ctx.signal);
 
         // ===== 체크박스 편의 =====
         ctx.addFilter(
@@ -172,6 +191,7 @@ export default defineModule({
 
     // 필터는 등록할 때와 요소가 새로 붙을 때만 돌므로, 이미 열린 글의 영상은 설정이 바뀔 때 여기서 바꾸고 되돌린다
     onChanged(ctx, key) {
+        if (key === "imageOrigin" || key === "titleSearch") renderViewTools(ctx.settings);
         if (key !== "enableGifControl") return;
         if (ctx.settings.enableGifControl) {
             for (const video of document.querySelectorAll(GIF_VIDEO)) enableGifControl(video);
@@ -182,5 +202,6 @@ export default defineModule({
 
     revoke() {
         disableGifControl();
+        removeViewTools();
     }
 });
