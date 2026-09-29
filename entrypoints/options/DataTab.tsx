@@ -6,7 +6,7 @@ import {arrayIncludes, objectKeys} from "ts-extras";
 import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
 import {type BackupSlot, CLOUD_QUOTA, type CloudBackupStatus, collectLocalData, isBackupTarget, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
-import {withIpInfoFilter} from "@/core/migrate-settings";
+import {MIGRATED_MODULES, migrateModuleSettings} from "@/core/migrate-settings";
 import {migrateV5} from "@/core/migrate-v5";
 import {BLOCK_TYPES, backupStorage, dbStorage, isBlockListKey, settingsKeyModule} from "@/core/storage/items";
 import {blockKey, normalizeBlockList, normalizeDefaults} from "@/stores/blocks";
@@ -33,9 +33,12 @@ const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "m
     const previous = await browser.storage.local.get(null);
     // 설정 키가 아닌 값(차단/메모 내보내기의 "NICK" 등)은 저장하지 않는다
     const next = Object.fromEntries(Object.entries(migrateV5(data)).filter(([key]) => key.startsWith("refresher:") && isBackupTarget(key)));
-    // 6.0.x 백업의 'IP 정보 표시' 끔(showIpInfo)을 새 설정으로 옮긴다. 옮기지 않으면 옵션을 열 때 없는 설정으로 지워진다
-    const userinfo = next["refresher:module:userinfo:settings"];
-    if (isRecord(userinfo)) next["refresher:module:userinfo:settings"] = withIpInfoFilter(userinfo);
+    // 6.0.x 백업의 옛 설정('IP 정보 표시' 끔 등)을 새 설정으로 옮긴다. 옮기지 않으면 옵션을 열 때 없는 설정으로 지워진다
+    for (const id of MIGRATED_MODULES) {
+        const key = `refresher:module:${id}:settings`;
+        const settings = next[key];
+        if (isRecord(settings)) next[key] = migrateModuleSettings(id, settings);
+    }
     // 백업은 용량 때문에 차단 항목 id를 빼고 올리므로 저장할 때 다시 붙인다
     for (const [key, value] of Object.entries(next)) {
         if (isBlockListKey(key)) next[key] = normalizeBlockList(value);
@@ -147,14 +150,17 @@ export function DataTab() {
         const opener = document.activeElement;
         if (opener instanceof HTMLElement && opener !== document.body) opener.parentElement?.closest<HTMLElement>("[tabindex]")?.focus({preventScroll: true});
         setLoading(true);
+        let message: string;
         try {
-            notify(await action());
+            message = await action();
         } catch (e) {
             console.error(e);
-            notify(`${failure} ${friendlyMessage(e)}`);
-        } finally {
-            setLoading(false);
+            message = `${failure} ${friendlyMessage(e)}`;
         }
+        // 확인 창 안에서 부르면(초기화) 창이 닫히며 포커스가 body로 떨어지고, 알림이 그 body를 돌아갈 곳으로 기억한다
+        if (document.activeElement === document.body) restoreRef.current?.parentElement?.closest<HTMLElement>("[tabindex]")?.focus({preventScroll: true});
+        notify(message);
+        setLoading(false);
     };
 
     const forceUpdate = () =>

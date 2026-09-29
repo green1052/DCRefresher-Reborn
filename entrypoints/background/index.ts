@@ -3,7 +3,7 @@ import {storage} from "wxt/utils/storage";
 import {isBackupTarget, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
 import {IP_FORMAT} from "@/core/ipdb";
-import {migrateShowIpInfo} from "@/core/migrate-settings";
+import {migrateSettingsStorage} from "@/core/migrate-settings";
 import {migrateV5Storage} from "@/core/migrate-v5";
 import {onMessage, sendMessage} from "@/core/messaging/protocol";
 import {type BackgroundModule, startBackgroundModules} from "@/core/module/background";
@@ -124,7 +124,7 @@ export default defineBackground(() => {
         // 6.0.2 파이어폭스는 배경이 불러오자마자 멈춰, v5에서 곧바로 6.0.2로 온 사용자는 옮기기를 건너뛰었다 (v5 키가 없으면 바로 끝난다).
         // 모듈 맞추기는 옮긴 설정을 보도록 그 뒤에 하고, 옮기기가 실패해도 DB 갱신까지 이어서 한다.
         if (reason === "update" && (previousVersion?.startsWith("5.") || previousVersion === "6.0.2")) await migrateV5Storage().catch(console.error);
-        if (reason === "update") await migrateShowIpInfo().catch(console.error);
+        if (reason === "update") await migrateSettingsStorage().catch(console.error);
         // 비회원 닉네임·비밀번호는 이제 디시 localStorage에 둔다. 예전 버전이 확장 저장소에 남긴 평문 비밀번호를 지운다
         if (reason === "update") await storage.removeItem("local:refresher:nonmember").catch(console.error);
         await applyBackgroundModules();
@@ -163,6 +163,9 @@ export default defineBackground(() => {
     };
     browser.runtime.onStartup.addListener(rearmAutoBackup);
     browser.runtime.onInstalled.addListener(() => void rearmAutoBackup().catch(console.error));
+    // 파이어폭스는 확장을 껐다 켜면 onStartup/onInstalled 없이 배경만 다시 뜨고 알람은 지워진다.
+    // 배경 페이지가 상주해 방금 울린 알람을 또 걸 일이 없으므로 뜰 때마다 다시 건다
+    if (import.meta.env.FIREFOX) void rearmAutoBackup().catch(console.error);
 
     browser.alarms.onAlarm.addListener((alarm) => {
         if (alarm.name === DATABASE_ALARM) {
