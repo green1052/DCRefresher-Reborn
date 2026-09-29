@@ -191,7 +191,7 @@ export function MemoTab() {
         try {
             for (const type of ["UID", "IP"] as const) {
                 const merged = {...memos[type]};
-                for (const [target, memo] of Object.entries(parsed[type])) merged[target] = {...(merged[target] ?? {color: randomColor()}), text: memo};
+                for (const [target, memo] of Object.entries(parsed[type])) merged[target] = {...((Object.hasOwn(merged, target) ? merged[target] : undefined) ?? {color: randomColor()}), text: memo};
                 await setMemos(type, merged);
             }
         } catch {
