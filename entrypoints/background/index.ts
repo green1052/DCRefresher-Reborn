@@ -96,6 +96,8 @@ export default defineBackground(() => {
 
         try {
             const injection = runInPage(sender.tab.id, sender.frameId, executeGrecaptcha, [GRECAPTCHA_SITE_KEY, action]);
+            // 시간 초과가 이긴 뒤 탭이 닫혀 실패해도 처리되지 않은 거절로 남지 않게 한다
+            injection.catch(() => {});
             const timeout = new Promise<undefined>((resolve) => setTimeout(resolve, GRECAPTCHA_TIMEOUT));
             const [result] = (await Promise.race([injection, timeout])) ?? [];
             return typeof result?.result === "string" ? result.result : undefined;
