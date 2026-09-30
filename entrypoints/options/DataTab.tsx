@@ -4,6 +4,7 @@ import {useEffect, useRef, useState} from "react";
 import {arrayIncludes, objectKeys} from "ts-extras";
 
 import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
+import {focusPanel} from "@/components/useOpenerFocus";
 import {type BackupSlot, CLOUD_QUOTA, type CloudBackupStatus, collectLocalData, isBackupTarget, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
 import {MIGRATED_MODULES, migrateModuleSettings} from "@/core/migrate-settings";
@@ -146,9 +147,8 @@ export function DataTab() {
 
     const run = async (action: () => Promise<string>, failure: string): Promise<void> => {
         // 누른 버튼이 막히면 브라우저가 포커스를 body로 떨어뜨려 알림을 닫은 뒤 돌아갈 곳이 없다.
-        // 포커스를 받는 가장 가까운 조상(탭 패널)으로 옮겨 둔다 (useOpenerFocus와 같다)
-        const opener = document.activeElement;
-        if (opener instanceof HTMLElement && opener !== document.body) opener.parentElement?.closest<HTMLElement>("[tabindex]")?.focus({preventScroll: true});
+        // 포커스를 받는 가장 가까운 조상(탭 패널)으로 옮겨 둔다
+        if (document.activeElement !== document.body) focusPanel(document.activeElement);
         setLoading(true);
         let message: string;
         try {
@@ -158,7 +158,7 @@ export function DataTab() {
             message = `${failure} ${friendlyMessage(e)}`;
         }
         // 확인 창 안에서 부르면(초기화) 창이 닫히며 포커스가 body로 떨어지고, 알림이 그 body를 돌아갈 곳으로 기억한다
-        if (document.activeElement === document.body) restoreRef.current?.parentElement?.closest<HTMLElement>("[tabindex]")?.focus({preventScroll: true});
+        if (document.activeElement === document.body) focusPanel(restoreRef.current);
         notify(message);
         setLoading(false);
     };
@@ -265,10 +265,10 @@ export function DataTab() {
                     </Flex>
 
                     <Dialog.Content maxWidth="420px" onCloseAutoFocus={(ev) => {
-                        // 복원 중에는 복원 버튼이 막혀 Radix가 포커스를 돌려주지 못하므로 포커스를 받는 가장 가까운 조상(탭 패널)으로 돌린다 (useOpenerFocus와 같다)
+                        // 복원 중에는 복원 버튼이 막혀 Radix가 포커스를 돌려주지 못하므로 포커스를 받는 가장 가까운 조상(탭 패널)으로 돌린다
                         if (!restoreRef.current?.disabled) return;
                         ev.preventDefault();
-                        restoreRef.current.parentElement?.closest<HTMLElement>("[tabindex]")?.focus({preventScroll: true});
+                        focusPanel(restoreRef.current);
                     }}>
                         <Dialog.Title>어느 백업으로 복원할까요?</Dialog.Title>
                         <SegmentedControl.Root value={restoreMode} onValueChange={(value) => arrayIncludes(objectKeys(RESTORE_DESCRIPTIONS), value) && setRestoreMode(value)} mb="3">
