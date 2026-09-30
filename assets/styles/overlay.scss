@@ -335,6 +335,7 @@
     .written_dccon {
         height: 100px;
         vertical-align: top;
+        cursor: pointer;
 
         &.bigdccon {
             height: 150px;
@@ -463,6 +464,10 @@
     .cbg_333333 .ctxt_333333 {
         text-shadow: 0 0 4px rgb(255 255 255 / 60%);
     }
+
+    .written_dccon {
+        cursor: pointer;
+    }
 }
 
 /* ===== 댓글 ===== */
@@ -551,6 +556,11 @@
         display: none;
     }
 
+    // 가린 디시콘(디시콘 자체·가린 본문·가린 댓글 안)은 눌러도 정보 창이 열리지 않으므로 손가락 커서를 되돌린다 (DcconInfoPopup의 openDcconInfo)
+    &:not([data-block-revealed]) :is(.written_dccon[data-blocked], [data-blocked] .written_dccon) {
+        cursor: auto;
+    }
+
     // 이 페이지에서만 가린 내용 보기 — 숨겼던 것도 흐리게 보인다
     &[data-block-revealed] :is([data-blocked], [data-duplicate]) {
         filter: none;
@@ -604,6 +614,16 @@
 
 /* ===== 디시콘 ===== */
 
+// 불러오는 동안은 스켈레톤을 칸이 넘치도록 깔아 꽉 찬 목록처럼 보인다(패키지는 보통 칸을 채운다). 넘친 스켈레톤에 스크롤바가 생기지 않게 자른다
+:is(.refresher-dccon-packages, .refresher-dccon-grid, .refresher-dccon-info-grid)[aria-busy="true"] {
+    overflow: hidden;
+}
+
+// 정보 창 목록은 최대 높이만 있어, 불러오는 동안 그 높이로 잡아 두어야 다 불러왔을 때 창이 커지지 않는다
+.refresher-dccon-info-grid[aria-busy="true"] {
+    height: 420px;
+}
+
 :is(.refresher-dccon-packages, .refresher-dccon-grid) button {
     padding: 2px;
     border: none;
@@ -650,6 +670,40 @@
         &:hover {
             background: var(--gray-a3);
         }
+    }
+}
+
+/* 디시콘 정보 (디시 '디시콘 보기' 창처럼 위에 패키지 정보, 아래에 든 디시콘) */
+.refresher-dccon-info-head {
+    display: flex;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border-radius: var(--radius-3);
+    background: var(--gray-a2);
+
+    > img {
+        flex: none;
+        width: 120px;
+        height: 120px;
+        object-fit: contain;
+    }
+}
+
+.refresher-dccon-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: var(--space-2);
+    max-height: 420px;
+    margin-top: var(--space-4);
+    overflow-y: auto;
+    align-content: start;
+
+    img {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: contain;
+        // 우클릭하면 차단 버블이 뜬다 (DcconInfoPopup의 openBlockBubble). 댓글 작성자 칸과 같다
+        cursor: context-menu;
     }
 }
 

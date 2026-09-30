@@ -17,6 +17,7 @@ import {adjacentPreData} from "../rows";
 import {TimeStamp, UserCard} from "./Comment";
 import {CommentList, threadParents} from "./CommentList";
 import {CountDown} from "./CountDown";
+import {openDcconInfo} from "./DcconInfoPopup";
 import {ErrorBlock} from "./ErrorBlock";
 import {fitMovies} from "./fitMovies";
 import {watchGifVideos} from "./gifVideos";
@@ -155,6 +156,8 @@ export const Frame = () => {
         const onKey = (ev: KeyboardEvent): void => {
             // Ctrl+PageUp/Down(탭 전환) 같은 조합키는 브라우저에 맡긴다.
             if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.shiftKey || isTyping(ev)) return;
+            // 디시콘 정보 창이 떠 있으면 그 창의 목록을 넘긴다. 옆 글로 넘어가면 창이 닫힌다
+            if (usePreviewStore.getState().dcconInfo) return;
             // 누른 버튼이 로딩으로 막히거나 사라져 포커스가 body로 빠졌으면 스크롤 칸으로 되돌린다 (Tab은 브라우저의 이어가기 위치에 맡긴다)
             if (ev.key !== "Tab" && focusedElement() === document.body) scroller.current?.focus({preventScroll: true});
 
@@ -327,6 +330,9 @@ export const Frame = () => {
                                     className={"refresher-html refresher-preview-contents" + (imageBlocked ? " refresher-preview-block-media" : "")}
                                     data-blocked={hideText ? undefined : post?.textBlocked}
                                     onClick={(ev) => {
+                                        // 디시콘을 눌렀으면 정보 팝업을 열고 더 이상의 처리를 막는다.
+                                        if (openDcconInfo(ev)) return;
+
                                         // 이미지를 누르면 디시처럼 원본 보기를 새 탭으로 연다. 주소는 parser.ts가 옮겨 둔 imgPop 주소이고 디시 주소만 연다
                                         const image = (ev.target as HTMLElement).closest<HTMLImageElement>("img[data-pop]");
                                         if (image && !image.closest("a")) {

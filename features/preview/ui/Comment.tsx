@@ -13,6 +13,7 @@ import {useGallogActivity} from "@/utils/gallogActivity";
 import {banReasonsOf, databaseVersion, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
 
 import {savedNonmember} from "../nonmember";
+import {openDcconInfo} from "./DcconInfoPopup";
 import {watchGifVideos} from "./gifVideos";
 import {NO_REPLY, parseDate, usePreviewStore} from "./previewStore";
 
@@ -355,6 +356,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                         <audio controls src={comment.voice.src}/>
                     ))}
                 <Box ref={body} className="refresher-html refresher-comment-html" data-dccon={isDccon || undefined}
+                     onClick={isDccon ? openDcconInfo : undefined}
                      dangerouslySetInnerHTML={{__html: html}}/>
             </Flex>
         </Box>

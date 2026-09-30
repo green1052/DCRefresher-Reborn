@@ -1,21 +1,10 @@
 // 유저 버블의 "차단" 처리. 차단 모듈이 꺼져 있어도 차단 목록(stores/blocks)에는 넣으므로 모듈이 아닌 stores에 둔다
-import {ajax, BlockedError} from "@/core/http/client";
-import {urls} from "@/core/http/urls";
+import {BlockedError} from "@/core/http/client";
+import {fetchDcconPackage} from "@/core/preview/request";
 import {TYPE_NAMES} from "@/core/storage/items";
 import type {BlockType} from "@/core/storage/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {type SelectedUser, useUiStore} from "@/stores/ui";
-import {csrfBody} from "@/utils/cookie";
-
-interface DcconDetailResponse {
-    info: {
-        title: string;
-        package_idx: number | string;
-    };
-    detail: {
-        path: string;
-    }[];
-}
 
 /** 패키지 전체 차단 방식. bundle: 정규식 한 항목으로 묶는다, each: 디시콘마다 한 항목 (따로 풀 수 있다) */
 type DcconPackageMode = "bundle" | "each";
@@ -44,9 +33,7 @@ const blockDccon = async (selected: SelectedUser, dcconPackage?: DcconPackageMod
     const code = selected.dccon;
     if (!code) return;
 
-    const response = await ajax.post(urls.dccon.detail, {
-        body: await csrfBody({code})
-    }).json<DcconDetailResponse>();
+    const response = await fetchDcconPackage(code);
 
     const extra = `${response.info.title} [${response.info.package_idx}]`;
     const mode = blockMode("DCCON");
