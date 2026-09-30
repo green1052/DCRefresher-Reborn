@@ -1,8 +1,11 @@
-import {moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
+import {storage} from "wxt/utils/storage";
+
+import {MODULES_KEY, moduleSettingsKey} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
 
 import {isModuleEnabled, normalizeSettings} from "./settings";
 import type {ModuleDefinition} from "./types";
+import {isRecord} from "@/utils/record";
 
 /**
  * 모듈의 배경 쪽. features/<id>/background.ts가 default로 내보내면 배경 스크립트가 glob으로 모아 돌린다.
@@ -29,16 +32,20 @@ export const startBackgroundModules = (modules: BackgroundModule[]): (() => Prom
         // apply가 겹치면 메뉴 지우기·만들기 같은 비동기 작업이 엇갈리므로 줄 세운다
         let queue = Promise.resolve();
         const apply = (): Promise<void> => (queue = queue.then(async () => {
-            const [enables, stored] = await Promise.all([modulesStorage.getValue(), moduleSettingsStorage(module.id).getValue()]);
+            // 한 번의 storage.local.get으로 읽는다. 항목(defineItem)은 만드는 순간 한 번 더 읽으므로 키로 읽고 감시한다 (items.ts)
+            const [enables, stored] = await storage.getItems([MODULES_KEY, moduleSettingsKey(module.id)]);
             // on/off·설정 해석은 콘텐츠 레지스트리와 같은 함수로 한다
-            await module.apply({enabled: isModuleEnabled(module, enables), settings: normalizeSettings(module, stored)});
+            await module.apply({
+                enabled: isModuleEnabled(module, isRecord(enables?.value) ? enables.value : {}),
+                settings: normalizeSettings(module, isRecord(stored?.value) ? stored.value : null)
+            });
         }).catch(console.error));
 
         // 옵션 페이지·팝업은 저장소에 직접 쓰므로 저장소를 감시해 바로 다시 맞춘다
-        modulesStorage.watch((next, prev) => {
-            if (next[module.id] !== prev[module.id]) void apply();
+        storage.watch<Record<string, unknown>>(MODULES_KEY, (next, prev) => {
+            if (next?.[module.id] !== prev?.[module.id]) void apply();
         });
-        if (module.settings) moduleSettingsStorage(module.id).watch(() => void apply());
+        if (module.settings) storage.watch(moduleSettingsKey(module.id), () => void apply());
 
         return apply;
     });

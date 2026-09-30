@@ -1,5 +1,5 @@
 import {objectKeys} from "ts-extras";
-import {storage, type WxtStorageItem} from "wxt/utils/storage";
+import {storage, type StorageItemKey, type WxtStorageItem} from "wxt/utils/storage";
 
 import type {BlockEntry, BlockType, DatabaseMeta, DetectMode, MemoEntry, MemoType, SettingValue} from "./types";
 
@@ -44,26 +44,42 @@ export const DEFAULT_DETECT_MODE: Record<BlockType, DetectMode> = {
     TAB: "SAME"
 };
 
-export const blockStorage = Object.fromEntries(
-    BLOCK_TYPES.map((type) => [type, storage.defineItem<BlockEntry[]>(`local:refresher:block:${type}`, {fallback: []})])
-) as Record<BlockType, WxtStorageItem<BlockEntry[], {}>>;
+/**
+ * defineItem은 만드는 순간 저장소를 한 번 읽는다 (@wxt-dev/storage의 getOrInitValue). 이 파일은 콘텐츠 스크립트·배경·옵션·팝업이
+ * 모두 불러오므로, 모듈 최상위에서 만들면 디시 페이지마다·서비스 워커가 깰 때마다 쓰지도 않는 키를 십여 번 읽는다.
+ * 그래서 항목은 처음 쓸 때 만들어 재사용한다. 읽기만 하는 곳(콘텐츠 스크립트의 스토어·레지스트리)은 항목을 만들지 않고
+ * 키로 storage.getItems·storage.watch를 써서 한 번의 storage.local.get으로 여러 키를 읽는다.
+ */
+const lazyItem = <T>(key: StorageItemKey, fallback: T): (() => WxtStorageItem<T, {}>) => {
+    let item: WxtStorageItem<T, {}> | undefined;
+    return () => (item ??= storage.defineItem<T>(key, {fallback}));
+};
 
-export const blockDefaultsStorage = storage.defineItem<Record<BlockType, DetectMode>>("local:refresher:block:defaults", {
-    fallback: {...DEFAULT_DETECT_MODE}
-});
+/** 키 → 처음 쓸 때 만드는 항목. 객체 모양(`items[key]`)은 그대로 두고 getter로 미룬다 */
+const lazyItems = <K extends string, T>(keys: readonly K[], keyOf: (key: K) => StorageItemKey, fallback: () => T): Record<K, WxtStorageItem<T, {}>> =>
+    Object.defineProperties({} as Record<K, WxtStorageItem<T, {}>>, Object.fromEntries(keys.map((key) => [key, {get: lazyItem<T>(keyOf(key), fallback()), enumerable: true}])));
 
-export const memoStorage = Object.fromEntries(
-    MEMO_TYPES.map((type) => [type, storage.defineItem<Record<string, MemoEntry>>(`local:refresher:memo:${type}`, {fallback: {}})])
-) as Record<MemoType, WxtStorageItem<Record<string, MemoEntry>, {}>>;
+export const blockListKey = (type: BlockType): `local:refresher:block:${BlockType}` => `local:refresher:block:${type}`;
+export const BLOCK_DEFAULTS_KEY = "local:refresher:block:defaults";
+export const memoMapKey = (type: MemoType): `local:refresher:memo:${MemoType}` => `local:refresher:memo:${type}`;
+export const MODULES_KEY = "local:refresher:modules";
 
-export const modulesStorage = storage.defineItem<Record<string, boolean>>("local:refresher:modules", {fallback: {}});
+export const blockStorage = lazyItems(BLOCK_TYPES, blockListKey, (): BlockEntry[] => []);
+
+/** 기본 차단 모드 항목 (쓰기용). moduleSettingsStorage처럼 처음 쓸 때 만든다 */
+export const blockDefaultsStorage = lazyItem<Record<BlockType, DetectMode>>(BLOCK_DEFAULTS_KEY, {...DEFAULT_DETECT_MODE});
+
+export const memoStorage = lazyItems(MEMO_TYPES, memoMapKey, (): Record<string, MemoEntry> => ({}));
+
+/** 모듈 on/off 항목 (쓰기·감시용) */
+export const modulesStorage = lazyItem<Record<string, boolean>>(MODULES_KEY, {});
 
 const settingsItems = new Map<string, WxtStorageItem<Record<string, SettingValue>, {}>>();
 
-/** 모듈 설정 키. 없어진 모듈의 설정은 항목을 만들지 않고 이 키로 지운다 */
+/** 모듈 설정 키. 읽기만 할 때와 없어진 모듈의 설정을 지울 때는 항목을 만들지 않고 이 키를 쓴다 */
 export const moduleSettingsKey = (id: string): `local:refresher:module:${string}:settings` => `local:refresher:module:${id}:settings`;
 
-/** 모듈 설정 항목. 모듈마다 하나를 만들어 재사용한다 (defineItem은 만들 때마다 저장소를 한 번 읽는다) */
+/** 모듈 설정 항목 (쓰기용). 모듈마다 하나를 만들어 재사용한다 */
 export const moduleSettingsStorage = (id: string): WxtStorageItem<Record<string, SettingValue>, {}> => {
     let item = settingsItems.get(id);
     if (!item) {
@@ -90,8 +106,11 @@ export const isBlockListKey = (key: string): boolean => /^refresher:block:[A-Z]+
 /**
  * IP/밴 DB는 필요한 것만 읽도록 세 키로 나눈다: 갱신 확인은 meta, 페이지는 ip, 밴은 쓸 때만 ban (ip·ban은 각각 수백 KB).
  */
+const dbMeta = lazyItem<DatabaseMeta>("local:refresher:db:meta", {version: "", lastUpdate: 0});
 export const dbStorage = {
-    meta: storage.defineItem<DatabaseMeta>("local:refresher:db:meta", {fallback: {version: "", lastUpdate: 0}})
+    get meta() {
+        return dbMeta();
+    }
 };
 
 /**
@@ -116,11 +135,20 @@ export const writeDatabase = async (meta: DatabaseMeta, ip: string, ban: string)
 };
 
 /** 클라우드 백업 상태. refresher:backup:* 키는 백업 대상에서 빠진다 (core/backup.ts). 백업 시각은 클라우드의 메타에서 읽는다 */
+const backupAuto = lazyItem<boolean>("local:refresher:backup:auto", false);
+const backupError = lazyItem<string>("local:refresher:backup:error", "");
+const backupPending = lazyItem<boolean>("local:refresher:backup:pending", false);
 export const backupStorage = {
     /** 설정이 바뀌면 잠시 뒤 자동으로 백업 */
-    auto: storage.defineItem<boolean>("local:refresher:backup:auto", {fallback: false}),
+    get auto() {
+        return backupAuto();
+    },
     /** 마지막 백업이 실패했으면 이유 (성공하면 빈 문자열) */
-    error: storage.defineItem<string>("local:refresher:backup:error", {fallback: ""}),
+    get error() {
+        return backupError();
+    },
     /** 자동 백업 알람이 걸려 있고 아직 울리지 않았다. 브라우저를 끄면 알람이 사라질 수 있어 다음 시작 때 이 값을 보고 다시 건다 */
-    pending: storage.defineItem<boolean>("local:refresher:backup:pending", {fallback: false})
+    get pending() {
+        return backupPending();
+    }
 };
