@@ -40,8 +40,8 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
     const focus = useOpenerFocus();
 
     const addDccon = async (packageIdx: string | number): Promise<void> => {
+        // 디시도 무료 디시콘은 묻지 않고 바로 추가한다 (dc_common2.js의 btn_buy)
         if (sending) return;
-        if (window.confirm("디시콘을 추가하시겠습니까?") === false) return;
         setSending(true);
 
         const result = await addDcconPackage(packageIdx).catch(() => "fail" as const);
@@ -91,7 +91,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                             <>
                                 <Flex justify="between" align="start" gap="3">
                                     <Text size="4" weight="bold">{info.title}</Text>
-                                    {info.buy_idx === null && !added && <Button loading={sending} size="2" style={{flexShrink: 0}} onClick={() => void addDccon(info.package_idx)}>사용</Button>}
+                                    {!info.register && !info.residual && !added &&<Button loading={sending} size="2" style={{flexShrink: 0}} onClick={() => void addDccon(info.package_idx)}>사용</Button>}
                                 </Flex>
                                 {info.description && <Text size="2">{info.description}</Text>}
                                 <Flex align="center" gap="2" wrap="wrap">
