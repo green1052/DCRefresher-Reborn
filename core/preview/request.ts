@@ -408,7 +408,7 @@ export const fetchDcconPackage = async (code: string, signal?: AbortSignal): Pro
 };
 
 /** 무료 디시콘 패키지를 내 디시콘에 추가한다 (디시 dc_common2.js의 '사용' 버튼) */
-export const addDcconPackage = async (packageIdx: string): Promise<"ok" | "fail" | "not_login"> => {
-    const text = (await ajax.post(urls.dccon.buy, {body: await csrfBody({package_idx: packageIdx})}).text()).trim();
+export const addDcconPackage = async (packageIdx: string | number): Promise<"ok" | "fail" | "not_login"> => {
+    const text = (await ajax.post(urls.dccon.buy, {body: await csrfBody({package_idx: String(packageIdx)})}).text()).trim();
     return text === "ok" || text === "not_login" ? text : "fail";
 };

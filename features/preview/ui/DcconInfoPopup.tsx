@@ -28,7 +28,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
     const [added, setAdded] = useState(false);
     const focus = useOpenerFocus();
 
-    const addDccon = async (packageIdx: string): Promise<void> => {
+    const addDccon = async (packageIdx: string | number): Promise<void> => {
         if (sending) return;
         if (window.confirm("디시콘을 추가하시겠습니까?") === false) return;
         setSending(true);

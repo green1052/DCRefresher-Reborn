@@ -86,7 +86,7 @@ export interface DcinsideDcconDetail {
 
 /** package_detail이 주는 디시콘 패키지 정보 */
 export interface DcinsideDcconPackageInfo {
-    package_idx: string;
+    package_idx: string | number;
     code: string;
     title: string;
     description: string;
