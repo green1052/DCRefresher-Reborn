@@ -20,7 +20,7 @@ import {ADULT_ERROR, SECRET_ERROR} from "@/core/preview/parser";
 import {blockUser, type BlockOptions, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {adjacentPreData, buildPreData, isBlurHidden, isTextPost} from "./rows";
 import {type Ctx, settings} from "./settings";
-import {closeMiniSoon, type ErrorState, hoverMini, keepMini, MANAGE_LABELS, type ManageKind, MINI_WIDTH, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
+import {closeMiniSoon, type ErrorState, hoverMini, keepMini, MANAGE_LABELS, type ManageKind, MINI_WIDTH, miniPosition, NO_HOOKS, NO_REPLY, postTitle, usePreviewStore} from "./ui/previewStore";
 
 // status는 ky의 HTTPError에서 읽는다 (삭제된 글은 404).
 // 성인 인증 안내 페이지면 parsePostInfo가 Error(ADULT_ERROR)를, 미니 갤러리 비밀글이면 Error(SECRET_ERROR)를 던진다.
@@ -140,7 +140,7 @@ const controller = (ctx: Ctx) => {
     const dropStaleReply = (): void => {
         const {reply, comments} = store.getState();
         if (reply.replyNo && !comments?.some((comment) => comment.no === reply.replyNo && comment.is_delete !== "1")) {
-            store.setState({reply: {commentNo: null, replyNo: null}});
+            store.setState({reply: NO_REPLY});
         }
     };
 
@@ -688,7 +688,7 @@ const publishSettings = (ctx: Ctx): void => {
 };
 
 /** 다른 모듈이 쓰는 미리보기 api (getModuleApi("preview")) */
-export interface PreviewApi {
+interface PreviewApi {
     /** '삭제된 글과 댓글 보존' 설정. 새로고침 모듈도 목록에서 지워진 글을 남길지 이것으로 정한다 */
     archiveArticle(): boolean;
 

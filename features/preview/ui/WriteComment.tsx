@@ -21,7 +21,7 @@ import {loggedInUserId} from "@/utils/user";
 
 import {saveNonmember, savedNonmember} from "../nonmember";
 import {DcconPopup} from "./DcconPopup";
-import {usePreviewStore} from "./previewStore";
+import {NO_REPLY, usePreviewStore} from "./previewStore";
 
 /** 비회원 댓글 비밀번호 (영문 소문자·숫자 8자) */
 const randomPassword = (): string => Array.from(crypto.getRandomValues(new Uint8Array(8)), (byte) => (byte % 36).toString(36)).join("");
@@ -91,10 +91,11 @@ export const WriteComment = () => {
     });
     const [login] = useState(() => Boolean(document.querySelector("#login_box .user_info .nickname > em")));
     const [accountId] = useState(loggedInUserId);
-    const [nick, setNick] = useState(() => savedNonmember().nick || "ㅇㅇ");
+    const [saved] = useState(savedNonmember);
+    const [nick, setNick] = useState(saved.nick || "ㅇㅇ");
     // 기억한 비밀번호가 없으면 하나 만든다. 쓸 때 저장되므로 이후 같은 비밀번호로 자기 댓글을 지울 수 있다
-    const [password, setPassword] = useState(() => savedNonmember().pw || randomPassword());
-    const [pwSaved] = useState(() => Boolean(savedNonmember().pw));
+    const [password, setPassword] = useState(() => saved.pw || randomPassword());
+    const pwSaved = Boolean(saved.pw);
     // 저장된 비밀번호는 입력칸에 넣지 않는다. 오버레이 섀도 루트가 open이라 페이지 스크립트가 값을 읽을 수 있다.
     // 사용자가 직접 고친 뒤에만 입력칸에 값이 보인다.
     const [passwordEdited, setPasswordEdited] = useState(false);
@@ -201,7 +202,7 @@ export const WriteComment = () => {
                 // 그새 다른 글로 넘어갔으면 답글 대상은 그 글 것이라 건드리지 않는다.
                 // 디시처럼 쓴 닉네임·비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다.
                 if (!login) saveNonmember(nick, password);
-                if (usePreviewStore.getState().signalId === signal) usePreviewStore.setState({reply: {commentNo: null, replyNo: null}});
+                if (usePreviewStore.getState().signalId === signal) usePreviewStore.setState({reply: NO_REPLY});
                 refreshIfOpen();
             } else if (response.message === "captcha") {
                 // v2 체크박스를 요구하거나 v3 재전송도 막히면 원문 페이지에서만 풀 수 있다.

@@ -128,7 +128,7 @@ export const miniPosition = (clientX: number, clientY: number): { x: number; y: 
     y: Math.max(0, Math.min(clientY + 16, window.innerHeight - MINI_HEIGHT - 20))
 });
 
-const NO_REPLY: Reply = {commentNo: null, replyNo: null};
+export const NO_REPLY: Reply = {commentNo: null, replyNo: null};
 
 export const NO_HOOKS: Hooks = {
     requestOpen: () => undefined,

@@ -14,7 +14,7 @@ import {banReasonsOf, databaseVersion, ipInfoOf, passesIpFilter, subscribeDataba
 
 import {savedNonmember} from "../nonmember";
 import {watchGifVideos} from "./gifVideos";
-import {parseDate, usePreviewStore} from "./previewStore";
+import {NO_REPLY, parseDate, usePreviewStore} from "./previewStore";
 
 /** 절대 시각 포매터. toLocaleString()은 부를 때마다 포매터를 새로 만들어, 댓글 수백 개를 다시 그릴 때 느리다 */
 const ABSOLUTE = new Intl.DateTimeFormat(undefined, {year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric"});
@@ -330,7 +330,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                             onClick={() =>
                                 // 같은 댓글을 다시 누르면 취소한다. 답글의 부모는 쓰레드 첫 댓글(c_no)이고, 첫 댓글이면 자기 자신이다.
                                 usePreviewStore.setState({
-                                    reply: replying ? {commentNo: null, replyNo: null} : {commentNo: comment.c_no || comment.no, replyNo: comment.no}
+                                    reply: replying ? NO_REPLY : {commentNo: comment.c_no || comment.no, replyNo: comment.no}
                                 })
                             }
                         >

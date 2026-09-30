@@ -51,24 +51,25 @@ export const isBlurHidden = (element: Element): boolean =>
  */
 export const adjacentPreData = (from: GalleryPreData, dir: number): GalleryPreData | null => {
     // 댓글 검색은 맞은 댓글마다 같은 글 행을 되풀이한다. 글마다 첫 행만 남겨야 넘기기가 같은 글에 멈추거나 되돌아가지 않는다
-    // 행마다 한 번만 읽는다. 설문·AD·외부 뉴스처럼 글로 열 수 없는 행은 pre가 null이다
+    // 행마다 한 번만 읽는다. 설문·AD·외부 뉴스처럼 글로 열 수 없는 행은 건너뛴다
     const seen = new Set<string>();
-    const rows: { row: HTMLElement; pre: GalleryPreData | null }[] = [];
+    const rows: { row: HTMLElement; pre: GalleryPreData }[] = [];
     for (const row of document.querySelectorAll<HTMLElement>(".gall_list .ub-content")) {
-        if (!row.checkVisibility() || !row.querySelector("a:not(.reply_numbox)")) continue;
+        if (!row.checkVisibility()) continue;
         const pre = buildPreData(row);
-        const key = pre && `${pre.gallery}/${pre.id}`;
-        if (key && seen.has(key)) continue;
-        if (key) seen.add(key);
+        if (!pre) continue;
+        const key = `${pre.gallery}/${pre.id}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
         rows.push({row, pre});
     }
 
-    const index = rows.findIndex(({pre}) => pre?.id === from.id && pre?.gallery === from.gallery);
+    const index = rows.findIndex(({pre}) => pre.id === from.id && pre.gallery === from.gallery);
     if (index < 0) return null;
 
     // 블러 행은 현재 위치를 찾은 뒤에 거른다. 지금 글이 블러 행이어도 제자리를 찾아야 한다.
     const ahead = dir > 0 ? rows.slice(index + 1) : rows.slice(0, index).reverse();
-    return ahead.find(({row, pre}) => pre && !isBlurHidden(row))?.pre ?? null;
+    return ahead.find(({row}) => !isBlurHidden(row))?.pre ?? null;
 };
 
 /** 목록에 이미지 아이콘이 없는 글인지 (텍스트 개념글 포함). blockImage 설정이 이런 글의 본문 이미지를 가린다 */

@@ -14,7 +14,7 @@ import {isTyping} from "@/utils/event";
 
 import {adjacentPreData} from "../rows";
 import {TimeStamp, UserCard} from "./Comment";
-import {CommentList} from "./CommentList";
+import {CommentList, threadParents} from "./CommentList";
 import {CountDown} from "./CountDown";
 import {ErrorBlock} from "./ErrorBlock";
 import {fitMovies} from "./fitMovies";
@@ -40,9 +40,7 @@ const subtitleOf = (comments: ProcessedComment[]): string => {
     const blocked = comments.filter((comment) => comment.blocked).length;
     const folded = comments.filter((comment) => comment.duplicates === 0).length;
     const extra = [blocked && `차단 ${blocked}개`, folded && `같은 댓글 ${folded}개 접음`].filter(Boolean).join(", ");
-    // 부모를 받지 못한 답글은 CommentList가 쓰레드 첫 댓글처럼 그리므로 같이 센다
-    const topNos = new Set(comments.filter((comment) => comment.depth === 0).map((comment) => comment.no));
-    return `스레드 ${comments.filter((comment) => comment.depth === 0 || !topNos.has(comment.c_no)).length}개, 총 댓글 ${comments.length}개${extra ? ` (${extra})` : ""}`;
+    return `스레드 ${threadParents(comments).length}개, 총 댓글 ${comments.length}개${extra ? ` (${extra})` : ""}`;
 };
 
 /** run이 끝날 때까지 로딩으로 돌며, 그동안은 다시 누를 수 없다 */
