@@ -105,13 +105,15 @@ export const encodeIpData = (prefixes: ReadonlyMap<number, readonly IpCandidate[
 export const parseIpData = (text: string): CompactIpData | null => {
     if (!text) return null;
     const data: unknown = JSON.parse(text);
-    // 모양까지 본다. 받은 파일은 그대로 저장되고 페이지마다 읽히므로, 필드 하나만 틀려도 배지·미리보기가 깨진다
-    const valid = isRecord(data) && typeof data.runs === "string" &&
-        (data.version === undefined || typeof data.version === "string") &&
-        isStrings(data.orgs) && isStrings(data.countries) && isNumbers(data.meta) &&
-        Array.isArray(data.lists) && data.lists.every(isNumbers);
-    return valid ? (data as unknown as CompactIpData) : null;
+    return isCompactIpData(data) ? data : null;
 };
+
+/** 모양까지 본다. 받은 파일은 그대로 저장되고 페이지마다 읽히므로, 필드 하나만 틀려도 배지·미리보기가 깨진다 */
+const isCompactIpData = (data: unknown): data is CompactIpData =>
+    isRecord(data) && typeof data.runs === "string" &&
+    (data.version === undefined || typeof data.version === "string") &&
+    isStrings(data.orgs) && isStrings(data.countries) && isNumbers(data.meta) &&
+    Array.isArray(data.lists) && data.lists.every(isNumbers);
 
 const isStrings = (value: unknown): value is string[] => Array.isArray(value) && value.every((item) => typeof item === "string");
 const isNumbers = (value: unknown): value is number[] => Array.isArray(value) && value.every((item) => typeof item === "number");

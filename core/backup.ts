@@ -56,7 +56,7 @@ export const collectLocalData = async (): Promise<Record<string, unknown>> => {
                 key,
                 // undefined인 id는 JSON에서 빠진다 (결과는 늘 JSON으로 쓰인다)
                 Array.isArray(value) && isBlockListKey(key)
-                    ? value.map((entry: unknown) => (entry && typeof entry === "object" ? {...entry, id: undefined} : entry))
+                    ? value.map((entry: unknown) => (isRecord(entry) ? {...entry, id: undefined} : entry))
                     : value
             ])
     );
@@ -171,7 +171,9 @@ export const readCloudBackup = async (slot: BackupSlot): Promise<CloudBackup | n
         const bytes = Uint8Array.fromBase64(chunks.join(""));
         if ((await sha256(bytes)) !== meta.hash) throw new Error("백업 데이터가 손상되었습니다.");
 
-        return {data: JSON.parse(await gunzip(bytes)) as Record<string, unknown>, createdAt: meta.createdAt};
+        const data: unknown = JSON.parse(await gunzip(bytes));
+        if (!isRecord(data)) throw new Error("백업 데이터가 손상되었습니다.");
+        return {data, createdAt: meta.createdAt};
     }
 
     if (slot !== "manual") return null;
