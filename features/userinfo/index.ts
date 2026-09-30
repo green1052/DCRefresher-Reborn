@@ -270,7 +270,7 @@ export default defineModule({
             const before = previous?.ratio ?? {};
             ratios = next?.ratio ?? {};
             const changed = [...new Set([...Object.keys(before), ...Object.keys(ratios)])]
-                .filter((uid) => JSON.stringify(before[uid]) !== JSON.stringify(ratios[uid]));
+                .filter((uid) => before[uid]?.date !== ratios[uid]?.date || before[uid]?.article !== ratios[uid]?.article || before[uid]?.comment !== ratios[uid]?.comment);
             if (changed.length === 0) return;
 
             publishRatios(ctx);
