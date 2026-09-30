@@ -5,10 +5,7 @@
     <p>
         <a href="https://github.com/green1052/DCRefresher-Reborn/releases/latest"><img src="https://img.shields.io/github/v/release/green1052/DCRefresher-Reborn" alt="최신 버전"></a>
         <a href="https://chromewebstore.google.com/detail/pmfifcbendahnkeojgpfppklgioemgon"><img src="https://img.shields.io/chrome-web-store/users/pmfifcbendahnkeojgpfppklgioemgon?logo=googlechrome&amp;logoColor=white&amp;label=Chrome" alt="Chrome 웹 스토어 사용자 수"></a>
-        <a href="https://chromewebstore.google.com/detail/pmfifcbendahnkeojgpfppklgioemgon"><img src="https://img.shields.io/chrome-web-store/rating/pmfifcbendahnkeojgpfppklgioemgon?logo=googlechrome&amp;logoColor=white&amp;label=%ED%8F%89%EC%A0%90" alt="Chrome 웹 스토어 평점"></a>
         <a href="https://addons.mozilla.org/ko/firefox/addon/dcrefresher-reborn"><img src="https://img.shields.io/amo/users/dcrefresher-reborn?logo=firefox&amp;logoColor=white&amp;label=Firefox" alt="Firefox Add-ons 사용자 수"></a>
-        <a href="https://addons.mozilla.org/ko/firefox/addon/dcrefresher-reborn"><img src="https://img.shields.io/amo/rating/dcrefresher-reborn?logo=firefox&amp;logoColor=white&amp;label=%ED%8F%89%EC%A0%90" alt="Firefox Add-ons 평점"></a>
-        <a href="LICENSE"><img src="https://img.shields.io/github/license/green1052/DCRefresher-Reborn" alt="라이선스"></a>
     </p>
     <p>
         <a href="https://chromewebstore.google.com/detail/pmfifcbendahnkeojgpfppklgioemgon"><b>Chrome에 설치</b></a>
