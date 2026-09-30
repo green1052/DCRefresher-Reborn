@@ -7,11 +7,26 @@ import DOMPurify, {type Config, type DOMPurify as Purifier} from "dompurify";
 const isGifVideo = (node: Element): boolean =>
     node.hasAttribute("data-src") || node.classList.contains("written_dccon") || /dccon\.php/.test(node.getAttribute("src") ?? "");
 
+// 인라인 style은 글 서식(글자·색·표·여백·크기)만 남긴다. 위치·표시(display)·배경 이미지 같은 나머지는
+// 창을 벗어나거나 숨기기 규칙(스텔스·관리자 가림)을 이기거나 원격 이미지를 불러오므로 지운다.
+// 이미지·동영상의 높이는 CSS의 height: auto가 이겨야 창보다 넓은 것이 줄어들 때 비율이 맞는다
+const KEPT_STYLE = /^(?:color|background-color|font-.+|text-(?:align|indent|decoration|wrap).*|white-space.*|line-height|letter-spacing|word-spacing|vertical-align|border-(?!image).+|padding.*|margin.*|width|height|table-layout)$/;
+
+const keepFormatting = (node: HTMLElement | SVGElement): void => {
+    const {style} = node;
+    for (const name of [...style]) {
+        if (!KEPT_STYLE.test(name) || (name === "height" && (node.nodeName === "IMG" || node.nodeName === "VIDEO"))) style.removeProperty(name);
+    }
+    if (style.length === 0) node.removeAttribute("style");
+};
+
 // 동영상에는 재생 컨트롤을 붙인다. 디시 본문은 컨트롤 없이 페이지 스크립트로 재생하기 때문이다.
 // 디시콘·움짤은 디시처럼 컨트롤 없이 자동 반복 재생한다.
 // 이미지·iframe은 lazy로 두어 스텔스·이미지 차단으로 숨긴 것은 받지 않게 한다.
 // 링크(# 앵커 제외)는 새 탭으로 연다. DOMPurify가 target을 지우므로 두면 갤러리 탭이 링크로 넘어가 목록과 미리보기를 잃는다.
 const onAttributes = (node: Element): void => {
+    if ((node instanceof HTMLElement || node instanceof SVGElement) && node.hasAttribute("style")) keepFormatting(node);
+
     if (node.nodeName === "VIDEO") {
         if (!isGifVideo(node)) node.setAttribute("controls", "");
         else for (const attribute of ["autoplay", "loop", "muted", "playsinline"]) node.setAttribute(attribute, "");
@@ -28,13 +43,13 @@ const YOUTUBE_EMBED = /<embed\s[^>]*?src="(https:\/\/www\.youtube(?:-nocookie)?\
 const embedYoutube = (html: string): string =>
     html.includes("<embed") ? html.replace(YOUTUBE_EMBED, "<iframe src=\"$1\" width=\"560\" height=\"315\" allowfullscreen></iframe>") : html;
 
-// 인라인 style은 오버레이 레이아웃을 깨므로 지우고, 본문의 동영상 임베드(iframe)는 허용한다.
+// 인라인 style은 서식만 남기고(keepFormatting), 본문의 동영상 임베드(iframe)는 허용한다.
 // <style>은 shadow 루트 전체(창·댓글·가린 내용)에 걸리고, 폼 요소는 본문에 필요 없는데 가짜 입력칸을 만들 수 있어 뺀다.
 // SVG <feImage>와 background 속성은 원격 이미지를 불러오는데 미디어 숨기기(태그·CSS)에 걸리지 않는다. 본문에 쓸 일도 없어 뺀다.
 // IN_PLACE: sanitizeHtml이 <template> 안의 요소를 그 자리에서 정화한다.
 const FORBIDDEN = ["style", "form", "input", "textarea", "select", "feimage"];
 const BASE: Config = {
-    FORBID_ATTR: ["style", "background"],
+    FORBID_ATTR: ["background"],
     FORBID_TAGS: FORBIDDEN,
     ADD_TAGS: ["iframe"],
     ADD_ATTR: ["allowfullscreen", "frameborder", "allow", "scrolling"],

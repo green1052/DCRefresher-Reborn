@@ -277,7 +277,8 @@
         margin-bottom: 3px;
     }
 
-    table {
+    // 인라인 width(본문 틀 900px, 표 등)가 창보다 넓어도 창 안에 들어오게 한다 (sanitize.ts가 남긴 서식)
+    * {
         max-width: 100%;
     }
 
@@ -314,7 +315,7 @@
     display: none;
 }
 
-// 관리자가 가린 이미지 — 디시는 인라인 style로 숨기는데 정화하며 지워진다. '차단 이미지 보기'를 누르면 속성을 떼어 보인다 (Frame.tsx)
+// 관리자가 가린 이미지 — 디시는 인라인 style(display)로 숨기는데 정화하며 지워진다. '차단 이미지 보기'를 누르면 속성을 떼어 보인다 (Frame.tsx)
 .refresher-html :is(img, video)[data-block] {
     display: none;
 }
