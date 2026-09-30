@@ -72,16 +72,17 @@ entrypoints/
   page.content.scss 디시 페이지에 입히는 CSS (manifest로 따로 주입)
   options/          옵션 페이지 (설정·차단·메모·단축키·데이터·정보·개발자 탭)
   popup/            팝업 (모듈 켜고 끄기, 현재 페이지 토글)
-features/<id>/      기능 모듈 하나. index.ts(콘텐츠), background.ts(배경, 선택), ui/(React, 선택)
+features/<id>/      기능 모듈 하나. meta.ts(이름·아이콘·설정 스키마), index.ts(콘텐츠), background.ts(배경, 선택), ui/(React, 선택)
+modules/            WXT 로컬 모듈. 모듈 api 타입 생성(module-types.ts), 엔트리마다 Radix CSS 줄이기(slim-radix-css.ts)
 core/               모듈 시스템, 저장소 키, HTTP, 필터링, 차단 판정, 미리보기 요청·파싱, 백업, DB, 마이그레이션
 stores/             여러 화면이 같이 쓰는 zustand 스토어 (모듈 on/off·설정, 차단, 메모, 오버레이 UI)
 components/         공용 React 컴포넌트, 오버레이 루트(components/overlay)
 utils/              DOM·이벤트·정화(DOMPurify)·다크모드 등 작은 도우미
-assets/styles/      페이지에 넣는 SCSS, 오버레이 CSS, Radix CSS 진입점
+assets/styles/      페이지에 넣는 SCSS, 오버레이 CSS, Radix CSS 진입점 (radix-themes.css: 옵션·오버레이, radix-themes-popup.css: 팝업)
 scripts/            IP DB 빌드 스크립트 (GitHub Actions의 DB 워크플로가 실행)
 ```
 
-`features/index.ts`가 `import.meta.glob("./*/index.ts")`로 모듈을 모읍니다. 새 폴더를 만들면 목록에 따로 등록할 필요가 없습니다.
+`features/index.ts`가 `import.meta.glob("./*/index.ts")`로 모듈을, `features/meta.ts`가 `./*/meta.ts`로 모듈 메타를 모읍니다. 새 폴더를 만들면 목록에 따로 등록할 필요가 없습니다. 콘텐츠 스크립트만 `features/index.ts`를 쓰고, 옵션·팝업·`stores/modules.ts`는 `features/meta.ts`를 씁니다. setup이 쓰는 HTTP 클라이언트·캐시·DOM 코드가 옵션·팝업 번들에 딸려 가지 않게 하기 위해서입니다.
 
 확장의 진입점, 공용 코드, 저장소, 외부 서버가 어떻게 이어지는지 한눈에 본 그림입니다. 실선은 호출·읽기·쓰기이고 점선은 `core/messaging/protocol.ts`의 메시지입니다.
 
@@ -189,10 +190,11 @@ flowchart TD
 
 ### 모듈 정의
 
-모듈은 `defineModule`로 정의해 `features/<id>/index.ts`에서 default로 내보냅니다. 가장 작은 예는 `features/requests/index.ts`입니다.
+모듈은 두 파일로 나뉩니다. 옵션·팝업이 그리는 데 필요한 정보는 `features/<id>/meta.ts`에서 `defineModuleMeta`로, 페이지에서 하는 일은 `features/<id>/index.ts`에서 메타를 펼쳐 `defineModule`로 정의해 각각 default로 내보냅니다. 가장 작은 예는 `features/requests`입니다.
 
 ```ts
-export default defineModule({
+// meta.ts — 옵션·팝업·콘텐츠가 모두 불러오므로 React 컴포넌트(lucide 아이콘) 말고는 가벼운 것만 둔다
+export default defineModuleMeta({
     id: "requests",            // 저장소 키에 쓰인다. 바꾸면 사용자 설정이 끊긴다
     name: "요청 제한",          // 옵션·팝업에 보이는 이름
     description: "…",
@@ -202,13 +204,20 @@ export default defineModule({
 
     settings: {
         concurrency: {type: "range", name: "동시 요청 수", desc: "…", default: 4, min: 1, max: 10, step: 1, unit: "개"}
-    },
+    }
+});
+
+// index.ts — 콘텐츠 스크립트만 불러온다
+export default defineModule({
+    ...meta,
 
     setup(ctx) { setRequestConcurrency(ctx.settings.concurrency); },
     onChanged(ctx) { setRequestConcurrency(ctx.settings.concurrency); },
     revoke() { setRequestConcurrency(Number.POSITIVE_INFINITY); }
 });
 ```
+
+`meta.ts`에서 `settings`를 `satisfies SettingsSchema`로 따로 내보내면 `index.ts`의 도우미 함수가 `ModuleContext<typeof settings>`로 설정 타입을 이어 받습니다(아래 [컨텍스트](#컨텍스트-ctx)). 설정 스키마가 쓰는 상수(폰트 이름 만들기, 숨김 선택자 등)도 `meta.ts`에 두고 `index.ts`가 가져다 씁니다.
 
 - **setup(ctx)**: 모듈이 켜진 페이지에서 실행됩니다. 돌려준 값은 그 모듈의 api가 되어 단축키·팝업 토글·다른 모듈이 받습니다.
 - **revoke()**: 모듈을 끄면 실행됩니다. 페이지에 넣은 DOM·클래스·스타일을 되돌립니다.
@@ -281,7 +290,7 @@ export default defineModule({ …, settings, setup: apply });
 ### 단축키와 팝업 토글
 
 - **shortcuts**: `{명령 이름: (ctx, api) => …}`. 명령 이름은 `wxt.config.ts`의 manifest `commands`에 있어야 합니다. 배경 스크립트가 명령을 받아 탭으로 보내고, 레지스트리가 setup이 끝난 모듈에만 전달합니다.
-- **pageToggles**: 팝업의 "현재 페이지"에 나오는 이 페이지 한정 토글입니다. `id`, `label`, `icon`, `desc`(문자열 또는 `(api) => string`), `isOn(api)`, `toggle(api)`를 주고, setup이 끝난 모듈의 토글만 보입니다.
+- **pageToggles**: 팝업의 "현재 페이지"에 나오는 이 페이지 한정 토글입니다. 표시 정보(`id`, `label`, `icon`)는 `meta.ts`의 `toggles`에 두고(팝업이 아이콘을 여기서 찾습니다), `index.ts`의 `pageToggles`가 같은 객체를 펼쳐 `desc`(문자열 또는 `(api) => string`), `isOn(api)`, `toggle(api)`를 붙입니다. setup이 끝난 모듈의 토글만 보입니다.
 
 ### 모듈 간 api
 
@@ -317,7 +326,9 @@ getModuleApi("preview")?.isOpen()
 ## 저장소
 
 - 모든 키는 `core/storage/items.ts`에 모읍니다. `storage.defineItem`을 쓰고 직접 만든 저장소 래퍼는 두지 않습니다.
-- 예외: IP·밴 DB(`DB_KEYS`)는 수백 KB라 `defineItem`으로 만들지 않습니다. `defineItem`은 만드는 순간 값을 읽기 때문에, 파일을 import한 모든 페이지가 쓰지 않는 DB를 읽게 됩니다. 이 키는 쓰는 곳에서 `storage.getItem`·`storage.watch`로 다룹니다.
+- `defineItem`은 만드는 순간 값을 한 번 읽습니다. 그래서 항목은 모듈 최상위가 아니라 처음 쓸 때 만듭니다(`items.ts`의 `lazyItem`·getter). 안 그러면 이 파일을 불러오는 모든 디시 페이지와 서비스 워커가 깰 때마다 쓰지도 않는 키를 십여 번 읽습니다.
+- 읽기만 하는 곳(콘텐츠 스크립트의 모듈 레지스트리, 차단·메모·모듈 스토어, 배경 모듈)은 항목을 만들지 않고 키로 `storage.getItems([...])`·`storage.watch(key, cb)`를 씁니다. 여러 키를 `storage.local.get` 한 번으로 읽고, 없는 값은 `null`이 오므로 받는 쪽이 기본값으로 맞춥니다. 항목은 쓸 때(`setValue`)와 옵션 페이지의 `useStorageItem`에서 씁니다.
+- 예외: IP·밴 DB(`DB_KEYS`)는 수백 KB라 항목을 아예 만들지 않습니다. 이 키는 쓰는 곳에서 `storage.getItem`·`storage.watch`로 다룹니다.
 - 모듈 캐시(계속 불어나는 데이터)는 `moduleDataStorage(id, fallback)`로 만들되, 만드는 순간 값을 읽으므로 모듈 최상위가 아니라 `setup` 안에서 만듭니다. 이 키는 백업·내보내기와 자동 백업 대상에서 빠집니다. 개수 상한을 두세요 (글댓비 캐시는 500명).
 - 백업 대상 판정은 `core/backup.ts`의 `isBackupTarget`입니다. 새 키가 백업되면 안 되는 성격(비밀번호, 다시 받을 수 있는 큰 데이터)이면 여기에 추가합니다. 클라우드 백업은 `storage.sync`의 용량(약 100KB)을 두 칸(수동·자동)이 나눠 씁니다.
 - 차단 항목의 검사 방식(`mode`)이 비어 있으면 그 기기의 기본 차단 모드를 따릅니다. 그래서 차단 목록을 다른 기기로 옮기는 곳(데이터 탭 가져오기, 클라우드 합치기, 차단 탭 가져오기)은 내보낸 쪽의 기본 모드가 다르면 그 모드를 항목에 적어 둡니다. 새로 옮기는 경로를 만들 때도 같은 규칙을 따릅니다. v5 이전은 항목 대신 기본 모드(`refresher:block:defaults`)를 v5 값으로 맞춥니다(v5에서는 모든 유형이 '일치'였습니다).
@@ -351,8 +362,8 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 - 새 오버레이 UI(토스트·팝업 등)를 만들면 오버레이가 필요한지 판단하는 곳(`entrypoints/content/index.tsx`의 `needsOverlay`, 미리보기 UI는 `features/preview/ui/previewStore.ts`의 `needsPreviewOverlay`)에 넣어야 처음 띄울 때 오버레이가 생깁니다.
 - 디시 페이지 자체를 바꾸는 CSS는 `assets/styles/content.scss`, `layout.scss`, `stealth.scss`입니다.
 - 페이지·오버레이·옵션은 서로 다른 문서라 같은 규칙(차단 흐림, 스텔스 디시콘 가림, 접기 애니메이션)을 `assets/styles/_mixins.scss`의 mixin으로 맞춥니다. 옵션·팝업의 바탕과 Radix 기본값 덮기는 `_radix.scss`에 있습니다.
-- 콘텐츠 스크립트는 `cssInjectionMode: "ui"`라서 불러오는 CSS(`overlay-radix.css`, `overlay.scss`)가 오버레이를 처음 띄울 때 shadow에만 들어갑니다(WXT가 `:root`를 `:host`로 바꿈). 디시 페이지에 입히는 CSS(content·stealth·layout)는 `entrypoints/page.content.scss`로 따로 빌드되고, `wxt.config.ts`의 `manifest.content_scripts`가 콘텐츠 스크립트와 같은 주소(`core/pages.ts`의 `CONTENT_MATCHES`)에 넣습니다. 페이지용 CSS를 콘텐츠 스크립트에서 import하면 페이지가 아니라 오버레이에 들어갑니다.
-- 오버레이·팝업용 Radix CSS(`overlay-radix.css`)는 `wxt.config.ts`의 PostCSS 플러그인이 줄입니다. 반응형 미디어 블록, 오버레이가 쓰지 않는 컴포넌트 규칙, 쓰지 않는 `@font-face`를 뺍니다. 오버레이나 팝업에서 새 Radix 컴포넌트를 쓰면 `UNUSED_OVERLAY_COMPONENT`에서 빼야 스타일이 들어갑니다. 반응형 prop(`{initial, md}` 등)은 오버레이·팝업에서 쓰지 않습니다.
+- 콘텐츠 스크립트는 `cssInjectionMode: "ui"`라서 불러오는 CSS(`radix-themes.css`, `overlay.scss`)가 오버레이를 처음 띄울 때 shadow에만 들어갑니다(WXT가 `:root`를 `:host`로 바꿈). 디시 페이지에 입히는 CSS(content·stealth·layout)는 `entrypoints/page.content.scss`로 따로 빌드되고, `wxt.config.ts`의 `manifest.content_scripts`가 콘텐츠 스크립트와 같은 주소(`core/pages.ts`의 `CONTENT_MATCHES`)에 넣습니다. 페이지용 CSS를 콘텐츠 스크립트에서 import하면 페이지가 아니라 오버레이에 들어갑니다.
+- Radix CSS는 통째로 넣으면 엔트리마다 600KB라, 빌드 때 WXT 로컬 모듈 `modules/slim-radix-css.ts`가 엔트리(옵션·팝업·오버레이)마다 쓰지 않는 규칙을 뺍니다. 손으로 적는 목록은 없습니다. 그 엔트리에서 닿는 JS 청크에 든 `rt-*` 클래스 리터럴(트리 셰이킹으로 쓰는 컴포넌트 것만 남습니다)을 모아, 거기 없는 클래스의 규칙과 소스에서 쓰지 않는 반응형 접두어(`md:` 등)·`variant` 값·색 스케일·`@font-face`를 뺍니다. 새 Radix 컴포넌트나 반응형 prop을 쓰면 그대로 들어갑니다. 팝업은 옵션과 같은 CSS 파일을 import하면 Vite가 둘이 같이 쓰는 CSS 하나로 묶어 버리므로 `radix-themes-popup.css`를 따로 둡니다. 개발 서버(옵션·팝업 HMR)에서는 이 모듈이 돌지 않아 CSS가 통째로 들어갑니다.
 - 다크모드는 Radix 문서 방식대로 `Theme`에 `appearance`를 넘기지 않고 조상의 `light`/`dark` 클래스로 바꿉니다(`utils/appearance.ts`). 옵션·팝업은 시스템 설정을, 오버레이는 디시 다크모드를 오버레이 최상위 요소(shadow 안의 컨테이너)에 옮깁니다. 스크롤바·폼 컨트롤도 따라가도록 같은 요소에 `color-scheme`을 같이 정합니다.
 - `radix-themes.css`는 색 파일을 `base.css`보다 먼저 불러옵니다. 순서가 바뀌면 gray가 slate가 아닌 순수 회색이 됩니다.
 - 설정값을 오버레이 CSS에 넘길 때는 `<html>`에 CSS 변수를 둡니다. 커스텀 속성은 shadow 경계를 넘어 상속됩니다(폰트 교체의 `--refresher-preview-font-size`가 예).
@@ -366,7 +377,7 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 | `index.ts` | 모듈 정의, 목록 클릭·우클릭·미니 미리보기 처리, 글·댓글 요청 흐름, 주소창 기록 |
 | `rows.ts` | 목록 행 → 미리보기 대상(`GalleryPreData`), 앞·뒤 글 찾기 |
 | `ui/previewStore.ts` | 미리보기 창 상태 (zustand) |
-| `settings.ts` | 설정 스키마 |
+| `meta.ts` | 모듈 메타(이름·아이콘)와 설정 스키마 |
 | `ui/Frame.tsx` | 창 (머리, 본문, 댓글 칸, 휠로 넘기기) |
 | `ui/Votes.tsx`, `ErrorBlock.tsx`, `CountDown.tsx`, `fitMovies.ts`, `gifVideos.ts` | 추천 버튼, 오류 안내, 자동 삭제 카운트다운, 디시 동영상 iframe 크기 맞추기, 깨진 디시콘·움짤 mp4를 gif로 바꾸기 |
 | `ui/CommentList.tsx`, `Comment.tsx`, `WriteComment.tsx` | 댓글 목록(답글 접기), 댓글 하나, 댓글 쓰기 |
