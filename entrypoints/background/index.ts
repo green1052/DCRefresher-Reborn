@@ -2,6 +2,7 @@ import {storage} from "wxt/utils/storage";
 
 import {isBackupTarget, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
+import {http} from "@/core/http/client";
 import {postSearchUrl} from "@/core/http/urls";
 import {IP_FORMAT} from "@/core/ipdb";
 import {migrateSettingsStorage} from "@/core/migrate-settings";
@@ -118,12 +119,7 @@ export default defineBackground(() => {
     });
 
     // ===== 관리: 같은 제목 글 찾기의 통합검색 =====
-    // 요청 한 번이라 기본 fetch로 받는다. HTTP 클라이언트(ky·p-limit)를 쓰면 배경 번들이 두 배가 된다
-    onMessage("refresher:searchPosts", async ({data: query}) => {
-        const response = await fetch(postSearchUrl(query));
-        if (!response.ok) throw new Error(`통합검색 응답 ${response.status}`);
-        return response.text();
-    });
+    onMessage("refresher:searchPosts", ({data: query}) => http.get(postSearchUrl(query)).text());
 
     // ===== Database: 설치/주기 갱신 =====
     // 설치 직후에는 onInstalled와 첫 주기 검사(lastUpdate 0)가 겹칠 수 있다. 진행 중인 갱신을 같이 기다려 두 번 받지 않는다
