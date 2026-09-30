@@ -4,7 +4,7 @@ import {csrfBody} from "@/utils/cookie";
 import {isRecord} from "@/utils/record";
 
 import {parsePostInfo} from "./parser";
-import type {CommentListResponse, DcinsideComment, DcinsideDccon, GalleryPreData, PostInfo} from "./types";
+import type {CommentListResponse, DcinsideComment, DcinsideDccon, DcinsideDcconPackage, GalleryPreData, PostInfo} from "./types";
 
 /** 디시 요청 본문. 모든 요청에 붙는 CSRF 토큰·갤러리 종류 뒤에 fields를 붙인다 (formBody 규칙) */
 const dcBody = (link: string, fields: Parameters<typeof formBody>[0]): Promise<URLSearchParams> =>
@@ -43,16 +43,23 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
         }>();
     };
 
-    // 1쪽의 쪽 나눔(viewComments(n, …))에서 마지막 쪽 번호를 읽고 나머지 쪽은 한꺼번에 받는다. 동시 요청 수는 요청 제한 모듈이 조절한다.
+    // 목록의 댓글 수로 쪽 수를 어림해 1쪽과 함께 받는다. 1쪽을 받은 뒤에 나머지를 요청하면 댓글이 많은 글은 그만큼(수백 ms) 늦게 뜬다.
+    // 목록의 수는 삭제된 댓글을 빼고 세어 모자랄 수 있으므로, 1쪽의 쪽 나눔(viewComments(n, …))에서 마지막 쪽 번호를 읽어 남은 쪽을 마저 받는다.
+    // 1쪽을 먼저 요청해야 동시 요청 수(요청 제한 모듈)에 막혀도 쪽 나눔을 먼저 받는다. 1쪽이 실패하면 어림한 쪽의 실패는 버린다.
     // ponytail: 10쪽(1000개)까지만 받는다. 더 많은 글은 드물고, 자동 갱신 때마다 전부 다시 받기 때문이다.
-    const first = await fetchPage(1);
+    const guessed = Math.min(10, Math.max(1, Math.ceil(preData.commentCount / 100)));
+    const firstPage = fetchPage(1);
+    const early = Promise.all(Array.from({length: guessed - 1}, (_, index) => fetchPage(index + 2)));
+    early.catch(() => {});
+
+    const first = await firstPage;
     const pages = Math.max(1, ...Array.from(first.pagination?.matchAll(/viewComments\((\d+)/g) ?? [], (match) => Number(match[1])));
-    const lastPage = Math.min(10, pages);
-    const rest = await Promise.all(Array.from({length: lastPage - 1}, (_, index) => fetchPage(index + 2)));
+    const rest = Promise.all(Array.from({length: Math.max(0, Math.min(10, pages) - guessed)}, (_, index) => fetchPage(guessed + index + 1)));
+    const [earlyPages, restPages] = await Promise.all([early, rest]);
 
     // 1쪽이 가장 최근 댓글이고 뒤쪽일수록 오래된 댓글이다. 쪽 사이에 같은 댓글이 겹쳐 올 수 있어 번호로 하나만 남기고 번호(등록)순으로 맞춘다
     const byNo = new Map<string, DcinsideComment>();
-    for (const response of [first, ...rest]) {
+    for (const response of [first, ...earlyPages, ...restPages]) {
         for (const comment of response.comments ?? []) byNo.set(comment.no, comment);
     }
 
@@ -235,11 +242,10 @@ export const submitComment = async (
 
             // 첫 자리 숫자를 5 당기거나 4 밀고, 쉼표로 나눈 수들을 글자로 바꿔 service_code 끝 10자리를 갈아 끼운다
             const fi = parseInt(decoded.slice(0, 1));
-            const computed = decoded
-                .replace(/^./, String(fi > 5 ? fi - 5 : fi + 4))
-                .split(",")
-                .map((value, index) => String.fromCharCode((2 * (Number(value) - index - 1)) / (13 - index - 1)))
-                .join("");
+            const values = decoded.replace(/^./, String(fi > 5 ? fi - 5 : fi + 4)).split(",").map(Number);
+            // 디시가 형식을 바꿔 숫자가 아니면 NaN이 "NaN"·"\0"으로 섞여 들어가 던지지 않고 틀린 코드가 된다
+            if (Number.isNaN(fi) || values.some(Number.isNaN)) return null;
+            const computed = values.map((value, index) => String.fromCharCode((2 * (value - index - 1)) / (13 - index - 1))).join("");
 
             return form.serviceCode.replace(/(.{10})$/, computed);
         } catch {
@@ -388,4 +394,27 @@ export const submitTxtcon = async (
     });
 
     return submitResult(await ajax.post(urls.txtcon_submit, {body}).text());
+};
+
+/** 디시콘 하나의 코드로 패키지 정보를 가져온다 (디시 dc_common2.js의 '디시콘 보기') */
+export const fetchDcconPackage = async (code: string, signal?: AbortSignal): Promise<DcinsideDcconPackage> => {
+    const text = await ajax.post(urls.dccon.detail, {
+        body: await csrfBody({code}),
+        signal
+    }).text();
+    // 잘못된 코드면 JSON 대신 'error'가 온다
+    if (text.trim() === "error") throw new Error("디시콘 정보가 잘못되었습니다.");
+
+    const response = JSON.parse(text) as DcinsideDcconPackage;
+    // 다른 모양(실패 응답 등)이면 정보 창을 그리다 오버레이 전체가 깨지므로 실패로 넘긴다 (DcconPopup의 fetchPage와 같다)
+    if (!isRecord(response) || !isRecord(response.info) || !Array.isArray(response.detail) || !Array.isArray(response.tags)) {
+        throw new Error("디시콘 정보가 아닙니다.");
+    }
+    return response;
+};
+
+/** 무료 디시콘 패키지를 내 디시콘에 추가한다 (디시 dc_common2.js의 '사용' 버튼) */
+export const addDcconPackage = async (packageIdx: string | number): Promise<"ok" | "fail" | "not_login"> => {
+    const text = (await ajax.post(urls.dccon.buy, {body: await csrfBody({package_idx: String(packageIdx)})}).text()).trim();
+    return text === "ok" || text === "not_login" ? text : "fail";
 };

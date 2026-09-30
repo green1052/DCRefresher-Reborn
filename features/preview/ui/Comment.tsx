@@ -13,8 +13,9 @@ import {useGallogActivity} from "@/utils/gallogActivity";
 import {banReasonsOf, databaseVersion, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
 
 import {savedNonmember} from "../nonmember";
+import {openDcconInfo} from "./DcconInfoPopup";
 import {watchGifVideos} from "./gifVideos";
-import {parseDate, usePreviewStore} from "./previewStore";
+import {NO_REPLY, parseDate, usePreviewStore} from "./previewStore";
 
 /** 절대 시각 포매터. toLocaleString()은 부를 때마다 포매터를 새로 만들어, 댓글 수백 개를 다시 그릴 때 느리다 */
 const ABSOLUTE = new Intl.DateTimeFormat(undefined, {year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric"});
@@ -235,7 +236,7 @@ interface CommentProps {
     replyCount: number;
     /** 답글이 펼쳐진 부모. 아래로 트리 선을 긋는다 */
     threadOpen?: boolean;
-    /** 쓰레드의 마지막 답글. 트리 선이 여기서 끝난다 */
+    /** 스레드의 마지막 답글. 트리 선이 여기서 끝난다 */
     lastReply?: boolean;
     /** 갤러리 관리 권한. 문서를 훑어 재므로 목록(CommentList)에서 한 번만 재서 넘긴다 */
     isAdmin: boolean;
@@ -309,7 +310,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                 <Flex align="center" gap="1" minWidth="0">
                     <UserCard user={user} op={isOp}/>
                     {comment.duplicates ? <Text size="1" color="gray" style={{whiteSpace: "nowrap"}}>같은 댓글 ×{comment.duplicates}</Text> : null}
-                    {/* 툴팁은 브라우저 기본(title)을 쓴다. 쓰레드마다 Radix 툴팁을 달면 댓글이 많은 글을 열 때 느려진다 */}
+                    {/* 툴팁은 브라우저 기본(title)을 쓴다. 스레드마다 Radix 툴팁을 달면 댓글이 많은 글을 열 때 느려진다 */}
                     {depth === 0 && replyCount > 1 && (
                         <IconButton size="1" variant="ghost" color="gray" aria-label={collapsed ? "답글 펼치기" : "답글 접기"}
                                     title={collapsed ? "답글 펼치기" : "답글 접기"} onClick={() => toggleCollapse(comment.no)}>
@@ -328,9 +329,9 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                             aria-label="답글"
                             aria-pressed={replying}
                             onClick={() =>
-                                // 같은 댓글을 다시 누르면 취소한다. 답글의 부모는 쓰레드 첫 댓글(c_no)이고, 첫 댓글이면 자기 자신이다.
+                                // 같은 댓글을 다시 누르면 취소한다. 답글의 부모는 스레드 첫 댓글(c_no)이고, 첫 댓글이면 자기 자신이다.
                                 usePreviewStore.setState({
-                                    reply: replying ? {commentNo: null, replyNo: null} : {commentNo: comment.c_no || comment.no, replyNo: comment.no}
+                                    reply: replying ? NO_REPLY : {commentNo: comment.c_no || comment.no, replyNo: comment.no}
                                 })
                             }
                         >
@@ -355,6 +356,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                         <audio controls src={comment.voice.src}/>
                     ))}
                 <Box ref={body} className="refresher-html refresher-comment-html" data-dccon={isDccon || undefined}
+                     onClick={isDccon ? openDcconInfo : undefined}
                      dangerouslySetInnerHTML={{__html: html}}/>
             </Flex>
         </Box>

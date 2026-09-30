@@ -5,8 +5,11 @@ import {rowPostNo} from "@/core/http/urls";
 import {ROW_SELECTOR} from "@/core/list";
 import {BOARD_PAGE} from "@/core/pages";
 import {deletePost} from "@/core/preview/request";
+import {whenDomReady} from "@/utils/dom";
 import {notifyManage} from "@/utils/notify";
 import {isGalleryManager} from "@/utils/user";
+
+import {removeViewTools, renderViewTools} from "./view";
 
 /** 체크박스와 작성자 칸이 같이 든 칸. 목록 행에 더해 댓글은 작성자 칸(.cmt_nickbox)이다 */
 const CHECKBOX_ROW = `${ROW_SELECTOR}, .cmt_nickbox`;
@@ -74,6 +77,18 @@ export default defineModule({
             name: "GIF 조작 기능 활성화",
             desc: "GIF를 제어할 수 있는 기능을 활성화합니다.",
             default: false
+        },
+        imageOrigin: {
+            type: "check",
+            name: "이미지 출처 표시",
+            desc: "다른 갤러리에서 올린 본문 이미지나, 다른 갤러리에서 받은 첨부 파일이 있으면 글 제목 위에 알립니다.",
+            default: false
+        },
+        titleSearch: {
+            type: "check",
+            name: "같은 제목 찾기",
+            desc: "게시글 보기에 버튼을 두어, 제목이 같은 글을 디시 통합검색에서 찾습니다.",
+            default: false
         }
     },
 
@@ -86,19 +101,21 @@ export default defineModule({
             if (ctx.settings.enableGifControl) enableGifControl(element);
         });
 
+        // ===== 글 보기: 이미지 출처·같은 제목 찾기 =====
+        // 본문·첨부 목록까지 읽은 뒤에 한 번 그린다. 필터로 걸면 머리를 읽는 순간 불려 본문이 아직 없다
+        whenDomReady(() => renderViewTools(ctx.settings), ctx.signal);
+
         // ===== 체크박스 편의 =====
         ctx.addFilter(
             ".article_chkbox",
             (element) => {
-                if (handled.has(element)) return;
+                if (!(element instanceof HTMLInputElement) || handled.has(element)) return;
                 handled.add(element);
 
                 const parent = element.closest<HTMLElement>(CHECKBOX_ROW);
                 const {uid, ip, nick} = parent?.querySelector<HTMLElement>(":scope > .ub-writer")?.dataset ?? {};
 
                 element.addEventListener("click", (ev) => {
-                    const source = ev.target as HTMLInputElement;
-
                     if (ctx.settings.checkAllTargetUser && ev.shiftKey && (uid || ip || nick)) {
                         // 유동은 data-uid=""다. key와 값을 같은 기준으로 골라야 한다.
                         // 값만 ??로 고르면 [data-ip=""]가 되어 회원 글이 전부 잡힌다
@@ -106,7 +123,7 @@ export default defineModule({
 
                         for (const other of document.querySelectorAll<HTMLElement>(`.ub-writer[data-${key}="${CSS.escape(value)}"]`)) {
                             const otherParent = other.closest<HTMLElement>(CHECKBOX_ROW);
-                            for (const box of otherParent?.querySelectorAll<HTMLInputElement>(".article_chkbox") ?? []) box.checked = source.checked;
+                            for (const box of otherParent?.querySelectorAll<HTMLInputElement>(".article_chkbox") ?? []) box.checked = element.checked;
                         }
                     }
 
@@ -116,7 +133,7 @@ export default defineModule({
                         if (!commentNo) return;
 
                         for (const box of document.getElementById(`reply_list_${commentNo}`)?.querySelectorAll<HTMLInputElement>(".article_chkbox") ?? []) {
-                            box.checked = source.checked;
+                            box.checked = element.checked;
                         }
                     }
                 }, {signal: ctx.signal});
@@ -124,7 +141,7 @@ export default defineModule({
                 // 왼쪽 버튼을 누른 채 지나간 칸만 체크한다. 그냥 지나가도 체크하면 Shift+클릭이 방금 체크된 칸을 도로 푼다.
                 // 드래그를 시작한 칸은 누르기 전에 들어왔으므로 떠날 때(mouseout) 체크한다
                 const checkOnDrag = (ev: MouseEvent): void => {
-                    if (ctx.settings.checkViaShift && ev.shiftKey && ev.buttons === 1 && element instanceof HTMLInputElement) element.checked = true;
+                    if (ctx.settings.checkViaShift && ev.shiftKey && ev.buttons === 1) element.checked = true;
                 };
                 element.addEventListener("mouseover", checkOnDrag, {signal: ctx.signal});
                 element.addEventListener("mouseout", checkOnDrag, {signal: ctx.signal});
@@ -172,6 +189,7 @@ export default defineModule({
 
     // 필터는 등록할 때와 요소가 새로 붙을 때만 돌므로, 이미 열린 글의 영상은 설정이 바뀔 때 여기서 바꾸고 되돌린다
     onChanged(ctx, key) {
+        if (key === "imageOrigin" || key === "titleSearch") renderViewTools(ctx.settings);
         if (key !== "enableGifControl") return;
         if (ctx.settings.enableGifControl) {
             for (const video of document.querySelectorAll(GIF_VIDEO)) enableGifControl(video);
@@ -182,5 +200,6 @@ export default defineModule({
 
     revoke() {
         disableGifControl();
+        removeViewTools();
     }
 });

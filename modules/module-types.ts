@@ -18,7 +18,7 @@ export default defineWxtModule((wxt) => {
 
         entries.push({
             path: "types/modules.d.ts",
-            text: `// modules/module-types.ts가 만든다. 고치지 않는다\nimport type {ModuleApiMap} from "@/core/module/types";\n\ndeclare module "@/core/module/types" {\n    interface ModuleApis extends ModuleApiMap<${modules}> {}\n}\n`,
+            text: `import type {ModuleApiMap} from "@/core/module/types";\n\ndeclare module "@/core/module/types" {\n    interface ModuleApis extends ModuleApiMap<${modules}> {}\n}\n`,
             tsReference: true
         });
     });

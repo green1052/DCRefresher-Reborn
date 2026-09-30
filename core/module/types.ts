@@ -80,7 +80,7 @@ export interface ModuleDefinition<S extends SettingsSchema = SettingsSchema, Api
     /** 설정 스키마 (옵션 페이지에서 렌더링됨) */
     settings?: S;
 
-    /** 활성화시 실행. 리턴값은 shortcuts·pageToggles에 api로 전달된다 */
+    /** 모듈을 켤 때 실행. 리턴값은 shortcuts·pageToggles에 api로 전달된다 */
     setup(ctx: ModuleContext<S>): Api | Promise<Api>;
 
     /** 단축키. 키는 wxt.config.ts의 manifest commands 이름이다. setup이 끝난 모듈에만 전달된다 */
@@ -93,12 +93,12 @@ export interface ModuleDefinition<S extends SettingsSchema = SettingsSchema, Api
     extensionPageVars?(settings: SettingValues<S>): Record<`--${string}`, string>;
 
     /**
-     * 비활성화시 실행 (DOM 정리 등). 리스너(signal)·cleanup은 이미 풀린 뒤다.
+     * 모듈을 끌 때 실행 (DOM 정리 등). 리스너(signal)·cleanup은 이미 풀린 뒤다.
      * 콘텐츠 스크립트 컨텍스트가 무효화될 때(stopAll)는 부르지 않는다.
      */
     revoke?(): void;
 
-    /** 활성 중 설정이 변경됐을 때 실행 (새 값은 ctx.settings[key]) */
+    /** 켜져 있는 동안 설정이 바뀌면 실행 (새 값은 ctx.settings[key]) */
     onChanged?(ctx: ModuleContext<S>, key: keyof S & string): void;
 }
 

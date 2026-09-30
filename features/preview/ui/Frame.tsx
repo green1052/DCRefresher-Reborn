@@ -6,6 +6,7 @@ import {type CSSProperties, Fragment, useEffect, useLayoutEffect, useRef, useSta
 import {overlay} from "@/components/overlay/shadow";
 import {focusedElement} from "@/components/useOpenerFocus";
 import {BLOCKED_TEXT} from "@/core/block";
+import {postKey as keyOfPost} from "@/core/preview/cache";
 import type {ProcessedComment} from "@/core/preview/comments";
 import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
@@ -14,8 +15,9 @@ import {isTyping} from "@/utils/event";
 
 import {adjacentPreData} from "../rows";
 import {TimeStamp, UserCard} from "./Comment";
-import {CommentList} from "./CommentList";
+import {CommentList, threadParents} from "./CommentList";
 import {CountDown} from "./CountDown";
+import {openDcconInfo} from "./DcconInfoPopup";
 import {ErrorBlock} from "./ErrorBlock";
 import {fitMovies} from "./fitMovies";
 import {watchGifVideos} from "./gifVideos";
@@ -40,9 +42,7 @@ const subtitleOf = (comments: ProcessedComment[]): string => {
     const blocked = comments.filter((comment) => comment.blocked).length;
     const folded = comments.filter((comment) => comment.duplicates === 0).length;
     const extra = [blocked && `차단 ${blocked}개`, folded && `같은 댓글 ${folded}개 접음`].filter(Boolean).join(", ");
-    // 부모를 받지 못한 답글은 CommentList가 쓰레드 첫 댓글처럼 그리므로 같이 센다
-    const topNos = new Set(comments.filter((comment) => comment.depth === 0).map((comment) => comment.no));
-    return `스레드 ${comments.filter((comment) => comment.depth === 0 || !topNos.has(comment.c_no)).length}개, 총 댓글 ${comments.length}개${extra ? ` (${extra})` : ""}`;
+    return `스레드 ${threadParents(comments).length}개, 총 댓글 ${comments.length}개${extra ? ` (${extra})` : ""}`;
 };
 
 /** run이 끝날 때까지 로딩으로 돌며, 그동안은 다시 누를 수 없다 */
@@ -94,7 +94,7 @@ export const Frame = () => {
     const blockEntries = useBlocksStore((s) => s.entries);
     const blockDefaults = useBlocksStore((s) => s.defaults);
     const gallery = usePreviewStore((s) => s.preData?.gallery);
-    const postKey = usePreviewStore((s) => (s.preData ? `${s.preData.gallery}/${s.preData.id}` : ""));
+    const postKey = usePreviewStore((s) => (s.preData ? keyOfPost(s.preData) : ""));
     const listTitle = usePreviewStore((s) => s.preData?.title);
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
@@ -156,6 +156,8 @@ export const Frame = () => {
         const onKey = (ev: KeyboardEvent): void => {
             // Ctrl+PageUp/Down(탭 전환) 같은 조합키는 브라우저에 맡긴다.
             if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.shiftKey || isTyping(ev)) return;
+            // 디시콘 정보 창이 떠 있으면 그 창의 목록을 넘긴다. 옆 글로 넘어가면 창이 닫힌다
+            if (usePreviewStore.getState().dcconInfo) return;
             // 누른 버튼이 로딩으로 막히거나 사라져 포커스가 body로 빠졌으면 스크롤 칸으로 되돌린다 (Tab은 브라우저의 이어가기 위치에 맡긴다)
             if (ev.key !== "Tab" && focusedElement() === document.body) scroller.current?.focus({preventScroll: true});
 
@@ -328,6 +330,9 @@ export const Frame = () => {
                                     className={"refresher-html refresher-preview-contents" + (imageBlocked ? " refresher-preview-block-media" : "")}
                                     data-blocked={hideText ? undefined : post?.textBlocked}
                                     onClick={(ev) => {
+                                        // 디시콘을 눌렀으면 정보 팝업을 열고 더 이상의 처리를 막는다.
+                                        if (openDcconInfo(ev)) return;
+
                                         // 이미지를 누르면 디시처럼 원본 보기를 새 탭으로 연다. 주소는 parser.ts가 옮겨 둔 imgPop 주소이고 디시 주소만 연다
                                         const image = (ev.target as HTMLElement).closest<HTMLImageElement>("img[data-pop]");
                                         if (image && !image.closest("a")) {
@@ -342,7 +347,7 @@ export const Frame = () => {
                                         ev.preventDefault();
                                         usePreviewStore.setState({imageBlocked: false});
                                         // 관리자가 가린 이미지는 디시처럼 누른 버튼 옆 것만 드러낸다.
-                                        // parser.ts는 가린 이미지의 원본 주소(data-original)를 넣지 않으므로 여기서 넣는다.
+                                        // parser.ts는 가린 이미지의 data-original을 src로 옮기지 않으므로 여기서 옮긴다.
                                         for (const media of button.parentElement?.querySelectorAll<HTMLElement>(":scope > [data-block], :scope > .refresher-imgnum > [data-block]") ?? []) {
                                             if (media instanceof HTMLImageElement && media.dataset.original) media.src = media.dataset.original;
                                             media.removeAttribute("data-block");

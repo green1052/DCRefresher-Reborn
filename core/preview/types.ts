@@ -6,8 +6,8 @@ export interface GalleryPreData {
     notice: boolean;
     recommend: boolean;
     type: string;
-    /** 목록에 댓글 수가 보였는지. 댓글을 본문과 함께 요청할지 정한다 */
-    hasComments: boolean;
+    /** 목록에 보인 댓글 수 (없으면 0). 댓글을 본문과 함께 요청할지, 댓글을 몇 쪽 한꺼번에 받을지 정한다 */
+    commentCount: number;
 }
 
 export interface User {
@@ -38,7 +38,7 @@ export interface PostInfo {
     requireCommentCaptcha?: boolean;
     v_cur_t?: string;
     randomParam?: { name: string; value: string };
-    /** 그 글의 댓글 요청 토큰 (#e_s_n_o). 갤러리마다 같아 목록의 값으로 미리 요청하지만, 쓰기 전에 이 값과 맞춰 본다 (preview의 load) */
+    /** 그 글의 댓글 요청 토큰 (#e_s_n_o). 갤러리마다 같아 지금 페이지의 값으로 미리 요청하지만, 쓰기 전에 이 값과 맞춰 본다 (preview의 load) */
     esno?: string;
     /** 그 글의 추천 토큰 (input[name=code_recommend]) */
     recommendCode?: string;
@@ -82,6 +82,37 @@ export interface DcinsideDcconDetail {
     /** 마지막 쪽 번호 (0부터). 문자열로 오기도 한다 */
     max_page: number | string;
     target: string;
+}
+
+/** package_detail이 주는 디시콘 패키지 정보 */
+export interface DcinsideDcconPackageInfo {
+    package_idx: string | number;
+    code: string;
+    title: string;
+    description: string;
+    seller_name: string;
+    reg_date_short: string;
+    /** 대표 이미지. dcimg5.dcinside.com/dccon.php?no= 뒤에 붙인다 */
+    main_img_path: string;
+    /** 내가 올린 패키지 (디시는 '사용' 대신 '수정'을 띄운다) */
+    register: boolean;
+    /** 가진 패키지면 남은 기간 문자열(무기한은 "-"), 없으면 false. 디시는 가진 패키지에 '사용'을 띄우지 않는다 */
+    residual: string | false;
+}
+
+/** 패키지 안의 디시콘 하나 */
+export interface DcinsideDcconPackageItem {
+    idx: string;
+    /** 이미지. dcimg5.dcinside.com/dccon.php?no= 뒤에 붙인다 */
+    path: string;
+    title: string;
+}
+
+/** /dccon/package_detail 응답 */
+export interface DcinsideDcconPackage {
+    info: DcinsideDcconPackageInfo;
+    detail: DcinsideDcconPackageItem[];
+    tags: { tag: string }[];
 }
 
 export interface DcinsideComment {

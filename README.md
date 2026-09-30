@@ -5,10 +5,7 @@
     <p>
         <a href="https://github.com/green1052/DCRefresher-Reborn/releases/latest"><img src="https://img.shields.io/github/v/release/green1052/DCRefresher-Reborn" alt="최신 버전"></a>
         <a href="https://chromewebstore.google.com/detail/pmfifcbendahnkeojgpfppklgioemgon"><img src="https://img.shields.io/chrome-web-store/users/pmfifcbendahnkeojgpfppklgioemgon?logo=googlechrome&amp;logoColor=white&amp;label=Chrome" alt="Chrome 웹 스토어 사용자 수"></a>
-        <a href="https://chromewebstore.google.com/detail/pmfifcbendahnkeojgpfppklgioemgon"><img src="https://img.shields.io/chrome-web-store/rating/pmfifcbendahnkeojgpfppklgioemgon?logo=googlechrome&amp;logoColor=white&amp;label=%ED%8F%89%EC%A0%90" alt="Chrome 웹 스토어 평점"></a>
         <a href="https://addons.mozilla.org/ko/firefox/addon/dcrefresher-reborn"><img src="https://img.shields.io/amo/users/dcrefresher-reborn?logo=firefox&amp;logoColor=white&amp;label=Firefox" alt="Firefox Add-ons 사용자 수"></a>
-        <a href="https://addons.mozilla.org/ko/firefox/addon/dcrefresher-reborn"><img src="https://img.shields.io/amo/rating/dcrefresher-reborn?logo=firefox&amp;logoColor=white&amp;label=%ED%8F%89%EC%A0%90" alt="Firefox Add-ons 평점"></a>
-        <a href="LICENSE"><img src="https://img.shields.io/github/license/green1052/DCRefresher-Reborn" alt="라이선스"></a>
     </p>
     <p>
         <a href="https://chromewebstore.google.com/detail/pmfifcbendahnkeojgpfppklgioemgon"><b>Chrome에 설치</b></a>
@@ -48,6 +45,7 @@
 - 창 안에서 **PageUp** / **PageDown**으로 목록의 앞·뒤 글로 넘어갑니다. 창 맨 아래(맨 위)에서 휠을 한 번 더 굴려도 넘어갑니다.
 - **Esc**나 창 바깥 클릭으로 닫습니다. `주소창에 게시글 주소 표시`(기본 켜짐)가 켜져 있으면 브라우저 뒤로 가기로도 닫히고, 닫은 미리보기를 앞으로 가기로 다시 열 수 있습니다.
 - 제목에 마우스를 올리면 뜨는 **미니 미리보기**는 설정에서 켭니다(기본 꺼짐).
+- 미리보기 창에서 본문·댓글의 **디시콘**을 누르면 그 디시콘 패키지 정보가 뜨고, 아직 없는 패키지는 바로 추가할 수 있습니다.
 
 ### 단축키
 
@@ -98,7 +96,7 @@
 개발자 서버는 없고, 분석·추적 코드도 없습니다. 사용자 데이터를 밖으로 보내지 않습니다. 직접 켠 클라우드 백업만 브라우저 계정 동기화로 올라가고, Firefox에는 수집하는 데이터가 없다고 선언되어 있습니다.
 
 - **연결하는 곳**
-  - 디시인사이드: 글·목록·댓글과 디시콘 목록, (글댓비를 켜면) 작성자의 갤로그 글·댓글 수를 불러오고, 사용자가 누른 댓글 쓰기·추천·관리 요청을 보냅니다.
+  - 디시인사이드: 글·목록·댓글과 디시콘 목록·패키지 정보, (글댓비를 켜면) 작성자의 갤로그 글·댓글 수, (같은 제목 찾기를 누르면) 통합검색 결과를 불러오고, 사용자가 누른 댓글 쓰기·추천·관리·디시콘 추가 요청을 보냅니다.
   - `dcrefresher.green1052.com`: IP/밴 데이터베이스 파일을 받기만 합니다. 이 저장소의 `data` 브랜치를 Cloudflare Pages로 그대로 배포한 곳입니다.
   - 이미지 검색 엔진: 이미지 우클릭 메뉴를 누를 때만, 그 이미지 주소로 검색 탭을 엽니다.
   - Google reCAPTCHA: 디시가 요구할 때만 디시와 같은 방식으로 씁니다.
@@ -143,4 +141,4 @@ bun run zip:firefox    # Firefox 배포용 zip (소스 zip도 함께 생성)
 
 - 버그 제보와 기능 제안은 [이슈 템플릿](https://github.com/green1052/DCRefresher-Reborn/issues/new/choose)으로 올려 주세요.
 - 풀 리퀘스트는 `develop` 브랜치로 보내 주세요. 커밋 전에 `bun run compile`과 `bun run build`가 통과해야 하고, 커밋 메시지는 [Conventional Commits](https://www.conventionalcommits.org/ko/)를 따릅니다.
-- Chrome과 Firefox에서 모두 확인해 주세요. 디시에 쓰기 요청(댓글·디시콘·추천·관리)은 실제로 반영되니 시험할 때 보내지 말고 막아 두세요.
+- Chrome과 Firefox에서 모두 확인해 주세요.

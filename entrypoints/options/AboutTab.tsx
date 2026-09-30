@@ -3,6 +3,7 @@ import {BookOpen, Bug, ClipboardCopy, Code, Heart, type LucideIcon, MessageCircl
 import {useEffect, useState} from "react";
 
 import {CLOUD_QUOTA} from "@/core/backup";
+import {isModuleEnabled} from "@/core/module/settings";
 import {dbStorage} from "@/core/storage/items";
 import features from "@/features";
 import {useBlocksStore} from "@/stores/blocks";
@@ -53,7 +54,7 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
 
     const blockCount = Object.values(blocks).reduce((sum, list) => sum + list.length, 0);
     const memoCount = Object.values(memos).reduce((sum, map) => sum + Object.keys(map).length, 0);
-    const enabledNames = features.filter((feature) => enables[feature.id] ?? true).map((feature) => feature.name);
+    const enabledNames = features.filter((feature) => isModuleEnabled(feature, enables)).map((feature) => feature.name);
 
     const copyDiagnostics = async (): Promise<void> => {
         const db = await dbStorage.meta.getValue().catch(() => null);

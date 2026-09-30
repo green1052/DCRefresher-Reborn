@@ -47,8 +47,8 @@ export default defineModule({
         if (!queryString("s_keyword")) return;
 
         const gallery = queryString("id") ?? "";
-        // 새로고침 모듈이 목록을 갈아끼우면 다시 이어 붙인다. 이미 받은 검색 페이지는 다시 요청하지 않는다.
-        // 페이지 HTML이 통째로 들어 있어 최대 다음 검색 횟수(30)만큼만 남긴다. 검색 페이지를 넘길 때마다 쌓이지 않게 한다
+        // 새로고침 모듈이 목록을 갈아끼우면 다시 이어 붙이는데, 이미 받은 검색 페이지는 다시 요청하지 않는다.
+        // 페이지 HTML을 통째로 담으므로 최대 다음 검색 횟수(30)만큼만 남겨 검색 페이지를 넘길수록 쌓이지 않게 한다
         const pages = new LRUCache<string, string>({max: 30});
         // 행을 붙이면 같은 tbody로 필터가 다시 불리므로 한 번만 채운다
         const filled = new WeakSet<HTMLElement>();

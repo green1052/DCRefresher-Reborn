@@ -10,7 +10,12 @@ export const urls = {
     comment_remove: "https://gall.dcinside.com/board/comment/comment_delete_submit",
     dccon: {
         lists: "https://gall.dcinside.com/dccon/lists",
-        detail: "https://gall.dcinside.com/dccon/package_detail"
+        detail: "https://gall.dcinside.com/dccon/package_detail",
+        buy: "https://gall.dcinside.com/dccon/buy",
+        /** 디시콘 이미지. package_detail이 주는 경로(main_img_path, path)를 뒤에 붙인다 */
+        image: "https://dcimg5.dcinside.com/dccon.php?no=",
+        /** 디시콘 상점. 뒤에 /nick_name/{제작자}, /tags/{태그}를 붙인다 */
+        shop: "https://dccon.dcinside.com/hot/1"
     },
     // data 브랜치는 .github/workflows/db.yml이 만들고, Cloudflare Pages가 그대로 배포한다. CORS를 열어 두어 호스트 권한이 필요 없다.
     // 6.0.3 이하는 raw.githubusercontent.com에서 받으므로 data 브랜치 게시는 계속 유지한다
@@ -55,6 +60,10 @@ export const mergeParamURL = (origin: string, from: string): string => {
     for (const [key, value] of new URL(from).searchParams) params.set(key, value);
     return `?${params}`;
 };
+
+/** 디시 통합검색의 최신순 글 검색 주소. 검색창처럼 검색어의 UTF-8 바이트를 ".XX"로 쓴다 (%2F가 든 주소는 404다) */
+export const postSearchUrl = (query: string): string =>
+    `https://search.dcinside.com/post/sort/latest/q/${Array.from(new TextEncoder().encode(query), (byte) => `.${byte.toString(16).padStart(2, "0").toUpperCase()}`).join("")}`;
 
 /** 현재 URL의 쿼리 값 */
 export const queryString = (name: string): string | null => new URLSearchParams(location.search).get(name);

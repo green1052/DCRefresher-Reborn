@@ -2,6 +2,8 @@ import {storage} from "wxt/utils/storage";
 
 import {isBackupTarget, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
+import {http} from "@/core/http/client";
+import {postSearchUrl} from "@/core/http/urls";
 import {IP_FORMAT} from "@/core/ipdb";
 import {migrateSettingsStorage} from "@/core/migrate-settings";
 import {migrateV5Storage} from "@/core/migrate-v5";
@@ -16,7 +18,7 @@ const backgroundModules = Object.values(import.meta.glob<{ default: BackgroundMo
 
 const DATABASE_UPDATE_INTERVAL = 604_800_000; // 7일
 /**
- * 7일이 지났는지 하루마다 확인한다. 서버 DB는 주 2번 바뀌고 확인할 때마다 DB 전체(수백 KB)를 읽으므로 더 자주 볼 이유가 없다.
+ * 7일이 지났는지 하루마다 확인한다(meta만 읽는다). 7일마다 받으므로 더 자주 보면 서비스 워커만 괜히 깨운다.
  * 받기에 실패하면 다음 날 다시 받는다. 저장 형식이 옛것이면(확장 업데이트 때 받기 실패) 7일을 기다리지 않고 다시 받는다.
  */
 const DATABASE_ALARM = "refresher:dbCheck";
@@ -62,7 +64,8 @@ const rerunListScripts = (gallery: string): void => {
     };
 
     // 디시가 페이지를 열 때 넘긴 값을 그대로 쓴다. 미니 갤러리는 목록('id')과 글 페이지('mi$id')의 값이 달라 id로 짐작하면 다른 설정을 읽는다
-    const loaded = [...document.scripts].map((script) => /chk_user_block\('([^']*)'\)/.exec(script.textContent ?? "")?.[1]).find((id) => id !== undefined);
+    // 목록을 바꿀 때마다 불리므로 찾으면 멈춘다 (배열로 펼쳐 map하면 페이지의 인라인 스크립트를 모두 훑는다)
+    const loaded = Iterator.from(document.scripts).map((script) => /chk_user_block\('([^']*)'\)/.exec(script.textContent ?? "")?.[1]).find((id) => id !== undefined);
     if (typeof scope.chk_user_block === "function") scope.chk_user_block(loaded ?? gallery);
     // null이면 디시가 처음 그릴 때 등록한 범위(목록·글 머리)를 다시 그린다
     if (typeof scope.UserMemo?.renderWriterMemoBadges === "function") scope.UserMemo.renderWriterMemoBadges(null);
@@ -76,9 +79,10 @@ export default defineBackground(() => {
     // ===== 모듈의 배경 쪽 (이미지 검색 메뉴 등) =====
     // 리스너는 여기서 바로 건다. 크롬은 메뉴 같은 상태를 유지하므로 설치·브라우저 시작·설정 변경 때만 다시 맞춘다
     const applyBackgroundModules = startBackgroundModules(backgroundModules);
-    browser.runtime.onStartup.addListener(() => void applyBackgroundModules());
-    // Firefox(MV2)는 메뉴를 유지하지 않고, 확장을 껐다 켜면 onStartup/onInstalled 없이 배경만 다시 뜨므로 뜰 때마다 맞춘다
+    // 파이어폭스(MV2)는 메뉴를 유지하지 않고, 확장을 껐다 켜면 onStartup/onInstalled 없이 배경만 다시 뜨므로 뜰 때마다 맞춘다.
+    // 브라우저 시작도 여기서 맞추므로 onStartup은 크롬만 건다 (둘 다 걸면 시작할 때 두 번 돈다)
     if (import.meta.env.FIREFOX) void applyBackgroundModules();
+    else browser.runtime.onStartup.addListener(() => void applyBackgroundModules());
 
     // ===== Commands: 단축키 → 활성 탭에만 전송 =====
     // 단축키 기능은 '이번 페이지' 단위라 모든 탭에 보내면 탭마다 토글·토스트·목록 요청이 한꺼번에 일어난다
@@ -94,6 +98,8 @@ export default defineBackground(() => {
 
         try {
             const injection = runInPage(sender.tab.id, sender.frameId, executeGrecaptcha, [GRECAPTCHA_SITE_KEY, action]);
+            // 시간 초과가 이긴 뒤 탭이 닫혀 실패해도 처리되지 않은 거절로 남지 않게 한다
+            injection.catch(() => {});
             const timeout = new Promise<undefined>((resolve) => setTimeout(resolve, GRECAPTCHA_TIMEOUT));
             const [result] = (await Promise.race([injection, timeout])) ?? [];
             return typeof result?.result === "string" ? result.result : undefined;
@@ -115,6 +121,9 @@ export default defineBackground(() => {
 
         await runInPage(sender.tab.id, sender.frameId, hookUploads, [UPLOAD_OPTIONS_KEY]).catch(console.error);
     });
+
+    // ===== 관리: 같은 제목 글 찾기의 통합검색 =====
+    onMessage("refresher:searchPosts", ({data: query}) => http.get(postSearchUrl(query)).text());
 
     // ===== Database: 설치/주기 갱신 =====
     // 설치 직후에는 onInstalled와 첫 주기 검사(lastUpdate 0)가 겹칠 수 있다. 진행 중인 갱신을 같이 기다려 두 번 받지 않는다
@@ -165,11 +174,14 @@ export default defineBackground(() => {
         const [pending, alarm] = await Promise.all([backupStorage.pending.getValue(), browser.alarms.get(AUTO_BACKUP_ALARM)]);
         if (pending && !alarm) await browser.alarms.create(AUTO_BACKUP_ALARM, {delayInMinutes: 1});
     };
-    browser.runtime.onStartup.addListener(rearmAutoBackup);
-    browser.runtime.onInstalled.addListener(() => void rearmAutoBackup().catch(console.error));
     // 파이어폭스는 확장을 껐다 켜면 onStartup/onInstalled 없이 배경만 다시 뜨고 알람은 지워진다.
-    // 배경 페이지가 상주해 방금 울린 알람을 또 걸 일이 없으므로 뜰 때마다 다시 건다
-    if (import.meta.env.FIREFOX) void rearmAutoBackup().catch(console.error);
+    // 배경 페이지가 상주해 방금 울린 알람을 또 걸 일이 없으므로 뜰 때마다 다시 건다 (시작·설치·업데이트도 여기서 덮인다)
+    if (import.meta.env.FIREFOX) {
+        void rearmAutoBackup().catch(console.error);
+    } else {
+        browser.runtime.onStartup.addListener(() => void rearmAutoBackup().catch(console.error));
+        browser.runtime.onInstalled.addListener(() => void rearmAutoBackup().catch(console.error));
+    }
 
     browser.alarms.onAlarm.addListener((alarm) => {
         if (alarm.name === DATABASE_ALARM) {

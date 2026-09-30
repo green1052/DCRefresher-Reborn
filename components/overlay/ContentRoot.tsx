@@ -60,9 +60,9 @@ const ToastItem = ({toast}: { toast: ToastData }) => {
 
 const ToastHost = () => {
     const toast = useUiStore((s) => s.toast);
-    // 스크린 리더용 알림 칸은 늘 두고 글만 바꾼다. 토스트와 같이 새로 붙는 칸은 읽히지 않을 때가 많다.
+    // 스크린 리더용 알림 칸은 늘 두고 글만 바꾼다. 토스트와 함께 새로 붙는 칸은 읽히지 않을 때가 많다.
     // 글은 토스트마다 새 노드로 넣어 같은 알림이 이어져도 다시 읽힌다. 오류는 하던 말을 끊고 바로 읽는다(alert).
-    // ponytail: 오버레이가 첫 토스트와 함께 붙으면 칸도 그때 생겨 그 토스트는 읽히지 않을 수 있다. 문제가 되면 칸을 먼저 그리고 글은 다음 틀에 넣는다
+    // ponytail: 오버레이가 첫 토스트와 함께 붙으면 칸도 그때 생겨 그 토스트는 읽히지 않을 수 있다. 문제가 되면 칸을 먼저 그리고 글은 다음 프레임에 넣는다
     const error = toast?.type === "error";
     return (
         <>
@@ -94,7 +94,7 @@ const formatActivity = (activity: ActivityState): string | undefined => {
 /** 아이디와 IP를 한 줄 "uid (IP)"로 합친다 */
 const identityValue = ({uid, ip}: { uid?: string; ip?: string }): string | undefined => (uid && ip ? `${uid} (${ip})` : uid || ip);
 
-/** 차단 규칙 하나를 해제한다. 토스트의 되돌리기 버튼으로 되돌린다 */
+/** 차단 규칙 하나를 해제한다. 토스트의 되돌리기 버튼으로 다시 걸 수 있다 */
 const unblock = async (type: BlockType, {id, ...fields}: BlockEntry): Promise<void> => {
     const {showToast} = useUiStore.getState();
     const saveFailed = (): void => showToast(SAVE_FAILED, "error");
@@ -125,7 +125,9 @@ const BlockRules = ({rules}: { rules: { type: BlockType; entry: BlockEntry }[] }
                         {entry.isRegex && <Text color="gray"> (정규식)</Text>}
                         {entry.gallery && <Text color="gray"> (이 갤러리만)</Text>}
                     </Text>
-                    <Button size="1" variant="ghost" color="red" style={{flexShrink: 0}} onClick={() => void unblock(type, entry)}>해제</Button>
+                    <Button size="1" variant="ghost" color="red" style={{flexShrink: 0}}
+                            aria-label={`${TYPE_NAMES[type]} ${type === "DCCON" ? entry.extra || entry.content : entry.content} 차단 해제`}
+                            onClick={() => void unblock(type, entry)}>해제</Button>
                 </Flex>
             ))}
         </Flex>

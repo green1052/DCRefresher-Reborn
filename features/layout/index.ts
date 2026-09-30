@@ -3,7 +3,7 @@ import {objectKeys} from "ts-extras";
 
 import {defineModule} from "@/core/module/define";
 import type {ModuleContext, SettingSchema, SettingsSchema} from "@/core/module/types";
-import {isViewPage} from "@/core/http/urls";
+import {isViewPage, queryString} from "@/core/http/urls";
 import {writeStyle} from "@/utils/dom";
 
 /** 체크하면 숨기는 영역. 설정과 <style> 규칙을 모두 여기서 만드므로 새 항목은 한 줄만 추가하면 된다 */
@@ -27,12 +27,13 @@ const HIDE_OPTIONS = {
         desc: "글 목록에서 게임메카 게시글을 숨깁니다.",
         // 예전 뉴스 행과, 지금처럼 일반 글 행으로 그려지는 게임메카 작성자 행
         selector: "tr[data-type=icon_fnews], tr.ub-content:has(> .ub-writer[data-uid=\"gamemeca\"])"
-    }
+    },
+    removeAi: {name: "AI 글 숨기기", desc: "글 목록에서 AI 표시가 붙은 글을 숨깁니다.", selector: "tr[data-type=icon_ai]"}
 } satisfies Record<string, { name: string; desc: string; selector: string }>;
 
 const HIDE_KEYS = objectKeys(HIDE_OPTIONS);
 
-const COMPACT_KEYS = new Set(["activePixel", "forceCompact", "useCompactModeOnView"]);
+const COMPACT_KEYS = new Set(["forceCompact", "useCompactModeOnView"]);
 const PUSH_CLASS = "refresherPushToRight";
 const HIDE_STYLE_ID = "refresher-layout-hide";
 
@@ -57,7 +58,7 @@ const watchWidth = (ctx: Ctx): void => {
 
 const applyHide = (ctx: Ctx): void => {
     // 공지 모아보기(?exception_mode=notice)에서는 공지를 숨기지 않는다 (디시 공지도)
-    const noticePage = location.search.includes("exception_mode=notice");
+    const noticePage = queryString("exception_mode") === "notice";
 
     // 선택자마다 규칙을 따로 둔다. 하나로 합치면 :has 등을 모르는 브라우저가 규칙 전체를 버린다.
     writeStyle(HIDE_STYLE_ID, HIDE_KEYS

@@ -14,7 +14,7 @@ export const IMAGE_SEARCH_ENGINES: Record<string, { name: string; url: string }>
     tracemoe: {name: "trace.moe", url: "https://trace.moe/?url="}
 };
 
-/** 메뉴를 띄울 이미지. imageSearchUrl이 변환할 수 있는 디시 본문 이미지(viewimage.php)만 (dcimg*.dcinside.co.kr, image.dcinside.com 등) */
+/** 메뉴를 띄울 이미지: imageSearchUrl이 바꿀 수 있는 디시 본문 이미지(viewimage.php — dcimg*.dcinside.co.kr, image.dcinside.com 등)만 */
 export const IMAGE_URL_PATTERNS = ["*://*.dcinside.co.kr/viewimage.php*", "*://*.dcinside.com/viewimage.php*"];
 
 /** 우클릭한 이미지를 engine으로 검색할 주소. 디시 본문 이미지가 아니면 null */
@@ -22,7 +22,7 @@ export const imageSearchUrl = (engine: string, src: string): string | null => {
     const prefix = IMAGE_SEARCH_ENGINES[engine]?.url;
     if (!prefix || !src.includes("viewimage.php")) return null;
 
-    // 디시콘 이미지로 통일 (호스트/경로만 교체, 쿼리 유지)
+    // 디시콘 주소(image.dcinside.com/dccon.php)로 바꾼다. 호스트·경로만 바꾸고 쿼리는 그대로 둔다
     const url = new URL(src);
     url.host = "image.dcinside.com";
     url.pathname = "/dccon.php";

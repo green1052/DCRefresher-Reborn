@@ -21,8 +21,10 @@ export const MANAGE_LABELS = {notice: ["공지로 등록", "공지를 해제"], 
 
 type Reply = { commentNo: string | null; replyNo: string | null };
 
-/** blockMedia: blockImage로 이미지를 가릴지. 전체 미리보기와 같은 클래스로 가린다. wheel: 휠로 내용을 스크롤할지 (tooltipWheel) */
-/** interactive: 마우스로 카드를 조작할 수 있다 (tooltipInteraction). 커서를 따라다니지 않는다 */
+/**
+ * blockMedia: blockImage로 이미지를 가릴지. 전체 미리보기와 같은 클래스로 가린다. wheel: 휠로 내용을 스크롤할지 (tooltipWheel).
+ * interactive: 마우스로 카드를 조작할 수 있다 (tooltipInteraction). 커서를 따라다니지 않는다
+ */
 type MiniState = { x: number; y: number; title: string; contents: string; blockMedia: boolean; wheel: boolean; interactive: boolean; gallery: string };
 
 /** 게시글을 새로 열 때마다 초기화되는 상태 */
@@ -80,6 +82,9 @@ interface PreviewState extends PostState, Hooks {
     captcha: { url: string; resolve: (code: string) => void } | null;
     mini: MiniState | null;
 
+    /** 정보 창(DcconInfoPopup)을 띄운 디시콘 코드. null이면 닫혀 있다 */
+    dcconInfo: string | null;
+
     /** 글 상태를 비우고 patch를 얹어 한 번의 setState로 연다 */
     open: (preData: GalleryPreData, patch?: Partial<PostState>) => void;
     close: () => void;
@@ -113,12 +118,12 @@ export const hoverMini = (hovered?: boolean): void => {
 
 /** 미리보기 UI 중 하나라도 떠 있어 오버레이가 필요한지 (콘텐츠 스크립트가 오버레이를 처음 띄울 때 본다). 새 UI를 추가하면 여기에 넣는다 */
 export const needsPreviewOverlay = (state: PreviewState): boolean =>
-    state.visible || state.warm || state.mini !== null || state.captcha !== null || state.blockPopup;
+    state.visible || state.warm || state.mini !== null || state.captcha !== null || state.blockPopup || state.dcconInfo !== null;
 
 /** 차단 기간 (시간 → 라벨). 차단 팝업과 차단 프리셋 설정이 같이 쓴다 */
 export const BLOCK_DAYS: Record<string, string> = {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"};
 
-/** 미니 미리보기 크기. Mini.tsx와 miniPosition의 화면 밖 방지 계산이 같이 쓴다 */
+/** 미니 미리보기 크기. Mini.tsx와 화면 밖 방지 계산(miniPosition, index.ts의 showMini)이 같이 쓴다 */
 export const MINI_WIDTH = 720;
 export const MINI_HEIGHT = 560;
 
@@ -128,7 +133,7 @@ export const miniPosition = (clientX: number, clientY: number): { x: number; y: 
     y: Math.max(0, Math.min(clientY + 16, window.innerHeight - MINI_HEIGHT - 20))
 });
 
-const NO_REPLY: Reply = {commentNo: null, replyNo: null};
+export const NO_REPLY: Reply = {commentNo: null, replyNo: null};
 
 export const NO_HOOKS: Hooks = {
     requestOpen: () => undefined,
@@ -191,11 +196,12 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     scrollToSkip: true,
     captcha: null,
     mini: null,
+    dcconInfo: null,
 
     open: (preData, patch) => {
         // 이전 글의 캡차 창은 닫는다. 남아 있으면 입력한 코드가 이전 글로 간다.
         get().captcha?.resolve("");
-        set({...freshPost(), ...patch, visible: true, fading: false, preData, signalId: ++signalSeq, mini: null, captcha: null});
+        set({...freshPost(), ...patch, visible: true, fading: false, preData, signalId: ++signalSeq, mini: null, captcha: null, dcconInfo: null});
     },
 
     close: () => {
@@ -203,7 +209,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
         if (!get().visible) return;
         get().captcha?.resolve("");
         // signalId도 올린다. 닫은 뒤 도착한 응답(abort로 난 오류 포함)이 페이드아웃 중인 창에 그려지면 안 된다.
-        set({visible: false, fading: true, comments: undefined, blockPopup: false, captcha: null, reply: NO_REPLY, signalId: ++signalSeq});
+        set({visible: false, fading: true, comments: undefined, blockPopup: false, captcha: null, reply: NO_REPLY, signalId: ++signalSeq, dcconInfo: null});
         // 앞서 닫을 때 건 타이머는 지운다. 남겨 두면 닫았다 곧바로 다시 열고 닫을 때 이번 페이드를 일찍 끊는다
         window.clearTimeout(fadeTimer);
         fadeTimer = window.setTimeout(() => set({fading: false}), 200);

@@ -1,6 +1,7 @@
 import {Button, Dialog, Flex, Skeleton, Switch, Text} from "@radix-ui/themes";
 import {useEffect, useState} from "react";
 
+import {DialogCloseButton} from "@/components/ConfirmDialog";
 import {overlay} from "@/components/overlay/shadow";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {ajax} from "@/core/http/client";
@@ -18,10 +19,15 @@ const MAX_PAGES = 20;
 
 type ListResult = DcinsideDcconDetailList[] | "not_login" | "shop";
 
+/** 디시콘 목록 캐시를 비운다. 정보 창(DcconInfoPopup)에서 디시콘을 추가하면 다음에 열 때 새로 받아 보이게 한다 */
+export const clearDcconListCache = (): void => {
+    listCache = null;
+};
+
 /** 한 쪽. 비로그인이면 JSON 대신 'not_login'이 온다 (디시 dccon.js) */
-const fetchPage = async (page: number): Promise<DcinsideDcconDetail | "not_login"> => {
+const fetchPage = async (page: number, signal: AbortSignal): Promise<DcinsideDcconDetail | "not_login"> => {
     const body = await csrfBody({target: "icon", page: String(page)});
-    const text = await ajax.post(urls.dccon.lists, {body}).text();
+    const text = await ajax.post(urls.dccon.lists, {body, signal}).text();
     if (/^"?not_login"?$/.test(text.trim())) return "not_login";
 
     const response = JSON.parse(text) as DcinsideDcconDetail;
@@ -34,14 +40,14 @@ const fetchPage = async (page: number): Promise<DcinsideDcconDetail | "not_login
  * 모든 쪽의 패키지를 이어 붙인다. 디시는 쪽마다 따로 주고(0부터 max_page까지) 창 안에서 넘기게 하지만,
  * 한 줄로 이어 두면 넘기지 않고 가로로 훑어 고를 수 있다. 첫 쪽 뒤의 쪽은 한꺼번에 받는다 (동시 요청 수는 요청 제한을 따른다)
  */
-const fetchAllPackages = async (): Promise<ListResult> => {
-    const first = await fetchPage(0);
+const fetchAllPackages = async (signal: AbortSignal): Promise<ListResult> => {
+    const first = await fetchPage(0, signal);
     if (first === "not_login") return first;
     if (first.target === "shop") return "shop";
 
     // max_page가 문자열로 오기도 한다 (디시 dccon.js도 ==로 비교한다)
     const last = Math.min(Number(first.max_page) || 0, MAX_PAGES - 1);
-    const rest = await Promise.all(Array.from({length: last}, (_, index) => fetchPage(index + 1)));
+    const rest = await Promise.all(Array.from({length: last}, (_, index) => fetchPage(index + 1, signal)));
     return [first, ...rest].flatMap((page) => (page !== "not_login" && Array.isArray(page.list) ? page.list : []));
 };
 
@@ -68,12 +74,14 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
 
     useEffect(() => {
         if (!loading) return;
-        // 닫은 뒤 늦게 온 결과는 버린다. onClose는 새로 연 창도 닫으므로 늦게 온 실패가 다시 연 창을 닫으면 안 된다
-        let alive = true;
+        // 닫으면 남은 쪽 요청을 끊고 늦게 온 결과는 버린다. onClose는 새로 연 창도 닫으므로 늦게 온 실패가 다시 연 창을 닫으면 안 된다
+        const controller = new AbortController();
+        const {signal} = controller;
 
-        void fetchAllPackages().then((result) => {
-            if (!alive) return;
-            if (typeof result === "string") {
+        void fetchAllPackages(signal).then((result) => {
+            if (signal.aborted) return;
+            // 가진 디시콘이 없으면 빈 목록이 온다. 빈 창을 띄우지 않고 알린다
+            if (typeof result === "string" || result.length === 0) {
                 const notLogin = result === "not_login";
                 useUiStore.getState().showToast(notLogin ? "디시콘은 로그인한 뒤에 쓸 수 있습니다." : "사용 가능한 디시콘이 없습니다.", notLogin ? "warning" : "error");
                 onClose();
@@ -85,14 +93,12 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
             if (result[0]) openPackage(result[0]);
             setLoading(false);
         }, () => {
-            if (!alive) return;
+            if (signal.aborted) return;
             useUiStore.getState().showToast("디시콘을 불러오지 못했습니다.", "error");
             onClose();
         });
 
-        return () => {
-            alive = false;
-        };
+        return () => controller.abort();
     }, []);
 
     const clickDccon = (dccon: DcinsideDccon): void => {
@@ -107,7 +113,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                             onCloseAutoFocus={focus.onCloseAutoFocus}>
                 <Flex justify="between" align="center" mb="3">
                     <Dialog.Title mb="0">디시콘</Dialog.Title>
-                    <Flex gap="4">
+                    <Flex gap="4" align="center">
                         <Text as="label" size="2">
                             <Flex gap="2" align="center">
                                 더블콘 <Switch size="1" checked={doubleDccon} onCheckedChange={(value) => {
@@ -121,6 +127,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                                 대왕콘 <Switch size="1" checked={bigDccon} onCheckedChange={setBigDccon}/>
                             </Flex>
                         </Text>
+                        <DialogCloseButton/>
                     </Flex>
                 </Flex>
 
@@ -132,9 +139,9 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                     </Flex>
                 )}
 
-                <div className="refresher-dccon-packages">
+                <div className="refresher-dccon-packages" aria-busy={loading && packages.length === 0}>
                     {loading && packages.length === 0
-                        ? Array.from({length: 8}, (_, index) => <Skeleton key={index} width="48px" height="48px"/>)
+                        ? Array.from({length: 12}, (_, index) => <Skeleton key={index} width="48px" height="48px"/>)
                         : packages.map((pack) => (
                             <button
                                 type="button"
@@ -151,9 +158,9 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                         ))}
                 </div>
 
-                <div className="refresher-dccon-grid">
+                <div className="refresher-dccon-grid" aria-busy={loading && current.length === 0}>
                     {loading && current.length === 0
-                        ? Array.from({length: 18}, (_, index) => <Skeleton key={index} style={{aspectRatio: 1}}/>)
+                        ? Array.from({length: 36}, (_, index) => <Skeleton key={index} width="100%" height="auto" style={{aspectRatio: 1}}/>)
                         : current.map((dccon) => (
                             <button type="button" key={dccon.detail_idx} title={dccon.title} onClick={() => clickDccon(dccon)}>
                                 <img src={dccon.list_img} alt={dccon.title}/>

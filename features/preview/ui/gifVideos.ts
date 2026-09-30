@@ -47,7 +47,7 @@ export const watchGifVideos = (root: HTMLElement): (() => void) => {
         const fallback = (): void => {
             if (video.isConnected && !painted) toGif(video, gif);
         };
-        // <source>의 error는 거품이 일지 않아 캡처로 받는다
+        // <source>의 error는 버블링되지 않아 캡처로 받는다
         video.addEventListener("error", fallback, {capture: true, signal: listeners.signal});
         timers.push(window.setTimeout(fallback, TIMEOUT));
     }

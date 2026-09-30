@@ -8,19 +8,20 @@ import {defineModule} from "@/core/module/define";
 import {getModuleApi} from "@/core/module/registry";
 import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useBlocksStore} from "@/stores/blocks";
-import {useUiStore} from "@/stores/ui";
+import {type BlockView, useUiStore} from "@/stores/ui";
+import {whenDomReady} from "@/utils/dom";
 import {messageOf} from "@/utils/error";
 import {isTyping, pressedKey} from "@/utils/event";
 import {isGalleryManager} from "@/utils/user";
 import {notifyManage} from "@/utils/notify";
 import {isRecord} from "@/utils/record";
 
-import {getEntry, setEntry} from "@/core/preview/cache";
+import {getEntry, postKey, setEntry} from "@/core/preview/cache";
 import {ADULT_ERROR, SECRET_ERROR} from "@/core/preview/parser";
 import {blockUser, type BlockOptions, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {adjacentPreData, buildPreData, isBlurHidden, isTextPost} from "./rows";
 import {type Ctx, settings} from "./settings";
-import {closeMiniSoon, type ErrorState, hoverMini, keepMini, MANAGE_LABELS, type ManageKind, MINI_WIDTH, miniPosition, NO_HOOKS, postTitle, usePreviewStore} from "./ui/previewStore";
+import {closeMiniSoon, type ErrorState, hoverMini, keepMini, MANAGE_LABELS, type ManageKind, MINI_WIDTH, miniPosition, NO_HOOKS, NO_REPLY, postTitle, usePreviewStore} from "./ui/previewStore";
 
 // status는 ky의 HTTPError에서 읽는다 (삭제된 글은 404).
 // 성인 인증 안내 페이지면 parsePostInfo가 Error(ADULT_ERROR)를, 미니 갤러리 비밀글이면 Error(SECRET_ERROR)를 던진다.
@@ -32,12 +33,19 @@ const errorOf = (error: unknown): ErrorState => ({
     secret: error instanceof Error && error.message === SECRET_ERROR
 });
 
+/** 미리보기를 열기 전 위치. 닫을 때 여기로 돌아간다 */
+interface SavedHistory {
+    title: string;
+    url: string;
+    state: unknown;
+}
+
 const controller = (ctx: Ctx) => {
     const store = usePreviewStore;
     const ui = useUiStore.getState();
 
     let abort: AbortController | null = null;
-    let savedHistory: { title: string; url: string; state: unknown } | null = null;
+    let savedHistory: SavedHistory | null = null;
     // 히스토리 항목에 넣어 이 문서가 쌓은 것인지 가린다. 새로고침한 페이지에 남은 예전 항목으로는 미리보기를 열지 않는다.
     const historyDoc = performance.timeOrigin;
     let refreshTimer = 0;
@@ -48,6 +56,8 @@ const controller = (ctx: Ctx) => {
     let miniTimer = 0;
     // 미니를 띄울 제목 칸. 본문을 받는 사이 커서가 떠났으면 띄우지 않는다.
     let miniTarget: HTMLElement | null = null;
+    // 떠 있는 미니가 보여 주는 제목 칸
+    let miniFor: HTMLElement | null = null;
     // 받는 중인 본문 요청 하나. 우클릭 누름·미니·열기·미리 받기가 같이 쓴다.
     // 다른 글을 받으면 앞 요청은 끊어, 연타해도 요청이 쌓이지 않는다.
     let pending: { key: string; ctrl: AbortController; post: Promise<PostInfo> } | null = null;
@@ -71,7 +81,7 @@ const controller = (ctx: Ctx) => {
     };
 
     const requestPost = (preData: GalleryPreData): Promise<PostInfo> => {
-        const key = `${preData.gallery}/${preData.id}`;
+        const key = postKey(preData);
         if (pending?.key === key) return pending.post;
 
         pending?.ctrl.abort();
@@ -83,7 +93,7 @@ const controller = (ctx: Ctx) => {
         const slot = {key, ctrl, post};
         pending = slot;
 
-        // 끝나면 칸을 비운다 (받은 본문은 캐시에 있다). catch는 아무도 기다리지 않는 미리 받기가 실패해도
+        // 끝나면 pending을 비운다 (받은 본문은 캐시에 있다). catch는 아무도 기다리지 않는 미리 받기가 실패해도
         // unhandled rejection이 나지 않게 붙인다.
         void post.catch(() => undefined).finally(() => {
             if (pending === slot) pending = null;
@@ -112,7 +122,6 @@ const controller = (ctx: Ctx) => {
             return {post: await requestPost(preData), fresh: true};
         } catch (e) {
             // 다른 글로 넘어가 끊은 요청은 보존본으로 대신하지 않는다.
-            // 파이어폭스에선 다른 realm의 DOMException이라 instanceof가 안 맞아 이름으로 본다.
             if (isAbortError(e)) throw e;
             // 삭제된 글 보존: 받지 못하면 캐시 비활성화여도 캐시에 남은 이전 본문을 보여 준다. 다시 저장해 수명을 늘린다.
             const archived = ctx.settings.archiveArticle ? getEntry(preData)?.post : undefined;
@@ -131,14 +140,14 @@ const controller = (ctx: Ctx) => {
     let pulling = 0;
     // 마지막으로 그린 댓글 원본 (보존 처리까지 마친 것). 차단 목록·방식이 바뀌면 다시 받지 않고 이것으로 다시 가린다.
     let shown: { signal: number; source: DcinsideComment[] } | null = null;
-    /** shown을 만든 받은 목록(JSON). 같은 목록을 다시 받으면 다시 그리지 않는다 */
+    /** shown을 만든 받은 목록의 JSON. 같은 목록을 다시 받으면 다시 그리지 않는다 */
     let shownRaw = "";
 
     // 답글 대상 댓글이 목록에서 빠졌거나 삭제됐으면 답글 쓰기를 푼다. 두면 취소 버튼도 없이 없는 댓글에 답글을 단다
     const dropStaleReply = (): void => {
         const {reply, comments} = store.getState();
         if (reply.replyNo && !comments?.some((comment) => comment.no === reply.replyNo && comment.is_delete !== "1")) {
-            store.setState({reply: {commentNo: null, replyNo: null}});
+            store.setState({reply: NO_REPLY});
         }
     };
 
@@ -164,7 +173,7 @@ const controller = (ctx: Ctx) => {
             shownSeq = seq;
             if (!skip) setEntry(preData, {comments: {list: raw, allowReply, truncated}});
 
-            // 보존(archive) 기록은 받을 때마다 갱신해야 하므로 정리는 늘 한다
+            // 보존 기록은 받을 때마다 갱신해야 하므로 prepareComments는 같은 목록이어도 부른다
             const source = prepareComments(raw, preData, ctx.settings.archiveArticle, truncated);
             // 자동 새로고침으로 같은 목록을 다시 받았으면 정화·다시 그리기를 건너뛴다. 댓글이 수백 개면 정화만 수십 ms다
             const rawKey = JSON.stringify(raw);
@@ -197,8 +206,11 @@ const controller = (ctx: Ctx) => {
     ctx.addCleanup(useBlocksStore.subscribe((state, previous) => {
         if (state.entries !== previous.entries || state.defaults !== previous.defaults) void reapplyBlocks();
     }));
+    // 가공 결과(processComments·textBlockOf)가 읽는 값만 본다. '가린 내용 보기'(revealed·blurReveal)는 창과 댓글 목록이 직접 구독하므로,
+    // 켜고 끌 때마다 댓글 수백 개를 다시 가공해 모두 다시 그리지 않는다. duplicate는 매번 새 객체라 값으로 비교한다
+    const blockKeyOf = (view: BlockView | null): string => (view ? JSON.stringify([view.blur, view.replyRemove, view.duplicate]) : "");
     ctx.addCleanup(useUiStore.subscribe((state, previous) => {
-        if (state.blockView !== previous.blockView) void reapplyBlocks();
+        if (blockKeyOf(state.blockView) !== blockKeyOf(previous.blockView)) void reapplyBlocks();
     }));
 
     /** report: 사용자가 누른 새로고침이면 실패를 알린다. 자동 갱신 실패는 조용히 넘긴다 */
@@ -240,9 +252,9 @@ const controller = (ctx: Ctx) => {
         let archived: boolean;
 
         // 받아야 하는 글이 목록에 댓글이 보이면 댓글도 본문과 함께 요청한다. 토큰(e_s_n_o)은 갤러리마다 같아 이 페이지의 값을 쓰고,
-        // 본문을 읽은 뒤 그 글의 값과 맞을 때만 쓴다. PageUp/Down으로 넘길 때는 하지 않는다 (연타하면 지나가는 글마다 요청이 나간다)
+        // 본문을 읽은 뒤 그 글의 값과 맞을 때만 쓴다. PageUp/Down·스크롤로 넘길 때는 하지 않는다 (연달아 넘기면 지나가는 글마다 요청이 나간다)
         const esno = document.querySelector<HTMLInputElement>("#e_s_n_o")?.value;
-        const early = !dir && preData.hasComments && esno && (ctx.settings.disableCache || !cachedPost(preData))
+        const early = !dir && preData.commentCount > 0 && esno && (ctx.settings.disableCache || !cachedPost(preData))
             ? fetchComments(preData, {esno}, abort!.signal).catch(() => undefined)
             : undefined;
 
@@ -274,8 +286,8 @@ const controller = (ctx: Ctx) => {
             if (store.getState().signalId === mySignal && !(e instanceof BlockedError)) ui.showToast("댓글을 불러오지 못했습니다.", "error");
         }
 
-        // PageUp/Down으로 넘겼으면 같은 방향 다음 글의 본문을 미리 받는다. 댓글은 열 때 받는다.
-        // 받는 중인 요청(새로고침 버튼·미니 등)이 있으면 미리 받지 않는다. 받으면 그 요청을 끊는다.
+        // PageUp/Down·스크롤로 넘겼으면 같은 방향 다음 글의 본문을 미리 받는다. 댓글은 열 때 받는다.
+        // 받는 중인 요청(새로고침 버튼·미니 등)이 있으면 미리 받지 않는다. 미리 받으면 그 요청이 끊긴다.
         if (dir && !ctx.settings.disableCache && store.getState().signalId === mySignal) {
             const next = adjacentPreData(preData, dir);
             if (next && !pending && !cachedPost(next)) void requestPost(next);
@@ -315,14 +327,14 @@ const controller = (ctx: Ctx) => {
         store.getState().close();
     };
 
-    /** dir: PageUp/Down으로 넘긴 방향. 그 방향 다음 글을 미리 받는다 */
+    /** dir: PageUp/Down·스크롤로 넘긴 방향. 그 방향 다음 글을 미리 받는다 */
     const open = (preData: GalleryPreData, commentsOnly = false, historySkip = false, dir = 0) => {
         // 대기·요청 중인 미니가 전체 미리보기 위에 뜨지 않게 한다.
         onMiniLeave();
 
         const st = store.getState();
 
-        if (st.visible && st.preData?.id === preData.id && st.preData?.gallery === preData.gallery) {
+        if (st.visible && st.preData && postKey(st.preData) === postKey(preData)) {
             if (!st.error) {
                 store.setState({commentsOnly});
                 return;
@@ -458,7 +470,7 @@ const controller = (ctx: Ctx) => {
 
     const onPopState = (ev: PopStateEvent) => {
         // 이 문서에서 쌓은 항목이면 창이 열려 있어도 그 글을 연다. PageDown으로 넘긴 뒤 뒤로 가면 이전 글이 열린다.
-        const state = ev.state as { refresher?: number; doc?: number; preData?: GalleryPreData; back?: typeof savedHistory } | null;
+        const state = ev.state as { refresher?: number; doc?: number; preData?: GalleryPreData; back?: SavedHistory } | null;
         if (state?.refresher === 1 && state.doc === historyDoc && state.preData) {
             savedHistory = state.back ?? null;
             open(state.preData, false, true);
@@ -484,6 +496,7 @@ const controller = (ctx: Ctx) => {
         if (ctx.settings.tooltipInteraction && position.x <= x) position.x = Math.max(0, x - MINI_WIDTH - 10);
 
         hoverMini();
+        miniFor = element;
         usePreviewStore.setState({
             mini: {
                 ...position,
@@ -505,8 +518,10 @@ const controller = (ctx: Ctx) => {
 
         const element = ev.currentTarget as HTMLElement;
         if (isBlurHidden(element)) return;
-        // 조작할 수 있는 미니에서 제목으로 돌아왔으면 닫지 않는다
+        // 조작할 수 있는 미니에서 제목으로 돌아왔으면 닫지 않는다. 떠난 제목의 닫기 타이머는 다른 제목에 들어와도 끊어야
+        // 새로 뜰 카드를 닫지 않으므로 keepMini는 늘 부른다. 다른 제목이면 앞 글의 카드는 바로 내린다 (새 글을 받지 못하면 앞 글 카드가 그대로 남는다)
         keepMini();
+        if (element !== miniFor && usePreviewStore.getState().mini) usePreviewStore.setState({mini: null});
         const x = ev.clientX;
         const y = ev.clientY;
 
@@ -650,6 +665,23 @@ const controller = (ctx: Ctx) => {
     window.addEventListener("keydown", onKey, {signal: ctx.signal});
     window.addEventListener("popstate", onPopState, {signal: ctx.signal});
 
+    // 앞/뒤로 가기로 돌아왔는데 목록 문서가 bfcache에 없으면 브라우저는 미리보기가 쌓은 항목을 글 주소로 새로 불러온다(파이어폭스에서 잦다).
+    // 목록 주소로 바꿔 다시 불러오고, 목록에서 그 글 미리보기를 연다. 새로고침(F5)은 글 페이지 그대로 둔다
+    // 다시 연 항목은 새로 쌓지 않고 이 문서 것으로 바꾼다. 쌓으면 목록 항목이 둘이 되어 뒤로 가기를 두 번 눌러야 한다
+    const entry = history.state as { refresher?: number; doc?: number; preData?: GalleryPreData; back?: SavedHistory; reopen?: boolean } | null;
+    if (entry?.refresher === 1 && entry.doc !== historyDoc && entry.preData && entry.back) {
+        const {preData, back} = entry;
+        const navigation = performance.getEntriesByType("navigation")[0];
+        if (entry.reopen) {
+            history.replaceState({...entry, doc: historyDoc, reopen: false}, "", preData.link);
+            savedHistory = back;
+            whenDomReady(() => open(preData, false, true), ctx.signal);
+        } else if (navigation instanceof PerformanceNavigationTiming && navigation.type === "back_forward") {
+            history.replaceState({...entry, reopen: true}, "", back.url);
+            location.reload();
+        }
+    }
+
     ctx.addCleanup(() => {
         // 행 리스너(mouseleave)가 떨어지면 떠 있거나 받는 중인 미니를 닫을 길이 없어 여기서 닫는다.
         onMiniLeave();
@@ -680,7 +712,7 @@ const publishSettings = (ctx: Ctx): void => {
 };
 
 /** 다른 모듈이 쓰는 미리보기 api (getModuleApi("preview")) */
-export interface PreviewApi {
+interface PreviewApi {
     /** '삭제된 글과 댓글 보존' 설정. 새로고침 모듈도 목록에서 지워진 글을 남길지 이것으로 정한다 */
     archiveArticle(): boolean;
 

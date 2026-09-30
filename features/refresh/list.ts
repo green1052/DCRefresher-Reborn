@@ -6,8 +6,25 @@ import {checkboxFiller, highlightSearchResults, PAGING_SELECTOR} from "@/core/li
 /** 새 글 판정용 행 키. 번호 없는 행(설문·AD, 다른 갤러리 공지)은 번호 칸 글자로 구분한다 */
 const rowKey = (row: HTMLElement): string => rowPostNo(row) ?? row.querySelector(".gall_num")?.textContent ?? "";
 
-/** 받아온 행의 원래 HTML (체크박스 칸·강조·효과를 입히기 전). 행 순서가 같을 때 바뀐 행을 가려내는 데 쓴다 */
-const rawRows = new WeakMap<Element, string>();
+/** 조회수·추천수·댓글 수 칸. 폴링마다 위쪽 행 여럿에서 바뀐다 */
+const COUNT_CELLS = ".gall_count, .gall_recommend, .reply_num";
+
+/**
+ * 받아온 행의 원래 HTML에서 수 칸의 글자를 비운 것 (체크박스 칸·강조·효과를 입히기 전). 행 순서가 같을 때 바뀐 행을 가려내는 데 쓴다.
+ * 수만 바뀐 행은 갈아끼우지 않고 글자만 고친다. 갈아끼우면 필터·차단 검사·배지·리스너가 다시 돌고 hover가 풀린다.
+ * 마크업이 예상과 달라 정규식이 못 비우면 수가 바뀐 행도 달라 보여 전처럼 갈아끼운다
+ */
+const rowFrames = new WeakMap<Element, string>();
+const frameOf = (html: string): string => html.replace(/(class="(?:gall_count|gall_recommend|reply_num)"[^>]*>)[^<]*/g, "$1");
+
+const syncCounts = (target: Element, source: Element): void => {
+    const sources = source.querySelectorAll(COUNT_CELLS);
+    for (const [index, cell] of target.querySelectorAll(COUNT_CELLS).entries()) {
+        const text = sources[index]?.textContent ?? "";
+        // 같으면 두어 DOM 변경(필터 감시)을 만들지 않는다
+        if (cell.textContent !== text) cell.textContent = text;
+    }
+};
 
 /**
  * 새 목록에서 빠진 글 행을 제자리에 남기고 붉게 칠한다 (v5의 삭제된 글 보존). 한 번 남긴 행은 다음 새로고침에도 남는다.
@@ -88,7 +105,7 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
 
     for (const [index, element] of newRows.entries()) {
         const no = newKeys[index]!;
-        rawRows.set(element, element.outerHTML);
+        rowFrames.set(element, frameOf(element.outerHTML));
         fillCheckbox(element);
 
         if (isViewPage && no === pagePostNo) {
@@ -104,7 +121,6 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
     // 받아온 HTML엔 검색어 강조가 없으니 페이지 전환뿐 아니라 받아온 목록마다 칠한다
     if (search !== undefined) highlightSearchResults(newList, search);
 
-    // 주소를 바꾼 로드(페이지 넘김·뒤로 가기)는 다른 목록이라 새 글 효과를 넣지 않는다
     if (!navigated && fadeIn) {
         for (const [index, element] of newPostList.entries()) {
             element.classList.add("refresherNewPost");
@@ -119,7 +135,7 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
     }
 
     // 행 순서가 같거나, 한 자리(공지 아래)에 새 글이 끼어들고 그만큼 아래가 밀려난 것뿐이면 제자리에서 고친다.
-    // 새 행만 끼우고 밀려난 행만 빼며, 나머지는 바뀐 행(조회수 등)만 갈아끼운다. 그대로인 행은 hover·리스너가 유지되고 필터·스타일·배치를 다시 하지 않는다.
+    // 새 행을 끼우고 밀려난 행을 빼고, 나머지는 바뀐 행만 갈아끼운다(수만 바뀐 행은 글자만 고친다). 그대로인 행은 hover·리스너가 남고 필터·스타일·배치도 다시 하지 않는다.
     // 검색 결과는 강조와 글·댓글 행 짝이 얽혀 있어 통째로 바꾼다. 삭제된 글 보존은 옛 행을 새 목록으로 옮겨 넣으므로 순서가 같을 때만 제자리에서 고친다
     const shift = !navigated && search === undefined ? insertionOf(oldKeys, newKeys) : null;
     if (shift && (!keepDeleted || (shift.count === 0 && oldKeys.length === newKeys.length))) {
@@ -130,7 +146,8 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
         for (const [index, row] of newRows.entries()) {
             if (index >= at && index < at + count) continue;
             const old = oldRows[index < at ? index : index - count]!;
-            if (rawRows.get(old) !== rawRows.get(row)) old.replaceWith(row);
+            if (rowFrames.get(old) !== rowFrames.get(row)) old.replaceWith(row);
+            else syncCounts(old, row);
         }
     } else {
         oldList.replaceWith(newList);

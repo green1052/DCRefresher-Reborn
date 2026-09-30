@@ -14,7 +14,7 @@ import {messageOf} from "@/utils/error";
 import {byteSize, Empty, formatBytes, formatTime, Section, useStorageItem} from "./Layout";
 import {notify, useOptionsStore} from "./optionsStore";
 
-/** 개발자 탭에서만 보는 ip·ban 원문. 이 탭은 App.tsx에서 lazy로 불러오므로 다른 페이지는 이 수백 KB를 읽지 않는다 */
+/** 개발자 탭에서만 보는 ip·ban 원문. 이 탭은 App.tsx에서 lazy로 불러오므로 다른 탭을 볼 때는 이 수백 KB를 읽지 않는다 */
 const dbIp = storage.defineItem<string>(DB_KEYS.ip, {fallback: ""});
 const dbBan = storage.defineItem<string>(DB_KEYS.ban, {fallback: ""});
 
@@ -46,7 +46,7 @@ const useStorageArea = (area: Area): Record<string, unknown> | null => {
             void browser.storage[area].get(null).then((next) => {
                 if (alive) setItems(next);
             });
-        // 바뀐 키만 반영한다. 다시 읽으면 글댓비를 저장할 때마다 1MB가 넘는 IP·밴 DB까지 읽는다
+        // 바뀐 키만 반영한다. 다시 읽으면 글댓비를 저장할 때마다 수백 KB씩인 IP·밴 DB까지 읽는다
         const onChanged = (changes: Record<string, { newValue?: unknown }>): void => {
             setItems((previous) => {
                 if (!previous) return previous;
@@ -79,20 +79,20 @@ const StorageEntry = ({name, value, onDelete}: { name: string; value: unknown; o
             <Box py="2" style={{borderTop: "1px solid var(--gray-a4)"}}>
                 <Flex align="center" gap="2">
                     <Collapsible.Trigger asChild>
-                        <IconButton size="1" variant="ghost" color="gray" aria-label={open ? "접기" : "펼치기"}>
+                        <IconButton size="1" variant="ghost" color="gray" aria-label={`${name} ${open ? "접기" : "펼치기"}`}>
                             <ChevronRight size={14} className="refresher-chevron"/>
                         </IconButton>
                     </Collapsible.Trigger>
                     <Code size="2" variant="ghost" style={{flex: 1, minWidth: 0, overflowWrap: "anywhere"}}>{name}</Code>
                     <Text size="1" color="gray" style={{fontVariantNumeric: "tabular-nums"}}>{formatBytes(byteSize(value))}</Text>
                     <Tooltip content="JSON 복사">
-                        <IconButton size="1" variant="ghost" color="gray" aria-label="JSON 복사"
+                        <IconButton size="1" variant="ghost" color="gray" aria-label={`${name} JSON 복사`}
                                     onClick={() => void navigator.clipboard.writeText(JSON.stringify(value, null, 2))}>
                             <Copy size={14}/>
                         </IconButton>
                     </Tooltip>
                     <Tooltip content="삭제">
-                        <IconButton size="1" variant="ghost" color="red" aria-label="삭제" onClick={onDelete}>
+                        <IconButton size="1" variant="ghost" color="red" aria-label={`${name} 삭제`} onClick={onDelete}>
                             <Trash2 size={14}/>
                         </IconButton>
                     </Tooltip>

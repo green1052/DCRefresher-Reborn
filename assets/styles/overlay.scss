@@ -277,13 +277,52 @@
         margin-bottom: 3px;
     }
 
-    table {
+    // 인라인 width(본문 틀 900px, 표 등)가 창보다 넓어도 창 안에 들어오게 한다 (sanitize.ts가 남긴 서식)
+    * {
         max-width: 100%;
     }
 
     // 디시는 본문 줄마다 <p>다. 브라우저 기본 문단 여백(1em)이 남으면 줄마다 빈 줄이 낀 것처럼 보인다 (미니 미리보기도 같다)
     p {
         margin: 0;
+    }
+
+    /* 링크 미리보기 카드 — 디시 og.css를 옮김. 디시는 인라인 style로도 주지만 sanitize.ts가 표시·float·넘침 속성을 지워, 지워지는 것만 여기서 다시 준다.
+       남는 인라인 서식(너비·높이·테두리·흰 바탕·글자색)은 그대로 쓴다 */
+    a.og-wrap {
+        display: inline-block;
+        box-sizing: border-box;
+        overflow: hidden;
+        // 디시 본문 글자색. 흰 바탕이 인라인으로 남으므로 다크 테마에서도 어둡게 둔다
+        color: #333;
+        text-decoration: none;
+    }
+
+    div.og-img {
+        float: left;
+        box-sizing: border-box;
+
+        img {
+            width: 100%;
+            height: 100%;
+            border-radius: 0;
+            object-fit: cover;
+        }
+    }
+
+    div.og-info {
+        float: right;
+        box-sizing: border-box;
+    }
+
+    :is(div.og-inr, strong.og-tit, p.og-txt, p.og-lnk) {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    :is(div.og-inr, strong.og-tit) {
+        display: inline-block;
     }
 }
 
@@ -296,6 +335,7 @@
     .written_dccon {
         height: 100px;
         vertical-align: top;
+        cursor: pointer;
 
         &.bigdccon {
             height: 150px;
@@ -314,7 +354,7 @@
     display: none;
 }
 
-// 관리자가 가린 이미지 — 디시는 인라인 style로 숨기는데 정화하며 지워진다. '차단 이미지 보기'를 누르면 속성을 떼어 보인다 (Frame.tsx)
+// 관리자가 가린 이미지 — 디시는 인라인 style(display)로 숨기는데 정화하며 지워진다. '차단 이미지 보기'를 누르면 속성을 떼어 보인다 (Frame.tsx)
 .refresher-html :is(img, video)[data-block] {
     display: none;
 }
@@ -424,20 +464,25 @@
     .cbg_333333 .ctxt_333333 {
         text-shadow: 0 0 4px rgb(255 255 255 / 60%);
     }
+
+    .written_dccon {
+        cursor: pointer;
+    }
 }
 
 /* ===== 댓글 ===== */
 
-/* 답글 접기·펼치기 (Frame.tsx) */
+/* 답글 접기·펼치기 (CommentList.tsx) */
 .refresher-replies {
     @include mixins.collapsible;
 }
 
 .refresher-comment {
     // 화면 밖 댓글은 레이아웃·스타일 계산을 건너뛴다 — 댓글 수백 개인 글을 열 때 레이아웃이 크게 준다.
-    // 트리 선(::before/::after)은 모두 칸 안에 그리므로 잘리지 않는다
-    // 아직 그리지 않은 댓글의 높이는 대부분인 한 줄 댓글(여백 포함 64px)로 어림한다. 크게 잡으면 답글을 펼칠 때 Radix가 그리기 전의 어림값으로 높이를 재
-    // 펼치는 동안 실제보다 아래로 늘었다가 줄고, 그리지 않은 댓글이 많은 글은 스크롤 길이도 부풀었다가 줄어든다
+    // 트리 선(::before/::after)은 모두 칸 안에 그리므로 잘리지 않는다.
+    // 아직 그리지 않은 댓글은 가장 흔한 한 줄 댓글 높이로 어림한다 (48px + 위아래 여백 16px = 64px).
+    // 크게 잡으면 답글을 펼칠 때 Radix가 그리기 전 어림값으로 높이를 재 펼치는 동안 실제보다 늘었다가 줄고,
+    // 그리지 않은 댓글이 많은 글은 스크롤 길이도 부풀었다가 줄어든다
     content-visibility: auto;
     contain-intrinsic-size: auto 48px;
 
@@ -511,6 +556,11 @@
         display: none;
     }
 
+    // 가린 디시콘(디시콘 자체·가린 본문·가린 댓글 안)은 눌러도 정보 창이 열리지 않으므로 손가락 커서를 되돌린다 (DcconInfoPopup의 openDcconInfo)
+    &:not([data-block-revealed]) :is(.written_dccon[data-blocked], [data-blocked] .written_dccon) {
+        cursor: auto;
+    }
+
     // 이 페이지에서만 가린 내용 보기 — 숨겼던 것도 흐리게 보인다
     &[data-block-revealed] :is([data-blocked], [data-duplicate]) {
         filter: none;
@@ -532,7 +582,8 @@
     overflow: hidden;
 }
 
-// 카드가 포인터를 통과시켜 직접 굴릴 수는 없다. 제목 위에서 굴리면 Mini.tsx가 스크롤하고, 스크롤바는 더 있다는 표시다
+// 카드가 포인터를 통과시키면(상호작용 설정이 꺼진 기본값) 직접 굴릴 수 없다. 휠 설정을 켜면 제목 위에서 굴릴 때 Mini.tsx가 스크롤한다.
+// 스크롤바는 내용이 더 있다는 표시다
 .refresher-mini-contents {
     flex: 1;
     min-height: 0;
@@ -562,6 +613,16 @@
 }
 
 /* ===== 디시콘 ===== */
+
+// 불러오는 동안은 스켈레톤을 칸이 넘치도록 깔아 꽉 찬 목록처럼 보인다(패키지는 보통 칸을 채운다). 넘친 스켈레톤에 스크롤바가 생기지 않게 자른다
+:is(.refresher-dccon-packages, .refresher-dccon-grid, .refresher-dccon-info-grid)[aria-busy="true"] {
+    overflow: hidden;
+}
+
+// 정보 창 목록은 최대 높이만 있어, 불러오는 동안 그 높이로 잡아 두어야 다 불러왔을 때 창이 커지지 않는다
+.refresher-dccon-info-grid[aria-busy="true"] {
+    height: 420px;
+}
 
 :is(.refresher-dccon-packages, .refresher-dccon-grid) button {
     padding: 2px;
@@ -609,6 +670,40 @@
         &:hover {
             background: var(--gray-a3);
         }
+    }
+}
+
+/* 디시콘 정보 (디시 '디시콘 보기' 창처럼 위에 패키지 정보, 아래에 든 디시콘) */
+.refresher-dccon-info-head {
+    display: flex;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border-radius: var(--radius-3);
+    background: var(--gray-a2);
+
+    > img {
+        flex: none;
+        width: 120px;
+        height: 120px;
+        object-fit: contain;
+    }
+}
+
+.refresher-dccon-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: var(--space-2);
+    max-height: 420px;
+    margin-top: var(--space-4);
+    overflow-y: auto;
+    align-content: start;
+
+    img {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: contain;
+        // 우클릭하면 차단 버블이 뜬다 (DcconInfoPopup의 openBlockBubble). 댓글 작성자 칸과 같다
+        cursor: context-menu;
     }
 }
 

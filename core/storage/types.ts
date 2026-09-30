@@ -30,7 +30,7 @@ export interface DatabaseMeta {
     format?: number;
 }
 
-/** 밴 목록: 이유 → uid[] */
+/** 밴 목록: 갤러리 이름(갱차 이유로 보인다) → uid[] */
 export type BanList = Record<string, string[]>;
 
 export type SettingValue = boolean | number | string | string[];
