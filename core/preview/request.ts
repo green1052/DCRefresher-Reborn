@@ -404,7 +404,13 @@ export const fetchDcconPackage = async (code: string, signal?: AbortSignal): Pro
     }).text();
     // 잘못된 코드면 JSON 대신 'error'가 온다
     if (text.trim() === "error") throw new Error("디시콘 정보가 잘못되었습니다.");
-    return JSON.parse(text) as DcinsideDcconPackage;
+
+    const response = JSON.parse(text) as DcinsideDcconPackage;
+    // 다른 모양(실패 응답 등)이면 정보 창을 그리다 오버레이 전체가 깨지므로 실패로 넘긴다 (DcconPopup의 fetchPage와 같다)
+    if (!isRecord(response) || !isRecord(response.info) || !Array.isArray(response.detail) || !Array.isArray(response.tags)) {
+        throw new Error("디시콘 정보가 아닙니다.");
+    }
+    return response;
 };
 
 /** 무료 디시콘 패키지를 내 디시콘에 추가한다 (디시 dc_common2.js의 '사용' 버튼) */
