@@ -55,11 +55,12 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
 
     const first = await firstPage;
     const pages = Math.max(1, ...Array.from(first.pagination?.matchAll(/viewComments\((\d+)/g) ?? [], (match) => Number(match[1])));
-    const rest = Array.from({length: Math.max(0, Math.min(10, pages) - guessed)}, (_, index) => fetchPage(guessed + index + 1));
+    const rest = Promise.all(Array.from({length: Math.max(0, Math.min(10, pages) - guessed)}, (_, index) => fetchPage(guessed + index + 1)));
+    const [earlyPages, restPages] = await Promise.all([early, rest]);
 
     // 1쪽이 가장 최근 댓글이고 뒤쪽일수록 오래된 댓글이다. 쪽 사이에 같은 댓글이 겹쳐 올 수 있어 번호로 하나만 남기고 번호(등록)순으로 맞춘다
     const byNo = new Map<string, DcinsideComment>();
-    for (const response of [first, ...await early, ...await Promise.all(rest)]) {
+    for (const response of [first, ...earlyPages, ...restPages]) {
         for (const comment of response.comments ?? []) byNo.set(comment.no, comment);
     }
 
