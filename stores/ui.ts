@@ -28,7 +28,7 @@ export const showsUid = (view: BadgeView, icon?: string): boolean => {
 };
 
 /** 차단 모듈의 표시 방식. 미리보기도 이것으로 페이지와 같게 가린다 */
-interface BlockView {
+export interface BlockView {
     blur: boolean;
     /** 블러에 마우스를 올리면 보기 */
     blurReveal: boolean;

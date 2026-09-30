@@ -75,10 +75,11 @@ export const processComments = (source: DcinsideComment[], preData: GalleryPreDa
 
     // 차단 모듈이 꺼져 있으면 blockView가 없고 아무것도 가리지 않는다
     const view = useUiStore.getState().blockView;
+    if (!view) return list;
     // 페이지 쪽 검사처럼 앞뒤 공백을 뗀다. 디시콘만 있는 댓글이 " "로 남아 빈 글과 달라지지 않게
     const texts = new Map(list.map((comment) => [comment, htmlToText(comment.memo).trim()]));
 
-    for (const comment of view ? list : []) {
+    for (const comment of list) {
         // 삭제 표시된 댓글도 검사한다. 보존으로 되살린 댓글은 원문을 담고 있어 건너뛰면 차단된 내용이 보인다
         const plain = texts.get(comment);
         // 디시콘 2개짜리 댓글은 두 번째도 검사한다
@@ -95,16 +96,16 @@ export const processComments = (source: DcinsideComment[], preData: GalleryPreDa
                 preData.gallery
             ) || dcconNos.some((no) => isBlocked("DCCON", no, preData.gallery));
 
-        if (blocked) comment.blocked = view!.blur ? "blur" : "hide";
+        if (blocked) comment.blocked = view.blur ? "blur" : "hide";
     }
 
-    if (view?.replyRemove) {
+    if (view.replyRemove) {
         // 답글의 c_no는 쓰레드 첫 댓글 번호
         const blockedThreads = new Set(list.filter((comment) => comment.depth === 0 && comment.blocked).map((comment) => comment.no));
         for (const comment of list) if (comment.depth === 1 && blockedThreads.has(comment.c_no)) comment.blocked ??= view.blur ? "blur" : "hide";
     }
 
-    if (view?.duplicate) {
+    if (view.duplicate) {
         const candidates = list.filter((comment) => !comment.blocked && comment.is_delete !== "1");
         for (const [comment, repeats] of groupDuplicates(candidates, (comment) => texts.get(comment) ?? "", view.duplicate)) comment.duplicates = repeats;
     }

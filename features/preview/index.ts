@@ -8,7 +8,7 @@ import {defineModule} from "@/core/module/define";
 import {getModuleApi} from "@/core/module/registry";
 import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useBlocksStore} from "@/stores/blocks";
-import {useUiStore} from "@/stores/ui";
+import {type BlockView, useUiStore} from "@/stores/ui";
 import {messageOf} from "@/utils/error";
 import {isTyping, pressedKey} from "@/utils/event";
 import {isGalleryManager} from "@/utils/user";
@@ -199,8 +199,11 @@ const controller = (ctx: Ctx) => {
     ctx.addCleanup(useBlocksStore.subscribe((state, previous) => {
         if (state.entries !== previous.entries || state.defaults !== previous.defaults) void reapplyBlocks();
     }));
+    // 가공 결과(processComments·textBlockOf)가 읽는 값만 본다. '가린 내용 보기'(revealed·blurReveal)는 창과 댓글 목록이 직접 구독하므로,
+    // 켜고 끌 때마다 댓글 수백 개를 다시 가공해 모두 다시 그리지 않는다. duplicate는 매번 새 객체라 값으로 비교한다
+    const blockKeyOf = (view: BlockView | null): string => (view ? JSON.stringify([view.blur, view.replyRemove, view.duplicate]) : "");
     ctx.addCleanup(useUiStore.subscribe((state, previous) => {
-        if (state.blockView !== previous.blockView) void reapplyBlocks();
+        if (blockKeyOf(state.blockView) !== blockKeyOf(previous.blockView)) void reapplyBlocks();
     }));
 
     /** report: 사용자가 누른 새로고침이면 실패를 알린다. 자동 갱신 실패는 조용히 넘긴다 */
