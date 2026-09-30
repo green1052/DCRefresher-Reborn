@@ -518,6 +518,11 @@
         display: none;
     }
 
+    // 가린 디시콘(디시콘 자체·가린 본문·가린 댓글 안)은 눌러도 정보 창이 열리지 않으므로 손가락 커서를 되돌린다 (DcconInfoPopup의 openDcconInfo)
+    &:not([data-block-revealed]) :is(.written_dccon[data-blocked], [data-blocked] .written_dccon) {
+        cursor: auto;
+    }
+
     // 이 페이지에서만 가린 내용 보기 — 숨겼던 것도 흐리게 보인다
     &[data-block-revealed] :is([data-blocked], [data-duplicate]) {
         filter: none;

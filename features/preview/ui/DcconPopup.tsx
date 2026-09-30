@@ -18,7 +18,7 @@ const MAX_PAGES = 20;
 
 type ListResult = DcinsideDcconDetailList[] | "not_login" | "shop";
 
-/** 리스트 캐시를 지운다. (디시콘 추가 후 호출) */
+/** 디시콘 목록 캐시를 비운다. 정보 창(DcconInfoPopup)에서 디시콘을 추가하면 다음에 열 때 새로 받아 보이게 한다 */
 export const clearDcconListCache = (): void => {
     listCache = null;
 };
