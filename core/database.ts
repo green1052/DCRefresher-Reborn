@@ -1,3 +1,4 @@
+import {http} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import {createIpLookup, type IpCandidate, IP_FORMAT, parseIpData} from "@/core/ipdb";
 import {storage} from "wxt/utils/storage";
@@ -7,15 +8,8 @@ import {DB_KEYS, dbStorage, writeDatabase} from "@/core/storage/items";
 import type {BanList} from "@/core/storage/types";
 import {once} from "@/utils/once";
 
-/**
- * DB 파일 하나를 받는다. 배경·옵션 페이지에서만 불러 기본 fetch를 쓴다 (ky를 쓰면 배경 번들이 두 배가 된다).
- * 재시도하지 않는다. 실패하면 배경의 다음 알람이나 사용자의 "지금 갱신"이 다시 받는다
- */
-const get = async (url: string): Promise<string> => {
-    const response = await fetch(url, {signal: AbortSignal.timeout(15_000)});
-    if (!response.ok) throw new Error(`요청이 거절되었습니다. (HTTP ${response.status})`);
-    return response.text();
-};
+/** DB 파일 하나를 받는다. 재시도하지 않는다. 실패하면 배경의 다음 알람이나 사용자의 "지금 갱신"이 다시 받는다 */
+const get = (url: string): Promise<string> => http.get(url, {retry: 0}).text();
 
 /**
  * IP/밴 DB를 내려받아 저장한다. 배경(설치·주기)과 옵션 페이지(지금 갱신)가 부른다.
