@@ -18,20 +18,6 @@ import {shortenOrg} from "./shorten-org";
 
 const OUT_DIR = "db";
 
-/**
- * Cloudflare Pages가 data 브랜치를 배포할 때 쓰는 헤더 (_headers). 확장은 호스트 권한 없이 받으므로 CORS를 연다.
- * version은 새 DB를 빨리 알아채게 짧게, ip·ban은 버전이 바뀔 때만 받으니 길게 캐시한다 (둘이 어긋나도 core/database.ts가 처리한다)
- */
-const PAGES_HEADERS = `/*
-  Access-Control-Allow-Origin: *
-/version
-  Cache-Control: public, max-age=300
-/ip.json
-  Cache-Control: public, max-age=3600
-/ban.json
-  Cache-Control: public, max-age=3600
-`;
-
 const MMDB_URL = (edition: string): string => `https://github.com/green1052/maxmind-geoip2/raw/master/dist/${edition}/${edition}.mmdb`;
 const VPN_URL = "https://raw.githubusercontent.com/X4BNet/lists_vpn/refs/heads/main/ipv4.txt";
 const KISA_URL = "https://xn--3e0bx5euxnjje69i70af08bea817g.xn--3e0b707e/jsp/business/management/asList.jsp";
@@ -196,7 +182,6 @@ const version = new Date().toISOString().slice(0, 16);
 const ip = JSON.stringify({...encodeIpData(candidates), version});
 await Bun.write(`${OUT_DIR}/ip.json`, ip);
 await Bun.write(`${OUT_DIR}/version`, version);
-await Bun.write(`${OUT_DIR}/_headers`, PAGES_HEADERS);
 
 const banFile = Bun.file(`${OUT_DIR}/ban.json`);
 const bans = (await banFile.exists()) ? normalizeBans(await banFile.json()) : undefined;

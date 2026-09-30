@@ -31,13 +31,15 @@ jobs:
             -   name: Install Dependencies
                 run: bun ci
 
-            # ban.json은 손으로 관리해 data 브랜치에 직접 올린다. 가져다 두면 Build가 검사하고 정리한다
-            -   name: Keep ban.json
+            # ban.json과 _headers(Cloudflare Pages의 CORS·캐시 헤더)는 손으로 관리해 data 브랜치에 직접 올린다.
+            # 가져다 두면 Build가 ban.json을 검사하고 정리하고, _headers는 그대로 다시 올린다
+            -   name: Keep hand-managed files
                 id: keep
                 run: |
                     git fetch -q --depth=1 origin data
                     mkdir -p db
                     git show FETCH_HEAD:ban.json > db/ban.json
+                    git show FETCH_HEAD:_headers > db/_headers
                     echo "sha=$(git rev-parse FETCH_HEAD)" >> "$GITHUB_OUTPUT"
 
             -   name: Build
