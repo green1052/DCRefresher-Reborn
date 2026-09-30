@@ -1,4 +1,4 @@
-import {Box, Flex, IconButton, Text} from "@radix-ui/themes";
+import {IconButton} from "@radix-ui/themes";
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
 import {Fragment, type MouseEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from "react";
 import {useShallow} from "zustand/react/shallow";
@@ -62,6 +62,10 @@ const subscribeClock = (listener: () => void): (() => void) => {
         clockTimer = 0;
     };
 };
+
+// 댓글 수백 개를 그리므로 레이아웃·글자는 Radix의 Box·Flex·Text 대신 같은 모양의 클래스(overlay.scss)로 낸다.
+// Radix 컴포넌트는 그릴 때마다 속성을 해석해, 댓글마다 열 개 남짓이면 큰 글을 열 때 그 비용만 수십 ms다
+const BADGE = "refresher-text-1 refresher-truncate";
 
 // 닉콘(a.writer_nikcon img)의 src. 댓글마다 DOMParser를 돌리지 않게 정규식으로 읽는다.
 // 디시는 작은따옴표를 쓰지만 따옴표 없는 값도 받는다.
@@ -147,11 +151,10 @@ export const TimeStamp = ({date, size = "1"}: { date: string; size?: "1" | "2" }
     const full = absoluteOf(parsed);
 
     return (
-        <Text asChild size={size} color="gray" title={full} style={{whiteSpace: "nowrap"}}>
-            <button type="button" className="refresher-text-button" onClick={() => setAbsolute((x) => !x)}>
-                {Number.isNaN(parsed.getTime()) ? "이미 삭제됨" : absolute ? full : since}
-            </button>
-        </Text>
+        <button type="button" className={`refresher-text-button refresher-text-${size} refresher-gray`} title={full} style={{whiteSpace: "nowrap"}}
+                onClick={() => setAbsolute((x) => !x)}>
+            {Number.isNaN(parsed.getTime()) ? "이미 삭제됨" : absolute ? full : since}
+        </button>
     );
 };
 
@@ -197,35 +200,34 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
         openBubble(ev.clientX, ev.clientY);
     };
 
-    const identityColor = uidColor ? undefined : "gray";
+    // 색 설정이 없으면 Radix Text의 color="gray"와 같은 색
+    const identityColor = uidColor ?? "var(--gray-a11)";
 
     const badges: Record<BadgeKey, ReactNode> = {
         UID: user.id
-            ? showsUid(view, user.image) && <Text size="1" color={identityColor} style={{color: uidColor}} truncate>({user.id})</Text>
+            ? showsUid(view, user.image) && <span className={BADGE} style={{color: identityColor}}>({user.id})</span>
             : ipInfo && passesIpFilter(ipInfo, view.ipFilter) &&
-            <Text size="1" color={ipColor ? undefined : "blue"} style={{color: ipColor}} title={ipInfo.title} truncate>[{ipInfo.label}]</Text>,
-        MEMO: memo && <Text size="1" style={{color: memo.color || undefined}} title={memo.text} truncate>[{memo.text}]</Text>,
-        RATIO: ratio && <Text size="1" style={{color: ratioColor}} title="글/댓글" truncate>[{ratio.article}/{ratio.comment}]</Text>,
-        PERMBAN: banReasons && banColor && <Text size="1" style={{color: banColor}} title={banReasons} truncate>[{banReasons}]</Text>
+            <span className={BADGE} style={{color: ipColor ?? "var(--blue-a11)"}} title={ipInfo.title}>[{ipInfo.label}]</span>,
+        MEMO: memo && <span className={BADGE} style={{color: memo.color || undefined}} title={memo.text}>[{memo.text}]</span>,
+        RATIO: ratio && <span className={BADGE} style={{color: ratioColor}} title="글/댓글">[{ratio.article}/{ratio.comment}]</span>,
+        PERMBAN: banReasons && banColor && <span className={BADGE} style={{color: banColor}} title={banReasons}>[{banReasons}]</span>
     };
 
     return (
-        <Flex align="center" gap="1" minWidth="0" className="refresher-user" data-op={op || undefined} onContextMenu={openMenu} style={{cursor: "context-menu"}}>
+        <div className="refresher-row refresher-user" data-op={op || undefined} onContextMenu={openMenu} style={{cursor: "context-menu"}}>
             {/* 버블은 닉네임 바로 아래에 띄운다. 키보드로 열면 버블 안으로 포커스가 옮겨 간다 (ContentRoot의 useOpenerFocus) */}
-            <Text asChild size="2" weight="bold" truncate>
-                <button type="button" className="refresher-text-button" aria-haspopup="dialog"
-                        onClick={(ev) => {
-                            const rect = ev.currentTarget.getBoundingClientRect();
-                            openBubble(rect.left, rect.bottom);
-                        }}>
-                    {user.nick ?? user.id ?? user.ip}
-                </button>
-            </Text>
+            <button type="button" className="refresher-text-button refresher-text-2 refresher-bold refresher-truncate" aria-haspopup="dialog"
+                    onClick={(ev) => {
+                        const rect = ev.currentTarget.getBoundingClientRect();
+                        openBubble(rect.left, rect.bottom);
+                    }}>
+                {user.nick ?? user.id ?? user.ip}
+            </button>
             {user.image && <img src={user.image} alt="" height={12}/>}
             {/* 유동 IP는 디시가 닉 옆에 바로 보여 주는 값이라 배지 순서와 상관없이 여기 둔다 */}
-            {user.ip && <Text size="1" color={identityColor} style={{color: uidColor}} truncate>({user.ip})</Text>}
+            {user.ip && <span className={BADGE} style={{color: identityColor}}>({user.ip})</span>}
             {view.order.map((key) => <Fragment key={key}>{badges[key]}</Fragment>)}
-        </Flex>
+        </div>
     );
 };
 
@@ -302,13 +304,13 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
     useEffect(() => (body.current ? watchGifVideos(body.current) : undefined), [html]);
 
     return (
-        <Box className="refresher-comment" data-depth={depth} data-deleted={isDeleted || undefined}
+        <div className="refresher-comment" data-depth={depth} data-deleted={isDeleted || undefined}
              data-blocked={comment.blocked} data-duplicate={comment.duplicates === 0 || undefined}
-             data-thread-open={threadOpen || undefined} data-last-reply={lastReply || undefined} px="6" py="2">
-            <Flex justify="between" align="center" gap="2">
-                <Flex align="center" gap="1" minWidth="0">
+             data-thread-open={threadOpen || undefined} data-last-reply={lastReply || undefined}>
+            <div className="refresher-comment-head">
+                <div className="refresher-row">
                     <UserCard user={user} op={isOp}/>
-                    {comment.duplicates ? <Text size="1" color="gray" style={{whiteSpace: "nowrap"}}>같은 댓글 ×{comment.duplicates}</Text> : null}
+                    {comment.duplicates ? <span className="refresher-text-1 refresher-gray" style={{whiteSpace: "nowrap"}}>같은 댓글 ×{comment.duplicates}</span> : null}
                     {/* 툴팁은 브라우저 기본(title)을 쓴다. 쓰레드마다 Radix 툴팁을 달면 댓글이 많은 글을 열 때 느려진다 */}
                     {depth === 0 && replyCount > 1 && (
                         <IconButton size="1" variant="ghost" color="gray" aria-label={collapsed ? "답글 펼치기" : "답글 접기"}
@@ -316,9 +318,9 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                             <ChevronDown size={14} className="refresher-chevron" style={{transform: collapsed ? "rotate(-90deg)" : undefined}}/>
                         </IconButton>
                     )}
-                </Flex>
+                </div>
 
-                <Flex align="center" gap="3" flexShrink="0">
+                <div className="refresher-comment-actions">
                     {canReply && (
                         <IconButton
                             size="1"
@@ -344,19 +346,19 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                         </IconButton>
                     )}
                     <TimeStamp date={String(comment.reg_date ?? comment.date_time ?? "")}/>
-                </Flex>
-            </Flex>
+                </div>
+            </div>
 
-            <Flex direction="column" gap="1" mt="1">
+            <div className="refresher-comment-body">
                 {comment.voice &&
                     (comment.voice.iframe ? (
                         <iframe src={comment.voice.src} width={280} height={54} style={{border: 0}} title="voice"/>
                     ) : (
                         <audio controls src={comment.voice.src}/>
                     ))}
-                <Box ref={body} className="refresher-html refresher-comment-html" data-dccon={isDccon || undefined}
+                <div ref={body} className="refresher-html refresher-comment-html" data-dccon={isDccon || undefined}
                      dangerouslySetInnerHTML={{__html: html}}/>
-            </Flex>
-        </Box>
+            </div>
+        </div>
     );
 };

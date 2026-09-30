@@ -433,7 +433,65 @@
     @include mixins.collapsible;
 }
 
+/* 댓글이 Radix Box·Flex·Text 대신 쓰는 클래스 (Comment.tsx). 값은 Radix의 해당 속성과 같다 */
+.refresher-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-width: 0;
+}
+
+.refresher-text-1 {
+    font-size: var(--font-size-1);
+    line-height: var(--line-height-1);
+    letter-spacing: var(--letter-spacing-1);
+}
+
+.refresher-text-2 {
+    font-size: var(--font-size-2);
+    line-height: var(--line-height-2);
+    letter-spacing: var(--letter-spacing-2);
+}
+
+.refresher-gray {
+    color: var(--gray-a11);
+}
+
+.refresher-bold {
+    font-weight: var(--font-weight-bold);
+}
+
+.refresher-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.refresher-comment-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.refresher-comment-actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.refresher-comment-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-top: var(--space-1);
+}
+
 .refresher-comment {
+    box-sizing: border-box;
+    padding: var(--space-2) var(--space-6);
+
     // 화면 밖 댓글은 레이아웃·스타일 계산을 건너뛴다 — 댓글 수백 개인 글을 열 때 레이아웃이 크게 준다.
     // 트리 선(::before/::after)은 모두 칸 안에 그리므로 잘리지 않는다
     // 아직 그리지 않은 댓글의 높이는 대부분인 한 줄 댓글(여백 포함 64px)로 어림한다. 크게 잡으면 답글을 펼칠 때 Radix가 그리기 전의 어림값으로 높이를 재
