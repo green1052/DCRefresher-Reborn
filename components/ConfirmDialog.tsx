@@ -1,4 +1,5 @@
-import {Button, Dialog, Flex} from "@radix-ui/themes";
+import {Button, Dialog, Flex, IconButton} from "@radix-ui/themes";
+import {X} from "lucide-react";
 import type {ReactNode} from "react";
 
 import {useOpenerFocus} from "@/components/useOpenerFocus";
@@ -13,6 +14,13 @@ export const DialogActions = ({cancelLabel = "취소", children}: { cancelLabel?
         )}
         {children}
     </Flex>
+);
+
+/** 제목 줄 오른쪽 닫기(X) 버튼. 아래 버튼 줄 없이 보기만 하거나 고르면 바로 닫히는 창(디시콘 정보·선택)에 둔다 */
+export const DialogCloseButton = () => (
+    <Dialog.Close>
+        <IconButton size="1" variant="ghost" color="gray" aria-label="닫기"><X size={16}/></IconButton>
+    </Dialog.Close>
 );
 
 interface ConfirmDialogProps {

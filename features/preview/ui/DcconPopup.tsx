@@ -1,6 +1,7 @@
 import {Button, Dialog, Flex, Skeleton, Switch, Text} from "@radix-ui/themes";
 import {useEffect, useState} from "react";
 
+import {DialogCloseButton} from "@/components/ConfirmDialog";
 import {overlay} from "@/components/overlay/shadow";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {ajax} from "@/core/http/client";
@@ -112,7 +113,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                             onCloseAutoFocus={focus.onCloseAutoFocus}>
                 <Flex justify="between" align="center" mb="3">
                     <Dialog.Title mb="0">디시콘</Dialog.Title>
-                    <Flex gap="4">
+                    <Flex gap="4" align="center">
                         <Text as="label" size="2">
                             <Flex gap="2" align="center">
                                 더블콘 <Switch size="1" checked={doubleDccon} onCheckedChange={(value) => {
@@ -126,6 +127,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                                 대왕콘 <Switch size="1" checked={bigDccon} onCheckedChange={setBigDccon}/>
                             </Flex>
                         </Text>
+                        <DialogCloseButton/>
                     </Flex>
                 </Flex>
 

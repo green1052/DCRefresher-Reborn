@@ -2,7 +2,7 @@ import {Badge, Button, Dialog, Flex, Link, Skeleton, Text} from "@radix-ui/theme
 import {LRUCache} from "lru-cache";
 import {type MouseEvent, useEffect, useState} from "react";
 
-import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
+import {ConfirmDialog, DialogCloseButton} from "@/components/ConfirmDialog";
 import {overlay} from "@/components/overlay/shadow";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {dcconCode} from "@/core/block";
@@ -109,7 +109,10 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                             onCloseAutoFocus={focus.onCloseAutoFocus}
                             // 우클릭 버블은 창이 아니라 이 창 밖(ContentRoot)에 뜨므로, 버블을 눌러도 바깥 클릭으로 닫히지 않게 막는다
                             onInteractOutside={(ev) => useUiStore.getState().bubble && ev.preventDefault()}>
-                <Dialog.Title>디시콘 정보</Dialog.Title>
+                <Flex justify="between" align="center" mb="3">
+                    <Dialog.Title mb="0">디시콘 정보</Dialog.Title>
+                    <DialogCloseButton/>
+                </Flex>
 
                 <div className="refresher-dccon-info-head">
                     {info ? <img src={urls.dccon.image + info.main_img_path} alt={info.title}/> : <Skeleton width="120px" height="120px"/>}
@@ -154,8 +157,6 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                         ? dccon.detail.map((item) => <img key={item.idx} src={urls.dccon.image + item.path} alt={item.title} title={item.title}/>)
                         : Array.from({length: 12}, (_, index) => <Skeleton key={index} style={{aspectRatio: 1}}/>)}
                 </div>
-
-                <DialogActions cancelLabel="닫기"/>
 
                 {/* 이 창 안에 그려야 확인 창을 누를 때 이 창이 바깥 클릭으로 닫히지 않는다 */}
                 {confirming && info && (
