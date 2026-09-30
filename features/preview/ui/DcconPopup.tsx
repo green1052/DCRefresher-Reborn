@@ -160,7 +160,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
 
                 <div className="refresher-dccon-grid" aria-busy={loading && current.length === 0}>
                     {loading && current.length === 0
-                        ? Array.from({length: 36}, (_, index) => <Skeleton key={index} style={{aspectRatio: 1}}/>)
+                        ? Array.from({length: 36}, (_, index) => <Skeleton key={index} width="100%" height="auto" style={{aspectRatio: 1}}/>)
                         : current.map((dccon) => (
                             <button type="button" key={dccon.detail_idx} title={dccon.title} onClick={() => clickDccon(dccon)}>
                                 <img src={dccon.list_img} alt={dccon.title}/>
