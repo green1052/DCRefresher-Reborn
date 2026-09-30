@@ -139,9 +139,9 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                     </Flex>
                 )}
 
-                <div className="refresher-dccon-packages">
+                <div className="refresher-dccon-packages" aria-busy={loading && packages.length === 0}>
                     {loading && packages.length === 0
-                        ? Array.from({length: 8}, (_, index) => <Skeleton key={index} width="48px" height="48px"/>)
+                        ? Array.from({length: 12}, (_, index) => <Skeleton key={index} width="48px" height="48px"/>)
                         : packages.map((pack) => (
                             <button
                                 type="button"
@@ -158,9 +158,9 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                         ))}
                 </div>
 
-                <div className="refresher-dccon-grid">
+                <div className="refresher-dccon-grid" aria-busy={loading && current.length === 0}>
                     {loading && current.length === 0
-                        ? Array.from({length: 18}, (_, index) => <Skeleton key={index} style={{aspectRatio: 1}}/>)
+                        ? Array.from({length: 36}, (_, index) => <Skeleton key={index} style={{aspectRatio: 1}}/>)
                         : current.map((dccon) => (
                             <button type="button" key={dccon.detail_idx} title={dccon.title} onClick={() => clickDccon(dccon)}>
                                 <img src={dccon.list_img} alt={dccon.title}/>

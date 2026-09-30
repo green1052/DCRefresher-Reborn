@@ -576,6 +576,16 @@
 
 /* ===== 디시콘 ===== */
 
+// 불러오는 동안은 스켈레톤을 칸이 넘치도록 깔아 꽉 찬 목록처럼 보인다(패키지는 보통 칸을 채운다). 넘친 스켈레톤에 스크롤바가 생기지 않게 자른다
+:is(.refresher-dccon-packages, .refresher-dccon-grid, .refresher-dccon-info-grid)[aria-busy="true"] {
+    overflow: hidden;
+}
+
+// 정보 창 목록은 최대 높이만 있어, 불러오는 동안 그 높이로 잡아 두어야 다 불러왔을 때 창이 커지지 않는다
+.refresher-dccon-info-grid[aria-busy="true"] {
+    height: 420px;
+}
+
 :is(.refresher-dccon-packages, .refresher-dccon-grid) button {
     padding: 2px;
     border: none;

@@ -152,10 +152,10 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                     </Flex>
                 </div>
 
-                <div className="refresher-dccon-info-grid" onContextMenu={openBlockBubble}>
+                <div className="refresher-dccon-info-grid" aria-busy={!dccon} onContextMenu={openBlockBubble}>
                     {dccon
                         ? dccon.detail.map((item) => <img key={item.idx} src={urls.dccon.image + item.path} alt={item.title} title={item.title}/>)
-                        : Array.from({length: 12}, (_, index) => <Skeleton key={index} style={{aspectRatio: 1}}/>)}
+                        : Array.from({length: 30}, (_, index) => <Skeleton key={index} style={{aspectRatio: 1}}/>)}
                 </div>
 
                 {/* 이 창 안에 그려야 확인 창을 누를 때 이 창이 바깥 클릭으로 닫히지 않는다 */}
