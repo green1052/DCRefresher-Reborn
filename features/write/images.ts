@@ -62,13 +62,14 @@ export const hookUploads = (key: string): void => {
     const convert = async (file: File, options: Options): Promise<File> => {
         if (!needsWork(file, options)) return file;
 
-        if (options.webp && !keepFormat(file) && !(await isApng(file))) {
+        if (options.webp && !keepFormat(file)) {
+            // 파일 읽기(isApng)도 안에 둔다. 여기서 던지면 막아 둔 업로드 이벤트를 다시 보내지 못해 이미지가 올라가지 않는다
             try {
-                const webp = await toWebp(file, options.quality);
+                const webp = (await isApng(file)) ? null : await toWebp(file, options.quality);
                 // 이미 잘 압축된 JPEG는 WebP가 더 클 수 있다. 그때는 원본을 올린다
                 if (webp && webp.size < file.size) return named(webp, file, "webp", options.rename);
             } catch (e) {
-                // 디코딩하지 못한 이미지는 원본 그대로 올려 디시가 판단하게 한다
+                // 읽거나 디코딩하지 못한 이미지는 원본 그대로 올려 디시가 판단하게 한다
                 console.error(e);
             }
         }
