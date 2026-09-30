@@ -25,6 +25,7 @@ import {AdminPanel} from "./Popups";
 import {postTitle, usePreviewStore} from "./previewStore";
 import {Votes} from "./Votes";
 import {WriteComment} from "./WriteComment";
+import { openDcconInfo } from "./DcconInfo";
 
 /**
  * 목록에서 앞(-1)/뒤(1) 글로 넘어간다. PageUp/Down과 스크롤 끝 넘기기가 같이 쓴다.
@@ -327,6 +328,9 @@ export const Frame = () => {
                                     className={"refresher-html refresher-preview-contents" + (imageBlocked ? " refresher-preview-block-media" : "")}
                                     data-blocked={hideText ? undefined : post?.textBlocked}
                                     onClick={(ev) => {
+                                        // 디시콘을 눌렀으면 정보 팝업을 열고 더 이상의 처리를 막는다.
+                                        if (openDcconInfo(ev)) return;
+
                                         // 이미지를 누르면 디시처럼 원본 보기를 새 탭으로 연다. 주소는 parser.ts가 옮겨 둔 imgPop 주소이고 디시 주소만 연다
                                         const image = (ev.target as HTMLElement).closest<HTMLImageElement>("img[data-pop]");
                                         if (image && !image.closest("a")) {

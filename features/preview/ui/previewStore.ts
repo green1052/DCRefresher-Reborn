@@ -82,6 +82,9 @@ interface PreviewState extends PostState, Hooks {
     captcha: { url: string; resolve: (code: string) => void } | null;
     mini: MiniState | null;
 
+    /** 디시콘 코드 */
+    dcconInfo: string | null;
+
     /** 글 상태를 비우고 patch를 얹어 한 번의 setState로 연다 */
     open: (preData: GalleryPreData, patch?: Partial<PostState>) => void;
     close: () => void;
@@ -115,7 +118,7 @@ export const hoverMini = (hovered?: boolean): void => {
 
 /** 미리보기 UI 중 하나라도 떠 있어 오버레이가 필요한지 (콘텐츠 스크립트가 오버레이를 처음 띄울 때 본다). 새 UI를 추가하면 여기에 넣는다 */
 export const needsPreviewOverlay = (state: PreviewState): boolean =>
-    state.visible || state.warm || state.mini !== null || state.captcha !== null || state.blockPopup;
+    state.visible || state.warm || state.mini !== null || state.captcha !== null || state.blockPopup || state.dcconInfo !== null;
 
 /** 차단 기간 (시간 → 라벨). 차단 팝업과 차단 프리셋 설정이 같이 쓴다 */
 export const BLOCK_DAYS: Record<string, string> = {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"};
@@ -193,11 +196,12 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     scrollToSkip: true,
     captcha: null,
     mini: null,
+    dcconInfo: null,
 
     open: (preData, patch) => {
         // 이전 글의 캡차 창은 닫는다. 남아 있으면 입력한 코드가 이전 글로 간다.
         get().captcha?.resolve("");
-        set({...freshPost(), ...patch, visible: true, fading: false, preData, signalId: ++signalSeq, mini: null, captcha: null});
+        set({...freshPost(), ...patch, visible: true, fading: false, preData, signalId: ++signalSeq, mini: null, captcha: null, dcconInfo: null});
     },
 
     close: () => {
@@ -205,7 +209,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
         if (!get().visible) return;
         get().captcha?.resolve("");
         // signalId도 올린다. 닫은 뒤 도착한 응답(abort로 난 오류 포함)이 페이드아웃 중인 창에 그려지면 안 된다.
-        set({visible: false, fading: true, comments: undefined, blockPopup: false, captcha: null, reply: NO_REPLY, signalId: ++signalSeq});
+        set({visible: false, fading: true, comments: undefined, blockPopup: false, captcha: null, reply: NO_REPLY, signalId: ++signalSeq, dcconInfo: null});
         // 앞서 닫을 때 건 타이머는 지운다. 남겨 두면 닫았다 곧바로 다시 열고 닫을 때 이번 페이드를 일찍 끊는다
         window.clearTimeout(fadeTimer);
         fadeTimer = window.setTimeout(() => set({fading: false}), 200);

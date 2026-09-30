@@ -18,6 +18,11 @@ const MAX_PAGES = 20;
 
 type ListResult = DcinsideDcconDetailList[] | "not_login" | "shop";
 
+/** 리스트 캐시를 지운다. (디시콘 추가 후 호출) */
+export const clearDcconListCache = (): void => {
+    listCache = null;
+};
+
 /** 한 쪽. 비로그인이면 JSON 대신 'not_login'이 온다 (디시 dccon.js) */
 const fetchPage = async (page: number, signal: AbortSignal): Promise<DcinsideDcconDetail | "not_login"> => {
     const body = await csrfBody({target: "icon", page: String(page)});
