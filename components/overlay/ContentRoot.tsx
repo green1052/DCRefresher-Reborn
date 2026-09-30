@@ -125,7 +125,9 @@ const BlockRules = ({rules}: { rules: { type: BlockType; entry: BlockEntry }[] }
                         {entry.isRegex && <Text color="gray"> (정규식)</Text>}
                         {entry.gallery && <Text color="gray"> (이 갤러리만)</Text>}
                     </Text>
-                    <Button size="1" variant="ghost" color="red" style={{flexShrink: 0}} onClick={() => void unblock(type, entry)}>해제</Button>
+                    <Button size="1" variant="ghost" color="red" style={{flexShrink: 0}}
+                            aria-label={`${TYPE_NAMES[type]} ${type === "DCCON" ? entry.extra || entry.content : entry.content} 차단 해제`}
+                            onClick={() => void unblock(type, entry)}>해제</Button>
                 </Flex>
             ))}
         </Flex>

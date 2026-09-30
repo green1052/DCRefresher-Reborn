@@ -79,20 +79,20 @@ const StorageEntry = ({name, value, onDelete}: { name: string; value: unknown; o
             <Box py="2" style={{borderTop: "1px solid var(--gray-a4)"}}>
                 <Flex align="center" gap="2">
                     <Collapsible.Trigger asChild>
-                        <IconButton size="1" variant="ghost" color="gray" aria-label={open ? "접기" : "펼치기"}>
+                        <IconButton size="1" variant="ghost" color="gray" aria-label={`${name} ${open ? "접기" : "펼치기"}`}>
                             <ChevronRight size={14} className="refresher-chevron"/>
                         </IconButton>
                     </Collapsible.Trigger>
                     <Code size="2" variant="ghost" style={{flex: 1, minWidth: 0, overflowWrap: "anywhere"}}>{name}</Code>
                     <Text size="1" color="gray" style={{fontVariantNumeric: "tabular-nums"}}>{formatBytes(byteSize(value))}</Text>
                     <Tooltip content="JSON 복사">
-                        <IconButton size="1" variant="ghost" color="gray" aria-label="JSON 복사"
+                        <IconButton size="1" variant="ghost" color="gray" aria-label={`${name} JSON 복사`}
                                     onClick={() => void navigator.clipboard.writeText(JSON.stringify(value, null, 2))}>
                             <Copy size={14}/>
                         </IconButton>
                     </Tooltip>
                     <Tooltip content="삭제">
-                        <IconButton size="1" variant="ghost" color="red" aria-label="삭제" onClick={onDelete}>
+                        <IconButton size="1" variant="ghost" color="red" aria-label={`${name} 삭제`} onClick={onDelete}>
                             <Trash2 size={14}/>
                         </IconButton>
                     </Tooltip>
