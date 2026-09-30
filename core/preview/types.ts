@@ -6,8 +6,8 @@ export interface GalleryPreData {
     notice: boolean;
     recommend: boolean;
     type: string;
-    /** 목록에 댓글 수가 보였는지. 댓글을 본문과 함께 요청할지 정한다 */
-    hasComments: boolean;
+    /** 목록에 보인 댓글 수 (없으면 0). 댓글을 본문과 함께 요청할지, 댓글을 몇 쪽 한꺼번에 받을지 정한다 */
+    commentCount: number;
 }
 
 export interface User {

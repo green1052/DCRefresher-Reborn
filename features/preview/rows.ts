@@ -36,7 +36,8 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
         // 이미지·텍스트·동영상 개념글 (icon_recomimg, icon_recomtxt, icon_recomovie)
         recommend: classes?.includes("icon_recom") ?? false,
         type: classes?.split(" ").at(-1) ?? "icon_txt",
-        hasComments: row.querySelector(".reply_num") !== null
+        // [댓글 수] 또는 [댓글 수/음성 댓글 수]
+        commentCount: Number.parseInt(row.querySelector(".reply_num")?.textContent?.slice(1) ?? "", 10) || 0
     };
 };
 

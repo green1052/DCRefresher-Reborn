@@ -242,7 +242,7 @@ const controller = (ctx: Ctx) => {
         // 받아야 하는 글이 목록에 댓글이 보이면 댓글도 본문과 함께 요청한다. 토큰(e_s_n_o)은 갤러리마다 같아 이 페이지의 값을 쓰고,
         // 본문을 읽은 뒤 그 글의 값과 맞을 때만 쓴다. PageUp/Down으로 넘길 때는 하지 않는다 (연타하면 지나가는 글마다 요청이 나간다)
         const esno = document.querySelector<HTMLInputElement>("#e_s_n_o")?.value;
-        const early = !dir && preData.hasComments && esno && (ctx.settings.disableCache || !cachedPost(preData))
+        const early = !dir && preData.commentCount > 0 && esno && (ctx.settings.disableCache || !cachedPost(preData))
             ? fetchComments(preData, {esno}, abort!.signal).catch(() => undefined)
             : undefined;
 

@@ -43,16 +43,23 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
         }>();
     };
 
-    // 1쪽의 쪽 나눔(viewComments(n, …))에서 마지막 쪽 번호를 읽고 나머지 쪽은 한꺼번에 받는다. 동시 요청 수는 요청 제한 모듈이 조절한다.
+    // 목록의 댓글 수로 쪽 수를 어림해 1쪽과 함께 받는다. 1쪽을 받은 뒤에 나머지를 요청하면 댓글이 많은 글은 그만큼(수백 ms) 늦게 뜬다.
+    // 목록의 수는 삭제된 댓글을 빼고 세어 모자랄 수 있으므로, 1쪽의 쪽 나눔(viewComments(n, …))에서 마지막 쪽 번호를 읽어 남은 쪽을 마저 받는다.
+    // 동시 요청 수는 요청 제한 모듈이 조절한다.
     // ponytail: 10쪽(1000개)까지만 받는다. 더 많은 글은 드물고, 자동 갱신 때마다 전부 다시 받기 때문이다.
-    const first = await fetchPage(1);
+    // 1쪽을 먼저 요청해야 동시 요청 수에 막혀도 쪽 나눔을 먼저 받는다. 1쪽이 실패하면 어림한 쪽의 실패는 버린다
+    const guessed = Math.min(10, Math.max(1, Math.ceil(preData.commentCount / 100)));
+    const firstPage = fetchPage(1);
+    const early = Promise.all(Array.from({length: guessed - 1}, (_, index) => fetchPage(index + 2)));
+    early.catch(() => {});
+
+    const first = await firstPage;
     const pages = Math.max(1, ...Array.from(first.pagination?.matchAll(/viewComments\((\d+)/g) ?? [], (match) => Number(match[1])));
-    const lastPage = Math.min(10, pages);
-    const rest = await Promise.all(Array.from({length: lastPage - 1}, (_, index) => fetchPage(index + 2)));
+    const rest = Array.from({length: Math.max(0, Math.min(10, pages) - guessed)}, (_, index) => fetchPage(guessed + index + 1));
 
     // 1쪽이 가장 최근 댓글이고 뒤쪽일수록 오래된 댓글이다. 쪽 사이에 같은 댓글이 겹쳐 올 수 있어 번호로 하나만 남기고 번호(등록)순으로 맞춘다
     const byNo = new Map<string, DcinsideComment>();
-    for (const response of [first, ...rest]) {
+    for (const response of [first, ...await early, ...await Promise.all(rest)]) {
         for (const comment of response.comments ?? []) byNo.set(comment.no, comment);
     }
 
