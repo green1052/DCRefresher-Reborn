@@ -2,10 +2,10 @@ import {storage} from "wxt/utils/storage";
 
 import {MODULES_KEY, moduleSettingsKey} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
+import {isRecord} from "@/utils/record";
 
 import {isModuleEnabled, normalizeSettings} from "./settings";
 import type {ModuleDefinition} from "./types";
-import {isRecord} from "@/utils/record";
 
 /**
  * 모듈의 배경 쪽. features/<id>/background.ts가 default로 내보내면 배경 스크립트가 glob으로 모아 돌린다.
