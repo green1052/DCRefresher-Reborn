@@ -37,6 +37,7 @@
         "mmdb-lib": "^3.0.3",
         "netmask": "^2.1.1",
         "oxc-transform-react": "^0.152.0",
+        "postcss": "^8.5.28",
         "sass": "^1.105.0",
         "typescript": "^7.0.2",
         "vite": "^8.3.1",

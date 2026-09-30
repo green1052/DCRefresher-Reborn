@@ -1,5 +1,5 @@
 // 이 스크립트가 불러오는 CSS는 오버레이 shadow에만 들어간다 (cssInjectionMode: "ui"). 디시 페이지에 입히는 CSS는 entrypoints/page.content.scss
-import "@/assets/styles/overlay-radix.css";
+import "@/assets/styles/radix-themes.css";
 import "@/assets/styles/overlay.scss";
 
 import {overlay} from "@/components/overlay/shadow";
