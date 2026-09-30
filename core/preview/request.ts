@@ -242,11 +242,10 @@ export const submitComment = async (
 
             // 첫 자리 숫자를 5 당기거나 4 밀고, 쉼표로 나눈 수들을 글자로 바꿔 service_code 끝 10자리를 갈아 끼운다
             const fi = parseInt(decoded.slice(0, 1));
-            const computed = decoded
-                .replace(/^./, String(fi > 5 ? fi - 5 : fi + 4))
-                .split(",")
-                .map((value, index) => String.fromCharCode((2 * (Number(value) - index - 1)) / (13 - index - 1)))
-                .join("");
+            const values = decoded.replace(/^./, String(fi > 5 ? fi - 5 : fi + 4)).split(",").map(Number);
+            // 디시가 형식을 바꿔 숫자가 아니면 NaN이 "NaN"·"\0"으로 섞여 들어가 던지지 않고 틀린 코드가 된다
+            if (Number.isNaN(fi) || values.some(Number.isNaN)) return null;
+            const computed = values.map((value, index) => String.fromCharCode((2 * (value - index - 1)) / (13 - index - 1))).join("");
 
             return form.serviceCode.replace(/(.{10})$/, computed);
         } catch {
