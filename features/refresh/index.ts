@@ -18,6 +18,12 @@ const MINIMUM_REFRESH_INTERVAL = 2000;
 /** 목록 요청이 연달아 실패할 때 자동 새로고침 주기를 늘리는 상한 */
 const MAXIMUM_BACKOFF_INTERVAL = 60_000;
 
+/** 거르지 않은 목록(개념글·공지·말머리가 아닌)의 1페이지인지 */
+const isWholeFirstPage = (url: string): boolean => {
+    const params = new URL(url).searchParams;
+    return (params.get("page") ?? "1") === "1" && !params.has("exception_mode") && !params.has("search_head");
+};
+
 /** setup()이 돌려주는 객체. 단축키·팝업·미리보기가 쓴다 */
 interface RefreshApi {
     refreshLists(): Promise<void>;
@@ -110,7 +116,9 @@ export default defineModule({
                 if (force) rerun = true;
                 return false;
             }
-            if (document.hidden) return false;
+            // 강제 로드는 숨긴 탭에서도 받는다. 진행 중인 요청 뒤로 미룬 강제 로드(rerun)가 그사이 탭을 옮겼다고 버려지면
+            // 돌아왔을 때 자동 새로고침은 뒤 페이지·멈춤을 건너뛰어 지운 글이나 옛 페이지가 그대로 남는다
+            if (!force && document.hidden) return false;
             if (!force && (Date.now() - lastRefresh < MINIMUM_REFRESH_INTERVAL || paused)) return false;
 
             // 자동 새로고침만 거르는 조건. 사용자가 직접 한 새로고침·이동은 그대로 받는다
@@ -199,8 +207,10 @@ export default defineModule({
                     search: queryString("s_keyword") ? document.querySelector<HTMLInputElement>("#sch_q")?.value ?? "" : undefined,
                     searchType: new URL(target).searchParams.get("s_type"),
                     fadeIn: ctx.settings.fadeIn,
-                    // 삭제된 글 보존은 미리보기의 archiveArticle 설정을 따른다 (미리보기를 끄면 같이 꺼진다)
-                    keepDeleted: getModuleApi("preview")?.archiveArticle() === true
+                    // 삭제된 글 보존은 미리보기의 archiveArticle 설정을 따른다 (미리보기를 끄면 같이 꺼진다).
+                    // 1페이지 전체 목록에서만 한다. 뒤 페이지는 앞 페이지의 글이 지워지거나 새 글이 들어오면 행이 밀려 빠지고,
+                    // 개념글·공지·말머리 목록은 개념글에서 내려가거나 말머리를 바꾼 글도 빠지므로 지워진 글이 아니다
+                    keepDeleted: getModuleApi("preview")?.archiveArticle() === true && isWholeFirstPage(target)
                 });
                 // 복사해 둔다. slice한 문자열은 응답 전체(수백 KB)를 붙잡아 다음 교체까지 남는다
                 lastListHtml = structuredClone(listHtml);
