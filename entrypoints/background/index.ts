@@ -78,9 +78,10 @@ export default defineBackground(() => {
     // ===== 모듈의 배경 쪽 (이미지 검색 메뉴 등) =====
     // 리스너는 여기서 바로 건다. 크롬은 메뉴 같은 상태를 유지하므로 설치·브라우저 시작·설정 변경 때만 다시 맞춘다
     const applyBackgroundModules = startBackgroundModules(backgroundModules);
-    browser.runtime.onStartup.addListener(() => void applyBackgroundModules());
-    // 파이어폭스(MV2)는 메뉴를 유지하지 않고, 확장을 껐다 켜면 onStartup/onInstalled 없이 배경만 다시 뜨므로 뜰 때마다 맞춘다
+    // 파이어폭스(MV2)는 메뉴를 유지하지 않고, 확장을 껐다 켜면 onStartup/onInstalled 없이 배경만 다시 뜨므로 뜰 때마다 맞춘다.
+    // 브라우저 시작도 여기서 맞추므로 onStartup은 크롬만 건다 (둘 다 걸면 시작할 때 두 번 돈다)
     if (import.meta.env.FIREFOX) void applyBackgroundModules();
+    else browser.runtime.onStartup.addListener(() => void applyBackgroundModules());
 
     // ===== Commands: 단축키 → 활성 탭에만 전송 =====
     // 단축키 기능은 '이번 페이지' 단위라 모든 탭에 보내면 탭마다 토글·토스트·목록 요청이 한꺼번에 일어난다
@@ -172,11 +173,14 @@ export default defineBackground(() => {
         const [pending, alarm] = await Promise.all([backupStorage.pending.getValue(), browser.alarms.get(AUTO_BACKUP_ALARM)]);
         if (pending && !alarm) await browser.alarms.create(AUTO_BACKUP_ALARM, {delayInMinutes: 1});
     };
-    browser.runtime.onStartup.addListener(rearmAutoBackup);
-    browser.runtime.onInstalled.addListener(() => void rearmAutoBackup().catch(console.error));
     // 파이어폭스는 확장을 껐다 켜면 onStartup/onInstalled 없이 배경만 다시 뜨고 알람은 지워진다.
-    // 배경 페이지가 상주해 방금 울린 알람을 또 걸 일이 없으므로 뜰 때마다 다시 건다
-    if (import.meta.env.FIREFOX) void rearmAutoBackup().catch(console.error);
+    // 배경 페이지가 상주해 방금 울린 알람을 또 걸 일이 없으므로 뜰 때마다 다시 건다 (시작·설치·업데이트도 여기서 덮인다)
+    if (import.meta.env.FIREFOX) {
+        void rearmAutoBackup().catch(console.error);
+    } else {
+        browser.runtime.onStartup.addListener(() => void rearmAutoBackup().catch(console.error));
+        browser.runtime.onInstalled.addListener(() => void rearmAutoBackup().catch(console.error));
+    }
 
     browser.alarms.onAlarm.addListener((alarm) => {
         if (alarm.name === DATABASE_ALARM) {
