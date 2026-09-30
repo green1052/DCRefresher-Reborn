@@ -48,6 +48,8 @@ const controller = (ctx: Ctx) => {
     let miniTimer = 0;
     // 미니를 띄울 제목 칸. 본문을 받는 사이 커서가 떠났으면 띄우지 않는다.
     let miniTarget: HTMLElement | null = null;
+    // 떠 있는 미니가 보여 주는 제목 칸
+    let miniFor: HTMLElement | null = null;
     // 받는 중인 본문 요청 하나. 우클릭 누름·미니·열기·미리 받기가 같이 쓴다.
     // 다른 글을 받으면 앞 요청은 끊어, 연타해도 요청이 쌓이지 않는다.
     let pending: { key: string; ctrl: AbortController; post: Promise<PostInfo> } | null = null;
@@ -484,6 +486,7 @@ const controller = (ctx: Ctx) => {
         if (ctx.settings.tooltipInteraction && position.x <= x) position.x = Math.max(0, x - MINI_WIDTH - 10);
 
         hoverMini();
+        miniFor = element;
         usePreviewStore.setState({
             mini: {
                 ...position,
@@ -505,8 +508,10 @@ const controller = (ctx: Ctx) => {
 
         const element = ev.currentTarget as HTMLElement;
         if (isBlurHidden(element)) return;
-        // 조작할 수 있는 미니에서 제목으로 돌아왔으면 닫지 않는다
+        // 조작할 수 있는 미니에서 제목으로 돌아왔으면 닫지 않는다. 떠난 제목의 닫기 타이머는 다른 제목에 들어와도 끊어야
+        // 새로 뜰 카드를 닫지 않으므로 늘 부르고, 다른 제목이면 앞 글의 카드를 바로 내린다 (받지 못하면 앞 글 카드가 그대로 남는다)
         keepMini();
+        if (element !== miniFor && usePreviewStore.getState().mini) usePreviewStore.setState({mini: null});
         const x = ev.clientX;
         const y = ev.clientY;
 
