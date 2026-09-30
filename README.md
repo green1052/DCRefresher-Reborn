@@ -140,4 +140,4 @@ bun run zip:firefox    # Firefox 배포용 zip (소스 zip도 함께 생성)
 
 - 버그 제보와 기능 제안은 [이슈 템플릿](https://github.com/green1052/DCRefresher-Reborn/issues/new/choose)으로 올려 주세요.
 - 풀 리퀘스트는 `develop` 브랜치로 보내 주세요. 커밋 전에 `bun run compile`과 `bun run build`가 통과해야 하고, 커밋 메시지는 [Conventional Commits](https://www.conventionalcommits.org/ko/)를 따릅니다.
-- Chrome과 Firefox에서 모두 확인해 주세요. 디시에 쓰기 요청(댓글·디시콘·추천·관리)은 실제로 반영되니 시험할 때 보내지 말고 막아 두세요.
+- Chrome과 Firefox에서 모두 확인해 주세요.
