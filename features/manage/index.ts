@@ -109,15 +109,13 @@ export default defineModule({
         ctx.addFilter(
             ".article_chkbox",
             (element) => {
-                if (handled.has(element)) return;
+                if (!(element instanceof HTMLInputElement) || handled.has(element)) return;
                 handled.add(element);
 
                 const parent = element.closest<HTMLElement>(CHECKBOX_ROW);
                 const {uid, ip, nick} = parent?.querySelector<HTMLElement>(":scope > .ub-writer")?.dataset ?? {};
 
                 element.addEventListener("click", (ev) => {
-                    const source = ev.target as HTMLInputElement;
-
                     if (ctx.settings.checkAllTargetUser && ev.shiftKey && (uid || ip || nick)) {
                         // 유동은 data-uid=""다. key와 값을 같은 기준으로 골라야 한다.
                         // 값만 ??로 고르면 [data-ip=""]가 되어 회원 글이 전부 잡힌다
@@ -125,7 +123,7 @@ export default defineModule({
 
                         for (const other of document.querySelectorAll<HTMLElement>(`.ub-writer[data-${key}="${CSS.escape(value)}"]`)) {
                             const otherParent = other.closest<HTMLElement>(CHECKBOX_ROW);
-                            for (const box of otherParent?.querySelectorAll<HTMLInputElement>(".article_chkbox") ?? []) box.checked = source.checked;
+                            for (const box of otherParent?.querySelectorAll<HTMLInputElement>(".article_chkbox") ?? []) box.checked = element.checked;
                         }
                     }
 
@@ -135,7 +133,7 @@ export default defineModule({
                         if (!commentNo) return;
 
                         for (const box of document.getElementById(`reply_list_${commentNo}`)?.querySelectorAll<HTMLInputElement>(".article_chkbox") ?? []) {
-                            box.checked = source.checked;
+                            box.checked = element.checked;
                         }
                     }
                 }, {signal: ctx.signal});
@@ -143,7 +141,7 @@ export default defineModule({
                 // 왼쪽 버튼을 누른 채 지나간 칸만 체크한다. 그냥 지나가도 체크하면 Shift+클릭이 방금 체크된 칸을 도로 푼다.
                 // 드래그를 시작한 칸은 누르기 전에 들어왔으므로 떠날 때(mouseout) 체크한다
                 const checkOnDrag = (ev: MouseEvent): void => {
-                    if (ctx.settings.checkViaShift && ev.shiftKey && ev.buttons === 1 && element instanceof HTMLInputElement) element.checked = true;
+                    if (ctx.settings.checkViaShift && ev.shiftKey && ev.buttons === 1) element.checked = true;
                 };
                 element.addEventListener("mouseover", checkOnDrag, {signal: ctx.signal});
                 element.addEventListener("mouseout", checkOnDrag, {signal: ctx.signal});
