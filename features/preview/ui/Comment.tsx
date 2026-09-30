@@ -13,9 +13,9 @@ import {useGallogActivity} from "@/utils/gallogActivity";
 import {banReasonsOf, databaseVersion, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
 
 import {savedNonmember} from "../nonmember";
+import {openDcconInfo} from "./DcconInfoPopup";
 import {watchGifVideos} from "./gifVideos";
 import {NO_REPLY, parseDate, usePreviewStore} from "./previewStore";
-import {openDcconInfo} from "./dcconInfo";
 
 /** 절대 시각 포매터. toLocaleString()은 부를 때마다 포매터를 새로 만들어, 댓글 수백 개를 다시 그릴 때 느리다 */
 const ABSOLUTE = new Intl.DateTimeFormat(undefined, {year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric"});

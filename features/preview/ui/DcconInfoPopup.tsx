@@ -1,9 +1,10 @@
 import {Badge, Button, Dialog, Flex, IconButton, Link, Skeleton, Text} from "@radix-ui/themes";
 import {X} from "lucide-react";
-import {useEffect, useState} from "react";
+import {type MouseEvent, useEffect, useState} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
+import {dcconCode} from "@/core/block";
 import {addDcconPackage, fetchDcconPackage} from "@/core/preview/request";
 import type {DcinsideDcconPackage} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
@@ -15,6 +16,19 @@ const DCCON_IMAGE = "https://dcimg5.dcinside.com/dccon.php?no=";
 const DCCON_SHOP = "https://dccon.dcinside.com/hot/1";
 
 const close = (): void => usePreviewStore.setState({dcconInfo: null});
+
+/**
+ * 본문·댓글에서 누른 디시콘의 정보 창을 연다. 디시콘을 눌렀으면 true.
+ * 본문·댓글은 HTML 문자열로 그려 디시콘이 React 요소가 아니라서 감싼 상자의 클릭에서 찾는다. 차단으로 가린 디시콘은 '가린 내용 보기' 동안만 연다
+ */
+export const openDcconInfo = (ev: MouseEvent<HTMLElement>): boolean => {
+    const dccon = ev.target instanceof Element ? ev.target.closest<HTMLElement>(".written_dccon") : null;
+    if (!dccon || (dccon.closest("[data-blocked]") && !dccon.closest("[data-block-revealed]"))) return false;
+
+    const code = dcconCode(dccon);
+    if (code) usePreviewStore.setState({dcconInfo: code});
+    return Boolean(code);
+};
 
 /** 제작·태그 줄 앞의 작은 딱지 (디시 정보창의 tbox) */
 const Label = ({children}: { children: string }) => (
