@@ -3,6 +3,7 @@ import {Ban, type LucideIcon, NotebookPen, Puzzle, Settings} from "lucide-react"
 import {type ReactNode, useEffect, useState} from "react";
 
 import {type PageAction, type PageToggleState, sendMessage} from "@/core/messaging/protocol";
+import {isModuleEnabled} from "@/core/module/settings";
 import {backupStorage} from "@/core/storage/items";
 import features from "@/features";
 import {initBlocksStore, useBlocksStore} from "@/stores/blocks";
@@ -127,14 +128,14 @@ function ModulesSection() {
     const enables = useModulesStore((state) => state.enables);
     const toggle = useModulesStore((state) => state.toggle);
     const [failed, setFailed] = useState(false);
-    const on = features.filter((feature) => enables[feature.id] ?? true).length;
+    const on = features.filter((feature) => isModuleEnabled(feature, enables)).length;
 
     return (
         <Box>
             <SectionTitle aside={<Text size="1" color="gray">{on}/{features.length} 켜짐</Text>}>모듈</SectionTitle>
             <Grid columns="2" gap="2">
                 {features.map((feature) => {
-                    const enabled = enables[feature.id] ?? true;
+                    const enabled = isModuleEnabled(feature, enables);
                     const Icon = feature.icon ?? Puzzle;
 
                     return (

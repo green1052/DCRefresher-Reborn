@@ -3,7 +3,7 @@ import {Collapsible} from "radix-ui";
 import {Fragment} from "react";
 
 import {SettingItem} from "@/components/SettingItem";
-import {defaultValue} from "@/core/module/settings";
+import {defaultValue, isModuleEnabled} from "@/core/module/settings";
 import type {SettingSchema} from "@/core/module/types";
 import features from "@/features";
 import {useModulesStore} from "@/stores/modules";
@@ -21,7 +21,7 @@ export function GeneralTab() {
     return (
         <Flex direction="column" gap="4">
             {features.map((feature) => {
-                const enabled = enables[feature.id] ?? true;
+                const enabled = isModuleEnabled(feature, enables);
                 const settings = Object.entries(feature.settings ?? {});
 
                 return (
