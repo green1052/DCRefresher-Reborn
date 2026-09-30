@@ -94,10 +94,10 @@ export interface DcinsideDcconPackageInfo {
     reg_date_short: string;
     /** 대표 이미지. dcimg5.dcinside.com/dccon.php?no= 뒤에 붙인다 */
     main_img_path: string;
-    /** 내가 올린 패키지 (디시는 '사용' 대신 '수정'을 띄운다). 디시 템플릿처럼 참·거짓으로만 읽는다 */
-    register?: boolean | number | string | null;
-    /** 이미 가진 패키지 (디시는 '사용'을 띄우지 않는다). 디시 템플릿처럼 참·거짓으로만 읽는다 */
-    residual?: boolean | number | string | null;
+    /** 내가 올린 패키지 (디시는 '사용' 대신 '수정'을 띄운다) */
+    register: boolean;
+    /** 가진 패키지면 남은 기간 문자열(무기한은 "-"), 없으면 false. 디시는 가진 패키지에 '사용'을 띄우지 않는다 */
+    residual: string | false;
 }
 
 /** 패키지 안의 디시콘 하나 */
