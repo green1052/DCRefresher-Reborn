@@ -7,8 +7,8 @@ import {overlay} from "@/components/overlay/shadow";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {useUiStore} from "@/stores/ui";
 
-import {BLOCK_DAYS, MANAGE_LABELS, type ManageKind, usePreviewStore} from "./previewStore";
 import {DcconInfoPopup} from "./DcconInfoPopup";
+import {BLOCK_DAYS, MANAGE_LABELS, type ManageKind, usePreviewStore} from "./previewStore";
 
 const BLOCK_REASONS: [string, string][] = [
     ["1", "음란성"],
@@ -233,12 +233,10 @@ export const AdminPanel = () => {
     );
 };
 
-
 export const Popups = () => {
     const blockPopup = usePreviewStore((s) => s.blockPopup);
     const captcha = usePreviewStore((s) => s.captcha);
     const dcconInfo = usePreviewStore((s) => s.dcconInfo);
-
 
     return (
         <>

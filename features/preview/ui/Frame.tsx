@@ -17,6 +17,7 @@ import {adjacentPreData} from "../rows";
 import {TimeStamp, UserCard} from "./Comment";
 import {CommentList, threadParents} from "./CommentList";
 import {CountDown} from "./CountDown";
+import {openDcconInfo} from "./DcconInfoPopup";
 import {ErrorBlock} from "./ErrorBlock";
 import {fitMovies} from "./fitMovies";
 import {watchGifVideos} from "./gifVideos";
@@ -25,7 +26,6 @@ import {AdminPanel} from "./Popups";
 import {postTitle, usePreviewStore} from "./previewStore";
 import {Votes} from "./Votes";
 import {WriteComment} from "./WriteComment";
-import { openDcconInfo } from "./dcconInfo";
 
 /**
  * 목록에서 앞(-1)/뒤(1) 글로 넘어간다. PageUp/Down과 스크롤 끝 넘기기가 같이 쓴다.
@@ -156,6 +156,8 @@ export const Frame = () => {
         const onKey = (ev: KeyboardEvent): void => {
             // Ctrl+PageUp/Down(탭 전환) 같은 조합키는 브라우저에 맡긴다.
             if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.shiftKey || isTyping(ev)) return;
+            // 디시콘 정보 창이 떠 있으면 그 창의 목록을 넘긴다. 옆 글로 넘어가면 창이 닫힌다
+            if (usePreviewStore.getState().dcconInfo) return;
             // 누른 버튼이 로딩으로 막히거나 사라져 포커스가 body로 빠졌으면 스크롤 칸으로 되돌린다 (Tab은 브라우저의 이어가기 위치에 맡긴다)
             if (ev.key !== "Tab" && focusedElement() === document.body) scroller.current?.focus({preventScroll: true});
 

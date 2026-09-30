@@ -6,7 +6,6 @@ import type {BlockType} from "@/core/storage/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {type SelectedUser, useUiStore} from "@/stores/ui";
 
-
 /** 패키지 전체 차단 방식. bundle: 정규식 한 항목으로 묶는다, each: 디시콘마다 한 항목 (따로 풀 수 있다) */
 type DcconPackageMode = "bundle" | "each";
 
