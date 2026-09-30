@@ -9,13 +9,20 @@ const isGifVideo = (node: Element): boolean =>
 
 // 인라인 style은 글 서식(글자·색·표·여백·크기)만 남긴다. 위치·표시(display)·배경 이미지 같은 나머지는
 // 창을 벗어나거나 숨기기 규칙(스텔스·관리자 가림)을 이기거나 원격 이미지를 불러오므로 지운다.
-// 이미지·동영상의 높이는 CSS의 height: auto가 이겨야 창보다 넓은 것이 줄어들 때 비율이 맞는다
+// 음수 여백은 본문을 창 머리(제목·작성자·버튼)나 댓글 위로 끌어올려 덮으므로 지운다 (calc(0px - 400px)도 '-'가 든다).
+// 이미지·동영상·유튜브의 높이는 CSS의 height: auto(유튜브는 16:9)가 이겨야 창보다 넓은 것이 줄어들 때 비율이 맞는다
 const KEPT_STYLE = /^(?:color|background-color|font-.+|text-(?:align|indent|decoration|wrap).*|white-space.*|line-height|letter-spacing|word-spacing|vertical-align|border-(?!image).+|padding.*|margin.*|width|height|table-layout)$/;
+
+const autoHeight = (node: Element): boolean =>
+    node.nodeName === "IMG" || node.nodeName === "VIDEO" || (node.nodeName === "IFRAME" && (node.getAttribute("src") ?? "").includes("youtube"));
 
 const keepFormatting = (node: HTMLElement | SVGElement): void => {
     const {style} = node;
     for (const name of [...style]) {
-        if (!KEPT_STYLE.test(name) || (name === "height" && (node.nodeName === "IMG" || node.nodeName === "VIDEO"))) style.removeProperty(name);
+        const dropped = !KEPT_STYLE.test(name)
+            || (name === "height" && autoHeight(node))
+            || (name.startsWith("margin") && style.getPropertyValue(name).includes("-"));
+        if (dropped) style.removeProperty(name);
     }
     if (style.length === 0) node.removeAttribute("style");
 };
@@ -25,7 +32,11 @@ const keepFormatting = (node: HTMLElement | SVGElement): void => {
 // 이미지·iframe은 lazy로 두어 스텔스·이미지 차단으로 숨긴 것은 받지 않게 한다.
 // 링크(# 앵커 제외)는 새 탭으로 연다. DOMPurify가 target을 지우므로 두면 갤러리 탭이 링크로 넘어가 목록과 미리보기를 잃는다.
 const onAttributes = (node: Element): void => {
-    if ((node instanceof HTMLElement || node instanceof SVGElement) && node.hasAttribute("style")) keepFormatting(node);
+    // MathML(<math>) 같은 나머지 요소는 서식만 골라 지울 수 없어(HTMLElement·SVGElement가 아니다) style을 통째로 지운다
+    if (node.hasAttribute("style")) {
+        if (node instanceof HTMLElement || node instanceof SVGElement) keepFormatting(node);
+        else node.removeAttribute("style");
+    }
 
     if (node.nodeName === "VIDEO") {
         if (!isGifVideo(node)) node.setAttribute("controls", "");
@@ -46,10 +57,11 @@ const embedYoutube = (html: string): string =>
 // 인라인 style은 서식만 남기고(keepFormatting), 본문의 동영상 임베드(iframe)는 허용한다.
 // <style>은 shadow 루트 전체(창·댓글·가린 내용)에 걸리고, 폼 요소는 본문에 필요 없는데 가짜 입력칸을 만들 수 있어 뺀다.
 // SVG <feImage>와 background 속성은 원격 이미지를 불러오는데 미디어 숨기기(태그·CSS)에 걸리지 않는다. 본문에 쓸 일도 없어 뺀다.
+// popover·command 속성은 본문 버튼으로 <dialog>나 팝오버를 최상위 층에 띄운다. 남긴 크기·배경색과 합치면 화면 전체를 덮는 가짜 창이 되어 뺀다.
 // IN_PLACE: sanitizeHtml이 <template> 안의 요소를 그 자리에서 정화한다.
 const FORBIDDEN = ["style", "form", "input", "textarea", "select", "feimage"];
 const BASE: Config = {
-    FORBID_ATTR: ["background"],
+    FORBID_ATTR: ["background", "popover", "popovertarget", "popovertargetaction", "commandfor", "command"],
     FORBID_TAGS: FORBIDDEN,
     ADD_TAGS: ["iframe"],
     ADD_ATTR: ["allowfullscreen", "frameborder", "allow", "scrolling"],
