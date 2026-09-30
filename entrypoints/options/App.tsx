@@ -1,6 +1,6 @@
 import {Box, Button, Flex, Heading, Separator, Text} from "@radix-ui/themes";
 import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings, Wrench} from "lucide-react";
-import {lazy, Suspense, useEffect, useSyncExternalStore} from "react";
+import {lazy, Suspense, useEffect, useState, useSyncExternalStore} from "react";
 
 import {Notice} from "@/components/ConfirmDialog";
 import {initBlocksStore} from "@/stores/blocks";
@@ -12,7 +12,7 @@ import {BlockTab} from "./BlockTab";
 import {DataTab} from "./DataTab";
 import {GeneralTab} from "./GeneralTab";
 import {MemoTab} from "./MemoTab";
-import {notify, useOptionsStore} from "./optionsStore";
+import {useOptionsStore} from "./optionsStore";
 import {ShortcutTab} from "./ShortcutTab";
 
 // 개발자 탭과 디시콘 비는 드물게 열리므로 옵션 페이지를 열 때 같이 불러오지 않는다(개발자 탭은 IP/밴 DB 원문도 읽는다)
@@ -116,12 +116,13 @@ export function App() {
     const notice = useOptionsStore((state) => state.notice);
     const tabs = TABS.filter((item) => !item.dev || devMode);
     const current = tabs.find((item) => item.id === tab) ?? tabs[0]!;
+    const [failed, setFailed] = useState(false);
 
     useEffect(() => {
-        // 못 읽은 채 차단·메모를 추가하면 빈 목록에 붙여 저장해 기존 목록을 덮으므로 새로고침하게 알린다
+        // 못 읽은 채 차단·메모를 고치면 빈 목록을 바탕으로 저장해 기존 목록을 덮으므로 탭을 그리지 않는다
         Promise.all([initBlocksStore(), initMemosStore(), initModulesStore()]).catch((e) => {
             console.error(e);
-            notify("저장된 데이터를 읽지 못했습니다. 페이지를 새로고침해 주세요.");
+            setFailed(true);
         });
     }, []);
 
@@ -140,7 +141,9 @@ export function App() {
                     연 버튼이 막혀(데이터 초기화 중) 돌아갈 곳이 없으면 다이얼로그가 포커스를 이 탭으로 돌려준다 (useOpenerFocus) */}
                 <Box key={current.id} className="refresher-tab-enter" maxWidth="880px" mx="auto" tabIndex={-1} style={{outline: "none"}}>
                     <Heading size="7" mb="5">{current.label}</Heading>
-                    <Suspense>{current.content()}</Suspense>
+                    {failed
+                        ? <Text as="p" color="red">저장된 데이터를 읽지 못했습니다. 페이지를 새로고침해 주세요.</Text>
+                        : <Suspense>{current.content()}</Suspense>}
                 </Box>
             </Box>
         </Flex>
