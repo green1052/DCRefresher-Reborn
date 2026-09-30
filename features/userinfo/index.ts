@@ -31,6 +31,12 @@ const badgeViewOf = (ctx: Ctx): BadgeView => ({
     ipFilter: ctx.settings.ipInfoFilter
 });
 
+/** 설정에서 만든 배지 색·표시 조건. 작성자 칸마다(목록 새로고침마다 수십 개) 다시 만들지 않고 설정이 바뀔 때(publishBadges) 한 번 만든다 */
+let colors: BadgeColors = {};
+let view: BadgeView = DEFAULT_BADGE_VIEW;
+/** 이 문서의 갤러리 id. 미리보기가 pushState로 주소를 바꿔도 같은 갤러리다 */
+let gallery: string | null = null;
+
 let ratios: Record<string, RatioInfo> = {};
 
 /** 글댓비 저장 상한. 최근에 받은 사람부터 이만큼만 남긴다 */
@@ -56,10 +62,6 @@ const clearLowActivity = (): void => {
 const process = (ctx: Ctx, element: HTMLElement): void => {
     // 완료 표시 없이 매번 다시 그린다. 파싱 중인 작성자 칸(닉콘·IP 전)에서 먼저 불려도, 칸이 다 읽혀 다시 불릴 때 배지가 제자리를 찾는다
     element.querySelector(".refresher-user-badges")?.remove();
-
-    const colors = colorsOf(ctx);
-    const view = badgeViewOf(ctx);
-    const gallery = queryString("id");
 
     const {nick, uid, ip} = element.dataset;
     const badges = Object.assign(document.createElement("span"), {className: "refresher-user-badges"});
@@ -111,14 +113,16 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
 
 /** 미리보기 작성자 표시가 같은 색·순서·표시 조건을 쓰도록 ui 스토어에 올린다 */
 const publishBadges = (ctx: Ctx): void => {
-    const colors = colorsOf(ctx);
+    colors = colorsOf(ctx);
+    view = badgeViewOf(ctx);
+    gallery = queryString("id");
     useUiStore.setState({
         badgeColors: {
             ...colors,
             // 갱차 조회를 끄면 미리보기에서도 숨긴다
             permBan: ctx.settings.checkPermBan ? colors.permBan : undefined
         },
-        badgeView: badgeViewOf(ctx)
+        badgeView: view
     });
 };
 

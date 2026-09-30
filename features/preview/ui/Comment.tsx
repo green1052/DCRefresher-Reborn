@@ -21,22 +21,23 @@ import {NO_REPLY, parseDate, usePreviewStore} from "./previewStore";
 const ABSOLUTE = new Intl.DateTimeFormat(undefined, {year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric"});
 const absoluteOf = (date: Date): string => (Number.isNaN(date.getTime()) ? "" : ABSOLUTE.format(date));
 
+/** 상대 시각 단위 (큰 것부터). 5초마다 댓글 수백 개가 다시 재므로 호출마다 만들지 않는다 */
+const RELATIVE_UNITS: [string, number][] = [
+    ["년", 31_536_000_000],
+    ["주", 604_800_000],
+    ["일", 86_400_000],
+    ["시간", 3_600_000],
+    ["분", 60_000],
+    ["초", 1000]
+];
+
 const relative = (date: Date): string => {
     const diff = Date.now() - date.getTime();
     // PC 시계가 조금 느리면 방금 단 댓글이 미래 시각이 된다. 1분 앞까지는 '방금 전'으로 보인다.
     if (Number.isNaN(diff) || diff < -60_000) return absoluteOf(date);
     if (diff < 3000) return "방금 전";
 
-    const units: [string, number][] = [
-        ["년", 31_536_000_000],
-        ["주", 604_800_000],
-        ["일", 86_400_000],
-        ["시간", 3_600_000],
-        ["분", 60_000],
-        ["초", 1000]
-    ];
-
-    for (const [label, ms] of units) {
+    for (const [label, ms] of RELATIVE_UNITS) {
         if (diff >= ms) return `${Math.floor(diff / ms)}${label} 전`;
     }
 

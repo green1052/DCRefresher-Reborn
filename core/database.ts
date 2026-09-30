@@ -68,7 +68,14 @@ let bansRequested = false;
 const versionStore = createStore(() => 0);
 
 export const databaseVersion = versionStore.getState;
-export const subscribeDatabase = versionStore.subscribe;
+/**
+ * DB 변경 구독. 처음 구독할 때 DB를 읽기 시작한다(initDatabase). 유저 정보 모듈이 꺼져 있으면 버블·미리보기가 IP 정보를 처음
+ * 그릴 때에야 수백 KB짜리 IP DB를 읽고, 읽은 뒤 번호가 올라 다시 그려진다. 모듈이 켜져 있으면 setup이 먼저 읽는다
+ */
+export const subscribeDatabase = (listener: () => void): (() => void) => {
+    void initDatabase().catch(console.error);
+    return versionStore.subscribe(listener);
+};
 
 const bump = (): void => versionStore.setState((version) => version + 1);
 
