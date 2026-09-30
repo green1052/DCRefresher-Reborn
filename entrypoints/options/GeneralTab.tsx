@@ -5,7 +5,7 @@ import {Fragment} from "react";
 import {SettingItem} from "@/components/SettingItem";
 import {defaultValue, isModuleEnabled} from "@/core/module/settings";
 import type {SettingSchema} from "@/core/module/types";
-import features from "@/features";
+import features from "@/features/meta";
 import {useModulesStore} from "@/stores/modules";
 import {SAVE_FAILED} from "@/utils/error";
 

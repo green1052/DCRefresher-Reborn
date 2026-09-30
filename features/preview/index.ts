@@ -1,9 +1,7 @@
 import {HTTPError} from "ky";
-import {SquareMousePointer} from "lucide-react";
 
 import {BLOCKED_TEXT, isBlocked} from "@/core/block";
 import {BlockedError, isAbortError} from "@/core/http/client";
-import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi} from "@/core/module/registry";
 import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
@@ -20,7 +18,7 @@ import {getEntry, postKey, setEntry} from "@/core/preview/cache";
 import {ADULT_ERROR, SECRET_ERROR} from "@/core/preview/parser";
 import {blockUser, type BlockOptions, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {adjacentPreData, buildPreData, isBlurHidden, isTextPost} from "./rows";
-import {type Ctx, settings} from "./settings";
+import meta, {type Ctx} from "./meta";
 import {closeMiniSoon, type ErrorState, hoverMini, keepMini, MANAGE_LABELS, type ManageKind, MINI_WIDTH, miniPosition, NO_HOOKS, NO_REPLY, postTitle, usePreviewStore} from "./ui/previewStore";
 
 // status는 ky의 HTTPError에서 읽는다 (삭제된 글은 404).
@@ -721,12 +719,8 @@ interface PreviewApi {
 }
 
 export default defineModule({
-    id: "preview",
-    name: "미리보기",
-    description: "글 목록에서 클릭 또는 우클릭으로 미리보기 창을 띄워 줍니다.",
-    icon: SquareMousePointer,
-    urls: [BOARD_PAGE],
-    settings,
+    ...meta,
+
     setup: (ctx): PreviewApi => {
         publishSettings(ctx);
         controller(ctx);

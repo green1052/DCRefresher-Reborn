@@ -1,14 +1,14 @@
 import {LRUCache} from "lru-cache";
-import {Search} from "lucide-react";
 
 import {BlockedError, http} from "@/core/http/client";
 import {queryString} from "@/core/http/urls";
 import {checkboxFiller, highlightSearchResults, LIST_SELECTOR, PAGING_SELECTOR} from "@/core/list";
 import {sendMessage} from "@/core/messaging/protocol";
 import {defineModule} from "@/core/module/define";
-import {LIST_PAGE} from "@/core/pages";
 import {useUiStore} from "@/stores/ui";
 import {whenDomReady} from "@/utils/dom";
+
+import meta from "./meta";
 
 /**
  * 검색 결과 행: 글(data-no)과 그 아래 댓글 검색 행(data-cmt). 설문·AD 행은 뺀다.
@@ -23,25 +23,7 @@ const isLastPage = (paging: Element): boolean => {
 };
 
 export default defineModule({
-    id: "search",
-    name: "검색 이어 보기",
-    description: "검색 결과가 한 페이지에 못 미치면 다음 검색 결과를 이어 붙입니다.",
-    icon: Search,
-    urls: [LIST_PAGE],
-    defaultEnable: false,
-
-    settings: {
-        maxSearches: {
-            type: "range",
-            name: "최대 다음 검색 횟수",
-            desc: "한 번에 이어서 검색할 최대 횟수입니다. 디시는 한 번에 글 1만 개씩 검색합니다.",
-            default: 10,
-            min: 1,
-            max: 30,
-            step: 1,
-            unit: "회"
-        }
-    },
+    ...meta,
 
     setup(ctx) {
         if (!queryString("s_keyword")) return;

@@ -120,9 +120,6 @@ export const hoverMini = (hovered?: boolean): void => {
 export const needsPreviewOverlay = (state: PreviewState): boolean =>
     state.visible || state.warm || state.mini !== null || state.captcha !== null || state.blockPopup || state.dcconInfo !== null;
 
-/** 차단 기간 (시간 → 라벨). 차단 팝업과 차단 프리셋 설정이 같이 쓴다 */
-export const BLOCK_DAYS: Record<string, string> = {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"};
-
 /** 미니 미리보기 크기. Mini.tsx와 화면 밖 방지 계산(miniPosition, index.ts의 showMini)이 같이 쓴다 */
 export const MINI_WIDTH = 720;
 export const MINI_HEIGHT = 560;

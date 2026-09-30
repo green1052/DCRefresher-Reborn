@@ -1,8 +1,13 @@
-import type {ModuleContext, SettingGroup, SettingsSchema} from "@/core/module/types";
+import {SquareMousePointer} from "lucide-react";
 
-import {BLOCK_DAYS} from "./ui/previewStore";
+import {defineModuleMeta} from "@/core/module/define";
+import type {ModuleContext, SettingGroup, SettingsSchema} from "@/core/module/types";
+import {BOARD_PAGE} from "@/core/pages";
 
 // 미리보기 모듈 설정. "v5와 같은 키"는 v5에서 옮긴 값을 그대로 쓰므로 이름을 바꾸지 않는다
+
+/** 차단 기간 (시간 → 라벨). 차단 팝업(Popups.tsx)과 차단 프리셋 설정이 같이 쓴다. 옵션 번들이 스토어까지 끌어오지 않게 여기 둔다 */
+export const BLOCK_DAYS: Record<string, string> = {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"};
 
 const SHORTCUT_GROUP: SettingGroup = {name: "관리 단축키", desc: "관리 권한이 있을 때 미리보기에서 키를 두 번 누르면 게시글을 삭제하거나 작성자를 차단합니다."};
 const PRESET_GROUP: SettingGroup = {name: "차단 프리셋", desc: "차단 키로 차단할 때 쓰는 값입니다."};
@@ -116,3 +121,12 @@ export const settings = {
 } satisfies SettingsSchema;
 
 export type Ctx = ModuleContext<typeof settings>;
+
+export default defineModuleMeta({
+    id: "preview",
+    name: "미리보기",
+    description: "글 목록에서 클릭 또는 우클릭으로 미리보기 창을 띄워 줍니다.",
+    icon: SquareMousePointer,
+    urls: [BOARD_PAGE],
+    settings
+});

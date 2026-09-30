@@ -3,11 +3,11 @@ import {storage} from "wxt/utils/storage";
 import {create} from "zustand";
 
 import {isModuleEnabled, normalizeSetting, normalizeSettings} from "@/core/module/settings";
-import type {AnyModule} from "@/core/module/types";
+import type {AnyModuleMeta} from "@/core/module/types";
 import {migrateModuleSettings} from "@/core/migrate-settings";
 import {MODULES_KEY, moduleSettingsKey, moduleSettingsStorage, modulesStorage, settingsKeyModule} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
-import features from "@/features";
+import features from "@/features/meta";
 import {saveOrReload} from "@/utils/error";
 import {once} from "@/utils/once";
 import {isRecord} from "@/utils/record";
@@ -109,7 +109,7 @@ const pruneStaleSettings = async (): Promise<void> => {
 };
 
 const setEnables = (stored: unknown): void => useModulesStore.setState({enables: resolveEnables(isRecord(stored) ? stored : {})});
-const setValues = (feature: AnyModule, stored: unknown): void =>
+const setValues = (feature: AnyModuleMeta, stored: unknown): void =>
     useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: normalizeSettings(feature, isRecord(stored) ? stored : null)}}));
 
 /** 설정이 있는 모듈 */

@@ -1,9 +1,6 @@
-import {Pause, RefreshCw} from "lucide-react";
-
 import {BlockedError, http} from "@/core/http/client";
 import {isViewPage, listUrl, mergeParamURL, queryString} from "@/core/http/urls";
 import {LIST_SELECTOR, PAGING_SELECTOR} from "@/core/list";
-import {BOARD_PAGE} from "@/core/pages";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi} from "@/core/module/registry";
 import {sendMessage} from "@/core/messaging/protocol";
@@ -12,7 +9,7 @@ import {smoothScroll} from "@/utils/dom";
 import {isRecord} from "@/utils/record";
 
 import {replaceList, syncPaging} from "./list";
-import {type Ctx, settings} from "./settings";
+import meta, {type Ctx, PAUSE_TOGGLE} from "./meta";
 
 const MINIMUM_REFRESH_INTERVAL = 2000;
 /** 목록 요청이 연달아 실패할 때 자동 새로고침 주기를 늘리는 상한 */
@@ -42,13 +39,7 @@ const applyDoNotColorVisited = (ctx: Ctx): void => {
 };
 
 export default defineModule({
-    id: "refresh",
-    name: "글 목록 새로고침",
-    description: "글 목록을 자동으로 새로고침합니다.",
-    icon: RefreshCw,
-    urls: [BOARD_PAGE],
-
-    settings,
+    ...meta,
 
     setup(ctx) {
         let paused = Boolean(queryString("s_keyword") && ctx.settings.noRefreshOnSearch);
@@ -356,10 +347,8 @@ export default defineModule({
     },
 
     pageToggles: [{
-        id: "pause",
-        label: "자동 새로고침 일시정지",
+        ...PAUSE_TOGGLE,
         desc: "이 페이지의 자동 새로고침을 멈춥니다",
-        icon: Pause,
         isOn: (api) => api.isPaused(),
         toggle: (api) => api.togglePause()
     }],
