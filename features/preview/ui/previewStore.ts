@@ -82,7 +82,7 @@ interface PreviewState extends PostState, Hooks {
     captcha: { url: string; resolve: (code: string) => void } | null;
     mini: MiniState | null;
 
-    /** 디시콘 코드 */
+    /** 정보 창(DcconInfoPopup)을 띄운 디시콘 코드. null이면 닫혀 있다 */
     dcconInfo: string | null;
 
     /** 글 상태를 비우고 patch를 얹어 한 번의 setState로 연다 */

@@ -1,19 +1,16 @@
-import {Badge, Button, Dialog, Flex, IconButton, Link, Skeleton, Text} from "@radix-ui/themes";
-import {X} from "lucide-react";
+import {Badge, Button, Dialog, Flex, Link, Skeleton, Text} from "@radix-ui/themes";
 import {type MouseEvent, useEffect, useState} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {dcconCode} from "@/core/block";
+import {urls} from "@/core/http/urls";
 import {addDcconPackage, fetchDcconPackage} from "@/core/preview/request";
 import type {DcinsideDcconPackage} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 
 import {clearDcconListCache} from "./DcconPopup";
 import {usePreviewStore} from "./previewStore";
-
-const DCCON_IMAGE = "https://dcimg5.dcinside.com/dccon.php?no=";
-const DCCON_SHOP = "https://dccon.dcinside.com/hot/1";
 
 const close = (): void => usePreviewStore.setState({dcconInfo: null});
 
@@ -82,29 +79,24 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
 
     return (
         <Dialog.Root open onOpenChange={(open) => !open && close()}>
-            <Dialog.Content container={overlay.portal} maxWidth="600px" className="refresher-dccon-info" onOpenAutoFocus={focus.onOpenAutoFocus}
+            <Dialog.Content container={overlay.portal} maxWidth="600px" onOpenAutoFocus={focus.onOpenAutoFocus}
                             onCloseAutoFocus={focus.onCloseAutoFocus}>
-                <Flex justify="between" align="center" mb="3">
-                    <Dialog.Title mb="0" ml="3">디시콘 정보</Dialog.Title>
-                    <Dialog.Close>
-                        <IconButton size="1" variant="ghost" color="gray" aria-label="닫기"><X size={16}/></IconButton>
-                    </Dialog.Close>
-                </Flex>
+                <Dialog.Title>디시콘 정보</Dialog.Title>
 
                 <div className="refresher-dccon-info-head">
-                    {info ? <img src={DCCON_IMAGE + info.main_img_path} alt={info.title}/> : <Skeleton width="120px" height="120px"/>}
+                    {info ? <img src={urls.dccon.image + info.main_img_path} alt={info.title}/> : <Skeleton width="120px" height="120px"/>}
 
                     <Flex direction="column" gap="2" minWidth="0" flexGrow="1">
                         {info ? (
                             <>
                                 <Flex justify="between" align="start" gap="3">
                                     <Text size="4" weight="bold">{info.title}</Text>
-                                    {info.buy_idx === null && !added && <Button loading={sending} size="2" style={{flexShrink: 0}} color="indigo" onClick={() => void addDccon(info.package_idx)}>사용</Button>}
+                                    {info.buy_idx === null && !added && <Button loading={sending} size="2" style={{flexShrink: 0}} onClick={() => void addDccon(info.package_idx)}>사용</Button>}
                                 </Flex>
                                 {info.description && <Text size="2">{info.description}</Text>}
                                 <Flex align="center" gap="2" wrap="wrap">
                                     <Label>제작</Label>
-                                    <Link size="2" href={`${DCCON_SHOP}/nick_name/${encodeURIComponent(info.seller_name)}`} target="_blank"
+                                    <Link size="2" href={`${urls.dccon.shop}/nick_name/${encodeURIComponent(info.seller_name)}`} target="_blank"
                                           rel="noopener noreferrer">{info.seller_name}</Link>
                                     <Text size="2" color="gray">{info.reg_date_short}</Text>
                                 </Flex>
@@ -112,7 +104,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                                     <Flex align="center" gap="2" wrap="wrap">
                                         <Label>태그</Label>
                                         {dccon.tags.map(({tag}) => (
-                                            <Link key={tag} size="2" href={`${DCCON_SHOP}/tags/${encodeURIComponent(tag)}`} target="_blank"
+                                            <Link key={tag} size="2" href={`${urls.dccon.shop}/tags/${encodeURIComponent(tag)}`} target="_blank"
                                                   rel="noopener noreferrer">{tag}</Link>
                                         ))}
                                     </Flex>
@@ -130,7 +122,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
 
                 <div className="refresher-dccon-info-grid">
                     {dccon
-                        ? dccon.detail.map((item) => <img key={item.idx} src={DCCON_IMAGE + item.path} alt={item.title} title={item.title}/>)
+                        ? dccon.detail.map((item) => <img key={item.idx} src={urls.dccon.image + item.path} alt={item.title} title={item.title}/>)
                         : Array.from({length: 12}, (_, index) => <Skeleton key={index} style={{aspectRatio: 1}}/>)}
                 </div>
             </Dialog.Content>
