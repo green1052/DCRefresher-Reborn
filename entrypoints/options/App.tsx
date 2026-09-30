@@ -12,7 +12,7 @@ import {BlockTab} from "./BlockTab";
 import {DataTab} from "./DataTab";
 import {GeneralTab} from "./GeneralTab";
 import {MemoTab} from "./MemoTab";
-import {useOptionsStore} from "./optionsStore";
+import {notify, useOptionsStore} from "./optionsStore";
 import {ShortcutTab} from "./ShortcutTab";
 
 // 개발자 탭과 디시콘 비는 드물게 열리므로 옵션 페이지를 열 때 같이 받지 않는다(개발자 탭은 IP/밴 DB 원문도 읽는다)
@@ -118,9 +118,11 @@ export function App() {
     const current = tabs.find((item) => item.id === tab) ?? tabs[0]!;
 
     useEffect(() => {
-        void initBlocksStore();
-        void initMemosStore();
-        void initModulesStore();
+        // 못 읽은 채 차단·메모를 추가하면 빈 목록에 붙여 저장해 기존 목록을 덮으므로 새로고침하게 알린다
+        Promise.all([initBlocksStore(), initMemosStore(), initModulesStore()]).catch((e) => {
+            console.error(e);
+            notify("저장된 데이터를 읽지 못했습니다. 페이지를 새로고침해 주세요.");
+        });
     }, []);
 
     // 모듈이 선언한 확장 페이지 CSS 변수 (폰트 교체 등)
