@@ -289,13 +289,17 @@ export default defineModule({
         // IP DB가 갱신되거나 갱차 목록을 다 읽으면 다시 그린다. 갱차 목록은 banReasonsOf를 처음 부를 때 읽기 시작한다
         const unwatchDatabase = subscribeDatabase(() => rebuildAll(ctx));
 
+        // 조회 중인 uid. 응답이 새로고침 주기보다 늦어도 다음 새로고침이 같은 요청을 또 보내지 않게 한다
+        const pending = new Set<string>();
+
         // 새 글 작성자의 글댓비를 조회한다 (1시간 캐시, 앞 10개만). 새로고침 모듈이 목록에 새 글을 넣을 때 부른다
         const checkNewPosts = (elements: HTMLElement[]): void => {
             if (!ctx.settings.checkRatio) return;
 
             const stale = [...new Set(elements.slice(0, 10).flatMap((post) => post.querySelector<HTMLElement>(".ub-writer")?.dataset.uid || []))]
-                .filter((uid) => !isFresh(ratios[uid]) && !failedRatios.has(uid));
+                .filter((uid) => !isFresh(ratios[uid]) && !failedRatios.has(uid) && !pending.has(uid));
             if (stale.length === 0) return;
+            for (const uid of stale) pending.add(uid);
 
             // 실패는 uid마다 흡수한다. 한 명이 실패해도 받아 온 나머지는 저장한다 (실패한 사람은 배지만 빠진다)
             void Promise.all(stale.map(async (uid) => [uid, await fetchGallogActivity(uid).catch(() => undefined)] as const)).then(async (results) => {
@@ -314,7 +318,9 @@ export default defineModule({
                 ratios = Object.fromEntries(Object.entries(merged).sort(([, a], [, b]) => b.date - a.date).slice(0, MAX_RATIOS));
                 // 다시 그리기는 위의 ratioStorage.watch가 한다
                 await ratioStorage.setValue({ratio: ratios});
-            }).catch(console.error);
+            }).catch(console.error).finally(() => {
+                for (const uid of stale) pending.delete(uid);
+            });
         };
 
         ctx.addCleanup(() => {
