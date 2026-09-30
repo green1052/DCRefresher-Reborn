@@ -1,0 +1,39 @@
+/**
+ * 단위 테스트 공통 준비. 파일마다 불린다 (vitest.config.ts의 setupFiles).
+ * - 테스트마다 fake-browser(storage·alarms 등 인메모리 상태)를 비운다
+ * - jsdom·Node에 없는 브라우저 API를 채운다. 확장이 도는 브라우저(Chrome·Firefox 140 이상)에는 다 있는 것들이다
+ */
+import {beforeEach} from "vitest";
+import {fakeBrowser} from "wxt/testing/fake-browser";
+
+beforeEach(() => {
+    fakeBrowser.reset();
+});
+
+// Node 22의 V8에는 Uint8Array의 base64·hex 변환이 없다 (core/ipdb, core/backup이 쓴다)
+const bytes = Uint8Array.prototype as Uint8Array & { toBase64?: () => string; toHex?: () => string };
+bytes.toBase64 ??= function (this: Uint8Array) {
+    return Buffer.from(this).toString("base64");
+};
+bytes.toHex ??= function (this: Uint8Array) {
+    return Buffer.from(this).toString("hex");
+};
+const typed = Uint8Array as typeof Uint8Array & { fromBase64?: (text: string) => Uint8Array };
+typed.fromBase64 ??= (text) => new Uint8Array(Buffer.from(text, "base64"));
+
+// jsdom에 없는 것들. core/http/urls는 불러오는 순간 내비게이션 항목을 읽는다. node 환경(@vitest-environment node) 파일에는 DOM이 없다
+if (typeof window !== "undefined") {
+    const perf = performance as Performance & { getEntriesByType?: Performance["getEntriesByType"] };
+    perf.getEntriesByType ??= () => [];
+    (globalThis as { CSS?: { escape?: (value: string) => string } }).CSS ??= {};
+    globalThis.CSS.escape ??= (value: string) => value.replace(/[^\w-]/g, (char) => `\\${char}`);
+    // jsdom의 CSSStyleDeclaration은 for...of로 돌 수 없다 (utils/sanitize의 keepFormatting)
+    const style = CSSStyleDeclaration.prototype as unknown as { [Symbol.iterator]?: (this: CSSStyleDeclaration) => Iterator<string> };
+    style[Symbol.iterator] ??= function* (this: CSSStyleDeclaration) {
+        for (let index = 0; index < this.length; index++) yield this.item(index);
+    };
+    const element = Element.prototype as Element & { checkVisibility?: () => boolean };
+    element.checkVisibility ??= () => true;
+    (window as Window & { matchMedia?: typeof window.matchMedia }).matchMedia ??= (query: string) =>
+        ({matches: false, media: query, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false}) as MediaQueryList;
+}

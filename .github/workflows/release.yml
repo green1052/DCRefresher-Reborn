@@ -35,6 +35,9 @@ jobs:
             -   name: Type check
                 run: bun run compile
 
+            -   name: Unit tests
+                run: bun run test
+
             -   name: Build
                 run: bun run zip && bun run zip:firefox
 

@@ -65,7 +65,7 @@ const reachableChunks = (entry: OutputChunk, chunks: Map<string, OutputChunk>): 
     return [...seen.values()];
 };
 
-interface Usage {
+export interface Usage {
     literals: Set<string>;
     breakpoints: Set<Breakpoint>;
     variants: Set<string>;
@@ -89,7 +89,7 @@ const usageOf = (entry: OutputChunk, chunks: Map<string, OutputChunk>, root: str
 };
 
 /** JS에 클래스 이름 그대로나, 값이 붙는 접두어(`rt-r-size` → `rt-r-size-2`, `rt-variant-` → `rt-variant-soft`)가 있는지 */
-const isUsedClass = (name: string, literals: Set<string>): boolean => {
+export const isUsedClass = (name: string, literals: Set<string>): boolean => {
     if (literals.has(name)) return true;
     for (let at = name.lastIndexOf("-"); at > 0; at = name.lastIndexOf("-", at - 1)) {
         if (literals.has(name.slice(0, at)) || literals.has(name.slice(0, at + 1))) return true;
@@ -97,7 +97,7 @@ const isUsedClass = (name: string, literals: Set<string>): boolean => {
     return false;
 };
 
-const slim = (css: string, usage: Usage): string => {
+export const slim = (css: string, usage: Usage): string => {
     const root: Root = postcss.parse(css);
 
     // 토큰이 정의된 색 (--blue-1 등). radix-themes.css가 가져온 색 스케일만 있다
