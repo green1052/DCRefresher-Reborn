@@ -10,7 +10,8 @@ export const urls = {
     comment_remove: "https://gall.dcinside.com/board/comment/comment_delete_submit",
     dccon: {
         lists: "https://gall.dcinside.com/dccon/lists",
-        detail: "https://gall.dcinside.com/dccon/package_detail"
+        detail: "https://gall.dcinside.com/dccon/package_detail",
+        buy: "https://gall.dcinside.com/dccon/buy"
     },
     // data 브랜치는 .github/workflows/db.yml이 만들고, Cloudflare Pages가 그대로 배포한다. CORS를 열어 두어 호스트 권한이 필요 없다.
     // 6.0.3 이하는 raw.githubusercontent.com에서 받으므로 data 브랜치 게시는 계속 유지한다

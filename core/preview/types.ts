@@ -84,6 +84,34 @@ export interface DcinsideDcconDetail {
     target: string;
 }
 
+/** package_detail이 주는 디시콘 패키지 정보 */
+export interface DcinsideDcconPackageInfo {
+    package_idx: string;
+    code: string;
+    title: string;
+    description: string;
+    seller_name: string;
+    reg_date_short: string;
+    /** 대표 이미지. dcimg5.dcinside.com/dccon.php?no= 뒤에 붙인다 */
+    main_img_path: string;
+    buy_idx: string | null; // 사용중인 디시콘이면 null이 아님
+}
+
+/** 패키지 안의 디시콘 하나 */
+export interface DcinsideDcconPackageItem {
+    idx: string;
+    /** 이미지. dcimg5.dcinside.com/dccon.php?no= 뒤에 붙인다 */
+    path: string;
+    title: string;
+}
+
+/** /dccon/package_detail 응답 */
+export interface DcinsideDcconPackage {
+    info: DcinsideDcconPackageInfo;
+    detail: DcinsideDcconPackageItem[];
+    tags: { tag: string }[];
+}
+
 export interface DcinsideComment {
     no: string;
     c_no: string;
