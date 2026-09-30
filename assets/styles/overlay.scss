@@ -649,6 +649,8 @@
         width: 100%;
         aspect-ratio: 1;
         object-fit: contain;
+        // 우클릭하면 차단 버블이 뜬다 (DcconInfoPopup의 openBlockBubble). 댓글 작성자 칸과 같다
+        cursor: context-menu;
     }
 }
 

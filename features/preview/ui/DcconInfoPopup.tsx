@@ -2,6 +2,7 @@ import {Badge, Button, Dialog, Flex, Link, Skeleton, Text} from "@radix-ui/theme
 import {LRUCache} from "lru-cache";
 import {type MouseEvent, useEffect, useState} from "react";
 
+import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
 import {overlay} from "@/components/overlay/shadow";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {dcconCode} from "@/core/block";
@@ -34,6 +35,20 @@ export const openDcconInfo = (ev: MouseEvent<HTMLElement>): boolean => {
     return Boolean(code);
 };
 
+/**
+ * 패키지 목록의 디시콘을 우클릭하면 본문 디시콘처럼 차단 버블을 연다 (차단 모듈의 setupSelection).
+ * 목록 이미지는 .written_dccon이 아니라 페이지 쪽 리스너가 받지 않는다. 주소의 no가 차단 목록에 넣는 값과 같다
+ */
+const openBlockBubble = (ev: MouseEvent<HTMLElement>): void => {
+    const code = !ev.shiftKey && ev.target instanceof HTMLImageElement ? dcconCode(ev.target) : undefined;
+    if (!code) return;
+
+    ev.preventDefault();
+    const ui = useUiStore.getState();
+    ui.setSelected({dccon: code});
+    ui.openBubble(ev.clientX, ev.clientY);
+};
+
 /** 제작·태그 줄 앞의 작은 딱지 (디시 정보창의 tbox) */
 const Label = ({children}: { children: string }) => (
     <Badge size="1" variant="outline" color="gray" radius="small">{children}</Badge>
@@ -44,10 +59,11 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
     const [dccon, setDccon] = useState(() => packageCache.get(code) ?? null);
     const [sending, setSending] = useState(false);
     const [added, setAdded] = useState(false);
+    const [confirming, setConfirming] = useState(false);
     const focus = useOpenerFocus();
 
     const addDccon = async (packageIdx: string | number): Promise<void> => {
-        // 디시도 무료 디시콘은 묻지 않고 바로 추가한다 (dc_common2.js의 btn_buy)
+        setConfirming(false);
         if (sending) return;
         setSending(true);
 
@@ -90,7 +106,9 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
     return (
         <Dialog.Root open onOpenChange={(open) => !open && close()}>
             <Dialog.Content container={overlay.portal} maxWidth="600px" onOpenAutoFocus={focus.onOpenAutoFocus}
-                            onCloseAutoFocus={focus.onCloseAutoFocus}>
+                            onCloseAutoFocus={focus.onCloseAutoFocus}
+                            // 우클릭 버블은 이 창 밖(ContentRoot)에 뜨므로, 버블을 누르거나 버블로 포커스가 가도 창이 닫히지 않게 막는다
+                            onInteractOutside={(ev) => useUiStore.getState().bubble && ev.preventDefault()}>
                 <Dialog.Title>디시콘 정보</Dialog.Title>
 
                 <div className="refresher-dccon-info-head">
@@ -101,7 +119,8 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                             <>
                                 <Flex justify="between" align="start" gap="3">
                                     <Text size="4" weight="bold">{info.title}</Text>
-                                    {!info.register && !info.residual && !added &&<Button loading={sending} size="2" style={{flexShrink: 0}} onClick={() => void addDccon(info.package_idx)}>사용</Button>}
+                                    {!info.register && !info.residual && !added &&
+                                        <Button loading={sending} size="2" style={{flexShrink: 0}} onClick={() => setConfirming(true)}>사용</Button>}
                                 </Flex>
                                 {info.description && <Text size="2">{info.description}</Text>}
                                 <Flex align="center" gap="2" wrap="wrap">
@@ -130,11 +149,19 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                     </Flex>
                 </div>
 
-                <div className="refresher-dccon-info-grid">
+                <div className="refresher-dccon-info-grid" onContextMenu={openBlockBubble}>
                     {dccon
                         ? dccon.detail.map((item) => <img key={item.idx} src={urls.dccon.image + item.path} alt={item.title} title={item.title}/>)
                         : Array.from({length: 12}, (_, index) => <Skeleton key={index} style={{aspectRatio: 1}}/>)}
                 </div>
+
+                <DialogActions cancelLabel="닫기"/>
+
+                {/* 이 창 안에 그려야 확인 창을 누를 때 이 창이 바깥 클릭으로 닫히지 않는다 */}
+                {confirming && info && (
+                    <ConfirmDialog container={overlay.portal} title="디시콘을 추가할까요?" confirmLabel="추가"
+                                   onConfirm={() => void addDccon(info.package_idx)} onClose={() => setConfirming(false)}/>
+                )}
             </Dialog.Content>
         </Dialog.Root>
     );

@@ -21,6 +21,8 @@ interface ConfirmDialogProps {
     /** null이면 취소 버튼 없음 (알림 전용) */
     cancelLabel?: string | null;
     danger?: boolean;
+    /** 오버레이(shadow DOM) 안에서 띄울 때 overlay.portal. 없으면 body에 그려 오버레이의 스타일이 닿지 않는다 */
+    container?: HTMLElement;
     onConfirm: () => void;
     onClose: () => void;
 }
@@ -34,6 +36,7 @@ export const ConfirmDialog = ({
                                   confirmLabel = "확인",
                                   cancelLabel,
                                   danger,
+                                  container,
                                   onConfirm,
                                   onClose
                               }: ConfirmDialogProps) => {
@@ -41,7 +44,7 @@ export const ConfirmDialog = ({
 
     return (
         <Dialog.Root open onOpenChange={(next) => !next && onClose()}>
-            <Dialog.Content maxWidth="440px" aria-describedby={undefined} onCloseAutoFocus={onCloseAutoFocus}>
+            <Dialog.Content container={container} maxWidth="440px" aria-describedby={undefined} onCloseAutoFocus={onCloseAutoFocus}>
                 <Dialog.Title>{title}</Dialog.Title>
 
                 <DialogActions cancelLabel={cancelLabel}>
