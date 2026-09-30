@@ -25,7 +25,7 @@ import {AdminPanel} from "./Popups";
 import {postTitle, usePreviewStore} from "./previewStore";
 import {Votes} from "./Votes";
 import {WriteComment} from "./WriteComment";
-import { openDcconInfo } from "./DcconInfo";
+import { openDcconInfo } from "./dcconInfo";
 
 /**
  * 목록에서 앞(-1)/뒤(1) 글로 넘어간다. PageUp/Down과 스크롤 끝 넘기기가 같이 쓴다.
