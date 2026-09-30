@@ -1,3 +1,4 @@
+import {postKey} from "@/core/preview/cache";
 import type {GalleryPreData} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 
@@ -58,13 +59,14 @@ export const adjacentPreData = (from: GalleryPreData, dir: number): GalleryPreDa
         if (!row.checkVisibility()) continue;
         const pre = buildPreData(row);
         if (!pre) continue;
-        const key = `${pre.gallery}/${pre.id}`;
+        const key = postKey(pre);
         if (seen.has(key)) continue;
         seen.add(key);
         rows.push({row, pre});
     }
 
-    const index = rows.findIndex(({pre}) => pre.id === from.id && pre.gallery === from.gallery);
+    const fromKey = postKey(from);
+    const index = rows.findIndex(({pre}) => postKey(pre) === fromKey);
     if (index < 0) return null;
 
     // 블러 행은 현재 위치를 찾은 뒤에 거른다. 지금 글이 블러 행이어도 제자리를 찾아야 한다.

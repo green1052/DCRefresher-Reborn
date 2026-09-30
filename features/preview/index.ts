@@ -15,7 +15,7 @@ import {isGalleryManager} from "@/utils/user";
 import {notifyManage} from "@/utils/notify";
 import {isRecord} from "@/utils/record";
 
-import {getEntry, setEntry} from "@/core/preview/cache";
+import {getEntry, postKey, setEntry} from "@/core/preview/cache";
 import {ADULT_ERROR, SECRET_ERROR} from "@/core/preview/parser";
 import {blockUser, type BlockOptions, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {adjacentPreData, buildPreData, isBlurHidden, isTextPost} from "./rows";
@@ -73,7 +73,7 @@ const controller = (ctx: Ctx) => {
     };
 
     const requestPost = (preData: GalleryPreData): Promise<PostInfo> => {
-        const key = `${preData.gallery}/${preData.id}`;
+        const key = postKey(preData);
         if (pending?.key === key) return pending.post;
 
         pending?.ctrl.abort();
@@ -326,7 +326,7 @@ const controller = (ctx: Ctx) => {
 
         const st = store.getState();
 
-        if (st.visible && st.preData?.id === preData.id && st.preData?.gallery === preData.gallery) {
+        if (st.visible && st.preData && postKey(st.preData) === postKey(preData)) {
             if (!st.error) {
                 store.setState({commentsOnly});
                 return;

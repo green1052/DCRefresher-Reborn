@@ -14,6 +14,7 @@ import {
     TXTCON_BACKGROUNDS,
     TXTCON_COLORS
 } from "@/core/preview/request";
+import {postKey} from "@/core/preview/cache";
 import type {DcinsideDccon} from "@/core/preview/types";
 import {sendMessage} from "@/core/messaging/protocol";
 import {useUiStore} from "@/stores/ui";
@@ -85,7 +86,7 @@ export const WriteComment = () => {
     // 보내는 중인 댓글은 되살리지 않는다. 올라간 댓글이 입력칸에 남아 한 번 더 보내게 된다.
     const [initialText] = useState(() => {
         const preData = usePreviewStore.getState().preData;
-        const key = preData ? `${preData.gallery}/${preData.id}` : "";
+        const key = preData ? postKey(preData) : "";
         if (draft.key !== key) draft = {key, text: ""};
         return sendingKeys.has(key) ? "" : draft.text;
     });
@@ -138,7 +139,7 @@ export const WriteComment = () => {
         if (!st.preData || !st.post || sending) return;
         if (!useDccon && !text) return;
 
-        const key = `${st.preData.gallery}/${st.preData.id}`;
+        const key = postKey(st.preData);
         if (sendingKeys.has(key)) {
             useUiStore.getState().showToast("앞서 보낸 댓글을 처리하는 중입니다. 잠시 후 다시 시도해 주세요.", "warning");
             return;
@@ -152,7 +153,7 @@ export const WriteComment = () => {
         // 댓글 목록은 이 글이 열려 있으면 새로 받는다. 보내는 사이 다른 글에 갔다 돌아왔으면 새 창의 목록은 댓글이 올라가기 전에 받은 것이다
         const refreshIfOpen = (): void => {
             const current = usePreviewStore.getState();
-            if (current.preData && `${current.preData.gallery}/${current.preData.id}` === key) void current.requestRefresh();
+            if (current.preData && postKey(current.preData) === key) void current.requestRefresh();
         };
 
         setSending(true);

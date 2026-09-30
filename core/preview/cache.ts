@@ -15,13 +15,14 @@ interface CacheEntry {
 // ttlAutopurge가 없으면 만료된 항목(본문 HTML 포함)이 50개에 밀려날 때까지 메모리에 남는다.
 const entries = new LRUCache<string, CacheEntry>({max: 50, ttl: 60_000, ttlAutopurge: true});
 
-const key = (preData: GalleryPreData): string => `${preData.gallery}:${preData.id}`;
+/** 글 하나를 가리키는 키. 번호는 갤러리마다 따로 매겨진다 */
+export const postKey = (preData: Pick<GalleryPreData, "gallery" | "id">): string => `${preData.gallery}:${preData.id}`;
 
-export const getEntry = (preData: GalleryPreData): CacheEntry | undefined => entries.get(key(preData));
+export const getEntry = (preData: GalleryPreData): CacheEntry | undefined => entries.get(postKey(preData));
 
 /** 기존 항목에 patch를 덮어써 저장한다 */
 export const setEntry = (preData: GalleryPreData, patch: CacheEntry): void => {
-    entries.set(key(preData), {...entries.get(key(preData)), ...patch});
+    entries.set(postKey(preData), {...entries.get(postKey(preData)), ...patch});
 };
 
 /**
@@ -31,7 +32,7 @@ export const setEntry = (preData: GalleryPreData, patch: CacheEntry): void => {
  * 그보다 오래된 댓글은 목록에 없어도 삭제로 치지 않는다 (쪽은 스레드 중간에서도 잘린다)
  */
 export const restoreArchive = (preData: GalleryPreData, list: DcinsideComment[], truncated = false): DcinsideComment[] => {
-    const seen = entries.get(key(preData))?.seen ?? {};
+    const seen = entries.get(postKey(preData))?.seen ?? {};
     const current = new Set(list.map((comment) => comment.no));
     const thread = (comment: DcinsideComment): number => Number(comment.c_no) || Number(comment.no);
     const cutoff = truncated ? Math.min(...list.map(thread)) : 0;

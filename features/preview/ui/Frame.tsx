@@ -6,6 +6,7 @@ import {type CSSProperties, Fragment, useEffect, useLayoutEffect, useRef, useSta
 import {overlay} from "@/components/overlay/shadow";
 import {focusedElement} from "@/components/useOpenerFocus";
 import {BLOCKED_TEXT} from "@/core/block";
+import {postKey as keyOfPost} from "@/core/preview/cache";
 import type {ProcessedComment} from "@/core/preview/comments";
 import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
@@ -92,7 +93,7 @@ export const Frame = () => {
     const blockEntries = useBlocksStore((s) => s.entries);
     const blockDefaults = useBlocksStore((s) => s.defaults);
     const gallery = usePreviewStore((s) => s.preData?.gallery);
-    const postKey = usePreviewStore((s) => (s.preData ? `${s.preData.gallery}/${s.preData.id}` : ""));
+    const postKey = usePreviewStore((s) => (s.preData ? keyOfPost(s.preData) : ""));
     const listTitle = usePreviewStore((s) => s.preData?.title);
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
