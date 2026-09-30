@@ -1,4 +1,4 @@
-// 이 스크립트가 불러오는 CSS는 오버레이 shadow에만 들어간다 (cssInjectionMode: "ui"). 페이지 CSS는 entrypoints/page.content.scss
+// 이 스크립트가 불러오는 CSS는 오버레이 shadow에만 들어간다 (cssInjectionMode: "ui"). 디시 페이지에 입히는 CSS는 entrypoints/page.content.scss
 import "@/assets/styles/overlay-radix.css";
 import "@/assets/styles/overlay.scss";
 
@@ -47,8 +47,9 @@ export default defineContentScript({
                 element.removeAttribute("data-aria-hidden");
             }
             for (const guard of document.querySelectorAll("[data-radix-focus-guard]")) guard.remove();
-            // 죽은 인스턴스가 연 미리보기의 기록 항목(글 주소·제목)을 목록 항목으로 되돌린다. 두면 새 미리보기를 닫을 때 그 항목으로 돌아가 옛 글이 다시 열린다.
-            // doc이 다르면 미리보기를 연 채 새로고침한 실제 글 페이지라 건드리지 않는다
+            // 죽은 인스턴스가 미리보기를 열며 바꿔 둔 기록 항목(글 주소·제목)을 목록 항목으로 되돌린다.
+            // 그대로 두면 새 미리보기를 닫을 때 그 항목으로 돌아가 옛 글이 다시 열린다.
+            // doc이 다르면 미리보기를 연 채 새로고침한 실제 글 페이지이므로 건드리지 않는다
             const state: unknown = history.state;
             if (isRecord(state) && state.refresher === 1 && state.doc === performance.timeOrigin && isRecord(state.back) && typeof state.back.url === "string") {
                 history.replaceState(state.back.state ?? null, "", state.back.url);
@@ -66,7 +67,7 @@ export default defineContentScript({
         });
 
         // 확장을 끄거나 업데이트해도 이 스크립트는 남아 새로고침 폴링·저장소 호출을 하다 실패하므로 모듈을 멈춘다.
-        // 부트스트랩의 await보다 먼저 건다. 읽는 사이 무효화되면 저장소 호출이 실패하거나 끝나지 않아 뒤에 건 처리는 걸리지 않는다
+        // 부트스트랩의 await보다 먼저 등록한다. 저장소를 읽는 중에 무효화되면 그 호출이 실패하거나 끝나지 않아 await 뒤의 등록까지 가지 못한다
         ctx.onInvalidated(() => {
             stopAll();
             // 새 스크립트가 주입되어 무효화된 경우(확장은 살아 있음)는 새 스크립트가 이어서 돌므로 알리지 않는다
@@ -150,9 +151,8 @@ export default defineContentScript({
         const offPreview = usePreviewStore.subscribe(mountWhenNeeded);
 
         // ===== 모듈 부트스트랩 =====
-        // 차단·메모·IP DB는 글 목록·본문(features의 urls와 같은 BOARD_PAGE)에서만 쓴다. 메인·검색 등에서는 저장소를 읽지 않는다.
-        // 임시 차단을 먹으면 디시는 모든 요청에 빈 페이지를 준다(상태 코드는 200). 확장이 고장 난 것처럼 보이므로 이유를 알린다.
-        // 막혀 있는 동안 요청마다 오므로 1분에 한 번만 띄운다
+        // 디시에 임시 차단되면 모든 요청에 빈 페이지가 온다(상태 코드는 200). 확장이 고장 난 것처럼 보이므로 이유를 알린다.
+        // 막혀 있는 동안은 요청마다 불리므로 1분에 한 번만 띄운다
         let blockedWarnedAt = 0;
         const warnBlocked = (): void => {
             if (Date.now() - blockedWarnedAt < 60_000) return;
@@ -167,6 +167,7 @@ export default defineContentScript({
         };
         whenDomReady(warnIfBlocked);
 
+        // 차단·메모·IP DB는 글 목록·본문(features의 urls와 같은 BOARD_PAGE)에서만 쓴다. 메인·검색 등에서는 저장소를 읽지 않는다
         const board = BOARD_PAGE.test(documentUrl.href);
         await loadAll(features, ctx.signal, board ? Promise.all([initBlocksStore(ctx.signal), initMemosStore(ctx.signal)]) : undefined);
         // 저장소는 요청 순서대로 읽히므로 가장 큰 IP/밴 DB는 모듈 설정 뒤에 요청한다(userinfo는 setup에서 기다린다).

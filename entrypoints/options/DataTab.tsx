@@ -40,7 +40,7 @@ const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "m
         const settings = next[key];
         if (isRecord(settings)) next[key] = migrateModuleSettings(id, settings);
     }
-    // 백업은 용량 때문에 차단 항목 id를 빼고 올리므로 저장할 때 다시 붙인다
+    // 백업·내보내기는 용량 때문에 차단 항목 id를 빼므로 저장할 때 다시 붙인다
     for (const [key, value] of Object.entries(next)) {
         if (isBlockListKey(key)) next[key] = normalizeBlockList(value);
     }
@@ -61,8 +61,8 @@ const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "m
             if (isMapKey(key) && isRecord(old) && isRecord(value)) next[key] = {...old, ...value};
         }
     }
-    // 걸러서 다 빠지면(옛 백업 키가 migrateV5에서 전부 빠지거나 가져온 JSON에 기본 차단 모드만 든 경우 등) 복원은 모든 설정을 지우고
-    // 가져오기는 아무것도 쓰지 않는다. 설정을 비우는 것은 초기화({})만 허용한다.
+    // 거르고 나서 남은 키가 없으면(옛 백업 키가 migrateV5에서 전부 빠졌거나 가져온 JSON에 기본 차단 모드만 든 경우 등)
+    // 복원은 모든 설정을 지우고 가져오기는 아무것도 쓰지 않으므로 실패로 알린다. 설정을 비우는 것은 초기화({})만 허용한다.
     if (Object.keys(data).length > 0 && Object.keys(next).length === 0) throw new Error("쓸 수 있는 설정이 없습니다.");
     const removed = mode === "replace" ? Object.keys(previous).filter((key) => isBackupTarget(key) && !(key in next)) : [];
 
@@ -146,8 +146,7 @@ export function DataTab() {
     }, []);
 
     const run = async (action: () => Promise<string>, failure: string): Promise<void> => {
-        // 누른 버튼이 막히면 브라우저가 포커스를 body로 떨어뜨려 알림을 닫은 뒤 돌아갈 곳이 없다.
-        // 포커스를 받는 가장 가까운 조상(탭 패널)으로 옮겨 둔다
+        // 누른 버튼이 막히면 포커스가 body로 떨어져 알림을 닫은 뒤 돌아갈 곳이 없으므로 가까운 조상(탭 패널)으로 옮겨 둔다
         if (document.activeElement !== document.body) focusPanel(document.activeElement);
         setLoading(true);
         let message: string;
@@ -265,7 +264,7 @@ export function DataTab() {
                     </Flex>
 
                     <Dialog.Content maxWidth="420px" onCloseAutoFocus={(ev) => {
-                        // 복원 중에는 복원 버튼이 막혀 Radix가 포커스를 돌려주지 못하므로 포커스를 받는 가장 가까운 조상(탭 패널)으로 돌린다
+                        // 복원 중에는 복원 버튼이 막혀 Radix가 포커스를 돌려주지 못하므로 가까운 조상(탭 패널)으로 돌린다
                         if (!restoreRef.current?.disabled) return;
                         ev.preventDefault();
                         focusPanel(restoreRef.current);

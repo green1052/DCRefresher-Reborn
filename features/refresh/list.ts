@@ -104,7 +104,6 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
     // 받아온 HTML엔 검색어 강조가 없으니 페이지 전환뿐 아니라 받아온 목록마다 칠한다
     if (search !== undefined) highlightSearchResults(newList, search);
 
-    // 주소를 바꾼 로드(페이지 넘김·뒤로 가기)는 다른 목록이라 새 글 효과를 넣지 않는다
     if (!navigated && fadeIn) {
         for (const [index, element] of newPostList.entries()) {
             element.classList.add("refresherNewPost");
@@ -119,7 +118,7 @@ export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigat
     }
 
     // 행 순서가 같거나, 한 자리(공지 아래)에 새 글이 끼어들고 그만큼 아래가 밀려난 것뿐이면 제자리에서 고친다.
-    // 새 행만 끼우고 밀려난 행만 빼며, 나머지는 바뀐 행(조회수 등)만 갈아끼운다. 그대로인 행은 hover·리스너가 유지되고 필터·스타일·배치를 다시 하지 않는다.
+    // 새 행을 끼우고 밀려난 행을 빼고, 나머지는 바뀐 행(조회수 등)만 갈아끼운다. 그대로인 행은 hover·리스너가 남고 필터·스타일·배치도 다시 하지 않는다.
     // 검색 결과는 강조와 글·댓글 행 짝이 얽혀 있어 통째로 바꾼다. 삭제된 글 보존은 옛 행을 새 목록으로 옮겨 넣으므로 순서가 같을 때만 제자리에서 고친다
     const shift = !navigated && search === undefined ? insertionOf(oldKeys, newKeys) : null;
     if (shift && (!keepDeleted || (shift.count === 0 && oldKeys.length === newKeys.length))) {

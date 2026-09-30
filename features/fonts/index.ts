@@ -95,7 +95,7 @@ export default defineModule({
     setup: apply,
     onChanged: apply,
 
-    // 옵션·팝업도 같은 폰트로 (_radix.scss·options.scss가 --refresher-font를 쓴다)
+    // 옵션·팝업도 같은 폰트로 (_radix.scss의 overrides가 --refresher-font를 쓴다)
     extensionPageVars: (settings) => ({"--refresher-font": fontFamilyOf(settings.customFonts)}),
 
     revoke() {

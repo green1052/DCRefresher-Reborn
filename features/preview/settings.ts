@@ -20,7 +20,7 @@ export const settings = {
         step: 50,
         unit: "px"
     },
-    // v5와 같은 키라 마이그레이션한 값을 그대로 쓴다
+    // v5와 같은 키
     toggleBackgroundBlur: {
         type: "check",
         group: FRAME_GROUP,

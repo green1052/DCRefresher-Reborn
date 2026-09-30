@@ -12,7 +12,7 @@ interface RefresherSelectProps<T extends string> {
     onChange: (value: T) => void;
 }
 
-/** 빈 문자열 값(기본값) 항목을 대신하는 sentinel. Radix Select는 빈 값을 받지 않는다 */
+/** 빈 문자열 값(기본값) 항목 대신 쓰는 값. Radix Select는 빈 문자열을 값으로 받지 않는다 */
 const NONE = "__none__";
 
 export const RefresherSelect = <T extends string>({value, options, disabled, onChange, ...aria}: RefresherSelectProps<T>) => (

@@ -17,7 +17,7 @@ export const focusPanel = (from: Element | null | undefined): void => from?.pare
  */
 export const useOpenerFocus = () => {
     const [opener] = useState(focusedElement);
-    // 닫는 사이 연 버튼이 막혔으면(전체 삭제로 목록이 비었거나 초기화 중) 포커스를 받는 가장 가까운 조상(탭 패널 등)으로 돌린다
+    // 닫는 사이 연 버튼이 막혔으면(전체 삭제로 목록이 비었거나 초기화 중) 가까운 조상으로 돌린다
     const focusOpener = (): void => {
         if (opener?.matches(":disabled")) focusPanel(opener);
         else opener?.focus({preventScroll: true});

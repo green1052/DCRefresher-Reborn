@@ -18,7 +18,7 @@ const backgroundModules = Object.values(import.meta.glob<{ default: BackgroundMo
 
 const DATABASE_UPDATE_INTERVAL = 604_800_000; // 7일
 /**
- * 7일이 지났는지 하루마다 확인한다. 서버 DB는 주 2번 바뀌고 확인할 때마다 DB 전체(수백 KB)를 읽으므로 더 자주 볼 이유가 없다.
+ * 7일이 지났는지 하루마다 확인한다(meta만 읽는다). 7일마다 받으므로 더 자주 보면 서비스 워커만 괜히 깨운다.
  * 받기에 실패하면 다음 날 다시 받는다. 저장 형식이 옛것이면(확장 업데이트 때 받기 실패) 7일을 기다리지 않고 다시 받는다.
  */
 const DATABASE_ALARM = "refresher:dbCheck";
@@ -79,7 +79,7 @@ export default defineBackground(() => {
     // 리스너는 여기서 바로 건다. 크롬은 메뉴 같은 상태를 유지하므로 설치·브라우저 시작·설정 변경 때만 다시 맞춘다
     const applyBackgroundModules = startBackgroundModules(backgroundModules);
     browser.runtime.onStartup.addListener(() => void applyBackgroundModules());
-    // Firefox(MV2)는 메뉴를 유지하지 않고, 확장을 껐다 켜면 onStartup/onInstalled 없이 배경만 다시 뜨므로 뜰 때마다 맞춘다
+    // 파이어폭스(MV2)는 메뉴를 유지하지 않고, 확장을 껐다 켜면 onStartup/onInstalled 없이 배경만 다시 뜨므로 뜰 때마다 맞춘다
     if (import.meta.env.FIREFOX) void applyBackgroundModules();
 
     // ===== Commands: 단축키 → 활성 탭에만 전송 =====

@@ -31,7 +31,6 @@ interface RefreshApi {
     reload(): Promise<void>;
 }
 
-/** 방문 링크 색상 (Firefox 대응) */
 const applyDoNotColorVisited = (ctx: Ctx): void => {
     document.documentElement.classList.toggle("refresherDoNotColorVisited", ctx.settings.doNotColorVisited);
 };
@@ -160,9 +159,9 @@ export default defineModule({
             try {
                 lastRefresh = Date.now();
 
-                // 자동 새로고침은 재시도하지 않는다. 실패하면 armNext가 주기를 늘린다. ky 재시도는 Retry-After를 끝없이 기다려 페이지 넘김까지 막는다.
+                // 자동 새로고침은 재시도하지 않고, 실패하면 armNext가 주기를 늘린다. ky 재시도는 Retry-After를 최대 10초까지 기다려 그동안 목록 요청이 묶인다.
                 // 시간 제한은 기본값(15초, 차례를 받은 뒤부터)을 쓴다. 다음 주기는 응답을 받은 뒤 잡으므로 요청이 겹치지 않는다.
-                // 주기보다 짧게 끊으면 큰 갤러리 목록(2~3초 걸린다)이 조금만 늦어도 실패로 쳐져 주기가 최대 1분까지 늘어나 멈춘 것처럼 보인다.
+                // 주기보다 짧게 끊으면 큰 갤러리 목록(2~3초 걸린다)이 조금만 늦어도 실패가 되어 주기가 최대 1분까지 늘어나 멈춘 것처럼 보인다.
                 // retry: undefined는 기본값을 덮으므로 키 자체를 뺀다
                 const response = await http.get(listUrl(target), {
                     signal: controller.signal,
@@ -181,8 +180,8 @@ export default defineModule({
                 }
 
                 // 자동 새로고침은 목록 표만 파싱한다 (문서 전체의 1/3). 페이징 박스는 사용자가 한 로드(강제·이동)에서만 맞춘다.
-                // 검색 결과는 검색 이어 보기가 페이징을 보고 다시 이어 붙이므로 문서 전체를 파싱해 페이징도 맞춘다.
-                // 지난 요청이 실패했으면(사용자의 페이지 이동이 실패해 페이징이 옛 페이지일 수 있다) 문서 전체를 파싱해 페이징도 맞춘다
+                // 검색 결과(검색 이어 보기가 페이징을 보고 다시 이어 붙인다)와 지난 요청이 실패한 뒤(사용자의 페이지 이동이 실패해
+                // 페이징이 옛 페이지일 수 있다)에는 문서 전체를 파싱해 페이징도 맞춘다
                 const partial = !force && failures === 0 && !queryString("s_keyword") && table !== -1 && listHtml;
                 const dom = new DOMParser().parseFromString(partial ? `<table class="gall_list">${listHtml}` : response, "text/html");
 
@@ -270,7 +269,7 @@ export default defineModule({
         // 뒤로/앞으로 가기: 인페이지 전환으로 쌓인 주소의 목록으로 되돌린다.
         // 미리보기가 쌓은 글 주소 사이의 이동은 같은 목록이라 받지 않는다. 다시 받으면 고르던 체크가 풀리고 일시정지를 무시한다
         const onPopState = (): void => {
-            // 미리보기가 쌓은 글 기록 사이의 이동은 같은 목록이다. 행 링크는 목록 주소의 기본값 쿼리(sort_type=N, 빈 search_pos 등)를 빼서 listUrl로는 가릴 수 없다
+            // 미리보기 기록은 history.state로 가린다. 행 링크는 목록 주소의 기본값 쿼리(sort_type=N, 빈 search_pos 등)를 빼서 listUrl로는 가릴 수 없다
             const state: unknown = history.state;
             // 새로고침 전 문서가 쌓은 항목(doc이 다르다)은 미리보기가 아니라 실제 이동이다
             if (isRecord(state) && state.refresher === 1 && state.doc === performance.timeOrigin) return;

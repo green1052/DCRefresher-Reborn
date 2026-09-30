@@ -85,7 +85,7 @@ const controller = (ctx: Ctx) => {
         const slot = {key, ctrl, post};
         pending = slot;
 
-        // 끝나면 칸을 비운다 (받은 본문은 캐시에 있다). catch는 아무도 기다리지 않는 미리 받기가 실패해도
+        // 끝나면 pending을 비운다 (받은 본문은 캐시에 있다). catch는 아무도 기다리지 않는 미리 받기가 실패해도
         // unhandled rejection이 나지 않게 붙인다.
         void post.catch(() => undefined).finally(() => {
             if (pending === slot) pending = null;
@@ -114,7 +114,6 @@ const controller = (ctx: Ctx) => {
             return {post: await requestPost(preData), fresh: true};
         } catch (e) {
             // 다른 글로 넘어가 끊은 요청은 보존본으로 대신하지 않는다.
-            // 파이어폭스에선 다른 realm의 DOMException이라 instanceof가 안 맞아 이름으로 본다.
             if (isAbortError(e)) throw e;
             // 삭제된 글 보존: 받지 못하면 캐시 비활성화여도 캐시에 남은 이전 본문을 보여 준다. 다시 저장해 수명을 늘린다.
             const archived = ctx.settings.archiveArticle ? getEntry(preData)?.post : undefined;
@@ -133,7 +132,7 @@ const controller = (ctx: Ctx) => {
     let pulling = 0;
     // 마지막으로 그린 댓글 원본 (보존 처리까지 마친 것). 차단 목록·방식이 바뀌면 다시 받지 않고 이것으로 다시 가린다.
     let shown: { signal: number; source: DcinsideComment[] } | null = null;
-    /** shown을 만든 받은 목록(JSON). 같은 목록을 다시 받으면 다시 그리지 않는다 */
+    /** shown을 만든 받은 목록의 JSON. 같은 목록을 다시 받으면 다시 그리지 않는다 */
     let shownRaw = "";
 
     // 답글 대상 댓글이 목록에서 빠졌거나 삭제됐으면 답글 쓰기를 푼다. 두면 취소 버튼도 없이 없는 댓글에 답글을 단다
@@ -166,7 +165,7 @@ const controller = (ctx: Ctx) => {
             shownSeq = seq;
             if (!skip) setEntry(preData, {comments: {list: raw, allowReply, truncated}});
 
-            // 보존(archive) 기록은 받을 때마다 갱신해야 하므로 정리는 늘 한다
+            // 보존 기록은 받을 때마다 갱신해야 하므로 prepareComments는 같은 목록이어도 부른다
             const source = prepareComments(raw, preData, ctx.settings.archiveArticle, truncated);
             // 자동 새로고침으로 같은 목록을 다시 받았으면 정화·다시 그리기를 건너뛴다. 댓글이 수백 개면 정화만 수십 ms다
             const rawKey = JSON.stringify(raw);
@@ -245,7 +244,7 @@ const controller = (ctx: Ctx) => {
         let archived: boolean;
 
         // 받아야 하는 글이 목록에 댓글이 보이면 댓글도 본문과 함께 요청한다. 토큰(e_s_n_o)은 갤러리마다 같아 이 페이지의 값을 쓰고,
-        // 본문을 읽은 뒤 그 글의 값과 맞을 때만 쓴다. PageUp/Down으로 넘길 때는 하지 않는다 (연타하면 지나가는 글마다 요청이 나간다)
+        // 본문을 읽은 뒤 그 글의 값과 맞을 때만 쓴다. PageUp/Down·스크롤로 넘길 때는 하지 않는다 (연달아 넘기면 지나가는 글마다 요청이 나간다)
         const esno = document.querySelector<HTMLInputElement>("#e_s_n_o")?.value;
         const early = !dir && preData.commentCount > 0 && esno && (ctx.settings.disableCache || !cachedPost(preData))
             ? fetchComments(preData, {esno}, abort!.signal).catch(() => undefined)
@@ -279,8 +278,8 @@ const controller = (ctx: Ctx) => {
             if (store.getState().signalId === mySignal && !(e instanceof BlockedError)) ui.showToast("댓글을 불러오지 못했습니다.", "error");
         }
 
-        // PageUp/Down으로 넘겼으면 같은 방향 다음 글의 본문을 미리 받는다. 댓글은 열 때 받는다.
-        // 받는 중인 요청(새로고침 버튼·미니 등)이 있으면 미리 받지 않는다. 받으면 그 요청을 끊는다.
+        // PageUp/Down·스크롤로 넘겼으면 같은 방향 다음 글의 본문을 미리 받는다. 댓글은 열 때 받는다.
+        // 받는 중인 요청(새로고침 버튼·미니 등)이 있으면 미리 받지 않는다. 미리 받으면 그 요청이 끊긴다.
         if (dir && !ctx.settings.disableCache && store.getState().signalId === mySignal) {
             const next = adjacentPreData(preData, dir);
             if (next && !pending && !cachedPost(next)) void requestPost(next);
@@ -320,7 +319,7 @@ const controller = (ctx: Ctx) => {
         store.getState().close();
     };
 
-    /** dir: PageUp/Down으로 넘긴 방향. 그 방향 다음 글을 미리 받는다 */
+    /** dir: PageUp/Down·스크롤로 넘긴 방향. 그 방향 다음 글을 미리 받는다 */
     const open = (preData: GalleryPreData, commentsOnly = false, historySkip = false, dir = 0) => {
         // 대기·요청 중인 미니가 전체 미리보기 위에 뜨지 않게 한다.
         onMiniLeave();
@@ -512,7 +511,7 @@ const controller = (ctx: Ctx) => {
         const element = ev.currentTarget as HTMLElement;
         if (isBlurHidden(element)) return;
         // 조작할 수 있는 미니에서 제목으로 돌아왔으면 닫지 않는다. 떠난 제목의 닫기 타이머는 다른 제목에 들어와도 끊어야
-        // 새로 뜰 카드를 닫지 않으므로 늘 부르고, 다른 제목이면 앞 글의 카드를 바로 내린다 (받지 못하면 앞 글 카드가 그대로 남는다)
+        // 새로 뜰 카드를 닫지 않으므로 keepMini는 늘 부른다. 다른 제목이면 앞 글의 카드는 바로 내린다 (새 글을 받지 못하면 앞 글 카드가 그대로 남는다)
         keepMini();
         if (element !== miniFor && usePreviewStore.getState().mini) usePreviewStore.setState({mini: null});
         const x = ev.clientX;

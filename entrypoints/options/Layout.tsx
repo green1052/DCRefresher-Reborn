@@ -91,7 +91,8 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
     // 가져오는 중에는 닫지 않는다. 닫으면 가져오기는 끝나도 알림이 뜨지 않는다
     return (
         <Dialog.Root open onOpenChange={(next) => !next && !busy && onClose()}>
-            {/* 가져왔다는 알림은 포커스를 가져오기 버튼에 돌려준 뒤에 띄운다. 먼저 띄우면 알림이 사라질 다이얼로그 버튼을 연 요소로 기억해 닫을 때 포커스가 body로 떨어진다 */}
+            {/* 가져왔다는 알림은 포커스를 가져오기 버튼에 돌려준 뒤에 띄운다.
+                먼저 띄우면 알림이 곧 사라질 이 다이얼로그의 버튼을 연 요소로 기억해, 알림을 닫을 때 포커스가 body로 떨어진다 */}
             <Dialog.Content maxWidth="520px" onCloseAutoFocus={(ev) => {
                 focus.onCloseAutoFocus(ev);
                 if (done.current) notify(done.current);

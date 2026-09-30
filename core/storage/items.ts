@@ -88,7 +88,7 @@ export const isBlockListKey = (key: string): boolean => /^refresher:block:[A-Z]+
 
 
 /**
- * IP/밴 DB는 필요한 것만 읽도록 세 키로 나눈다: 갱신 확인은 meta, 페이지는 ip, 밴은 쓸 때만 ban (각각 수백 KB).
+ * IP/밴 DB는 필요한 것만 읽도록 세 키로 나눈다: 갱신 확인은 meta, 페이지는 ip, 밴은 쓸 때만 ban (ip·ban은 각각 수백 KB).
  */
 export const dbStorage = {
     meta: storage.defineItem<DatabaseMeta>("local:refresher:db:meta", {fallback: {version: "", lastUpdate: 0}})

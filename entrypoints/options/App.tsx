@@ -15,7 +15,7 @@ import {MemoTab} from "./MemoTab";
 import {notify, useOptionsStore} from "./optionsStore";
 import {ShortcutTab} from "./ShortcutTab";
 
-// 개발자 탭과 디시콘 비는 드물게 열리므로 옵션 페이지를 열 때 같이 받지 않는다(개발자 탭은 IP/밴 DB 원문도 읽는다)
+// 개발자 탭과 디시콘 비는 드물게 열리므로 옵션 페이지를 열 때 같이 불러오지 않는다(개발자 탭은 IP/밴 DB 원문도 읽는다)
 const DevTab = lazy(() => import("./DevTab").then(({DevTab}) => ({default: DevTab})));
 const DcconRain = lazy(() => import("./DcconRain").then(({DcconRain}) => ({default: DcconRain})));
 

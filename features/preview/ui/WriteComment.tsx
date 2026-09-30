@@ -199,9 +199,9 @@ export const WriteComment = () => {
                 }
                 setDccon(NO_DCCON);
                 setTxtcon(false);
-                // 그새 다른 글로 넘어갔으면 답글 대상은 그 글 것이라 건드리지 않는다.
                 // 디시처럼 쓴 닉네임·비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다.
                 if (!login) saveNonmember(nick, password);
+                // 그새 다른 글로 넘어갔으면 답글 대상은 그 글 것이라 건드리지 않는다.
                 if (usePreviewStore.getState().signalId === signal) usePreviewStore.setState({reply: NO_REPLY});
                 refreshIfOpen();
             } else if (response.message === "captcha") {

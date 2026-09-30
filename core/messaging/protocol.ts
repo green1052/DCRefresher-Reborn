@@ -22,7 +22,7 @@ interface ProtocolMap {
     "refresher:grecaptchaToken"(action: "comment_submit" | "insert_icon"): string | undefined;
 
     /**
-     * 탭 → 배경: refresh가 목록 행을 갈아끼웠다. 배경이 그 탭의 MAIN world에서 디시 자체 차단·이용자 메모 표시를 다시 적용한다.
+     * 탭 → 배경: refresh·search가 목록 행을 갈아끼우거나 이어 붙였다. 배경이 그 탭의 MAIN world에서 디시 자체 차단·이용자 메모 표시를 다시 적용한다.
      * 인자는 갤러리 id
      */
     "refresher:listReplaced"(gallery: string): void;
@@ -33,7 +33,7 @@ interface ProtocolMap {
     /** 탭 → 배경: 디시 통합검색 결과 페이지(HTML). search.dcinside.com은 CORS를 열지 않아 콘텐츠 스크립트가 받을 수 없다 */
     "refresher:searchPosts"(query: string): string;
 
-    /** 팝업 → 탭: 이 페이지의 상태 */
+    /** 팝업 → 탭: 이 페이지의 토글 상태 */
     "refresher:pageState"(): PageToggleState[];
 
     /** 팝업 → 탭: 이 페이지에서만 토글. 바뀐 상태를 돌려준다 */

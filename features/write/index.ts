@@ -119,9 +119,9 @@ export default defineModule({
         document.addEventListener("input", onInput, {capture: true, signal});
         window.addEventListener("beforeunload", onBeforeUnload, {signal});
 
-        // 수정 페이지에서 에디터 스크립트로 넣거나 뺀 이미지는 input 이벤트가 나지 않으므로 에디터의 변화로 고친 것을 안다.
-        // 디시가 원래 글을 채우는 것은 잡지 않게 사용자가 페이지를 건드린 뒤부터 본다. 등록 뒤 디시가 에디터를 고칠 수 있어 submitting은 두고,
-        // 속성(hover·class)의 변화는 보지 않는다. 같은 요소를 다시 observe해도 옵션만 바뀌므로 건드릴 때마다 부른다
+        // 수정 페이지에서 에디터 스크립트로 넣거나 뺀 이미지는 input 이벤트가 나지 않아 에디터의 DOM 변화로 알아챈다.
+        // 디시가 원래 글을 채우는 것까지 잡지 않게 사용자가 페이지를 건드린 뒤부터 본다. 등록 뒤에 디시가 에디터를 고칠 수 있어 submitting은 풀지 않고,
+        // 속성(hover·class) 변화는 보지 않는다. 같은 요소를 다시 observe해도 옵션만 바뀌므로 건드릴 때마다 부른다
         if (edited) return;
         const observer = new MutationObserver(() => {
             edited = true;

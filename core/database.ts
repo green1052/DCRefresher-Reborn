@@ -13,7 +13,7 @@ const get = (url: string): Promise<string> => http.get(url, {retry: 0}).text();
 
 /**
  * IP/밴 DB를 내려받아 저장한다. 배경(설치·주기)과 옵션 페이지(지금 갱신)가 부른다.
- * 서버 버전이 저장된 것과 같으면 본문(1MB 넘음)은 받지 않고 확인 시각만 갱신한다. 다시 쓰면 열린 탭마다 IP DB를 다시 풀기 때문이다.
+ * 서버 버전이 저장된 것과 같으면 본문(ip·ban 각각 수백 KB)은 받지 않고 확인 시각만 갱신한다. 다시 쓰면 열린 탭마다 IP DB를 다시 풀기 때문이다.
  * force: 사용자가 누른 "지금 갱신". 같은 버전이어도 다시 받는다.
  */
 export const updateDatabase = async (force = false): Promise<void> => {
@@ -56,8 +56,8 @@ interface IpInfo {
 
 let lookupIp: ((ip: string) => IpCandidate[] | undefined) | null = null;
 /**
- * uid → 이유들. 저장된 ban은 이유 → uid[] 형태라 뒤집어 둔다.
- * 기본 설정에서는 유저 버블만 쓰므로 처음 조회할 때 읽기 시작한다. 읽는 동안은 null이고, 다 읽으면 version을 올려 다시 그리게 한다.
+ * uid → 이유들. 저장된 ban은 갤러리 → uid[] 형태라 뒤집어 둔다. 갤러리 이름이 그대로 갱차 이유로 보인다.
+ * 기본 설정에서는 유저 버블만 쓰므로 처음 조회할 때 읽기 시작한다. 읽는 동안은 null이고, 다 읽으면 번호(bump)를 올려 다시 그리게 한다.
  */
 let bans: Map<string, string> | null = null;
 let bansRequested = false;

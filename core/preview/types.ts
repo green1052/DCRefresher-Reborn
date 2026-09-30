@@ -38,7 +38,7 @@ export interface PostInfo {
     requireCommentCaptcha?: boolean;
     v_cur_t?: string;
     randomParam?: { name: string; value: string };
-    /** 그 글의 댓글 요청 토큰 (#e_s_n_o). 갤러리마다 같아 목록의 값으로 미리 요청하지만, 쓰기 전에 이 값과 맞춰 본다 (preview의 load) */
+    /** 그 글의 댓글 요청 토큰 (#e_s_n_o). 갤러리마다 같아 지금 페이지의 값으로 미리 요청하지만, 쓰기 전에 이 값과 맞춰 본다 (preview의 load) */
     esno?: string;
     /** 그 글의 추천 토큰 (input[name=code_recommend]) */
     recommendCode?: string;

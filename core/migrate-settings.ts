@@ -1,6 +1,6 @@
 /**
- * v6 안에서 바뀐 설정 옮기기. v5 마이그레이션(migrate-v5.ts)과 달리 배경·옵션(DataTab)·stores/modules가 계속 쓴다.
- * 옵션·팝업은 스키마에 없는 설정을 지우므로(pruneStaleSettings) 그보다 먼저 옮겨야 한다. 그래서 세 곳이 모두 부른다:
+ * v6 안에서 바뀐 설정 옮기기. 한시적인 v5 마이그레이션(migrate-v5.ts)과 달리 계속 둔다.
+ * 옵션·팝업은 스키마에 없는 설정을 지우므로(pruneStaleSettings) 그보다 먼저 옮겨야 한다. 그래서 세 곳이 부른다:
  * 업데이트 때 배경(migrateSettingsStorage), 옵션·팝업이 정리하기 전(stores/modules), 복원·가져오기(DataTab)
  */
 import {moduleSettingsStorage} from "@/core/storage/items";

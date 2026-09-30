@@ -21,8 +21,10 @@ export const MANAGE_LABELS = {notice: ["공지로 등록", "공지를 해제"], 
 
 type Reply = { commentNo: string | null; replyNo: string | null };
 
-/** blockMedia: blockImage로 이미지를 가릴지. 전체 미리보기와 같은 클래스로 가린다. wheel: 휠로 내용을 스크롤할지 (tooltipWheel) */
-/** interactive: 마우스로 카드를 조작할 수 있다 (tooltipInteraction). 커서를 따라다니지 않는다 */
+/**
+ * blockMedia: blockImage로 이미지를 가릴지. 전체 미리보기와 같은 클래스로 가린다. wheel: 휠로 내용을 스크롤할지 (tooltipWheel).
+ * interactive: 마우스로 카드를 조작할 수 있다 (tooltipInteraction). 커서를 따라다니지 않는다
+ */
 type MiniState = { x: number; y: number; title: string; contents: string; blockMedia: boolean; wheel: boolean; interactive: boolean; gallery: string };
 
 /** 게시글을 새로 열 때마다 초기화되는 상태 */
@@ -118,7 +120,7 @@ export const needsPreviewOverlay = (state: PreviewState): boolean =>
 /** 차단 기간 (시간 → 라벨). 차단 팝업과 차단 프리셋 설정이 같이 쓴다 */
 export const BLOCK_DAYS: Record<string, string> = {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"};
 
-/** 미니 미리보기 크기. Mini.tsx와 miniPosition의 화면 밖 방지 계산이 같이 쓴다 */
+/** 미니 미리보기 크기. Mini.tsx와 화면 밖 방지 계산(miniPosition, index.ts의 showMini)이 같이 쓴다 */
 export const MINI_WIDTH = 720;
 export const MINI_HEIGHT = 560;
 
