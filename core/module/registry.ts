@@ -16,9 +16,14 @@ interface ModuleInstance {
 }
 
 const instances = new Map<string, ModuleInstance>();
+/**
+ * stopAll 뒤에는 다시 켜지 않는다. 새 스크립트가 주입되어 무효화된 경우 확장은 살아 있어 on/off 감시·bfcache·불러오는 중인 register가
+ * 계속 불리는데, 여기서 켜면 새 스크립트의 모듈과 두 벌로 돈다
+ */
+let stopped = false;
 
 const start = async (instance: ModuleInstance): Promise<void> => {
-    if (instance.running) return;
+    if (stopped || instance.running) return;
 
     // 이 실행의 수명. setup이 await하는 사이 중지되면 이미 abort된 상태라, 그 뒤에 등록하는 필터·cleanup은 바로 해제한다
     const controller = new AbortController();
@@ -133,6 +138,7 @@ export const runPageToggle = ({module, id}: PageAction): void => {
  * 새로고침 전까지 가린 내용이 드러난다.
  */
 export const stopAll = (): void => {
+    stopped = true;
     for (const instance of instances.values()) stop(instance, true);
 };
 
