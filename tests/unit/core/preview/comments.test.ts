@@ -3,9 +3,9 @@ import {beforeEach, describe, expect, it} from "vitest";
 import {getEntry, restoreArchive, setEntry} from "@/core/preview/cache";
 import {prepareComments, processComments} from "@/core/preview/comments";
 import type {DcinsideComment, GalleryPreData} from "@/core/preview/types";
-import {DEFAULT_DETECT_MODE} from "@/core/storage/items";
-import {useBlocksStore} from "@/stores/blocks";
 import {useUiStore} from "@/stores/ui";
+
+import {setBlockLists} from "../../../helpers";
 
 let post = 0;
 const preDataOf = (): GalleryPreData => ({gallery: "g", id: String(++post), link: "", notice: false, recommend: false, type: "icon_txt", commentCount: 0});
@@ -17,8 +17,7 @@ const blockView = {blur: false, blurReveal: true, replyRemove: false, revealed: 
 
 beforeEach(() => {
     useUiStore.setState({blockView: null});
-    const {entries} = useBlocksStore.getState();
-    useBlocksStore.setState({entries: Object.fromEntries(Object.keys(entries).map((type) => [type, []])) as unknown as typeof entries, defaults: {...DEFAULT_DETECT_MODE}});
+    setBlockLists();
 });
 
 describe("restoreArchive", () => {
@@ -72,7 +71,7 @@ describe("processComments", () => {
 
     it("차단 모듈 설정대로 댓글·대댓글을 가리고 같은 댓글을 접는다", () => {
         const preData = preDataOf();
-        useBlocksStore.setState((state) => ({entries: {...state.entries, NICK: [{id: "x", content: "n1", isRegex: false}], COMMENT: [{id: "y", content: "욕", isRegex: false}]}}));
+        setBlockLists({NICK: [{id: "x", content: "n1", isRegex: false}], COMMENT: [{id: "y", content: "욕", isRegex: false}]});
         useUiStore.setState({blockView: {...blockView, replyRemove: true, duplicate: {count: 2, minLength: 2}}});
 
         const source = [
@@ -96,7 +95,7 @@ describe("processComments", () => {
 
     it("디시콘 두 개짜리 댓글은 태그를 나눠 둘 다 검사한다", () => {
         const preData = preDataOf();
-        useBlocksStore.setState((state) => ({entries: {...state.entries, DCCON: [{id: "d", content: "second", isRegex: false}]}}));
+        setBlockLists({DCCON: [{id: "d", content: "second", isRegex: false}]});
         useUiStore.setState({blockView});
         const memo = "<img class=\"written_dccon\" src=\"https://dcimg5.dcinside.com/dccon.php?no=first\"\"img class=\"written_dccon\" src=\"https://dcimg5.dcinside.com/dccon.php?no=second\">";
         const [processed] = processComments([comment("1", memo)], preData);

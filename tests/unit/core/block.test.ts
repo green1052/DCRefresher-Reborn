@@ -1,27 +1,18 @@
 import {beforeEach, describe, expect, it} from "vitest";
 
 import {blockingEntries, dcconCode, groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
-import {DEFAULT_DETECT_MODE} from "@/core/storage/items";
-import type {BlockEntry, BlockType} from "@/core/storage/types";
-import {useBlocksStore} from "@/stores/blocks";
+import type {BlockEntry} from "@/core/storage/types";
+
+import {setBlockLists} from "../../helpers";
 
 let seq = 0;
 const entry = (fields: Partial<BlockEntry> & { content: string }): BlockEntry => ({id: String(++seq), isRegex: false, ...fields});
 
-/** 스토어에 목록을 직접 넣는다 (저장소를 거치지 않는다) */
-const setLists = (lists: Partial<Record<BlockType, BlockEntry[]>>, defaults: Partial<Record<BlockType, BlockEntry["mode"] & string>> = {}): void => {
-    const state = useBlocksStore.getState();
-    useBlocksStore.setState({
-        entries: {...Object.fromEntries(Object.keys(state.entries).map((type) => [type, []])), ...lists} as typeof state.entries,
-        defaults: {...DEFAULT_DETECT_MODE, ...defaults}
-    });
-};
-
-beforeEach(() => setLists({}));
+beforeEach(() => setBlockLists());
 
 describe("isBlocked", () => {
     it("유형의 기본 모드(닉네임 일치, 제목 포함)를 따른다", () => {
-        setLists({NICK: [entry({content: "ㅇㅇ"})], TITLE: [entry({content: "광고"})]});
+        setBlockLists({NICK: [entry({content: "ㅇㅇ"})], TITLE: [entry({content: "광고"})]});
         expect(isBlocked("NICK", "ㅇㅇ")).toBe(true);
         expect(isBlocked("NICK", "ㅇㅇㅇ")).toBe(false);
         expect(isBlocked("TITLE", "이건 광고임")).toBe(true);
@@ -29,28 +20,28 @@ describe("isBlocked", () => {
     });
 
     it("항목의 mode가 기본 모드보다 우선한다", () => {
-        setLists({NICK: [entry({content: "ㅇ", mode: "CONTAIN"})]});
+        setBlockLists({NICK: [entry({content: "ㅇ", mode: "CONTAIN"})]});
         expect(isBlocked("NICK", "ㅇㅇ")).toBe(true);
     });
 
     it("정규식은 일치 모드에서 전체가 맞아야 한다", () => {
-        setLists({NICK: [entry({content: "닉1|닉1a", isRegex: true})]});
+        setBlockLists({NICK: [entry({content: "닉1|닉1a", isRegex: true})]});
         expect(isBlocked("NICK", "닉1a")).toBe(true);
         expect(isBlocked("NICK", "닉1ab")).toBe(false);
         // 잘못된 정규식은 아무것도 막지 않는다
-        setLists({NICK: [entry({content: "(", isRegex: true})]});
+        setBlockLists({NICK: [entry({content: "(", isRegex: true})]});
         expect(isBlocked("NICK", "(")).toBe(false);
     });
 
     it("갤러리 한정 항목은 그 갤러리에서만 막는다", () => {
-        setLists({ID: [entry({content: "user", gallery: "a"})]});
+        setBlockLists({ID: [entry({content: "user", gallery: "a"})]});
         expect(isBlocked("ID", "user", "a")).toBe(true);
         expect(isBlocked("ID", "user", "b")).toBe(false);
         expect(isBlocked("ID", "user")).toBe(false);
     });
 
     it("NOT_* 항목은 한 유형을 허용 목록으로 본다", () => {
-        setLists({NICK: [entry({content: "A"}), entry({content: "B"})]}, {NICK: "NOT_SAME"});
+        setBlockLists({NICK: [entry({content: "A"}), entry({content: "B"})]}, {NICK: "NOT_SAME"});
         expect(isBlocked("NICK", "A")).toBe(false);
         expect(isBlocked("NICK", "B")).toBe(false);
         expect(isBlocked("NICK", "C")).toBe(true);
@@ -59,7 +50,7 @@ describe("isBlocked", () => {
     });
 
     it("SAME 항목과 NOT_* 항목이 섞이면 둘 다 본다", () => {
-        setLists({NICK: [entry({content: "A", mode: "NOT_SAME"}), entry({content: "X", mode: "SAME"})]});
+        setBlockLists({NICK: [entry({content: "A", mode: "NOT_SAME"}), entry({content: "X", mode: "SAME"})]});
         expect(isBlocked("NICK", "A")).toBe(false);
         expect(isBlocked("NICK", "X")).toBe(true);
         expect(isBlocked("NICK", "Y")).toBe(true);
@@ -68,7 +59,7 @@ describe("isBlocked", () => {
 
 describe("isAnyBlocked / blockingEntries", () => {
     it("값이 없는 유형은 건너뛴다", () => {
-        setLists({IP: [entry({content: "1.2"})], NICK: [entry({content: "n"})]});
+        setBlockLists({IP: [entry({content: "1.2"})], NICK: [entry({content: "n"})]});
         expect(isAnyBlocked({NICK: null, IP: "1.2"})).toBe(true);
         expect(isAnyBlocked({NICK: "", IP: undefined})).toBe(false);
         expect(blockingEntries({NICK: "n", IP: "1.2"}).map(({type}) => type)).toEqual(["NICK", "IP"]);
