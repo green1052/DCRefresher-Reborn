@@ -18,8 +18,13 @@ interface SettingItemProps {
     onChange: (value: SettingValue) => void;
 }
 
-type NarrowProps<T extends SettingSchema["type"]> = Omit<SettingItemProps, "schema"> & {
+/** 설정 종류별 값 타입 */
+type ValueOf<T extends SettingSchema["type"]> = T extends "check" ? boolean : T extends "range" ? number : T extends "order" ? string[] : string;
+
+type NarrowProps<T extends SettingSchema["type"]> = Omit<SettingItemProps, "schema" | "value" | "onChange"> & {
     schema: Extract<SettingSchema, { type: T }>;
+    value: ValueOf<T>;
+    onChange: (value: ValueOf<T>) => void;
     /** 설명 글의 id. 컨트롤의 aria-describedby로 달아 포커스했을 때 설명도 읽히게 한다 */
     descId: string;
 };
@@ -60,7 +65,7 @@ const useDraft = <T, >(value: T): [T, (next: T) => void] => {
 
 /** 색 선택. 드래그 중에는 미리보기만 바꾸고, 선택 창을 닫을 때(네이티브 change) 저장한다 */
 const ColorControl = ({schema, value, compact, descId, onChange}: NarrowProps<"color">) => {
-    const [draft, setDraft] = useDraft(String(value));
+    const [draft, setDraft] = useDraft(value);
 
     return (
         <Flex align="center" gap="2">
@@ -86,7 +91,7 @@ const ColorControl = ({schema, value, compact, descId, onChange}: NarrowProps<"c
 };
 
 const TextControl = ({schema, value, descId, onChange}: NarrowProps<"text">) => {
-    const [draft, setDraft] = useDraft(String(value));
+    const [draft, setDraft] = useDraft(value);
 
     return (
         <TextField.Root
@@ -112,7 +117,7 @@ const KeyControl = ({schema, value, takenKeys = [], descId, onChange}: NarrowPro
     const [listening, setListening] = useState(false);
     const [taken, setTaken] = useState("");
     // 스크린 리더에 화면 글자와 같은 내용을 준다. 이름만 주면 '키 입력…'·'이미 사용 중'이 들리지 않는다
-    const shown = taken ? `${taken.toUpperCase()}: 이미 사용 중` : listening ? "키 입력…" : String(value).toUpperCase();
+    const shown = taken ? `${taken.toUpperCase()}: 이미 사용 중` : listening ? "키 입력…" : value.toUpperCase();
 
     return (
         <Button size="2" variant="soft" color={taken ? "red" : listening ? undefined : "gray"} style={{minWidth: 72}}
@@ -143,7 +148,7 @@ const KeyControl = ({schema, value, takenKeys = [], descId, onChange}: NarrowPro
 
 const RangeControl = ({schema, value, descId, onChange}: NarrowProps<"range">) => {
     // 화살표 키는 한 칸마다 commit하므로 저장값은 useDraft로 따라간다. key로 다시 마운트해 맞추면 그때마다 포커스를 잃는다
-    const [draft, setDraft] = useDraft(Number(value));
+    const [draft, setDraft] = useDraft(value);
     const text = formatRange(draft, schema.unit);
 
     // rt-SliderRoot는 width:stretch(부모의 100%)라 부모 폭을 고정해야 트랙이 그려진다
@@ -180,12 +185,10 @@ const RangeControl = ({schema, value, descId, onChange}: NarrowProps<"range">) =
     );
 };
 
-const OrderControl = ({schema, value, descId, onChange}: NarrowProps<"order">) => {
+const OrderControl = ({schema, value: order, descId, onChange}: NarrowProps<"order">) => {
     const [dragging, setDragging] = useState<number | null>(null);
     const [over, setOver] = useState<number | null>(null);
 
-    // 스토어가 normalizeSetting으로 스키마에 맞춰 둔 값이라 string[]이다
-    const order = value as string[];
     const label = (key: string): string => schema.items[key] ?? key;
 
     const move = (from: number, to: number): void => {
@@ -261,6 +264,8 @@ const OrderControl = ({schema, value, descId, onChange}: NarrowProps<"order">) =
 
 export const SettingItem = ({schema, value, compact, takenKeys, onChange}: SettingItemProps) => {
     const descId = useId();
+    // 스토어가 normalizeSetting으로 스키마에 맞춰 둔 값이다. 모양이 다르면(있을 수 없지만) 기본값으로 그린다
+    const text = typeof value === "string" ? value : String(defaultValue(schema));
     const title = (
         <Flex align="center" gap="1">
             <Text size="2" weight="medium" title={compact ? schema.desc : undefined}>
@@ -294,18 +299,18 @@ export const SettingItem = ({schema, value, compact, takenKeys, onChange}: Setti
 
             <Box flexShrink="0">
                 {schema.type === "check" && (
-                    <Switch size="2" aria-label={schema.name} aria-describedby={descId} checked={Boolean(value)}
+                    <Switch size="2" aria-label={schema.name} aria-describedby={descId} checked={value === true}
                             onCheckedChange={(checked) => onChange(checked)}/>
                 )}
                 {schema.type === "option" && (
-                    <RefresherSelect value={String(value)} aria-label={schema.name} aria-describedby={descId} options={schema.items}
+                    <RefresherSelect value={text} aria-label={schema.name} aria-describedby={descId} options={schema.items}
                                      onChange={onChange}/>
                 )}
-                {schema.type === "text" && <TextControl {...{schema, value, descId, onChange}} />}
-                {schema.type === "color" && <ColorControl {...{schema, value, compact, descId, onChange}} />}
-                {schema.type === "range" && <RangeControl {...{schema, value, descId, onChange}} />}
-                {schema.type === "order" && <OrderControl {...{schema, value, descId, onChange}} />}
-                {schema.type === "key" && <KeyControl {...{schema, value, takenKeys, descId, onChange}} />}
+                {schema.type === "text" && <TextControl {...{schema, value: text, descId, onChange}} />}
+                {schema.type === "color" && <ColorControl {...{schema, value: text, compact, descId, onChange}} />}
+                {schema.type === "range" && <RangeControl {...{schema, value: typeof value === "number" ? value : schema.default, descId, onChange}} />}
+                {schema.type === "order" && <OrderControl {...{schema, value: Array.isArray(value) ? value : [...schema.default], descId, onChange}} />}
+                {schema.type === "key" && <KeyControl {...{schema, value: text, takenKeys, descId, onChange}} />}
             </Box>
         </Flex>
     );

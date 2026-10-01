@@ -8,6 +8,7 @@ import {DB_KEYS, dbStorage, writeDatabase} from "@/core/storage/items";
 import type {BanList} from "@/core/storage/types";
 import {onBfcacheRestore} from "@/utils/dom";
 import {once} from "@/utils/once";
+import {isRecord} from "@/utils/record";
 
 /** DB 파일 하나를 받는다. 재시도하지 않는다. 실패하면 배경의 다음 알람이나 사용자의 "지금 갱신"이 다시 받는다 */
 const get = (url: string): Promise<string> => http.get(url, {retry: 0}).text();
@@ -39,8 +40,16 @@ export const updateDatabase = async (force = false): Promise<void> => {
     await writeDatabase({version: data.version ?? version, lastUpdate: Date.now(), format: IP_FORMAT}, ip, ban);
 };
 
-/** 저장된 ban 문자열을 푼다 (없으면 빈 목록). 깨졌으면 던진다 */
-export const parseBans = (stored: string): BanList => (stored ? (JSON.parse(stored) as BanList) : {});
+/**
+ * 저장된 ban 문자열을 푼다 (없으면 빈 목록). JSON이 깨졌으면 던진다.
+ * ban.json은 손으로 관리하는 파일이라 uid 문자열 배열이 아닌 항목은 버린다
+ */
+export const parseBans = (stored: string): BanList => {
+    const parsed: unknown = stored ? JSON.parse(stored) : {};
+    if (!isRecord(parsed)) return {};
+    return Object.fromEntries(Object.entries(parsed).flatMap(([reason, uids]) =>
+        Array.isArray(uids) ? [[reason, uids.filter((uid): uid is string => typeof uid === "string")]] : []));
+};
 
 // ===== 콘텐츠 스크립트용 조회 (저장소 → 메모리) =====
 
@@ -105,8 +114,6 @@ const loadBans = (stored: string): void => {
 const indexBans = (list: BanList): Map<string, string> => {
     const index = new Map<string, string>();
     for (const [reason, uids] of Object.entries(list)) {
-        // ban.json은 손으로 관리하는 파일이라 배열이 아닌 값은 건너뛴다
-        if (!Array.isArray(uids)) continue;
         for (const uid of uids) index.set(uid, index.has(uid) ? `${index.get(uid)}, ${reason}` : reason);
     }
     return index;

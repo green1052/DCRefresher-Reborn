@@ -4,7 +4,7 @@ import {csrfBody} from "@/utils/cookie";
 import {isRecord} from "@/utils/record";
 
 import {parsePostInfo} from "./parser";
-import type {CommentListResponse, DcinsideComment, DcinsideDccon, DcinsideDcconPackage, GalleryPreData, PostInfo} from "./types";
+import type {BlockDay, BlockReason, CommentListResponse, DcinsideComment, DcinsideDccon, DcinsideDcconPackage, GalleryPreData, PostInfo} from "./types";
 
 /** 디시 요청 본문. 모든 요청에 붙는 CSRF 토큰·갤러리 종류 뒤에 fields를 붙인다 (formBody 규칙) */
 const dcBody = (link: string, fields: Parameters<typeof formBody>[0]): Promise<URLSearchParams> =>
@@ -139,7 +139,9 @@ const isSuccess = (result: unknown): boolean => result === "success" || result =
  * 관리 요청. 미니 갤러리는 mini_, 나머지(일반·마이너·인물)는 minor_ 관리 API를 쓴다.
  * 필드는 공통 필드(ci_t, _GALLTYPE_) 뒤에 준 순서대로 붙는다.
  */
-const manage = async (target: Pick<GalleryPreData, "link">, action: string, fields: Record<string, string>): Promise<ManageResult> => {
+type ManageAction = "update_bump" | "delete_list" | "delete_comment" | "update_avoid_list" | "set_notice" | "set_recommend";
+
+const manage = async (target: Pick<GalleryPreData, "link">, action: ManageAction, fields: Record<string, string>): Promise<ManageResult> => {
     const body = await dcBody(target.link, fields);
 
     const url = `${urls.base}ajax/${isMiniGallery(target.link) ? "mini" : "minor"}_manager_board_ajax/${action}`;
@@ -168,8 +170,8 @@ export const deletePost = (target: Pick<GalleryPreData, "gallery" | "id" | "link
     manage(target, "delete_list", {id: target.gallery, "nos[]": target.id});
 
 export interface BlockOptions {
-    avoidHour: string;
-    avoidReason: string;
+    avoidHour: BlockDay;
+    avoidReason: BlockReason;
     avoidReasonTxt: string;
     /** 선택한 글도 삭제 */
     delChk: boolean;

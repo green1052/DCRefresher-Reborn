@@ -1,28 +1,28 @@
 import {Button, Card, Checkbox, Dialog, Flex, Grid, Kbd, RadioGroup, Text, TextField} from "@radix-ui/themes";
 import {ArrowBigUpDash, Ban, Megaphone, Star, Trash2} from "lucide-react";
 import {type ReactNode, useRef, useState} from "react";
+import {objectEntries} from "ts-extras";
 
 import {DialogActions} from "@/components/ConfirmDialog";
 import {overlay} from "@/components/overlay/shadow";
+import {BLOCK_DAYS, BLOCK_REASONS, type BlockDay, type BlockReason} from "@/core/preview/types";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {useUiStore} from "@/stores/ui";
 
-import {BLOCK_DAYS} from "../meta";
 import {DcconInfoPopup} from "./DcconInfoPopup";
 import {MANAGE_LABELS, type ManageKind, usePreviewStore} from "./previewStore";
 
-const BLOCK_REASONS: [string, string][] = [
-    ["1", "음란성"],
-    ["2", "광고"],
-    ["3", "욕설"],
-    ["4", "도배"],
-    ["5", "저작권 침해"],
-    ["6", "명예훼손"],
-    ["0", "직접 입력"]
-];
-
-const RadioGrid = ({label, items, value, onChange}: { label: string; items: [string, string][]; value: string; onChange: (value: string) => void }) => (
-    <RadioGroup.Root value={value} onValueChange={onChange} size="2" aria-label={label}>
+/** 고를 수 있는 값만 onChange로 넘긴다 (RadioGroup은 string을 준다) */
+const RadioGrid = <T extends string, >({label, items, value, onChange}: {
+    label: string;
+    items: readonly (readonly [T, string])[];
+    value: T;
+    onChange: (value: T) => void;
+}) => (
+    <RadioGroup.Root value={value} onValueChange={(next) => {
+        const found = items.find(([item]) => item === next);
+        if (found) onChange(found[0]);
+    }} size="2" aria-label={label}>
         <Grid columns="3" gap="2">
             {items.map(([item, text]) => <RadioGroup.Item key={item} value={item}>{text}</RadioGroup.Item>)}
         </Grid>
@@ -31,8 +31,8 @@ const RadioGrid = ({label, items, value, onChange}: { label: string; items: [str
 
 const BlockPopup = () => {
     const preData = usePreviewStore((s) => s.preData);
-    const [day, setDay] = useState("1");
-    const [reason, setReason] = useState("1");
+    const [day, setDay] = useState<BlockDay>("1");
+    const [reason, setReason] = useState<BlockReason>("1");
     const [custom, setCustom] = useState("");
     const [delChk, setDelChk] = useState(false);
     const [userTypeChk, setUserTypeChk] = useState(false);
@@ -61,7 +61,7 @@ const BlockPopup = () => {
                 <Dialog.Title>유저 차단</Dialog.Title>
 
                 <Text as="div" size="2" weight="bold" mb="2">기간</Text>
-                <RadioGrid label="기간" items={Object.entries(BLOCK_DAYS)} value={day} onChange={setDay}/>
+                <RadioGrid label="기간" items={objectEntries(BLOCK_DAYS)} value={day} onChange={setDay}/>
 
                 <Text as="div" size="2" weight="bold" mt="4" mb="2">사유</Text>
                 <RadioGrid label="사유" items={BLOCK_REASONS} value={reason} onChange={setReason}/>

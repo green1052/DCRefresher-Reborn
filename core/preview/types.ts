@@ -1,3 +1,22 @@
+/**
+ * 관리 API의 차단 기간(시간 → 라벨). 차단 팝업과 차단 프리셋 설정(features/preview/meta.ts)이 같이 쓴다.
+ * 키가 정수 모양이라 객체 순서는 오름차순이다
+ */
+export const BLOCK_DAYS = {"1": "1시간", "6": "6시간", "24": "1일", "168": "7일", "336": "14일", "744": "31일"} as const;
+export type BlockDay = keyof typeof BLOCK_DAYS;
+
+/** 관리 API의 차단 사유. "0"은 직접 입력이다. 객체로 두면 "0"이 맨 앞으로 오므로 순서대로 배열에 둔다 */
+export const BLOCK_REASONS = [
+    ["1", "음란성"],
+    ["2", "광고"],
+    ["3", "욕설"],
+    ["4", "도배"],
+    ["5", "저작권 침해"],
+    ["6", "명예훼손"],
+    ["0", "직접 입력"]
+] as const;
+export type BlockReason = (typeof BLOCK_REASONS)[number][0];
+
 export interface GalleryPreData {
     gallery: string;
     id: string;

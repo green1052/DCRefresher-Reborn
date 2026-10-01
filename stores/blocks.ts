@@ -53,7 +53,8 @@ export const normalizeBlockList = (value: unknown): BlockEntry[] => {
     });
 };
 
-const emptyEntries = (): Record<BlockType, BlockEntry[]> => Object.fromEntries(BLOCK_TYPES.map((type) => [type, []])) as unknown as Record<BlockType, BlockEntry[]>;
+// 유형을 늘리면 여기서 타입 오류가 난다
+const emptyEntries = (): Record<BlockType, BlockEntry[]> => ({COMMENT: [], DCCON: [], ID: [], IP: [], NICK: [], TAB: [], TEXT: [], TITLE: []});
 
 /** 같은 content+gallery는 한 항목이다 */
 export const blockKey = ({content, gallery}: BlockInputFields): string => JSON.stringify([content, gallery ?? ""]);
