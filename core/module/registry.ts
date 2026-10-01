@@ -15,7 +15,7 @@ interface ModuleInstance {
     def: AnyModule;
     settings: Record<string, SettingValue>;
     /** 실행 중일 때만 있다. ready는 setup이 끝나 api가 준비됐다는 뜻이며, 단축키·팝업 토글은 그때부터 받는다 */
-    running?: { ctx: ModuleContext; controller: AbortController; ready: boolean; api?: unknown };
+    running?: { ctx: ModuleContext; controller: AbortController; ready: boolean; api?: unknown; setup?: Promise<void> };
 }
 
 const instances = new Map<string, ModuleInstance>();
@@ -25,8 +25,10 @@ const instances = new Map<string, ModuleInstance>();
  */
 let stopped = false;
 
+/** 시작 중이면 그 setup을 기다린다 */
 const start = async (instance: ModuleInstance): Promise<void> => {
-    if (stopped || instance.running) return;
+    if (stopped) return;
+    if (instance.running) return instance.running.setup;
 
     // 이 실행의 수명. setup이 await하는 사이 중지되면 이미 abort된 상태라, 그 뒤에 등록하는 필터·cleanup은 바로 해제한다
     const controller = new AbortController();
@@ -50,17 +52,20 @@ const start = async (instance: ModuleInstance): Promise<void> => {
     const running: NonNullable<ModuleInstance["running"]> = {ctx, controller, ready: false};
     instance.running = running;
 
-    try {
-        const api = await instance.def.setup(ctx);
-        if (!signal.aborted) {
-            running.api = api;
-            running.ready = true;
+    running.setup = (async () => {
+        try {
+            const api = await instance.def.setup(ctx);
+            if (!signal.aborted) {
+                running.api = api;
+                running.ready = true;
+            }
+        } catch (e) {
+            // 실패한 모듈을 반쪽 상태로 두지 않는다. 그사이 중지됐으면(재시작 포함) 새 실행을 건드리지 않는다
+            if (!signal.aborted) stop(instance);
+            throw e;
         }
-    } catch (e) {
-        // 실패한 모듈을 반쪽 상태로 두지 않는다. 그사이 중지됐으면(재시작 포함) 새 실행을 건드리지 않는다
-        if (!signal.aborted) stop(instance);
-        throw e;
-    }
+    })();
+    return running.setup;
 };
 
 /** keepDom이면 revoke 없이 리스너·타이머만 푼다. abort를 revoke보다 먼저 해서 revoke가 던져도 리스너가 남지 않게 한다 */
@@ -131,6 +136,18 @@ export const pageToggleStates = (): PageToggleState[] =>
         on: toggle.isOn(running.api)
     })));
 
+/** loadAll이 끝난 뒤에 생긴다. 저장소의 on/off를 다시 읽어 맞추고, 시작하는 모듈의 setup을 기다린다 */
+let resync: (() => Promise<void>) | null = null;
+
+/**
+ * 팝업이 묻는 토글 상태. 팝업은 모듈을 켜고 끈 저장이 끝난 뒤에 묻는데, 저장소 감시 알림은 그보다 늦게 올 수 있으므로
+ * 저장소를 직접 읽어 맞추고 모듈이 다 뜬 뒤에 답한다
+ */
+export const settledPageToggleStates = async (): Promise<PageToggleState[]> => {
+    await resync?.();
+    return pageToggleStates();
+};
+
 /** 팝업에서 누른 토글을 실행한다 */
 export const runPageToggle = ({module, id}: PageAction): void => {
     const found = readyModules().find(({def}) => def.id === module);
@@ -166,13 +183,15 @@ export const loadAll = async (defs: AnyModule[], signal: AbortSignal, ready?: Pr
     // 차단·메모를 못 읽었으면 여기서 멈춘다. 아래 sync가 차단 목록 없이 모듈을 켜지 않게 한다
     await enables;
 
-    const sync = (next: Record<string, unknown>): void => {
+    const sync = async (next: Record<string, unknown>): Promise<void> => {
+        const starts: Promise<void>[] = [];
         for (const instance of instances.values()) {
-            if (isModuleEnabled(instance.def, next)) void start(instance).catch((e) => console.error(e));
+            if (isModuleEnabled(instance.def, next)) starts.push(start(instance).catch((e) => console.error(e)));
             else stop(instance);
         }
+        await Promise.all(starts);
     };
-    watchStorage(MODULES_KEY, (next) => sync(enablesOf(next)), signal);
+    watchStorage(MODULES_KEY, (next) => void sync(enablesOf(next)), signal);
     // bfcache에서 돌아온 탭은 그사이의 on/off·설정 변경을 받지 못했다. 다시 시작하는 모듈이 새 값을 보도록 설정을 먼저 맞춘다
     onBfcacheRestore(async () => {
         // 모두 한꺼번에 읽는다. sync는 설정을 다 맞춘 뒤에 부른다
@@ -180,8 +199,10 @@ export const loadAll = async (defs: AnyModule[], signal: AbortSignal, ready?: Pr
         for (const instance of instances.values()) {
             if (instance.def.settings) applySettings(instance, settings.get(instance.def.id));
         }
-        sync(enables);
+        await sync(enables);
     }, signal);
     // 불러오는 동안(setup이 IP DB를 읽는 동안 등) 팝업에서 켜고 끈 것은 감시 전이라 놓친다. 한 번 맞춘다 (바뀐 게 없으면 아무 일도 없다)
-    sync(enablesOf((await storage.getItem(MODULES_KEY)) ?? undefined));
+    resync = async () => sync(enablesOf(await storage.getItem(MODULES_KEY)));
+    signal.addEventListener("abort", () => (resync = null), {once: true});
+    await resync();
 };

@@ -7,7 +7,7 @@ import {setBlockedHandler} from "@/core/http/client";
 import {documentUrl} from "@/core/http/urls";
 import {BLOCKED_PAGE_MESSAGE, BOARD_PAGE, CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES, WRITE_PAGE} from "@/core/pages";
 import {onMessage} from "@/core/messaging/protocol";
-import {loadAll, pageToggleStates, runPageToggle, runShortcut, stopAll} from "@/core/module/registry";
+import {loadAll, pageToggleStates, runPageToggle, runShortcut, settledPageToggleStates, stopAll} from "@/core/module/registry";
 import features from "@/features";
 import {needsPreviewOverlay, usePreviewStore} from "@/features/preview/ui/previewStore";
 import {initBlocksStore} from "@/stores/blocks";
@@ -60,7 +60,7 @@ export default defineContentScript({
         // ===== 메시징 (배경·팝업→탭) =====
         onMessage("refresher:executeShortcut", ({data: command}) => runShortcut(command));
 
-        onMessage("refresher:pageState", pageToggleStates);
+        onMessage("refresher:pageState", settledPageToggleStates);
         onMessage("refresher:pageAction", ({data: action}) => {
             runPageToggle(action);
             return pageToggleStates();

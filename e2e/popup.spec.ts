@@ -28,4 +28,22 @@ test.describe("팝업", () => {
         await expect(pause).toBeChecked();
         await expect(listPage.refreshButton()).toHaveText("자동 새로고침: 꺼짐");
     });
+
+    test("모듈을 끄고 켜면 현재 페이지 토글이 저장된 상태를 따라간다", async ({context, extensionId, listPage}) => {
+        const popup = await openPopup(await context.newPage(), extensionId);
+        await listPage.page.bringToFront();
+        await popup.reload();
+
+        const pause = popup.pageToggle(/자동 새로고침 일시정지/);
+        await expect(pause).toBeVisible();
+
+        // 탭이 모듈을 멈춘 뒤의 상태로 답해야 토글이 사라진다
+        await popup.tile("글 목록 새로고침").click();
+        await expect(pause).toHaveCount(0);
+        await expect(listPage.refreshButton()).toHaveCount(0);
+
+        await popup.tile("글 목록 새로고침").click();
+        await expect(pause).toBeVisible();
+        await expect(listPage.refreshButton()).toHaveCount(1);
+    });
 });

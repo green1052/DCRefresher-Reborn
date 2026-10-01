@@ -68,14 +68,16 @@ const ToggleRow = ({icon: Icon, label, desc, checked, onChange}: {
     </Text>
 );
 
-function PageSection({tabId, gallery, state: initial}: Page) {
+/** toggled: 팝업에서 모듈 on/off를 저장한 횟수. 0이면 처음 물은 상태(initial) 그대로다 */
+function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled: number }) {
     const blocks = useBlocksStore((state) => state.entries);
     const memos = useMemosStore((state) => state.memos);
-    const enables = useModulesStore((state) => state.enables);
     const [state, setState] = useState(initial);
 
-    // 모듈을 켜고 끄면 탭의 모듈도 멈추거나 시작하므로 다시 묻는다. 늦게 온 이전 응답은 버린다
+    // 모듈을 켜고 끄면 탭의 모듈도 멈추거나 시작하므로 다시 묻는다. 저장이 끝난 뒤에 물어야 탭이 새 값으로 답한다
+    // (탭은 저장소를 다시 읽고 모듈이 다 뜬 뒤에 답한다). 늦게 온 이전 응답은 버린다
     useEffect(() => {
+        if (toggled === 0) return;
         let current = true;
         sendMessage("refresher:pageState", undefined, tabId).then(
             (next) => {
@@ -88,7 +90,7 @@ function PageSection({tabId, gallery, state: initial}: Page) {
         return () => {
             current = false;
         };
-    }, [tabId, enables]);
+    }, [tabId, toggled]);
 
     const act = (action: PageAction): void => void sendMessage("refresher:pageAction", action, tabId).then(setState, () => setState(null));
 
@@ -124,7 +126,7 @@ function PageSection({tabId, gallery, state: initial}: Page) {
     );
 }
 
-function ModulesSection() {
+function ModulesSection({onToggled}: { onToggled: () => void }) {
     const enables = useModulesStore((state) => state.enables);
     const toggle = useModulesStore((state) => state.toggle);
     const [failed, setFailed] = useState(false);
@@ -140,7 +142,10 @@ function ModulesSection() {
 
                     return (
                         <button key={feature.id} type="button" className="module-tile" aria-pressed={enabled}
-                                title={feature.description} onClick={() => void toggle(feature.id, !enabled).then(() => setFailed(false), () => setFailed(true))}>
+                                title={feature.description} onClick={() => void toggle(feature.id, !enabled).then(() => {
+                                    setFailed(false);
+                                    onToggled();
+                                }, () => setFailed(true))}>
                             <Icon size={15}/>
                             <span className="module-name">{feature.name}</span>
                             <span className="module-dot"/>
@@ -155,6 +160,7 @@ function ModulesSection() {
 
 export function App() {
     const [loaded, setLoaded] = useState<{ page: Page | null; backupError: string } | null>(null);
+    const [toggled, setToggled] = useState(0);
 
     // 한 번에 그려야 팝업 크기가 여러 번 바뀌지 않는다. 모두 로컬 읽기라 금방 끝난다.
     // 하나가 실패해도 빈 팝업으로 남지 않게 기본값으로 그린다
@@ -193,11 +199,11 @@ export function App() {
                     <Text size="1" color="red" align="center">클라우드에 백업하지 못했습니다. 설정의 데이터 탭에서 확인해 주세요.</Text>
                 )}
                 {loaded.page ? (
-                    <PageSection {...loaded.page}/>
+                    <PageSection {...loaded.page} toggled={toggled}/>
                 ) : (
                     <Text size="1" color="gray" align="center">디시인사이드 갤러리에서 열면 이 페이지 설정이 나옵니다.</Text>
                 )}
-                <ModulesSection/>
+                <ModulesSection onToggled={() => setToggled((count) => count + 1)}/>
             </Flex>
         </Flex>
     );
