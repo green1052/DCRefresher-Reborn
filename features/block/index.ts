@@ -30,8 +30,10 @@ const duplicateOf = (ctx: Ctx): { count: number; minLength: number } | null =>
 const REVEAL_CLASS = "refresherBlockReveal";
 const isRevealed = (): boolean => document.documentElement.classList.contains(REVEAL_CLASS);
 
+/** 이 모듈이 요소를 가릴 때 다는 클래스 (차단 숨김·블러·같은 댓글 접기) */
+const HIDDEN_CLASSES = ["refresherBlocked", "refresherBlur", "refresherDuplicate"];
 /** 이 모듈이 가린 요소 */
-const HIDDEN_SELECTOR = ".refresherBlocked, .refresherBlur, .refresherDuplicate";
+const HIDDEN_SELECTOR = HIDDEN_CLASSES.map((name) => `.${name}`).join(", ");
 /** '가린 내용 보기'가 보이는 요소. userinfo의 깡계 흐림·숨김도 같이 보인다 (content.scss) */
 const REVEALED_SELECTOR = `${HIDDEN_SELECTOR}, .refresherLowActivityHide, .refresherLowActivityBlur`;
 
@@ -152,21 +154,19 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         }
     };
 
-    ctx.addFilter(".ub-writer", checkWriter);
-    ctx.addFilter(".written_dccon", checkDccon);
-    if (isViewPage) ctx.addFilter(".cmt_list", foldDuplicates);
-
+    // 선택자마다 판정. 새로 그려지는 요소는 필터가, 이미 그려진 요소는 recheck가 같은 표로 돈다
+    const checks: [selector: string, check: (element: HTMLElement) => void][] = [[".ub-writer", checkWriter], [".written_dccon", checkDccon]];
+    if (isViewPage) checks.push([".cmt_list", foldDuplicates]);
+    for (const [selector, check] of checks) ctx.addFilter(selector, check);
     if (isViewPage) whenDomReady(checkText, ctx.signal);
 
     // 필터는 DOM 삽입 때만 돈다. 차단 목록이나 숨기는 방식(블러/대댓글)이 바뀌면 이미 그려진 요소를 직접 다시 판정한다
     const recheck = (): void => {
         restoreHiddenElements();
-        for (const element of document.querySelectorAll<HTMLElement>(".ub-writer")) checkWriter(element);
-        for (const element of document.querySelectorAll<HTMLElement>(".written_dccon")) checkDccon(element);
-        if (isViewPage) {
-            for (const element of document.querySelectorAll<HTMLElement>(".cmt_list")) foldDuplicates(element);
-            if (document.readyState !== "loading") checkText();
+        for (const [selector, check] of checks) {
+            for (const element of document.querySelectorAll<HTMLElement>(selector)) check(element);
         }
+        if (isViewPage && document.readyState !== "loading") checkText();
     };
 
     ctx.addCleanup(useBlocksStore.subscribe((state, previous) => {
@@ -205,7 +205,7 @@ const setupSelection = (ctx: Ctx): void => {
 };
 
 const restoreHiddenElements = (): void => {
-    for (const element of document.querySelectorAll(HIDDEN_SELECTOR)) element.classList.remove("refresherBlocked", "refresherBlur", "refresherDuplicate");
+    for (const element of document.querySelectorAll(HIDDEN_SELECTOR)) element.classList.remove(...HIDDEN_CLASSES);
 
     for (const element of document.querySelectorAll(".refresherTextNotice, .refresherDuplicateBadge")) element.remove();
 };
