@@ -100,7 +100,10 @@ export const settingsKeyModule = (key: string): string | undefined => /^refreshe
 
 /** 모듈 캐시(글댓비 등). isModuleDataKey로 백업·내보내기에서 빠진다. 만드는 순간 값을 읽으므로 쓰는 모듈의 setup에서 만든다 */
 export const moduleDataStorage = <T>(id: string, fallback: T): WxtStorageItem<T, {}> =>
-    storage.defineItem<T>(`local:refresher:module:${id}:data`, {fallback});
+    storage.defineItem<T>(moduleDataKey(id), {fallback});
+
+/** 모듈 캐시 키. 감시만 할 때는 항목 대신 이 키를 쓴다 (core/storage/sync의 watchStorage) */
+export const moduleDataKey = (id: string): `local:refresher:module:${string}:data` => `local:refresher:module:${id}:data`;
 
 /** moduleDataStorage의 키인지 (local: 없이) */
 export const isModuleDataKey = (key: string): boolean => /^refresher:module:.+:data$/.test(key);

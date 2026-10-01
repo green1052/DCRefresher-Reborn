@@ -5,11 +5,11 @@ import {defineModule} from "@/core/module/define";
 import {type GallogActivity, getGallogActivity} from "@/core/gallog";
 import {queryString} from "@/core/http/urls";
 import {ROW_SELECTOR} from "@/core/list";
-import {moduleDataStorage} from "@/core/storage/items";
+import {moduleDataKey, moduleDataStorage} from "@/core/storage/items";
+import {watchStorage} from "@/core/storage/sync";
 import {findMemo, useMemosStore} from "@/stores/memos";
 import {type BadgeView, DEFAULT_BADGE_VIEW, isFresh, isLowActivity, openWriterBubble, showsUid, useUiStore} from "@/stores/ui";
 import {LruCache} from "@/utils/lru";
-import {insertWriterSpan} from "@/utils/userDataInsert";
 
 import meta, {BADGE_COLORS, type BadgeColor, type Ctx} from "./meta";
 
@@ -18,6 +18,9 @@ interface RatioInfo {
     comment: number;
     date: number;
 }
+
+/** 저장소의 글댓비 캐시 (moduleDataStorage) */
+type RatioData = { ratio?: Record<string, RatioInfo> };
 
 type BadgeColors = Partial<Record<BadgeColor, string>>;
 
@@ -39,6 +42,11 @@ let gallery: string | null = null;
 
 let ratios: Record<string, RatioInfo> = {};
 
+/** 배지를 붙이는 작성자 칸. user_name이 붙은 칸은 디시가 이미 처리한 자리라 건너뛴다 */
+const WRITER_SELECTOR = ".ub-writer:not([user_name])";
+/** 작성자 칸 하나에 붙이는 배지 묶음. core/filtering이 이 클래스의 노드는 훑지 않는다 */
+const BADGES_CLASS = "refresher-user-badges";
+
 /** 글댓비 저장 상한. 최근에 받은 사람부터 이만큼만 남긴다 */
 const MAX_RATIOS = 500;
 
@@ -52,6 +60,15 @@ const buildBadgeSpan = (text: string, color?: string, title?: string, className 
     return span;
 };
 
+/** 작성자 영역의 닉콘/IP 바로 뒤에 배지 묶음을 넣는다. 영역은 .addbox, .fl > span, element 자신 순으로 찾는다 */
+const insertBadges = (element: HTMLElement, badges: HTMLElement): void => {
+    const container = element.querySelector<HTMLElement>(".addbox") ?? element.querySelector<HTMLElement>(".fl > span") ?? element;
+    const anchor = container.querySelector<HTMLElement>(".writer_nikcon, .ip");
+
+    if (anchor) anchor.after(badges);
+    else container.append(badges);
+};
+
 const LOW_ACTIVITY_CLASSES = {blur: "refresherLowActivityBlur", hide: "refresherLowActivityHide"} as const;
 const LOW_ACTIVITY_CLASS_LIST = Object.values(LOW_ACTIVITY_CLASSES);
 
@@ -61,10 +78,10 @@ const clearLowActivity = (): void => {
 
 const process = (ctx: Ctx, element: HTMLElement): void => {
     // 완료 표시 없이 매번 다시 그린다. 파싱 중인 작성자 칸(닉콘·IP 전)에서 먼저 불려도, 칸이 다 읽혀 다시 불릴 때 배지가 제자리를 찾는다
-    element.querySelector(".refresher-user-badges")?.remove();
+    element.querySelector(`.${BADGES_CLASS}`)?.remove();
 
     const {nick, uid, ip} = element.dataset;
-    const badges = Object.assign(document.createElement("span"), {className: "refresher-user-badges"});
+    const badges = Object.assign(document.createElement("span"), {className: BADGES_CLASS});
     let lowActivity = false;
 
     const appendIdentity = (): void => {
@@ -108,7 +125,7 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
         (element.closest<HTMLElement>(ROW_SELECTOR) ?? element).classList.add(LOW_ACTIVITY_CLASSES[action]);
     }
 
-    if (badges.children.length > 0) insertWriterSpan(element, badges);
+    if (badges.children.length > 0) insertBadges(element, badges);
 };
 
 /** 미리보기 작성자 표시가 같은 색·순서·표시 조건을 쓰도록 ui 스토어에 올린다 */
@@ -134,13 +151,13 @@ const publishRatios = (ctx: Ctx): void => {
 const rebuildAll = (ctx: Ctx): void => {
     clearLowActivity();
     // 배지가 없던 작성자도 돈다. 설정을 켜서 새로 생기는 배지가 있다 (필터 선택자와 같은 대상)
-    for (const element of document.querySelectorAll<HTMLElement>(".ub-writer:not([user_name])")) process(ctx, element);
+    for (const element of document.querySelectorAll<HTMLElement>(WRITER_SELECTOR)) process(ctx, element);
 };
 
 /** 몇몇 유저의 작성자 칸만 다시 그린다. 깡계 흐림·숨김은 process가 더하기만 하므로 먼저 뗀다 */
 const rebuildUsers = (ctx: Ctx, uids: string[]): void => {
     for (const uid of uids) {
-        for (const element of document.querySelectorAll<HTMLElement>(`.ub-writer[data-uid="${CSS.escape(uid)}"]:not([user_name])`)) {
+        for (const element of document.querySelectorAll<HTMLElement>(`${WRITER_SELECTOR}[data-uid="${CSS.escape(uid)}"]`)) {
             (element.closest<HTMLElement>(ROW_SELECTOR) ?? element).classList.remove(...LOW_ACTIVITY_CLASS_LIST);
             process(ctx, element);
         }
@@ -159,7 +176,7 @@ export default defineModule({
 
         // 글댓비 캐시. 다른 탭의 쓰기와 개발자 탭의 캐시 비우기도 watch로 받는다. moduleDataStorage 키라 백업·내보내기에서 빠진다.
         // setup에서 만든다: defineItem은 만드는 순간 값을 읽으므로, 모듈 scope에 두면 features를 불러오는 모든 페이지·팝업·옵션이 이 캐시를 읽는다
-        const ratioStorage = moduleDataStorage<{ ratio?: Record<string, RatioInfo> }>("userinfo", {});
+        const ratioStorage = moduleDataStorage<RatioData>("userinfo", {});
 
         // 작성자 우클릭으로 유저 버블(메모·차단·갤로그)을 연다. 메모는 이 모듈의 기능이라 차단 모듈이 꺼져 있어도 열려야 한다
         document.addEventListener("contextmenu", openWriterBubble, {capture: true, signal});
@@ -171,7 +188,7 @@ export default defineModule({
         if (signal.aborted) return;
         publishRatios(ctx);
         // 이 탭과 다른 탭이 받아 쓴 글댓비가 모두 여기로 온다. 열린 디시 탭마다 오므로, 값이 바뀐 유저의 칸만 다시 그린다
-        const unwatchRatios = ratioStorage.watch((next, previous) => {
+        watchStorage<RatioData>(moduleDataKey("userinfo"), (next, previous) => {
             const before = previous?.ratio ?? {};
             ratios = next?.ratio ?? {};
             const changed = [...new Set([...Object.keys(before), ...Object.keys(ratios)])]
@@ -180,10 +197,10 @@ export default defineModule({
 
             publishRatios(ctx);
             rebuildUsers(ctx, changed);
-        });
+        }, signal);
 
         ctx.addFilter(
-            ".ub-writer:not([user_name])",
+            WRITER_SELECTOR,
             (element) => process(ctx, element)
         );
 
@@ -232,8 +249,6 @@ export default defineModule({
         ctx.addCleanup(() => {
             unsubscribeMemos();
             unwatchDatabase();
-            // 확장이 무효화된 뒤에는 storage.onChanged.removeListener가 던지고, 리스너도 이미 죽었다
-            if (browser.runtime?.id) unwatchRatios();
         });
 
         return {checkNewPosts};
@@ -249,6 +264,6 @@ export default defineModule({
         useUiStore.setState({badgeColors: {}, badgeView: DEFAULT_BADGE_VIEW, ratios: null});
         clearLowActivity();
 
-        for (const element of document.querySelectorAll(".refresher-user-badges")) element.remove();
+        for (const element of document.querySelectorAll(`.${BADGES_CLASS}`)) element.remove();
     }
 });
