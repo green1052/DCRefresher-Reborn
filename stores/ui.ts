@@ -1,5 +1,6 @@
 import {create} from "zustand";
 
+import {needOverlayWhen} from "@/components/overlay/demands";
 import type {IpCategory, IpInfoFilter} from "@/core/database";
 import type {MemoType} from "@/core/storage/types";
 import {eventTarget} from "@/utils/event";
@@ -160,3 +161,6 @@ export const openWriterBubble = (ev: MouseEvent): void => {
     ui.setSelected({nick, uid, ip});
     ui.openBubble(ev.clientX, ev.clientY);
 };
+
+// 토스트·유저 버블·메모 창이 뜨면 오버레이를 띄운다 (components/overlay/demands). 배지 색·차단 보기처럼 setup이 늘 채우는 값은 넣지 않는다.
+needOverlayWhen(useUiStore, ({toast, bubble, memo}) => Boolean(toast || bubble || memo));

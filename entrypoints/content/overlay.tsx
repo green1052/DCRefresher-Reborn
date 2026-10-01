@@ -1,8 +1,7 @@
 import type {ContentScriptContext} from "wxt/utils/content-script-context";
 
+import {overlayNeeded, watchOverlayDemands} from "@/components/overlay/demands";
 import {overlay} from "@/components/overlay/shadow";
-import {needsPreviewOverlay, usePreviewStore} from "@/features/preview/ui/previewStore";
-import {useUiStore} from "@/stores/ui";
 import {followDcAppearance} from "@/utils/appearance";
 import {whenDomReady} from "@/utils/dom";
 
@@ -53,19 +52,11 @@ export const mountOverlayWhenNeeded = (ctx: ContentScriptContext): void => {
     };
 
     // 대부분의 페이지는 오버레이를 끝내 띄우지 않으므로 CSS 처리·shadow 삽입·첫 렌더(수십 ms)를 처음 필요할 때로 미룬다.
-    // 오버레이에 새 UI를 추가하면 그 표시 조건을 여기(미리보기 UI는 previewStore의 needsPreviewOverlay)에도 넣어야 한다. 빠지면 그 UI는 뜨지 않는다.
-    // 매 페이지 setup이 채우는 값(badgeColors·ratios·blockView·selected·훅 등)은 넣지 않는다. 넣으면 항상 마운트된다.
-    const needsOverlay = (): boolean => {
-        const {toast, bubble, memo} = useUiStore.getState();
-        return Boolean(toast || bubble || memo) || needsPreviewOverlay(usePreviewStore.getState());
-    };
-
+    // 언제 필요한지는 UI를 그리는 스토어가 각자 등록한다 (components/overlay/demands.ts의 needOverlayWhen).
     const mountWhenNeeded = (): void => {
-        if (!needsOverlay()) return;
-        offUi();
-        offPreview();
-        whenDomReady(() => void mountOverlay());
+        if (!overlayNeeded()) return;
+        stopWatching();
+        whenDomReady(() => void mountOverlay().catch(console.error));
     };
-    const offUi = useUiStore.subscribe(mountWhenNeeded);
-    const offPreview = usePreviewStore.subscribe(mountWhenNeeded);
+    const stopWatching = watchOverlayDemands(mountWhenNeeded);
 };

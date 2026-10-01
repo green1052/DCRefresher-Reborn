@@ -1,5 +1,6 @@
 import {create} from "zustand";
 
+import {needOverlayWhen} from "@/components/overlay/demands";
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {BlockOptions} from "@/core/preview/request";
 import type {GalleryPreData, PostInfo} from "@/core/preview/types";
@@ -129,9 +130,6 @@ export const hoverMini = (hovered?: boolean): void => {
     else if (hovered === false) closeMiniSoon();
 };
 
-/** 미리보기 UI 중 하나라도 떠 있어 오버레이가 필요한지 (콘텐츠 스크립트가 오버레이를 처음 띄울 때 본다). 새 UI를 추가하면 여기에 넣는다. */
-export const needsPreviewOverlay = (state: PreviewState): boolean =>
-    state.visible || state.warm || state.mini !== null || state.captcha !== null || state.blockPopup || state.dcconInfo !== null;
 
 /** 미니 미리보기 크기. Mini.tsx와 화면 밖 방지 계산(miniPosition, mini.ts의 showMini)이 같이 쓴다. */
 export const MINI_WIDTH = 720;
@@ -242,3 +240,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
 
     moveMini: (clientX, clientY) => set((state) => (state.mini ? {mini: {...state.mini, ...miniPosition(clientX, clientY)}} : state))
 }));
+
+// 미리보기 UI 중 하나라도 떠 있으면 오버레이를 띄운다 (components/overlay/demands). 새 미리보기 UI를 추가하면 여기에 넣는다.
+needOverlayWhen(usePreviewStore, (state) =>
+    state.visible || state.warm || state.mini !== null || state.captcha !== null || state.blockPopup || state.dcconInfo !== null);
