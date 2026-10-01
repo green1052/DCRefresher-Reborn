@@ -1,20 +1,10 @@
-import React from "react";
-import * as jsxRuntime from "react/jsx-runtime";
 import type {ContentScriptContext} from "wxt/utils/content-script-context";
 
 import {overlay} from "@/components/overlay/shadow";
-import {shareReact} from "@/components/overlay/vendor";
-import {sendMessage} from "@/core/messaging/protocol";
 import {needsPreviewOverlay, usePreviewStore} from "@/features/preview/ui/previewStore";
 import {useUiStore} from "@/stores/ui";
 import {followDcAppearance} from "@/utils/appearance";
 import {whenDomReady} from "@/utils/dom";
-
-/** react-dom·Radix(entrypoints/overlay-vendor.ts)를 넣게 한다. 그 스크립트는 React를 따로 갖지 않고 이 스크립트의 것을 쓴다. */
-const loadVendor = async (): Promise<void> => {
-    shareReact({react: React, jsxRuntime});
-    await sendMessage("refresher:loadOverlay");
-};
 
 /**
  * 오버레이 (디시 CSS와 Radix Themes CSS가 섞이지 않게 shadow DOM에 둔다). 화면에 그릴 것이 처음 생길 때 띄운다.
@@ -24,10 +14,7 @@ export const mountOverlayWhenNeeded = (ctx: ContentScriptContext): void => {
     const mountOverlay = async (): Promise<void> => {
         if (ctx.isInvalid) return;
 
-        // react-dom·Radix는 별도 스크립트로 넣고, 오버레이 UI는 그 뒤에 초기화한다 (Radix를 import하므로).
-        // 매 페이지 콘텐츠 스크립트가 이 라이브러리들을 컴파일하지 않게 처음 띄울 때로 미룬다.
-        await loadVendor();
-        if (ctx.isInvalid) return;
+        // react-dom·Radix·오버레이 UI는 오버레이를 처음 띄울 때 초기화한다. 번들 안에 있어 네트워크 요청은 없다.
         const [{createRoot}, {ContentRoot}] = await Promise.all([
             import("react-dom/client"),
             import("@/components/overlay/ContentRoot")
@@ -77,7 +64,7 @@ export const mountOverlayWhenNeeded = (ctx: ContentScriptContext): void => {
         if (!needsOverlay()) return;
         offUi();
         offPreview();
-        whenDomReady(() => void mountOverlay().catch(console.error));
+        whenDomReady(() => void mountOverlay());
     };
     const offUi = useUiStore.subscribe(mountWhenNeeded);
     const offPreview = usePreviewStore.subscribe(mountWhenNeeded);
