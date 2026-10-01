@@ -87,7 +87,7 @@ const StorageEntry = ({name, value, onDelete}: { name: string; value: unknown; o
                     <Text size="1" color="gray" style={{fontVariantNumeric: "tabular-nums"}}>{formatBytes(byteSize(value))}</Text>
                     <Tooltip content="JSON 복사">
                         <IconButton size="1" variant="ghost" color="gray" aria-label={`${name} JSON 복사`}
-                                    onClick={() => void navigator.clipboard.writeText(JSON.stringify(value, null, 2))}>
+                                    onClick={() => navigator.clipboard.writeText(JSON.stringify(value, null, 2)).catch((e: unknown) => notify(`복사하지 못했습니다. ${messageOf(e)}`))}>
                             <Copy size={14}/>
                         </IconButton>
                     </Tooltip>
@@ -146,7 +146,7 @@ const StorageSection = () => {
                     confirmLabel="삭제"
                     danger
                     onConfirm={() => {
-                        void browser.storage[area].remove(deleting);
+                        browser.storage[area].remove(deleting).catch((e: unknown) => notify(`삭제하지 못했습니다. ${messageOf(e)}`));
                         setDeleting(null);
                     }}
                     onClose={() => setDeleting(null)}
@@ -172,6 +172,7 @@ const DatabaseSection = () => {
     const ipData = parseOr(parseIpData, useStorageItem(dbIp), null);
     const banList = parseOr(parseBans, useStorageItem(dbBan), {});
     const [ip, setIp] = useState("");
+    const [clearing, setClearing] = useState(false);
     const fileInput = useRef<HTMLInputElement>(null);
     // 조회 테스트는 콘텐츠 스크립트와 같은 경로(ipInfoOf)를 쓴다. 구독이 DB 읽기를 시작한다.
     // DB를 읽을 때마다 올라가는 이 번호를 식에 넣어야 React Compiler가 다시 조회한다.
@@ -206,7 +207,7 @@ const DatabaseSection = () => {
                     <Button variant="soft" color="gray" onClick={() => fileInput.current?.click()}>
                         <FileJson size={14}/> IP 파일 불러오기
                     </Button>
-                    <Button variant="soft" color="red" onClick={() => void storage.removeItems([dbStorage.meta, dbIp, dbBan])}>
+                    <Button variant="soft" color="red" onClick={() => setClearing(true)}>
                         <Trash2 size={14}/> 비우기
                     </Button>
                 </>
@@ -249,15 +250,32 @@ const DatabaseSection = () => {
                     )}
                 </Box>
             )}
+
+            {clearing && (
+                <ConfirmDialog
+                    title="IP/밴 데이터베이스를 비울까요? 다음 자동 갱신 때 다시 받습니다."
+                    confirmLabel="비우기"
+                    danger
+                    onConfirm={() => {
+                        setClearing(false);
+                        storage.removeItems([dbStorage.meta, dbIp, dbBan]).catch((e: unknown) => notify(`비우지 못했습니다. ${messageOf(e)}`));
+                    }}
+                    onClose={() => setClearing(false)}
+                />
+            )}
         </Section>
     );
 };
 
 const ToolsSection = () => {
     const clearModuleData = async (): Promise<void> => {
-        const keys = Object.keys(await browser.storage.local.get(null)).filter(isModuleDataKey);
-        await browser.storage.local.remove(keys);
-        notify(`모듈 데이터 ${keys.length}개를 지웠습니다.`);
+        try {
+            const keys = Object.keys(await browser.storage.local.get(null)).filter(isModuleDataKey);
+            await browser.storage.local.remove(keys);
+            notify(`모듈 데이터 ${keys.length}개를 지웠습니다.`);
+        } catch (e) {
+            notify(`모듈 데이터를 지우지 못했습니다. ${messageOf(e)}`);
+        }
     };
 
     return (
