@@ -1,3 +1,5 @@
+import {LRUCache} from "lru-cache";
+
 import {ajax} from "@/core/http/client";
 import {csrfBody} from "@/utils/cookie";
 
@@ -18,4 +20,24 @@ export const fetchGallogActivity = async (uid: string): Promise<GallogActivity |
     if (!Number.isFinite(article) || !Number.isFinite(comment)) return undefined;
 
     return {article, comment};
+};
+
+/** uid별 요청. 1시간 캐시하고, 실패한 항목은 지워 다음에 다시 받는다. 받는 중인 요청은 같이 기다린다 */
+const activityCache = new LRUCache<string, Promise<GallogActivity | undefined>>({max: 500, ttl: 3_600_000});
+
+/**
+ * 캐시를 거친 갤로그 글/댓글 수. 실패하면 undefined다.
+ * 유저 버블·미리보기(useGallogActivity)와 글댓비(userinfo)가 같이 써서 같은 사람을 두 번 묻지 않는다
+ */
+export const getGallogActivity = (uid: string): Promise<GallogActivity | undefined> => {
+    let request = activityCache.get(uid);
+    if (!request) {
+        // 실패한 항목은 받은 자리에서 지운다. 기다리던 쪽이 먼저 사라져도 실패가 1시간 캐시에 남지 않는다
+        request = fetchGallogActivity(uid).catch(() => undefined).then((activity) => {
+            if (!activity) activityCache.delete(uid);
+            return activity;
+        });
+        activityCache.set(uid, request);
+    }
+    return request;
 };

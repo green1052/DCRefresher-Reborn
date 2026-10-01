@@ -1,11 +1,7 @@
-import {LRUCache} from "lru-cache";
 import {useEffect, useState} from "react";
 
-import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
+import {type GallogActivity, getGallogActivity} from "@/core/gallog";
 import {isFresh, useUiStore} from "@/stores/ui";
-
-/** uid별 갤로그 글/댓글 수 요청. 1시간 캐시하고, 실패한 항목은 지워 다음에 다시 받는다 */
-const activityCache = new LRUCache<string, Promise<GallogActivity | undefined>>({max: 500, ttl: 3_600_000});
 
 export type ActivityState = GallogActivity | undefined | "loading" | "error";
 
@@ -31,14 +27,7 @@ export const useGallogActivity = (uid: string | undefined): ActivityState => {
         let alive = true;
         setState("loading");
 
-        // 실패한 항목은 받은 자리에서 지운다. 기다리던 쪽이 먼저 사라져도 실패가 1시간 캐시에 남지 않는다
-        if (!activityCache.has(uid)) {
-            activityCache.set(uid, fetchGallogActivity(uid).catch(() => undefined).then((activity) => {
-                if (!activity) activityCache.delete(uid);
-                return activity;
-            }));
-        }
-        void activityCache.get(uid)!.then((activity) => {
+        void getGallogActivity(uid).then((activity) => {
             if (alive) setState(activity ?? "error");
         });
 

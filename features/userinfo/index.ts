@@ -3,7 +3,7 @@ import {objectFromEntries, objectKeys} from "ts-extras";
 
 import {banReasonsOf, initDatabase, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
 import {defineModule} from "@/core/module/define";
-import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
+import {type GallogActivity, getGallogActivity} from "@/core/gallog";
 import {queryString} from "@/core/http/urls";
 import {ROW_SELECTOR} from "@/core/list";
 import {moduleDataStorage} from "@/core/storage/items";
@@ -206,8 +206,9 @@ export default defineModule({
             if (stale.length === 0) return;
             for (const uid of stale) pending.add(uid);
 
-            // 실패는 uid마다 흡수한다. 한 명이 실패해도 받아 온 나머지는 저장한다 (실패한 사람은 배지만 빠진다)
-            void Promise.all(stale.map(async (uid) => [uid, await fetchGallogActivity(uid).catch(() => undefined)] as const)).then(async (results) => {
+            // 실패는 uid마다 흡수한다. 한 명이 실패해도 받아 온 나머지는 저장한다 (실패한 사람은 배지만 빠진다).
+            // 버블·미리보기가 이미 받았거나 받는 중인 사람은 그 결과를 같이 쓴다 (getGallogActivity의 캐시)
+            void Promise.all(stale.map(async (uid) => [uid, await getGallogActivity(uid)] as const)).then(async (results) => {
                 for (const [uid, info] of results) {
                     if (!info) failedRatios.set(uid, true);
                 }
