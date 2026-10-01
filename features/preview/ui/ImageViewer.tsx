@@ -3,16 +3,12 @@ import {ChevronLeft, ChevronRight, ExternalLink, X} from "lucide-react";
 import {Dialog} from "radix-ui";
 
 import {overlay} from "@/components/overlay/shadow";
+import {dcinsideHref} from "@/core/http/urls";
 
 import {usePreviewStore, type ViewerImage} from "./previewStore";
 
 const close = (): void => usePreviewStore.setState({viewer: null});
 
-/** 디시 원본 보기 주소(imgPop)만 연다. 정화를 거친 본문이라도 다른 곳으로 가는 주소는 열지 않는다. */
-const originalUrl = (image: ViewerImage): string | undefined => {
-    const url = image.pop ? URL.parse(image.pop) : null;
-    return url?.protocol === "https:" && url.hostname.endsWith(".dcinside.com") ? url.href : undefined;
-};
 
 /**
  * 본문 이미지 크게 보기 (imageViewer 설정). 본문 이미지를 누르면 Frame이 연다. ←/→로 넘기고 Esc·바깥 클릭으로 닫는다.
@@ -23,7 +19,8 @@ export const ImageViewer = ({images, index}: { images: ViewerImage[]; index: num
     if (!image) return null;
 
     const go = (dir: number): void => usePreviewStore.setState({viewer: {images, index: (index + dir + images.length) % images.length}});
-    const original = originalUrl(image);
+    // 디시 원본 보기 주소(imgPop)만 연다.
+    const original = dcinsideHref(image.pop);
 
     return (
         <Dialog.Root open onOpenChange={(open) => !open && close()}>

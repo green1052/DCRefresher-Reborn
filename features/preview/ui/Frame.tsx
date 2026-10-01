@@ -6,6 +6,7 @@ import {type CSSProperties, Fragment, useEffect, useLayoutEffect, useRef, useSta
 import {overlay} from "@/components/overlay/shadow";
 import {focusedElement} from "@/components/useOpenerFocus";
 import {BLOCKED_TEXT} from "@/core/block";
+import {dcinsideHref} from "@/core/http/urls";
 import {useModuleSettings} from "@/core/module/useModuleSettings";
 import {postKey as keyOfPost} from "@/core/preview/cache";
 import type {ProcessedComment} from "@/core/preview/comments";
@@ -350,8 +351,8 @@ export const Frame = () => {
                                         // 크게 보기를 끄면 디시처럼 원본 보기를 새 탭으로 연다. 주소는 parser.ts가 옮겨 둔 imgPop 주소이고 디시 주소만 연다.
                                         const image = (ev.target as HTMLElement).closest<HTMLImageElement>("img[data-pop]");
                                         if (image && !image.closest("a")) {
-                                            const url = URL.parse(image.dataset.pop ?? "");
-                                            if (url?.protocol === "https:" && url.hostname.endsWith(".dcinside.com")) window.open(url.href, "_blank", "noopener");
+                                            const url = dcinsideHref(image.dataset.pop);
+                                            if (url) window.open(url, "_blank", "noopener");
                                             return;
                                         }
 

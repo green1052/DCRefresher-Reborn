@@ -41,18 +41,19 @@ const GALLERIES = {
 /** 갤러리 종류: 일반, 마이너, 미니, 인물. */
 export type GalleryKind = keyof typeof GALLERIES;
 
+/**
+ * https 디시 주소면 그 주소, 아니면 undefined. 페이지·본문에서 읽은 주소로 이동하거나 새 탭을 열기 전에 거친다.
+ * javascript:나 다른 사이트 주소가 섞여 들어와도 따라가지 않는다.
+ */
+export const dcinsideHref = (url: string | URL | null | undefined): string | undefined => {
+    const parsed = typeof url === "string" ? URL.parse(url) : url;
+    return parsed?.protocol === "https:" && parsed.hostname.endsWith(".dcinside.com") ? parsed.href : undefined;
+};
+
 /** URL의 갤러리 종류. */
 export const galleryKind = (url: string): GalleryKind => {
-    switch (/\.com\/(mgallery|mini|person)/.exec(url)?.[1]) {
-        case "mgallery":
-            return "minor";
-        case "mini":
-            return "mini";
-        case "person":
-            return "person";
-        default:
-            return "normal";
-    }
+    const path = /\.com\/(mgallery|mini|person)/.exec(url)?.[1];
+    return path === "mgallery" ? "minor" : path === "mini" || path === "person" ? path : "normal";
 };
 
 /** URL의 갤러리 경로 접두사 ("", "mgallery/", "mini/", "person/"). */

@@ -1,6 +1,7 @@
 import {postKey} from "@/core/preview/cache";
 import type {GalleryPreData} from "@/core/preview/types";
 import {moduleDataKey, moduleDataStorage} from "@/core/storage/items";
+import {batchedSave} from "@/core/storage/batched";
 import {watchStorage} from "@/core/storage/sync";
 
 import type {Ctx} from "./meta";
@@ -32,21 +33,15 @@ export const createReadMarks = (ctx: Ctx) => {
     let loaded = false;
     // 이 탭에서 열었지만 아직 저장하지 않은 글.
     let unsaved: string[] = [];
-    let saveTimer = 0;
 
-    // 저장소를 다시 읽지 않고 한 번에 쓴다. 페이지를 떠날 때는 읽고 쓰는 두 번째 호출까지 가지 못한다.
-    // read는 감시가 다른 탭의 값과 합쳐 두었다.
-    const save = (): void => {
-        window.clearTimeout(saveTimer);
-        saveTimer = 0;
+    // 저장소를 다시 읽지 않고 메모리의 값을 한 번에 쓴다 (batchedSave). read는 감시가 다른 탭의 값과 합쳐 두었다.
+    // 쓰기가 끝난 뒤에 unsaved를 비워, 그사이 다른 탭의 저장이 와도 이 탭의 글이 남는다.
+    const saver = batchedSave(ctx, SAVE_DELAY, async () => {
         if (!loaded || unsaved.length === 0) return;
         const batch = new Set(unsaved);
-        void storage.setValue({read: [...read].slice(-MAX_READ)}).then(() => {
-            unsaved = unsaved.filter((key) => !batch.has(key));
-        }, console.error);
-    };
-    document.addEventListener("visibilitychange", () => document.hidden && save(), {signal: ctx.signal});
-    window.addEventListener("pagehide", save, {signal: ctx.signal});
+        await storage.setValue({read: [...read].slice(-MAX_READ)});
+        unsaved = unsaved.filter((key) => !batch.has(key));
+    });
 
     const markRow = (row: HTMLElement): void => {
         const pre = ctx.settings.markRead && read.size > 0 ? buildPreData(row) : null;
@@ -66,14 +61,13 @@ export const createReadMarks = (ctx: Ctx) => {
         read = new Set([...stored ?? [], ...read]);
         loaded = true;
         markAll();
-        if (unsaved.length > 0) saveTimer ||= window.setTimeout(save, SAVE_DELAY);
+        if (unsaved.length > 0) saver.schedule();
     }, console.error);
     // 다른 탭이 저장한 것을 받는다. 아직 저장하지 않은 이 탭의 글은 남긴다.
     watchStorage<ReadData>(moduleDataKey("preview"), (next) => {
         read = new Set([...next?.read ?? [], ...unsaved]);
         markAll();
     }, ctx.signal);
-    ctx.addCleanup(save);
     ctx.addCleanup(() => {
         for (const row of document.querySelectorAll(`.${READ_CLASS}`)) row.classList.remove(READ_CLASS);
     });
@@ -86,7 +80,7 @@ export const createReadMarks = (ctx: Ctx) => {
         read.add(key);
         unsaved.push(key);
         markAll();
-        saveTimer ||= window.setTimeout(save, SAVE_DELAY);
+        saver.schedule();
     };
 
     return {markRead, markAll};

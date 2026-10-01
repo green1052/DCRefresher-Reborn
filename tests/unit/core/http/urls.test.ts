@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
 
-import {galleryKind, galleryPath, galltypeOf, listUrl, mergeParamURL, postSearchUrl, rowPostNo} from "@/core/http/urls";
+import {dcinsideHref, galleryKind, galleryPath, galltypeOf, listUrl, mergeParamURL, postSearchUrl, rowPostNo} from "@/core/http/urls";
 
 describe("galleryKind / galleryPath / galltypeOf", () => {
     it("갤러리 종류를 URL에서 읽는다", () => {
@@ -49,5 +49,17 @@ describe("rowPostNo", () => {
         const other = document.createElement("tr");
         other.innerHTML = "<td class=\"gall_tit\"><a href=\"/board/view/?id=other&no=12\">t</a></td>";
         expect(rowPostNo(other)).toBeUndefined();
+    });
+});
+
+describe("dcinsideHref", () => {
+    it("https 디시 주소만 돌려준다", () => {
+        expect(dcinsideHref("https://gall.dcinside.com/board/view/?id=a&no=1")).toBe("https://gall.dcinside.com/board/view/?id=a&no=1");
+        expect(dcinsideHref(new URL("https://dcimg1.dcinside.com/viewimagePop.php?no=1"))).toBe("https://dcimg1.dcinside.com/viewimagePop.php?no=1");
+        expect(dcinsideHref("http://gall.dcinside.com/")).toBeUndefined();
+        expect(dcinsideHref("javascript:alert(1)//.dcinside.com")).toBeUndefined();
+        expect(dcinsideHref("https://evil.example/?x=.dcinside.com")).toBeUndefined();
+        expect(dcinsideHref("https://notdcinside.com/")).toBeUndefined();
+        expect(dcinsideHref(undefined)).toBeUndefined();
     });
 });

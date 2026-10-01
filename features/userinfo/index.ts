@@ -3,6 +3,7 @@ import {defineModule} from "@/core/module/define";
 import {type GallogActivity, getGallogActivity} from "@/core/gallog";
 import {queryString} from "@/core/http/urls";
 import {ROW_SELECTOR} from "@/core/list";
+import {batchedSave} from "@/core/storage/batched";
 import {moduleDataKey, moduleDataStorage} from "@/core/storage/items";
 import {watchStorage} from "@/core/storage/sync";
 import {findMemo, useMemosStore} from "@/stores/memos";
@@ -210,21 +211,14 @@ export default defineModule({
         publishRatios(ctx);
         // 받았지만 아직 저장하지 않은 글댓비 (RATIO_SAVE_DELAY).
         let unsaved: Record<string, RatioInfo> = {};
-        let saveTimer = 0;
-        // 저장소를 다시 읽지 않고 한 번에 쓴다. 페이지를 떠날 때는 읽고 쓰는 두 번째 호출까지 가지 못한다.
-        // ratios는 아래 감시가 다른 탭이 저장한 값과 합쳐 두었다. 쓰기가 끝난 뒤에 unsaved를 비워, 그사이 다른 탭의 저장이 와도 이 탭의 값이 남는다.
-        const save = async (): Promise<void> => {
-            window.clearTimeout(saveTimer);
-            saveTimer = 0;
+        // 저장소를 다시 읽지 않고 메모리의 값을 한 번에 쓴다 (batchedSave). ratios는 아래 감시가 다른 탭이 저장한 값과 합쳐 두었다.
+        // 쓰기가 끝난 뒤에 unsaved를 비워, 그사이 다른 탭의 저장이 와도 이 탭의 값이 남는다.
+        const saver = batchedSave(ctx, RATIO_SAVE_DELAY, async () => {
             const batch = unsaved;
             if (Object.keys(batch).length === 0) return;
             await ratioStorage.setValue({ratio: ratios});
             unsaved = Object.fromEntries(Object.entries(unsaved).filter(([uid, info]) => batch[uid] !== info));
-        };
-        const saveNow = (): void => void save().catch(console.error);
-        document.addEventListener("visibilitychange", () => document.hidden && saveNow(), {signal});
-        window.addEventListener("pagehide", saveNow, {signal});
-        ctx.addCleanup(saveNow);
+        });
 
         // 다른 탭이 저장한 글댓비가 여기로 온다 (이 탭의 저장도 돌아온다). 열린 디시 탭마다 오므로, 값이 바뀐 유저의 칸만 다시 그린다.
         watchStorage<RatioData>(moduleDataKey("userinfo"), (next) => {
@@ -280,7 +274,7 @@ export default defineModule({
                 ratios = trimRatios({...ratios, ...received});
                 publishRatios(ctx);
                 rebuildUsers(ctx, Object.keys(received));
-                saveTimer ||= window.setTimeout(saveNow, RATIO_SAVE_DELAY);
+                saver.schedule();
             }).catch(console.error).finally(() => {
                 for (const uid of stale) pending.delete(uid);
             });
