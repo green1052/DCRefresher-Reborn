@@ -1,8 +1,7 @@
-import {LRUCache} from "lru-cache";
-
 import {groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
 import {htmlToText, sanitizeHtml} from "@/utils/sanitize";
 import {useUiStore} from "@/stores/ui";
+import {LruCache} from "@/utils/lru";
 
 import {restoreArchive} from "./cache";
 import type {DcinsideComment, GalleryPreData} from "./types";
@@ -25,10 +24,8 @@ const GALLOG_DCCON = /dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g;
 const splitDccons = (memo: string): string => memo.replace(/"\s*(img|video) class="written_dccon/g, "\"><$1 class=\"written_dccon");
 
 // 정화 결과는 입력에만 달려 있어 기억해 둔다. 자동 새로고침·차단 변경·가린 내용 보기마다 댓글 수백 개를 다시 정화하지 않는다
-const cleaned = new LRUCache<string, string>({
-    max: 2000,
-    memoMethod: (memo) => sanitizeHtml(splitDccons(memo).replace(/data-dcconoverstatus="?\w+"?/g, "data-dcconoverstatus=\"true\""))
-});
+const cleaned = new LruCache<string, string>({max: 2000});
+const sanitizeMemo = (memo: string): string => sanitizeHtml(splitDccons(memo).replace(/data-dcconoverstatus="?\w+"?/g, "data-dcconoverstatus=\"true\""));
 
 const extractVoice = (memo: string): { memo: string; voice?: ProcessedComment["voice"] } | undefined => {
     if (!memo.includes("@^dc^@")) return;
@@ -70,7 +67,7 @@ export const processComments = (source: DcinsideComment[], preData: GalleryPreDa
     for (const comment of list) {
         const voice = extractVoice(String(comment.memo ?? ""));
         if (voice) comment.voice = voice.voice;
-        comment.memo = cleaned.memo(voice?.memo ?? String(comment.memo ?? ""));
+        comment.memo = cleaned.memo(voice?.memo ?? String(comment.memo ?? ""), sanitizeMemo);
     }
 
     // 차단 모듈이 꺼져 있으면 blockView가 없고 아무것도 가리지 않는다

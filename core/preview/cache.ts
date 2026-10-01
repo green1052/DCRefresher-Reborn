@@ -1,4 +1,5 @@
-import {LRUCache} from "lru-cache";
+import {LruCache} from "@/utils/lru";
+
 import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "./types";
 
 interface CacheEntry {
@@ -12,8 +13,8 @@ interface CacheEntry {
 }
 
 // 게시글 캐시: 수명 1분, 최대 50개. 저장할 때마다 수명이 다시 1분으로 늘어난다.
-// ttlAutopurge가 없으면 만료된 항목(본문 HTML 포함)이 50개에 밀려날 때까지 메모리에 남는다.
-const entries = new LRUCache<string, CacheEntry>({max: 50, ttl: 60_000, ttlAutopurge: true});
+// autopurge가 없으면 만료된 항목(본문 HTML 포함)이 50개에 밀려날 때까지 메모리에 남는다.
+const entries = new LruCache<string, CacheEntry>({max: 50, ttl: 60_000, autopurge: true});
 
 /** 글 하나를 가리키는 키. 번호는 갤러리마다 따로 매겨진다 */
 export const postKey = (preData: Pick<GalleryPreData, "gallery" | "id">): string => `${preData.gallery}:${preData.id}`;
