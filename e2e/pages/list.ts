@@ -1,9 +1,9 @@
 import type {Page} from "@playwright/test";
 
-export const LIST_URL = "https://gall.dcinside.com/board/lists/?id=test";
+const LIST_URL = "https://gall.dcinside.com/board/lists/?id=test";
 
 /** 오버레이 shadow root. 처음 필요할 때 붙는다. */
-export const overlay = (page: Page) => page.locator("refresher-root");
+const overlay = (page: Page) => page.locator("refresher-root");
 
 /**
  * 콘텐츠 스크립트가 돈 가짜 글 목록 페이지 (e2e/dcinside.ts). 새로고침 버튼이 붙을 때까지 기다린다.

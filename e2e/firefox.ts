@@ -7,7 +7,7 @@ import net from "node:net";
 
 /** 확장 내부 UUID. 고정해 두면 moz-extension:// 주소를 미리 안다 (extensions.webextensions.uuids). */
 export const FIREFOX_EXTENSION_UUID = "6f1d2c3b-0e4a-4c5d-9b8a-7e6f5d4c3b2a";
-export const GECKO_ID = "dcrefresher-reborn@green1052";
+const GECKO_ID = "dcrefresher-reborn@green1052";
 
 /** 디버깅 서버를 켜고, 붙을 때 확인 창을 띄우지 않게 하는 설정. */
 export const firefoxUserPrefs = (): Record<string, string | number | boolean> => ({

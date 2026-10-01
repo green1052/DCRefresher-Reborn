@@ -13,7 +13,7 @@ export interface FakeRow {
     replies?: number;
 }
 
-export const ROWS: FakeRow[] = [
+const ROWS: FakeRow[] = [
     {no: 3, title: "세 번째 글", nick: "고닉", uid: "user3", replies: 2},
     {no: 2, title: "두 번째 글", nick: "ㅇㅇ", uid: "", ip: "1.2"},
     {no: 1, title: "첫 번째 글", nick: "고닉", uid: "user1"}
