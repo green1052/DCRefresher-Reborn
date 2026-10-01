@@ -1,6 +1,6 @@
 # 개발 문서
 
-DCRefresher Reborn v6의 구조, 기능을 더하는 방법, 테스트와 릴리즈 절차를 정리한 문서입니다. 사용법은 [위키](https://github.com/green1052/DCRefresher-Reborn/wiki)를 보세요.
+DCRefresher Reborn의 구조, 기능을 더하는 방법, 테스트와 릴리즈 절차를 정리한 문서입니다. 사용법은 [위키](https://github.com/green1052/DCRefresher-Reborn/wiki)를 보세요.
 
 - [스택](#스택)
 - [시작하기](#시작하기)
