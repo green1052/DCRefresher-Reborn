@@ -64,6 +64,11 @@ export default defineModule({
         // 제어 버튼
         let button: HTMLButtonElement | null = null;
         const label = (): string => (paused ? "자동 새로고침: 꺼짐" : "자동 새로고침: 켜짐");
+        // 버튼·단축키·팝업 토글이 같이 쓴다
+        const setPaused = (next: boolean): void => {
+            paused = next;
+            if (button) button.textContent = label();
+        };
 
         ctx.addFilter(
             ".page_head > .gall_issuebox",
@@ -79,10 +84,7 @@ export default defineModule({
 
                 button = Object.assign(document.createElement("button"), {type: "button", textContent: label()});
                 button.dataset.refresherRefresh = "true";
-                button.addEventListener("click", () => {
-                    paused = !paused;
-                    button!.textContent = label();
-                });
+                button.addEventListener("click", () => setPaused(!paused));
                 element.append(button);
             }
         );
@@ -322,8 +324,7 @@ export default defineModule({
             },
 
             togglePause: () => {
-                paused = !paused;
-                if (button) button.textContent = label();
+                setPaused(!paused);
 
                 useUiStore.getState().showToast(paused ? "이 페이지의 자동 새로고침을 멈췄습니다." : "이 페이지의 자동 새로고침을 다시 켰습니다.");
             },
