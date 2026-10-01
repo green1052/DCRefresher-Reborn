@@ -103,6 +103,8 @@ test.describe("유저 버블", () => {
         await bubble.getByRole("button", {name: "유저 차단"}).click();
 
         await expect(listPage.overlay().locator(".refresher-toast")).toContainText("차단 목록에 추가했습니다.");
+        // 오버레이가 이 토스트와 함께 붙어도 스크린 리더 알림 칸에 들어간다
+        await expect(listPage.overlay().getByRole("status")).toContainText("차단 목록에 추가했습니다.");
         await expect(listPage.rows().first()).toHaveClass(/refresherBlocked/);
         expect(await storage.get("refresher:block:ID")).toMatchObject([{content: "user3", extra: "고닉"}]);
     });

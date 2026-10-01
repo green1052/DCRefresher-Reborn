@@ -19,6 +19,7 @@ import {type ActivityState, useGallogActivity} from "@/utils/gallogActivity";
 
 import {overlay} from "./shadow";
 
+/** 클릭하면 복사되는 값 한 줄 */
 const CopyRow = ({label, value, onCopy}: { label: string; value: string; onCopy: (value: string) => void }) => (
     <Button variant="ghost" color="gray" size="1" title="클릭하면 복사됩니다." onClick={() => onCopy(value)}
             style={{justifyContent: "space-between", margin: 0}}>
