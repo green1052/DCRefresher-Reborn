@@ -71,21 +71,34 @@ export default defineWebExtConfig({
 
 ```
 entrypoints/
-  background/       배경 스크립트. index.ts(단축키 전달, 설치·업데이트 처리, 배경 모듈 실행), page.ts(MAIN world 주입), database.ts(DB 갱신 알람), backup.ts(자동 백업)
-  content/          콘텐츠 스크립트. index.tsx(메시지·모듈 레지스트리 시작), overlay.tsx(오버레이 지연 마운트), stale.ts(파이어폭스 재주입 정리), invalidated.ts(무효화 안내), blocked.ts(임시 차단 안내)
-  page.content.scss 디시 페이지에 입히는 CSS (manifest로 따로 주입)
-  options/          옵션 페이지 (설정·차단·메모·단축키·데이터·정보·개발자 탭)
-  popup/            팝업 (모듈 켜고 끄기, 현재 페이지 토글)
-features/<id>/      기능 모듈 하나. meta.ts(이름·아이콘·설정 스키마), index.ts(콘텐츠, 페이지에서 할 일이 있을 때), background.ts(배경, 선택), ui/(React, 선택)
-modules/            WXT 로컬 모듈. 모듈 api 타입 생성(module-types.ts), 엔트리마다 Radix CSS 줄이기(slim-radix-css.ts)
-core/               모듈 시스템, 저장소 키, HTTP, 필터링, 차단 판정, 미리보기 요청·파싱, 백업, DB, 마이그레이션
-stores/             여러 화면이 같이 쓰는 zustand 스토어 (모듈 on/off·설정, 차단, 메모, 오버레이 UI)
-components/         공용 React 컴포넌트, 오버레이 루트(components/overlay)
-utils/              DOM·이벤트·정화(DOMPurify)·다크모드 등 작은 도우미
-assets/styles/      페이지에 넣는 SCSS, 오버레이 CSS, Radix CSS 진입점 (radix-themes.css: 옵션·오버레이, radix-themes-popup.css: 팝업)
-scripts/            IP DB 빌드 스크립트 (GitHub Actions의 DB 워크플로가 실행)
-tests/              unit/(Vitest, 소스 경로를 따라 둔다), setup.ts(단위 테스트 공통 준비)
-e2e/                Playwright E2E (가짜 디시 페이지, 페이지 객체 pages/, 파이어폭스 설치 firefox.ts)
+  background/           배경 스크립트
+    index.ts            리스너 등록 순서, 단축키 전달, 설치·업데이트 처리, 배경 모듈 실행
+    page.ts             탭의 페이지(MAIN world)에서 대신 실행하는 것 (reCAPTCHA, 목록 스크립트, 이미지 변환)
+    database.ts         IP·밴 DB 주기 갱신 알람
+    backup.ts           자동 클라우드 백업 알람
+  content/              콘텐츠 스크립트
+    index.tsx           메시지 등록, 모듈 레지스트리 시작
+    overlay.tsx         오버레이(shadow DOM)를 처음 필요할 때 띄우기
+    stale.ts            파이어폭스 재주입으로 죽은 인스턴스 정리
+    invalidated.ts      확장이 멈췄을 때의 안내
+    blocked.ts          디시 임시 차단 안내
+  page.content.scss     디시 페이지에 입히는 CSS (manifest로 따로 주입)
+  options/              옵션 페이지 (설정·차단·메모·단축키·데이터·정보·개발자 탭)
+  popup/                팝업 (모듈 켜고 끄기, 현재 페이지 토글)
+features/<id>/          기능 모듈 하나
+  meta.ts               이름·아이콘·설정 스키마 (옵션·팝업이 읽는다)
+  index.ts              페이지에서 하는 일 (할 일이 없는 모듈은 두지 않는다)
+  background.ts         배경에서 하는 일 (선택)
+  ui/                   React 화면 (선택)
+modules/                WXT 로컬 모듈: 모듈 api 타입 생성(module-types.ts), 엔트리마다 Radix CSS 줄이기(slim-radix-css.ts)
+core/                   모듈 시스템, 저장소 키, HTTP, 필터링, 차단 판정, 미리보기 요청·파싱, 백업, 설정 옮기기, DB, 마이그레이션
+stores/                 여러 화면이 같이 쓰는 zustand 스토어 (모듈 on/off·설정, 차단, 메모, 오버레이 UI)
+components/             공용 React 컴포넌트, 오버레이 루트(components/overlay)
+utils/                  작은 도우미 (DOM, 이벤트, 정화, 다크모드, 캐시, 동시 실행 제한, 타입 붙인 Object 함수)
+assets/styles/          페이지 SCSS, 오버레이 CSS, Radix CSS 진입점 (radix-themes.css: 옵션·오버레이, radix-themes-popup.css: 팝업)
+scripts/                IP DB 빌드 스크립트 (GitHub Actions의 DB 워크플로가 실행)
+tests/                  단위 테스트: unit/(소스 경로를 따라 둔다), setup.ts(공통 준비), helpers.ts(공통 도우미)
+e2e/                    Playwright E2E: 가짜 디시 페이지, 페이지 객체(pages/), 파이어폭스 설치(firefox.ts)
 ```
 
 `features/index.ts`가 `import.meta.glob("./*/index.ts")`로 모듈을, `features/meta.ts`가 `./*/meta.ts`로 모듈 메타를 모읍니다. 새 폴더를 만들면 목록에 따로 등록할 필요가 없습니다. 콘텐츠 스크립트만 `features/index.ts`를 쓰고, 옵션·팝업·`stores/modules.ts`는 `features/meta.ts`를 씁니다. setup이 쓰는 HTTP 클라이언트·캐시·DOM 코드가 옵션·팝업 번들에 딸려 가지 않게 하기 위해서입니다.
@@ -158,9 +171,9 @@ flowchart LR
 
 `entrypoints/content/index.tsx`가 디시 페이지(`core/pages.ts`의 `CONTENT_MATCHES`)에서 `document_start`에 실행됩니다.
 
-1. Firefox가 재주입하며 남긴 옛 오버레이와 잠금을 걷어 내고, 단축키·팝업 메시지를 받을 준비를 합니다.
-2. 저장소를 기다리기 전에, 확장이 업데이트되거나 꺼져 컨텍스트가 무효가 되면 모듈을 멈추는 처리를 겁니다. 확장이 정말 없어졌을 때만 새로고침 안내를 띄웁니다.
-3. 오버레이는 바로 띄우지 않습니다. 토스트, 유저 버블, 미리보기처럼 화면에 그릴 것이 처음 생길 때 React와 오버레이 CSS를 불러와 띄웁니다. 글 제목에서 오른쪽 버튼을 누르는 순간에도 미리 띄워 첫 미리보기 창을 빨리 보이게 합니다.
+1. Firefox가 재주입하며 남긴 옛 오버레이와 잠금을 걷어 내고(`stale.ts`), 단축키·팝업 메시지를 받을 준비를 합니다.
+2. 저장소를 기다리기 전에, 확장이 업데이트되거나 꺼져 컨텍스트가 무효가 되면 모듈을 멈추는 처리를 겁니다. 확장이 정말 없어졌을 때만 새로고침 안내를 띄웁니다(`invalidated.ts`).
+3. 오버레이는 바로 띄우지 않습니다(`overlay.tsx`). 토스트, 유저 버블, 미리보기처럼 화면에 그릴 것이 처음 생길 때 React와 오버레이 CSS를 불러와 띄웁니다. 글 제목에서 오른쪽 버튼을 누르는 순간에도 미리 띄워 첫 미리보기 창을 빨리 보이게 합니다.
 4. 글 목록·본문 페이지(`BOARD_PAGE`)면 차단·메모 스토어를 읽기 시작하고, 동시에 모듈 on/off와 설정을 읽습니다(`core/module/registry.ts`의 `loadAll`). 모듈의 `setup`은 차단·메모를 다 읽은 뒤에 돕니다. 차례로 기다리면 저장소 왕복이 쌓여 모듈이 목록을 한참 읽은 뒤에야 뜹니다.
 5. 글 목록·본문 페이지에서는 모듈을 다 불러온 뒤 가장 큰 IP DB를 읽습니다(`core/database.ts`의 `initDatabase`, userinfo가 켜져 있으면 그 setup이 먼저 부릅니다). 저장소는 요청 순서대로 읽히기 때문입니다. 밴 DB는 처음 조회할 때 읽습니다.
 
@@ -190,7 +203,17 @@ flowchart TD
 
 ### 배경 스크립트
 
-`entrypoints/background/index.ts`는 뜰 때마다 리스너와 배경 모듈의 `listen()`을 겁니다. 같은 폴더의 `page.ts`(탭의 페이지에서 대신 실행하는 것), `database.ts`(DB 주기 갱신), `backup.ts`(자동 백업)가 각자 리스너를 걸고, `index.ts`는 이것들을 부르고 설치·업데이트 처리를 합니다. 업데이트(`onInstalled`의 update) 때는 설정을 옮깁니다(v5 → v6은 5.x·6.0.2에서 올 때만, v6 안의 이름 변경은 매번). 이어서 배경 모듈을 맞추고 IP·밴 DB를 받습니다. 개발 빌드는 DB가 없을 때만 받고, DB 갱신 알람도 배포 빌드에서만 만듭니다. 자동 백업은 알람으로 돌립니다. 콘텐츠 스크립트가 요청하면 탭의 페이지 컨텍스트(MAIN world)에서 reCAPTCHA 토큰을 받거나 디시 목록 스크립트를 다시 돌립니다(`refresher:grecaptchaToken`, `refresher:listReplaced`). 글쓰기 모듈의 이미지 변환을 그 탭에 넣고(`refresher:hookUploads`), CORS를 열지 않는 디시 통합검색 결과를 대신 받아 줍니다(`refresher:searchPosts`, 관리 모듈의 같은 제목 찾기). Chrome은 서비스 워커라 언제든 멈췄다 다시 뜨므로, 전역 변수에 상태를 두지 말고 저장소에 둡니다.
+배경은 뜰 때마다 리스너를 동기로 겁니다. Chrome은 서비스 워커라 언제든 멈췄다 다시 뜨므로, 전역 변수에 상태를 두지 말고 저장소에 둡니다.
+
+| 파일 | 하는 일 |
+|------|---------|
+| `index.ts` | 아래 파일들과 배경 모듈의 `listen()`을 부르고, 설치·업데이트를 처리합니다 |
+| `page.ts` | 콘텐츠 스크립트 대신 탭의 페이지(MAIN world)에서 실행합니다. reCAPTCHA 토큰(`refresher:grecaptchaToken`), 갈아끼운 목록에 디시 스크립트 다시 걸기(`refresher:listReplaced`), 글쓰기 이미지 변환 넣기(`refresher:hookUploads`) |
+| `database.ts` | IP·밴 DB를 하루마다 확인해 7일이 지났거나 저장 형식이 옛것이면 받습니다. 알람은 배포 빌드에서만 만듭니다 |
+| `backup.ts` | 설정이 바뀌면 1분 뒤 자동 클라우드 백업을 돌립니다 |
+
+- **업데이트 때** (`onInstalled`의 update): 설정을 옮기고(v5 → v6은 5.x·6.0.2에서 올 때만, v6 안의 이름 변경은 매번), 배경 모듈을 맞추고, IP·밴 DB를 받습니다. 개발 빌드는 DB가 없을 때만 받습니다.
+- **통합검색 대신 받기** (`refresher:searchPosts`): 디시 통합검색은 CORS를 열지 않아, 관리 모듈의 같은 제목 찾기는 배경이 받아 줍니다.
 
 ## 모듈 시스템
 
@@ -512,10 +535,13 @@ flowchart TD
 ## 코드 규칙
 
 - 반복은 `for...of`를 씁니다 (`forEach` 대신). catch 변수는 `e`, 이벤트 매개변수는 `ev`입니다.
-- 브라우저 기본 기능, WXT 기능, 널리 쓰이고 관리가 잘 되는 라이브러리로 되면 직접 구현하지 않습니다. 라이브러리 코드는 패치하지 않습니다.
+- 브라우저 기본 기능과 WXT 기능으로 되면 그것을 씁니다. 라이브러리는 직접 만들면 위험하거나 큰 것(DOMPurify, ky 등)만 둡니다. 몇 줄로 대신할 수 있는 것은 `utils/`에 둡니다(`typed.ts`, `limit.ts`, `lru.ts`). 라이브러리 코드는 패치하지 않습니다.
 - 기능 하나를 고칠 때 여러 화면을 건드리지 않도록 모듈 구조를 따릅니다. 옵션·팝업은 모듈 정의(스키마, `extensionPageVars`, `pageToggles`)만 보고 그립니다.
 - 타입은 정확하게 씁니다. 경계에서 `unknown`을 넘기거나 `as`로 덮지 말고 값을 검사해 좁힙니다.
 - 주석은 한국어로, 코드만 봐서는 알 수 없는 이유(디시·브라우저 동작, 순서 제약, 성능 이유)를 적습니다.
+  - 문장은 "~다"로 끝내고, 주석의 마지막 문장에는 마침표를 찍지 않습니다. 문장 사이의 마침표는 둡니다.
+  - 내보내는 함수·상수·타입은 `/** … */`, 코드 안의 설명은 `//`를 씁니다.
+  - 다른 파일을 가리킬 때는 경로를 적습니다(`core/storage/sync.ts`). 파일을 옮기면 가리키던 주석도 같이 고칩니다.
 - 커밋 메시지는 conventional commits(`feat`, `fix`, `perf`, `refactor`, `docs`, `chore`, `ci` …)를 따릅니다. 이슈 번호는 GitHub 이슈일 때만 적습니다.
 
 ## 테스트
