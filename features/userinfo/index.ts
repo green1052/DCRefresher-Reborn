@@ -1,6 +1,7 @@
 import {banReasonsOf, initDatabase, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
 import {defineModule} from "@/core/module/define";
 import {type GallogActivity, getGallogActivity} from "@/core/gallog";
+import {ROWS_HIDDEN_EVENT} from "@/core/block";
 import {queryString} from "@/core/http/urls";
 import {ROW_SELECTOR} from "@/core/list";
 import {batchedSave} from "@/core/storage/batched";
@@ -83,6 +84,20 @@ const LOW_ACTIVITY_CLASSES = {blur: "refresherLowActivityBlur", hide: "refresher
 const LOW_ACTIVITY_CLASS_LIST = Object.values(LOW_ACTIVITY_CLASSES);
 const LOW_ACTIVITY_SELECTOR = LOW_ACTIVITY_CLASS_LIST.map((name) => `.${name}`).join(",");
 
+/**
+ * 깡계 숨김·흐림을 바꿨다고 알린다. 차단 모듈이 같은 댓글을 다시 접는다 (가린 댓글은 세지 않는다).
+ * 차단 모듈의 접기는 이 모듈이 DB를 읽기 전에 먼저 돈다. 작성자마다 부르므로 한 번에 모아 보낸다.
+ */
+let notifyQueued = false;
+const notifyRowsHidden = (): void => {
+    if (notifyQueued) return;
+    notifyQueued = true;
+    queueMicrotask(() => {
+        notifyQueued = false;
+        document.dispatchEvent(new Event(ROWS_HIDDEN_EVENT));
+    });
+};
+
 const clearLowActivity = (): void => {
     for (const element of document.querySelectorAll(LOW_ACTIVITY_SELECTOR)) element.classList.remove(...LOW_ACTIVITY_CLASS_LIST);
 };
@@ -135,6 +150,7 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
     // 글 보기 머리는 가리지 않는다. 머리만 가리면 본문은 그대로 보인다 (배지 색으로만 알린다).
     if (lowActivity && (action === "blur" || action === "hide") && !element.closest(".gallview_head")) {
         (element.closest<HTMLElement>(ROW_SELECTOR) ?? element).classList.add(LOW_ACTIVITY_CLASSES[action]);
+        notifyRowsHidden();
     }
 
     if (badges.length > 0) {
@@ -168,6 +184,7 @@ const rebuildAll = (ctx: Ctx): void => {
     clearLowActivity();
     // 배지가 없던 작성자도 돈다. 설정을 켜서 새로 생기는 배지가 있다 (필터 선택자와 같은 대상).
     for (const element of document.querySelectorAll<HTMLElement>(WRITER_SELECTOR)) process(ctx, element);
+    notifyRowsHidden();
 };
 
 /** 몇몇 유저의 작성자 칸만 다시 그린다. 깡계 흐림·숨김은 process가 더하기만 하므로 먼저 뗀다. */
@@ -179,6 +196,7 @@ const rebuildUsers = (ctx: Ctx, uids: string[]): void => {
         (element.closest<HTMLElement>(ROW_SELECTOR) ?? element).classList.remove(...LOW_ACTIVITY_CLASS_LIST);
         process(ctx, element);
     }
+    notifyRowsHidden();
 };
 
 export default defineModule({

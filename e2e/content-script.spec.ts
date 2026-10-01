@@ -343,6 +343,49 @@ test.describe("메모", () => {
     });
 });
 
+test.describe("글 페이지 댓글", () => {
+    const SAME = "같은 내용의 댓글입니다";
+
+    test("같은 댓글은 첫 댓글에 배지를 달고 접는다. 차단하면 남은 댓글로 다시 센다", async ({context, site, storage}) => {
+        await storage.setModuleSettings("block", {foldDuplicate: true, duplicateCount: 3});
+        site.pageComments = ["가", "나", "다"].map((name, index) => fakeComment(20 + index, {name, memo: SAME}));
+        const page = await context.newPage();
+        await page.goto("https://gall.dcinside.com/board/view/?id=test&no=3");
+        const items = page.locator(".cmt_list > li");
+
+        await expect(items.nth(0).locator(".refresherDuplicateBadge")).toHaveText("같은 댓글 ×3");
+        await expect(items.nth(1)).toHaveClass(/refresherDuplicate/);
+        await expect(items.nth(2)).toBeHidden();
+
+        // 첫 댓글을 차단하면 둘만 남아 기준(3번) 아래다. 접었던 댓글을 다시 보이고 배지도 뗀다.
+        await storage.set({"refresher:block:NICK": [{content: "가", isRegex: false}]});
+        await expect(items.nth(0)).toBeHidden();
+        await expect(items.nth(1)).toBeVisible();
+        await expect(items.nth(2)).toBeVisible();
+        await expect(page.locator(".refresherDuplicateBadge")).toHaveCount(0);
+    });
+
+    test("깡계로 숨긴 댓글은 세지 않아, 같은 내용의 다른 댓글까지 사라지지 않는다", async ({context, site, storage}) => {
+        await storage.setModuleSettings("block", {foldDuplicate: true, duplicateCount: 3});
+        await storage.setModuleSettings("userinfo", {checkRatio: true, alarmRatio: 10, lowActivityAction: "hide"});
+        // 첫 댓글 작성자는 글댓비를 받아 둔 깡계다.
+        await storage.set({"refresher:module:userinfo:data": {ratio: {low1: {article: 1, comment: 2, date: Date.now()}}}});
+        site.pageComments = [
+            fakeComment(20, {name: "깡계", user_id: "low1", ip: "", memo: SAME}),
+            fakeComment(21, {name: "나", memo: SAME}),
+            fakeComment(22, {name: "다", memo: SAME})
+        ];
+        const page = await context.newPage();
+        await page.goto("https://gall.dcinside.com/board/view/?id=test&no=3");
+        const items = page.locator(".cmt_list > li");
+
+        await expect(items.nth(0)).toHaveClass(/refresherLowActivityHide/);
+        await expect(items.nth(1)).toBeVisible();
+        await expect(items.nth(2)).toBeVisible();
+        await expect(page.locator(".refresherDuplicateBadge")).toHaveCount(0);
+    });
+});
+
 test.describe("스텔스 모드", () => {
     test("켜면 미리보기 본문 이미지를 숨기고, 버튼으로 잠시 보였다가 끄면 되돌린다", async ({listPage, storage}) => {
         await storage.setModules({stealth: true});

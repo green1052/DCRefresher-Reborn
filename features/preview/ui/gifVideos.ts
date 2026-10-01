@@ -9,7 +9,8 @@ const stopLoading = (video: HTMLVideoElement): void => {
 };
 
 /**
- * 디시 common.js의 dccon_video_to_gif처럼 클래스·alt·title을 옮긴 gif로 바꾼다. 관리자 가림(data-block)도 옮겨야 가린 채로 남는다.
+ * 디시 common.js의 dccon_video_to_gif처럼 클래스·alt·title을 옮긴 gif로 바꾼다. 관리자 가림(data-block)과 차단 표시(data-blocked, blockedDccons.ts)도 옮겨야 가린 채로 남는다.
+ * 숨긴 차단 디시콘은 프레임을 그리지 않아 늘 바뀐다.
  * 디시가 함께 옮기는 conalt는 정화에서 빠져 없다.
  */
 const toGif = (video: HTMLVideoElement, gif: string): void => {
@@ -18,7 +19,7 @@ const toGif = (video: HTMLVideoElement, gif: string): void => {
     image.src = gif;
     // 스텔스·이미지 차단으로 숨긴 것은 받지 않게 (sanitize.ts와 같다).
     image.loading = "lazy";
-    for (const name of ["alt", "title", "data-block"]) {
+    for (const name of ["alt", "title", "data-block", "data-blocked"]) {
         const value = video.getAttribute(name);
         if (value !== null) image.setAttribute(name, value);
     }

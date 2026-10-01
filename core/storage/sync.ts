@@ -9,6 +9,8 @@ import {once} from "@/utils/once";
  * 콘텐츠 스크립트 쪽 감시는 컨텍스트의 signal에 묶는다. 돌려준 함수로 먼저 풀 수도 있다.
  */
 export const watchStorage = <T>(key: StorageItemKey, callback: (next: T | null, previous: T | null) => void, signal?: AbortSignal): (() => void) => {
+    // await 뒤에 거는 감시는 그사이 컨텍스트가 끝났을 수 있다. 끝난 signal에는 abort가 다시 오지 않아 걸면 풀 길이 없다.
+    if (signal?.aborted) return () => {};
     const unwatch = storage.watch<T>(key, callback);
     const dispose = (): void => {
         // 확장이 무효화된 뒤에는 storage.onChanged.removeListener가 던지고, 리스너도 이미 죽었다.
@@ -22,7 +24,7 @@ export const watchStorage = <T>(key: StorageItemKey, callback: (next: T | null, 
  * 저장소 키 여러 개를 한 번의 storage.local.get으로 읽어 apply에 넘기고, 바뀌면(다른 탭·옵션 페이지·이 탭의 쓰기) 다시 넘긴다.
  * 항목(defineItem)은 만드는 순간 키마다 한 번 더 읽으므로 키로 읽고 감시한다 (items.ts). 값이 없으면 null이다.
  * - load: 다시 읽기 (저장 실패 뒤 되돌리기 등)
- * - start: 읽고 감시를 건다. 여러 번 불러도 한 번만 한다. 옛 값으로 쓰면 다른 탭의 변경을 덮으므로 bfcache에서 돌아오면 다시 읽는다.
+ * - start: 감시를 걸고 읽는다. 여러 번 불러도 한 번만 한다. 옛 값으로 쓰면 다른 탭의 변경을 덮으므로 bfcache에서 돌아오면 다시 읽는다.
  *   signal(콘텐츠 스크립트 컨텍스트의 것)이 끝나면 감시를 푼다.
  */
 export const storageSync = <K extends StorageItemKey>(keys: readonly K[], apply: (key: K, value: unknown) => void) => {
@@ -32,9 +34,21 @@ export const storageSync = <K extends StorageItemKey>(keys: readonly K[], apply:
     };
 
     const start = once(async (signal?: AbortSignal): Promise<void> => {
-        // 다 읽은 뒤에 감시를 건다. 읽기가 실패하면 once가 다음 호출에 다시 시도하는데, 그때 감시가 두 번 걸리지 않는다.
-        await load();
-        for (const key of keys) watchStorage(key, (next) => apply(key, next), signal);
+        // 감시를 먼저 건다. 읽은 뒤에 걸면 읽는 사이 다른 탭이 쓴 값을 놓치고, 그 옛 값으로 저장하면 그 변경을 덮는다.
+        // 읽는 사이 바뀐 키는 읽은 값(바뀌기 전일 수 있다)을 넣지 않는다.
+        const changed = new Set<K>();
+        const unwatches = keys.map((key) => watchStorage(key, (next) => {
+            changed.add(key);
+            apply(key, next);
+        }, signal));
+        try {
+            const items = await storage.getItems([...keys]);
+            for (const [index, key] of keys.entries()) if (!changed.has(key)) apply(key, items[index]?.value ?? null);
+        } catch (e) {
+            // once가 다음 호출에 다시 시도한다. 그때 감시가 두 번 걸리지 않게 푼다.
+            for (const unwatch of unwatches) unwatch();
+            throw e;
+        }
         onBfcacheRestore(load, signal);
     });
 

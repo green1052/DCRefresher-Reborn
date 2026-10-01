@@ -132,8 +132,14 @@ export const releaseDatabase = (): void => watching.abort();
 /** 조회용 데이터 로드 + 변경 감시. 여러 번 불러도 1회. */
 export const initDatabase = once(async () => {
     const {signal} = watching;
-    loadIp(await storage.getItem<string>(DB_KEYS.ip, {fallback: ""}));
-    watchStorage<string>(DB_KEYS.ip, (next) => loadIp(next ?? ""), signal);
+    // 감시를 먼저 건다. 읽는 사이 받은 갱신이 오면 읽은 값(갱신 전일 수 있다)은 버린다.
+    let updated = false;
+    watchStorage<string>(DB_KEYS.ip, (next) => {
+        updated = true;
+        loadIp(next ?? "");
+    }, signal);
+    const ip = await storage.getItem<string>(DB_KEYS.ip, {fallback: ""});
+    if (!updated) loadIp(ip);
     // 밴은 한 번이라도 읽었을 때만 새 값을 따라간다.
     watchStorage<string>(DB_KEYS.ban, (next) => {
         if (bansRequested) loadBans(next ?? "");

@@ -43,6 +43,8 @@ export interface ExtensionStorage {
 export interface FakeSite {
     rows: FakeRow[];
     comments: FakeComment[];
+    /** 글 페이지를 직접 열었을 때 디시가 그려 둔 댓글. 기본은 없다. */
+    pageComments: FakeComment[];
     submitted: { path: string; body: URLSearchParams }[];
 }
 
@@ -93,7 +95,7 @@ export const test = base.extend<{ live: boolean }>({
 }).extend<{ site: FakeSite; context: BrowserContext; background: Background; extensionId: string; errors: string[]; storage: ExtensionStorage; listPage: ListPage }>({
     // 테스트마다 기본 목록·댓글에서 시작한다. 배열은 복사해 테스트가 바꿔도 다른 테스트에 남지 않는다.
     site: async ({}, use) => {
-        await use({rows: [...ROWS], comments: COMMENTS.map((comment) => ({...comment})), submitted: []});
+        await use({rows: [...ROWS], comments: COMMENTS.map((comment) => ({...comment})), pageComments: [], submitted: []});
     },
 
     context: async ({browserName, live, site}, use) => {
@@ -121,7 +123,7 @@ export const test = base.extend<{ live: boolean }>({
             if (url.pathname.startsWith("/board/lists")) return route.fulfill({contentType: "text/html; charset=utf-8", body: listPage(site.rows)});
             // 임시 차단된 페이지(본문이 빈 페이지). 글 목록·본문이 아니라 미리보기 모듈이 등록되지 않는다.
             if (url.pathname.startsWith("/board/write")) return route.fulfill({contentType: "text/html; charset=utf-8", body: "<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head><body></body></html>"});
-            if (url.pathname.startsWith("/board/view")) return route.fulfill({contentType: "text/html; charset=utf-8", body: viewPage(url.searchParams.get("no") ?? "")});
+            if (url.pathname.startsWith("/board/view")) return route.fulfill({contentType: "text/html; charset=utf-8", body: viewPage(url.searchParams.get("no") ?? "", site.pageComments)});
             if (url.pathname === "/board/comment/") return route.fulfill({contentType: "application/json", body: commentsResponse(site.comments)});
             if (url.pathname === "/board/forms/comment_submit") {
                 const body = new URLSearchParams(route.request().postData() ?? "");

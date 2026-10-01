@@ -40,7 +40,15 @@ export const listPage = (rows: FakeRow[] = ROWS): string => `<!DOCTYPE html><htm
 </body></html>`;
 
 // 글 페이지는 미리보기가 받아 읽기도 하고, 좌클릭 이동으로 실제로 열리기도 한다. 열릴 때 아래 디시 스크립트가 쓰는 전역(_d, jQuery)을 흉내 낸다.
-export const viewPage = (no: string): string => `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>글 ${no}</title>
+/** 글 페이지에 디시가 그려 둔 댓글 목록 (.cmt_list). 차단·같은 댓글 접기 같은 페이지 모듈이 본다. */
+const pageCommentList = (comments: FakeComment[]): string => comments.length === 0 ? "" : `
+<div class="comment_box"><ul class="cmt_list">${comments.map(({no, name, user_id, ip, memo}) => `
+<li id="comment_li_${no}" class="ub-content"><div class="cmt_info clear">
+<div class="cmt_nickbox"><span class="gall_writer ub-writer" data-nick="${name}" data-uid="${user_id}" data-ip="${ip}"><span class="nickname"><em>${name}</em></span></span></div>
+<div class="clear cmt_txtbox"><p class="usertxt ub-word">${memo}</p></div></div></li>`).join("")}
+</ul></div>`;
+
+export const viewPage = (no: string, comments: FakeComment[] = []): string => `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>글 ${no}</title>
 <script>window._d = () => ""; window.$ = () => ({data() {}});</script></head><body>
 <input type="hidden" id="e_s_n_o" value="token">
 <div class="view_content_wrap"><header><div class="gallview_head clear ub-content">
@@ -50,6 +58,7 @@ export const viewPage = (no: string): string => `<!DOCTYPE html><html lang="ko">
 </div></header>
 <div class="writing_view_box"><div class="write_div">본문 ${no} 내용입니다. <img src="https://dcimg1.dcinside.com/viewimage.php?id=test&no=${no}"></div></div>
 </div>
+${pageCommentList(comments)}
 <div class="cmt_write_box"><form id="focus_cmt"><input name="service_code" value="${SERVICE_CODE}"></form></div>
 <script id="reply-setting-tmpl" type="text/x-jquery-tmpl"></script><script>_d('${dValueFor(SERVICE_CODE_TAIL)}');</script>
 <script>$(document).data('comment_id', 'test'); $(document).data('comment_no', '${no}');</script>

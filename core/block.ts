@@ -106,6 +106,15 @@ export const isBlocked = (type: BlockType, content: string, gallery?: string): b
 export const isAnyBlocked = (values: BlockValues, gallery?: string): boolean =>
     objectEntries(values).some(([type, value]) => value && isBlocked(type, value, gallery));
 
+/**
+ * 확장이 가린 행 (차단 숨김·블러, userinfo의 깡계 숨김·흐림). 같은 댓글 접기는 이 안의 댓글을 세지 않는다.
+ * 클래스는 assets/styles/content.scss가 그린다.
+ */
+export const HIDDEN_ROW_SELECTOR = ".refresherBlocked, .refresherBlur, .refresherLowActivityHide, .refresherLowActivityBlur";
+
+/** userinfo가 깡계 숨김·흐림을 이미 그려진 행에서 바꿨을 때 document에 보내는 이벤트. 차단 모듈이 받아 같은 댓글을 다시 접는다. */
+export const ROWS_HIDDEN_EVENT = "refresher:rowsHidden";
+
 /** 본문 차단 안내 문구. 페이지(block 모듈)와 미리보기(창·미니)가 같이 쓴다. */
 export const BLOCKED_TEXT = "게시글 내용이 차단되었습니다.";
 

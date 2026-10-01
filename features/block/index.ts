@@ -1,4 +1,4 @@
-import {BLOCKED_TEXT, dcconCode, groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
+import {BLOCKED_TEXT, dcconCode, groupDuplicates, HIDDEN_ROW_SELECTOR, isAnyBlocked, isBlocked, ROWS_HIDDEN_EVENT} from "@/core/block";
 import {defineModule} from "@/core/module/define";
 import {isViewPage, queryString} from "@/core/http/urls";
 import {ROW_SELECTOR} from "@/core/list";
@@ -138,35 +138,44 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
     };
 
     // 같은 댓글 접기. 댓글 목록은 댓글 페이지를 넘기거나 새로 고칠 때마다 통째로 다시 그려져 필터로 다시 불린다.
+    // 차단·깡계로 가린 댓글(대댓글은 감싼 칸이 가려진다)은 세지 않는다. 세면 가려진 댓글이 배지를 가져가 같은 내용의 다른 댓글까지 모두 사라진다.
+    // 미리보기(core/preview/comments)도 차단된 댓글을 빼고 센다.
+    // 가린 댓글이 바뀌면 다시 접으므로 지난 판정의 표시도 맞춰 뗀다. 같은 결과면 DOM을 건드리지 않는다.
+    // 배지를 넣거나 빼면 조상인 목록에 필터가 다시 불리므로, 바꿀 것이 없을 때 아무것도 하지 않아야 끝없이 돌지 않는다.
     const foldDuplicates = (list: HTMLElement): void => {
         const duplicate = duplicateOf(ctx);
         if (!duplicate) return;
 
         const textOf = (item: HTMLElement): string => item.querySelector(".usertxt")?.textContent ?? "";
-        // 차단으로 가린 댓글(대댓글은 감싼 칸이 가려진다)은 세지 않는다. 세면 가려진 댓글이 배지를 가져가 같은 내용의 다른 댓글까지 모두 사라진다.
-        // 미리보기(core/preview/comments)도 차단된 댓글을 빼고 센다. 작성자 필터가 이 필터보다 먼저 등록되어 먼저 돈다.
-        const items = [...list.querySelectorAll<HTMLElement>("li.ub-content")].filter((item) => !item.closest(".refresherBlocked, .refresherBlur"));
-        for (const [item, repeats] of groupDuplicates(items, textOf, duplicate)) {
-            if (repeats === 0) {
-                item.classList.add("refresherDuplicate");
-                continue;
-            }
+        const all = [...list.querySelectorAll<HTMLElement>("li.ub-content")];
+        const groups = groupDuplicates(all.filter((item) => !item.closest(HIDDEN_ROW_SELECTOR)), textOf, duplicate);
+        for (const item of all) {
+            const repeats = groups.get(item);
+            if (item.classList.contains("refresherDuplicate") !== (repeats === 0)) item.classList.toggle("refresherDuplicate", repeats === 0);
 
-            // 멱등이어야 한다. 배지를 넣으면 조상인 목록에 필터가 다시 불리므로, 같은 배지를 또 넣으면 끝없이 돈다.
-            const text = `같은 댓글 ×${repeats}`;
+            const text = repeats ? `같은 댓글 ×${repeats}` : undefined;
             const existing = item.querySelector(".refresherDuplicateBadge");
             if (existing?.textContent === text) continue;
             existing?.remove();
-
-            item.querySelector(".usertxt")?.after(Object.assign(document.createElement("span"), {className: "refresherDuplicateBadge", textContent: text}));
+            if (text) item.querySelector(".usertxt")?.after(Object.assign(document.createElement("span"), {className: "refresherDuplicateBadge", textContent: text}));
         }
     };
+    // userinfo는 같은 필터 묶음에서 이 필터 뒤에 깡계를 가린다. 그 뒤에 접도록 미룬다.
+    const foldLater = (list: HTMLElement): void => queueMicrotask(() => {
+        if (!ctx.signal.aborted && list.isConnected) foldDuplicates(list);
+    });
 
     // 선택자마다 판정. 새로 그려지는 요소는 필터가, 이미 그려진 요소는 recheck가 같은 표로 돈다.
     const checks: [selector: string, check: (element: HTMLElement) => void][] = [[".ub-writer", checkWriter], [".written_dccon", checkDccon]];
-    if (isViewPage) checks.push([".cmt_list", foldDuplicates]);
+    if (isViewPage) checks.push([".cmt_list", foldLater]);
     for (const [selector, check] of checks) ctx.addFilter(selector, check);
-    if (isViewPage) whenDomReady(checkText, ctx.signal);
+    if (isViewPage) {
+        whenDomReady(checkText, ctx.signal);
+        // 글댓비를 받아 깡계를 새로 가리면(또는 풀면) 댓글 수가 달라져 다시 접는다.
+        document.addEventListener(ROWS_HIDDEN_EVENT, () => {
+            for (const list of document.querySelectorAll<HTMLElement>(".cmt_list")) foldDuplicates(list);
+        }, {signal: ctx.signal});
+    }
 
     // 필터는 DOM 삽입 때만 돈다. 차단 목록이나 숨기는 방식(블러/대댓글)이 바뀌면 이미 그려진 요소를 직접 다시 판정한다.
     const recheck = (): void => {
