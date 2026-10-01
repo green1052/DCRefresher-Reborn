@@ -2,6 +2,7 @@
 import "@/assets/styles/radix-themes.css";
 import "@/assets/styles/overlay.scss";
 
+import {releaseDatabase} from "@/core/database";
 import {documentUrl} from "@/core/http/urls";
 import {onMessage} from "@/core/messaging/protocol";
 import {loadAll, pageToggleStates, runPageToggle, runShortcut, settledPageToggleStates, stopAll} from "@/core/module/registry";
@@ -46,6 +47,7 @@ export default defineContentScript({
         // 부트스트랩의 await보다 먼저 등록한다. 저장소를 읽는 중에 무효화되면 그 호출이 실패하거나 끝나지 않아 await 뒤의 등록까지 가지 못한다.
         ctx.onInvalidated(() => {
             stopAll();
+            releaseDatabase();
             // 새 스크립트가 주입되어 무효화된 경우(확장은 살아 있음)는 새 스크립트가 이어서 돌므로 알리지 않는다.
             if (browser.runtime?.id) return;
             showInvalidatedNote();

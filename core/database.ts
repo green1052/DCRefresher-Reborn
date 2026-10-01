@@ -5,6 +5,7 @@ import {storage} from "wxt/utils/storage";
 import {createStore} from "zustand/vanilla";
 
 import {DB_KEYS, dbStorage, writeDatabase} from "@/core/storage/items";
+import {watchStorage} from "@/core/storage/sync";
 import type {BanList} from "@/core/storage/types";
 import {onBfcacheRestore} from "@/utils/dom";
 import {once} from "@/utils/once";
@@ -119,19 +120,29 @@ const indexBans = (list: BanList): Map<string, string> => {
     return index;
 };
 
+// 감시는 모듈이 아니라 페이지 단위다 (모듈이 꺼져도 버블·미리보기가 쓴다). 그래서 콘텐츠 스크립트가 무효화될 때 releaseDatabase로 푼다.
+const watching = new AbortController();
+
+/**
+ * DB 감시를 푼다. 콘텐츠 스크립트가 무효화되면 부른다.
+ * 파이어폭스는 다시 주입한 뒤에도 죽은 인스턴스가 남아, 풀지 않으면 DB가 바뀔 때마다 수백 KB를 다시 푼다.
+ */
+export const releaseDatabase = (): void => watching.abort();
+
 /** 조회용 데이터 로드 + 변경 감시. 여러 번 불러도 1회. */
 export const initDatabase = once(async () => {
+    const {signal} = watching;
     loadIp(await storage.getItem<string>(DB_KEYS.ip, {fallback: ""}));
-    storage.watch<string>(DB_KEYS.ip, (next) => loadIp(next ?? ""));
+    watchStorage<string>(DB_KEYS.ip, (next) => loadIp(next ?? ""), signal);
     // 밴은 한 번이라도 읽었을 때만 새 값을 따라간다.
-    storage.watch<string>(DB_KEYS.ban, (next) => {
+    watchStorage<string>(DB_KEYS.ban, (next) => {
         if (bansRequested) loadBans(next ?? "");
-    });
+    }, signal);
     // bfcache에 있는 동안 받은 DB 갱신은 watch로 오지 않는다.
     onBfcacheRestore(async () => {
         loadIp(await storage.getItem<string>(DB_KEYS.ip, {fallback: ""}));
         if (bansRequested) loadBans(await storage.getItem<string>(DB_KEYS.ban, {fallback: ""}));
-    });
+    }, signal);
 });
 
 const categoryOf = ({vpn, country}: IpCandidate): IpCategory => {
