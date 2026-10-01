@@ -20,8 +20,8 @@ interface ModuleInstance {
 
 const instances = new Map<string, ModuleInstance>();
 /**
- * stopAll 뒤에는 다시 켜지 않는다. 새 스크립트가 주입되어 무효화된 경우 확장은 살아 있어 on/off 감시·bfcache·불러오는 중인 register가
- * 계속 불리는데, 여기서 켜면 새 스크립트의 모듈과 두 벌로 돈다
+ * stopAll 뒤에는 다시 켜지 않는다. 새 스크립트가 주입되어 무효화된 경우 확장은 살아 있다. on/off·설정 감시와 bfcache 처리는
+ * 컨텍스트 signal로 풀리지만, 불러오는 중이던 register·sync는 그 뒤에도 끝까지 돈다. 여기서 켜면 새 스크립트의 모듈과 두 벌로 돈다
  */
 let stopped = false;
 

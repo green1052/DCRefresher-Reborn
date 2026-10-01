@@ -14,7 +14,8 @@ import {smoothScroll} from "@/utils/dom";
 import {isTyping} from "@/utils/event";
 
 import {adjacentPreData} from "../rows";
-import {TimeStamp, UserCard} from "./Comment";
+import {TimeStamp} from "./TimeStamp";
+import {UserCard} from "./UserCard";
 import {CommentList, threadParents} from "./CommentList";
 import {CountDown} from "./CountDown";
 import {openDcconInfo} from "./DcconInfoPopup";

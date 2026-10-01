@@ -3,7 +3,7 @@ import {Clock} from "lucide-react";
 
 import {overlay} from "@/components/overlay/shadow";
 
-import {useTick} from "./Comment";
+import {useTick} from "./TimeStamp";
 import {parseDate, usePreviewStore} from "./previewStore";
 
 const Remaining = ({expire}: { expire: Date }) => {

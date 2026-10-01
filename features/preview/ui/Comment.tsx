@@ -1,69 +1,18 @@
 import {Box, Flex, IconButton, Text} from "@radix-ui/themes";
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
-import {Fragment, type MouseEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from "react";
-import {useShallow} from "zustand/react/shallow";
+import {useEffect, useLayoutEffect, useRef} from "react";
 
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {User} from "@/core/preview/types";
 import {adminDeleteComment, graphemes, userDeleteComment, wrapTxtcon} from "@/core/preview/request";
 import {notifyManage} from "@/utils/notify";
-import {useUserMemo} from "@/stores/memos";
-import {type BadgeKey, isFresh, isLowActivity, showsUid, useUiStore} from "@/stores/ui";
-import {useGallogActivity} from "@/utils/gallogActivity";
-import {banReasonsOf, databaseVersion, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
 
 import {savedNonmember} from "../nonmember";
 import {openDcconInfo} from "./DcconInfoPopup";
 import {watchGifVideos} from "./gifVideos";
-import {NO_REPLY, parseDate, usePreviewStore} from "./previewStore";
-
-/** 절대 시각 포매터. toLocaleString()은 부를 때마다 포매터를 새로 만들어, 댓글 수백 개를 다시 그릴 때 느리다 */
-const ABSOLUTE = new Intl.DateTimeFormat(undefined, {year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric"});
-const absoluteOf = (date: Date): string => (Number.isNaN(date.getTime()) ? "" : ABSOLUTE.format(date));
-
-/** 상대 시각 단위 (큰 것부터). 5초마다 댓글 수백 개가 다시 재므로 호출마다 만들지 않는다 */
-const RELATIVE_UNITS: [string, number][] = [
-    ["년", 31_536_000_000],
-    ["주", 604_800_000],
-    ["일", 86_400_000],
-    ["시간", 3_600_000],
-    ["분", 60_000],
-    ["초", 1000]
-];
-
-const relative = (date: Date): string => {
-    const diff = Date.now() - date.getTime();
-    // PC 시계가 조금 느리면 방금 단 댓글이 미래 시각이 된다. 1분 앞까지는 '방금 전'으로 보인다.
-    if (Number.isNaN(diff) || diff < -60_000) return absoluteOf(date);
-    if (diff < 3000) return "방금 전";
-
-    for (const [label, ms] of RELATIVE_UNITS) {
-        if (diff >= ms) return `${Math.floor(diff / ms)}${label} 전`;
-    }
-
-    return absoluteOf(date);
-};
-
-/**
- * TimeStamp들이 같이 쓰는 시계. 댓글마다 타이머를 두면 댓글 수백 개가 저마다 다시 그려진다.
- * 구독자가 있을 때만 5초마다 알리고 숨긴 탭에선 건너뛴다. useSyncExternalStore라 글자가 바뀐 것만 다시 그려진다.
- */
-const clockListeners = new Set<() => void>();
-let clockTimer = 0;
-const subscribeClock = (listener: () => void): (() => void) => {
-    clockListeners.add(listener);
-    clockTimer ||= window.setInterval(() => {
-        if (document.hidden) return;
-        for (const notify of clockListeners) notify();
-    }, 5000);
-
-    return () => {
-        clockListeners.delete(listener);
-        if (clockListeners.size > 0) return;
-        window.clearInterval(clockTimer);
-        clockTimer = 0;
-    };
-};
+import {NO_REPLY, usePreviewStore} from "./previewStore";
+import {TimeStamp} from "./TimeStamp";
+import {UserCard} from "./UserCard";
 
 // 닉콘(a.writer_nikcon img)의 src. 댓글마다 DOMParser를 돌리지 않게 정규식으로 읽는다.
 // 디시는 작은따옴표를 쓰지만 따옴표 없는 값도 받는다.
@@ -127,108 +76,6 @@ const fitTxtcon = (box: HTMLElement): void => {
         txt.style.letterSpacing = `calc(-0.045em + ${spacing.toFixed(2)}px)`;
         txt.style.transform = `translate(${(spacing / 2).toFixed(2)}px, -0.05em)`;
     }
-};
-
-/** ms마다 다시 그린다. 숨긴 탭에선 건너뛴다 */
-export const useTick = (ms: number): void => {
-    const [, force] = useState(0);
-
-    useEffect(() => {
-        const timer = window.setInterval(() => {
-            if (!document.hidden) force((x) => x + 1);
-        }, ms);
-        return () => window.clearInterval(timer);
-    }, [ms]);
-};
-
-/** 상대 시각. 누르면 절대 시각으로 바뀐다. 댓글과 글 머리의 작성 시각이 같이 쓴다. 키보드로도 누르게 버튼이다 */
-export const TimeStamp = ({date, size = "1"}: { date: string; size?: "1" | "2" }) => {
-    const parsed = parseDate(date);
-    const [absolute, setAbsolute] = useState(false);
-    const since = useSyncExternalStore(subscribeClock, () => relative(parsed));
-    const full = absoluteOf(parsed);
-
-    return (
-        <Text asChild size={size} color="gray" title={full} style={{whiteSpace: "nowrap"}}>
-            <button type="button" className="refresher-text-button" onClick={() => setAbsolute((x) => !x)}>
-                {Number.isNaN(parsed.getTime()) ? "이미 삭제됨" : absolute ? full : since}
-            </button>
-        </Text>
-    );
-};
-
-/**
- * 작성자 표시. 우클릭하거나 닉네임을 누르면(키보드 포함) 유저 버블을 연다.
- * fetchRatio: 글댓비가 캐시에 없으면 갤로그에서 받는다. 댓글마다 받으면 요청이 너무 많아 글쓴이에게만 켠다.
- * op: 글쓴이가 단 댓글. v5처럼 작성자 칸을 칠한다 (overlay.scss).
- */
-export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: boolean; op?: boolean }) => {
-    // 배지 순서·표시 조건은 페이지와 같게 userinfo 설정을 따른다. 회원은 UID, 유동만 IP 정보를 단다.
-    const view = useUiStore((state) => state.badgeView);
-    // IP·밴 조회 식에 dbVersion을 넣는다. 빠지면 React Compiler가 인자만 보고 메모해 DB를 읽은 뒤에도 옛 값이 남는다.
-    const dbVersion = useSyncExternalStore(subscribeDatabase, databaseVersion);
-    const ipInfo = dbVersion > 0 && !user.id && user.ip ? ipInfoOf(user.ip) : undefined;
-    const ipColor = useUiStore((state) => (ipInfo ? state.badgeColors[ipInfo.category] : undefined));
-    const banColor = useUiStore((state) => state.badgeColors.permBan);
-    // 갱차 조회를 켰을 때(banColor)만 찾는다. 밴 색인(수 MB)은 처음 조회할 때 만든다.
-    const banReasons = dbVersion > 0 && user.id && banColor ? banReasonsOf(user.id) : undefined;
-    const uidColor = useUiStore((state) => state.badgeColors.uid);
-    const gallery = usePreviewStore((s) => s.preData?.gallery);
-    const memo = useUserMemo({uid: user.id, ip: user.ip, nick: user.nick}, gallery);
-    // 글댓비는 이 사람 것만 구독한다. 캐시 전체를 구독하면 누구 것이든 저장될 때마다 모든 댓글의 작성자가 다시 그려진다.
-    // hasOwn은 아이디가 constructor 같은 프로토타입 키일 때 캐시로 잘못 잡히지 않게 한다.
-    // 1시간이 지난 값도 페이지처럼 보이고, 글쓴이(fetchRatio)만 새로 받아 받는 대로 바꾼다.
-    const showsRatio = useUiStore((state) => state.ratios !== null);
-    const alarm = useUiStore((state) => state.ratios?.alarm ?? 0);
-    const cached = useUiStore(useShallow((state) =>
-        user.id && state.ratios && Object.hasOwn(state.ratios.cache, user.id) ? state.ratios.cache[user.id] : undefined));
-    const fetched = useGallogActivity(fetchRatio && showsRatio && !isFresh(cached) ? user.id : undefined);
-    const ratio = (typeof fetched === "object" ? fetched : undefined) ?? cached;
-    const ratioColor = useUiStore((state) => (ratio && isLowActivity(ratio, alarm) ? state.badgeColors.ratioAlarm : state.badgeColors.ratio));
-
-    const openBubble = (x: number, y: number): void => {
-        const ui = useUiStore.getState();
-        ui.setSelected({nick: user.nick, uid: user.id, ip: user.ip});
-        ui.openBubble(x, y);
-    };
-
-    const openMenu = (ev: MouseEvent): void => {
-        // 목록과 같이 Shift+우클릭은 브라우저 기본 메뉴로 남긴다.
-        if (ev.shiftKey) return;
-        ev.preventDefault();
-        openBubble(ev.clientX, ev.clientY);
-    };
-
-    const identityColor = uidColor ? undefined : "gray";
-
-    const badges: Record<BadgeKey, ReactNode> = {
-        UID: user.id
-            ? showsUid(view, user.image) && <Text size="1" color={identityColor} style={{color: uidColor}} truncate>({user.id})</Text>
-            : ipInfo && passesIpFilter(ipInfo, view.ipFilter) &&
-            <Text size="1" color={ipColor ? undefined : "blue"} style={{color: ipColor}} title={ipInfo.title} truncate>[{ipInfo.label}]</Text>,
-        MEMO: memo && <Text size="1" style={{color: memo.color || undefined}} title={memo.text} truncate>[{memo.text}]</Text>,
-        RATIO: ratio && <Text size="1" style={{color: ratioColor}} title="글/댓글" truncate>[{ratio.article}/{ratio.comment}]</Text>,
-        PERMBAN: banReasons && banColor && <Text size="1" style={{color: banColor}} title={banReasons} truncate>[{banReasons}]</Text>
-    };
-
-    return (
-        <Flex align="center" gap="1" minWidth="0" className="refresher-user" data-op={op || undefined} onContextMenu={openMenu} style={{cursor: "context-menu"}}>
-            {/* 버블은 닉네임 바로 아래에 띄운다. 키보드로 열면 버블 안으로 포커스가 옮겨 간다 (ContentRoot의 useOpenerFocus) */}
-            <Text asChild size="2" weight="bold" truncate>
-                <button type="button" className="refresher-text-button" aria-haspopup="dialog"
-                        onClick={(ev) => {
-                            const rect = ev.currentTarget.getBoundingClientRect();
-                            openBubble(rect.left, rect.bottom);
-                        }}>
-                    {user.nick ?? user.id ?? user.ip}
-                </button>
-            </Text>
-            {user.image && <img src={user.image} alt="" height={12}/>}
-            {/* 유동 IP는 디시가 닉 옆에 바로 보여 주는 값이라 배지 순서와 상관없이 여기 둔다 */}
-            {user.ip && <Text size="1" color={identityColor} style={{color: uidColor}} truncate>({user.ip})</Text>}
-            {view.order.map((key) => <Fragment key={key}>{badges[key]}</Fragment>)}
-        </Flex>
-    );
 };
 
 interface CommentProps {

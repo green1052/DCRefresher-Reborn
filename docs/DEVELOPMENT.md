@@ -394,6 +394,7 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 | `ui/Frame.tsx` | 창 (머리, 본문, 댓글 칸, 휠로 넘기기) |
 | `ui/Votes.tsx`, `ErrorBlock.tsx`, `CountDown.tsx`, `fitMovies.ts`, `gifVideos.ts` | 추천 버튼, 오류 안내, 자동 삭제 카운트다운, 디시 동영상 iframe 크기 맞추기, 깨진 디시콘·움짤 mp4를 gif로 바꾸기 |
 | `ui/CommentList.tsx`, `Comment.tsx`, `WriteComment.tsx` | 댓글 목록(답글 접기), 댓글 하나, 댓글 쓰기 |
+| `ui/UserCard.tsx`, `TimeStamp.tsx` | 작성자 표시(배지·유저 버블), 상대 시각(공용 시계)과 `useTick`. 글 머리와 댓글이 같이 쓴다 |
 | `ui/PreviewHost.tsx` | 미리보기 UI 최상위 (Frame·Popups·Mini) |
 | `ui/Popups.tsx`, `Mini.tsx`, `DcconPopup.tsx` | 관리 패널·차단 팝업, 미니 미리보기, 디시콘 고르기 |
 | `ui/DcconInfoPopup.tsx` | 본문·댓글 디시콘을 눌렀을 때 뜨는 디시콘 정보 창(패키지 보기, 패키지 추가, 우클릭 차단) |
