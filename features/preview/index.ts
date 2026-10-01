@@ -15,7 +15,7 @@ import {notifyManage} from "@/utils/notify";
 import {isRecord} from "@/utils/record";
 
 import {getEntry, postKey, setEntry} from "@/core/preview/cache";
-import {historyDoc, ownPreviewEntry, previewEntry, type PreviewEntry, type SavedHistory} from "@/core/preview/history";
+import {historyDoc, ownPreviewDepth, ownPreviewEntry, previewEntry, type PreviewEntry, type SavedHistory} from "@/core/preview/history";
 import {ADULT_ERROR, SECRET_ERROR} from "@/core/preview/parser";
 import {blockUser, type BlockOptions, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import meta, {type Ctx} from "./meta";
@@ -34,6 +34,28 @@ const errorOf = (error: unknown): ErrorState => ({
     secret: error instanceof Error && error.message === SECRET_ERROR
 });
 
+// 제목 링크의 첫 텍스트 노드만 읽는다. h1(로고)엔 인라인 스크립트가, 링크 전체엔 마이너·미니 표시가 섞인다.
+const galName = (): string => document.querySelector(".page_head h2 a")?.firstChild?.textContent?.trim() || "디시인사이드";
+
+// 본문 차단은 차단 모듈 설정(blockView)을 따르고, 모듈이 꺼져 있으면 가리지 않는다.
+// 원문은 지우지 않아 '가린 내용 보기'로 다시 볼 수 있다 (Frame.tsx).
+const textBlockOf = (preData: GalleryPreData, postInfo: PostInfo): PostInfo["textBlocked"] => {
+    const view = useUiStore.getState().blockView;
+    // block 모듈 checkText처럼 .write_div의 글자(writeText)로 검사한다. 본문 HTML을 풀어 쓰면 디시 스크립트 글자가 섞이고,
+    // 태그 자리가 공백이 돼 '<b>광</b>고' 같은 글이 빠져나간다.
+    return view && postInfo.writeText !== undefined && isBlocked("TEXT", postInfo.writeText, preData.gallery) ? (view.blur ? "blur" : "hide") : undefined;
+};
+
+/** 받은 지 1분 안의 캐시 본문과 그 나이(ms). 댓글 보존·추천이 항목을 다시 저장해 수명을 늘리므로 받은 시각으로 본다 */
+const cachedPost = (preData: GalleryPreData): { post: PostInfo; age: number } | undefined => {
+    const entry = getEntry(preData);
+    const age = Date.now() - (entry?.fetchedAt ?? 0);
+    return entry?.post && age < 60_000 ? {post: entry.post, age} : undefined;
+};
+
+// blockView에서 가공 결과가 읽는 값만 뽑은 비교 키 (아래 useUiStore 구독)
+const blockKeyOf = (view: BlockView | null): string => (view ? JSON.stringify([view.blur, view.replyRemove, view.duplicate]) : "");
+
 const controller = (ctx: Ctx) => {
     const store = usePreviewStore;
     const ui = useUiStore.getState();
@@ -46,18 +68,6 @@ const controller = (ctx: Ctx) => {
     // 받는 중인 본문 요청 하나. 우클릭 누름·미니·열기·미리 받기가 같이 쓴다.
     // 다른 글을 받으면 앞 요청은 끊어, 연타해도 요청이 쌓이지 않는다.
     let pending: { key: string; ctrl: AbortController; post: Promise<PostInfo> } | null = null;
-
-    // 제목 링크의 첫 텍스트 노드만 읽는다. h1(로고)엔 인라인 스크립트가, 링크 전체엔 마이너·미니 표시가 섞인다.
-    const galName = (): string => document.querySelector(".page_head h2 a")?.firstChild?.textContent?.trim() || "디시인사이드";
-
-    // 본문 차단은 차단 모듈 설정(blockView)을 따르고, 모듈이 꺼져 있으면 가리지 않는다.
-    // 원문은 지우지 않아 '가린 내용 보기'로 다시 볼 수 있다 (Frame.tsx).
-    const textBlockOf = (preData: GalleryPreData, postInfo: PostInfo): PostInfo["textBlocked"] => {
-        const view = useUiStore.getState().blockView;
-        // block 모듈 checkText처럼 .write_div의 글자(writeText)로 검사한다. 본문 HTML을 풀어 쓰면 디시 스크립트 글자가 섞이고,
-        // 태그 자리가 공백이 돼 '<b>광</b>고' 같은 글이 빠져나간다.
-        return view && postInfo.writeText !== undefined && isBlocked("TEXT", postInfo.writeText, preData.gallery) ? (view.blur ? "blur" : "hide") : undefined;
-    };
 
     const processContents = async (preData: GalleryPreData, postInfo: PostInfo, stripMedia = false): Promise<PostInfo> => {
         // 정화기는 처음 쓸 때 불러온다. 미리보기를 안 여는 페이지에서까지 DOMPurify를 만들지 않는다.
@@ -87,12 +97,6 @@ const controller = (ctx: Ctx) => {
         return post;
     };
 
-    /** 받은 지 1분 안의 캐시 본문과 그 나이(ms). 댓글 보존·추천이 항목을 다시 저장해 수명을 늘리므로 받은 시각으로 본다 */
-    const cachedPost = (preData: GalleryPreData): { post: PostInfo; age: number } | undefined => {
-        const entry = getEntry(preData);
-        const age = Date.now() - (entry?.fetchedAt ?? 0);
-        return entry?.post && age < 60_000 ? {post: entry.post, age} : undefined;
-    };
 
     /**
      * 캐시에 있으면 캐시, 없으면 받는다. fresh는 방금 받은 본문인지다 (캐시 것은 1분까지 낡았을 수 있다).
@@ -196,7 +200,6 @@ const controller = (ctx: Ctx) => {
     }));
     // 가공 결과(processComments·textBlockOf)가 읽는 값만 본다. '가린 내용 보기'(revealed·blurReveal)는 창과 댓글 목록이 직접 구독하므로,
     // 켜고 끌 때마다 댓글 수백 개를 다시 가공해 모두 다시 그리지 않는다. duplicate는 매번 새 객체라 값으로 비교한다
-    const blockKeyOf = (view: BlockView | null): string => (view ? JSON.stringify([view.blur, view.replyRemove, view.duplicate]) : "");
     ctx.addCleanup(useUiStore.subscribe((state, previous) => {
         if (blockKeyOf(state.blockView) !== blockKeyOf(previous.blockView)) void reapplyBlocks();
     }));
@@ -282,18 +285,13 @@ const controller = (ctx: Ctx) => {
         }
     };
 
-    /** 지금 기록이 이 문서의 미리보기가 쌓은 것이면, 미리보기를 열기 전 기록에서 몇 칸 위인지 (아니면 0) */
-    const historyDepth = (): number => {
-        const depth = ownPreviewEntry(history.state)?.depth;
-        return typeof depth === "number" ? depth : 0;
-    };
 
     const restoreHistory = (fromHistory: boolean) => {
         if (savedHistory) {
             // 뒤로 가기로 닫았으면 주소는 이미 돌아가 있다.
             // 미리보기가 쌓은 만큼 뒤로 간다. 새로 쌓으면 열고 닫을 때마다 두 칸씩 늘어 갤러리 전의 기록이 밀려난다.
             // 쌓은 기록이 아닌데 주소가 바뀌어 있으면(창을 연 채 설정을 바꾼 경우 등) 원래 주소를 쌓는다
-            const depth = historyDepth();
+            const depth = ownPreviewDepth();
             if (!fromHistory && depth > 0) history.go(-depth);
             else if (!fromHistory && location.href !== savedHistory.url) history.pushState(savedHistory.state, savedHistory.title, savedHistory.url);
             // popstate는 제목을 되돌리지 않는다.
@@ -356,7 +354,7 @@ const controller = (ctx: Ctx) => {
             // depth: 미리보기를 열기 전 기록에서 몇 칸 위인지. 닫을 때 그만큼 뒤로 간다.
             // 브라우저는 기록을 50개까지만 두고 오래된 것부터 지운다. 목록 항목까지 지워지면 닫아도 목록으로 못 돌아가므로 40칸부터는 쌓지 않고 바꾼다
             if (!historySkip) {
-                const depth = (st.visible ? historyDepth() : 0) + 1;
+                const depth = (st.visible ? ownPreviewDepth() : 0) + 1;
                 const state: PreviewEntry = {refresher: 1, doc: historyDoc, preData, back: savedHistory ?? undefined, depth: Math.min(depth, 40)};
                 if (depth > 40) history.replaceState(state, newTitle, preData.link);
                 else history.pushState(state, newTitle, preData.link);

@@ -33,3 +33,9 @@ export const ownPreviewEntry = (state: unknown): PreviewEntry | null => {
     const entry = previewEntry(state);
     return entry?.doc === historyDoc ? entry : null;
 };
+
+/** 지금 기록이 이 문서의 미리보기가 쌓은 것이면, 미리보기를 열기 전 기록에서 몇 칸 위인지 (아니면 0) */
+export const ownPreviewDepth = (): number => {
+    const depth = ownPreviewEntry(history.state)?.depth;
+    return typeof depth === "number" ? depth : 0;
+};

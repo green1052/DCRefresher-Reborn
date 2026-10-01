@@ -131,9 +131,9 @@ export const migrateV5 = (data: Snapshot): Snapshot => {
     if (isRecord(modules)) next[rawKey(MODULES_KEY)] = Object.fromEntries(Object.entries(modules).filter(([, value]) => typeof value === "boolean"));
 
     // 이미 있는 v6 값이 이긴다
-    const merge = (key: string, fromV5: Record<string, unknown>): void => {
-        if (Object.keys(fromV5).length === 0) return;
-        next[key] = {...fromV5, ...(isRecord(next[key]) ? next[key] : {})};
+    const merge = (key: string, migrated: Record<string, unknown>): void => {
+        if (Object.keys(migrated).length === 0) return;
+        next[key] = {...migrated, ...(isRecord(next[key]) ? next[key] : {})};
     };
 
     merge(rawKey(MODULES_KEY), enables);

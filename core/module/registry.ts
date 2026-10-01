@@ -164,6 +164,16 @@ export const stopAll = (): void => {
     for (const instance of instances.values()) stop(instance, true);
 };
 
+/** on/off 값에 맞춰 모듈을 시작·중지하고, 시작하는 모듈의 setup을 기다린다 */
+const sync = async (enables: Record<string, unknown>): Promise<void> => {
+    const starts: Promise<void>[] = [];
+    for (const instance of instances.values()) {
+        if (isModuleEnabled(instance.def, enables)) starts.push(start(instance).catch((e) => console.error(e)));
+        else stop(instance);
+    }
+    await Promise.all(starts);
+};
+
 /**
  * 모듈을 일괄 등록하고, 옵션 페이지의 on/off(저장소)를 감시해 시작/중지한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다.
  * setup은 ready(차단·메모 스토어 초기화)가 끝난 뒤에 돈다
@@ -183,23 +193,15 @@ export const loadAll = async (defs: AnyModule[], signal: AbortSignal, ready?: Pr
     // 차단·메모를 못 읽었으면 여기서 멈춘다. 아래 sync가 차단 목록 없이 모듈을 켜지 않게 한다
     await enables;
 
-    const sync = async (next: Record<string, unknown>): Promise<void> => {
-        const starts: Promise<void>[] = [];
-        for (const instance of instances.values()) {
-            if (isModuleEnabled(instance.def, next)) starts.push(start(instance).catch((e) => console.error(e)));
-            else stop(instance);
-        }
-        await Promise.all(starts);
-    };
     watchStorage(MODULES_KEY, (next) => void sync(enablesOf(next)), signal);
     // bfcache에서 돌아온 탭은 그사이의 on/off·설정 변경을 받지 못했다. 다시 시작하는 모듈이 새 값을 보도록 설정을 먼저 맞춘다
     onBfcacheRestore(async () => {
         // 모두 한꺼번에 읽는다. sync는 설정을 다 맞춘 뒤에 부른다
-        const {enables, settings} = await readAll(defs);
+        const stored = await readAll(defs);
         for (const instance of instances.values()) {
-            if (instance.def.settings) applySettings(instance, settings.get(instance.def.id));
+            if (instance.def.settings) applySettings(instance, stored.settings.get(instance.def.id));
         }
-        await sync(enables);
+        await sync(stored.enables);
     }, signal);
     // 불러오는 동안(setup이 IP DB를 읽는 동안 등) 팝업에서 켜고 끈 것은 감시 전이라 놓친다. 한 번 맞춘다 (바뀐 게 없으면 아무 일도 없다)
     resync = async () => sync(enablesOf(await storage.getItem(MODULES_KEY)));
