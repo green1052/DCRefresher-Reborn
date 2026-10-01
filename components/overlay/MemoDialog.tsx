@@ -3,6 +3,7 @@ import {Shuffle} from "lucide-react";
 import {useState} from "react";
 import {arrayIncludes} from "ts-extras";
 
+import {SubmitForm} from "@/components/ConfirmDialog";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {queryString} from "@/core/http/urls";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
@@ -70,11 +71,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                 {MEMO_TYPE_NAMES[type]}: <Text weight="bold" highContrast>{value}</Text>
             </Dialog.Description>
 
-            {/* Enter로 저장한다. 폼 제출이라 한글 조합을 끝내는 Enter로는 브라우저가 제출하지 않는다 */}
-            <form onSubmit={(ev) => {
-                ev.preventDefault();
-                void submit();
-            }}>
+            <SubmitForm onSubmit={submit}>
                 <Flex direction="column" gap="3">
                     <SegmentedControl.Root value={type} onValueChange={(next) => {
                         if (!arrayIncludes(MEMO_TYPES, next) || !state.targets[next]) return;
@@ -141,7 +138,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                     </Dialog.Close>
                     <Button type="submit">저장</Button>
                 </Flex>
-            </form>
+            </SubmitForm>
         </Dialog.Content>
     );
 };

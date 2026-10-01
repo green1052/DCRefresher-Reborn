@@ -1,7 +1,7 @@
 import {Button, Checkbox, Dialog, Flex, Text, TextField} from "@radix-ui/themes";
 import {useState} from "react";
 
-import {DialogActions} from "@/components/ConfirmDialog";
+import {DialogActions, SubmitForm} from "@/components/ConfirmDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
@@ -65,11 +65,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                     {initial ? `${TYPE_NAMES[type]} 항목을 수정합니다.` : `${TYPE_NAMES[type]} 차단 항목을 추가합니다.`}
                 </Dialog.Description>
 
-                {/* Enter로 저장한다. 폼 제출이라 한글 조합을 끝내는 Enter로는 브라우저가 제출하지 않는다 */}
-                <form onSubmit={(ev) => {
-                    ev.preventDefault();
-                    void submit();
-                }}>
+                <SubmitForm onSubmit={submit}>
                     <Flex direction="column" gap="3">
                         <label>
                             <Text as="div" size="2" color="gray" mb="1">
@@ -119,7 +115,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                     <DialogActions>
                         <Button type="submit">{initial ? "수정" : "추가"}</Button>
                     </DialogActions>
-                </form>
+                </SubmitForm>
             </Dialog.Content>
         </Dialog.Root>
     );

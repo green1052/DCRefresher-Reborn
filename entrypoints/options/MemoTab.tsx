@@ -2,7 +2,7 @@ import {Badge, Box, Button, Code, Dialog, Flex, Text, TextField} from "@radix-ui
 import {ClipboardCopy, Smartphone} from "lucide-react";
 import {useState} from "react";
 
-import {DialogActions} from "@/components/ConfirmDialog";
+import {DialogActions, SubmitForm} from "@/components/ConfirmDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
@@ -70,11 +70,7 @@ const MemoFormDialog = ({
             <Dialog.Content maxWidth="480px" aria-describedby={undefined} onCloseAutoFocus={onCloseAutoFocus}>
                 <Dialog.Title>메모 {editing ? "수정" : "추가"}</Dialog.Title>
 
-                {/* Enter로 저장한다. 폼 제출이라 한글 조합을 끝내는 Enter로는 브라우저가 제출하지 않는다 */}
-                <form onSubmit={(ev) => {
-                    ev.preventDefault();
-                    void submit();
-                }}>
+                <SubmitForm onSubmit={submit}>
                     <Flex direction="column" gap="3" mt="3">
                         <Flex justify="between" align="center">
                             <Text size="2" color="gray">
@@ -164,7 +160,7 @@ const MemoFormDialog = ({
                     <DialogActions>
                         <Button type="submit">{editing ? "수정" : "추가"}</Button>
                     </DialogActions>
-                </form>
+                </SubmitForm>
             </Dialog.Content>
         </Dialog.Root>
     );

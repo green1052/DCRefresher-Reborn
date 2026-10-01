@@ -16,6 +16,16 @@ export const DialogActions = ({cancelLabel = "취소", children}: { cancelLabel?
     </Flex>
 );
 
+/** Enter로 저장하는 다이얼로그 폼. 폼 제출이라 한글 조합을 끝내는 Enter로는 브라우저가 제출하지 않는다 */
+export const SubmitForm = ({onSubmit, children}: { onSubmit: () => unknown; children: ReactNode }) => (
+    <form onSubmit={(ev) => {
+        ev.preventDefault();
+        void onSubmit();
+    }}>
+        {children}
+    </form>
+);
+
 /** 제목 줄 오른쪽 닫기(X) 버튼. 아래 버튼 줄 없이 보기만 하거나 고르면 바로 닫히는 창(디시콘 정보·선택)에 둔다 */
 export const DialogCloseButton = () => (
     <Dialog.Close>
