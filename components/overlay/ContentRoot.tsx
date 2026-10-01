@@ -118,18 +118,21 @@ const BlockRules = ({rules}: { rules: { type: BlockType; entry: BlockEntry }[] }
         <Separator size="4" my="2"/>
         <Text as="p" size="1" color="gray" mb="1">걸린 차단 규칙</Text>
         <Flex direction="column" gap="1">
-            {rules.map(({type, entry}) => (
-                <Flex key={entry.id} align="center" justify="between" gap="2">
-                    <Text size="1" truncate title={entry.isRegex ? "정규식 — 풀면 이 규칙에 걸린 다른 대상도 함께 풀립니다." : undefined}>
-                        <Text color="gray">{TYPE_NAMES[type]}</Text> {type === "DCCON" ? entry.extra || entry.content : entry.content}
-                        {entry.isRegex && <Text color="gray"> (정규식)</Text>}
-                        {entry.gallery && <Text color="gray"> (이 갤러리만)</Text>}
-                    </Text>
-                    <Button size="1" variant="ghost" color="red" style={{flexShrink: 0}}
-                            aria-label={`${TYPE_NAMES[type]} ${type === "DCCON" ? entry.extra || entry.content : entry.content} 차단 해제`}
-                            onClick={() => void unblock(type, entry)}>해제</Button>
-                </Flex>
-            ))}
+            {rules.map(({type, entry}) => {
+                const name = type === "DCCON" ? entry.extra || entry.content : entry.content;
+                return (
+                    <Flex key={entry.id} align="center" justify="between" gap="2">
+                        <Text size="1" truncate title={entry.isRegex ? "정규식 — 풀면 이 규칙에 걸린 다른 대상도 함께 풀립니다." : undefined}>
+                            <Text color="gray">{TYPE_NAMES[type]}</Text> {name}
+                            {entry.isRegex && <Text color="gray"> (정규식)</Text>}
+                            {entry.gallery && <Text color="gray"> (이 갤러리만)</Text>}
+                        </Text>
+                        <Button size="1" variant="ghost" color="red" style={{flexShrink: 0}}
+                                aria-label={`${TYPE_NAMES[type]} ${name} 차단 해제`}
+                                onClick={() => void unblock(type, entry)}>해제</Button>
+                    </Flex>
+                );
+            })}
         </Flex>
     </>
 );

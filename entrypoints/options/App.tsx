@@ -116,14 +116,18 @@ export function App() {
     const notice = useOptionsStore((state) => state.notice);
     const tabs = TABS.filter((item) => !item.dev || devMode);
     const current = tabs.find((item) => item.id === tab) ?? tabs[0]!;
-    const [failed, setFailed] = useState(false);
+    const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
 
     useEffect(() => {
         // 못 읽은 채 차단·메모를 고치면 빈 목록을 바탕으로 저장해 기존 목록을 덮으므로 탭을 그리지 않는다
-        Promise.all([initBlocksStore(), initMemosStore(), initModulesStore()]).catch((e) => {
-            console.error(e);
-            setFailed(true);
-        });
+        // 읽기 전에 그리면 빈 목록에서 고친 결과(전체 삭제·추가·가져오기)가 저장된 목록을 덮는다
+        Promise.all([initBlocksStore(), initMemosStore(), initModulesStore()]).then(
+            () => setStatus("ready"),
+            (e) => {
+                console.error(e);
+                setStatus("failed");
+            }
+        );
     }, []);
 
     // 모듈이 선언한 확장 페이지 CSS 변수 (폰트 교체 등)
@@ -141,9 +145,9 @@ export function App() {
                     연 버튼이 막혀(데이터 초기화 중) 돌아갈 곳이 없으면 다이얼로그가 포커스를 이 탭으로 돌려준다 (useOpenerFocus) */}
                 <Box key={current.id} className="refresher-tab-enter" maxWidth="880px" mx="auto" tabIndex={-1} style={{outline: "none"}}>
                     <Heading size="7" mb="5">{current.label}</Heading>
-                    {failed
+                    {status === "failed"
                         ? <Text as="p" color="red">저장된 데이터를 읽지 못했습니다. 페이지를 새로고침해 주세요.</Text>
-                        : <Suspense>{current.content()}</Suspense>}
+                        : status === "ready" && <Suspense>{current.content()}</Suspense>}
                 </Box>
             </Box>
         </Flex>

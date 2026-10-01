@@ -90,7 +90,7 @@ function PageSection({tabId, gallery, state: initial}: Page) {
         };
     }, [tabId, enables]);
 
-    const act = (action: PageAction): void => void sendMessage("refresher:pageAction", action, tabId).then(setState, () => {});
+    const act = (action: PageAction): void => void sendMessage("refresher:pageAction", action, tabId).then(setState, () => setState(null));
 
     // 모든 갤러리용 + 이 갤러리 전용
     const visible = (entry: { gallery?: string }): boolean => !entry.gallery || entry.gallery === gallery;

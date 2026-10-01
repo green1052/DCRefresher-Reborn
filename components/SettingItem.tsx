@@ -99,7 +99,7 @@ const TextControl = ({schema, value, descId, onChange}: NarrowProps<"text">) => 
             onBlur={() => {
                 if (draft !== value) onChange(draft);
             }}
-            onKeyDown={(ev) => ev.key === "Enter" && (ev.target as HTMLInputElement).blur()}
+            onKeyDown={(ev) => ev.key === "Enter" && !ev.nativeEvent.isComposing && ev.currentTarget.blur()}
         />
     );
 };

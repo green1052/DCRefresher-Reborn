@@ -15,8 +15,15 @@ export const useStorageItem = <T, >(item: WxtStorageItem<T, {}>): T => {
     const [value, setValue] = useState(item.fallback);
 
     useEffect(() => {
-        item.getValue().then(setValue, console.error);
-        return item.watch(setValue);
+        // 읽기보다 변경 알림이 먼저 오면 늦게 온 읽기 결과가 새 값을 덮지 않게 한다
+        let watched = false;
+        item.getValue().then((next) => {
+            if (!watched) setValue(next);
+        }, console.error);
+        return item.watch((next) => {
+            watched = true;
+            setValue(next);
+        });
     }, [item]);
 
     return value;
