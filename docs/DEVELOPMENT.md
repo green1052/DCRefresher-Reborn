@@ -72,7 +72,7 @@ export default defineWebExtConfig({
 ```
 entrypoints/
   background/       배경 스크립트. index.ts(단축키 전달, 설치·업데이트 처리, 배경 모듈 실행), page.ts(MAIN world 주입), database.ts(DB 갱신 알람), backup.ts(자동 백업)
-  content/          콘텐츠 스크립트. 모듈 레지스트리 시작, 오버레이(shadow DOM) 마운트
+  content/          콘텐츠 스크립트. index.tsx(메시지·모듈 레지스트리 시작), overlay.tsx(오버레이 지연 마운트), stale.ts(파이어폭스 재주입 정리), invalidated.ts(무효화 안내), blocked.ts(임시 차단 안내)
   page.content.scss 디시 페이지에 입히는 CSS (manifest로 따로 주입)
   options/          옵션 페이지 (설정·차단·메모·단축키·데이터·정보·개발자 탭)
   popup/            팝업 (모듈 켜고 끄기, 현재 페이지 토글)
