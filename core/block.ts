@@ -1,7 +1,6 @@
-import {objectEntries} from "ts-extras";
-
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {useBlocksStore} from "@/stores/blocks";
+import {objectEntries} from "@/utils/typed";
 
 interface Compiled {
     regex: RegExp;

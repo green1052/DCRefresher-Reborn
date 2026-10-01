@@ -30,7 +30,7 @@ DCRefresher Reborn의 구조, 기능을 더하는 방법, 테스트와 릴리즈
 | 캐시 | `utils/lru.ts`의 `LruCache` (Map으로 만든 작은 메모리 캐시. 콘텐츠 스크립트에 라이브러리를 싣지 않는다) |
 | HTML 정화 | DOMPurify (`utils/sanitize.ts`) |
 | 메시징 | @webext-core/messaging |
-| 타입 도우미 | ts-extras (`objectKeys`, `objectEntries`, `arrayIncludes`) |
+| 타입 도우미 | `utils/typed.ts` (`objectKeys`, `objectEntries`, `objectFromEntries`, `arrayIncludes`. 내장 함수에 타입만 붙인 것) |
 | 패키지 관리·실행 | Bun 1.4 이상 |
 | 테스트 | Vitest (`wxt/testing/vitest-plugin`, fake-browser), Playwright (`e2e`) |
 

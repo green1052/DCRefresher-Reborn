@@ -5,11 +5,11 @@
  * 설정을 통째로 gzip → base64로 묶어 8KB 이하 조각(<칸>:0, <칸>:1, …)으로 나누고,
  * 조각 수와 해시를 담은 <칸> 키와 함께 set 한 번으로 쓴다. 쓰기가 실패하면 이전 백업이 그대로 남는다.
  */
-import {objectKeys} from "ts-extras";
 
 import {backupStorage, isBlockListKey, isModuleDataKey} from "@/core/storage/items";
 import {friendlyMessage} from "@/utils/error";
 import {isRecord} from "@/utils/record";
+import {objectKeys} from "@/utils/typed";
 
 export type BackupSlot = "manual" | "auto";
 

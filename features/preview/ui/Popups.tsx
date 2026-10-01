@@ -1,13 +1,13 @@
 import {Button, Card, Checkbox, Dialog, Flex, Grid, Kbd, RadioGroup, Text, TextField} from "@radix-ui/themes";
 import {ArrowBigUpDash, Ban, Megaphone, Star, Trash2} from "lucide-react";
 import {type ReactNode, useRef, useState} from "react";
-import {objectEntries} from "ts-extras";
 
 import {DialogActions} from "@/components/ConfirmDialog";
 import {overlay} from "@/components/overlay/shadow";
 import {BLOCK_DAYS, BLOCK_REASONS, type BlockDay, type BlockReason} from "@/core/preview/types";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {useUiStore} from "@/stores/ui";
+import {objectEntries} from "@/utils/typed";
 
 import {DcconInfoPopup} from "./DcconInfoPopup";
 import {MANAGE_LABELS, type ManageKind, usePreviewStore} from "./previewStore";

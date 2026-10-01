@@ -3,13 +3,13 @@ import {ChevronRight, Copy, EyeOff, FileJson, RefreshCw, RotateCcw, Trash2} from
 import {Collapsible} from "radix-ui";
 import {useEffect, useRef, useState, useSyncExternalStore} from "react";
 import {storage} from "wxt/utils/storage";
-import {arrayIncludes, objectKeys} from "ts-extras";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
 import {databaseVersion, ipInfoOf, parseBans, subscribeDatabase} from "@/core/database";
 import {IP_FORMAT, parseIpData} from "@/core/ipdb";
 import {DB_KEYS, dbStorage, isModuleDataKey, writeDatabase} from "@/core/storage/items";
 import {messageOf} from "@/utils/error";
+import {arrayIncludes, objectKeys} from "@/utils/typed";
 
 import {byteSize, Empty, formatBytes, formatTime, Section, useStorageItem} from "./Layout";
 import {notify, useOptionsStore} from "./optionsStore";

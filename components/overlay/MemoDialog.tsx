@@ -1,7 +1,6 @@
 import {Button, Checkbox, Dialog, Flex, SegmentedControl, Text, TextField} from "@radix-ui/themes";
 import {Shuffle} from "lucide-react";
 import {useState} from "react";
-import {arrayIncludes} from "ts-extras";
 
 import {SubmitForm} from "@/components/ConfirmDialog";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
@@ -11,6 +10,7 @@ import type {MemoType} from "@/core/storage/types";
 import {randomColor, useMemosStore} from "@/stores/memos";
 import {type MemoTargetState, useUiStore} from "@/stores/ui";
 import {SAVE_FAILED} from "@/utils/error";
+import {arrayIncludes} from "@/utils/typed";
 
 import {overlay} from "./shadow";
 

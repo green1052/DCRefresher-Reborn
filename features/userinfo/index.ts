@@ -1,5 +1,3 @@
-import {objectFromEntries, objectKeys} from "ts-extras";
-
 import {banReasonsOf, initDatabase, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
 import {defineModule} from "@/core/module/define";
 import {type GallogActivity, getGallogActivity} from "@/core/gallog";
@@ -10,6 +8,7 @@ import {watchStorage} from "@/core/storage/sync";
 import {findMemo, useMemosStore} from "@/stores/memos";
 import {type BadgeView, DEFAULT_BADGE_VIEW, isFresh, isLowActivity, openWriterBubble, showsUid, useUiStore} from "@/stores/ui";
 import {LruCache} from "@/utils/lru";
+import {objectFromEntries, objectKeys} from "@/utils/typed";
 
 import meta, {BADGE_COLORS, type BadgeColor, type Ctx} from "./meta";
 

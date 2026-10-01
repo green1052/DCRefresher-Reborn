@@ -1,7 +1,6 @@
 import {CloudDownload, CloudUpload, Download, RefreshCw, Trash2, Upload} from "lucide-react";
 import {Box, Button, Dialog, Flex, SegmentedControl, Switch, Text} from "@radix-ui/themes";
 import {useEffect, useRef, useState} from "react";
-import {arrayIncludes, objectKeys} from "ts-extras";
 
 import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
 import {focusPanel} from "@/components/useOpenerFocus";
@@ -10,6 +9,7 @@ import {updateDatabase} from "@/core/database";
 import {mergeBackup, parseImport, writeSettings} from "@/core/settings-transfer";
 import {backupStorage, dbStorage} from "@/core/storage/items";
 import {friendlyMessage} from "@/utils/error";
+import {arrayIncludes, objectKeys} from "@/utils/typed";
 
 import {formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
 import {notify} from "./optionsStore";

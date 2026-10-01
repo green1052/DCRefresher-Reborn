@@ -1,11 +1,11 @@
 import {create} from "zustand";
-import {arrayIncludes} from "ts-extras";
 
 import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockDefaultsStorage, blockListKey, blockStorage, DEFAULT_DETECT_MODE, DETECT_MODE_NAMES, DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {storageSync} from "@/core/storage/sync";
 import {saveOrReload} from "@/utils/error";
 import {isRecord} from "@/utils/record";
+import {arrayIncludes} from "@/utils/typed";
 
 export type BlockInputFields = Omit<BlockEntry, "id">;
 

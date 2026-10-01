@@ -10,11 +10,11 @@
  * 5.1.2 이전 버전이 남긴 키(isLeftoverKey)도 버린다. v5도 읽지 않던 잔재라 백업·내보내기만 불린다.
  * 설정 키·값 형식은 v5와 같다(모듈별로 대조함). v6에 없는 키는 v6가 읽지 않으니 그대로 넘겨도 된다.
  */
-import {arrayIncludes} from "ts-extras";
 
 import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockListKey, DETECT_MODES, MODULES_KEY, moduleSettingsKey, rawKey} from "@/core/storage/items";
 import type {BlockType, DetectMode} from "@/core/storage/types";
 import {isRecord} from "@/utils/record";
+import {arrayIncludes} from "@/utils/typed";
 
 const V5_MODULE_IDS: Record<string, string> = {
     "컨텐츠 차단": "block",

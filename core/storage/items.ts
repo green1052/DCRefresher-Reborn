@@ -1,8 +1,8 @@
-import {objectKeys} from "ts-extras";
 import {storage, type StorageItemKey, type WxtStorageItem} from "wxt/utils/storage";
 
-import type {BlockEntry, BlockType, DatabaseMeta, DetectMode, MemoEntry, MemoType, SettingValue} from "./types";
+import {objectKeys} from "@/utils/typed";
 
+import type {BlockEntry, BlockType, DatabaseMeta, DetectMode, MemoEntry, MemoType, SettingValue} from "./types";
 
 // 유형·모드 목록과 타입(types.ts)은 이름표의 키 순서를 따른다
 export const TYPE_NAMES = {
@@ -110,7 +110,6 @@ export const isModuleDataKey = (key: string): boolean => /^refresher:module:.+:d
 
 /** blockStorage의 차단 목록 키인지 (local: 없이). 기본 차단 모드(refresher:block:defaults)는 아니다 */
 export const isBlockListKey = (key: string): boolean => /^refresher:block:[A-Z]+$/.test(key);
-
 
 /**
  * IP/밴 DB는 필요한 것만 읽도록 세 키로 나눈다: 갱신 확인은 meta, 페이지는 ip, 밴은 쓸 때만 ban (ip·ban은 각각 수백 KB).
