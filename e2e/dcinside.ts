@@ -39,7 +39,9 @@ export const listPage = (rows: FakeRow[] = ROWS): string => `<!DOCTYPE html><htm
 </div></article></div>
 </body></html>`;
 
-export const viewPage = (no: string): string => `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>글 ${no}</title></head><body>
+// 글 페이지는 미리보기가 받아 읽기도 하고, 좌클릭 이동으로 실제로 열리기도 한다. 열릴 때 아래 디시 스크립트가 쓰는 전역(_d, jQuery)을 흉내 낸다
+export const viewPage = (no: string): string => `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>글 ${no}</title>
+<script>window._d = () => ""; window.$ = () => ({data() {}});</script></head><body>
 <input type="hidden" id="e_s_n_o" value="token">
 <div class="view_content_wrap"><header><div class="gallview_head clear ub-content">
 <h3 class="title ub-word"><span class="title_headtext">[말머리]</span><span class="title_subject">글 ${no} 제목</span></h3>

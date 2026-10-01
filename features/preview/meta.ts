@@ -66,7 +66,7 @@ export const settings = {
         desc: "마우스를 미니 미리보기 위로 옮겨 내용을 스크롤하거나 링크·이미지를 누를 수 있습니다. 미리보기는 커서를 따라다니지 않습니다.",
         default: false
     },
-    reversePreviewKey: {type: "check", name: "미리보기 키 반전", desc: "좌클릭으로 미리보기, 우클릭으로 게시글 이동을 사용합니다.", default: false},
+    reversePreviewKey: {type: "check", name: "미리보기 키 반전", desc: "좌클릭으로 미리보기, 우클릭으로 게시글 이동을 사용합니다. 댓글 수도 같습니다.", default: false},
     longPressDelay: {
         type: "range",
         name: "길게 누르기 판정 시간",

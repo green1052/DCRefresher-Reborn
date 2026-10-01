@@ -564,9 +564,9 @@ const controller = (ctx: Ctx) => {
 
         // 윈도우는 contextmenu가 버튼을 뗄 때 오므로, 누르고 있는 동안 본문을 미리 받는다.
         // Shift+우클릭(브라우저 메뉴)과 키 반전(우클릭은 글 이동)이면 열지 않으니 받지 않는다.
-        if (ev.shiftKey) return;
+        if (ev.shiftKey || ctx.settings.reversePreviewKey) return;
         const resolved = resolveTarget(ev);
-        if (!resolved || (!resolved.commentsOnly && ctx.settings.reversePreviewKey)) return;
+        if (!resolved) return;
         // 캐시를 끄면 열 때 캐시를 보지 않는다. 떼기 전에 다 받으면 한 번 더 받게 되므로 미리 받지 않는다.
         if (!ctx.settings.disableCache && !cachedPost(resolved.preData)) void requestPost(resolved.preData);
         // 오버레이도 처음 쓸 때 띄우므로(수십 ms) 떼기를 기다리는 동안 미리 띄운다.
@@ -587,13 +587,15 @@ const controller = (ctx: Ctx) => {
         element.classList.contains("ub-content") && target.closest(".ub-word") !== null;
 
     // 우클릭·좌클릭·미리 받기가 같은 기준으로 대상을 고르게 한 곳에서 판정한다.
-    const resolveTarget = (ev: MouseEvent): { preData: GalleryPreData; commentsOnly: boolean } | null => {
+    // link: 키 반전 우클릭으로 이동할 주소. 댓글 수는 그 링크(댓글 위치, t=cv)다
+    const resolveTarget = (ev: MouseEvent): { preData: GalleryPreData; commentsOnly: boolean; link: string } | null => {
         const element = ev.currentTarget as HTMLElement;
         const target = ev.target as HTMLElement;
         if (handledByWord(element, target)) return null;
 
         // 댓글 수 링크는 댓글만 보기로 연다. 행 전체 인식이 꺼져 있어도 열리게 아래 검사보다 먼저 본다.
-        const commentsOnly = target.closest(".reply_numbox") !== null;
+        const replyLink = target.closest<HTMLAnchorElement>("a.reply_numbox");
+        const commentsOnly = replyLink !== null;
 
         if (!commentsOnly) {
             if (element.classList.contains("ub-content") && !ctx.settings.expandRecognizeRange) return null;
@@ -603,7 +605,7 @@ const controller = (ctx: Ctx) => {
         }
 
         const preData = buildPreData(element);
-        return preData ? {preData, commentsOnly} : null;
+        return preData ? {preData, commentsOnly, link: replyLink?.href || preData.link} : null;
     };
 
     const onContextMenu = (ev: MouseEvent) => {
@@ -613,15 +615,15 @@ const controller = (ctx: Ctx) => {
         const resolved = resolveTarget(ev);
         if (!resolved) return;
 
-        // 길게 눌렀으면 댓글 수·키 반전이어도 기본 우클릭 메뉴다.
+        // 길게 눌렀으면 키 반전이어도 기본 우클릭 메뉴다.
         if (preventOpen) {
             preventOpen = false;
             return;
         }
 
-        // 짧게 눌렀으면 미리보기다. 키 반전이면 댓글 수가 아닌 곳은 글로 이동한다
+        // 짧게 눌렀으면 미리보기다. 키 반전이면 글(댓글 수는 그 댓글 위치)로 이동한다
         ev.preventDefault();
-        if (!resolved.commentsOnly && ctx.settings.reversePreviewKey) location.href = resolved.preData.link;
+        if (ctx.settings.reversePreviewKey) location.href = resolved.link;
         else open(resolved.preData, resolved.commentsOnly);
     };
 
@@ -629,8 +631,10 @@ const controller = (ctx: Ctx) => {
         // 수정키 클릭(새 탭·창으로 열기, manage 모듈의 Ctrl+클릭 삭제)은 가로채지 않는다.
         if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
 
+        // 좌클릭은 키 반전일 때만 미리보기다. 아니면 제목·댓글 수 모두 원래대로 링크를 연다
+        if (!ctx.settings.reversePreviewKey) return;
         const resolved = resolveTarget(ev);
-        if (!resolved || (!resolved.commentsOnly && !ctx.settings.reversePreviewKey)) return;
+        if (!resolved) return;
 
         ev.preventDefault();
         open(resolved.preData, resolved.commentsOnly);

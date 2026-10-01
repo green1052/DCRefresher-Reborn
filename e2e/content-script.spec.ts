@@ -55,11 +55,25 @@ test.describe("미리보기", () => {
         await expect(listPage.page).toHaveURL(/\/board\/lists\/\?id=test$/);
     });
 
-    test("댓글 수를 누르면 댓글만 보기로 열린다", async ({listPage}) => {
-        await listPage.page.locator(".gall_list .reply_numbox").first().click();
+    test("댓글 수를 우클릭하면 댓글만 보기로 열리고, 좌클릭은 원래대로 이동한다", async ({listPage}) => {
+        const replies = listPage.page.locator(".gall_list .reply_numbox").first();
+        await replies.click({button: "right"});
         const frame = listPage.overlay().locator(".refresher-frame");
         await expect(frame.getByRole("button", {name: /댓글만 표시 중입니다/})).toBeVisible();
         await expect(frame.locator(".refresher-comment")).toHaveCount(2);
+
+        await listPage.page.keyboard.press("Escape");
+        await expect(frame).toHaveCount(0);
+        await replies.click();
+        await expect(listPage.page).toHaveURL(/\/board\/view\/\?id=test&no=3$/);
+    });
+
+    test("키 반전이면 댓글 수 좌클릭이 댓글만 보기로 열린다", async ({listPage, storage}) => {
+        await storage.set({"refresher:module:preview:settings": {reversePreviewKey: true}});
+        await listPage.page.locator(".gall_list .reply_numbox").first().click();
+        const frame = listPage.overlay().locator(".refresher-frame");
+        await expect(frame.getByRole("button", {name: /댓글만 표시 중입니다/})).toBeVisible();
+        await expect(listPage.page).toHaveURL(/\/board\/view\/\?id=test&no=3/);
     });
 });
 
