@@ -1,6 +1,6 @@
 import {HTTPError} from "ky";
 
-import {BLOCKED_TEXT, isBlocked} from "@/core/block";
+import {isBlocked} from "@/core/block";
 import {BlockedError, isAbortError} from "@/core/http/client";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi} from "@/core/module/registry";
@@ -18,9 +18,10 @@ import {getEntry, postKey, setEntry} from "@/core/preview/cache";
 import {historyDoc, ownPreviewEntry, previewEntry, type PreviewEntry, type SavedHistory} from "@/core/preview/history";
 import {ADULT_ERROR, SECRET_ERROR} from "@/core/preview/parser";
 import {blockUser, type BlockOptions, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
-import {adjacentPreData, buildPreData, isBlurHidden, isTextPost} from "./rows";
 import meta, {type Ctx} from "./meta";
-import {closeMiniSoon, type ErrorState, hoverMini, keepMini, MANAGE_LABELS, type ManageKind, MINI_WIDTH, miniPosition, NO_HOOKS, NO_REPLY, postTitle, usePreviewStore} from "./ui/previewStore";
+import {createMini} from "./mini";
+import {adjacentPreData, buildPreData, isTextPost} from "./rows";
+import {type ErrorState, MANAGE_LABELS, type ManageKind, NO_HOOKS, NO_REPLY, usePreviewStore} from "./ui/previewStore";
 
 // status는 ky의 HTTPError에서 읽는다 (삭제된 글은 404).
 // 성인 인증 안내 페이지면 parsePostInfo가 Error(ADULT_ERROR)를, 미니 갤러리 비밀글이면 Error(SECRET_ERROR)를 던진다.
@@ -43,11 +44,6 @@ const controller = (ctx: Ctx) => {
     let preventOpen = false;
     let lastKey = "";
     let lastKeyTime = 0;
-    let miniTimer = 0;
-    // 미니를 띄울 제목 칸. 본문을 받는 사이 커서가 떠났으면 띄우지 않는다.
-    let miniTarget: HTMLElement | null = null;
-    // 떠 있는 미니가 보여 주는 제목 칸
-    let miniFor: HTMLElement | null = null;
     // 받는 중인 본문 요청 하나. 우클릭 누름·미니·열기·미리 받기가 같이 쓴다.
     // 다른 글을 받으면 앞 요청은 끊어, 연타해도 요청이 쌓이지 않는다.
     let pending: { key: string; ctrl: AbortController; post: Promise<PostInfo> } | null = null;
@@ -121,6 +117,9 @@ const controller = (ctx: Ctx) => {
             return {post: archived, fresh: false, archived: true};
         }
     };
+
+    // 미니 미리보기 (제목 호버 카드). 본문 요청·캐시를 같이 쓴다
+    const {onMiniEnter, onMiniMove, onMiniLeave, onMiniLeaveSoon} = createMini(ctx, getPost, processContents);
 
     // 보낸 순번과 그린 순번. 먼저 보낸 요청이 늦게 도착해 새 응답을 덮으면
     // 방금 쓴 댓글이 사라지거나 삭제된 것으로 보인다.
@@ -482,79 +481,6 @@ const controller = (ctx: Ctx) => {
         if (store.getState().visible) close(true);
     };
 
-    // ── 미니 미리보기 ────────────────────────────────────────────
-    const showMini = async (element: HTMLElement, x: number, y: number) => {
-        const preData = buildPreData(element);
-        if (!preData) return;
-
-        const post = await getPost(preData).then(({post}) => processContents(preData, post, ctx.settings.tooltipMediaHide)).catch(() => undefined);
-
-        // 받지 못했거나, 받는 사이 행을 떠났거나 전체 미리보기가 열렸으면 띄우지 않는다.
-        if (!post || miniTarget !== element || usePreviewStore.getState().visible) return;
-
-        // 조작할 수 있는 미니는 v5처럼 커서 바로 오른쪽에 붙인다(x+10, y-50). 오른쪽으로만 옮기면 다른 행을 지나지 않고 카드에 닿는다.
-        // 오른쪽에 자리가 없어 커서 위로 밀려 오면 제목을 덮어 누를 수 없으니 커서 왼쪽에 붙인다
-        const position = ctx.settings.tooltipInteraction ? miniPosition(x - 6, y - 66) : miniPosition(x, y);
-        if (ctx.settings.tooltipInteraction && position.x <= x) position.x = Math.max(0, x - MINI_WIDTH - 10);
-
-        hoverMini();
-        miniFor = element;
-        usePreviewStore.setState({
-            mini: {
-                ...position,
-                title: postTitle(post),
-                // 미니에는 마우스를 올려 블러를 걷을 수 없으니 블러 차단도 안내 문구로 가린다.
-                contents: post.textBlocked && !useUiStore.getState().blockView?.revealed ? BLOCKED_TEXT : post.contents ?? "",
-                // 전체 미리보기와 같은 조건으로 이미지를 가린다. 다르면 거기서 숨긴 이미지가 호버로 보인다.
-                blockMedia: ctx.settings.blockImage && isTextPost(preData),
-                wheel: ctx.settings.tooltipWheel,
-                interactive: ctx.settings.tooltipInteraction,
-                gallery: preData.gallery
-            }
-        });
-    };
-
-    const onMiniEnter = (ev: MouseEvent) => {
-        if (!ctx.settings.tooltipMode) return;
-        if (usePreviewStore.getState().visible) return;
-
-        const element = ev.currentTarget as HTMLElement;
-        if (isBlurHidden(element)) return;
-        // 조작할 수 있는 미니에서 제목으로 돌아왔으면 닫지 않는다. 떠난 제목의 닫기 타이머는 다른 제목에 들어와도 끊어야
-        // 새로 뜰 카드를 닫지 않으므로 keepMini는 늘 부른다. 다른 제목이면 앞 글의 카드는 바로 내린다 (새 글을 받지 못하면 앞 글 카드가 그대로 남는다)
-        keepMini();
-        if (element !== miniFor && usePreviewStore.getState().mini) usePreviewStore.setState({mini: null});
-        const x = ev.clientX;
-        const y = ev.clientY;
-
-        miniTarget = element;
-        window.clearTimeout(miniTimer);
-        // 0이면 바로 띄운다. 목록을 가로지르면 행마다 요청이 나가지만, 다른 행으로 옮기면 앞 요청은 끊긴다.
-        if (ctx.settings.tooltipDelay <= 0) void showMini(element, x, y);
-        else miniTimer = window.setTimeout(() => void showMini(element, x, y), ctx.settings.tooltipDelay);
-    };
-
-    const onMiniMove = (ev: MouseEvent) => {
-        // 조작할 수 있는 미니는 커서를 따라가면 카드로 옮겨 갈 수 없다
-        if (!usePreviewStore.getState().mini?.interactive) usePreviewStore.getState().moveMini(ev.clientX, ev.clientY);
-    };
-
-    /** soon: 조작할 수 있는 미니면 커서가 카드로 옮겨 갈 틈을 두고 닫는다 (제목에서 나갈 때) */
-    const onMiniLeave = (soon = false) => {
-        window.clearTimeout(miniTimer);
-        // 받는 중인 본문은 끊지 않는다. 클릭해 열면 같은 요청을 이어 쓰고, 다른 글을 받을 때 끊긴다.
-        miniTarget = null;
-        const {mini} = usePreviewStore.getState();
-        if (soon && mini?.interactive) {
-            closeMiniSoon();
-            return;
-        }
-        keepMini();
-        hoverMini();
-        // 떠 있을 때만 비운다. 제목 칸을 지날 때마다 setState하면 스토어를 구독하는 창·댓글이 모두 다시 확인한다.
-        if (mini) usePreviewStore.setState({mini: null});
-    };
-
     // ── 행 이벤트 ────────────────────────────────────────────────
     // 우클릭 길게 누르기: mousedown에서 시각을 기록하고, mouseup에서 판정해 contextmenu에서 쓴다.
     const onMouseDown = (ev: MouseEvent) => {
@@ -639,8 +565,6 @@ const controller = (ctx: Ctx) => {
         ev.preventDefault();
         open(resolved.preData, resolved.commentsOnly);
     };
-
-    const onMiniLeaveSoon = () => onMiniLeave(true);
 
     // 같은 함수는 addEventListener로 두 번 붙지 않아, 필터가 같은 요소로 다시 불러도 괜찮다. 그래서 핸들러는 모두 여기 밖에서 한 번 만든다.
     const bind = (element: HTMLElement, word: boolean) => {

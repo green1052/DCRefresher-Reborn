@@ -77,6 +77,22 @@ test.describe("미리보기", () => {
     });
 });
 
+test.describe("미니 미리보기", () => {
+    test("켜면 제목에 마우스를 올릴 때 카드가 뜨고, 떠나면 닫힌다", async ({listPage, storage}) => {
+        await storage.set({"refresher:module:preview:settings": {tooltipMode: true, tooltipDelay: 0}});
+        const title = listPage.page.locator(".gall_list .ub-word").first();
+        await expect.poll(async () => {
+            await listPage.page.mouse.move(0, 0);
+            await title.hover();
+            return listPage.overlay().locator(".refresher-mini-preview").count();
+        }).toBe(1);
+        await expect(listPage.overlay().locator(".refresher-mini-contents")).toContainText("본문 3 내용입니다.");
+
+        await listPage.page.mouse.move(0, 0);
+        await expect(listPage.overlay().locator(".refresher-mini-preview")).toHaveCount(0);
+    });
+});
+
 test.describe("유저 버블", () => {
     test("작성자를 우클릭하면 버블이 뜨고 차단하면 행이 가려진다", async ({listPage, storage}) => {
         await listPage.page.locator(".gall_list .ub-writer").first().click({button: "right"});
