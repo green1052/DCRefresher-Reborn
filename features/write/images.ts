@@ -33,12 +33,19 @@ export const hookUploads = (key: string): void => {
 
     // 움짤은 캔버스가 첫 장면만 그리므로 WebP로 바꾸지 않고 이름만 바꾼다. AVIF는 WebP보다 작고 움직일 수도 있어 그대로 둔다.
     const keepFormat = (file: File): boolean => ["image/gif", "image/webp", "image/avif"].includes(file.type);
-    // 움직이는 PNG(APNG)는 acTL 청크가 첫 IDAT보다 앞에 있다. 앞부분만 읽는다 (바이트를 글자로 읽어도 ASCII 청크 이름은 그대로다).
+    // 움직이는 PNG(APNG)는 acTL 청크가 첫 IDAT보다 앞에 있다. 서명(8바이트) 뒤 청크 머리(길이 4 + 이름 4)만 따라가며 읽는다.
+    // 앞쪽 메타데이터 청크(EXIF·ICC 등)가 커도 놓치지 않고, 이미지 데이터는 읽지 않는다.
     const isApng = async (file: File): Promise<boolean> => {
         if (file.type !== "image/png") return false;
-        const head = await file.slice(0, 65_536).text();
-        const actl = head.indexOf("acTL");
-        return actl >= 0 && !head.slice(0, actl).includes("IDAT");
+        for (let offset = 8; offset + 8 <= file.size;) {
+            const head = new DataView(await file.slice(offset, offset + 8).arrayBuffer());
+            const type = String.fromCharCode(head.getUint8(4), head.getUint8(5), head.getUint8(6), head.getUint8(7));
+            if (type === "acTL") return true;
+            if (type === "IDAT" || type === "IEND") return false;
+            // 머리 8바이트 + 데이터 + CRC 4바이트.
+            offset += 12 + head.getUint32(0);
+        }
+        return false;
     };
     // 이미 바꾼(또는 바꿀 것 없는) 파일. 바꾼 뒤 다시 보낸 이벤트를 또 가로채지 않게 한다.
     const done = new WeakSet<File>();

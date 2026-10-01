@@ -42,12 +42,26 @@ const useStorageArea = (area: Area): Record<string, unknown> | null => {
     useEffect(() => {
         // 영역을 바꾼 뒤 늦게 온 이전 영역의 값이 덮어쓰지 않게 한다.
         let alive = true;
+        // 처음 읽는 동안 바뀌었는지. 읽기는 그 전에 보낸 것이라 옛 값이 오므로 한 번 더 읽는다.
+        let loaded = false;
+        let changedWhileLoading = false;
         const load = (): void =>
             void browser.storage[area].get(null).then((next) => {
-                if (alive) setItems(next);
+                if (!alive) return;
+                if (changedWhileLoading) {
+                    changedWhileLoading = false;
+                    load();
+                    return;
+                }
+                loaded = true;
+                setItems(next);
             });
         // 바뀐 키만 반영한다. 다시 읽으면 글댓비를 저장할 때마다 수백 KB씩인 IP·밴 DB까지 읽는다.
         const onChanged = (changes: Record<string, { newValue?: unknown }>): void => {
+            if (!loaded) {
+                changedWhileLoading = true;
+                return;
+            }
             setItems((previous) => {
                 if (!previous) return previous;
                 const next = {...previous};

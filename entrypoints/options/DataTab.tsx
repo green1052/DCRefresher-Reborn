@@ -38,10 +38,21 @@ export function DataTab() {
 
     useEffect(() => {
         // 클라우드 메타에서 읽어 자동 백업(백그라운드)과 다른 기기의 백업도 반영한다.
-        const loadStatus = (): void => void readCloudBackupStatus().then(setCloud, console.error);
+        // 백업은 sync를 연달아 여러 번 쓴다. 먼저 보낸 읽기가 늦게 와 새 상태를 덮지 않게 마지막 읽기만 반영한다.
+        let latest = 0;
+        let alive = true;
+        const loadStatus = (): void => {
+            const request = ++latest;
+            void readCloudBackupStatus().then((status) => {
+                if (alive && request === latest) setCloud(status);
+            }, console.error);
+        };
         loadStatus();
         browser.storage.sync.onChanged.addListener(loadStatus);
-        return () => browser.storage.sync.onChanged.removeListener(loadStatus);
+        return () => {
+            alive = false;
+            browser.storage.sync.onChanged.removeListener(loadStatus);
+        };
     }, []);
 
     const run = async (action: () => Promise<string>, failure: string): Promise<void> => {
