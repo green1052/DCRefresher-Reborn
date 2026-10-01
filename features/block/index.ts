@@ -9,11 +9,11 @@ import {eventTarget} from "@/utils/event";
 
 import meta, {type Ctx, REVEAL_TOGGLE} from "./meta";
 
-/** 요소 글자 — 안에 든 <script> 글자는 뺀다 */
+/** 요소 글자 — 안에 든 <script> 글자는 뺀다. */
 const plainText = (element: Element | null | undefined): string =>
     element ? Array.from(element.childNodes, (node) => (node.nodeName === "SCRIPT" ? "" : node.textContent)).join("").trim() : "";
 
-/** 블러 강도·마우스 오버 보기는 <html>의 변수·클래스로만 건다 (content.scss). 행마다 JS를 붙이지 않아도 새로 그려진 행에 그대로 먹는다 */
+/** 블러 강도·마우스 오버 보기는 <html>의 변수·클래스로만 건다 (content.scss). 행마다 JS를 붙이지 않아도 새로 그려진 행에 그대로 먹는다. */
 const applyBlurStyle = (ctx: Ctx): void => {
     const root = document.documentElement;
     root.style.setProperty("--refresher-blur", `${ctx.settings.blurStrength}px`);
@@ -25,19 +25,19 @@ const duplicateOf = (ctx: Ctx): { count: number; minLength: number } | null =>
 
 /**
  * 이 페이지에서만 차단 내용 보기. 저장하지 않아 새로고침하면 다시 가린다. 보이는 방식은 <html>의 클래스로 정한다 (content.scss).
- * 상태도 그 클래스 하나뿐이다. 확장이 업데이트되어 다시 주입된 인스턴스도 같은 상태를 읽는다
+ * 상태도 그 클래스 하나뿐이다. 확장이 업데이트되어 다시 주입된 인스턴스도 같은 상태를 읽는다.
  */
 const REVEAL_CLASS = "refresherBlockReveal";
 const isRevealed = (): boolean => document.documentElement.classList.contains(REVEAL_CLASS);
 
-/** 이 모듈이 요소를 가릴 때 다는 클래스 (차단 숨김·블러·같은 댓글 접기) */
+/** 이 모듈이 요소를 가릴 때 다는 클래스 (차단 숨김·블러·같은 댓글 접기). */
 const HIDDEN_CLASSES = ["refresherBlocked", "refresherBlur", "refresherDuplicate"];
-/** 이 모듈이 가린 요소 */
+/** 이 모듈이 가린 요소. */
 const HIDDEN_SELECTOR = HIDDEN_CLASSES.map((name) => `.${name}`).join(", ");
-/** '가린 내용 보기'가 보이는 요소. userinfo의 깡계 흐림·숨김도 같이 보인다 (content.scss) */
+/** '가린 내용 보기'가 보이는 요소. userinfo의 깡계 흐림·숨김도 같이 보인다 (content.scss). */
 const REVEALED_SELECTOR = `${HIDDEN_SELECTOR}, .refresherLowActivityHide, .refresherLowActivityBlur`;
 
-/** 미리보기도 페이지와 같은 방식으로 가리게 알린다 */
+/** 미리보기도 페이지와 같은 방식으로 가리게 알린다. */
 const publishView = (ctx: Ctx): void => {
     useUiStore.setState({
         blockView: {
@@ -50,18 +50,18 @@ const publishView = (ctx: Ctx): void => {
     });
 };
 
-/** setup()이 돌려주는 객체. 단축키와 팝업이 쓴다 */
+/** setup()이 돌려주는 객체. 단축키와 팝업이 쓴다. */
 interface BlockApi {
     isRevealed(): boolean;
 
-    /** 이 페이지에서 가린 요소 수 */
+    /** 이 페이지에서 가린 요소 수. */
     hiddenCount(): number;
 
     toggleReveal(): void;
 }
 
 const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
-    // 숨김도 클래스로만 건다 (content.scss). 풀 때 디시가 건 인라인 display를 건드리지 않는다
+    // 숨김도 클래스로만 건다 (content.scss). 풀 때 디시가 건 인라인 display를 건드리지 않는다.
     const hide = (element: HTMLElement): void => element.classList.add(ctx.settings.blur ? "refresherBlur" : "refresherBlocked");
 
     const hideWithReply = (target: HTMLElement): void => {
@@ -75,16 +75,16 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         }
     };
 
-    // 유저/제목/말머리/댓글 차단
+    // 유저/제목/말머리/댓글 차단.
     const checkWriter = (element: HTMLElement): void => {
-        // 제목·말머리는 작성자 칸이 아니라 같은 행의 다른 칸에 있다. 글 보기 머리(.gallview_head)도 ub-content다
+        // 제목·말머리는 작성자 칸이 아니라 같은 행의 다른 칸에 있다. 글 보기 머리(.gallview_head)도 ub-content다.
         const row = element.closest<HTMLElement>(ROW_SELECTOR);
         const title = plainText(row?.querySelector(".gall_tit > a:not([class]), .title_subject"));
-        // 잘린 말머리는 툴팁(.subject_inner)에 전체가 있다. 글 보기 머리의 말머리는 [대괄호]로 감싸 있다
+        // 잘린 말머리는 툴팁(.subject_inner)에 전체가 있다. 글 보기 머리의 말머리는 [대괄호]로 감싸 있다.
         const tab = plainText(row?.querySelector(".gall_subject .subject_inner, .title_headtext") ?? row?.querySelector(".gall_subject")).replace(/^\[(.*)\]$/, "$1");
         const commentContainer = isViewPage ? element.closest(".reply_info, .cmt_info") : null;
         // 글자콘 댓글은 .usertxt 없이 .comment_dccon > .coment_dccon_txt > .txtcon_txt로 그려진다. 그 글자도 댓글 차단어로 본다
-        // 댓글 검색 결과 행은 댓글 내용이 .sch_cmt에 있다
+        // 댓글 검색 결과 행은 댓글 내용이 .sch_cmt에 있다.
         const comment = commentContainer?.querySelector(".usertxt, .txtcon_txt")?.textContent ?? row?.querySelector(".sch_cmt")?.textContent;
         const {nick, uid, ip} = element.dataset;
 
@@ -103,12 +103,12 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         if (blocked) hideWithReply(row ?? element);
     };
 
-    // 디시콘 차단
+    // 디시콘 차단.
     const checkDccon = (element: HTMLElement): void => {
         const code = dcconCode(element);
         if (!code || !isBlocked("DCCON", code, gallery)) return;
 
-        // 행이나 댓글 칸이 없는 본문 디시콘은 그 디시콘만 가린다
+        // 행이나 댓글 칸이 없는 본문 디시콘은 그 디시콘만 가린다.
         const target = element.closest<HTMLElement>(".ub-content") ?? element.closest<HTMLElement>(".comment_dccon");
         if (target) hideWithReply(target);
         else hide(element);
@@ -116,15 +116,15 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
 
     // 본문 차단: 블러면 흐리게, 아니면 숨기고 안내를 넣는다. 원문은 남겨 두어 차단을 풀거나 '차단 내용 보기'로 다시 보인다.
     // 본문이 다 읽힌 뒤 한 번만 본다. 작성자 필터에서 보면 아래 글 목록 행마다 본문을 다시 읽고,
-    // .write_div 필터에서 보면 파싱 중인 본문 일부로 판정해 NOT_*·SAME 항목이 오탐한다
+    // .write_div 필터에서 보면 파싱 중인 본문 일부로 판정해 NOT_*·SAME 항목이 오탐한다.
     const checkText = (): void => {
         const writeDiv = document.querySelector<HTMLElement>(".write_div");
         if (!writeDiv) return;
-        // 글 보기 머리(작성자·제목·말머리)가 차단됐으면 본문도 가린다. 머리 필터는 본문이 그려지기 전에 돌아 여기서 본다
+        // 글 보기 머리(작성자·제목·말머리)가 차단됐으면 본문도 가린다. 머리 필터는 본문이 그려지기 전에 돌아 여기서 본다.
         const headBlocked = document.querySelector(".gallview_head:is(.refresherBlocked, .refresherBlur)") !== null;
         if (!headBlocked && !isBlocked("TEXT", writeDiv.textContent?.trim() ?? "", gallery)) return;
 
-        // 확장이 업데이트되어 다시 주입되면 앞 인스턴스가 넣은 안내가 남아 있다. 안내가 둘 쌓이지 않게 먼저 뗀다
+        // 확장이 업데이트되어 다시 주입되면 앞 인스턴스가 넣은 안내가 남아 있다. 안내가 둘 쌓이지 않게 먼저 뗀다.
         for (const element of document.querySelectorAll(".refresherTextNotice")) element.remove();
         hide(writeDiv);
         if (ctx.settings.blur) return;
@@ -132,7 +132,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         writeDiv.before(Object.assign(document.createElement("div"), {className: "refresherTextNotice", textContent: BLOCKED_TEXT}));
     };
 
-    // 같은 댓글 접기. 댓글 목록은 댓글 페이지를 넘기거나 새로 고칠 때마다 통째로 다시 그려져 필터로 다시 불린다
+    // 같은 댓글 접기. 댓글 목록은 댓글 페이지를 넘기거나 새로 고칠 때마다 통째로 다시 그려져 필터로 다시 불린다.
     const foldDuplicates = (list: HTMLElement): void => {
         const duplicate = duplicateOf(ctx);
         if (!duplicate) return;
@@ -144,7 +144,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
                 continue;
             }
 
-            // 멱등이어야 한다. 배지를 넣으면 조상인 목록에 필터가 다시 불리므로, 같은 배지를 또 넣으면 끝없이 돈다
+            // 멱등이어야 한다. 배지를 넣으면 조상인 목록에 필터가 다시 불리므로, 같은 배지를 또 넣으면 끝없이 돈다.
             const text = `같은 댓글 ×${repeats}`;
             const existing = item.querySelector(".refresherDuplicateBadge");
             if (existing?.textContent === text) continue;
@@ -154,13 +154,13 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         }
     };
 
-    // 선택자마다 판정. 새로 그려지는 요소는 필터가, 이미 그려진 요소는 recheck가 같은 표로 돈다
+    // 선택자마다 판정. 새로 그려지는 요소는 필터가, 이미 그려진 요소는 recheck가 같은 표로 돈다.
     const checks: [selector: string, check: (element: HTMLElement) => void][] = [[".ub-writer", checkWriter], [".written_dccon", checkDccon]];
     if (isViewPage) checks.push([".cmt_list", foldDuplicates]);
     for (const [selector, check] of checks) ctx.addFilter(selector, check);
     if (isViewPage) whenDomReady(checkText, ctx.signal);
 
-    // 필터는 DOM 삽입 때만 돈다. 차단 목록이나 숨기는 방식(블러/대댓글)이 바뀌면 이미 그려진 요소를 직접 다시 판정한다
+    // 필터는 DOM 삽입 때만 돈다. 차단 목록이나 숨기는 방식(블러/대댓글)이 바뀌면 이미 그려진 요소를 직접 다시 판정한다.
     const recheck = (): void => {
         restoreHiddenElements();
         for (const [selector, check] of checks) {
@@ -180,12 +180,12 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
 const setupSelection = (ctx: Ctx): void => {
     const onContextMenu = (ev: MouseEvent): void => {
         // Shift+우클릭은 유저 버블 대신 브라우저 기본 메뉴를 연다 (링크 복사·요소 검사 등이 막히지 않게).
-        // 작성자 칸을 유저 정보 모듈이 먼저 받아 버블을 열었으면 defaultPrevented다
+        // 작성자 칸을 유저 정보 모듈이 먼저 받아 버블을 열었으면 defaultPrevented다.
         if (ev.shiftKey || ev.defaultPrevented) return;
 
         const target = eventTarget(ev);
         const dcconElement = target instanceof Element ? target.closest<HTMLElement>(".written_dccon") : null;
-        // 작성자 칸 버블은 유저 정보 모듈과 같이 쓴다
+        // 작성자 칸 버블은 유저 정보 모듈과 같이 쓴다.
         if (!dcconElement) {
             openWriterBubble(ev);
             return;
@@ -196,7 +196,7 @@ const setupSelection = (ctx: Ctx): void => {
 
         const ui = useUiStore.getState();
         ui.setSelected({dccon: code});
-        // 브라우저 우클릭 메뉴 대신 디시콘 차단 버블을 연다
+        // 브라우저 우클릭 메뉴 대신 디시콘 차단 버블을 연다.
         ev.preventDefault();
         ui.openBubble(ev.clientX, ev.clientY);
     };
@@ -210,7 +210,7 @@ const restoreHiddenElements = (): void => {
     for (const element of document.querySelectorAll(".refresherTextNotice, .refresherDuplicateBadge")) element.remove();
 };
 
-/** setup이 만든 다시 판정 함수. 설정(블러/대댓글 등)이 바뀌면 onChanged가 부른다 */
+/** setup이 만든 다시 판정 함수. 설정(블러/대댓글 등)이 바뀌면 onChanged가 부른다. */
 let recheck: (() => void) | undefined;
 
 export default defineModule({
@@ -251,7 +251,7 @@ export default defineModule({
 
     onChanged(ctx, key) {
         publishView(ctx);
-        // 보기 방식만 바뀌면 다시 판정할 필요 없다
+        // 보기 방식만 바뀌면 다시 판정할 필요 없다.
         if (key === "blurReveal" || key === "blurStrength") applyBlurStyle(ctx);
         else recheck?.();
     },

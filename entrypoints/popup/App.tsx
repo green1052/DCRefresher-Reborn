@@ -20,25 +20,25 @@ interface Page {
     state: PageToggleState[] | null;
 }
 
-/** 활성 탭이 디시 갤러리 페이지면 탭과 갤러리 id를 돌려준다. tabs 권한이 없어 탭 주소는 host_permissions가 있는 디시 탭에서만 보인다 */
+/** 활성 탭이 디시 갤러리 페이지면 탭과 갤러리 id를 돌려준다. tabs 권한이 없어 탭 주소는 host_permissions가 있는 디시 탭에서만 보인다. */
 const findPage = async (): Promise<Page | null> => {
     const [tab] = await browser.tabs.query({active: true, currentWindow: true});
     const url = tab?.url ? URL.parse(tab.url) : null;
     const gallery = url?.hostname === "gall.dcinside.com" ? url.searchParams.get("id") : null;
     if (tab?.id === undefined || !gallery) return null;
 
-    // 설치 전에 열린 탭 등 콘텐츠 스크립트가 없으면 토글 없이 보여 준다
+    // 설치 전에 열린 탭 등 콘텐츠 스크립트가 없으면 토글 없이 보여 준다.
     const state = await sendMessage("refresher:pageState", undefined, tab.id).catch(() => null);
     return {tabId: tab.id, gallery, state};
 };
 
-// openOptionsPage는 이미 열린 옵션 탭이 있으면 그 탭으로 간다
+// openOptionsPage는 이미 열린 옵션 탭이 있으면 그 탭으로 간다.
 const openOptions = async (): Promise<void> => {
     await browser.runtime.openOptionsPage();
     window.close();
 };
 
-/** 토글 아이콘(컴포넌트)은 메시지로 보낼 수 없어 팝업이 모듈 메타(toggles)에서 찾는다 */
+/** 토글 아이콘(컴포넌트)은 메시지로 보낼 수 없어 팝업이 모듈 메타(toggles)에서 찾는다. */
 const toggleIcon = ({module, id}: PageAction): LucideIcon =>
     features.find((feature) => feature.id === module)?.toggles?.find((toggle) => toggle.id === id)?.icon ?? Puzzle;
 
@@ -68,14 +68,14 @@ const ToggleRow = ({icon: Icon, label, desc, checked, onChange}: {
     </Text>
 );
 
-/** toggled: 팝업에서 모듈 on/off를 저장한 횟수. 0이면 처음 물은 상태(initial) 그대로다 */
+/** toggled: 팝업에서 모듈 on/off를 저장한 횟수. 0이면 처음 물은 상태(initial) 그대로다. */
 function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled: number }) {
     const blocks = useBlocksStore((state) => state.entries);
     const memos = useMemosStore((state) => state.memos);
     const [state, setState] = useState(initial);
 
     // 모듈을 켜고 끄면 탭의 모듈도 멈추거나 시작하므로 다시 묻는다. 저장이 끝난 뒤에 물어야 탭이 새 값으로 답한다
-    // (탭은 저장소를 다시 읽고 모듈이 다 뜬 뒤에 답한다). 늦게 온 이전 응답은 버린다
+    // (탭은 저장소를 다시 읽고 모듈이 다 뜬 뒤에 답한다). 늦게 온 이전 응답은 버린다.
     useEffect(() => {
         if (toggled === 0) return;
         let current = true;
@@ -94,7 +94,7 @@ function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled
 
     const act = (action: PageAction): void => void sendMessage("refresher:pageAction", action, tabId).then(setState, () => setState(null));
 
-    // 모든 갤러리용 + 이 갤러리 전용
+    // 모든 갤러리용 + 이 갤러리 전용.
     const visible = (entry: { gallery?: string }): boolean => !entry.gallery || entry.gallery === gallery;
     const blockCount = Object.values(blocks).flat().filter(visible).length;
     const memoCount = Object.values(memos).flatMap((map) => Object.values(map)).filter(visible).length;
@@ -110,7 +110,7 @@ function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled
                 현재 페이지
             </SectionTitle>
 
-            {/* 확장을 업데이트하기 전에 열린 탭 등 콘텐츠 스크립트가 없으면 토글을 받을 수 없다 */}
+            {/* 확장을 업데이트하기 전에 열린 탭 등 콘텐츠 스크립트가 없으면 토글을 받을 수 없다. */}
             {state === null && <Text as="p" size="1" color="gray" align="center">페이지를 새로고침하면 이 페이지 설정이 나옵니다.</Text>}
             {state && state.length > 0 && (
                 <Card size="1">
@@ -163,12 +163,12 @@ export function App() {
     const [toggled, setToggled] = useState(0);
 
     // 한 번에 그려야 팝업 크기가 여러 번 바뀌지 않는다. 모두 로컬 읽기라 금방 끝난다.
-    // 하나가 실패해도 빈 팝업으로 남지 않게 기본값으로 그린다
+    // 하나가 실패해도 빈 팝업으로 남지 않게 기본값으로 그린다.
     useEffect(() => {
         void Promise.all([
             findPage().catch(() => null),
             // 자동 백업은 배경에서 돌아 실패해도 데이터 탭을 열기 전에는 모른다. 켜져 있을 때만 팝업에서 한 줄로 알린다.
-            // 오류는 백업이 성공해야 지워지므로, 한도 초과로 자동 백업을 끈 뒤에도 알리면 경고가 사라지지 않는다 (지난 실패는 데이터 탭에 남는다)
+            // 오류는 백업이 성공해야 지워지므로, 한도 초과로 자동 백업을 끈 뒤에도 알리면 경고가 사라지지 않는다 (지난 실패는 데이터 탭에 남는다).
             Promise.all([backupStorage.auto.getValue(), backupStorage.error.getValue()]).then(([auto, error]) => (auto ? error : "")).catch(() => ""),
             initBlocksStore().catch(console.error),
             initMemosStore().catch(console.error),
@@ -176,7 +176,7 @@ export function App() {
         ]).then(([page, backupError]) => setLoaded({page, backupError}));
     }, []);
 
-    // 모듈이 선언한 확장 페이지 CSS 변수 (폰트 교체 등)
+    // 모듈이 선언한 확장 페이지 CSS 변수 (폰트 교체 등).
     useExtensionPageVars();
 
     if (!loaded) return null;

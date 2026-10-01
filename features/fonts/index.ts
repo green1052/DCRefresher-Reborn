@@ -4,7 +4,7 @@ import {writeStyle} from "@/utils/dom";
 import meta, {type Ctx, fontFamilyOf} from "./meta";
 
 // "디시인사이드 폰트 교체"가 켜졌을 때 폰트를 바꿀 디시 요소.
-// :root 접두사는 명시도를 올려 디시 규칙을 이기려는 것이다
+// :root 접두사는 명시도를 올려 디시 규칙을 이기려는 것이다.
 const DC_FONT_TARGETS = ["body", "button", "input", "textarea", "select", ".gall_list", ".view_content_wrap", ".view_comment div", ".btn_cmt_open", ".btn_cmt_close"]
     .map((selector) => `:root ${selector}`)
     .join(", ");
@@ -13,7 +13,7 @@ const buildCss = (ctx: Ctx): string => {
     const fonts = fontFamilyOf(ctx.settings.customFonts);
     const size = ctx.settings.bodyFontSize;
 
-    // 확장 UI(shadow DOM)엔 선택자가 닿지 않으므로 상속되는 커스텀 속성으로 넘긴다 (overlay.scss에서 사용)
+    // 확장 UI(shadow DOM)엔 선택자가 닿지 않으므로 상속되는 커스텀 속성으로 넘긴다 (overlay.scss에서 사용).
     const css = [`:root { --refresher-font: ${fonts}; --refresher-preview-font-size: ${size + 2}px; }`];
 
     if (ctx.settings.changeDCFont) {

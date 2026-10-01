@@ -6,7 +6,7 @@ import type {ModuleContext, SettingGroup, SettingSchema, SettingsSchema} from "@
 import {BOARD_PAGE} from "@/core/pages";
 import type {BadgeColorKey} from "@/stores/ui";
 
-/** 배지 색 기본값. 키마다 `${key}Color` 설정이 하나씩 생기고 옵션 화면에선 한 그룹으로 묶인다. IP 배지는 분류(korea…vpn)가 키다 */
+/** 배지 색 기본값. 키마다 `${key}Color` 설정이 하나씩 생기고 옵션 화면에선 한 그룹으로 묶인다. IP 배지는 분류(korea…vpn)가 키다. */
 export const BADGE_COLORS = {
     uid: ["아이디/IP", "#999999"],
     ratio: ["글댓비", "#999999"],

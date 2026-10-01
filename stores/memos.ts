@@ -20,7 +20,7 @@ const isMemoEntry = (value: unknown): value is MemoEntry =>
 
 /**
  * 새 메모의 기본 색. 색상만 무작위로 고르고 채도(60%)·명도(50%)는 고정한다. 아무 RGB나 고르면 흰색·검은색에 가까운 색이 나와 한쪽 테마에서 안 보인다.
- * 색 입력칸(input[type=color])이 #rrggbb만 받으므로 HSL을 RGB로 바꾼다
+ * 색 입력칸(input[type=color])이 #rrggbb만 받으므로 HSL을 RGB로 바꾼다.
  */
 export const randomColor = (): string => {
     const hue = Math.random() * 360;
@@ -32,13 +32,13 @@ export const randomColor = (): string => {
     return `#${channel(0)}${channel(8)}${channel(4)}`;
 };
 
-/** 저장소·가져오기 값에서 유효한 항목만 남긴다 */
+/** 저장소·가져오기 값에서 유효한 항목만 남긴다. */
 export const normalizeMemoMap = (value: unknown): MemoMap =>
     isRecord(value)
         ? Object.fromEntries(Object.entries(value).filter((entry): entry is [string, MemoEntry] => isMemoEntry(entry[1])))
         : {};
 
-/** 메모의 단일 출처. 콘텐츠·옵션 모두 이 스토어를 쓰고 저장소와 양방향 동기화된다 */
+/** 메모의 단일 출처. 콘텐츠·옵션 모두 이 스토어를 쓰고 저장소와 양방향 동기화된다. */
 export const useMemosStore = create<MemosState>((set, get) => ({
     memos: {UID: {}, NICK: {}, IP: {}},
 
@@ -60,7 +60,7 @@ export const useMemosStore = create<MemosState>((set, get) => ({
 type MemoUser = { uid?: string; ip?: string; nick?: string };
 
 const lookupMemo = (memos: Record<MemoType, MemoMap>, user: MemoUser, gallery?: string | null): MemoEntry | undefined => {
-    // 닉네임이 toString·constructor·__proto__여도 프로토타입 값을 메모로 읽지 않게 자기 속성만 본다
+    // 닉네임이 toString·constructor·__proto__여도 프로토타입 값을 메모로 읽지 않게 자기 속성만 본다.
     const find = (map: MemoMap, key?: string): MemoEntry | undefined => {
         const entry = key && Object.hasOwn(map, key) ? map[key] : undefined;
         return entry && (!entry.gallery || entry.gallery === gallery) ? entry : undefined;
@@ -69,15 +69,15 @@ const lookupMemo = (memos: Record<MemoType, MemoMap>, user: MemoUser, gallery?: 
     return find(memos.UID, user.uid) ?? find(memos.IP, user.ip) ?? find(memos.NICK, user.nick);
 };
 
-/** 유저에 달린 메모 (아이디 > IP > 닉네임 순). 다른 갤러리 전용 메모는 건너뛴다 */
+/** 유저에 달린 메모 (아이디 > IP > 닉네임 순). 다른 갤러리 전용 메모는 건너뛴다. */
 export const findMemo = (user: MemoUser, gallery?: string | null): MemoEntry | undefined =>
     lookupMemo(useMemosStore.getState().memos, user, gallery);
 
-/** React용 findMemo. 구독한 memos로 찾아야 React Compiler가 메모가 바뀔 때 다시 계산한다 */
+/** React용 findMemo. 구독한 memos로 찾아야 React Compiler가 메모가 바뀔 때 다시 계산한다. */
 export const useUserMemo = (user: MemoUser, gallery?: string | null): MemoEntry | undefined =>
     lookupMemo(useMemosStore((state) => state.memos), user, gallery);
 
-// 이 탭의 쓰기도 watch로 돌아온다. 값이 같으면 state를 그대로 돌려줘 구독자(배지 전체 다시 그리기)를 깨우지 않는다
+// 이 탭의 쓰기도 watch로 돌아온다. 값이 같으면 state를 그대로 돌려줘 구독자(배지 전체 다시 그리기)를 깨우지 않는다.
 const setMap = (type: MemoType, value: unknown): void =>
     useMemosStore.setState((state) => {
         const next = normalizeMemoMap(value);
@@ -86,9 +86,9 @@ const setMap = (type: MemoType, value: unknown): void =>
 
 const mapTypes = new Map(MEMO_TYPES.map((type) => [memoMapKey(type), type]));
 
-// 값이 없으면 null → 빈 목록
+// 값이 없으면 null → 빈 목록.
 const sync = storageSync([...mapTypes.keys()], (key, value) => setMap(mapTypes.get(key)!, value));
 const load = sync.load;
 
-/** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다 */
+/** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다. */
 export const initMemosStore = sync.start;

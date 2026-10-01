@@ -1,6 +1,6 @@
 interface Entry<V> {
     value: V;
-    /** 만료 시각(ms). 0이면 만료되지 않는다 */
+    /** 만료 시각(ms). 0이면 만료되지 않는다. */
     expires: number;
     timer?: ReturnType<typeof setTimeout>;
 }
@@ -9,7 +9,7 @@ interface Entry<V> {
  * 작은 LRU 캐시. 콘텐츠 스크립트에 lru-cache(18 kB)를 싣지 않으려고 쓰는 기능만 둔다.
  * Map은 넣은 순서를 지키므로, 읽을 때 다시 넣어 맨 뒤로 보내고 넘치면 맨 앞(가장 오래 안 쓴 것)을 버린다.
  * - ttl: 저장한 뒤 이 시간(ms)이 지나면 없는 것으로 본다. 다시 저장하면 수명이 처음부터 다시 간다
- * - autopurge: 만료될 때 지워 값(본문 HTML 등)이 밀려날 때까지 메모리에 남지 않게 한다
+ * - autopurge: 만료될 때 지워 값(본문 HTML 등)이 밀려날 때까지 메모리에 남지 않게 한다.
  */
 export class LruCache<K, V> {
     readonly #entries = new Map<K, Entry<V>>();
@@ -70,7 +70,7 @@ export class LruCache<K, V> {
         this.#entries.clear();
     }
 
-    /** 있으면 그 값, 없으면 compute로 만들어 저장한다 */
+    /** 있으면 그 값, 없으면 compute로 만들어 저장한다. */
     memo(key: K, compute: (key: K) => V): V {
         const cached = this.get(key);
         if (cached !== undefined) return cached;

@@ -20,7 +20,7 @@ describe("mergeBackup", () => {
             {"refresher:block:NICK": [{content: "a", isRegex: false}, {content: "b", isRegex: false}], "refresher:block:defaults": {NICK: "CONTAIN"}}
         );
         expect(strip(merged["refresher:block:NICK"])).toEqual([{content: "a"}, {content: "b", mode: "CONTAIN"}]);
-        // 기본 모드는 이 기기 것을 남긴다
+        // 기본 모드는 이 기기 것을 남긴다.
         expect(merged["refresher:block:defaults"]).toMatchObject({NICK: "SAME"});
     });
 

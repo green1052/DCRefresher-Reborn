@@ -28,7 +28,7 @@ describe("isBlocked", () => {
         setBlockLists({NICK: [entry({content: "닉1|닉1a", isRegex: true})]});
         expect(isBlocked("NICK", "닉1a")).toBe(true);
         expect(isBlocked("NICK", "닉1ab")).toBe(false);
-        // 잘못된 정규식은 아무것도 막지 않는다
+        // 잘못된 정규식은 아무것도 막지 않는다.
         setBlockLists({NICK: [entry({content: "(", isRegex: true})]});
         expect(isBlocked("NICK", "(")).toBe(false);
     });
@@ -45,7 +45,7 @@ describe("isBlocked", () => {
         expect(isBlocked("NICK", "A")).toBe(false);
         expect(isBlocked("NICK", "B")).toBe(false);
         expect(isBlocked("NICK", "C")).toBe(true);
-        // 걸린 항목은 허용 목록 전부다
+        // 걸린 항목은 허용 목록 전부다.
         expect(blockingEntries({NICK: "C"}).map(({entry: {content}}) => content)).toEqual(["A", "B"]);
     });
 
@@ -65,7 +65,7 @@ describe("isAnyBlocked / blockingEntries", () => {
         expect(blockingEntries({NICK: "n", IP: "1.2"}).map(({type}) => type)).toEqual(["NICK", "IP"]);
     });
     it("isBlocked는 걸린 규칙(blockingEntries)이 있을 때만 참이다", () => {
-        // 모드·정규식(잘못된 패턴 포함)·갤러리 한정을 섞은 목록에서 두 판정이 늘 같은지 본다
+        // 모드·정규식(잘못된 패턴 포함)·갤러리 한정을 섞은 목록에서 두 판정이 늘 같은지 본다.
         const modes = [undefined, "SAME", "CONTAIN", "NOT_SAME", "NOT_CONTAIN"] as const;
         const contents = ["ab", "a", "x", "a.", "("];
         let seed = 1;

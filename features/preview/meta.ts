@@ -5,7 +5,7 @@ import type {ModuleContext, SettingGroup, SettingsSchema} from "@/core/module/ty
 import {BOARD_PAGE} from "@/core/pages";
 import {BLOCK_DAYS} from "@/core/preview/types";
 
-// 미리보기 모듈 설정. "v5와 같은 키"는 v5에서 옮긴 값을 그대로 쓰므로 이름을 바꾸지 않는다
+// 미리보기 모듈 설정. "v5와 같은 키"는 v5에서 옮긴 값을 그대로 쓰므로 이름을 바꾸지 않는다.
 
 
 const SHORTCUT_GROUP: SettingGroup = {name: "관리 단축키", desc: "관리 권한이 있을 때 미리보기에서 키를 두 번 누르면 게시글을 삭제하거나 작성자를 차단합니다."};
@@ -24,7 +24,7 @@ export const settings = {
         step: 50,
         unit: "px"
     },
-    // v5와 같은 키
+    // v5와 같은 키.
     toggleBackgroundBlur: {
         type: "check",
         group: FRAME_GROUP,
@@ -32,7 +32,7 @@ export const settings = {
         desc: "미리보기 창 바깥 배경을 흐리게 처리합니다. (성능이 떨어질 수 있음)",
         default: false
     },
-    // v5와 같은 키
+    // v5와 같은 키.
     scrollToSkip: {
         type: "check",
         name: "스크롤하여 게시글 이동",
@@ -51,14 +51,14 @@ export const settings = {
         step: 50,
         unit: "ms"
     },
-    // v5의 '툴팁 미리보기 상호작용'처럼 켜야 한다. 늘 켜 두면 목록을 휠로 내리다 제목 위에 미니가 뜰 때마다 페이지 대신 미니가 스크롤된다
+    // v5의 '툴팁 미리보기 상호작용'처럼 켜야 한다. 늘 켜 두면 목록을 휠로 내리다 제목 위에 미니가 뜰 때마다 페이지 대신 미니가 스크롤된다.
     tooltipWheel: {
         type: "check",
         name: "미니 미리보기 휠 스크롤",
         desc: "미니 미리보기가 떠 있는 동안 마우스 휠로 내용을 스크롤합니다. 끝까지 내리면 페이지가 스크롤됩니다.",
         default: false
     },
-    // v5와 같은 키 ('툴팁 미리보기 상호작용')
+    // v5와 같은 키 ('툴팁 미리보기 상호작용').
     tooltipInteraction: {
         type: "check",
         name: "미니 미리보기 상호작용",

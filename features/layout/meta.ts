@@ -4,7 +4,7 @@ import {defineModuleMeta} from "@/core/module/define";
 import type {ModuleContext, SettingSchema, SettingsSchema} from "@/core/module/types";
 import {objectKeys} from "@/utils/typed";
 
-/** 체크하면 숨기는 영역. 설정과 <style> 규칙을 모두 여기서 만드므로 새 항목은 한 줄만 추가하면 된다 */
+/** 체크하면 숨기는 영역. 설정과 <style> 규칙을 모두 여기서 만드므로 새 항목은 한 줄만 추가하면 된다. */
 export const HIDE_OPTIONS = {
     hideGalleryView: {name: "갤러리 뷰 숨기기", desc: "갤러리 정보, 최근 방문 갤러리 영역을 숨깁니다.", selector: ".issue_wrap, #visit_history"},
     hideUselessView: {
@@ -17,13 +17,13 @@ export const HIDE_OPTIONS = {
     removeDCNotice: {
         name: "디시 공지 숨기기",
         desc: "글 목록에서 운영자의 게시글을 숨깁니다.",
-        // 설문·광고 행은 user_name 칸, 운영자 글은 식별 코드·IP가 빈 운영자 작성자 칸
+        // 설문·광고 행은 user_name 칸, 운영자 글은 식별 코드·IP가 빈 운영자 작성자 칸.
         selector: "tr[class*=ub-content]:has(> td[user_name=운영자]), tr.ub-content:has(> .ub-writer[data-nick=운영자][data-uid=\"\"][data-ip=\"\"])"
     },
     removeGamemeca: {
         name: "게임메카 숨기기",
         desc: "글 목록에서 게임메카 게시글을 숨깁니다.",
-        // 예전 뉴스 행과, 지금처럼 일반 글 행으로 그려지는 게임메카 작성자 행
+        // 예전 뉴스 행과, 지금처럼 일반 글 행으로 그려지는 게임메카 작성자 행.
         selector: "tr[data-type=icon_fnews], tr.ub-content:has(> .ub-writer[data-uid=\"gamemeca\"])"
     },
     removeAi: {name: "AI 글 숨기기", desc: "글 목록에서 AI 표시가 붙은 글을 숨깁니다.", selector: "tr[data-type=icon_ai]"}
@@ -38,7 +38,7 @@ export const settings = {
         desc: "브라우저 가로가 이 값보다 작을 경우 컴팩트 모드를 활성화합니다.",
         default: 900,
         min: 100,
-        // 모니터마다 다른 screen.width로 두면 큰 모니터에서 저장한 값이 작은 모니터에서 잘린다
+        // 모니터마다 다른 screen.width로 두면 큰 모니터에서 저장한 값이 작은 모니터에서 잘린다.
         max: 3840,
         step: 1,
         unit: "px"

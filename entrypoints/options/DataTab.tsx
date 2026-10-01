@@ -37,7 +37,7 @@ export function DataTab() {
     const restoreRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
-        // 클라우드 메타에서 읽어 자동 백업(백그라운드)과 다른 기기의 백업도 반영한다
+        // 클라우드 메타에서 읽어 자동 백업(백그라운드)과 다른 기기의 백업도 반영한다.
         const loadStatus = (): void => void readCloudBackupStatus().then(setCloud, console.error);
         loadStatus();
         browser.storage.sync.onChanged.addListener(loadStatus);
@@ -45,7 +45,7 @@ export function DataTab() {
     }, []);
 
     const run = async (action: () => Promise<string>, failure: string): Promise<void> => {
-        // 누른 버튼이 막히면 포커스가 body로 떨어져 알림을 닫은 뒤 돌아갈 곳이 없으므로 가까운 조상(탭 패널)으로 옮겨 둔다
+        // 누른 버튼이 막히면 포커스가 body로 떨어져 알림을 닫은 뒤 돌아갈 곳이 없으므로 가까운 조상(탭 패널)으로 옮겨 둔다.
         if (document.activeElement !== document.body) focusPanel(document.activeElement);
         setLoading(true);
         let message: string;
@@ -55,7 +55,7 @@ export function DataTab() {
             console.error(e);
             message = `${failure} ${friendlyMessage(e)}`;
         }
-        // 확인 창 안에서 부르면(초기화) 창이 닫히며 포커스가 body로 떨어지고, 알림이 그 body를 돌아갈 곳으로 기억한다
+        // 확인 창 안에서 부르면(초기화) 창이 닫히며 포커스가 body로 떨어지고, 알림이 그 body를 돌아갈 곳으로 기억한다.
         if (document.activeElement === document.body) focusPanel(restoreRef.current);
         notify(message);
         setLoading(false);
@@ -85,7 +85,7 @@ export function DataTab() {
             notify(`자동 백업 설정을 저장하지 못했습니다. ${friendlyMessage(e)}`);
             return;
         }
-        // 켜는 순간의 설정을 자동 백업 칸에 바로 올린다. 이후에는 설정이 바뀔 때마다 백그라운드가 올린다
+        // 켜는 순간의 설정을 자동 백업 칸에 바로 올린다. 이후에는 설정이 바뀔 때마다 백그라운드가 올린다.
         if (on) {
             await run(() => runBackup("auto").then(() => "자동 백업을 켰습니다. 지금 설정을 자동 백업으로 올렸습니다."), "자동 백업을 켰지만 첫 백업을 올리지 못했습니다.");
         }
@@ -97,7 +97,7 @@ export function DataTab() {
             "클립보드로 내보내지 못했습니다."
         );
 
-    // run()을 거치지 않는다. loading이 가져오기 버튼을 막으면 다이얼로그를 닫을 때 포커스가 그 버튼으로 돌아가지 못한다
+    // run()을 거치지 않는다. loading이 가져오기 버튼을 막으면 다이얼로그를 닫을 때 포커스가 그 버튼으로 돌아가지 못한다.
     const submitImport = async (text: string): Promise<string | undefined> => {
         try {
             await writeSettings(parseImport(text), "merge");
@@ -110,7 +110,7 @@ export function DataTab() {
 
     const clearData = () =>
         run(async () => {
-            // 자동 백업이 켜져 있으면 1분 뒤 빈 설정이 클라우드 백업을 덮어쓰므로 먼저 끈다
+            // 자동 백업이 켜져 있으면 1분 뒤 빈 설정이 클라우드 백업을 덮어쓰므로 먼저 끈다.
             const wasAuto = await backupStorage.auto.getValue();
             if (wasAuto) await backupStorage.auto.setValue(false);
 
@@ -133,7 +133,7 @@ export function DataTab() {
                 actions={
                     <Text as="label" size="2">
                         <Flex gap="2" align="center">
-                            {/* 자동 칸은 기기끼리 같이 쓰고 켜는 즉시 이 기기 설정으로 덮인다. 새 기기에서 켰다가 복원할 백업을 잃지 않게 먼저 묻는다 */}
+                            {/* 자동 칸은 기기끼리 같이 쓰고 켜는 즉시 이 기기 설정으로 덮인다. 새 기기에서 켰다가 복원할 백업을 잃지 않게 먼저 묻는다. */}
                             <Switch checked={autoBackup} disabled={loading}
                                     onCheckedChange={(on) => (on && cloud.auto ? setAutoConfirm(true) : void toggleAutoBackup(on))}/>
                             자동 백업
@@ -144,12 +144,12 @@ export function DataTab() {
                 <Text as="p" size="2" color="gray">
                     수동 백업: {formatTime(cloud.manual?.createdAt ?? 0)} · 자동 백업: {formatTime(cloud.auto?.createdAt ?? 0)}
                 </Text>
-                {/* 한도를 넘으면 백업이 실패하므로 가까워진 것을 미리 보인다. 수동·자동 두 칸이 한도를 나눠 쓴다 */}
+                {/* 한도를 넘으면 백업이 실패하므로 가까워진 것을 미리 보인다. 수동·자동 두 칸이 한도를 나눠 쓴다. */}
                 <Text as="p" size="2" color={cloud.used > CLOUD_QUOTA * 0.8 ? "orange" : "gray"} mb="3">
                     클라우드 사용량: {kilobytes(cloud.used)} / {kilobytes(CLOUD_QUOTA)}
                     {(cloud.manual || cloud.auto) && ` (수동 ${kilobytes(cloud.manual?.size ?? 0)} · 자동 ${kilobytes(cloud.auto?.size ?? 0)})`}
                 </Text>
-                {/* 복원 버튼을 Dialog.Trigger로 둬야 닫을 때 Radix가 그 버튼으로 포커스를 돌려준다 */}
+                {/* 복원 버튼을 Dialog.Trigger로 둬야 닫을 때 Radix가 그 버튼으로 포커스를 돌려준다. */}
                 <Dialog.Root open={restoreOpen} onOpenChange={setRestoreOpen}>
                     <Flex gap="2" wrap="wrap">
                         <Button variant="soft" disabled={loading} onClick={() => void backupCloud()}>
@@ -163,7 +163,7 @@ export function DataTab() {
                     </Flex>
 
                     <Dialog.Content maxWidth="420px" onCloseAutoFocus={(ev) => {
-                        // 복원 중에는 복원 버튼이 막혀 Radix가 포커스를 돌려주지 못하므로 가까운 조상(탭 패널)으로 돌린다
+                        // 복원 중에는 복원 버튼이 막혀 Radix가 포커스를 돌려주지 못하므로 가까운 조상(탭 패널)으로 돌린다.
                         if (!restoreRef.current?.disabled) return;
                         ev.preventDefault();
                         focusPanel(restoreRef.current);

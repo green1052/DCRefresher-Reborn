@@ -51,7 +51,7 @@ describe("prepareComments", () => {
         const preData = preDataOf();
         const list = prepareComments([comment("1", "a", {nicktype: "COMMENT_BOY"}), comment("2", "b", {is_delete: "2"}), comment("3", "c", {del_yn: "Y"})], preData, false);
         expect(list.map(({no, is_delete}) => `${no}:${is_delete}`)).toEqual(["2:1", "3:1"]);
-        // 보존이 꺼져 있으면 기록하지 않는다
+        // 보존이 꺼져 있으면 기록하지 않는다.
         expect(getEntry(preData)?.seen).toBeUndefined();
         prepareComments([comment("4", "d")], preData, true);
         expect(Object.keys(getEntry(preData)?.seen ?? {})).toEqual(["4"]);
@@ -88,7 +88,7 @@ describe("processComments", () => {
 
         useUiStore.setState({blockView: {...blockView, blur: true}});
         expect(processComments(source, preData)[0]?.blocked).toBe("blur");
-        // 차단 모듈이 꺼져 있으면 가리지 않는다
+        // 차단 모듈이 꺼져 있으면 가리지 않는다.
         useUiStore.setState({blockView: null});
         expect(processComments(source, preData).every(({blocked}) => blocked === undefined)).toBe(true);
     });

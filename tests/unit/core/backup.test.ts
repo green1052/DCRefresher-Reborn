@@ -1,5 +1,5 @@
 // @vitest-environment node
-// jsdom의 Blob에는 stream()이 없어 gzip을 못 한다. 이 모듈은 DOM을 쓰지 않는다
+// jsdom의 Blob에는 stream()이 없어 gzip을 못 한다. 이 모듈은 DOM을 쓰지 않는다.
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
@@ -18,7 +18,7 @@ const local = {
     "refresher:module:userinfo:data": {ratio: {}}
 };
 
-// fake-browser에는 getBytesInUse가 없다 (실제 브라우저가 한도에 쓰는 값이라 여기서는 0으로 둔다)
+// fake-browser에는 getBytesInUse가 없다 (실제 브라우저가 한도에 쓰는 값이라 여기서는 0으로 둔다).
 beforeEach(() => {
     vi.spyOn(fakeBrowser.storage.sync, "getBytesInUse").mockResolvedValue(0 as never);
 });
@@ -54,7 +54,7 @@ describe("runBackup / readCloudBackup", () => {
     });
 
     it("큰 설정은 8KB 조각 여러 개로 나뉘고, 줄어들면 남는 조각을 지운다", async () => {
-        // 무작위 문자열은 압축이 안 돼 조각이 여럿 나온다
+        // 무작위 문자열은 압축이 안 돼 조각이 여럿 나온다.
         const big = Array.from({length: 40}, () => Array.from(crypto.getRandomValues(new Uint8Array(400)), (byte) => byte.toString(16).padStart(2, "0")).join(""));
         await fakeBrowser.storage.local.set({"refresher:memo:NICK": Object.fromEntries(big.map((text, index) => [index, {text, color: "#000"}]))});
         await runBackup("auto");

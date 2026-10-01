@@ -7,7 +7,7 @@ const SEARCH_CLASS = "refresherTitleSearch";
 
 const hexBytes = (hex: string): number[] => Array.from(hex.match(/../g) ?? [], (byte) => parseInt(byte, 16));
 
-/** 디시 이미지 주소의 id는 올린 갤러리 아이디를 MD5("dcinside")와 XOR한 값이다. 아이디는 16자까지 담기고, 미니 갤러리는 "mi$"가 붙는다 */
+/** 디시 이미지 주소의 id는 올린 갤러리 아이디를 MD5("dcinside")와 XOR한 값이다. 아이디는 16자까지 담기고, 미니 갤러리는 "mi$"가 붙는다. */
 const IMAGE_ID_KEY = hexBytes("4dddb04685b258c60edfb6d576b1445d");
 
 const uploadedGallery = (src: string): string | undefined => {
@@ -16,10 +16,10 @@ const uploadedGallery = (src: string): string | undefined => {
     return id ? String.fromCharCode(...hexBytes(id).map((byte, index) => byte ^ IMAGE_ID_KEY[index % IMAGE_ID_KEY.length]!)) : undefined;
 };
 
-/** 디시에서 받은 이미지의 파일 이름: 갤러리아이디-날짜-시각-번호(-resize).확장자 */
+/** 디시에서 받은 이미지의 파일 이름: 갤러리아이디-날짜-시각-번호(-resize).확장자. */
 const DOWNLOADED_NAME = /^([a-z0-9_]+)-\d{8}-\d{6}-\d{3}(?:-resize)?\.\w+$/;
 
-/** 다른 갤러리에서 올린 본문 이미지와, 다른 갤러리에서 받은 첨부 파일을 제목 위에 알린다 */
+/** 다른 갤러리에서 올린 본문 이미지와, 다른 갤러리에서 받은 첨부 파일을 제목 위에 알린다. */
 const showImageOrigin = (head: Element): void => {
     const gallery = queryString("id") ?? "";
     const own = new Set([gallery, `mi$${gallery}`].map((id) => id.slice(0, 16)));
@@ -29,7 +29,7 @@ const showImageOrigin = (head: Element): void => {
     };
 
     const media = document.querySelectorAll<HTMLImageElement | HTMLVideoElement>(".write_div :is(img:not(.written_dccon, .og-img), video)");
-    // 늦게 불러오는 이미지는 data-original, GIF를 바꾼 영상은 data-src에 주소가 있다
+    // 늦게 불러오는 이미지는 data-original, GIF를 바꾼 영상은 data-src에 주소가 있다.
     for (const [index, element] of media.entries()) check(uploadedGallery(element.dataset.original ?? element.dataset.src ?? element.src), `${index + 1}번`);
     for (const [index, item] of document.querySelectorAll(".appending_file li").entries()) {
         check(DOWNLOADED_NAME.exec(item.textContent?.trim() ?? "")?.[1], `첨부 ${index + 1}번`);
@@ -40,7 +40,7 @@ const showImageOrigin = (head: Element): void => {
     head.prepend(Object.assign(document.createElement("p"), {className: ORIGIN_CLASS, textContent: `다른 갤러리의 이미지: ${text}`}));
 };
 
-/** 제목이 같은 글을 디시 통합검색에서 찾는다. 검색은 낱말 단위라 제목이 똑같은 글만 추리고, 이 글은 뺀다 */
+/** 제목이 같은 글을 디시 통합검색에서 찾는다. 검색은 낱말 단위라 제목이 똑같은 글만 추리고, 이 글은 뺀다. */
 const searchSameTitle = async (button: HTMLButtonElement, title: string): Promise<void> => {
     const {showToast} = useUiStore.getState();
     const openResults = {label: "검색 결과 보기", run: () => window.open(postSearchUrl(title), "_blank", "noopener")};
@@ -78,12 +78,12 @@ export const removeViewTools = (): void => {
     for (const element of document.querySelectorAll(`.${ORIGIN_CLASS}, .${SEARCH_CLASS}`)) element.remove();
 };
 
-/** 글 보기 머리(.gallview_head)에 켠 도구를 다시 그린다 */
+/** 글 보기 머리(.gallview_head)에 켠 도구를 다시 그린다. */
 export const renderViewTools = (show: { imageOrigin: boolean; titleSearch: boolean }): void => {
     removeViewTools();
     const head = document.querySelector(".gallview_head");
     if (!head) return;
-    // 개념글은 다른 갤러리의 글을 옮긴 것이라 이미지 출처는 언제나 다르다
+    // 개념글은 다른 갤러리의 글을 옮긴 것이라 이미지 출처는 언제나 다르다.
     if (show.imageOrigin && queryString("id") !== "dcbest") showImageOrigin(head);
     if (show.titleSearch) addTitleSearch(head);
 };

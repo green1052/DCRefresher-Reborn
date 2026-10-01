@@ -6,7 +6,7 @@ test.describe("글 목록", () => {
         await expect(badges).toHaveCount(2);
         await expect(badges.first()).toHaveText("(user3)");
         await expect(listPage.refreshButton()).toHaveText("자동 새로고침: 켜짐");
-        // 오버레이는 필요할 때까지 띄우지 않는다
+        // 오버레이는 필요할 때까지 띄우지 않는다.
         await expect(listPage.overlay()).toHaveCount(0);
     });
 
@@ -45,7 +45,7 @@ test.describe("미리보기", () => {
         await expect(frame.getByText("스레드 1개, 총 댓글 2개")).toBeVisible();
         await expect(listPage.page).toHaveURL(/\/board\/view\/\?id=test&no=3/);
 
-        // 정화: 본문 이미지는 lazy로, 오버레이의 Radix 버튼은 스타일이 붙어 있다
+        // 정화: 본문 이미지는 lazy로, 오버레이의 Radix 버튼은 스타일이 붙어 있다.
         await expect(frame.locator(".refresher-preview-contents img")).toHaveAttribute("loading", "lazy");
         const styled = await frame.locator(".rt-BaseButton").first().evaluate((element) => getComputedStyle(element).cursor === "pointer");
         expect(styled).toBe(true);
@@ -103,7 +103,7 @@ test.describe("유저 버블", () => {
         await bubble.getByRole("button", {name: "유저 차단"}).click();
 
         await expect(listPage.toast()).toContainText("차단 목록에 추가했습니다.");
-        // 스크린 리더 알림 칸에도 들어간다
+        // 스크린 리더 알림 칸에도 들어간다.
         await expect(listPage.overlay().getByRole("status")).toContainText("차단 목록에 추가했습니다.");
         await expect(listPage.rows().first()).toHaveClass(/refresherBlocked/);
         expect(await storage.get("refresher:block:ID")).toMatchObject([{content: "user3", extra: "고닉"}]);

@@ -16,7 +16,7 @@ describe("sanitizeHtml", () => {
         expect(clean).not.toContain("display");
         expect(clean).not.toContain("background-image");
         expect(clean).not.toContain("margin-top");
-        // 남는 서식이 없으면 style 속성째 뺀다
+        // 남는 서식이 없으면 style 속성째 뺀다.
         expect(sanitizeHtml("<p style=\"position: fixed\">a</p>")).toBe("<p>a</p>");
     });
 

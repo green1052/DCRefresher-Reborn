@@ -2,7 +2,7 @@ import DOMPurify, {type Config, type DOMPurify as Purifier} from "dompurify";
 
 /**
  * 움직이는 디시콘과 본문 움짤(gif를 mp4로 바꾼 것)도 <video>로 온다. 디시는 둘 다 data-src에 대신 보일 gif 주소를 달아 둔다.
- * 그것이나 디시콘 표시(written_dccon 클래스, dccon.php 주소)로 일반 동영상과 구분한다
+ * 그것이나 디시콘 표시(written_dccon 클래스, dccon.php 주소)로 일반 동영상과 구분한다.
  */
 const isGifVideo = (node: Element): boolean =>
     node.hasAttribute("data-src") || node.classList.contains("written_dccon") || /dccon\.php/.test(node.getAttribute("src") ?? "");
@@ -10,7 +10,7 @@ const isGifVideo = (node: Element): boolean =>
 // 인라인 style은 글 서식(글자·색·표·여백·크기)만 남긴다. 위치·표시(display)·배경 이미지 같은 나머지는
 // 창을 벗어나거나 숨기기 규칙(스텔스·관리자 가림)을 이기거나 원격 이미지를 불러오므로 지운다.
 // 음수 여백은 본문을 창 머리(제목·작성자·버튼)나 댓글 위로 끌어올려 덮으므로 지운다 (calc(0px - 400px)도 '-'가 든다).
-// 이미지·동영상·유튜브의 높이는 CSS의 height: auto(유튜브는 16:9)가 이겨야 창보다 넓은 것이 줄어들 때 비율이 맞는다
+// 이미지·동영상·유튜브의 높이는 CSS의 height: auto(유튜브는 16:9)가 이겨야 창보다 넓은 것이 줄어들 때 비율이 맞는다.
 const KEPT_STYLE = /^(?:color|background-color|font-.+|text-(?:align|indent|decoration|wrap).*|white-space.*|line-height|letter-spacing|word-spacing|vertical-align|border-(?!image).+|padding.*|margin.*|width|height|table-layout)$/;
 
 const autoHeight = (node: Element): boolean =>
@@ -30,9 +30,9 @@ const keepFormatting = (node: HTMLElement | SVGElement): void => {
 // 동영상에는 재생 컨트롤을 붙인다. 디시 본문은 컨트롤 없이 페이지 스크립트로 재생하기 때문이다.
 // 디시콘·움짤은 디시처럼 컨트롤 없이 자동 반복 재생한다.
 // 이미지·iframe은 lazy로 두어 스텔스·이미지 차단으로 숨긴 것은 받지 않게 한다.
-// 링크(# 앵커 제외)는 새 탭으로 연다. DOMPurify가 target을 지우므로 두면 갤러리 탭이 링크로 넘어가 목록과 미리보기를 잃는다
+// 링크(# 앵커 제외)는 새 탭으로 연다. DOMPurify가 target을 지우므로 두면 갤러리 탭이 링크로 넘어가 목록과 미리보기를 잃는다.
 const onAttributes = (node: Element): void => {
-    // MathML(<math>) 같은 나머지 요소는 서식만 골라 지울 수 없어(HTMLElement·SVGElement가 아니다) style을 통째로 지운다
+    // MathML(<math>) 같은 나머지 요소는 서식만 골라 지울 수 없어(HTMLElement·SVGElement가 아니다) style을 통째로 지운다.
     if (node.hasAttribute("style")) {
         if (node instanceof HTMLElement || node instanceof SVGElement) keepFormatting(node);
         else node.removeAttribute("style");
@@ -49,7 +49,7 @@ const onAttributes = (node: Element): void => {
     }
 };
 
-// 디시 편집기로 넣은 유튜브는 <embed src="https://www.youtube.com/embed/…">다. DOMPurify는 embed를 버리므로 같은 주소의 iframe으로 바꾼다
+// 디시 편집기로 넣은 유튜브는 <embed src="https://www.youtube.com/embed/…">다. DOMPurify는 embed를 버리므로 같은 주소의 iframe으로 바꾼다.
 const YOUTUBE_EMBED = /<embed\s[^>]*?src="(https:\/\/www\.youtube(?:-nocookie)?\.com\/embed\/[^"]+)"[^>]*>/gi;
 const embedYoutube = (html: string): string =>
     html.includes("<embed") ? html.replace(YOUTUBE_EMBED, "<iframe src=\"$1\" width=\"560\" height=\"315\" allowfullscreen></iframe>") : html;
@@ -58,7 +58,7 @@ const embedYoutube = (html: string): string =>
 // <style>은 shadow 루트 전체(창·댓글·가린 내용)에 걸리고, 폼 요소는 본문에 필요 없는데 가짜 입력칸을 만들 수 있어 뺀다.
 // SVG <feImage>와 background 속성은 원격 이미지를 불러오는데 미디어 숨기기(태그·CSS)에 걸리지 않는다. 본문에 쓸 일도 없어 뺀다.
 // popover·command 속성은 본문 버튼으로 <dialog>나 팝오버를 최상위 층에 띄운다. 남긴 크기·배경색과 합치면 화면 전체를 덮는 가짜 창이 되어 뺀다.
-// IN_PLACE: sanitizeHtml이 <template> 안의 요소를 그 자리에서 정화한다
+// IN_PLACE: sanitizeHtml이 <template> 안의 요소를 그 자리에서 정화한다.
 const FORBIDDEN = ["style", "form", "input", "textarea", "select", "feimage"];
 const BASE: Config = {
     FORBID_ATTR: ["background", "popover", "popovertarget", "popovertargetaction", "commandfor", "command"],
@@ -67,11 +67,11 @@ const BASE: Config = {
     ADD_ATTR: ["allowfullscreen", "frameborder", "allow", "scrolling"],
     IN_PLACE: true
 };
-// SVG <image>도 원격 이미지를 불러온다
+// SVG <image>도 원격 이미지를 불러온다.
 const NO_MEDIA: Config = {...BASE, FORBID_TAGS: [...FORBIDDEN, "img", "video", "iframe", "audio", "embed", "source", "picture", "image"]};
 
 // 설정을 고정한 인스턴스를 쓴다. sanitize(html, cfg)는 호출마다 허용 목록을 다시 만든다.
-// 인스턴스는 처음 쓸 때 만든다(정화할 일이 없는 페이지에서는 만들지 않게)
+// 인스턴스는 처음 쓸 때 만든다(정화할 일이 없는 페이지에서는 만들지 않게).
 const make = (cfg: Config): Purifier => {
     const purify = DOMPurify();
     purify.setConfig(cfg);
@@ -88,7 +88,7 @@ let template: HTMLTemplateElement | undefined;
  * 디시 게시글/댓글 HTML을 오버레이에 넣을 수 있게 정화한다.
  * 오버레이도 페이지 DOM이라 인라인 핸들러가 페이지 컨텍스트에서 실행되므로 반드시 거쳐야 한다.
  * 문자열을 넘기면 DOMPurify가 호출마다 새 문서를 만드는데, <video>(디시콘 등)가 든 문서는 크롬에서 해제되지 않는다.
- * 그래서 재사용하는 <template> 하나(스크립트·로딩이 없는 문서)에 넣고 그 자리에서 정화한다
+ * 그래서 재사용하는 <template> 하나(스크립트·로딩이 없는 문서)에 넣고 그 자리에서 정화한다.
  */
 export const sanitizeHtml = (html: string, options: { stripMedia?: boolean } = {}): string => {
     const purify = options.stripMedia ? (noMedia ??= make(NO_MEDIA)) : (base ??= make(BASE));
@@ -104,14 +104,14 @@ export const sanitizeHtml = (html: string, options: { stripMedia?: boolean } = {
 
 /**
  * 직렬화된 HTML(innerHTML·DOMPurify 결과) → 차단어 검사용 평문.
- * 태그만 떼면 &amp; 같은 엔티티가 남아 'R&B', '<3' 같은 차단어가 안 걸린다
+ * 태그만 떼면 &amp; 같은 엔티티가 남아 'R&B', '<3' 같은 차단어가 안 걸린다.
  */
 export const htmlToText = (html: string): string => {
     // 직렬화는 속성값 안의 '>'를 이스케이프하지 않는다.
-    // 속성값(직렬화 결과는 늘 큰따옴표)과 주석을 통째로 건너뛰어야 속성 글자가 본문으로 새지 않는다
+    // 속성값(직렬화 결과는 늘 큰따옴표)과 주석을 통째로 건너뛰어야 속성 글자가 본문으로 새지 않는다.
     const text = html.includes("<") ? html.replace(/<!--[\s\S]*?-->|<(?:[^>"]|"[^"]*")*>/g, " ") : html;
     if (!text.includes("&")) return text;
 
-    // 직렬화는 텍스트의 &, <, >, U+00A0만 이스케이프한다. &amp;는 마지막에 풀어야 '&amp;lt;'가 '<'로 두 번 풀리지 않는다
+    // 직렬화는 텍스트의 &, <, >, U+00A0만 이스케이프한다. &amp;는 마지막에 풀어야 '&amp;lt;'가 '<'로 두 번 풀리지 않는다.
     return text.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&");
 };

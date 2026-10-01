@@ -8,7 +8,7 @@ import {setting, testModule, tick} from "../../../helpers";
 const settingsOf = (id: string, value: unknown) => fakeBrowser.storage.local.set({[`refresher:module:${id}:settings`]: value});
 const enables = (value: Record<string, boolean>) => fakeBrowser.storage.local.set({"refresher:modules": value});
 
-// 레지스트리는 모듈 단위 싱글턴이라 테스트마다 다른 id를 쓴다
+// 레지스트리는 모듈 단위 싱글턴이라 테스트마다 다른 id를 쓴다.
 describe("loadAll", () => {
     it("한 번의 읽기로 on/off와 설정을 맞추고, 저장소 변경을 따라 켜고 끄고 onChanged를 부른다", async () => {
         await enables({a: true, b: true});
@@ -28,16 +28,16 @@ describe("loadAll", () => {
             revoke
         });
         const b = testModule({id: "b", setup: () => "b-api"});
-        // urls가 이 문서와 맞지 않는 모듈은 등록조차 되지 않는다
+        // urls가 이 문서와 맞지 않는 모듈은 등록조차 되지 않는다.
         const c = testModule({id: "c", urls: [/never/], setup: vi.fn()});
 
         const getSpy = vi.spyOn(fakeBrowser.storage.local, "get");
         await loadAll([a, b, c], new AbortController().signal);
-        // on/off + 모듈 설정 전부를 storage.local.get 한 번으로 읽는다 (마지막 sync 확인 읽기 하나가 더 있다)
+        // on/off + 모듈 설정 전부를 storage.local.get 한 번으로 읽는다 (마지막 sync 확인 읽기 하나가 더 있다).
         expect(getSpy).toHaveBeenCalledTimes(2);
         expect(getSpy.mock.calls[0]?.[0]).toEqual(["refresher:modules", "refresher:module:a:settings", "refresher:module:b:settings"]);
 
-        // 저장값은 스키마에 맞춰지고(9999 → 10), 없는 키는 기본값이다
+        // 저장값은 스키마에 맞춰지고(9999 → 10), 없는 키는 기본값이다.
         expect(setup).toHaveBeenCalledWith({size: 10, flag: true});
         expect(getModuleApi("b" as never)).toBe("b-api");
         expect(c.setup).not.toHaveBeenCalled();

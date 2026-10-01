@@ -49,7 +49,7 @@ export const settings = {
 
 export type Ctx = ModuleContext<typeof settings>;
 
-/** 팝업 '자동 새로고침 일시정지' 토글. index.ts의 pageToggles가 동작을 붙인다 */
+/** 팝업 '자동 새로고침 일시정지' 토글. index.ts의 pageToggles가 동작을 붙인다. */
 export const PAUSE_TOGGLE = {id: "pause", label: "자동 새로고침 일시정지", icon: Pause};
 
 export default defineModuleMeta({

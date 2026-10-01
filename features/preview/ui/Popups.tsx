@@ -12,7 +12,7 @@ import {objectEntries} from "@/utils/typed";
 import {DcconInfoPopup} from "./DcconInfoPopup";
 import {MANAGE_LABELS, type ManageKind, usePreviewStore} from "./previewStore";
 
-/** 고를 수 있는 값만 onChange로 넘긴다 (RadioGroup은 string을 준다) */
+/** 고를 수 있는 값만 onChange로 넘긴다 (RadioGroup은 string을 준다). */
 const RadioGrid = <T extends string, >({label, items, value, onChange}: {
     label: string;
     items: readonly (readonly [T, string])[];
@@ -40,16 +40,16 @@ const BlockPopup = () => {
     const focus = useOpenerFocus();
 
     const submit = async (): Promise<void> => {
-        // 연타로 차단 요청이 두 번 가지 않게 한다
+        // 연타로 차단 요청이 두 번 가지 않게 한다.
         if (!preData || sending) return;
         setSending(true);
         const signal = usePreviewStore.getState().signalId;
 
         const done = await usePreviewStore.getState().requestBlock(preData, {avoidHour: day, avoidReason: reason, avoidReasonTxt: reason === "0" ? custom : "", delChk, userTypeChk});
 
-        // 그새 다른 글로 넘어갔으면 차단 창과 미리보기는 그 글 것이라 알림만 띄우고 건드리지 않는다. 글도 지웠으면 창은 이미 닫혔다
+        // 그새 다른 글로 넘어갔으면 차단 창과 미리보기는 그 글 것이라 알림만 띄우고 건드리지 않는다. 글도 지웠으면 창은 이미 닫혔다.
         if (usePreviewStore.getState().signalId !== signal) return;
-        // 실패하면 입력을 그대로 두어 다시 보낼 수 있게 한다
+        // 실패하면 입력을 그대로 두어 다시 보낼 수 있게 한다.
         if (!done) setSending(false);
         else usePreviewStore.setState({blockPopup: false});
     };
@@ -120,12 +120,12 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
                 }
             }}
         >
-            {/* 섀도 루트 안에선 Dialog의 FocusScope가 입력칸의 autoFocus를 덮으므로 자동 포커스를 막는다 (MemoDialog와 같음) */}
+            {/* 섀도 루트 안에선 Dialog의 FocusScope가 입력칸의 autoFocus를 덮으므로 자동 포커스를 막는다 (MemoDialog와 같음). */}
             <Dialog.Content container={overlay.portal} maxWidth="320px" onOpenAutoFocus={(ev) => ev.preventDefault()}
                             onCloseAutoFocus={onCloseAutoFocus}>
                 <Dialog.Title>자동입력 방지 코드</Dialog.Title>
                 <img src={captcha.url} alt="자동입력 방지 코드" style={{display: "block", width: "100%", borderRadius: "var(--radius-3)"}}/>
-                {/* Enter로 보낸다. 폼 제출이라 한글 조합을 끝내는 Enter로는 브라우저가 보내지 않는다 */}
+                {/* Enter로 보낸다. 폼 제출이라 한글 조합을 끝내는 Enter로는 브라우저가 보내지 않는다. */}
                 <form onSubmit={(ev) => {
                     ev.preventDefault();
                     send();
@@ -147,7 +147,7 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
     );
 };
 
-/** 관리 버튼 두 번 누르기 확인 시간(ms). 이 안에 같은 버튼을 다시 눌러야 실행한다 */
+/** 관리 버튼 두 번 누르기 확인 시간(ms). 이 안에 같은 버튼을 다시 눌러야 실행한다. */
 const CONFIRM_WINDOW = 3000;
 
 interface AdminAction {
@@ -158,7 +158,7 @@ interface AdminAction {
     icon: ReactNode;
     active?: boolean;
     danger?: boolean;
-    /** 두 번 누르기 없이 바로 실행한다. 차단은 옵션 창을 열 뿐이라 그 창이 확인을 겸한다 */
+    /** 두 번 누르기 없이 바로 실행한다. 차단은 옵션 창을 열 뿐이라 그 창이 확인을 겸한다. */
     instant?: boolean;
     run: () => void;
 }
@@ -169,17 +169,17 @@ interface AdminAction {
  * 공지·개념글·끌올·삭제는 두 번 눌러야 실행하고, 첫 번째는 토스트로 알린다.
  * 다른 버튼을 누르거나, 늦거나, 다른 글로 넘어가면 처음부터 다시 센다.
  * Frame이 미리보기 포털 안에 그린다. 나중에 뜬 창(차단·메모 등)이 패널 위를 덮어야
- * 한 번 클릭에 창 닫기와 관리 동작이 같이 일어나지 않는다
+ * 한 번 클릭에 창 닫기와 관리 동작이 같이 일어나지 않는다.
  */
 export const AdminPanel = () => {
     const notice = usePreviewStore((s) => s.notice);
     const recommend = usePreviewStore((s) => s.recommend);
     const requestManage = usePreviewStore((s) => s.requestManage);
     const keys = usePreviewStore((s) => s.shortcutKeys);
-    // 첫 번째로 누른 버튼. 바뀌어도 다시 그릴 필요가 없어 ref에 둔다
+    // 첫 번째로 누른 버튼. 바뀌어도 다시 그릴 필요가 없어 ref에 둔다.
     const armed = useRef<{ id: AdminAction["id"]; signal: number; at: number } | null>(null);
 
-    // key는 고정된 id로 준다. 라벨을 key로 쓰면 공지·개념글을 토글할 때 버튼이 새로 마운트돼 포커스가 사라진다
+    // key는 고정된 id로 준다. 라벨을 key로 쓰면 공지·개념글을 토글할 때 버튼이 새로 마운트돼 포커스가 사라진다.
     const actions: AdminAction[] = [
         {id: "notice", label: notice ? "공지 해제" : "공지 등록", confirm: MANAGE_LABELS.notice[notice ? 1 : 0], icon: <Megaphone size={14}/>, active: notice, run: () => requestManage("notice")},
         {id: "recommend", label: recommend ? "개념글 해제" : "개념글 등록", confirm: MANAGE_LABELS.recommend[recommend ? 1 : 0], icon: <Star size={14}/>, active: recommend, run: () => requestManage("recommend")},
@@ -215,12 +215,12 @@ export const AdminPanel = () => {
                     <Button
                         key={action.id}
                         size="2"
-                        // variant는 soft로 고정한다. ghost와 섞으면 Radix 여백이 달라 버튼이 흔들리므로 상태는 색으로 보인다
+                        // variant는 soft로 고정한다. ghost와 섞으면 Radix 여백이 달라 버튼이 흔들리므로 상태는 색으로 보인다.
                         variant="soft"
                         color={action.danger ? "red" : action.active ? undefined : "gray"}
                         highContrast={action.active}
                         style={{justifyContent: "flex-start"}}
-                        // 눌러도 포커스를 가져가지 않는다. 첫 클릭 뒤 스페이스로 스크롤하면 포커스된 버튼이 눌려 두 번째 확인이 된다
+                        // 눌러도 포커스를 가져가지 않는다. 첫 클릭 뒤 스페이스로 스크롤하면 포커스된 버튼이 눌려 두 번째 확인이 된다.
                         onMouseDown={(ev) => ev.preventDefault()}
                         onClick={() => press(action)}
                     >

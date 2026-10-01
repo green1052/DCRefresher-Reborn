@@ -27,11 +27,11 @@ describe("migrateV5", () => {
         });
 
         expect(next["refresher:modules"]).toEqual({block: false, manage: true});
-        // 이미 있는 v6 값이 이긴다
+        // 이미 있는 v6 값이 이긴다.
         expect(next["refresher:module:preview:settings"]).toEqual({previewWidth: 1000});
-        // 관리 모듈의 글댓비 설정은 유저 정보로 가고, 관리가 켜져 있었으므로 값이 남는다
+        // 관리 모듈의 글댓비 설정은 유저 정보로 가고, 관리가 켜져 있었으므로 값이 남는다.
         expect(next["refresher:module:userinfo:settings"]).toEqual({checkRatio: true, alarmRatio: 20});
-        // :mode가 없는 유형은 v5 기본(SAME)으로 고정한다
+        // :mode가 없는 유형은 v5 기본(SAME)으로 고정한다.
         expect(next["refresher:block:defaults"]).toEqual({NICK: "CONTAIN", TITLE: "SAME"});
         expect(next["refresher:block:NICK"]).toEqual([{content: "a", isRegex: false}]);
         expect(next["refresher:memo:UID"]).toEqual({u: {text: "m", color: "#fff"}});

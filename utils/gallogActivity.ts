@@ -5,18 +5,18 @@ import {isFresh, useUiStore} from "@/stores/ui";
 
 export type ActivityState = GallogActivity | undefined | "loading" | "error";
 
-/** 갤로그 글/댓글 수. uid가 없으면(유동) 요청하지 않고 undefined다 */
+/** 갤로그 글/댓글 수. uid가 없으면(유동) 요청하지 않고 undefined다. */
 export const useGallogActivity = (uid: string | undefined): ActivityState => {
     const [state, setState] = useState<ActivityState>(uid ? "loading" : undefined);
 
     useEffect(() => {
-        // 버블처럼 계속 마운트된 곳은 여기서 비워야 유동 유저에 이전 고정닉의 글/댓글 수가 남지 않는다
+        // 버블처럼 계속 마운트된 곳은 여기서 비워야 유동 유저에 이전 고정닉의 글/댓글 수가 남지 않는다.
         if (!uid) {
             setState(undefined);
             return;
         }
 
-        // userinfo 글댓비 캐시에 1시간 안에 받은 값이 있으면 그 값을 쓴다. 버블과 작성자 배지의 숫자가 같아지고 요청도 줄어든다
+        // userinfo 글댓비 캐시에 1시간 안에 받은 값이 있으면 그 값을 쓴다. 버블과 작성자 배지의 숫자가 같아지고 요청도 줄어든다.
         const known = useUiStore.getState().ratios?.cache;
         const cached = known && Object.hasOwn(known, uid) ? known[uid] : undefined;
         if (isFresh(cached)) {

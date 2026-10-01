@@ -10,7 +10,7 @@ export function ShortcutTab() {
     useEffect(() => {
         const load = (): void => void browser.commands.getAll().then(setShortcuts);
         load();
-        // 단축키 변경 이벤트가 없으므로 브라우저 설정에서 바꾸고 돌아올 때(focus) 다시 읽는다
+        // 단축키 변경 이벤트가 없으므로 브라우저 설정에서 바꾸고 돌아올 때(focus) 다시 읽는다.
         window.addEventListener("focus", load);
         return () => window.removeEventListener("focus", load);
     }, []);
@@ -22,9 +22,9 @@ export function ShortcutTab() {
                 <Button
                     variant="soft"
                     onClick={() =>
-                        // Firefox는 tabs.create로 about:addons를 열 수 없어 전용 API(137+)를 쓴다
+                        // Firefox는 tabs.create로 about:addons를 열 수 없어 전용 API(137+)를 쓴다.
                         void (import.meta.env.FIREFOX
-                            // @ts-ignore 파이어폭스 전용 API라 크롬 기준 타입(wxt/browser)에 없다
+                            // @ts-ignore 파이어폭스 전용 API라 크롬 기준 타입(wxt/browser)에 없다.
                             ? browser.commands.openShortcutSettings()
                             : browser.tabs.create({url: "chrome://extensions/shortcuts"}))
                     }

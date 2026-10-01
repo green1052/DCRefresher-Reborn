@@ -1,13 +1,13 @@
 /**
  * 가짜 디시 페이지. 콘텐츠 스크립트가 보는 최소한의 마크업만 담는다 (디시가 마크업을 바꾸면 여기와 모듈을 같이 고친다).
- * fixtures.ts가 dcinside.com 주소를 이것으로 응답해 실제 디시에는 요청이 가지 않는다
+ * fixtures.ts가 dcinside.com 주소를 이것으로 응답해 실제 디시에는 요청이 가지 않는다.
  */
 
 export interface FakeRow {
     no: number;
     title: string;
     nick: string;
-    /** 유동은 빈 문자열 */
+    /** 유동은 빈 문자열. */
     uid: string;
     ip?: string;
     replies?: number;
@@ -39,7 +39,7 @@ export const listPage = (rows: FakeRow[] = ROWS): string => `<!DOCTYPE html><htm
 </div></article></div>
 </body></html>`;
 
-// 글 페이지는 미리보기가 받아 읽기도 하고, 좌클릭 이동으로 실제로 열리기도 한다. 열릴 때 아래 디시 스크립트가 쓰는 전역(_d, jQuery)을 흉내 낸다
+// 글 페이지는 미리보기가 받아 읽기도 하고, 좌클릭 이동으로 실제로 열리기도 한다. 열릴 때 아래 디시 스크립트가 쓰는 전역(_d, jQuery)을 흉내 낸다.
 export const viewPage = (no: string): string => `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>글 ${no}</title>
 <script>window._d = () => ""; window.$ = () => ({data() {}});</script></head><body>
 <input type="hidden" id="e_s_n_o" value="token">

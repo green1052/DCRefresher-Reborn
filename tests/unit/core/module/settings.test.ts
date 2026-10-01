@@ -12,7 +12,7 @@ describe("isModuleEnabled", () => {
         expect(isModuleEnabled({id: "a"}, {a: false})).toBe(false);
         expect(isModuleEnabled({id: "a"}, {})).toBe(true);
         expect(isModuleEnabled({id: "a", defaultEnable: false}, {})).toBe(false);
-        // 가져온 설정의 "false" 문자열은 boolean이 아니므로 기본값
+        // 가져온 설정의 "false" 문자열은 boolean이 아니므로 기본값.
         expect(isModuleEnabled({id: "a", defaultEnable: false}, {a: "true"})).toBe(false);
     });
 });
@@ -23,7 +23,7 @@ describe("normalizeSetting", () => {
         expect(normalizeSetting(setting({type: "text", default: "x"}), 3)).toBe("x");
         expect(normalizeSetting(setting({type: "option", default: "a", items: {a: "", b: ""}}), "c")).toBe("a");
         expect(normalizeSetting(setting({type: "option", default: "a", items: {a: "", b: ""}}), "b")).toBe("b");
-        // 프로토타입 키는 항목이 아니다
+        // 프로토타입 키는 항목이 아니다.
         expect(normalizeSetting(setting({type: "option", default: "a", items: {a: ""}}), "constructor")).toBe("a");
     });
 

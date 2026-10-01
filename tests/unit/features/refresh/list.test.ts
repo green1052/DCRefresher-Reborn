@@ -14,7 +14,7 @@ const table = (rows: string[]): HTMLElement => {
 const options = {navigated: false, search: undefined, searchType: null, fadeIn: true, keepDeleted: false};
 const nos = (list: HTMLElement): string[] => Array.from(list.children, (child) => (child as HTMLElement).dataset.no ?? "");
 
-/** 페이지에 목록을 두고 같은 목록으로 한 번 갈아끼운다. 처음 그려진 행은 비교할 틀(outerHTML)이 없어 첫 교체에서 모두 갈아끼워지기 때문이다 */
+/** 페이지에 목록을 두고 같은 목록으로 한 번 갈아끼운다. 처음 그려진 행은 비교할 틀(outerHTML)이 없어 첫 교체에서 모두 갈아끼워지기 때문이다. */
 const mount = (rows: string[]): HTMLElement => {
     const list = table(rows);
     document.body.append(list.closest("table")!);

@@ -58,7 +58,7 @@ describe("slim", () => {
         expect(out).not.toContain("crimson");
         expect(out).not.toContain("mauve");
         expect(out).toContain("@keyframes rt-fade");
-        // 기본 글꼴(우리가 덮어쓴다)만 쓰는 Segoe UI는 빠지고, --code-font-family가 쓰는 Consolas는 남는다
+        // 기본 글꼴(우리가 덮어쓴다)만 쓰는 Segoe UI는 빠지고, --code-font-family가 쓰는 Consolas는 남는다.
         expect(out).not.toContain("Segoe UI (Custom)\";src");
         expect(out).toContain("font-family:\"Consolas (Custom)\";src");
     });

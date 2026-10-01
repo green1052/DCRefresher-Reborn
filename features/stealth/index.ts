@@ -16,16 +16,16 @@ const EYE_OFF_SVG = svg(
 );
 
 interface StealthApi {
-    /** 이번 페이지에서 이미지를 잠시 보이게 했는지 */
+    /** 이번 페이지에서 이미지를 잠시 보이게 했는지. */
     isRevealed(): boolean;
 
     toggle(): void;
 }
 
-// 토글 상태는 CSS가 보는 <html>의 stlth 클래스 하나뿐이다. 버튼·단축키·팝업이 같이 읽는다
+// 토글 상태는 CSS가 보는 <html>의 stlth 클래스 하나뿐이다. 버튼·단축키·팝업이 같이 읽는다.
 const isRevealed = (): boolean => document.documentElement.classList.contains(TEMPORARY_STEALTH);
 
-/** 버튼 문구·아이콘은 현재 상태가 아니라 누르면 할 동작을 보인다 */
+/** 버튼 문구·아이콘은 현재 상태가 아니라 누르면 할 동작을 보인다. */
 const render = (button: HTMLElement): void => {
     const shown = isRevealed();
     button.innerHTML = `<span>${shown ? "이미지 숨기기" : "이미지 보이기"}</span>${shown ? EYE_OFF_SVG : EYE_SVG}`;
@@ -39,14 +39,14 @@ const toggle = (): void => {
 };
 
 const createButton = (): void => {
-    // 죽은 인스턴스(파이어폭스 재주입)가 남긴 버튼은 리스너가 없어 갈아끼운다
+    // 죽은 인스턴스(파이어폭스 재주입)가 남긴 버튼은 리스너가 없어 갈아끼운다.
     for (const element of document.querySelectorAll(CONTROL_BUTTON)) element.remove();
 
     const frame = Object.assign(document.createElement("div"), {className: CONTROL_BUTTON.slice(1)});
-    // 미리보기가 뒤 페이지를 inert로 막을 때 이 버튼은 남긴다 (preview/ui/Frame.tsx)
+    // 미리보기가 뒤 페이지를 inert로 막을 때 이 버튼은 남긴다 (preview/ui/Frame.tsx).
     frame.dataset.refresherUi = "";
 
-    // 키보드로도 누를 수 있게 button으로 만든다. 이름은 안의 문구(누르면 할 동작)다
+    // 키보드로도 누를 수 있게 button으로 만든다. 이름은 안의 문구(누르면 할 동작)다.
     const button = Object.assign(document.createElement("button"), {type: "button", className: "button", id: "tempview"});
     render(button);
     button.addEventListener("click", toggle);
@@ -61,7 +61,7 @@ export default defineModule({
     setup(ctx) {
         document.documentElement.classList.add("refresherStealth");
 
-        // 광고까지 다 받는 load를 기다리면 한참 늦으므로 body가 생기자마자 만든다
+        // 광고까지 다 받는 load를 기다리면 한참 늦으므로 body가 생기자마자 만든다.
         if (document.body) {
             createButton();
         } else {

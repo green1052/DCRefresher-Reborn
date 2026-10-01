@@ -19,7 +19,7 @@ import {type ActivityState, useGallogActivity} from "@/utils/gallogActivity";
 
 import {overlay} from "./shadow";
 
-/** 클릭하면 복사되는 값 한 줄 */
+/** 클릭하면 복사되는 값 한 줄. */
 const CopyRow = ({label, value, onCopy}: { label: string; value: string; onCopy: (value: string) => void }) => (
     <Button variant="ghost" color="gray" size="1" title="클릭하면 복사됩니다." onClick={() => onCopy(value)}
             style={{justifyContent: "space-between", margin: 0}}>
@@ -37,10 +37,10 @@ const formatActivity = (activity: ActivityState): string | undefined => {
     return `${activity.article.toLocaleString()} / ${activity.comment.toLocaleString()}`;
 };
 
-/** 아이디와 IP를 한 줄 "uid (IP)"로 합친다 */
+/** 아이디와 IP를 한 줄 "uid (IP)"로 합친다. */
 const identityValue = ({uid, ip}: { uid?: string; ip?: string }): string | undefined => (uid && ip ? `${uid} (${ip})` : uid || ip);
 
-/** 차단 규칙 하나를 해제한다. 토스트의 되돌리기 버튼으로 다시 걸 수 있다 */
+/** 차단 규칙 하나를 해제한다. 토스트의 되돌리기 버튼으로 다시 걸 수 있다. */
 const unblock = async (type: BlockType, {id, ...fields}: BlockEntry): Promise<void> => {
     const {showToast} = useUiStore.getState();
     const saveFailed = (): void => showToast(SAVE_FAILED, "error");
@@ -50,7 +50,7 @@ const unblock = async (type: BlockType, {id, ...fields}: BlockEntry): Promise<vo
         saveFailed();
         return;
     }
-    // 정규식은 한 규칙이 여러 대상을 막는다
+    // 정규식은 한 규칙이 여러 대상을 막는다.
     const others = fields.isRegex ? " 같은 규칙에 걸린 다른 대상도 풀렸습니다." : "";
     showToast(`차단을 해제했습니다.${others}`, "info", 5000, {
         label: "되돌리기",
@@ -58,7 +58,7 @@ const unblock = async (type: BlockType, {id, ...fields}: BlockEntry): Promise<vo
     });
 };
 
-/** 이 대상을 막고 있는 차단 규칙 목록. 왜 가려졌는지 보여 주고 그 자리에서 풀 수 있게 한다 */
+/** 이 대상을 막고 있는 차단 규칙 목록. 왜 가려졌는지 보여 주고 그 자리에서 풀 수 있게 한다. */
 const BlockRules = ({rules}: { rules: { type: BlockType; entry: BlockEntry }[] }) => (
     <>
         <Separator size="4" my="2"/>
@@ -83,7 +83,7 @@ const BlockRules = ({rules}: { rules: { type: BlockType; entry: BlockEntry }[] }
     </>
 );
 
-/** 디시콘 패키지 전체를 어떻게 차단할지 고른다. 취소하면 아무것도 차단하지 않는다 */
+/** 디시콘 패키지 전체를 어떻게 차단할지 고른다. 취소하면 아무것도 차단하지 않는다. */
 export const DcconPackageDialog = ({target, onClose}: { target: SelectedUser; onClose: () => void }) => {
     const {onCloseAutoFocus} = useOpenerFocus();
     const choose = (dcconPackage: "bundle" | "each"): void => {
@@ -113,20 +113,20 @@ interface BubbleProps {
     onBlockPackage: (target: SelectedUser) => void;
 }
 
-/** 유저 버블. 열 때 마운트되어 연 요소(닉네임 버튼 등)를 기억했다가 닫을 때 그리로 포커스를 돌려준다 */
+/** 유저 버블. 열 때 마운트되어 연 요소(닉네임 버튼 등)를 기억했다가 닫을 때 그리로 포커스를 돌려준다. */
 const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
     const focus = useOpenerFocus();
     const activityState = useGallogActivity(selected.dccon ? undefined : selected.uid);
     const memo = useUserMemo(selected, queryString("id"));
-    // 구독한 목록으로 찾아야 해제했을 때 바로 다시 계산된다
+    // 구독한 목록으로 찾아야 해제했을 때 바로 다시 계산된다.
     const entries = useBlocksStore((s) => s.entries);
     const defaults = useBlocksStore((s) => s.defaults);
     const rules = blockingEntries(selected.dccon ? {DCCON: selected.dccon} : {NICK: selected.nick, ID: selected.uid, IP: selected.ip}, queryString("id") ?? undefined, {entries, defaults});
-    // IP/밴 조회 식에 이 번호를 넣는다. 빠지면 React Compiler가 인자만 보고 메모해 DB를 읽은 뒤에도 옛 값이 남는다
+    // IP/밴 조회 식에 이 번호를 넣는다. 빠지면 React Compiler가 인자만 보고 메모해 DB를 읽은 뒤에도 옛 값이 남는다.
     const dbVersion = useSyncExternalStore(subscribeDatabase, databaseVersion);
 
     // Popover는 스크롤을 따라가지 않으므로 스크롤하면 닫는다.
-    // scroll 이벤트는 shadow root 밖으로 나가지 않으므로 미리보기 안의 스크롤은 루트에서 잡는다
+    // scroll 이벤트는 shadow root 밖으로 나가지 않으므로 미리보기 안의 스크롤은 루트에서 잡는다.
     useEffect(() => {
         const onScroll = (): void => useUiStore.getState().closeBubble();
         const controller = new AbortController();
@@ -144,7 +144,7 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
             () => useUiStore.getState().showToast("복사하지 못했습니다.", "error")
         );
     };
-    // 이벤트로 보내면 차단 모듈이 꺼져 있을 때 받는 쪽이 없어 조용히 무시되므로 직접 부른다
+    // 이벤트로 보내면 차단 모듈이 꺼져 있을 때 받는 쪽이 없어 조용히 무시되므로 직접 부른다.
     const requestBlock = (options: BlockRequestOptions): void => {
         void handleBlockRequest(options, selected);
         close();
@@ -157,13 +157,13 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
 
     return (
         <Popover.Root open onOpenChange={(open) => !open && close()}>
-            {/* Themes Popover.Anchor는 children을 버리므로(3.3.0) 프리미티브 Anchor를 쓴다 */}
+            {/* Themes Popover.Anchor는 children을 버리므로(3.3.0) 프리미티브 Anchor를 쓴다. */}
             <PopoverPrimitive.Anchor asChild>
                 <span className="refresher-anchor" style={{left: bubble.x, top: bubble.y}}/>
             </PopoverPrimitive.Anchor>
             <Popover.Content container={overlay.portal} side="bottom" align="start" sideOffset={4} size="1"
                              minWidth="200px" maxWidth="320px" onOpenAutoFocus={focus.onOpenAutoFocus} onCloseAutoFocus={focus.onCloseAutoFocus}>
-                {/* 여기서 여는 창(메모·패키지 차단)은 연 요소로 포커스를 먼저 옮겨 둔다. 그래야 그 창이 닫힐 때 사라진 버블 대신 그리로 돌아간다 */}
+                {/* 여기서 여는 창(메모·패키지 차단)은 연 요소로 포커스를 먼저 옮겨 둔다. 그래야 그 창이 닫힐 때 사라진 버블 대신 그리로 돌아간다. */}
                 {selected.dccon ? (
                     <Flex gap="2">
                         <Button size="1" onClick={() => requestBlock({target: "dccon"})}>디시콘 차단</Button>
@@ -215,7 +215,7 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
     );
 };
 
-/** 작성자를 우클릭하면 뜨는 유저 버블 (메모·차단·갤로그) */
+/** 작성자를 우클릭하면 뜨는 유저 버블 (메모·차단·갤로그). */
 export const BubbleHost = ({onBlockPackage}: { onBlockPackage: (target: SelectedUser) => void }) => {
     const bubble = useUiStore((s) => s.bubble);
     const selected = useUiStore((s) => s.selected);

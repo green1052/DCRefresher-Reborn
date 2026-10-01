@@ -8,6 +8,6 @@ export default defineModule({
 
     setup: (ctx) => setRequestConcurrency(ctx.settings.concurrency),
     onChanged: (ctx) => setRequestConcurrency(ctx.settings.concurrency),
-    // 모듈을 끄면 제한하지 않는다
+    // 모듈을 끄면 제한하지 않는다.
     revoke: () => setRequestConcurrency(Number.POSITIVE_INFINITY)
 });

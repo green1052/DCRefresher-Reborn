@@ -47,7 +47,7 @@ describe("useBlocksStore + 저장소", () => {
         expect(state.entries.ID).toEqual([]);
         expect(state.defaults).toMatchObject({NICK: "CONTAIN", TITLE: "CONTAIN", ID: "SAME"});
 
-        // 같은 content+gallery는 한 항목이고, 새로 넣은 쪽이 뒤로 간다
+        // 같은 content+gallery는 한 항목이고, 새로 넣은 쪽이 뒤로 간다.
         await state.addEntry("NICK", {content: "n", isRegex: false, extra: "별명"});
         await state.addEntry("NICK", {content: "m", isRegex: false});
         const nicks = (await stored("refresher:block:NICK")) as { content: string; extra?: string }[];
@@ -55,7 +55,7 @@ describe("useBlocksStore + 저장소", () => {
         expect(nicks[0]?.extra).toBe("별명");
         expect(blockKey({content: "n", isRegex: false})).toBe(blockKey({content: "n", isRegex: true, gallery: undefined}));
 
-        // 이 탭의 쓰기가 watch로 돌아와도 값이 같으면 상태 객체를 바꾸지 않는다
+        // 이 탭의 쓰기가 watch로 돌아와도 값이 같으면 상태 객체를 바꾸지 않는다.
         const listener = vi.fn();
         const unsubscribe = useBlocksStore.subscribe(listener);
         const before = useBlocksStore.getState().entries;
@@ -63,7 +63,7 @@ describe("useBlocksStore + 저장소", () => {
         await tick();
         expect(useBlocksStore.getState().entries).toBe(before);
 
-        // 다른 탭(옵션 페이지)의 변경은 들어온다
+        // 다른 탭(옵션 페이지)의 변경은 들어온다.
         await fakeBrowser.storage.local.set({"refresher:block:ID": [{content: "u", isRegex: false}]});
         await tick();
         expect(useBlocksStore.getState().entries.ID.map(({content}) => content)).toEqual(["u"]);

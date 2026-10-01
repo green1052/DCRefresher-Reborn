@@ -2,7 +2,7 @@ import {EyeOff, Image} from "lucide-react";
 
 import {defineModuleMeta} from "@/core/module/define";
 
-/** 팝업 '이미지 잠시 보이기' 토글. index.ts의 pageToggles가 동작을 붙인다 */
+/** 팝업 '이미지 잠시 보이기' 토글. index.ts의 pageToggles가 동작을 붙인다. */
 export const REVEAL_TOGGLE = {id: "reveal", label: "이미지 잠시 보이기", icon: Image};
 
 export default defineModuleMeta({

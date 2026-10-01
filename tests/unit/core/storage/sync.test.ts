@@ -15,7 +15,7 @@ describe("storageSync", () => {
         await sync.start(controller.signal);
         expect(seen).toEqual([["local:a", 1], ["local:b", null]]);
 
-        // 여러 번 불러도 한 번만 읽고 감시한다
+        // 여러 번 불러도 한 번만 읽고 감시한다.
         await sync.start(controller.signal);
         await storage.setItem("local:b", 2);
         await expect.poll(() => seen.length).toBe(3);

@@ -11,13 +11,13 @@ import {messageOf, SAVE_FAILED} from "@/utils/error";
 
 interface BlockDialogProps {
     type: BlockType;
-    /** 수정할 기존 항목. 없으면 추가 */
+    /** 수정할 기존 항목. 없으면 추가. */
     initial?: BlockEntry | null;
     onClose: () => void;
     onSubmit: (fields: BlockInputFields) => Promise<void>;
 }
 
-/** 차단 항목 추가/수정 다이얼로그. 입력 초기값을 마운트 시점의 initial에서 잡으므로 열 때만 마운트한다 */
+/** 차단 항목 추가/수정 다이얼로그. 입력 초기값을 마운트 시점의 initial에서 잡으므로 열 때만 마운트한다. */
 export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps) => {
     const [content, setContent] = useState(initial?.content ?? "");
     const [isRegex, setIsRegex] = useState(initial?.isRegex ?? false);
@@ -31,7 +31,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
             setError(`${TYPE_NAMES[type]} 값을 입력해 주세요.`);
             return;
         }
-        // 틀린 정규식은 차단 검사에서 조용히 건너뛰어 아무것도 걸리지 않으므로 저장 전에 알린다
+        // 틀린 정규식은 차단 검사에서 조용히 건너뛰어 아무것도 걸리지 않으므로 저장 전에 알린다.
         if (isRegex) {
             try {
                 new RegExp(content.trim());
@@ -47,7 +47,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                 isRegex,
                 mode: mode || undefined,
                 gallery: gallery.trim() || undefined,
-                // extra는 별명(우클릭 차단 닉네임, 디시콘 제목)이라 입력칸 없이 그대로 유지한다
+                // extra는 별명(우클릭 차단 닉네임, 디시콘 제목)이라 입력칸 없이 그대로 유지한다.
                 extra: initial?.extra
             });
         } catch {

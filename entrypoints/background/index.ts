@@ -12,7 +12,7 @@ import {startAutoBackup} from "./backup";
 import {startDatabaseUpdates} from "./database";
 import {listenPageMessages} from "./page";
 
-/** 모듈별 배경 코드(features/<id>/background.ts). 필요한 모듈만 이 파일을 둔다 */
+/** 모듈별 배경 코드(features/<id>/background.ts). 필요한 모듈만 이 파일을 둔다. */
 const backgroundModules = Object.values(import.meta.glob<{ default: BackgroundModule }>("../../features/*/background.ts", {eager: true}))
     .map((module) => module.default);
 
@@ -20,21 +20,21 @@ const backgroundModules = Object.values(import.meta.glob<{ default: BackgroundMo
  * 배경 스크립트. 서비스 워커(크롬)는 언제든 멈췄다 다시 뜨므로 리스너는 모두 여기서 동기로 걸고, 상태는 저장소에 둔다.
  * - page.ts: 콘텐츠 스크립트 대신 탭의 페이지(MAIN world)에서 실행하는 것 (reCAPTCHA, 목록 스크립트, 이미지 변환)
  * - database.ts: IP·밴 DB 주기 갱신
- * - backup.ts: 자동 클라우드 백업
+ * - backup.ts: 자동 클라우드 백업.
  */
 export default defineBackground(() => {
     // ===== 모듈의 배경 쪽 (이미지 검색 메뉴 등) =====
-    // 리스너는 여기서 바로 건다. 크롬은 메뉴 같은 상태를 유지하므로 설치·브라우저 시작·설정 변경 때만 다시 맞춘다
+    // 리스너는 여기서 바로 건다. 크롬은 메뉴 같은 상태를 유지하므로 설치·브라우저 시작·설정 변경 때만 다시 맞춘다.
     const applyBackgroundModules = startBackgroundModules(backgroundModules);
     // 파이어폭스(MV2)는 메뉴를 유지하지 않고, 확장을 껐다 켜면 onStartup/onInstalled 없이 배경만 다시 뜨므로 뜰 때마다 맞춘다.
-    // 브라우저 시작도 여기서 맞추므로 onStartup은 크롬만 건다 (둘 다 걸면 시작할 때 두 번 돈다)
+    // 브라우저 시작도 여기서 맞추므로 onStartup은 크롬만 건다 (둘 다 걸면 시작할 때 두 번 돈다).
     if (import.meta.env.FIREFOX) void applyBackgroundModules();
     else browser.runtime.onStartup.addListener(() => void applyBackgroundModules());
 
     // ===== Commands: 단축키 → 활성 탭에만 전송 =====
-    // 단축키 기능은 '이번 페이지' 단위라 모든 탭에 보내면 탭마다 토글·토스트·목록 요청이 한꺼번에 일어난다
+    // 단축키 기능은 '이번 페이지' 단위라 모든 탭에 보내면 탭마다 토글·토스트·목록 요청이 한꺼번에 일어난다.
     browser.commands.onCommand.addListener(async (command, tab) => {
-        // 활성 탭이 디시가 아니면 받는 쪽이 없어 실패한다
+        // 활성 탭이 디시가 아니면 받는 쪽이 없어 실패한다.
         if (tab?.id) await sendMessage("refresher:executeShortcut", command, {tabId: tab.id}).catch(() => {});
     });
 
@@ -48,16 +48,16 @@ export default defineBackground(() => {
     browser.runtime.onInstalled.addListener(async ({reason, previousVersion}) => {
         // v5에서 업데이트한 경우만 설정을 v6 형식으로 옮긴다(한시적). 저장소 전체를 읽으므로 다른 경우는 건너뛴다.
         // 6.0.2 파이어폭스는 배경이 불러오자마자 멈춰, v5에서 곧바로 6.0.2로 온 사용자는 옮기기를 건너뛰었다 (v5 키가 없으면 바로 끝난다).
-        // 모듈 맞추기는 옮긴 설정을 보도록 그 뒤에 하고, 옮기기가 실패해도 DB 갱신까지 이어서 한다
+        // 모듈 맞추기는 옮긴 설정을 보도록 그 뒤에 하고, 옮기기가 실패해도 DB 갱신까지 이어서 한다.
         if (reason === "update") {
             if (previousVersion?.startsWith("5.") || previousVersion === "6.0.2") await migrateV5Storage().catch(console.error);
             await migrateSettingsStorage().catch(console.error);
-            // 비회원 닉네임·비밀번호는 이제 디시 localStorage에 둔다. 예전 버전이 확장 저장소에 남긴 평문 비밀번호를 지운다
+            // 비회원 닉네임·비밀번호는 이제 디시 localStorage에 둔다. 예전 버전이 확장 저장소에 남긴 평문 비밀번호를 지운다.
             await storage.removeItem("local:refresher:nonmember").catch(console.error);
         }
         await applyBackgroundModules();
 
-        // 개발 빌드는 DB가 없을 때만 받는다
+        // 개발 빌드는 DB가 없을 때만 받는다.
         if (import.meta.env.PROD || !(await dbStorage.meta.getValue()).version) {
             await updateDatabase();
         }

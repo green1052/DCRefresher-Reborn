@@ -15,7 +15,7 @@ import {MemoTab} from "./MemoTab";
 import {useOptionsStore} from "./optionsStore";
 import {ShortcutTab} from "./ShortcutTab";
 
-// 개발자 탭과 디시콘 비는 드물게 열리므로 옵션 페이지를 열 때 같이 불러오지 않는다(개발자 탭은 IP/밴 DB 원문도 읽는다)
+// 개발자 탭과 디시콘 비는 드물게 열리므로 옵션 페이지를 열 때 같이 불러오지 않는다(개발자 탭은 IP/밴 DB 원문도 읽는다).
 const DevTab = lazy(() => import("./DevTab").then(({DevTab}) => ({default: DevTab})));
 const DcconRain = lazy(() => import("./DcconRain").then(({DcconRain}) => ({default: DcconRain})));
 
@@ -23,7 +23,7 @@ interface TabDef {
     id: string;
     label: string;
     icon: LucideIcon;
-    /** 개발자 모드에서만 보임 */
+    /** 개발자 모드에서만 보임. */
     dev?: boolean;
     content: () => React.ReactNode;
 }
@@ -42,7 +42,7 @@ const LOGO_URL = browser.runtime.getURL("/icons/128.png");
 
 const VERSION = browser.runtime.getManifest().version + (import.meta.env.DEV ? "-dev" : "");
 
-/** 현재 탭은 location.hash에 둬서 새로고침하거나 링크를 공유해도 유지되게 한다 */
+/** 현재 탭은 location.hash에 둬서 새로고침하거나 링크를 공유해도 유지되게 한다. */
 const readHash = (): string => {
     const id = location.hash.slice(1);
     return TABS.some((tab) => tab.id === id) ? id : TABS[0]!.id;
@@ -72,7 +72,7 @@ const Sidebar = ({tabs, tab, onSelect}: {
         <Flex align="center" gap="3" px="2">
             <img src={LOGO_URL} alt="" width={36} height={36} style={{borderRadius: "var(--radius-3)"}}
                  onClick={() => useOptionsStore.getState().startRain()}/>
-            {/* h1은 본문의 탭 제목 하나만 둔다. 모양만 제목으로 그린다 */}
+            {/* h1은 본문의 탭 제목 하나만 둔다. 모양만 제목으로 그린다. */}
             <Heading asChild size="3"><p>DCRefresher Reborn</p></Heading>
         </Flex>
 
@@ -82,7 +82,7 @@ const Sidebar = ({tabs, tab, onSelect}: {
                     <Button
                         key={id}
                         size="3"
-                        // Radix의 soft와 ghost는 패딩·높이가 달라 탭을 바꿀 때 흔들린다. ghost로 통일하고 배경만 바꾼다
+                        // Radix의 soft와 ghost는 패딩·높이가 달라 탭을 바꿀 때 흔들린다. ghost로 통일하고 배경만 바꾼다.
                         variant="ghost"
                         color={tab === id ? undefined : "gray"}
                         highContrast={tab !== id}
@@ -120,7 +120,7 @@ export function App() {
 
     useEffect(() => {
         // 못 읽은 채 차단·메모를 고치면 빈 목록을 바탕으로 저장해 기존 목록을 덮으므로 탭을 그리지 않는다
-        // 읽기 전에 그리면 빈 목록에서 고친 결과(전체 삭제·추가·가져오기)가 저장된 목록을 덮는다
+        // 읽기 전에 그리면 빈 목록에서 고친 결과(전체 삭제·추가·가져오기)가 저장된 목록을 덮는다.
         Promise.all([initBlocksStore(), initMemosStore(), initModulesStore()]).then(
             () => setStatus("ready"),
             (e) => {
@@ -130,13 +130,13 @@ export function App() {
         );
     }, []);
 
-    // 모듈이 선언한 확장 페이지 CSS 변수 (폰트 교체 등)
+    // 모듈이 선언한 확장 페이지 CSS 변수 (폰트 교체 등).
     useExtensionPageVars();
 
     return (
         <Flex direction={{initial: "column", md: "row"}} minHeight="100vh">
             <Sidebar tabs={tabs} tab={current.id} onSelect={(id) => (location.hash = id)}/>
-            {/* 누를 때마다 새로 마운트한다. React Compiler가 Math.random으로 그린 결과를 기억해 같은 모양이 반복되기 때문이다 */}
+            {/* 누를 때마다 새로 마운트한다. React Compiler가 Math.random으로 그린 결과를 기억해 같은 모양이 반복되기 때문이다. */}
             {rain > 0 && <Suspense><DcconRain key={rain}/></Suspense>}
             <Notice message={notice} onClose={() => useOptionsStore.setState({notice: null})}/>
 

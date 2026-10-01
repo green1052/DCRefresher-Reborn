@@ -6,7 +6,7 @@ describe("wrapTxtcon", () => {
     it("줄마다 5글자씩 나누고 직접 넣은 줄바꿈은 둔다", () => {
         expect(wrapTxtcon("가나다라마바사")).toBe("가나다라마\n바사");
         expect(wrapTxtcon("가\r\n나다라마바사")).toBe("가\n나다라마바\n사");
-        // 결합 이모지는 한 글자
+        // 결합 이모지는 한 글자.
         expect(graphemes("👨‍👩‍👧a")).toEqual(["👨‍👩‍👧", "a"]);
     });
 });
@@ -15,7 +15,7 @@ describe("normalizeTxtcon", () => {
     it("4줄·줄당 5자·20자 제한을 적용한다", () => {
         expect(normalizeTxtcon("가나다라마바사아자차카타파하가나다라마바사아")).toBe("가나다라마바사아자차카타파하가나다라마바");
         expect(normalizeTxtcon("1\n2\n3\n4\n5")).toBe("1\n2\n3\n4");
-        // 5글자씩 나눈 줄이 4줄을 넘으면 뒤에서 뺀다
+        // 5글자씩 나눈 줄이 4줄을 넘으면 뒤에서 뺀다.
         expect(normalizeTxtcon("가나다라마바사아자차카타파하가나다라마바사").split("\n")).toHaveLength(1);
         expect(wrapTxtcon(normalizeTxtcon("가\n나다라마바사아자차카타파하가나다라마바사")).split("\n")).toHaveLength(4);
     });

@@ -3,7 +3,7 @@ import {PenLine} from "lucide-react";
 import {defineModuleMeta} from "@/core/module/define";
 import {WRITE_PAGE} from "@/core/pages";
 
-// 글쓰기의 이미지 버튼이 여는 이미지 올리기 팝업
+// 글쓰기의 이미지 버튼이 여는 이미지 올리기 팝업.
 const UPLOAD_POPUP = /\/upload\/image/;
 
 export default defineModuleMeta({
@@ -15,7 +15,7 @@ export default defineModuleMeta({
     defaultEnable: false,
 
     settings: {
-        // 모듈을 켜면 바로 동작하게 기본값을 켠다. 아래 이미지 설정은 올리는 파일이 바뀌므로 직접 켜게 둔다
+        // 모듈을 켜면 바로 동작하게 기본값을 켠다. 아래 이미지 설정은 올리는 파일이 바뀌므로 직접 켜게 둔다.
         preventExit: {
             type: "check",
             name: "나가기 방지",

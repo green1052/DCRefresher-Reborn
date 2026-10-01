@@ -14,7 +14,7 @@ import {arrayIncludes, objectKeys} from "@/utils/typed";
 import {byteSize, Empty, formatBytes, formatTime, Section, useStorageItem} from "./Layout";
 import {notify, useOptionsStore} from "./optionsStore";
 
-/** 개발자 탭에서만 보는 ip·ban 원문. 이 탭은 App.tsx에서 lazy로 불러오므로 다른 탭을 볼 때는 이 수백 KB를 읽지 않는다 */
+/** 개발자 탭에서만 보는 ip·ban 원문. 이 탭은 App.tsx에서 lazy로 불러오므로 다른 탭을 볼 때는 이 수백 KB를 읽지 않는다. */
 const dbIp = storage.defineItem<string>(DB_KEYS.ip, {fallback: ""});
 const dbBan = storage.defineItem<string>(DB_KEYS.ban, {fallback: ""});
 
@@ -22,7 +22,7 @@ type Area = "local" | "sync";
 
 const AREA_NAMES: Record<Area, string> = {local: "로컬", sync: "클라우드"};
 
-/** 표시용 JSON의 문자열 하나(IP 표 base64 등)와 전체 길이 상한. 잘라서 DOM이 커지지 않게 한다 */
+/** 표시용 JSON의 문자열 하나(IP 표 base64 등)와 전체 길이 상한. 잘라서 DOM이 커지지 않게 한다. */
 const MAX_STRING = 200;
 const MAX_TEXT = 50_000;
 
@@ -35,18 +35,18 @@ const preview = (value: unknown): string => {
     return text.length > MAX_TEXT ? `${text.slice(0, MAX_TEXT)}\n… (${text.length}자 중 ${MAX_TEXT}자만 표시)` : text;
 };
 
-/** 저장소 영역의 전체 내용. 다른 탭이나 콘텐츠 스크립트에서 바뀌어도 따라간다 */
+/** 저장소 영역의 전체 내용. 다른 탭이나 콘텐츠 스크립트에서 바뀌어도 따라간다. */
 const useStorageArea = (area: Area): Record<string, unknown> | null => {
     const [items, setItems] = useState<Record<string, unknown> | null>(null);
 
     useEffect(() => {
-        // 영역을 바꾼 뒤 늦게 온 이전 영역의 값이 덮어쓰지 않게 한다
+        // 영역을 바꾼 뒤 늦게 온 이전 영역의 값이 덮어쓰지 않게 한다.
         let alive = true;
         const load = (): void =>
             void browser.storage[area].get(null).then((next) => {
                 if (alive) setItems(next);
             });
-        // 바뀐 키만 반영한다. 다시 읽으면 글댓비를 저장할 때마다 수백 KB씩인 IP·밴 DB까지 읽는다
+        // 바뀐 키만 반영한다. 다시 읽으면 글댓비를 저장할 때마다 수백 KB씩인 IP·밴 DB까지 읽는다.
         const onChanged = (changes: Record<string, { newValue?: unknown }>): void => {
             setItems((previous) => {
                 if (!previous) return previous;
@@ -156,7 +156,7 @@ const StorageSection = () => {
     );
 };
 
-/** 문자열로 저장된 DB 값을 푼다. 깨졌으면 broken 값(없음)으로 대신한다 */
+/** 문자열로 저장된 DB 값을 푼다. 깨졌으면 broken 값(없음)으로 대신한다. */
 const parseOr = <T, >(parse: (stored: string) => T, stored: string, broken: T): T => {
     try {
         return parse(stored);
@@ -167,7 +167,7 @@ const parseOr = <T, >(parse: (stored: string) => T, stored: string, broken: T): 
 };
 
 const DatabaseSection = () => {
-    // React Compiler가 저장값 기준으로 메모하므로 값이 바뀔 때만 다시 푼다
+    // React Compiler가 저장값 기준으로 메모하므로 값이 바뀔 때만 다시 푼다.
     const meta = useStorageItem(dbStorage.meta);
     const ipData = parseOr(parseIpData, useStorageItem(dbIp), null);
     const banList = parseOr(parseBans, useStorageItem(dbBan), {});
@@ -175,12 +175,12 @@ const DatabaseSection = () => {
     const [clearing, setClearing] = useState(false);
     const fileInput = useRef<HTMLInputElement>(null);
     // 조회 테스트는 콘텐츠 스크립트와 같은 경로(ipInfoOf)를 쓴다. 구독이 DB 읽기를 시작한다.
-    // DB를 읽을 때마다 올라가는 이 번호를 식에 넣어야 React Compiler가 다시 조회한다
+    // DB를 읽을 때마다 올라가는 이 번호를 식에 넣어야 React Compiler가 다시 조회한다.
     const dbVersion = useSyncExternalStore(subscribeDatabase, databaseVersion);
 
     const loadFile = async (file: File): Promise<void> => {
         try {
-            // data 브랜치의 ip.json 형식(저장 형식)만 받는다
+            // data 브랜치의 ip.json 형식(저장 형식)만 받는다.
             const text = await file.text();
             if (!parseIpData(text)) throw new Error("형식이 올바르지 않습니다.");
             await writeDatabase({version: "local", lastUpdate: Date.now(), format: IP_FORMAT}, text, await dbBan.getValue());

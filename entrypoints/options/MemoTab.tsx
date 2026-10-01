@@ -20,7 +20,7 @@ interface MemoFormState {
     user: string;
     text: string;
     color: string;
-    /** 비우면 모든 갤러리 */
+    /** 비우면 모든 갤러리. */
     gallery: string;
 }
 
@@ -44,18 +44,18 @@ const MemoFormDialog = ({
             setError("메모 대상을 입력해 주세요.");
             return;
         }
-        // 빈 메모를 저장하면 빈 "[]" 배지만 붙는다
+        // 빈 메모를 저장하면 빈 "[]" 배지만 붙는다.
         if (!state.text.trim()) {
             setError("메모를 입력해 주세요.");
             return;
         }
-        // 추가로 기존 메모를 덮어쓰지 않게 한다. 고치려면 목록에서 수정한다
+        // 추가로 기존 메모를 덮어쓰지 않게 한다. 고치려면 목록에서 수정한다.
         if (!editing && Object.hasOwn(useMemosStore.getState().memos[state.type], state.user.trim())) {
             setError("이미 메모가 있습니다.");
             return;
         }
 
-        // 수정할 때는 기존 키를 그대로 쓴다. 앞뒤 공백이 있는 기존 키를 trim하면 새 항목으로 갈라진다
+        // 수정할 때는 기존 키를 그대로 쓴다. 앞뒤 공백이 있는 기존 키를 trim하면 새 항목으로 갈라진다.
         try {
             await onSubmit(editing ? state : {...state, user: state.user.trim()});
         } catch {
@@ -93,9 +93,9 @@ const MemoFormDialog = ({
                                 placeholder="아이디, 닉네임 또는 IP"
                                 value={state.user}
                                 disabled={editing}
-                                // 추가할 때는 비어 있는 대상부터, 고칠 때는(대상이 막혀 있다) 메모부터 입력한다
+                                // 추가할 때는 비어 있는 대상부터, 고칠 때는(대상이 막혀 있다) 메모부터 입력한다.
                                 autoFocus={!editing}
-                                // 입력 중에 trim하면 닉네임 가운데 공백을 칠 수 없으므로 저장할 때 trim한다
+                                // 입력 중에 trim하면 닉네임 가운데 공백을 칠 수 없으므로 저장할 때 trim한다.
                                 onChange={(ev) => setState((prev) => ({...prev, user: ev.target.value}))}
                             />
                         </label>
@@ -175,7 +175,7 @@ export function MemoTab() {
     const [form, setForm] = useState<MemoFormState | null>(null);
     const [appImport, setAppImport] = useState(false);
 
-    /** 공앱 메모를 합친다. 이미 있는 대상은 글만 바꾸고 색·갤러리는 그대로 둔다 */
+    /** 공앱 메모를 합친다. 이미 있는 대상은 글만 바꾸고 색·갤러리는 그대로 둔다. */
     const importAppMemos = async (text: string): Promise<string | undefined> => {
         const {memos: parsed, skipped} = parseAppMemos(text);
         const count = Object.keys(parsed.UID).length + Object.keys(parsed.IP).length;
@@ -211,9 +211,9 @@ export function MemoTab() {
     };
 
     const importMemos = async (parsed: Record<string, unknown>): Promise<number> => {
-        // 객체만 받는다. 차단 내보내기의 NICK/IP(배열)까지 메모로 세면 다른 데이터인데도 성공으로 알린다
+        // 객체만 받는다. 차단 내보내기의 NICK/IP(배열)까지 메모로 세면 다른 데이터인데도 성공으로 알린다.
         const types = MEMO_TYPES.filter((type) => isRecord(parsed[type]));
-        // 기존 메모에 합치고, 같은 대상은 가져온 메모로 덮는다
+        // 기존 메모에 합치고, 같은 대상은 가져온 메모로 덮는다.
         for (const type of types) await setMemos(type, {...memos[type], ...normalizeMemoMap(parsed[type])});
         return types.length;
     };
@@ -230,7 +230,7 @@ export function MemoTab() {
                 importData={importMemos}
                 onClear={(type) => setMemos(type, {})}
                 onAdd={(type) => setForm({type, user: "", text: "", color: randomColor(), gallery: ""})}
-                // 공앱(디시인사이드 모바일 앱) 메모는 한 줄에 하나씩 "아이디-메모" 글이다
+                // 공앱(디시인사이드 모바일 앱) 메모는 한 줄에 하나씩 "아이디-메모" 글이다.
                 toolbar={() => (
                     <Flex gap="2" wrap="wrap">
                         <Button size="2" variant="soft" color="gray" onClick={() => setAppImport(true)}>
@@ -241,14 +241,14 @@ export function MemoTab() {
                         </Button>
                     </Flex>
                 )}
-                // 객체 키 순서가 곧 추가 순서다. 숫자로만 된 키는 JS가 앞으로 정렬하는 예외가 있다
+                // 객체 키 순서가 곧 추가 순서다. 숫자로만 된 키는 JS가 앞으로 정렬하는 예외가 있다.
                 items={(type) => Object.entries(memos[type])}
                 searchText={([user, entry]) => [user, entry.text, entry.gallery]}
                 row={(type, [user, entry]) => (
                     <ListRow
                         key={user}
                         head={
-                            // 편집 버튼 안에 들어가므로 div 대신 span으로 그린다
+                            // 편집 버튼 안에 들어가므로 div 대신 span으로 그린다.
                             <Flex as="span" align="center" gap="2">
                                 <Box as="span" width="10px" height="10px" flexShrink="0" style={{borderRadius: "50%", background: entry.color}}/>
                                 <Text weight="medium">{user}</Text>

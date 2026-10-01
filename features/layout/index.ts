@@ -18,7 +18,7 @@ const applyCompact = (ctx: Ctx): void => {
     document.documentElement.classList.toggle("refresherCompact", useCompact);
 };
 
-/** 창 폭이 기준(activePixel)을 넘나들 때만 다시 맞춘다 — resize는 창 크기를 바꾸는 동안 수십 번 온다 */
+/** 창 폭이 기준(activePixel)을 넘나들 때만 다시 맞춘다 — resize는 창 크기를 바꾸는 동안 수십 번 온다. */
 const watchWidth = (ctx: Ctx): void => {
     widthWatch?.abort();
     widthWatch = new AbortController();
@@ -28,16 +28,16 @@ const watchWidth = (ctx: Ctx): void => {
 };
 
 const applyHide = (ctx: Ctx): void => {
-    // 공지 모아보기(?exception_mode=notice)에서는 공지를 숨기지 않는다 (디시 공지도)
+    // 공지 모아보기(?exception_mode=notice)에서는 공지를 숨기지 않는다 (디시 공지도).
     const noticePage = queryString("exception_mode") === "notice";
 
-    // 선택자마다 규칙을 따로 둔다. 하나로 합치면 :has 등을 모르는 브라우저가 규칙 전체를 버린다
+    // 선택자마다 규칙을 따로 둔다. 하나로 합치면 :has 등을 모르는 브라우저가 규칙 전체를 버린다.
     writeStyle(HIDE_STYLE_ID, HIDE_KEYS
         .filter((key) => ctx.settings[key] && !(noticePage && (key === "removeNotice" || key === "removeDCNotice")))
         .map((key) => `${HIDE_OPTIONS[key].selector} { display: none !important; }`)
         .join("\n"));
 
-    // 본문 확장은 잡다 링크가 숨겨졌을 때만 (layout.scss의 폭 조정)
+    // 본문 확장은 잡다 링크가 숨겨졌을 때만 (layout.scss의 폭 조정).
     document.documentElement.classList.toggle(PUSH_CLASS, ctx.settings.pushToRight && ctx.settings.hideUselessView);
 };
 

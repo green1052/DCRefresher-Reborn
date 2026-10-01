@@ -4,7 +4,7 @@ import {createLimiter} from "@/utils/limit";
 
 import {tick} from "../../helpers";
 
-/** 밖에서 끝낼 수 있는 작업 */
+/** 밖에서 끝낼 수 있는 작업. */
 const deferred = () => {
     let resolve!: (value: string) => void;
     let reject!: (error: Error) => void;

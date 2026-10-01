@@ -6,7 +6,7 @@ import {defineWxtModule} from "wxt/modules";
 /**
  * 기능 모듈의 타입 목록을 만든다. features/<폴더>/index.ts를 모아 ModuleApis(모듈 id → setup의 리턴값)를 채우므로
  * getModuleApi(id)가 id를 자동완성하고 api 타입을 안다. 새 모듈도 폴더만 만들면 된다 (런타임은 features/index.ts의 glob이 모은다).
- * wxt prepare(설치·dev·build)가 .wxt/types/modules.d.ts로 쓴다
+ * wxt prepare(설치·dev·build)가 .wxt/types/modules.d.ts로 쓴다.
  */
 export default defineWxtModule((wxt) => {
     wxt.hook("prepare:types", (_, entries) => {

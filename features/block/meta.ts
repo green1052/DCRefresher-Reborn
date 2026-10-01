@@ -73,7 +73,7 @@ export const settings = {
 
 export type Ctx = ModuleContext<typeof settings>;
 
-/** 팝업 '가린 내용 보기' 토글. index.ts의 pageToggles가 동작을 붙인다 */
+/** 팝업 '가린 내용 보기' 토글. index.ts의 pageToggles가 동작을 붙인다. */
 export const REVEAL_TOGGLE = {id: "reveal", label: "가린 내용 보기", icon: Eye};
 
 export default defineModuleMeta({
