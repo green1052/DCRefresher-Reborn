@@ -1,4 +1,5 @@
 // 디시 글 목록 DOM 도우미. 목록을 갈아끼우거나 이어 붙이는 refresh·search 모듈과 행을 찾는 모듈이 같이 쓴다.
+import {sendMessage} from "@/core/messaging/protocol";
 
 /** 갈아끼울 글 목록 tbody. 검색 페이지 아래쪽 통합검색 목록(#kakao_seach_list)은 id가 있어 :not([id])로 빠진다. */
 export const LIST_SELECTOR = ".gall_list:not([id]) tbody";
@@ -9,6 +10,14 @@ export const PAGING_SELECTOR = ".left_content article:has(.gall_listwrap) .botto
  * 댓글 검색 결과의 댓글 행은 ub-content가 아니라 .search_comment다.
  */
 export const ROW_SELECTOR = ".ub-content, .search_comment";
+
+/**
+ * 목록 행을 갈아끼우거나 붙인 뒤 부른다. 디시는 자체 차단·이용자 메모 표시를 로드 때만 걸므로, 배경이 페이지(MAIN world)에서 다시 건다
+ * (콘텐츠 스크립트에선 디시 함수를 부를 수 없다). 실패해도(확장이 멈춤 등) 목록은 그대로라 넘긴다.
+ */
+export const notifyListReplaced = (gallery: string): void => {
+    void sendMessage("refresher:listReplaced", gallery).catch(() => {});
+};
 
 /**
  * 관리자 목록 행의 체크박스 칸을 만드는 함수를 돌려준다.

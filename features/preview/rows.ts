@@ -52,6 +52,20 @@ export const isBlurHidden = (element: Element): boolean =>
 /** 미리보기를 여는 목록 행. */
 export const ROW_SELECTOR = ".gall_list .ub-content";
 
+// 행 → 글 키. 새로고침은 바뀐 행을 새 요소로 갈아끼우므로 요소마다 한 번만 읽으면 된다 (댓글 수처럼 제자리에서 고치는 칸은 키에 없다).
+const rowKeys = new WeakMap<HTMLElement, string | null>();
+
+/** 행의 글 키(postKey). 글로 열 수 없는 행이면 null. 읽은 글 표시·키보드 선택처럼 행마다 자주 보는 곳에서 쓴다. */
+export const rowPostKey = (row: HTMLElement): string | null => {
+    let key = rowKeys.get(row);
+    if (key === undefined) {
+        const pre = buildPreData(row);
+        key = pre ? postKey(pre) : null;
+        rowKeys.set(row, key);
+    }
+    return key;
+};
+
 export interface ListRow {
     row: HTMLElement;
     pre: GalleryPreData;

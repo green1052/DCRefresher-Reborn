@@ -44,9 +44,7 @@ const openBlockBubble = (ev: MouseEvent<HTMLElement>): void => {
     if (!code) return;
 
     ev.preventDefault();
-    const ui = useUiStore.getState();
-    ui.setSelected({dccon: code});
-    ui.openBubble(ev.clientX, ev.clientY);
+    useUiStore.getState().openBubble({dccon: code}, ev.clientX, ev.clientY);
 };
 
 /** 제작·태그 줄 앞의 작은 딱지 (디시 정보창의 tbox). */

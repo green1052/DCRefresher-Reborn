@@ -30,7 +30,8 @@ export const getEntry = (preData: GalleryPreData): CacheEntry | undefined => ent
 
 /** 기존 항목에 patch를 덮어써 저장한다. */
 export const setEntry = (preData: GalleryPreData, patch: CacheEntry): void => {
-    entries.set(postKey(preData), {...entries.get(postKey(preData)), ...patch});
+    const key = postKey(preData);
+    entries.set(key, {...entries.get(key), ...patch});
 };
 
 /**

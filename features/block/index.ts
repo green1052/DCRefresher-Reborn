@@ -202,11 +202,9 @@ const setupSelection = (ctx: Ctx): void => {
         const code = dcconCode(dcconElement);
         if (!code) return;
 
-        const ui = useUiStore.getState();
-        ui.setSelected({dccon: code});
         // 브라우저 우클릭 메뉴 대신 디시콘 차단 버블을 연다.
         ev.preventDefault();
-        ui.openBubble(ev.clientX, ev.clientY);
+        useUiStore.getState().openBubble({dccon: code}, ev.clientX, ev.clientY);
     };
 
     document.addEventListener("contextmenu", onContextMenu, {capture: true, signal: ctx.signal});

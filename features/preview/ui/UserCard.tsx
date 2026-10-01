@@ -39,11 +39,7 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     const ratio = (typeof fetched === "object" ? fetched : undefined) ?? cached;
     const ratioColor = useUiStore((state) => (ratio && isLowActivity(ratio, alarm) ? state.badgeColors.ratioAlarm : state.badgeColors.ratio));
 
-    const openBubble = (x: number, y: number): void => {
-        const ui = useUiStore.getState();
-        ui.setSelected({nick: user.nick, uid: user.id, ip: user.ip});
-        ui.openBubble(x, y);
-    };
+    const openBubble = (x: number, y: number): void => useUiStore.getState().openBubble({nick: user.nick, uid: user.id, ip: user.ip}, x, y);
 
     const openMenu = (ev: MouseEvent): void => {
         // 목록과 같이 Shift+우클릭은 브라우저 기본 메뉴로 남긴다.

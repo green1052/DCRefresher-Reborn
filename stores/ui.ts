@@ -89,8 +89,8 @@ interface UiState {
 
     showToast: (content: string, type?: ToastLevel, autoClose?: number, action?: ToastData["action"]) => void;
     dismissToast: (id?: number) => void;
-    setSelected: (user: SelectedUser) => void;
-    openBubble: (x: number, y: number) => void;
+    /** user를 고르고 (x, y)에 유저 버블을 연다. 버블의 메모·차단은 고른 대상에 건다. */
+    openBubble: (user: SelectedUser, x: number, y: number) => void;
     closeBubble: () => void;
     /** 마지막으로 우클릭한 대상의 메모 다이얼로그를 연다. 선택이 없으면 토스트를 띄운다. */
     openMemoForSelected: () => void;
@@ -118,9 +118,7 @@ export const useUiStore = create<UiState>((set, get) => ({
         if (!id || !current || current.id === id) set({toast: null});
     },
 
-    setSelected: (selected) => set({selected}),
-
-    openBubble: (x, y) => set({bubble: {x, y}}),
+    openBubble: (selected, x, y) => set({selected, bubble: {x, y}}),
     closeBubble: () => set({bubble: null}),
 
     openMemoForSelected: () => {
@@ -157,9 +155,7 @@ export const openWriterBubble = (ev: MouseEvent): void => {
     if (!nick && !uid && !ip) return;
 
     ev.preventDefault();
-    const ui = useUiStore.getState();
-    ui.setSelected({nick, uid, ip});
-    ui.openBubble(ev.clientX, ev.clientY);
+    useUiStore.getState().openBubble({nick, uid, ip}, ev.clientX, ev.clientY);
 };
 
 // 토스트·유저 버블·메모 창이 뜨면 오버레이를 띄운다 (components/overlay/demands). 배지 색·차단 보기처럼 setup이 늘 채우는 값은 넣지 않는다.

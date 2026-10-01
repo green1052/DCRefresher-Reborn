@@ -1,10 +1,9 @@
 import {BlockedError, http} from "@/core/http/client";
 import {isViewPage, listUrl, mergeParamURL, queryString} from "@/core/http/urls";
-import {LIST_SELECTOR, PAGING_SELECTOR} from "@/core/list";
+import {LIST_SELECTOR, notifyListReplaced, PAGING_SELECTOR} from "@/core/list";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi} from "@/core/module/registry";
 import {ownPreviewEntry} from "@/core/preview/history";
-import {sendMessage} from "@/core/messaging/protocol";
 import {useUiStore} from "@/stores/ui";
 import {smoothScroll} from "@/utils/dom";
 
@@ -205,8 +204,7 @@ export default defineModule({
                 });
                 // 복사해 둔다. slice한 문자열은 응답 전체(수백 KB)를 붙잡아 다음 교체까지 남는다.
                 lastListHtml = structuredClone(listHtml);
-                // 디시는 자체 차단·메모 표시를 로드 때 한 번만 건다. 갈아끼운 행엔 배경이 페이지(MAIN world)에서 다시 건다 (콘텐츠 스크립트에선 못 부른다).
-                void sendMessage("refresher:listReplaced", gallery).catch(() => {});
+                notifyListReplaced(gallery);
 
                 if (target === scrollAfter) {
                     scrollAfter = null;

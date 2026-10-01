@@ -1,7 +1,6 @@
 import {BlockedError, http} from "@/core/http/client";
 import {queryString} from "@/core/http/urls";
-import {checkboxFiller, highlightSearchResults, LIST_SELECTOR, PAGING_SELECTOR} from "@/core/list";
-import {sendMessage} from "@/core/messaging/protocol";
+import {checkboxFiller, highlightSearchResults, LIST_SELECTOR, notifyListReplaced, PAGING_SELECTOR} from "@/core/list";
 import {defineModule} from "@/core/module/define";
 import {useUiStore} from "@/stores/ui";
 import {whenDomReady} from "@/utils/dom";
@@ -100,8 +99,7 @@ export default defineModule({
                 useUiStore.getState().showToast("다음 검색 결과를 불러오지 못했습니다.", "error");
             } finally {
                 status.remove();
-                // 디시의 자체 차단·메모 표시는 로드 때만 걸리므로 붙인 행에 다시 건다.
-                if (added > 0) void sendMessage("refresher:listReplaced", gallery).catch(() => {});
+                if (added > 0) notifyListReplaced(gallery);
             }
         };
 

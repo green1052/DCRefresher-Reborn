@@ -5,7 +5,7 @@ import {batchedSave} from "@/core/storage/batched";
 import {watchStorage} from "@/core/storage/sync";
 
 import type {Ctx} from "./meta";
-import {buildPreData, ROW_SELECTOR} from "./rows";
+import {ROW_SELECTOR, rowPostKey} from "./rows";
 
 /** 기억하는 글 수. 넘으면 오래전에 연 글부터 잊는다. */
 const MAX_READ = 3000;
@@ -44,8 +44,8 @@ export const createReadMarks = (ctx: Ctx) => {
     });
 
     const markRow = (row: HTMLElement): void => {
-        const pre = ctx.settings.markRead && read.size > 0 ? buildPreData(row) : null;
-        row.classList.toggle(READ_CLASS, pre !== null && read.has(postKey(pre)));
+        const key = ctx.settings.markRead && read.size > 0 ? rowPostKey(row) : null;
+        row.classList.toggle(READ_CLASS, key !== null && read.has(key));
     };
     const markAll = (): void => {
         for (const row of document.querySelectorAll<HTMLElement>(ROW_SELECTOR)) markRow(row);
