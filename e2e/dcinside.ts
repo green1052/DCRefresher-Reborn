@@ -13,7 +13,7 @@ export interface FakeRow {
     replies?: number;
 }
 
-const ROWS: FakeRow[] = [
+export const ROWS: FakeRow[] = [
     {no: 3, title: "세 번째 글", nick: "고닉", uid: "user3", replies: 2},
     {no: 2, title: "두 번째 글", nick: "ㅇㅇ", uid: "", ip: "1.2"},
     {no: 1, title: "첫 번째 글", nick: "고닉", uid: "user1"}
@@ -50,20 +50,66 @@ export const viewPage = (no: string): string => `<!DOCTYPE html><html lang="ko">
 </div></header>
 <div class="writing_view_box"><div class="write_div">본문 ${no} 내용입니다. <img src="https://dcimg1.dcinside.com/viewimage.php?id=test&no=${no}"></div></div>
 </div>
-<div class="cmt_write_box"><form id="focus_cmt"><input name="service_code" value="abc0123456789"></form></div>
-<script id="reply-setting-tmpl" type="text/x-jquery-tmpl"></script><script>_d('');</script>
+<div class="cmt_write_box"><form id="focus_cmt"><input name="service_code" value="${SERVICE_CODE}"></form></div>
+<script id="reply-setting-tmpl" type="text/x-jquery-tmpl"></script><script>_d('${dValueFor(SERVICE_CODE_TAIL)}');</script>
 <script>$(document).data('comment_id', 'test'); $(document).data('comment_no', '${no}');</script>
 </body></html>`;
 
-export const commentsResponse = (): string => JSON.stringify({
-    comments: [
-        {no: "10", c_no: "10", depth: 0, user_id: "user1", name: "고닉", ip: "", memo: "댓글 하나", is_delete: "0", date_time: "2026.09.30 12:01:00", reg_date: "2026-09-30 12:01:00"},
-        {no: "11", c_no: "10", depth: 1, user_id: "", name: "ㅇㅇ", ip: "1.2", memo: "답글", is_delete: "0", date_time: "2026.09.30 12:02:00", reg_date: "2026-09-30 12:02:00"}
-    ],
-    total_cnt: 2,
+/** 댓글 목록 API(/board/comment/)가 주는 댓글. */
+export interface FakeComment {
+    no: string;
+    /** 스레드 첫 댓글 번호. 첫 댓글이면 자기 번호다. */
+    c_no: string;
+    depth: 0 | 1;
+    user_id: string;
+    name: string;
+    ip: string;
+    memo: string;
+    is_delete: "0" | "1";
+    date_time: string;
+    reg_date: string;
+}
+
+/** 댓글 하나. 시각은 순서대로 1분씩 뒤다. */
+export const fakeComment = (no: number, fields: Partial<FakeComment> = {}): FakeComment => ({
+    no: String(no), c_no: String(no), depth: 0, user_id: "", name: "ㅇㅇ", ip: "1.2", memo: `댓글 ${no}`, is_delete: "0",
+    date_time: `2026.09.30 12:${String(no % 60).padStart(2, "0")}:00`, reg_date: `2026-09-30 12:${String(no % 60).padStart(2, "0")}:00`,
+    ...fields
+});
+
+/** 기본 댓글: 고닉의 댓글 하나와 유동의 답글 하나. */
+export const COMMENTS: FakeComment[] = [
+    fakeComment(10, {user_id: "user1", name: "고닉", ip: "", memo: "댓글 하나"}),
+    fakeComment(11, {c_no: "10", depth: 1, memo: "답글"})
+];
+
+export const commentsResponse = (comments: FakeComment[] = COMMENTS): string => JSON.stringify({
+    comments,
+    total_cnt: comments.length,
     pagination: "",
     allow_reply: 1
 });
+
+/* ===== 댓글 폼의 service_code ===== */
+
+/** 글 페이지 댓글 폼의 service_code. 확장은 끝 10자리를 _d() 값으로 갈아 끼워 보낸다. */
+export const SERVICE_CODE = "abc0123456789";
+/** _d() 값을 풀면 나오는 끝 10자리. 보낸 service_code는 "abc" + 이것이어야 한다. */
+export const SERVICE_CODE_TAIL = "refresher!";
+
+/**
+ * 디시 _d()가 풀어 service_code 끝 10자리를 만드는 값을 거꾸로 만든다 (core/preview/request.ts의 submitComment가 푸는 방식의 역).
+ * 글자 c(i번째)는 수 c·(12−i)/2 + i + 1이 되고, 수들을 쉼표로 잇고 첫 자리를 디시처럼 바꾼 뒤 섞은 base64로 쓴다.
+ */
+export function dValueFor(tail: string): string {
+    const rKey = "yL/M=zNa0bcPQdReSfTgUhViWjXkYIZmnpo+qArOBs1Ct2D3uE4Fv5G6wHl78xJ9K";
+    const b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+    const values = Array.from(tail, (c, i) => (c.charCodeAt(0) * (12 - i)) / 2 + i + 1).join(",");
+    // 풀 때 첫 자리 f를 f>5면 f−5, 아니면 f+4로 바꾼다. 그 역 (첫 수는 6·c+1이라 0으로 시작하지 않는다).
+    const first = Number(values[0]);
+    const decoded = String(first <= 4 ? first + 5 : first - 4) + values.slice(1);
+    return Array.from(btoa(decoded), (c) => rKey[b64.indexOf(c)]).join("");
+}
 
 /** 1×1 gif */
 export const GIF = Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64");

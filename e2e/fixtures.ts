@@ -5,7 +5,7 @@ import path from "node:path";
 import {type BrowserContext, chromium, firefox, type Page, test as base, type Worker} from "@playwright/test";
 import type {browser} from "wxt/browser";
 
-import {commentsResponse, GIF, listPage, viewPage} from "./dcinside";
+import {COMMENTS, commentsResponse, type FakeComment, type FakeRow, fakeComment, GIF, listPage, ROWS, viewPage} from "./dcinside";
 import {FIREFOX_EXTENSION_UUID, firefoxUserPrefs, freePort, installTemporaryAddon} from "./firefox";
 import {extensionUrl} from "./pages/extension";
 import {type ListPage, openListPage} from "./pages/list";
@@ -35,6 +35,24 @@ export interface ExtensionStorage {
     /** 모듈 하나의 설정 (refresher:module:<id>:settings). 없는 키는 기본값이다. */
     setModuleSettings(id: string, settings: Record<string, unknown>): Promise<void>;
 }
+
+/**
+ * 가짜 디시의 상태. 테스트가 바꾸면 다음 요청부터 그대로 응답한다 (자동 새로고침·댓글 새로고침이 받는 목록).
+ * 댓글 작성(comment_submit)은 디시처럼 새 댓글 번호를 주고 comments에 넣고, 댓글 삭제는 그 댓글을 지운 것으로 바꾼다. 보낸 폼은 submitted에 남는다.
+ */
+export interface FakeSite {
+    rows: FakeRow[];
+    comments: FakeComment[];
+    submitted: { path: string; body: URLSearchParams }[];
+}
+
+/** 쓰기 요청 중 가짜 디시가 받아 주는 것. 나머지 POST는 500으로 실패시킨다. */
+const acceptComment = (site: FakeSite, body: URLSearchParams): string => {
+    const no = Math.max(0, ...site.comments.map((comment) => Number(comment.no))) + 1;
+    const parent = body.get("c_no");
+    site.comments.push(fakeComment(no, {c_no: parent ?? String(no), depth: parent ? 1 : 0, name: body.get("name") ?? "", memo: body.get("memo") ?? ""}));
+    return String(no);
+};
 
 /** 배경 스크립트. MV3는 서비스 워커, MV2는 배경 페이지다. */
 type Background = Worker | Page;
@@ -72,8 +90,13 @@ const routeLive = async (context: BrowserContext): Promise<void> => {
 export const test = base.extend<{ live: boolean }>({
     /** 실제 디시에 요청하는지. live 프로젝트가 켠다 (playwright.config.ts). */
     live: [false, {option: true}]
-}).extend<{ context: BrowserContext; background: Background; extensionId: string; errors: string[]; storage: ExtensionStorage; listPage: ListPage }>({
-    context: async ({browserName, live}, use) => {
+}).extend<{ site: FakeSite; context: BrowserContext; background: Background; extensionId: string; errors: string[]; storage: ExtensionStorage; listPage: ListPage }>({
+    // 테스트마다 기본 목록·댓글에서 시작한다. 배열은 복사해 테스트가 바꿔도 다른 테스트에 남지 않는다.
+    site: async ({}, use) => {
+        await use({rows: [...ROWS], comments: COMMENTS.map((comment) => ({...comment})), submitted: []});
+    },
+
+    context: async ({browserName, live, site}, use) => {
         const profile = mkdtempSync(path.join(tmpdir(), "refresher-e2e-"));
         let context: BrowserContext;
         if (browserName === "firefox") {
@@ -95,11 +118,23 @@ export const test = base.extend<{ live: boolean }>({
         if (live) await routeLive(context);
         else await context.route(/^https:\/\/([a-z0-9]+\.)?dcinside\.com\//, (route) => {
             const url = new URL(route.request().url());
-            if (url.pathname.startsWith("/board/lists")) return route.fulfill({contentType: "text/html; charset=utf-8", body: listPage()});
+            if (url.pathname.startsWith("/board/lists")) return route.fulfill({contentType: "text/html; charset=utf-8", body: listPage(site.rows)});
             // 임시 차단된 페이지(본문이 빈 페이지). 글 목록·본문이 아니라 미리보기 모듈이 등록되지 않는다.
             if (url.pathname.startsWith("/board/write")) return route.fulfill({contentType: "text/html; charset=utf-8", body: "<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head><body></body></html>"});
             if (url.pathname.startsWith("/board/view")) return route.fulfill({contentType: "text/html; charset=utf-8", body: viewPage(url.searchParams.get("no") ?? "")});
-            if (url.pathname.startsWith("/board/comment")) return route.fulfill({contentType: "application/json", body: commentsResponse()});
+            if (url.pathname === "/board/comment/") return route.fulfill({contentType: "application/json", body: commentsResponse(site.comments)});
+            if (url.pathname === "/board/forms/comment_submit") {
+                const body = new URLSearchParams(route.request().postData() ?? "");
+                site.submitted.push({path: url.pathname, body});
+                return route.fulfill({contentType: "text/plain", body: acceptComment(site, body)});
+            }
+            if (url.pathname === "/board/comment/comment_delete_submit") {
+                const body = new URLSearchParams(route.request().postData() ?? "");
+                site.submitted.push({path: url.pathname, body});
+                const target = site.comments.find((comment) => comment.no === body.get("re_no"));
+                if (target) target.is_delete = "1";
+                return route.fulfill({contentType: "text/plain", body: target ? "true" : "false||댓글이 없습니다."});
+            }
             // 갤로그 글/댓글 수 (유저 버블·글댓비). POST지만 읽기다.
             if (url.pathname.startsWith("/api/gallog_user_layer")) return route.fulfill({contentType: "text/plain", body: "12,34"});
             // 쓰기 요청(댓글·추천·관리)은 테스트에서 절대 나가면 안 된다. 나가면 바로 실패로 보이게 500을 준다.

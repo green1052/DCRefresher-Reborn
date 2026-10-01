@@ -1,4 +1,4 @@
-import {commentsResponse} from "./dcinside";
+import {fakeComment, SERVICE_CODE_TAIL} from "./dcinside";
 import {expect, test} from "./fixtures";
 
 test.describe("글 목록", () => {
@@ -128,14 +128,8 @@ test.describe("미리보기 부가 기능", () => {
         await expect(frame).toBeVisible();
     });
 
-    test("답글이 둘 이상인 스레드는 접고 펼 수 있고, 접힌 답글은 보이지 않는다", async ({listPage}) => {
-        // 이 페이지의 댓글 응답에 답글 하나를 더해 답글을 둘로 만든다.
-        await listPage.page.route(/\/board\/comment\//, async (route) => {
-            const body = JSON.parse(commentsResponse()) as { comments: object[]; total_cnt: number };
-            body.comments.push({no: "12", c_no: "10", depth: 1, user_id: "", name: "ㅇㅇ", ip: "3.4", memo: "답글 둘", is_delete: "0", date_time: "2026.09.30 12:03:00", reg_date: "2026-09-30 12:03:00"});
-            body.total_cnt = 3;
-            await route.fulfill({contentType: "application/json", body: JSON.stringify(body)});
-        });
+    test("답글이 둘 이상인 스레드는 접고 펼 수 있고, 접힌 답글은 보이지 않는다", async ({listPage, site}) => {
+        site.comments.push(fakeComment(12, {c_no: "10", depth: 1, ip: "3.4", memo: "답글 둘"}));
         await listPage.titles().first().click({button: "right"});
         const frame = listPage.frame();
         const reply = frame.getByText("답글 둘");
@@ -143,30 +137,146 @@ test.describe("미리보기 부가 기능", () => {
 
         await frame.getByRole("button", {name: "답글 접기"}).click();
         await expect(reply).toBeHidden();
+        // 접어도 부모 댓글과 첫 답글이 아닌 스레드 머리는 남는다.
+        await expect(frame.getByText("댓글 하나")).toBeVisible();
 
         await frame.getByRole("button", {name: "답글 펼치기"}).click();
         await expect(reply).toBeVisible();
     });
 
-    test("댓글을 새로고침하면 새로 들어온 댓글만 강조한다", async ({listPage}) => {
+    test("답글이 하나뿐인 스레드에는 접기 버튼이 없다", async ({listPage}) => {
+        await listPage.titles().first().click({button: "right"});
+        const frame = listPage.frame();
+        await expect(frame.getByText("답글", {exact: true})).toBeVisible();
+        await expect(frame.getByRole("button", {name: /답글 (접기|펼치기)/})).toHaveCount(0);
+    });
+
+    test("댓글을 새로고침하면 새로 들어온 댓글만 강조한다", async ({listPage, site}) => {
         await listPage.titles().first().click({button: "right"});
         const comments = listPage.frame().locator(".refresher-comment");
         await expect(comments).toHaveCount(2);
         await expect(listPage.frame().locator(".refresher-comment[data-fresh]")).toHaveCount(0);
 
-        // 이 페이지의 댓글 응답에만 새 댓글을 하나 더한다 (페이지 route가 컨텍스트 route보다 먼저다).
-        await listPage.page.route(/\/board\/comment\//, async (route) => {
-            const body = JSON.parse(commentsResponse()) as { comments: object[]; total_cnt: number };
-            body.comments.push({no: "12", c_no: "12", depth: 0, user_id: "user2", name: "고닉", ip: "", memo: "새 댓글", is_delete: "0", date_time: "2026.09.30 12:03:00", reg_date: "2026-09-30 12:03:00"});
-            body.total_cnt = 3;
-            await route.fulfill({contentType: "application/json", body: JSON.stringify(body)});
-        });
+        site.comments.push(fakeComment(12, {user_id: "user2", name: "고닉", ip: "", memo: "새 댓글"}));
         await listPage.frame().getByRole("button", {name: "댓글 새로고침"}).click();
 
         await expect(comments).toHaveCount(3);
         const fresh = listPage.frame().locator(".refresher-comment[data-fresh]");
         await expect(fresh).toHaveCount(1);
         await expect(fresh).toContainText("새 댓글");
+    });
+});
+
+test.describe("댓글 쓰기·지우기", () => {
+    test("비회원 댓글은 폼에서 푼 service_code와 닉네임·비밀번호를 담아 보내고, 올라간 댓글을 다시 받는다", async ({listPage, site}) => {
+        await listPage.titles().first().click({button: "right"});
+        const frame = listPage.frame();
+        await frame.getByRole("textbox", {name: "댓글 입력"}).fill("미리보기에서 쓴 댓글");
+        await frame.getByRole("button", {name: "작성"}).click();
+
+        await expect(frame.getByText("미리보기에서 쓴 댓글", {exact: true})).toBeVisible();
+        await expect(frame.getByRole("textbox", {name: "댓글 입력"})).toHaveValue("");
+        expect(site.submitted).toHaveLength(1);
+        const {body} = site.submitted[0]!;
+        expect(body.get("service_code")).toBe(`abc${SERVICE_CODE_TAIL}`);
+        expect(Object.fromEntries(["id", "no", "c_gall_id", "c_gall_no", "name", "memo"].map((key) => [key, body.get(key)]))).toEqual({
+            id: "test", no: "3", c_gall_id: "test", c_gall_no: "3", name: "ㅇㅇ", memo: "미리보기에서 쓴 댓글"
+        });
+        // 비밀번호는 만들어 넣고, 답글이 아니면 부모 번호가 없다.
+        expect(body.get("password")).toMatch(/^.{4,}$/);
+        expect(body.has("c_no")).toBe(false);
+    });
+
+    test("답글은 스레드 첫 댓글 번호와 답할 댓글 번호를 같이 보낸다", async ({listPage, site}) => {
+        await listPage.titles().first().click({button: "right"});
+        const frame = listPage.frame();
+        // 답글(11)에 답한다. 부모는 스레드 첫 댓글(10)이다.
+        await frame.locator(".refresher-comment").nth(1).getByRole("button", {name: "답글", exact: true}).click();
+        await frame.getByRole("textbox", {name: "답글 입력"}).fill("답글에 단 답글");
+        await frame.getByRole("button", {name: "작성"}).click();
+
+        await expect(frame.getByText("답글에 단 답글", {exact: true})).toBeVisible();
+        const {body} = site.submitted[0]!;
+        expect([body.get("c_no"), body.get("reply_no")]).toEqual(["10", "11"]);
+        // 답글을 보내면 답글 대상이 풀린다.
+        await expect(frame.getByRole("textbox", {name: "댓글 입력"})).toBeVisible();
+    });
+
+    test("유동 댓글은 비밀번호를 물어 지우고, 지운 뒤 목록을 다시 받는다", async ({listPage, site}) => {
+        await listPage.titles().first().click({button: "right"});
+        const frame = listPage.frame();
+        // 대화상자는 뜨는 동안 페이지를 멈추므로 누르기 전에 처리기를 건다.
+        const dialogs: string[] = [];
+        listPage.page.once("dialog", (dialog) => {
+            dialogs.push(dialog.type());
+            void dialog.accept("pw1234");
+        });
+        await frame.locator(".refresher-comment").nth(1).getByRole("button", {name: "댓글 삭제"}).click();
+
+        await expect(listPage.toast()).toContainText("댓글을 삭제했습니다.");
+        await expect(frame.locator(".refresher-comment").nth(1)).toHaveAttribute("data-deleted");
+        expect(dialogs).toEqual(["prompt"]);
+        const {path, body} = site.submitted[0]!;
+        expect(path).toBe("/board/comment/comment_delete_submit");
+        expect(Object.fromEntries(["id", "no", "re_no", "mode", "re_password"].map((key) => [key, body.get(key)]))).toEqual({
+            id: "test", no: "3", re_no: "11", mode: "del", re_password: "pw1234"
+        });
+    });
+
+    test("비밀번호 입력을 취소하면 아무것도 보내지 않는다", async ({listPage, site}) => {
+        await listPage.titles().first().click({button: "right"});
+        const frame = listPage.frame();
+        const dismissed = new Promise<void>((resolve) => listPage.page.once("dialog", (dialog) => void dialog.dismiss().then(resolve)));
+        await frame.locator(".refresher-comment").nth(1).getByRole("button", {name: "댓글 삭제"}).click();
+        await dismissed;
+
+        // 대화상자가 닫힌 뒤에도 요청이 없고 댓글은 그대로다.
+        await listPage.page.waitForTimeout(500);
+        expect(site.submitted).toEqual([]);
+        await expect(frame.locator(".refresher-comment").nth(1)).not.toHaveAttribute("data-deleted");
+    });
+});
+
+test.describe("자동 새로고침", () => {
+    test("새 글이 올라오면 맨 위에 넣고, 차단한 사람의 새 글은 가린다", async ({listPage, site, storage}) => {
+        await storage.set({"refresher:block:NICK": [{content: "차단닉", isRegex: false}]});
+        await storage.setModuleSettings("refresh", {refreshRate: 3000});
+        site.rows = [
+            {no: 5, title: "차단된 새 글", nick: "차단닉", uid: "", ip: "5.6"},
+            {no: 4, title: "네 번째 글", nick: "새닉", uid: "user4"},
+            ...site.rows
+        ];
+
+        const rows = listPage.rows();
+        await expect(rows.nth(1)).toContainText("네 번째 글", {timeout: 15_000});
+        await expect(rows.nth(1)).toHaveClass(/refresherNewPost/);
+        await expect(rows.nth(0)).toHaveClass(/refresherBlocked/);
+        // 새 행에도 유저 정보 배지가 붙는다.
+        await expect(rows.nth(1).locator(".refresher-user-badges")).toHaveText("(user4)");
+    });
+
+    test("삭제된 글 보존을 켜면 목록에서 빠진 글을 붉게 남긴다", async ({listPage, site, storage}) => {
+        await storage.setModuleSettings("preview", {archiveArticle: true});
+        await storage.setModuleSettings("refresh", {refreshRate: 3000});
+        site.rows = site.rows.filter((row) => row.no !== 2);
+
+        const deleted = listPage.page.locator(".gall_list tr[data-no=\"2\"]");
+        await expect(deleted).toHaveClass(/refresherDeleted/, {timeout: 15_000});
+        // 자리는 그대로다 (3과 1 사이).
+        await expect(listPage.rows().nth(1)).toHaveAttribute("data-no", "2");
+    });
+
+    test("목록 위에 마우스가 있으면 새로고침하지 않는다", async ({listPage, site, storage}) => {
+        await storage.setModuleSettings("refresh", {refreshRate: 3000, pauseOnHover: true});
+        await listPage.rows().nth(1).hover();
+        site.rows = [{no: 4, title: "네 번째 글", nick: "새닉", uid: "user4"}, ...site.rows];
+
+        // 두 주기가 지나도 그대로다. 같은 설정을 끈 아래 테스트들은 이 시간 안에 새 글을 넣는다.
+        await listPage.page.waitForTimeout(7000);
+        await expect(listPage.rows().first()).toHaveAttribute("data-no", "3");
+
+        await listPage.leave();
+        await expect(listPage.rows().first()).toHaveAttribute("data-no", "4", {timeout: 15_000});
     });
 });
 
