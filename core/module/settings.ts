@@ -1,4 +1,8 @@
+import {storage} from "wxt/utils/storage";
+
+import {MODULES_KEY, moduleSettingsKey} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
+import {isRecord} from "@/utils/record";
 
 import type {ModuleDefinition, SettingSchema} from "./types";
 
@@ -57,3 +61,20 @@ export const areEqual = (a: SettingValue | undefined, b: SettingValue): boolean 
     return false;
 };
 
+
+/** 저장소의 모듈 on/off 값. 없거나 모양이 다르면 빈 객체(모두 defaultEnable) */
+export const enablesOf = (stored: unknown): Record<string, unknown> => (isRecord(stored) ? stored : {});
+
+/** 저장소의 모듈 설정을 스키마에 맞춘다. 없거나 모양이 다르면 기본값 */
+export const settingsOf = (def: Pick<ModuleDefinition, "settings">, stored: unknown): Record<string, SettingValue> =>
+    normalizeSettings(def, isRecord(stored) ? stored : null);
+
+/**
+ * 모듈 on/off와 주어진 모듈들의 설정을 한 번의 storage.local.get으로 읽는다. 모듈마다 따로 읽으면 왕복이 모듈 수만큼 쌓인다.
+ * 항목(defineItem)은 만드는 순간 키마다 한 번 더 읽으므로 키로 읽는다 (items.ts). 설정은 저장소 값 그대로다 (settingsOf로 맞춘다).
+ * 콘텐츠 레지스트리·배경 모듈이 같이 쓴다
+ */
+export const readModuleStorage = async (ids: readonly string[]): Promise<{ enables: Record<string, unknown>; settings: Map<string, unknown> }> => {
+    const [enables, ...values] = await storage.getItems([MODULES_KEY, ...ids.map(moduleSettingsKey)]);
+    return {enables: enablesOf(enables?.value), settings: new Map(ids.map((id, index) => [id, values[index]?.value ?? null]))};
+};

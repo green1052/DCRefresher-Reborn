@@ -4,11 +4,11 @@ import type {PageAction, PageToggleState} from "@/core/messaging/protocol";
 import {storage} from "wxt/utils/storage";
 
 import {MODULES_KEY, moduleSettingsKey} from "@/core/storage/items";
+import {watchStorage} from "@/core/storage/sync";
 import type {SettingValue} from "@/core/storage/types";
 import {onBfcacheRestore} from "@/utils/dom";
-import {isRecord} from "@/utils/record";
 
-import {areEqual, isModuleEnabled, normalizeSettings} from "./settings";
+import {areEqual, enablesOf, isModuleEnabled, readModuleStorage, settingsOf} from "./settings";
 import type {AnyModule, ModuleApis, ModuleContext} from "./types";
 
 interface ModuleInstance {
@@ -75,7 +75,7 @@ const stop = (instance: ModuleInstance, keepDom = false): void => {
 
 /** 저장된 설정을 반영. 바뀐 값만 onChanged로 알린다. stored는 저장소에서 온 그대로(없으면 null)라 모양을 검사한다 */
 const applySettings = (instance: ModuleInstance, stored: unknown): void => {
-    for (const [key, next] of Object.entries(normalizeSettings(instance.def, isRecord(stored) ? stored : null))) {
+    for (const [key, next] of Object.entries(settingsOf(instance.def, stored))) {
         if (areEqual(instance.settings[key], next)) continue;
 
         instance.settings[key] = next;
@@ -83,19 +83,10 @@ const applySettings = (instance: ModuleInstance, stored: unknown): void => {
     }
 };
 
-/** 저장소의 모듈 on/off 값. 없거나 모양이 다르면 빈 객체(모두 defaultEnable) */
-const enablesOf = (stored: unknown): Record<string, unknown> => (isRecord(stored) ? stored : {});
+/** 모듈 on/off와 모든 모듈의 설정. 따로 읽으면 왕복이 모듈 수만큼 쌓여 첫 모듈이 늦게 뜬다 */
+const readAll = (defs: AnyModule[]) => readModuleStorage(defs.map((def) => def.id));
 
-/**
- * 모듈 on/off와 모든 모듈의 설정을 한 번의 storage.local.get으로 읽는다. 모듈마다 따로 읽으면 왕복이 모듈 수만큼 쌓여
- * 첫 모듈이 늦게 뜬다. 항목(defineItem)은 만드는 순간 키마다 한 번 더 읽으므로 만들지 않고 키로 읽는다 (items.ts)
- */
-const readAll = async (defs: AnyModule[]): Promise<{ enables: Record<string, unknown>; settings: Map<string, unknown> }> => {
-    const [enables, ...values] = await storage.getItems([MODULES_KEY, ...defs.map((def) => moduleSettingsKey(def.id))]);
-    return {enables: enablesOf(enables?.value), settings: new Map(defs.map((def, index) => [def.id, values[index]?.value]))};
-};
-
-const register = async (def: AnyModule, stored: unknown, enables: Promise<Record<string, unknown>>): Promise<void> => {
+const register = async (def: AnyModule, stored: unknown, enables: Promise<Record<string, unknown>>, signal: AbortSignal): Promise<void> => {
     if (instances.has(def.id)) throw new Error(`${def.id} is already registered.`);
 
     const instance: ModuleInstance = {def, settings: {}};
@@ -104,7 +95,7 @@ const register = async (def: AnyModule, stored: unknown, enables: Promise<Record
     // 설정은 옵션 페이지가 저장소에 직접 쓰고, 여기서 감시해 반영한다
     if (def.settings) {
         applySettings(instance, stored);
-        storage.watch(moduleSettingsKey(def.id), (next) => applySettings(instance, next));
+        watchStorage(moduleSettingsKey(def.id), (next) => applySettings(instance, next), signal);
     }
 
     if (isModuleEnabled(def, await enables)) await start(instance);
@@ -168,7 +159,7 @@ export const loadAll = async (defs: AnyModule[], signal: AbortSignal, ready?: Pr
     const enables = Promise.all([all, ready]).then(([value]) => value.enables);
 
     const {settings} = await all;
-    const results = await Promise.allSettled(defs.map((def) => register(def, settings.get(def.id), enables)));
+    const results = await Promise.allSettled(defs.map((def) => register(def, settings.get(def.id), enables, signal)));
     for (const [index, result] of results.entries()) {
         if (result.status === "rejected") console.error(`Failed to load module: ${defs[index]?.id}`, result.reason);
     }
@@ -181,7 +172,7 @@ export const loadAll = async (defs: AnyModule[], signal: AbortSignal, ready?: Pr
             else stop(instance);
         }
     };
-    storage.watch(MODULES_KEY, (next) => sync(enablesOf(next)));
+    watchStorage(MODULES_KEY, (next) => sync(enablesOf(next)), signal);
     // bfcache에서 돌아온 탭은 그사이의 on/off·설정 변경을 받지 못했다. 다시 시작하는 모듈이 새 값을 보도록 설정을 먼저 맞춘다
     onBfcacheRestore(async () => {
         // 모두 한꺼번에 읽는다. sync는 설정을 다 맞춘 뒤에 부른다

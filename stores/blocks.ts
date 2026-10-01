@@ -1,12 +1,10 @@
 import {create} from "zustand";
 import {arrayIncludes} from "ts-extras";
-import {storage} from "wxt/utils/storage";
 
 import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockDefaultsStorage, blockListKey, blockStorage, DEFAULT_DETECT_MODE, DETECT_MODE_NAMES, DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
-import {onBfcacheRestore} from "@/utils/dom";
+import {storageSync} from "@/core/storage/sync";
 import {saveOrReload} from "@/utils/error";
-import {once} from "@/utils/once";
 import {isRecord} from "@/utils/record";
 
 export type BlockInputFields = Omit<BlockEntry, "id">;
@@ -120,21 +118,15 @@ export const normalizeDefaults = (value: unknown): Record<BlockType, DetectMode>
 
 const setDefaults = (next: unknown): void => useBlocksStore.setState({defaults: normalizeDefaults(next)});
 
-const load = async (): Promise<void> => {
-    // 키로 읽어 한 번의 storage.local.get으로 끝낸다. 항목(defineItem)은 만드는 순간 키마다 한 번 더 읽으므로 쓸 때만 만든다 (items.ts).
-    // 값이 없으면 null이고, setList·setDefaults가 기본값으로 맞춘다
-    const [defaults, ...lists] = await storage.getItems([BLOCK_DEFAULTS_KEY, ...BLOCK_TYPES.map(blockListKey)]);
-    for (const [index, type] of BLOCK_TYPES.entries()) setList(type, lists[index]?.value);
-    setDefaults(defaults?.value);
-};
+const listTypes = new Map<string, BlockType>(BLOCK_TYPES.map((type) => [blockListKey(type), type]));
 
-/** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다 */
-export const initBlocksStore = once(async (signal?: AbortSignal) => {
-    // 다 읽은 뒤에 감시를 건다. 읽기가 실패하면 once가 다음 호출에 다시 시도하는데, 그때 감시가 두 번 걸리지 않는다
-    await load();
-    for (const type of BLOCK_TYPES) storage.watch(blockListKey(type), (next) => setList(type, next));
-    storage.watch(BLOCK_DEFAULTS_KEY, setDefaults);
-
-    // 옛 목록으로 쓰면 다른 탭의 변경을 덮으므로 bfcache에서 돌아오면 다시 읽는다. signal은 콘텐츠 스크립트 컨텍스트의 것이다
-    onBfcacheRestore(load, signal);
+// 값이 없으면 null이고, setList·setDefaults가 기본값으로 맞춘다
+const sync = storageSync([BLOCK_DEFAULTS_KEY, ...BLOCK_TYPES.map(blockListKey)], (key, value) => {
+    const type = listTypes.get(key);
+    if (type) setList(type, value);
+    else setDefaults(value);
 });
+const load = sync.load;
+
+/** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다 */
+export const initBlocksStore = sync.start;

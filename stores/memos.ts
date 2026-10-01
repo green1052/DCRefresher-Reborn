@@ -1,11 +1,9 @@
-import {storage} from "wxt/utils/storage";
 import {create} from "zustand";
 
 import {MEMO_TYPES, memoMapKey, memoStorage} from "@/core/storage/items";
+import {storageSync} from "@/core/storage/sync";
 import type {MemoEntry, MemoType} from "@/core/storage/types";
-import {onBfcacheRestore} from "@/utils/dom";
 import {saveOrReload} from "@/utils/error";
-import {once} from "@/utils/once";
 import {isRecord} from "@/utils/record";
 
 type MemoMap = Record<string, MemoEntry>;
@@ -86,18 +84,11 @@ const setMap = (type: MemoType, value: unknown): void =>
         return JSON.stringify(state.memos[type]) === JSON.stringify(next) ? state : {memos: {...state.memos, [type]: next}};
     });
 
-const load = async (): Promise<void> => {
-    // 키로 읽어 한 번의 storage.local.get으로 끝낸다. 항목은 만드는 순간 한 번 더 읽으므로 쓸 때만 만든다 (items.ts). 없으면 null → 빈 목록
-    const maps = await storage.getItems(MEMO_TYPES.map(memoMapKey));
-    for (const [index, type] of MEMO_TYPES.entries()) setMap(type, maps[index]?.value);
-};
+const mapTypes = new Map(MEMO_TYPES.map((type) => [memoMapKey(type), type]));
 
-/** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다 */
-export const initMemosStore = once(async (signal?: AbortSignal) => {
-    // 다 읽은 뒤에 감시를 건다. 읽기가 실패하면 once가 다음 호출에 다시 시도하는데, 그때 감시가 두 번 걸리지 않는다
-    await load();
-    for (const type of MEMO_TYPES) storage.watch(memoMapKey(type), (next) => setMap(type, next));
+// 값이 없으면 null → 빈 목록
+const sync = storageSync([...mapTypes.keys()], (key, value) => setMap(mapTypes.get(key)!, value));
+const load = sync.load;
 
-    // 옛 메모로 쓰면 다른 탭의 변경을 덮으므로 bfcache에서 돌아오면 다시 읽는다. signal은 콘텐츠 스크립트 컨텍스트의 것이다
-    onBfcacheRestore(load, signal);
-});
+/** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다 */
+export const initMemosStore = sync.start;

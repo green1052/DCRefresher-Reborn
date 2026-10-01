@@ -2,15 +2,15 @@ import {useEffect} from "react";
 import {storage} from "wxt/utils/storage";
 import {create} from "zustand";
 
-import {isModuleEnabled, normalizeSetting, normalizeSettings} from "@/core/module/settings";
+import {enablesOf, isModuleEnabled, normalizeSetting, normalizeSettings, settingsOf} from "@/core/module/settings";
 import type {AnyModuleMeta} from "@/core/module/types";
 import {migrateModuleSettings} from "@/core/migrate-settings";
 import {MODULES_KEY, moduleSettingsKey, moduleSettingsStorage, modulesStorage, settingsKeyModule} from "@/core/storage/items";
+import {storageSync} from "@/core/storage/sync";
 import type {SettingValue} from "@/core/storage/types";
 import features from "@/features/meta";
 import {saveOrReload} from "@/utils/error";
 import {once} from "@/utils/once";
-import {isRecord} from "@/utils/record";
 
 type Values = Record<string, SettingValue>;
 
@@ -108,29 +108,26 @@ const pruneStaleSettings = async (): Promise<void> => {
     });
 };
 
-const setEnables = (stored: unknown): void => useModulesStore.setState({enables: resolveEnables(isRecord(stored) ? stored : {})});
+const setEnables = (stored: unknown): void => useModulesStore.setState({enables: resolveEnables(enablesOf(stored))});
 const setValues = (feature: AnyModuleMeta, stored: unknown): void =>
-    useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: normalizeSettings(feature, isRecord(stored) ? stored : null)}}));
+    useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: settingsOf(feature, stored)}}));
 
-/** 설정이 있는 모듈 */
-const withSettings = features.filter((feature) => feature.settings);
+/** 설정이 있는 모듈. 설정 키로 찾는다 */
+const withSettings = new Map<string, AnyModuleMeta>(features.filter((feature) => feature.settings).map((feature) => [moduleSettingsKey(feature.id), feature]));
 
-const load = async (): Promise<void> => {
-    // on/off와 모든 모듈 설정을 한 번의 storage.local.get으로 읽는다. 항목은 쓸 때만 만든다 (items.ts). 없으면 null → 기본값
-    const [enables, ...values] = await storage.getItems([MODULES_KEY, ...withSettings.map((feature) => moduleSettingsKey(feature.id))]);
-    setEnables(enables?.value);
-    for (const [index, feature] of withSettings.entries()) setValues(feature, values[index]?.value);
-};
+// on/off와 모든 모듈 설정. 없으면 null → 기본값
+const sync = storageSync([MODULES_KEY, ...[...withSettings.values()].map((feature) => moduleSettingsKey(feature.id))], (key, value) => {
+    const feature = withSettings.get(key);
+    if (feature) setValues(feature, value);
+    else setEnables(value);
+});
+const load = sync.load;
 
 const persist = (write: () => Promise<void>): Promise<void> => saveOrReload(enqueue(write), load, "모듈 설정을 저장하지 못했습니다.");
 
 /** 옵션·팝업에서 저장소 값을 읽고 변경을 감시한다. 여러 번 불러도 한 번만 한다 */
 export const initModulesStore = once(async () => {
-    await load();
-
-    // 다 읽은 뒤에 감시를 건다. 읽기가 실패하면 once가 다음 호출에 다시 시도하는데, 그때 감시가 두 번 걸리지 않는다
-    storage.watch(MODULES_KEY, setEnables);
-    for (const feature of withSettings) storage.watch(moduleSettingsKey(feature.id), (next) => setValues(feature, next));
+    await sync.start();
 
     // 화면을 그리는 데는 필요 없으니 기다리지 않는다
     pruneStaleSettings().catch(console.error);

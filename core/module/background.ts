@@ -2,9 +2,8 @@ import {storage} from "wxt/utils/storage";
 
 import {MODULES_KEY, moduleSettingsKey} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
-import {isRecord} from "@/utils/record";
 
-import {isModuleEnabled, normalizeSettings} from "./settings";
+import {isModuleEnabled, readModuleStorage, settingsOf} from "./settings";
 import type {ModuleDefinition} from "./types";
 
 /**
@@ -32,12 +31,11 @@ export const startBackgroundModules = (modules: BackgroundModule[]): (() => Prom
         // apply가 겹치면 메뉴 지우기·만들기 같은 비동기 작업이 엇갈리므로 줄 세운다
         let queue = Promise.resolve();
         const apply = (): Promise<void> => (queue = queue.then(async () => {
-            // 한 번의 storage.local.get으로 읽는다. 항목(defineItem)은 만드는 순간 한 번 더 읽으므로 키로 읽고 감시한다 (items.ts)
-            const [enables, stored] = await storage.getItems([MODULES_KEY, moduleSettingsKey(module.id)]);
-            // on/off·설정 해석은 콘텐츠 레지스트리와 같은 함수로 한다
+            // on/off·설정 읽기와 해석은 콘텐츠 레지스트리와 같은 함수로 한다
+            const {enables, settings} = await readModuleStorage([module.id]);
             await module.apply({
-                enabled: isModuleEnabled(module, isRecord(enables?.value) ? enables.value : {}),
-                settings: normalizeSettings(module, isRecord(stored?.value) ? stored.value : null)
+                enabled: isModuleEnabled(module, enables),
+                settings: settingsOf(module, settings.get(module.id))
             });
         }).catch(console.error));
 
