@@ -12,7 +12,7 @@
  */
 import {arrayIncludes} from "ts-extras";
 
-import {BLOCK_TYPES, DETECT_MODES} from "@/core/storage/items";
+import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockListKey, DETECT_MODES, MODULES_KEY, moduleSettingsKey, rawKey} from "@/core/storage/items";
 import type {BlockType, DetectMode} from "@/core/storage/types";
 import {isRecord} from "@/utils/record";
 
@@ -123,12 +123,12 @@ export const migrateV5 = (data: Snapshot): Snapshot => {
     // 차단 목록 키는 v5·v6가 같으니 v5 키가 있을 때만 v5 데이터로 본다 (잔재 키만 있는 개발 빌드의 v6 데이터는 제외).
     const fromV5 = Object.keys(data).some(isV5Key);
     for (const type of fromV5 ? BLOCK_TYPES : []) {
-        if (`refresher:block:${type}` in data) defaults[type] ??= "SAME";
+        if (rawKey(blockListKey(type)) in data) defaults[type] ??= "SAME";
     }
 
     // 옛 버전은 refresher:modules에 v4 모듈 스냅숏(객체)을 넣어 두었다. on/off(boolean) 값만 남긴다
-    const modules = next["refresher:modules"];
-    if (isRecord(modules)) next["refresher:modules"] = Object.fromEntries(Object.entries(modules).filter(([, value]) => typeof value === "boolean"));
+    const modules = next[rawKey(MODULES_KEY)];
+    if (isRecord(modules)) next[rawKey(MODULES_KEY)] = Object.fromEntries(Object.entries(modules).filter(([, value]) => typeof value === "boolean"));
 
     // 이미 있는 v6 값이 이긴다
     const merge = (key: string, fromV5: Record<string, unknown>): void => {
@@ -136,9 +136,9 @@ export const migrateV5 = (data: Snapshot): Snapshot => {
         next[key] = {...fromV5, ...(isRecord(next[key]) ? next[key] : {})};
     };
 
-    merge("refresher:modules", enables);
-    merge("refresher:block:defaults", defaults);
-    for (const [id, values] of Object.entries(settings)) merge(`refresher:module:${id}:settings`, values);
+    merge(rawKey(MODULES_KEY), enables);
+    merge(rawKey(BLOCK_DEFAULTS_KEY), defaults);
+    for (const [id, values] of Object.entries(settings)) merge(rawKey(moduleSettingsKey(id)), values);
 
     return next;
 };

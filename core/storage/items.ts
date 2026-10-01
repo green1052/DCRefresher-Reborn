@@ -59,6 +59,12 @@ const lazyItem = <T>(key: StorageItemKey, fallback: T): (() => WxtStorageItem<T,
 const lazyItems = <K extends string, T>(keys: readonly K[], keyOf: (key: K) => StorageItemKey, fallback: () => T): Record<K, WxtStorageItem<T, {}>> =>
     Object.defineProperties({} as Record<K, WxtStorageItem<T, {}>>, Object.fromEntries(keys.map((key) => [key, {get: lazyItem<T>(keyOf(key), fallback()), enumerable: true}])));
 
+/**
+ * browser.storage.local에 실제로 저장되는 이름 (local: 없이). 백업·가져오기처럼 storage.local을 직접 다룰 때 쓴다.
+ * WXT 키에서 만들어 두 이름이 어긋나지 않게 한다
+ */
+export const rawKey = <K extends string>(key: `local:${K}`): K => key.slice("local:".length) as K;
+
 export const blockListKey = (type: BlockType): `local:refresher:block:${BlockType}` => `local:refresher:block:${type}`;
 export const BLOCK_DEFAULTS_KEY = "local:refresher:block:defaults";
 export const memoMapKey = (type: MemoType): `local:refresher:memo:${MemoType}` => `local:refresher:memo:${type}`;

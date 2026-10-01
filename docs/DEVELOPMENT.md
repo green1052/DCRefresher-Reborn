@@ -343,7 +343,8 @@ getModuleApi("preview")?.isOpen()
 - 백업 대상 판정은 `core/backup.ts`의 `isBackupTarget`입니다. 새 키가 백업되면 안 되는 성격(비밀번호, 다시 받을 수 있는 큰 데이터)이면 여기에 추가합니다. 클라우드 백업은 `storage.sync`의 용량(약 100KB)을 두 칸(수동·자동)이 나눠 씁니다.
 - 차단 항목의 검사 방식(`mode`)이 비어 있으면 그 기기의 기본 차단 모드를 따릅니다. 그래서 차단 목록을 다른 기기로 옮기는 곳(데이터 탭 가져오기, 클라우드 합치기, 차단 탭 가져오기)은 내보낸 쪽의 기본 모드가 다르면 그 모드를 항목에 적어 둡니다. 새로 옮기는 경로를 만들 때도 같은 규칙을 따릅니다. v5 이전은 항목 대신 기본 모드(`refresher:block:defaults`)를 v5 값으로 맞춥니다(v5에서는 모든 유형이 '일치'였습니다).
 - v5 사용자의 데이터는 업데이트 때와, 데이터 탭이 v5 백업을 가져오거나 복원할 때 `core/migrate-v5.ts`가 옮깁니다. v6 설정 키는 v5와 이름이 같습니다(`core/migrate-v5.ts` 머리 주석). 주석 표시는 미리보기 일부에만 있으니, 표시가 없어도 v5에 있던 설정 키는 이름을 바꾸지 마세요.
-- v6 안에서 바뀐 설정(6.0.x의 `showIpInfo` 등)은 `core/migrate-settings.ts`에 변환 함수를 두고 세 곳에서 부릅니다. 배경의 `onInstalled`(update), `stores/modules.ts`의 `pruneStaleSettings`(정리하기 전), 데이터 탭의 `writeSettings`(복원·가져오기)입니다. 이전 코드는 여러 번 돌아도 결과가 같아야 합니다.
+- v6 안에서 바뀐 설정(6.0.x의 `showIpInfo` 등)은 `core/migrate-settings.ts`에 변환 함수를 두고 세 곳에서 부릅니다. 배경의 `onInstalled`(update), `stores/modules.ts`의 `pruneStaleSettings`(정리하기 전), 데이터 탭이 쓰는 `core/settings-transfer.ts`의 `writeSettings`(복원·가져오기)입니다. 이전 코드는 여러 번 돌아도 결과가 같아야 합니다.
+- 클라우드 복원·합치기, JSON 가져오기, 초기화가 저장소에 쓰는 규칙(지울 키, 합치는 방법, 기본 차단 모드 고정)은 `core/settings-transfer.ts`에 모여 있고 단위 테스트가 있습니다. `storage.local`을 직접 다루는 곳은 키 이름을 문자열로 적지 말고 `rawKey(MODULES_KEY)`처럼 `items.ts`의 키에서 만듭니다.
 
 ## HTTP
 
