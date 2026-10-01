@@ -15,6 +15,7 @@ import {initMemosStore} from "@/stores/memos";
 import {useUiStore} from "@/stores/ui";
 import {followDcAppearance} from "@/utils/appearance";
 import {whenDomReady} from "@/utils/dom";
+import {ownPreviewEntry} from "@/core/preview/history";
 import {isRecord} from "@/utils/record";
 
 export default defineContentScript({
@@ -49,10 +50,10 @@ export default defineContentScript({
             // 죽은 인스턴스가 미리보기를 열며 바꿔 둔 기록 항목(글 주소·제목)을 목록 항목으로 되돌린다.
             // 그대로 두면 새 미리보기를 닫을 때 그 항목으로 돌아가 옛 글이 다시 열린다.
             // doc이 다르면 미리보기를 연 채 새로고침한 실제 글 페이지이므로 건드리지 않는다
-            const state: unknown = history.state;
-            if (isRecord(state) && state.refresher === 1 && state.doc === performance.timeOrigin && isRecord(state.back) && typeof state.back.url === "string") {
-                history.replaceState(state.back.state ?? null, "", state.back.url);
-                if (typeof state.back.title === "string") document.title = state.back.title;
+            const back = ownPreviewEntry(history.state)?.back;
+            if (isRecord(back) && typeof back.url === "string") {
+                history.replaceState(back.state ?? null, "", back.url);
+                if (typeof back.title === "string") document.title = back.title;
             }
         }
 

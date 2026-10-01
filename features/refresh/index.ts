@@ -3,10 +3,10 @@ import {isViewPage, listUrl, mergeParamURL, queryString} from "@/core/http/urls"
 import {LIST_SELECTOR, PAGING_SELECTOR} from "@/core/list";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi} from "@/core/module/registry";
+import {ownPreviewEntry} from "@/core/preview/history";
 import {sendMessage} from "@/core/messaging/protocol";
 import {useUiStore} from "@/stores/ui";
 import {smoothScroll} from "@/utils/dom";
-import {isRecord} from "@/utils/record";
 
 import {replaceList, syncPaging} from "./list";
 import meta, {type Ctx, PAUSE_TOGGLE} from "./meta";
@@ -271,9 +271,8 @@ export default defineModule({
         // 미리보기가 쌓은 글 주소 사이의 이동은 같은 목록이라 받지 않는다. 다시 받으면 고르던 체크가 풀리고 일시정지를 무시한다
         const onPopState = (): void => {
             // 미리보기 기록은 history.state로 가린다. 행 링크는 목록 주소의 기본값 쿼리(sort_type=N, 빈 search_pos 등)를 빼서 listUrl로는 가릴 수 없다
-            const state: unknown = history.state;
             // 새로고침 전 문서가 쌓은 항목(doc이 다르다)은 미리보기가 아니라 실제 이동이다
-            if (isRecord(state) && state.refresher === 1 && state.doc === performance.timeOrigin) return;
+            if (ownPreviewEntry(history.state)) return;
             if (listUrl(location.href) === listUrl(originalLocation)) return;
 
             window.clearTimeout(timer);

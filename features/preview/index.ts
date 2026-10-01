@@ -15,6 +15,7 @@ import {notifyManage} from "@/utils/notify";
 import {isRecord} from "@/utils/record";
 
 import {getEntry, postKey, setEntry} from "@/core/preview/cache";
+import {historyDoc, ownPreviewEntry, previewEntry, type PreviewEntry, type SavedHistory} from "@/core/preview/history";
 import {ADULT_ERROR, SECRET_ERROR} from "@/core/preview/parser";
 import {blockUser, type BlockOptions, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
 import {adjacentPreData, buildPreData, isBlurHidden, isTextPost} from "./rows";
@@ -31,21 +32,12 @@ const errorOf = (error: unknown): ErrorState => ({
     secret: error instanceof Error && error.message === SECRET_ERROR
 });
 
-/** 미리보기를 열기 전 위치. 닫을 때 여기로 돌아간다 */
-interface SavedHistory {
-    title: string;
-    url: string;
-    state: unknown;
-}
-
 const controller = (ctx: Ctx) => {
     const store = usePreviewStore;
     const ui = useUiStore.getState();
 
     let abort: AbortController | null = null;
     let savedHistory: SavedHistory | null = null;
-    // 히스토리 항목에 넣어 이 문서가 쌓은 것인지 가린다. 새로고침한 페이지에 남은 예전 항목으로는 미리보기를 열지 않는다.
-    const historyDoc = performance.timeOrigin;
     let refreshTimer = 0;
     let pressStart = 0;
     let preventOpen = false;
@@ -294,8 +286,8 @@ const controller = (ctx: Ctx) => {
 
     /** 지금 기록이 이 문서의 미리보기가 쌓은 것이면, 미리보기를 열기 전 기록에서 몇 칸 위인지 (아니면 0) */
     const historyDepth = (): number => {
-        const state: unknown = history.state;
-        return isRecord(state) && state.refresher === 1 && state.doc === historyDoc && typeof state.depth === "number" ? state.depth : 0;
+        const depth = ownPreviewEntry(history.state)?.depth;
+        return typeof depth === "number" ? depth : 0;
     };
 
     const restoreHistory = (fromHistory: boolean) => {
@@ -367,7 +359,7 @@ const controller = (ctx: Ctx) => {
             // 브라우저는 기록을 50개까지만 두고 오래된 것부터 지운다. 목록 항목까지 지워지면 닫아도 목록으로 못 돌아가므로 40칸부터는 쌓지 않고 바꾼다
             if (!historySkip) {
                 const depth = (st.visible ? historyDepth() : 0) + 1;
-                const state = {refresher: 1, doc: historyDoc, preData, back: savedHistory, depth: Math.min(depth, 40)};
+                const state: PreviewEntry = {refresher: 1, doc: historyDoc, preData, back: savedHistory ?? undefined, depth: Math.min(depth, 40)};
                 if (depth > 40) history.replaceState(state, newTitle, preData.link);
                 else history.pushState(state, newTitle, preData.link);
             }
@@ -480,8 +472,8 @@ const controller = (ctx: Ctx) => {
 
     const onPopState = (ev: PopStateEvent) => {
         // 이 문서에서 쌓은 항목이면 창이 열려 있어도 그 글을 연다. PageDown으로 넘긴 뒤 뒤로 가면 이전 글이 열린다.
-        const state = ev.state as { refresher?: number; doc?: number; preData?: GalleryPreData; back?: SavedHistory } | null;
-        if (state?.refresher === 1 && state.doc === historyDoc && state.preData) {
+        const state = ownPreviewEntry(ev.state);
+        if (state?.preData) {
             savedHistory = state.back ?? null;
             open(state.preData, false, true);
             return;
@@ -678,8 +670,8 @@ const controller = (ctx: Ctx) => {
     // 앞/뒤로 가기로 돌아왔는데 목록 문서가 bfcache에 없으면 브라우저는 미리보기가 쌓은 항목을 글 주소로 새로 불러온다(파이어폭스에서 잦다).
     // 목록 주소로 바꿔 다시 불러오고, 목록에서 그 글 미리보기를 연다. 새로고침(F5)은 글 페이지 그대로 둔다
     // 다시 연 항목은 새로 쌓지 않고 이 문서 것으로 바꾼다. 쌓으면 목록 항목이 둘이 되어 뒤로 가기를 두 번 눌러야 한다
-    const entry = history.state as { refresher?: number; doc?: number; preData?: GalleryPreData; back?: SavedHistory; reopen?: boolean } | null;
-    if (entry?.refresher === 1 && entry.doc !== historyDoc && entry.preData && entry.back) {
+    const entry = previewEntry(history.state);
+    if (entry && entry.doc !== historyDoc && entry.preData && entry.back) {
         const {preData, back} = entry;
         const navigation = performance.getEntriesByType("navigation")[0];
         if (entry.reopen) {
