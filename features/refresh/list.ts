@@ -28,11 +28,13 @@ const syncCounts = (target: Element, source: Element): void => {
 
 /**
  * 새 목록에서 빠진 글 행을 제자리에 남기고 붉게 칠한다 (v5의 삭제된 글 보존). 한 번 남긴 행은 다음 새로고침에도 남는다.
- * 위에 새 글이 n개 들어오면 맨 아래 n개는 다음 페이지로 밀려난 것이라 남기지 않는다. 행 수는 원래대로 맞춘다.
+ * 위에 새 글이 n개 들어오면 맨 아래 n개는 다음 페이지로 밀려난 것이라 남기지 않는다. 남긴 만큼 아래 행을 빼 행 수를 맞춘다.
  * first: 남아 있던 마지막 글 다음 행(다음 페이지에서 올라온 첫 행). 맨 아래 글이 지워졌을 때 그 앞에 끼워야 행 수를 맞출 때 잘리지 않는다.
  */
 const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, newList: HTMLElement, newPostCount: number, first: Element | null): void => {
     const newRows = new Map(Array.from(newList.children, (row) => [rowKey(row as HTMLElement), row]));
+    // 받은 행 수. 한 페이지가 안 차는 갤러리는 목록이 길어지므로, 옛 행 수가 아니라 남긴 행 수만큼만 뺀다.
+    const received = newList.children.length;
 
     // 옛 목록에서 바로 아래에 있던 행 앞에 끼운다. 새 글이 위에 들어오면 같이 내려가다 다음 페이지로 밀려난다.
     // 위 행 뒤에 끼우면 공지 바로 아래 글이 새 글보다 위에 붙박이고, 인덱스로 세면 새로고침마다 조금씩 밀린다.
@@ -51,7 +53,7 @@ const keepDeletedRows = (oldRows: HTMLTableRowElement[], newKeys: Set<string>, n
         next = row;
     }
 
-    while (newList.children.length > oldRows.length) newList.lastElementChild?.remove();
+    while (newList.children.length > Math.max(oldRows.length, received)) newList.lastElementChild?.remove();
 };
 
 /**

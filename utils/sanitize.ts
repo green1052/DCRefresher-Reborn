@@ -58,7 +58,7 @@ const embedYoutube = (html: string): string =>
 // <style>은 shadow 루트 전체(창·댓글·가린 내용)에 걸리고, 폼 요소는 본문에 필요 없는데 가짜 입력칸을 만들 수 있어 뺀다.
 // SVG <feImage>와 background 속성은 원격 이미지를 불러오는데 미디어 숨기기(태그·CSS)에 걸리지 않는다. 본문에 쓸 일도 없어 뺀다.
 // popover·command 속성은 본문 버튼으로 <dialog>나 팝오버를 최상위 층에 띄운다. 남긴 크기·배경색과 합치면 화면 전체를 덮는 가짜 창이 되어 뺀다.
-// IN_PLACE: sanitizeHtml이 <template> 안의 요소를 그 자리에서 정화한다.
+// IN_PLACE: sanitizeHtml이 비활성 문서의 요소를 그 자리에서 정화한다.
 const FORBIDDEN = ["style", "form", "input", "textarea", "select", "feimage"];
 const BASE: Config = {
     FORBID_ATTR: ["background", "popover", "popovertarget", "popovertargetaction", "commandfor", "command"],
@@ -82,24 +82,23 @@ const make = (cfg: Config): Purifier => {
 let base: Purifier | undefined;
 let noMedia: Purifier | undefined;
 
-let template: HTMLTemplateElement | undefined;
+/** 스크립트·로딩이 없는 문서 (<template>의 내용 문서). 정화할 HTML을 여기서 파싱한다. */
+let inert: Document | undefined;
 
 /**
  * 디시 게시글/댓글 HTML을 오버레이에 넣을 수 있게 정화한다.
  * 오버레이도 페이지 DOM이라 인라인 핸들러가 페이지 컨텍스트에서 실행되므로 반드시 거쳐야 한다.
  * 문자열을 넘기면 DOMPurify가 호출마다 새 문서를 만드는데, <video>(디시콘 등)가 든 문서는 크롬에서 해제되지 않는다.
- * 그래서 재사용하는 <template> 하나(스크립트·로딩이 없는 문서)에 넣고 그 자리에서 정화한다.
+ * 그래서 재사용하는 비활성 문서 하나에서 파싱해 그 자리에서 정화한다.
  */
 export const sanitizeHtml = (html: string, options: { stripMedia?: boolean } = {}): string => {
     const purify = options.stripMedia ? (noMedia ??= make(NO_MEDIA)) : (base ??= make(BASE));
-    template ??= document.createElement("template");
-    template.innerHTML = `<div>${options.stripMedia ? html : embedYoutube(html)}</div>`;
-
-    const root = template.content.firstElementChild!;
+    inert ??= document.createElement("template").content.ownerDocument;
+    // <div>로 감싼 문자열을 넣지 않고 div 안에 바로 넣는다. 문자열로 감싸면 댓글 HTML의 남는 </div>가 감싼 div를 닫아 그 뒤가 버려진다.
+    const root = inert.createElement("div");
+    root.innerHTML = options.stripMedia ? html : embedYoutube(html);
     purify.sanitize(root);
-    const clean = root.innerHTML;
-    template.innerHTML = "";
-    return clean;
+    return root.innerHTML;
 };
 
 /**

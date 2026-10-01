@@ -108,12 +108,23 @@ export const parseIpData = (text: string): CompactIpData | null => {
     return isCompactIpData(data) ? data : null;
 };
 
-/** 모양까지 본다. 받은 파일은 그대로 저장되고 페이지마다 읽히므로, 필드 하나만 틀려도 배지·미리보기가 깨진다. */
-const isCompactIpData = (data: unknown): data is CompactIpData =>
-    isRecord(data) && typeof data.runs === "string" &&
-    (data.version === undefined || typeof data.version === "string") &&
-    isStrings(data.orgs) && isStrings(data.countries) && isNumbers(data.meta) &&
-    Array.isArray(data.lists) && data.lists.every(isNumbers);
+/**
+ * 모양까지 본다. 받은 파일은 그대로 저장되고 페이지마다 읽히므로, 필드 하나만 틀려도 배지·미리보기가 깨진다.
+ * 번호가 범위를 벗어나면 다른 기관·국가가 조용히 보이므로 meta·lists의 번호도 본다.
+ */
+const isCompactIpData = (data: unknown): data is CompactIpData => {
+    if (!isRecord(data) || typeof data.runs !== "string" || (data.version !== undefined && typeof data.version !== "string")) return false;
+    const {orgs, countries, meta, lists} = data;
+    if (!isStrings(orgs) || !isStrings(countries) || !isNumbers(meta) || meta.length % 3 !== 0) return false;
+    if (!Array.isArray(lists) || !lists.every(isNumbers)) return false;
+
+    const metaCount = meta.length / 3;
+    const inRange = (value: number, size: number): boolean => Number.isInteger(value) && value >= 0 && value < size;
+    for (let index = 0; index < metaCount; index++) {
+        if (!inRange(meta[index * 3]!, orgs.length) || !inRange(meta[index * 3 + 1]!, countries.length)) return false;
+    }
+    return lists.every((list) => list.every((value) => inRange(value, metaCount)));
+};
 
 const isStrings = (value: unknown): value is string[] => Array.isArray(value) && value.every((item) => typeof item === "string");
 const isNumbers = (value: unknown): value is number[] => Array.isArray(value) && value.every((item) => typeof item === "number");

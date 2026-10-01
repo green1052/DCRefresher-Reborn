@@ -7,6 +7,10 @@ describe("sanitizeHtml", () => {
         expect(sanitizeHtml("<p onclick=\"x()\">a</p><script>x()</script><input><form></form><style>p{}</style>")).toBe("<p>a</p>");
     });
 
+    it("남는 닫는 태그가 있어도 그 뒤를 버리지 않는다", () => {
+        expect(sanitizeHtml("abc</div>def<b>x</b>")).toBe("abcdef<b>x</b>");
+    });
+
     it("서식 style만 남기고 위치·표시·배경 이미지·음수 여백은 지운다", () => {
         const clean = sanitizeHtml("<p style=\"color: red; position: fixed; display: none; background-image: url(x); margin-top: -400px; padding: 4px; font-weight: bold\">a</p>");
         expect(clean).toContain("color: red");

@@ -94,6 +94,12 @@ describe("replaceList", () => {
         expect(list.children[1]?.classList.contains("refresherDeleted")).toBe(true);
     });
 
+    it("삭제된 글 보존: 한 페이지가 안 차는 목록은 새 글만큼 길어진다", () => {
+        const old = mount([row("3"), row("2"), row("1")]);
+        replaceList(old, table([row("4"), row("3"), row("2"), row("1")]), {...options, keepDeleted: true});
+        expect(nos(document.querySelector("tbody")!)).toEqual(["4", "3", "2", "1"]);
+    });
+
     it("관리자 목록은 받아온 행에 체크박스 칸을 채운다", () => {
         const wrapper = document.createElement("div");
         wrapper.innerHTML = "<table class=\"gall_list\"><thead><tr><th class=\"chkbox_th\"></th><th></th></tr></thead><tbody>" +

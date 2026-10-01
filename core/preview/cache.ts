@@ -1,3 +1,4 @@
+import {galleryKind} from "@/core/http/urls";
 import {LruCache} from "@/utils/lru";
 
 import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "./types";
@@ -16,8 +17,14 @@ interface CacheEntry {
 // autopurge가 없으면 만료된 항목(본문 HTML 포함)이 50개에 밀려날 때까지 메모리에 남는다.
 const entries = new LruCache<string, CacheEntry>({max: 50, ttl: 60_000, autopurge: true});
 
-/** 글 하나를 가리키는 키. 번호는 갤러리마다 따로 매겨진다. */
-export const postKey = (preData: Pick<GalleryPreData, "gallery" | "id">): string => `${preData.gallery}:${preData.id}`;
+/**
+ * 글 하나를 가리키는 키. 번호는 갤러리마다 따로 매겨진다. 일반·마이너·미니·인물 갤러리는 id가 겹칠 수 있어 종류도 넣는다.
+ * 일반 갤러리는 종류를 붙이지 않는다 ("id:번호").
+ */
+export const postKey = (preData: Pick<GalleryPreData, "gallery" | "id" | "link">): string => {
+    const kind = galleryKind(preData.link);
+    return `${kind === "normal" ? "" : `${kind}/`}${preData.gallery}:${preData.id}`;
+};
 
 export const getEntry = (preData: GalleryPreData): CacheEntry | undefined => entries.get(postKey(preData));
 

@@ -47,5 +47,10 @@ describe("parseIpData", () => {
         expect(parseIpData(JSON.stringify({...encodeIpData(prefixes), meta: ["x"]}))).toBeNull();
         expect(() => parseIpData("{")).toThrow();
         expect(parseIpData(JSON.stringify(encodeIpData(prefixes)))).not.toBeNull();
+        // 번호가 어긋나면 다른 기관·국가가 조용히 보이므로 받지 않는다.
+        const data = encodeIpData(prefixes);
+        expect(parseIpData(JSON.stringify({...data, meta: data.meta.slice(0, -1)}))).toBeNull();
+        expect(parseIpData(JSON.stringify({...data, meta: [data.orgs.length, 0, 0, ...data.meta.slice(3)]}))).toBeNull();
+        expect(parseIpData(JSON.stringify({...data, lists: [[data.meta.length / 3]]}))).toBeNull();
     });
 });
