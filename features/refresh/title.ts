@@ -1,0 +1,17 @@
+/** 탭 제목 앞의 새 글 수 "(3) ". */
+const TITLE_COUNT = /^\(\d+\) /;
+
+/** 이 모듈이 탭 제목 앞에 수를 붙여 두었는지. 원래 "(1) "로 시작하는 제목(글 제목 등)은 건드리지 않는다. */
+let titleCounted = false;
+
+/** 탭 제목 앞에 새 글 수를 붙인다. 0이면 붙여 둔 수를 뗀다. 미리보기가 제목을 바꿔도 앞에 붙은 수만 갈아 쓴다. */
+export const setTitleCount = (count: number): void => {
+    if (count === 0 && !titleCounted) return;
+    const title = titleCounted ? document.title.replace(TITLE_COUNT, "") : document.title;
+    titleCounted = count > 0;
+    const next = count > 0 ? `(${count}) ${title}` : title;
+    if (next !== document.title) document.title = next;
+};
+
+/** 사용자가 이 탭을 보고 있는지. 다른 창을 보는 동안(창은 보이지만 포커스가 없다)도 안 보는 것으로 친다. */
+export const isWatching = (): boolean => !document.hidden && document.hasFocus();

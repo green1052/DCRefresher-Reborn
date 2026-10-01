@@ -75,7 +75,11 @@ describe("runBackup / readCloudBackup", () => {
         await fakeBrowser.storage.local.set(local);
         await runBackup("manual");
         await fakeBrowser.storage.sync.set({"backup:0": "AAAA"});
-        await expect(readCloudBackup("manual")).rejects.toThrow();
+        await expect(readCloudBackup("manual")).rejects.toThrow("백업 데이터가 손상되었습니다.");
+
+        // 조각이 아직 동기화되지 않았으면 손상이 아니라 빠졌다고 알린다.
+        await fakeBrowser.storage.sync.remove("backup:0");
+        await expect(readCloudBackup("manual")).rejects.toThrow("백업 조각이 빠져 있습니다.");
 
         fakeBrowser.reset();
         await fakeBrowser.storage.sync.set({"refresher:modules": {block: false}, "refresher:db:ip": "big"});

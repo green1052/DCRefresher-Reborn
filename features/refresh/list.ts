@@ -88,6 +88,12 @@ interface ReplaceOptions {
     keepDeleted: boolean;
 }
 
+/** 거르지 않은 목록(개념글·공지·말머리가 아닌)의 1페이지인지. 새 글이 들어오고, 빠진 글이 지워진 글인 목록이다. */
+export const isWholeFirstPage = (url: string): boolean => {
+    const params = new URL(url).searchParams;
+    return (params.get("page") ?? "1") === "1" && !params.has("exception_mode") && !params.has("search_head");
+};
+
 /** 받아온 목록(newList)을 지금 목록(oldList) 자리에 넣고, 새로 들어온 글 행을 돌려준다. */
 export const replaceList = (oldList: HTMLElement, newList: HTMLElement, {navigated, search, searchType, fadeIn, keepDeleted}: ReplaceOptions): HTMLTableRowElement[] => {
     const oldRows = Array.from(oldList.querySelectorAll<HTMLTableRowElement>(":scope > tr"));

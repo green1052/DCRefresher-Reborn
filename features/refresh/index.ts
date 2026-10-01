@@ -8,18 +8,13 @@ import {sendMessage} from "@/core/messaging/protocol";
 import {useUiStore} from "@/stores/ui";
 import {smoothScroll} from "@/utils/dom";
 
-import {replaceList, syncPaging} from "./list";
+import {isWholeFirstPage, replaceList, syncPaging} from "./list";
 import meta, {type Ctx, PAUSE_TOGGLE} from "./meta";
+import {isWatching, setTitleCount} from "./title";
 
 const MINIMUM_REFRESH_INTERVAL = 2000;
 /** 목록 요청이 연달아 실패할 때 자동 새로고침 주기를 늘리는 상한. */
 const MAXIMUM_BACKOFF_INTERVAL = 60_000;
-
-/** 거르지 않은 목록(개념글·공지·말머리가 아닌)의 1페이지인지. */
-const isWholeFirstPage = (url: string): boolean => {
-    const params = new URL(url).searchParams;
-    return (params.get("page") ?? "1") === "1" && !params.has("exception_mode") && !params.has("search_head");
-};
 
 /** setup()이 돌려주는 객체. 단축키·팝업·미리보기가 쓴다. */
 interface RefreshApi {
@@ -33,24 +28,6 @@ interface RefreshApi {
     /** 목록을 곧바로 다시 받고 다음 주기를 새로 잡는다. 미리보기의 관리 동작(삭제·차단 등) 뒤에 부른다. */
     reload(): Promise<void>;
 }
-
-/** 탭 제목 앞의 새 글 수 "(3) ". */
-const TITLE_COUNT = /^\(\d+\) /;
-
-/** 이 모듈이 탭 제목 앞에 수를 붙여 두었는지. 원래 "(1) "로 시작하는 제목(글 제목 등)은 건드리지 않는다. */
-let titleCounted = false;
-
-/** 탭 제목 앞에 새 글 수를 붙인다. 0이면 붙여 둔 수를 뗀다. 미리보기가 제목을 바꿔도 앞에 붙은 수만 갈아 쓴다. */
-const setTitleCount = (count: number): void => {
-    if (count === 0 && !titleCounted) return;
-    const title = titleCounted ? document.title.replace(TITLE_COUNT, "") : document.title;
-    titleCounted = count > 0;
-    const next = count > 0 ? `(${count}) ${title}` : title;
-    if (next !== document.title) document.title = next;
-};
-
-/** 사용자가 이 탭을 보고 있는지. 다른 창을 보는 동안(창은 보이지만 포커스가 없다)도 안 보는 것으로 친다. */
-const isWatching = (): boolean => !document.hidden && document.hasFocus();
 
 /** setup이 만든 다음 주기 잡기. 숨은 탭 새로고침 설정이 바뀌면 onChanged가 부른다. */
 let rearm: (() => void) | null = null;

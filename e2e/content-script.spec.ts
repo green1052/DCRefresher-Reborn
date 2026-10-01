@@ -70,7 +70,10 @@ test.describe("미리보기", () => {
     });
 
     test("키 반전이면 댓글 수 좌클릭이 댓글만 보기로 열린다", async ({listPage, storage}) => {
+        // 설정은 저장소 감시로 탭에 닿는다. 닿기 전에 누르면 실제로 이동해 버리므로, 저장한 뒤 페이지를 다시 연다.
         await storage.setModuleSettings("preview", {reversePreviewKey: true});
+        await listPage.page.reload();
+        await listPage.refreshButton().waitFor();
         await listPage.replyCounts().first().click();
         const frame = listPage.frame();
         await expect(frame.getByRole("button", {name: /댓글만 표시 중입니다/})).toBeVisible();

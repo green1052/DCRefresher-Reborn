@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it} from "vitest";
 
-import {replaceList} from "@/features/refresh/list";
+import {isWholeFirstPage, replaceList} from "@/features/refresh/list";
 
 const row = (no: string, {title = `글 ${no}`, count = "1", notice = false}: { title?: string; count?: string; notice?: boolean } = {}): string =>
     `<tr class="ub-content" data-no="${no}"><td class="gall_num">${notice ? "<em class=\"icon_notice\"></em>" : no}</td><td class="gall_tit"><a href="/board/view/?id=test&no=${no}">${title}</a></td><td class="gall_count">${count}</td></tr>`;
@@ -78,6 +78,22 @@ describe("replaceList", () => {
         expect(list.children[2]?.classList.contains("refresherDeleted")).toBe(true);
     });
 
+    it("지워진 글 아래로 다음 페이지에서 올라온 행은 새 글이 아니다", () => {
+        const old = mount([row("4"), row("3"), row("2"), row("1")]);
+        const added = replaceList(old, table([row("4"), row("2"), row("1"), row("0")]), options);
+        expect(added).toEqual([]);
+        expect(nos(document.querySelector("tbody")!)).toEqual(["4", "2", "1", "0"]);
+    });
+
+    it("삭제된 글 보존: 아래에서 올라온 행보다 앞에 지워진 글을 남긴다", () => {
+        const old = mount([row("4"), row("3"), row("2"), row("1")]);
+        const added = replaceList(old, table([row("4"), row("2"), row("1"), row("0")]), {...options, keepDeleted: true});
+        expect(added).toEqual([]);
+        const list = document.querySelector("tbody")!;
+        expect(nos(list)).toEqual(["4", "3", "2", "1"]);
+        expect(list.children[1]?.classList.contains("refresherDeleted")).toBe(true);
+    });
+
     it("관리자 목록은 받아온 행에 체크박스 칸을 채운다", () => {
         const wrapper = document.createElement("div");
         wrapper.innerHTML = "<table class=\"gall_list\"><thead><tr><th class=\"chkbox_th\"></th><th></th></tr></thead><tbody>" +
@@ -87,5 +103,15 @@ describe("replaceList", () => {
         replaceList(old, table([row("2"), row("1")]), options);
         const inputs = Array.from(old.querySelectorAll<HTMLInputElement>("tr > td:first-child input.article_chkbox"), (input) => input.value);
         expect(inputs).toEqual(["2", "1"]);
+    });
+});
+
+describe("isWholeFirstPage", () => {
+    it("거르지 않은 목록의 1페이지만 참이다", () => {
+        expect(isWholeFirstPage("https://gall.dcinside.com/board/lists/?id=test")).toBe(true);
+        expect(isWholeFirstPage("https://gall.dcinside.com/board/lists/?id=test&page=1")).toBe(true);
+        expect(isWholeFirstPage("https://gall.dcinside.com/board/lists/?id=test&page=2")).toBe(false);
+        expect(isWholeFirstPage("https://gall.dcinside.com/board/lists/?id=test&exception_mode=recommend")).toBe(false);
+        expect(isWholeFirstPage("https://gall.dcinside.com/board/lists/?id=test&search_head=10")).toBe(false);
     });
 });

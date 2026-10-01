@@ -16,8 +16,8 @@ describe("normalizeTxtcon", () => {
         expect(normalizeTxtcon("가나다라마바사아자차카타파하가나다라마바사아")).toBe("가나다라마바사아자차카타파하가나다라마바");
         expect(normalizeTxtcon("1\n2\n3\n4\n5")).toBe("1\n2\n3\n4");
         // 5글자씩 나눈 줄이 4줄을 넘으면 뒤에서 뺀다.
-        expect(normalizeTxtcon("가나다라마바사아자차카타파하가나다라마바사").split("\n")).toHaveLength(1);
-        expect(wrapTxtcon(normalizeTxtcon("가\n나다라마바사아자차카타파하가나다라마바사")).split("\n")).toHaveLength(4);
+        expect(normalizeTxtcon("가\n나다라마바사아자차카타파하가나다라마바사")).toBe("가\n나다라마바사아자차카타파하가나");
+        expect(wrapTxtcon(normalizeTxtcon("가\n나다라마바사아자차카타파하가나다라마바사"))).toBe("가\n나다라마바\n사아자차카\n타파하가나");
     });
 
     it("허용하지 않는 문자를 정리한다", () => {
