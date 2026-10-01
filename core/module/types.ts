@@ -33,7 +33,7 @@ type SettingValueOf<T extends SettingSchema> =
                     : string;
 
 /** 스키마로 만든 설정값 타입 (ctx.settings). defineModule에 스키마를 리터럴로 적으면 키마다 정확한 타입이 된다. */
-export type SettingValues<S extends SettingsSchema> = { readonly [K in keyof S]: SettingValueOf<S[K]> };
+type SettingValues<S extends SettingsSchema> = { readonly [K in keyof S]: SettingValueOf<S[K]> };
 
 export interface ModuleContext<S extends SettingsSchema = SettingsSchema> {
     /** 현재 설정값 (읽기 전용). 레지스트리가 같은 객체를 갱신하므로 늘 최신이다. */
