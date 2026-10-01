@@ -3,7 +3,7 @@ import {create} from "zustand";
 import type {IpCategory, IpInfoFilter} from "@/core/database";
 import type {MemoType} from "@/core/storage/types";
 import {eventTarget} from "@/utils/event";
-import {getType} from "@/utils/user";
+import {nickType} from "@/utils/user";
 
 type ToastLevel = "info" | "error" | "warning";
 
@@ -23,7 +23,7 @@ export const DEFAULT_BADGE_VIEW: BadgeView = {order: ["UID", "MEMO", "RATIO", "P
 
 /** 닉콘(고정닉·반고정닉)에 따라 UID를 보일지. 닉콘이 없으면 늘 보인다 */
 export const showsUid = (view: BadgeView, icon?: string): boolean => {
-    const type = icon ? getType(icon) : "UNFIXED";
+    const type = icon ? nickType(icon) : "UNFIXED";
     return type === "FIXED" ? view.fixedUid : type === "HALF_FIXED" ? view.halfFixedUid : true;
 };
 
