@@ -6,7 +6,7 @@ import {DialogActions} from "@/components/ConfirmDialog";
 import {overlay} from "@/components/overlay/shadow";
 import {useModuleSettings} from "@/core/module/useModuleSettings";
 import {BLOCK_DAYS, BLOCK_REASONS, type BlockDay, type BlockReason} from "@/core/preview/types";
-import {useOpenerFocus} from "@/components/useOpenerFocus";
+import {ModalDialog} from "@/components/ModalDialog";
 import {useUiStore} from "@/stores/ui";
 import {objectEntries} from "@/utils/typed";
 
@@ -39,7 +39,6 @@ const BlockPopup = () => {
     const [delChk, setDelChk] = useState(false);
     const [userTypeChk, setUserTypeChk] = useState(false);
     const [sending, setSending] = useState(false);
-    const focus = useOpenerFocus();
 
     const submit = async (): Promise<void> => {
         // 연타로 차단 요청이 두 번 가지 않게 한다.
@@ -57,9 +56,7 @@ const BlockPopup = () => {
     };
 
     return (
-        <Dialog.Root open onOpenChange={(open) => !open && usePreviewStore.setState({blockPopup: false})}>
-            <Dialog.Content container={overlay.portal} maxWidth="440px" onOpenAutoFocus={focus.onOpenAutoFocus}
-                            onCloseAutoFocus={focus.onCloseAutoFocus}>
+        <ModalDialog onClose={() => usePreviewStore.setState({blockPopup: false})} container={overlay.portal} maxWidth="440px" focusOnOpen="keyboard">
                 <Dialog.Title>유저 차단</Dialog.Title>
 
                 <Text as="div" size="2" weight="bold" mb="2">기간</Text>
@@ -97,15 +94,12 @@ const BlockPopup = () => {
                 <DialogActions>
                     <Button color="red" loading={sending} onClick={() => void submit()}>차단</Button>
                 </DialogActions>
-            </Dialog.Content>
-        </Dialog.Root>
+        </ModalDialog>
     );
 };
 
 const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: string) => void } }) => {
     const [code, setCode] = useState("");
-    const {onCloseAutoFocus} = useOpenerFocus();
-
     const send = (): void => {
         if (!code.trim()) return;
         captcha.resolve(code.trim());
@@ -113,18 +107,16 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
     };
 
     return (
-        <Dialog.Root
-            open
-            onOpenChange={(open) => {
-                if (!open) {
-                    captcha.resolve("");
-                    usePreviewStore.setState({captcha: null});
-                }
+        // 섀도 루트 안에선 Dialog의 FocusScope가 입력칸의 autoFocus를 덮으므로 자동 포커스를 막는다 (MemoDialog와 같음).
+        <ModalDialog
+            onClose={() => {
+                captcha.resolve("");
+                usePreviewStore.setState({captcha: null});
             }}
+            container={overlay.portal}
+            maxWidth="320px"
+            focusOnOpen="none"
         >
-            {/* 섀도 루트 안에선 Dialog의 FocusScope가 입력칸의 autoFocus를 덮으므로 자동 포커스를 막는다 (MemoDialog와 같음). */}
-            <Dialog.Content container={overlay.portal} maxWidth="320px" onOpenAutoFocus={(ev) => ev.preventDefault()}
-                            onCloseAutoFocus={onCloseAutoFocus}>
                 <Dialog.Title>자동입력 방지 코드</Dialog.Title>
                 <img src={captcha.url} alt="자동입력 방지 코드" style={{display: "block", width: "100%", borderRadius: "var(--radius-3)"}}/>
                 {/* Enter로 보낸다. 폼 제출이라 한글 조합을 끝내는 Enter로는 브라우저가 보내지 않는다. */}
@@ -144,8 +136,7 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
                         <Button type="submit" disabled={!code.trim()}>전송</Button>
                     </DialogActions>
                 </form>
-            </Dialog.Content>
-        </Dialog.Root>
+        </ModalDialog>
     );
 };
 

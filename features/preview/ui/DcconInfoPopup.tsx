@@ -3,7 +3,7 @@ import {type MouseEvent, useEffect, useState} from "react";
 
 import {ConfirmDialog, DialogCloseButton} from "@/components/ConfirmDialog";
 import {overlay} from "@/components/overlay/shadow";
-import {useOpenerFocus} from "@/components/useOpenerFocus";
+import {ModalDialog} from "@/components/ModalDialog";
 import {dcconCode} from "@/core/block";
 import {urls} from "@/core/http/urls";
 import {addDcconPackage, fetchDcconPackage} from "@/core/preview/request";
@@ -60,7 +60,6 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
     const [sending, setSending] = useState(false);
     const [added, setAdded] = useState(false);
     const [confirming, setConfirming] = useState(false);
-    const focus = useOpenerFocus();
 
     const addDccon = async (packageIdx: string | number): Promise<void> => {
         setConfirming(false);
@@ -104,9 +103,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
     const info = dccon?.info;
 
     return (
-        <Dialog.Root open onOpenChange={(open) => !open && close()}>
-            <Dialog.Content container={overlay.portal} maxWidth="600px" onOpenAutoFocus={focus.onOpenAutoFocus}
-                            onCloseAutoFocus={focus.onCloseAutoFocus}
+        <ModalDialog onClose={close} container={overlay.portal} maxWidth="600px" focusOnOpen="keyboard"
                             // 우클릭 버블은 창이 아니라 이 창 밖(components/overlay/UserBubble)에 뜨므로, 버블을 눌러도 바깥 클릭으로 닫히지 않게 막는다.
                             onInteractOutside={(ev) => useUiStore.getState().bubble && ev.preventDefault()}>
                 <Flex justify="between" align="center" mb="3">
@@ -163,7 +160,6 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
                     <ConfirmDialog container={overlay.portal} title="디시콘을 추가할까요?" confirmLabel="추가"
                                    onConfirm={() => void addDccon(info.package_idx)} onClose={() => setConfirming(false)}/>
                 )}
-            </Dialog.Content>
-        </Dialog.Root>
+        </ModalDialog>
     );
 };

@@ -4,6 +4,7 @@ import {Popover as PopoverPrimitive} from "radix-ui";
 import {useSyncExternalStore} from "react";
 
 import {DialogActions} from "@/components/ConfirmDialog";
+import {ModalDialog} from "@/components/ModalDialog";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {blockingEntries} from "@/core/block";
 import {banReasonsOf, databaseVersion, ipInfoOf, subscribeDatabase} from "@/core/database";
@@ -85,15 +86,13 @@ const BlockRules = ({rules}: { rules: { type: BlockType; entry: BlockEntry }[] }
 
 /** 디시콘 패키지 전체를 어떻게 차단할지 고른다. 취소하면 아무것도 차단하지 않는다. */
 export const DcconPackageDialog = ({target, onClose}: { target: SelectedUser; onClose: () => void }) => {
-    const {onCloseAutoFocus} = useOpenerFocus();
     const choose = (dcconPackage: "bundle" | "each"): void => {
         onClose();
         void handleBlockRequest({target: "dccon", dcconPackage}, target);
     };
 
     return (
-        <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
-            <Dialog.Content container={overlay.portal} maxWidth="400px" onCloseAutoFocus={onCloseAutoFocus}>
+        <ModalDialog onClose={onClose} container={overlay.portal} maxWidth="400px">
                 <Dialog.Title>디시콘 패키지를 어떻게 차단할까요?</Dialog.Title>
                 <Dialog.Description size="2" color="gray">
                     묶어서 차단하면 차단 목록에 한 항목으로 들어갑니다. 하나씩 차단하면 디시콘마다 항목이 생겨 따로 풀 수 있습니다.
@@ -102,8 +101,7 @@ export const DcconPackageDialog = ({target, onClose}: { target: SelectedUser; on
                     <Button variant="soft" onClick={() => choose("each")}>하나씩 차단</Button>
                     <Button onClick={() => choose("bundle")}>묶어서 차단</Button>
                 </DialogActions>
-            </Dialog.Content>
-        </Dialog.Root>
+        </ModalDialog>
     );
 };
 

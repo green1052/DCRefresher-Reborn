@@ -2,8 +2,8 @@ import {Button, Checkbox, Dialog, Flex, Text, TextField} from "@radix-ui/themes"
 import {useState} from "react";
 
 import {DialogActions, SubmitForm} from "@/components/ConfirmDialog";
+import {ModalDialog} from "@/components/ModalDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
-import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import type {BlockInputFields} from "@/stores/blocks";
@@ -24,7 +24,6 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
     const [gallery, setGallery] = useState(initial?.gallery ?? "");
     const [mode, setMode] = useState<DetectMode | "">(initial?.mode ?? "");
     const [error, setError] = useState("");
-    const {onCloseAutoFocus} = useOpenerFocus();
 
     const submit = async (): Promise<void> => {
         if (!content.trim()) {
@@ -56,8 +55,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
     };
 
     return (
-        <Dialog.Root open onOpenChange={(next) => !next && onClose()}>
-            <Dialog.Content maxWidth="480px" onCloseAutoFocus={onCloseAutoFocus}>
+        <ModalDialog onClose={onClose} maxWidth="480px">
                 <Dialog.Title>
                     {TYPE_NAMES[type]} 차단 {initial ? "수정" : "추가"}
                 </Dialog.Title>
@@ -116,7 +114,6 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                         <Button type="submit">{initial ? "수정" : "추가"}</Button>
                     </DialogActions>
                 </SubmitForm>
-            </Dialog.Content>
-        </Dialog.Root>
+        </ModalDialog>
     );
 };

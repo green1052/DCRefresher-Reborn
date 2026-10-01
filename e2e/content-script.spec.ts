@@ -195,3 +195,20 @@ test.describe("유저 버블", () => {
         expect(await storage.get("refresher:block:ID")).toMatchObject([{content: "user3", extra: "고닉"}]);
     });
 });
+
+test.describe("메모", () => {
+    test("버블에서 메모 창을 열어 저장하면 저장소에 남고 목록 배지에 붙는다", async ({listPage, storage}) => {
+        await listPage.writers().first().click({button: "right"});
+        await listPage.bubble().getByRole("button", {name: "메모"}).click();
+
+        const dialog = listPage.overlay().getByRole("dialog");
+        await expect(dialog.getByText("메모", {exact: true}).first()).toBeVisible();
+        await dialog.getByRole("textbox").first().fill("테스트 메모");
+        await dialog.getByRole("button", {name: "저장"}).click();
+
+        await expect(dialog).toHaveCount(0);
+        await expect(listPage.toast()).toContainText("메모를 저장했습니다.");
+        await expect.poll(() => storage.get("refresher:memo:UID")).toMatchObject({user3: {text: "테스트 메모"}});
+        await expect(listPage.rows().first()).toContainText("테스트 메모");
+    });
+});

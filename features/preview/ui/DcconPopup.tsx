@@ -3,7 +3,7 @@ import {useEffect, useState} from "react";
 
 import {DialogCloseButton} from "@/components/ConfirmDialog";
 import {overlay} from "@/components/overlay/shadow";
-import {useOpenerFocus} from "@/components/useOpenerFocus";
+import {ModalDialog} from "@/components/ModalDialog";
 import {ajax} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import type {DcinsideDccon, DcinsideDcconDetail, DcinsideDcconDetailList} from "@/core/preview/types";
@@ -65,7 +65,6 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
     const [bigDccon, setBigDccon] = useState(false);
     const [selected, setSelected] = useState<DcinsideDccon[]>([]);
     const [loading, setLoading] = useState(!cached);
-    const focus = useOpenerFocus();
 
     const openPackage = (pack: DcinsideDcconDetailList): void => {
         setActivePackage(pack.package_idx);
@@ -108,9 +107,7 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
     };
 
     return (
-        <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
-            <Dialog.Content container={overlay.portal} maxWidth="560px" onOpenAutoFocus={focus.onOpenAutoFocus}
-                            onCloseAutoFocus={focus.onCloseAutoFocus}>
+        <ModalDialog onClose={onClose} container={overlay.portal} maxWidth="560px" focusOnOpen="keyboard">
                 <Flex justify="between" align="center" mb="3">
                     <Dialog.Title mb="0">디시콘</Dialog.Title>
                     <Flex gap="4" align="center">
@@ -168,7 +165,6 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
                         ))}
                 </div>
 
-            </Dialog.Content>
-        </Dialog.Root>
+        </ModalDialog>
     );
 };

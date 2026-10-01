@@ -3,7 +3,7 @@ import {Shuffle} from "lucide-react";
 import {useState} from "react";
 
 import {SubmitForm} from "@/components/ConfirmDialog";
-import {useOpenerFocus} from "@/components/useOpenerFocus";
+import {ModalDialog} from "@/components/ModalDialog";
 import {queryString} from "@/core/http/urls";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import type {MemoType} from "@/core/storage/types";
@@ -20,7 +20,6 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const memos = useMemosStore((s) => s.memos);
     const setMemo = useMemosStore((s) => s.setMemo);
     const removeMemo = useMemosStore((s) => s.removeMemo);
-    const {onCloseAutoFocus} = useOpenerFocus();
 
     // 지금 보고 있는 갤러리. 이 갤러리에서만 보이는 메모로 저장할 때 쓴다.
     const gallery = queryString("id");
@@ -64,8 +63,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
 
     return (
         // shadow root 안에서는 FocusScope가 autoFocus된 입력칸을 알아보지 못하고 첫 버튼으로 포커스를 옮기므로 막는다.
-        <Dialog.Content container={overlay.portal} maxWidth="400px" onOpenAutoFocus={(ev) => ev.preventDefault()}
-                        onCloseAutoFocus={onCloseAutoFocus}>
+        <ModalDialog onClose={closeMemo} container={overlay.portal} maxWidth="400px" focusOnOpen="none">
             <Dialog.Title>메모</Dialog.Title>
             <Dialog.Description size="2" color="gray" mb="4">
                 {MEMO_TYPE_NAMES[type]}: <Text weight="bold" highContrast>{value}</Text>
@@ -139,18 +137,12 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                     <Button type="submit">저장</Button>
                 </Flex>
             </SubmitForm>
-        </Dialog.Content>
+        </ModalDialog>
     );
 };
 
 export const MemoDialog = () => {
     const memo = useUiStore((s) => s.memo);
-    const closeMemo = useUiStore((s) => s.closeMemo);
-    if (!memo) return null;
-
-    return (
-        <Dialog.Root open onOpenChange={(open) => !open && closeMemo()}>
-            <MemoDialogInner key={JSON.stringify(memo)} state={memo}/>
-        </Dialog.Root>
-    );
+    // 대상이 바뀌면 입력 초기값을 새로 잡도록 다시 마운트한다.
+    return memo ? <MemoDialogInner key={JSON.stringify(memo)} state={memo}/> : null;
 };

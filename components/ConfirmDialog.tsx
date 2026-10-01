@@ -2,7 +2,7 @@ import {Button, Dialog, Flex, IconButton} from "@radix-ui/themes";
 import {X} from "lucide-react";
 import type {ReactNode} from "react";
 
-import {useOpenerFocus} from "@/components/useOpenerFocus";
+import {ModalDialog} from "@/components/ModalDialog";
 
 /** 다이얼로그 하단 버튼 줄. 취소(닫기) 버튼 뒤에 children을 둔다. cancelLabel이 null이면 취소 버튼을 뺀다. */
 export const DialogActions = ({cancelLabel = "취소", children}: { cancelLabel?: string | null; children?: ReactNode }) => (
@@ -58,11 +58,8 @@ export const ConfirmDialog = ({
                                   onConfirm,
                                   onClose
                               }: ConfirmDialogProps) => {
-    const {onCloseAutoFocus} = useOpenerFocus();
-
     return (
-        <Dialog.Root open onOpenChange={(next) => !next && onClose()}>
-            <Dialog.Content container={container} maxWidth="440px" aria-describedby={undefined} onCloseAutoFocus={onCloseAutoFocus}>
+        <ModalDialog onClose={onClose} container={container} maxWidth="440px" aria-describedby={undefined}>
                 <Dialog.Title>{title}</Dialog.Title>
 
                 <DialogActions cancelLabel={cancelLabel}>
@@ -70,8 +67,7 @@ export const ConfirmDialog = ({
                         {confirmLabel}
                     </Button>
                 </DialogActions>
-            </Dialog.Content>
-        </Dialog.Root>
+        </ModalDialog>
     );
 };
 
