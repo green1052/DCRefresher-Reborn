@@ -48,24 +48,28 @@ export interface ModuleContext<S extends SettingsSchema = SettingsSchema> {
     addCleanup(dispose: () => void): void;
 }
 
+/** 팝업 '현재 페이지' 토글의 표시 정보. 팝업은 메타(features/<id>/meta.ts)의 이것으로 아이콘을 찾고, 동작은 index.ts의 PageToggle이 잇는다 */
+export interface PageToggleMeta {
+    id: string;
+    label: string;
+    icon: LucideIcon;
+}
+
 /**
  * 팝업 '현재 페이지'에 나오는 이 페이지 한정 토글. 모듈이 이 페이지에서 돌 때만 보이며, api는 setup()의 리턴값이다.
  * desc가 함수면 팝업을 열 때마다 계산한다 (가린 개수 등).
  */
-interface PageToggle<Api = unknown> {
-    id: string;
-    label: string;
+interface PageToggle<Api = unknown> extends PageToggleMeta {
     desc: string | ((api: Api) => string);
-    icon: LucideIcon;
     isOn(api: Api): boolean;
     toggle(api: Api): void;
 }
 
 /**
- * 기능 모듈. S는 설정 스키마, Api는 setup()의 리턴값으로 단축키·팝업 토글에 넘어간다.
- * 객체 리터럴에서 setup을 shortcuts·pageToggles보다 앞에 둔다. Api를 setup에서 먼저 추론해야 뒤쪽 함수의 인자 타입이 정해진다.
+ * 옵션·팝업이 그리는 데 필요한 모듈 정보. features/<id>/meta.ts에 두고 index.ts가 setup 등과 합친다(defineModule({...meta, setup})).
+ * 옵션·팝업은 meta.ts만 불러와, 모듈의 setup이 쓰는 HTTP 클라이언트·캐시·DOM 코드가 그 번들에 딸려 가지 않게 한다.
  */
-export interface ModuleDefinition<S extends SettingsSchema = SettingsSchema, Api = unknown> {
+export interface ModuleMeta<S extends SettingsSchema = SettingsSchema> {
     /** 아스키 id. storage 키(refresher:module:<id>:…)와 저장값의 키로 쓰인다 */
     id: string;
     /** 표시명 (한글) */
@@ -79,18 +83,26 @@ export interface ModuleDefinition<S extends SettingsSchema = SettingsSchema, Api
     defaultEnable?: boolean;
     /** 설정 스키마 (옵션 페이지에서 렌더링됨) */
     settings?: S;
+    /** 팝업 '현재 페이지' 토글의 표시 정보. index.ts의 pageToggles가 같은 객체를 펼쳐 동작을 붙인다 */
+    toggles?: readonly PageToggleMeta[];
 
+    /** 모듈이 켜져 있을 때 확장 페이지(옵션·팝업)의 <html>에 넣을 CSS 변수 (폰트 교체 등). 디시 페이지에는 setup이 따로 적용한다 */
+    extensionPageVars?(settings: SettingValues<S>): Record<`--${string}`, string>;
+}
+
+/**
+ * 기능 모듈. S는 설정 스키마, Api는 setup()의 리턴값으로 단축키·팝업 토글에 넘어간다.
+ * 객체 리터럴에서 setup을 shortcuts·pageToggles보다 앞에 둔다. Api를 setup에서 먼저 추론해야 뒤쪽 함수의 인자 타입이 정해진다.
+ */
+export interface ModuleDefinition<S extends SettingsSchema = SettingsSchema, Api = unknown> extends ModuleMeta<S> {
     /** 모듈을 켤 때 실행. 리턴값은 shortcuts·pageToggles에 api로 전달된다 */
     setup(ctx: ModuleContext<S>): Api | Promise<Api>;
 
     /** 단축키. 키는 wxt.config.ts의 manifest commands 이름이다. setup이 끝난 모듈에만 전달된다 */
     shortcuts?: Record<string, (ctx: ModuleContext<S>, api: Api) => void | Promise<void>>;
 
-    /** 팝업 '현재 페이지' 토글 */
+    /** 팝업 '현재 페이지' 토글 (메타의 toggles에 동작을 붙인 것) */
     pageToggles?: PageToggle<Api>[];
-
-    /** 모듈이 켜져 있을 때 확장 페이지(옵션·팝업)의 <html>에 넣을 CSS 변수 (폰트 교체 등). 디시 페이지에는 setup이 따로 적용한다 */
-    extensionPageVars?(settings: SettingValues<S>): Record<`--${string}`, string>;
 
     /**
      * 모듈을 끌 때 실행 (DOM 정리 등). 리스너(signal)·cleanup은 이미 풀린 뒤다.
@@ -116,5 +128,8 @@ export type ModuleApiMap<M> = {
     [K in M as K extends DefinedModule<string, infer Api> ? ([Api] extends [void] ? never : K["id"]) : never]: K extends DefinedModule<string, infer Api> ? Api : never;
 };
 
-/** 레지스트리·옵션·팝업이 모듈을 모아 다룰 때의 타입. 모듈별 설정·api 타입은 defineModule에서 지운다 */
+/** 레지스트리가 모듈을 모아 다룰 때의 타입. 모듈별 설정·api 타입은 defineModule에서 지운다 */
 export type AnyModule = ModuleDefinition<SettingsSchema, unknown>;
+
+/** 옵션·팝업이 모듈 메타를 모아 다룰 때의 타입 */
+export type AnyModuleMeta = ModuleMeta<SettingsSchema>;

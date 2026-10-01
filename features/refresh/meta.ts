@@ -1,4 +1,8 @@
+import {Pause, RefreshCw} from "lucide-react";
+
+import {defineModuleMeta} from "@/core/module/define";
 import type {ModuleContext, SettingsSchema} from "@/core/module/types";
+import {BOARD_PAGE} from "@/core/pages";
 
 export const settings = {
     refreshRate: {
@@ -44,3 +48,16 @@ export const settings = {
 } satisfies SettingsSchema;
 
 export type Ctx = ModuleContext<typeof settings>;
+
+/** 팝업 '자동 새로고침 일시정지' 토글. index.ts의 pageToggles가 동작을 붙인다 */
+export const PAUSE_TOGGLE = {id: "pause", label: "자동 새로고침 일시정지", icon: Pause};
+
+export default defineModuleMeta({
+    id: "refresh",
+    name: "글 목록 새로고침",
+    description: "글 목록을 자동으로 새로고침합니다.",
+    icon: RefreshCw,
+    urls: [BOARD_PAGE],
+    settings,
+    toggles: [PAUSE_TOGGLE]
+});

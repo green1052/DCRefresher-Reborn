@@ -1,0 +1,54 @@
+name: Test
+
+on:
+    push:
+        branches:
+            - develop
+            - release
+    pull_request:
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: test-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        steps:
+            -   uses: actions/checkout@v7
+
+            -   uses: oven-sh/setup-bun@v2
+
+            -   name: Install Dependencies
+                run: bun ci
+
+            -   name: Type check
+                run: bun run compile
+
+            -   name: Unit tests
+                run: bun run test
+
+            -   name: Build
+                run: bun run build
+
+            # E2E는 확장을 올려야 해서 headless shell이 아니라 크로미엄 본체가 필요하다 (tests/e2e/fixtures.ts)
+            -   name: Install Chromium
+                run: bunx playwright install --with-deps chromium
+
+            -   name: E2E tests
+                run: bunx playwright test
+
+            -   name: Upload E2E report
+                if: failure()
+                uses: actions/upload-artifact@v4
+                with:
+                    name: playwright-report
+                    path: |
+                        playwright-report
+                        test-results
+                    retention-days: 7

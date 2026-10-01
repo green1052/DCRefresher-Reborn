@@ -5,7 +5,7 @@ import {useEffect, useState} from "react";
 import {CLOUD_QUOTA} from "@/core/backup";
 import {isModuleEnabled} from "@/core/module/settings";
 import {dbStorage} from "@/core/storage/items";
-import features from "@/features";
+import features from "@/features/meta";
 import {useBlocksStore} from "@/stores/blocks";
 import {useMemosStore} from "@/stores/memos";
 import {useModulesStore} from "@/stores/modules";

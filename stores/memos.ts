@@ -1,7 +1,7 @@
 import {storage} from "wxt/utils/storage";
 import {create} from "zustand";
 
-import {MEMO_TYPES, memoStorage} from "@/core/storage/items";
+import {MEMO_TYPES, memoMapKey, memoStorage} from "@/core/storage/items";
 import type {MemoEntry, MemoType} from "@/core/storage/types";
 import {onBfcacheRestore} from "@/utils/dom";
 import {saveOrReload} from "@/utils/error";
@@ -87,8 +87,8 @@ const setMap = (type: MemoType, value: unknown): void =>
     });
 
 const load = async (): Promise<void> => {
-    // 한 번의 storage.local.get으로 읽는다 (getItems가 항목별 fallback도 채운다)
-    const maps = await storage.getItems(MEMO_TYPES.map((type) => memoStorage[type]));
+    // 키로 읽어 한 번의 storage.local.get으로 끝낸다. 항목은 만드는 순간 한 번 더 읽으므로 쓸 때만 만든다 (items.ts). 없으면 null → 빈 목록
+    const maps = await storage.getItems(MEMO_TYPES.map(memoMapKey));
     for (const [index, type] of MEMO_TYPES.entries()) setMap(type, maps[index]?.value);
 };
 
@@ -96,7 +96,7 @@ const load = async (): Promise<void> => {
 export const initMemosStore = once(async (signal?: AbortSignal) => {
     // 다 읽은 뒤에 감시를 건다. 읽기가 실패하면 once가 다음 호출에 다시 시도하는데, 그때 감시가 두 번 걸리지 않는다
     await load();
-    for (const type of MEMO_TYPES) memoStorage[type].watch((next) => setMap(type, next));
+    for (const type of MEMO_TYPES) storage.watch(memoMapKey(type), (next) => setMap(type, next));
 
     // 옛 메모로 쓰면 다른 탭의 변경을 덮으므로 bfcache에서 돌아오면 다시 읽는다. signal은 콘텐츠 스크립트 컨텍스트의 것이다
     onBfcacheRestore(load, signal);

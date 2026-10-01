@@ -3,13 +3,14 @@ import {storage} from "wxt/utils/storage";
 import {create} from "zustand";
 
 import {isModuleEnabled, normalizeSetting, normalizeSettings} from "@/core/module/settings";
-import type {AnyModule} from "@/core/module/types";
+import type {AnyModuleMeta} from "@/core/module/types";
 import {migrateModuleSettings} from "@/core/migrate-settings";
-import {moduleSettingsKey, moduleSettingsStorage, modulesStorage, settingsKeyModule} from "@/core/storage/items";
+import {MODULES_KEY, moduleSettingsKey, moduleSettingsStorage, modulesStorage, settingsKeyModule} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
-import features from "@/features";
+import features from "@/features/meta";
 import {saveOrReload} from "@/utils/error";
 import {once} from "@/utils/once";
+import {isRecord} from "@/utils/record";
 
 type Values = Record<string, SettingValue>;
 
@@ -24,7 +25,7 @@ interface ModulesState {
 
 const featureById = new Map(features.map((feature) => [feature.id, feature]));
 
-const resolveEnables = (stored: Record<string, boolean>): Record<string, boolean> =>
+const resolveEnables = (stored: Record<string, unknown>): Record<string, boolean> =>
     Object.fromEntries(features.map((feature) => [feature.id, isModuleEnabled(feature, stored)]));
 
 // 쓰기가 읽고-고쳐-쓰기라 동시에 바꾸면 둘 다 옛 값을 읽어 앞의 쓰기를 덮는다. 한 줄로 세운다.
@@ -41,7 +42,7 @@ export const useModulesStore = create<ModulesState>((set) => ({
 
     toggle: async (id, value) => {
         set((state) => ({enables: {...state.enables, [id]: value}}));
-        await persist(async () => modulesStorage.setValue({...(await modulesStorage.getValue()), [id]: value}));
+        await persist(async () => modulesStorage().setValue({...(await modulesStorage().getValue()), [id]: value}));
     },
 
     changeSetting: async (id, key, value) => {
@@ -81,7 +82,7 @@ const pruneStaleSettings = async (): Promise<void> => {
     const ids = new Set(features.map((feature) => feature.id));
 
     await enqueue(async () => {
-        const enables = await modulesStorage.getValue();
+        const enables = await modulesStorage().getValue();
         const staleIds = new Set(Object.keys(enables).filter((id) => !ids.has(id)));
         // get(null)은 수백 KB짜리 IP DB까지 읽으니 키 이름만 읽는다. getKeys가 없는 브라우저는 켜짐 목록에 남은 모듈만 지운다
         const keys = typeof browser.storage.local.getKeys === "function" ? await browser.storage.local.getKeys() : [];
@@ -91,7 +92,7 @@ const pruneStaleSettings = async (): Promise<void> => {
         }
 
         if (staleIds.size > 0) {
-            await modulesStorage.setValue(Object.fromEntries(Object.entries(enables).filter(([id]) => !staleIds.has(id))));
+            await modulesStorage().setValue(Object.fromEntries(Object.entries(enables).filter(([id]) => !staleIds.has(id))));
             await storage.removeItems([...staleIds].map(moduleSettingsKey));
         }
 
@@ -107,18 +108,18 @@ const pruneStaleSettings = async (): Promise<void> => {
     });
 };
 
-const setEnables = (stored: Record<string, boolean>): void => useModulesStore.setState({enables: resolveEnables(stored)});
-const setValues = (feature: AnyModule, stored: Record<string, unknown> | undefined): void =>
-    useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: normalizeSettings(feature, stored)}}));
+const setEnables = (stored: unknown): void => useModulesStore.setState({enables: resolveEnables(isRecord(stored) ? stored : {})});
+const setValues = (feature: AnyModuleMeta, stored: unknown): void =>
+    useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: normalizeSettings(feature, isRecord(stored) ? stored : null)}}));
 
-/** 설정이 있는 모듈과 그 저장소 항목 */
-const settingItems = () => features.filter((feature) => feature.settings).map((feature) => ({feature, item: moduleSettingsStorage(feature.id)}));
+/** 설정이 있는 모듈 */
+const withSettings = features.filter((feature) => feature.settings);
 
 const load = async (): Promise<void> => {
-    const settings = settingItems();
-    const [enables, values] = await Promise.all([modulesStorage.getValue(), Promise.all(settings.map(({item}) => item.getValue()))]);
-    setEnables(enables);
-    for (const [index, {feature}] of settings.entries()) setValues(feature, values[index]);
+    // on/off와 모든 모듈 설정을 한 번의 storage.local.get으로 읽는다. 항목은 쓸 때만 만든다 (items.ts). 없으면 null → 기본값
+    const [enables, ...values] = await storage.getItems([MODULES_KEY, ...withSettings.map((feature) => moduleSettingsKey(feature.id))]);
+    setEnables(enables?.value);
+    for (const [index, feature] of withSettings.entries()) setValues(feature, values[index]?.value);
 };
 
 const persist = (write: () => Promise<void>): Promise<void> => saveOrReload(enqueue(write), load, "모듈 설정을 저장하지 못했습니다.");
@@ -128,8 +129,8 @@ export const initModulesStore = once(async () => {
     await load();
 
     // 다 읽은 뒤에 감시를 건다. 읽기가 실패하면 once가 다음 호출에 다시 시도하는데, 그때 감시가 두 번 걸리지 않는다
-    modulesStorage.watch(setEnables);
-    for (const {feature, item} of settingItems()) item.watch((next) => setValues(feature, next));
+    storage.watch(MODULES_KEY, setEnables);
+    for (const feature of withSettings) storage.watch(moduleSettingsKey(feature.id), (next) => setValues(feature, next));
 
     // 화면을 그리는 데는 필요 없으니 기다리지 않는다
     pruneStaleSettings().catch(console.error);

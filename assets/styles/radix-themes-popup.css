@@ -1,0 +1,5 @@
+/*
+ * 팝업용 Radix Themes. 내용은 radix-themes.css와 같지만, 옵션과 같은 파일을 import하면 Vite가 둘이 같이 쓰는 CSS 한 개로 묶어
+ * 팝업이 옵션의 CSS(표·탭·개발자 탭 등)까지 받는다. 파일을 나눠야 modules/slim-radix-css.ts가 팝업이 쓰는 것만 남긴다
+ */
+@import "./radix-themes.css";

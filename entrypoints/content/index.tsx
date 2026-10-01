@@ -1,9 +1,8 @@
 // 이 스크립트가 불러오는 CSS는 오버레이 shadow에만 들어간다 (cssInjectionMode: "ui"). 디시 페이지에 입히는 CSS는 entrypoints/page.content.scss
-import "@/assets/styles/overlay-radix.css";
+import "@/assets/styles/radix-themes.css";
 import "@/assets/styles/overlay.scss";
 
 import {overlay} from "@/components/overlay/shadow";
-import {initDatabase} from "@/core/database";
 import {setBlockedHandler} from "@/core/http/client";
 import {documentUrl} from "@/core/http/urls";
 import {BLOCKED_PAGE_MESSAGE, BOARD_PAGE, CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES, WRITE_PAGE} from "@/core/pages";
@@ -167,11 +166,10 @@ export default defineContentScript({
         };
         whenDomReady(warnIfBlocked);
 
-        // 차단·메모·IP DB는 글 목록·본문(features의 urls와 같은 BOARD_PAGE)에서만 쓴다. 메인·검색 등에서는 저장소를 읽지 않는다
+        // 차단·메모는 글 목록·본문(features의 urls와 같은 BOARD_PAGE)에서만 쓴다. 메인·검색 등에서는 저장소를 읽지 않는다.
+        // 가장 큰 IP/밴 DB는 여기서 읽지 않는다. 유저 정보 모듈의 setup이 모듈 설정 뒤에 읽고, 모듈이 꺼져 있으면
+        // 버블·미리보기가 IP 정보를 처음 그릴 때 읽는다 (core/database의 subscribeDatabase)
         const board = BOARD_PAGE.test(documentUrl.href);
         await loadAll(features, ctx.signal, board ? Promise.all([initBlocksStore(ctx.signal), initMemosStore(ctx.signal)]) : undefined);
-        // 저장소는 요청 순서대로 읽히므로 가장 큰 IP/밴 DB는 모듈 설정 뒤에 요청한다(userinfo는 setup에서 기다린다).
-        // userinfo가 꺼져 있어도 버블·미리보기 라벨이 나오도록 여기서도 부른다.
-        if (board) void initDatabase().catch(console.error);
     }
 });

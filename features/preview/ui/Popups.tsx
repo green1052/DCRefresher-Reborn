@@ -7,8 +7,9 @@ import {overlay} from "@/components/overlay/shadow";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {useUiStore} from "@/stores/ui";
 
+import {BLOCK_DAYS} from "../meta";
 import {DcconInfoPopup} from "./DcconInfoPopup";
-import {BLOCK_DAYS, MANAGE_LABELS, type ManageKind, usePreviewStore} from "./previewStore";
+import {MANAGE_LABELS, type ManageKind, usePreviewStore} from "./previewStore";
 
 const BLOCK_REASONS: [string, string][] = [
     ["1", "음란성"],

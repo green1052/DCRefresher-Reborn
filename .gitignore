@@ -5,3 +5,6 @@ node_modules
 .env.submit
 web-ext.config.ts
 db
+# Playwright
+test-results
+playwright-report

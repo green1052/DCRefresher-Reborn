@@ -5,7 +5,7 @@ import {type ReactNode, useEffect, useState} from "react";
 import {type PageAction, type PageToggleState, sendMessage} from "@/core/messaging/protocol";
 import {isModuleEnabled} from "@/core/module/settings";
 import {backupStorage} from "@/core/storage/items";
-import features from "@/features";
+import features from "@/features/meta";
 import {initBlocksStore, useBlocksStore} from "@/stores/blocks";
 import {initMemosStore, useMemosStore} from "@/stores/memos";
 import {initModulesStore, useExtensionPageVars, useModulesStore} from "@/stores/modules";
@@ -38,9 +38,9 @@ const openOptions = async (): Promise<void> => {
     window.close();
 };
 
-/** 토글 아이콘(컴포넌트)은 메시지로 보낼 수 없어 팝업이 모듈 정의에서 찾는다 */
+/** 토글 아이콘(컴포넌트)은 메시지로 보낼 수 없어 팝업이 모듈 메타(toggles)에서 찾는다 */
 const toggleIcon = ({module, id}: PageAction): LucideIcon =>
-    features.find((feature) => feature.id === module)?.pageToggles?.find((toggle) => toggle.id === id)?.icon ?? Puzzle;
+    features.find((feature) => feature.id === module)?.toggles?.find((toggle) => toggle.id === id)?.icon ?? Puzzle;
 
 const SectionTitle = ({children, aside}: { children: ReactNode; aside?: ReactNode }) => (
     <Flex justify="between" align="center" px="1" mb="2">

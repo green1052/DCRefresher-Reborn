@@ -1,9 +1,12 @@
 import {addFilter} from "@/core/filtering";
 import {documentUrl} from "@/core/http/urls";
 import type {PageAction, PageToggleState} from "@/core/messaging/protocol";
-import {moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
+import {storage} from "wxt/utils/storage";
+
+import {MODULES_KEY, moduleSettingsKey} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
 import {onBfcacheRestore} from "@/utils/dom";
+import {isRecord} from "@/utils/record";
 
 import {areEqual, isModuleEnabled, normalizeSettings} from "./settings";
 import type {AnyModule, ModuleApis, ModuleContext} from "./types";
@@ -70,9 +73,9 @@ const stop = (instance: ModuleInstance, keepDom = false): void => {
     if (!keepDom) instance.def.revoke?.();
 };
 
-/** 저장된 설정을 반영. 바뀐 값만 onChanged로 알린다 */
-const applySettings = (instance: ModuleInstance, stored: Record<string, unknown> | null): void => {
-    for (const [key, next] of Object.entries(normalizeSettings(instance.def, stored))) {
+/** 저장된 설정을 반영. 바뀐 값만 onChanged로 알린다. stored는 저장소에서 온 그대로(없으면 null)라 모양을 검사한다 */
+const applySettings = (instance: ModuleInstance, stored: unknown): void => {
+    for (const [key, next] of Object.entries(normalizeSettings(instance.def, isRecord(stored) ? stored : null))) {
         if (areEqual(instance.settings[key], next)) continue;
 
         instance.settings[key] = next;
@@ -80,7 +83,19 @@ const applySettings = (instance: ModuleInstance, stored: Record<string, unknown>
     }
 };
 
-const register = async (def: AnyModule, enables: Promise<Record<string, boolean>>): Promise<void> => {
+/** 저장소의 모듈 on/off 값. 없거나 모양이 다르면 빈 객체(모두 defaultEnable) */
+const enablesOf = (stored: unknown): Record<string, unknown> => (isRecord(stored) ? stored : {});
+
+/**
+ * 모듈 on/off와 모든 모듈의 설정을 한 번의 storage.local.get으로 읽는다. 모듈마다 따로 읽으면 왕복이 모듈 수만큼 쌓여
+ * 첫 모듈이 늦게 뜬다. 항목(defineItem)은 만드는 순간 키마다 한 번 더 읽으므로 만들지 않고 키로 읽는다 (items.ts)
+ */
+const readAll = async (defs: AnyModule[]): Promise<{ enables: Record<string, unknown>; settings: Map<string, unknown> }> => {
+    const [enables, ...values] = await storage.getItems([MODULES_KEY, ...defs.map((def) => moduleSettingsKey(def.id))]);
+    return {enables: enablesOf(enables?.value), settings: new Map(defs.map((def, index) => [def.id, values[index]?.value]))};
+};
+
+const register = async (def: AnyModule, stored: unknown, enables: Promise<Record<string, unknown>>): Promise<void> => {
     if (instances.has(def.id)) throw new Error(`${def.id} is already registered.`);
 
     const instance: ModuleInstance = {def, settings: {}};
@@ -88,9 +103,8 @@ const register = async (def: AnyModule, enables: Promise<Record<string, boolean>
 
     // 설정은 옵션 페이지가 저장소에 직접 쓰고, 여기서 감시해 반영한다
     if (def.settings) {
-        const settingsItem = moduleSettingsStorage(def.id);
-        applySettings(instance, await settingsItem.getValue());
-        settingsItem.watch((next) => applySettings(instance, next));
+        applySettings(instance, stored);
+        storage.watch(moduleSettingsKey(def.id), (next) => applySettings(instance, next));
     }
 
     if (isModuleEnabled(def, await enables)) await start(instance);
@@ -149,34 +163,34 @@ export const stopAll = (): void => {
 export const loadAll = async (defs: AnyModule[], signal: AbortSignal, ready?: Promise<void[]>): Promise<void> => {
     // 이 문서의 주소(documentUrl)는 바뀌지 않으므로 urls가 이 페이지를 빼는 모듈은 끝내 돌지 않는다. 설정을 읽거나 감시하지 않게 등록하지 않는다
     defs = defs.filter((def) => !def.urls || def.urls.some((re) => re.test(documentUrl.href)));
-    // on/off·모듈 설정을 ready와 한꺼번에 요청한다. 차례로 기다리면 저장소 왕복이 쌓여 모듈이 본문을 한참 읽은 뒤에야 뜬다
-    const enables = Promise.all([modulesStorage.getValue(), ready]).then(([value]) => value);
+    // on/off·모듈 설정을 한 번에 읽고 ready와 같이 기다린다. 차례로 기다리면 저장소 왕복이 쌓여 모듈이 본문을 한참 읽은 뒤에야 뜬다
+    const all = readAll(defs);
+    const enables = Promise.all([all, ready]).then(([value]) => value.enables);
 
-    const results = await Promise.allSettled(defs.map((def) => register(def, enables)));
+    const {settings} = await all;
+    const results = await Promise.allSettled(defs.map((def) => register(def, settings.get(def.id), enables)));
     for (const [index, result] of results.entries()) {
         if (result.status === "rejected") console.error(`Failed to load module: ${defs[index]?.id}`, result.reason);
     }
     // 차단·메모를 못 읽었으면 여기서 멈춘다. 아래 sync가 차단 목록 없이 모듈을 켜지 않게 한다
     await enables;
 
-    const sync = (next: Record<string, boolean>): void => {
+    const sync = (next: Record<string, unknown>): void => {
         for (const instance of instances.values()) {
             if (isModuleEnabled(instance.def, next)) void start(instance).catch((e) => console.error(e));
             else stop(instance);
         }
     };
-    modulesStorage.watch(sync);
+    storage.watch(MODULES_KEY, (next) => sync(enablesOf(next)));
     // bfcache에서 돌아온 탭은 그사이의 on/off·설정 변경을 받지 못했다. 다시 시작하는 모듈이 새 값을 보도록 설정을 먼저 맞춘다
     onBfcacheRestore(async () => {
         // 모두 한꺼번에 읽는다. sync는 설정을 다 맞춘 뒤에 부른다
-        const [enables] = await Promise.all([
-            modulesStorage.getValue(),
-            ...[...instances.values()].map(async (instance) => {
-                if (instance.def.settings) applySettings(instance, await moduleSettingsStorage(instance.def.id).getValue());
-            })
-        ]);
+        const {enables, settings} = await readAll(defs);
+        for (const instance of instances.values()) {
+            if (instance.def.settings) applySettings(instance, settings.get(instance.def.id));
+        }
         sync(enables);
     }, signal);
     // 불러오는 동안(setup이 IP DB를 읽는 동안 등) 팝업에서 켜고 끈 것은 감시 전이라 놓친다. 한 번 맞춘다 (바뀐 게 없으면 아무 일도 없다)
-    sync(await modulesStorage.getValue());
+    sync(enablesOf((await storage.getItem(MODULES_KEY)) ?? undefined));
 };

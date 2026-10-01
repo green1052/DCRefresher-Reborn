@@ -6,7 +6,7 @@ import {storage} from "wxt/utils/storage";
 import {arrayIncludes, objectKeys} from "ts-extras";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
-import {databaseVersion, initDatabase, ipInfoOf, parseBans, subscribeDatabase} from "@/core/database";
+import {databaseVersion, ipInfoOf, parseBans, subscribeDatabase} from "@/core/database";
 import {IP_FORMAT, parseIpData} from "@/core/ipdb";
 import {DB_KEYS, dbStorage, isModuleDataKey, writeDatabase} from "@/core/storage/items";
 import {messageOf} from "@/utils/error";
@@ -173,11 +173,9 @@ const DatabaseSection = () => {
     const banList = parseOr(parseBans, useStorageItem(dbBan), {});
     const [ip, setIp] = useState("");
     const fileInput = useRef<HTMLInputElement>(null);
-    // 조회 테스트는 콘텐츠 스크립트와 같은 경로(ipInfoOf)를 쓴다.
+    // 조회 테스트는 콘텐츠 스크립트와 같은 경로(ipInfoOf)를 쓴다. 구독이 DB 읽기를 시작한다.
     // DB를 읽을 때마다 올라가는 이 번호를 식에 넣어야 React Compiler가 다시 조회한다.
     const dbVersion = useSyncExternalStore(subscribeDatabase, databaseVersion);
-
-    useEffect(() => void initDatabase().catch(console.error), []);
 
     const loadFile = async (file: File): Promise<void> => {
         try {

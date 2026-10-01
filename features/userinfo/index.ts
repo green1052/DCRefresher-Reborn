@@ -1,18 +1,17 @@
 import {LRUCache} from "lru-cache";
-import {UserRound} from "lucide-react";
 import {objectFromEntries, objectKeys} from "ts-extras";
 
-import {banReasonsOf, initDatabase, ipInfoOf, type IpInfoFilter, passesIpFilter, subscribeDatabase} from "@/core/database";
+import {banReasonsOf, initDatabase, ipInfoOf, passesIpFilter, subscribeDatabase} from "@/core/database";
 import {defineModule} from "@/core/module/define";
-import type {ModuleContext, SettingGroup, SettingSchema, SettingsSchema} from "@/core/module/types";
 import {fetchGallogActivity, type GallogActivity} from "@/core/gallog";
 import {queryString} from "@/core/http/urls";
 import {ROW_SELECTOR} from "@/core/list";
-import {BOARD_PAGE} from "@/core/pages";
 import {moduleDataStorage} from "@/core/storage/items";
 import {findMemo, useMemosStore} from "@/stores/memos";
-import {type BadgeColorKey, type BadgeView, DEFAULT_BADGE_VIEW, isFresh, isLowActivity, openWriterBubble, showsUid, useUiStore} from "@/stores/ui";
+import {type BadgeView, DEFAULT_BADGE_VIEW, isFresh, isLowActivity, openWriterBubble, showsUid, useUiStore} from "@/stores/ui";
 import {insertWriterSpan} from "@/utils/userDataInsert";
+
+import meta, {BADGE_COLORS, type BadgeColor, type Ctx} from "./meta";
 
 interface RatioInfo {
     article: number;
@@ -20,31 +19,10 @@ interface RatioInfo {
     date: number;
 }
 
-/** 배지 색 기본값. 키마다 `${key}Color` 설정이 하나씩 생기고 옵션 화면에선 한 그룹으로 묶인다. IP 배지는 분류(korea…vpn)가 키다 */
-const BADGE_COLORS = {
-    uid: ["아이디/IP", "#999999"],
-    ratio: ["글댓비", "#999999"],
-    ratioAlarm: ["깡계", "#ff0000"],
-    permBan: ["갱차", "#e8645f"],
-    korea: ["IP 한국", "#6495ed"],
-    japan: ["IP 일본", "#e5484d"],
-    china: ["IP 중국", "#f76b15"],
-    foreign: ["IP 그 외 해외", "#12a594"],
-    vpn: ["IP VPN", "#8e4ec6"]
-} satisfies Record<BadgeColorKey, [name: string, color: string]>;
-
-type BadgeColor = keyof typeof BADGE_COLORS;
-
-const LOW_ACTIVITY_GROUP: SettingGroup = {name: "깡계", desc: "글댓합이 기준 이하인 유저를 깡계로 봅니다. 글댓비 표시가 켜져 있고 글댓비를 받아 둔 유저만 해당합니다. 기준이 0이면 꺼집니다."};
-
-const BADGE_COLOR_GROUP: SettingGroup = {name: "배지 색", desc: "유저 정보 배지의 글자 색입니다. IP는 국가별로 칠하고, VPN이면 국가보다 우선합니다."};
-
 type BadgeColors = Partial<Record<BadgeColor, string>>;
 
 const colorsOf = (ctx: Ctx): BadgeColors =>
     objectFromEntries(objectKeys(BADGE_COLORS).map((key) => [key, ctx.settings[`${key}Color`]] as const));
-
-const IP_INFO_FILTERS: Record<IpInfoFilter, string> = {all: "전체", foreign: "해외·VPN만", vpn: "VPN만", none: "표시 안 함"};
 
 const badgeViewOf = (ctx: Ctx): BadgeView => ({
     order: ctx.settings.badgeOrder,
@@ -52,6 +30,12 @@ const badgeViewOf = (ctx: Ctx): BadgeView => ({
     halfFixedUid: ctx.settings.showHalfFixedNickUID,
     ipFilter: ctx.settings.ipInfoFilter
 });
+
+/** 설정에서 만든 배지 색·표시 조건. 작성자 칸마다(목록 새로고침마다 수십 개) 다시 만들지 않고 설정이 바뀔 때(publishBadges) 한 번 만든다 */
+let colors: BadgeColors = {};
+let view: BadgeView = DEFAULT_BADGE_VIEW;
+/** 이 문서의 갤러리 id. 미리보기가 pushState로 주소를 바꿔도 같은 갤러리다 */
+let gallery: string | null = null;
 
 let ratios: Record<string, RatioInfo> = {};
 
@@ -68,7 +52,6 @@ const buildBadgeSpan = (text: string, color?: string, title?: string, className 
     return span;
 };
 
-const LOW_ACTIVITY_ACTIONS = {none: "배지 색만", tag: "[깡계] 표시", blur: "흐리게", hide: "숨기기"};
 const LOW_ACTIVITY_CLASSES = {blur: "refresherLowActivityBlur", hide: "refresherLowActivityHide"} as const;
 const LOW_ACTIVITY_CLASS_LIST = Object.values(LOW_ACTIVITY_CLASSES);
 
@@ -79,10 +62,6 @@ const clearLowActivity = (): void => {
 const process = (ctx: Ctx, element: HTMLElement): void => {
     // 완료 표시 없이 매번 다시 그린다. 파싱 중인 작성자 칸(닉콘·IP 전)에서 먼저 불려도, 칸이 다 읽혀 다시 불릴 때 배지가 제자리를 찾는다
     element.querySelector(".refresher-user-badges")?.remove();
-
-    const colors = colorsOf(ctx);
-    const view = badgeViewOf(ctx);
-    const gallery = queryString("id");
 
     const {nick, uid, ip} = element.dataset;
     const badges = Object.assign(document.createElement("span"), {className: "refresher-user-badges"});
@@ -134,14 +113,16 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
 
 /** 미리보기 작성자 표시가 같은 색·순서·표시 조건을 쓰도록 ui 스토어에 올린다 */
 const publishBadges = (ctx: Ctx): void => {
-    const colors = colorsOf(ctx);
+    colors = colorsOf(ctx);
+    view = badgeViewOf(ctx);
+    gallery = queryString("id");
     useUiStore.setState({
         badgeColors: {
             ...colors,
             // 갱차 조회를 끄면 미리보기에서도 숨긴다
             permBan: ctx.settings.checkPermBan ? colors.permBan : undefined
         },
-        badgeView: badgeViewOf(ctx)
+        badgeView: view
     });
 };
 
@@ -166,84 +147,8 @@ const rebuildUsers = (ctx: Ctx, uids: string[]): void => {
     }
 };
 
-const settings = {
-    showFixedNickUID: {
-        type: "check",
-        name: "고정닉 아이디 표시",
-        desc: "고정닉 유저의 아이디를 표시합니다.",
-        default: true
-    },
-    showHalfFixedNickUID: {
-        type: "check",
-        name: "반고정닉 아이디 표시",
-        desc: "반고정닉 유저의 아이디를 표시합니다.",
-        default: true
-    },
-    ipInfoFilter: {
-        type: "option",
-        name: "IP 정보 표시",
-        desc: "IP의 통신사·조직과 국가를 표시할 대상입니다. VPN은 국가와 상관없이 해외·VPN에 들어갑니다. " +
-            "표시되는 정보는 공개 IP 데이터로 추정한 값이라 실제와 다를 수 있습니다.",
-        default: "all",
-        items: IP_INFO_FILTERS
-    },
-    checkRatio: {
-        type: "check",
-        name: "글댓비 표시",
-        desc: "작성자의 글/댓글 수를 표시합니다. 자동 새로고침으로 새로 올라온 글과 미리보기로 연 글의 작성자만 조회합니다. " +
-            "새 글 작성자의 값은 저장해 두고 목록에 계속 표시하며, 1시간이 지난 값은 그 유저의 새 글이 올라오면 다시 조회합니다.",
-        default: false
-    },
-    alarmRatio: {
-        type: "range",
-        group: LOW_ACTIVITY_GROUP,
-        name: "기준",
-        desc: "글댓합이 이 값 이하면 깡계로 봅니다. (0이면 끔)",
-        default: 0,
-        min: 0,
-        max: 5000,
-        step: 10,
-        unit: "개"
-    },
-    lowActivityAction: {
-        type: "option",
-        group: LOW_ACTIVITY_GROUP,
-        name: "처리",
-        desc: "깡계 유저의 글·댓글을 어떻게 보여 줄지 정합니다.",
-        default: "tag",
-        items: LOW_ACTIVITY_ACTIONS
-    },
-    checkPermBan: {
-        type: "check",
-        name: "갱차 조회",
-        desc: "갱차(갱신 차단)된 갤러리를 배지로 표시합니다. (IP/밴 데이터베이스 기준)",
-        default: false
-    },
-    ...(Object.fromEntries(
-        Object.entries(BADGE_COLORS).map(([key, [name, color]]) => [
-            `${key}Color`,
-            {type: "color", group: BADGE_COLOR_GROUP, name, desc: `${name} 배지의 글자 색입니다.`, default: color}
-        ])
-    ) as Record<`${BadgeColor}Color`, Extract<SettingSchema, { type: "color" }>>),
-    badgeOrder: {
-        type: "order",
-        name: "정보 배치 순서",
-        desc: "유저 정보 배지의 표시 순서를 정합니다.",
-        items: {UID: "아이디/IP", MEMO: "메모", RATIO: "글댓비", PERMBAN: "갱차"},
-        default: ["UID", "MEMO", "RATIO", "PERMBAN"]
-    }
-} satisfies SettingsSchema;
-
-type Ctx = ModuleContext<typeof settings>;
-
 export default defineModule({
-    id: "userinfo",
-    name: "유저 정보",
-    description: "유저의 IP, 아이디 정보, 메모를 표시합니다.",
-    icon: UserRound,
-    urls: [BOARD_PAGE],
-
-    settings,
+    ...meta,
 
     async setup(ctx) {
         // await 전에 알린다. 뒤에 두면 기다리는 동안 모듈이 꺼졌을 때 revoke가 지운 값을 다시 쓴다

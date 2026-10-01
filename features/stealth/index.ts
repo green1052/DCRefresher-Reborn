@@ -1,7 +1,7 @@
-import {EyeOff, Image} from "lucide-react";
-
 import {defineModule} from "@/core/module/define";
 import {useUiStore} from "@/stores/ui";
+
+import meta, {REVEAL_TOGGLE} from "./meta";
 
 const CONTROL_BUTTON = ".stealth_control_button";
 const TEMPORARY_STEALTH = "stlth";
@@ -56,11 +56,7 @@ const createButton = (): void => {
 };
 
 export default defineModule({
-    id: "stealth",
-    name: "스텔스 모드",
-    description: "페이지 내에서 표시되는 이미지를 비활성화합니다.",
-    icon: EyeOff,
-    defaultEnable: false,
+    ...meta,
 
     setup(ctx) {
         document.documentElement.classList.add("refresherStealth");
@@ -84,10 +80,8 @@ export default defineModule({
     },
 
     pageToggles: [{
-        id: "reveal",
-        label: "이미지 잠시 보이기",
+        ...REVEAL_TOGGLE,
         desc: "스텔스로 숨긴 이미지를 보입니다",
-        icon: Image,
         isOn: (api) => api.isRevealed(),
         toggle: (api) => api.toggle()
     }],
