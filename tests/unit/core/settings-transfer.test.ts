@@ -1,9 +1,17 @@
 import {describe, expect, it} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
-import {mergeBackup, parseImport, writeSettings} from "@/core/settings-transfer";
+import {mergeBackup, parseImport, pinDefaultMode, writeSettings} from "@/core/settings-transfer";
 
 const strip = (list: unknown) => (list as { content: string; mode?: string }[]).map(({content, mode}) => (mode ? {content, mode} : {content}));
+
+describe("pinDefaultMode", () => {
+    it("기본 모드가 다르면 모드 없는 항목에만 보낸 쪽 모드를 적고, 같으면 그대로 둔다", () => {
+        const list = [{id: "1", content: "a", isRegex: false}, {id: "2", content: "b", isRegex: false, mode: "SAME" as const}];
+        expect(pinDefaultMode(list, "CONTAIN", "SAME").map((entry) => entry.mode)).toEqual(["CONTAIN", "SAME"]);
+        expect(pinDefaultMode(list, "SAME", "SAME")).toBe(list);
+    });
+});
 
 describe("mergeBackup", () => {
     it("차단 목록은 백업에만 있는 항목을 붙이고, 기본 모드가 다르면 백업 항목에 그 모드를 적는다", () => {

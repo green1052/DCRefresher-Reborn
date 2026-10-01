@@ -6,7 +6,7 @@ import {isBackupTarget} from "@/core/backup";
 import {MIGRATED_MODULES, migrateModuleSettings} from "@/core/migrate-settings";
 import {migrateV5} from "@/core/migrate-v5";
 import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockListKey, isBlockListKey, MODULES_KEY, moduleSettingsKey, rawKey, settingsKeyModule} from "@/core/storage/items";
-import type {BlockType} from "@/core/storage/types";
+import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {blockKey, normalizeBlockList, normalizeDefaults} from "@/stores/blocks";
 import {isRecord} from "@/utils/record";
 
@@ -26,6 +26,13 @@ const isMapKey = (key: string): boolean =>
  *   설정 객체(isMapKey)도 기존 값에 얕게 합쳐, 설정 몇 개만 든 JSON이 나머지 설정을 기본값으로 돌리지 않게 한다.
  * 쓰다가 실패하면 이전 값으로 되돌린다.
  */
+/**
+ * 다른 기기에서 온 차단 항목의 검사 방식을 지킨다. 모드가 '기본값'(없음)인 항목은 그 기기의 기본 모드(from)로 검사됐으므로,
+ * 이 기기의 기본 모드(local)와 다르면 그 모드를 항목에 적는다. 같으면 그대로 둔다
+ */
+export const pinDefaultMode = (list: BlockEntry[], from: DetectMode, local: DetectMode): BlockEntry[] =>
+    from === local ? list : list.map((entry) => (entry.mode ? entry : {...entry, mode: from}));
+
 export const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "merge"): Promise<void> => {
     const previous = await browser.storage.local.get(null);
     // 설정 키가 아닌 값(차단/메모 내보내기의 "NICK" 등)은 저장하지 않는다
@@ -48,9 +55,7 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
         delete next[DEFAULTS_KEY];
         for (const type of BLOCK_TYPES) {
             const key = rawKey(blockListKey(type));
-            const pinned = importDefaults[type];
-            if (!(key in next) || pinned === localDefaults[type]) continue;
-            next[key] = normalizeBlockList(next[key]).map((entry) => (entry.mode ? entry : {...entry, mode: pinned}));
+            if (key in next) next[key] = pinDefaultMode(normalizeBlockList(next[key]), importDefaults[type], localDefaults[type]);
         }
         for (const [key, value] of Object.entries(next)) {
             const old = previous[key];
@@ -88,11 +93,10 @@ export const mergeBackup = (current: Record<string, unknown>, backup: Record<str
         const local = current[key];
         if (isBlockListKey(key)) {
             const type = BLOCK_LIST_TYPES.get(key);
-            const pinned = type && backupDefaults[type] !== localDefaults[type] ? backupDefaults[type] : undefined;
             const kept = normalizeBlockList(local);
             const seen = new Set(kept.map(blockKey));
             const added = normalizeBlockList(value).filter((entry) => !seen.has(blockKey(entry)));
-            return [key, [...kept, ...added.map((entry) => (entry.mode || !pinned ? entry : {...entry, mode: pinned}))]];
+            return [key, [...kept, ...(type ? pinDefaultMode(added, backupDefaults[type], localDefaults[type]) : added)]];
         }
         if (local === undefined) return [key, value];
         return [key, isRecord(local) && isRecord(value) ? {...value, ...local} : local];

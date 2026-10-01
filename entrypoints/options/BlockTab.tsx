@@ -3,6 +3,7 @@ import {useState} from "react";
 
 import {BlockDialog} from "@/components/BlockDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
+import {pinDefaultMode} from "@/core/settings-transfer";
 import {BLOCK_TYPES, DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType} from "@/core/storage/types";
 import {type BlockInputFields, composeExtra, normalizeBlockList, normalizeDefaults, useBlocksStore} from "@/stores/blocks";
@@ -41,9 +42,7 @@ export function BlockTab() {
         const source = isRecord(parsed.defaults) ? normalizeDefaults(parsed.defaults) : defaults;
         // 기존 목록에 덧붙인다. 같은 content+gallery는 가져온 항목으로 바꿔 뒤로 보내고, id는 새로 준다
         for (const type of types) {
-            const list = normalizeBlockList(parsed[type]);
-            const pinned = source[type] === defaults[type] ? undefined : source[type];
-            await addEntries(type, pinned ? list.map((entry) => (entry.mode ? entry : {...entry, mode: pinned})) : list);
+            await addEntries(type, pinDefaultMode(normalizeBlockList(parsed[type]), source[type], defaults[type]));
         }
         return types.length;
     };
