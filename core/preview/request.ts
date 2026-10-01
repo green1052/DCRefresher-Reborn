@@ -32,10 +32,13 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
         e_s_n_o: postInfo.esno ?? ""
     });
 
+    // 1쪽이 실패하면(갱신 차단 등) 함께 보낸 어림 쪽 요청도 끊는다. 막힌 서버에 요청을 더 보내지 않는다
+    const pageAbort = new AbortController();
+    const pageSignal = AbortSignal.any([signal, pageAbort.signal]);
     const fetchPage = (page: number) => {
         const pageBody = new URLSearchParams(body);
         pageBody.set("comment_page", String(page));
-        return ajax.post(urls.comments, {body: pageBody, signal}).json<{
+        return ajax.post(urls.comments, {body: pageBody, signal: pageSignal}).json<{
             comments: DcinsideComment[] | null;
             total_cnt: number | string;
             pagination: string | null;
@@ -52,7 +55,10 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
     const early = Promise.all(Array.from({length: guessed - 1}, (_, index) => fetchPage(index + 2)));
     early.catch(() => {});
 
-    const first = await firstPage;
+    const first = await firstPage.catch((e: unknown) => {
+        pageAbort.abort();
+        throw e;
+    });
     const pages = Math.max(1, ...Array.from(first.pagination?.matchAll(/viewComments\((\d+)/g) ?? [], (match) => Number(match[1])));
     const rest = Promise.all(Array.from({length: Math.max(0, Math.min(10, pages) - guessed)}, (_, index) => fetchPage(guessed + index + 1)));
     const [earlyPages, restPages] = await Promise.all([early, rest]);

@@ -10,6 +10,9 @@ beforeEach(() => {
     fakeBrowser.reset();
 });
 
+// fake-browser의 storage.local.getKeys는 던지기만 한다 (core/backup, stores/modules가 쓴다). reset이 지우지 않는 같은 객체라 한 번만 바꾼다
+fakeBrowser.storage.local.getKeys = async () => Object.keys(await fakeBrowser.storage.local.get(null));
+
 // Node 22의 V8에는 Uint8Array의 base64·hex 변환이 없다 (core/ipdb, core/backup이 쓴다)
 const bytes = Uint8Array.prototype as Uint8Array & { toBase64?: () => string; toHex?: () => string };
 bytes.toBase64 ??= function (this: Uint8Array) {

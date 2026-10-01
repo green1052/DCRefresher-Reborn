@@ -48,7 +48,10 @@ export const isBackupTarget = (key: string): boolean =>
  * 읽는 쪽(stores/blocks의 normalizeBlockList)이 없는 id를 새로 준다.
  */
 export const collectLocalData = async (): Promise<Record<string, unknown>> => {
-    const data = await browser.storage.local.get(null);
+    // get(null)은 수백 KB짜리 IP·밴 DB까지 읽으니 백업할 키만 읽는다. getKeys가 없는 브라우저는 다 읽고 아래에서 거른다
+    const keys = typeof browser.storage.local.getKeys === "function" ? (await browser.storage.local.getKeys()).filter(isBackupTarget) : null;
+    if (keys?.length === 0) return {};
+    const data = await browser.storage.local.get(keys);
     return Object.fromEntries(
         Object.entries(data)
             .filter(([key]) => isBackupTarget(key))

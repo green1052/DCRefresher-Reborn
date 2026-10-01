@@ -121,6 +121,8 @@ const isNumbers = (value: unknown): value is number[] => Array.isArray(value) &&
 /** 저장 형식 → 조회 함수. 구간을 65536칸 표로 한 번 펼쳐 조회는 배열 한 칸으로 한다 */
 export const createIpLookup = (data: CompactIpData): ((ip: string) => IpCandidate[] | undefined) => {
     const runs = new Uint16Array(Uint8Array.fromBase64(data.runs).buffer);
+    // 시작점과 값이 짝을 이뤄야 한다. 홀수면 값 칸이 어긋나 표가 0으로 조용히 채워진다
+    if (runs.length % 2 !== 0) throw new Error("IP 데이터 형식이 올바르지 않습니다.");
     const count = runs.length / 2;
     const table = new Uint16Array(65536);
     for (let run = 0; run < count; run++) table.fill(runs[count + run]!, runs[run]!, run + 1 < count ? runs[run + 1]! : 65536);

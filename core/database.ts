@@ -6,6 +6,7 @@ import {createStore} from "zustand/vanilla";
 
 import {DB_KEYS, dbStorage, writeDatabase} from "@/core/storage/items";
 import type {BanList} from "@/core/storage/types";
+import {onBfcacheRestore} from "@/utils/dom";
 import {once} from "@/utils/once";
 
 /** DB 파일 하나를 받는다. 재시도하지 않는다. 실패하면 배경의 다음 알람이나 사용자의 "지금 갱신"이 다시 받는다 */
@@ -119,6 +120,11 @@ export const initDatabase = once(async () => {
     storage.watch<string>(DB_KEYS.ban, (next) => {
         if (bansRequested) loadBans(next ?? "");
     });
+    // bfcache에 있는 동안 받은 DB 갱신은 watch로 오지 않는다
+    onBfcacheRestore(async () => {
+        loadIp(await storage.getItem<string>(DB_KEYS.ip, {fallback: ""}));
+        if (bansRequested) loadBans(await storage.getItem<string>(DB_KEYS.ban, {fallback: ""}));
+    });
 });
 
 const categoryOf = ({vpn, country}: IpCandidate): IpCategory => {
@@ -162,7 +168,11 @@ export const passesIpFilter = ({category}: IpInfo, filter: IpInfoFilter): boolea
 export const banReasonsOf = (uid: string): string | undefined => {
     if (!bansRequested) {
         bansRequested = true;
-        void storage.getItem<string>(DB_KEYS.ban, {fallback: ""}).then(loadBans, console.error);
+        // 읽기에 실패하면 다음 호출이 다시 읽는다
+        void storage.getItem<string>(DB_KEYS.ban, {fallback: ""}).then(loadBans, (e: unknown) => {
+            bansRequested = false;
+            console.error(e);
+        });
     }
     return bans?.get(uid);
 };
