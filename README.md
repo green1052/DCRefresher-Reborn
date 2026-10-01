@@ -131,6 +131,8 @@ bun install
 bun run dev            # Chrome 개발 모드
 bun run dev:firefox    # Firefox 개발 모드
 bun run compile        # 타입 검사
+bun run test           # 단위 테스트 (Vitest)
+bun run build && bun run e2e   # E2E 테스트 (Playwright, 처음 한 번 bunx playwright install chromium)
 bun run zip            # Chrome 배포용 zip
 bun run zip:firefox    # Firefox 배포용 zip (소스 zip도 함께 생성)
 ```
@@ -140,5 +142,5 @@ bun run zip:firefox    # Firefox 배포용 zip (소스 zip도 함께 생성)
 ### 기여
 
 - 버그 제보와 기능 제안은 [이슈 템플릿](https://github.com/green1052/DCRefresher-Reborn/issues/new/choose)으로 올려 주세요.
-- 풀 리퀘스트는 `develop` 브랜치로 보내 주세요. 커밋 전에 `bun run compile`과 `bun run build`가 통과해야 하고, 커밋 메시지는 [Conventional Commits](https://www.conventionalcommits.org/ko/)를 따릅니다.
+- 풀 리퀘스트는 `develop` 브랜치로 보내 주세요. 커밋 전에 `bun run compile`, `bun run test`, `bun run build`가 통과해야 하고, 커밋 메시지는 [Conventional Commits](https://www.conventionalcommits.org/ko/)를 따릅니다.
 - Chrome과 Firefox에서 모두 확인해 주세요.

@@ -27,7 +27,7 @@ DCRefresher Reborn의 구조, 기능을 더하는 방법, 테스트와 릴리즈
 | 상태 | zustand |
 | 저장소 | WXT storage (`wxt/utils/storage`) |
 | HTTP | ky + p-limit |
-| 캐시 | lru-cache (메모리 캐시) |
+| 캐시 | `utils/lru.ts`의 `LruCache` (Map으로 만든 작은 메모리 캐시. 콘텐츠 스크립트에 라이브러리를 싣지 않는다) |
 | HTML 정화 | DOMPurify (`utils/sanitize.ts`) |
 | 메시징 | @webext-core/messaging |
 | 타입 도우미 | ts-extras (`objectKeys`, `objectEntries`, `arrayIncludes`) |
@@ -84,7 +84,8 @@ components/         공용 React 컴포넌트, 오버레이 루트(components/ov
 utils/              DOM·이벤트·정화(DOMPurify)·다크모드 등 작은 도우미
 assets/styles/      페이지에 넣는 SCSS, 오버레이 CSS, Radix CSS 진입점 (radix-themes.css: 옵션·오버레이, radix-themes-popup.css: 팝업)
 scripts/            IP DB 빌드 스크립트 (GitHub Actions의 DB 워크플로가 실행)
-tests/              unit/(Vitest, 소스 경로를 따라 둔다), e2e/(Playwright, 가짜 디시 페이지), setup.ts(단위 테스트 공통 준비)
+tests/              unit/(Vitest, 소스 경로를 따라 둔다), setup.ts(단위 테스트 공통 준비)
+e2e/                Playwright E2E (가짜 디시 페이지, 페이지 객체 pages/, 파이어폭스 설치 firefox.ts)
 ```
 
 `features/index.ts`가 `import.meta.glob("./*/index.ts")`로 모듈을, `features/meta.ts`가 `./*/meta.ts`로 모듈 메타를 모읍니다. 새 폴더를 만들면 목록에 따로 등록할 필요가 없습니다. 콘텐츠 스크립트만 `features/index.ts`를 쓰고, 옵션·팝업·`stores/modules.ts`는 `features/meta.ts`를 씁니다. setup이 쓰는 HTTP 클라이언트·캐시·DOM 코드가 옵션·팝업 번들에 딸려 가지 않게 하기 위해서입니다.
@@ -180,7 +181,7 @@ flowchart TD
     B -->|항상| LA["loadAll<br>이 페이지 모듈만 거르기<br>on/off·모듈 설정 읽기"]
     ST -->|ready| SU
     LA --> SU["켜진 모듈 setup<br>BOARD_PAGE면 차단·메모를 다 읽은 뒤"]
-    SU --> W["modulesStorage 감시·bfcache 복귀 처리<br>on/off 한 번 더 맞춤"]
+    SU --> W["on/off·설정 감시(signal에 묶음)·bfcache 복귀 처리<br>on/off 한 번 더 맞춤"]
     W --> D{"BOARD_PAGE인가"}
     D -->|예| DB["initDatabase<br>IP DB 읽기"]
 ```
@@ -296,6 +297,7 @@ export default defineModule({ …, settings, setup: apply });
 
 - **shortcuts**: `{명령 이름: (ctx, api) => …}`. 명령 이름은 `wxt.config.ts`의 manifest `commands`에 있어야 합니다. 배경 스크립트가 명령을 받아 탭으로 보내고, 레지스트리가 setup이 끝난 모듈에만 전달합니다.
 - **pageToggles**: 팝업의 "현재 페이지"에 나오는 이 페이지 한정 토글입니다. 표시 정보(`id`, `label`, `icon`)는 `meta.ts`의 `toggles`에 두고(팝업이 아이콘을 여기서 찾습니다), `index.ts`의 `pageToggles`가 같은 객체를 펼쳐 `desc`(문자열 또는 `(api) => string`), `isOn(api)`, `toggle(api)`를 붙입니다. setup이 끝난 모듈의 토글만 보입니다.
+  - 팝업은 처음 열 때와, 모듈 on/off 저장이 끝난 뒤에 탭에 상태를 묻습니다(`refresher:pageState`). 탭은 감시 알림을 기다리지 않고 저장소의 on/off를 직접 다시 읽어 맞춘 뒤, 시작하는 모듈의 setup이 끝나면 답합니다(`settledPageToggleStates`). 그래서 끈 모듈의 토글이 잠깐 남아 보이지 않습니다.
 
 ### 모듈 간 api
 
@@ -332,7 +334,10 @@ getModuleApi("preview")?.isOpen()
 
 - 모든 키는 `core/storage/items.ts`에 모읍니다. `storage.defineItem`을 쓰고 직접 만든 저장소 래퍼는 두지 않습니다.
 - `defineItem`은 만드는 순간 값을 한 번 읽습니다. 그래서 항목은 모듈 최상위가 아니라 처음 쓸 때 만듭니다(`items.ts`의 `lazyItem`·getter). 안 그러면 이 파일을 불러오는 모든 디시 페이지와 서비스 워커가 깰 때마다 쓰지도 않는 키를 십여 번 읽습니다.
-- 읽기만 하는 곳(콘텐츠 스크립트의 모듈 레지스트리, 차단·메모·모듈 스토어, 배경 모듈)은 항목을 만들지 않고 키로 `storage.getItems([...])`·`storage.watch(key, cb)`를 씁니다. 여러 키를 `storage.local.get` 한 번으로 읽고, 없는 값은 `null`이 오므로 받는 쪽이 기본값으로 맞춥니다. 항목은 쓸 때(`setValue`)와 옵션 페이지의 `useStorageItem`에서 씁니다.
+- 읽기만 하는 곳은 항목을 만들지 않고 키로 읽고 감시합니다. 여러 키를 `storage.local.get` 한 번으로 읽고, 없는 값은 `null`이 오므로 받는 쪽이 기본값으로 맞춥니다. 항목은 쓸 때(`setValue`)와 옵션 페이지의 `useStorageItem`에서 씁니다.
+  - 스토어처럼 키 여러 개를 읽고 따라가야 하면 `core/storage/sync.ts`의 `storageSync(keys, apply)`를 씁니다. 한 번에 읽고, 키마다 감시하고, bfcache에서 돌아오면 다시 읽습니다. 차단·메모·모듈 스토어가 이것을 씁니다.
+  - 콘텐츠 스크립트의 감시는 `watchStorage(key, cb, signal)`로 컨텍스트의 signal에 묶습니다. 파이어폭스에서 스크립트가 다시 주입되면 이전 인스턴스가 남는데, 묶어 두면 그 인스턴스는 더 반응하지 않습니다.
+  - 모듈 on/off와 설정은 `core/module/settings.ts`의 `readModuleStorage(ids)`로 읽고 `enablesOf`·`settingsOf`로 맞춥니다. 콘텐츠 레지스트리, 옵션·팝업 스토어, 배경 모듈이 같은 함수를 씁니다.
 - 예외: IP·밴 DB(`DB_KEYS`)는 수백 KB라 항목을 아예 만들지 않습니다. 이 키는 쓰는 곳에서 `storage.getItem`·`storage.watch`로 다룹니다.
 - 모듈 캐시(계속 불어나는 데이터)는 `moduleDataStorage(id, fallback)`로 만들되, 만드는 순간 값을 읽으므로 모듈 최상위가 아니라 `setup` 안에서 만듭니다. 이 키는 백업·내보내기와 자동 백업 대상에서 빠집니다. 개수 상한을 두세요 (글댓비 캐시는 500명).
 - 백업 대상 판정은 `core/backup.ts`의 `isBackupTarget`입니다. 새 키가 백업되면 안 되는 성격(비밀번호, 다시 받을 수 있는 큰 데이터)이면 여기에 추가합니다. 클라우드 백업은 `storage.sync`의 용량(약 100KB)을 두 칸(수동·자동)이 나눠 씁니다.
@@ -349,6 +354,7 @@ getModuleApi("preview")?.isOpen()
 - 시간 제한(15초)은 동시 요청 수 제한의 차례를 받은 뒤부터 잽니다. ky의 `timeout`은 `fetch`를 부르는 순간부터 재서 차례를 기다리는 시간까지 들어가므로 쓰지 않습니다(호출할 때도 주지 마세요). 시간 제한은 `AbortController`와 `setTimeout`으로 겁니다. `AbortSignal.timeout`은 Firefox 콘텐츠 스크립트에서 던집니다.
 - 재시도는 ky 기본값(GET 같은 멱등 메서드만 최대 2번, 408·413·429·5xx 응답과 네트워크 오류)에 지터를 더하고, `Retry-After`는 최대 10초까지만 기다립니다. 15초 시간 초과와 `BlockedError`는 재시도하지 않고, 댓글 목록·쓰기 같은 POST도 재시도하지 않습니다. 자동 새로고침은 `retry: 0`으로 보내고, 실패하면 주기를 늘립니다.
 - 요청이 너무 많으면 디시는 상태 코드 없이(200) 빈 페이지를 줍니다. 클라이언트는 dcinside.com의 GET 응답과 `/board/comment/` 아래 요청(댓글 목록·삭제)이 비어 있을 때만 `BlockedError`를 던집니다. 다른 ajax POST는 성공 응답도 비어 있을 수 있어 검사하지 않습니다. 콘텐츠 스크립트가 1분에 한 번 안내를 띄우므로, 기능 쪽에서는 `e instanceof BlockedError`일 때 자기 오류 토스트를 건너뜁니다(`utils/notify.ts` 참고).
+- 갤러리 종류는 `core/http/urls.ts`의 `galleryKind(url)`(`"normal" | "minor" | "mini" | "person"`)로 다룹니다. 주소 경로(`mgallery/` 등)와 요청의 `_GALLTYPE_` 값(`G`·`M`·`MI`·`PR`)은 같은 파일의 표에만 두고, 주소·요청을 만들 때 `galleryPath`·`galltypeOf`로 꺼냅니다.
 - 폼 본문은 `formBody({...})`로 만듭니다. 값이 `null`·`undefined`·`false`인 필드는 빠지고, 빈 문자열은 들어갑니다. CSRF 토큰(`ci_t`)이 붙는 디시 요청은 `csrfBody({...})`(`utils/cookie.ts`)를 씁니다. 끊은 요청인지는 `isAbortError(e)`로 봅니다.
 
 ## Firefox에서 주의할 점
