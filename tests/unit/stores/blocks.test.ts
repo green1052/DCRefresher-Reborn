@@ -3,7 +3,8 @@ import {fakeBrowser} from "wxt/testing/fake-browser";
 
 import {blockKey, composeExtra, initBlocksStore, normalizeBlockList, normalizeDefaults, useBlocksStore} from "@/stores/blocks";
 
-const tick = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
+import {stored, tick} from "../../helpers";
+
 
 describe("normalizeBlockList", () => {
     it("모양이 맞는 항목만 남기고 id가 없거나 겹치면 새로 준다", () => {
@@ -49,16 +50,16 @@ describe("useBlocksStore + 저장소", () => {
         // 같은 content+gallery는 한 항목이고, 새로 넣은 쪽이 뒤로 간다
         await state.addEntry("NICK", {content: "n", isRegex: false, extra: "별명"});
         await state.addEntry("NICK", {content: "m", isRegex: false});
-        const stored = (await fakeBrowser.storage.local.get("refresher:block:NICK"))["refresher:block:NICK"] as { content: string; extra?: string }[];
-        expect(stored.map(({content}) => content)).toEqual(["n", "m"]);
-        expect(stored[0]?.extra).toBe("별명");
+        const nicks = (await stored("refresher:block:NICK")) as { content: string; extra?: string }[];
+        expect(nicks.map(({content}) => content)).toEqual(["n", "m"]);
+        expect(nicks[0]?.extra).toBe("별명");
         expect(blockKey({content: "n", isRegex: false})).toBe(blockKey({content: "n", isRegex: true, gallery: undefined}));
 
         // 이 탭의 쓰기가 watch로 돌아와도 값이 같으면 상태 객체를 바꾸지 않는다
         const listener = vi.fn();
         const unsubscribe = useBlocksStore.subscribe(listener);
         const before = useBlocksStore.getState().entries;
-        await fakeBrowser.storage.local.set({"refresher:block:NICK": stored});
+        await fakeBrowser.storage.local.set({"refresher:block:NICK": nicks});
         await tick();
         expect(useBlocksStore.getState().entries).toBe(before);
 
@@ -69,7 +70,7 @@ describe("useBlocksStore + 저장소", () => {
         expect(listener).toHaveBeenCalled();
 
         await useBlocksStore.getState().setDefault("ID", "NOT_SAME");
-        expect((await fakeBrowser.storage.local.get("refresher:block:defaults"))["refresher:block:defaults"]).toMatchObject({ID: "NOT_SAME", NICK: "CONTAIN"});
+        expect(await stored("refresher:block:defaults")).toMatchObject({ID: "NOT_SAME", NICK: "CONTAIN"});
         unsubscribe();
     });
 });

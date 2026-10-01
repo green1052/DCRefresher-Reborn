@@ -1,5 +1,5 @@
 import {expect, storedIn, test} from "./fixtures";
-import {openPopup} from "./pages/popup";
+import {openPopup, openPopupFor} from "./pages/popup";
 
 test.describe("팝업", () => {
     test("모듈 타일을 그리고 누르면 켜고 끈다", async ({page, extensionId, errors: _errors}) => {
@@ -16,10 +16,7 @@ test.describe("팝업", () => {
     });
 
     test("디시 탭에서 열면 현재 페이지 토글이 나오고 탭의 모듈을 바로 조작한다", async ({context, extensionId, listPage}) => {
-        const popup = await openPopup(await context.newPage(), extensionId);
-        // 팝업은 활성 탭을 본다. 마지막으로 연 팝업 탭이 아니라 목록 탭이 활성이어야 한다
-        await listPage.page.bringToFront();
-        await popup.reload();
+        const popup = await openPopupFor(context, extensionId, listPage.page);
 
         await expect(popup.page.getByText("현재 페이지")).toBeVisible();
         const pause = popup.pageToggle(/자동 새로고침 일시정지/);
@@ -30,9 +27,7 @@ test.describe("팝업", () => {
     });
 
     test("모듈을 끄고 켜면 현재 페이지 토글이 저장된 상태를 따라간다", async ({context, extensionId, listPage}) => {
-        const popup = await openPopup(await context.newPage(), extensionId);
-        await listPage.page.bringToFront();
-        await popup.reload();
+        const popup = await openPopupFor(context, extensionId, listPage.page);
 
         const pause = popup.pageToggle(/자동 새로고침 일시정지/);
         await expect(pause).toBeVisible();

@@ -3,6 +3,8 @@ import {storage} from "wxt/utils/storage";
 
 import {storageSync, watchStorage} from "@/core/storage/sync";
 
+import {tick} from "../../../helpers";
+
 describe("storageSync", () => {
     it("키들을 한 번에 읽어 넘기고(없으면 null), 바뀌면 다시 넘기고, signal이 끝나면 감시를 푼다", async () => {
         await storage.setItem("local:a", 1);
@@ -21,7 +23,7 @@ describe("storageSync", () => {
 
         controller.abort();
         await storage.setItem("local:a", 3);
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await tick();
         expect(seen).toHaveLength(3);
     });
 });
@@ -35,7 +37,7 @@ describe("watchStorage", () => {
 
         dispose();
         await storage.setItem("local:c", 2);
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await tick();
         expect(seen).toEqual([1]);
     });
 });

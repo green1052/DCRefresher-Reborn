@@ -1,4 +1,4 @@
-import type {Page} from "@playwright/test";
+import type {BrowserContext, Page} from "@playwright/test";
 
 import {extensionUrl} from "./extension";
 
@@ -19,5 +19,13 @@ export async function openPopup(page: Page, extensionId: string) {
             await page.locator(".module-tile").first().waitFor();
         }
     };
+    return popup;
+}
+
+/** 탭(page)에서 연 것처럼 팝업을 연다. 팝업은 활성 탭을 보므로, 팝업 탭을 연 뒤 그 탭을 앞으로 가져와 다시 읽는다 */
+export async function openPopupFor(context: BrowserContext, extensionId: string, tab: Page) {
+    const popup = await openPopup(await context.newPage(), extensionId);
+    await tab.bringToFront();
+    await popup.reload();
     return popup;
 }

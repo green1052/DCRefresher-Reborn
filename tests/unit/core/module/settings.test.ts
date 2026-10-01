@@ -1,10 +1,11 @@
 import {describe, expect, it} from "vitest";
 
 import {areEqual, defaultValue, isModuleEnabled, normalizeSetting, normalizeSettings} from "@/core/module/settings";
-import type {SettingSchema} from "@/core/module/types";
 
-const range: SettingSchema = {type: "range", name: "", desc: "", default: 5000, min: 3000, max: 20000, step: 100, unit: "ms"};
-const order: SettingSchema = {type: "order", name: "", desc: "", items: {UID: "", MEMO: "", RATIO: "", PERMBAN: ""}, default: ["UID", "MEMO", "RATIO", "PERMBAN"]};
+import {setting} from "../../../helpers";
+
+const range = setting({type: "range", default: 5000, min: 3000, max: 20000, step: 100, unit: "ms"});
+const order = setting({type: "order", items: {UID: "", MEMO: "", RATIO: "", PERMBAN: ""}, default: ["UID", "MEMO", "RATIO", "PERMBAN"]});
 
 describe("isModuleEnabled", () => {
     it("저장값이 boolean이면 그 값, 아니면 defaultEnable(기본 true)을 따른다", () => {
@@ -18,12 +19,12 @@ describe("isModuleEnabled", () => {
 
 describe("normalizeSetting", () => {
     it("타입이 틀리면 기본값을 쓴다", () => {
-        expect(normalizeSetting({type: "check", name: "", desc: "", default: true}, "yes")).toBe(true);
-        expect(normalizeSetting({type: "text", name: "", desc: "", default: "x"}, 3)).toBe("x");
-        expect(normalizeSetting({type: "option", name: "", desc: "", default: "a", items: {a: "", b: ""}}, "c")).toBe("a");
-        expect(normalizeSetting({type: "option", name: "", desc: "", default: "a", items: {a: "", b: ""}}, "b")).toBe("b");
+        expect(normalizeSetting(setting({type: "check", default: true}), "yes")).toBe(true);
+        expect(normalizeSetting(setting({type: "text", default: "x"}), 3)).toBe("x");
+        expect(normalizeSetting(setting({type: "option", default: "a", items: {a: "", b: ""}}), "c")).toBe("a");
+        expect(normalizeSetting(setting({type: "option", default: "a", items: {a: "", b: ""}}), "b")).toBe("b");
         // 프로토타입 키는 항목이 아니다
-        expect(normalizeSetting({type: "option", name: "", desc: "", default: "a", items: {a: ""}}, "constructor")).toBe("a");
+        expect(normalizeSetting(setting({type: "option", default: "a", items: {a: ""}}), "constructor")).toBe("a");
     });
 
     it("range는 step 단위로 맞춰 min~max로 자른다", () => {
@@ -36,11 +37,11 @@ describe("normalizeSetting", () => {
     });
 
     it("key·color는 형식에 맞는 값만 받는다", () => {
-        expect(normalizeSetting({type: "key", name: "", desc: "", default: "d"}, "b")).toBe("b");
-        expect(normalizeSetting({type: "key", name: "", desc: "", default: "d"}, "B")).toBe("d");
-        expect(normalizeSetting({type: "key", name: "", desc: "", default: "d"}, "ab")).toBe("d");
-        expect(normalizeSetting({type: "color", name: "", desc: "", default: "#000000"}, "#ABCDEF")).toBe("#ABCDEF");
-        expect(normalizeSetting({type: "color", name: "", desc: "", default: "#000000"}, "red")).toBe("#000000");
+        expect(normalizeSetting(setting({type: "key", default: "d"}), "b")).toBe("b");
+        expect(normalizeSetting(setting({type: "key", default: "d"}), "B")).toBe("d");
+        expect(normalizeSetting(setting({type: "key", default: "d"}), "ab")).toBe("d");
+        expect(normalizeSetting(setting({type: "color", default: "#000000"}), "#ABCDEF")).toBe("#ABCDEF");
+        expect(normalizeSetting(setting({type: "color", default: "#000000"}), "red")).toBe("#000000");
     });
 
     it("order는 모르는 항목과 겹친 항목을 빼고 새 항목을 뒤에 붙인다", () => {
@@ -58,7 +59,7 @@ describe("normalizeSetting", () => {
 
 describe("normalizeSettings", () => {
     it("스키마의 모든 키를 채우고 없는 키는 버린다", () => {
-        const def = {settings: {a: {type: "check", name: "", desc: "", default: true}, r: range}} as const;
+        const def = {settings: {a: setting({type: "check", default: true}), r: range}} as const;
         expect(normalizeSettings(def, {a: false, zzz: 1})).toEqual({a: false, r: 5000});
         expect(normalizeSettings(def, null)).toEqual({a: true, r: 5000});
         expect(normalizeSettings({}, {a: 1})).toEqual({});

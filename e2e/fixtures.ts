@@ -30,6 +30,10 @@ const pathToFirefoxExtension = path.resolve(".output/firefox-mv2");
 export interface ExtensionStorage {
     set(items: Record<string, unknown>): Promise<void>;
     get(key: string): Promise<unknown>;
+    /** 모듈 on/off (refresher:modules) */
+    setModules(enables: Record<string, boolean>): Promise<void>;
+    /** 모듈 하나의 설정 (refresher:module:<id>:settings). 없는 키는 기본값이다 */
+    setModuleSettings(id: string, settings: Record<string, unknown>): Promise<void>;
 }
 
 /** 배경 스크립트. MV3는 서비스 워커, MV2는 배경 페이지다 */
@@ -106,9 +110,12 @@ export const test = base.extend<{ context: BrowserContext; background: Backgroun
         // Worker와 Page의 evaluate는 시그니처가 달라 합친 타입으로는 부를 수 없어 나눠 부른다
         const setItems = (items: Record<string, unknown>) => chrome.storage.local.set(items);
         const getItem = (key: string) => chrome.storage.local.get(key);
+        const set = (items: Record<string, unknown>) => ("goto" in background ? background.evaluate(setItems, items) : background.evaluate(setItems, items));
         await use({
-            set: (items) => ("goto" in background ? background.evaluate(setItems, items) : background.evaluate(setItems, items)),
-            get: async (key) => ("goto" in background ? await background.evaluate(getItem, key) : await background.evaluate(getItem, key))?.[key]
+            set,
+            get: async (key) => ("goto" in background ? await background.evaluate(getItem, key) : await background.evaluate(getItem, key))?.[key],
+            setModules: (enables) => set({"refresher:modules": enables}),
+            setModuleSettings: (id, settings) => set({[`refresher:module:${id}:settings`]: settings})
         });
     },
 

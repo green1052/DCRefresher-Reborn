@@ -5,6 +5,8 @@ import {fakeBrowser} from "wxt/testing/fake-browser";
 
 import {collectLocalData, isBackupTarget, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
 
+import {stored} from "../../helpers";
+
 const local = {
     "refresher:modules": {block: true},
     "refresher:module:preview:settings": {previewWidth: 900},
@@ -39,7 +41,7 @@ describe("runBackup / readCloudBackup", () => {
         const sync = await fakeBrowser.storage.sync.get(null);
         expect(sync.backup).toMatchObject({format: 1, chunks: 1});
         expect(typeof sync["backup:0"]).toBe("string");
-        expect((await fakeBrowser.storage.local.get("refresher:backup:error"))["refresher:backup:error"]).toBe("");
+        expect(await stored("refresher:backup:error")).toBe("");
 
         const status = await readCloudBackupStatus();
         expect(status.manual?.createdAt).toBe((sync.backup as { createdAt: number }).createdAt);
