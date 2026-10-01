@@ -11,5 +11,8 @@ export default defineModuleMeta({
     description: "페이지 내에서 표시되는 이미지를 비활성화합니다.",
     icon: EyeOff,
     defaultEnable: false,
-    toggles: [REVEAL_TOGGLE]
+    toggles: [REVEAL_TOGGLE],
+    commands: {
+        stealthPause: {description: "이미지 잠시 보이기", key: "Alt+P"}
+    }
 });

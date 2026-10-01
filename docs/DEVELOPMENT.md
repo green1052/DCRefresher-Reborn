@@ -90,7 +90,8 @@ features/<id>/          기능 모듈 하나
   index.ts              페이지에서 하는 일 (할 일이 없는 모듈은 두지 않는다)
   background.ts         배경에서 하는 일 (선택)
   ui/                   React 화면 (선택)
-modules/                WXT 로컬 모듈: 모듈 api 타입 생성(module-types.ts), 엔트리마다 Radix CSS 줄이기(slim-radix-css.ts)
+modules/                WXT 로컬 모듈: 모듈 api 타입 생성(module-types.ts), 단축키 모으기(commands.ts),
+                        엔트리마다 Radix CSS 줄이기(slim-radix-css.ts)
 core/                   모듈 시스템, 저장소 키, HTTP, 필터링, 차단 판정, 미리보기 요청·파싱, 백업, 설정 옮기기, DB, 마이그레이션
 stores/                 여러 화면이 같이 쓰는 zustand 스토어 (모듈 on/off·설정, 차단, 메모, 오버레이 UI)
 components/             공용 React 컴포넌트, 오버레이 루트(components/overlay)
@@ -320,7 +321,8 @@ export default defineModule({ …, settings, setup: apply });
 
 ### 단축키와 팝업 토글
 
-- **shortcuts**: `{명령 이름: (ctx, api) => …}`. 명령 이름은 `wxt.config.ts`의 manifest `commands`에 있어야 합니다. 배경 스크립트가 명령을 받아 탭으로 보내고, 레지스트리가 setup이 끝난 모듈에만 전달합니다.
+- **commands** (meta.ts): `{명령 이름: {description, key?}}`. 빌드할 때 `modules/commands.ts`가 모든 모듈의 것을 모아 manifest `commands`로 넣습니다. 브라우저 단축키 설정에는 "모듈 이름: description"으로 보이고, `key`는 처음 설치할 때의 기본 키입니다.
+- **shortcuts** (index.ts): `{명령 이름: (ctx, api) => …}`. 메타의 `commands`와 이름이 같아야 합니다(`tests/unit/features/commands.test.ts`가 확인합니다). 배경 스크립트가 명령을 받아 탭으로 보내고, 레지스트리가 setup이 끝난 모듈에만 전달합니다.
 - **pageToggles**: 팝업의 "현재 페이지"에 나오는 이 페이지 한정 토글입니다. 표시 정보(`id`, `label`, `icon`)는 `meta.ts`의 `toggles`에 두고(팝업이 아이콘을 여기서 찾습니다), `index.ts`의 `pageToggles`가 같은 객체를 펼쳐 `desc`(문자열 또는 `(api) => string`), `isOn(api)`, `toggle(api)`를 붙입니다. setup이 끝난 모듈의 토글만 보입니다.
   - 팝업은 처음 열 때와, 모듈 on/off 저장이 끝난 뒤에 탭에 상태를 묻습니다(`refresher:pageState`). 탭은 감시 알림을 기다리지 않고 저장소의 on/off를 직접 다시 읽어 맞춘 뒤, 시작하는 모듈의 setup이 끝나면 답합니다(`settledPageToggleStates`). 그래서 끈 모듈의 토글이 잠깐 남아 보이지 않습니다.
 

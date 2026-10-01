@@ -92,6 +92,13 @@ export interface ModuleMeta<S extends SettingsSchema = SettingsSchema> {
     /** 팝업 '현재 페이지' 토글의 표시 정보. index.ts의 pageToggles가 같은 객체를 펼쳐 동작을 붙인다. */
     toggles?: readonly PageToggleMeta[];
 
+    /**
+     * 브라우저 단축키 (manifest commands). 키는 명령 이름이고 index.ts의 shortcuts가 같은 이름으로 동작을 붙인다.
+     * 빌드할 때 modules/commands.ts가 모아 manifest에 넣는다. 설명은 "모듈 이름: description"으로 보인다.
+     * key는 처음 설치할 때의 기본 키다 (브라우저 단축키 설정에서 바꾼다). 없으면 사용자가 정해야 쓴다.
+     */
+    commands?: Record<string, { description: string; key?: string }>;
+
     /** 모듈이 켜져 있을 때 확장 페이지(옵션·팝업)의 <html>에 넣을 CSS 변수 (폰트 교체 등). 디시 페이지에는 setup이 따로 적용한다. */
     extensionPageVars?(settings: SettingValues<S>): Record<`--${string}`, string>;
 }
@@ -104,7 +111,7 @@ export interface ModuleDefinition<S extends SettingsSchema = SettingsSchema, Api
     /** 모듈을 켤 때 실행. 리턴값은 shortcuts·pageToggles에 api로 전달된다. */
     setup(ctx: ModuleContext<S>): Api | Promise<Api>;
 
-    /** 단축키. 키는 wxt.config.ts의 manifest commands 이름이다. setup이 끝난 모듈에만 전달된다. */
+    /** 단축키. 키는 메타의 commands 이름이다. setup이 끝난 모듈에만 전달된다. */
     shortcuts?: Record<string, (ctx: ModuleContext<S>, api: Api) => void | Promise<void>>;
 
     /** 팝업 '현재 페이지' 토글 (메타의 toggles에 동작을 붙인 것). */

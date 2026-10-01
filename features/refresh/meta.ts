@@ -85,5 +85,9 @@ export default defineModuleMeta({
     icon: RefreshCw,
     urls: [BOARD_PAGE],
     settings,
-    toggles: [PAUSE_TOGGLE]
+    toggles: [PAUSE_TOGGLE],
+    commands: {
+        refreshLists: {description: "새로고침", key: "Alt+R"},
+        refreshPause: {description: "자동 새로고침 일시정지", key: "Alt+S"}
+    }
 });

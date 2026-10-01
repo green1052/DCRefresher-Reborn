@@ -83,5 +83,8 @@ export default defineModuleMeta({
     icon: Ban,
     urls: [BOARD_PAGE],
     settings,
-    toggles: [REVEAL_TOGGLE]
+    toggles: [REVEAL_TOGGLE],
+    commands: {
+        blockReveal: {description: "이 페이지에서 가린 내용 보기"}
+    }
 });

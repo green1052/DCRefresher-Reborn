@@ -47,29 +47,6 @@ export default defineConfig({
                 css: ["content-scripts/page.css"],
                 run_at: "document_start"
             }
-        ],
-        commands: {
-            refreshLists: {
-                suggested_key: {
-                    default: "Alt+R"
-                },
-                description: "글 목록 새로고침: 새로고침"
-            },
-            refreshPause: {
-                suggested_key: {
-                    default: "Alt+S"
-                },
-                description: "글 목록 새로고침: 자동 새로고침 일시정지"
-            },
-            stealthPause: {
-                suggested_key: {
-                    default: "Alt+P"
-                },
-                description: "스텔스 모드: 이미지 잠시 보이기"
-            },
-            blockReveal: {
-                description: "콘텐츠 차단: 이 페이지에서 가린 내용 보기"
-            }
-        }
+        ]
     }
 });
