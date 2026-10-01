@@ -52,11 +52,11 @@ export const createMini = (
         });
     };
 
-    const onMiniEnter = (ev: MouseEvent) => {
+    /** element: 커서가 들어간 제목 칸. */
+    const onMiniEnter = (element: HTMLElement, ev: MouseEvent) => {
         if (!ctx.settings.tooltipMode) return;
         if (usePreviewStore.getState().visible) return;
 
-        const element = ev.currentTarget as HTMLElement;
         if (isBlurHidden(element)) return;
         // 조작할 수 있는 미니에서 제목으로 돌아왔으면 닫지 않는다. 떠난 제목의 닫기 타이머는 다른 제목에 들어와도 끊어야
         // 새로 뜰 카드를 닫지 않으므로 keepMini는 늘 부른다. 다른 제목이면 앞 글의 카드는 바로 내린다 (새 글을 받지 못하면 앞 글 카드가 그대로 남는다).

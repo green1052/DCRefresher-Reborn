@@ -91,6 +91,19 @@ test.describe("미니 미리보기", () => {
         await listPage.leave();
         await expect(listPage.mini()).toHaveCount(0);
     });
+
+    test("다른 제목으로 옮기면 카드가 그 글로 바뀐다", async ({listPage, storage}) => {
+        await storage.setModuleSettings("preview", {tooltipMode: true, tooltipDelay: 0});
+        const contents = listPage.mini().locator(".refresher-mini-contents");
+        await expect.poll(async () => {
+            await listPage.leave();
+            await listPage.titles().nth(0).hover();
+            return contents.textContent();
+        }).toContain("본문 3 내용입니다.");
+
+        await listPage.titles().nth(1).hover();
+        await expect(contents).toContainText("본문 2 내용입니다.");
+    });
 });
 
 test.describe("유저 버블", () => {

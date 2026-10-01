@@ -306,13 +306,14 @@ const TXTCON_MAX_LINES = 4;
 const TXTCON_MAX_LINE_LEN = 5;
 
 // 컬러 이모지로 그려지는 BMP 문자. 글자 수에 1을 더 센다.
-const TXTCON_BMP_EMOJI = /[\p{Emoji_Presentation}--[\u{10000}-\u{10FFFF}]]/gv;
+// 유니코드 집합 연산이 든 정규식은 만드는 데 비용이 있어 글자콘을 처음 셀 때 만든다. 모든 디시 페이지가 이 파일을 불러온다.
+let bmpEmoji: RegExp | undefined;
 
 /** 글자 수: UTF-16 코드 유닛 + BMP 컬러 이모지 가산 (줄바꿈 제외). */
 const txtconLength = (text: string): number => {
     const plain = text.replaceAll("\n", "");
 
-    return plain.length + (plain.match(TXTCON_BMP_EMOJI)?.length ?? 0);
+    return plain.length + (plain.match((bmpEmoji ??= /[\p{Emoji_Presentation}--[\u{10000}-\u{10FFFF}]]/gv))?.length ?? 0);
 };
 
 // 디시 txtcon_clusters 대신 브라우저 grapheme 분할을 쓴다. 국기·스킨톤·ZWJ 같은 흔한 글자는 결과가 같고, 분해형 한글 자모 등만 다르다.

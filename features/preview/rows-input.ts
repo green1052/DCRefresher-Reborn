@@ -5,6 +5,10 @@ import type {createMini} from "./mini";
 import {buildPreData} from "./rows";
 import {usePreviewStore} from "./ui/previewStore";
 
+/** 미리보기를 여는 제목 칸과 행. 행 전체 인식이 꺼져 있으면 행은 댓글 수만 받는다. */
+const WORD = ".gall_list .ub-word";
+const ROW = ".gall_list .ub-content";
+
 interface RowHandlers {
     open(preData: GalleryPreData, commentsOnly: boolean): void;
     /** 우클릭을 누르는 동안 본문을 미리 받는다. */
@@ -13,7 +17,7 @@ interface RowHandlers {
 }
 
 /**
- * 목록 행·제목 칸의 마우스 입력. 우클릭(짧게)·좌클릭(키 반전)으로 미리보기를 열고, 제목 칸에는 미니 미리보기를 붙인다.
+ * 목록 행·제목 칸의 마우스 입력. 우클릭(짧게)·좌클릭(키 반전)으로 미리보기를 열고, 제목 칸에는 미니 미리보기를 띄운다.
  * 우클릭 길게 누르기는 브라우저 메뉴로 남긴다.
  */
 export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void => {
@@ -45,16 +49,14 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
         pressStart = 0;
     };
 
-    // 제목 칸(.ub-word) 안에서 난 이벤트는 제목 칸 핸들러가 이미 처리했다. 버블링으로 받은 행 핸들러는 건너뛴다.
-    const handledByWord = (element: HTMLElement, target: HTMLElement): boolean =>
-        element.classList.contains("ub-content") && target.closest(".ub-word") !== null;
-
     // 우클릭·좌클릭·미리 받기가 같은 기준으로 대상을 고르게 한 곳에서 판정한다.
     // link: 키 반전 우클릭으로 이동할 주소. 댓글 수는 그 링크(댓글 위치, t=cv)다.
     const resolveTarget = (ev: MouseEvent): { preData: GalleryPreData; commentsOnly: boolean; link: string } | null => {
-        const element = ev.currentTarget as HTMLElement;
-        const target = ev.target as HTMLElement;
-        if (handledByWord(element, target)) return null;
+        const target = ev.target;
+        if (!(target instanceof Element)) return null;
+        // 제목 칸 안이면 제목 칸이, 아니면 행이 대상이다.
+        const element = target.closest<HTMLElement>(WORD) ?? target.closest<HTMLElement>(ROW);
+        if (!element) return null;
 
         // 댓글 수 링크는 댓글만 보기로 연다. 행 전체 인식이 꺼져 있어도 열리게 아래 검사보다 먼저 본다.
         const replyLink = target.closest<HTMLAnchorElement>("a.reply_numbox");
@@ -103,29 +105,32 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
         open(resolved.preData, resolved.commentsOnly);
     };
 
-    // 같은 함수는 addEventListener로 두 번 붙지 않아, 필터가 같은 요소로 다시 불러도 괜찮다. 그래서 핸들러는 모두 여기 밖에서 한 번 만든다.
-    const bind = (element: HTMLElement, word: boolean) => {
-        const options = {signal: ctx.signal};
+    // 행마다 붙이지 않고 문서에서 받는다. 목록이 수십 행이고 새로고침마다 행이 바뀌므로, 행마다 붙이면 리스너 수백 개를 다시 붙인다.
+    // 캡처 단계에서 받아 디시 스크립트가 행에서 전파를 멈춰도 놓치지 않는다.
+    const options = {capture: true, signal: ctx.signal};
+    document.addEventListener("mousedown", onMouseDown, options);
+    document.addEventListener("mouseup", onMouseUp, options);
+    document.addEventListener("contextmenu", onContextMenu, options);
+    document.addEventListener("click", onClick, options);
 
-        element.addEventListener("mousedown", onMouseDown, options);
-        element.addEventListener("mouseup", onMouseUp, options);
-        element.addEventListener("contextmenu", onContextMenu, options);
-        element.addEventListener("click", onClick, options);
+    // 미니 미리보기: 커서가 있는 제목 칸을 따라간다. mouseenter·mouseleave는 버블링하지 않아 mouseover·mouseout으로 가린다.
+    let hovered: HTMLElement | null = null;
+    const wordOf = (target: EventTarget | null): HTMLElement | null => (target instanceof Element ? target.closest<HTMLElement>(WORD) : null);
 
-        if (word) {
-            element.addEventListener("mouseenter", mini.onMiniEnter, options);
-            element.addEventListener("mousemove", mini.onMiniMove, options);
-            element.addEventListener("mouseleave", mini.onMiniLeaveSoon, options);
-        }
-    };
-
-    ctx.addFilter(
-        ".gall_list .ub-word",
-        (element) => bind(element, true)
-    );
-
-    ctx.addFilter(
-        ".gall_list .ub-content",
-        (element) => bind(element, false)
-    );
+    document.addEventListener("mouseover", (ev) => {
+        const word = wordOf(ev.target);
+        if (word === hovered) return;
+        if (hovered) mini.onMiniLeaveSoon();
+        hovered = word;
+        if (word) mini.onMiniEnter(word, ev);
+    }, {signal: ctx.signal});
+    document.addEventListener("mouseout", (ev) => {
+        // 같은 제목 칸 안에서 옮겨 가는 것은 떠난 것이 아니다. 창 밖으로 나가면 relatedTarget이 없다.
+        if (!hovered || wordOf(ev.relatedTarget) === hovered) return;
+        hovered = null;
+        mini.onMiniLeaveSoon();
+    }, {signal: ctx.signal});
+    document.addEventListener("mousemove", (ev) => {
+        if (hovered) mini.onMiniMove(ev);
+    }, {signal: ctx.signal});
 };
