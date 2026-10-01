@@ -206,8 +206,11 @@
         float: none !important;
     }
 
+    // 폭을 맞추려고 border-box로 바꾸면 여백과 테두리까지 78px 안에 들어가 입력칸이 작아진다.
+    // 원래 높이인 106px로 다시 지정한다.
     .cmt_txt_cont textarea {
         width: 100% !important;
+        height: 106px !important;
         box-sizing: border-box !important;
     }
 
