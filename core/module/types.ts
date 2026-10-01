@@ -46,6 +46,12 @@ export interface ModuleContext<S extends SettingsSchema = SettingsSchema> {
 
     /** signal을 받지 않는 것(storage watch, zustand subscribe, 타이머 등)의 해제 함수를 등록한다. 모듈이 멈출 때 부른다. */
     addCleanup(dispose: () => void): void;
+
+    /**
+     * 켜져 있는 동안 설정이 바뀌면 바뀐 키로 부른다 (새 값은 ctx.settings[key]). 모듈이 멈추면 더 부르지 않는다.
+     * setup 안에서 등록해 setup이 만든 상태를 그대로 쓴다. await 전에 등록해야 그사이 바뀐 설정도 받는다.
+     */
+    onSettingsChanged(listener: (key: keyof S & string) => void): void;
 }
 
 /** 팝업 '현재 페이지' 토글의 표시 정보. 팝업은 메타(features/<id>/meta.ts)의 이것으로 아이콘을 찾고, 동작은 index.ts의 PageToggle이 잇는다. */
@@ -109,9 +115,6 @@ export interface ModuleDefinition<S extends SettingsSchema = SettingsSchema, Api
      * 콘텐츠 스크립트 컨텍스트가 무효화될 때(stopAll)는 부르지 않는다.
      */
     revoke?(): void;
-
-    /** 켜져 있는 동안 설정이 바뀌면 실행 (새 값은 ctx.settings[key]). */
-    onChanged?(ctx: ModuleContext<S>, key: keyof S & string): void;
 }
 
 /**

@@ -186,6 +186,11 @@ export default defineModule({
     async setup(ctx) {
         // await 전에 알린다. 뒤에 두면 기다리는 동안 모듈이 꺼졌을 때 revoke가 지운 값을 다시 쓴다.
         publishBadges(ctx);
+        ctx.onSettingsChanged(() => {
+            publishBadges(ctx);
+            publishRatios(ctx);
+            rebuildAll(ctx);
+        });
 
         // await 뒤마다 확인해, 그사이 모듈이 꺼졌으면 revoke가 지운 배지·글댓비를 다시 그리지 않는다.
         const {signal} = ctx;
@@ -287,12 +292,6 @@ export default defineModule({
         });
 
         return {checkNewPosts};
-    },
-
-    onChanged(ctx) {
-        publishBadges(ctx);
-        publishRatios(ctx);
-        rebuildAll(ctx);
     },
 
     revoke() {

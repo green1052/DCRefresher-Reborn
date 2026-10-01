@@ -218,9 +218,6 @@ const restoreHiddenElements = (): void => {
     for (const element of document.querySelectorAll(".refresherTextNotice, .refresherDuplicateBadge")) element.remove();
 };
 
-/** setup이 만든 다시 판정 함수. 설정(블러/대댓글 등)이 바뀌면 onChanged가 부른다. */
-let recheck: (() => void) | undefined;
-
 export default defineModule({
     ...meta,
 
@@ -229,9 +226,14 @@ export default defineModule({
 
         applyBlurStyle(ctx);
         publishView(ctx);
-        recheck = setupFilters(ctx, gallery);
-        ctx.addCleanup(() => (recheck = undefined));
+        const recheck = setupFilters(ctx, gallery);
         setupSelection(ctx);
+        ctx.onSettingsChanged((key) => {
+            publishView(ctx);
+            // 보기 방식만 바뀌면 다시 판정할 필요 없다.
+            if (key === "blurReveal" || key === "blurStrength") applyBlurStyle(ctx);
+            else recheck();
+        });
 
         const api: BlockApi = {
             isRevealed,
@@ -256,13 +258,6 @@ export default defineModule({
         isOn: (api) => api.isRevealed(),
         toggle: (api) => api.toggleReveal()
     }],
-
-    onChanged(ctx, key) {
-        publishView(ctx);
-        // 보기 방식만 바뀌면 다시 판정할 필요 없다.
-        if (key === "blurReveal" || key === "blurStrength") applyBlurStyle(ctx);
-        else recheck?.();
-    },
 
     revoke() {
         restoreHiddenElements();

@@ -58,6 +58,9 @@ export const createReadMarks = (ctx: Ctx) => {
 
     // 새로고침으로 들어온 행에도 건다. 읽기 전에 들어온 행은 다 읽은 뒤 markAll이 건다.
     ctx.addFilter(ROW_SELECTOR, markRow);
+    ctx.onSettingsChanged((key) => {
+        if (key === "markRead") markAll();
+    });
     void storage.getValue().then(({read: stored}) => {
         if (ctx.signal.aborted) return;
         read = new Set([...stored ?? [], ...read]);

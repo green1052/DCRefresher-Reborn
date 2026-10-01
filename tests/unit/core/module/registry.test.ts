@@ -10,7 +10,7 @@ const enables = (value: Record<string, boolean>) => fakeBrowser.storage.local.se
 
 // 레지스트리는 모듈 단위 싱글턴이라 테스트마다 다른 id를 쓴다.
 describe("loadAll", () => {
-    it("한 번의 읽기로 on/off와 설정을 맞추고, 저장소 변경을 따라 켜고 끄고 onChanged를 부른다", async () => {
+    it("한 번의 읽기로 on/off와 설정을 맞추고, 저장소 변경을 따라 켜고 끄고 설정 리스너를 부른다", async () => {
         await enables({a: true, b: true});
         await settingsOf("a", {size: 9999, zzz: 1});
 
@@ -22,9 +22,9 @@ describe("loadAll", () => {
             settings: {size: setting({type: "range", default: 5, min: 1, max: 10, step: 1, unit: ""}), flag: setting({type: "check", default: true})},
             setup: (ctx) => {
                 setup({...ctx.settings});
+                ctx.onSettingsChanged((key) => onChanged(key));
                 return {ctx};
             },
-            onChanged: (_ctx, key) => onChanged(key),
             revoke
         });
         const b = testModule({id: "b", setup: () => "b-api"});
@@ -42,7 +42,7 @@ describe("loadAll", () => {
         expect(getModuleApi("b" as never)).toBe("b-api");
         expect(c.setup).not.toHaveBeenCalled();
 
-        // 설정이 바뀌면 바뀐 키만 onChanged
+        // 설정이 바뀌면 바뀐 키만 리스너에 알린다
         await settingsOf("a", {size: 3, flag: true});
         await tick();
         expect(onChanged).toHaveBeenCalledTimes(1);

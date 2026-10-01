@@ -39,6 +39,7 @@ export default defineModule({
 
     setup(ctx) {
         publishImageOptions(ctx.settings);
+        ctx.onSettingsChanged(() => publishImageOptions(ctx.settings));
         if (!WRITE_PAGE.test(location.pathname)) return;
 
         // 등록을 누른 뒤의 페이지 이동은 막지 않는다. 디시가 성공 표시(#clickbutton)를 두는 페이지는 그것을 본다.
@@ -94,10 +95,6 @@ export default defineModule({
         };
         for (const type of ["pointerdown", "keydown", "dragenter"]) document.addEventListener(type, watch, {capture: true, signal});
         signal.addEventListener("abort", () => observer.disconnect());
-    },
-
-    onChanged(ctx) {
-        publishImageOptions(ctx.settings);
     },
 
     revoke() {

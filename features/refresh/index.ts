@@ -29,9 +29,6 @@ interface RefreshApi {
     reload(): Promise<void>;
 }
 
-/** setup이 만든 다음 주기 잡기. 숨은 탭 새로고침 설정이 바뀌면 onChanged가 부른다. */
-let rearm: (() => void) | null = null;
-
 const applyDoNotColorVisited = (ctx: Ctx): void => {
     document.documentElement.classList.toggle("refresherDoNotColorVisited", ctx.settings.doNotColorVisited);
 };
@@ -282,10 +279,12 @@ export default defineModule({
         };
 
         armNext();
-        // 숨은 탭 새로고침 설정은 옵션 탭에서 바꾸므로 이 탭은 숨어 있다. 다음 주기를 새 값으로 다시 잡는다.
-        rearm = armNext;
-        ctx.addCleanup(() => {
-            rearm = null;
+
+        ctx.onSettingsChanged((key) => {
+            if (key === "doNotColorVisited") applyDoNotColorVisited(ctx);
+            else if (key === "titleCount" && !ctx.settings.titleCount) clearUnseen();
+            // 숨은 탭 새로고침 설정은 옵션 탭에서 바꾸므로 이 탭은 숨어 있다. 다음 주기를 새 값으로 다시 잡는다.
+            else if (key === "backgroundRefresh" || key === "backgroundRefreshRate") armNext();
         });
 
         const onVisibilityChange = (): void => {
@@ -384,12 +383,6 @@ export default defineModule({
         isOn: (api) => api.isPaused(),
         toggle: (api) => api.togglePause()
     }],
-
-    onChanged(ctx, key) {
-        if (key === "doNotColorVisited") applyDoNotColorVisited(ctx);
-        else if (key === "titleCount" && !ctx.settings.titleCount) setTitleCount(0);
-        else if (key === "backgroundRefresh" || key === "backgroundRefreshRate") rearm?.();
-    },
 
     revoke() {
         document.documentElement.classList.remove("refresherDoNotColorVisited");

@@ -30,8 +30,10 @@ const apply = (ctx: Ctx): void => writeStyle(STYLE_ID, buildCss(ctx));
 export default defineModule({
     ...meta,
 
-    setup: apply,
-    onChanged: apply,
+    setup(ctx) {
+        apply(ctx);
+        ctx.onSettingsChanged(() => apply(ctx));
+    },
 
     revoke() {
         document.querySelector(`style#${STYLE_ID}`)?.remove();

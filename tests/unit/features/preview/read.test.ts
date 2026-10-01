@@ -14,7 +14,8 @@ const stubCtx = (): Ctx => ({
     settings: {markRead: true},
     signal: controller.signal,
     addFilter: () => () => undefined,
-    addCleanup: () => undefined
+    addCleanup: () => undefined,
+    onSettingsChanged: () => undefined
 }) as unknown as Ctx;
 
 /** 모아 저장하는 시간(5초)을 넘기고 저장소 쓰기가 끝날 때까지 돌린다. */

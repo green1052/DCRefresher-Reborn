@@ -240,8 +240,10 @@ export default defineModuleMeta({
 export default defineModule({
     ...meta,
 
-    setup(ctx) { setRequestConcurrency(ctx.settings.concurrency); },
-    onChanged(ctx) { setRequestConcurrency(ctx.settings.concurrency); },
+    setup(ctx) {
+        setRequestConcurrency(ctx.settings.concurrency);
+        ctx.onSettingsChanged(() => setRequestConcurrency(ctx.settings.concurrency));
+    },
     revoke() { setRequestConcurrency(Number.POSITIVE_INFINITY); }
 });
 ```
@@ -250,7 +252,7 @@ export default defineModule({
 
 - **setup(ctx)**: 모듈이 켜진 페이지에서 실행됩니다. 돌려준 값은 그 모듈의 api가 되어 단축키·팝업 토글·다른 모듈이 받습니다.
 - **revoke()**: 모듈을 끄면 실행됩니다. 페이지에 넣은 DOM·클래스·스타일을 되돌립니다.
-- **onChanged(ctx, key)**: 켜져 있는 동안 설정이 바뀌면 바뀐 키마다 실행됩니다. `ctx.settings`는 늘 최신 값이므로, 설정을 쓸 때마다 읽는 모듈은 onChanged가 없어도 됩니다.
+- **ctx.onSettingsChanged(listener)**: 켜져 있는 동안 설정이 바뀌면 바뀐 키마다 부릅니다. setup 안에서 등록하므로 setup이 만든 상태(타이머, 다시 판정하는 함수 등)를 그대로 씁니다. 모듈 전역 변수로 setup과 이을 필요가 없습니다. `ctx.settings`는 늘 최신 값이므로, 설정을 쓸 때마다 읽는 모듈은 등록하지 않아도 됩니다.
 - 객체를 쓸 때 `setup`을 `shortcuts`, `pageToggles`보다 앞에 둡니다. TypeScript가 api 타입을 `setup`의 반환값에서 추론하기 때문입니다.
 
 모듈 하나가 등록되고 켜지고 꺼지기까지의 흐름입니다. 단축키와 팝업 토글은 setup이 끝나 api가 준비된 모듈에만 전달되고, 끄면 signal을 먼저 abort한 뒤 revoke를 부릅니다.
@@ -267,7 +269,7 @@ flowchart TD
     SU -->|"끝남·그사이 안 꺼짐"| R["ready<br>반환값을 api로 저장"]
     SU -->|"실패"| STOP
     R --> USE["단축키·pageToggles·getModuleApi<br>ready인 모듈만 받음"]
-    C -.->|"설정 값 바뀜"| OC["실행 중이면<br>바뀐 키마다 onChanged(ctx, key)"]
+    C -.->|"설정 값 바뀜"| OC["실행 중이면<br>바뀐 키마다 onSettingsChanged 리스너"]
     W["on/off 저장소 watch<br>+ 로드 끝에 1회<br>+ bfcache 복귀 시 설정 먼저 반영"] --> SY["sync<br>모듈마다 켜짐 여부 재확인"]
     SY -->|"켜짐"| S
     SY -->|"꺼짐"| STOP["stop<br>signal abort → 필터·addCleanup 해제"]

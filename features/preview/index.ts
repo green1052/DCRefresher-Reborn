@@ -61,9 +61,6 @@ const blockKeyOf = (view: BlockView | null): string => (view ? JSON.stringify([v
 /** 새 댓글 강조 시간 (ms). overlay.scss의 refresher-fresh-comment 애니메이션 길이와 같다. */
 const FRESH_DURATION = 3000;
 
-/** setup이 만든 읽은 글 다시 표시. markRead 설정이 바뀌면 onChanged가 부른다. */
-let remarkRead: (() => void) | null = null;
-
 const controller = (ctx: Ctx) => {
     const store = usePreviewStore;
     const ui = useUiStore.getState();
@@ -501,12 +498,8 @@ const controller = (ctx: Ctx) => {
         if (store.getState().visible) close(true);
     };
 
-    // 미리보기로 읽은 글 표시 (read.ts). 설정이 바뀌면 onChanged가 다시 표시한다.
+    // 미리보기로 읽은 글 표시 (read.ts).
     const readMarks = createReadMarks(ctx);
-    remarkRead = readMarks.markAll;
-    ctx.addCleanup(() => {
-        remarkRead = null;
-    });
 
     // 목록 키보드 이동 (keyboard.ts).
     bindListKeys(ctx, (preData) => open(preData));
@@ -558,7 +551,7 @@ const controller = (ctx: Ctx) => {
     });
 };
 
-/** 창(Frame)이 그릴 때 읽는 설정을 스토어에 올린다. onChanged로도 불려 열린 창에 바로 반영된다. */
+/** 창(Frame)이 그릴 때 읽는 설정을 스토어에 올린다. 설정이 바뀌면 다시 불려 열린 창에 바로 반영된다. */
 const publishSettings = (ctx: Ctx): void => {
     usePreviewStore.setState({
         shortcutKeys: ctx.settings.useKeyPress
@@ -585,11 +578,8 @@ export default defineModule({
 
     setup: (ctx): PreviewApi => {
         publishSettings(ctx);
+        ctx.onSettingsChanged(() => publishSettings(ctx));
         controller(ctx);
         return {archiveArticle: () => ctx.settings.archiveArticle, isOpen: () => usePreviewStore.getState().visible};
-    },
-    onChanged(ctx, key) {
-        publishSettings(ctx);
-        if (key === "markRead") remarkRead?.();
     }
 });

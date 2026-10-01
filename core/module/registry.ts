@@ -15,7 +15,7 @@ interface ModuleInstance {
     def: AnyModule;
     settings: Record<string, SettingValue>;
     /** 실행 중일 때만 있다. ready는 setup이 끝나 api가 준비됐다는 뜻이며, 단축키·팝업 토글은 그때부터 받는다. */
-    running?: { ctx: ModuleContext; controller: AbortController; ready: boolean; api?: unknown; setup?: Promise<void> };
+    running?: { ctx: ModuleContext; controller: AbortController; ready: boolean; api?: unknown; setup?: Promise<void>; listeners: ((key: string) => void)[] };
 }
 
 const instances = new Map<string, ModuleInstance>();
@@ -37,6 +37,7 @@ const start = async (instance: ModuleInstance): Promise<void> => {
         if (signal.aborted) dispose();
         else signal.addEventListener("abort", () => dispose(), {once: true});
     };
+    const listeners: ((key: string) => void)[] = [];
     const ctx: ModuleContext = {
         settings: instance.settings,
         signal,
@@ -46,10 +47,13 @@ const start = async (instance: ModuleInstance): Promise<void> => {
             addCleanup(dispose);
             return dispose;
         },
-        addCleanup
+        addCleanup,
+        onSettingsChanged: (listener) => {
+            if (!signal.aborted) listeners.push(listener);
+        }
     };
 
-    const running: NonNullable<ModuleInstance["running"]> = {ctx, controller, ready: false};
+    const running: NonNullable<ModuleInstance["running"]> = {ctx, controller, ready: false, listeners};
     instance.running = running;
 
     running.setup = (async () => {
@@ -78,13 +82,20 @@ const stop = (instance: ModuleInstance, keepDom = false): void => {
     if (!keepDom) instance.def.revoke?.();
 };
 
-/** 저장된 설정을 반영. 바뀐 값만 onChanged로 알린다. stored는 저장소에서 온 그대로(없으면 null)라 모양을 검사한다. */
+/** 저장된 설정을 반영. 바뀐 값만 실행 중인 모듈의 설정 리스너(ctx.onSettingsChanged)에 알린다. stored는 저장소에서 온 그대로(없으면 null)라 모양을 검사한다. */
 const applySettings = (instance: ModuleInstance, stored: unknown): void => {
     for (const [key, next] of Object.entries(settingsOf(instance.def, stored))) {
         if (areEqual(instance.settings[key], next)) continue;
 
         instance.settings[key] = next;
-        if (instance.running) instance.def.onChanged?.(instance.running.ctx, key);
+        // 리스너 하나가 던져도 다른 리스너와 다른 키는 반영한다.
+        for (const listener of instance.running?.listeners ?? []) {
+            try {
+                listener(key);
+            } catch (e) {
+                console.error(`Settings listener failed: ${instance.def.id}.${key}`, e);
+            }
+        }
     }
 };
 
