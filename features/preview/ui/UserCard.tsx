@@ -66,7 +66,7 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
 
     return (
         <Flex align="center" gap="1" minWidth="0" className="refresher-user" data-op={op || undefined} onContextMenu={openMenu} style={{cursor: "context-menu"}}>
-            {/* 버블은 닉네임 바로 아래에 띄운다. 키보드로 열면 버블 안으로 포커스가 옮겨 간다 (ContentRoot의 useOpenerFocus) */}
+            {/* 버블은 닉네임 바로 아래에 띄운다. 키보드로 열면 버블 안으로 포커스가 옮겨 간다 (components/overlay/UserBubble의 useOpenerFocus) */}
             <Text asChild size="2" weight="bold" truncate>
                 <button type="button" className="refresher-text-button" aria-haspopup="dialog"
                         onClick={(ev) => {

@@ -107,7 +107,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
         <Dialog.Root open onOpenChange={(open) => !open && close()}>
             <Dialog.Content container={overlay.portal} maxWidth="600px" onOpenAutoFocus={focus.onOpenAutoFocus}
                             onCloseAutoFocus={focus.onCloseAutoFocus}
-                            // 우클릭 버블은 창이 아니라 이 창 밖(ContentRoot)에 뜨므로, 버블을 눌러도 바깥 클릭으로 닫히지 않게 막는다
+                            // 우클릭 버블은 창이 아니라 이 창 밖(components/overlay/UserBubble)에 뜨므로, 버블을 눌러도 바깥 클릭으로 닫히지 않게 막는다
                             onInteractOutside={(ev) => useUiStore.getState().bubble && ev.preventDefault()}>
                 <Flex justify="between" align="center" mb="3">
                     <Dialog.Title mb="0">디시콘 정보</Dialog.Title>
