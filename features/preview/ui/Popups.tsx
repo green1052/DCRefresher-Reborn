@@ -4,6 +4,7 @@ import {type ReactNode, useRef, useState} from "react";
 
 import {DialogActions} from "@/components/ConfirmDialog";
 import {overlay} from "@/components/overlay/shadow";
+import {useModuleSettings} from "@/core/module/useModuleSettings";
 import {BLOCK_DAYS, BLOCK_REASONS, type BlockDay, type BlockReason} from "@/core/preview/types";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {useUiStore} from "@/stores/ui";
@@ -176,7 +177,9 @@ export const AdminPanel = () => {
     const notice = usePreviewStore((s) => s.notice);
     const recommend = usePreviewStore((s) => s.recommend);
     const requestManage = usePreviewStore((s) => s.requestManage);
-    const keys = usePreviewStore((s) => s.shortcutKeys);
+    // 관리 단축키 힌트. 단축키를 끄면 보이지 않는다.
+    const {useKeyPress, deleteKey, blockKey} = useModuleSettings("preview");
+    const keys = useKeyPress ? {delete: deleteKey.toUpperCase(), block: blockKey.toUpperCase()} : null;
     // 첫 번째로 누른 버튼. 바뀌어도 다시 그릴 필요가 없어 ref에 둔다.
     const armed = useRef<{ id: AdminAction["id"]; signal: number; at: number } | null>(null);
 

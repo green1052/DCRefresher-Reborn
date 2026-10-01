@@ -33,7 +33,7 @@ type SettingValueOf<T extends SettingSchema> =
                     : string;
 
 /** 스키마로 만든 설정값 타입 (ctx.settings). defineModule에 스키마를 리터럴로 적으면 키마다 정확한 타입이 된다. */
-type SettingValues<S extends SettingsSchema> = { readonly [K in keyof S]: SettingValueOf<S[K]> };
+export type SettingValues<S extends SettingsSchema> = { readonly [K in keyof S]: SettingValueOf<S[K]> };
 
 export interface ModuleContext<S extends SettingsSchema = SettingsSchema> {
     /** 현재 설정값 (읽기 전용). 레지스트리가 같은 객체를 갱신하므로 늘 최신이다. */
@@ -132,6 +132,17 @@ export interface ModuleApis {}
 
 /** defineModule이 돌려주는 모듈. 레지스트리에는 AnyModule로 넘기고, id와 setup의 리턴값은 타입에만 남긴다 (ModuleApis 생성용). */
 export type DefinedModule<Id extends string, Api> = AnyModule & { readonly id: Id; readonly apiType?: Api };
+
+/**
+ * useModuleSettings(id)가 돌려주는 설정 타입 (모듈 id → 설정값). ModuleApis처럼 modules/module-types.ts가 features/*\/meta.ts를 모아 채운다.
+ */
+export interface ModuleSettings {}
+
+/** 모듈 메타를 모아 ModuleSettings 모양으로 만든다. 설정이 없는 모듈은 뺀다. */
+export type ModuleSettingsMap<M> = {
+    [K in M as K extends { id: infer Id extends string; settings?: infer S } ? (NonNullable<S> extends SettingsSchema ? ({} extends NonNullable<S> ? never : Id) : never) : never]:
+    K extends { settings?: infer S } ? (NonNullable<S> extends SettingsSchema ? SettingValues<NonNullable<S>> : never) : never;
+};
 
 /** 모듈 id·api를 모아 ModuleApis 모양으로 만든다. api가 없는(void) 모듈은 뺀다. */
 export type ModuleApiMap<M> = {

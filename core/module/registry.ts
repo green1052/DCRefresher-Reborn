@@ -2,6 +2,7 @@ import {addFilter} from "@/core/filtering";
 import {documentUrl} from "@/core/http/urls";
 import type {PageAction, PageToggleState} from "@/core/messaging/protocol";
 import {storage} from "wxt/utils/storage";
+import {createStore} from "zustand/vanilla";
 
 import {MODULES_KEY, moduleSettingsKey} from "@/core/storage/items";
 import {watchStorage} from "@/core/storage/sync";
@@ -19,6 +20,12 @@ interface ModuleInstance {
 }
 
 const instances = new Map<string, ModuleInstance>();
+
+/**
+ * 등록된 모듈의 설정 (모듈 id → 설정값). 바뀔 때마다 그 모듈의 값을 새 객체로 바꾼다.
+ * UI가 구독한다 (core/module/useModuleSettings.ts). 모듈이 설정을 다른 스토어로 옮겨 적지 않아도 된다.
+ */
+export const moduleSettingsStore = createStore<Record<string, Readonly<Record<string, SettingValue>>>>(() => ({}));
 /**
  * stopAll 뒤에는 다시 켜지 않는다. 새 스크립트가 주입되어 무효화된 경우 확장은 살아 있다. on/off·설정 감시와 bfcache 처리는
  * 컨텍스트 signal로 풀리지만, 불러오는 중이던 register·sync는 그 뒤에도 끝까지 돈다. 여기서 켜면 새 스크립트의 모듈과 두 벌로 돈다.
@@ -84,11 +91,17 @@ const stop = (instance: ModuleInstance, keepDom = false): void => {
 
 /** 저장된 설정을 반영. 바뀐 값만 실행 중인 모듈의 설정 리스너(ctx.onSettingsChanged)에 알린다. stored는 저장소에서 온 그대로(없으면 null)라 모양을 검사한다. */
 const applySettings = (instance: ModuleInstance, stored: unknown): void => {
+    const changed: string[] = [];
     for (const [key, next] of Object.entries(settingsOf(instance.def, stored))) {
         if (areEqual(instance.settings[key], next)) continue;
-
+        changed.push(key);
         instance.settings[key] = next;
-        // 리스너 하나가 던져도 다른 리스너와 다른 키는 반영한다.
+    }
+    if (changed.length === 0) return;
+
+    moduleSettingsStore.setState({[instance.def.id]: {...instance.settings}});
+    // 리스너 하나가 던져도 다른 리스너와 다른 키는 반영한다.
+    for (const key of changed) {
         for (const listener of instance.running?.listeners ?? []) {
             try {
                 listener(key);

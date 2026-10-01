@@ -551,19 +551,6 @@ const controller = (ctx: Ctx) => {
     });
 };
 
-/** 창(Frame)이 그릴 때 읽는 설정을 스토어에 올린다. 설정이 바뀌면 다시 불려 열린 창에 바로 반영된다. */
-const publishSettings = (ctx: Ctx): void => {
-    usePreviewStore.setState({
-        shortcutKeys: ctx.settings.useKeyPress
-            ? {delete: ctx.settings.deleteKey.toUpperCase(), block: ctx.settings.blockKey.toUpperCase()}
-            : null,
-        frameWidth: ctx.settings.previewWidth,
-        backgroundBlur: ctx.settings.toggleBackgroundBlur,
-        scrollToSkip: ctx.settings.scrollToSkip,
-        imageViewer: ctx.settings.imageViewer
-    });
-};
-
 /** 다른 모듈이 쓰는 미리보기 api (getModuleApi("preview")). */
 interface PreviewApi {
     /** '삭제된 글과 댓글 보존' 설정. 새로고침 모듈도 목록에서 지워진 글을 남길지 이것으로 정한다. */
@@ -577,8 +564,6 @@ export default defineModule({
     ...meta,
 
     setup: (ctx): PreviewApi => {
-        publishSettings(ctx);
-        ctx.onSettingsChanged(() => publishSettings(ctx));
         controller(ctx);
         return {archiveArticle: () => ctx.settings.archiveArticle, isOpen: () => usePreviewStore.getState().visible};
     }

@@ -104,6 +104,14 @@ test.describe("미리보기 부가 기능", () => {
         await expect.poll(() => storage.get("refresher:module:preview:data"), {timeout: 10_000}).toEqual({read: ["test:3"]});
     });
 
+    test("옵션에서 바꾼 설정이 열린 창에 바로 반영된다", async ({listPage, storage}) => {
+        await listPage.titles().first().click({button: "right"});
+        const frame = listPage.frame();
+        await expect(frame).toHaveAttribute("style", /--refresher-frame-width: 1200px/);
+        await storage.setModuleSettings("preview", {previewWidth: 900});
+        await expect(frame).toHaveAttribute("style", /--refresher-frame-width: 900px/);
+    });
+
     test("본문 이미지를 누르면 크게 보고, Esc는 크게 보기만 닫는다", async ({listPage}) => {
         await listPage.titles().first().click({button: "right"});
         const frame = listPage.frame();

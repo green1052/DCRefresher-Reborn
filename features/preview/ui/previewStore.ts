@@ -84,14 +84,6 @@ interface PreviewState extends PostState, Hooks {
     preData: GalleryPreData | null;
     /** 열고 닫을 때마다 오른다. 늦게 도착한 이전 글의 응답을 버리는 데 쓴다. */
     signalId: number;
-    /** 관리 패널에 보일 단축키 힌트. 단축키를 끄면 null */
-    shortcutKeys: { delete: string; block: string } | null;
-    /** 아래 셋은 설정값 (publishSettings). */
-    frameWidth: number;
-    backgroundBlur: boolean;
-    scrollToSkip: boolean;
-    /** 본문 이미지를 누르면 크게 본다 (imageViewer). 끄면 디시처럼 원본 보기를 새 탭으로 연다. */
-    imageViewer: boolean;
 
     captcha: { url: string; resolve: (code: string) => void } | null;
     mini: MiniState | null;
@@ -203,11 +195,6 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     fading: false,
     preData: null,
     signalId: 0,
-    shortcutKeys: null,
-    frameWidth: 1200,
-    backgroundBlur: false,
-    scrollToSkip: true,
-    imageViewer: true,
     captcha: null,
     mini: null,
     dcconInfo: null,

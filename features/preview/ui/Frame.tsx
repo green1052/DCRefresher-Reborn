@@ -6,6 +6,7 @@ import {type CSSProperties, Fragment, useEffect, useLayoutEffect, useRef, useSta
 import {overlay} from "@/components/overlay/shadow";
 import {focusedElement} from "@/components/useOpenerFocus";
 import {BLOCKED_TEXT} from "@/core/block";
+import {useModuleSettings} from "@/core/module/useModuleSettings";
 import {postKey as keyOfPost} from "@/core/preview/cache";
 import type {ProcessedComment} from "@/core/preview/comments";
 import {useBlocksStore} from "@/stores/blocks";
@@ -92,10 +93,7 @@ export const Frame = () => {
     const allowReply = usePreviewStore((s) => s.allowReply);
     const commentsOnly = usePreviewStore((s) => s.commentsOnly);
     const imageBlocked = usePreviewStore((s) => s.imageBlocked);
-    const frameWidth = usePreviewStore((s) => s.frameWidth);
-    const backgroundBlur = usePreviewStore((s) => s.backgroundBlur);
-    const scrollToSkip = usePreviewStore((s) => s.scrollToSkip);
-    const imageViewer = usePreviewStore((s) => s.imageViewer);
+    const {previewWidth: frameWidth, toggleBackgroundBlur: backgroundBlur, scrollToSkip, imageViewer} = useModuleSettings("preview");
     const blockView = useUiStore((s) => s.blockView);
     const blockEntries = useBlocksStore((s) => s.entries);
     const blockDefaults = useBlocksStore((s) => s.defaults);

@@ -287,6 +287,9 @@ flowchart TD
 | `signal` | 이 실행의 AbortSignal. 모듈이 꺼지면 abort된다. `addEventListener`에 `{signal}`로 넘긴다 |
 | `addFilter(selector, fn)` | 지금 있는 요소와 이후 추가되는 요소마다 `fn`을 실행한다 (core/filtering.ts의 MutationObserver 하나를 같이 쓴다) |
 | `addCleanup(fn)` | signal을 받지 못하는 것(storage watch, zustand subscribe, 타이머)의 해제 함수를 등록한다 |
+| `onSettingsChanged(fn)` | 켜져 있는 동안 설정이 바뀌면 바뀐 키로 `fn`을 부른다. setup 안에서 등록한다 |
+
+React UI는 설정을 `useModuleSettings("모듈 id")`(`core/module/useModuleSettings.ts`)로 직접 읽습니다. 옵션에서 바꾸면 바로 다시 그려지고, 타입은 모듈 메타의 스키마에서 나옵니다(`modules/module-types.ts`가 `ModuleSettings`를 채웁니다). 설정을 UI 스토어로 옮겨 적지 마세요.
 
 `addFilter`의 `fn`은 같은 요소에 여러 번 불릴 수 있습니다. 페이지를 읽는 동안 자식이 붙을 때마다 조상 필터가 다시 불리기 때문입니다. 넣은 요소가 이미 있는지 보고 건너뛰게 만드세요(글 목록 새로고침의 버튼이 예입니다).
 
