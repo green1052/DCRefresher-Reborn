@@ -104,7 +104,7 @@ export interface DcinsideDcconDetail {
 }
 
 /** package_detail이 주는 디시콘 패키지 정보 */
-export interface DcinsideDcconPackageInfo {
+interface DcinsideDcconPackageInfo {
     package_idx: string | number;
     code: string;
     title: string;
@@ -120,7 +120,7 @@ export interface DcinsideDcconPackageInfo {
 }
 
 /** 패키지 안의 디시콘 하나 */
-export interface DcinsideDcconPackageItem {
+interface DcinsideDcconPackageItem {
     idx: string;
     /** 이미지. dcimg5.dcinside.com/dccon.php?no= 뒤에 붙인다 */
     path: string;

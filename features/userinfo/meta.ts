@@ -27,7 +27,7 @@ const BADGE_COLOR_GROUP: SettingGroup = {name: "배지 색", desc: "유저 정�
 
 const IP_INFO_FILTERS: Record<IpInfoFilter, string> = {all: "전체", foreign: "해외·VPN만", vpn: "VPN만", none: "표시 안 함"};
 
-export const LOW_ACTIVITY_ACTIONS = {none: "배지 색만", tag: "[깡계] 표시", blur: "흐리게", hide: "숨기기"};
+const LOW_ACTIVITY_ACTIONS = {none: "배지 색만", tag: "[깡계] 표시", blur: "흐리게", hide: "숨기기"};
 
 export const settings = {
     showFixedNickUID: {

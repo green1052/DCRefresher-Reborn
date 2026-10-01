@@ -10,7 +10,7 @@ export interface GallogActivity {
 }
 
 /** 갤로그의 글/댓글 수 ("글,댓글" 텍스트 응답) */
-export const fetchGallogActivity = async (uid: string): Promise<GallogActivity | undefined> => {
+const fetchGallogActivity = async (uid: string): Promise<GallogActivity | undefined> => {
     const text = await ajax.post(GALLOG_API, {
         body: await csrfBody({user_id: uid})
     }).text();

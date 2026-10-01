@@ -49,7 +49,7 @@ export interface ModuleContext<S extends SettingsSchema = SettingsSchema> {
 }
 
 /** 팝업 '현재 페이지' 토글의 표시 정보. 팝업은 메타(features/<id>/meta.ts)의 이것으로 아이콘을 찾고, 동작은 index.ts의 PageToggle이 잇는다 */
-export interface PageToggleMeta {
+interface PageToggleMeta {
     id: string;
     label: string;
     icon: LucideIcon;
