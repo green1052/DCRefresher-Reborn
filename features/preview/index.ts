@@ -18,11 +18,13 @@ import {getEntry, postKey, setEntry} from "@/core/preview/cache";
 import {historyDoc, ownPreviewDepth, ownPreviewEntry, previewEntry, type PreviewEntry, type SavedHistory} from "@/core/preview/history";
 import {ADULT_ERROR, SECRET_ERROR} from "@/core/preview/parser";
 import {blockUser, type BlockOptions, bump, deletePost, fetchComments, fetchPost, setNotice, setRecommend} from "@/core/preview/request";
+import {bindListKeys} from "./keyboard";
 import meta, {type Ctx} from "./meta";
 import {createMini} from "./mini";
+import {createReadMarks} from "./read";
 import {bindRows} from "./rows-input";
 import {adjacentPreData, isTextPost} from "./rows";
-import {type ErrorState, MANAGE_LABELS, type ManageKind, NO_HOOKS, NO_REPLY, usePreviewStore} from "./ui/previewStore";
+import {type ErrorState, MANAGE_LABELS, type ManageKind, NO_FRESH, NO_HOOKS, NO_REPLY, usePreviewStore} from "./ui/previewStore";
 
 // status는 ky의 HTTPError에서 읽는다 (삭제된 글은 404).
 // 성인 인증 안내 페이지면 parsePostInfo가 Error(ADULT_ERROR)를, 미니 갤러리 비밀글이면 Error(SECRET_ERROR)를 던진다.
@@ -55,6 +57,9 @@ const cachedPost = (preData: GalleryPreData): { post: PostInfo; age: number } | 
 
 // blockView에서 가공 결과가 읽는 값만 뽑은 비교 키 (아래 useUiStore 구독).
 const blockKeyOf = (view: BlockView | null): string => (view ? JSON.stringify([view.blur, view.replyRemove, view.duplicate]) : "");
+
+/** setup이 만든 읽은 글 다시 표시. markRead 설정이 바뀌면 onChanged가 부른다. */
+let remarkRead: (() => void) | null = null;
 
 const controller = (ctx: Ctx) => {
     const store = usePreviewStore;
@@ -174,8 +179,11 @@ const controller = (ctx: Ctx) => {
                 return;
             }
             shownRaw = rawKey;
+            // 같은 글의 목록을 다시 받았으면 새로 들어온 댓글을 표시한다. 글을 처음 열 때는 표시하지 않는다.
+            const before = shown?.signal === mySignal && ctx.settings.highlightNewComments ? new Set(shown.source.map((comment) => comment.no)) : null;
+            const added = before ? source.filter((comment) => !before.has(comment.no) && comment.is_delete !== "1").map((comment) => comment.no) : [];
             shown = {signal: mySignal, source};
-            store.setState({comments: processComments(source, preData), allowReply});
+            store.setState({comments: processComments(source, preData), allowReply, freshComments: added.length > 0 ? new Set(added) : NO_FRESH});
             dropStaleReply();
         } finally {
             pulling--;
@@ -335,6 +343,8 @@ const controller = (ctx: Ctx) => {
         // 두 번 누르기는 글마다 새로 센다. 이전 글에서 한 번 누른 키로 다음 글이 바로 지워지면 안 된다.
         lastKey = "";
 
+        readMarks.markRead(preData);
+
         store.getState().open(preData, {
             commentsOnly,
             // 목록에 이미지 아이콘이 없는 글만 본문 이미지를 숨긴다.
@@ -437,7 +447,8 @@ const controller = (ctx: Ctx) => {
     };
 
     const onKey = (ev: KeyboardEvent) => {
-        if (!ctx.settings.useKeyPress || !store.getState().visible) return;
+        // 크게 보기가 떠 있으면 키는 그 창 몫이다. 이미지를 보다 누른 키로 글이 지워지면 안 된다.
+        if (!ctx.settings.useKeyPress || !store.getState().visible || store.getState().viewer) return;
         // Ctrl+D(북마크) 같은 조합키와 키를 누르고 있을 때의 반복 입력은 무시한다.
         if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.repeat) return;
 
@@ -477,6 +488,16 @@ const controller = (ctx: Ctx) => {
 
         if (store.getState().visible) close(true);
     };
+
+    // 미리보기로 읽은 글 표시 (read.ts). 설정이 바뀌면 onChanged가 다시 표시한다.
+    const readMarks = createReadMarks(ctx);
+    remarkRead = readMarks.markAll;
+    ctx.addCleanup(() => {
+        remarkRead = null;
+    });
+
+    // 목록 키보드 이동 (keyboard.ts).
+    bindListKeys(ctx, (preData) => open(preData));
 
     // 목록 행·제목 칸의 마우스 입력 (rows-input.ts).
     bindRows(ctx, {
@@ -533,7 +554,8 @@ const publishSettings = (ctx: Ctx): void => {
             : null,
         frameWidth: ctx.settings.previewWidth,
         backgroundBlur: ctx.settings.toggleBackgroundBlur,
-        scrollToSkip: ctx.settings.scrollToSkip
+        scrollToSkip: ctx.settings.scrollToSkip,
+        imageViewer: ctx.settings.imageViewer
     });
 };
 
@@ -554,5 +576,8 @@ export default defineModule({
         controller(ctx);
         return {archiveArticle: () => ctx.settings.archiveArticle, isOpen: () => usePreviewStore.getState().visible};
     },
-    onChanged: publishSettings
+    onChanged(ctx, key) {
+        publishSettings(ctx);
+        if (key === "markRead") remarkRead?.();
+    }
 });

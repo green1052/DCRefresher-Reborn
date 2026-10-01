@@ -46,16 +46,22 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
 export const isBlurHidden = (element: Element): boolean =>
     !useUiStore.getState().blockView?.revealed && element.closest(".refresherBlur") !== null;
 
+/** 미리보기를 여는 목록 행. */
+export const ROW_SELECTOR = ".gall_list .ub-content";
+
+export interface ListRow {
+    row: HTMLElement;
+    pre: GalleryPreData;
+}
+
 /**
- * 목록에서 앞(-1)/뒤(1) 글. 차단·운영자 숨김으로 안 보이는 행과 블러 행은 건너뛴다.
- * 미리보기는 본문(TEXT) 차단만 검사하므로 여기서 거르지 않으면 목록에서 숨긴 글이 그대로 열린다.
+ * 화면에 보이는 목록 행을 글마다 하나씩. 차단·운영자 숨김으로 안 보이는 행과, 설문·AD·외부 뉴스처럼 글로 열 수 없는 행은 뺀다.
+ * 댓글 검색은 맞은 댓글마다 같은 글 행을 되풀이한다. 글마다 첫 행만 남겨야 넘기기가 같은 글에 멈추거나 되돌아가지 않는다.
  */
-export const adjacentPreData = (from: GalleryPreData, dir: number): GalleryPreData | null => {
-    // 댓글 검색은 맞은 댓글마다 같은 글 행을 되풀이한다. 글마다 첫 행만 남겨야 넘기기가 같은 글에 멈추거나 되돌아가지 않는다
-    // 행마다 한 번만 읽는다. 설문·AD·외부 뉴스처럼 글로 열 수 없는 행은 건너뛴다.
+export const listRows = (): ListRow[] => {
     const seen = new Set<string>();
-    const rows: { row: HTMLElement; pre: GalleryPreData }[] = [];
-    for (const row of document.querySelectorAll<HTMLElement>(".gall_list .ub-content")) {
+    const rows: ListRow[] = [];
+    for (const row of document.querySelectorAll<HTMLElement>(ROW_SELECTOR)) {
         if (!row.checkVisibility()) continue;
         const pre = buildPreData(row);
         if (!pre) continue;
@@ -64,7 +70,15 @@ export const adjacentPreData = (from: GalleryPreData, dir: number): GalleryPreDa
         seen.add(key);
         rows.push({row, pre});
     }
+    return rows;
+};
 
+/**
+ * 목록에서 앞(-1)/뒤(1) 글. 안 보이는 행(listRows)과 블러 행은 건너뛴다.
+ * 미리보기는 본문(TEXT) 차단만 검사하므로 여기서 거르지 않으면 목록에서 숨긴 글이 그대로 열린다.
+ */
+export const adjacentPreData = (from: GalleryPreData, dir: number): GalleryPreData | null => {
+    const rows = listRows();
     const fromKey = postKey(from);
     const index = rows.findIndex(({pre}) => postKey(pre) === fromKey);
     if (index < 0) return null;

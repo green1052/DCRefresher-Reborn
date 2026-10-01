@@ -21,6 +21,12 @@ export const MANAGE_LABELS = {notice: ["공지로 등록", "공지를 해제"], 
 
 type Reply = { commentNo: string | null; replyNo: string | null };
 
+/** 크게 보기(ImageViewer)의 이미지. pop은 디시 원본 보기 주소 (parser.ts가 옮겨 둔 data-pop). */
+export interface ViewerImage {
+    src: string;
+    pop?: string;
+}
+
 /**
  * blockMedia: blockImage로 이미지를 가릴지. 전체 미리보기와 같은 클래스로 가린다. wheel: 휠로 내용을 스크롤할지 (tooltipWheel).
  * interactive: 마우스로 카드를 조작할 수 있다 (tooltipInteraction). 커서를 따라다니지 않는다.
@@ -38,6 +44,8 @@ interface PostState {
     /** 댓글·답글 쓰기 허용. 멤버만 댓글을 쓸 수 있는 갤러리면 댓글 응답의 allow_reply가 0이다. */
     allowReply: boolean;
     collapsed: Set<string>;
+    /** 댓글 새로고침으로 새로 들어온 댓글 번호. 잠깐 강조한다 (overlay.scss의 data-fresh). */
+    freshComments: ReadonlySet<string>;
     reply: Reply;
     /** 댓글만 보기 (목록의 댓글 수 링크로 열었을 때). */
     commentsOnly: boolean;
@@ -48,6 +56,8 @@ interface PostState {
     recommend: boolean;
     adminVisible: boolean;
     blockPopup: boolean;
+    /** 본문 이미지 크게 보기. 글을 넘기거나 닫으면 닫힌다. */
+    viewer: { images: ViewerImage[]; index: number } | null;
 }
 
 /** 컨트롤러(index.ts)가 UI에 넘기는 동작. 모듈이 켜질 때 setState로 넣고, 정리할 때 NO_HOOKS로 되돌린다. */
@@ -78,6 +88,8 @@ interface PreviewState extends PostState, Hooks {
     frameWidth: number;
     backgroundBlur: boolean;
     scrollToSkip: boolean;
+    /** 본문 이미지를 누르면 크게 본다 (imageViewer). 끄면 디시처럼 원본 보기를 새 탭으로 연다. */
+    imageViewer: boolean;
 
     captcha: { url: string; resolve: (code: string) => void } | null;
     mini: MiniState | null;
@@ -132,6 +144,9 @@ export const miniPosition = (clientX: number, clientY: number): { x: number; y: 
 
 export const NO_REPLY: Reply = {commentNo: null, replyNo: null};
 
+/** 새 댓글이 없을 때 쓰는 빈 집합. 새로고침마다 새 객체를 넣지 않는다. */
+export const NO_FRESH: ReadonlySet<string> = new Set();
+
 export const NO_HOOKS: Hooks = {
     requestOpen: () => undefined,
     requestClose: () => undefined,
@@ -148,13 +163,15 @@ const freshPost = (): PostState => ({
     comments: undefined,
     allowReply: true,
     collapsed: new Set(),
+    freshComments: NO_FRESH,
     reply: NO_REPLY,
     commentsOnly: false,
     imageBlocked: false,
     notice: false,
     recommend: false,
     adminVisible: false,
-    blockPopup: false
+    blockPopup: false,
+    viewer: null
 });
 
 let signalSeq = 0;
@@ -191,6 +208,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     frameWidth: 1200,
     backgroundBlur: false,
     scrollToSkip: true,
+    imageViewer: true,
     captcha: null,
     mini: null,
     dcconInfo: null,
@@ -206,7 +224,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
         if (!get().visible) return;
         get().captcha?.resolve("");
         // signalId도 올린다. 닫은 뒤 도착한 응답(abort로 난 오류 포함)이 페이드아웃 중인 창에 그려지면 안 된다.
-        set({visible: false, fading: true, comments: undefined, blockPopup: false, captcha: null, reply: NO_REPLY, signalId: ++signalSeq, dcconInfo: null});
+        set({visible: false, fading: true, comments: undefined, blockPopup: false, captcha: null, reply: NO_REPLY, signalId: ++signalSeq, dcconInfo: null, viewer: null});
         // 앞서 닫을 때 건 타이머는 지운다. 남겨 두면 닫았다 곧바로 다시 열고 닫을 때 이번 페이드를 일찍 끊는다.
         window.clearTimeout(fadeTimer);
         fadeTimer = window.setTimeout(() => set({fading: false}), 200);

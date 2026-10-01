@@ -49,6 +49,16 @@ const BADGES_CLASS = "refresher-user-badges";
 /** 글댓비 저장 상한. 최근에 받은 사람부터 이만큼만 남긴다. */
 const MAX_RATIOS = 500;
 
+/**
+ * 받은 글댓비를 모아 두었다가 저장하는 간격 (ms). 저장할 때마다 캐시 전체가 열린 디시 탭마다 전달되고 크롬 서비스 워커도 깨므로,
+ * 자동 새로고침마다 쓰지 않는다. 이 탭은 받은 즉시 그리고, 탭을 숨기거나 떠날 때도 저장한다.
+ */
+const RATIO_SAVE_DELAY = 30_000;
+
+/** 최근에 받은 MAX_RATIOS명만 남긴다. */
+const trimRatios = (all: Record<string, RatioInfo>): Record<string, RatioInfo> =>
+    Object.fromEntries(Object.entries(all).sort(([, a], [, b]) => b.date - a.date).slice(0, MAX_RATIOS));
+
 /** 글댓비를 받지 못한 유저 (임시 차단 포함). 디시가 막거나 실패하는 동안 새 목록마다 다시 묻지 않게 5분 동안 건너뛴다. */
 const failedRatios = new LruCache<string, true>({max: 500, ttl: 5 * 60_000});
 
@@ -193,10 +203,28 @@ export default defineModule({
         ratios = stored.ratio ?? {};
         if (signal.aborted) return;
         publishRatios(ctx);
-        // 이 탭과 다른 탭이 받아 쓴 글댓비가 모두 여기로 온다. 열린 디시 탭마다 오므로, 값이 바뀐 유저의 칸만 다시 그린다.
-        watchStorage<RatioData>(moduleDataKey("userinfo"), (next, previous) => {
-            const before = previous?.ratio ?? {};
-            ratios = next?.ratio ?? {};
+        // 받았지만 아직 저장하지 않은 글댓비 (RATIO_SAVE_DELAY).
+        let unsaved: Record<string, RatioInfo> = {};
+        let saveTimer = 0;
+        // 그사이 다른 탭이 쓴 값을 잃지 않게 저장소의 최신 값에 병합한다.
+        const save = async (): Promise<void> => {
+            window.clearTimeout(saveTimer);
+            saveTimer = 0;
+            const batch = unsaved;
+            unsaved = {};
+            if (Object.keys(batch).length === 0) return;
+            const stored = (await ratioStorage.getValue()).ratio ?? {};
+            await ratioStorage.setValue({ratio: trimRatios({...stored, ...batch})});
+        };
+        const saveNow = (): void => void save().catch(console.error);
+        document.addEventListener("visibilitychange", () => document.hidden && saveNow(), {signal});
+        window.addEventListener("pagehide", saveNow, {signal});
+        ctx.addCleanup(saveNow);
+
+        // 다른 탭이 저장한 글댓비가 여기로 온다 (이 탭의 저장도 돌아온다). 열린 디시 탭마다 오므로, 값이 바뀐 유저의 칸만 다시 그린다.
+        watchStorage<RatioData>(moduleDataKey("userinfo"), (next) => {
+            const before = ratios;
+            ratios = trimRatios({...next?.ratio, ...unsaved});
             const changed = [...new Set([...Object.keys(before), ...Object.keys(ratios)])]
                 .filter((uid) => before[uid]?.date !== ratios[uid]?.date || before[uid]?.article !== ratios[uid]?.article || before[uid]?.comment !== ratios[uid]?.comment);
             if (changed.length === 0) return;
@@ -238,15 +266,16 @@ export default defineModule({
                 const fresh = results.filter((entry): entry is [string, GallogActivity] => Boolean(entry[1]));
                 if (fresh.length === 0) return;
 
-                // 그사이 다른 탭이 쓴 값을 잃지 않게 저장소의 최신 값에 병합한다. 최근에 받은 MAX_RATIOS명만 남긴다.
-                const now = Date.now();
-                const stored = (await ratioStorage.getValue()).ratio ?? {};
                 if (signal.aborted) return;
 
-                const merged: Record<string, RatioInfo> = {...stored, ...Object.fromEntries(fresh.map(([uid, info]) => [uid, {...info, date: now}]))};
-                ratios = Object.fromEntries(Object.entries(merged).sort(([, a], [, b]) => b.date - a.date).slice(0, MAX_RATIOS));
-                // 다시 그리기는 위의 ratioStorage.watch가 한다.
-                await ratioStorage.setValue({ratio: ratios});
+                // 이 탭에는 바로 그리고, 저장은 모아서 한다 (RATIO_SAVE_DELAY).
+                const now = Date.now();
+                const received = Object.fromEntries(fresh.map(([uid, info]) => [uid, {...info, date: now}]));
+                Object.assign(unsaved, received);
+                ratios = trimRatios({...ratios, ...received});
+                publishRatios(ctx);
+                rebuildUsers(ctx, Object.keys(received));
+                saveTimer ||= window.setTimeout(saveNow, RATIO_SAVE_DELAY);
             }).catch(console.error).finally(() => {
                 for (const uid of stale) pending.delete(uid);
             });

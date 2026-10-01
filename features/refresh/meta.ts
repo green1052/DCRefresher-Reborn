@@ -1,8 +1,10 @@
 import {Pause, RefreshCw} from "lucide-react";
 
 import {defineModuleMeta} from "@/core/module/define";
-import type {ModuleContext, SettingsSchema} from "@/core/module/types";
+import type {ModuleContext, SettingGroup, SettingsSchema} from "@/core/module/types";
 import {BOARD_PAGE} from "@/core/pages";
+
+const BACKGROUND_GROUP: SettingGroup = {name: "숨은 탭", desc: "다른 탭을 보는 동안의 새로고침입니다."};
 
 export const settings = {
     refreshRate: {
@@ -38,6 +40,30 @@ export const settings = {
         name: "목록 위에서 자동 새로고침 안 함",
         desc: "마우스를 글 목록 위에 올려 두는 동안에는 자동 새로고침을 하지 않습니다. 누르려던 글이 밀리지 않습니다.",
         default: false
+    },
+    titleCount: {
+        type: "check",
+        name: "탭 제목에 새 글 수 표시",
+        desc: "이 탭을 보고 있지 않을 때 들어온 새 글 수를 탭 제목 앞에 (3)처럼 붙입니다. 탭으로 돌아오면 지웁니다.",
+        default: true
+    },
+    backgroundRefresh: {
+        type: "check",
+        group: BACKGROUND_GROUP,
+        name: "숨은 탭에서도 새로고침",
+        desc: "다른 탭을 보는 동안에도 아래 주기로 새로고침합니다. 끄면 탭으로 돌아올 때까지 쉽니다.",
+        default: false
+    },
+    backgroundRefreshRate: {
+        type: "range",
+        group: BACKGROUND_GROUP,
+        name: "숨은 탭 새로고침 주기",
+        desc: "숨은 탭의 새로고침 주기입니다.",
+        default: 30000,
+        min: 10000,
+        max: 120000,
+        step: 1000,
+        unit: "ms"
     },
     doNotColorVisited: {
         type: "check",

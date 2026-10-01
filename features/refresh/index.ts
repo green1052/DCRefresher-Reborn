@@ -34,6 +34,22 @@ interface RefreshApi {
     reload(): Promise<void>;
 }
 
+/** 탭 제목 앞의 새 글 수 "(3) ". */
+const TITLE_COUNT = /^\(\d+\) /;
+
+/** 탭 제목 앞에 새 글 수를 붙인다. 0이면 뗀다. 미리보기가 제목을 바꿔도 앞에 붙은 수만 갈아 쓴다. */
+const setTitleCount = (count: number): void => {
+    const title = document.title.replace(TITLE_COUNT, "");
+    const next = count > 0 ? `(${count}) ${title}` : title;
+    if (next !== document.title) document.title = next;
+};
+
+/** 사용자가 이 탭을 보고 있는지. 다른 창을 보는 동안(창은 보이지만 포커스가 없다)도 안 보는 것으로 친다. */
+const isWatching = (): boolean => !document.hidden && document.hasFocus();
+
+/** setup이 만든 다음 주기 잡기. 숨은 탭 새로고침 설정이 바뀌면 onChanged가 부른다. */
+let rearm: (() => void) | null = null;
+
 const applyDoNotColorVisited = (ctx: Ctx): void => {
     document.documentElement.classList.toggle("refresherDoNotColorVisited", ctx.settings.doNotColorVisited);
 };
@@ -59,6 +75,8 @@ export default defineModule({
         let inflight: AbortController | null = null;
         // 지난번 갈아끼운 목록의 tbody HTML. 받은 것이 같으면 파싱·교체를 건너뛴다.
         let lastListHtml = "";
+        // 이 탭을 보지 않는 동안 들어온 새 글 수 (탭 제목에 붙인다).
+        let unseen = 0;
         const gallery = queryString("id") ?? "";
 
         // 제어 버튼.
@@ -111,7 +129,7 @@ export default defineModule({
             }
             // 강제 로드는 숨긴 탭에서도 받는다. 진행 중인 요청 뒤로 미룬 강제 로드(rerun)가 그사이 탭을 옮겼다고 버려지면
             // 돌아왔을 때 자동 새로고침은 뒤 페이지·멈춤을 건너뛰어 지운 글이나 옛 페이지가 그대로 남는다.
-            if (!force && document.hidden) return false;
+            if (!force && document.hidden && !ctx.settings.backgroundRefresh) return false;
             if (!force && (Date.now() - lastRefresh < MINIMUM_REFRESH_INTERVAL || paused)) return false;
 
             // 자동 새로고침만 거르는 조건. 사용자가 직접 한 새로고침·이동은 그대로 받는다.
@@ -216,7 +234,10 @@ export default defineModule({
                 }
 
                 // 페이지를 넘긴 목록은 옛 목록과 겹치는 행이 없으면 전부 새 글로 잡히므로 알리지 않는다 (글댓비 조회가 몰린다).
-                if (!customURL && newPostList.length > 0) getModuleApi("userinfo")?.checkNewPosts(newPostList);
+                if (!customURL && newPostList.length > 0) {
+                    getModuleApi("userinfo")?.checkNewPosts(newPostList);
+                    if (ctx.settings.titleCount && !isWatching()) countUnseen(newPostList);
+                }
 
                 return true;
             } catch (e) {
@@ -242,27 +263,55 @@ export default defineModule({
             }
         };
 
+        // ===== 탭 제목의 새 글 수 =====
+        // 차단으로 가린 글은 세지 않는다. 차단 필터는 행을 넣은 뒤(MutationObserver)에 돌므로 한 차례 뒤에 센다.
+        const countUnseen = (rows: HTMLElement[]): void => {
+            window.setTimeout(() => {
+                if (ctx.signal.aborted || isWatching() || !ctx.settings.titleCount) return;
+                unseen += rows.filter((row) => row.isConnected && !row.closest(".refresherBlocked, .refresherBlur")).length;
+                setTitleCount(unseen);
+            });
+        };
+
+        const clearUnseen = (): void => {
+            unseen = 0;
+            setTitleCount(0);
+        };
+        const onFocus = (): void => {
+            if (isWatching()) clearUnseen();
+        };
+        window.addEventListener("focus", onFocus, {signal: ctx.signal});
+        ctx.addCleanup(clearUnseen);
+
         // ===== 스케줄링: 주기+지터 재귀 =====
         // 첫 요청도 한 주기 뒤에 보낸다. 파싱 중인 목록을 곧바로 다시 받지 않는다.
         const armNext = (): void => {
             window.clearTimeout(timer);
-            // 숨은 탭에선 쉬고, 다시 보이면 onVisibilityChange가 잇는다 (응답을 기다리던 중 숨겨져도 여기서 멈춘다).
-            // 모듈을 끈 뒤 응답이 와도 타이머를 다시 걸지 않는다.
-            if (ctx.signal.aborted || document.hidden) return;
+            // 숨은 탭에선 쉬고(숨은 탭 새로고침을 켜면 그 주기로 받는다), 다시 보이면 onVisibilityChange가 잇는다.
+            // 응답을 기다리던 중 숨겨져도 여기서 멈춘다. 모듈을 끈 뒤 응답이 와도 타이머를 다시 걸지 않는다.
+            if (ctx.signal.aborted || (document.hidden && !ctx.settings.backgroundRefresh)) return;
 
             // 실패가 이어지면 주기를 두 배씩 늘린다 (최대 MAXIMUM_BACKOFF_INTERVAL). 성공하면 load가 failures를 0으로 되돌린다.
-            const interval = Math.min(ctx.settings.refreshRate * 2 ** failures, MAXIMUM_BACKOFF_INTERVAL);
+            const rate = document.hidden ? ctx.settings.backgroundRefreshRate : ctx.settings.refreshRate;
+            const interval = Math.min(rate * 2 ** failures, Math.max(rate, MAXIMUM_BACKOFF_INTERVAL));
             // 응답을 받은 뒤 다음 주기를 잡아야 방금 실패가 바로 반영된다.
             timer = window.setTimeout(() => void load().finally(armNext), interval + 500 + Math.random() * 1500);
         };
 
         armNext();
+        // 숨은 탭 새로고침 설정은 옵션 탭에서 바꾸므로 이 탭은 숨어 있다. 다음 주기를 새 값으로 다시 잡는다.
+        rearm = armNext;
+        ctx.addCleanup(() => {
+            rearm = null;
+        });
 
         const onVisibilityChange = (): void => {
             if (document.hidden) {
-                window.clearTimeout(timer);
+                // 숨은 탭 새로고침이면 그 주기로 다시 잡고, 아니면 쉰다.
+                armNext();
                 return;
             }
+            onFocus();
 
             // 실패로 주기가 늘어난 동안은 바로 받지 않는다. 탭을 오갈 때마다 요청하면 늘린 주기가 소용없다.
             if (failures === 0) void load();
@@ -355,9 +404,12 @@ export default defineModule({
 
     onChanged(ctx, key) {
         if (key === "doNotColorVisited") applyDoNotColorVisited(ctx);
+        else if (key === "titleCount" && !ctx.settings.titleCount) setTitleCount(0);
+        else if (key === "backgroundRefresh" || key === "backgroundRefreshRate") rearm?.();
     },
 
     revoke() {
         document.documentElement.classList.remove("refresherDoNotColorVisited");
+        setTitleCount(0);
     }
 });

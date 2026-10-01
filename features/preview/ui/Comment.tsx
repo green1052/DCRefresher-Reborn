@@ -94,6 +94,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
     // reply 객체째 구독하면 답글 버튼 하나에 모든 댓글이 다시 그려지므로, 이 댓글이 대상인지만 구독한다.
     const replying = usePreviewStore((s) => s.reply.replyNo === comment.no);
     const collapsed = usePreviewStore((s) => s.collapsed.has(comment.no));
+    const fresh = usePreviewStore((s) => s.freshComments.has(comment.no));
     const toggleCollapse = usePreviewStore((s) => s.toggleCollapse);
     // 글 작성자 아이디만 구독한다. 글 객체째 구독하면 추천·새로고침마다 모든 댓글이 다시 그려진다.
     const authorId = usePreviewStore((s) => s.post?.user?.id);
@@ -152,7 +153,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
 
     return (
         <Box className="refresher-comment" data-depth={depth} data-deleted={isDeleted || undefined}
-             data-blocked={comment.blocked} data-duplicate={comment.duplicates === 0 || undefined}
+             data-blocked={comment.blocked} data-duplicate={comment.duplicates === 0 || undefined} data-fresh={fresh || undefined}
              data-thread-open={threadOpen || undefined} data-last-reply={lastReply || undefined} px="6" py="2">
             <Flex justify="between" align="center" gap="2">
                 <Flex align="center" gap="1" minWidth="0">

@@ -10,6 +10,7 @@ import {useUiStore} from "@/stores/ui";
 import {objectEntries} from "@/utils/typed";
 
 import {DcconInfoPopup} from "./DcconInfoPopup";
+import {ImageViewer} from "./ImageViewer";
 import {MANAGE_LABELS, type ManageKind, usePreviewStore} from "./previewStore";
 
 /** 고를 수 있는 값만 onChange로 넘긴다 (RadioGroup은 string을 준다). */
@@ -238,12 +239,14 @@ export const Popups = () => {
     const blockPopup = usePreviewStore((s) => s.blockPopup);
     const captcha = usePreviewStore((s) => s.captcha);
     const dcconInfo = usePreviewStore((s) => s.dcconInfo);
+    const viewer = usePreviewStore((s) => s.viewer);
 
     return (
         <>
             {blockPopup && <BlockPopup/>}
             {captcha && <CaptchaPopup key={captcha.url} captcha={captcha}/>}
             {dcconInfo && <DcconInfoPopup key={dcconInfo} code={dcconInfo}/>}
+            {viewer && <ImageViewer images={viewer.images} index={viewer.index}/>}
         </>
     );
 };

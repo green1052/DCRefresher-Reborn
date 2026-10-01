@@ -412,12 +412,15 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 | `index.ts` | 모듈 정의, 글·댓글 요청 흐름, 관리·차단 키, 주소창 기록 |
 | `rows-input.ts` | 목록 행·제목 칸의 마우스 입력 (우클릭·길게 누르기·키 반전 좌클릭) |
 | `mini.ts` | 미니 미리보기(제목 호버 카드)의 타이머·대상 |
-| `rows.ts` | 목록 행 → 미리보기 대상(`GalleryPreData`), 앞·뒤 글 찾기 |
+| `keyboard.ts` | 목록 키보드 이동 (J/K로 고르기, Enter 미리보기, O 글 열기) |
+| `read.ts` | 미리보기로 읽은 글 표시. 모듈 캐시 키(`refresher:module:preview:data`)에 최근 3000개를 둔다 |
+| `rows.ts` | 목록 행 → 미리보기 대상(`GalleryPreData`), 보이는 행 목록, 앞·뒤 글 찾기 |
 | `ui/previewStore.ts` | 미리보기 창 상태 (zustand) |
 | `meta.ts` | 모듈 메타(이름·아이콘)와 설정 스키마 |
 | `ui/Frame.tsx` | 창 (머리, 본문, 댓글 칸, 휠로 넘기기) |
 | `ui/Votes.tsx`, `ErrorBlock.tsx`, `CountDown.tsx`, `fitMovies.ts`, `gifVideos.ts` | 추천 버튼, 오류 안내, 자동 삭제 카운트다운, 디시 동영상 iframe 크기 맞추기, 깨진 디시콘·움짤 mp4를 gif로 바꾸기 |
-| `ui/CommentList.tsx`, `Comment.tsx`, `WriteComment.tsx` | 댓글 목록(답글 접기), 댓글 하나, 댓글 쓰기 |
+| `ui/CommentList.tsx`, `Comment.tsx`, `WriteComment.tsx` | 댓글 목록(답글 접기), 댓글 하나(새 댓글 강조), 댓글 쓰기 |
+| `ui/ImageViewer.tsx` | 본문 이미지 크게 보기 |
 | `ui/UserCard.tsx`, `TimeStamp.tsx` | 작성자 표시(배지·유저 버블), 상대 시각(공용 시계)과 `useTick`. 글 머리와 댓글이 같이 쓴다 |
 | `ui/PreviewHost.tsx` | 미리보기 UI 최상위 (Frame·Popups·Mini) |
 | `ui/Popups.tsx`, `Mini.tsx`, `DcconPopup.tsx` | 관리 패널·차단 팝업, 미니 미리보기, 디시콘 고르기 |

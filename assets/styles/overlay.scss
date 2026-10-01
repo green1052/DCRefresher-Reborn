@@ -539,6 +539,18 @@
     &[data-deleted] .refresher-comment-html {
         color: var(--gray-11);
     }
+
+    // 자동 새로고침으로 새로 들어온 댓글 (previewStore의 freshComments). 강조색으로 깔았다가 걷는다.
+    &[data-fresh] {
+        animation: refresher-fresh-comment 3s ease-out;
+    }
+}
+
+@keyframes refresher-fresh-comment {
+    from,
+    30% {
+        background: var(--accent-a4);
+    }
 }
 
 /* 차단 — 페이지와 같은 차단 모듈 설정 (Frame의 data-*). 블러 강도 변수는 <html>에서 shadow 안으로 이어받는다. */
@@ -710,4 +722,61 @@
 /* 미리보기를 연 채로 띄운 다이얼로그(메모·디시콘·차단 등)는 배경을 다시 깔지 않는다 — 미리보기 배경과 겹쳐 두 겹으로 어두워진다. */
 #portal:has(.refresher-frame) .rt-BaseDialogOverlay::before {
     background: none;
+}
+
+/* ===== 이미지 크게 보기 (features/preview/ui/ImageViewer.tsx) ===== */
+.refresher-viewer-backdrop,
+.refresher-viewer {
+    position: fixed;
+    inset: 0;
+    animation: refresher-fade-in 0.15s ease-out;
+}
+
+.refresher-viewer-backdrop {
+    background: rgb(0 0 0 / 85%);
+}
+
+.refresher-viewer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 56px 72px;
+    outline: none;
+
+    img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        user-select: none;
+    }
+
+    // 어두운 배경 위라 밝은 글자·아이콘을 쓴다.
+    .rt-Text,
+    .rt-IconButton:where(.rt-variant-ghost) {
+        color: rgb(255 255 255 / 85%);
+    }
+}
+
+.refresher-viewer-bar {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.refresher-viewer-prev,
+.refresher-viewer-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.refresher-viewer-prev {
+    left: 16px;
+}
+
+.refresher-viewer-next {
+    right: 16px;
 }

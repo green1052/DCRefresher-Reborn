@@ -66,4 +66,4 @@ export const commentsResponse = (): string => JSON.stringify({
 });
 
 /** 1×1 gif */
-export const GIF = Buffer.from("R0lGODlhAQABAAAAACw=", "base64");
+export const GIF = Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64");

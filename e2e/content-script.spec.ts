@@ -1,3 +1,4 @@
+import {commentsResponse} from "./dcinside";
 import {expect, test} from "./fixtures";
 
 test.describe("글 목록", () => {
@@ -74,6 +75,66 @@ test.describe("미리보기", () => {
         const frame = listPage.frame();
         await expect(frame.getByRole("button", {name: /댓글만 표시 중입니다/})).toBeVisible();
         await expect(listPage.page).toHaveURL(/\/board\/view\/\?id=test&no=3/);
+    });
+});
+
+test.describe("미리보기 부가 기능", () => {
+    test("J/K로 글을 고르고 Enter로 열면, 닫은 뒤 읽은 글로 흐려진다", async ({listPage, storage}) => {
+        const {page} = listPage;
+        const rows = listPage.rows();
+        await page.keyboard.press("j");
+        await expect(rows.nth(0)).toHaveClass(/refresherSelected/);
+        await page.keyboard.press("j");
+        await expect(rows.nth(1)).toHaveClass(/refresherSelected/);
+        await expect(rows.nth(0)).not.toHaveClass(/refresherSelected/);
+        await page.keyboard.press("k");
+        await expect(rows.nth(0)).toHaveClass(/refresherSelected/);
+
+        await page.keyboard.press("Enter");
+        await expect(listPage.frame().locator("h2")).toHaveText("[말머리] 글 3 제목");
+        await page.keyboard.press("Escape");
+        await expect(listPage.frame()).toHaveCount(0);
+
+        await expect(rows.nth(0)).toHaveClass(/refresherRead/);
+        await expect(rows.nth(1)).not.toHaveClass(/refresherRead/);
+        await expect.poll(() => storage.get("refresher:module:preview:data")).toEqual({read: ["test:3"]});
+    });
+
+    test("본문 이미지를 누르면 크게 보고, Esc는 크게 보기만 닫는다", async ({listPage}) => {
+        await listPage.titles().first().click({button: "right"});
+        const frame = listPage.frame();
+        const image = frame.locator(".refresher-preview-contents img");
+        await expect(image).toHaveJSProperty("complete", true);
+        await image.click({force: true});
+
+        const viewer = listPage.overlay().locator(".refresher-viewer");
+        await expect(viewer.locator("img")).toHaveAttribute("src", /viewimage\.php\?id=test&no=3/);
+        await expect(viewer.getByRole("link", {name: "원본 보기"})).toHaveCount(0);
+
+        await listPage.page.keyboard.press("Escape");
+        await expect(viewer).toHaveCount(0);
+        await expect(frame).toBeVisible();
+    });
+
+    test("댓글을 새로고침하면 새로 들어온 댓글만 강조한다", async ({listPage}) => {
+        await listPage.titles().first().click({button: "right"});
+        const comments = listPage.frame().locator(".refresher-comment");
+        await expect(comments).toHaveCount(2);
+        await expect(listPage.frame().locator(".refresher-comment[data-fresh]")).toHaveCount(0);
+
+        // 이 페이지의 댓글 응답에만 새 댓글을 하나 더한다 (페이지 route가 컨텍스트 route보다 먼저다).
+        await listPage.page.route(/\/board\/comment\//, async (route) => {
+            const body = JSON.parse(commentsResponse()) as { comments: object[]; total_cnt: number };
+            body.comments.push({no: "12", c_no: "12", depth: 0, user_id: "user2", name: "고닉", ip: "", memo: "새 댓글", is_delete: "0", date_time: "2026.09.30 12:03:00", reg_date: "2026-09-30 12:03:00"});
+            body.total_cnt = 3;
+            await route.fulfill({contentType: "application/json", body: JSON.stringify(body)});
+        });
+        await listPage.frame().getByRole("button", {name: "댓글 새로고침"}).click();
+
+        await expect(comments).toHaveCount(3);
+        const fresh = listPage.frame().locator(".refresher-comment[data-fresh]");
+        await expect(fresh).toHaveCount(1);
+        await expect(fresh).toContainText("새 댓글");
     });
 });
 

@@ -2,12 +2,11 @@ import type {GalleryPreData} from "@/core/preview/types";
 
 import type {Ctx} from "./meta";
 import type {createMini} from "./mini";
-import {buildPreData} from "./rows";
+import {buildPreData, ROW_SELECTOR as ROW} from "./rows";
 import {usePreviewStore} from "./ui/previewStore";
 
 /** 미리보기를 여는 제목 칸과 행. 행 전체 인식이 꺼져 있으면 행은 댓글 수만 받는다. */
 const WORD = ".gall_list .ub-word";
-const ROW = ".gall_list .ub-content";
 
 interface RowHandlers {
     open(preData: GalleryPreData, commentsOnly: boolean): void;
