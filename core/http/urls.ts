@@ -27,24 +27,39 @@ export const urls = {
     }
 };
 
-/** 갤러리 경로 접두사 → 댓글/관리 요청의 _GALLTYPE_ 코드. 일반 "", 마이너 "mgallery/", 미니 "mini/", 인물 "person/" */
-const GALLERY_TYPES = {"": "G", "mgallery/": "M", "mini/": "MI", "person/": "PR"} as const;
+/**
+ * 갤러리 종류별 주소 경로 접두사와 디시 요청의 _GALLTYPE_ 값. 디시가 정한 값이라 바꾸면 안 된다.
+ * 코드에서는 종류 이름(GalleryKind)으로 다루고, 이 값들은 주소·요청을 만들 때만 꺼낸다
+ */
+const GALLERIES = {
+    normal: {path: "", galltype: "G"},
+    minor: {path: "mgallery/", galltype: "M"},
+    mini: {path: "mini/", galltype: "MI"},
+    person: {path: "person/", galltype: "PR"}
+} as const;
 
-export type GalleryPath = keyof typeof GALLERY_TYPES;
-export type GalleryTypeName = (typeof GALLERY_TYPES)[GalleryPath];
+/** 갤러리 종류: 일반, 마이너, 미니, 인물 */
+export type GalleryKind = keyof typeof GALLERIES;
 
-const isGalleryPath = (path: string): path is GalleryPath => Object.hasOwn(GALLERY_TYPES, path);
-
-/** URL의 갤러리 경로 접두사 */
-export const galleryPath = (url: string): GalleryPath => {
-    const path = `${/\.com\/(mgallery|mini|person)/.exec(url)?.[1] ?? ""}/`;
-    return isGalleryPath(path) ? path : "";
+/** URL의 갤러리 종류 */
+export const galleryKind = (url: string): GalleryKind => {
+    switch (/\.com\/(mgallery|mini|person)/.exec(url)?.[1]) {
+        case "mgallery":
+            return "minor";
+        case "mini":
+            return "mini";
+        case "person":
+            return "person";
+        default:
+            return "normal";
+    }
 };
 
-export const isMiniGallery = (url: string): boolean => galleryPath(url) === "mini/";
+/** URL의 갤러리 경로 접두사 ("", "mgallery/", "mini/", "person/") */
+export const galleryPath = (url: string): string => GALLERIES[galleryKind(url)].path;
 
-/** 댓글/관리 요청의 _GALLTYPE_ 코드 (G, M, MI, PR) */
-export const galleryTypeName = (url: string): GalleryTypeName => GALLERY_TYPES[galleryPath(url)];
+/** 댓글·관리·캡차 요청에 넣는 _GALLTYPE_ 값 */
+export const galltypeOf = (url: string): string => GALLERIES[galleryKind(url)].galltype;
 
 /**
  * 게시글/목록 URL → 같은 갤러리·쿼리의 목록 URL.

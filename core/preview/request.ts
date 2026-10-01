@@ -1,5 +1,5 @@
 import {ajax, formBody, http} from "@/core/http/client";
-import {galleryPath, galleryTypeName, isMiniGallery, urls} from "@/core/http/urls";
+import {galleryKind, galleryPath, galltypeOf, urls} from "@/core/http/urls";
 import {csrfBody} from "@/utils/cookie";
 import {isRecord} from "@/utils/record";
 
@@ -8,7 +8,7 @@ import type {BlockDay, BlockReason, CommentListResponse, DcinsideComment, Dcinsi
 
 /** 디시 요청 본문. 모든 요청에 붙는 CSRF 토큰·갤러리 종류 뒤에 fields를 붙인다 (formBody 규칙) */
 const dcBody = (link: string, fields: Parameters<typeof formBody>[0]): Promise<URLSearchParams> =>
-    csrfBody({_GALLTYPE_: galleryTypeName(link), ...fields});
+    csrfBody({_GALLTYPE_: galltypeOf(link), ...fields});
 
 export const viewUrl = (link: string, gallery: string, id: string): string => `${urls.base}${galleryPath(link)}board/view/?id=${gallery}&no=${id}`;
 
@@ -144,7 +144,7 @@ type ManageAction = "update_bump" | "delete_list" | "delete_comment" | "update_a
 const manage = async (target: Pick<GalleryPreData, "link">, action: ManageAction, fields: Record<string, string>): Promise<ManageResult> => {
     const body = await dcBody(target.link, fields);
 
-    const url = `${urls.base}ajax/${isMiniGallery(target.link) ? "mini" : "minor"}_manager_board_ajax/${action}`;
+    const url = `${urls.base}ajax/${galleryKind(target.link) === "mini" ? "mini" : "minor"}_manager_board_ajax/${action}`;
     const text = (await ajax.post(url, {body}).text()).trim();
 
     try {
@@ -201,7 +201,7 @@ export const setRecommend = (preData: GalleryPreData, recommend: boolean): Promi
 
 /** 이미지 캡챠 URL */
 export const captchaImage = (preData: GalleryPreData, type: "comment" | "recommend"): string =>
-    `${urls.base}kcaptcha/image_v3/?gall_id=${preData.gallery}&kcaptcha_type=${type}&time=${Date.now()}&_GALLTYPE_=${galleryTypeName(preData.link)}`;
+    `${urls.base}kcaptcha/image_v3/?gall_id=${preData.gallery}&kcaptcha_type=${type}&time=${Date.now()}&_GALLTYPE_=${galltypeOf(preData.link)}`;
 
 /** 관리자 댓글 삭제 */
 export const adminDeleteComment = (preData: GalleryPreData, commentId: string): Promise<ManageResult> =>

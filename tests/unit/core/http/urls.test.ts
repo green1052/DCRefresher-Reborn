@@ -1,16 +1,18 @@
 import {describe, expect, it} from "vitest";
 
-import {galleryPath, galleryTypeName, isMiniGallery, listUrl, mergeParamURL, postSearchUrl, rowPostNo} from "@/core/http/urls";
+import {galleryKind, galleryPath, galltypeOf, listUrl, mergeParamURL, postSearchUrl, rowPostNo} from "@/core/http/urls";
 
-describe("galleryPath / galleryTypeName", () => {
+describe("galleryKind / galleryPath / galltypeOf", () => {
     it("갤러리 종류를 URL에서 읽는다", () => {
         expect(galleryPath("https://gall.dcinside.com/board/lists/?id=a")).toBe("");
         expect(galleryPath("https://gall.dcinside.com/mgallery/board/view/?id=a")).toBe("mgallery/");
         expect(galleryPath("https://gall.dcinside.com/mini/board/lists/?id=a")).toBe("mini/");
         expect(galleryPath("https://gall.dcinside.com/person/board/lists/?id=a")).toBe("person/");
-        expect(galleryTypeName("https://gall.dcinside.com/mini/board/lists/?id=a")).toBe("MI");
-        expect(galleryTypeName("https://gall.dcinside.com/board/lists/?id=a")).toBe("G");
-        expect(isMiniGallery("https://gall.dcinside.com/mini/board/lists/?id=a")).toBe(true);
+        expect(galltypeOf("https://gall.dcinside.com/mini/board/lists/?id=a")).toBe("MI");
+        expect(galltypeOf("https://gall.dcinside.com/board/lists/?id=a")).toBe("G");
+        expect(galleryKind("https://gall.dcinside.com/mini/board/lists/?id=a")).toBe("mini");
+        expect(galleryKind("https://gall.dcinside.com/mgallery/board/lists/?id=a")).toBe("minor");
+        expect(galleryKind("https://gall.dcinside.com/board/lists/?id=a")).toBe("normal");
     });
 });
 
