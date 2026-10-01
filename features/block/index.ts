@@ -2,6 +2,7 @@ import {BLOCKED_TEXT, dcconCode, groupDuplicates, isAnyBlocked, isBlocked} from 
 import {defineModule} from "@/core/module/define";
 import {isViewPage, queryString} from "@/core/http/urls";
 import {ROW_SELECTOR} from "@/core/list";
+import type {BlockType} from "@/core/storage/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {openWriterBubble, useUiStore} from "@/stores/ui";
 import {whenDomReady} from "@/utils/dom";
@@ -60,6 +61,9 @@ interface BlockApi {
     toggleReveal(): void;
 }
 
+/** 작성자 칸(checkWriter)이 보는 차단 유형 */
+const WRITER_TYPES: BlockType[] = ["NICK", "ID", "IP", "TITLE", "TAB", "COMMENT"];
+
 const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
     // 숨김도 클래스로만 건다 (content.scss). 풀 때 디시가 건 인라인 display를 건드리지 않는다.
     const hide = (element: HTMLElement): void => element.classList.add(ctx.settings.blur ? "refresherBlur" : "refresherBlocked");
@@ -77,25 +81,26 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
 
     // 유저/제목/말머리/댓글 차단.
     const checkWriter = (element: HTMLElement): void => {
+        // 목록이 빈 유형은 글자를 꺼내지도 않는다. 행마다 도는 일이라 보통 몇 가지 유형만 쓰는 사용자에게는 대부분 건너뛴다.
+        const {entries} = useBlocksStore.getState();
+        const read = (type: BlockType, value: () => string | null | undefined): string | null => (entries[type].length > 0 ? value() || null : null);
+        if (!WRITER_TYPES.some((type) => entries[type].length > 0)) return;
+
         // 제목·말머리는 작성자 칸이 아니라 같은 행의 다른 칸에 있다. 글 보기 머리(.gallview_head)도 ub-content다.
         const row = element.closest<HTMLElement>(ROW_SELECTOR);
-        const title = plainText(row?.querySelector(".gall_tit > a:not([class]), .title_subject"));
-        // 잘린 말머리는 툴팁(.subject_inner)에 전체가 있다. 글 보기 머리의 말머리는 [대괄호]로 감싸 있다.
-        const tab = plainText(row?.querySelector(".gall_subject .subject_inner, .title_headtext") ?? row?.querySelector(".gall_subject")).replace(/^\[(.*)\]$/, "$1");
-        const commentContainer = isViewPage ? element.closest(".reply_info, .cmt_info") : null;
-        // 글자콘 댓글은 .usertxt 없이 .comment_dccon > .coment_dccon_txt > .txtcon_txt로 그려진다. 그 글자도 댓글 차단어로 본다
-        // 댓글 검색 결과 행은 댓글 내용이 .sch_cmt에 있다.
-        const comment = commentContainer?.querySelector(".usertxt, .txtcon_txt")?.textContent ?? row?.querySelector(".sch_cmt")?.textContent;
         const {nick, uid, ip} = element.dataset;
 
         const blocked = isAnyBlocked(
             {
-                TITLE: title || null,
-                NICK: nick || null,
-                ID: uid || null,
-                IP: ip || null,
-                TAB: tab || null,
-                COMMENT: comment || null
+                NICK: read("NICK", () => nick),
+                ID: read("ID", () => uid),
+                IP: read("IP", () => ip),
+                TITLE: read("TITLE", () => plainText(row?.querySelector(".gall_tit > a:not([class]), .title_subject"))),
+                // 잘린 말머리는 툴팁(.subject_inner)에 전체가 있다. 글 보기 머리의 말머리는 [대괄호]로 감싸 있다.
+                TAB: read("TAB", () => plainText(row?.querySelector(".gall_subject .subject_inner, .title_headtext") ?? row?.querySelector(".gall_subject")).replace(/^\[(.*)\]$/, "$1")),
+                // 글자콘 댓글은 .usertxt 없이 .comment_dccon > .coment_dccon_txt > .txtcon_txt로 그려진다. 그 글자도 댓글 차단어로 본다.
+                // 댓글 검색 결과 행은 댓글 내용이 .sch_cmt에 있다.
+                COMMENT: read("COMMENT", () => (isViewPage ? element.closest(".reply_info, .cmt_info") : null)?.querySelector(".usertxt, .txtcon_txt")?.textContent ?? row?.querySelector(".sch_cmt")?.textContent)
             },
             gallery
         );

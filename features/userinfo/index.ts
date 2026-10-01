@@ -81,17 +81,18 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
     element.querySelector(`.${BADGES_CLASS}`)?.remove();
 
     const {nick, uid, ip} = element.dataset;
-    const badges = Object.assign(document.createElement("span"), {className: BADGES_CLASS});
+    // 묶음 요소는 붙일 배지가 있을 때만 만든다. 배지가 없는 작성자 칸이 대부분이다.
+    const badges: HTMLElement[] = [];
     let lowActivity = false;
 
     const appendIdentity = (): void => {
         if (uid) {
-            if (showsUid(view, element.querySelector<HTMLImageElement>("img")?.src)) badges.append(buildBadgeSpan(`(${uid})`, colors.uid, uid, "ip refresherUserData"));
+            if (showsUid(view, element.querySelector<HTMLImageElement>("img")?.src)) badges.push(buildBadgeSpan(`(${uid})`, colors.uid, uid, "ip refresherUserData"));
             return;
         }
 
         const info = ip ? ipInfoOf(ip) : undefined;
-        if (info && passesIpFilter(info, view.ipFilter)) badges.append(buildBadgeSpan(`[${info.label}]`, colors[info.category], info.title));
+        if (info && passesIpFilter(info, view.ipFilter)) badges.push(buildBadgeSpan(`[${info.label}]`, colors[info.category], info.title));
     };
 
     for (const key of view.order) {
@@ -99,7 +100,7 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
 
         if (key === "MEMO") {
             const memo = findMemo({uid, ip, nick}, gallery);
-            if (memo) badges.append(buildBadgeSpan(`[${memo.text}]`, memo.color || undefined, memo.text));
+            if (memo) badges.push(buildBadgeSpan(`[${memo.text}]`, memo.color || undefined, memo.text));
         }
 
         if (key === "RATIO" && uid && ctx.settings.checkRatio) {
@@ -107,25 +108,29 @@ const process = (ctx: Ctx, element: HTMLElement): void => {
             if (cached) {
                 const text = `${cached.article}/${cached.comment}`;
                 lowActivity = isLowActivity(cached, ctx.settings.alarmRatio);
-                badges.append(buildBadgeSpan(`[${text}]`, lowActivity ? colors.ratioAlarm : colors.ratio, text, "ip refresherUserData"));
+                badges.push(buildBadgeSpan(`[${text}]`, lowActivity ? colors.ratioAlarm : colors.ratio, text, "ip refresherUserData"));
             }
         }
 
         if (key === "PERMBAN" && uid && ctx.settings.checkPermBan) {
             const reasons = banReasonsOf(uid);
-            if (reasons) badges.append(buildBadgeSpan(`[${reasons}]`, colors.permBan, reasons, "ip refresherUserData"));
+            if (reasons) badges.push(buildBadgeSpan(`[${reasons}]`, colors.permBan, reasons, "ip refresherUserData"));
         }
     }
 
     // 깡계는 글댓비를 받아 둔 유저만 판정한다. 목록 전체를 조회하면 갤로그 요청이 너무 많다.
     const action = ctx.settings.lowActivityAction;
-    if (lowActivity && action === "tag") badges.append(buildBadgeSpan("[깡계]", colors.ratioAlarm, `글댓합 ${ctx.settings.alarmRatio}개 이하`));
+    if (lowActivity && action === "tag") badges.push(buildBadgeSpan("[깡계]", colors.ratioAlarm, `글댓합 ${ctx.settings.alarmRatio}개 이하`));
     // 글 보기 머리는 가리지 않는다. 머리만 가리면 본문은 그대로 보인다 (배지 색으로만 알린다).
     if (lowActivity && (action === "blur" || action === "hide") && !element.closest(".gallview_head")) {
         (element.closest<HTMLElement>(ROW_SELECTOR) ?? element).classList.add(LOW_ACTIVITY_CLASSES[action]);
     }
 
-    if (badges.children.length > 0) insertBadges(element, badges);
+    if (badges.length > 0) {
+        const group = Object.assign(document.createElement("span"), {className: BADGES_CLASS});
+        group.append(...badges);
+        insertBadges(element, group);
+    }
 };
 
 /** 미리보기 작성자 표시가 같은 색·순서·표시 조건을 쓰도록 ui 스토어에 올린다. */

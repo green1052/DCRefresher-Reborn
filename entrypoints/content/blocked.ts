@@ -18,10 +18,11 @@ export const warnWhenBlocked = (): void => {
     // 지금 페이지 자체가 빈 페이지인 경우.
     const warnIfBlocked = (): void => {
         // 확장이 body에 붙인 UI(오버레이, 스텔스 버튼 등 data-refresher-ui)는 디시 내용이 아니다. 그 글자도 세지 않는다.
-        const nodes = Array.from(document.body?.childNodes ?? []);
-        const content = nodes.filter((node) => node instanceof Element && node.tagName !== "REFRESHER-ROOT" && !node.hasAttribute("data-refresher-ui"));
-        const text = nodes.some((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim());
-        if (content.length === 0 && !text) warnBlocked();
+        // 보통 페이지는 첫 자식부터 디시 요소라 거기서 끝난다.
+        for (const node of document.body?.childNodes ?? []) {
+            if (node instanceof Element ? node.tagName !== "REFRESHER-ROOT" && !node.hasAttribute("data-refresher-ui") : node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) return;
+        }
+        warnBlocked();
     };
     whenDomReady(warnIfBlocked);
 };
