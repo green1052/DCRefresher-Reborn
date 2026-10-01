@@ -120,7 +120,7 @@ export const hoverMini = (hovered?: boolean): void => {
 export const needsPreviewOverlay = (state: PreviewState): boolean =>
     state.visible || state.warm || state.mini !== null || state.captcha !== null || state.blockPopup || state.dcconInfo !== null;
 
-/** 미니 미리보기 크기. Mini.tsx와 화면 밖 방지 계산(miniPosition, index.ts의 showMini)이 같이 쓴다 */
+/** 미니 미리보기 크기. Mini.tsx와 화면 밖 방지 계산(miniPosition, mini.ts의 showMini)이 같이 쓴다 */
 export const MINI_WIDTH = 720;
 export const MINI_HEIGHT = 560;
 
