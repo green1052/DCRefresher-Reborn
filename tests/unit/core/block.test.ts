@@ -64,6 +64,25 @@ describe("isAnyBlocked / blockingEntries", () => {
         expect(isAnyBlocked({NICK: "", IP: undefined})).toBe(false);
         expect(blockingEntries({NICK: "n", IP: "1.2"}).map(({type}) => type)).toEqual(["NICK", "IP"]);
     });
+    it("isBlocked는 걸린 규칙(blockingEntries)이 있을 때만 참이다", () => {
+        // 모드·정규식(잘못된 패턴 포함)·갤러리 한정을 섞은 목록에서 두 판정이 늘 같은지 본다
+        const modes = [undefined, "SAME", "CONTAIN", "NOT_SAME", "NOT_CONTAIN"] as const;
+        const contents = ["ab", "a", "x", "a.", "("];
+        let seed = 1;
+        const pick = <T>(items: readonly T[]): T => items[(seed = (seed * 48271) % 2147483647) % items.length]!;
+
+        for (let round = 0; round < 300; round++) {
+            const list = Array.from({length: pick([0, 1, 2, 3])}, () => entry({
+                content: pick(contents), mode: pick(modes), isRegex: pick([false, true]), gallery: pick([undefined, "g", "h"])
+            }));
+            setBlockLists({NICK: list}, {NICK: pick(["SAME", "CONTAIN", "NOT_SAME"] as const)});
+            for (const value of ["ab", "a", "zz"]) {
+                for (const gallery of [undefined, "g"]) {
+                    expect(isBlocked("NICK", value, gallery)).toBe(blockingEntries({NICK: value}, gallery).length > 0);
+                }
+            }
+        }
+    });
 });
 
 describe("dcconCode", () => {

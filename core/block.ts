@@ -75,9 +75,32 @@ export const dcconCode = (element: HTMLElement): string | undefined => {
     return src ? URL.parse(src, location.href)?.searchParams.get("no") || undefined : undefined;
 };
 
+/**
+ * blockingIn이 무언가를 돌려주는지만 본다. 목록 행·댓글마다 유형별로 불리므로 배열을 만들지 않고, 걸린 항목을 찾으면 바로 끝낸다.
+ * 걸린 SAME/CONTAIN 항목이 하나라도 있으면 막히고, 없으면 NOT_* 허용 목록이 있는데 어느 것에도 맞지 않을 때 막힌다
+ */
+const isBlockedIn = (lists: BlockLists, type: BlockType, content: string, gallery?: string): boolean => {
+    let hasAllowList = false;
+    let allowed = false;
+
+    for (const entry of lists.entries[type]) {
+        if (entry.gallery && entry.gallery !== gallery) continue;
+
+        const mode = entry.mode ?? lists.defaults[type];
+        if (!mode.startsWith("NOT_")) {
+            if (matches(entry, mode, content)) return true;
+        } else if (!allowed && (!entry.isRegex || compile(entry))) {
+            hasAllowList = true;
+            allowed = matches(entry, mode, content);
+        }
+    }
+
+    return hasAllowList && !allowed;
+};
+
 /** 해당 내용이 차단 대상인지 (갤러리 한정 항목은 그 갤러리에서만) */
 export const isBlocked = (type: BlockType, content: string, gallery?: string): boolean =>
-    content !== "" && blockingIn(useBlocksStore.getState(), type, content, gallery).length > 0;
+    content !== "" && isBlockedIn(useBlocksStore.getState(), type, content, gallery);
 
 /** 값 중 하나라도 차단 대상인지 */
 export const isAnyBlocked = (values: BlockValues, gallery?: string): boolean =>

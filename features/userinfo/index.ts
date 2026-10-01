@@ -70,9 +70,10 @@ const insertBadges = (element: HTMLElement, badges: HTMLElement): void => {
 
 const LOW_ACTIVITY_CLASSES = {blur: "refresherLowActivityBlur", hide: "refresherLowActivityHide"} as const;
 const LOW_ACTIVITY_CLASS_LIST = Object.values(LOW_ACTIVITY_CLASSES);
+const LOW_ACTIVITY_SELECTOR = LOW_ACTIVITY_CLASS_LIST.map((name) => `.${name}`).join(",");
 
 const clearLowActivity = (): void => {
-    for (const element of document.querySelectorAll(LOW_ACTIVITY_CLASS_LIST.map((name) => `.${name}`).join(","))) element.classList.remove(...LOW_ACTIVITY_CLASS_LIST);
+    for (const element of document.querySelectorAll(LOW_ACTIVITY_SELECTOR)) element.classList.remove(...LOW_ACTIVITY_CLASS_LIST);
 };
 
 const process = (ctx: Ctx, element: HTMLElement): void => {
@@ -155,11 +156,12 @@ const rebuildAll = (ctx: Ctx): void => {
 
 /** 몇몇 유저의 작성자 칸만 다시 그린다. 깡계 흐림·숨김은 process가 더하기만 하므로 먼저 뗀다 */
 const rebuildUsers = (ctx: Ctx, uids: string[]): void => {
-    for (const uid of uids) {
-        for (const element of document.querySelectorAll<HTMLElement>(`${WRITER_SELECTOR}[data-uid="${CSS.escape(uid)}"]`)) {
-            (element.closest<HTMLElement>(ROW_SELECTOR) ?? element).classList.remove(...LOW_ACTIVITY_CLASS_LIST);
-            process(ctx, element);
-        }
+    // 작성자 칸을 한 번만 훑는다. 다른 탭이 글댓비를 쓸 때마다(새 글마다 최대 10명) 유저 수만큼 문서를 다시 찾지 않는다
+    const changed = new Set(uids);
+    for (const element of document.querySelectorAll<HTMLElement>(WRITER_SELECTOR)) {
+        if (!changed.has(element.dataset.uid ?? "")) continue;
+        (element.closest<HTMLElement>(ROW_SELECTOR) ?? element).classList.remove(...LOW_ACTIVITY_CLASS_LIST);
+        process(ctx, element);
     }
 };
 
