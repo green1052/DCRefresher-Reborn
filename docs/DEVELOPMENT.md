@@ -76,7 +76,7 @@ entrypoints/
   page.content.scss 디시 페이지에 입히는 CSS (manifest로 따로 주입)
   options/          옵션 페이지 (설정·차단·메모·단축키·데이터·정보·개발자 탭)
   popup/            팝업 (모듈 켜고 끄기, 현재 페이지 토글)
-features/<id>/      기능 모듈 하나. meta.ts(이름·아이콘·설정 스키마), index.ts(콘텐츠), background.ts(배경, 선택), ui/(React, 선택)
+features/<id>/      기능 모듈 하나. meta.ts(이름·아이콘·설정 스키마), index.ts(콘텐츠, 페이지에서 할 일이 있을 때), background.ts(배경, 선택), ui/(React, 선택)
 modules/            WXT 로컬 모듈. 모듈 api 타입 생성(module-types.ts), 엔트리마다 Radix CSS 줄이기(slim-radix-css.ts)
 core/               모듈 시스템, 저장소 키, HTTP, 필터링, 차단 판정, 미리보기 요청·파싱, 백업, DB, 마이그레이션
 stores/             여러 화면이 같이 쓰는 zustand 스토어 (모듈 on/off·설정, 차단, 메모, 오버레이 UI)
@@ -321,12 +321,12 @@ getModuleApi("preview")?.isOpen()
 
 ### 배경 모듈
 
-배경 스크립트에서 할 일(컨텍스트 메뉴 등)이 있으면 `features/<id>/background.ts`에서 `defineBackgroundModule`로 default 내보냅니다. `entrypoints/background/index.ts`가 glob으로 모아 실행합니다. `id`, `settings`, `defaultEnable`은 `index.ts`와 같아야 하므로 React 없는 파일(예: `features/imagesearch/engines.ts`)에 두고 양쪽에서 가져다 씁니다. `defaultEnable`이 다르면 옵션에서는 꺼져 있는데 배경은 켜진 것으로 봅니다.
+배경 스크립트에서 할 일(컨텍스트 메뉴 등)이 있으면 `features/<id>/background.ts`에서 `defineBackgroundModule`로 default 내보냅니다. `entrypoints/background/index.ts`가 glob으로 모아 실행합니다. `id`, `settings`, `defaultEnable`은 `meta.ts`와 같아야 하므로 React 없는 파일(예: `features/imagesearch/engines.ts`)에 두고 양쪽에서 가져다 씁니다. `defaultEnable`이 다르면 옵션에서는 꺼져 있는데 배경은 켜진 것으로 봅니다.
 
 - `listen()`: 배경이 뜰 때마다 동기로 실행됩니다. 서비스 워커를 깨울 이벤트 리스너는 여기서 겁니다.
 - `apply({enabled, settings})`: 모듈을 켜고 끄거나 설정이 바뀔 때, 설치·브라우저 시작 때(Firefox는 배경이 뜰 때마다) 실행됩니다. 호출은 모듈마다 순서대로 한 번에 하나씩입니다.
 
-배경 번들에는 React가 들어가면 안 됩니다. `background.ts`는 `index.ts`(아이콘·React import)를 불러오지 않고, 같이 쓰는 값은 React 없는 파일로 뺍니다. `features/imagesearch`가 예입니다. 페이지에서 할 일이 없는 모듈은 `index.ts`에 `urls: []`를 두어 디시 페이지에서 설정을 읽거나 감시하지 않게 합니다.
+배경 번들에는 React가 들어가면 안 됩니다. `background.ts`는 `index.ts`(아이콘·React import)를 불러오지 않고, 같이 쓰는 값은 React 없는 파일로 뺍니다. `features/imagesearch`가 예입니다. 페이지에서 할 일이 없는 모듈은 `index.ts`를 두지 않습니다(`meta.ts`와 `background.ts`만). 콘텐츠 스크립트는 `index.ts`가 있는 모듈만 등록하므로 디시 페이지에서 설정을 읽거나 감시하지 않습니다.
 
 배경·옵션·팝업과 콘텐츠 스크립트가 같이 불러오는 파일(`core/`, `stores/` 등)은 모듈 최상위에서 페이지 전용 값을 계산하다 던지면 안 됩니다. 한 곳에서 던지면 그 번들 전체가 멈춥니다([Firefox에서 주의할 점](#firefox에서-주의할-점) 참고).
 
