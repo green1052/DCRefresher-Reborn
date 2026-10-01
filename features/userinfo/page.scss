@@ -1,0 +1,53 @@
+/* ===== 유저 정보 (userinfo 모듈) ===== */
+
+/* 유저 정보 배지 (userinfo 모듈): 닉네임이 잘리지 않게, 배지 사이 간격. */
+:is(.fl, .cmt_info, .addbox, .reply_info) {
+    .nickname {
+        max-width: unset !important;
+    }
+
+    .refresherUserData {
+        margin-left: 3px;
+    }
+}
+
+.gall_writer {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    /* 작성자를 누르면 뜨는 디시 메뉴(.user_data.add)가 잘리지 않게. */
+    &:has(.user_data.add) {
+        overflow: visible !important;
+    }
+
+    .addbox {
+        display: initial !important;
+    }
+}
+
+/*
+ * 목록의 작성자 칸: 칸을 넘친 닉네임·배지는 addbox가 가리고, 디시 메뉴는 칸(td)을 기준으로 띄운다.
+ * 칸을 visible로 풀면 메뉴를 여는 동안 가려 둔 글자가 옆 칸으로 튀어나오고, 메뉴가 글자 끝(칸 밖)에 붙어 밀려 뜬다.
+ */
+.gall_list td.gall_writer {
+    overflow: visible;
+
+    .addbox {
+        display: block !important;
+        position: static;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .user_data.add {
+        position: absolute;
+        top: 50% !important;
+        left: 70% !important;
+        white-space: normal;
+    }
+}
+
+.cmt_nickbox {
+    display: flex;
+}

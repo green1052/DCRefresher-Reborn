@@ -89,9 +89,11 @@ features/<id>/          기능 모듈 하나
   meta.ts               이름·아이콘·설정 스키마 (옵션·팝업이 읽는다)
   index.ts              페이지에서 하는 일 (할 일이 없는 모듈은 두지 않는다)
   background.ts         배경에서 하는 일 (선택)
+  page.scss             디시 페이지에 입히는 CSS (선택, 저절로 들어간다)
+  overlay.scss          오버레이(shadow) 안의 CSS (선택, 저절로 들어간다)
   ui/                   React 화면 (선택)
-modules/                WXT 로컬 모듈: 모듈 api 타입 생성(module-types.ts), 단축키 모으기(commands.ts),
-                        엔트리마다 Radix CSS 줄이기(slim-radix-css.ts)
+modules/                WXT 로컬 모듈: 모듈 api·설정 타입 생성(module-types.ts), 단축키 모으기(commands.ts),
+                        기능별 페이지 CSS 모으기(feature-styles.ts), 엔트리마다 Radix CSS 줄이기(slim-radix-css.ts)
 core/                   모듈 시스템, 저장소 키, HTTP, 필터링, 차단 판정, 미리보기 요청·파싱, 백업, 설정 옮기기, DB, 마이그레이션
 stores/                 여러 화면이 같이 쓰는 zustand 스토어 (모듈 on/off·설정, 차단, 메모, 오버레이 UI)
 components/             공용 React 컴포넌트, 오버레이 루트(components/overlay)
@@ -217,6 +219,21 @@ flowchart TD
 - **통합검색 대신 받기** (`refresher:searchPosts`): 디시 통합검색은 CORS를 열지 않아, 관리 모듈의 같은 제목 찾기는 배경이 받아 줍니다.
 
 ## 모듈 시스템
+
+### 새 기능 추가하기
+
+기능은 모듈 폴더 하나에 모읍니다. 다른 곳의 목록에 등록하지 않습니다.
+
+| 하려는 것 | 고치는 곳 |
+|---|---|
+| 새 모듈 | `features/<id>/meta.ts`, `index.ts` (런타임은 `features/index.ts`의 glob, 타입은 `modules/module-types.ts`가 모은다) |
+| 설정 | `meta.ts`의 `settings`. 페이지 코드는 `ctx.settings`, React는 `useModuleSettings(id)`로 읽는다. 바뀔 때 할 일은 setup의 `ctx.onSettingsChanged` |
+| 단축키 | `meta.ts`의 `commands`와 `index.ts`의 `shortcuts` (manifest는 `modules/commands.ts`가 만든다) |
+| 팝업 '현재 페이지' 토글 | `meta.ts`의 `toggles`와 `index.ts`의 `pageToggles` |
+| 디시 페이지 CSS | `features/<id>/page.scss` |
+| 오버레이 UI | 컴포넌트와 그 스토어. 스토어에 `needOverlayWhen(store, (state) => …)`로 띄울 조건을 등록한다. CSS는 `features/<id>/overlay.scss` |
+| 배경에서 할 일 | `features/<id>/background.ts` (`defineBackgroundModule`, 배경이 glob으로 모은다) |
+| 다른 모듈에 줄 api | setup의 반환값. 받는 쪽은 `getModuleApi(id)` |
 
 ### 모듈 정의
 
@@ -402,9 +419,10 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 
 - 콘텐츠 스크립트는 `refresher-root` shadow DOM 안에 React 루트(`components/overlay/ContentRoot.tsx`)를 띄웁니다. 루트는 토스트(`Toasts.tsx`), 유저 버블(`UserBubble.tsx`), 메모 창(`MemoDialog.tsx`), 미리보기(`features/preview/ui/PreviewHost.tsx`)를 모아 그리기만 합니다. 디시 CSS와 Radix CSS가 서로 섞이지 않게 하기 위해서입니다. 포털은 `overlay.portal`입니다.
 - 오버레이는 그릴 것이 처음 생길 때 띄웁니다. UI를 그리는 스토어가 그 조건을 `needOverlayWhen(store, (state) => …)`로 등록합니다(`components/overlay/demands.ts`). 새 오버레이 UI는 자기 스토어의 조건에 상태를 더하면 됩니다(미리보기 UI는 `previewStore.ts`, 토스트·버블·메모는 `stores/ui.ts` 끝).
-- 디시 페이지 자체를 바꾸는 CSS는 `assets/styles/content.scss`, `layout.scss`, `stealth.scss`입니다.
+- 디시 페이지 자체를 바꾸는 CSS는 기능 폴더의 `page.scss`에 둡니다. `modules/feature-styles.ts`가 모아 `.wxt/page-styles.scss`를 만들고 `entrypoints/page.content.scss`가 불러옵니다. 여러 모듈이 같이 쓰는 가림 규칙(차단·깡계)만 `assets/styles/content.scss`에 있습니다. dev 중에 `page.scss`를 새로 만들었으면 dev를 다시 띄웁니다.
+- 오버레이 안의 CSS는 공용 배치·토스트·버블이 `assets/styles/overlay.scss`, 기능의 것은 그 폴더의 `overlay.scss`입니다(`components/overlay/feature-styles.ts`가 모두 불러옵니다).
 - 페이지·오버레이·옵션은 서로 다른 문서라 같은 규칙(차단 흐림, 스텔스 디시콘 가림, 접기 애니메이션)을 `assets/styles/_mixins.scss`의 mixin으로 맞춥니다. 옵션·팝업의 바탕과 Radix 기본값 덮기는 `_radix.scss`에 있습니다.
-- 콘텐츠 스크립트는 `cssInjectionMode: "ui"`라서 불러오는 CSS(`radix-themes.css`, `overlay.scss`)가 오버레이를 처음 띄울 때 shadow에만 들어갑니다(WXT가 `:root`를 `:host`로 바꿈). 디시 페이지에 입히는 CSS(content·stealth·layout)는 `entrypoints/page.content.scss`로 따로 빌드되고, `wxt.config.ts`의 `manifest.content_scripts`가 콘텐츠 스크립트와 같은 주소(`core/pages.ts`의 `CONTENT_MATCHES`)에 넣습니다. 페이지용 CSS를 콘텐츠 스크립트에서 import하면 페이지가 아니라 오버레이에 들어갑니다.
+- 콘텐츠 스크립트는 `cssInjectionMode: "ui"`라서 불러오는 CSS(`radix-themes.css`, `overlay.scss`)가 오버레이를 처음 띄울 때 shadow에만 들어갑니다(WXT가 `:root`를 `:host`로 바꿈). 디시 페이지에 입히는 CSS(공용 `content.scss`와 기능별 `page.scss`)는 `entrypoints/page.content.scss`로 따로 빌드되고, `wxt.config.ts`의 `manifest.content_scripts`가 콘텐츠 스크립트와 같은 주소(`core/pages.ts`의 `CONTENT_MATCHES`)에 넣습니다. 페이지용 CSS를 콘텐츠 스크립트에서 import하면 페이지가 아니라 오버레이에 들어갑니다.
 - Radix CSS는 통째로 넣으면 엔트리마다 600KB라, 빌드 때 WXT 로컬 모듈 `modules/slim-radix-css.ts`가 엔트리(옵션·팝업·오버레이)마다 쓰지 않는 규칙을 뺍니다. 손으로 적는 목록은 없습니다. 그 엔트리에서 닿는 JS 청크에 든 `rt-*` 클래스 리터럴(트리 셰이킹으로 쓰는 컴포넌트 것만 남습니다)을 모아, 거기 없는 클래스의 규칙과 소스에서 쓰지 않는 반응형 접두어(`md:` 등)·`variant` 값·색 스케일·`@font-face`를 뺍니다. 새 Radix 컴포넌트나 반응형 prop을 쓰면 그대로 들어갑니다. 팝업은 옵션과 같은 CSS 파일을 import하면 Vite가 둘이 같이 쓰는 CSS 하나로 묶어 버리므로 `radix-themes-popup.css`를 따로 둡니다. 개발 서버(옵션·팝업 HMR)에서는 이 모듈이 돌지 않아 CSS가 통째로 들어갑니다.
 - 다크모드는 Radix 문서 방식대로 `Theme`에 `appearance`를 넘기지 않고 조상의 `light`/`dark` 클래스로 바꿉니다(`utils/appearance.ts`). 옵션·팝업은 시스템 설정을, 오버레이는 디시 다크모드를 오버레이 최상위 요소(shadow 안의 컨테이너)에 옮깁니다. 스크롤바·폼 컨트롤도 따라가도록 같은 요소에 `color-scheme`을 같이 정합니다.
 - `radix-themes.css`는 색 파일을 `base.css`보다 먼저 불러옵니다. 순서가 바뀌면 gray가 slate가 아닌 순수 회색이 됩니다.
