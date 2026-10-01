@@ -15,7 +15,7 @@ import {defineWxtModule} from "wxt/modules";
  * 없는 색(`[data-accent-color=crimson]`)의 규칙과, 어느 엔트리도 쓰지 않는 Radix 글꼴의 @font-face도 뺀다.
  * 오버레이(콘텐츠 스크립트)는 @font-face를 모두 뺀다: 오버레이는 --default-font-family를 덮어쓰고, 두면 WXT가 shadow에서 떼어 디시 페이지의 head에 넣는다.
  *
- * generateBundle에서 돌아 CSS는 이미 압축된 상태다. 개발 서버(옵션·팝업 HMR)에서는 돌지 않아 CSS가 통째로 들어간다.
+ * generateBundle에서 돌아 CSS는 이미 압축된 상태다. 개발 서버(옵션·팝업 HMR)에서는 돌지 않아 CSS가 통째로 들어간다
  */
 
 type OutputChunk = Rollup.OutputChunk;

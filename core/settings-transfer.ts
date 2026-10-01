@@ -24,7 +24,7 @@ const isMapKey = (key: string): boolean =>
  * - replace(클라우드 복원·초기화): 백업은 완전한 스냅숏이므로 거기 없는 설정 키는 지운다.
  * - merge(가져오기): 붙여넣은 JSON은 일부만 담을 수 있으므로 든 키만 쓴다. 설정만 든 JSON이 차단/메모 목록을 지우지 않게 한다.
  *   설정 객체(isMapKey)도 기존 값에 얕게 합쳐, 설정 몇 개만 든 JSON이 나머지 설정을 기본값으로 돌리지 않게 한다.
- * 쓰다가 실패하면 이전 값으로 되돌린다.
+ * 쓰다가 실패하면 이전 값으로 되돌린다
  */
 /**
  * 다른 기기에서 온 차단 항목의 검사 방식을 지킨다. 모드가 '기본값'(없음)인 항목은 그 기기의 기본 모드(from)로 검사됐으므로,
@@ -63,7 +63,7 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
         }
     }
     // 거르고 나서 남은 키가 없으면(옛 백업 키가 migrateV5에서 전부 빠졌거나 가져온 JSON에 기본 차단 모드만 든 경우 등)
-    // 복원은 모든 설정을 지우고 가져오기는 아무것도 쓰지 않으므로 실패로 알린다. 설정을 비우는 것은 초기화({})만 허용한다.
+    // 복원은 모든 설정을 지우고 가져오기는 아무것도 쓰지 않으므로 실패로 알린다. 설정을 비우는 것은 초기화({})만 허용한다
     if (Object.keys(data).length > 0 && Object.keys(next).length === 0) throw new Error("쓸 수 있는 설정이 없습니다.");
     const removed = mode === "replace" ? Object.keys(previous).filter((key) => isBackupTarget(key) && !(key in next)) : [];
 

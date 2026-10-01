@@ -8,12 +8,12 @@ import type {ModuleDefinition} from "./types";
 
 /**
  * 모듈의 배경 쪽. features/<id>/background.ts가 default로 내보내면 배경 스크립트가 glob으로 모아 돌린다.
- * 배경 번들에 React가 딸려 가지 않도록 모듈 파일(index.ts)은 import하지 않는다. 설정 스키마는 React 없는 파일에 두고 양쪽이 같이 쓴다.
+ * 배경 번들에 React가 딸려 가지 않도록 모듈 파일(index.ts)은 import하지 않는다. 설정 스키마는 React 없는 파일에 두고 양쪽이 같이 쓴다
  */
 export interface BackgroundModule extends Pick<ModuleDefinition, "id" | "defaultEnable" | "settings"> {
     /**
      * 배경이 뜰 때마다 동기로 부른다. 서비스 워커를 깨우는 이벤트 리스너는 첫 실행 중에 걸어야 하므로 여기서 건다.
-     * 모듈이 꺼져 있어도 부른다.
+     * 모듈이 꺼져 있어도 부른다
      */
     listen?(): void;
 

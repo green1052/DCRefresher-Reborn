@@ -8,7 +8,7 @@
  * 차단·메모 목록(refresher:block:<유형>, refresher:memo:<유형>)은 키와 모양이 같아 그대로 쓴다.
  * 옛 IP DB(refresher:database:*)·모듈 캐시(…:data)·백업 시각은 버린다. 다시 받거나 새로 쌓인다.
  * 5.1.2 이전 버전이 남긴 키(isLeftoverKey)도 버린다. v5도 읽지 않던 잔재라 백업·내보내기만 불린다.
- * 설정 키·값 형식은 v5와 같다(모듈별로 대조함). v6에 없는 키는 v6가 읽지 않으니 그대로 넘겨도 된다.
+ * 설정 키·값 형식은 v5와 같다(모듈별로 대조함). v6에 없는 키는 v6가 읽지 않으니 그대로 넘겨도 된다
  */
 
 import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockListKey, DETECT_MODES, MODULES_KEY, moduleSettingsKey, rawKey} from "@/core/storage/items";
@@ -65,7 +65,7 @@ const parseStored = (value: unknown): unknown => {
 
 /**
  * 저장소 스냅숏 → v6 스냅숏. v5 키는 빠지고, 옮긴 값은 이미 있는 v6 값을 덮어쓰지 않는다.
- * v5 키가 없으면 그대로 돌려준다.
+ * v5 키가 없으면 그대로 돌려준다
  */
 export const migrateV5 = (data: Snapshot): Snapshot => {
     if (!hasV5Data(data)) return data;
@@ -120,7 +120,7 @@ export const migrateV5 = (data: Snapshot): Snapshot => {
 
     // v5는 모든 유형의 기본 모드가 SAME이었다. :mode 키가 없는 유형에 v6 기본값(제목·내용·댓글은 CONTAIN)을 쓰면
     // 'ㅋ' 같은 항목이 포함 검사가 되어 마구 막으므로, 차단 목록이 있는 유형은 SAME으로 고정한다.
-    // 차단 목록 키는 v5·v6가 같으니 v5 키가 있을 때만 v5 데이터로 본다 (잔재 키만 있는 개발 빌드의 v6 데이터는 제외).
+    // 차단 목록 키는 v5·v6가 같으니 v5 키가 있을 때만 v5 데이터로 본다 (잔재 키만 있는 개발 빌드의 v6 데이터는 제외)
     const fromV5 = Object.keys(data).some(isV5Key);
     for (const type of fromV5 ? BLOCK_TYPES : []) {
         if (rawKey(blockListKey(type)) in data) defaults[type] ??= "SAME";

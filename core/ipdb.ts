@@ -1,7 +1,7 @@
 /**
  * IP 대역(a.b) → 후보(조직명·국가·VPN) 데이터.
  * 저장 형식(CompactIpData)은 DB 워크플로(scripts/build-db.ts)가 encodeIpData로 만들어 data 브랜치 ip.json으로 올리고,
- * 확장은 받은 문자열을 그대로 저장해 createIpLookup으로 읽는다. 쓰는 쪽과 읽는 쪽을 한 파일에 둔다.
+ * 확장은 받은 문자열을 그대로 저장해 createIpLookup으로 읽는다. 쓰는 쪽과 읽는 쪽을 한 파일에 둔다
  */
 
 import {isRecord} from "@/utils/record";
@@ -15,7 +15,7 @@ export interface CompactIpData {
     /**
      * 65536칸 표(칸 번호 a*256+b)를 값이 같은 구간으로 줄인 것. base64(Uint16Array[구간 시작 × n, 값 × n]).
      * 이웃 대역은 대개 같은 기관이라 구간이 칸 수의 절반도 안 된다. 값 0은 정보 없음,
-     * 그 밖에는 값-1이 meta 개수보다 작으면 meta 번호, 아니면 meta 개수 + lists 번호다.
+     * 그 밖에는 값-1이 meta 개수보다 작으면 meta 번호, 아니면 meta 개수 + lists 번호다
      */
     runs: string;
     /** 조직명. ""는 조직 없음 (국가만 아는 해외 대역 등) */
@@ -44,7 +44,7 @@ const candidateKey = ({org, country, vpn}: IpCandidate): string => `${org ?? ""}
 
 /**
  * 대역(a*256+b) → 후보들(유력한 순) → 저장 형식. 대역 순으로 넘기면 결과가 늘 같다.
- * 자주 나오는 후보가 앞 번호를 받게 해 meta·lists의 JSON을 줄인다.
+ * 자주 나오는 후보가 앞 번호를 받게 해 meta·lists의 JSON을 줄인다
  */
 export const encodeIpData = (prefixes: ReadonlyMap<number, readonly IpCandidate[]>): CompactIpData => {
     const frequency = new Map<string, { candidate: IpCandidate; count: number }>();

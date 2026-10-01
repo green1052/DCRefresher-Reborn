@@ -163,11 +163,11 @@ const KST = 9 * 3_600_000;
 
 /**
  * 디시 시각 문자열을 읽는다 ("2026.09.26 02:29:40", 올해 것은 연도 없이 "09.26 02:29:40").
- * 한국 시간이므로 +09:00을 붙인다. 브라우저 시간대로 읽으면 해외에서 어긋난다.
+ * 한국 시간이므로 +09:00을 붙인다. 브라우저 시간대로 읽으면 해외에서 어긋난다
  */
 export const parseDate = (value: string): Date => {
     const missingYear = value.substring(0, 4).includes(".");
-    // 빠진 연도도 한국 날짜 기준으로 채운다. 로컬 연도를 쓰면 해가 바뀌는 무렵 시차로 한 해 어긋난다.
+    // 빠진 연도도 한국 날짜 기준으로 채운다. 로컬 연도를 쓰면 해가 바뀌는 무렵 시차로 한 해 어긋난다
     const year = missingYear ? `${new Date(Date.now() + KST).getUTCFullYear()}-` : "";
 
     return new Date(`${year}${value.replace(/\./g, "-").replace(" ", "T")}+09:00`);
@@ -196,7 +196,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     dcconInfo: null,
 
     open: (preData, patch) => {
-        // 이전 글의 캡차 창은 닫는다. 남아 있으면 입력한 코드가 이전 글로 간다.
+        // 이전 글의 캡차 창은 닫는다. 남아 있으면 입력한 코드가 이전 글로 간다
         get().captcha?.resolve("");
         set({...freshPost(), ...patch, visible: true, fading: false, preData, signalId: ++signalSeq, mini: null, captcha: null, dcconInfo: null});
     },
@@ -205,7 +205,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
         // 열려 있지 않으면 할 일이 없다. 모듈을 끌 때도 부르는데, 페이드를 걸면 지난 글이 잠깐 비친다
         if (!get().visible) return;
         get().captcha?.resolve("");
-        // signalId도 올린다. 닫은 뒤 도착한 응답(abort로 난 오류 포함)이 페이드아웃 중인 창에 그려지면 안 된다.
+        // signalId도 올린다. 닫은 뒤 도착한 응답(abort로 난 오류 포함)이 페이드아웃 중인 창에 그려지면 안 된다
         set({visible: false, fading: true, comments: undefined, blockPopup: false, captcha: null, reply: NO_REPLY, signalId: ++signalSeq, dcconInfo: null});
         // 앞서 닫을 때 건 타이머는 지운다. 남겨 두면 닫았다 곧바로 다시 열고 닫을 때 이번 페이드를 일찍 끊는다
         window.clearTimeout(fadeTimer);

@@ -19,7 +19,7 @@ const RELATIVE_UNITS: [string, number][] = [
 
 const relative = (date: Date): string => {
     const diff = Date.now() - date.getTime();
-    // PC 시계가 조금 느리면 방금 단 댓글이 미래 시각이 된다. 1분 앞까지는 '방금 전'으로 보인다.
+    // PC 시계가 조금 느리면 방금 단 댓글이 미래 시각이 된다. 1분 앞까지는 '방금 전'으로 보인다
     if (Number.isNaN(diff) || diff < -60_000) return absoluteOf(date);
     if (diff < 3000) return "방금 전";
 
@@ -32,7 +32,7 @@ const relative = (date: Date): string => {
 
 /**
  * TimeStamp들이 같이 쓰는 시계. 댓글마다 타이머를 두면 댓글 수백 개가 저마다 다시 그려진다.
- * 구독자가 있을 때만 5초마다 알리고 숨긴 탭에선 건너뛴다. useSyncExternalStore라 글자가 바뀐 것만 다시 그려진다.
+ * 구독자가 있을 때만 5초마다 알리고 숨긴 탭에선 건너뛴다. useSyncExternalStore라 글자가 바뀐 것만 다시 그려진다
  */
 const clockListeners = new Set<() => void>();
 let clockTimer = 0;

@@ -31,7 +31,7 @@ const applyHide = (ctx: Ctx): void => {
     // 공지 모아보기(?exception_mode=notice)에서는 공지를 숨기지 않는다 (디시 공지도)
     const noticePage = queryString("exception_mode") === "notice";
 
-    // 선택자마다 규칙을 따로 둔다. 하나로 합치면 :has 등을 모르는 브라우저가 규칙 전체를 버린다.
+    // 선택자마다 규칙을 따로 둔다. 하나로 합치면 :has 등을 모르는 브라우저가 규칙 전체를 버린다
     writeStyle(HIDE_STYLE_ID, HIDE_KEYS
         .filter((key) => ctx.settings[key] && !(noticePage && (key === "removeNotice" || key === "removeDCNotice")))
         .map((key) => `${HIDE_OPTIONS[key].selector} { display: none !important; }`)

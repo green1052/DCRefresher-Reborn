@@ -47,7 +47,7 @@ interface ConfirmDialogProps {
 
 /**
  * Themes Dialog로 만든 confirm()/alert() 대체. 바깥 클릭이나 Esc로 닫힌다.
- * 열 때만 마운트해야 닫힘 애니메이션 동안 비워진 제목("null" 등)이 비치지 않는다.
+ * 열 때만 마운트해야 닫힘 애니메이션 동안 비워진 제목("null" 등)이 비치지 않는다
  */
 export const ConfirmDialog = ({
                                   title,

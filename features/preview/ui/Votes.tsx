@@ -15,7 +15,7 @@ import {usePreviewStore} from "./previewStore";
 export const Votes = ({post}: { post: PostInfo }) => {
     const preData = usePreviewStore((s) => s.preData);
     const {upvotes, fixedUpvotes, downvotes} = post;
-    // 보내는 중인 쪽. 연타로 추천 POST가 두 번 가지 않게 막는다.
+    // 보내는 중인 쪽. 연타로 추천 POST가 두 번 가지 않게 막는다
     const [voting, setVoting] = useState<"U" | "D" | null>(null);
 
     const castVote = async (target: GalleryPreData, mode: "U" | "D"): Promise<void> => {
@@ -36,9 +36,9 @@ export const Votes = ({post}: { post: PostInfo }) => {
             ? {upvotes: result.counts ?? upvotes ?? "X", fixedUpvotes: result.fixedCounts || undefined}
             : {downvotes: result.counts ?? downvotes};
         // 응답 전에 다른 글로 넘어갔으면 숫자는 고치지 않고 알림만 띄운다.
-        // 함수형 setState로 지금 post를 읽어야 동시에 끝난 추천·비추천이 서로 덮지 않는다.
+        // 함수형 setState로 지금 post를 읽어야 동시에 끝난 추천·비추천이 서로 덮지 않는다
         usePreviewStore.setState((s) => (s.signalId !== signal || !s.post ? {} : {post: {...s.post, ...counts}}));
-        // 1분 안에 다시 열면 캐시 본문을 쓰므로 거기 숫자도 고친다.
+        // 1분 안에 다시 열면 캐시 본문을 쓰므로 거기 숫자도 고친다
         const cached = getEntry(target)?.post;
         if (cached) setEntry(target, {post: {...cached, ...counts}});
     };
@@ -50,7 +50,7 @@ export const Votes = ({post}: { post: PostInfo }) => {
         void castVote(preData, mode).finally(() => setVoting(null));
     };
 
-    // 목록 쿼리(검색어·페이지)를 뺀 글 주소를 복사한다.
+    // 목록 쿼리(검색어·페이지)를 뺀 글 주소를 복사한다
     const onShare = (): void => {
         if (!preData) return;
         navigator.clipboard.writeText(viewUrl(preData.link, preData.gallery, preData.id)).then(

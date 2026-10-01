@@ -16,7 +16,7 @@ export const createMini = (
     processContents: (preData: GalleryPreData, post: PostInfo, stripMedia?: boolean) => Promise<PostInfo>
 ) => {
     let miniTimer = 0;
-    // 미니를 띄울 제목 칸. 본문을 받는 사이 커서가 떠났으면 띄우지 않는다.
+    // 미니를 띄울 제목 칸. 본문을 받는 사이 커서가 떠났으면 띄우지 않는다
     let miniTarget: HTMLElement | null = null;
     // 떠 있는 미니가 보여 주는 제목 칸
     let miniFor: HTMLElement | null = null;
@@ -27,7 +27,7 @@ export const createMini = (
 
         const post = await getPost(preData).then(({post}) => processContents(preData, post, ctx.settings.tooltipMediaHide)).catch(() => undefined);
 
-        // 받지 못했거나, 받는 사이 행을 떠났거나 전체 미리보기가 열렸으면 띄우지 않는다.
+        // 받지 못했거나, 받는 사이 행을 떠났거나 전체 미리보기가 열렸으면 띄우지 않는다
         if (!post || miniTarget !== element || usePreviewStore.getState().visible) return;
 
         // 조작할 수 있는 미니는 v5처럼 커서 바로 오른쪽에 붙인다(x+10, y-50). 오른쪽으로만 옮기면 다른 행을 지나지 않고 카드에 닿는다.
@@ -41,9 +41,9 @@ export const createMini = (
             mini: {
                 ...position,
                 title: postTitle(post),
-                // 미니에는 마우스를 올려 블러를 걷을 수 없으니 블러 차단도 안내 문구로 가린다.
+                // 미니에는 마우스를 올려 블러를 걷을 수 없으니 블러 차단도 안내 문구로 가린다
                 contents: post.textBlocked && !useUiStore.getState().blockView?.revealed ? BLOCKED_TEXT : post.contents ?? "",
-                // 전체 미리보기와 같은 조건으로 이미지를 가린다. 다르면 거기서 숨긴 이미지가 호버로 보인다.
+                // 전체 미리보기와 같은 조건으로 이미지를 가린다. 다르면 거기서 숨긴 이미지가 호버로 보인다
                 blockMedia: ctx.settings.blockImage && isTextPost(preData),
                 wheel: ctx.settings.tooltipWheel,
                 interactive: ctx.settings.tooltipInteraction,
@@ -67,7 +67,7 @@ export const createMini = (
 
         miniTarget = element;
         window.clearTimeout(miniTimer);
-        // 0이면 바로 띄운다. 목록을 가로지르면 행마다 요청이 나가지만, 다른 행으로 옮기면 앞 요청은 끊긴다.
+        // 0이면 바로 띄운다. 목록을 가로지르면 행마다 요청이 나가지만, 다른 행으로 옮기면 앞 요청은 끊긴다
         if (ctx.settings.tooltipDelay <= 0) void showMini(element, x, y);
         else miniTimer = window.setTimeout(() => void showMini(element, x, y), ctx.settings.tooltipDelay);
     };
@@ -80,7 +80,7 @@ export const createMini = (
     /** soon: 조작할 수 있는 미니면 커서가 카드로 옮겨 갈 틈을 두고 닫는다 (제목에서 나갈 때) */
     const onMiniLeave = (soon = false) => {
         window.clearTimeout(miniTimer);
-        // 받는 중인 본문은 끊지 않는다. 클릭해 열면 같은 요청을 이어 쓰고, 다른 글을 받을 때 끊긴다.
+        // 받는 중인 본문은 끊지 않는다. 클릭해 열면 같은 요청을 이어 쓰고, 다른 글을 받을 때 끊긴다
         miniTarget = null;
         const {mini} = usePreviewStore.getState();
         if (soon && mini?.interactive) {
@@ -89,7 +89,7 @@ export const createMini = (
         }
         keepMini();
         hoverMini();
-        // 떠 있을 때만 비운다. 제목 칸을 지날 때마다 setState하면 스토어를 구독하는 창·댓글이 모두 다시 확인한다.
+        // 떠 있을 때만 비운다. 제목 칸을 지날 때마다 setState하면 스토어를 구독하는 창·댓글이 모두 다시 확인한다
         if (mini) usePreviewStore.setState({mini: null});
     };
 

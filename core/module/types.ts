@@ -2,7 +2,7 @@ import type {LucideIcon} from "lucide-react";
 
 /**
  * 설정 묶음. 같은 SettingGroup 객체를 group으로 가진 설정들을 옵션 화면에서 첫 설정 자리에 한 칸으로 모아 보인다.
- * 값은 설정마다 따로 저장된다.
+ * 값은 설정마다 따로 저장된다
  */
 export interface SettingGroup {
     name: string;
@@ -57,7 +57,7 @@ interface PageToggleMeta {
 
 /**
  * 팝업 '현재 페이지'에 나오는 이 페이지 한정 토글. 모듈이 이 페이지에서 돌 때만 보이며, api는 setup()의 리턴값이다.
- * desc가 함수면 팝업을 열 때마다 계산한다 (가린 개수 등).
+ * desc가 함수면 팝업을 열 때마다 계산한다 (가린 개수 등)
  */
 interface PageToggle<Api = unknown> extends PageToggleMeta {
     desc: string | ((api: Api) => string);
@@ -67,7 +67,7 @@ interface PageToggle<Api = unknown> extends PageToggleMeta {
 
 /**
  * 옵션·팝업이 그리는 데 필요한 모듈 정보. features/<id>/meta.ts에 두고 index.ts가 setup 등과 합친다(defineModule({...meta, setup})).
- * 옵션·팝업은 meta.ts만 불러와, 모듈의 setup이 쓰는 HTTP 클라이언트·캐시·DOM 코드가 그 번들에 딸려 가지 않게 한다.
+ * 옵션·팝업은 meta.ts만 불러와, 모듈의 setup이 쓰는 HTTP 클라이언트·캐시·DOM 코드가 그 번들에 딸려 가지 않게 한다
  */
 export interface ModuleMeta<S extends SettingsSchema = SettingsSchema> {
     /** 아스키 id. storage 키(refresher:module:<id>:…)와 저장값의 키로 쓰인다 */
@@ -92,7 +92,7 @@ export interface ModuleMeta<S extends SettingsSchema = SettingsSchema> {
 
 /**
  * 기능 모듈. S는 설정 스키마, Api는 setup()의 리턴값으로 단축키·팝업 토글에 넘어간다.
- * 객체 리터럴에서 setup을 shortcuts·pageToggles보다 앞에 둔다. Api를 setup에서 먼저 추론해야 뒤쪽 함수의 인자 타입이 정해진다.
+ * 객체 리터럴에서 setup을 shortcuts·pageToggles보다 앞에 둔다. Api를 setup에서 먼저 추론해야 뒤쪽 함수의 인자 타입이 정해진다
  */
 export interface ModuleDefinition<S extends SettingsSchema = SettingsSchema, Api = unknown> extends ModuleMeta<S> {
     /** 모듈을 켤 때 실행. 리턴값은 shortcuts·pageToggles에 api로 전달된다 */
@@ -106,7 +106,7 @@ export interface ModuleDefinition<S extends SettingsSchema = SettingsSchema, Api
 
     /**
      * 모듈을 끌 때 실행 (DOM 정리 등). 리스너(signal)·cleanup은 이미 풀린 뒤다.
-     * 콘텐츠 스크립트 컨텍스트가 무효화될 때(stopAll)는 부르지 않는다.
+     * 콘텐츠 스크립트 컨텍스트가 무효화될 때(stopAll)는 부르지 않는다
      */
     revoke?(): void;
 

@@ -49,7 +49,7 @@ export const fetchComments = async (preData: GalleryPreData, postInfo: Pick<Post
     // 목록의 댓글 수로 쪽 수를 어림해 1쪽과 함께 받는다. 1쪽을 받은 뒤에 나머지를 요청하면 댓글이 많은 글은 그만큼(수백 ms) 늦게 뜬다.
     // 목록의 수는 삭제된 댓글을 빼고 세어 모자랄 수 있으므로, 1쪽의 쪽 나눔(viewComments(n, …))에서 마지막 쪽 번호를 읽어 남은 쪽을 마저 받는다.
     // 1쪽을 먼저 요청해야 동시 요청 수(요청 제한 모듈)에 막혀도 쪽 나눔을 먼저 받는다. 1쪽이 실패하면 어림한 쪽의 실패는 버린다.
-    // 10쪽(1000개)까지만 받는다. 더 많은 글은 드물고, 자동 갱신 때마다 전부 다시 받기 때문이다.
+    // 10쪽(1000개)까지만 받는다. 더 많은 글은 드물고, 자동 갱신 때마다 전부 다시 받기 때문이다
     const guessed = Math.min(10, Math.max(1, Math.ceil(preData.commentCount / 100)));
     const firstPage = fetchPage(1);
     const early = Promise.all(Array.from({length: guessed - 1}, (_, index) => fetchPage(index + 2)));
@@ -137,7 +137,7 @@ const isSuccess = (result: unknown): boolean => result === "success" || result =
 
 /**
  * 관리 요청. 미니 갤러리는 mini_, 나머지(일반·마이너·인물)는 minor_ 관리 API를 쓴다.
- * 필드는 공통 필드(ci_t, _GALLTYPE_) 뒤에 준 순서대로 붙는다.
+ * 필드는 공통 필드(ci_t, _GALLTYPE_) 뒤에 준 순서대로 붙는다
  */
 type ManageAction = "update_bump" | "delete_list" | "delete_comment" | "update_avoid_list" | "set_notice" | "set_recommend";
 
@@ -348,14 +348,14 @@ export const normalizeTxtcon = (value: string): string => {
         .join("\n");
 
     // 결과는 4줄×5글자와 줄바꿈 3개, 즉 23 grapheme을 넘을 수 없으니 미리 자른다.
-    // 그래야 한 글자씩 빼며 전체를 다시 나누는 아래 루프가 긴 붙여넣기에서 O(n²)가 되지 않는다.
+    // 그래야 한 글자씩 빼며 전체를 다시 나누는 아래 루프가 긴 붙여넣기에서 O(n²)가 되지 않는다
     text = graphemes(text).slice(0, (TXTCON_MAX_LINE_LEN + 1) * TXTCON_MAX_LINES).join("");
 
     // 5글자씩 나눈 줄 수가 넘치면 뒤에서부터 뺀다
     while (wrapTxtcon(text).split("\n").length > TXTCON_MAX_LINES) text = Array.from(text).slice(0, -1).join("");
 
     // 20자 제한. 코드포인트 단위로 앞에서부터 채우다가 넘치면 멈춘다.
-    // 넘치는 글자만 건너뛰고 계속하면 가운데가 빠지고, 뒤의 ZWJ·결합 문자가 엉뚱한 글자에 붙는다.
+    // 넘치는 글자만 건너뛰고 계속하면 가운데가 빠지고, 뒤의 ZWJ·결합 문자가 엉뚱한 글자에 붙는다
     let count = 0;
     let output = "";
     for (const char of text) {

@@ -109,7 +109,7 @@ const candidateKey = ({org, country, vpn}: IpCandidate): string => `${org ?? ""}
 
 /**
  * /16 대역(a*256+b, 오름차순) → 유력한 순 후보.
- * 세 출처의 값이 모두 같은 구간씩 건너뛰며 후보별 주소 수를 세고, 많은 순으로 고른다.
+ * 세 출처의 값이 모두 같은 구간씩 건너뛰며 후보별 주소 수를 세고, 많은 순으로 고른다
  */
 const buildCandidates = (asns: Range<Asn>[], countries: Range<string>[], vpns: Range<true>[], kisa: Map<number, string>): Map<number, IpCandidate[]> => {
     const atAsn = cursor(asns);

@@ -73,7 +73,7 @@ export const Empty = ({children}: { children: ReactNode }) => (
 
 /**
  * 내보낸 JSON을 붙여넣는 가져오기 다이얼로그(차단/메모/데이터 공용).
- * 열 때만 마운트하므로 닫으면 입력이 초기화되고, 가져오기에 실패해 열려 있으면 붙여넣은 텍스트가 남는다.
+ * 열 때만 마운트하므로 닫으면 입력이 초기화되고, 가져오기에 실패해 열려 있으면 붙여넣은 텍스트가 남는다
  */
 export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 넣어 주세요.", placeholder = "JSON 데이터", onClose, onSubmit}: {
     title: string;
@@ -155,7 +155,7 @@ export const ListRow = ({head, info, onEdit, onRemove}: {
 
 /**
  * 차단/메모 탭 공용 틀. 종류별 탭, 검색, 클립보드 내보내기/가져오기, 전체 삭제/추가, 빈 목록 안내, 표 머리를 그린다.
- * 줄(ListRow)은 row가 그린다.
+ * 줄(ListRow)은 row가 그린다
  */
 export const ListTabs = <T extends string, I>({
                                                   types,
@@ -196,7 +196,7 @@ export const ListTabs = <T extends string, I>({
     // 입력칸은 바로 바꾸고 목록은 뒤따라 그린다. 수천 줄을 거르고 그리는 동안 글자 입력이 막히지 않게 한다
     const needle = useDeferredValue(query).trim().toLowerCase();
     // 새 항목은 배열/객체 끝에 붙으므로 뒤집어 최신순으로 보여 준다(저장 순서는 그대로).
-    // 종류마다 한 번만 걸러 탭 배지와 표가 같이 쓴다.
+    // 종류마다 한 번만 걸러 탭 배지와 표가 같이 쓴다
     const shown = new Map(types.map((type) => [
         type,
         items(type).filter((item) => !needle || searchText(item).some((text) => text?.toLowerCase().includes(needle))).reverse()

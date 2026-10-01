@@ -13,7 +13,7 @@ interface CacheEntry {
 }
 
 // 게시글 캐시: 수명 1분, 최대 50개. 저장할 때마다 수명이 다시 1분으로 늘어난다.
-// autopurge가 없으면 만료된 항목(본문 HTML 포함)이 50개에 밀려날 때까지 메모리에 남는다.
+// autopurge가 없으면 만료된 항목(본문 HTML 포함)이 50개에 밀려날 때까지 메모리에 남는다
 const entries = new LruCache<string, CacheEntry>({max: 50, ttl: 60_000, autopurge: true});
 
 /** 글 하나를 가리키는 키. 번호는 갤러리마다 따로 매겨진다 */
@@ -48,7 +48,7 @@ export const restoreArchive = (preData: GalleryPreData, list: DcinsideComment[],
         const before = seen[comment.no];
 
         // 답글 달린 부모 댓글은 지워져도 서버가 내용을 바꿔 삭제 표시로 남긴다.
-        // 그대로 덮어쓰면 원문이 사라지므로 전에 받은 원문을 삭제 표시로 보여 준다.
+        // 그대로 덮어쓰면 원문이 사라지므로 전에 받은 원문을 삭제 표시로 보여 준다
         if (comment.is_delete !== "0" && before?.is_delete === "0") return {...before, is_delete: "1"};
 
         nextSeen[comment.no] = comment;
@@ -60,6 +60,6 @@ export const restoreArchive = (preData: GalleryPreData, list: DcinsideComment[],
     if (deleted.length === 0) return output;
 
     // 답글은 CommentList(CommentList.tsx)가 c_no로 다시 묶으므로 번호(등록)순이면 충분하다.
-    // 요청에 정렬 파라미터가 없어 서버 목록도 등록순이다.
+    // 요청에 정렬 파라미터가 없어 서버 목록도 등록순이다
     return [...output, ...deleted].sort((a, b) => Number(a.no) - Number(b.no));
 };

@@ -3,7 +3,7 @@
  *
  * storage.sync 한도: 항목당 8KB(키 + JSON 값), 전체 100KB, 쓰기 분당 120회.
  * 설정을 통째로 gzip → base64로 묶어 8KB 이하 조각(<칸>:0, <칸>:1, …)으로 나누고,
- * 조각 수와 해시를 담은 <칸> 키와 함께 set 한 번으로 쓴다. 쓰기가 실패하면 이전 백업이 그대로 남는다.
+ * 조각 수와 해시를 담은 <칸> 키와 함께 set 한 번으로 쓴다. 쓰기가 실패하면 이전 백업이 그대로 남는다
  */
 
 import {backupStorage, isBlockListKey, isModuleDataKey} from "@/core/storage/items";
@@ -45,7 +45,7 @@ export const isBackupTarget = (key: string): boolean =>
 
 /**
  * 백업·내보내기 대상. 차단 목록의 id(UUID)는 압축이 안 돼 클라우드 백업을 두 배 넘게 불리므로 뺀다.
- * 읽는 쪽(stores/blocks의 normalizeBlockList)이 없는 id를 새로 준다.
+ * 읽는 쪽(stores/blocks의 normalizeBlockList)이 없는 id를 새로 준다
  */
 export const collectLocalData = async (): Promise<Record<string, unknown>> => {
     // get(null)은 수백 KB짜리 IP·밴 DB까지 읽으니 백업할 키만 읽는다. getKeys가 없는 브라우저는 다 읽고 아래에서 거른다
@@ -102,14 +102,14 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     };
 
     // 지울 키: 이 칸에서 이번에 쓰지 않는 조각(전보다 줄어든 몫). 다른 칸은 건드리지 않는다.
-    // v5 방식 백업은 수동 칸으로 복원되므로 수동 칸을 쓸 때만 치운다.
+    // v5 방식 백업은 수동 칸으로 복원되므로 수동 칸을 쓸 때만 치운다
     const stale = Object.keys(all).filter((key) => !(key in items) && (isSlotKey(slot, key) || (slot === "manual" && isLegacyKey(key))));
 
     try {
         await browser.storage.sync.set(items);
     } catch (e) {
         // v5 방식 백업이 공간을 차지해 한도를 넘었을 수 있으니 그것만 치우고 한 번 더 쓴다.
-        // 이 칸의 남는 조각은 성공한 뒤에 지운다. 다시 실패하면 이전 메타가 여전히 그 조각을 가리키기 때문이다.
+        // 이 칸의 남는 조각은 성공한 뒤에 지운다. 다시 실패하면 이전 메타가 여전히 그 조각을 가리키기 때문이다
         const legacy = stale.filter(isLegacyKey);
         if (legacy.length === 0) {
             // 자동 칸은 v5 방식 백업을 치우지 않는다 (수동 칸으로 복원되는 데이터다). 그것이 원인일 수 있으니 해결 방법을 알린다

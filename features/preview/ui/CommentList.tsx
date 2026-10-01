@@ -48,13 +48,13 @@ export const CommentList = () => {
     const revealed = useUiStore((s) => s.blockView?.revealed === true);
 
     // 숨김 차단과 접힌 같은 댓글은 '가린 내용 보기' 동안만 (흐리게) 그린다. 블러 차단은 그려 두고 overlay.scss가 흐린다.
-    // 트리 선과 답글 수도 그리는 댓글만 센다.
+    // 트리 선과 답글 수도 그리는 댓글만 센다
     const shown = new Set(revealed ? comments : comments.filter((comment) => comment.blocked !== "hide" && comment.duplicates !== 0));
     const parents = threadParents(comments);
-    // 답글을 스레드 첫 댓글 번호(c_no)로 한 번에 묶는다. 부모마다 전체를 훑으면 O(n²)이다.
+    // 답글을 스레드 첫 댓글 번호(c_no)로 한 번에 묶는다. 부모마다 전체를 훑으면 O(n²)이다
     const repliesOf = Map.groupBy(comments.filter((comment) => comment.depth === 1 && shown.has(comment)), (comment) => comment.c_no);
     // 문서를 querySelector로 훑으므로 댓글마다가 아니라 여기서 한 번 잰다.
-    // 모듈 전역에 두면 페이지를 다 읽기 전에 잰 false가 굳는다.
+    // 모듈 전역에 두면 페이지를 다 읽기 전에 잰 false가 굳는다
     const isAdmin = isGalleryManager();
 
     return (
@@ -62,7 +62,7 @@ export const CommentList = () => {
             {parents.map((parent) => {
                 const replies = repliesOf.get(parent.no) ?? [];
 
-                // 부모를 숨겼으면 답글을 들여쓰지 않고 그 자리에 그린다. 이어 줄 트리 선이 없다.
+                // 부모를 숨겼으면 답글을 들여쓰지 않고 그 자리에 그린다. 이어 줄 트리 선이 없다
                 if (!shown.has(parent)) {
                     return (
                         <Fragment key={parent.no}>

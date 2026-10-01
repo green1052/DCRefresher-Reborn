@@ -30,7 +30,7 @@ import {WriteComment} from "./WriteComment";
 
 /**
  * 목록에서 앞(-1)/뒤(1) 글로 넘어간다. PageUp/Down과 스크롤 끝 넘기기가 같이 쓴다.
- * 방향을 넘겨 컨트롤러가 그 방향 다음 글을 미리 받게 한다.
+ * 방향을 넘겨 컨트롤러가 그 방향 다음 글을 미리 받게 한다
  */
 const goToAdjacent = (dir: number): void => {
     const st = usePreviewStore.getState();
@@ -100,11 +100,11 @@ export const Frame = () => {
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
     const contentsBox = useRef<HTMLDivElement>(null);
-    // 숨김 차단된 본문은 안내 문구로 바꾸고, '가린 내용 보기' 동안만 원문을 흐리게 보인다 (overlay.scss의 data-blocked).
+    // 숨김 차단된 본문은 안내 문구로 바꾸고, '가린 내용 보기' 동안만 원문을 흐리게 보인다 (overlay.scss의 data-blocked)
     const hideText = post?.textBlocked === "hide" && !blockView?.revealed;
 
     // 본문 칸은 댓글만 보기·오류·닫힘일 때 빠졌다가 다시 붙고, 글마다 새로 마운트되므로 그때마다 동영상 크기를 다시 맞춘다.
-    // 같은 글을 캐시로 다시 열면 visible 말고는 값이 모두 같다. hideText가 풀리면 동영상이 새로 들어온다.
+    // 같은 글을 캐시로 다시 열면 visible 말고는 값이 모두 같다. hideText가 풀리면 동영상이 새로 들어온다
     useEffect(() => (contentsBox.current ? fitMovies(contentsBox.current) : undefined), [visible, contents, commentsOnly, error, postKey, hideText]);
     // 본문에 든 차단 디시콘은 페이지 글 보기처럼 그 디시콘만 가린다. 차단 목록이나 설정이 바뀌면 다시 본다
     useEffect(() => {
@@ -118,7 +118,7 @@ export const Frame = () => {
     // 오버레이(refresher-root)는 남긴다. 버블·토스트·관리 패널이 거기 있다. body에 직접 붙인 확장 UI(스텔스 버튼 등)도 data-refresher-ui로 남긴다.
     // 키보드로 열었으면(연 요소에 포커스 링이 보이면) 닫을 때 그 요소(목록의 제목 링크 등)로 포커스를 돌려준다. 글을 넘길 때는 visible이 그대로라 처음 연 요소가 남는다.
     // 마우스로 연 창까지 돌려주면 Esc로 닫을 때 제목 링크에 포커스 링이 생겨 새로고침 모듈이 자동 갱신을 멈춘다.
-    // 연 요소는 스크롤 칸에 포커스를 주는 아래 효과보다 먼저 읽어야 해서 이 효과를 앞에 둔다.
+    // 연 요소는 스크롤 칸에 포커스를 주는 아래 효과보다 먼저 읽어야 해서 이 효과를 앞에 둔다
     useEffect(() => {
         if (!visible) return;
 
@@ -137,7 +137,7 @@ export const Frame = () => {
         };
     }, [visible]);
 
-    // 열거나 글을 바꾸면 스크롤 칸에 포커스를 줘 방향키·스페이스로 바로 스크롤되게 한다.
+    // 열거나 글을 바꾸면 스크롤 칸에 포커스를 줘 방향키·스페이스로 바로 스크롤되게 한다
     useEffect(() => {
         if (visible) scroller.current?.focus({preventScroll: true});
     }, [visible, postKey]);
@@ -155,7 +155,7 @@ export const Frame = () => {
         if (!visible) return;
 
         const onKey = (ev: KeyboardEvent): void => {
-            // Ctrl+PageUp/Down(탭 전환) 같은 조합키는 브라우저에 맡긴다.
+            // Ctrl+PageUp/Down(탭 전환) 같은 조합키는 브라우저에 맡긴다
             if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.shiftKey || isTyping(ev)) return;
             // 디시콘 정보 창이 떠 있으면 그 창의 목록을 넘긴다. 옆 글로 넘어가면 창이 닫힌다
             if (usePreviewStore.getState().dcconInfo) return;
@@ -176,14 +176,14 @@ export const Frame = () => {
     }, [visible]);
 
     // 스크롤 끝에서 새로 한 번 더 굴리면 이전/다음 글로 넘어간다. 끝에 닿은 그 동작으로 넘기면 트랙패드 관성에 글이 연달아 넘어간다.
-    // 끝에 닿으면 v5처럼 안내를 띄우고, 넘기거나 닫았다 열면 지운다 (hint.key가 지금 글일 때만 보인다).
+    // 끝에 닿으면 v5처럼 안내를 띄우고, 넘기거나 닫았다 열면 지운다 (hint.key가 지금 글일 때만 보인다)
     const wheel = useRef({last: 0, armed: 0, key: "", settling: false});
     const [hint, setHint] = useState({dir: 0, key: ""});
     const hintDir = visible && !fading && hint.key === postKey ? hint.dir : 0;
 
     const skipOnWheel = (dir: number, timeStamp: number, atEdge: boolean): void => {
         const state = wheel.current;
-        // 앞 글에서 끝에 닿아 둔 상태는 버린다.
+        // 앞 글에서 끝에 닿아 둔 상태는 버린다
         if (state.key !== postKey) {
             state.key = postKey;
             state.armed = 0;
@@ -191,7 +191,7 @@ export const Frame = () => {
         const newGesture = timeStamp - state.last > WHEEL_GESTURE_GAP;
         state.last = timeStamp;
 
-        // 넘기게 한 동작(관성 포함)이 새 글에서 이어지면 무시한다. 새 글은 맨 위에서 열려, 위로 넘기면 곧바로 끝에 닿은 것으로 잡힌다.
+        // 넘기게 한 동작(관성 포함)이 새 글에서 이어지면 무시한다. 새 글은 맨 위에서 열려, 위로 넘기면 곧바로 끝에 닿은 것으로 잡힌다
         if (state.settling) {
             if (!newGesture) return;
             state.settling = false;
@@ -202,7 +202,7 @@ export const Frame = () => {
             state.settling = true;
             goToAdjacent(dir);
         }
-        // 끝에 닿은 방향을 기억해 두고 다음 동작을 기다린다.
+        // 끝에 닿은 방향을 기억해 두고 다음 동작을 기다린다
         else if (atEdge) armed = dir;
 
         if (armed !== state.armed) setHint({dir: armed, key: postKey});
@@ -214,11 +214,11 @@ export const Frame = () => {
 
         const box = ev.currentTarget;
         const target = ev.target;
-        // 포털로 뜬 창(디시콘 등)의 휠도 React 트리를 타고 여기로 오므로, 스크롤 칸 DOM 안에서 난 것만 본다.
+        // 포털로 뜬 창(디시콘 등)의 휠도 React 트리를 타고 여기로 오므로, 스크롤 칸 DOM 안에서 난 것만 본다
         if (!(target instanceof Element) || !box.contains(target)) return;
 
         const dir = ev.deltaY > 0 ? 1 : -1;
-        // 안쪽 스크롤 칸(댓글 입력칸 등)이 아직 굴러가면 그쪽 스크롤이라 끝으로 치지 않는다.
+        // 안쪽 스크롤 칸(댓글 입력칸 등)이 아직 굴러가면 그쪽 스크롤이라 끝으로 치지 않는다
         let inner = false;
         for (let el: Element | null = target; el && el !== box; el = el.parentElement) {
             if (el.scrollHeight > el.clientHeight && /auto|scroll/.test(getComputedStyle(el).overflowY) && canScroll(el, dir)) {
@@ -234,7 +234,7 @@ export const Frame = () => {
     const busy = !error && !post;
 
     return (
-        // Themes Dialog는 항상 modal이라 프리미티브를 쓴다. 스크롤 잠금과 PageUp/Down 이동은 직접 처리한다.
+        // Themes Dialog는 항상 modal이라 프리미티브를 쓴다. 스크롤 잠금과 PageUp/Down 이동은 직접 처리한다
         <Dialog.Root
             open
             modal={false}
@@ -255,11 +255,11 @@ export const Frame = () => {
                     // 비모달이지만 연 동안 뒤 페이지를 inert로 막으므로 보조 기술에는 모달로 알린다
                     aria-modal
                     onOpenAutoFocus={(ev) => ev.preventDefault()}
-                    // 바깥 클릭 닫기는 아래 click이 맡는다. 위에 뜬 팝업·버블을 눌러도 닫히지 않게 막는다.
+                    // 바깥 클릭 닫기는 아래 click이 맡는다. 위에 뜬 팝업·버블을 눌러도 닫히지 않게 막는다
                     onInteractOutside={(ev) => ev.preventDefault()}
                     onWheel={onWheel}
                     // 창 바깥을 누르면 닫는다. pointerdown에서 닫으면 칸이 곧바로 사라져 이어지는 click/contextmenu가 아래 목록에 떨어진다
-                    // (우클릭으로 닫으면 다른 글 미리보기가 열린다). 그래서 click/contextmenu에서 닫는다.
+                    // (우클릭으로 닫으면 다른 글 미리보기가 열린다). 그래서 click/contextmenu에서 닫는다
                     onPointerDown={(ev) => (pressedOutside.current = ev.target === ev.currentTarget)}
                     // &&=는 React Compiler가 지원하지 않아 창 전체가 컴파일되지 않는다
                     onPointerUp={(ev) => (pressedOutside.current = pressedOutside.current && ev.target === ev.currentTarget)}
@@ -277,7 +277,7 @@ export const Frame = () => {
                     data-admin={adminVisible || undefined}
                     data-blur-reveal={blockView?.blurReveal || undefined}
                     data-block-revealed={blockView?.revealed || undefined}
-                    // 설정 너비가 기준이고, overlay.scss가 화면 폭·관리 패널에 맞춰 줄인다.
+                    // 설정 너비가 기준이고, overlay.scss가 화면 폭·관리 패널에 맞춰 줄인다
                     style={{"--refresher-frame-width": `${frameWidth}px`} as CSSProperties}
                 >
                     {/* 글마다 새로 마운트한다. 안 그러면 캐시 hit일 때 한 번에 렌더돼 쓰던 댓글이 다음 글로 넘어간다 */}
@@ -331,7 +331,7 @@ export const Frame = () => {
                                     className={"refresher-html refresher-preview-contents" + (imageBlocked ? " refresher-preview-block-media" : "")}
                                     data-blocked={hideText ? undefined : post?.textBlocked}
                                     onClick={(ev) => {
-                                        // 디시콘을 눌렀으면 정보 팝업을 열고 더 이상의 처리를 막는다.
+                                        // 디시콘을 눌렀으면 정보 팝업을 열고 더 이상의 처리를 막는다
                                         if (openDcconInfo(ev)) return;
 
                                         // 이미지를 누르면 디시처럼 원본 보기를 새 탭으로 연다. 주소는 parser.ts가 옮겨 둔 imgPop 주소이고 디시 주소만 연다
@@ -348,7 +348,7 @@ export const Frame = () => {
                                         ev.preventDefault();
                                         usePreviewStore.setState({imageBlocked: false});
                                         // 관리자가 가린 이미지는 디시처럼 누른 버튼 옆 것만 드러낸다.
-                                        // parser.ts는 가린 이미지의 data-original을 src로 옮기지 않으므로 여기서 옮긴다.
+                                        // parser.ts는 가린 이미지의 data-original을 src로 옮기지 않으므로 여기서 옮긴다
                                         for (const media of button.parentElement?.querySelectorAll<HTMLElement>(":scope > [data-block], :scope > .refresher-imgnum > [data-block]") ?? []) {
                                             if (media instanceof HTMLImageElement && media.dataset.original) media.src = media.dataset.original;
                                             media.removeAttribute("data-block");

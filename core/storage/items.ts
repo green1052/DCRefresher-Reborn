@@ -48,7 +48,7 @@ export const DEFAULT_DETECT_MODE: Record<BlockType, DetectMode> = {
  * defineItem은 만드는 순간 저장소를 한 번 읽는다 (@wxt-dev/storage의 getOrInitValue). 이 파일은 콘텐츠 스크립트·배경·옵션·팝업이
  * 모두 불러오므로, 모듈 최상위에서 만들면 디시 페이지마다·서비스 워커가 깰 때마다 쓰지도 않는 키를 십여 번 읽는다.
  * 그래서 항목은 처음 쓸 때 만들어 재사용한다. 읽기만 하는 곳(콘텐츠 스크립트의 스토어·레지스트리)은 항목을 만들지 않고
- * 키로 storage.getItems·storage.watch를 써서 한 번의 storage.local.get으로 여러 키를 읽는다.
+ * 키로 storage.getItems·storage.watch를 써서 한 번의 storage.local.get으로 여러 키를 읽는다
  */
 const lazyItem = <T>(key: StorageItemKey, fallback: T): (() => WxtStorageItem<T, {}>) => {
     let item: WxtStorageItem<T, {}> | undefined;
@@ -112,7 +112,7 @@ export const isModuleDataKey = (key: string): boolean => /^refresher:module:.+:d
 export const isBlockListKey = (key: string): boolean => /^refresher:block:[A-Z]+$/.test(key);
 
 /**
- * IP/밴 DB는 필요한 것만 읽도록 세 키로 나눈다: 갱신 확인은 meta, 페이지는 ip, 밴은 쓸 때만 ban (ip·ban은 각각 수백 KB).
+ * IP/밴 DB는 필요한 것만 읽도록 세 키로 나눈다: 갱신 확인은 meta, 페이지는 ip, 밴은 쓸 때만 ban (ip·ban은 각각 수백 KB)
  */
 const dbMeta = lazyItem<DatabaseMeta>("local:refresher:db:meta", {version: "", lastUpdate: 0});
 export const dbStorage = {
@@ -125,7 +125,7 @@ export const dbStorage = {
  * ip·ban 키. defineItem은 만드는 순간 값을 한 번 읽으므로, 여기서 만들면 이 파일을 불러오는 모든 페이지·서비스 워커가
  * 쓰지도 않는 수백 KB를 읽는다. 쓰는 곳(core/database)에서 storage.getItem·watch로 다룬다.
  * 값은 CompactIpData(core/ipdb)·BanList의 JSON 문자열이고, 없으면 ""다. ip는 서버(ip.json)가 준 문자열 그대로다.
- * 객체로 두면 값 약 10만 개짜리 객체 그래프를 읽을 때마다 메인 스레드가 10ms 넘게 막힌다.
+ * 객체로 두면 값 약 10만 개짜리 객체 그래프를 읽을 때마다 메인 스레드가 10ms 넘게 막힌다
  */
 export const DB_KEYS = {
     ip: "local:refresher:db:ip",

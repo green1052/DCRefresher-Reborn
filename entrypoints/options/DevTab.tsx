@@ -175,7 +175,7 @@ const DatabaseSection = () => {
     const [clearing, setClearing] = useState(false);
     const fileInput = useRef<HTMLInputElement>(null);
     // 조회 테스트는 콘텐츠 스크립트와 같은 경로(ipInfoOf)를 쓴다. 구독이 DB 읽기를 시작한다.
-    // DB를 읽을 때마다 올라가는 이 번호를 식에 넣어야 React Compiler가 다시 조회한다.
+    // DB를 읽을 때마다 올라가는 이 번호를 식에 넣어야 React Compiler가 다시 조회한다
     const dbVersion = useSyncExternalStore(subscribeDatabase, databaseVersion);
 
     const loadFile = async (file: File): Promise<void> => {

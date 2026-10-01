@@ -70,7 +70,7 @@ export const http: KyInstance = ky.create({
     timeout: false,
     fetch: limitedFetch,
     // jitter: 재시도가 한꺼번에 몰리지 않게 시점을 흩는다.
-    // maxRetryAfter: Retry-After가 몇 분이어도 10초까지만 기다린다. 더 기다리면 화면이 멈춘 것처럼 보인다.
+    // maxRetryAfter: Retry-After가 몇 분이어도 10초까지만 기다린다. 더 기다리면 화면이 멈춘 것처럼 보인다
     retry: {jitter: true, maxRetryAfter: 10_000},
     hooks: {afterResponse: [detectBlocked]}
 });

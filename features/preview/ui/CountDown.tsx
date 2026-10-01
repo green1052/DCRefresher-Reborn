@@ -7,7 +7,7 @@ import {useTick} from "./TimeStamp";
 import {parseDate, usePreviewStore} from "./previewStore";
 
 const Remaining = ({expire}: { expire: Date }) => {
-    // 1시간 미만이면 초까지 보여 주므로 1초마다 다시 그린다.
+    // 1시간 미만이면 초까지 보여 주므로 1초마다 다시 그린다
     useTick(1000);
 
     const diff = expire.getTime() - Date.now();
@@ -25,7 +25,7 @@ const Remaining = ({expire}: { expire: Date }) => {
     );
 };
 
-// 만료 시각이 있는 글에서만 Remaining을 그린다. 대부분의 글엔 없으니 1초 타이머를 돌리지 않는다.
+// 만료 시각이 있는 글에서만 Remaining을 그린다. 대부분의 글엔 없으니 1초 타이머를 돌리지 않는다
 export const CountDown = () => {
     const expire = usePreviewStore((s) => s.post?.expire);
     const date = expire ? parseDate(expire) : undefined;

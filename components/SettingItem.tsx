@@ -51,7 +51,7 @@ const formatDefault = (schema: SettingSchema): string => {
 
 /**
  * 저장 전 편집값. 저장값이 바뀌면(되돌리기·다른 탭) 따라간다.
- * effect가 아니라 렌더 중에 비교해야 옛 값이 한 번 그려지지 않는다.
+ * effect가 아니라 렌더 중에 비교해야 옛 값이 한 번 그려지지 않는다
  */
 const useDraft = <T, >(value: T): [T, (next: T) => void] => {
     const [draft, setDraft] = useState(value);
@@ -111,7 +111,7 @@ const TextControl = ({schema, value, descId, onChange}: NarrowProps<"text">) => 
 
 /**
  * 단축키 하나. 버튼을 누른 뒤 원하는 키를 치면 바뀐다(영문·숫자만, 다른 키는 취소).
- * 다른 단축키가 쓰는 키면 알려 주고 계속 기다린다.
+ * 다른 단축키가 쓰는 키면 알려 주고 계속 기다린다
  */
 const KeyControl = ({schema, value, takenKeys = [], descId, onChange}: NarrowProps<"key">) => {
     const [listening, setListening] = useState(false);

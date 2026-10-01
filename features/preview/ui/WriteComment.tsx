@@ -83,7 +83,7 @@ const sendingKeys = new Set<string>();
 export const WriteComment = () => {
     const reply = usePreviewStore((s) => s.reply);
     // 폼은 글마다 새로 마운트된다 (Frame의 key). 마운트할 때 이 글에서 쓰던 댓글이 있으면 되살린다.
-    // 보내는 중인 댓글은 되살리지 않는다. 올라간 댓글이 입력칸에 남아 한 번 더 보내게 된다.
+    // 보내는 중인 댓글은 되살리지 않는다. 올라간 댓글이 입력칸에 남아 한 번 더 보내게 된다
     const [initialText] = useState(() => {
         const preData = usePreviewStore.getState().preData;
         const key = preData ? postKey(preData) : "";
@@ -98,7 +98,7 @@ export const WriteComment = () => {
     const [password, setPassword] = useState(() => saved.pw || randomPassword());
     const pwSaved = Boolean(saved.pw);
     // 저장된 비밀번호는 입력칸에 넣지 않는다. 오버레이 섀도 루트가 open이라 페이지 스크립트가 값을 읽을 수 있다.
-    // 사용자가 직접 고친 뒤에만 입력칸에 값이 보인다.
+    // 사용자가 직접 고친 뒤에만 입력칸에 값이 보인다
     const [passwordEdited, setPasswordEdited] = useState(false);
     // 고른 디시콘(더블콘이면 둘)과 대왕콘 여부. 같이 고르고 같이 비운다
     const [{list: dccons, big: bigDccon}, setDccon] = useState(NO_DCCON);
@@ -184,7 +184,7 @@ export const WriteComment = () => {
                     );
 
             // 처음엔 토큰 없이 보내고, 'false||captcha||v3'가 오면 reCAPTCHA v3 토큰을 붙여 한 번 더 보낸다
-            // (디시 comment.js·dccon.js·txtcon.js와 같음).
+            // (디시 comment.js·dccon.js·txtcon.js와 같음)
             let response = await send();
             if (response.message === "captcha" && response.detail === "v3") {
                 const token = await sendMessage("refresher:grecaptchaToken", txtcon || useDccon ? "insert_icon" : "comment_submit").catch(() => undefined);
@@ -200,13 +200,13 @@ export const WriteComment = () => {
                 }
                 setDccon(NO_DCCON);
                 setTxtcon(false);
-                // 디시처럼 쓴 닉네임·비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다.
+                // 디시처럼 쓴 닉네임·비밀번호를 기억한다. 만든 비밀번호도 저장해야 나중에 자기 댓글을 지울 수 있다
                 if (!login) saveNonmember(nick, password);
-                // 그새 다른 글로 넘어갔으면 답글 대상은 그 글 것이라 건드리지 않는다.
+                // 그새 다른 글로 넘어갔으면 답글 대상은 그 글 것이라 건드리지 않는다
                 if (usePreviewStore.getState().signalId === signal) usePreviewStore.setState({reply: NO_REPLY});
                 refreshIfOpen();
             } else if (response.message === "captcha") {
-                // v2 체크박스를 요구하거나 v3 재전송도 막히면 원문 페이지에서만 풀 수 있다.
+                // v2 체크박스를 요구하거나 v3 재전송도 막히면 원문 페이지에서만 풀 수 있다
                 useUiStore.getState().showToast(
                     "자동입력 방지 확인이 필요합니다. 원문에서 작성해 주세요.",
                     "warning",
@@ -217,7 +217,7 @@ export const WriteComment = () => {
                 useUiStore.getState().showToast((response.result === "false" ? resultMessage(response) : FAIL_MESSAGES[response.result]) || "댓글을 작성하지 못했습니다.", "error");
             }
         } catch (e) {
-            // 시간 초과 등으로 끊겨도 서버는 댓글을 올렸을 수 있다. 목록을 새로 받아 올라간 댓글이 보이게 해 다시 보내지 않게 한다. 입력한 글은 둔다.
+            // 시간 초과 등으로 끊겨도 서버는 댓글을 올렸을 수 있다. 목록을 새로 받아 올라간 댓글이 보이게 해 다시 보내지 않게 한다. 입력한 글은 둔다
             refreshIfOpen();
             const timeout = isTimeoutError(e);
             useUiStore.getState().showToast(
@@ -232,7 +232,7 @@ export const WriteComment = () => {
 
     /**
      * 글자콘 입력 제한을 적용한다. 값이 바뀔 때만 다시 써서 커서가 튀지 않게 한다.
-     * 한글 조합 중엔 부르지 않고 조합이 끝난 뒤 부른다 (디시 txtcon.js와 같음).
+     * 한글 조합 중엔 부르지 않고 조합이 끝난 뒤 부른다 (디시 txtcon.js와 같음)
      */
     const applyTxtcon = (): void => {
         const element = textarea.current;
@@ -333,7 +333,7 @@ export const WriteComment = () => {
                                 aria-label="글자콘"
                                 aria-pressed={txtcon}
                                 onClick={() => {
-                                    // 글자콘과 디시콘은 같이 쓸 수 없다.
+                                    // 글자콘과 디시콘은 같이 쓸 수 없다
                                     setDccon(NO_DCCON);
 
                                     if (txtcon) {
@@ -341,7 +341,7 @@ export const WriteComment = () => {
                                         return;
                                     }
 
-                                    // 켜면서 잘리는 원문을 기억해 두었다가, 손대지 않고 끄면 되돌린다.
+                                    // 켜면서 잘리는 원문을 기억해 두었다가, 손대지 않고 끄면 되돌린다
                                     beforeTxtcon.current = textarea.current?.value ?? null;
                                     applyTxtcon();
                                     setTxtcon(true);

@@ -11,7 +11,7 @@ import {hoverMini, MINI_HEIGHT, MINI_WIDTH, usePreviewStore} from "./previewStor
  * 미니 미리보기 (툴팁). 커서를 따라다니며 보기만 한다.
  * 카드는 포인터를 통과시킨다. 포인터를 받으면 카드에 올라서는 순간 제목 칸의 mouseleave로 닫히고,
  * 통과시키면 아래 제목 클릭이 그대로 미리보기를 연다.
- * 상호작용(tooltipInteraction)을 켜면 카드가 포인터를 받는다. 커서를 따라다니지 않고, 제목과 카드 사이를 옮겨 가는 동안은 닫지 않는다.
+ * 상호작용(tooltipInteraction)을 켜면 카드가 포인터를 받는다. 커서를 따라다니지 않고, 제목과 카드 사이를 옮겨 가는 동안은 닫지 않는다
  */
 export const Mini = () => {
     const mini = usePreviewStore((s) => s.mini);
@@ -19,7 +19,7 @@ export const Mini = () => {
     const contents = useRef<HTMLDivElement>(null);
 
     // 포인터를 통과시키니 휠도 카드에 닿지 않는다. 설정(tooltipWheel)을 켰으면 떠 있는 동안(커서가 제목 위일 때) 굴리면 v5처럼 내용을 스크롤하고,
-    // 더 굴러갈 데가 없으면(끝이거나 짧은 글) 막지 않아 페이지가 스크롤된다.
+    // 더 굴러갈 데가 없으면(끝이거나 짧은 글) 막지 않아 페이지가 스크롤된다
     useEffect(() => {
         if (!wheel) return;
 

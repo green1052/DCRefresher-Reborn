@@ -25,7 +25,7 @@ export const mountOverlayWhenNeeded = (ctx: ContentScriptContext): void => {
             position: "inline",
             anchor: "body",
             // WXT 기본 리셋(:host{all:initial !important})은 pointer-events까지 되돌려 페이지 클릭을 막는다.
-            // 그래서 끄고 overlay.scss의 :host 리셋을 쓴다.
+            // 그래서 끄고 overlay.scss의 :host 리셋을 쓴다
             inheritStyles: true,
             // index.tsx가 불러온 CSS는 WXT가 content-scripts/content.css로 묶어 두었다가 여기서 shadow에 넣는다 (:root → :host 포함)
             onMount(container) {
@@ -54,7 +54,7 @@ export const mountOverlayWhenNeeded = (ctx: ContentScriptContext): void => {
 
     // 대부분의 페이지는 오버레이를 끝내 띄우지 않으므로 CSS 처리·shadow 삽입·첫 렌더(수십 ms)를 처음 필요할 때로 미룬다.
     // 오버레이에 새 UI를 추가하면 그 표시 조건을 여기(미리보기 UI는 previewStore의 needsPreviewOverlay)에도 넣어야 한다. 빠지면 그 UI는 뜨지 않는다.
-    // 매 페이지 setup이 채우는 값(badgeColors·ratios·blockView·selected·훅 등)은 넣지 않는다. 넣으면 항상 마운트된다.
+    // 매 페이지 setup이 채우는 값(badgeColors·ratios·blockView·selected·훅 등)은 넣지 않는다. 넣으면 항상 마운트된다
     const needsOverlay = (): boolean => {
         const {toast, bubble, memo} = useUiStore.getState();
         return Boolean(toast || bubble || memo) || needsPreviewOverlay(usePreviewStore.getState());

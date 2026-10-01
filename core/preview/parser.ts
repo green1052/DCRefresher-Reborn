@@ -2,7 +2,7 @@ import type {CommentForm, PostInfo} from "./types";
 
 /**
  * 지연 로딩 이미지의 data-original을 src로 옮긴다.
- * 관리자가 가린 이미지(data-block)는 가림 버튼(.btn_img_block)을 누를 때 넣는다 (Frame.tsx).
+ * 관리자가 가린 이미지(data-block)는 가림 버튼(.btn_img_block)을 누를 때 넣는다 (Frame.tsx)
  */
 const restoreImageSources = (dom: Document): void => {
     for (const image of dom.querySelectorAll<HTMLImageElement>("img[data-original]:not([data-block])")) {
@@ -80,7 +80,7 @@ export const SECRET_ERROR = "secret";
 /**
  * 성인 인증 안내 페이지인지. 미인증이면 본문 대신 /error/adult/로 보내는 스크립트가 오고,
  * 리다이렉트를 따라가면 인증 페이지(.adult_certify)가 온다.
- * 본문이 없을 때만 부른다. 본문에 그 주소가 적혀 있어도 오인하지 않게.
+ * 본문이 없을 때만 부른다. 본문에 그 주소가 적혀 있어도 오인하지 않게
  */
 const isAdultPage = (html: string, dom: Document): boolean => html.includes("/error/adult") || dom.querySelector(".adult_certify") !== null;
 

@@ -19,7 +19,7 @@ const GALLOG_DCCON = /dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g;
 
 /**
  * 디시콘 2개짜리 댓글은 두 태그가 `…"img class="written_dccon`처럼 `><` 없이 붙어 온다.
- * 그대로 정화하면 두 번째 태그가 첫 태그의 속성으로 읽히므로 먼저 떼어 놓는다.
+ * 그대로 정화하면 두 번째 태그가 첫 태그의 속성으로 읽히므로 먼저 떼어 놓는다
  */
 const splitDccons = (memo: string): string => memo.replace(/"\s*(img|video) class="written_dccon/g, "\"><$1 class=\"written_dccon");
 
@@ -36,7 +36,7 @@ const extractVoice = (memo: string): { memo: string; voice?: ProcessedComment["v
     const src = iframe ? (raw.match(/src="([^"]+)"/)?.[1] ?? "") : `https://vr.dcinside.com/${raw}`;
 
     // 음성댓글 호스트가 아니면 임의 iframe일 수 있어 음성은 버리고 글만 살린다.
-    // memo를 그대로 두면 구분자와 iframe 태그가 글자로 보이므로 display만 돌려준다.
+    // memo를 그대로 두면 구분자와 iframe 태그가 글자로 보이므로 display만 돌려준다
     if (!src.startsWith("https://vr.dcinside.com/")) return {memo: display};
 
     return {memo: display, voice: {src, iframe}};
@@ -44,11 +44,11 @@ const extractVoice = (memo: string): { memo: string; voice?: ProcessedComment["v
 
 /**
  * 받은 댓글 목록을 정리하고 삭제 댓글 보존(restoreArchive)을 적용한다.
- * 보존은 받은 기록을 쌓고 캐시 수명을 늘리므로 받을 때마다 한 번만 부른다.
+ * 보존은 받은 기록을 쌓고 캐시 수명을 늘리므로 받을 때마다 한 번만 부른다
  */
 export const prepareComments = (raw: DcinsideComment[], preData: GalleryPreData, archive: boolean, truncated = false): DcinsideComment[] => {
     // 댓글돌이(COMMENT_BOY)는 보존 기록에 들어가지 않게 restoreArchive보다 먼저 뺀다.
-    // 다른 삭제 코드('2' 등)나 del_yn "Y"로 온 댓글은 is_delete "1"로 맞춘다. 답글·삭제 버튼 숨김과 같은 댓글 접기 제외가 "1"로 판단한다.
+    // 다른 삭제 코드('2' 등)나 del_yn "Y"로 온 댓글은 is_delete "1"로 맞춘다. 답글·삭제 버튼 숨김과 같은 댓글 접기 제외가 "1"로 판단한다
     const filtered = raw
         .filter((comment) => comment.nicktype !== "COMMENT_BOY")
         .map((comment) => ({...comment, is_delete: comment.is_delete !== "0" || comment.del_yn === "Y" ? "1" : "0"}));
@@ -58,7 +58,7 @@ export const prepareComments = (raw: DcinsideComment[], preData: GalleryPreData,
 
 /**
  * 정화 → 차단 표시 → 같은 댓글 묶기. 차단 목록이 바뀌면 같은 prepareComments 결과로 다시 부르므로
- * 입력(캐시된 원본)은 고치지 않고 복사본을 가공한다.
+ * 입력(캐시된 원본)은 고치지 않고 복사본을 가공한다
  */
 export const processComments = (source: DcinsideComment[], preData: GalleryPreData): ProcessedComment[] => {
     const list: ProcessedComment[] = source.map((comment) => ({...comment}));

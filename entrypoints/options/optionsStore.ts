@@ -29,7 +29,7 @@ const writeDevMode = (on: boolean): void => {
 interface OptionsState {
     /**
      * 개발자 탭 표시 여부. 개발 빌드이거나 정보 탭의 버전을 5번 연달아 누르면 켜진다.
-     * 설정 백업에 섞이지 않게 옵션 페이지 localStorage에 기억한다.
+     * 설정 백업에 섞이지 않게 옵션 페이지 localStorage에 기억한다
      */
     devMode: boolean;
     /** 디시콘 비(로고 이스터에그). 누를 때마다 새 값(Date.now())이 들어가 비를 다시 마운트한다. 0이면 없다 */

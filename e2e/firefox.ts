@@ -2,7 +2,7 @@ import net from "node:net";
 
 /**
  * Playwright의 파이어폭스는 크로미엄처럼 실행 인자로 확장을 올릴 수 없다. 그래서 web-ext처럼
- * 파이어폭스의 원격 디버깅 서버(-start-debugger-server)에 붙어 임시 부가 기능으로 설치한다 (Remote Debugging Protocol).
+ * 파이어폭스의 원격 디버깅 서버(-start-debugger-server)에 붙어 임시 부가 기능으로 설치한다 (Remote Debugging Protocol)
  */
 
 /** 확장 내부 UUID. 고정해 두면 moz-extension:// 주소를 미리 안다 (extensions.webextensions.uuids) */

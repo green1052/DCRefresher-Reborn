@@ -126,7 +126,7 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
     const dbVersion = useSyncExternalStore(subscribeDatabase, databaseVersion);
 
     // Popover는 스크롤을 따라가지 않으므로 스크롤하면 닫는다.
-    // scroll 이벤트는 shadow root 밖으로 나가지 않으므로 미리보기 안의 스크롤은 루트에서 잡는다.
+    // scroll 이벤트는 shadow root 밖으로 나가지 않으므로 미리보기 안의 스크롤은 루트에서 잡는다
     useEffect(() => {
         const onScroll = (): void => useUiStore.getState().closeBubble();
         const controller = new AbortController();

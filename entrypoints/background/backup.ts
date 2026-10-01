@@ -19,7 +19,7 @@ export const startAutoBackup = (): void => {
     });
 
     // 알람은 브라우저를 끄거나(파이어폭스는 항상) 확장을 업데이트하면 사라질 수 있다. 변경 후 1분 안에 그러면 백업이 빠지므로 다음 시작·업데이트 때 다시 건다.
-    // 워커가 깰 때마다 하면 안 된다. 크롬은 울린 알람을 지운 뒤 워커를 깨우므로 방금 울린 알람을 또 걸어 백업이 두 번 돈다.
+    // 워커가 깰 때마다 하면 안 된다. 크롬은 울린 알람을 지운 뒤 워커를 깨우므로 방금 울린 알람을 또 걸어 백업이 두 번 돈다
     const rearm = async (): Promise<void> => {
         const [pending, alarm] = await Promise.all([backupStorage.pending.getValue(), browser.alarms.get(AUTO_BACKUP_ALARM)]);
         if (pending && !alarm) await browser.alarms.create(AUTO_BACKUP_ALARM, {delayInMinutes: 1});

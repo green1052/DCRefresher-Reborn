@@ -6,12 +6,12 @@ interface Compiled {
     regex: RegExp;
     /**
      * 완전 일치 검사용 ^(?:패턴)$. 첫 매치가 전체와 같은지로 보면 `닉1|닉1a`에서 앞 대안이 짧게 먼저 매치해
-     * `닉1a`의 완전 일치를 놓친다.
+     * `닉1a`의 완전 일치를 놓친다
      */
     anchored: RegExp;
 }
 
-// 항목 객체 → 컴파일 결과 (잘못된 패턴은 null). 스토어는 항목이 바뀌면 새 객체를 만들므로 따로 무효화할 필요가 없다.
+// 항목 객체 → 컴파일 결과 (잘못된 패턴은 null). 스토어는 항목이 바뀌면 새 객체를 만들므로 따로 무효화할 필요가 없다
 const regexCache = new WeakMap<BlockEntry, Compiled | null>();
 
 const compile = (entry: BlockEntry): Compiled | null => {
@@ -88,7 +88,7 @@ export const BLOCKED_TEXT = "게시글 내용이 차단되었습니다.";
 
 /**
  * 같은 댓글 묶기 (도배 접기). 공백만 다른 글도 같게 보고, minLength보다 짧은 글(ㅋㅋ 등)과 count번 미만 반복은 건너뛴다.
- * 묶인 항목만 돌려준다. 값은 첫 항목이 반복 수, 나머지는 0이다.
+ * 묶인 항목만 돌려준다. 값은 첫 항목이 반복 수, 나머지는 0이다
  */
 export const groupDuplicates = <T>(items: T[], textOf: (item: T) => string, {count, minLength}: { count: number; minLength: number }): Map<T, number> => {
     const result = new Map<T, number>();
@@ -104,7 +104,7 @@ export const groupDuplicates = <T>(items: T[], textOf: (item: T) => string, {cou
 /**
  * 값에 걸린 차단 항목들 (유저 버블의 "걸린 차단 규칙").
  * React에서는 구독한 목록을 lists로 넘긴다. 기본값(getState)에 맡기면 React Compiler가 인자만 보고 이전 결과를 재사용해
- * 차단 목록이 바뀌어도 다시 계산하지 않는다.
+ * 차단 목록이 바뀌어도 다시 계산하지 않는다
  */
 export const blockingEntries = (values: BlockValues, gallery?: string, lists: BlockLists = useBlocksStore.getState()): { type: BlockType; entry: BlockEntry }[] =>
     objectEntries(values).flatMap(([type, value]) =>

@@ -108,7 +108,7 @@ const register = async (def: AnyModule, stored: unknown, enables: Promise<Record
 
 /**
  * 다른 모듈의 api. 그 모듈이 이 페이지에서 돌고 setup이 끝났을 때만 있고, 아니면 undefined.
- * 타입은 그 모듈이 ModuleApis에 선언한 것으로 단언한다 (레지스트리는 모듈별 타입을 모른다).
+ * 타입은 그 모듈이 ModuleApis에 선언한 것으로 단언한다 (레지스트리는 모듈별 타입을 모른다)
  */
 export const getModuleApi = <K extends keyof ModuleApis>(id: K): ModuleApis[K] | undefined => {
     const running = instances.get(id)?.running;
@@ -157,7 +157,7 @@ export const runPageToggle = ({module, id}: PageAction): void => {
 /**
  * 모든 모듈 중지 (콘텐츠 스크립트 컨텍스트가 무효화됐을 때). 해제 함수 하나가 던져도 abort 리스너라 나머지는 계속 돈다.
  * revoke는 부르지 않고 페이지를 지금 모습대로 둔다. 부르면 확장을 업데이트할 때 열린 탭마다 차단·스텔스·레이아웃이 풀려
- * 새로고침 전까지 가린 내용이 드러난다.
+ * 새로고침 전까지 가린 내용이 드러난다
  */
 export const stopAll = (): void => {
     stopped = true;

@@ -15,7 +15,7 @@ import {TimeStamp} from "./TimeStamp";
 import {UserCard} from "./UserCard";
 
 // 닉콘(a.writer_nikcon img)의 src. 댓글마다 DOMParser를 돌리지 않게 정규식으로 읽는다.
-// 디시는 작은따옴표를 쓰지만 따옴표 없는 값도 받는다.
+// 디시는 작은따옴표를 쓰지만 따옴표 없는 값도 받는다
 const extractIcon = (html: string | undefined): string | undefined => html?.match(/writer_nikcon[^>]*>\s*<img\b[^>]*?\ssrc=["']?([^"'\s>]+)/)?.[1];
 
 const extractIp = (html: string | undefined): string | undefined => html?.match(/class=["']?ip["']?[^>]*>\s*\(([^)]+)\)/)?.[1];
@@ -29,7 +29,7 @@ const fitTxtcon = (box: HTMLElement): void => {
 
     Object.assign(txt.style, {wordBreak: "keep-all", overflowWrap: "normal", whiteSpace: "pre-line", letterSpacing: "", transform: ""});
 
-    // 크기를 잴 인라인 span. 다시 불려도 wrapTxtcon은 이미 나눈 줄을 그대로 둔다.
+    // 크기를 잴 인라인 span. 다시 불려도 wrapTxtcon은 이미 나눈 줄을 그대로 둔다
     const meas = document.createElement("span");
     meas.textContent = wrapTxtcon(Array.from(txt.childNodes, (node) => (node.nodeName === "BR" ? "\n" : node.textContent)).join(""));
     txt.replaceChildren(meas);
@@ -63,12 +63,12 @@ const fitTxtcon = (box: HTMLElement): void => {
         fit(16, true);
     }
 
-    // 16px로도 크게 넘치면 10px까지 줄여 담는다 (줄 수 제한 없음).
+    // 16px로도 크게 넘치면 10px까지 줄여 담는다 (줄 수 제한 없음)
     const over = meas.getBoundingClientRect();
     if (over.height - availH > 4 || over.width - availW > 4) fit(10, false);
 
     // 남는 폭을 자간으로 채운다. 마지막 글자 뒤 자간만큼 치우치므로 transform으로 보정한다.
-    // 글자 수는 디시처럼 이스케이프된 채로 센다 (&는 &amp; 5글자). 그래야 디시와 같은 자간이 나온다.
+    // 글자 수는 디시처럼 이스케이프된 채로 센다 (&는 &amp; 5글자). 그래야 디시와 같은 자간이 나온다
     const longest = Math.max(...meas.innerHTML.split("\n").map((line) => graphemes(line).length));
     const slack = availW - meas.getBoundingClientRect().width;
     if (longest > 1 && slack > 1) {
@@ -91,11 +91,11 @@ interface CommentProps {
 }
 
 export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAdmin}: CommentProps) => {
-    // reply 객체째 구독하면 답글 버튼 하나에 모든 댓글이 다시 그려지므로, 이 댓글이 대상인지만 구독한다.
+    // reply 객체째 구독하면 답글 버튼 하나에 모든 댓글이 다시 그려지므로, 이 댓글이 대상인지만 구독한다
     const replying = usePreviewStore((s) => s.reply.replyNo === comment.no);
     const collapsed = usePreviewStore((s) => s.collapsed.has(comment.no));
     const toggleCollapse = usePreviewStore((s) => s.toggleCollapse);
-    // 글 작성자 아이디만 구독한다. 글 객체째 구독하면 추천·새로고침마다 모든 댓글이 다시 그려진다.
+    // 글 작성자 아이디만 구독한다. 글 객체째 구독하면 추천·새로고침마다 모든 댓글이 다시 그려진다
     const authorId = usePreviewStore((s) => s.post?.user?.id);
     const allowReply = usePreviewStore((s) => s.allowReply);
 
@@ -105,13 +105,13 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
         ip: comment.ip || extractIp(comment.gallog_icon) || extractIp(comment.nickname),
         image: extractIcon(comment.gallog_icon)
     };
-    // 회원 아이디가 같을 때만 글쓴이로 본다. 유동은 닉과 IP 앞자리가 같아도 다른 사람일 수 있다.
+    // 회원 아이디가 같을 때만 글쓴이로 본다. 유동은 닉과 IP 앞자리가 같아도 다른 사람일 수 있다
     const isOp = Boolean(user.id) && user.id === authorId;
 
     const isDeleted = comment.is_delete === "1";
     // 디시처럼 멤버만 댓글(allow_reply)이면 답글도 막고, 답글이 막힌 댓글(reply_w)엔 버튼을 두지 않는다.
     // 음성 댓글은 디시도 reply_w와 상관없이 답글 버튼을 단다.
-    // 그린 깊이(depth prop)가 아니라 댓글 자체의 깊이로 본다. 부모를 숨겨 들여쓰지 않은 답글도 답글이다.
+    // 그린 깊이(depth prop)가 아니라 댓글 자체의 깊이로 본다. 부모를 숨겨 들여쓰지 않은 답글도 답글이다
     const canReply = !isDeleted && allowReply && (comment.depth > 0 || comment.voice !== undefined || comment.reply_w !== "N");
     const canDelete =
         !isDeleted && (comment.del_btn === "Y" || comment.my_cmt === "Y" || isAdmin || (!comment.user_id && Boolean(comment.ip)));
@@ -121,28 +121,28 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
         if (!st.preData || !st.post) return;
 
         // 비밀번호 없이 지워지는 삭제(관리자·회원 본인)는 X 한 번에 되돌릴 수 없으니 확인한다 (디시 comment.js와 같음).
-        // 비밀번호 삭제는 prompt가 확인을 겸한다.
+        // 비밀번호 삭제는 prompt가 확인을 겸한다
         const needsPassword = !isAdmin && !comment.user_id;
         if (!needsPassword && !window.confirm("댓글을 삭제할까요?")) return;
 
         let password = "";
         if (needsPassword) {
-            // 미리보기에서 쓴 댓글은 저장해 둔 비밀번호를 썼으므로 기본값으로 채운다.
+            // 미리보기에서 쓴 댓글은 저장해 둔 비밀번호를 썼으므로 기본값으로 채운다
             password = window.prompt("댓글 비밀번호를 입력해 주세요.", savedNonmember().pw) ?? "";
             if (!password) return;
         }
 
-        // 비밀번호가 틀려도 HTTP 200('false||메시지')이 오므로 결과를 확인해 알려야 한다.
+        // 비밀번호가 틀려도 HTTP 200('false||메시지')이 오므로 결과를 확인해 알려야 한다
         const request = isAdmin ? adminDeleteComment(st.preData, comment.no) : userDeleteComment(st.preData, comment.no, password);
         if (await notifyManage(request, "댓글을 삭제했습니다.", "댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.")) void st.requestRefresh();
     };
 
-    // 디시콘(img/video)과 글자콘. 답글이면 앞에 멘션이 붙어 오므로 ^로 고정하지 않고 찾는다.
+    // 디시콘(img/video)과 글자콘. 답글이면 앞에 멘션이 붙어 오므로 ^로 고정하지 않고 찾는다
     const isDccon = /<(img|video) class=|<div class="coment_dccon_txt/.test(comment.memo);
-    // 디시콘 HTML은 줄바꿈을 <br/>로 바꾸지 않는다. 붙어 온 디시콘 태그는 comments.ts(splitDccons)가 이미 나눠 두었다.
+    // 디시콘 HTML은 줄바꿈을 <br/>로 바꾸지 않는다. 붙어 온 디시콘 태그는 comments.ts(splitDccons)가 이미 나눠 두었다
     const html = isDccon ? comment.memo : comment.memo.replace(/\n/g, "<br/>");
 
-    // 글자콘 크기는 그려진 뒤에 잰다. html이 바뀌면 React가 내용을 새로 넣으므로 다시 잰다.
+    // 글자콘 크기는 그려진 뒤에 잰다. html이 바뀌면 React가 내용을 새로 넣으므로 다시 잰다
     const body = useRef<HTMLDivElement>(null);
     useLayoutEffect(() => {
         for (const box of body.current?.querySelectorAll<HTMLElement>(".coment_dccon_txt") ?? []) fitTxtcon(box);
@@ -171,13 +171,13 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                     {canReply && (
                         <IconButton
                             size="1"
-                            // 선택 중에도 ghost를 유지한다. soft로 바꾸면 Radix 여백이 달라져 댓글 줄이 흔들린다.
+                            // 선택 중에도 ghost를 유지한다. soft로 바꾸면 Radix 여백이 달라져 댓글 줄이 흔들린다
                             variant="ghost"
                             color={replying ? undefined : "gray"}
                             aria-label="답글"
                             aria-pressed={replying}
                             onClick={() =>
-                                // 같은 댓글을 다시 누르면 취소한다. 답글의 부모는 스레드 첫 댓글(c_no)이고, 첫 댓글이면 자기 자신이다.
+                                // 같은 댓글을 다시 누르면 취소한다. 답글의 부모는 스레드 첫 댓글(c_no)이고, 첫 댓글이면 자기 자신이다
                                 usePreviewStore.setState({
                                     reply: replying ? NO_REPLY : {commentNo: comment.c_no || comment.no, replyNo: comment.no}
                                 })
