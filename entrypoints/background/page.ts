@@ -82,4 +82,11 @@ export const listenPageMessages = (): void => {
 
         await runInPage(sender.tab.id, sender.frameId, hookUploads, [UPLOAD_OPTIONS_KEY]).catch(console.error);
     });
+
+    // 오버레이: react-dom·Radix를 콘텐츠 스크립트와 같은 격리 world에 넣는다. 매 페이지 콘텐츠 스크립트가 컴파일하지 않게 따로 둔다.
+    onMessage("refresher:loadOverlay", async ({sender}) => {
+        if (!sender.tab?.id) return;
+
+        await browser.scripting.executeScript({target: {tabId: sender.tab.id, frameIds: [sender.frameId ?? 0]}, files: ["/overlay-vendor.js"]});
+    });
 };

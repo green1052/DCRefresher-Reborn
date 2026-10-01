@@ -30,6 +30,9 @@ interface ProtocolMap {
     /** 탭 → 배경: 글쓰기 모듈이 그 탭의 MAIN world에 이미지 변환(features/write/images.ts의 hookUploads)을 넣는다. 페이지마다 한 번. */
     "refresher:hookUploads"(): void;
 
+    /** 탭 → 배경: 오버레이를 처음 띄울 때 그 탭·프레임에 오버레이 라이브러리(entrypoints/overlay-vendor.ts)를 넣는다. */
+    "refresher:loadOverlay"(): void;
+
     /** 탭 → 배경: 디시 통합검색 결과 페이지(HTML). search.dcinside.com은 CORS를 열지 않아 콘텐츠 스크립트가 받을 수 없다. */
     "refresher:searchPosts"(query: string): string;
 

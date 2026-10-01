@@ -15,6 +15,13 @@ export default defineConfig({
         }
         // Radix CSS에서 엔트리마다 쓰지 않는 규칙을 빼는 일은 modules/slim-radix-css.ts가 한다
     }),
+    hooks: {
+        // 우리 코드는 components·utils를 직접 import한다. 자동 import 스캔은 제네릭 타입 인자(V 등)를 export로 잘못 읽어 경고만 낸다.
+        // WXT API(defineContentScript·browser 등)의 자동 import는 그대로 둔다. imports.dirs는 기본값과 합쳐지므로 여기서 비운다.
+        "config:resolved": (wxt) => {
+            if (wxt.config.imports) wxt.config.imports.dirs = [];
+        }
+    },
     dev: {
         reloadCommand: "Alt+Shift+R"
     },

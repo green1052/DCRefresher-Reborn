@@ -73,7 +73,7 @@ export default defineWebExtConfig({
 entrypoints/
   background/           배경 스크립트
     index.ts            리스너 등록 순서, 단축키 전달, 설치·업데이트 처리, 배경 모듈 실행
-    page.ts             탭의 페이지(MAIN world)에서 대신 실행하는 것 (reCAPTCHA, 목록 스크립트, 이미지 변환)
+    page.ts             탭에 대신 넣거나 실행하는 것 (reCAPTCHA, 목록 스크립트, 이미지 변환, 오버레이 라이브러리)
     database.ts         IP·밴 DB 주기 갱신 알람
     backup.ts           자동 클라우드 백업 알람
   content/              콘텐츠 스크립트
@@ -82,6 +82,7 @@ entrypoints/
     stale.ts            파이어폭스 재주입으로 죽은 인스턴스 정리
     invalidated.ts      확장이 멈췄을 때의 안내
     blocked.ts          디시 임시 차단 안내
+  overlay-vendor.ts     오버레이 라이브러리(react-dom·Radix 기본 부품). 오버레이를 처음 띄울 때 배경이 주입
   page.content.scss     디시 페이지에 입히는 CSS (manifest로 따로 주입)
   options/              옵션 페이지 (설정·차단·메모·단축키·데이터·정보·개발자 탭)
   popup/                팝업 (모듈 켜고 끄기, 현재 페이지 토글)
@@ -90,7 +91,8 @@ features/<id>/          기능 모듈 하나
   index.ts              페이지에서 하는 일 (할 일이 없는 모듈은 두지 않는다)
   background.ts         배경에서 하는 일 (선택)
   ui/                   React 화면 (선택)
-modules/                WXT 로컬 모듈: 모듈 api 타입 생성(module-types.ts), 엔트리마다 Radix CSS 줄이기(slim-radix-css.ts)
+modules/                WXT 로컬 모듈: 모듈 api 타입 생성(module-types.ts), 엔트리마다 Radix CSS 줄이기(slim-radix-css.ts),
+                        오버레이 라이브러리 떼어 내기(overlay-vendor.ts)
 core/                   모듈 시스템, 저장소 키, HTTP, 필터링, 차단 판정, 미리보기 요청·파싱, 백업, 설정 옮기기, DB, 마이그레이션
 stores/                 여러 화면이 같이 쓰는 zustand 스토어 (모듈 on/off·설정, 차단, 메모, 오버레이 UI)
 components/             공용 React 컴포넌트, 오버레이 루트(components/overlay)
@@ -161,7 +163,7 @@ flowchart LR
     BGM -->|"설정 감시"| LOCAL
     BG -->|"MAIN world 주입<br>reCAPTCHA · 목록 스크립트"| DC
     BG -.->|"executeShortcut"| CS
-    FEAT -.->|"grecaptchaToken · listReplaced<br>hookUploads · searchPosts"| BG
+    FEAT -.->|"grecaptchaToken · listReplaced<br>hookUploads · searchPosts<br>loadOverlay"| BG
     POP -.->|"pageState · pageAction"| CS
 ```
 
@@ -173,7 +175,7 @@ flowchart LR
 
 1. Firefox가 재주입하며 남긴 옛 오버레이와 잠금을 걷어 내고(`stale.ts`), 단축키·팝업 메시지를 받을 준비를 합니다.
 2. 저장소를 기다리기 전에, 확장이 업데이트되거나 꺼져 컨텍스트가 무효가 되면 모듈을 멈추는 처리를 겁니다. 확장이 정말 없어졌을 때만 새로고침 안내를 띄웁니다(`invalidated.ts`).
-3. 오버레이는 바로 띄우지 않습니다(`overlay.tsx`). 토스트, 유저 버블, 미리보기처럼 화면에 그릴 것이 처음 생길 때 React와 오버레이 CSS를 불러와 띄웁니다. 글 제목에서 오른쪽 버튼을 누르는 순간에도 미리 띄워 첫 미리보기 창을 빨리 보이게 합니다.
+3. 오버레이는 바로 띄우지 않습니다(`overlay.tsx`). 토스트, 유저 버블, 미리보기처럼 화면에 그릴 것이 처음 생길 때 배경에 오버레이 라이브러리(react-dom·Radix)를 넣게 하고, 오버레이 UI와 CSS를 불러와 띄웁니다. 글 제목에서 오른쪽 버튼을 누르는 순간에도 미리 띄워 첫 미리보기 창을 빨리 보이게 합니다.
 4. 글 목록·본문 페이지(`BOARD_PAGE`)면 차단·메모 스토어를 읽기 시작하고, 동시에 모듈 on/off와 설정을 읽습니다(`core/module/registry.ts`의 `loadAll`). 모듈의 `setup`은 차단·메모를 다 읽은 뒤에 돕니다. 차례로 기다리면 저장소 왕복이 쌓여 모듈이 목록을 한참 읽은 뒤에야 뜹니다.
 5. 글 목록·본문 페이지에서는 모듈을 다 불러온 뒤 가장 큰 IP DB를 읽습니다(`core/database.ts`의 `initDatabase`, userinfo가 켜져 있으면 그 setup이 먼저 부릅니다). 저장소는 요청 순서대로 읽히기 때문입니다. 밴 DB는 처음 조회할 때 읽습니다.
 
@@ -208,7 +210,7 @@ flowchart TD
 | 파일 | 하는 일 |
 |------|---------|
 | `index.ts` | 아래 파일들과 배경 모듈의 `listen()`을 부르고, 설치·업데이트를 처리합니다 |
-| `page.ts` | 콘텐츠 스크립트 대신 탭의 페이지(MAIN world)에서 실행합니다. reCAPTCHA 토큰(`refresher:grecaptchaToken`), 갈아끼운 목록에 디시 스크립트 다시 걸기(`refresher:listReplaced`), 글쓰기 이미지 변환 넣기(`refresher:hookUploads`) |
+| `page.ts` | 콘텐츠 스크립트 대신 탭의 페이지(MAIN world)에서 실행합니다. reCAPTCHA 토큰(`refresher:grecaptchaToken`), 갈아끼운 목록에 디시 스크립트 다시 걸기(`refresher:listReplaced`), 글쓰기 이미지 변환 넣기(`refresher:hookUploads`), 오버레이 라이브러리 넣기(`refresher:loadOverlay`, 콘텐츠 스크립트와 같은 격리 world) |
 | `database.ts` | IP·밴 DB를 하루마다 확인해 7일이 지났거나 저장 형식이 옛것이면 받습니다. 알람은 배포 빌드에서만 만듭니다 |
 | `backup.ts` | 설정이 바뀌면 1분 뒤 자동 클라우드 백업을 돌립니다 |
 
@@ -397,6 +399,11 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 - 새 오버레이 UI(토스트·팝업 등)를 만들면 오버레이가 필요한지 판단하는 곳(`entrypoints/content/index.tsx`의 `needsOverlay`, 미리보기 UI는 `features/preview/ui/previewStore.ts`의 `needsPreviewOverlay`)에 넣어야 처음 띄울 때 오버레이가 생깁니다.
 - 디시 페이지 자체를 바꾸는 CSS는 `assets/styles/content.scss`, `layout.scss`, `stealth.scss`입니다.
 - 페이지·오버레이·옵션은 서로 다른 문서라 같은 규칙(차단 흐림, 스텔스 디시콘 가림, 접기 애니메이션)을 `assets/styles/_mixins.scss`의 mixin으로 맞춥니다. 옵션·팝업의 바탕과 Radix 기본값 덮기는 `_radix.scss`에 있습니다.
+- react-dom과 Radix 기본 부품(`radix-ui`)은 콘텐츠 스크립트에 넣지 않습니다. 콘텐츠 스크립트는 모든 디시 페이지에서 통째로 컴파일되는데, 이 둘이 그 절반쯤입니다. WXT 로컬 모듈 `modules/overlay-vendor.ts`가 두 빌드를 잇습니다.
+  - 콘텐츠 스크립트 빌드에서는 그 import를 `globalThis.__refresherVendor`를 읽는 모듈로 바꾸고, 번들에 남은 모듈이 가져가는 이름을 모읍니다.
+  - `entrypoints/overlay-vendor.ts` 빌드에서는 모은 이름만 넣고(빌드가 따로라 트리 셰이킹이 넘어가지 않습니다), `react`는 콘텐츠 스크립트가 둔 `globalThis.__refresherReact`의 것을 씁니다. React가 두 벌이면 훅이 깨집니다.
+  - `overlay.tsx`는 오버레이를 처음 띄울 때 `refresher:loadOverlay`로 그 스크립트를 넣게 한 뒤 오버레이 UI를 불러옵니다. 그 전에 Radix를 쓰는 코드를 평가하면 "오버레이 라이브러리를 주입하기 전에 불렀습니다" 오류가 납니다. 오버레이 밖(항상 도는 모듈 코드)에서는 Radix·react-dom을 import하지 않습니다.
+  - Radix Themes는 콘텐츠 스크립트에 남습니다. 아래 CSS 줄이기가 그 코드의 `rt-*` 리터럴을 읽기 때문입니다.
 - 콘텐츠 스크립트는 `cssInjectionMode: "ui"`라서 불러오는 CSS(`radix-themes.css`, `overlay.scss`)가 오버레이를 처음 띄울 때 shadow에만 들어갑니다(WXT가 `:root`를 `:host`로 바꿈). 디시 페이지에 입히는 CSS(content·stealth·layout)는 `entrypoints/page.content.scss`로 따로 빌드되고, `wxt.config.ts`의 `manifest.content_scripts`가 콘텐츠 스크립트와 같은 주소(`core/pages.ts`의 `CONTENT_MATCHES`)에 넣습니다. 페이지용 CSS를 콘텐츠 스크립트에서 import하면 페이지가 아니라 오버레이에 들어갑니다.
 - Radix CSS는 통째로 넣으면 엔트리마다 600KB라, 빌드 때 WXT 로컬 모듈 `modules/slim-radix-css.ts`가 엔트리(옵션·팝업·오버레이)마다 쓰지 않는 규칙을 뺍니다. 손으로 적는 목록은 없습니다. 그 엔트리에서 닿는 JS 청크에 든 `rt-*` 클래스 리터럴(트리 셰이킹으로 쓰는 컴포넌트 것만 남습니다)을 모아, 거기 없는 클래스의 규칙과 소스에서 쓰지 않는 반응형 접두어(`md:` 등)·`variant` 값·색 스케일·`@font-face`를 뺍니다. 새 Radix 컴포넌트나 반응형 prop을 쓰면 그대로 들어갑니다. 팝업은 옵션과 같은 CSS 파일을 import하면 Vite가 둘이 같이 쓰는 CSS 하나로 묶어 버리므로 `radix-themes-popup.css`를 따로 둡니다. 개발 서버(옵션·팝업 HMR)에서는 이 모듈이 돌지 않아 CSS가 통째로 들어갑니다.
 - 다크모드는 Radix 문서 방식대로 `Theme`에 `appearance`를 넘기지 않고 조상의 `light`/`dark` 클래스로 바꿉니다(`utils/appearance.ts`). 옵션·팝업은 시스템 설정을, 오버레이는 디시 다크모드를 오버레이 최상위 요소(shadow 안의 컨테이너)에 옮깁니다. 스크롤바·폼 컨트롤도 따라가도록 같은 요소에 `color-scheme`을 같이 정합니다.
@@ -554,6 +561,7 @@ flowchart TD
 - `tests/setup.ts`가 테스트마다 `fakeBrowser.reset()`을 하고, jsdom·Node에 없는 API(`Uint8Array.toBase64`, `performance.getEntriesByType`, `CSS.escape` 등)를 채웁니다. 실제 브라우저(140 이상)에는 다 있는 것들이라 소스는 그대로 둡니다.
 - 공통 도우미는 `tests/helpers.ts`에 둡니다. `tick()`(타이머·저장소 알림 한 차례 기다리기), `stored(key)`(fake 저장소 값 하나), `setting({...})`·`testModule({...})`(이름·설명을 비운 설정 스키마와 모듈)입니다. 시간을 정해 기다리지(`setTimeout(…, 10)`) 말고 `tick()`이나 `expect.poll`을 씁니다.
 - 기본 환경은 jsdom입니다. DOM을 안 쓰고 jsdom이 방해하는 모듈(`core/backup`의 gzip)은 파일 머리에 `// @vitest-environment node`를 둡니다.
+- WXT API(`defineContentScript`·`browser`·`storage` 등)만 자동 import됩니다. `components`·`utils`는 자동 import하지 않으니(`wxt.config.ts`의 `config:resolved` 훅) 직접 import합니다.
 - WXT의 `#imports`를 mock할 때는 실제 경로(`wxt/utils/storage` 등)로 합니다. `.wxt/types/imports-module.d.ts`에 있습니다.
 - 모듈 레지스트리·스토어처럼 모듈 단위 싱글턴(`instances`, `once`)이 있는 코드는 테스트마다 다른 모듈 id를 쓰거나 한 테스트 안에서 이어서 봅니다.
 
