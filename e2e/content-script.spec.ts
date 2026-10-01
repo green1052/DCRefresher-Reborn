@@ -128,6 +128,27 @@ test.describe("미리보기 부가 기능", () => {
         await expect(frame).toBeVisible();
     });
 
+    test("답글이 둘 이상인 스레드는 접고 펼 수 있고, 접힌 답글은 보이지도 눌리지도 않는다", async ({listPage}) => {
+        // 이 페이지의 댓글 응답에 답글 하나를 더해 답글을 둘로 만든다.
+        await listPage.page.route(/\/board\/comment\//, async (route) => {
+            const body = JSON.parse(commentsResponse()) as { comments: object[]; total_cnt: number };
+            body.comments.push({no: "12", c_no: "10", depth: 1, user_id: "", name: "ㅇㅇ", ip: "3.4", memo: "답글 둘", is_delete: "0", date_time: "2026.09.30 12:03:00", reg_date: "2026-09-30 12:03:00"});
+            body.total_cnt = 3;
+            await route.fulfill({contentType: "application/json", body: JSON.stringify(body)});
+        });
+        await listPage.titles().first().click({button: "right"});
+        const frame = listPage.frame();
+        const reply = frame.getByText("답글 둘");
+        await expect(reply).toBeVisible();
+
+        await frame.getByRole("button", {name: "답글 접기"}).click();
+        await expect(reply).toBeHidden();
+        await expect(frame.locator(".refresher-replies")).toHaveAttribute("inert", "");
+
+        await frame.getByRole("button", {name: "답글 펼치기"}).click();
+        await expect(reply).toBeVisible();
+    });
+
     test("댓글을 새로고침하면 새로 들어온 댓글만 강조한다", async ({listPage}) => {
         await listPage.titles().first().click({button: "right"});
         const comments = listPage.frame().locator(".refresher-comment");

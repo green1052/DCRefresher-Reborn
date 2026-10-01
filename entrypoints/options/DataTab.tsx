@@ -42,7 +42,8 @@ export function DataTab() {
         let latest = 0;
         let alive = true;
         const loadStatus = (): void => {
-            const request = ++latest;
+            latest += 1;
+            const request = latest;
             void readCloudBackupStatus().then((status) => {
                 if (alive && request === latest) setCloud(status);
             }, console.error);

@@ -65,9 +65,9 @@ const useStorageArea = (area: Area): Record<string, unknown> | null => {
             setItems((previous) => {
                 if (!previous) return previous;
                 const next = {...previous};
-                for (const [key, {newValue}] of Object.entries(changes)) {
-                    if (newValue === undefined) delete next[key];
-                    else next[key] = newValue;
+                for (const [key, change] of Object.entries(changes)) {
+                    if (change.newValue === undefined) delete next[key];
+                    else next[key] = change.newValue;
                 }
                 return next;
             });
@@ -196,7 +196,10 @@ const DatabaseSection = () => {
         try {
             // data 브랜치의 ip.json 형식(저장 형식)만 받는다.
             const text = await file.text();
-            if (!parseIpData(text)) throw new Error("형식이 올바르지 않습니다.");
+            if (!parseIpData(text)) {
+                notify("IP 데이터를 불러오지 못했습니다. 형식이 올바르지 않습니다.");
+                return;
+            }
             await writeDatabase({version: "local", lastUpdate: Date.now(), format: IP_FORMAT}, text, await dbBan.getValue());
             notify("IP 데이터를 파일에서 불러왔습니다. 다음 자동 갱신 때 서버 데이터로 바뀝니다.");
         } catch (e) {

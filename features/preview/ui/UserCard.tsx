@@ -1,4 +1,3 @@
-import {Flex, Text} from "@radix-ui/themes";
 import {Fragment, type MouseEvent, type ReactNode, useSyncExternalStore} from "react";
 import {useShallow} from "zustand/react/shallow";
 
@@ -48,34 +47,34 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
         openBubble(ev.clientX, ev.clientY);
     };
 
-    const identityColor = uidColor ? undefined : "gray";
+    // 아이디·IP 색을 정하지 않았으면 회색이다.
+    const identityClass = uidColor ? "" : " refresher-gray";
 
     const badges: Record<BadgeKey, ReactNode> = {
         UID: user.id
-            ? showsUid(view, user.image) && <Text size="1" color={identityColor} style={{color: uidColor}} truncate>({user.id})</Text>
+            ? showsUid(view, user.image) && <span className={`refresher-text-1 refresher-truncate${identityClass}`} style={{color: uidColor}}>({user.id})</span>
             : ipInfo && passesIpFilter(ipInfo, view.ipFilter) &&
-            <Text size="1" color={ipColor ? undefined : "blue"} style={{color: ipColor}} title={ipInfo.title} truncate>[{ipInfo.label}]</Text>,
-        MEMO: memo && <Text size="1" style={{color: memo.color || undefined}} title={memo.text} truncate>[{memo.text}]</Text>,
-        RATIO: ratio && <Text size="1" style={{color: ratioColor}} title="글/댓글" truncate>[{ratio.article}/{ratio.comment}]</Text>,
-        PERMBAN: banReasons && banColor && <Text size="1" style={{color: banColor}} title={banReasons} truncate>[{banReasons}]</Text>
+            <span className={`refresher-text-1 refresher-truncate${ipColor ? "" : " refresher-blue"}`} style={{color: ipColor}} title={ipInfo.title}>[{ipInfo.label}]</span>,
+        MEMO: memo && <span className="refresher-text-1 refresher-truncate" style={{color: memo.color || undefined}} title={memo.text}>[{memo.text}]</span>,
+        RATIO: ratio && <span className="refresher-text-1 refresher-truncate" style={{color: ratioColor}} title="글/댓글">[{ratio.article}/{ratio.comment}]</span>,
+        PERMBAN: banReasons && banColor && <span className="refresher-text-1 refresher-truncate" style={{color: banColor}} title={banReasons}>[{banReasons}]</span>
     };
 
     return (
-        <Flex align="center" gap="1" minWidth="0" className="refresher-user" data-op={op || undefined} onContextMenu={openMenu} style={{cursor: "context-menu"}}>
+        // 댓글마다 그리므로 Radix Themes 레이아웃 컴포넌트 대신 CSS 클래스로 배치한다 (Comment.tsx와 같다).
+        <div className="refresher-user" data-op={op || undefined} onContextMenu={openMenu}>
             {/* 버블은 닉네임 바로 아래에 띄운다. 키보드로 열면 버블 안으로 포커스가 옮겨 간다 (components/overlay/UserBubble의 useOpenerFocus). */}
-            <Text asChild size="2" weight="bold" truncate>
-                <button type="button" className="refresher-text-button" aria-haspopup="dialog"
-                        onClick={(ev) => {
-                            const rect = ev.currentTarget.getBoundingClientRect();
-                            openBubble(rect.left, rect.bottom);
-                        }}>
-                    {user.nick ?? user.id ?? user.ip}
-                </button>
-            </Text>
+            <button type="button" className="refresher-text-button refresher-text-2 refresher-bold refresher-truncate" aria-haspopup="dialog"
+                    onClick={(ev) => {
+                        const rect = ev.currentTarget.getBoundingClientRect();
+                        openBubble(rect.left, rect.bottom);
+                    }}>
+                {user.nick ?? user.id ?? user.ip}
+            </button>
             {user.image && <img src={user.image} alt="" height={12}/>}
             {/* 유동 IP는 디시가 닉 옆에 바로 보여 주는 값이라 배지 순서와 상관없이 여기 둔다. */}
-            {user.ip && <Text size="1" color={identityColor} style={{color: uidColor}} truncate>({user.ip})</Text>}
+            {user.ip && <span className={`refresher-text-1 refresher-truncate${identityClass}`} style={{color: uidColor}}>({user.ip})</span>}
             {view.order.map((key) => <Fragment key={key}>{badges[key]}</Fragment>)}
-        </Flex>
+        </div>
     );
 };

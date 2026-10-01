@@ -1,4 +1,4 @@
-import {Box, Flex, IconButton, Text} from "@radix-ui/themes";
+import {IconButton} from "@radix-ui/themes";
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
 import {useEffect, useLayoutEffect, useRef} from "react";
 
@@ -152,13 +152,15 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
     useEffect(() => (body.current ? watchGifVideos(body.current) : undefined), [html]);
 
     return (
-        <Box className="refresher-comment" data-depth={depth} data-deleted={isDeleted || undefined}
+        // 댓글은 수백 개라 배치는 Radix Themes 레이아웃 컴포넌트(Box·Flex·Text) 대신 CSS 클래스로 한다 (overlay.scss).
+        // 그 컴포넌트는 그릴 때마다 prop 정의를 펼쳐 맞추는데, 댓글 하나에 십수 개라 많은 글을 열 때 렌더 시간의 큰 몫이었다.
+        <div className="refresher-comment" data-depth={depth} data-deleted={isDeleted || undefined}
              data-blocked={comment.blocked} data-duplicate={comment.duplicates === 0 || undefined} data-fresh={fresh || undefined}
-             data-thread-open={threadOpen || undefined} data-last-reply={lastReply || undefined} px="6" py="2">
-            <Flex justify="between" align="center" gap="2">
-                <Flex align="center" gap="1" minWidth="0">
+             data-thread-open={threadOpen || undefined} data-last-reply={lastReply || undefined}>
+            <div className="refresher-comment-head">
+                <div className="refresher-comment-who">
                     <UserCard user={user} op={isOp}/>
-                    {comment.duplicates ? <Text size="1" color="gray" style={{whiteSpace: "nowrap"}}>같은 댓글 ×{comment.duplicates}</Text> : null}
+                    {comment.duplicates ? <span className="refresher-text-1 refresher-gray refresher-nowrap">같은 댓글 ×{comment.duplicates}</span> : null}
                     {/* 툴팁은 브라우저 기본(title)을 쓴다. 스레드마다 Radix 툴팁을 달면 댓글이 많은 글을 열 때 느려진다. */}
                     {depth === 0 && replyCount > 1 && (
                         <IconButton size="1" variant="ghost" color="gray" aria-label={collapsed ? "답글 펼치기" : "답글 접기"}
@@ -166,9 +168,9 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                             <ChevronDown size={14} className="refresher-chevron" style={{transform: collapsed ? "rotate(-90deg)" : undefined}}/>
                         </IconButton>
                     )}
-                </Flex>
+                </div>
 
-                <Flex align="center" gap="3" flexShrink="0">
+                <div className="refresher-comment-tools">
                     {canReply && (
                         <IconButton
                             size="1"
@@ -194,20 +196,20 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                         </IconButton>
                     )}
                     <TimeStamp date={String(comment.reg_date ?? comment.date_time ?? "")}/>
-                </Flex>
-            </Flex>
+                </div>
+            </div>
 
-            <Flex direction="column" gap="1" mt="1">
+            <div className="refresher-comment-body">
                 {comment.voice &&
                     (comment.voice.iframe ? (
                         <iframe src={comment.voice.src} width={280} height={54} style={{border: 0}} title="voice"/>
                     ) : (
                         <audio controls src={comment.voice.src}/>
                     ))}
-                <Box ref={body} className="refresher-html refresher-comment-html" data-dccon={isDccon || undefined}
+                <div ref={body} className="refresher-html refresher-comment-html" data-dccon={isDccon || undefined}
                      onClick={isDccon ? openDcconInfo : undefined}
                      dangerouslySetInnerHTML={{__html: html}}/>
-            </Flex>
-        </Box>
+            </div>
+        </div>
     );
 };
