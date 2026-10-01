@@ -32,7 +32,7 @@ DCRefresher Reborn v6의 구조, 기능을 더하는 방법, 테스트와 릴리
 | 메시징 | @webext-core/messaging |
 | 타입 도우미 | ts-extras (`objectKeys`, `objectEntries`, `arrayIncludes`) |
 | 패키지 관리·실행 | Bun 1.4 이상 |
-| 테스트 | Vitest (`wxt/testing/vitest-plugin`, fake-browser), Playwright (`tests/e2e`) |
+| 테스트 | Vitest (`wxt/testing/vitest-plugin`, fake-browser), Playwright (`e2e`) |
 
 ## 시작하기
 
@@ -42,14 +42,14 @@ bun run dev            # Chrome 개발 모드 (코드를 고치면 다시 빌드
 bun run dev:firefox    # Firefox 개발 모드
 bun run compile        # 타입 검사 (tsc --noEmit)
 bun run test           # 단위 테스트 (Vitest). test:watch는 지켜보며 다시 돈다
-bun run test:e2e       # 빌드 후 E2E (Playwright, 크로미엄에 확장을 올린다)
+bun run e2e            # E2E (Playwright, 크로미엄에 확장을 올린다). 먼저 bun run build
 bun run build          # .output/chrome-mv3
 bun run build:firefox  # .output/firefox-mv2
 bun run zip            # 배포용 zip
 bun run zip:firefox    # Firefox zip + 소스 zip
 ```
 
-`tsconfig.json`은 `noUnusedLocals`, `noUnusedParameters`를 켜 둡니다. 커밋 전에 `bun run compile`, `bun run test`, `bun run build`가 통과해야 합니다. E2E(`test:e2e`)는 처음 한 번 `bunx playwright install chromium`으로 크로미엄을 받아야 합니다 (headless shell이 아니라 크로미엄 본체여야 확장이 올라갑니다). 이 검사들은 릴리즈 워크플로(`.github/workflows/release.yml`)에서도 돌고, 실패하면 릴리즈하지 않습니다.
+`tsconfig.json`은 `noUnusedLocals`, `noUnusedParameters`를 켜 둡니다. 커밋 전에 `bun run compile`, `bun run test`, `bun run build`가 통과해야 합니다. E2E(`bun run e2e`)는 먼저 `bun run build`로 확장을 빌드해야 하고, 처음 한 번 `bunx playwright install chromium`으로 크로미엄을 받아야 합니다 (headless shell이 아니라 크로미엄 본체여야 확장이 올라갑니다). 이 검사들은 릴리즈 워크플로(`.github/workflows/release.yml`)에서도 돌고, 실패하면 릴리즈하지 않습니다.
 
 개발 모드는 따로 정하지 않으면 설치된 Chrome/Firefox를 새 임시 프로필로 띄웁니다. 다른 실행 파일이나 프로필을 쓰려면 저장소에 올리지 않는 `web-ext.config.ts`(`.gitignore`에 있음)를 만듭니다. 실행 파일은 `binaries`, 프로필은 `chromiumProfile`·`firefoxProfile`로 정하고, 프로필에 바뀐 내용을 남기려면 `keepProfileChanges: true`를 줍니다. Firefox 계열 브라우저(Zen 등)도 `firefox`에 그 실행 파일을 넣으면 됩니다. 평소 쓰는 기본 프로필을 그대로 쓰는 것은 권하지 않습니다(Chrome은 기본 사용자 데이터 폴더에서 원격 디버깅을 막습니다).
 
@@ -521,12 +521,21 @@ flowchart TD
 
 ### E2E (Playwright)
 
-`bun run test:e2e`가 빌드(`.output/chrome-mv3`)하고 `playwright.config.ts`로 돕니다. `tests/e2e/fixtures.ts`가 [Playwright의 확장 테스트 방식](https://playwright.dev/docs/chrome-extensions)대로 영속 컨텍스트에 확장을 올리고 `extensionId`를 꺼냅니다.
+[WXT의 Playwright 예제](https://github.com/wxt-dev/examples/tree/main/examples/playwright-e2e-testing)와 같은 구성입니다. `bun run build`로 확장(`.output/chrome-mv3`)을 빌드한 뒤 `bun run e2e`가 `playwright.config.ts`로 돕니다.
 
-- **디시에는 요청을 보내지 않습니다.** fixtures가 `dcinside.com` 주소를 모두 `tests/e2e/dcinside.ts`의 가짜 목록·글·댓글로 응답하고, 읽기가 아닌 POST에는 500을 줘서 쓰기 요청이 나가면 테스트가 바로 실패합니다. IP DB 서버는 끊습니다. 디시 마크업이 바뀌어 모듈을 고치면 가짜 페이지도 같이 고칩니다.
-- `errors` fixture가 페이지 오류와 `console.error`를 모아 테스트 끝에 비어 있는지 봅니다. `listPage`는 콘텐츠 스크립트가 돈 목록 페이지, `storage`는 서비스 워커를 통한 확장 저장소입니다 (디시 페이지의 `page.evaluate`에서는 `chrome.storage`에 닿지 않습니다).
+```
+e2e/
+├─ fixtures.ts           # 영속 컨텍스트에 확장을 올리고 background·extensionId·storage·errors·listPage를 준다
+├─ dcinside.ts           # 가짜 디시 목록·글·댓글
+├─ pages/                # 페이지별 조작 (openPopup, openOptions, openListPage)
+└─ *.spec.ts             # popup, options, content-script
+```
+
+- `fixtures.ts`가 [Playwright의 확장 테스트 방식](https://playwright.dev/docs/chrome-extensions)대로 확장을 올리고, 배경(MV3 서비스 워커, MV2 배경 페이지)에서 `extensionId`를 꺼냅니다. 테스트는 `pages/`의 `openPopup(page, extensionId)` 같은 함수로 페이지를 열고 그 반환값으로 조작합니다.
+- **디시에는 요청을 보내지 않습니다.** fixtures가 `dcinside.com` 주소를 모두 `e2e/dcinside.ts`의 가짜 목록·글·댓글로 응답하고, 읽기가 아닌 POST에는 500을 줘서 쓰기 요청이 나가면 테스트가 바로 실패합니다. IP DB 서버는 끊습니다. 디시 마크업이 바뀌어 모듈을 고치면 가짜 페이지도 같이 고칩니다.
+- `errors` fixture가 페이지 오류와 `console.error`를 모아 테스트 끝에 비어 있는지 봅니다. `listPage`는 콘텐츠 스크립트가 돈 목록 페이지(`pages/list.ts`), `storage`는 배경을 통한 확장 저장소입니다 (디시 페이지의 `page.evaluate`에서는 `chrome.storage`에 닿지 않습니다).
 - 확장은 headless shell에 올라가지 않아 크로미엄 본체(`channel: "chromium"`)로 headless 실행합니다. 미리 설치된 크로미엄을 쓰려면 `PLAYWRIGHT_CHROMIUM=/경로/chrome`을 줍니다.
-- 실패한 실행의 트레이스·리포트는 `test-results/`, `playwright-report/`에 남습니다 (git에 올리지 않습니다). CI는 실패 때 이것을 아티팩트로 올립니다.
+- 실패한 실행의 트레이스·리포트는 `test-results/`, `playwright-report/`에 남습니다 (git에 올리지 않습니다). 릴리즈 워크플로는 실패 때 이것을 아티팩트로 올립니다.
 
 ### 손으로 확인할 것
 

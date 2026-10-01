@@ -41,13 +41,13 @@ jobs:
             -   name: Build
                 run: bun run zip && bun run zip:firefox
 
-            # E2E는 위에서 zip을 만들며 남은 .output/chrome-mv3를 크로미엄에 올린다 (tests/e2e/fixtures.ts).
+            # E2E는 위에서 zip을 만들며 남은 .output/chrome-mv3를 크로미엄에 올린다 (e2e/fixtures.ts).
             # 확장을 올려야 해서 headless shell이 아니라 크로미엄 본체가 필요하다. 실패하면 릴리즈하지 않는다
             -   name: Install Chromium
                 run: bunx playwright install --with-deps chromium
 
             -   name: E2E tests
-                run: bunx playwright test
+                run: bun run e2e
 
             -   name: Upload E2E report
                 if: failure()

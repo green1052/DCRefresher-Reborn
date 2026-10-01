@@ -14,7 +14,7 @@
         "compile": "tsc --noEmit",
         "test": "vitest run",
         "test:watch": "vitest",
-        "test:e2e": "wxt build && playwright test",
+        "e2e": "playwright test",
         "postinstall": "wxt prepare"
     },
     "dependencies": {
