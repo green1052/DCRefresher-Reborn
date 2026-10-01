@@ -49,7 +49,7 @@ bun run zip            # 배포용 zip
 bun run zip:firefox    # Firefox zip + 소스 zip
 ```
 
-`tsconfig.json`은 `noUnusedLocals`, `noUnusedParameters`를 켜 둡니다. 커밋 전에 `bun run compile`, `bun run test`, `bun run build`가 통과해야 합니다. E2E(`test:e2e`)는 처음 한 번 `bunx playwright install chromium`으로 크로미엄을 받아야 합니다 (headless shell이 아니라 크로미엄 본체여야 확장이 올라갑니다).
+`tsconfig.json`은 `noUnusedLocals`, `noUnusedParameters`를 켜 둡니다. 커밋 전에 `bun run compile`, `bun run test`, `bun run build`가 통과해야 합니다. E2E(`test:e2e`)는 처음 한 번 `bunx playwright install chromium`으로 크로미엄을 받아야 합니다 (headless shell이 아니라 크로미엄 본체여야 확장이 올라갑니다). 이 검사들은 릴리즈 워크플로(`.github/workflows/release.yml`)에서도 돌고, 실패하면 릴리즈하지 않습니다.
 
 개발 모드는 따로 정하지 않으면 설치된 Chrome/Firefox를 새 임시 프로필로 띄웁니다. 다른 실행 파일이나 프로필을 쓰려면 저장소에 올리지 않는 `web-ext.config.ts`(`.gitignore`에 있음)를 만듭니다. 실행 파일은 `binaries`, 프로필은 `chromiumProfile`·`firefoxProfile`로 정하고, 프로필에 바뀐 내용을 남기려면 `keepProfileChanges: true`를 줍니다. Firefox 계열 브라우저(Zen 등)도 `firefox`에 그 실행 파일을 넣으면 됩니다. 평소 쓰는 기본 프로필을 그대로 쓰는 것은 권하지 않습니다(Chrome은 기본 사용자 데이터 폴더에서 원격 디버깅을 막습니다).
 
@@ -543,7 +543,7 @@ flowchart TD
 
 태그를 push하면 `.github/workflows/release.yml`이 돕니다.
 
-1. 태그와 `package.json` 버전이 같은지 확인하고, 타입 검사를 하고, zip을 만들어 GitHub 릴리즈에 올립니다.
+1. 태그와 `package.json` 버전이 같은지 확인하고, 타입 검사·단위 테스트를 하고, zip을 만든 뒤 E2E 테스트를 돌립니다. 하나라도 실패하면 릴리즈하지 않습니다. 모두 통과하면 zip을 GitHub 릴리즈에 올립니다.
 2. Chrome 웹 스토어와 Firefox Add-ons에 함께 제출합니다. 한 스토어가 실패해도 다른 스토어는 끝까지 제출되고, 이 단계는 실패해도 넘어가므로(`continue-on-error`) DB는 막히지 않습니다.
 3. DB 워크플로가 이 태그의 코드로 IP·밴 DB를 새로 만듭니다([IP·밴 DB](#ip밴-db)).
 
@@ -571,7 +571,7 @@ flowchart TD
     B --> C["X.Y.Z 태그 push"]
 
     subgraph REL["release.yml"]
-        R1["태그·package.json 버전 확인<br>타입 검사"] --> R2["zip 빌드<br>GitHub 릴리즈"]
+        R1["태그·package.json 버전 확인<br>타입 검사·단위 테스트"] --> R2["zip 빌드·E2E<br>GitHub 릴리즈"]
         R2 --> R3["Chrome·Firefox 스토어 제출<br>continue-on-error"]
     end
     C --> R1
