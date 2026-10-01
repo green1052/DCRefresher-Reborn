@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
 
-import {buildPreData} from "@/features/preview/rows";
+import {buildPreData, rowPostKey} from "@/features/preview/rows";
 
 const rowWith = (href: string, extra = ""): HTMLElement => {
     const row = document.createElement("tr");
@@ -22,5 +22,15 @@ describe("buildPreData", () => {
         expect(buildPreData(rowWith("javascript:alert(1)//?id=game&no=1"))).toBeNull();
         expect(buildPreData(rowWith("https://evil.example/board/view/?id=game&no=1"))).toBeNull();
         expect(buildPreData(rowWith("https://gall.dcinside.com/board/lists/?id=game"))).toBeNull();
+    });
+});
+
+describe("rowPostKey", () => {
+    it("링크가 아직 없던 행도 나중에 다시 읽는다 (문서를 읽는 중에는 행이 링크보다 먼저 붙는다)", () => {
+        const row = document.createElement("tr");
+        row.className = "ub-content";
+        expect(rowPostKey(row)).toBeNull();
+        row.innerHTML = "<td class=\"gall_tit\"><a href=\"https://gall.dcinside.com/board/view/?id=game&no=7\">제목</a></td>";
+        expect(rowPostKey(row)).toBe("game:7");
     });
 });

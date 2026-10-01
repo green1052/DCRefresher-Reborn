@@ -212,3 +212,11 @@ test.describe("메모", () => {
         await expect(listPage.rows().first()).toContainText("테스트 메모");
     });
 });
+
+test.describe("목록·본문이 아닌 페이지", () => {
+    test("미리보기가 없는 페이지에서도 오버레이가 뜬다 (임시 차단 안내)", async ({context}) => {
+        const page = await context.newPage();
+        await page.goto("https://gall.dcinside.com/board/write/?id=test");
+        await expect(page.locator("refresher-root").locator(".refresher-toast")).toContainText("잠시 접속을 막았습니다");
+    });
+});

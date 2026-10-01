@@ -53,16 +53,17 @@ export const isBlurHidden = (element: Element): boolean =>
 export const ROW_SELECTOR = ".gall_list .ub-content";
 
 // 행 → 글 키. 새로고침은 바뀐 행을 새 요소로 갈아끼우므로 요소마다 한 번만 읽으면 된다 (댓글 수처럼 제자리에서 고치는 칸은 키에 없다).
-const rowKeys = new WeakMap<HTMLElement, string | null>();
+// 찾지 못한 것은 담지 않는다. 문서를 읽는 동안에는 행이 링크보다 먼저 붙어, 그때 읽으면 아직 키가 없다.
+const rowKeys = new WeakMap<HTMLElement, string>();
 
 /** 행의 글 키(postKey). 글로 열 수 없는 행이면 null. 읽은 글 표시·키보드 선택처럼 행마다 자주 보는 곳에서 쓴다. */
 export const rowPostKey = (row: HTMLElement): string | null => {
-    let key = rowKeys.get(row);
-    if (key === undefined) {
-        const pre = buildPreData(row);
-        key = pre ? postKey(pre) : null;
-        rowKeys.set(row, key);
-    }
+    const cached = rowKeys.get(row);
+    if (cached !== undefined) return cached;
+    const pre = buildPreData(row);
+    if (!pre) return null;
+    const key = postKey(pre);
+    rowKeys.set(row, key);
     return key;
 };
 

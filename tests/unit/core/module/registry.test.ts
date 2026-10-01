@@ -1,7 +1,7 @@
 import {describe, expect, it, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
-import {getModuleApi, loadAll, pageToggleStates, runPageToggle, runShortcut} from "@/core/module/registry";
+import {getModuleApi, loadAll, moduleSettingsStore, pageToggleStates, runPageToggle, runShortcut} from "@/core/module/registry";
 
 import {setting, testModule, tick} from "../../../helpers";
 
@@ -103,5 +103,18 @@ describe("loadAll", () => {
         await loadAll([f], new AbortController().signal);
         expect(getModuleApi("f" as never)).toBeUndefined();
         expect(error).toHaveBeenCalledWith("Failed to load module: f", expect.any(Error));
+    });
+});
+
+describe("moduleSettingsStore", () => {
+    it("이 페이지에 등록하지 않는 모듈도 UI가 읽을 기본 설정이 있고, 등록한 모듈은 저장된 값이다", async () => {
+        await settingsOf("s1", {size: 3});
+        const size = setting({type: "range", default: 5, min: 1, max: 10, step: 1, unit: ""});
+        const here = testModule({id: "s1", settings: {size}, setup: () => undefined});
+        const elsewhere = testModule({id: "s2", urls: [/never/], settings: {size}, setup: () => undefined});
+
+        await loadAll([here, elsewhere], new AbortController().signal);
+        expect(moduleSettingsStore.getState().s1).toEqual({size: 3});
+        expect(moduleSettingsStore.getState().s2).toEqual({size: 5});
     });
 });

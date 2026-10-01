@@ -75,6 +75,8 @@ export const test = base.extend<{ context: BrowserContext; background: Backgroun
         await context.route(/^https:\/\/([a-z0-9]+\.)?dcinside\.com\//, (route) => {
             const url = new URL(route.request().url());
             if (url.pathname.startsWith("/board/lists")) return route.fulfill({contentType: "text/html; charset=utf-8", body: listPage()});
+            // 임시 차단된 페이지(본문이 빈 페이지). 글 목록·본문이 아니라 미리보기 모듈이 등록되지 않는다.
+            if (url.pathname.startsWith("/board/write")) return route.fulfill({contentType: "text/html; charset=utf-8", body: "<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head><body></body></html>"});
             if (url.pathname.startsWith("/board/view")) return route.fulfill({contentType: "text/html; charset=utf-8", body: viewPage(url.searchParams.get("no") ?? "")});
             if (url.pathname.startsWith("/board/comment")) return route.fulfill({contentType: "application/json", body: commentsResponse()});
             // 갤로그 글/댓글 수 (유저 버블·글댓비). POST지만 읽기다.

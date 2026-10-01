@@ -25,6 +25,7 @@ export default defineWxtModule((wxt) => {
                 commands[name] = {description: `${meta.name}: ${description}`, ...(key ? {suggested_key: {default: key}} : {})};
             }
         }
-        if (Object.keys(commands).length > 0) manifest.commands = commands;
+        // dev는 확장 다시 불러오기 명령(dev.reloadCommand)을 이미 넣어 두었으므로 덮지 않고 더한다.
+        if (Object.keys(commands).length > 0) manifest.commands = {...manifest.commands, ...commands};
     });
 });

@@ -203,6 +203,9 @@ const sync = async (enables: Record<string, unknown>): Promise<void> => {
  * setup은 ready(차단·메모 스토어 초기화)가 끝난 뒤에 돈다.
  */
 export const loadAll = async (defs: AnyModule[], signal: AbortSignal, ready?: Promise<void[]>): Promise<void> => {
+    // UI가 읽는 설정(useModuleSettings)은 모든 모듈의 기본값으로 먼저 채운다. 이 페이지에 등록하지 않는 모듈(미리보기가 없는 글쓰기 페이지 등)도
+    // 오버레이의 그 모듈 UI가 마운트되며 설정을 읽는다. 등록하는 모듈은 아래에서 저장된 값으로 덮인다.
+    moduleSettingsStore.setState(Object.fromEntries(defs.filter((def) => def.settings).map((def) => [def.id, settingsOf(def, null)])));
     // 이 문서의 주소(documentUrl)는 바뀌지 않으므로 urls가 이 페이지를 빼는 모듈은 끝내 돌지 않는다. 설정을 읽거나 감시하지 않게 등록하지 않는다.
     defs = defs.filter((def) => !def.urls || def.urls.some((re) => re.test(documentUrl.href)));
     // on/off·모듈 설정을 한 번에 읽고 ready와 같이 기다린다. 차례로 기다리면 저장소 왕복이 쌓여 모듈이 본문을 한참 읽은 뒤에야 뜬다.
