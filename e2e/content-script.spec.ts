@@ -97,7 +97,8 @@ test.describe("미리보기 부가 기능", () => {
 
         await expect(rows.nth(0)).toHaveClass(/refresherRead/);
         await expect(rows.nth(1)).not.toHaveClass(/refresherRead/);
-        await expect.poll(() => storage.get("refresher:module:preview:data")).toEqual({read: ["test:3"]});
+        // 저장은 모아서 한다 (read.ts의 SAVE_DELAY 5초).
+        await expect.poll(() => storage.get("refresher:module:preview:data"), {timeout: 10_000}).toEqual({read: ["test:3"]});
     });
 
     test("본문 이미지를 누르면 크게 보고, Esc는 크게 보기만 닫는다", async ({listPage}) => {

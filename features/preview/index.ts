@@ -58,6 +58,9 @@ const cachedPost = (preData: GalleryPreData): { post: PostInfo; age: number } | 
 // blockView에서 가공 결과가 읽는 값만 뽑은 비교 키 (아래 useUiStore 구독).
 const blockKeyOf = (view: BlockView | null): string => (view ? JSON.stringify([view.blur, view.replyRemove, view.duplicate]) : "");
 
+/** 새 댓글 강조 시간 (ms). overlay.scss의 refresher-fresh-comment 애니메이션 길이와 같다. */
+const FRESH_DURATION = 3000;
+
 /** setup이 만든 읽은 글 다시 표시. markRead 설정이 바뀌면 onChanged가 부른다. */
 let remarkRead: (() => void) | null = null;
 
@@ -139,6 +142,8 @@ const controller = (ctx: Ctx) => {
     let shown: { signal: number; source: DcinsideComment[] } | null = null;
     /** shown을 만든 받은 목록의 JSON. 같은 목록을 다시 받으면 다시 그리지 않는다. */
     let shownRaw = "";
+    let freshTimer = 0;
+    ctx.addCleanup(() => window.clearTimeout(freshTimer));
 
     // 답글 대상 댓글이 목록에서 빠졌거나 삭제됐으면 답글 쓰기를 푼다. 두면 취소 버튼도 없이 없는 댓글에 답글을 단다.
     const dropStaleReply = (): void => {
@@ -184,6 +189,13 @@ const controller = (ctx: Ctx) => {
             const added = before ? source.filter((comment) => !before.has(comment.no) && comment.is_delete !== "1").map((comment) => comment.no) : [];
             shown = {signal: mySignal, source};
             store.setState({comments: processComments(source, preData), allowReply, freshComments: added.length > 0 ? new Set(added) : NO_FRESH});
+            // 강조(3초)가 끝나면 지운다. 남겨 두면 답글을 접었다 펴는 등 다시 그릴 때마다 강조가 되풀이된다.
+            window.clearTimeout(freshTimer);
+            if (added.length > 0) {
+                freshTimer = window.setTimeout(() => {
+                    if (store.getState().signalId === mySignal) store.setState({freshComments: NO_FRESH});
+                }, FRESH_DURATION);
+            }
             dropStaleReply();
         } finally {
             pulling--;

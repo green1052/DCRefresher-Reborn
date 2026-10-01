@@ -36,7 +36,8 @@ export const bindListKeys = (ctx: Ctx, open: (preData: GalleryPreData) => void):
     };
 
     const onKey = (ev: KeyboardEvent): void => {
-        if (!ctx.settings.listKeyboard || ev.ctrlKey || ev.altKey || ev.metaKey || isTyping(ev)) return;
+        // 다른 창(디시 레이어 등)이 이미 쓴 키(Esc 등)는 받지 않는다.
+        if (!ctx.settings.listKeyboard || ev.defaultPrevented || ev.ctrlKey || ev.altKey || ev.metaKey || isTyping(ev)) return;
         if (usePreviewStore.getState().visible) return;
 
         const current = (): ListRow | undefined => rows().find(({pre}) => postKey(pre) === selected);

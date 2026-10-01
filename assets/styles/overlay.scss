@@ -542,6 +542,7 @@
 
     // 자동 새로고침으로 새로 들어온 댓글 (previewStore의 freshComments). 강조색으로 깔았다가 걷는다.
     &[data-fresh] {
+        // 길이는 features/preview/index.ts의 FRESH_DURATION과 같다.
         animation: refresher-fresh-comment 3s ease-out;
     }
 }

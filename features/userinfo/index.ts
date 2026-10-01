@@ -206,15 +206,15 @@ export default defineModule({
         // 받았지만 아직 저장하지 않은 글댓비 (RATIO_SAVE_DELAY).
         let unsaved: Record<string, RatioInfo> = {};
         let saveTimer = 0;
-        // 그사이 다른 탭이 쓴 값을 잃지 않게 저장소의 최신 값에 병합한다.
+        // 저장소를 다시 읽지 않고 한 번에 쓴다. 페이지를 떠날 때는 읽고 쓰는 두 번째 호출까지 가지 못한다.
+        // ratios는 아래 감시가 다른 탭이 저장한 값과 합쳐 두었다. 쓰기가 끝난 뒤에 unsaved를 비워, 그사이 다른 탭의 저장이 와도 이 탭의 값이 남는다.
         const save = async (): Promise<void> => {
             window.clearTimeout(saveTimer);
             saveTimer = 0;
             const batch = unsaved;
-            unsaved = {};
             if (Object.keys(batch).length === 0) return;
-            const stored = (await ratioStorage.getValue()).ratio ?? {};
-            await ratioStorage.setValue({ratio: trimRatios({...stored, ...batch})});
+            await ratioStorage.setValue({ratio: ratios});
+            unsaved = Object.fromEntries(Object.entries(unsaved).filter(([uid, info]) => batch[uid] !== info));
         };
         const saveNow = (): void => void save().catch(console.error);
         document.addEventListener("visibilitychange", () => document.hidden && saveNow(), {signal});

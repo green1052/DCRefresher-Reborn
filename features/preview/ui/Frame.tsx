@@ -344,7 +344,7 @@ export const Frame = () => {
                                         if (clicked && imageViewer && !clicked.closest("a") && isViewable(clicked)) {
                                             const images = [...ev.currentTarget.querySelectorAll("img")].filter(isViewable);
                                             usePreviewStore.setState({
-                                                viewer: {images: images.map((image) => ({src: image.currentSrc || image.src, pop: image.dataset.pop})), index: images.indexOf(clicked)}
+                                                viewer: {images: images.map((image) => ({src: image.currentSrc || image.src, alt: image.alt, pop: image.dataset.pop})), index: images.indexOf(clicked)}
                                             });
                                             return;
                                         }

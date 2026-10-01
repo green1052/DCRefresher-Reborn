@@ -43,10 +43,11 @@ export const ImageViewer = ({images, index}: { images: ViewerImage[]; index: num
                         onClick={(ev) => ev.target === ev.currentTarget && close()}
                     >
                         <VisuallyHidden><Dialog.Title>이미지 크게 보기</Dialog.Title></VisuallyHidden>
-                        <img src={image.src} alt=""/>
+                        <img src={image.src} alt={image.alt || `본문 이미지 ${index + 1}`}/>
 
                         <div className="refresher-viewer-bar">
-                            {images.length > 1 && <Text size="2">{index + 1} / {images.length}</Text>}
+                            {/* 넘길 때 몇 번째인지 화면 낭독기에도 알린다. */}
+                            {images.length > 1 && <Text size="2" aria-live="polite">{index + 1} / {images.length}</Text>}
                             {original && (
                                 <IconButton asChild size="2" variant="ghost" color="gray" aria-label="원본 보기" title="원본 보기">
                                     <a href={original} target="_blank" rel="noopener noreferrer"><ExternalLink size={18}/></a>

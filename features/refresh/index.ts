@@ -37,9 +37,14 @@ interface RefreshApi {
 /** 탭 제목 앞의 새 글 수 "(3) ". */
 const TITLE_COUNT = /^\(\d+\) /;
 
-/** 탭 제목 앞에 새 글 수를 붙인다. 0이면 뗀다. 미리보기가 제목을 바꿔도 앞에 붙은 수만 갈아 쓴다. */
+/** 이 모듈이 탭 제목 앞에 수를 붙여 두었는지. 원래 "(1) "로 시작하는 제목(글 제목 등)은 건드리지 않는다. */
+let titleCounted = false;
+
+/** 탭 제목 앞에 새 글 수를 붙인다. 0이면 붙여 둔 수를 뗀다. 미리보기가 제목을 바꿔도 앞에 붙은 수만 갈아 쓴다. */
 const setTitleCount = (count: number): void => {
-    const title = document.title.replace(TITLE_COUNT, "");
+    if (count === 0 && !titleCounted) return;
+    const title = titleCounted ? document.title.replace(TITLE_COUNT, "") : document.title;
+    titleCounted = count > 0;
     const next = count > 0 ? `(${count}) ${title}` : title;
     if (next !== document.title) document.title = next;
 };
@@ -151,7 +156,8 @@ export default defineModule({
 
                 // 목록을 갈아끼우면 커서·키보드 포커스 아래 행이 바뀐다. 설정을 켜면 그 위에 있는 동안 건너뛴다.
                 // 포커스는 :focus-visible만 본다. 글 제목을 마우스로 누르면 링크에 포커스가 남아, :focus로 보면 목록을 떠나도 계속 멈춘다.
-                const list = ctx.settings.pauseOnHover ? document.querySelector(LIST_SELECTOR) : null;
+                // 숨은 탭은 보지 않는다. 목록 위에서 탭을 옮기면 :hover가 남아 숨은 탭 새로고침이 끝내 돌지 않는다.
+                const list = ctx.settings.pauseOnHover && !document.hidden ? document.querySelector(LIST_SELECTOR) : null;
                 if (list && (list.matches(":hover") || list.querySelector(":focus-visible"))) return false;
             }
 
@@ -264,11 +270,11 @@ export default defineModule({
         };
 
         // ===== 탭 제목의 새 글 수 =====
-        // 차단으로 가린 글은 세지 않는다. 차단 필터는 행을 넣은 뒤(MutationObserver)에 돌므로 한 차례 뒤에 센다.
+        // 가린 글(차단·깡계 숨김과 흐리게)은 세지 않는다. 필터는 행을 넣은 뒤(MutationObserver)에 돌므로 한 차례 뒤에 센다.
         const countUnseen = (rows: HTMLElement[]): void => {
             window.setTimeout(() => {
                 if (ctx.signal.aborted || isWatching() || !ctx.settings.titleCount) return;
-                unseen += rows.filter((row) => row.isConnected && !row.closest(".refresherBlocked, .refresherBlur")).length;
+                unseen += rows.filter((row) => row.isConnected && row.checkVisibility() && !row.closest(".refresherBlur, .refresherLowActivityBlur")).length;
                 setTitleCount(unseen);
             });
         };
