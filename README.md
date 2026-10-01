@@ -144,6 +144,7 @@ bun run build             # Chrome 빌드 (.output/chrome-mv3)
 bun run e2e               # Chrome E2E (Playwright). 먼저 build, 처음 한 번 bunx playwright install chromium
 bun run build:firefox     # Firefox 빌드 (.output/firefox-mv2)
 bun run e2e:firefox       # Firefox E2E. 먼저 build:firefox, 처음 한 번 bunx playwright install firefox
+bun run e2e:live          # 실제 디시에 읽기 요청을 보내는 E2E (쓰기는 막는다). DC_GALLERY로 갤러리를 바꾼다
 bun run zip               # Chrome 배포용 zip
 bun run zip:firefox       # Firefox 배포용 zip (소스 zip도 함께 생성)
 ```

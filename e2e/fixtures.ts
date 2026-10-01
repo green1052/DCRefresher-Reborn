@@ -52,8 +52,28 @@ const chromiumBackground = async (context: BrowserContext): Promise<Background> 
     return background;
 };
 
-export const test = base.extend<{ context: BrowserContext; background: Background; extensionId: string; errors: string[]; storage: ExtensionStorage; listPage: ListPage }>({
-    context: async ({browserName}, use) => {
+/** 디시에 보내도 되는 POST. 모두 읽기다 (댓글 목록, 갤로그 글/댓글 수, 디시콘 목록·정보). */
+const LIVE_READ_POSTS = /^\/(board\/comment\/$|api\/gallog_user_layer\/|dccon\/(lists|package_detail)$)/;
+
+/**
+ * 실제 디시로 보내되 쓰기는 막는다. 디시·IP DB 서버 밖(광고·추적)은 끊어 느려지거나 흔들리지 않게 한다.
+ * 디시 스크립트가 보내는 POST(조회수·로그 등)도 읽기 목록에 없으면 끊는다.
+ */
+const routeLive = async (context: BrowserContext): Promise<void> => {
+    await context.route(/^https?:\/\//, (route) => {
+        const url = new URL(route.request().url());
+        const dcinside = /(^|\.)dcinside\.(com|co\.kr)$/.test(url.hostname);
+        if (!dcinside && url.hostname !== "dcrefresher.green1052.com") return route.abort();
+        if (route.request().method() !== "GET" && !(dcinside && LIVE_READ_POSTS.test(url.pathname))) return route.abort();
+        return route.continue();
+    });
+};
+
+export const test = base.extend<{ live: boolean }>({
+    /** 실제 디시에 요청하는지. live 프로젝트가 켠다 (playwright.config.ts). */
+    live: [false, {option: true}]
+}).extend<{ context: BrowserContext; background: Background; extensionId: string; errors: string[]; storage: ExtensionStorage; listPage: ListPage }>({
+    context: async ({browserName, live}, use) => {
         const profile = mkdtempSync(path.join(tmpdir(), "refresher-e2e-"));
         let context: BrowserContext;
         if (browserName === "firefox") {
@@ -72,7 +92,8 @@ export const test = base.extend<{ context: BrowserContext; background: Backgroun
             });
         }
 
-        await context.route(/^https:\/\/([a-z0-9]+\.)?dcinside\.com\//, (route) => {
+        if (live) await routeLive(context);
+        else await context.route(/^https:\/\/([a-z0-9]+\.)?dcinside\.com\//, (route) => {
             const url = new URL(route.request().url());
             if (url.pathname.startsWith("/board/lists")) return route.fulfill({contentType: "text/html; charset=utf-8", body: listPage()});
             // 임시 차단된 페이지(본문이 빈 페이지). 글 목록·본문이 아니라 미리보기 모듈이 등록되지 않는다.
@@ -85,7 +106,7 @@ export const test = base.extend<{ context: BrowserContext; background: Backgroun
             if (route.request().method() === "POST") return route.fulfill({status: 500, body: "unexpected write request"});
             return route.fulfill({contentType: "image/gif", body: GIF});
         });
-        await context.route(/^https:\/\/dcrefresher\.green1052\.com\//, (route) => route.abort());
+        if (!live) await context.route(/^https:\/\/dcrefresher\.green1052\.com\//, (route) => route.abort());
 
         await use(context);
         await context.close();
@@ -123,11 +144,15 @@ export const test = base.extend<{ context: BrowserContext; background: Backgroun
         });
     },
 
-    errors: async ({context}, use) => {
+    errors: async ({context, live}, use) => {
         const errors: string[] = [];
-        context.on("weberror", (error) => errors.push(`pageerror ${error.page()?.url()}: ${error.error().message}`));
+        // 실제 디시 페이지는 디시 스크립트·끊은 광고에서 오류가 난다. 확장 코드(chrome-extension://)에서 난 것만 본다.
+        const fromExtension = (where: string | undefined): boolean => !live || /(chrome|moz)-extension:\/\//.test(where ?? "");
+        context.on("weberror", (error) => {
+            if (fromExtension(error.error().stack)) errors.push(`pageerror ${error.page()?.url()}: ${error.error().message}`);
+        });
         const watch = (page: Page) => page.on("console", (message) => {
-            if (message.type() === "error") errors.push(`console ${page.url()}: ${message.text()}`);
+            if (message.type() === "error" && fromExtension(message.location().url)) errors.push(`console ${page.url()}: ${message.text()}`);
         });
         // 이미 열린 페이지(page 픽스처 등)도 본다.
         context.pages().forEach(watch);

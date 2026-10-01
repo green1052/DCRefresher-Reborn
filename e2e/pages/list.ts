@@ -7,10 +7,10 @@ const overlay = (page: Page) => page.locator("refresher-root");
 
 /**
  * 콘텐츠 스크립트가 돈 가짜 글 목록 페이지 (e2e/dcinside.ts). 새로고침 버튼이 붙을 때까지 기다린다.
- * 첫 행은 글 3(고닉 user3, 댓글 2개)이다.
+ * 첫 행은 글 3(고닉 user3, 댓글 2개)이다. url을 주면 그 페이지를 연다 (e2e/live/의 실제 디시).
  */
-export async function openListPage(page: Page) {
-    await page.goto(LIST_URL);
+export async function openListPage(page: Page, url = LIST_URL) {
+    await page.goto(url);
     await page.waitForSelector("button[data-refresher-refresh]");
 
     const inOverlay = (selector: string) => overlay(page).locator(selector);

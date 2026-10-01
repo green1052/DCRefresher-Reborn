@@ -46,6 +46,7 @@ bun run build          # .output/chrome-mv3
 bun run e2e            # E2E (Playwright, 크로미엄에 확장을 올린다). 먼저 bun run build
 bun run build:firefox  # .output/firefox-mv2
 bun run e2e:firefox    # 파이어폭스 E2E. 먼저 bun run build:firefox, 처음 한 번 bunx playwright install firefox
+bun run e2e:live       # 실제 디시 E2E. 디시 마크업·API가 바뀌었는지 본다
 bun run zip            # 배포용 zip
 bun run zip:firefox    # Firefox zip + 소스 zip
 ```
@@ -604,6 +605,7 @@ e2e/
 - 스펙은 선택자를 직접 쓰지 않고 페이지 객체의 메서드를 씁니다. 목록 페이지(`openListPage`)는 `titles()`·`replyCounts()`·`writers()`와 오버레이 안의 `frame()`·`mini()`·`bubble()`·`toast()`를 주고, 팝업은 `openPopupFor(context, extensionId, tab)`로 그 탭에서 연 것처럼 엽니다. 설정은 `storage.setModules({...})`·`storage.setModuleSettings(id, {...})`로 넣습니다. 디시 마크업이나 클래스 이름이 바뀌면 페이지 객체만 고칩니다.
 - `errors` fixture가 페이지 오류와 `console.error`를 모아 테스트 끝에 비어 있는지 봅니다. `listPage`는 콘텐츠 스크립트가 돈 목록 페이지(`pages/list.ts`), `storage`는 배경을 통한 확장 저장소입니다 (디시 페이지의 `page.evaluate`에서는 `chrome.storage`에 닿지 않습니다).
 - **파이어폭스**(`bun run e2e:firefox`): Playwright의 파이어폭스는 실행 인자로 확장을 올릴 수 없어, `e2e/firefox.ts`가 web-ext처럼 원격 디버깅 서버(`-start-debugger-server`)에 붙어 `.output/firefox-mv2`를 임시 부가 기능으로 설치합니다. 확장 UUID는 `extensions.webextensions.uuids`로 고정해 `moz-extension://` 주소를 미리 압니다. 배경 페이지에는 닿을 수 없어 `storage`는 확장 페이지(`popup.html`)를 하나 열어 그 안에서 읽고 씁니다. 릴리즈 워크플로는 크로미엄과 파이어폭스 E2E를 모두 돌립니다.
+- **실제 디시**(`bun run e2e:live`, `e2e/live/`): 가짜 페이지 대신 실제 디시에 요청합니다. 글·댓글이 그때그때 달라 개수·내용이 아니라 모양만 봅니다. 픽스처(`routeLive`)가 디시·IP DB 서버 밖 요청(광고 등)과 읽기가 아닌 POST(댓글·추천·삭제 등)를 끊어 테스트가 디시에 아무것도 쓰지 않습니다. 디시 스크립트 오류는 빼고 확장에서 난 오류만 실패로 봅니다. 네트워크에 따라 흔들릴 수 있어 릴리즈 워크플로에는 넣지 않았습니다. 갤러리는 `DC_GALLERY`(기본 `programming`)로 바꿉니다.
 - 확장은 headless shell에 올라가지 않아 크로미엄 본체(`channel: "chromium"`)로 headless 실행합니다. 미리 설치된 크로미엄을 쓰려면 `PLAYWRIGHT_CHROMIUM=/경로/chrome`을 줍니다.
 - 실패한 실행의 트레이스·리포트는 `test-results/`, `playwright-report/`에 남습니다 (git에 올리지 않습니다). 릴리즈 워크플로는 실패 때 이것을 아티팩트로 올립니다.
 
