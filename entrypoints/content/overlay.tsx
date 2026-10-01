@@ -3,18 +3,16 @@ import * as jsxRuntime from "react/jsx-runtime";
 import type {ContentScriptContext} from "wxt/utils/content-script-context";
 
 import {overlay} from "@/components/overlay/shadow";
+import {shareReact} from "@/components/overlay/vendor";
 import {sendMessage} from "@/core/messaging/protocol";
 import {needsPreviewOverlay, usePreviewStore} from "@/features/preview/ui/previewStore";
 import {useUiStore} from "@/stores/ui";
 import {followDcAppearance} from "@/utils/appearance";
 import {whenDomReady} from "@/utils/dom";
 
-/**
- * react-dom·Radix를 넣는다(modules/overlay-vendor.ts). 그 스크립트는 React를 따로 갖지 않고 이 스크립트의 것을 쓴다.
- * 두 벌이면 훅이 서로 다른 React를 봐서 깨진다.
- */
+/** react-dom·Radix(entrypoints/overlay-vendor.ts)를 넣게 한다. 그 스크립트는 React를 따로 갖지 않고 이 스크립트의 것을 쓴다. */
 const loadVendor = async (): Promise<void> => {
-    (globalThis as { __refresherReact?: unknown }).__refresherReact = {react: React, jsxRuntime};
+    shareReact({react: React, jsxRuntime});
     await sendMessage("refresher:loadOverlay");
 };
 

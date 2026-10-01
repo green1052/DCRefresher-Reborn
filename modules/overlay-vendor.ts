@@ -1,6 +1,8 @@
 import type {Plugin} from "vite";
 import {defineWxtModule} from "wxt/modules";
 
+import {type OverlayVendor, REACT_GLOBAL, type SharedReact, VENDOR_GLOBAL} from "../components/overlay/vendor";
+
 /**
  * 오버레이 UI 라이브러리를 콘텐츠 스크립트에서 떼어 낸다.
  *
@@ -9,25 +11,25 @@ import {defineWxtModule} from "wxt/modules";
  * 오버레이를 처음 띄울 때 배경이 그 탭에 주입한다 (entrypoints/background/page.ts의 refresher:loadOverlay).
  *
  * 상태가 두 벌이 되지 않게 우리 코드와 React·Radix Themes는 콘텐츠 스크립트에 그대로 둔다. 두 빌드가 같은 것을 쓰도록:
- * - 콘텐츠 스크립트: 떼어 낸 패키지의 import를 overlay-vendor가 둔 전역(__refresherVendor)을 읽는 모듈로 바꾼다.
+ * - 콘텐츠 스크립트: 떼어 낸 패키지의 import를 overlay-vendor가 둔 전역(components/overlay/vendor.ts의 OverlayVendor)을 읽는 모듈로 바꾼다.
  *   CommonJS 모듈로 만들어 처음 require될 때 평가된다. 오버레이 코드만 이 패키지를 쓰므로 주입한 뒤에야 평가된다.
- * - overlay-vendor: react를 콘텐츠 스크립트가 둔 전역(__refresherReact)의 것으로 바꾼다. React가 두 벌이면 훅이 깨진다.
+ * - overlay-vendor: react를 콘텐츠 스크립트가 둔 전역(SharedReact)의 것으로 바꾼다. React가 두 벌이면 훅이 깨진다.
  *   빌드가 따로라 트리 셰이킹이 넘어가지 않으므로, 콘텐츠 스크립트 번들에 남은 모듈이 가져가는 이름만 overlay-vendor에 넣는다.
  * Radix Themes는 콘텐츠 스크립트에 남는다. modules/slim-radix-css.ts가 그 코드의 rt- 클래스로 오버레이 CSS를 줄인다.
  */
 
-/** 떼어 내는 패키지 → overlay-vendor가 __refresherVendor에 두는 이름. */
+/** 떼어 내는 패키지 → overlay-vendor가 OverlayVendor에 두는 이름. */
 export const VENDOR_PACKAGES = {
     "radix-ui": "radixUi",
     "radix-ui/internal": "radixInternal",
     "react-dom/client": "reactDomClient"
-} as const;
+} as const satisfies Record<string, keyof OverlayVendor>;
 
-/** overlay-vendor가 콘텐츠 스크립트의 것을 쓰는 패키지 → __refresherReact에 두는 이름. */
+/** overlay-vendor가 콘텐츠 스크립트의 것을 쓰는 패키지 → SharedReact에 두는 이름. */
 const SHARED_PACKAGES = {
     react: "react",
     "react/jsx-runtime": "jsxRuntime"
-} as const;
+} as const satisfies Record<string, keyof SharedReact>;
 
 const PREFIX = "\0refresher-global:";
 const PICK_PREFIX = "\0refresher-pick:";
@@ -112,10 +114,10 @@ export default defineWxtModule((wxt) => {
         const names = entries.map((entry) => entry.name);
         config.plugins ??= [];
         if (names.includes("content")) {
-            config.plugins.push(fromGlobal("refresher:overlay-vendor-imports", "__refresherVendor", VENDOR_PACKAGES), collectImports(picked));
+            config.plugins.push(fromGlobal("refresher:overlay-vendor-imports", VENDOR_GLOBAL, VENDOR_PACKAGES), collectImports(picked));
         }
         if (names.includes("overlay-vendor")) {
-            config.plugins.push(fromGlobal("refresher:overlay-vendor-react", "__refresherReact", SHARED_PACKAGES), pickExports(picked));
+            config.plugins.push(fromGlobal("refresher:overlay-vendor-react", REACT_GLOBAL, SHARED_PACKAGES), pickExports(picked));
         }
     });
 });

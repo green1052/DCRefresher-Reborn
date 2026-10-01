@@ -399,7 +399,7 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 - 새 오버레이 UI(토스트·팝업 등)를 만들면 오버레이가 필요한지 판단하는 곳(`entrypoints/content/index.tsx`의 `needsOverlay`, 미리보기 UI는 `features/preview/ui/previewStore.ts`의 `needsPreviewOverlay`)에 넣어야 처음 띄울 때 오버레이가 생깁니다.
 - 디시 페이지 자체를 바꾸는 CSS는 `assets/styles/content.scss`, `layout.scss`, `stealth.scss`입니다.
 - 페이지·오버레이·옵션은 서로 다른 문서라 같은 규칙(차단 흐림, 스텔스 디시콘 가림, 접기 애니메이션)을 `assets/styles/_mixins.scss`의 mixin으로 맞춥니다. 옵션·팝업의 바탕과 Radix 기본값 덮기는 `_radix.scss`에 있습니다.
-- react-dom과 Radix 기본 부품(`radix-ui`)은 콘텐츠 스크립트에 넣지 않습니다. 콘텐츠 스크립트는 모든 디시 페이지에서 통째로 컴파일되는데, 이 둘이 그 절반쯤입니다. WXT 로컬 모듈 `modules/overlay-vendor.ts`가 두 빌드를 잇습니다.
+- react-dom과 Radix 기본 부품(`radix-ui`)은 콘텐츠 스크립트에 넣지 않습니다. 콘텐츠 스크립트는 모든 디시 페이지에서 통째로 컴파일되는데, 이 둘이 그 절반쯤입니다. WXT 로컬 모듈 `modules/overlay-vendor.ts`가 두 빌드를 잇고, 주고받는 값의 타입과 전역 이름은 `components/overlay/vendor.ts` 한 곳에 둡니다.
   - 콘텐츠 스크립트 빌드에서는 그 import를 `globalThis.__refresherVendor`를 읽는 모듈로 바꾸고, 번들에 남은 모듈이 가져가는 이름을 모읍니다.
   - `entrypoints/overlay-vendor.ts` 빌드에서는 모은 이름만 넣고(빌드가 따로라 트리 셰이킹이 넘어가지 않습니다), `react`는 콘텐츠 스크립트가 둔 `globalThis.__refresherReact`의 것을 씁니다. React가 두 벌이면 훅이 깨집니다.
   - `overlay.tsx`는 오버레이를 처음 띄울 때 `refresher:loadOverlay`로 그 스크립트를 넣게 한 뒤 오버레이 UI를 불러옵니다. 그 전에 Radix를 쓰는 코드를 평가하면 "오버레이 라이브러리를 주입하기 전에 불렀습니다" 오류가 납니다. 오버레이 밖(항상 도는 모듈 코드)에서는 Radix·react-dom을 import하지 않습니다.
