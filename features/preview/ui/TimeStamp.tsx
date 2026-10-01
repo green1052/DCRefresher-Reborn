@@ -1,3 +1,4 @@
+import {Text} from "@radix-ui/themes";
 import {useEffect, useState, useSyncExternalStore} from "react";
 
 import {parseDate} from "./previewStore";
@@ -70,10 +71,10 @@ export const TimeStamp = ({date, size = "1"}: { date: string; size?: "1" | "2" }
     const full = absoluteOf(parsed);
 
     return (
-        // 댓글마다 그리므로 Radix Text 대신 같은 모양의 클래스를 쓴다 (overlay.scss).
-        <button type="button" className={`refresher-text-button refresher-text-${size} refresher-gray refresher-nowrap`} title={full}
-                onClick={() => setAbsolute((x) => !x)}>
-            {Number.isNaN(parsed.getTime()) ? "이미 삭제됨" : absolute ? full : since}
-        </button>
+        <Text asChild size={size} color="gray" title={full} style={{whiteSpace: "nowrap"}}>
+            <button type="button" className="refresher-text-button" onClick={() => setAbsolute((x) => !x)}>
+                {Number.isNaN(parsed.getTime()) ? "이미 삭제됨" : absolute ? full : since}
+            </button>
+        </Text>
     );
 };

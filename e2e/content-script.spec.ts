@@ -128,7 +128,7 @@ test.describe("미리보기 부가 기능", () => {
         await expect(frame).toBeVisible();
     });
 
-    test("답글이 둘 이상인 스레드는 접고 펼 수 있고, 접힌 답글은 보이지도 눌리지도 않는다", async ({listPage}) => {
+    test("답글이 둘 이상인 스레드는 접고 펼 수 있고, 접힌 답글은 보이지 않는다", async ({listPage}) => {
         // 이 페이지의 댓글 응답에 답글 하나를 더해 답글을 둘로 만든다.
         await listPage.page.route(/\/board\/comment\//, async (route) => {
             const body = JSON.parse(commentsResponse()) as { comments: object[]; total_cnt: number };
@@ -143,7 +143,6 @@ test.describe("미리보기 부가 기능", () => {
 
         await frame.getByRole("button", {name: "답글 접기"}).click();
         await expect(reply).toBeHidden();
-        await expect(frame.locator(".refresher-replies")).toHaveAttribute("inert", "");
 
         await frame.getByRole("button", {name: "답글 펼치기"}).click();
         await expect(reply).toBeVisible();

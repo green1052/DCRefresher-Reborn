@@ -145,86 +145,6 @@
     cursor: pointer;
 }
 
-/*
- * 댓글을 그리는 클래스. 댓글은 수백 개라 Radix Themes의 Box·Flex·Text 대신 같은 값의 CSS를 쓴다 (Comment.tsx·UserCard.tsx·TimeStamp.tsx).
- * 값은 Radix의 Text(size·color·weight·truncate)와 Flex(gap)·여백(px·py·mt) 규칙을 그대로 옮긴 것이다.
- */
-.refresher-text-1,
-.refresher-text-2 {
-    line-height: var(--line-height, var(--default-line-height));
-    letter-spacing: var(--letter-spacing, inherit);
-}
-
-.refresher-text-1 {
-    font-size: var(--font-size-1);
-    --line-height: var(--line-height-1);
-    --letter-spacing: var(--letter-spacing-1);
-}
-
-.refresher-text-2 {
-    font-size: var(--font-size-2);
-    --line-height: var(--line-height-2);
-    --letter-spacing: var(--letter-spacing-2);
-}
-
-.refresher-gray {
-    color: var(--gray-a11);
-}
-
-.refresher-blue {
-    color: var(--blue-a11);
-}
-
-.refresher-bold {
-    font-weight: var(--font-weight-bold);
-}
-
-.refresher-nowrap {
-    white-space: nowrap;
-}
-
-.refresher-truncate {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.refresher-user {
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
-    min-width: 0;
-    cursor: context-menu;
-}
-
-.refresher-comment-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--space-2);
-}
-
-.refresher-comment-who {
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
-    min-width: 0;
-}
-
-.refresher-comment-tools {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    flex-shrink: 0;
-}
-
-.refresher-comment-body {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    margin-top: var(--space-1);
-}
-
 .refresher-text-button:focus-visible {
     outline: 2px solid var(--focus-8);
     outline-offset: 2px;
@@ -485,36 +405,16 @@
 /* ===== 댓글 ===== */
 
 /* 답글 접기·펼치기 (CommentList.tsx). */
-/* 답글 접기 (CommentList.tsx). 행 높이를 0fr ↔ 1fr로 옮겨 높이를 재지 않고 움직인다. 처음 그릴 때는 전환이 없다. */
 .refresher-replies {
-    display: grid;
-    grid-template-rows: 0fr;
-    opacity: 0;
-    transition: grid-template-rows 200ms ease-out, opacity 200ms ease-out, visibility 200ms;
-    visibility: hidden;
-
-    > div {
-        min-height: 0;
-        overflow: clip;
-    }
-
-    &[data-open] {
-        grid-template-rows: 1fr;
-        opacity: 1;
-        visibility: visible;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        transition: none;
-    }
+    @include mixins.collapsible;
 }
 
 .refresher-comment {
-    padding: var(--space-2) var(--space-6);
     // 화면 밖 댓글은 레이아웃·스타일 계산을 건너뛴다 — 댓글 수백 개인 글을 열 때 레이아웃이 크게 준다.
     // 트리 선(::before/::after)은 모두 칸 안에 그리므로 잘리지 않는다.
     // 아직 그리지 않은 댓글은 가장 흔한 한 줄 댓글 높이로 어림한다 (48px + 위아래 여백 16px = 64px).
-    // 크게 잡으면 그리지 않은 댓글이 많은 글은 스크롤 길이가 부풀었다가 줄어든다.
+    // 크게 잡으면 답글을 펼칠 때 Radix가 그리기 전 어림값으로 높이를 재 펼치는 동안 실제보다 늘었다가 줄고,
+    // 그리지 않은 댓글이 많은 글은 스크롤 길이도 부풀었다가 줄어든다.
     content-visibility: auto;
     contain-intrinsic-size: auto 48px;
 

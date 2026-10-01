@@ -1,4 +1,5 @@
 import {Box} from "@radix-ui/themes";
+import {Collapsible} from "radix-ui";
 import {Fragment, useDeferredValue} from "react";
 
 import type {ProcessedComment} from "@/core/preview/comments";
@@ -23,20 +24,20 @@ const Thread = ({parent, replies, isAdmin}: { parent: ProcessedComment; replies:
     // 펼치기 버튼은 답글이 둘 이상일 때만 있다. 접은 뒤 답글이 하나로 줄면(삭제·차단) 펼칠 수 없게 갇히므로 펼쳐 둔다.
     const isCollapsed = usePreviewStore((s) => replies.length > 1 && s.collapsed.has(parent.no));
 
+    const children = replies.map((child, index) => (
+        <Comment key={child.no} comment={child} depth={1} replyCount={0} lastReply={index === replies.length - 1} isAdmin={isAdmin}/>
+    ));
+
     return (
         <>
             <Comment comment={parent} depth={0} replyCount={replies.length} threadOpen={!isCollapsed && replies.length > 0} isAdmin={isAdmin}/>
-            {/* 접고 펼 때 높이를 CSS로 움직인다 (overlay.scss의 .refresher-replies). 높이를 재지 않아 스레드가 많아도 그릴 때 스타일 계산을 강제하지 않는다.
-                Radix Collapsible은 스레드마다 마운트할 때 계산된 스타일을 읽는다. 접힌 답글은 inert로 포커스·낭독에서 뺀다. */}
-            {replies.length > 0 && (
-                <div className="refresher-replies" data-open={!isCollapsed || undefined} inert={isCollapsed}>
-                    <div>
-                        {replies.map((child, index) => (
-                            <Comment key={child.no} comment={child} depth={1} replyCount={0} lastReply={index === replies.length - 1} isAdmin={isAdmin}/>
-                        ))}
-                    </div>
-                </div>
-            )}
+            {/* 접고 펼 때 높이를 움직인다 (overlay.scss). 처음 그릴 때는 Radix가 애니메이션을 건너뛴다.
+                접기 버튼은 답글이 둘 이상일 때만 있으므로 답글 하나는 Collapsible 없이 그린다. Collapsible은 그릴 때마다 높이와 스타일을 재 스레드가 많은 글에서 느리다. */}
+            {replies.length > 1 ? (
+                <Collapsible.Root open={!isCollapsed}>
+                    <Collapsible.Content className="refresher-replies">{children}</Collapsible.Content>
+                </Collapsible.Root>
+            ) : children}
         </>
     );
 };
