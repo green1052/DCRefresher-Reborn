@@ -71,7 +71,7 @@ export default defineWebExtConfig({
 
 ```
 entrypoints/
-  background/       배경 스크립트. 단축키 전달, DB 갱신·자동 백업 알람, 설치·업데이트 처리, 배경 모듈 실행
+  background/       배경 스크립트. index.ts(단축키 전달, 설치·업데이트 처리, 배경 모듈 실행), page.ts(MAIN world 주입), database.ts(DB 갱신 알람), backup.ts(자동 백업)
   content/          콘텐츠 스크립트. 모듈 레지스트리 시작, 오버레이(shadow DOM) 마운트
   page.content.scss 디시 페이지에 입히는 CSS (manifest로 따로 주입)
   options/          옵션 페이지 (설정·차단·메모·단축키·데이터·정보·개발자 탭)
@@ -190,7 +190,7 @@ flowchart TD
 
 ### 배경 스크립트
 
-`entrypoints/background/index.ts`는 뜰 때마다 리스너와 배경 모듈의 `listen()`을 겁니다. 업데이트(`onInstalled`의 update) 때는 설정을 옮깁니다(v5 → v6은 5.x·6.0.2에서 올 때만, v6 안의 이름 변경은 매번). 이어서 배경 모듈을 맞추고 IP·밴 DB를 받습니다. 개발 빌드는 DB가 없을 때만 받고, DB 갱신 알람도 배포 빌드에서만 만듭니다. 자동 백업은 알람으로 돌립니다. 콘텐츠 스크립트가 요청하면 탭의 페이지 컨텍스트(MAIN world)에서 reCAPTCHA 토큰을 받거나 디시 목록 스크립트를 다시 돌립니다(`refresher:grecaptchaToken`, `refresher:listReplaced`). 글쓰기 모듈의 이미지 변환을 그 탭에 넣고(`refresher:hookUploads`), CORS를 열지 않는 디시 통합검색 결과를 대신 받아 줍니다(`refresher:searchPosts`, 관리 모듈의 같은 제목 찾기). Chrome은 서비스 워커라 언제든 멈췄다 다시 뜨므로, 전역 변수에 상태를 두지 말고 저장소에 둡니다.
+`entrypoints/background/index.ts`는 뜰 때마다 리스너와 배경 모듈의 `listen()`을 겁니다. 같은 폴더의 `page.ts`(탭의 페이지에서 대신 실행하는 것), `database.ts`(DB 주기 갱신), `backup.ts`(자동 백업)가 각자 리스너를 걸고, `index.ts`는 이것들을 부르고 설치·업데이트 처리를 합니다. 업데이트(`onInstalled`의 update) 때는 설정을 옮깁니다(v5 → v6은 5.x·6.0.2에서 올 때만, v6 안의 이름 변경은 매번). 이어서 배경 모듈을 맞추고 IP·밴 DB를 받습니다. 개발 빌드는 DB가 없을 때만 받고, DB 갱신 알람도 배포 빌드에서만 만듭니다. 자동 백업은 알람으로 돌립니다. 콘텐츠 스크립트가 요청하면 탭의 페이지 컨텍스트(MAIN world)에서 reCAPTCHA 토큰을 받거나 디시 목록 스크립트를 다시 돌립니다(`refresher:grecaptchaToken`, `refresher:listReplaced`). 글쓰기 모듈의 이미지 변환을 그 탭에 넣고(`refresher:hookUploads`), CORS를 열지 않는 디시 통합검색 결과를 대신 받아 줍니다(`refresher:searchPosts`, 관리 모듈의 같은 제목 찾기). Chrome은 서비스 워커라 언제든 멈췄다 다시 뜨므로, 전역 변수에 상태를 두지 말고 저장소에 둡니다.
 
 ## 모듈 시스템
 
