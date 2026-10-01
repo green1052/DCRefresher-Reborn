@@ -18,7 +18,7 @@ export default defineWxtModule((wxt) => {
 
         const commands: Record<string, { description: string; suggested_key?: { default: string } }> = {};
         // 한 번에 불러온다. 파일마다 부르면 불러오는 환경을 그때마다 새로 만든다.
-        const metas = (await wxt.builder.importEntrypoints(files)) as AnyModuleMeta[];
+        const metas = (await wxt.builder.importEntrypoints(files)) as unknown as AnyModuleMeta[];
         for (const meta of metas) {
             for (const [name, {description, key}] of Object.entries(meta.commands ?? {})) {
                 if (name in commands) throw new Error(`단축키 이름이 겹칩니다: ${name} (${meta.id})`);
