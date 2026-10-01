@@ -1,8 +1,8 @@
 import {create} from "zustand";
 
-import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockDefaultsStorage, blockListKey, blockStorage, DEFAULT_DETECT_MODE, DETECT_MODE_NAMES, DETECT_MODES} from "@/core/storage/items";
+import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockDefaultsStorage, blockListKey, DEFAULT_DETECT_MODE, DETECT_MODE_NAMES, DETECT_MODES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
-import {storageSync} from "@/core/storage/sync";
+import {typedListSync} from "@/core/storage/sync";
 import {saveOrReload} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 import {arrayIncludes} from "@/utils/typed";
@@ -64,10 +64,7 @@ export const useBlocksStore = create<BlocksState>((set, get) => ({
     entries: emptyEntries(),
     defaults: {...DEFAULT_DETECT_MODE},
 
-    setEntries: async (type, entries) => {
-        set((state) => ({entries: {...state.entries, [type]: entries}}));
-        await saveOrReload(blockStorage[type].setValue(entries), load, "차단 목록을 저장하지 못했습니다.");
-    },
+    setEntries: (type, entries): Promise<void> => lists.save(type, entries),
 
     addEntry: (type, fields) => get().addEntries(type, [fields]),
 
@@ -95,16 +92,9 @@ export const useBlocksStore = create<BlocksState>((set, get) => ({
 
     setDefault: async (type, mode) => {
         set((state) => ({defaults: {...state.defaults, [type]: mode}}));
-        await saveOrReload(blockDefaultsStorage().setValue(get().defaults), load, "차단 목록을 저장하지 못했습니다.");
+        await saveOrReload(blockDefaultsStorage().setValue(get().defaults), lists.load, "차단 목록을 저장하지 못했습니다.");
     }
 }));
-
-// 이 탭의 쓰기도 watch로 돌아온다. 값이 같으면 state를 그대로 돌려줘 구독자를 다시 렌더시키지 않는다.
-const setList = (type: BlockType, value: unknown): void =>
-    useBlocksStore.setState((state) => {
-        const next = normalizeBlockList(value);
-        return JSON.stringify(state.entries[type]) === JSON.stringify(next) ? state : {entries: {...state.entries, [type]: next}};
-    });
 
 /** 저장소·백업의 기본 차단 모드. 가져오기·복원 값은 검증 없이 들어오므로 모르는 모드(소문자 등)는 버리고 그 유형은 기본 모드로 둔다. */
 export const normalizeDefaults = (value: unknown): Record<BlockType, DetectMode> => {
@@ -117,17 +107,16 @@ export const normalizeDefaults = (value: unknown): Record<BlockType, DetectMode>
     return defaults;
 };
 
-const setDefaults = (next: unknown): void => useBlocksStore.setState({defaults: normalizeDefaults(next)});
-
-const listTypes = new Map<string, BlockType>(BLOCK_TYPES.map((type) => [blockListKey(type), type]));
-
-// 값이 없으면 null이고, setList·setDefaults가 기본값으로 맞춘다.
-const sync = storageSync([BLOCK_DEFAULTS_KEY, ...BLOCK_TYPES.map(blockListKey)], (key, value) => {
-    const type = listTypes.get(key);
-    if (type) setList(type, value);
-    else setDefaults(value);
+// 값이 없으면 null이고, normalize가 빈 목록·기본 모드로 맞춘다.
+const lists = typedListSync({
+    types: BLOCK_TYPES,
+    keyOf: blockListKey,
+    normalize: normalizeBlockList,
+    get: (): Record<BlockType, BlockEntry[]> => useBlocksStore.getState().entries,
+    set: (entries) => useBlocksStore.setState({entries}),
+    failure: "차단 목록을 저장하지 못했습니다.",
+    extra: {[BLOCK_DEFAULTS_KEY]: (value) => useBlocksStore.setState({defaults: normalizeDefaults(value)})}
 });
-const load = sync.load;
 
 /** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다. */
-export const initBlocksStore = sync.start;
+export const initBlocksStore = lists.start;

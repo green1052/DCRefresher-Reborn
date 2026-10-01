@@ -1,6 +1,7 @@
 import {storage, type StorageItemKey} from "wxt/utils/storage";
 
 import {onBfcacheRestore} from "@/utils/dom";
+import {saveOrReload} from "@/utils/error";
 import {once} from "@/utils/once";
 
 /**
@@ -38,4 +39,43 @@ export const storageSync = <K extends StorageItemKey>(keys: readonly K[], apply:
     });
 
     return {load, start};
+};
+
+/**
+ * 유형마다 키 하나에 저장하는 목록(차단 목록·메모)을 스토어와 양방향으로 맞춘다.
+ * - save: 스토어에 먼저 반영하고 저장한다. 실패하면 저장소 값으로 되돌리고 던진다 (saveOrReload).
+ * - 저장소가 바뀌면(다른 탭·옵션 페이지, 이 탭의 쓰기도 돌아온다) normalize한 값을 넣는다. 값이 같으면 스토어를 건드리지 않아 구독자를 깨우지 않는다.
+ * - extra: 같은 읽기·감시에 함께 묶을 다른 키 (차단의 기본 모드 등).
+ * load·start는 storageSync와 같다.
+ */
+export const typedListSync = <T extends string, V>(options: {
+    types: readonly T[];
+    keyOf: (type: T) => StorageItemKey;
+    normalize: (value: unknown) => V;
+    get: () => Record<T, V>;
+    set: (lists: Record<T, V>) => void;
+    /** 저장하지 못했을 때 콘솔에 남길 문구. */
+    failure: string;
+    extra?: Partial<Record<StorageItemKey, (value: unknown) => void>>;
+}) => {
+    const {types, keyOf, normalize, get, set, failure, extra = {}} = options;
+    const typeOf = new Map<StorageItemKey, T>(types.map((type) => [keyOf(type), type]));
+
+    const sync = storageSync([...typeOf.keys(), ...Object.keys(extra) as StorageItemKey[]], (key, value) => {
+        const type = typeOf.get(key);
+        if (type === undefined) {
+            extra[key]?.(value);
+            return;
+        }
+        const next = normalize(value);
+        const lists = get();
+        if (JSON.stringify(lists[type]) !== JSON.stringify(next)) set({...lists, [type]: next});
+    });
+
+    const save = async (type: T, value: V): Promise<void> => {
+        set({...get(), [type]: value});
+        await saveOrReload(storage.setItem(keyOf(type), value), sync.load, failure);
+    };
+
+    return {...sync, save};
 };

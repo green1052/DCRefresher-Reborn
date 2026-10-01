@@ -1,9 +1,8 @@
 import {create} from "zustand";
 
-import {MEMO_TYPES, memoMapKey, memoStorage} from "@/core/storage/items";
-import {storageSync} from "@/core/storage/sync";
+import {MEMO_TYPES, memoMapKey} from "@/core/storage/items";
+import {typedListSync} from "@/core/storage/sync";
 import type {MemoEntry, MemoType} from "@/core/storage/types";
-import {saveOrReload} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
 type MemoMap = Record<string, MemoEntry>;
@@ -39,13 +38,10 @@ export const normalizeMemoMap = (value: unknown): MemoMap =>
         : {};
 
 /** 메모의 단일 출처. 콘텐츠·옵션 모두 이 스토어를 쓰고 저장소와 양방향 동기화된다. */
-export const useMemosStore = create<MemosState>((set, get) => ({
+export const useMemosStore = create<MemosState>((_set, get) => ({
     memos: {UID: {}, NICK: {}, IP: {}},
 
-    setMemos: async (type, memos) => {
-        set((state) => ({memos: {...state.memos, [type]: memos}}));
-        await saveOrReload(memoStorage[type].setValue(memos), load, "메모를 저장하지 못했습니다.");
-    },
+    setMemos: (type, memos): Promise<void> => lists.save(type, memos),
 
     setMemo: async (type, user, entry) => {
         await get().setMemos(type, {...get().memos[type], [user]: entry});
@@ -77,18 +73,15 @@ export const findMemo = (user: MemoUser, gallery?: string | null): MemoEntry | u
 export const useUserMemo = (user: MemoUser, gallery?: string | null): MemoEntry | undefined =>
     lookupMemo(useMemosStore((state) => state.memos), user, gallery);
 
-// 이 탭의 쓰기도 watch로 돌아온다. 값이 같으면 state를 그대로 돌려줘 구독자(배지 전체 다시 그리기)를 깨우지 않는다.
-const setMap = (type: MemoType, value: unknown): void =>
-    useMemosStore.setState((state) => {
-        const next = normalizeMemoMap(value);
-        return JSON.stringify(state.memos[type]) === JSON.stringify(next) ? state : {memos: {...state.memos, [type]: next}};
-    });
-
-const mapTypes = new Map(MEMO_TYPES.map((type) => [memoMapKey(type), type]));
-
-// 값이 없으면 null → 빈 목록.
-const sync = storageSync([...mapTypes.keys()], (key, value) => setMap(mapTypes.get(key)!, value));
-const load = sync.load;
+// 값이 없으면 null → 빈 목록. 같은 값이 돌아오면 구독자(배지 전체 다시 그리기)를 깨우지 않는다 (typedListSync).
+const lists = typedListSync({
+    types: MEMO_TYPES,
+    keyOf: memoMapKey,
+    normalize: normalizeMemoMap,
+    get: (): Record<MemoType, MemoMap> => useMemosStore.getState().memos,
+    set: (memos) => useMemosStore.setState({memos}),
+    failure: "메모를 저장하지 못했습니다."
+});
 
 /** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다. */
-export const initMemosStore = sync.start;
+export const initMemosStore = lists.start;

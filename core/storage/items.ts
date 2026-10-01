@@ -2,7 +2,7 @@ import {storage, type StorageItemKey, type WxtStorageItem} from "wxt/utils/stora
 
 import {objectKeys} from "@/utils/typed";
 
-import type {BlockEntry, BlockType, DatabaseMeta, DetectMode, MemoEntry, MemoType, SettingValue} from "./types";
+import type {BlockType, DatabaseMeta, DetectMode, MemoType, SettingValue} from "./types";
 
 /** 차단 유형 → 이름. 유형·모드 목록과 타입(types.ts)은 이름표의 키 순서를 따른다. */
 export const TYPE_NAMES = {
@@ -55,10 +55,6 @@ const lazyItem = <T>(key: StorageItemKey, fallback: T): (() => WxtStorageItem<T,
     return () => (item ??= storage.defineItem<T>(key, {fallback}));
 };
 
-/** 키 → 처음 쓸 때 만드는 항목. 객체 모양(`items[key]`)은 그대로 두고 getter로 미룬다. */
-const lazyItems = <K extends string, T>(keys: readonly K[], keyOf: (key: K) => StorageItemKey, fallback: () => T): Record<K, WxtStorageItem<T, {}>> =>
-    Object.defineProperties({} as Record<K, WxtStorageItem<T, {}>>, Object.fromEntries(keys.map((key) => [key, {get: lazyItem<T>(keyOf(key), fallback()), enumerable: true}])));
-
 /**
  * browser.storage.local에 실제로 저장되는 이름 (local: 없이). 백업·가져오기처럼 storage.local을 직접 다룰 때 쓴다.
  * WXT 키에서 만들어 두 이름이 어긋나지 않게 한다.
@@ -70,12 +66,8 @@ export const BLOCK_DEFAULTS_KEY = "local:refresher:block:defaults";
 export const memoMapKey = (type: MemoType): `local:refresher:memo:${MemoType}` => `local:refresher:memo:${type}`;
 export const MODULES_KEY = "local:refresher:modules";
 
-export const blockStorage = lazyItems(BLOCK_TYPES, blockListKey, (): BlockEntry[] => []);
-
 /** 기본 차단 모드 항목 (쓰기용). moduleSettingsStorage처럼 처음 쓸 때 만든다. */
 export const blockDefaultsStorage = lazyItem<Record<BlockType, DetectMode>>(BLOCK_DEFAULTS_KEY, {...DEFAULT_DETECT_MODE});
-
-export const memoStorage = lazyItems(MEMO_TYPES, memoMapKey, (): Record<string, MemoEntry> => ({}));
 
 /** 모듈 on/off 항목 (쓰기·감시용). */
 export const modulesStorage = lazyItem<Record<string, boolean>>(MODULES_KEY, {});
@@ -108,7 +100,7 @@ export const moduleDataKey = (id: string): `local:refresher:module:${string}:dat
 /** moduleDataStorage의 키인지 (local: 없이). */
 export const isModuleDataKey = (key: string): boolean => /^refresher:module:.+:data$/.test(key);
 
-/** blockStorage의 차단 목록 키인지 (local: 없이). 기본 차단 모드(refresher:block:defaults)는 아니다. */
+/** 차단 목록 키(blockListKey)인지 (local: 없이). 기본 차단 모드(refresher:block:defaults)는 아니다. */
 export const isBlockListKey = (key: string): boolean => /^refresher:block:[A-Z]+$/.test(key);
 
 /**
