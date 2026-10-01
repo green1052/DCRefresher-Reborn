@@ -17,7 +17,7 @@ concurrency:
 jobs:
     release:
         runs-on: ubuntu-latest
-        timeout-minutes: 25
+        timeout-minutes: 30
         permissions:
             contents: write
         steps:
@@ -41,13 +41,16 @@ jobs:
             -   name: Build
                 run: bun run zip && bun run zip:firefox
 
-            # E2E는 위에서 zip을 만들며 남은 .output/chrome-mv3를 크로미엄에 올린다 (e2e/fixtures.ts).
-            # 확장을 올려야 해서 headless shell이 아니라 크로미엄 본체가 필요하다. 실패하면 릴리즈하지 않는다
-            -   name: Install Chromium
-                run: bunx playwright install --with-deps chromium
+            # E2E는 위에서 zip을 만들며 남은 .output/chrome-mv3·firefox-mv2를 브라우저에 올린다 (e2e/fixtures.ts). 실패하면 릴리즈하지 않는다.
+            # 크로미엄은 확장을 올려야 해서 headless shell이 아니라 본체가 필요하다. 파이어폭스는 원격 디버깅으로 임시 설치한다 (e2e/firefox.ts)
+            -   name: Install browsers
+                run: bunx playwright install --with-deps chromium firefox
 
-            -   name: E2E tests
+            -   name: E2E tests (Chromium)
                 run: bun run e2e
+
+            -   name: E2E tests (Firefox)
+                run: bun run e2e:firefox
 
             -   name: Upload E2E report
                 if: failure()

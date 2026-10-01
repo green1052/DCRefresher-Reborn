@@ -546,7 +546,7 @@ e2e/
 - `fixtures.ts`가 [Playwright의 확장 테스트 방식](https://playwright.dev/docs/chrome-extensions)대로 확장을 올리고, 배경(MV3 서비스 워커, MV2 배경 페이지)에서 `extensionId`를 꺼냅니다. 테스트는 `pages/`의 `openPopup(page, extensionId)` 같은 함수로 페이지를 열고 그 반환값으로 조작합니다.
 - **디시에는 요청을 보내지 않습니다.** fixtures가 `dcinside.com` 주소를 모두 `e2e/dcinside.ts`의 가짜 목록·글·댓글로 응답하고, 읽기가 아닌 POST에는 500을 줘서 쓰기 요청이 나가면 테스트가 바로 실패합니다. IP DB 서버는 끊습니다. 디시 마크업이 바뀌어 모듈을 고치면 가짜 페이지도 같이 고칩니다.
 - `errors` fixture가 페이지 오류와 `console.error`를 모아 테스트 끝에 비어 있는지 봅니다. `listPage`는 콘텐츠 스크립트가 돈 목록 페이지(`pages/list.ts`), `storage`는 배경을 통한 확장 저장소입니다 (디시 페이지의 `page.evaluate`에서는 `chrome.storage`에 닿지 않습니다).
-- **파이어폭스**(`bun run e2e:firefox`): Playwright의 파이어폭스는 실행 인자로 확장을 올릴 수 없어, `e2e/firefox.ts`가 web-ext처럼 원격 디버깅 서버(`-start-debugger-server`)에 붙어 `.output/firefox-mv2`를 임시 부가 기능으로 설치합니다. 확장 UUID는 `extensions.webextensions.uuids`로 고정해 `moz-extension://` 주소를 미리 압니다. 배경 페이지에는 닿을 수 없어 `storage`는 확장 페이지(`popup.html`)를 하나 열어 그 안에서 읽고 씁니다. 릴리즈 워크플로는 아직 크로미엄만 돌립니다.
+- **파이어폭스**(`bun run e2e:firefox`): Playwright의 파이어폭스는 실행 인자로 확장을 올릴 수 없어, `e2e/firefox.ts`가 web-ext처럼 원격 디버깅 서버(`-start-debugger-server`)에 붙어 `.output/firefox-mv2`를 임시 부가 기능으로 설치합니다. 확장 UUID는 `extensions.webextensions.uuids`로 고정해 `moz-extension://` 주소를 미리 압니다. 배경 페이지에는 닿을 수 없어 `storage`는 확장 페이지(`popup.html`)를 하나 열어 그 안에서 읽고 씁니다. 릴리즈 워크플로는 크로미엄과 파이어폭스 E2E를 모두 돌립니다.
 - 확장은 headless shell에 올라가지 않아 크로미엄 본체(`channel: "chromium"`)로 headless 실행합니다. 미리 설치된 크로미엄을 쓰려면 `PLAYWRIGHT_CHROMIUM=/경로/chrome`을 줍니다.
 - 실패한 실행의 트레이스·리포트는 `test-results/`, `playwright-report/`에 남습니다 (git에 올리지 않습니다). 릴리즈 워크플로는 실패 때 이것을 아티팩트로 올립니다.
 
@@ -565,7 +565,7 @@ e2e/
 
 태그를 push하면 `.github/workflows/release.yml`이 돕니다.
 
-1. 태그와 `package.json` 버전이 같은지 확인하고, 타입 검사·단위 테스트를 하고, zip을 만든 뒤 E2E 테스트를 돌립니다. 하나라도 실패하면 릴리즈하지 않습니다. 모두 통과하면 zip을 GitHub 릴리즈에 올립니다.
+1. 태그와 `package.json` 버전이 같은지 확인하고, 타입 검사·단위 테스트를 하고, zip을 만든 뒤 크로미엄·파이어폭스 E2E 테스트를 돌립니다. 하나라도 실패하면 릴리즈하지 않습니다. 모두 통과하면 zip을 GitHub 릴리즈에 올립니다.
 2. Chrome 웹 스토어와 Firefox Add-ons에 함께 제출합니다. 한 스토어가 실패해도 다른 스토어는 끝까지 제출되고, 이 단계는 실패해도 넘어가므로(`continue-on-error`) DB는 막히지 않습니다.
 3. DB 워크플로가 이 태그의 코드로 IP·밴 DB를 새로 만듭니다([IP·밴 DB](#ip밴-db)).
 
