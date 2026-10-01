@@ -87,3 +87,37 @@ describe("runBackup / readCloudBackup", () => {
         expect((await readCloudBackupStatus()).legacy).toBe(true);
     });
 });
+
+describe("runBackup 한도", () => {
+    const quotaError = (): Error => new Error("QUOTA_BYTES quota exceeded");
+
+    it("수동 백업은 한도에 걸리면 v5 방식 백업만 치우고 한 번 더 쓴다", async () => {
+        await fakeBrowser.storage.local.set(local);
+        await fakeBrowser.storage.sync.set({"refresher:modules": {block: false}});
+        const set = fakeBrowser.storage.sync.set.bind(fakeBrowser.storage.sync);
+        vi.spyOn(fakeBrowser.storage.sync, "set").mockRejectedValueOnce(quotaError()).mockImplementation(set);
+
+        await runBackup("manual");
+        const sync = await fakeBrowser.storage.sync.get(null);
+        expect(sync["refresher:modules"]).toBeUndefined();
+        expect((await readCloudBackup("manual"))?.data["refresher:modules"]).toEqual({block: true});
+    });
+
+    it("자동 백업은 v5 방식 백업을 치우지 않고 수동 백업을 하라고 알린다", async () => {
+        await fakeBrowser.storage.local.set(local);
+        await fakeBrowser.storage.sync.set({"refresher:modules": {block: false}});
+        vi.spyOn(fakeBrowser.storage.sync, "set").mockRejectedValue(quotaError());
+
+        await expect(runBackup("auto")).rejects.toThrow("수동 백업을 한 번 하면 정리됩니다.");
+        expect((await fakeBrowser.storage.sync.get("refresher:modules"))["refresher:modules"]).toEqual({block: false});
+        expect(await stored("refresher:backup:error")).toContain("수동 백업");
+    });
+
+    it("두 칸을 합쳐 한도를 넘으면 쓰지 않고 크기를 알린다", async () => {
+        // 압축해도 줄지 않는 큰 값.
+        const noise = Array.from({length: 60_000}, () => Math.random().toString(36).slice(2)).join("");
+        await fakeBrowser.storage.local.set({"refresher:memo:UID": {u: {text: noise, color: "#fff"}}});
+        await expect(runBackup("manual")).rejects.toThrow("백업이 클라우드 한도를 넘습니다.");
+        expect(await fakeBrowser.storage.sync.get(null)).toEqual({});
+    });
+});

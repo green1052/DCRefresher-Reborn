@@ -24,6 +24,9 @@ bytes.toHex ??= function (this: Uint8Array) {
 const typed = Uint8Array as typeof Uint8Array & { fromBase64?: (text: string) => Uint8Array };
 typed.fromBase64 ??= (text) => new Uint8Array(Buffer.from(text, "base64"));
 
+// Cookie Store API (utils/cookie의 csrfBody). jsdom·Node에는 없다. 쿠키가 없는 것처럼 둔다.
+(globalThis as { cookieStore?: unknown }).cookieStore ??= {get: async () => null};
+
 // jsdom에 없는 것들. core/http/urls는 불러오는 순간 내비게이션 항목을 읽는다. node 환경(@vitest-environment node) 파일에는 DOM이 없다.
 if (typeof window !== "undefined") {
     const perf = performance as Performance & { getEntriesByType?: Performance["getEntriesByType"] };
