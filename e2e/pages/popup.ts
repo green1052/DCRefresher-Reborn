@@ -1,8 +1,10 @@
 import type {Page} from "@playwright/test";
 
+import {extensionUrl} from "./extension";
+
 /** 팝업 페이지. 모듈 타일과 (디시 탭에서 열면) 현재 페이지 토글을 다룬다 */
 export async function openPopup(page: Page, extensionId: string) {
-    await page.goto(`chrome-extension://${extensionId}/popup.html`);
+    await page.goto(extensionUrl(extensionId, "popup.html"));
     await page.locator(".module-tile").first().waitFor();
 
     const popup = {

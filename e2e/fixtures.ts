@@ -2,21 +2,26 @@ import {mkdtempSync} from "node:fs";
 import {tmpdir} from "node:os";
 import path from "node:path";
 
-import {type BrowserContext, chromium, type Page, test as base, type Worker} from "@playwright/test";
+import {type BrowserContext, chromium, firefox, type Page, test as base, type Worker} from "@playwright/test";
 import type {browser} from "wxt/browser";
 
 import {commentsResponse, GIF, listPage, viewPage} from "./dcinside";
+import {FIREFOX_EXTENSION_UUID, firefoxUserPrefs, freePort, installTemporaryAddon} from "./firefox";
+import {extensionUrl} from "./pages/extension";
 import {type ListPage, openListPage} from "./pages/list";
 
 /** 확장 페이지·서비스 워커 안(evaluate)의 chrome 전역. 테스트 파일은 확장 번들이 아니라 타입이 없다 */
 declare const chrome: typeof browser;
 
 const pathToExtension = path.resolve(".output/chrome-mv3");
+const pathToFirefoxExtension = path.resolve(".output/firefox-mv2");
 
 /**
  * 빌드한 확장을 올린 브라우저 컨텍스트 (WXT의 Playwright 예제 wxt-dev/examples의 playwright-e2e-testing과 같은 방식).
  * - 확장은 영속 컨텍스트에서만 올라간다. headless도 크로미엄 본체(channel: chromium)여야 확장이 돈다 (headless shell은 확장을 못 올린다).
  *   PLAYWRIGHT_CHROMIUM에 실행 파일을 주면 그것을 쓴다 (playwright install 없이 미리 설치된 크로미엄으로 돌릴 때).
+ * - 파이어폭스(firefox 프로젝트)는 .output/firefox-mv2를 원격 디버깅 서버로 임시 설치한다 (e2e/firefox.ts).
+ *   배경 페이지에 닿을 수 없어 저장소는 확장 페이지(popup.html)를 하나 열어 그 안에서 읽고 쓴다.
  * - dcinside.com 주소는 모두 e2e/dcinside.ts의 가짜 페이지로 응답한다. 디시에 요청을 보내지 않는다.
  * - IP DB 서버(dcrefresher.green1052.com)는 끊는다.
  * - errors: 페이지 오류와 console.error를 모은다. 테스트 끝에 비어 있어야 한다
@@ -30,13 +35,38 @@ export interface ExtensionStorage {
 /** 배경 스크립트. MV3는 서비스 워커, MV2는 배경 페이지다 */
 type Background = Worker | Page;
 
+/** 크로미엄의 배경 스크립트 (WXT 예제와 같다) */
+const chromiumBackground = async (context: BrowserContext): Promise<Background> => {
+    let background: Background | undefined;
+    if (pathToExtension.endsWith("-mv3")) {
+        [background] = context.serviceWorkers();
+        background ??= await context.waitForEvent("serviceworker");
+    } else {
+        [background] = context.backgroundPages();
+        background ??= await context.waitForEvent("backgroundpage");
+    }
+    return background;
+};
+
 export const test = base.extend<{ context: BrowserContext; background: Background; extensionId: string; errors: string[]; storage: ExtensionStorage; listPage: ListPage }>({
-    context: async ({}, use) => {
-        const context = await chromium.launchPersistentContext(mkdtempSync(path.join(tmpdir(), "refresher-e2e-")), {
-            headless: true,
-            ...(process.env.PLAYWRIGHT_CHROMIUM ? {executablePath: process.env.PLAYWRIGHT_CHROMIUM} : {channel: "chromium"}),
-            args: [`--disable-extensions-except=${pathToExtension}`, `--load-extension=${pathToExtension}`]
-        });
+    context: async ({browserName}, use) => {
+        const profile = mkdtempSync(path.join(tmpdir(), "refresher-e2e-"));
+        let context: BrowserContext;
+        if (browserName === "firefox") {
+            const port = await freePort();
+            context = await firefox.launchPersistentContext(profile, {
+                headless: true,
+                args: ["-start-debugger-server", String(port)],
+                firefoxUserPrefs: firefoxUserPrefs()
+            });
+            await installTemporaryAddon(port, pathToFirefoxExtension);
+        } else {
+            context = await chromium.launchPersistentContext(profile, {
+                headless: true,
+                ...(process.env.PLAYWRIGHT_CHROMIUM ? {executablePath: process.env.PLAYWRIGHT_CHROMIUM} : {channel: "chromium"}),
+                args: [`--disable-extensions-except=${pathToExtension}`, `--load-extension=${pathToExtension}`]
+            });
+        }
 
         await context.route(/^https:\/\/([a-z0-9]+\.)?dcinside\.com\//, (route) => {
             const url = new URL(route.request().url());
@@ -55,20 +85,21 @@ export const test = base.extend<{ context: BrowserContext; background: Backgroun
         await context.close();
     },
 
-    background: async ({context}, use) => {
-        let background: Background | undefined;
-        if (pathToExtension.endsWith("-mv3")) {
-            [background] = context.serviceWorkers();
-            background ??= await context.waitForEvent("serviceworker");
-        } else {
-            [background] = context.backgroundPages();
-            background ??= await context.waitForEvent("backgroundpage");
+    background: async ({context, browserName}, use) => {
+        if (browserName === "firefox") {
+            // 배경 페이지 대신 확장 페이지 하나를 연다. 같은 확장 출처라 browser.storage에 닿는다
+            const page = await context.newPage();
+            await page.goto(extensionUrl(FIREFOX_EXTENSION_UUID, "popup.html"));
+            await use(page);
+            return;
         }
-        await use(background);
+        await use(await chromiumBackground(context));
     },
 
-    extensionId: async ({background}, use) => {
-        await use(background.url().split("/")[2]!);
+    extensionId: async ({browserName, context}, use) => {
+        // 파이어폭스는 UUID를 고정해 두었다. 배경 대신 여는 페이지가 팝업 테스트의 활성 탭을 바꾸지 않게 background를 쓰지 않는다
+        if (browserName === "firefox") await use(FIREFOX_EXTENSION_UUID);
+        else await use((await chromiumBackground(context)).url().split("/")[2]!);
     },
 
     storage: async ({background}, use) => {

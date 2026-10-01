@@ -43,6 +43,7 @@ bun run dev:firefox    # Firefox 개발 모드
 bun run compile        # 타입 검사 (tsc --noEmit)
 bun run test           # 단위 테스트 (Vitest). test:watch는 지켜보며 다시 돈다
 bun run e2e            # E2E (Playwright, 크로미엄에 확장을 올린다). 먼저 bun run build
+bun run e2e:firefox    # 파이어폭스 E2E. 먼저 bun run build:firefox, 처음 한 번 bunx playwright install firefox
 bun run build          # .output/chrome-mv3
 bun run build:firefox  # .output/firefox-mv2
 bun run zip            # 배포용 zip
@@ -526,6 +527,7 @@ flowchart TD
 ```
 e2e/
 ├─ fixtures.ts           # 영속 컨텍스트에 확장을 올리고 background·extensionId·storage·errors·listPage를 준다
+├─ firefox.ts            # 파이어폭스에 확장을 임시 부가 기능으로 설치한다
 ├─ dcinside.ts           # 가짜 디시 목록·글·댓글
 ├─ pages/                # 페이지별 조작 (openPopup, openOptions, openListPage)
 └─ *.spec.ts             # popup, options, content-script
@@ -534,6 +536,7 @@ e2e/
 - `fixtures.ts`가 [Playwright의 확장 테스트 방식](https://playwright.dev/docs/chrome-extensions)대로 확장을 올리고, 배경(MV3 서비스 워커, MV2 배경 페이지)에서 `extensionId`를 꺼냅니다. 테스트는 `pages/`의 `openPopup(page, extensionId)` 같은 함수로 페이지를 열고 그 반환값으로 조작합니다.
 - **디시에는 요청을 보내지 않습니다.** fixtures가 `dcinside.com` 주소를 모두 `e2e/dcinside.ts`의 가짜 목록·글·댓글로 응답하고, 읽기가 아닌 POST에는 500을 줘서 쓰기 요청이 나가면 테스트가 바로 실패합니다. IP DB 서버는 끊습니다. 디시 마크업이 바뀌어 모듈을 고치면 가짜 페이지도 같이 고칩니다.
 - `errors` fixture가 페이지 오류와 `console.error`를 모아 테스트 끝에 비어 있는지 봅니다. `listPage`는 콘텐츠 스크립트가 돈 목록 페이지(`pages/list.ts`), `storage`는 배경을 통한 확장 저장소입니다 (디시 페이지의 `page.evaluate`에서는 `chrome.storage`에 닿지 않습니다).
+- **파이어폭스**(`bun run e2e:firefox`): Playwright의 파이어폭스는 실행 인자로 확장을 올릴 수 없어, `e2e/firefox.ts`가 web-ext처럼 원격 디버깅 서버(`-start-debugger-server`)에 붙어 `.output/firefox-mv2`를 임시 부가 기능으로 설치합니다. 확장 UUID는 `extensions.webextensions.uuids`로 고정해 `moz-extension://` 주소를 미리 압니다. 배경 페이지에는 닿을 수 없어 `storage`는 확장 페이지(`popup.html`)를 하나 열어 그 안에서 읽고 씁니다. 릴리즈 워크플로는 아직 크로미엄만 돌립니다.
 - 확장은 headless shell에 올라가지 않아 크로미엄 본체(`channel: "chromium"`)로 headless 실행합니다. 미리 설치된 크로미엄을 쓰려면 `PLAYWRIGHT_CHROMIUM=/경로/chrome`을 줍니다.
 - 실패한 실행의 트레이스·리포트는 `test-results/`, `playwright-report/`에 남습니다 (git에 올리지 않습니다). 릴리즈 워크플로는 실패 때 이것을 아티팩트로 올립니다.
 
