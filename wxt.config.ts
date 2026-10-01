@@ -22,6 +22,10 @@ export default defineConfig({
             if (wxt.config.imports) wxt.config.imports.dirs = [];
         }
     },
+    zip: {
+        // 파이어폭스 심사용 소스 zip. 테스트 결과물과 DB 빌드 결과(.gitignore에 있는 것)는 소스가 아니라 뺀다.
+        excludeSources: ["test-results/**", "playwright-report/**", "db/**"]
+    },
     dev: {
         reloadCommand: "Alt+Shift+R"
     },
