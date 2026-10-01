@@ -143,7 +143,10 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         if (!duplicate) return;
 
         const textOf = (item: HTMLElement): string => item.querySelector(".usertxt")?.textContent ?? "";
-        for (const [item, repeats] of groupDuplicates([...list.querySelectorAll<HTMLElement>("li.ub-content")], textOf, duplicate)) {
+        // 차단으로 가린 댓글(대댓글은 감싼 칸이 가려진다)은 세지 않는다. 세면 가려진 댓글이 배지를 가져가 같은 내용의 다른 댓글까지 모두 사라진다.
+        // 미리보기(core/preview/comments)도 차단된 댓글을 빼고 센다. 작성자 필터가 이 필터보다 먼저 등록되어 먼저 돈다.
+        const items = [...list.querySelectorAll<HTMLElement>("li.ub-content")].filter((item) => !item.closest(".refresherBlocked, .refresherBlur"));
+        for (const [item, repeats] of groupDuplicates(items, textOf, duplicate)) {
             if (repeats === 0) {
                 item.classList.add("refresherDuplicate");
                 continue;
