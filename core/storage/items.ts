@@ -4,7 +4,7 @@ import {objectKeys} from "@/utils/typed";
 
 import type {BlockEntry, BlockType, DatabaseMeta, DetectMode, MemoEntry, MemoType, SettingValue} from "./types";
 
-// 유형·모드 목록과 타입(types.ts)은 이름표의 키 순서를 따른다
+/** 차단 유형 → 이름. 유형·모드 목록과 타입(types.ts)은 이름표의 키 순서를 따른다 */
 export const TYPE_NAMES = {
     NICK: "닉네임",
     ID: "아이디",

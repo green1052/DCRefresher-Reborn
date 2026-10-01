@@ -128,13 +128,16 @@
 
 ```sh
 bun install
-bun run dev            # Chrome 개발 모드
-bun run dev:firefox    # Firefox 개발 모드
-bun run compile        # 타입 검사
-bun run test           # 단위 테스트 (Vitest)
-bun run build && bun run e2e   # E2E 테스트 (Playwright, 처음 한 번 bunx playwright install chromium)
-bun run zip            # Chrome 배포용 zip
-bun run zip:firefox    # Firefox 배포용 zip (소스 zip도 함께 생성)
+bun run dev               # Chrome 개발 모드
+bun run dev:firefox       # Firefox 개발 모드
+bun run compile           # 타입 검사
+bun run test              # 단위 테스트 (Vitest)
+bun run build             # Chrome 빌드 (.output/chrome-mv3)
+bun run e2e               # Chrome E2E (Playwright). 먼저 build, 처음 한 번 bunx playwright install chromium
+bun run build:firefox     # Firefox 빌드 (.output/firefox-mv2)
+bun run e2e:firefox       # Firefox E2E. 먼저 build:firefox, 처음 한 번 bunx playwright install firefox
+bun run zip               # Chrome 배포용 zip
+bun run zip:firefox       # Firefox 배포용 zip (소스 zip도 함께 생성)
 ```
 
 결과물은 `.output` 폴더에 생성됩니다. 구조, 기능 추가 방법, 테스트와 릴리즈 절차는 [개발 문서](docs/DEVELOPMENT.md)를 참고하세요.

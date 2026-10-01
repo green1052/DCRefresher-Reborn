@@ -42,10 +42,10 @@ bun run dev            # Chrome 개발 모드 (코드를 고치면 다시 빌드
 bun run dev:firefox    # Firefox 개발 모드
 bun run compile        # 타입 검사 (tsc --noEmit)
 bun run test           # 단위 테스트 (Vitest). test:watch는 지켜보며 다시 돈다
-bun run e2e            # E2E (Playwright, 크로미엄에 확장을 올린다). 먼저 bun run build
-bun run e2e:firefox    # 파이어폭스 E2E. 먼저 bun run build:firefox, 처음 한 번 bunx playwright install firefox
 bun run build          # .output/chrome-mv3
+bun run e2e            # E2E (Playwright, 크로미엄에 확장을 올린다). 먼저 bun run build
 bun run build:firefox  # .output/firefox-mv2
+bun run e2e:firefox    # 파이어폭스 E2E. 먼저 bun run build:firefox, 처음 한 번 bunx playwright install firefox
 bun run zip            # 배포용 zip
 bun run zip:firefox    # Firefox zip + 소스 zip
 ```

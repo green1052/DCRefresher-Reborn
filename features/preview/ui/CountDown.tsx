@@ -25,7 +25,7 @@ const Remaining = ({expire}: { expire: Date }) => {
     );
 };
 
-// 만료 시각이 있는 글에서만 Remaining을 그린다. 대부분의 글엔 없으니 1초 타이머를 돌리지 않는다
+/** 자동 삭제까지 남은 시간. 만료 시각이 있는 글에서만 Remaining을 그린다. 대부분의 글엔 없으니 1초 타이머를 돌리지 않는다 */
 export const CountDown = () => {
     const expire = usePreviewStore((s) => s.post?.expire);
     const date = expire ? parseDate(expire) : undefined;
