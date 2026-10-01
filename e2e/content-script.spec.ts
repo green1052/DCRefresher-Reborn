@@ -343,6 +343,29 @@ test.describe("메모", () => {
     });
 });
 
+test.describe("스텔스 모드", () => {
+    test("켜면 미리보기 본문 이미지를 숨기고, 버튼으로 잠시 보였다가 끄면 되돌린다", async ({listPage, storage}) => {
+        await storage.setModules({stealth: true});
+        const html = listPage.page.locator("html");
+        await expect(html).toHaveClass(/refresherStealth/);
+
+        await listPage.titles().first().click({button: "right"});
+        const image = listPage.frame().locator(".refresher-preview-contents img");
+        await expect(image).toBeAttached();
+        await expect(image).toBeHidden();
+
+        const reveal = listPage.page.getByRole("button", {name: "이미지 보이기"});
+        await reveal.click();
+        await expect(image).toBeVisible();
+        await expect(listPage.page.getByRole("button", {name: "이미지 숨기기"})).toBeVisible();
+
+        await storage.setModules({stealth: false});
+        await expect(html).not.toHaveClass(/refresherStealth/);
+        await expect(listPage.page.locator(".stealth_control_button")).toHaveCount(0);
+        await expect(image).toBeVisible();
+    });
+});
+
 test.describe("목록·본문이 아닌 페이지", () => {
     test("미리보기가 없는 페이지에서도 오버레이가 뜬다 (임시 차단 안내)", async ({context}) => {
         const page = await context.newPage();
