@@ -319,7 +319,7 @@ const controller = (ctx: Ctx) => {
         pending?.ctrl.abort();
         pending = null;
 
-        window.clearInterval(refreshTimer);
+        window.clearTimeout(refreshTimer);
 
         restoreHistory(fromHistory);
         store.getState().close();
@@ -343,7 +343,7 @@ const controller = (ctx: Ctx) => {
 
         abort?.abort();
         abort = new AbortController();
-        window.clearInterval(refreshTimer);
+        window.clearTimeout(refreshTimer);
         // 두 번 누르기는 글마다 새로 센다. 이전 글에서 한 번 누른 키로 다음 글이 바로 지워지면 안 된다.
         lastKey = "";
 
@@ -375,11 +375,14 @@ const controller = (ctx: Ctx) => {
             document.title = newTitle;
         }
 
-        // 설정이 꺼져 있어도 타이머는 둔다. 열린 사이 설정을 켜고 끄면 다음 차례부터 따른다
-        refreshTimer = window.setInterval(() => {
-            if (!ctx.settings.autoRefreshComment || document.hidden || pulling) return;
-            void refreshComments();
-        }, ctx.settings.commentRefreshInterval || 10000);
+        // 설정이 꺼져 있어도 타이머는 둔다. 열린 사이 설정(켜고 끄기·간격)을 바꾸면 다음 차례부터 따른다
+        const scheduleRefresh = (): void => {
+            refreshTimer = window.setTimeout(() => {
+                if (ctx.settings.autoRefreshComment && !document.hidden && !pulling) void refreshComments();
+                scheduleRefresh();
+            }, ctx.settings.commentRefreshInterval || 10000);
+        };
+        scheduleRefresh();
 
         void load(preData, mySignal, dir);
     };
@@ -426,14 +429,23 @@ const controller = (ctx: Ctx) => {
         void getModuleApi("refresh")?.reload();
     };
 
+    // 차단 요청도 한 번에 하나만. 차단 키를 네 번 누르면(두 번씩 두 차례) 같은 사람을 두 번 차단한다
+    let blocking = false;
+
     /** 차단 키(프리셋)와 차단 창이 같이 쓴다. 글도 지웠으면 창을 닫는다 */
     const block = async (target: GalleryPreData, options: BlockOptions): Promise<boolean> => {
+        if (blocking) return false;
+        blocking = true;
         const signal = store.getState().signalId;
-        const blocked = await notifyManage(blockUser(target, options), "차단했습니다.", "차단하지 못했습니다. 잠시 후 다시 시도해 주세요.");
-        // 그새 다른 글로 넘어갔으면 창을 닫지 않는다.
-        if (blocked && options.delChk && store.getState().signalId === signal) close();
-        void getModuleApi("refresh")?.reload();
-        return blocked;
+        try {
+            const blocked = await notifyManage(blockUser(target, options), "차단했습니다.", "차단하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+            // 그새 다른 글로 넘어갔으면 창을 닫지 않는다.
+            if (blocked && options.delChk && store.getState().signalId === signal) close();
+            void getModuleApi("refresh")?.reload();
+            return blocked;
+        } finally {
+            blocking = false;
+        }
     };
 
     const onKey = (ev: KeyboardEvent) => {
