@@ -14,7 +14,7 @@ import {smoothScroll} from "@/utils/dom";
 /** 디시콘 패키지 목록 캐시. 창을 닫았다 열어도 다시 받지 않고, 새로 산 디시콘이 보이도록 10분 뒤 다시 받는다 */
 let listCache: { list: DcinsideDcconDetailList[]; at: number } | null = null;
 const LIST_TTL = 10 * 60_000;
-// ponytail: 쪽이 이보다 많으면 뒤쪽은 받지 않는다. 한 쪽에 패키지 여러 개라 보통 몇 쪽이다
+// 쪽이 이보다 많으면 뒤쪽은 받지 않는다. 한 쪽에 패키지 여러 개라 보통 몇 쪽이다
 const MAX_PAGES = 20;
 
 type ListResult = DcinsideDcconDetailList[] | "not_login" | "shop";

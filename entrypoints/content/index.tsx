@@ -84,7 +84,7 @@ export default defineContentScript({
             note.addEventListener("click", () => note.remove());
             document.body?.append(note);
         });
-        // ponytail: WXT는 ctx.isValid를 읽을 때만 무효화를 알아채므로 빈 interval로 5초마다 검사하게 한다.
+        // WXT는 ctx.isValid를 읽을 때만 무효화를 알아채므로 빈 interval로 5초마다 검사하게 한다.
         // 업데이트 전에 열린 탭은 새로고침할 때까지 기능이 멈춘다.
         ctx.setInterval(() => {}, 5_000);
 
