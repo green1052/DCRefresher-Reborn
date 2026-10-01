@@ -29,9 +29,23 @@
         display: none !important;
     }
 
+    // 오른쪽 위 링크 줄. 디시는 이 상자를 absolute로 띄우고 안의 목록을 float: left로 둔다.
+    // 상자만 static으로 내리면 text-align이 float에 안 먹어 목록이 왼쪽으로 붙고 창 폭에 따라 떠다닌다 (#267)
+    // flex로 바꿔 오른쪽에 붙이고 안쪽 float·위치 지정을 푼다
     .area_links {
         position: static !important;
-        text-align: right !important;
+        inset: auto !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+        width: auto !important;
+        margin: 0 !important;
+
+        > * {
+            float: none !important;
+            position: static !important;
+        }
     }
 
     .wrap_search {
