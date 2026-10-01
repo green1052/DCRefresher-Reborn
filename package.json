@@ -24,7 +24,6 @@
         "dompurify": "^3.4.16",
         "ky": "^2.1.0",
         "lucide-react": "^1.48.0",
-        "p-limit": "^7.3.3",
         "radix-ui": "^1.6.7",
         "react": "^19.3.0",
         "react-dom": "^19.3.0",

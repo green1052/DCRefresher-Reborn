@@ -26,7 +26,7 @@ DCRefresher Reborn의 구조, 기능을 더하는 방법, 테스트와 릴리즈
 | UI | React 19 + React Compiler, [Radix Themes](https://www.radix-ui.com/themes) |
 | 상태 | zustand |
 | 저장소 | WXT storage (`wxt/utils/storage`) |
-| HTTP | ky + p-limit |
+| HTTP | ky + `utils/limit.ts`(동시 요청 수 제한) |
 | 캐시 | `utils/lru.ts`의 `LruCache` (Map으로 만든 작은 메모리 캐시. 콘텐츠 스크립트에 라이브러리를 싣지 않는다) |
 | HTML 정화 | DOMPurify (`utils/sanitize.ts`) |
 | 메시징 | @webext-core/messaging |
@@ -350,7 +350,7 @@ getModuleApi("preview")?.isOpen()
 
 `core/http/client.ts`의 `http`(일반 요청)와 `ajax`(`X-Requested-With` 헤더를 붙인 디시 ajax 요청)를 씁니다.
 
-- 두 클라이언트가 p-limit 하나를 같이 써서 합친 동시 요청 수를 제한합니다(ky 재시도 요청도 포함). 제한 값은 "요청 제한" 모듈 설정이고, 모듈이 꺼져 있거나 옵션·배경 페이지면 제한하지 않습니다. 탭마다 따로 셉니다.
+- 두 클라이언트가 `utils/limit.ts`의 제한기 하나를 같이 써서 합친 동시 요청 수를 제한합니다(ky 재시도 요청도 포함). 제한 값은 "요청 제한" 모듈 설정이고, 모듈이 꺼져 있거나 옵션·배경 페이지면 제한하지 않습니다. 탭마다 따로 셉니다.
 - Firefox 콘텐츠 스크립트에서는 두 클라이언트 모두 `content.fetch`로 보냅니다. 페이지가 보낸 요청처럼 나가야 디시 ajax가 받아 줍니다.
 - 시간 제한(15초)은 동시 요청 수 제한의 차례를 받은 뒤부터 잽니다. ky의 `timeout`은 `fetch`를 부르는 순간부터 재서 차례를 기다리는 시간까지 들어가므로 쓰지 않습니다(호출할 때도 주지 마세요). 시간 제한은 `AbortController`와 `setTimeout`으로 겁니다. `AbortSignal.timeout`은 Firefox 콘텐츠 스크립트에서 던집니다.
 - 재시도는 ky 기본값(GET 같은 멱등 메서드만 최대 2번, 408·413·429·5xx 응답과 네트워크 오류)에 지터를 더하고, `Retry-After`는 최대 10초까지만 기다립니다. 15초 시간 초과와 `BlockedError`는 재시도하지 않고, 댓글 목록·쓰기 같은 POST도 재시도하지 않습니다. 자동 새로고침은 `retry: 0`으로 보내고, 실패하면 주기를 늘립니다.
