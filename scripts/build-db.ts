@@ -18,6 +18,9 @@ import {shortenOrg} from "./shorten-org";
 
 const OUT_DIR = "db";
 
+/** MaxMind 데이터가 이보다 오래되면 만들지 않는다 (ms). */
+const MAX_MMDB_AGE = 45 * 86_400_000;
+
 const MMDB_URL = (edition: string): string => `https://github.com/green1052/maxmind-geoip2/raw/master/dist/${edition}/${edition}.mmdb`;
 const VPN_URL = "https://raw.githubusercontent.com/X4BNet/lists_vpn/refs/heads/main/ipv4.txt";
 const KISA_URL = "https://xn--3e0bx5euxnjje69i70af08bea817g.xn--3e0b707e/jsp/business/management/asList.jsp";
@@ -47,6 +50,9 @@ interface Asn {
 const readMmdb = async <T, V>(edition: string, pick: (record: T) => V | undefined): Promise<Range<V>[]> => {
     // 수많은 네트워크가 같은 레코드(국가·ASN)를 가리킨다. 디코더 캐시를 주면 같은 디코드를 되풀이하지 않는다.
     const reader = new Reader<T & object>(Buffer.from(await ky.get(MMDB_URL(edition)).arrayBuffer()), {cache: new Map()});
+    // 미러가 갱신을 멈추면 크기 검사로는 알 수 없고, 낡은 데이터가 새 버전으로 계속 올라간다. GeoLite는 일주일에 두 번 나온다.
+    const age = Date.now() - reader.metadata.buildEpoch.getTime();
+    if (age > MAX_MMDB_AGE) throw new Error(`${edition}가 ${Math.floor(age / 86_400_000)}일 전 데이터입니다. 미러가 갱신되는지 확인하세요.`);
     const ranges: Range<V>[] = [];
 
     for (let start = 0; start <= 0xffffffff;) {

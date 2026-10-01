@@ -1,4 +1,4 @@
-import {mkdtempSync} from "node:fs";
+import {mkdtempSync, rmSync} from "node:fs";
 import {tmpdir} from "node:os";
 import path from "node:path";
 
@@ -87,6 +87,8 @@ export const test = base.extend<{ context: BrowserContext; background: Backgroun
 
         await use(context);
         await context.close();
+        // 테스트마다 새 프로필을 만들므로 지운다. 두면 임시 폴더에 브라우저 프로필이 쌓인다.
+        rmSync(profile, {recursive: true, force: true});
     },
 
     background: async ({context, browserName}, use) => {

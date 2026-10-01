@@ -211,7 +211,7 @@ export const WriteComment = () => {
                     "자동입력 방지 확인이 필요합니다. 원문에서 작성해 주세요.",
                     "warning",
                     8000,
-                    {label: "원문 열기", run: () => window.open(preData.link, "_blank")}
+                    {label: "원문 열기", run: () => window.open(preData.link, "_blank", "noopener")}
                 );
             } else {
                 useUiStore.getState().showToast((response.result === "false" ? resultMessage(response) : FAIL_MESSAGES[response.result]) || "댓글을 작성하지 못했습니다.", "error");

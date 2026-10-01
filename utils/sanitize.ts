@@ -31,6 +31,9 @@ const keepFormatting = (node: HTMLElement | SVGElement): void => {
 // 디시콘·움짤은 디시처럼 컨트롤 없이 자동 반복 재생한다.
 // 이미지·iframe은 lazy로 두어 스텔스·이미지 차단으로 숨긴 것은 받지 않게 한다.
 // 링크(# 앵커 제외)는 새 탭으로 연다. DOMPurify가 target을 지우므로 두면 갤러리 탭이 링크로 넘어가 목록과 미리보기를 잃는다.
+/** iframe에 넘겨도 되는 권한. 동영상 재생에 쓰는 것만 남기고, 카메라·마이크·클립보드 같은 권한은 본문이 넘기지 못하게 한다. */
+const IFRAME_ALLOW = new Set(["autoplay", "encrypted-media", "fullscreen", "picture-in-picture"]);
+
 const onAttributes = (node: Element): void => {
     // MathML(<math>) 같은 나머지 요소는 서식만 골라 지울 수 없어(HTMLElement·SVGElement가 아니다) style을 통째로 지운다.
     if (node.hasAttribute("style")) {
@@ -43,6 +46,12 @@ const onAttributes = (node: Element): void => {
         else for (const attribute of ["autoplay", "loop", "muted", "playsinline"]) node.setAttribute(attribute, "");
     } else if (node.nodeName === "IMG" || node.nodeName === "IFRAME") {
         node.setAttribute("loading", "lazy");
+        const allow = node.getAttribute("allow");
+        if (allow !== null) {
+            const kept = allow.split(";").map((item) => item.trim()).filter((item) => IFRAME_ALLOW.has(item.split(/\s/)[0]!.toLowerCase()));
+            if (kept.length > 0) node.setAttribute("allow", kept.join("; "));
+            else node.removeAttribute("allow");
+        }
     } else if (node.nodeName === "A" && !(node.getAttribute("href") ?? "#").startsWith("#")) {
         node.setAttribute("target", "_blank");
         node.setAttribute("rel", "noopener noreferrer");

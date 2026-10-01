@@ -7,6 +7,12 @@ describe("sanitizeHtml", () => {
         expect(sanitizeHtml("<p onclick=\"x()\">a</p><script>x()</script><input><form></form><style>p{}</style>")).toBe("<p>a</p>");
     });
 
+    it("iframe에는 동영상 재생 권한만 넘긴다", () => {
+        expect(sanitizeHtml("<iframe src=\"https://www.youtube.com/embed/x\" allow=\"autoplay; camera; clipboard-write; fullscreen\"></iframe>"))
+            .toContain("allow=\"autoplay; fullscreen\"");
+        expect(sanitizeHtml("<iframe src=\"https://x\" allow=\"camera\"></iframe>")).not.toContain("allow=");
+    });
+
     it("남는 닫는 태그가 있어도 그 뒤를 버리지 않는다", () => {
         expect(sanitizeHtml("abc</div>def<b>x</b>")).toBe("abcdef<b>x</b>");
     });

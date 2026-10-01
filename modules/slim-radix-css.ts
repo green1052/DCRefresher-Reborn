@@ -1,4 +1,5 @@
-import {existsSync, readFileSync} from "node:fs";
+import {existsSync, readdirSync, readFileSync} from "node:fs";
+import {resolve} from "node:path";
 
 import postcss, {type AtRule, type Root} from "postcss";
 import type {Plugin, Rollup} from "vite";
@@ -28,11 +29,32 @@ const CLASS = /\.(?:(xs|sm|md|lg|xl)\\:)?-?(rt-[A-Za-z0-9-]+)/g;
 /** JS 코드 안의 rt- 클래스 리터럴·접두어. */
 const LITERAL = /rt-[A-Za-z0-9-]+/g;
 const COLOR_ATTR = /\[data-(?:accent|gray)-color=([a-z]+)\]/;
+/** 대부분의 컴포넌트가 기본값으로 쓰는 variant. 값을 주지 않은 컴포넌트가 쓰므로 어느 컴포넌트에서든 남긴다. */
+const COMMON_VARIANTS = ["solid", "soft", "surface"];
+
 /**
- * variant prop 값. `rt-variant-${variant}`로 붙어 JS만으로는 어느 값이 쓰이는지 모르므로 소스의 variant="…"에서 모은다.
- * 값을 주지 않은 컴포넌트는 Radix 기본값(solid·soft·surface 중 하나)을 쓴다. classic은 어느 컴포넌트의 기본값도 아니다.
+ * 그 밖의 variant 기본값 → 그 컴포넌트의 클래스 접두어 (<Kbd>는 classic → rt-Kbd, <Table>은 ghost → rt-Table).
+ * 그 컴포넌트의 규칙에서만 남긴다. 다른 컴포넌트의 classic 규칙까지 남기면 CSS가 엔트리마다 십수 KB 는다.
+ * 손으로 적으면 놓치므로 Radix Themes의 컴포넌트 props 정의(kbd.props.js 등)에서 읽는다.
  */
-const DEFAULT_VARIANTS = ["solid", "soft", "surface"];
+const componentDefaults = (root: string): Map<string, string[]> => {
+    const dir = resolve(root, "node_modules/@radix-ui/themes/dist/esm/components");
+    const found = new Map<string, string[]>();
+    let total = 0;
+    for (const file of readdirSync(dir).filter((name) => name.endsWith(".props.js"))) {
+        const text = readFileSync(resolve(dir, file), "utf8");
+        for (const match of text.matchAll(/variant:\{[^}]*?default:"(\w+)"/g)) {
+            total++;
+            if (COMMON_VARIANTS.includes(match[1]!)) continue;
+            // text-field.props.js → rt-TextField (rt-TextFieldRoot 등).
+            const prefix = `rt-${file.replace(".props.js", "").replace(/(^|-)(\w)/g, (_, _dash: string, char: string) => char.toUpperCase())}`;
+            found.set(match[1]!, [...found.get(match[1]!) ?? [], prefix]);
+        }
+    }
+    // 못 읽었으면(경로가 바뀌는 등) 기본값 규칙을 지울 수 있으므로 빌드를 멈춘다.
+    if (total === 0) throw new Error(`Radix variant 기본값을 찾지 못했습니다: ${dir}`);
+    return found;
+};
 
 const uniqueBreakpoints = (text: string): Set<Breakpoint> => {
     const found = new Set<Breakpoint>();
@@ -40,12 +62,20 @@ const uniqueBreakpoints = (text: string): Set<Breakpoint> => {
     return found;
 };
 
-/** variant="soft"와 variant={cond ? "soft" : "solid"} 안의 문자열. */
-const usedVariants = (text: string): Set<string> => {
-    const found = new Set(DEFAULT_VARIANTS);
+/**
+ * 소스에서 쓰는 variant 값. variant="soft"와 variant={cond ? "soft" : "solid"} 안의 문자열과 COMMON_VARIANTS다.
+ * variant={value}처럼 문자열이 없는 식이 있으면 어느 값인지 모르므로 null(모두 남긴다)을 돌려준다.
+ */
+export const usedVariants = (text: string): Set<string> | null => {
+    const found = new Set(COMMON_VARIANTS);
     for (const match of text.matchAll(/variant=(?:"(\w+)"|\{([^}]*)\})/g)) {
-        if (match[1]) found.add(match[1]);
-        for (const literal of (match[2] ?? "").matchAll(/"(\w+)"/g)) found.add(literal[1]!);
+        if (match[1]) {
+            found.add(match[1]);
+            continue;
+        }
+        const literals = [...(match[2] ?? "").matchAll(/"(\w+)"/g)];
+        if (literals.length === 0) return null;
+        for (const literal of literals) found.add(literal[1]!);
     }
     return found;
 };
@@ -68,7 +98,10 @@ const reachableChunks = (entry: OutputChunk, chunks: Map<string, OutputChunk>): 
 export interface Usage {
     literals: Set<string>;
     breakpoints: Set<Breakpoint>;
-    variants: Set<string>;
+    /** 쓰는 variant 값. null이면 알 수 없어 모두 남긴다. */
+    variants: Set<string> | null;
+    /** 컴포넌트별 기본 variant → 그 컴포넌트의 클래스 접두어 (componentDefaults). */
+    defaults: Map<string, string[]>;
     /** 콘텐츠 스크립트(오버레이 shadow DOM)에 넣는 CSS인지. */
     overlay: boolean;
 }
@@ -85,7 +118,7 @@ const usageOf = (entry: OutputChunk, chunks: Map<string, OutputChunk>, root: str
             source += readFileSync(file, "utf8");
         }
     }
-    return {literals, breakpoints: uniqueBreakpoints(source), variants: usedVariants(source), overlay: entry.fileName.startsWith("content-scripts/")};
+    return {literals, breakpoints: uniqueBreakpoints(source), variants: usedVariants(source), defaults: componentDefaults(root), overlay: entry.fileName.startsWith("content-scripts/")};
 };
 
 /** JS에 클래스 이름 그대로나, 값이 붙는 접두어(`rt-r-size` → `rt-r-size-2`, `rt-variant-` → `rt-variant-soft`)가 있는지. */
@@ -96,6 +129,10 @@ export const isUsedClass = (name: string, literals: Set<string>): boolean => {
     }
     return false;
 };
+
+/** 선택자가 variant를 기본값으로 쓰는 컴포넌트의 규칙인지 (.rt-Kbd:where(.rt-variant-classic)). */
+const isComponentDefault = (selector: string, variant: string, defaults: Map<string, string[]>): boolean =>
+    defaults.get(variant)?.some((prefix) => selector.includes(`.${prefix}`)) ?? false;
 
 export const slim = (css: string, usage: Usage): string => {
     const root: Root = postcss.parse(css);
@@ -113,7 +150,7 @@ export const slim = (css: string, usage: Usage): string => {
         for (const [, breakpoint, name] of selector.matchAll(CLASS)) {
             if (breakpoint && !usage.breakpoints.has(breakpoint as Breakpoint)) return false;
             const variant = /^rt-variant-(\w+)$/.exec(name!)?.[1];
-            if (variant && !usage.variants.has(variant)) return false;
+            if (variant && usage.variants && !usage.variants.has(variant) && !isComponentDefault(selector, variant, usage.defaults)) return false;
             if (!isUsedClass(name!, usage.literals)) return false;
         }
         return true;

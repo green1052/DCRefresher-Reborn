@@ -13,6 +13,8 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
     const url = new URL(href, location.origin);
     // 운영자 '이슈' 행은 http:// 링크다. 출처가 다르면 pushState가 SecurityError를 던지므로 페이지 프로토콜로 맞춘다.
     if (url.host === location.host) url.protocol = location.protocol;
+    // 디시 글 주소만 연다. 이 주소로 이동(O 키·키 반전 우클릭)하므로 javascript:나 다른 사이트 주소가 섞이면 안 된다.
+    if (url.protocol !== "https:" || !url.hostname.endsWith(".dcinside.com")) return null;
     let gallery = url.searchParams.get("id") ?? undefined;
     let id = url.searchParams.get("no") ?? undefined;
 

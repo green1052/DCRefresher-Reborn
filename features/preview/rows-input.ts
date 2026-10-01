@@ -69,7 +69,10 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
         }
 
         const preData = buildPreData(element);
-        return preData ? {preData, commentsOnly, link: replyLink?.href || preData.link} : null;
+        // 댓글 수 링크도 디시 주소일 때만 그리로 간다 (buildPreData와 같은 기준).
+        const replyUrl = replyLink ? URL.parse(replyLink.href) : null;
+        const replyHref = replyUrl?.protocol === "https:" && replyUrl.hostname.endsWith(".dcinside.com") ? replyUrl.href : undefined;
+        return preData ? {preData, commentsOnly, link: replyHref ?? preData.link} : null;
     };
 
     const onContextMenu = (ev: MouseEvent) => {

@@ -21,7 +21,10 @@ jobs:
         permissions:
             contents: write
         steps:
+            # 이 작업은 쓰기 권한이 있고 의존성·빌드·테스트 코드를 돌린다. 토큰을 .git/config에 남기지 않는다 (릴리즈·제출은 git을 쓰지 않는다)
             -   uses: actions/checkout@v7
+                with:
+                    persist-credentials: false
 
             # 태그와 package.json 버전이 다르면 스토어에 엉뚱한 버전이 올라간다
             -   name: Check version

@@ -1,11 +1,12 @@
 import {describe, expect, it} from "vitest";
 
-import {isUsedClass, slim, type Usage} from "../../../modules/slim-radix-css";
+import {isUsedClass, slim, type Usage, usedVariants} from "../../../modules/slim-radix-css";
 
 const usage = (overrides: Partial<Usage> = {}): Usage => ({
     literals: new Set(["rt-Button", "rt-BaseButton", "rt-r-size", "rt-r-w", "rt-r-m", "rt-variant-", "rt-Text"]),
     breakpoints: new Set(["md"]),
     variants: new Set(["solid", "soft"]),
+    defaults: new Map(),
     overlay: false,
     ...overrides
 });
@@ -67,5 +68,25 @@ describe("slim", () => {
         const out = slim(css, usage({overlay: true, breakpoints: new Set()}));
         expect(out).not.toContain("@font-face");
         expect(out).not.toContain("@media");
+    });
+});
+
+describe("usedVariants", () => {
+    it("소스의 variant 문자열과 Radix 기본값을 모으고, 값을 모르는 식이 있으면 모두 남긴다", () => {
+        expect(usedVariants(`<Button variant="outline"/><Badge variant={on ? "solid" : "ghost"}/>`))
+            .toEqual(new Set(["solid", "soft", "surface", "outline", "ghost"]));
+        expect(usedVariants(`<Button variant={variant}/>`)).toBeNull();
+    });
+
+    it("컴포넌트 기본값은 그 컴포넌트 규칙에서만 남긴다", () => {
+        const out = slim(`${css}.rt-Kbd:where(.rt-variant-classic){color:gray}`, usage({literals: new Set([...usage().literals, "rt-Kbd"]), defaults: new Map([["classic", ["rt-Kbd"]]])}));
+        expect(out).toContain(".rt-Kbd:where(.rt-variant-classic)");
+        expect(out).not.toContain(".rt-Button:where(.rt-variant-classic)");
+    });
+
+    it("값을 모르면(null) variant 규칙을 빼지 않는다", () => {
+        const out = slim(css, usage({variants: null}));
+        expect(out).toContain("rt-variant-classic");
+        expect(out).toContain("rt-variant-soft");
     });
 });
