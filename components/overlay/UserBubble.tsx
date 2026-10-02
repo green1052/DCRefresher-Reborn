@@ -1,7 +1,7 @@
 import {Button, Dialog, Flex, Popover, Separator, Text} from "@radix-ui/themes";
 import {Copy} from "lucide-react";
 import {Popover as PopoverPrimitive} from "radix-ui";
-import {useSyncExternalStore} from "react";
+import {useEffect, useSyncExternalStore} from "react";
 
 import {DialogActions} from "@/components/ConfirmDialog";
 import {ModalDialog} from "@/components/ModalDialog";
