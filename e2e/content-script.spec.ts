@@ -58,6 +58,27 @@ test.describe("미리보기", () => {
         await expect(listPage.page).toHaveURL(/\/board\/lists\/\?id=test$/);
     });
 
+    test("방금 연 글을 닫았다 다시 열면 본문·댓글을 다시 받지 않고, 새로고침 버튼은 댓글을 받는다 (#273)", async ({listPage}) => {
+        const requests: string[] = [];
+        listPage.page.on("request", (request) => {
+            const {pathname} = new URL(request.url());
+            if (pathname.startsWith("/board/view") || pathname.startsWith("/board/comment")) requests.push(pathname);
+        });
+
+        for (let i = 0; i < 3; i++) {
+            const frame = await listPage.openPreview();
+            await expect(frame.locator(".refresher-comment")).toHaveCount(2);
+            await listPage.page.keyboard.press("Escape");
+            await expect(frame).toHaveCount(0);
+        }
+        expect(requests).toEqual(["/board/view/", "/board/comment/"]);
+
+        const frame = await listPage.openPreview();
+        await frame.getByRole("button", {name: "댓글 새로고침"}).click();
+        await expect.poll(() => requests.length).toBe(3);
+        expect(requests[2]).toBe("/board/comment/");
+    });
+
     test("댓글 수를 우클릭하면 댓글만 보기로 열리고, 좌클릭은 원래대로 이동한다", async ({listPage}) => {
         const replies = listPage.replyCounts().first();
         await replies.click({button: "right"});

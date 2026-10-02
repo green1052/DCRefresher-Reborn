@@ -55,6 +55,19 @@ const cachedPost = (preData: GalleryPreData): { post: PostInfo; age: number } | 
     return entry?.post && age < 60_000 ? {post: entry.post, age} : undefined;
 };
 
+/**
+ * 이 시간(ms) 안에 받은 댓글은 글을 다시 열어도 다시 받지 않는다 (#273).
+ * 댓글은 쪽마다 요청이라, 열고 닫기·PageUp/Down으로 같은 글을 오갈 때마다 받으면 몇 초 만에 요청이 수십 개 몰려 임시 차단된다.
+ * 새로고침 버튼·자동 새로고침은 이와 상관없이 받는다.
+ */
+const COMMENTS_REUSE = 10_000;
+
+/** COMMENTS_REUSE 안에 받은 캐시 댓글 목록. */
+const recentComments = (preData: GalleryPreData): CommentListResponse | undefined => {
+    const entry = getEntry(preData);
+    return entry?.comments && Date.now() - (entry.commentsAt ?? 0) < COMMENTS_REUSE ? entry.comments : undefined;
+};
+
 // blockView에서 가공 결과가 읽는 값만 뽑은 비교 키 (아래 useUiStore 구독).
 const blockKeyOf = (view: BlockView | null): string => (view ? JSON.stringify([view.blur, view.replyRemove, view.duplicate]) : "");
 
@@ -154,8 +167,12 @@ const controller = (ctx: Ctx) => {
      * 댓글을 받아 가공해 그린다. skip이면 받지 않고 빈 목록으로 처리한다 (보존해 둔 댓글은 삭제된 것으로 나온다).
      * given이 있으면 그 목록을 그린다 (미리 받은 목록, 캐시의 지난 목록). 미리 받는 중이면 여기서 기다려야 순번·pulling이 지금 잡혀,
      * 그사이 새로고침한 새 목록을 늦게 온 옛 목록이 덮지 않는다. 미리 받기가 비었거나 실패하면 다시 받는다.
+     * cached: given이 캐시의 지난 목록이다 (받은 시각을 갱신하지 않는다).
      */
-    const pullComments = async (preData: GalleryPreData, post: PostInfo, mySignal: number, skip = false, given?: CommentListResponse | Promise<CommentListResponse | undefined>): Promise<void> => {
+    const pullComments = async (
+        preData: GalleryPreData, post: PostInfo, mySignal: number, skip = false,
+        given?: CommentListResponse | Promise<CommentListResponse | undefined>, cached = false
+    ): Promise<void> => {
         // 부른 때의 요청을 쓴다. 미리 받기를 기다리는 사이 다른 글로 넘어가면 이미 끊겨 앞 글의 댓글을 다시 받지 않는다.
         const signal = abort?.signal ?? AbortSignal.abort();
         const seq = ++commentSeq;
@@ -170,7 +187,7 @@ const controller = (ctx: Ctx) => {
             ]);
             if (store.getState().signalId !== mySignal || seq < shownSeq) return;
             shownSeq = seq;
-            if (!skip) setEntry(preData, {comments: {list: raw, allowReply, truncated}});
+            if (!skip) setEntry(preData, {comments: {list: raw, allowReply, truncated}, ...(cached ? {} : {commentsAt: Date.now()})});
 
             // 보존 기록은 받을 때마다 갱신해야 하므로 prepareComments는 같은 목록이어도 부른다.
             const source = prepareComments(raw, preData, ctx.settings.archiveArticle, truncated);
@@ -262,7 +279,9 @@ const controller = (ctx: Ctx) => {
         // 받아야 하는 글이 목록에 댓글이 보이면 댓글도 본문과 함께 요청한다. 토큰(e_s_n_o)은 갤러리마다 같아 이 페이지의 값을 쓰고,
         // 본문을 읽은 뒤 그 글의 값과 맞을 때만 쓴다. PageUp/Down·스크롤로 넘길 때는 하지 않는다 (연달아 넘기면 지나가는 글마다 요청이 나간다).
         const esno = document.querySelector<HTMLInputElement>("#e_s_n_o")?.value;
-        const early = !dir && preData.commentCount > 0 && esno && (ctx.settings.disableCache || !cachedPost(preData))
+        // 방금 받은 댓글(COMMENTS_REUSE)은 그대로 쓰고 다시 받지 않는다. 캐시를 끄면 늘 받는다.
+        const recent = ctx.settings.disableCache ? undefined : recentComments(preData);
+        const early = !dir && !recent && preData.commentCount > 0 && esno && (ctx.settings.disableCache || !cachedPost(preData))
             ? fetchComments(preData, {esno}, abort!.signal).catch(() => undefined)
             : undefined;
 
@@ -281,14 +300,17 @@ const controller = (ctx: Ctx) => {
         store.setState({post, archived});
 
         try {
-            // 캐시로 연 글은 받는 동안 지난번 댓글을 먼저 보인다. 새로 받은 목록이 같으면 다시 그리지 않는다 (shownRaw).
-            const last = fresh ? undefined : getEntry(preData)?.comments;
-            if (last) await pullComments(preData, post, mySignal, false, last);
-            // 미리 받은 댓글은 같은 요청이었을 때만 쓴다. 비어 있으면 다시 받는다.
-            const matches = post.esno === esno && (post.commentId ?? preData.gallery) === preData.gallery && (post.commentNo ?? preData.id) === preData.id;
-            const given = matches && early ? early.then((list) => (list?.list.length ? list : undefined)) : undefined;
-            // 방금 받은 본문이 댓글 0개면 받지 않는다. 보존해 둔 댓글이 있으면 삭제 여부를 비교해야 하므로 받는다.
-            await pullComments(preData, post, mySignal, fresh && post.commentCount === 0 && !Object.keys(getEntry(preData)?.seen ?? {}).length, given);
+            // 본문을 방금 받았어도(fresh) 방금 받은 댓글은 쓴다. 그 밖에 캐시로 연 글은 받는 동안 지난번 댓글을 먼저 보인다.
+            // 새로 받은 목록이 같으면 다시 그리지 않는다 (shownRaw).
+            const last = recent ?? (fresh ? undefined : getEntry(preData)?.comments);
+            if (last) await pullComments(preData, post, mySignal, false, last, true);
+            if (!recent) {
+                // 미리 받은 댓글은 같은 요청이었을 때만 쓴다. 비어 있으면 다시 받는다.
+                const matches = post.esno === esno && (post.commentId ?? preData.gallery) === preData.gallery && (post.commentNo ?? preData.id) === preData.id;
+                const given = matches && early ? early.then((list) => (list?.list.length ? list : undefined)) : undefined;
+                // 방금 받은 본문이 댓글 0개면 받지 않는다. 보존해 둔 댓글이 있으면 삭제 여부를 비교해야 하므로 받는다.
+                await pullComments(preData, post, mySignal, fresh && post.commentCount === 0 && !Object.keys(getEntry(preData)?.seen ?? {}).length, given);
+            }
         } catch (e) {
             // 댓글만 못 받았으면 본문은 그대로 두고 알린다. 임시 차단은 HTTP 클라이언트가 이미 알렸다.
             if (store.getState().signalId === mySignal && !(e instanceof BlockedError)) ui.showToast("댓글을 불러오지 못했습니다.", "error");

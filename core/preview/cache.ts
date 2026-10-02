@@ -11,6 +11,8 @@ interface CacheEntry {
     seen?: Record<string, DcinsideComment>;
     /** 마지막으로 그린 댓글 목록. 캐시로 다시 열면 새로 받는 동안 이것을 먼저 보인다. */
     comments?: CommentListResponse;
+    /** comments를 디시에서 받은 시각(ms). 방금 받은 목록이면 다시 열어도 다시 받지 않는다. */
+    commentsAt?: number;
 }
 
 // 게시글 캐시: 수명 1분, 최대 50개. 저장할 때마다 수명이 다시 1분으로 늘어난다.
