@@ -24,15 +24,14 @@ beforeEach(() => {
 });
 
 describe("isBackupTarget / collectLocalData", () => {
-    it("DB·백업 상태·모듈 캐시를 빼고 차단 항목의 id를 뺀다", async () => {
+    it("설정·차단·메모만 담고 차단 항목의 id를 뺀다", async () => {
         await fakeBrowser.storage.local.set(local);
         const data = await collectLocalData();
         expect(Object.keys(data).sort()).toEqual(["refresher:block:NICK", "refresher:memo:UID", "refresher:module:preview:settings", "refresher:modules"]);
         expect(JSON.stringify(data["refresher:block:NICK"])).toBe("[{\"content\":\"n\",\"isRegex\":false}]");
-        expect(isBackupTarget("refresher:db")).toBe(false);
-        // 5.1.2 이전 버전의 잔재(옛 DB 등)는 클라우드 한도를 넘기므로 뺀다.
-        expect(isBackupTarget("refresher.database.ip")).toBe(false);
-        expect(isBackupTarget("refresher:settings")).toBe(false);
+        expect(isBackupTarget("refresher:block:defaults")).toBe(true);
+        // 모르는 키(예전 버전이 남긴 옛 DB 등)는 클라우드 한도를 넘길 수 있어 담지 않는다.
+        for (const key of ["refresher:db", "refresher.database.ip", "refresher:settings", "refresher:usage"]) expect(isBackupTarget(key), key).toBe(false);
     });
 });
 
@@ -73,7 +72,7 @@ describe("runBackup / readCloudBackup", () => {
         expect(second["autoBackup:1"]).toBeUndefined();
     });
 
-    it("조각이 손상되면 던지고, v5 방식 백업은 읽지 않는다", async () => {
+    it("조각이 손상되거나 빠지면 던진다", async () => {
         await fakeBrowser.storage.local.set(local);
         await runBackup("manual");
         await fakeBrowser.storage.sync.set({"backup:0": "AAAA"});
@@ -82,45 +81,19 @@ describe("runBackup / readCloudBackup", () => {
         // 조각이 아직 동기화되지 않았으면 손상이 아니라 빠졌다고 알린다.
         await fakeBrowser.storage.sync.remove("backup:0");
         await expect(readCloudBackup("manual")).rejects.toThrow("백업 조각이 빠져 있습니다.");
-
-        fakeBrowser.reset();
-        await fakeBrowser.storage.sync.set({"refresher:modules": {block: false}, "refresher:db:ip": "big"});
-        expect(await readCloudBackup("manual")).toBeNull();
     });
 });
 
 describe("runBackup 한도", () => {
-    const quotaError = (): Error => new Error("QUOTA_BYTES quota exceeded");
-
-    it("수동 백업은 한도에 걸리면 v5 방식 백업만 치우고 한 번 더 쓴다", async () => {
+    it("쓰다 실패하면 이전 백업을 그대로 두고 이유를 남긴다", async () => {
         await fakeBrowser.storage.local.set(local);
-        await fakeBrowser.storage.sync.set({"refresher:modules": {block: false}});
-        const set = fakeBrowser.storage.sync.set.bind(fakeBrowser.storage.sync);
-        vi.spyOn(fakeBrowser.storage.sync, "set").mockRejectedValueOnce(quotaError()).mockImplementation(set);
-
         await runBackup("manual");
-        const sync = await fakeBrowser.storage.sync.get(null);
-        expect(sync["refresher:modules"]).toBeUndefined();
-        expect((await readCloudBackup("manual"))?.data["refresher:modules"]).toEqual({block: true});
-    });
+        const before = await fakeBrowser.storage.sync.get(null);
+        vi.spyOn(fakeBrowser.storage.sync, "set").mockRejectedValue(new Error("QUOTA_BYTES quota exceeded"));
 
-    it("한도가 아닌 이유로 쓰지 못하면 v5 방식 백업을 지우지 않고 그 오류를 그대로 알린다", async () => {
-        await fakeBrowser.storage.local.set(local);
-        await fakeBrowser.storage.sync.set({"refresher:modules": {block: false}});
-        vi.spyOn(fakeBrowser.storage.sync, "set").mockRejectedValue(new Error("MAX_WRITE_OPERATIONS_PER_MINUTE quota exceeded"));
-
-        await expect(runBackup("manual")).rejects.toThrow("MAX_WRITE_OPERATIONS_PER_MINUTE");
-        expect((await fakeBrowser.storage.sync.get("refresher:modules"))["refresher:modules"]).toEqual({block: false});
-    });
-
-    it("자동 백업은 v5 방식 백업을 치우지 않고 수동 백업을 하라고 알린다", async () => {
-        await fakeBrowser.storage.local.set(local);
-        await fakeBrowser.storage.sync.set({"refresher:modules": {block: false}});
-        vi.spyOn(fakeBrowser.storage.sync, "set").mockRejectedValue(quotaError());
-
-        await expect(runBackup("auto")).rejects.toThrow("수동 백업을 한 번 하면 정리됩니다.");
-        expect((await fakeBrowser.storage.sync.get("refresher:modules"))["refresher:modules"]).toEqual({block: false});
-        expect(await stored("refresher:backup:error")).toContain("수동 백업");
+        await expect(runBackup("manual")).rejects.toThrow("QUOTA_BYTES");
+        expect(await fakeBrowser.storage.sync.get(null)).toEqual(before);
+        expect(await stored("refresher:backup:error")).toBe("저장 공간이 부족합니다.");
     });
 
     it("두 칸을 합쳐 한도를 넘으면 쓰지 않고 크기를 알린다", async () => {

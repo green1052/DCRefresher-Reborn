@@ -389,7 +389,7 @@ getModuleApi("preview")?.isOpen()
   - 모듈 on/off와 설정은 `core/module/settings.ts`의 `readModuleStorage(ids)`로 읽고 `enablesOf`·`settingsOf`로 맞춥니다. 콘텐츠 레지스트리, 옵션·팝업 스토어, 배경 모듈이 같은 함수를 씁니다.
 - 예외: IP·밴 DB(`DB_KEYS`)는 수백 KB라 항목을 아예 만들지 않습니다. 이 키는 쓰는 곳에서 `storage.getItem`·`storage.watch`로 다룹니다.
 - 모듈 캐시(계속 불어나는 데이터)는 `moduleDataStorage(id, fallback)`로 만들되, 만드는 순간 값을 읽으므로 모듈 최상위가 아니라 `setup` 안에서 만듭니다. 이 키는 백업·내보내기와 자동 백업 대상에서 빠집니다. 개수 상한을 두세요 (글댓비 캐시는 500명).
-- 백업 대상 판정은 `core/backup.ts`의 `isBackupTarget`입니다. 새 키가 백업되면 안 되는 성격(비밀번호, 다시 받을 수 있는 큰 데이터)이면 여기에 추가합니다. 클라우드 백업은 `storage.sync`의 용량(약 100KB)을 두 칸(수동·자동)이 나눠 씁니다.
+- 백업 대상 판정은 `core/backup.ts`의 `isBackupTarget`입니다. 모듈 on/off와 설정, 차단 목록과 기본 차단 모드, 메모만 담고 나머지 키는 담지 않습니다. 새 키를 백업·내보내기·클라우드 복원에 넣으려면 여기의 `BACKUP_KEYS`에 추가합니다. 클라우드 백업은 `storage.sync`의 용량(약 100KB)을 두 칸(수동·자동)이 나눠 씁니다.
 - 차단 항목의 검사 방식(`mode`)이 비어 있으면 그 기기의 기본 차단 모드를 따릅니다. 그래서 차단 목록을 다른 기기로 옮기는 곳(데이터 탭 가져오기, 클라우드 합치기, 차단 탭 가져오기)은 내보낸 쪽의 기본 모드가 다르면 그 모드를 항목에 적어 둡니다. 새로 옮기는 경로를 만들 때도 같은 규칙을 따릅니다.
 - 설정을 없애거나 이름을 바꿀 때 옛 값을 옮기는 코드는 두지 않습니다. 옵션·팝업을 열면 `stores/modules.ts`의 `pruneStaleSettings`가 스키마에 없는 설정을 지우므로, 이름을 바꾼 설정은 기본값으로 돌아갑니다.
 - 차단 항목과 메모가 이 기기에서 마지막으로 쓰인 시각은 `core/usage.ts`가 `refresher:usage`에 모아 적습니다(차단은 `core/block.ts`의 검사, 메모는 `stores/memos.ts`의 찾기). 여러 탭과 옵션 페이지가 함께 고치는 값이라 쓰기는 배경이 메시지(`refresher:markUsed`, `refresher:syncUsage`)를 받아 차례로 합니다. 옵션의 차단·메모 탭이 오래 안 쓰인 항목을 거를 때 쓰고, 기록이 없는 항목은 옵션을 연 때를 기준으로 둡니다. 기기마다 다른 값이라 백업하지 않습니다.

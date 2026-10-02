@@ -6,10 +6,20 @@
  * 조각 수와 해시를 담은 <칸> 키와 함께 set 한 번으로 쓴다. 쓰기가 실패하면 이전 백업이 그대로 남는다.
  */
 
-import {backupStorage, isBlockListKey, isModuleDataKey} from "@/core/storage/items";
-import {friendlyMessage, messageOf} from "@/utils/error";
+import {
+    BLOCK_DEFAULTS_KEY,
+    BLOCK_TYPES,
+    backupStorage,
+    blockListKey,
+    isBlockListKey,
+    MEMO_TYPES,
+    memoMapKey,
+    MODULES_KEY,
+    rawKey,
+    settingsKeyModule
+} from "@/core/storage/items";
+import {friendlyMessage} from "@/utils/error";
 import {isRecord} from "@/utils/record";
-import {objectKeys} from "@/utils/typed";
 
 export type BackupSlot = "manual" | "auto";
 
@@ -17,7 +27,6 @@ export type BackupSlot = "manual" | "auto";
 const SLOT_KEYS: Record<BackupSlot, string> = {manual: "backup", auto: "autoBackup"};
 const chunkKey = (slot: BackupSlot, index: number): string => `${SLOT_KEYS[slot]}:${index}`;
 const isSlotKey = (slot: BackupSlot, key: string): boolean => key === SLOT_KEYS[slot] || key.startsWith(`${SLOT_KEYS[slot]}:`);
-const SLOTS = objectKeys(SLOT_KEYS);
 
 /** 조각 하나의 글자 수. 항목 한도 8192바이트에서 키와 따옴표 몫을 뺐다. */
 const CHUNK_CHARS = 8000;
@@ -34,24 +43,19 @@ interface BackupMeta {
     createdAt: number;
 }
 
-/** 5.1.2 이전 버전이 남긴 키 (옛 DB, 모듈 데이터, v4 모듈·설정 스냅숏). v6는 읽지 않는다. */
-const isLeftoverKey = (key: string): boolean =>
-    key.startsWith("refresher.database.") ||
-    key.startsWith("refresher.module:") ||
-    key === "__REFRESHER_MODULES" ||
-    key === "__REFRESHER_SETTINGS" ||
-    key === "refresher:settings";
+/** 백업하는 로컬 키 (local: 없이). 모듈 설정(refresher:module:<id>:settings)은 settingsKeyModule로 가린다. */
+const BACKUP_KEYS = new Set<string>([
+    rawKey(MODULES_KEY),
+    rawKey(BLOCK_DEFAULTS_KEY),
+    ...BLOCK_TYPES.map((type) => rawKey(blockListKey(type))),
+    ...MEMO_TYPES.map((type) => rawKey(memoMapKey(type)))
+]);
 
 /**
- * 백업·내보내기에서 빼는 로컬 키
- * - refresher:db:*: IP/밴 DB. 크고 다시 받으면 된다 (refresher:db는 6.0.0 개발판의 한 키짜리)
- * - refresher:backup:*: 백업 상태 자체
- * - refresher:module:*:data: 모듈 캐시(글댓비 등). 계속 불어난다.
- * - refresher:usage: 차단·메모가 이 기기에서 마지막으로 쓰인 시각 (core/usage). 걸릴 때마다 바뀌어 자동 백업을 계속 돌린다.
- * - 5.1.2 이전 버전이 남긴 키(isLeftoverKey): 옛 DB가 수백 KB라 백업 한도를 넘긴다.
+ * 백업·내보내기 대상인 로컬 키: 모듈 on/off와 설정, 차단 목록과 기본 차단 모드, 메모.
+ * 그 밖의 키(IP/밴 DB, 백업 상태, 모듈 캐시, 사용 기록, 예전 버전이 남긴 키)는 크거나 기기마다 다르거나 읽지 않는 값이라 뺀다.
  */
-export const isBackupTarget = (key: string): boolean =>
-    key !== "refresher:usage" && key !== "refresher:db" && !key.startsWith("refresher:db:") && !key.startsWith("refresher:backup:") && !isModuleDataKey(key) && !isLeftoverKey(key);
+export const isBackupTarget = (key: string): boolean => BACKUP_KEYS.has(key) || settingsKeyModule(key) !== undefined;
 
 /** storage.local의 키 목록. getKeys가 없는 브라우저는 값까지 다 읽어 키만 꺼낸다. */
 const localKeys = async (): Promise<string[]> =>
@@ -90,9 +94,6 @@ const sha256 = async (bytes: Uint8Array<ArrayBuffer>): Promise<string> =>
 
 const isMeta = (value: unknown): value is BackupMeta => isRecord(value) && value.format === 1 && Number.isInteger(value.chunks);
 
-/** v5 방식 백업의 키. v5는 로컬 설정을 그대로 sync에 넣었으므로 어느 칸에도 속하지 않는 키로 가려낸다. 더는 읽지 않고 공간만 치운다. */
-const isLegacyKey = (key: string): boolean => !SLOTS.some((slot) => isSlotKey(slot, key));
-
 /** 설정을 클라우드의 한 칸에 백업. */
 const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     const bytes = await gzip(JSON.stringify(await collectLocalData()));
@@ -115,31 +116,10 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
         [SLOT_KEYS[slot]]: meta
     };
 
-    // 지울 키: 이 칸에서 이번에 쓰지 않는 조각(전보다 줄어든 몫). 다른 칸은 건드리지 않는다.
-    // v5 방식 백업은 수동 칸을 쓸 때만 치운다. 자동 백업이 사용자 모르게 지우지 않게 한다.
-    const stale = Object.keys(all).filter((key) => !(key in items) && (isSlotKey(slot, key) || (slot === "manual" && isLegacyKey(key))));
-
-    try {
-        await browser.storage.sync.set(items);
-    } catch (e) {
-        // v5 방식 백업이 공간을 차지해 한도를 넘었을 수 있으니 그것만 치우고 한 번 더 쓴다.
-        // 이 칸의 남는 조각은 성공한 뒤에 지운다. 다시 실패하면 이전 메타가 여전히 그 조각을 가리키기 때문이다.
-        // 용량 문제가 아니면(쓰기 횟수 한도·동기화 오류 등) v5 백업을 지워도 다시 실패하고, 하나뿐인 v5 백업만 잃는다.
-        // 크롬은 쓰기 횟수 한도도 "MAX_WRITE_OPERATIONS_PER_MINUTE quota exceeded"라 quota만으로는 가릴 수 없다.
-        const message = messageOf(e);
-        const quota = /quota/i.test(message) && !message.includes("MAX_WRITE_OPERATIONS");
-        const legacy = quota ? stale.filter(isLegacyKey) : [];
-        if (legacy.length === 0) {
-            // 자동 칸은 v5 방식 백업을 치우지 않는다. 그것이 원인일 수 있으니 해결 방법을 알린다.
-            if (quota && Object.keys(all).some(isLegacyKey)) {
-                throw new Error(`${friendlyMessage(e)} 예전 방식(v5) 백업이 클라우드 공간을 차지하고 있습니다. 수동 백업을 한 번 하면 정리됩니다.`, {cause: e});
-            }
-            throw e;
-        }
-        await browser.storage.sync.remove(legacy);
-        await browser.storage.sync.set(items);
-    }
-
+    // 이 칸에서 이번에 쓰지 않는 조각(전보다 줄어든 몫)은 쓴 뒤에 지운다. 쓰기가 실패하면 이전 메타가 여전히 그 조각을 가리킨다.
+    // 다른 칸은 건드리지 않는다.
+    const stale = Object.keys(all).filter((key) => !(key in items) && isSlotKey(slot, key));
+    await browser.storage.sync.set(items);
     if (stale.length > 0) await browser.storage.sync.remove(stale);
 };
 
