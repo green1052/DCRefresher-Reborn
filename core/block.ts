@@ -44,6 +44,7 @@ type BlockValues = Partial<Record<BlockType, string | null | undefined>>;
  * 내용에 걸린 항목들 (갤러리 한정 항목은 그 갤러리에서만). SAME/CONTAIN은 맞는 항목마다 막는다.
  * NOT_*(불일치·불포함)는 한 유형의 항목을 묶어 허용 목록으로 본다: 어느 것에도 맞지 않으면 그 항목들 전부로 막는다.
  * 항목마다 뒤집으면 둘만 돼도 서로를 막아(A는 B와 다르다) 모두 막힌다. 잘못된 정규식은 NOT_*로도 걸지 않는다.
+ * isBlockedIn과 같은 판정을 한다. 어느 쪽을 고치면 다른 쪽도 고쳐야 한다 (isBlockedIn은 markUsed·배열 없음까지 더한 판독 버전이다).
  */
 const blockingIn = (lists: BlockLists, type: BlockType, content: string, gallery?: string): BlockEntry[] => {
     const hits: BlockEntry[] = [];
@@ -92,6 +93,7 @@ export const isBlockedHidden = (element: Element): boolean => {
  * 걸린 SAME/CONTAIN 항목이 하나라도 있으면 막히고, 없으면 NOT_* 허용 목록이 있는데 어느 것에도 맞지 않을 때 막힌다.
  * 맞은 항목(막은 SAME/CONTAIN, 허용한 NOT_*)은 모두 쓰였다고 적는다 (옵션의 오래 안 쓰인 항목 거르기).
  * 첫 항목에서 멈추면 같은 대상을 함께 막는 다른 항목(닉네임과 아이디로 같이 막은 유저 등)이 안 쓰인 것으로 보여 지워질 수 있다.
+ * blockingIn과 같은 판정을 한다. 어느 쪽을 고치면 다른 쪽도 고쳐야 한다.
  */
 const isBlockedIn = (lists: BlockLists, type: BlockType, content: string, gallery?: string): boolean => {
     let blocked = false;
@@ -123,9 +125,10 @@ const isBlockedIn = (lists: BlockLists, type: BlockType, content: string, galler
 export const isBlocked = (type: BlockType, content: string, gallery?: string): boolean =>
     content !== "" && isBlockedIn(useBlocksStore.getState(), type, content, gallery);
 
-/** 값 중 하나라도 차단 대상인지. 막힌 유형에서 멈추지 않고 모든 유형을 본다. 다른 유형의 항목(같은 유저를 아이디로도 막은 것 등)도 쓰였다고 적어야 한다. */
+/** 값 중 하나라도 차단 대상인지. 막힌 유형에서 멈추지 않고 모든 유형을 본다 (isBlocked가 유형마다 markUsed를 적는다). 다른 유형의 항목(같은 유저를 아이디로도 막은 것 등)도 쓰였다고 적어야 한다. */
 export const isAnyBlocked = (values: BlockValues, gallery?: string): boolean =>
-    objectEntries(values).map(([type, value]) => Boolean(value) && isBlocked(type, value!, gallery)).includes(true);
+    // some을 바로 쓰면 첫 막힌 유형에서 멈춰 나머지 유형의 markUsed가 빠진다. map으로 모두 본다.
+    objectEntries(values).map(([type, value]) => Boolean(value) && isBlocked(type, value!, gallery)).some(Boolean);
 
 /** 확장이 흐리게 가린 행 (차단 블러, userinfo의 깡계 흐림). 흐린 행은 보이므로 checkVisibility로 가릴 수 없다. */
 export const BLURRED_ROW_SELECTOR = ".refresherBlur, .refresherLowActivityBlur";
