@@ -128,6 +128,28 @@ test.describe("미리보기 부가 기능", () => {
         await expect(frame).toBeVisible();
     });
 
+    test("스크롤 끝에서 굴리면 안내만 띄우고, 새로 한 번 더 굴려야 다음 글로 넘어간다", async ({listPage}) => {
+        await listPage.titles().nth(1).click({button: "right"});
+        const frame = listPage.frame();
+        await expect(frame.getByText("글 2 제목").first()).toBeVisible();
+
+        const {page} = listPage;
+        const box = await listPage.overlay().locator(".refresher-frame-scroll").boundingBox();
+        await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+        // 끝에 닿은 그 동작(관성 포함)으로는 넘어가지 않는다.
+        for (let i = 0; i < 5; i++) {
+            await page.mouse.wheel(0, 2000);
+            await page.waitForTimeout(50);
+        }
+        await expect(listPage.overlay().locator(".refresher-skip-hint")).toBeVisible();
+        await expect(frame.getByText("글 2 제목").first()).toBeVisible();
+
+        // 잠시 뒤 새로 굴리면 목록의 다음(아래) 글로 넘어간다.
+        await page.waitForTimeout(400);
+        await page.mouse.wheel(0, 300);
+        await expect(frame.getByText("글 1 제목").first()).toBeVisible();
+    });
+
     test("답글이 둘 이상인 스레드는 접고 펼 수 있고, 접힌 답글은 보이지 않는다", async ({listPage, site}) => {
         site.comments.push(fakeComment(12, {c_no: "10", depth: 1, ip: "3.4", memo: "답글 둘"}));
         await listPage.titles().first().click({button: "right"});
