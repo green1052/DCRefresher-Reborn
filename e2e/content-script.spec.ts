@@ -50,6 +50,9 @@ test.describe("미리보기", () => {
         await expect(frame.locator(".refresher-preview-contents img")).toHaveAttribute("loading", "lazy");
         const styled = await frame.locator(".rt-BaseButton").first().evaluate((element) => getComputedStyle(element).cursor === "pointer");
         expect(styled).toBe(true);
+        // IconButton 크기 규칙은 :not(.rt-variant-ghost)에 묶여 있어 ghost 규칙을 잘못 빼면 같이 빠진다 (modules/slim-radix-css).
+        const icon = await frame.getByRole("button", {name: "디시콘"}).boundingBox();
+        expect([icon?.width, icon?.height]).toEqual([32, 32]);
 
         await listPage.page.keyboard.press("Escape");
         await expect(frame).toHaveCount(0);

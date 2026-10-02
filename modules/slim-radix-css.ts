@@ -2,7 +2,7 @@ import {existsSync, readdirSync, readFileSync} from "node:fs";
 import {resolve} from "node:path";
 
 import postcss, {type AtRule, type Root} from "postcss";
-import type {Plugin, Rollup} from "vite";
+import {normalizePath, type Plugin, type Rollup} from "vite";
 import {defineWxtModule} from "wxt/modules";
 
 /**
@@ -109,12 +109,14 @@ export interface Usage {
 const usageOf = (entry: OutputChunk, chunks: Map<string, OutputChunk>, root: string): Usage => {
     const literals = new Set<string>();
     let source = "";
+    // 모듈 id는 /로 쓰는데 Windows의 root는 \다. 맞추지 않으면 소스를 하나도 못 읽어 ghost 같은 variant 규칙을 지운다.
+    const base = normalizePath(root);
     for (const chunk of reachableChunks(entry, chunks)) {
         for (const match of chunk.code.matchAll(LITERAL)) literals.add(match[0]);
         // 반응형 prop은 우리 소스(.tsx)에서만 쓴다. Radix 자체 코드에는 브레이크포인트 이름이 모두 들어 있어 청크 코드로는 가릴 수 없다.
         for (const id of chunk.moduleIds) {
-            const file = id.split("?")[0]!;
-            if (!file.startsWith(root) || file.includes("/node_modules/") || !existsSync(file)) continue;
+            const file = normalizePath(id.split("?")[0]!);
+            if (!file.startsWith(base) || file.includes("/node_modules/") || !existsSync(file)) continue;
             source += readFileSync(file, "utf8");
         }
     }
