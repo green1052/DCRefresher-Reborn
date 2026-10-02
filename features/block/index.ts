@@ -99,8 +99,8 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
                 // 잘린 말머리는 툴팁(.subject_inner)에 전체가 있다. 글 보기 머리의 말머리는 [대괄호]로 감싸 있다.
                 TAB: read("TAB", () => plainText(row?.querySelector(".gall_subject .subject_inner, .title_headtext") ?? row?.querySelector(".gall_subject")).replace(/^\[(.*)\]$/, "$1")),
                 // 글자콘 댓글은 .usertxt 없이 .comment_dccon > .coment_dccon_txt > .txtcon_txt로 그려진다. 그 글자도 댓글 차단어로 본다.
-                // 댓글 검색 결과 행은 댓글 내용이 .sch_cmt에 있다.
-                COMMENT: read("COMMENT", () => (isViewPage ? element.closest(".reply_info, .cmt_info") : null)?.querySelector(".usertxt, .txtcon_txt")?.textContent ?? row?.querySelector(".sch_cmt")?.textContent)
+                // 댓글 검색 결과 행은 댓글 내용이 .sch_cmt에 있다. 미리보기 댓글(processComments)처럼 앞뒤 공백을 떼야 일치 검사가 같다.
+                COMMENT: read("COMMENT", () => (isViewPage ? element.closest(".reply_info, .cmt_info") : null)?.querySelector(".usertxt, .txtcon_txt")?.textContent ?? row?.querySelector(".sch_cmt")?.textContent)?.trim()
             },
             gallery
         );

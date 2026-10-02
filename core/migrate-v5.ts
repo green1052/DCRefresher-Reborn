@@ -39,7 +39,7 @@ const V5_KEY = /^refresher:module:(.+):(enable|data|setting:(.+))$/;
 type Snapshot = Record<string, unknown>;
 
 /** 5.1.2 이전 버전의 키 (옛 DB 수백 KB, 모듈 데이터, v4 모듈·설정 스냅숏). 옮겨진 뒤에도 지워지지 않아 클라우드 백업 한도를 넘긴다. */
-const isLeftoverKey = (key: string): boolean =>
+export const isLeftoverKey = (key: string): boolean =>
     key.startsWith("refresher.database.") ||
     key.startsWith("refresher.module:") ||
     key === "__REFRESHER_MODULES" ||

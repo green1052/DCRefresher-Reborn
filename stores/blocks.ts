@@ -23,7 +23,9 @@ interface BlocksState {
 
 const isBlockEntry = (value: unknown): value is Omit<BlockEntry, "id"> & { id?: unknown } =>
     isRecord(value) &&
+    // 빈 내용은 포함 검사에서 모든 글에 맞는다. 다이얼로그는 막지만 가져오기·옛 데이터로 들어올 수 있다.
     typeof value.content === "string" &&
+    value.content.trim() !== "" &&
     typeof value.isRegex === "boolean" &&
     (value.gallery === undefined || typeof value.gallery === "string") &&
     (value.extra === undefined || typeof value.extra === "string") &&

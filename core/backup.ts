@@ -6,6 +6,7 @@
  * 조각 수와 해시를 담은 <칸> 키와 함께 set 한 번으로 쓴다. 쓰기가 실패하면 이전 백업이 그대로 남는다.
  */
 
+import {isLeftoverKey} from "@/core/migrate-v5";
 import {backupStorage, isBlockListKey, isModuleDataKey} from "@/core/storage/items";
 import {friendlyMessage, messageOf} from "@/utils/error";
 import {isRecord} from "@/utils/record";
@@ -39,9 +40,10 @@ interface BackupMeta {
  * - refresher:db:*: IP/밴 DB. 크고 다시 받으면 된다 (refresher:db는 6.0.0 개발판의 한 키짜리)
  * - refresher:backup:*: 백업 상태 자체
  * - refresher:module:*:data: 모듈 캐시(글댓비 등). 계속 불어난다.
+ * - 5.1.2 이전 버전이 남긴 키(isLeftoverKey): 옛 DB가 수백 KB라 백업 한도를 넘긴다. v5에서 곧바로 온 경우만 업데이트 때 지워진다.
  */
 export const isBackupTarget = (key: string): boolean =>
-    key !== "refresher:db" && !key.startsWith("refresher:db:") && !key.startsWith("refresher:backup:") && !isModuleDataKey(key);
+    key !== "refresher:db" && !key.startsWith("refresher:db:") && !key.startsWith("refresher:backup:") && !isModuleDataKey(key) && !isLeftoverKey(key);
 
 /** storage.local의 키 목록. getKeys가 없는 브라우저는 값까지 다 읽어 키만 꺼낸다. */
 export const localKeys = async (): Promise<string[]> =>
@@ -180,7 +182,8 @@ export const readCloudBackup = async (slot: BackupSlot): Promise<CloudBackup | n
         }
 
         const bytes = Uint8Array.fromBase64(chunks.join(""));
-        if ((await sha256(bytes)) !== meta.hash) throw new Error("백업 데이터가 손상되었습니다.");
+        // 새 메타만 먼저 동기화되고 조각은 아직 이전 백업이어도 여기서 어긋난다.
+        if ((await sha256(bytes)) !== meta.hash) throw new Error("백업 데이터가 맞지 않습니다. 다른 기기에서 동기화가 아직 끝나지 않았을 수 있습니다.");
 
         const data: unknown = JSON.parse(await gunzip(bytes));
         if (!isRecord(data)) throw new Error("백업 데이터가 손상되었습니다.");

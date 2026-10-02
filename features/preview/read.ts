@@ -75,11 +75,13 @@ export const createReadMarks = (ctx: Ctx) => {
     /** 연 글을 기억한다. 저장은 모아서 한다 (SAVE_DELAY). */
     const markRead = (preData: GalleryPreData): void => {
         const key = postKey(preData);
-        if (!ctx.settings.markRead || read.has(key)) return;
+        if (!ctx.settings.markRead) return;
 
+        // 다시 연 글은 맨 뒤로 옮긴다. 저장은 뒤에서 MAX_READ개만 남기므로, 자주 여는 글이 먼저 밀려나지 않게 한다.
+        const known = read.delete(key);
         read.add(key);
         unsaved.push(key);
-        markAll();
+        if (!known) markAll();
         saver.schedule();
     };
 

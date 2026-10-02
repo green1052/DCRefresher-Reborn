@@ -55,6 +55,22 @@ describe("createReadMarks", () => {
         });
     });
 
+    it("다시 연 글은 최근으로 옮겨 먼저 밀려나지 않는다", async () => {
+        await fakeBrowser.storage.local.set({[KEY]: {read: Array.from({length: 3000}, (_, index) => `test:${index}`)}});
+        const marks = createReadMarks(stubCtx());
+        await vi.advanceTimersByTimeAsync(0);
+        marks.markRead(post("0"));
+        marks.markRead(post("new"));
+
+        await vi.advanceTimersByTimeAsync(5_000);
+        await vi.waitFor(async () => {
+            const read = ((await stored(KEY)) as { read: string[] }).read;
+            expect(read).toHaveLength(3000);
+            expect(read.slice(-2)).toEqual(["test:0", "test:new"]);
+            expect(read).not.toContain("test:1");
+        });
+    });
+
     it("다른 탭이 저장해도 이 탭의 저장하지 않은 글을 남긴다", async () => {
         const marks = createReadMarks(stubCtx());
         await vi.advanceTimersByTimeAsync(0);

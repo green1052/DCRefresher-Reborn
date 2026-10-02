@@ -30,6 +30,9 @@ describe("isBackupTarget / collectLocalData", () => {
         expect(Object.keys(data).sort()).toEqual(["refresher:block:NICK", "refresher:memo:UID", "refresher:module:preview:settings", "refresher:modules"]);
         expect(JSON.stringify(data["refresher:block:NICK"])).toBe("[{\"content\":\"n\",\"isRegex\":false}]");
         expect(isBackupTarget("refresher:db")).toBe(false);
+        // 5.1.2 이전 버전의 잔재(옛 DB 등)는 클라우드 한도를 넘기므로 뺀다.
+        expect(isBackupTarget("refresher.database.ip")).toBe(false);
+        expect(isBackupTarget("refresher:settings")).toBe(false);
     });
 });
 
@@ -75,7 +78,7 @@ describe("runBackup / readCloudBackup", () => {
         await fakeBrowser.storage.local.set(local);
         await runBackup("manual");
         await fakeBrowser.storage.sync.set({"backup:0": "AAAA"});
-        await expect(readCloudBackup("manual")).rejects.toThrow("백업 데이터가 손상되었습니다.");
+        await expect(readCloudBackup("manual")).rejects.toThrow("백업 데이터가 맞지 않습니다.");
 
         // 조각이 아직 동기화되지 않았으면 손상이 아니라 빠졌다고 알린다.
         await fakeBrowser.storage.sync.remove("backup:0");

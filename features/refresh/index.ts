@@ -262,8 +262,9 @@ export default defineModule({
         ctx.onSettingsChanged((key) => {
             if (key === "doNotColorVisited") applyDoNotColorVisited(ctx);
             else if (key === "titleCount" && !ctx.settings.titleCount) unseen.clear();
-            // 숨은 탭 새로고침 설정은 옵션 탭에서 바꾸므로 이 탭은 숨어 있다. 다음 주기를 새 값으로 다시 잡는다.
-            else if (key === "backgroundRefresh" || key === "backgroundRefreshRate") armNext();
+            // 주기 설정은 옵션 탭에서 바꾸므로 이미 잡힌 주기가 끝나기를 기다리지 않고 새 값으로 다시 잡는다.
+            else if (key === "refreshRate" || key === "backgroundRefresh" || key === "backgroundRefreshRate") armNext();
+            else if (key === "noRefreshOnSearch" && queryString("s_keyword")) setPaused(ctx.settings.noRefreshOnSearch);
         });
 
         const onVisibilityChange = (): void => {

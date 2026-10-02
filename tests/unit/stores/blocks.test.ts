@@ -14,6 +14,9 @@ describe("normalizeBlockList", () => {
             {id: "1", content: "c", isRegex: false},
             {content: 1, isRegex: false},
             {content: "d", isRegex: false, mode: "same"},
+            // 빈 내용은 모든 글에 맞으므로 버린다.
+            {content: "", isRegex: false},
+            {content: "  ", isRegex: true},
             "x"
         ]);
         expect(list.map(({content}) => content)).toEqual(["a", "b", "c"]);
