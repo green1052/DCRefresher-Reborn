@@ -36,7 +36,7 @@ const HIDDEN_CLASSES = ["refresherBlocked", "refresherBlur", "refresherDuplicate
 /** 이 모듈이 가린 요소. */
 const HIDDEN_SELECTOR = HIDDEN_CLASSES.map((name) => `.${name}`).join(", ");
 /** '가린 내용 보기'가 보이는 요소. userinfo의 깡계 흐림·숨김도 같이 보인다 (content.scss). */
-const REVEALED_SELECTOR = `${HIDDEN_SELECTOR}, .refresherLowActivityHide, .refresherLowActivityBlur`;
+const REVEALED_SELECTOR = `${HIDDEN_ROW_SELECTOR}, .refresherDuplicate`;
 
 /** 미리보기도 페이지와 같은 방식으로 가리게 알린다. */
 const publishView = (ctx: Ctx): void => {

@@ -72,6 +72,8 @@ let lookupIp: ((ip: string) => IpCandidate[] | undefined) | null = null;
  */
 let bans: Map<string, string> | null = null;
 let bansRequested = false;
+/** 감시로 받은 밴 DB 갱신 수. 처음 읽기가 늦게 끝나 새 값을 덮지 않게 견준다. */
+let banVersion = 0;
 
 // DB를 읽을 때마다 올리는 번호 (0이면 아직 안 읽음). 렌더 중에 조회하는 곳은 useSyncExternalStore로 이것을 구독한다.
 // React Compiler는 인자만 보고 메모하므로 이 번호를 식에 넣어야 DB가 바뀐 뒤 다시 계산한다.
@@ -131,18 +133,25 @@ export const releaseDatabase = (): void => watching.abort();
 
 /** 조회용 데이터 로드 + 변경 감시. 여러 번 불러도 1회. */
 export const initDatabase = once(async () => {
-    const {signal} = watching;
+    // 읽기가 실패하면 once가 다음 호출에 다시 시도한다. 이번에 건 감시는 풀어야 시도할 때마다 감시가 쌓이지 않는다.
+    const attempt = new AbortController();
+    const signal = AbortSignal.any([watching.signal, attempt.signal]);
     // 감시를 먼저 건다. 읽는 사이 받은 갱신이 오면 읽은 값(갱신 전일 수 있다)은 버린다.
     let updated = false;
     watchStorage<string>(DB_KEYS.ip, (next) => {
         updated = true;
         loadIp(next ?? "");
     }, signal);
-    const ip = await storage.getItem<string>(DB_KEYS.ip, {fallback: ""});
+    const ip = await storage.getItem<string>(DB_KEYS.ip, {fallback: ""}).catch((e: unknown) => {
+        attempt.abort();
+        throw e;
+    });
     if (!updated) loadIp(ip);
     // 밴은 한 번이라도 읽었을 때만 새 값을 따라간다.
     watchStorage<string>(DB_KEYS.ban, (next) => {
-        if (bansRequested) loadBans(next ?? "");
+        if (!bansRequested) return;
+        banVersion++;
+        loadBans(next ?? "");
     }, signal);
     // bfcache에 있는 동안 받은 DB 갱신은 watch로 오지 않는다.
     onBfcacheRestore(async () => {
@@ -192,8 +201,11 @@ export const passesIpFilter = ({category}: IpInfo, filter: IpInfoFilter): boolea
 export const banReasonsOf = (uid: string): string | undefined => {
     if (!bansRequested) {
         bansRequested = true;
-        // 읽기에 실패하면 다음 호출이 다시 읽는다.
-        void storage.getItem<string>(DB_KEYS.ban, {fallback: ""}).then(loadBans, (e: unknown) => {
+        // 읽는 사이 감시가 새 값을 먼저 넣었으면 읽은 값(갱신 전일 수 있다)은 버린다. 읽기에 실패하면 다음 호출이 다시 읽는다.
+        const version = banVersion;
+        void storage.getItem<string>(DB_KEYS.ban, {fallback: ""}).then((stored) => {
+            if (banVersion === version) loadBans(stored);
+        }, (e: unknown) => {
             bansRequested = false;
             console.error(e);
         });

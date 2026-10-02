@@ -7,7 +7,7 @@
  */
 
 import {backupStorage, isBlockListKey, isModuleDataKey} from "@/core/storage/items";
-import {friendlyMessage} from "@/utils/error";
+import {friendlyMessage, messageOf} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 import {objectKeys} from "@/utils/typed";
 
@@ -110,10 +110,14 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     } catch (e) {
         // v5 방식 백업이 공간을 차지해 한도를 넘었을 수 있으니 그것만 치우고 한 번 더 쓴다.
         // 이 칸의 남는 조각은 성공한 뒤에 지운다. 다시 실패하면 이전 메타가 여전히 그 조각을 가리키기 때문이다.
-        const legacy = stale.filter(isLegacyKey);
+        // 용량 문제가 아니면(쓰기 횟수 한도·동기화 오류 등) v5 백업을 지워도 다시 실패하고, 하나뿐인 v5 백업만 잃는다.
+        // 크롬은 쓰기 횟수 한도도 "MAX_WRITE_OPERATIONS_PER_MINUTE quota exceeded"라 quota만으로는 가릴 수 없다.
+        const message = messageOf(e);
+        const quota = /quota/i.test(message) && !message.includes("MAX_WRITE_OPERATIONS");
+        const legacy = quota ? stale.filter(isLegacyKey) : [];
         if (legacy.length === 0) {
             // 자동 칸은 v5 방식 백업을 치우지 않는다 (수동 칸으로 복원되는 데이터다). 그것이 원인일 수 있으니 해결 방법을 알린다.
-            if (Object.keys(all).some(isLegacyKey)) {
+            if (quota && Object.keys(all).some(isLegacyKey)) {
                 throw new Error(`${friendlyMessage(e)} 예전 방식(v5) 백업이 클라우드 공간을 차지하고 있습니다. 수동 백업을 한 번 하면 정리됩니다.`, {cause: e});
             }
             throw e;

@@ -170,7 +170,9 @@ export default defineModule({
                 // 목록이 그대로면 파싱·교체를 건너뛴다. 응답 전체는 요청마다 바뀌는 값(s_key)이 있어 목록 표의 tbody만 비교한다.
                 const table = response.indexOf("<table class=\"gall_list");
                 const start = response.indexOf("<tbody", table);
-                const listHtml = start === -1 ? "" : response.slice(start, response.indexOf("</tbody>", start));
+                const end = start === -1 ? -1 : response.indexOf("</tbody>", start);
+                // 잘린 응답(</tbody> 없음)은 비교·부분 파싱하지 않고 문서 전체를 파싱한다. slice(start, -1)은 문서 끝까지를 준다.
+                const listHtml = end === -1 ? "" : response.slice(start, end);
                 if (!customURL && listHtml && listHtml === lastListHtml) {
                     failures = 0;
                     return true;

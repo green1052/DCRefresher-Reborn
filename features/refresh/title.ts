@@ -1,3 +1,5 @@
+import {BLURRED_ROW_SELECTOR} from "@/core/block";
+
 import type {Ctx} from "./meta";
 
 /** 탭 제목 앞의 새 글 수 "(3) ". */
@@ -28,7 +30,7 @@ export const createUnseenCounter = (ctx: Ctx) => {
     const count = (rows: HTMLElement[]): void => {
         window.setTimeout(() => {
             if (ctx.signal.aborted || isWatching() || !ctx.settings.titleCount) return;
-            unseen += rows.filter((row) => row.isConnected && row.checkVisibility() && !row.closest(".refresherBlur, .refresherLowActivityBlur")).length;
+            unseen += rows.filter((row) => row.isConnected && row.checkVisibility() && !row.closest(BLURRED_ROW_SELECTOR)).length;
             setTitleCount(unseen);
         });
     };

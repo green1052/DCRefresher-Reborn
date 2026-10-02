@@ -224,8 +224,8 @@ export default defineModule({
         // IP/밴 DB는 모듈 설정을 읽은 뒤 여기서 처음 읽는다 (콘텐츠 스크립트도 부르지만 이 모듈이 꺼졌을 때를 위한 것이다).
         // 읽기가 끝난 뒤 필터를 걸어야 첫 배지부터 IP 정보가 붙는다.
         const [stored] = await Promise.all([ratioStorage.getValue(), initDatabase()]);
-        ratios = stored.ratio ?? {};
         if (signal.aborted) return;
+        ratios = stored.ratio ?? {};
         publishRatios(ctx);
         // 받았지만 아직 저장하지 않은 글댓비 (RATIO_SAVE_DELAY).
         let unsaved: Record<string, RatioInfo> = {};

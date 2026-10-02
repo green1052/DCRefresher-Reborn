@@ -103,6 +103,15 @@ describe("runBackup 한도", () => {
         expect((await readCloudBackup("manual"))?.data["refresher:modules"]).toEqual({block: true});
     });
 
+    it("한도가 아닌 이유로 쓰지 못하면 v5 방식 백업을 지우지 않고 그 오류를 그대로 알린다", async () => {
+        await fakeBrowser.storage.local.set(local);
+        await fakeBrowser.storage.sync.set({"refresher:modules": {block: false}});
+        vi.spyOn(fakeBrowser.storage.sync, "set").mockRejectedValue(new Error("MAX_WRITE_OPERATIONS_PER_MINUTE quota exceeded"));
+
+        await expect(runBackup("manual")).rejects.toThrow("MAX_WRITE_OPERATIONS_PER_MINUTE");
+        expect((await fakeBrowser.storage.sync.get("refresher:modules"))["refresher:modules"]).toEqual({block: false});
+    });
+
     it("자동 백업은 v5 방식 백업을 치우지 않고 수동 백업을 하라고 알린다", async () => {
         await fakeBrowser.storage.local.set(local);
         await fakeBrowser.storage.sync.set({"refresher:modules": {block: false}});
