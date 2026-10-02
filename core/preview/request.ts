@@ -249,7 +249,8 @@ export const submitComment = async (
 
             if (!form.dValue) return null;
 
-            const decoded = atob(form.dValue.replace(/./g, (c) => b64[rKey.indexOf(c)] ?? ""));
+            // s 플래그: 개행도 한 글자로 세어 매핑 표에 없어 버린다. 빠지면 atob가 실패해 폼을 못 읽는다.
+            const decoded = atob(form.dValue.replace(/./gs, (c) => b64[rKey.indexOf(c)] ?? ""));
             if (!decoded) return null;
 
             // 첫 자리 숫자를 5 당기거나 4 밀고, 쉼표로 나눈 수들을 글자로 바꿔 service_code 끝 10자리를 갈아 끼운다.
