@@ -3,8 +3,7 @@
  * 키는 storage.local의 이름(local: 없이)이다. 백업·내보내기와 같은 모양이다.
  */
 import {isBackupTarget, readBackupTargets} from "@/core/backup";
-import {MIGRATED_MODULES, migrateModuleSettings} from "@/core/migrate-settings";
-import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockListKey, isBlockListKey, MODULES_KEY, moduleSettingsKey, rawKey, settingsKeyModule} from "@/core/storage/items";
+import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockListKey, isBlockListKey, MODULES_KEY, rawKey, settingsKeyModule} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {blockKey, normalizeBlockList, normalizeDefaults} from "@/stores/blocks";
 import {isRecord} from "@/utils/record";
@@ -37,12 +36,6 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
     const previous = await readBackupTargets();
     // 설정 키가 아닌 값(차단/메모 내보내기의 "NICK" 등)은 저장하지 않는다.
     const next = Object.fromEntries(Object.entries(data).filter(([key]) => key.startsWith("refresher:") && isBackupTarget(key)));
-    // 6.0.x 백업의 옛 설정('IP 정보 표시' 끔 등)을 새 설정으로 옮긴다. 옮기지 않으면 옵션을 열 때 없는 설정으로 지워진다.
-    for (const id of MIGRATED_MODULES) {
-        const key = rawKey(moduleSettingsKey(id));
-        const settings = next[key];
-        if (isRecord(settings)) next[key] = migrateModuleSettings(id, settings);
-    }
     // 백업·내보내기는 용량 때문에 차단 항목 id를 빼므로 저장할 때 다시 붙인다.
     for (const [key, value] of Object.entries(next)) {
         if (isBlockListKey(key)) next[key] = normalizeBlockList(value);

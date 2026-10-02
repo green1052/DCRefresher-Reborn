@@ -96,7 +96,7 @@ features/<id>/          기능 모듈 하나
 modules/                WXT 로컬 모듈: 모듈 api·설정 타입 생성(module-types.ts), 단축키 모으기(commands.ts),
                         기능별 페이지 CSS 모으기(feature-styles.ts), 엔트리마다 Radix CSS 줄이기(slim-radix-css.ts).
                         WXT가 바로 아래 파일을 모두 모듈로 불러오므로 같이 쓰는 도우미는 lib/에 둔다 (features/ 폴더 찾기)
-core/                   모듈 시스템, 저장소 키, HTTP, 필터링, 차단 판정, 미리보기 요청·파싱, 백업, 설정 옮기기, DB, 마이그레이션
+core/                   모듈 시스템, 저장소 키, HTTP, 필터링, 차단 판정, 미리보기 요청·파싱, 백업, 설정 옮기기, DB
 stores/                 여러 화면이 같이 쓰는 zustand 스토어 (모듈 on/off·설정, 차단, 메모, 오버레이 UI)
 components/             공용 React 컴포넌트, 오버레이 루트(components/overlay)
 utils/                  작은 도우미 (DOM, 이벤트, 정화, 다크모드, 캐시, 동시 실행 제한, 타입 붙인 Object 함수)
@@ -217,7 +217,7 @@ flowchart TD
 | `database.ts` | IP·밴 DB를 하루마다 확인해 7일이 지났거나 저장 형식이 옛것이면 받습니다. 알람은 배포 빌드에서만 만듭니다 |
 | `backup.ts` | 설정이 바뀌면 1분 뒤 자동 클라우드 백업을 돌립니다 |
 
-- **업데이트 때** (`onInstalled`의 update): 바뀐 설정 이름을 옮기고, 배경 모듈을 맞추고, IP·밴 DB를 받습니다. 개발 빌드는 DB가 없을 때만 받습니다.
+- **설치·업데이트 때** (`onInstalled`): 배경 모듈을 맞추고 IP·밴 DB를 받습니다. 개발 빌드는 DB가 없을 때만 받습니다.
 - **통합검색 대신 받기** (`refresher:searchPosts`): 디시 통합검색은 CORS를 열지 않아, 관리 모듈의 같은 제목 찾기는 배경이 받아 줍니다.
 
 ## 모듈 시스템
@@ -391,7 +391,7 @@ getModuleApi("preview")?.isOpen()
 - 모듈 캐시(계속 불어나는 데이터)는 `moduleDataStorage(id, fallback)`로 만들되, 만드는 순간 값을 읽으므로 모듈 최상위가 아니라 `setup` 안에서 만듭니다. 이 키는 백업·내보내기와 자동 백업 대상에서 빠집니다. 개수 상한을 두세요 (글댓비 캐시는 500명).
 - 백업 대상 판정은 `core/backup.ts`의 `isBackupTarget`입니다. 새 키가 백업되면 안 되는 성격(비밀번호, 다시 받을 수 있는 큰 데이터)이면 여기에 추가합니다. 클라우드 백업은 `storage.sync`의 용량(약 100KB)을 두 칸(수동·자동)이 나눠 씁니다.
 - 차단 항목의 검사 방식(`mode`)이 비어 있으면 그 기기의 기본 차단 모드를 따릅니다. 그래서 차단 목록을 다른 기기로 옮기는 곳(데이터 탭 가져오기, 클라우드 합치기, 차단 탭 가져오기)은 내보낸 쪽의 기본 모드가 다르면 그 모드를 항목에 적어 둡니다. 새로 옮기는 경로를 만들 때도 같은 규칙을 따릅니다.
-- v6 안에서 바뀐 설정(6.0.x의 `showIpInfo` 등)은 `core/migrate-settings.ts`에 변환 함수를 두고 세 곳에서 부릅니다. 배경의 `onInstalled`(update), `stores/modules.ts`의 `pruneStaleSettings`(정리하기 전), 데이터 탭이 쓰는 `core/settings-transfer.ts`의 `writeSettings`(복원·가져오기)입니다. 이전 코드는 여러 번 돌아도 결과가 같아야 합니다.
+- 설정을 없애거나 이름을 바꿀 때 옛 값을 옮기는 코드는 두지 않습니다. 옵션·팝업을 열면 `stores/modules.ts`의 `pruneStaleSettings`가 스키마에 없는 설정을 지우므로, 이름을 바꾼 설정은 기본값으로 돌아갑니다.
 - 차단 항목과 메모가 이 기기에서 마지막으로 쓰인 시각은 `core/usage.ts`가 `refresher:usage`에 모아 적습니다(차단은 `core/block.ts`의 검사, 메모는 `stores/memos.ts`의 찾기). 여러 탭과 옵션 페이지가 함께 고치는 값이라 쓰기는 배경이 메시지(`refresher:markUsed`, `refresher:syncUsage`)를 받아 차례로 합니다. 옵션의 차단·메모 탭이 오래 안 쓰인 항목을 거를 때 쓰고, 기록이 없는 항목은 옵션을 연 때를 기준으로 둡니다. 기기마다 다른 값이라 백업하지 않습니다.
 - 클라우드 복원·합치기, JSON 가져오기, 초기화가 저장소에 쓰는 규칙(지울 키, 합치는 방법, 기본 차단 모드 고정)은 `core/settings-transfer.ts`에 모여 있고 단위 테스트가 있습니다. `storage.local`을 직접 다루는 곳은 키 이름을 문자열로 적지 말고 `rawKey(MODULES_KEY)`처럼 `items.ts`의 키에서 만듭니다.
 

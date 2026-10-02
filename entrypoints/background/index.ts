@@ -1,8 +1,5 @@
-import {storage} from "wxt/utils/storage";
-
 import {http} from "@/core/http/client";
 import {postSearchUrl} from "@/core/http/urls";
-import {migrateSettingsStorage} from "@/core/migrate-settings";
 import {onMessage, sendMessage} from "@/core/messaging/protocol";
 import {type BackgroundModule, startBackgroundModules} from "@/core/module/background";
 import {dbStorage} from "@/core/storage/items";
@@ -49,13 +46,7 @@ export default defineBackground(() => {
 
     const updateDatabase = startDatabaseUpdates();
 
-    browser.runtime.onInstalled.addListener(async ({reason}) => {
-        // 모듈 맞추기는 옮긴 설정을 보도록 그 뒤에 하고, 옮기기가 실패해도 DB 갱신까지 이어서 한다.
-        if (reason === "update") {
-            await migrateSettingsStorage().catch(console.error);
-            // 비회원 닉네임·비밀번호는 이제 디시 localStorage에 둔다. 예전 버전이 확장 저장소에 남긴 평문 비밀번호를 지운다.
-            await storage.removeItem("local:refresher:nonmember").catch(console.error);
-        }
+    browser.runtime.onInstalled.addListener(async () => {
         await applyBackgroundModules();
 
         // 개발 빌드는 DB가 없을 때만 받는다.

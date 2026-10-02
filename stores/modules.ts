@@ -4,7 +4,6 @@ import {create} from "zustand";
 
 import {enablesOf, isModuleEnabled, normalizeSetting, settingsOf} from "@/core/module/settings";
 import type {AnyModuleMeta} from "@/core/module/types";
-import {migrateModuleSettings} from "@/core/migrate-settings";
 import {MODULES_KEY, moduleDataKey, moduleKeyModule, moduleSettingsKey, moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
 import {storageSync} from "@/core/storage/sync";
 import type {SettingValue} from "@/core/storage/types";
@@ -99,11 +98,9 @@ const pruneStaleSettings = async (): Promise<void> => {
         for (const feature of features) {
             if (!feature.settings) continue;
             const item = moduleSettingsStorage(feature.id);
-            const original = await item.getValue();
-            // 업데이트 직후 배경이 옮기기 전에 여기서 먼저 지우면 옛 설정('IP 정보 끔' 등)이 사라지므로 정리 전에 옮긴다.
-            const stored = migrateModuleSettings(feature.id, original);
+            const stored = await item.getValue();
             const kept = Object.entries(stored).filter(([key]) => Object.hasOwn(feature.settings!, key));
-            if (stored !== original || kept.length !== Object.keys(stored).length) await item.setValue(Object.fromEntries(kept));
+            if (kept.length !== Object.keys(stored).length) await item.setValue(Object.fromEntries(kept));
         }
     });
 };

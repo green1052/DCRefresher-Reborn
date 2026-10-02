@@ -127,15 +127,13 @@ export const DB_KEYS = {
     ban: "local:refresher:db:ban"
 } as const;
 
-/** 세 키를 한 번에 써서 읽는 쪽이 새 meta와 옛 ip를 섞어 보지 않게 한다. 6.0.0 개발판의 한 키짜리 DB(refresher:db)는 이때 지운다. */
-export const writeDatabase = async (meta: DatabaseMeta, ip: string, ban: string): Promise<void> => {
-    await storage.setItems([
+/** 세 키를 한 번에 써서 읽는 쪽이 새 meta와 옛 ip를 섞어 보지 않게 한다. */
+export const writeDatabase = (meta: DatabaseMeta, ip: string, ban: string): Promise<void> =>
+    storage.setItems([
         {item: dbStorage.meta, value: meta},
         {key: DB_KEYS.ip, value: ip},
         {key: DB_KEYS.ban, value: ban}
     ]);
-    await storage.removeItem("local:refresher:db");
-};
 
 /** 클라우드 백업 상태. refresher:backup:* 키는 백업 대상에서 빠진다 (core/backup.ts). 백업 시각은 클라우드의 메타에서 읽는다. */
 const backupAuto = lazyItem<boolean>("local:refresher:backup:auto", false);
