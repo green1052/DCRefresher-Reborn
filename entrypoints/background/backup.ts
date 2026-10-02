@@ -15,7 +15,7 @@ export const startAutoBackup = (): void => {
 
         void backupStorage.auto.getValue().then((auto) => {
             if (!auto) return;
-            void arm();
+            void arm().catch(console.error);
             void backupStorage.pending.setValue(true);
         });
     });

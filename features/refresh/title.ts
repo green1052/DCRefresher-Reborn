@@ -19,7 +19,7 @@ export const setTitleCount = (count: number): void => {
 export const isWatching = (): boolean => !document.hidden && document.hasFocus();
 
 /**
- * 이 탭을 보지 않는 동안 들어온 새 글 수를 탭 제목에 붙인다. 탭으로 돌아오면(focus) 지운다.
+ * 이 탭을 보지 않는 동안 들어온 새 글 수를 탭 제목에 붙인다. 탭으로 돌아오면(창 포커스·탭 표시) 지운다.
  * 가린 글(차단·깡계 숨김과 흐리게)은 세지 않는다. 필터는 행을 넣은 뒤(MutationObserver)에 돌므로 한 차례 뒤에 센다.
  */
 export const createUnseenCounter = (ctx: Ctx) => {
@@ -38,11 +38,12 @@ export const createUnseenCounter = (ctx: Ctx) => {
         setTitleCount(0);
     };
 
-    const onFocus = (): void => {
+    const onReturn = (): void => {
         if (isWatching()) clear();
     };
-    window.addEventListener("focus", onFocus, {signal: ctx.signal});
+    window.addEventListener("focus", onReturn, {signal: ctx.signal});
+    document.addEventListener("visibilitychange", onReturn, {signal: ctx.signal});
     ctx.addCleanup(clear);
 
-    return {count, clear, onFocus};
+    return {count, clear};
 };

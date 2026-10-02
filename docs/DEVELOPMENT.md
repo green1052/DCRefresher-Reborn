@@ -94,7 +94,8 @@ features/<id>/          기능 모듈 하나
   overlay.scss          오버레이(shadow) 안의 CSS (선택, 저절로 들어간다)
   ui/                   React 화면 (선택)
 modules/                WXT 로컬 모듈: 모듈 api·설정 타입 생성(module-types.ts), 단축키 모으기(commands.ts),
-                        기능별 페이지 CSS 모으기(feature-styles.ts), 엔트리마다 Radix CSS 줄이기(slim-radix-css.ts)
+                        기능별 페이지 CSS 모으기(feature-styles.ts), 엔트리마다 Radix CSS 줄이기(slim-radix-css.ts).
+                        WXT가 바로 아래 파일을 모두 모듈로 불러오므로 같이 쓰는 도우미는 lib/에 둔다 (features/ 폴더 찾기)
 core/                   모듈 시스템, 저장소 키, HTTP, 필터링, 차단 판정, 미리보기 요청·파싱, 백업, 설정 옮기기, DB, 마이그레이션
 stores/                 여러 화면이 같이 쓰는 zustand 스토어 (모듈 on/off·설정, 차단, 메모, 오버레이 UI)
 components/             공용 React 컴포넌트, 오버레이 루트(components/overlay)

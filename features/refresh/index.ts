@@ -10,7 +10,7 @@ import {smoothScroll} from "@/utils/dom";
 
 import {isWholeFirstPage, replaceList, syncPaging} from "./list";
 import meta, {type Ctx, PAUSE_TOGGLE} from "./meta";
-import {createUnseenCounter, isWatching, setTitleCount} from "./title";
+import {createUnseenCounter, setTitleCount} from "./title";
 
 const MINIMUM_REFRESH_INTERVAL = 2000;
 /** 목록 요청이 연달아 실패할 때 자동 새로고침 주기를 늘리는 상한. */
@@ -213,7 +213,7 @@ export default defineModule({
                 // 페이지를 넘긴 목록은 옛 목록과 겹치는 행이 없으면 전부 새 글로 잡히므로 알리지 않는다 (글댓비 조회가 몰린다).
                 if (!customURL && newPostList.length > 0) {
                     getModuleApi("userinfo")?.checkNewPosts(newPostList);
-                    if (ctx.settings.titleCount && !isWatching()) unseen.count(newPostList);
+                    unseen.count(newPostList);
                 }
 
                 return true;
@@ -270,7 +270,6 @@ export default defineModule({
                 armNext();
                 return;
             }
-            unseen.onFocus();
 
             // 실패로 주기가 늘어난 동안은 바로 받지 않는다. 탭을 오갈 때마다 요청하면 늘린 주기가 소용없다.
             if (failures === 0) void load();
