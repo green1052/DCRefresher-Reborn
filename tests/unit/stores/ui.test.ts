@@ -42,16 +42,16 @@ describe("토스트", () => {
         showToast("불러왔습니다.");
         let toasts = useUiStore.getState().toasts;
         expect(toasts).toHaveLength(3);
-        expect(toasts[0].action?.label).toBe("되돌리기");
+        expect(toasts[0]!.action?.label).toBe("되돌리기");
 
         // 넘친 토스트는 가장 오래된 것부터 버린다.
         showToast("네 번째");
         toasts = useUiStore.getState().toasts;
         expect(toasts).toHaveLength(3);
-        expect(toasts[0].content).toBe("저장했습니다.");
-        expect(toasts[0].action).toBeUndefined();
+        expect(toasts[0]!.content).toBe("저장했습니다.");
+        expect(toasts[0]!.action).toBeUndefined();
 
-        dismissToast(toasts[0].id);
+        dismissToast(toasts[0]!.id);
         expect(useUiStore.getState().toasts).toHaveLength(2);
     });
 });
