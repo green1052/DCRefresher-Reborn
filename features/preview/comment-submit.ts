@@ -6,8 +6,11 @@ import type {DcinsideDccon, GalleryPreData, PostInfo} from "@/core/preview/types
 const FAIL_MESSAGES: Record<string, string> = {
     code_fail: "자동입력 방지 코드가 일치하지 않습니다.",
     fail1: "닉네임과 비밀번호를 정확하게 입력해 주세요.",
-    form_error: "닉네임과 비밀번호를 정확하게 입력해 주세요.",
-    // 디시콘 댓글 (디시 dccon.js와 같은 문구).
+    form_error: "닉네임과 비밀번호를 정확하게 입력해 주세요."
+};
+
+// 디시콘 댓글만의 실패 응답 코드 (디시 dccon.js와 같은 문구). 글·글자콘 댓글이 fail을 받아도 디시콘 문구를 보이지 않게 나눈다.
+const DCCON_FAIL_MESSAGES: Record<string, string> = {
     not_buy: "구매내역이 존재하지 않는 디시콘입니다.",
     expired: "사용기간이 만료된 디시콘입니다.",
     unuseable: "해당 디시콘은 현재 사용 불가능합니다.",
@@ -20,7 +23,7 @@ const FAIL_MESSAGES: Record<string, string> = {
  * 실패 코드, 빈 응답, HTML 페이지(로그인이 풀렸거나 오류 페이지). 성공으로 잘못 보면 입력한 글을 지워 버린다.
  */
 export const isCommentPosted = ({result}: SubmitResult): boolean =>
-    result !== "false" && result !== "" && !result.trimStart().startsWith("<") && !Object.hasOwn(FAIL_MESSAGES, result);
+    result !== "false" && result !== "" && !result.trimStart().startsWith("<") && !Object.hasOwn(FAIL_MESSAGES, result) && !Object.hasOwn(DCCON_FAIL_MESSAGES, result);
 
 /** 보낼 댓글. 디시콘이 있으면 디시콘을, txtcon(색)이 있으면 글자콘을, 아니면 글을 보낸다. */
 export interface CommentContent {
@@ -61,5 +64,7 @@ export const postComment = async (
     if (content.txtcon || useDccon ? response.result === "ok" : isCommentPosted(response)) return {ok: true};
     // v2 체크박스를 요구하거나 v3 재전송도 막히면 원문 페이지에서만 풀 수 있다.
     if (response.message === "captcha") return {ok: false, captcha: true};
-    return {ok: false, captcha: false, message: (response.result === "false" ? resultMessage(response) : FAIL_MESSAGES[response.result]) || "댓글을 작성하지 못했습니다."};
+    const failMessage = Object.hasOwn(FAIL_MESSAGES, response.result) ? FAIL_MESSAGES[response.result]
+        : useDccon && Object.hasOwn(DCCON_FAIL_MESSAGES, response.result) ? DCCON_FAIL_MESSAGES[response.result] : undefined;
+    return {ok: false, captcha: false, message: (response.result === "false" ? resultMessage(response) : failMessage) || "댓글을 작성하지 못했습니다."};
 };

@@ -69,6 +69,11 @@ describe("postComment", () => {
         expect(await postComment(preData, post, user, {text: "글", dccons: [], bigDccon: false}, reply)).toMatchObject({message: "자동입력 방지 코드가 일치하지 않습니다."});
         vi.mocked(submitComment).mockResolvedValueOnce(result("<html>"));
         expect(await postComment(preData, post, user, {text: "글", dccons: [], bigDccon: false}, reply)).toMatchObject({message: "댓글을 작성하지 못했습니다."});
+        // fail은 디시콘을 보냈을 때만 디시콘 문구다.
+        vi.mocked(submitComment).mockResolvedValueOnce(result("fail"));
+        expect(await postComment(preData, post, user, {text: "글", dccons: [], bigDccon: false}, reply)).toMatchObject({message: "댓글을 작성하지 못했습니다."});
+        vi.mocked(submitComment).mockResolvedValueOnce(result("fail"));
+        expect(await postComment(preData, post, user, {text: "", dccons: [dccon], bigDccon: false}, reply)).toMatchObject({message: "디시콘 입력에 실패하였습니다."});
     });
 
     it("요청이 끊기면 던진다", async () => {
