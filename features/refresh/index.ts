@@ -2,6 +2,7 @@ import {BlockedError, http} from "@/core/http/client";
 import {isViewPage, listUrl, mergeParamURL, queryString} from "@/core/http/urls";
 import {LIST_SELECTOR, notifyListReplaced, PAGING_SELECTOR} from "@/core/list";
 import {defineModule} from "@/core/module/define";
+import {whenDomReady} from "@/utils/dom";
 import {getModuleApi} from "@/core/module/registry";
 import {ownPreviewEntry} from "@/core/preview/history";
 import {useUiStore} from "@/stores/ui";
@@ -66,16 +67,14 @@ export default defineModule({
             if (button) button.textContent = label();
         };
 
-        ctx.addFilter(
+        // 페이지를 다 읽은 뒤에 넣는다. 읽는 중에 넣으면 파서가 이 칸에 버튼을 붙일 때마다 필터가 다시 불려 버튼을 끝으로 옮기고,
+        // 그때마다 반쯤 읽은 페이지를 다시 배치해 목록 페이지를 여는 시간이 30ms 넘게 늘었다.
+        whenDomReady(() => ctx.addFilter(
             ".page_head > .gall_issuebox",
             (element) => {
                 // 버튼을 넣으면 이 칸에 필터가 다시 불린다. 이 실행의 버튼이면 그대로 둔다.
                 // 죽은 인스턴스(파이어폭스 재주입)가 남긴 버튼은 눌러도 반응이 없어 갈아끼운다.
-                if (button && element.contains(button)) {
-                    // 칸을 다 읽기 전에 넣었으면 파서가 뒤 버튼들을 그 뒤에 붙인다. 다시 불릴 때 끝으로 옮긴다.
-                    if (element.lastElementChild !== button) element.append(button);
-                    return;
-                }
+                if (button && element.contains(button)) return;
                 element.querySelector("button[data-refresher-refresh]")?.remove();
 
                 button = Object.assign(document.createElement("button"), {type: "button", textContent: label()});
@@ -83,7 +82,7 @@ export default defineModule({
                 button.addEventListener("click", () => setPaused(!paused));
                 element.append(button);
             }
-        );
+        ), ctx.signal);
         ctx.addCleanup(() => button?.remove());
 
         applyDoNotColorVisited(ctx);
