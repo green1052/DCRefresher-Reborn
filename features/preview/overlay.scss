@@ -47,7 +47,7 @@
     flex-direction: column;
     width: min(var(--refresher-frame-width, 1200px), 90vw);
     // 짧은 글에서도 납작해 보이지 않게 최소 높이를 둔다 (작은 창에선 화면을 넘지 않게).
-    min-height: min(600px, 90vh);
+    min-height: min(800px, 90vh);
     margin: auto;
     // 둥근 모서리 밖으로 댓글 배경이 나가지 않게 자른다. hidden이면 스크롤 칸이 되어 맨 위로 버튼(sticky)이 화면에 붙지 않는다.
     overflow: clip;
@@ -56,8 +56,15 @@
     box-shadow: var(--shadow-6);
 
     // 최소 높이로 남는 공간은 본문이 채운다. 비워 두면 댓글 입력칸 아래에 빈 칸이 생긴다.
+    // 추천 버튼은 본문 칸 맨 아래(댓글 바로 위)에 둔다. 남는 공간은 본문 글이 받는다.
     > .refresher-frame-body {
+        display: flex;
+        flex-direction: column;
         flex-grow: 1;
+
+        > .refresher-preview-contents {
+            flex-grow: 1;
+        }
     }
 
     // 왼쪽 관리 창(.refresher-admin-panel, 150px)과 겹치지 않게 양옆에 그 폭만큼 비운다 (너무 좁은 창에선 480px은 유지).
