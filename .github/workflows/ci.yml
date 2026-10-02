@@ -2,18 +2,14 @@ name: CI
 
 on:
     pull_request:
-    # PR 없이 develop에 바로 올린 커밋도 같은 검사를 돈다
-    push:
-        branches:
-            - develop
 
 # 포크에서 온 PR도 돌므로 읽기 권한만 준다
 permissions:
     contents: read
 
-# 같은 PR(브랜치)에 새로 푸시하면 이전 실행은 멈춘다
+# 같은 PR에 새로 푸시하면 이전 실행은 멈춘다
 concurrency:
-    group: ci-${{ github.event.pull_request.number || github.ref }}
+    group: ci-${{ github.event.pull_request.number }}
     cancel-in-progress: true
 
 # 세 작업은 동시에 돈다. E2E는 브라우저마다 그 브라우저용 빌드만 만들고 그 브라우저만 받는다
