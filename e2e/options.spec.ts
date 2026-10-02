@@ -2,7 +2,7 @@ import {expect, storedIn, test} from "./fixtures";
 import {openOptions} from "./pages/options";
 
 test.describe("옵션 페이지", () => {
-    test("모듈 카드를 그리고 스위치로 켜고 끈 값이 저장소에 남는다", async ({page, extensionId, errors: _errors}) => {
+    test("모듈 카드를 그리고 스위치로 켜고 끈 값이 저장소에 남는다", async ({page, extensionId}) => {
         const options = await openOptions(page, extensionId, "general");
 
         await expect(options.card("글 목록 새로고침")).toBeVisible();
@@ -19,7 +19,7 @@ test.describe("옵션 페이지", () => {
         await expect.poll(() => storedIn(page, "refresher:modules")).toEqual({stealth: true});
     });
 
-    test("설정을 바꾸면 모듈 설정 키에 저장되고 되돌리기가 보인다", async ({page, extensionId, errors: _errors}) => {
+    test("설정을 바꾸면 모듈 설정 키에 저장되고 되돌리기가 보인다", async ({page, extensionId}) => {
         const options = await openOptions(page, extensionId, "general");
 
         const card = options.card("글 목록 새로고침");
@@ -30,7 +30,7 @@ test.describe("옵션 페이지", () => {
         await expect.poll(() => storedIn(page, "refresher:module:refresh:settings")).toEqual({fadeIn: false});
     });
 
-    test("차단 탭에서 항목을 추가하고 데이터 탭이 그려진다", async ({page, extensionId, errors: _errors}) => {
+    test("차단 탭에서 항목을 추가하고 데이터 탭이 그려진다", async ({page, extensionId}) => {
         const options = await openOptions(page, extensionId, "block");
         await expect(page.getByText("기본 차단 모드")).toBeVisible();
 
@@ -43,7 +43,7 @@ test.describe("옵션 페이지", () => {
         await options.goto("data");
         await expect(page.getByText("클라우드 백업")).toBeVisible();
     });
-    test("차단 목록을 갤러리와 오래 안 쓰인 것으로 거르고, 보이는 것만 지운다", async ({page, extensionId, storage, errors: _errors}) => {
+    test("차단 목록을 갤러리와 오래 안 쓰인 것으로 거르고, 보이는 것만 지운다", async ({page, extensionId, storage}) => {
         const day = 24 * 60 * 60 * 1000;
         await storage.set({
             "refresher:block:NICK": [

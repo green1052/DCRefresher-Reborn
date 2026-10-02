@@ -2,7 +2,7 @@ import {expect, storedIn, test} from "./fixtures";
 import {openPopup, openPopupFor} from "./pages/popup";
 
 test.describe("팝업", () => {
-    test("모듈 타일을 그리고 누르면 켜고 끈다", async ({page, extensionId, errors: _errors}) => {
+    test("모듈 타일을 그리고 누르면 켜고 끈다", async ({page, extensionId}) => {
         const popup = await openPopup(page, extensionId);
 
         expect(await popup.tiles().count()).toBeGreaterThanOrEqual(10);

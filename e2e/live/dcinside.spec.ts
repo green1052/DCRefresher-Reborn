@@ -17,7 +17,7 @@ const VIEW_URL = new RegExp(`${LIST_PATH.replace("/lists", "/view").replace(/\//
 const POSTS = `.gall_list tbody tr.us-post[data-no]:not([data-type="icon_notice"], [data-type="icon_survey"])`;
 
 test.describe("실제 디시", () => {
-    test("글 목록에 유저 정보 배지와 새로고침 버튼이 붙고, 자동 새로고침이 목록을 다시 받는다", async ({page, errors: _errors}) => {
+    test("글 목록에 유저 정보 배지와 새로고침 버튼이 붙고, 자동 새로고침이 목록을 다시 받는다", async ({page}) => {
         const list = await openListPage(page, LIST_URL);
         await expect(page.locator(POSTS).first()).toBeVisible();
         await expect(list.refreshButton()).toHaveText("자동 새로고침: 켜짐");
@@ -28,7 +28,7 @@ test.describe("실제 디시", () => {
         await expect(page.locator(POSTS).first()).toBeVisible();
     });
 
-    test("제목을 우클릭하면 글을 받아 본문을 그리고, 닫으면 주소가 돌아온다", async ({page, errors: _errors}) => {
+    test("제목을 우클릭하면 글을 받아 본문을 그리고, 닫으면 주소가 돌아온다", async ({page}) => {
         const list = await openListPage(page, LIST_URL);
         const post = page.locator(POSTS).first();
         const no = await post.getAttribute("data-no");
@@ -45,7 +45,7 @@ test.describe("실제 디시", () => {
         await expect(page).toHaveURL(new URL(LIST_URL).href);
     });
 
-    test("댓글 수를 우클릭하면 댓글을 받아 그린다", async ({page, errors: _errors}) => {
+    test("댓글 수를 우클릭하면 댓글을 받아 그린다", async ({page}) => {
         const list = await openListPage(page, LIST_URL);
         const replies = page.locator(`${POSTS} .reply_numbox`).first();
         test.skip(!(await replies.count()), "첫 쪽에 댓글 달린 글이 없다");
@@ -59,7 +59,7 @@ test.describe("실제 디시", () => {
         if (await comments.count()) await expect(comments.first().locator(".refresher-user")).toBeVisible();
     });
 
-    test("회원 작성자를 우클릭하면 갤로그 글/댓글 수가 보인다", async ({page, errors: _errors}) => {
+    test("회원 작성자를 우클릭하면 갤로그 글/댓글 수가 보인다", async ({page}) => {
         const list = await openListPage(page, LIST_URL);
         const member = page.locator(`${POSTS} .ub-writer:not([data-uid=""])`).first();
         test.skip(!(await member.count()), "첫 쪽에 회원 글이 없다");
@@ -71,7 +71,7 @@ test.describe("실제 디시", () => {
         await expect(bubble).toContainText(/[\d,]+ \/ [\d,]+/);
     });
 
-    test("글 페이지에서도 콘텐츠 스크립트가 돈다", async ({page, errors: _errors}) => {
+    test("글 페이지에서도 콘텐츠 스크립트가 돈다", async ({page}) => {
         const list = await openListPage(page, LIST_URL);
         const href = await page.locator(`${POSTS} .ub-word a`).first().getAttribute("href");
         await page.goto(new URL(href!, LIST_URL).href);

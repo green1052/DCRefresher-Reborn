@@ -78,7 +78,7 @@ const routeLive = async (context: BrowserContext): Promise<void> => {
  *   플레이라이트의 파이어폭스는 확장 페이지를 열지 못해 팝업·옵션 테스트는 크로미엄에서만 돈다 (playwright.config.ts).
  * - dcinside.com 주소는 모두 e2e/dcinside.ts의 가짜 페이지로 응답하고 IP DB 서버(dcrefresher.green1052.com)는 끊는다.
  *   live 프로젝트(e2e/live)만 실제 디시에 읽기 요청을 보낸다 (routeLive).
- * - errors: 페이지 오류와 console.error를 모은다. 테스트 끝에 비어 있어야 한다.
+ * - errors: 페이지 오류와 console.error를 모은다. 모든 테스트에 자동으로 걸리고, 테스트 끝에 비어 있어야 한다.
  */
 export const test = base.extend<{ live: boolean }>({
     /** 실제 디시에 요청하는지. live 프로젝트가 켠다 (playwright.config.ts). */
@@ -171,7 +171,8 @@ export const test = base.extend<{ live: boolean }>({
         });
     },
 
-    errors: async ({context, live}, use) => {
+    // 모든 테스트에 건다. 받지 않는 테스트(글 페이지를 직접 여는 것 등)도 오류가 나면 실패한다.
+    errors: [async ({context, live}, use) => {
         const errors: string[] = [];
         // 실제 디시 페이지는 디시 스크립트·끊은 광고에서 오류가 난다. 확장 코드(chrome-extension://)에서 난 것만 본다.
         const fromExtension = (where: string | undefined): boolean => !live || /(chrome|moz)-extension:\/\//.test(where ?? "");
@@ -182,14 +183,14 @@ export const test = base.extend<{ live: boolean }>({
             if (message.type() === "error" && fromExtension(message.location().url)) errors.push(`console ${page.url()}: ${message.text()}`);
         });
         // 이미 열린 페이지(page 픽스처 등)도 본다.
-        context.pages().forEach(watch);
+        for (const page of context.pages()) watch(page);
         context.on("page", watch);
         await use(errors);
         expect(errors, "페이지 오류·console.error가 없어야 한다").toEqual([]);
-    },
+    }, {auto: true}],
 
     /** 콘텐츠 스크립트가 돈 가짜 글 목록 페이지 (pages/list.ts). */
-    listPage: async ({errors: _errors, page}, use) => {
+    listPage: async ({page}, use) => {
         await use(await openListPage(page));
     }
 });
