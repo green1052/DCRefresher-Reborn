@@ -100,6 +100,9 @@ export const moduleDataKey = (id: string): `local:refresher:module:${string}:dat
 /** moduleDataStorage의 키인지 (local: 없이). */
 export const isModuleDataKey = (key: string): boolean => /^refresher:module:.+:data$/.test(key);
 
+/** 모듈 설정·캐시 키(local: 없이)의 모듈 id. 둘 다 아니면 undefined. */
+export const moduleKeyModule = (key: string): string | undefined => /^refresher:module:(.+):(?:settings|data)$/.exec(key)?.[1];
+
 /** 차단 목록 키(blockListKey)인지 (local: 없이). 기본 차단 모드(refresher:block:defaults)는 아니다. */
 export const isBlockListKey = (key: string): boolean => /^refresher:block:[A-Z]+$/.test(key);
 

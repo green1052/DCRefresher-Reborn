@@ -37,3 +37,17 @@ if (typeof window !== "undefined") {
         for (let index = 0; index < this.length; index++) yield this.item(index);
     };
 }
+
+// Web Locks API (stores/modules의 설정 쓰기 줄). jsdom·Node에는 없다. 테스트는 한 탭뿐이라 순서대로 잇기만 한다.
+if (typeof navigator !== "undefined" && !("locks" in navigator)) {
+    let queue: Promise<unknown> = Promise.resolve();
+    Object.defineProperty(navigator, "locks", {
+        value: {
+            request: (_name: string, callback: () => Promise<unknown>) => {
+                const result = queue.then(callback);
+                queue = result.catch(() => undefined);
+                return result;
+            }
+        }
+    });
+}
