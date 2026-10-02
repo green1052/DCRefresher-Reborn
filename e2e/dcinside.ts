@@ -31,7 +31,7 @@ const row = ({no, title, nick, uid, ip = "", replies}: FakeRow): string => `
 
 export const listPage = (rows: FakeRow[] = ROWS): string => `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>테스트 갤러리</title></head><body>
 <div class="page_head"><h2><a href="/board/lists/?id=test">테스트 갤러리</a></h2><div class="gall_issuebox"></div></div>
-<input type="hidden" id="e_s_n_o" value="token">
+<input type="hidden" id="e_s_n_o" value="token"><input type="hidden" id="gallery_id" value="test">
 <div class="left_content"><article><div class="gall_listwrap">
 <table class="gall_list"><thead><tr><th>번호</th><th>제목</th><th>글쓴이</th><th>작성일</th><th>조회</th><th>추천</th></tr></thead>
 <tbody>${rows.map(row).join("")}</tbody></table>

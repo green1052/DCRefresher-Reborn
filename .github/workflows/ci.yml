@@ -44,9 +44,12 @@ jobs:
                 run: bunx playwright install --with-deps chromium firefox
 
             -   name: E2E tests (Chromium)
+                id: chromium
                 run: bun run e2e
 
+            # 크로미엄 E2E가 실패해도 돈다. 파이어폭스에서만 깨진 것을 같은 실행에서 함께 본다
             -   name: E2E tests (Firefox)
+                if: success() || steps.chromium.outcome == 'failure'
                 run: bun run e2e:firefox
 
             -   name: Upload E2E report

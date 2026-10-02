@@ -97,7 +97,13 @@ export const test = base.extend<{ live: boolean }>({
                 args: ["-start-debugger-server", String(port)],
                 firefoxUserPrefs: firefoxUserPrefs()
             });
-            firefoxAddons.set(context, await installTemporaryAddon(port, pathToFirefoxExtension));
+            try {
+                firefoxAddons.set(context, await installTemporaryAddon(port, pathToFirefoxExtension));
+            } catch (error) {
+                await context.close();
+                rmSync(profile, {recursive: true, force: true});
+                throw error;
+            }
         } else {
             context = await chromium.launchPersistentContext(profile, {
                 headless: true,
