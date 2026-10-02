@@ -310,6 +310,13 @@ export default defineModule({
         useUiStore.setState({badgeColors: {}, badgeView: DEFAULT_BADGE_VIEW, ratios: null});
         clearLowActivity();
 
+        // 파이어폭스 재주입으로 새 인스턴스가 setup될 때 옛 인스턴스의 값을 이어받지 않게 비운다.
+        colors = {};
+        view = DEFAULT_BADGE_VIEW;
+        gallery = null;
+        ratios = {};
+        failedRatios.clear();
+
         for (const element of document.querySelectorAll(`.${BADGES_CLASS}`)) element.remove();
     }
 });
