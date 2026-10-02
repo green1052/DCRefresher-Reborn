@@ -1,5 +1,7 @@
 import {defineExtensionMessaging} from "@webext-core/messaging";
 
+import type {UsageData, UsageKind} from "@/core/usage";
+
 /**
  * 팝업 '현재 페이지'의 토글 하나. 이 페이지에서 도는 모듈의 pageToggles만 담긴다.
  * 아이콘은 컴포넌트라 메시지로 보낼 수 없어 팝업이 모듈 정의에서 찾는다.
@@ -13,8 +15,6 @@ export interface PageToggleState {
 }
 
 export type PageAction = Pick<PageToggleState, "module" | "id">;
-
-import type {UsageData, UsageKind} from "@/core/usage";
 
 interface ProtocolMap {
     /** 배경 → 탭: 단축키 실행 (commands). */
