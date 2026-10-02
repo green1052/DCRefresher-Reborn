@@ -16,10 +16,11 @@ concurrency:
     group: ci-${{ github.event.pull_request.number || github.ref }}
     cancel-in-progress: true
 
+# 세 작업은 동시에 돈다. E2E는 브라우저마다 그 브라우저용 빌드만 만들고 그 브라우저만 받는다
 jobs:
-    test:
+    check:
         runs-on: ubuntu-latest
-        timeout-minutes: 30
+        timeout-minutes: 10
         steps:
             -   uses: actions/checkout@v7
                 with:
@@ -36,27 +37,46 @@ jobs:
             -   name: Unit tests
                 run: bun run test
 
+    e2e:
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        strategy:
+            # 한 브라우저가 실패해도 다른 브라우저는 끝까지 돈다. 한쪽에서만 깨진 것을 같은 실행에서 함께 본다
+            fail-fast: false
+            matrix:
+                include:
+                    -   browser: chromium
+                        build: build
+                        e2e: e2e
+                    -   browser: firefox
+                        build: build:firefox
+                        e2e: e2e:firefox
+        name: e2e (${{ matrix.browser }})
+        steps:
+            -   uses: actions/checkout@v7
+                with:
+                    persist-credentials: false
+
+            -   uses: oven-sh/setup-bun@v2
+
+            -   name: Install Dependencies
+                run: bun ci
+
             # E2E가 .output/chrome-mv3·firefox-mv2를 브라우저에 올린다 (e2e/fixtures.ts)
             -   name: Build
-                run: bun run build && bun run build:firefox
+                run: bun run ${{ matrix.build }}
 
-            -   name: Install browsers
-                run: bunx playwright install --with-deps chromium firefox
+            -   name: Install browser
+                run: bunx playwright install --with-deps ${{ matrix.browser }}
 
-            -   name: E2E tests (Chromium)
-                id: chromium
-                run: bun run e2e
-
-            # 크로미엄 E2E가 실패해도 돈다. 파이어폭스에서만 깨진 것을 같은 실행에서 함께 본다
-            -   name: E2E tests (Firefox)
-                if: success() || steps.chromium.outcome == 'failure'
-                run: bun run e2e:firefox
+            -   name: E2E tests
+                run: bun run ${{ matrix.e2e }}
 
             -   name: Upload E2E report
                 if: failure()
                 uses: actions/upload-artifact@v4
                 with:
-                    name: playwright-report
+                    name: playwright-report-${{ matrix.browser }}
                     path: |
                         playwright-report
                         test-results
