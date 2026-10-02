@@ -77,11 +77,13 @@ export const dcconCode = (element: HTMLElement): string | undefined => {
 };
 
 /**
- * blockingIn이 무언가를 돌려주는지만 본다.
- * 맞은 항목(막은 SAME/CONTAIN, 허용한 NOT_*)은 쓰였다고 적는다 (옵션의 오래 안 쓰인 항목 거르기). 목록 행·댓글마다 유형별로 불리므로 배열을 만들지 않고, 걸린 항목을 찾으면 바로 끝낸다.
+ * blockingIn이 무언가를 돌려주는지만 본다. 목록 행·댓글마다 유형별로 불리므로 배열을 만들지 않는다.
  * 걸린 SAME/CONTAIN 항목이 하나라도 있으면 막히고, 없으면 NOT_* 허용 목록이 있는데 어느 것에도 맞지 않을 때 막힌다.
+ * 맞은 항목(막은 SAME/CONTAIN, 허용한 NOT_*)은 모두 쓰였다고 적는다 (옵션의 오래 안 쓰인 항목 거르기).
+ * 첫 항목에서 멈추면 같은 대상을 함께 막는 다른 항목(닉네임과 아이디로 같이 막은 유저 등)이 안 쓰인 것으로 보여 지워질 수 있다.
  */
 const isBlockedIn = (lists: BlockLists, type: BlockType, content: string, gallery?: string): boolean => {
+    let blocked = false;
     let hasAllowList = false;
     let allowed = false;
 
@@ -91,26 +93,28 @@ const isBlockedIn = (lists: BlockLists, type: BlockType, content: string, galler
         const mode = entry.mode ?? lists.defaults[type];
         if (!mode.startsWith("NOT_")) {
             if (matches(entry, mode, content)) {
+                blocked = true;
                 markUsed("block", entry.id);
-                return true;
             }
-        } else if (!allowed && (!entry.isRegex || compile(entry))) {
+        } else if (!entry.isRegex || compile(entry)) {
             hasAllowList = true;
-            allowed = matches(entry, mode, content);
-            if (allowed) markUsed("block", entry.id);
+            if (matches(entry, mode, content)) {
+                allowed = true;
+                markUsed("block", entry.id);
+            }
         }
     }
 
-    return hasAllowList && !allowed;
+    return blocked || (hasAllowList && !allowed);
 };
 
 /** 해당 내용이 차단 대상인지 (갤러리 한정 항목은 그 갤러리에서만). */
 export const isBlocked = (type: BlockType, content: string, gallery?: string): boolean =>
     content !== "" && isBlockedIn(useBlocksStore.getState(), type, content, gallery);
 
-/** 값 중 하나라도 차단 대상인지. */
+/** 값 중 하나라도 차단 대상인지. 막힌 유형에서 멈추지 않고 모든 유형을 본다. 다른 유형의 항목(같은 유저를 아이디로도 막은 것 등)도 쓰였다고 적어야 한다. */
 export const isAnyBlocked = (values: BlockValues, gallery?: string): boolean =>
-    objectEntries(values).some(([type, value]) => value && isBlocked(type, value, gallery));
+    objectEntries(values).map(([type, value]) => Boolean(value) && isBlocked(type, value!, gallery)).includes(true);
 
 /** 확장이 흐리게 가린 행 (차단 블러, userinfo의 깡계 흐림). 흐린 행은 보이므로 checkVisibility로 가릴 수 없다. */
 export const BLURRED_ROW_SELECTOR = ".refresherBlur, .refresherLowActivityBlur";

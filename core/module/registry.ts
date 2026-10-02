@@ -115,17 +115,14 @@ const applySettings = (instance: ModuleInstance, stored: unknown): void => {
 /** 모듈 on/off와 모든 모듈의 설정. 따로 읽으면 왕복이 모듈 수만큼 쌓여 첫 모듈이 늦게 뜬다. */
 const readAll = (defs: AnyModule[]) => readModuleStorage(defs.map((def) => def.id));
 
-const register = async (def: AnyModule, stored: unknown, enables: Promise<Record<string, unknown>>, signal: AbortSignal): Promise<void> => {
+const register = async (def: AnyModule, stored: unknown, enables: Promise<Record<string, unknown>>): Promise<void> => {
     if (instances.has(def.id)) throw new Error(`${def.id} is already registered.`);
 
     const instance: ModuleInstance = {def, settings: {}};
     instances.set(def.id, instance);
 
-    // 설정은 옵션 페이지가 저장소에 직접 쓰고, 여기서 감시해 반영한다.
-    if (def.settings) {
-        applySettings(instance, stored);
-        watchStorage(moduleSettingsKey(def.id), (next) => applySettings(instance, next), signal);
-    }
+    // 설정은 옵션 페이지가 저장소에 직접 쓰고, loadAll이 건 감시가 반영한다.
+    if (def.settings) applySettings(instance, stored);
 
     if (isModuleEnabled(def, await enables)) await start(instance);
 };
@@ -209,11 +206,22 @@ export const loadAll = async (defs: AnyModule[], signal: AbortSignal, ready?: Pr
     // 이 문서의 주소(documentUrl)는 바뀌지 않으므로 urls가 이 페이지를 빼는 모듈은 끝내 돌지 않는다. 설정을 읽거나 감시하지 않게 등록하지 않는다.
     defs = defs.filter((def) => !def.urls || def.urls.some((re) => re.test(documentUrl.href)));
     // on/off·모듈 설정을 한 번에 읽고 ready와 같이 기다린다. 차례로 기다리면 저장소 왕복이 쌓여 모듈이 본문을 한참 읽은 뒤에야 뜬다.
+    // 설정 감시는 읽기 전에 건다. 읽은 뒤에 걸면 그사이 옵션에서 바꾼 설정을 놓친다 (storageSync와 같다).
+    // 등록 전에 온 값은 모아 두었다가 읽은 값 대신 쓴다.
+    const early = new Map<string, unknown>();
+    for (const def of defs) {
+        if (!def.settings) continue;
+        watchStorage(moduleSettingsKey(def.id), (next) => {
+            const instance = instances.get(def.id);
+            if (instance) applySettings(instance, next);
+            else early.set(def.id, next);
+        }, signal);
+    }
     const all = readAll(defs);
     const enables = Promise.all([all, ready]).then(([value]) => value.enables);
 
     const {settings} = await all;
-    const results = await Promise.allSettled(defs.map((def) => register(def, settings.get(def.id), enables, signal)));
+    const results = await Promise.allSettled(defs.map((def) => register(def, early.has(def.id) ? early.get(def.id) : settings.get(def.id), enables)));
     for (const [index, result] of results.entries()) {
         if (result.status === "rejected") console.error(`Failed to load module: ${defs[index]?.id}`, result.reason);
     }

@@ -60,6 +60,29 @@ describe("loadAll", () => {
         expect(setup).toHaveBeenLastCalledWith({size: 3, flag: true});
     });
 
+    it("저장소를 읽는 사이 바뀐 설정도 놓치지 않는다", async () => {
+        await enables({late: true});
+        await settingsOf("late", {size: 3});
+        const setup = vi.fn();
+        const late = testModule({
+            id: "late",
+            settings: {size: setting({type: "range", default: 5, min: 1, max: 10, step: 1, unit: ""})},
+            setup: (ctx) => void setup(ctx.settings.size)
+        });
+
+        // 옛 값을 읽어 돌려주기 직전에 옵션 페이지가 설정을 바꾼다.
+        const get = fakeBrowser.storage.local.get.bind(fakeBrowser.storage.local);
+        vi.spyOn(fakeBrowser.storage.local, "get").mockImplementationOnce(async (keys) => {
+            const read = await get(keys);
+            await settingsOf("late", {size: 7});
+            await tick();
+            return read;
+        });
+        await loadAll([late], new AbortController().signal);
+        expect(setup).toHaveBeenCalledWith(7);
+        expect(moduleSettingsStore.getState().late).toEqual({size: 7});
+    });
+
     it("setup이 끝난 모듈에만 단축키·팝업 토글이 간다", async () => {
         await enables({d: true, e: true});
         let release!: () => void;

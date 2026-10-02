@@ -14,6 +14,8 @@ export interface PageToggleState {
 
 export type PageAction = Pick<PageToggleState, "module" | "id">;
 
+import type {UsageData, UsageKind} from "@/core/usage";
+
 interface ProtocolMap {
     /** 배경 → 탭: 단축키 실행 (commands). */
     "refresher:executeShortcut"(data: string): void;
@@ -32,6 +34,12 @@ interface ProtocolMap {
 
     /** 탭 → 배경: 디시 통합검색 결과 페이지(HTML). search.dcinside.com은 CORS를 열지 않아 콘텐츠 스크립트가 받을 수 없다. */
     "refresher:searchPosts"(query: string): string;
+
+    /** 탭 → 배경: 쓰인 차단 항목·메모 (core/usage). 여러 탭이 동시에 써도 기록을 잃지 않게 배경이 차례로 저장한다. */
+    "refresher:markUsed"(batch: UsageData): void;
+
+    /** 옵션 → 배경: 사용 기록을 지금 목록에 맞추고 그 종류의 기록을 돌려준다 (core/usage의 syncUsage). */
+    "refresher:syncUsage"(data: { kind: UsageKind; ids: string[] }): Record<string, number>;
 
     /** 팝업 → 탭: 이 페이지의 토글 상태. */
     "refresher:pageState"(): PageToggleState[];

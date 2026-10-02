@@ -25,18 +25,19 @@ const REQUEST_TIMEOUT = 15_000;
 
 /**
  * fetch 단위로 동시 요청 수를 제한한다. ky의 재시도도 이 fetch를 다시 부르므로 재시도 요청도 동시 요청 수에 들어간다.
- * 시간 제한은 자리를 잡은 뒤부터 잰다. ky의 timeout은 fetch를 부르는 순간부터 재서, 요청이 몰리면 차례를 기다리던 요청이
- * 보내지도 못하고 시간 초과로 실패한다. 요청을 끊는 신호(ky·호출한 쪽)는 Request에 들어 있어 함께 건다.
+ * 시간 제한은 자리를 잡은 뒤부터 응답 머리를 받을 때까지 잰다. ky의 timeout은 fetch를 부르는 순간부터 재서, 요청이 몰리면 차례를 기다리던 요청이
+ * 보내지도 못하고 시간 초과로 실패한다. 머리를 받으면 타이머를 지운다. 남겨 두면 느린 회선에서 본문(IP DB 등)을 받는 도중에 끊는다.
+ * 요청을 끊는 신호(ky·호출한 쪽)는 Request에 들어 있어 함께 건다.
  */
 const limitedFetch: Fetch = (input, init) =>
     limiter.run(() => {
         // AbortSignal.timeout은 파이어폭스 콘텐츠 스크립트에서 "Could not find window"로 던진다 (전역이 창이 아니라 샌드박스다).
         const timeout = new AbortController();
-        setTimeout(() => timeout.abort(new DOMException("요청 시간 초과", "TimeoutError")), REQUEST_TIMEOUT);
+        const timer = setTimeout(() => timeout.abort(new DOMException("요청 시간 초과", "TimeoutError")), REQUEST_TIMEOUT);
         const signals = [timeout.signal];
         if (input instanceof Request) signals.push(input.signal);
         if (init?.signal) signals.push(init.signal);
-        return baseFetch(input, {...init, signal: AbortSignal.any(signals)});
+        return baseFetch(input, {...init, signal: AbortSignal.any(signals)}).finally(() => clearTimeout(timer));
     });
 
 /** 디시 임시 차단을 받았을 때 던지는 오류. 요청이 너무 많으면 디시는 상태 코드 없이 모든 요청에 빈 페이지를 준다. */

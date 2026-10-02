@@ -5,7 +5,8 @@ import {storage, type WxtStorageItem} from "wxt/utils/storage";
 
 import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
-import {syncUsage, USAGE_KEY, type UsageKind} from "@/core/usage";
+import {sendMessage} from "@/core/messaging/protocol";
+import {USAGE_KEY, type UsageKind} from "@/core/usage";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
 import {friendlyMessage, SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
@@ -58,7 +59,7 @@ export const useUsage = (kind: UsageKind, ids: readonly string[]): Record<string
 
     useEffect(() => {
         let stale = false;
-        syncUsage(kind, ids).then((next) => {
+        sendMessage("refresher:syncUsage", {kind, ids: [...ids]}).then((next) => {
             if (!stale) setTimes(next);
         }, console.error);
         const unwatch = storage.watch<Record<UsageKind, Record<string, number>>>(USAGE_KEY, (next) => {

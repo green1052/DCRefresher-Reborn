@@ -357,6 +357,14 @@ test.describe("메모", () => {
         const dialog = listPage.overlay().getByRole("dialog");
         await expect(dialog.getByText("메모", {exact: true}).first()).toBeVisible();
         await dialog.getByRole("textbox").first().fill("테스트 메모");
+        // 오버레이(shadow DOM) 안에서도 Tab·Shift+Tab이 창 밖(디시 페이지)으로 나가지 않는다.
+        const focusInside = () => dialog.evaluate((element) => element.contains((element.getRootNode() as ShadowRoot).activeElement) && document.activeElement?.tagName === "REFRESHER-ROOT");
+        for (const key of ["Tab", "Shift+Tab"]) {
+            for (let i = 0; i < 12; i++) {
+                await listPage.page.keyboard.press(key);
+                expect(await focusInside()).toBe(true);
+            }
+        }
         await dialog.getByRole("button", {name: "저장"}).click();
 
         await expect(dialog).toHaveCount(0);

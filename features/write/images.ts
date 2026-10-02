@@ -32,7 +32,8 @@ export const hookUploads = (key: string): void => {
     };
 
     // 움짤은 캔버스가 첫 장면만 그리므로 WebP로 바꾸지 않고 이름만 바꾼다. AVIF는 WebP보다 작고 움직일 수도 있어 그대로 둔다.
-    const keepFormat = (file: File): boolean => ["image/gif", "image/webp", "image/avif"].includes(file.type);
+    // .apng는 크로미움이 image/apng로 준다 (image/png인 APNG는 아래 isApng가 찾는다).
+    const keepFormat = (file: File): boolean => ["image/gif", "image/webp", "image/avif", "image/apng"].includes(file.type);
     // 움직이는 PNG(APNG)는 acTL 청크가 첫 IDAT보다 앞에 있다. 서명(8바이트) 뒤 청크 머리(길이 4 + 이름 4)만 따라가며 읽는다.
     // 앞쪽 메타데이터 청크(EXIF·ICC 등)가 커도 놓치지 않고, 이미지 데이터는 읽지 않는다.
     const isApng = async (file: File): Promise<boolean> => {
