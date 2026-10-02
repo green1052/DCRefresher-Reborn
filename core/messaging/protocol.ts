@@ -27,6 +27,9 @@ interface ProtocolMap {
      */
     "refresher:listReplaced"(gallery: string): void;
 
+    /** 탭 → 배경: 디시가 첫 댓글 목록을 그리다 실패했다 (entrypoints/content/comments.ts). 배경이 그 탭의 MAIN world에서 디시의 viewComments를 다시 부른다. */
+    "refresher:redrawComments"(): void;
+
     /** 탭 → 배경: 글쓰기 모듈이 그 탭의 MAIN world에 이미지 변환(features/write/images.ts의 hookUploads)을 넣는다. 페이지마다 한 번. */
     "refresher:hookUploads"(): void;
 

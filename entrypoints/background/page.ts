@@ -47,6 +47,12 @@ const rerunListScripts = (gallery: string): void => {
     if (typeof scope.UserMemo?.renderWriterMemoBadges === "function") scope.UserMemo.renderWriterMemoBadges(null);
 };
 
+/** 탭의 페이지 컨텍스트에서 실행된다(직렬화되므로 바깥 변수를 쓰지 않는다). 디시 댓글 목록의 첫 쪽을 다시 그린다. VIEW_PAGE로 불러야 댓글로 스크롤하지 않는다. */
+const redrawComments = (): void => {
+    const scope = window as Window & { viewComments?: (page: number, type: string) => void };
+    if (typeof scope.viewComments === "function") scope.viewComments(1, "VIEW_PAGE");
+};
+
 /** 탭에서 온 메시지의 보낸 쪽. 팝업·옵션 같은 확장 페이지는 tab이 없다. */
 type TabSender = Browser.runtime.MessageSender & { tab: { id: number } };
 
@@ -86,6 +92,13 @@ export const listenPageMessages = (): void => {
         if (!hasTab(sender)) return;
 
         await runInPage(sender, rerunListScripts, [gallery]).catch(() => {});
+    });
+
+    // 댓글: 디시가 첫 댓글 목록을 그리다 실패한 글에서 다시 그린다.
+    onMessage("refresher:redrawComments", async ({sender}) => {
+        if (!hasTab(sender)) return;
+
+        await runInPage(sender, redrawComments, []).catch(() => {});
     });
 
     // 글쓰기: 올리는 이미지를 바꾸는 리스너를 넣는다.
