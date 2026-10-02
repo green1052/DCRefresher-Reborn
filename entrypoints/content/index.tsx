@@ -11,7 +11,6 @@ import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
 
 import {warnWhenBlocked} from "./blocked";
-import {redrawFailedComments} from "./comments";
 import {showInvalidatedNote} from "./invalidated";
 import {mountOverlayWhenNeeded} from "./overlay";
 import {cleanUpStaleInstance} from "./stale";
@@ -21,8 +20,7 @@ import {cleanUpStaleInstance} from "./stale";
  * - stale.ts: 파이어폭스 재주입으로 죽은 인스턴스가 남긴 것 걷어 내기
  * - invalidated.ts: 확장이 업데이트되거나 꺼졌을 때의 안내
  * - overlay.tsx: 오버레이(shadow DOM)를 처음 필요할 때 띄우기
- * - blocked.ts: 디시 임시 차단 안내
- * - comments.ts: 디시가 그리다 실패한 댓글 목록 다시 그리기.
+ * - blocked.ts: 디시 임시 차단 안내.
  */
 export default defineContentScript({
     matches: CONTENT_MATCHES,
@@ -63,7 +61,6 @@ export default defineContentScript({
 
         // ===== 모듈 부트스트랩 =====
         warnWhenBlocked();
-        redrawFailedComments(ctx.signal);
 
         // 차단·메모는 글 목록·본문(features의 urls와 같은 BOARD_PAGE)에서만 쓴다. 메인·검색 등에서는 저장소를 읽지 않는다.
         // 가장 큰 IP/밴 DB는 여기서 읽지 않는다. 유저 정보 모듈의 setup이 모듈 설정 뒤에 읽고, 모듈이 꺼져 있으면
