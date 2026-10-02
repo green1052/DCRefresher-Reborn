@@ -3,6 +3,7 @@ import {create} from "zustand";
 import {MEMO_TYPES, memoMapKey} from "@/core/storage/items";
 import {typedListSync} from "@/core/storage/sync";
 import type {MemoEntry, MemoType} from "@/core/storage/types";
+import {markUsed, memoUsageKey} from "@/core/usage";
 import {isRecord} from "@/utils/record";
 
 type MemoMap = Record<string, MemoEntry>;
@@ -57,12 +58,16 @@ type MemoUser = { uid?: string; ip?: string; nick?: string };
 
 const lookupMemo = (memos: Record<MemoType, MemoMap>, user: MemoUser, gallery?: string | null): MemoEntry | undefined => {
     // 닉네임이 toString·constructor·__proto__여도 프로토타입 값을 메모로 읽지 않게 자기 속성만 본다.
-    const find = (map: MemoMap, key?: string): MemoEntry | undefined => {
+    // 찾은 메모는 쓰였다고 적는다 (옵션의 오래 안 쓰인 메모 거르기).
+    const find = (type: MemoType, key?: string): MemoEntry | undefined => {
+        const map = memos[type];
         const entry = key && Object.hasOwn(map, key) ? map[key] : undefined;
-        return entry && (!entry.gallery || entry.gallery === gallery) ? entry : undefined;
+        if (!entry || (entry.gallery && entry.gallery !== gallery)) return undefined;
+        markUsed("memo", memoUsageKey(type, key!));
+        return entry;
     };
 
-    return find(memos.UID, user.uid) ?? find(memos.IP, user.ip) ?? find(memos.NICK, user.nick);
+    return find("UID", user.uid) ?? find("IP", user.ip) ?? find("NICK", user.nick);
 };
 
 /** 유저에 달린 메모 (아이디 > IP > 닉네임 순). 다른 갤러리 전용 메모는 건너뛴다. */

@@ -43,4 +43,38 @@ test.describe("옵션 페이지", () => {
         await options.goto("data");
         await expect(page.getByText("클라우드 백업")).toBeVisible();
     });
+    test("차단 목록을 갤러리와 오래 안 쓰인 것으로 거르고, 보이는 것만 지운다", async ({page, extensionId, errors: _errors}) => {
+        await openOptions(page, extensionId, "block");
+        await page.evaluate(async () => {
+            const day = 24 * 60 * 60 * 1000;
+            await chrome.storage.local.set({
+                "refresher:block:NICK": [
+                    {id: "a", content: "오래된닉", isRegex: false, gallery: "g1"},
+                    {id: "b", content: "공통닉", isRegex: false},
+                    {id: "c", content: "최근닉", isRegex: false, gallery: "g1"}
+                ],
+                "refresher:usage": {block: {a: Date.now() - 100 * day, b: Date.now() - 100 * day, c: Date.now()}, memo: {}}
+            });
+        });
+        await page.reload();
+        const table = page.locator("table");
+        await expect(table.getByText("공통닉")).toBeVisible();
+        await expect(table.getByText("100일 전").first()).toBeVisible();
+
+        await page.getByRole("combobox", {name: "갤러리"}).click();
+        await page.getByRole("option", {name: "g1"}).click();
+        await expect(table.getByText("공통닉")).toHaveCount(0);
+        await expect(table.getByText("최근닉")).toBeVisible();
+
+        await page.getByRole("combobox", {name: "마지막 사용"}).click();
+        await page.getByRole("option", {name: "90일 넘게 안 쓰임"}).click();
+        await expect(table.getByText("최근닉")).toHaveCount(0);
+        await expect(table.getByText("오래된닉")).toBeVisible();
+
+        await page.getByRole("button", {name: "보이는 1개 삭제"}).click();
+        await page.getByRole("button", {name: "삭제", exact: true}).click();
+        await expect.poll(async () => ((await storedIn(page, "refresher:block:NICK")) as { id: string }[]).map(({id}) => id)).toEqual(["b", "c"]);
+        // 지운 항목의 사용 기록도 정리된다.
+        await expect.poll(async () => Object.keys(((await storedIn(page, "refresher:usage")) as { block: object }).block).sort()).toEqual(["b", "c"]);
+    });
 });

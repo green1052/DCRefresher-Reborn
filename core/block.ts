@@ -1,4 +1,5 @@
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
+import {markUsed} from "@/core/usage";
 import {useBlocksStore} from "@/stores/blocks";
 import {objectEntries} from "@/utils/typed";
 
@@ -76,7 +77,8 @@ export const dcconCode = (element: HTMLElement): string | undefined => {
 };
 
 /**
- * blockingIn이 무언가를 돌려주는지만 본다. 목록 행·댓글마다 유형별로 불리므로 배열을 만들지 않고, 걸린 항목을 찾으면 바로 끝낸다.
+ * blockingIn이 무언가를 돌려주는지만 본다.
+ * 맞은 항목(막은 SAME/CONTAIN, 허용한 NOT_*)은 쓰였다고 적는다 (옵션의 오래 안 쓰인 항목 거르기). 목록 행·댓글마다 유형별로 불리므로 배열을 만들지 않고, 걸린 항목을 찾으면 바로 끝낸다.
  * 걸린 SAME/CONTAIN 항목이 하나라도 있으면 막히고, 없으면 NOT_* 허용 목록이 있는데 어느 것에도 맞지 않을 때 막힌다.
  */
 const isBlockedIn = (lists: BlockLists, type: BlockType, content: string, gallery?: string): boolean => {
@@ -88,10 +90,14 @@ const isBlockedIn = (lists: BlockLists, type: BlockType, content: string, galler
 
         const mode = entry.mode ?? lists.defaults[type];
         if (!mode.startsWith("NOT_")) {
-            if (matches(entry, mode, content)) return true;
+            if (matches(entry, mode, content)) {
+                markUsed("block", entry.id);
+                return true;
+            }
         } else if (!allowed && (!entry.isRegex || compile(entry))) {
             hasAllowList = true;
             allowed = matches(entry, mode, content);
+            if (allowed) markUsed("block", entry.id);
         }
     }
 

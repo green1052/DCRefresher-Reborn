@@ -1,5 +1,5 @@
 import {Flex, Text} from "@radix-ui/themes";
-import {useState} from "react";
+import {useMemo, useState} from "react";
 
 import {BlockDialog} from "@/components/BlockDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
@@ -10,7 +10,7 @@ import {type BlockInputFields, composeExtra, normalizeBlockList, normalizeDefaul
 import {SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
-import {ListRow, ListTabs} from "./Layout";
+import {ListRow, ListTabs, useUsage} from "./Layout";
 import {notify} from "./optionsStore";
 
 /** 디시콘 이미지 주소. 묶음 정규식("^(a|b…)$", 하나뿐이면 "^(code)$")이면 첫 코드의 이미지를 쓴다. */
@@ -31,6 +31,9 @@ export function BlockTab() {
     const setEntries = useBlocksStore((state) => state.setEntries);
     const setDefault = useBlocksStore((state) => state.setDefault);
     const addEntries = useBlocksStore((state) => state.addEntries);
+
+    const ids = useMemo(() => BLOCK_TYPES.flatMap((type) => entries[type].map((entry) => entry.id)), [entries]);
+    const used = useUsage("block", ids);
 
     const [dialog, setDialog] = useState<{ type: BlockType; initial: BlockEntry | null } | null>(null);
 
@@ -82,6 +85,12 @@ export function BlockTab() {
                 items={(type) => entries[type]}
                 // 디시콘은 content가 코드라 이름(extra)으로도 찾을 수 있게 넣는다.
                 searchText={(entry) => [entry.content, entry.gallery, entry.extra]}
+                galleryOf={(entry) => entry.gallery}
+                usedAt={(_type, entry) => used[entry.id]}
+                onRemoveMany={(type, removed) => {
+                    const removedIds = new Set(removed.map((entry) => entry.id));
+                    return setEntries(type, entries[type].filter((entry) => !removedIds.has(entry.id)));
+                }}
                 row={(type, entry) => (
                     <ListRow
                         key={entry.id}
@@ -92,6 +101,7 @@ export function BlockTab() {
                             <Text weight="medium">{entry.content}</Text>
                         )}
                         info={<Text size="2" color="gray">{entryInfo(entry)}</Text>}
+                        used={used[entry.id]}
                         onEdit={() => setDialog({type, initial: entry})}
                         onRemove={() => void removeEntry(type, entry.id).catch(() => notify(SAVE_FAILED))}
                     />

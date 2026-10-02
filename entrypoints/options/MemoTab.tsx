@@ -1,18 +1,19 @@
 import {Badge, Box, Button, Code, Dialog, Flex, Text, TextField} from "@radix-ui/themes";
 import {ClipboardCopy, Smartphone} from "lucide-react";
-import {useState} from "react";
+import {useMemo, useState} from "react";
 
 import {DialogActions, SubmitForm} from "@/components/ConfirmDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
 import {ModalDialog} from "@/components/ModalDialog";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
+import {memoUsageKey} from "@/core/usage";
 import type {MemoType} from "@/core/storage/types";
 import {normalizeMemoMap, randomColor, useMemosStore} from "@/stores/memos";
 import {SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
 import {formatAppMemos, parseAppMemos} from "./appMemo";
-import {ImportDialog, ListRow, ListTabs} from "./Layout";
+import {ImportDialog, ListRow, ListTabs, useUsage} from "./Layout";
 import {notify} from "./optionsStore";
 
 interface MemoFormState {
@@ -168,6 +169,8 @@ export function MemoTab() {
     const setMemo = useMemosStore((state) => state.setMemo);
     const removeMemo = useMemosStore((state) => state.removeMemo);
     const setMemos = useMemosStore((state) => state.setMemos);
+    const ids = useMemo(() => MEMO_TYPES.flatMap((type) => Object.keys(memos[type]).map((user) => memoUsageKey(type, user))), [memos]);
+    const used = useUsage("memo", ids);
 
     const [form, setForm] = useState<MemoFormState | null>(null);
     const [appImport, setAppImport] = useState(false);
@@ -241,6 +244,12 @@ export function MemoTab() {
                 // 객체 키 순서가 곧 추가 순서다. 숫자로만 된 키는 JS가 앞으로 정렬하는 예외가 있다.
                 items={(type) => Object.entries(memos[type])}
                 searchText={([user, entry]) => [user, entry.text, entry.gallery]}
+                galleryOf={([, entry]) => entry.gallery}
+                usedAt={(type, [user]) => used[memoUsageKey(type, user)]}
+                onRemoveMany={(type, removed) => {
+                    const users = new Set(removed.map(([user]) => user));
+                    return setMemos(type, Object.fromEntries(Object.entries(memos[type]).filter(([user]) => !users.has(user))));
+                }}
                 row={(type, [user, entry]) => (
                     <ListRow
                         key={user}
@@ -253,6 +262,7 @@ export function MemoTab() {
                             </Flex>
                         }
                         info={<Text color="gray">{entry.text}</Text>}
+                        used={used[memoUsageKey(type, user)]}
                         onEdit={() => setForm({type, user, text: entry.text, color: entry.color, gallery: entry.gallery ?? ""})}
                         onRemove={() => void removeMemo(type, user).catch(() => notify(SAVE_FAILED))}
                     />

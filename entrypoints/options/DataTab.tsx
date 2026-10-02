@@ -24,7 +24,7 @@ const RESTORE_DESCRIPTIONS: Record<RestoreMode, string> = {
 const kilobytes = (bytes: number): string => `${Math.ceil(bytes / 1024)}KB`;
 
 export function DataTab() {
-    const {lastUpdate} = useStorageItem(dbStorage.meta);
+    const {version, lastUpdate} = useStorageItem(dbStorage.meta);
     const backupError = useStorageItem(backupStorage.error);
     const autoBackup = useStorageItem(backupStorage.auto);
     const [cloud, setCloud] = useState<CloudBackupStatus>({used: 0});
@@ -132,7 +132,7 @@ export function DataTab() {
 
     return (
         <Box>
-            <Section title="IP/밴 데이터베이스" desc={`마지막 갱신: ${formatTime(lastUpdate)}`}
+            <Section title="IP/밴 데이터베이스" desc={`버전: ${version.trim() || "없음"} · 마지막 확인: ${formatTime(lastUpdate)}`}
                      actions={
                          <Button variant="soft" disabled={loading} onClick={() => void forceUpdate()}>
                              <RefreshCw size={14}/> 지금 갱신

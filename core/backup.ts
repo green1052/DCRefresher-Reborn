@@ -47,10 +47,11 @@ const isLeftoverKey = (key: string): boolean =>
  * - refresher:db:*: IP/밴 DB. 크고 다시 받으면 된다 (refresher:db는 6.0.0 개발판의 한 키짜리)
  * - refresher:backup:*: 백업 상태 자체
  * - refresher:module:*:data: 모듈 캐시(글댓비 등). 계속 불어난다.
+ * - refresher:usage: 차단·메모가 이 기기에서 마지막으로 쓰인 시각 (core/usage). 걸릴 때마다 바뀌어 자동 백업을 계속 돌린다.
  * - 5.1.2 이전 버전이 남긴 키(isLeftoverKey): 옛 DB가 수백 KB라 백업 한도를 넘긴다.
  */
 export const isBackupTarget = (key: string): boolean =>
-    key !== "refresher:db" && !key.startsWith("refresher:db:") && !key.startsWith("refresher:backup:") && !isModuleDataKey(key) && !isLeftoverKey(key);
+    key !== "refresher:usage" && key !== "refresher:db" && !key.startsWith("refresher:db:") && !key.startsWith("refresher:backup:") && !isModuleDataKey(key) && !isLeftoverKey(key);
 
 /** storage.local의 키 목록. getKeys가 없는 브라우저는 값까지 다 읽어 키만 꺼낸다. */
 const localKeys = async (): Promise<string[]> =>
