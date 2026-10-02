@@ -76,6 +76,7 @@ export const settingsOf = (def: Pick<ModuleDefinition, "settings">, stored: unkn
  * 콘텐츠 레지스트리·배경 모듈이 같이 쓴다.
  */
 export const readModuleStorage = async (ids: readonly string[]): Promise<{ enables: Record<string, unknown>; settings: Map<string, unknown> }> => {
-    const [enables, ...values] = await storage.getItems([MODULES_KEY, ...ids.map(moduleSettingsKey)]);
-    return {enables: enablesOf(enables?.value), settings: new Map(ids.map((id, index) => [id, values[index]?.value ?? null]))};
+    // getItems는 받은 키로 값을 돌려주지만 순서는 약속이 아니므로 키로 짝짓는다 (storage/sync.ts와 같다).
+    const items = new Map((await storage.getItems([MODULES_KEY, ...ids.map(moduleSettingsKey)])).map(({key, value}) => [key, value]));
+    return {enables: enablesOf(items.get(MODULES_KEY)), settings: new Map(ids.map((id) => [id, items.get(moduleSettingsKey(id)) ?? null]))};
 };
