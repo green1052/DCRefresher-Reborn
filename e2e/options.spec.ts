@@ -43,20 +43,17 @@ test.describe("옵션 페이지", () => {
         await options.goto("data");
         await expect(page.getByText("클라우드 백업")).toBeVisible();
     });
-    test("차단 목록을 갤러리와 오래 안 쓰인 것으로 거르고, 보이는 것만 지운다", async ({page, extensionId, errors: _errors}) => {
-        await openOptions(page, extensionId, "block");
-        await page.evaluate(async () => {
-            const day = 24 * 60 * 60 * 1000;
-            await chrome.storage.local.set({
-                "refresher:block:NICK": [
-                    {id: "a", content: "오래된닉", isRegex: false, gallery: "g1"},
-                    {id: "b", content: "공통닉", isRegex: false},
-                    {id: "c", content: "최근닉", isRegex: false, gallery: "g1"}
-                ],
-                "refresher:usage": {block: {a: Date.now() - 100 * day, b: Date.now() - 100 * day, c: Date.now()}, memo: {}}
-            });
+    test("차단 목록을 갤러리와 오래 안 쓰인 것으로 거르고, 보이는 것만 지운다", async ({page, extensionId, storage, errors: _errors}) => {
+        const day = 24 * 60 * 60 * 1000;
+        await storage.set({
+            "refresher:block:NICK": [
+                {id: "a", content: "오래된닉", isRegex: false, gallery: "g1"},
+                {id: "b", content: "공통닉", isRegex: false},
+                {id: "c", content: "최근닉", isRegex: false, gallery: "g1"}
+            ],
+            "refresher:usage": {block: {a: Date.now() - 100 * day, b: Date.now() - 100 * day, c: Date.now()}, memo: {}}
         });
-        await page.reload();
+        await openOptions(page, extensionId, "block");
         const table = page.locator("table");
         await expect(table.getByText("공통닉")).toBeVisible();
         await expect(table.getByText("100일 전").first()).toBeVisible();
