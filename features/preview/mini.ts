@@ -45,7 +45,6 @@ export const createMini = (
                 contents: post.textBlocked && !useUiStore.getState().blockView?.revealed ? BLOCKED_TEXT : post.contents ?? "",
                 // 전체 미리보기와 같은 조건으로 이미지를 가린다. 다르면 거기서 숨긴 이미지가 호버로 보인다.
                 blockMedia: ctx.settings.blockImage && isTextPost(preData),
-                wheel: ctx.settings.tooltipWheel,
                 interactive: ctx.settings.tooltipInteraction,
                 gallery: preData.gallery
             }

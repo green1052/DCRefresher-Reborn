@@ -30,10 +30,10 @@ export interface ViewerImage {
 }
 
 /**
- * blockMedia: blockImage로 이미지를 가릴지. 전체 미리보기와 같은 클래스로 가린다. wheel: 휠로 내용을 스크롤할지 (tooltipWheel).
+ * blockMedia: blockImage로 이미지를 가릴지. 전체 미리보기와 같은 클래스로 가린다.
  * interactive: 마우스로 카드를 조작할 수 있다 (tooltipInteraction). 커서를 따라다니지 않는다.
  */
-type MiniState = { x: number; y: number; title: string; contents: string; blockMedia: boolean; wheel: boolean; interactive: boolean; gallery: string };
+type MiniState = { x: number; y: number; title: string; contents: string; blockMedia: boolean; interactive: boolean; gallery: string };
 
 /** 게시글을 새로 열 때마다 초기화되는 상태. */
 interface PostState {
