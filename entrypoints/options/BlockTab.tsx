@@ -9,7 +9,8 @@ import type {BlockEntry, BlockType} from "@/core/storage/types";
 import {type BlockInputFields, composeExtra, normalizeBlockList, normalizeDefaults, useBlocksStore} from "@/stores/blocks";
 import {SAVE_FAILED} from "@/utils/error";
 
-import {ListRow, ListTabs, useUsage} from "./Layout";
+import {useUsage} from "./Layout";
+import {ListRow, ListTabs} from "./ListTabs";
 import {notify} from "./optionsStore";
 
 /** 디시콘 이미지 주소. 묶음 정규식("^(a|b…)$", 하나뿐이면 "^(code)$")이면 첫 코드의 이미지를 쓴다. */

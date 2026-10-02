@@ -14,7 +14,8 @@ import {SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
 import {formatAppMemos, parseAppMemos} from "./appMemo";
-import {ImportDialog, ListRow, ListTabs, useUsage} from "./Layout";
+import {ImportDialog, useUsage} from "./Layout";
+import {ListRow, ListTabs} from "./ListTabs";
 import {notify} from "./optionsStore";
 
 interface MemoFormState {
