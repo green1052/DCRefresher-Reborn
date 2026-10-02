@@ -83,9 +83,3 @@ jobs:
                     FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
                     FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
                     FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
-
-    db:
-        needs: release
-        permissions:
-            contents: write
-        uses: ./.github/workflows/db.yml
