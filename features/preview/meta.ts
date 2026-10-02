@@ -45,8 +45,9 @@ export const settings = {
         type: "range",
         name: "미니 미리보기 지연 시간",
         desc: "미니 미리보기가 표시되기까지의 지연 시간입니다.",
-        default: 0,
-        min: 0,
+        // 이 시간 동안 제목 위에 머물러야 글을 받는다. 짧으면 목록을 훑을 때 지나는 행마다 요청이 나가 디시가 임시 차단한다.
+        default: 300,
+        min: 200,
         max: 1000,
         step: 50,
         unit: "ms"

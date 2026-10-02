@@ -66,9 +66,8 @@ export const createMini = (
 
         miniTarget = element;
         window.clearTimeout(miniTimer);
-        // 0이면 바로 띄운다. 목록을 가로지르면 행마다 요청이 나가지만, 다른 행으로 옮기면 앞 요청은 끊긴다.
-        if (ctx.settings.tooltipDelay <= 0) void showMini(element, x, y);
-        else miniTimer = window.setTimeout(() => void showMini(element, x, y), ctx.settings.tooltipDelay);
+        // 지연 시간 동안 머문 제목만 받는다. 목록을 훑으며 지나간 행은 요청을 보내지 않는다 (지연 시간 최소값은 meta.ts).
+        miniTimer = window.setTimeout(() => void showMini(element, x, y), ctx.settings.tooltipDelay);
     };
 
     const onMiniMove = (ev: MouseEvent) => {
