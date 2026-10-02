@@ -440,6 +440,7 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 | `mini.ts` | 미니 미리보기(제목 호버 카드)의 타이머·대상 |
 | `keyboard.ts` | 목록 키보드 이동 (J/K로 고르기, Enter 미리보기, O 글 열기) |
 | `read.ts` | 미리보기로 읽은 글 표시. 모듈 캐시 키(`refresher:module:preview:data`)에 최근 3000개를 둔다 |
+| `actions.ts` | 미리보기 창의 관리(공지·개념글·삭제·끌올)와 차단. 끝나면 목록을 다시 받는다 |
 | `rows.ts` | 목록 행 → 미리보기 대상(`GalleryPreData`), 보이는 행 목록, 앞·뒤 글 찾기 |
 | `ui/previewStore.ts` | 미리보기 창 상태 (zustand) |
 | `meta.ts` | 모듈 메타(이름·아이콘)와 설정 스키마 |
