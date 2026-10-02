@@ -51,7 +51,7 @@ bun run zip            # 배포용 zip
 bun run zip:firefox    # Firefox zip + 소스 zip
 ```
 
-`tsconfig.json`은 `noUnusedLocals`, `noUnusedParameters`를 켜 둡니다. 커밋 전에 `bun run compile`, `bun run test`, `bun run build`가 통과해야 합니다. E2E(`bun run e2e`)는 먼저 `bun run build`로 확장을 빌드해야 하고, 처음 한 번 `bunx playwright install chromium`으로 크로미엄을 받아야 합니다 (headless shell이 아니라 크로미엄 본체여야 확장이 올라갑니다). 이 검사들과 크로미엄·파이어폭스 E2E는 PR마다 CI 워크플로(`.github/workflows/ci.yml`)에서 돌고, 릴리즈 워크플로(`.github/workflows/release.yml`)에서도 돌아 실패하면 릴리즈하지 않습니다.
+`tsconfig.json`은 `noUnusedLocals`, `noUnusedParameters`를 켜 둡니다. 커밋 전에 `bun run compile`, `bun run test`, `bun run build`가 통과해야 합니다. E2E(`bun run e2e`)는 먼저 `bun run build`로 확장을 빌드해야 하고, 처음 한 번 `bunx playwright install chromium`으로 크로미엄을 받아야 합니다 (headless shell이 아니라 크로미엄 본체여야 확장이 올라갑니다). 이 검사들과 크로미엄·파이어폭스 E2E는 PR마다 CI 워크플로(`.github/workflows/ci.yml`)에서 돌고, 릴리즈 워크플로(`.github/workflows/release.yml`)도 같은 CI 워크플로를 불러 돌려 실패하면 릴리즈하지 않습니다.
 
 개발 모드는 따로 정하지 않으면 설치된 Chrome/Firefox를 새 임시 프로필로 띄웁니다. 다른 실행 파일이나 프로필을 쓰려면 저장소에 올리지 않는 `web-ext.config.ts`(`.gitignore`에 있음)를 만듭니다. 실행 파일은 `binaries`, 프로필은 `chromiumProfile`·`firefoxProfile`로 정하고, 프로필에 바뀐 내용을 남기려면 `keepProfileChanges: true`를 줍니다. Firefox 계열 브라우저(Zen 등)도 `firefox`에 그 실행 파일을 넣으면 됩니다. 평소 쓰는 기본 프로필을 그대로 쓰는 것은 권하지 않습니다(Chrome은 기본 사용자 데이터 폴더에서 원격 디버깅을 막습니다).
 
@@ -438,7 +438,7 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 |------|------|
 | `index.ts` | 모듈 정의, 글·댓글 요청 흐름, 관리·차단 키, 주소창 기록 |
 | `rows-input.ts` | 목록 행·제목 칸의 마우스 입력 (우클릭·길게 누르기·키 반전 좌클릭) |
-| `mini.ts` | 미니 미리보기(제목 호버 카드)의 타이머·대상 |
+| `mini.ts` | 미니 미리보기(제목 호버 카드)의 타이머·대상. 지연 시간(최소 200ms) 동안 머문 제목만 글을 받아, 목록을 훑을 때 지나는 행마다 요청이 나가지 않는다 |
 | `keyboard.ts` | 목록 키보드 이동 (J/K로 고르기, Enter 미리보기, O 글 열기) |
 | `read.ts` | 미리보기로 읽은 글 표시. 모듈 캐시 키(`refresher:module:preview:data`)에 최근 3000개를 둔다 |
 | `comment-submit.ts` | 댓글·디시콘·글자콘 보내기 (reCAPTCHA v3 재전송, 성공·실패 판정). 폼은 `ui/WriteComment.tsx` |
@@ -457,13 +457,13 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 | `core/preview/request.ts` | 글·댓글 요청, 댓글 쓰기, 관리 요청, 디시콘 패키지 정보·추가 |
 | `core/preview/parser.ts` | 글 HTML 파싱 (DOMParser) |
 | `core/preview/comments.ts` | 댓글 정리, 차단·같은 댓글 접기, 삭제된 댓글 보존 |
-| `core/preview/cache.ts` | 글·댓글 캐시 (1분, 50개) |
+| `core/preview/cache.ts` | 글·댓글 캐시 (1분, 50개). 댓글은 받은 시각도 둔다 |
 | `core/preview/types.ts` | `GalleryPreData`·`PostInfo`·댓글 타입 |
 
 글을 여는 흐름은 이렇습니다.
 
-1. 캐시에 없는 글이고 목록 행에 댓글 수가 보이면, 본문 요청과 함께 댓글 목록도 요청합니다. 댓글 토큰(`e_s_n_o`)은 갤러리마다 같아서 목록 페이지의 값을 쓰고, 본문을 읽은 뒤 그 글의 토큰·댓글 번호와 맞을 때만 결과를 씁니다. PageUp/PageDown이나 스크롤 끝 휠로 앞뒤 글로 넘길 때는 미리 요청하지 않습니다.
-2. 캐시로 다시 연 글은 지난번 댓글 목록을 먼저 그리고, 새로 받은 목록이 같으면 다시 그리지 않습니다.
+1. 캐시에 없는 글이고 목록 행에 댓글 수가 보이면(10초 안에 받은 댓글이 없을 때), 본문 요청과 함께 댓글 목록도 요청합니다. 댓글 토큰(`e_s_n_o`)은 갤러리마다 같아서 목록 페이지의 값을 쓰고, 본문을 읽은 뒤 그 글의 토큰·댓글 번호와 맞을 때만 결과를 씁니다. PageUp/PageDown이나 스크롤 끝 휠로 앞뒤 글로 넘길 때는 미리 요청하지 않습니다.
+2. 10초 안에 받은 댓글 목록이 캐시에 있으면 그것을 그리고 다시 받지 않습니다(`COMMENTS_REUSE`). 댓글은 쪽마다 요청이라, 같은 글을 열고 닫거나 앞뒤 글을 오갈 때마다 받으면 몇 초 만에 요청이 몰려 임시 차단됩니다(#273). 새로고침 버튼·자동 새로고침은 늘 받고, 캐시 비활성화를 켜면 늘 받습니다. 그보다 오래된 캐시로 다시 연 글은 지난번 댓글 목록을 먼저 그리고, 새로 받은 목록이 같으면 다시 그리지 않습니다.
 3. 댓글은 한 쪽에 100개씩 최대 10쪽을 받아 번호(등록)순으로 합칩니다. 디시 API는 1쪽에 가장 최근 댓글을 줍니다. 부모를 받지 못한 답글은 쓰레드 첫 댓글처럼 그립니다. 목록의 댓글 수로 쪽 수를 어림해 1쪽과 함께 요청하고, 1쪽의 쪽 나눔을 보고 모자란 쪽을 마저 받습니다.
 4. 댓글을 그리는 곳(`pullComments`)은 순번으로 늦게 온 옛 목록이 새 목록을 덮지 않게 합니다. 댓글을 받는 새 경로를 만들 때는 이 함수 안에서 기다리게 합니다.
 
@@ -487,7 +487,7 @@ sequenceDiagram
     opt colorPreviewLink 켜짐
         M->>M: history.pushState 글 주소
     end
-    par 댓글 미리 받기 (댓글 보이고 캐시에 없는 글)
+    par 댓글 미리 받기 (댓글 보이고 캐시에 없는 글, 10초 안에 받은 댓글 없음)
         M->>S: 댓글 POST (목록 페이지의 e_s_n_o)
     and 본문 (load → getPost)
         M->>C: 캐시 확인 (받은 지 1분 안)
@@ -498,10 +498,12 @@ sequenceDiagram
     end
     M->>W: DOMPurify 정화 후 본문 그리기
     Note over M: pullComments
-    opt 캐시로 연 글 (받은 지 2초 넘음)
-        M->>W: 지난 댓글 목록 먼저 그리기
+    opt 10초 안에 받은 댓글, 또는 캐시로 연 글 (받은 지 2초 넘음)
+        M->>W: 캐시의 댓글 목록 먼저 그리기
     end
-    alt 방금 받은 본문의 댓글 0개, 보존 기록 없음
+    alt 10초 안에 받은 댓글
+        M->>M: 다시 받지 않음
+    else 방금 받은 본문의 댓글 0개, 보존 기록 없음
         M->>M: 요청 없이 빈 목록
     else 미리 받은 목록의 토큰·글 번호가 맞고 비어 있지 않음
         S-->>M: 미리 받은 댓글 목록
@@ -582,8 +584,9 @@ flowchart TD
 `bun run test`. `vitest.config.ts`가 WXT의 `WxtVitest` 플러그인을 씁니다. `wxt.config.ts`의 vite 설정과 `@/` 별칭, `import.meta.env.BROWSER` 같은 전역을 맞추고, 확장 API(`browser.*`)를 [`@webext-core/fake-browser`](https://webext-core.aklinker1.io/fake-browser/installation)로 바꿉니다. 그래서 `storage.getItems`·`storage.watch`·`defineItem`이 인메모리 저장소로 그대로 돕니다. 저장소를 직접 넣을 때는 `fakeBrowser.storage.local.set({"refresher:modules": …})`처럼 `local:` 없는 키를 씁니다.
 
 - 테스트는 `tests/unit/`에 소스 경로를 따라 둡니다 (`core/block.ts` → `tests/unit/core/block.test.ts`). `modules/`에 두면 WXT가 WXT 모듈로 불러오므로 소스 옆에 두지 않습니다.
-- `tests/setup.ts`가 테스트마다 `fakeBrowser.reset()`을 하고, jsdom·Node에 없는 API(`Uint8Array.toBase64`, `performance.getEntriesByType`, `CSS.escape` 등)를 채웁니다. 실제 브라우저(140 이상)에는 다 있는 것들이라 소스는 그대로 둡니다.
-- 공통 도우미는 `tests/helpers.ts`에 둡니다. `tick()`(타이머·저장소 알림 한 차례 기다리기), `stored(key)`(fake 저장소 값 하나), `setting({...})`·`testModule({...})`(이름·설명을 비운 설정 스키마와 모듈)입니다. 시간을 정해 기다리지(`setTimeout(…, 10)`) 말고 `tick()`이나 `expect.poll`을 씁니다.
+- `tests/setup.ts`가 테스트마다 `fakeBrowser.reset()`을 하고 끝나면 `vi.useRealTimers()`로 돌립니다. 목·스파이는 `vitest.config.ts`의 `mockReset`·`restoreMocks`가 테스트마다 되돌리므로, 테스트 파일에서 `restoreAllMocks`·`mockReset`·`useRealTimers`를 따로 부르지 않습니다.
+- `tests/setup.ts`는 jsdom·Node에 없는 API(`Uint8Array.toBase64`, `performance.getEntriesByType`, `CSS.escape` 등)를 채웁니다. 실제 브라우저(140 이상)에는 다 있는 것들이라 소스는 그대로 둡니다.
+- 공통 도우미는 `tests/helpers.ts`에 둡니다. `tick()`(타이머·저장소 알림 한 차례 기다리기), `stored(key)`(fake 저장소 값 하나), `setting({...})`·`testModule({...})`(이름·설명을 비운 설정 스키마와 모듈), `testPreData({...})`(목록 행에서 읽은 글 정보), `setBlockLists(...)`(차단 스토어에 목록 넣기)입니다. 시간을 정해 기다리지(`setTimeout(…, 10)`) 말고 `tick()`이나 `expect.poll`을 씁니다.
 - 기본 환경은 jsdom입니다. DOM을 안 쓰고 jsdom이 방해하는 모듈(`core/backup`의 gzip)은 파일 머리에 `// @vitest-environment node`를 둡니다.
 - WXT API(`defineContentScript`·`browser`·`storage` 등)만 자동 import됩니다. `components`·`utils`는 자동 import하지 않으니(`wxt.config.ts`의 `config:resolved` 훅) 직접 import합니다.
 - WXT의 `#imports`를 mock할 때는 실제 경로(`wxt/utils/storage` 등)로 합니다. `.wxt/types/imports-module.d.ts`에 있습니다.
@@ -604,10 +607,10 @@ e2e/
 
 - `fixtures.ts`가 [Playwright의 확장 테스트 방식](https://playwright.dev/docs/chrome-extensions)대로 확장을 올리고, 배경 서비스 워커에서 `extensionId`를 꺼냅니다. 테스트는 `pages/`의 `openPopup(page, extensionId)` 같은 함수로 페이지를 열고 그 반환값으로 조작합니다.
 - **디시에는 요청을 보내지 않습니다.** fixtures가 `dcinside.com` 주소를 모두 `e2e/dcinside.ts`의 가짜 목록·글·댓글로 응답하고, 읽기가 아닌 POST에는 500을 줘서 쓰기 요청이 나가면 테스트가 바로 실패합니다. IP DB 서버는 끊습니다. 디시 마크업이 바뀌어 모듈을 고치면 가짜 페이지도 같이 고칩니다.
-- 스펙은 선택자를 직접 쓰지 않고 페이지 객체의 메서드를 씁니다. 목록 페이지(`openListPage`)는 `titles()`·`replyCounts()`·`writers()`와 오버레이 안의 `frame()`·`mini()`·`bubble()`·`toast()`를 주고, 팝업은 `openPopupFor(context, extensionId, tab)`로 그 탭에서 연 것처럼 엽니다. 설정은 `storage.setModules({...})`·`storage.setModuleSettings(id, {...})`로 넣습니다. 디시 마크업이나 클래스 이름이 바뀌면 페이지 객체만 고칩니다.
-- `errors` fixture가 페이지 오류와 `console.error`를 모아 테스트 끝에 비어 있는지 봅니다. `listPage`는 콘텐츠 스크립트가 돈 목록 페이지(`pages/list.ts`), `storage`는 배경을 통한 확장 저장소입니다 (디시 페이지의 `page.evaluate`에서는 `chrome.storage`에 닿지 않습니다).
+- 스펙은 선택자를 직접 쓰지 않고 페이지 객체의 메서드를 씁니다. 목록 페이지(`openListPage`)는 `titles()`·`replyCounts()`·`writers()`, 제목을 우클릭해 창을 여는 `openPreview(index)`와 오버레이 안의 `frame()`·`mini()`·`bubble()`·`toast()`를 주고, 팝업은 `openPopupFor(context, extensionId, tab)`로 그 탭에서 연 것처럼 엽니다. 설정은 `storage.setModules({...})`·`storage.setModuleSettings(id, {...})`로 넣습니다. 디시 마크업이나 클래스 이름이 바뀌면 페이지 객체만 고칩니다.
+- `errors` fixture가 페이지 오류와 `console.error`를 모아 테스트 끝에 비어 있는지 봅니다. 모든 테스트에 자동으로 걸리므로(`auto`) 테스트에서 받지 않아도 됩니다. `listPage`는 콘텐츠 스크립트가 돈 목록 페이지(`pages/list.ts`), `storage`는 배경을 통한 확장 저장소입니다 (디시 페이지의 `page.evaluate`에서는 `chrome.storage`에 닿지 않습니다).
 - **파이어폭스**(`bun run e2e:firefox`): Playwright의 파이어폭스는 실행 인자로 확장을 올릴 수 없어, `e2e/firefox.ts`가 web-ext처럼 원격 디버깅 서버(`-start-debugger-server`)에 붙어 `.output/firefox-mv2`를 임시 부가 기능으로 설치합니다. `storage`는 같은 디버깅 연결로 배경 페이지에서 식을 계산해(`evaluateJSAsync`) 읽고 씁니다. Playwright의 파이어폭스는 `moz-extension://` 페이지로 이동하지 못하므로(`page.goto`가 끝나지 않고, 확장이 연 탭도 잡지 못합니다) 팝업·옵션 테스트(`popup.spec.ts`, `options.spec.ts`)는 크로미엄에서만 돌고 파이어폭스는 콘텐츠 스크립트 테스트만 돕니다.
-- **실제 디시**(`bun run e2e:live`, `e2e/live/`): 가짜 페이지 대신 실제 디시에 요청합니다. 글·댓글이 그때그때 달라 개수·내용이 아니라 모양만 봅니다. 픽스처(`routeLive`)가 디시·IP DB 서버 밖 요청(광고 등)과 읽기가 아닌 POST(댓글·추천·삭제 등)를 끊어 테스트가 디시에 아무것도 쓰지 않습니다. 디시 스크립트 오류는 빼고 확장에서 난 오류만 실패로 봅니다. 네트워크에 따라 흔들릴 수 있어 릴리즈 워크플로에는 넣지 않았습니다. 기본은 미니 갤러리 `bjwg64`이고, `DC_LIST_URL`에 다른 갤러리의 PC 목록 주소를 주면 그 갤러리로 돕니다.
+- **실제 디시**(`bun run e2e:live`, `e2e/live/`): 가짜 페이지 대신 실제 디시에 요청합니다. 글·댓글이 그때그때 달라 개수·내용이 아니라 모양만 봅니다. 픽스처(`routeLive`)가 디시·IP DB 서버 밖 요청(광고 등)과 읽기가 아닌 POST(댓글·추천·삭제 등)를 끊어 테스트가 디시에 아무것도 쓰지 않습니다. 디시 스크립트 오류는 빼고 확장에서 난 오류만 실패로 봅니다. 네트워크에 따라 흔들릴 수 있어 CI·릴리즈 워크플로에는 넣지 않았습니다. 기본은 미니 갤러리 `bjwg64`이고, `DC_LIST_URL`에 다른 갤러리의 PC 목록 주소를 주면 그 갤러리로 돕니다.
 - 확장은 headless shell에 올라가지 않아 크로미엄 본체(`channel: "chromium"`)로 headless 실행합니다. 미리 설치된 크로미엄을 쓰려면 `PLAYWRIGHT_CHROMIUM=/경로/chrome`을 줍니다.
 - 실패한 실행의 트레이스·리포트는 `test-results/`, `playwright-report/`에 남습니다 (git에 올리지 않습니다). CI·릴리즈 워크플로는 실패 때 이것을 아티팩트로 올립니다.
 
@@ -626,9 +629,11 @@ e2e/
 
 태그를 push하면 `.github/workflows/release.yml`이 돕니다.
 
-1. 태그와 `package.json` 버전이 같은지 확인하고, 타입 검사·단위 테스트를 하고, zip을 만든 뒤 크로미엄·파이어폭스 E2E 테스트를 돌립니다. 하나라도 실패하면 릴리즈하지 않습니다. 모두 통과하면 zip을 GitHub 릴리즈에 올립니다.
-2. Chrome 웹 스토어와 Firefox Add-ons에 함께 제출합니다. 한 스토어가 실패해도 다른 스토어는 끝까지 제출되고, 이 단계는 실패해도 넘어가므로(`continue-on-error`) DB는 막히지 않습니다.
-3. DB 워크플로가 이 태그의 코드로 IP·밴 DB를 새로 만듭니다([IP·밴 DB](#ip밴-db)).
+1. 태그와 `package.json` 버전이 같은지 먼저 확인합니다(`version` 작업). 다르면 테스트를 돌리기 전에 멈춥니다.
+2. CI 워크플로(`ci.yml`)를 그대로 불러 타입 검사·단위 테스트와 크로미엄·파이어폭스 E2E를 돌립니다(`ci` 작업). 하나라도 실패하면 릴리즈하지 않습니다.
+3. zip을 만들어 GitHub 릴리즈에 올리고, Chrome 웹 스토어와 Firefox Add-ons에 함께 제출합니다(`release` 작업). 한 스토어가 실패해도 다른 스토어는 끝까지 제출되고, 제출 단계는 실패해도 넘어갑니다(`continue-on-error`).
+
+릴리즈는 IP·밴 DB를 만들지 않습니다. DB는 예약·수동 실행으로만 만듭니다([IP·밴 DB](#ip밴-db)).
 
 실패한 스토어는 그 단계의 로그에서 원인을 확인하고, 그 스토어만 따로 제출합니다(`.env.submit` 필요).
 
@@ -646,26 +651,17 @@ Firefox는 `FIREFOX_EXTENSION_ID`(`wxt.config.ts`의 gecko ID `dcrefresher-rebor
 
 ## IP·밴 DB
 
-릴리즈 태그부터 확장이 IP·밴 DB를 저장하기까지의 흐름입니다. DB 워크플로는 릴리즈가 부를 때 말고도 수·토요일 예약과 수동 실행으로도 돌고, 확장은 `data` 브랜치를 Cloudflare Pages로 배포한 `dcrefresher.green1052.com`에서 파일을 받습니다.
+DB를 만들어 확장이 저장하기까지의 흐름입니다. DB 워크플로는 수·토요일 예약과 수동 실행으로만 돌고(릴리즈는 부르지 않습니다), 확장은 `data` 브랜치를 Cloudflare Pages로 배포한 `dcrefresher.green1052.com`에서 파일을 받습니다.
 
 ```mermaid
 flowchart TD
-    A["develop: 버전 커밋<br>chore(release): X.Y.Z"] --> B["release 브랜치에 머지"]
-    B --> C["X.Y.Z 태그 push"]
-
-    subgraph REL["release.yml"]
-        R1["태그·package.json 버전 확인<br>타입 검사·단위 테스트"] --> R2["zip 빌드·E2E<br>GitHub 릴리즈"]
-        R2 --> R3["Chrome·Firefox 스토어 제출<br>continue-on-error"]
-    end
-    C --> R1
+    CRON["수·토 예약 / 수동 실행"] --> D0
 
     subgraph DBW["db.yml"]
-        D0["체크아웃<br>태그 또는 release 브랜치"] --> D1["data 브랜치의 ban.json 가져오기"]
+        D0["release 브랜치 체크아웃"] --> D1["data 브랜치의 ban.json·_headers 가져오기"]
         D1 --> D2["build-db.ts<br>MaxMind·VPN 목록·KISA"]
         D2 --> D3["data 브랜치에<br>force-with-lease push"]
     end
-    R3 -->|"db 작업, workflow_call"| D0
-    CRON["수·토 예약 / 수동 실행"] --> D0
 
     subgraph EXT["확장 배경 스크립트"]
         E1["설치·업데이트<br>onInstalled"] --> U["updateDatabase"]
@@ -678,13 +674,13 @@ flowchart TD
     D3 -.->|"Cloudflare Pages<br>dcrefresher.green1052.com"| U
 ```
 
-`.github/workflows/db.yml`이 매주 수·토요일과 릴리즈 때 `scripts/build-db.ts`로 만들어 `data` 브랜치에 올립니다. 수동으로도 돌릴 수 있습니다(Actions → DB → Run workflow).
+`.github/workflows/db.yml`이 매주 수·토요일에 `scripts/build-db.ts`로 만들어 `data` 브랜치에 올립니다. 수동으로도 돌릴 수 있습니다(Actions → DB → Run workflow).
 
-- 예약·수동 실행은 release 브랜치(배포된 코드)로, 릴리즈 때는 그 태그로 만듭니다. develop으로 만들지 않는 것은 형식을 바꾼 코드가 릴리즈 전에 올라가지 않게 하려는 것입니다.
+- 늘 release 브랜치(배포된 코드)로 만듭니다. develop으로 만들지 않는 것은 형식을 바꾼 코드가 릴리즈 전에 올라가지 않게 하려는 것입니다.
 - `ip.json`은 확장이 저장하는 형식(`core/ipdb.ts`의 `CompactIpData`) 그대로이고 버전(UTC, 분까지)을 담고 있습니다. `ban.json`은 `data` 브랜치에서 손으로 관리하며, 워크플로가 가져와 검사·정리합니다.
 - Cloudflare Pages가 `data` 브랜치를 `dcrefresher.green1052.com`으로 배포합니다(빌드 명령 없음, 출력 `/`). push할 때마다 자동으로 다시 배포됩니다. 6.0.3 이하는 `raw.githubusercontent.com`에서 받으므로 GitHub `data` 브랜치 게시는 계속 유지합니다.
 - CORS와 캐시 헤더는 `data` 브랜치의 `_headers` 파일로 줍니다. `ban.json`처럼 손으로 관리하고, 워크플로가 가져와 그대로 다시 올립니다. 확장은 호스트 권한 없이 받으므로 CORS를 열고, `version`은 새 DB를 빨리 알아채게 짧게(5분), `ip.json`·`ban.json`은 버전이 바뀔 때만 받으니 길게(1시간) 캐시합니다. 둘이 잠깐 어긋나도 `core/database.ts`가 처리합니다.
 - `data` 브랜치는 커밋 하나로 유지합니다. 빌드가 도는 사이 `data`가 바뀌었으면(ban.json 수정 등) 덮어쓰지 않고 실패합니다.
 - 확장은 설치·업데이트 때 받고, 이후에는 하루 한 번 울리는 알람에서 마지막 확인이 7일을 넘었거나 저장 형식이 다를 때 확인합니다(`entrypoints/background/index.ts`). 확인할 때는 `data` 브랜치의 `version` 파일을 먼저 받아 저장된 버전과 비교하고, 다를 때만 `ip.json`·`ban.json`을 받습니다(`core/database.ts`의 `updateDatabase`). 옵션 데이터 탭의 '지금 갱신'은 같은 버전이어도 다시 받습니다. 받은 파일이 깨졌거나 형식이 다르면 저장하지 않고 갖고 있던 DB를 씁니다.
 
-IP DB 형식(`IP_FORMAT`)을 바꾸면 옛 확장은 새 `ip.json`을 읽지 못하고, 새 확장은 옛 `ip.json`을 받지 않습니다. 릴리즈가 제출 직후 새 형식으로 DB를 만들므로, 심사를 거쳐 새 확장이 설치될 때는 `data` 브랜치가 이미 새 형식입니다. 대신 심사 중에는 옛 확장이 새 파일을 읽지 못해 갖고 있던 DB를 그대로 씁니다. 두 스토어의 심사 시점이 달라 한동안 옛 버전과 새 버전이 섞이므로, 형식은 꼭 필요할 때만 바꿉니다. 형식을 바꾼 릴리즈에서 DB 작업이 돌지 않았다면(6.0.2처럼) 새 버전 사용자는 IP 정보를 받지 못하니, 바로 DB 워크플로를 수동으로 돌립니다.
+IP DB 형식(`IP_FORMAT`)을 바꾸면 옛 확장은 새 `ip.json`을 읽지 못하고, 새 확장은 옛 `ip.json`을 받지 않습니다. 릴리즈는 DB를 만들지 않으므로, 형식을 바꾼 버전을 release 브랜치에 머지해 릴리즈했으면 DB 워크플로를 바로 수동으로 돌립니다. 그래야 심사를 거쳐 새 확장이 설치될 때 `data` 브랜치가 이미 새 형식입니다. 돌리지 않으면 다음 예약 실행까지 새 버전 사용자는 IP 정보를 받지 못합니다(6.0.2처럼). 대신 심사 중에는 옛 확장이 새 파일을 읽지 못해 갖고 있던 DB를 그대로 씁니다. 두 스토어의 심사 시점이 달라 한동안 옛 버전과 새 버전이 섞이므로, 형식은 꼭 필요할 때만 바꿉니다.
