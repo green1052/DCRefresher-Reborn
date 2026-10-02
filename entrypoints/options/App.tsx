@@ -72,7 +72,7 @@ const Sidebar = ({tabs, tab, onSelect}: {
             <Heading asChild size="3"><p>DCRefresher Reborn</p></Heading>
         </Flex>
 
-        <Flex asChild direction={{initial: "row", md: "column"}} gap="1" wrap={{initial: "wrap", md: "nowrap"}}>
+        <Flex asChild style={{cursor: "pointer"}} direction={{initial: "row", md: "column"}} gap="1" wrap={{initial: "wrap", md: "nowrap"}}>
             <nav>
                 {tabs.map(({id, label, icon: Icon}) => (
                     <Button
@@ -137,7 +137,8 @@ export function App() {
             <Box flexGrow="1" minWidth="0" px={{initial: "4", md: "6"}} py="6">
                 {/* 탭마다 새로 마운트해 들어오는 애니메이션을 다시 건다 (options.scss).
                     연 버튼이 막혀(데이터 초기화 중) 돌아갈 곳이 없으면 다이얼로그가 포커스를 이 탭으로 돌려준다 (useOpenerFocus) */}
-                <Box key={current.id} className="refresher-tab-enter" maxWidth="880px" mx="auto" tabIndex={-1} style={{outline: "none"}}>
+                <Box key={current.id} className="refresher-tab-enter" maxWidth="880px" mx="auto" tabIndex={-1}
+                     style={{outline: "none"}}>
                     <Heading size="7" mb="5">{current.label}</Heading>
                     {status === "failed"
                         ? <Text as="p" color="red">저장된 데이터를 읽지 못했습니다. 페이지를 새로고침해 주세요.</Text>
