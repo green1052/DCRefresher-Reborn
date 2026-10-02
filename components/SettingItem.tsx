@@ -130,7 +130,8 @@ const KeyControl = ({schema, value, takenKeys = [], descId, onChange}: NarrowPro
                 }}
                 onKeyDown={(ev) => {
                     if (!listening) return;
-                    ev.preventDefault();
+                    // Tab은 막지 않고 녹음을 끝낸다. 막으면 키보드로 이 칸을 빠져나갈 수 없다.
+                    if (ev.key !== "Tab") ev.preventDefault();
 
                     const key = pressedKey(ev);
                     const valid = /^[a-z0-9]$/.test(key);
