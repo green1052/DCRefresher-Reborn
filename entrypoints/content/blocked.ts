@@ -17,6 +17,8 @@ export const warnWhenBlocked = (): void => {
     setBlockedHandler(warnBlocked);
     // 지금 페이지 자체가 빈 페이지인 경우.
     const warnIfBlocked = (): void => {
+        // 삭제된 글·없는 갤러리는 <script>로 알림을 띄우거나 이동만 하는 빈 페이지다. 차단이 아니다.
+        if (Array.from(document.scripts).some((script) => /location\.|history\.|alert\(/.test(script.textContent ?? ""))) return;
         // 확장이 body에 붙인 UI(오버레이, 스텔스 버튼 등 data-refresher-ui)는 디시 내용이 아니다. 그 글자도 세지 않는다.
         // 보통 페이지는 첫 자식부터 디시 요소라 거기서 끝난다.
         for (const node of document.body?.childNodes ?? []) {

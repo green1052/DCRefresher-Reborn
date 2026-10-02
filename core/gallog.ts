@@ -32,10 +32,12 @@ export const getGallogActivity = (uid: string): Promise<GallogActivity | undefin
     let request = activityCache.get(uid);
     if (!request) {
         // 실패한 항목은 받은 자리에서 지운다. 기다리던 쪽이 먼저 사라져도 실패가 1시간 캐시에 남지 않는다.
-        request = fetchGallogActivity(uid).catch(() => undefined).then((activity) => {
-            if (!activity) activityCache.delete(uid);
+        // 그사이 이 항목이 밀려나 새 요청이 들어왔으면 그것은 지우지 않는다.
+        const pending: Promise<GallogActivity | undefined> = fetchGallogActivity(uid).catch(() => undefined).then((activity) => {
+            if (!activity && activityCache.get(uid) === pending) activityCache.delete(uid);
             return activity;
         });
+        request = pending;
         activityCache.set(uid, request);
     }
     return request;

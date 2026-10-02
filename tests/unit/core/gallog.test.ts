@@ -38,4 +38,30 @@ describe("getGallogActivity", () => {
         expect(await getGallogActivity(id)).toEqual({article: 1, comment: 2});
         expect(asked).toEqual([id, id]);
     });
+
+    it("늦게 실패한 요청은 그사이 새로 들어온 요청의 캐시를 지우지 않는다", async () => {
+        vi.useFakeTimers({toFake: ["Date"]});
+        let failFirst: (error: Error) => void = () => {};
+        const asked: string[] = [];
+        vi.spyOn(ajax, "post").mockImplementation((() => {
+            asked.push("c1");
+            return asked.length === 1
+                ? {text: () => new Promise<string>((_, reject) => (failFirst = reject))}
+                : {text: async () => "5,6"};
+        }) as never);
+
+        const first = getGallogActivity("c1");
+        // 첫 요청이 응답 없이 1시간 캐시를 넘겨 밀려나고, 다음 호출이 새로 묻는다.
+        vi.setSystemTime(Date.now() + 3_600_001);
+        const second = getGallogActivity("c1");
+        // 두 요청이 다 나간 뒤(csrfBody를 기다린 뒤) 첫 요청을 실패시킨다.
+        await vi.waitFor(() => expect(asked).toHaveLength(2));
+        failFirst(new Error("network"));
+        expect(await first).toBeUndefined();
+        expect(await second).toEqual({article: 5, comment: 6});
+
+        expect(await getGallogActivity("c1")).toEqual({article: 5, comment: 6});
+        expect(asked).toEqual(["c1", "c1"]);
+        vi.useRealTimers();
+    });
 });

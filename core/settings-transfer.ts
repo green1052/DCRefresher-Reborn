@@ -2,7 +2,7 @@
  * 설정 옮기기: 클라우드 복원·합치기, JSON 가져오기, 초기화가 저장소에 쓰는 규칙. 옵션 페이지의 데이터 탭이 쓴다.
  * 키는 storage.local의 이름(local: 없이)이다. 백업·내보내기와 같은 모양이다.
  */
-import {isBackupTarget} from "@/core/backup";
+import {isBackupTarget, readBackupTargets} from "@/core/backup";
 import {MIGRATED_MODULES, migrateModuleSettings} from "@/core/migrate-settings";
 import {migrateV5} from "@/core/migrate-v5";
 import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockListKey, isBlockListKey, MODULES_KEY, moduleSettingsKey, rawKey, settingsKeyModule} from "@/core/storage/items";
@@ -34,7 +34,8 @@ export const pinDefaultMode = (list: BlockEntry[], from: DetectMode, local: Dete
  * 쓰다가 실패하면 이전 값으로 되돌린다.
  */
 export const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "merge"): Promise<void> => {
-    const previous = await browser.storage.local.get(null);
+    // 아래에서 쓰는 이전 값(기본 차단 모드·설정 객체·지울 키·되돌릴 키)은 모두 백업 대상 키다.
+    const previous = await readBackupTargets();
     // 설정 키가 아닌 값(차단/메모 내보내기의 "NICK" 등)은 저장하지 않는다.
     const next = Object.fromEntries(Object.entries(migrateV5(data)).filter(([key]) => key.startsWith("refresher:") && isBackupTarget(key)));
     // 6.0.x 백업의 옛 설정('IP 정보 표시' 끔 등)을 새 설정으로 옮긴다. 옮기지 않으면 옵션을 열 때 없는 설정으로 지워진다.

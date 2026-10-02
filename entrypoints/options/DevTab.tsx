@@ -5,8 +5,9 @@ import {useEffect, useRef, useState, useSyncExternalStore} from "react";
 import {storage} from "wxt/utils/storage";
 
 import {ConfirmDialog} from "@/components/ConfirmDialog";
+import {localKeys} from "@/core/backup";
 import {databaseVersion, ipInfoOf, parseBans, subscribeDatabase} from "@/core/database";
-import {IP_FORMAT, parseIpData} from "@/core/ipdb";
+import {createIpLookup, IP_FORMAT, parseIpData} from "@/core/ipdb";
 import {DB_KEYS, dbStorage, isModuleDataKey, writeDatabase} from "@/core/storage/items";
 import {messageOf} from "@/utils/error";
 import {arrayIncludes, objectKeys} from "@/utils/typed";
@@ -196,10 +197,13 @@ const DatabaseSection = () => {
         try {
             // data 브랜치의 ip.json 형식(저장 형식)만 받는다.
             const text = await file.text();
-            if (!parseIpData(text)) {
+            // 모양만 맞고 대역 데이터가 깨진 파일은 저장하면 모든 탭의 IP 조회가 멈춘다. 자동 갱신처럼 조회표까지 만들어 본다.
+            const parsed = parseIpData(text);
+            if (!parsed) {
                 notify("IP 데이터를 불러오지 못했습니다. 형식이 올바르지 않습니다.");
                 return;
             }
+            createIpLookup(parsed);
             await writeDatabase({version: "local", lastUpdate: Date.now(), format: IP_FORMAT}, text, await dbBan.getValue());
             notify("IP 데이터를 파일에서 불러왔습니다. 다음 자동 갱신 때 서버 데이터로 바뀝니다.");
         } catch (e) {
@@ -287,7 +291,7 @@ const DatabaseSection = () => {
 const ToolsSection = () => {
     const clearModuleData = async (): Promise<void> => {
         try {
-            const keys = Object.keys(await browser.storage.local.get(null)).filter(isModuleDataKey);
+            const keys = (await localKeys()).filter(isModuleDataKey);
             await browser.storage.local.remove(keys);
             notify(`모듈 데이터 ${keys.length}개를 지웠습니다.`);
         } catch (e) {

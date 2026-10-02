@@ -43,18 +43,23 @@ interface BackupMeta {
 export const isBackupTarget = (key: string): boolean =>
     key !== "refresher:db" && !key.startsWith("refresher:db:") && !key.startsWith("refresher:backup:") && !isModuleDataKey(key);
 
+/** storage.local의 키 목록. getKeys가 없는 브라우저는 값까지 다 읽어 키만 꺼낸다. */
+export const localKeys = async (): Promise<string[]> =>
+    typeof browser.storage.local.getKeys === "function" ? browser.storage.local.getKeys() : Object.keys(await browser.storage.local.get(null));
+
+/** 백업 대상 키(isBackupTarget)의 값만 읽는다. get(null)은 수백 KB짜리 IP·밴 DB까지 읽는다. */
+export const readBackupTargets = async (): Promise<Record<string, unknown>> => {
+    const keys = (await localKeys()).filter(isBackupTarget);
+    return keys.length === 0 ? {} : browser.storage.local.get(keys);
+};
+
 /**
  * 백업·내보내기 대상. 차단 목록의 id(UUID)는 압축이 안 돼 클라우드 백업을 두 배 넘게 불리므로 뺀다.
  * 읽는 쪽(stores/blocks의 normalizeBlockList)이 없는 id를 새로 준다.
  */
-export const collectLocalData = async (): Promise<Record<string, unknown>> => {
-    // get(null)은 수백 KB짜리 IP·밴 DB까지 읽으니 백업할 키만 읽는다. getKeys가 없는 브라우저는 다 읽고 아래에서 거른다.
-    const keys = typeof browser.storage.local.getKeys === "function" ? (await browser.storage.local.getKeys()).filter(isBackupTarget) : null;
-    if (keys?.length === 0) return {};
-    const data = await browser.storage.local.get(keys);
-    return Object.fromEntries(
-        Object.entries(data)
-            .filter(([key]) => isBackupTarget(key))
+export const collectLocalData = async (): Promise<Record<string, unknown>> =>
+    Object.fromEntries(
+        Object.entries(await readBackupTargets())
             .map(([key, value]) => [
                 key,
                 // undefined인 id는 JSON에서 빠진다 (결과는 늘 JSON으로 쓰인다).
@@ -63,7 +68,6 @@ export const collectLocalData = async (): Promise<Record<string, unknown>> => {
                     : value
             ])
     );
-};
 
 const gzip = (text: string): Promise<Uint8Array<ArrayBuffer>> =>
     new Response(new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"))).bytes();

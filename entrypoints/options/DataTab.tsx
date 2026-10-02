@@ -4,7 +4,7 @@ import {useEffect, useRef, useState} from "react";
 
 import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
 import {focusPanel} from "@/components/useOpenerFocus";
-import {type BackupSlot, CLOUD_QUOTA, type CloudBackupStatus, collectLocalData, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
+import {type BackupSlot, CLOUD_QUOTA, type CloudBackupStatus, collectLocalData, readBackupTargets, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
 import {mergeBackup, parseImport, writeSettings} from "@/core/settings-transfer";
 import {backupStorage, dbStorage} from "@/core/storage/items";
@@ -83,7 +83,7 @@ export function DataTab() {
             const backup = await readCloudBackup(slot);
             if (!backup) return "클라우드에 백업이 없습니다.";
 
-            const data = mode === "merge" ? mergeBackup(await browser.storage.local.get(null), backup.data) : backup.data;
+            const data = mode === "merge" ? mergeBackup(await readBackupTargets(), backup.data) : backup.data;
             await writeSettings(data, mode);
             const what = backup.createdAt ? `${formatTime(backup.createdAt)} 백업을` : "데이터를";
             return `${what} ${mode === "merge" ? "합쳤습니다" : "복원했습니다"}. 새 탭에서 디시인사이드를 열어 주세요.`;
