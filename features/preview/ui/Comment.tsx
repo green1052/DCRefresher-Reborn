@@ -1,4 +1,4 @@
-import {Box, Flex, IconButton, Text} from "@radix-ui/themes";
+import {IconButton} from "@radix-ui/themes";
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
 import {useEffect, useLayoutEffect, useRef} from "react";
 
@@ -152,13 +152,13 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
     useEffect(() => (body.current ? watchGifVideos(body.current) : undefined), [html]);
 
     return (
-        <Box className="refresher-comment" data-depth={depth} data-deleted={isDeleted || undefined}
+        <div className="refresher-comment" data-depth={depth} data-deleted={isDeleted || undefined}
              data-blocked={comment.blocked} data-duplicate={comment.duplicates === 0 || undefined} data-fresh={fresh || undefined}
-             data-thread-open={threadOpen || undefined} data-last-reply={lastReply || undefined} px="6" py="2">
-            <Flex justify="between" align="center" gap="2">
-                <Flex align="center" gap="1" minWidth="0">
+             data-thread-open={threadOpen || undefined} data-last-reply={lastReply || undefined}>
+            <div className="refresher-comment-head">
+                <div className="refresher-inline">
                     <UserCard user={user} op={isOp}/>
-                    {comment.duplicates ? <Text size="1" color="gray" style={{whiteSpace: "nowrap"}}>같은 댓글 ×{comment.duplicates}</Text> : null}
+                    {comment.duplicates ? <span className="refresher-text-1 refresher-text-gray" style={{whiteSpace: "nowrap"}}>같은 댓글 ×{comment.duplicates}</span> : null}
                     {/* 툴팁은 브라우저 기본(title)을 쓴다. 스레드마다 Radix 툴팁을 달면 댓글이 많은 글을 열 때 느려진다. */}
                     {depth === 0 && replyCount > 1 && (
                         <IconButton size="1" variant="ghost" color="gray" aria-label={collapsed ? "답글 펼치기" : "답글 접기"}
@@ -166,9 +166,9 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                             <ChevronDown size={14} className="refresher-chevron" style={{transform: collapsed ? "rotate(-90deg)" : undefined}}/>
                         </IconButton>
                     )}
-                </Flex>
+                </div>
 
-                <Flex align="center" gap="3" flexShrink="0">
+                <div className="refresher-comment-actions">
                     {canReply && (
                         <IconButton
                             size="1"
@@ -194,22 +194,22 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                         </IconButton>
                     )}
                     <TimeStamp date={String(comment.reg_date ?? comment.date_time ?? "")}/>
-                </Flex>
-            </Flex>
+                </div>
+            </div>
 
-            {/* 음성 댓글만 본문 위에 플레이어가 붙는다. 감싸는 Flex 없이 각자 띄워 댓글마다 Radix 컴포넌트를 하나 덜 그린다. 플레이어는 Flex 항목일 때처럼 블록으로 둔다. */}
+            {/* 음성 댓글만 본문 위에 플레이어가 붙는다. 플레이어는 블록으로 둔다. */}
             {comment.voice && (
-                <Box mt="1">
+                <div className="refresher-comment-voice">
                     {comment.voice.iframe ? (
                         <iframe src={comment.voice.src} width={280} height={54} style={{display: "block", border: 0}} title="voice"/>
                     ) : (
                         <audio controls src={comment.voice.src} style={{display: "block"}}/>
                     )}
-                </Box>
+                </div>
             )}
-            <Box ref={body} mt="1" className="refresher-html refresher-comment-html" data-dccon={isDccon || undefined}
+            <div ref={body} className="refresher-html refresher-comment-html" data-dccon={isDccon || undefined}
                  onClick={isDccon ? openDcconInfo : undefined}
                  dangerouslySetInnerHTML={{__html: html}}/>
-        </Box>
+        </div>
     );
 };
