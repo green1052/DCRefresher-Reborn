@@ -37,7 +37,7 @@ const applyHide = (ctx: Ctx): void => {
         .map((key) => `${HIDE_OPTIONS[key].selector} { display: none !important; }`)
         .join("\n"));
 
-    // 본문 확장은 잡다 링크가 숨겨졌을 때만 (layout.scss의 폭 조정).
+    // 본문 확장은 잡다 링크가 숨겨졌을 때만 (page.scss의 폭 조정).
     document.documentElement.classList.toggle(PUSH_CLASS, ctx.settings.pushToRight && ctx.settings.hideUselessView);
 };
 

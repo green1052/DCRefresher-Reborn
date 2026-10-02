@@ -11,8 +11,9 @@ import ky from "ky";
 import {type AsnResponse, type CountryResponse, Reader} from "mmdb-lib";
 import {long2ip, Netmask} from "netmask";
 
-import {encodeIpData, type IpCandidate} from "../core/ipdb";
+import {candidateKey, encodeIpData, type IpCandidate} from "../core/ipdb";
 import type {BanList} from "../core/storage/types";
+import {isRecord} from "../utils/record";
 
 import {shortenOrg} from "./shorten-org";
 
@@ -111,8 +112,6 @@ const cursor = <T>(ranges: Range<T>[]) => {
     };
 };
 
-const candidateKey = ({org, country, vpn}: IpCandidate): string => `${org ?? ""}\u0000${country ?? ""}\u0000${vpn}`;
-
 /**
  * /16 대역(a*256+b, 오름차순) → 유력한 순 후보.
  * 세 출처의 값이 모두 같은 구간씩 건너뛰며 후보별 주소 수를 세고, 많은 순으로 고른다.
@@ -158,7 +157,7 @@ const buildCandidates = (asns: Range<Asn>[], countries: Range<string>[], vpns: R
 
 /** 손으로 고치는 파일이라 형식을 검사한다. 아이디는 앞뒤 공백·빈 값·중복을 빼고, 갤러리와 아이디를 정렬해 diff를 안정시킨다. */
 const normalizeBans = (data: unknown): BanList => {
-    if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("ban.json은 갤러리 → 아이디 목록 객체여야 합니다.");
+    if (!isRecord(data)) throw new Error("ban.json은 갤러리 → 아이디 목록 객체여야 합니다.");
 
     return Object.fromEntries(Object.entries(data).sort(([a], [b]) => (a < b ? -1 : 1)).map(([gallery, uids]) => {
         if (!Array.isArray(uids) || !uids.every((uid): uid is string => typeof uid === "string")) throw new Error(`ban.json의 "${gallery}"가 문자열 목록이 아닙니다.`);

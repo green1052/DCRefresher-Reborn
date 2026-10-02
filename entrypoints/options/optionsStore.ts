@@ -61,7 +61,7 @@ export const useOptionsStore = create<OptionsState>()((set, get) => ({
 
     hideDev: () => {
         writeDevMode(false);
-        set({devMode: import.meta.env.DEV});
+        set({devMode: false});
         location.hash = "";
     },
 

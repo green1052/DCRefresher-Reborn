@@ -341,7 +341,7 @@
         }
     }
 
-    /* 스텔스 모드: 가려 두고 마우스를 올리면 보인다 (변수는 stealth.scss가 페이지에서 넘긴다). */
+    /* 스텔스 모드: 가려 두고 마우스를 올리면 보인다 (변수는 features/stealth/page.scss가 페이지에서 넘긴다). */
     &[data-dccon] {
         @include mixins.dccon-cover(var(--gray-a6));
     }

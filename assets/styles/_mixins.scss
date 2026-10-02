@@ -16,7 +16,7 @@
     }
 }
 
-// 스텔스 모드: 댓글 디시콘·글자콘을 가려 두고 마우스를 올리면 보인다. 가리는 값과 안내 문구는 stealth.scss가 <html>에 거는 변수다.
+// 스텔스 모드: 댓글 디시콘·글자콘을 가려 두고 마우스를 올리면 보인다. 가리는 값과 안내 문구는 features/stealth/page.scss가 <html>에 거는 변수다.
 // @content는 안내 문구(::before)에 더할 선언이다.
 @mixin dccon-cover($border) {
     position: relative;

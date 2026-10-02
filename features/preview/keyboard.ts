@@ -19,12 +19,12 @@ export const bindListKeys = (ctx: Ctx, open: (preData: GalleryPreData) => void):
 
     const rows = (): ListRow[] => listRows().filter(({row}) => !isBlurHidden(row));
 
-    const select = (entry: ListRow | undefined, scroll = true): void => {
+    const select = (entry: ListRow | undefined): void => {
         for (const row of document.querySelectorAll(`.${SELECTED_CLASS}`)) row.classList.remove(SELECTED_CLASS);
         selected = entry ? postKey(entry.pre) : null;
         if (!entry) return;
         entry.row.classList.add(SELECTED_CLASS);
-        if (scroll) entry.row.scrollIntoView({block: "nearest", behavior: smoothScroll()});
+        entry.row.scrollIntoView({block: "nearest", behavior: smoothScroll()});
     };
 
     const move = (dir: number): void => {

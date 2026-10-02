@@ -27,13 +27,13 @@ const keepFormatting = (node: HTMLElement | SVGElement): void => {
     if (style.length === 0) node.removeAttribute("style");
 };
 
+/** iframe에 넘겨도 되는 권한. 동영상 재생에 쓰는 것만 남기고, 카메라·마이크·클립보드 같은 권한은 본문이 넘기지 못하게 한다. */
+const IFRAME_ALLOW = new Set(["autoplay", "encrypted-media", "fullscreen", "picture-in-picture"]);
+
 // 동영상에는 재생 컨트롤을 붙인다. 디시 본문은 컨트롤 없이 페이지 스크립트로 재생하기 때문이다.
 // 디시콘·움짤은 디시처럼 컨트롤 없이 자동 반복 재생한다.
 // 이미지·iframe은 lazy로 두어 스텔스·이미지 차단으로 숨긴 것은 받지 않게 한다.
 // 링크(# 앵커 제외)는 새 탭으로 연다. DOMPurify가 target을 지우므로 두면 갤러리 탭이 링크로 넘어가 목록과 미리보기를 잃는다.
-/** iframe에 넘겨도 되는 권한. 동영상 재생에 쓰는 것만 남기고, 카메라·마이크·클립보드 같은 권한은 본문이 넘기지 못하게 한다. */
-const IFRAME_ALLOW = new Set(["autoplay", "encrypted-media", "fullscreen", "picture-in-picture"]);
-
 const onAttributes = (node: Element): void => {
     // MathML(<math>) 같은 나머지 요소는 서식만 골라 지울 수 없어(HTMLElement·SVGElement가 아니다) style을 통째로 지운다.
     if (node.hasAttribute("style")) {

@@ -83,5 +83,5 @@ export const createReadMarks = (ctx: Ctx) => {
         saver.schedule();
     };
 
-    return {markRead, markAll};
+    return {markRead};
 };

@@ -184,7 +184,7 @@ export const ListTabs = <T extends string, I>({
     onClear: (type: T) => Promise<void>;
     onAdd: (type: T) => void;
     /** 목록 위 왼쪽에 둘 도구(차단 탭의 기본 차단 모드). */
-    toolbar?: (type: T) => ReactNode;
+    toolbar: (type: T) => ReactNode;
     /** 저장된 순서(오래된 것부터) 그대로 준다. 표시할 때 뒤집는다. */
     items: (type: T) => readonly I[];
     /** 검색 대상 글자 (내용/유저/메모/갤러리 등). */
@@ -275,7 +275,7 @@ export const ListTabs = <T extends string, I>({
                     return (
                         <Tabs.Content key={type} value={type} className="refresher-tab-enter">
                             <Flex justify="between" align="center" gap="3" wrap="wrap" py="4">
-                                {toolbar?.(type)}
+                                {toolbar(type)}
                                 <Flex gap="2" ml="auto" wrap="wrap">
                                     <TextField.Root type="search" placeholder="검색" aria-label={`${label} 검색`} value={query}
                                                     style={{width: 180}} onChange={(ev) => setQuery(ev.target.value)}>

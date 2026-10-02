@@ -44,7 +44,7 @@ export const bindRows = (ctx: Ctx, {open, prefetch, mini}: RowHandlers): void =>
     const onMouseUp = (ev: MouseEvent) => {
         if (ev.button !== 2 || pressStart === 0) return;
 
-        const delay = ctx.settings.longPressDelay || 300;
+        const delay = ctx.settings.longPressDelay;
         if (Date.now() - delay > pressStart) preventOpen = true;
         pressStart = 0;
     };

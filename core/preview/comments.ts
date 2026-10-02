@@ -65,9 +65,10 @@ export const processComments = (source: DcinsideComment[], preData: GalleryPreDa
 
     // 음성 URL은 정화(재직렬화)하면 &가 &amp;로 바뀌므로 정화 전에 떼어 낸다.
     for (const comment of list) {
-        const voice = extractVoice(String(comment.memo ?? ""));
+        const memo = String(comment.memo ?? "");
+        const voice = extractVoice(memo);
         if (voice) comment.voice = voice.voice;
-        comment.memo = cleaned.memo(voice?.memo ?? String(comment.memo ?? ""), sanitizeMemo);
+        comment.memo = cleaned.memo(voice?.memo ?? memo, sanitizeMemo);
     }
 
     // 차단 모듈이 꺼져 있으면 blockView가 없고 아무것도 가리지 않는다.

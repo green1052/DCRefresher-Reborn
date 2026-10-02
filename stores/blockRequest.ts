@@ -58,12 +58,7 @@ export type BlockRequestOptions = {
 };
 
 /** 유저 버블의 차단 요청을 처리한다. 차단 모듈이 꺼져 있어도 목록에는 넣는다. */
-export const handleBlockRequest = async (options: BlockRequestOptions, selected: SelectedUser | null): Promise<void> => {
-    if (!selected) {
-        useUiStore.getState().showToast("차단할 대상을 다시 우클릭해 주세요.");
-        return;
-    }
-
+export const handleBlockRequest = async (options: BlockRequestOptions, selected: SelectedUser): Promise<void> => {
     try {
         if (options.target === "dccon") await blockDccon(selected, options.dcconPackage);
         else await blockUser(selected);

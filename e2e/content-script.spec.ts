@@ -136,8 +136,9 @@ test.describe("미리보기 부가 기능", () => {
         await expect(reply).toBeVisible();
 
         await frame.getByRole("button", {name: "답글 접기"}).click();
+        // 답글은 모두 접히고 부모 댓글만 남는다.
         await expect(reply).toBeHidden();
-        // 접어도 부모 댓글과 첫 답글이 아닌 스레드 머리는 남는다.
+        await expect(frame.getByText("답글", {exact: true})).toBeHidden();
         await expect(frame.getByText("댓글 하나")).toBeVisible();
 
         await frame.getByRole("button", {name: "답글 펼치기"}).click();
@@ -271,7 +272,7 @@ test.describe("자동 새로고침", () => {
         await listPage.rows().nth(1).hover();
         site.rows = [{no: 4, title: "네 번째 글", nick: "새닉", uid: "user4"}, ...site.rows];
 
-        // 두 주기가 지나도 그대로다. 같은 설정을 끈 아래 테스트들은 이 시간 안에 새 글을 넣는다.
+        // 두 주기가 지나도 그대로다. 이 설정이 꺼진(기본값) 위 테스트들은 이 시간 안에 새 글을 넣는다.
         await listPage.page.waitForTimeout(7000);
         await expect(listPage.rows().first()).toHaveAttribute("data-no", "3");
 

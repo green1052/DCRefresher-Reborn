@@ -133,11 +133,12 @@ const KeyControl = ({schema, value, takenKeys = [], descId, onChange}: NarrowPro
                     ev.preventDefault();
 
                     const key = pressedKey(ev);
-                    if (/^[a-z0-9]$/.test(key) && key !== value && takenKeys.includes(key)) {
+                    const valid = /^[a-z0-9]$/.test(key);
+                    if (valid && key !== value && takenKeys.includes(key)) {
                         setTaken(key);
                         return;
                     }
-                    if (/^[a-z0-9]$/.test(key)) onChange(key);
+                    if (valid) onChange(key);
                     setListening(false);
                     setTaken("");
                 }}>

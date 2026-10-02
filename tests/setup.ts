@@ -31,15 +31,9 @@ typed.fromBase64 ??= (text) => new Uint8Array(Buffer.from(text, "base64"));
 if (typeof window !== "undefined") {
     const perf = performance as Performance & { getEntriesByType?: Performance["getEntriesByType"] };
     perf.getEntriesByType ??= () => [];
-    (globalThis as { CSS?: { escape?: (value: string) => string } }).CSS ??= {};
-    globalThis.CSS.escape ??= (value: string) => value.replace(/[^\w-]/g, (char) => `\\${char}`);
     // jsdom의 CSSStyleDeclaration은 for...of로 돌 수 없다 (utils/sanitize의 keepFormatting).
     const style = CSSStyleDeclaration.prototype as unknown as { [Symbol.iterator]?: (this: CSSStyleDeclaration) => Iterator<string> };
     style[Symbol.iterator] ??= function* (this: CSSStyleDeclaration) {
         for (let index = 0; index < this.length; index++) yield this.item(index);
     };
-    const element = Element.prototype as Element & { checkVisibility?: () => boolean };
-    element.checkVisibility ??= () => true;
-    (window as Window & { matchMedia?: typeof window.matchMedia }).matchMedia ??= (query: string) =>
-        ({matches: false, media: query, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false}) as MediaQueryList;
 }

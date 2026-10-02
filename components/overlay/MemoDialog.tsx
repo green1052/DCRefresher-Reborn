@@ -72,7 +72,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
             <SubmitForm onSubmit={submit}>
                 <Flex direction="column" gap="3">
                     <SegmentedControl.Root value={type} onValueChange={(next) => {
-                        if (!arrayIncludes(MEMO_TYPES, next) || !state.targets[next]) return;
+                        if (!arrayIncludes(MEMO_TYPES, next)) return;
                         setType(next);
                         setForm(prefill(next));
                     }}>

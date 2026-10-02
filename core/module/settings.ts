@@ -51,10 +51,6 @@ export const normalizeSetting = (schema: SettingSchema, value: unknown): Setting
     }
 };
 
-/** 모듈 설정 전체를 스키마에 맞춘다. 옵션 스토어·콘텐츠 레지스트리·배경이 같은 값을 보도록 모두 이 함수를 쓴다. */
-export const normalizeSettings = (def: Pick<ModuleDefinition, "settings">, stored: Record<string, unknown> | null | undefined): Record<string, SettingValue> =>
-    Object.fromEntries(Object.entries(def.settings ?? {}).map(([key, schema]) => [key, normalizeSetting(schema, stored?.[key])]));
-
 export const areEqual = (a: SettingValue | undefined, b: SettingValue): boolean => {
     if (a === b) return true;
     if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((v, i) => v === b[i]);
@@ -65,9 +61,14 @@ export const areEqual = (a: SettingValue | undefined, b: SettingValue): boolean 
 /** 저장소의 모듈 on/off 값. 없거나 모양이 다르면 빈 객체(모두 defaultEnable). */
 export const enablesOf = (stored: unknown): Record<string, unknown> => (isRecord(stored) ? stored : {});
 
-/** 저장소의 모듈 설정을 스키마에 맞춘다. 없거나 모양이 다르면 기본값. */
-export const settingsOf = (def: Pick<ModuleDefinition, "settings">, stored: unknown): Record<string, SettingValue> =>
-    normalizeSettings(def, isRecord(stored) ? stored : null);
+/**
+ * 저장소의 모듈 설정을 스키마에 맞춘다. 없거나 모양이 다르면 기본값.
+ * 옵션 스토어·콘텐츠 레지스트리·배경이 같은 값을 보도록 모두 이 함수를 쓴다.
+ */
+export const settingsOf = (def: Pick<ModuleDefinition, "settings">, stored: unknown): Record<string, SettingValue> => {
+    const values = isRecord(stored) ? stored : {};
+    return Object.fromEntries(Object.entries(def.settings ?? {}).map(([key, schema]) => [key, normalizeSetting(schema, values[key])]));
+};
 
 /**
  * 모듈 on/off와 주어진 모듈들의 설정을 한 번의 storage.local.get으로 읽는다. 모듈마다 따로 읽으면 왕복이 모듈 수만큼 쌓인다.

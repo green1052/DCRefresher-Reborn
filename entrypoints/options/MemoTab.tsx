@@ -4,7 +4,7 @@ import {useState} from "react";
 
 import {DialogActions, SubmitForm} from "@/components/ConfirmDialog";
 import {RefresherSelect} from "@/components/RefresherSelect";
-import {useOpenerFocus} from "@/components/useOpenerFocus";
+import {ModalDialog} from "@/components/ModalDialog";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import type {MemoType} from "@/core/storage/types";
 import {normalizeMemoMap, randomColor, useMemosStore} from "@/stores/memos";
@@ -35,7 +35,6 @@ const MemoFormDialog = ({
 }) => {
     const [state, setState] = useState<MemoFormState>(initial);
     const [error, setError] = useState("");
-    const {onCloseAutoFocus} = useOpenerFocus();
 
     const editing = Boolean(initial.user);
 
@@ -66,103 +65,101 @@ const MemoFormDialog = ({
     };
 
     return (
-        <Dialog.Root open onOpenChange={(next) => !next && onClose()}>
-            <Dialog.Content maxWidth="480px" aria-describedby={undefined} onCloseAutoFocus={onCloseAutoFocus}>
-                <Dialog.Title>메모 {editing ? "수정" : "추가"}</Dialog.Title>
+        <ModalDialog onClose={onClose} maxWidth="480px" aria-describedby={undefined}>
+            <Dialog.Title>메모 {editing ? "수정" : "추가"}</Dialog.Title>
 
-                <SubmitForm onSubmit={submit}>
-                    <Flex direction="column" gap="3" mt="3">
-                        <Flex justify="between" align="center">
-                            <Text size="2" color="gray">
-                                종류
-                            </Text>
-                            <RefresherSelect
-                                value={state.type}
-                                disabled={editing}
-                                aria-label="종류"
-                                onChange={(type) => setState((prev) => ({...prev, type}))}
-                                options={MEMO_TYPE_NAMES}
-                            />
-                        </Flex>
-
-                        <label>
-                            <Text as="div" size="2" color="gray" mb="1">
-                                대상
-                            </Text>
-                            <TextField.Root
-                                placeholder="아이디, 닉네임 또는 IP"
-                                value={state.user}
-                                disabled={editing}
-                                // 추가할 때는 비어 있는 대상부터, 고칠 때는(대상이 막혀 있다) 메모부터 입력한다.
-                                autoFocus={!editing}
-                                // 입력 중에 trim하면 닉네임 가운데 공백을 칠 수 없으므로 저장할 때 trim한다.
-                                onChange={(ev) => setState((prev) => ({...prev, user: ev.target.value}))}
-                            />
-                        </label>
-
-                        <label>
-                            <Text as="div" size="2" color="gray" mb="1">
-                                메모
-                            </Text>
-                            <TextField.Root
-                                maxLength={160}
-                                placeholder="메모를 입력해 주세요 (160자 제한)"
-                                value={state.text}
-                                onChange={(ev) => setState((prev) => ({...prev, text: ev.target.value}))}
-                                autoFocus={editing}
-                            />
-                        </label>
-
-                        <label>
-                            <Text as="div" size="2" color="gray" mb="1">
-                                갤러리
-                            </Text>
-                            <TextField.Root
-                                placeholder="갤러리 ID (비우면 모든 갤러리)"
-                                value={state.gallery}
-                                onChange={(ev) => setState((prev) => ({...prev, gallery: ev.target.value.trim()}))}
-                            />
-                        </label>
-
-                        <Flex justify="between" align="center">
-                            <Text size="2" color="gray">
-                                색상
-                            </Text>
-                            <Flex gap="2" align="center">
-                                <input
-                                    type="color"
-                                    aria-label="메모 색상"
-                                    value={state.color}
-                                    onChange={(ev) => setState((prev) => ({...prev, color: ev.target.value}))}
-                                    style={{
-                                        width: 36,
-                                        height: 28,
-                                        padding: 0,
-                                        border: 0,
-                                        background: "none",
-                                        cursor: "pointer"
-                                    }}
-                                />
-                                <Button type="button" size="2" variant="soft"
-                                        onClick={() => setState((prev) => ({...prev, color: randomColor()}))}>
-                                    랜덤
-                                </Button>
-                            </Flex>
-                        </Flex>
-
-                        {error && (
-                            <Text size="2" color="red" role="alert">
-                                {error}
-                            </Text>
-                        )}
+            <SubmitForm onSubmit={submit}>
+                <Flex direction="column" gap="3" mt="3">
+                    <Flex justify="between" align="center">
+                        <Text size="2" color="gray">
+                            종류
+                        </Text>
+                        <RefresherSelect
+                            value={state.type}
+                            disabled={editing}
+                            aria-label="종류"
+                            onChange={(type) => setState((prev) => ({...prev, type}))}
+                            options={MEMO_TYPE_NAMES}
+                        />
                     </Flex>
 
-                    <DialogActions>
-                        <Button type="submit">{editing ? "수정" : "추가"}</Button>
-                    </DialogActions>
-                </SubmitForm>
-            </Dialog.Content>
-        </Dialog.Root>
+                    <label>
+                        <Text as="div" size="2" color="gray" mb="1">
+                            대상
+                        </Text>
+                        <TextField.Root
+                            placeholder="아이디, 닉네임 또는 IP"
+                            value={state.user}
+                            disabled={editing}
+                            // 추가할 때는 비어 있는 대상부터, 고칠 때는(대상이 막혀 있다) 메모부터 입력한다.
+                            autoFocus={!editing}
+                            // 입력 중에 trim하면 닉네임 가운데 공백을 칠 수 없으므로 저장할 때 trim한다.
+                            onChange={(ev) => setState((prev) => ({...prev, user: ev.target.value}))}
+                        />
+                    </label>
+
+                    <label>
+                        <Text as="div" size="2" color="gray" mb="1">
+                            메모
+                        </Text>
+                        <TextField.Root
+                            maxLength={160}
+                            placeholder="메모를 입력해 주세요 (160자 제한)"
+                            value={state.text}
+                            onChange={(ev) => setState((prev) => ({...prev, text: ev.target.value}))}
+                            autoFocus={editing}
+                        />
+                    </label>
+
+                    <label>
+                        <Text as="div" size="2" color="gray" mb="1">
+                            갤러리
+                        </Text>
+                        <TextField.Root
+                            placeholder="갤러리 ID (비우면 모든 갤러리)"
+                            value={state.gallery}
+                            onChange={(ev) => setState((prev) => ({...prev, gallery: ev.target.value.trim()}))}
+                        />
+                    </label>
+
+                    <Flex justify="between" align="center">
+                        <Text size="2" color="gray">
+                            색상
+                        </Text>
+                        <Flex gap="2" align="center">
+                            <input
+                                type="color"
+                                aria-label="메모 색상"
+                                value={state.color}
+                                onChange={(ev) => setState((prev) => ({...prev, color: ev.target.value}))}
+                                style={{
+                                    width: 36,
+                                    height: 28,
+                                    padding: 0,
+                                    border: 0,
+                                    background: "none",
+                                    cursor: "pointer"
+                                }}
+                            />
+                            <Button type="button" size="2" variant="soft"
+                                    onClick={() => setState((prev) => ({...prev, color: randomColor()}))}>
+                                랜덤
+                            </Button>
+                        </Flex>
+                    </Flex>
+
+                    {error && (
+                        <Text size="2" color="red" role="alert">
+                            {error}
+                        </Text>
+                    )}
+                </Flex>
+
+                <DialogActions>
+                    <Button type="submit">{editing ? "수정" : "추가"}</Button>
+                </DialogActions>
+            </SubmitForm>
+        </ModalDialog>
     );
 };
 

@@ -115,11 +115,12 @@ interface BubbleProps {
 const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
     const focus = useOpenerFocus();
     const activityState = useGallogActivity(selected.dccon ? undefined : selected.uid);
-    const memo = useUserMemo(selected, queryString("id"));
+    const gallery = queryString("id");
+    const memo = useUserMemo(selected, gallery);
     // 구독한 목록으로 찾아야 해제했을 때 바로 다시 계산된다.
     const entries = useBlocksStore((s) => s.entries);
     const defaults = useBlocksStore((s) => s.defaults);
-    const rules = blockingEntries(selected.dccon ? {DCCON: selected.dccon} : {NICK: selected.nick, ID: selected.uid, IP: selected.ip}, queryString("id") ?? undefined, {entries, defaults});
+    const rules = blockingEntries(selected.dccon ? {DCCON: selected.dccon} : {NICK: selected.nick, ID: selected.uid, IP: selected.ip}, gallery ?? undefined, {entries, defaults});
     // IP/밴 조회 식에 이 번호를 넣는다. 빠지면 React Compiler가 인자만 보고 메모해 DB를 읽은 뒤에도 옛 값이 남는다.
     const dbVersion = useSyncExternalStore(subscribeDatabase, databaseVersion);
 
@@ -192,7 +193,7 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
                             <Button size="1" variant="soft" color="gray"
                                     onClick={() => {
                                         focus.returnFocus();
-                                        useUiStore.getState().openMemoForSelected();
+                                        useUiStore.getState().openMemo(selected);
                                     }}>
                                 메모
                             </Button>

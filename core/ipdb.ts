@@ -40,7 +40,8 @@ const prefixIndex = (ip: string): number | undefined => {
     return a !== undefined && b !== undefined && a >= 0 && a < 256 && b >= 0 && b < 256 ? a * 256 + b : undefined;
 };
 
-const candidateKey = ({org, country, vpn}: IpCandidate): string => `${org ?? ""}\u0000${country ?? ""}\u0000${vpn ? 1 : 0}`;
+/** 후보를 같은지 견주는 키. */
+export const candidateKey = ({org, country, vpn}: IpCandidate): string => `${org ?? ""}\u0000${country ?? ""}\u0000${vpn ? 1 : 0}`;
 
 /**
  * 대역(a*256+b) → 후보들(유력한 순) → 저장 형식. 대역 순으로 넘기면 결과가 늘 같다.

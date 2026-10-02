@@ -1,4 +1,4 @@
-/** index.ts와 background.ts가 같이 쓰는 엔진·설정. 배경 번들에 들어가므로 React를 불러오지 않는다. */
+/** meta.ts와 background.ts가 같이 쓰는 엔진·설정. 배경 번들에 들어가므로 React를 불러오지 않는다. */
 import type {SettingGroup, SettingSchema} from "@/core/module/types";
 
 export const IMAGE_SEARCH_ID = "imagesearch";

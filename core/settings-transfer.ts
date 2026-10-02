@@ -20,19 +20,19 @@ const isMapKey = (key: string): boolean =>
     key === MODULES || key === DEFAULTS_KEY || settingsKeyModule(key) !== undefined;
 
 /**
- * 설정(백업 대상 키)을 저장소에 쓴다. IP/밴 DB·백업 상태·모듈 캐시는 건드리지 않는다.
- * - replace(클라우드 복원·초기화): 백업은 완전한 스냅숏이므로 거기 없는 설정 키는 지운다.
- * - merge(가져오기): 붙여넣은 JSON은 일부만 담을 수 있으므로 든 키만 쓴다. 설정만 든 JSON이 차단/메모 목록을 지우지 않게 한다.
- *   설정 객체(isMapKey)도 기존 값에 얕게 합쳐, 설정 몇 개만 든 JSON이 나머지 설정을 기본값으로 돌리지 않게 한다.
- * 쓰다가 실패하면 이전 값으로 되돌린다.
- */
-/**
  * 다른 기기에서 온 차단 항목의 검사 방식을 지킨다. 모드가 '기본값'(없음)인 항목은 그 기기의 기본 모드(from)로 검사됐으므로,
  * 이 기기의 기본 모드(local)와 다르면 그 모드를 항목에 적는다. 같으면 그대로 둔다.
  */
 export const pinDefaultMode = (list: BlockEntry[], from: DetectMode, local: DetectMode): BlockEntry[] =>
     from === local ? list : list.map((entry) => (entry.mode ? entry : {...entry, mode: from}));
 
+/**
+ * 설정(백업 대상 키)을 저장소에 쓴다. IP/밴 DB·백업 상태·모듈 캐시는 건드리지 않는다.
+ * - replace(클라우드 복원·초기화): 백업은 완전한 스냅숏이므로 거기 없는 설정 키는 지운다.
+ * - merge(가져오기): 붙여넣은 JSON은 일부만 담을 수 있으므로 든 키만 쓴다. 설정만 든 JSON이 차단/메모 목록을 지우지 않게 한다.
+ *   설정 객체(isMapKey)도 기존 값에 얕게 합쳐, 설정 몇 개만 든 JSON이 나머지 설정을 기본값으로 돌리지 않게 한다.
+ * 쓰다가 실패하면 이전 값으로 되돌린다.
+ */
 export const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "merge"): Promise<void> => {
     const previous = await browser.storage.local.get(null);
     // 설정 키가 아닌 값(차단/메모 내보내기의 "NICK" 등)은 저장하지 않는다.
@@ -55,7 +55,7 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
         delete next[DEFAULTS_KEY];
         for (const type of BLOCK_TYPES) {
             const key = rawKey(blockListKey(type));
-            if (key in next) next[key] = pinDefaultMode(normalizeBlockList(next[key]), importDefaults[type], localDefaults[type]);
+            if (key in next) next[key] = pinDefaultMode(next[key] as BlockEntry[], importDefaults[type], localDefaults[type]);
         }
         for (const [key, value] of Object.entries(next)) {
             const old = previous[key];

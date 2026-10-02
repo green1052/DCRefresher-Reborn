@@ -59,9 +59,9 @@ export default defineContentScript({
 
         mountOverlayWhenNeeded(ctx);
 
-        // ===== 모듈 부트스트랩 =====
         warnWhenBlocked();
 
+        // ===== 모듈 부트스트랩 =====
         // 차단·메모는 글 목록·본문(features의 urls와 같은 BOARD_PAGE)에서만 쓴다. 메인·검색 등에서는 저장소를 읽지 않는다.
         // 가장 큰 IP/밴 DB는 여기서 읽지 않는다. 유저 정보 모듈의 setup이 모듈 설정 뒤에 읽고, 모듈이 꺼져 있으면
         // 버블·미리보기가 IP 정보를 처음 그릴 때 읽는다 (core/database의 subscribeDatabase).

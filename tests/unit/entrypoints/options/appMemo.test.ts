@@ -5,9 +5,7 @@ import {formatAppMemos, parseAppMemos} from "@/entrypoints/options/appMemo";
 describe("parseAppMemos", () => {
     it("아이디-메모 줄을 나누고 IP 모양은 IP 메모로, 형식이 아닌 줄은 센다", () => {
         const {memos, skipped} = parseAppMemos("user1-메모 하나\n\n123.45-유동-메모\n형식아님\n-빈대상\nuser2-\r\n");
-        expect(memos.UID).toEqual({user1: "메모 하나", user2: undefined} as never);
-        expect(memos.UID.user1).toBe("메모 하나");
-        expect(Object.keys(memos.UID)).toEqual(["user1"]);
+        expect(memos.UID).toStrictEqual({user1: "메모 하나"});
         expect(memos.IP).toEqual({"123.45": "유동-메모"});
         expect(skipped).toBe(3);
     });

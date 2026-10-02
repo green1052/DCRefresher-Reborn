@@ -135,12 +135,12 @@ export interface ManageResult {
 // 성공이라고 밝힌 응답만 성공으로 본다. 세션이 끊겨 온 HTML이나 "정상적인 접근이 아닙니다." 같은 응답에 성공 알림을 띄우지 않게.
 const isSuccess = (result: unknown): boolean => result === "success" || result === "true" || result === true;
 
+type ManageAction = "update_bump" | "delete_list" | "delete_comment" | "update_avoid_list" | "set_notice" | "set_recommend";
+
 /**
  * 관리 요청. 미니 갤러리는 mini_, 나머지(일반·마이너·인물)는 minor_ 관리 API를 쓴다.
  * 필드는 공통 필드(ci_t, _GALLTYPE_) 뒤에 준 순서대로 붙는다.
  */
-type ManageAction = "update_bump" | "delete_list" | "delete_comment" | "update_avoid_list" | "set_notice" | "set_recommend";
-
 const manage = async (target: Pick<GalleryPreData, "link">, action: ManageAction, fields: Record<string, string>): Promise<ManageResult> => {
     const body = await dcBody(target.link, fields);
 

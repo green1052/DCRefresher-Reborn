@@ -52,6 +52,7 @@ export default defineModule({
         // ===== 글 보기: 이미지 출처·같은 제목 찾기 =====
         // 본문·첨부 목록까지 읽은 뒤에 한 번 그린다. 필터로 걸면 머리를 읽는 순간 불려 본문이 아직 없다.
         whenDomReady(() => renderViewTools(ctx.settings), ctx.signal);
+        // 필터는 등록할 때와 요소가 새로 붙을 때만 돌므로, 이미 열린 글의 영상은 설정이 바뀔 때 여기서 바꾸고 되돌린다.
         ctx.onSettingsChanged((key) => {
             if (key === "imageOrigin" || key === "titleSearch") renderViewTools(ctx.settings);
             if (key !== "enableGifControl") return;
@@ -143,8 +144,6 @@ export default defineModule({
             }
         );
     },
-
-    // 필터는 등록할 때와 요소가 새로 붙을 때만 돌므로, 이미 열린 글의 영상은 설정이 바뀔 때 여기서 바꾸고 되돌린다.
 
     revoke() {
         disableGifControl();

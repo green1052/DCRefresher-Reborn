@@ -2,7 +2,7 @@ import {useEffect} from "react";
 import {storage} from "wxt/utils/storage";
 import {create} from "zustand";
 
-import {enablesOf, isModuleEnabled, normalizeSetting, normalizeSettings, settingsOf} from "@/core/module/settings";
+import {enablesOf, isModuleEnabled, normalizeSetting, settingsOf} from "@/core/module/settings";
 import type {AnyModuleMeta} from "@/core/module/types";
 import {migrateModuleSettings} from "@/core/migrate-settings";
 import {MODULES_KEY, moduleSettingsKey, moduleSettingsStorage, modulesStorage, settingsKeyModule} from "@/core/storage/items";
@@ -38,7 +38,7 @@ const enqueue = (write: () => Promise<void>): Promise<void> => navigator.locks.r
  */
 export const useModulesStore = create<ModulesState>((set) => ({
     enables: resolveEnables({}),
-    values: Object.fromEntries(features.map((feature) => [feature.id, normalizeSettings(feature, null)])),
+    values: Object.fromEntries(features.map((feature) => [feature.id, settingsOf(feature, null)])),
 
     toggle: async (id, value) => {
         set((state) => ({enables: {...state.enables, [id]: value}}));
@@ -121,9 +121,7 @@ const sync = storageSync([MODULES_KEY, ...[...withSettings.values()].map((featur
     if (feature) setValues(feature, value);
     else setEnables(value);
 });
-const load = sync.load;
-
-const persist = (write: () => Promise<void>): Promise<void> => saveOrReload(enqueue(write), load, "모듈 설정을 저장하지 못했습니다.");
+const persist = (write: () => Promise<void>): Promise<void> => saveOrReload(enqueue(write), sync.load, "모듈 설정을 저장하지 못했습니다.");
 
 /** 옵션·팝업에서 저장소 값을 읽고 변경을 감시한다. 여러 번 불러도 한 번만 한다. */
 export const initModulesStore = once(async () => {

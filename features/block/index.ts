@@ -151,7 +151,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         const groups = groupDuplicates(all.filter((item) => !item.closest(HIDDEN_ROW_SELECTOR)), textOf, duplicate);
         for (const item of all) {
             const repeats = groups.get(item);
-            if (item.classList.contains("refresherDuplicate") !== (repeats === 0)) item.classList.toggle("refresherDuplicate", repeats === 0);
+            item.classList.toggle("refresherDuplicate", repeats === 0);
 
             const text = repeats ? `같은 댓글 ×${repeats}` : undefined;
             const existing = item.querySelector(".refresherDuplicateBadge");

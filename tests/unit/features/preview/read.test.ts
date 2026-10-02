@@ -18,12 +18,6 @@ const stubCtx = (): Ctx => ({
     onSettingsChanged: () => undefined
 }) as unknown as Ctx;
 
-/** 모아 저장하는 시간(5초)을 넘기고 저장소 쓰기가 끝날 때까지 돌린다. */
-const flushSave = async (): Promise<void> => {
-    await vi.advanceTimersByTimeAsync(5_000);
-    await vi.waitFor(async () => expect(await stored(KEY)).toBeDefined());
-};
-
 beforeEach(() => {
     controller = new AbortController();
     vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
@@ -52,7 +46,7 @@ describe("createReadMarks", () => {
         await vi.advanceTimersByTimeAsync(0);
         marks.markRead(post("new"));
 
-        await flushSave();
+        await vi.advanceTimersByTimeAsync(5_000);
         await vi.waitFor(async () => {
             const read = ((await stored(KEY)) as { read: string[] }).read;
             expect(read).toHaveLength(3000);

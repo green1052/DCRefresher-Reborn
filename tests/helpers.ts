@@ -1,6 +1,7 @@
 /**
  * 단위 테스트 공통 도우미. 테스트 파일에서 `../../helpers`처럼 상대 경로로 불러온다.
  */
+import {Puzzle} from "lucide-react";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
 import type {AnyModule, ModuleDefinition, SettingSchema} from "@/core/module/types";
@@ -19,9 +20,9 @@ type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K>
 /** 테스트용 설정 스키마. 이름·설명은 비운다. */
 export const setting = (schema: DistributiveOmit<SettingSchema, "name" | "desc">): SettingSchema => ({name: "", desc: "", ...schema} as SettingSchema);
 
-/** 테스트용 모듈. 이름·설명은 비우고, 레지스트리가 받는 AnyModule로 돌려준다. */
-export const testModule = <Api>(definition: Omit<ModuleDefinition<Record<string, SettingSchema>, Api>, "name" | "description">): AnyModule =>
-    ({name: "", description: "", ...definition}) as AnyModule;
+/** 테스트용 모듈. 이름·설명·아이콘은 채우고, 레지스트리가 받는 AnyModule로 돌려준다. */
+export const testModule = <Api>(definition: Omit<ModuleDefinition<Record<string, SettingSchema>, Api>, "name" | "description" | "icon">): AnyModule =>
+    ({name: "", description: "", icon: Puzzle, ...definition}) as AnyModule;
 
 /** 차단 스토어에 목록과 기본 모드를 직접 넣는다 (저장소를 거치지 않는다). 주지 않은 유형은 비우고 기본 모드는 기본값이다. */
 export const setBlockLists = (lists: Partial<Record<BlockType, BlockEntry[]>> = {}, defaults: Partial<Record<BlockType, DetectMode>> = {}): void =>

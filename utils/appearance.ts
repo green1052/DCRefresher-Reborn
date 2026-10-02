@@ -10,7 +10,8 @@ const setAppearance = (root: HTMLElement, dark: boolean): void => {
 };
 
 /** 시스템 다크 모드를 따라간다. 첫 렌더 전에 불러 밝은 화면이 잠깐 비치지 않게 한다 (옵션·팝업). */
-export const followSystemAppearance = (root: HTMLElement = document.documentElement): void => {
+export const followSystemAppearance = (): void => {
+    const root = document.documentElement;
     const query = window.matchMedia("(prefers-color-scheme: dark)");
     setAppearance(root, query.matches);
     query.addEventListener("change", (ev) => setAppearance(root, ev.matches));

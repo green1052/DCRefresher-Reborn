@@ -50,7 +50,6 @@ export const dcinsideHref = (url: string | URL | null | undefined): string | und
     return parsed?.protocol === "https:" && parsed.hostname.endsWith(".dcinside.com") ? parsed.href : undefined;
 };
 
-/** URL의 갤러리 종류. */
 export const galleryKind = (url: string): GalleryKind => {
     const path = /\.com\/(mgallery|mini|person)/.exec(url)?.[1];
     return path === "mgallery" ? "minor" : path === "mini" || path === "person" ? path : "normal";
@@ -87,7 +86,6 @@ export const mergeParamURL = (origin: string, from: string): string => {
 export const postSearchUrl = (query: string): string =>
     `https://search.dcinside.com/post/sort/latest/q/${Array.from(new TextEncoder().encode(query), (byte) => `.${byte.toString(16).padStart(2, "0").toUpperCase()}`).join("")}`;
 
-/** 현재 URL의 쿼리 값. */
 export const queryString = (name: string): string | null => new URLSearchParams(location.search).get(name);
 
 /**
@@ -96,7 +94,6 @@ export const queryString = (name: string): string | null => new URLSearchParams(
  * 파이어폭스 확장 페이지(배경·옵션·팝업)는 항목 이름이 URL이 아니라 "document"라 파싱되지 않으면 지금 주소를 쓴다 (던지면 번들 전체가 멈춘다).
  */
 export const documentUrl = URL.parse(performance.getEntriesByType("navigation")[0]?.name ?? "") ?? new URL(location.href);
-/** 글 보기 페이지인지. */
 export const isViewPage = VIEW_PAGE.test(documentUrl.pathname);
 /** 글 보기 페이지가 보여 주는 글 번호. */
 export const pagePostNo = isViewPage ? documentUrl.searchParams.get("no") : null;

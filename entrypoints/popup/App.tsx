@@ -138,7 +138,7 @@ function ModulesSection({onToggled}: { onToggled: () => void }) {
             <Grid columns="2" gap="2">
                 {features.map((feature) => {
                     const enabled = isModuleEnabled(feature, enables);
-                    const Icon = feature.icon ?? Puzzle;
+                    const Icon = feature.icon;
 
                     return (
                         <button key={feature.id} type="button" className="module-tile" aria-pressed={enabled}

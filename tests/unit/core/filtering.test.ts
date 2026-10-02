@@ -2,8 +2,8 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {addFilter} from "@/core/filtering";
 
-/** MutationObserver 콜백(마이크로태스크)이 돌 때까지 기다린다. */
-const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
+import {tick} from "../../helpers";
+
 
 let removers: (() => void)[] = [];
 const watch = (scope: string) => {
@@ -28,7 +28,7 @@ describe("addFilter", () => {
         expect(seen.map((element) => element.id)).toEqual(["a"]);
 
         document.querySelector("tbody")!.insertAdjacentHTML("beforeend", "<tr class=\"row\" id=\"b\"></tr>");
-        await settle();
+        await tick();
         expect(seen.map((element) => element.id)).toEqual(["a", "b"]);
     });
 
@@ -39,7 +39,7 @@ describe("addFilter", () => {
         document.body.append(table);
         // 조상이 붙은 뒤 같은 묶음에서 그 안에 또 붙인 행도 한 번만 잡힌다.
         table.querySelector("tbody")!.append(Object.assign(document.createElement("tr"), {className: "row"}));
-        await settle();
+        await tick();
         expect(seen).toHaveLength(3);
         expect(new Set(seen).size).toBe(3);
     });
@@ -48,11 +48,11 @@ describe("addFilter", () => {
         const seen = watch(".gall_list tr");
         const row = document.createElement("tr");
         document.querySelector("tbody")!.append(row);
-        await settle();
+        await tick();
         seen.length = 0;
 
         row.append(document.createElement("td"));
-        await settle();
+        await tick();
         expect(seen).toEqual([row]);
     });
 
@@ -64,7 +64,7 @@ describe("addFilter", () => {
         seen.length = 0;
 
         writer.append(Object.assign(document.createElement("span"), {className: "refresher-user-badges"}));
-        await settle();
+        await tick();
         expect(seen).toEqual([]);
     });
 
@@ -75,7 +75,7 @@ describe("addFilter", () => {
         }));
         const seen = watch(".row");
         document.querySelector("tbody")!.insertAdjacentHTML("beforeend", "<tr class=\"row\" id=\"bad\"></tr><tr class=\"row\" id=\"ok\"></tr>");
-        await settle();
+        await tick();
         expect(seen.map((element) => element.id)).toEqual(["bad", "ok"]);
         expect(error).toHaveBeenCalledOnce();
     });

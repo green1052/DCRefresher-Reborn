@@ -100,7 +100,7 @@ interface PreviewState extends PostState, Hooks {
 }
 
 let miniCloseTimer = 0;
-// 커서가 조작할 수 있는 카드 위에 있다. 카드의 pointerenter가 제목의 mouseleave보다 먼저 오기도 해서 따로 기억한다.
+// 커서가 조작할 수 있는 카드 위에 있다. 카드의 pointerenter가 제목의 mouseout보다 먼저 오기도 해서 따로 기억한다.
 let miniHovered = false;
 
 /** 조작할 수 있는 미니를 조금 뒤에 닫는다. 커서가 제목에서 카드로(카드에서 제목으로) 옮겨 가는 사이 닫히지 않게 v5처럼 150ms 기다린다. */

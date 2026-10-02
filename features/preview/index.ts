@@ -387,7 +387,7 @@ const controller = (ctx: Ctx) => {
             refreshTimer = window.setTimeout(() => {
                 if (ctx.settings.autoRefreshComment && !document.hidden && !pulling) void refreshComments();
                 scheduleRefresh();
-            }, ctx.settings.commentRefreshInterval || 10000);
+            }, ctx.settings.commentRefreshInterval);
         };
         scheduleRefresh();
 
@@ -535,7 +535,7 @@ const controller = (ctx: Ctx) => {
     }
 
     ctx.addCleanup(() => {
-        // 행 리스너(mouseleave)가 떨어지면 떠 있거나 받는 중인 미니를 닫을 길이 없어 여기서 닫는다.
+        // 문서의 mouseout 리스너가 떨어지면 떠 있거나 받는 중인 미니를 닫을 길이 없어 여기서 닫는다.
         mini.onMiniLeave();
         close();
         store.setState(NO_HOOKS);

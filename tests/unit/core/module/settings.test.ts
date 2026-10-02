@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
 
-import {areEqual, defaultValue, isModuleEnabled, normalizeSetting, normalizeSettings} from "@/core/module/settings";
+import {areEqual, defaultValue, isModuleEnabled, normalizeSetting, settingsOf} from "@/core/module/settings";
 
 import {setting} from "../../../helpers";
 
@@ -57,12 +57,13 @@ describe("normalizeSetting", () => {
     });
 });
 
-describe("normalizeSettings", () => {
+describe("settingsOf", () => {
     it("스키마의 모든 키를 채우고 없는 키는 버린다", () => {
         const def = {settings: {a: setting({type: "check", default: true}), r: range}} as const;
-        expect(normalizeSettings(def, {a: false, zzz: 1})).toEqual({a: false, r: 5000});
-        expect(normalizeSettings(def, null)).toEqual({a: true, r: 5000});
-        expect(normalizeSettings({}, {a: 1})).toEqual({});
+        expect(settingsOf(def, {a: false, zzz: 1})).toEqual({a: false, r: 5000});
+        expect(settingsOf(def, null)).toEqual({a: true, r: 5000});
+        expect(settingsOf(def, ["a"])).toEqual({a: true, r: 5000});
+        expect(settingsOf({}, {a: 1})).toEqual({});
     });
 });
 

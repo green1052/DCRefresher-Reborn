@@ -27,6 +27,8 @@ describe("friendlyMessage", () => {
     it("시간 초과는 응답이 없다고 알린다", () => {
         const error = new TimeoutError(new Request("https://gall.dcinside.com/x"));
         expect(friendlyMessage(error)).toBe("응답이 없습니다. 잠시 후 다시 시도해 주세요.");
+        // core/http/client가 시간 초과로 끊은 요청.
+        expect(friendlyMessage(new DOMException("x", "TimeoutError"))).toBe("응답이 없습니다. 잠시 후 다시 시도해 주세요.");
     });
 });
 

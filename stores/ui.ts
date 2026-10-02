@@ -88,12 +88,12 @@ interface UiState {
     blockView: BlockView | null;
 
     showToast: (content: string, type?: ToastLevel, autoClose?: number, action?: ToastData["action"]) => void;
-    dismissToast: (id?: number) => void;
+    dismissToast: (id: number) => void;
     /** user를 고르고 (x, y)에 유저 버블을 연다. 버블의 메모·차단은 고른 대상에 건다. */
     openBubble: (user: SelectedUser, x: number, y: number) => void;
     closeBubble: () => void;
-    /** 마지막으로 우클릭한 대상의 메모 다이얼로그를 연다. 선택이 없으면 토스트를 띄운다. */
-    openMemoForSelected: () => void;
+    /** 버블에서 고른 대상의 메모 다이얼로그를 연다. */
+    openMemo: (user: SelectedUser) => void;
     closeMemo: () => void;
 }
 
@@ -115,19 +115,13 @@ export const useUiStore = create<UiState>((set, get) => ({
 
     dismissToast: (id) => {
         const current = get().toast;
-        if (!id || !current || current.id === id) set({toast: null});
+        if (!current || current.id === id) set({toast: null});
     },
 
     openBubble: (selected, x, y) => set({selected, bubble: {x, y}}),
     closeBubble: () => set({bubble: null}),
 
-    openMemoForSelected: () => {
-        const {selected, showToast} = get();
-        if (!selected) {
-            showToast("메모할 대상을 다시 우클릭해 주세요.");
-            return;
-        }
-
+    openMemo: (selected) => {
         const targets: Partial<Record<MemoType, string>> = {};
         if (selected.nick) targets.NICK = selected.nick;
         if (selected.uid) targets.UID = selected.uid;
