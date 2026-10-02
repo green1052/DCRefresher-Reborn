@@ -36,6 +36,12 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
 
     const [type, setType] = useState<MemoType>(state.initialType);
     const [form, setForm] = useState(() => prefill(state.initialType));
+    // 입력을 바꿨는지. 종류를 넘겼을 때 저장된 메모로 다시 채울지 정한다.
+    const [touched, setTouched] = useState(false);
+    const edit = (patch: Partial<{ text: string; color: string; scope?: string }>): void => {
+        setTouched(true);
+        setForm((form) => ({...form, ...patch}));
+    };
     const {text, color, scope} = form;
 
     const value = state.targets[type] ?? "";
@@ -74,7 +80,8 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                     <SegmentedControl.Root value={type} onValueChange={(next) => {
                         if (!arrayIncludes(MEMO_TYPES, next)) return;
                         setType(next);
-                        setForm(prefill(next));
+                        // 종류를 바꿀 때 입력한 적이 없으면 다른 대상의 저장된 메모로 채우고, 입력했으면 지우지 않는다.
+                        if (!touched) setForm(prefill(next));
                     }}>
                         {MEMO_TYPES.filter((memoType) => state.targets[memoType]).map((memoType) => (
                             <SegmentedControl.Item key={memoType} value={memoType}>
@@ -88,7 +95,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                         aria-label="메모"
                         placeholder="메모를 입력해 주세요 (160자 제한)"
                         value={text}
-                        onChange={(ev) => setForm({...form, text: ev.target.value})}
+                        onChange={(ev) => edit({text: ev.target.value})}
                         autoFocus
                     >
                         <TextField.Slot>
@@ -96,13 +103,13 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                                 type="color"
                                 aria-label="색상"
                                 value={color}
-                                onChange={(ev) => setForm({...form, color: ev.target.value})}
+                                onChange={(ev) => edit({color: ev.target.value})}
                                 style={{width: 20, height: 20, padding: 0, border: 0, background: "none", cursor: "pointer"}}
                             />
                         </TextField.Slot>
                         <TextField.Slot side="right">
                             <Button type="button" size="1" variant="ghost" color="gray" aria-label="랜덤 색상"
-                                    onClick={() => setForm({...form, color: randomColor()})}>
+                                    onClick={() => edit({color: randomColor()})}>
                                 <Shuffle size={12}/>
                             </Button>
                         </TextField.Slot>
@@ -112,7 +119,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                         <Text as="label" size="2">
                             <Flex gap="2" align="center">
                                 <Checkbox checked={scope === gallery}
-                                          onCheckedChange={(checked) => setForm({...form, scope: checked === true ? gallery : undefined})}/>
+                                          onCheckedChange={(checked) => edit({scope: checked === true ? gallery : undefined})}/>
                                 이 갤러리에서만 ({gallery})
                             </Flex>
                         </Text>
