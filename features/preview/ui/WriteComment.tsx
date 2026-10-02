@@ -4,48 +4,19 @@ import {Send, Smile, Type, X} from "lucide-react";
 import {useLayoutEffect, useRef, useState} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
-import {
-    captchaImage,
-    normalizeTxtcon,
-    resultMessage,
-    submitComment,
-    type SubmitResult,
-    submitTxtcon,
-    TXTCON_BACKGROUNDS,
-    TXTCON_COLORS
-} from "@/core/preview/request";
+import {captchaImage, normalizeTxtcon, TXTCON_BACKGROUNDS, TXTCON_COLORS} from "@/core/preview/request";
 import {postKey} from "@/core/preview/cache";
 import type {DcinsideDccon} from "@/core/preview/types";
-import {sendMessage} from "@/core/messaging/protocol";
 import {useUiStore} from "@/stores/ui";
 import {loggedInUserId} from "@/utils/user";
 
+import {postComment} from "../comment-submit";
 import {saveNonmember, savedNonmember} from "../nonmember";
 import {DcconPopup} from "./DcconPopup";
 import {NO_REPLY, usePreviewStore} from "./previewStore";
 
 /** 비회원 댓글 비밀번호 (영문 소문자·숫자 8자). */
 const randomPassword = (): string => Array.from(crypto.getRandomValues(new Uint8Array(8)), (byte) => (byte % 36).toString(36)).join("");
-
-// 'false||메시지' 형식이 아닌 실패 응답 코드 (디시 dccon.js·txtcon.js에서 옮김).
-const FAIL_MESSAGES: Record<string, string> = {
-    code_fail: "자동입력 방지 코드가 일치하지 않습니다.",
-    fail1: "닉네임과 비밀번호를 정확하게 입력해 주세요.",
-    form_error: "닉네임과 비밀번호를 정확하게 입력해 주세요.",
-    // 디시콘 댓글 (디시 dccon.js와 같은 문구).
-    not_buy: "구매내역이 존재하지 않는 디시콘입니다.",
-    expired: "사용기간이 만료된 디시콘입니다.",
-    unuseable: "해당 디시콘은 현재 사용 불가능합니다.",
-    not_exists: "잘못된 파일 경로 입니다.",
-    fail: "디시콘 입력에 실패하였습니다."
-};
-
-/**
- * 댓글이 올라갔는지. 디시 comment.js처럼 'false'가 아니면 성공(새 댓글 번호)으로 보되, 확실한 실패는 거른다:
- * 실패 코드, 빈 응답, HTML 페이지(로그인이 풀렸거나 오류 페이지). 성공으로 잘못 보면 입력한 글을 지워 버린다.
- */
-const isCommentPosted = ({result}: SubmitResult): boolean =>
-    result !== "false" && result !== "" && !result.trimStart().startsWith("<") && !Object.hasOwn(FAIL_MESSAGES, result);
 
 /** 글자콘 색 스와치. */
 const Swatch = ({color, selected, label, onClick}: {
@@ -171,31 +142,9 @@ export const WriteComment = () => {
                 }
 
                 const user = {name: login ? "" : nick, pw: login ? undefined : password};
-                const send = (token?: string): Promise<SubmitResult> =>
-                    txtcon
-                        ? submitTxtcon(preData, post, user, text, txtconColors, st.reply.commentNo, st.reply.replyNo, code, token)
-                        : submitComment(
-                            preData,
-                            post,
-                            user,
-                            useDccon ? dccons : text,
-                            st.reply.commentNo,
-                            st.reply.replyNo,
-                            useDccon && bigDccon,
-                            code,
-                            token
-                        );
+                const outcome = await postComment(preData, post, user, {text, dccons, bigDccon, txtcon: txtcon ? txtconColors : undefined}, st.reply, code);
 
-                // 처음엔 토큰 없이 보내고, 'false||captcha||v3'가 오면 reCAPTCHA v3 토큰을 붙여 한 번 더 보낸다
-                // (디시 comment.js·dccon.js·txtcon.js와 같음).
-                let response = await send();
-                if (response.message === "captcha" && response.detail === "v3") {
-                    const token = await sendMessage("refresher:grecaptchaToken", txtcon || useDccon ? "insert_icon" : "comment_submit").catch(() => undefined);
-                    if (token) response = await send(token);
-                }
-
-                // 성공 응답: 댓글은 새 댓글 번호, 디시콘·글자콘은 'ok'.
-                if (txtcon || useDccon ? response.result === "ok" : isCommentPosted(response)) {
+                if (outcome.ok) {
                     // 보내는 사이 더 쓴 글은 남긴다. 디시콘만 보냈으면 입력칸의 글은 보내지 않았으니 둔다.
                     if (!useDccon) {
                         if (textarea.current?.value === raw) textarea.current.value = "";
@@ -208,8 +157,7 @@ export const WriteComment = () => {
                     // 그새 다른 글로 넘어갔으면 답글 대상은 그 글 것이라 건드리지 않는다.
                     if (usePreviewStore.getState().signalId === signal) usePreviewStore.setState({reply: NO_REPLY});
                     refreshIfOpen();
-                } else if (response.message === "captcha") {
-                    // v2 체크박스를 요구하거나 v3 재전송도 막히면 원문 페이지에서만 풀 수 있다.
+                } else if (outcome.captcha) {
                     useUiStore.getState().showToast(
                         "자동입력 방지 확인이 필요합니다. 원문에서 작성해 주세요.",
                         "warning",
@@ -217,7 +165,7 @@ export const WriteComment = () => {
                         {label: "원문 열기", run: () => window.open(preData.link, "_blank", "noopener")}
                     );
                 } else {
-                    useUiStore.getState().showToast((response.result === "false" ? resultMessage(response) : FAIL_MESSAGES[response.result]) || "댓글을 작성하지 못했습니다.", "error");
+                    useUiStore.getState().showToast(outcome.message, "error");
                 }
             } catch (e) {
                 // 시간 초과 등으로 끊겨도 서버는 댓글을 올렸을 수 있다. 목록을 새로 받아 올라간 댓글이 보이게 해 다시 보내지 않게 한다. 입력한 글은 둔다.
