@@ -2,12 +2,11 @@ import {mkdtempSync, rmSync} from "node:fs";
 import {tmpdir} from "node:os";
 import path from "node:path";
 
-import {type BrowserContext, chromium, firefox, type Page, test as base, type Worker} from "@playwright/test";
+import {type BrowserContext, chromium, firefox, type Page, test as base} from "@playwright/test";
 import type {browser} from "wxt/browser";
 
 import {COMMENTS, commentsResponse, type FakeComment, type FakeRow, fakeComment, GIF, listPage, ROWS, viewPage} from "./dcinside";
-import {FIREFOX_EXTENSION_UUID, firefoxUserPrefs, freePort, installTemporaryAddon} from "./firefox";
-import {extensionUrl} from "./pages/extension";
+import {type FirefoxAddon, firefoxUserPrefs, freePort, installTemporaryAddon} from "./firefox";
 import {type ListPage, openListPage} from "./pages/list";
 
 /** 확장 페이지·서비스 워커 안(evaluate)의 chrome 전역. 테스트 파일은 확장 번들이 아니라 타입이 없다. */
@@ -16,16 +15,6 @@ declare const chrome: typeof browser;
 const pathToExtension = path.resolve(".output/chrome-mv3");
 const pathToFirefoxExtension = path.resolve(".output/firefox-mv2");
 
-/**
- * 빌드한 확장을 올린 브라우저 컨텍스트 (WXT의 Playwright 예제 wxt-dev/examples의 playwright-e2e-testing과 같은 방식).
- * - 확장은 영속 컨텍스트에서만 올라간다. headless도 크로미엄 본체(channel: chromium)여야 확장이 돈다 (headless shell은 확장을 못 올린다).
- *   PLAYWRIGHT_CHROMIUM에 실행 파일을 주면 그것을 쓴다 (playwright install 없이 미리 설치된 크로미엄으로 돌릴 때).
- * - 파이어폭스(firefox 프로젝트)는 .output/firefox-mv2를 원격 디버깅 서버로 임시 설치한다 (e2e/firefox.ts).
- *   배경 페이지에 닿을 수 없어 저장소는 확장 페이지(popup.html)를 하나 열어 그 안에서 읽고 쓴다.
- * - dcinside.com 주소는 모두 e2e/dcinside.ts의 가짜 페이지로 응답한다. 디시에 요청을 보내지 않는다.
- * - IP DB 서버(dcrefresher.green1052.com)는 끊는다.
- * - errors: 페이지 오류와 console.error를 모은다. 테스트 끝에 비어 있어야 한다.
- */
 /** 확장 저장소. 디시 페이지(page.evaluate)에서는 chrome.storage에 닿지 않으므로 배경(서비스 워커)에서 읽고 쓴다. */
 export interface ExtensionStorage {
     set(items: Record<string, unknown>): Promise<void>;
@@ -48,7 +37,7 @@ export interface FakeSite {
     submitted: { path: string; body: URLSearchParams }[];
 }
 
-/** 쓰기 요청 중 가짜 디시가 받아 주는 것. 나머지 POST는 500으로 실패시킨다. */
+/** 댓글 작성(comment_submit)에 디시처럼 새 댓글 번호를 돌려주고 댓글 목록에 넣는다. */
 const acceptComment = (site: FakeSite, body: URLSearchParams): string => {
     const no = Math.max(0, ...site.comments.map((comment) => Number(comment.no))) + 1;
     const parent = body.get("c_no");
@@ -56,21 +45,11 @@ const acceptComment = (site: FakeSite, body: URLSearchParams): string => {
     return String(no);
 };
 
-/** 배경 스크립트. MV3는 서비스 워커, MV2는 배경 페이지다. */
-type Background = Worker | Page;
+/** 파이어폭스 컨텍스트에 설치한 부가 기능. 저장소는 이 연결로 배경 페이지에서 다룬다. */
+const firefoxAddons = new WeakMap<BrowserContext, FirefoxAddon>();
 
-/** 크로미엄의 배경 스크립트 (WXT 예제와 같다). */
-const chromiumBackground = async (context: BrowserContext): Promise<Background> => {
-    let background: Background | undefined;
-    if (pathToExtension.endsWith("-mv3")) {
-        [background] = context.serviceWorkers();
-        background ??= await context.waitForEvent("serviceworker");
-    } else {
-        [background] = context.backgroundPages();
-        background ??= await context.waitForEvent("backgroundpage");
-    }
-    return background;
-};
+/** 크로미엄의 배경 서비스 워커 (WXT 예제와 같다). */
+const serviceWorker = async (context: BrowserContext) => context.serviceWorkers()[0] ?? await context.waitForEvent("serviceworker");
 
 /** 디시에 보내도 되는 POST. 모두 읽기다 (댓글 목록, 갤로그 글/댓글 수, 디시콘 목록·정보). */
 const LIVE_READ_POSTS = /^\/(board\/comment\/$|api\/gallog_user_layer\/|dccon\/(lists|package_detail)$)/;
@@ -89,10 +68,20 @@ const routeLive = async (context: BrowserContext): Promise<void> => {
     });
 };
 
+/**
+ * 빌드한 확장을 올린 브라우저 컨텍스트 (WXT의 Playwright 예제 wxt-dev/examples의 playwright-e2e-testing과 같은 방식).
+ * - 확장은 영속 컨텍스트에서만 올라간다. headless도 크로미엄 본체(channel: chromium)여야 확장이 돈다 (headless shell은 확장을 못 올린다).
+ *   PLAYWRIGHT_CHROMIUM에 실행 파일을 주면 그것을 쓴다 (playwright install 없이 미리 설치된 크로미엄으로 돌릴 때).
+ * - 파이어폭스(firefox 프로젝트)는 .output/firefox-mv2를 원격 디버깅 서버로 임시 설치하고, 저장소는 그 연결로 배경 페이지에서 읽고 쓴다 (e2e/firefox.ts).
+ *   플레이라이트의 파이어폭스는 확장 페이지를 열지 못해 팝업·옵션 테스트는 크로미엄에서만 돈다 (playwright.config.ts).
+ * - dcinside.com 주소는 모두 e2e/dcinside.ts의 가짜 페이지로 응답하고 IP DB 서버(dcrefresher.green1052.com)는 끊는다.
+ *   live 프로젝트(e2e/live)만 실제 디시에 읽기 요청을 보낸다 (routeLive).
+ * - errors: 페이지 오류와 console.error를 모은다. 테스트 끝에 비어 있어야 한다.
+ */
 export const test = base.extend<{ live: boolean }>({
     /** 실제 디시에 요청하는지. live 프로젝트가 켠다 (playwright.config.ts). */
     live: [false, {option: true}]
-}).extend<{ site: FakeSite; context: BrowserContext; background: Background; extensionId: string; errors: string[]; storage: ExtensionStorage; listPage: ListPage }>({
+}).extend<{ site: FakeSite; context: BrowserContext; extensionId: string; errors: string[]; storage: ExtensionStorage; listPage: ListPage }>({
     // 테스트마다 기본 목록·댓글에서 시작한다. 배열은 복사해 테스트가 바꿔도 다른 테스트에 남지 않는다.
     site: async ({}, use) => {
         await use({rows: [...ROWS], comments: COMMENTS.map((comment) => ({...comment})), pageComments: [], submitted: []});
@@ -108,7 +97,7 @@ export const test = base.extend<{ live: boolean }>({
                 args: ["-start-debugger-server", String(port)],
                 firefoxUserPrefs: firefoxUserPrefs()
             });
-            await installTemporaryAddon(port, pathToFirefoxExtension);
+            firefoxAddons.set(context, await installTemporaryAddon(port, pathToFirefoxExtension));
         } else {
             context = await chromium.launchPersistentContext(profile, {
                 headless: true,
@@ -146,36 +135,29 @@ export const test = base.extend<{ live: boolean }>({
         if (!live) await context.route(/^https:\/\/dcrefresher\.green1052\.com\//, (route) => route.abort());
 
         await use(context);
+        firefoxAddons.get(context)?.close();
         await context.close();
         // 테스트마다 새 프로필을 만들므로 지운다. 두면 임시 폴더에 브라우저 프로필이 쌓인다.
         rmSync(profile, {recursive: true, force: true});
     },
 
-    background: async ({context, browserName}, use) => {
-        if (browserName === "firefox") {
-            // 배경 페이지 대신 확장 페이지 하나를 연다. 같은 확장 출처라 browser.storage에 닿는다.
-            const page = await context.newPage();
-            await page.goto(extensionUrl(FIREFOX_EXTENSION_UUID, "popup.html"));
-            await use(page);
-            return;
-        }
-        await use(await chromiumBackground(context));
-    },
-
     extensionId: async ({browserName, context}, use) => {
-        // 파이어폭스는 UUID를 고정해 두었다. 배경 대신 여는 페이지가 팝업 테스트의 활성 탭을 바꾸지 않게 background를 쓰지 않는다.
-        if (browserName === "firefox") await use(FIREFOX_EXTENSION_UUID);
-        else await use((await chromiumBackground(context)).url().split("/")[2]!);
+        if (browserName === "firefox") throw new Error("플레이라이트의 파이어폭스는 확장 페이지를 열지 못한다. 확장 페이지 테스트는 크로미엄에서만 돈다.");
+        await use((await serviceWorker(context)).url().split("/")[2]!);
     },
 
-    storage: async ({background}, use) => {
-        // Worker와 Page의 evaluate는 시그니처가 달라 합친 타입으로는 부를 수 없어 나눠 부른다.
-        const setItems = (items: Record<string, unknown>) => chrome.storage.local.set(items);
-        const getItem = (key: string) => chrome.storage.local.get(key);
-        const set = (items: Record<string, unknown>) => ("goto" in background ? background.evaluate(setItems, items) : background.evaluate(setItems, items));
+    storage: async ({browserName, context}, use) => {
+        const addon = firefoxAddons.get(context);
+        const worker = browserName === "firefox" ? undefined : await serviceWorker(context);
+        const set = async (items: Record<string, unknown>): Promise<void> => {
+            if (addon) await addon.evaluate(`browser.storage.local.set(${JSON.stringify(items)})`);
+            else await worker!.evaluate((items) => chrome.storage.local.set(items), items);
+        };
         await use({
             set,
-            get: async (key) => ("goto" in background ? await background.evaluate(getItem, key) : await background.evaluate(getItem, key))?.[key],
+            get: async (key) => (addon
+                ? addon.evaluate(`browser.storage.local.get(${JSON.stringify(key)}).then((items) => items[${JSON.stringify(key)}])`)
+                : (await worker!.evaluate((key) => chrome.storage.local.get(key), key))[key]),
             setModules: (enables) => set({"refresher:modules": enables}),
             setModuleSettings: (id, settings) => set({[`refresher:module:${id}:settings`]: settings})
         });

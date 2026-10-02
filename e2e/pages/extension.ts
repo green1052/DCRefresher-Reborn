@@ -1,6 +1,2 @@
-/**
- * 확장 페이지 주소. 크로미엄은 chrome-extension://<32자 id>, 파이어폭스는 moz-extension://<UUID>다 (e2e/firefox.ts).
- * extensionId 모양으로 가린다.
- */
-export const extensionUrl = (extensionId: string, file: string): string =>
-    `${extensionId.includes("-") ? "moz-extension" : "chrome-extension"}://${extensionId}/${file}`;
+/** 확장 페이지 주소. 확장 페이지는 크로미엄에서만 연다 (플레이라이트의 파이어폭스는 moz-extension:// 페이지로 이동하지 못한다). */
+export const extensionUrl = (extensionId: string, file: string): string => `chrome-extension://${extensionId}/${file}`;

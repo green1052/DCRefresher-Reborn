@@ -25,10 +25,11 @@ export default defineConfig<{ live: boolean }>({
             testIgnore: "live/**",
             use: {...devices["Desktop Chrome"], viewport: {width: 1280, height: 900}}
         },
-        // bun run build:firefox로 빌드한 .output/firefox-mv2를 올린다 (e2e/firefox.ts). bunx playwright install firefox가 필요하다
+        // bun run build:firefox로 빌드한 .output/firefox-mv2를 올린다 (e2e/firefox.ts). bunx playwright install firefox가 필요하다.
+        // 플레이라이트의 파이어폭스는 moz-extension:// 페이지로 이동하지 못해(page.goto가 끝나지 않는다) 팝업·옵션 테스트는 뺀다
         {
             name: "firefox",
-            testIgnore: "live/**",
+            testIgnore: ["live/**", "popup.spec.ts", "options.spec.ts"],
             use: {...devices["Desktop Firefox"], viewport: {width: 1280, height: 900}}
         },
         // 실제 디시. 네트워크·디시 상태에 따라 흔들릴 수 있어 한 번 더 돌린다. 갤러리는 DC_LIST_URL로 바꾼다 (기본 미니 갤러리 bjwg64).
