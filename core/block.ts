@@ -77,6 +77,17 @@ export const dcconCode = (element: HTMLElement): string | undefined => {
 };
 
 /**
+ * 차단 표시(data-blocked)로 가려진 요소인지. '가린 내용 보기'(data-block-revealed) 중이거나
+ * 흐림 차단을 흐림 풀기(data-blur-reveal)로 밝힌 동안은 가려지지 않은 것으로 본다.
+ * 미리보기의 큰 이미지(Frame)와 디시콘 정보 창(openDcconInfo)이 같은 기준을 쓴다.
+ */
+export const isBlockedHidden = (element: Element): boolean => {
+    const blocked = element.closest("[data-blocked]");
+    if (!blocked || element.closest("[data-block-revealed]")) return false;
+    return !(blocked.getAttribute("data-blocked") === "blur" && element.closest("[data-blur-reveal]"));
+};
+
+/**
  * blockingIn이 무언가를 돌려주는지만 본다. 목록 행·댓글마다 유형별로 불리므로 배열을 만들지 않는다.
  * 걸린 SAME/CONTAIN 항목이 하나라도 있으면 막히고, 없으면 NOT_* 허용 목록이 있는데 어느 것에도 맞지 않을 때 막힌다.
  * 맞은 항목(막은 SAME/CONTAIN, 허용한 NOT_*)은 모두 쓰였다고 적는다 (옵션의 오래 안 쓰인 항목 거르기).

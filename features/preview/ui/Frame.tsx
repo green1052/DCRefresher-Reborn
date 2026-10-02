@@ -5,7 +5,7 @@ import {type CSSProperties, Fragment, useEffect, useLayoutEffect, useRef, useSta
 
 import {overlay} from "@/components/overlay/shadow";
 import {focusedElement} from "@/components/useOpenerFocus";
-import {BLOCKED_TEXT} from "@/core/block";
+import {BLOCKED_TEXT, isBlockedHidden} from "@/core/block";
 import {dcinsideHref} from "@/core/http/urls";
 import {useModuleSettings} from "@/core/module/useModuleSettings";
 import {postKey as keyOfPost} from "@/core/preview/cache";
@@ -67,16 +67,10 @@ const RefreshButton = ({label, run}: { label: string; run: () => Promise<void> }
 
 /**
  * 크게 볼 수 있는 본문 이미지. 디시콘·가린 이미지(관리자 가림·blockImage)·깨진 이미지는 뺀다.
- * 차단으로 가린 본문 안의 이미지는 '가린 내용 보기' 중이거나 흐림이 풀려 있을 때(blurReveal)만 연다. openDcconInfo와 같은 기준.
+ * 차단으로 가린 본문 안의 이미지는 '가린 내용 보기' 중이거나 흐림이 풀려 있을 때(blurReveal)만 연다. openDcconInfo와 같은 기준(isBlockedHidden).
  */
 const isViewable = (image: HTMLImageElement): boolean =>
     image.complete && image.naturalWidth > 0 && !image.closest(".written_dccon, [data-block]") && !isBlockedHidden(image) && image.checkVisibility();
-
-const isBlockedHidden = (image: HTMLImageElement): boolean => {
-    const blocked = image.closest("[data-blocked]");
-    if (!blocked || image.closest("[data-block-revealed]")) return false;
-    return !(blocked.getAttribute("data-blocked") === "blur" && image.closest("[data-blur-reveal]"));
-};
 
 /** 휠 이벤트 사이가 이보다 벌어지면 새 동작으로 본다(ms). 관성 스크롤은 이보다 촘촘하게 이어진다. */
 const WHEEL_GESTURE_GAP = 250;
