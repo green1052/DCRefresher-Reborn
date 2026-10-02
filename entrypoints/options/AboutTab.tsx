@@ -11,7 +11,7 @@ import {useMemosStore} from "@/stores/memos";
 import {useModulesStore} from "@/stores/modules";
 
 import {byteSize, formatBytes, formatTime, Section} from "./Layout";
-import {notify, useOptionsStore} from "./optionsStore";
+import {notify} from "./optionsStore";
 
 const REPO = "https://github.com/green1052/DCRefresher-Reborn";
 
@@ -81,8 +81,7 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
                     <Box flexGrow="1">
                         <Flex align="center" gap="2">
                             <Heading as="h2" size="5">DCRefresher Reborn</Heading>
-                            {/* 연달아 5번 누르면 개발자 탭이 열린다. */}
-                            <Badge variant="soft" style={{userSelect: "none"}} onClick={() => useOptionsStore.getState().unlockDev()}>v{version}</Badge>
+                            <Badge variant="soft">v{version}</Badge>
                         </Flex>
                         <Text as="p" size="2" color="gray">디시인사이드 개선 확장 프로그램</Text>
                     </Box>

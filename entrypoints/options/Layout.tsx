@@ -63,7 +63,7 @@ export const Section = ({title, desc, actions, children}: {
     </Card>
 );
 
-export const Empty = ({children}: { children: ReactNode }) => (
+const Empty = ({children}: { children: ReactNode }) => (
     <Box py="6">
         <Text as="p" size="2" color="gray" align="center">
             {children}

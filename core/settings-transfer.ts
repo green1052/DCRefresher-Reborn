@@ -4,7 +4,6 @@
  */
 import {isBackupTarget, readBackupTargets} from "@/core/backup";
 import {MIGRATED_MODULES, migrateModuleSettings} from "@/core/migrate-settings";
-import {migrateV5} from "@/core/migrate-v5";
 import {BLOCK_DEFAULTS_KEY, BLOCK_TYPES, blockListKey, isBlockListKey, MODULES_KEY, moduleSettingsKey, rawKey, settingsKeyModule} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {blockKey, normalizeBlockList, normalizeDefaults} from "@/stores/blocks";
@@ -37,7 +36,7 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
     // 아래에서 쓰는 이전 값(기본 차단 모드·설정 객체·지울 키·되돌릴 키)은 모두 백업 대상 키다.
     const previous = await readBackupTargets();
     // 설정 키가 아닌 값(차단/메모 내보내기의 "NICK" 등)은 저장하지 않는다.
-    const next = Object.fromEntries(Object.entries(migrateV5(data)).filter(([key]) => key.startsWith("refresher:") && isBackupTarget(key)));
+    const next = Object.fromEntries(Object.entries(data).filter(([key]) => key.startsWith("refresher:") && isBackupTarget(key)));
     // 6.0.x 백업의 옛 설정('IP 정보 표시' 끔 등)을 새 설정으로 옮긴다. 옮기지 않으면 옵션을 열 때 없는 설정으로 지워진다.
     for (const id of MIGRATED_MODULES) {
         const key = rawKey(moduleSettingsKey(id));
@@ -63,7 +62,7 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
             if (isMapKey(key) && isRecord(old) && isRecord(value)) next[key] = {...old, ...value};
         }
     }
-    // 거르고 나서 남은 키가 없으면(옛 백업 키가 migrateV5에서 전부 빠졌거나 가져온 JSON에 기본 차단 모드만 든 경우 등)
+    // 거르고 나서 남은 키가 없으면(가져온 JSON에 기본 차단 모드만 든 경우 등)
     // 복원은 모든 설정을 지우고 가져오기는 아무것도 쓰지 않으므로 실패로 알린다. 설정을 비우는 것은 초기화({})만 허용한다.
     if (Object.keys(data).length > 0 && Object.keys(next).length === 0) throw new Error("쓸 수 있는 설정이 없습니다.");
     const removed = mode === "replace" ? Object.keys(previous).filter((key) => isBackupTarget(key) && !(key in next)) : [];
@@ -85,12 +84,11 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
  * 차단 목록은 백업에만 있는 항목(내용+갤러리)을 뒤에 붙이고, 메모·설정 객체는 백업에만 있는 키를 더한다. 그 밖의 값은 지금 없을 때만 백업 값을 쓴다.
  */
 export const mergeBackup = (current: Record<string, unknown>, backup: Record<string, unknown>): Record<string, unknown> => {
-    const migrated = migrateV5(backup);
     // 모드 없는 차단 항목은 유형의 기본 모드를 따른다. 기본 모드는 이 기기 것을 남기고, 백업의 기본 모드가 다른 유형은
     // 백업에서 온 항목에 그 모드를 적어 둔다. 어느 한쪽 기본 모드만 남으면 다른 쪽 항목의 검사 방식이 바뀐다('ㅋ'이 포함 검사가 되는 등).
     const localDefaults = normalizeDefaults(current[DEFAULTS_KEY]);
-    const backupDefaults = normalizeDefaults(migrated[DEFAULTS_KEY]);
-    const merged = Object.fromEntries(Object.entries(migrated).map(([key, value]) => {
+    const backupDefaults = normalizeDefaults(backup[DEFAULTS_KEY]);
+    const merged = Object.fromEntries(Object.entries(backup).map(([key, value]) => {
         const local = current[key];
         if (isBlockListKey(key)) {
             const type = BLOCK_LIST_TYPES.get(key);

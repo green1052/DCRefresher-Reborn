@@ -214,7 +214,7 @@ export default defineModule({
         // await 뒤마다 확인해, 그사이 모듈이 꺼졌으면 revoke가 지운 배지·글댓비를 다시 그리지 않는다.
         const {signal} = ctx;
 
-        // 글댓비 캐시. 다른 탭의 쓰기와 개발자 탭의 캐시 비우기도 watch로 받는다. moduleDataStorage 키라 백업·내보내기에서 빠진다.
+        // 글댓비 캐시. 다른 탭의 쓰기도 watch로 받는다. moduleDataStorage 키라 백업·내보내기에서 빠진다.
         // setup에서 만든다: defineItem은 만드는 순간 값을 읽으므로, 모듈 scope에 두면 features를 불러오는 모든 페이지·팝업·옵션이 이 캐시를 읽는다.
         const ratioStorage = moduleDataStorage<RatioData>("userinfo", {});
 

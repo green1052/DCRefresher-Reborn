@@ -1,5 +1,5 @@
 import {Box, Button, Flex, Heading, Separator, Text} from "@radix-ui/themes";
-import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings, Wrench} from "lucide-react";
+import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings} from "lucide-react";
 import {lazy, Suspense, useEffect, useState, useSyncExternalStore} from "react";
 
 import {Notice} from "@/components/ConfirmDialog";
@@ -15,16 +15,13 @@ import {MemoTab} from "./MemoTab";
 import {useOptionsStore} from "./optionsStore";
 import {ShortcutTab} from "./ShortcutTab";
 
-// 개발자 탭과 디시콘 비는 드물게 열리므로 옵션 페이지를 열 때 같이 불러오지 않는다(개발자 탭은 IP/밴 DB 원문도 읽는다).
-const DevTab = lazy(() => import("./DevTab").then(({DevTab}) => ({default: DevTab})));
+// 디시콘 비는 드물게 열리므로 옵션 페이지를 열 때 같이 불러오지 않는다.
 const DcconRain = lazy(() => import("./DcconRain").then(({DcconRain}) => ({default: DcconRain})));
 
 interface TabDef {
     id: string;
     label: string;
     icon: LucideIcon;
-    /** 개발자 모드에서만 보임. */
-    dev?: boolean;
     content: () => React.ReactNode;
 }
 
@@ -34,8 +31,7 @@ const TABS: TabDef[] = [
     {id: "memo", label: "메모", icon: NotebookPen, content: () => <MemoTab/>},
     {id: "shortcut", label: "단축키", icon: Keyboard, content: () => <ShortcutTab/>},
     {id: "data", label: "데이터", icon: Database, content: () => <DataTab/>},
-    {id: "about", label: "정보", icon: Info, content: () => <AboutTab logo={LOGO_URL} version={VERSION}/>},
-    {id: "dev", label: "개발자", icon: Wrench, dev: true, content: () => <DevTab/>}
+    {id: "about", label: "정보", icon: Info, content: () => <AboutTab logo={LOGO_URL} version={VERSION}/>}
 ];
 
 const LOGO_URL = browser.runtime.getURL("/icons/128.png");
@@ -111,11 +107,9 @@ const Sidebar = ({tabs, tab, onSelect}: {
 
 export function App() {
     const tab = useSyncExternalStore(subscribeHash, readHash);
-    const devMode = useOptionsStore((state) => state.devMode);
     const rain = useOptionsStore((state) => state.rain);
     const notice = useOptionsStore((state) => state.notice);
-    const tabs = TABS.filter((item) => !item.dev || devMode);
-    const current = tabs.find((item) => item.id === tab) ?? tabs[0]!;
+    const current = TABS.find((item) => item.id === tab) ?? TABS[0]!;
     const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
 
     useEffect(() => {
@@ -135,7 +129,7 @@ export function App() {
 
     return (
         <Flex direction={{initial: "column", md: "row"}} minHeight="100vh">
-            <Sidebar tabs={tabs} tab={current.id} onSelect={(id) => (location.hash = id)}/>
+            <Sidebar tabs={TABS} tab={current.id} onSelect={(id) => (location.hash = id)}/>
             {/* 누를 때마다 새로 마운트한다. React Compiler가 Math.random으로 그린 결과를 기억해 같은 모양이 반복되기 때문이다. */}
             {rain > 0 && <Suspense><DcconRain key={rain}/></Suspense>}
             <Notice message={notice} onClose={() => useOptionsStore.setState({notice: null})}/>

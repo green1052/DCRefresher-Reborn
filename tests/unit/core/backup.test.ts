@@ -49,7 +49,6 @@ describe("runBackup / readCloudBackup", () => {
         const status = await readCloudBackupStatus();
         expect(status.manual?.createdAt).toBe((sync.backup as { createdAt: number }).createdAt);
         expect(status.auto).toBeUndefined();
-        expect(status.legacy).toBe(false);
 
         const backup = await readCloudBackup("manual");
         expect(backup?.data).toEqual(await collectLocalData());
@@ -74,7 +73,7 @@ describe("runBackup / readCloudBackup", () => {
         expect(second["autoBackup:1"]).toBeUndefined();
     });
 
-    it("조각이 손상되면 던지고, v5 방식 백업은 수동 칸으로 읽는다", async () => {
+    it("조각이 손상되면 던지고, v5 방식 백업은 읽지 않는다", async () => {
         await fakeBrowser.storage.local.set(local);
         await runBackup("manual");
         await fakeBrowser.storage.sync.set({"backup:0": "AAAA"});
@@ -86,8 +85,7 @@ describe("runBackup / readCloudBackup", () => {
 
         fakeBrowser.reset();
         await fakeBrowser.storage.sync.set({"refresher:modules": {block: false}, "refresher:db:ip": "big"});
-        expect(await readCloudBackup("manual")).toEqual({data: {"refresher:modules": {block: false}}});
-        expect((await readCloudBackupStatus()).legacy).toBe(true);
+        expect(await readCloudBackup("manual")).toBeNull();
     });
 });
 

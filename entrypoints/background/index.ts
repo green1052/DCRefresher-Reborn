@@ -3,7 +3,6 @@ import {storage} from "wxt/utils/storage";
 import {http} from "@/core/http/client";
 import {postSearchUrl} from "@/core/http/urls";
 import {migrateSettingsStorage} from "@/core/migrate-settings";
-import {migrateV5Storage} from "@/core/migrate-v5";
 import {onMessage, sendMessage} from "@/core/messaging/protocol";
 import {type BackgroundModule, startBackgroundModules} from "@/core/module/background";
 import {dbStorage} from "@/core/storage/items";
@@ -45,12 +44,9 @@ export default defineBackground(() => {
 
     const updateDatabase = startDatabaseUpdates();
 
-    browser.runtime.onInstalled.addListener(async ({reason, previousVersion}) => {
-        // v5에서 업데이트한 경우만 설정을 v6 형식으로 옮긴다(한시적). 저장소 전체를 읽으므로 다른 경우는 건너뛴다.
-        // 6.0.2 파이어폭스는 배경이 불러오자마자 멈춰, v5에서 곧바로 6.0.2로 온 사용자는 옮기기를 건너뛰었다 (v5 키가 없으면 바로 끝난다).
+    browser.runtime.onInstalled.addListener(async ({reason}) => {
         // 모듈 맞추기는 옮긴 설정을 보도록 그 뒤에 하고, 옮기기가 실패해도 DB 갱신까지 이어서 한다.
         if (reason === "update") {
-            if (previousVersion?.startsWith("5.") || previousVersion === "6.0.2") await migrateV5Storage().catch(console.error);
             await migrateSettingsStorage().catch(console.error);
             // 비회원 닉네임·비밀번호는 이제 디시 localStorage에 둔다. 예전 버전이 확장 저장소에 남긴 평문 비밀번호를 지운다.
             await storage.removeItem("local:refresher:nonmember").catch(console.error);

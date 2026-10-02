@@ -27,7 +27,7 @@ export function DataTab() {
     const {lastUpdate} = useStorageItem(dbStorage.meta);
     const backupError = useStorageItem(backupStorage.error);
     const autoBackup = useStorageItem(backupStorage.auto);
-    const [cloud, setCloud] = useState<CloudBackupStatus>({legacy: false, used: 0});
+    const [cloud, setCloud] = useState<CloudBackupStatus>({used: 0});
     const [restoreOpen, setRestoreOpen] = useState(false);
     const [restoreMode, setRestoreMode] = useState<RestoreMode>("replace");
     const [loading, setLoading] = useState(false);
@@ -85,7 +85,7 @@ export function DataTab() {
 
             const data = mode === "merge" ? mergeBackup(await readBackupTargets(), backup.data) : backup.data;
             await writeSettings(data, mode);
-            const what = backup.createdAt ? `${formatTime(backup.createdAt)} 백업을` : "데이터를";
+            const what = `${formatTime(backup.createdAt)} 백업을`;
             return `${what} ${mode === "merge" ? "합쳤습니다" : "복원했습니다"}. 새 탭에서 디시인사이드를 열어 주세요.`;
         }, "복원하지 못했습니다.");
 
@@ -188,7 +188,7 @@ export function DataTab() {
                         <Dialog.Description size="2" mb="3">{RESTORE_DESCRIPTIONS[restoreMode]}</Dialog.Description>
                         <Flex direction="column" gap="2">
                             {([
-                                ["manual", "수동 백업", cloud.manual ? formatTime(cloud.manual.createdAt) : cloud.legacy ? "예전 방식 백업" : undefined],
+                                ["manual", "수동 백업", cloud.manual ? formatTime(cloud.manual.createdAt) : undefined],
                                 ["auto", "자동 백업", cloud.auto ? formatTime(cloud.auto.createdAt) : undefined]
                             ] as const).map(([slot, label, time]) => (
                                 <Button key={slot} variant="soft" size="3" disabled={!time} onClick={() => void recoverCloud(slot, restoreMode)}

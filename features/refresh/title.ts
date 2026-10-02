@@ -18,7 +18,7 @@ export const setTitleCount = (count: number): void => {
 };
 
 /** 사용자가 이 탭을 보고 있는지. 다른 창을 보는 동안(창은 보이지만 포커스가 없다)도 안 보는 것으로 친다. */
-export const isWatching = (): boolean => !document.hidden && document.hasFocus();
+const isWatching = (): boolean => !document.hidden && document.hasFocus();
 
 /**
  * 이 탭을 보지 않는 동안 들어온 새 글 수를 탭 제목에 붙인다. 탭으로 돌아오면(창 포커스·탭 표시) 지운다.

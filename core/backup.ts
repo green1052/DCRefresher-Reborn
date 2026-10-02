@@ -6,7 +6,6 @@
  * 조각 수와 해시를 담은 <칸> 키와 함께 set 한 번으로 쓴다. 쓰기가 실패하면 이전 백업이 그대로 남는다.
  */
 
-import {isLeftoverKey} from "@/core/migrate-v5";
 import {backupStorage, isBlockListKey, isModuleDataKey} from "@/core/storage/items";
 import {friendlyMessage, messageOf} from "@/utils/error";
 import {isRecord} from "@/utils/record";
@@ -35,18 +34,26 @@ interface BackupMeta {
     createdAt: number;
 }
 
+/** 5.1.2 이전 버전이 남긴 키 (옛 DB, 모듈 데이터, v4 모듈·설정 스냅숏). v6는 읽지 않는다. */
+const isLeftoverKey = (key: string): boolean =>
+    key.startsWith("refresher.database.") ||
+    key.startsWith("refresher.module:") ||
+    key === "__REFRESHER_MODULES" ||
+    key === "__REFRESHER_SETTINGS" ||
+    key === "refresher:settings";
+
 /**
  * 백업·내보내기에서 빼는 로컬 키
  * - refresher:db:*: IP/밴 DB. 크고 다시 받으면 된다 (refresher:db는 6.0.0 개발판의 한 키짜리)
  * - refresher:backup:*: 백업 상태 자체
  * - refresher:module:*:data: 모듈 캐시(글댓비 등). 계속 불어난다.
- * - 5.1.2 이전 버전이 남긴 키(isLeftoverKey): 옛 DB가 수백 KB라 백업 한도를 넘긴다. v5에서 곧바로 온 경우만 업데이트 때 지워진다.
+ * - 5.1.2 이전 버전이 남긴 키(isLeftoverKey): 옛 DB가 수백 KB라 백업 한도를 넘긴다.
  */
 export const isBackupTarget = (key: string): boolean =>
     key !== "refresher:db" && !key.startsWith("refresher:db:") && !key.startsWith("refresher:backup:") && !isModuleDataKey(key) && !isLeftoverKey(key);
 
 /** storage.local의 키 목록. getKeys가 없는 브라우저는 값까지 다 읽어 키만 꺼낸다. */
-export const localKeys = async (): Promise<string[]> =>
+const localKeys = async (): Promise<string[]> =>
     typeof browser.storage.local.getKeys === "function" ? browser.storage.local.getKeys() : Object.keys(await browser.storage.local.get(null));
 
 /** 백업 대상 키(isBackupTarget)의 값만 읽는다. get(null)은 수백 KB짜리 IP·밴 DB까지 읽는다. */
@@ -82,7 +89,7 @@ const sha256 = async (bytes: Uint8Array<ArrayBuffer>): Promise<string> =>
 
 const isMeta = (value: unknown): value is BackupMeta => isRecord(value) && value.format === 1 && Number.isInteger(value.chunks);
 
-/** v5 방식 백업의 키. v5는 로컬 설정을 그대로 sync에 넣었으므로 어느 칸에도 속하지 않는 키로 가려낸다. */
+/** v5 방식 백업의 키. v5는 로컬 설정을 그대로 sync에 넣었으므로 어느 칸에도 속하지 않는 키로 가려낸다. 더는 읽지 않고 공간만 치운다. */
 const isLegacyKey = (key: string): boolean => !SLOTS.some((slot) => isSlotKey(slot, key));
 
 /** 설정을 클라우드의 한 칸에 백업. */
@@ -108,7 +115,7 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     };
 
     // 지울 키: 이 칸에서 이번에 쓰지 않는 조각(전보다 줄어든 몫). 다른 칸은 건드리지 않는다.
-    // v5 방식 백업은 수동 칸으로 복원되므로 수동 칸을 쓸 때만 치운다.
+    // v5 방식 백업은 수동 칸을 쓸 때만 치운다. 자동 백업이 사용자 모르게 지우지 않게 한다.
     const stale = Object.keys(all).filter((key) => !(key in items) && (isSlotKey(slot, key) || (slot === "manual" && isLegacyKey(key))));
 
     try {
@@ -122,7 +129,7 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
         const quota = /quota/i.test(message) && !message.includes("MAX_WRITE_OPERATIONS");
         const legacy = quota ? stale.filter(isLegacyKey) : [];
         if (legacy.length === 0) {
-            // 자동 칸은 v5 방식 백업을 치우지 않는다 (수동 칸으로 복원되는 데이터다). 그것이 원인일 수 있으니 해결 방법을 알린다.
+            // 자동 칸은 v5 방식 백업을 치우지 않는다. 그것이 원인일 수 있으니 해결 방법을 알린다.
             if (quota && Object.keys(all).some(isLegacyKey)) {
                 throw new Error(`${friendlyMessage(e)} 예전 방식(v5) 백업이 클라우드 공간을 차지하고 있습니다. 수동 백업을 한 번 하면 정리됩니다.`, {cause: e});
             }
@@ -142,8 +149,6 @@ export interface CloudBackupStatus {
     /** 칸마다 마지막 백업 시각과 크기(바이트). 백업이 없으면 없다. */
     manual?: { createdAt: number; size: number };
     auto?: { createdAt: number; size: number };
-    /** v5 방식 백업이 남아 있다. */
-    legacy: boolean;
     /** sync 전체 사용량 (바이트). 브라우저가 한도에 쓰는 getBytesInUse 값. */
     used: number;
 }
@@ -159,42 +164,34 @@ export const readCloudBackupStatus = async (): Promise<CloudBackupStatus> => {
     return {
         manual: slotStatus("manual"),
         auto: slotStatus("auto"),
-        legacy: Object.keys(all).some((key) => isLegacyKey(key) && isBackupTarget(key)),
         used
     };
 };
 
 interface CloudBackup {
     data: Record<string, unknown>;
-    /** v5 방식 백업이면 없음. */
-    createdAt?: number;
+    createdAt: number;
 }
 
-/** 한 칸의 백업을 읽는다. 없으면 null. 수동 칸은 v5 방식 백업도 읽는다. */
+/** 한 칸의 백업을 읽는다. 없으면 null. */
 export const readCloudBackup = async (slot: BackupSlot): Promise<CloudBackup | null> => {
     const all = await browser.storage.sync.get(null);
     const meta = all[SLOT_KEYS[slot]];
 
-    if (isMeta(meta)) {
-        const chunks = Array.from({length: meta.chunks}, (_, index) => all[chunkKey(slot, index)]);
-        if (chunks.some((chunk) => typeof chunk !== "string")) {
-            throw new Error("백업 조각이 빠져 있습니다. 다른 기기에서 동기화가 아직 끝나지 않았을 수 있습니다.");
-        }
+    if (!isMeta(meta)) return null;
 
-        const bytes = Uint8Array.fromBase64(chunks.join(""));
-        // 새 메타만 먼저 동기화되고 조각은 아직 이전 백업이어도 여기서 어긋난다.
-        if ((await sha256(bytes)) !== meta.hash) throw new Error("백업 데이터가 맞지 않습니다. 다른 기기에서 동기화가 아직 끝나지 않았을 수 있습니다.");
-
-        const data: unknown = JSON.parse(await gunzip(bytes));
-        if (!isRecord(data)) throw new Error("백업 데이터가 손상되었습니다.");
-        return {data, createdAt: meta.createdAt};
+    const chunks = Array.from({length: meta.chunks}, (_, index) => all[chunkKey(slot, index)]);
+    if (chunks.some((chunk) => typeof chunk !== "string")) {
+        throw new Error("백업 조각이 빠져 있습니다. 다른 기기에서 동기화가 아직 끝나지 않았을 수 있습니다.");
     }
 
-    if (slot !== "manual") return null;
+    const bytes = Uint8Array.fromBase64(chunks.join(""));
+    // 새 메타만 먼저 동기화되고 조각은 아직 이전 백업이어도 여기서 어긋난다.
+    if ((await sha256(bytes)) !== meta.hash) throw new Error("백업 데이터가 맞지 않습니다. 다른 기기에서 동기화가 아직 끝나지 않았을 수 있습니다.");
 
-    // v5 방식: 로컬 설정이 그대로 들어 있다. 메타보다 먼저 동기화된 새 방식 조각은 isLegacyKey가 걸러 낸다.
-    const legacy = Object.fromEntries(Object.entries(all).filter(([key]) => isLegacyKey(key) && isBackupTarget(key)));
-    return Object.keys(legacy).length > 0 ? {data: legacy} : null;
+    const data: unknown = JSON.parse(await gunzip(bytes));
+    if (!isRecord(data)) throw new Error("백업 데이터가 손상되었습니다.");
+    return {data, createdAt: meta.createdAt};
 };
 
 /** 백업하고 실패 이유를 남긴다 (성공하면 지운다). 남긴 이유는 데이터 탭에 그대로 보이므로 원문은 콘솔에만 둔다. */
