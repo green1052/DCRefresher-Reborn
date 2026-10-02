@@ -1,4 +1,4 @@
-import {csrfBody} from "@/utils/cookie";
+import {csrfBody} from "@/core/http/cookie";
 import {galltypeOf} from "@/core/http/urls";
 
 /** 디시 요청 본문. 모든 요청에 붙는 CSRF 토큰·갤러리 종류 뒤에 fields를 붙인다 (formBody 규칙). */

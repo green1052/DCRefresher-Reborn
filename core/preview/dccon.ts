@@ -1,6 +1,6 @@
 import {ajax} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
-import {csrfBody} from "@/utils/cookie";
+import {csrfBody} from "@/core/http/cookie";
 import {isRecord} from "@/utils/record";
 
 import type {DcinsideDcconPackage} from "./types";
