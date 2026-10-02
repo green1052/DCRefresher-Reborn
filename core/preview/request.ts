@@ -1,11 +1,4 @@
-/**
- * 게시글·댓글 받기와 추천. 나머지 디시 요청은 각 파일로 나뉘어 있고 이 파일에서 다시 내보낸다.
- * - manage.ts: 관리(끌올·삭제·차단·공지·개념글·댓글 삭제)와 캡챠
- * - submit.ts: 댓글·디시콘 작성
- * - txtcon.ts: 글자콘 입력 규칙과 작성
- * - dccon.ts: 디시콘 패키지 정보·추가
- * - response.ts: 요청 본문·응답 공통 도구
- */
+/** 게시글·댓글 받기와 추천. 나머지 디시 요청은 각 파일(manage·submit·txtcon·dccon)로 나뉘어 있고 여기서 다시 내보낸다. */
 import {ajax, http} from "@/core/http/client";
 import {galleryPath, urls} from "@/core/http/urls";
 
