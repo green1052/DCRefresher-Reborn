@@ -77,7 +77,11 @@ export const typedListSync = <T extends string, V>(options: {
     /** 저장하지 못했을 때 콘솔에 남길 문구. */
     failure: string;
     extra?: Partial<Record<StorageItemKey, (value: unknown) => void>>;
-    /** Web Locks 이름. 목록 쓰기는 읽고-고쳐-쓰기라 창(옵션·팝업·디시 탭) 여럿이 동시에 쓰면 앞의 쓰기를 덮는다. 같은 출처끼리만 세운다. */
+    /**
+     * Web Locks 이름. 목록 쓰기는 읽고-고쳐-쓰기라 여러 창이 동시에 쓰면 앞의 쓰기를 덮는다.
+     * 잠금은 같은 출처끼리만 서진다: 옵션↔팝업(확장 출처)끼리와 디시 탭끼리는 서진다.
+     * 디시 탭과 옵션·팝업 사이는 출처가 달라 서지 않는다 — 교차 출처 쓰기를 막으려면 배경을 거쳐야 한다.
+     */
     lock?: string;
 }) => {
     const {types, keyOf, normalize, get, set, failure, extra = {}, lock} = options;
@@ -102,7 +106,10 @@ export const typedListSync = <T extends string, V>(options: {
         await saveOrReload(enqueue(() => storage.setItem(keyOf(type), value)), sync.load, failure);
     };
 
-    /** 저장소의 현재 값에 change를 붙여 쓴다. 스토어에는 바로 반영해 두고, 잠금 안에서 다시 읽은 값에 붙인다. */
+    /**
+     * 저장소의 현재 값에 change를 붙여 쓴다. 스토어에는 바로 반영해 두고, 잠금 안에서 다시 읽은 값에 붙인다.
+     * change는 순수해야 한다 — 스토어 값과 저장소 값에 두 번 불리며, 결과는 저장소 쪽으로 맞춰진다.
+     */
     const update = async (type: T, change: (current: V) => V): Promise<void> => {
         set({...get(), [type]: change(get()[type])});
         await saveOrReload(enqueue(async () => {
