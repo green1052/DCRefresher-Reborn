@@ -5,8 +5,20 @@ import net from "node:net";
  * 파이어폭스의 원격 디버깅 서버(-start-debugger-server)에 붙어 임시 부가 기능으로 설치한다 (Remote Debugging Protocol).
  */
 
-/** 디버깅 서버를 켜고, 붙을 때 확인 창을 띄우지 않게 하는 설정. */
-export const firefoxUserPrefs = (): Record<string, string | number | boolean> => ({
+/**
+ * 디버깅 서버를 켜고, 붙을 때 확인 창을 띄우지 않게 하는 설정.
+ * offline이면 없는 프록시(127.0.0.1:9)로 보내 실제 네트워크 요청이 모두 바로 실패하게 한다. 페이지 요청은 context.route가 먼저 응답하므로 영향이 없다.
+ * context.route는 확장 배경 페이지의 요청을 가로채지 못해, 막지 않으면 설치 직후 배경이 실제 IP DB를 받아 와 가짜 목록의 유동 행에도 IP 배지가 붙는다.
+ */
+export const firefoxUserPrefs = (offline: boolean): Record<string, string | number | boolean> => ({
+    ...(offline && {
+        "network.proxy.type": 1,
+        "network.proxy.http": "127.0.0.1",
+        "network.proxy.http_port": 9,
+        "network.proxy.ssl": "127.0.0.1",
+        "network.proxy.ssl_port": 9,
+        "network.proxy.no_proxies_on": ""
+    }),
     "devtools.debugger.remote-enabled": true,
     "devtools.debugger.prompt-connection": false,
     "devtools.chrome.enabled": true,

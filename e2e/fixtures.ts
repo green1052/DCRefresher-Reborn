@@ -14,6 +14,8 @@ declare const chrome: typeof browser;
 
 const pathToExtension = path.resolve(".output/chrome-mv3");
 const pathToFirefoxExtension = path.resolve(".output/firefox-mv2");
+/** IP·밴 DB 서버. 가짜 디시로 돌릴 때는 끊는다. */
+const IP_DB_HOST = "dcrefresher.green1052.com";
 
 /** 확장 저장소. 디시 페이지(page.evaluate)에서는 chrome.storage에 닿지 않으므로 배경(서비스 워커)에서 읽고 쓴다. */
 interface ExtensionStorage {
@@ -62,7 +64,7 @@ const routeLive = async (context: BrowserContext): Promise<void> => {
     await context.route(/^https?:\/\//, (route) => {
         const url = new URL(route.request().url());
         const dcinside = /(^|\.)dcinside\.(com|co\.kr)$/.test(url.hostname);
-        if (!dcinside && url.hostname !== "dcrefresher.green1052.com") return route.abort();
+        if (!dcinside && url.hostname !== IP_DB_HOST) return route.abort();
         if (route.request().method() !== "GET" && !(dcinside && LIVE_READ_POSTS.test(url.pathname))) return route.abort();
         return route.continue();
     });
@@ -95,7 +97,7 @@ export const test = base.extend<{ live: boolean }>({
             context = await firefox.launchPersistentContext(profile, {
                 headless: true,
                 args: ["-start-debugger-server", String(port)],
-                firefoxUserPrefs: firefoxUserPrefs()
+                firefoxUserPrefs: firefoxUserPrefs(!live)
             });
             try {
                 firefoxAddons.set(context, await installTemporaryAddon(port, pathToFirefoxExtension));
@@ -138,7 +140,7 @@ export const test = base.extend<{ live: boolean }>({
             if (route.request().method() === "POST") return route.fulfill({status: 500, body: "unexpected write request"});
             return route.fulfill({contentType: "image/gif", body: GIF});
         });
-        if (!live) await context.route(/^https:\/\/dcrefresher\.green1052\.com\//, (route) => route.abort());
+        if (!live) await context.route((url) => url.hostname === IP_DB_HOST, (route) => route.abort());
 
         await use(context);
         firefoxAddons.get(context)?.close();
