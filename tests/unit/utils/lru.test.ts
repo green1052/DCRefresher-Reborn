@@ -1,12 +1,8 @@
-import {afterEach, describe, expect, it, vi} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 
 import {LruCache} from "@/utils/lru";
 
 describe("LruCache", () => {
-    afterEach(() => {
-        vi.useRealTimers();
-    });
-
     it("넘치면 가장 오래 안 쓴 항목을 버린다. 읽으면 최근으로 올라간다", () => {
         const cache = new LruCache<string, number>({max: 2});
         cache.set("a", 1).set("b", 2);

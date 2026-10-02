@@ -59,7 +59,6 @@ describe("createUnseenCounter", () => {
     });
     afterEach(() => {
         controller.abort();
-        vi.useRealTimers();
     });
 
     it("보지 않는 동안 들어온 글을 더해 붙이고, 창 포커스나 탭 표시로 돌아오면 지운다", () => {

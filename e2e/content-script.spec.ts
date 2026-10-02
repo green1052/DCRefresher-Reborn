@@ -1,5 +1,6 @@
 import {fakeComment, SERVICE_CODE_TAIL} from "./dcinside";
-import {expect, test} from "./fixtures";
+import {expect, type ExtensionStorage, test} from "./fixtures";
+import type {ListPage} from "./pages/list";
 
 test.describe("글 목록", () => {
     test("유저 정보 배지와 새로고침 버튼이 붙는다", async ({listPage}) => {
@@ -37,9 +38,7 @@ test.describe("글 목록", () => {
 
 test.describe("미리보기", () => {
     test("제목을 우클릭하면 창이 뜨고 본문·댓글을 그린다. 닫으면 주소가 돌아온다", async ({listPage}) => {
-        await listPage.titles().first().click({button: "right"});
-
-        const frame = listPage.frame();
+        const frame = await listPage.openPreview();
         await expect(frame.locator("h2")).toHaveText("[말머리] 글 3 제목");
         await expect(frame.locator(".refresher-preview-contents")).toContainText("본문 3 내용입니다.");
         await expect(frame.locator(".refresher-comment")).toHaveCount(2);
@@ -108,16 +107,14 @@ test.describe("미리보기 부가 기능", () => {
     });
 
     test("옵션에서 바꾼 설정이 열린 창에 바로 반영된다", async ({listPage, storage}) => {
-        await listPage.titles().first().click({button: "right"});
-        const frame = listPage.frame();
+        const frame = await listPage.openPreview();
         await expect(frame).toHaveAttribute("style", /--refresher-frame-width: 1200px/);
         await storage.setModuleSettings("preview", {previewWidth: 900});
         await expect(frame).toHaveAttribute("style", /--refresher-frame-width: 900px/);
     });
 
     test("본문 이미지를 누르면 크게 보고, Esc는 크게 보기만 닫는다", async ({listPage}) => {
-        await listPage.titles().first().click({button: "right"});
-        const frame = listPage.frame();
+        const frame = await listPage.openPreview();
         const image = frame.locator(".refresher-preview-contents img");
         await expect(image).toHaveJSProperty("complete", true);
         await image.click({force: true});
@@ -132,8 +129,7 @@ test.describe("미리보기 부가 기능", () => {
     });
 
     test("스크롤 끝에서 굴리면 안내만 띄우고, 새로 한 번 더 굴려야 다음 글로 넘어간다", async ({listPage}) => {
-        await listPage.titles().nth(1).click({button: "right"});
-        const frame = listPage.frame();
+        const frame = await listPage.openPreview(1);
         await expect(frame.getByText("글 2 제목").first()).toBeVisible();
 
         const {page} = listPage;
@@ -155,8 +151,7 @@ test.describe("미리보기 부가 기능", () => {
 
     test("답글이 둘 이상인 스레드는 접고 펼 수 있고, 접힌 답글은 보이지 않는다", async ({listPage, site}) => {
         site.comments.push(fakeComment(12, {c_no: "10", depth: 1, ip: "3.4", memo: "답글 둘"}));
-        await listPage.titles().first().click({button: "right"});
-        const frame = listPage.frame();
+        const frame = await listPage.openPreview();
         const reply = frame.getByText("답글 둘");
         await expect(reply).toBeVisible();
 
@@ -171,23 +166,22 @@ test.describe("미리보기 부가 기능", () => {
     });
 
     test("답글이 하나뿐인 스레드에는 접기 버튼이 없다", async ({listPage}) => {
-        await listPage.titles().first().click({button: "right"});
-        const frame = listPage.frame();
+        const frame = await listPage.openPreview();
         await expect(frame.getByText("답글", {exact: true})).toBeVisible();
         await expect(frame.getByRole("button", {name: /답글 (접기|펼치기)/})).toHaveCount(0);
     });
 
     test("댓글을 새로고침하면 새로 들어온 댓글만 강조한다", async ({listPage, site}) => {
-        await listPage.titles().first().click({button: "right"});
-        const comments = listPage.frame().locator(".refresher-comment");
+        const frame = await listPage.openPreview();
+        const comments = frame.locator(".refresher-comment");
+        const fresh = frame.locator(".refresher-comment[data-fresh]");
         await expect(comments).toHaveCount(2);
-        await expect(listPage.frame().locator(".refresher-comment[data-fresh]")).toHaveCount(0);
+        await expect(fresh).toHaveCount(0);
 
         site.comments.push(fakeComment(12, {user_id: "user2", name: "고닉", ip: "", memo: "새 댓글"}));
-        await listPage.frame().getByRole("button", {name: "댓글 새로고침"}).click();
+        await frame.getByRole("button", {name: "댓글 새로고침"}).click();
 
         await expect(comments).toHaveCount(3);
-        const fresh = listPage.frame().locator(".refresher-comment[data-fresh]");
         await expect(fresh).toHaveCount(1);
         await expect(fresh).toContainText("새 댓글");
     });
@@ -195,8 +189,7 @@ test.describe("미리보기 부가 기능", () => {
 
 test.describe("댓글 쓰기·지우기", () => {
     test("비회원 댓글은 폼에서 푼 service_code와 닉네임·비밀번호를 담아 보내고, 올라간 댓글을 다시 받는다", async ({listPage, site}) => {
-        await listPage.titles().first().click({button: "right"});
-        const frame = listPage.frame();
+        const frame = await listPage.openPreview();
         await frame.getByRole("textbox", {name: "댓글 입력"}).fill("미리보기에서 쓴 댓글");
         await frame.getByRole("button", {name: "작성"}).click();
 
@@ -214,8 +207,7 @@ test.describe("댓글 쓰기·지우기", () => {
     });
 
     test("답글은 스레드 첫 댓글 번호와 답할 댓글 번호를 같이 보낸다", async ({listPage, site}) => {
-        await listPage.titles().first().click({button: "right"});
-        const frame = listPage.frame();
+        const frame = await listPage.openPreview();
         // 답글(11)에 답한다. 부모는 스레드 첫 댓글(10)이다.
         await frame.locator(".refresher-comment").nth(1).getByRole("button", {name: "답글", exact: true}).click();
         await frame.getByRole("textbox", {name: "답글 입력"}).fill("답글에 단 답글");
@@ -229,8 +221,7 @@ test.describe("댓글 쓰기·지우기", () => {
     });
 
     test("유동 댓글은 비밀번호를 물어 지우고, 지운 뒤 목록을 다시 받는다", async ({listPage, site}) => {
-        await listPage.titles().first().click({button: "right"});
-        const frame = listPage.frame();
+        const frame = await listPage.openPreview();
         // 대화상자는 뜨는 동안 페이지를 멈추므로 누르기 전에 처리기를 건다.
         const dialogs: string[] = [];
         listPage.page.once("dialog", (dialog) => {
@@ -250,8 +241,7 @@ test.describe("댓글 쓰기·지우기", () => {
     });
 
     test("비밀번호 입력을 취소하면 아무것도 보내지 않는다", async ({listPage, site}) => {
-        await listPage.titles().first().click({button: "right"});
-        const frame = listPage.frame();
+        const frame = await listPage.openPreview();
         const dismissed = new Promise<void>((resolve) => listPage.page.once("dialog", (dialog) => void dialog.dismiss().then(resolve)));
         await frame.locator(".refresher-comment").nth(1).getByRole("button", {name: "댓글 삭제"}).click();
         await dismissed;
@@ -307,14 +297,18 @@ test.describe("자동 새로고침", () => {
 });
 
 test.describe("미니 미리보기", () => {
-    test("켜면 제목에 마우스를 올릴 때 카드가 뜨고, 떠나면 닫힌다", async ({listPage, storage}) => {
-        await storage.setModuleSettings("preview", {tooltipMode: true, tooltipDelay: 0});
-        const title = listPage.titles().first();
-        await expect.poll(async () => {
+    /** 미니 미리보기를 켜고 첫 제목에 카드가 뜰 때까지 올린다. 설정은 저장소 감시로 탭에 닿으므로 닿을 때까지 다시 올린다. */
+    const showFirstMini = async (listPage: ListPage, storage: ExtensionStorage) => {
+        await storage.setModuleSettings("preview", {tooltipMode: true});
+        await expect(async () => {
             await listPage.leave();
-            await title.hover();
-            return listPage.mini().count();
-        }).toBe(1);
+            await listPage.titles().first().hover();
+            await expect(listPage.mini()).toHaveCount(1, {timeout: 1000});
+        }).toPass();
+    };
+
+    test("켜면 제목에 마우스를 올릴 때 카드가 뜨고, 떠나면 닫힌다", async ({listPage, storage}) => {
+        await showFirstMini(listPage, storage);
         await expect(listPage.mini().locator(".refresher-mini-contents")).toContainText("본문 3 내용입니다.");
 
         await listPage.leave();
@@ -322,16 +316,23 @@ test.describe("미니 미리보기", () => {
     });
 
     test("다른 제목으로 옮기면 카드가 그 글로 바뀐다", async ({listPage, storage}) => {
-        await storage.setModuleSettings("preview", {tooltipMode: true, tooltipDelay: 0});
-        const contents = listPage.mini().locator(".refresher-mini-contents");
-        await expect.poll(async () => {
-            await listPage.leave();
-            await listPage.titles().nth(0).hover();
-            return contents.textContent();
-        }).toContain("본문 3 내용입니다.");
-
+        await showFirstMini(listPage, storage);
         await listPage.titles().nth(1).hover();
-        await expect(contents).toContainText("본문 2 내용입니다.");
+        await expect(listPage.mini().locator(".refresher-mini-contents")).toContainText("본문 2 내용입니다.");
+    });
+
+    test("목록을 훑고 지나간 제목은 글을 받지 않고, 멈춘 제목만 받는다", async ({listPage, storage}) => {
+        await showFirstMini(listPage, storage);
+        await listPage.leave();
+        const viewed: string[] = [];
+        listPage.page.on("request", (request) => {
+            const url = new URL(request.url());
+            if (url.pathname.startsWith("/board/view")) viewed.push(url.searchParams.get("no") ?? "");
+        });
+
+        for (const index of [0, 1, 2]) await listPage.titles().nth(index).hover();
+        await expect(listPage.mini().locator(".refresher-mini-contents")).toContainText("본문 1 내용입니다.");
+        expect(viewed).toEqual(["1"]);
     });
 });
 
@@ -426,8 +427,7 @@ test.describe("스텔스 모드", () => {
         const html = listPage.page.locator("html");
         await expect(html).toHaveClass(/refresherStealth/);
 
-        await listPage.titles().first().click({button: "right"});
-        const image = listPage.frame().locator(".refresher-preview-contents img");
+        const image = (await listPage.openPreview()).locator(".refresher-preview-contents img");
         await expect(image).toBeAttached();
         await expect(image).toBeHidden();
 

@@ -15,15 +15,11 @@ describe("initModulesStore", () => {
 
         await initModulesStore();
 
-        await expect.poll(async () => Object.keys(await fakeBrowser.storage.local.get(null)).sort()).toEqual([
-            "refresher:module:preview:data",
-            "refresher:module:preview:settings",
-            "refresher:modules"
-        ]);
-        expect(await fakeBrowser.storage.local.get(null)).toMatchObject({
+        // 정리가 끝날 때까지 기다린다.
+        await expect.poll(() => fakeBrowser.storage.local.get(null)).toEqual({
             "refresher:modules": {preview: true},
-            "refresher:module:preview:settings": {previewWidth: 900}
+            "refresher:module:preview:settings": {previewWidth: 900},
+            "refresher:module:preview:data": {read: ["g:1"]}
         });
-        expect((await fakeBrowser.storage.local.get("refresher:module:preview:settings"))["refresher:module:preview:settings"]).not.toHaveProperty("removedSetting");
     });
 });

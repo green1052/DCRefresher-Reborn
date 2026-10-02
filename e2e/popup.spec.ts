@@ -1,8 +1,8 @@
-import {expect, storedIn, test} from "./fixtures";
+import {expect, test} from "./fixtures";
 import {openPopup, openPopupFor} from "./pages/popup";
 
 test.describe("팝업", () => {
-    test("모듈 타일을 그리고 누르면 켜고 끈다", async ({page, extensionId}) => {
+    test("모듈 타일을 그리고 누르면 켜고 끈다", async ({page, extensionId, storage}) => {
         const popup = await openPopup(page, extensionId);
 
         expect(await popup.tiles().count()).toBeGreaterThanOrEqual(10);
@@ -12,7 +12,7 @@ test.describe("팝업", () => {
         await expect(manage).toHaveAttribute("aria-pressed", "false");
         await manage.click();
         await expect(manage).toHaveAttribute("aria-pressed", "true");
-        await expect.poll(() => storedIn(page, "refresher:modules")).toEqual({manage: true});
+        await expect.poll(() => storage.get("refresher:modules")).toEqual({manage: true});
     });
 
     test("디시 탭에서 열면 현재 페이지 토글이 나오고 탭의 모듈을 바로 조작한다", async ({context, extensionId, listPage}) => {

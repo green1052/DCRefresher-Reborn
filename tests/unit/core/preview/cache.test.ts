@@ -1,7 +1,8 @@
 import {describe, expect, it} from "vitest";
 
 import {getEntry, postKey, setEntry} from "@/core/preview/cache";
-import type {GalleryPreData} from "@/core/preview/types";
+
+import {testPreData} from "../../../helpers";
 
 describe("postKey", () => {
     it("갤러리 종류가 다르면 id와 번호가 같아도 다른 글이다", () => {
@@ -16,7 +17,7 @@ describe("postKey", () => {
 
 describe("setEntry", () => {
     it("기존 항목을 갈지 않고 준 필드만 덮어쓴다", () => {
-        const preData: GalleryPreData = {gallery: "cache", id: "1", link: "", notice: false, recommend: false, type: "icon_txt", commentCount: 0};
+        const preData = testPreData();
         setEntry(preData, {fetchedAt: 1});
         setEntry(preData, {comments: {list: [], allowReply: true}});
         expect(getEntry(preData)).toEqual({fetchedAt: 1, comments: {list: [], allowReply: true}});

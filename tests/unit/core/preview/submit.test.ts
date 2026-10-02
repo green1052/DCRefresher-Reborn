@@ -1,15 +1,14 @@
-import {afterEach, describe, expect, it, vi} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 
 import {ajax} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import {submitComment} from "@/core/preview/request";
-import type {DcinsideDccon, GalleryPreData, PostInfo} from "@/core/preview/types";
+import type {DcinsideDccon, PostInfo} from "@/core/preview/types";
 
 import {dValueFor} from "../../../../e2e/dcinside";
+import {testPreData} from "../../../helpers";
 
-const preData: GalleryPreData = {
-    gallery: "test", id: "7", link: "https://gall.dcinside.com/board/view/?id=test&no=7", notice: false, recommend: false, type: "icon_txt", commentCount: 0
-};
+const preData = testPreData({id: "7", link: "https://gall.dcinside.com/board/view/?id=test&no=7"});
 
 const post = (dValue: string | undefined): PostInfo => ({
     commentForm: {
@@ -29,8 +28,6 @@ const mockPost = (response: string) => {
     }) as never);
     return sent;
 };
-
-afterEach(() => vi.restoreAllMocks());
 
 describe("submitComment", () => {
     it("_d() 값을 풀어 service_code 끝 10자리를 갈아 끼우고, 폼 필드와 댓글 필드를 같이 보낸다", async () => {

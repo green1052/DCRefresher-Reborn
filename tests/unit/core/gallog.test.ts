@@ -1,4 +1,4 @@
-import {afterEach, describe, expect, it, vi} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 
 import {getGallogActivity} from "@/core/gallog";
 import {ajax} from "@/core/http/client";
@@ -13,8 +13,6 @@ const mockResponses = (...responses: (string | Error)[]) => {
     }) as never);
     return asked;
 };
-
-afterEach(() => vi.restoreAllMocks());
 
 // 캐시가 모듈 전역이라 테스트마다 다른 아이디를 쓴다.
 describe("getGallogActivity", () => {
@@ -31,8 +29,8 @@ describe("getGallogActivity", () => {
         ["형식이 다른 응답", "<html>"],
         ["빈 응답", ""],
         ["요청 실패", new Error("network")]
-    ])("%s은 undefined이고 캐시에 남기지 않아 다음에 다시 묻는다", async (_name, response) => {
-        const id = `b-${_name}`;
+    ])("%s은 undefined이고 캐시에 남기지 않아 다음에 다시 묻는다", async (name, response) => {
+        const id = `b-${name}`;
         const asked = mockResponses(response, "1,2");
         expect(await getGallogActivity(id)).toBeUndefined();
         expect(await getGallogActivity(id)).toEqual({article: 1, comment: 2});
@@ -62,6 +60,5 @@ describe("getGallogActivity", () => {
 
         expect(await getGallogActivity("c1")).toEqual({article: 5, comment: 6});
         expect(asked).toEqual(["c1", "c1"]);
-        vi.useRealTimers();
     });
 });

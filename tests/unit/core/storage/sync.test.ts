@@ -1,4 +1,4 @@
-import {afterEach, describe, expect, it, vi} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 import {storage} from "wxt/utils/storage";
 
 import {storageSync, watchStorage} from "@/core/storage/sync";
@@ -29,8 +29,6 @@ describe("storageSync", () => {
 });
 
 describe("storageSync 읽는 사이의 변경", () => {
-    afterEach(() => vi.restoreAllMocks());
-
     it("읽는 사이 다른 탭이 쓴 값을 읽은 옛 값으로 덮지 않는다", async () => {
         await storage.setItem("local:list", ["old"]);
         const getItems = storage.getItems.bind(storage);

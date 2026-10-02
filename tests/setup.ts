@@ -1,13 +1,19 @@
 /**
  * 단위 테스트 공통 준비. 파일마다 불린다 (vitest.config.ts의 setupFiles).
- * - 테스트마다 fake-browser(storage·alarms 등 인메모리 상태)를 비운다
+ * - 테스트마다 fake-browser(storage·alarms 등 인메모리 상태)를 비우고, 끝나면 실제 타이머로 돌린다
+ *   (목·스파이는 vitest.config.ts의 mockReset·restoreMocks가 테스트마다 되돌리므로 파일에서 따로 풀지 않는다)
  * - jsdom·Node에 없는 브라우저 API를 채운다. 확장이 도는 브라우저(Chrome·Firefox 140 이상)에는 다 있는 것들이다.
  */
-import {beforeEach} from "vitest";
+import {afterEach, beforeEach, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
 beforeEach(() => {
     fakeBrowser.reset();
+});
+
+// 가짜 타이머를 쓴 테스트가 중간에 실패해도 다음 테스트는 실제 타이머로 시작한다.
+afterEach(() => {
+    vi.useRealTimers();
 });
 
 // fake-browser의 storage.local.getKeys는 던지기만 한다 (core/backup, stores/modules가 쓴다). reset이 지우지 않는 같은 객체라 한 번만 바꾼다.

@@ -1,8 +1,8 @@
-import {expect, storedIn, test} from "./fixtures";
+import {expect, test} from "./fixtures";
 import {openOptions} from "./pages/options";
 
 test.describe("옵션 페이지", () => {
-    test("모듈 카드를 그리고 스위치로 켜고 끈 값이 저장소에 남는다", async ({page, extensionId}) => {
+    test("모듈 카드를 그리고 스위치로 켜고 끈 값이 저장소에 남는다", async ({page, extensionId, storage}) => {
         const options = await openOptions(page, extensionId, "general");
 
         await expect(options.card("글 목록 새로고침")).toBeVisible();
@@ -16,10 +16,10 @@ test.describe("옵션 페이지", () => {
         await expect(stealth).not.toBeChecked();
         await stealth.click();
         await expect(stealth).toBeChecked();
-        await expect.poll(() => storedIn(page, "refresher:modules")).toEqual({stealth: true});
+        await expect.poll(() => storage.get("refresher:modules")).toEqual({stealth: true});
     });
 
-    test("설정을 바꾸면 모듈 설정 키에 저장되고 되돌리기가 보인다", async ({page, extensionId}) => {
+    test("설정을 바꾸면 모듈 설정 키에 저장되고 되돌리기가 보인다", async ({page, extensionId, storage}) => {
         const options = await openOptions(page, extensionId, "general");
 
         const card = options.card("글 목록 새로고침");
@@ -27,10 +27,10 @@ test.describe("옵션 페이지", () => {
         await fade.click();
         await expect(fade).not.toBeChecked();
         await expect(card.getByRole("button", {name: "새 게시글 효과 기본값으로 되돌리기"})).toBeVisible();
-        await expect.poll(() => storedIn(page, "refresher:module:refresh:settings")).toEqual({fadeIn: false});
+        await expect.poll(() => storage.get("refresher:module:refresh:settings")).toEqual({fadeIn: false});
     });
 
-    test("차단 탭에서 항목을 추가하고 데이터 탭이 그려진다", async ({page, extensionId}) => {
+    test("차단 탭에서 항목을 추가하고 데이터 탭이 그려진다", async ({page, extensionId, storage}) => {
         const options = await openOptions(page, extensionId, "block");
         await expect(page.getByText("기본 차단 모드")).toBeVisible();
 
@@ -38,7 +38,7 @@ test.describe("옵션 페이지", () => {
         await page.getByPlaceholder("닉네임 값을 입력해 주세요").fill("차단닉");
         await page.getByRole("button", {name: "추가", exact: true}).last().click();
         await expect(page.locator("table").getByText("차단닉")).toBeVisible();
-        expect(await storedIn(page, "refresher:block:NICK")).toMatchObject([{content: "차단닉", isRegex: false}]);
+        expect(await storage.get("refresher:block:NICK")).toMatchObject([{content: "차단닉", isRegex: false}]);
 
         await options.goto("data");
         await expect(page.getByText("클라우드 백업")).toBeVisible();
@@ -70,8 +70,8 @@ test.describe("옵션 페이지", () => {
 
         await page.getByRole("button", {name: "보이는 1개 삭제"}).click();
         await page.getByRole("button", {name: "삭제", exact: true}).click();
-        await expect.poll(async () => ((await storedIn(page, "refresher:block:NICK")) as { id: string }[]).map(({id}) => id)).toEqual(["b", "c"]);
+        await expect.poll(async () => ((await storage.get("refresher:block:NICK")) as { id: string }[]).map(({id}) => id)).toEqual(["b", "c"]);
         // 지운 항목의 사용 기록도 정리된다.
-        await expect.poll(async () => Object.keys(((await storedIn(page, "refresher:usage")) as { block: object }).block).sort()).toEqual(["b", "c"]);
+        await expect.poll(async () => Object.keys(((await storage.get("refresher:usage")) as { block: object }).block).sort()).toEqual(["b", "c"]);
     });
 });

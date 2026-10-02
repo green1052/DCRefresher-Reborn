@@ -1,4 +1,4 @@
-import {afterEach, describe, expect, it, vi} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 
 import {DEFAULT_BADGE_VIEW, isFresh, isLowActivity, showsUid} from "@/stores/ui";
 
@@ -24,8 +24,6 @@ describe("isLowActivity", () => {
 });
 
 describe("isFresh", () => {
-    afterEach(() => vi.useRealTimers());
-
     it("1시간 안에 받은 값만 새 값이다", () => {
         vi.useFakeTimers({now: 10_000_000});
         expect(isFresh({date: 10_000_000 - 3600_000})).toBe(true);

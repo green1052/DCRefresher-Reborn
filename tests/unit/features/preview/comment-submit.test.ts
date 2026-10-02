@@ -1,9 +1,11 @@
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 
 import {sendMessage} from "@/core/messaging/protocol";
 import {submitComment, type SubmitResult, submitTxtcon} from "@/core/preview/request";
-import type {DcinsideDccon, GalleryPreData, PostInfo} from "@/core/preview/types";
+import type {DcinsideDccon, PostInfo} from "@/core/preview/types";
 import {isCommentPosted, postComment} from "@/features/preview/comment-submit";
+
+import {testPreData} from "../../../helpers";
 
 vi.mock("@/core/preview/request", async (original) => ({
     ...await original<typeof import("@/core/preview/request")>(),
@@ -12,7 +14,7 @@ vi.mock("@/core/preview/request", async (original) => ({
 }));
 vi.mock("@/core/messaging/protocol", () => ({sendMessage: vi.fn()}));
 
-const preData = {gallery: "test", id: "1", link: "https://gall.dcinside.com/board/view/?id=test&no=1"} as GalleryPreData;
+const preData = testPreData({link: "https://gall.dcinside.com/board/view/?id=test&no=1"});
 const post = {} as PostInfo;
 const user = {name: "ㅇㅇ", pw: "pw"};
 const reply = {commentNo: null, replyNo: null};
@@ -21,12 +23,6 @@ const result = (text: string): SubmitResult => {
     const [res, message, detail] = text.split("||");
     return {result: res!, message, detail};
 };
-
-beforeEach(() => {
-    vi.mocked(submitComment).mockReset();
-    vi.mocked(submitTxtcon).mockReset();
-    vi.mocked(sendMessage).mockReset();
-});
 
 describe("isCommentPosted", () => {
     it("새 댓글 번호만 성공이고, false·빈 응답·HTML·실패 코드는 실패다", () => {

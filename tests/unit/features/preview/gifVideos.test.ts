@@ -1,4 +1,4 @@
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 
 import {watchGifVideos} from "@/features/preview/ui/gifVideos";
 
@@ -8,7 +8,6 @@ describe("watchGifVideos", () => {
         // jsdom에는 영상 재생이 없다. 프레임을 그리지 않는 영상처럼 둔다.
         Object.assign(HTMLVideoElement.prototype, {requestVideoFrameCallback: () => 0, load: () => {}});
     });
-    afterEach(() => vi.useRealTimers());
 
     it("3초 안에 프레임을 그리지 못한 디시콘 영상은 gif로 바꾸고, 클래스·관리자 가림·차단 표시를 옮긴다", () => {
         const root = document.createElement("div");

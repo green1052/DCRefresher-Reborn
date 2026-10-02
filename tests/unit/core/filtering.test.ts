@@ -4,7 +4,6 @@ import {addFilter} from "@/core/filtering";
 
 import {tick} from "../../helpers";
 
-
 let removers: (() => void)[] = [];
 const watch = (scope: string) => {
     const seen: HTMLElement[] = [];

@@ -1,4 +1,4 @@
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
 import {isAnyBlocked} from "@/core/block";
@@ -13,13 +13,8 @@ vi.mock("@/core/messaging/protocol", () => ({sendMessage: vi.fn(async () => unde
 const KEY = "refresher:usage";
 
 beforeEach(() => {
-    vi.mocked(sendMessage).mockClear();
     vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout", "Date"]});
     vi.setSystemTime(new Date("2026-01-10T00:00:00Z"));
-});
-
-afterEach(() => {
-    vi.useRealTimers();
 });
 
 describe("markUsed", () => {

@@ -2,11 +2,11 @@ import {describe, expect, it, vi} from "vitest";
 
 import {ajax} from "@/core/http/client";
 import {fetchComments} from "@/core/preview/request";
-import type {DcinsideComment, GalleryPreData} from "@/core/preview/types";
+import type {DcinsideComment} from "@/core/preview/types";
 
-const preData = (commentCount: number): GalleryPreData => ({
-    gallery: "test", id: "1", link: "https://gall.dcinside.com/board/view/?id=test&no=1", notice: false, recommend: false, type: "icon_txt", commentCount
-});
+import {testPreData} from "../../../helpers";
+
+const preData = (commentCount: number) => testPreData({link: "https://gall.dcinside.com/board/view/?id=test&no=1", commentCount});
 
 const comment = (no: number): DcinsideComment => ({no: String(no), c_no: String(no), depth: 0, name: "ㅇㅇ", memo: "", is_delete: "0"}) as DcinsideComment;
 

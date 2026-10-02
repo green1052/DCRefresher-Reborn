@@ -14,12 +14,18 @@ export async function openListPage(page: Page, url = LIST_URL) {
     await page.waitForSelector("button[data-refresher-refresh]");
 
     const inOverlay = (selector: string) => overlay(page).locator(selector);
+    const titles = () => page.locator(".gall_list .ub-word");
 
     return {
         page,
         rows: () => page.locator(".gall_list tbody tr"),
         /** 제목 칸 (미리보기·미니 미리보기를 연다). */
-        titles: () => page.locator(".gall_list .ub-word"),
+        titles,
+        /** index번째 제목을 우클릭해 미리보기 창을 열고 창을 돌려준다. */
+        openPreview: async (index = 0) => {
+            await titles().nth(index).click({button: "right"});
+            return inOverlay(".refresher-frame");
+        },
         /** 댓글 수 링크 (댓글만 보기). */
         replyCounts: () => page.locator(".gall_list .reply_numbox"),
         /** 작성자 칸 (유저 버블). */

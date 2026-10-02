@@ -5,7 +5,6 @@ import {blockKey, composeExtra, initBlocksStore, normalizeBlockList, normalizeDe
 
 import {stored, tick} from "../../helpers";
 
-
 describe("normalizeBlockList", () => {
     it("모양이 맞는 항목만 남기고 id가 없거나 겹치면 새로 준다", () => {
         const list = normalizeBlockList([

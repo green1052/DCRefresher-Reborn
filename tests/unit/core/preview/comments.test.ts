@@ -2,13 +2,14 @@ import {beforeEach, describe, expect, it} from "vitest";
 
 import {getEntry, restoreArchive} from "@/core/preview/cache";
 import {prepareComments, processComments} from "@/core/preview/comments";
-import type {DcinsideComment, GalleryPreData} from "@/core/preview/types";
+import type {DcinsideComment} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 
-import {setBlockLists} from "../../../helpers";
+import {setBlockLists, testPreData} from "../../../helpers";
 
+// 보존 기록(캐시)이 모듈 전역이라 테스트마다 다른 글을 쓴다.
 let post = 0;
-const preDataOf = (): GalleryPreData => ({gallery: "g", id: String(++post), link: "", notice: false, recommend: false, type: "icon_txt", commentCount: 0});
+const preDataOf = () => testPreData({id: String(++post)});
 
 const comment = (no: string, memo: string, extra: Partial<DcinsideComment> = {}): DcinsideComment =>
     ({no, c_no: no, depth: 0, user_id: `u${no}`, name: `n${no}`, ip: "", memo, is_delete: "0", date_time: "", ...extra});

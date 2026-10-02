@@ -14,7 +14,6 @@ beforeEach(() => {
 
 afterEach(() => {
     controller.abort();
-    vi.useRealTimers();
 });
 
 describe("batchedSave", () => {

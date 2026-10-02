@@ -4,10 +4,10 @@ import {fakeBrowser} from "wxt/testing/fake-browser";
 import type {Ctx} from "@/features/preview/meta";
 import {createReadMarks} from "@/features/preview/read";
 
-import {stored} from "../../../helpers";
+import {stored, testPreData} from "../../../helpers";
 
 const KEY = "refresher:module:preview:data";
-const post = (id: string) => ({gallery: "test", id, link: "", notice: false, recommend: false, type: "icon_txt", commentCount: 0});
+const post = (id: string) => testPreData({id});
 
 let controller: AbortController;
 const stubCtx = (): Ctx => ({
@@ -25,7 +25,6 @@ beforeEach(() => {
 
 afterEach(() => {
     controller.abort();
-    vi.useRealTimers();
 });
 
 describe("createReadMarks", () => {

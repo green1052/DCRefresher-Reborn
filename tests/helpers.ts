@@ -5,6 +5,7 @@ import {Puzzle} from "lucide-react";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
 import type {AnyModule, ModuleDefinition, SettingSchema} from "@/core/module/types";
+import type {GalleryPreData} from "@/core/preview/types";
 import {DEFAULT_DETECT_MODE} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import {emptyEntries, useBlocksStore} from "@/stores/blocks";
@@ -23,6 +24,10 @@ export const setting = (schema: DistributiveOmit<SettingSchema, "name" | "desc">
 /** 테스트용 모듈. 이름·설명·아이콘은 채우고, 레지스트리가 받는 AnyModule로 돌려준다. */
 export const testModule = <Api>(definition: Omit<ModuleDefinition<Record<string, SettingSchema>, Api>, "name" | "description" | "icon">): AnyModule =>
     ({name: "", description: "", icon: Puzzle, ...definition}) as AnyModule;
+
+/** 목록 행에서 읽은 글 정보. 주지 않은 필드는 test 갤러리 1번 글이다. */
+export const testPreData = (fields: Partial<GalleryPreData> = {}): GalleryPreData =>
+    ({gallery: "test", id: "1", link: "", notice: false, recommend: false, type: "icon_txt", commentCount: 0, ...fields});
 
 /** 차단 스토어에 목록과 기본 모드를 직접 넣는다 (저장소를 거치지 않는다). 주지 않은 유형은 비우고 기본 모드는 기본값이다. */
 export const setBlockLists = (lists: Partial<Record<BlockType, BlockEntry[]>> = {}, defaults: Partial<Record<BlockType, DetectMode>> = {}): void =>

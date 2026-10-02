@@ -18,7 +18,7 @@ const pathToFirefoxExtension = path.resolve(".output/firefox-mv2");
 const IP_DB_HOST = "dcrefresher.green1052.com";
 
 /** 확장 저장소. 디시 페이지(page.evaluate)에서는 chrome.storage에 닿지 않으므로 배경(서비스 워커)에서 읽고 쓴다. */
-interface ExtensionStorage {
+export interface ExtensionStorage {
     set(items: Record<string, unknown>): Promise<void>;
     get(key: string): Promise<unknown>;
     /** 모듈 on/off (refresher:modules). */
@@ -194,8 +194,5 @@ export const test = base.extend<{ live: boolean }>({
         await use(await openListPage(page));
     }
 });
-
-/** 확장 페이지(옵션·팝업)에서 저장소 값을 읽는다. */
-export const storedIn = (page: Page, key: string): Promise<unknown> => page.evaluate(async (key) => (await chrome.storage.local.get(key))?.[key], key);
 
 export const expect = test.expect;
