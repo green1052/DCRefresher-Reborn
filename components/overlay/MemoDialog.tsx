@@ -3,6 +3,7 @@ import {Shuffle} from "lucide-react";
 import {useState} from "react";
 
 import {SubmitForm} from "@/components/ConfirmDialog";
+import {ColorInput} from "@/components/ColorInput";
 import {ModalDialog} from "@/components/ModalDialog";
 import {queryString} from "@/core/http/urls";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
@@ -99,12 +100,12 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                         autoFocus
                     >
                         <TextField.Slot>
-                            <input
-                                type="color"
+                            <ColorInput
+                                width={20}
+                                height={20}
                                 aria-label="색상"
                                 value={color}
                                 onChange={(ev) => edit({color: ev.target.value})}
-                                style={{width: 20, height: 20, padding: 0, border: 0, background: "none", cursor: "pointer"}}
                             />
                         </TextField.Slot>
                         <TextField.Slot side="right">

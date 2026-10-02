@@ -3,6 +3,7 @@ import {ClipboardCopy, Smartphone} from "lucide-react";
 import {useMemo, useState} from "react";
 
 import {DialogActions, SubmitForm} from "@/components/ConfirmDialog";
+import {ColorInput} from "@/components/ColorInput";
 import {RefresherSelect} from "@/components/RefresherSelect";
 import {ModalDialog} from "@/components/ModalDialog";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
@@ -128,19 +129,10 @@ const MemoFormDialog = ({
                             색상
                         </Text>
                         <Flex gap="2" align="center">
-                            <input
-                                type="color"
+                            <ColorInput
                                 aria-label="메모 색상"
                                 value={state.color}
                                 onChange={(ev) => setState((prev) => ({...prev, color: ev.target.value}))}
-                                style={{
-                                    width: 36,
-                                    height: 28,
-                                    padding: 0,
-                                    border: 0,
-                                    background: "none",
-                                    cursor: "pointer"
-                                }}
                             />
                             <Button type="button" size="2" variant="soft"
                                     onClick={() => setState((prev) => ({...prev, color: randomColor()}))}>
