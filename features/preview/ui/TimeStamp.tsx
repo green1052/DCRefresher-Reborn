@@ -1,3 +1,4 @@
+import {Text} from "@radix-ui/themes";
 import {useEffect, useState, useSyncExternalStore} from "react";
 
 import {parseDate} from "./previewStore";
@@ -70,9 +71,10 @@ export const TimeStamp = ({date, size = "1"}: { date: string; size?: "1" | "2" }
     const full = absoluteOf(parsed);
 
     return (
-        <button type="button" className={`refresher-text-button refresher-text-${size} refresher-text-gray`} title={full} style={{whiteSpace: "nowrap"}}
-                onClick={() => setAbsolute((x) => !x)}>
-            {Number.isNaN(parsed.getTime()) ? "이미 삭제됨" : absolute ? full : since}
-        </button>
+        <Text asChild size={size} color="gray" title={full} style={{whiteSpace: "nowrap"}}>
+            <button type="button" className="refresher-text-button" onClick={() => setAbsolute((x) => !x)}>
+                {Number.isNaN(parsed.getTime()) ? "이미 삭제됨" : absolute ? full : since}
+            </button>
+        </Text>
     );
 };

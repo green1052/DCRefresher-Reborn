@@ -134,49 +134,7 @@
     }
 }
 
-/*
- * 댓글마다 그리는 칸(Comment·UserCard·TimeStamp)은 Radix의 Box·Flex·Text 대신 아래 클래스로 꾸민다. 값은 Radix 토큰 그대로다.
- * Radix 레이아웃 컴포넌트는 그릴 때마다 prop을 클래스로 바꾸는데(extractProps), 댓글 백 개면 천 번이 넘어 미리보기를 열 때 20ms쯤 걸렸다.
- */
-.refresher-text-1 {
-    font-size: var(--font-size-1);
-    line-height: var(--line-height-1);
-    letter-spacing: var(--letter-spacing-1);
-}
-
-.refresher-text-2 {
-    font-size: var(--font-size-2);
-    line-height: var(--line-height-2);
-    letter-spacing: var(--letter-spacing-2);
-}
-
-.refresher-text-bold {
-    font-weight: var(--font-weight-bold);
-}
-
-.refresher-text-gray {
-    color: var(--gray-a11);
-}
-
-.refresher-text-blue {
-    color: var(--blue-a11);
-}
-
-.refresher-truncate {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* 가운데 맞춘 가로 줄 (작성자 칸). 줄어들 수 있어 긴 닉네임이 말줄임된다. */
-.refresher-inline {
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
-    min-width: 0;
-}
-
-/* 글자처럼 보이는 버튼 (Comment.tsx의 작성자 닉네임·작성 시각). :where로 명시도를 0으로 두어 위 글자 클래스의 크기·굵기·색이 이긴다. */
+/* 글자처럼 보이는 버튼 (Comment.tsx의 작성자 닉네임·작성 시각). :where로 명시도를 0으로 두어 Radix Text의 크기·굵기·색이 이긴다. */
 :where(.refresher-text-button) {
     padding: 0;
     border: 0;
@@ -451,30 +409,7 @@
     @include mixins.collapsible;
 }
 
-/* 댓글 머리: 왼쪽 작성자, 오른쪽 버튼·작성 시각. */
-.refresher-comment-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--space-2);
-}
-
-.refresher-comment-actions {
-    display: flex;
-    flex-shrink: 0;
-    align-items: center;
-    gap: var(--space-3);
-}
-
-.refresher-comment-voice,
-.refresher-comment > .refresher-comment-html {
-    margin-top: var(--space-1);
-}
-
 .refresher-comment {
-    box-sizing: border-box;
-    padding: var(--space-2) var(--space-6);
-
     // 화면 밖 댓글은 레이아웃·스타일 계산을 건너뛴다 — 댓글 수백 개인 글을 열 때 레이아웃이 크게 준다.
     // 트리 선(::before/::after)은 모두 칸 안에 그리므로 잘리지 않는다.
     // 아직 그리지 않은 댓글은 가장 흔한 한 줄 댓글 높이로 어림한다 (48px + 위아래 여백 16px = 64px).

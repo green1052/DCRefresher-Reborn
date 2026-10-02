@@ -1,3 +1,4 @@
+import {Flex, Text} from "@radix-ui/themes";
 import {Fragment, type MouseEvent, type ReactNode, useSyncExternalStore} from "react";
 import {useShallow} from "zustand/react/shallow";
 
@@ -8,9 +9,6 @@ import {type BadgeKey, isFresh, isLowActivity, showsUid, useUiStore} from "@/sto
 import {useGallogActivity} from "@/utils/gallogActivity";
 
 import {usePreviewStore} from "./previewStore";
-
-/** 작성자 옆 배지 (아이디·IP·메모·글댓비·갱차). 좁으면 말줄임된다. */
-const BADGE = "refresher-text-1 refresher-truncate";
 
 /**
  * 작성자 표시. 우클릭하거나 닉네임을 누르면(키보드 포함) 유저 버블을 연다.
@@ -50,33 +48,34 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
         openBubble(ev.clientX, ev.clientY);
     };
 
-    // 색을 정하지 않은 아이디·IP는 회색, IP 정보는 파란색이다.
-    const identityClass = BADGE + (uidColor ? "" : " refresher-text-gray");
+    const identityColor = uidColor ? undefined : "gray";
 
     const badges: Record<BadgeKey, ReactNode> = {
         UID: user.id
-            ? showsUid(view, user.image) && <span className={identityClass} style={{color: uidColor}}>({user.id})</span>
+            ? showsUid(view, user.image) && <Text size="1" color={identityColor} style={{color: uidColor}} truncate>({user.id})</Text>
             : ipInfo && passesIpFilter(ipInfo, view.ipFilter) &&
-            <span className={BADGE + (ipColor ? "" : " refresher-text-blue")} style={{color: ipColor}} title={ipInfo.title}>[{ipInfo.label}]</span>,
-        MEMO: memo && <span className={BADGE} style={{color: memo.color || undefined}} title={memo.text}>[{memo.text}]</span>,
-        RATIO: ratio && <span className={BADGE} style={{color: ratioColor}} title="글/댓글">[{ratio.article}/{ratio.comment}]</span>,
-        PERMBAN: banReasons && banColor && <span className={BADGE} style={{color: banColor}} title={banReasons}>[{banReasons}]</span>
+            <Text size="1" color={ipColor ? undefined : "blue"} style={{color: ipColor}} title={ipInfo.title} truncate>[{ipInfo.label}]</Text>,
+        MEMO: memo && <Text size="1" style={{color: memo.color || undefined}} title={memo.text} truncate>[{memo.text}]</Text>,
+        RATIO: ratio && <Text size="1" style={{color: ratioColor}} title="글/댓글" truncate>[{ratio.article}/{ratio.comment}]</Text>,
+        PERMBAN: banReasons && banColor && <Text size="1" style={{color: banColor}} title={banReasons} truncate>[{banReasons}]</Text>
     };
 
     return (
-        <div className="refresher-inline refresher-user" data-op={op || undefined} onContextMenu={openMenu} style={{cursor: "context-menu"}}>
+        <Flex align="center" gap="1" minWidth="0" className="refresher-user" data-op={op || undefined} onContextMenu={openMenu} style={{cursor: "context-menu"}}>
             {/* 버블은 닉네임 바로 아래에 띄운다. 키보드로 열면 버블 안으로 포커스가 옮겨 간다 (components/overlay/UserBubble의 useOpenerFocus). */}
-            <button type="button" className="refresher-text-button refresher-text-2 refresher-text-bold refresher-truncate" aria-haspopup="dialog"
-                    onClick={(ev) => {
-                        const rect = ev.currentTarget.getBoundingClientRect();
-                        openBubble(rect.left, rect.bottom);
-                    }}>
-                {user.nick ?? user.id ?? user.ip}
-            </button>
+            <Text asChild size="2" weight="bold" truncate>
+                <button type="button" className="refresher-text-button" aria-haspopup="dialog"
+                        onClick={(ev) => {
+                            const rect = ev.currentTarget.getBoundingClientRect();
+                            openBubble(rect.left, rect.bottom);
+                        }}>
+                    {user.nick ?? user.id ?? user.ip}
+                </button>
+            </Text>
             {user.image && <img src={user.image} alt="" height={12}/>}
             {/* 유동 IP는 디시가 닉 옆에 바로 보여 주는 값이라 배지 순서와 상관없이 여기 둔다. */}
-            {user.ip && <span className={identityClass} style={{color: uidColor}}>({user.ip})</span>}
+            {user.ip && <Text size="1" color={identityColor} style={{color: uidColor}} truncate>({user.ip})</Text>}
             {view.order.map((key) => <Fragment key={key}>{badges[key]}</Fragment>)}
-        </div>
+        </Flex>
     );
 };
