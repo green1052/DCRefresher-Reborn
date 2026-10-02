@@ -85,7 +85,27 @@
     }
 
     // 목록: 사이드바를 빼고 목록이 폭을 다 쓴다.
-    .right_content,
+    // 알림 목록·설정 창(#alarmList, #alarmConf)은 사이드바 로그인 상자 안에 있어 display: none으로 숨기면 머리글의 알림 버튼을 눌러도 안 보인다 (#270)
+    // 사이드바는 자리를 차지하지 않게 빼고 보이지만 않게 둔다. visibility는 자손이 되돌릴 수 있어 알림 창만 다시 보인다.
+    .right_content {
+        position: absolute !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        visibility: hidden !important;
+    }
+
+    // 사이드바 기준 자리(오른쪽 위)는 화면 밖이므로 머리글 알림 버튼(alarmList의 'H')처럼 화면 가운데에 띄운다.
+    // 고정 위치라 사이드바의 overflow: hidden에 잘리지 않는다.
+    :is(#alarmList, #alarmConf) {
+        visibility: visible !important;
+        position: fixed !important;
+        inset: 50% auto auto 50% !important;
+        margin: 0 !important;
+        transform: translate(-50%, -50%) !important;
+        z-index: 10000 !important;
+    }
+
     .gall_exposure,
     .minor_ranking_box,
     .issue_contentbox,
