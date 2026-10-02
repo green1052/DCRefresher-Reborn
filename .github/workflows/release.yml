@@ -2,11 +2,9 @@ name: Release
 
 on:
     push:
-        # 버전 태그(6.0.2 등)에만 돈다
         tags:
             - "[0-9]+.[0-9]+.[0-9]+"
 
-# 작업마다 필요한 권한만 준다. 쓰기는 GitHub 릴리즈(release)와 data 브랜치 푸시(db)만 한다
 permissions:
     contents: read
 
@@ -21,12 +19,10 @@ jobs:
         permissions:
             contents: write
         steps:
-            # 이 작업은 쓰기 권한이 있고 의존성·빌드·테스트 코드를 돌린다. 토큰을 .git/config에 남기지 않는다 (릴리즈·제출은 git을 쓰지 않는다)
             -   uses: actions/checkout@v7
                 with:
                     persist-credentials: false
 
-            # 태그와 package.json 버전이 다르면 스토어에 엉뚱한 버전이 올라간다
             -   name: Check version
                 run: jq -e --arg tag "$GITHUB_REF_NAME" '.version == $tag' package.json > /dev/null || { echo "::error::태그 $GITHUB_REF_NAME 와 package.json 버전이 다릅니다."; exit 1; }
 
@@ -44,8 +40,6 @@ jobs:
             -   name: Build
                 run: bun run zip && bun run zip:firefox
 
-            # E2E는 위에서 zip을 만들며 남은 .output/chrome-mv3·firefox-mv2를 브라우저에 올린다 (e2e/fixtures.ts). 실패하면 릴리즈하지 않는다.
-            # 크로미엄은 확장을 올려야 해서 headless shell이 아니라 본체가 필요하다. 파이어폭스는 원격 디버깅으로 임시 설치한다 (e2e/firefox.ts)
             -   name: Install browsers
                 run: bunx playwright install --with-deps chromium firefox
 
@@ -57,7 +51,7 @@ jobs:
 
             -   name: Upload E2E report
                 if: failure()
-                uses: actions/upload-artifact@v4
+                uses: actions/upload-artifact@v7
                 with:
                     name: playwright-report
                     path: |
@@ -73,9 +67,6 @@ jobs:
                         .output/*-chrome.zip
                     generate_release_notes: true
 
-            # 두 스토어를 함께 제출한다. 제출 도구는 한 스토어가 실패해도 다른 스토어를 끝까지 제출하고 실패로 끝나는데,
-            # 실패해도 넘어가게 해 DB는 막히지 않는다. 실패한 스토어는 로그에서 확인하고 GitHub 릴리즈의 zip으로 따로 제출한다 (docs/DEVELOPMENT.md 릴리즈).
-            # Chrome 웹 스토어는 API v2(서비스 계정)로 제출한다
             -   name: Submit to stores
                 continue-on-error: true
                 run: >-
@@ -93,8 +84,6 @@ jobs:
                     FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
                     FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
 
-    # 릴리즈마다 이 태그의 코드로 DB를 새로 만든다. IP 형식을 바꾼 버전도 스토어 심사를 마치기 전에 새 형식이 올라가 있다
-    # (확장은 업데이트 때 DB를 다시 받는다). 검사·빌드가 실패한 릴리즈는 DB를 바꾸지 않도록 릴리즈 뒤에 돈다. 스토어 제출은 실패해도 넘어가므로 DB와 상관없다
     db:
         needs: release
         permissions:
