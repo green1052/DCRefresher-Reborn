@@ -16,7 +16,7 @@ import {useBlocksStore} from "@/stores/blocks";
 import {useUserMemo} from "@/stores/memos";
 import {type SelectedUser, useUiStore} from "@/stores/ui";
 import {SAVE_FAILED} from "@/utils/error";
-import {type ActivityState, useGallogActivity} from "@/utils/gallogActivity";
+import {type ActivityState, useGallogActivity} from "@/components/overlay/gallogActivity";
 
 import {overlay} from "./shadow";
 

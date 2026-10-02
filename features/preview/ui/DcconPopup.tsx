@@ -8,7 +8,7 @@ import {ajax} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import type {DcinsideDccon, DcinsideDcconDetail, DcinsideDcconDetailList} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
-import {csrfBody} from "@/utils/cookie";
+import {csrfBody} from "@/core/http/cookie";
 import {smoothScroll} from "@/utils/dom";
 
 /** 디시콘 패키지 목록 캐시. 창을 닫았다 열어도 다시 받지 않고, 새로 산 디시콘이 보이도록 10분 뒤 다시 받는다. */

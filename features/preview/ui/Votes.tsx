@@ -7,7 +7,7 @@ import {getEntry, setEntry} from "@/core/preview/cache";
 import {captchaImage, viewUrl, vote} from "@/core/preview/request";
 import type {GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
-import {notifyManage} from "@/utils/notify";
+import {notifyManage} from "@/stores/notify";
 
 import {usePreviewStore} from "./previewStore";
 

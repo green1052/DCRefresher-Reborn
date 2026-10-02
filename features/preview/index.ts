@@ -12,7 +12,7 @@ import {messageOf} from "@/utils/error";
 import {isTyping, pressedKey} from "@/utils/event";
 import {createDoublePress} from "@/utils/doublePress";
 import {isGalleryManager} from "@/utils/user";
-import {notifyManage} from "@/utils/notify";
+import {notifyManage} from "@/stores/notify";
 import {isRecord} from "@/utils/record";
 
 import {getEntry, postKey, setEntry} from "@/core/preview/cache";

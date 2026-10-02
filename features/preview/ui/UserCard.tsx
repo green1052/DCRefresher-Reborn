@@ -6,7 +6,7 @@ import {banReasonsOf, databaseVersion, ipInfoOf, passesIpFilter, subscribeDataba
 import type {User} from "@/core/preview/types";
 import {useUserMemo} from "@/stores/memos";
 import {type BadgeKey, isFresh, isLowActivity, showsUid, useUiStore} from "@/stores/ui";
-import {useGallogActivity} from "@/utils/gallogActivity";
+import {useGallogActivity} from "@/components/overlay/gallogActivity";
 
 import {usePreviewStore} from "./previewStore";
 

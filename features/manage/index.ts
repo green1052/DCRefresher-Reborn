@@ -3,7 +3,7 @@ import {rowPostNo} from "@/core/http/urls";
 import {ROW_SELECTOR} from "@/core/list";
 import {deletePost} from "@/core/preview/request";
 import {whenDomReady} from "@/utils/dom";
-import {notifyManage} from "@/utils/notify";
+import {notifyManage} from "@/stores/notify";
 import {isGalleryManager} from "@/utils/user";
 
 import meta from "./meta";
