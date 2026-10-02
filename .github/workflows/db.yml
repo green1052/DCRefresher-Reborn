@@ -20,6 +20,7 @@ jobs:
             -   uses: actions/checkout@v7
                 with:
                     ref: release
+                    persist-credentials: false
 
             -   uses: oven-sh/setup-bun@v2
 
@@ -40,8 +41,11 @@ jobs:
 
             -   name: Publish to data branch
                 working-directory: db
+                env:
+                    GH_TOKEN: ${{ github.token }}
+                    LEASE: ${{ steps.keep.outputs.sha }}
                 run: |
                     git init -q -b data
                     git add .
                     git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -qm "IP DB $(cat version)"
-                    git push --force-with-lease=data:${{ steps.keep.outputs.sha }} "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data
+                    git push --force-with-lease="data:$LEASE" "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY.git" data
