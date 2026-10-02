@@ -2,9 +2,12 @@ import {describe, expect, it} from "vitest";
 
 import {commentsFailedToRender} from "@/entrypoints/content/comments";
 
+/** 본문 이미지 댓글. 글 댓글 칸보다 먼저 나온다. */
+const IMAGE_COMMENT = `<div class="write_div"><div class="view_comment image_comment"><div class="comment_wrap show"><div class="comment_box"></div></div></div></div>`;
+
 const viewComment = (total: string, list = ""): HTMLElement => {
     const root = document.createElement("div");
-    root.innerHTML = `<div class="view_comment"><div id="comment_wrap_1" class="comment_wrap">
+    root.innerHTML = `${IMAGE_COMMENT}<div class="view_comment"><div id="comment_wrap_1" class="comment_wrap">
         <div class="comment_count"><span id="comment_total_1">${total}</span></div>${list}</div></div>`;
     return root;
 };
