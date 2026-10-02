@@ -10,7 +10,7 @@ import {smoothScroll} from "@/utils/dom";
 
 import {isWholeFirstPage, replaceList, syncPaging} from "./list";
 import meta, {type Ctx, PAUSE_TOGGLE} from "./meta";
-import {isWatching, setTitleCount} from "./title";
+import {createUnseenCounter, isWatching, setTitleCount} from "./title";
 
 const MINIMUM_REFRESH_INTERVAL = 2000;
 /** 목록 요청이 연달아 실패할 때 자동 새로고침 주기를 늘리는 상한. */
@@ -55,7 +55,7 @@ export default defineModule({
         // 지난번 갈아끼운 목록의 tbody HTML. 받은 것이 같으면 파싱·교체를 건너뛴다.
         let lastListHtml = "";
         // 이 탭을 보지 않는 동안 들어온 새 글 수 (탭 제목에 붙인다).
-        let unseen = 0;
+        const unseen = createUnseenCounter(ctx);
         const gallery = queryString("id") ?? "";
 
         // 제어 버튼.
@@ -213,7 +213,7 @@ export default defineModule({
                 // 페이지를 넘긴 목록은 옛 목록과 겹치는 행이 없으면 전부 새 글로 잡히므로 알리지 않는다 (글댓비 조회가 몰린다).
                 if (!customURL && newPostList.length > 0) {
                     getModuleApi("userinfo")?.checkNewPosts(newPostList);
-                    if (ctx.settings.titleCount && !isWatching()) countUnseen(newPostList);
+                    if (ctx.settings.titleCount && !isWatching()) unseen.count(newPostList);
                 }
 
                 return true;
@@ -240,26 +240,6 @@ export default defineModule({
             }
         };
 
-        // ===== 탭 제목의 새 글 수 =====
-        // 가린 글(차단·깡계 숨김과 흐리게)은 세지 않는다. 필터는 행을 넣은 뒤(MutationObserver)에 돌므로 한 차례 뒤에 센다.
-        const countUnseen = (rows: HTMLElement[]): void => {
-            window.setTimeout(() => {
-                if (ctx.signal.aborted || isWatching() || !ctx.settings.titleCount) return;
-                unseen += rows.filter((row) => row.isConnected && row.checkVisibility() && !row.closest(".refresherBlur, .refresherLowActivityBlur")).length;
-                setTitleCount(unseen);
-            });
-        };
-
-        const clearUnseen = (): void => {
-            unseen = 0;
-            setTitleCount(0);
-        };
-        const onFocus = (): void => {
-            if (isWatching()) clearUnseen();
-        };
-        window.addEventListener("focus", onFocus, {signal: ctx.signal});
-        ctx.addCleanup(clearUnseen);
-
         // ===== 스케줄링: 주기+지터 재귀 =====
         // 첫 요청도 한 주기 뒤에 보낸다. 파싱 중인 목록을 곧바로 다시 받지 않는다.
         const armNext = (): void => {
@@ -279,7 +259,7 @@ export default defineModule({
 
         ctx.onSettingsChanged((key) => {
             if (key === "doNotColorVisited") applyDoNotColorVisited(ctx);
-            else if (key === "titleCount" && !ctx.settings.titleCount) clearUnseen();
+            else if (key === "titleCount" && !ctx.settings.titleCount) unseen.clear();
             // 숨은 탭 새로고침 설정은 옵션 탭에서 바꾸므로 이 탭은 숨어 있다. 다음 주기를 새 값으로 다시 잡는다.
             else if (key === "backgroundRefresh" || key === "backgroundRefreshRate") armNext();
         });
@@ -290,7 +270,7 @@ export default defineModule({
                 armNext();
                 return;
             }
-            onFocus();
+            unseen.onFocus();
 
             // 실패로 주기가 늘어난 동안은 바로 받지 않는다. 탭을 오갈 때마다 요청하면 늘린 주기가 소용없다.
             if (failures === 0) void load();

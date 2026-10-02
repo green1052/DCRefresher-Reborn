@@ -1,3 +1,5 @@
+import type {Ctx} from "./meta";
+
 /** 탭 제목 앞의 새 글 수 "(3) ". */
 const TITLE_COUNT = /^\(\d+\) /;
 
@@ -15,3 +17,32 @@ export const setTitleCount = (count: number): void => {
 
 /** 사용자가 이 탭을 보고 있는지. 다른 창을 보는 동안(창은 보이지만 포커스가 없다)도 안 보는 것으로 친다. */
 export const isWatching = (): boolean => !document.hidden && document.hasFocus();
+
+/**
+ * 이 탭을 보지 않는 동안 들어온 새 글 수를 탭 제목에 붙인다. 탭으로 돌아오면(focus) 지운다.
+ * 가린 글(차단·깡계 숨김과 흐리게)은 세지 않는다. 필터는 행을 넣은 뒤(MutationObserver)에 돌므로 한 차례 뒤에 센다.
+ */
+export const createUnseenCounter = (ctx: Ctx) => {
+    let unseen = 0;
+
+    const count = (rows: HTMLElement[]): void => {
+        window.setTimeout(() => {
+            if (ctx.signal.aborted || isWatching() || !ctx.settings.titleCount) return;
+            unseen += rows.filter((row) => row.isConnected && row.checkVisibility() && !row.closest(".refresherBlur, .refresherLowActivityBlur")).length;
+            setTitleCount(unseen);
+        });
+    };
+
+    const clear = (): void => {
+        unseen = 0;
+        setTitleCount(0);
+    };
+
+    const onFocus = (): void => {
+        if (isWatching()) clear();
+    };
+    window.addEventListener("focus", onFocus, {signal: ctx.signal});
+    ctx.addCleanup(clear);
+
+    return {count, clear, onFocus};
+};
