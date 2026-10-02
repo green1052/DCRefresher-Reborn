@@ -46,7 +46,8 @@ export const restoreArchive = (preData: GalleryPreData, list: DcinsideComment[],
     const seen = entries.get(postKey(preData))?.seen ?? {};
     const current = new Set(list.map((comment) => comment.no));
     const thread = (comment: DcinsideComment): number => Number(comment.c_no) || Number(comment.no);
-    const cutoff = truncated ? Math.min(...list.map(thread)) : 0;
+    // 잘린 목록은 받은 것 중 가장 오래된 스레드보다 오래된 댓글을 삭제로 치지 않는다. 빈 목록이면 min이 Infinity가 되므로 0으로 둔다 (전부 지워진 목록).
+    const cutoff = truncated && list.length > 0 ? Math.min(...list.map(thread)) : 0;
 
     const deleted: DcinsideComment[] = [];
     for (const comment of Object.values(seen)) {
