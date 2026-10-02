@@ -2,7 +2,7 @@ import type {Page} from "@playwright/test";
 
 import {extensionUrl} from "./extension";
 
-export type OptionsTab = "general" | "block" | "data";
+type OptionsTab = "general" | "block" | "data";
 
 /** 옵션 페이지. 탭은 주소의 해시로 고른다. */
 export async function openOptions(page: Page, extensionId: string, tab: OptionsTab) {

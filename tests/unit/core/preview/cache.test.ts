@@ -1,6 +1,7 @@
 import {describe, expect, it} from "vitest";
 
-import {postKey} from "@/core/preview/cache";
+import {getEntry, postKey, setEntry} from "@/core/preview/cache";
+import type {GalleryPreData} from "@/core/preview/types";
 
 describe("postKey", () => {
     it("갤러리 종류가 다르면 id와 번호가 같아도 다른 글이다", () => {
@@ -10,5 +11,14 @@ describe("postKey", () => {
         expect(normal).toBe("game:1");
         expect(minor).toBe("minor/game:1");
         expect(new Set([normal, minor, mini]).size).toBe(3);
+    });
+});
+
+describe("setEntry", () => {
+    it("기존 항목을 갈지 않고 준 필드만 덮어쓴다", () => {
+        const preData: GalleryPreData = {gallery: "cache", id: "1", link: "", notice: false, recommend: false, type: "icon_txt", commentCount: 0};
+        setEntry(preData, {fetchedAt: 1});
+        setEntry(preData, {comments: {list: [], allowReply: true}});
+        expect(getEntry(preData)).toEqual({fetchedAt: 1, comments: {list: [], allowReply: true}});
     });
 });

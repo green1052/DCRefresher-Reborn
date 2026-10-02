@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it} from "vitest";
 
-import {getEntry, restoreArchive, setEntry} from "@/core/preview/cache";
+import {getEntry, restoreArchive} from "@/core/preview/cache";
 import {prepareComments, processComments} from "@/core/preview/comments";
 import type {DcinsideComment, GalleryPreData} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
@@ -101,14 +101,5 @@ describe("processComments", () => {
         const [processed] = processComments([comment("1", memo)], preData);
         expect(processed?.memo.match(/written_dccon/g)).toHaveLength(2);
         expect(processed?.blocked).toBe("hide");
-    });
-});
-
-describe("cache", () => {
-    it("setEntry는 기존 항목에 덮어쓴다", () => {
-        const preData = preDataOf();
-        setEntry(preData, {fetchedAt: 1});
-        setEntry(preData, {comments: {list: [], allowReply: true}});
-        expect(getEntry(preData)).toEqual({fetchedAt: 1, comments: {list: [], allowReply: true}});
     });
 });

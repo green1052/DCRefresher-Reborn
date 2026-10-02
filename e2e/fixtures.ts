@@ -16,7 +16,7 @@ const pathToExtension = path.resolve(".output/chrome-mv3");
 const pathToFirefoxExtension = path.resolve(".output/firefox-mv2");
 
 /** 확장 저장소. 디시 페이지(page.evaluate)에서는 chrome.storage에 닿지 않으므로 배경(서비스 워커)에서 읽고 쓴다. */
-export interface ExtensionStorage {
+interface ExtensionStorage {
     set(items: Record<string, unknown>): Promise<void>;
     get(key: string): Promise<unknown>;
     /** 모듈 on/off (refresher:modules). */
@@ -29,7 +29,7 @@ export interface ExtensionStorage {
  * 가짜 디시의 상태. 테스트가 바꾸면 다음 요청부터 그대로 응답한다 (자동 새로고침·댓글 새로고침이 받는 목록).
  * 댓글 작성(comment_submit)은 디시처럼 새 댓글 번호를 주고 comments에 넣고, 댓글 삭제는 그 댓글을 지운 것으로 바꾼다. 보낸 폼은 submitted에 남는다.
  */
-export interface FakeSite {
+interface FakeSite {
     rows: FakeRow[];
     comments: FakeComment[];
     /** 글 페이지를 직접 열었을 때 디시가 그려 둔 댓글. 기본은 없다. */
