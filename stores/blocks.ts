@@ -13,6 +13,8 @@ interface BlocksState {
     entries: Record<BlockType, BlockEntry[]>;
     defaults: Record<BlockType, DetectMode>;
     setEntries: (type: BlockType, entries: BlockEntry[]) => Promise<void>;
+    /** 저장소의 현재 값에 change를 붙여 쓴다 (가져오기·여러 개 지우기). */
+    updateEntries: (type: BlockType, change: (entries: BlockEntry[]) => BlockEntry[]) => Promise<void>;
     addEntry: (type: BlockType, fields: BlockInputFields) => Promise<void>;
     /** 여러 항목을 한 번의 쓰기로. */
     addEntries: (type: BlockType, list: BlockInputFields[]) => Promise<void>;
@@ -68,28 +70,31 @@ export const useBlocksStore = create<BlocksState>((set, get) => ({
 
     setEntries: (type, entries): Promise<void> => lists.save(type, entries),
 
+    updateEntries: (type, change): Promise<void> => lists.update(type, change),
+
     addEntry: (type, fields) => get().addEntries(type, [fields]),
 
     addEntries: async (type, list) => {
         // 같은 content+gallery는 새로 들어온 쪽으로 바꿔 맨 뒤로 보낸다. id는 가져온 id가 기존 항목과 겹치지 않게 늘 새로 준다.
         const added = new Map(list.map((fields) => [blockKey(fields), {...fields, id: crypto.randomUUID()}]));
-        await get().setEntries(type, [...get().entries[type].filter((entry) => !added.has(blockKey(entry))), ...added.values()]);
+        await lists.update(type, (current) => [...current.filter((entry) => !added.has(blockKey(entry))), ...added.values()]);
     },
 
     updateEntry: async (type, id, fields) => {
-        const list = get().entries[type];
         // 다른 탭에서 지웠거나 가져오기로 id가 바뀐 항목이면 새로 넣는다. 아래 수정으로 넘기면 같은 content 항목만 지워지고 수정은 사라진다.
-        if (!list.some((entry) => entry.id === id)) return get().addEntries(type, [fields]);
+        if (!get().entries[type].some((entry) => entry.id === id)) return get().addEntries(type, [fields]);
 
         const key = blockKey(fields);
-        await get().setEntries(
-            type,
-            list.filter((entry) => entry.id === id || blockKey(entry) !== key).map((entry) => (entry.id === id ? {...entry, ...fields, id} : entry))
+        await lists.update(type, (current) =>
+            // 잠금 안에서 읽은 값에서 id가 사라졌다면 다른 탭이 지운 것이므로 그대로 둔다.
+            current.some((entry) => entry.id === id)
+                ? current.filter((entry) => entry.id === id || blockKey(entry) !== key).map((entry) => (entry.id === id ? {...entry, ...fields, id} : entry))
+                : current
         );
     },
 
     removeEntry: async (type, id) => {
-        await get().setEntries(type, get().entries[type].filter((entry) => entry.id !== id));
+        await lists.update(type, (current) => current.filter((entry) => entry.id !== id));
     },
 
     setDefault: async (type, mode) => {
@@ -117,7 +122,8 @@ const lists = typedListSync({
     get: (): Record<BlockType, BlockEntry[]> => useBlocksStore.getState().entries,
     set: (entries) => useBlocksStore.setState({entries}),
     failure: "차단 목록을 저장하지 못했습니다.",
-    extra: {[BLOCK_DEFAULTS_KEY]: (value) => useBlocksStore.setState({defaults: normalizeDefaults(value)})}
+    extra: {[BLOCK_DEFAULTS_KEY]: (value) => useBlocksStore.setState({defaults: normalizeDefaults(value)})},
+    lock: "refresher:blocks"
 });
 
 /** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다. */

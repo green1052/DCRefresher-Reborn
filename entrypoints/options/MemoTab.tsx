@@ -169,6 +169,7 @@ export function MemoTab() {
     const setMemo = useMemosStore((state) => state.setMemo);
     const removeMemo = useMemosStore((state) => state.removeMemo);
     const setMemos = useMemosStore((state) => state.setMemos);
+    const updateMemos = useMemosStore((state) => state.updateMemos);
     const ids = useMemo(() => MEMO_TYPES.flatMap((type) => Object.keys(memos[type]).map((user) => memoUsageKey(type, user))), [memos]);
     const used = useUsage("memo", ids);
 
@@ -185,9 +186,11 @@ export function MemoTab() {
         }
         try {
             for (const type of ["UID", "IP"] as const) {
-                const merged = {...memos[type]};
-                for (const [target, memo] of Object.entries(parsed[type])) merged[target] = {...((Object.hasOwn(merged, target) ? merged[target] : undefined) ?? {color: randomColor()}), text: memo};
-                await setMemos(type, merged);
+                await updateMemos(type, (current) => {
+                    const merged = {...current};
+                    for (const [target, memo] of Object.entries(parsed[type])) merged[target] = {...(merged[target] ?? {color: randomColor()}), text: memo};
+                    return merged;
+                });
             }
         } catch {
             notify(SAVE_FAILED);
@@ -214,7 +217,7 @@ export function MemoTab() {
         // 객체만 받는다. 차단 내보내기의 NICK/IP(배열)까지 메모로 세면 다른 데이터인데도 성공으로 알린다.
         const types = MEMO_TYPES.filter((type) => isRecord(parsed[type]));
         // 기존 메모에 합치고, 같은 대상은 가져온 메모로 덮는다.
-        for (const type of types) await setMemos(type, {...memos[type], ...normalizeMemoMap(parsed[type])});
+        for (const type of types) await updateMemos(type, (current) => ({...current, ...normalizeMemoMap(parsed[type])}));
         return types.length;
     };
 
@@ -248,7 +251,7 @@ export function MemoTab() {
                 usedAt={(type, [user]) => used[memoUsageKey(type, user)]}
                 onRemoveMany={(type, removed) => {
                     const users = new Set(removed.map(([user]) => user));
-                    return setMemos(type, Object.fromEntries(Object.entries(memos[type]).filter(([user]) => !users.has(user))));
+                    return updateMemos(type, (current) => Object.fromEntries(Object.entries(current).filter(([user]) => !users.has(user))));
                 }}
                 row={(type, [user, entry]) => (
                     <ListRow

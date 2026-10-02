@@ -71,8 +71,10 @@ export const typedListSync = <T extends string, V>(options: {
     /** 저장하지 못했을 때 콘솔에 남길 문구. */
     failure: string;
     extra?: Partial<Record<StorageItemKey, (value: unknown) => void>>;
+    /** Web Locks 이름. 목록 쓰기는 읽고-고쳐-쓰기라 창(옵션·팝업·디시 탭) 여럿이 동시에 쓰면 앞의 쓰기를 덮는다. 같은 출처끼리만 세운다. */
+    lock?: string;
 }) => {
-    const {types, keyOf, normalize, get, set, failure, extra = {}} = options;
+    const {types, keyOf, normalize, get, set, failure, extra = {}, lock} = options;
     const typeOf = new Map<StorageItemKey, T>(types.map((type) => [keyOf(type), type]));
 
     const sync = storageSync([...typeOf.keys(), ...Object.keys(extra) as StorageItemKey[]], (key, value) => {
@@ -86,10 +88,22 @@ export const typedListSync = <T extends string, V>(options: {
         if (JSON.stringify(lists[type]) !== JSON.stringify(next)) set({...lists, [type]: next});
     });
 
+    // 쓰기를 한 줄로 세운다. update는 잠금 안에서 저장소를 다시 읽어 다른 창이 쓴 값을 덮지 않고 합친다.
+    const enqueue = lock ? (write: () => Promise<void>): Promise<void> => navigator.locks.request(lock, write) : (write: () => Promise<void>): Promise<void> => write();
+
     const save = async (type: T, value: V): Promise<void> => {
         set({...get(), [type]: value});
-        await saveOrReload(storage.setItem(keyOf(type), value), sync.load, failure);
+        await saveOrReload(enqueue(() => storage.setItem(keyOf(type), value)), sync.load, failure);
     };
 
-    return {...sync, save};
+    /** 저장소의 현재 값에 change를 붙여 쓴다. 스토어에는 바로 반영해 두고, 잠금 안에서 다시 읽은 값에 붙인다. */
+    const update = async (type: T, change: (current: V) => V): Promise<void> => {
+        set({...get(), [type]: change(get()[type])});
+        await saveOrReload(enqueue(async () => {
+            const next = change(normalize(await storage.getItem(keyOf(type))));
+            await storage.setItem(keyOf(type), next);
+        }), sync.load, failure);
+    };
+
+    return {...sync, save, update};
 };

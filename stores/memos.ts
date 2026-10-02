@@ -11,6 +11,8 @@ type MemoMap = Record<string, MemoEntry>;
 interface MemosState {
     memos: Record<MemoType, MemoMap>;
     setMemos: (type: MemoType, memos: MemoMap) => Promise<void>;
+    /** 저장소의 현재 값에 change를 붙여 쓴다 (가져오기·여러 개 지우기). */
+    updateMemos: (type: MemoType, change: (memos: MemoMap) => MemoMap) => Promise<void>;
     setMemo: (type: MemoType, user: string, entry: MemoEntry) => Promise<void>;
     removeMemo: (type: MemoType, user: string) => Promise<void>;
 }
@@ -39,18 +41,22 @@ export const normalizeMemoMap = (value: unknown): MemoMap =>
         : {};
 
 /** 메모의 단일 출처. 콘텐츠·옵션 모두 이 스토어를 쓰고 저장소와 양방향 동기화된다. */
-export const useMemosStore = create<MemosState>((_set, get) => ({
+export const useMemosStore = create<MemosState>(() => ({
     memos: {UID: {}, NICK: {}, IP: {}},
 
     setMemos: (type, memos): Promise<void> => lists.save(type, memos),
 
+    updateMemos: (type, change): Promise<void> => lists.update(type, change),
+
     setMemo: async (type, user, entry) => {
-        await get().setMemos(type, {...get().memos[type], [user]: entry});
+        await lists.update(type, (current) => ({...current, [user]: entry}));
     },
 
     removeMemo: async (type, user) => {
-        const {[user]: _removed, ...rest} = get().memos[type];
-        await get().setMemos(type, rest);
+        await lists.update(type, (current) => {
+            const {[user]: _removed, ...rest} = current;
+            return rest;
+        });
     }
 }));
 
@@ -85,7 +91,8 @@ const lists = typedListSync({
     normalize: normalizeMemoMap,
     get: (): Record<MemoType, MemoMap> => useMemosStore.getState().memos,
     set: (memos) => useMemosStore.setState({memos}),
-    failure: "메모를 저장하지 못했습니다."
+    failure: "메모를 저장하지 못했습니다.",
+    lock: "refresher:memos"
 });
 
 /** 저장소 값을 읽고 변경(다른 탭·옵션 페이지)을 감시한다. 여러 번 불러도 한 번만 한다. signal은 콘텐츠 스크립트 컨텍스트의 것이다. */

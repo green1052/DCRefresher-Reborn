@@ -75,4 +75,19 @@ describe("useBlocksStore + 저장소", () => {
         expect(await stored("refresher:block:defaults")).toMatchObject({ID: "NOT_SAME", NICK: "CONTAIN"});
         unsubscribe();
     });
+
+    it("쓰기는 잠금 안에서 저장소를 다시 읽어, 이 탭이 모르는 다른 창의 항목을 덮지 않는다", async () => {
+        await initBlocksStore();
+        await useBlocksStore.getState().addEntry("IP", {content: "1.1.1.1", isRegex: false});
+
+        // 다른 창이 곧바로 넣어 이 탭의 스토어에는 아직 없는 상황.
+        const other = await fakeBrowser.storage.local.get("refresher:block:IP");
+        const list = (other["refresher:block:IP"] ?? []) as { content: string; isRegex: boolean }[];
+        list.push({content: "2.2.2.2", isRegex: false});
+        await fakeBrowser.storage.local.set({"refresher:block:IP": list});
+
+        await useBlocksStore.getState().addEntry("IP", {content: "3.3.3.3", isRegex: false});
+        const contents = ((await stored("refresher:block:IP")) as { content: string }[]).map(({content}) => content);
+        expect(contents).toEqual(["1.1.1.1", "2.2.2.2", "3.3.3.3"]);
+    });
 });

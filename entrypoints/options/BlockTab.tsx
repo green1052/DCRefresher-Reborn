@@ -28,6 +28,7 @@ export function BlockTab() {
     const updateEntry = useBlocksStore((state) => state.updateEntry);
     const removeEntry = useBlocksStore((state) => state.removeEntry);
     const setEntries = useBlocksStore((state) => state.setEntries);
+    const updateEntries = useBlocksStore((state) => state.updateEntries);
     const setDefault = useBlocksStore((state) => state.setDefault);
     const addEntries = useBlocksStore((state) => state.addEntries);
 
@@ -88,7 +89,7 @@ export function BlockTab() {
                 usedAt={(_type, entry) => used[entry.id]}
                 onRemoveMany={(type, removed) => {
                     const removedIds = new Set(removed.map((entry) => entry.id));
-                    return setEntries(type, entries[type].filter((entry) => !removedIds.has(entry.id)));
+                    return updateEntries(type, (current) => current.filter((entry) => !removedIds.has(entry.id)));
                 }}
                 row={(type, entry) => (
                     <ListRow
