@@ -1,9 +1,9 @@
-import {existsSync, readdirSync} from "node:fs";
 import {resolve} from "node:path";
 
 import {defineWxtModule} from "wxt/modules";
 
 import type {AnyModuleMeta} from "../core/module/types";
+import {featureFolders} from "./lib/features";
 
 /**
  * 모듈 메타(features/<id>/meta.ts)의 commands를 모아 manifest commands로 넣는다.
@@ -11,10 +11,7 @@ import type {AnyModuleMeta} from "../core/module/types";
  */
 export default defineWxtModule((wxt) => {
     wxt.hook("build:manifestGenerated", async (wxt, manifest) => {
-        const dir = resolve(wxt.config.root, "features");
-        const files = readdirSync(dir, {withFileTypes: true})
-            .map((entry) => resolve(dir, entry.name, "meta.ts"))
-            .filter((file) => existsSync(file));
+        const files = featureFolders(wxt.config.root, "meta.ts").map((folder) => resolve(wxt.config.root, "features", folder, "meta.ts"));
 
         const commands: Record<string, { description: string; suggested_key?: { default: string } }> = {};
         // 한 번에 불러온다. 파일마다 부르면 불러오는 환경을 그때마다 새로 만든다.

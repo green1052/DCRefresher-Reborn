@@ -1,7 +1,6 @@
-import {existsSync, readdirSync} from "node:fs";
-import {resolve} from "node:path";
-
 import {defineWxtModule} from "wxt/modules";
+
+import {featureFolders} from "./lib/features";
 
 /**
  * 기능 모듈의 타입 목록을 만든다. features/<폴더>/index.ts를 모아 ModuleApis(모듈 id → setup의 리턴값)를 채우므로
@@ -11,14 +10,8 @@ import {defineWxtModule} from "wxt/modules";
  */
 export default defineWxtModule((wxt) => {
     wxt.hook("prepare:types", (_, entries) => {
-        const dir = resolve(wxt.config.root, "features");
-        const folders = readdirSync(dir, {withFileTypes: true})
-            .filter((entry) => entry.isDirectory() && existsSync(resolve(dir, entry.name, "index.ts")))
-            .map((entry) => entry.name);
-        const modules = folders.map((folder) => `typeof import("@/features/${folder}/index").default`).join(" | ");
-        const metas = readdirSync(dir, {withFileTypes: true})
-            .filter((entry) => entry.isDirectory() && existsSync(resolve(dir, entry.name, "meta.ts")))
-            .map((entry) => `typeof import("@/features/${entry.name}/meta").default`).join(" | ");
+        const modules = featureFolders(wxt.config.root, "index.ts").map((folder) => `typeof import("@/features/${folder}/index").default`).join(" | ");
+        const metas = featureFolders(wxt.config.root, "meta.ts").map((folder) => `typeof import("@/features/${folder}/meta").default`).join(" | ");
 
         entries.push({
             path: "types/modules.d.ts",

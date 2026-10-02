@@ -8,29 +8,30 @@ const AUTO_BACKUP_ALARM = "refresher:autoBackup";
  * 서비스 워커는 잠들 수 있어 setTimeout 대신 alarms로 기다린다. 자동 백업을 켤 때는 옵션 페이지가 바로 한 번 백업한다.
  */
 export const startAutoBackup = (): void => {
+    const arm = () => browser.alarms.create(AUTO_BACKUP_ALARM, {delayInMinutes: 1});
+
     browser.storage.local.onChanged.addListener((changes) => {
         if (!Object.keys(changes).some(isBackupTarget)) return;
 
         void backupStorage.auto.getValue().then((auto) => {
             if (!auto) return;
-            void browser.alarms.create(AUTO_BACKUP_ALARM, {delayInMinutes: 1});
+            void arm();
             void backupStorage.pending.setValue(true);
         });
     });
 
     // 알람은 브라우저를 끄거나(파이어폭스는 항상) 확장을 업데이트하면 사라질 수 있다. 변경 후 1분 안에 그러면 백업이 빠지므로 다음 시작·업데이트 때 다시 건다.
     // 워커가 깰 때마다 하면 안 된다. 크롬은 울린 알람을 지운 뒤 워커를 깨우므로 방금 울린 알람을 또 걸어 백업이 두 번 돈다.
-    const rearm = async (): Promise<void> => {
-        const [pending, alarm] = await Promise.all([backupStorage.pending.getValue(), browser.alarms.get(AUTO_BACKUP_ALARM)]);
-        if (pending && !alarm) await browser.alarms.create(AUTO_BACKUP_ALARM, {delayInMinutes: 1});
-    };
+    const rearm = (): void => void Promise.all([backupStorage.pending.getValue(), browser.alarms.get(AUTO_BACKUP_ALARM)])
+        .then(([pending, alarm]) => (pending && !alarm ? arm() : undefined))
+        .catch(console.error);
     // 파이어폭스는 확장을 껐다 켜면 onStartup/onInstalled 없이 배경만 다시 뜨고 알람은 지워진다.
     // 배경 페이지가 상주해 방금 울린 알람을 또 걸 일이 없으므로 뜰 때마다 다시 건다 (시작·설치·업데이트도 여기서 덮인다).
     if (import.meta.env.FIREFOX) {
-        void rearm().catch(console.error);
+        rearm();
     } else {
-        browser.runtime.onStartup.addListener(() => void rearm().catch(console.error));
-        browser.runtime.onInstalled.addListener(() => void rearm().catch(console.error));
+        browser.runtime.onStartup.addListener(rearm);
+        browser.runtime.onInstalled.addListener(rearm);
     }
 
     browser.alarms.onAlarm.addListener((alarm) => {

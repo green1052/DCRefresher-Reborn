@@ -196,11 +196,11 @@ export const ListTabs = <T extends string, I>({
     // 입력칸은 바로 바꾸고 목록은 뒤따라 그린다. 수천 줄을 거르고 그리는 동안 글자 입력이 막히지 않게 한다.
     const needle = useDeferredValue(query).trim().toLowerCase();
     // 새 항목은 배열/객체 끝에 붙으므로 뒤집어 최신순으로 보여 준다(저장 순서는 그대로).
-    // 종류마다 한 번만 걸러 탭 배지와 표가 같이 쓴다.
-    const shown = new Map(types.map((type) => [
-        type,
-        items(type).filter((item) => !needle || searchText(item).some((text) => text?.toLowerCase().includes(needle))).reverse()
-    ]));
+    // 종류마다 한 번만 걸러 탭 배지와 표가 같이 쓴다. total은 거르기 전 개수다.
+    const shown = new Map(types.map((type) => {
+        const all = items(type);
+        return [type, {total: all.length, list: all.filter((item) => !needle || searchText(item).some((text) => text?.toLowerCase().includes(needle))).reverse()}];
+    }));
 
     const [clearConfirm, setClearConfirm] = useState<T | null>(null);
     const [importOpen, setImportOpen] = useState(false);
@@ -242,13 +242,13 @@ export const ListTabs = <T extends string, I>({
                 <Flex align="end" gap="3">
                     <Tabs.List style={{flex: 1, flexWrap: "wrap"}}>
                         {types.map((type) => {
-                            const total = items(type).length;
+                            const {total, list} = shown.get(type)!;
                             return (
                                 <Tabs.Trigger key={type} value={type}>
                                     {names[type]}
                                     {total > 0 && (
                                         <Badge ml="1" size="1" variant="soft" color={needle ? "blue" : "gray"} radius="full">
-                                            {needle ? `${shown.get(type)!.length}/${total}` : total}
+                                            {needle ? `${list.length}/${total}` : total}
                                         </Badge>
                                     )}
                                 </Tabs.Trigger>
@@ -270,8 +270,7 @@ export const ListTabs = <T extends string, I>({
                 </Flex>
 
                 {types.map((type) => {
-                    const total = items(type).length;
-                    const list = shown.get(type)!;
+                    const {total, list} = shown.get(type)!;
                     return (
                         <Tabs.Content key={type} value={type} className="refresher-tab-enter">
                             <Flex justify="between" align="center" gap="3" wrap="wrap" py="4">

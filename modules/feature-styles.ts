@@ -1,7 +1,6 @@
-import {existsSync, readdirSync} from "node:fs";
-import {resolve} from "node:path";
-
 import {defineWxtModule} from "wxt/modules";
+
+import {featureFolders} from "./lib/features";
 
 /**
  * 기능 모듈의 디시 페이지 CSS(features/<id>/page.scss)를 모은 .wxt/page-styles.scss를 만든다. entrypoints/page.content.scss가 불러온다.
@@ -10,11 +9,7 @@ import {defineWxtModule} from "wxt/modules";
  */
 export default defineWxtModule((wxt) => {
     wxt.hook("prepare:types", (_, entries) => {
-        const dir = resolve(wxt.config.root, "features");
-        const folders = readdirSync(dir, {withFileTypes: true})
-            .filter((entry) => entry.isDirectory() && existsSync(resolve(dir, entry.name, "page.scss")))
-            .map((entry) => entry.name)
-            .sort();
+        const folders = featureFolders(wxt.config.root, "page.scss");
 
         entries.push({
             path: "page-styles.scss",
