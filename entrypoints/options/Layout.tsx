@@ -58,6 +58,8 @@ export const useUsage = (kind: UsageKind, ids: readonly string[]): Record<string
     const [times, setTimes] = useState<Record<string, number>>({});
 
     useEffect(() => {
+        // 기록이 바뀌지 않았으면 저장소 이벤트가 오지 않으므로 응답으로 채운다. 응답을 기다리는 동안 watch가 먼저 오면
+        // (배경이 저장소에 쓰고 같은 값을 돌려준다) 그 새 값을 응답이 덮지 않게 버린다.
         let stale = false;
         sendMessage("refresher:syncUsage", {kind, ids: [...ids]}).then((next) => {
             if (!stale) setTimes(next);
