@@ -27,6 +27,10 @@ const splitDccons = (memo: string): string => memo.replace(/"\s*(img|video) clas
 const cleaned = new LruCache<string, string>({max: 2000});
 const sanitizeMemo = (memo: string): string => sanitizeHtml(splitDccons(memo).replace(/data-dcconoverstatus="?\w+"?/g, "data-dcconoverstatus=\"true\""));
 
+// 정화된 댓글의 평문(차단 검사용)도 마찬가지로 입력에만 달려 있어 함께 기억한다.
+const plainTexts = new LruCache<string, string>({max: 2000});
+const plainTextOf = (html: string): string => plainTexts.memo(html, (text) => htmlToText(text).trim());
+
 const extractVoice = (memo: string): { memo: string; voice?: ProcessedComment["voice"] } | undefined => {
     if (!memo.includes("@^dc^@")) return;
 
@@ -75,7 +79,7 @@ export const processComments = (source: DcinsideComment[], preData: GalleryPreDa
     const view = useUiStore.getState().blockView;
     if (!view) return list;
     // 페이지 쪽 검사처럼 앞뒤 공백을 뗀다. 디시콘만 있는 댓글이 " "로 남아 빈 글과 달라지지 않게.
-    const texts = new Map(list.map((comment) => [comment, htmlToText(comment.memo).trim()]));
+    const texts = new Map(list.map((comment) => [comment, plainTextOf(comment.memo)]));
 
     for (const comment of list) {
         // 삭제 표시된 댓글도 검사한다. 보존으로 되살린 댓글은 원문을 담고 있어 건너뛰면 차단된 내용이 보인다.
