@@ -1,9 +1,6 @@
 import {isHTTPError, isNetworkError, isTimeoutError} from "ky";
 
-/**
- * 오류의 메시지. 파이어폭스 content.fetch의 오류는 페이지 영역의 DOMException이라 instanceof Error가 거짓이다.
- * 그래서 메시지는 모양으로 꺼낸다.
- */
+/** 오류의 메시지. 파이어폭스 content.fetch의 오류는 페이지 영역의 DOMException이라 instanceof Error가 거짓이므로 모양으로 꺼낸다. */
 export const messageOf = (error: unknown): string =>
     typeof error === "object" && error !== null && "message" in error && typeof error.message === "string" ? error.message : String(error);
 
@@ -32,7 +29,7 @@ export const friendlyMessage = (error: unknown): string => {
         if (status === 403 || status === 429) return "요청이 많아 잠시 막혔습니다. 잠시 후 다시 시도해 주세요.";
         return status >= 500 ? "서버가 불안정합니다. 잠시 후 다시 시도해 주세요." : `요청이 거절되었습니다. (HTTP ${status})`;
     }
-    // 요청 시간 제한(core/http/client)의 DOMException도 이름이 TimeoutError다.
+    // 요청 시간 제한(core/http/client.ts)의 DOMException도 이름이 TimeoutError다.
     if (isTimeoutError(error)) return "응답이 없습니다. 잠시 후 다시 시도해 주세요.";
     if (isNetworkError(error) || /failed to fetch|networkerror/i.test(message)) return "서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.";
     if (error instanceof SyntaxError) return "JSON 형식이 올바르지 않습니다.";

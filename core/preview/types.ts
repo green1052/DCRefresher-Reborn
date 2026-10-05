@@ -40,7 +40,7 @@ export interface PostInfo {
     header?: string;
     title?: string;
     expire?: string;
-    /** 작성 시각 "2026-09-26 02:29:40" */
+    /** 작성 시각 ("2026-09-26 02:29:40"). */
     date?: string;
     user?: User;
     views?: string;
@@ -57,7 +57,7 @@ export interface PostInfo {
     requireCommentCaptcha?: boolean;
     v_cur_t?: string;
     randomParam?: { name: string; value: string };
-    /** 그 글의 댓글 요청 토큰 (#e_s_n_o). 갤러리마다 같아 지금 페이지의 값으로 미리 요청하지만, 쓰기 전에 이 값과 맞춰 본다 (preview의 load). */
+    /** 그 글의 댓글 요청 토큰 (#e_s_n_o). 갤러리마다 같아 지금 페이지의 값으로 미리 요청하지만, 쓰기 전에 이 값과 맞춰 본다 (features/preview/index.ts의 load). */
     esno?: string;
     /** 그 글의 추천 토큰 (input[name=code_recommend]). */
     recommendCode?: string;
@@ -68,7 +68,7 @@ export interface PostInfo {
 }
 
 
-/** 글 페이지의 댓글 폼에서 미리 꺼내 둔 값. 댓글을 쓸 때 다시 읽으려고 파싱한 문서를 들고 있지 않는다 (parser.ts). */
+/** 글 페이지의 댓글 폼에서 미리 꺼내 둔 값. 댓글을 쓸 때 다시 읽으려고 파싱한 문서를 들고 있지 않는다 (core/preview/parser.ts). */
 export interface CommentForm {
     /** 댓글 폼(#focus_cmt)의 input들. [이름(없으면 id), 값]을 페이지 순서대로 담는다. */
     fields: [string, string][];
@@ -76,9 +76,9 @@ export interface CommentForm {
     serviceCode: string;
     /** 댓글 설정 스크립트(#reply-setting-tmpl 다음)의 _d('…') 인자. */
     dValue?: string;
-    /** 글자콘 쓰기가 보내는 check_6~8 */
+    /** 글자콘 쓰기가 보내는 check_6~8. */
     checks: Record<string, string>;
-    /** 갤닉 입력칸(#use_gall_nick)이 있으면 #gall_nick_name의 값, 없으면 undefined */
+    /** 갤닉 입력칸(#use_gall_nick)이 있으면 #gall_nick_name의 값, 없으면 undefined다. */
     gallNickName?: string;
 }
 
@@ -147,7 +147,7 @@ export interface DcinsideComment {
     nicktype?: string;
     ip: string;
     memo: string;
-    /** "0"이면 살아 있고 그 밖은 삭제. prepareComments(comments.ts)를 거치면 "0"/"1"만 남는다. */
+    /** "0"이면 살아 있고 그 밖은 삭제. prepareComments(core/preview/comments.ts)를 거치면 "0"/"1"만 남는다. */
     is_delete: string;
     /** "Y"면 디시가 지운 댓글. */
     del_yn?: "Y" | "N";
@@ -161,7 +161,7 @@ export interface DcinsideComment {
 
 export interface CommentListResponse {
     list: DcinsideComment[];
-    /** 댓글·답글 쓰기 허용 (allow_reply). 멤버만 댓글을 쓰는 갤러리면 false */
+    /** 댓글·답글 쓰기 허용 (allow_reply). 멤버만 댓글을 쓰는 갤러리면 false다. */
     allowReply: boolean;
     /** 10쪽(1000개)을 넘어 오래된 댓글을 받지 못했는지. */
     truncated?: boolean;

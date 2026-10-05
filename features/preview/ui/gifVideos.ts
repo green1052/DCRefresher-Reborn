@@ -17,7 +17,7 @@ const toGif = (video: HTMLVideoElement, gif: string): void => {
     const image = document.createElement("img");
     image.className = video.className;
     image.src = gif;
-    // 스텔스·이미지 차단으로 숨긴 것은 받지 않게 (sanitize.ts와 같다).
+    // 스텔스·이미지 차단으로 숨긴 것은 받지 않게 (utils/sanitize.ts와 같다).
     image.loading = "lazy";
     for (const name of ["alt", "title", "data-block", "data-blocked"]) {
         const value = video.getAttribute(name);

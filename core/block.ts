@@ -117,9 +117,9 @@ const isBlockedIn = (lists: BlockLists, type: BlockType, content: string, galler
 export const isBlocked = (type: BlockType, content: string, gallery?: string): boolean =>
     content !== "" && isBlockedIn(useBlocksStore.getState(), type, content, gallery);
 
-/** 값 중 하나라도 차단 대상인지. 막힌 유형에서 멈추지 않고 모든 유형을 본다 (isBlocked가 유형마다 markUsed를 적는다). 다른 유형의 항목(같은 유저를 아이디로도 막은 것 등)도 쓰였다고 적어야 한다. */
+/** 값 중 하나라도 차단 대상인지. 막힌 유형에서 멈추지 않고 모든 유형을 본다. */
 export const isAnyBlocked = (values: BlockValues, gallery?: string): boolean =>
-    // some을 바로 쓰면 첫 막힌 유형에서 멈춰 나머지 유형의 markUsed가 빠진다. map으로 모두 본다.
+    // some을 바로 쓰면 첫 막힌 유형에서 멈춰 다른 유형 항목(같은 유저를 아이디로도 막은 것 등)의 markUsed가 빠진다.
     objectEntries(values).map(([type, value]) => Boolean(value) && isBlocked(type, value!, gallery)).some(Boolean);
 
 /** 확장이 흐리게 가린 행 (차단 블러, userinfo의 깡계 흐림). 흐린 행은 보이므로 checkVisibility로 가릴 수 없다. */

@@ -4,7 +4,7 @@ import {objectKeys} from "@/utils/typed";
 
 import type {BlockType, DatabaseMeta, DetectMode, MemoType, SettingValue} from "./types";
 
-/** 차단 유형 → 이름. 유형·모드 목록과 타입(types.ts)은 이름표의 키 순서를 따른다. */
+/** 차단 유형 → 이름. 유형·모드 목록과 타입(core/storage/types.ts)은 이름표의 키 순서를 따른다. */
 export const TYPE_NAMES = {
     NICK: "닉네임",
     ID: "아이디",
@@ -94,7 +94,7 @@ export const settingsKeyModule = (key: string): string | undefined => /^refreshe
 export const moduleDataStorage = <T>(id: string, fallback: T): WxtStorageItem<T, {}> =>
     storage.defineItem<T>(moduleDataKey(id), {fallback});
 
-/** 모듈 캐시 키. 감시만 할 때는 항목 대신 이 키를 쓴다 (core/storage/sync의 watchStorage). */
+/** 모듈 캐시 키. 감시만 할 때는 항목 대신 이 키를 쓴다 (core/storage/sync.ts의 watchStorage). */
 export const moduleDataKey = (id: string): `local:refresher:module:${string}:data` => `local:refresher:module:${id}:data`;
 
 /** 모듈 설정·캐시 키(local: 없이)의 모듈 id. 둘 다 아니면 undefined. */
@@ -115,8 +115,8 @@ export const dbStorage = {
 
 /**
  * ip·ban 키. defineItem은 만드는 순간 값을 한 번 읽으므로, 여기서 만들면 이 파일을 불러오는 모든 페이지·서비스 워커가
- * 쓰지도 않는 수백 KB를 읽는다. 쓰는 곳(core/database)에서 storage.getItem·watch로 다룬다.
- * 값은 CompactIpData(core/ipdb)·BanList의 JSON 문자열이고, 없으면 ""다. ip는 서버(ip.json)가 준 문자열 그대로다.
+ * 쓰지도 않는 수백 KB를 읽는다. 쓰는 곳(core/database.ts)에서 storage.getItem·watch로 다룬다.
+ * 값은 CompactIpData(core/ipdb.ts)·BanList의 JSON 문자열이고, 없으면 ""다. ip는 서버(ip.json)가 준 문자열 그대로다.
  * 객체로 두면 값 약 10만 개짜리 객체 그래프를 읽을 때마다 메인 스레드가 10ms 넘게 막힌다.
  */
 export const DB_KEYS = {

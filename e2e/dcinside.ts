@@ -52,7 +52,6 @@ export class FakeSite {
         {no: 1, title: "첫 번째 글", nick: "고닉", uid: "user1"}
     ];
 
-    /** 2쪽 목록. */
     page2: FakeRow[] = [{no: 51, title: "2쪽 첫 글", nick: "고닉", uid: "user51"}];
 
     /** 글마다 같은 댓글: 고닉의 댓글 하나와 그 아래 유동의 답글 하나. */
@@ -180,7 +179,7 @@ ${pageCommentList(comments)}
 <script>$(document).data('comment_id', 'test'); $(document).data('comment_no', '${no}');</script>
 </body></html>`;
 
-/* ===== 댓글 폼의 service_code ===== */
+// ===== 댓글 폼의 service_code =====
 
 /** 글 페이지 댓글 폼의 service_code. 확장은 끝 10자리를 _d() 값을 푼 글자로 갈아 끼워 보낸다. */
 const SERVICE_CODE = "abc0123456789";
@@ -200,5 +199,5 @@ function encodeServiceTail(tail: string): string {
     return Array.from(btoa(encoded), (char) => shuffled[standard.indexOf(char)]).join("");
 }
 
-/** 1×1 gif */
+/** 1×1 GIF. */
 const GIF = Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64");

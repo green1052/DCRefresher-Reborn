@@ -21,7 +21,7 @@ const fetchGallogActivity = async (uid: string): Promise<GallogActivity | undefi
     return {article, comment};
 };
 
-/** uid별 요청. 1시간 캐시하고, 실패한 항목은 지워 다음에 다시 받는다. 받는 중인 요청은 같이 기다린다. */
+/** uid별 요청. 1시간 캐시하고, 받는 중인 요청은 같이 기다린다. */
 const activityCache = new LruCache<string, Promise<GallogActivity | undefined>>({max: 500, ttl: 3_600_000});
 
 /**

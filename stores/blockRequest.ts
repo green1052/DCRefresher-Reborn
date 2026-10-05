@@ -1,4 +1,4 @@
-// 유저 버블의 "차단" 처리. 차단 모듈이 꺼져 있어도 차단 목록(stores/blocks)에는 넣으므로 모듈이 아닌 stores에 둔다.
+// 유저 버블의 "차단" 처리. 차단 모듈이 꺼져 있어도 차단 목록(stores/blocks.ts)에는 넣으므로 모듈이 아닌 stores에 둔다.
 import {BlockedError} from "@/core/http/client";
 import {fetchDcconPackage} from "@/core/preview/request";
 import {TYPE_NAMES} from "@/core/storage/items";
@@ -58,14 +58,14 @@ export type BlockRequestOptions = {
     dcconPackage?: DcconPackageMode;
 };
 
-/** 유저 버블의 차단 요청을 처리한다. 차단 모듈이 꺼져 있어도 목록에는 넣는다. */
+/** 유저 버블의 차단 요청을 처리한다. */
 export const handleBlockRequest = async (options: BlockRequestOptions, selected: SelectedUser): Promise<void> => {
     try {
         if (options.target === "dccon") await blockDccon(selected, options.dcconPackage);
         else await blockUser(selected);
     } catch (e) {
         console.error("Block request failed:", e);
-        // 임시 차단은 HTTP 클라이언트가 이미 알렸다. 디시콘은 정보 받기와 저장 중 어느 쪽이 실패했어도 같은 문구다.
+        // 임시 차단은 HTTP 클라이언트가 이미 알렸다.
         if (e instanceof BlockedError) return;
         useUiStore.getState().showToast(options.target === "dccon" ? "디시콘을 차단하지 못했습니다." : "차단 목록에 저장하지 못했습니다.", "error");
     }

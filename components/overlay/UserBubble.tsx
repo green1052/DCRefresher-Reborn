@@ -38,7 +38,6 @@ const formatActivity = (activity: ActivityState): string | undefined => {
     return `${activity.article.toLocaleString()} / ${activity.comment.toLocaleString()}`;
 };
 
-/** 아이디와 IP를 한 줄 "uid (IP)"로 합친다. */
 const identityValue = ({uid, ip}: { uid?: string; ip?: string }): string | undefined => (uid && ip ? `${uid} (${ip})` : uid || ip);
 
 /** 차단 규칙 하나를 해제한다. 토스트의 되돌리기 버튼으로 다시 걸 수 있다. */

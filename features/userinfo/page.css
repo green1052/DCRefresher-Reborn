@@ -1,6 +1,6 @@
 /* ===== 유저 정보 (userinfo 모듈) ===== */
 
-/* 유저 정보 배지 (userinfo 모듈): 닉네임이 잘리지 않게, 배지 사이 간격. */
+/* 유저 정보 배지:닉네임이 잘리지 않게, 배지 사이 간격. */
 :is(.fl, .cmt_info, .addbox, .reply_info) {
     .nickname {
         max-width: unset !important;

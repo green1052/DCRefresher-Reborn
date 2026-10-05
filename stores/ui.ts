@@ -36,7 +36,7 @@ export interface BlockView {
     replyRemove: boolean;
     /** 이 페이지에서만 차단 내용 보기 (저장하지 않음). */
     revealed: boolean;
-    /** 같은 댓글 접기. 끄면 null */
+    /** 같은 댓글 접기. 끄면 null이다. */
     duplicate: { count: number; minLength: number } | null;
 }
 
@@ -67,7 +67,7 @@ export const isLowActivity = (ratio: { article: number; comment: number }, alarm
 
 /**
  * 글댓비가 1시간 안에 받은 값인지. 지난 값은 미리보기·버블이 새로 조회하고, userinfo는 그 유저의 새 글이 올라오면 다시 조회한다.
- * 목록 배지는 지난 값도 그대로 보인다 (v5와 같다). 1시간 뒤 지우면 새 글이 드문 갤러리에선 배지가 거의 남지 않는다.
+ * 목록 배지는 지난 값도 그대로 보인다. 1시간 뒤 지우면 새 글이 드문 갤러리에선 배지가 거의 남지 않는다.
  */
 export const isFresh = <T extends { date: number }>(info?: T): info is T => info !== undefined && Date.now() - info.date <= 3600_000;
 
@@ -113,7 +113,6 @@ export const useUiStore = create<UiState>((set, get) => ({
     blockView: null,
 
     showToast: (content, type = "info", autoClose = 5000, action) => {
-        // 넘친 토스트는 가장 오래된 것부터 버린다.
         set({toasts: [...get().toasts, {id: ++toastSeq, content, type, autoClose, action}].slice(-TOAST_MAX)});
     },
 
@@ -138,7 +137,7 @@ export const useUiStore = create<UiState>((set, get) => ({
 
 /**
  * 페이지의 작성자 칸(.ub-writer)을 우클릭하면 브라우저 메뉴 대신 유저 버블(차단·메모·갤로그)을 연다. document의 capture 리스너로 건다.
- * 차단과 유저 정보 모듈이 각자 건다. 메모는 차단 모듈을 꺼도 쓸 수 있어야 한다 (v5도 유저 정보 모듈이 메모 메뉴를 맡았다).
+ * 차단과 유저 정보 모듈이 각자 건다. 메모는 차단 모듈을 꺼도 쓸 수 있어야 한다.
  * 둘 다 켜져 있으면 먼저 받은 쪽이 열고, 나머지는 defaultPrevented를 보고 건너뛴다. Shift+우클릭은 브라우저 메뉴로 남긴다.
  */
 export const openWriterBubble = (ev: MouseEvent): void => {
@@ -155,5 +154,5 @@ export const openWriterBubble = (ev: MouseEvent): void => {
     useUiStore.getState().openBubble({nick, uid, ip}, ev.clientX, ev.clientY);
 };
 
-// 토스트·유저 버블·메모 창이 뜨면 오버레이를 띄운다 (components/overlay/demands). 배지 색·차단 보기처럼 setup이 늘 채우는 값은 넣지 않는다.
+// 토스트·유저 버블·메모 창이 뜨면 오버레이를 띄운다 (components/overlay/demands.ts). 배지 색·차단 보기처럼 setup이 늘 채우는 값은 넣지 않는다.
 needOverlayWhen(useUiStore, ({toasts, bubble, memo}) => Boolean(toasts.length || bubble || memo));

@@ -182,7 +182,7 @@ export const WriteComment = () => {
 
     /**
      * 글자콘 입력 제한을 적용한다. 값이 바뀔 때만 다시 써서 커서가 튀지 않게 한다.
-     * 한글 조합 중엔 부르지 않고 조합이 끝난 뒤 부른다 (디시 txtcon.js와 같음).
+     * 한글 조합 중엔 부르지 않고 조합이 끝난 뒤 부른다 (디시 txtcon.js와 같다).
      */
     const applyTxtcon = (): void => {
         const element = textarea.current;

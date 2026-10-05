@@ -86,7 +86,7 @@ const readKisa = async (): Promise<Map<number, string>> => {
 
 const regionName = new Intl.DisplayNames(["ko"], {type: "region"});
 
-/** 한 주소 구간의 후보. 보여 줄 것이 없으면 undefined */
+/** 한 주소 구간의 후보. 보여 줄 것이 없으면 undefined다. */
 const candidateOf = (kisa: Map<number, string>, asn: Asn | undefined, iso: string | undefined, vpn: boolean): IpCandidate | undefined => {
     // 한국은 국가를 생략하고 기관명만. KISA 이름이 있으면 그것으로.
     if (iso === "KR") {

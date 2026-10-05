@@ -3,7 +3,7 @@ import {postKey} from "@/core/preview/cache";
 import type {GalleryPreData} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 
-/** 목록 행(또는 제목 칸)에서 미리보기 대상을 읽는다. 링크가 없거나 글 주소가 아니면 null */
+/** 목록 행(또는 제목 칸)에서 미리보기 대상을 읽는다. 링크가 없거나 글 주소가 아니면 null이다. */
 export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
     const anchor = element.querySelector<HTMLAnchorElement>("a:not(.reply_numbox)");
     if (!anchor) return null;
@@ -40,7 +40,7 @@ export const buildPreData = (element: HTMLElement): GalleryPreData | null => {
         // 이미지·텍스트·동영상 개념글 (icon_recomimg, icon_recomtxt, icon_recomovie).
         recommend: classes?.includes("icon_recom") ?? false,
         type: classes?.split(" ").at(-1) ?? "icon_txt",
-        // [댓글 수] 또는 [댓글 수/음성 댓글 수]
+        // 칸 글자는 [댓글 수] 또는 [댓글 수/음성 댓글 수]다.
         commentCount: Number.parseInt(row.querySelector(".reply_num")?.textContent?.slice(1) ?? "", 10) || 0
     };
 };

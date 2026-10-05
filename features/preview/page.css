@@ -1,11 +1,11 @@
 /* ===== 미리보기 (preview 모듈): 목록에 거는 표시 ===== */
 
-/* 미리보기로 읽은 글 (preview 모듈의 read.ts). 방문 기록에 남지 않아 방문한 글 색이 바뀌지 않으므로 흐리게 한다. */
+/* 미리보기로 읽은 글 (read.ts).방문 기록에 남지 않아 방문한 글 색이 바뀌지 않으므로 흐리게 한다. */
 .gall_list .refresherRead .gall_tit {
     opacity: 0.55;
 }
 
-/* 목록 키보드 이동으로 고른 글 (preview 모듈의 keyboard.ts). */
+/* 목록 키보드 이동으로 고른 글 (keyboard.ts). */
 .gall_list .refresherSelected > td {
     background: rgb(59 72 144 / 10%) !important;
 }

@@ -28,7 +28,7 @@ const EmptyList = ({children}: { children: ReactNode }) => (
 /** 오래 안 쓴 항목 거르기. 쓰인 시각은 이 기기에서 걸리거나(차단) 보인(메모) 때다. */
 const UNUSED_OPTIONS = {"0": "사용 기록 전체", "30": "30일 넘게 안 쓰임", "90": "90일 넘게 안 쓰임", "180": "180일 넘게 안 쓰임"};
 
-/** 받침이 있으면 "을", 없으면 "를" */
+/** 받침이 있으면 "을", 없으면 "를". */
 const objectParticle = (word: string): string => ((word.charCodeAt(word.length - 1) - 0xac00) % 28 > 0 ? "을" : "를");
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -52,7 +52,7 @@ export const ListRow = ({head, info, used, onEdit, onRemove}: {
     <TableRow className="cursor-pointer" onClick={onEdit}>
         <TableHead scope="row" className="font-normal">
             {/* 줄(tr)은 버튼이 될 수 없어 키보드·스크린 리더에는 첫 칸을 편집 버튼으로 알린다.
-                따로 onClick을 달지 않는다. 누르면(Enter/Space 포함) click이 줄로 올라가 편집이 열린다 */}
+                따로 onClick을 달지 않는다. 누르면(Enter/Space 포함) click이 줄로 올라가 편집이 열린다. */}
             <button type="button" title="수정"
                     className="block w-full cursor-pointer rounded-sm text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
                 {head}
@@ -61,7 +61,7 @@ export const ListRow = ({head, info, used, onEdit, onRemove}: {
         <TableCell className="whitespace-normal">{info}</TableCell>
         <TableCell className="text-muted-foreground">{formatUsed(used)}</TableCell>
         <TableCell className="text-right">
-            {/* 툴팁은 브라우저 기본(title)을 쓴다. 줄마다 툴팁 부품을 달면 수천 줄 목록을 열거나 검색할 때마다 느려진다 */}
+            {/* 툴팁은 브라우저 기본(title)을 쓴다. 줄마다 툴팁 부품을 달면 수천 줄 목록을 열거나 검색할 때마다 느려진다. */}
             <Button variant="ghost" size="icon-sm" className="text-destructive" aria-label="삭제" title="삭제"
                     onClick={(ev) => {
                         ev.stopPropagation();

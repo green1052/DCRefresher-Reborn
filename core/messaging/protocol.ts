@@ -20,12 +20,12 @@ interface ProtocolMap {
     /** 배경 → 탭: 단축키 실행 (commands). */
     "refresher:executeShortcut"(data: string): void;
 
-    /** 탭 → 배경: 디시가 reCAPTCHA v3를 요구하면 그 탭의 MAIN world에서 토큰을 받아 온다. 실패하면 undefined */
+    /** 탭 → 배경: 디시가 reCAPTCHA v3를 요구하면 그 탭의 MAIN world에서 토큰을 받아 온다. 실패하면 undefined다. */
     "refresher:grecaptchaToken"(action: "comment_submit" | "insert_icon"): string | undefined;
 
     /**
      * 탭 → 배경: refresh·search가 목록 행을 갈아끼우거나 이어 붙였다. 배경이 그 탭의 MAIN world에서 디시 자체 차단·이용자 메모 표시를 다시 적용한다.
-     * 인자는 갤러리 id
+     * 인자는 갤러리 id다.
      */
     "refresher:listReplaced"(gallery: string): void;
 
@@ -35,10 +35,10 @@ interface ProtocolMap {
     /** 탭 → 배경: 디시 통합검색 결과 페이지(HTML). search.dcinside.com은 CORS를 열지 않아 콘텐츠 스크립트가 받을 수 없다. */
     "refresher:searchPosts"(query: string): string;
 
-    /** 탭 → 배경: 쓰인 차단 항목·메모 (core/usage). 여러 탭이 동시에 써도 기록을 잃지 않게 배경이 차례로 저장한다. */
+    /** 탭 → 배경: 쓰인 차단 항목·메모 (core/usage.ts). 여러 탭이 동시에 써도 기록을 잃지 않게 배경이 차례로 저장한다. */
     "refresher:markUsed"(batch: UsageData): void;
 
-    /** 옵션 → 배경: 사용 기록을 지금 목록에 맞추고 그 종류의 기록을 돌려준다 (core/usage의 syncUsage). */
+    /** 옵션 → 배경: 사용 기록을 지금 목록에 맞추고 그 종류의 기록을 돌려준다 (core/usage.ts의 syncUsage). */
     "refresher:syncUsage"(data: { kind: UsageKind; ids: string[] }): Record<string, number>;
 
     /** 팝업 → 탭: 이 페이지의 토글 상태. */

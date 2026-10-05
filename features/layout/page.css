@@ -30,7 +30,7 @@
     }
 
     /* 오른쪽 위 링크 줄. 디시는 이 상자를 absolute로 띄우고 안의 목록을 float: left로 둔다. */
-    /* 상자만 static으로 내리면 text-align이 float에 안 먹어 목록이 왼쪽으로 붙고 창 폭에 따라 떠다닌다 (#267) */
+    /* 상자만 static으로 내리면 text-align이 float에 안 먹어 목록이 왼쪽으로 붙고 창 폭에 따라 떠다닌다 (#267). */
     /* flex로 바꿔 오른쪽에 붙이고 안쪽 float·위치 지정을 푼다. */
     .area_links {
         position: static !important;
@@ -85,7 +85,7 @@
     }
 
     /* 목록: 사이드바를 빼고 목록이 폭을 다 쓴다. */
-    /* 알림 목록·설정 창(#alarmList, #alarmConf)은 사이드바 로그인 상자 안에 있어 display: none으로 숨기면 머리글의 알림 버튼을 눌러도 안 보인다 (#270) */
+    /* 알림 목록·설정 창(#alarmList, #alarmConf)은 사이드바 로그인 상자 안에 있어 display: none으로 숨기면 머리글의 알림 버튼을 눌러도 안 보인다 (#270). */
     /* 사이드바는 자리를 차지하지 않게 빼고 보이지만 않게 둔다. visibility는 자손이 되돌릴 수 있어 알림 창만 다시 보인다. */
     .right_content {
         position: absolute !important;

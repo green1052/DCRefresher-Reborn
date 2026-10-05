@@ -11,7 +11,6 @@ interface Demand {
 
 const demands: Demand[] = [];
 
-/** zustand 스토어처럼 getState·subscribe가 있는 것. */
 interface Subscribable<S> {
     getState(): S;
     subscribe(listener: (state: S) => void): () => void;
@@ -22,7 +21,6 @@ export const needOverlayWhen = <S>(store: Subscribable<S>, needed: (state: S) =>
     demands.push({needed: () => needed(store.getState()), subscribe: (listener) => store.subscribe(listener)});
 };
 
-/** 등록된 조건 중 하나라도 맞는지. */
 export const overlayNeeded = (): boolean => demands.some((demand) => demand.needed());
 
 /** 조건이 바뀔 수 있을 때마다 부른다. 해제 함수를 돌려준다. */

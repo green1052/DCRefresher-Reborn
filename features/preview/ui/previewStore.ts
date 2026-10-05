@@ -7,7 +7,7 @@ import type {GalleryPreData, PostInfo} from "@/core/preview/types";
 
 export interface ErrorState {
     detail: string;
-    /** HTTP 상태 코드 (HTTPError일 때). 임시 차단(BlockedError)은 429 */
+    /** HTTP 상태 코드 (HTTPError일 때). 임시 차단(BlockedError)은 429다. */
     status?: number;
     /** 성인 인증이 필요한 글 (비로그인·미인증이면 본문 대신 인증 안내가 온다). */
     adult?: boolean;
@@ -22,7 +22,7 @@ export const MANAGE_LABELS = {notice: ["공지로 등록", "공지를 해제"], 
 
 type Reply = { commentNo: string | null; replyNo: string | null };
 
-/** 크게 보기(ImageViewer)의 이미지. pop은 디시 원본 보기 주소 (parser.ts가 옮겨 둔 data-pop). */
+/** 크게 보기(ImageViewer)의 이미지. pop은 디시 원본 보기 주소 (core/preview/parser.ts가 옮겨 둔 data-pop). */
 export interface ViewerImage {
     src: string;
     alt: string;
@@ -46,7 +46,7 @@ interface PostState {
     /** 댓글·답글 쓰기 허용. 멤버만 댓글을 쓸 수 있는 갤러리면 댓글 응답의 allow_reply가 0이다. */
     allowReply: boolean;
     collapsed: Set<string>;
-    /** 댓글 새로고침으로 새로 들어온 댓글 번호. 잠깐 강조한다 (overlay.css의 data-fresh). */
+    /** 댓글 새로고침으로 새로 들어온 댓글 번호. 잠깐 강조한다 (Comment.tsx의 animate-fresh-comment). */
     freshComments: ReadonlySet<string>;
     reply: Reply;
     /** 댓글만 보기 (목록의 댓글 수 링크로 열었을 때). */

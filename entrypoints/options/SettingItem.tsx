@@ -26,7 +26,6 @@ interface SettingItemProps {
     onChange: (value: SettingValue) => void;
 }
 
-/** 설정 종류별 값 타입. */
 type ValueOf<T extends SettingSchema["type"]> = T extends "check" ? boolean : T extends "range" ? number : T extends "order" ? string[] : string;
 
 type NarrowProps<T extends SettingSchema["type"]> = Omit<SettingItemProps, "schema" | "value" | "onChange"> & {

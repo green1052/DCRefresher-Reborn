@@ -12,7 +12,7 @@ const COUNT_CELLS = ".gall_count, .gall_recommend, .reply_num";
 /**
  * 받아온 행의 원래 HTML에서 수 칸의 글자를 비운 것 (체크박스 칸·강조·효과를 입히기 전). 행 순서가 같을 때 바뀐 행을 가려내는 데 쓴다.
  * 수만 바뀐 행은 갈아끼우지 않고 글자만 고친다. 갈아끼우면 필터·차단 검사·배지·리스너가 다시 돌고 hover가 풀린다.
- * 마크업이 예상과 달라 정규식이 못 비우면 수가 바뀐 행도 달라 보여 전처럼 갈아끼운다.
+ * 마크업이 예상과 달라 정규식이 못 비우면 수가 바뀐 행도 달라 보여 통째로 갈아끼운다.
  */
 const rowFrames = new WeakMap<Element, string>();
 const frameOf = (html: string): string => html.replace(/(class="(?:gall_count|gall_recommend|reply_num)"[^>]*>)[^<]*/g, "$1");

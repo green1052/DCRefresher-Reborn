@@ -7,7 +7,6 @@ interface RefresherSelectProps<T extends string> {
     disabled?: boolean;
     /** 스크린 리더용 이름. 옆에 둔 글자는 label로 연결되지 않으므로 따로 넘긴다. */
     "aria-label"?: string;
-    /** 설명 글의 id (설정 설명). */
     "aria-describedby"?: string;
     onChange: (value: T) => void;
 }

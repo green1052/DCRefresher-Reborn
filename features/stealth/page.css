@@ -3,7 +3,7 @@
 /* ===== 스텔스 모드 (stealth 모듈) — html.refresherStealth, 버튼으로 잠시 보이기: html.stlth ===== */
 
 .refresherStealth {
-    /* 미리보기(shadow DOM)엔 선택자가 닿지 않으므로 상속되는 변수로 알린다 (overlay.css). */
+    /* 미리보기(shadow DOM)엔 선택자가 닿지 않으므로 상속되는 변수로 알린다 (features/preview/overlay.css). */
     &:not(.stlth) {
         --refresher-stealth-media: none;
     }
@@ -12,7 +12,7 @@
     --refresher-stealth-dccon-visibility: hidden;
     --refresher-stealth-dccon-label: "디시콘 표시";
 
-    /* 본문 미디어·갤러리 대문·목록 썸네일(실시간 베스트) — 지연 로딩 이미지는 디시 JS가 style="display: inline"을 붙이므로 !important */
+    /* 본문 미디어·갤러리 대문·목록 썸네일(실시간 베스트) — 지연 로딩 이미지는 디시 JS가 style="display: inline"을 붙이므로 !important를 쓴다. */
     &:not(.stlth) .writing_view_box :is(img, video, embed),
     &:not(.stlth) #zzbang_div,
     &:not(.stlth) .gall_list .thumimg {
@@ -53,7 +53,7 @@
     /* 디시 왼쪽 아래 고정 배너(개념글 알림)에 가리지 않도록 그 위에 둔다. */
     bottom: 96px;
     left: 0;
-    /* 미리보기(overlay.css, 100000)보다 위 — 미리보기를 연 채로 이미지를 보이게 할 수 있다 (배경 클릭이 아니라 닫히지 않음). */
+    /* 미리보기(assets/styles/overlay.css, 100000)보다 위 — 미리보기를 연 채로 이미지를 보이게 할 수 있다 (배경 클릭이 아니라 닫히지 않음). */
     z-index: 100001;
     padding: 4px;
     border: 1px solid rgb(0 0 0 / 12%);

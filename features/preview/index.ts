@@ -74,7 +74,7 @@ const recentComments = (preData: GalleryPreData): CommentListResponse | undefine
 // blockView에서 가공 결과가 읽는 값만 뽑은 비교 키 (아래 useUiStore 구독).
 const blockKeyOf = (view: BlockView | null): string => (view ? JSON.stringify([view.blur, view.replyRemove, view.duplicate]) : "");
 
-/** 새 댓글 강조 시간 (ms). overlay.css의 refresher-fresh-comment 애니메이션 길이와 같다. */
+/** 새 댓글 강조 시간 (ms). assets/styles/tailwind.css의 fresh-comment 애니메이션 길이와 같다. */
 const FRESH_DURATION = 3000;
 
 const controller = (ctx: Ctx) => {
@@ -84,7 +84,7 @@ const controller = (ctx: Ctx) => {
     let abort: AbortController | null = null;
     let savedHistory: SavedHistory | null = null;
     let refreshTimer = 0;
-    // 관리 단축키 두 번 누르기 확인. 같은 키를 1초 안에 다시 누르면 실행한다. 글을 열 때 새로 만들어 다시 센다.
+    // 관리 단축키 두 번 누르기 확인. 같은 키를 1초 안에 다시 누르면 실행한다.
     let confirmPress = createDoublePress(1000);
     // 받는 중인 본문 요청 하나. 우클릭 누름·미니·열기·미리 받기가 같이 쓴다.
     // 다른 글을 받으면 앞 요청은 끊어, 연타해도 요청이 쌓이지 않는다.
@@ -563,7 +563,7 @@ const controller = (ctx: Ctx) => {
     window.addEventListener("popstate", onPopState, {signal: ctx.signal});
 
     // 앞/뒤로 가기로 돌아왔는데 목록 문서가 bfcache에 없으면 브라우저는 미리보기가 쌓은 항목을 글 주소로 새로 불러온다(파이어폭스에서 잦다).
-    // 목록 주소로 바꿔 다시 불러오고, 목록에서 그 글 미리보기를 연다. 새로고침(F5)은 글 페이지 그대로 둔다
+    // 목록 주소로 바꿔 다시 불러오고, 목록에서 그 글 미리보기를 연다. 새로고침(F5)은 글 페이지 그대로 둔다.
     // 다시 연 항목은 새로 쌓지 않고 이 문서 것으로 바꾼다. 쌓으면 목록 항목이 둘이 되어 뒤로 가기를 두 번 눌러야 한다.
     const entry = previewEntry(history.state);
     if (entry && entry.doc !== historyDoc && entry.preData && entry.back) {

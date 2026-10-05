@@ -27,14 +27,13 @@ export const createLimiter = (initial: number) => {
                 next();
             }),
 
-        /** 1 이상의 정수나 Infinity */
+        /** 1 이상의 정수나 Infinity여야 한다. */
         setConcurrency: (value: number): void => {
             if (!(value === Number.POSITIVE_INFINITY || (Number.isInteger(value) && value > 0))) throw new TypeError(`동시 실행 수가 올바르지 않습니다: ${value}`);
             concurrency = value;
             next();
         },
 
-        /** 실행 중인 작업 수와 기다리는 작업 수. */
         get activeCount(): number {
             return active;
         },

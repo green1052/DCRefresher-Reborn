@@ -33,7 +33,7 @@ const resolveEnables = (stored: Record<string, unknown>): Record<string, boolean
 const enqueue = (write: () => Promise<void>): Promise<void> => navigator.locks.request("refresher:module-settings", write);
 
 /**
- * 옵션 페이지용 모듈 상태. 저장소에 직접 읽고 쓰며, 열린 디시 탭의 레지스트리가 저장소를 감시해 반영한다.
+ * 옵션·팝업용 모듈 상태. 저장소에 직접 읽고 쓰며, 열린 디시 탭의 레지스트리가 저장소를 감시해 반영한다.
  * 그래서 디시 탭이 없어도 설정할 수 있다.
  */
 export const useModulesStore = create<ModulesState>((set) => ({

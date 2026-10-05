@@ -32,7 +32,6 @@ export const useStorageItem = <T, >(item: WxtStorageItem<T, {}>): T => {
     return value;
 };
 
-/** 저장 시각 표시 (0이면 기록 없음). */
 export const formatTime = (time: number): string => (time === 0 ? "기록 없음" : new Date(time).toLocaleString("ko-KR"));
 
 export const formatBytes = (bytes: number): string =>
@@ -65,7 +64,6 @@ export const useUsage = (kind: UsageKind, ids: readonly string[]): Record<string
     return times;
 };
 
-/** 옵션 페이지 섹션 카드. */
 export const Section = ({title, desc, actions, children}: {
     title?: ReactNode;
     desc?: ReactNode;

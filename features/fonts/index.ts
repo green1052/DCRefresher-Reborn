@@ -13,7 +13,7 @@ const buildCss = (ctx: Ctx): string => {
     const fonts = fontFamilyOf(ctx.settings.customFonts);
     const size = ctx.settings.bodyFontSize;
 
-    // 확장 UI(shadow DOM)엔 선택자가 닿지 않으므로 상속되는 커스텀 속성으로 넘긴다 (overlay.css에서 사용).
+    // 확장 UI(shadow DOM)엔 선택자가 닿지 않으므로 상속되는 커스텀 속성으로 넘긴다 (assets/styles/tailwind.css, features/preview/overlay.css).
     const css = [`:root { --refresher-font: ${fonts}; --refresher-preview-font-size: ${size + 2}px; }`];
 
     if (ctx.settings.changeDCFont) {

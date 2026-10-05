@@ -10,7 +10,6 @@ export const focusedElement = (): HTMLElement | null => {
 /** 포커스를 받는 가장 가까운 조상(탭 패널 등). 누른 버튼이 막혀 포커스가 body로 떨어질 때 돌아갈 곳이다. */
 export const panelOf = (from: Element | null | undefined): HTMLElement | null | undefined => from?.parentElement?.closest<HTMLElement>("[tabindex]");
 
-/** panelOf로 포커스를 옮긴다. */
 export const focusPanel = (from: Element | null | undefined): void => panelOf(from)?.focus({preventScroll: true});
 
 /**

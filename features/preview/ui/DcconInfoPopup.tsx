@@ -39,7 +39,7 @@ export const openDcconInfo = (ev: MouseEvent<HTMLElement>): boolean => {
 };
 
 /**
- * 패키지 목록의 디시콘을 우클릭하면 본문 디시콘처럼 차단 버블을 연다 (차단 모듈의 setupSelection).
+ * 패키지 목록의 디시콘을 우클릭하면 본문 디시콘처럼 차단 버블을 연다 (features/block/index.ts의 setupSelection).
  * 목록 이미지는 .written_dccon이 아니라 페이지 쪽 리스너가 받지 않는다. 주소의 no가 차단 목록에 넣는 값과 같다.
  */
 const openBlockBubble = (ev: MouseEvent<HTMLElement>): void => {
@@ -55,7 +55,6 @@ const Label = ({children}: { children: string }) => (
     <Badge variant="outline" className="rounded-sm text-muted-foreground">{children}</Badge>
 );
 
-/** 디시콘 상점 링크. */
 const ShopLink = ({href, children}: { href: string; children: string }) => (
     <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline-offset-4 hover:underline">{children}</a>
 );
@@ -110,7 +109,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
     const info = dccon?.info;
 
     return (
-        // 우클릭 버블은 이 창 밖(components/overlay/UserBubble)에 뜨므로, 버블이 떠 있는 동안은 바깥 클릭으로 닫지 않는다.
+        // 우클릭 버블은 이 창 밖(components/overlay/UserBubble.tsx)에 뜨므로, 버블이 떠 있는 동안은 바깥 클릭으로 닫지 않는다.
         <ModalDialog onClose={close} className="sm:max-w-[600px]" focusOnOpen="keyboard" disablePointerDismissal={bubble !== null}>
             <div className="flex items-center justify-between">
                 <DialogTitle>디시콘 정보</DialogTitle>

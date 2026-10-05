@@ -151,7 +151,6 @@ class RdpClient {
     }
 }
 
-/** 설치한 부가 기능. */
 export interface FirefoxAddon {
     /**
      * 배경 페이지에서 식(Promise여도 된다)을 계산해 JSON으로 돌려받는다.

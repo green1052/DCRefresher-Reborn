@@ -42,7 +42,6 @@ export const normalizeSetting = (schema: SettingSchema, value: unknown): Setting
             const stored = [...new Set((Array.isArray(value) ? value : schema.default).filter(
                 (key): key is string => typeof key === "string" && itemKeys.has(key)
             ))];
-            // 스키마에 새로 추가된 항목은 맨 뒤에 넣는다.
             for (const key of schema.default) {
                 if (itemKeys.has(key) && !stored.includes(key)) stored.push(key);
             }
@@ -72,11 +71,11 @@ export const settingsOf = (def: Pick<ModuleDefinition, "settings">, stored: unkn
 
 /**
  * 모듈 on/off와 주어진 모듈들의 설정을 한 번의 storage.local.get으로 읽는다. 모듈마다 따로 읽으면 왕복이 모듈 수만큼 쌓인다.
- * 항목(defineItem)은 만드는 순간 키마다 한 번 더 읽으므로 키로 읽는다 (items.ts). 설정은 저장소 값 그대로다 (settingsOf로 맞춘다).
+ * 항목(defineItem)은 만드는 순간 키마다 한 번 더 읽으므로 키로 읽는다 (core/storage/items.ts). 설정은 저장소 값 그대로다 (settingsOf로 맞춘다).
  * 콘텐츠 레지스트리·배경 모듈이 같이 쓴다.
  */
 export const readModuleStorage = async (ids: readonly string[]): Promise<{ enables: Record<string, unknown>; settings: Map<string, unknown> }> => {
-    // getItems는 받은 키로 값을 돌려주지만 순서는 약속이 아니므로 키로 짝짓는다 (storage/sync.ts와 같다).
+    // getItems는 받은 키로 값을 돌려주지만 순서는 약속이 아니므로 키로 짝짓는다 (core/storage/sync.ts와 같다).
     const items = new Map((await storage.getItems([MODULES_KEY, ...ids.map(moduleSettingsKey)])).map(({key, value}) => [key, value]));
     return {enables: enablesOf(items.get(MODULES_KEY)), settings: new Map(ids.map((id) => [id, items.get(moduleSettingsKey(id)) ?? null]))};
 };

@@ -82,7 +82,7 @@ export interface ModuleMeta<S extends SettingsSchema = SettingsSchema> {
     /** 표시명 (한글). */
     name: string;
     description: string;
-    /** 팝업 모듈 타일 아이콘. 배경 스크립트가 import하는 파일에 두면 React가 배경 번들에 딸려 간다 (imagesearch 참고). */
+    /** 팝업 모듈 타일 아이콘. 배경 스크립트가 import하는 파일에 두면 React가 배경 번들에 딸려 간다 (features/imagesearch 참고). */
     icon: LucideIcon;
     /** 모듈이 돌 URL. 없으면 모든 페이지, []면 어느 페이지에서도 돌지 않는다(설정도 읽지 않는다). */
     urls?: RegExp[];

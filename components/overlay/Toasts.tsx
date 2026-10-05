@@ -50,7 +50,6 @@ export const ToastHost = () => {
         return () => cancelAnimationFrame(frame);
     }, []);
     const toasts = useUiStore((s) => s.toasts);
-    // 스크린 리더는 가장 최근 토스트를 읽는다.
     const spoken = announce ? toasts.at(-1) : undefined;
     const error = spoken?.type === "error";
     return (

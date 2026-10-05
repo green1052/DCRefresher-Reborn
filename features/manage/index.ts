@@ -131,7 +131,7 @@ export default defineModule({
                     if (deleting.has(postId)) return;
                     deleting.add(postId);
 
-                    // 목록 페이지 주소의 id가 곧 갤러리다. 다른 모듈들과 같은 출처로 쓴다 (#gallery_id 입력칸은 없는 페이지가 있다).
+                    // #gallery_id 입력칸은 없는 페이지가 있어 주소의 id를 갤러리로 쓴다.
                     const gallery = queryString("id") ?? "";
                     void notifyManage(
                         deletePost({gallery, id: postId, link: location.href}),

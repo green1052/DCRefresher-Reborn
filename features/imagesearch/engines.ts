@@ -17,7 +17,7 @@ export const IMAGE_SEARCH_ENGINES: Record<string, { name: string; url: string }>
 /** 메뉴를 띄울 이미지: imageSearchUrl이 바꿀 수 있는 디시 본문 이미지(viewimage.php — dcimg*.dcinside.co.kr, image.dcinside.com 등)만. */
 export const IMAGE_URL_PATTERNS = ["*://*.dcinside.co.kr/viewimage.php*", "*://*.dcinside.com/viewimage.php*"];
 
-/** 우클릭한 이미지를 engine으로 검색할 주소. 디시 본문 이미지가 아니면 null */
+/** 우클릭한 이미지를 engine으로 검색할 주소. 디시 본문 이미지가 아니면 null이다. */
 export const imageSearchUrl = (engine: string, src: string): string | null => {
     const prefix = IMAGE_SEARCH_ENGINES[engine]?.url;
     if (!prefix || !src.includes("viewimage.php")) return null;

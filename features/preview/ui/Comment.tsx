@@ -96,7 +96,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
 
     // 디시콘(img/video)과 글자콘. 답글이면 앞에 멘션이 붙어 오므로 ^로 고정하지 않고 찾는다.
     const isDccon = /<(img|video) class=|<div class="coment_dccon_txt/.test(comment.memo);
-    // 디시콘 HTML은 줄바꿈을 <br/>로 바꾸지 않는다. 붙어 온 디시콘 태그는 comments.ts(splitDccons)가 이미 나눠 두었다.
+    // 디시콘 HTML은 줄바꿈을 <br/>로 바꾸지 않는다. 붙어 온 디시콘 태그는 core/preview/comments.ts(splitDccons)가 이미 나눠 두었다.
     const html = isDccon ? comment.memo : comment.memo.replace(/\n/g, "<br/>");
 
     // 글자콘 크기는 그려진 뒤에 잰다. html이 바뀌면 React가 내용을 새로 넣으므로 다시 잰다. 글만 있는 댓글(대부분)은 훑지 않는다.

@@ -63,7 +63,6 @@ export const bindListKeys = (ctx: Ctx, open: (preData: GalleryPreData) => void):
     };
     window.addEventListener("keydown", onKey, {signal: ctx.signal});
 
-    // 새로고침으로 바뀐 행에도 다시 표시한다.
     ctx.addFilter(ROW_SELECTOR, (row) => {
         if (selected && rowPostKey(row) === selected) row.classList.add(SELECTED_CLASS);
     });

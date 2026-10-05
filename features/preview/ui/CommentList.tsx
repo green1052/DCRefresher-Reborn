@@ -47,7 +47,7 @@ export const CommentList = () => {
     const comments = usePreviewStore((s) => s.comments)!;
     const revealed = useUiStore((s) => s.blockView?.revealed === true);
 
-    // 숨김 차단과 접힌 같은 댓글은 '가린 내용 보기' 동안만 (흐리게) 그린다. 블러 차단은 그려 두고 overlay.css가 흐린다.
+    // 숨김 차단과 접힌 같은 댓글은 '가린 내용 보기' 동안만 (흐리게) 그린다. 블러 차단은 그려 두고 features/preview/overlay.css가 흐린다.
     // 트리 선과 답글 수도 그리는 댓글만 센다.
     const shown = new Set(revealed ? comments : comments.filter((comment) => comment.blocked !== "hide" && comment.duplicates !== 0));
     const parents = threadParents(comments);

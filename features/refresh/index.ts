@@ -58,7 +58,6 @@ export default defineModule({
         const unseen = createUnseenCounter(ctx);
         const gallery = queryString("id") ?? "";
 
-        // 제어 버튼.
         let button: HTMLButtonElement | null = null;
         const label = (): string => (paused ? "자동 새로고침: 꺼짐" : "자동 새로고침: 켜짐");
         // 버튼·단축키·팝업 토글이 같이 쓴다.
@@ -146,12 +145,10 @@ export default defineModule({
                 lastRefresh = Date.now();
 
                 // 자동 새로고침은 재시도하지 않고, 실패하면 armNext가 주기를 늘린다. ky 재시도는 Retry-After를 최대 10초까지 기다려 그동안 목록 요청이 묶인다.
-                // 시간 제한은 기본값(15초, 차례를 받은 뒤부터)을 쓴다. 다음 주기는 응답을 받은 뒤 잡으므로 요청이 겹치지 않는다.
-                // 주기보다 짧게 끊으면 큰 갤러리 목록(2~3초 걸린다)이 조금만 늦어도 실패가 되어 주기가 최대 1분까지 늘어나 멈춘 것처럼 보인다.
                 // retry: undefined는 기본값을 덮으므로 키 자체를 뺀다.
-                // http의 시간 제한은 응답 머리까지만 잰다. 디시 GET은 임시 차단 검사(detectBlocked)가 http.get 안에서 본문까지 읽어, 본문이 멈추면
-                // http.get이 끝나지 않고 loading이 풀리지 않아 새로고침이 끝내 멈춘다. 그래서 요청 전체에 건다. 끊으면 요청째 끊겨 본문 읽기도 실패한다.
-                // 이 제한으로 끊긴 것은 controller가 아니라 실패로 친다 (catch).
+                // 시간 제한을 주기보다 짧게 잡지 않는다. 큰 갤러리 목록(2~3초)이 조금만 늦어도 실패가 되어 주기가 1분까지 늘어난다.
+                // http의 시간 제한(15초)은 응답 머리까지만 잰다. 디시 GET은 임시 차단 검사(detectBlocked)가 http.get 안에서 본문까지 읽어,
+                // 본문이 멈추면 loading이 풀리지 않아 새로고침이 끝내 멈춘다. 그래서 요청 전체에 LIST_TIMEOUT을 걸고, 여기서 끊긴 것은 실패로 친다 (catch).
                 const stalled = new AbortController();
                 const stallTimer = window.setTimeout(() => stalled.abort(new DOMException("목록 요청 시간 초과", "TimeoutError")), LIST_TIMEOUT);
                 let response: string;
@@ -249,7 +246,6 @@ export default defineModule({
             // 응답을 기다리던 중 숨겨져도 여기서 멈춘다. 모듈을 끈 뒤 응답이 와도 타이머를 다시 걸지 않는다.
             if (ctx.signal.aborted || (document.hidden && !ctx.settings.backgroundRefresh)) return;
 
-            // 실패가 이어지면 주기를 두 배씩 늘린다 (최대 MAXIMUM_BACKOFF_INTERVAL). 성공하면 load가 failures를 0으로 되돌린다.
             const rate = document.hidden ? ctx.settings.backgroundRefreshRate : ctx.settings.refreshRate;
             const interval = Math.min(rate * 2 ** failures, Math.max(rate, MAXIMUM_BACKOFF_INTERVAL));
             // 응답을 받은 뒤 다음 주기를 잡아야 방금 실패가 바로 반영된다.
@@ -268,7 +264,6 @@ export default defineModule({
 
         const onVisibilityChange = (): void => {
             if (document.hidden) {
-                // 숨은 탭 새로고침이면 그 주기로 다시 잡고, 아니면 쉰다.
                 armNext();
                 return;
             }
@@ -281,7 +276,7 @@ export default defineModule({
         // 뒤로/앞으로 가기: 인페이지 전환으로 쌓인 주소의 목록으로 되돌린다.
         // 미리보기가 쌓은 글 주소 사이의 이동은 같은 목록이라 받지 않는다. 다시 받으면 고르던 체크가 풀리고 일시정지를 무시한다.
         const onPopState = (): void => {
-            // 미리보기 기록은 history.state로 가린다. 행 링크는 목록 주소의 기본값 쿼리(sort_type=N, 빈 search_pos 등)를 빼서 listUrl로는 가릴 수 없다
+            // 미리보기 기록은 history.state로 가린다. 행 링크는 목록 주소의 기본값 쿼리(sort_type=N, 빈 search_pos 등)를 빼서 listUrl로는 가릴 수 없다.
             // 새로고침 전 문서가 쌓은 항목(doc이 다르다)은 미리보기가 아니라 실제 이동이다.
             if (ownPreviewEntry(history.state)) return;
             if (listUrl(location.href) === listUrl(originalLocation)) return;

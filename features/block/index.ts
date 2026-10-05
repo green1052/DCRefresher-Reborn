@@ -17,7 +17,7 @@ const plainText = (element: Element | null | undefined): string =>
 /** 보기 방식(블러)만 바꾸는 설정. 이것만 바뀌면 다시 판정하지 않는다. */
 const BLUR_KEYS = new Set(["blurReveal", "blurStrength"]);
 
-/** 블러 강도·마우스 오버 보기는 <html>의 변수·클래스로만 건다 (content.css). 행마다 JS를 붙이지 않아도 새로 그려진 행에 그대로 먹는다. */
+/** 블러 강도·마우스 오버 보기는 <html>의 변수·클래스로만 건다 (assets/styles/content.css). 행마다 JS를 붙이지 않아도 새로 그려진 행에 그대로 먹는다. */
 const applyBlurStyle = (ctx: Ctx): void => {
     const root = document.documentElement;
     root.style.setProperty("--refresher-blur", `${ctx.settings.blurStrength}px`);
@@ -28,17 +28,16 @@ const duplicateOf = (ctx: Ctx): { count: number; minLength: number } | null =>
     ctx.settings.foldDuplicate ? {count: ctx.settings.duplicateCount, minLength: ctx.settings.duplicateMinLength} : null;
 
 /**
- * 이 페이지에서만 차단 내용 보기. 저장하지 않아 새로고침하면 다시 가린다. 보이는 방식은 <html>의 클래스로 정한다 (content.css).
- * 상태도 그 클래스 하나뿐이다. 확장이 업데이트되어 다시 주입된 인스턴스도 같은 상태를 읽는다.
+ * 이 페이지에서만 차단 내용 보기. 저장하지 않아 새로고침하면 다시 가린다.
+ * 상태는 <html>의 이 클래스 하나뿐이라(assets/styles/content.css) 확장이 업데이트되어 다시 주입된 인스턴스도 같은 상태를 읽는다.
  */
 const REVEAL_CLASS = "refresherBlockReveal";
 const isRevealed = (): boolean => document.documentElement.classList.contains(REVEAL_CLASS);
 
 /** 이 모듈이 요소를 가릴 때 다는 클래스 (차단 숨김·블러·같은 댓글 접기). */
 const HIDDEN_CLASSES = ["refresherBlocked", "refresherBlur", "refresherDuplicate"];
-/** 이 모듈이 가린 요소. */
 const HIDDEN_SELECTOR = HIDDEN_CLASSES.map((name) => `.${name}`).join(", ");
-/** '가린 내용 보기'가 보이는 요소. userinfo의 깡계 흐림·숨김도 같이 보인다 (content.css). */
+/** '가린 내용 보기'가 보이는 요소. userinfo의 깡계 흐림·숨김도 같이 보인다 (assets/styles/content.css). */
 const REVEALED_SELECTOR = `${HIDDEN_ROW_SELECTOR}, .refresherDuplicate`;
 
 /** 미리보기도 페이지와 같은 방식으로 가리게 알린다. */
@@ -64,11 +63,11 @@ interface BlockApi {
     toggleReveal(): void;
 }
 
-/** 작성자 칸(checkWriter)이 보는 차단 유형 */
+/** 작성자 칸(checkWriter)이 보는 차단 유형. */
 const WRITER_TYPES: BlockType[] = ["NICK", "ID", "IP", "TITLE", "TAB", "COMMENT"];
 
 const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
-    // 숨김도 클래스로만 건다 (content.css). 풀 때 디시가 건 인라인 display를 건드리지 않는다.
+    // 숨김도 클래스로만 건다 (assets/styles/content.css). 풀 때 디시가 건 인라인 display를 건드리지 않는다.
     const hide = (element: HTMLElement): void => element.classList.add(ctx.settings.blur ? "refresherBlur" : "refresherBlocked");
 
     const hideWithReply = (target: HTMLElement): void => {
@@ -84,7 +83,7 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
 
     // 유저/제목/말머리/댓글 차단.
     const checkWriter = (element: HTMLElement): void => {
-        // 목록이 빈 유형은 글자를 꺼내지도 않는다. 행마다 도는 일이라 보통 몇 가지 유형만 쓰는 사용자에게는 대부분 건너뛴다.
+        // 행마다 도는 일이라 목록이 빈 유형은 글자를 꺼내지도 않는다.
         const {entries} = useBlocksStore.getState();
         const read = (type: BlockType, value: () => string | null | undefined): string | null => (entries[type].length > 0 ? value() || null : null);
         if (!WRITER_TYPES.some((type) => entries[type].length > 0)) return;
@@ -111,7 +110,6 @@ const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
         if (blocked) hideWithReply(row ?? element);
     };
 
-    // 디시콘 차단.
     const checkDccon = (element: HTMLElement): void => {
         const code = dcconCode(element);
         if (!code || !isBlocked("DCCON", code, gallery)) return;
@@ -214,7 +212,6 @@ const setupSelection = (ctx: Ctx): void => {
         const code = dcconCode(dcconElement);
         if (!code) return;
 
-        // 브라우저 우클릭 메뉴 대신 디시콘 차단 버블을 연다.
         ev.preventDefault();
         useUiStore.getState().openBubble({dccon: code}, ev.clientX, ev.clientY);
     };
@@ -241,7 +238,6 @@ export default defineModule({
         ctx.onSettingsChanged((keys) => {
             publishView(ctx);
             if (!keys.isDisjointFrom(BLUR_KEYS)) applyBlurStyle(ctx);
-            // 보기 방식만 바뀌면 다시 판정할 필요 없다.
             if (!keys.isSubsetOf(BLUR_KEYS)) recheck();
         });
 

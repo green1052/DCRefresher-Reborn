@@ -105,7 +105,7 @@ export const Frame = () => {
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
     const contentsBox = useRef<HTMLDivElement>(null);
-    // 숨김 차단된 본문은 안내 문구로 바꾸고, '가린 내용 보기' 동안만 원문을 흐리게 보인다 (overlay.css의 data-blocked).
+    // 숨김 차단된 본문은 안내 문구로 바꾸고, '가린 내용 보기' 동안만 원문을 흐리게 보인다 (features/preview/overlay.css의 data-blocked).
     const hideText = post?.textBlocked === "hide" && !blockView?.revealed;
 
     // 창이 그려져 있는 동안 (닫는 페이드 포함). 닫을 때 바로 다시 돌지 않고, 페이드가 끝나 본문이 빠지면 정리가 돈다 (떨어진 영상의 감시·받기를 끊는다).
@@ -181,7 +181,6 @@ export const Frame = () => {
         return () => window.removeEventListener("keydown", onKey);
     }, [visible]);
 
-    // 스크롤 끝에서 새로 한 번 더 굴리면 이전/다음 글로 넘어간다 (useWheelGesture).
     const {onWheel, hint} = useWheelGesture(postKey, goToAdjacent, scrollToSkip);
     const hintDir = visible && !fading && hint.key === postKey ? hint.dir : 0;
 
@@ -285,8 +284,7 @@ export const Frame = () => {
 
                     <Separator/>
 
-                    {/* 최소 높이로 남는 공간은 본문이 채운다. 비워 두면 댓글 입력칸 아래에 빈 칸이 생긴다.
-                        추천 버튼은 본문 칸 맨 아래(댓글 바로 위)에 둔다. 남는 공간은 본문 글이 받는다. */}
+                    {/* 최소 높이로 남는 공간은 본문 글이 채워 추천 버튼이 댓글 바로 위에 붙는다. 비워 두면 댓글 입력칸 아래에 빈 칸이 생긴다. */}
                     <div className="flex grow flex-col px-8 pt-6">
                         {/* 보존본은 삭제되었거나 바뀐 글일 수 있으니 지금 글이 아니라고 알린다. */}
                         {archived && (
@@ -359,7 +357,7 @@ export const Frame = () => {
                     </div>
                 </div>
                 {/* 화면 왼쪽에 fixed로 붙인다. 스크롤 칸에 transform이 없어 화면 기준 그대로이고,
-                    aria-modal 창 안에 두어야 스크린 리더가 창 밖 내용으로 보고 건너뛰지 않는다 */}
+                    aria-modal 창 안에 두어야 스크린 리더가 창 밖 내용으로 보고 건너뛰지 않는다. */}
                 {visible && adminVisible && <AdminPanel/>}
                 </Dialog.Popup>
                 {hintDir !== 0 && <SkipHint dir={hintDir}/>}
