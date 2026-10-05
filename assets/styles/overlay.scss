@@ -39,39 +39,6 @@
     }
 }
 
-@keyframes refresher-rise {
-    from {
-        opacity: 0;
-        transform: translateY(8px);
-    }
-}
-
-/* ===== 토스트 ===== */
-
-/* 여러 토스트가 아래에서 위로 쌓인다. 호스트 자체은 클릭을 통과시키고 실제 카드만 받는다 (.refresher-interactive). */
-.refresher-toast-host {
-    position: fixed;
-    right: 16px;
-    bottom: 16px;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: flex-end;
-    pointer-events: none;
-    max-width: 360px;
-}
-
-.refresher-toast {
-    pointer-events: auto;
-    max-width: 360px;
-    animation: refresher-rise 0.2s cubic-bezier(0.19, 1, 0.22, 1);
-
-    @media (prefers-reduced-motion: reduce) {
-        animation: none;
-    }
-}
-
 /* ===== 우클릭 버블 앵커 ===== */
 
 .refresher-anchor {

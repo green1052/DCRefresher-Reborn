@@ -1,6 +1,6 @@
 import type {Dialog as DialogPrimitive} from "@base-ui/react/dialog";
 import {X} from "lucide-react";
-import {type ReactNode, type RefObject, useLayoutEffect, useRef, useState} from "react";
+import {type KeyboardEvent, type ReactNode, type RefObject, useLayoutEffect, useRef, useState} from "react";
 
 import {focusedElement} from "@/components/useOpenerFocus";
 import {Button} from "@/components/ui/button";
@@ -13,6 +13,29 @@ import {Dialog, DialogClose, DialogContent, DialogFooter, DialogTitle} from "@/c
  * - none: 옮기지 않는다. 입력칸이 autoFocus로 스스로 포커스를 잡는 창에 쓴다.
  */
 type AutoFocus = "first" | "keyboard" | "none";
+
+const FOCUSABLE = "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]";
+
+/**
+ * Tab을 창 안에서 돌린다. Base UI의 포커스 가두기는 문서의 activeElement로 끝을 알아보는데, 오버레이(shadow DOM) 안에서는
+ * 그것이 늘 호스트라 끝을 못 알아보고 포커스가 디시 페이지로 나간다. 문서에 그린 창에서는 Base UI가 먼저 막는다(defaultPrevented).
+ */
+const keepTabInside = (ev: KeyboardEvent<HTMLDivElement>): void => {
+    if (ev.key !== "Tab" || ev.defaultPrevented) return;
+    // 묶음(토글 묶음 등)의 고르지 않은 항목처럼 tabindex가 -1인 것은 Tab 순서에 없다.
+    const items = [...ev.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE)]
+        .filter((element) => element.tabIndex >= 0 && element.checkVisibility());
+    const first = items[0];
+    const last = items.at(-1);
+    if (!first || !last) return;
+
+    const active = (ev.currentTarget.getRootNode() as Document | ShadowRoot).activeElement;
+    // 묶음은 감싸는 요소가 tabindex를 갖고 포커스는 그 안의 항목에 있으므로 contains로 본다.
+    if (ev.shiftKey ? first.contains(active) || active === ev.currentTarget : last.contains(active)) {
+        ev.preventDefault();
+        (ev.shiftKey ? last : first).focus();
+    }
+};
 
 /**
  * 열 때만 마운트하는 다이얼로그. Esc·바깥 클릭·닫기 버튼이 닫고, 닫으면 연 요소로 포커스를 돌려준다.
@@ -59,6 +82,7 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
                 }}>
             <DialogContent
                 ref={popup}
+                onKeyDown={keepTabInside}
                 showCloseButton={false}
                 className={className}
                 initialFocus={focusOnOpen === "first" || (focusOnOpen === "keyboard" && Boolean(opener?.matches(":focus-visible")))}

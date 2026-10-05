@@ -39,7 +39,7 @@ export async function openListPage(page: Page, url = LIST_URL) {
         mini: () => inOverlay(".refresher-mini-preview"),
         /** 유저 버블. */
         bubble: () => inOverlay(".rt-PopoverContent"),
-        toast: () => inOverlay(".refresher-toast"),
+        toast: () => inOverlay("[data-slot=toast]"),
         /** 커서를 목록 밖으로 뺀다 (미니 미리보기 닫기). */
         leave: () => page.mouse.move(0, 0)
     };

@@ -1,10 +1,14 @@
-import {Button, Checkbox, Dialog, Flex, SegmentedControl, Text, TextField} from "@radix-ui/themes";
 import {Shuffle} from "lucide-react";
-import {useState} from "react";
+import {useId, useState} from "react";
 
-import {SubmitForm} from "@/components/ConfirmDialog";
 import {ColorInput} from "@/components/ColorInput";
-import {ModalDialog} from "@/components/ModalDialog";
+import {ModalDialog, SubmitForm} from "@/components/dialogs";
+import {Button} from "@/components/ui/button";
+import {Checkbox} from "@/components/ui/checkbox";
+import {DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {Field, FieldLabel} from "@/components/ui/field";
+import {InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput} from "@/components/ui/input-group";
+import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
 import {queryString} from "@/core/http/urls";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import type {MemoType} from "@/core/storage/types";
@@ -13,14 +17,13 @@ import {type MemoTargetState, useUiStore} from "@/stores/ui";
 import {SAVE_FAILED} from "@/utils/error";
 import {arrayIncludes} from "@/utils/typed";
 
-import {overlay} from "./shadow";
-
 const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const closeMemo = useUiStore((s) => s.closeMemo);
     const showToast = useUiStore((s) => s.showToast);
     const memos = useMemosStore((s) => s.memos);
     const setMemo = useMemosStore((s) => s.setMemo);
     const removeMemo = useMemosStore((s) => s.removeMemo);
+    const id = useId();
 
     // 지금 보고 있는 갤러리. 이 갤러리에서만 보이는 메모로 저장할 때 쓴다.
     const gallery = queryString("id");
@@ -69,81 +72,72 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     };
 
     return (
-        // shadow root 안에서는 FocusScope가 autoFocus된 입력칸을 알아보지 못하고 첫 버튼으로 포커스를 옮기므로 막는다.
-        <ModalDialog onClose={closeMemo} container={overlay.portal} maxWidth="400px" focusOnOpen="none">
-            <Dialog.Title>메모</Dialog.Title>
-            <Dialog.Description size="2" color="gray" mb="4">
-                {MEMO_TYPE_NAMES[type]}: <Text weight="bold" highContrast>{value}</Text>
-            </Dialog.Description>
+        // 입력칸이 autoFocus로 포커스를 잡는다.
+        <ModalDialog onClose={closeMemo} focusOnOpen="none" className="sm:max-w-[400px]">
+            <DialogHeader>
+                <DialogTitle>메모</DialogTitle>
+                <DialogDescription>
+                    {MEMO_TYPE_NAMES[type]}: <strong className="text-foreground">{value}</strong>
+                </DialogDescription>
+            </DialogHeader>
 
-            <SubmitForm onSubmit={submit}>
-                <Flex direction="column" gap="3">
-                    <SegmentedControl.Root value={type} onValueChange={(next) => {
+            <SubmitForm onSubmit={submit} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3">
+                    <ToggleGroup variant="outline" spacing={0} value={[type]} onValueChange={([next]) => {
                         if (!arrayIncludes(MEMO_TYPES, next)) return;
                         setType(next);
                         // 종류를 바꿀 때 입력한 적이 없으면 다른 대상의 저장된 메모로 채우고, 입력했으면 지우지 않는다.
                         if (!touched) setForm(prefill(next));
                     }}>
                         {MEMO_TYPES.filter((memoType) => state.targets[memoType]).map((memoType) => (
-                            <SegmentedControl.Item key={memoType} value={memoType}>
+                            <ToggleGroupItem key={memoType} value={memoType}>
                                 {MEMO_TYPE_NAMES[memoType]}
-                            </SegmentedControl.Item>
+                            </ToggleGroupItem>
                         ))}
-                    </SegmentedControl.Root>
+                    </ToggleGroup>
 
-                    <TextField.Root
-                        maxLength={160}
-                        aria-label="메모"
-                        placeholder="메모를 입력해 주세요 (160자 제한)"
-                        value={text}
-                        onChange={(ev) => edit({text: ev.target.value})}
-                        autoFocus
-                    >
-                        <TextField.Slot>
-                            <ColorInput
-                                width={20}
-                                height={20}
-                                aria-label="색상"
-                                value={color}
-                                onChange={(ev) => edit({color: ev.target.value})}
-                            />
-                        </TextField.Slot>
-                        <TextField.Slot side="right">
-                            <Button type="button" size="1" variant="ghost" color="gray" aria-label="랜덤 색상"
-                                    onClick={() => edit({color: randomColor()})}>
-                                <Shuffle size={12}/>
-                            </Button>
-                        </TextField.Slot>
-                    </TextField.Root>
+                    <InputGroup>
+                        <InputGroupAddon>
+                            <ColorInput width={20} height={20} aria-label="색상" value={color} onChange={(ev) => edit({color: ev.target.value})}/>
+                        </InputGroupAddon>
+                        <InputGroupInput
+                            maxLength={160}
+                            aria-label="메모"
+                            placeholder="메모를 입력해 주세요 (160자 제한)"
+                            value={text}
+                            onChange={(ev) => edit({text: ev.target.value})}
+                            autoFocus
+                        />
+                        <InputGroupAddon align="inline-end">
+                            <InputGroupButton size="icon-xs" aria-label="랜덤 색상" onClick={() => edit({color: randomColor()})}>
+                                <Shuffle/>
+                            </InputGroupButton>
+                        </InputGroupAddon>
+                    </InputGroup>
 
                     {gallery && (
-                        <Text as="label" size="2">
-                            <Flex gap="2" align="center">
-                                <Checkbox checked={scope === gallery}
-                                          onCheckedChange={(checked) => edit({scope: checked === true ? gallery : undefined})}/>
-                                이 갤러리에서만 ({gallery})
-                            </Flex>
-                        </Text>
+                        <Field orientation="horizontal">
+                            <Checkbox id={`${id}-scope`} checked={scope === gallery} onCheckedChange={(checked) => edit({scope: checked ? gallery : undefined})}/>
+                            <FieldLabel htmlFor={`${id}-scope`}>이 갤러리에서만 ({gallery})</FieldLabel>
+                        </Field>
                     )}
                     {scope && scope !== gallery && (
-                        <Text size="2" color="gray">지금은 {scope} 갤러리 전용 메모입니다.</Text>
+                        <p className="text-muted-foreground">지금은 {scope} 갤러리 전용 메모입니다.</p>
                     )}
-                </Flex>
+                </div>
 
-                <Flex gap="3" justify="end" mt="4">
+                <DialogFooter>
                     {existing && (
-                        <Button type="button" variant="soft" color="red" onClick={() => {
+                        <Button type="button" variant="destructive" onClick={() => {
                             removeMemo(type, value).catch(() => showToast(SAVE_FAILED, "error"));
                             closeMemo();
                         }}>
                             삭제
                         </Button>
                     )}
-                    <Dialog.Close>
-                        <Button variant="soft" color="gray">취소</Button>
-                    </Dialog.Close>
+                    <DialogClose render={<Button variant="outline"/>}>취소</DialogClose>
                     <Button type="submit">저장</Button>
-                </Flex>
+                </DialogFooter>
             </SubmitForm>
         </ModalDialog>
     );

@@ -30,6 +30,8 @@ export const mountOverlayWhenNeeded = (ctx: ContentScriptContext): void => {
             onMount(container) {
                 // 디시 다크모드를 따라간다. Radix는 조상의 light/dark 클래스로 색을 바꾸므로 오버레이 최상위 요소(app·portal의 부모)에 붙인다.
                 stopAppearance = followDcAppearance(container);
+                // 호스트는 :host { all: initial }로 디시 페이지 글꼴을 받지 않는다. app·portal이 같이 쓰는 글꼴·글자색을 여기서 준다.
+                container.className = "font-sans text-sm text-foreground antialiased";
                 const app = document.createElement("div");
                 const portal = document.createElement("div");
                 portal.id = "portal";

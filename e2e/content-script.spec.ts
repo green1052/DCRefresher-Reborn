@@ -381,7 +381,7 @@ test.describe("메모", () => {
 
         const dialog = listPage.overlay().getByRole("dialog");
         await expect(dialog.getByText("메모", {exact: true}).first()).toBeVisible();
-        await dialog.getByRole("textbox").first().fill("테스트 메모");
+        await dialog.getByRole("textbox", {name: "메모"}).fill("테스트 메모");
         // 오버레이(shadow DOM) 안에서도 Tab·Shift+Tab이 창 밖(디시 페이지)으로 나가지 않는다.
         const focusInside = () => dialog.evaluate((element) => element.contains((element.getRootNode() as ShadowRoot).activeElement) && document.activeElement?.tagName === "REFRESHER-ROOT");
         for (const key of ["Tab", "Shift+Tab"]) {
@@ -468,6 +468,6 @@ test.describe("목록·본문이 아닌 페이지", () => {
     test("미리보기가 없는 페이지에서도 오버레이가 뜬다 (임시 차단 안내)", async ({context}) => {
         const page = await context.newPage();
         await page.goto("https://gall.dcinside.com/board/write/?id=test");
-        await expect(page.locator("refresher-root").locator(".refresher-toast")).toContainText("잠시 접속을 막았습니다");
+        await expect(page.locator("refresher-root").locator("[data-slot=toast]")).toContainText("잠시 접속을 막았습니다");
     });
 });
