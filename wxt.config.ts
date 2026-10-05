@@ -1,5 +1,6 @@
 import preact from "@preact/preset-vite";
 import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
 import {defineConfig} from "wxt";
 
 import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "./core/pages";
@@ -8,13 +9,13 @@ export default defineConfig({
     modules: ["@wxt-dev/auto-icons"],
     vite: () => ({
         plugins: [
+            // React Compiler를 Babel 없이 oxc(oxc-transform-react)로 돌린다. @vitejs/plugin-react에서 컴파일러 플러그인만 쓴다.
+            // 나머지(React Fast Refresh)는 React 전용이라 뺀다. 이 플러그인이 JSX도 Preact 런타임으로 바꾼다.
+            // React 18 대상으로 돌려 react-compiler-runtime을 쓰게 한다. 19 대상은 React 내부 런타임(react/compiler-runtime)을 써 Preact에 없다.
+            ...react({compiler: {target: "18"}, jsxImportSource: "preact"}).filter((plugin) => plugin.name === "vite:react-compiler"),
             // React 대신 Preact를 쓴다. 코드와 라이브러리(Base UI 등)의 react·react-dom import는 preact/compat으로 바뀐다.
-            // React Compiler는 React 18 대상으로 돌려 react-compiler-runtime을 쓰게 한다. 19 대상은 React 내부 런타임(react/compiler-runtime)을 써 Preact에 없다.
-            preact({
-                babel: {
-                    plugins: [["babel-plugin-react-compiler", {target: "18"}]]
-                }
-            }),
+            // babel 옵션을 주지 않으면 JSX는 oxc로 바뀐다 (preset-vite 2.10.4+).
+            preact(),
             tailwindcss()
         ],
         build: {
