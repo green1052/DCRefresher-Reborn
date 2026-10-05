@@ -28,6 +28,19 @@ test.describe("옵션 페이지", () => {
         await expect.poll(() => storage.get("refresher:module:refresh:settings")).toEqual({fadeIn: false});
     });
 
+    test("폰트 교체 설정이 옵션 페이지 글자에도 걸린다", async ({page, extensionId, storage}) => {
+        await storage.setModuleSettings("fonts", {customFonts: "Gulim"});
+        const options = await openOptions(page, extensionId, "general");
+
+        // 크롬이 확장 페이지 body에 넣는 자체 폰트 규칙에 지지 않는다.
+        const font = () => options.cards().first().evaluate((card) => getComputedStyle(card).fontFamily);
+        await expect.poll(font).toBe("Gulim, sans-serif");
+        const name = options.card("폰트 교체").getByRole("textbox").first();
+        await name.fill("Batang");
+        await name.press("Enter");
+        await expect.poll(font).toBe("Batang, sans-serif");
+    });
+
     test("차단 탭에서 항목을 추가하고 데이터 탭이 그려진다", async ({page, extensionId, storage}) => {
         const options = await openOptions(page, extensionId, "block");
         await expect(page.getByText("기본 차단 모드")).toBeVisible();

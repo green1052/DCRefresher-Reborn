@@ -141,7 +141,9 @@
     }
 
     body {
-        @apply bg-background text-foreground font-sans;
+        @apply bg-background text-foreground;
+        /* 크롬은 확장 페이지(옵션·팝업)의 body에 자체 폰트 규칙을 레이어 밖에 넣어, 레이어 안의 규칙은 진다. 폰트 교체 설정이 먹도록 important로 건다. */
+        font-family: var(--font-sans) !important;
     }
 
     /* 오버레이에 그리는 디시 본문·댓글 HTML(.refresher-html)은 Tailwind 리셋(preflight)을 받지 않고 브라우저 기본 모양을 쓴다.
