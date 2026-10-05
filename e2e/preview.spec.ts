@@ -145,6 +145,9 @@ test.describe("미리보기", () => {
         await listPage.page.keyboard.press("Escape");
         await expect(viewer).toHaveCount(0);
         await expect(frame).toBeVisible();
+        // 곧바로 누른 다음 Esc는 닫힌 크게 보기가 아니라 미리보기가 받는다.
+        await listPage.page.keyboard.press("Escape");
+        await expect(frame).toHaveCount(0);
     });
 
     test("스크롤 끝에서 굴리면 안내만 띄우고, 새로 한 번 더 굴려야 다음 글로 넘어간다", async ({listPage}) => {
