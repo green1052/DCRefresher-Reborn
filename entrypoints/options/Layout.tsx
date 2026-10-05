@@ -1,8 +1,9 @@
-import {Box, Button, Card, Dialog, Flex, Heading, Text, TextArea} from "@radix-ui/themes";
+import {Button, Dialog, TextArea} from "@radix-ui/themes";
 import {type ReactNode, useEffect, useRef, useState} from "react";
 import {storage, type WxtStorageItem} from "wxt/utils/storage";
 
 import {DialogActions} from "@/components/ConfirmDialog";
+import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {sendMessage} from "@/core/messaging/protocol";
 import {USAGE_KEY, type UsageKind} from "@/core/usage";
 import {useOpenerFocus} from "@/components/useOpenerFocus";
@@ -64,28 +65,22 @@ export const useUsage = (kind: UsageKind, ids: readonly string[]): Record<string
     return times;
 };
 
-/** 옵션 페이지 섹션 카드. 스타일은 Radix Themes prop만 쓴다. */
+/** 옵션 페이지 섹션 카드. */
 export const Section = ({title, desc, actions, children}: {
     title?: ReactNode;
     desc?: ReactNode;
     actions?: ReactNode;
     children?: ReactNode
 }) => (
-    <Card size="3" mb="4">
+    <Card className="mb-4">
         {(title || desc || actions) && (
-            <Flex justify="between" align="center" gap="4" wrap="wrap" mb={children ? "4" : "0"}>
-                <Box minWidth="0">
-                    {title && <Heading as="h2" size="4">{title}</Heading>}
-                    {desc && <Text as="p" size="2" color="gray">{desc}</Text>}
-                </Box>
-                {actions && (
-                    <Flex gap="2" align="center" ml="auto">
-                        {actions}
-                    </Flex>
-                )}
-            </Flex>
+            <CardHeader>
+                {title && <CardTitle><h2>{title}</h2></CardTitle>}
+                {desc && <CardDescription>{desc}</CardDescription>}
+                {actions && <CardAction className="flex items-center gap-2">{actions}</CardAction>}
+            </CardHeader>
         )}
-        {children}
+        {children && <CardContent>{children}</CardContent>}
     </Card>
 );
 

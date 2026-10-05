@@ -1,11 +1,13 @@
-import {Box, Button, Flex, Heading, Separator, Text} from "@radix-ui/themes";
 import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings} from "lucide-react";
 import {lazy, Suspense, useEffect, useState, useSyncExternalStore} from "react";
 
 import {Notice} from "@/components/ConfirmDialog";
+import {Button} from "@/components/ui/button";
+import {Separator} from "@/components/ui/separator";
 import {initBlocksStore} from "@/stores/blocks";
 import {initMemosStore} from "@/stores/memos";
 import {initModulesStore, useExtensionPageVars} from "@/stores/modules";
+import {cn} from "cn";
 
 import {AboutTab} from "./AboutTab";
 import {BlockTab} from "./BlockTab";
@@ -54,54 +56,33 @@ const Sidebar = ({tabs, tab, onSelect}: {
     tab: string;
     onSelect: (id: string) => void;
 }) => (
-    <Flex
-        direction="column"
-        gap="4"
-        p="4"
-        width={{initial: "100%", md: "240px"}}
-        flexShrink="0"
-        position={{initial: "static", md: "sticky"}}
-        top="0"
-        height={{md: "100vh"}}
-        style={{borderRight: "1px solid var(--gray-a5)"}}
-    >
-        <Flex align="center" gap="3" px="2">
-            <img src={LOGO_URL} alt="" width={36} height={36} style={{cursor: "pointer", borderRadius: "var(--radius-3)"}} onClick={() => useOptionsStore.getState().startRain()}/>
+    <div className="flex w-full shrink-0 flex-col gap-4 border-r p-4 md:sticky md:top-0 md:h-screen md:w-60">
+        <div className="flex items-center gap-3 px-2">
+            <img src={LOGO_URL} alt="" width={36} height={36} className="cursor-pointer rounded-md" onClick={() => useOptionsStore.getState().startRain()}/>
             {/* h1은 본문의 탭 제목 하나만 둔다. 모양만 제목으로 그린다. */}
-            <Heading asChild size="3"><p>DCRefresher Reborn</p></Heading>
-        </Flex>
+            <p className="font-bold">DCRefresher Reborn</p>
+        </div>
 
-        <Flex asChild direction={{initial: "row", md: "column"}} gap="1" wrap={{initial: "wrap", md: "nowrap"}}>
-            <nav>
-                {tabs.map(({id, label, icon: Icon}) => (
-                    <Button
-                        key={id}
-                        size="3"
-                        // Radix의 soft와 ghost는 패딩·높이가 달라 탭을 바꿀 때 흔들린다. ghost로 통일하고 배경만 바꾼다.
-                        variant="ghost"
-                        color={tab === id ? undefined : "gray"}
-                        highContrast={tab !== id}
-                        aria-current={tab === id ? "page" : undefined}
-                        style={{
-                            justifyContent: "flex-start",
-                            margin: 0,
-                            background: tab === id ? "var(--accent-a4)" : undefined
-                        }}
-                        onClick={() => onSelect(id)}
-                    >
-                        <Icon size={16}/> {label}
-                    </Button>
-                ))}
-            </nav>
-        </Flex>
+        <nav className="flex flex-wrap gap-1 md:flex-col md:flex-nowrap">
+            {tabs.map(({id, label, icon: Icon}) => (
+                <Button
+                    key={id}
+                    size="lg"
+                    variant="ghost"
+                    aria-current={tab === id ? "page" : undefined}
+                    className={cn("justify-start", tab === id && "bg-muted")}
+                    onClick={() => onSelect(id)}
+                >
+                    <Icon data-icon="inline-start"/> {label}
+                </Button>
+            ))}
+        </nav>
 
-        <Box display={{initial: "none", md: "block"}} mt="auto">
-            <Separator size="4" mb="3"/>
-            <Text as="p" size="1" color="gray" style={{paddingInline: "var(--space-2)"}}>
-                v{VERSION}
-            </Text>
-        </Box>
-    </Flex>
+        <div className="mt-auto hidden md:block">
+            <Separator className="mb-3"/>
+            <p className="px-2 text-xs text-muted-foreground">v{VERSION}</p>
+        </div>
+    </div>
 );
 
 export function App() {
@@ -127,23 +108,22 @@ export function App() {
     useExtensionPageVars();
 
     return (
-        <Flex direction={{initial: "column", md: "row"}} minHeight="100vh">
+        <div className="flex min-h-screen flex-col md:flex-row">
             <Sidebar tabs={TABS} tab={current.id} onSelect={(id) => (location.hash = id)}/>
             {/* 누를 때마다 새로 마운트한다. React Compiler가 Math.random으로 그린 결과를 기억해 같은 모양이 반복되기 때문이다. */}
             {rain > 0 && <Suspense><DcconRain key={rain}/></Suspense>}
             <Notice message={notice} onClose={() => useOptionsStore.setState({notice: null})}/>
 
-            <Box flexGrow="1" minWidth="0" px={{initial: "4", md: "6"}} py="6">
-                {/* 탭마다 새로 마운트해 들어오는 애니메이션을 다시 건다 (options.scss).
+            <div className="min-w-0 grow px-4 py-6 md:px-6">
+                {/* 탭마다 새로 마운트해 들어오는 애니메이션을 다시 건다.
                     연 버튼이 막혀(데이터 초기화 중) 돌아갈 곳이 없으면 다이얼로그가 포커스를 이 탭으로 돌려준다 (useOpenerFocus) */}
-                <Box key={current.id} className="refresher-tab-enter" maxWidth="880px" mx="auto" tabIndex={-1}
-                     style={{outline: "none"}}>
-                    <Heading size="7" mb="5">{current.label}</Heading>
+                <div key={current.id} className="tab-enter mx-auto max-w-[880px] outline-none" tabIndex={-1}>
+                    <h1 className="mb-5 text-2xl font-bold">{current.label}</h1>
                     {status === "failed"
-                        ? <Text as="p" color="red">저장된 데이터를 읽지 못했습니다. 페이지를 새로고침해 주세요.</Text>
+                        ? <p className="text-destructive">저장된 데이터를 읽지 못했습니다. 페이지를 새로고침해 주세요.</p>
                         : status === "ready" && <Suspense>{current.content()}</Suspense>}
-                </Box>
-            </Box>
-        </Flex>
+                </div>
+            </div>
+        </div>
     );
 }

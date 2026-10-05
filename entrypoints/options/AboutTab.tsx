@@ -1,7 +1,8 @@
-import {Badge, Box, Button, DataList, Flex, Grid, Heading, Text} from "@radix-ui/themes";
 import {BookOpen, Bug, ClipboardCopy, Code, Heart, type LucideIcon, MessageCircle, Star, Tag, Users} from "lucide-react";
 import {useEffect, useState} from "react";
 
+import {Badge} from "@/components/ui/badge";
+import {Button} from "@/components/ui/button";
 import {CLOUD_QUOTA} from "@/core/backup";
 import {isModuleEnabled} from "@/core/module/settings";
 import {dbStorage} from "@/core/storage/items";
@@ -74,53 +75,46 @@ export function AboutTab({logo, version}: { logo: string; version: string }) {
     };
 
     return (
-        <Box>
+        <div>
             <Section>
-                <Flex align="center" gap="4" wrap="wrap">
-                    <img src={logo} alt="" width={64} height={64} style={{borderRadius: "var(--radius-4)"}}/>
-                    <Box flexGrow="1">
-                        <Flex align="center" gap="2">
-                            <Heading as="h2" size="5">DCRefresher Reborn</Heading>
-                            <Badge variant="soft">v{version}</Badge>
-                        </Flex>
-                        <Text as="p" size="2" color="gray">디시인사이드 개선 확장 프로그램</Text>
-                    </Box>
-                    <Button variant="soft" onClick={() => void copyDiagnostics()}>
-                        <ClipboardCopy size={14}/> 진단 정보 복사
+                <div className="flex flex-wrap items-center gap-4">
+                    <img src={logo} alt="" width={64} height={64} className="rounded-xl"/>
+                    <div className="grow">
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-xl font-bold">DCRefresher Reborn</h2>
+                            <Badge variant="secondary">v{version}</Badge>
+                        </div>
+                        <p className="text-muted-foreground">디시인사이드 개선 확장 프로그램</p>
+                    </div>
+                    <Button variant="secondary" onClick={() => void copyDiagnostics()}>
+                        <ClipboardCopy data-icon="inline-start"/> 진단 정보 복사
                     </Button>
-                </Flex>
+                </div>
             </Section>
 
             <Section title="바로가기">
-                <Grid columns={{initial: "1", sm: "2"}} gap="2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {LINKS.map(([label, url, Icon]) => (
-                        <Button key={label} asChild variant="soft" color="gray" style={{justifyContent: "flex-start"}}>
-                            <a href={url} target="_blank" rel="noreferrer">
-                                <Icon size={14}/> {label}
-                            </a>
+                        <Button key={label} variant="secondary" className="justify-start" nativeButton={false}
+                                render={<a href={url} target="_blank" rel="noreferrer"/>}>
+                            <Icon data-icon="inline-start"/> {label}
                         </Button>
                     ))}
-                </Grid>
+                </div>
             </Section>
 
             <Section title="데이터 현황">
-                <DataList.Root>
-                    <DataList.Item>
-                        <DataList.Label>차단 · 메모</DataList.Label>
-                        <DataList.Value>차단 {blockCount}개 · 메모 {memoCount}개</DataList.Value>
-                    </DataList.Item>
-                    <DataList.Item>
-                        <DataList.Label>로컬 저장소</DataList.Label>
-                        <DataList.Value>{usage === "error" ? "알 수 없음" : usage ? formatBytes(usage.local) : "…"}</DataList.Value>
-                    </DataList.Item>
-                    <DataList.Item>
-                        <DataList.Label>클라우드 저장소</DataList.Label>
-                        <DataList.Value>
-                            {usage === "error" ? "알 수 없음" : usage ? `${formatBytes(usage.sync)} / ${formatBytes(CLOUD_QUOTA)} (${Math.round((usage.sync / CLOUD_QUOTA) * 100)}%)` : "…"}
-                        </DataList.Value>
-                    </DataList.Item>
-                </DataList.Root>
+                <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3">
+                    <dt className="text-muted-foreground">차단 · 메모</dt>
+                    <dd>차단 {blockCount}개 · 메모 {memoCount}개</dd>
+                    <dt className="text-muted-foreground">로컬 저장소</dt>
+                    <dd>{usage === "error" ? "알 수 없음" : usage ? formatBytes(usage.local) : "…"}</dd>
+                    <dt className="text-muted-foreground">클라우드 저장소</dt>
+                    <dd>
+                        {usage === "error" ? "알 수 없음" : usage ? `${formatBytes(usage.sync)} / ${formatBytes(CLOUD_QUOTA)} (${Math.round((usage.sync / CLOUD_QUOTA) * 100)}%)` : "…"}
+                    </dd>
+                </dl>
             </Section>
-        </Box>
+        </div>
     );
 }

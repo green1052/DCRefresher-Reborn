@@ -49,12 +49,13 @@ export const DcconRain = () => {
     }, []);
 
     return (
-        <div className="refresher-dccon-rain">
+        <div className="pointer-events-none fixed inset-0 z-100 overflow-hidden">
             {Array.from({length: COUNT}, (_, index) => (
                 <img
                     key={index}
                     src={`https://image.dcinside.com/dccon.php?no=${DCCONS[index % DCCONS.length]}`}
                     alt=""
+                    className="absolute top-0 animate-dccon-fall rounded-lg"
                     onError={(ev) => ev.currentTarget.remove()}
                     style={{
                         left: `${Math.random() * 95}%`,

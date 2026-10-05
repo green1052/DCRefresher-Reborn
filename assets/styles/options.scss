@@ -21,29 +21,6 @@ html body[data-scroll-locked] {
     margin-right: 0 !important;
 }
 
-/* 로고 연타 이스터에그 (DcconRain). */
-.refresher-dccon-rain {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    overflow: hidden;
-    pointer-events: none;
-
-    img {
-        position: absolute;
-        top: 0;
-        border-radius: var(--radius-3);
-        transform: translateY(-150px);
-        animation: refresher-dccon-fall linear both;
-    }
-}
-
-@keyframes refresher-dccon-fall {
-    to {
-        transform: translateY(110vh) rotate(var(--spin));
-    }
-}
-
 /* 차단·메모 목록 줄의 편집 버튼(ListRow). 칸을 채워 버튼이 없던 때와 같게 놓고, Reset이 없앤 포커스 테두리만 되살린다. */
 .refresher-row-edit {
     display: block;
