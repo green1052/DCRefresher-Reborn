@@ -7,8 +7,11 @@ export const focusedElement = (): HTMLElement | null => {
     return element instanceof HTMLElement ? element : null;
 };
 
-/** 포커스를 받는 가장 가까운 조상(탭 패널 등)으로 포커스를 옮긴다. 누른 버튼이 막혀 포커스가 body로 떨어질 때 돌아갈 곳이다. */
-export const focusPanel = (from: Element | null | undefined): void => from?.parentElement?.closest<HTMLElement>("[tabindex]")?.focus({preventScroll: true});
+/** 포커스를 받는 가장 가까운 조상(탭 패널 등). 누른 버튼이 막혀 포커스가 body로 떨어질 때 돌아갈 곳이다. */
+export const panelOf = (from: Element | null | undefined): HTMLElement | null | undefined => from?.parentElement?.closest<HTMLElement>("[tabindex]");
+
+/** panelOf로 포커스를 옮긴다. */
+export const focusPanel = (from: Element | null | undefined): void => panelOf(from)?.focus({preventScroll: true});
 
 /**
  * 트리거 없이 여는 창(다이얼로그·버블)의 포커스. 창과 같이 마운트되는 컴포넌트에서 부른다.
@@ -21,7 +24,7 @@ export const useReturnFocus = (popup: RefObject<HTMLElement | null>) => {
     const [opener] = useState(focusedElement);
     // 키보드로 열었는지(연 요소에 포커스 링이 보였는지). 창이 포커스를 가져간 뒤에는 알 수 없으므로 열 때 잰다.
     const [keyboard] = useState(() => Boolean(opener?.matches(":focus-visible")));
-    const target = (): HTMLElement | null | undefined => (opener?.matches(":disabled") ? opener.parentElement?.closest<HTMLElement>("[tabindex]") : opener);
+    const target = (): HTMLElement | null | undefined => (opener?.matches(":disabled") ? panelOf(opener) : opener);
 
     const restoreFocus = (): void => {
         const current = focusedElement();

@@ -7,7 +7,7 @@ import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Dia
 import {Field, FieldLabel} from "@/components/ui/field";
 import {Switch} from "@/components/ui/switch";
 import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
-import {focusPanel} from "@/components/useReturnFocus";
+import {focusPanel, panelOf} from "@/components/useReturnFocus";
 import {type BackupSlot, CLOUD_QUOTA, type CloudBackupStatus, collectLocalData, readBackupTargets, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
 import {mergeBackup, parseImport, writeSettings} from "@/core/settings-transfer";
@@ -175,7 +175,7 @@ export function DataTab() {
 
                     {/* 복원 중에는 복원 버튼이 막혀 포커스를 돌려줄 수 없으므로 가까운 조상(탭 패널)으로 돌린다. */}
                     <DialogContent showCloseButton={false} className="sm:max-w-[420px]"
-                                   finalFocus={() => (restoreRef.current?.disabled ? restoreRef.current.parentElement?.closest<HTMLElement>("[tabindex]") ?? true : true)}>
+                                   finalFocus={() => (restoreRef.current?.disabled ? panelOf(restoreRef.current) ?? true : true)}>
                         <DialogHeader>
                             <DialogTitle>어느 백업으로 복원할까요?</DialogTitle>
                         </DialogHeader>

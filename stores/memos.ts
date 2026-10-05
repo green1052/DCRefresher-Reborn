@@ -60,14 +60,15 @@ export const useMemosStore = create<MemosState>(() => ({
     }
 }));
 
+/** 그 키의 메모. 닉네임이 toString·constructor·__proto__여도 프로토타입 값을 메모로 읽지 않게 자기 속성만 본다. */
+export const ownMemo = (map: MemoMap, key: string): MemoEntry | undefined => (Object.hasOwn(map, key) ? map[key] : undefined);
+
 type MemoUser = { uid?: string; ip?: string; nick?: string };
 
 const lookupMemo = (memos: Record<MemoType, MemoMap>, user: MemoUser, gallery?: string | null): MemoEntry | undefined => {
-    // 닉네임이 toString·constructor·__proto__여도 프로토타입 값을 메모로 읽지 않게 자기 속성만 본다.
     // 찾은 메모는 쓰였다고 적는다 (옵션의 오래 안 쓰인 메모 거르기).
     const find = (type: MemoType, key?: string): MemoEntry | undefined => {
-        const map = memos[type];
-        const entry = key && Object.hasOwn(map, key) ? map[key] : undefined;
+        const entry = key ? ownMemo(memos[type], key) : undefined;
         if (!entry || (entry.gallery && entry.gallery !== gallery)) return undefined;
         markUsed("memo", memoUsageKey(type, key!));
         return entry;

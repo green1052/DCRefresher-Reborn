@@ -12,7 +12,7 @@ import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
 import {queryString} from "@/core/http/urls";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import type {MemoType} from "@/core/storage/types";
-import {randomColor, useMemosStore} from "@/stores/memos";
+import {ownMemo, randomColor, useMemosStore} from "@/stores/memos";
 import {type MemoTargetState, useUiStore} from "@/stores/ui";
 import {SAVE_FAILED} from "@/utils/error";
 import {arrayIncludes} from "@/utils/typed";
@@ -29,8 +29,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     // 지금 보고 있는 갤러리. 이 갤러리에서만 보이는 메모로 저장할 때 쓴다.
     const gallery = queryString("id");
 
-    // 닉네임이 toString·constructor·__proto__여도 프로토타입 값을 메모로 읽지 않게 자기 속성만 본다.
-    const memoOf = (memoType: MemoType, user: string) => (Object.hasOwn(memos[memoType], user) ? memos[memoType][user] : undefined);
+    const memoOf = (memoType: MemoType, user: string) => ownMemo(memos[memoType], user);
 
     // 열릴 때와 종류를 바꿀 때 기존 메모로 채운다.
     // 범위(scope)는 저장된 갤러리를 그대로 가져와, 다른 갤러리 전용 메모를 여기서 저장해도 범위가 바뀌지 않게 한다.
