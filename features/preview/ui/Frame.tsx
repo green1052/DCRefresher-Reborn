@@ -108,16 +108,17 @@ export const Frame = () => {
     // 숨김 차단된 본문은 안내 문구로 바꾸고, '가린 내용 보기' 동안만 원문을 흐리게 보인다 (overlay.css의 data-blocked).
     const hideText = post?.textBlocked === "hide" && !blockView?.revealed;
 
+    // 창이 그려져 있는 동안 (닫는 페이드 포함). 닫을 때 바로 다시 돌지 않고, 페이드가 끝나 본문이 빠지면 정리가 돈다 (떨어진 영상의 감시·받기를 끊는다).
+    const mounted = visible || fading;
     // 본문 칸은 댓글만 보기·오류·닫힘일 때 빠졌다가 다시 붙고, 글마다 새로 마운트되므로 그때마다 동영상 크기를 다시 맞춘다.
-    // 같은 글을 캐시로 다시 열면 visible 말고는 값이 모두 같다. hideText가 풀리면 동영상이 새로 들어온다.
-    useEffect(() => (contentsBox.current ? fitMovies(contentsBox.current) : undefined), [visible, contents, commentsOnly, error, postKey, hideText]);
+    // 같은 글을 캐시로 다시 열면 mounted 말고는 값이 모두 같다. hideText가 풀리면 동영상이 새로 들어온다.
+    useEffect(() => (contentsBox.current ? fitMovies(contentsBox.current) : undefined), [mounted, contents, commentsOnly, error, postKey, hideText]);
     // 본문에 든 차단 디시콘은 페이지 글 보기처럼 그 디시콘만 가린다. 차단 목록이나 설정이 바뀌면 다시 본다.
     useEffect(() => {
         if (contentsBox.current) markBlockedDccons(contentsBox.current, gallery, blockView ? (blockView.blur ? "blur" : "hide") : undefined);
-    }, [visible, contents, commentsOnly, error, postKey, hideText, blockView, blockEntries, blockDefaults, gallery]);
+    }, [mounted, contents, commentsOnly, error, postKey, hideText, blockView, blockEntries, blockDefaults, gallery]);
     // 깨진 움짤·디시콘 mp4는 디시처럼 gif로 바꾼다. 본문 칸이 새로 그려지는 때가 위와 같다.
-    // 닫을 때는 페이드가 끝나 본문이 빠진 뒤에도 정리가 돌아야 떨어진 영상의 받기를 끊는다 (fading).
-    useEffect(() => (contentsBox.current ? watchGifVideos(contentsBox.current) : undefined), [visible, fading, contents, commentsOnly, error, postKey, hideText]);
+    useEffect(() => (contentsBox.current ? watchGifVideos(contentsBox.current) : undefined), [mounted, contents, commentsOnly, error, postKey, hideText]);
 
     // 창은 비모달이라(아래 Dialog.Root) 포커스를 가두지 않는다. 연 동안 뒤 페이지를 inert로 막아 Tab·스크린 리더가 가려진 목록으로 나가지 않게 한다.
     // 오버레이(refresher-root)는 남긴다. 버블·토스트·관리 패널이 거기 있다. body에 직접 붙인 확장 UI(스텔스 버튼 등)도 data-refresher-ui로 남긴다.

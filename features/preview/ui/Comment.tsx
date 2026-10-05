@@ -99,13 +99,14 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
     // 디시콘 HTML은 줄바꿈을 <br/>로 바꾸지 않는다. 붙어 온 디시콘 태그는 comments.ts(splitDccons)가 이미 나눠 두었다.
     const html = isDccon ? comment.memo : comment.memo.replace(/\n/g, "<br/>");
 
-    // 글자콘 크기는 그려진 뒤에 잰다. html이 바뀌면 React가 내용을 새로 넣으므로 다시 잰다.
+    // 글자콘 크기는 그려진 뒤에 잰다. html이 바뀌면 React가 내용을 새로 넣으므로 다시 잰다. 글만 있는 댓글(대부분)은 훑지 않는다.
     const body = useRef<HTMLDivElement>(null);
     useLayoutEffect(() => {
+        if (!isDccon) return;
         for (const box of body.current?.querySelectorAll<HTMLElement>(".coment_dccon_txt") ?? []) fitTxtcon(box);
-    }, [html]);
+    }, [html, isDccon]);
     // 깨진 디시콘 mp4는 디시처럼 gif로 바꾼다.
-    useEffect(() => (body.current ? watchGifVideos(body.current) : undefined), [html]);
+    useEffect(() => (isDccon && body.current ? watchGifVideos(body.current) : undefined), [html, isDccon]);
 
     return (
         // 화면 밖 댓글은 레이아웃·스타일 계산을 건너뛴다 (댓글 수백 개인 글을 열 때 레이아웃이 크게 준다).
