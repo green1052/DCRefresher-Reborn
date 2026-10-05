@@ -9,8 +9,7 @@ import {Separator} from "@/components/ui/separator";
 import {Spinner} from "@/components/ui/spinner";
 import {WithTooltip} from "@/components/WithTooltip";
 import {focusedElement} from "@/components/useReturnFocus";
-import {BLOCKED_TEXT, isBlockedHidden} from "@/core/block";
-import {dcinsideHref} from "@/core/http/urls";
+import {BLOCKED_TEXT} from "@/core/block";
 import {useModuleSettings} from "@/core/module/useModuleSettings";
 import {postKey as keyOfPost} from "@/core/preview/cache";
 import type {ProcessedComment} from "@/core/preview/comments";
@@ -24,8 +23,8 @@ import {adjacentPreData} from "../rows";
 import {TimeStamp} from "./TimeStamp";
 import {UserCard} from "./UserCard";
 import {CommentList, threadParents} from "./CommentList";
+import {clickContents} from "./contentsClick";
 import {CountDown} from "./CountDown";
-import {openDcconInfo} from "./DcconInfoPopup";
 import {ErrorBlock} from "./ErrorBlock";
 import {fitMovies} from "./fitMovies";
 import {watchGifVideos} from "./gifVideos";
@@ -68,13 +67,6 @@ const RefreshButton = ({label, run}: { label: string; run: () => Promise<void> }
         </WithTooltip>
     );
 };
-
-/**
- * 크게 볼 수 있는 본문 이미지. 디시콘·가린 이미지(관리자 가림·blockImage)·깨진 이미지는 뺀다.
- * 차단으로 가린 본문 안의 이미지는 '가린 내용 보기' 중이거나 흐림이 풀려 있을 때(blurReveal)만 연다. openDcconInfo와 같은 기준(isBlockedHidden).
- */
-const isViewable = (image: HTMLImageElement): boolean =>
-    image.complete && image.naturalWidth > 0 && !image.closest(".written_dccon, [data-block]") && !isBlockedHidden(image) && image.checkVisibility();
 
 /**
  * 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내 (v5와 같은 모양). 목록은 번호가 큰 글이 위라 위로 넘기면 다음 글이다.
@@ -301,41 +293,7 @@ export const Frame = () => {
                                     ref={contentsBox}
                                     className={cn("refresher-html refresher-preview-contents grow", imageBlocked && "refresher-preview-block-media")}
                                     data-blocked={hideText ? undefined : post?.textBlocked}
-                                    onClick={(ev) => {
-                                        // 디시콘을 눌렀으면 정보 팝업을 열고 더 이상의 처리를 막는다.
-                                        if (openDcconInfo(ev)) return;
-
-                                        // 이미지를 누르면 크게 본다 (링크로 감싼 이미지는 링크로 연다).
-                                        const clicked = (ev.target as HTMLElement).closest<HTMLImageElement>("img");
-                                        if (clicked && imageViewer && !clicked.closest("a") && isViewable(clicked)) {
-                                            const images = [...ev.currentTarget.querySelectorAll("img")].filter(isViewable);
-                                            usePreviewStore.setState({
-                                                viewer: {images: images.map((image) => ({src: image.currentSrc || image.src, alt: image.alt, pop: image.dataset.pop})), index: images.indexOf(clicked)}
-                                            });
-                                            return;
-                                        }
-
-                                        // 크게 보기를 끄면 디시처럼 원본 보기를 새 탭으로 연다. 주소는 parser.ts가 옮겨 둔 imgPop 주소이고 디시 주소만 연다.
-                                        const image = (ev.target as HTMLElement).closest<HTMLImageElement>("img[data-pop]");
-                                        if (image && !image.closest("a")) {
-                                            const url = dcinsideHref(image.dataset.pop);
-                                            if (url) window.open(url, "_blank", "noopener");
-                                            return;
-                                        }
-
-                                        const button = (ev.target as HTMLElement).closest(".btn_img_block");
-                                        if (!button) return;
-
-                                        ev.preventDefault();
-                                        usePreviewStore.setState({imageBlocked: false});
-                                        // 관리자가 가린 이미지는 디시처럼 누른 버튼 옆 것만 드러낸다.
-                                        // parser.ts는 가린 이미지의 data-original을 src로 옮기지 않으므로 여기서 옮긴다.
-                                        for (const media of button.parentElement?.querySelectorAll<HTMLElement>(":scope > [data-block], :scope > .refresher-imgnum > [data-block]") ?? []) {
-                                            if (media instanceof HTMLImageElement && media.dataset.original) media.src = media.dataset.original;
-                                            media.removeAttribute("data-block");
-                                        }
-                                        button.remove();
-                                    }}
+                                    onClick={(ev) => clickContents(ev, imageViewer)}
                                     dangerouslySetInnerHTML={{__html: hideText ? BLOCKED_TEXT : contents ?? ""}}
                                 />
                                 {post && <Votes post={post}/>}
