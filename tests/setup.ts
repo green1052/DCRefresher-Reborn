@@ -14,7 +14,7 @@ afterEach(() => void vi.useRealTimers());
 fakeBrowser.storage.local.getKeys = async () => Object.keys(await fakeBrowser.storage.local.get(null));
 
 // Uint8Array의 base64 변환 (core/backup·core/ipdb). Node 25부터 있어 CI 러너의 기본 Node에는 없다. 코드는 옵션 없는 형태만 쓴다.
-if (!("fromBase64" in Uint8Array)) {
+if (typeof Uint8Array.fromBase64 !== "function") {
     Object.assign(Uint8Array, {fromBase64: (text: string) => new Uint8Array(Buffer.from(text, "base64"))});
     Object.assign(Uint8Array.prototype, {
         toBase64(this: Uint8Array) {
