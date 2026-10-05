@@ -1,9 +1,11 @@
 import {HTTPError} from "ky";
+import {shallow} from "zustand/shallow";
 
 import {isBlocked} from "@/core/block";
 import {BlockedError, isAbortError} from "@/core/http/client";
 import {defineModule} from "@/core/module/define";
 import {getModuleApi} from "@/core/module/registry";
+import type {ProcessedComment} from "@/core/preview/comments";
 import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useBlocksStore} from "@/stores/blocks";
 import {type BlockView, useUiStore} from "@/stores/ui";
@@ -156,6 +158,18 @@ const controller = (ctx: Ctx) => {
     let freshTimer = 0;
     ctx.addCleanup(() => window.clearTimeout(freshTimer));
 
+    /**
+     * 새로 가공한 댓글 중 지금 그린 것과 같은 댓글은 그린 객체를 그대로 쓴다. 자동 새로고침으로 하나만 늘어도 전부 새 객체면 댓글 전부를 다시 그린다.
+     * 음성 댓글은 voice가 매번 새 객체라 다시 그린다.
+     */
+    const keepUnchanged = (next: ProcessedComment[]): ProcessedComment[] => {
+        const before = new Map(store.getState().comments?.map((comment) => [comment.no, comment]));
+        return next.map((comment) => {
+            const old = before.get(comment.no);
+            return old && shallow(old, comment) ? old : comment;
+        });
+    };
+
     // 답글 대상 댓글이 목록에서 빠졌거나 삭제됐으면 답글 쓰기를 푼다. 두면 취소 버튼도 없이 없는 댓글에 답글을 단다.
     const dropStaleReply = (): void => {
         const {reply, comments} = store.getState();
@@ -203,7 +217,7 @@ const controller = (ctx: Ctx) => {
             const before = shown?.signal === mySignal && ctx.settings.highlightNewComments ? new Set(shown.source.map((comment) => comment.no)) : null;
             const added = before ? source.filter((comment) => !before.has(comment.no) && comment.is_delete !== "1").map((comment) => comment.no) : [];
             shown = {signal: mySignal, source};
-            store.setState({comments: processComments(source, preData), allowReply, freshComments: added.length > 0 ? new Set(added) : NO_FRESH});
+            store.setState({comments: keepUnchanged(processComments(source, preData)), allowReply, freshComments: added.length > 0 ? new Set(added) : NO_FRESH});
             // 강조(3초)가 끝나면 지운다. 남겨 두면 답글을 접었다 펴는 등 다시 그릴 때마다 강조가 되풀이된다.
             window.clearTimeout(freshTimer);
             if (added.length > 0) {
@@ -225,7 +239,7 @@ const controller = (ctx: Ctx) => {
         const {processComments} = await import("@/core/preview/comments");
         store.setState((s) => (s.signalId !== signalId ? {} : {
             post: s.post && {...s.post, textBlocked: textBlockOf(preData, s.post)},
-            comments: shown?.signal === signalId ? processComments(shown.source, preData) : s.comments
+            comments: shown?.signal === signalId ? keepUnchanged(processComments(shown.source, preData)) : s.comments
         }));
         dropStaleReply();
     };
@@ -348,6 +362,9 @@ const controller = (ctx: Ctx) => {
         pending = null;
 
         window.clearTimeout(refreshTimer);
+        // 지난 글의 댓글 원본(수백 개면 수백 KB)을 다음 글을 열 때까지 들고 있지 않는다. 다음 글은 새 signalId라 어차피 다시 그린다.
+        shown = null;
+        shownRaw = "";
 
         restoreHistory(fromHistory);
         store.getState().close();
