@@ -4,6 +4,8 @@
  */
 @import "tailwindcss";
 @import "tw-animate-css";
+/* shadcn 부품이 쓰는 variant(data-horizontal·data-open 등, Base UI 데이터 속성에 맞춘 것)와 유틸리티. */
+@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
