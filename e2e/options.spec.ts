@@ -34,7 +34,7 @@ test.describe("옵션 페이지", () => {
 
         await page.getByRole("button", {name: "추가"}).first().click();
         // 차단 모드의 '기본값'은 고른 값으로 보인다 (빈 문자열 값이 자리표시자로 흐려지지 않는다).
-        await expect(page.getByRole("combobox", {name: "차단 모드"})).not.toHaveAttribute("data-placeholder");
+        await expect(page.getByRole("dialog").getByRole("combobox", {name: "차단 모드", exact: true})).not.toHaveAttribute("data-placeholder");
         await expect(page.getByPlaceholder("닉네임 값을 입력해 주세요")).toBeFocused();
         await page.getByPlaceholder("닉네임 값을 입력해 주세요").fill("차단닉");
         await page.getByRole("button", {name: "추가", exact: true}).last().click();
