@@ -52,15 +52,13 @@ export const useWheelGesture = (key: string, goToAdjacent: (dir: number) => void
         if (!(target instanceof Element) || !box.contains(target)) return;
 
         const dir = ev.deltaY > 0 ? 1 : -1;
-        // 안쪽 스크롤 칸(댓글 입력칸 등)이 아직 굴러가면 그쪽 스크롤이라 끝으로 치지 않는다.
-        let inner = false;
-        for (let el: Element | null = target; el && el !== box; el = el.parentElement) {
-            if (el.scrollHeight > el.clientHeight && /auto|scroll/.test(getComputedStyle(el).overflowY) && canScroll(el, dir)) {
-                inner = true;
-                break;
-            }
+        // 창이 아직 굴러가면 끝이 아니다. 끝일 때만 안쪽 스크롤 칸(댓글 입력칸 등)을 본다: 그쪽이 굴러가면 그쪽 스크롤이라 끝으로 치지 않는다.
+        // 읽는 동안 휠마다 조상을 getComputedStyle로 훑지 않게 순서를 이렇게 둔다.
+        let atEdge = !canScroll(box, dir);
+        for (let el: Element | null = target; atEdge && el && el !== box; el = el.parentElement) {
+            if (el.scrollHeight > el.clientHeight && /auto|scroll/.test(getComputedStyle(el).overflowY) && canScroll(el, dir)) atEdge = false;
         }
-        skipOnWheel(dir, ev.timeStamp, !inner && !canScroll(box, dir));
+        skipOnWheel(dir, ev.timeStamp, atEdge);
     };
 
     return {onWheel, hint};
