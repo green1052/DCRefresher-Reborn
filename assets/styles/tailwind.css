@@ -87,6 +87,24 @@
         }
     }
 
+    /* 미리보기 스크롤 끝 넘기기 안내 (Frame의 SkipHint). */
+    --animate-skip-hint-bottom: skip-hint-bottom 450ms cubic-bezier(0.19, 1, 0.22, 1);
+    --animate-skip-hint-top: skip-hint-top 450ms cubic-bezier(0.19, 1, 0.22, 1);
+
+    @keyframes skip-hint-bottom {
+        from {
+            opacity: 0;
+            transform: translateY(40%);
+        }
+    }
+
+    @keyframes skip-hint-top {
+        from {
+            opacity: 0;
+            transform: translateY(-40%);
+        }
+    }
+
     /* 옵션 로고 연타 이스터에그 (DcconRain). 회전각은 이미지마다 --spin으로 준다. */
     --animate-dccon-fall: dccon-fall linear both;
 
