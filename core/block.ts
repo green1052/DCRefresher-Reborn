@@ -41,29 +41,45 @@ type BlockLists = Pick<ReturnType<typeof useBlocksStore.getState>, "entries" | "
 type BlockValues = Partial<Record<BlockType, string | null | undefined>>;
 
 /**
- * 내용에 걸린 항목들 (갤러리 한정 항목은 그 갤러리에서만). SAME/CONTAIN은 맞는 항목마다 막는다.
+ * 한 유형의 항목으로 내용이 막히는지 판정한다 (갤러리 한정 항목은 그 갤러리에서만). SAME/CONTAIN은 맞는 항목마다 막는다.
  * NOT_*(불일치·불포함)는 한 유형의 항목을 묶어 허용 목록으로 본다: 어느 것에도 맞지 않으면 그 항목들 전부로 막는다.
  * 항목마다 뒤집으면 둘만 돼도 서로를 막아(A는 B와 다르다) 모두 막힌다. 잘못된 정규식은 NOT_*로도 걸지 않는다.
- * isBlockedIn과 같은 판정을 한다. 어느 쪽을 고치면 다른 쪽도 고쳐야 한다 (isBlockedIn은 markUsed·배열 없음까지 더한 판독 버전이다).
+ * onEntry: 맞은 SAME/CONTAIN("hit"), 맞은 NOT_*("allow"), 맞지 않은 NOT_*("miss"). 목록 행·댓글마다 불리므로 판정만 할 때는 배열을 만들지 않는다.
  */
-const blockingIn = (lists: BlockLists, type: BlockType, content: string, gallery?: string): BlockEntry[] => {
-    const hits: BlockEntry[] = [];
-    const allowList: BlockEntry[] = [];
+const scan = (lists: BlockLists, type: BlockType, content: string, gallery: string | undefined, onEntry?: (entry: BlockEntry, kind: "hit" | "allow" | "miss") => void): boolean => {
+    let blocked = false;
+    let hasAllowList = false;
     let allowed = false;
 
     for (const entry of lists.entries[type]) {
         if (entry.gallery && entry.gallery !== gallery) continue;
 
         const mode = entry.mode ?? lists.defaults[type];
-        const hit = matches(entry, mode, content);
         if (!mode.startsWith("NOT_")) {
-            if (hit) hits.push(entry);
+            if (!matches(entry, mode, content)) continue;
+            blocked = true;
+            onEntry?.(entry, "hit");
         } else if (!entry.isRegex || compile(entry)) {
-            allowList.push(entry);
+            hasAllowList = true;
+            const hit = matches(entry, mode, content);
             allowed ||= hit;
+            onEntry?.(entry, hit ? "allow" : "miss");
         }
     }
 
+    return blocked || (hasAllowList && !allowed);
+};
+
+/** 내용을 막은 항목들: 걸린 SAME/CONTAIN과, 허용 목록에 맞지 않았으면 그 NOT_* 항목 전부. */
+const blockingIn = (lists: BlockLists, type: BlockType, content: string, gallery?: string): BlockEntry[] => {
+    const hits: BlockEntry[] = [];
+    const allowList: BlockEntry[] = [];
+    let allowed = false;
+    scan(lists, type, content, gallery, (entry, kind) => {
+        if (kind === "hit") hits.push(entry);
+        else allowList.push(entry);
+        allowed ||= kind === "allow";
+    });
     return allowed ? hits : [...hits, ...allowList];
 };
 
@@ -89,37 +105,13 @@ export const isBlockedHidden = (element: Element): boolean => {
 };
 
 /**
- * blockingIn이 무언가를 돌려주는지만 본다. 목록 행·댓글마다 유형별로 불리므로 배열을 만들지 않는다.
- * 걸린 SAME/CONTAIN 항목이 하나라도 있으면 막히고, 없으면 NOT_* 허용 목록이 있는데 어느 것에도 맞지 않을 때 막힌다.
- * 맞은 항목(막은 SAME/CONTAIN, 허용한 NOT_*)은 모두 쓰였다고 적는다 (옵션의 오래 안 쓰인 항목 거르기).
+ * 막히는지 판정하고, 맞은 항목(막은 SAME/CONTAIN, 허용한 NOT_*)은 모두 쓰였다고 적는다 (옵션의 오래 안 쓰인 항목 거르기).
  * 첫 항목에서 멈추면 같은 대상을 함께 막는 다른 항목(닉네임과 아이디로 같이 막은 유저 등)이 안 쓰인 것으로 보여 지워질 수 있다.
- * blockingIn과 같은 판정을 한다. 어느 쪽을 고치면 다른 쪽도 고쳐야 한다.
  */
-const isBlockedIn = (lists: BlockLists, type: BlockType, content: string, gallery?: string): boolean => {
-    let blocked = false;
-    let hasAllowList = false;
-    let allowed = false;
-
-    for (const entry of lists.entries[type]) {
-        if (entry.gallery && entry.gallery !== gallery) continue;
-
-        const mode = entry.mode ?? lists.defaults[type];
-        if (!mode.startsWith("NOT_")) {
-            if (matches(entry, mode, content)) {
-                blocked = true;
-                markUsed("block", entry.id);
-            }
-        } else if (!entry.isRegex || compile(entry)) {
-            hasAllowList = true;
-            if (matches(entry, mode, content)) {
-                allowed = true;
-                markUsed("block", entry.id);
-            }
-        }
-    }
-
-    return blocked || (hasAllowList && !allowed);
-};
+const isBlockedIn = (lists: BlockLists, type: BlockType, content: string, gallery?: string): boolean =>
+    scan(lists, type, content, gallery, (entry, kind) => {
+        if (kind !== "miss") markUsed("block", entry.id);
+    });
 
 /** 해당 내용이 차단 대상인지 (갤러리 한정 항목은 그 갤러리에서만). */
 export const isBlocked = (type: BlockType, content: string, gallery?: string): boolean =>
