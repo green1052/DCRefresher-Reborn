@@ -152,7 +152,7 @@ function ModulesSection({onToggled}: { onToggled: () => void }) {
 
                     return (
                         // 모듈 타일 — 누르면 켜고 끈다. 켜진 타일은 오른쪽 점이 강조색이다.
-                        <Toggle key={feature.id} variant="outline" className="group min-w-0 justify-start font-normal"
+                        <Toggle key={feature.id} variant="outline" className="min-w-0 justify-start font-normal"
                                 title={feature.description} pressed={enabled}
                                 onPressedChange={(next) => void toggle(feature.id, next).then(() => {
                                     setFailed(false);
@@ -160,7 +160,7 @@ function ModulesSection({onToggled}: { onToggled: () => void }) {
                                 }, () => setFailed(true))}>
                             <Icon/>
                             <span className="grow truncate text-left">{feature.name}</span>
-                            <span className="size-1.5 shrink-0 rounded-full bg-muted-foreground/40 group-data-[state=on]:bg-primary"/>
+                            <span className="size-1.5 shrink-0 rounded-full bg-muted-foreground/40 group-data-pressed/toggle:bg-primary"/>
                         </Toggle>
                     );
                 })}

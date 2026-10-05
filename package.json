@@ -20,6 +20,7 @@
         "postinstall": "wxt prepare"
     },
     "dependencies": {
+        "@base-ui/react": "^1.8.0",
         "@radix-ui/themes": "^3.3.0",
         "@webext-core/messaging": "^4.0.0",
         "class-variance-authority": "^0.7.1",
