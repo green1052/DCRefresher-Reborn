@@ -11,7 +11,7 @@ import {Input} from "@/components/ui/input";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import {memoUsageKey} from "@/core/usage";
 import type {MemoType} from "@/core/storage/types";
-import {normalizeMemoMap, randomColor, useMemosStore} from "@/stores/memos";
+import {normalizeMemoMap, ownMemo, randomColor, useMemosStore} from "@/stores/memos";
 import {SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
@@ -177,7 +177,7 @@ export function MemoTab() {
             for (const type of ["UID", "IP"] as const) {
                 await updateMemos(type, (current) => {
                     const merged = {...current};
-                    for (const [target, memo] of Object.entries(parsed[type])) merged[target] = {...(merged[target] ?? {color: randomColor()}), text: memo};
+                    for (const [target, memo] of Object.entries(parsed[type])) merged[target] = {...(ownMemo(merged, target) ?? {color: randomColor()}), text: memo};
                     return merged;
                 });
             }
