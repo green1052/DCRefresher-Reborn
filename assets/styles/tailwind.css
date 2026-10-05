@@ -116,4 +116,12 @@
     body {
         @apply bg-background text-foreground font-sans;
     }
+
+    /* 오버레이에 그리는 디시 본문·댓글 HTML(.refresher-html)은 Tailwind 리셋(preflight)을 받지 않고 브라우저 기본 모양을 쓴다.
+       base 레이어 안에서 되돌리므로 레이어 밖의 본문 스타일(features/preview/overlay.scss)은 그대로 걸린다. */
+    .refresher-html :where(*),
+    .refresher-html :where(*)::before,
+    .refresher-html :where(*)::after {
+        all: revert-layer;
+    }
 }

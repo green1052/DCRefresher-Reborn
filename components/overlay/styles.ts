@@ -2,5 +2,6 @@
 // 콘텐츠 스크립트가 불러오는 CSS는 오버레이 shadow에만 들어간다 (cssInjectionMode: "ui").
 // 기능별 스타일은 따로 둔 파일에서 불러온다. 같은 파일에 import.meta.glob을 쓰면 그 import가 파일 맨 위로 올라가 Radix보다 앞에 들어간다.
 import "@/assets/styles/radix-themes.css";
+import "@/assets/styles/tailwind.css";
 import "@/assets/styles/overlay.scss";
 import "./feature-styles";
