@@ -1,8 +1,10 @@
-import {Box, Card, Flex, Grid, Heading, Separator, Switch, Text} from "@radix-ui/themes";
-import {Collapsible} from "radix-ui";
 import {Fragment} from "react";
 
 import {SettingItem} from "@/components/SettingItem";
+import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
+import {Collapsible, CollapsibleContent} from "@/components/ui/collapsible";
+import {Separator} from "@/components/ui/separator";
+import {Switch} from "@/components/ui/switch";
 import {defaultValue, isModuleEnabled} from "@/core/module/settings";
 import type {AnyModuleMeta, SettingSchema} from "@/core/module/types";
 import features from "@/features/meta";
@@ -36,29 +38,29 @@ const ModuleSettings = ({feature, settings}: { feature: AnyModuleMeta; settings:
     );
 
     return (
-        <Box pt="4">
+        <div className="pt-4">
             {[...Map.groupBy(settings, ([key, schema]) => schema.group ?? key).values()].map((entries) => {
                 const [first] = entries;
                 const group = first![1].group;
                 return (
                     <Fragment key={first![0]}>
-                        <Separator size="4"/>
+                        <Separator/>
                         {group ? (
-                            <Box py="3" role="group" aria-label={group.name}>
-                                <Text as="p" size="2" weight="medium">{group.name}</Text>
-                                <Text as="p" size="1" color="gray" mb="2">{group.desc}</Text>
+                            <div className="py-3" role="group" aria-label={group.name}>
+                                <p className="font-medium">{group.name}</p>
+                                <p className="mb-2 text-xs text-muted-foreground">{group.desc}</p>
                                 {/* 글 입력칸·슬라이더는 칸 하나에 넣기엔 좁다. 섞여 있으면 묶음 전체를 한 줄에 하나씩 그려 조작부를 오른쪽 끝에 맞춘다. */}
-                                <Grid columns={entries.some(([, schema]) => schema.type === "text" || schema.type === "range") ? "1" : {initial: "2", sm: "3"}} gapX="5">
+                                <div className={entries.some(([, schema]) => schema.type === "text" || schema.type === "range") ? "grid grid-cols-1 gap-x-6" : "grid grid-cols-2 gap-x-6 sm:grid-cols-3"}>
                                     {entries.map((entry) => item(entry, true))}
-                                </Grid>
-                            </Box>
+                                </div>
+                            </div>
                         ) : (
                             item(first!)
                         )}
                     </Fragment>
                 );
             })}
-        </Box>
+        </div>
     );
 };
 
@@ -69,27 +71,30 @@ const ModuleCard = ({feature}: { feature: AnyModuleMeta }) => {
     const settings = Object.entries(feature.settings ?? {});
 
     return (
-        <Card size="3">
-            <Flex justify="between" align="center" gap="4">
-                <Box minWidth="0">
-                    <Heading as="h2" size="4">{feature.name}</Heading>
-                    <Text as="p" size="2" color="gray">{feature.description}</Text>
-                </Box>
-                <Switch
-                    size="3"
-                    checked={enabled}
-                    aria-label={`${feature.name} 사용`}
-                    onCheckedChange={(value) => void toggle(feature.id, value).catch(() => notify(SAVE_FAILED))}
-                />
-            </Flex>
+        <Card>
+            <CardHeader>
+                <CardTitle><h2>{feature.name}</h2></CardTitle>
+                <CardDescription>{feature.description}</CardDescription>
+                <CardAction className="self-center">
+                    <Switch
+                        checked={enabled}
+                        aria-label={`${feature.name} 사용`}
+                        onCheckedChange={(value) => void toggle(feature.id, value).catch(() => notify(SAVE_FAILED))}
+                    />
+                </CardAction>
+            </CardHeader>
 
             {settings.length > 0 && (
-                <Collapsible.Root open={enabled}>
-                    {/* 켜고 끌 때 펼치고 접는다 (options.scss). 닫히는 애니메이션이 끝난 뒤 빠진다. */}
-                    <Collapsible.Content className="refresher-collapsible">
-                        <ModuleSettings feature={feature} settings={settings}/>
-                    </Collapsible.Content>
-                </Collapsible.Root>
+                <Collapsible open={enabled}>
+                    {/* 켜고 끌 때 펼치고 접는다. 닫히는 애니메이션이 끝난 뒤 빠진다.
+                        overflow-clip에 여백을 둔다. 없으면 가장자리 스위치·입력칸의 포커스 테두리가 잘린다. */}
+                    <CollapsibleContent
+                        className="h-(--collapsible-panel-height) overflow-clip transition-[height,opacity] duration-200 ease-out [overflow-clip-margin:6px] data-ending-style:h-0 data-ending-style:opacity-0 data-starting-style:h-0 data-starting-style:opacity-0 motion-reduce:transition-none">
+                        <CardContent className="-mt-4">
+                            <ModuleSettings feature={feature} settings={settings}/>
+                        </CardContent>
+                    </CollapsibleContent>
+                </Collapsible>
             )}
         </Card>
     );
@@ -98,8 +103,8 @@ const ModuleCard = ({feature}: { feature: AnyModuleMeta }) => {
 /** 모듈별 카드 목록. */
 export function GeneralTab() {
     return (
-        <Flex direction="column" gap="4">
+        <div className="flex flex-col gap-4">
             {features.map((feature) => <ModuleCard key={feature.id} feature={feature}/>)}
-        </Flex>
+        </div>
     );
 }

@@ -8,10 +8,6 @@ test.describe("옵션 페이지", () => {
         await expect(options.card("글 목록 새로고침")).toBeVisible();
         expect(await options.cards().count()).toBeGreaterThanOrEqual(10);
 
-        // Radix 스타일이 들어갔는지 (CSS를 줄여도 쓰는 컴포넌트는 남아야 한다).
-        const cursor = await page.locator(".rt-SwitchRoot").first().evaluate((element) => getComputedStyle(element).cursor);
-        expect(cursor).toBe("pointer");
-
         const stealth = options.card("스텔스 모드").getByRole("switch");
         await expect(stealth).not.toBeChecked();
         await stealth.click();
