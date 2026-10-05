@@ -26,7 +26,7 @@ export function ShortcutTab() {
                     variant="secondary"
                     onClick={() =>
                         // Firefox는 tabs.create로 about:addons를 열 수 없어 전용 API(137+)를 쓴다.
-                        void (import.meta.env.FIREFOX
+                        void (import.meta.env.BROWSER === "firefox"
                             // @ts-ignore 파이어폭스 전용 API라 크롬 기준 타입(wxt/browser)에 없다.
                             ? browser.commands.openShortcutSettings()
                             : browser.tabs.create({url: "chrome://extensions/shortcuts"}))

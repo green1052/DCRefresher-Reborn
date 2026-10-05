@@ -101,7 +101,7 @@ export const typedListSync = <T extends string, V>(options: {
     // 쓰기를 한 줄로 세운다. update는 잠금 안에서 저장소를 다시 읽어 다른 창이 쓴 값을 덮지 않고 합친다.
     // 파이어폭스 콘텐츠 스크립트는 페이지의 navigator.locks에 콜백을 넘기면 (Xray 경계에서) 이유 없는 Error로 실패하므로 잠그지 않는다.
     // 디시 탭끼리 동시에 쓰는 일은 드물고, 쓰기는 그대로 저장소의 현재 값에 합친다.
-    const locks = lock && !(import.meta.env.FIREFOX && location.protocol !== "moz-extension:") ? lock : undefined;
+    const locks = lock && !(import.meta.env.BROWSER === "firefox" && location.protocol !== "moz-extension:") ? lock : undefined;
     const enqueue = locks ? (write: () => Promise<void>): Promise<void> => navigator.locks.request(locks, write) : (write: () => Promise<void>): Promise<void> => write();
 
     const save = async (type: T, value: V): Promise<void> => {

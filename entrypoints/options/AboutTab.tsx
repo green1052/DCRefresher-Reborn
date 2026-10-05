@@ -15,7 +15,7 @@ import {notify} from "./optionsStore";
 
 const REPO = "https://github.com/green1052/DCRefresher-Reborn";
 
-const STORE = import.meta.env.FIREFOX
+const STORE = import.meta.env.BROWSER === "firefox"
     ? "https://addons.mozilla.org/ko/firefox/addon/dcrefresher-reborn"
     : "https://chromewebstore.google.com/detail/pmfifcbendahnkeojgpfppklgioemgon";
 

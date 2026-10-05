@@ -25,7 +25,7 @@ export default defineBackground(() => {
     const applyBackgroundModules = startBackgroundModules(backgroundModules);
     // 파이어폭스(MV2)는 메뉴를 유지하지 않고, 확장을 껐다 켜면 onStartup/onInstalled 없이 배경만 다시 뜨므로 뜰 때마다 맞춘다.
     // 브라우저 시작도 여기서 맞추므로 onStartup은 크롬만 건다 (둘 다 걸면 시작할 때 두 번 돈다).
-    if (import.meta.env.FIREFOX) void applyBackgroundModules();
+    if (import.meta.env.BROWSER === "firefox") void applyBackgroundModules();
     else browser.runtime.onStartup.addListener(() => void applyBackgroundModules());
 
     // ===== Commands: 단축키 → 활성 탭에만 전송 =====
