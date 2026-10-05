@@ -31,7 +31,7 @@ DCRefresher Reborn의 구조, 기능을 더하는 방법, 테스트와 릴리즈
 | HTML 정화 | DOMPurify (`utils/sanitize.ts`) |
 | 메시징 | @webext-core/messaging |
 | 타입 도우미 | `utils/typed.ts` (`objectKeys`, `objectEntries`, `objectFromEntries`, `arrayIncludes`. 내장 함수에 타입만 붙인 것) |
-| 패키지 관리·실행 | Bun 1.4 이상. `scripts/`는 Bun으로 돌아 파일을 Bun API(`Bun.file`·`Bun.write`)로 다룬다. WXT·Vitest·Playwright는 Node에서 돌므로(Vitest의 jsdom은 Bun에서 뜨지 않고, Playwright는 Bun에서 테스트가 무작위로 멈춘다) 빌드 모듈(`modules/`)과 E2E는 Node API를 쓴다 |
+| 패키지 관리·실행 | Bun 1.4 이상. `scripts/`는 Bun으로 돌아 파일을 Bun API(`Bun.file`·`Bun.write`)로 다룬다. WXT·Vitest·Playwright는 Node에서 돌므로(Vitest의 jsdom은 Bun에서 뜨지 않고, Playwright는 Bun에서 테스트가 무작위로 멈춘다) 빌드 모듈(`modules/`)과 E2E는 Node API를 쓴다. Node는 25 이상이어야 한다(코드가 쓰는 `Uint8Array`의 `toBase64`·`fromBase64`. CI는 26) |
 | 테스트 | Vitest (`wxt/testing/vitest-plugin`, fake-browser), Playwright (`e2e`) |
 
 ## 시작하기

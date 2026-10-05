@@ -22,6 +22,11 @@ jobs:
 
             -   uses: oven-sh/setup-bun@v2
 
+            # Vitest·Playwright는 Node에서 돈다. 코드가 쓰는 Uint8Array의 toBase64·fromBase64는 Node 25부터 있어 러너 기본 Node로는 단위 테스트가 실패한다.
+            -   uses: actions/setup-node@v7
+                with:
+                    node-version: 26
+
             -   name: Install Dependencies
                 run: bun ci
 
@@ -51,6 +56,11 @@ jobs:
                     persist-credentials: false
 
             -   uses: oven-sh/setup-bun@v2
+
+            # Vitest·Playwright는 Node에서 돈다. 코드가 쓰는 Uint8Array의 toBase64·fromBase64는 Node 25부터 있어 러너 기본 Node로는 단위 테스트가 실패한다.
+            -   uses: actions/setup-node@v7
+                with:
+                    node-version: 26
 
             -   name: Install Dependencies
                 run: bun ci
