@@ -56,9 +56,13 @@ const componentDefaults = (root: string): Map<string, string[]> => {
     return found;
 };
 
-const uniqueBreakpoints = (text: string): Set<Breakpoint> => {
+/**
+ * 소스에서 반응형 prop({initial: "row", md: "column"})으로 쓰는 브레이크포인트.
+ * 콜론 뒤에 값(공백·따옴표·중괄호·숫자)이 와야 한다. Tailwind 클래스(md:sticky)는 콜론 뒤에 바로 클래스 이름이 붙어 걸리지 않는다.
+ */
+export const uniqueBreakpoints = (text: string): Set<Breakpoint> => {
     const found = new Set<Breakpoint>();
-    for (const match of text.matchAll(/\b(xs|sm|md|lg|xl)\s*:/g)) found.add(match[1] as Breakpoint);
+    for (const match of text.matchAll(/\b(xs|sm|md|lg|xl)\s*:(?=[\s"'{\d])/g)) found.add(match[1] as Breakpoint);
     return found;
 };
 
@@ -114,9 +118,11 @@ const usageOf = (entry: OutputChunk, chunks: Map<string, OutputChunk>, root: str
     for (const chunk of reachableChunks(entry, chunks)) {
         for (const match of chunk.code.matchAll(LITERAL)) literals.add(match[0]);
         // 반응형 prop은 우리 소스(.tsx)에서만 쓴다. Radix 자체 코드에는 브레이크포인트 이름이 모두 들어 있어 청크 코드로는 가릴 수 없다.
+        // CSS(tailwind.css의 --radius-md: …)도 브레이크포인트로 잘못 읽히므로 .ts·.tsx만 읽는다.
+        // shadcn 부품(components/ui)은 Radix Themes를 쓰지 않는다. 그 안의 variant={variant}를 세면 모든 variant 규칙이 남는다.
         for (const id of chunk.moduleIds) {
             const file = normalizePath(id.split("?")[0]!);
-            if (!file.startsWith(base) || file.includes("/node_modules/") || !existsSync(file)) continue;
+            if (!file.startsWith(base) || file.includes("/node_modules/") || file.includes("/components/ui/") || !/\.tsx?$/.test(file) || !existsSync(file)) continue;
             source += readFileSync(file, "utf8");
         }
     }
@@ -198,8 +204,10 @@ const plugin = (root: string): Plugin => ({
             if (output.type !== "asset" || !output.fileName.endsWith(".css") || typeof output.source !== "string") continue;
             if (!output.source.includes(".rt-")) continue;
 
-            // 이 CSS를 쓰는 엔트리. 콘텐츠 스크립트(라이브러리 빌드)는 importedCss가 비어 있어 하나뿐인 청크로 본다.
-            const entry = [...chunks.values()].find((chunk) => chunk.viteMetadata?.importedCss.has(output.fileName))
+            // 이 CSS를 쓰는 엔트리. CSS가 엔트리가 아니라 엔트리가 불러오는 청크에 붙기도 하므로(옵션·팝업이 같이 쓰는 청크가 있을 때) 닿는 청크까지 본다.
+            // 콘텐츠 스크립트(라이브러리 빌드)는 importedCss가 비어 있어 하나뿐인 청크로 본다.
+            const entry = [...chunks.values()].find((chunk) => chunk.isEntry
+                    && reachableChunks(chunk, chunks).some((reached) => reached.viteMetadata?.importedCss.has(output.fileName)))
                 ?? (chunks.size === 1 ? [...chunks.values()][0] : undefined);
             if (!entry?.isEntry) continue;
 

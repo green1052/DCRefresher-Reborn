@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
 
-import {isUsedClass, slim, type Usage, usedVariants} from "../../../modules/slim-radix-css";
+import {isUsedClass, slim, uniqueBreakpoints, type Usage, usedVariants} from "../../../modules/slim-radix-css";
 
 const usage = (overrides: Partial<Usage> = {}): Usage => ({
     literals: new Set(["rt-Button", "rt-BaseButton", "rt-r-size", "rt-r-w", "rt-r-m", "rt-variant-", "rt-Text"]),
@@ -88,5 +88,12 @@ describe("usedVariants", () => {
         const out = slim(css, usage({variants: null}));
         expect(out).toContain("rt-variant-classic");
         expect(out).toContain("rt-variant-soft");
+    });
+});
+
+describe("uniqueBreakpoints", () => {
+    it("반응형 prop만 세고 Tailwind 클래스(md:sticky)는 세지 않는다", () => {
+        expect([...uniqueBreakpoints(`width={{initial: "100%", md: "240px"}} columns={{sm: 2}}`)]).toEqual(["md", "sm"]);
+        expect(uniqueBreakpoints(`className="md:sticky md:w-60 sm:grid-cols-2"`).size).toBe(0);
     });
 });
