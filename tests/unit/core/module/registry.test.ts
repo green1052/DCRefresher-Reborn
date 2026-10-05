@@ -161,8 +161,28 @@ describe("loadAll", () => {
         expect(error).toHaveBeenCalled();
     });
 
-    // 지금은 loadAll 끝의 resync와 다른 모듈의 on/off 변경마다 sync가 실패한 모듈의 setup을 다시 부른다 (setup·revoke가 두 번).
-    it.todo("setup이 실패한 모듈은 바뀐 것이 없으면 다시 setup하지 않는다");
+    it("setup이 실패한 모듈은 껐다 켤 때만 다시 setup한다", async () => {
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        const setup = vi.fn(() => {
+            throw new Error("boom");
+        });
+
+        await load([testModule({id: "broken", setup}), testModule({id: "fine", setup: () => {}})]);
+        expect(setup).toHaveBeenCalledTimes(1);
+
+        // 다른 모듈을 켜고 끄는 것으로는 다시 돌지 않는다.
+        await setEnables({fine: false});
+        await tick();
+        await setEnables({fine: true});
+        await tick();
+        expect(setup).toHaveBeenCalledTimes(1);
+
+        await setEnables({broken: false});
+        await tick();
+        await setEnables({broken: true});
+        await tick();
+        expect(setup).toHaveBeenCalledTimes(2);
+    });
 });
 
 describe("설정 변경", () => {

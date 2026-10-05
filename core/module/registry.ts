@@ -17,6 +17,8 @@ interface ModuleInstance {
     settings: Record<string, SettingValue>;
     /** 실행 중일 때만 있다. ready는 setup이 끝나 api가 준비됐다는 뜻이며, 단축키·팝업 토글은 그때부터 받는다. */
     running?: { ctx: ModuleContext; controller: AbortController; ready: boolean; api?: unknown; setup?: Promise<void>; listeners: ((keys: ReadonlySet<string>) => void)[] };
+    /** setup이 던졌다. 켜짐 값이 그대로면 다시 시작하지 않는다 (다른 모듈을 켜고 끌 때마다 실패를 되풀이한다). 껐다 켜면 다시 시도한다. */
+    failed?: boolean;
 }
 
 const instances = new Map<string, ModuleInstance>();
@@ -72,7 +74,10 @@ const start = async (instance: ModuleInstance): Promise<void> => {
             }
         } catch (e) {
             // 실패한 모듈을 반쪽 상태로 두지 않는다. 그사이 중지됐으면(재시작 포함) 새 실행을 건드리지 않는다.
-            if (!signal.aborted) stop(instance);
+            if (!signal.aborted) {
+                stop(instance);
+                instance.failed = true;
+            }
             throw e;
         }
     })();
@@ -188,8 +193,12 @@ export const stopAll = (): void => {
 const sync = async (enables: Record<string, unknown>): Promise<void> => {
     const starts: Promise<void>[] = [];
     for (const instance of instances.values()) {
-        if (isModuleEnabled(instance.def, enables)) starts.push(start(instance).catch((e) => console.error(e)));
-        else stop(instance);
+        if (!isModuleEnabled(instance.def, enables)) {
+            instance.failed = false;
+            stop(instance);
+        } else if (!instance.failed) {
+            starts.push(start(instance).catch((e) => console.error(e)));
+        }
     }
     await Promise.all(starts);
 };
