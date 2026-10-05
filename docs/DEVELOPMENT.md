@@ -414,6 +414,7 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 
 - **콘텐츠 스크립트의 전역은 창(Window)이 아니라 샌드박스입니다.** 창이 있어야 하는 정적 API는 던집니다. 예를 들어 `AbortSignal.timeout()`은 "Could not find window"로 던져 모든 요청이 실패했습니다. `AbortController`와 `setTimeout`처럼 창이 없어도 되는 방법을 씁니다. `AbortSignal.any`, `AbortSignal.abort`는 괜찮습니다.
 - **페이지 쪽 객체는 다른 영역(compartment)에서 옵니다.** `content.fetch`의 응답과 오류, `event.detail` 같은 값은 `instanceof`가 틀릴 수 있습니다. 오류는 `name`·`message`로 판단합니다(`isAbortError`, `utils/error.ts`의 `messageOf`).
+- **`content.fetch`가 준 Promise에 `finally` 등으로 이은 Promise는 이쪽에서 기다려도 처리되지 않은 것으로 칩니다.** 끊은 요청마다 AbortError가 콘솔에 남았습니다. `core/http/client.ts`가 `then`으로 곧바로 콘텐츠 스크립트의 Promise에 옮겨 담습니다.
 - **확장 페이지(배경·옵션·팝업)의 내비게이션 항목 이름은 URL이 아니라 `"document"`입니다.** `performance.getEntriesByType("navigation")[0].name`을 `new URL()`에 그대로 넣으면 던져 배경·옵션·팝업이 통째로 멈췄습니다. 모듈 최상위에서 URL을 만들 때는 `URL.parse(...) ?? ...`처럼 던지지 않게 합니다.
 - **MV2라 배경은 서비스 워커가 아니라 배경 페이지입니다.** 알람·메뉴·단축키는 두 브라우저에서 다 확인합니다.
 - **페이지의 `navigator.locks`에 콘텐츠 스크립트의 콜백을 넘기면 이유 없는 `Error`로 실패합니다.** 차단·메모 저장이 모두 실패했습니다. 쓰기 직렬화(`core/storage/sync.ts`)는 파이어폭스 콘텐츠 스크립트에서 잠그지 않습니다.
@@ -436,6 +437,7 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 ## UI 부품
 
 - 화면은 Preact로 그리지만 코드는 `react`에서 import합니다(`@preact/preset-vite`가 `preact/compat`으로 바꿉니다). Preact는 상태 변경을 다음 마이크로태스크에 그리므로, 누른 직후 새 창이 바로 DOM에 있다고 기대하지 않습니다(E2E는 `getByRole("dialog")` 안에서 찾습니다). 타입은 `@types/react`를 그대로 씁니다. tsconfig에서 `react` 타입을 `preact/compat`으로 바꾸면 React 타입으로 작성된 Base UI와 ref·이벤트 타입이 맞지 않아 shadcn 부품마다 오류가 납니다. Preact는 `autoFocus`로 포커스를 옮기지 않으므로 다이얼로그는 `ModalDialog`의 `focusOnOpen`에 ref를, 나중에 나타나는 입력칸은 `utils/focus.ts`의 `focusOnMount`를 씁니다.
+- Preact 11은 언마운트된 컴포넌트의 `useEffect` 정리를 그린 뒤(다음 프레임)로 미룹니다. 그사이 Base UI의 문서 리스너(Esc·바깥 클릭)가 살아 있어, `open`을 고정해 두고 언마운트로 닫는 창은 방금 닫혔어도 다음 키·클릭을 받습니다. 그런 창의 `onOpenChange`는 이미 닫혔으면 `details.cancel()`·`details.allowPropagation()`으로 흘려보냅니다(유저 버블, 미리보기 창).
 - 부품은 shadcn(`components/ui`, Base UI·base-vega 스타일)입니다. 손으로 만들지 않고 `bunx shadcn add <이름>`으로 추가합니다. shadcn CLI가 상속된 `.wxt/tsconfig.json`의 경로를 잘못 풀어 루트 `tsconfig.json`에 `@/*` 경로를 다시 적어 두었습니다. `tailwind.css`는 `shadcn/tailwind.css`(Base UI 데이터 속성용 variant)를 불러와야 합니다.
 - `components/ui`에서 우리가 고친 곳: 포털을 쓰는 부품(dialog·popover·select·tooltip)은 `container={overlay.portal}`로 오버레이 안에 그리고, slider는 손잡이에 이름을 달 `thumbProps`를 받습니다. 부품을 다시 받을 때(`--overwrite`) 이 부분을 다시 넣습니다.
 - 다이얼로그는 `components/dialogs.tsx`의 `ModalDialog`(열 때만 마운트), `ConfirmDialog`, `Notice`, `DialogActions`, `SubmitForm`을 씁니다. `onClose`는 닫힘 애니메이션이 끝나 포커스가 돌아간 뒤에 불립니다. 일을 마친 창이 스스로 닫을 때는 `actionsRef.current.close()`를 씁니다.
