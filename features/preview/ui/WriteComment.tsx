@@ -8,7 +8,7 @@ import {Spinner} from "@/components/ui/spinner";
 import {Textarea} from "@/components/ui/textarea";
 import {WithTooltip} from "@/components/WithTooltip";
 import {captchaImage, normalizeTxtcon, TXTCON_BACKGROUNDS, TXTCON_COLORS} from "@/core/preview/request";
-import {postKey} from "@/core/preview/cache";
+import {postKey, setEntry} from "@/core/preview/cache";
 import type {DcinsideDccon} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 import {loggedInUserId} from "@/utils/user";
@@ -95,7 +95,6 @@ export const WriteComment = () => {
     const textarea = useRef<HTMLTextAreaElement>(null);
     const beforeTxtcon = useRef<string | null>(null);
 
-
     const submit = async (): Promise<void> => {
         const st = usePreviewStore.getState();
         const raw = textarea.current?.value ?? "";
@@ -117,7 +116,10 @@ export const WriteComment = () => {
         }
 
         // 댓글 목록은 이 글이 열려 있으면 새로 받는다. 보내는 사이 다른 글에 갔다 돌아왔으면 새 창의 목록은 댓글이 올라가기 전에 받은 것이다.
+        // 다른 글에 가 있으면 캐시의 목록을 낡은 것으로 표시해 둔다. 두면 10초 안에 돌아올 때 방금 받은 목록으로 쳐서(COMMENTS_REUSE) 다시 받지 않아,
+        // 올라간 댓글이 안 보여 한 번 더 보내게 된다.
         const refreshIfOpen = (): void => {
+            setEntry(preData, {commentsAt: 0});
             const current = usePreviewStore.getState();
             if (current.preData && postKey(current.preData) === key) void current.requestRefresh();
         };
