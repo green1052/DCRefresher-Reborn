@@ -355,6 +355,16 @@ test.describe("미니 미리보기", () => {
 });
 
 test.describe("유저 버블", () => {
+    test("미리보기 위에 띄운 버블은 Esc에 버블만 닫히고 미리보기는 남는다", async ({listPage}) => {
+        const frame = await listPage.openPreview();
+        await frame.locator(".refresher-user").first().click({button: "right"});
+        await expect(listPage.bubble()).toBeVisible();
+
+        await listPage.page.keyboard.press("Escape");
+        await expect(listPage.bubble()).toHaveCount(0);
+        await expect(frame).toBeVisible();
+    });
+
     test("작성자를 우클릭하면 버블이 뜨고 차단하면 행이 가려진다", async ({listPage, storage}) => {
         await listPage.writers().first().click({button: "right"});
 
