@@ -20,6 +20,9 @@ const LEAVE = "#leave_confirm_box .btn_blue";
  */
 let listeners: AbortController | undefined;
 
+/** hookUploads를 넣어 달라고 이미 했다. 넣은 스크립트는 페이지에 남으므로 다시 보내 배경을 깨울 필요가 없다. */
+let hookRequested = false;
+
 /**
  * 페이지에 넣는 hookUploads가 읽을 설정을 둔다. 켜진 설정이 있으면 배경에 hookUploads를 넣어 달라고 한다 (페이지마다 한 번만 걸린다).
  * 둘 다 꺼져 있으면 지워 파일을 건드리지 않게 한다.
@@ -31,7 +34,12 @@ const publishImageOptions = ({webpConvert: webp, webpQuality, obfuscateName: ren
     }
     const options: ImageOptions = {webp, quality: webpQuality / 100, rename};
     document.documentElement.dataset[UPLOAD_OPTIONS_KEY] = JSON.stringify(options);
-    void sendMessage("refresher:hookUploads").catch(console.error);
+    if (hookRequested) return;
+    hookRequested = true;
+    sendMessage("refresher:hookUploads").catch((e: unknown) => {
+        hookRequested = false;
+        console.error(e);
+    });
 };
 
 export default defineModule({
