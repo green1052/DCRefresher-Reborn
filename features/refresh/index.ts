@@ -15,8 +15,8 @@ import {createUnseenCounter, setTitleCount} from "./title";
 const MINIMUM_REFRESH_INTERVAL = 2000;
 /** 목록 요청이 연달아 실패할 때 자동 새로고침 주기를 늘리는 상한. */
 const MAXIMUM_BACKOFF_INTERVAL = 60_000;
-/** 목록 응답 머리를 받은 뒤 본문을 다 받을 때까지의 제한. 목록은 수백 KB라 느린 회선에서도 넉넉하다. */
-const BODY_TIMEOUT = 15_000;
+/** 목록 요청 하나(차례 기다리기·응답 머리·본문)의 제한. 머리 제한(15초)에 수백 KB 본문을 받을 시간을 더했다. */
+const LIST_TIMEOUT = 30_000;
 
 /** setup()이 돌려주는 객체. 단축키·팝업·미리보기가 쓴다. */
 interface RefreshApi {
@@ -149,15 +149,20 @@ export default defineModule({
                 // 시간 제한은 기본값(15초, 차례를 받은 뒤부터)을 쓴다. 다음 주기는 응답을 받은 뒤 잡으므로 요청이 겹치지 않는다.
                 // 주기보다 짧게 끊으면 큰 갤러리 목록(2~3초 걸린다)이 조금만 늦어도 실패가 되어 주기가 최대 1분까지 늘어나 멈춘 것처럼 보인다.
                 // retry: undefined는 기본값을 덮으므로 키 자체를 뺀다.
-                // http의 시간 제한은 응답 머리까지만 잰다. 머리를 받은 뒤 본문이 멈추면 loading이 풀리지 않아 새로고침이 끝내 멈추므로 본문에도 건다.
+                // http의 시간 제한은 응답 머리까지만 잰다. 디시 GET은 임시 차단 검사(detectBlocked)가 http.get 안에서 본문까지 읽어, 본문이 멈추면
+                // http.get이 끝나지 않고 loading이 풀리지 않아 새로고침이 끝내 멈춘다. 그래서 요청 전체에 건다. 끊으면 요청째 끊겨 본문 읽기도 실패한다.
                 // 이 제한으로 끊긴 것은 controller가 아니라 실패로 친다 (catch).
                 const stalled = new AbortController();
-                const received = await http.get(listUrl(target), {
-                    signal: AbortSignal.any([controller.signal, stalled.signal]),
-                    ...(force ? {} : {retry: 0})
-                });
-                const stallTimer = window.setTimeout(() => stalled.abort(new DOMException("목록 본문 시간 초과", "TimeoutError")), BODY_TIMEOUT);
-                const response = await received.text().finally(() => window.clearTimeout(stallTimer));
+                const stallTimer = window.setTimeout(() => stalled.abort(new DOMException("목록 요청 시간 초과", "TimeoutError")), LIST_TIMEOUT);
+                let response: string;
+                try {
+                    response = await (await http.get(listUrl(target), {
+                        signal: AbortSignal.any([controller.signal, stalled.signal]),
+                        ...(force ? {} : {retry: 0})
+                    })).text();
+                } finally {
+                    window.clearTimeout(stallTimer);
+                }
                 // 그사이 주소가 바뀌었으면 지난 주소의 목록이라 버린다. finally에서 새 주소로 다시 받는다.
                 if (target !== originalLocation) return false;
 
