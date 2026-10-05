@@ -71,7 +71,8 @@ export const processComments = (source: DcinsideComment[], preData: GalleryPreDa
     for (const comment of list) {
         const memo = String(comment.memo ?? "");
         const voice = extractVoice(memo);
-        if (voice) comment.voice = voice.voice;
+        // 늘 덮어쓴다. 디시 응답에도 voice 필드가 있어(보통 null) 그대로 두면 음성 댓글이 아닌데도 음성 댓글로 보인다(답글 막힘을 무시한다).
+        comment.voice = voice?.voice;
         comment.memo = cleaned.memo(voice?.memo ?? memo, sanitizeMemo);
     }
 

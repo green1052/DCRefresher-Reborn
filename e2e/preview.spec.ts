@@ -227,6 +227,13 @@ test.describe("댓글 쓰기·지우기", () => {
         await expect(frame.getByRole("textbox", {name: "댓글 입력", exact: true})).toBeVisible();
     });
 
+    test("디시가 답글을 막은 댓글(reply_w N)에는 답글 버튼이 없다", async ({listPage, site}) => {
+        site.comments = [fakeComment(10, {reply_w: "N"}), fakeComment(12)];
+        await listPage.openPreview();
+        await expect(listPage.comments.nth(1).getByRole("button", {name: "답글", exact: true})).toBeVisible();
+        await expect(listPage.comments.nth(0).getByRole("button", {name: "답글", exact: true})).toHaveCount(0);
+    });
+
     test("디시콘 창에서 고른 디시콘을 디시콘 댓글로 보낸다", async ({listPage, site}) => {
         const frame = await listPage.openPreview();
         await frame.getByRole("button", {name: "디시콘", exact: true}).click();

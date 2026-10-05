@@ -27,11 +27,15 @@ export interface FakeComment {
     memo: string;
     is_delete: "0" | "1";
     reg_date: string;
+    /** 음성 댓글이 아니면 디시는 null을 준다. */
+    voice: null;
+    /** "N"이면 디시가 답글쓰기를 두지 않는 댓글이다. */
+    reply_w?: "Y" | "N";
 }
 
 /** 댓글 하나. 기본은 유동 ㅇㅇ(1.2)이다. */
 export const fakeComment = (no: number, fields: Partial<FakeComment> = {}): FakeComment => ({
-    no: String(no), c_no: String(no), depth: 0, user_id: "", name: "ㅇㅇ", ip: "1.2", memo: `댓글 ${no}`, is_delete: "0",
+    no: String(no), c_no: String(no), depth: 0, user_id: "", name: "ㅇㅇ", ip: "1.2", memo: `댓글 ${no}`, is_delete: "0", voice: null,
     reg_date: `2026-09-30 12:${String(no % 60).padStart(2, "0")}:00`,
     ...fields
 });

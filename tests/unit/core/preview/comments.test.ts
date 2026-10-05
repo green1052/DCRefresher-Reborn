@@ -116,6 +116,12 @@ describe("processComments", () => {
             expect(output?.voice).toBeUndefined();
             expect(output?.memo).toBe("글");
         });
+
+        it("디시 응답의 voice: null은 음성 댓글로 보지 않는다 (답글 막힘을 따른다)", () => {
+            const raw = {...comment(1, {memo: "글"}), voice: null};
+            const [output] = processComments([raw], preData());
+            expect(output?.voice).toBeUndefined();
+        });
     });
 
     describe("차단", () => {
