@@ -6,7 +6,7 @@ import {createStore} from "zustand/vanilla";
 
 import {DB_KEYS, dbStorage, writeDatabase} from "@/core/storage/items";
 import {watchStorage} from "@/core/storage/sync";
-import type {BanList} from "@/core/storage/types";
+import type {BanList, DatabaseMeta} from "@/core/storage/types";
 import {onBfcacheRestore} from "@/utils/dom";
 import {once} from "@/utils/once";
 import {isRecord} from "@/utils/record";
@@ -20,8 +20,7 @@ const get = (url: string): Promise<string> => http.get(url, {retry: 0}).text();
  * force: 사용자가 누른 "지금 갱신". 같은 버전이어도 다시 받는다.
  */
 export const updateDatabase = async (force = false): Promise<void> => {
-    const version = (await get(urls.database.version)).trim();
-    const meta = await dbStorage.meta.getValue();
+    const [version, meta] = await Promise.all([get(urls.database.version).then((text) => text.trim()), dbStorage.meta.getValue()]);
     // 저장 형식이 바뀌었으면(확장 업데이트) 같은 버전이어도 새 형식으로 다시 받는다.
     if (!force && version && version === meta.version.trim() && meta.format === IP_FORMAT) {
         await dbStorage.meta.setValue({...meta, lastUpdate: Date.now()});
@@ -74,6 +73,10 @@ let bans: Map<string, string> | null = null;
 let bansRequested = false;
 /** 감시로 받은 밴 DB 갱신 수. 처음 읽기가 늦게 끝나 새 값을 덮지 않게 견준다. */
 let banVersion = 0;
+/** 지금 읽어 둔 DB의 버전·형식 (모르면 빈 문자열). bfcache 복원 때 같으면 수백 KB를 다시 풀지 않는다. */
+let loadedStamp = "";
+const stampOf = ({version, format}: DatabaseMeta): string => `${version}
+${format ?? ""}`;
 
 // DB를 읽을 때마다 올리는 번호 (0이면 아직 안 읽음). 렌더 중에 조회하는 곳은 useSyncExternalStore로 이것을 구독한다.
 // React Compiler는 인자만 보고 메모하므로 이 번호를 식에 넣어야 DB가 바뀐 뒤 다시 계산한다.
@@ -140,23 +143,31 @@ export const initDatabase = once(async () => {
     let updated = false;
     watchStorage<string>(DB_KEYS.ip, (next) => {
         updated = true;
+        loadedStamp = "";
         loadIp(next ?? "");
     }, signal);
-    const ip = await storage.getItem<string>(DB_KEYS.ip, {fallback: ""}).catch((e: unknown) => {
+    const [ip, meta] = await Promise.all([storage.getItem<string>(DB_KEYS.ip, {fallback: ""}), dbStorage.meta.getValue()]).catch((e: unknown) => {
         attempt.abort();
         throw e;
     });
-    if (!updated) loadIp(ip);
+    if (!updated) {
+        loadedStamp = stampOf(meta);
+        loadIp(ip);
+    }
     // 밴은 한 번이라도 읽었을 때만 새 값을 따라간다.
     watchStorage<string>(DB_KEYS.ban, (next) => {
         if (!bansRequested) return;
         banVersion++;
         loadBans(next ?? "");
     }, signal);
-    // bfcache에 있는 동안 받은 DB 갱신은 watch로 오지 않는다.
+    // bfcache에 있는 동안 받은 DB 갱신은 watch로 오지 않는다. 버전이 그대로면(대부분) 작은 meta만 읽고 끝낸다.
     onBfcacheRestore(async () => {
-        loadIp(await storage.getItem<string>(DB_KEYS.ip, {fallback: ""}));
-        if (bansRequested) loadBans(await storage.getItem<string>(DB_KEYS.ban, {fallback: ""}));
+        const stamp = stampOf(await dbStorage.meta.getValue());
+        if (stamp === loadedStamp) return;
+        const [ip, ban] = await Promise.all([storage.getItem<string>(DB_KEYS.ip, {fallback: ""}), bansRequested ? storage.getItem<string>(DB_KEYS.ban, {fallback: ""}) : null]);
+        loadedStamp = stamp;
+        loadIp(ip);
+        if (ban !== null) loadBans(ban);
     }, signal);
 });
 
