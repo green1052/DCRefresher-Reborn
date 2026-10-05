@@ -48,8 +48,6 @@ export default defineModule({
         let rerun = false;
         // 연달아 실패한 목록 요청 수. 실패할 때마다 자동 새로고침 주기가 두 배가 된다.
         let failures = 0;
-        // 미리보기가 열려 있어 자동 새로고침을 쉬었는지. 닫은 뒤 첫 주기도 쉰다.
-        let previewPaused = false;
         // 페이지를 넘긴 주소. 그 목록으로 갈아끼운 직후 목록 위로 스크롤한다 (진행 중인 요청에 막혀 나중에 받아도).
         let scrollAfter: string | null = null;
         // 진행 중인 목록 요청. 주소가 바뀌면 끊는다.
@@ -117,16 +115,8 @@ export default defineModule({
                 const page = new URL(originalLocation).searchParams.get("page");
                 if (page && page !== "1") return false;
 
-                // 미리보기가 목록을 덮고 있으면 쉬고, 닫은 뒤 첫 주기도 쉰다.
-                // 연 동안 쌓인 새 글이 닫자마자 들어오면 다음 글을 누르려던 행이 밀린다.
-                if (getModuleApi("preview")?.isOpen()) {
-                    previewPaused = true;
-                    return false;
-                }
-                if (previewPaused) {
-                    previewPaused = false;
-                    return false;
-                }
+                // 미리보기가 목록을 덮고 있으면 쉰다.
+                if (getModuleApi("preview")?.isOpen()) return false;
 
                 // 목록을 갈아끼우면 커서·키보드 포커스 아래 행이 바뀐다. 설정을 켜면 그 위에 있는 동안 건너뛴다.
                 // 포커스는 :focus-visible만 본다. 글 제목을 마우스로 누르면 링크에 포커스가 남아, :focus로 보면 목록을 떠나도 계속 멈춘다.
