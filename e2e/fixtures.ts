@@ -1,6 +1,4 @@
-import {mkdtempSync, rmSync} from "node:fs";
-import {tmpdir} from "node:os";
-import path from "node:path";
+import {fileURLToPath} from "node:url";
 
 import {type BrowserContext, chromium, firefox, test as base, type Worker} from "@playwright/test";
 import type {browser} from "wxt/browser";
@@ -12,8 +10,8 @@ import {type ListPage, openListPage} from "./pages/list";
 /** 서비스 워커 안(evaluate)의 chrome 전역. 테스트 파일은 확장 번들이 아니라 타입이 없다. */
 declare const chrome: typeof browser;
 
-const CHROME_EXTENSION = path.resolve(".output/chrome-mv3");
-const FIREFOX_EXTENSION = path.resolve(".output/firefox-mv2");
+const CHROME_EXTENSION = fileURLToPath(new URL("../.output/chrome-mv3", import.meta.url));
+const FIREFOX_EXTENSION = fileURLToPath(new URL("../.output/firefox-mv2", import.meta.url));
 /** IP·밴 DB 서버. */
 const IP_DB_HOST = "dcrefresher.green1052.com";
 const DCINSIDE = /^https:\/\/([a-z0-9-]+\.)*dcinside\.(com|co\.kr)$/;
@@ -68,13 +66,7 @@ export const test = base.extend<{ live: boolean }>({
     },
 
     context: async ({browserName, live, site}, use) => {
-        // 테스트마다 새 프로필을 만들고 끝나면 지운다.
-        const profiles: string[] = [];
-        const newProfile = (): string => {
-            const profile = mkdtempSync(path.join(tmpdir(), "refresher-e2e-"));
-            profiles.push(profile);
-            return profile;
-        };
+        // 프로필 경로를 비워 두면 플레이라이트가 테스트마다 임시 프로필을 만들고 닫을 때 지운다.
         let context: BrowserContext | undefined;
         try {
             if (browserName === "firefox") {
@@ -82,7 +74,7 @@ export const test = base.extend<{ live: boolean }>({
                 for (let attempt = 1; !context; attempt++) {
                     const port = await freePort();
                     try {
-                        context = await firefox.launchPersistentContext(newProfile(), {
+                        context = await firefox.launchPersistentContext("", {
                             headless: true,
                             timeout: 15_000,
                             args: ["-start-debugger-server", String(port)],
@@ -95,7 +87,7 @@ export const test = base.extend<{ live: boolean }>({
                     backgrounds.set(context, {kind: "firefox", addon: await installTemporaryAddon(port, FIREFOX_EXTENSION)});
                 }
             } else {
-                context = await chromium.launchPersistentContext(newProfile(), {
+                context = await chromium.launchPersistentContext("", {
                     headless: true,
                     ...(process.env.PLAYWRIGHT_CHROMIUM ? {executablePath: process.env.PLAYWRIGHT_CHROMIUM} : {channel: "chromium"}),
                     args: [`--disable-extensions-except=${CHROME_EXTENSION}`, `--load-extension=${CHROME_EXTENSION}`]
@@ -116,14 +108,6 @@ export const test = base.extend<{ live: boolean }>({
             const background = context && backgrounds.get(context);
             if (background?.kind === "firefox") background.addon.close();
             await context?.close();
-            for (const profile of profiles) {
-                try {
-                    rmSync(profile, {recursive: true, force: true, maxRetries: 5});
-                } catch (e) {
-                    // 뜨다 멈춘 파이어폭스가 아직 프로필을 잡고 있으면 남겨 둔다.
-                    console.warn(`프로필을 지우지 못했습니다: ${String(e)}`);
-                }
-            }
         }
     },
 
