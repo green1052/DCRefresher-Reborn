@@ -115,9 +115,6 @@ export default defineModule({
                 const page = new URL(originalLocation).searchParams.get("page");
                 if (page && page !== "1") return false;
 
-                // 미리보기가 목록을 덮고 있으면 쉰다.
-                if (getModuleApi("preview")?.isOpen()) return false;
-
                 // 목록을 갈아끼우면 커서·키보드 포커스 아래 행이 바뀐다. 설정을 켜면 그 위에 있는 동안 건너뛴다.
                 // 포커스는 :focus-visible만 본다. 글 제목을 마우스로 누르면 링크에 포커스가 남아, :focus로 보면 목록을 떠나도 계속 멈춘다.
                 // 숨은 탭은 보지 않는다. 목록 위에서 탭을 옮기면 :hover가 남아 숨은 탭 새로고침이 끝내 돌지 않는다.
