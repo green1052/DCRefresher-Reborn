@@ -1,11 +1,12 @@
-import {Button, Dialog, Flex, Popover, Separator, Text} from "@radix-ui/themes";
 import {Copy} from "lucide-react";
-import {Popover as PopoverPrimitive} from "radix-ui";
-import {useEffect, useSyncExternalStore} from "react";
+import {useEffect, useRef, useSyncExternalStore} from "react";
 
-import {DialogActions} from "@/components/ConfirmDialog";
-import {ModalDialog} from "@/components/ModalDialog";
-import {useOpenerFocus} from "@/components/useOpenerFocus";
+import {DialogActions, ModalDialog} from "@/components/dialogs";
+import {Button} from "@/components/ui/button";
+import {DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {Popover, PopoverContent} from "@/components/ui/popover";
+import {Separator} from "@/components/ui/separator";
+import {useReturnFocus} from "@/components/useOpenerFocus";
 import {blockingEntries} from "@/core/block";
 import {banReasonsOf, databaseVersion, ipInfoOf, subscribeDatabase} from "@/core/database";
 import {queryString} from "@/core/http/urls";
@@ -22,12 +23,11 @@ import {overlay} from "./shadow";
 
 /** 클릭하면 복사되는 값 한 줄. */
 const CopyRow = ({label, value, onCopy}: { label: string; value: string; onCopy: (value: string) => void }) => (
-    <Button variant="ghost" color="gray" size="1" title="클릭하면 복사됩니다." onClick={() => onCopy(value)}
-            style={{justifyContent: "space-between", margin: 0}}>
-        <Text truncate>
-            <Text color="gray">{label}</Text> <Text weight="bold" highContrast>{value}</Text>
-        </Text>
-        <Copy size={12}/>
+    <Button variant="ghost" size="sm" className="w-full justify-between font-normal" title="클릭하면 복사됩니다." onClick={() => onCopy(value)}>
+        <span className="truncate">
+            <span className="text-muted-foreground">{label}</span> <strong>{value}</strong>
+        </span>
+        <Copy data-icon="inline-end"/>
     </Button>
 );
 
@@ -62,25 +62,25 @@ const unblock = async (type: BlockType, {id, ...fields}: BlockEntry): Promise<vo
 /** 이 대상을 막고 있는 차단 규칙 목록. 왜 가려졌는지 보여 주고 그 자리에서 풀 수 있게 한다. */
 const BlockRules = ({rules}: { rules: { type: BlockType; entry: BlockEntry }[] }) => (
     <>
-        <Separator size="4" my="2"/>
-        <Text as="p" size="1" color="gray" mb="1">걸린 차단 규칙</Text>
-        <Flex direction="column" gap="1">
+        <Separator/>
+        <p className="text-xs text-muted-foreground">걸린 차단 규칙</p>
+        <div className="flex flex-col gap-1">
             {rules.map(({type, entry}) => {
                 const name = type === "DCCON" ? entry.extra || entry.content : entry.content;
                 return (
-                    <Flex key={entry.id} align="center" justify="between" gap="2">
-                        <Text size="1" truncate title={entry.isRegex ? "정규식 — 풀면 이 규칙에 걸린 다른 대상도 함께 풀립니다." : undefined}>
-                            <Text color="gray">{TYPE_NAMES[type]}</Text> {name}
-                            {entry.isRegex && <Text color="gray"> (정규식)</Text>}
-                            {entry.gallery && <Text color="gray"> (이 갤러리만)</Text>}
-                        </Text>
-                        <Button size="1" variant="ghost" color="red" style={{flexShrink: 0}}
+                    <div key={entry.id} className="flex items-center justify-between gap-2">
+                        <span className="truncate text-xs" title={entry.isRegex ? "정규식 — 풀면 이 규칙에 걸린 다른 대상도 함께 풀립니다." : undefined}>
+                            <span className="text-muted-foreground">{TYPE_NAMES[type]}</span> {name}
+                            {entry.isRegex && <span className="text-muted-foreground"> (정규식)</span>}
+                            {entry.gallery && <span className="text-muted-foreground"> (이 갤러리만)</span>}
+                        </span>
+                        <Button size="xs" variant="ghost" className="shrink-0 text-destructive"
                                 aria-label={`${TYPE_NAMES[type]} ${name} 차단 해제`}
                                 onClick={() => void unblock(type, entry)}>해제</Button>
-                    </Flex>
+                    </div>
                 );
             })}
-        </Flex>
+        </div>
     </>
 );
 
@@ -92,15 +92,17 @@ export const DcconPackageDialog = ({target, onClose}: { target: SelectedUser; on
     };
 
     return (
-        <ModalDialog onClose={onClose} container={overlay.portal} maxWidth="400px">
-                <Dialog.Title>디시콘 패키지를 어떻게 차단할까요?</Dialog.Title>
-                <Dialog.Description size="2" color="gray">
+        <ModalDialog onClose={onClose} className="sm:max-w-[400px]">
+            <DialogHeader>
+                <DialogTitle>디시콘 패키지를 어떻게 차단할까요?</DialogTitle>
+                <DialogDescription>
                     묶어서 차단하면 차단 목록에 한 항목으로 들어갑니다. 하나씩 차단하면 디시콘마다 항목이 생겨 따로 풀 수 있습니다.
-                </Dialog.Description>
-                <DialogActions>
-                    <Button variant="soft" onClick={() => choose("each")}>하나씩 차단</Button>
-                    <Button onClick={() => choose("bundle")}>묶어서 차단</Button>
-                </DialogActions>
+                </DialogDescription>
+            </DialogHeader>
+            <DialogActions>
+                <Button variant="secondary" onClick={() => choose("each")}>하나씩 차단</Button>
+                <Button onClick={() => choose("bundle")}>묶어서 차단</Button>
+            </DialogActions>
         </ModalDialog>
     );
 };
@@ -113,7 +115,8 @@ interface BubbleProps {
 
 /** 유저 버블. 열 때 마운트되어 연 요소(닉네임 버튼 등)를 기억했다가 닫을 때 그리로 포커스를 돌려준다. */
 const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
-    const focus = useOpenerFocus();
+    const popup = useRef<HTMLDivElement>(null);
+    const focus = useReturnFocus(popup);
     const activityState = useGallogActivity(selected.dccon ? undefined : selected.uid);
     const gallery = queryString("id");
     const memo = useUserMemo(selected, gallery);
@@ -155,18 +158,16 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
     const activity = formatActivity(activityState);
 
     return (
-        <Popover.Root open onOpenChange={(open) => !open && close()}>
-            {/* Themes Popover.Anchor는 children을 버리므로(3.3.0) 프리미티브 Anchor를 쓴다. */}
-            <PopoverPrimitive.Anchor asChild>
-                <span className="refresher-anchor" style={{left: bubble.x, top: bubble.y}}/>
-            </PopoverPrimitive.Anchor>
-            <Popover.Content container={overlay.portal} side="bottom" align="start" sideOffset={4} size="1"
-                             minWidth="200px" maxWidth="320px" onOpenAutoFocus={focus.onOpenAutoFocus} onCloseAutoFocus={focus.onCloseAutoFocus}>
+        <Popover open onOpenChange={(open) => !open && close()}>
+            {/* 우클릭한 자리에 띄운다. 트리거 대신 그 점을 기준으로 놓는다. */}
+            <PopoverContent ref={popup} side="bottom" align="start" sideOffset={4} className="w-auto min-w-[200px] max-w-[320px] gap-2 p-2"
+                            anchor={{getBoundingClientRect: () => DOMRect.fromRect({x: bubble.x, y: bubble.y, width: 0, height: 0})}}
+                            initialFocus={focus.keyboard} finalFocus={focus.finalFocus}>
                 {/* 여기서 여는 창(메모·패키지 차단)은 연 요소로 포커스를 먼저 옮겨 둔다. 그래야 그 창이 닫힐 때 사라진 버블 대신 그리로 돌아간다. */}
                 {selected.dccon ? (
-                    <Flex gap="2">
-                        <Button size="1" onClick={() => requestBlock({target: "dccon"})}>디시콘 차단</Button>
-                        <Button size="1" variant="soft" color="gray"
+                    <div className="flex gap-2">
+                        <Button size="sm" onClick={() => requestBlock({target: "dccon"})}>디시콘 차단</Button>
+                        <Button size="sm" variant="secondary"
                                 onClick={() => {
                                     focus.returnFocus();
                                     close();
@@ -174,23 +175,23 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
                                 }}>
                             디시콘 전체 차단
                         </Button>
-                    </Flex>
+                    </div>
                 ) : (
                     <>
-                        <Flex direction="column" gap="2">
+                        <div className="flex flex-col gap-1">
                             {selected.nick && <CopyRow label="닉네임" value={selected.nick} onCopy={copy}/>}
                             {identity && <CopyRow label="아이디/IP" value={identity} onCopy={copy}/>}
                             {ipLabel && <CopyRow label="IP 정보" value={ipLabel} onCopy={copy}/>}
                             {activity && <CopyRow label="글/댓글" value={activity} onCopy={copy}/>}
                             {bans && <CopyRow label="갱차 갤러리" value={bans} onCopy={copy}/>}
                             {memo && <CopyRow label="메모" value={memo.text} onCopy={copy}/>}
-                        </Flex>
-                        <Separator size="4" my="2"/>
-                        <Flex gap="2" wrap="wrap">
-                            <Button size="1" color="red" variant="soft" onClick={() => requestBlock({target: "user"})}>
+                        </div>
+                        <Separator/>
+                        <div className="flex flex-wrap gap-2">
+                            <Button size="sm" variant="destructive" onClick={() => requestBlock({target: "user"})}>
                                 유저 차단
                             </Button>
-                            <Button size="1" variant="soft" color="gray"
+                            <Button size="sm" variant="secondary"
                                     onClick={() => {
                                         focus.returnFocus();
                                         useUiStore.getState().openMemo(selected);
@@ -198,19 +199,17 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
                                 메모
                             </Button>
                             {selected.uid && (
-                                <Button size="1" variant="soft" color="gray" asChild>
-                                    <a href={`https://gallog.dcinside.com/${selected.uid}`} target="_blank"
-                                       rel="noreferrer" onClick={close}>
-                                        갤로그
-                                    </a>
+                                <Button size="sm" variant="secondary" nativeButton={false}
+                                        render={<a href={`https://gallog.dcinside.com/${selected.uid}`} target="_blank" rel="noreferrer" onClick={close}/>}>
+                                    갤로그
                                 </Button>
                             )}
-                        </Flex>
+                        </div>
                     </>
                 )}
                 {rules.length > 0 && <BlockRules rules={rules}/>}
-            </Popover.Content>
-        </Popover.Root>
+            </PopoverContent>
+        </Popover>
     );
 };
 

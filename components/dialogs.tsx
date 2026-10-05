@@ -1,8 +1,8 @@
 import type {Dialog as DialogPrimitive} from "@base-ui/react/dialog";
 import {X} from "lucide-react";
-import {type KeyboardEvent, type ReactNode, type RefObject, useLayoutEffect, useRef, useState} from "react";
+import {type KeyboardEvent, type ReactNode, type RefObject, useRef, useState} from "react";
 
-import {focusedElement} from "@/components/useOpenerFocus";
+import {useReturnFocus} from "@/components/useOpenerFocus";
 import {Button} from "@/components/ui/button";
 import {Dialog, DialogClose, DialogContent, DialogFooter, DialogTitle} from "@/components/ui/dialog";
 
@@ -52,23 +52,9 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
     className?: string;
     children: ReactNode;
 }) => {
-    // 트리거 없이 여는 창이라 마운트할 때 포커스된 요소(연 요소)를 기억한다.
-    const [opener] = useState(focusedElement);
     const [open, setOpen] = useState(true);
     const popup = useRef<HTMLDivElement>(null);
-
-    // 닫을 때 포커스를 돌려줄 곳. 닫는 사이 연 버튼이 막혔으면(전체 삭제로 목록이 비었거나 초기화 중) 포커스를 받는 가장 가까운 조상(탭 패널 등)이다.
-    const returnTarget = (): HTMLElement | null | undefined =>
-        opener?.matches(":disabled") ? opener.parentElement?.closest<HTMLElement>("[tabindex]") : opener;
-
-    // 포커스가 창 안이나 body에 남았을 때만 연 요소로 돌려준다. 그사이 다른 곳(새로 뜬 창의 입력칸 등)으로 간 포커스는 빼앗지 않는다.
-    const restoreFocus = (): void => {
-        const current = focusedElement();
-        if (!current || current === document.body || popup.current?.contains(current)) returnTarget()?.focus({preventScroll: true});
-    };
-
-    // 부모가 언마운트해 닫으면(확인을 누른 뒤 등) Base UI는 포커스를 돌려주지 않는다.
-    useLayoutEffect(() => restoreFocus, []);
+    const focus = useReturnFocus(popup);
 
     return (
         // actionsRef.close()(일을 마친 창이 스스로 닫기)는 dismissible과 상관없이 닫는다. 끝난 직후라 dismissible이 아직 옛 값일 수 있다.
@@ -77,7 +63,7 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
                 // 애니메이션이 끝났을 때 Base UI는 아직 포커스를 돌려주지 않았다(body). onClose가 알림 창을 띄우면 body를 연 요소로 기억하므로 먼저 돌려준다.
                 onOpenChangeComplete={(next) => {
                     if (next) return;
-                    restoreFocus();
+                    focus.restoreFocus();
                     onClose();
                 }}>
             <DialogContent
@@ -85,8 +71,8 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
                 onKeyDown={keepTabInside}
                 showCloseButton={false}
                 className={className}
-                initialFocus={focusOnOpen === "first" || (focusOnOpen === "keyboard" && Boolean(opener?.matches(":focus-visible")))}
-                finalFocus={() => returnTarget() ?? true}
+                initialFocus={focusOnOpen === "first" || (focusOnOpen === "keyboard" && focus.keyboard)}
+                finalFocus={focus.finalFocus}
             >
                 {children}
             </DialogContent>
