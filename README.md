@@ -19,7 +19,7 @@
     <a href="https://www.buymeacoffee.com/green1052"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" width="150" height="42" alt="Buy Me a Coffee로 후원하기"></a>
 </div>
 
-글을 열지 않고 목록에서 미리 보고, 목록을 자동으로 새로고침하고, 보고 싶지 않은 유저와 글을 가립니다. 작성자 옆에는 IP 정보(통신사·국가·VPN)와 메모를 보여 줍니다.
+글을 열지 않고 목록에서 미리 보고 목록을 자동으로 새로고침합니다. 보고 싶지 않은 유저와 글은 가리고 작성자 옆에는 IP 정보(통신사·국가·VPN)와 메모를 보여 줍니다.
 
 <p align="center">
     <img src="docs/images/preview.webp" width="49%" alt="글 목록에서 우클릭으로 연 미리보기 창">
@@ -33,23 +33,21 @@
 | Chrome (Edge, Whale 등 크로뮴 계열 포함) | [Chrome 웹 스토어](https://chromewebstore.google.com/detail/pmfifcbendahnkeojgpfppklgioemgon) |
 | Firefox | [Firefox Add-ons](https://addons.mozilla.org/ko/firefox/addon/dcrefresher-reborn) |
 
-Chrome·Firefox 140 이상에서 동작합니다.
+Chrome 140, Firefox 144 이상에서 동작합니다.
 
-설치한 뒤 툴바의 확장 아이콘을 누르면 팝업이 열립니다. 팝업에서 모듈을 켜고 끄고, 톱니바퀴 버튼으로 옵션 페이지(설정·차단·메모·단축키·데이터·정보)를 엽니다.
+설치한 뒤 툴바의 확장 아이콘을 누르면 팝업이 열립니다. 팝업에서 모듈을 켜고 끄며 톱니바퀴 버튼으로 옵션 페이지(설정·차단·메모·단축키·데이터·정보)를 엽니다.
 
 ## 사용법
 
 ### 미리보기
 
-- 글 목록에서 제목을 **우클릭**하면 미리보기 창이 열립니다. 좌클릭은 원래대로 글로 이동합니다. 설정의 `미리보기 키 반전`을 켜면 반대가 됩니다.
-- 목록의 **댓글 수**를 우클릭하면 댓글만 보기로 열립니다. 좌클릭은 원래대로 댓글 위치로 이동하고, `미리보기 키 반전`을 켜면 반대가 됩니다.
+- 글 목록에서 제목을 **우클릭**하면 미리보기 창이 열립니다. 좌클릭은 원래대로 글로 이동하는데, 설정의 `미리보기 키 반전`을 켜면 반대가 됩니다.
+- 목록의 **댓글 수**를 우클릭하면 댓글만 보기로 열리고 좌클릭은 원래대로 댓글 위치로 이동합니다. 이것도 `미리보기 키 반전`을 켜면 반대가 됩니다.
 - 원래 우클릭 메뉴가 필요하면 **Shift+우클릭**을 하거나, Windows에서는 오른쪽 버튼을 길게 눌렀다 뗍니다.
 - 창 안에서 **PageUp** / **PageDown**으로 목록의 앞·뒤 글로 넘어갑니다. 창 맨 아래(맨 위)에서 휠을 한 번 더 굴려도 넘어갑니다.
 - **Esc**나 창 바깥 클릭으로 닫습니다. `주소창에 게시글 주소 표시`(기본 켜짐)가 켜져 있으면 브라우저 뒤로 가기로도 닫히고, 닫은 미리보기를 앞으로 가기로 다시 열 수 있습니다.
 - 제목에 마우스를 올리면 뜨는 **미니 미리보기**는 설정에서 켭니다(기본 꺼짐).
-- 미리보기 창에서 본문·댓글의 **디시콘**을 누르면 그 디시콘 패키지 정보가 뜨고, 아직 없는 패키지는 바로 추가할 수 있습니다.
 - 본문 **이미지**를 누르면 창 안에서 크게 봅니다. **←** / **→**로 넘기고 Esc로 닫습니다.
-- 댓글을 새로고침하면 새로 들어온 댓글을 잠깐 강조합니다. 미리보기로 연 글은 목록에서 흐리게 표시합니다.
 - 목록에서 **J** / **K**로 글을 고르고 **Enter**로 미리보기, **O**로 글을 엽니다. **Esc**로 선택을 풉니다.
 
 ### 글 목록 새로고침
@@ -66,7 +64,7 @@ Chrome·Firefox 140 이상에서 동작합니다.
 | 스텔스 모드: 이미지 잠시 보이기 | `Alt+P` |
 | 이 페이지에서 가린 내용 보기 | 없음 |
 
-키는 브라우저의 확장 프로그램 단축키 설정에서 바꿉니다. 옵션 페이지의 **단축키** 탭에서 지금 키를 확인하고, **단축키 설정** 버튼으로 그 화면을 열 수 있습니다. 갤러리 관리 권한이 있으면 미리보기 창에서 `D`를 두 번 눌러 글을 삭제하고, `B`를 두 번 눌러 작성자를 차단할 수 있습니다(설정에서 키 변경).
+키는 브라우저의 확장 프로그램 단축키 설정에서 바꿉니다. 그 화면은 옵션 페이지 **단축키** 탭의 **단축키 설정** 버튼으로도 열 수 있습니다. 갤러리 관리 권한이 있으면 미리보기 창에서 `D`를 두 번 눌러 글을 삭제하고 `B`를 두 번 눌러 작성자를 차단할 수 있습니다(설정에서 키 변경).
 
 ## 주요 기능
 
@@ -103,21 +101,10 @@ Chrome·Firefox 140 이상에서 동작합니다.
 
 ## 개발
 
-[Bun](https://bun.sh) 1.4 이상과 [Node.js](https://nodejs.org)가 필요합니다.
-
-```sh
-bun install
-bun run dev            # Chrome 개발 모드 (dev:firefox는 Firefox)
-bun run compile        # 타입 검사
-bun run test           # 단위 테스트
-bun run build          # 빌드 (build:firefox는 Firefox)
-bun run e2e            # E2E (먼저 build)
-```
-
-구조, 기능을 더하는 방법, 테스트와 릴리즈는 [개발 문서](docs/README.md)에 있습니다.
+[Bun](https://bun.sh) 1.4 이상과 [Node.js](https://nodejs.org)가 필요합니다. `bun install` 뒤 `bun run dev`로 띄웁니다. 명령, 구조, 테스트, 릴리즈는 [개발 문서](docs/README.md)에 있습니다.
 
 ## 기여·문의
 
 - 버그 제보와 기능 제안은 [이슈](https://github.com/green1052/DCRefresher-Reborn/issues/new/choose)로 올려 주세요.
-- 풀 리퀘스트는 `develop` 브랜치로 보내 주세요. `bun run compile`, `bun run test`, `bun run build`가 통과해야 하고, 커밋 메시지는 [Conventional Commits](https://www.conventionalcommits.org/ko/)를 따릅니다. Chrome과 Firefox에서 모두 확인해 주세요.
+- 풀 리퀘스트는 `develop` 브랜치로 보내 주세요. 통과해야 할 검사와 커밋 규칙은 [시작하기](docs/getting-started.md)에 있습니다. Chrome과 Firefox에서 모두 확인해 주세요.
 - [디스코드 서버](https://discord.gg/SSW6Zuyjz6) · [리프레셔 미니 갤러리](https://gall.dcinside.com/mini/board/lists/?id=bjwg64)
