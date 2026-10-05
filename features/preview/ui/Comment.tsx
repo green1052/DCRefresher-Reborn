@@ -1,11 +1,12 @@
-import {Box, Flex, IconButton, Text} from "@radix-ui/themes";
 import {Check, ChevronDown, Reply as ReplyIcon, X} from "lucide-react";
 import {useEffect, useLayoutEffect, useRef} from "react";
 
+import {Button} from "@/components/ui/button";
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {User} from "@/core/preview/types";
 import {adminDeleteComment, graphemes, userDeleteComment, wrapTxtcon} from "@/core/preview/request";
 import {notifyManage} from "@/stores/notify";
+import {cn} from "cn";
 
 import {savedNonmember} from "../nonmember";
 import {openDcconInfo} from "./DcconInfoPopup";
@@ -77,6 +78,18 @@ const fitTxtcon = (box: HTMLElement): void => {
         txt.style.transform = `translate(${(spacing / 2).toFixed(2)}px, -0.05em)`;
     }
 };
+
+/**
+ * 유튜브식 답글 트리. 부모 이름 아래에서 내려온 선이 답글마다 ㄴ자로 꺾여 들어간다 (x좌표: 부모 본문 시작 32px + 12px = 답글 안에서 12px).
+ * 선은 모두 칸 안에 그려 content-visibility로 잘리지 않는다. 불투명 색을 쓴다: ㄴ과 이어지는 세로선이 겹치는 구간이 반투명이면 두 번 칠해져 진해진다.
+ */
+// Tailwind가 소스에서 클래스 이름을 읽어 CSS를 만들므로 이어 붙이지 않고 다 적는다.
+/** 부모: 본문 아래 여백만큼 세로선 (본문이 여러 줄이어도 글자를 가로지르지 않게) → 첫 답글의 ㄴ으로 이어진다. */
+const THREAD_OPEN = "after:pointer-events-none after:absolute after:bottom-0 after:left-11 after:h-2 after:border-l-2 after:border-slate-300 after:content-[''] dark:after:border-slate-700";
+/** 답글: 위에서 내려와 이름 높이에서 오른쪽으로 꺾이는 ㄴ. */
+const REPLY = "ml-8 before:pointer-events-none before:absolute before:top-0 before:left-3 before:h-4.5 before:w-3.5 before:rounded-bl-[10px] before:border-b-2 before:border-l-2 before:border-slate-300 before:content-[''] dark:before:border-slate-700";
+/** 마지막 답글이 아니면 다음 답글까지 세로선을 잇는다. */
+const REPLY_CONTINUES = "after:pointer-events-none after:absolute after:inset-y-0 after:left-3 after:border-l-2 after:border-slate-300 after:content-[''] dark:after:border-slate-700";
 
 interface CommentProps {
     comment: ProcessedComment;
@@ -152,29 +165,33 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
     useEffect(() => (body.current ? watchGifVideos(body.current) : undefined), [html]);
 
     return (
-        <Box className="refresher-comment" data-depth={depth} data-deleted={isDeleted || undefined}
-             data-blocked={comment.blocked} data-duplicate={comment.duplicates === 0 || undefined} data-fresh={fresh || undefined}
-             data-thread-open={threadOpen || undefined} data-last-reply={lastReply || undefined} px="6" py="2">
-            <Flex justify="between" align="center" gap="2">
-                <Flex align="center" gap="1" minWidth="0">
+        // 화면 밖 댓글은 레이아웃·스타일 계산을 건너뛴다 (댓글 수백 개인 글을 열 때 레이아웃이 크게 준다).
+        // 아직 그리지 않은 댓글은 가장 흔한 한 줄 댓글 높이(48px)로 어림한다. 크게 잡으면 답글을 펼칠 때 어림값으로 높이를 재
+        // 펼치는 동안 실제보다 늘었다가 줄고, 그리지 않은 댓글이 많은 글은 스크롤 길이도 부풀었다가 줄어든다.
+        <div className={cn("refresher-comment relative px-8 py-2 [contain-intrinsic-size:auto_48px] [content-visibility:auto] hover:bg-muted/50",
+                           // 자동 새로고침으로 새로 들어온 댓글 (previewStore의 freshComments). 강조색으로 깔았다가 걷는다.
+                           fresh && "animate-fresh-comment",
+                           threadOpen && THREAD_OPEN, depth === 1 && REPLY, depth === 1 && !lastReply && REPLY_CONTINUES)}
+             data-deleted={isDeleted || undefined} data-blocked={comment.blocked} data-duplicate={comment.duplicates === 0 || undefined} data-fresh={fresh || undefined}>
+            <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-1">
                     <UserCard user={user} op={isOp}/>
-                    {comment.duplicates ? <Text size="1" color="gray" style={{whiteSpace: "nowrap"}}>같은 댓글 ×{comment.duplicates}</Text> : null}
-                    {/* 툴팁은 브라우저 기본(title)을 쓴다. 스레드마다 Radix 툴팁을 달면 댓글이 많은 글을 열 때 느려진다. */}
+                    {comment.duplicates ? <span className="text-xs whitespace-nowrap text-muted-foreground">같은 댓글 ×{comment.duplicates}</span> : null}
+                    {/* 툴팁은 브라우저 기본(title)을 쓴다. 스레드마다 툴팁 부품을 달면 댓글이 많은 글을 열 때 느려진다. */}
                     {depth === 0 && replyCount > 1 && (
-                        <IconButton size="1" variant="ghost" color="gray" aria-label={collapsed ? "답글 펼치기" : "답글 접기"}
-                                    title={collapsed ? "답글 펼치기" : "답글 접기"} onClick={() => toggleCollapse(comment.no)}>
-                            <ChevronDown size={14} className="refresher-chevron" style={{transform: collapsed ? "rotate(-90deg)" : undefined}}/>
-                        </IconButton>
+                        <Button size="icon-xs" variant="ghost" aria-label={collapsed ? "답글 펼치기" : "답글 접기"}
+                                title={collapsed ? "답글 펼치기" : "답글 접기"} onClick={() => toggleCollapse(comment.no)}>
+                            <ChevronDown className={cn("transition-transform motion-reduce:transition-none", collapsed && "-rotate-90")}/>
+                        </Button>
                     )}
-                </Flex>
+                </div>
 
-                <Flex align="center" gap="3" flexShrink="0">
+                <div className="flex shrink-0 items-center gap-3">
                     {canReply && (
-                        <IconButton
-                            size="1"
-                            // 선택 중에도 ghost를 유지한다. soft로 바꾸면 Radix 여백이 달라져 댓글 줄이 흔들린다.
+                        <Button
+                            size="icon-xs"
                             variant="ghost"
-                            color={replying ? undefined : "gray"}
+                            className={cn(replying && "text-primary")}
                             aria-label="답글"
                             aria-pressed={replying}
                             onClick={() =>
@@ -184,32 +201,32 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                                 })
                             }
                         >
-                            {replying ? <Check size={14}/> : <ReplyIcon size={14}/>}
-                        </IconButton>
+                            {replying ? <Check/> : <ReplyIcon/>}
+                        </Button>
                     )}
                     {canDelete && (
-                        <IconButton size="1" variant="ghost" color="gray" aria-label="댓글 삭제"
-                                    onClick={() => void onDelete()}>
-                            <X size={14}/>
-                        </IconButton>
+                        <Button size="icon-xs" variant="ghost" aria-label="댓글 삭제" onClick={() => void onDelete()}>
+                            <X/>
+                        </Button>
                     )}
                     <TimeStamp date={String(comment.reg_date ?? comment.date_time ?? "")}/>
-                </Flex>
-            </Flex>
+                </div>
+            </div>
 
-            {/* 음성 댓글만 본문 위에 플레이어가 붙는다. 감싸는 Flex 없이 각자 띄워 댓글마다 Radix 컴포넌트를 하나 덜 그린다. 플레이어는 Flex 항목일 때처럼 블록으로 둔다. */}
+            {/* 음성 댓글만 본문 위에 플레이어가 붙는다. */}
             {comment.voice && (
-                <Box mt="1">
+                <div className="mt-1">
                     {comment.voice.iframe ? (
-                        <iframe src={comment.voice.src} width={280} height={54} style={{display: "block", border: 0}} title="voice"/>
+                        <iframe src={comment.voice.src} width={280} height={54} className="block border-0" title="voice"/>
                     ) : (
-                        <audio controls src={comment.voice.src} style={{display: "block"}}/>
+                        <audio controls src={comment.voice.src} className="block"/>
                     )}
-                </Box>
+                </div>
             )}
-            <Box ref={body} mt="1" className="refresher-html refresher-comment-html" data-dccon={isDccon || undefined}
+            {/* 지운 댓글은 읽을 수 있게 본문용 회색을 쓴다. */}
+            <div ref={body} className={cn("refresher-html refresher-comment-html mt-1", isDeleted && "text-muted-foreground")} data-dccon={isDccon || undefined}
                  onClick={isDccon ? openDcconInfo : undefined}
                  dangerouslySetInnerHTML={{__html: html}}/>
-        </Box>
+        </div>
     );
 };

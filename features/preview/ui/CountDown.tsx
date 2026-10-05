@@ -1,7 +1,7 @@
-import {Badge, Tooltip} from "@radix-ui/themes";
 import {Clock} from "lucide-react";
 
-import {overlay} from "@/components/overlay/shadow";
+import {Badge} from "@/components/ui/badge";
+import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 
 import {useTick} from "./TimeStamp";
 import {parseDate, usePreviewStore} from "./previewStore";
@@ -16,11 +16,12 @@ const Remaining = ({expire}: { expire: Date }) => {
     const s = Math.floor((diff % 60000) / 1000);
 
     return (
-        <Tooltip content="자동 삭제까지 남은 시간" container={overlay.portal}>
-            <Badge color="orange" variant="soft">
-                <Clock size={12}/>
+        <Tooltip>
+            <TooltipTrigger render={<Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400"/>}>
+                <Clock/>
                 {diff <= 0 ? "만료됨" : h > 0 ? `${h}시간 ${m}분` : `${m}분 ${s}초`}
-            </Badge>
+            </TooltipTrigger>
+            <TooltipContent>자동 삭제까지 남은 시간</TooltipContent>
         </Tooltip>
     );
 };

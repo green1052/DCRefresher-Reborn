@@ -78,6 +78,15 @@
     --color-input: var(--input);
     --color-ring: var(--ring);
 
+    /* 자동 새로고침으로 새로 들어온 미리보기 댓글. 길이는 features/preview/index.ts의 FRESH_DURATION과 같다. */
+    --animate-fresh-comment: fresh-comment 3s ease-out;
+
+    @keyframes fresh-comment {
+        from, 30% {
+            background: color-mix(in oklch, var(--primary) 15%, transparent);
+        }
+    }
+
     /* 옵션 로고 연타 이스터에그 (DcconRain). 회전각은 이미지마다 --spin으로 준다. */
     --animate-dccon-fall: dccon-fall linear both;
 

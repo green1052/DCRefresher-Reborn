@@ -141,41 +141,6 @@
     }
 }
 
-/* 글자처럼 보이는 버튼 (Comment.tsx의 작성자 닉네임·작성 시각). :where로 명시도를 0으로 두어 Radix Text의 크기·굵기·색이 이긴다. */
-:where(.refresher-text-button) {
-    padding: 0;
-    border: 0;
-    background: none;
-    color: inherit;
-    font: inherit;
-    text-align: inherit;
-    cursor: pointer;
-}
-
-.refresher-text-button:focus-visible {
-    outline: 2px solid var(--focus-8);
-    outline-offset: 2px;
-    border-radius: var(--radius-1);
-}
-
-/* 답글 접기 버튼의 화살표 (Comment.tsx). */
-.refresher-chevron {
-    transition: transform 0.15s;
-
-    @media (prefers-reduced-motion: reduce) {
-        transition: none;
-    }
-}
-
-/* 글쓴이가 단 댓글 — v5처럼 작성자 칸을 파랗게 칠한다 (Comment.tsx UserCard). */
-.refresher-user[data-op] {
-    padding: 1px 6px;
-    border-radius: var(--radius-2);
-    background: var(--blue-a4);
-    // 닉네임만 칩 색으로. 배지(아이디·IP·글댓비·갱차·메모)는 설정한 색 그대로 둔다.
-    color: var(--blue-11);
-}
-
 /* 누르면 원본 보기가 열리는 본문 이미지 (Frame.tsx). */
 .refresher-preview-contents img[data-pop] {
     cursor: pointer;
@@ -411,88 +376,6 @@
 
 /* ===== 댓글 ===== */
 
-/* 답글 접기·펼치기 (CommentList.tsx). */
-.refresher-replies {
-    @include mixins.collapsible;
-}
-
-.refresher-comment {
-    // 화면 밖 댓글은 레이아웃·스타일 계산을 건너뛴다 — 댓글 수백 개인 글을 열 때 레이아웃이 크게 준다.
-    // 트리 선(::before/::after)은 모두 칸 안에 그리므로 잘리지 않는다.
-    // 아직 그리지 않은 댓글은 가장 흔한 한 줄 댓글 높이로 어림한다 (48px + 위아래 여백 16px = 64px).
-    // 크게 잡으면 답글을 펼칠 때 Radix가 그리기 전 어림값으로 높이를 재 펼치는 동안 실제보다 늘었다가 줄고,
-    // 그리지 않은 댓글이 많은 글은 스크롤 길이도 부풀었다가 줄어든다.
-    content-visibility: auto;
-    contain-intrinsic-size: auto 48px;
-
-    &:hover {
-        background: var(--gray-a2);
-    }
-
-    // 유튜브식 답글 트리: 부모 이름 아래에서 내려온 선이 답글마다 ㄴ자로 꺾여 들어간다
-    // (x좌표: 부모 본문 시작 --space-6 + 12px = 답글 안에서 12px).
-    position: relative;
-
-    &[data-thread-open]::after,
-    &[data-depth="1"]::before,
-    &[data-depth="1"]:not([data-last-reply])::after {
-        content: "";
-        position: absolute;
-        // 불투명 색: ㄴ과 이어지는 세로선이 겹치는 구간이 반투명이면 두 번 칠해져 진해진다.
-        border: 0 solid var(--gray-6);
-        pointer-events: none;
-    }
-
-    // 부모: 본문 아래 여백만큼 세로선 (본문이 여러 줄이어도 글자를 가로지르지 않게) → 첫 답글의 ㄴ으로 이어진다.
-    &[data-thread-open]::after {
-        bottom: 0;
-        height: var(--space-2);
-        left: calc(var(--space-6) + 12px);
-        border-left-width: 2px;
-    }
-
-    &[data-depth="1"] {
-        margin-left: var(--space-6);
-
-        // ㄴ: 위에서 내려와 이름 높이에서 오른쪽으로 꺾인다.
-        &::before {
-            top: 0;
-            left: 12px;
-            width: 14px;
-            height: calc(var(--space-2) + 10px);
-            border-left-width: 2px;
-            border-bottom-width: 2px;
-            border-bottom-left-radius: 10px;
-        }
-
-        // 마지막 답글이 아니면 다음 답글까지 세로선을 잇는다.
-        &:not([data-last-reply])::after {
-            top: 0;
-            bottom: 0;
-            left: 12px;
-            border-left-width: 2px;
-        }
-    }
-
-    // 읽을 수 있게 본문용 회색(11)을 쓴다. 9는 대비가 3:1쯤이다.
-    &[data-deleted] .refresher-comment-html {
-        color: var(--gray-11);
-    }
-
-    // 자동 새로고침으로 새로 들어온 댓글 (previewStore의 freshComments). 강조색으로 깔았다가 걷는다.
-    &[data-fresh] {
-        // 길이는 features/preview/index.ts의 FRESH_DURATION과 같다.
-        animation: refresher-fresh-comment 3s ease-out;
-    }
-}
-
-@keyframes refresher-fresh-comment {
-    from,
-    30% {
-        background: var(--accent-a4);
-    }
-}
-
 /* 차단 — 페이지와 같은 차단 모듈 설정 (Frame의 data-*). 블러 강도 변수는 <html>에서 shadow 안으로 이어받는다. */
 .refresher-frame {
     [data-blocked="blur"] {
@@ -525,25 +408,6 @@
 // 본문에 든 차단 디시콘 (Mini의 markBlockedDccons).
 .refresher-mini-contents .written_dccon[data-blocked] {
     display: none;
-}
-
-.refresher-mini-preview {
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    overflow: hidden;
-}
-
-// 카드가 포인터를 통과시키면(상호작용 설정이 꺼진 기본값) 직접 굴릴 수 없다. 휠 설정을 켜면 제목 위에서 굴릴 때 Mini.tsx가 스크롤한다.
-// 스크롤바는 내용이 더 있다는 표시다.
-.refresher-mini-contents {
-    flex: 1;
-    min-height: 0;
-    // 넓은 내용은 전처럼 옆을 자른다 (overflow-y만 auto면 가로 스크롤바가 생긴다).
-    overflow: hidden auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--gray-a8) transparent;
-    font-size: var(--font-size-2);
 }
 
 /* ===== 관리 패널 (v5처럼 왼쪽 가장자리) — 미리보기 포털 안이라 나중에 뜬 창 아래에 깔린다 ===== */
