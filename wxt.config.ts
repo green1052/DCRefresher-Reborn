@@ -44,7 +44,7 @@ export default defineConfig({
         },
         permissions: ["alarms", "contextMenus", "storage", "scripting", "unlimitedStorage"],
         host_permissions: ["https://*.dcinside.com/*"],
-        // 디시 페이지에 입히는 CSS (entrypoints/page.content.scss). 콘텐츠 스크립트의 CSS는 오버레이 shadow에만 들어가므로 따로 넣는다
+        // 디시 페이지에 입히는 CSS (entrypoints/page.content.css). 콘텐츠 스크립트의 CSS는 오버레이 shadow에만 들어가므로 따로 넣는다
         content_scripts: [
             {
                 matches: CONTENT_MATCHES,

@@ -72,7 +72,7 @@ const recentComments = (preData: GalleryPreData): CommentListResponse | undefine
 // blockView에서 가공 결과가 읽는 값만 뽑은 비교 키 (아래 useUiStore 구독).
 const blockKeyOf = (view: BlockView | null): string => (view ? JSON.stringify([view.blur, view.replyRemove, view.duplicate]) : "");
 
-/** 새 댓글 강조 시간 (ms). overlay.scss의 refresher-fresh-comment 애니메이션 길이와 같다. */
+/** 새 댓글 강조 시간 (ms). overlay.css의 refresher-fresh-comment 애니메이션 길이와 같다. */
 const FRESH_DURATION = 3000;
 
 const controller = (ctx: Ctx) => {

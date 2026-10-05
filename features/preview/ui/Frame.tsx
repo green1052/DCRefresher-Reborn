@@ -121,7 +121,7 @@ export const Frame = () => {
     const scroller = useRef<HTMLDivElement>(null);
     const commentsSection = useRef<HTMLDivElement>(null);
     const contentsBox = useRef<HTMLDivElement>(null);
-    // 숨김 차단된 본문은 안내 문구로 바꾸고, '가린 내용 보기' 동안만 원문을 흐리게 보인다 (overlay.scss의 data-blocked).
+    // 숨김 차단된 본문은 안내 문구로 바꾸고, '가린 내용 보기' 동안만 원문을 흐리게 보인다 (overlay.css의 data-blocked).
     const hideText = post?.textBlocked === "hide" && !blockView?.revealed;
 
     // 본문 칸은 댓글만 보기·오류·닫힘일 때 빠졌다가 다시 붙고, 글마다 새로 마운트되므로 그때마다 동영상 크기를 다시 맞춘다.
@@ -223,7 +223,7 @@ export const Frame = () => {
                     짧은 글은 창이 가운데 오고(margin: auto), 긴 글은 위아래에 5vh씩 띄운다. 스크롤바 폭을 양쪽에 비워 둔다.
                     안 그러면 긴 글에서만 창이 왼쪽으로 밀려 짧은 글과 오갈 때 옆으로 흔들린다. 키보드 스크롤용 포커스(tabIndex -1)라 테두리는 그리지 않는다. */}
                 <Dialog.Popup
-                    className="refresher-frame-scroll fixed inset-0 flex overflow-y-auto overscroll-contain py-[5vh] outline-none duration-150 animate-in fade-in [scrollbar-color:var(--color-border)_transparent] [scrollbar-gutter:stable_both-edges] [scrollbar-width:thin] data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards"
+                    className="refresher-frame-scroll fixed inset-0 flex overflow-y-auto overscroll-contain py-[5vh] outline-none duration-150 animate-in fade-in [scrollbar-color:var(--border)_transparent] [scrollbar-gutter:stable_both-edges] [scrollbar-width:thin] data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards"
                     ref={scroller}
                     tabIndex={-1}
                     data-fading={fading || undefined}

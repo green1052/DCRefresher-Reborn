@@ -1,6 +1,6 @@
-/* ===== 미리보기 (preview 모듈) — 오버레이 shadow 안. 공용 배치·토스트·버블은 assets/styles/overlay.scss ===== */
+@reference "../../assets/styles/shared.css";
 
-@use "../../assets/styles/mixins";
+/* ===== 미리보기 (preview 모듈) — 오버레이 shadow 안. 공용 배치·토스트·버블은 assets/styles/overlay.css ===== */
 
 /* 누르면 원본 보기가 열리는 본문 이미지 (Frame.tsx). */
 .refresher-preview-contents img[data-pop] {
@@ -17,37 +17,37 @@
     iframe,
     embed {
         max-width: 100%;
-        border-radius: var(--radius-3);
+        border-radius: var(--radius);
     }
 
-    // iframe·embed는 원래 크기가 없어 height: auto면 150px로 줄어든다. height 속성(유튜브 315 등)을 그대로 쓴다.
+    /* iframe·embed는 원래 크기가 없어 height: auto면 150px로 줄어든다. height 속성(유튜브 315 등)을 그대로 쓴다. */
     img,
     video {
         height: auto;
     }
 
-    // 유튜브는 16:9로 맞춘다. 높이 속성(315)만 쓰면 너비가 100%이거나 창이 좁을 때 납작하거나 길쭉해진다.
+    /* 유튜브는 16:9로 맞춘다. 높이 속성(315)만 쓰면 너비가 100%이거나 창이 좁을 때 납작하거나 길쭉해진다. */
     iframe[src*="youtube"] {
         aspect-ratio: 16 / 9;
         height: auto;
     }
 
     a {
-        color: var(--accent-11);
+        color: var(--primary);
     }
 
-    // 답글 멘션은 디시처럼 따로 한 줄 — 인라인이면 디시콘·글자콘 아래 끝에 붙는다.
+    /* 답글 멘션은 디시처럼 따로 한 줄 — 인라인이면 디시콘·글자콘 아래 끝에 붙는다. */
     .mention.deco {
         display: block;
         margin-bottom: 3px;
     }
 
-    // 인라인 width(본문 틀 900px, 표 등)가 창보다 넓어도 창 안에 들어오게 한다 (sanitize.ts가 남긴 서식).
+    /* 인라인 width(본문 틀 900px, 표 등)가 창보다 넓어도 창 안에 들어오게 한다 (sanitize.ts가 남긴 서식). */
     * {
         max-width: 100%;
     }
 
-    // 디시는 본문 줄마다 <p>다. 브라우저 기본 문단 여백(1em)이 남으면 줄마다 빈 줄이 낀 것처럼 보인다 (미니 미리보기도 같다).
+    /* 디시는 본문 줄마다 <p>다. 브라우저 기본 문단 여백(1em)이 남으면 줄마다 빈 줄이 낀 것처럼 보인다 (미니 미리보기도 같다). */
     p {
         margin: 0;
     }
@@ -58,7 +58,7 @@
         display: inline-block;
         box-sizing: border-box;
         overflow: hidden;
-        // 디시 본문 글자색. 흰 바탕이 인라인으로 남으므로 다크 테마에서도 어둡게 둔다.
+        /* 디시 본문 글자색. 흰 바탕이 인라인으로 남으므로 다크 테마에서도 어둡게 둔다. */
         color: #333;
         text-decoration: none;
     }
@@ -93,10 +93,10 @@
 
 .refresher-preview-contents {
     font-size: var(--refresher-preview-font-size, 15px);
-    // 디시 본문(.writing_view_box)과 같다.
+    /* 디시 본문(.writing_view_box)과 같다. */
     line-height: 1.5;
 
-    // 본문 디시콘은 디시 common.css처럼 높이만 맞춘다 (보통 100px, 대왕콘 150px).
+    /* 본문 디시콘은 디시 common.css처럼 높이만 맞춘다 (보통 100px, 대왕콘 150px). */
     .written_dccon {
         height: 100px;
         vertical-align: top;
@@ -113,18 +113,18 @@
     display: var(--refresher-stealth-media, inline);
 }
 
-// 위 스텔스 규칙(0,2,1)과 명시도를 맞춰야 뒤에 선언된 이쪽이 이긴다 — :is는 가장 높은 인자(img:not(...))를 따른다.
-// 유튜브 <embed>는 정화하며 iframe으로 바뀐다 (sanitize.ts). 디시콘은 mp4든 gif든(gifVideos.ts가 바꾼 것) 이미지로 치지 않는다.
+/* 위 스텔스 규칙(0,2,1)과 명시도를 맞춰야 뒤에 선언된 이쪽이 이긴다 — :is는 가장 높은 인자(img:not(...))를 따른다. */
+/* 유튜브 <embed>는 정화하며 iframe으로 바뀐다 (sanitize.ts). 디시콘은 mp4든 gif든(gifVideos.ts가 바꾼 것) 이미지로 치지 않는다. */
 .refresher-preview-block-media :is(iframe, image, img:not(.written_dccon), video:not(.written_dccon)) {
     display: none;
 }
 
-// 관리자가 가린 이미지 — 디시는 인라인 style(display)로 숨기는데 정화하며 지워진다. '차단 이미지 보기'를 누르면 속성을 떼어 보인다 (Frame.tsx).
+/* 관리자가 가린 이미지 — 디시는 인라인 style(display)로 숨기는데 정화하며 지워진다. '차단 이미지 보기'를 누르면 속성을 떼어 보인다 (Frame.tsx). */
 .refresher-html :is(img, video)[data-block] {
     display: none;
 }
 
-// 첨부 이미지 순서 번호 (parser.ts의 numberImages). 오른쪽 위에 띄운다. 가려진 미디어(관리자 가림·이미지 차단·스텔스)에는 띄우지 않는다.
+/* 첨부 이미지 순서 번호 (parser.ts의 numberImages). 오른쪽 위에 띄운다. 가려진 미디어(관리자 가림·이미지 차단·스텔스)에는 띄우지 않는다. */
 .refresher-imgnum {
     position: relative;
     display: inline-block;
@@ -157,7 +157,7 @@
 }
 
 .refresher-comment-html {
-    // 본문과 같은 크기 (fonts 모듈의 본문 폰트 크기).
+    /* 본문과 같은 크기 (fonts 모듈의 본문 폰트 크기). */
     font-size: var(--refresher-preview-font-size, 15px);
     line-height: 1.6;
 
@@ -167,34 +167,35 @@
         height: 100px;
         border-radius: 0;
 
-        // 대왕콘 (디시 common.css와 같은 크기).
+        /* 대왕콘 (디시 common.css와 같은 크기). */
         &.bigdccon {
             width: 150px;
             height: 150px;
         }
     }
 
-    /* 스텔스 모드: 가려 두고 마우스를 올리면 보인다 (변수는 features/stealth/page.scss가 페이지에서 넘긴다). */
+    /* 스텔스 모드: 가려 두고 마우스를 올리면 보인다 (변수는 features/stealth/page.css가 페이지에서 넘긴다). */
     &[data-dccon] {
-        @include mixins.dccon-cover(var(--gray-a6));
+        --refresher-dccon-cover-border: var(--border);
+        @apply refresher-dccon-cover;
     }
 
     /* 글자콘 — 디시 common.css를 옮김. 모르는 색 클래스면 디시 기본값(남색 바탕·흰 글자). */
     .coment_dccon_txt {
         display: flex;
         justify-content: center;
-        overflow: hidden; // 디시는 txtcon_view.js가 붙인다
+        overflow: hidden; /* 디시는 txtcon_view.js가 붙인다 */
         width: 100px;
         height: 100px;
         padding: 10px 11px;
         box-sizing: border-box;
         border-radius: 10px;
         background-color: #3b4890;
-        // 크기가 고정이라 가둔다 — 글자 크기를 잴 때(fitTxtcon)마다 스크롤 칸 전체가 다시 배치되지 않게.
+        /* 크기가 고정이라 가둔다 — 글자 크기를 잴 때(fitTxtcon)마다 스크롤 칸 전체가 다시 배치되지 않게. */
         contain: strict;
     }
 
-    // 글자 크기·자간·줄바꿈은 Comment.tsx(fitTxtcon)가 다시 잡는다 — 정화하며 지워진 style="font-size:16px"도 여기서.
+    /* 글자 크기·자간·줄바꿈은 Comment.tsx(fitTxtcon)가 다시 잡는다 — 정화하며 지워진 style="font-size:16px"도 여기서. */
     .txtcon_txt {
         margin: 0;
         color: #ffffff;
@@ -209,17 +210,37 @@
         box-sizing: border-box;
     }
 
-    // 색 목록은 request.ts의 TXTCON_BACKGROUNDS·TXTCON_COLORS와 같다.
-    @each $color in ("3b4890", "b4b4e1", "f5e1f0", "d2f0e6", "ffffff", "333333") {
-        .cbg_#{$color} {
-            background-color: #{"#" + $color};
-        }
+    /* 색 목록은 request.ts의 TXTCON_BACKGROUNDS·TXTCON_COLORS와 같다. */
+    .cbg_3b4890 {
+        background-color: #3b4890;
     }
 
-    @each $color in ("ffffff", "333333") {
-        .ctxt_#{$color} {
-            color: #{"#" + $color};
-        }
+    .cbg_b4b4e1 {
+        background-color: #b4b4e1;
+    }
+
+    .cbg_f5e1f0 {
+        background-color: #f5e1f0;
+    }
+
+    .cbg_d2f0e6 {
+        background-color: #d2f0e6;
+    }
+
+    .cbg_ffffff {
+        background-color: #ffffff;
+    }
+
+    .cbg_333333 {
+        background-color: #333333;
+    }
+
+    .ctxt_ffffff {
+        color: #ffffff;
+    }
+
+    .ctxt_333333 {
+        color: #333333;
     }
 
     .cbg_ffffff .ctxt_ffffff {
@@ -240,24 +261,24 @@
 /* 차단 — 페이지와 같은 차단 모듈 설정 (Frame의 data-*). 블러 강도 변수는 <html>에서 shadow 안으로 이어받는다. */
 .refresher-frame {
     [data-blocked="blur"] {
-        @include mixins.blurred;
+        @apply refresher-blurred;
     }
 
     &[data-blur-reveal] [data-blocked="blur"] {
-        @include mixins.blur-reveal;
+        @apply refresher-blur-reveal;
     }
 
-    // 본문에 든 차단 디시콘 (Frame의 markBlockedDccons). 가린 내용 보기 동안은 아래 규칙으로 흐리게 보인다.
+    /* 본문에 든 차단 디시콘 (Frame의 markBlockedDccons). 가린 내용 보기 동안은 아래 규칙으로 흐리게 보인다. */
     &:not([data-block-revealed]) .refresher-preview-contents .written_dccon[data-blocked="hide"] {
         display: none;
     }
 
-    // 가린 디시콘(디시콘 자체·가린 본문·가린 댓글 안)은 눌러도 정보 창이 열리지 않으므로 손가락 커서를 되돌린다 (DcconInfoPopup의 openDcconInfo).
+    /* 가린 디시콘(디시콘 자체·가린 본문·가린 댓글 안)은 눌러도 정보 창이 열리지 않으므로 손가락 커서를 되돌린다 (DcconInfoPopup의 openDcconInfo). */
     &:not([data-block-revealed]) :is(.written_dccon[data-blocked], [data-blocked] .written_dccon) {
         cursor: auto;
     }
 
-    // 이 페이지에서만 가린 내용 보기 — 숨겼던 것도 흐리게 보인다.
+    /* 이 페이지에서만 가린 내용 보기 — 숨겼던 것도 흐리게 보인다. */
     &[data-block-revealed] :is([data-blocked], [data-duplicate]) {
         filter: none;
         opacity: 0.35;
@@ -266,7 +287,7 @@
 
 /* ===== 미니 미리보기 ===== */
 
-// 본문에 든 차단 디시콘 (Mini의 markBlockedDccons).
+/* 본문에 든 차단 디시콘 (Mini의 markBlockedDccons). */
 .refresher-mini-contents .written_dccon[data-blocked] {
     display: none;
 }

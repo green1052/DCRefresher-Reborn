@@ -1,0 +1,48 @@
+/*
+ * 디시 페이지(page.css)와 오버레이(shadow DOM)가 같이 쓰는 규칙. 서로 다른 문서라 CSS를 나눠 쓸 수 없어 Tailwind 유틸리티로 정의해 두고
+ * 쓰는 파일이 @reference로 가져와 @apply한다. @reference는 아무것도 출력하지 않아 디시 페이지에 Tailwind 유틸리티가 들어가지 않는다.
+ */
+
+/* 차단 흐리게 (block 모듈의 흐리게 처리, userinfo의 깡계 흐리게). 강도는 block 모듈이 <html>에 거는 변수다. */
+@utility refresher-blurred {
+    filter: blur(var(--refresher-blur, 5px));
+    opacity: 0.5;
+    transition: filter 0.15s, opacity 0.15s;
+}
+
+/*
+ * 흐림만 풀고 반투명은 남기면 가려진 글인지 알아보기 어렵다 — 둘 다 원래대로.
+ * 키보드 포커스로도 볼 수 있게 하되 focus-visible만 — 클릭한 링크에 남는 포커스로 계속 보이면 안 된다.
+ */
+@utility refresher-blur-reveal {
+    &:is(:hover, :has(:focus-visible)) {
+        filter: none;
+        opacity: 1;
+    }
+}
+
+/*
+ * 스텔스 모드: 댓글 디시콘·글자콘을 가려 두고 마우스를 올리면 보인다. 가리는 값과 안내 문구는 features/stealth/page.css가 <html>에 거는 변수다.
+ * 안내 문구 테두리 색은 --refresher-dccon-cover-border로 준다.
+ */
+@utility refresher-dccon-cover {
+    position: relative;
+    width: fit-content;
+
+    &:not(:hover) {
+        :is(img, video, .coment_dccon_txt) {
+            visibility: var(--refresher-stealth-dccon-visibility, visible);
+        }
+
+        &::before {
+            content: var(--refresher-stealth-dccon-label, none);
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--refresher-dccon-cover-border);
+            font-weight: bold;
+        }
+    }
+}

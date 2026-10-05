@@ -1,4 +1,4 @@
-/** 콘텐츠 스크립트가 도는 주소. 페이지 CSS(entrypoints/page.content.scss)도 같은 곳에 넣는다 (wxt.config.ts). */
+/** 콘텐츠 스크립트가 도는 주소. 페이지 CSS(entrypoints/page.content.css)도 같은 곳에 넣는다 (wxt.config.ts). */
 export const CONTENT_MATCHES = ["https://*.dcinside.com/*"];
 export const CONTENT_EXCLUDE_MATCHES = [
     "https://event.dcinside.com/*",

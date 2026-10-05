@@ -46,7 +46,7 @@ interface PostState {
     /** 댓글·답글 쓰기 허용. 멤버만 댓글을 쓸 수 있는 갤러리면 댓글 응답의 allow_reply가 0이다. */
     allowReply: boolean;
     collapsed: Set<string>;
-    /** 댓글 새로고침으로 새로 들어온 댓글 번호. 잠깐 강조한다 (overlay.scss의 data-fresh). */
+    /** 댓글 새로고침으로 새로 들어온 댓글 번호. 잠깐 강조한다 (overlay.css의 data-fresh). */
     freshComments: ReadonlySet<string>;
     reply: Reply;
     /** 댓글만 보기 (목록의 댓글 수 링크로 열었을 때). */
