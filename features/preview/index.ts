@@ -90,10 +90,20 @@ const controller = (ctx: Ctx) => {
     // 다른 글을 받으면 앞 요청은 끊어, 연타해도 요청이 쌓이지 않는다.
     let pending: { key: string; ctrl: AbortController; post: Promise<PostInfo> } | null = null;
 
+    // 정화한 본문 (받은 글 객체마다). 캐시의 같은 글을 다시 열거나 미니로 다시 볼 때 큰 본문을 다시 정화하지 않는다.
+    // 추천 등으로 글이 바뀌면 캐시에 새 객체가 들어가 다시 정화한다.
+    const sanitized = new WeakMap<PostInfo, string>();
+    const sanitizedStripped = new WeakMap<PostInfo, string>();
     const processContents = async (preData: GalleryPreData, postInfo: PostInfo, stripMedia = false): Promise<PostInfo> => {
-        // 정화기는 처음 쓸 때 불러온다. 미리보기를 안 여는 페이지에서까지 DOMPurify를 만들지 않는다.
-        const {sanitizeHtml} = await import("@/utils/sanitize");
-        return {...postInfo, contents: sanitizeHtml(postInfo.contents ?? "", {stripMedia}), textBlocked: textBlockOf(preData, postInfo)};
+        const cache = stripMedia ? sanitizedStripped : sanitized;
+        let contents = cache.get(postInfo);
+        if (contents === undefined) {
+            // 정화기는 처음 쓸 때 불러온다. 미리보기를 안 여는 페이지에서까지 DOMPurify를 만들지 않는다.
+            const {sanitizeHtml} = await import("@/utils/sanitize");
+            contents = sanitizeHtml(postInfo.contents ?? "", {stripMedia});
+            cache.set(postInfo, contents);
+        }
+        return {...postInfo, contents, textBlocked: textBlockOf(preData, postInfo)};
     };
 
     const requestPost = (preData: GalleryPreData): Promise<PostInfo> => {
