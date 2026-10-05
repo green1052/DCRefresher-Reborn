@@ -1,12 +1,15 @@
-import {Button, Dialog, TextArea} from "@radix-ui/themes";
+import type {Dialog as DialogPrimitive} from "@base-ui/react/dialog";
 import {type ReactNode, useEffect, useRef, useState} from "react";
 import {storage, type WxtStorageItem} from "wxt/utils/storage";
 
-import {DialogActions} from "@/components/ConfirmDialog";
+import {DialogActions, ModalDialog} from "@/components/dialogs";
+import {Button} from "@/components/ui/button";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
+import {DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {Spinner} from "@/components/ui/spinner";
+import {Textarea} from "@/components/ui/textarea";
 import {sendMessage} from "@/core/messaging/protocol";
 import {USAGE_KEY, type UsageKind} from "@/core/usage";
-import {useOpenerFocus} from "@/components/useOpenerFocus";
 
 import {notify} from "./optionsStore";
 
@@ -100,35 +103,35 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
     const [text, setText] = useState("");
     const [busy, setBusy] = useState(false);
     const done = useRef<string>(undefined);
-    const focus = useOpenerFocus();
+    const actions = useRef<DialogPrimitive.Root.Actions>(null);
 
     const submit = async (): Promise<void> => {
         setBusy(true);
         done.current = await onSubmit(text).finally(() => setBusy(false));
-        if (done.current) onClose();
+        if (done.current) actions.current?.close();
     };
 
     // 가져오는 중에는 닫지 않는다. 닫으면 가져오기는 끝나도 알림이 뜨지 않는다.
+    // 가져왔다는 알림은 포커스를 가져오기 버튼에 돌려준 뒤(onClose)에 띄운다.
+    // 먼저 띄우면 알림이 곧 사라질 이 다이얼로그의 버튼을 연 요소로 기억해, 알림을 닫을 때 포커스가 body로 떨어진다.
     return (
-        <Dialog.Root open onOpenChange={(next) => !next && !busy && onClose()}>
-            {/* 가져왔다는 알림은 포커스를 가져오기 버튼에 돌려준 뒤에 띄운다.
-                먼저 띄우면 알림이 곧 사라질 이 다이얼로그의 버튼을 연 요소로 기억해, 알림을 닫을 때 포커스가 body로 떨어진다 */}
-            <Dialog.Content maxWidth="520px" onCloseAutoFocus={(ev) => {
-                focus.onCloseAutoFocus(ev);
-                if (done.current) notify(done.current);
-            }}>
-                <Dialog.Title>{title}</Dialog.Title>
-                <Dialog.Description size="2" mb="3">
-                    {desc}
-                </Dialog.Description>
+        <ModalDialog actionsRef={actions} dismissible={!busy} focusOnOpen="none" className="sm:max-w-[520px]" onClose={() => {
+            onClose();
+            if (done.current) notify(done.current);
+        }}>
+            <DialogHeader>
+                <DialogTitle>{title}</DialogTitle>
+                <DialogDescription>{desc}</DialogDescription>
+            </DialogHeader>
 
-                <TextArea placeholder={placeholder} aria-label={placeholder} value={text} rows={8} autoFocus
-                          onChange={(ev) => setText(ev.target.value)}/>
+            <Textarea placeholder={placeholder} aria-label={placeholder} value={text} rows={8} autoFocus className="max-h-[50vh]"
+                      onChange={(ev) => setText(ev.target.value)}/>
 
-                <DialogActions>
-                    <Button loading={busy} disabled={!text.trim()} onClick={() => void submit()}>가져오기</Button>
-                </DialogActions>
-            </Dialog.Content>
-        </Dialog.Root>
+            <DialogActions>
+                <Button disabled={busy || !text.trim()} onClick={() => void submit()}>
+                    {busy && <Spinner data-icon="inline-start"/>}가져오기
+                </Button>
+            </DialogActions>
+        </ModalDialog>
     );
 };

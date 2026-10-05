@@ -1,4 +1,4 @@
-import {Select} from "@radix-ui/themes";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 
 interface RefresherSelectProps<T extends string> {
     value: T;
@@ -12,24 +12,24 @@ interface RefresherSelectProps<T extends string> {
     onChange: (value: T) => void;
 }
 
-/** 빈 문자열 값(기본값) 항목 대신 쓰는 값. Radix Select는 빈 문자열을 값으로 받지 않는다. */
-const NONE = "__none__";
-
+/** 값 → 이름 목록으로 그리는 선택 칸. 빈 문자열(기본값)도 값으로 쓸 수 있다. */
 export const RefresherSelect = <T extends string>({value, options, disabled, onChange, ...aria}: RefresherSelectProps<T>) => (
-    <Select.Root
-        size="2"
-        value={value || NONE}
+    <Select
+        value={value}
+        items={options}
         disabled={disabled}
-        // 선택지는 options의 키뿐이라 T로 단언해도 된다.
-        onValueChange={(next) => onChange((next === NONE ? "" : next) as T)}
+        // 선택지는 options의 키뿐이라 T로 단언해도 된다. 고른 것을 다시 누르면 null이 올 수 있어 무시한다.
+        onValueChange={(next) => next !== null && onChange(next as T)}
     >
-        <Select.Trigger {...aria} style={{minWidth: 140}}/>
-        <Select.Content>
+        <SelectTrigger {...aria} className="min-w-[140px]">
+            <SelectValue/>
+        </SelectTrigger>
+        <SelectContent>
             {Object.entries<string>(options).map(([key, label]) => (
-                <Select.Item key={key} value={key || NONE}>
+                <SelectItem key={key} value={key}>
                     {label}
-                </Select.Item>
+                </SelectItem>
             ))}
-        </Select.Content>
-    </Select.Root>
+        </SelectContent>
+    </Select>
 );

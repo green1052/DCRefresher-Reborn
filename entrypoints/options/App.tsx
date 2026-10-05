@@ -1,7 +1,7 @@
 import {Ban, Database, Info, Keyboard, type LucideIcon, NotebookPen, Settings} from "lucide-react";
 import {lazy, Suspense, useEffect, useState, useSyncExternalStore} from "react";
 
-import {Notice} from "@/components/ConfirmDialog";
+import {Notice} from "@/components/dialogs";
 import {Button} from "@/components/ui/button";
 import {Separator} from "@/components/ui/separator";
 import {initBlocksStore} from "@/stores/blocks";

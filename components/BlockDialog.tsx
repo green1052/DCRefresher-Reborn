@@ -1,9 +1,12 @@
-import {Button, Checkbox, Dialog, Flex, Text, TextField} from "@radix-ui/themes";
-import {useState} from "react";
+import {useId, useState} from "react";
 
-import {DialogActions, SubmitForm} from "@/components/ConfirmDialog";
-import {ModalDialog} from "@/components/ModalDialog";
+import {DialogActions, ModalDialog, SubmitForm} from "@/components/dialogs";
 import {RefresherSelect} from "@/components/RefresherSelect";
+import {Button} from "@/components/ui/button";
+import {Checkbox} from "@/components/ui/checkbox";
+import {DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {Field, FieldError, FieldGroup, FieldLabel} from "@/components/ui/field";
+import {Input} from "@/components/ui/input";
 import {DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import type {BlockInputFields} from "@/stores/blocks";
@@ -24,6 +27,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
     const [gallery, setGallery] = useState(initial?.gallery ?? "");
     const [mode, setMode] = useState<DetectMode | "">(initial?.mode ?? "");
     const [error, setError] = useState("");
+    const id = useId();
 
     const submit = async (): Promise<void> => {
         if (!content.trim()) {
@@ -55,65 +59,44 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
     };
 
     return (
-        <ModalDialog onClose={onClose} maxWidth="480px">
-                <Dialog.Title>
-                    {TYPE_NAMES[type]} 차단 {initial ? "수정" : "추가"}
-                </Dialog.Title>
-                <Dialog.Description size="2" mb="4">
+        <ModalDialog onClose={onClose} className="sm:max-w-[480px]">
+            <DialogHeader>
+                <DialogTitle>{TYPE_NAMES[type]} 차단 {initial ? "수정" : "추가"}</DialogTitle>
+                <DialogDescription>
                     {initial ? `${TYPE_NAMES[type]} 항목을 수정합니다.` : `${TYPE_NAMES[type]} 차단 항목을 추가합니다.`}
-                </Dialog.Description>
+                </DialogDescription>
+            </DialogHeader>
 
-                <SubmitForm onSubmit={submit}>
-                    <Flex direction="column" gap="3">
-                        <label>
-                            <Text as="div" size="2" color="gray" mb="1">
-                                값
-                            </Text>
-                            <TextField.Root
-                                placeholder={`${TYPE_NAMES[type]} 값을 입력해 주세요`}
-                                value={content}
-                                onChange={(ev) => setContent(ev.target.value)}
-                                autoFocus
-                            />
-                        </label>
+            <SubmitForm onSubmit={submit} className="flex flex-col gap-4">
+                <FieldGroup>
+                    <Field>
+                        <FieldLabel htmlFor={`${id}-content`}>값</FieldLabel>
+                        <Input id={`${id}-content`} placeholder={`${TYPE_NAMES[type]} 값을 입력해 주세요`} value={content} autoFocus
+                               onChange={(ev) => setContent(ev.target.value)}/>
+                    </Field>
 
-                        <Text as="label" size="2">
-                            <Flex gap="2" align="center">
-                                <Checkbox checked={isRegex} onCheckedChange={(value) => setIsRegex(value === true)}/> 정규식
-                            </Flex>
-                        </Text>
+                    <Field orientation="horizontal">
+                        <Checkbox id={`${id}-regex`} checked={isRegex} onCheckedChange={setIsRegex}/>
+                        <FieldLabel htmlFor={`${id}-regex`}>정규식</FieldLabel>
+                    </Field>
 
-                        <label>
-                            <Text as="div" size="2" color="gray" mb="1">
-                                특정 갤러리 차단 (선택)
-                            </Text>
-                            <TextField.Root placeholder="갤러리 ID" value={gallery}
-                                            onChange={(ev) => setGallery(ev.target.value)}/>
-                        </label>
+                    <Field>
+                        <FieldLabel htmlFor={`${id}-gallery`}>특정 갤러리 차단 (선택)</FieldLabel>
+                        <Input id={`${id}-gallery`} placeholder="갤러리 ID" value={gallery} onChange={(ev) => setGallery(ev.target.value)}/>
+                    </Field>
 
-                        <Flex justify="between" align="center">
-                            <Text size="2" color="gray">
-                                차단 모드
-                            </Text>
-                            <RefresherSelect
-                                value={mode}
-                                aria-label="차단 모드"
-                                onChange={setMode}
-                                options={{"": "기본값", ...DETECT_MODE_NAMES}}
-                            />
-                        </Flex>
+                    <Field orientation="horizontal" className="justify-between">
+                        <FieldLabel>차단 모드</FieldLabel>
+                        <RefresherSelect value={mode} aria-label="차단 모드" onChange={setMode} options={{"": "기본값", ...DETECT_MODE_NAMES}}/>
+                    </Field>
 
-                        {error && (
-                            <Text size="2" color="red" role="alert">
-                                {error}
-                            </Text>
-                        )}
-                    </Flex>
+                    {error && <FieldError role="alert">{error}</FieldError>}
+                </FieldGroup>
 
-                    <DialogActions>
-                        <Button type="submit">{initial ? "수정" : "추가"}</Button>
-                    </DialogActions>
-                </SubmitForm>
+                <DialogActions>
+                    <Button type="submit">{initial ? "수정" : "추가"}</Button>
+                </DialogActions>
+            </SubmitForm>
         </ModalDialog>
     );
 };

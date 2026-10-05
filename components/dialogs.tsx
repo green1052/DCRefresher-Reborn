@@ -1,0 +1,121 @@
+import type {Dialog as DialogPrimitive} from "@base-ui/react/dialog";
+import {X} from "lucide-react";
+import {type ReactNode, type RefObject, useLayoutEffect, useRef, useState} from "react";
+
+import {focusedElement} from "@/components/useOpenerFocus";
+import {Button} from "@/components/ui/button";
+import {Dialog, DialogClose, DialogContent, DialogFooter, DialogTitle} from "@/components/ui/dialog";
+
+/**
+ * 연 창의 포커스.
+ * - first: 창의 첫 요소로 옮긴다.
+ * - keyboard: 키보드로 열었을 때만 창 안으로 옮긴다. 마우스로 열었으면 그 자리에 둔다.
+ * - none: 옮기지 않는다. 입력칸이 autoFocus로 스스로 포커스를 잡는 창에 쓴다.
+ */
+type AutoFocus = "first" | "keyboard" | "none";
+
+/**
+ * 열 때만 마운트하는 다이얼로그. Esc·바깥 클릭·닫기 버튼이 닫고, 닫으면 연 요소로 포커스를 돌려준다.
+ * onClose는 닫힘 애니메이션이 끝나 포커스가 돌아간 뒤에 불린다. 그 안에서 알림 창을 띄워도 알림이 닫히면 연 요소로 돌아온다.
+ * 부모가 언마운트해 닫아도 된다 (저장한 뒤 등). dismissible이 false면(가져오는 중 등) 닫지 않는다.
+ * 오버레이(shadow DOM)에서는 그 안의 포털 칸에 그린다 (components/ui/dialog.tsx). 폭은 className으로 준다 (sm:max-w-[480px] 등).
+ */
+export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true, actionsRef, className, children}: {
+    onClose: () => void;
+    focusOnOpen?: AutoFocus;
+    dismissible?: boolean;
+    /** 창 안의 일이 끝나 스스로 닫을 때 쓴다 (actionsRef.current.close()). 닫기 애니메이션·포커스 돌려주기를 거친다. */
+    actionsRef?: RefObject<DialogPrimitive.Root.Actions | null>;
+    className?: string;
+    children: ReactNode;
+}) => {
+    // 트리거 없이 여는 창이라 마운트할 때 포커스된 요소(연 요소)를 기억한다.
+    const [opener] = useState(focusedElement);
+    const [open, setOpen] = useState(true);
+    const popup = useRef<HTMLDivElement>(null);
+
+    // 닫을 때 포커스를 돌려줄 곳. 닫는 사이 연 버튼이 막혔으면(전체 삭제로 목록이 비었거나 초기화 중) 포커스를 받는 가장 가까운 조상(탭 패널 등)이다.
+    const returnTarget = (): HTMLElement | null | undefined =>
+        opener?.matches(":disabled") ? opener.parentElement?.closest<HTMLElement>("[tabindex]") : opener;
+
+    // 포커스가 창 안이나 body에 남았을 때만 연 요소로 돌려준다. 그사이 다른 곳(새로 뜬 창의 입력칸 등)으로 간 포커스는 빼앗지 않는다.
+    const restoreFocus = (): void => {
+        const current = focusedElement();
+        if (!current || current === document.body || popup.current?.contains(current)) returnTarget()?.focus({preventScroll: true});
+    };
+
+    // 부모가 언마운트해 닫으면(확인을 누른 뒤 등) Base UI는 포커스를 돌려주지 않는다.
+    useLayoutEffect(() => restoreFocus, []);
+
+    return (
+        // actionsRef.close()(일을 마친 창이 스스로 닫기)는 dismissible과 상관없이 닫는다. 끝난 직후라 dismissible이 아직 옛 값일 수 있다.
+        <Dialog open={open} actionsRef={actionsRef}
+                onOpenChange={(next, {reason}) => !next && (dismissible || reason === "imperative-action") && setOpen(false)}
+                // 애니메이션이 끝났을 때 Base UI는 아직 포커스를 돌려주지 않았다(body). onClose가 알림 창을 띄우면 body를 연 요소로 기억하므로 먼저 돌려준다.
+                onOpenChangeComplete={(next) => {
+                    if (next) return;
+                    restoreFocus();
+                    onClose();
+                }}>
+            <DialogContent
+                ref={popup}
+                showCloseButton={false}
+                className={className}
+                initialFocus={focusOnOpen === "first" || (focusOnOpen === "keyboard" && Boolean(opener?.matches(":focus-visible")))}
+                finalFocus={() => returnTarget() ?? true}
+            >
+                {children}
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+/** 다이얼로그 하단 버튼 줄. 취소(닫기) 버튼 뒤에 children을 둔다. cancelLabel이 null이면 취소 버튼을 뺀다. */
+export const DialogActions = ({cancelLabel = "취소", children}: { cancelLabel?: string | null; children?: ReactNode }) => (
+    <DialogFooter>
+        {cancelLabel !== null && <DialogClose render={<Button variant="outline"/>}>{cancelLabel}</DialogClose>}
+        {children}
+    </DialogFooter>
+);
+
+/** Enter로 저장하는 다이얼로그 폼. 폼 제출이라 한글 조합을 끝내는 Enter로는 브라우저가 제출하지 않는다. */
+export const SubmitForm = ({onSubmit, className, children}: { onSubmit: () => unknown; className?: string; children: ReactNode }) => (
+    <form className={className} onSubmit={(ev) => {
+        ev.preventDefault();
+        void onSubmit();
+    }}>
+        {children}
+    </form>
+);
+
+/** 제목 줄 오른쪽 닫기(X) 버튼. 아래 버튼 줄 없이 보기만 하거나 고르면 바로 닫히는 창(디시콘 정보·선택)에 둔다. */
+export const DialogCloseButton = () => (
+    <DialogClose render={<Button variant="ghost" size="icon-sm" aria-label="닫기"/>}>
+        <X/>
+    </DialogClose>
+);
+
+/**
+ * confirm()/alert() 대체. 바깥 클릭이나 Esc로 닫힌다.
+ * 열 때만 마운트해야 닫힘 애니메이션 동안 비워진 제목("null" 등)이 비치지 않는다.
+ */
+export const ConfirmDialog = ({title, confirmLabel = "확인", cancelLabel, danger, onConfirm, onClose}: {
+    title: string;
+    confirmLabel?: string;
+    /** null이면 취소 버튼 없음 (알림 전용). */
+    cancelLabel?: string | null;
+    danger?: boolean;
+    onConfirm: () => void;
+    onClose: () => void;
+}) => (
+    <ModalDialog onClose={onClose} className="sm:max-w-[440px]">
+        <DialogTitle>{title}</DialogTitle>
+        <DialogActions cancelLabel={cancelLabel}>
+            <Button variant={danger ? "destructive" : "default"} onClick={onConfirm}>{confirmLabel}</Button>
+        </DialogActions>
+    </ModalDialog>
+);
+
+/** 확인 버튼만 있는 알림. message가 없으면 그리지 않는다. */
+export const Notice = ({message, onClose}: { message: string | null; onClose: () => void }) =>
+    message ? <ConfirmDialog title={message} cancelLabel={null} onConfirm={onClose} onClose={onClose}/> : null;

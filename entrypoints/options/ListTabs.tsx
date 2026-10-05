@@ -1,7 +1,7 @@
 import {Download, Plus, Search, Trash2, Upload} from "lucide-react";
 import {type ReactElement, type ReactNode, useDeferredValue, useState} from "react";
 
-import {ConfirmDialog} from "@/components/ConfirmDialog";
+import {ConfirmDialog} from "@/components/dialogs";
 import {RefresherSelect} from "@/components/RefresherSelect";
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
