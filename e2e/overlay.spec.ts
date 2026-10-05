@@ -19,6 +19,20 @@ test.describe("유저 버블", () => {
         expect(await storage.get("refresher:block:ID")).toMatchObject([{content: "user3", extra: "고닉"}]);
     });
 
+    test("버블은 막은 규칙을 보이고, 허용 목록 항목에는 해제 버튼을 두지 않는다", async ({listPage, storage}) => {
+        // 흐리게 가려야 가린 행의 작성자를 우클릭할 수 있다.
+        await storage.setModuleSettings("block", {blur: true});
+        await storage.set({"refresher:block:NICK": [{id: "a", content: "고닉", isRegex: false, mode: "NOT_SAME"}, {id: "b", content: "ㅇㅇ", isRegex: false, mode: "SAME"}]});
+        await expect(listPage.row(2)).toHaveClass(/refresherBlur/);
+        await listPage.row(2).locator(".ub-writer").click({button: "right"});
+
+        const {bubble} = listPage;
+        await expect(bubble.getByRole("button", {name: "닉네임 ㅇㅇ 차단 해제"})).toBeVisible();
+        // 허용 목록(고닉만 보기)의 항목을 지우면 이 사람은 그대로 막히고 고닉까지 막힌다.
+        await expect(bubble.getByText("허용 목록에 없음")).toBeVisible();
+        await expect(bubble.getByRole("button", {name: "닉네임 고닉 차단 해제"})).toHaveCount(0);
+    });
+
     test("미리보기 위에 띄운 버블은 Esc에 버블만 닫히고 미리보기는 남는다", async ({listPage}) => {
         const frame = await listPage.openPreview();
         await frame.locator(".refresher-user").first().click({button: "right"});
