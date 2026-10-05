@@ -32,7 +32,6 @@
         "zustand": "^5.0.15"
     },
     "devDependencies": {
-        "@babel/core": "^7",
         "@playwright/test": "^1.63.0",
         "@preact/preset-vite": "^2.10.6",
         "@tailwindcss/vite": "^4.3.3",
