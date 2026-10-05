@@ -197,6 +197,12 @@ export const Frame = () => {
             disablePointerDismissal
             onOpenChange={(open, details) => {
                 if (open) return;
+                // 닫히는 동안(페이드)과 닫힌 뒤 Preact가 effect 정리를 미룬 사이에도 Base UI가 Esc를 받는다. 이미 닫았으면 키를 흘려보내 목록의 Esc(선택 풀기)가 받게 한다.
+                if (!usePreviewStore.getState().visible) {
+                    details.cancel();
+                    details.allowPropagation();
+                    return;
+                }
                 // Esc는 위에 뜬 것(유저 버블·다이얼로그)부터 닫는다. 그것들은 미리보기와 따로 그려져 Base UI가 미리보기를 맨 위로 보므로,
                 // 위에 뭔가 떠 있으면 미리보기는 닫지 않고 키를 흘려보내 그쪽이 닫히게 한다.
                 if (details.reason === "escape-key" && overlay.portal?.querySelector("[data-slot=dialog-overlay], [data-slot=popover-content]")) {

@@ -82,8 +82,9 @@ test.describe("오버레이 포커스", () => {
         await expect(bubble).toHaveCount(0);
         await expect(nick).toBeFocused();
 
-        // Esc로 닫은 직후의 첫 Enter로는 버블이 다시 열리지 않는다 (확장 버그). 다시 열 때는 누른다.
-        await nick.click();
+        // 닫은 직후 Enter로 다시 연다. 닫힌 버블의 남은 리스너가 여는 클릭을 바깥 클릭으로 보고 닫으면 안 된다.
+        await page.keyboard.press("Enter");
+        await expect(bubble).toBeVisible();
         await bubble.getByRole("button", {name: "메모", exact: true}).click();
         await expect(dialog.getByRole("textbox", {name: "메모", exact: true})).toBeFocused();
         await page.keyboard.press("Escape");

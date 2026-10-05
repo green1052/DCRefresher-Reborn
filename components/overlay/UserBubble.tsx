@@ -158,7 +158,17 @@ const Bubble = ({bubble, selected, onBlockPackage}: BubbleProps) => {
     const activity = formatActivity(activityState);
 
     return (
-        <Popover open onOpenChange={(open) => !open && close()}>
+        <Popover open onOpenChange={(open, details) => {
+            if (open) return;
+            // 닫힌 버블도 Preact가 effect 정리를 그린 뒤로 미뤄, 그동안 Base UI가 클릭·Esc를 받는다. 지금 떠 있는 버블이 아니면 손대지 않고 흘려보낸다.
+            // 두면 곧바로 다시 연 버블을 여는 클릭으로 닫고, 다음 Esc(미리보기 닫기 등)를 먹는다.
+            if (useUiStore.getState().bubble !== bubble) {
+                details.cancel();
+                details.allowPropagation();
+                return;
+            }
+            close();
+        }}>
             {/* 우클릭한 자리에 띄운다. 트리거 대신 그 점을 기준으로 놓는다. */}
             <PopoverContent ref={popup} side="bottom" align="start" sideOffset={4} className="w-auto min-w-[200px] max-w-[320px] gap-2 p-2"
                             anchor={{getBoundingClientRect: () => DOMRect.fromRect({x: bubble.x, y: bubble.y, width: 0, height: 0})}}

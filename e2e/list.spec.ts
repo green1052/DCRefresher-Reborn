@@ -150,9 +150,11 @@ test.describe("목록 키보드", () => {
         await page.keyboard.press("Enter");
         await expect(listPage.frameTitle).toHaveText("[말머리] 글 3 제목");
         await page.keyboard.press("Escape");
-        await expect(listPage.frame).toHaveCount(0);
-        // 미리보기를 닫아도 고른 글은 그대로다.
+        // 미리보기를 닫아도 고른 글은 그대로다. 곧바로 누른 Esc는 닫히는 중인 창이 아니라 목록이 받아 선택을 푼다.
         await expect(rows.nth(0)).toHaveClass(/refresherSelected/);
+        await page.keyboard.press("Escape");
+        await expect(selected).toHaveCount(0);
+        await expect(listPage.frame).toHaveCount(0);
     });
 });
 
