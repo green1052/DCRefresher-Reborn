@@ -2,6 +2,10 @@
     "extends": "./.wxt/tsconfig.json",
     "compilerOptions": {
         "jsx": "react-jsx",
+        // .wxt/tsconfig.json의 paths와 같다. shadcn CLI가 상속된 paths를 이 파일 기준으로 풀어 경로가 어긋나므로 여기 다시 적는다.
+        "paths": {
+            "@/*": ["./*"]
+        },
         "noUnusedLocals": true,
         "noUnusedParameters": true
     }

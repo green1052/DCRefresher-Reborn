@@ -99,8 +99,9 @@ modules/                WXT 로컬 모듈: 모듈 api·설정 타입 생성(modu
 core/                   모듈 시스템, 저장소 키, HTTP, 필터링, 차단 판정, 미리보기 요청·파싱, 백업, 설정 옮기기, DB
 stores/                 여러 화면이 같이 쓰는 zustand 스토어 (모듈 on/off·설정, 차단, 메모, 오버레이 UI)
 components/             공용 React 컴포넌트, 오버레이 루트(components/overlay)
+components/ui/          shadcn 부품. 손으로 만들지 않고 CLI로 추가한다 (npx shadcn@latest add <이름>, 설정은 components.json)
 utils/                  작은 도우미 (DOM, 이벤트, 정화, 다크모드, 캐시, 동시 실행 제한, 타입 붙인 Object 함수)
-assets/styles/          페이지 SCSS, 오버레이 CSS, Radix CSS 진입점 (radix-themes.css: 옵션·오버레이, radix-themes-popup.css: 팝업)
+assets/styles/          페이지 SCSS, 오버레이 CSS, Radix CSS 진입점 (radix-themes.css: 옵션·오버레이), Tailwind·shadcn 토큰 (tailwind.css: 팝업)
 scripts/                IP DB 빌드 스크립트 (GitHub Actions의 DB 워크플로가 실행)
 tests/                  단위 테스트: unit/(소스 경로를 따라 둔다), setup.ts(공통 준비), helpers.ts(공통 도우미)
 e2e/                    Playwright E2E: 가짜 디시 페이지, 페이지 객체(pages/), 파이어폭스 설치(firefox.ts)
@@ -425,7 +426,7 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 - 오버레이 안의 CSS는 공용 배치·토스트·버블이 `assets/styles/overlay.scss`, 기능의 것은 그 폴더의 `overlay.scss`입니다(`components/overlay/feature-styles.ts`가 모두 불러옵니다).
 - 페이지·오버레이·옵션은 서로 다른 문서라 같은 규칙(차단 흐림, 스텔스 디시콘 가림, 접기 애니메이션)을 `assets/styles/_mixins.scss`의 mixin으로 맞춥니다. 옵션·팝업의 바탕과 Radix 기본값 덮기는 `_radix.scss`에 있습니다.
 - 콘텐츠 스크립트는 `cssInjectionMode: "ui"`라서 불러오는 CSS(`radix-themes.css`, `overlay.scss`)가 오버레이를 처음 띄울 때 shadow에만 들어갑니다(WXT가 `:root`를 `:host`로 바꿈). 디시 페이지에 입히는 CSS(공용 `content.scss`와 기능별 `page.scss`)는 `entrypoints/page.content.scss`로 따로 빌드되고, `wxt.config.ts`의 `manifest.content_scripts`가 콘텐츠 스크립트와 같은 주소(`core/pages.ts`의 `CONTENT_MATCHES`)에 넣습니다. 페이지용 CSS를 콘텐츠 스크립트에서 import하면 페이지가 아니라 오버레이에 들어갑니다.
-- Radix CSS는 통째로 넣으면 엔트리마다 600KB라, 빌드 때 WXT 로컬 모듈 `modules/slim-radix-css.ts`가 엔트리(옵션·팝업·오버레이)마다 쓰지 않는 규칙을 뺍니다. 손으로 적는 목록은 없습니다. 그 엔트리에서 닿는 JS 청크에 든 `rt-*` 클래스 리터럴(트리 셰이킹으로 쓰는 컴포넌트 것만 남습니다)을 모아, 거기 없는 클래스의 규칙과 소스에서 쓰지 않는 반응형 접두어(`md:` 등)·`variant` 값·색 스케일·`@font-face`를 뺍니다. 새 Radix 컴포넌트나 반응형 prop을 쓰면 그대로 들어갑니다. 팝업은 옵션과 같은 CSS 파일을 import하면 Vite가 둘이 같이 쓰는 CSS 하나로 묶어 버리므로 `radix-themes-popup.css`를 따로 둡니다. 개발 서버(옵션·팝업 HMR)에서는 이 모듈이 돌지 않아 CSS가 통째로 들어갑니다.
+- Radix CSS는 통째로 넣으면 엔트리마다 600KB라, 빌드 때 WXT 로컬 모듈 `modules/slim-radix-css.ts`가 엔트리(옵션·오버레이)마다 쓰지 않는 규칙을 뺍니다. 손으로 적는 목록은 없습니다. 그 엔트리에서 닿는 JS 청크에 든 `rt-*` 클래스 리터럴(트리 셰이킹으로 쓰는 컴포넌트 것만 남습니다)을 모아, 거기 없는 클래스의 규칙과 소스에서 쓰지 않는 반응형 접두어(`md:` 등)·`variant` 값·색 스케일·`@font-face`를 뺍니다. 새 Radix 컴포넌트나 반응형 prop을 쓰면 그대로 들어갑니다. 개발 서버(옵션·팝업 HMR)에서는 이 모듈이 돌지 않아 CSS가 통째로 들어갑니다.
 - 다크모드는 Radix 문서 방식대로 `Theme`에 `appearance`를 넘기지 않고 조상의 `light`/`dark` 클래스로 바꿉니다(`utils/appearance.ts`). 옵션·팝업은 시스템 설정을, 오버레이는 디시 다크모드를 오버레이 최상위 요소(shadow 안의 컨테이너)에 옮깁니다. 스크롤바·폼 컨트롤도 따라가도록 같은 요소에 `color-scheme`을 같이 정합니다.
 - `radix-themes.css`는 색 파일을 `base.css`보다 먼저 불러옵니다. 순서가 바뀌면 gray가 slate가 아닌 순수 회색이 됩니다.
 - 설정값을 오버레이 CSS에 넘길 때는 `<html>`에 CSS 변수를 둡니다. 커스텀 속성은 shadow 경계를 넘어 상속됩니다(폰트 교체의 `--refresher-preview-font-size`가 예).

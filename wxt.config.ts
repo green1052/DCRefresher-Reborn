@@ -1,3 +1,4 @@
+import tailwindcss from "@tailwindcss/vite";
 import {defineConfig} from "wxt";
 
 import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "./core/pages";
@@ -10,6 +11,7 @@ export default defineConfig({
         }
     },
     vite: () => ({
+        plugins: [tailwindcss()],
         build: {
             cssTarget: ["chrome140", "firefox140"]
         }
