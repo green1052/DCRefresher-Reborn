@@ -22,7 +22,7 @@ DCRefresher Reborn의 구조, 기능을 더하는 방법, 테스트와 릴리즈
 
 | 항목 | 사용 |
 |------|------|
-| 확장 프레임워크 | [WXT](https://wxt.dev). Chrome은 MV3, Firefox는 MV2 (최소 Chrome 153·Firefox 155, `wxt.config.ts`의 `MIN_CHROME`·`MIN_FIREFOX`. 옛 브라우저용으로 트랜스파일하지 않는다) |
+| 확장 프레임워크 | [WXT](https://wxt.dev). Chrome은 MV3, Firefox는 MV2 (최소 Chrome 153·Firefox 155, `wxt.config.ts`의 `MIN_CHROME`·`MIN_FIREFOX`.) |
 | UI | [Preact](https://preactjs.com) 11 (코드는 `react`에서 import하고 `preact/compat`으로 바뀐다, `@preact/preset-vite`) + React Compiler(React 18 대상, `react-compiler-runtime`), [shadcn/ui](https://ui.shadcn.com) (Base UI, base-vega 스타일) + [Tailwind CSS](https://tailwindcss.com) v4 |
 | 상태 | zustand |
 | 저장소 | WXT storage (`wxt/utils/storage`) |

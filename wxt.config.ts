@@ -5,13 +5,9 @@ import {defineConfig} from "wxt";
 
 import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "./core/pages";
 
-/**
- * 지원하는 가장 낮은 브라우저 버전. 최신 브라우저만 지원해 빌드가 문법·CSS를 옛 버전용으로 바꾸지(트랜스파일) 않는다.
- * 올리면 manifest의 최소 버전과 빌드 대상이 같이 바뀐다.
- */
+/** 지원하는 가장 낮은 브라우저 버전 (manifest의 최소 버전). 빌드 대상은 Vite 기본값(baseline-widely-available)이다. */
 const MIN_CHROME = 153;
 const MIN_FIREFOX = 155;
-const TARGETS = [`chrome${MIN_CHROME}`, `firefox${MIN_FIREFOX}`];
 
 export default defineConfig({
     modules: ["@wxt-dev/auto-icons"],
@@ -27,8 +23,14 @@ export default defineConfig({
             tailwindcss()
         ],
         build: {
-            target: TARGETS,
-            cssTarget: TARGETS
+            rolldownOptions: {
+                checks: {
+                    // react-compiler-runtime의 "use no memo"는 컴파일러가 그 파일을 건너뛰게 하는 표시라 번들에서 빠져도 된다.
+                    moduleLevelDirective: false,
+                    // dev 빌드는 WXT가 소스맵을 켜는데, Tailwind는 빌드 모드에서 CSS 소스맵을 만들지 않아 경고한다. CSS 소스맵은 쓰지 않는다.
+                    sourcemapBroken: false
+                }
+            }
         }
     }),
     hooks: {
