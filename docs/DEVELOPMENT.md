@@ -403,9 +403,9 @@ getModuleApi("preview")?.isOpen()
 - Firefox 콘텐츠 스크립트에서는 두 클라이언트 모두 `content.fetch`로 보냅니다. 페이지가 보낸 요청처럼 나가야 디시 ajax가 받아 줍니다.
 - 시간 제한(15초)은 동시 요청 수 제한의 차례를 받은 뒤부터 잽니다. ky의 `timeout`은 `fetch`를 부르는 순간부터 재서 차례를 기다리는 시간까지 들어가므로 쓰지 않습니다(호출할 때도 주지 마세요). 시간 제한은 `AbortController`와 `setTimeout`으로 겁니다. `AbortSignal.timeout`은 Firefox 콘텐츠 스크립트에서 던집니다.
 - 재시도는 ky 기본값(GET 같은 멱등 메서드만 최대 2번, 408·413·429·5xx 응답과 네트워크 오류)에 지터를 더하고, `Retry-After`는 최대 10초까지만 기다립니다. 15초 시간 초과와 `BlockedError`는 재시도하지 않고, 댓글 목록·쓰기 같은 POST도 재시도하지 않습니다. 자동 새로고침은 `retry: 0`으로 보내고, 실패하면 주기를 늘립니다.
-- 요청이 너무 많으면 디시는 상태 코드 없이(200) 빈 페이지를 줍니다. 클라이언트는 dcinside.com의 GET 응답과 `/board/comment/` 아래 요청(댓글 목록·삭제)이 비어 있을 때만 `BlockedError`를 던집니다. 다른 ajax POST는 성공 응답도 비어 있을 수 있어 검사하지 않습니다. 콘텐츠 스크립트가 1분에 한 번 안내를 띄우므로, 기능 쪽에서는 `e instanceof BlockedError`일 때 자기 오류 토스트를 건너뜁니다(`utils/notify.ts` 참고).
+- 요청이 너무 많으면 디시는 상태 코드 없이(200) 빈 페이지를 줍니다. 클라이언트는 dcinside.com의 GET 응답과 `/board/comment/` 아래 요청(댓글 목록·삭제)이 비어 있을 때만 `BlockedError`를 던집니다. 다른 ajax POST는 성공 응답도 비어 있을 수 있어 검사하지 않습니다. 콘텐츠 스크립트가 1분에 한 번 안내를 띄우므로, 기능 쪽에서는 `e instanceof BlockedError`일 때 자기 오류 토스트를 건너뜁니다(`stores/notify.ts` 참고).
 - 갤러리 종류는 `core/http/urls.ts`의 `galleryKind(url)`(`"normal" | "minor" | "mini" | "person"`)로 다룹니다. 주소 경로(`mgallery/` 등)와 요청의 `_GALLTYPE_` 값(`G`·`M`·`MI`·`PR`)은 같은 파일의 표에만 두고, 주소·요청을 만들 때 `galleryPath`·`galltypeOf`로 꺼냅니다.
-- 폼 본문은 `formBody({...})`로 만듭니다. 값이 `null`·`undefined`·`false`인 필드는 빠지고, 빈 문자열은 들어갑니다. CSRF 토큰(`ci_t`)이 붙는 디시 요청은 `csrfBody({...})`(`utils/cookie.ts`)를 씁니다. 끊은 요청인지는 `isAbortError(e)`로 봅니다.
+- 폼 본문은 `formBody({...})`로 만듭니다. 값이 `null`·`undefined`·`false`인 필드는 빠지고, 빈 문자열은 들어갑니다. CSRF 토큰(`ci_t`)이 붙는 디시 요청은 `csrfBody({...})`(`core/http/cookie.ts`)를 씁니다. 끊은 요청인지는 `isAbortError(e)`로 봅니다.
 
 ## Firefox에서 주의할 점
 
@@ -454,7 +454,10 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 | `ui/Popups.tsx`, `Mini.tsx`, `DcconPopup.tsx` | 관리 패널·차단 팝업, 미니 미리보기, 디시콘 고르기 |
 | `ui/DcconInfoPopup.tsx` | 본문·댓글 디시콘을 눌렀을 때 뜨는 디시콘 정보 창(패키지 보기, 패키지 추가, 우클릭 차단) |
 | `nonmember.ts` | 비회원 닉네임·비밀번호 (디시 localStorage를 같이 씀) |
-| `core/preview/request.ts` | 글·댓글 요청, 댓글 쓰기, 관리 요청, 디시콘 패키지 정보·추가 |
+| `core/preview/request.ts` | 글·댓글 받기와 추천. 나머지 디시 요청은 각 파일로 나뉘고 여기서 다시 내보낸다 |
+| `core/preview/manage.ts` | 관리 요청(끌올·삭제·차단·공지·개념글·댓글 삭제)과 캡챠 |
+| `core/preview/submit.ts`, `txtcon.ts`, `dccon.ts` | 댓글·디시콘 작성, 글자콘 입력 규칙과 작성, 디시콘 패키지 정보·추가 |
+| `core/preview/response.ts` | 요청 본문(dcBody)과 `result||message||detail` 응답 공통 도구 |
 | `core/preview/parser.ts` | 글 HTML 파싱 (DOMParser) |
 | `core/preview/comments.ts` | 댓글 정리, 차단·같은 댓글 접기, 삭제된 댓글 보존 |
 | `core/preview/cache.ts` | 글·댓글 캐시 (1분, 50개). 댓글은 받은 시각도 둔다 |

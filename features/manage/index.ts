@@ -1,9 +1,9 @@
 import {defineModule} from "@/core/module/define";
-import {rowPostNo} from "@/core/http/urls";
+import {rowPostNo, queryString} from "@/core/http/urls";
 import {ROW_SELECTOR} from "@/core/list";
 import {deletePost} from "@/core/preview/request";
 import {whenDomReady} from "@/utils/dom";
-import {notifyManage} from "@/utils/notify";
+import {notifyManage} from "@/stores/notify";
 import {isGalleryManager} from "@/utils/user";
 
 import meta from "./meta";
@@ -131,7 +131,8 @@ export default defineModule({
                     if (deleting.has(postId)) return;
                     deleting.add(postId);
 
-                    const gallery = document.querySelector<HTMLInputElement>("#gallery_id")?.value ?? "";
+                    // 목록 페이지 주소의 id가 곧 갤러리다. 다른 모듈들과 같은 출처로 쓴다 (#gallery_id 입력칸은 없는 페이지가 있다).
+                    const gallery = queryString("id") ?? "";
                     void notifyManage(
                         deletePost({gallery, id: postId, link: location.href}),
                         "게시글을 삭제했습니다.",

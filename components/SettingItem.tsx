@@ -2,6 +2,7 @@ import {Box, Button, Flex, IconButton, Kbd, Slider, Switch, Text, TextField, Too
 import {ChevronDown, ChevronUp, GripVertical, Undo2} from "lucide-react";
 import {useId, useState} from "react";
 
+import {ColorInput} from "@/components/ColorInput";
 import {RefresherSelect} from "@/components/RefresherSelect";
 import {areEqual, defaultValue} from "@/core/module/settings";
 import type {SettingSchema} from "@/core/module/types";
@@ -70,8 +71,7 @@ const ColorControl = ({schema, value, compact, descId, onChange}: NarrowProps<"c
     return (
         <Flex align="center" gap="2">
             {!compact && <Text size="2" color="gray" style={{fontVariantNumeric: "tabular-nums"}}>{draft}</Text>}
-            <input
-                type="color"
+            <ColorInput
                 aria-label={schema.name}
                 aria-describedby={descId}
                 title={draft}
@@ -84,7 +84,6 @@ const ColorControl = ({schema, value, compact, descId, onChange}: NarrowProps<"c
                     element.addEventListener("change", commit);
                     return () => element.removeEventListener("change", commit);
                 }}
-                style={{width: 36, height: 28, padding: 0, border: 0, background: "none", cursor: "pointer"}}
             />
         </Flex>
     );
@@ -130,7 +129,8 @@ const KeyControl = ({schema, value, takenKeys = [], descId, onChange}: NarrowPro
                 }}
                 onKeyDown={(ev) => {
                     if (!listening) return;
-                    ev.preventDefault();
+                    // Tab은 막지 않고 녹음을 끝낸다. 막으면 키보드로 이 칸을 빠져나갈 수 없다.
+                    if (ev.key !== "Tab") ev.preventDefault();
 
                     const key = pressedKey(ev);
                     const valid = /^[a-z0-9]$/.test(key);

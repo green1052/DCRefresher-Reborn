@@ -1,43 +1,93 @@
 import {describe, expect, it, vi} from "vitest";
 import {fakeBrowser} from "wxt/testing/fake-browser";
 
-import {banReasonsOf, initDatabase, ipInfoOf, parseBans} from "@/core/database";
-import {encodeIpData} from "@/core/ipdb";
+// database.ts가 쓰는 HTTP 클라이언트는 모듈을 읽는 순간 fetch를 잡아 두므로 가짜를 먼저 박는다.
+const fetchMock = vi.fn();
+vi.stubGlobal("fetch", fetchMock);
 
-describe("parseBans", () => {
-    it("uid 문자열 배열인 항목만 남기고, 비었으면 빈 목록이다", () => {
-        expect(parseBans("")).toEqual({});
-        expect(parseBans(JSON.stringify({도배: ["a", 1, "b"], 메모: "x", 광고: []}))).toEqual({도배: ["a", "b"], 광고: []});
-        expect(parseBans("[1]")).toEqual({});
-        expect(() => parseBans("{")).toThrow();
-    });
+const {updateDatabase} = await import("@/core/database");
+const {IP_FORMAT} = await import("@/core/ipdb");
+const {urls} = await import("@/core/http/urls");
+
+/** 받은 쪽이 문서 없이 JSON/텍스트로 오는 MaxMind 형식이 아니라 그냥 텍스트라고 표현하지 않는다 — 확장 DB 파일은 텍스트다. */
+const page = (body: string): Response => new Response(body, {status: 200});
+
+/** 받은 적 없는 유효한 최소 IP DB (대역 1개: 0.0.0.0/16 → KT 한국). */
+const ipJson = (): string => JSON.stringify({
+    version: "v2",
+    runs: new Uint8Array(new Uint16Array([0, 1]).buffer).toBase64(),
+    orgs: ["KT"],
+    countries: [""],
+    meta: [0, 0, 0],
+    lists: []
 });
 
-// initDatabase는 한 번만 읽고(once) 모듈 상태에 둔다. 이 파일에서는 이 묶음 하나만 부른다.
-describe("ipInfoOf / banReasonsOf", () => {
-    it("저장된 DB로 IP 정보와 갱차 이유를 보인다", async () => {
-        const ip = encodeIpData(new Map([
-            [1 * 256 + 2, [{org: "가", vpn: false}, {org: "나", vpn: false}, {org: "다", vpn: false}, {org: "라", vpn: false}]],
-            [3 * 256 + 4, [{org: "X", country: "일본", vpn: true}]],
-            [5 * 256 + 6, [{country: "중국", vpn: false}]]
-        ]));
-        await fakeBrowser.storage.local.set({
-            "refresher:db:ip": JSON.stringify(ip),
-            "refresher:db:ban": JSON.stringify({도배: ["u1"], 광고: ["u1", "u2"]})
-        });
-        await initDatabase();
+/** 엔드포인트별 응답을 단다. */
+const stub = (bodyOf: Record<string, string>): void => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+        const url = String(input instanceof Request ? input.url : input);
+        for (const [suffix, body] of Object.entries(bodyOf)) {
+            if (url.endsWith(suffix)) return Promise.resolve(page(body));
+        }
+        return Promise.reject(new Error(`예상 밖의 요청: ${url}`));
+    });
+};
 
-        // 조직은 3개까지, 한국은 국가를 붙이지 않는다.
-        expect(ipInfoOf("1.2")).toMatchObject({label: "가, 나, 다 외 1", category: "korea"});
-        // VPN이 국가보다 앞선다.
-        expect(ipInfoOf("3.4")).toMatchObject({label: "X (VPN)", category: "vpn"});
-        expect(ipInfoOf("5.6")).toMatchObject({label: "중국", category: "china"});
-        expect(ipInfoOf("9.9")).toBeUndefined();
+const storedMeta = async (): Promise<unknown> => (await fakeBrowser.storage.local.get("refresher:db:meta"))["refresher:db:meta"];
 
-        // 갱차 목록은 처음 물을 때 읽기 시작한다. 두 이유에 든 uid는 이유를 잇는다.
-        expect(banReasonsOf("u1")).toBeUndefined();
-        await vi.waitFor(() => expect(banReasonsOf("u1")).toBe("도배, 광고"));
-        expect(banReasonsOf("u2")).toBe("광고");
-        expect(banReasonsOf("u3")).toBeUndefined();
+describe("updateDatabase", () => {
+    it("버전과 형식이 같으면 확인 시각만 갱신하고 본문은 받지 않는다", async () => {
+        await fakeBrowser.storage.local.set({"refresher:db:meta": {version: "v1", lastUpdate: 1, format: IP_FORMAT}});
+        stub({"version": "v1"});
+
+        await updateDatabase();
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        // ky는 fetch에 Request를 넘기므로 주소만 문자열로 본다.
+        const requested = fetchMock.mock.calls[0]![0];
+        expect(String(requested instanceof Request ? requested.url : requested)).toBe(urls.database.version);
+        expect(await storedMeta()).toMatchObject({version: "v1", format: IP_FORMAT, lastUpdate: expect.any(Number)});
+        expect((await fakeBrowser.storage.local.get("refresher:db:ip"))["refresher:db:ip"]).toBeUndefined();
+    });
+
+    it("버전이 다르면 세 파일을 받아 그대로 저장한다. ip.json의 버전이 우선한다(CDN 캐시 어긋남 대비)", async () => {
+        await fakeBrowser.storage.local.set({"refresher:db:meta": {version: "v1", lastUpdate: 1, format: IP_FORMAT}});
+        stub({"version": "v2", "ip.json": ipJson(), "ban.json": "{}"});
+
+        await updateDatabase();
+
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+        expect((await fakeBrowser.storage.local.get("refresher:db:ip"))["refresher:db:ip"]).toBe(ipJson());
+        expect((await fakeBrowser.storage.local.get("refresher:db:ban"))["refresher:db:ban"]).toBe("{}");
+        expect(await storedMeta()).toMatchObject({version: "v2", format: IP_FORMAT});
+    });
+
+    it("저장 형식이 옛것이면 버전이 같아도 다시 받는다", async () => {
+        await fakeBrowser.storage.local.set({"refresher:db:meta": {version: "v1", lastUpdate: 1}});
+        stub({"version": "v1", "ip.json": ipJson(), "ban.json": "{}"});
+
+        await updateDatabase();
+
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+        expect(await storedMeta()).toMatchObject({version: "v2", format: IP_FORMAT});
+    });
+
+    it("ip.json이 깨졌으면 던지고 DB를 바꾸지 않는다", async () => {
+        await fakeBrowser.storage.local.set({"refresher:db:meta": {version: "v1", lastUpdate: 1, format: IP_FORMAT}});
+        stub({"version": "v9", "ip.json": "{not json", "ban.json": "{}"});
+
+        await expect(updateDatabase()).rejects.toThrow();
+        expect((await fakeBrowser.storage.local.get("refresher:db:ip"))["refresher:db:ip"]).toBeUndefined();
+        expect(await storedMeta()).toMatchObject({version: "v1"});
+    });
+
+    it("force면 버전과 형식이 같아도 다시 받는다 (지금 갱신)", async () => {
+        await fakeBrowser.storage.local.set({"refresher:db:meta": {version: "v2", lastUpdate: 1, format: IP_FORMAT}});
+        stub({"version": "v2", "ip.json": ipJson(), "ban.json": "{}"});
+
+        await updateDatabase(true);
+
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+        expect(await storedMeta()).toMatchObject({version: "v2", format: IP_FORMAT, lastUpdate: expect.any(Number)});
     });
 });

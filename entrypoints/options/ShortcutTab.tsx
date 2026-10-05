@@ -8,7 +8,8 @@ export function ShortcutTab() {
     const [shortcuts, setShortcuts] = useState<Browser.commands.Command[]>([]);
 
     useEffect(() => {
-        const load = (): void => void browser.commands.getAll().then(setShortcuts);
+        // 단축키를 못 읽으면(등록 전 창 등) 빈 목록 그대로 둔다.
+        const load = (): void => void browser.commands.getAll().then(setShortcuts, console.error);
         load();
         // 단축키 변경 이벤트가 없으므로 브라우저 설정에서 바꾸고 돌아올 때(focus) 다시 읽는다.
         window.addEventListener("focus", load);

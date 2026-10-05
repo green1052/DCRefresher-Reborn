@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from "vitest";
 
-import {DEFAULT_BADGE_VIEW, isFresh, isLowActivity, showsUid} from "@/stores/ui";
+import {DEFAULT_BADGE_VIEW, isFresh, isLowActivity, showsUid, useUiStore} from "@/stores/ui";
 
 const ICON = "https://nstatic.dcinside.com/dc/w/images/";
 
@@ -29,5 +29,29 @@ describe("isFresh", () => {
         expect(isFresh({date: 10_000_000 - 3600_000})).toBe(true);
         expect(isFresh({date: 10_000_000 - 3600_001})).toBe(false);
         expect(isFresh(undefined)).toBe(false);
+    });
+});
+
+describe("토스트", () => {
+    it("여러 토스트가 떠도 되돌리기 액션이 지워지지 않고, 3개까지만 쌓인다", () => {
+        const {showToast, dismissToast} = useUiStore.getState();
+        useUiStore.setState({toasts: []});
+
+        showToast("차단을 해제했습니다.", "info", 5000, {label: "되돌리기", run: () => {}});
+        showToast("저장했습니다.");
+        showToast("불러왔습니다.");
+        let toasts = useUiStore.getState().toasts;
+        expect(toasts).toHaveLength(3);
+        expect(toasts[0]!.action?.label).toBe("되돌리기");
+
+        // 넘친 토스트는 가장 오래된 것부터 버린다.
+        showToast("네 번째");
+        toasts = useUiStore.getState().toasts;
+        expect(toasts).toHaveLength(3);
+        expect(toasts[0]!.content).toBe("저장했습니다.");
+        expect(toasts[0]!.action).toBeUndefined();
+
+        dismissToast(toasts[0]!.id);
+        expect(useUiStore.getState().toasts).toHaveLength(2);
     });
 });

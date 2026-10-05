@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
 
-import {createIpLookup, encodeIpData, type IpCandidate, parseIpData} from "@/core/ipdb";
+import {createIpLookup, encodeIpData, type CompactIpData, type IpCandidate, parseIpData} from "@/core/ipdb";
 
 const kt: IpCandidate = {org: "KT", vpn: false};
 const softbank: IpCandidate = {org: "SoftBank", country: "일본", vpn: false};
@@ -37,6 +37,23 @@ describe("encodeIpData / createIpLookup", () => {
         const data = encodeIpData(prefixes);
         expect(data.orgs[0]).toBe("KT");
         expect(data.meta.slice(0, 3)).toEqual([0, 0, 0]);
+    });
+
+    it("구간 시작이 늘지 않거나 값이 범위 밖이면 조용히 펼치지 않고 띤다", () => {
+        const data = encodeIpData(prefixes);
+        const runs = new Uint16Array(Uint8Array.fromBase64(data.runs).buffer);
+        const count = runs.length / 2;
+        const withRuns = (patched: Uint16Array): CompactIpData => ({...data, runs: new Uint8Array(patched.buffer).toBase64()});
+
+        // 시작이 뒤로 물러난 구간.
+        const backwards = Uint16Array.from(runs);
+        [backwards[0], backwards[1]] = [backwards[1]!, backwards[0]!];
+        expect(() => createIpLookup(withRuns(backwards))).toThrow();
+
+        // meta+lists 범위 밖의 값.
+        const outOfRange = Uint16Array.from(runs);
+        outOfRange[count] = data.meta.length / 3 + data.lists.length + 1;
+        expect(() => createIpLookup(withRuns(outOfRange))).toThrow();
     });
 });
 

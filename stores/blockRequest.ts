@@ -41,7 +41,8 @@ const blockDccon = async (selected: SelectedUser, dcconPackage?: DcconPackageMod
     if (!dcconPackage) {
         await useBlocksStore.getState().addEntry("DCCON", {content: code, isRegex: false, extra, mode});
     } else if (dcconPackage === "bundle") {
-        const paths = response.detail.map((detail) => detail.path).join("|");
+        // 경로에 정규식 특수문자가 있으면 의미가 변하므로 묶을 때 이스케이프한다.
+        const paths = response.detail.map((detail) => RegExp.escape(detail.path)).join("|");
         await useBlocksStore.getState().addEntry("DCCON", {content: `^(${paths})$`, isRegex: true, extra: `[묶음] ${extra}`, mode});
     } else {
         // 묶지 않고 하나씩 넣되 addEntries로 한 번에 쓴다. 따로 넣으면 저장소 쓰기와 모든 탭의 watch가 디시콘 수만큼 돈다.

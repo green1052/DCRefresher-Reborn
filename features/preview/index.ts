@@ -10,8 +10,9 @@ import {type BlockView, useUiStore} from "@/stores/ui";
 import {whenDomReady} from "@/utils/dom";
 import {messageOf} from "@/utils/error";
 import {isTyping, pressedKey} from "@/utils/event";
+import {createDoublePress} from "@/utils/doublePress";
 import {isGalleryManager} from "@/utils/user";
-import {notifyManage} from "@/utils/notify";
+import {notifyManage} from "@/stores/notify";
 import {isRecord} from "@/utils/record";
 
 import {getEntry, postKey, setEntry} from "@/core/preview/cache";
@@ -81,8 +82,8 @@ const controller = (ctx: Ctx) => {
     let abort: AbortController | null = null;
     let savedHistory: SavedHistory | null = null;
     let refreshTimer = 0;
-    let lastKey = "";
-    let lastKeyTime = 0;
+    // 관리 단축키 두 번 누르기 확인. 같은 키를 1초 안에 다시 누르면 실행한다. 글을 열 때 새로 만들어 다시 센다.
+    let confirmPress = createDoublePress(1000);
     // 받는 중인 본문 요청 하나. 우클릭 누름·미니·열기·미리 받기가 같이 쓴다.
     // 다른 글을 받으면 앞 요청은 끊어, 연타해도 요청이 쌓이지 않는다.
     let pending: { key: string; ctrl: AbortController; post: Promise<PostInfo> } | null = null;
@@ -372,7 +373,7 @@ const controller = (ctx: Ctx) => {
         abort = new AbortController();
         window.clearTimeout(refreshTimer);
         // 두 번 누르기는 글마다 새로 센다. 이전 글에서 한 번 누른 키로 다음 글이 바로 지워지면 안 된다.
-        lastKey = "";
+        confirmPress = createDoublePress(1000);
 
         readMarks.markRead(preData);
 
@@ -490,10 +491,7 @@ const controller = (ctx: Ctx) => {
 
         if (isTyping(ev) || !isGalleryManager()) return;
 
-        const now = Date.now();
-
-        if (lastKey === key && now - lastKeyTime < 1000) {
-            lastKey = "";
+        if (confirmPress(key)) {
             ev.preventDefault();
             const {preData} = store.getState();
             if (isDelete) void manage("delete");
@@ -502,8 +500,6 @@ const controller = (ctx: Ctx) => {
                 void block(preData, {avoidHour: blockPresetDay, avoidReason: "0", avoidReasonTxt: blockPresetReason, delChk: blockPresetDelete, userTypeChk: blockPresetUserType});
             }
         } else {
-            lastKey = key;
-            lastKeyTime = now;
             ui.showToast(`한 번 더 ${key.toUpperCase()} 키를 누르면 ${isDelete ? "게시글을 삭제" : "작성자를 차단"}합니다.`);
         }
     };

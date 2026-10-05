@@ -1,5 +1,5 @@
 import {ajax} from "@/core/http/client";
-import {csrfBody} from "@/utils/cookie";
+import {csrfBody} from "@/core/http/cookie";
 import {LruCache} from "@/utils/lru";
 
 const GALLOG_API = "https://gall.dcinside.com/api/gallog_user_layer/gallog_content_reple";

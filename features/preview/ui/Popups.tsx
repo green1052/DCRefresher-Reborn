@@ -8,6 +8,7 @@ import {useModuleSettings} from "@/core/module/useModuleSettings";
 import {BLOCK_DAYS, BLOCK_REASONS, type BlockDay, type BlockReason} from "@/core/preview/types";
 import {ModalDialog} from "@/components/ModalDialog";
 import {useUiStore} from "@/stores/ui";
+import {createDoublePress} from "@/utils/doublePress";
 import {objectEntries} from "@/utils/typed";
 
 import {DcconInfoPopup} from "./DcconInfoPopup";
@@ -171,8 +172,8 @@ export const AdminPanel = () => {
     // 관리 단축키 힌트. 단축키를 끄면 보이지 않는다.
     const {useKeyPress, deleteKey, blockKey} = useModuleSettings("preview");
     const keys = useKeyPress ? {delete: deleteKey.toUpperCase(), block: blockKey.toUpperCase()} : null;
-    // 첫 번째로 누른 버튼. 바뀌어도 다시 그릴 필요가 없어 ref에 둔다.
-    const armed = useRef<{ id: AdminAction["id"]; signal: number; at: number } | null>(null);
+    // 두 번 누르기 확인 상태. 바뀌어도 다시 그릴 필요가 없어 ref에 둔다.
+    const confirmPress = useRef(createDoublePress(CONFIRM_WINDOW)).current;
 
     // key는 고정된 id로 준다. 라벨을 key로 쓰면 공지·개념글을 토글할 때 버튼이 새로 마운트돼 포커스가 사라진다.
     const actions: AdminAction[] = [
@@ -189,16 +190,12 @@ export const AdminPanel = () => {
             return;
         }
 
-        const now = Date.now();
-        const signal = usePreviewStore.getState().signalId;
-        const prev = armed.current;
-        if (prev?.id === id && prev.signal === signal && now - prev.at < CONFIRM_WINDOW) {
-            armed.current = null;
+        // signalId까지 key에 넣어 다른 글로 넘어가면 처음부터 다시 센다.
+        if (confirmPress(`${id}:${usePreviewStore.getState().signalId}`)) {
             run();
             return;
         }
 
-        armed.current = {id, signal, at: now};
         useUiStore.getState().showToast(`한 번 더 누르면 ${confirm ?? label}합니다.`);
     };
 

@@ -28,9 +28,15 @@ export const watchStorage = <T>(key: StorageItemKey, callback: (next: T | null, 
  *   signal(콘텐츠 스크립트 컨텍스트의 것)이 끝나면 감시를 푼다.
  */
 export const storageSync = <K extends StorageItemKey>(keys: readonly K[], apply: (key: K, value: unknown) => void) => {
-    const load = async (): Promise<void> => {
+    // getItems는 받은 키로 값을 돌려주지만 순서는 약속이 아니므로 키로 짝짓는다.
+    const read = async (): Promise<Map<K, unknown>> => {
         const items = await storage.getItems([...keys]);
-        for (const [index, key] of keys.entries()) apply(key, items[index]?.value ?? null);
+        return new Map(items.map(({key, value}) => [key as K, value]));
+    };
+
+    const load = async (): Promise<void> => {
+        const items = await read();
+        for (const key of keys) apply(key, items.get(key) ?? null);
     };
 
     const start = once(async (signal?: AbortSignal): Promise<void> => {
@@ -42,8 +48,8 @@ export const storageSync = <K extends StorageItemKey>(keys: readonly K[], apply:
             apply(key, next);
         }, signal));
         try {
-            const items = await storage.getItems([...keys]);
-            for (const [index, key] of keys.entries()) if (!changed.has(key)) apply(key, items[index]?.value ?? null);
+            const items = await read();
+            for (const key of keys) if (!changed.has(key)) apply(key, items.get(key) ?? null);
         } catch (e) {
             // once가 다음 호출에 다시 시도한다. 그때 감시가 두 번 걸리지 않게 푼다.
             for (const unwatch of unwatches) unwatch();
@@ -71,8 +77,14 @@ export const typedListSync = <T extends string, V>(options: {
     /** 저장하지 못했을 때 콘솔에 남길 문구. */
     failure: string;
     extra?: Partial<Record<StorageItemKey, (value: unknown) => void>>;
+    /**
+     * Web Locks 이름. 목록 쓰기는 읽고-고쳐-쓰기라 여러 창이 동시에 쓰면 앞의 쓰기를 덮는다.
+     * 잠금은 같은 출처끼리만 서진다: 옵션↔팝업(확장 출처)끼리와 디시 탭끼리는 서진다.
+     * 디시 탭과 옵션·팝업 사이는 출처가 달라 서지 않는다 — 교차 출처 쓰기를 막으려면 배경을 거쳐야 한다.
+     */
+    lock?: string;
 }) => {
-    const {types, keyOf, normalize, get, set, failure, extra = {}} = options;
+    const {types, keyOf, normalize, get, set, failure, extra = {}, lock} = options;
     const typeOf = new Map<StorageItemKey, T>(types.map((type) => [keyOf(type), type]));
 
     const sync = storageSync([...typeOf.keys(), ...Object.keys(extra) as StorageItemKey[]], (key, value) => {
@@ -86,10 +98,25 @@ export const typedListSync = <T extends string, V>(options: {
         if (JSON.stringify(lists[type]) !== JSON.stringify(next)) set({...lists, [type]: next});
     });
 
+    // 쓰기를 한 줄로 세운다. update는 잠금 안에서 저장소를 다시 읽어 다른 창이 쓴 값을 덮지 않고 합친다.
+    const enqueue = lock ? (write: () => Promise<void>): Promise<void> => navigator.locks.request(lock, write) : (write: () => Promise<void>): Promise<void> => write();
+
     const save = async (type: T, value: V): Promise<void> => {
         set({...get(), [type]: value});
-        await saveOrReload(storage.setItem(keyOf(type), value), sync.load, failure);
+        await saveOrReload(enqueue(() => storage.setItem(keyOf(type), value)), sync.load, failure);
     };
 
-    return {...sync, save};
+    /**
+     * 저장소의 현재 값에 change를 붙여 쓴다. 스토어에는 바로 반영해 두고, 잠금 안에서 다시 읽은 값에 붙인다.
+     * change는 순수해야 한다 — 스토어 값과 저장소 값에 두 번 불리며, 결과는 저장소 쪽으로 맞춰진다.
+     */
+    const update = async (type: T, change: (current: V) => V): Promise<void> => {
+        set({...get(), [type]: change(get()[type])});
+        await saveOrReload(enqueue(async () => {
+            const next = change(normalize(await storage.getItem(keyOf(type))));
+            await storage.setItem(keyOf(type), next);
+        }), sync.load, failure);
+    };
+
+    return {...sync, save, update};
 };

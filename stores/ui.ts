@@ -75,7 +75,8 @@ export const isFresh = <T extends { date: number }>(info?: T): info is T => info
 export type BadgeColorKey = IpCategory | "uid" | "permBan" | "ratio" | "ratioAlarm";
 
 interface UiState {
-    toast: ToastData | null;
+    /** 화면에 떠 있는 토스트. 마지막이 가장 최근 것이다. 되돌리기 등 액션이 다음 토스트에 지워지지 않게 여러 개를 쌓는다 (최대 3개). */
+    toasts: ToastData[];
     selected: SelectedUser | null;
     bubble: { x: number; y: number } | null;
     memo: MemoTargetState | null;
@@ -99,8 +100,10 @@ interface UiState {
 
 let toastSeq = 0;
 
+const TOAST_MAX = 3;
+
 export const useUiStore = create<UiState>((set, get) => ({
-    toast: null,
+    toasts: [],
     selected: null,
     bubble: null,
     memo: null,
@@ -110,12 +113,12 @@ export const useUiStore = create<UiState>((set, get) => ({
     blockView: null,
 
     showToast: (content, type = "info", autoClose = 5000, action) => {
-        set({toast: {id: ++toastSeq, content, type, autoClose, action}});
+        // 넘친 토스트는 가장 오래된 것부터 버린다.
+        set({toasts: [...get().toasts, {id: ++toastSeq, content, type, autoClose, action}].slice(-TOAST_MAX)});
     },
 
     dismissToast: (id) => {
-        const current = get().toast;
-        if (!current || current.id === id) set({toast: null});
+        set({toasts: get().toasts.filter((toast) => toast.id !== id)});
     },
 
     openBubble: (selected, x, y) => set({selected, bubble: {x, y}}),
@@ -153,4 +156,4 @@ export const openWriterBubble = (ev: MouseEvent): void => {
 };
 
 // 토스트·유저 버블·메모 창이 뜨면 오버레이를 띄운다 (components/overlay/demands). 배지 색·차단 보기처럼 setup이 늘 채우는 값은 넣지 않는다.
-needOverlayWhen(useUiStore, ({toast, bubble, memo}) => Boolean(toast || bubble || memo));
+needOverlayWhen(useUiStore, ({toasts, bubble, memo}) => Boolean(toasts.length || bubble || memo));

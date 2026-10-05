@@ -3,6 +3,7 @@ import {ClipboardCopy, Smartphone} from "lucide-react";
 import {useMemo, useState} from "react";
 
 import {DialogActions, SubmitForm} from "@/components/ConfirmDialog";
+import {ColorInput} from "@/components/ColorInput";
 import {RefresherSelect} from "@/components/RefresherSelect";
 import {ModalDialog} from "@/components/ModalDialog";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
@@ -13,7 +14,8 @@ import {SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
 import {formatAppMemos, parseAppMemos} from "./appMemo";
-import {ImportDialog, ListRow, ListTabs, useUsage} from "./Layout";
+import {ImportDialog, useUsage} from "./Layout";
+import {ListRow, ListTabs} from "./ListTabs";
 import {notify} from "./optionsStore";
 
 interface MemoFormState {
@@ -128,19 +130,10 @@ const MemoFormDialog = ({
                             색상
                         </Text>
                         <Flex gap="2" align="center">
-                            <input
-                                type="color"
+                            <ColorInput
                                 aria-label="메모 색상"
                                 value={state.color}
                                 onChange={(ev) => setState((prev) => ({...prev, color: ev.target.value}))}
-                                style={{
-                                    width: 36,
-                                    height: 28,
-                                    padding: 0,
-                                    border: 0,
-                                    background: "none",
-                                    cursor: "pointer"
-                                }}
                             />
                             <Button type="button" size="2" variant="soft"
                                     onClick={() => setState((prev) => ({...prev, color: randomColor()}))}>
@@ -169,6 +162,7 @@ export function MemoTab() {
     const setMemo = useMemosStore((state) => state.setMemo);
     const removeMemo = useMemosStore((state) => state.removeMemo);
     const setMemos = useMemosStore((state) => state.setMemos);
+    const updateMemos = useMemosStore((state) => state.updateMemos);
     const ids = useMemo(() => MEMO_TYPES.flatMap((type) => Object.keys(memos[type]).map((user) => memoUsageKey(type, user))), [memos]);
     const used = useUsage("memo", ids);
 
@@ -185,9 +179,11 @@ export function MemoTab() {
         }
         try {
             for (const type of ["UID", "IP"] as const) {
-                const merged = {...memos[type]};
-                for (const [target, memo] of Object.entries(parsed[type])) merged[target] = {...((Object.hasOwn(merged, target) ? merged[target] : undefined) ?? {color: randomColor()}), text: memo};
-                await setMemos(type, merged);
+                await updateMemos(type, (current) => {
+                    const merged = {...current};
+                    for (const [target, memo] of Object.entries(parsed[type])) merged[target] = {...(merged[target] ?? {color: randomColor()}), text: memo};
+                    return merged;
+                });
             }
         } catch {
             notify(SAVE_FAILED);
@@ -214,7 +210,7 @@ export function MemoTab() {
         // 객체만 받는다. 차단 내보내기의 NICK/IP(배열)까지 메모로 세면 다른 데이터인데도 성공으로 알린다.
         const types = MEMO_TYPES.filter((type) => isRecord(parsed[type]));
         // 기존 메모에 합치고, 같은 대상은 가져온 메모로 덮는다.
-        for (const type of types) await setMemos(type, {...memos[type], ...normalizeMemoMap(parsed[type])});
+        for (const type of types) await updateMemos(type, (current) => ({...current, ...normalizeMemoMap(parsed[type])}));
         return types.length;
     };
 
@@ -248,7 +244,7 @@ export function MemoTab() {
                 usedAt={(type, [user]) => used[memoUsageKey(type, user)]}
                 onRemoveMany={(type, removed) => {
                     const users = new Set(removed.map(([user]) => user));
-                    return setMemos(type, Object.fromEntries(Object.entries(memos[type]).filter(([user]) => !users.has(user))));
+                    return updateMemos(type, (current) => Object.fromEntries(Object.entries(current).filter(([user]) => !users.has(user))));
                 }}
                 row={(type, [user, entry]) => (
                     <ListRow

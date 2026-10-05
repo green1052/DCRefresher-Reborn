@@ -65,9 +65,14 @@ export const writeSettings = async (data: Record<string, unknown>, mode: "replac
         await browser.storage.local.set(next);
     } catch (e) {
         // 건드린 키만 되돌린다. 저장소 전체를 다시 쓰면 그사이 다른 탭이 한 쓰기(차단 추가, DB 갱신)를 지운다.
+        // 되돌리기도 실패할 수 있다(용량이 꽉 참). 그때는 되돌리기 실패를 덮어 쓴 원래 실패를 알린다.
         const touched = [...removed, ...Object.keys(next)];
-        await browser.storage.local.remove(touched.filter((key) => !(key in previous)));
-        await browser.storage.local.set(Object.fromEntries(touched.filter((key) => key in previous).map((key) => [key, previous[key]])));
+        try {
+            await browser.storage.local.remove(touched.filter((key) => !(key in previous)));
+            await browser.storage.local.set(Object.fromEntries(touched.filter((key) => key in previous).map((key) => [key, previous[key]])));
+        } catch (rollback) {
+            console.error("설정 되돌리기 실패:", rollback);
+        }
         throw e;
     }
 };

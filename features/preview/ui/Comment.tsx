@@ -5,7 +5,7 @@ import {useEffect, useLayoutEffect, useRef} from "react";
 import type {ProcessedComment} from "@/core/preview/comments";
 import type {User} from "@/core/preview/types";
 import {adminDeleteComment, graphemes, userDeleteComment, wrapTxtcon} from "@/core/preview/request";
-import {notifyManage} from "@/utils/notify";
+import {notifyManage} from "@/stores/notify";
 
 import {savedNonmember} from "../nonmember";
 import {openDcconInfo} from "./DcconInfoPopup";

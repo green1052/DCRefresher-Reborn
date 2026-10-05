@@ -136,6 +136,14 @@ export const createIpLookup = (data: CompactIpData): ((ip: string) => IpCandidat
     // 시작점과 값이 짝을 이뤄야 한다. 홀수면 값 칸이 어긋나 표가 0으로 조용히 채워진다.
     if (runs.length % 2 !== 0) throw new Error("IP 데이터 형식이 올바르지 않습니다.");
     const count = runs.length / 2;
+
+    // 시작점이 65536 밖이거나 늘지 않으면 fill이 조용히 어긋나 잘못된 표가 되므로 여기서 띤다.
+    // 값(=후보 번호+1)도 meta·lists 범위 밖이면 조회가 조용히 빈 결과를 내므로 함께 띤다.
+    const total = data.meta.length / 3 + data.lists.length;
+    for (let run = 0; run < count; run++) {
+        if (runs[run]! >= 65536 || (run > 0 && runs[run]! <= runs[run - 1]!) || runs[count + run]! - 1 >= total) throw new Error("IP 데이터 형식이 올바르지 않습니다.");
+    }
+
     const table = new Uint16Array(65536);
     for (let run = 0; run < count; run++) table.fill(runs[count + run]!, runs[run]!, run + 1 < count ? runs[run + 1]! : 65536);
 

@@ -1,11 +1,11 @@
 import {Box, Button, Callout, Flex, Heading, IconButton, Separator, Spinner, Text, Theme, Tooltip} from "@radix-ui/themes";
 import {Archive, ArrowUp, Eye, MessageSquare, RotateCw} from "lucide-react";
 import {Dialog} from "radix-ui";
-import {type CSSProperties, Fragment, useEffect, useLayoutEffect, useRef, useState, type WheelEvent} from "react";
+import {type CSSProperties, Fragment, useEffect, useLayoutEffect, useRef, useState} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
 import {focusedElement} from "@/components/useOpenerFocus";
-import {BLOCKED_TEXT} from "@/core/block";
+import {BLOCKED_TEXT, isBlockedHidden} from "@/core/block";
 import {dcinsideHref} from "@/core/http/urls";
 import {useModuleSettings} from "@/core/module/useModuleSettings";
 import {postKey as keyOfPost} from "@/core/preview/cache";
@@ -27,6 +27,7 @@ import {watchGifVideos} from "./gifVideos";
 import {markBlockedDccons} from "./blockedDccons";
 import {AdminPanel} from "./Popups";
 import {postTitle, usePreviewStore} from "./previewStore";
+import {useWheelGesture} from "./useWheelGesture";
 import {Votes} from "./Votes";
 import {WriteComment} from "./WriteComment";
 
@@ -67,22 +68,10 @@ const RefreshButton = ({label, run}: { label: string; run: () => Promise<void> }
 
 /**
  * 크게 볼 수 있는 본문 이미지. 디시콘·가린 이미지(관리자 가림·blockImage)·깨진 이미지는 뺀다.
- * 차단으로 가린 본문 안의 이미지는 '가린 내용 보기' 중이거나 흐림이 풀려 있을 때(blurReveal)만 연다. openDcconInfo와 같은 기준.
+ * 차단으로 가린 본문 안의 이미지는 '가린 내용 보기' 중이거나 흐림이 풀려 있을 때(blurReveal)만 연다. openDcconInfo와 같은 기준(isBlockedHidden).
  */
 const isViewable = (image: HTMLImageElement): boolean =>
     image.complete && image.naturalWidth > 0 && !image.closest(".written_dccon, [data-block]") && !isBlockedHidden(image) && image.checkVisibility();
-
-const isBlockedHidden = (image: HTMLImageElement): boolean => {
-    const blocked = image.closest("[data-blocked]");
-    if (!blocked || image.closest("[data-block-revealed]")) return false;
-    return !(blocked.getAttribute("data-blocked") === "blur" && image.closest("[data-blur-reveal]"));
-};
-
-/** 휠 이벤트 사이가 이보다 벌어지면 새 동작으로 본다(ms). 관성 스크롤은 이보다 촘촘하게 이어진다. */
-const WHEEL_GESTURE_GAP = 250;
-
-/** 스크롤 칸이 그 방향(1 아래, -1 위)으로 더 굴러가는지. 아래쪽은 배율에 따른 소수점 오차로 2px 여유를 둔다. */
-const canScroll = (el: Element, dir: number): boolean => (dir > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 2 : el.scrollTop > 0);
 
 /** 스크롤 끝에서 한 번 더 굴리면 넘어간다는 안내 (v5와 같은 모양). 목록은 번호가 큰 글이 위라 위로 넘기면 다음 글이다. */
 const SkipHint = ({dir}: { dir: number }) => (
@@ -188,59 +177,9 @@ export const Frame = () => {
         return () => window.removeEventListener("keydown", onKey);
     }, [visible]);
 
-    // 스크롤 끝에서 새로 한 번 더 굴리면 이전/다음 글로 넘어간다. 끝에 닿은 그 동작으로 넘기면 트랙패드 관성에 글이 연달아 넘어간다.
-    // 끝에 닿으면 v5처럼 안내를 띄우고, 넘기거나 닫았다 열면 지운다 (hint.key가 지금 글일 때만 보인다).
-    const wheel = useRef({last: 0, armed: 0, key: "", settling: false});
-    const [hint, setHint] = useState({dir: 0, key: ""});
+    // 스크롤 끝에서 새로 한 번 더 굴리면 이전/다음 글로 넘어간다 (useWheelGesture).
+    const {onWheel, hint} = useWheelGesture(postKey, goToAdjacent, scrollToSkip);
     const hintDir = visible && !fading && hint.key === postKey ? hint.dir : 0;
-
-    const skipOnWheel = (dir: number, timeStamp: number, atEdge: boolean): void => {
-        const state = wheel.current;
-        // 앞 글에서 끝에 닿아 둔 상태는 버린다.
-        if (state.key !== postKey) {
-            state.key = postKey;
-            state.armed = 0;
-        }
-        const newGesture = timeStamp - state.last > WHEEL_GESTURE_GAP;
-        state.last = timeStamp;
-
-        // 넘기게 한 동작(관성 포함)이 새 글에서 이어지면 무시한다. 새 글은 맨 위에서 열려, 위로 넘기면 곧바로 끝에 닿은 것으로 잡힌다.
-        if (state.settling) {
-            if (!newGesture) return;
-            state.settling = false;
-        }
-
-        let armed = 0;
-        if (atEdge && newGesture && state.armed === dir) {
-            state.settling = true;
-            goToAdjacent(dir);
-        }
-        // 끝에 닿은 방향을 기억해 두고 다음 동작을 기다린다.
-        else if (atEdge) armed = dir;
-
-        if (armed !== state.armed) setHint({dir: armed, key: postKey});
-        state.armed = armed;
-    };
-
-    const onWheel = (ev: WheelEvent<HTMLDivElement>): void => {
-        if (!scrollToSkip || ev.deltaY === 0 || ev.ctrlKey || ev.shiftKey) return;
-
-        const box = ev.currentTarget;
-        const target = ev.target;
-        // 포털로 뜬 창(디시콘 등)의 휠도 React 트리를 타고 여기로 오므로, 스크롤 칸 DOM 안에서 난 것만 본다.
-        if (!(target instanceof Element) || !box.contains(target)) return;
-
-        const dir = ev.deltaY > 0 ? 1 : -1;
-        // 안쪽 스크롤 칸(댓글 입력칸 등)이 아직 굴러가면 그쪽 스크롤이라 끝으로 치지 않는다.
-        let inner = false;
-        for (let el: Element | null = target; el && el !== box; el = el.parentElement) {
-            if (el.scrollHeight > el.clientHeight && /auto|scroll/.test(getComputedStyle(el).overflowY) && canScroll(el, dir)) {
-                inner = true;
-                break;
-            }
-        }
-        skipOnWheel(dir, ev.timeStamp, !inner && !canScroll(box, dir));
-    };
 
     if (!visible && !fading) return null;
 

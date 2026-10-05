@@ -1,7 +1,7 @@
 import {Button, Dialog, Flex, Popover, Separator, Text} from "@radix-ui/themes";
 import {Copy} from "lucide-react";
 import {Popover as PopoverPrimitive} from "radix-ui";
-import {useSyncExternalStore} from "react";
+import {useEffect, useSyncExternalStore} from "react";
 
 import {DialogActions} from "@/components/ConfirmDialog";
 import {ModalDialog} from "@/components/ModalDialog";
@@ -16,7 +16,7 @@ import {useBlocksStore} from "@/stores/blocks";
 import {useUserMemo} from "@/stores/memos";
 import {type SelectedUser, useUiStore} from "@/stores/ui";
 import {SAVE_FAILED} from "@/utils/error";
-import {type ActivityState, useGallogActivity} from "@/utils/gallogActivity";
+import {type ActivityState, useGallogActivity} from "@/components/overlay/gallogActivity";
 
 import {overlay} from "./shadow";
 
