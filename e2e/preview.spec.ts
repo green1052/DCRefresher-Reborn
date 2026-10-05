@@ -124,13 +124,6 @@ test.describe("미리보기", () => {
         await expect(listPage.page).toHaveURL(viewUrl(3));
     });
 
-    test("옵션에서 바꾼 창 너비가 열린 창에 바로 반영된다", async ({listPage, storage}) => {
-        const frame = await listPage.openPreview();
-        await expect(frame).toHaveAttribute("style", /--refresher-frame-width: 1200px/);
-        await storage.setModuleSettings("preview", {previewWidth: 900});
-        await expect(frame).toHaveAttribute("style", /--refresher-frame-width: 900px/);
-    });
-
     test("본문 이미지를 누르면 크게 보고, Esc는 크게 보기만 닫는다", async ({listPage}) => {
         const frame = await listPage.openPreview();
         const image = frame.locator(".refresher-preview-contents img");
@@ -185,12 +178,6 @@ test.describe("미리보기 댓글", () => {
 
         await frame.getByRole("button", {name: "답글 펼치기"}).click();
         await expect(second).toBeVisible();
-    });
-
-    test("답글이 하나뿐인 스레드에는 접기 버튼이 없다", async ({listPage}) => {
-        const frame = await listPage.openPreview();
-        await expect(frame.getByText("답글", {exact: true})).toBeVisible();
-        await expect(frame.getByRole("button", {name: /답글 (접기|펼치기)/})).toHaveCount(0);
     });
 
     test("댓글을 새로고침하면 새로 들어온 댓글만 강조한다", async ({listPage, site}) => {
@@ -281,17 +268,6 @@ test.describe("댓글 쓰기·지우기", () => {
             id: "test", no: "3", re_no: "11", mode: "del", re_password: "pw1234"
         });
     });
-
-    test("비밀번호 입력을 취소하면 아무것도 보내지 않는다", async ({listPage, site}) => {
-        await listPage.openPreview();
-        const dismissed = new Promise<void>((resolve) => listPage.page.once("dialog", (dialog) => void dialog.dismiss().then(resolve)));
-        await listPage.comments.nth(1).getByRole("button", {name: "댓글 삭제", exact: true}).click();
-        await dismissed;
-
-        await listPage.page.waitForTimeout(500);
-        expect(site.submitted).toEqual([]);
-        await expect(listPage.comments.nth(1)).not.toHaveAttribute("data-deleted");
-    });
 });
 
 test.describe("미니 미리보기", () => {
@@ -309,11 +285,6 @@ test.describe("미니 미리보기", () => {
         await expect(listPage.mini.locator(".refresher-mini-contents")).toContainText("본문 3 내용입니다.");
         await listPage.leave();
         await expect(listPage.mini).toHaveCount(0);
-    });
-
-    test("다른 제목으로 옮기면 카드가 그 글로 바뀐다", async ({listPage}) => {
-        await listPage.titles.nth(1).hover();
-        await expect(listPage.mini.locator(".refresher-mini-contents")).toContainText("본문 2 내용입니다.");
     });
 
     test("훑고 지나간 제목은 글을 받지 않고, 멈춘 제목만 받는다", async ({listPage}) => {

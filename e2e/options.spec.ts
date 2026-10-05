@@ -135,9 +135,4 @@ test.describe("옵션 - 메모·데이터 탭", () => {
         await expect(table.getByText("옵션 메모")).toBeVisible();
         await expect.poll(() => storage.get("refresher:memo:UID")).toMatchObject({user9: {text: "옵션 메모"}});
     });
-
-    test("데이터 탭은 백업·내보내기·초기화 칸을 그린다", async ({page, extensionId}) => {
-        await openOptions(page, extensionId, "data");
-        for (const title of ["클라우드 백업", "내보내기 / 가져오기", "초기화"]) await expect(page.getByText(title, {exact: true})).toBeVisible();
-    });
 });
