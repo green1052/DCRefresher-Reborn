@@ -1,5 +1,5 @@
 import {Shuffle} from "lucide-react";
-import {useId, useState} from "react";
+import {useId, useRef, useState} from "react";
 
 import {ColorInput} from "@/components/ColorInput";
 import {ModalDialog, SubmitForm} from "@/components/dialogs";
@@ -24,6 +24,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     const setMemo = useMemosStore((s) => s.setMemo);
     const removeMemo = useMemosStore((s) => s.removeMemo);
     const id = useId();
+    const input = useRef<HTMLInputElement>(null);
 
     // 지금 보고 있는 갤러리. 이 갤러리에서만 보이는 메모로 저장할 때 쓴다.
     const gallery = queryString("id");
@@ -72,8 +73,7 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
     };
 
     return (
-        // 입력칸이 autoFocus로 포커스를 잡는다.
-        <ModalDialog onClose={closeMemo} focusOnOpen="none" className="sm:max-w-[400px]">
+        <ModalDialog onClose={closeMemo} focusOnOpen={input} className="sm:max-w-[400px]">
             <DialogHeader>
                 <DialogTitle>메모</DialogTitle>
                 <DialogDescription>
@@ -101,12 +101,12 @@ const MemoDialogInner = ({state}: { state: MemoTargetState }) => {
                             <ColorInput width={20} height={20} aria-label="색상" value={color} onChange={(ev) => edit({color: ev.target.value})}/>
                         </InputGroupAddon>
                         <InputGroupInput
+                            ref={input}
                             maxLength={160}
                             aria-label="메모"
                             placeholder="메모를 입력해 주세요 (160자 제한)"
                             value={text}
                             onChange={(ev) => edit({text: ev.target.value})}
-                            autoFocus
                         />
                         <InputGroupAddon align="inline-end">
                             <InputGroupButton size="icon-xs" aria-label="랜덤 색상" onClick={() => edit({color: randomColor()})}>

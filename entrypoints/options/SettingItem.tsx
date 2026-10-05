@@ -165,12 +165,18 @@ const RangeControl = ({schema, value, descId, onChange}: NarrowProps<"range">) =
                 min={schema.min}
                 max={schema.max}
                 step={schema.step}
-                value={draft}
+                // 배열로 준다. 숫자를 주면 Slider 부품이 손잡이를 둘(최솟값·최댓값) 그린다.
+                value={[draft]}
                 // 이름·설명·읽는 값은 손잡이(role=slider)에 달아야 읽힌다. 그대로 두면 이름 없이 저장값(ms)만 읽힌다.
                 thumbProps={{"aria-label": schema.name, "aria-describedby": descId, getAriaValueText: () => text}}
-                // 손잡이가 하나라 값은 숫자다 (Slider 부품 타입은 여러 손잡이용 배열도 받는다).
-                onValueChange={(next) => typeof next === "number" && setDraft(next)}
-                onValueCommitted={(next) => typeof next === "number" && next !== value && onChange(next)}
+                onValueChange={(next) => {
+                    const [first] = typeof next === "number" ? [next] : next;
+                    if (first !== undefined) setDraft(first);
+                }}
+                onValueCommitted={(next) => {
+                    const [first] = typeof next === "number" ? [next] : next;
+                    if (first !== undefined && first !== value) onChange(first);
+                }}
             />
             <span className="min-w-14 text-right font-bold tabular-nums">{text}</span>
         </div>

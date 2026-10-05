@@ -14,6 +14,7 @@ import {useModuleSettings} from "@/core/module/useModuleSettings";
 import {BLOCK_DAYS, BLOCK_REASONS, type BlockDay, type BlockReason} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
 import {createDoublePress} from "@/utils/doublePress";
+import {focusOnMount} from "@/utils/focus";
 import {objectEntries} from "@/utils/typed";
 
 import {DcconInfoPopup} from "./DcconInfoPopup";
@@ -88,7 +89,7 @@ const BlockPopup = () => {
                         aria-label="차단 사유"
                         placeholder="차단 사유 직접 입력 (한글 20자 이내)"
                         maxLength={20}
-                        autoFocus
+                        ref={focusOnMount}
                         onChange={(ev) => setCustom(ev.target.value)}
                     />
                 )}
@@ -116,6 +117,7 @@ const BlockPopup = () => {
 
 const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: string) => void } }) => {
     const [code, setCode] = useState("");
+    const input = useRef<HTMLInputElement>(null);
     const send = (): void => {
         if (!code.trim()) return;
         captcha.resolve(code.trim());
@@ -123,14 +125,13 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
     };
 
     return (
-        // 입력칸이 autoFocus로 포커스를 잡는다.
         <ModalDialog
             onClose={() => {
                 captcha.resolve("");
                 usePreviewStore.setState({captcha: null});
             }}
             className="sm:max-w-[320px]"
-            focusOnOpen="none"
+            focusOnOpen={input}
         >
             <DialogHeader>
                 <DialogTitle>자동입력 방지 코드</DialogTitle>
@@ -139,7 +140,7 @@ const CaptchaPopup = ({captcha}: { captcha: { url: string; resolve: (code: strin
             {/* Enter로 보낸다 (SubmitForm). */}
             <SubmitForm onSubmit={send} className="flex flex-col gap-4">
                 <Input
-                    autoFocus
+                    ref={input}
                     value={code}
                     aria-label="자동입력 방지 코드"
                     placeholder="자동입력 방지 코드"

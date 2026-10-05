@@ -104,6 +104,7 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
     const [busy, setBusy] = useState(false);
     const done = useRef<string>(undefined);
     const actions = useRef<DialogPrimitive.Root.Actions>(null);
+    const input = useRef<HTMLTextAreaElement>(null);
 
     const submit = async (): Promise<void> => {
         setBusy(true);
@@ -115,7 +116,7 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
     // 가져왔다는 알림은 포커스를 가져오기 버튼에 돌려준 뒤(onClose)에 띄운다.
     // 먼저 띄우면 알림이 곧 사라질 이 다이얼로그의 버튼을 연 요소로 기억해, 알림을 닫을 때 포커스가 body로 떨어진다.
     return (
-        <ModalDialog actionsRef={actions} dismissible={!busy} focusOnOpen="none" className="sm:max-w-[520px]" onClose={() => {
+        <ModalDialog actionsRef={actions} dismissible={!busy} focusOnOpen={input} className="sm:max-w-[520px]" onClose={() => {
             onClose();
             if (done.current) notify(done.current);
         }}>
@@ -124,7 +125,7 @@ export const ImportDialog = ({title, desc = "내보낸 JSON 데이터를 붙여 
                 <DialogDescription>{desc}</DialogDescription>
             </DialogHeader>
 
-            <Textarea placeholder={placeholder} aria-label={placeholder} value={text} rows={8} autoFocus className="max-h-[50vh]"
+            <Textarea ref={input} placeholder={placeholder} aria-label={placeholder} value={text} rows={8} className="max-h-[50vh]"
                       onChange={(ev) => setText(ev.target.value)}/>
 
             <DialogActions>

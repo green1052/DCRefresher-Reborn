@@ -6,6 +6,8 @@ test.describe("옵션 페이지", () => {
         const options = await openOptions(page, extensionId, "general");
 
         await expect(options.card("글 목록 새로고침")).toBeVisible();
+        // 범위 설정마다 손잡이가 하나다 (같은 이름의 손잡이가 겹쳐 둘 그려지지 않는다).
+        await expect(page.getByRole("slider", {name: "새로고침 주기", exact: true})).toHaveCount(1);
         expect(await options.cards().count()).toBeGreaterThanOrEqual(10);
 
         const stealth = options.card("스텔스 모드").getByRole("switch");
@@ -31,6 +33,9 @@ test.describe("옵션 페이지", () => {
         await expect(page.getByText("기본 차단 모드")).toBeVisible();
 
         await page.getByRole("button", {name: "추가"}).first().click();
+        // 차단 모드의 '기본값'은 고른 값으로 보인다 (빈 문자열 값이 자리표시자로 흐려지지 않는다).
+        await expect(page.getByRole("combobox", {name: "차단 모드"})).not.toHaveAttribute("data-placeholder");
+        await expect(page.getByPlaceholder("닉네임 값을 입력해 주세요")).toBeFocused();
         await page.getByPlaceholder("닉네임 값을 입력해 주세요").fill("차단닉");
         await page.getByRole("button", {name: "추가", exact: true}).last().click();
         await expect(page.locator("table").getByText("차단닉")).toBeVisible();
@@ -74,6 +79,8 @@ test.describe("옵션 페이지", () => {
         await openOptions(page, extensionId, "block");
         const importButton = page.getByRole("button", {name: "가져오기", exact: true});
         await importButton.click();
+        // 창이 열리면 입력칸에 바로 쓸 수 있다 (Preact는 autoFocus로 포커스를 옮기지 않아 창이 직접 옮긴다).
+        await expect(page.getByRole("textbox", {name: "JSON 데이터"})).toBeFocused();
         await page.getByRole("textbox", {name: "JSON 데이터"}).fill(JSON.stringify({NICK: [{content: "가져온닉", isRegex: false}]}));
         await page.getByRole("dialog").getByRole("button", {name: "가져오기"}).click();
 

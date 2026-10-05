@@ -1,5 +1,5 @@
 import {ClipboardCopy, Smartphone} from "lucide-react";
-import {useId, useMemo, useState} from "react";
+import {useId, useMemo, useRef, useState} from "react";
 
 import {ColorInput} from "@/components/ColorInput";
 import {DialogActions, ModalDialog, SubmitForm} from "@/components/dialogs";
@@ -42,6 +42,8 @@ const MemoFormDialog = ({
     const [state, setState] = useState<MemoFormState>(initial);
     const [error, setError] = useState("");
     const id = useId();
+    const userInput = useRef<HTMLInputElement>(null);
+    const textInput = useRef<HTMLInputElement>(null);
 
     const editing = Boolean(initial.user);
 
@@ -72,8 +74,8 @@ const MemoFormDialog = ({
     };
 
     return (
-        // 입력칸이 autoFocus로 포커스를 잡는다 (추가는 대상, 수정은 메모).
-        <ModalDialog onClose={onClose} focusOnOpen="none" className="sm:max-w-[480px]">
+        // 추가할 때는 비어 있는 대상부터, 고칠 때는(대상이 막혀 있다) 메모부터 입력한다.
+        <ModalDialog onClose={onClose} focusOnOpen={editing ? textInput : userInput} className="sm:max-w-[480px]">
             <DialogHeader>
                 <DialogTitle>메모 {editing ? "수정" : "추가"}</DialogTitle>
             </DialogHeader>
@@ -97,9 +99,8 @@ const MemoFormDialog = ({
                             id={`${id}-user`}
                             placeholder="아이디, 닉네임 또는 IP"
                             value={state.user}
+                            ref={userInput}
                             disabled={editing}
-                            // 추가할 때는 비어 있는 대상부터, 고칠 때는(대상이 막혀 있다) 메모부터 입력한다.
-                            autoFocus={!editing}
                             // 입력 중에 trim하면 닉네임 가운데 공백을 칠 수 없으므로 저장할 때 trim한다.
                             onChange={(ev) => setState((prev) => ({...prev, user: ev.target.value}))}
                         />
@@ -112,8 +113,8 @@ const MemoFormDialog = ({
                             maxLength={160}
                             placeholder="메모를 입력해 주세요 (160자 제한)"
                             value={state.text}
+                            ref={textInput}
                             onChange={(ev) => setState((prev) => ({...prev, text: ev.target.value}))}
-                            autoFocus={editing}
                         />
                     </Field>
 

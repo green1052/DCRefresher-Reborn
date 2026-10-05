@@ -72,7 +72,7 @@ export const BlockDialog = ({type, initial, onClose, onSubmit}: BlockDialogProps
                 <FieldGroup>
                     <Field>
                         <FieldLabel htmlFor={`${id}-content`}>값</FieldLabel>
-                        <Input id={`${id}-content`} placeholder={`${TYPE_NAMES[type]} 값을 입력해 주세요`} value={content} autoFocus
+                        <Input id={`${id}-content`} placeholder={`${TYPE_NAMES[type]} 값을 입력해 주세요`} value={content}
                                onChange={(ev) => setContent(ev.target.value)}/>
                     </Field>
 

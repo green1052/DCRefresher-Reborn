@@ -10,9 +10,9 @@ import {Dialog, DialogClose, DialogContent, DialogFooter, DialogTitle} from "@/c
  * 연 창의 포커스.
  * - first: 창의 첫 요소로 옮긴다.
  * - keyboard: 키보드로 열었을 때만 창 안으로 옮긴다. 마우스로 열었으면 그 자리에 둔다.
- * - none: 옮기지 않는다. 입력칸이 autoFocus로 스스로 포커스를 잡는 창에 쓴다.
+ * - ref: 그 요소(입력칸 등)로 옮긴다. Preact는 autoFocus 속성으로 포커스를 옮기지 않으므로 입력칸부터 쓰는 창은 이것을 쓴다.
  */
-type AutoFocus = "first" | "keyboard" | "none";
+type AutoFocus = "first" | "keyboard" | RefObject<HTMLElement | null>;
 
 const FOCUSABLE = "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]";
 
@@ -73,7 +73,7 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
                 onKeyDown={keepTabInside}
                 showCloseButton={false}
                 className={className}
-                initialFocus={focusOnOpen === "first" || (focusOnOpen === "keyboard" && focus.keyboard)}
+                initialFocus={typeof focusOnOpen === "object" ? focusOnOpen : focusOnOpen === "first" || focus.keyboard}
                 finalFocus={focus.finalFocus}
             >
                 {children}
