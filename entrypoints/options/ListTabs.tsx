@@ -1,7 +1,8 @@
 import {Download, Plus, Search, Trash2, Upload} from "lucide-react";
-import {type ReactElement, type ReactNode, useDeferredValue, useState} from "react";
+import {type ReactNode, useDeferredValue, useState} from "react";
 
 import {ConfirmDialog} from "@/components/dialogs";
+import {WithTooltip} from "@/components/WithTooltip";
 import {RefresherSelect} from "@/components/RefresherSelect";
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
@@ -10,7 +11,6 @@ import {Empty, EmptyDescription} from "@/components/ui/empty";
 import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {friendlyMessage, SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
@@ -23,13 +23,6 @@ const EmptyList = ({children}: { children: ReactNode }) => (
     </Empty>
 );
 
-/** 툴팁을 단 버튼. trigger는 Button 요소다 (아이콘은 children). */
-const WithTooltip = ({tip, trigger, children}: { tip: string; trigger: ReactElement; children: ReactNode }) => (
-    <Tooltip>
-        <TooltipTrigger render={trigger}>{children}</TooltipTrigger>
-        <TooltipContent>{tip}</TooltipContent>
-    </Tooltip>
-);
 
 /** 오래 안 쓴 항목 거르기. 쓰인 시각은 이 기기에서 걸리거나(차단) 보인(메모) 때다. */
 const UNUSED_OPTIONS = {"0": "사용 기록 전체", "30": "30일 넘게 안 쓰임", "90": "90일 넘게 안 쓰임", "180": "180일 넘게 안 쓰임"};

@@ -9,20 +9,7 @@
     pointer-events: none;
 }
 
-/* 호스트는 클릭을 통과시키고, 실제 UI만 받는다. */
-#portal > *,
-.refresher-interactive {
+/* 호스트는 클릭을 통과시키고, 실제 UI만 받는다 (포털 밖의 UI는 pointer-events-auto 클래스를 단다). */
+#portal > * {
     pointer-events: auto;
-}
-
-@keyframes refresher-fade-in {
-    from {
-        opacity: 0;
-    }
-}
-
-@keyframes refresher-fade-out {
-    to {
-        opacity: 0;
-    }
 }

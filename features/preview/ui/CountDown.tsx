@@ -1,7 +1,7 @@
 import {Clock} from "lucide-react";
 
 import {Badge} from "@/components/ui/badge";
-import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
+import {WithTooltip} from "@/components/WithTooltip";
 
 import {useTick} from "./TimeStamp";
 import {parseDate, usePreviewStore} from "./previewStore";
@@ -16,13 +16,10 @@ const Remaining = ({expire}: { expire: Date }) => {
     const s = Math.floor((diff % 60000) / 1000);
 
     return (
-        <Tooltip>
-            <TooltipTrigger render={<Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400"/>}>
-                <Clock/>
-                {diff <= 0 ? "만료됨" : h > 0 ? `${h}시간 ${m}분` : `${m}분 ${s}초`}
-            </TooltipTrigger>
-            <TooltipContent>자동 삭제까지 남은 시간</TooltipContent>
-        </Tooltip>
+        <WithTooltip tip="자동 삭제까지 남은 시간" trigger={<Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400"/>}>
+            <Clock/>
+            {diff <= 0 ? "만료됨" : h > 0 ? `${h}시간 ${m}분` : `${m}분 ${s}초`}
+        </WithTooltip>
     );
 };
 

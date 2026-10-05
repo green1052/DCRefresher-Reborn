@@ -3,12 +3,12 @@ import {useId, useState} from "react";
 
 import {ColorInput} from "@/components/ColorInput";
 import {RefresherSelect} from "@/components/RefresherSelect";
+import {WithTooltip} from "@/components/WithTooltip";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Kbd} from "@/components/ui/kbd";
 import {Slider} from "@/components/ui/slider";
 import {Switch} from "@/components/ui/switch";
-import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {areEqual, defaultValue} from "@/core/module/settings";
 import type {SettingSchema} from "@/core/module/types";
 import type {SettingValue} from "@/core/storage/types";
@@ -252,13 +252,10 @@ export const SettingItem = ({schema, value, compact, takenKeys, onChange}: Setti
             <span className="font-medium" title={compact ? schema.desc : undefined}>{schema.name}</span>
             {/* 다른 단축키가 기본값 키를 쓰고 있으면 되돌리지 못하게 한다. 되돌리면 두 단축키가 같은 키가 된다. */}
             {!areEqual(value, defaultValue(schema)) && !(schema.type === "key" && takenKeys?.includes(schema.default)) && (
-                <Tooltip>
-                    <TooltipTrigger render={<Button variant="ghost" size="icon-xs" aria-label={`${schema.name} 기본값으로 되돌리기`}
-                                                    onClick={() => onChange(defaultValue(schema))}/>}>
-                        <Undo2/>
-                    </TooltipTrigger>
-                    <TooltipContent>기본값으로 되돌리기 ({formatDefault(schema)})</TooltipContent>
-                </Tooltip>
+                <WithTooltip tip={`기본값으로 되돌리기 (${formatDefault(schema)})`}
+                             trigger={<Button variant="ghost" size="icon-xs" aria-label={`${schema.name} 기본값으로 되돌리기`} onClick={() => onChange(defaultValue(schema))}/>}>
+                    <Undo2/>
+                </WithTooltip>
             )}
         </div>
     );

@@ -1,13 +1,13 @@
 import {Dialog} from "@base-ui/react/dialog";
 import {Archive, ArrowUp, Eye, MessageSquare, RotateCw} from "lucide-react";
-import {type CSSProperties, Fragment, type ReactElement, useEffect, useLayoutEffect, useRef, useState} from "react";
+import {type CSSProperties, Fragment, useEffect, useLayoutEffect, useRef, useState} from "react";
 
 import {overlay} from "@/components/overlay/shadow";
 import {Alert, AlertDescription} from "@/components/ui/alert";
 import {Button} from "@/components/ui/button";
 import {Separator} from "@/components/ui/separator";
 import {Spinner} from "@/components/ui/spinner";
-import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
+import {WithTooltip} from "@/components/WithTooltip";
 import {focusedElement} from "@/components/useReturnFocus";
 import {BLOCKED_TEXT, isBlockedHidden} from "@/core/block";
 import {dcinsideHref} from "@/core/http/urls";
@@ -53,14 +53,6 @@ const subtitleOf = (comments: ProcessedComment[]): string => {
     const extra = [blocked && `차단 ${blocked}개`, folded && `같은 댓글 ${folded}개 접음`].filter(Boolean).join(", ");
     return `스레드 ${threadParents(comments).length}개, 총 댓글 ${comments.length}개${extra ? ` (${extra})` : ""}`;
 };
-
-/** 툴팁을 단 버튼. trigger는 Button 요소다 (아이콘은 children). */
-const WithTooltip = ({tip, side, trigger, children}: { tip: string; side?: "left"; trigger: ReactElement; children: ReactElement }) => (
-    <Tooltip>
-        <TooltipTrigger render={trigger}>{children}</TooltipTrigger>
-        <TooltipContent side={side}>{tip}</TooltipContent>
-    </Tooltip>
-);
 
 /** run이 끝날 때까지 로딩으로 돌며, 그동안은 다시 누를 수 없다. */
 const RefreshButton = ({label, run}: { label: string; run: () => Promise<void> }) => {

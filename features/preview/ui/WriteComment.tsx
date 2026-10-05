@@ -1,12 +1,12 @@
 import {isTimeoutError} from "ky";
 import {Send, Smile, Type, X} from "lucide-react";
-import {type ReactElement, useLayoutEffect, useRef, useState} from "react";
+import {useLayoutEffect, useRef, useState} from "react";
 
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Spinner} from "@/components/ui/spinner";
 import {Textarea} from "@/components/ui/textarea";
-import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
+import {WithTooltip} from "@/components/WithTooltip";
 import {captchaImage, normalizeTxtcon, TXTCON_BACKGROUNDS, TXTCON_COLORS} from "@/core/preview/request";
 import {postKey} from "@/core/preview/cache";
 import type {DcinsideDccon} from "@/core/preview/types";
@@ -37,14 +37,6 @@ const Swatch = ({color, selected, label, onClick}: {
         className="size-[18px] cursor-pointer rounded-full border border-foreground/25 aria-pressed:ring-2 aria-pressed:ring-primary aria-pressed:ring-offset-1 aria-pressed:ring-offset-background"
         style={{background: `#${color}`}}
     />
-);
-
-/** 툴팁을 단 버튼. trigger는 Button 요소다 (아이콘은 children). */
-const WithTooltip = ({tip, trigger, children}: { tip: string; trigger: ReactElement; children: ReactElement }) => (
-    <Tooltip>
-        <TooltipTrigger render={trigger}>{children}</TooltipTrigger>
-        <TooltipContent>{tip}</TooltipContent>
-    </Tooltip>
 );
 
 const NO_DCCON: { list: DcinsideDccon[]; big: boolean } = {list: [], big: false};
