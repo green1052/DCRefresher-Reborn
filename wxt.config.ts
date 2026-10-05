@@ -20,7 +20,19 @@ export default defineConfig({
             // React 대신 Preact를 쓴다. 코드와 라이브러리(Base UI 등)의 react·react-dom import는 preact/compat으로 바뀐다.
             // babel 옵션을 주지 않으면 JSX는 oxc로 바뀐다 (preset-vite 2.10.4+).
             preact(),
-            tailwindcss()
+            tailwindcss(),
+            // Tailwind는 CSS 맨 앞에 라이선스 주석(/*! tailwindcss … */)을 늘 붙이고, CSS 압축기(Lightning CSS)는 /*! 주석을 지우는 옵션이 없다.
+            {
+                name: "strip-tailwind-banner",
+                apply: "build",
+                // 콘텐츠 스크립트(IIFE)의 CSS는 vite:css-post가 generateBundle에서 내보내므로 그 뒤에 돈다.
+                enforce: "post",
+                generateBundle(_, bundle) {
+                    for (const file of Object.values(bundle)) {
+                        if (file.type === "asset" && file.fileName.endsWith(".css") && typeof file.source === "string") file.source = file.source.replace(/\/\*! tailwindcss v[^*]*\*\/\n?/, "");
+                    }
+                }
+            }
         ],
         build: {
             rolldownOptions: {
