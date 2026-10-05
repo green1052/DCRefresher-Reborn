@@ -28,11 +28,11 @@ const extractIp = (html: string | undefined): string | undefined => html?.match(
  */
 // Tailwind가 소스에서 클래스 이름을 읽어 CSS를 만들므로 이어 붙이지 않고 다 적는다.
 /** 부모: 본문 아래 여백만큼 세로선 (본문이 여러 줄이어도 글자를 가로지르지 않게) → 첫 답글의 ㄴ으로 이어진다. */
-const THREAD_OPEN = "after:pointer-events-none after:absolute after:bottom-0 after:left-11 after:h-2 after:border-l-2 after:border-slate-300 after:content-[''] dark:after:border-slate-700";
+const THREAD_OPEN = "after:pointer-events-none after:absolute after:bottom-0 after:left-11 after:h-2 after:border-l-2 after:border-neutral-300 after:content-[''] dark:after:border-neutral-700";
 /** 답글: 위에서 내려와 이름 높이에서 오른쪽으로 꺾이는 ㄴ. */
-const REPLY = "ml-8 before:pointer-events-none before:absolute before:top-0 before:left-3 before:h-4.5 before:w-3.5 before:rounded-bl-[10px] before:border-b-2 before:border-l-2 before:border-slate-300 before:content-[''] dark:before:border-slate-700";
+const REPLY = "ml-8 before:pointer-events-none before:absolute before:top-0 before:left-3 before:h-4.5 before:w-3.5 before:rounded-bl-[10px] before:border-b-2 before:border-l-2 before:border-neutral-300 before:content-[''] dark:before:border-neutral-700";
 /** 마지막 답글이 아니면 다음 답글까지 세로선을 잇는다. */
-const REPLY_CONTINUES = "after:pointer-events-none after:absolute after:inset-y-0 after:left-3 after:border-l-2 after:border-slate-300 after:content-[''] dark:after:border-slate-700";
+const REPLY_CONTINUES = "after:pointer-events-none after:absolute after:inset-y-0 after:left-3 after:border-l-2 after:border-neutral-300 after:content-[''] dark:after:border-neutral-700";
 
 interface CommentProps {
     comment: ProcessedComment;
