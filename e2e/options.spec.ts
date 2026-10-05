@@ -97,6 +97,8 @@ test.describe("옵션 - 차단 탭", () => {
         await page.getByRole("button", {name: "보이는 1개 삭제"}).click();
         await dialog.getByRole("button", {name: "삭제", exact: true}).click();
         await expect.poll(() => storage.get("refresher:block:NICK")).toMatchObject([{id: "b"}, {id: "c"}]);
+        // 보이는 항목이 없어 삭제 버튼이 막히므로 포커스는 그 버튼이 아니라 탭 패널로 돌아간다.
+        await expect(page.getByRole("tabpanel")).toBeFocused();
         // 지운 항목의 사용 기록도 정리한다.
         await expect.poll(() => storage.get("refresher:usage")).toEqual({block: {b: expect.any(Number), c: expect.any(Number)}, memo: {}});
     });

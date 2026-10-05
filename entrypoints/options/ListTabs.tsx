@@ -1,8 +1,9 @@
 import {Download, Plus, Search, Trash2, Upload} from "lucide-react";
-import {type ReactNode, useState} from "react";
+import {type ReactNode, useRef, useState} from "react";
 
 import {ConfirmDialog} from "@/components/dialogs";
 import {WithTooltip} from "@/components/WithTooltip";
+import {focusPanel} from "@/components/useReturnFocus";
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent} from "@/components/ui/card";
@@ -148,6 +149,9 @@ export const ListTabs = <T extends string, I>({
 
     const [clearConfirm, setClearConfirm] = useState<T | null>(null);
     const [removeShownConfirm, setRemoveShownConfirm] = useState<T | null>(null);
+    // 삭제를 확인하면 연 버튼이 사라지거나(보이는 항목 삭제) 막혀(전체 삭제) 확인 창이 포커스를 돌려줄 곳이 없다. 지우기 전에 탭 패널로 옮겨 둔다.
+    // 확인 창은 창 밖으로 옮긴 포커스를 빼앗지 않는다 (useReturnFocus).
+    const filterRow = useRef<HTMLDivElement>(null);
     const [importOpen, setImportOpen] = useState(false);
     const object = label + objectParticle(label);
 
@@ -215,7 +219,7 @@ export const ListTabs = <T extends string, I>({
                         const {total, list} = shown.get(type)!;
                         return (
                             <TabsContent key={type} value={type} className="tab-enter">
-                                <div className="flex flex-wrap items-center gap-2 pt-2">
+                                <div ref={filterRow} className="flex flex-wrap items-center gap-2 pt-2">
                                     <RefresherSelect value={galleryFilter} options={galleryOptions} aria-label="갤러리" onChange={setGallery}/>
                                     <RefresherSelect value={unusedDays} options={UNUSED_OPTIONS} aria-label="마지막 사용" onChange={setUnusedDays}/>
                                     {filtering && list.length > 0 && (
@@ -280,6 +284,7 @@ export const ListTabs = <T extends string, I>({
                     confirmLabel="삭제"
                     danger
                     onConfirm={() => {
+                        focusPanel(filterRow.current);
                         onClear(clearConfirm).catch(() => notify(`${object} 삭제하지 못했습니다.`));
                         setClearConfirm(null);
                     }}
@@ -293,6 +298,7 @@ export const ListTabs = <T extends string, I>({
                     confirmLabel="삭제"
                     danger
                     onConfirm={() => {
+                        focusPanel(filterRow.current);
                         onRemoveMany(removeShownConfirm, shown.get(removeShownConfirm)!.list).catch(() => notify(`${object} 삭제하지 못했습니다.`));
                         setRemoveShownConfirm(null);
                     }}
