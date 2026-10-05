@@ -1,7 +1,6 @@
-import {Box} from "@radix-ui/themes";
-import {Collapsible} from "radix-ui";
 import {Fragment, useDeferredValue} from "react";
 
+import {Collapsible, CollapsibleContent} from "@/components/ui/collapsible";
 import type {ProcessedComment} from "@/core/preview/comments";
 import {useUiStore} from "@/stores/ui";
 import {isGalleryManager} from "@/utils/user";
@@ -31,12 +30,15 @@ const Thread = ({parent, replies, isAdmin}: { parent: ProcessedComment; replies:
     return (
         <>
             <Comment comment={parent} depth={0} replyCount={replies.length} threadOpen={!isCollapsed && replies.length > 0} isAdmin={isAdmin}/>
-            {/* 접고 펼 때 높이를 움직인다 (overlay.scss). 처음 그릴 때는 Radix가 애니메이션을 건너뛴다.
+            {/* 접고 펼 때 높이를 움직인다. 처음 그릴 때는 애니메이션을 건너뛴다.
                 접기 버튼은 답글이 둘 이상일 때만 있으므로 답글 하나는 Collapsible 없이 그린다. Collapsible은 그릴 때마다 높이와 스타일을 재 스레드가 많은 글에서 느리다. */}
             {replies.length > 1 ? (
-                <Collapsible.Root open={!isCollapsed}>
-                    <Collapsible.Content className="refresher-replies">{children}</Collapsible.Content>
-                </Collapsible.Root>
+                <Collapsible open={!isCollapsed}>
+                    <CollapsibleContent
+                        className="h-(--collapsible-panel-height) overflow-clip transition-[height,opacity] duration-200 ease-out data-ending-style:h-0 data-ending-style:opacity-0 data-starting-style:h-0 data-starting-style:opacity-0 motion-reduce:transition-none">
+                        {children}
+                    </CollapsibleContent>
+                </Collapsible>
             ) : children}
         </>
     );
@@ -48,7 +50,7 @@ export const CommentList = () => {
     const comments = useDeferredValue(usePreviewStore((s) => s.comments)!, NO_COMMENTS);
     const revealed = useUiStore((s) => s.blockView?.revealed === true);
 
-    // 숨김 차단과 접힌 같은 댓글은 '가린 내용 보기' 동안만 (흐리게) 그린다. 블러 차단은 그려 두고 overlay.scss가 흐린다.
+    // 숨김 차단과 접힌 같은 댓글은 '가린 내용 보기' 동안만 (흐리게) 그린다. 블러 차단은 그려 두고 overlay.css가 흐린다.
     // 트리 선과 답글 수도 그리는 댓글만 센다.
     const shown = new Set(revealed ? comments : comments.filter((comment) => comment.blocked !== "hide" && comment.duplicates !== 0));
     const parents = threadParents(comments);
@@ -59,7 +61,7 @@ export const CommentList = () => {
     const isAdmin = isGalleryManager();
 
     return (
-        <Box py="1">
+        <div className="py-1">
             {parents.map((parent) => {
                 const replies = repliesOf.get(parent.no) ?? [];
 
@@ -74,6 +76,6 @@ export const CommentList = () => {
 
                 return <Thread key={parent.no} parent={parent} replies={replies} isAdmin={isAdmin}/>;
             })}
-        </Box>
+        </div>
     );
 };

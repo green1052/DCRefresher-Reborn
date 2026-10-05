@@ -67,6 +67,6 @@ export default defineModuleMeta({
 
     settings,
 
-    // 옵션·팝업도 같은 폰트로 (_radix.scss의 overrides가 --refresher-font를 쓴다).
+    // 옵션·팝업도 같은 폰트로 (tailwind.css의 --font-sans가 --refresher-font를 쓴다).
     extensionPageVars: (settings) => ({"--refresher-font": fontFamilyOf(settings.customFonts)})
 });

@@ -23,7 +23,7 @@ DCRefresher Reborn의 구조, 기능을 더하는 방법, 테스트와 릴리즈
 | 항목 | 사용 |
 |------|------|
 | 확장 프레임워크 | [WXT](https://wxt.dev). Chrome은 MV3, Firefox는 MV2 (둘 다 최소 140) |
-| UI | React 19 + React Compiler, [Radix Themes](https://www.radix-ui.com/themes) |
+| UI | [Preact](https://preactjs.com) 11 (코드는 `react`에서 import하고 `preact/compat`으로 바뀐다, `@preact/preset-vite`) + React Compiler(React 18 대상, `react-compiler-runtime`), [shadcn/ui](https://ui.shadcn.com) (Base UI, base-nova 스타일) + [Tailwind CSS](https://tailwindcss.com) v4 |
 | 상태 | zustand |
 | 저장소 | WXT storage (`wxt/utils/storage`) |
 | HTTP | ky + `utils/limit.ts`(동시 요청 수 제한) |
@@ -83,24 +83,25 @@ entrypoints/
     stale.ts            파이어폭스 재주입으로 죽은 인스턴스 정리
     invalidated.ts      확장이 멈췄을 때의 안내
     blocked.ts          디시 임시 차단 안내
-  page.content.scss     디시 페이지에 입히는 CSS (manifest로 따로 주입)
+  page.content.css     디시 페이지에 입히는 CSS (manifest로 따로 주입)
   options/              옵션 페이지 (설정·차단·메모·단축키·데이터·정보 탭)
   popup/                팝업 (모듈 켜고 끄기, 현재 페이지 토글)
 features/<id>/          기능 모듈 하나
   meta.ts               이름·아이콘·설정 스키마 (옵션·팝업이 읽는다)
   index.ts              페이지에서 하는 일 (할 일이 없는 모듈은 두지 않는다)
   background.ts         배경에서 하는 일 (선택)
-  page.scss             디시 페이지에 입히는 CSS (선택, 저절로 들어간다)
-  overlay.scss          오버레이(shadow) 안의 CSS (선택, 저절로 들어간다)
+  page.css             디시 페이지에 입히는 CSS (선택, 저절로 들어간다)
+  overlay.css          오버레이(shadow) 안의 CSS (선택, 저절로 들어간다)
   ui/                   React 화면 (선택)
 modules/                WXT 로컬 모듈: 모듈 api·설정 타입 생성(module-types.ts), 단축키 모으기(commands.ts),
-                        기능별 페이지 CSS 모으기(feature-styles.ts), 엔트리마다 Radix CSS 줄이기(slim-radix-css.ts).
+                        기능별 페이지 CSS 모으기(feature-styles.ts).
                         WXT가 바로 아래 파일을 모두 모듈로 불러오므로 같이 쓰는 도우미는 lib/에 둔다 (features/ 폴더 찾기)
 core/                   모듈 시스템, 저장소 키, HTTP, 필터링, 차단 판정, 미리보기 요청·파싱, 백업, 설정 옮기기, DB
 stores/                 여러 화면이 같이 쓰는 zustand 스토어 (모듈 on/off·설정, 차단, 메모, 오버레이 UI)
 components/             공용 React 컴포넌트, 오버레이 루트(components/overlay)
+components/ui/          shadcn 부품. 손으로 만들지 않고 CLI로 추가한다 (npx shadcn@latest add <이름>, 설정은 components.json)
 utils/                  작은 도우미 (DOM, 이벤트, 정화, 다크모드, 캐시, 동시 실행 제한, 타입 붙인 Object 함수)
-assets/styles/          페이지 SCSS, 오버레이 CSS, Radix CSS 진입점 (radix-themes.css: 옵션·오버레이, radix-themes-popup.css: 팝업)
+assets/styles/          디시 페이지 CSS(content.css), 오버레이 CSS(overlay.css), 두 문서가 같이 쓰는 유틸리티(shared.css), Tailwind·shadcn 토큰과 공용 애니메이션(tailwind.css)
 scripts/                IP DB 빌드 스크립트 (GitHub Actions의 DB 워크플로가 실행)
 tests/                  단위 테스트: unit/(소스 경로를 따라 둔다), setup.ts(공통 준비), helpers.ts(공통 도우미)
 e2e/                    Playwright E2E: 가짜 디시 페이지, 페이지 객체(pages/), 파이어폭스 설치(firefox.ts)
@@ -119,7 +120,7 @@ flowchart LR
 
     subgraph ENTRY["entrypoints"]
         CS["콘텐츠 스크립트<br>content/index.tsx"]
-        PCSS["page.content.scss"]
+        PCSS["page.content.css"]
         BG["배경 스크립트<br>background/index.ts"]
         OPT["옵션 페이지"]
         POP["팝업"]
@@ -232,8 +233,8 @@ flowchart TD
 | 설정 | `meta.ts`의 `settings`. 페이지 코드는 `ctx.settings`, React는 `useModuleSettings(id)`로 읽는다. 바뀔 때 할 일은 setup의 `ctx.onSettingsChanged` |
 | 단축키 | `meta.ts`의 `commands`와 `index.ts`의 `shortcuts` (manifest는 `modules/commands.ts`가 만든다) |
 | 팝업 '현재 페이지' 토글 | `meta.ts`의 `toggles`와 `index.ts`의 `pageToggles` |
-| 디시 페이지 CSS | `features/<id>/page.scss` |
-| 오버레이 UI | 컴포넌트와 그 스토어. 스토어에 `needOverlayWhen(store, (state) => …)`로 띄울 조건을 등록한다. CSS는 `features/<id>/overlay.scss` |
+| 디시 페이지 CSS | `features/<id>/page.css` |
+| 오버레이 UI | 컴포넌트와 그 스토어. 스토어에 `needOverlayWhen(store, (state) => …)`로 띄울 조건을 등록한다. CSS는 `features/<id>/overlay.css` |
 | 배경에서 할 일 | `features/<id>/background.ts` (`defineBackgroundModule`, 배경이 glob으로 모은다) |
 | 다른 모듈에 줄 api | setup의 반환값. 받는 쪽은 `getModuleApi(id)` |
 
@@ -415,20 +416,32 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 - **페이지 쪽 객체는 다른 영역(compartment)에서 옵니다.** `content.fetch`의 응답과 오류, `event.detail` 같은 값은 `instanceof`가 틀릴 수 있습니다. 오류는 `name`·`message`로 판단합니다(`isAbortError`, `utils/error.ts`의 `messageOf`).
 - **확장 페이지(배경·옵션·팝업)의 내비게이션 항목 이름은 URL이 아니라 `"document"`입니다.** `performance.getEntriesByType("navigation")[0].name`을 `new URL()`에 그대로 넣으면 던져 배경·옵션·팝업이 통째로 멈췄습니다. 모듈 최상위에서 URL을 만들 때는 `URL.parse(...) ?? ...`처럼 던지지 않게 합니다.
 - **MV2라 배경은 서비스 워커가 아니라 배경 페이지입니다.** 알람·메뉴·단축키는 두 브라우저에서 다 확인합니다.
+- **페이지의 `navigator.locks`에 콘텐츠 스크립트의 콜백을 넘기면 이유 없는 `Error`로 실패합니다.** 차단·메모 저장이 모두 실패했습니다. 쓰기 직렬화(`core/storage/sync.ts`)는 파이어폭스 콘텐츠 스크립트에서 잠그지 않습니다.
 - **Firefox 전용 API**는 `wxt/browser` 타입(Chrome 기준)에 없습니다. 지금은 `browser.commands.openShortcutSettings()` 한 곳이라 `// @ts-ignore`에 이유를 적어 두었습니다. 이런 곳이 늘어나면 그때 타입 선언을 추가합니다.
 
 ## 오버레이와 CSS
 
-- 콘텐츠 스크립트는 `refresher-root` shadow DOM 안에 React 루트(`components/overlay/ContentRoot.tsx`)를 띄웁니다. 루트는 토스트(`Toasts.tsx`), 유저 버블(`UserBubble.tsx`), 메모 창(`MemoDialog.tsx`), 미리보기(`features/preview/ui/PreviewHost.tsx`)를 모아 그리기만 합니다. 디시 CSS와 Radix CSS가 서로 섞이지 않게 하기 위해서입니다. 포털은 `overlay.portal`입니다.
+- 콘텐츠 스크립트는 `refresher-root` shadow DOM 안에 React 루트(`components/overlay/ContentRoot.tsx`)를 띄웁니다. 루트는 토스트(`Toasts.tsx`), 유저 버블(`UserBubble.tsx`), 메모 창(`MemoDialog.tsx`), 미리보기(`features/preview/ui/PreviewHost.tsx`)를 모아 그리기만 합니다. 디시 CSS와 오버레이 CSS(Tailwind)가 서로 섞이지 않게 하기 위해서입니다. 포털은 `overlay.portal`이고, 포털을 쓰는 shadcn 부품(`components/ui`의 dialog·popover·select·tooltip)이 기본값으로 씁니다.
 - 오버레이는 그릴 것이 처음 생길 때 띄웁니다. UI를 그리는 스토어가 그 조건을 `needOverlayWhen(store, (state) => …)`로 등록합니다(`components/overlay/demands.ts`). 새 오버레이 UI는 자기 스토어의 조건에 상태를 더하면 됩니다(미리보기 UI는 `previewStore.ts`, 토스트·버블·메모는 `stores/ui.ts` 끝).
-- 디시 페이지 자체를 바꾸는 CSS는 기능 폴더의 `page.scss`에 둡니다. `modules/feature-styles.ts`가 모아 `.wxt/page-styles.scss`를 만들고 `entrypoints/page.content.scss`가 불러옵니다. 여러 모듈이 같이 쓰는 가림 규칙(차단·깡계)만 `assets/styles/content.scss`에 있습니다. dev 중에 `page.scss`를 새로 만들었으면 dev를 다시 띄웁니다.
-- 오버레이 안의 CSS는 공용 배치·토스트·버블이 `assets/styles/overlay.scss`, 기능의 것은 그 폴더의 `overlay.scss`입니다(`components/overlay/feature-styles.ts`가 모두 불러옵니다).
-- 페이지·오버레이·옵션은 서로 다른 문서라 같은 규칙(차단 흐림, 스텔스 디시콘 가림, 접기 애니메이션)을 `assets/styles/_mixins.scss`의 mixin으로 맞춥니다. 옵션·팝업의 바탕과 Radix 기본값 덮기는 `_radix.scss`에 있습니다.
-- 콘텐츠 스크립트는 `cssInjectionMode: "ui"`라서 불러오는 CSS(`radix-themes.css`, `overlay.scss`)가 오버레이를 처음 띄울 때 shadow에만 들어갑니다(WXT가 `:root`를 `:host`로 바꿈). 디시 페이지에 입히는 CSS(공용 `content.scss`와 기능별 `page.scss`)는 `entrypoints/page.content.scss`로 따로 빌드되고, `wxt.config.ts`의 `manifest.content_scripts`가 콘텐츠 스크립트와 같은 주소(`core/pages.ts`의 `CONTENT_MATCHES`)에 넣습니다. 페이지용 CSS를 콘텐츠 스크립트에서 import하면 페이지가 아니라 오버레이에 들어갑니다.
-- Radix CSS는 통째로 넣으면 엔트리마다 600KB라, 빌드 때 WXT 로컬 모듈 `modules/slim-radix-css.ts`가 엔트리(옵션·팝업·오버레이)마다 쓰지 않는 규칙을 뺍니다. 손으로 적는 목록은 없습니다. 그 엔트리에서 닿는 JS 청크에 든 `rt-*` 클래스 리터럴(트리 셰이킹으로 쓰는 컴포넌트 것만 남습니다)을 모아, 거기 없는 클래스의 규칙과 소스에서 쓰지 않는 반응형 접두어(`md:` 등)·`variant` 값·색 스케일·`@font-face`를 뺍니다. 새 Radix 컴포넌트나 반응형 prop을 쓰면 그대로 들어갑니다. 팝업은 옵션과 같은 CSS 파일을 import하면 Vite가 둘이 같이 쓰는 CSS 하나로 묶어 버리므로 `radix-themes-popup.css`를 따로 둡니다. 개발 서버(옵션·팝업 HMR)에서는 이 모듈이 돌지 않아 CSS가 통째로 들어갑니다.
-- 다크모드는 Radix 문서 방식대로 `Theme`에 `appearance`를 넘기지 않고 조상의 `light`/`dark` 클래스로 바꿉니다(`utils/appearance.ts`). 옵션·팝업은 시스템 설정을, 오버레이는 디시 다크모드를 오버레이 최상위 요소(shadow 안의 컨테이너)에 옮깁니다. 스크롤바·폼 컨트롤도 따라가도록 같은 요소에 `color-scheme`을 같이 정합니다.
-- `radix-themes.css`는 색 파일을 `base.css`보다 먼저 불러옵니다. 순서가 바뀌면 gray가 slate가 아닌 순수 회색이 됩니다.
+- 디시 페이지 자체를 바꾸는 CSS는 기능 폴더의 `page.css`에 둡니다. `modules/feature-styles.ts`가 모아 `.wxt/page-styles.css`를 만들고 `entrypoints/page.content.css`가 불러옵니다. 여러 모듈이 같이 쓰는 가림 규칙(차단·깡계)만 `assets/styles/content.css`에 있습니다. dev 중에 `page.css`를 새로 만들었으면 dev를 다시 띄웁니다.
+- 오버레이 안의 CSS는 공용 배치·토스트·버블이 `assets/styles/overlay.css`, 기능의 것은 그 폴더의 `overlay.css`입니다(`components/overlay/feature-styles.ts`가 모두 불러옵니다).
+- 페이지·오버레이는 서로 다른 문서라 같은 규칙(차단 흐림, 스텔스 디시콘 가림)을 `assets/styles/shared.css`의 Tailwind 유틸리티(`@utility`)로 맞춥니다. 쓰는 CSS가 `@reference`로 가져와 `@apply`합니다. `@reference`는 아무것도 출력하지 않아 디시 페이지 CSS에 Tailwind 유틸리티가 섞이지 않습니다. 부모 선택자 목록에 중첩하면 `:is()`로 감싸져 명시도가 달라지므로, 명시도가 중요한 곳은 규칙을 나눠 씁니다.
+- 우리가 그리는 UI는 Tailwind 클래스로 꾸밉니다. CSS 파일에 남는 것은 디시 HTML(미리보기 본문·댓글의 `.refresher-html`, 디시 페이지)처럼 클래스를 달 수 없는 곳의 규칙뿐입니다. Tailwind는 소스에 적힌 클래스 이름만 만들므로 클래스 이름을 이어 붙여 만들지 않습니다.
+- 오버레이에는 Tailwind 리셋(preflight)이 들어갑니다. 디시 본문·댓글 HTML(`.refresher-html`)만은 `tailwind.css`가 base 레이어 안에서 `all: revert-layer`로 리셋을 되돌려 브라우저 기본 모양을 씁니다.
+- shadow DOM 안의 `@property`는 브라우저가 무시하지만, WXT `createShadowRootUi`가 `@property`·`@font-face`를 디시 페이지 문서로 옮겨 줍니다.
+- 콘텐츠 스크립트는 `cssInjectionMode: "ui"`라서 불러오는 CSS(`tailwind.css`, `overlay.css`)가 오버레이를 처음 띄울 때 shadow에만 들어갑니다(WXT가 `:root`를 `:host`로 바꿈). 디시 페이지에 입히는 CSS(공용 `content.css`와 기능별 `page.css`)는 `entrypoints/page.content.css`로 따로 빌드되고, `wxt.config.ts`의 `manifest.content_scripts`가 콘텐츠 스크립트와 같은 주소(`core/pages.ts`의 `CONTENT_MATCHES`)에 넣습니다. 페이지용 CSS를 콘텐츠 스크립트에서 import하면 페이지가 아니라 오버레이에 들어갑니다.
+- 다크모드는 조상의 `dark` 클래스로 바꿉니다(`utils/appearance.ts`, Tailwind `dark:`와 `tailwind.css`의 `.dark` 토큰). 옵션·팝업은 시스템 설정을, 오버레이는 디시 다크모드를 오버레이 최상위 요소(shadow 안의 컨테이너)에 옮깁니다. 스크롤바·폼 컨트롤도 따라가도록 같은 요소에 `color-scheme`을 같이 정합니다.
 - 설정값을 오버레이 CSS에 넘길 때는 `<html>`에 CSS 변수를 둡니다. 커스텀 속성은 shadow 경계를 넘어 상속됩니다(폰트 교체의 `--refresher-preview-font-size`가 예).
+
+## UI 부품
+
+- 화면은 Preact로 그리지만 코드는 `react`에서 import합니다(`@preact/preset-vite`가 `preact/compat`으로 바꿉니다). Preact는 상태 변경을 다음 마이크로태스크에 그리므로, 누른 직후 새 창이 바로 DOM에 있다고 기대하지 않습니다(E2E는 `getByRole("dialog")` 안에서 찾습니다).
+- 부품은 shadcn(`components/ui`, Base UI·base-nova 스타일)입니다. 손으로 만들지 않고 `npx shadcn@latest add <이름>`으로 추가합니다. shadcn CLI가 상속된 `.wxt/tsconfig.json`의 경로를 잘못 풀어 루트 `tsconfig.json`에 `@/*` 경로를 다시 적어 두었습니다. `tailwind.css`는 `shadcn/tailwind.css`(Base UI 데이터 속성용 variant)를 불러와야 합니다.
+- `components/ui`에서 우리가 고친 곳: 포털을 쓰는 부품(dialog·popover·select·tooltip)은 `container={overlay.portal}`로 오버레이 안에 그리고, slider는 손잡이에 이름을 달 `thumbProps`를 받습니다. 부품을 다시 받을 때(`--overwrite`) 이 부분을 다시 넣습니다.
+- 다이얼로그는 `components/dialogs.tsx`의 `ModalDialog`(열 때만 마운트), `ConfirmDialog`, `Notice`, `DialogActions`, `SubmitForm`을 씁니다. `onClose`는 닫힘 애니메이션이 끝나 포커스가 돌아간 뒤에 불립니다. 일을 마친 창이 스스로 닫을 때는 `actionsRef.current.close()`를 씁니다.
+- 포커스: 트리거 없이 여는 창(다이얼로그·버블)은 `useReturnFocus`(`components/useReturnFocus.ts`)가 연 요소를 기억했다가 돌려줍니다. Base UI는 트리거가 없거나 부모가 언마운트해 닫으면 돌려주지 않기 때문입니다. 오버레이(shadow DOM) 안에서는 Base UI의 포커스 가두기가 끝을 알아보지 못해 `ModalDialog`가 Tab을 직접 돌립니다.
+- 툴팁은 `components/WithTooltip.tsx`를 씁니다. 수천 줄을 그리는 목록(차단 목록 줄·댓글)에는 브라우저 기본(`title`)을 씁니다.
+- 단축키는 `utils/event.ts`의 `isTyping`이 모달 다이얼로그 배경(`[data-slot=dialog-overlay]`)이 떠 있으면 막습니다. 배경을 바꾸면 이 선택자도 맞춥니다.
 
 ## 미리보기
 

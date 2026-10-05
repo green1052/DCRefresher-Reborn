@@ -1,9 +1,13 @@
 import {CloudDownload, CloudUpload, Download, RefreshCw, Trash2, Upload} from "lucide-react";
-import {Box, Button, Dialog, Flex, SegmentedControl, Switch, Text} from "@radix-ui/themes";
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useId, useRef, useState} from "react";
 
-import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
-import {focusPanel} from "@/components/useOpenerFocus";
+import {ConfirmDialog, DialogActions} from "@/components/dialogs";
+import {Button} from "@/components/ui/button";
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "@/components/ui/dialog";
+import {Field, FieldLabel} from "@/components/ui/field";
+import {Switch} from "@/components/ui/switch";
+import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
+import {focusPanel} from "@/components/useReturnFocus";
 import {type BackupSlot, CLOUD_QUOTA, type CloudBackupStatus, collectLocalData, readBackupTargets, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
 import {mergeBackup, parseImport, writeSettings} from "@/core/settings-transfer";
@@ -35,6 +39,7 @@ export function DataTab() {
     const [autoConfirm, setAutoConfirm] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
     const restoreRef = useRef<HTMLButtonElement>(null);
+    const id = useId();
 
     useEffect(() => {
         // 클라우드 메타에서 읽어 자동 백업(백그라운드)과 다른 기기의 백업도 반영한다.
@@ -131,11 +136,11 @@ export function DataTab() {
         }, "초기화하지 못했습니다.");
 
     return (
-        <Box>
+        <div>
             <Section title="IP/밴 데이터베이스" desc={`버전: ${version.trim() || "없음"} · 마지막 확인: ${formatTime(lastUpdate)}`}
                      actions={
-                         <Button variant="soft" disabled={loading} onClick={() => void forceUpdate()}>
-                             <RefreshCw size={14}/> 지금 갱신
+                         <Button variant="secondary" disabled={loading} onClick={() => void forceUpdate()}>
+                             <RefreshCw data-icon="inline-start"/> 지금 갱신
                          </Button>
                      }/>
 
@@ -143,93 +148,84 @@ export function DataTab() {
                 title="클라우드 백업"
                 desc="브라우저 동기화 저장소(최대 100KB)에 설정을 압축해 백업합니다. 수동 백업과 자동 백업은 따로 저장됩니다."
                 actions={
-                    <Text as="label" size="2">
-                        <Flex gap="2" align="center">
-                            {/* 자동 칸은 기기끼리 같이 쓰고 켜는 즉시 이 기기 설정으로 덮인다. 새 기기에서 켰다가 복원할 백업을 잃지 않게 먼저 묻는다. */}
-                            <Switch checked={autoBackup} disabled={loading}
-                                    onCheckedChange={(on) => (on && cloud.auto ? setAutoConfirm(true) : void toggleAutoBackup(on))}/>
-                            자동 백업
-                        </Flex>
-                    </Text>
+                    <Field orientation="horizontal">
+                        {/* 자동 칸은 기기끼리 같이 쓰고 켜는 즉시 이 기기 설정으로 덮인다. 새 기기에서 켰다가 복원할 백업을 잃지 않게 먼저 묻는다. */}
+                        <Switch id={`${id}-auto`} checked={autoBackup} disabled={loading}
+                                onCheckedChange={(on) => (on && cloud.auto ? setAutoConfirm(true) : void toggleAutoBackup(on))}/>
+                        <FieldLabel htmlFor={`${id}-auto`}>자동 백업</FieldLabel>
+                    </Field>
                 }
             >
-                <Text as="p" size="2" color="gray">
+                <p className="text-muted-foreground">
                     수동 백업: {formatTime(cloud.manual?.createdAt ?? 0)} · 자동 백업: {formatTime(cloud.auto?.createdAt ?? 0)}
-                </Text>
+                </p>
                 {/* 한도를 넘으면 백업이 실패하므로 가까워진 것을 미리 보인다. 수동·자동 두 칸이 한도를 나눠 쓴다. */}
-                <Text as="p" size="2" color={cloud.used > CLOUD_QUOTA * 0.8 ? "orange" : "gray"} mb="3">
+                <p className={cloud.used > CLOUD_QUOTA * 0.8 ? "mb-3 text-amber-600 dark:text-amber-400" : "mb-3 text-muted-foreground"}>
                     클라우드 사용량: {kilobytes(cloud.used)} / {kilobytes(CLOUD_QUOTA)}
                     {(cloud.manual || cloud.auto) && ` (수동 ${kilobytes(cloud.manual?.size ?? 0)} · 자동 ${kilobytes(cloud.auto?.size ?? 0)})`}
-                </Text>
-                {/* 복원 버튼을 Dialog.Trigger로 둬야 닫을 때 Radix가 그 버튼으로 포커스를 돌려준다. */}
-                <Dialog.Root open={restoreOpen} onOpenChange={setRestoreOpen}>
-                    <Flex gap="2" wrap="wrap">
-                        <Button variant="soft" disabled={loading} onClick={() => void backupCloud()}>
-                            <CloudUpload size={14}/> 백업
+                </p>
+                {/* 복원 버튼을 Trigger로 둬야 닫을 때 그 버튼으로 포커스가 돌아온다. */}
+                <Dialog open={restoreOpen} onOpenChange={setRestoreOpen}>
+                    <div className="flex flex-wrap gap-2">
+                        <Button variant="secondary" disabled={loading} onClick={() => void backupCloud()}>
+                            <CloudUpload data-icon="inline-start"/> 백업
                         </Button>
-                        <Dialog.Trigger>
-                            <Button ref={restoreRef} variant="soft" disabled={loading}>
-                                <CloudDownload size={14}/> 복원
-                            </Button>
-                        </Dialog.Trigger>
-                    </Flex>
+                        <DialogTrigger render={<Button ref={restoreRef} variant="secondary" disabled={loading}/>}>
+                            <CloudDownload data-icon="inline-start"/> 복원
+                        </DialogTrigger>
+                    </div>
 
-                    <Dialog.Content maxWidth="420px" onCloseAutoFocus={(ev) => {
-                        // 복원 중에는 복원 버튼이 막혀 Radix가 포커스를 돌려주지 못하므로 가까운 조상(탭 패널)으로 돌린다.
-                        if (!restoreRef.current?.disabled) return;
-                        ev.preventDefault();
-                        focusPanel(restoreRef.current);
-                    }}>
-                        <Dialog.Title>어느 백업으로 복원할까요?</Dialog.Title>
-                        <SegmentedControl.Root value={restoreMode} onValueChange={(value) => arrayIncludes(objectKeys(RESTORE_DESCRIPTIONS), value) && setRestoreMode(value)} mb="3">
-                            <SegmentedControl.Item value="replace">덮어쓰기</SegmentedControl.Item>
-                            <SegmentedControl.Item value="merge">합치기</SegmentedControl.Item>
-                        </SegmentedControl.Root>
-                        <Dialog.Description size="2" mb="3">{RESTORE_DESCRIPTIONS[restoreMode]}</Dialog.Description>
-                        <Flex direction="column" gap="2">
+                    {/* 복원 중에는 복원 버튼이 막혀 포커스를 돌려줄 수 없으므로 가까운 조상(탭 패널)으로 돌린다. */}
+                    <DialogContent showCloseButton={false} className="sm:max-w-[420px]"
+                                   finalFocus={() => (restoreRef.current?.disabled ? restoreRef.current.parentElement?.closest<HTMLElement>("[tabindex]") ?? true : true)}>
+                        <DialogHeader>
+                            <DialogTitle>어느 백업으로 복원할까요?</DialogTitle>
+                        </DialogHeader>
+                        <ToggleGroup variant="outline" spacing={0} value={[restoreMode]}
+                                     onValueChange={([value]) => arrayIncludes(objectKeys(RESTORE_DESCRIPTIONS), value) && setRestoreMode(value)}>
+                            <ToggleGroupItem value="replace">덮어쓰기</ToggleGroupItem>
+                            <ToggleGroupItem value="merge">합치기</ToggleGroupItem>
+                        </ToggleGroup>
+                        <DialogDescription>{RESTORE_DESCRIPTIONS[restoreMode]}</DialogDescription>
+                        <div className="flex flex-col gap-2">
                             {([
                                 ["manual", "수동 백업", cloud.manual ? formatTime(cloud.manual.createdAt) : undefined],
                                 ["auto", "자동 백업", cloud.auto ? formatTime(cloud.auto.createdAt) : undefined]
                             ] as const).map(([slot, label, time]) => (
-                                <Button key={slot} variant="soft" size="3" disabled={!time} onClick={() => void recoverCloud(slot, restoreMode)}
-                                        style={{justifyContent: "space-between"}}>
+                                <Button key={slot} variant="secondary" size="lg" className="justify-between" disabled={!time}
+                                        onClick={() => void recoverCloud(slot, restoreMode)}>
                                     {label}
-                                    <Text size="2" color="gray">{time ?? "없음"}</Text>
+                                    <span className="text-muted-foreground">{time ?? "없음"}</span>
                                 </Button>
                             ))}
-                        </Flex>
+                        </div>
                         <DialogActions/>
-                    </Dialog.Content>
-                </Dialog.Root>
+                    </DialogContent>
+                </Dialog>
                 {autoBackup && (
-                    <Text as="p" size="1" color="gray" mt="2">설정이 바뀌면 1분 뒤에 자동으로 백업합니다.</Text>
+                    <p className="mt-2 text-xs text-muted-foreground">설정이 바뀌면 1분 뒤에 자동으로 백업합니다.</p>
                 )}
                 {backupError && (
-                    <Text as="p" size="1" color="red" mt="2">마지막 백업 실패: {backupError}</Text>
+                    <p className="mt-2 text-xs text-destructive">마지막 백업 실패: {backupError}</p>
                 )}
             </Section>
 
             <Section title="내보내기 / 가져오기"
                      desc="IP/밴 데이터베이스와 캐시를 뺀 모든 설정을 JSON으로 옮깁니다. 가져오기는 JSON에 든 설정과 목록만 바꾸고, JSON에 없는 것은 그대로 둡니다.">
-                <Flex gap="2" wrap="wrap">
-                    <Button variant="soft" disabled={loading} onClick={() => void exportData()}>
-                        <Download size={14}/> 클립보드로 내보내기
+                <div className="flex flex-wrap gap-2">
+                    <Button variant="secondary" disabled={loading} onClick={() => void exportData()}>
+                        <Download data-icon="inline-start"/> 클립보드로 내보내기
                     </Button>
-                    <Button variant="soft" disabled={loading} onClick={() => setImportOpen(true)}>
-                        <Upload size={14}/> 가져오기
+                    <Button variant="secondary" disabled={loading} onClick={() => setImportOpen(true)}>
+                        <Upload data-icon="inline-start"/> 가져오기
                     </Button>
-                </Flex>
+                </div>
             </Section>
 
             <Section title="초기화" desc="모든 설정과 차단/메모 데이터를 삭제합니다. 되돌릴 수 없습니다."
                      actions={
-                         <Button
-                             variant="soft"
-                             color="red"
-                             disabled={loading}
-                             onClick={() => setResetConfirm(true)}
-                         >
-                             <Trash2 size={14}/> 데이터 초기화
+                         <Button variant="destructive" disabled={loading} onClick={() => setResetConfirm(true)}>
+                             <Trash2 data-icon="inline-start"/> 데이터 초기화
                          </Button>
                      }/>
 
@@ -264,6 +260,6 @@ export function DataTab() {
                               desc="내보낸 JSON 데이터를 붙여 넣어 주세요. JSON에 든 설정과 목록만 바꾸고 나머지는 그대로 둡니다. 들어 있는 차단/메모 목록은 합치지 않고 통째로 바꿉니다. 기본 차단 모드는 이 기기 것을 남깁니다. 합치려면 차단/메모 탭의 가져오기를 써 주세요."
                               onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
             )}
-        </Box>
+        </div>
     );
 }

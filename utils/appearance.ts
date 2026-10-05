@@ -1,7 +1,6 @@
 /**
- * Radix Themes는 조상 요소의 light/dark 클래스를 보고 색을 바꾼다 (https://www.radix-ui.com/themes/docs/theme/dark-mode).
- * Theme에 appearance를 넘기지 않고 이 클래스만 바꾼다.
- * Radix의 color-scheme 규칙은 .radix-themes 자신에 클래스가 있을 때만 걸리므로 스크롤바·폼 컨트롤이 어둡도록 여기서 직접 정한다.
+ * Tailwind(shadcn)의 dark: 변형과 토큰은 조상 요소의 dark 클래스를 보고 색을 바꾼다 (assets/styles/tailwind.css).
+ * 스크롤바·폼 컨트롤도 어둡도록 color-scheme도 여기서 정한다.
  */
 const setAppearance = (root: HTMLElement, dark: boolean): void => {
     root.classList.toggle("dark", dark);

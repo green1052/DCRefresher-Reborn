@@ -14,7 +14,7 @@ import meta, {type Ctx, REVEAL_TOGGLE} from "./meta";
 const plainText = (element: Element | null | undefined): string =>
     element ? Array.from(element.childNodes, (node) => (node.nodeName === "SCRIPT" ? "" : node.textContent)).join("").trim() : "";
 
-/** 블러 강도·마우스 오버 보기는 <html>의 변수·클래스로만 건다 (content.scss). 행마다 JS를 붙이지 않아도 새로 그려진 행에 그대로 먹는다. */
+/** 블러 강도·마우스 오버 보기는 <html>의 변수·클래스로만 건다 (content.css). 행마다 JS를 붙이지 않아도 새로 그려진 행에 그대로 먹는다. */
 const applyBlurStyle = (ctx: Ctx): void => {
     const root = document.documentElement;
     root.style.setProperty("--refresher-blur", `${ctx.settings.blurStrength}px`);
@@ -25,7 +25,7 @@ const duplicateOf = (ctx: Ctx): { count: number; minLength: number } | null =>
     ctx.settings.foldDuplicate ? {count: ctx.settings.duplicateCount, minLength: ctx.settings.duplicateMinLength} : null;
 
 /**
- * 이 페이지에서만 차단 내용 보기. 저장하지 않아 새로고침하면 다시 가린다. 보이는 방식은 <html>의 클래스로 정한다 (content.scss).
+ * 이 페이지에서만 차단 내용 보기. 저장하지 않아 새로고침하면 다시 가린다. 보이는 방식은 <html>의 클래스로 정한다 (content.css).
  * 상태도 그 클래스 하나뿐이다. 확장이 업데이트되어 다시 주입된 인스턴스도 같은 상태를 읽는다.
  */
 const REVEAL_CLASS = "refresherBlockReveal";
@@ -35,7 +35,7 @@ const isRevealed = (): boolean => document.documentElement.classList.contains(RE
 const HIDDEN_CLASSES = ["refresherBlocked", "refresherBlur", "refresherDuplicate"];
 /** 이 모듈이 가린 요소. */
 const HIDDEN_SELECTOR = HIDDEN_CLASSES.map((name) => `.${name}`).join(", ");
-/** '가린 내용 보기'가 보이는 요소. userinfo의 깡계 흐림·숨김도 같이 보인다 (content.scss). */
+/** '가린 내용 보기'가 보이는 요소. userinfo의 깡계 흐림·숨김도 같이 보인다 (content.css). */
 const REVEALED_SELECTOR = `${HIDDEN_ROW_SELECTOR}, .refresherDuplicate`;
 
 /** 미리보기도 페이지와 같은 방식으로 가리게 알린다. */
@@ -65,7 +65,7 @@ interface BlockApi {
 const WRITER_TYPES: BlockType[] = ["NICK", "ID", "IP", "TITLE", "TAB", "COMMENT"];
 
 const setupFilters = (ctx: Ctx, gallery: string | undefined): (() => void) => {
-    // 숨김도 클래스로만 건다 (content.scss). 풀 때 디시가 건 인라인 display를 건드리지 않는다.
+    // 숨김도 클래스로만 건다 (content.css). 풀 때 디시가 건 인라인 display를 건드리지 않는다.
     const hide = (element: HTMLElement): void => element.classList.add(ctx.settings.blur ? "refresherBlur" : "refresherBlocked");
 
     const hideWithReply = (target: HTMLElement): void => {

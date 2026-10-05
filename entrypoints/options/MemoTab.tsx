@@ -1,11 +1,13 @@
-import {Badge, Box, Button, Code, Dialog, Flex, Text, TextField} from "@radix-ui/themes";
 import {ClipboardCopy, Smartphone} from "lucide-react";
-import {useMemo, useState} from "react";
+import {useId, useMemo, useState} from "react";
 
-import {DialogActions, SubmitForm} from "@/components/ConfirmDialog";
 import {ColorInput} from "@/components/ColorInput";
-import {RefresherSelect} from "@/components/RefresherSelect";
-import {ModalDialog} from "@/components/ModalDialog";
+import {DialogActions, ModalDialog, SubmitForm} from "@/components/dialogs";
+import {Badge} from "@/components/ui/badge";
+import {Button} from "@/components/ui/button";
+import {DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {Field, FieldError, FieldGroup, FieldLabel} from "@/components/ui/field";
+import {Input} from "@/components/ui/input";
 import {MEMO_TYPE_NAMES, MEMO_TYPES} from "@/core/storage/items";
 import {memoUsageKey} from "@/core/usage";
 import type {MemoType} from "@/core/storage/types";
@@ -17,6 +19,7 @@ import {formatAppMemos, parseAppMemos} from "./appMemo";
 import {ImportDialog, useUsage} from "./Layout";
 import {ListRow, ListTabs} from "./ListTabs";
 import {notify} from "./optionsStore";
+import {RefresherSelect} from "./RefresherSelect";
 
 interface MemoFormState {
     type: MemoType;
@@ -38,6 +41,7 @@ const MemoFormDialog = ({
 }) => {
     const [state, setState] = useState<MemoFormState>(initial);
     const [error, setError] = useState("");
+    const id = useId();
 
     const editing = Boolean(initial.user);
 
@@ -68,15 +72,16 @@ const MemoFormDialog = ({
     };
 
     return (
-        <ModalDialog onClose={onClose} maxWidth="480px" aria-describedby={undefined}>
-            <Dialog.Title>메모 {editing ? "수정" : "추가"}</Dialog.Title>
+        // 입력칸이 autoFocus로 포커스를 잡는다 (추가는 대상, 수정은 메모).
+        <ModalDialog onClose={onClose} focusOnOpen="none" className="sm:max-w-[480px]">
+            <DialogHeader>
+                <DialogTitle>메모 {editing ? "수정" : "추가"}</DialogTitle>
+            </DialogHeader>
 
-            <SubmitForm onSubmit={submit}>
-                <Flex direction="column" gap="3" mt="3">
-                    <Flex justify="between" align="center">
-                        <Text size="2" color="gray">
-                            종류
-                        </Text>
+            <SubmitForm onSubmit={submit} className="flex flex-col gap-4">
+                <FieldGroup>
+                    <Field orientation="horizontal" className="justify-between">
+                        <FieldLabel>종류</FieldLabel>
                         <RefresherSelect
                             value={state.type}
                             disabled={editing}
@@ -84,13 +89,12 @@ const MemoFormDialog = ({
                             onChange={(type) => setState((prev) => ({...prev, type}))}
                             options={MEMO_TYPE_NAMES}
                         />
-                    </Flex>
+                    </Field>
 
-                    <label>
-                        <Text as="div" size="2" color="gray" mb="1">
-                            대상
-                        </Text>
-                        <TextField.Root
+                    <Field>
+                        <FieldLabel htmlFor={`${id}-user`}>대상</FieldLabel>
+                        <Input
+                            id={`${id}-user`}
                             placeholder="아이디, 닉네임 또는 IP"
                             value={state.user}
                             disabled={editing}
@@ -99,55 +103,46 @@ const MemoFormDialog = ({
                             // 입력 중에 trim하면 닉네임 가운데 공백을 칠 수 없으므로 저장할 때 trim한다.
                             onChange={(ev) => setState((prev) => ({...prev, user: ev.target.value}))}
                         />
-                    </label>
+                    </Field>
 
-                    <label>
-                        <Text as="div" size="2" color="gray" mb="1">
-                            메모
-                        </Text>
-                        <TextField.Root
+                    <Field>
+                        <FieldLabel htmlFor={`${id}-text`}>메모</FieldLabel>
+                        <Input
+                            id={`${id}-text`}
                             maxLength={160}
                             placeholder="메모를 입력해 주세요 (160자 제한)"
                             value={state.text}
                             onChange={(ev) => setState((prev) => ({...prev, text: ev.target.value}))}
                             autoFocus={editing}
                         />
-                    </label>
+                    </Field>
 
-                    <label>
-                        <Text as="div" size="2" color="gray" mb="1">
-                            갤러리
-                        </Text>
-                        <TextField.Root
+                    <Field>
+                        <FieldLabel htmlFor={`${id}-gallery`}>갤러리</FieldLabel>
+                        <Input
+                            id={`${id}-gallery`}
                             placeholder="갤러리 ID (비우면 모든 갤러리)"
                             value={state.gallery}
                             onChange={(ev) => setState((prev) => ({...prev, gallery: ev.target.value.trim()}))}
                         />
-                    </label>
+                    </Field>
 
-                    <Flex justify="between" align="center">
-                        <Text size="2" color="gray">
-                            색상
-                        </Text>
-                        <Flex gap="2" align="center">
+                    <Field orientation="horizontal" className="justify-between">
+                        <FieldLabel>색상</FieldLabel>
+                        <div className="flex items-center gap-2">
                             <ColorInput
                                 aria-label="메모 색상"
                                 value={state.color}
                                 onChange={(ev) => setState((prev) => ({...prev, color: ev.target.value}))}
                             />
-                            <Button type="button" size="2" variant="soft"
-                                    onClick={() => setState((prev) => ({...prev, color: randomColor()}))}>
+                            <Button type="button" variant="secondary" onClick={() => setState((prev) => ({...prev, color: randomColor()}))}>
                                 랜덤
                             </Button>
-                        </Flex>
-                    </Flex>
+                        </div>
+                    </Field>
 
-                    {error && (
-                        <Text size="2" color="red" role="alert">
-                            {error}
-                        </Text>
-                    )}
-                </Flex>
+                    {error && <FieldError role="alert">{error}</FieldError>}
+                </FieldGroup>
 
                 <DialogActions>
                     <Button type="submit">{editing ? "수정" : "추가"}</Button>
@@ -228,14 +223,14 @@ export function MemoTab() {
                 onAdd={(type) => setForm({type, user: "", text: "", color: randomColor(), gallery: ""})}
                 // 공앱(디시인사이드 모바일 앱) 메모는 한 줄에 하나씩 "아이디-메모" 글이다.
                 toolbar={() => (
-                    <Flex gap="2" wrap="wrap">
-                        <Button size="2" variant="soft" color="gray" onClick={() => setAppImport(true)}>
-                            <Smartphone size={14}/> 공앱 메모 가져오기
+                    <div className="flex flex-wrap gap-2">
+                        <Button variant="secondary" onClick={() => setAppImport(true)}>
+                            <Smartphone data-icon="inline-start"/> 공앱 메모 가져오기
                         </Button>
-                        <Button size="2" variant="soft" color="gray" onClick={() => void copyAppMemos()}>
-                            <ClipboardCopy size={14}/> 공앱 형식으로 복사
+                        <Button variant="secondary" onClick={() => void copyAppMemos()}>
+                            <ClipboardCopy data-icon="inline-start"/> 공앱 형식으로 복사
                         </Button>
-                    </Flex>
+                    </div>
                 )}
                 // 객체 키 순서가 곧 추가 순서다. 숫자로만 된 키는 JS가 앞으로 정렬하는 예외가 있다.
                 items={(type) => Object.entries(memos[type])}
@@ -251,13 +246,13 @@ export function MemoTab() {
                         key={user}
                         head={
                             // 편집 버튼 안에 들어가므로 div 대신 span으로 그린다.
-                            <Flex as="span" align="center" gap="2">
-                                <Box as="span" width="10px" height="10px" flexShrink="0" style={{borderRadius: "50%", background: entry.color}}/>
-                                <Text weight="medium">{user}</Text>
-                                {entry.gallery && <Badge size="1" variant="soft" color="gray">{entry.gallery}</Badge>}
-                            </Flex>
+                            <span className="flex items-center gap-2">
+                                <span className="size-2.5 shrink-0 rounded-full" style={{background: entry.color}}/>
+                                <span className="font-medium">{user}</span>
+                                {entry.gallery && <Badge variant="secondary">{entry.gallery}</Badge>}
+                            </span>
                         }
-                        info={<Text color="gray">{entry.text}</Text>}
+                        info={<span className="text-muted-foreground">{entry.text}</span>}
                         used={used[memoUsageKey(type, user)]}
                         onEdit={() => setForm({type, user, text: entry.text, color: entry.color, gallery: entry.gallery ?? ""})}
                         onRemove={() => void removeMemo(type, user).catch(() => notify(SAVE_FAILED))}
@@ -268,7 +263,7 @@ export function MemoTab() {
             {appImport && (
                 <ImportDialog
                     title="공앱 메모 가져오기"
-                    desc={<>공앱에서 복사한 메모를 붙여 넣어 주세요. 한 줄에 하나씩 <Code>아이디-메모</Code> 형식이고, 아이디 자리가 IP(예: <Code>123.45</Code>)면 IP 메모로 넣습니다.</>}
+                    desc={<>공앱에서 복사한 메모를 붙여 넣어 주세요. 한 줄에 하나씩 <code>아이디-메모</code> 형식이고, 아이디 자리가 IP(예: <code>123.45</code>)면 IP 메모로 넣습니다.</>}
                     placeholder="아이디-메모"
                     onClose={() => setAppImport(false)}
                     onSubmit={importAppMemos}

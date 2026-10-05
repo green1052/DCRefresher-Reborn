@@ -12,20 +12,19 @@ export const cleanUpStaleInstance = (): void => {
 
     stale.remove();
     const {documentElement: html, body} = document;
-    // 미리보기 창은 <html> 스크롤과 뒤 페이지(inert)를, Radix 다이얼로그는 <body> 스크롤·바깥 클릭을 잠근다.
+    // 미리보기 창은 <html> 스크롤과 뒤 페이지(inert)를 잠근다.
     if (html.style.overflow === "hidden") {
         html.style.overflow = "";
         for (const element of body.querySelectorAll<HTMLElement>(":scope > [inert]")) element.inert = false;
     }
-    if (body.style.pointerEvents === "none") body.style.pointerEvents = "";
-    body.removeAttribute("data-scroll-locked");
-    // Radix 모달은 나머지 페이지에 aria-hidden(표시 속성 data-aria-hidden)을 달고 body 앞뒤에 포커스 가드를 넣는다.
-    // 가드는 Radix가 모듈 변수로 추적해 새 인스턴스가 지우지 않는다.
-    for (const element of document.querySelectorAll("[data-aria-hidden]")) {
+    // Base UI 모달은 나머지 페이지에 aria-hidden·inert(표시 속성 data-base-ui-inert)를 달고 포커스 가드를 넣는다.
+    // 이것들은 Base UI가 모듈 변수로 추적해 새 인스턴스가 지우지 않는다.
+    for (const element of document.querySelectorAll("[data-base-ui-inert]")) {
         element.removeAttribute("aria-hidden");
-        element.removeAttribute("data-aria-hidden");
+        element.removeAttribute("inert");
+        element.removeAttribute("data-base-ui-inert");
     }
-    for (const guard of document.querySelectorAll("[data-radix-focus-guard]")) guard.remove();
+    for (const guard of document.querySelectorAll("[data-base-ui-focus-guard]")) guard.remove();
     // 죽은 인스턴스가 미리보기를 열며 바꿔 둔 기록 항목(글 주소·제목)을 목록 항목으로 되돌린다.
     // 그대로 두면 새 미리보기를 닫을 때 그 항목으로 돌아가 옛 글이 다시 열린다.
     // doc이 다르면 미리보기를 연 채 새로고침한 실제 글 페이지이므로 건드리지 않는다.

@@ -45,11 +45,8 @@ test.describe("미리보기", () => {
         await expect(frame.getByText("스레드 1개, 총 댓글 2개")).toBeVisible();
         await expect(listPage.page).toHaveURL(/\/board\/view\/\?id=test&no=3/);
 
-        // 정화: 본문 이미지는 lazy로, 오버레이의 Radix 버튼은 스타일이 붙어 있다.
+        // 정화: 본문 이미지는 lazy로, 오버레이의 버튼은 Tailwind 스타일이 붙어 있다 (shadow 안 CSS).
         await expect(frame.locator(".refresher-preview-contents img")).toHaveAttribute("loading", "lazy");
-        const styled = await frame.locator(".rt-BaseButton").first().evaluate((element) => getComputedStyle(element).cursor === "pointer");
-        expect(styled).toBe(true);
-        // IconButton 크기 규칙은 :not(.rt-variant-ghost)에 묶여 있어 ghost 규칙을 잘못 빼면 같이 빠진다 (modules/slim-radix-css).
         const icon = await frame.getByRole("button", {name: "디시콘"}).boundingBox();
         expect([icon?.width, icon?.height]).toEqual([32, 32]);
 
@@ -381,7 +378,7 @@ test.describe("메모", () => {
 
         const dialog = listPage.overlay().getByRole("dialog");
         await expect(dialog.getByText("메모", {exact: true}).first()).toBeVisible();
-        await dialog.getByRole("textbox").first().fill("테스트 메모");
+        await dialog.getByRole("textbox", {name: "메모"}).fill("테스트 메모");
         // 오버레이(shadow DOM) 안에서도 Tab·Shift+Tab이 창 밖(디시 페이지)으로 나가지 않는다.
         const focusInside = () => dialog.evaluate((element) => element.contains((element.getRootNode() as ShadowRoot).activeElement) && document.activeElement?.tagName === "REFRESHER-ROOT");
         for (const key of ["Tab", "Shift+Tab"]) {
@@ -468,6 +465,6 @@ test.describe("목록·본문이 아닌 페이지", () => {
     test("미리보기가 없는 페이지에서도 오버레이가 뜬다 (임시 차단 안내)", async ({context}) => {
         const page = await context.newPage();
         await page.goto("https://gall.dcinside.com/board/write/?id=test");
-        await expect(page.locator("refresher-root").locator(".refresher-toast")).toContainText("잠시 접속을 막았습니다");
+        await expect(page.locator("refresher-root").locator("[data-slot=toast]")).toContainText("잠시 접속을 막았습니다");
     });
 });

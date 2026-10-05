@@ -135,7 +135,7 @@ export const BLURRED_ROW_SELECTOR = ".refresherBlur, .refresherLowActivityBlur";
 
 /**
  * 확장이 가린 행 (차단 숨김·블러, userinfo의 깡계 숨김·흐림). 같은 댓글 접기는 이 안의 댓글을 세지 않는다.
- * 클래스는 assets/styles/content.scss가 그린다.
+ * 클래스는 assets/styles/content.css가 그린다.
  */
 export const HIDDEN_ROW_SELECTOR = `.refresherBlocked, .refresherLowActivityHide, ${BLURRED_ROW_SELECTOR}`;
 

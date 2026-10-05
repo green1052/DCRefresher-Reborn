@@ -12,7 +12,7 @@ export async function openOptions(page: Page, extensionId: string, tab: OptionsT
     const options = {
         page,
         goto,
-        cards: () => page.locator(".rt-Card"),
+        cards: () => page.locator("[data-slot=card]"),
         /** 모듈 카드 (제목으로 찾는다). */
         card: (name: string) => options.cards().filter({hasText: name})
     };

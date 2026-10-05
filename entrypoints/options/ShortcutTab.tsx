@@ -1,6 +1,8 @@
-import {Button, Flex, Kbd, Separator, Text} from "@radix-ui/themes";
 import {ExternalLink} from "lucide-react";
-import {Fragment, useEffect, useState} from "react";
+import {useEffect, useState} from "react";
+
+import {Button} from "@/components/ui/button";
+import {Kbd} from "@/components/ui/kbd";
 
 import {Section} from "./Layout";
 
@@ -21,7 +23,7 @@ export function ShortcutTab() {
             desc="단축키는 브라우저의 확장 프로그램 단축키 설정에서 변경할 수 있습니다."
             actions={
                 <Button
-                    variant="soft"
+                    variant="secondary"
                     onClick={() =>
                         // Firefox는 tabs.create로 about:addons를 열 수 없어 전용 API(137+)를 쓴다.
                         void (import.meta.env.FIREFOX
@@ -30,22 +32,20 @@ export function ShortcutTab() {
                             : browser.tabs.create({url: "chrome://extensions/shortcuts"}))
                     }
                 >
-                    <ExternalLink size={14}/> 단축키 설정
+                    <ExternalLink data-icon="inline-start"/> 단축키 설정
                 </Button>
             }
         >
-            {shortcuts
-                .filter((shortcut) => shortcut.description)
-                .map((shortcut) => (
-                    <Fragment key={shortcut.name}>
-                        <Separator size="4"/>
-                        <Flex justify="between" align="center" gap="3" py="3">
-                            <Text size="2">{shortcut.description}</Text>
-                            {shortcut.shortcut ? <Kbd>{shortcut.shortcut}</Kbd> :
-                                <Text size="2" color="gray">없음</Text>}
-                        </Flex>
-                    </Fragment>
-                ))}
+            <div className="flex flex-col divide-y">
+                {shortcuts
+                    .filter((shortcut) => shortcut.description)
+                    .map((shortcut) => (
+                        <div key={shortcut.name} className="flex items-center justify-between gap-3 py-3">
+                            <span>{shortcut.description}</span>
+                            {shortcut.shortcut ? <Kbd>{shortcut.shortcut}</Kbd> : <span className="text-muted-foreground">없음</span>}
+                        </div>
+                    ))}
+            </div>
         </Section>
     );
 }

@@ -1,13 +1,13 @@
-import {Button, Card, Flex, IconButton, Text, VisuallyHidden} from "@radix-ui/themes";
 import {CircleAlert, Info, TriangleAlert, X} from "lucide-react";
 import {useEffect, useState} from "react";
 
+import {Button} from "@/components/ui/button";
 import {type ToastData, useUiStore} from "@/stores/ui";
 
 const TOAST_ICONS = {
-    info: <Info size={16} color="var(--accent-11)"/>,
-    warning: <TriangleAlert size={16} color="var(--amber-11)"/>,
-    error: <CircleAlert size={16} color="var(--red-11)"/>
+    info: <Info className="size-4 shrink-0 text-primary"/>,
+    warning: <TriangleAlert className="size-4 shrink-0 text-amber-600 dark:text-amber-400"/>,
+    error: <CircleAlert className="size-4 shrink-0 text-destructive"/>
 };
 
 const ToastItem = ({toast}: { toast: ToastData }) => {
@@ -21,27 +21,25 @@ const ToastItem = ({toast}: { toast: ToastData }) => {
 
     // 읽어 주는 것은 ToastHost의 알림 칸이 맡는다. 여기에도 role을 달면 두 번 읽힌다.
     return (
-        <Card size="2" className="refresher-toast refresher-interactive">
-            <Flex align="center" gap="3">
-                {TOAST_ICONS[toast.type]}
-                <Text size="2" style={{flex: 1}}>{toast.content}</Text>
-                {toast.action && (
-                    <Button size="1" variant="ghost" style={{flexShrink: 0}} onClick={() => {
-                        dismiss();
-                        toast.action?.run();
-                    }}>
-                        {toast.action.label}
-                    </Button>
-                )}
-                <IconButton size="1" variant="ghost" color="gray" aria-label="닫기" onClick={dismiss}>
-                    <X size={14}/>
-                </IconButton>
-            </Flex>
-        </Card>
+        <div data-slot="toast" className="pointer-events-auto flex max-w-[360px] items-center gap-3 rounded-xl bg-popover p-3 text-popover-foreground shadow-lg ring-1 ring-foreground/10 duration-200 animate-in fade-in slide-in-from-bottom-2 motion-reduce:animate-none">
+            {TOAST_ICONS[toast.type]}
+            <span className="flex-1">{toast.content}</span>
+            {toast.action && (
+                <Button size="xs" variant="ghost" className="text-primary" onClick={() => {
+                    dismiss();
+                    toast.action?.run();
+                }}>
+                    {toast.action.label}
+                </Button>
+            )}
+            <Button size="icon-xs" variant="ghost" aria-label="닫기" onClick={dismiss}>
+                <X/>
+            </Button>
+        </div>
     );
 };
 
-/** 화면 아래의 토스트들 (useUiStore.showToast). */
+/** 화면 아래의 토스트들 (useUiStore.showToast). 여러 개가 아래에서 위로 쌓인다. */
 export const ToastHost = () => {
     // 스크린 리더용 알림 칸은 늘 두고 글만 바꾼다. 토스트와 함께 새로 붙는 칸은 읽히지 않을 때가 많다.
     // 오버레이는 첫 토스트와 함께 붙으므로, 칸을 빈 채로 먼저 붙이고 다음 프레임부터 글을 넣어 첫 토스트도 읽히게 한다.
@@ -57,14 +55,14 @@ export const ToastHost = () => {
     const error = spoken?.type === "error";
     return (
         <>
-            <VisuallyHidden role="status">{spoken && !error && <span key={spoken.id}>{spoken.content}</span>}</VisuallyHidden>
-            <VisuallyHidden role="alert">{spoken && error && <span key={spoken.id}>{spoken.content}</span>}</VisuallyHidden>
+            <span className="sr-only" role="status">{spoken && !error && <span key={spoken.id}>{spoken.content}</span>}</span>
+            <span className="sr-only" role="alert">{spoken && error && <span key={spoken.id}>{spoken.content}</span>}</span>
             {toasts.length > 0 && (
-                <div className="refresher-toast-host">
+                // 호스트는 클릭을 통과시키고 토스트만 받는다. 디시 페이지의 최댓값(이미지 확대창)보다 위인 :host 안에서 미리보기 위에 둔다.
+                <div className="pointer-events-none fixed right-4 bottom-4 z-1 flex max-w-[360px] flex-col items-end gap-2">
                     {toasts.map((toast) => <ToastItem key={toast.id} toast={toast}/>)}
                 </div>
             )}
         </>
     );
 };
-

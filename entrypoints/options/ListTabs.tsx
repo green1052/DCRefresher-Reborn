@@ -1,22 +1,28 @@
-import {Badge, Box, Button, Card, Flex, IconButton, Reset, Table, Tabs, Text, TextField, Tooltip} from "@radix-ui/themes";
 import {Download, Plus, Search, Trash2, Upload} from "lucide-react";
 import {type ReactNode, useDeferredValue, useState} from "react";
 
-import {ConfirmDialog} from "@/components/ConfirmDialog";
-import {RefresherSelect} from "@/components/RefresherSelect";
+import {ConfirmDialog} from "@/components/dialogs";
+import {WithTooltip} from "@/components/WithTooltip";
+import {Badge} from "@/components/ui/badge";
+import {Button} from "@/components/ui/button";
+import {Card, CardContent} from "@/components/ui/card";
+import {Empty, EmptyDescription} from "@/components/ui/empty";
+import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group";
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {friendlyMessage, SAVE_FAILED} from "@/utils/error";
 import {isRecord} from "@/utils/record";
 
 import {ImportDialog} from "./Layout";
 import {notify} from "./optionsStore";
+import {RefresherSelect} from "./RefresherSelect";
 
-const Empty = ({children}: { children: ReactNode }) => (
-    <Box py="6">
-        <Text as="p" size="2" color="gray" align="center">
-            {children}
-        </Text>
-    </Box>
+const EmptyList = ({children}: { children: ReactNode }) => (
+    <Empty>
+        <EmptyDescription>{children}</EmptyDescription>
+    </Empty>
 );
+
 
 /** 오래 안 쓴 항목 거르기. 쓰인 시각은 이 기기에서 걸리거나(차단) 보인(메모) 때다. */
 const UNUSED_OPTIONS = {"0": "사용 기록 전체", "30": "30일 넘게 안 쓰임", "90": "90일 넘게 안 쓰임", "180": "180일 넘게 안 쓰임"};
@@ -42,30 +48,28 @@ export const ListRow = ({head, info, used, onEdit, onRemove}: {
     onEdit: () => void;
     onRemove: () => void;
 }) => (
-    <Table.Row align="center" style={{cursor: "pointer"}} onClick={onEdit}>
-        <Table.RowHeaderCell>
+    <TableRow className="cursor-pointer" onClick={onEdit}>
+        <TableHead scope="row" className="font-normal">
             {/* 줄(tr)은 버튼이 될 수 없어 키보드·스크린 리더에는 첫 칸을 편집 버튼으로 알린다.
                 따로 onClick을 달지 않는다. 누르면(Enter/Space 포함) click이 줄로 올라가 편집이 열린다 */}
-            <Reset>
-                <button type="button" title="수정" className="refresher-row-edit">{head}</button>
-            </Reset>
-        </Table.RowHeaderCell>
-        <Table.Cell>{info}</Table.Cell>
-        <Table.Cell>
-            <Text size="2" color="gray" wrap="nowrap">{formatUsed(used)}</Text>
-        </Table.Cell>
-        <Table.Cell justify="end">
-            {/* ghost는 음수 여백으로 칸 밖에 걸쳐 줄 가운데에서 어긋나므로 여백을 없앤다.
-                툴팁은 브라우저 기본(title)을 쓴다. 줄마다 Radix 툴팁을 달면 수천 줄 목록을 열거나 검색할 때마다 느려진다 */}
-            <IconButton variant="ghost" color="red" size="1" aria-label="삭제" title="삭제" style={{margin: 0}}
-                        onClick={(ev) => {
-                            ev.stopPropagation();
-                            onRemove();
-                        }}>
-                <Trash2 size={14}/>
-            </IconButton>
-        </Table.Cell>
-    </Table.Row>
+            <button type="button" title="수정"
+                    className="block w-full cursor-pointer rounded-sm text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+                {head}
+            </button>
+        </TableHead>
+        <TableCell className="whitespace-normal">{info}</TableCell>
+        <TableCell className="text-muted-foreground">{formatUsed(used)}</TableCell>
+        <TableCell className="text-right">
+            {/* 툴팁은 브라우저 기본(title)을 쓴다. 줄마다 툴팁 부품을 달면 수천 줄 목록을 열거나 검색할 때마다 느려진다 */}
+            <Button variant="ghost" size="icon-sm" className="text-destructive" aria-label="삭제" title="삭제"
+                    onClick={(ev) => {
+                        ev.stopPropagation();
+                        onRemove();
+                    }}>
+                <Trash2/>
+            </Button>
+        </TableCell>
+    </TableRow>
 );
 
 /**
@@ -179,100 +183,97 @@ export const ListTabs = <T extends string, I>({
     };
 
     return (
-        <Card size="3">
-            <Tabs.Root defaultValue={types[0]}>
-                <Flex align="end" gap="3">
-                    <Tabs.List style={{flex: 1, flexWrap: "wrap"}}>
-                        {types.map((type) => {
-                            const {total, list} = shown.get(type)!;
-                            return (
-                                <Tabs.Trigger key={type} value={type}>
-                                    {names[type]}
-                                    {total > 0 && (
-                                        <Badge ml="1" size="1" variant="soft" color={filtering ? "blue" : "gray"} radius="full">
-                                            {filtering ? `${list.length}/${total}` : total}
-                                        </Badge>
-                                    )}
-                                </Tabs.Trigger>
-                            );
-                        })}
-                    </Tabs.List>
-                    <Flex gap="3" pb="2">
-                        <Tooltip content="클립보드로 내보내기">
-                            <IconButton variant="ghost" color="gray" aria-label="내보내기" onClick={() => void exportList()}>
-                                <Download size={16}/>
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip content="가져오기">
-                            <IconButton variant="ghost" color="gray" aria-label="가져오기" onClick={() => setImportOpen(true)}>
-                                <Upload size={16}/>
-                            </IconButton>
-                        </Tooltip>
-                    </Flex>
-                </Flex>
+        <Card>
+            <CardContent>
+                <Tabs defaultValue={types[0]}>
+                    <div className="flex items-end gap-3">
+                        <TabsList variant="line" className="h-auto flex-1 flex-wrap justify-start">
+                            {types.map((type) => {
+                                const {total, list} = shown.get(type)!;
+                                return (
+                                    <TabsTrigger key={type} value={type} className="flex-none">
+                                        {names[type]}
+                                        {total > 0 && (
+                                            <Badge variant={filtering ? "default" : "secondary"}>
+                                                {filtering ? `${list.length}/${total}` : total}
+                                            </Badge>
+                                        )}
+                                    </TabsTrigger>
+                                );
+                            })}
+                        </TabsList>
+                        <div className="flex gap-1 pb-1">
+                            <WithTooltip tip="클립보드로 내보내기" trigger={<Button variant="ghost" size="icon" aria-label="내보내기" onClick={() => void exportList()}/>}>
+                                <Download/>
+                            </WithTooltip>
+                            <WithTooltip tip="가져오기" trigger={<Button variant="ghost" size="icon" aria-label="가져오기" onClick={() => setImportOpen(true)}/>}>
+                                <Upload/>
+                            </WithTooltip>
+                        </div>
+                    </div>
 
-                {types.map((type) => {
-                    const {total, list} = shown.get(type)!;
-                    return (
-                        <Tabs.Content key={type} value={type} className="refresher-tab-enter">
-                            <Flex align="center" gap="2" wrap="wrap" pt="4">
-                                <RefresherSelect value={galleryFilter} options={galleryOptions} aria-label="갤러리" onChange={setGallery}/>
-                                <RefresherSelect value={unusedDays} options={UNUSED_OPTIONS} aria-label="마지막 사용" onChange={setUnusedDays}/>
-                                {filtering && list.length > 0 && (
-                                    <Button variant="soft" color="red" onClick={() => setRemoveShownConfirm(type)}>
-                                        <Trash2 size={14}/> 보이는 {list.length}개 삭제
-                                    </Button>
-                                )}
-                            </Flex>
-                            <Flex justify="between" align="center" gap="3" wrap="wrap" py="4">
-                                {toolbar(type)}
-                                <Flex gap="2" ml="auto" wrap="wrap">
-                                    <TextField.Root type="search" placeholder="검색" aria-label={`${label} 검색`} value={query}
-                                                    style={{width: 180}} onChange={(ev) => setQuery(ev.target.value)}>
-                                        <TextField.Slot>
-                                            <Search size={14}/>
-                                        </TextField.Slot>
-                                    </TextField.Root>
-                                    {/* 검색 중에도 걸러진 것만이 아니라 이 종류 전부를 지우므로 확인 문구에 전체 개수를 적는다. */}
-                                    <Tooltip content="전체 삭제">
-                                        <IconButton variant="soft" color="red" aria-label="전체 삭제" disabled={total === 0}
-                                                    onClick={() => setClearConfirm(type)}>
-                                            <Trash2 size={16}/>
-                                        </IconButton>
-                                    </Tooltip>
-                                    <Tooltip content="추가">
-                                        <IconButton aria-label="추가" onClick={() => {
+                    {types.map((type) => {
+                        const {total, list} = shown.get(type)!;
+                        return (
+                            <TabsContent key={type} value={type} className="tab-enter">
+                                <div className="flex flex-wrap items-center gap-2 pt-2">
+                                    <RefresherSelect value={galleryFilter} options={galleryOptions} aria-label="갤러리" onChange={setGallery}/>
+                                    <RefresherSelect value={unusedDays} options={UNUSED_OPTIONS} aria-label="마지막 사용" onChange={setUnusedDays}/>
+                                    {filtering && list.length > 0 && (
+                                        <Button variant="destructive" onClick={() => setRemoveShownConfirm(type)}>
+                                            <Trash2 data-icon="inline-start"/> 보이는 {list.length}개 삭제
+                                        </Button>
+                                    )}
+                                </div>
+                                <div className="flex flex-wrap items-center justify-between gap-3 py-4">
+                                    {toolbar(type)}
+                                    <div className="ml-auto flex flex-wrap gap-2">
+                                        <InputGroup className="w-[180px]">
+                                            <InputGroupAddon>
+                                                <Search/>
+                                            </InputGroupAddon>
+                                            <InputGroupInput type="search" placeholder="검색" aria-label={`${label} 검색`} value={query}
+                                                             onChange={(ev) => setQuery(ev.target.value)}/>
+                                        </InputGroup>
+                                        {/* 검색 중에도 걸러진 것만이 아니라 이 종류 전부를 지우므로 확인 문구에 전체 개수를 적는다. */}
+                                        <WithTooltip tip="전체 삭제" trigger={<Button variant="destructive" size="icon" aria-label="전체 삭제" disabled={total === 0}
+                                                                                   onClick={() => setClearConfirm(type)}/>}>
+                                            <Trash2/>
+                                        </WithTooltip>
+                                        <WithTooltip tip="추가" trigger={<Button size="icon" aria-label="추가" onClick={() => {
                                             // 검색어에 안 맞는 새 항목이 바로 숨어 추가가 안 된 것처럼 보이지 않게 검색어를 비운다.
                                             setQuery("");
                                             onAdd(type);
-                                        }}>
-                                            <Plus size={16}/>
-                                        </IconButton>
-                                    </Tooltip>
-                                </Flex>
-                            </Flex>
+                                        }}/>}>
+                                            <Plus/>
+                                        </WithTooltip>
+                                    </div>
+                                </div>
 
-                            {total === 0 ? (
-                                <Empty>{emptyText(type)}</Empty>
-                            ) : list.length === 0 ? (
-                                <Empty>{needle ? `"${query.trim()}" 검색 결과 없음` : "조건에 맞는 항목 없음"}</Empty>
-                            ) : (
-                                <Table.Root variant="surface">
-                                    <Table.Header>
-                                        <Table.Row>
-                                            <Table.ColumnHeaderCell>{columns[0]}</Table.ColumnHeaderCell>
-                                            <Table.ColumnHeaderCell>{columns[1]}</Table.ColumnHeaderCell>
-                                            <Table.ColumnHeaderCell title="이 기기에서 마지막으로 걸리거나 보인 때">최근 사용</Table.ColumnHeaderCell>
-                                            <Table.ColumnHeaderCell width="48px"/>
-                                        </Table.Row>
-                                    </Table.Header>
-                                    <Table.Body>{list.map((item) => row(type, item))}</Table.Body>
-                                </Table.Root>
-                            )}
-                        </Tabs.Content>
-                    );
-                })}
-            </Tabs.Root>
+                                {total === 0 ? (
+                                    <EmptyList>{emptyText(type)}</EmptyList>
+                                ) : list.length === 0 ? (
+                                    <EmptyList>{needle ? `"${query.trim()}" 검색 결과 없음` : "조건에 맞는 항목 없음"}</EmptyList>
+                                ) : (
+                                    <div className="overflow-hidden rounded-lg border">
+                                        <Table>
+                                            <TableHeader className="bg-muted/50">
+                                                <TableRow>
+                                                    <TableHead>{columns[0]}</TableHead>
+                                                    <TableHead>{columns[1]}</TableHead>
+                                                    <TableHead title="이 기기에서 마지막으로 걸리거나 보인 때">최근 사용</TableHead>
+                                                    <TableHead className="w-12"/>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>{list.map((item) => row(type, item))}</TableBody>
+                                        </Table>
+                                    </div>
+                                )}
+                            </TabsContent>
+                        );
+                    })}
+                </Tabs>
+            </CardContent>
 
             {clearConfirm && (
                 <ConfirmDialog

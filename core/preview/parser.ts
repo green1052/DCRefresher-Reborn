@@ -20,7 +20,7 @@ const restoreImageSources = (dom: Document): void => {
 const NUMBERED_SOURCE = /dcimg\d\.dcinside\.(com|co\.kr)\/viewimage\.php/;
 
 /**
- * 첨부 이미지·동영상에 디시처럼 순서 번호를 단다 (3개 이상일 때만). 번호는 감싼 span의 data-num을 CSS가 띄운다 (overlay.scss).
+ * 첨부 이미지·동영상에 디시처럼 순서 번호를 단다 (3개 이상일 때만). 번호는 감싼 span의 data-num을 CSS가 띄운다 (overlay.css).
  * 디시 글 페이지의 번호 끄기(img_numbering 쿠키가 1이 아님)를 따른다.
  */
 const numberImages = (dom: Document): void => {

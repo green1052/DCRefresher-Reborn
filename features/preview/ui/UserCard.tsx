@@ -1,4 +1,3 @@
-import {Flex, Text} from "@radix-ui/themes";
 import {Fragment, type MouseEvent, type ReactNode, useSyncExternalStore} from "react";
 import {useShallow} from "zustand/react/shallow";
 
@@ -7,13 +6,14 @@ import type {User} from "@/core/preview/types";
 import {useUserMemo} from "@/stores/memos";
 import {type BadgeKey, isFresh, isLowActivity, showsUid, useUiStore} from "@/stores/ui";
 import {useGallogActivity} from "@/components/overlay/gallogActivity";
+import {cn} from "cn";
 
 import {usePreviewStore} from "./previewStore";
 
 /**
  * 작성자 표시. 우클릭하거나 닉네임을 누르면(키보드 포함) 유저 버블을 연다.
  * fetchRatio: 글댓비가 캐시에 없으면 갤로그에서 받는다. 댓글마다 받으면 요청이 너무 많아 글쓴이에게만 켠다.
- * op: 글쓴이가 단 댓글. v5처럼 작성자 칸을 칠한다 (overlay.scss).
+ * op: 글쓴이가 단 댓글. v5처럼 작성자 칸을 파랗게 칠한다. 닉네임만 칩 색으로, 배지(아이디·IP·글댓비·갱차·메모)는 설정한 색 그대로 둔다.
  */
 export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: boolean; op?: boolean }) => {
     // 배지 순서·표시 조건은 페이지와 같게 userinfo 설정을 따른다. 회원은 UID, 유동만 IP 정보를 단다.
@@ -48,34 +48,35 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
         openBubble(ev.clientX, ev.clientY);
     };
 
-    const identityColor = uidColor ? undefined : "gray";
+    // 설정한 색이 없으면 아이디·IP는 회색, IP 정보는 파랑이다.
+    const identityClass = cn("truncate text-xs", !uidColor && "text-muted-foreground");
 
     const badges: Record<BadgeKey, ReactNode> = {
         UID: user.id
-            ? showsUid(view, user.image) && <Text size="1" color={identityColor} style={{color: uidColor}} truncate>({user.id})</Text>
+            ? showsUid(view, user.image) && <span className={identityClass} style={{color: uidColor}}>({user.id})</span>
             : ipInfo && passesIpFilter(ipInfo, view.ipFilter) &&
-            <Text size="1" color={ipColor ? undefined : "blue"} style={{color: ipColor}} title={ipInfo.title} truncate>[{ipInfo.label}]</Text>,
-        MEMO: memo && <Text size="1" style={{color: memo.color || undefined}} title={memo.text} truncate>[{memo.text}]</Text>,
-        RATIO: ratio && <Text size="1" style={{color: ratioColor}} title="글/댓글" truncate>[{ratio.article}/{ratio.comment}]</Text>,
-        PERMBAN: banReasons && banColor && <Text size="1" style={{color: banColor}} title={banReasons} truncate>[{banReasons}]</Text>
+            <span className={cn("truncate text-xs", !ipColor && "text-blue-600 dark:text-blue-400")} style={{color: ipColor}} title={ipInfo.title}>[{ipInfo.label}]</span>,
+        MEMO: memo && <span className="truncate text-xs" style={{color: memo.color || undefined}} title={memo.text}>[{memo.text}]</span>,
+        RATIO: ratio && <span className="truncate text-xs" style={{color: ratioColor}} title="글/댓글">[{ratio.article}/{ratio.comment}]</span>,
+        PERMBAN: banReasons && banColor && <span className="truncate text-xs" style={{color: banColor}} title={banReasons}>[{banReasons}]</span>
     };
 
     return (
-        <Flex align="center" gap="1" minWidth="0" className="refresher-user" data-op={op || undefined} onContextMenu={openMenu} style={{cursor: "context-menu"}}>
-            {/* 버블은 닉네임 바로 아래에 띄운다. 키보드로 열면 버블 안으로 포커스가 옮겨 간다 (components/overlay/UserBubble의 useOpenerFocus). */}
-            <Text asChild size="2" weight="bold" truncate>
-                <button type="button" className="refresher-text-button" aria-haspopup="dialog"
-                        onClick={(ev) => {
-                            const rect = ev.currentTarget.getBoundingClientRect();
-                            openBubble(rect.left, rect.bottom);
-                        }}>
-                    {user.nick ?? user.id ?? user.ip}
-                </button>
-            </Text>
+        <div className={cn("refresher-user flex min-w-0 cursor-context-menu items-center gap-1", op && "rounded-md bg-primary/15 px-1.5 py-px text-primary")}
+             onContextMenu={openMenu}>
+            {/* 버블은 닉네임 바로 아래에 띄운다. 키보드로 열면 버블 안으로 포커스가 옮겨 간다 (components/overlay/UserBubble의 useReturnFocus). */}
+            <button type="button" aria-haspopup="dialog"
+                    className="cursor-pointer truncate rounded-sm text-sm font-bold outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                    onClick={(ev) => {
+                        const rect = ev.currentTarget.getBoundingClientRect();
+                        openBubble(rect.left, rect.bottom);
+                    }}>
+                {user.nick ?? user.id ?? user.ip}
+            </button>
             {user.image && <img src={user.image} alt="" height={12}/>}
             {/* 유동 IP는 디시가 닉 옆에 바로 보여 주는 값이라 배지 순서와 상관없이 여기 둔다. */}
-            {user.ip && <Text size="1" color={identityColor} style={{color: uidColor}} truncate>({user.ip})</Text>}
+            {user.ip && <span className={identityClass} style={{color: uidColor}}>({user.ip})</span>}
             {view.order.map((key) => <Fragment key={key}>{badges[key]}</Fragment>)}
-        </Flex>
+        </div>
     );
 };

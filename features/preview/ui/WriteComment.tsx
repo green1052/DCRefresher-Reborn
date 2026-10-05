@@ -1,9 +1,12 @@
-import {Box, Flex, IconButton, Link, Text, TextArea, TextField, Tooltip} from "@radix-ui/themes";
 import {isTimeoutError} from "ky";
 import {Send, Smile, Type, X} from "lucide-react";
 import {useLayoutEffect, useRef, useState} from "react";
 
-import {overlay} from "@/components/overlay/shadow";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Spinner} from "@/components/ui/spinner";
+import {Textarea} from "@/components/ui/textarea";
+import {WithTooltip} from "@/components/WithTooltip";
 import {captchaImage, normalizeTxtcon, TXTCON_BACKGROUNDS, TXTCON_COLORS} from "@/core/preview/request";
 import {postKey} from "@/core/preview/cache";
 import type {DcinsideDccon} from "@/core/preview/types";
@@ -25,22 +28,14 @@ const Swatch = ({color, selected, label, onClick}: {
     label: string;
     onClick: () => void
 }) => (
+    // 고른 색은 한 칸 띄운 링으로 보인다. outline은 비워 두어야 키보드 포커스 링이 보인다.
     <button
         type="button"
         aria-label={label}
         aria-pressed={selected}
         onClick={onClick}
-        style={{
-            width: 18,
-            height: 18,
-            padding: 0,
-            borderRadius: "50%",
-            cursor: "pointer",
-            background: `#${color}`,
-            border: "1px solid var(--gray-a7)",
-            // 고른 색은 한 칸 띄운 링으로 보인다. outline은 비워 두어야 키보드 포커스 링이 보인다.
-            boxShadow: selected ? "0 0 0 1px var(--color-panel-solid), 0 0 0 3px var(--accent-9)" : undefined
-        }}
+        className="size-[18px] cursor-pointer rounded-full border border-foreground/25 aria-pressed:ring-2 aria-pressed:ring-primary aria-pressed:ring-offset-1 aria-pressed:ring-offset-background"
+        style={{background: `#${color}`}}
     />
 );
 
@@ -210,39 +205,35 @@ export const WriteComment = () => {
     const mode = reply.replyNo ? "답글" : txtcon ? "글자콘" : dccons.length > 0 ? "디시콘" : "댓글";
 
     return (
-        <Box ref={box} pl="6" pr="9" pt="3" pb="5">
+        <div ref={box} className="pt-3 pr-14 pb-6 pl-8">
             {!login && showInputs && (
-                <Flex gap="2" mb="2">
-                    <TextField.Root
-                        size="2"
+                <div className="mb-2 flex gap-2">
+                    <Input
                         value={nick}
                         aria-label="닉네임"
                         placeholder="닉네임"
                         maxLength={20}
-                        style={{flex: 1}}
+                        className="flex-1"
                         onChange={(ev) => setNick(ev.target.value)}
                     />
-                    <TextField.Root
-                        size="2"
+                    <Input
                         type="password"
                         value={passwordEdited ? password : ""}
                         aria-label="비밀번호"
                         placeholder={passwordEdited ? "비밀번호" : pwSaved ? "비밀번호 (저장됨)" : "비밀번호 (자동 생성)"}
-                        style={{flex: 1}}
+                        className="flex-1"
                         onChange={(ev) => {
                             setPasswordEdited(true);
                             setPassword(ev.target.value);
                         }}
                     />
-                </Flex>
+                </div>
             )}
 
-            <Flex gap="2" align="end">
-                <TextArea
+            <div className="flex items-end gap-2">
+                <Textarea
                     ref={textarea}
-                    size="2"
                     rows={2}
-                    resize="vertical"
                     defaultValue={initialText}
                     disabled={dccons.length > 0}
                     aria-label={`${mode} 입력`}
@@ -251,7 +242,7 @@ export const WriteComment = () => {
                             : txtcon ? "글자콘 입력... (최대 20자, 4줄, 줄당 5자로 나뉨)"
                                 : "댓글 입력... (Shift+Enter 줄바꿈)"
                     }
-                    style={{flex: 1}}
+                    className="min-h-16 flex-1 resize-y"
                     onChange={(ev) => {
                         if (txtcon && !(ev.nativeEvent instanceof InputEvent && ev.nativeEvent.isComposing)) applyTxtcon();
                         draft.text = ev.target.value;
@@ -267,75 +258,64 @@ export const WriteComment = () => {
                         }
                     }}
                 />
-                <Flex direction="column" gap="2">
-                    <Flex gap="2">
-                        <Tooltip content={dccons.length > 0 ? "디시콘 취소" : "디시콘"} container={overlay.portal}>
-                            <IconButton
-                                variant="soft"
-                                color="gray"
-                                aria-label={dccons.length > 0 ? "디시콘 취소" : "디시콘"}
-                                onClick={() => (dccons.length > 0 ? setDccon(NO_DCCON) : setDcconOpen(true))}
-                            >
-                                {dccons.length > 0 ? <X size={16}/> : <Smile size={16}/>}
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip content={txtcon ? "글자콘 취소" : "글자콘"} container={overlay.portal}>
-                            <IconButton
-                                variant="soft"
-                                color={txtcon ? undefined : "gray"}
-                                aria-label="글자콘"
-                                aria-pressed={txtcon}
-                                onClick={() => {
-                                    // 글자콘과 디시콘은 같이 쓸 수 없다.
-                                    setDccon(NO_DCCON);
+                <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                        <WithTooltip tip={dccons.length > 0 ? "디시콘 취소" : "디시콘"}
+                                     trigger={<Button variant="secondary" size="icon" aria-label={dccons.length > 0 ? "디시콘 취소" : "디시콘"}
+                                                      onClick={() => (dccons.length > 0 ? setDccon(NO_DCCON) : setDcconOpen(true))}/>}>
+                            {dccons.length > 0 ? <X/> : <Smile/>}
+                        </WithTooltip>
+                        <WithTooltip tip={txtcon ? "글자콘 취소" : "글자콘"}
+                                     trigger={<Button variant={txtcon ? "default" : "secondary"} size="icon" aria-label="글자콘" aria-pressed={txtcon}
+                                                      onClick={() => {
+                                                          // 글자콘과 디시콘은 같이 쓸 수 없다.
+                                                          setDccon(NO_DCCON);
 
-                                    if (txtcon) {
-                                        exitTxtcon();
-                                        return;
-                                    }
+                                                          if (txtcon) {
+                                                              exitTxtcon();
+                                                              return;
+                                                          }
 
-                                    // 켜면서 잘리는 원문을 기억해 두었다가, 손대지 않고 끄면 되돌린다.
-                                    beforeTxtcon.current = textarea.current?.value ?? null;
-                                    applyTxtcon();
-                                    setTxtcon(true);
-                                }}
-                            >
-                                <Type size={16}/>
-                            </IconButton>
-                        </Tooltip>
-                    </Flex>
-                    <IconButton aria-label="작성" loading={sending} style={{width: "100%"}} onClick={() => void submit()}>
-                        <Send size={16}/>
-                    </IconButton>
-                </Flex>
-            </Flex>
+                                                          // 켜면서 잘리는 원문을 기억해 두었다가, 손대지 않고 끄면 되돌린다.
+                                                          beforeTxtcon.current = textarea.current?.value ?? null;
+                                                          applyTxtcon();
+                                                          setTxtcon(true);
+                                                      }}/>}>
+                            <Type/>
+                        </WithTooltip>
+                    </div>
+                    <Button aria-label="작성" className="w-full" disabled={sending} onClick={() => void submit()}>
+                        {sending ? <Spinner/> : <Send/>}
+                    </Button>
+                </div>
+            </div>
 
             {txtcon && (
-                <Flex gap="2" align="center" wrap="wrap" mt="2">
-                    <Text size="1" color="gray">배경</Text>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-muted-foreground">배경</span>
                     {TXTCON_BACKGROUNDS.map((bg) => (
                         <Swatch key={bg} color={bg} label={`배경색 #${bg}`} selected={txtconColors.bg === bg}
                                 onClick={() => setTxtconColors((prev) => ({...prev, bg}))}/>
                     ))}
-                    <Text size="1" color="gray" ml="2">글자</Text>
+                    <span className="ml-2 text-xs text-muted-foreground">글자</span>
                     {TXTCON_COLORS.map((txt) => (
                         <Swatch key={txt} color={txt} label={`글자색 #${txt}`} selected={txtconColors.txt === txt}
                                 onClick={() => setTxtconColors((prev) => ({...prev, txt}))}/>
                     ))}
-                </Flex>
+                </div>
             )}
 
-            <Text as="p" size="1" color="gray" mt="2">
+            <p className="mt-2 text-xs text-muted-foreground">
                 {login ? (accountId ?? "회원 계정") : (
-                    <Link size="1" href="#" aria-expanded={showInputs} onClick={(ev) => {
+                    <a href="#" className="text-primary underline-offset-4 hover:underline" aria-expanded={showInputs} onClick={(ev) => {
                         ev.preventDefault();
                         toggleInputs();
                     }}>
                         {nick}
-                    </Link>
+                    </a>
                 )}
                 (으)로 {mode} 작성 중
-            </Text>
+            </p>
 
             {dcconOpen && (
                 <DcconPopup
@@ -347,6 +327,6 @@ export const WriteComment = () => {
                     onClose={() => setDcconOpen(false)}
                 />
             )}
-        </Box>
+        </div>
     );
 };

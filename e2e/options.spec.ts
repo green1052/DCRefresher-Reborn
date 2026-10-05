@@ -8,10 +8,6 @@ test.describe("옵션 페이지", () => {
         await expect(options.card("글 목록 새로고침")).toBeVisible();
         expect(await options.cards().count()).toBeGreaterThanOrEqual(10);
 
-        // Radix 스타일이 들어갔는지 (CSS를 줄여도 쓰는 컴포넌트는 남아야 한다).
-        const cursor = await page.locator(".rt-SwitchRoot").first().evaluate((element) => getComputedStyle(element).cursor);
-        expect(cursor).toBe("pointer");
-
         const stealth = options.card("스텔스 모드").getByRole("switch");
         await expect(stealth).not.toBeChecked();
         await stealth.click();
@@ -38,7 +34,7 @@ test.describe("옵션 페이지", () => {
         await page.getByPlaceholder("닉네임 값을 입력해 주세요").fill("차단닉");
         await page.getByRole("button", {name: "추가", exact: true}).last().click();
         await expect(page.locator("table").getByText("차단닉")).toBeVisible();
-        expect(await storage.get("refresher:block:NICK")).toMatchObject([{content: "차단닉", isRegex: false}]);
+        await expect.poll(() => storage.get("refresher:block:NICK")).toMatchObject([{content: "차단닉", isRegex: false}]);
 
         await options.goto("data");
         await expect(page.getByText("클라우드 백업")).toBeVisible();
@@ -69,9 +65,22 @@ test.describe("옵션 페이지", () => {
         await expect(table.getByText("오래된닉")).toBeVisible();
 
         await page.getByRole("button", {name: "보이는 1개 삭제"}).click();
-        await page.getByRole("button", {name: "삭제", exact: true}).click();
+        await page.getByRole("dialog").getByRole("button", {name: "삭제", exact: true}).click();
         await expect.poll(async () => ((await storage.get("refresher:block:NICK")) as { id: string }[]).map(({id}) => id)).toEqual(["b", "c"]);
         // 지운 항목의 사용 기록도 정리된다.
         await expect.poll(async () => Object.keys(((await storage.get("refresher:usage")) as { block: object }).block).sort()).toEqual(["b", "c"]);
+    });
+    test("가져오기 창은 가져온 뒤 닫히고, 알림을 닫으면 포커스가 가져오기 버튼으로 돌아온다", async ({page, extensionId, storage}) => {
+        await openOptions(page, extensionId, "block");
+        const importButton = page.getByRole("button", {name: "가져오기", exact: true});
+        await importButton.click();
+        await page.getByRole("textbox", {name: "JSON 데이터"}).fill(JSON.stringify({NICK: [{content: "가져온닉", isRegex: false}]}));
+        await page.getByRole("dialog").getByRole("button", {name: "가져오기"}).click();
+
+        await expect(page.getByRole("dialog", {name: "차단 목록을 가져왔습니다."})).toBeVisible();
+        await expect.poll(() => storage.get("refresher:block:NICK")).toMatchObject([{content: "가져온닉"}]);
+        await page.getByRole("button", {name: "확인"}).click();
+        await expect(page.getByRole("dialog")).toHaveCount(0);
+        await expect(importButton).toBeFocused();
     });
 });

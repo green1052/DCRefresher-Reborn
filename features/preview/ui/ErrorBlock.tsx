@@ -1,5 +1,7 @@
-import {Button, Callout, Flex} from "@radix-ui/themes";
 import {CircleAlert, ExternalLink} from "lucide-react";
+
+import {Alert, AlertDescription} from "@/components/ui/alert";
+import {Button} from "@/components/ui/button";
 
 import {type ErrorState, usePreviewStore} from "./previewStore";
 
@@ -23,30 +25,30 @@ export const ErrorBlock = ({error}: { error: ErrorState }) => {
     else text = "게시글을 읽지 못했습니다. 다시 시도하거나 원문에서 확인해 주세요.";
 
     return (
-        <Callout.Root color={original ? "orange" : "red"} my="4">
-            <Callout.Icon><CircleAlert size={16}/></Callout.Icon>
-            <Callout.Text>{text}</Callout.Text>
-            <Flex gap="2">
-                {original && (
-                    <Button size="1" variant="soft" color="orange" asChild>
-                        <a href={preData?.link ?? location.href} target="_blank" rel="noreferrer">
-                            <ExternalLink size={14}/>
+        <Alert variant={original ? "default" : "destructive"} className={original ? "my-4 text-amber-700 dark:text-amber-400" : "my-4"}>
+            <CircleAlert/>
+            <AlertDescription className="text-current">
+                {text}
+                <div className="mt-2 flex gap-2">
+                    {original && (
+                        <Button size="sm" variant="secondary" nativeButton={false}
+                                render={<a href={preData?.link ?? location.href} target="_blank" rel="noreferrer"/>}>
+                            <ExternalLink data-icon="inline-start"/>
                             원문 열기
-                        </a>
-                    </Button>
-                )}
-                {!deleted && (
-                    <Button
-                        size="1"
-                        variant="soft"
-                        color={original ? "gray" : "red"}
-                        // 같은 글을 다시 열면 컨트롤러가 제자리에서 다시 받는다.
-                        onClick={() => preData && usePreviewStore.getState().requestOpen(preData, usePreviewStore.getState().commentsOnly)}
-                    >
-                        다시 시도
-                    </Button>
-                )}
-            </Flex>
-        </Callout.Root>
+                        </Button>
+                    )}
+                    {!deleted && (
+                        <Button
+                            size="sm"
+                            variant={original ? "secondary" : "destructive"}
+                            // 같은 글을 다시 열면 컨트롤러가 제자리에서 다시 받는다.
+                            onClick={() => preData && usePreviewStore.getState().requestOpen(preData, usePreviewStore.getState().commentsOnly)}
+                        >
+                            다시 시도
+                        </Button>
+                    )}
+                </div>
+            </AlertDescription>
+        </Alert>
     );
 };

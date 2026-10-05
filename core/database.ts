@@ -45,7 +45,7 @@ export const updateDatabase = async (force = false): Promise<void> => {
  * 저장된 ban 문자열을 푼다 (없으면 빈 목록). JSON이 깨졌으면 던진다.
  * ban.json은 손으로 관리하는 파일이라 uid 문자열 배열이 아닌 항목은 버린다.
  */
-export const parseBans = (stored: string): BanList => {
+const parseBans = (stored: string): BanList => {
     const parsed: unknown = stored ? JSON.parse(stored) : {};
     if (!isRecord(parsed)) return {};
     return Object.fromEntries(Object.entries(parsed).flatMap(([reason, uids]) =>
