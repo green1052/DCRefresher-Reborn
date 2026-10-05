@@ -23,7 +23,7 @@ DCRefresher Reborn의 구조, 기능을 더하는 방법, 테스트와 릴리즈
 | 항목 | 사용 |
 |------|------|
 | 확장 프레임워크 | [WXT](https://wxt.dev). Chrome은 MV3, Firefox는 MV2 (최소 Chrome 153·Firefox 155, `wxt.config.ts`의 `MIN_CHROME`·`MIN_FIREFOX`. 옛 브라우저용으로 트랜스파일하지 않는다) |
-| UI | [Preact](https://preactjs.com) 11 (코드는 `react`에서 import하고 `preact/compat`으로 바뀐다, `@preact/preset-vite`) + React Compiler(React 18 대상, `react-compiler-runtime`), [shadcn/ui](https://ui.shadcn.com) (Base UI, base-nova 스타일) + [Tailwind CSS](https://tailwindcss.com) v4 |
+| UI | [Preact](https://preactjs.com) 11 (코드는 `react`에서 import하고 `preact/compat`으로 바뀐다, `@preact/preset-vite`) + React Compiler(React 18 대상, `react-compiler-runtime`), [shadcn/ui](https://ui.shadcn.com) (Base UI, base-vega 스타일) + [Tailwind CSS](https://tailwindcss.com) v4 |
 | 상태 | zustand |
 | 저장소 | WXT storage (`wxt/utils/storage`) |
 | HTTP | ky + `utils/limit.ts`(동시 요청 수 제한) |
@@ -436,7 +436,7 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 ## UI 부품
 
 - 화면은 Preact로 그리지만 코드는 `react`에서 import합니다(`@preact/preset-vite`가 `preact/compat`으로 바꿉니다). Preact는 상태 변경을 다음 마이크로태스크에 그리므로, 누른 직후 새 창이 바로 DOM에 있다고 기대하지 않습니다(E2E는 `getByRole("dialog")` 안에서 찾습니다). 타입은 `@types/react`를 그대로 씁니다. tsconfig에서 `react` 타입을 `preact/compat`으로 바꾸면 React 타입으로 작성된 Base UI와 ref·이벤트 타입이 맞지 않아 shadcn 부품마다 오류가 납니다. Preact는 `autoFocus`로 포커스를 옮기지 않으므로 다이얼로그는 `ModalDialog`의 `focusOnOpen`에 ref를, 나중에 나타나는 입력칸은 `utils/focus.ts`의 `focusOnMount`를 씁니다.
-- 부품은 shadcn(`components/ui`, Base UI·base-nova 스타일)입니다. 손으로 만들지 않고 `bunx shadcn add <이름>`으로 추가합니다. shadcn CLI가 상속된 `.wxt/tsconfig.json`의 경로를 잘못 풀어 루트 `tsconfig.json`에 `@/*` 경로를 다시 적어 두었습니다. `tailwind.css`는 `shadcn/tailwind.css`(Base UI 데이터 속성용 variant)를 불러와야 합니다.
+- 부품은 shadcn(`components/ui`, Base UI·base-vega 스타일)입니다. 손으로 만들지 않고 `bunx shadcn add <이름>`으로 추가합니다. shadcn CLI가 상속된 `.wxt/tsconfig.json`의 경로를 잘못 풀어 루트 `tsconfig.json`에 `@/*` 경로를 다시 적어 두었습니다. `tailwind.css`는 `shadcn/tailwind.css`(Base UI 데이터 속성용 variant)를 불러와야 합니다.
 - `components/ui`에서 우리가 고친 곳: 포털을 쓰는 부품(dialog·popover·select·tooltip)은 `container={overlay.portal}`로 오버레이 안에 그리고, slider는 손잡이에 이름을 달 `thumbProps`를 받습니다. 부품을 다시 받을 때(`--overwrite`) 이 부분을 다시 넣습니다.
 - 다이얼로그는 `components/dialogs.tsx`의 `ModalDialog`(열 때만 마운트), `ConfirmDialog`, `Notice`, `DialogActions`, `SubmitForm`을 씁니다. `onClose`는 닫힘 애니메이션이 끝나 포커스가 돌아간 뒤에 불립니다. 일을 마친 창이 스스로 닫을 때는 `actionsRef.current.close()`를 씁니다.
 - 포커스: 트리거 없이 여는 창(다이얼로그·버블)은 `useReturnFocus`(`components/useReturnFocus.ts`)가 연 요소를 기억했다가 돌려줍니다. Base UI는 트리거가 없거나 부모가 언마운트해 닫으면 돌려주지 않기 때문입니다. 오버레이(shadow DOM) 안에서는 Base UI의 포커스 가두기가 끝을 알아보지 못해 `ModalDialog`가 Tab을 직접 돌립니다.

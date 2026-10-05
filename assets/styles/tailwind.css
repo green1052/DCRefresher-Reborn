@@ -1,5 +1,5 @@
 /*
- * Tailwind + shadcn 토큰. 색은 shadcn 테마 값 그대로다 (base-nova, 기본색 zinc, 테마 indigo. https://ui.shadcn.com/init?base=base&style=nova&baseColor=zinc&theme=indigo&only=theme의 cssVars). 손으로 고치지 않는다.
+ * Tailwind + shadcn 토큰. 색은 shadcn 테마 값 그대로다 (base-vega, 기본색 zinc, 테마 indigo. https://ui.shadcn.com/init?base=base&style=vega&baseColor=zinc&theme=indigo&only=theme의 cssVars). 손으로 고치지 않는다.
  * 오버레이 shadow에서도 쓰도록 :root와 :host에 같이 건다. 다크 모드는 조상의 .dark 클래스가 정한다 (utils/appearance.ts).
  */
 @import "tailwindcss";

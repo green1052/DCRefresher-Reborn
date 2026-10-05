@@ -45,10 +45,10 @@ test.describe("미리보기", () => {
         await expect(frame.getByText("스레드 1개, 총 댓글 2개")).toBeVisible();
         await expect(listPage.page).toHaveURL(/\/board\/view\/\?id=test&no=3/);
 
-        // 정화: 본문 이미지는 lazy로, 오버레이의 버튼은 Tailwind 스타일이 붙어 있다 (shadow 안 CSS).
+        // 정화: 본문 이미지는 lazy로, 오버레이의 버튼은 Tailwind 스타일이 붙어 있다 (shadow 안 CSS. base-vega의 아이콘 버튼은 size-9).
         await expect(frame.locator(".refresher-preview-contents img")).toHaveAttribute("loading", "lazy");
         const icon = await frame.getByRole("button", {name: "디시콘"}).boundingBox();
-        expect([icon?.width, icon?.height]).toEqual([32, 32]);
+        expect([icon?.width, icon?.height]).toEqual([36, 36]);
 
         await listPage.page.keyboard.press("Escape");
         await expect(frame).toHaveCount(0);
