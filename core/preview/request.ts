@@ -8,7 +8,7 @@ import type {CommentListResponse, DcinsideComment, GalleryPreData, PostInfo} fro
 
 export {type BlockOptions, type ManageResult, adminDeleteComment, blockUser, bump, captchaImage, deletePost, setNotice, setRecommend, userDeleteComment} from "./manage";
 export {submitComment} from "./submit";
-export {TXTCON_BACKGROUNDS, TXTCON_COLORS, graphemes, normalizeTxtcon, submitTxtcon, wrapTxtcon} from "./txtcon";
+export {TXTCON_BACKGROUNDS, TXTCON_COLORS, normalizeTxtcon, submitTxtcon} from "./txtcon";
 export {addDcconPackage, fetchDcconPackage} from "./dccon";
 export {type SubmitResult, resultMessage} from "./response";
 

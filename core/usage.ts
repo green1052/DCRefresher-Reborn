@@ -1,6 +1,7 @@
 import {storage} from "wxt/utils/storage";
 
 import {sendMessage} from "@/core/messaging/protocol";
+import {createLimiter} from "@/utils/limit";
 import {isRecord} from "@/utils/record";
 
 /**
@@ -61,16 +62,11 @@ export const markUsed = (kind: UsageKind, id: string): void => {
 
 // ===== 배경: 저장소에 차례로 쓴다 =====
 
-let queue: Promise<unknown> = Promise.resolve();
-const enqueue = <T>(task: () => Promise<T>): Promise<T> => {
-    const result = queue.then(task);
-    queue = result.catch(() => undefined);
-    return result;
-};
+const writes = createLimiter(1);
 
 /** 탭이 보낸 기록을 합친다. 더 늦은 시각을 남긴다. */
 export const recordUsage = (batch: UsageData): Promise<void> =>
-    enqueue(async () => {
+    writes.run(async () => {
         const usage = await readUsage();
         for (const kind of ["block", "memo"] as const) {
             for (const [id, time] of Object.entries(normalizeTimes(batch[kind]))) usage[kind][id] = Math.max(usage[kind][id] ?? 0, time);
@@ -83,7 +79,7 @@ export const recordUsage = (batch: UsageData): Promise<void> =>
  * 지운 항목의 기록은 버린다. 바뀐 것이 없으면 쓰지 않는다.
  */
 export const syncUsage = (kind: UsageKind, ids: readonly string[]): Promise<Record<string, number>> =>
-    enqueue(async () => {
+    writes.run(async () => {
         const usage = await readUsage();
         const now = Date.now();
         const times = usage[kind];

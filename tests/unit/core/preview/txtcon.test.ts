@@ -1,6 +1,7 @@
 import {describe, expect, it} from "vitest";
 
-import {graphemes, normalizeTxtcon, resultMessage, wrapTxtcon} from "@/core/preview/request";
+import {resultMessage} from "@/core/preview/request";
+import {graphemes, normalizeTxtcon, wrapTxtcon} from "@/core/preview/txtcon";
 
 describe("wrapTxtcon", () => {
     it("줄마다 5글자씩 나누고 직접 넣은 줄바꿈은 둔다", () => {

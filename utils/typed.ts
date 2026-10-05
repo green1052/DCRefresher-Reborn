@@ -1,7 +1,7 @@
 // 타입이 붙은 Object·Array 도우미. 내장 함수는 키를 string으로 넓히거나 includes가 타입을 좁히지 않는다.
 
 /** 객체의 문자열 키 (심볼 제외, 숫자 키는 문자열로). */
-export type ObjectKeys<T extends object> = `${Exclude<keyof T, symbol>}`;
+type ObjectKeys<T extends object> = `${Exclude<keyof T, symbol>}`;
 
 /** 키를 넓히지 않는 Object.keys */
 export const objectKeys = <T extends object>(value: T): ObjectKeys<T>[] => Object.keys(value) as ObjectKeys<T>[];

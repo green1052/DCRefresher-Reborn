@@ -39,7 +39,7 @@ const GALLERIES = {
 } as const;
 
 /** 갤러리 종류: 일반, 마이너, 미니, 인물. */
-export type GalleryKind = keyof typeof GALLERIES;
+type GalleryKind = keyof typeof GALLERIES;
 
 /**
  * https 디시 주소면 그 주소, 아니면 undefined. 페이지·본문에서 읽은 주소로 이동하거나 새 탭을 열기 전에 거친다.

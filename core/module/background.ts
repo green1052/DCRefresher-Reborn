@@ -2,6 +2,7 @@ import {storage} from "wxt/utils/storage";
 
 import {MODULES_KEY, moduleSettingsKey} from "@/core/storage/items";
 import type {SettingValue} from "@/core/storage/types";
+import {createLimiter} from "@/utils/limit";
 
 import {isModuleEnabled, readModuleStorage, settingsOf} from "./settings";
 import type {ModuleDefinition} from "./types";
@@ -29,15 +30,15 @@ export const startBackgroundModules = (modules: BackgroundModule[]): (() => Prom
         module.listen?.();
 
         // apply가 겹치면 메뉴 지우기·만들기 같은 비동기 작업이 엇갈리므로 줄 세운다.
-        let queue = Promise.resolve();
-        const apply = (): Promise<void> => (queue = queue.then(async () => {
+        const applies = createLimiter(1);
+        const apply = (): Promise<void> => applies.run(async () => {
             // on/off·설정 읽기와 해석은 콘텐츠 레지스트리와 같은 함수로 한다.
             const {enables, settings} = await readModuleStorage([module.id]);
             await module.apply({
                 enabled: isModuleEnabled(module, enables),
                 settings: settingsOf(module, settings.get(module.id))
             });
-        }).catch(console.error));
+        }).catch(console.error);
 
         // 옵션 페이지·팝업은 저장소에 직접 쓰므로 저장소를 감시해 바로 다시 맞춘다.
         storage.watch<Record<string, unknown>>(MODULES_KEY, (next, prev) => {

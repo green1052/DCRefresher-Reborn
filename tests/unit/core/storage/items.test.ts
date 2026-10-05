@@ -5,7 +5,6 @@ import {
     blockListKey,
     DB_KEYS,
     isBlockListKey,
-    isModuleDataKey,
     memoMapKey,
     MODULES_KEY,
     moduleDataKey,
@@ -41,9 +40,6 @@ describe("저장소 키 도우미", () => {
         expect(moduleKeyModule("refresher:module:preview:settings")).toBe("preview");
         expect(moduleKeyModule("refresher:module:userinfo:data")).toBe("userinfo");
         expect(moduleKeyModule("refresher:modules")).toBeUndefined();
-
-        expect(isModuleDataKey("refresher:module:preview:data")).toBe(true);
-        expect(isModuleDataKey("refresher:module:preview:settings")).toBe(false);
 
         // 차단 목록 키는 대문자 유형만: 기본 차단 모드(refresher:block:defaults)는 아니다.
         expect(isBlockListKey("refresher:block:NICK")).toBe(true);

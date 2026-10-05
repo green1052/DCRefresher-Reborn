@@ -30,7 +30,7 @@ const HALF_FIXED_ICONS = new Set([
 ]);
 
 /** 닉네임 종류: 고정닉, 반고정닉, 유동(닉콘 없음). */
-export type NickType = "FIXED" | "HALF_FIXED" | "UNFIXED";
+type NickType = "FIXED" | "HALF_FIXED" | "UNFIXED";
 
 /** 닉콘 주소로 닉네임 종류를 가린다. 모르는 닉콘은 유동으로 본다. */
 export const nickType = (iconUrl: string): NickType => {

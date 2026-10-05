@@ -26,7 +26,7 @@ export const isCommentPosted = ({result}: SubmitResult): boolean =>
     result !== "false" && result !== "" && !result.trimStart().startsWith("<") && !Object.hasOwn(FAIL_MESSAGES, result) && !Object.hasOwn(DCCON_FAIL_MESSAGES, result);
 
 /** 보낼 댓글. 디시콘이 있으면 디시콘을, txtcon(색)이 있으면 글자콘을, 아니면 글을 보낸다. */
-export interface CommentContent {
+interface CommentContent {
     text: string;
     dccons: DcinsideDccon[];
     bigDccon: boolean;
@@ -34,7 +34,7 @@ export interface CommentContent {
 }
 
 /** captcha: 원문 페이지에서만 풀 수 있는 자동입력 방지 확인을 요구받았다. */
-export type CommentOutcome = { ok: true } | { ok: false; captcha: true } | { ok: false; captcha: false; message: string };
+type CommentOutcome = { ok: true } | { ok: false; captcha: true } | { ok: false; captcha: false; message: string };
 
 /**
  * 댓글·디시콘·글자콘을 보낸다. 처음엔 토큰 없이 보내고, 'false||captcha||v3'가 오면 reCAPTCHA v3 토큰을 붙여 한 번 더 보낸다
