@@ -58,8 +58,8 @@ export const ToastHost = () => {
             <span className="sr-only" role="status">{spoken && !error && <span key={spoken.id}>{spoken.content}</span>}</span>
             <span className="sr-only" role="alert">{spoken && error && <span key={spoken.id}>{spoken.content}</span>}</span>
             {toasts.length > 0 && (
-                // 호스트는 클릭을 통과시키고 토스트만 받는다. 디시 페이지의 최댓값(이미지 확대창)보다 위인 :host 안에서 미리보기 위에 둔다.
-                <div className="pointer-events-none fixed right-4 bottom-4 z-1 flex max-w-[360px] flex-col items-end gap-2">
+                // 호스트는 클릭을 통과시키고 토스트만 받는다. 다이얼로그(z-50) 위에 두어 창이 떠 있을 때 뜬 알림도 보이고 눌린다.
+                <div className="pointer-events-none fixed right-4 bottom-4 z-60 flex max-w-[360px] flex-col items-end gap-2">
                     {toasts.map((toast) => <ToastItem key={toast.id} toast={toast}/>)}
                 </div>
             )}
