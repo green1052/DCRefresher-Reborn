@@ -30,8 +30,8 @@
 
 | 브라우저 | 설치 | 최소 버전 |
 |---|---|---|
-| Chrome (Edge, Whale 등 크로뮴 계열 포함) | [Chrome 웹 스토어](https://chromewebstore.google.com/detail/pmfifcbendahnkeojgpfppklgioemgon) | 140 |
-| Firefox | [Firefox Add-ons](https://addons.mozilla.org/ko/firefox/addon/dcrefresher-reborn) | 140 |
+| Chrome (Edge, Whale 등 크로뮴 계열 포함) | [Chrome 웹 스토어](https://chromewebstore.google.com/detail/pmfifcbendahnkeojgpfppklgioemgon) | 153 |
+| Firefox | [Firefox Add-ons](https://addons.mozilla.org/ko/firefox/addon/dcrefresher-reborn) | 155 |
 
 설치한 뒤 툴바의 확장 아이콘을 누르면 팝업이 열립니다. 팝업에서 모듈을 켜고 끄고, 톱니바퀴 버튼으로 옵션 페이지(설정·차단·메모·단축키·데이터·정보)를 엽니다.
 

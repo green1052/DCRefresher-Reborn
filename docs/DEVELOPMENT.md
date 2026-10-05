@@ -22,7 +22,7 @@ DCRefresher Reborn의 구조, 기능을 더하는 방법, 테스트와 릴리즈
 
 | 항목 | 사용 |
 |------|------|
-| 확장 프레임워크 | [WXT](https://wxt.dev). Chrome은 MV3, Firefox는 MV2 (둘 다 최소 140) |
+| 확장 프레임워크 | [WXT](https://wxt.dev). Chrome은 MV3, Firefox는 MV2 (최소 Chrome 153·Firefox 155, `wxt.config.ts`의 `MIN_CHROME`·`MIN_FIREFOX`. 옛 브라우저용으로 트랜스파일하지 않는다) |
 | UI | [Preact](https://preactjs.com) 11 (코드는 `react`에서 import하고 `preact/compat`으로 바뀐다, `@preact/preset-vite`) + React Compiler(React 18 대상, `react-compiler-runtime`), [shadcn/ui](https://ui.shadcn.com) (Base UI, base-nova 스타일) + [Tailwind CSS](https://tailwindcss.com) v4 |
 | 상태 | zustand |
 | 저장소 | WXT storage (`wxt/utils/storage`) |
@@ -99,7 +99,7 @@ modules/                WXT 로컬 모듈: 모듈 api·설정 타입 생성(modu
 core/                   모듈 시스템, 저장소 키, HTTP, 필터링, 차단 판정, 미리보기 요청·파싱, 백업, 설정 옮기기, DB
 stores/                 여러 화면이 같이 쓰는 zustand 스토어 (모듈 on/off·설정, 차단, 메모, 오버레이 UI)
 components/             공용 React 컴포넌트, 오버레이 루트(components/overlay)
-components/ui/          shadcn 부품. 손으로 만들지 않고 CLI로 추가한다 (npx shadcn@latest add <이름>, 설정은 components.json)
+components/ui/          shadcn 부품. 손으로 만들지 않고 CLI로 추가한다 (bunx shadcn add <이름>, 설정은 components.json)
 utils/                  작은 도우미 (DOM, 이벤트, 정화, 다크모드, 캐시, 동시 실행 제한, 타입 붙인 Object 함수)
 assets/styles/          디시 페이지 CSS(content.css), 오버레이 CSS(overlay.css), 두 문서가 같이 쓰는 유틸리티(shared.css), Tailwind·shadcn 토큰과 공용 애니메이션(tailwind.css)
 scripts/                IP DB 빌드 스크립트 (GitHub Actions의 DB 워크플로가 실행)
@@ -436,7 +436,7 @@ Chrome에서만 시험하면 드러나지 않는 문제가 있습니다. 6.0.2�
 ## UI 부품
 
 - 화면은 Preact로 그리지만 코드는 `react`에서 import합니다(`@preact/preset-vite`가 `preact/compat`으로 바꿉니다). Preact는 상태 변경을 다음 마이크로태스크에 그리므로, 누른 직후 새 창이 바로 DOM에 있다고 기대하지 않습니다(E2E는 `getByRole("dialog")` 안에서 찾습니다). 타입은 `@types/react`를 그대로 씁니다. tsconfig에서 `react` 타입을 `preact/compat`으로 바꾸면 React 타입으로 작성된 Base UI와 ref·이벤트 타입이 맞지 않아 shadcn 부품마다 오류가 납니다. Preact는 `autoFocus`로 포커스를 옮기지 않으므로 다이얼로그는 `ModalDialog`의 `focusOnOpen`에 ref를, 나중에 나타나는 입력칸은 `utils/focus.ts`의 `focusOnMount`를 씁니다.
-- 부품은 shadcn(`components/ui`, Base UI·base-nova 스타일)입니다. 손으로 만들지 않고 `npx shadcn@latest add <이름>`으로 추가합니다. shadcn CLI가 상속된 `.wxt/tsconfig.json`의 경로를 잘못 풀어 루트 `tsconfig.json`에 `@/*` 경로를 다시 적어 두었습니다. `tailwind.css`는 `shadcn/tailwind.css`(Base UI 데이터 속성용 variant)를 불러와야 합니다.
+- 부품은 shadcn(`components/ui`, Base UI·base-nova 스타일)입니다. 손으로 만들지 않고 `bunx shadcn add <이름>`으로 추가합니다. shadcn CLI가 상속된 `.wxt/tsconfig.json`의 경로를 잘못 풀어 루트 `tsconfig.json`에 `@/*` 경로를 다시 적어 두었습니다. `tailwind.css`는 `shadcn/tailwind.css`(Base UI 데이터 속성용 variant)를 불러와야 합니다.
 - `components/ui`에서 우리가 고친 곳: 포털을 쓰는 부품(dialog·popover·select·tooltip)은 `container={overlay.portal}`로 오버레이 안에 그리고, slider는 손잡이에 이름을 달 `thumbProps`를 받습니다. 부품을 다시 받을 때(`--overwrite`) 이 부분을 다시 넣습니다.
 - 다이얼로그는 `components/dialogs.tsx`의 `ModalDialog`(열 때만 마운트), `ConfirmDialog`, `Notice`, `DialogActions`, `SubmitForm`을 씁니다. `onClose`는 닫힘 애니메이션이 끝나 포커스가 돌아간 뒤에 불립니다. 일을 마친 창이 스스로 닫을 때는 `actionsRef.current.close()`를 씁니다.
 - 포커스: 트리거 없이 여는 창(다이얼로그·버블)은 `useReturnFocus`(`components/useReturnFocus.ts`)가 연 요소를 기억했다가 돌려줍니다. Base UI는 트리거가 없거나 부모가 언마운트해 닫으면 돌려주지 않기 때문입니다. 오버레이(shadow DOM) 안에서는 Base UI의 포커스 가두기가 끝을 알아보지 못해 `ModalDialog`가 Tab을 직접 돌립니다.
@@ -601,7 +601,7 @@ flowchart TD
 
 - 테스트는 `tests/unit/`에 소스 경로를 따라 둡니다 (`core/block.ts` → `tests/unit/core/block.test.ts`). `modules/`에 두면 WXT가 WXT 모듈로 불러오므로 소스 옆에 두지 않습니다.
 - `tests/setup.ts`가 테스트마다 `fakeBrowser.reset()`을 하고 끝나면 `vi.useRealTimers()`로 돌립니다. 목·스파이는 `vitest.config.ts`의 `mockReset`·`restoreMocks`가 테스트마다 되돌리므로, 테스트 파일에서 `restoreAllMocks`·`mockReset`·`useRealTimers`를 따로 부르지 않습니다.
-- `tests/setup.ts`는 jsdom·Node에 없는 API(`Uint8Array.toBase64`, `performance.getEntriesByType`, `CSS.escape` 등)를 채웁니다. 실제 브라우저(140 이상)에는 다 있는 것들이라 소스는 그대로 둡니다.
+- `tests/setup.ts`는 jsdom·Node에 없는 API(`Uint8Array.toBase64`, `performance.getEntriesByType`, `CSS.escape` 등)를 채웁니다. 실제 브라우저(최소 지원 버전 이상)에는 다 있는 것들이라 소스는 그대로 둡니다.
 - 공통 도우미는 `tests/helpers.ts`에 둡니다. `tick()`(타이머·저장소 알림 한 차례 기다리기), `stored(key)`(fake 저장소 값 하나), `setting({...})`·`testModule({...})`(이름·설명을 비운 설정 스키마와 모듈), `testPreData({...})`(목록 행에서 읽은 글 정보), `setBlockLists(...)`(차단 스토어에 목록 넣기)입니다. 시간을 정해 기다리지(`setTimeout(…, 10)`) 말고 `tick()`이나 `expect.poll`을 씁니다.
 - 기본 환경은 jsdom입니다. DOM을 안 쓰고 jsdom이 방해하는 모듈(`core/backup`의 gzip)은 파일 머리에 `// @vitest-environment node`를 둡니다.
 - WXT API(`defineContentScript`·`browser`·`storage` 등)만 자동 import됩니다. `components`·`utils`는 자동 import하지 않으니(`wxt.config.ts`의 `config:resolved` 훅) 직접 import합니다.

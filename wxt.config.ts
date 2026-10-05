@@ -5,6 +5,14 @@ import {defineConfig} from "wxt";
 
 import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "./core/pages";
 
+/**
+ * 지원하는 가장 낮은 브라우저 버전. 최신 브라우저만 지원해 빌드가 문법·CSS를 옛 버전용으로 바꾸지(트랜스파일) 않는다.
+ * 올리면 manifest의 최소 버전과 빌드 대상이 같이 바뀐다.
+ */
+const MIN_CHROME = 153;
+const MIN_FIREFOX = 155;
+const TARGETS = [`chrome${MIN_CHROME}`, `firefox${MIN_FIREFOX}`];
+
 export default defineConfig({
     modules: ["@wxt-dev/auto-icons"],
     vite: () => ({
@@ -19,7 +27,8 @@ export default defineConfig({
             tailwindcss()
         ],
         build: {
-            cssTarget: ["chrome140", "firefox140"]
+            target: TARGETS,
+            cssTarget: TARGETS
         }
     }),
     hooks: {
@@ -38,11 +47,11 @@ export default defineConfig({
     },
     manifest: {
         name: "DCRefresher Reborn",
-        minimum_chrome_version: "140",
+        minimum_chrome_version: String(MIN_CHROME),
         browser_specific_settings: {
             gecko: {
                 id: "dcrefresher-reborn@green1052",
-                strict_min_version: "140.0",
+                strict_min_version: `${MIN_FIREFOX}.0`,
                 data_collection_permissions: {
                     required: ["none"]
                 }

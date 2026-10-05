@@ -11,7 +11,7 @@ import {useBlocksStore} from "@/stores/blocks";
 import {useMemosStore} from "@/stores/memos";
 import {useModulesStore} from "@/stores/modules";
 
-import {byteSize, formatBytes, formatTime, Section} from "./Layout";
+import {formatBytes, formatTime, Section} from "./Layout";
 import {notify} from "./optionsStore";
 
 const REPO = "https://github.com/green1052/DCRefresher-Reborn";
@@ -36,10 +36,9 @@ interface Usage {
     sync: number;
 }
 
-// storage.local.getBytesInUse는 Firefox 144부터 지원하므로 local은 JSON 크기로 잰다.
-// sync는 브라우저가 한도를 계산하는 값과 맞추려고 getBytesInUse를 쓴다.
+// 브라우저가 한도를 계산하는 값과 맞추려고 getBytesInUse를 쓴다.
 const readUsage = async (): Promise<Usage> => {
-    const [local, sync] = await Promise.all([browser.storage.local.get(null).then(byteSize), browser.storage.sync.getBytesInUse(null)]);
+    const [local, sync] = await Promise.all([browser.storage.local.getBytesInUse(null), browser.storage.sync.getBytesInUse(null)]);
     return {local, sync};
 };
 

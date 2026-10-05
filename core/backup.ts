@@ -57,13 +57,9 @@ const BACKUP_KEYS = new Set<string>([
  */
 export const isBackupTarget = (key: string): boolean => BACKUP_KEYS.has(key) || settingsKeyModule(key) !== undefined;
 
-/** storage.local의 키 목록. getKeys가 없는 브라우저는 값까지 다 읽어 키만 꺼낸다. */
-const localKeys = async (): Promise<string[]> =>
-    typeof browser.storage.local.getKeys === "function" ? browser.storage.local.getKeys() : Object.keys(await browser.storage.local.get(null));
-
 /** 백업 대상 키(isBackupTarget)의 값만 읽는다. get(null)은 수백 KB짜리 IP·밴 DB까지 읽는다. */
 export const readBackupTargets = async (): Promise<Record<string, unknown>> => {
-    const keys = (await localKeys()).filter(isBackupTarget);
+    const keys = (await browser.storage.local.getKeys()).filter(isBackupTarget);
     return keys.length === 0 ? {} : browser.storage.local.get(keys);
 };
 

@@ -83,9 +83,8 @@ const pruneStaleSettings = async (): Promise<void> => {
     await enqueue(async () => {
         const enables = await modulesStorage().getValue();
         const staleIds = new Set(Object.keys(enables).filter((id) => !ids.has(id)));
-        // get(null)은 수백 KB짜리 IP DB까지 읽으니 키 이름만 읽는다. getKeys가 없는 브라우저는 켜짐 목록에 남은 모듈만 지운다.
-        const keys = typeof browser.storage.local.getKeys === "function" ? await browser.storage.local.getKeys() : [];
-        for (const key of keys) {
+        // get(null)은 수백 KB짜리 IP DB까지 읽으니 키 이름만 읽는다.
+        for (const key of await browser.storage.local.getKeys()) {
             const id = moduleKeyModule(key);
             if (id !== undefined && !ids.has(id)) staleIds.add(id);
         }
