@@ -616,14 +616,14 @@ flowchart TD
 e2e/
 ├─ fixtures.ts           # 영속 컨텍스트에 확장을 올리고 extensionId·storage·errors·listPage를 준다
 ├─ firefox.ts            # 파이어폭스에 확장을 임시 부가 기능으로 설치하고 배경 페이지에서 코드를 돌린다
-├─ dcinside.ts           # 가짜 디시 목록·글·댓글
-├─ pages/                # 페이지별 조작 (openPopup, openOptions, openListPage)
-└─ *.spec.ts             # popup, options, content-script
+├─ dcinside.ts           # 가짜 디시 (FakeSite: 목록·글·댓글·디시콘·갤로그, 받은 요청 수)
+├─ pages/                # 페이지 객체 (list.ts의 openListPage, extension.ts의 openPopup·openOptions)
+└─ *.spec.ts             # list, preview, overlay, options, popup
 ```
 
-- `fixtures.ts`가 [Playwright의 확장 테스트 방식](https://playwright.dev/docs/chrome-extensions)대로 확장을 올리고, 배경 서비스 워커에서 `extensionId`를 꺼냅니다. 테스트는 `pages/`의 `openPopup(page, extensionId)` 같은 함수로 페이지를 열고 그 반환값으로 조작합니다.
+- `fixtures.ts`가 [Playwright의 확장 테스트 방식](https://playwright.dev/docs/chrome-extensions)대로 확장을 올리고, 배경 서비스 워커에서 `extensionId`를 꺼냅니다. 테스트는 `pages/`의 `openPopup(context, extensionId)` 같은 함수로 페이지를 열고 그 반환값으로 조작합니다.
 - **디시에는 요청을 보내지 않습니다.** fixtures가 `dcinside.com` 주소를 모두 `e2e/dcinside.ts`의 가짜 목록·글·댓글로 응답하고, 읽기가 아닌 POST에는 500을 줘서 쓰기 요청이 나가면 테스트가 바로 실패합니다. IP DB 서버는 끊습니다. 디시 마크업이 바뀌어 모듈을 고치면 가짜 페이지도 같이 고칩니다.
-- 스펙은 선택자를 직접 쓰지 않고 페이지 객체의 메서드를 씁니다. 목록 페이지(`openListPage`)는 `titles()`·`replyCounts()`·`writers()`, 제목을 우클릭해 창을 여는 `openPreview(index)`와 오버레이 안의 `frame()`·`mini()`·`bubble()`·`toast()`를 주고, 팝업은 `openPopupFor(context, extensionId, tab)`로 그 탭에서 연 것처럼 엽니다. 설정은 `storage.setModules({...})`·`storage.setModuleSettings(id, {...})`로 넣습니다. 디시 마크업이나 클래스 이름이 바뀌면 페이지 객체만 고칩니다.
+- 스펙은 선택자를 직접 쓰지 않고 페이지 객체를 씁니다. 목록 페이지(`openListPage`)는 `titles`·`replyCounts`·`writers` 같은 로케이터, 제목을 우클릭해 창을 여는 `openPreview(index)`와 오버레이 안의 `frame`·`mini`·`bubble`·`dialog`·`toast`를 주고, 팝업은 `openPopup(context, extensionId, tab)`로 그 탭에서 연 것처럼 엽니다. 설정은 `storage.setModules({...})`·`storage.setModuleSettings(id, {...})`로 넣습니다. 디시 마크업이나 클래스 이름이 바뀌면 페이지 객체만 고칩니다.
 - `errors` fixture가 페이지 오류와 `console.error`를 모아 테스트 끝에 비어 있는지 봅니다. 모든 테스트에 자동으로 걸리므로(`auto`) 테스트에서 받지 않아도 됩니다. `listPage`는 콘텐츠 스크립트가 돈 목록 페이지(`pages/list.ts`), `storage`는 배경을 통한 확장 저장소입니다 (디시 페이지의 `page.evaluate`에서는 `chrome.storage`에 닿지 않습니다).
 - **파이어폭스**(`bun run e2e:firefox`): Playwright의 파이어폭스는 실행 인자로 확장을 올릴 수 없어, `e2e/firefox.ts`가 web-ext처럼 원격 디버깅 서버(`-start-debugger-server`)에 붙어 `.output/firefox-mv2`를 임시 부가 기능으로 설치합니다. `storage`는 같은 디버깅 연결로 배경 페이지에서 식을 계산해(`evaluateJSAsync`) 읽고 씁니다. Playwright의 파이어폭스는 `moz-extension://` 페이지로 이동하지 못하므로(`page.goto`가 끝나지 않고, 확장이 연 탭도 잡지 못합니다) 팝업·옵션 테스트(`popup.spec.ts`, `options.spec.ts`)는 크로미엄에서만 돌고 파이어폭스는 콘텐츠 스크립트 테스트만 돕니다.
 - **실제 디시**(`bun run e2e:live`, `e2e/live/`): 가짜 페이지 대신 실제 디시에 요청합니다. 글·댓글이 그때그때 달라 개수·내용이 아니라 모양만 봅니다. 픽스처(`routeLive`)가 디시·IP DB 서버 밖 요청(광고 등)과 읽기가 아닌 POST(댓글·추천·삭제 등)를 끊어 테스트가 디시에 아무것도 쓰지 않습니다. 디시 스크립트 오류는 빼고 확장에서 난 오류만 실패로 봅니다. 네트워크에 따라 흔들릴 수 있어 CI·릴리즈 워크플로에는 넣지 않았습니다. 기본은 미니 갤러리 `bjwg64`이고, `DC_LIST_URL`에 다른 갤러리의 PC 목록 주소를 주면 그 갤러리로 돕니다.
