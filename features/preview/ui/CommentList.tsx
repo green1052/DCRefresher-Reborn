@@ -1,4 +1,4 @@
-import {Fragment, useDeferredValue} from "react";
+import {Fragment} from "react";
 
 import {Collapsible, CollapsibleContent} from "@/components/ui/collapsible";
 import type {ProcessedComment} from "@/core/preview/comments";
@@ -7,8 +7,6 @@ import {isGalleryManager} from "@/utils/user";
 
 import {Comment} from "./Comment";
 import {usePreviewStore} from "./previewStore";
-
-const NO_COMMENTS: ProcessedComment[] = [];
 
 /** 스레드 첫 댓글로 그릴 댓글. 10쪽 제한으로 부모를 받지 못한 답글도 넣는다. 빠뜨리면 머리의 스레드·총 댓글 수와 어긋난다. */
 export const threadParents = (comments: ProcessedComment[]): ProcessedComment[] => {
@@ -46,8 +44,7 @@ const Thread = ({parent, replies, isAdmin}: { parent: ProcessedComment; replies:
 
 /** 스레드별 댓글과 접을 수 있는 답글. */
 export const CommentList = () => {
-    // 댓글 수백 개는 그리는 데 수백 ms가 걸려 한 번에 그리면 그동안 스크롤·키 입력이 멈춘다. 뒤로 미뤄 나눠 그린다 (처음엔 빈 목록).
-    const comments = useDeferredValue(usePreviewStore((s) => s.comments)!, NO_COMMENTS);
+    const comments = usePreviewStore((s) => s.comments)!;
     const revealed = useUiStore((s) => s.blockView?.revealed === true);
 
     // 숨김 차단과 접힌 같은 댓글은 '가린 내용 보기' 동안만 (흐리게) 그린다. 블러 차단은 그려 두고 overlay.css가 흐린다.

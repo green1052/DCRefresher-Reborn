@@ -1,5 +1,5 @@
 import {Download, Plus, Search, Trash2, Upload} from "lucide-react";
-import {type ReactNode, useDeferredValue, useState} from "react";
+import {type ReactNode, useState} from "react";
 
 import {ConfirmDialog} from "@/components/dialogs";
 import {WithTooltip} from "@/components/WithTooltip";
@@ -121,8 +121,7 @@ export const ListTabs = <T extends string, I>({
 }) => {
     // 모든 탭이 같은 검색어를 쓴다. 탭 배지에 탭마다 걸린 개수가 보여 다른 탭에 있는지도 알 수 있다.
     const [query, setQuery] = useState("");
-    // 입력칸은 바로 바꾸고 목록은 뒤따라 그린다. 수천 줄을 거르고 그리는 동안 글자 입력이 막히지 않게 한다.
-    const needle = useDeferredValue(query).trim().toLowerCase();
+    const needle = query.trim().toLowerCase();
     // 갤러리 거르기: all(전체), common(모든 갤러리 항목), g:<ID>(그 갤러리 한정 항목). 검색어처럼 모든 탭이 같이 쓴다.
     const [gallery, setGallery] = useState("all");
     // 이만큼(일) 넘게 안 쓰인 항목만. 0이면 거르지 않는다.
@@ -131,7 +130,7 @@ export const ListTabs = <T extends string, I>({
     const galleryOptions: Record<string, string> = {all: "모든 항목", common: "갤러리 공통", ...Object.fromEntries(galleries.map((id) => [`g:${id}`, id]))};
     // 고르던 갤러리의 항목을 다 지우면 선택지에서 빠지므로 전체로 돌린다.
     const galleryFilter = gallery in galleryOptions ? gallery : "all";
-    const cutoff = Number(unusedDays) > 0 ? Date.now() - Number(unusedDays) * 24 * 60 * 60 * 1000 : 0;
+    const cutoff = Number(unusedDays) > 0 ? Date.now() - Number(unusedDays) * DAY : 0;
     const filtering = Boolean(needle) || galleryFilter !== "all" || cutoff > 0;
 
     const visible = (type: T, item: I): boolean => {
