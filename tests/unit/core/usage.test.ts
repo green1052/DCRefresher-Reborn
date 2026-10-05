@@ -1,54 +1,137 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {fakeBrowser} from "wxt/testing/fake-browser";
 
-import {isAnyBlocked} from "@/core/block";
-import {sendMessage} from "@/core/messaging/protocol";
-import {markUsed, recordUsage, syncUsage} from "@/core/usage";
-import {findMemo, useMemosStore} from "@/stores/memos";
+import type {UsageData} from "@/core/usage";
 
-import {setBlockLists, stored} from "../../helpers";
+import {stored} from "../../helpers";
 
-vi.mock("@/core/messaging/protocol", () => ({sendMessage: vi.fn(async () => undefined)}));
+const sent = vi.hoisted(() => new Array<UsageData>());
 
-const KEY = "refresher:usage";
+vi.mock("@/core/messaging/protocol", () => ({
+    sendMessage: async (_name: string, batch: UsageData) => {
+        sent.push(batch);
+    }
+}));
+
+const USAGE = "refresher:usage";
+const HOUR = 60 * 60 * 1000;
+
+/** 모아 둔 기록·타이머가 모듈에 남으므로 테스트마다 새로 불러온다. */
+const load = async (): Promise<typeof import("@/core/usage")> => {
+    vi.resetModules();
+    return import("@/core/usage");
+};
 
 beforeEach(() => {
-    vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout", "Date"]});
-    vi.setSystemTime(new Date("2026-01-10T00:00:00Z"));
+    sent.length = 0;
 });
 
 describe("markUsed", () => {
-    it("함께 걸린 항목을 모두 적고, 맞지 않은 항목과 다른 갤러리 메모는 적지 않는다. 모아서 배경에 한 번 보낸다", async () => {
-        const at = Date.now();
-        // 같은 유저를 닉네임과 아이디로 함께 막았다. 닉네임에서 막혀도 아이디 항목까지 적는다.
-        setBlockLists({NICK: [{id: "nick", content: "ㅇㅇ", isRegex: false}, {id: "miss", content: "ㄴㄴ", isRegex: false}], ID: [{id: "uid", content: "u1", isRegex: false}]});
-        expect(isAnyBlocked({NICK: "ㅇㅇ", ID: "u1"})).toBe(true);
-        useMemosStore.setState({memos: {UID: {u1: {text: "m", color: "#000"}, u2: {text: "m", color: "#000", gallery: "g"}}, NICK: {}, IP: {}}});
-        expect(findMemo({uid: "u1"})).toBeDefined();
-        expect(findMemo({uid: "u2"}, "other")).toBeUndefined();
-        // 한 시간 안에 다시 걸려도 또 적지 않는다.
-        markUsed("block", "nick");
+    beforeEach(() => {
+        vi.useFakeTimers({now: 10 * HOUR});
+    });
 
-        expect(sendMessage).not.toHaveBeenCalled();
-        await vi.advanceTimersByTimeAsync(5_000);
-        expect(sendMessage).toHaveBeenCalledTimes(1);
-        expect(sendMessage).toHaveBeenCalledWith("refresher:markUsed", {block: {nick: at, uid: at}, memo: {"UID:u1": at}});
+    it("모아서 5초 뒤 한 번에 보낸다", async () => {
+        const {markUsed} = await load();
+        markUsed("block", "a");
+        vi.advanceTimersByTime(1000);
+        markUsed("block", "b");
+        markUsed("memo", "NICK:닉");
+
+        vi.advanceTimersByTime(3999);
+        expect(sent).toEqual([]);
+        vi.advanceTimersByTime(1);
+        const now = 10 * HOUR + 1000;
+        expect(sent).toEqual([{block: {a: 10 * HOUR, b: now}, memo: {"NICK:닉": now}}]);
+    });
+
+    it("같은 항목은 1시간에 한 번만 적는다", async () => {
+        const {markUsed} = await load();
+        markUsed("block", "a");
+        vi.advanceTimersByTime(5000);
+        markUsed("block", "a");
+        vi.advanceTimersByTime(HOUR);
+        expect(sent).toHaveLength(1);
+
+        markUsed("block", "a");
+        // 차단과 메모는 같은 id여도 다른 항목이다.
+        markUsed("memo", "a");
+        vi.advanceTimersByTime(5000);
+        expect(sent).toHaveLength(2);
+        expect(Object.keys(sent[1]!.block)).toEqual(["a"]);
+        expect(Object.keys(sent[1]!.memo)).toEqual(["a"]);
+    });
+
+    it("보낸 뒤 다시 모으기 시작한다", async () => {
+        const {markUsed} = await load();
+        markUsed("block", "a");
+        vi.advanceTimersByTime(5000);
+        markUsed("block", "b");
+        vi.advanceTimersByTime(5000);
+        expect(sent.map((batch) => Object.keys(batch.block))).toEqual([["a"], ["b"]]);
+    });
+
+    it("페이지를 떠나면 기다리지 않고 보낸다", async () => {
+        const {markUsed} = await load();
+        markUsed("block", "a");
+        window.dispatchEvent(new Event("pagehide"));
+        expect(sent).toHaveLength(1);
+
+        // 걸려 있던 타이머는 지워 빈 묶음을 다시 보내지 않는다.
+        vi.advanceTimersByTime(5000);
+        window.dispatchEvent(new Event("pagehide"));
+        expect(sent).toHaveLength(1);
     });
 });
 
-describe("recordUsage / syncUsage (배경)", () => {
-    it("동시에 와도 서로의 기록을 덮지 않는다", async () => {
-        await fakeBrowser.storage.local.set({[KEY]: {block: {kept: 5, gone: 5}, memo: {"UID:x": 7}}});
-        const [, times] = await Promise.all([
-            recordUsage({block: {kept: 9, other: 9}, memo: {"UID:x": 8}}),
-            syncUsage("block", ["kept", "new"])
-        ]);
-        // 먼저 온 기록을 본 뒤에 맞춘다. other는 목록에 없으니 버리고, 기록이 없는 new는 지금으로 둔다.
-        expect(times).toEqual({kept: 9, new: Date.now()});
-        expect(await stored(KEY)).toEqual({block: {kept: 9, new: Date.now()}, memo: {"UID:x": 8}});
+describe("memoUsageKey", () => {
+    it("종류와 대상을 잇는다", async () => {
+        const {memoUsageKey} = await load();
+        expect(memoUsageKey("NICK", "닉")).toBe("NICK:닉");
+    });
+});
 
-        // 더 이른 시각은 늦은 기록을 덮지 않는다.
-        await recordUsage({block: {kept: 1}, memo: {}});
-        expect((await stored(KEY) as { block: Record<string, number> }).block.kept).toBe(9);
+describe("recordUsage", () => {
+    it("저장된 기록과 합치며 더 늦은 시각을 남긴다", async () => {
+        const {recordUsage} = await load();
+        await browser.storage.local.set({[USAGE]: {block: {a: 100, b: 300}, memo: {m: 1}}});
+        await recordUsage({block: {a: 200, b: 250, c: 50}, memo: {}});
+        expect(await stored(USAGE)).toEqual({block: {a: 200, b: 300, c: 50}, memo: {m: 1}});
+    });
+
+    it("깨진 기록과 숫자가 아닌 값은 버린다", async () => {
+        const {recordUsage} = await load();
+        await browser.storage.local.set({[USAGE]: {block: {a: "x", b: 1}, memo: "깨짐"}});
+        await recordUsage({block: {c: 2}, memo: {d: 3}});
+        expect(await stored(USAGE)).toEqual({block: {b: 1, c: 2}, memo: {d: 3}});
+    });
+
+    it("동시에 와도 서로의 기록을 덮지 않는다", async () => {
+        const {recordUsage, syncUsage} = await load();
+        await Promise.all([
+            recordUsage({block: {a: 1}, memo: {}}),
+            recordUsage({block: {b: 2}, memo: {}}),
+            syncUsage("memo", ["m"])
+        ]);
+        expect(await stored(USAGE)).toMatchObject({block: {a: 1, b: 2}, memo: {m: expect.any(Number)}});
+    });
+});
+
+describe("syncUsage", () => {
+    it("기록이 없는 항목은 지금 쓰인 것으로 두고 지운 항목의 기록은 버린다", async () => {
+        const {syncUsage} = await load();
+        vi.spyOn(Date, "now").mockReturnValue(999);
+        await browser.storage.local.set({[USAGE]: {block: {kept: 5, removed: 6}, memo: {m: 7}}});
+
+        await expect(syncUsage("block", ["kept", "new"])).resolves.toEqual({kept: 5, new: 999});
+        expect(await stored(USAGE)).toEqual({block: {kept: 5, new: 999}, memo: {m: 7}});
+    });
+
+    it("바뀐 것이 없으면 쓰지 않는다", async () => {
+        const {syncUsage} = await load();
+        await browser.storage.local.set({[USAGE]: {block: {a: 5}, memo: {}}});
+        const set = vi.spyOn(browser.storage.local, "set");
+
+        await expect(syncUsage("block", ["a"])).resolves.toEqual({a: 5});
+        expect(set).not.toHaveBeenCalled();
     });
 });
