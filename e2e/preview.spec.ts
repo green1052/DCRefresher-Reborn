@@ -28,7 +28,6 @@ test.describe("미리보기", () => {
 
     test("PageDown·PageUp으로 옆 글로 넘기고, 뒤로 가기는 앞서 본 글을 다시 열며, 닫으면 쌓은 주소를 모두 걷는다", async ({listPage}) => {
         const {page} = listPage;
-        // 넘길 때마다 댓글까지 받은 뒤 넘긴다. 받는 중에 넘기면 파이어폭스에서 끊긴 요청의 AbortError가 콘솔에 남는다 (확장 버그).
         const shows = async (no: number): Promise<void> => {
             await expect(listPage.frameTitle).toHaveText(`[말머리] 글 ${no} 제목`);
             await expect(page).toHaveURL(viewUrl(no));
@@ -52,6 +51,25 @@ test.describe("미리보기", () => {
         await expect(page).toHaveURL(LIST_URL);
         // 목록 앞의 기록(빈 탭)으로 돌아가지 않았다.
         await expect(listPage.refreshButton).toBeVisible();
+    });
+
+    test("받는 중에 넘기거나 닫아 끊은 요청은 콘솔에 오류를 남기지 않는다", async ({listPage, context}) => {
+        const {page} = listPage;
+        // 본문·댓글 응답을 늦춰 받는 도중에 끊기게 한다. 파이어폭스에서 content.fetch의 AbortError가 처리되지 않은 오류로 남았다.
+        await context.route(/\/board\/(view|comment)\//, async (route) => {
+            await new Promise((resolve) => setTimeout(resolve, 150));
+            await route.fallback().catch(() => {});
+        });
+        for (const index of [0, 1, 2]) {
+            await listPage.openPreview(index);
+            await page.waitForTimeout(75);
+            await page.keyboard.press("PageDown");
+            await page.waitForTimeout(75);
+            await page.keyboard.press("Escape");
+        }
+        // 끊긴 응답이 다 돌아올 때까지 기다린다. 오류는 errors 픽스처가 본다.
+        await page.waitForTimeout(500);
+        await expect(listPage.frame).toHaveCount(0);
     });
 
     test("뒤로 가기로 닫으면 목록 주소로 돌아간다", async ({listPage}) => {

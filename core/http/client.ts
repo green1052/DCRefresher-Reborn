@@ -8,9 +8,15 @@ type Fetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
 /**
  * 파이어폭스 콘텐츠 스크립트에만 있는 전역 content. content.fetch는 페이지 컨텍스트의 fetch라 페이지가 보낸 요청처럼 나간다.
  * 콘텐츠 스크립트 자체의 fetch는 확장 샌드박스에서 나가 Origin/Referer가 빠진다 (#67). 크롬 콘텐츠 스크립트와 배경·옵션 페이지는 기본 fetch다.
+ * content.fetch가 준 Promise는 페이지 영역의 것이라, 거기에 finally 등으로 이은 Promise는 이쪽에서 기다려도 받은 쪽이 없는 것으로 쳐서
+ * 끊은 요청마다 AbortError가 콘솔에 남는다. then으로 바로 이 영역의 Promise에 옮겨 담는다.
  */
 const pageWindow = (globalThis as { content?: { fetch: Fetch } }).content;
-const baseFetch: Fetch = pageWindow ? pageWindow.fetch.bind(pageWindow) : globalThis.fetch.bind(globalThis);
+const baseFetch: Fetch = pageWindow
+    ? (input, init) => new Promise((resolve, reject) => {
+        pageWindow.fetch(input, init).then(resolve, reject);
+    })
+    : globalThis.fetch.bind(globalThis);
 
 /** 동시 요청 수. 요청 제한 모듈(features/requests)이 설정값으로 바꾸고, 모듈이 꺼져 있거나 배경·옵션 페이지면 무제한이다. */
 const limiter = createLimiter(Number.POSITIVE_INFINITY);
