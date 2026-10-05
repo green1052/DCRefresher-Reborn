@@ -1,6 +1,5 @@
 import {Fragment} from "react";
 
-import {SettingItem} from "@/components/SettingItem";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Collapsible, CollapsibleContent} from "@/components/ui/collapsible";
 import {Separator} from "@/components/ui/separator";
@@ -12,6 +11,7 @@ import {useModulesStore} from "@/stores/modules";
 import {SAVE_FAILED} from "@/utils/error";
 
 import {notify} from "./optionsStore";
+import {SettingItem} from "./SettingItem";
 
 type SettingEntry = [key: string, schema: SettingSchema];
 

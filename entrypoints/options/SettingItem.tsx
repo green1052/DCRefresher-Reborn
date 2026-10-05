@@ -2,7 +2,6 @@ import {ChevronDown, ChevronUp, GripVertical, Undo2} from "lucide-react";
 import {useId, useState} from "react";
 
 import {ColorInput} from "@/components/ColorInput";
-import {RefresherSelect} from "@/components/RefresherSelect";
 import {WithTooltip} from "@/components/WithTooltip";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
@@ -14,6 +13,8 @@ import type {SettingSchema} from "@/core/module/types";
 import type {SettingValue} from "@/core/storage/types";
 import {pressedKey} from "@/utils/event";
 import {cn} from "cn";
+
+import {RefresherSelect} from "./RefresherSelect";
 
 interface SettingItemProps {
     schema: SettingSchema;

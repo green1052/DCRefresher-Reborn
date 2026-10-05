@@ -3,7 +3,6 @@ import {type ReactNode, useDeferredValue, useState} from "react";
 
 import {ConfirmDialog} from "@/components/dialogs";
 import {WithTooltip} from "@/components/WithTooltip";
-import {RefresherSelect} from "@/components/RefresherSelect";
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent} from "@/components/ui/card";
@@ -16,6 +15,7 @@ import {isRecord} from "@/utils/record";
 
 import {ImportDialog} from "./Layout";
 import {notify} from "./optionsStore";
+import {RefresherSelect} from "./RefresherSelect";
 
 const EmptyList = ({children}: { children: ReactNode }) => (
     <Empty>

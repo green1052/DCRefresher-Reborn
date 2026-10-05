@@ -3,7 +3,6 @@ import {useId, useMemo, useState} from "react";
 
 import {ColorInput} from "@/components/ColorInput";
 import {DialogActions, ModalDialog, SubmitForm} from "@/components/dialogs";
-import {RefresherSelect} from "@/components/RefresherSelect";
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
 import {DialogHeader, DialogTitle} from "@/components/ui/dialog";
@@ -20,6 +19,7 @@ import {formatAppMemos, parseAppMemos} from "./appMemo";
 import {ImportDialog, useUsage} from "./Layout";
 import {ListRow, ListTabs} from "./ListTabs";
 import {notify} from "./optionsStore";
+import {RefresherSelect} from "./RefresherSelect";
 
 interface MemoFormState {
     type: MemoType;

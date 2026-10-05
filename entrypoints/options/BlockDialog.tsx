@@ -1,7 +1,6 @@
 import {useId, useState} from "react";
 
 import {DialogActions, ModalDialog, SubmitForm} from "@/components/dialogs";
-import {RefresherSelect} from "@/components/RefresherSelect";
 import {Button} from "@/components/ui/button";
 import {Checkbox} from "@/components/ui/checkbox";
 import {DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
@@ -11,6 +10,8 @@ import {DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
 import type {BlockInputFields} from "@/stores/blocks";
 import {messageOf, SAVE_FAILED} from "@/utils/error";
+
+import {RefresherSelect} from "./RefresherSelect";
 
 interface BlockDialogProps {
     type: BlockType;

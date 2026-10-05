@@ -1,16 +1,16 @@
 import {useMemo, useState} from "react";
 
-import {BlockDialog} from "@/components/BlockDialog";
-import {RefresherSelect} from "@/components/RefresherSelect";
 import {pinDefaultMode} from "@/core/settings-transfer";
 import {BLOCK_TYPES, DETECT_MODE_NAMES, TYPE_NAMES} from "@/core/storage/items";
 import type {BlockEntry, BlockType} from "@/core/storage/types";
 import {type BlockInputFields, composeExtra, normalizeBlockList, normalizeDefaults, useBlocksStore} from "@/stores/blocks";
 import {SAVE_FAILED} from "@/utils/error";
 
+import {BlockDialog} from "./BlockDialog";
 import {useUsage} from "./Layout";
 import {ListRow, ListTabs} from "./ListTabs";
 import {notify} from "./optionsStore";
+import {RefresherSelect} from "./RefresherSelect";
 
 /**
  * 디시콘 이미지 주소. 묶음 정규식("^(a|b…)$", 하나뿐이면 "^(code)$")이면 첫 코드의 이미지를 쓴다.
