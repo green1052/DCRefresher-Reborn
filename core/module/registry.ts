@@ -16,7 +16,7 @@ interface ModuleInstance {
     def: AnyModule;
     settings: Record<string, SettingValue>;
     /** 실행 중일 때만 있다. ready는 setup이 끝나 api가 준비됐다는 뜻이며, 단축키·팝업 토글은 그때부터 받는다. */
-    running?: { ctx: ModuleContext; controller: AbortController; ready: boolean; api?: unknown; setup?: Promise<void>; listeners: ((key: string) => void)[] };
+    running?: { ctx: ModuleContext; controller: AbortController; ready: boolean; api?: unknown; setup?: Promise<void>; listeners: ((keys: ReadonlySet<string>) => void)[] };
 }
 
 const instances = new Map<string, ModuleInstance>();
@@ -44,7 +44,7 @@ const start = async (instance: ModuleInstance): Promise<void> => {
         if (signal.aborted) dispose();
         else signal.addEventListener("abort", () => dispose(), {once: true});
     };
-    const listeners: ((key: string) => void)[] = [];
+    const listeners: ((keys: ReadonlySet<string>) => void)[] = [];
     const ctx: ModuleContext = {
         settings: instance.settings,
         signal,
@@ -100,14 +100,13 @@ const applySettings = (instance: ModuleInstance, stored: unknown): void => {
     if (changed.length === 0) return;
 
     moduleSettingsStore.setState({[instance.def.id]: {...instance.settings}});
-    // 리스너 하나가 던져도 다른 리스너와 다른 키는 반영한다.
-    for (const key of changed) {
-        for (const listener of instance.running?.listeners ?? []) {
-            try {
-                listener(key);
-            } catch (e) {
-                console.error(`Settings listener failed: ${instance.def.id}.${key}`, e);
-            }
+    // 리스너 하나가 던져도 다른 리스너는 반영한다.
+    const keys = new Set(changed);
+    for (const listener of instance.running?.listeners ?? []) {
+        try {
+            listener(keys);
+        } catch (e) {
+            console.error(`Settings listener failed: ${instance.def.id}`, e);
         }
     }
 };

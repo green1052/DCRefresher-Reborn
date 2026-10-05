@@ -259,12 +259,12 @@ export default defineModule({
 
         armNext();
 
-        ctx.onSettingsChanged((key) => {
-            if (key === "doNotColorVisited") applyDoNotColorVisited(ctx);
-            else if (key === "titleCount" && !ctx.settings.titleCount) unseen.clear();
+        ctx.onSettingsChanged((keys) => {
+            if (keys.has("doNotColorVisited")) applyDoNotColorVisited(ctx);
+            if (keys.has("titleCount") && !ctx.settings.titleCount) unseen.clear();
             // 주기 설정은 옵션 탭에서 바꾸므로 이미 잡힌 주기가 끝나기를 기다리지 않고 새 값으로 다시 잡는다.
-            else if (key === "refreshRate" || key === "backgroundRefresh" || key === "backgroundRefreshRate") armNext();
-            else if (key === "noRefreshOnSearch" && queryString("s_keyword")) setPaused(ctx.settings.noRefreshOnSearch);
+            if (keys.has("refreshRate") || keys.has("backgroundRefresh") || keys.has("backgroundRefreshRate")) armNext();
+            if (keys.has("noRefreshOnSearch") && queryString("s_keyword")) setPaused(ctx.settings.noRefreshOnSearch);
         });
 
         const onVisibilityChange = (): void => {

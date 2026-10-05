@@ -22,7 +22,7 @@ describe("loadAll", () => {
             settings: {size: setting({type: "range", default: 5, min: 1, max: 10, step: 1, unit: ""}), flag: setting({type: "check", default: true})},
             setup: (ctx) => {
                 setup({...ctx.settings});
-                ctx.onSettingsChanged((key) => onChanged(key));
+                ctx.onSettingsChanged((keys) => onChanged([...keys]));
                 return {ctx};
             },
             revoke
@@ -46,7 +46,7 @@ describe("loadAll", () => {
         await settingsOf("a", {size: 3, flag: true});
         await tick();
         expect(onChanged).toHaveBeenCalledTimes(1);
-        expect(onChanged).toHaveBeenCalledWith("size");
+        expect(onChanged).toHaveBeenCalledWith(["size"]);
         expect((getModuleApi("a" as never) as unknown as { ctx: { settings: { size: number } } }).ctx.settings.size).toBe(3);
 
         // 끄면 revoke, 다시 켜면 setup

@@ -48,10 +48,11 @@ export interface ModuleContext<S extends SettingsSchema = SettingsSchema> {
     addCleanup(dispose: () => void): void;
 
     /**
-     * 켜져 있는 동안 설정이 바뀌면 바뀐 키로 부른다 (새 값은 ctx.settings[key]). 모듈이 멈추면 더 부르지 않는다.
+     * 켜져 있는 동안 설정이 바뀌면 바뀐 키들로 한 번 부른다 (새 값은 ctx.settings[key]). 모듈이 멈추면 더 부르지 않는다.
+     * 가져오기·초기화처럼 여러 키가 한꺼번에 바뀌어도 한 번이라 다시 그리는 일을 키마다 하지 않는다.
      * setup 안에서 등록해 setup이 만든 상태를 그대로 쓴다. await 전에 등록해야 그사이 바뀐 설정도 받는다.
      */
-    onSettingsChanged(listener: (key: keyof S & string) => void): void;
+    onSettingsChanged(listener: (keys: ReadonlySet<keyof S & string>) => void): void;
 }
 
 /** 팝업 '현재 페이지' 토글의 표시 정보. 팝업은 메타(features/<id>/meta.ts)의 이것으로 아이콘을 찾고, 동작은 index.ts의 PageToggle이 잇는다. */

@@ -47,10 +47,10 @@ export default defineModule({
     setup(ctx) {
         watchWidth(ctx);
         applyHide(ctx);
-        ctx.onSettingsChanged((key) => {
-            if (key === "activePixel") watchWidth(ctx);
-            else if (COMPACT_KEYS.has(key)) applyCompact(ctx);
-            else applyHide(ctx);
+        ctx.onSettingsChanged((keys) => {
+            if (keys.has("activePixel")) watchWidth(ctx);
+            if (!keys.isDisjointFrom(COMPACT_KEYS)) applyCompact(ctx);
+            if ([...keys].some((key) => key !== "activePixel" && !COMPACT_KEYS.has(key))) applyHide(ctx);
         });
     },
 

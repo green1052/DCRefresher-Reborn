@@ -53,9 +53,9 @@ export default defineModule({
         // 본문·첨부 목록까지 읽은 뒤에 한 번 그린다. 필터로 걸면 머리를 읽는 순간 불려 본문이 아직 없다.
         whenDomReady(() => renderViewTools(ctx.settings), ctx.signal);
         // 필터는 등록할 때와 요소가 새로 붙을 때만 돌므로, 이미 열린 글의 영상은 설정이 바뀔 때 여기서 바꾸고 되돌린다.
-        ctx.onSettingsChanged((key) => {
-            if (key === "imageOrigin" || key === "titleSearch") renderViewTools(ctx.settings);
-            if (key !== "enableGifControl") return;
+        ctx.onSettingsChanged((keys) => {
+            if (keys.has("imageOrigin") || keys.has("titleSearch")) renderViewTools(ctx.settings);
+            if (!keys.has("enableGifControl")) return;
             if (ctx.settings.enableGifControl) {
                 for (const video of document.querySelectorAll(GIF_VIDEO)) enableGifControl(video);
             } else {

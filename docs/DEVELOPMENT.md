@@ -273,7 +273,7 @@ export default defineModule({
 
 - **setup(ctx)**: 모듈이 켜진 페이지에서 실행됩니다. 돌려준 값은 그 모듈의 api가 되어 단축키·팝업 토글·다른 모듈이 받습니다.
 - **revoke()**: 모듈을 끄면 실행됩니다. 페이지에 넣은 DOM·클래스·스타일을 되돌립니다.
-- **ctx.onSettingsChanged(listener)**: 켜져 있는 동안 설정이 바뀌면 바뀐 키마다 부릅니다. setup 안에서 등록하므로 setup이 만든 상태(타이머, 다시 판정하는 함수 등)를 그대로 씁니다. 모듈 전역 변수로 setup과 이을 필요가 없습니다. `ctx.settings`는 늘 최신 값이므로, 설정을 쓸 때마다 읽는 모듈은 등록하지 않아도 됩니다.
+- **ctx.onSettingsChanged(listener)**: 켜져 있는 동안 설정이 바뀌면 바뀐 키들(Set)로 한 번 부릅니다. 가져오기처럼 여러 키가 한꺼번에 바뀌어도 한 번입니다. setup 안에서 등록하므로 setup이 만든 상태(타이머, 다시 판정하는 함수 등)를 그대로 씁니다. 모듈 전역 변수로 setup과 이을 필요가 없습니다. `ctx.settings`는 늘 최신 값이므로, 설정을 쓸 때마다 읽는 모듈은 등록하지 않아도 됩니다.
 - 객체를 쓸 때 `setup`을 `shortcuts`, `pageToggles`보다 앞에 둡니다. TypeScript가 api 타입을 `setup`의 반환값에서 추론하기 때문입니다.
 
 모듈 하나가 등록되고 켜지고 꺼지기까지의 흐름입니다. 단축키와 팝업 토글은 setup이 끝나 api가 준비된 모듈에만 전달되고, 끄면 signal을 먼저 abort한 뒤 revoke를 부릅니다.
@@ -290,7 +290,7 @@ flowchart TD
     SU -->|"끝남·그사이 안 꺼짐"| R["ready<br>반환값을 api로 저장"]
     SU -->|"실패"| STOP
     R --> USE["단축키·pageToggles·getModuleApi<br>ready인 모듈만 받음"]
-    C -.->|"설정 값 바뀜"| OC["실행 중이면<br>바뀐 키마다 onSettingsChanged 리스너"]
+    C -.->|"설정 값 바뀜"| OC["실행 중이면<br>바뀐 키들로 onSettingsChanged 리스너 한 번"]
     W["on/off 저장소 watch<br>+ 로드 끝에 1회<br>+ bfcache 복귀 시 설정 먼저 반영"] --> SY["sync<br>모듈마다 켜짐 여부 재확인"]
     SY -->|"켜짐"| S
     SY -->|"꺼짐"| STOP["stop<br>signal abort → 필터·addCleanup 해제"]
@@ -307,7 +307,7 @@ flowchart TD
 | `signal` | 이 실행의 AbortSignal. 모듈이 꺼지면 abort된다. `addEventListener`에 `{signal}`로 넘긴다 |
 | `addFilter(selector, fn)` | 지금 있는 요소와 이후 추가되는 요소마다 `fn`을 실행한다 (core/filtering.ts의 MutationObserver 하나를 같이 쓴다) |
 | `addCleanup(fn)` | signal을 받지 못하는 것(storage watch, zustand subscribe, 타이머)의 해제 함수를 등록한다 |
-| `onSettingsChanged(fn)` | 켜져 있는 동안 설정이 바뀌면 바뀐 키로 `fn`을 부른다. setup 안에서 등록한다 |
+| `onSettingsChanged(fn)` | 켜져 있는 동안 설정이 바뀌면 바뀐 키들(Set)로 `fn`을 한 번 부른다. setup 안에서 등록한다 |
 
 React UI는 설정을 `useModuleSettings("모듈 id")`(`core/module/useModuleSettings.ts`)로 직접 읽습니다. 옵션에서 바꾸면 바로 다시 그려지고, 타입은 모듈 메타의 스키마에서 나옵니다(`modules/module-types.ts`가 `ModuleSettings`를 채웁니다). 설정을 UI 스토어로 옮겨 적지 마세요.
 
