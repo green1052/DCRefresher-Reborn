@@ -14,6 +14,8 @@ export default defineConfig({
         // 파서·정화·목록 교체처럼 DOM을 만지는 코드가 많아 jsdom을 기본으로 둔다
         environment: "jsdom",
         setupFiles: ["tests/setup.ts"],
+        // zustand의 React 훅은 node_modules라 변환되지 않으면 진짜 react를 불러 훅이 깨진다. preact/compat으로 바꾸도록 같이 변환한다.
+        server: {deps: {inline: ["zustand"]}},
         mockReset: true,
         restoreMocks: true
     }
