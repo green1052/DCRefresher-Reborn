@@ -98,8 +98,11 @@ const notifyRowsHidden = (): void => {
     });
 };
 
-const clearLowActivity = (): void => {
-    for (const element of document.querySelectorAll(LOW_ACTIVITY_SELECTOR)) element.classList.remove(...LOW_ACTIVITY_CLASS_LIST);
+/** 깡계 흐림·숨김을 모두 뗀다. 뗀 것이 있었는지 돌려준다. */
+const clearLowActivity = (): boolean => {
+    const marked = document.querySelectorAll(LOW_ACTIVITY_SELECTOR);
+    for (const element of marked) element.classList.remove(...LOW_ACTIVITY_CLASS_LIST);
+    return marked.length > 0;
 };
 
 const process = (ctx: Ctx, element: HTMLElement): void => {
@@ -180,23 +183,27 @@ const publishRatios = (ctx: Ctx): void => {
     useUiStore.setState({ratios: ctx.settings.checkRatio ? {cache: ratios, alarm: ctx.settings.alarmRatio} : null});
 };
 
+// 숨김이 다시 붙으면 process가 알린다. 여기서는 뗀 것이 있을 때만 알려 차단 모듈이 같은 댓글 접기를 괜히 다시 하지 않게 한다.
 const rebuildAll = (ctx: Ctx): void => {
-    clearLowActivity();
+    const cleared = clearLowActivity();
     // 배지가 없던 작성자도 돈다. 설정을 켜서 새로 생기는 배지가 있다 (필터 선택자와 같은 대상).
     for (const element of document.querySelectorAll<HTMLElement>(WRITER_SELECTOR)) process(ctx, element);
-    notifyRowsHidden();
+    if (cleared) notifyRowsHidden();
 };
 
 /** 몇몇 유저의 작성자 칸만 다시 그린다. 깡계 흐림·숨김은 process가 더하기만 하므로 먼저 뗀다. */
 const rebuildUsers = (ctx: Ctx, uids: string[]): void => {
     // 작성자 칸을 한 번만 훑는다. 다른 탭이 글댓비를 쓸 때마다(새 글마다 최대 10명) 유저 수만큼 문서를 다시 찾지 않는다.
     const changed = new Set(uids);
+    let cleared = false;
     for (const element of document.querySelectorAll<HTMLElement>(WRITER_SELECTOR)) {
         if (!changed.has(element.dataset.uid ?? "")) continue;
-        (element.closest<HTMLElement>(ROW_SELECTOR) ?? element).classList.remove(...LOW_ACTIVITY_CLASS_LIST);
+        const row = element.closest<HTMLElement>(ROW_SELECTOR) ?? element;
+        cleared ||= row.matches(LOW_ACTIVITY_SELECTOR);
+        row.classList.remove(...LOW_ACTIVITY_CLASS_LIST);
         process(ctx, element);
     }
-    notifyRowsHidden();
+    if (cleared) notifyRowsHidden();
 };
 
 export default defineModule({
