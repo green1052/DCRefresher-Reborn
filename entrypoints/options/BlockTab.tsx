@@ -1,4 +1,3 @@
-import {Flex, Text} from "@radix-ui/themes";
 import {useMemo, useState} from "react";
 
 import {BlockDialog} from "@/components/BlockDialog";
@@ -77,15 +76,15 @@ export function BlockTab() {
                 onClear={(type) => setEntries(type, [])}
                 onAdd={(type) => setDialog({type, initial: null})}
                 toolbar={(type) => (
-                    <Flex align="center" gap="2">
-                        <Text size="2" color="gray">기본 차단 모드</Text>
+                    <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">기본 차단 모드</span>
                         <RefresherSelect
                             value={defaults[type]}
                             aria-label="기본 차단 모드"
                             onChange={(next) => void setDefault(type, next).catch(() => notify(SAVE_FAILED))}
                             options={DETECT_MODE_NAMES}
                         />
-                    </Flex>
+                    </div>
                 )}
                 items={(type) => entries[type]}
                 // 디시콘은 content가 코드라 이름(extra)으로도 찾을 수 있게 넣는다.
@@ -101,11 +100,11 @@ export function BlockTab() {
                         key={entry.id}
                         head={type === "DCCON" ? (
                             <img src={dcconImage(entry)} alt={entry.extra ?? entry.content} loading="lazy" decoding="async"
-                                 style={{display: "block", height: 40}}/>
+                                 className="block h-10"/>
                         ) : (
-                            <Text weight="medium">{entry.content}</Text>
+                            <span className="font-medium">{entry.content}</span>
                         )}
-                        info={<Text size="2" color="gray">{entryInfo(entry)}</Text>}
+                        info={<span className="text-muted-foreground">{entryInfo(entry)}</span>}
                         used={used[entry.id]}
                         onEdit={() => setDialog({type, initial: entry})}
                         onRemove={() => void removeEntry(type, entry.id).catch(() => notify(SAVE_FAILED))}
