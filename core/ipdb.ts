@@ -59,13 +59,17 @@ export const encodeIpData = (prefixes: ReadonlyMap<number, readonly IpCandidate[
     const ordered = [...frequency.values()].sort((a, b) => b.count - a.count).map(({candidate}) => candidate);
     const metaIndex = new Map(ordered.map((candidate, index) => [candidateKey(candidate), index]));
 
-    const orgs: string[] = [];
-    const countries: string[] = [];
-    const indexIn = (table: string[], value: string): number => {
-        const found = table.indexOf(value);
-        return found >= 0 ? found : table.push(value) - 1;
+    // 처음 나온 순서대로 번호를 매긴다. Map이 그 순서를 지키므로 키 목록이 곧 표다 (indexOf로 찾으면 조직 수천 개에 후보마다 훑는다).
+    const orgIndex = new Map<string, number>();
+    const countryIndex = new Map<string, number>();
+    const indexIn = (index: Map<string, number>, value: string): number => {
+        let found = index.get(value);
+        if (found === undefined) index.set(value, (found = index.size));
+        return found;
     };
-    const meta = ordered.flatMap((candidate) => [indexIn(orgs, candidate.org ?? ""), indexIn(countries, candidate.country ?? ""), candidate.vpn ? 1 : 0]);
+    const meta = ordered.flatMap((candidate) => [indexIn(orgIndex, candidate.org ?? ""), indexIn(countryIndex, candidate.country ?? ""), candidate.vpn ? 1 : 0]);
+    const orgs = [...orgIndex.keys()];
+    const countries = [...countryIndex.keys()];
 
     const lists: number[][] = [];
     const listIds = new Map<string, number>();
