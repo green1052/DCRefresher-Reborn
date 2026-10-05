@@ -1,0 +1,9 @@
+/* ===== 검색 이어 보기 (search 모듈) ===== */
+
+/* 다음 검색 진행 표시 (search 모듈). */
+.refresherSearchStatus {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 12px;
+    color: #888;
+}

@@ -1,0 +1,75 @@
+name: CI
+
+on:
+    pull_request:
+    workflow_call:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: ci-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    check:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            -   uses: actions/checkout@v7
+                with:
+                    persist-credentials: false
+
+            -   uses: oven-sh/setup-bun@v2
+
+            -   name: Install Dependencies
+                run: bun ci
+
+            -   name: Type check
+                run: bun run compile
+
+            -   name: Unit tests
+                run: bun run test
+
+    e2e:
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    -   browser: chromium
+                        build: build
+                        e2e: e2e
+                    -   browser: firefox
+                        build: build:firefox
+                        e2e: e2e:firefox
+        name: e2e (${{ matrix.browser }})
+        steps:
+            -   uses: actions/checkout@v7
+                with:
+                    persist-credentials: false
+
+            -   uses: oven-sh/setup-bun@v2
+
+            -   name: Install Dependencies
+                run: bun ci
+
+            -   name: Build
+                run: bun run ${{ matrix.build }}
+
+            -   name: Install browser
+                run: bunx playwright install --with-deps ${{ matrix.browser }}
+
+            -   name: E2E tests
+                run: bun run ${{ matrix.e2e }}
+
+            -   name: Upload E2E report
+                if: failure()
+                uses: actions/upload-artifact@v7
+                with:
+                    name: playwright-report-${{ matrix.browser }}
+                    path: |
+                        playwright-report
+                        test-results
+                    retention-days: 7

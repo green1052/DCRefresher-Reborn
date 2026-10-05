@@ -7,7 +7,7 @@ export const savedNonmember = (): { nick: string; pw: string } => ({
     pw: localStorage.getItem("nonmember_pw") ?? ""
 });
 
-/** 디시처럼 닉네임은 늘, 비밀번호는 비어 있지 않을 때만 저장한다 */
+/** 디시처럼 닉네임은 늘, 비밀번호는 비어 있지 않을 때만 저장한다. */
 export const saveNonmember = (nick: string, pw: string): void => {
     localStorage.setItem("nonmember_nick", nick);
     if (pw) localStorage.setItem("nonmember_pw", pw);

@@ -1,14 +1,23 @@
 // 디시 글 목록 DOM 도우미. 목록을 갈아끼우거나 이어 붙이는 refresh·search 모듈과 행을 찾는 모듈이 같이 쓴다.
+import {sendMessage} from "@/core/messaging/protocol";
 
-/** 갈아끼울 글 목록 tbody. 검색 페이지 아래쪽 통합검색 목록(#kakao_seach_list)은 id가 있어 :not([id])로 빠진다 */
+/** 갈아끼울 글 목록 tbody. 검색 페이지 아래쪽 통합검색 목록(#kakao_seach_list)은 id가 있어 :not([id])로 빠진다. */
 export const LIST_SELECTOR = ".gall_list:not([id]) tbody";
 export const PAGING_SELECTOR = ".left_content article:has(.gall_listwrap) .bottom_paging_box";
 
 /**
  * 작성자 칸(.ub-writer)이 든 행. 글 목록 행·글 보기 머리·댓글은 .ub-content이고,
- * 댓글 검색 결과의 댓글 행은 ub-content가 아니라 .search_comment다
+ * 댓글 검색 결과의 댓글 행은 ub-content가 아니라 .search_comment다.
  */
 export const ROW_SELECTOR = ".ub-content, .search_comment";
+
+/**
+ * 목록 행을 갈아끼우거나 붙인 뒤 부른다. 디시는 자체 차단·이용자 메모 표시를 로드 때만 걸므로, 배경이 페이지(MAIN world)에서 다시 건다
+ * (콘텐츠 스크립트에선 디시 함수를 부를 수 없다). 실패해도(확장이 멈춤 등) 목록은 그대로라 넘긴다.
+ */
+export const notifyListReplaced = (gallery: string): void => {
+    void sendMessage("refresher:listReplaced", gallery).catch(() => {});
+};
 
 /**
  * 관리자 목록 행의 체크박스 칸을 만드는 함수를 돌려준다.
@@ -33,7 +42,7 @@ const checkboxCellFactory = (oldRows: HTMLTableRowElement[]): ((no: string | und
         const input = cell.querySelector<HTMLInputElement>("input");
         if (input) {
             input.checked = false;
-            // 행을 복제했으면 그 행의 번호일 때만 바꾼다. 템플릿은 값이 자리표시자일 수 있으니 늘 이 글의 번호를 넣는다
+            // 행을 복제했으면 그 행의 번호일 때만 바꾼다. 템플릿은 값이 자리표시자일 수 있으니 늘 이 글의 번호를 넣는다.
             if (!sampleRow || input.value === sampleRow.dataset.no) input.value = no;
         }
         return cell;
@@ -43,7 +52,7 @@ const checkboxCellFactory = (oldRows: HTMLTableRowElement[]): ((no: string | und
 /**
  * 받아온 행에 체크박스 칸을 채우는 함수를 돌려준다. list는 행을 넣을 지금 목록이다.
  * 관리자 목록은 머리에 체크박스 열이 있는데 받아온 행엔 그 칸이 없다 (디시 JS가 나중에 붙인다). 채우지 않으면 열이 한 칸씩 밀린다.
- * 댓글 검색 결과(commentSearch)에선 댓글 행에만 체크박스가 있다
+ * 댓글 검색 결과(commentSearch)에선 댓글 행에만 체크박스가 있다.
  */
 export const checkboxFiller = (list: HTMLElement, commentSearch: boolean): ((row: HTMLTableRowElement) => void) => {
     if (!list.closest("table")?.querySelector("thead .chkbox_th")) return () => {};
@@ -55,7 +64,7 @@ export const checkboxFiller = (list: HTMLElement, commentSearch: boolean): ((row
     };
 };
 
-/** 제목 링크 안의 검색어를 span.mark로 감싼다. 텍스트 노드만 바꿔 링크 안의 다른 요소는 건드리지 않는다 */
+/** 제목 링크 안의 검색어를 span.mark로 감싼다. 텍스트 노드만 바꿔 링크 안의 다른 요소는 건드리지 않는다. */
 export const highlightSearchResults = (newList: HTMLElement, searchValue: string): void => {
     if (!searchValue) return;
 

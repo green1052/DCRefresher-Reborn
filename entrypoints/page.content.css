@@ -1,0 +1,8 @@
+/*
+ * 디시 페이지에 입히는 CSS. 콘텐츠 스크립트의 CSS는 오버레이 shadow에만 들어가므로(cssInjectionMode: "ui")
+ * 이 엔트리로 따로 빌드해 manifest에 넣는다 (wxt.config.ts의 content_scripts). document_start에 들어가 스텔스가 이미지를 처음부터 가린다.
+ * 공용 스타일(차단·깡계 가림) 다음에 기능별 스타일(features/<id>/page.css, modules/feature-styles.ts가 모은다)이 온다.
+ * Tailwind 유틸리티는 넣지 않는다 (디시 클래스와 부딪힌다). 공용 규칙은 assets/styles/shared.css를 @reference로 쓴다.
+ */
+@import "../assets/styles/content.css";
+@import "../.wxt/page-styles.css";

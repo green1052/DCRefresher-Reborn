@@ -1,7 +1,7 @@
-import {objectEntries} from "ts-extras";
-
 import type {BlockEntry, BlockType, DetectMode} from "@/core/storage/types";
+import {markUsed} from "@/core/usage";
 import {useBlocksStore} from "@/stores/blocks";
+import {objectEntries} from "@/utils/typed";
 
 interface Compiled {
     regex: RegExp;
@@ -28,7 +28,7 @@ const compile = (entry: BlockEntry): Compiled | null => {
     return compiled;
 };
 
-/** 일치·포함 검사. NOT_*도 뒤집지 않고 SAME/CONTAIN으로 본다. 잘못된 정규식은 맞지 않는다 */
+/** 일치·포함 검사. NOT_*도 뒤집지 않고 SAME/CONTAIN으로 본다. 잘못된 정규식은 맞지 않는다. */
 const matches = (entry: BlockEntry, mode: DetectMode, content: string): boolean => {
     const whole = mode.endsWith("SAME");
     if (!entry.isRegex) return whole ? entry.content === content : content.includes(entry.content);
@@ -41,34 +41,51 @@ type BlockLists = Pick<ReturnType<typeof useBlocksStore.getState>, "entries" | "
 type BlockValues = Partial<Record<BlockType, string | null | undefined>>;
 
 /**
- * 내용에 걸린 항목들 (갤러리 한정 항목은 그 갤러리에서만). SAME/CONTAIN은 맞는 항목마다 막는다.
+ * 한 유형의 항목으로 내용이 막히는지 판정한다 (갤러리 한정 항목은 그 갤러리에서만). SAME/CONTAIN은 맞는 항목마다 막는다.
  * NOT_*(불일치·불포함)는 한 유형의 항목을 묶어 허용 목록으로 본다: 어느 것에도 맞지 않으면 그 항목들 전부로 막는다.
- * 항목마다 뒤집으면 둘만 돼도 서로를 막아(A는 B와 다르다) 모두 막힌다. 잘못된 정규식은 NOT_*로도 걸지 않는다
+ * 항목마다 뒤집으면 둘만 돼도 서로를 막아(A는 B와 다르다) 모두 막힌다. 잘못된 정규식은 NOT_*로도 걸지 않는다.
+ * onEntry: 맞은 SAME/CONTAIN("hit"), 맞은 NOT_*("allow"), 맞지 않은 NOT_*("miss"). 목록 행·댓글마다 불리므로 판정만 할 때는 배열을 만들지 않는다.
  */
-const blockingIn = (lists: BlockLists, type: BlockType, content: string, gallery?: string): BlockEntry[] => {
-    const hits: BlockEntry[] = [];
-    const allowList: BlockEntry[] = [];
+const scan = (lists: BlockLists, type: BlockType, content: string, gallery: string | undefined, onEntry?: (entry: BlockEntry, kind: "hit" | "allow" | "miss") => void): boolean => {
+    let blocked = false;
+    let hasAllowList = false;
     let allowed = false;
 
     for (const entry of lists.entries[type]) {
         if (entry.gallery && entry.gallery !== gallery) continue;
 
         const mode = entry.mode ?? lists.defaults[type];
-        const hit = matches(entry, mode, content);
         if (!mode.startsWith("NOT_")) {
-            if (hit) hits.push(entry);
+            if (!matches(entry, mode, content)) continue;
+            blocked = true;
+            onEntry?.(entry, "hit");
         } else if (!entry.isRegex || compile(entry)) {
-            allowList.push(entry);
+            hasAllowList = true;
+            const hit = matches(entry, mode, content);
             allowed ||= hit;
+            onEntry?.(entry, hit ? "allow" : "miss");
         }
     }
 
+    return blocked || (hasAllowList && !allowed);
+};
+
+/** 내용을 막은 항목들: 걸린 SAME/CONTAIN과, 허용 목록에 맞지 않았으면 그 NOT_* 항목 전부. */
+const blockingIn = (lists: BlockLists, type: BlockType, content: string, gallery?: string): BlockEntry[] => {
+    const hits: BlockEntry[] = [];
+    const allowList: BlockEntry[] = [];
+    let allowed = false;
+    scan(lists, type, content, gallery, (entry, kind) => {
+        if (kind === "hit") hits.push(entry);
+        else allowList.push(entry);
+        allowed ||= kind === "allow";
+    });
     return allowed ? hits : [...hits, ...allowList];
 };
 
 /**
  * 디시콘 요소의 코드 (이미지 URL의 no 파라미터). 페이지 차단 필터, 우클릭 선택, 미리보기가 같은 기준을 써야 선택해서 넣은 항목이 실제로 가려진다.
- * src 없이 data-src나 <source>만 가진 video 디시콘이 있고, 빈 src 속성도 건너뛰어야 해서 ||를 쓴다
+ * src 없이 data-src나 <source>만 가진 video 디시콘이 있고, 빈 src 속성도 건너뛰어야 해서 ||를 쓴다.
  */
 export const dcconCode = (element: HTMLElement): string | undefined => {
     const media = (element as HTMLImageElement).src ? element : (element.querySelector("img, video, source") ?? element);
@@ -76,15 +93,48 @@ export const dcconCode = (element: HTMLElement): string | undefined => {
     return src ? URL.parse(src, location.href)?.searchParams.get("no") || undefined : undefined;
 };
 
-/** 해당 내용이 차단 대상인지 (갤러리 한정 항목은 그 갤러리에서만) */
+/**
+ * 차단 표시(data-blocked)로 가려진 요소인지. '가린 내용 보기'(data-block-revealed) 중이거나
+ * 흐림 차단을 흐림 풀기(data-blur-reveal)로 밝힌 동안은 가려지지 않은 것으로 본다.
+ * 미리보기의 큰 이미지(Frame)와 디시콘 정보 창(openDcconInfo)이 같은 기준을 쓴다.
+ */
+export const isBlockedHidden = (element: Element): boolean => {
+    const blocked = element.closest("[data-blocked]");
+    if (!blocked || element.closest("[data-block-revealed]")) return false;
+    return !(blocked.getAttribute("data-blocked") === "blur" && element.closest("[data-blur-reveal]"));
+};
+
+/**
+ * 막히는지 판정하고, 맞은 항목(막은 SAME/CONTAIN, 허용한 NOT_*)은 모두 쓰였다고 적는다 (옵션의 오래 안 쓰인 항목 거르기).
+ * 첫 항목에서 멈추면 같은 대상을 함께 막는 다른 항목(닉네임과 아이디로 같이 막은 유저 등)이 안 쓰인 것으로 보여 지워질 수 있다.
+ */
+const isBlockedIn = (lists: BlockLists, type: BlockType, content: string, gallery?: string): boolean =>
+    scan(lists, type, content, gallery, (entry, kind) => {
+        if (kind !== "miss") markUsed("block", entry.id);
+    });
+
+/** 해당 내용이 차단 대상인지 (갤러리 한정 항목은 그 갤러리에서만). */
 export const isBlocked = (type: BlockType, content: string, gallery?: string): boolean =>
-    content !== "" && blockingIn(useBlocksStore.getState(), type, content, gallery).length > 0;
+    content !== "" && isBlockedIn(useBlocksStore.getState(), type, content, gallery);
 
-/** 값 중 하나라도 차단 대상인지 */
+/** 값 중 하나라도 차단 대상인지. 막힌 유형에서 멈추지 않고 모든 유형을 본다 (isBlocked가 유형마다 markUsed를 적는다). 다른 유형의 항목(같은 유저를 아이디로도 막은 것 등)도 쓰였다고 적어야 한다. */
 export const isAnyBlocked = (values: BlockValues, gallery?: string): boolean =>
-    objectEntries(values).some(([type, value]) => value && isBlocked(type, value, gallery));
+    // some을 바로 쓰면 첫 막힌 유형에서 멈춰 나머지 유형의 markUsed가 빠진다. map으로 모두 본다.
+    objectEntries(values).map(([type, value]) => Boolean(value) && isBlocked(type, value!, gallery)).some(Boolean);
 
-/** 본문 차단 안내 문구. 페이지(block 모듈)와 미리보기(창·미니)가 같이 쓴다 */
+/** 확장이 흐리게 가린 행 (차단 블러, userinfo의 깡계 흐림). 흐린 행은 보이므로 checkVisibility로 가릴 수 없다. */
+export const BLURRED_ROW_SELECTOR = ".refresherBlur, .refresherLowActivityBlur";
+
+/**
+ * 확장이 가린 행 (차단 숨김·블러, userinfo의 깡계 숨김·흐림). 같은 댓글 접기는 이 안의 댓글을 세지 않는다.
+ * 클래스는 assets/styles/content.css가 그린다.
+ */
+export const HIDDEN_ROW_SELECTOR = `.refresherBlocked, .refresherLowActivityHide, ${BLURRED_ROW_SELECTOR}`;
+
+/** userinfo가 깡계 숨김·흐림을 이미 그려진 행에서 바꿨을 때 document에 보내는 이벤트. 차단 모듈이 받아 같은 댓글을 다시 접는다. */
+export const ROWS_HIDDEN_EVENT = "refresher:rowsHidden";
+
+/** 본문 차단 안내 문구. 페이지(block 모듈)와 미리보기(창·미니)가 같이 쓴다. */
 export const BLOCKED_TEXT = "게시글 내용이 차단되었습니다.";
 
 /**

@@ -4,8 +4,6 @@ on:
     schedule:
         - cron: "0 6 * * 3,6"
     workflow_dispatch:
-    # 릴리즈가 부른다 (release.yml, 태그의 코드로 만든다)
-    workflow_call:
 
 permissions:
     contents: write
@@ -19,20 +17,16 @@ jobs:
         runs-on: ubuntu-latest
         timeout-minutes: 15
         steps:
-            # 배포된 확장이 읽는 형식으로 만든다. 릴리즈(태그)가 부르면 그 태그, 예약·수동 실행은 release 브랜치다.
-            # develop으로 만들면 IP 형식을 바꾼 코드가 릴리즈 전에 올라가 배포된 확장이 DB를 읽지 못한다
             -   uses: actions/checkout@v7
                 with:
-                    ref: ${{ startsWith(github.ref, 'refs/tags/') && github.ref || 'release' }}
+                    ref: release
+                    persist-credentials: false
 
             -   uses: oven-sh/setup-bun@v2
 
-            # postinstall(wxt prepare)이 만드는 .wxt/tsconfig.json에 @/ 경로가 있다 (core/ipdb.ts가 쓴다)
             -   name: Install Dependencies
                 run: bun ci
 
-            # ban.json과 _headers(Cloudflare Pages의 CORS·캐시 헤더)는 손으로 관리해 data 브랜치에 직접 올린다.
-            # 가져다 두면 Build가 ban.json을 검사하고 정리하고, _headers는 그대로 다시 올린다
             -   name: Keep hand-managed files
                 id: keep
                 run: |
@@ -45,11 +39,13 @@ jobs:
             -   name: Build
                 run: bun scripts/build-db.ts
 
-            # Keep 이후 data가 바뀌었으면(ban.json 직접 푸시 등) 덮어쓰지 않고 실패
             -   name: Publish to data branch
                 working-directory: db
+                env:
+                    GH_TOKEN: ${{ github.token }}
+                    LEASE: ${{ steps.keep.outputs.sha }}
                 run: |
                     git init -q -b data
                     git add .
                     git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -qm "IP DB $(cat version)"
-                    git push --force-with-lease=data:${{ steps.keep.outputs.sha }} "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data
+                    git push --force-with-lease="data:$LEASE" "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY.git" data

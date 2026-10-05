@@ -1,0 +1,53 @@
+@reference "./shared.css";
+
+/* ===== 디시 페이지에 주입하는 공용 스타일. 기능별 스타일은 features/<id>/page.css (modules/feature-styles.ts가 모은다) ===== */
+
+/* 차단 — 흐리게 처리 옵션 (block 모듈)과 깡계 흐리게 (userinfo 모듈). 강도·마우스 오버 보기는 block 모듈이 <html>에 거는 변수/클래스. */
+.refresherBlur,
+.refresherLowActivityBlur {
+    @apply refresher-blurred;
+}
+
+/* 선택자마다 따로 쓴다. 한 규칙에 묶으면 :is()로 감싸져 깡계 흐림도 더 긴 선택자의 명시도를 얻어 '가린 내용 보기'의 반투명을 이긴다. */
+.refresherBlurReveal .refresherBlur {
+    @apply refresher-blur-reveal;
+}
+
+.refresherLowActivityBlur {
+    @apply refresher-blur-reveal;
+}
+
+/* 디시 JS가 나중에 인라인 display를 걸어도 가린 채로 둔다. */
+.refresherBlocked,
+.refresherDuplicate,
+.refresherLowActivityHide {
+    display: none !important;
+}
+
+.refresherTextNotice {
+    padding: 20px 0;
+    color: #888;
+}
+
+.refresherDuplicateBadge {
+    margin-left: 6px;
+    font-size: 11px;
+    color: #888;
+}
+
+/* 이 페이지에서만 가린 내용 보기 (block 모듈) — 가린 것을 흐리게 다 보인다. 숨김 규칙도 !important라 명시도로 이긴다. */
+.refresherBlockReveal {
+    :is(.refresherBlocked, .refresherDuplicate, .refresherLowActivityHide) {
+        display: revert !important;
+        opacity: 0.35;
+    }
+
+    :is(.refresherBlur, .refresherLowActivityBlur) {
+        filter: none;
+        opacity: 0.35;
+    }
+
+    .refresherTextNotice {
+        display: none;
+    }
+}

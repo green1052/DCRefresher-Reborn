@@ -1,15 +1,17 @@
-import {Button, Callout, Flex} from "@radix-ui/themes";
 import {CircleAlert, ExternalLink} from "lucide-react";
+
+import {Alert, AlertDescription} from "@/components/ui/alert";
+import {Button} from "@/components/ui/button";
 
 import {type ErrorState, usePreviewStore} from "./previewStore";
 
-/** 글을 받지 못했을 때 본문 자리에 두는 안내 */
+/** 글을 받지 못했을 때 본문 자리에 두는 안내. */
 export const ErrorBlock = ({error}: { error: ErrorState }) => {
     const preData = usePreviewStore((s) => s.preData);
     const {detail, status, adult, secret} = error;
-    // 성인 인증·비밀글 비밀번호는 원문 페이지에서만 된다. 원문에서 푼 뒤 다시 시도하면 미리보기로 볼 수 있다
+    // 성인 인증·비밀글 비밀번호는 원문 페이지에서만 된다. 원문에서 푼 뒤 다시 시도하면 미리보기로 볼 수 있다.
     const original = adult || secret;
-    // 삭제된 글은 다시 받아도 같다. 원문 오류(요청 주소 등)는 콘솔에만 남기고 안내만 둔다
+    // 삭제된 글은 다시 받아도 같다. 원문 오류(요청 주소 등)는 콘솔에만 남기고 안내만 둔다.
     const deleted = status === 404;
     const limited = status === 403 || status === 429;
 
@@ -23,30 +25,30 @@ export const ErrorBlock = ({error}: { error: ErrorState }) => {
     else text = "게시글을 읽지 못했습니다. 다시 시도하거나 원문에서 확인해 주세요.";
 
     return (
-        <Callout.Root color={original ? "orange" : "red"} my="4">
-            <Callout.Icon><CircleAlert size={16}/></Callout.Icon>
-            <Callout.Text>{text}</Callout.Text>
-            <Flex gap="2">
-                {original && (
-                    <Button size="1" variant="soft" color="orange" asChild>
-                        <a href={preData?.link ?? location.href} target="_blank" rel="noreferrer">
-                            <ExternalLink size={14}/>
+        <Alert variant={original ? "default" : "destructive"} className={original ? "my-4 text-amber-700 dark:text-amber-400" : "my-4"}>
+            <CircleAlert/>
+            <AlertDescription className="text-current">
+                {text}
+                <div className="mt-2 flex gap-2">
+                    {original && (
+                        <Button size="sm" variant="secondary" nativeButton={false}
+                                render={<a href={preData?.link ?? location.href} target="_blank" rel="noreferrer"/>}>
+                            <ExternalLink data-icon="inline-start"/>
                             원문 열기
-                        </a>
-                    </Button>
-                )}
-                {!deleted && (
-                    <Button
-                        size="1"
-                        variant="soft"
-                        color={original ? "gray" : "red"}
-                        // 같은 글을 다시 열면 컨트롤러가 제자리에서 다시 받는다
-                        onClick={() => preData && usePreviewStore.getState().requestOpen(preData, usePreviewStore.getState().commentsOnly)}
-                    >
-                        다시 시도
-                    </Button>
-                )}
-            </Flex>
-        </Callout.Root>
+                        </Button>
+                    )}
+                    {!deleted && (
+                        <Button
+                            size="sm"
+                            variant={original ? "secondary" : "destructive"}
+                            // 같은 글을 다시 열면 컨트롤러가 제자리에서 다시 받는다.
+                            onClick={() => preData && usePreviewStore.getState().requestOpen(preData, usePreviewStore.getState().commentsOnly)}
+                        >
+                            다시 시도
+                        </Button>
+                    )}
+                </div>
+            </AlertDescription>
+        </Alert>
     );
 };

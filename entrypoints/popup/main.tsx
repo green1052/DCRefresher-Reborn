@@ -1,6 +1,4 @@
-import "@/assets/styles/overlay-radix.css";
-import "./popup.scss";
-import {Theme} from "@radix-ui/themes";
+import "@/assets/styles/tailwind.css";
 import {StrictMode} from "react";
 import {createRoot} from "react-dom/client";
 
@@ -12,8 +10,6 @@ followSystemAppearance();
 
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
-        <Theme accentColor="blue" radius="medium">
-            <App/>
-        </Theme>
+        <App/>
     </StrictMode>
 );

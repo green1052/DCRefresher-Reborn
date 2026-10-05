@@ -1,0 +1,15 @@
+/* ===== 오버레이 (shadow root 전용) 공용 스타일 — 컴포넌트 스타일은 Tailwind(shadcn). 기능별 스타일은 features/<id>/overlay.css ===== */
+
+:host {
+    all: initial;
+    position: fixed;
+    inset: 0;
+    /* 디시 페이지의 최댓값(이미지 확대창 #imgModal 9999)보다 위. */
+    z-index: 100000;
+    pointer-events: none;
+}
+
+/* 호스트는 클릭을 통과시키고, 실제 UI만 받는다 (포털 밖의 UI는 pointer-events-auto 클래스를 단다). */
+#portal > * {
+    pointer-events: auto;
+}

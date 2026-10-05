@@ -1,0 +1,27 @@
+/* ===== 관리 (manage 모듈) ===== */
+
+/* 글 보기 도구 (manage 모듈): 이미지 출처 알림, 같은 제목 찾기 버튼. */
+.refresherImageOrigin {
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #e5484d;
+}
+
+.refresherTitleSearch {
+    margin-right: 10px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+
+    &:hover {
+        text-decoration: underline;
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: wait;
+    }
+}

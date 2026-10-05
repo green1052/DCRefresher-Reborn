@@ -1,7 +1,10 @@
-import {moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
-import type {SettingValue} from "@/core/storage/types";
+import {storage} from "wxt/utils/storage";
 
-import {isModuleEnabled, normalizeSettings} from "./settings";
+import {MODULES_KEY, moduleSettingsKey} from "@/core/storage/items";
+import type {SettingValue} from "@/core/storage/types";
+import {createLimiter} from "@/utils/limit";
+
+import {isModuleEnabled, readModuleStorage, settingsOf} from "./settings";
 import type {ModuleDefinition} from "./types";
 
 /**
@@ -15,30 +18,33 @@ export interface BackgroundModule extends Pick<ModuleDefinition, "id" | "default
      */
     listen?(): void;
 
-    /** 켜기/끄기·설정 변경·설치·브라우저 시작 때 그 시점의 상태에 맞춘다. 모듈마다 앞의 호출이 끝난 뒤에 다음을 부른다 */
+    /** 켜기/끄기·설정 변경·설치·브라우저 시작 때 그 시점의 상태에 맞춘다. 모듈마다 앞의 호출이 끝난 뒤에 다음을 부른다. */
     apply(state: { enabled: boolean; settings: Record<string, SettingValue> }): Promise<void> | void;
 }
 
 export const defineBackgroundModule = (module: BackgroundModule): BackgroundModule => module;
 
-/** 배경 모듈을 시작한다. 모든 모듈을 지금 상태에 다시 맞추는 함수를 돌려준다 (설치·브라우저 시작 때 배경이 부른다) */
+/** 배경 모듈을 시작한다. 모든 모듈을 지금 상태에 다시 맞추는 함수를 돌려준다 (설치·브라우저 시작 때 배경이 부른다). */
 export const startBackgroundModules = (modules: BackgroundModule[]): (() => Promise<void>) => {
     const appliers = modules.map((module) => {
         module.listen?.();
 
-        // apply가 겹치면 메뉴 지우기·만들기 같은 비동기 작업이 엇갈리므로 줄 세운다
-        let queue = Promise.resolve();
-        const apply = (): Promise<void> => (queue = queue.then(async () => {
-            const [enables, stored] = await Promise.all([modulesStorage.getValue(), moduleSettingsStorage(module.id).getValue()]);
-            // on/off·설정 해석은 콘텐츠 레지스트리와 같은 함수로 한다
-            await module.apply({enabled: isModuleEnabled(module, enables), settings: normalizeSettings(module, stored)});
-        }).catch(console.error));
+        // apply가 겹치면 메뉴 지우기·만들기 같은 비동기 작업이 엇갈리므로 줄 세운다.
+        const applies = createLimiter(1);
+        const apply = (): Promise<void> => applies.run(async () => {
+            // on/off·설정 읽기와 해석은 콘텐츠 레지스트리와 같은 함수로 한다.
+            const {enables, settings} = await readModuleStorage([module.id]);
+            await module.apply({
+                enabled: isModuleEnabled(module, enables),
+                settings: settingsOf(module, settings.get(module.id))
+            });
+        }).catch(console.error);
 
-        // 옵션 페이지·팝업은 저장소에 직접 쓰므로 저장소를 감시해 바로 다시 맞춘다
-        modulesStorage.watch((next, prev) => {
-            if (next[module.id] !== prev[module.id]) void apply();
+        // 옵션 페이지·팝업은 저장소에 직접 쓰므로 저장소를 감시해 바로 다시 맞춘다.
+        storage.watch<Record<string, unknown>>(MODULES_KEY, (next, prev) => {
+            if (next?.[module.id] !== prev?.[module.id]) void apply();
         });
-        if (module.settings) moduleSettingsStorage(module.id).watch(() => void apply());
+        if (module.settings) storage.watch(moduleSettingsKey(module.id), () => void apply());
 
         return apply;
     });

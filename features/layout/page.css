@@ -1,0 +1,265 @@
+/* ===== 레이아웃 수정 (layout 모듈) ===== */
+
+/*
+ * 컴팩트 모드 (html.refresherCompact): 창이 좁을 때 디시의 1160px 고정폭 레이아웃을 창 폭에 맞춘다.
+ * 고정폭 상자는 auto로 풀고, 오른쪽 사이드바·큰 머리글·줄어들지 않는 광고는 숨긴다.
+ */
+.refresherCompact {
+    /* 페이지 전체 틀(#top.dcwrap)에 min-width 1515px가 걸려 있다. */
+    &,
+    body,
+    .dcwrap {
+        min-width: 0 !important;
+    }
+
+    .dcwrap {
+        width: auto !important;
+    }
+
+    /* 머리글: 로고·파란 메뉴줄을 빼고 오른쪽 위 링크 한 줄과 통합검색 창만. */
+    .dchead {
+        width: auto !important;
+        height: auto !important;
+        padding: 8px 12px !important;
+    }
+
+    .dc_logo,
+    .gnb_bar,
+    .dc_all {
+        display: none !important;
+    }
+
+    /* 오른쪽 위 링크 줄. 디시는 이 상자를 absolute로 띄우고 안의 목록을 float: left로 둔다. */
+    /* 상자만 static으로 내리면 text-align이 float에 안 먹어 목록이 왼쪽으로 붙고 창 폭에 따라 떠다닌다 (#267) */
+    /* flex로 바꿔 오른쪽에 붙이고 안쪽 float·위치 지정을 푼다. */
+    .area_links {
+        position: static !important;
+        inset: auto !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+        width: auto !important;
+        margin: 0 !important;
+
+        > * {
+            float: none !important;
+            position: static !important;
+        }
+    }
+
+    .wrap_search {
+        position: relative !important;
+        inset: auto !important;
+        width: auto !important;
+        max-width: 500px !important;
+        margin: 8px auto 0 !important;
+    }
+
+    /* 본문 폭: 창에 맞추되 너무 넓어지지 않게. */
+    .wrap_inner {
+        width: auto !important;
+        max-width: 1000px !important;
+        margin: 0 auto !important;
+        padding: 0 12px !important;
+    }
+
+    /* 1160px 등으로 고정된 상자들. */
+    .visit_bookmark,
+    .newvisit_history,
+    .info_policy,
+    .copyright,
+    #container,
+    .issue_wrap,
+    .issuebox,
+    .page_head,
+    .list_array_option,
+    .view_content_wrap,
+    .gallview_contents,
+    .view_comment,
+    .cmt_list,
+    .cmt_write_box,
+    .view_bottom_btnbox,
+    .bottom_paging_box {
+        width: auto !important;
+    }
+
+    /* 목록: 사이드바를 빼고 목록이 폭을 다 쓴다. */
+    /* 알림 목록·설정 창(#alarmList, #alarmConf)은 사이드바 로그인 상자 안에 있어 display: none으로 숨기면 머리글의 알림 버튼을 눌러도 안 보인다 (#270) */
+    /* 사이드바는 자리를 차지하지 않게 빼고 보이지만 않게 둔다. visibility는 자손이 되돌릴 수 있어 알림 창만 다시 보인다. */
+    .right_content {
+        position: absolute !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        visibility: hidden !important;
+    }
+
+    /* 사이드바 기준 자리(오른쪽 위)는 화면 밖이므로 머리글 알림 버튼(alarmList의 'H')처럼 화면 가운데에 띄운다. */
+    /* 고정 위치라 사이드바의 overflow: hidden에 잘리지 않는다. */
+    :is(#alarmList, #alarmConf) {
+        visibility: visible !important;
+        position: fixed !important;
+        inset: 50% auto auto 50% !important;
+        margin: 0 !important;
+        transform: translate(-50%, -50%) !important;
+        z-index: 10000 !important;
+    }
+
+    .gall_exposure,
+    .minor_ranking_box,
+    .issue_contentbox,
+    .ad_bottom_list,
+    /* 목록 양옆 날개 광고 — 목록 상자 가운데에서 780px씩 떨어져 있어 좁은 창에선 밖으로 나간다. */
+    [class*="ad_left_wing"],
+    /* 왼쪽 날개 광고 — setup(document_start) 때는 아직 파싱 전이라 JS로 찾으면 놓친다. */
+    .stickyunit {
+        display: none !important;
+    }
+
+    .left_content {
+        width: auto !important;
+        float: none !important;
+    }
+
+    .array_tab button {
+        width: 72px !important;
+    }
+
+    .page_head h2 {
+        font-size: 23px !important;
+    }
+
+    /* 갤러리 제목 옆 링크(설정·새로고침…)가 좁으면 두 줄이 되는데 머리가 37px 고정이라 밑줄을 덮는다. */
+    .page_head {
+        height: auto !important;
+    }
+
+    .gall_issuebox {
+        padding-top: 0 !important;
+    }
+
+    /* 좁은 칸의 긴 값(글 번호 등)이 옆 칸으로 넘치지 않게. */
+    .gall_list :is(.gall_num, .gall_subject, .gall_date, .gall_count, .gall_recommend) {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    /* 글 보기: 본문·댓글 칸의 고정폭 float를 푼다. 폭을 줄일 수 없는 광고는 숨긴다. */
+    .writing_view_box,
+    .write_div,
+    .cmt_txtbox,
+    .cmt_txtbox .usertxt,
+    /* 삭제된 댓글 (752px 고정). */
+    .del_reply {
+        width: auto !important;
+        max-width: 100% !important;
+        float: none !important;
+    }
+
+    /* 댓글 한 줄(닉네임 | 본문 | 작성 시간). 본문 칸의 float를 풀면 본문이 줄 전체를 차지해 작성 시간이 다음 줄로 밀리므로 (#265) */
+    /* 줄을 flex로 바꿔 본문이 남는 폭만 쓰게 한다. */
+    :is(.cmt_info, .reply_info):has(> .fr) {
+        display: flex !important;
+        align-items: flex-start;
+        clear: both;
+    }
+
+    :is(.cmt_info, .reply_info) {
+        > .addbox {
+            display: flex !important;
+            flex: 1 1 auto;
+            align-items: flex-start;
+            min-width: 0;
+        }
+
+        .cmt_nickbox {
+            flex: none;
+        }
+
+        .cmt_txtbox {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        > .fr {
+            flex: none;
+            margin-left: auto;
+        }
+    }
+
+    /* 댓글 안 디시콘 상자(820px) 등도 칸을 넘지 않게. */
+    .cmt_txtbox > * {
+        max-width: 100% !important;
+    }
+
+    .write_div img {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    ins.adsbygoogle,
+    /* 글 보기 파워링크 광고 (min-width 970px). */
+    .power_link,
+    /* 목록 위 840px 배너와 그 닫기 버튼 (창 폭에 맞춰 줄지 않는다). */
+    #ad-layer,
+    #ad-layer-closer {
+        display: none !important;
+    }
+
+    .banner_box img {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    /* 댓글 입력: 닉네임 칸 옆에서 입력칸이 남는 폭을 다 쓴다. */
+    .cmt_write_box {
+        display: flex !important;
+        gap: 12px !important;
+    }
+
+    .cmt_txt_cont {
+        flex: 1 !important;
+        min-width: 0 !important;
+        width: auto !important;
+        float: none !important;
+    }
+
+    /* 폭을 맞추려고 border-box로 바꾸면 여백과 테두리까지 78px 안에 들어가 입력칸이 작아진다. */
+    /* 원래 높이인 106px로 다시 지정한다. */
+    .cmt_txt_cont textarea {
+        width: 100% !important;
+        height: 106px !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 글쓰기: float된 닉네임·비밀번호 칸 아래로 내린다. 아니면 제목 안내 문구가 닉네임 칸을 덮는다. */
+    .input_write_tit {
+        float: none !important;
+        clear: both !important;
+    }
+}
+
+/* 본문 영역 전체로 확장 (html.refresherPushToRight — "잡다 링크 숨기기"와 함께 켜졌을 때). */
+.refresherPushToRight {
+    /* 목록 상자를 넓히면 그 가운데 기준으로 붙은 날개 광고가 창 밖으로 밀려 가로 스크롤이 생긴다. */
+    .stickyunit,
+    [class*="ad_left_wing"] {
+        display: none !important;
+    }
+
+    .list_array_option,
+    .listwrap .left_content,
+    .listwrap .issuebox {
+        width: 1160px;
+    }
+
+    .listwrap .minor_intro_box {
+        width: 1000px;
+    }
+
+    .list_wrap.width1160 .newvisit_history {
+        width: unset;
+    }
+}

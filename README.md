@@ -30,8 +30,8 @@
 
 | 브라우저 | 설치 | 최소 버전 |
 |---|---|---|
-| Chrome (Edge, Whale 등 크로뮴 계열 포함) | [Chrome 웹 스토어](https://chromewebstore.google.com/detail/pmfifcbendahnkeojgpfppklgioemgon) | 140 |
-| Firefox | [Firefox Add-ons](https://addons.mozilla.org/ko/firefox/addon/dcrefresher-reborn) | 140 |
+| Chrome (Edge, Whale 등 크로뮴 계열 포함) | [Chrome 웹 스토어](https://chromewebstore.google.com/detail/pmfifcbendahnkeojgpfppklgioemgon) | 153 |
+| Firefox | [Firefox Add-ons](https://addons.mozilla.org/ko/firefox/addon/dcrefresher-reborn) | 155 |
 
 설치한 뒤 툴바의 확장 아이콘을 누르면 팝업이 열립니다. 팝업에서 모듈을 켜고 끄고, 톱니바퀴 버튼으로 옵션 페이지(설정·차단·메모·단축키·데이터·정보)를 엽니다.
 
@@ -40,12 +40,20 @@
 ### 미리보기
 
 - 글 목록에서 제목을 **우클릭**하면 미리보기 창이 열립니다. 좌클릭은 원래대로 글로 이동합니다. 설정의 `미리보기 키 반전`을 켜면 반대가 됩니다.
-- 목록의 **댓글 수**를 누르면 댓글만 보기로 열립니다.
+- 목록의 **댓글 수**를 우클릭하면 댓글만 보기로 열립니다. 좌클릭은 원래대로 댓글 위치로 이동하고, `미리보기 키 반전`을 켜면 반대가 됩니다.
 - 원래 우클릭 메뉴가 필요하면 **Shift+우클릭**을 하거나, Windows에서는 오른쪽 버튼을 길게 눌렀다 뗍니다.
 - 창 안에서 **PageUp** / **PageDown**으로 목록의 앞·뒤 글로 넘어갑니다. 창 맨 아래(맨 위)에서 휠을 한 번 더 굴려도 넘어갑니다.
 - **Esc**나 창 바깥 클릭으로 닫습니다. `주소창에 게시글 주소 표시`(기본 켜짐)가 켜져 있으면 브라우저 뒤로 가기로도 닫히고, 닫은 미리보기를 앞으로 가기로 다시 열 수 있습니다.
 - 제목에 마우스를 올리면 뜨는 **미니 미리보기**는 설정에서 켭니다(기본 꺼짐).
 - 미리보기 창에서 본문·댓글의 **디시콘**을 누르면 그 디시콘 패키지 정보가 뜨고, 아직 없는 패키지는 바로 추가할 수 있습니다.
+- 본문 **이미지**를 누르면 창 안에서 크게 봅니다. **←** / **→**로 넘기고 Esc로 닫습니다.
+- 댓글을 새로고침하면 새로 들어온 댓글을 잠깐 강조합니다. 미리보기로 연 글은 목록에서 흐리게 표시합니다.
+- 목록에서 **J** / **K**로 글을 고르고 **Enter**로 미리보기, **O**로 글을 엽니다. **Esc**로 선택을 풉니다.
+
+### 글 목록 새로고침
+
+- 이 탭을 보고 있지 않을 때 들어온 새 글 수를 탭 제목 앞에 `(3)`처럼 붙입니다.
+- 기본으로 다른 탭을 보는 동안은 새로고침을 쉽니다. `숨은 탭에서도 새로고침`을 켜면 느린 주기(기본 30초)로 계속 받습니다.
 
 ### 단축키
 
@@ -128,11 +136,17 @@
 
 ```sh
 bun install
-bun run dev            # Chrome 개발 모드
-bun run dev:firefox    # Firefox 개발 모드
-bun run compile        # 타입 검사
-bun run zip            # Chrome 배포용 zip
-bun run zip:firefox    # Firefox 배포용 zip (소스 zip도 함께 생성)
+bun run dev               # Chrome 개발 모드
+bun run dev:firefox       # Firefox 개발 모드
+bun run compile           # 타입 검사
+bun run test              # 단위 테스트 (Vitest)
+bun run build             # Chrome 빌드 (.output/chrome-mv3)
+bun run e2e               # Chrome E2E (Playwright). 먼저 build, 처음 한 번 bunx playwright install chromium
+bun run build:firefox     # Firefox 빌드 (.output/firefox-mv2)
+bun run e2e:firefox       # Firefox E2E. 먼저 build:firefox, 처음 한 번 bunx playwright install firefox
+bun run e2e:live          # 실제 디시에 읽기 요청을 보내는 E2E (쓰기는 막는다). DC_LIST_URL로 갤러리를 바꾼다 (기본 미니 갤러리 bjwg64)
+bun run zip               # Chrome 배포용 zip
+bun run zip:firefox       # Firefox 배포용 zip (소스 zip도 함께 생성)
 ```
 
 결과물은 `.output` 폴더에 생성됩니다. 구조, 기능 추가 방법, 테스트와 릴리즈 절차는 [개발 문서](docs/DEVELOPMENT.md)를 참고하세요.
@@ -140,5 +154,5 @@ bun run zip:firefox    # Firefox 배포용 zip (소스 zip도 함께 생성)
 ### 기여
 
 - 버그 제보와 기능 제안은 [이슈 템플릿](https://github.com/green1052/DCRefresher-Reborn/issues/new/choose)으로 올려 주세요.
-- 풀 리퀘스트는 `develop` 브랜치로 보내 주세요. 커밋 전에 `bun run compile`과 `bun run build`가 통과해야 하고, 커밋 메시지는 [Conventional Commits](https://www.conventionalcommits.org/ko/)를 따릅니다.
+- 풀 리퀘스트는 `develop` 브랜치로 보내 주세요. 커밋 전에 `bun run compile`, `bun run test`, `bun run build`가 통과해야 하고, 커밋 메시지는 [Conventional Commits](https://www.conventionalcommits.org/ko/)를 따릅니다.
 - Chrome과 Firefox에서 모두 확인해 주세요.

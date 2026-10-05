@@ -1,0 +1,2 @@
+# 저장소와 작업 폴더 모두 LF로 둔다. 도구(bun·prettier 등)가 LF로 쓰는데 Windows의 core.autocrlf가 CRLF로 바꾸려 해 커밋마다 경고가 났다.
+* text=auto eol=lf

@@ -2,11 +2,9 @@ name: Release
 
 on:
     push:
-        # 버전 태그(6.0.2 등)에만 돈다
         tags:
             - "[0-9]+.[0-9]+.[0-9]+"
 
-# 작업마다 필요한 권한만 준다. 쓰기는 GitHub 릴리즈(release)와 data 브랜치 푸시(db)만 한다
 permissions:
     contents: read
 
@@ -15,25 +13,36 @@ concurrency:
     cancel-in-progress: false
 
 jobs:
+    version:
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        steps:
+            -   uses: actions/checkout@v7
+                with:
+                    persist-credentials: false
+
+            -   name: Check version
+                run: jq -e --arg tag "$GITHUB_REF_NAME" '.version == $tag' package.json > /dev/null || { echo "::error::태그 $GITHUB_REF_NAME 와 package.json 버전이 다릅니다."; exit 1; }
+
+    ci:
+        needs: version
+        uses: ./.github/workflows/ci.yml
+
     release:
+        needs: ci
         runs-on: ubuntu-latest
         timeout-minutes: 15
         permissions:
             contents: write
         steps:
             -   uses: actions/checkout@v7
-
-            # 태그와 package.json 버전이 다르면 스토어에 엉뚱한 버전이 올라간다
-            -   name: Check version
-                run: jq -e --arg tag "$GITHUB_REF_NAME" '.version == $tag' package.json > /dev/null || { echo "::error::태그 $GITHUB_REF_NAME 와 package.json 버전이 다릅니다."; exit 1; }
+                with:
+                    persist-credentials: false
 
             -   uses: oven-sh/setup-bun@v2
 
             -   name: Install Dependencies
                 run: bun ci
-
-            -   name: Type check
-                run: bun run compile
 
             -   name: Build
                 run: bun run zip && bun run zip:firefox
@@ -46,9 +55,6 @@ jobs:
                         .output/*-chrome.zip
                     generate_release_notes: true
 
-            # 두 스토어를 함께 제출한다. 제출 도구는 한 스토어가 실패해도 다른 스토어를 끝까지 제출하고 실패로 끝나는데,
-            # 실패해도 넘어가게 해 DB는 막히지 않는다. 실패한 스토어는 로그에서 확인하고 GitHub 릴리즈의 zip으로 따로 제출한다 (docs/DEVELOPMENT.md 릴리즈).
-            # Chrome 웹 스토어는 API v2(서비스 계정)로 제출한다
             -   name: Submit to stores
                 continue-on-error: true
                 run: >-
@@ -65,11 +71,3 @@ jobs:
                     FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
                     FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
                     FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
-
-    # 릴리즈마다 이 태그의 코드로 DB를 새로 만든다. IP 형식을 바꾼 버전도 스토어 심사를 마치기 전에 새 형식이 올라가 있다
-    # (확장은 업데이트 때 DB를 다시 받는다). 검사·빌드가 실패한 릴리즈는 DB를 바꾸지 않도록 릴리즈 뒤에 돈다. 스토어 제출은 실패해도 넘어가므로 DB와 상관없다
-    db:
-        needs: release
-        permissions:
-            contents: write
-        uses: ./.github/workflows/db.yml

@@ -1,0 +1,156 @@
+/*
+ * Tailwind + shadcn 토큰. 색은 shadcn 테마 값 그대로다 (base-vega, 기본색 zinc, 테마 indigo. https://ui.shadcn.com/init?base=base&style=vega&baseColor=zinc&theme=indigo&only=theme의 cssVars). 손으로 고치지 않는다.
+ * 오버레이 shadow에서도 쓰도록 :root와 :host에 같이 건다. 다크 모드는 조상의 .dark 클래스가 정한다 (utils/appearance.ts).
+ */
+@import "tailwindcss";
+@import "tw-animate-css";
+/* shadcn 부품이 쓰는 variant(data-horizontal·data-open 등, Base UI 데이터 속성에 맞춘 것)와 유틸리티. */
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root, :host {
+    --radius: 0.625rem;
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.141 0.005 285.823);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.141 0.005 285.823);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.141 0.005 285.823);
+    --primary: oklch(0.457 0.24 277.023);
+    --primary-foreground: oklch(0.962 0.018 272.314);
+    --secondary: oklch(0.967 0.001 286.375);
+    --secondary-foreground: oklch(0.21 0.006 285.885);
+    --muted: oklch(0.967 0.001 286.375);
+    --muted-foreground: oklch(0.552 0.016 285.938);
+    --accent: oklch(0.967 0.001 286.375);
+    --accent-foreground: oklch(0.21 0.006 285.885);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.92 0.004 286.32);
+    --input: oklch(0.92 0.004 286.32);
+    --ring: oklch(0.705 0.015 286.067);
+}
+
+.dark {
+    --background: oklch(0.141 0.005 285.823);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.21 0.006 285.885);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.21 0.006 285.885);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.398 0.195 277.366);
+    --primary-foreground: oklch(0.962 0.018 272.314);
+    --secondary: oklch(0.274 0.006 286.033);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.274 0.006 286.033);
+    --muted-foreground: oklch(0.705 0.015 286.067);
+    --accent: oklch(0.274 0.006 286.033);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.552 0.016 285.938);
+}
+
+@theme inline {
+    /* 폰트 교체 모듈이 켜져 있으면 html에 --refresher-font가 들어온다. */
+    --font-sans: var(--refresher-font, -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif);
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    /* 자동 새로고침으로 새로 들어온 미리보기 댓글. 길이는 features/preview/index.ts의 FRESH_DURATION과 같다. */
+    --animate-fresh-comment: fresh-comment 3s ease-out;
+
+    @keyframes fresh-comment {
+        from, 30% {
+            background: color-mix(in oklch, var(--primary) 15%, transparent);
+        }
+    }
+
+    /* 미리보기 스크롤 끝 넘기기 안내 (Frame의 SkipHint). */
+    --animate-skip-hint-bottom: skip-hint-bottom 450ms cubic-bezier(0.19, 1, 0.22, 1);
+    --animate-skip-hint-top: skip-hint-top 450ms cubic-bezier(0.19, 1, 0.22, 1);
+
+    @keyframes skip-hint-bottom {
+        from {
+            opacity: 0;
+            transform: translateY(40%);
+        }
+    }
+
+    @keyframes skip-hint-top {
+        from {
+            opacity: 0;
+            transform: translateY(-40%);
+        }
+    }
+
+    /* 옵션 로고 연타 이스터에그 (DcconRain). 회전각은 이미지마다 --spin으로 준다. */
+    --animate-dccon-fall: dccon-fall linear both;
+
+    @keyframes dccon-fall {
+        from {
+            transform: translateY(-150px);
+        }
+
+        to {
+            transform: translateY(110vh) rotate(var(--spin));
+        }
+    }
+}
+
+/* 탭을 바꾸면 새 내용이 살짝 떠오른다 (옵션 탭, 차단·메모 목록의 종류 탭). */
+@utility tab-enter {
+    animation: tab-enter 180ms cubic-bezier(0.19, 1, 0.22, 1);
+
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
+    }
+}
+
+@keyframes tab-enter {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+        /* 크롬은 확장 페이지(옵션·팝업)의 body에 자체 폰트 규칙을 레이어 밖에 넣어, 레이어 안의 규칙은 진다. 폰트 교체 설정이 먹도록 important로 건다. */
+        font-family: var(--font-sans) !important;
+    }
+
+    /* 오버레이에 그리는 디시 본문·댓글 HTML(.refresher-html)은 Tailwind 리셋(preflight)을 받지 않고 브라우저 기본 모양을 쓴다.
+       base 레이어 안에서 되돌리므로 레이어 밖의 본문 스타일(features/preview/overlay.css)은 그대로 걸린다. */
+    .refresher-html :where(*),
+    .refresher-html :where(*)::before,
+    .refresher-html :where(*)::after {
+        all: revert-layer;
+    }
+}

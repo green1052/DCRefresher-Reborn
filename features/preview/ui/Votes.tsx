@@ -1,17 +1,18 @@
-import {Button, Flex, IconButton, Text, Tooltip} from "@radix-ui/themes";
 import {ChevronDown, ChevronUp, ExternalLink, Link2} from "lucide-react";
 import {useState} from "react";
 
-import {overlay} from "@/components/overlay/shadow";
+import {Button} from "@/components/ui/button";
+import {Spinner} from "@/components/ui/spinner";
+import {WithTooltip} from "@/components/WithTooltip";
 import {getEntry, setEntry} from "@/core/preview/cache";
 import {captchaImage, viewUrl, vote} from "@/core/preview/request";
 import type {GalleryPreData, PostInfo} from "@/core/preview/types";
 import {useUiStore} from "@/stores/ui";
-import {notifyManage} from "@/utils/notify";
+import {notifyManage} from "@/stores/notify";
 
 import {usePreviewStore} from "./previewStore";
 
-/** 본문 아래 추천·비추천과 링크 복사·새 탭 열기 */
+/** 본문 아래 추천·비추천과 링크 복사·새 탭 열기. */
 export const Votes = ({post}: { post: PostInfo }) => {
     const preData = usePreviewStore((s) => s.preData);
     const {upvotes, fixedUpvotes, downvotes} = post;
@@ -30,7 +31,7 @@ export const Votes = ({post}: { post: PostInfo }) => {
         const request = vote(target, post, mode, code);
         if (!(await notifyManage(request, `${label}했습니다.`, `${label}하지 못했습니다. 잠시 후 다시 시도해 주세요.`))) return;
 
-        // notifyManage가 기다린 요청이라 결과만 꺼낸다
+        // notifyManage가 기다린 요청이라 결과만 꺼낸다.
         const result = await request;
         const counts = mode === "U"
             ? {upvotes: result.counts ?? upvotes ?? "X", fixedUpvotes: result.fixedCounts || undefined}
@@ -43,7 +44,7 @@ export const Votes = ({post}: { post: PostInfo }) => {
         if (cached) setEntry(target, {post: {...cached, ...counts}});
     };
 
-    // try/finally는 React Compiler가 컴파일하지 못해 .finally로 푼다
+    // try/finally는 React Compiler가 컴파일하지 못해 .finally로 푼다.
     const onVote = (mode: "U" | "D"): void => {
         if (!preData || voting) return;
         setVoting(mode);
@@ -59,34 +60,29 @@ export const Votes = ({post}: { post: PostInfo }) => {
         );
     };
 
-    // 숫자까지 읽히게 라벨에 넣는다. aria-label은 버튼 안의 글을 대신한다
+    // 숫자까지 읽히게 라벨에 넣는다. aria-label은 버튼 안의 글을 대신한다.
     return (
-        <Flex justify="center" align="center" gap="3" py="5">
-            <Button size="3" variant="soft" aria-label={`추천 ${upvotes || "X"}${fixedUpvotes ? ` (고정닉 ${fixedUpvotes})` : ""}`}
-                    loading={voting === "U"} disabled={voting === "D"} onClick={() => onVote("U")}>
-                <ChevronUp size={18}/>
+        <div className="flex items-center justify-center gap-3 py-6">
+            <Button size="lg" variant="secondary" className="h-10 px-4 text-primary" aria-label={`추천 ${upvotes || "X"}${fixedUpvotes ? ` (고정닉 ${fixedUpvotes})` : ""}`}
+                    disabled={voting !== null} onClick={() => onVote("U")}>
+                {voting === "U" ? <Spinner data-icon="inline-start"/> : <ChevronUp data-icon="inline-start"/>}
                 {upvotes || "X"}
-                {fixedUpvotes && <Text size="2" color="gray">({fixedUpvotes})</Text>}
+                {fixedUpvotes && <span className="text-muted-foreground">({fixedUpvotes})</span>}
             </Button>
             {downvotes !== undefined && (
-                <Button size="3" variant="soft" color="gray" aria-label={`비추천 ${downvotes}`} loading={voting === "D"} disabled={voting === "U"}
+                <Button size="lg" variant="secondary" className="h-10 px-4" aria-label={`비추천 ${downvotes}`} disabled={voting !== null}
                         onClick={() => onVote("D")}>
-                    <ChevronDown size={18}/>
+                    {voting === "D" ? <Spinner data-icon="inline-start"/> : <ChevronDown data-icon="inline-start"/>}
                     {downvotes}
                 </Button>
             )}
-            <Tooltip content="링크 복사" container={overlay.portal}>
-                <IconButton size="3" variant="ghost" color="gray" aria-label="링크 복사" onClick={onShare}>
-                    <Link2 size={18}/>
-                </IconButton>
-            </Tooltip>
-            <Tooltip content="새 탭으로 열기" container={overlay.portal}>
-                <IconButton size="3" variant="ghost" color="gray" asChild>
-                    <a href={preData?.link ?? location.href} target="_blank" rel="noreferrer" aria-label="새 탭으로 열기">
-                        <ExternalLink size={18}/>
-                    </a>
-                </IconButton>
-            </Tooltip>
-        </Flex>
+            <WithTooltip tip="링크 복사" trigger={<Button size="icon-lg" variant="ghost" aria-label="링크 복사" onClick={onShare}/>}>
+                <Link2/>
+            </WithTooltip>
+            <WithTooltip tip="새 탭으로 열기" trigger={<Button size="icon-lg" variant="ghost" nativeButton={false} aria-label="새 탭으로 열기"
+                                                         render={<a href={preData?.link ?? location.href} target="_blank" rel="noreferrer"/>}/>}>
+                <ExternalLink/>
+            </WithTooltip>
+        </div>
     );
 };

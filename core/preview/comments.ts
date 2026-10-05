@@ -1,18 +1,17 @@
-import {LRUCache} from "lru-cache";
-
 import {groupDuplicates, isAnyBlocked, isBlocked} from "@/core/block";
 import {htmlToText, sanitizeHtml} from "@/utils/sanitize";
 import {useUiStore} from "@/stores/ui";
+import {LruCache} from "@/utils/lru";
 
 import {restoreArchive} from "./cache";
 import type {DcinsideComment, GalleryPreData} from "./types";
 
 export interface ProcessedComment extends DcinsideComment {
-    /** 음성댓글. iframe이면 src가 음성 파일이 아니라 플레이어 페이지라 <audio>로 틀 수 없다 */
+    /** 음성댓글. iframe이면 src가 음성 파일이 아니라 플레이어 페이지라 <audio>로 틀 수 없다. */
     voice?: { src: string; iframe: boolean };
-    /** 차단에 걸린 댓글을 가리는 방식 (차단 모듈 설정). blur는 흐리게, hide는 숨긴다 */
+    /** 차단에 걸린 댓글을 가리는 방식 (차단 모듈 설정). blur는 흐리게, hide는 숨긴다. */
     blocked?: "blur" | "hide";
-    /** 같은 댓글 묶음. 첫 댓글은 반복 수, 나머지는 0이며 접힌다 */
+    /** 같은 댓글 묶음. 첫 댓글은 반복 수, 나머지는 0이며 접힌다. */
     duplicates?: number;
 }
 
@@ -24,16 +23,18 @@ const GALLOG_DCCON = /dcimg5\.dcinside\.com\/dccon\.php\?no=(\w*)/g;
  */
 const splitDccons = (memo: string): string => memo.replace(/"\s*(img|video) class="written_dccon/g, "\"><$1 class=\"written_dccon");
 
-// 정화 결과는 입력에만 달려 있어 기억해 둔다. 자동 새로고침·차단 변경·가린 내용 보기마다 댓글 수백 개를 다시 정화하지 않는다
-const cleaned = new LRUCache<string, string>({
-    max: 2000,
-    memoMethod: (memo) => sanitizeHtml(splitDccons(memo).replace(/data-dcconoverstatus="?\w+"?/g, "data-dcconoverstatus=\"true\""))
-});
+// 정화 결과는 입력에만 달려 있어 기억해 둔다. 자동 새로고침·차단 변경·가린 내용 보기마다 댓글 수백 개를 다시 정화하지 않는다.
+const cleaned = new LruCache<string, string>({max: 2000});
+const sanitizeMemo = (memo: string): string => sanitizeHtml(splitDccons(memo).replace(/data-dcconoverstatus="?\w+"?/g, "data-dcconoverstatus=\"true\""));
+
+// 정화된 댓글의 평문(차단 검사용)도 마찬가지로 입력에만 달려 있어 함께 기억한다.
+const plainTexts = new LruCache<string, string>({max: 2000});
+const plainTextOf = (html: string): string => plainTexts.memo(html, (text) => htmlToText(text).trim());
 
 const extractVoice = (memo: string): { memo: string; voice?: ProcessedComment["voice"] } | undefined => {
     if (!memo.includes("@^dc^@")) return;
 
-    // 구분자 앞은 음성 경로(또는 iframe 태그), 뒤는 글이다 (디시·v5와 같은 해석)
+    // 구분자 앞은 음성 경로(또는 iframe 태그), 뒤는 글이다 (디시·v5와 같은 해석).
     const [raw = "", display = ""] = memo.split("@^dc^@");
     const iframe = raw.includes("<iframe");
     const src = iframe ? (raw.match(/src="([^"]+)"/)?.[1] ?? "") : `https://vr.dcinside.com/${raw}`;
@@ -66,23 +67,25 @@ export const prepareComments = (raw: DcinsideComment[], preData: GalleryPreData,
 export const processComments = (source: DcinsideComment[], preData: GalleryPreData): ProcessedComment[] => {
     const list: ProcessedComment[] = source.map((comment) => ({...comment}));
 
-    // 음성 URL은 정화(재직렬화)하면 &가 &amp;로 바뀌므로 정화 전에 떼어 낸다
+    // 음성 URL은 정화(재직렬화)하면 &가 &amp;로 바뀌므로 정화 전에 떼어 낸다.
     for (const comment of list) {
-        const voice = extractVoice(String(comment.memo ?? ""));
-        if (voice) comment.voice = voice.voice;
-        comment.memo = cleaned.memo(voice?.memo ?? String(comment.memo ?? ""));
+        const memo = String(comment.memo ?? "");
+        const voice = extractVoice(memo);
+        // 늘 덮어쓴다. 디시 응답에도 voice 필드가 있어(보통 null) 그대로 두면 음성 댓글이 아닌데도 음성 댓글로 보인다(답글 막힘을 무시한다).
+        comment.voice = voice?.voice;
+        comment.memo = cleaned.memo(voice?.memo ?? memo, sanitizeMemo);
     }
 
-    // 차단 모듈이 꺼져 있으면 blockView가 없고 아무것도 가리지 않는다
+    // 차단 모듈이 꺼져 있으면 blockView가 없고 아무것도 가리지 않는다.
     const view = useUiStore.getState().blockView;
     if (!view) return list;
-    // 페이지 쪽 검사처럼 앞뒤 공백을 뗀다. 디시콘만 있는 댓글이 " "로 남아 빈 글과 달라지지 않게
-    const texts = new Map(list.map((comment) => [comment, htmlToText(comment.memo).trim()]));
+    // 페이지 쪽 검사처럼 앞뒤 공백을 뗀다. 디시콘만 있는 댓글이 " "로 남아 빈 글과 달라지지 않게.
+    const texts = new Map(list.map((comment) => [comment, plainTextOf(comment.memo)]));
 
     for (const comment of list) {
-        // 삭제 표시된 댓글도 검사한다. 보존으로 되살린 댓글은 원문을 담고 있어 건너뛰면 차단된 내용이 보인다
+        // 삭제 표시된 댓글도 검사한다. 보존으로 되살린 댓글은 원문을 담고 있어 건너뛰면 차단된 내용이 보인다.
         const plain = texts.get(comment);
-        // 디시콘 2개짜리 댓글은 두 번째도 검사한다
+        // 디시콘 2개짜리 댓글은 두 번째도 검사한다.
         const dcconNos = Array.from(comment.memo.matchAll(GALLOG_DCCON), (match) => match[1] ?? "");
 
         const blocked =
@@ -100,7 +103,7 @@ export const processComments = (source: DcinsideComment[], preData: GalleryPreDa
     }
 
     if (view.replyRemove) {
-        // 답글의 c_no는 쓰레드 첫 댓글 번호
+        // 답글의 c_no는 쓰레드 첫 댓글 번호.
         const blockedThreads = new Set(list.filter((comment) => comment.depth === 0 && comment.blocked).map((comment) => comment.no));
         for (const comment of list) if (comment.depth === 1 && blockedThreads.has(comment.c_no)) comment.blocked ??= view.blur ? "blur" : "hide";
     }

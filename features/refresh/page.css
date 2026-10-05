@@ -1,0 +1,28 @@
+/* ===== 글 목록 새로고침 (refresh 모듈) ===== */
+
+/* 새 글 등장 효과 (refresh 모듈의 fadeIn). */
+.refresherNewPost {
+    /* 줄마다 animation-delay가 걸린다 — backwards가 없으면 delay 동안 원래 모습으로 보였다가 사라진 뒤 다시 나타난다. */
+    animation: refresher-new-post 0.36s cubic-bezier(0.19, 1, 0.22, 1) backwards;
+
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
+    }
+}
+
+@keyframes refresher-new-post {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+/* 삭제된 글 보존 (refresh 모듈, 미리보기의 archiveArticle 설정) — 목록에서 지워진 글 행. */
+.refresherDeleted {
+    background-color: rgba(232, 100, 95, 0.25) !important;
+}
+
+/* 방문 링크 색 끄기 (refresh 모듈의 doNotColorVisited). */
+.refresherDoNotColorVisited .gall_list a:visited {
+    color: inherit !important;
+}

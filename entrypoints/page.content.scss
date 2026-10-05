@@ -1,5 +1,0 @@
-// 디시 페이지에 입히는 CSS (차단 흐리게·스텔스·레이아웃). 콘텐츠 스크립트의 CSS는 오버레이 shadow에만 들어가므로(cssInjectionMode: "ui")
-// 이 엔트리로 따로 빌드해 manifest에 넣는다 (wxt.config.ts의 content_scripts). document_start에 들어가 스텔스가 이미지를 처음부터 가린다
-@use "../assets/styles/content";
-@use "../assets/styles/stealth";
-@use "../assets/styles/layout";

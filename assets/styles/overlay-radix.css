@@ -1,5 +1,0 @@
-/*
- * 오버레이(shadow DOM)와 팝업용 Radix Themes. wxt.config.ts의 slim-overlay-radix가 이 파일만 더 줄인다.
- * 옵션은 radix-themes.css를 그대로 쓰므로 같은 파일을 두 모듈로 나눠 둔다
- */
-@import "./radix-themes.css";

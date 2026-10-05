@@ -27,7 +27,7 @@ const rebuildUnion = (): void => {
 const flush = (mutations: MutationRecord[]): void => {
     const added = new Set<HTMLElement>();
     // 부모(target)가 이번 묶음에 추가된 요소 안이면 그 요소를 훑을 때 잡히므로 노드를 꺼내 보지 않는다.
-    // 문서를 읽는 동안에는 노드마다 래퍼를 만드는 비용이 flush의 대부분이다. 판정은 부모마다 한 번만 한다
+    // 문서를 읽는 동안에는 노드마다 래퍼를 만드는 비용이 flush의 대부분이다. 판정은 부모마다 한 번만 한다.
     const covered = new Map<Node, boolean>();
     const isCovered = (node: Node): boolean => {
         let result = covered.get(node);
@@ -46,14 +46,14 @@ const flush = (mutations: MutationRecord[]): void => {
     }
     if (added.size === 0) return;
 
-    // 함께 추가된 조상 안에 든 노드는 그 조상을 훑을 때 잡힌다. 같은 묶음 안에서 다시 빠진 노드는 볼 것이 없다
+    // 함께 추가된 조상 안에 든 노드는 그 조상을 훑을 때 잡힌다. 같은 묶음 안에서 다시 빠진 노드는 볼 것이 없다.
     const roots = [...added].filter((node) => {
         for (let parent = node.parentElement; parent; parent = parent.parentElement) {
             if (added.has(parent)) return false;
         }
         return node.isConnected && !node.classList.contains("refresher-user-badges");
     });
-    // 조상 검사는 부모마다 한 번만 한다. 파서는 같은 부모 아래에 행을 줄줄이 넣는다
+    // 조상 검사는 부모마다 한 번만 한다. 파서는 같은 부모 아래에 행을 줄줄이 넣는다.
     const parents = new Set<HTMLElement>();
     for (const root of roots) if (root.parentElement) parents.add(root.parentElement);
     const candidates = union ? roots.filter((root) => root.matches(union!) || root.querySelector(union!) !== null) : roots;
@@ -75,7 +75,7 @@ const flush = (mutations: MutationRecord[]): void => {
 /**
  * scope에 맞는 요소마다 callback을 부른다. 지금 있는 요소는 바로, 이후 추가되는 요소는 추가될 때 부른다.
  * 같은 요소에 여러 번 불릴 수 있으므로 callback은 멱등이어야 한다. 해제 함수를 반환한다.
- * scope는 모듈의 고정 선택자다. 틀린 선택자는 여기서 던져(모듈 setup 실패) 등록되지 않는다
+ * scope는 모듈의 고정 선택자다. 틀린 선택자는 여기서 던져(모듈 setup 실패) 등록되지 않는다.
  */
 export const addFilter = (scope: string, callback: (element: HTMLElement) => void): (() => void) => {
     const existing = document.querySelectorAll<HTMLElement>(scope);

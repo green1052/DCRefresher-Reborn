@@ -1,109 +1,22 @@
 import {CloudDownload, CloudUpload, Download, RefreshCw, Trash2, Upload} from "lucide-react";
-import {Box, Button, Dialog, Flex, SegmentedControl, Switch, Text} from "@radix-ui/themes";
-import {useEffect, useRef, useState} from "react";
-import {arrayIncludes, objectKeys} from "ts-extras";
+import {useEffect, useId, useRef, useState} from "react";
 
-import {ConfirmDialog, DialogActions} from "@/components/ConfirmDialog";
-import {focusPanel} from "@/components/useOpenerFocus";
-import {type BackupSlot, CLOUD_QUOTA, type CloudBackupStatus, collectLocalData, isBackupTarget, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
+import {ConfirmDialog, DialogActions} from "@/components/dialogs";
+import {Button} from "@/components/ui/button";
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "@/components/ui/dialog";
+import {Field, FieldLabel} from "@/components/ui/field";
+import {Switch} from "@/components/ui/switch";
+import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
+import {focusPanel, panelOf} from "@/components/useReturnFocus";
+import {type BackupSlot, CLOUD_QUOTA, type CloudBackupStatus, collectLocalData, readBackupTargets, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
-import {MIGRATED_MODULES, migrateModuleSettings} from "@/core/migrate-settings";
-import {migrateV5} from "@/core/migrate-v5";
-import {BLOCK_TYPES, backupStorage, dbStorage, isBlockListKey, settingsKeyModule} from "@/core/storage/items";
-import {blockKey, normalizeBlockList, normalizeDefaults} from "@/stores/blocks";
+import {mergeBackup, parseImport, writeSettings} from "@/core/settings-transfer";
+import {backupStorage, dbStorage} from "@/core/storage/items";
 import {friendlyMessage} from "@/utils/error";
-import {isRecord} from "@/utils/record";
+import {arrayIncludes, objectKeys} from "@/utils/typed";
 
-import {formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
+import {formatBytes, formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
 import {notify} from "./optionsStore";
-
-const DEFAULTS_KEY = "refresher:block:defaults";
-
-/** 값 여러 개를 객체 하나에 담는 키(모듈 on/off, 기본 차단 모드, 모듈별 설정) */
-const isMapKey = (key: string): boolean =>
-    key === "refresher:modules" || key === DEFAULTS_KEY || settingsKeyModule(key) !== undefined;
-
-/**
- * 설정(백업 대상 키)을 저장소에 쓴다. IP/밴 DB·백업 상태·모듈 캐시는 건드리지 않는다.
- * - replace(클라우드 복원·초기화): 백업은 완전한 스냅숏이므로 거기 없는 설정 키는 지운다.
- * - merge(가져오기): 붙여넣은 JSON은 일부만 담을 수 있으므로 든 키만 쓴다. 설정만 든 JSON이 차단/메모 목록을 지우지 않게 한다.
- *   설정 객체(isMapKey)도 기존 값에 얕게 합쳐, 설정 몇 개만 든 JSON이 나머지 설정을 기본값으로 돌리지 않게 한다.
- * 쓰다가 실패하면 이전 값으로 되돌린다.
- */
-const writeSettings = async (data: Record<string, unknown>, mode: "replace" | "merge"): Promise<void> => {
-    const previous = await browser.storage.local.get(null);
-    // 설정 키가 아닌 값(차단/메모 내보내기의 "NICK" 등)은 저장하지 않는다
-    const next = Object.fromEntries(Object.entries(migrateV5(data)).filter(([key]) => key.startsWith("refresher:") && isBackupTarget(key)));
-    // 6.0.x 백업의 옛 설정('IP 정보 표시' 끔 등)을 새 설정으로 옮긴다. 옮기지 않으면 옵션을 열 때 없는 설정으로 지워진다
-    for (const id of MIGRATED_MODULES) {
-        const key = `refresher:module:${id}:settings`;
-        const settings = next[key];
-        if (isRecord(settings)) next[key] = migrateModuleSettings(id, settings);
-    }
-    // 백업·내보내기는 용량 때문에 차단 항목 id를 빼므로 저장할 때 다시 붙인다
-    for (const [key, value] of Object.entries(next)) {
-        if (isBlockListKey(key)) next[key] = normalizeBlockList(value);
-    }
-    if (mode === "merge") {
-        // 기본 차단 모드는 mergeBackup처럼 이 기기 것을 남기고, 가져온 목록의 모드 없는 항목에 JSON의 기본 모드를 적어 둔다.
-        // JSON에 기본 모드가 없으면 그 기기는 기본값을 썼다. 이 기기 기본 모드를 따르게 두면 가져온 'ㅋ'이 일치 검사가 되는 등 검사 방식이 바뀐다
-        const localDefaults = normalizeDefaults(previous[DEFAULTS_KEY]);
-        const importDefaults = normalizeDefaults(next[DEFAULTS_KEY]);
-        delete next[DEFAULTS_KEY];
-        for (const type of BLOCK_TYPES) {
-            const key = `refresher:block:${type}`;
-            const pinned = importDefaults[type];
-            if (!(key in next) || pinned === localDefaults[type]) continue;
-            next[key] = normalizeBlockList(next[key]).map((entry) => (entry.mode ? entry : {...entry, mode: pinned}));
-        }
-        for (const [key, value] of Object.entries(next)) {
-            const old = previous[key];
-            if (isMapKey(key) && isRecord(old) && isRecord(value)) next[key] = {...old, ...value};
-        }
-    }
-    // 거르고 나서 남은 키가 없으면(옛 백업 키가 migrateV5에서 전부 빠졌거나 가져온 JSON에 기본 차단 모드만 든 경우 등)
-    // 복원은 모든 설정을 지우고 가져오기는 아무것도 쓰지 않으므로 실패로 알린다. 설정을 비우는 것은 초기화({})만 허용한다.
-    if (Object.keys(data).length > 0 && Object.keys(next).length === 0) throw new Error("쓸 수 있는 설정이 없습니다.");
-    const removed = mode === "replace" ? Object.keys(previous).filter((key) => isBackupTarget(key) && !(key in next)) : [];
-
-    try {
-        await browser.storage.local.remove(removed);
-        await browser.storage.local.set(next);
-    } catch (e) {
-        // 건드린 키만 되돌린다. 저장소 전체를 다시 쓰면 그사이 다른 탭이 한 쓰기(차단 추가, DB 갱신)를 지운다
-        const touched = [...removed, ...Object.keys(next)];
-        await browser.storage.local.remove(touched.filter((key) => !(key in previous)));
-        await browser.storage.local.set(Object.fromEntries(touched.filter((key) => key in previous).map((key) => [key, previous[key]])));
-        throw e;
-    }
-};
-
-/**
- * 백업을 지금 데이터에 합친다. 겹치면 지금 것이 이긴다.
- * 차단 목록은 백업에만 있는 항목(내용+갤러리)을 뒤에 붙이고, 메모·설정 객체는 백업에만 있는 키를 더한다. 그 밖의 값은 지금 없을 때만 백업 값을 쓴다
- */
-const mergeBackup = (current: Record<string, unknown>, backup: Record<string, unknown>): Record<string, unknown> => {
-    const migrated = migrateV5(backup);
-    // 모드 없는 차단 항목은 유형의 기본 모드를 따른다. 기본 모드는 이 기기 것을 남기고, 백업의 기본 모드가 다른 유형은
-    // 백업에서 온 항목에 그 모드를 적어 둔다. 어느 한쪽 기본 모드만 남으면 다른 쪽 항목의 검사 방식이 바뀐다('ㅋ'이 포함 검사가 되는 등)
-    const localDefaults = normalizeDefaults(current[DEFAULTS_KEY]);
-    const backupDefaults = normalizeDefaults(migrated[DEFAULTS_KEY]);
-    const merged = Object.fromEntries(Object.entries(migrated).map(([key, value]) => {
-        const local = current[key];
-        if (isBlockListKey(key)) {
-            const type = key.slice("refresher:block:".length);
-            const pinned = arrayIncludes(BLOCK_TYPES, type) && backupDefaults[type] !== localDefaults[type] ? backupDefaults[type] : undefined;
-            const kept = normalizeBlockList(local);
-            const seen = new Set(kept.map(blockKey));
-            const added = normalizeBlockList(value).filter((entry) => !seen.has(blockKey(entry)));
-            return [key, [...kept, ...added.map((entry) => (entry.mode || !pinned ? entry : {...entry, mode: pinned}))]];
-        }
-        if (local === undefined) return [key, value];
-        return [key, isRecord(local) && isRecord(value) ? {...value, ...local} : local];
-    }));
-    // 기본 모드는 백업에 없어도 이 기기 것을 넘긴다. 없으면 writeSettings가 기본값을 쓴 기기의 JSON으로 보고 이 기기 항목에까지 모드를 적는다
-    return {...merged, [DEFAULTS_KEY]: localDefaults};
-};
 
 type RestoreMode = "replace" | "merge";
 
@@ -112,23 +25,11 @@ const RESTORE_DESCRIPTIONS: Record<RestoreMode, string> = {
     merge: "현재 설정과 목록은 그대로 두고, 백업에만 있는 차단·메모와 설정을 더합니다. 겹치면 현재 것을 남깁니다."
 };
 
-const kilobytes = (bytes: number): string => `${Math.ceil(bytes / 1024)}KB`;
-
-const parseImport = (input: string): Record<string, unknown> => {
-    const parsed: unknown = JSON.parse(input);
-    if (!isRecord(parsed)) throw new Error("가져오기 데이터는 JSON 객체여야 합니다.");
-    // 차단/메모 내보내기나 {}를 붙여넣으면 아무것도 쓰지 않고 "가져왔습니다"만 뜨므로 잘못 붙여넣었다고 알린다
-    if (!Object.keys(parsed).some((key) => key.startsWith("refresher:"))) {
-        throw new Error("설정 데이터가 아닙니다.");
-    }
-    return parsed;
-};
-
 export function DataTab() {
-    const {lastUpdate} = useStorageItem(dbStorage.meta);
+    const {version, lastUpdate} = useStorageItem(dbStorage.meta);
     const backupError = useStorageItem(backupStorage.error);
     const autoBackup = useStorageItem(backupStorage.auto);
-    const [cloud, setCloud] = useState<CloudBackupStatus>({legacy: false, used: 0});
+    const [cloud, setCloud] = useState<CloudBackupStatus>({used: 0});
     const [restoreOpen, setRestoreOpen] = useState(false);
     const [restoreMode, setRestoreMode] = useState<RestoreMode>("replace");
     const [loading, setLoading] = useState(false);
@@ -136,17 +37,30 @@ export function DataTab() {
     const [autoConfirm, setAutoConfirm] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
     const restoreRef = useRef<HTMLButtonElement>(null);
+    const id = useId();
 
     useEffect(() => {
-        // 클라우드 메타에서 읽어 자동 백업(백그라운드)과 다른 기기의 백업도 반영한다
-        const loadStatus = (): void => void readCloudBackupStatus().then(setCloud, console.error);
+        // 클라우드 메타에서 읽어 자동 백업(백그라운드)과 다른 기기의 백업도 반영한다.
+        // 백업은 sync를 연달아 여러 번 쓴다. 먼저 보낸 읽기가 늦게 와 새 상태를 덮지 않게 마지막 읽기만 반영한다.
+        let latest = 0;
+        let alive = true;
+        const loadStatus = (): void => {
+            latest += 1;
+            const request = latest;
+            void readCloudBackupStatus().then((status) => {
+                if (alive && request === latest) setCloud(status);
+            }, console.error);
+        };
         loadStatus();
         browser.storage.sync.onChanged.addListener(loadStatus);
-        return () => browser.storage.sync.onChanged.removeListener(loadStatus);
+        return () => {
+            alive = false;
+            browser.storage.sync.onChanged.removeListener(loadStatus);
+        };
     }, []);
 
     const run = async (action: () => Promise<string>, failure: string): Promise<void> => {
-        // 누른 버튼이 막히면 포커스가 body로 떨어져 알림을 닫은 뒤 돌아갈 곳이 없으므로 가까운 조상(탭 패널)으로 옮겨 둔다
+        // 누른 버튼이 막히면 포커스가 body로 떨어져 알림을 닫은 뒤 돌아갈 곳이 없으므로 가까운 조상(탭 패널)으로 옮겨 둔다.
         if (document.activeElement !== document.body) focusPanel(document.activeElement);
         setLoading(true);
         let message: string;
@@ -156,7 +70,7 @@ export function DataTab() {
             console.error(e);
             message = `${failure} ${friendlyMessage(e)}`;
         }
-        // 확인 창 안에서 부르면(초기화) 창이 닫히며 포커스가 body로 떨어지고, 알림이 그 body를 돌아갈 곳으로 기억한다
+        // 확인 창 안에서 부르면(초기화) 창이 닫히며 포커스가 body로 떨어지고, 알림이 그 body를 돌아갈 곳으로 기억한다.
         if (document.activeElement === document.body) focusPanel(restoreRef.current);
         notify(message);
         setLoading(false);
@@ -172,9 +86,9 @@ export function DataTab() {
             const backup = await readCloudBackup(slot);
             if (!backup) return "클라우드에 백업이 없습니다.";
 
-            const data = mode === "merge" ? mergeBackup(await browser.storage.local.get(null), backup.data) : backup.data;
+            const data = mode === "merge" ? mergeBackup(await readBackupTargets(), backup.data) : backup.data;
             await writeSettings(data, mode);
-            const what = backup.createdAt ? `${formatTime(backup.createdAt)} 백업을` : "데이터를";
+            const what = `${formatTime(backup.createdAt)} 백업을`;
             return `${what} ${mode === "merge" ? "합쳤습니다" : "복원했습니다"}. 새 탭에서 디시인사이드를 열어 주세요.`;
         }, "복원하지 못했습니다.");
 
@@ -186,7 +100,7 @@ export function DataTab() {
             notify(`자동 백업 설정을 저장하지 못했습니다. ${friendlyMessage(e)}`);
             return;
         }
-        // 켜는 순간의 설정을 자동 백업 칸에 바로 올린다. 이후에는 설정이 바뀔 때마다 백그라운드가 올린다
+        // 켜는 순간의 설정을 자동 백업 칸에 바로 올린다. 이후에는 설정이 바뀔 때마다 백그라운드가 올린다.
         if (on) {
             await run(() => runBackup("auto").then(() => "자동 백업을 켰습니다. 지금 설정을 자동 백업으로 올렸습니다."), "자동 백업을 켰지만 첫 백업을 올리지 못했습니다.");
         }
@@ -198,7 +112,7 @@ export function DataTab() {
             "클립보드로 내보내지 못했습니다."
         );
 
-    // run()을 거치지 않는다. loading이 가져오기 버튼을 막으면 다이얼로그를 닫을 때 포커스가 그 버튼으로 돌아가지 못한다
+    // run()을 거치지 않는다. loading이 가져오기 버튼을 막으면 다이얼로그를 닫을 때 포커스가 그 버튼으로 돌아가지 못한다.
     const submitImport = async (text: string): Promise<string | undefined> => {
         try {
             await writeSettings(parseImport(text), "merge");
@@ -211,7 +125,7 @@ export function DataTab() {
 
     const clearData = () =>
         run(async () => {
-            // 자동 백업이 켜져 있으면 1분 뒤 빈 설정이 클라우드 백업을 덮어쓰므로 먼저 끈다
+            // 자동 백업이 켜져 있으면 1분 뒤 빈 설정이 클라우드 백업을 덮어쓰므로 먼저 끈다.
             const wasAuto = await backupStorage.auto.getValue();
             if (wasAuto) await backupStorage.auto.setValue(false);
 
@@ -220,11 +134,11 @@ export function DataTab() {
         }, "초기화하지 못했습니다.");
 
     return (
-        <Box>
-            <Section title="IP/밴 데이터베이스" desc={`마지막 갱신: ${formatTime(lastUpdate)}`}
+        <div>
+            <Section title="IP/밴 데이터베이스" desc={`버전: ${version.trim() || "없음"} · 마지막 확인: ${formatTime(lastUpdate)}`}
                      actions={
-                         <Button variant="soft" disabled={loading} onClick={() => void forceUpdate()}>
-                             <RefreshCw size={14}/> 지금 갱신
+                         <Button variant="secondary" disabled={loading} onClick={() => void forceUpdate()}>
+                             <RefreshCw data-icon="inline-start"/> 지금 갱신
                          </Button>
                      }/>
 
@@ -232,93 +146,84 @@ export function DataTab() {
                 title="클라우드 백업"
                 desc="브라우저 동기화 저장소(최대 100KB)에 설정을 압축해 백업합니다. 수동 백업과 자동 백업은 따로 저장됩니다."
                 actions={
-                    <Text as="label" size="2">
-                        <Flex gap="2" align="center">
-                            {/* 자동 칸은 기기끼리 같이 쓰고 켜는 즉시 이 기기 설정으로 덮인다. 새 기기에서 켰다가 복원할 백업을 잃지 않게 먼저 묻는다 */}
-                            <Switch checked={autoBackup} disabled={loading}
-                                    onCheckedChange={(on) => (on && cloud.auto ? setAutoConfirm(true) : void toggleAutoBackup(on))}/>
-                            자동 백업
-                        </Flex>
-                    </Text>
+                    <Field orientation="horizontal">
+                        {/* 자동 칸은 기기끼리 같이 쓰고 켜는 즉시 이 기기 설정으로 덮인다. 새 기기에서 켰다가 복원할 백업을 잃지 않게 먼저 묻는다. */}
+                        <Switch id={`${id}-auto`} checked={autoBackup} disabled={loading}
+                                onCheckedChange={(on) => (on && cloud.auto ? setAutoConfirm(true) : void toggleAutoBackup(on))}/>
+                        <FieldLabel htmlFor={`${id}-auto`}>자동 백업</FieldLabel>
+                    </Field>
                 }
             >
-                <Text as="p" size="2" color="gray">
+                <p className="text-muted-foreground">
                     수동 백업: {formatTime(cloud.manual?.createdAt ?? 0)} · 자동 백업: {formatTime(cloud.auto?.createdAt ?? 0)}
-                </Text>
-                {/* 한도를 넘으면 백업이 실패하므로 가까워진 것을 미리 보인다. 수동·자동 두 칸이 한도를 나눠 쓴다 */}
-                <Text as="p" size="2" color={cloud.used > CLOUD_QUOTA * 0.8 ? "orange" : "gray"} mb="3">
-                    클라우드 사용량: {kilobytes(cloud.used)} / {kilobytes(CLOUD_QUOTA)}
-                    {(cloud.manual || cloud.auto) && ` (수동 ${kilobytes(cloud.manual?.size ?? 0)} · 자동 ${kilobytes(cloud.auto?.size ?? 0)})`}
-                </Text>
-                {/* 복원 버튼을 Dialog.Trigger로 둬야 닫을 때 Radix가 그 버튼으로 포커스를 돌려준다 */}
-                <Dialog.Root open={restoreOpen} onOpenChange={setRestoreOpen}>
-                    <Flex gap="2" wrap="wrap">
-                        <Button variant="soft" disabled={loading} onClick={() => void backupCloud()}>
-                            <CloudUpload size={14}/> 백업
+                </p>
+                {/* 한도를 넘으면 백업이 실패하므로 가까워진 것을 미리 보인다. 수동·자동 두 칸이 한도를 나눠 쓴다. */}
+                <p className={cloud.used > CLOUD_QUOTA * 0.8 ? "mb-3 text-amber-600 dark:text-amber-400" : "mb-3 text-muted-foreground"}>
+                    클라우드 사용량: {formatBytes(cloud.used)} / {formatBytes(CLOUD_QUOTA)}
+                    {(cloud.manual || cloud.auto) && ` (수동 ${formatBytes(cloud.manual?.size ?? 0)} · 자동 ${formatBytes(cloud.auto?.size ?? 0)})`}
+                </p>
+                {/* 복원 버튼을 Trigger로 둬야 닫을 때 그 버튼으로 포커스가 돌아온다. */}
+                <Dialog open={restoreOpen} onOpenChange={setRestoreOpen}>
+                    <div className="flex flex-wrap gap-2">
+                        <Button variant="secondary" disabled={loading} onClick={() => void backupCloud()}>
+                            <CloudUpload data-icon="inline-start"/> 백업
                         </Button>
-                        <Dialog.Trigger>
-                            <Button ref={restoreRef} variant="soft" disabled={loading}>
-                                <CloudDownload size={14}/> 복원
-                            </Button>
-                        </Dialog.Trigger>
-                    </Flex>
+                        <DialogTrigger render={<Button ref={restoreRef} variant="secondary" disabled={loading}/>}>
+                            <CloudDownload data-icon="inline-start"/> 복원
+                        </DialogTrigger>
+                    </div>
 
-                    <Dialog.Content maxWidth="420px" onCloseAutoFocus={(ev) => {
-                        // 복원 중에는 복원 버튼이 막혀 Radix가 포커스를 돌려주지 못하므로 가까운 조상(탭 패널)으로 돌린다
-                        if (!restoreRef.current?.disabled) return;
-                        ev.preventDefault();
-                        focusPanel(restoreRef.current);
-                    }}>
-                        <Dialog.Title>어느 백업으로 복원할까요?</Dialog.Title>
-                        <SegmentedControl.Root value={restoreMode} onValueChange={(value) => arrayIncludes(objectKeys(RESTORE_DESCRIPTIONS), value) && setRestoreMode(value)} mb="3">
-                            <SegmentedControl.Item value="replace">덮어쓰기</SegmentedControl.Item>
-                            <SegmentedControl.Item value="merge">합치기</SegmentedControl.Item>
-                        </SegmentedControl.Root>
-                        <Dialog.Description size="2" mb="3">{RESTORE_DESCRIPTIONS[restoreMode]}</Dialog.Description>
-                        <Flex direction="column" gap="2">
+                    {/* 복원 중에는 복원 버튼이 막혀 포커스를 돌려줄 수 없으므로 가까운 조상(탭 패널)으로 돌린다. */}
+                    <DialogContent showCloseButton={false} className="sm:max-w-[420px]"
+                                   finalFocus={() => (restoreRef.current?.disabled ? panelOf(restoreRef.current) ?? true : true)}>
+                        <DialogHeader>
+                            <DialogTitle>어느 백업으로 복원할까요?</DialogTitle>
+                        </DialogHeader>
+                        <ToggleGroup variant="outline" spacing={0} value={[restoreMode]}
+                                     onValueChange={([value]) => arrayIncludes(objectKeys(RESTORE_DESCRIPTIONS), value) && setRestoreMode(value)}>
+                            <ToggleGroupItem value="replace">덮어쓰기</ToggleGroupItem>
+                            <ToggleGroupItem value="merge">합치기</ToggleGroupItem>
+                        </ToggleGroup>
+                        <DialogDescription>{RESTORE_DESCRIPTIONS[restoreMode]}</DialogDescription>
+                        <div className="flex flex-col gap-2">
                             {([
-                                ["manual", "수동 백업", cloud.manual ? formatTime(cloud.manual.createdAt) : cloud.legacy ? "예전 방식 백업" : undefined],
+                                ["manual", "수동 백업", cloud.manual ? formatTime(cloud.manual.createdAt) : undefined],
                                 ["auto", "자동 백업", cloud.auto ? formatTime(cloud.auto.createdAt) : undefined]
                             ] as const).map(([slot, label, time]) => (
-                                <Button key={slot} variant="soft" size="3" disabled={!time} onClick={() => void recoverCloud(slot, restoreMode)}
-                                        style={{justifyContent: "space-between"}}>
+                                <Button key={slot} variant="secondary" size="lg" className="justify-between" disabled={!time}
+                                        onClick={() => void recoverCloud(slot, restoreMode)}>
                                     {label}
-                                    <Text size="2" color="gray">{time ?? "없음"}</Text>
+                                    <span className="text-muted-foreground">{time ?? "없음"}</span>
                                 </Button>
                             ))}
-                        </Flex>
+                        </div>
                         <DialogActions/>
-                    </Dialog.Content>
-                </Dialog.Root>
+                    </DialogContent>
+                </Dialog>
                 {autoBackup && (
-                    <Text as="p" size="1" color="gray" mt="2">설정이 바뀌면 1분 뒤에 자동으로 백업합니다.</Text>
+                    <p className="mt-2 text-xs text-muted-foreground">설정이 바뀌면 1분 뒤에 자동으로 백업합니다.</p>
                 )}
                 {backupError && (
-                    <Text as="p" size="1" color="red" mt="2">마지막 백업 실패: {backupError}</Text>
+                    <p className="mt-2 text-xs text-destructive">마지막 백업 실패: {backupError}</p>
                 )}
             </Section>
 
             <Section title="내보내기 / 가져오기"
                      desc="IP/밴 데이터베이스와 캐시를 뺀 모든 설정을 JSON으로 옮깁니다. 가져오기는 JSON에 든 설정과 목록만 바꾸고, JSON에 없는 것은 그대로 둡니다.">
-                <Flex gap="2" wrap="wrap">
-                    <Button variant="soft" disabled={loading} onClick={() => void exportData()}>
-                        <Download size={14}/> 클립보드로 내보내기
+                <div className="flex flex-wrap gap-2">
+                    <Button variant="secondary" disabled={loading} onClick={() => void exportData()}>
+                        <Download data-icon="inline-start"/> 클립보드로 내보내기
                     </Button>
-                    <Button variant="soft" disabled={loading} onClick={() => setImportOpen(true)}>
-                        <Upload size={14}/> 가져오기
+                    <Button variant="secondary" disabled={loading} onClick={() => setImportOpen(true)}>
+                        <Upload data-icon="inline-start"/> 가져오기
                     </Button>
-                </Flex>
+                </div>
             </Section>
 
             <Section title="초기화" desc="모든 설정과 차단/메모 데이터를 삭제합니다. 되돌릴 수 없습니다."
                      actions={
-                         <Button
-                             variant="soft"
-                             color="red"
-                             disabled={loading}
-                             onClick={() => setResetConfirm(true)}
-                         >
-                             <Trash2 size={14}/> 데이터 초기화
+                         <Button variant="destructive" disabled={loading} onClick={() => setResetConfirm(true)}>
+                             <Trash2 data-icon="inline-start"/> 데이터 초기화
                          </Button>
                      }/>
 
@@ -353,6 +258,6 @@ export function DataTab() {
                               desc="내보낸 JSON 데이터를 붙여 넣어 주세요. JSON에 든 설정과 목록만 바꾸고 나머지는 그대로 둡니다. 들어 있는 차단/메모 목록은 합치지 않고 통째로 바꿉니다. 기본 차단 모드는 이 기기 것을 남깁니다. 합치려면 차단/메모 탭의 가져오기를 써 주세요."
                               onClose={() => setImportOpen(false)} onSubmit={submitImport}/>
             )}
-        </Box>
+        </div>
     );
 }
