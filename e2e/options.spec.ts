@@ -65,7 +65,7 @@ test.describe("옵션 페이지", () => {
         await expect(table.getByText("오래된닉")).toBeVisible();
 
         await page.getByRole("button", {name: "보이는 1개 삭제"}).click();
-        await page.getByRole("button", {name: "삭제", exact: true}).click();
+        await page.getByRole("dialog").getByRole("button", {name: "삭제", exact: true}).click();
         await expect.poll(async () => ((await storage.get("refresher:block:NICK")) as { id: string }[]).map(({id}) => id)).toEqual(["b", "c"]);
         // 지운 항목의 사용 기록도 정리된다.
         await expect.poll(async () => Object.keys(((await storage.get("refresher:usage")) as { block: object }).block).sort()).toEqual(["b", "c"]);

@@ -1,17 +1,22 @@
+import preact from "@preact/preset-vite";
 import tailwindcss from "@tailwindcss/vite";
 import {defineConfig} from "wxt";
 
 import {CONTENT_EXCLUDE_MATCHES, CONTENT_MATCHES} from "./core/pages";
 
 export default defineConfig({
-    modules: ["@wxt-dev/module-react", "@wxt-dev/auto-icons"],
-    react: {
-        vite: {
-            compiler: true
-        }
-    },
+    modules: ["@wxt-dev/auto-icons"],
     vite: () => ({
-        plugins: [tailwindcss()],
+        plugins: [
+            // React 대신 Preact를 쓴다. 코드와 라이브러리(Base UI 등)의 react·react-dom import는 preact/compat으로 바뀐다.
+            // React Compiler는 React 18 대상으로 돌려 react-compiler-runtime을 쓰게 한다. 19 대상은 React 내부 런타임(react/compiler-runtime)을 써 Preact에 없다.
+            preact({
+                babel: {
+                    plugins: [["babel-plugin-react-compiler", {target: "18"}]]
+                }
+            }),
+            tailwindcss()
+        ],
         build: {
             cssTarget: ["chrome140", "firefox140"]
         }
