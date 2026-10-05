@@ -37,23 +37,6 @@ bun run zip:firefox    # Firefox zip + 소스 zip
 
 `tsconfig.json`은 `noUnusedLocals`, `noUnusedParameters`를 켜 둡니다. 커밋 전에 `bun run compile`, `bun run test`, `bun run build`가 통과해야 합니다. 이 검사들과 크로미엄·파이어폭스 E2E는 PR마다 CI 워크플로(`.github/workflows/ci.yml`)에서 돕니다.
 
-## 개발 모드
-
-개발 모드는 따로 정하지 않으면 설치된 Chrome/Firefox를 새 임시 프로필로 띄웁니다. 다른 실행 파일이나 프로필을 쓰려면 저장소에 올리지 않는 `web-ext.config.ts`(`.gitignore`에 있음)를 만듭니다. 실행 파일은 `binaries`, 프로필은 `chromiumProfile`·`firefoxProfile`로 정합니다. Firefox 계열 브라우저(Zen 등)는 `firefox`에 그 실행 파일을 넣습니다. Chrome은 기본 사용자 데이터 폴더에서 원격 디버깅을 막으므로 평소 쓰는 기본 프로필은 쓰지 않습니다.
-
-```ts
-import {defineWebExtConfig} from "wxt";
-
-export default defineWebExtConfig({
-    binaries: {
-        chrome: "C:/Program Files/Google/Chrome/Application/chrome.exe",
-        firefox: "C:/Program Files/Mozilla Firefox/firefox.exe"
-    }
-});
-```
-
-개발 모드에서 확장을 다시 불러오는 단축키는 `Alt+Shift+R`입니다(`wxt.config.ts`의 `dev.reloadCommand`). 기본 키(`suggested_key`)가 있는 명령이 4개가 되면 WXT가 이 단축키를 넣지 않으니, 새 단축키에는 기본 키를 주지 않거나 이 점을 감안하세요.
-
 ## 코드 규칙
 
 - 반복은 `for...of`를 씁니다 (`forEach` 대신). catch 변수는 `e`, 이벤트 매개변수는 `ev`입니다.

@@ -4,7 +4,7 @@ DCRefresher Reborn을 고치고 기능을 더하는 사람을 위한 문서입�
 
 | 문서 | 내용 |
 |------|------|
-| [시작하기](getting-started.md) | 스택, 개발 환경, 명령, 코드 규칙 |
+| [시작하기](getting-started.md) | 스택, 명령, 코드 규칙 |
 | [구조](architecture.md) | 디렉터리, 진입점과 실행 흐름, 저장소, HTTP |
 | [모듈](modules.md) | 기능 모듈 만들기, 설정 스키마, 단축키·팝업 토글, 모듈 간 api, 배경 모듈 |
 | [UI](ui.md) | 오버레이(shadow DOM)와 CSS, Preact·shadcn(Base UI) 부품 |
