@@ -28,10 +28,12 @@ const SLOT_KEYS: Record<BackupSlot, string> = {manual: "backup", auto: "autoBack
 const chunkKey = (slot: BackupSlot, index: number): string => `${SLOT_KEYS[slot]}:${index}`;
 const isSlotKey = (slot: BackupSlot, key: string): boolean => key === SLOT_KEYS[slot] || key.startsWith(`${SLOT_KEYS[slot]}:`);
 
-/** 조각 하나의 글자 수. 항목 한도 8192바이트에서 키와 따옴표 몫을 뺐다. */
-const CHUNK_CHARS = 8000;
-/** 전체 한도 102400바이트에서 메타·키 몫을 뺐다 (두 칸 합계). */
-const TOTAL_CHARS = 100_000;
+/** storage.sync 전체 한도 (바이트). 크롬·파이어폭스 모두 102400이다. */
+export const CLOUD_QUOTA = browser.storage.sync.QUOTA_BYTES;
+/** 조각 하나의 글자 수. 항목 한도(8192바이트)에서 키와 따옴표 몫을 뺐다. */
+const CHUNK_CHARS = browser.storage.sync.QUOTA_BYTES_PER_ITEM - 192;
+/** 전체 한도에서 메타·키 몫을 뺐다 (두 칸 합계). */
+const TOTAL_CHARS = CLOUD_QUOTA - 2400;
 
 interface BackupMeta {
     format: 1;
@@ -118,9 +120,6 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     await browser.storage.sync.set(items);
     if (stale.length > 0) await browser.storage.sync.remove(stale);
 };
-
-/** storage.sync 전체 한도 (바이트). */
-export const CLOUD_QUOTA = 102_400;
 
 export interface CloudBackupStatus {
     /** 칸마다 마지막 백업 시각과 크기(바이트). 백업이 없으면 없다. */
