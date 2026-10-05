@@ -1,9 +1,11 @@
-import {Badge, Button, Dialog, Flex, Link, Skeleton, Text} from "@radix-ui/themes";
 import {type MouseEvent, useEffect, useState} from "react";
 
-import {ConfirmDialog, DialogCloseButton} from "@/components/ConfirmDialog";
-import {overlay} from "@/components/overlay/shadow";
-import {ModalDialog} from "@/components/ModalDialog";
+import {ConfirmDialog, DialogCloseButton, ModalDialog} from "@/components/dialogs";
+import {Badge} from "@/components/ui/badge";
+import {Button} from "@/components/ui/button";
+import {DialogTitle} from "@/components/ui/dialog";
+import {Skeleton} from "@/components/ui/skeleton";
+import {Spinner} from "@/components/ui/spinner";
 import {dcconCode, isBlockedHidden} from "@/core/block";
 import {urls} from "@/core/http/urls";
 import {addDcconPackage, fetchDcconPackage} from "@/core/preview/request";
@@ -50,7 +52,12 @@ const openBlockBubble = (ev: MouseEvent<HTMLElement>): void => {
 
 /** 제작·태그 줄 앞의 작은 딱지 (디시 정보창의 tbox). */
 const Label = ({children}: { children: string }) => (
-    <Badge size="1" variant="outline" color="gray" radius="small">{children}</Badge>
+    <Badge variant="outline" className="rounded-sm text-muted-foreground">{children}</Badge>
+);
+
+/** 디시콘 상점 링크. */
+const ShopLink = ({href, children}: { href: string; children: string }) => (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline-offset-4 hover:underline">{children}</a>
 );
 
 /** 댓글·본문의 디시콘을 눌렀을 때 그 디시콘이 든 패키지 정보를 보여 준다 (디시 '디시콘 보기' 창). */
@@ -59,6 +66,7 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
     const [sending, setSending] = useState(false);
     const [added, setAdded] = useState(false);
     const [confirming, setConfirming] = useState(false);
+    const bubble = useUiStore((s) => s.bubble);
 
     const addDccon = async (packageIdx: string | number): Promise<void> => {
         setConfirming(false);
@@ -102,63 +110,68 @@ export const DcconInfoPopup = ({code}: { code: string }) => {
     const info = dccon?.info;
 
     return (
-        <ModalDialog onClose={close} container={overlay.portal} maxWidth="600px" focusOnOpen="keyboard"
-                            // 우클릭 버블은 창이 아니라 이 창 밖(components/overlay/UserBubble)에 뜨므로, 버블을 눌러도 바깥 클릭으로 닫히지 않게 막는다.
-                            onInteractOutside={(ev) => useUiStore.getState().bubble && ev.preventDefault()}>
-                <Flex justify="between" align="center" mb="3">
-                    <Dialog.Title mb="0">디시콘 정보</Dialog.Title>
-                    <DialogCloseButton/>
-                </Flex>
+        // 우클릭 버블은 이 창 밖(components/overlay/UserBubble)에 뜨므로, 버블이 떠 있는 동안은 바깥 클릭으로 닫지 않는다.
+        <ModalDialog onClose={close} className="sm:max-w-[600px]" focusOnOpen="keyboard" disablePointerDismissal={bubble !== null}>
+            <div className="flex items-center justify-between">
+                <DialogTitle>디시콘 정보</DialogTitle>
+                <DialogCloseButton/>
+            </div>
 
-                <div className="refresher-dccon-info-head">
-                    {info ? <img src={urls.dccon.image + info.main_img_path} alt={info.title}/> : <Skeleton width="120px" height="120px"/>}
+            {/* 디시 '디시콘 보기' 창처럼 위에 패키지 정보, 아래에 든 디시콘. */}
+            <div className="flex gap-4 rounded-lg bg-muted/50 p-4">
+                {info ? <img src={urls.dccon.image + info.main_img_path} alt={info.title} className="size-30 flex-none object-contain"/> : <Skeleton className="size-30 flex-none"/>}
 
-                    <Flex direction="column" gap="2" minWidth="0" flexGrow="1">
-                        {info ? (
-                            <>
-                                <Flex justify="between" align="start" gap="3">
-                                    <Text size="4" weight="bold">{info.title}</Text>
-                                    {!info.register && !info.residual && !added &&
-                                        <Button loading={sending} size="2" style={{flexShrink: 0}} onClick={() => setConfirming(true)}>사용</Button>}
-                                </Flex>
-                                {info.description && <Text size="2">{info.description}</Text>}
-                                <Flex align="center" gap="2" wrap="wrap">
-                                    <Label>제작</Label>
-                                    <Link size="2" href={`${urls.dccon.shop}/nick_name/${encodeURIComponent(info.seller_name)}`} target="_blank"
-                                          rel="noopener noreferrer">{info.seller_name}</Link>
-                                    <Text size="2" color="gray">{info.reg_date_short}</Text>
-                                </Flex>
-                                {dccon.tags.length > 0 && (
-                                    <Flex align="center" gap="2" wrap="wrap">
-                                        <Label>태그</Label>
-                                        {dccon.tags.map(({tag}) => (
-                                            <Link key={tag} size="2" href={`${urls.dccon.shop}/tags/${encodeURIComponent(tag)}`} target="_blank"
-                                                  rel="noopener noreferrer">{tag}</Link>
-                                        ))}
-                                    </Flex>
-                                )}
-                            </>
-                        ) : (
-                            <>
-                                <Skeleton width="160px" height="24px"/>
-                                <Skeleton width="280px" height="18px"/>
-                                <Skeleton width="200px" height="18px"/>
-                            </>
-                        )}
-                    </Flex>
+                <div className="flex min-w-0 grow flex-col gap-2">
+                    {info ? (
+                        <>
+                            <div className="flex items-start justify-between gap-3">
+                                <span className="text-lg font-bold">{info.title}</span>
+                                {!info.register && !info.residual && !added &&
+                                    <Button className="shrink-0" disabled={sending} onClick={() => setConfirming(true)}>
+                                        {sending && <Spinner data-icon="inline-start"/>}사용
+                                    </Button>}
+                            </div>
+                            {info.description && <p>{info.description}</p>}
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Label>제작</Label>
+                                <ShopLink href={`${urls.dccon.shop}/nick_name/${encodeURIComponent(info.seller_name)}`}>{info.seller_name}</ShopLink>
+                                <span className="text-muted-foreground">{info.reg_date_short}</span>
+                            </div>
+                            {dccon.tags.length > 0 && (
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Label>태그</Label>
+                                    {dccon.tags.map(({tag}) => (
+                                        <ShopLink key={tag} href={`${urls.dccon.shop}/tags/${encodeURIComponent(tag)}`}>{tag}</ShopLink>
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            <Skeleton className="h-6 w-40"/>
+                            <Skeleton className="h-[18px] w-70"/>
+                            <Skeleton className="h-[18px] w-50"/>
+                        </>
+                    )}
                 </div>
+            </div>
 
-                <div className="refresher-dccon-info-grid" aria-busy={!dccon} onContextMenu={openBlockBubble}>
-                    {dccon
-                        ? dccon.detail.map((item) => <img key={item.idx} src={urls.dccon.image + item.path} alt={item.title} title={item.title}/>)
-                        : Array.from({length: 30}, (_, index) => <Skeleton key={index} width="100%" height="auto" style={{aspectRatio: 1}}/>)}
-                </div>
+            {/* 우클릭하면 차단 버블이 뜬다 (openBlockBubble). 댓글 작성자 칸과 같다.
+                정보 창 목록은 최대 높이만 있어, 불러오는 동안 그 높이로 잡아 두어야 다 불러왔을 때 창이 커지지 않는다.
+                불러오는 동안은 스켈레톤을 넘치도록 깔아 꽉 찬 목록처럼 보이고, 넘친 스켈레톤에 스크롤바가 생기지 않게 자른다. */}
+            <div className="grid max-h-[420px] grid-cols-[repeat(auto-fill,minmax(96px,1fr))] content-start gap-2 overflow-y-auto aria-busy:h-[420px] aria-busy:overflow-hidden"
+                 aria-busy={!dccon} onContextMenu={openBlockBubble}>
+                {dccon
+                    ? dccon.detail.map((item) => <img key={item.idx} src={urls.dccon.image + item.path} alt={item.title} title={item.title}
+                                                      className="aspect-square w-full cursor-context-menu object-contain"/>)
+                    : Array.from({length: 30}, (_, index) => <Skeleton key={index} className="aspect-square w-full"/>)}
+            </div>
 
-                {/* 이 창 안에 그려야 확인 창을 누를 때 이 창이 바깥 클릭으로 닫히지 않는다. */}
-                {confirming && info && (
-                    <ConfirmDialog container={overlay.portal} title="디시콘을 추가할까요?" confirmLabel="추가"
-                                   onConfirm={() => void addDccon(info.package_idx)} onClose={() => setConfirming(false)}/>
-                )}
+            {/* 이 창 안에 그려야 확인 창을 누를 때 이 창이 바깥 클릭으로 닫히지 않는다. */}
+            {confirming && info && (
+                <ConfirmDialog title="디시콘을 추가할까요?" confirmLabel="추가"
+                               onConfirm={() => void addDccon(info.package_idx)} onClose={() => setConfirming(false)}/>
+            )}
         </ModalDialog>
     );
 };

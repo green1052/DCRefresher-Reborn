@@ -1,6 +1,4 @@
-/* ===== 오버레이 (shadow root 전용) 공용 스타일 — 컴포넌트 스타일은 Radix Themes. 기능별 스타일은 features/<id>/overlay.scss ===== */
-
-@use "radix";
+/* ===== 오버레이 (shadow root 전용) 공용 스타일 — 컴포넌트 스타일은 Tailwind(shadcn). 기능별 스타일은 features/<id>/overlay.scss ===== */
 
 :host {
     all: initial;
@@ -9,16 +7,6 @@
     // 디시 페이지의 최댓값(이미지 확대창 #imgModal 9999)보다 위.
     z-index: 100000;
     pointer-events: none;
-}
-
-/* fonts 모듈이 html에 --refresher-font / --refresher-preview-font-size를 지정 (커스텀 속성은 shadow 경계를 넘어 상속됨). */
-:host .radix-themes {
-    @include radix.overrides;
-}
-
-/* Radix 루트 Theme(z-index: 0)이 쌓임 맥락을 만들어, 그 안의 토스트가 z-index와 상관없이 포털(미리보기) 아래로 깔린다. */
-:host [data-is-root-theme="true"] {
-    z-index: auto;
 }
 
 /* 호스트는 클릭을 통과시키고, 실제 UI만 받는다. */

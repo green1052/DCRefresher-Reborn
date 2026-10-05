@@ -1,9 +1,11 @@
-import {Button, Dialog, Flex, Skeleton, Switch, Text} from "@radix-ui/themes";
-import {useEffect, useState} from "react";
+import {useEffect, useId, useState} from "react";
 
-import {DialogCloseButton} from "@/components/ConfirmDialog";
-import {overlay} from "@/components/overlay/shadow";
-import {ModalDialog} from "@/components/ModalDialog";
+import {DialogCloseButton, ModalDialog} from "@/components/dialogs";
+import {Button} from "@/components/ui/button";
+import {DialogTitle} from "@/components/ui/dialog";
+import {Field, FieldLabel} from "@/components/ui/field";
+import {Skeleton} from "@/components/ui/skeleton";
+import {Switch} from "@/components/ui/switch";
 import {ajax} from "@/core/http/client";
 import {urls} from "@/core/http/urls";
 import type {DcinsideDccon, DcinsideDcconDetail, DcinsideDcconDetailList} from "@/core/preview/types";
@@ -100,6 +102,8 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
         return () => controller.abort();
     }, []);
 
+    const id = useId();
+
     const clickDccon = (dccon: DcinsideDccon): void => {
         const next = doubleDccon ? [...selected, dccon] : [dccon];
         if (!doubleDccon || next.length === 2) onSelect(next, bigDccon);
@@ -107,64 +111,63 @@ export const DcconPopup = ({onSelect, onClose}: DcconPopupProps) => {
     };
 
     return (
-        <ModalDialog onClose={onClose} container={overlay.portal} maxWidth="560px" focusOnOpen="keyboard">
-                <Flex justify="between" align="center" mb="3">
-                    <Dialog.Title mb="0">디시콘</Dialog.Title>
-                    <Flex gap="4" align="center">
-                        <Text as="label" size="2">
-                            <Flex gap="2" align="center">
-                                더블콘 <Switch size="1" checked={doubleDccon} onCheckedChange={(value) => {
-                                setDoubleDccon(value);
-                                setSelected([]);
-                            }}/>
-                            </Flex>
-                        </Text>
-                        <Text as="label" size="2">
-                            <Flex gap="2" align="center">
-                                대왕콘 <Switch size="1" checked={bigDccon} onCheckedChange={setBigDccon}/>
-                            </Flex>
-                        </Text>
-                        <DialogCloseButton/>
-                    </Flex>
-                </Flex>
-
-                {doubleDccon && selected.length > 0 && (
-                    <Flex align="center" gap="2" mb="2">
-                        <img src={selected[0]!.list_img} alt={selected[0]!.title} width={32} height={32}/>
-                        <Text size="2" color="gray" style={{flex: 1}}>더블콘 {selected.length}/2 — 하나만 더 선택</Text>
-                        <Button size="1" variant="soft" color="gray" onClick={() => setSelected([])}>초기화</Button>
-                    </Flex>
-                )}
-
-                <div className="refresher-dccon-packages" aria-busy={loading}>
-                    {loading
-                        ? Array.from({length: 12}, (_, index) => <Skeleton key={index} width="48px" height="48px"/>)
-                        : packages.map((pack) => (
-                            <button
-                                type="button"
-                                key={pack.package_idx}
-                                aria-pressed={activePackage === pack.package_idx}
-                                title={pack.title}
-                                onClick={(ev) => {
-                                    openPackage(pack);
-                                    ev.currentTarget.scrollIntoView({behavior: smoothScroll(), block: "nearest", inline: "center"});
-                                }}
-                            >
-                                <img src={pack.main_img_url} alt={pack.title}/>
-                            </button>
-                        ))}
+        <ModalDialog onClose={onClose} className="sm:max-w-[560px]" focusOnOpen="keyboard">
+            <div className="flex items-center justify-between">
+                <DialogTitle>디시콘</DialogTitle>
+                <div className="flex items-center gap-4">
+                    <Field orientation="horizontal">
+                        <FieldLabel htmlFor={`${id}-double`} className="font-normal">더블콘</FieldLabel>
+                        <Switch id={`${id}-double`} size="sm" checked={doubleDccon} onCheckedChange={(value) => {
+                            setDoubleDccon(value);
+                            setSelected([]);
+                        }}/>
+                    </Field>
+                    <Field orientation="horizontal">
+                        <FieldLabel htmlFor={`${id}-big`} className="font-normal">대왕콘</FieldLabel>
+                        <Switch id={`${id}-big`} size="sm" checked={bigDccon} onCheckedChange={setBigDccon}/>
+                    </Field>
+                    <DialogCloseButton/>
                 </div>
+            </div>
 
-                <div className="refresher-dccon-grid" aria-busy={loading}>
-                    {loading
-                        ? Array.from({length: 36}, (_, index) => <Skeleton key={index} width="100%" height="auto" style={{aspectRatio: 1}}/>)
-                        : current.map((dccon) => (
-                            <button type="button" key={dccon.detail_idx} title={dccon.title} onClick={() => clickDccon(dccon)}>
-                                <img src={dccon.list_img} alt={dccon.title}/>
-                            </button>
-                        ))}
+            {doubleDccon && selected.length > 0 && (
+                <div className="flex items-center gap-2">
+                    <img src={selected[0]!.list_img} alt={selected[0]!.title} width={32} height={32}/>
+                    <span className="flex-1 text-muted-foreground">더블콘 {selected.length}/2 — 하나만 더 선택</span>
+                    <Button size="xs" variant="secondary" onClick={() => setSelected([])}>초기화</Button>
                 </div>
+            )}
 
+            {/* 불러오는 동안은 스켈레톤을 칸이 넘치도록 깔아 꽉 찬 목록처럼 보인다. 넘친 스켈레톤에 스크롤바가 생기지 않게 자른다. */}
+            <div className="flex gap-1 overflow-x-auto pb-2 aria-busy:overflow-hidden" aria-busy={loading}>
+                {loading
+                    ? Array.from({length: 12}, (_, index) => <Skeleton key={index} className="size-12 flex-none"/>)
+                    : packages.map((pack) => (
+                        <button
+                            type="button"
+                            key={pack.package_idx}
+                            aria-pressed={activePackage === pack.package_idx}
+                            title={pack.title}
+                            className="cursor-pointer rounded-lg p-0.5 hover:bg-muted [&>img]:size-full [&>img]:object-contain size-12 flex-none border-2 border-transparent aria-pressed:border-primary"
+                            onClick={(ev) => {
+                                openPackage(pack);
+                                ev.currentTarget.scrollIntoView({behavior: smoothScroll(), block: "nearest", inline: "center"});
+                            }}
+                        >
+                            <img src={pack.main_img_url} alt={pack.title}/>
+                        </button>
+                    ))}
+            </div>
+
+            <div className="grid h-80 grid-cols-[repeat(auto-fill,minmax(72px,1fr))] content-start gap-1 overflow-y-auto aria-busy:overflow-hidden" aria-busy={loading}>
+                {loading
+                    ? Array.from({length: 36}, (_, index) => <Skeleton key={index} className="aspect-square w-full"/>)
+                    : current.map((dccon) => (
+                        <button type="button" key={dccon.detail_idx} title={dccon.title} className="cursor-pointer rounded-lg p-0.5 hover:bg-muted [&>img]:size-full [&>img]:object-contain aspect-square" onClick={() => clickDccon(dccon)}>
+                            <img src={dccon.list_img} alt={dccon.title}/>
+                        </button>
+                    ))}
+            </div>
         </ModalDialog>
     );
 };

@@ -1,4 +1,3 @@
-import {Box, Theme} from "@radix-ui/themes";
 import {useState} from "react";
 
 import {PreviewHost} from "@/features/preview/ui/PreviewHost";
@@ -14,15 +13,12 @@ export const ContentRoot = () => {
 
     return (
         // 다크모드는 오버레이 최상위 요소의 light/dark 클래스가 정한다 (콘텐츠 스크립트의 followDcAppearance).
-        <Theme accentColor="blue" radius="medium" panelBackground="solid"
-               hasBackground={false}>
-            <Box>
-                <ToastHost/>
-                <BubbleHost onBlockPackage={setPackageTarget}/>
-                {packageTarget && <DcconPackageDialog target={packageTarget} onClose={() => setPackageTarget(null)}/>}
-                <MemoDialog/>
-                <PreviewHost/>
-            </Box>
-        </Theme>
+        <>
+            <ToastHost/>
+            <BubbleHost onBlockPackage={setPackageTarget}/>
+            {packageTarget && <DcconPackageDialog target={packageTarget} onClose={() => setPackageTarget(null)}/>}
+            <MemoDialog/>
+            <PreviewHost/>
+        </>
     );
 };

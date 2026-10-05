@@ -6,7 +6,7 @@ import {Button} from "@/components/ui/button";
 import {DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {Popover, PopoverContent} from "@/components/ui/popover";
 import {Separator} from "@/components/ui/separator";
-import {useReturnFocus} from "@/components/useOpenerFocus";
+import {useReturnFocus} from "@/components/useReturnFocus";
 import {blockingEntries} from "@/core/block";
 import {banReasonsOf, databaseVersion, ipInfoOf, subscribeDatabase} from "@/core/database";
 import {queryString} from "@/core/http/urls";

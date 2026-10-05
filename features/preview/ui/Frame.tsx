@@ -1,5 +1,4 @@
 import {Dialog} from "@base-ui/react/dialog";
-import {Theme} from "@radix-ui/themes";
 import {Archive, ArrowUp, Eye, MessageSquare, RotateCw} from "lucide-react";
 import {type CSSProperties, Fragment, type ReactElement, useEffect, useLayoutEffect, useRef, useState} from "react";
 
@@ -9,7 +8,7 @@ import {Button} from "@/components/ui/button";
 import {Separator} from "@/components/ui/separator";
 import {Spinner} from "@/components/ui/spinner";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
-import {focusedElement} from "@/components/useOpenerFocus";
+import {focusedElement} from "@/components/useReturnFocus";
 import {BLOCKED_TEXT, isBlockedHidden} from "@/core/block";
 import {dcinsideHref} from "@/core/http/urls";
 import {useModuleSettings} from "@/core/module/useModuleSettings";
@@ -216,8 +215,6 @@ export const Frame = () => {
             }}
         >
             <Dialog.Portal container={overlay.portal}>
-                {/* 관리 패널·댓글 입력칸은 아직 Radix Themes로 그려 테마 토큰이 필요하다. */}
-                <Theme>
                 {/* 바깥 배경과 스크롤 칸은 같이 나타나고 같이 사라진다. */}
                 <div className={cn("fixed inset-0 bg-black/40 duration-150 animate-in fade-in data-fading:pointer-events-none data-fading:animate-out data-fading:fade-out data-fading:fill-mode-forwards",
                                    backgroundBlur && "backdrop-blur-[5px]")}
@@ -401,7 +398,6 @@ export const Frame = () => {
                 {visible && adminVisible && <AdminPanel/>}
                 </Dialog.Popup>
                 {hintDir !== 0 && <SkipHint dir={hintDir}/>}
-                </Theme>
             </Dialog.Portal>
         </Dialog.Root>
     );

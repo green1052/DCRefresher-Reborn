@@ -2,7 +2,7 @@ import type {Dialog as DialogPrimitive} from "@base-ui/react/dialog";
 import {X} from "lucide-react";
 import {type KeyboardEvent, type ReactNode, type RefObject, useRef, useState} from "react";
 
-import {useReturnFocus} from "@/components/useOpenerFocus";
+import {useReturnFocus} from "@/components/useReturnFocus";
 import {Button} from "@/components/ui/button";
 import {Dialog, DialogClose, DialogContent, DialogFooter, DialogTitle} from "@/components/ui/dialog";
 
@@ -43,10 +43,12 @@ const keepTabInside = (ev: KeyboardEvent<HTMLDivElement>): void => {
  * 부모가 언마운트해 닫아도 된다 (저장한 뒤 등). dismissible이 false면(가져오는 중 등) 닫지 않는다.
  * 오버레이(shadow DOM)에서는 그 안의 포털 칸에 그린다 (components/ui/dialog.tsx). 폭은 className으로 준다 (sm:max-w-[480px] 등).
  */
-export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true, actionsRef, className, children}: {
+export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true, disablePointerDismissal, actionsRef, className, children}: {
     onClose: () => void;
     focusOnOpen?: AutoFocus;
     dismissible?: boolean;
+    /** 바깥 클릭으로 닫지 않는다 (Esc로는 닫힌다). 창 밖에 뜬 버블을 누를 때 등. */
+    disablePointerDismissal?: boolean;
     /** 창 안의 일이 끝나 스스로 닫을 때 쓴다 (actionsRef.current.close()). 닫기 애니메이션·포커스 돌려주기를 거친다. */
     actionsRef?: RefObject<DialogPrimitive.Root.Actions | null>;
     className?: string;
@@ -58,7 +60,7 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
 
     return (
         // actionsRef.close()(일을 마친 창이 스스로 닫기)는 dismissible과 상관없이 닫는다. 끝난 직후라 dismissible이 아직 옛 값일 수 있다.
-        <Dialog open={open} actionsRef={actionsRef}
+        <Dialog open={open} actionsRef={actionsRef} disablePointerDismissal={disablePointerDismissal}
                 onOpenChange={(next, {reason}) => !next && (dismissible || reason === "imperative-action") && setOpen(false)}
                 // 애니메이션이 끝났을 때 Base UI는 아직 포커스를 돌려주지 않았다(body). onClose가 알림 창을 띄우면 body를 연 요소로 기억하므로 먼저 돌려준다.
                 onOpenChangeComplete={(next) => {
