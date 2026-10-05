@@ -8,7 +8,6 @@ import {Field, FieldContent, FieldDescription, FieldLabel} from "@/components/ui
 import {Switch} from "@/components/ui/switch";
 import {Toggle} from "@/components/ui/toggle";
 import {type PageAction, type PageToggleState, sendMessage} from "@/core/messaging/protocol";
-import {isModuleEnabled} from "@/core/module/settings";
 import {backupStorage} from "@/core/storage/items";
 import features from "@/features/meta";
 import {initBlocksStore, useBlocksStore} from "@/stores/blocks";
@@ -140,14 +139,14 @@ function ModulesSection({onToggled}: { onToggled: () => void }) {
     const enables = useModulesStore((state) => state.enables);
     const toggle = useModulesStore((state) => state.toggle);
     const [failed, setFailed] = useState(false);
-    const on = features.filter((feature) => isModuleEnabled(feature, enables)).length;
+    const on = features.filter((feature) => enables[feature.id]).length;
 
     return (
         <div>
             <SectionTitle aside={<span className="text-xs text-muted-foreground">{on}/{features.length} 켜짐</span>}>모듈</SectionTitle>
             <div className="grid grid-cols-2 gap-2">
                 {features.map((feature) => {
-                    const enabled = isModuleEnabled(feature, enables);
+                    const enabled = enables[feature.id] === true;
                     const Icon = feature.icon;
 
                     return (

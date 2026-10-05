@@ -4,7 +4,7 @@ import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} f
 import {Collapsible, CollapsibleContent} from "@/components/ui/collapsible";
 import {Separator} from "@/components/ui/separator";
 import {Switch} from "@/components/ui/switch";
-import {defaultValue, isModuleEnabled} from "@/core/module/settings";
+import {defaultValue} from "@/core/module/settings";
 import type {AnyModuleMeta, SettingSchema} from "@/core/module/types";
 import features from "@/features/meta";
 import {useModulesStore} from "@/stores/modules";
@@ -66,7 +66,7 @@ const ModuleSettings = ({feature, settings}: { feature: AnyModuleMeta; settings:
 
 /** 모듈 카드. 헤더의 스위치로 켜고 끄며, 켜져 있을 때 세부 설정을 펼친다. */
 const ModuleCard = ({feature}: { feature: AnyModuleMeta }) => {
-    const enabled = useModulesStore((state) => isModuleEnabled(feature, state.enables));
+    const enabled = useModulesStore((state) => state.enables[feature.id] === true);
     const toggle = useModulesStore((state) => state.toggle);
     const settings = Object.entries(feature.settings ?? {});
 

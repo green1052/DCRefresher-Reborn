@@ -51,8 +51,7 @@ const subscribeHash = (onChange: () => void): (() => void) => {
     return () => window.removeEventListener("hashchange", onChange);
 };
 
-const Sidebar = ({tabs, tab, onSelect}: {
-    tabs: TabDef[];
+const Sidebar = ({tab, onSelect}: {
     tab: string;
     onSelect: (id: string) => void;
 }) => (
@@ -64,7 +63,7 @@ const Sidebar = ({tabs, tab, onSelect}: {
         </div>
 
         <nav className="flex flex-wrap gap-1 md:flex-col md:flex-nowrap">
-            {tabs.map(({id, label, icon: Icon}) => (
+            {TABS.map(({id, label, icon: Icon}) => (
                 <Button
                     key={id}
                     size="lg"
@@ -109,7 +108,7 @@ export function App() {
 
     return (
         <div className="flex min-h-screen flex-col md:flex-row">
-            <Sidebar tabs={TABS} tab={current.id} onSelect={(id) => (location.hash = id)}/>
+            <Sidebar tab={current.id} onSelect={(id) => (location.hash = id)}/>
             {/* 누를 때마다 새로 마운트한다. React Compiler가 Math.random으로 그린 결과를 기억해 같은 모양이 반복되기 때문이다. */}
             {rain > 0 && <Suspense><DcconRain key={rain}/></Suspense>}
             <Notice message={notice} onClose={() => useOptionsStore.setState({notice: null})}/>
@@ -121,7 +120,7 @@ export function App() {
                     <h1 className="mb-6 text-2xl font-bold">{current.label}</h1>
                     {status === "failed"
                         ? <p className="text-destructive">저장된 데이터를 읽지 못했습니다. 페이지를 새로고침해 주세요.</p>
-                        : status === "ready" && <Suspense>{current.content()}</Suspense>}
+                        : status === "ready" && current.content()}
                 </div>
             </div>
         </div>

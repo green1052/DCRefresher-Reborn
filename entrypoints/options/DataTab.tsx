@@ -15,7 +15,7 @@ import {backupStorage, dbStorage} from "@/core/storage/items";
 import {friendlyMessage} from "@/utils/error";
 import {arrayIncludes, objectKeys} from "@/utils/typed";
 
-import {formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
+import {formatBytes, formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
 import {notify} from "./optionsStore";
 
 type RestoreMode = "replace" | "merge";
@@ -24,8 +24,6 @@ const RESTORE_DESCRIPTIONS: Record<RestoreMode, string> = {
     replace: "현재 설정과 차단/메모 목록을 고른 백업으로 통째로 교체합니다. 백업에 없는 항목은 지워집니다.",
     merge: "현재 설정과 목록은 그대로 두고, 백업에만 있는 차단·메모와 설정을 더합니다. 겹치면 현재 것을 남깁니다."
 };
-
-const kilobytes = (bytes: number): string => `${Math.ceil(bytes / 1024)}KB`;
 
 export function DataTab() {
     const {version, lastUpdate} = useStorageItem(dbStorage.meta);
@@ -161,8 +159,8 @@ export function DataTab() {
                 </p>
                 {/* 한도를 넘으면 백업이 실패하므로 가까워진 것을 미리 보인다. 수동·자동 두 칸이 한도를 나눠 쓴다. */}
                 <p className={cloud.used > CLOUD_QUOTA * 0.8 ? "mb-3 text-amber-600 dark:text-amber-400" : "mb-3 text-muted-foreground"}>
-                    클라우드 사용량: {kilobytes(cloud.used)} / {kilobytes(CLOUD_QUOTA)}
-                    {(cloud.manual || cloud.auto) && ` (수동 ${kilobytes(cloud.manual?.size ?? 0)} · 자동 ${kilobytes(cloud.auto?.size ?? 0)})`}
+                    클라우드 사용량: {formatBytes(cloud.used)} / {formatBytes(CLOUD_QUOTA)}
+                    {(cloud.manual || cloud.auto) && ` (수동 ${formatBytes(cloud.manual?.size ?? 0)} · 자동 ${formatBytes(cloud.auto?.size ?? 0)})`}
                 </p>
                 {/* 복원 버튼을 Trigger로 둬야 닫을 때 그 버튼으로 포커스가 돌아온다. */}
                 <Dialog open={restoreOpen} onOpenChange={setRestoreOpen}>

@@ -2,7 +2,7 @@ import {useEffect} from "react";
 import {storage} from "wxt/utils/storage";
 import {create} from "zustand";
 
-import {enablesOf, isModuleEnabled, normalizeSetting, settingsOf} from "@/core/module/settings";
+import {enablesOf, isModuleEnabled, normalizeSetting, readModuleStorage, settingsOf} from "@/core/module/settings";
 import type {AnyModuleMeta} from "@/core/module/types";
 import {MODULES_KEY, moduleDataKey, moduleKeyModule, moduleSettingsKey, moduleSettingsStorage, modulesStorage} from "@/core/storage/items";
 import {storageSync} from "@/core/storage/sync";
@@ -10,6 +10,7 @@ import type {SettingValue} from "@/core/storage/types";
 import features from "@/features/meta";
 import {saveOrReload} from "@/utils/error";
 import {once} from "@/utils/once";
+import {isRecord} from "@/utils/record";
 
 type Values = Record<string, SettingValue>;
 
@@ -81,32 +82,40 @@ const pruneStaleSettings = async (): Promise<void> => {
     const ids = new Set(features.map((feature) => feature.id));
 
     await enqueue(async () => {
-        const enables = await modulesStorage().getValue();
+        const withSchema = features.filter((feature) => feature.settings);
+        // on/off와 설정을 한 번에 읽는다. get(null)은 수백 KB짜리 IP DB까지 읽으니 나머지는 키 이름만 읽는다.
+        const [{enables, settings}, keys] = await Promise.all([readModuleStorage(withSchema.map((feature) => feature.id)), browser.storage.local.getKeys()]);
         const staleIds = new Set(Object.keys(enables).filter((id) => !ids.has(id)));
-        // get(null)은 수백 KB짜리 IP DB까지 읽으니 키 이름만 읽는다.
-        for (const key of await browser.storage.local.getKeys()) {
+        for (const key of keys) {
             const id = moduleKeyModule(key);
             if (id !== undefined && !ids.has(id)) staleIds.add(id);
         }
 
         if (staleIds.size > 0) {
-            await modulesStorage().setValue(Object.fromEntries(Object.entries(enables).filter(([id]) => !staleIds.has(id))));
+            await storage.setItem(MODULES_KEY, Object.fromEntries(Object.entries(enables).filter(([id]) => !staleIds.has(id))));
             await storage.removeItems([...staleIds].flatMap((id) => [moduleSettingsKey(id), moduleDataKey(id)]));
         }
 
-        for (const feature of features) {
-            if (!feature.settings) continue;
-            const item = moduleSettingsStorage(feature.id);
-            const stored = await item.getValue();
+        for (const feature of withSchema) {
+            const stored = settings.get(feature.id);
+            if (!isRecord(stored)) continue;
             const kept = Object.entries(stored).filter(([key]) => Object.hasOwn(feature.settings!, key));
-            if (kept.length !== Object.keys(stored).length) await item.setValue(Object.fromEntries(kept));
+            // 저장소 값 그대로(검사 전)라 항목(moduleSettingsStorage) 대신 키로 쓴다. 남은 키는 손대지 않는다.
+            if (kept.length !== Object.keys(stored).length) await storage.setItem(moduleSettingsKey(feature.id), Object.fromEntries(kept));
         }
     });
 };
 
-const setEnables = (stored: unknown): void => useModulesStore.setState({enables: resolveEnables(enablesOf(stored))});
-const setValues = (feature: AnyModuleMeta, stored: unknown): void =>
-    useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: settingsOf(feature, stored)}}));
+// 저장한 값은 감시로 되돌아온다. 이미 반영한 값이면 상태를 바꾸지 않는다 (바꾸면 구독하는 화면이 같은 값으로 한 번 더 그린다).
+const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+const setEnables = (stored: unknown): void => {
+    const enables = resolveEnables(enablesOf(stored));
+    if (!same(enables, useModulesStore.getState().enables)) useModulesStore.setState({enables});
+};
+const setValues = (feature: AnyModuleMeta, stored: unknown): void => {
+    const values = settingsOf(feature, stored);
+    if (!same(values, useModulesStore.getState().values[feature.id])) useModulesStore.setState((state) => ({values: {...state.values, [feature.id]: values}}));
+};
 
 /** 설정이 있는 모듈. 설정 키로 찾는다. */
 const withSettings = new Map<string, AnyModuleMeta>(features.filter((feature) => feature.settings).map((feature) => [moduleSettingsKey(feature.id), feature]));
