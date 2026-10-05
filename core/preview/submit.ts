@@ -1,4 +1,5 @@
 import {ajax, formBody} from "@/core/http/client";
+import {csrfBody} from "@/core/http/cookie";
 import {urls} from "@/core/http/urls";
 
 import {type SubmitResult, submitResult} from "./response";
@@ -46,7 +47,8 @@ export const submitComment = async (
     if (!code) return {result: "false", message: "댓글 폼을 읽지 못했습니다. 원문에서 작성해 주세요."};
 
     // 폼의 필드 중 같은 이름은 아래 값으로 바뀐다 (자리는 폼 순서 그대로).
-    const params = formBody({
+    // 디시콘 댓글은 디시 dccon.js처럼 CSRF 토큰(ci_t)도 보낸다. 글 댓글(comment.js)은 보내지 않는다.
+    const params = await (typeof memo === "string" ? formBody : csrfBody)({
         t_vch2: "",
         t_vch2_chk: "",
         ...Object.fromEntries(form.fields.filter(([name]) => !["service_code", "gallery_no", "clickbutton"].includes(name))),

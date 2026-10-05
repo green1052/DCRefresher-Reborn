@@ -234,7 +234,8 @@ test.describe("댓글 쓰기·지우기", () => {
         await expect(listPage.comments.nth(0).getByRole("button", {name: "답글", exact: true})).toHaveCount(0);
     });
 
-    test("디시콘 창에서 고른 디시콘을 디시콘 댓글로 보낸다", async ({listPage, site}) => {
+    test("디시콘 창에서 고른 디시콘을 CSRF 토큰과 함께 디시콘 댓글로 보낸다", async ({listPage, site, context}) => {
+        await context.addCookies([{name: "ci_c", value: "csrf-token", domain: ".dcinside.com", path: "/"}]);
         const frame = await listPage.openPreview();
         await frame.getByRole("button", {name: "디시콘", exact: true}).click();
 
@@ -252,6 +253,8 @@ test.describe("댓글 쓰기·지우기", () => {
         expect(site.submitted.map(({path}) => path)).toEqual(["/dccon/insert_icon"]);
         const {body} = site.submitted[0]!;
         expect([body.get("package_idx"), body.get("detail_idx"), body.get("no")]).toEqual([DCCON.package_idx, DCCON.detail_idx, "3"]);
+        // 디시 dccon.js처럼 ci_c 쿠키를 ci_t로 보낸다.
+        expect(body.get("ci_t")).toBe("csrf-token");
         // 보내면 디시콘을 비워 다시 글을 쓸 수 있다.
         await expect(frame.getByRole("textbox", {name: "댓글 입력", exact: true})).toBeEnabled();
     });
