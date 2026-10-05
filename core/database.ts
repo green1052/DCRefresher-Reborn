@@ -11,8 +11,12 @@ import {onBfcacheRestore} from "@/utils/dom";
 import {once} from "@/utils/once";
 import {isRecord} from "@/utils/record";
 
-/** DB 파일 하나를 받는다. 재시도하지 않는다. 실패하면 배경의 다음 알람이나 사용자의 "지금 갱신"이 다시 받는다. */
-const get = (url: string): Promise<string> => http.get(url, {retry: 0}).text();
+/**
+ * DB 파일 하나를 받는다. 재시도하지 않는다. 실패하면 배경의 다음 알람이나 사용자의 "지금 갱신"이 다시 받는다.
+ * 브라우저 캐시는 서버에 확인(ETag)한 뒤 쓴다. 서버가 ip·ban을 1시간 캐시하라고 주므로, 그대로 쓰면 새 버전이 올라온 뒤에도
+ * 한 시간 안의 "지금 갱신"이 옛 파일을 받아 저장한다.
+ */
+const get = (url: string): Promise<string> => http.get(url, {retry: 0, cache: "no-cache"}).text();
 
 /**
  * IP/밴 DB를 내려받아 저장한다. 배경(설치·주기)과 옵션 페이지(지금 갱신)가 부른다.

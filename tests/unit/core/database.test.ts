@@ -7,13 +7,14 @@ import {DB_KEYS, rawKey} from "@/core/storage/items";
 import {stored, tick} from "../../helpers";
 
 /** 서버 파일 (주소 → 본문). 없는 주소는 실패한다. */
-const server = vi.hoisted(() => ({files: new Map<string, string>(), requested: new Array<string>()}));
+const server = vi.hoisted(() => ({files: new Map<string, string>(), requested: new Array<string>(), caches: new Array<string | undefined>()}));
 
 vi.mock("@/core/http/client", () => ({
     http: {
-        get: (url: string) => ({
+        get: (url: string, options?: { cache?: string }) => ({
             text: async () => {
                 server.requested.push(url);
+                server.caches.push(options?.cache);
                 const text = server.files.get(url);
                 if (text === undefined) throw new Error(`404 ${url}`);
                 return text;
@@ -43,6 +44,7 @@ const load = async (): Promise<typeof import("@/core/database")> => {
 beforeEach(() => {
     server.files.clear();
     server.requested.length = 0;
+    server.caches.length = 0;
 });
 
 describe("updateDatabase", () => {
@@ -62,6 +64,8 @@ describe("updateDatabase", () => {
         expect(await stored(META)).toEqual({version: "v2", lastUpdate: 1000, format: IP_FORMAT});
         expect(await stored(IP)).toBe(ip);
         expect(await stored(BAN)).toBe("{\"갤\":[\"uid\"]}");
+        // 브라우저 캐시(서버가 1시간 캐시하라고 준다)의 옛 파일을 쓰지 않게 매번 서버에 확인한다.
+        expect(server.caches).toEqual(["no-cache", "no-cache", "no-cache"]);
     });
 
     it("ip.json에 버전이 있으면 그것을 저장한다", async () => {
