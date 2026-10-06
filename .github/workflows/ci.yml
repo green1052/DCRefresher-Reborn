@@ -53,6 +53,7 @@ jobs:
                 run: bun run ${{ matrix.build }}
 
             -   name: Install browser
+                timeout-minutes: 3
                 run: bunx playwright install --with-deps ${{ matrix.browser }}
 
             -   name: E2E tests
