@@ -2,7 +2,7 @@
 // jsdom의 Blob에는 stream()이 없어 압축을 못 한다. 이 모듈은 DOM을 쓰지 않는다.
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
-import {collectLocalData, isBackupTarget, readBackupTargets, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
+import {clearCloudBackups, collectLocalData, isBackupTarget, readBackupTargets, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
 
 import {stored} from "../../helpers";
 
@@ -131,15 +131,28 @@ describe("runBackup / readCloudBackup", () => {
 });
 
 describe("readCloudBackupStatus", () => {
-    it("칸마다 시각·크기와 전체 사용량을 알린다", async () => {
+    it("칸마다 시각·크기를 알린다", async () => {
         vi.spyOn(Date, "now").mockReturnValue(77);
-        vi.spyOn(browser.storage.sync, "getBytesInUse").mockImplementation(async () => 4096);
         await browser.storage.local.set({"refresher:modules": {a: true}});
         await runBackup("auto");
 
         const status = await readCloudBackupStatus();
         const meta = (await browser.storage.sync.get("autoBackup")).autoBackup;
-        expect(status).toEqual({manual: undefined, auto: {createdAt: 77, size: expect.any(Number)}, used: 4096});
+        expect(status).toEqual({manual: undefined, auto: {createdAt: 77, size: expect.any(Number)}});
         expect(meta).toMatchObject({size: status.auto?.size, chunks: 1});
+    });
+});
+
+describe("clearCloudBackups", () => {
+    it("두 칸의 메타와 조각을 모두 지우고 다른 sync 키는 둔다", async () => {
+        await browser.storage.local.set({"refresher:modules": {a: true}});
+        await runBackup("manual");
+        await runBackup("auto");
+        await browser.storage.sync.set({other: 1});
+
+        await clearCloudBackups();
+
+        expect(await browser.storage.sync.get(null)).toEqual({other: 1});
+        expect(await readCloudBackupStatus()).toEqual({manual: undefined, auto: undefined});
     });
 });

@@ -8,14 +8,14 @@ import {Field, FieldLabel} from "@/components/ui/field";
 import {Switch} from "@/components/ui/switch";
 import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
 import {focusPanel, panelOf} from "@/components/useReturnFocus";
-import {type BackupSlot, CLOUD_QUOTA, type CloudBackupStatus, collectLocalData, readBackupTargets, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
+import {type BackupSlot, clearCloudBackups, type CloudBackupStatus, collectLocalData, readBackupTargets, readCloudBackup, readCloudBackupStatus, runBackup} from "@/core/backup";
 import {updateDatabase} from "@/core/database";
 import {mergeBackup, parseImport, writeSettings} from "@/core/settings-transfer";
 import {backupStorage, dbStorage} from "@/core/storage/items";
 import {friendlyMessage} from "@/utils/error";
 import {arrayIncludes, objectKeys} from "@/utils/typed";
 
-import {formatBytes, formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
+import {formatTime, ImportDialog, Section, useStorageItem} from "./Layout";
 import {notify} from "./optionsStore";
 
 type RestoreMode = "replace" | "merge";
@@ -29,12 +29,13 @@ export function DataTab() {
     const {version, lastUpdate} = useStorageItem(dbStorage.meta);
     const backupError = useStorageItem(backupStorage.error);
     const autoBackup = useStorageItem(backupStorage.auto);
-    const [cloud, setCloud] = useState<CloudBackupStatus>({used: 0});
+    const [cloud, setCloud] = useState<CloudBackupStatus>({});
     const [restoreOpen, setRestoreOpen] = useState(false);
     const [restoreMode, setRestoreMode] = useState<RestoreMode>("replace");
     const [loading, setLoading] = useState(false);
     const [resetConfirm, setResetConfirm] = useState(false);
     const [autoConfirm, setAutoConfirm] = useState(false);
+    const [cloudClearConfirm, setCloudClearConfirm] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
     const restoreRef = useRef<HTMLButtonElement>(null);
     const id = useId();
@@ -123,6 +124,16 @@ export function DataTab() {
         }
     };
 
+    const clearCloud = () =>
+        run(async () => {
+            // 자동 백업이 켜져 있으면 다음 설정 변경 때 다시 올라가므로 끈다.
+            const wasAuto = await backupStorage.auto.getValue();
+            if (wasAuto) await backupStorage.auto.setValue(false);
+
+            await clearCloudBackups();
+            return `클라우드 백업을 지웠습니다.${wasAuto ? " 자동 백업도 껐습니다." : ""}`;
+        }, "클라우드 백업을 지우지 못했습니다.");
+
     const clearData = () =>
         run(async () => {
             // 자동 백업이 켜져 있으면 1분 뒤 빈 설정이 클라우드 백업을 덮어쓰므로 먼저 끈다.
@@ -154,13 +165,8 @@ export function DataTab() {
                     </Field>
                 }
             >
-                <p className="text-muted-foreground">
+                <p className="mb-3 text-muted-foreground">
                     수동 백업: {formatTime(cloud.manual?.createdAt ?? 0)} · 자동 백업: {formatTime(cloud.auto?.createdAt ?? 0)}
-                </p>
-                {/* 한도를 넘으면 백업이 실패하므로 가까워진 것을 미리 보인다. 수동·자동 두 칸이 한도를 나눠 쓴다. */}
-                <p className={cloud.used > CLOUD_QUOTA * 0.8 ? "mb-3 text-amber-600 dark:text-amber-400" : "mb-3 text-muted-foreground"}>
-                    클라우드 사용량: {formatBytes(cloud.used)} / {formatBytes(CLOUD_QUOTA)}
-                    {(cloud.manual || cloud.auto) && ` (수동 ${formatBytes(cloud.manual?.size ?? 0)} · 자동 ${formatBytes(cloud.auto?.size ?? 0)})`}
                 </p>
                 {/* 복원 버튼을 Trigger로 둬야 닫을 때 그 버튼으로 포커스가 돌아온다. */}
                 <Dialog open={restoreOpen} onOpenChange={setRestoreOpen}>
@@ -171,6 +177,9 @@ export function DataTab() {
                         <DialogTrigger render={<Button ref={restoreRef} variant="secondary" disabled={loading}/>}>
                             <CloudDownload data-icon="inline-start"/> 복원
                         </DialogTrigger>
+                        <Button variant="secondary" disabled={loading || (!cloud.manual && !cloud.auto)} onClick={() => setCloudClearConfirm(true)}>
+                            <Trash2 data-icon="inline-start"/> 삭제
+                        </Button>
                     </div>
 
                     {/* 복원 중에는 복원 버튼이 막혀 포커스를 돌려줄 수 없으므로 가까운 조상(탭 패널)으로 돌린다. */}
@@ -237,6 +246,19 @@ export function DataTab() {
                         void clearData();
                     }}
                     onClose={() => setResetConfirm(false)}
+                />
+            )}
+
+            {cloudClearConfirm && (
+                <ConfirmDialog
+                    title={`클라우드에 올라간 수동·자동 백업을 모두 지울까요?${autoBackup ? " 자동 백업도 꺼집니다." : ""}`}
+                    confirmLabel="삭제"
+                    danger
+                    onConfirm={() => {
+                        setCloudClearConfirm(false);
+                        void clearCloud();
+                    }}
+                    onClose={() => setCloudClearConfirm(false)}
                 />
             )}
 

@@ -28,10 +28,10 @@ const SLOT_KEYS: Record<BackupSlot, string> = {manual: "backup", auto: "autoBack
 const chunkKey = (slot: BackupSlot, index: number): string => `${SLOT_KEYS[slot]}:${index}`;
 const isSlotKey = (slot: BackupSlot, key: string): boolean => key === SLOT_KEYS[slot] || key.startsWith(`${SLOT_KEYS[slot]}:`);
 
-/** storage.sync 전체 한도 (바이트). 크롬·파이어폭스 모두 102400이다. */
-export const CLOUD_QUOTA = browser.storage.sync.QUOTA_BYTES;
+/** storage.sync 전체 한도 (바이트). 파이어폭스는 QUOTA_* 상수가 없어 크롬과 같은 값을 쓴다. */
+export const CLOUD_QUOTA = browser.storage.sync.QUOTA_BYTES ?? 102_400;
 /** 조각 하나의 글자 수. 항목 한도(8192바이트)에서 키와 따옴표 몫을 뺐다. */
-const CHUNK_CHARS = browser.storage.sync.QUOTA_BYTES_PER_ITEM - 192;
+const CHUNK_CHARS = (browser.storage.sync.QUOTA_BYTES_PER_ITEM ?? 8_192) - 192;
 /** 전체 한도에서 메타·키 몫을 뺐다 (두 칸 합계). */
 const TOTAL_CHARS = CLOUD_QUOTA - 2400;
 
@@ -123,13 +123,11 @@ export interface CloudBackupStatus {
     /** 칸마다 마지막 백업 시각과 크기(바이트). 백업이 없으면 없다. */
     manual?: { createdAt: number; size: number };
     auto?: { createdAt: number; size: number };
-    /** sync 전체 사용량 (바이트). 브라우저가 한도에 쓰는 getBytesInUse 값. */
-    used: number;
 }
 
 /** 클라우드 백업 상태. 다른 기기가 올린 백업도 메타로 알 수 있다. */
 export const readCloudBackupStatus = async (): Promise<CloudBackupStatus> => {
-    const [all, used] = await Promise.all([browser.storage.sync.get(null), browser.storage.sync.getBytesInUse(null)]);
+    const all = await browser.storage.sync.get(null);
     const slotStatus = (slot: BackupSlot): CloudBackupStatus["manual"] => {
         const meta = all[SLOT_KEYS[slot]];
         return isMeta(meta) ? {createdAt: meta.createdAt, size: meta.size} : undefined;
@@ -137,9 +135,14 @@ export const readCloudBackupStatus = async (): Promise<CloudBackupStatus> => {
 
     return {
         manual: slotStatus("manual"),
-        auto: slotStatus("auto"),
-        used
+        auto: slotStatus("auto")
     };
+};
+
+/** 두 칸의 백업을 메타·조각까지 모두 지운다. */
+export const clearCloudBackups = async (): Promise<void> => {
+    const keys = Object.keys(await browser.storage.sync.get(null)).filter((key) => isSlotKey("manual", key) || isSlotKey("auto", key));
+    if (keys.length > 0) await browser.storage.sync.remove(keys);
 };
 
 interface CloudBackup {
