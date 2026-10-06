@@ -22,6 +22,10 @@ jobs:
 
             -   uses: oven-sh/setup-bun@v2
 
+            -   uses: actions/setup-node@v7
+                with:
+                    node-version: latest
+
             -   name: Install Dependencies
                 run: bun ci
 
@@ -51,6 +55,10 @@ jobs:
                     persist-credentials: false
 
             -   uses: oven-sh/setup-bun@v2
+
+            -   uses: actions/setup-node@v7
+                with:
+                    node-version: latest
 
             -   name: Install Dependencies
                 run: bun ci
