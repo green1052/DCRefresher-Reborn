@@ -30,7 +30,7 @@ export const settings = {
         group: FRAME_GROUP,
         name: "바깥 배경 흐리게",
         desc: "미리보기 창 바깥 배경을 흐리게 처리합니다. (성능이 떨어질 수 있음)",
-        default: false
+        default: true
     },
     // v5와 같은 키.
     scrollToSkip: {
