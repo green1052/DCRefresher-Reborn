@@ -1,9 +1,10 @@
 name: Release
 
+# release 브랜치의 package.json 버전에 태그가 없으면 그 버전을 릴리즈하고 태그를 단다.
 on:
     push:
-        tags:
-            - "[0-9]+.[0-9]+.[0-9]+"
+        branches:
+            - release
 
 permissions:
     contents: read
@@ -16,20 +17,33 @@ jobs:
     version:
         runs-on: ubuntu-latest
         timeout-minutes: 5
+        outputs:
+            version: ${{ steps.version.outputs.version }}
+            new: ${{ steps.version.outputs.new }}
         steps:
             -   uses: actions/checkout@v7
                 with:
                     persist-credentials: false
 
             -   name: Check version
-                run: jq -e --arg tag "$GITHUB_REF_NAME" '.version == $tag' package.json > /dev/null || { echo "::error::태그 $GITHUB_REF_NAME 와 package.json 버전이 다릅니다."; exit 1; }
+                id: version
+                run: |
+                    version=$(jq -r .version package.json)
+                    echo "version=$version" >> "$GITHUB_OUTPUT"
+                    if git ls-remote --exit-code --tags origin "refs/tags/$version" > /dev/null; then
+                        echo "::notice::$version 태그가 이미 있어 릴리즈하지 않습니다."
+                        echo "new=false" >> "$GITHUB_OUTPUT"
+                    else
+                        echo "new=true" >> "$GITHUB_OUTPUT"
+                    fi
 
     ci:
         needs: version
+        if: needs.version.outputs.new == 'true'
         uses: ./.github/workflows/ci.yml
 
     release:
-        needs: ci
+        needs: [version, ci]
         runs-on: ubuntu-latest
         timeout-minutes: 15
         permissions:
@@ -50,6 +64,8 @@ jobs:
             -   name: Release
                 uses: softprops/action-gh-release@v3
                 with:
+                    tag_name: ${{ needs.version.outputs.version }}
+                    target_commitish: ${{ github.sha }}
                     files: |
                         .output/*-firefox.zip
                         .output/*-chrome.zip
