@@ -34,25 +34,40 @@
 }
 
 .dark {
+    --background: oklch(0.141 0.005 285.823);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.21 0.006 285.885);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.21 0.006 285.885);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.398 0.195 277.366);
+    --primary-foreground: oklch(0.962 0.018 272.314);
+    --link: oklch(0.673 0.182 276.935);
+    --secondary: oklch(0.274 0.006 286.033);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.274 0.006 286.033);
+    --muted-foreground: oklch(0.705 0.015 286.067);
+    --accent: oklch(0.274 0.006 286.033);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.552 0.016 285.938);
+}
+
+/* 디시 위에 뜨는 오버레이(shadow)는 새까만 배경에 흰 글자가 눈부셔 회색 배경과 덜 흰 글자를 쓴다. 옵션·팝업 페이지는 위의 값 그대로다. */
+:host .dark {
     --background: oklch(0.24 0.006 286);
     --foreground: oklch(0.92 0.004 286.32);
     --card: oklch(0.28 0.006 286);
     --card-foreground: oklch(0.92 0.004 286.32);
     --popover: oklch(0.28 0.006 286);
     --popover-foreground: oklch(0.92 0.004 286.32);
-    --primary: oklch(0.398 0.195 277.366);
-    --primary-foreground: oklch(0.962 0.018 272.314);
-    --link: oklch(0.673 0.182 276.935);
     --secondary: oklch(0.32 0.006 286);
     --secondary-foreground: oklch(0.92 0.004 286.32);
     --muted: oklch(0.32 0.006 286);
-    --muted-foreground: oklch(0.705 0.015 286.067);
     --accent: oklch(0.32 0.006 286);
     --accent-foreground: oklch(0.92 0.004 286.32);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.552 0.016 285.938);
 }
 
 @theme inline {
