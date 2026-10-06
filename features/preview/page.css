@@ -5,6 +5,15 @@
     opacity: 0.55;
 }
 
+/* 다크 모드에서는 디시의 방문한 글 색(#6d459e)이 이미 어두워 흐리게 하면 안 보인다. 흐리게 하지 않고 회색으로 칠한다. */
+html:has(#css-darkmode) .gall_list .refresherRead .gall_tit {
+    opacity: 1;
+
+    a {
+        color: #8c8c8c;
+    }
+}
+
 /* 목록 키보드 이동으로 고른 글 (keyboard.ts). */
 .gall_list .refresherSelected > td {
     background: rgb(59 72 144 / 10%) !important;
