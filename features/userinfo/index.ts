@@ -57,7 +57,6 @@ const MAX_RATIOS = 500;
  */
 const RATIO_SAVE_DELAY = 30_000;
 
-/** 최근에 받은 MAX_RATIOS명만 남긴다. */
 const trimRatios = (all: Record<string, RatioInfo>): Record<string, RatioInfo> =>
     Object.fromEntries(Object.entries(all).sort(([, a], [, b]) => b.date - a.date).slice(0, MAX_RATIOS));
 
@@ -71,7 +70,7 @@ const buildBadgeSpan = (text: string, color?: string, title?: string, className 
     return span;
 };
 
-/** 작성자 영역의 닉콘/IP 바로 뒤에 배지 묶음을 넣는다. 영역은 .addbox, .fl > span, element 자신 순으로 찾는다. */
+/** 작성자 영역의 닉콘/IP 바로 뒤에 배지 묶음을 넣는다. */
 const insertBadges = (element: HTMLElement, badges: HTMLElement): void => {
     const container = element.querySelector<HTMLElement>(".addbox") ?? element.querySelector<HTMLElement>(".fl > span") ?? element;
     const anchor = container.querySelector<HTMLElement>(".writer_nikcon, .ip");

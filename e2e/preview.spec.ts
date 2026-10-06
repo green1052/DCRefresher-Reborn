@@ -143,6 +143,21 @@ test.describe("미리보기", () => {
         await expect(frame).toHaveCount(0);
     });
 
+    test("세로로 긴 이미지는 크게 보기에서 높이에 맞춰 줄이지 않고 폭 그대로 세로로 스크롤한다", async ({listPage}) => {
+        await listPage.page.context().route(/viewimage\.php/, (route) => route.fulfill({
+            contentType: "image/svg+xml",
+            body: `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="2000"><rect width="100" height="2000"/></svg>`
+        }));
+        const frame = await listPage.openPreview();
+        const image = frame.locator(".refresher-preview-contents img");
+        await expect(image).toHaveJSProperty("complete", true);
+        await image.click({force: true});
+
+        const viewer = listPage.overlay.locator(".refresher-viewer");
+        await expect.poll(async () => (await viewer.locator("img").boundingBox())?.height).toBe(2000);
+        expect(await viewer.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+    });
+
     test("스크롤 끝에서 굴리면 안내만 띄우고, 새로 한 번 더 굴려야 다음 글로 넘어간다", async ({listPage}) => {
         const {page} = listPage;
         await listPage.openPreview(1);

@@ -20,7 +20,7 @@ const VERSION = browser.runtime.getManifest().version;
 interface Page {
     tabId: number;
     gallery: string;
-    /** 처음 물었을 때의 탭 상태. 콘텐츠 스크립트가 없으면 null */
+    /** 처음 물었을 때의 탭 상태. 콘텐츠 스크립트가 없으면 null이다. */
     state: PageToggleState[] | null;
 }
 
@@ -63,8 +63,7 @@ const ToggleRow = ({icon: Icon, label, desc, checked, onChange}: {
     const id = useId();
     return (
         <Field orientation="horizontal" className="items-center">
-            {/* 켜지면 강조색. */}
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors data-on:bg-primary/15 data-on:text-primary"
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors data-on:bg-primary/15 data-on:text-link"
                   data-on={checked || undefined}><Icon size={15}/></span>
             <FieldContent>
                 <FieldLabel htmlFor={id}>{label}</FieldLabel>
@@ -101,7 +100,6 @@ function PageSection({tabId, gallery, state: initial, toggled}: Page & { toggled
 
     const act = (action: PageAction): void => void sendMessage("refresher:pageAction", action, tabId).then(setState, () => setState(null));
 
-    // 모든 갤러리용 + 이 갤러리 전용.
     const visible = (entry: { gallery?: string }): boolean => !entry.gallery || entry.gallery === gallery;
     const blockCount = Object.values(blocks).flat().filter(visible).length;
     const memoCount = Object.values(memos).flatMap((map) => Object.values(map)).filter(visible).length;
@@ -187,7 +185,6 @@ export function App() {
         ]).then(([page, backupError]) => setLoaded({page, backupError}));
     }, []);
 
-    // 모듈이 선언한 확장 페이지 CSS 변수 (폰트 교체 등).
     useExtensionPageVars();
 
     if (!loaded) return null;

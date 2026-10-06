@@ -33,7 +33,7 @@
     }
 
     a {
-        color: var(--primary);
+        color: var(--link);
     }
 
     /* 답글 멘션은 디시처럼 따로 한 줄 — 인라인이면 디시콘·글자콘 아래 끝에 붙는다. */
@@ -42,7 +42,7 @@
         margin-bottom: 3px;
     }
 
-    /* 인라인 width(본문 틀 900px, 표 등)가 창보다 넓어도 창 안에 들어오게 한다 (sanitize.ts가 남긴 서식). */
+    /* 인라인 width(본문 틀 900px, 표 등)가 창보다 넓어도 창 안에 들어오게 한다 (utils/sanitize.ts가 남긴 서식). */
     * {
         max-width: 100%;
     }
@@ -52,8 +52,7 @@
         margin: 0;
     }
 
-    /* 링크 미리보기 카드 — 디시 og.css를 옮김. 디시는 인라인 style로도 주지만 sanitize.ts가 표시·float·넘침 속성을 지워, 지워지는 것만 여기서 다시 준다.
-       남는 인라인 서식(너비·높이·테두리·흰 바탕·글자색)은 그대로 쓴다. */
+    /* 링크 미리보기 카드 — 디시 og.css를 옮겼다. 디시는 인라인 style로도 주지만 utils/sanitize.ts가 표시·float·넘침 속성을 지워, 지워지는 것만 여기서 다시 준다. */
     a.og-wrap {
         display: inline-block;
         box-sizing: border-box;
@@ -114,7 +113,7 @@
 }
 
 /* 위 스텔스 규칙(0,2,1)과 명시도를 맞춰야 뒤에 선언된 이쪽이 이긴다 — :is는 가장 높은 인자(img:not(...))를 따른다. */
-/* 유튜브 <embed>는 정화하며 iframe으로 바뀐다 (sanitize.ts). 디시콘은 mp4든 gif든(gifVideos.ts가 바꾼 것) 이미지로 치지 않는다. */
+/* 유튜브 <embed>는 정화하며 iframe으로 바뀐다 (utils/sanitize.ts). 디시콘은 mp4든 gif든(gifVideos.ts가 바꾼 것) 이미지로 치지 않는다. */
 .refresher-preview-block-media :is(iframe, image, img:not(.written_dccon), video:not(.written_dccon)) {
     display: none;
 }
@@ -124,7 +123,7 @@
     display: none;
 }
 
-/* 첨부 이미지 순서 번호 (parser.ts의 numberImages). 오른쪽 위에 띄운다. 가려진 미디어(관리자 가림·이미지 차단·스텔스)에는 띄우지 않는다. */
+/* 첨부 이미지 순서 번호 (core/preview/parser.ts의 numberImages). 오른쪽 위에 띄운다. 가려진 미디어(관리자 가림·이미지 차단·스텔스)에는 띄우지 않는다. */
 .refresher-imgnum {
     position: relative;
     display: inline-block;
@@ -180,11 +179,11 @@
         @apply refresher-dccon-cover;
     }
 
-    /* 글자콘 — 디시 common.css를 옮김. 모르는 색 클래스면 디시 기본값(남색 바탕·흰 글자). */
+    /* 글자콘 — 디시 common.css를 옮겼다. 모르는 색 클래스면 디시 기본값(남색 바탕·흰 글자)을 쓴다. */
     .coment_dccon_txt {
         display: flex;
         justify-content: center;
-        overflow: hidden; /* 디시는 txtcon_view.js가 붙인다 */
+        overflow: hidden; /* 디시는 txtcon_view.js가 붙인다. */
         width: 100px;
         height: 100px;
         padding: 10px 11px;
@@ -210,7 +209,7 @@
         box-sizing: border-box;
     }
 
-    /* 색 목록은 request.ts의 TXTCON_BACKGROUNDS·TXTCON_COLORS와 같다. */
+    /* 색 목록은 core/preview/txtcon.ts의 TXTCON_BACKGROUNDS·TXTCON_COLORS와 같다. */
     .cbg_3b4890 {
         background-color: #3b4890;
     }
@@ -292,8 +291,8 @@
     display: none;
 }
 
-/* 미리보기를 연 채로 띄운 다이얼로그(메모·디시콘·차단 등)는 배경을 다시 깔지 않는다 — 미리보기 배경과 겹쳐 두 겹으로 어두워진다. */
+/* 미리보기를 연 채로 띄운 다이얼로그(메모·디시콘·차단 등)는 배경을 다시 깔지 않는다 — 미리보기 배경과 겹쳐 두 겹으로 어두워진다.
+   흐림은 '팝업 바깥 배경 흐리게' 설정을 따른다 (components/dialogs.tsx). */
 #portal:has(.refresher-frame) [data-slot="dialog-overlay"] {
     background: none;
-    backdrop-filter: none;
 }

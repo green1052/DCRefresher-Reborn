@@ -23,7 +23,7 @@ export const HIDE_OPTIONS = {
     removeGamemeca: {
         name: "게임메카 숨기기",
         desc: "글 목록에서 게임메카 게시글을 숨깁니다.",
-        // 예전 뉴스 행과, 지금처럼 일반 글 행으로 그려지는 게임메카 작성자 행.
+        // 옛 뉴스 행과, 일반 글 행으로 그려지는 게임메카 작성자 행을 둘 다 잡는다.
         selector: "tr[data-type=icon_fnews], tr.ub-content:has(> .ub-writer[data-uid=\"gamemeca\"])"
     },
     removeAi: {name: "AI 글 숨기기", desc: "글 목록에서 AI 표시가 붙은 글을 숨깁니다.", selector: "tr[data-type=icon_ai]"}

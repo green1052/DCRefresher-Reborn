@@ -21,7 +21,7 @@ export const urls = {
     // 6.0.3 이하는 raw.githubusercontent.com에서 받으므로 data 브랜치 게시는 계속 유지한다.
     database: {
         version: "https://dcrefresher.green1052.com/version",
-        // 저장 형식 그대로다 (core/ipdb의 CompactIpData).
+        // 저장 형식 그대로다 (core/ipdb.ts의 CompactIpData).
         ip: "https://dcrefresher.green1052.com/ip.json",
         ban: "https://dcrefresher.green1052.com/ban.json"
     }

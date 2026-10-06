@@ -28,13 +28,9 @@ const OPTIONS = {navigated: false, search: undefined, searchType: null, fadeIn: 
 
 const nos = (list: Element): string[] => Array.from(list.children, (child) => child.getAttribute("data-no") ?? child.querySelector(".gall_num")?.textContent ?? "");
 
-/** 지금 페이지의 목록 tbody. */
 const current = (): HTMLElement => document.querySelector("tbody")!;
 
-/**
- * 페이지에 목록을 두고 같은 목록으로 한 번 갈아끼운다. 페이지가 처음 그린 행은 비교할 원래 HTML이 없어 첫 교체에서 모두 갈아끼워지므로,
- * 그 뒤의 교체를 보려면 받아온 행이 놓인 상태에서 시작해야 한다.
- */
+/** 페이지에 목록을 두고 같은 목록으로 한 번 갈아끼운다. 처음 그린 행은 비교할 원래 HTML이 없어 첫 교체에서 모두 바뀌기 때문이다. */
 const mount = (rows: string[]): HTMLElement => {
     const list = tbody(rows);
     document.body.append(list.closest("table")!);

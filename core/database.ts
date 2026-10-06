@@ -190,7 +190,7 @@ const withTag = (name: string, tag?: string): string => (name && tag ? `${name} 
 
 const MAX_ORGS = 3;
 
-/** IP 대역(a.b)의 조직·국가·VPN 정보. 데이터가 없으면 undefined */
+/** IP 대역(a.b)의 조직·국가·VPN 정보. 데이터가 없으면 undefined다. */
 export const ipInfoOf = (ip: string): IpInfo | undefined => {
     const candidates = lookupIp?.(ip);
     const first = candidates?.[0];

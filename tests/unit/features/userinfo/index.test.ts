@@ -56,7 +56,6 @@ const mountRows = (writers: Writer[]): void => {
     document.body.innerHTML = `<table class="gall_list"><tbody>${writers.map(row).join("")}</tbody></table>`;
 };
 
-/** 행의 배지 글자들. */
 const badges = (no: string): string[] =>
     Array.from(document.querySelectorAll(`tr[data-no="${no}"] .refresher-user-badges > span`), (span) => span.textContent ?? "");
 

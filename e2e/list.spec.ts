@@ -86,7 +86,6 @@ test.describe("자동 새로고침", () => {
         await expect(fresh).toBeVisible({timeout: 15_000});
         await expect(fresh).toHaveClass(/refresherNewPost/);
         await expect(listPage.rows.nth(1)).toHaveAttribute("data-no", "4");
-        // 새 행에도 유저 정보 배지가 붙는다.
         await expect(fresh.locator(".refresher-user-badges")).toHaveText("(user4)");
         await expect(listPage.row(5)).toHaveClass(/refresherBlocked/);
         await expect(listPage.row(3)).toHaveAttribute("data-e2e-kept");

@@ -239,7 +239,6 @@ export const loadAll = async (defs: AnyModule[], signal: AbortSignal, ready?: Pr
     watchStorage(MODULES_KEY, (next) => void sync(enablesOf(next)), signal);
     // bfcache에서 돌아온 탭은 그사이의 on/off·설정 변경을 받지 못했다. 다시 시작하는 모듈이 새 값을 보도록 설정을 먼저 맞춘다.
     onBfcacheRestore(async () => {
-        // 모두 한꺼번에 읽는다. sync는 설정을 다 맞춘 뒤에 부른다.
         const stored = await readAll(defs);
         for (const instance of instances.values()) {
             if (instance.def.settings) applySettings(instance, stored.settings.get(instance.def.id));

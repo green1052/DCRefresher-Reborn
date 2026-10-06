@@ -172,9 +172,7 @@ interface AdminAction {
 
 /**
  * 관리 권한이 있을 때 미리보기를 연 동안 화면 왼쪽 가장자리에 붙는 관리 패널.
- * Kbd는 단축키 힌트다. 차단 버튼은 차단 키 두 번(프리셋으로 즉시 차단)과 달리 옵션 창을 연다.
- * 공지·개념글·끌올·삭제는 두 번 눌러야 실행하고, 첫 번째는 토스트로 알린다.
- * 다른 버튼을 누르거나, 늦거나, 다른 글로 넘어가면 처음부터 다시 센다.
+ * 차단 버튼은 차단 키 두 번(프리셋으로 즉시 차단)과 달리 옵션 창을 연다. 나머지는 두 번 눌러야 실행하고, 첫 번째는 토스트로 알린다.
  * Frame이 미리보기 포털 안에 그린다. 나중에 뜬 창(차단·메모 등)이 패널 위를 덮어야
  * 한 번 클릭에 창 닫기와 관리 동작이 같이 일어나지 않는다.
  */
@@ -182,7 +180,6 @@ export const AdminPanel = () => {
     const notice = usePreviewStore((s) => s.notice);
     const recommend = usePreviewStore((s) => s.recommend);
     const requestManage = usePreviewStore((s) => s.requestManage);
-    // 관리 단축키 힌트. 단축키를 끄면 보이지 않는다.
     const {useKeyPress, deleteKey, blockKey} = useModuleSettings("preview");
     const keys = useKeyPress ? {delete: deleteKey.toUpperCase(), block: blockKey.toUpperCase()} : null;
     // 두 번 누르기 확인 상태. 바뀌어도 다시 그릴 필요가 없어 ref에 둔다.
@@ -203,7 +200,7 @@ export const AdminPanel = () => {
             return;
         }
 
-        // signalId까지 key에 넣어 다른 글로 넘어가면 처음부터 다시 센다.
+        // 다른 버튼을 누르거나 늦으면 처음부터 다시 센다. signalId까지 key에 넣어 다른 글로 넘어가도 다시 센다.
         if (confirmPress(`${id}:${usePreviewStore.getState().signalId}`)) {
             run();
             return;
@@ -213,7 +210,6 @@ export const AdminPanel = () => {
     };
 
     return (
-        // v5처럼 화면 왼쪽 가장자리에 붙인다. 왼쪽 모서리는 평평하다.
         <div className="pointer-events-auto fixed top-[20%] left-0 w-[150px] rounded-r-xl bg-card p-2 text-card-foreground shadow-md ring-1 ring-foreground/10 duration-150 animate-in fade-in">
             <p className="mb-2 ml-1 text-xs font-medium text-muted-foreground">관리</p>
             <div className="flex flex-col gap-1">

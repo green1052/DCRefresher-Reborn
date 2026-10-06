@@ -22,8 +22,8 @@ export const watchStorage = <T>(key: StorageItemKey, callback: (next: T | null, 
 
 /**
  * 저장소 키 여러 개를 한 번의 storage.local.get으로 읽어 apply에 넘기고, 바뀌면(다른 탭·옵션 페이지·이 탭의 쓰기) 다시 넘긴다.
- * 항목(defineItem)은 만드는 순간 키마다 한 번 더 읽으므로 키로 읽고 감시한다 (items.ts). 값이 없으면 null이다.
- * - load: 다시 읽기 (저장 실패 뒤 되돌리기 등)
+ * 항목(defineItem)은 만드는 순간 키마다 한 번 더 읽으므로 키로 읽고 감시한다 (core/storage/items.ts). 값이 없으면 null이다.
+ * - load: 다시 읽는다 (저장 실패 뒤 되돌리기 등).
  * - start: 감시를 걸고 읽는다. 여러 번 불러도 한 번만 한다. 옛 값으로 쓰면 다른 탭의 변경을 덮으므로 bfcache에서 돌아오면 다시 읽는다.
  *   signal(콘텐츠 스크립트 컨텍스트의 것)이 끝나면 감시를 푼다.
  */

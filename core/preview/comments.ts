@@ -34,7 +34,7 @@ const plainTextOf = (html: string): string => plainTexts.memo(html, (text) => ht
 const extractVoice = (memo: string): { memo: string; voice?: ProcessedComment["voice"] } | undefined => {
     if (!memo.includes("@^dc^@")) return;
 
-    // 구분자 앞은 음성 경로(또는 iframe 태그), 뒤는 글이다 (디시·v5와 같은 해석).
+    // 구분자 앞은 음성 경로(또는 iframe 태그), 뒤는 글이다 (디시와 같은 해석).
     const [raw = "", display = ""] = memo.split("@^dc^@");
     const iframe = raw.includes("<iframe");
     const src = iframe ? (raw.match(/src="([^"]+)"/)?.[1] ?? "") : `https://vr.dcinside.com/${raw}`;
@@ -103,7 +103,7 @@ export const processComments = (source: DcinsideComment[], preData: GalleryPreDa
     }
 
     if (view.replyRemove) {
-        // 답글의 c_no는 쓰레드 첫 댓글 번호.
+        // 답글의 c_no는 스레드 첫 댓글 번호다.
         const blockedThreads = new Set(list.filter((comment) => comment.depth === 0 && comment.blocked).map((comment) => comment.no));
         for (const comment of list) if (comment.depth === 1 && blockedThreads.has(comment.c_no)) comment.blocked ??= view.blur ? "blur" : "hide";
     }

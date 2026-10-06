@@ -38,7 +38,6 @@ export async function openListPage(page: Page, url = FAKE_LIST_URL) {
         comments: frame.locator(".refresher-comment"),
         /** 미니 미리보기 카드. */
         mini: overlay.locator(".refresher-mini-preview"),
-        /** 유저 버블. */
         bubble: overlay.locator("[data-slot=popover-content]"),
         /** 오버레이의 다이얼로그 (메모·디시콘 등). */
         dialog: overlay.locator("[data-slot=dialog-content]"),

@@ -5,7 +5,7 @@ import {Button} from "@/components/ui/button";
 import {type ToastData, useUiStore} from "@/stores/ui";
 
 const TOAST_ICONS = {
-    info: <Info className="size-4 shrink-0 text-primary"/>,
+    info: <Info className="size-4 shrink-0 text-link"/>,
     warning: <TriangleAlert className="size-4 shrink-0 text-amber-600 dark:text-amber-400"/>,
     error: <CircleAlert className="size-4 shrink-0 text-destructive"/>
 };
@@ -25,7 +25,7 @@ const ToastItem = ({toast}: { toast: ToastData }) => {
             {TOAST_ICONS[toast.type]}
             <span className="flex-1">{toast.content}</span>
             {toast.action && (
-                <Button size="xs" variant="ghost" className="text-primary" onClick={() => {
+                <Button size="xs" variant="ghost" className="text-link" onClick={() => {
                     dismiss();
                     toast.action?.run();
                 }}>
@@ -50,7 +50,6 @@ export const ToastHost = () => {
         return () => cancelAnimationFrame(frame);
     }, []);
     const toasts = useUiStore((s) => s.toasts);
-    // 스크린 리더는 가장 최근 토스트를 읽는다.
     const spoken = announce ? toasts.at(-1) : undefined;
     const error = spoken?.type === "error";
     return (

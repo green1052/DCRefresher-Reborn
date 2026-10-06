@@ -79,7 +79,7 @@ export const setNotice = (preData: GalleryPreData, notice: boolean): Promise<Man
 export const setRecommend = (preData: GalleryPreData, recommend: boolean): Promise<ManageResult> =>
     manage(preData, "set_recommend", {mode: recommend ? "SET" : "REL", id: preData.gallery, "nos[]": preData.id});
 
-/** 이미지 캡챠 URL */
+/** 이미지 캡차 URL. */
 export const captchaImage = (preData: GalleryPreData, type: "comment" | "recommend"): string =>
     `${urls.base}kcaptcha/image_v3/?gall_id=${preData.gallery}&kcaptcha_type=${type}&time=${Date.now()}&_GALLTYPE_=${galltypeOf(preData.link)}`;
 
@@ -98,7 +98,7 @@ export const userDeleteComment = async (preData: GalleryPreData, commentId: stri
         "g-recaptcha-response": ""
     });
 
-    // 'true'만 성공으로 본다 (v5와 같음). 관리 요청과 달리 응답이 JSON이 아니다.
+    // 'true'만 성공으로 본다. 관리 요청과 달리 응답이 JSON이 아니다.
     const response = submitResult(await ajax.post(urls.comment_remove, {body}).text());
     return {success: response.result === "true", message: resultMessage(response)};
 };

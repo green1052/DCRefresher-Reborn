@@ -92,8 +92,7 @@ export function App() {
     const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
 
     useEffect(() => {
-        // 못 읽은 채 차단·메모를 고치면 빈 목록을 바탕으로 저장해 기존 목록을 덮으므로 탭을 그리지 않는다
-        // 읽기 전에 그리면 빈 목록에서 고친 결과(전체 삭제·추가·가져오기)가 저장된 목록을 덮는다.
+        // 읽기 전이나 읽기에 실패한 채 그리면 빈 목록에서 고친 결과(전체 삭제·추가·가져오기)가 저장된 목록을 덮으므로 탭을 그리지 않는다.
         Promise.all([initBlocksStore(), initMemosStore(), initModulesStore()]).then(
             () => setStatus("ready"),
             (e) => {
@@ -103,7 +102,6 @@ export function App() {
         );
     }, []);
 
-    // 모듈이 선언한 확장 페이지 CSS 변수 (폰트 교체 등).
     useExtensionPageVars();
 
     return (
@@ -115,7 +113,7 @@ export function App() {
 
             <div className="min-w-0 grow px-4 py-8 md:px-8">
                 {/* 탭마다 새로 마운트해 들어오는 애니메이션을 다시 건다.
-                    연 버튼이 막혀(데이터 초기화 중) 돌아갈 곳이 없으면 다이얼로그가 포커스를 이 탭으로 돌려준다 (useReturnFocus) */}
+                    연 버튼이 막혀(데이터 초기화 중) 돌아갈 곳이 없으면 다이얼로그가 포커스를 이 탭으로 돌려준다 (useReturnFocus). */}
                 <div key={current.id} className="tab-enter mx-auto max-w-[880px] outline-none" tabIndex={-1}>
                     <h1 className="mb-6 text-2xl font-bold">{current.label}</h1>
                     {status === "failed"

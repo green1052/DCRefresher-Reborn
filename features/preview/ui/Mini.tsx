@@ -38,7 +38,7 @@ export const Mini = () => {
              onPointerEnter={mini.interactive ? () => hoverMini(true) : undefined} onPointerLeave={mini.interactive ? () => hoverMini(false) : undefined}
              style={{left: mini.x, top: mini.y, width: MINI_WIDTH, maxHeight: `min(${MINI_HEIGHT}px, calc(100vh - 20px))`}}>
             <h3 className="mb-2 shrink-0 truncate text-base font-bold">{mini.title}</h3>
-            {/* 카드가 포인터를 통과시키면(상호작용 설정이 꺼진 기본값) 직접 굴릴 수 없다. 휠 설정을 켜면 제목 위에서 굴릴 때 mini.ts가 스크롤한다.
+            {/* 카드가 포인터를 통과시키면(상호작용 설정이 꺼진 기본값) 직접 굴릴 수 없다.
                 스크롤바는 내용이 더 있다는 표시다. 넓은 내용은 옆을 자른다 (overflow-y만 auto면 가로 스크롤바가 생긴다). */}
             <div ref={contents}
                  className={cn("refresher-html refresher-mini-contents min-h-0 flex-1 overflow-x-hidden overflow-y-auto [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]",

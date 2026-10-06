@@ -13,6 +13,16 @@ afterEach(() => void vi.useRealTimers());
 // fake-browser의 getKeys는 구현되지 않았다고 던진다. reset이 바꾸지 않는 객체라 한 번만 채운다.
 fakeBrowser.storage.local.getKeys = async () => Object.keys(await fakeBrowser.storage.local.get(null));
 
+// Uint8Array의 base64 변환 (core/backup·core/ipdb). Node 25부터 있어 CI 러너의 기본 Node에는 없다. 코드는 옵션 없는 형태만 쓴다.
+if (typeof Uint8Array.fromBase64 !== "function") {
+    Object.assign(Uint8Array, {fromBase64: (text: string) => new Uint8Array(Buffer.from(text, "base64"))});
+    Object.assign(Uint8Array.prototype, {
+        toBase64(this: Uint8Array) {
+            return Buffer.from(this.buffer, this.byteOffset, this.byteLength).toString("base64");
+        }
+    });
+}
+
 // Cookie Store API (core/http/cookie). 쿠키가 하나도 없는 것으로 둔다.
 Object.assign(globalThis, {cookieStore: {get: async () => null}});
 

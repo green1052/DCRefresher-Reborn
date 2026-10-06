@@ -67,7 +67,7 @@ export const readBackupTargets = async (): Promise<Record<string, unknown>> => {
 
 /**
  * 백업·내보내기 대상. 차단 목록의 id(UUID)는 압축이 안 돼 클라우드 백업을 두 배 넘게 불리므로 뺀다.
- * 읽는 쪽(stores/blocks의 normalizeBlockList)이 없는 id를 새로 준다.
+ * 읽는 쪽(stores/blocks.ts의 normalizeBlockList)이 없는 id를 새로 준다.
  */
 export const collectLocalData = async (): Promise<Record<string, unknown>> =>
     Object.fromEntries(
@@ -92,7 +92,6 @@ const sha256 = async (bytes: Uint8Array<ArrayBuffer>): Promise<string> =>
 
 const isMeta = (value: unknown): value is BackupMeta => isRecord(value) && value.format === 1 && Number.isInteger(value.chunks);
 
-/** 설정을 클라우드의 한 칸에 백업. */
 const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     const bytes = await gzip(JSON.stringify(await collectLocalData()));
     const encoded = bytes.toBase64();
@@ -115,7 +114,6 @@ const backupToCloud = async (slot: BackupSlot): Promise<void> => {
     };
 
     // 이 칸에서 이번에 쓰지 않는 조각(전보다 줄어든 몫)은 쓴 뒤에 지운다. 쓰기가 실패하면 이전 메타가 여전히 그 조각을 가리킨다.
-    // 다른 칸은 건드리지 않는다.
     const stale = Object.keys(all).filter((key) => !(key in items) && isSlotKey(slot, key));
     await browser.storage.sync.set(items);
     if (stale.length > 0) await browser.storage.sync.remove(stale);

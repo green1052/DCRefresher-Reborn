@@ -28,7 +28,7 @@ let segmenter: Intl.Segmenter | undefined;
 /** 글자콘의 '한 글자'(grapheme) 단위로 나눈다. 모든 디시 페이지에서 만들지 않도록 분할기는 처음 쓸 때 만든다. */
 export const graphemes = (text: string): string[] => Array.from((segmenter ??= new Intl.Segmenter()).segment(text), ({segment}) => segment);
 
-/** 직접 넣은 줄바꿈은 두고 각 줄을 5글자씩 나눈다. 입력 제한과 표시(Comment.tsx)가 같이 쓴다. */
+/** 직접 넣은 줄바꿈은 두고 각 줄을 5글자씩 나눈다. 입력 제한과 표시(features/preview/ui/Comment.tsx)가 같이 쓴다. */
 export const wrapTxtcon = (text: string): string =>
     text
         .replace(/\r\n?/g, "\n")

@@ -14,7 +14,7 @@ export {type SubmitResult, resultMessage} from "./response";
 
 export const viewUrl = (link: string, gallery: string, id: string): string => `${urls.base}${galleryPath(link)}board/view/?id=${gallery}&no=${id}`;
 
-/** 게시글을 받아 PostInfo로 푼다. 삭제된 글은 디시가 404를 주고, 임시 차단은 HTTP 클라이언트가 BlockedError로 던진다. 그 밖에 글이 없는 페이지면 Error */
+/** 게시글을 받아 PostInfo로 푼다. 삭제된 글은 디시가 404를 주고, 임시 차단은 HTTP 클라이언트가 BlockedError로 던진다. 그 밖에 글이 없는 페이지면 Error를 던진다. */
 export const fetchPost = async (preData: GalleryPreData, signal: AbortSignal): Promise<PostInfo> => {
     const response = await http.get(viewUrl(preData.link, preData.gallery, preData.id), {signal}).text();
 
@@ -107,7 +107,7 @@ export const vote = async (preData: GalleryPreData, postInfo: PostInfo, mode: "U
         ...(postInfo.randomParam && {[postInfo.randomParam.name]: postInfo.randomParam.value})
     });
 
-    // 성공이면 'true||추천 수||고정닉 추천 수'
+    // 성공이면 'true||추천 수||고정닉 추천 수'다.
     const response = submitResult(await ajax.post(urls.vote, {body}).text());
     return response.result === "true"
         ? {success: true, counts: response.message, fixedCounts: response.detail}

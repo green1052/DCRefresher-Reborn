@@ -2,7 +2,7 @@
     "name": "dcrefresher-reborn",
     "description": "디시인사이드 개선 확장 프로그램",
     "private": true,
-    "version": "6.1.0",
+    "version": "6.1.1",
     "type": "module",
     "scripts": {
         "dev": "wxt",

@@ -1,4 +1,4 @@
-// 오버레이 CSS (components/overlay/styles.ts). 디시 페이지에 입히는 CSS는 entrypoints/page.content.css
+// 오버레이 CSS (components/overlay/styles.ts). 디시 페이지에 입히는 CSS는 entrypoints/page.content.css다.
 import "@/components/overlay/styles";
 
 import {releaseDatabase} from "@/core/database";

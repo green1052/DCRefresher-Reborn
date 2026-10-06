@@ -5,7 +5,7 @@ import type {ModuleContext, SettingGroup, SettingsSchema} from "@/core/module/ty
 import {BOARD_PAGE} from "@/core/pages";
 import {BLOCK_DAYS} from "@/core/preview/types";
 
-// 미리보기 모듈 설정. "v5와 같은 키"는 v5에서 옮긴 값을 그대로 쓰므로 이름을 바꾸지 않는다.
+// "v5와 같은 키"는 v5에서 옮긴 값을 그대로 쓰므로 이름을 바꾸지 않는다.
 
 
 const SHORTCUT_GROUP: SettingGroup = {name: "관리 단축키", desc: "관리 권한이 있을 때 미리보기에서 키를 두 번 누르면 게시글을 삭제하거나 작성자를 차단합니다."};
@@ -30,7 +30,13 @@ export const settings = {
         group: FRAME_GROUP,
         name: "바깥 배경 흐리게",
         desc: "미리보기 창 바깥 배경을 흐리게 처리합니다. (성능이 떨어질 수 있음)",
-        default: false
+        default: true
+    },
+    popupBlur: {
+        type: "check",
+        name: "팝업 바깥 배경 흐리게",
+        desc: "메모·차단 같은 팝업 창 바깥 배경을 흐리게 처리합니다.",
+        default: true
     },
     // v5와 같은 키.
     scrollToSkip: {

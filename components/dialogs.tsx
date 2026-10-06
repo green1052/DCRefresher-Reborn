@@ -5,6 +5,7 @@ import {type KeyboardEvent, type ReactNode, type RefObject, useRef, useState} fr
 import {useReturnFocus} from "@/components/useReturnFocus";
 import {Button} from "@/components/ui/button";
 import {Dialog, DialogClose, DialogContent, DialogFooter, DialogTitle} from "@/components/ui/dialog";
+import {useModuleSettings} from "@/core/module/useModuleSettings";
 
 /**
  * 연 창의 포커스.
@@ -57,6 +58,8 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
     const [open, setOpen] = useState(true);
     const popup = useRef<HTMLDivElement>(null);
     const focus = useReturnFocus(popup);
+    // 옵션 페이지에는 모듈 설정이 없어 기본(흐림)이다.
+    const blur = useModuleSettings("preview")?.popupBlur ?? true;
 
     return (
         // actionsRef.close()(일을 마친 창이 스스로 닫기)는 dismissible과 상관없이 닫는다. 끝난 직후라 dismissible이 아직 옛 값일 수 있다.
@@ -73,6 +76,8 @@ export const ModalDialog = ({onClose, focusOnOpen = "first", dismissible = true,
                 onKeyDown={keepTabInside}
                 showCloseButton={false}
                 className={className}
+                // 미리보기 안에서 연 창(디시콘 등)은 Base UI가 겹친 창으로 보고 바깥 배경을 그리지 않으므로 흐릴 때는 늘 그린다.
+                overlayProps={blur ? {forceRender: true} : {className: "supports-backdrop-filter:backdrop-blur-none"}}
                 initialFocus={typeof focusOnOpen === "object" ? focusOnOpen : focusOnOpen === "first" || focus.keyboard}
                 finalFocus={focus.finalFocus}
             >

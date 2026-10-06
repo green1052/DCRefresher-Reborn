@@ -2,14 +2,14 @@ import type {CommentForm, PostInfo} from "./types";
 
 /**
  * 지연 로딩 이미지의 data-original을 src로 옮긴다.
- * 관리자가 가린 이미지(data-block)는 가림 버튼(.btn_img_block)을 누를 때 넣는다 (Frame.tsx).
+ * 관리자가 가린 이미지(data-block)는 가림 버튼(.btn_img_block)을 누를 때 넣는다 (features/preview/ui/Frame.tsx).
  */
 const restoreImageSources = (dom: Document): void => {
     for (const image of dom.querySelectorAll<HTMLImageElement>("img[data-original]:not([data-block])")) {
         if (image.dataset.original) image.src = image.dataset.original;
     }
 
-    // 누르면 여는 디시 원본 보기 주소(onclick의 imgPop)는 정화에서 onclick째 빠지므로 data-pop으로 옮겨 둔다 (Frame.tsx).
+    // 누르면 여는 디시 원본 보기 주소(onclick의 imgPop)는 정화에서 onclick째 빠지므로 data-pop으로 옮겨 둔다 (features/preview/ui/Frame.tsx).
     for (const image of dom.querySelectorAll<HTMLImageElement>("img[onclick*='imgPop']")) {
         const url = image.getAttribute("onclick")?.match(/imgPop\('([^']+)'/)?.[1];
         if (url) image.dataset.pop = url;
@@ -20,7 +20,7 @@ const restoreImageSources = (dom: Document): void => {
 const NUMBERED_SOURCE = /dcimg\d\.dcinside\.(com|co\.kr)\/viewimage\.php/;
 
 /**
- * 첨부 이미지·동영상에 디시처럼 순서 번호를 단다 (3개 이상일 때만). 번호는 감싼 span의 data-num을 CSS가 띄운다 (overlay.css).
+ * 첨부 이미지·동영상에 디시처럼 순서 번호를 단다 (3개 이상일 때만). 번호는 감싼 span의 data-num을 CSS가 띄운다 (features/preview/overlay.css).
  * 디시 글 페이지의 번호 끄기(img_numbering 쿠키가 1이 아님)를 따른다.
  */
 const numberImages = (dom: Document): void => {
@@ -72,7 +72,7 @@ const strip = (value: string | undefined | null, ...prefixes: string[]): string 
     return result || undefined;
 };
 
-/** 성인 인증이 필요한 글일 때 parsePostInfo가 던지는 Error의 message */
+/** 성인 인증이 필요한 글일 때 parsePostInfo가 던지는 Error의 message다. */
 export const ADULT_ERROR = "adult";
 /** 미니 갤러리 비밀글. 본문 대신 비밀번호 폼이 온다. */
 export const SECRET_ERROR = "secret";

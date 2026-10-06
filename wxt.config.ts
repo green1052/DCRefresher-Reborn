@@ -30,9 +30,13 @@ export default defineConfig({
     },
     manifest: {
         name: "DCRefresher Reborn",
+        // 코드가 쓰는 API 중 가장 늦게 들어온 것에 맞춘다 (빌드가 바꿔 주지 않는다).
+        // Chrome 140: Uint8Array의 toBase64·fromBase64(백업·IP DB). Firefox 144: storage.local.getBytesInUse(정보 탭), getKeys(143).
+        minimum_chrome_version: "140",
         browser_specific_settings: {
             gecko: {
                 id: "dcrefresher-reborn@green1052",
+                strict_min_version: "144.0",
                 data_collection_permissions: {
                     required: ["none"]
                 }

@@ -199,7 +199,7 @@ describe("자동 새로고침", () => {
     it("응답이 멈추면 30초에 끊고 실패로 쳐서 다음 주기에 다시 받는다", async () => {
         vi.useFakeTimers();
         vi.spyOn(console, "error").mockImplementation(() => {});
-        // 디시 GET은 차단 검사가 http.get 안에서 본문까지 읽으므로, 본문이 멈추면 http.get이 끝나지 않는다. 끊어야만 실패로 끝난다.
+        // 디시 GET은 http.get 안에서 차단 검사로 본문까지 읽으므로 본문이 멈추면 끊어야만 실패로 끝난다.
         get.mockImplementation((_, options) => new Promise((_, reject) => {
             options?.signal?.addEventListener("abort", () => reject(options.signal?.reason));
         }));

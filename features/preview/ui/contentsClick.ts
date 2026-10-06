@@ -18,7 +18,6 @@ const isViewable = (image: HTMLImageElement): boolean =>
  * 디시콘은 정보 창, 이미지는 크게 보기(imageViewer 설정)나 디시 원본 보기, '차단 이미지 보기' 버튼은 가린 이미지를 드러낸다.
  */
 export const clickContents = (ev: MouseEvent<HTMLElement>, imageViewer: boolean): void => {
-    // 디시콘을 눌렀으면 정보 팝업을 열고 더 이상의 처리를 막는다.
     if (openDcconInfo(ev)) return;
     const target = ev.target instanceof Element ? ev.target : null;
 
@@ -32,7 +31,7 @@ export const clickContents = (ev: MouseEvent<HTMLElement>, imageViewer: boolean)
         return;
     }
 
-    // 크게 보기를 끄면 디시처럼 원본 보기를 새 탭으로 연다. 주소는 parser.ts가 옮겨 둔 imgPop 주소이고 디시 주소만 연다.
+    // 크게 보기를 끄면 디시처럼 원본 보기를 새 탭으로 연다. 주소는 core/preview/parser.ts가 옮겨 둔 imgPop 주소이고 디시 주소만 연다.
     const image = target?.closest<HTMLImageElement>("img[data-pop]");
     if (image && !image.closest("a")) {
         const url = dcinsideHref(image.dataset.pop);
@@ -46,7 +45,7 @@ export const clickContents = (ev: MouseEvent<HTMLElement>, imageViewer: boolean)
     ev.preventDefault();
     usePreviewStore.setState({imageBlocked: false});
     // 관리자가 가린 이미지는 디시처럼 누른 버튼 옆 것만 드러낸다.
-    // parser.ts는 가린 이미지의 data-original을 src로 옮기지 않으므로 여기서 옮긴다.
+    // core/preview/parser.ts는 가린 이미지의 data-original을 src로 옮기지 않으므로 여기서 옮긴다.
     for (const media of button.parentElement?.querySelectorAll<HTMLElement>(":scope > [data-block], :scope > .refresher-imgnum > [data-block]") ?? []) {
         if (media instanceof HTMLImageElement && media.dataset.original) media.src = media.dataset.original;
         media.removeAttribute("data-block");

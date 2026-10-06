@@ -100,7 +100,6 @@ const ModuleCard = ({feature}: { feature: AnyModuleMeta }) => {
     );
 };
 
-/** 모듈별 카드 목록. */
 export function GeneralTab() {
     return (
         <div className="flex flex-col gap-4">

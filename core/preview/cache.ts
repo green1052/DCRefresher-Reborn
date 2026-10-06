@@ -70,7 +70,7 @@ export const restoreArchive = (preData: GalleryPreData, list: DcinsideComment[],
 
     if (deleted.length === 0) return output;
 
-    // 답글은 CommentList(CommentList.tsx)가 c_no로 다시 묶으므로 번호(등록)순이면 충분하다.
+    // 답글은 CommentList(features/preview/ui/CommentList.tsx)가 c_no로 다시 묶으므로 번호(등록)순이면 충분하다.
     // 요청에 정렬 파라미터가 없어 서버 목록도 등록순이다.
     return [...output, ...deleted].sort((a, b) => Number(a.no) - Number(b.no));
 };
