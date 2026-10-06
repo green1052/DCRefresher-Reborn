@@ -19,10 +19,12 @@ jobs:
         outputs:
             version: ${{ steps.version.outputs.version }}
             new: ${{ steps.version.outputs.new }}
+            target: ${{ steps.version.outputs.target }}
         steps:
             -   uses: actions/checkout@v7
                 with:
                     persist-credentials: false
+                    fetch-depth: 2
                     sparse-checkout: package.json
                     sparse-checkout-cone-mode: false
 
@@ -31,6 +33,8 @@ jobs:
                 run: |
                     version=$(jq -r .version package.json)
                     echo "version=$version" >> "$GITHUB_OUTPUT"
+                    # 태그는 머지해 온 develop 커밋에 단다. release에만 있는 옛 기록이 릴리즈 노트에 들어가지 않는다.
+                    echo "target=$(git rev-parse --verify -q HEAD^2 || git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
                     if git ls-remote --exit-code --tags origin "refs/tags/$version" > /dev/null; then
                         echo "::notice::$version 태그가 이미 있어 릴리즈하지 않습니다."
                         echo "new=false" >> "$GITHUB_OUTPUT"
@@ -63,7 +67,7 @@ jobs:
                 uses: softprops/action-gh-release@v3
                 with:
                     tag_name: ${{ needs.version.outputs.version }}
-                    target_commitish: ${{ github.sha }}
+                    target_commitish: ${{ needs.version.outputs.target }}
                     files: |
                         .output/*-firefox.zip
                         .output/*-chrome.zip
