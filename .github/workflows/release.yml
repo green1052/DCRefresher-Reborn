@@ -1,6 +1,5 @@
 name: Release
 
-# release 브랜치의 package.json 버전에 태그가 없으면 그 버전을 릴리즈하고 태그를 단다.
 on:
     push:
         branches:
@@ -24,6 +23,8 @@ jobs:
             -   uses: actions/checkout@v7
                 with:
                     persist-credentials: false
+                    sparse-checkout: package.json
+                    sparse-checkout-cone-mode: false
 
             -   name: Check version
                 id: version
@@ -53,10 +54,7 @@ jobs:
                 with:
                     persist-credentials: false
 
-            -   uses: oven-sh/setup-bun@v2
-
-            -   name: Install Dependencies
-                run: bun ci
+            -   uses: ./.github/actions/setup
 
             -   name: Build
                 run: bun run zip && bun run zip:firefox

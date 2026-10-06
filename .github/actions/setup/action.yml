@@ -1,0 +1,15 @@
+name: Setup
+description: Bun·Node를 설치하고 의존성을 받는다.
+
+runs:
+    using: composite
+    steps:
+        -   uses: oven-sh/setup-bun@v2
+
+        -   uses: actions/setup-node@v7
+            with:
+                node-version: latest
+
+        -   name: Install Dependencies
+            shell: bash
+            run: bun ci
