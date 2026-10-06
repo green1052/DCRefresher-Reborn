@@ -12,6 +12,7 @@
 - 우리가 그리는 UI는 Tailwind 클래스로 꾸밉니다. CSS 파일에 남는 것은 디시 HTML(미리보기 본문·댓글의 `.refresher-html`, 디시 페이지)처럼 클래스를 달 수 없는 곳의 규칙뿐입니다. Tailwind는 소스에 적힌 클래스 이름만 만들므로 클래스 이름을 이어 붙여 만들지 않습니다.
 - 오버레이에는 Tailwind 리셋(preflight)이 들어갑니다. 디시 본문·댓글 HTML(`.refresher-html`)만은 `tailwind.css`가 `all: revert-layer`로 리셋을 되돌립니다.
 - 다크모드는 조상의 `dark` 클래스로 바꿉니다(`utils/appearance.ts`). 옵션·팝업은 시스템 설정을, 오버레이는 디시 다크모드를 오버레이 최상위 요소(shadow 안의 컨테이너)에 옮기고 `color-scheme`도 같이 정합니다.
+- 강조색 글자(링크 등)는 `text-link`(`--link`)로 칠합니다. 다크모드의 `--primary`는 흰 글자를 얹는 버튼 배경색이라 글자에 쓰면 어두운 배경에 묻힙니다.
 - 설정값을 오버레이 CSS에 넘길 때는 `<html>`에 CSS 변수를 둡니다. 커스텀 속성은 shadow 경계를 넘어 상속됩니다. 폰트 교체의 `--refresher-preview-font-size`가 예입니다.
 
 ## 부품
