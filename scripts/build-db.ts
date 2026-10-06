@@ -133,7 +133,8 @@ const buildCandidates = (asns: Range<Asn>[], countries: Range<string>[], vpns: R
 
         const candidate = candidateOf(kisa, asn.value, country.value, vpn.value === true);
         if (candidate) {
-            const byCandidate = counts.get(prefix) ?? counts.set(prefix, new Map()).get(prefix)!;
+            const byCandidate = counts.get(prefix) ?? new Map();
+            counts.set(prefix, byCandidate);
             const key = candidateKey(candidate);
             const entry = byCandidate.get(key);
             if (entry) entry.addresses += end - at + 1;
@@ -143,7 +144,8 @@ const buildCandidates = (asns: Range<Asn>[], countries: Range<string>[], vpns: R
         at = end + 1;
     }
 
-    return new Map([...counts].sort(([a], [b]) => a - b).map(([prefix, byCandidate]) => [
+    // 주소 순으로 훑었으므로 대역은 이미 오름차순이다.
+    return new Map([...counts].map(([prefix, byCandidate]) => [
         prefix,
         [...byCandidate.values()]
             .sort((a, b) => b.addresses - a.addresses)
@@ -159,7 +161,8 @@ const buildCandidates = (asns: Range<Asn>[], countries: Range<string>[], vpns: R
 const normalizeBans = (data: unknown): BanList => {
     if (!isRecord(data)) throw new Error("ban.json은 갤러리 → 아이디 목록 객체여야 합니다.");
 
-    return Object.fromEntries(Object.entries(data).sort(([a], [b]) => (a < b ? -1 : 1)).map(([gallery, uids]) => {
+    return Object.fromEntries(Object.keys(data).sort().map((gallery) => {
+        const uids = data[gallery];
         if (!Array.isArray(uids) || !uids.every((uid): uid is string => typeof uid === "string")) throw new Error(`ban.json의 "${gallery}"가 문자열 목록이 아닙니다.`);
         return [gallery, [...new Set(uids.map((uid) => uid.trim()).filter(Boolean))].sort()];
     }));
