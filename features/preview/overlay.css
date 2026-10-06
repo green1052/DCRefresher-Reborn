@@ -291,8 +291,8 @@
     display: none;
 }
 
-/* 미리보기를 연 채로 띄운 다이얼로그(메모·디시콘·차단 등)는 배경을 다시 깔지 않는다 — 미리보기 배경과 겹쳐 두 겹으로 어두워진다. */
+/* 미리보기를 연 채로 띄운 다이얼로그(메모·디시콘·차단 등)는 배경을 다시 깔지 않는다 — 미리보기 배경과 겹쳐 두 겹으로 어두워진다.
+   흐림은 '팝업 바깥 배경 흐리게' 설정을 따른다 (components/dialogs.tsx). */
 #portal:has(.refresher-frame) [data-slot="dialog-overlay"] {
     background: none;
-    backdrop-filter: none;
 }
