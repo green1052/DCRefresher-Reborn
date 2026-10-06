@@ -63,7 +63,7 @@ const ToggleRow = ({icon: Icon, label, desc, checked, onChange}: {
     const id = useId();
     return (
         <Field orientation="horizontal" className="items-center">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors data-on:bg-primary/15 data-on:text-primary"
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors data-on:bg-primary/15 data-on:text-link"
                   data-on={checked || undefined}><Icon size={15}/></span>
             <FieldContent>
                 <FieldLabel htmlFor={id}>{label}</FieldLabel>

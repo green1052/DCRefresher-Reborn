@@ -56,7 +56,7 @@ const Label = ({children}: { children: string }) => (
 );
 
 const ShopLink = ({href, children}: { href: string; children: string }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline-offset-4 hover:underline">{children}</a>
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-link underline-offset-4 hover:underline">{children}</a>
 );
 
 /** 댓글·본문의 디시콘을 눌렀을 때 그 디시콘이 든 패키지 정보를 보여 준다 (디시 '디시콘 보기' 창). */

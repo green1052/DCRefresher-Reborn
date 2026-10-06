@@ -62,7 +62,7 @@ export const UserCard = ({user, fetchRatio, op}: { user: User; fetchRatio?: bool
     };
 
     return (
-        <div className={cn("refresher-user flex min-w-0 cursor-context-menu items-center gap-1", op && "rounded-md bg-primary/15 px-1.5 py-px text-primary")}
+        <div className={cn("refresher-user flex min-w-0 cursor-context-menu items-center gap-1", op && "rounded-md bg-primary/15 px-1.5 py-px text-link")}
              onContextMenu={openMenu}>
             {/* 버블은 닉네임 바로 아래에 띄운다. 키보드로 열면 버블 안으로 포커스가 옮겨 간다 (components/overlay/UserBubble.tsx의 useReturnFocus). */}
             <button type="button" aria-haspopup="dialog"

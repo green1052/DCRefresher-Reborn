@@ -135,7 +135,7 @@ export const Comment = ({comment, depth, replyCount, threadOpen, lastReply, isAd
                         <Button
                             size="icon-xs"
                             variant="ghost"
-                            className={cn(replying && "text-primary")}
+                            className={cn(replying && "text-link")}
                             aria-label="답글"
                             aria-pressed={replying}
                             onClick={() =>

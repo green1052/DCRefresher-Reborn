@@ -309,7 +309,7 @@ export const WriteComment = () => {
 
             <p className="mt-2 text-xs text-muted-foreground">
                 {login ? (accountId ?? "회원 계정") : (
-                    <a href="#" className="text-primary underline-offset-4 hover:underline" aria-expanded={showInputs} onClick={(ev) => {
+                    <a href="#" className="text-link underline-offset-4 hover:underline" aria-expanded={showInputs} onClick={(ev) => {
                         ev.preventDefault();
                         toggleInputs();
                     }}>
