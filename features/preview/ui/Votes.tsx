@@ -63,7 +63,7 @@ export const Votes = ({post}: { post: PostInfo }) => {
     // 숫자까지 읽히게 라벨에 넣는다. aria-label은 버튼 안의 글을 대신한다.
     return (
         <div className="flex items-center justify-center gap-3 py-6">
-            <Button size="lg" variant="secondary" className="h-10 px-4 text-primary" aria-label={`추천 ${upvotes || "X"}${fixedUpvotes ? ` (고정닉 ${fixedUpvotes})` : ""}`}
+            <Button size="lg" variant="secondary" className="h-10 px-4" aria-label={`추천 ${upvotes || "X"}${fixedUpvotes ? ` (고정닉 ${fixedUpvotes})` : ""}`}
                     disabled={voting !== null} onClick={() => onVote("U")}>
                 {voting === "U" ? <Spinner data-icon="inline-start"/> : <ChevronUp data-icon="inline-start"/>}
                 {upvotes || "X"}
