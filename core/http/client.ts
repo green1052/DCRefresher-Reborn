@@ -66,7 +66,8 @@ const detectBlocked: AfterResponseHook = async ({request, response}) => {
     const url = new URL(request.url);
     if (!response.ok || !url.hostname.endsWith("dcinside.com")) return;
     if (request.method !== "GET" && !url.pathname.startsWith("/board/comment/")) return;
-    if (!isBlockedPage(await response.clone().text())) return;
+    // ky가 훅마다 복제본을 넘기고 호출한 쪽에는 원본을 주므로 바로 읽어도 된다.
+    if (!isBlockedPage(await response.text())) return;
 
     onBlocked?.();
     throw new BlockedError("디시인사이드 임시 차단");
