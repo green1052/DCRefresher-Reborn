@@ -2,7 +2,8 @@
 import {describe, expect, it, vi} from "vitest";
 import {storage} from "wxt/utils/storage";
 
-import {recordUsage, USAGE_KEY} from "@/core/usage";
+import {USAGE_KEY} from "@/core/storage/items";
+import {recordUsage} from "@/core/usage";
 
 const HOUR = 60 * 60 * 1000;
 

@@ -9,7 +9,8 @@ import {DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dial
 import {Spinner} from "@/components/ui/spinner";
 import {Textarea} from "@/components/ui/textarea";
 import {sendMessage} from "@/core/messaging/protocol";
-import {USAGE_KEY, type UsageKind} from "@/core/usage";
+import {USAGE_KEY} from "@/core/storage/items";
+import type {UsageKind} from "@/core/usage";
 
 import {notify} from "./optionsStore";
 

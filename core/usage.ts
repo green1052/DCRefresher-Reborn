@@ -2,15 +2,8 @@ import {storage} from "wxt/utils/storage";
 import pLimit from "p-limit";
 
 import {sendMessage} from "@/core/messaging/protocol";
+import {USAGE_KEY} from "@/core/storage/items";
 import {isRecord} from "@/utils/record";
-
-/**
- * 차단 항목·메모가 마지막으로 쓰인(걸린·보인) 시각. 옵션의 차단·메모 탭이 오래 안 쓰인 항목을 거를 때 쓴다.
- * 기기마다 따로 두고 백업하지 않는다 (core/backup.ts의 isBackupTarget).
- * block은 차단 항목 id, memo는 "종류:대상" 키다.
- * 여러 탭과 옵션 페이지가 함께 고치므로 쓰기는 배경 한 곳에서 차례로 한다 (recordUsage·syncUsage). 따로 읽고 쓰면 그사이 다른 쪽의 기록을 덮는다.
- */
-export const USAGE_KEY = "local:refresher:usage";
 
 export type UsageKind = "block" | "memo";
 export type UsageData = Record<UsageKind, Record<string, number>>;
